@@ -827,6 +827,131 @@ describe('parseAdvanceBlock — warnings', () => {
   });
 });
 
+// ── Condition-extraction regression tests (the five live defects) ─────────────
+//
+// Each test is derived from the identified root cause rather than the observed
+// output, so the same root cause cannot produce a passing test for the wrong
+// reason.  The five named defects are ordered by root cause:
+//
+//   Group A — "to to" doubling: \b…\b gi stripped lowercase prose words
+//             alongside the uppercase state reference.
+//   Group B — orphaned close-bracket: a bad ' or ' separator split began
+//             inside a parenthetical, leaving a "fragment). rest…" clause.
+//   Group C — routing footnote: "— see" survived backtick stripping and
+//             the trailing routing-reference strip did not exist.
+//   Group D — bare fragment "see": the whole clause was a routing parenthetical
+//             "(see `references/…`)" whose content was stripped to "see".
+//   Group E — subject-stripped conditional: the backtick-held subject of an
+//             `if` clause was stripped, leaving "if was set, but is rejected".
+
+describe('Rule 3 — condition regression: "to to" doubling (aid-specify corpus defect)', () => {
+  // Root cause: `\b${escaped}\b` with 'gi' stripped both the uppercase state
+  // reference (CONTINUE) and any lowercase prose occurrence of the same word
+  // ("continue" in "to continue to [State: CONTINUE]"), creating doubled
+  // prepositions.  The shared _tokenBoundaryRe helper without 'gi' strips only
+  // the exact-case state reference.
+  it('CONTINUE state — clause ending "to continue to [State: CONTINUE]" returns null, not "to to"', () => {
+    // This clause arises when a sentence separator splits a PAUSE block:
+    // "Re-run `…` after recording spike results in SPEC.md to continue to [State: CONTINUE]."
+    // The stripped condition should be null (trailing preposition guard), NOT the
+    // doubled string "Re-run after recording spike results in SPEC.md to to".
+    const result = parse(
+      advBlock('Re-run `/aid-specify` after recording spike results in SPEC.md to continue to [State: CONTINUE].'),
+      states('TEST', 'CONTINUE'),
+      { fromNodeName: 'TEST' }
+    );
+    const cond = result.edges.find((e) => e.to === 'n2')?.condition ?? null;
+    expect(cond).toBeNull();
+    // Non-vacuity: the old code produced "…to to"; the absence of that string
+    // proves the guard fired rather than the edge being dropped silently.
+    expect(cond).not.toBe('Re-run after recording spike results in SPEC.md to to');
+  });
+
+  it('lowercase prose word matching the state name is preserved in the condition', () => {
+    // Directly proves the case-sensitivity fix: the word "continue" in prose
+    // must NOT be stripped when the state name is "CONTINUE" (uppercase only).
+    const result = parse(
+      advBlock('DONE when you continue the workflow'),
+      states('DONE'),
+    );
+    const cond = result.edges[0]?.condition ?? null;
+    // The word "continue" is prose, not the state DONE; it must survive.
+    expect(cond).not.toBeNull();
+    expect(cond).toMatch(/continue/);
+  });
+});
+
+describe('Rule 3 — condition regression: orphaned close-bracket fragment (aid-specify corpus defect)', () => {
+  // Root cause: an ' or ' separator split a PAUSE clause text like
+  // "…or upstream phase fix). Re-run…" at ' or ', leaving "upstream phase fix)."
+  // as piece-1 (which does not resolve, so the cut is rejected) and
+  // "upstream phase fix). Re-run…" as the full clause when the '. ' cut
+  // that follows is also rejected because "upstream phase fix)" cannot resolve.
+  // The resulting condition "upstream phase fix). Re-run…" has more close-parens
+  // than open-parens — a reliable fragment signature.
+  it('clause with more close-parens than open-parens produces null condition', () => {
+    // Simulate the fragment shape: text starting inside a closed parenthetical.
+    const result = parse(
+      advBlock('phase fix). Re-run `/x` after the blocker clears to continue to CONTINUE'),
+      states('TEST', 'CONTINUE'),
+      { fromNodeName: 'TEST' }
+    );
+    const cond = result.edges.find((e) => e.to === 'n2')?.condition ?? null;
+    expect(cond).toBeNull();
+  });
+});
+
+describe('Rule 3 — condition regression: routing footnote "— see" (aid-housekeep corpus defect)', () => {
+  // Root cause: after backtick spans are removed, "— see" at the end is a
+  // meaningless routing footnote ("see `SKILL.md § Arguments`" → "see").
+  // The trailing routing-reference strip removes it; the subject-stripped
+  // conditional guard then catches "if was set, but is rejected" (no subject).
+  it('clause "if `--flag` was set, but … in delivery-001 — see `…`" returns null', () => {
+    const result = parse(
+      advBlock('DONE if `--flag` was set, but `--flag` is rejected in delivery-001 — see `SKILL.md § Arguments`'),
+      states('DONE'),
+    );
+    const cond = result.edges[0]?.condition ?? null;
+    // Must not produce "if was set, but is rejected in delivery-001 — see"
+    expect(cond).toBeNull();
+  });
+});
+
+describe('Rule 3 — condition regression: bare "see" fragment (aid-deploy corpus defect)', () => {
+  // Root cause: the clause "(see `references/state-done.md`)" was a pure
+  // routing parenthetical.  After backtick stripping, "(see )" remained;
+  // after leading/trailing punctuation strip, only "see" survived.
+  // The routing-parenthetical strip in step 8 removes "(see …)" before
+  // it can become a bare "see".
+  it('clause consisting solely of "(see `…`)" routing parenthetical returns null', () => {
+    const result = parse(
+      advBlock('CHAIN -> DONE (see `references/state-done.md`).'),
+      states('DONE'),
+    );
+    const cond = result.edges[0]?.condition ?? null;
+    // Must not produce the bare word "see"
+    expect(cond).toBeNull();
+    expect(cond).not.toBe('see');
+  });
+});
+
+describe('Rule 3 — condition regression: subject-stripped conditional (aid-summarize corpus defect)', () => {
+  // Root cause: the ';' separator split a multi-branch HALT clause, producing a
+  // fragment "no writeback). If user said …: **CHAIN** → [State: FIX]
+  // (continue inline)." with an orphaned ')'.  After routing-paren and bold
+  // stripping, the orphaned close-bracket guard (closes > opens) catches it.
+  it('fragment with orphaned close-paren after semicolon split returns null', () => {
+    // Simulates the second piece of "HALT (exit; no writeback). …"
+    const result = parse(
+      advBlock('no writeback). If user said needs: CHAIN -> FIX (continue inline).'),
+      states('TEST', 'FIX'),
+      { fromNodeName: 'TEST' }
+    );
+    const cond = result.edges.find((e) => e.to === 'n2')?.condition ?? null;
+    expect(cond).toBeNull();
+  });
+});
+
 // ── Corpus smoke test (non-failing: just verifies parse does not throw) ───────
 
 describe('Corpus smoke test — real skill advance blocks do not throw', () => {

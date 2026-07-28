@@ -46,8 +46,7 @@ flowchart TB
   n3 --> n1
   n3 --> n4
   n4 --> n5
-  n5 -->|"continue inline; picks the doc back up -- it is still in"| n4
-  n5 -. "otherwise" .- n5
+  n5 --> n4
   n5 -->|"grade/teach-back/act-back/TRACE-1 below gate (scope-diff already PASS) FIX…"| n6
   n6 --> n2
   n6 --> n7

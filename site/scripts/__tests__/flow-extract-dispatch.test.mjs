@@ -549,20 +549,30 @@ describe('extractDispatch — all 13 D1 skills produce valid charts', () => {
     expect(D1_SKILLS.length).toBeGreaterThan(1);
   });
 
-  it('a node whose only inbound edge is its own self-loop is an ENTRY', () => {
-    // The general rule behind the fix, pinned independently of any one skill so it
-    // survives the corpus changing. `aid-specify`'s SPIKE is the live instance:
-    // reachable from nothing, self-looping, and therefore a way into the chart.
+  it('a node with no inbound edges from other nodes is an ENTRY', () => {
+    // The general rule pinned independently of any one skill.  `aid-specify`'s
+    // SPIKE is the live instance: it is reachable from no other declared state
+    // (CONTINUE routes to REVIEW, not SPIKE — the "State 3" detection is prose
+    // guidance, not an advance edge).  SPIKE → CONTINUE is a loop-back, so SPIKE
+    // has in-degree 0 and buildChart marks it as an ENTRY.
+    //
+    // Before the _extractCondition fix, SPIKE's PAUSE-FOR-USER-ACTION advance
+    // produced a mangled non-null condition ("Re-run … to to"), which triggered
+    // rule 5 (single conditional → self-loop).  The self-loop made SPIKE an
+    // ENTRY via the "self-edges excluded from in-degree" path in buildChart.
+    // The fix returns null for that condition (trailing-preposition guard), so
+    // rule 5 does NOT fire.  SPIKE is an ENTRY through the direct in-degree-0
+    // path instead — same result, correct mechanism.
     const chart = extractDispatch('aid-specify', null, REPO_ROOT);
     const spike = chart.nodes.find((n) => n.name === 'SPIKE');
     expect(spike, 'aid-specify should declare a SPIKE state').toBeDefined();
 
-    const inbound = chart.edges.filter((e) => e.to === spike.id);
-    // The premise of the test — if the corpus ever gives SPIKE a real inbound
-    // edge, this stops being the self-loop case and the assertion below would be
-    // testing something else.
-    expect(inbound.length).toBeGreaterThan(0);
-    expect(inbound.every((e) => e.from === spike.id)).toBe(true);
+    const inbound = chart.edges.filter((e) => e.to === spike.id && e.from !== spike.id);
+    // SPIKE should have no inbound edges from other nodes (in-degree 0).
+    // If the corpus ever gives SPIKE a real inbound edge from another node,
+    // this test needs to be revisited — but the ENTRY assertion below would
+    // still hold.
+    expect(inbound.length).toBe(0);
 
     expect(chart.entries).toContain(spike.id);
   });

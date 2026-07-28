@@ -44,7 +44,7 @@ flowchart TB
   n2 -. "otherwise" .- n2
   n2 -->|"after triage, findings write, and the terminal State write above"| n4
   n3 --> n2
-  n5 -->|"The router prints the prompt above and exits; the user re-invokes with their…"| n2
+  n5 --> n2
   n5 -->|"depending on the decision"| n4
   n6 -->|"grade &lt; min"| n3
   n6 -. "otherwise" .- n6

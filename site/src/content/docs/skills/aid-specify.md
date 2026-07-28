@@ -43,10 +43,8 @@ flowchart TB
   n1 --> n2
   n2 -. "otherwise" .- n2
   n2 -->|"when all sections are Complete"| n5
-  n3 -->|"Re-run after recording spike results in SPEC.md to to"| n2
-  n3 -. "otherwise" .- n3
-  n4 -->|"upstream phase fix). Re-run after the blocker clears to to"| n2
-  n4 -. "otherwise" .- n4
+  n3 --> n2
+  n4 --> n2
   n5 -. "otherwise" .- n5
   n5 -->|"when spec is Ready and meets minimum grade"| n6
   class n1 aidEntry

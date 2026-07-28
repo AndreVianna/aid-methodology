@@ -53,7 +53,7 @@ flowchart TB
   n6 -->|"otherwise. Both continue inline"| n7
   n6 -->|"if Overall Grade ≥ minimum"| n8
   n7 --> n5
-  n8 -->|"no writeback). If user said &quot;changes needed&quot;: (continue inline"| n7
+  n8 --> n7
   n8 -->|"If user approved"| n9
   n9 --> n10
   class n1 aidEntry

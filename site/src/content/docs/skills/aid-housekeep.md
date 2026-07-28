@@ -40,7 +40,7 @@ flowchart TB
   n4["CLEANUP<br/>CLEANUP is the terminal gated stage of ."]
   n5(["DONE<br/>DONE is the terminal state."])
   n1 --> n2
-  n1 -->|"if was set, but is rejected in delivery-001 — see"| n4
+  n1 --> n4
   n2 --> n3
   n3 --> n4
   n4 --> n5

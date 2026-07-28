@@ -545,12 +545,14 @@ function _processWorkerDetail(workerRelPath, nodeId, stateName, safeDecl, repoRo
 /**
  * Return true when `condition` is a markdown artifact with no real content —
  * e.g. `** **` (bold delimiters around whitespace after keyword stripping) or
- * `(continue inline` / `(continue inline)` (parenthetical navigation prose,
- * with or without the closing paren which may be stripped by _extractCondition's
- * trailing-punctuation trimmer).
+ * bare routing words like `continue inline` / `inline` / `below`.
  *
- * These conditions are created by `_extractCondition` in advance.mjs when the
- * clause text contains `**KEYWORD**` followed by parenthetical navigation prose.
+ * **Role after the advance.mjs rewrite:** `_extractCondition` now returns null
+ * directly for the most common artifact shapes (routing parentheticals, orphaned
+ * close-brackets, trailing prepositions, subject-stripped conditionals).  This
+ * function is retained as a thin safety-net for any residual artifacts that
+ * survive to the merge step — e.g. a bare `inline` from a worker file that does
+ * not wrap its routing prose in parens.
  *
  * @param {string|null} condition
  * @returns {boolean}

@@ -759,13 +759,44 @@ function _detectAdvanceType(clauseText) {
 }
 
 /**
+ * Build a whole-token RegExp for `name` using the AID token-boundary convention:
+ * not immediately preceded or followed by `[A-Za-z0-9-]`.  This boundary spans
+ * hyphenated names as one token (Q-AND-A, PAUSE-FOR-USER-ACTION) and prevents
+ * embedded matches (APPROVAL-HALT never matches HALT, CONTINUE never matches
+ * the word "continue" inside prose).
+ *
+ * This is the SINGLE canonical boundary implementation shared by every call
+ * site that strips a resolved state name from clause text.  Having three
+ * different boundary rules in the same module — `\b…\b`, a lookaround in
+ * `_extractOptionalityMarker`, and a lookaround in `extract-dispatch.mjs` —
+ * was the root cause of the "to to" doubling defect: `\b…\b` with the `i`
+ * flag matched lowercase `continue` (prose) in addition to uppercase `CONTINUE`
+ * (state reference), stripping both and leaving a doubled preposition.
+ *
+ * @param {string} name    Token to match (state name, keyword, etc.).
+ * @param {string} [flags] Regex flags (default '').  Pass 'gi' for
+ *                         case-insensitive matching (used by
+ *                         _extractOptionalityMarker).
+ * @returns {RegExp}
+ */
+function _tokenBoundaryRe(name, flags = '') {
+  const escaped = name
+    .replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+    .replace(/-/g, '\\-');
+  return new RegExp(`(?<![A-Za-z0-9-])${escaped}(?![A-Za-z0-9-])`, flags);
+}
+
+/**
  * Extract the edge condition from a clause (rule 3): the text that remains
  * after removing `[State: X]` wrappers, arrows, advance-type keywords, the
- * target state name, standalone `State:` prefix, and backtick spans.
+ * target state name, standalone `State:` prefix, backtick spans, and routing
+ * parentheticals.
  *
- * Returns null when nothing meaningful is left.  Non-null values are capped at
- * 80 code points using the shared truncator imported from model.mjs — this
- * module contains no second truncation implementation (acceptance criterion 8).
+ * Returns null when nothing meaningful is left — including when the remaining
+ * text is a recognised routing artifact (orphaned close-paren fragment,
+ * trailing preposition, or subject-stripped conditional).  Non-null values are
+ * capped at 80 code points using the shared truncator imported from model.mjs
+ * — this module contains no second truncation implementation (AC-8).
  *
  * @param {string} clauseText   Raw clause text.
  * @param {string} targetName   Resolved state name (exact case, for removal).
@@ -773,41 +804,85 @@ function _detectAdvanceType(clauseText) {
  */
 function _extractCondition(clauseText, targetName) {
   let text = clauseText;
+
+  // (1) Strip [State: X] wrappers → X
   text = text.replace(STATE_WRAPPER_RE, '$1');
+  // (2) Strip arrow forms
   text = text.replace(ARROW_RE, ' ');
+  // (3) Strip advance-type keywords
   text = text.replace(ADVANCE_KW_RE, ' ');
-  // Strip the resolved state name as a whole token (hyphens included in token)
-  const escaped = targetName.replace(/[-]/g, '\\-');
-  text = text.replace(new RegExp(`\\b${escaped}\\b`, 'gi'), ' ');
-  // Strip standalone "State:" prefix (not inside brackets — those were handled above)
+
+  // (4) Strip the resolved state name — CASE-SENSITIVE, shared boundary helper.
+  //
+  //     The old `\b${escaped}\b` with the `gi` flag stripped both the uppercase
+  //     state reference AND any matching lowercase prose word.  For a CONTINUE
+  //     state, this turned the routing clause "Re-run … to continue to
+  //     [State: CONTINUE]" into "Re-run … to  to" — two bare prepositions where
+  //     the author wrote one.  The shared _tokenBoundaryRe helper without `gi`
+  //     strips only the exact-case state reference, leaving prose words intact.
+  text = text.replace(_tokenBoundaryRe(targetName), ' ');
+
+  // (5) Strip standalone "State:" prefix artifacts
   text = text.replace(/\bState:\s*/g, ' ');
-  // Strip backtick spans (routing notation such as `[1] File it` is not a condition)
+  // (6) Strip backtick spans (routing notation such as `[1] File it`)
   text = text.replace(/`[^`]*`/g, ' ');
-  // Strip markdown emphasis. Removing a BOLDED keyword leaves its `**` delimiters
-  // behind, so conditions rendered on the page as `** ** after scaffolding is
-  // complete` — measured on 23 of 44 edge labels, over half of every condition in
-  // the corpus. Same defect as the `** **` handoff, which was fixed in
-  // `_extractHandoff` but not here; the two strip paths had drifted apart.
+  // (7) Strip markdown emphasis markers.  Removing a BOLDED keyword leaves its
+  //     `**` delimiters behind; without this strip they reach the rendered page.
   text = text.replace(/\*+/g, ' ');
-  // Collapse whitespace and trim
+
+  // (8) Strip routing parentheticals — "(continue inline)", "(see …)", "(exit;
+  //     no writeback)", etc.  Authors use these to annotate the transition path;
+  //     they are never a real edge guard.  The close-paren is optional because
+  //     _extractCondition's separator trim sometimes removes it first.
+  text = text.replace(
+    /\(\s*(?:continue|chain\s+continues?|see|exit|re-?run)\b[^)]*\)?/gi, ' '
+  );
+
+  // (9) Collapse whitespace and trim
   text = text.replace(/\s+/g, ' ').trim();
-  // Drop an ORPHANED trailing parenthetical. Authors write asides like
-  // "(continue inline; state-apply.md § Step 1 ...)", and stripping the state name
-  // and backtick spans out of the middle leaves the opening half stranded — the
-  // page then showed "when all sections are Complete or N/A (continue inline".
-  // An unmatched `(` is a reliable signature of that debris: a real condition does
-  // not open a bracket it never closes. Everything from it to the end goes, since
-  // the aside was parenthetical by the author's own choice.
-  // Strip leading/trailing routing punctuation
+
+  // (10) Strip leading/trailing routing punctuation
   text = text.replace(/^[[\]().,;:!?→>-]+|[[\]().,;:!?→>-]+$/g, '').trim();
-  // AFTER the punctuation strip, not before — order is the whole point. The source
-  // reads "...completes (continue inline)." with the parenthesis BALANCED, so a
-  // check run earlier sees nothing wrong. The stripper above then removes the
-  // trailing ")." and orphans the opening bracket, which is what reached the page.
-  const opens = (text.match(/\(/g) || []).length;
+
+  // (11) Orphaned open-bracket guard.  Authors write asides like
+  //      "(continue inline; state-apply.md § Step 1)", and stripping the state
+  //      name or backtick spans out of the middle orphans the opening bracket.
+  //      Run AFTER the punctuation strip — balanced parens are still balanced
+  //      before it, so this check only fires on debris, not on real parentheticals.
+  const opens  = (text.match(/\(/g) || []).length;
   const closes = (text.match(/\)/g) || []).length;
-  if (opens > closes) text = text.slice(0, text.lastIndexOf('(')).trim();
+  if (opens > closes) {
+    text = text.slice(0, text.lastIndexOf('(')).trim();
+    text = text.replace(/[[\]().,;:!?→>-]+$/g, '').trim();
+  }
+
+  // (12) Fragment guard — orphaned CLOSE-bracket (more closes than opens).
+  //      This signals a bad separator split that began inside a parenthetical,
+  //      leaving a fragment like "upstream phase fix). Re-run …" or
+  //      "no writeback). If user said …".  No real condition opens with a
+  //      dangling close-paren.
+  if (closes > opens) return null;
+
+  // (13) Strip trailing routing-reference chains.  After backtick spans are
+  //      removed, "— see" / "-- see" / ": see" at the end is a meaningless
+  //      footnote, e.g. "… in delivery-001 — see `SKILL.md § Arguments`"
+  //      becomes "… in delivery-001 — see" once the backtick span is gone.
+  text = text.replace(/\s*[—–\-:;]\s*see\s*$/i, '').trim();
   text = text.replace(/[[\]().,;:!?→>-]+$/g, '').trim();
+
+  // (14) Trailing-preposition guard.  When the resolved state name was the
+  //      object of a routing phrase such as "to continue to [State: CONTINUE]",
+  //      stripping the state reference leaves a dangling preposition at the end.
+  //      No corpus condition ends with a bare preposition, so returning null is
+  //      safe and avoids a label like "Re-run … to continue to".
+  if (/\b(?:to|in|at|by|for|from|of)\s*$/i.test(text)) return null;
+
+  // (15) Subject-stripped conditional guard.  When a backtick span held the
+  //      grammatical subject of an `if` clause (e.g. "`--cleanup-only` was set"),
+  //      stripping backticks leaves "if was set …" — syntactically broken and
+  //      never a meaningful condition.
+  if (/^if\s+(?:was|were|is|are|has|have|had|does|do|did)\b/i.test(text)) return null;
+
   if (!text) return null;
   return truncate(text, 80);
 }
@@ -854,10 +929,9 @@ function _extractHandoff(clauseText) {
  */
 function _extractOptionalityMarker(clauseText, targetName) {
   let remaining = clauseText;
-  const escaped = targetName.replace(/[-]/g, '\\-');
-  remaining = remaining.replace(
-    new RegExp(`(?<![A-Za-z0-9-])${escaped}(?![A-Za-z0-9-])`, 'gi'), ' '
-  );
+  // Use the shared boundary helper with 'gi' — optionality markers may
+  // reference the state name in mixed case, unlike conditions (exact-case only).
+  remaining = remaining.replace(_tokenBoundaryRe(targetName, 'gi'), ' ');
   remaining = remaining.replace(ARROW_RE, ' ');
   remaining = remaining.replace(ADVANCE_KW_RE, ' ');
   remaining = remaining.replace(/\s+/g, ' ').trim();
