@@ -690,6 +690,59 @@ resolves into the module split.
 
 ---
 
+## Wave 9 (task-032) — findings, pre-review
+
+Completes feature-003. Contract tier 152 → **181 tests**: three AC-4 corpus fixtures, the whole-corpus
+sweep, and the unparsed-advance allow-list. Nine mutants, all killed.
+
+### A production defect, found because an acceptance criterion could not be met
+
+task-032's AC requires `aid-describe`'s COMPLETION handoff to **mention `/aid-define`**. It did not.
+`_extractHandoff` deleted backtick spans, and this corpus writes the resume command as code — the
+source clause reads *Run `` `/aid-define {work}` `` to decompose approved requirements into features*,
+and the published handoff read **"Run to decompose approved requirements into features"**: the command
+removed, the sentence left dangling. `aid-update-kb`'s ANALYZE ended on a bare *"escalation to"* for
+the same reason, and `aid-define`'s DONE said *"Run again only to…"*.
+
+This is the same damage class as the edge-condition mangling fixed at the tasks-019–029 checkpoint,
+in a function that rule did not reach. Deleting a backtick span is right in `_extractCondition`, where
+it is routing notation; it is wrong in a handoff, whose entire job is to say what to run next. Now
+**unwrapped rather than deleted**. Four sidecars changed; no page changed, because handoff text is not
+page-visible until feature-005 surfaces it.
+
+**Worth noting how it surfaced.** The dispatched agent hit the AC, correctly declined to edit
+production code, wrote the assertion down to `handoff !== null`, and reported the defect. That weaker
+assertion would have passed forever against the broken output. The AC named `/aid-define` precisely so
+that could not happen, and it now asserts exactly that.
+
+### Carried forward, not fixed: orphan parentheticals in handoffs
+
+Five handoffs are still cut mid-parenthetical or carry an unbalanced bracket — `aid-discover`/ELICIT
+ends *"(below"*, `aid-execute`/DELIVERY-GATE reads *"Step 1 (SCORE"*, `aid-summarize`/APPROVAL reads
+*"If user rejected: (exit"*, and `aid-describe`/COMPLETION opens on an orphan `)`. `_extractCondition`
+gained a guard for exactly this; `_extractHandoff` has none.
+
+Not fixed here on scope grounds: task-032 is a TEST task, the handoff text reaches no page yet, and the
+fix is a behaviour change to a function this task does not own. **Routed to feature-005**, which is the
+task that makes this text user-visible and therefore the one that must care. Recorded rather than left
+for someone to rediscover.
+
+### Two harness lessons, both mine, both general
+
+**A mutant can be caught by a collection error rather than a test failure.** The corpus tier builds its
+charts at module scope, so a mutation that trips a validator throws during import: vitest prints
+`Tests  no tests` alongside `Failed Suites 1` and exits non-zero. My harness read only the `Tests`
+line and reported a survivor. Death is now judged by **exit code**. This is the third harness bug in
+this delivery to masquerade as a coverage gap — after two label-renaming mutants that the matching
+regex still matched, and one that targeted the wrong `warnings.push`.
+
+**Two of my nine mutants were invalid on the first pass** — one replaced the first occurrence of
+`'decision'`, which is a JSDoc `@property` line, and one renamed an export, which broke the test file's
+import rather than its behaviour. The standing rule now: before believing a survivor, confirm the
+mutation changed behaviour at all.
+
+---
+
 ## Wave 8 (task-031) — PASS, A+ floor met (2 cycles)
 
 Closed at `9c172360` plus a tidy-up commit. Contract tier: **84 → 152 tests**, all fixtures inline,

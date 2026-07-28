@@ -34,6 +34,16 @@ import { classifySkill } from '../lib/flow-graph/classify.mjs';
 import { parseAdvanceBlock } from '../lib/flow-graph/advance.mjs';
 import { validateChart } from '../lib/flow-graph/validate.mjs';
 
+// ── Imports for task-032 tiers (AC-4 fixtures, whole-corpus, W-1 allow-list) ─
+import {
+  buildFlowChart,
+  renderMermaid,
+  resetFlowWarnings,
+} from '../lib/flow-graph/index.mjs';
+import { readdirSync, readFileSync } from 'node:fs';
+import { join, resolve, dirname } from 'node:path';
+import { fileURLToPath } from 'node:url';
+
 // No repo-root constant and no path resolution: this tier's fixtures are all inline in
 // this file, so it reads nothing from `canonical/` or `.aid/works/` (task-031 AC-1).
 // A REPO_ROOT was declared here and never used — removed rather than left as an
@@ -2126,5 +2136,357 @@ describe('validateChart — boundary: V1–V8 only; V9 lives in advance.mjs', ()
     const { ok, errors } = validateChart(chart);
     expect(ok).toBe(true);
     expect(errors).toHaveLength(0);
+  });
+});
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// task-032 tiers: AC-4 corpus fixtures, whole-corpus, W-1 allow-list
+// These tiers MAY read canonical/ but must read nothing under .aid/works/.
+// ═══════════════════════════════════════════════════════════════════════════════
+
+/** Absolute path to the repo root (canonical/ lives here). */
+const _t032Root = resolve(
+  dirname(fileURLToPath(import.meta.url)),
+  '../../..'
+);
+
+// ── Corpus data — computed once, shared by whole-corpus and W-1 tiers ─────────
+// Each directory under canonical/skills/ classifies into exactly one shape:
+// either it builds successfully (authored) or throws 'not an authored shape' (doorway).
+// Any other throw is re-propagated so the corpus build itself fails.
+
+const _t032Allowlist = [
+  {
+    key: 'aid-housekeep:PREFLIGHT',
+    skill: 'aid-housekeep',
+    state: 'PREFLIGHT',
+    reason:
+      'empty (or ) alternative — the parenthetical yields no second target',
+  },
+  {
+    key: 'aid-update-kb:REVIEW',
+    skill: 'aid-update-kb',
+    state: 'REVIEW',
+    reason:
+      'four-outcome table cell; third outcome routes to FIX (undeclared state), dropping that span as residue',
+  },
+];
+
+const _t032SkillDirs = readdirSync(join(_t032Root, 'canonical/skills'), {
+  withFileTypes: true,
+})
+  .filter((d) => d.isDirectory())
+  .map((d) => d.name);
+
+let _t032Authored = 0;
+let _t032Doorway = 0;
+const _t032Charts = [];
+const _t032W1Observed = [];
+
+for (const _cname of _t032SkillDirs) {
+  resetFlowWarnings();
+  try {
+    const _cchart = buildFlowChart({ name: _cname, dir: _t032Root });
+    _t032Authored++;
+    _t032Charts.push(_cchart);
+    for (const _w of _cchart.warnings) {
+      if (/W-1/.test(_w)) {
+        const _sm = _w.match(/W-1: '([A-Z0-9_-]+)'/);
+        if (_sm) _t032W1Observed.push(`${_cname}:${_sm[1]}`);
+      }
+    }
+  } catch (_err) {
+    if (_err.message && _err.message.includes('not an authored shape')) {
+      _t032Doorway++;
+    } else {
+      throw _err;
+    }
+  }
+}
+
+// ── AC-4 corpus fixture — aid-describe (dispatch-table) ───────────────────────
+
+describe('AC-4 corpus fixture — aid-describe (dispatch-table)', () => {
+  resetFlowWarnings();
+  const _dChart = buildFlowChart({ name: 'aid-describe', dir: _t032Root });
+  const _dNn = (id) => _dChart.nodes.find((n) => n.id === id);
+  const _dContinue = _dChart.nodes.find((n) => n.name === 'CONTINUE');
+  const _dQA = _dChart.nodes.find((n) => n.name === 'Q-AND-A');
+  const _dCompletion = _dChart.nodes.find((n) => n.name === 'COMPLETION');
+  const _dContOut = _dChart.edges.filter((e) => e.from === _dContinue?.id);
+
+  it('validateChart passes, entries >= 1, exits >= 1', () => {
+    expect(validateChart(_dChart).ok).toBe(true);
+    expect(_dChart.entries.length).toBeGreaterThanOrEqual(1);
+    expect(_dChart.exits.length).toBeGreaterThanOrEqual(1);
+  });
+
+  it('CONTINUE.kind === decision', () => {
+    expect(_dContinue).toBeDefined();
+    expect(_dContinue.kind).toBe('decision');
+  });
+
+  it('CONTINUE out-degree 3 with kinds {branch, branch, loop-back}', () => {
+    // Kind-list assertion so a rule-5 change or KI-008 regression cannot pass silently.
+    expect(_dContOut).toHaveLength(3);
+    expect(_dContOut.map((e) => e.kind).sort()).toEqual([
+      'branch',
+      'branch',
+      'loop-back',
+    ]);
+  });
+
+  it('a re-entry edge enters Q-AND-A', () => {
+    expect(_dQA).toBeDefined();
+    const _reentry = _dChart.edges.find(
+      (e) => e.to === _dQA.id && e.kind === 're-entry'
+    );
+    expect(_reentry).toBeDefined();
+  });
+
+  it('COMPLETION is in exits, PAUSE-FOR-USER-DECISION, handoff mentioning /aid-define', () => {
+    expect(_dCompletion).toBeDefined();
+    expect(_dChart.exits).toContain(_dCompletion.id);
+    expect(_dCompletion.terminal.advanceType).toBe('PAUSE-FOR-USER-DECISION');
+
+    // The AC names `/aid-define` specifically, and asserting only `!== null` would have
+    // passed while the handoff read "Run to decompose approved requirements into
+    // features" — the command deleted, the sentence left dangling. `_extractHandoff`
+    // removed backtick spans, and this corpus writes the resume command as code. It now
+    // unwraps them instead, so the one thing a handoff exists to convey survives.
+    expect(_dCompletion.terminal.handoff).toContain('/aid-define');
+  });
+
+  it('no W-1 residual-text warning', () => {
+    expect(_dChart.warnings.filter((w) => /W-1/.test(w))).toHaveLength(0);
+  });
+
+  it('every node provenance.excerpt equals the live canonical/ file slice (non-vacuous)', () => {
+    expect(_dChart.nodes.length).toBeGreaterThan(0);
+    for (const _n of _dChart.nodes) {
+      const { file, startLine, endLine, excerpt } = _n.provenance;
+      const _lines = readFileSync(join(_t032Root, file), 'utf8')
+        .split('\n')
+        .map((l) => l.replace(/\r$/, ''));
+      expect(sliceLines(_lines, startLine, endLine)).toBe(excerpt);
+    }
+  });
+});
+
+// ── AC-4 corpus fixture — aid-review (inline-states) ──────────────────────────
+
+describe('AC-4 corpus fixture — aid-review (inline-states)', () => {
+  resetFlowWarnings();
+  const _rvChart = buildFlowChart({ name: 'aid-review', dir: _t032Root });
+  const _rvNn = (id) => _rvChart.nodes.find((n) => n.id === id);
+  const _rvVerify = _rvChart.nodes.find((n) => n.name === 'VERIFY');
+  const _rvReview = _rvChart.nodes.find((n) => n.name === 'REVIEW');
+  const _rvPresent = _rvChart.nodes.find((n) => n.name === 'PRESENT-FINDINGS');
+  const _rvDone = _rvChart.nodes.find((n) => n.name === 'DONE');
+
+  it('validateChart passes, entries >= 1, exits >= 1', () => {
+    expect(validateChart(_rvChart).ok).toBe(true);
+    expect(_rvChart.entries.length).toBeGreaterThanOrEqual(1);
+    expect(_rvChart.exits.length).toBeGreaterThanOrEqual(1);
+  });
+
+  it('a loop-back edge VERIFY -> REVIEW exists', () => {
+    expect(_rvVerify).toBeDefined();
+    expect(_rvReview).toBeDefined();
+    const _lb = _rvChart.edges.find(
+      (e) =>
+        e.from === _rvVerify.id &&
+        e.to === _rvReview.id &&
+        e.kind === 'loop-back'
+    );
+    expect(_lb).toBeDefined();
+  });
+
+  it('VERIFY.kind === loop-back, not decision', () => {
+    // VERIFY has one sequence edge forward and one loop-back backward;
+    // its node kind must be loop-back, not decision, because decisions require branches.
+    expect(_rvVerify.kind).toBe('loop-back');
+  });
+
+  it('PRESENT-FINDINGS.kind === decision', () => {
+    expect(_rvPresent).toBeDefined();
+    expect(_rvPresent.kind).toBe('decision');
+  });
+
+  it('PRESENT-FINDINGS has exactly two branch edges to PUBLISH and DONE', () => {
+    // Kind-specific: counts branches only, names both targets.
+    const _branches = _rvChart.edges.filter(
+      (e) => e.from === _rvPresent.id && e.kind === 'branch'
+    );
+    expect(_branches).toHaveLength(2);
+    const _targets = new Set(_branches.map((e) => _rvNn(e.to)?.name));
+    expect(_targets.has('PUBLISH')).toBe(true);
+    expect(_targets.has('DONE')).toBe(true);
+  });
+
+  it('DONE is in exits', () => {
+    expect(_rvDone).toBeDefined();
+    expect(_rvChart.exits).toContain(_rvDone.id);
+  });
+
+  it('no W-1 residual-text warning', () => {
+    expect(_rvChart.warnings.filter((w) => /W-1/.test(w))).toHaveLength(0);
+  });
+
+  it('every node provenance.excerpt equals the live canonical/ file slice (non-vacuous)', () => {
+    expect(_rvChart.nodes.length).toBeGreaterThan(0);
+    for (const _n of _rvChart.nodes) {
+      const { file, startLine, endLine, excerpt } = _n.provenance;
+      const _lines = readFileSync(join(_t032Root, file), 'utf8')
+        .split('\n')
+        .map((l) => l.replace(/\r$/, ''));
+      expect(sliceLines(_lines, startLine, endLine)).toBe(excerpt);
+    }
+  });
+});
+
+// ── AC-4 corpus fixture — aid-test (inline-states, pins the ` then ` form) ────
+
+describe('AC-4 corpus fixture — aid-test (inline-states, KI-008 pin)', () => {
+  resetFlowWarnings();
+  const _atChart = buildFlowChart({ name: 'aid-test', dir: _t032Root });
+  const _atNn = (id) => _atChart.nodes.find((n) => n.id === id);
+  const _atVerify = _atChart.nodes.find((n) => n.name === 'VERIFY');
+  const _atRun = _atChart.nodes.find((n) => n.name === 'RUN');
+  const _atPresent = _atChart.nodes.find((n) => n.name === 'PRESENT');
+  const _atHandoff = _atChart.nodes.find((n) => n.name === 'HANDOFF');
+  const _atDone = _atChart.nodes.find((n) => n.name === 'DONE');
+
+  it('validateChart passes, entries >= 1, exits >= 1', () => {
+    expect(validateChart(_atChart).ok).toBe(true);
+    expect(_atChart.entries.length).toBeGreaterThanOrEqual(1);
+    expect(_atChart.exits.length).toBeGreaterThanOrEqual(1);
+  });
+
+  it('a loop-back edge VERIFY -> RUN exists (line-wrapped back-reference)', () => {
+    expect(_atVerify).toBeDefined();
+    expect(_atRun).toBeDefined();
+    const _lb = _atChart.edges.find(
+      (e) =>
+        e.from === _atVerify.id &&
+        e.to === _atRun.id &&
+        e.kind === 'loop-back'
+    );
+    expect(_lb).toBeDefined();
+  });
+
+  it('PRESENT.kind === decision', () => {
+    expect(_atPresent).toBeDefined();
+    expect(_atPresent.kind).toBe('decision');
+  });
+
+  it('PRESENT has exactly two branch edges: HANDOFF (condition optional) and DONE (condition null)', () => {
+    // Pins the " then " marked-arm separator form per KI-008 scope note.
+    const _branches = _atChart.edges.filter(
+      (e) => e.from === _atPresent.id && e.kind === 'branch'
+    );
+    expect(_branches).toHaveLength(2);
+    const _toHandoff = _branches.find((e) => e.to === _atHandoff?.id);
+    const _toDone = _branches.find((e) => e.to === _atDone?.id);
+    expect(_toHandoff).toBeDefined();
+    expect(_toHandoff.condition).toBe('optional');
+    expect(_toDone).toBeDefined();
+    expect(_toDone.condition).toBeNull();
+  });
+
+  it('HANDOFF -> DONE is a sequence edge (through-path distinct from skip-path)', () => {
+    // Asserted alongside PRESENT branches to distinguish skip path from through path.
+    expect(_atHandoff).toBeDefined();
+    expect(_atDone).toBeDefined();
+    const _seq = _atChart.edges.find(
+      (e) =>
+        e.from === _atHandoff.id &&
+        e.to === _atDone.id &&
+        e.kind === 'sequence'
+    );
+    expect(_seq).toBeDefined();
+  });
+
+  it('DONE is in exits', () => {
+    expect(_atDone).toBeDefined();
+    expect(_atChart.exits).toContain(_atDone.id);
+  });
+
+  it('no W-1 residual-text warning', () => {
+    expect(_atChart.warnings.filter((w) => /W-1/.test(w))).toHaveLength(0);
+  });
+
+  it('every node provenance.excerpt equals the live canonical/ file slice (non-vacuous)', () => {
+    expect(_atChart.nodes.length).toBeGreaterThan(0);
+    for (const _n of _atChart.nodes) {
+      const { file, startLine, endLine, excerpt } = _n.provenance;
+      const _lines = readFileSync(join(_t032Root, file), 'utf8')
+        .split('\n')
+        .map((l) => l.replace(/\r$/, ''));
+      expect(sliceLines(_lines, startLine, endLine)).toBe(excerpt);
+    }
+  });
+});
+
+// ── Whole-corpus tier ──────────────────────────────────────────────────────────
+
+describe('Whole-corpus tier — every canonical/skills/ directory classifies into one shape', () => {
+  it('skill directory count is non-zero (non-vacuity guard)', () => {
+    expect(_t032SkillDirs.length).toBeGreaterThan(0);
+  });
+
+  it('authored + doorway counts sum to on-disk directory count', () => {
+    // Asserts exactly one shape per directory: every dir either built (authored) or
+    // threw "not an authored shape" (doorway); no third outcome is possible.
+    expect(_t032Authored + _t032Doorway).toBe(_t032SkillDirs.length);
+  });
+
+  it('authored chart count is non-zero (non-vacuity guard for assertions below)', () => {
+    expect(_t032Authored).toBeGreaterThan(0);
+  });
+
+  it('every authored chart passes validateChart', () => {
+    for (const _chart of _t032Charts) {
+      expect(validateChart(_chart).ok).toBe(true);
+    }
+  });
+
+  it('serializeChart is byte-equal across two calls on the same chart', () => {
+    for (const _chart of _t032Charts) {
+      expect(serializeChart(_chart)).toBe(serializeChart(_chart));
+    }
+  });
+
+  it('renderMermaid is byte-equal across two calls on the same chart', () => {
+    for (const _chart of _t032Charts) {
+      expect(renderMermaid(_chart)).toBe(renderMermaid(_chart));
+    }
+  });
+});
+
+// ── Unparsed-advance allow-list — guard against KI-008 regression ─────────────
+// Each entry in _t032Allowlist carries a one-line reason. The suite fails in
+// either direction when the observed W-1 set diverges from the allow-list.
+
+describe('Unparsed-advance allow-list — W-1 residual-text guard', () => {
+  const _alExpected = new Set(_t032Allowlist.map((e) => e.key));
+  const _alObserved = new Set(_t032W1Observed);
+
+  it('allow-list is non-empty and every entry carries a non-empty reason', () => {
+    expect(_t032Allowlist.length).toBeGreaterThan(0);
+    for (const _entry of _t032Allowlist) {
+      expect(typeof _entry.reason).toBe('string');
+      expect(_entry.reason.length).toBeGreaterThan(0);
+    }
+  });
+
+  it('no new W-1 entries beyond the allow-list (observed ⊆ expected)', () => {
+    const _unexpected = [..._alObserved].filter((k) => !_alExpected.has(k));
+    expect(_unexpected).toHaveLength(0);
+  });
+
+  it('no allow-list entry silently fixed without removal (expected ⊆ observed)', () => {
+    const _missing = [..._alExpected].filter((k) => !_alObserved.has(k));
+    expect(_missing).toHaveLength(0);
   });
 });

@@ -13,7 +13,7 @@
       "kind": "exit",
       "terminal": {
         "advanceType": "PAUSE-FOR-USER-ACTION",
-        "handoff": "Re-run after answering to continue processing Step E1's reply (below"
+        "handoff": "Re-run /aid-discover after answering to continue processing Step E1's reply (below"
       },
       "provenance": {
         "file": "canonical/skills/aid-discover/SKILL.md",
@@ -38,7 +38,7 @@
       "kind": "exit",
       "terminal": {
         "advanceType": "PAUSE-FOR-USER-ACTION",
-        "handoff": "Re-run after confirming the domain to continue to Step 0d"
+        "handoff": "Re-run /aid-discover after confirming the domain to continue to Step 0d"
       },
       "provenance": {
         "file": "canonical/skills/aid-discover/SKILL.md",

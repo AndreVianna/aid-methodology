@@ -13,7 +13,7 @@
       "kind": "exit",
       "terminal": {
         "advanceType": "PAUSE-FOR-USER-ACTION",
-        "handoff": "if a concept is un-groundable -- Q&A escalation to"
+        "handoff": "if a concept is un-groundable -- Q&A escalation to .aid/knowledge/STATE.md"
       },
       "provenance": {
         "file": "canonical/skills/aid-update-kb/SKILL.md",

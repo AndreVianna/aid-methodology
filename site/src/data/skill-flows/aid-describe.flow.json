@@ -101,7 +101,7 @@
       "kind": "exit",
       "terminal": {
         "advanceType": "PAUSE-FOR-USER-DECISION",
-        "handoff": "contracted checkpoint per feature-002 SPEC IQ9 resolution 2026-05-24) — on approval, print the pause reason + resume command and exit. Run to decompose approved requirements into features. Do NOT chain — this is the only explicit no-auto-advance contract in the AID methodology"
+        "handoff": "contracted checkpoint per feature-002 SPEC IQ9 resolution 2026-05-24) — on approval, print the pause reason + resume command and exit. Run /aid-define {work} to decompose approved requirements into features. Do NOT chain — this is the only explicit no-auto-advance contract in the AID methodology"
       },
       "provenance": {
         "file": "canonical/skills/aid-describe/SKILL.md",

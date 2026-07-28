@@ -57,7 +57,7 @@
       "kind": "exit",
       "terminal": {
         "advanceType": "HALT",
-        "handoff": "This is the terminal state. Run again only to add information or re-validate"
+        "handoff": "This is the terminal state. Run /aid-define again only to add information or re-validate"
       },
       "provenance": {
         "file": "canonical/skills/aid-define/SKILL.md",

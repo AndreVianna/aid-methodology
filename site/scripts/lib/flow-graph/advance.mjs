@@ -996,8 +996,18 @@ function _extractCondition(clauseText, targetName) {
 
 /**
  * Extract the terminal handoff prose from a clause (rule 4): the text that
- * remains after removing advance-type keywords, arrow forms, stop phrases,
- * and backtick spans.  Returns null when nothing meaningful is left.
+ * remains after removing advance-type keywords, arrow forms and stop phrases.
+ * Returns null when nothing meaningful is left.
+ *
+ * Backtick spans are **unwrapped, not removed** — unlike in `_extractCondition`,
+ * where a backticked span is routing notation. A handoff's whole job is to tell the
+ * reader what to run next, and in this corpus that command is written as code:
+ * `aid-describe`'s COMPLETION clause says *Run `/aid-define {work}` to decompose
+ * approved requirements into features*. Deleting the span published "Run to decompose
+ * approved requirements into features" — the same dangling-verb damage that edge
+ * conditions were fixed for, and with the one piece of information the handoff exists
+ * to carry removed. `aid-update-kb`'s ANALYZE ended on a bare "escalation to" for the
+ * same reason.
  *
  * @param {string} clauseText
  * @returns {string|null}
@@ -1008,7 +1018,7 @@ function _extractHandoff(clauseText) {
   text = text.replace(ARROW_RE, ' ');
   text = text.replace(/\bStop here\b/g, ' ');
   text = text.replace(/\bhalt\b/gi, ' ');
-  text = text.replace(/`[^`]*`/g, ' ');
+  text = text.replace(/`([^`]*)`/g, '$1');
   // Markdown emphasis markers are formatting, never part of a state name. Without
   // this, a bare `**PAUSE-FOR-USER-ACTION**` — which names no resume state — has its
   // keyword stripped and returns the literal `** **` instead of null, because `*` is
