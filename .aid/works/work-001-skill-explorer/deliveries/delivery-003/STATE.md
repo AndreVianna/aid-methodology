@@ -674,6 +674,30 @@ resolves into the module split.
 
 ---
 
+## Wave 7 (task-030) — PASS, Grade A+ (2 cycles)
+
+Closed at `b66f9f15`. **Two cycles, against the previous checkpoint's eight** — the first per-wave
+review rather than a per-eleven-task one, which was the lever recorded at that checkpoint's close.
+Cycle 1 graded C on three rows, all the same recurring shape: the sidecar `writeFileSync` was
+unpinned (every assertion read *committed* sidecars, so deleting the write left 99 tests green), the
+AC-6 idempotence test omitted the sidecar bytes its own AC names, and the `shapeCounts` fixture fed
+whole-file text where the contract and the generator both pass post-frontmatter text.
+
+Smaller review units did not stop the defect class appearing — it appeared immediately — but it cost
+one cycle to close instead of five. That is the whole benefit, and it holds.
+
+**One caution recorded about my own method:** my first mutation pass reported a survivor that was in
+fact an *inert mutant* — it used a `globalThis` counter to skip a sidecar "on the second run only",
+but each generator run is a fresh process, so the counter never reached its threshold. A surviving
+mutant can mean a broken mutant. Replaced with two that discriminate (sidecar bytes carrying a wall
+clock; an extra sidecar for a non-existent skill), and both die naming the AC-6 test.
+
+**One residue, accepted not fixed.** Feeding whole-file text as `body` to the classifier still passes,
+because no D1–D4 discriminator matches inside YAML. That is a corpus property, not a test defect; the
+fixture now matches production input, which is the part that was owed.
+
+---
+
 ## Wave 7 (task-030) — decisions taken
 
 **Q6 — the four-line stdout contract vs task-029's warning report. OWNER DECIDED: the report stays.**
