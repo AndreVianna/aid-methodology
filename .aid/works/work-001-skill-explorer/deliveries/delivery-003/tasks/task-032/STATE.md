@@ -1,6 +1,6 @@
 ---
 state: Done
-review: "--"
+review: "A+ floor met (wave 9, 1 cycle) — 0 survivors; orphan-bracket class Accepted, routed to delivery-004"
 elapsed: "--"
 notes: "--"
 ticket_ref: "--"
