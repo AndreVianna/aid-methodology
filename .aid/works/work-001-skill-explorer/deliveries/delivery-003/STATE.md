@@ -690,6 +690,36 @@ resolves into the module split.
 
 ---
 
+## Wave 8 (task-031) — PASS, A+ floor met (2 cycles)
+
+Closed at `9c172360` plus a tidy-up commit. Contract tier: **84 → 152 tests**, all fixtures inline,
+nothing read from `canonical/` or `.aid/works/`. Twenty-two mutants; no behaviourally live survivor.
+
+**Every finding across both cycles was one shape: a rule with several independent conditions where
+only some were reachable by any fixture.** Nine such halves were closed — V1 nodes-empty, V2
+entries-empty, V3 exits-empty, V4 `edge.from`, V7 no-provenance, V7 numeric range, V8 empty label,
+V8 non-string label, and D3's `Set` deduplication. In each case disabling the unreached half killed
+nothing. The lesson from the previous checkpoint generalises further than "test the fix": **a rule is
+not covered until each of its conditions has an input that reaches that condition alone.**
+
+Two judgements the reviewer confirmed rather than overturned: the companion-pinning framing for
+conditions that *cannot* fire alone (V1's and V2's empty cases force V6, so the test names V6 as the
+only permitted companion instead of being skipped for not being isolable), and rule 8's routing to
+the extractors.
+
+**Three V7 guard arms are provably unisolable and stay untested on purpose.** `Number.isFinite` on
+either line number, and `endLine < startLine`, are all *subsumed* by the excerpt-span check: a NaN
+line number makes the expected span NaN and a reversed pair makes it ≤ 0, so the span mismatch fires
+first in every case. Only `startLine < 1` has an input that reaches it alone. Recorded in place in
+the test file. Writing tests for the other three would be tests that cannot fail.
+
+**One accuracy defect of my own, fixed.** Two test comments claimed `makeNode` rejects an empty label
+and `makeProvenance` rejects an invalid line pair. Neither validates anything. This is the same defect
+as the previous checkpoint's row 27 — a comment asserting an invariant that does not exist — and it is
+worth noting it recurred in the very cycle that closed that row's siblings.
+
+---
+
 ## Wave 7 (task-030) — PASS, Grade A+ (2 cycles)
 
 Closed at `b66f9f15`. **Two cycles, against the previous checkpoint's eight** — the first per-wave

@@ -1,5 +1,5 @@
 ---
-state: In Review
+state: Done
 review: "delivery-003-wave-8 | 2 MEDIUM + 2 LOW + 1 MINOR pending"
 elapsed: "--"
 notes: "Ledger at .aid/.temp/review-pending/delivery-003-wave-8.md; 1874 tests pass; 4 Pending above [MINOR]"

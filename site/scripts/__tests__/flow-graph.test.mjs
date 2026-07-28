@@ -1973,8 +1973,14 @@ describe('validateChart — V7: provenance well-formed', () => {
     // V7's numeric guards (`Number.isFinite`, `startLine < 1`, `endLine < startLine`) are
     // separate from its excerpt-span check, and disabling all four killed nothing:
     // startLine=0/endLine=0 with a one-line excerpt has span 1 and passes the span
-    // check, so only the range guard can reject it. Built by hand because makeProvenance
-    // would reject the pair.
+    // check, so only the range guard can reject it. Built by hand because the provenance
+    // has to reach the validator with that pair intact — makeProvenance does not validate,
+    // so this is about controlling the value, not about evading a rejection.
+    //
+    // Note the guard's other three arms are *subsumed* by the span check and cannot be
+    // isolated: a NaN line number makes the expected span NaN, and `endLine < startLine`
+    // makes it zero or negative, so in both cases the span mismatch fires first. Only the
+    // `startLine < 1` arm has an input that reaches it alone, and this is that input.
     const chart = buildChart({
       skill: 'aid-test', shape: 'residual', extractor: 'test', confidence: 'approximate',
       nodes: [node(1, 'A', halt())],
@@ -2065,8 +2071,10 @@ describe('validateChart — V8: label ≤ 60 Unicode code points', () => {
     // an empty label — and an empty label is what killed pages earlier in this delivery
     // (extract-residual's nameless-token defect), so the branch is not academic.
     //
-    // Built by hand: makeNode rejects an empty label, and the point is a chart that
-    // reached the validator carrying one.
+    // Built by hand rather than through makeNode — not because makeNode rejects an empty
+    // label (it does not validate at all), but because the label has to survive into the
+    // chart unchanged, and going through buildChart first then overriding is the shortest
+    // way to get an otherwise-valid chart carrying one.
     const chart = buildChart({
       skill: 'aid-test', shape: 'residual', extractor: 'test', confidence: 'approximate',
       nodes: [node(1, 'A', halt())],
@@ -2093,6 +2101,9 @@ describe('validateChart — V8: label ≤ 60 Unicode code points', () => {
       nodes: [{ ...chart.nodes[0], label: null }],
     });
     expect(errors.some((e) => /V8: .*has empty label/.test(e))).toBe(true);
+    // Isolation, as in the empty-string case: nothing else may fire, or a future rule
+    // that starts rejecting a null label would be indistinguishable from this one.
+    expect(errors.every((e) => /V8/.test(e))).toBe(true);
   });
 });
 
