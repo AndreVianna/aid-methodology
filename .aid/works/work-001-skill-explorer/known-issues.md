@@ -541,6 +541,65 @@
 - **Surfaced by:** `/aid-detail` task decomposition, as item G of the architect's "what I had to
   decide" report — a hazard neither SPEC addresses, recorded rather than silently resolved.
 
+## KI-019: work-004 shrinks the skill corpus 111 → 74 and also edits `site/` — merge-order hazard
+
+- **Type:** Cross-work collision (not a defect in either work)
+- **Severity:** Medium — no code change owed by work-001, but a large conflict surface if merged second
+- **Affects:** `site/` in its entirety; one hard-coded roster in `site/scripts/__tests__/gen-reference.test.mjs`
+- **Source:** `work-004-optimize-skill-library`, worktree `.cursor/worktrees/work-004-optimize-skill-library`,
+  branch `work-004`. In **Specify** as of 2026-07-28, no commits yet (branch still at master's `16ea056f`).
+
+### What work-004 removes — measured from the catalogue, not from prose
+
+**37 of the 111 directories under `canonical/skills/` go away, leaving 74** (its AC-1 says "exactly 75";
+the one-off is worth reconciling when it lands, not now):
+
+- the 15 `aid-add-*` rows plus bare `aid-add` — all alias rows, deleted with the alias mechanism
+- the 15 `aid-change-*` canonical rows — **renamed** to `aid-update-*`, not deleted
+- `aid-delete`, `aid-audit`, `aid-investigate`, `aid-spike` — alias rows / hand-authored stubs
+- `aid-show-dashboard` — deleted outright (its Q2: viewing a dashboard is a CLI concern)
+- `aid-query-kb` — deleted; `aid-ask` becomes the canonical row (its Q1)
+
+**`aid-update-*` and `aid-ask` survive.** The `aid-update-*` names are deleted as *aliases* and recreated
+as *canonical* by the rename, so the names persist across the change. Retired names resolve to nothing —
+work-004's Q6 dropped every synonym mechanism.
+
+### Why work-001 owes no code change, and must not pre-empt this
+
+`gen-skills.mjs` enumerates `canonical/skills/` and contains no per-skill code. 111 pages exist because
+111 directories do; after work-004 lands, one `npm run gen:skills` yields 74 pages, 74 sidecars and a
+corrected `shapeCounts` with **no source edit**. That is the dividend from task-001 deleting the count
+literals and from every subsequent AC forbidding them.
+
+**Pre-emptively excluding the 37 was considered and rejected** (owner asked, 2026-07-28). It would require
+*adding* a hard-coded 37-name list — the exact anti-pattern this delivery's reviews exist to prevent —
+and would make work-001 wrong on master meanwhile: the drift guard would throw 37 missing pages, and
+suppressing it would ship a knowingly incomplete site. work-004 is also still in Specify with scope that
+has already moved repeatedly (Q6 abolished the synonym mechanism; feature-002 folded into feature-004;
+FR-12 was reassigned), so any list frozen now would likely be stale before it merged.
+
+### The two things that will actually need doing, and when
+
+1. **`CURATED_SKILL_NAMES` names `aid-query-kb`** (`gen-reference.test.mjs`) — work-001's **only**
+   hard-coded roster. It cannot be corrected in advance: the directory still exists, so removing the name
+   today makes the clamp fire, correctly. Whoever merges second removes it **at that point**, and should
+   check whether `aid-ask` needs its curated/catalogue classification revisited, since work-004 promotes
+   it from alias row to canonical row.
+2. **work-004's FR-5 sweeps `site/`** — "fix every dangling reference … in the README, `docs/`, `site/`".
+   Almost everything under `site/src/content/docs/skills/` and `site/src/data/skill-flows/` is
+   **generated**, and work-004 already carries a no-hand-editing-generated-artifacts constraint, so the
+   correct action there is to re-run the generator rather than edit pages. Hand-editing them would
+   produce ~150 conflicting files and be reverted by the next build anyway.
+
+### Merge order
+
+work-001 should land first — it is nine waves into its final large delivery, and its output is a
+regenerable function of the corpus, whereas work-004's changes to the corpus are the input. Landing
+work-004 first is survivable but means regenerating the whole site tree inside their branch.
+
+**Related:** work-004's worktree is registered with a **WSL-style gitdir** (`/mnt/c/Projects/…`), which is
+the exact path dialect KI-017 documents as arming the next prune. Expect it to lose its registration.
+
 ## KI-018: astro-mermaid re-renders from its own output on theme change, breaking every diagram
 
 - **Type:** Bug (third-party integration)
