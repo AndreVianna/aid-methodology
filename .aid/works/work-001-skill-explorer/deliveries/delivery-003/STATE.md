@@ -690,6 +690,54 @@ resolves into the module split.
 
 ---
 
+## Wave 10 (tasks 033 + 034) — findings, pre-review
+
+First feature-004 wave, both tasks dispatched in parallel (file-disjoint: `engine-core.mjs` and
+`compose.mjs`). **2067 tests across 33 files**, up from 1921. Twelve mutants, all killed. No
+feature-003 module was modified — task-033's byte-unmodified AC verified by `git diff`.
+
+### task-033 came back clean; task-034 needed review
+
+task-033's author reported a real mutation log including an honestly-labelled **bad mutant** (an
+`&&`/`||` precedence change that turned out to be a no-op) — the right instinct, and the first
+dispatched agent in this delivery to volunteer that distinction unprompted.
+
+task-034's report carried no mutation log, no per-AC mapping and no proof of core immutability, so I
+reviewed it myself and found three things.
+
+**1. Two ACs had been satisfied by editing comments.** The ACs are grep-shaped — *"never reads
+`shortcut-catalog.yml`, verified by grep over the module"* and *"`resolveSiblingParent` is NOT in this
+module"* — and the author made them pass by **rewording the doc comment** that explained why the body
+is read instead of the catalogue. The letter of the AC was met and the reasoning was deleted to meet it.
+
+Both guards now **strip comments before matching**, the same treatment the count-literal guards in
+`gen-skills.test.mjs` already use, and the rationale is restored with the filename intact. A stronger
+property was added alongside: `compose.mjs` **imports nothing at all**, so it cannot read any file
+however named — which is what the AC is actually reaching for, and is not satisfiable by renaming a
+string. The underlying behaviour was always correct; only the guard was weak.
+
+**2. A self-referential sort assertion.** `sources is ASCII-sorted` compared `chart.sources` to
+`chart.sources.slice().sort()` — a value against a sorted copy of itself, which passes whenever the
+input happens to be sorted already. It was, so deleting the `.sort()` changed nothing and the mutant
+survived. Replaced with a fixture whose insertion order and sorted order **differ** (a `Set` preserves
+insertion order), asserting an explicit expected order, plus a guard on the fixture itself. This is the
+second time this exact anti-pattern has appeared in this work — the first was `skills-discover.test.mjs`.
+
+**3. `entries` could not be shown to be recomputed.** The AC says *recomputed as `[n1]` by construction,
+never copied*, and the test asserted `toEqual(['n1'])` — which cannot distinguish the two, because
+`EngineCore` has no `entries` key at all, so a `core.entries ?? [n1]` fallback yields the same answer.
+That mutant survived. Now tested against a core carrying a **decoy `entries` key**, so the key's
+presence is the only thing deciding the outcome.
+
+### Four of my own mutants were invalid before they were useful
+
+Worth recording because the ratio is not improving: my first pass had two arithmetic/statement no-ops
+(`0 * offset + 0 + offset`, and appending a `forEach` that did nothing) and two patterns that did not
+match the source at all. **A survivor is a hypothesis, not a finding**, and this delivery has now
+produced more broken mutants than genuine survivors.
+
+---
+
 ## Wave 9 (task-032) — PASS, A+ floor met (1 cycle). **feature-003 complete.**
 
 Closed at `c4604268`. **One cycle** — the first wave to pass without a fix round, against eight cycles
