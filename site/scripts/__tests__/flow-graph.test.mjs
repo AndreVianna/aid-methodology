@@ -1267,6 +1267,24 @@ describe('classifySkill — D3 sibling-doorway', () => {
     const result = classifySkill(skillBody(body));
     expect(result.shape).not.toBe('sibling-doorway');
   });
+
+  it('the SAME target referenced twice is ONE distinct reference — still D3', () => {
+    // "exactly one reference" means one distinct *target*, not one occurrence — the
+    // owner decision recorded for D3. The probe deduplicates through a Set, and nothing
+    // exercised that: swapping the Set for an array left every other case green while
+    // silently making a repeated target fail to classify.
+    //
+    // Separable from the two-distinct-targets case above: here the count of occurrences
+    // is 2 and the count of distinct names is 1, so only deduplication can decide it.
+    const body = [
+      'This skill has no logic of its own.',
+      'See canonical/skills/aid-base/SKILL.md for the full implementation.',
+      'All behaviour is defined in canonical/skills/aid-base/SKILL.md.',
+    ].join('\n');
+    const result = classifySkill(skillBody(body));
+    expect(result.shape).toBe('sibling-doorway');
+    expect(result.delegatesTo).toBe('aid-base');
+  });
 });
 
 describe('classifySkill — D4 engine-doorway', () => {
@@ -1742,6 +1760,24 @@ describe('validateChart — V1: nodes non-empty; ids unique and charset-valid', 
   });
 });
 
+describe('validateChart — V1: nodes non-empty (the condition before the id checks)', () => {
+  it('V1 fires when nodes is EMPTY, with only the structurally forced companions', () => {
+    // V1's id-uniqueness and charset checks live in its `else` branch, so no test that
+    // reaches them can also reach this one. Like V2's empty case, an empty chart cannot
+    // fail V1 alone: with no nodes there is no valid entry or exit id and nothing is
+    // reachable, so V2, V3 and V6 are forced companions. Pinned rather than skipped.
+    const chart = buildChart({
+      skill: 'aid-test', shape: 'residual', extractor: 'test', confidence: 'approximate',
+      nodes: [node(1, 'A', halt())],
+      edges: [],
+      sources: [],
+    });
+    const { errors } = validateChart({ ...chart, nodes: [] });
+    expect(errors.some((e) => /V1: nodes is empty/.test(e))).toBe(true);
+    expect(errors.every((e) => /V1|V2|V3|V6/.test(e))).toBe(true);
+  });
+});
+
 describe('validateChart — V2: entries non-empty; every entry id is a node id', () => {
   it('V2 fires (only) when entries contains an id not present in nodes', () => {
     // entries=['n1','ghost']: 'n1' is valid (V2 passes for it), 'ghost' is not (V2 fires).
@@ -1824,7 +1860,9 @@ describe('validateChart — V4: no dangling edges', () => {
       condition: null, advanceType: 'CHAIN', provenance: PROV,
     });
     const { errors } = validateChart({ ...chart, edges: [danglingEdge] });
-    expect(errors.some((e) => /V4/.test(e))).toBe(true);
+    // Names the offending endpoint, not merely the rule — a bare /V4/ would also match
+    // the `from` half's message, so it could not tell the two halves apart.
+    expect(errors.some((e) => /V4: edge\.to 'ghost'/.test(e))).toBe(true);
     expect(errors.every((e) => /V4/.test(e))).toBe(true);
   });
 
@@ -1931,6 +1969,33 @@ describe('validateChart — V7: provenance well-formed', () => {
     expect(errors.every((e) => /V7/.test(e))).toBe(true);
   });
 
+  it('V7 also fires on an out-of-range line pair the excerpt check cannot catch', () => {
+    // V7's numeric guards (`Number.isFinite`, `startLine < 1`, `endLine < startLine`) are
+    // separate from its excerpt-span check, and disabling all four killed nothing:
+    // startLine=0/endLine=0 with a one-line excerpt has span 1 and passes the span
+    // check, so only the range guard can reject it. Built by hand because makeProvenance
+    // would reject the pair.
+    const chart = buildChart({
+      skill: 'aid-test', shape: 'residual', extractor: 'test', confidence: 'approximate',
+      nodes: [node(1, 'A', halt())],
+      edges: [],
+      sources: [],
+    });
+    const badRange = {
+      ...chart.nodes[0].provenance,
+      file: 'canonical/skills/aid-test/SKILL.md',
+      startLine: 0,
+      endLine: 0,
+      excerpt: 'X',
+    };
+    const { errors } = validateChart({
+      ...chart,
+      nodes: [{ ...chart.nodes[0], provenance: badRange }],
+    });
+    expect(errors.some((e) => /V7: .*invalid line range startLine=0/.test(e))).toBe(true);
+    expect(errors.every((e) => /V7/.test(e))).toBe(true);
+  });
+
   it('V7 also fires when a node has NO provenance at all — its first condition', () => {
     // The two cases below reach V7's file and span checks; neither reaches the guard
     // that runs before them, and disabling that guard killed nothing until now.
@@ -1992,6 +2057,42 @@ describe('validateChart — V8: label ≤ 60 Unicode code points', () => {
     });
     const { ok } = validateChart(chart);
     expect(ok).toBe(true);
+  });
+
+  it('V8 also fires for an EMPTY label — the non-empty half of the same rule', () => {
+    // V8 is "non-empty AND ≤ 60 code points". The over-cap case above reaches only the
+    // length half, so removing `|| label === ''` left a validator that silently accepted
+    // an empty label — and an empty label is what killed pages earlier in this delivery
+    // (extract-residual's nameless-token defect), so the branch is not academic.
+    //
+    // Built by hand: makeNode rejects an empty label, and the point is a chart that
+    // reached the validator carrying one.
+    const chart = buildChart({
+      skill: 'aid-test', shape: 'residual', extractor: 'test', confidence: 'approximate',
+      nodes: [node(1, 'A', halt())],
+      edges: [],
+      sources: [],
+    });
+    const { errors } = validateChart({
+      ...chart,
+      nodes: [{ ...chart.nodes[0], label: '' }],
+    });
+    expect(errors.some((e) => /V8: node 'n1' \('A'\) has empty label/.test(e))).toBe(true);
+    expect(errors.every((e) => /V8/.test(e))).toBe(true);
+  });
+
+  it('V8 fires for a non-string label too — the same guard, other arm', () => {
+    const chart = buildChart({
+      skill: 'aid-test', shape: 'residual', extractor: 'test', confidence: 'approximate',
+      nodes: [node(1, 'A', halt())],
+      edges: [],
+      sources: [],
+    });
+    const { errors } = validateChart({
+      ...chart,
+      nodes: [{ ...chart.nodes[0], label: null }],
+    });
+    expect(errors.some((e) => /V8: .*has empty label/.test(e))).toBe(true);
   });
 });
 
