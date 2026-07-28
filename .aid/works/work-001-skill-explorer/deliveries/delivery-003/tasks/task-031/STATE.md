@@ -1,6 +1,6 @@
 ---
 state: Done
-review: "delivery-003-wave-8 | 2 MEDIUM + 2 LOW + 1 MINOR pending"
+review: "A+ floor met (wave 8, 2 cycles) | all MEDIUM/LOW closed; 3 unisolable V7 arms recorded"
 elapsed: "--"
 notes: "Ledger at .aid/.temp/review-pending/delivery-003-wave-8.md; 1874 tests pass; 4 Pending above [MINOR]"
 ticket_ref: "--"
