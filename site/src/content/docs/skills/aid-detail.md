@@ -36,7 +36,7 @@ flowchart TB
   classDef aidStep fill:#1a2035,stroke:#d4a853,color:#f1f5f9
   n1(["FIRST-RUN<br/>No task files exist yet."])
   n2["REVIEW<br/>Existing task files found; re-review against current…"]
-  n3(["DONE<br/>Done"])
+  n3(["DONE"])
   n1 --> n2
   n2 --> n3
   class n1 aidEntry

@@ -37,7 +37,7 @@ flowchart TB
   n1(["EXECUTE<br/>Task work is dispatched to the type-appropriate executor…"])
   n2["REVIEW<br/>Task output is graded by a lightweight quick-check pass…"]
   n3["FIX<br/>CODE-source issues from the most recent REVIEW cycle are…"]
-  n4(["DONE<br/>Done"])
+  n4(["DONE"])
   n5(["RE-RUN<br/>The task is already Done and the user has re-invoked…"])
   n6(["DELIVERY-GATE<br/>Per-delivery quality gate — runs once per delivery as the…"])
   n1 --> n2

@@ -35,10 +35,6 @@ export { classifySkill, validateChart, renderMermaid, serializeChart };
 /** Shapes whose extractors are wired here; doorway shapes are handled by task-037. */
 const AUTHORED_SHAPES = new Set(['dispatch-table', 'inline-states', 'residual']);
 
-// ── Run-level warning counter ──────────────────────────────────────────────
-
-let _warnCount = 0;
-
 /**
  * Build a validated FlowChart for a skill with one of the three authored shapes.
  *
@@ -47,9 +43,20 @@ let _warnCount = 0;
  * the resulting chart.
  *
  * Throws on any validateChart error: the error message names the failing rule
- * and the offending node or edge. Warnings are logged to stderr with a
- * run-level accumulated count and are never thrown (FR-2 boundary: a chart may
- * be approximate, never malformed).
+ * and the offending node or edge.
+ *
+ * Warnings are never thrown — that is FR-2's boundary, a chart may be
+ * *approximate* but never *malformed*. They are also **not written to stderr**,
+ * because `gen-skills` requires an empty stderr on a successful run. They are
+ * surfaced on the chart itself: `chart.warnings` carries the messages and
+ * `chart.confidence === 'approximate'` marks the page, which is what makes the
+ * body provider emit its interpretation notice above the fence.
+ *
+ * The task DETAIL asks for "a run-level accumulated count", which cannot be
+ * reconciled with the empty-stderr requirement without a caller to report it to.
+ * A module-level counter was tried and removed: nothing read it, so it recorded a
+ * number no one could see. Whoever adds run-level reporting should sum
+ * `chart.warnings.length` at the call site, where the run actually exists.
  *
  * @param {{ name: string, dir: string }} params
  *   name — skill directory name under canonical/skills/
@@ -101,14 +108,6 @@ export function buildFlowChart({ name, dir }) {
       // Unreachable: AUTHORED_SHAPES guard above ensures shape is one of three values.
       throw new Error(`[gen-skills] buildFlowChart: unhandled shape '${shape}' (${skillRelPath}:1)`);
   }
-
-  // ── Accumulate warnings; never throw on them (FR-2 boundary) ─────────────
-  //
-  // Warnings are not written to stderr here: the gen-skills run mandates an empty
-  // stderr on success. The caller can inspect chart.warnings or chart.confidence
-  // ('approximate') to surface them in the run log.
-
-  _warnCount += chart.warnings.length;
 
   // ── Validate — throw on any error ───────────────────────────────────────
 

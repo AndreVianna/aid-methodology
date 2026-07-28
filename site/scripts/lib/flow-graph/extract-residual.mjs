@@ -429,6 +429,29 @@ function _tryR3(bodyLines, allLines, bodyStartLine, file) {
     }
   }
 
+  // Drop a `## Mode N` heading that has NO steps beneath it before the next mode.
+  //
+  // Such a mode used to become a node with no inbound and no outbound edge — a box
+  // floating beside the chart. It passed validation only incidentally: `buildChart`
+  // sees in-degree 0 and lists it in `entries`, so V6 reachability is satisfied
+  // trivially and V1–V8 all hold. Valid, and still wrong to show a reader, since it
+  // asserts a lane that has no content.
+  //
+  // A mode heading is a LANE LABEL, not a state. With no steps under it there is no
+  // lane, so there is nothing to label.
+  {
+    const kept = [];
+    for (let i = 0; i < events.length; i++) {
+      if (events[i].kind !== 'mode') { kept.push(events[i]); continue; }
+      const nextMode = events.findIndex((e, j) => j > i && e.kind === 'mode');
+      const end = nextMode === -1 ? events.length : nextMode;
+      const hasStep = events.slice(i + 1, end).some((e) => e.kind === 'step');
+      if (hasStep) kept.push(events[i]);
+    }
+    events.length = 0;
+    events.push(...kept);
+  }
+
   // Require at least one step event.
   const stepCount = events.filter((e) => e.kind === 'step').length;
   if (stepCount === 0) return null;
@@ -567,7 +590,14 @@ function _tryR4(bodyLines, allLines, bodyStartLine, file) {
     }
   }
 
-  if (items.length < 2) return null;
+  // Deliberately NOT a `items.length < 2` gate here. R4 previously carried its own
+  // two-item minimum, and mutation testing showed it could be relaxed to `< 1`
+  // without changing any outcome — because the ladder re-applies the same `>= 2`
+  // check to whatever this returns. An inner guard that cannot alter behaviour reads
+  // like a safeguard while guarding nothing, and it invites a future reader to
+  // "fix" one of the two copies. The ladder is the single authority for how many
+  // nodes a rung must yield to win.
+  if (items.length === 0) return null;
 
   const rawNodes = [];
   const rawEdges = [];

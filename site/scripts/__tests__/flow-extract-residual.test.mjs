@@ -826,6 +826,106 @@ describe.each([
   });
 });
 
+// ── R1 mechanics that mutation testing found unpinned ─────────────────────────
+//
+// Four survivors from the checkpoint review, all in R1. Each is a documented
+// contract that no test in this 218-test suite exercised, so the source could be
+// changed freely without a failure. They are grouped here because they share one
+// cause: the suite tested which RUNG fires and how many nodes result, never what
+// the resulting nodes and edges actually contain.
+
+describe('R1 — a condition attaches to the edge INTO its token', () => {
+  const COND_MAP = `---
+name: r1-cond
+description: Conditioned state map fixture
+---
+
+State machine: [ALPHA] -> [BETA (when ready)] -> [GAMMA (if approved)]
+`;
+
+  it('each condition lands on the edge whose TARGET carried it', () => {
+    // The survivor: `conditions[i + 1]` -> `conditions[i]` — an off-by-one that
+    // misattributes every condition to the previous edge — passed all 218 tests,
+    // because nothing drove a conditioned map through `extractResidual` at all.
+    const chart = extractResidual(parseSkill(COND_MAP, 'r1-cond'));
+    const byId = new Map(chart.nodes.map((n) => [n.id, n.name]));
+    const labelled = chart.edges.map((e) => `${byId.get(e.from)}->${byId.get(e.to)}:${e.condition}`);
+
+    // Exact, and asserted as a whole so a shifted condition cannot hide.
+    expect(labelled).toEqual([
+      'ALPHA->BETA:when ready',
+      'BETA->GAMMA:if approved',
+    ]);
+  });
+
+  it('the bracketed condition is not left in the node name', () => {
+    const chart = extractResidual(parseSkill(COND_MAP, 'r1-cond'));
+    expect(chart.nodes.map((n) => n.name)).toEqual(['ALPHA', 'BETA', 'GAMMA']);
+  });
+});
+
+describe('R1 — node labels are capped by the shared truncator', () => {
+  it('an over-long token is truncated, not passed through', () => {
+    // Unpinned survivor: dropping `truncate` here was invisible. It matters more
+    // than a cosmetic cap — an over-long label fails V8, and the throwing façade
+    // then loses the whole page, so this is the FR-2 boundary again.
+    const long = 'A'.repeat(120);
+    const chart = extractResidual(parseSkill(`---
+name: r1-long
+description: Long token fixture
+---
+
+State machine: [${long}] -> [DONE]
+`, 'r1-long'));
+
+    const node = chart.nodes[0];
+    expect([...node.label].length).toBeLessThanOrEqual(60);
+    // Non-vacuity: the fixture really is over the cap, so the assertion means
+    // something.
+    expect(long.length).toBeGreaterThan(60);
+    expect(validateChart(chart).ok).toBe(true);
+  });
+});
+
+describe('R1 — the ladder needs two nodes before a rung wins', () => {
+  it('a single-token state map falls through to R5 rather than charting one node', () => {
+    // Survivor: relaxing the gate from `>= 2` to `>= 1` produced a degenerate
+    // one-node chart with no test objecting. The ladder contract is that a rung
+    // must describe a FLOW, and one node is not a flow.
+    const chart = extractResidual(parseSkill(`---
+name: r1-single
+description: Single token fixture
+---
+
+State machine: [ONLY]
+`, 'r1-single'));
+
+    // R5's signature shape, i.e. R1 declined.
+    expect(chart.nodes.map((n) => n.name)).toEqual(['ENTRY', 'RUN', 'EXIT']);
+  });
+});
+
+describe('R1 — repeated state names are disambiguated', () => {
+  it('a second occurrence of a name is suffixed so the two nodes are distinguishable', () => {
+    // Survivor: dropping the suffix produced two nodes a reader cannot tell apart,
+    // silently. Asserted on the exact names so a different scheme still fails
+    // rather than passing on a coincidence.
+    const chart = extractResidual(parseSkill(`---
+name: r1-dup
+description: Duplicate name fixture
+---
+
+State machine: [CHECK] -> [WORK] -> [CHECK]
+`, 'r1-dup'));
+
+    const names = chart.nodes.map((n) => n.name);
+    expect(names).toHaveLength(3);
+    expect(new Set(names).size).toBe(3);
+    expect(names[0]).toBe('CHECK');
+    expect(names[2]).toMatch(/^CHECK-\d+$/);
+  });
+});
+
 // ── FR-2: the safety net must never emit a malformed chart ────────────────────
 
 describe('R1 — a bracket token with no NAME is skipped, not turned into a node', () => {
@@ -890,6 +990,34 @@ describe('R3 — mixed `##` and `###` Step headings are one sequence', () => {
       expect(validateChart(chart).ok).toBe(true);
     });
   }
+
+  it('a `## Mode N` heading with no steps beneath it produces NO node', () => {
+    // It used to produce a node with no inbound and no outbound edge — a box
+    // floating beside the chart. It passed validation only incidentally:
+    // `buildChart` sees in-degree 0, lists it in `entries`, and V6 reachability is
+    // then satisfied trivially. Valid, and still wrong to show, because it asserts
+    // a lane with no content. A mode heading is a lane LABEL, not a state.
+    const chart = extractResidual(parseSkill(`---
+name: mode-empty
+description: A mode with no steps.
+---
+
+## Mode 1
+
+### Step 1: do a thing
+
+## Mode 2
+`, 'mode-empty'));
+
+    expect(chart.nodes.map((n) => n.name)).toEqual(['MODE-1', 'STEP-1']);
+
+    // The property that actually matters: nothing is stranded.
+    for (const n of chart.nodes) {
+      const degree = chart.edges.filter((e) => e.to === n.id || e.from === n.id).length;
+      expect(degree, `${n.name} has no edges at all`).toBeGreaterThan(0);
+    }
+    expect(validateChart(chart).ok).toBe(true);
+  });
 
   it('a `## Mode N` heading is not mistaken for a step', () => {
     // The reason widening to `#{2,3}` is safe: multi-lane detection keys on `Mode`,

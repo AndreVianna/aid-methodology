@@ -36,7 +36,7 @@ flowchart TB
   classDef aidStep fill:#1a2035,stroke:#d4a853,color:#f1f5f9
   n1(["FIRST-RUN<br/>No PLAN.md found; begin dependency mapping and deliverable…"])
   n2["REVIEW<br/>PLAN.md exists and was previously completed; re-review…"]
-  n3(["DONE<br/>Done"])
+  n3(["DONE"])
   n1 -. "otherwise" .- n1
   n1 -->|"when PLAN.md is written, delivery folders are created, and the final summary is…"| n2
   n2 -. "otherwise" .- n2

@@ -36,9 +36,9 @@ flowchart TB
   classDef aidDecision fill:#92400e,stroke:#78350f,color:#fff
   classDef aidLoopBack fill:#1e3a8a,stroke:#1e3a8a,color:#fff
   classDef aidStep fill:#1a2035,stroke:#d4a853,color:#f1f5f9
-  n1(["ENTRY<br/>Entry"])
+  n1(["ENTRY"])
   n2["RUN<br/>Run Alias of /aid-research -- investigate an open technical…"]
-  n3(["EXIT<br/>Exit"])
+  n3(["EXIT"])
   n1 --> n2
   n2 --> n3
   class n1 aidEntry

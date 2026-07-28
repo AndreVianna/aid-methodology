@@ -36,7 +36,7 @@ flowchart TB
   n1(["OBSERVE<br/>No prior run context; pull telemetry signals and correlate…"])
   n2["CLASSIFY<br/>Active findings are present; classify each anomaly and…"]
   n3["ROUTE<br/>All findings are classified; propose and execute routing…"]
-  n4(["DONE<br/>Done"])
+  n4(["DONE"])
   n1 --> n2
   n2 --> n3
   n3 --> n4
