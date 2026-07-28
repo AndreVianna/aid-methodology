@@ -466,26 +466,39 @@ wc -l canonical/aid/templates/reviewer-dispatch.md \
 # measured: 876
 ```
 
-**C — per-caller review-mechanics lines**, by a **fixed** pattern written into the spec so it
-cannot be tuned after the fact:
+**C — per-caller review-mechanics lines**, by a **fixed** pattern *and* a **pinned file set**:
 
 ```bash
 PAT='aid-reviewer|reviewer-brief|reviewer-dispatch|reviewer-ledger-schema|grade\.sh|ARTIFACTS UNDER REVIEW|OUT OF SCOPE|OUT-OF-SCOPE|review-pending|Ledger lifecycle|minimum_grade|subagent_type|RUBRIC:|CONTEXT:|DELIVERABLES:'
-grep -hcE "$PAT" <caller files> | awk '{t+=$1} END{print t}'
+# File set, per caller: SKILL.md + every references/*.md, EXCLUDING reviewer-brief.md
+# (those are counted in B; counting them in both would double-count).
+grep -hcE "$PAT" <that set> | awk '{t+=$1} END{print t}'
 ```
 
-| Caller | C (measured) |
+> **Corrected at delivery-001, 2026-07-28.** This spec originally recorded **212** with a
+> per-caller table, and claimed the pattern was fixed *"so it cannot be tuned after the fact"*. But
+> it pinned only the **pattern**, not the **file set** — and a fixed pattern over an unstated file
+> set is not a reproducible measurement. Re-measuring at delivery-001 with the file set written down
+> gave **271**. Only `shortcut-engine` (41) and `aid-review` (14) matched the original table. **An
+> anti-gaming clause that is not reproducible does not prevent gaming**, which is why the file set
+> is now part of the measure rather than an implicit choice.
+
+| Caller | C (measured at delivery-001) |
 |---|---|
-| `aid-define` | 11 |
-| `aid-specify` | 11 |
-| `aid-plan` | 19 |
-| `aid-detail` | 19 |
-| `aid-execute` | 21 |
-| `aid-discover` | 70 |
-| `aid-describe` | 6 |
-| `shortcut-engine` | 41 |
+| `aid-define` | 18 |
+| `aid-specify` | 14 |
+| `aid-plan` | 20 |
+| `aid-detail` | 21 |
+| `aid-execute` | 38 |
+| `aid-discover` | 95 |
+| `aid-describe` | 10 |
 | `aid-review` | 14 |
-| **total** | **212** |
+| `shortcut-engine` | 41 |
+| **total** | **271** |
+
+The per-file enumeration behind every one of those numbers is recorded in
+`deliveries/delivery-001/BASELINE-ac11.md`, which is the authority for the delivery-012 and
+delivery-014 comparisons. `B` re-measured at **876**, matching this spec's original figure exactly.
 
 **Threshold.** (a) every migrated caller's C strictly decreases; (b) `B_after + lines(new shared
 review assets) < B_before` — **the anti-gaming clause**, without which "shorter" is achieved by

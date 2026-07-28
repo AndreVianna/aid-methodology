@@ -402,10 +402,12 @@ possible-loop signal therefore rides **stdout**, not a new exit code — one lin
 convention that stdout carries the result and stderr the diagnostics.
 
 Both land in the `review/` directory **feature-003 creates**, so its emission caveat is
-inherited and must be honoured rather than re-derived: all five rendered manifests carry
-`"src": "canonical/scripts/grade.sh"` while the script lives at
-`canonical/aid/scripts/grade.sh` — verified, one occurrence per profile. **Emission of
-`review/` must be confirmed by rendering.**
+inherited: **emission of `review/` must be confirmed by rendering**, because a subdirectory that
+has never been emitted has never exercised the directory-level mapping. (A first draft justified
+this by calling the rendered manifests *stale*, since they carry `"src": "canonical/scripts/..."`
+while the scripts live under `canonical/aid/scripts/`. That was retracted on 2026-07-28:
+`render.py` normalizes the manifest `src` field deliberately, "for manifest src stability", so the
+value is a stable logical identifier and is correct as generated.)
 
 **Claimed regions:**
 
@@ -564,8 +566,8 @@ Per STATE.md concern N3, verified **at this feature's close**: `/generate-profil
 five tool roots plus this repo's own `.claude/` and `.cursor/` installs, and that each rendered
 brief carries the `GAP POLICY` section with renderer-rewritten pointers. `canonical/aid/scripts/`
 currently holds `config connectors execute grade.sh housekeep kb migrate release summarize
-works` — no `review/` — so emission must be confirmed by rendering, per feature-003's verified
-manifest-staleness caveat.
+works` — no `review/` — so emission must be confirmed by rendering, per feature-003's emission
+caveat (a never-emitted subdirectory has never exercised the mapping).
 
 ### 11. Out of scope
 
@@ -578,8 +580,9 @@ manifest-staleness caveat.
 - `aid-light-review` and the relocation of the up-front scan into it — **feature-006**.
 - The settings gate, the frontmatter-lint wiring, the BLUEPRINT review, the per-section specify
   ledger, and the single-grading-backend consolidation — **feature-007**.
-- Fixing `/aid-update-kb`'s branch base, the phantom `coding-standards.md S12` citation, and the
-  stale emission manifests — **Q3 backlog**, all three logged rather than fixed here.
+- Fixing `/aid-update-kb`'s branch base and the phantom `coding-standards.md S12` citation —
+  **Q3 backlog**, both logged rather than fixed here. (A third item, "the stale emission
+  manifests", was listed here and has been **retracted** — it was not a defect; see feature-003.)
 
 ### Delivery recommendation
 

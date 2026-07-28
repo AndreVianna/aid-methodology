@@ -176,15 +176,19 @@ combination, `die()` with a numeric exit code, write to `mktemp` → sanity-chec
 **directory-level**, so a new `review/` subdirectory should emit to all five profiles without a
 manifest edit.
 
-**That expectation must be verified during implementation, not assumed.** All five rendered
-manifests (`profiles/*/emission-manifest.jsonl`) currently carry
-`"src": "canonical/scripts/grade.sh"` — and `canonical/scripts/` **does not exist**; the script
-lives at `canonical/aid/scripts/grade.sh`. So the manifests are stale with respect to the
-existing script's own location, which means the directory mapping cannot be treated as
-demonstrably live. Implementation therefore **must** confirm by rendering that the new
-`review/` subdirectory reaches every profile, and must not rely on the mapping alone. This
-stale-manifest condition is a pre-existing defect, logged to the Q3 backlog rather than fixed
-here.
+**That expectation must still be confirmed by rendering — but for a narrower reason than this
+paragraph originally gave.** The first draft claimed the five rendered manifests are *stale*,
+because they carry `"src": "canonical/scripts/grade.sh"` while the script lives at
+`canonical/aid/scripts/grade.sh`. **That was a misreading, retracted during execution on
+2026-07-28:** `render.py` deliberately normalizes `canonical/aid/<sub>/` to `canonical/<sub>/` in
+the manifest `src` field, with the stated reason *"for manifest src stability (downstream
+traceability paths unchanged)"*. The field is a **stable logical identifier, not a filesystem
+path**, and is correct as generated. There is no pre-existing defect here and nothing was logged
+to the Q3 backlog.
+
+The verification requirement stands on its own footing: **a subdirectory that has never been
+emitted has never exercised the mapping**, so implementation must confirm the new `review/`
+subdirectory reaches every profile rather than inferring it from the directory-level rule.
 
 The helper locates `grade.sh` as `"$(dirname "$0")/../grade.sh"` — a relative path with no
 `canonical/` prefix, so `rewrite_install_paths` has nothing to rewrite and resolution is

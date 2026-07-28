@@ -1,8 +1,8 @@
 ---
-delivery_state: Pending-Spec
+delivery_state: Done
 gate_tier: Medium
-gate_grade: "Pending"
-gate_timestamp: "--"
+gate_grade: "A+"
+gate_timestamp: "2026-07-28T20:55:00Z"
 ticket_ref: "--"
 ---
 
@@ -46,7 +46,24 @@ ticket_ref: "--"
 <!-- AUTHORED -- single writer: the delivery-gate closing step of aid-execute on this
      delivery's branch. Reviewer Tier / Grade / Timestamp live in the frontmatter above. -->
 
-- **Issue List:** --
+- **Issue List:** none -- gate passed clean at cycle 2. Cycle 1 raised 4 findings (2 HIGH,
+  2 MEDIUM), all one class: the AC-13 amendment had landed in `REQUIREMENTS.md` and
+  `BASELINE-ac13.md` but not in this BLUEPRINT's Scope and gate criterion, nor in task-003's
+  Scope and acceptance criteria. All 4 Fixed.
+- **Scope changes made during execution** -- all three are corrections to the work itself, not
+  just completions of it:
+  1. **The emission-manifest fix was CUT.** The claim that five rendered manifests carry a
+     nonexistent `src` path was a misreading: `render.py` deliberately normalizes
+     `canonical/aid/<sub>/` to `canonical/<sub>/` "for manifest src stability". Retracted in
+     four SPECs, this BLUEPRINT, task-001 and `STATE.md` Q13.
+  2. **AC-11's baseline is 271, not the 212 feature-006 recorded.** The SPEC pinned the
+     measurement *pattern* but not the *file set*, so the measure was not reproducible. The
+     per-file enumeration is now pinned in `BASELINE-ac11.md`, which is the authority for the
+     delivery-012 and delivery-014 comparisons. `B` reproduced at 876, matching exactly.
+  3. **AC-13's per-dispatch tier was dropped.** The `## Dispatch Log` telemetry it reads is
+     never written -- 49 dispatches across this work's pipeline, zero rows -- so tier was
+     unrecoverable and its weighting was never defined. Populating the log is now a
+     prerequisite of AC-13 rather than an input to it.
 
 ---
 

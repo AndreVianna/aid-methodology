@@ -452,7 +452,8 @@ Per STATE.md concern N3, verified **at this feature's close**: `/generate-profil
 `verify_deterministic.py`, then assert `plan-resume.sh` is emitted and executable under each of
 the five tool roots plus this repo's own `.claude/` and `.cursor/` installs, and that every
 rendered brief carries the `{{RESUME_MODE}}` slot. Emission of `review/` must be confirmed by
-rendering, per feature-003's verified manifest-staleness caveat.
+rendering, per feature-003's emission caveat (a never-emitted subdirectory has never exercised the
+mapping; the earlier "manifest staleness" justification was retracted).
 
 ### 12. Verification strategy
 

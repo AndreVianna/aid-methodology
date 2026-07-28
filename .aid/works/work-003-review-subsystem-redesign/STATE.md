@@ -752,11 +752,17 @@ landed, took 6.
   feature-001's treatment rather than a one-line edit.
 
 **New defects found and routed to the Q3 backlog:**
-- **All five rendered emission manifests carry `"src": "canonical/scripts/grade.sh"`, and
-  `canonical/scripts/` does not exist** -- the script is at `canonical/aid/scripts/grade.sh`.
-  The manifests are stale with respect to the existing script's own location, so the
-  directory-level mapping cannot be treated as demonstrably live. feature-003's spec now
-  requires emission to be **verified by rendering** rather than assumed.
+- ~~**All five rendered emission manifests carry a `src` path that does not exist**~~ --
+  **RETRACTED at execution, 2026-07-28. This was not a defect.** `render.py` deliberately
+  normalizes `canonical/aid/<sub>/` to `canonical/<sub>/` in the manifest `src` field, with the
+  stated reason *"for manifest src stability (downstream traceability paths unchanged)"*. The field
+  is a **stable logical identifier, not a filesystem path**, and is correct as generated. I reported
+  this as a defect overnight and it propagated into four SPECs, one BLUEPRINT and one task; all have
+  been corrected. The **"verify emission by rendering"** criteria are retained, because a directory
+  that has never been emitted has never exercised the mapping -- but that is the reason, not
+  staleness. **Lesson: I read a normalization as a bug because the two paths differed, without
+  reading the code that produced them** -- the same claim-without-checking-the-source failure the
+  citation-accuracy feature exists to catch.
 - `test-grade.sh` has **16** numbered cases. Two successive reviewers reported 14 and 15; both
   were wrong. Count claims in specs should carry the counting command, not just the number.
 

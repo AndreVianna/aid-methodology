@@ -18,9 +18,9 @@
 
 **Scope:**
 - `git checkout --` on `canonical/agents/aid-reviewer/AGENT.md` in the main tree, discarding the uncommitted markdown-formatter run
-- The five rendered `profiles/*/emission-manifest.jsonl` files, whose `grade.sh` src path points at a directory that does not exist
+- ~~The five rendered `profiles/*/emission-manifest.jsonl` files~~ **CUT at execution** -- the `src` normalization is deliberate generator behaviour (`render.py`, "for manifest src stability"), so there is no defect here
 
 **Acceptance Criteria:**
 - [ ] `git diff canonical/agents/aid-reviewer/AGENT.md` is empty in the main tree
-- [ ] No emission manifest references a path absent from disk, asserted by a sweep over every `src` value
+- [ ] _(cut -- the manifest `src` value is an intentional logical identifier, not a filesystem path)_
 - [ ] All section-6 quality gates pass

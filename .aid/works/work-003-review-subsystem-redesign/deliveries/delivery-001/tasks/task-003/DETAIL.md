@@ -18,9 +18,12 @@
 
 **Scope:**
 - One fixture artifact taken through a full gate passage, before any review-path edit
-- Record from `## Dispatch Log` telemetry: total dispatch count, per-dispatch agent and tier, FIX-cycle count
+- Record total dispatch count and FIX-cycle count. ~~per-dispatch agent and tier~~ **Amended at execution** -- the per-dispatch tier is dropped: the `## Dispatch Log` telemetry AC-13 was written against is never actually written (49 dispatches, zero rows), so tier was unrecoverable and its weighting was never defined. Populating that log is now a prerequisite of AC-13, not an input to it. See REQUIREMENTS.md AC-13 and BASELINE-ac13.md.
 
 **Acceptance Criteria:**
-- [ ] All three numbers are recorded for the named fixture, with the commands that read them
-- [ ] The tier-weighted dispatch cost is stated, so delivery-012 and delivery-014 can compare against it
+- [ ] Dispatch count and FIX-cycle count are recorded for the named fixture, each traceable to
+      the session record or a runnable command
+- [ ] The measure's limits are stated explicitly: what the baseline can support (count
+      comparison) and what it cannot (tier weighting, wall-clock, Execute-phase reviews)
+- [ ] ~~The tier-weighted dispatch cost is stated~~ -- **cut**, per the AC-13 amendment
 - [ ] All section-6 quality gates pass
