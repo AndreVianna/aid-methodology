@@ -44,11 +44,11 @@ flowchart TB
   n1 --> n2
   n2 --> n3
   n3 -->|"if Pending Q&amp;A entries with Impact: Required exist"| n4
-  n3 -->|"otherwise. Both continue inline"| n5
+  n3 -->|"otherwise"| n5
   n4 -->|"when any answer implies a doc change"| n5
-  n4 -->|"otherwise chain toward once zero Pending and grade &gt;= minimum"| n6
+  n4 -->|"otherwise chain once zero Pending and grade &gt;= minimum"| n6
   n5 -->|"if grade &lt; minimum"| n3
-  n5 -->|"if grade ≥ minimum. Both continue inline"| n6
+  n5 -->|"if grade ≥ minimum"| n6
   n6 -. "otherwise" .- n6
   n6 -->|"user approval is the natural pause — once user approves"| n7
   class n1 aidExit

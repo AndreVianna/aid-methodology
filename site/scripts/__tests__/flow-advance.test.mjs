@@ -277,6 +277,69 @@ describe('Rule 2 — whole-token matching: hyphenated names and no substring mat
   });
 });
 
+describe('routing notation never becomes a branch guard', () => {
+  it('a trailing "Both continue inline" sentence is dropped', () => {
+    // Four labels published this. The parenthesised form was already handled; four
+    // reference files write it as a bare sentence instead, where that rule could
+    // not see it. Same debris, and to a reader it looks like the guard on the branch.
+    const r = parse(advBlock('-> BETA otherwise. Both continue inline.'), states('ALPHA', 'BETA'), {
+      fromNodeName: 'ALPHA',
+    });
+    const conds = r.edges.map((e) => e.condition).filter(Boolean);
+    expect(conds.some((c) => /continue inline/i.test(c))).toBe(false);
+    // The real guard survives — this must not strip the whole condition.
+    expect(conds).toContain('otherwise');
+  });
+
+  it('a trailing "— see" footnote is dropped once its backtick span is gone', () => {
+    // Pins a strip that today's corpus reaches only through another guard. Left in
+    // place because it is unreached by the CURRENT corpus rather than unreachable by
+    // construction — a plain trailing "see" is ordinary authoring nobody has written
+    // yet, and it would publish a dangling footnote.
+    const r = parse(advBlock('-> BETA when ready — see `SKILL.md § Arguments`'), states('ALPHA', 'BETA'), {
+      fromNodeName: 'ALPHA',
+    });
+    expect(r.edges[0].condition).toBe('when ready');
+  });
+});
+
+describe('the shared token boundary — hyphens are part of a state name', () => {
+  // This exists because the reconciliation it guards shipped WITHOUT a test, and a
+  // reviewer found that reverting it to the old `\b…\b` form passed the entire
+  // suite. That is the delivery's signature defect landing on the fix for the
+  // delivery's signature defect: a repair with nothing that fails when it is undone.
+  //
+  // The mechanism: `-` is not a word character, so `\bDONE\b` matches the DONE
+  // *inside* `PRE-DONE`. Stripping the target name from clause text with that form
+  // therefore cut a hole in the middle of a longer name, and the words either side
+  // collapsed together — which is what published `"…SPEC.md to to"` on aid-specify.
+
+  it('stripping a target name does NOT cut into a longer hyphenated word', () => {
+    // `RE-RUN` contains `RUN`, and `-` is not a word character — so `\bRUN\b`
+    // matches the tail of `RE-RUN`, strips it, and welds the leftover `RE-` to the
+    // next word. The lookaround form treats the hyphenated word as one token.
+    //
+    // `RE-RUN` here is deliberately PROSE, not a declared state: declaring it would
+    // make it an unconsumed state reference and correctly trip V9, which would test
+    // the guard rather than the boundary. That distinction cost me a failing test.
+    const r = parse(advBlock('-> RUN after the re-run completes'), states('RUN'), {
+      fromNodeName: 'FROM',
+    });
+    expect(r.edges).toHaveLength(1);
+    expect(r.edges[0].condition).toBe('after the re-run completes');
+  });
+
+  it('a doubled preposition never survives into a condition', () => {
+    // The published symptom, reduced. Whatever the boundary rule, two identical
+    // adjacent words are always a stripping artefact and never authored prose.
+    const r = parse(advBlock('-> DONE Re-run after recording results in SPEC.md to DONE'), states('DONE'), {
+      fromNodeName: 'FROM',
+    });
+    const cond = r.edges[0]?.condition ?? '';
+    expect(cond).not.toMatch(/\b(\w+) \1\b/);
+  });
+});
+
 describe('Rule 2 — state matching is CASE-SENSITIVE', () => {
   // This describe block previously asserted the opposite — that a lowercase `done`
   // clause resolved to state `DONE`. That rule fabricated edges out of ordinary

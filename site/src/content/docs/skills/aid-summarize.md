@@ -49,8 +49,8 @@ flowchart TB
   n3 --> n4
   n4 --> n5
   n5 -->|"if Machine Grade &gt;= minimum"| n6
-  n5 -->|"otherwise. Both continue inline"| n7
-  n6 -->|"otherwise. Both continue inline"| n7
+  n5 -->|"otherwise"| n7
+  n6 -->|"otherwise"| n7
   n6 -->|"if Overall Grade ≥ minimum"| n8
   n7 --> n5
   n8 --> n7

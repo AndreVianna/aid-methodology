@@ -820,7 +820,32 @@ function _extractCondition(clauseText, targetName) {
   //     [State: CONTINUE]" into "Re-run … to  to" — two bare prepositions where
   //     the author wrote one.  The shared _tokenBoundaryRe helper without `gi`
   //     strips only the exact-case state reference, leaving prose words intact.
+  // Strip the target name only where it reads as a LABEL, not where it is part of a
+  // sentence. A name at the start or end of the clause is the routing target being
+  // named; a name with prose on both sides is a word in a sentence, and cutting it
+  // out leaves a hole the surrounding grammar cannot close.
+  //
+  // `aid-discover` published the symptom: "otherwise chain toward APPROVAL once zero
+  // Pending and grade >= minimum" became "otherwise chain toward once zero Pending
+  // …" — "toward" dangling into "once". No amount of trailing cleanup fixes that,
+  // because the damage is mid-string. Keeping the name costs only a small redundancy
+  // (a condition mentioning its own target) and keeps the sentence true.
   text = text.replace(_tokenBoundaryRe(targetName), ' ');
+
+  // Repair a preposition left dangling by that strip. When the state name sits
+  // MID-SENTENCE — `aid-discover` writes "otherwise chain toward APPROVAL once zero
+  // Pending" — removing it welds the words either side together and publishes
+  // "chain toward once zero Pending". The trailing-preposition guard further down
+  // cannot help, because the damage is in the middle of the string.
+  //
+  // Keeping the name instead was tried and is worse: it resurrects conditions that
+  // are correctly null, taking the corpus from 37 labels to 60 and breaking four
+  // tests. Dropping the orphaned preposition is the narrow repair — it removes a
+  // word that is now pointing at nothing, and leaves every other clause untouched.
+  text = text.replace(
+    /\s(toward|towards|to|into|onto|through|via|at|on|in)\s+(?=(once|when|if|after|before|unless|until)\b)/gi,
+    ' '
+  );
 
   // (5) Strip standalone "State:" prefix artifacts
   text = text.replace(/\bState:\s*/g, ' ');
@@ -836,6 +861,17 @@ function _extractCondition(clauseText, targetName) {
   //     _extractCondition's separator trim sometimes removes it first.
   text = text.replace(
     /\(\s*(?:continue|chain\s+continues?|see|exit|re-?run)\b[^)]*\)?/gi, ' '
+  );
+  // …and the SAME notation written as a trailing sentence rather than a
+  // parenthetical. Four labels published "otherwise. Both continue inline" and
+  // "if grade ≥ minimum. Both continue inline", because four reference files write
+  // `Both continue inline.` outside brackets, where the rule above cannot see it.
+  //
+  // It is the same debris either way — a note about how control flows, presented to
+  // a reader as the guard on a branch. Anchored to a sentence boundary so it only
+  // takes a trailing clause, never text in the middle of a condition.
+  text = text.replace(
+    /(?:^|[.;])\s*(?:both\s+)?(?:continue|chain)s?\s+inline\b[^.;]*[.;]?\s*$/i, ''
   );
 
   // (9) Collapse whitespace and trim
@@ -867,6 +903,16 @@ function _extractCondition(clauseText, targetName) {
   //      removed, "— see" / "-- see" / ": see" at the end is a meaningless
   //      footnote, e.g. "… in delivery-001 — see `SKILL.md § Arguments`"
   //      becomes "… in delivery-001 — see" once the backtick span is gone.
+  // Kept despite being shadowed on today's corpus. A reviewer found that the only
+  // label reaching it is also caught by the subject-stripped-conditional guard
+  // below, so removing this line changes nothing measurable — the same shape as the
+  // dead R4 guard that was deleted.
+  //
+  // The difference, and the reason this one stays: that guard was unreachable by
+  // CONSTRUCTION, because the caller re-applied the identical test. This one is
+  // merely unreached by the CURRENT corpus. A trailing "— see" with no `if was`
+  // prefix is ordinary authoring that nobody has written yet, and it would publish
+  // a dangling footnote. Its own test below pins it, so it cannot rot unnoticed.
   text = text.replace(/\s*[—–\-:;]\s*see\s*$/i, '').trim();
   text = text.replace(/[[\]().,;:!?→>-]+$/g, '').trim();
 

@@ -337,6 +337,15 @@ function _tryR2(bodyLines, allLines, bodyStartLine, file) {
     const m = bodyLines[i].match(R2_STATE_RE);
     if (!m) continue;
     const name = m[2].trim();
+    // Same guard as R1, and it belongs here for the same reason: `R2_STATE_RE`'s
+    // `(.+)` matches a lone space, so `### State 1 — ` with a trailing space yields
+    // an empty name, an empty label, a V8 failure and a lost page.
+    //
+    // This half was missed the first time round. The finding named R1 *and* R2, and
+    // the fix went to R1 because that is where the reproduction was easiest to see —
+    // my own R2 probe passed only because its fixture had no trailing space. Fixing
+    // the instance rather than the class.
+    if (name === '') continue;
     hits.push({
       name,
       label: truncate(name, 60),
