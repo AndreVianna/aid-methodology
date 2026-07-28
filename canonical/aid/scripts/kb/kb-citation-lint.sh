@@ -64,10 +64,22 @@ esac
 # Windows Git Bash / MSYS (one fork per KB doc).
 mapfile -t docs < <(find "$ROOT" -maxdepth "$DEPTH" -type f -name '*.md' ! -name '.*' 2>/dev/null | sort)
 
+# The en-dash separator is passed in as its literal bytes and spliced into a DYNAMIC regex as an
+# ALTERNATION branch, never as a member of a bracket class. Two reasons, both learned the hard way:
+#   - A bracket class cannot match a multi-byte sequence at all. In a single-byte locale
+#     `[,-\xe2\x80\x93]` is three independent byte members (and `,-\xe2` is even read as a RANGE),
+#     so `2<en-dash>4` never matches as number-separator-number.
+#   - A static /literal/ with hex escapes is locale-dependent: it works under a UTF-8 LANG and
+#     silently truncates the range under Git Bash's default empty LANG -- which is the platform
+#     this repository is developed on, so "works on my machine" was exactly the failure mode.
+# An alternation branch holding the three literal bytes matches in ANY locale, because it is a
+# string match rather than a character-class membership test.
+ENDASH="$(printf '\xe2\x80\x93')"
+
 candidates=""
 if [[ ${#docs[@]} -gt 0 ]]; then
   candidates="$(
-    awk '
+    awk -v ed="$ENDASH" '
       # Fenced code blocks are SKIPPED, under both profiles. A citation inside a fence is an
       # example or a test fixture, not a claim about the tree -- flagging `f.md:12` in an oracle
       # block is noise, and a lint whose findings are mostly noise does not survive its first FIX
@@ -75,9 +87,15 @@ if [[ ${#docs[@]} -gt 0 ]]; then
       # UNRESOLVED findings were the lint reporting its own fixtures.
       /^[ \t]*(```|~~~)/ { in_fence = !in_fence; next }
       in_fence { next }
+      BEGIN {
+        # Built once. `ed` carries the three literal en-dash bytes; the separator is an
+        # alternation, so it matches regardless of locale.
+        CITE = "[A-Za-z0-9_./-]+[.](md|sh|py|mjs|js|ts|yml|yaml|json|toml|txt|ps1)" \
+               ":[0-9]+((,|-|" ed ")[0-9]+)*"
+      }
       {
         line = $0
-        while (match(line, /[A-Za-z0-9_.\/-]+\.(md|sh|py|mjs|js|ts|yml|yaml|json|toml|txt|ps1):[0-9]+([,\-\xe2\x80\x93][0-9]+)*/)) {
+        while (match(line, CITE)) {
           m  = substr(line, RSTART, RLENGTH)               # e.g. installer-tests.yml:106-125
           a2 = substr(line, RSTART + RLENGTH, 2)           # the 2 chars right after the linespec
           a1 = substr(a2, 1, 1)

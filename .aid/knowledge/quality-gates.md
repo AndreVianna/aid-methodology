@@ -350,13 +350,34 @@ defect is caught at GENERATE rather than one phase later at REVIEW:
 | Spine closure | `.claude/aid/scripts/kb/closure-check.sh` | Every load-bearing concept is grounded or dismissed |
 | Version sync | `.claude/aid/scripts/release/check-version-sync.sh` | All version carriers agree (release gate) |
 
-**Of these, only the frontmatter lint and the KB-index freshness check actually run in
-CI's `kb-hygiene` job** (`.github/workflows/test.yml`), and only those two are blocking
-for merges to master. The citation lint, the spine-closure check and the version-sync
-check are **not wired into CI** — verified 2026-07-28:
-`grep -n 'kb-citation-lint\|closure-check\|check-version-sync' .github/workflows/*.yml`
-returns nothing. This paragraph previously claimed all of them ran, marked CONFIRMED.
-Wiring the citation lint into CI is delivery-017's job; the other two remain unwired.
+**Only the frontmatter lint and the KB-index freshness check are blocking for merges to
+master.** They run in CI's `kb-hygiene` job (`.github/workflows/test.yml`, which is the
+pull-request gate). Verified 2026-07-28, per gate:
+
+| Gate | Runs in CI? | Blocking for a merge? |
+|---|---|---|
+| Frontmatter lint | yes -- `test.yml` `kb-hygiene` | **yes** |
+| KB-index freshness | yes -- `test.yml` | **yes** |
+| Citation lint | **no workflow references it** | no |
+| Spine closure | **no workflow references it** | no |
+| Version sync | yes -- `release.yml` | **no** -- `release.yml` is *tag*-triggered, so it gates a release, not a merge |
+
+```bash
+grep -n 'kb-citation-lint\|closure-check\|check-version-sync' .github/workflows/*.yml
+# release.yml:109  (comment)   release.yml:128  (check-version-sync.sh invocation)
+# kb-citation-lint and closure-check: no matches in any workflow
+```
+
+This paragraph previously claimed **all** of these run in `kb-hygiene` and are blocking for
+merges, marked CONFIRMED. Two of the five do. A first correction then over-swung and claimed the
+grep "returns nothing", which is also wrong -- `check-version-sync` does run, just on a tag rather
+than a merge. Wiring the citation lint into CI is delivery-017's job; spine closure remains unwired.
+
+**One deliberate exemption in the citation lint, declared here because it narrows a ban:**
+citations inside fenced code blocks are **not** flagged, under either profile. A citation in a
+fence is an example or a test fixture rather than a claim about the tree -- the lint was otherwise
+reporting its own test fixtures. This narrows the durable profile's otherwise-unconditional ban,
+and it is recorded rather than silent.
 
 ---
 
