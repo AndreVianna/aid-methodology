@@ -37,7 +37,7 @@ flowchart TB
   n1(["INTAKE"])
   n2["INVESTIGATE"]
   n3["VERIFY<br/>who reviews the researcher"]
-  n4{"PRESENT<br/>always a hard stop -- the user resolves"}
+  n4{"PRESENT"}
   n5["HANDOFF<br/>optional; printed suggestions only"]
   n6(["DONE"])
   n1 --> n2

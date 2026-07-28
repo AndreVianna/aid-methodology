@@ -38,8 +38,8 @@ flowchart TB
   n2(["STALE-CHECK<br/>STALE-CHECK compares the KB review date against the last…"])
   n3["PROFILE<br/>PROFILE reads the doc-set and domain from feature-014…"]
   n4["GENERATE<br/>GENERATE builds kb.html from KB content using the resolved…"]
-  n5{"VALIDATE<br/>VALIDATE runs the machine-verifiable quality checks…"}
-  n6{"MANUAL-CHECKLIST<br/>MANUAL-CHECKLIST elicits human-judgment answers for the…"}
+  n5{"VALIDATE"}
+  n6{"MANUAL-CHECKLIST"}
   n7["FIX<br/>FIX handles objective machine-pool failures autonomously…"]
   n8(["APPROVAL<br/>APPROVAL presents the graded summary to the user for final…"])
   n9["WRITEBACK<br/>WRITEBACK atomically records the approved summarization…"]

@@ -37,7 +37,7 @@ flowchart TB
   n1(["INTAKE"])
   n2["REVIEW"]
   n3["VERIFY<br/>who reviews the reviewer"]
-  n4{"PRESENT-FINDINGS<br/>always a hard stop -- human final say"}
+  n4{"PRESENT-FINDINGS"}
   n5["PUBLISH<br/>only on approval"]
   n6(["DONE"])
   n1 --> n2

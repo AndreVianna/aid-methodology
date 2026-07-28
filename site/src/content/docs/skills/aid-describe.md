@@ -36,7 +36,7 @@ flowchart TB
   classDef aidStep fill:#1a2035,stroke:#d4a853,color:#f1f5f9
   n1(["FIRST-RUN<br/>This state runs only when STATE.md does not exist in the…"])
   n2["Q-AND-A<br/>STATE.md has entries with ; resolve them one at a time…"]
-  n3{"CONTINUE<br/>Resume the conversational interview; STATE.md shows In…"}
+  n3{"CONTINUE"}
   n4["DESCRIBE-SEED<br/>The seed-authoring step of (the step per D3, executed today…"]
   n5(["COMPLETION<br/>All sections are Complete or N/A in STATE.md ; run quality…"])
   n1 -->|"after scaffolding is complete"| n3

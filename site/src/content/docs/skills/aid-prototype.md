@@ -37,7 +37,7 @@ flowchart TB
   n1(["INTAKE"])
   n2["BUILD"]
   n3["VERIFY<br/>LIGHT -- do not polish-grade a rough model"]
-  n4{"PRESENT<br/>hard stop -- the user decides"}
+  n4{"PRESENT"}
   n5["HANDOFF<br/>optional; printed suggestions only"]
   n6(["DONE"])
   n1 --> n2

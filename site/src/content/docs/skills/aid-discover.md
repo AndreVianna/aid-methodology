@@ -36,9 +36,9 @@ flowchart TB
   classDef aidStep fill:#1a2035,stroke:#d4a853,color:#f1f5f9
   n1(["ELICIT<br/>ELICIT captures the project's external sources and tool…"])
   n2(["GENERATE<br/>GENERATE generates KB documents that are missing or still…"])
-  n3{"REVIEW<br/>REVIEW grades all declared KB documents for accuracy…"}
-  n4{"Q-AND-A<br/>Q-AND-A drives EVERY pending question to a terminal answer."}
-  n5{"FIX<br/>FIX applies Q&amp;A answers and reviewer feedback to bring KB…"}
+  n3{"REVIEW"}
+  n4{"Q-AND-A"}
+  n5{"FIX"}
   n6(["APPROVAL<br/>APPROVAL presents the KB summary and asks the user to…"])
   n7(["DONE<br/>DONE confirms discovery is complete and user-approved; it…"])
   n1 --> n2

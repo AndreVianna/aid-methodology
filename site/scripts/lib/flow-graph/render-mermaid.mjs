@@ -125,6 +125,15 @@ function escapeMermaid(text) {
  */
 function nodeLabel(node) {
   const name = escapeMermaid(node.name);
+  // A DECISION renders as a rhombus, and Mermaid sizes a rhombus around its text —
+  // so a two-line label inflated one to 320x320px, a quarter of the whole chart's
+  // height and two thirds of its width. No layout engine fixes that; it is node
+  // sizing, not arrangement.
+  //
+  // The second line is also least useful here: a decision's meaning is carried by
+  // its outgoing BRANCH CONDITIONS, which are already drawn on the edges, so the
+  // prose beneath the name mostly repeats what the branches say. Name only.
+  if (node.kind === 'decision') return `"${name}"`;
   // When the derived label adds nothing over the state name, render one line.
   // Otherwise a node reads `INTAKE<br/>INTAKE` — measured at 45 of 181 nodes
   // across the 34 charts, and 100% of the nodes in three ticket skills, where
