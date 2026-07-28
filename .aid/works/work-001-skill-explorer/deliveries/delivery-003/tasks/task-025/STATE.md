@@ -1,6 +1,6 @@
 ---
-state: 'In Review'
-review: "--"
+state: Done
+review: 'Wave-5 quick check (Small, Sonnet 5): CONDITIONAL PASS -> PASS. 1 CRITICAL + 3 HIGH + 1 MEDIUM fixed, 2 LOW carried.'
 elapsed: "--"
 notes: "--"
 ticket_ref: "--"
