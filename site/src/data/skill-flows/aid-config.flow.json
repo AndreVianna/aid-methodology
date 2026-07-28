@@ -1,0 +1,361 @@
+{
+  "skill": "aid-config",
+  "shape": "residual",
+  "extractor": "residual",
+  "confidence": "approximate",
+  "title": "aid-config — state flow",
+  "nodes": [
+    {
+      "id": "n1",
+      "order": 1,
+      "name": "MODE-1",
+      "label": "Mode 1 — Show all settings (…)",
+      "kind": "entry",
+      "terminal": null,
+      "provenance": {
+        "file": "canonical/skills/aid-config/SKILL.md",
+        "startLine": 36,
+        "endLine": 36,
+        "sourceKind": "skill",
+        "excerpt": "## Mode 1 — Show all settings (`/aid-config`)"
+      },
+      "detail": null
+    },
+    {
+      "id": "n2",
+      "order": 2,
+      "name": "STEP-1",
+      "label": "Ensure `.aid/settings.yml` exists",
+      "kind": "step",
+      "terminal": null,
+      "provenance": {
+        "file": "canonical/skills/aid-config/SKILL.md",
+        "startLine": 38,
+        "endLine": 38,
+        "sourceKind": "skill",
+        "excerpt": "### Step 1: Ensure `.aid/settings.yml` exists"
+      },
+      "detail": null
+    },
+    {
+      "id": "n3",
+      "order": 3,
+      "name": "STEP-2",
+      "label": "Render the table",
+      "kind": "step",
+      "terminal": null,
+      "provenance": {
+        "file": "canonical/skills/aid-config/SKILL.md",
+        "startLine": 45,
+        "endLine": 45,
+        "sourceKind": "skill",
+        "excerpt": "### Step 2: Render the table"
+      },
+      "detail": null
+    },
+    {
+      "id": "n4",
+      "order": 4,
+      "name": "STEP-3",
+      "label": "Suggest commands for unset values + the general update form",
+      "kind": "exit",
+      "terminal": {
+        "advanceType": "UNSPECIFIED",
+        "handoff": null
+      },
+      "provenance": {
+        "file": "canonical/skills/aid-config/SKILL.md",
+        "startLine": 54,
+        "endLine": 54,
+        "sourceKind": "skill",
+        "excerpt": "### Step 3: Suggest commands for unset values + the general update form"
+      },
+      "detail": null
+    },
+    {
+      "id": "n5",
+      "order": 5,
+      "name": "MODE-2",
+      "label": "Mode 2 — View/update one key (…)",
+      "kind": "entry",
+      "terminal": null,
+      "provenance": {
+        "file": "canonical/skills/aid-config/SKILL.md",
+        "startLine": 73,
+        "endLine": 73,
+        "sourceKind": "skill",
+        "excerpt": "## Mode 2 — View/update one key (`/aid-config <key>`)"
+      },
+      "detail": null
+    },
+    {
+      "id": "n6",
+      "order": 6,
+      "name": "STEP-1",
+      "label": "Validate the key argument",
+      "kind": "step",
+      "terminal": null,
+      "provenance": {
+        "file": "canonical/skills/aid-config/SKILL.md",
+        "startLine": 75,
+        "endLine": 75,
+        "sourceKind": "skill",
+        "excerpt": "### Step 1: Validate the key argument"
+      },
+      "detail": null
+    },
+    {
+      "id": "n7",
+      "order": 7,
+      "name": "STEP-2",
+      "label": "Ensure `.aid/settings.yml` exists",
+      "kind": "step",
+      "terminal": null,
+      "provenance": {
+        "file": "canonical/skills/aid-config/SKILL.md",
+        "startLine": 87,
+        "endLine": 87,
+        "sourceKind": "skill",
+        "excerpt": "### Step 2: Ensure `.aid/settings.yml` exists"
+      },
+      "detail": null
+    },
+    {
+      "id": "n8",
+      "order": 8,
+      "name": "STEP-3",
+      "label": "Read current value",
+      "kind": "step",
+      "terminal": null,
+      "provenance": {
+        "file": "canonical/skills/aid-config/SKILL.md",
+        "startLine": 91,
+        "endLine": 91,
+        "sourceKind": "skill",
+        "excerpt": "### Step 3: Read current value"
+      },
+      "detail": null
+    },
+    {
+      "id": "n9",
+      "order": 9,
+      "name": "STEP-4",
+      "label": "Prompt for new value",
+      "kind": "step",
+      "terminal": null,
+      "provenance": {
+        "file": "canonical/skills/aid-config/SKILL.md",
+        "startLine": 100,
+        "endLine": 100,
+        "sourceKind": "skill",
+        "excerpt": "### Step 4: Prompt for new value"
+      },
+      "detail": null
+    },
+    {
+      "id": "n10",
+      "order": 10,
+      "name": "STEP-5",
+      "label": "Validate",
+      "kind": "step",
+      "terminal": null,
+      "provenance": {
+        "file": "canonical/skills/aid-config/SKILL.md",
+        "startLine": 118,
+        "endLine": 118,
+        "sourceKind": "skill",
+        "excerpt": "### Step 5: Validate"
+      },
+      "detail": null
+    },
+    {
+      "id": "n11",
+      "order": 11,
+      "name": "STEP-6",
+      "label": "Save in place",
+      "kind": "step",
+      "terminal": null,
+      "provenance": {
+        "file": "canonical/skills/aid-config/SKILL.md",
+        "startLine": 122,
+        "endLine": 122,
+        "sourceKind": "skill",
+        "excerpt": "### Step 6: Save in place"
+      },
+      "detail": null
+    },
+    {
+      "id": "n12",
+      "order": 12,
+      "name": "STEP-7",
+      "label": "Confirm",
+      "kind": "exit",
+      "terminal": {
+        "advanceType": "UNSPECIFIED",
+        "handoff": null
+      },
+      "provenance": {
+        "file": "canonical/skills/aid-config/SKILL.md",
+        "startLine": 131,
+        "endLine": 131,
+        "sourceKind": "skill",
+        "excerpt": "### Step 7: Confirm"
+      },
+      "detail": null
+    }
+  ],
+  "edges": [
+    {
+      "from": "n1",
+      "to": "n2",
+      "kind": "sequence",
+      "condition": null,
+      "advanceType": "CHAIN",
+      "provenance": {
+        "file": "canonical/skills/aid-config/SKILL.md",
+        "startLine": 38,
+        "endLine": 38,
+        "sourceKind": "skill",
+        "excerpt": "### Step 1: Ensure `.aid/settings.yml` exists"
+      }
+    },
+    {
+      "from": "n2",
+      "to": "n3",
+      "kind": "sequence",
+      "condition": null,
+      "advanceType": "CHAIN",
+      "provenance": {
+        "file": "canonical/skills/aid-config/SKILL.md",
+        "startLine": 45,
+        "endLine": 45,
+        "sourceKind": "skill",
+        "excerpt": "### Step 2: Render the table"
+      }
+    },
+    {
+      "from": "n3",
+      "to": "n4",
+      "kind": "sequence",
+      "condition": null,
+      "advanceType": "CHAIN",
+      "provenance": {
+        "file": "canonical/skills/aid-config/SKILL.md",
+        "startLine": 54,
+        "endLine": 54,
+        "sourceKind": "skill",
+        "excerpt": "### Step 3: Suggest commands for unset values + the general update form"
+      }
+    },
+    {
+      "from": "n5",
+      "to": "n6",
+      "kind": "sequence",
+      "condition": null,
+      "advanceType": "CHAIN",
+      "provenance": {
+        "file": "canonical/skills/aid-config/SKILL.md",
+        "startLine": 75,
+        "endLine": 75,
+        "sourceKind": "skill",
+        "excerpt": "### Step 1: Validate the key argument"
+      }
+    },
+    {
+      "from": "n6",
+      "to": "n7",
+      "kind": "sequence",
+      "condition": null,
+      "advanceType": "CHAIN",
+      "provenance": {
+        "file": "canonical/skills/aid-config/SKILL.md",
+        "startLine": 87,
+        "endLine": 87,
+        "sourceKind": "skill",
+        "excerpt": "### Step 2: Ensure `.aid/settings.yml` exists"
+      }
+    },
+    {
+      "from": "n7",
+      "to": "n8",
+      "kind": "sequence",
+      "condition": null,
+      "advanceType": "CHAIN",
+      "provenance": {
+        "file": "canonical/skills/aid-config/SKILL.md",
+        "startLine": 91,
+        "endLine": 91,
+        "sourceKind": "skill",
+        "excerpt": "### Step 3: Read current value"
+      }
+    },
+    {
+      "from": "n8",
+      "to": "n9",
+      "kind": "sequence",
+      "condition": null,
+      "advanceType": "CHAIN",
+      "provenance": {
+        "file": "canonical/skills/aid-config/SKILL.md",
+        "startLine": 100,
+        "endLine": 100,
+        "sourceKind": "skill",
+        "excerpt": "### Step 4: Prompt for new value"
+      }
+    },
+    {
+      "from": "n9",
+      "to": "n10",
+      "kind": "sequence",
+      "condition": null,
+      "advanceType": "CHAIN",
+      "provenance": {
+        "file": "canonical/skills/aid-config/SKILL.md",
+        "startLine": 118,
+        "endLine": 118,
+        "sourceKind": "skill",
+        "excerpt": "### Step 5: Validate"
+      }
+    },
+    {
+      "from": "n10",
+      "to": "n11",
+      "kind": "sequence",
+      "condition": null,
+      "advanceType": "CHAIN",
+      "provenance": {
+        "file": "canonical/skills/aid-config/SKILL.md",
+        "startLine": 122,
+        "endLine": 122,
+        "sourceKind": "skill",
+        "excerpt": "### Step 6: Save in place"
+      }
+    },
+    {
+      "from": "n11",
+      "to": "n12",
+      "kind": "sequence",
+      "condition": null,
+      "advanceType": "CHAIN",
+      "provenance": {
+        "file": "canonical/skills/aid-config/SKILL.md",
+        "startLine": 131,
+        "endLine": 131,
+        "sourceKind": "skill",
+        "excerpt": "### Step 7: Confirm"
+      }
+    }
+  ],
+  "entries": [
+    "n1",
+    "n5"
+  ],
+  "exits": [
+    "n4",
+    "n12"
+  ],
+  "sources": [
+    "canonical/skills/aid-config/SKILL.md"
+  ],
+  "warnings": []
+}

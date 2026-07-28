@@ -120,7 +120,7 @@ export function buildFlowChart({ name, dir }) {
   }
 
   if (chart.warnings && chart.warnings.length > 0) {
-    _runWarnings.push({ skill: name, warnings: chart.warnings.slice() });
+    _runWarnings.set(name, chart.warnings.slice());
   }
 
   return chart;
@@ -143,8 +143,17 @@ export function buildFlowChart({ name, dir }) {
 // cannot affect generated output — `summarizeFlowWarnings` is read-only and
 // `resetFlowWarnings` exists so a test or a second run starts clean.
 
-/** @type {Array<{skill: string, warnings: string[]}>} */
-const _runWarnings = [];
+/**
+ * Keyed by skill name, **not** an append-only list. A single run builds the same
+ * chart more than once — the body provider builds it during RENDER and `gen-skills`
+ * builds it again to write the sidecar — and an append-only list reported that as
+ * doubled warnings across doubled charts, naming every skill twice. Keying by skill
+ * makes the count a property of the corpus rather than of how many times the
+ * generator happened to ask.
+ *
+ * @type {Map<string, string[]>}
+ */
+const _runWarnings = new Map();
 
 /**
  * Drop every accumulated warning. Call before a run whose count must be its own —
@@ -153,7 +162,7 @@ const _runWarnings = [];
  * @returns {void}
  */
 export function resetFlowWarnings() {
-  _runWarnings.length = 0;
+  _runWarnings.clear();
 }
 
 /**
@@ -166,10 +175,11 @@ export function resetFlowWarnings() {
  * @returns {{total: number, charts: number, skills: string[], messages: string[]}}
  */
 export function summarizeFlowWarnings() {
+  const entries = [..._runWarnings.entries()];
   return {
-    total: _runWarnings.reduce((n, e) => n + e.warnings.length, 0),
-    charts: _runWarnings.length,
-    skills: _runWarnings.map((e) => e.skill),
-    messages: _runWarnings.flatMap((e) => e.warnings),
+    total: entries.reduce((n, [, w]) => n + w.length, 0),
+    charts: entries.length,
+    skills: entries.map(([skill]) => skill),
+    messages: entries.flatMap(([, w]) => w),
   };
 }

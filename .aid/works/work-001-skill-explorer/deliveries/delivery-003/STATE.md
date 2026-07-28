@@ -674,6 +674,37 @@ resolves into the module split.
 
 ---
 
+## Wave 7 (task-030) — decisions taken
+
+**Q6 — the four-line stdout contract vs task-029's warning report. OWNER DECIDED: the report stays.**
+Two immutable task DETAILs conflict as written. task-029 requires `chart.warnings` be "logged with a
+run-level count"; task-030 requires stdout stay "exactly four lines". The owner's ruling reads
+task-030's clause with its own qualifier — "not widened **by sidecar or `shapeCounts` emission**" —
+which is what task-030 must not do, and does not reach a line task-029 already owed. Verified:
+task-030 adds no stdout line, the four phase lines are unchanged in wording and order, and stderr is
+silent on success. The stdout-discipline test asserts the four phase lines plus a constrained shape
+for report lines, rather than a total count.
+
+**Q7 — seam S1 needed one delta: `expectedSidecars` is separate from `expected`.** S1 directs the
+sidecar comparison to use "the **same** `expected` set". Taken literally that throws on 77 skills
+today, because a sidecar can only exist where a chart does and feature-004's doorway extractors do not
+land until waves 10–12. S1 was written against the end state, where every shape charts and the two
+sets are equal. So the guard takes a fifth **required** set, derived from the same classification pass
+that computes `shapeCounts` — which also means the sidecar set and `shapeCounts` cannot disagree, since
+a second scan would be a second authority. Required rather than defaulted, for the reason S1 itself
+gave for `onDiskSidecars`. Orphan detection is unaffected: an orphan is "on disk but not expected",
+which still fires. At feature-004's completion this set equals `expected` and S1 holds exactly.
+
+**One incidental defect found and fixed.** The run-level warning accumulator was an append-only list,
+so a single run reported **18 warnings across 14 charts**, naming every skill twice — the body provider
+builds each chart during RENDER and task-030's sidecar step builds it again. Keyed by skill now, so the
+count is a property of the corpus rather than of how often the generator asks. Back to 9 across 7.
+The reset test's old assertion (a rebuild doubles the count) encoded the defect, so it was replaced
+with two: a rebuild of the same skill changes nothing, and a *different* skill does grow the total —
+the second being what stops the reset assertion passing vacuously.
+
+---
+
 ## Review Checkpoint (tasks 019–029) — PASS, Grade A+
 
 Mandated A+ checkpoint after task-029. **Closed at `82ef1e72` with Grade A+ and zero Pending rows**,

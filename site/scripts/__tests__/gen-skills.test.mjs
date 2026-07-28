@@ -44,6 +44,8 @@ import { renderSkillPage } from '../skills/render-page.mjs';
 import { assertNoSkillsDrift, assertNoDeadCards, reportFlowWarnings, main } from '../gen-skills.mjs';
 import {
   buildFlowChart,
+  classifySkill,
+  serializeChart,
   resetFlowWarnings,
   summarizeFlowWarnings,
 } from '../lib/flow-graph/index.mjs';
@@ -839,7 +841,16 @@ describe('gen-skills: isolation from gen-reference', () => {
 // generator in a subprocess, in the suite above.
 
 describe('assertNoSkillsDrift — all four branches', () => {
-  const ok = { expected: ['a', 'b'], written: ['a', 'b'], onDisk: ['a', 'b'] };
+  // task-030 (seam S1) added the two sidecar sets. They are required, so the fixture
+  // carries them; no assertion below changes, because the page labels keep their exact
+  // wording, order and position.
+  const ok = {
+    expected: ['a', 'b'],
+    written: ['a', 'b'],
+    onDisk: ['a', 'b'],
+    expectedSidecars: ['a', 'b'],
+    onDiskSidecars: ['a', 'b'],
+  };
 
   it('passes when all three sets agree', () => {
     expect(() => assertNoSkillsDrift(ok)).not.toThrow();
@@ -878,7 +889,7 @@ describe('assertNoSkillsDrift — all four branches', () => {
   it('reports both deltas at once, each under its own label', () => {
     let err;
     try {
-      assertNoSkillsDrift({ expected: ['a', 'b'], written: ['a', 'b'], onDisk: ['a', 'zz'] });
+      assertNoSkillsDrift({ ...ok, onDisk: ['a', 'zz'] });
     } catch (e) {
       err = e;
     }
@@ -886,13 +897,112 @@ describe('assertNoSkillsDrift — all four branches', () => {
     expect(err.message).toContain('orphan pages: zz');
   });
 
+  // ── task-030 / seam S1: the two sidecar parts of the same throw ──────────────
+
+  it('throws when a charted skill has no sidecar on disk', () => {
+    expect(() => assertNoSkillsDrift({ ...ok, onDiskSidecars: ['a'] })).toThrow(
+      /\[gen-skills\] skills drift: missing sidecars: b/
+    );
+  });
+
+  it('throws when a sidecar on disk has no skill, naming the git rm remedy', () => {
+    let err;
+    try {
+      assertNoSkillsDrift({ ...ok, onDiskSidecars: ['a', 'b', 'aid-deleted'] });
+    } catch (e) {
+      err = e;
+    }
+    expect(err).toBeDefined();
+    expect(err.message).toContain('orphan sidecars: aid-deleted');
+    expect(err.message).toContain('git rm site/src/data/skill-flows/aid-deleted.flow.json');
+  });
+
+  it('a deleted skill orphans page and sidecar in ONE throw, with both remedies', () => {
+    // The realistic failure, and the reason the sidecar comparison joins this guard
+    // rather than becoming a second exported guard: two guards would report the page
+    // on one run and the sidecar only on the next, costing a build cycle.
+    let err;
+    try {
+      assertNoSkillsDrift({
+        ...ok,
+        onDisk: ['a', 'b', 'aid-deleted'],
+        onDiskSidecars: ['a', 'b', 'aid-deleted'],
+      });
+    } catch (e) {
+      err = e;
+    }
+    expect(err).toBeDefined();
+    expect(err.message).toContain('orphan pages: aid-deleted');
+    expect(err.message).toContain('git rm site/src/content/docs/skills/aid-deleted.md');
+    expect(err.message).toContain('orphan sidecars: aid-deleted');
+    expect(err.message).toContain('git rm site/src/data/skill-flows/aid-deleted.flow.json');
+    // One throw, not two — and the guard NAME is unchanged, because feature-001
+    // § Telemetry pins `skills drift` in a closed list of grep-able names.
+    expect(err.message.match(/skills drift:/g)).toHaveLength(1);
+    expect(err.message).not.toContain('sidecar drift');
+  });
+
+  it('emits the four parts in the fixed S1 order', () => {
+    let err;
+    try {
+      assertNoSkillsDrift({
+        ...ok,
+        onDisk: ['a', 'orphanpage'],
+        onDiskSidecars: ['a', 'orphansidecar'],
+      });
+    } catch (e) {
+      err = e;
+    }
+    const m = err.message;
+    const order = [
+      m.indexOf('missing pages:'),
+      m.indexOf('orphan pages:'),
+      m.indexOf('missing sidecars:'),
+      m.indexOf('orphan sidecars:'),
+    ];
+    // All four present …
+    expect(order.every((i) => i >= 0)).toBe(true);
+    // … and strictly ascending, which is what pins the order rather than mere presence.
+    expect(order).toEqual([...order].sort((x, y) => x - y));
+    expect(new Set(order).size).toBe(4);
+  });
+
+  it('both sidecar sets are REQUIRED, not defaulted', () => {
+    // A defaulted set is a guard that silently passes when a caller forgets it —
+    // the silent-skip class KI-008 has already cost this work once.
+    expect(() => assertNoSkillsDrift({ expected: ['a'], written: ['a'], onDisk: ['a'] })).toThrow(
+      /expectedSidecars is required/
+    );
+    expect(() =>
+      assertNoSkillsDrift({ ...ok, onDiskSidecars: undefined })
+    ).toThrow(/onDiskSidecars is required/);
+  });
+
+  it('a chart-less skill is not a missing sidecar', () => {
+    // 77 of 111 skills are correctly chart-less until feature-004's doorway
+    // extractors land. `expectedSidecars` is separate from `expected` for exactly
+    // this reason; passing `expected` here would throw on all of them.
+    expect(() =>
+      assertNoSkillsDrift({
+        expected: ['a', 'b', 'doorway'],
+        written: ['a', 'b', 'doorway'],
+        onDisk: ['a', 'b', 'doorway'],
+        expectedSidecars: ['a', 'b'],
+        onDiskSidecars: ['a', 'b'],
+      })
+    ).not.toThrow();
+  });
+
   it('reports each delta sorted', () => {
     let err;
     try {
       assertNoSkillsDrift({
+        ...ok,
         expected: ['a'],
         written: ['a'],
         onDisk: ['a', 'zz', 'mm', 'bb'].sort(),
+        expectedSidecars: ['a'],
+        onDiskSidecars: ['a'],
       });
     } catch (e) {
       err = e;
@@ -1140,6 +1250,167 @@ describe('assertNoDeadCards — all branches', () => {
   });
 });
 
+// ── task-030: sidecar emission and shapeCounts ────────────────────────────────
+
+describe('gen-skills: flow sidecars', () => {
+  const FLOWS_DIR = join(SITE_ROOT, 'src', 'data', 'skill-flows');
+
+  /** Sidecar basenames on disk, sorted. */
+  function onDiskSidecars() {
+    return readdirSync(FLOWS_DIR)
+      .filter((f) => f.endsWith('.flow.json'))
+      .map((f) => f.slice(0, -'.flow.json'.length))
+      .sort();
+  }
+
+  /** The manifest as parsed JSON. */
+  function manifest() {
+    return JSON.parse(readFileSync(MANIFEST_PATH, 'utf8'));
+  }
+
+  it('writes one sidecar per charted skill, and none for a chart-less one', () => {
+    const m = manifest();
+    const files = onDiskSidecars();
+
+    // Derived from the classifier via the manifest, never a literal.
+    const chartable = ['dispatch-table', 'inline-states', 'residual'];
+    const expectedCount = chartable.reduce((n, s) => n + m.shapeCounts[s], 0);
+
+    expect(files).toHaveLength(expectedCount);
+    expect(expectedCount).toBeGreaterThan(0); // non-vacuity
+    expect(files).toEqual(m.sidecars.map((r) => r.dest.split('/').pop().replace('.flow.json', '')).sort());
+
+    // A chart-less skill has no sidecar. aid-add-api is a doorway shape today.
+    const doorwayCount = m.shapeCounts['engine-doorway'] + m.shapeCounts['sibling-doorway'];
+    expect(doorwayCount).toBeGreaterThan(0);
+    expect(files).toHaveLength(getCanonicalDirNames().length - doorwayCount);
+  });
+
+  it('every sidecar equals serializeChart(chart) byte for byte', () => {
+    const files = onDiskSidecars();
+    expect(files.length).toBeGreaterThan(0);
+
+    for (const name of files) {
+      const onDisk = readFileSync(join(FLOWS_DIR, `${name}.flow.json`), 'utf8');
+      const expected = serializeChart(buildFlowChart({ name, dir: REPO_ROOT }));
+      expect(onDisk).toBe(expected);
+    }
+  });
+
+  it('sidecar bytes are two-space JSON, LF only, one trailing newline', () => {
+    for (const name of onDiskSidecars()) {
+      const raw = readFileSync(join(FLOWS_DIR, `${name}.flow.json`));
+      const text = raw.toString('utf8');
+      expect(raw.includes(0x0d)).toBe(false);           // no CR anywhere
+      expect(text.endsWith('\n')).toBe(true);
+      expect(text.endsWith('\n\n')).toBe(false);
+      expect(text).toContain('\n  "skill"');            // two-space indent
+    }
+  });
+
+  it('the manifest sidecars key is sorted by literal src ascending', () => {
+    const srcs = manifest().sidecars.map((r) => r.src);
+    expect(srcs.length).toBeGreaterThan(0);
+    const sorted = srcs.slice().sort((a, b) => (a < b ? -1 : a > b ? 1 : 0));
+    expect(srcs).toEqual(sorted);
+    // Strictly ascending — no duplicate src, which is what keeps this out of `entries`.
+    expect(new Set(srcs).size).toBe(srcs.length);
+  });
+
+  it('sidecars ride in their own key, never in entries or generatedPaths', () => {
+    const m = manifest();
+    const flowPaths = m.sidecars.map((r) => r.dest);
+    expect(flowPaths.length).toBeGreaterThan(0);
+    for (const p of flowPaths) {
+      expect(m.generatedPaths).not.toContain(p);
+      expect(m.entries.map((e) => e.dest)).not.toContain(p);
+    }
+    // entries stays exactly one row per page plus the index row.
+    expect(m.entries).toHaveLength(getCanonicalDirNames().length + 1);
+  });
+
+  it('every manifest path is a POSIX string', () => {
+    const m = manifest();
+    const all = [
+      ...m.entries.flatMap((e) => [e.src, e.dest]),
+      ...m.generatedPaths,
+      ...m.sidecars.flatMap((r) => [r.src, r.dest]),
+    ];
+    expect(all.length).toBeGreaterThan(0);
+    for (const p of all) expect(p).not.toContain('\\');
+  });
+});
+
+describe('gen-skills: shapeCounts', () => {
+  function manifest() {
+    return JSON.parse(readFileSync(MANIFEST_PATH, 'utf8'));
+  }
+
+  const SHAPE_ORDER = [
+    'dispatch-table',
+    'inline-states',
+    'sibling-doorway',
+    'engine-doorway',
+    'residual',
+  ];
+
+  it('carries all five classifier shapes, in the enum declared order', () => {
+    // Key ORDER, not merely presence — a fixed, fully-populated key set keeps the
+    // manifest bytes independent of which shapes the corpus happens to contain.
+    expect(Object.keys(manifest().shapeCounts)).toEqual(SHAPE_ORDER);
+  });
+
+  it('counts sum to the on-disk directory count', () => {
+    const counts = manifest().shapeCounts;
+    const sum = Object.values(counts).reduce((a, b) => a + b, 0);
+    expect(sum).toBe(getCanonicalDirNames().length);
+    // Every value an integer; the SPEC forbids asserting any per-shape figure here.
+    for (const v of Object.values(counts)) expect(Number.isInteger(v)).toBe(true);
+  });
+
+  it('agrees with the live classifier, shape by shape', () => {
+    // The manifest is the only authority for these numbers, so the check is that it
+    // equals a fresh classification — not that it equals any literal.
+    const fresh = Object.fromEntries(SHAPE_ORDER.map((s) => [s, 0]));
+    for (const dirName of getCanonicalDirNames()) {
+      const file = join(REPO_ROOT, 'canonical', 'skills', dirName, 'SKILL.md');
+      const { shape } = classifySkill({
+        name: dirName,
+        dir: REPO_ROOT,
+        frontmatter: {},
+        body: readFileSync(file, 'utf8'),
+      });
+      fresh[shape] += 1;
+    }
+    expect(manifest().shapeCounts).toEqual(fresh);
+  });
+
+  it('no per-shape number is printed to stdout or written into any page', () => {
+    const counts = manifest().shapeCounts;
+    const run = spawnSync(process.execPath, [join(SITE_ROOT, 'scripts', 'gen-skills.mjs')], {
+      cwd: SITE_ROOT, encoding: 'utf8',
+    });
+    expect(run.status).toBe(0);
+    // The phase lines carry the corpus total; none may carry a per-shape figure under
+    // a shape's name. Checked as `<shape>` adjacency rather than bare numbers, since
+    // 111 legitimately appears in the parsed/wrote lines.
+    for (const shape of Object.keys(counts)) {
+      expect(run.stdout).not.toContain(shape);
+    }
+  });
+
+  it('the generator source contains no per-shape literal', () => {
+    const src = readFileSync(join(SITE_ROOT, 'scripts', 'gen-skills.mjs'), 'utf8');
+    const counts = Object.values(manifest().shapeCounts).filter((n) => n > 0);
+    expect(counts.length).toBeGreaterThan(0);
+    // Strip comments first: the prose explains the seam and may cite corpus figures.
+    const code = src.replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '');
+    for (const n of new Set(counts)) {
+      expect(code).not.toMatch(new RegExp(`(?<![\\w.])${n}(?![\\w.])`));
+    }
+  });
+});
+
 // ── Run-level flow-warning report (task-029 AC: "logged with a run-level count") ──
 
 describe('flow warnings reach a human', () => {
@@ -1183,19 +1454,37 @@ describe('flow warnings reach a human', () => {
     expect(lines.join('\n')).toContain('grade/teach-back/act-back/TRACE-1');
   });
 
+  it('rebuilding the SAME chart does not double its warnings', () => {
+    // The accumulator is keyed by skill because one generator run builds each chart
+    // twice — once in the body provider during RENDER, once to write the sidecar.
+    // An append-only list reported 18 warnings across 14 charts and named every skill
+    // twice, making the count a property of how often the generator asked rather than
+    // of the corpus.
+    resetFlowWarnings();
+    buildFlowChart({ name: 'aid-update-kb', dir: REPO_ROOT });
+    const once = summarizeFlowWarnings();
+    expect(once.total).toBeGreaterThan(0);
+
+    buildFlowChart({ name: 'aid-update-kb', dir: REPO_ROOT });
+    expect(summarizeFlowWarnings()).toEqual(once);
+  });
+
   it('resetFlowWarnings makes a second run report its own total, not a running one', () => {
     resetFlowWarnings();
     buildFlowChart({ name: 'aid-update-kb', dir: REPO_ROOT });
     const first = summarizeFlowWarnings().total;
     expect(first).toBeGreaterThan(0);
 
-    // Without the reset, building the same chart again would double the count.
-    buildFlowChart({ name: 'aid-update-kb', dir: REPO_ROOT });
-    expect(summarizeFlowWarnings().total).toBe(first * 2);
+    // A DIFFERENT warning-carrying skill, to show the accumulator does grow — so the
+    // reset assertion below cannot pass merely because nothing accumulates.
+    buildFlowChart({ name: 'aid-execute', dir: REPO_ROOT });
+    expect(summarizeFlowWarnings().total).toBeGreaterThan(first);
+    expect(summarizeFlowWarnings().charts).toBe(2);
 
     resetFlowWarnings();
     buildFlowChart({ name: 'aid-update-kb', dir: REPO_ROOT });
     expect(summarizeFlowWarnings().total).toBe(first);
+    expect(summarizeFlowWarnings().charts).toBe(1);
   });
 
   it('a chart with no warnings does not enter the accumulator', () => {

@@ -52,6 +52,18 @@ export const SITE_SKILLS_DIR = resolve(SITE_ROOT, 'src', 'content', 'docs', 'ski
  */
 export const SKILLS_MANIFEST_ABS = resolve(SITE_ROOT, 'scripts', '.skills-manifest.json');
 
+/**
+ * Absolute OS path to site/src/data/skill-flows/ (flow-chart sidecar directory).
+ *
+ * Outside the docs content collection on purpose: a non-page file under
+ * `src/content/docs/` is either parsed as content or breaks the collection.
+ * `src/data/` is the site's existing home for data modules a component consumes,
+ * which is what the sidecar is — readable by Node at build time (feature-005) and
+ * importable from an Astro component (feature-006). `public/` is fetch-only and
+ * `scripts/` is not importable from a component, so each fails one of those.
+ */
+export const SITE_SKILL_FLOWS_DIR = resolve(SITE_ROOT, 'src', 'data', 'skill-flows');
+
 // ── POSIX repo-relative string builders ───────────────────────────────────
 // Return values are POSIX strings built by string concatenation (forward
 // slashes only).  They are the exact strings written to .skills-manifest.json.
@@ -108,4 +120,22 @@ export function skillFileAbs(dirName) {
  */
 export function skillDestAbs(dirName) {
   return resolve(SITE_SKILLS_DIR, dirName + '.md');
+}
+
+/**
+ * Repo-relative POSIX destination path for a skill's flow sidecar.
+ * @param {string} dirName  e.g. 'aid-create-api'
+ * @returns {string}        e.g. 'site/src/data/skill-flows/aid-create-api.flow.json'
+ */
+export function skillFlowPath(dirName) {
+  return 'site/src/data/skill-flows/' + dirName + '.flow.json';
+}
+
+/**
+ * Absolute OS path to a skill's flow sidecar.
+ * @param {string} dirName  e.g. 'aid-create-api'
+ * @returns {string}
+ */
+export function skillFlowAbs(dirName) {
+  return resolve(SITE_SKILL_FLOWS_DIR, dirName + '.flow.json');
 }

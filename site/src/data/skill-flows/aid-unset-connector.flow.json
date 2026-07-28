@@ -1,0 +1,130 @@
+{
+  "skill": "aid-unset-connector",
+  "shape": "residual",
+  "extractor": "residual",
+  "confidence": "approximate",
+  "title": "aid-unset-connector — state flow",
+  "nodes": [
+    {
+      "id": "n1",
+      "order": 1,
+      "name": "STEP-0",
+      "label": "Validate arguments",
+      "kind": "entry",
+      "terminal": null,
+      "provenance": {
+        "file": "canonical/skills/aid-unset-connector/SKILL.md",
+        "startLine": 38,
+        "endLine": 38,
+        "sourceKind": "skill",
+        "excerpt": "### Step 0: Validate arguments"
+      },
+      "detail": null
+    },
+    {
+      "id": "n2",
+      "order": 2,
+      "name": "STEP-1",
+      "label": "Resolve `<tool>` → descriptor stem",
+      "kind": "step",
+      "terminal": null,
+      "provenance": {
+        "file": "canonical/skills/aid-unset-connector/SKILL.md",
+        "startLine": 57,
+        "endLine": 57,
+        "sourceKind": "skill",
+        "excerpt": "## Step 1: Resolve `<tool>` → descriptor stem"
+      },
+      "detail": null
+    },
+    {
+      "id": "n3",
+      "order": 3,
+      "name": "STEP-2",
+      "label": "Single-stem REMOVE (`reconcile.md`)",
+      "kind": "step",
+      "terminal": null,
+      "provenance": {
+        "file": "canonical/skills/aid-unset-connector/SKILL.md",
+        "startLine": 71,
+        "endLine": 71,
+        "sourceKind": "skill",
+        "excerpt": "## Step 2: Single-stem REMOVE (`reconcile.md`)"
+      },
+      "detail": null
+    },
+    {
+      "id": "n4",
+      "order": 4,
+      "name": "STEP-3",
+      "label": "Rebuild `INDEX.md`",
+      "kind": "exit",
+      "terminal": {
+        "advanceType": "UNSPECIFIED",
+        "handoff": null
+      },
+      "provenance": {
+        "file": "canonical/skills/aid-unset-connector/SKILL.md",
+        "startLine": 101,
+        "endLine": 101,
+        "sourceKind": "skill",
+        "excerpt": "## Step 3: Rebuild `INDEX.md`"
+      },
+      "detail": null
+    }
+  ],
+  "edges": [
+    {
+      "from": "n1",
+      "to": "n2",
+      "kind": "sequence",
+      "condition": null,
+      "advanceType": "CHAIN",
+      "provenance": {
+        "file": "canonical/skills/aid-unset-connector/SKILL.md",
+        "startLine": 57,
+        "endLine": 57,
+        "sourceKind": "skill",
+        "excerpt": "## Step 1: Resolve `<tool>` → descriptor stem"
+      }
+    },
+    {
+      "from": "n2",
+      "to": "n3",
+      "kind": "sequence",
+      "condition": null,
+      "advanceType": "CHAIN",
+      "provenance": {
+        "file": "canonical/skills/aid-unset-connector/SKILL.md",
+        "startLine": 71,
+        "endLine": 71,
+        "sourceKind": "skill",
+        "excerpt": "## Step 2: Single-stem REMOVE (`reconcile.md`)"
+      }
+    },
+    {
+      "from": "n3",
+      "to": "n4",
+      "kind": "sequence",
+      "condition": null,
+      "advanceType": "CHAIN",
+      "provenance": {
+        "file": "canonical/skills/aid-unset-connector/SKILL.md",
+        "startLine": 101,
+        "endLine": 101,
+        "sourceKind": "skill",
+        "excerpt": "## Step 3: Rebuild `INDEX.md`"
+      }
+    }
+  ],
+  "entries": [
+    "n1"
+  ],
+  "exits": [
+    "n4"
+  ],
+  "sources": [
+    "canonical/skills/aid-unset-connector/SKILL.md"
+  ],
+  "warnings": []
+}

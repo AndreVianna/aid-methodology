@@ -26,14 +26,23 @@ import { renderSkillPage } from './skills/render-page.mjs';
 import { loadShortcutCatalog } from './skills/catalog.mjs';
 import { assignGroups } from './skills/groups.mjs';
 import { renderSkillIndex } from './skills/render-index.mjs';
-import { resetFlowWarnings, summarizeFlowWarnings } from './lib/flow-graph/index.mjs';
+import {
+  resetFlowWarnings,
+  summarizeFlowWarnings,
+  classifySkill,
+  buildFlowChart,
+  serializeChart,
+} from './lib/flow-graph/index.mjs';
 import {
   REPO_ROOT,
   SITE_SKILLS_DIR,
+  SITE_SKILL_FLOWS_DIR,
   SKILLS_MANIFEST_ABS,
   skillSourcePath,
   skillDestPath,
   skillDestAbs,
+  skillFlowPath,
+  skillFlowAbs,
 } from './skills/paths.mjs';
 
 // ── Index-row constants ────────────────────────────────────────────────────────
@@ -46,6 +55,36 @@ import {
 // comparison, no localeCompare.
 const INDEX_SRC = 'canonical/skills/*/SKILL.md, canonical/aid/templates/shortcut-catalog.yml';
 const INDEX_DEST = 'site/src/content/docs/skills/index.md';
+
+// ── Shape constants ────────────────────────────────────────────────────────────
+
+/**
+ * The five classifier shapes, in the enum's declared order (task-019 seam S2).
+ *
+ * `shapeCounts` carries all five as literal keys with an integer each, `0` included
+ * where a shape is unpopulated. Emitting only the shapes the scan encountered would
+ * make the key set a function of the corpus, so a shape falling to zero would change
+ * the manifest's *shape* rather than its numbers, and an absent key would be
+ * indistinguishable from a classifier that never ran. An explicit `0` states the fact.
+ *
+ * These are shape names, not counts. No per-shape number appears anywhere in this
+ * file — `shapeCounts` is the repo's only authority for those, and it is computed.
+ */
+const SHAPE_ORDER = [
+  'dispatch-table',
+  'inline-states',
+  'sibling-doorway',
+  'engine-doorway',
+  'residual',
+];
+
+/**
+ * Shapes that currently produce a chart, and therefore a sidecar.
+ *
+ * feature-003's three authored shapes. feature-004 adds the two doorway shapes in
+ * tasks 035–037, at which point every skill charts and this set equals SHAPE_ORDER.
+ */
+const CHARTABLE_SHAPES = new Set(['dispatch-table', 'inline-states', 'residual']);
 
 // ── Main ──────────────────────────────────────────────────────────────────────
 
@@ -117,6 +156,44 @@ export async function main() {
   const indexDestAbs = resolve(SITE_SKILLS_DIR, 'index.md');
   writeFileSync(indexDestAbs, indexContent, 'utf8');
 
+  // ── 5b. SIDECARS ────────────────────────────────────────────────────────────
+  // One <skill>.flow.json per charted skill, bytes exactly serializeChart(chart).
+  // No line is printed for this step: feature-001's stdout contract is four phase
+  // lines, and task-030 must not widen it.
+  //
+  // Classification drives both the sidecar set and shapeCounts, so the two cannot
+  // disagree — shapeCounts is the repo's only authority for per-shape numbers, and
+  // an authority computed from a second scan would be a second authority.
+  mkdirSync(SITE_SKILL_FLOWS_DIR, { recursive: true });
+
+  const shapeCounts = Object.fromEntries(SHAPE_ORDER.map((s) => [s, 0]));
+  const chartedDirNames = [];
+
+  for (const skill of skills) {
+    const { shape } = classifySkill({
+      name: skill.dirName,
+      dir: REPO_ROOT,
+      frontmatter: Object.fromEntries((skill.fields ?? []).map((f) => [f.key, f.value])),
+      body: skill.body ?? '',
+    });
+
+    if (!(shape in shapeCounts)) {
+      throw new Error(
+        `[gen-skills] shapeCounts: classifier returned unknown shape '${shape}' for ` +
+        `'${skill.dirName}' — SHAPE_ORDER must list every classifier value.`
+      );
+    }
+    shapeCounts[shape] += 1;
+
+    // A sidecar exists only where a chart does. That is 34 of 111 until feature-004's
+    // doorway extractors land and every shape charts.
+    if (!CHARTABLE_SHAPES.has(shape)) continue;
+
+    const chart = buildFlowChart({ name: skill.dirName, dir: REPO_ROOT });
+    writeFileSync(skillFlowAbs(skill.dirName), serializeChart(chart), 'utf8');
+    chartedDirNames.push(skill.dirName);
+  }
+
   // ── 6. MANIFEST ─────────────────────────────────────────────────────────────
   // Write scripts/.skills-manifest.json — sibling of .reference-manifest.json,
   // outside the content-collection root so docsLoader() never sees it.
@@ -135,10 +212,26 @@ export async function main() {
     (a, b) => (a.src < b.src ? -1 : a.src > b.src ? 1 : 0)
   );
 
+  // Sidecars ride in their own key, never as `entries` rows and never in
+  // `generatedPaths` (task-019 seam S1). Six green assertions pin `entries` to exactly
+  // one row per page — including one on *strictly* ascending `src`, which a page and
+  // sidecar sharing a `src` would violate. Same pure string comparator as `entries`.
+  const sidecars = chartedDirNames
+    .map((dirName) => ({
+      src: skillSourcePath(dirName),
+      dest: skillFlowPath(dirName),
+    }))
+    .sort((a, b) => (a.src < b.src ? -1 : a.src > b.src ? 1 : 0));
+
+  // Five keys in fixed insertion order (seam S2). This diverges deliberately from
+  // .reference-manifest.json, which stays three-key and byte-untouched: from
+  // delivery-003 this manifest is a superset of that shape rather than a mirror of it.
   const manifest = {
     generator: 'site/scripts/gen-skills.mjs',
     entries,
     generatedPaths: entries.map((e) => e.dest),
+    sidecars,
+    shapeCounts,
   };
 
   writeFileSync(SKILLS_MANIFEST_ABS, JSON.stringify(manifest, null, 2) + '\n', 'utf8');
@@ -164,7 +257,21 @@ export async function main() {
     : [];
   const onDisk = onDiskFiles.map((f) => f.slice(0, -3)).sort();
 
-  assertNoSkillsDrift({ expected, written, onDisk });
+  // onDiskSidecars: *.flow.json under src/data/skill-flows/, basename without the
+  // .flow.json suffix. Read from disk rather than from chartedDirNames, so a sidecar
+  // left behind by a deleted skill is caught — the one branch that actually fires.
+  const onDiskSidecarFiles = existsSync(SITE_SKILL_FLOWS_DIR)
+    ? readdirSync(SITE_SKILL_FLOWS_DIR).filter((f) => f.endsWith('.flow.json'))
+    : [];
+  const onDiskSidecars = onDiskSidecarFiles.map((f) => f.slice(0, -'.flow.json'.length)).sort();
+
+  assertNoSkillsDrift({
+    expected,
+    written,
+    onDisk,
+    expectedSidecars: chartedDirNames.slice().sort(),
+    onDiskSidecars,
+  });
 
   // ── 7a. CARDS ───────────────────────────────────────────────────────────────
   // Dead card guard: every card target must be among the pages just written.
@@ -225,9 +332,40 @@ export function reportFlowWarnings(log = console.log) {
  * auto-pruning would keep the build green and turn AC-1's loud coverage failure
  * into exactly the silent rot the criterion exists to prevent.
  *
- * @param {{ expected: string[], written: string[], onDisk: string[] }} sets — each sorted
+ * **Sidecars join block (b), not block (a)** (task-019 seam S1). An orphan sidecar is
+ * the same reachable failure as an orphan page — the generator never deletes, and
+ * deliveries 004 and 005 read the sidecar — so it belongs in the same guard and the
+ * same single throw. Two separate guards would report the page on one run and the
+ * sidecar only on the next, costing a build cycle on the one failure that actually
+ * occurs. The realistic case, a skill deleted from `canonical/`, orphans a page and
+ * its sidecar at once and must produce one throw naming both remedies.
+ *
+ * `expectedSidecars` is **required and separate from `expected`**, which is a delta
+ * against S1's letter ("the same `expected` set"). A sidecar can only exist for a
+ * skill that produces a chart: 34 of 111 until feature-004's doorway extractors land,
+ * all 111 afterwards, at which point this set equals `expected` and S1 holds exactly.
+ * Passing `expected` today would make the guard throw on 77 skills that are correctly
+ * chart-less. The set is required rather than defaulted for the same reason S1 gave
+ * for `onDiskSidecars`: a defaulted set is a guard that silently passes when a caller
+ * forgets it, which is the silent-skip class KI-008 has already cost this work once.
+ *
+ * @param {{ expected: string[], written: string[], onDisk: string[],
+ *           expectedSidecars: string[], onDiskSidecars: string[] }} sets — each sorted
  */
-export function assertNoSkillsDrift({ expected, written, onDisk }) {
+export function assertNoSkillsDrift({ expected, written, onDisk, expectedSidecars, onDiskSidecars }) {
+  // Required-not-defaulted: name the omission rather than skipping the comparison.
+  for (const [key, value] of [
+    ['expectedSidecars', expectedSidecars],
+    ['onDiskSidecars', onDiskSidecars],
+  ]) {
+    if (!Array.isArray(value)) {
+      throw new Error(
+        `[gen-skills] skills drift: ${key} is required (task-019 seam S1) — ` +
+        'a defaulted sidecar set is a guard that silently passes.'
+      );
+    }
+  }
+
   // (a) the write pass must match discovery
   const missingFromWritten = expected.filter((d) => !written.includes(d));
   const extraInWritten = written.filter((d) => !expected.includes(d));
@@ -246,7 +384,16 @@ export function assertNoSkillsDrift({ expected, written, onDisk }) {
   // page left behind by a deleted skill, which the write pass cannot see.
   const missingPages = expected.filter((d) => !onDisk.includes(d));
   const orphanPages = onDisk.filter((d) => !expected.includes(d));
-  if (missingPages.length > 0 || orphanPages.length > 0) {
+  const missingSidecars = expectedSidecars.filter((d) => !onDiskSidecars.includes(d));
+  const orphanSidecars = onDiskSidecars.filter((d) => !expectedSidecars.includes(d));
+
+  if (
+    missingPages.length > 0 || orphanPages.length > 0 ||
+    missingSidecars.length > 0 || orphanSidecars.length > 0
+  ) {
+    // Fixed part order (S1): missing pages, orphan pages, missing sidecars, orphan
+    // sidecars. The page parts keep their exact wording and position, which is what
+    // keeps feature-001's seven message assertions green.
     const parts = [];
     if (missingPages.length > 0) {
       parts.push('missing pages: ' + missingPages.join(', '));
@@ -255,6 +402,17 @@ export function assertNoSkillsDrift({ expected, written, onDisk }) {
       const remedy = orphanPages.map((d) => `git rm site/src/content/docs/skills/${d}.md`).join(', ');
       parts.push('orphan pages: ' + orphanPages.join(', ') + ' (remedy: ' + remedy + ')');
     }
+    if (missingSidecars.length > 0) {
+      parts.push('missing sidecars: ' + missingSidecars.join(', '));
+    }
+    if (orphanSidecars.length > 0) {
+      const remedy = orphanSidecars
+        .map((d) => `git rm site/src/data/skill-flows/${d}.flow.json`)
+        .join(', ');
+      parts.push('orphan sidecars: ' + orphanSidecars.join(', ') + ' (remedy: ' + remedy + ')');
+    }
+    // The guard NAME is unchanged: feature-001 § Telemetry pins `skills drift` in a
+    // closed list of grep-able names, so no `sidecar drift` name is minted.
     throw new Error('[gen-skills] skills drift: ' + parts.join('; '));
   }
 }

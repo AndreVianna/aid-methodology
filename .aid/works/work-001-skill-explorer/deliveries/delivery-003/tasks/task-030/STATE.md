@@ -1,8 +1,8 @@
 ---
-state: Pending
+state: In Review
 review: "--"
 elapsed: "--"
-notes: "--"
+notes: "Owner resolved the stdout-contract conflict with task-029: the flow report stays. Seam S1 needed one delta -- expectedSidecars is separate from expected, since only charted skills have sidecars."
 ticket_ref: "--"
 ---
 
