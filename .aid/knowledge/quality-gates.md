@@ -350,8 +350,13 @@ defect is caught at GENERATE rather than one phase later at REVIEW:
 | Spine closure | `.claude/aid/scripts/kb/closure-check.sh` | Every load-bearing concept is grounded or dismissed |
 | Version sync | `.claude/aid/scripts/release/check-version-sync.sh` | All version carriers agree (release gate) |
 
-These also run in CI's `kb-hygiene` job for this repo (CONFIRMED in
-`.github/workflows/test.yml`), making them blocking for merges to master.
+**Of these, only the frontmatter lint and the KB-index freshness check actually run in
+CI's `kb-hygiene` job** (`.github/workflows/test.yml`), and only those two are blocking
+for merges to master. The citation lint, the spine-closure check and the version-sync
+check are **not wired into CI** — verified 2026-07-28:
+`grep -n 'kb-citation-lint\|closure-check\|check-version-sync' .github/workflows/*.yml`
+returns nothing. This paragraph previously claimed all of them ran, marked CONFIRMED.
+Wiring the citation lint into CI is delivery-017's job; the other two remain unwired.
 
 ---
 

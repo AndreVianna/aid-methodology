@@ -145,14 +145,14 @@ taxonomy gives `[MEDIUM]` for a confined instance. Both are re-derived.
 | Artifact | Fate |
 |---|---|
 | `grade.sh` | **Byte-unchanged.** Feature-002 claims five comment lines, feature-003 one; this feature claims **none**. NFR-1 holds trivially |
-| `grade-summary.sh` | **Retained, gutted, and renamed `emit-summary-findings.sh`.** *Keeps:* the COV `doc_set` awk parse (91–103), the four validator invocations, the per-check pass/fail detection (257–313, 333–354). *Loses:* `WEIGHTS`, `PARTIAL_SCORES`, `letter_grade()`, `grade_order()`, `grade_from_order()`, `MACHINE_GRADE`, `HUMAN_GRADE`, `OVERALL_GRADE`, the `manual-checklist.json` read (366–377), and the A-−or-better exit semantics (593–598). *Gains:* one `writeback-ledger.sh --append-finding --rule SUMMARY-NN` call per failed check. *Exit codes* move to the linter alphabet — `0` clean, `1` findings emitted, `2` usage — per `coding-standards.md:226–229`, matching `check-gaps.sh` and `plan-resume.sh`. **The rename is not cosmetic:** a script named for a grade it no longer computes is exactly the drift this feature exists to remove, and a misnamed script is how the second backend grew |
+| `grade-summary.sh` | **Retained, gutted, and renamed `emit-summary-findings.sh`.** *Keeps:* the COV `doc_set` awk parse (91–103), the four validator invocations, the per-check pass/fail detection (257–313, 333–354). *Loses:* `WEIGHTS`, `PARTIAL_SCORES`, `letter_grade()`, `grade_order()`, `grade_from_order()`, `MACHINE_GRADE`, `HUMAN_GRADE`, `OVERALL_GRADE`, the `manual-checklist.json` read (366–377), and the A-−or-better exit semantics (593–598). *Gains:* one `writeback-ledger.sh --append-finding --rule SUMMARY-NN` call per failed check. *Exit codes* move to the linter alphabet — `0` clean, `1` findings emitted, `2` usage — per `.aid/knowledge/coding-standards.md:226–229`, matching `check-gaps.sh` and `plan-resume.sh`. **The rename is not cosmetic:** a script named for a grade it no longer computes is exactly the drift this feature exists to remove, and a misnamed script is how the second backend grew |
 | `manual-checklist.sh` | **Retained, de-scored.** `score_k1/score_k2/score_v1` and the three `*_score` JSON keys go. Keeps `K1_answer`, `K2_answer`, `V1_answer`, `notes`, `html_file`, `timestamp`. Becomes an **answer recorder** — which its own header already describes. `--input` becomes a schema validator rather than a rescorer |
 | `manual-checklist.json` | **Retained as a precondition artifact**, not a score carrier. Its `*_answer` values drive human-authored ledger rows; its *existence* gates APPROVAL (§1d item 3) |
 | `knowledge-summary/grading-rubric.md` | The Two-Grade Model (17–45), the weight column of the check table (48–72), the percentage ladder (85–123), and the four hard rules (125–147) are **deleted**; the file becomes a pointer to `review-rubrics/summary.md` plus the per-check *pass criteria* prose (176–265), which is genuinely useful and is what feature-002 re-derives the rules from |
 
 #### 1d. The three binary verdicts, each with its replacement
 
-**Verdict 1 — the essence gate** (`state-review.md:442–466`). Its condition 1 is *"zero open
+**Verdict 1 — the essence gate** (`canonical/skills/aid-discover/references/state-review.md:442–466`). Its condition 1 is *"zero open
 `[FIDELITY]` rows"*, and the file already says the gate *"is realized entirely through the merged
 rows. No separate boolean, no AND to reconcile."* So STATE.md Q12's "third backend" claim is
 overstated for the derivation and correct for one part: **condition 2 is a ratio** —
@@ -167,7 +167,7 @@ already written beside it** (*"any open `[ESSENCE-GAP]` row … caps the verdict
 argument is REQUIREMENTS' own argument for cutting FR-B8: at an A+ floor any open non-MINOR
 finding fails the gate regardless, so the ratio protects the *metric*, not the *gate*.
 
-**Verdict 2 — the act-back gate** (`state-review.md:468–495`). Identical shape, identical
+**Verdict 2 — the act-back gate** (`canonical/skills/aid-discover/references/state-review.md:468–495`). Identical shape, identical
 treatment. Condition 1 becomes *zero open rows whose `Rule` matches `^KB-2[0-6]$`* — the set
 feature-002 §6 already authored. Condition 2 (STATED-coverage ≥ 90%) retires on the same argument.
 Condition 3 (quality-contract section presence) is already an ordinary `[ACTBACK]` row; it becomes
@@ -234,7 +234,7 @@ Ships as `canonical/aid/scripts/config/lint-settings.sh`, asserting:
 
 | Key | Assertion | Enum source |
 |---|---|---|
-| `minimum_grade` (global + every `<skill>.minimum_grade`) | membership in the **closed 16-value ordered set** | `grading-rubric.md:62` |
+| `minimum_grade` (global + every `<skill>.minimum_grade`) | membership in the **closed 16-value ordered set** | `canonical/aid/templates/grading-rubric.md:62` |
 | `type` | `brownfield \| greenfield` | `aid-config/SKILL.md:143` |
 | `source_control` | `none \| git \| svn \| mercurial` | `aid-config/SKILL.md:144` |
 | `heartbeat_interval` | non-negative integer | `aid-config/SKILL.md:146` |
@@ -255,7 +255,7 @@ exactly two values: it admits `F+` and `F-`, not in the canonical 16. Those five
 where it is not** — so `lint-settings.sh` uses the closed enum, and the five regex sites are
 logged as a consistency note rather than edited.
 
-`/aid-config` already has a Validation table (`SKILL.md:137–146`), so FR-F1 is **mechanising an
+`/aid-config` already has a Validation table (`canonical/skills/aid-config/SKILL.md:137–146`), so FR-F1 is **mechanising an
 agent-enforced prose table** and extending it to the four `knowledge.*` keys that same file
 explicitly excludes (*"deliberately does not expose these"*, line 152).
 
@@ -285,7 +285,7 @@ affordable rather than a design compromise.**
 
 #### Exit codes, and the fourth AC's honest reading
 
-Linter alphabet per `coding-standards.md:226–229` — the same reasoning feature-004 §7 used to
+Linter alphabet per `.aid/knowledge/coding-standards.md:226–229` — the same reasoning feature-004 §7 used to
 split `check-gaps.sh` from `gap-register.sh`: `0` valid, no output; `1` violations, each printed as
 `<dotted.path>\t<value>\t<expected>` on stdout with diagnostics on stderr; `2` usage error or
 unreadable file.
@@ -355,7 +355,7 @@ grep -rn 'lint-frontmatter' canonical tests dashboard .github .aid/knowledge
 - `.github/workflows/test.yml:155` — the `kb-hygiene` CI job, plus a repo-local strict guard at
   `:158`. **This is what Q12 called "the dashboard".** The dashboard only mentions it in comments.
 - **No skill state.** `grep -c lint-frontmatter canonical/skills/` → `1`, a prose cross-reference
-  at `state-generate.md:863`.
+  at `canonical/skills/aid-discover/references/state-generate.md:863`.
 
 And the KB already *claims* it is wired: `quality-gates.md:340–342` heads a table *"Mechanical
 Gates Run by the Orchestrator … so a defect is caught at GENERATE rather than one phase later at
@@ -365,7 +365,7 @@ downward.
 
 #### The wiring site is pre-sanctioned
 
-`state-generate.md:863` reads: *"This gate is the model for moving any MECHANICAL authoring rule
+`canonical/skills/aid-discover/references/state-generate.md:863` reads: *"This gate is the model for moving any MECHANICAL authoring rule
 from 'self-reported in GENERATE / caught in REVIEW' to 'mechanically gated in GENERATE' (cf.
 `lint-frontmatter.sh` for frontmatter)."*
 
@@ -374,7 +374,7 @@ run; exit 0 → CHAIN; exit 1 → partition findings by doc, resolve each doc's 
 doc-set, re-dispatch the owning agents in parallel with the finding list, re-run, cap at 2 rounds,
 residual escalates to a Q&A entry. `aid-update-kb` inherits it for free.
 
-**One path-form correction, because it would ship broken otherwise.** `state-generate.md:850`
+**One path-form correction, because it would ship broken otherwise.** `canonical/skills/aid-discover/references/state-generate.md:850`
 invokes the citation lint as `bash .claude/aid/scripts/kb/kb-citation-lint.sh`.
 `rewrite_install_paths` rewrites only `canonical/...` forms, so a hardcoded `.claude/aid/` path in
 a canonical body ships literally to codex, cursor, copilot-cli and antigravity — Q3 defect (c)
@@ -472,7 +472,7 @@ rubric is a catalog entry and `grade.sh` uses neither.
 | Grade call | **none** — *"The grade is calculated"* (`:82`) is an agent assertion | `bash canonical/aid/scripts/grade.sh --explain …` (`:52`) |
 | Severity vocabulary | `Minor/Low/Medium/High/Critical` — **bare words** (`:82`) | bracketed tokens |
 
-**The third is the one that bites.** `grading-rubric.md:27` states it outright: *"An issue written
+**The third is the one that bites.** `canonical/aid/templates/grading-rubric.md:27` states it outright: *"An issue written
 `Minor: missing comment` will be counted as zero issues, producing a silent A+."* So the
 per-section review's vocabulary is the exact form the grading rubric names as producing a false
 pass — and with no ledger and no `grade.sh` call, nothing catches it.
@@ -544,7 +544,7 @@ dependency is visible); `tests/canonical/test-review-coverage-gaps.sh`;
 | `aid-discover/references/state-review.md` | `447–466`, `473–495` | 7–11 / after-427 / 575–576 feature-004; after-424 feature-003; 355 / after-357 / 404–411 feature-005. **Disjoint** |
 | `.../reviewer-prompt-anatomy.md` | `87–89`, the FM anchor entries, `113–116` (partial) | Feature-005 claims **223–224** only. Disjoint |
 | `.../state-generate.md` | **insertion after 862**; `850` corrected as collateral | Unclaimed |
-| `aid-config/SKILL.md` | `137–146`, `181–190` | Unclaimed. **Two verified defects:** line 189's documented `read-setting.sh --key minimum_grade --default A` **exits non-zero** (the script requires `--skill X --key Y` or `--path A.B`), and 181–184 states a *two*-tier resolution where the script and `grading-rubric.md:75` both state three |
+| `aid-config/SKILL.md` | `137–146`, `181–190` | Unclaimed. **Two verified defects:** line 189's documented `read-setting.sh --key minimum_grade --default A` **exits non-zero** (the script requires `--skill X --key Y` or `--path A.B`), and 181–184 states a *two*-tier resolution where the script and `canonical/aid/templates/grading-rubric.md:75` both state three |
 | `grading-rubric.md` | `66–68` | Feature-001 claims 5–13 and states 15–63 unchanged. 66–68 documents `review.minimum_grade` as the storage location, which `read-setting.sh:245`/`:303` treats as **legacy**. Collateral, unavoidable: FR-F1's gate cannot cite a retired key path |
 | `aid-specify/references/state-continue.md` | `67–101` | Feature-001 claims line 81; feature-006 §6 now **excludes** this file. Collateral on 81 accepted |
 | `aid-plan/references/first-run-loop.md` | `142` | One line inside feature-006's span — declared collateral |
@@ -750,7 +750,7 @@ not a directory.
 Five, ordered so the largest item is not entangled with the five small ones.
 
 - **D1 — FR-F1.** `lint-settings.sh`, its suite, the three wiring sites, the `aid-config`
-  validation table, and `grading-rubric.md:66–68`. Fully self-contained; ships the
+  validation table, and `canonical/aid/templates/grading-rubric.md:66–68`. Fully self-contained; ships the
   highest-leverage gap alone.
 - **D2 — FR-F3.** The Step 5a-ii gate, the M2 subtraction, `--fail-on-skip`, the
   `quality-gates.md` correction, and the renderer-blind path fix. Independent of D1.

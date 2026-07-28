@@ -110,13 +110,15 @@ shown the prior verdict to do it.
 **The current model is worse than contradictory — it cannot run.** Verified in the one skill
 that already uses scratch ledgers:
 
-- `state-review.md:497–528` (step 2e) deletes every scratch **unconditionally** after each merge.
-- `state-fix.md:7` shows FIX reads only the canonical `discovery.md`; nothing re-creates a scratch.
+- `canonical/skills/aid-discover/references/state-review.md:497–528` (step 2e) deletes every scratch **unconditionally** after each merge.
+- `canonical/skills/aid-discover/references/state-fix.md:7` shows FIX reads only the canonical `discovery.md`; nothing re-creates a scratch.
 - Yet each mandate prompt tells a cycle-2 reviewer to read a file 2e already deleted —
-  `reviewer-prompt-correctness.md:127`, `-anatomy.md:223`, `-teachback.md:191`,
-  `-actback.md:183`, all of the form *"If re-reviewing: read existing `{{SCOPE}}-<mandate>.md`,
+  `canonical/skills/aid-discover/references/reviewer-prompt-correctness.md:127`,
+  `canonical/skills/aid-discover/references/reviewer-prompt-anatomy.md:223`,
+  `canonical/skills/aid-discover/references/reviewer-prompt-teachback.md:191`,
+  `canonical/skills/aid-discover/references/reviewer-prompt-actback.md:183` — all of the form *"If re-reviewing: read existing `{{SCOPE}}-<mandate>.md`,
   update Status for your prior rows"*.
-- And `state-review.md:404–411` builds on that — *"the mandate reviewers have updated their own
+- And `canonical/skills/aid-discover/references/state-review.md:404–411` builds on that — *"the mandate reviewers have updated their own
   rows' Status in their scratch ledgers. Merge rule: 1. For rows in the existing `{{SCOPE}}.md`
   that correspond to a mandate's scratch ledger, replace the row with the scratch ledger's
   version"*. A key **is** named, at lines 405–406: *"Each mandate reviewer's rows are identified
@@ -134,7 +136,7 @@ cannot survive that deletion. **FR-D5 is not a preference; it is the repair** �
 **The mechanism is a file, not a flag.** Every reviewer dispatch writes to a **per-attempt
 scratch ledger**; the durable `<scope>.md` is the **canonical** ledger and only the orchestrator
 writes it. This generalises `aid-discover`, the only skill that already works this way
-(`state-review.md:247` — *"Each mandate reviewer writes ONLY to its own scratch ledger … the
+(`canonical/skills/aid-discover/references/state-review.md:247` — *"Each mandate reviewer writes ONLY to its own scratch ledger … the
 canonical `{{SCOPE}}.md` ledger … is untouched until Step 2"*).
 
 | | Scratch path | Given to the reviewer | May see |

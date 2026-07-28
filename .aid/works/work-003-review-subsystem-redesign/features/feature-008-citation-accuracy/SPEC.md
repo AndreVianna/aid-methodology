@@ -190,7 +190,7 @@ git ls-files | grep -vE '^(profiles|\.claude|\.cursor|\.codex|packages)/' \
 ```
 
 **One** of those references sits inside feature-007's claimed regions —
-`state-generate.md:850`, whose invocation path form feature-007 §4 corrects. The two in
+`canonical/skills/aid-discover/references/state-generate.md:850`, whose invocation path form feature-007 §4 corrects. The two in
 `.aid/knowledge/quality-gates.md` are at lines **347** and **387**, and feature-007 claims
 341–342, 348, 364 and 388 in that file, so neither is claimed. The `kb-` prefix becomes a mild
 misnomer; that is accepted debt and a smaller lie than a cross-feature rename touching every one of
@@ -444,8 +444,8 @@ yield would be self-refuting.
 The 22 are still worth having, and all are cheap:
 
 - **4 `[UNRESOLVED]`.** Three are one authoring pattern: feature-005's evidence list continues
-  `reviewer-prompt-correctness.md:127` with the elliptical `-anatomy.md:223`, `-teachback.md:191`,
-  `-actback.md:183`. A reader recovers the elision; `grep` cannot. The fourth is `render.py:268` —
+  `reviewer-prompt-correctness.md:NNN` with elliptical continuations (`-anatomy.md:NNN` and
+  siblings). A reader recovers the elision; `grep` cannot. The fourth is a bare `render.py:NNN` —
   whose *content* is correct, but the file exists only under
   `.claude/skills/generate-profile/scripts/`, and a bare basename of a dev-only-tree file is
   unrecoverable. One qualified path fixes it.
@@ -494,7 +494,7 @@ Extends `tests/canonical/test-kb-citation-lint.sh`. Exit-code contract unchanged
 violations, `2` usage, per `coding-standards.md`'s Exit Codes section. Advisory findings print
 without changing the code, matching the `visual-fidelity` SKIP precedent.
 
-- **(a) Mode separation** — the extension decision made testable. One fixture, a `f.md:12` that
+- **(a) Mode separation** — the extension decision made testable. One fixture, a `f.md:NN` that
   resolves and is in range: `--profile durable` → exit 1; `--profile resolvable` → exit 0.
 - **(b) KB behaviour byte-unchanged** — `diff -q` of default-profile output on `.aid/knowledge`
   before and after. Measured today: exit 0,
@@ -504,10 +504,10 @@ without changing the code, matching the `visual-fidelity` SKIP precedent.
   all in `STATE.md`, and **zero** from the seven SPECs, because `features/feature-NNN/SPEC.md` is
   two levels down and task `DETAIL.md` is four. Oracle: a citation at each of depths 0–4;
   `--depth 4` finds five, depth 1 finds one.
-- **(d) En-dash ranges** — `f.md:10–20` against a 15-line file → exit 1 `[OUT-OF-RANGE]`.
+- **(d) En-dash ranges** — `f.md:NN–MM` against a 15-line file → exit 1 `[OUT-OF-RANGE]`.
   **Non-trivially false today**: the upper bound is currently invisible and this passes. The
   regression guard on the tokenizer fix.
-- **(e) Range, both directions** — `f.md:5` on a 10-line file → 0; `:11` → 1; `:5,11` → 1;
+- **(e) Range, both directions** — `f.md:NN` on a 10-line file → 0; `:11` → 1; `:5,11` → 1;
   `:5-11` → 1; `:5–11` → 1.
 - **(f) Resolution, three outcomes** — verbatim-resolvable → OK; zero candidates →
   `[UNRESOLVED]`; two → `[AMBIGUOUS]` with both listed. Per CLAUDE.md's transient-work-folder rule

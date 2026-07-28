@@ -105,7 +105,8 @@ Must
 
 **(i) The boilerplate split can be made byte-identical.** The renderer's `_resolve_includes`
 substitutes each `{{include:<name>}}` token with the template's content **after passing it
-through `rewrite_install_paths(content, install_root)`** — `render.py:268`, the final statement of
+through `rewrite_install_paths(content, install_root)`** —
+`.claude/skills/generate-profile/scripts/render.py:268`, the final statement of
 `_replace_include` (defined at 264, inside `_resolve_includes` at 257) — it is not a raw byte
 substitution. The byte-identity conclusion survives regardless, because that rewrite is
 **distributive over the concatenation**: it operates on path tokens within lines, and no path
@@ -648,7 +649,7 @@ anyway:
 |---|---|
 | **Q3(a)** `aid-execute/references/state-review.md` self-contradicts | **Fix here.** Line 3 says the reviewer *"produces the full grade"*; line 177 says *"No grade is computed at the task level."* No `## Step 1` or `## Step 2` heading exists. A Tier-1 caller, rewritten by the migration. **Count correction:** Q3 says "four times"; `grep -c 'Step 2'` returns **2** (lines 68, 117) |
 | **Q3(b)** `reviewer-guide.md:3` points at the removed Step 2 | **Survives.** feature-001 deletes 6–14 and 35; line 3 is untouched by all five. Resolved by retiring the file |
-| **Q3(c)** the `references/reviewer-guide.md` pointer is renderer-blind | **Survives.** `reviewer-brief.md:35` still carries the bare relative path. feature-001 fixes four *other* pointers; feature-002 fixes the `aid-discover` brief's. This one is nobody's |
+| **Q3(c)** the `references/reviewer-guide.md` pointer is renderer-blind | **Survives.** `canonical/skills/aid-execute/references/reviewer-brief.md:35` still carries the bare relative path. feature-001 fixes four *other* pointers; feature-002 fixes the `aid-discover` brief's. This one is nobody's |
 | **Q3(d)** `README.md:52` Large tier vs canonical `medium` | **Fix here.** 002 and 005 both explicitly declined it; now load-bearing because §3's carve-out is authored here |
 | *"Six per-skill briefs"* then seven listed; `aid-describe` has none | **Resolved here** by §5's redesign. `ls … \| wc -l` = 6; `aid-describe` needs no brief file |
 | *"EXACTLY these 5 sections"* but six ship | **Resolved here**, wholesale, by the shared template |
