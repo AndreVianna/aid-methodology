@@ -277,12 +277,36 @@ describe('Rule 2 — whole-token matching: hyphenated names and no substring mat
   });
 });
 
-describe('Rule 2 — case-insensitive state matching', () => {
-  it('resolves lowercase "done" clause to the declared state DONE', () => {
-    // Case-insensitive: 'done' matches 'DONE' in the index.
-    const result = parse(advBlock('done'), states('DONE'));
+describe('Rule 2 — state matching is CASE-SENSITIVE', () => {
+  // This describe block previously asserted the opposite — that a lowercase `done`
+  // clause resolved to state `DONE`. That rule fabricated edges out of ordinary
+  // prose: `aid-update-kb` gained a false `REVIEW -> SCOPE` transition, conditioned
+  // "picks the doc back up -- it is still in", because the word "scope" appeared in
+  // a parenthetical.
+  //
+  // Changed only after measuring, since the old behaviour was deliberate: of 48
+  // corpus edges, every one names its target in exact case and ZERO relied on a
+  // case-insensitive match. So the rule it guarded was unused by real content while
+  // actively producing a wrong edge. task-026 reached the same conclusion
+  // independently in `extract-inline` (lowercase "run" matching state `RUN`), and
+  // the two modules disagreed until this change.
+
+  it('resolves an exact-case state name', () => {
+    const result = parse(advBlock('DONE'), states('DONE'));
     expect(result.edges).toHaveLength(1);
     expect(result.edges[0].to).toBe('n1');
+  });
+
+  it('does NOT resolve a lowercase token to an uppercase state', () => {
+    const result = parse(advBlock('done'), states('DONE'));
+    expect(result.edges).toEqual([]);
+  });
+
+  it('does NOT resolve a state name buried in ordinary prose', () => {
+    // The real defect, reduced to a fixture: "scope" is English here, not a target.
+    const result = parse(advBlock('-> APPLY (it is still in scope for this run)'), states('APPLY', 'SCOPE'));
+    expect(result.edges.map((e) => e.to)).toEqual(['n1']);
+    expect(result.edges.some((e) => e.to === 'n2')).toBe(false);
   });
 });
 

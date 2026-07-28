@@ -393,6 +393,13 @@ export function parseAdvanceBlock({
     while ((vm = TOKEN_RE.exec(contentForV9)) !== null) {
       const state = stateByName.get(vm[0].toLowerCase());
       if (!state) continue;                           // not a declared state
+      // Case-SENSITIVE, for the same reason target resolution is: a lowercase
+      // token is English prose, not a reference to a state. Without this, making
+      // resolution exact-case merely moves the defect — the false edge disappears
+      // and V9 THROWS on the same prose instead, which is worse, since a throw
+      // fails the page. It also serves V9's own stated design goal of staying
+      // narrow, because a noisy guard is an ignored guard.
+      if (state.name !== vm[0]) continue;
       if (edgeTargetIds.has(state.id)) continue;     // already an edge target
       if (handoffName && state.name.toLowerCase() === handoffName) continue; // pause handoff
       if (v9Exempt.has(state.id)) continue;          // rule 6 unmarked `then` tail
@@ -710,7 +717,18 @@ function _resolveTarget(text, stateByName) {
   let m;
   while ((m = TOKEN_RE.exec(cleaned)) !== null) {
     const state = stateByName.get(m[0].toLowerCase());
-    if (state) return state;
+    // Case-SENSITIVE: the token must match the declared name exactly. State names
+    // are uppercase, so a lowercase token is ordinary English prose, not a
+    // reference — and resolving it fabricates an edge. `aid-update-kb` gained a
+    // false `REVIEW -> SCOPE` transition, conditioned "picks the doc back up -- it
+    // is still in", purely because the word "scope" appeared in a parenthetical.
+    //
+    // Measured before changing: of 48 corpus edges, every one names its target in
+    // exact case and ZERO depend on a case-insensitive match, so nothing real is
+    // lost. task-026 reached the same conclusion independently in `extract-inline`
+    // after a failing test — lowercase "run" was matching state `RUN` — which is
+    // why the two extractors disagreed until now.
+    if (state && state.name === m[0]) return state;
   }
   return null;
 }
@@ -874,7 +892,12 @@ function _residueHasDeclaredState(text, stateByName) {
   TOKEN_RE.lastIndex = 0;
   let m;
   while ((m = TOKEN_RE.exec(text)) !== null) {
-    if (stateByName.has(m[0].toLowerCase())) return true;
+    // Case-SENSITIVE, consistently with target resolution and the V9 scan. Rule 10
+    // calls residue "pure commentary" when it holds no declared-state token, and a
+    // lowercase word IS commentary — treating it as a state name made ordinary
+    // prose look like a dropped edge.
+    const state = stateByName.get(m[0].toLowerCase());
+    if (state && state.name === m[0]) return true;
   }
   return false;
 }
