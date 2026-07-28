@@ -702,38 +702,42 @@ describe('gen-skills: .skills-manifest.json shape', () => {
 // ── AC-6 / Idempotence: byte comparison of two consecutive runs ───────────────
 
 describe('gen-skills: AC-6 idempotence by byte comparison', () => {
-  it('two consecutive runs produce byte-identical skill pages, index.md, and manifest', () => {
-    // Run 1.
-    execSync('node scripts/gen-skills.mjs', { cwd: SITE_ROOT, stdio: 'pipe' });
+  const FLOWS_DIR = join(SITE_ROOT, 'src', 'data', 'skill-flows');
 
-    // Capture byte content after run 1.
-    const dirNames = getCanonicalDirNames();
-    const run1Pages = new Map();
-    for (const dir of dirNames) {
+  /** Every generated artifact, as a path → bytes map. */
+  function snapshot() {
+    const files = new Map();
+    for (const dir of getCanonicalDirNames()) {
       const p = join(SKILLS_OUTPUT_DIR, dir + '.md');
-      run1Pages.set(dir, readFileSync(p));
+      files.set(p, readFileSync(p));
     }
-    const run1Index = readFileSync(join(SKILLS_OUTPUT_DIR, 'index.md'));
-    const run1Manifest = readFileSync(MANIFEST_PATH);
+    files.set(join(SKILLS_OUTPUT_DIR, 'index.md'), readFileSync(join(SKILLS_OUTPUT_DIR, 'index.md')));
+    files.set(MANIFEST_PATH, readFileSync(MANIFEST_PATH));
+    // task-030 AC names sidecars alongside pages and manifest. Enumerated from disk so
+    // a sidecar appearing or vanishing between runs is caught as a name difference, not
+    // just as a byte difference in a file both runs happened to write.
+    for (const f of readdirSync(FLOWS_DIR).filter((n) => n.endsWith('.flow.json'))) {
+      files.set(join(FLOWS_DIR, f), readFileSync(join(FLOWS_DIR, f)));
+    }
+    return files;
+  }
 
-    // Run 2.
+  it('two consecutive runs produce byte-identical pages, index.md, sidecars and manifest', () => {
     execSync('node scripts/gen-skills.mjs', { cwd: SITE_ROOT, stdio: 'pipe' });
+    const run1 = snapshot();
 
-    // Compare skill page bytes.
-    for (const dir of dirNames) {
-      const p = join(SKILLS_OUTPUT_DIR, dir + '.md');
-      const run2Content = readFileSync(p);
-      const run1Content = run1Pages.get(dir);
-      expect(run2Content.equals(run1Content)).toBe(true);
-    }
+    execSync('node scripts/gen-skills.mjs', { cwd: SITE_ROOT, stdio: 'pipe' });
+    const run2 = snapshot();
 
-    // Compare index.md bytes (AC-6 for the index page).
-    const run2Index = readFileSync(join(SKILLS_OUTPUT_DIR, 'index.md'));
-    expect(run2Index.equals(run1Index)).toBe(true);
+    // Same file set, so an added or removed artifact fails here rather than silently
+    // passing a loop over whichever run's keys happened to be iterated.
+    expect([...run2.keys()].sort()).toEqual([...run1.keys()].sort());
 
-    // Compare manifest bytes.
-    const run2Manifest = readFileSync(MANIFEST_PATH);
-    expect(run2Manifest.equals(run1Manifest)).toBe(true);
+    // Non-vacuity: pages + index + manifest + sidecars, all present.
+    expect(run1.size).toBeGreaterThan(getCanonicalDirNames().length + 1);
+
+    const differing = [...run1.keys()].filter((p) => !run2.get(p).equals(run1.get(p)));
+    expect(differing).toEqual([]);
   });
 });
 
@@ -1286,6 +1290,31 @@ describe('gen-skills: flow sidecars', () => {
     expect(files).toHaveLength(getCanonicalDirNames().length - doorwayCount);
   });
 
+  it('the generator CREATES the sidecars — deleting them all and re-running restores them', async () => {
+    // Every other assertion in this describe reads sidecars that are committed, so all
+    // of them pass with the write removed entirely. This is the one that fails: it
+    // takes away the committed copies first, so only an actual write can satisfy it.
+    const before = onDiskSidecars();
+    expect(before.length).toBeGreaterThan(0);
+    const sample = before[0];
+    const sampleBytes = readFileSync(join(FLOWS_DIR, `${sample}.flow.json`), 'utf8');
+
+    try {
+      rmSync(FLOWS_DIR, { recursive: true, force: true });
+      expect(existsSync(FLOWS_DIR)).toBe(false);
+
+      await main();
+
+      expect(onDiskSidecars()).toEqual(before);
+      expect(readFileSync(join(FLOWS_DIR, `${sample}.flow.json`), 'utf8')).toBe(sampleBytes);
+    } finally {
+      // Leave the tree as found even if an assertion above threw.
+      if (!existsSync(FLOWS_DIR) || onDiskSidecars().length !== before.length) {
+        await main();
+      }
+    }
+  }, 60_000);
+
   it('every sidecar equals serializeChart(chart) byte for byte', () => {
     const files = onDiskSidecars();
     expect(files.length).toBeGreaterThan(0);
@@ -1371,14 +1400,21 @@ describe('gen-skills: shapeCounts', () => {
   it('agrees with the live classifier, shape by shape', () => {
     // The manifest is the only authority for these numbers, so the check is that it
     // equals a fresh classification — not that it equals any literal.
+    //
+    // Driven off discoverSkills() records rather than raw file text: `body` is
+    // contractually the text AFTER the closing frontmatter fence, and that is what the
+    // generator passes. Feeding whole files here would pass today — no discriminator
+    // matches inside YAML — while quietly testing a different input than production.
+    const records = discoverSkills();
+    expect(records).toHaveLength(getCanonicalDirNames().length);
+
     const fresh = Object.fromEntries(SHAPE_ORDER.map((s) => [s, 0]));
-    for (const dirName of getCanonicalDirNames()) {
-      const file = join(REPO_ROOT, 'canonical', 'skills', dirName, 'SKILL.md');
+    for (const skill of records) {
       const { shape } = classifySkill({
-        name: dirName,
+        name: skill.dirName,
         dir: REPO_ROOT,
-        frontmatter: {},
-        body: readFileSync(file, 'utf8'),
+        frontmatter: Object.fromEntries((skill.fields ?? []).map((f) => [f.key, f.value])),
+        body: skill.body ?? '',
       });
       fresh[shape] += 1;
     }
