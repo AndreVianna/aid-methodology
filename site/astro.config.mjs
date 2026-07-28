@@ -13,6 +13,7 @@
 // Banner, Footer) — do not rewrite the map, only add. No slot is reserved for a
 // feature of this work.
 
+import { readFileSync } from 'node:fs';
 import { defineConfig } from 'astro/config';
 import starlight from '@astrojs/starlight';
 import sitemap from '@astrojs/sitemap';
@@ -87,6 +88,31 @@ export default defineConfig({
       customCss: [
         './src/styles/casulo.css',
         './src/styles/shell.css',
+      ],
+
+      // KI-018 workaround. astro-mermaid can cache a diagram's *rendered SVG* as that
+      // diagram's source, after which switching the theme feeds an SVG stylesheet to the
+      // mermaid parser and every diagram on the page reads "Syntax error in text" until
+      // a reload. The script below claims `data-diagram` from the real source first, so
+      // the integration's `if (!hasAttribute(...))` guard never overwrites it.
+      //
+      // It must beat astro-mermaid's script, which `injectScript('page', …)` emits as a
+      // deferred module. Deferred modules run after parsing, so this — a classic inline
+      // script in <head>, with `is:inline` semantics by virtue of being a raw head tag —
+      // installs its observer while the document is still being parsed and always wins.
+      //
+      // Read from a real file rather than written as a template literal here: the logic
+      // deserves to be readable and reviewable on its own, and inlining it as a string
+      // would put JavaScript inside a config comment block where nothing checks it.
+      head: [
+        {
+          tag: 'script',
+          attrs: { 'data-aid': 'mermaid-source-cache' },
+          content: readFileSync(
+            new URL('./src/scripts/mermaid-source-cache.js', import.meta.url),
+            'utf8'
+          ),
+        },
       ],
 
       favicon: '/favicon.svg',

@@ -570,14 +570,34 @@
   feeds that to the parser, which is exactly the reported syntax error.
 - **Not caused by AID, and specifically not by the `config:` removal in delivery-003 wave 9.** The
   hand-authored diagram at `/` has never carried a per-diagram config block and fails identically.
-- **Options, none applied yet — this is an owner scope call:**
-  1. Cache the source ourselves before the integration's script runs, from a small inline script that
-     copies each `pre.mermaid` textContent into `data-diagram`. Small and effective; relies on
-     ordering against a third-party script, which is fragile.
-  2. Drop `autoTheme` and accept one theme for diagrams. Loses per-theme legibility, which is the
-     thing KI-018's sibling fix just delivered.
-  3. Patch the dependency (`patch-package`) or upstream a fix: move the caching above the render and
-     make it unconditional.
+- **RESOLVED (2026-07-28, owner chose option 1).** Three options were costed:
+  1. **Chosen.** Cache the source ourselves before the integration's script runs.
+  2. Drop `autoTheme` and accept one diagram theme — rejected, it discards the per-theme legibility
+     the sibling fix had just delivered.
+  3. `patch-package`, or upstream a fix moving the caching above the render — heavier, and leaves the
+     site broken until a release lands.
+- **The fix, and why the ordering is sound rather than lucky.** `site/src/scripts/mermaid-source-cache.js`
+  is inlined into `<head>` by Starlight's `head:` option. astro-mermaid ships its code through
+  `injectScript('page', …)`, which emits a **deferred module** — deferred modules execute after
+  parsing, so a classic inline head script installing a `MutationObserver` sees every `pre.mermaid`
+  as the parser appends it and is always first. It claims `data-diagram` from the real source, after
+  which the integration's `if (!hasAttribute(...))` guard finds it present and never overwrites it.
+  This is a property of script types and document order, not a race we happen to win.
+- **Three guards, because there are three ways to cache the wrong thing:** an attribute already
+  present (never clobber a correct value), an element that already contains an `<svg>`, and content
+  containing `@keyframes` (the fingerprint of the SVG stylesheet actually observed in the wild).
+- **Verified in the browser, both directions:** the hand-authored diagram at `/` holds 17 edges across
+  two theme toggles where it previously went to 0 with a syntax error, and a generated ELK chart holds
+  8 edges while its stroke and label colours track the theme on each switch.
+- **Tested** in `site/scripts/__tests__/mermaid-source-cache.test.mjs` — the script is a bare IIFE with
+  no imports, so it is executed against a minimal fake `document`/`MutationObserver` rather than being
+  asserted to merely exist. Seven mutants, all killed.
+- **Two things this exercise taught, recorded because both are general.** The happy-path test is what
+  exposed that the two guard tests were passing for the wrong reason — the fake element lacked
+  `nodeType`, so the script skipped every fixture and "did not cache" was vacuously true. And the
+  element-node filter was initially redundant (two downstream `&&` short-circuits absorbed text nodes
+  anyway), so removing it killed nothing; rather than pin an assertion that changes no behaviour, the
+  downstream guards were dropped so the one remaining filter is load-bearing.
 - **Interaction with the wave-9 CSS fix.** The per-theme edge colours in `casulo.css` are selected by
   `[data-theme]`, so they re-colour correctly the instant the theme changes, with no re-render needed.
   They are unaffected by this bug and would keep working under option 2 for one theme only.
