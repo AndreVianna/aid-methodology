@@ -569,6 +569,11 @@ function _isArtifactCondition(condition) {
   // is stripped from `(continue inline)` by _extractCondition's state-name removal.
   // e.g. `( inline)` / `( inline` / `( below)` / `(continued)`.
   cleaned = cleaned.replace(/\(\s*(?:inline|below|above|continued?)\s*\)?/gi, '').trim();
+  // …and the same words with no parenthesis at all. `_extractCondition` now drops an
+  // orphaned trailing parenthetical outright, so what used to arrive as `( inline`
+  // arrives as a bare `inline`. Both are routing notation rather than a condition,
+  // and a chart edge labelled "inline" tells a reader nothing.
+  cleaned = cleaned.replace(/^\s*(?:inline|below|above|continued?)\s*$/gi, '').trim();
   // Strip bare navigation phrases (no parens) produced when _extractCondition's
   // leading/trailing punctuation stripper removes the surrounding `(` and `)`.
   // e.g. `continue inline` (from `(continue inline)` minus parens).

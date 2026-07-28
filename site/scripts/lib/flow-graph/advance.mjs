@@ -783,10 +783,31 @@ function _extractCondition(clauseText, targetName) {
   text = text.replace(/\bState:\s*/g, ' ');
   // Strip backtick spans (routing notation such as `[1] File it` is not a condition)
   text = text.replace(/`[^`]*`/g, ' ');
+  // Strip markdown emphasis. Removing a BOLDED keyword leaves its `**` delimiters
+  // behind, so conditions rendered on the page as `** ** after scaffolding is
+  // complete` — measured on 23 of 44 edge labels, over half of every condition in
+  // the corpus. Same defect as the `** **` handoff, which was fixed in
+  // `_extractHandoff` but not here; the two strip paths had drifted apart.
+  text = text.replace(/\*+/g, ' ');
   // Collapse whitespace and trim
   text = text.replace(/\s+/g, ' ').trim();
+  // Drop an ORPHANED trailing parenthetical. Authors write asides like
+  // "(continue inline; state-apply.md § Step 1 ...)", and stripping the state name
+  // and backtick spans out of the middle leaves the opening half stranded — the
+  // page then showed "when all sections are Complete or N/A (continue inline".
+  // An unmatched `(` is a reliable signature of that debris: a real condition does
+  // not open a bracket it never closes. Everything from it to the end goes, since
+  // the aside was parenthetical by the author's own choice.
   // Strip leading/trailing routing punctuation
   text = text.replace(/^[[\]().,;:!?→>-]+|[[\]().,;:!?→>-]+$/g, '').trim();
+  // AFTER the punctuation strip, not before — order is the whole point. The source
+  // reads "...completes (continue inline)." with the parenthesis BALANCED, so a
+  // check run earlier sees nothing wrong. The stripper above then removes the
+  // trailing ")." and orphans the opening bracket, which is what reached the page.
+  const opens = (text.match(/\(/g) || []).length;
+  const closes = (text.match(/\)/g) || []).length;
+  if (opens > closes) text = text.slice(0, text.lastIndexOf('(')).trim();
+  text = text.replace(/[[\]().,;:!?→>-]+$/g, '').trim();
   if (!text) return null;
   return truncate(text, 80);
 }

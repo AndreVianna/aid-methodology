@@ -60,7 +60,18 @@ import { truncate } from './model.mjs';
  * override aidNode's color property in the CSS cascade.
  */
 const CLASS_DEFS = [
-  'classDef aidNode color:inherit',
+  // `color:#fff`, NOT `color:inherit`. Every node carries two classes — its kind
+  // class and this hook — and Mermaid emits both, so the cascade decides. `inherit`
+  // picked up the PAGE's text colour, which is dark in light mode: measured
+  // rgb(53,56,65) on fills of dark green, dark red and near-black. Unreadable in
+  // light mode, fine in dark, because there `inherit` happened to be near-white.
+  //
+  // The earlier reasoning that declaration order protected the kind colours was
+  // wrong, and it took a rendered page to show it — the source and the unit tests
+  // both looked correct. Every kind class sets the same `#fff`, so matching it here
+  // makes the hook inert with respect to colour while keeping the H3 selector
+  // feature-006 binds to.
+  'classDef aidNode color:#fff',
   'classDef aidEntry fill:#166534,stroke:#14532d,color:#fff',
   'classDef aidExit fill:#991b1b,stroke:#7f1d1d,color:#fff',
   'classDef aidDecision fill:#92400e,stroke:#78350f,color:#fff',
@@ -222,6 +233,20 @@ export function renderMermaid(chart) {
   const lines = [];
 
   // ── 1. Dialect and classDef block ──────────────────────────────────────────
+  // Layout directive. Mermaid's defaults are tuned for small hand-drawn diagrams;
+  // these charts are derived, so nodes carry two lines of real text and grow well
+  // past the spacing dagre assumes. The result was shapes nearly touching and edges
+  // taking long curved detours around them.
+  //
+  //   nodeSpacing / rankSpacing — room between siblings and between ranks, so a
+  //     wide rhombus stops crowding whatever sits beside and below it.
+  //   curve: linear — dagre's default basis spline bows edges outward around large
+  //     nodes, which is what reads as "bending strangely"; straight segments make
+  //     a loop-back's destination obvious.
+  //   padding — breathing room inside each shape.
+  lines.push(
+    "%%{init: {'flowchart': {'nodeSpacing': 55, 'rankSpacing': 65, 'curve': 'linear', 'padding': 12, 'useMaxWidth': true}}}%%"
+  );
   lines.push('flowchart TB');
   lines.push(`  ${CLASS_DEFS}`);
 

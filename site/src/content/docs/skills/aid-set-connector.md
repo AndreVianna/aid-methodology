@@ -20,8 +20,9 @@ generatedFrom: 'canonical/skills/aid-set-connector/SKILL.md'
 > **Approximate:** This chart is derived by heuristic; exact transitions may differ from runtime behaviour.
 
 ```mermaid
+%%{init: {'flowchart': {'nodeSpacing': 55, 'rankSpacing': 65, 'curve': 'linear', 'padding': 12, 'useMaxWidth': true}}}%%
 flowchart TB
-  classDef aidNode color:inherit
+  classDef aidNode color:#fff
   classDef aidEntry fill:#166534,stroke:#14532d,color:#fff
   classDef aidExit fill:#991b1b,stroke:#7f1d1d,color:#fff
   classDef aidDecision fill:#92400e,stroke:#78350f,color:#fff

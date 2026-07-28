@@ -18,8 +18,9 @@ generatedFrom: 'canonical/skills/aid-describe/SKILL.md'
 ## Flow
 
 ```mermaid
+%%{init: {'flowchart': {'nodeSpacing': 55, 'rankSpacing': 65, 'curve': 'linear', 'padding': 12, 'useMaxWidth': true}}}%%
 flowchart TB
-  classDef aidNode color:inherit
+  classDef aidNode color:#fff
   classDef aidEntry fill:#166534,stroke:#14532d,color:#fff
   classDef aidExit fill:#991b1b,stroke:#7f1d1d,color:#fff
   classDef aidDecision fill:#92400e,stroke:#78350f,color:#fff
@@ -30,12 +31,12 @@ flowchart TB
   n3{"CONTINUE<br/>Resume the conversational interview; STATE.md shows In…"}
   n4["DESCRIBE-SEED<br/>The seed-authoring step of (the step per D3, executed today…"]
   n5(["COMPLETION<br/>All sections are Complete or N/A in STATE.md ; run quality…"])
-  n1 -->|"** ** after scaffolding is complete ( inline"| n3
+  n1 -->|"after scaffolding is complete"| n3
   n1 -->|"emits the D1 opener and runs the full-path interview"| n3
   n2 --> n3
   n3 -. "otherwise" .-> n3
   n3 -->|"greenfield: no brownfield KB on disk and seed not yet complete"| n4
-  n3 -->|"** ** when all sections are Complete or N/A (continue inline"| n5
+  n3 -->|"when all sections are Complete or N/A"| n5
   n4 --> n5
   n5 -.-> n2
   class n1 aidEntry

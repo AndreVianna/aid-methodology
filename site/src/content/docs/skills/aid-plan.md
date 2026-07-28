@@ -18,8 +18,9 @@ generatedFrom: 'canonical/skills/aid-plan/SKILL.md'
 ## Flow
 
 ```mermaid
+%%{init: {'flowchart': {'nodeSpacing': 55, 'rankSpacing': 65, 'curve': 'linear', 'padding': 12, 'useMaxWidth': true}}}%%
 flowchart TB
-  classDef aidNode color:inherit
+  classDef aidNode color:#fff
   classDef aidEntry fill:#166534,stroke:#14532d,color:#fff
   classDef aidExit fill:#991b1b,stroke:#7f1d1d,color:#fff
   classDef aidDecision fill:#92400e,stroke:#78350f,color:#fff
@@ -29,9 +30,9 @@ flowchart TB
   n2["REVIEW<br/>PLAN.md exists and was previously completed; re-review…"]
   n3(["DONE<br/>Done"])
   n1 -. "otherwise" .-> n1
-  n1 -->|"** ** when PLAN.md is written, delivery folders are created, and the final…"| n2
+  n1 -->|"when PLAN.md is written, delivery folders are created, and the final summary is…"| n2
   n2 -. "otherwise" .-> n2
-  n2 -->|"** ** when the grade meets minimum and all delivery folders are created…"| n3
+  n2 -->|"when the grade meets minimum and all delivery folders are created"| n3
   class n1 aidEntry
   class n2 aidLoopBack
   class n3 aidExit

@@ -103,6 +103,9 @@ function makeChart(rawNodes, rawEdges) {
 
 const WHITESPACE_ONLY = /^\s*$/;
 const FLOWCHART_TB   = /^\s*flowchart\s+TB\s*$/;
+// A `%%{init: ...}%%` layout directive may precede the flowchart line. It carries
+// spacing and curve settings, not topology, so the round-trip parser skips it.
+const INIT_DIRECTIVE = /^\s*%%\{.*\}%%\s*$/;
 const CLASSDEF_LINE  = /^\s*classDef\s+\w+/;
 const CLASS_ASSIGN   = /^\s*class\s+(\w+)\s+(\w+)\s*$/;
 
@@ -140,6 +143,7 @@ function parseEmitted(body) {
     const line = rawLine;
 
     if (WHITESPACE_ONLY.test(line)) continue;
+    if (INIT_DIRECTIVE.test(line))  continue;
     if (FLOWCHART_TB.test(line))    continue;
     if (CLASSDEF_LINE.test(line))   continue;
 
@@ -217,9 +221,20 @@ describe('AC-1 — output is fence body only', () => {
     expect(renderMermaid(chart)).not.toContain('Approximate');
   });
 
-  it('starts with flowchart TB', () => {
+  it('opens with the layout directive, then flowchart TB', () => {
+    // The directive sets node/rank spacing and a linear edge curve. Mermaid's
+    // defaults assume small hand-drawn diagrams; these charts carry two lines of
+    // derived text per node, so shapes crowded and edges bowed around them.
+    const c = makeChart([node(1, 'A', 'Do A', halt())], []);
+    const out = renderMermaid(c).trimStart();
+    expect(out).toMatch(/^%%\{init:/);
+    expect(out.split('\n')[1]).toMatch(/^flowchart TB\s*$/);
+  });
+
+  it('still declares flowchart TB, on the line after the directive', () => {
     const chart = makeChart([node(1, 'A', 'Do A', halt())], []);
-    expect(renderMermaid(chart).trimStart()).toMatch(/^flowchart TB/);
+    const lines = renderMermaid(chart).trimStart().split('\n');
+    expect(lines.find((l) => /^flowchart TB\s*$/.test(l))).toBeDefined();
   });
 
   it('ends with exactly one trailing LF', () => {

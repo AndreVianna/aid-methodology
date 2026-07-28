@@ -18,8 +18,9 @@ generatedFrom: 'canonical/skills/aid-change-document/SKILL.md'
 ## Flow
 
 ```mermaid
+%%{init: {'flowchart': {'nodeSpacing': 55, 'rankSpacing': 65, 'curve': 'linear', 'padding': 12, 'useMaxWidth': true}}}%%
 flowchart TB
-  classDef aidNode color:inherit
+  classDef aidNode color:#fff
   classDef aidEntry fill:#166534,stroke:#14532d,color:#fff
   classDef aidExit fill:#991b1b,stroke:#7f1d1d,color:#fff
   classDef aidDecision fill:#92400e,stroke:#78350f,color:#fff
@@ -35,7 +36,7 @@ flowchart TB
   n2 --> n3
   n3 --> n4
   n4 -->|"on approval"| n5
-  n4 -->|"else (draft kept in the work folder"| n6
+  n4 -->|"else"| n6
   n5 -.-> n4
   n5 --> n6
   class n1 aidEntry

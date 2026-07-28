@@ -18,8 +18,9 @@ generatedFrom: 'canonical/skills/aid-execute/SKILL.md'
 ## Flow
 
 ```mermaid
+%%{init: {'flowchart': {'nodeSpacing': 55, 'rankSpacing': 65, 'curve': 'linear', 'padding': 12, 'useMaxWidth': true}}}%%
 flowchart TB
-  classDef aidNode color:inherit
+  classDef aidNode color:#fff
   classDef aidEntry fill:#166534,stroke:#14532d,color:#fff
   classDef aidExit fill:#991b1b,stroke:#7f1d1d,color:#fff
   classDef aidDecision fill:#92400e,stroke:#78350f,color:#fff
@@ -33,7 +34,7 @@ flowchart TB
   n6(["DELIVERY-GATE<br/>Per-delivery quality gate — runs once per delivery as the…"])
   n1 --> n2
   n2 -. "otherwise" .-> n2
-  n2 -->|"** ** after triage, findings write, and the terminal State write above…"| n4
+  n2 -->|"after triage, findings write, and the terminal State write above"| n4
   n3 --> n2
   n5 -->|"The router prints the prompt above and exits; the user re-invokes with their…"| n2
   n5 -->|"depending on the decision"| n4
