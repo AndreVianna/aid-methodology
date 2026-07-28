@@ -687,7 +687,8 @@ closed row 13's siblings.
 | 17 | MEDIUM | Fixed | The dangling-preposition repair shipped with no test; three mutations survived, two of them removing exactly the `toward`/`once` token pair the `aid-discover` label needed. | Added four tests, fixture shape taken verbatim from `state-q-and-a.md:64`. All three mutations now fail. |
 | 18 | LOW | Fixed | Row 14's strip was pinned only for the `both continue inline` form; unanchoring the sentence boundary and making `both` mandatory both survived. | Added two tests — one proving the anchor prevents mid-condition eating, one covering the bare form. |
 | 19 | MEDIUM | Fixed | `aid-update-kb`'s `REVIEW → APPROVAL` edge published outcome 3's condition (`grade/teach-back/… PASS) FIX…`) instead of its own (`READY`). | Root cause found one level deeper than reported — see below. Fixed in `_buildClauses`; label is now `"READY"`. |
-| 20 | MEDIUM | Open | `chart.warnings` reaches no human: `confidence` does not track warnings, and no caller reads them. | Documented honestly in `index.mjs`; **not fixed** — needs a seam that does not exist. See below. |
+| 20 | MEDIUM | Fixed | `chart.warnings` reaches no human: `confidence` does not track warnings, and no caller reads them. | Filed open in cycle 4; **closed in cycle 5** once it turned out to be an unchecked task-029 AC, not a scope expansion. See below. |
+| 21 | MEDIUM | Fixed | The arrow requirement in `_isUnresolvableOutcome` was unpinned: the test claiming to cover it used a lowercase-ending tail, which the ALL-CAPS clause already rejects, so removing the arrow check changed nothing. | Added the discriminating fixture — no arrow, ALL-CAPS tail (`escalate to FIX`). Mutant now dies. |
 
 ### Row 19 root cause — not the clause splitter, the resolve-both-halves guard
 
@@ -711,7 +712,48 @@ one line on one page. Census unchanged: 13 dispatch-table / 8 inline-states / 13
 charted, 0 failed; 64 engine-doorway + 13 sibling-doorway. AC-6 idempotence holds. Full suite 1781
 passing across 29 files. Five mutants of the fix, all killed.
 
-### Row 20 — the warning that reaches nobody (open, deliberately not fixed)
+### Row 21 — the same pattern, inside row 19's own fix
+
+`_isUnresolvableOutcome` has two narrowing properties. I added tests for both and both mutants died,
+so I recorded them as pinned. The reviewer found that only one of them was: the "requires an arrow"
+test used `otherwise hand -> back to the author`, whose tail ends **lowercase**, so the ALL-CAPS clause
+rejects it whether or not the arrow check is present. The test's comment claimed a property its input
+could not exercise.
+
+The discriminating case needs both halves separable — no arrow, ALL-CAPS tail — which is
+`escalate to FIX`. Added; the mutant now dies against exactly that test. Worth naming: this is the
+fourth consecutive cycle the same finding has landed, and this time it landed on a test I had written
+*specifically to close it*. The mutation pass I ran did catch two of three narrowing gaps; what it
+missed was that one of my new tests was passing for the wrong reason. Mutating the implementation does
+not detect a test whose fixture cannot reach the mutated line.
+
+### Row 20 — closed in cycle 5: it was an unchecked AC, not a scope expansion
+
+Filed open in cycle 4 on the reasoning that run-level reporting needed a seam that did not exist, and
+the reviewer agreed with that disposition. That agreement was based on my framing, and my framing was
+wrong: **task-029's DETAIL carries `- [ ] chart.warnings are logged with a run-level count and never
+thrown` as an unchecked acceptance criterion.** So the work was owed by the task, not deferred by it,
+and "needs a seam that does not exist" was a description of the defect rather than a reason to keep it.
+
+The seam is four lines. `buildFlowChart` already sits between the pure `BODY_PROVIDERS[].render()`
+function and the extractors, so it is the one place that both sees every chart and can hold state:
+it now pushes into a module-level accumulator, and `resetFlowWarnings` / `summarizeFlowWarnings`
+expose it. `gen-skills` resets at the start of the run and reports at the end, as a new step 8, to
+**stdout** — stderr stays empty on success, which was the constraint that made this look impossible.
+task-029's counter was not the wrong mechanism; it was missing its reader.
+
+It pays for itself immediately. The run now prints **9 warnings across 7 charts**, and two of them are
+findings nobody had filed: `aid-housekeep`'s residue is `'**CHAIN** → [State: KB-DELTA] (or ). Continue
+inline.'` — an empty `(or )` alternative — and three separate skills report `inline detail for state
+'DONE' has no matching ## State: section`. Both were true before this cycle and invisible.
+
+`confidence` is deliberately still not warning-sensitive. Making it so would change which pages carry
+the on-page approximation notice, which is a rendering decision, and `index.mjs` now says that in
+those terms instead of implying the notice already covers warnings.
+
+The stdout-discipline test previously pinned the output at exactly four lines. It now asserts the four
+phase lines in order and constrains everything after them to report lines, rather than pinning a total
+that a corpus change would break for unrelated reasons.
 
 Row 19's fix routes the dropped span to the W-1 residue warning, and while writing that justification
 I checked whether W-1 actually surfaces. It does not. `index.mjs` claimed warnings are surfaced via

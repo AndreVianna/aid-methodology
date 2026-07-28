@@ -26,6 +26,7 @@ import { renderSkillPage } from './skills/render-page.mjs';
 import { loadShortcutCatalog } from './skills/catalog.mjs';
 import { assignGroups } from './skills/groups.mjs';
 import { renderSkillIndex } from './skills/render-index.mjs';
+import { resetFlowWarnings, summarizeFlowWarnings } from './lib/flow-graph/index.mjs';
 import {
   REPO_ROOT,
   SITE_SKILLS_DIR,
@@ -53,6 +54,9 @@ async function main() {
   // discoverSkills() enumerates canonical/skills/, sorts directory names, and
   // builds a SkillRecord[] — throwing on any per-skill guard failure.
   console.log('[gen-skills] generating skill detail pages...');
+  // Start the run's warning count at zero, so a second run in the same process
+  // (a test, or a watch rebuild) reports its own total rather than a cumulative one.
+  resetFlowWarnings();
   const skills = discoverSkills();
 
   // ── 2. PARSE + 3. RECORD ────────────────────────────────────────────────────
@@ -158,6 +162,38 @@ async function main() {
   // + index.md), so it also catches an index referencing a page a later step
   // failed to produce.
   assertNoDeadCards(sections, writtenDirNames);
+
+  // ── 8. REPORT ───────────────────────────────────────────────────────────────
+  // Flow-chart warnings, drained from the accumulator in flow-graph/index.mjs.
+  // Printed to stdout, never stderr — a successful run must leave stderr empty.
+  //
+  // This is the reader that task-029's counter lacked. A warning means an authored
+  // chart is approximate in some specific way (a clause dropped, a heuristic ladder
+  // rung declined); without this line, `chart.warnings` reached nobody, because
+  // `confidence` reflects which extractor ran rather than whether anything was lost.
+  reportFlowWarnings();
+}
+
+/**
+ * Print the run-level flow-warning summary. Silent when the run produced none, so
+ * a clean run stays quiet and any output is signal.
+ *
+ * Exported for test: the assertion that a warning actually reaches a human should
+ * not have to scrape a subprocess's stdout.
+ *
+ * @param {(msg: string) => void} [log]  Sink (default console.log).
+ * @returns {{total: number, charts: number}}  What was reported.
+ */
+export function reportFlowWarnings(log = console.log) {
+  const { total, charts, skills, messages } = summarizeFlowWarnings();
+  if (total === 0) return { total: 0, charts: 0 };
+
+  log(
+    `[gen-skills] flow: ${total} warning${total === 1 ? '' : 's'} across ` +
+    `${charts} chart${charts === 1 ? '' : 's'} (${skills.join(', ')})`
+  );
+  for (const m of messages) log(`  ${m}`);
+  return { total, charts };
 }
 
 /**

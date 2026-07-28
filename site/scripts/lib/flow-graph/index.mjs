@@ -48,24 +48,18 @@ const AUTHORED_SHAPES = new Set(['dispatch-table', 'inline-states', 'residual'])
  * Warnings are never thrown — that is FR-2's boundary, a chart may be
  * *approximate* but never *malformed*. They are also **not written to stderr**,
  * because `gen-skills` requires an empty stderr on a successful run. They are
- * carried on the chart itself, as `chart.warnings`.
+ * carried on the chart itself, as `chart.warnings`, and accumulated for the run —
+ * see `resetFlowWarnings` / `summarizeFlowWarnings` below, which `gen-skills` drains
+ * and prints to **stdout**, keeping stderr empty on a successful run.
  *
- * **`confidence` does not track warnings, and no current caller reads
- * `chart.warnings`.** `extract-dispatch` stamps `'derived'` unconditionally and
- * `extract-residual` stamps `'approximate'` unconditionally, so the body provider's
- * interpretation notice reflects the *extractor* that built the chart, not whether
- * that chart lost anything. A dispatch-table chart can therefore drop an outcome —
- * see `_buildClauses` in advance.mjs — and publish with no notice and no console
- * output. The warning exists and is unit-tested; nothing shows it to a human.
- *
- * The task DETAIL asks for "a run-level accumulated count", which cannot be
- * reconciled with the empty-stderr requirement without a caller to report it to.
- * A module-level counter was tried and removed: nothing read it, so it recorded a
- * number no one could see. Closing the gap properly means summing
- * `chart.warnings.length` at the `gen-skills` call site and printing to stdout —
- * but the chart is built inside `BODY_PROVIDERS[].render()`, a pure
- * string-returning function with nowhere to accumulate, so it needs a seam that
- * does not exist yet. Recorded as a finding rather than bolted on here.
+ * **`confidence` does not track warnings.** `extract-dispatch` stamps `'derived'`
+ * unconditionally and `extract-residual` stamps `'approximate'` unconditionally, so
+ * the body provider's interpretation notice reflects the *extractor* that built the
+ * chart, not whether that chart lost anything. A dispatch-table chart can drop an
+ * outcome — see `_buildClauses` in advance.mjs — and still publish with no on-page
+ * notice. The run summary is what makes that visible; the page notice is not, and
+ * making `confidence` warning-sensitive would change which pages carry the notice,
+ * which is a rendering decision this module should not take on its own.
  *
  * @param {{ name: string, dir: string }} params
  *   name — skill directory name under canonical/skills/
@@ -125,5 +119,57 @@ export function buildFlowChart({ name, dir }) {
     throw new Error(errors[0]);
   }
 
+  if (chart.warnings && chart.warnings.length > 0) {
+    _runWarnings.push({ skill: name, warnings: chart.warnings.slice() });
+  }
+
   return chart;
+}
+
+// ── Run-level warning accumulation ───────────────────────────────────────────
+//
+// task-029's DETAIL requires that `chart.warnings` be "logged with a run-level
+// count". A bare counter was tried in task-029 and removed because nothing read it
+// — a number no one could see. The missing half was never the counter; it was a
+// reader. These two functions are that seam: `buildFlowChart` accumulates, and the
+// generator drains and reports at the end of its run.
+//
+// Accumulating here rather than in the body provider is what makes this work at
+// all: `BODY_PROVIDERS[].render()` is a pure string-returning function with nowhere
+// to put a total, but it calls `buildFlowChart`, which can hold one.
+//
+// This is module-level mutable state, deliberately. It is not an import-time side
+// effect (the array starts empty and is written only when a chart is built), and it
+// cannot affect generated output — `summarizeFlowWarnings` is read-only and
+// `resetFlowWarnings` exists so a test or a second run starts clean.
+
+/** @type {Array<{skill: string, warnings: string[]}>} */
+const _runWarnings = [];
+
+/**
+ * Drop every accumulated warning. Call before a run whose count must be its own —
+ * `gen-skills` does this at the start, and tests do it between cases.
+ *
+ * @returns {void}
+ */
+export function resetFlowWarnings() {
+  _runWarnings.length = 0;
+}
+
+/**
+ * Summarize warnings accumulated since the last reset.
+ *
+ * `charts` is the number of charts that carried at least one warning, not the
+ * number of warnings — a single chart can carry several, and the two numbers being
+ * different is the interesting case.
+ *
+ * @returns {{total: number, charts: number, skills: string[], messages: string[]}}
+ */
+export function summarizeFlowWarnings() {
+  return {
+    total: _runWarnings.reduce((n, e) => n + e.warnings.length, 0),
+    charts: _runWarnings.length,
+    skills: _runWarnings.map((e) => e.skill),
+    messages: _runWarnings.flatMap((e) => e.warnings),
+  };
 }

@@ -33,7 +33,7 @@ Shape: 6 sections matching .claude/aid/templates/delivery-plans/task-template.md
 
 **Acceptance Criteria:**
 - [ ] `buildFlowChart` classifies, dispatches to the correct authored extractor, validates, and **throws** on any `validateChart` error; the thrown message names the failing rule and the offending node or edge.
-- [ ] `chart.warnings` are logged with a run-level count and **never** thrown.
+- [x] `chart.warnings` are logged with a run-level count and **never** thrown.
 - [ ] The dispatch table routes `dispatch-table`, `inline-states` and `residual`; the two doorway shapes are absent here and are added only by task-037.
 - [ ] The provider's `applies()` claims exactly `{dispatch-table, inline-states, residual}` -- verified by asserting it returns `false` for both doorway shapes.
 - [ ] The provider emits the H2 string fixed by task-019 seam 3, byte-for-byte, and task-037's provider will emit the identical string.

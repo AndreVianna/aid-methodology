@@ -355,6 +355,20 @@ describe('an outcome routing to an undeclared state is dropped, not absorbed', (
     expect(r.edges[0].condition).toBe('when ready; otherwise hand back to the author');
   });
 
+  it('requires an ARROW — an ALL-CAPS tail alone is prose naming a state, not a route', () => {
+    // The discriminating case for the arrow requirement: no arrow in the failing half,
+    // but it ends ALL-CAPS. The earlier prose test cannot pin this — its tail ends
+    // lowercase, so the ALL-CAPS clause already rejects it and removing the arrow
+    // requirement changes nothing. Here the two properties are separable.
+    const r = parse(
+      advBlock('-> APPROVAL when ready; escalate to FIX'),
+      states('APPROVAL'),
+      { fromNodeName: 'REVIEW' }
+    );
+    expect(r.edges).toHaveLength(1);
+    expect(r.edges[0].condition).toBe('when ready; escalate to FIX');
+  });
+
   it('does NOT split ordinary prose that merely contains a separator', () => {
     // The guard must stay narrow: without an arrow the failing half is a sentence
     // fragment, so the halves stay joined and the whole condition survives.

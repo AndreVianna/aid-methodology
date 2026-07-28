@@ -41,7 +41,12 @@ import { renderSkillPage } from '../skills/render-page.mjs';
 // gen-reference.mjs calls main() at module scope, so importing it would
 // regenerate four pages as a side effect; gen-skills.mjs must not, and this
 // import would run the whole generator on every test file load if it did.
-import { assertNoSkillsDrift, assertNoDeadCards } from '../gen-skills.mjs';
+import { assertNoSkillsDrift, assertNoDeadCards, reportFlowWarnings } from '../gen-skills.mjs';
+import {
+  buildFlowChart,
+  resetFlowWarnings,
+  summarizeFlowWarnings,
+} from '../lib/flow-graph/index.mjs';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const SITE_ROOT = resolve(__dirname, '../../');
@@ -730,10 +735,10 @@ describe('gen-skills: AC-6 idempotence by byte comparison', () => {
   });
 });
 
-// ── Stdout discipline: exactly four lines on success ─────────────────────────
+// ── Stdout discipline: four phase lines, then the flow report ────────────────
 
 describe('gen-skills: stdout discipline', () => {
-  it('successful run emits exactly four [gen-skills]-prefixed stdout lines and nothing on stderr', () => {
+  it('successful run emits the four phase lines in order and nothing on stderr', () => {
     const result = spawnSync('node', ['scripts/gen-skills.mjs'], {
       cwd: SITE_ROOT,
       encoding: 'utf8',
@@ -744,29 +749,44 @@ describe('gen-skills: stdout discipline', () => {
     // stderr must be empty on success.
     expect(result.stderr || '').toBe('');
 
-    // stdout: exactly four non-empty lines, each starting with [gen-skills].
     const lines = (result.stdout || '').split('\n').filter((l) => l.trim() !== '');
-    expect(lines).toHaveLength(4);
-    for (const line of lines) {
-      expect(line).toMatch(/^\[gen-skills\] /);
-    }
+
+    // The four phase lines are the first four, in order. The count is no longer
+    // pinned at four: step 8 appends a flow-warning report whose length tracks the
+    // corpus. Pinning a total here would either forbid the report or turn a corpus
+    // change into an unrelated failure, so the shape below is asserted instead —
+    // four phase lines, then only report lines.
+    const phase = lines.slice(0, 4);
 
     // Line 1: start message.
-    expect(lines[0]).toContain('[gen-skills] generating');
+    expect(phase[0]).toContain('[gen-skills] generating');
 
     // Line 2: parsed N skills — count derived, not literal.
-    expect(lines[1]).toMatch(/^\[gen-skills\] parsed \d+ skills$/);
+    expect(phase[1]).toMatch(/^\[gen-skills\] parsed \d+ skills$/);
 
     // Line 3: wrote N pages.
-    expect(lines[2]).toMatch(/^\[gen-skills\] wrote \d+ pages -> src\/content\/docs\/skills\/$/);
+    expect(phase[2]).toMatch(/^\[gen-skills\] wrote \d+ pages -> src\/content\/docs\/skills\/$/);
 
     // Line 4: manifest.
-    expect(lines[3]).toBe('[gen-skills] wrote scripts/.skills-manifest.json');
+    expect(phase[3]).toBe('[gen-skills] wrote scripts/.skills-manifest.json');
 
     // The counts in lines 2 and 3 must match the actual directory count.
     const dirCount = getCanonicalDirNames().length;
-    expect(lines[1]).toBe(`[gen-skills] parsed ${dirCount} skills`);
-    expect(lines[2]).toBe(`[gen-skills] wrote ${dirCount} pages -> src/content/docs/skills/`);
+    expect(phase[1]).toBe(`[gen-skills] parsed ${dirCount} skills`);
+    expect(phase[2]).toBe(`[gen-skills] wrote ${dirCount} pages -> src/content/docs/skills/`);
+
+    // Anything after the four phase lines belongs to the flow report: one header
+    // followed by one indented line per warning. Nothing else may print.
+    const rest = lines.slice(4);
+    if (rest.length > 0) {
+      expect(rest[0]).toMatch(/^\[gen-skills\] flow: \d+ warnings? across \d+ charts?/);
+      for (const line of rest.slice(1)) {
+        expect(line).toMatch(/^ {2}\[gen-skills\] /);
+      }
+      // The header's chart count must equal the number of distinct skills it names.
+      const named = rest[0].replace(/^.*\(/, '').replace(/\)\s*$/, '').split(', ');
+      expect(rest[0]).toContain(`across ${named.length} chart`);
+    }
   });
 });
 
@@ -1117,5 +1137,82 @@ describe('assertNoDeadCards — all branches', () => {
   it('passes with sections that have no cards or families', () => {
     const sections = [makeSection([]), makeSection([], [])];
     expect(() => assertNoDeadCards(sections, [])).not.toThrow();
+  });
+});
+
+// ── Run-level flow-warning report (task-029 AC: "logged with a run-level count") ──
+
+describe('flow warnings reach a human', () => {
+  // task-029 shipped a module-level counter and removed it because nothing read it.
+  // The reader is the part that was missing; these tests assert the reader, not the
+  // counter — a count no one prints is the defect that got the counter deleted.
+
+  it('a clean run reports nothing, so any output is signal', () => {
+    resetFlowWarnings();
+    const lines = [];
+    const result = reportFlowWarnings((m) => lines.push(m));
+    expect(result).toEqual({ total: 0, charts: 0 });
+    expect(lines).toEqual([]);
+  });
+
+  it('counts charts and warnings separately — one chart can carry several', () => {
+    resetFlowWarnings();
+    // aid-update-kb carries two: a multiple-terminal-clauses warning from the
+    // CONFIRM row and the W-1 residue from REVIEW's dropped fourth outcome.
+    buildFlowChart({ name: 'aid-update-kb', dir: REPO_ROOT });
+    const s = summarizeFlowWarnings();
+    expect(s.charts).toBe(1);
+    expect(s.total).toBeGreaterThan(1);
+    expect(s.skills).toEqual(['aid-update-kb']);
+    expect(s.messages).toHaveLength(s.total);
+  });
+
+  it('prints the count, the skill names, and every message', () => {
+    resetFlowWarnings();
+    buildFlowChart({ name: 'aid-update-kb', dir: REPO_ROOT });
+    const lines = [];
+    const { total, charts } = reportFlowWarnings((m) => lines.push(m));
+
+    expect(charts).toBe(1);
+    expect(lines[0]).toContain(`${total} warnings across 1 chart`);
+    expect(lines[0]).toContain('aid-update-kb');
+    // One line per message, after the header.
+    expect(lines).toHaveLength(total + 1);
+    // The dropped outcome from row 19 is among them — the specific thing whose
+    // invisibility made row 19's justification hollow before this existed.
+    expect(lines.join('\n')).toContain('grade/teach-back/act-back/TRACE-1');
+  });
+
+  it('resetFlowWarnings makes a second run report its own total, not a running one', () => {
+    resetFlowWarnings();
+    buildFlowChart({ name: 'aid-update-kb', dir: REPO_ROOT });
+    const first = summarizeFlowWarnings().total;
+    expect(first).toBeGreaterThan(0);
+
+    // Without the reset, building the same chart again would double the count.
+    buildFlowChart({ name: 'aid-update-kb', dir: REPO_ROOT });
+    expect(summarizeFlowWarnings().total).toBe(first * 2);
+
+    resetFlowWarnings();
+    buildFlowChart({ name: 'aid-update-kb', dir: REPO_ROOT });
+    expect(summarizeFlowWarnings().total).toBe(first);
+  });
+
+  it('a chart with no warnings does not enter the accumulator', () => {
+    resetFlowWarnings();
+    // aid-discover charts clean — it is the skill whose label row 17 repaired.
+    buildFlowChart({ name: 'aid-discover', dir: REPO_ROOT });
+    expect(summarizeFlowWarnings()).toEqual({
+      total: 0, charts: 0, skills: [], messages: [],
+    });
+  });
+
+  it('gen-skills wires the reader in — the summary appears on stdout, not stderr', () => {
+    const run = spawnSync(process.execPath, [join(SITE_ROOT, 'scripts', 'gen-skills.mjs')], {
+      cwd: SITE_ROOT, encoding: 'utf8',
+    });
+    expect(run.status).toBe(0);
+    expect(run.stderr).toBe('');
+    expect(run.stdout).toMatch(/\[gen-skills\] flow: \d+ warnings? across \d+ charts?/);
   });
 });
