@@ -478,11 +478,27 @@ BLUEPRINT, and touches nothing under `site/` or `canonical/`.
 - **Action owed:** whoever executes task-025/026 must carry this AC, and the reviewer of that wave
   should check it was not silently dropped between the two tasks.
 
-### Rule 10's W-1 residual warning may be unreachable through the public API — open
+### Rule 10's W-1 residual warning may be unreachable through the public API — CLOSED: it is reachable
 
-- **Category:** Possible dead path; unresolved
+- **Category:** Possible dead path; resolved with an input
 - **Impact:** Low-Medium — if unreachable, an acceptance criterion is unverifiable as written
-- **State:** **Open — routed back to the reviewer.** Not fabricating a test for it.
+- **State:** **CLOSED (2026-07-28, task-031).** Reachable, and now covered in two places.
+- **The input that produces it.** Every earlier candidate was a **single-clause** block, and for
+  those the clause *is* the whole content, so residue is necessarily empty — the structural reason
+  guessed below was right, but the conclusion drawn from it was too broad. The reachable shape is a
+  **multi-outcome** block in which one outcome is *dropped*: the dropped span is covered by no
+  accepted clause, so it becomes residue. That shape did not exist in the corpus until wave 7's fix
+  to `_buildClauses` made an outcome routing to an undeclared state get dropped rather than absorbed
+  into its neighbour (checkpoint row 19).
+- **Live instances, printed by the generator's own step 8:** `aid-update-kb`'s REVIEW row (four
+  `;`-separated outcomes, the third routing to `FIX`, which is a prose loop mode and not a declared
+  state) and `aid-housekeep`'s PREFLIGHT (`**CHAIN** → [State: KB-DELTA] (or ). Continue inline.`).
+- **Covered by:** `flow-advance.test.mjs` "the dropped outcome is surfaced as a W-1 residue warning,
+  not swallowed", and task-031's contract tier group *rule 10: W-1 residual warning*, which pins the
+  tag, the source node, `file:line` and the residue text, plus a separable negative case where both
+  outcomes resolve and no W-1 is emitted. Suppressing the `if (!isPureCommentary)` branch now fails.
+- **So no routing treatment is owed**, and the alternative the open row contemplated — "a test that
+  cannot fail" — was correctly refused while the input was unknown.
 - The wave-4 reviewer raised ([MEDIUM]) that W-1's positive-case content has no test. Rule 6's
   unmarked path **does** emit a W-1 and its content is now fully asserted — the `W-1` tag, both state
   names, and `file:line`. What remains uncovered is the W-1 that **rule 10** derives from *residue*.

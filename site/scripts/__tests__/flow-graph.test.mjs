@@ -16,8 +16,6 @@
 //   - No hard-coded corpus counts (REQUIREMENTS §8 / KI-005).
 
 import { describe, it, expect } from 'vitest';
-import { resolve, dirname } from 'node:path';
-import { fileURLToPath } from 'node:url';
 import {
   truncate,
   makeProvenance,
@@ -32,9 +30,14 @@ import {
   buildProvenance,
   findStateSections,
 } from '../lib/flow-graph/source.mjs';
+import { classifySkill } from '../lib/flow-graph/classify.mjs';
+import { parseAdvanceBlock } from '../lib/flow-graph/advance.mjs';
+import { validateChart } from '../lib/flow-graph/validate.mjs';
 
-const __dirname = dirname(fileURLToPath(import.meta.url));
-const REPO_ROOT = resolve(__dirname, '../../../');
+// No repo-root constant and no path resolution: this tier's fixtures are all inline in
+// this file, so it reads nothing from `canonical/` or `.aid/works/` (task-031 AC-1).
+// A REPO_ROOT was declared here and never used — removed rather than left as an
+// invitation to reach outside the file.
 
 // ── Shared fixtures ──────────────────────────────────────────────────────────
 
@@ -1131,5 +1134,885 @@ describe('AC-3 by construction', () => {
       sources: [],
     });
     expect(chart.warnings.some((w) => w.startsWith('[gen-skills]'))).toBe(true);
+  });
+});
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// CONTRACT TIER — classify.mjs · advance.mjs · validate.mjs
+// All fixtures are inline; no canonical/ file is read.
+// ═══════════════════════════════════════════════════════════════════════════════
+
+// ── truncate — 59-cp boundary (contract supplement) ──────────────────────────
+// 60 cp (line 74) and 61 cp word-boundary (line 92) are already covered.
+// This pins the specific off-by-one on the lower side.
+
+describe('truncate — 59-cp boundary', () => {
+  it('59 code points is within the 60-cp cap and returned unchanged', () => {
+    const text = 'A'.repeat(59);
+    // Non-vacuity: confirm the fixture is actually 59 cp.
+    expect(Array.from(text).length).toBe(59);
+    expect(truncate(text, 60)).toBe(text);
+  });
+});
+
+// ── classifySkill — discriminator group ──────────────────────────────────────
+
+/** Wrap a body string into the minimal skill object classifySkill expects. */
+function skillBody(body) {
+  return { name: 'aid-test', dir: 'canonical/skills/aid-test', frontmatter: {}, body };
+}
+
+describe('classifySkill — D1 dispatch-table', () => {
+  it('classifies as dispatch-table when ## Dispatch heading has State+Advance table', () => {
+    const body = [
+      '## Dispatch',
+      '',
+      '| State | Advance |',
+      '|-------|---------|',
+      '| ALPHA | HALT |',
+    ].join('\n');
+    const result = classifySkill(skillBody(body));
+    expect(result.shape).toBe('dispatch-table');
+    expect(result.evidence.some((e) => e.includes('D1'))).toBe(true);
+    expect(result.delegatesTo).toBeNull();
+  });
+
+  it('classifies as dispatch-table when ## State Machine heading has State+Advance table', () => {
+    const body = [
+      '## State Machine',
+      '',
+      '| State | Advance |',
+      '|-------|---------|',
+      '| ALPHA | HALT |',
+    ].join('\n');
+    const result = classifySkill(skillBody(body));
+    expect(result.shape).toBe('dispatch-table');
+    expect(result.evidence.some((e) => e.includes('State Machine'))).toBe(true);
+  });
+
+  it('does NOT classify as D1 when Dispatch heading table lacks the Advance column', () => {
+    // Without an "Advance" column the table does not satisfy the D1 probe.
+    const body = [
+      '## Dispatch',
+      '',
+      '| State | Notes |',
+      '|-------|-------|',
+      '| ALPHA | some notes |',
+    ].join('\n');
+    const result = classifySkill(skillBody(body));
+    expect(result.shape).not.toBe('dispatch-table');
+  });
+
+  it('does NOT classify as D1 when heading text is a superset of "Dispatch"', () => {
+    // D1_HEADING_RE requires the text is EXACTLY "Dispatch" or "State Machine".
+    const body = [
+      '## Dispatch Protocol',
+      '',
+      '| State | Advance |',
+      '|-------|---------|',
+      '| ALPHA | HALT |',
+    ].join('\n');
+    const result = classifySkill(skillBody(body));
+    expect(result.shape).not.toBe('dispatch-table');
+  });
+});
+
+describe('classifySkill — D2 inline-states', () => {
+  it('classifies as inline-states when two or more ## State: headings exist', () => {
+    const body = [
+      '## State: ALPHA',
+      'First state content.',
+      '',
+      '## State: BETA',
+      'Second state content.',
+    ].join('\n');
+    const result = classifySkill(skillBody(body));
+    expect(result.shape).toBe('inline-states');
+    expect(result.evidence.some((e) => e.includes('D2'))).toBe(true);
+  });
+
+  it('does NOT classify as D2 with only one ## State: heading (threshold is 2)', () => {
+    // One heading is below the threshold; falls through to D5 residual.
+    const body = '## State: ALPHA\nOnly one state, no second heading.';
+    const result = classifySkill(skillBody(body));
+    expect(result.shape).not.toBe('inline-states');
+  });
+});
+
+describe('classifySkill — D3 sibling-doorway', () => {
+  it('classifies as sibling-doorway: "no logic of its own" + exactly one SKILL.md ref', () => {
+    const body = [
+      'This skill has no logic of its own.',
+      'See canonical/skills/aid-base/SKILL.md for the full implementation.',
+    ].join('\n');
+    const result = classifySkill(skillBody(body));
+    expect(result.shape).toBe('sibling-doorway');
+    expect(result.delegatesTo).toBe('aid-base');
+    expect(result.evidence.some((e) => e.includes('D3'))).toBe(true);
+  });
+
+  it('does NOT classify as D3 when two distinct SKILL.md targets are referenced', () => {
+    // names.size === 2 → probe returns null.
+    const body = [
+      'This skill has no logic of its own.',
+      'See canonical/skills/aid-alpha/SKILL.md and canonical/skills/aid-beta/SKILL.md.',
+    ].join('\n');
+    const result = classifySkill(skillBody(body));
+    expect(result.shape).not.toBe('sibling-doorway');
+  });
+
+  it('does NOT classify as D3 when "no logic of its own" phrase is absent', () => {
+    // The SKILL.md reference exists but the required phrase is missing.
+    const body = 'See canonical/skills/aid-base/SKILL.md for details.';
+    const result = classifySkill(skillBody(body));
+    expect(result.shape).not.toBe('sibling-doorway');
+  });
+});
+
+describe('classifySkill — D4 engine-doorway', () => {
+  it('classifies as engine-doorway via GENERATED-by-build-shortcut-skills.py comment', () => {
+    const body = '<!-- GENERATED by build-shortcut-skills.py -->\nSome content.';
+    const result = classifySkill(skillBody(body));
+    expect(result.shape).toBe('engine-doorway');
+    expect(result.evidence.some((e) => e.includes('D4'))).toBe(true);
+    expect(result.delegatesTo).toBeNull();
+  });
+
+  it('classifies as engine-doorway via shortcut-engine.md reference', () => {
+    const body = 'Uses canonical/aid/templates/shortcut-engine.md as its template.';
+    const result = classifySkill(skillBody(body));
+    expect(result.shape).toBe('engine-doorway');
+    expect(result.evidence.some((e) => e.includes('D4'))).toBe(true);
+  });
+});
+
+describe('classifySkill — D5 residual', () => {
+  it('classifies as residual when no D1–D4 discriminator matches', () => {
+    const body = 'This skill has plain prose content with no special markers.';
+    const result = classifySkill(skillBody(body));
+    expect(result.shape).toBe('residual');
+    expect(result.delegatesTo).toBeNull();
+    expect(result.evidence.some((e) => e.includes('D5'))).toBe(true);
+  });
+});
+
+describe('classifySkill — precedence D1 > D2 > D3 > D4 > D5', () => {
+  it('D1 beats D2: aid-triage-shaped fixture carries ## State Machine + ## State: headings', () => {
+    // The body simultaneously satisfies D1 (## State Machine with State+Advance table)
+    // AND D2 (two ## State: headings). D1 must win because it fires first in the chain.
+    // This is the "aid-triage-shaped fixture" required by the AC: a body that carries
+    // a Dispatch table heading, a qualifying table, AND inline ## State: sections.
+    const body = [
+      '## State Machine',
+      '',
+      '| State | Advance |',
+      '|-------|---------|',
+      '| INTAKE | PROCESS HALT |',
+      '| PROCESS | HALT |',
+      '',
+      '## State: INTAKE',
+      'Intake state content.',
+      '',
+      '## State: PROCESS',
+      'Process state content.',
+    ].join('\n');
+    // D1 fires: ## State Machine + State+Advance table.
+    // D2 would also fire: two ## State: headings present.
+    const result = classifySkill(skillBody(body));
+    expect(result.shape).toBe('dispatch-table');
+  });
+
+  it('D2 beats D3: two ## State: headings win over "no logic of its own" + SKILL.md ref', () => {
+    const body = [
+      'This skill has no logic of its own.',
+      'See canonical/skills/aid-base/SKILL.md.',
+      '',
+      '## State: ALPHA',
+      'State A.',
+      '',
+      '## State: BETA',
+      'State B.',
+    ].join('\n');
+    const result = classifySkill(skillBody(body));
+    expect(result.shape).toBe('inline-states');
+  });
+
+  it('D3 beats D4: sibling-doorway wins over shortcut-engine.md reference', () => {
+    const body = [
+      'This skill has no logic of its own.',
+      'See canonical/skills/aid-base/SKILL.md.',
+      'Uses canonical/aid/templates/shortcut-engine.md.',
+    ].join('\n');
+    const result = classifySkill(skillBody(body));
+    expect(result.shape).toBe('sibling-doorway');
+  });
+
+  it('D4 beats D5: engine-doorway beats residual when GENERATED comment is present', () => {
+    const body = '<!-- GENERATED by build-shortcut-skills.py -->\nJust plain text.';
+    const result = classifySkill(skillBody(body));
+    expect(result.shape).toBe('engine-doorway');
+  });
+});
+
+// ── parseAdvanceBlock — separator group ──────────────────────────────────────
+
+/** States shared by all advance-parser fixtures. Uppercase names are exact-case
+ *  tokens — the parser is case-sensitive for declared state matching. */
+const ADV_STATES = [
+  { name: 'ALPHA', order: 1, id: 'n1' },
+  { name: 'BETA',  order: 2, id: 'n2' },
+  { name: 'GAMMA', order: 3, id: 'n3' },
+];
+
+/** Call parseAdvanceBlock with fixture defaults. `fromNodeId` defaults to 'n0'
+ *  (not in ADV_STATES) so rule-7 back-reference does not fire by default. */
+function adv(block, states = ADV_STATES, fromNodeId = 'n0') {
+  return parseAdvanceBlock({
+    block,
+    fromNodeId,
+    fromNodeName: 'START',
+    declaredStates: states,
+    file: 'canonical/skills/aid-test/SKILL.md',
+    blockStartLine: 1,
+    sourceKind: 'skill',
+  });
+}
+
+describe('parseAdvanceBlock — separators', () => {
+  it('semicolon ";" splits one block into two edges', () => {
+    const { edges } = adv('**Advance:** ALPHA; BETA');
+    expect(edges).toHaveLength(2);
+    expect(edges.some((e) => e.to === 'n1')).toBe(true);
+    expect(edges.some((e) => e.to === 'n2')).toBe(true);
+  });
+
+  it('spaced slash " / " splits into two edges', () => {
+    const { edges } = adv('**Advance:** ALPHA / BETA');
+    expect(edges).toHaveLength(2);
+    expect(edges.some((e) => e.to === 'n1')).toBe(true);
+    expect(edges.some((e) => e.to === 'n2')).toBe(true);
+  });
+
+  it('unspaced slash "A/B" between declared state tokens splits into two edges', () => {
+    // Both sides must be declared states; otherwise phase 2 rejects the cut.
+    const { edges } = adv('**Advance:** ALPHA/BETA');
+    expect(edges).toHaveLength(2);
+    expect(edges.some((e) => e.to === 'n1')).toBe(true);
+    expect(edges.some((e) => e.to === 'n2')).toBe(true);
+  });
+
+  it('" or " separator splits into two edges', () => {
+    const { edges } = adv('**Advance:** ALPHA or BETA');
+    expect(edges).toHaveLength(2);
+    expect(edges.some((e) => e.to === 'n1')).toBe(true);
+    expect(edges.some((e) => e.to === 'n2')).toBe(true);
+  });
+
+  it('"(or X)" parenthetical alternative produces two edges', () => {
+    const { edges } = adv('**Advance:** ALPHA (or BETA)');
+    expect(edges).toHaveLength(2);
+    expect(edges.some((e) => e.to === 'n1')).toBe(true);
+    expect(edges.some((e) => e.to === 'n2')).toBe(true);
+  });
+
+  it('sentence ". " boundary splits into two edges', () => {
+    const { edges } = adv('**Advance:** ALPHA. BETA');
+    expect(edges).toHaveLength(2);
+    expect(edges.some((e) => e.to === 'n1')).toBe(true);
+    expect(edges.some((e) => e.to === 'n2')).toBe(true);
+  });
+
+  it('" then " (lowercase) is recognised as a separator (one edge after rule 6 removes Y)', () => {
+    // The lowercase " then " separator is detected in phase 1. After phase 2 splits
+    // the block, rule 6 (unmarked arm) removes the Y clause edge, leaving one edge.
+    // This pins that " then " IS in the separator set; the rule 6 tests in their own
+    // group separately pin what each arm does.
+    const { edges } = adv('**Advance:** ALPHA then BETA');
+    expect(edges).toHaveLength(1);
+    expect(edges[0].to).toBe('n1'); // ALPHA is kept; BETA edge removed by rule 6
+  });
+});
+
+describe('parseAdvanceBlock — rule 4: terminal handling', () => {
+  it('HALT keyword with no declared-state target → HALT terminal, zero edges', () => {
+    const { edges, terminal } = adv('**Advance:** HALT', []);
+    expect(edges).toHaveLength(0);
+    expect(terminal).not.toBeNull();
+    expect(terminal.advanceType).toBe('HALT');
+  });
+
+  it('lowercase "halt" also produces a HALT terminal', () => {
+    const { edges, terminal } = adv('**Advance:** halt', []);
+    expect(edges).toHaveLength(0);
+    expect(terminal.advanceType).toBe('HALT');
+  });
+
+  it('"Stop here" produces a PAUSE-FOR-USER-ACTION terminal', () => {
+    const { edges, terminal } = adv('**Advance:** Stop here', []);
+    expect(edges).toHaveLength(0);
+    expect(terminal.advanceType).toBe('PAUSE-FOR-USER-ACTION');
+  });
+});
+
+describe('parseAdvanceBlock — rule 5: single conditional edge → self-loop', () => {
+  it('one conditional branch edge triggers a loop-back self-edge with condition "otherwise"', () => {
+    // "if approved BETA": single clause → edge to n2 (branch, condition='if approved').
+    // Rule 5: edges.length===1, condition!==null, to!=='n0' → self-loop added.
+    const { edges } = adv('**Advance:** if approved BETA');
+    expect(edges).toHaveLength(2);
+    const selfLoop = edges.find((e) => e.to === 'n0');
+    expect(selfLoop).toBeDefined();
+    expect(selfLoop.kind).toBe('loop-back');
+    expect(selfLoop.condition).toBe('otherwise');
+  });
+
+  it('rule 5 does NOT fire when there are two or more edges', () => {
+    // Two unconditional edges → rule 5 guard (edges.length===1) fails.
+    const { edges } = adv('**Advance:** ALPHA; BETA');
+    expect(edges.every((e) => e.to !== 'n0')).toBe(true);
+    expect(edges).toHaveLength(2);
+  });
+
+  it('rule 5 does NOT fire when the single edge is unconditional', () => {
+    // One clause, no condition → `condition !== null` is false → no self-loop.
+    const { edges } = adv('**Advance:** ALPHA');
+    expect(edges).toHaveLength(1);
+    expect(edges[0].condition).toBeNull();
+  });
+});
+
+describe('parseAdvanceBlock — rule 6: " then " separator, marked and unmarked arms', () => {
+  it('unmarked "then": keeps X as sequence edge, removes Y, emits W-1 warning', () => {
+    // No optionality marker on ALPHA → unmarked arm:
+    //   - ALPHA edge kept (sequence)
+    //   - BETA edge removed; BETA exempt from V9
+    //   - W-1 warning pushed
+    const { edges, warnings } = adv('**Advance:** ALPHA then BETA');
+    expect(edges).toHaveLength(1);
+    expect(edges[0].to).toBe('n1');
+    expect(edges[0].kind).toBe('sequence');
+    expect(warnings.length).toBeGreaterThan(0);
+    expect(warnings.some((w) => w.includes('then'))).toBe(true);
+  });
+
+  it('marked "then" with (optional): X becomes branch(condition=marker), Y becomes branch(null)', () => {
+    // "ALPHA (optional) then BETA": optionality marker detected on X.
+    // Marked arm: X → branch('optional'), Y → branch(null).
+    const { edges } = adv('**Advance:** ALPHA (optional) then BETA');
+    expect(edges).toHaveLength(2);
+    const xEdge = edges.find((e) => e.to === 'n1');
+    const yEdge = edges.find((e) => e.to === 'n2');
+    expect(xEdge).toBeDefined();
+    expect(xEdge.kind).toBe('branch');
+    expect(xEdge.condition).toBe('optional');
+    expect(yEdge).toBeDefined();
+    expect(yEdge.kind).toBe('branch');
+    expect(yEdge.condition).toBeNull();
+  });
+});
+
+describe('parseAdvanceBlock — rule 7: back-reference → loop-back kind', () => {
+  it('an edge targeting a lower-order declared state is assigned kind "loop-back"', () => {
+    // FROM: BETA (order=2, id=n2). TARGET: ALPHA (order=1 < 2) → rule 7 assigns loop-back.
+    const { edges } = adv('**Advance:** ALPHA', ADV_STATES, 'n2');
+    expect(edges).toHaveLength(1);
+    expect(edges[0].to).toBe('n1');
+    expect(edges[0].kind).toBe('loop-back');
+  });
+
+  it('an edge targeting a higher-order state is NOT assigned loop-back', () => {
+    // FROM: ALPHA (order=1, id=n1). TARGET: BETA (order=2 > 1) → sequence unchanged.
+    const { edges } = adv('**Advance:** BETA', ADV_STATES, 'n1');
+    expect(edges).toHaveLength(1);
+    expect(edges[0].to).toBe('n2');
+    expect(edges[0].kind).toBe('sequence');
+  });
+});
+
+describe('parseAdvanceBlock — rule 9: pause-resume edge → terminal', () => {
+  it('PAUSE-FOR-USER-DECISION targeting a declared state → terminal, zero edges', () => {
+    // Edge to ALPHA is emitted by rules 2-4, then consumed by rule 9.
+    const { edges, terminal } = adv('**Advance:** PAUSE-FOR-USER-DECISION ALPHA');
+    expect(edges).toHaveLength(0);
+    expect(terminal).not.toBeNull();
+    expect(terminal.advanceType).toBe('PAUSE-FOR-USER-DECISION');
+    expect(terminal.handoff).toBe('ALPHA');
+  });
+
+  it('PAUSE-FOR-USER-ACTION targeting a declared state → terminal with that state as handoff', () => {
+    const { edges, terminal } = adv('**Advance:** PAUSE-FOR-USER-ACTION BETA');
+    expect(edges).toHaveLength(0);
+    expect(terminal.advanceType).toBe('PAUSE-FOR-USER-ACTION');
+    expect(terminal.handoff).toBe('BETA');
+  });
+});
+
+// ── V9 — enforced in advance.mjs at edge-emission time, not in validateChart ─
+
+describe('parseAdvanceBlock — rule 10: W-1 residual warning (warn, never throw)', () => {
+  // Rule 10 has two halves against the same residue: W-1 warns, V9 throws. The V9 half
+  // is below. This half was recorded as possibly-unreachable and left OPEN in the
+  // delivery STATE — six candidate inputs were measured and none produced a residual
+  // W-1, because for a single-clause block the clause IS the whole content, so residue
+  // is necessarily empty.
+  //
+  // The reachable shape turned out to be a MULTI-outcome block in which one outcome is
+  // dropped: the dropped span is not covered by any accepted clause, so it becomes
+  // residue. `aid-update-kb`'s REVIEW row is the live instance. That closes the open
+  // question with an input rather than with a declaration of unreachability.
+  const STATES = [
+    { name: 'APPLY', order: 1, id: 'n1' },
+    { name: 'APPROVAL', order: 2, id: 'n2' },
+  ];
+
+  it('a dropped outcome leaves residue and emits a W-1 naming it — without throwing', () => {
+    const r = adv(
+      '**Advance:** incomplete APPLY -> CHAIN -> APPLY; ' +
+      'grade below gate -> CHAIN -> UNDECLARED; READY -> CHAIN -> APPROVAL',
+      STATES
+    );
+
+    // Warns, never throws — that is rule 10's W-1 half, and FR-2's boundary.
+    const w1 = r.warnings.filter((w) => /W-1/.test(w));
+    expect(w1).toHaveLength(1);
+    // Content, not just presence: the tag, the source node, file:line, and the residue.
+    expect(w1[0]).toContain('W-1');
+    expect(w1[0]).toContain("'START'");
+    expect(w1[0]).toContain('canonical/skills/aid-test/SKILL.md:1');
+    expect(w1[0]).toContain('grade below gate');
+
+    // The surviving outcomes are unaffected, which is what makes the residue a residue
+    // rather than a parse failure.
+    expect(r.edges.map((e) => e.to).sort()).toEqual(['n1', 'n2']);
+  });
+
+  it('no residue means no W-1 — the warning is not emitted unconditionally', () => {
+    // Separability for the residue condition: same two-clause shape, both outcomes
+    // resolvable, so nothing is dropped and nothing is left over.
+    const r = adv('**Advance:** incomplete APPLY -> CHAIN -> APPLY; READY -> CHAIN -> APPROVAL', STATES);
+    expect(r.warnings.filter((w) => /W-1/.test(w))).toEqual([]);
+    expect(r.edges).toHaveLength(2);
+  });
+
+  // Rule 8 is deliberately NOT tested here. Its guard
+  // (`if (edge.kind === 're-entry') continue;` inside rule 7) is structurally dead in
+  // this module: `advance.mjs` never assigns kind 're-entry', so no input to
+  // parseAdvanceBlock can reach it. Rule 8 emits re-entry edges from a *heading*, which
+  // is an extractor's job, so the criterion is discharged in
+  // `flow-extract-dispatch.test.mjs` — see its "re-entry kind takes precedence over
+  // loop-back" case. Writing a rule-8 test here would be a test that cannot fail, which
+  // is the defect this delivery keeps producing. Recorded in the delivery STATE.
+});
+
+describe('V9 (advance.mjs): throw on unconsumed declared state', () => {
+  it('throws carrying "V9" when a declared state appears in advance text but is not an edge target', () => {
+    // KI-008 scenario: THEN (uppercase) is not the " then " separator.
+    // Phase 1 finds no separator. Clause "DELIVER THEN DONE" resolves to DELIVER.
+    // DONE is declared, case-exact in the text, not an edge target → V9 throws.
+    const states = [
+      { name: 'DELIVER', order: 1, id: 'n1' },
+      { name: 'DONE',    order: 2, id: 'n2' },
+    ];
+    expect(() =>
+      parseAdvanceBlock({
+        block: '**Advance:** DELIVER THEN DONE',
+        fromNodeId: 'n0',
+        fromNodeName: 'START',
+        declaredStates: states,
+        file: 'canonical/skills/aid-test/SKILL.md',
+        blockStartLine: 1,
+      })
+    ).toThrow(/V9/);
+  });
+
+  it('V9 throw message cites the unconsumed state by name (KI-008 fingerprint)', () => {
+    const states = [
+      { name: 'DELIVER', order: 1, id: 'n1' },
+      { name: 'DONE',    order: 2, id: 'n2' },
+    ];
+    expect(() =>
+      parseAdvanceBlock({
+        block: '**Advance:** DELIVER THEN DONE',
+        fromNodeId: 'n0',
+        fromNodeName: 'START',
+        declaredStates: states,
+        file: 'canonical/skills/aid-test/SKILL.md',
+        blockStartLine: 1,
+      })
+    ).toThrow(/DONE/);
+  });
+
+  it('V9 does NOT throw when all declared state references are emitted as edge targets', () => {
+    // Both ALPHA and BETA are consumed by edges; V9 scan finds nothing unaccounted for.
+    const states = [
+      { name: 'ALPHA', order: 1, id: 'n1' },
+      { name: 'BETA',  order: 2, id: 'n2' },
+    ];
+    expect(() =>
+      parseAdvanceBlock({
+        block: '**Advance:** ALPHA; BETA',
+        fromNodeId: 'n0',
+        fromNodeName: 'START',
+        declaredStates: states,
+        file: 'canonical/skills/aid-test/SKILL.md',
+        blockStartLine: 1,
+      })
+    ).not.toThrow();
+  });
+
+  it('V9 does NOT throw when the state appears only as the pause-resume handoff', () => {
+    // ALPHA is consumed into terminal.handoff, not edgeTargetIds.
+    // V9 skips it via the handoffName comparison.
+    const states = [{ name: 'ALPHA', order: 1, id: 'n1' }];
+    expect(() =>
+      parseAdvanceBlock({
+        block: '**Advance:** PAUSE-FOR-USER-DECISION ALPHA',
+        fromNodeId: 'n0',
+        fromNodeName: 'START',
+        declaredStates: states,
+        file: 'canonical/skills/aid-test/SKILL.md',
+        blockStartLine: 1,
+      })
+    ).not.toThrow();
+  });
+
+  it('V9 does NOT throw when the tail of an unmarked " then " clause is exempt', () => {
+    // "ALPHA then BETA" unmarked → rule 6 removes the BETA edge AND adds n2 to v9Exempt.
+    // V9 then skips BETA; no throw.
+    const states = [
+      { name: 'ALPHA', order: 1, id: 'n1' },
+      { name: 'BETA',  order: 2, id: 'n2' },
+    ];
+    expect(() =>
+      parseAdvanceBlock({
+        block: '**Advance:** ALPHA then BETA',
+        fromNodeId: 'n0',
+        fromNodeName: 'START',
+        declaredStates: states,
+        file: 'canonical/skills/aid-test/SKILL.md',
+        blockStartLine: 1,
+      })
+    ).not.toThrow();
+  });
+});
+
+// ── validateChart — V1–V8 isolation ──────────────────────────────────────────
+// Each test fails exactly ONE V-rule.  Confirmed by: (a) asserting that rule's
+// error string appears in `errors`, and (b) asserting ALL errors mention only
+// that rule — a test that also catches a second rule firing.
+
+describe('validateChart — V1: nodes non-empty; ids unique and charset-valid', () => {
+  it('V1 fires (only) for a node id that violates the charset (starts with digit)', () => {
+    // '1invalid' starts with a digit → fails ^[A-Za-z][A-Za-z0-9_]{0,31}$.
+    // entries/exits use that same id → nodeIds contains it → V2, V3 pass.
+    // V6: '1invalid' is in entries; adj walk → it is reachable. Passes.
+    // V7: PROV is valid. V8: label 'A' ≤ 60 cp. ONLY V1 fires.
+    const rawChart = {
+      skill: 'aid-test', shape: 'residual', extractor: 'test',
+      confidence: 'approximate', title: 'aid-test \u2014 state flow',
+      nodes: [{
+        id: '1invalid', order: 1, name: 'A', label: 'A',
+        kind: 'exit', terminal: halt(), provenance: PROV, detail: null,
+      }],
+      edges: [],
+      entries: ['1invalid'],
+      exits: ['1invalid'],
+      sources: [], warnings: [],
+    };
+    const { ok, errors } = validateChart(rawChart);
+    expect(ok).toBe(false);
+    expect(errors.some((e) => /V1/.test(e))).toBe(true);
+    expect(errors.every((e) => /V1/.test(e))).toBe(true);
+  });
+
+  it('V1 fires for duplicate node ids', () => {
+    // Two nodes share id 'n1'. entries/exits both point to 'n1' → present in nodeIds → V2/V3 pass.
+    // V6: n1 in entries → reachable. V7, V8 pass. Only V1 fires.
+    const rawChart = {
+      skill: 'aid-test', shape: 'residual', extractor: 'test',
+      confidence: 'approximate', title: 'aid-test \u2014 state flow',
+      nodes: [
+        { id: 'n1', order: 1, name: 'A', label: 'A', kind: 'entry', terminal: null,  provenance: PROV, detail: null },
+        { id: 'n1', order: 2, name: 'B', label: 'B', kind: 'exit',  terminal: halt(), provenance: PROV, detail: null },
+      ],
+      edges: [], entries: ['n1'], exits: ['n1'], sources: [], warnings: [],
+    };
+    const { errors } = validateChart(rawChart);
+    expect(errors.some((e) => /V1/.test(e) && /duplicate/.test(e))).toBe(true);
+  });
+});
+
+describe('validateChart — V2: entries non-empty; every entry id is a node id', () => {
+  it('V2 fires (only) when entries contains an id not present in nodes', () => {
+    // entries=['n1','ghost']: 'n1' is valid (V2 passes for it), 'ghost' is not (V2 fires).
+    // V6: queue starts with n1 (ghost filtered by nodeIds); n2 reachable via edge. Passes.
+    // V3: exits=['n2'] → valid. ONLY V2 fires.
+    const chart = buildChart({
+      skill: 'aid-test', shape: 'residual', extractor: 'test', confidence: 'approximate',
+      nodes: [node(1, 'A'), node(2, 'B', halt())],
+      edges: [edge('n1', 'n2')],
+      sources: [],
+    });
+    const { errors } = validateChart({ ...chart, entries: ['n1', 'ghost'] });
+    expect(errors.some((e) => /V2/.test(e))).toBe(true);
+    expect(errors.every((e) => /V2/.test(e))).toBe(true);
+  });
+
+  it('V2 also fires when entries is EMPTY — its other half', () => {
+    // V2 has two independent conditions and the case above only reaches the second.
+    // Neutralising the emptiness check killed nothing until this test existed.
+    //
+    // Empty entries cannot fail V2 *alone*: with no entry, V6 finds no node reachable,
+    // so it necessarily co-fires. That is a structural fact about the rule set, not a
+    // reason to leave the condition unpinned — so this asserts V2 fires, names V6 as the
+    // expected companion, and pins that nothing else joins them.
+    const chart = buildChart({
+      skill: 'aid-test', shape: 'residual', extractor: 'test', confidence: 'approximate',
+      nodes: [node(1, 'A'), node(2, 'B', halt())],
+      edges: [edge('n1', 'n2')],
+      sources: [],
+    });
+    const { errors } = validateChart({ ...chart, entries: [] });
+    expect(errors.some((e) => /V2: entries is empty/.test(e))).toBe(true);
+    expect(errors.every((e) => /V2|V6/.test(e))).toBe(true);
+  });
+});
+
+describe('validateChart — V3: exits non-empty; every exit id is a node id', () => {
+  it('V3 fires (only) when exits contains an id not present in nodes', () => {
+    // exits=['n2','ghost']: 'n2' valid, 'ghost' is not → V3 fires.
+    // V2: entries=['n1'] valid. V6: reachable. ONLY V3 fires.
+    const chart = buildChart({
+      skill: 'aid-test', shape: 'residual', extractor: 'test', confidence: 'approximate',
+      nodes: [node(1, 'A'), node(2, 'B', halt())],
+      edges: [edge('n1', 'n2')],
+      sources: [],
+    });
+    const { errors } = validateChart({ ...chart, exits: ['n2', 'ghost'] });
+    expect(errors.some((e) => /V3/.test(e))).toBe(true);
+    expect(errors.every((e) => /V3/.test(e))).toBe(true);
+  });
+
+  it('V3 also fires when exits is EMPTY — its other half, and alone', () => {
+    // As with V2, the case above only reaches the second condition. Unlike V2's empty
+    // case, this one genuinely fails V3 alone: no other rule reads `exits`.
+    const chart = buildChart({
+      skill: 'aid-test', shape: 'residual', extractor: 'test', confidence: 'approximate',
+      nodes: [node(1, 'A'), node(2, 'B', halt())],
+      edges: [edge('n1', 'n2')],
+      sources: [],
+    });
+    const { errors } = validateChart({ ...chart, exits: [] });
+    expect(errors.some((e) => /V3: exits is empty/.test(e))).toBe(true);
+    expect(errors.every((e) => /V3/.test(e))).toBe(true);
+  });
+});
+
+describe('validateChart — V4: no dangling edges', () => {
+  it('V4 fires (only) when an edge.to is not a node id', () => {
+    // n1 is the only node (entry + exit via terminal). Edge n1→'ghost' is dangling.
+    // V5: one edge, no duplicate. V6: V4-invalid edges are skipped in adj construction;
+    //     n1 reachable from its own entry. ONLY V4 fires.
+    const chart = buildChart({
+      skill: 'aid-test', shape: 'residual', extractor: 'test', confidence: 'approximate',
+      nodes: [node(1, 'A', halt())],
+      edges: [],
+      sources: [],
+    });
+    const danglingEdge = makeEdge({
+      from: 'n1', to: 'ghost', kind: 'sequence',
+      condition: null, advanceType: 'CHAIN', provenance: PROV,
+    });
+    const { errors } = validateChart({ ...chart, edges: [danglingEdge] });
+    expect(errors.some((e) => /V4/.test(e))).toBe(true);
+    expect(errors.every((e) => /V4/.test(e))).toBe(true);
+  });
+
+  it('V4 also fires when an edge.FROM is not a node id — its other half', () => {
+    // V4 checks both endpoints independently, and the case above only reaches `to`.
+    // Disabling the `from` half killed nothing until this test existed.
+    const chart = buildChart({
+      skill: 'aid-test', shape: 'residual', extractor: 'test', confidence: 'approximate',
+      nodes: [node(1, 'A', halt())],
+      edges: [],
+      sources: [],
+    });
+    const danglingFrom = makeEdge({
+      from: 'ghost', to: 'n1', kind: 'sequence',
+      condition: null, advanceType: 'CHAIN', provenance: PROV,
+    });
+    const { errors } = validateChart({ ...chart, edges: [danglingFrom] });
+    expect(errors.some((e) => /V4: edge\.from 'ghost'/.test(e))).toBe(true);
+    expect(errors.every((e) => /V4/.test(e))).toBe(true);
+  });
+});
+
+describe('validateChart — V5: no duplicate (from, to, condition) triple', () => {
+  it('V5 fires (only) when two edges share the same (from, to, condition) triple', () => {
+    // Two identical n1→n2 sequence edges with condition=null.
+    // V4: both endpoints are valid node ids. V6: n2 reachable via (either) edge. ONLY V5.
+    const chart = buildChart({
+      skill: 'aid-test', shape: 'residual', extractor: 'test', confidence: 'approximate',
+      nodes: [node(1, 'A'), node(2, 'B', halt())],
+      edges: [edge('n1', 'n2')],
+      sources: [],
+    });
+    const dup = makeEdge({ from: 'n1', to: 'n2', kind: 'sequence', condition: null, advanceType: 'CHAIN', provenance: PROV });
+    const { errors } = validateChart({ ...chart, edges: [chart.edges[0], dup] });
+    expect(errors.some((e) => /V5/.test(e))).toBe(true);
+    expect(errors.every((e) => /V5/.test(e))).toBe(true);
+  });
+
+  it('two edges with the same (from, to) but different conditions do NOT trigger V5', () => {
+    // Different condition strings → different keys in tripleSeen → no duplicate.
+    const e1 = makeEdge({ from: 'n1', to: 'n2', kind: 'branch', condition: 'if A', advanceType: 'CHAIN', provenance: PROV });
+    const e2 = makeEdge({ from: 'n1', to: 'n2', kind: 'branch', condition: 'if B', advanceType: 'CHAIN', provenance: PROV });
+    const chart = buildChart({
+      skill: 'aid-test', shape: 'residual', extractor: 'test', confidence: 'approximate',
+      nodes: [node(1, 'A'), node(2, 'B', halt())],
+      edges: [e1, e2],
+      sources: [],
+    });
+    const { errors } = validateChart(chart);
+    expect(errors.some((e) => /V5/.test(e))).toBe(false);
+  });
+});
+
+describe('validateChart — V6: every node reachable from entries', () => {
+  it('V6 fires (only) for a node that is not reachable from any entry', () => {
+    // Strategy: build the chart normally, then override `entries` in the raw object
+    // passed to validateChart so n3 is not an entry.
+    //
+    // buildChart computes a synthetic entry for n3 (its own self-loop makes it a
+    // cycle component with no real in-degree-0 node), keeping V6 from firing on the
+    // built chart. By overriding to entries=['n1'] we give validateChart a structurally
+    // coherent chart where n3 is genuinely unreachable from the declared entry set —
+    // the scenario V6 exists to detect.
+    //
+    // V4: both n3→n3 and n1→n2 have valid node endpoints. Passes.
+    // V5: no duplicate triples. Passes.
+    // V7: all nodes use PROV (valid canonical/ file, line range, excerpt). Passes.
+    // V8: all labels short. Passes.
+    // V2: 'n1' in nodeIds. Passes. V3: exits=['n2']. Passes. ONLY V6 fires.
+    const selfLoopEdge = makeEdge({
+      from: 'n3', to: 'n3', kind: 'loop-back',
+      condition: null, advanceType: 'CHAIN', provenance: PROV,
+    });
+    const chart = buildChart({
+      skill: 'aid-test', shape: 'residual', extractor: 'test', confidence: 'approximate',
+      nodes: [node(1, 'A'), node(2, 'B', halt()), node(3, 'C')],
+      edges: [edge('n1', 'n2'), selfLoopEdge],
+      sources: [],
+    });
+    // Override entries: remove the synthetic n3 entry so validateChart sees n3 as unreachable.
+    const { errors } = validateChart({ ...chart, entries: ['n1'] });
+    expect(errors.some((e) => /V6/.test(e))).toBe(true);
+    expect(errors.every((e) => /V6/.test(e))).toBe(true);
+  });
+});
+
+describe('validateChart — V7: provenance well-formed', () => {
+  it('V7 fires (only) when provenance.file is not under canonical/', () => {
+    // Local path fails the startsWith('canonical/') guard.
+    // startLine=1, endLine=1, excerpt='| test |' (1 line → span matches) → no range error.
+    // V8: label 'A' ≤ 60 cp. ONLY V7 fires.
+    const badProv = makeProvenance({
+      file: 'local/skills/aid-test/SKILL.md',
+      startLine: 1, endLine: 1, sourceKind: 'skill', excerpt: '| test |',
+    });
+    const chart = buildChart({
+      skill: 'aid-test', shape: 'residual', extractor: 'test', confidence: 'approximate',
+      nodes: [makeNode({ order: 1, name: 'A', label: 'A', provenance: badProv, terminal: halt() })],
+      edges: [],
+      sources: [],
+    });
+    const { errors } = validateChart(chart);
+    expect(errors.some((e) => /V7/.test(e))).toBe(true);
+    expect(errors.every((e) => /V7/.test(e))).toBe(true);
+  });
+
+  it('V7 also fires when a node has NO provenance at all — its first condition', () => {
+    // The two cases below reach V7's file and span checks; neither reaches the guard
+    // that runs before them, and disabling that guard killed nothing until now.
+    // Built by hand rather than through makeNode, which requires a provenance — the
+    // point is a chart that reached the validator without one.
+    const chart = buildChart({
+      skill: 'aid-test', shape: 'residual', extractor: 'test', confidence: 'approximate',
+      nodes: [node(1, 'A', halt())],
+      edges: [],
+      sources: [],
+    });
+    const stripped = { ...chart, nodes: [{ ...chart.nodes[0], provenance: null }] };
+    const { errors } = validateChart(stripped);
+    expect(errors.some((e) => /V7: node 'n1' \('A'\) has no provenance/.test(e))).toBe(true);
+    expect(errors.every((e) => /V7/.test(e))).toBe(true);
+  });
+
+  it('V7 fires (only) when excerpt line count mismatches the startLine–endLine span', () => {
+    // startLine=1, endLine=3 → expects 3 lines. 'single line only' has 1 → V7 fires.
+    // file is under canonical/ → file check passes. ONLY V7 fires.
+    const mismatchProv = makeProvenance({
+      file: 'canonical/skills/aid-test/SKILL.md',
+      startLine: 1, endLine: 3, sourceKind: 'skill', excerpt: 'single line only',
+    });
+    const chart = buildChart({
+      skill: 'aid-test', shape: 'residual', extractor: 'test', confidence: 'approximate',
+      nodes: [makeNode({ order: 1, name: 'A', label: 'A', provenance: mismatchProv, terminal: halt() })],
+      edges: [],
+      sources: [],
+    });
+    const { errors } = validateChart(chart);
+    expect(errors.some((e) => /V7/.test(e))).toBe(true);
+    expect(errors.every((e) => /V7/.test(e))).toBe(true);
+  });
+});
+
+describe('validateChart — V8: label ≤ 60 Unicode code points', () => {
+  it('V8 fires (only) for a label that is 61 code points (one over the cap)', () => {
+    // 61 ASCII chars → 61 code points. Limit is 60. V8 fires.
+    // PROV is valid → V7 passes. id 'n1' valid → V1 passes. ONLY V8 fires.
+    const chart = buildChart({
+      skill: 'aid-test', shape: 'residual', extractor: 'test', confidence: 'approximate',
+      nodes: [makeNode({ order: 1, name: 'A', label: 'A'.repeat(61), provenance: PROV, terminal: halt() })],
+      edges: [],
+      sources: [],
+    });
+    const { ok, errors } = validateChart(chart);
+    expect(ok).toBe(false);
+    expect(errors.some((e) => /V8/.test(e))).toBe(true);
+    expect(errors.every((e) => /V8/.test(e))).toBe(true);
+  });
+
+  it('V8 passes for a label of exactly 60 code points (at the cap)', () => {
+    const chart = buildChart({
+      skill: 'aid-test', shape: 'residual', extractor: 'test', confidence: 'approximate',
+      nodes: [makeNode({ order: 1, name: 'A', label: 'A'.repeat(60), provenance: PROV, terminal: halt() })],
+      edges: [],
+      sources: [],
+    });
+    const { ok } = validateChart(chart);
+    expect(ok).toBe(true);
+  });
+});
+
+// ── validateChart — exactly V1–V8; V9 is NOT implemented here ────────────────
+
+describe('validateChart — boundary: V1–V8 only; V9 lives in advance.mjs', () => {
+  it('a chart structurally valid under V1-V8 passes cleanly even for a V9 scenario', () => {
+    // Two isolated terminal nodes (both entries, both exits, no edges).
+    // This represents the chart that could result from a parse where DONE appeared
+    // in DELIVER's advance text but was not emitted as an edge — exactly the KI-008
+    // scenario. validateChart cannot see the advance text, so it passes V1-V8 cleanly.
+    // V9 would have fired at parse time in advance.mjs. This test is the positive
+    // statement that the V1-V8 boundary is where the rule is intentionally drawn.
+    const chart = buildChart({
+      skill: 'aid-test', shape: 'residual', extractor: 'test', confidence: 'approximate',
+      nodes: [node(1, 'DELIVER', halt()), node(2, 'DONE', halt())],
+      edges: [],
+      sources: [],
+    });
+    const { ok, errors } = validateChart(chart);
+    expect(ok).toBe(true);
+    expect(errors).toHaveLength(0);
   });
 });
