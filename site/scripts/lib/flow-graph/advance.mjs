@@ -606,6 +606,22 @@ function _clauseResolves(text, stateByName) {
 }
 
 /**
+ * Return true if `text` reads as a complete routing outcome whose target is not a
+ * declared state — an arrow form followed, eventually, by a state-shaped ALL-CAPS
+ * token.  Used by `_buildClauses` to tell "an outcome pointing at an undeclared
+ * state" (drop it) apart from "a sentence fragment" (keep it joined).
+ *
+ * Deliberately narrow: without an arrow this returns false, so ordinary prose that
+ * happens to contain a `;` or `. ` still keeps its halves joined.
+ *
+ * @param {string} text  A clause half that failed `_clauseResolves`.
+ * @returns {boolean}
+ */
+function _isUnresolvableOutcome(text) {
+  return /(->|→|=>)[^A-Za-z0-9]*(?:[A-Z][A-Z0-9-]{1,}\b[^A-Za-z0-9]*)+$/.test(text.trim());
+}
+
+/**
  * Phase 2: process proposed cuts left-to-right, greedily accepting each one
  * when both resulting sub-clauses individually resolve.  Returns the ordered
  * list of clause strings.
@@ -675,7 +691,43 @@ function _buildClauses(content, proposedCuts, stateByName) {
       const text2 = content.slice(cut.splitAt + cut.sepLen, piece.end).trim();
 
       if (!text1 || !text2) continue;
-      if (!_clauseResolves(text1, stateByName) || !_clauseResolves(text2, stateByName)) continue;
+
+      const r1 = _clauseResolves(text1, stateByName);
+      const r2 = _clauseResolves(text2, stateByName);
+
+      if (!r1 && !r2) continue;
+
+      // When exactly ONE half fails to resolve, the default is to reject the cut and
+      // keep the halves joined — the separator was punctuation inside a single clause,
+      // not a boundary between two. That default is wrong for one shape: a half that
+      // is itself a complete outcome routing to a state this skill never declares.
+      //
+      // `aid-update-kb`'s REVIEW row packs four `;`-separated outcomes into one cell,
+      // and the third routes to FIX — a loop *mode* described in prose, not a row in
+      // the Dispatch table. Rejecting that cut absorbed outcome 3 into outcome 4, so
+      // the REVIEW -> APPROVAL edge published outcome 3's condition
+      // ("grade/teach-back/… below gate … FIX…") instead of its own ("READY"). The
+      // label named a target that was not the edge's target — worse than no label,
+      // because it reads as authoritative.
+      //
+      // So: cut anyway and drop the unresolvable half. An outcome whose target is not
+      // a declared state has no node to point at and cannot appear in the chart either
+      // way; what it must not do is overwrite its neighbour's condition. Nothing is
+      // lost that was previously drawn.
+      //
+      // The dropped span does fall through to the W-1 residue warning, and that is
+      // asserted — but note that a W-1 on a dispatch-table chart currently reaches no
+      // human: see the `confidence` note in index.mjs. The drop is defensible because
+      // the alternative published a false label, not because the warning is loud.
+      if (!r1 || !r2) {
+        const orphan = r1 ? text2 : text1;
+        if (!_isUnresolvableOutcome(orphan)) continue;
+        const kept = r1
+          ? { start: piece.start, end: cut.splitAt, _text: undefined }
+          : { start: cut.splitAt + cut.sepLen, end: piece.end, _text: undefined };
+        pieces.splice(pIdx, 1, kept);
+        continue;
+      }
 
       // Accept: replace piece with two sub-pieces.
       pieces.splice(

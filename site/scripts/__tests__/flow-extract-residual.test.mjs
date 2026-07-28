@@ -963,6 +963,35 @@ describe('R1 — a bracket token with no NAME is skipped, not turned into a node
     });
   }
 
+  it('R2 — a `### State N —` heading with an empty name produces no node either', () => {
+    // Row 16. The R1 guard has three tests; its R2 twin had none — and the R2 half is
+    // exactly the half that was missed when this class was first "fixed", because my
+    // probe fixture lacked the trailing space that makes the name empty. Leaving it
+    // unpinned means the missed half can now be silently deleted.
+    //
+    // The trailing space after the em-dash is load-bearing: `R2_STATE_RE`'s `(.+)`
+    // matches it, `.trim()` empties it, and the node used to ship with no label.
+    const chart = extractResidual(parseSkill(`---
+name: r2-empty
+description: R2 empty-name fixture.
+---
+
+### State 1 — 
+
+prose under the nameless heading
+
+### State 2 — REAL
+
+prose under the real one
+`, 'r2-empty'));
+
+    const empty = chart.nodes.filter((n) => !n.name || !String(n.label).trim());
+    expect(empty).toEqual([]);
+    expect(validateChart(chart).ok).toBe(true);
+    // One valid R2 heading is not two, so the ladder declines and R5 answers.
+    expect(chart.nodes.map((n) => n.name)).toEqual(['ENTRY', 'RUN', 'EXIT']);
+  });
+
   it('parseAsciiStateMap drops the nameless token but keeps its neighbours', () => {
     // Pins the mechanism directly, so the behaviour survives a refactor of the
     // ladder above it.

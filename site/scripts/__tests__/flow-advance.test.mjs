@@ -277,6 +277,139 @@ describe('Rule 2 — whole-token matching: hyphenated names and no substring mat
   });
 });
 
+describe('an outcome routing to an undeclared state is dropped, not absorbed', () => {
+  // Row 19. `_buildClauses` accepts a cut only when BOTH halves resolve to a declared
+  // state. That default is right for punctuation inside one clause, but it silently
+  // misattributes when a half is a whole outcome pointing at a state the skill never
+  // declared: the cut is rejected, the halves stay joined, and the surviving edge
+  // publishes its NEIGHBOUR's condition.
+  //
+  // Shape from canonical/skills/aid-update-kb/SKILL.md:446 — four `;`-separated
+  // outcomes in one Dispatch cell, the third routing to FIX, which is a loop *mode*
+  // in prose and not a row in the table.
+  // The real cell opens with a "4 outcomes (`…`):" preamble, omitted here so the
+  // fixture isolates the misattribution rather than also asserting preamble handling.
+  const CELL =
+    'incomplete APPLY -> CHAIN -> APPLY; ' +
+    'out-of-scope disk edit -> PAUSE-FOR-USER-ACTION -> CONFIRM; ' +
+    'grade/teach-back/act-back/TRACE-1 below gate (scope-diff already PASS) -> CHAIN -> FIX; ' +
+    'READY -> CHAIN -> APPROVAL';
+
+  const declared = states('APPLY', 'CONFIRM', 'APPROVAL');
+
+  it('the APPROVAL edge carries its OWN condition, not its neighbour\'s', () => {
+    const r = parse(advBlock(CELL), declared, { fromNodeName: 'REVIEW' });
+    const approval = r.edges.filter((e) => e.to === 'n3');
+    expect(approval).toHaveLength(1);
+    expect(approval[0].condition).toBe('READY');
+  });
+
+  it('no edge label mentions the undeclared target FIX', () => {
+    const r = parse(advBlock(CELL), declared, { fromNodeName: 'REVIEW' });
+    expect(r.edges.length).toBeGreaterThan(1); // non-vacuity
+    for (const e of r.edges) {
+      expect(e.condition ?? '').not.toMatch(/(?<![A-Za-z0-9-])FIX(?![A-Za-z0-9-])/);
+    }
+  });
+
+  it('the other outcomes are unaffected', () => {
+    const r = parse(advBlock(CELL), declared, { fromNodeName: 'REVIEW' });
+    // Outcome 1 keeps its own condition …
+    expect(r.edges.filter((e) => e.to === 'n1')[0].condition).toBe('incomplete APPLY');
+    // … and outcome 2 stays a PAUSE-FOR-USER-ACTION terminal handing off to CONFIRM,
+    // which is why the built chart has no REVIEW -> CONFIRM edge.
+    expect(r.terminal).toEqual({ advanceType: 'PAUSE-FOR-USER-ACTION', handoff: 'CONFIRM' });
+  });
+
+  it('the dropped outcome is surfaced as a W-1 residue warning, not swallowed', () => {
+    // Dropping the clause is only defensible because the drop is visible. W-1 names it.
+    const r = parse(advBlock(CELL), declared, { fromNodeName: 'REVIEW' });
+    expect(r.warnings).toHaveLength(1);
+    expect(r.warnings[0]).toContain('W-1');
+    expect(r.warnings[0]).toContain('grade/teach-back/act-back/TRACE-1');
+  });
+
+  // The two properties that keep `_isUnresolvableOutcome` narrow. Both survived
+  // mutation on the first pass, which is the same finding the reviewer has raised
+  // three times — a correct fix whose narrowing is free to undo. Pinned here.
+  it('requires the target to be LAST — trailing prose means it is not a bare outcome', () => {
+    const r = parse(
+      advBlock('-> APPROVAL when ready; escalate -> CHAIN -> FIX and then reconsider the scope'),
+      states('APPROVAL'),
+      { fromNodeName: 'REVIEW' }
+    );
+    // The half is not outcome-shaped, so the cut is rejected and nothing is discarded.
+    expect(r.edges).toHaveLength(1);
+    expect(r.edges[0].condition).toBe(
+      'when ready; escalate FIX and then reconsider the scope'
+    );
+  });
+
+  it('requires an ALL-CAPS target — a lowercase tail is prose, not a state', () => {
+    const r = parse(
+      advBlock('-> APPROVAL when ready; otherwise hand -> back to the author'),
+      states('APPROVAL'),
+      { fromNodeName: 'REVIEW' }
+    );
+    expect(r.edges).toHaveLength(1);
+    expect(r.edges[0].condition).toBe('when ready; otherwise hand back to the author');
+  });
+
+  it('does NOT split ordinary prose that merely contains a separator', () => {
+    // The guard must stay narrow: without an arrow the failing half is a sentence
+    // fragment, so the halves stay joined and the whole condition survives.
+    const r = parse(advBlock('-> APPROVAL when the panel agrees; and the gate is green'), states('APPROVAL'), {
+      fromNodeName: 'REVIEW',
+    });
+    expect(r.edges).toHaveLength(1);
+    expect(r.edges[0].condition).toBe('when the panel agrees; and the gate is green');
+  });
+});
+
+describe('the dangling-preposition repair', () => {
+  // Row 17. This repair shipped with NO test, and three separate mutations survived:
+  // deleting it outright, dropping `toward` from the preposition set, and dropping
+  // `once` from the lookahead. The last two are precise enough to remove exactly the
+  // token pair the aid-discover label needed — so the only thing holding that fix
+  // closed was the committed page output.
+  //
+  // Third time this shape has been found on one of my fixes, which is why each
+  // assertion below names the token pair it protects rather than testing the general
+  // idea once.
+  // Shape taken verbatim from the clause that produced the defect —
+  // canonical/skills/aid-discover/references/state-q-and-a.md:64. The second clause
+  // carries no arrow and names its target mid-sentence, which is what makes the strip
+  // weld the surrounding words together.
+  const PAIRS = [
+    ['toward … once', 'otherwise chain toward APPROVAL once zero Pending', 'otherwise chain once zero Pending'],
+    ['to … when', 'otherwise hand to APPROVAL when ready', 'otherwise hand when ready'],
+    ['into … after', 'otherwise fold into APPROVAL after review', 'otherwise fold after review'],
+  ];
+
+  for (const [label, tail, expected] of PAIRS) {
+    it(`drops the orphaned preposition in "${label}"`, () => {
+      const r = parse(
+        advBlock(`**CHAIN** → [State: FIX] when a doc changes; ${tail}.`),
+        states('FIX', 'APPROVAL'),
+        { fromNodeName: 'Q-AND-A' }
+      );
+      // n2 is APPROVAL — the second clause's target, whose name sits mid-sentence.
+      const toApproval = r.edges.filter((e) => e.to === 'n2');
+      expect(toApproval).toHaveLength(1);
+      expect(toApproval[0].condition).toBe(expected);
+    });
+  }
+
+  it('does NOT eat a preposition that still has its object', () => {
+    // The repair must only fire where the strip left the preposition pointing at
+    // nothing. Here `the queue` follows it, so the phrase is intact prose.
+    const r = parse(advBlock('-> APPROVAL when handed to the queue'), states('APPROVAL'), {
+      fromNodeName: 'FROM',
+    });
+    expect(r.edges[0].condition).toBe('when handed to the queue');
+  });
+});
+
 describe('routing notation never becomes a branch guard', () => {
   it('a trailing "Both continue inline" sentence is dropped', () => {
     // Four labels published this. The parenthesised form was already handled; four
@@ -289,6 +422,24 @@ describe('routing notation never becomes a branch guard', () => {
     expect(conds.some((c) => /continue inline/i.test(c))).toBe(false);
     // The real guard survives — this must not strip the whole condition.
     expect(conds).toContain('otherwise');
+  });
+
+  it('the strip is ANCHORED to a sentence boundary — it cannot eat mid-condition text', () => {
+    // Row 18. The anchor is the property that keeps this rule narrow, and nothing
+    // failed when it was removed. Without it, a condition that merely mentions the
+    // phrase loses everything from there to the end.
+    const r = parse(advBlock('-> BETA when both continue inline checks pass and the gate is green'), states('ALPHA', 'BETA'), {
+      fromNodeName: 'ALPHA',
+    });
+    // The whole condition survives: the phrase is mid-sentence, not a trailing note.
+    expect(r.edges[0].condition).toBe('when both continue inline checks pass and the gate is green');
+  });
+
+  it('the "both" is optional — a bare "continue inline" sentence is dropped too', () => {
+    const r = parse(advBlock('-> BETA otherwise. Continue inline.'), states('ALPHA', 'BETA'), {
+      fromNodeName: 'ALPHA',
+    });
+    expect(r.edges[0].condition).toBe('otherwise');
   });
 
   it('a trailing "— see" footnote is dropped once its backtick span is gone', () => {

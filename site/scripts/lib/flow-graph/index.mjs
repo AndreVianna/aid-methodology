@@ -48,15 +48,24 @@ const AUTHORED_SHAPES = new Set(['dispatch-table', 'inline-states', 'residual'])
  * Warnings are never thrown — that is FR-2's boundary, a chart may be
  * *approximate* but never *malformed*. They are also **not written to stderr**,
  * because `gen-skills` requires an empty stderr on a successful run. They are
- * surfaced on the chart itself: `chart.warnings` carries the messages and
- * `chart.confidence === 'approximate'` marks the page, which is what makes the
- * body provider emit its interpretation notice above the fence.
+ * carried on the chart itself, as `chart.warnings`.
+ *
+ * **`confidence` does not track warnings, and no current caller reads
+ * `chart.warnings`.** `extract-dispatch` stamps `'derived'` unconditionally and
+ * `extract-residual` stamps `'approximate'` unconditionally, so the body provider's
+ * interpretation notice reflects the *extractor* that built the chart, not whether
+ * that chart lost anything. A dispatch-table chart can therefore drop an outcome —
+ * see `_buildClauses` in advance.mjs — and publish with no notice and no console
+ * output. The warning exists and is unit-tested; nothing shows it to a human.
  *
  * The task DETAIL asks for "a run-level accumulated count", which cannot be
  * reconciled with the empty-stderr requirement without a caller to report it to.
  * A module-level counter was tried and removed: nothing read it, so it recorded a
- * number no one could see. Whoever adds run-level reporting should sum
- * `chart.warnings.length` at the call site, where the run actually exists.
+ * number no one could see. Closing the gap properly means summing
+ * `chart.warnings.length` at the `gen-skills` call site and printing to stdout —
+ * but the chart is built inside `BODY_PROVIDERS[].render()`, a pure
+ * string-returning function with nowhere to accumulate, so it needs a seam that
+ * does not exist yet. Recorded as a finding rather than bolted on here.
  *
  * @param {{ name: string, dir: string }} params
  *   name — skill directory name under canonical/skills/

@@ -674,6 +674,60 @@ resolves into the module split.
 
 ---
 
+## Checkpoint Findings — cycle 4 (rows 16–19)
+
+Recorded against the tasks-019–029 A+ checkpoint. Rows 16–18 are all one shape, which the reviewer
+has now raised on three consecutive cycles: **the fix is correct, and undoing it is free.** Row 13
+was this finding applied to the R1 guard; rows 16–18 are the same finding applied to the fixes that
+closed row 13's siblings.
+
+| # | Sev | Status | What | Resolution |
+|---|-----|--------|------|------------|
+| 16 | MEDIUM | Fixed | R2 nameless-token guard had no test; its R1 twin had three. The R2 half was the half originally missed. | Added an R2 empty-name fixture (trailing space after the em-dash is load-bearing). Removing the guard now fails 1 test. |
+| 17 | MEDIUM | Fixed | The dangling-preposition repair shipped with no test; three mutations survived, two of them removing exactly the `toward`/`once` token pair the `aid-discover` label needed. | Added four tests, fixture shape taken verbatim from `state-q-and-a.md:64`. All three mutations now fail. |
+| 18 | LOW | Fixed | Row 14's strip was pinned only for the `both continue inline` form; unanchoring the sentence boundary and making `both` mandatory both survived. | Added two tests — one proving the anchor prevents mid-condition eating, one covering the bare form. |
+| 19 | MEDIUM | Fixed | `aid-update-kb`'s `REVIEW → APPROVAL` edge published outcome 3's condition (`grade/teach-back/… PASS) FIX…`) instead of its own (`READY`). | Root cause found one level deeper than reported — see below. Fixed in `_buildClauses`; label is now `"READY"`. |
+| 20 | MEDIUM | Open | `chart.warnings` reaches no human: `confidence` does not track warnings, and no caller reads them. | Documented honestly in `index.mjs`; **not fixed** — needs a seam that does not exist. See below. |
+
+### Row 19 root cause — not the clause splitter, the resolve-both-halves guard
+
+The reviewer read this as the splitter failing to learn the `;` boundary. It is narrower than that:
+the splitter **does** propose the boundary. `_buildClauses` then rejects it, because a cut is accepted
+only when **both** halves resolve to a declared state (`advance.mjs`, the `!r1 || !r2` guard).
+Outcome 3 routes to `FIX` — a loop *mode* described in the prose note at `SKILL.md:450`, not a row in
+the Dispatch table — so its half does not resolve, the cut is rejected, and outcome 3 is **absorbed
+into outcome 4**, overwriting its condition. The 80-code-point cap then cut `FIX` mid-token, which is
+the artifact that made it visible.
+
+The guard's default is right for punctuation inside one clause and wrong for exactly one shape: a half
+that is itself a complete outcome pointing at an undeclared state. The fix cuts anyway and drops that
+half, gated by `_isUnresolvableOutcome` (arrow form followed by an ALL-CAPS token, anchored at end).
+Both narrowing properties are pinned by tests — they survived the first mutation pass, which is rows
+16–18's finding recurring inside its own fix, caught before shipping this time.
+
+**Nothing that was previously drawn is lost.** `FIX` was never a node, so the dropped outcome had no
+edge either way; what changed is that it no longer overwrites its neighbour's label. Blast radius is
+one line on one page. Census unchanged: 13 dispatch-table / 8 inline-states / 13 residual = 34
+charted, 0 failed; 64 engine-doorway + 13 sibling-doorway. AC-6 idempotence holds. Full suite 1781
+passing across 29 files. Five mutants of the fix, all killed.
+
+### Row 20 — the warning that reaches nobody (open, deliberately not fixed)
+
+Row 19's fix routes the dropped span to the W-1 residue warning, and while writing that justification
+I checked whether W-1 actually surfaces. It does not. `index.mjs` claimed warnings are surfaced via
+`chart.confidence === 'approximate'`, which drives the body provider's interpretation notice — but
+`extract-dispatch` stamps `'derived'` unconditionally and `extract-residual` stamps `'approximate'`
+unconditionally, so the notice reflects **which extractor built the chart**, never whether that chart
+lost anything. Measured: **7 of 34 charts carry warnings** (`aid-design`, `aid-detail`, `aid-execute`,
+`aid-housekeep`, `aid-monitor`, `aid-plan`, `aid-update-kb`); exactly one page shows a notice, and only
+because it is residual. `gen-skills` prints zero warning lines.
+
+I corrected the overstated docstring and the row-19 comment rather than leaving either claiming more
+than is true. I did **not** build run-level reporting: the chart is constructed inside
+`BODY_PROVIDERS[].render()`, a pure string-returning function with nowhere to accumulate, so closing
+this needs a new seam — the same wall that caused task-029's module-level counter to be removed. That
+is a design change, not a patch, so it is filed rather than improvised at a gate.
+
 <!-- ============================================================
      DERIVED / READ-ONLY VIEWS
      The Tasks State section below is assembled at READ TIME from per-task STATE.md files
