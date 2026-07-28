@@ -49,7 +49,7 @@ flowchart TB
   n4 -->|"otherwise chain toward once zero Pending and grade &gt;= minimum"| n6
   n5 -->|"if grade &lt; minimum"| n3
   n5 -->|"if grade ≥ minimum. Both continue inline"| n6
-  n6 -. "otherwise" .-> n6
+  n6 -. "otherwise" .- n6
   n6 -->|"user approval is the natural pause — once user approves"| n7
   class n1 aidExit
   class n2 aidExit

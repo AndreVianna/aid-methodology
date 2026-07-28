@@ -193,6 +193,25 @@ function edgeDecl(edge) {
   const { from, to, kind, condition } = edge;
   const cond = condition !== null ? escapeMermaid(condition) : null;
 
+  // A SELF-EDGE is drawn without an arrowhead, and this is a workaround for a
+  // renderer artifact rather than a stylistic choice.
+  //
+  // Under the ELK layout, a self-loop is emitted as an ordinary edge path whose
+  // final segment doubles back on itself — its last two coordinates run
+  // right-to-left by a fraction of a pixel. SVG `marker-end` orients on that final
+  // segment, so the arrowhead renders pointing AWAY from the node. Measuring the
+  // tangent over a few pixels shows the loop genuinely arriving rightward, which
+  // makes the defect easy to argue away; at 3x zoom the arrow is plainly backwards.
+  // dagre avoids it by rendering self-loops through a dedicated `cyclic-special`
+  // path set, but dagre loses on every other count.
+  //
+  // A loop with no arrowhead cannot point the wrong way. Direction is not lost:
+  // both endpoints are the same node, so there is nothing for an arrow to
+  // disambiguate — and the "otherwise" caption still says what the loop means.
+  if (from === to) {
+    return cond !== null ? `${from} -. "${cond}" .- ${to}` : `${from} --- ${to}`;
+  }
+
   switch (kind) {
     case 'sequence':
       return `${from} --> ${to}`;

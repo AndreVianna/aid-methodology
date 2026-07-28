@@ -37,9 +37,9 @@ flowchart TB
   n1(["FIRST-RUN<br/>No PLAN.md found; begin dependency mapping and deliverable…"])
   n2["REVIEW<br/>PLAN.md exists and was previously completed; re-review…"]
   n3(["DONE<br/>Done"])
-  n1 -. "otherwise" .-> n1
+  n1 -. "otherwise" .- n1
   n1 -->|"when PLAN.md is written, delivery folders are created, and the final summary is…"| n2
-  n2 -. "otherwise" .-> n2
+  n2 -. "otherwise" .- n2
   n2 -->|"when the grade meets minimum and all delivery folders are created"| n3
   class n1 aidEntry
   class n2 aidLoopBack

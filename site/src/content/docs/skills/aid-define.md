@@ -37,9 +37,9 @@ flowchart TB
   n1(["FEATURE-DECOMPOSITION<br/>Requirements are approved and no feature folders exist yet…"])
   n2["CROSS-REFERENCE<br/>Requirements are approved and features exist but…"]
   n3(["DONE<br/>Interview is complete, approved, features decomposed, and…"])
-  n1 -. "otherwise" .-> n1
+  n1 -. "otherwise" .- n1
   n1 -->|"when decomposition completes"| n2
-  n2 -. "otherwise" .-> n2
+  n2 -. "otherwise" .- n2
   n2 -->|"when cross-reference completes"| n3
   class n1 aidEntry
   class n2 aidLoopBack

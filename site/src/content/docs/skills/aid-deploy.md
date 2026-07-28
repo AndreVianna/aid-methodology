@@ -42,7 +42,7 @@ flowchart TB
   n1 --> n2
   n2 --> n3
   n3 --> n4
-  n4 -. "otherwise" .-> n4
+  n4 -. "otherwise" .- n4
   n4 -->|"see"| n5
   class n1 aidEntry
   class n2 aidStep

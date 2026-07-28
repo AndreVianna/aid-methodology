@@ -42,7 +42,7 @@ flowchart TB
   n1 -->|"after scaffolding is complete"| n3
   n1 -->|"emits the D1 opener and runs the full-path interview"| n3
   n2 --> n3
-  n3 -. "otherwise" .-> n3
+  n3 -. "otherwise" .- n3
   n3 -->|"greenfield: no brownfield KB on disk and seed not yet complete"| n4
   n3 -->|"when all sections are Complete or N/A"| n5
   n4 --> n5

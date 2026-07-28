@@ -41,13 +41,13 @@ flowchart TB
   n5(["RE-RUN<br/>The task is already Done and the user has re-invoked…"])
   n6(["DELIVERY-GATE<br/>Per-delivery quality gate — runs once per delivery as the…"])
   n1 --> n2
-  n2 -. "otherwise" .-> n2
+  n2 -. "otherwise" .- n2
   n2 -->|"after triage, findings write, and the terminal State write above"| n4
   n3 --> n2
   n5 -->|"The router prints the prompt above and exits; the user re-invokes with their…"| n2
   n5 -->|"depending on the decision"| n4
   n6 -->|"grade &lt; min"| n3
-  n6 -. "otherwise" .-> n6
+  n6 -. "otherwise" .- n6
   class n1 aidEntry
   class n2 aidLoopBack
   class n3 aidStep

@@ -41,13 +41,13 @@ flowchart TB
   n5["REVIEW<br/>All sections complete; re-review entire spec against…"]
   n6(["DONE<br/>Spec is Ready and has met the minimum grade; this feature's…"])
   n1 --> n2
-  n2 -. "otherwise" .-> n2
+  n2 -. "otherwise" .- n2
   n2 -->|"when all sections are Complete"| n5
   n3 -->|"Re-run after recording spike results in SPEC.md to to"| n2
-  n3 -. "otherwise" .-> n3
+  n3 -. "otherwise" .- n3
   n4 -->|"upstream phase fix). Re-run after the blocker clears to to"| n2
-  n4 -. "otherwise" .-> n4
-  n5 -. "otherwise" .-> n5
+  n4 -. "otherwise" .- n4
+  n5 -. "otherwise" .- n5
   n5 -->|"when spec is Ready and meets minimum grade"| n6
   class n1 aidEntry
   class n2 aidLoopBack
