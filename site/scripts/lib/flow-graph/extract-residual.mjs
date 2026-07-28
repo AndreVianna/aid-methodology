@@ -99,13 +99,22 @@ export function parseAsciiStateMap(text) {
     const inner = m[1].trim();
     // A parenthesised suffix inside the brackets becomes the incoming condition.
     const condMatch = inner.match(/^(.*?)\s*\((.+)\)\s*$/);
-    if (condMatch) {
-      names.push(condMatch[1].trim().toUpperCase());
-      conditions.push(condMatch[2].trim());
-    } else {
-      names.push(inner.toUpperCase());
-      conditions.push(null);
-    }
+    const name = (condMatch ? condMatch[1] : inner).trim().toUpperCase();
+
+    // A token with no NAME is not a state, and must not become a node. `[ ]` and
+    // `[(when ready)]` both reach here with an empty name, and both used to produce
+    // a node with an empty label — which fails V8, which makes the throwing façade
+    // lose the ENTIRE page.
+    //
+    // That is the worst place for this defect to live: R1 is the first rung of the
+    // safety-net extractor, the one whose whole purpose is that every skill gets
+    // *some* chart. FR-2 draws the line at "approximate, never malformed", and an
+    // empty node is malformed. Skipping the token lets the ladder fall through to a
+    // rung that can describe the skill, which is the honest outcome.
+    if (name === '') continue;
+
+    names.push(name);
+    conditions.push(condMatch ? condMatch[2].trim() : null);
   }
 
   // The first token never has an incoming condition (nothing precedes it).

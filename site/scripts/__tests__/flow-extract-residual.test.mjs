@@ -826,6 +826,51 @@ describe.each([
   });
 });
 
+// ── FR-2: the safety net must never emit a malformed chart ────────────────────
+
+describe('R1 — a bracket token with no NAME is skipped, not turned into a node', () => {
+  // FR-2 draws the line at "a chart may be approximate, never malformed", and this
+  // is the module that exists to honour it — R5 is the rung that always succeeds.
+  // But R1 ran first and produced a node with an EMPTY LABEL, which fails V8, which
+  // makes task-029's throwing façade lose the entire page. The safety net was the
+  // thing tearing.
+  //
+  // Both inputs below are legitimate authoring: a placeholder box, and a bracket
+  // carrying only a condition. Neither names a state, so neither is a node.
+  const CASES = [
+    ['an empty bracket', '[ ] -> [DONE]'],
+    ['a condition-only bracket', '[(when ready)] -> [DONE]'],
+  ];
+
+  for (const [label, map] of CASES) {
+    it(`${label} yields no empty-labelled node, and the chart validates`, () => {
+      const body = `# T\n\nState machine:\n\n\`\`\`\n${map}\n\`\`\`\n`;
+      const bodyLines = body.split('\n');
+      const chart = extractResidual({
+        skill: 'aid-fixture',
+        file: 'canonical/skills/aid-fixture/SKILL.md',
+        allLines: bodyLines,
+        bodyLines,
+        bodyStartLine: 1,
+        frontmatter: 'name: aid-fixture\ndescription: A fixture.',
+      });
+      const empty = chart.nodes.filter((n) => !n.label || !String(n.label).trim());
+      expect(empty).toEqual([]);
+      // The real requirement: the façade must not throw on it.
+      expect(validateChart(chart).ok).toBe(true);
+      // Non-vacuity — a chart really was produced rather than the call bailing out.
+      expect(chart.nodes.length).toBeGreaterThan(0);
+    });
+  }
+
+  it('parseAsciiStateMap drops the nameless token but keeps its neighbours', () => {
+    // Pins the mechanism directly, so the behaviour survives a refactor of the
+    // ladder above it.
+    const { names } = parseAsciiStateMap('[ALPHA] -> [ ] -> [BETA]');
+    expect(names).toEqual(['ALPHA', 'BETA']);
+  });
+});
+
 // ── R3 across MIXED heading levels ────────────────────────────────────────────
 
 describe('R3 — mixed `##` and `###` Step headings are one sequence', () => {
