@@ -674,6 +674,39 @@ resolves into the module split.
 
 ---
 
+## Review Checkpoint (tasks 019–029) — PASS, Grade A+
+
+Mandated A+ checkpoint after task-029. **Closed at `82ef1e72` with Grade A+ and zero Pending rows**,
+across eight adversarial cycles (E+ → D → C → C → B+ → D+ → A+). Twenty-seven ledger rows, all Fixed.
+
+Final verification at close: suite **1795 passing across 30 files**; census **13 dispatch-table /
+8 inline-states / 13 residual = 34 charted, 0 failed**, plus 64 engine-doorway + 13 sibling-doorway;
+AC-6 idempotence holds; **0 mangled edge labels** across all 34 charts; generated tree byte-identical
+to `2922af8b`; no BOM in any of the 3585+ tracked files.
+
+**What the cycle count was actually telling me.** Five consecutive cycles produced *new* rows rather
+than re-litigating old ones, and every one of those new rows was the same defect wearing different
+clothes: **a change that ships in a state where undoing it costs nothing, because nothing observes
+it.** It appeared as un-separable test fixtures (rows 13, 16–18, 21–25), as a warning no caller read
+(row 20), and finally as bytes the test runner cannot see (row 26). Each time I fixed the instance;
+the reviewer kept refusing to let the class close.
+
+Two things ended it, and both are worth carrying into deliveries 004–005:
+
+1. **Test separability, not the implementation.** Mutating code cannot detect a test whose fixture
+   never reaches the mutated line — that is exactly how row 21 passed my own mutation pass. For every
+   narrowing property of a predicate, the fixture must be one where *that property alone* is the
+   reason the input is rejected.
+2. **Where a defect is invisible to the runner, ship a guard rather than a resolution to be careful.**
+   `source-encoding.test.mjs` is that, and it justified itself within a minute by catching a BOM my
+   own manual audit had missed.
+
+One observation carried forward, not a defect: the BOM guard is scoped to `site/`, which matches where
+the harness that caused the problem operates. If a later task runs mutation harnesses over `canonical/`,
+`.claude/`, or `bin/`, widen it.
+
+---
+
 ## Checkpoint Findings — cycle 4 (rows 16–19)
 
 Recorded against the tasks-019–029 A+ checkpoint. Rows 16–18 are all one shape, which the reviewer
