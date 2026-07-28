@@ -712,6 +712,50 @@ one line on one page. Census unchanged: 13 dispatch-table / 8 inline-states / 13
 charted, 0 failed; 64 engine-doorway + 13 sibling-doorway. AC-6 idempotence holds. Full suite 1781
 passing across 29 files. Five mutants of the fix, all killed.
 
+### Rows 26–27 — the pattern's real root cause, and a structural guard for it
+
+Cycle 7 graded **D+**: every one of the twelve functional mutants died, and the grade still collapsed,
+because two new rows landed — one of them [HIGH] and entirely self-inflicted.
+
+| # | Sev | Status | Resolution |
+|---|-----|--------|------------|
+| 26 | HIGH | Fixed | **I committed two files with a UTF-8 BOM** (`advance.mjs`, `gen-skills.mjs`) in `3600a758`. Stripped, and a repo-hygiene guard added so the class cannot recur silently: `site/scripts/__tests__/source-encoding.test.mjs`. |
+| 27 | LOW | Fixed | My justification for deleting the `\b` was **factually wrong**. Corrected, and the property is now pinned rather than assumed unreachable. |
+
+**Row 26 is the more important finding, and it is about how I work rather than what the code does.**
+The BOM came from cycle 6's mutate-and-restore: the reviewer's restore wrote UTF-8-with-BOM (PowerShell's
+default), and my own `mut22.py` then read those files with `read_text(encoding='utf-8')` — which surfaces
+an existing BOM as a literal `\ufeff` rather than stripping it — and wrote it faithfully back. I *did*
+strip BOMs that cycle, from the two files that showed up as unexpectedly modified. The two files I was
+editing anyway hid their BOM inside my own diff, and I never checked them.
+
+Node strips a leading BOM before parsing, so nothing failed: 1791 tests green, generated output
+byte-identical, no functional test could have caught it. That is the actual shape of this delivery's
+recurring defect, and it is broader than the "un-undoable fix" framing: **a side effect invisible to the
+test runner survives any amount of mutation coverage on functional behaviour.** Rows 13, 16–18 and 21–25
+were that principle applied to assertions; row 26 is the same principle applied to bytes.
+
+So the fix is a guard, not a habit. `source-encoding.test.mjs` walks `git ls-files` under `site/` (so a
+newly added file is covered on arrival, and ignored build output is not), names every offender rather
+than counting them, and carries both a non-vacuity check and a proof that the detection works. It earned
+its place within a minute of existing: it caught a **third** BOM in `advance.mjs` that my own audit had
+missed, because that audit only scanned `.mjs`/`.ts`/`.js` while the guard covers every tracked text
+extension.
+
+**Row 27 — the reviewer was right and my reasoning was wrong.** I removed the `\b` claiming it inert
+because "`[^A-Za-z0-9]` cannot match a word character". That is false for `_`: it is a word character to
+`\b` but *is* matched by that class, so the two forms disagree on exactly one input — an underscored
+target like `-> FIX_THING`. With `\b` the token cannot end before the underscore, no split succeeds, and
+the match fails; without it the text is recognised. Recognising it is the better answer, so the deletion
+stands — but as a decision with a test (`recognises an UNDERSCORED target`) rather than an assumption of
+unreachability. Restoring the `\b` now fails that test. Had I not been corrected, the comment would have
+left a maintainer a false invariant.
+
+Thirteen mutants re-run this cycle, including the BOM guard mutated against itself and its own file list
+emptied. All died; all files byte-equal after restore, verified through `read_bytes`/`write_bytes` so the
+harness cannot itself add or strip a BOM. Suite **1795** green across 30 files, AC-6 idempotence holds,
+generated tree byte-identical to `2922af8b`.
+
 ### Rows 22–25 — closing the pattern by testing separability, not the implementation
 
 Cycle 6 graded **B+** with zero Pending above [LOW] and four [LOW] survivors. The reviewer's diagnosis

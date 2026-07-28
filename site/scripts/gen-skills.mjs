@@ -1,4 +1,4 @@
-﻿#!/usr/bin/env node
+#!/usr/bin/env node
 // gen-skills.mjs — Skill detail page generator (feature-001-skill-detail-pages).
 //
 // Purpose:

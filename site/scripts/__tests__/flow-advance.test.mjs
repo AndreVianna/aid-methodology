@@ -355,6 +355,21 @@ describe('an outcome routing to an undeclared state is dropped, not absorbed', (
     expect(r.edges[0].condition).toBe('when ready; otherwise hand back to the author');
   });
 
+  it('recognises an UNDERSCORED target — the one input the dropped \\b changed', () => {
+    // Separability for the absent `\b`. `_` is a word character to `\b` but is matched
+    // by `[^A-Za-z0-9]`, so the two forms disagree on exactly this input: with `\b` the
+    // token cannot end before `_` and the whole match fails, leaving the halves joined.
+    // Restoring the assertion therefore fails this test — which is what makes its
+    // absence a decision rather than an accident.
+    const r = parse(
+      advBlock('-> APPROVAL when ready; escalate -> FIX_THING'),
+      states('APPROVAL'),
+      { fromNodeName: 'REVIEW' }
+    );
+    expect(r.edges).toHaveLength(1);
+    expect(r.edges[0].condition).toBe('when ready');
+  });
+
   it('requires at least ONE caps token — a bare trailing arrow routes nowhere', () => {
     // Separability for the outer `+` quantifier. Relaxing it to `*` lets a half that
     // ends in a bare arrow match, so a dangling "escalate ->" would be silently
