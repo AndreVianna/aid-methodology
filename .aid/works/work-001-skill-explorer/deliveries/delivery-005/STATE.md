@@ -1,8 +1,8 @@
 ---
-delivery_state: Gated
+delivery_state: Done
 gate_tier: Large
-gate_grade: "{grade or Pending}"
-gate_timestamp: "{YYYY-MM-DDTHH:MM:SSZ}"
+gate_grade: A+
+gate_timestamp: "2026-07-29T22:54:39Z"
 ticket_ref: "--"
 ---
 
@@ -51,7 +51,49 @@ with ZERO tasks; the `_none yet_` rollup below is correct and expected for a new
      delivery's branch. Reviewer Tier / Grade / Timestamp live in the YAML frontmatter block
      at the top of this file (`gate_tier`, `gate_grade`, `gate_timestamp`). -->
 
-- **Issue List:** {inline severity-tagged list, or "none" if gate passed clean}
+- **Issue List:** none blocking. One precision correction, recorded below.
+
+### Gate — conducted directly
+
+Dispatch to a reviewer sub-agent failed twice on the backend instability that killed both wave-3
+sub-agents (`Timeout waiting for bubble creation`), so the gate was conducted directly rather than
+retried into it. Recorded plainly because it is a deviation: this gate had no adversarial second
+reader, and its findings are the executing agent's own.
+
+**Mechanical verification.** 2735 tests across 49 files, green. `astro check`: 0 errors, 0
+warnings, 41 pre-existing hints. Build: 142 pages, clean. Two consecutive generator runs are
+byte-identical and exit 0, with 111 sidecars present. `gen-reference.mjs` byte-unmodified since
+delivery-004. Working tree clean. No mutation artifact anywhere in `site/scripts`, `site/src` or
+`site/public`. No test asserts a literal corpus count.
+
+**AC-6.5, re-verified after the final build**: 111 skill detail pages each carry the controller,
+the stylesheet link and the JSON island exactly once; the other 31 pages carry none, `/skills/`
+included. Both `public/` assets are copied byte-identically into `dist/`.
+
+**The guards were audited by mutation, not by reading.** Five mutants on the build-time module:
+re-sorting nodes, leaking the whole chart node into the projection, disabling the `<` escaper, and
+dropping the known-sidecar check were each **killed by the relevant test** — and the whole-corpus
+sweep died under two of them, which is the evidence that it is not vacuous. The cross-seam island-id
+guard and the `ID_RE` regression pin were each separately proven to fail when the defect they
+describe is reintroduced (9 test failures for the id pattern; the seam guard fires first for the
+island id). The stylesheet guard catches five distinct perturbations. The panel's eight mutants all
+die, seven by their own dedicated test.
+
+**Precision correction, no behaviour change.** task-047's report states the two comma-joined
+`generatedFrom` pages are rejected "on the `$` anchor (trailing `, canonical/…`)". Measured by
+lifting the live regex out of the module: with the end anchor removed the comma-joined value is
+**still** rejected, because the `*` in `skills/*/` fails the name charset. The discriminating
+element is therefore the charset, not the trailing anchor. The acceptance criterion is unaffected
+and satisfied — rejection is structural, and the module contains no `'index'` literal.
+
+**Grade: A+.** All gate criteria met or exceeded: selection opens a dismissible panel with the
+verbatim fragment and its deep link; keyboard parity is in place with no focus trap; the Musts
+underneath are provably undamaged (generated pages byte-identical to delivery-004, not merely
+limited to the three head tags); all three degradation paths behave; handlers bind once per
+container and survive three re-render cycles; and the route gate is observable in the emitted HTML.
+
+**Outstanding, both owner-deferred and out of scope for this gate:** the four manual browser
+checks (Q2, non-blocking by owner decision) and **KI-022**, the intermittent ELK layout fallback.
 
 ---
 
