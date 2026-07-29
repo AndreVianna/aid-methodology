@@ -87,3 +87,243 @@
 | 5 | **Q7 — real-world `ext:` resolution needs an entry format that does not exist.** `.aid/knowledge/external-sources.md` has zero registered entries and states so in prose, with a placeholder `- (none)` in its `sources:` frontmatter; it carries no machine-readable entry shape. feature-003 D2c specifies a table form the resolver reads, but `/aid-graph` may not author it under FR-10, and the file's writer is `/aid-discover`'s ELICIT state. Lands in delivery-002 via feature-003. | M | Q4 is already resolved to a self-built synthetic fixture (A-6), so AC-1's `ext:` branch is proven to fire in test regardless — this is a **production-completeness** risk, not a test blocker. delivery-002's gate accepts the fixture as the AC-1 `ext:` evidence and records the upstream ELICIT change as a candidate follow-on outside this work. |
 | 6 | **The rendering decision's blast radius arrives late.** feature-002 completes in delivery-001, so the recommendation is *known* before delivery-002 — but the code that exercises it is spread across three later deliveries. feature-012's dependency-packaging criterion (private, unpublished, exactly pinned, lockfiled, monitored, licence-recorded) fires in delivery-002 only if a third-party dependency is adopted; feature-011's carve-outs are contingent the same way (`S2` only under CDN packaging, `validate-visuals.mjs` T2 only for an SVG live surface — feature-007 Open Item 4) and cannot actually be exercised until `graph.html` exists in delivery-004; and feature-008's size in delivery-005 swings substantially on the answer, with its runtime prerequisites feeding back into AC-6, which delivery-004 already closed. | M | Sequence delivery-001 first so the recommendation is in hand before any packaging or validator work is scoped, and require the decision record's runtime-prerequisite statement to be written as prose AC-6 can be checked against. Do not size feature-008 before delivery-001 lands (feature-008's own Dependency position says so). Treat delivery-005's prerequisite declaration as a re-check against delivery-004's documented prerequisites rather than as new work. |
 | 7 | **Three acceptance criteria are mutual obligations split across delivery boundaries.** AC-15 is owned by feature-006 in delivery-003 but its view side is feature-007 (delivery-004) and its graph side feature-008 (delivery-005), and every one of those SPECs states that neither owner may consider it met alone — so AC-15 cannot close before delivery-005. AC-9 is owned by feature-009 in delivery-004 while its reduced-motion clause is feature-008's in delivery-005, so it cannot fully close before delivery-005 either. AC-7 is shared between features 007 and 009, both in delivery-004, so it is the one that closes inside a single delivery. | M | Name the co-owner and the closing delivery in each affected BLUEPRINT's gate criteria rather than letting a gate silently pass on a half-met criterion. delivery-003 and delivery-004 record their halves as satisfied-but-not-closed; delivery-005's gate is where AC-9 and AC-15 close overall. feature-007's lens view-model is the mechanism that makes the parity checkable rather than asserted, and its `tests/canonical/test-graph-view-shell.sh` GV-series carries the assertions. |
+
+## Execution Graphs
+
+> Derived mechanically from each task's `**Depends on:**` line by
+> `.aid/.temp/build-graphs.py`, per
+> `aid-detail/references/execution-graph-generation.md`. Waves are computed over
+> **intra-delivery** edges only — a dependency on an earlier delivery's task is satisfied by
+> delivery ordering and does not inflate the wave number. Cross-delivery edges are listed in
+> the Depends On column for traceability.
+
+### delivery-001 execution graph
+
+| Task | Depends On |
+|------|-----------|
+| task-001 | — |
+| task-002 | task-001 |
+| task-003 | — |
+| task-004 | task-003 |
+| task-005 | task-004 |
+
+| Can Be Done In Parallel |
+|------------------------|
+| task-001, task-003 |
+| task-002, task-004 |
+
+```wave-map
+delivery: 001
+wave 1: task-001, task-003
+wave 2: task-002, task-004
+wave 3: task-005
+```
+
+### delivery-002 execution graph
+
+| Task | Depends On |
+|------|-----------|
+| task-006 | — |
+| task-007 | — |
+| task-008 | task-007 |
+| task-009 | task-007 |
+| task-010 | task-007 |
+| task-011 | task-010 |
+| task-012 | task-007 |
+| task-013 | task-006 |
+| task-014 | — |
+| task-015 | task-002, task-014 |
+| task-016 | task-014, task-015 |
+| task-017 | — |
+| task-018 | task-017 |
+| task-019 | task-018 |
+| task-020 | task-015 |
+| task-021 | task-014, task-020 |
+| task-022 | task-019, task-020 |
+| task-023 | task-014, task-016, task-021, task-022 |
+| task-024 | task-023 |
+| task-025 | task-007, task-024 |
+| task-026 | task-007 |
+| task-027 | task-019 |
+| task-028 | — |
+| task-029 | task-016 |
+| task-030 | task-007, task-026, task-027, task-029 |
+| task-031 | task-007, task-019, task-023, task-024 |
+| task-032 | task-019 |
+| task-033 | task-019, task-021, task-032 |
+| task-034 | task-015 |
+| task-035 | task-016 |
+| task-036 | task-021 |
+| task-037 | task-022 |
+| task-038 | task-023, task-024 |
+| task-039 | task-024 |
+| task-040 | task-026 |
+| task-041 | task-027 |
+| task-042 | task-028 |
+| task-043 | task-029, task-040 |
+| task-044 | task-008, task-009, task-013, task-016, task-019, task-024, task-025, task-028, task-029, task-030, task-031 |
+
+| Can Be Done In Parallel |
+|------------------------|
+| task-006, task-007, task-014, task-017, task-028 |
+| task-008, task-009, task-010, task-012, task-013, task-015, task-018, task-026, task-042 |
+| task-011, task-016, task-019, task-020, task-034, task-040 |
+| task-021, task-022, task-027, task-029, task-032, task-035 |
+| task-023, task-030, task-033, task-036, task-037, task-041, task-043 |
+| task-025, task-031, task-038, task-039 |
+
+```wave-map
+delivery: 002
+wave 1: task-006, task-007, task-014, task-017, task-028
+wave 2: task-008, task-009, task-010, task-012, task-013, task-015, task-018, task-026, task-042
+wave 3: task-011, task-016, task-019, task-020, task-034, task-040
+wave 4: task-021, task-022, task-027, task-029, task-032, task-035
+wave 5: task-023, task-030, task-033, task-036, task-037, task-041, task-043
+wave 6: task-024
+wave 7: task-025, task-031, task-038, task-039
+wave 8: task-044
+```
+
+### delivery-003 execution graph
+
+| Task | Depends On |
+|------|-----------|
+| task-045 | task-002, task-015 |
+| task-046 | task-019, task-023, task-045 |
+| task-047 | task-046 |
+| task-048 | — |
+| task-049 | task-048 |
+| task-050 | task-007, task-047 |
+| task-051 | task-007, task-008, task-050 |
+| task-052 | task-047 |
+| task-053 | task-052 |
+| task-054 | task-045 |
+| task-055 | task-045, task-047, task-048, task-050, task-051 |
+
+| Can Be Done In Parallel |
+|------------------------|
+| task-045, task-048 |
+| task-046, task-049, task-054 |
+| task-050, task-052 |
+| task-051, task-053 |
+
+```wave-map
+delivery: 003
+wave 1: task-045, task-048
+wave 2: task-046, task-049, task-054
+wave 3: task-047
+wave 4: task-050, task-052
+wave 5: task-051, task-053
+wave 6: task-055
+```
+
+### delivery-004 execution graph
+
+| Task | Depends On |
+|------|-----------|
+| task-056 | — |
+| task-057 | task-056 |
+| task-058 | task-056 |
+| task-059 | task-014 |
+| task-060 | task-059 |
+| task-061 | task-045, task-060 |
+| task-062 | task-057, task-060 |
+| task-063 | task-058, task-060 |
+| task-064 | task-061, task-063 |
+| task-065 | task-045, task-057, task-058, task-062, task-064 |
+| task-066 | task-007, task-065 |
+| task-067 | task-007, task-051, task-066 |
+| task-068 | task-060 |
+| task-069 | task-057, task-058, task-061, task-062, task-064, task-065, task-066, task-067, task-068 |
+| task-070 | task-054, task-069 |
+| task-071 | task-070 |
+| task-072 | task-063, task-064 |
+| task-073 | task-069 |
+| task-074 | task-069 |
+| task-075 | task-069 |
+| task-076 | task-075 |
+| task-077 | task-076 |
+
+| Can Be Done In Parallel |
+|------------------------|
+| task-056, task-059 |
+| task-057, task-058, task-060 |
+| task-061, task-062, task-063, task-068 |
+| task-065, task-072 |
+| task-070, task-073, task-074, task-075 |
+| task-071, task-076 |
+
+```wave-map
+delivery: 004
+wave 1: task-056, task-059
+wave 2: task-057, task-058, task-060
+wave 3: task-061, task-062, task-063, task-068
+wave 4: task-064
+wave 5: task-065, task-072
+wave 6: task-066
+wave 7: task-067
+wave 8: task-069
+wave 9: task-070, task-073, task-074, task-075
+wave 10: task-071, task-076
+wave 11: task-077
+```
+
+### delivery-005 execution graph
+
+| Task | Depends On |
+|------|-----------|
+| task-078 | task-005, task-056 |
+| task-079 | task-061, task-069 |
+| task-080 | task-078, task-079 |
+| task-081 | task-078, task-080 |
+| task-082 | task-081 |
+| task-083 | task-005, task-079 |
+| task-084 | task-082, task-086 |
+| task-085 | task-084 |
+| task-086 | task-082, task-083 |
+| task-087 | task-086 |
+| task-088 | task-073, task-086 |
+| task-089 | task-053, task-071, task-086 |
+
+| Can Be Done In Parallel |
+|------------------------|
+| task-078, task-079 |
+| task-080, task-083 |
+| task-084, task-087, task-088, task-089 |
+
+```wave-map
+delivery: 005
+wave 1: task-078, task-079
+wave 2: task-080, task-083
+wave 3: task-081
+wave 4: task-082
+wave 5: task-086
+wave 6: task-084, task-087, task-088, task-089
+wave 7: task-085
+```
+
+### delivery-006 execution graph
+
+| Task | Depends On |
+|------|-----------|
+| task-090 | task-069, task-086 |
+| task-091 | task-086 |
+| task-092 | task-090, task-091 |
+| task-093 | task-084, task-086 |
+| task-094 | task-091, task-093 |
+| task-095 | task-094 |
+| task-096 | task-090, task-091, task-092, task-093, task-094, task-095 |
+
+| Can Be Done In Parallel |
+|------------------------|
+| task-090, task-091, task-093 |
+| task-092, task-094 |
+
+```wave-map
+delivery: 006
+wave 1: task-090, task-091, task-093
+wave 2: task-092, task-094
+wave 3: task-095
+wave 4: task-096
+```
+

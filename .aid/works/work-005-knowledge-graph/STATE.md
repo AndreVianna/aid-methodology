@@ -6,10 +6,10 @@ started: "2026-07-28"
 minimum_grade: "A+"
 user_approved: yes
 lifecycle: Paused-Awaiting-Input
-phase: Plan
+phase: Detail
 active_skill: none
-updated: '2026-07-28T22:19:40Z'
-pause_reason: 'Plan gated at A+ with 6 deliveries - run /aid-detail work-005-knowledge-graph to break deliveries into tasks'
+updated: '2026-07-29T00:11:00Z'
+pause_reason: '96 tasks detailed and gated at A+ - run /aid-execute work-005-knowledge-graph to begin delivery-001'
 block_reason: --
 block_artifact: --
 ticket_ref: --
@@ -174,6 +174,10 @@ Ledger: `.aid/.temp/review-pending/interview-work-005-knowledge-graph-cross-ref.
 | 2026-07-28 | Plan → 6 deliveries sequenced | -- | PLAN.md written with 6 deliveries; all 13 features and all 18 acceptance criteria assigned exactly once (independently verified); 7 cross-cutting risks, all substantiated. Delivery folders created with BLUEPRINT + STATE at `Pending-Spec`. Flattened-single-delivery-only sections removed from this file, per the template, now that the work is confirmed multi-delivery. |
 | 2026-07-28 | Plan gate (per-deliverable, all 6) | B+ → **A+** | First pass B+ (1 LOW, 2 MINOR); deliveries 001, 002, 004, 005 clean. Fixed: delivery-003's gate omitted the `GL10`/`GL11` ledger-lifecycle sentinels; the `io_bounds.py` L4 quotation was softened to "stale" in three files when the KB records a missing security-relevant file; delivery-006's Must-after-Should inversion lacked a recorded deviation. Regraded A+ (0 findings). |
 | 2026-07-28 | **Plan phase complete** | **A+** | Dependency graph verified acyclic with no understated edges; every gate identifier cited (`V1`–`V12`, `R1`–`R5`, `GL01`–`GL13`, `GV01`–`GV08`) verified present in its SPEC. Ready for /aid-detail. |
+| 2026-07-28 | Detail → 96 tasks written | -- | Owner reviewed a merge-to-89 option and kept 96: 5/39/11/22/12/7 across the six deliveries. By type: 48 IMPLEMENT, 30 TEST, 8 DOCUMENT, 6 RESEARCH, 6 CONFIGURE, 2 DESIGN, 0 MIGRATE, 0 REFACTOR. Written by 5 parallel writers from one shared brief; 192 files. Execution graphs + `wave-map` blocks derived **mechanically** by script and appended to PLAN.md. |
+| 2026-07-28 | Detail — orchestrator corrections during writing | -- | 15 corrections applied. Nine dependency edges wrong in the proposed table (eight missing, one spurious — task 013 was gating task 017 and putting the Q6 decision on the critical path of the whole enumeration spine). Three identifiers had no name in any SPEC yet were needed by 2+ tasks (`coverage-bearing.yml`, `edge-relation-map.sh`, `graph-live-surface`). The state machine needed an Advance re-point chain across three deliveries, unspecified because feature-010's table describes only the final shape — which also corrected the final count to **eleven** states. |
+| 2026-07-28 | Detail gate (per-deliverable, all 6) | D → **A+** | First pass D (2 HIGH, 3 MEDIUM, 1 LOW); deliveries 005 and 006 clean. **Both HIGHs shared one root cause: the orchestrator edited task Scope without editing the Acceptance Criteria in the same file**, so tasks 051 and 067 each instructed an executor to undo the correction directly above. Also fixed: tasks 021/022 not naming the loader they must source, an unresolvable `ext:` key forward-reference between tasks 002 and 035, and 19 state files using quoted dashes. Regraded A+ (0 findings). |
+| 2026-07-28 | **Detail phase complete** | **A+** | 96 tasks, all typed single-type, all traced to a feature and delivery. Graph independently verified acyclic; all six `wave-map` blocks total (96 tasks mapped exactly once). Ready for /aid-execute. |
 
 ---
 
