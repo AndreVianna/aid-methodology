@@ -59,11 +59,24 @@ explicitly **not** adopted as an automated gate.
 
 ## Tasks
 
-_none yet_ — `aid-detail` fills this table.
+Filled at execution time from the per-task DETAILs, matching the practice used for
+deliveries 001–004 where the detail phase left the same table unfilled.
 
-| Task | Type | Title |
-|------|------|-------|
-| _none yet_ | | |
+| Task | Type | Wave | Title |
+|------|------|------|-------|
+| task-045 | CONFIGURE | 1 | `jsdom` test-only devDependency and the DOM test environment |
+| task-046 | IMPLEMENT | 1 | Build-time panel logic — gate, projection and island encoding |
+| task-047 | IMPLEMENT | 2 | Route-gated `Head` component override |
+| task-049 | IMPLEMENT | 2 | Client controller attachment lifecycle and node decoration |
+| task-051 | IMPLEMENT | 2 | Panel and focus stylesheet |
+| task-048 | IMPLEMENT | 3 | `Head` key in the Starlight `components:` map |
+| task-050 | IMPLEMENT | 3 | The node panel — disclosure, focus and key handling |
+| task-052 | TEST | 3 | `skill-node-panel.test.ts` — node-environment suite |
+| task-053 | TEST | 4 | `skill-node-panel.dom.test.ts` — jsdom lifecycle and ARIA suite |
+
+Execution graph (from the per-task `Depends on` fields): 045 and 046 are file-disjoint and run
+in parallel; 047, 049 and 051 each depend only on 046; 048 depends on 047, 050 on 049, and 052
+on 046 plus 049; 053 depends on 045, 049, 050 and 051, so it runs last.
 
 ## Dependencies
 

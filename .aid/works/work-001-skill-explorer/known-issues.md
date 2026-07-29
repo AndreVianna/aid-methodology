@@ -541,6 +541,40 @@
 - **Surfaced by:** `/aid-detail` task decomposition, as item G of the architect's "what I had to
   decide" report — a hazard neither SPEC addresses, recorded rather than silently resolved.
 
+## KI-021: `CHARTABLE_SHAPES` was never widened when the doorway extractors landed — 77 skills charted with no sidecar
+
+- **Type:** Product defect (delivery-003; found in delivery-005, wave 1). **CLOSED** by the same wave.
+- **Severity:** High — it would have made delivery-005's headline criterion false on 77 of 111 pages.
+- **Affects:** `site/scripts/gen-skills.mjs` (`CHARTABLE_SHAPES`),
+  `site/src/data/skill-flows/` (77 missing sidecars), `.skills-manifest.json` (`sidecars`),
+  and every downstream consumer of a sidecar — feature-005's guard set and feature-006's route gate.
+- **What happened:** task-030 introduced the sidecar write pass gated on `CHARTABLE_SHAPES`, set
+  to feature-003's three authored shapes, with a comment predicting its own fix: *"feature-004
+  adds the two doorway shapes in tasks 035–037, at which point every skill charts and this set
+  equals `SHAPE_ORDER`."* Tasks 035–037 shipped in delivery-003. The set was never widened, so
+  the 77 doorway skills rendered a chart on the page and got no sidecar.
+- **Why three delivery gates missed it — the part worth keeping:** the omission was
+  **self-consistent**. task-030's drift guard derives *both* its expected and its on-disk sidecar
+  set from that same constant, so a missing sidecar was never an expected one. And the test
+  asserting sidecar coverage carried its **own second copy** of the three-shape list, plus an
+  assertion that doorway skills have *no* sidecar. Production and test agreed with each other,
+  and both were wrong. A count of "34 sidecars" was even observed during delivery-004's cache
+  measurement and not followed up.
+- **How it surfaced:** delivery-005's route gate was verified against every `generatedFrom` value
+  that actually exists on disk, rather than against fixtures. It admitted 34 of 111 pages. The
+  gate was correct; the data was not.
+- **Fix:** `CHARTABLE_SHAPES` is now `new Set(SHAPE_ORDER)` — derived, so there is no second list
+  to drift. The coverage test reads the shape list from the manifest, which is computed from the
+  live classifier, and asserts one sidecar per skill against the directory enumeration.
+- **Proven closed in both directions:** restoring the stale constant produces **7 test failures**
+  and makes `gen-skills.mjs` **exit 1**, because the 77 sidecars become orphans and the drift
+  guard fires. Sidecars are 111, the manifest lists 111, and the route gate admits exactly 111.
+- **Lesson, generalisable:** a guard that derives its expectation and its observation from one
+  constant cannot detect an error in that constant. Both sides must be independently sourced —
+  here, the classifier for one and the filesystem for the other.
+
+---
+
 ## KI-020: `index.md` byte-identity test is intermittent in full-suite runs only
 
 - **Type:** Flaky test (pre-existing; task-014, delivery-002)

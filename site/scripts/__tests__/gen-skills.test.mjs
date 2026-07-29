@@ -1279,22 +1279,39 @@ describe('gen-skills: flow sidecars', () => {
     return JSON.parse(readFileSync(MANIFEST_PATH, 'utf8'));
   }
 
-  it('writes one sidecar per charted skill, and none for a chart-less one', () => {
+  // This assertion previously carried its own copy of the generator's chartable-shape
+  // list, naming only feature-003's three authored shapes, and asserted that doorway
+  // skills have no sidecar. That was true when written and stopped being true when
+  // feature-004's extractors landed in tasks 035–037. Because the production constant
+  // and this list agreed with each other, 77 of the 111 skills charted on the page
+  // with no sidecar and every assertion here still passed. The shape list is now read
+  // from the manifest, which is computed from the live classifier, so there is no
+  // second list left to go stale.
+  it('writes exactly one sidecar per skill, since every shape charts', () => {
     const m = manifest();
     const files = onDiskSidecars();
 
-    // Derived from the classifier via the manifest, never a literal.
-    const chartable = ['dispatch-table', 'inline-states', 'residual'];
-    const expectedCount = chartable.reduce((n, s) => n + m.shapeCounts[s], 0);
+    const shapes = Object.keys(m.shapeCounts);
+    const expectedCount = shapes.reduce((n, s) => n + m.shapeCounts[s], 0);
+
+    // Non-vacuity, and a bound that fails if shapeCounts is ever emptied.
+    expect(shapes.length).toBeGreaterThan(0);
+    expect(expectedCount).toBeGreaterThan(0);
 
     expect(files).toHaveLength(expectedCount);
-    expect(expectedCount).toBeGreaterThan(0); // non-vacuity
-    expect(files).toEqual(m.sidecars.map((r) => r.dest.split('/').pop().replace('.flow.json', '')).sort());
+    expect(files).toEqual(
+      m.sidecars.map((r) => r.dest.split('/').pop().replace('.flow.json', '')).sort(),
+    );
 
-    // A chart-less skill has no sidecar. aid-add-api is a doorway shape today.
+    // Every skill on disk charts, so the sidecar set is the whole corpus. Stated
+    // against the directory enumeration rather than a literal.
+    expect(files).toHaveLength(getCanonicalDirNames().length);
+
+    // The doorway shapes are populated, so this is not passing because they vanished
+    // — the arm that used to assert they had NO sidecar.
     const doorwayCount = m.shapeCounts['engine-doorway'] + m.shapeCounts['sibling-doorway'];
     expect(doorwayCount).toBeGreaterThan(0);
-    expect(files).toHaveLength(getCanonicalDirNames().length - doorwayCount);
+    for (const shape of shapes) expect(m.shapeCounts[shape]).toBeGreaterThan(0);
   });
 
   it('the generator CREATES the sidecars — deleting them all and re-running restores them', async () => {

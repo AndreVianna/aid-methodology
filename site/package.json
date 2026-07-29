@@ -33,6 +33,7 @@
     "@astrojs/check": "0.9.9",
     "@mermaid-js/layout-elk": "^0.2.2",
     "@types/sanitize-html": "^2.16.1",
+    "jsdom": "^29.1.1",
     "typescript": "6.0.3",
     "vitest": "^4.1.8"
   },

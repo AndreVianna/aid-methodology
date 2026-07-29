@@ -79,12 +79,20 @@ const SHAPE_ORDER = [
 ];
 
 /**
- * Shapes that currently produce a chart, and therefore a sidecar.
+ * Shapes that produce a chart, and therefore a sidecar.
  *
- * feature-003's three authored shapes. feature-004 adds the two doorway shapes in
- * tasks 035–037, at which point every skill charts and this set equals SHAPE_ORDER.
+ * Derived from SHAPE_ORDER rather than listed again, because every shape the
+ * classifier can return now charts: feature-003's three authored shapes plus
+ * feature-004's two doorway shapes, which landed in tasks 035–037.
+ *
+ * It was previously the three authored shapes with a comment predicting this very
+ * change, and widening it was missed when the doorway extractors shipped — so 77
+ * of the 111 skills charted on the page but got no sidecar. Nothing caught it
+ * because the drift guard derives both its expected and its on-disk set from this
+ * constant, making the omission self-consistent and therefore invisible.
+ * Deriving it removes the second list that could go stale.
  */
-const CHARTABLE_SHAPES = new Set(['dispatch-table', 'inline-states', 'residual']);
+const CHARTABLE_SHAPES = new Set(SHAPE_ORDER);
 
 // ── Main ──────────────────────────────────────────────────────────────────────
 
