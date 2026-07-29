@@ -27,48 +27,35 @@ For each section in SPEC.md, run step 4 of the loop against current state:
 4. **Missing sections** — New conditional sections should now be activated?
 5. **Stale content** — Section contradicts what now exists?
 
-### Dispatch the Reviewer
+### Review
 
-Render `references/reviewer-brief.md` with:
-- `{{ARTIFACTS}}` = `SPEC.md` path + the section list under review (or "full SPEC")
-- `{{CONTEXT}}` = `SPEC.md for feature-NNN-{name} in work-NNN-{name}. All sections marked Complete in the work STATE.md \`## Features State\` row. This is the final review pass before the feature is marked Ready.`
+CHAIN to `/aid-deep-review` with this manifest. It owns the dispatch, the ledger, the gap gate, the
+grade and the fix loop — this skill no longer carries any of that.
 
-Include in the prompt:
-- **Ledger lifecycle:** "Read `.aid/.temp/review-pending/specify-<feature>.md` if it
-  exists. For each existing row: verify on disk, update Status (Pending→Fixed if
-  resolved; Fixed→Recurred if regressed). Append new findings with Status: Pending."
-- **Schema reference:** "Output per `.claude/aid/templates/reviewer-ledger-schema.md`.
-  The ledger is the entire file — ONE markdown table, no headers, no narrative."
-
-Dispatch the `aid-reviewer` subagent **at Large tier** (the executor is the Large
-`aid-architect`; reviewer tier >= executor tier per
-`.claude/aid/templates/agent-dispatch-tiering.md`) with the rendered brief.
-
-### Grade Overall
-
-After the aid-reviewer returns, run grade.sh on the ledger:
-
-```bash
-bash .claude/aid/scripts/review/check-gaps.sh --ledger .aid/.temp/review-pending/specify-<feature>.md   # exit 1 = an open criteria gap; do NOT grade
-bash .claude/aid/scripts/grade.sh --explain .aid/.temp/review-pending/specify-<feature>.md
+```yaml
+scope:         specify-<feature>
+artifacts:     <the feature SPEC.md, plus the section list under review>
+rule_set:      definition
+resume_mode:   new-cycle
+depth:         deep
+tier:          large            # the executor is the Large aid-architect
+context:       |
+  SPEC.md for feature-NNN in work-NNN. All sections marked Complete.
 ```
 
-Compare to minimum grade from `bash .claude/aid/scripts/config/read-setting.sh --skill specify --key minimum_grade --default A`.
+Fill `ledger` with the scratch path and `minimum_grade` from
+`read-setting.sh --skill specify` — both per `reviewer-brief-template.md`.
+
+The two per-skill brief sections come from `references/reviewer-brief.md`.
+
+### On return
+
+`/aid-deep-review` returns the grade and the cycle count.
 
 | Condition | Action |
 |-----------|--------|
-| Grade ≥ minimum | Print summary, done. Set feature status to `Ready` in work STATE.md. |
-| Grade < minimum, fixable sections | List findings, re-enter loop for affected sections. |
-| Grade < minimum, core assumptions wrong | Recommend `--reset`. |
+| Meets minimum | Set feature status to `Ready` in the work STATE.md. Print the summary. |
+| Below minimum, fixable sections | Re-enter the loop (Propose → Discuss → Write) for the affected sections. |
+| Below minimum, core assumptions wrong | Recommend `--reset`. |
 
-```
-Reviewing {work}/{feature} against current KB and codebase...
-
-Issues found: 1 [LOW] (stale DB column ref), 3 [MINOR] (naming) → **Grade: B+**
-Minimum: B+. ✅ Meets minimum.
-```
-
-For grades below minimum: re-enter the loop (Propose → Discuss → Write → Review)
-for affected sections. When all resolved, set status back to Ready.
-
-**Advance:** **CHAIN** → [State: DONE] when spec is Ready and meets minimum grade (continue inline).
+**Advance:** **CHAIN** → [State: DONE] when the spec is Ready and meets the minimum.
