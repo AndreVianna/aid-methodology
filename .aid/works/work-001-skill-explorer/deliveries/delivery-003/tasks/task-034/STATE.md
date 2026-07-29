@@ -1,6 +1,6 @@
 ---
 state: Done
-review: "--"
+review: "A+ floor met (wave 10, 3 cycles) -- 2 survivors confirmed inert"
 elapsed: "--"
 notes: "--"
 ticket_ref: "--"
