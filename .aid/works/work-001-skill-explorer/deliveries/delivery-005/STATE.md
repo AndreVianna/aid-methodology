@@ -228,6 +228,45 @@ earlier poisoned render — KI-018's family, not a regression, and not caused by
 delivery. Worth recording that the KI-018 workaround is doing its job: `data-diagram` held the
 correct source throughout.
 
+### task-047 / task-048 — Head override, and a second seam mismatch
+
+`Head.astro` is well-judged: it composes Starlight's packaged `Head` rather than replacing it,
+so non-skill pages keep their output; the sidecar set comes from `import.meta.glob`, which is
+frontmatter-only and so cannot reach a client bundle; and the gate fails closed when the glob
+resolves empty. The `set:html` choice is correct for a reason worth keeping — the HTML parser
+does not decode character references inside a raw-text element, so an interpolated `{expr}`
+child would be read back with literal `&amp;` and fail to parse.
+
+**The defect: the two halves disagreed on the island id.** `Head.astro` emits
+`id="aid-flow-data"`, which is what feature-006's SPEC fixes. The controller from task-049 read
+`getElementById('aid-panel-data')` — an id no page contains. It would have warned "island element
+not found" and no-opped on every page.
+
+This is the **second** instance in this delivery of the same failure mode, after the node-id
+pattern: two halves written in parallel, each with its own fixtures, each passing its own suite
+while contradicting the other. Testing each side against its own fixture cannot detect it.
+Fixed on the controller side, since the SPEC and the emitting component already agreed.
+
+Added a **cross-seam guard** that extracts the id the controller passes to `getElementById` and
+the id the override puts on its JSON island, and asserts they are equal — plus a check that the
+override's asset paths match the controller and stylesheet filenames. Reverting the id now fails
+that guard first. This is the general remedy for the class: assert the two sides against each
+other, not each against a fixture.
+
+**task-048** added exactly one key, `Head`, to the `components:` map. Diff confirmed to touch
+nothing else — the `sidebar` array and the `mermaid({...})` options are untouched, so risk R1
+(third editor of `astro.config.mjs`) is discharged, and it ran strictly after task-016 and the
+KI-001 ride-along, never concurrently.
+
+**AC-6.5 verified against a real build, not inferred.** After `npm run build`: 142 HTML pages,
+of which **111 are skill detail pages and each carries the controller, the stylesheet link and
+the JSON island exactly once**; the other **31 pages carry none of the three**, including
+`/skills/` itself. Also confirmed: `public/skill-node-panel.css` and `.mjs` are copied
+byte-identically into `dist/`, which discharges task-051's deferred check, and **no client JS
+bundle contains the island id or any corpus excerpt** — the flow JSON reaches the browser only
+as a per-page island. One grep hit in a mermaid bundle was a false positive: a Langium parser
+grammar containing `"$type":"ParserRule","fragment":true`.
+
 ### task-051 — panel and focus stylesheet
 
 `site/public/skill-node-panel.css` covers the block and all eight Anatomy elements, and styles

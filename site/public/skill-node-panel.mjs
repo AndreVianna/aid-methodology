@@ -2,7 +2,7 @@
 // Delivery: feature-006 (interactive node panel), task-049.
 //
 // Scope (task-049):
-//   • Reads the PanelProjection island injected by task-047 (id="aid-panel-data").
+//   • Reads the PanelProjection island injected by task-047 (id="aid-flow-data").
 //   • Finds the skill chart container and installs delegated handlers exactly once
 //     per container (WeakSet guard by element identity).
 //   • Observes the container for SVG replacement on theme change (mermaid re-renders the
@@ -103,7 +103,12 @@
    * Each failure path warns at most once via its stable guard name.
    */
   function readProjection() {
-    var el = document.getElementById('aid-panel-data');
+    // 'aid-flow-data' is the id feature-006's SPEC fixes and the id task-047's
+    // Head override emits. This read and that emission are the only two places
+    // it appears, so they are asserted against each other in the test suite —
+    // an earlier version of this file looked up 'aid-panel-data', which no page
+    // ever contains, and would have silently no-opped on every page.
+    var el = document.getElementById('aid-flow-data');
     if (!el) {
       warnOnce('panel data', 'island element not found');
       return null;

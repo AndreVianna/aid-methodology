@@ -29,6 +29,8 @@ import { fileURLToPath } from 'node:url';
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const SCRIPT_PATH = join(resolve(__dirname, '../..'), 'public', 'skill-node-panel.mjs');
 const SCRIPT_SRC = readFileSync(SCRIPT_PATH, 'utf8');
+const HEAD_PATH = join(resolve(__dirname, '../..'), 'src', 'components', 'overrides', 'Head.astro');
+const HEAD_SRC = readFileSync(HEAD_PATH, 'utf8');
 
 // ── Projection fixtures ───────────────────────────────────────────────────────
 
@@ -141,7 +143,7 @@ function runScript({ island = PROJECTION, containers = [] } = {}) {
   }
 
   const islandEl = island !== null
-    ? { id: 'aid-panel-data', textContent: JSON.stringify(island) }
+    ? { id: 'aid-flow-data', textContent: JSON.stringify(island) }
     : null;
 
   const slContent = {
@@ -150,7 +152,7 @@ function runScript({ island = PROJECTION, containers = [] } = {}) {
 
   const docListeners = {};
   const fakeDoc = {
-    getElementById: (id) => id === 'aid-panel-data' ? islandEl : null,
+    getElementById: (id) => id === 'aid-flow-data' ? islandEl : null,
     querySelector: (sel) => sel === '.sl-markdown-content' ? slContent : null,
     addEventListener: (name, fn) => { docListeners[name] = fn; },
   };
@@ -181,6 +183,45 @@ function aidNodeFor(modelId, counter = 0) {
 }
 
 // ── Test suites ───────────────────────────────────────────────────────────────
+
+// Cross-seam guards.
+//
+// The controller and the Head override were written in parallel, each with its own
+// fixtures, and each passed its own suite while disagreeing with the other: the
+// override emitted the projection island as `aid-flow-data` while the controller
+// looked up `aid-panel-data`, so the controller would have found nothing and
+// silently no-opped on every page. Testing each side against its own fixture
+// cannot catch that. These assertions compare the two sides directly.
+describe('skill-node-panel: the controller and the Head override agree on the seam', () => {
+  /** The id string the controller passes to getElementById. */
+  function idReadByController() {
+    const m = /getElementById\('([^']+)'\)/.exec(SCRIPT_SRC);
+    expect(m).not.toBeNull();
+    return m[1];
+  }
+
+  /** The id the Head override puts on the JSON island. */
+  function idEmittedByHead() {
+    const m = /<script[^>]*type="application\/json"[^>]*id="([^"]+)"/.exec(HEAD_SRC);
+    expect(m).not.toBeNull();
+    return m[1];
+  }
+
+  it('the island id read equals the island id emitted', () => {
+    const read = idReadByController();
+    const emitted = idEmittedByHead();
+    // Non-vacuity: both sides produced a real, non-empty id.
+    expect(read.length).toBeGreaterThan(3);
+    expect(emitted.length).toBeGreaterThan(3);
+    expect(read).toBe(emitted);
+  });
+
+  it('the controller asset paths match the tags the Head override emits', () => {
+    // The override references the controller and stylesheet by absolute public path.
+    expect(HEAD_SRC).toContain('/skill-node-panel.mjs');
+    expect(HEAD_SRC).toContain('/skill-node-panel.css');
+  });
+});
 
 // Regression pin for the node-id pattern.
 //
@@ -583,7 +624,7 @@ describe('skill-node-panel: schema guard (v !== 1)', () => {
     }
 
     // Inject a bad-JSON island directly.
-    const badIslandEl = { id: 'aid-panel-data', textContent: '{ not valid json' };
+    const badIslandEl = { id: 'aid-flow-data', textContent: '{ not valid json' };
     const slContent = { querySelectorAll: () => [container] };
     const fakeDoc = {
       getElementById: () => badIslandEl,
