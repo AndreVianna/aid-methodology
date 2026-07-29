@@ -88,30 +88,21 @@ Once approved:
    - Scope aligned with what the SPECs actually say?
    - Criteria concrete enough to verify?
 
-**Agent:** Dispatch with `subagent_type: aid-reviewer` (overriding the default `aid-architect`) **at Large tier** — the executor is the Large `aid-architect`, so reviewer tier >= executor tier (`.agent/aid/templates/agent-dispatch-tiering.md`). The aid-reviewer must run with clean context — it grades against KB/codebase reality without seeing the aid-architect's working notes.
+**Review:** invoke `/aid-deep-review`. It owns the dispatch, the clean context, the ledger, the gap
+gate, the grade and the fix loop.
 
-**Dispatch package:** render `references/reviewer-brief.md` with:
-- `{{SCOPE}}` = `per-deliverable`
-- `{{ARTIFACTS}}` = the task DETAIL.md files just written for delivery-NNN (`.aid/works/{work}/deliveries/delivery-NNN/tasks/task-NNN/DETAIL.md`) + the Execution Graph section just appended to PLAN.md (if present)
-- `{{CONTEXT}}` = `Tasks for delivery-NNN of work-NNN; feature SPECs: feature-NNN-{name}, ...`
-
-Include in the prompt:
-- **Ledger lifecycle:** "Append new findings as rows with Status: Pending to
-  `.aid/.temp/review-pending/detail.md`. Read the existing file first if it exists.
-  Output per `.agent/aid/templates/reviewer-ledger-schema.md` — ONE table, no narrative."
-
-Print before dispatch: `[Review] Dispatching aid-reviewer for task list validation (per-deliverable scope).`
-
-▶ aid-reviewer starting (~1–2 min)
-After writing, **review immediately:** Do the tasks hold up?
-✓ aid-reviewer done (record actual time) — or ✗ aid-reviewer failed: {reason}
-
-After aid-reviewer returns, run grade.sh:
-
-```bash
-bash .agent/aid/scripts/review/check-gaps.sh --ledger .aid/.temp/review-pending/detail.md   # exit 1 = an open criteria gap; do NOT grade
-bash .agent/aid/scripts/grade.sh --explain .aid/.temp/review-pending/detail.md
+```yaml
+scope:         detail
+artifacts:     every tasks/task-NNN/DETAIL.md on disk
+rule_set:      definition
+depth:         deep
+tier:          large
+fix_agent:     aid-architect
 ```
+
+`minimum_grade` resolves from `read-setting.sh --skill detail`; the two brief sections come from
+`references/reviewer-brief.md`.
+
 
 | Condition | Action |
 |-----------|--------|

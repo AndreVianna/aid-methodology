@@ -701,123 +701,62 @@ below share it; it is resolved once per GATE entry, not once per pass.
 
 ### Step 2: Pass 1 -- definition documents
 
-Ledger: `.aid/.temp/review-pending/shortcut-{work}-defn.md`. Run the Generic
-REVIEW -> GRADE -> FIX loop (Step 4 below) with this pass's own brief
-content:
+Invoke `/aid-deep-review` with this manifest. It owns the dispatch, the clean context, the ledger, the
+gap gate, the grade, the fix loop and the circuit breaker.
 
-- **ARTIFACTS UNDER REVIEW:** `.aid/works/{work}/REQUIREMENTS.md`,
-  `.aid/works/{work}/SPEC.md`, `.aid/works/{work}/PLAN.md`, `.aid/works/{work}/BLUEPRINT.md`.
-- **CONTEXT:** these are the collapsed-lifecycle definition documents for a
-  direct-entry shortcut work (`/{name}` binds `{verb}`/`{artifact}`); a
-  single feature, a single delivery (feature-001's flattened shape); the
-  work has not yet been approved for execution.
-- **RUBRIC:** (one-off -- no shared per-skill `reviewer-brief.md` exists for
-  the shortcut engine; `reviewer-dispatch.md § One-off reviews`) internal
-  consistency across the four documents; every `SPEC.md` Acceptance
-  Criterion traces back to a `REQUIREMENTS.md` requirement and forward to a
-  `BLUEPRINT.md § Gate Criteria` line; no fabricated content standing in for
-  a genuine `*(pending)*`/`N/A` gap; `PLAN.md`/`BLUEPRINT.md` carry no
-  `### delivery-NNN` subsection heading (feature-001's parser-compatibility
-  constraint).
-- **OUT OF SCOPE:** every `tasks/task-NNN/DETAIL.md` (Pass 2's own scope,
-  below, not yet reviewed); full-path-only concerns (feature decomposition,
-  cross-reference, multi-delivery planning -- this is a single-feature,
-  single-delivery flattened work by construction); hypothetical future
-  shortcuts or catalog rows.
-- **OUT-OF-SCOPE FINDINGS POLICY:** the standard policy
-  (`reviewer-dispatch.md` -- log as `Status: OOS` rows in the same ledger,
-  routing destination named in Description/Evidence, never counted toward
-  the grade).
+```yaml
+scope:         shortcut-{work}-defn
+artifacts:     REQUIREMENTS.md, SPEC.md, PLAN.md, BLUEPRINT.md   (under .aid/works/{work}/)
+rule_set:      definition
+depth:         deep
+tier:          large        # matches the Large aid-architect that authored them
+fix_agent:     aid-architect
+context:       |
+  Collapsed-lifecycle definition documents for a direct-entry shortcut work: a single
+  feature, a single delivery, not yet approved for execution.
+```
+
+The two brief sections this pass supplies:
+
+- **RUBRIC_BODY** — internal consistency across the four documents; every `SPEC.md` acceptance criterion
+  traces back to a `REQUIREMENTS.md` requirement and forward to a `BLUEPRINT.md § Gate Criteria` line; no
+  fabricated content standing in for a genuine `*(pending)*` / `N/A` gap; `PLAN.md` / `BLUEPRINT.md` carry
+  no `### delivery-NNN` subsection heading (the parser-compatibility constraint).
+- **OUT_OF_SCOPE** — every `tasks/task-NNN/DETAIL.md` (Pass 2's scope, not yet reviewed); full-path-only
+  concerns such as feature decomposition, cross-reference and multi-delivery planning, none of which apply
+  to a single-feature flattened work; hypothetical future shortcuts or catalog rows.
 
 ### Step 3: Pass 2 -- task set
 
-Only entered once Pass 1 clears (Step 2). Ledger:
-`.aid/.temp/review-pending/shortcut-{work}-tasks.md`. Run the Generic
-REVIEW -> GRADE -> FIX loop (Step 4 below) with this pass's own brief
-content:
+Only entered once Pass 1 clears. Same shape, `scope: shortcut-{work}-tasks`, `rule_set: definition`.
 
-- **ARTIFACTS UNDER REVIEW:** every `.aid/works/{work}/tasks/task-NNN/DETAIL.md`
-  actually on disk (an explicit file list built from disk, not from memory
-  -- `reviewer-dispatch.md § Deriving {{ARTIFACTS}}`).
-- **CONTEXT:** the task breakdown for the same shortcut work, whose
-  definition documents already cleared Pass 1; each task traces to a
-  `SPEC.md` Acceptance Criterion and a `BLUEPRINT.md § Gate Criteria` line.
-- **RUBRIC:** (one-off, as Pass 1) each `DETAIL.md` carries exactly one bold
-  `**Type:**` (never mixed across tasks of the same shortcut unless the
-  family scaffolding calls for it -- `artifact-schemas.md § Task DETAIL.md`),
-  a correct `**Source:** work-NNN-{slug} -> delivery-001` and
-  `**Depends on:**` shape matching the natural ordering, and concrete,
-  testable `**Acceptance Criteria:**` ending in `All section-6 quality gates
-  pass.`; no sibling `STATE.md` exists for any task (the flat layout has
-  none by design).
-- **OUT OF SCOPE:** `REQUIREMENTS.md`/`SPEC.md`/`PLAN.md`/`BLUEPRINT.md`
-  (Pass 1's own scope, already cleared -- re-litigating them here is scope
-  leak the reviewer must not re-grade); full-path per-task `STATE.md`
-  conventions (not applicable to this flat layout).
-- **OUT-OF-SCOPE FINDINGS POLICY:** identical to Pass 1's.
+- **RUBRIC_BODY** — each `DETAIL.md` carries exactly one bold `**Type:**` from the closed enum, a correct
+  `**Source:** work-NNN-{slug} -> delivery-001`, a `**Depends on:**` shape matching the natural ordering,
+  and concrete testable `**Acceptance Criteria:**` ending in `All section-6 quality gates pass.`; no
+  sibling `STATE.md` exists for any task (the flat layout has none by design).
+- **OUT_OF_SCOPE** — `REQUIREMENTS.md` / `SPEC.md` / `PLAN.md` / `BLUEPRINT.md`, which Pass 1 already
+  cleared; re-litigating them here is scope leak. Full-path per-task `STATE.md` conventions do not apply
+  to this flat layout.
 
-### Step 4: The Generic REVIEW -> GRADE -> FIX loop (shared by both passes)
+`artifacts` is every `tasks/task-NNN/DETAIL.md` **actually on disk** — built from disk, never from memory.
 
-1. **REVIEW.** Dispatch `aid-reviewer` (Large; follow the Dispatch Protocol
-   above -- ETA lookup, heartbeat file, 3 L2 timers) in a **clean context**
-   that never inherits the authoring `aid-architect`'s reasoning
-   (`architecture.md § Agent / Sub-Agent Dispatch Model`). Hand-craft the
-   inline 5-section brief (`ARTIFACTS UNDER REVIEW` / `CONTEXT` / `RUBRIC` /
-   `OUT OF SCOPE` / `OUT-OF-SCOPE FINDINGS POLICY`) from this pass's own
-   bullets (Step 2 or Step 3), per `reviewer-dispatch.md § One-off reviews`
-   -- there is **no** shared `reviewer-brief.md` for the shortcut engine
-   (that file exists only per-skill under
-   `.github/skills/<skill>/references/`). On cycle 1 the ledger does not
-   exist yet; the reviewer creates it. On cycle N>=2 the reviewer reads the
-   existing ledger first, re-verifies every existing `Pending` row against
-   disk (-> `Fixed` if resolved, left `Pending` otherwise), re-verifies
-   every `Fixed` row (-> `Recurred` if regressed), then appends newly-found
-   issues as `Pending` (`reviewer-ledger-schema.md § Lifecycle`).
-2. **GRADE.**
-   ```bash
-   bash .github/aid/scripts/review/check-gaps.sh --ledger <ledger-path>   # exit 1 = an open criteria gap; do NOT grade
-   bash .github/aid/scripts/grade.sh --explain <ledger-path>
-   ```
-   Because the operative floor for this work is `A+` (zero findings --
-   `grading-rubric.md` Grade Calculation), and a batched ledger's total
-   finding count is the sum of every reviewed document's own finding count,
-   the pooled grade equals `A+` **if and only if every individual document
-   in the pass also has zero findings**. This is exactly the property
-   feature-004's SPEC requires ("each document still clears `minimum_grade`
-   via its own REVIEW->FIX loop within the pass" --
-   `features/feature-004-approval-and-grading-gates/SPEC.md § Data Model`
-   item 2) -- the batched dispatch changes round-trip **granularity** only,
-   never the per-document guarantee (AC-11), so no second, per-document
-   `grade.sh` pass is needed at the shortcut path's `A+` floor. (A project
-   override that lowers `minimum_grade` below `A+` would need the
-   ledger's own `Doc` column read per-document before trusting the pooled
-   number; that is outside this engine's default scope and is not built
-   speculatively.) If the pass's grade `>= {floor}` -> the pass clears;
-   advance (Pass 1 clearing -> Step 3; Pass 2 clearing -> Step 5). Otherwise
-   -> Fix below.
-3. **FIX.** Dispatch `aid-architect` (Large; same Dispatch Protocol; the
-   same tier that authored these documents -- reviewer tier `>=` executor
-   tier and the writer, never the reviewer, fixes --
-   `architecture.md § Agent / Sub-Agent Dispatch Model`) with every
-   `Pending`/`Recurred` row from the pass's ledger. The architect addresses
-   each row's cited `Doc`/`Line` in place; it does **not** touch the
-   ledger's `Status` column -- that is the next REVIEW cycle's job
-   (`reviewer-ledger-schema.md § Authoring rules for the fixer`). Loop back
-   to Step 1 (REVIEW) for a fresh, clean-context reviewer pass.
+### Step 4: Why a pooled grade is sufficient here
 
-   **Circuit breaker.** If the pass's grade has not improved across 3
-   consecutive cycles, STOP (mirrors
-   `.github/skills/aid-execute/references/state-delivery-gate.md § Step
-   5`; `quality-gates.md § The Per-Phase REVIEW to FIX Loop`). Write
-   `.aid/works/{work}/IMPEDIMENT-gate-{pass}.md` (`{pass}` = `defn` or `tasks`)
-   and:
-   ```bash
-   bash .github/aid/scripts/execute/writeback-state.sh --pipeline --field Lifecycle --value Blocked
-   bash .github/aid/scripts/execute/writeback-state.sh --pipeline --field "Block Reason" --value "GATE {pass} pass circuit breaker -- grade not improving after 3 cycles"
-   bash .github/aid/scripts/execute/writeback-state.sh --pipeline --field "Block Artifact" --value ".aid/works/{work}/IMPEDIMENT-gate-{pass}.md"
-   bash .github/aid/scripts/execute/writeback-state.sh --pipeline --field Updated --value "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
-   ```
-   and surface it to the user instead of looping further.
+`/aid-deep-review` runs the loop; this section records the one argument that is specific to the shortcut
+path and would otherwise be lost.
+
+The operative floor is `A+`, meaning **zero findings**. A batched ledger's finding count is the sum of
+every reviewed document's own count, so the pooled grade is `A+` **if and only if every individual
+document also has zero findings.** That is exactly the per-document guarantee the gate requires — the
+batched dispatch changes round-trip *granularity* only, never the guarantee, so no second per-document
+grading pass is needed.
+
+**This argument depends on the `A+` floor and fails without it.** A project override lowering
+`minimum_grade` below `A+` would need the ledger's `Doc` column read per document before the pooled
+number could be trusted. That is out of scope here and is deliberately not built speculatively.
+
+`fix_agent: aid-architect` — the tier that authored these documents. The writer fixes and the reviewer
+never does, and reviewer tier >= executor tier holds because both are Large.
 
 ### Step 5: Record the cleared grades
 

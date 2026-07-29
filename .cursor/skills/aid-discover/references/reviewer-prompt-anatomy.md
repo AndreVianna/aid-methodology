@@ -206,16 +206,16 @@ Route each document by its `kb-category:` and `source:` frontmatter before gradi
 ### Output format
 
 Write all findings to `.aid/.temp/review-pending/{{SCOPE}}-anatomy.md` using the
-8-column ledger schema (the `Rule` cell shows `KB-NN` because the KB rule set does not
-yet assign rule IDs -- put the real ID there once it does; never invent one):
+8-column ledger schema (the `Rule` cell cites a rule from
+`review-rubrics/kb.md`; never invent an ID):
 
 ```
 | # | Severity | Status | Rule | Doc | Line | Description | Evidence |
 |---|----------|--------|------|-----|------|-------------|----------|
-| M2-001 | [HIGH] | Pending | KB-NN | architecture.md | — | [M2] [KB-MISSING] auth-service.md is not present on disk | ls .aid/knowledge/ — no auth-service.md |
-| M2-002 | [HIGH] | Pending | KB-NN | architecture.md | — | [M2] [CAL-COVERAGE] Salient term "router-mesh" absent from doc though in local sources | output (b) absent row: router-mesh \| architecture.md \| src/router.ts |
-| M2-003 | [MEDIUM] | Pending | KB-NN | module-map.md | — | [M2] [CAL-TRANSCRIPTION] Doc is a near-verbatim restatement of src/index.ts with no synthesis (no why/how-it-relates) | reads as re-narrated source; output (b) shows full salient-token echo |
-| M2-004 | [MEDIUM] | Pending | KB-NN | patterns.md | — | [M2] [CAL-HOLLOW] Doc is a list of "see X" references with no synthesised content | Forward read: all entries are pointers; no why/how-it-relates |
+| M2-001 | [HIGH] | Pending | KB-04 | architecture.md | — | [M2] [KB-MISSING] auth-service.md is not present on disk | ls .aid/knowledge/ — no auth-service.md |
+| M2-002 | [HIGH] | Pending | KB-09 | architecture.md | — | [M2] [CAL-COVERAGE] Salient term "router-mesh" absent from doc though in local sources | output (b) absent row: router-mesh \| architecture.md \| src/router.ts |
+| M2-003 | [MEDIUM] | Pending | KB-08 | module-map.md | — | [M2] [CAL-TRANSCRIPTION] Doc is a near-verbatim restatement of src/index.ts with no synthesis (no why/how-it-relates) | reads as re-narrated source; output (b) shows full salient-token echo |
+| M2-004 | [MEDIUM] | Pending | KB-08 | patterns.md | — | [M2] [CAL-HOLLOW] Doc is a list of "see X" references with no synthesised content | Forward read: all entries are pointers; no why/how-it-relates |
 ```
 
 - Use stable IDs: `M2-001`, `M2-002`, ...

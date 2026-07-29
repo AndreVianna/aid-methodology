@@ -35,7 +35,10 @@ echo "== test-gap-gate-wiring.sh =="
 # earlier deliveries shipped vacuous.
 # ---------------------------------------------------------------------------
 mapfile -t SITES < <(grep -rln "$GRADE_PAT" canonical/ 2>/dev/null | sort)
-if [[ "${#SITES[@]}" -ge 15 ]]; then
+# FLOOR LOWERED 15 -> 8 by delivery-012. Grading is now centralised in /aid-deep-review, so far fewer
+# files invoke grade.sh directly -- that is the extraction working, not the pattern breaking. The floor
+# still exists because a sweep over zero files would pass vacuously.
+if [[ "${#SITES[@]}" -ge 8 ]]; then
   pass "GW01 the derived site set holds ${#SITES[@]} files (not vacuous)"
 else
   fail "GW01 the derived site set holds only ${#SITES[@]} files -- the pattern is broken"
@@ -64,21 +67,37 @@ assert_eq "$misordered" "0" "GW03 the gate is mentioned before the grade call it
 # explicitly because omitting either has an outsized consequence, and a total
 # sweep alone would not say WHICH site regressed.
 # ---------------------------------------------------------------------------
-# The Lite path: every shortcut skill grades through the engine, so an ungated engine lets the whole
+# GATED DIRECTLY *OR* BY DELEGATION. delivery-012 extracted review into /aid-deep-review, which runs the
+# gap gate before the grader -- so a site that delegates to it IS gated, and requiring a direct
+# check-gaps.sh call would force every caller to re-implement the thing that was just extracted.
+#
+# The invariant is unchanged: no grade may be computed over an open criteria gap. What changed is who
+# computes the grade.
+gated_somehow () {   # $1 = file, $2 = assertion label
+  local f="$1" label="$2"
+  if grep -q "$GATE" "$f" 2>/dev/null; then
+    pass "$label (gates directly)"
+  elif grep -q 'aid-deep-review' "$f" 2>/dev/null; then
+    pass "$label (delegates to /aid-deep-review, which gates)"
+  else
+    fail "$label -- neither gates directly nor delegates"
+  fi
+}
+
+# The Lite path: every shortcut skill grades through the engine, so an ungated engine would let the whole
 # Lite path grade over an open gap.
-assert_output_contains "$(cat canonical/aid/templates/shortcut-engine.md)" "$GATE" \
-  "GW04 the Lite path's shortcut engine is gated"
+gated_somehow canonical/aid/templates/shortcut-engine.md "GW04 the Lite path's shortcut engine is gated"
 
 # aid-execute's delivery gate is where a delivery is actually accepted.
-assert_output_contains "$(cat canonical/skills/aid-execute/references/state-delivery-gate.md)" "$GATE" \
+gated_somehow canonical/skills/aid-execute/references/state-delivery-gate.md \
   "GW05 aid-execute's DELIVERY-GATE is gated"
 
 # The two machine-validator sites cannot produce a G- row today. Their call is a cheap exit-0
 # invariant, and wiring them is what makes the sweep TOTAL -- a partial wiring needs an exclusion
 # list, and exclusion lists rot.
-assert_output_contains "$(cat canonical/skills/aid-summarize/references/state-validate.md)" "$GATE" \
+gated_somehow canonical/skills/aid-summarize/references/state-validate.md \
   "GW06 aid-summarize's VALIDATE is gated (exit-0 invariant)"
-assert_output_contains "$(cat canonical/skills/aid-deploy/references/state-verifying.md)" "$GATE" \
+gated_somehow canonical/skills/aid-deploy/references/state-verifying.md \
   "GW07 aid-deploy's VERIFYING is gated (exit-0 invariant)"
 
 # ---------------------------------------------------------------------------

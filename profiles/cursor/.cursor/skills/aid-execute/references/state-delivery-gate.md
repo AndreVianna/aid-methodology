@@ -144,44 +144,31 @@ Gate reviewer tier: {Small | Medium | Large}
 
 ## Step 2: REVIEW (Gate Reviewer — Fresh Issue List)
 
-Dispatch the `aid-reviewer` agent at the **score-selected tier** (Small / Medium /
-Large). Clean context — reviewer must NOT inherit any executor working notes.
+Invoke `/aid-deep-review`. It owns the dispatch, the clean context, the ledger, the gap gate, the grade
+and the fix loop — including the reconciliation that used to be described here and contradicted the
+clean-context rule two lines above it.
 
-**Before dispatching, print:**
-`[DELIVERY-GATE Step 2] Dispatching aid-reviewer (gate, {tier} tier) → subagent_type=aid-reviewer`
+```yaml
+scope:         execute-delivery-NNN
+artifacts:     the full delivery branch diff, every task's STATE.md row, the PLAN.md delivery section
+rule_set:      executable
+depth:         deep
+tier:          <score-selected: small | medium | large>
+fix_agent:     <the delivery's own executor, per the Agent Selection table>
+context:       |
+  delivery-NNN aggregates tasks {NNN..MMM}; this is the post-execution quality gate
+  before merge to main.
+```
 
-Dispatch metadata is logged via the Calibration Log appendix in the work
-`STATE.md` (per work-003 traceability rule — never optional).
+**The tier is score-selected here, not fixed.** The gate's complexity score picks it, and the
+reviewer-tier >= executor-tier invariant is the floor: a delivery executed by a Large agent cannot be
+gated by a Medium reviewer.
 
-Follow the Dispatch Protocol (L1+L2+L3 subagent visibility) from `SKILL.md`:
-arm 3 L2 timers; pre-create heartbeat file; include `HEARTBEAT_FILE` +
-`HEARTBEAT_INTERVAL` in prompt.
+Dispatch metadata is logged via the Calibration Log appendix in the work `STATE.md` — never optional.
 
-### Gate Reviewer Inputs
+### What the gate reviewer reads
 
-The gate reviewer receives a **fresh, clean-context package** — not a summary
-of per-task reviews. The package wrapper is the universal brief at
-`references/reviewer-brief.md` rendered with:
-- `{{MODE}}` = `per-delivery`
-- `{{ARTIFACTS}}` = the full delivery branch diff + every task's STATE.md row + the PLAN.md delivery section
-- `{{CONTEXT}}` = `delivery-NNN aggregates tasks {NNN..MMM}; this is the post-execution quality gate before merge to main.`
-
-Include in the prompt:
-- **Ledger lifecycle:** "Write ONLY to the scratch ledger path given to you. Do NOT read the durable
-  `.aid/.temp/review-pending/execute-delivery-NNN.md`, and do NOT update the Status of any prior row —
-  the orchestrator reconciles your rows against the durable ledger on `(Doc, Rule)` after you return.
-  Record every finding as `Status: Pending`. If the ledger you were given already contains your own
-  rows, this is a RESUME of the same attempt: continue from your coverage rows rather than starting
-  over."
-
-  This replaced an instruction to read the durable ledger and update prior statuses, which
-  contradicted the clean-context rule two lines above: the reviewer cannot both be denied the previous
-  verdict and be asked to update it. Deciding a row is now `Fixed` is a set difference between two
-  finding lists, not a judgment about the artifact, so it belongs to the orchestrator.
-- **Schema reference:** "Output per `.cursor/aid/templates/reviewer-ledger-schema.md`.
-  The ledger is the entire file — ONE markdown table, no headers, no narrative."
-
-Then append the gate-specific prompt below. The reviewer reads directly from source:
+A **fresh, clean-context package** — not a summary of per-task reviews. It reads directly from source:
 
 - **All delivery artifacts** — every file produced or modified by tasks in the
   delivery (code, docs, configs, tests, etc.)
@@ -235,19 +222,10 @@ Then append the gate-specific prompt below. The reviewer reads directly from sou
 
 ---
 
-## Step 3: GRADE (Deterministic Grade Computation)
+## Step 3: GRADE
 
-Run `grade.sh` on the ledger file:
-
-```bash
-bash .cursor/aid/scripts/review/check-gaps.sh --ledger .aid/.temp/review-pending/execute-delivery-NNN.md   # exit 1 = an open criteria gap; do NOT grade
-bash .cursor/aid/scripts/grade.sh --explain .aid/.temp/review-pending/execute-delivery-NNN.md
-```
-
-The script parses the Severity and Status columns from the markdown table, counts
-findings where Status ∈ {Pending, Recurred}, and prints a grade letter
-(`A+`, `A`, `A-`, `B+`, …, `F`). The `--explain` flag prints the count
-breakdown to stderr.
+`/aid-deep-review` returns the grade — it ran the gap gate first and the grader second, and looped on FIX
+until the minimum was met or its three-cycle breaker tripped. Nothing is re-graded here.
 
 **Record the grade** in the work `STATE.md` `## Delivery Gates` section
 (partial write — will be completed by RECORD step on PASS):

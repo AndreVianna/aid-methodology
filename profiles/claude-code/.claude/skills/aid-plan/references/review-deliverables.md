@@ -32,31 +32,21 @@ For each deliverable in PLAN.md, run step 4:
 
 ### Dispatch the Reviewer
 
-Render `references/reviewer-brief.md` with:
-- `{{SCOPE}}` = `whole-plan`
-- `{{ARTIFACTS}}` = full `PLAN.md` + every `.aid/works/{work}/features/feature-*/SPEC.md`
-- `{{CONTEXT}}` = `PLAN.md for work-NNN with N deliveries; re-review against current SPECs.`
+Invoke `/aid-deep-review`. It owns the dispatch, the clean context, the ledger, the gap gate, the grade
+and the fix loop.
 
-Include in the prompt:
-- **Ledger lifecycle:** "Read `.aid/.temp/review-pending/plan.md` if it exists.
-  For each existing row: verify on disk, update Status (Pending→Fixed if resolved;
-  Fixed→Recurred if regressed). Append new findings with Status: Pending.
-  Output per `.claude/aid/templates/reviewer-ledger-schema.md` — ONE table, no narrative."
-
-Dispatch the `aid-reviewer` subagent **at Large tier** (the executor is the Large
-`aid-architect`; reviewer tier >= executor tier per
-`.claude/aid/templates/agent-dispatch-tiering.md`) with the rendered brief.
-
-### Grade Overall
-
-After aid-reviewer returns, run grade.sh:
-
-```bash
-bash .claude/aid/scripts/review/check-gaps.sh --ledger .aid/.temp/review-pending/plan.md   # exit 1 = an open criteria gap; do NOT grade
-bash .claude/aid/scripts/grade.sh --explain .aid/.temp/review-pending/plan.md
+```yaml
+scope:         plan
+artifacts:     PLAN.md and every delivery BLUEPRINT.md
+rule_set:      definition
+depth:         deep
+tier:          large            # the executor is the Large aid-architect
+fix_agent:     aid-architect
 ```
 
-Compare to minimum grade from `bash .claude/aid/scripts/config/read-setting.sh --skill plan --key minimum_grade --default A`.
+`minimum_grade` resolves from `read-setting.sh --skill plan`; the two brief sections come from
+`references/reviewer-brief.md`. It returns the grade.
+
 
 | Condition | Action |
 |-----------|--------|

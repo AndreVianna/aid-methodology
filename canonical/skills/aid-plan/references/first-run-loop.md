@@ -135,33 +135,21 @@ print a suggestion: "to file a tracker item for this deliverable, run `/aid-crea
 re-record its ref," and continue without one. Optional, user-initiated, never auto-invoked;
 silent (no output) if no issue-tracker connector is catalogued.
 
-**Agent:** Dispatch with `subagent_type: aid-reviewer` (overriding the default `aid-architect`) **at Large tier** — the executor is the Large `aid-architect`, so reviewer tier >= executor tier (`canonical/aid/templates/agent-dispatch-tiering.md`). The aid-reviewer must run with clean context — it grades against KB/codebase reality without seeing the aid-architect's working notes.
+**Review:** invoke `/aid-deep-review`. It owns the dispatch, the clean context, the ledger, the gap
+gate, the grade and the fix loop.
 
-**Dispatch package:** render `references/reviewer-brief.md` with:
-- `{{SCOPE}}` = `per-deliverable`
-- `{{ARTIFACTS}}` = the deliverable section just appended to `PLAN.md` + the SPECs of the features it assigns
-- `{{CONTEXT}}` = `delivery-NNN of work-NNN just written; preceding deliveries: delivery-NNN..MMM (titles).`
-
-Include in the prompt:
-- **Ledger lifecycle:** "Append new findings as rows with Status: Pending to
-  `.aid/.temp/review-pending/plan.md`. Read the existing file first if it exists.
-  Output per `canonical/aid/templates/reviewer-ledger-schema.md` — ONE table, no narrative."
-
-Print before dispatch: `[Review] Dispatching aid-reviewer for PLAN validation (per-deliverable scope).`
-
-▶ aid-reviewer starting (~1–2 min)
-After writing, **review immediately:** Does it hold up?
-✓ aid-reviewer done (record actual time) — or ✗ aid-reviewer failed: {reason}
-- All included features' dependencies satisfied by prior deliverables?
-- Actually standalone-functional?
-- Consistent with KB architecture?
-
-After aid-reviewer returns, run grade.sh:
-
-```bash
-bash canonical/aid/scripts/review/check-gaps.sh --ledger .aid/.temp/review-pending/plan.md   # exit 1 = an open criteria gap; do NOT grade
-bash canonical/aid/scripts/grade.sh --explain .aid/.temp/review-pending/plan.md
+```yaml
+scope:         plan
+artifacts:     PLAN.md and every delivery BLUEPRINT.md
+rule_set:      definition
+depth:         deep
+tier:          large
+fix_agent:     aid-architect
 ```
+
+`minimum_grade` resolves from `read-setting.sh --skill plan`; the two brief sections come from
+`references/reviewer-brief.md`.
+
 
 | Condition | Action |
 |-----------|--------|

@@ -35,31 +35,21 @@ For each deliverable, check its corresponding tasks:
 
 ### Dispatch the Reviewer
 
-Render `references/reviewer-brief.md` with:
-- `{{SCOPE}}` = `whole-list`
-- `{{ARTIFACTS}}` = every `.aid/works/{work}/deliveries/delivery-NNN/tasks/task-NNN/DETAIL.md` (all deliveries) + the full `PLAN.md` (incl. Execution Graphs)
-- `{{CONTEXT}}` = `Re-review of all tasks for work-NNN after PLAN/SPEC changes.`
+Invoke `/aid-deep-review`. It owns the dispatch, the clean context, the ledger, the gap gate, the grade
+and the fix loop.
 
-Include in the prompt:
-- **Ledger lifecycle:** "Read `.aid/.temp/review-pending/detail.md` if it exists.
-  For each existing row: verify on disk, update Status (Pending→Fixed if resolved;
-  Fixed→Recurred if regressed). Append new findings with Status: Pending.
-  Output per `.github/aid/templates/reviewer-ledger-schema.md` — ONE table, no narrative."
-
-Dispatch the `aid-reviewer` subagent **at Large tier** (the executor is the Large
-`aid-architect`; reviewer tier >= executor tier per
-`.github/aid/templates/agent-dispatch-tiering.md`) with the rendered brief.
-
-### Grade Overall
-
-After aid-reviewer returns, run grade.sh:
-
-```bash
-bash .github/aid/scripts/review/check-gaps.sh --ledger .aid/.temp/review-pending/detail.md   # exit 1 = an open criteria gap; do NOT grade
-bash .github/aid/scripts/grade.sh --explain .aid/.temp/review-pending/detail.md
+```yaml
+scope:         detail
+artifacts:     every tasks/task-NNN/DETAIL.md on disk
+rule_set:      definition
+depth:         deep
+tier:          large            # the executor is the Large aid-architect
+fix_agent:     aid-architect
 ```
 
-Compare to minimum grade from `bash .github/aid/scripts/config/read-setting.sh --skill detail --key minimum_grade --default A`.
+`minimum_grade` resolves from `read-setting.sh --skill detail`; the two brief sections come from
+`references/reviewer-brief.md`. It returns the grade.
+
 
 | Condition | Action |
 |-----------|--------|
