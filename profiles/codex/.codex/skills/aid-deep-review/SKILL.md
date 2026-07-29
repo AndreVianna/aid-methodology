@@ -48,6 +48,52 @@ no rule for the reviewer to remember, because the prior verdict is not reachable
 
 For a **resume**, the same scratch is passed — the reviewer sees its own coverage and continues.
 
+### 2b. DISPATCH — panel mode
+
+Some artifacts are reviewed by **several mandates at once**, each asking a different question and each
+permitted to see a *different* surface. A KB review is the case that forced this: correctness, anatomy,
+teach-back and act-back are four genuinely different reviews, and two of them are only meaningful if the
+reviewer is denied the sources.
+
+A single-reviewer dispatch cannot express that, so the manifest may declare mandates:
+
+```yaml
+mandates:
+  - id: M1                    # namespaces this mandate's row IDs: M1-007, U-M1-004
+    rule_set: KB
+    surface: [.aid/knowledge/*.md]        # what this mandate MAY see -- a whitelist
+    ledger: .aid/.temp/review-pending/discovery-M1-cycle1.md
+  - id: M3
+    rule_set: KB
+    surface: [.aid/knowledge/*.md]        # NOT the sources -- see below
+    deny:    [src/**, .aid/generated/**]  # what it must NOT see, stated explicitly
+    ledger: .aid/.temp/review-pending/discovery-M3-cycle1.md
+```
+
+**`surface` and `deny` are the point, not decoration.** A mandate that reconstructs meaning from the KB
+alone is worthless if the reviewer can read the source it is meant to be tested against. Denial has to
+be enforced at dispatch — you cannot ask an agent to un-see a file it was given.
+
+**Rules that fall out, none of them new:**
+
+- **One scratch per mandate.** Each writes only its own, so no two mandates can collide on a row ID.
+  Their `U-`/`G-` IDs are namespaced (`U-M1-004`), which is why the ID grammar has a namespace segment.
+- **Mandates may run in parallel or be collapsed** into fewer dispatches when parallelism is
+  unavailable — a scheduling choice, never a semantic one. Collapsing two mandates into one dispatch is
+  only legal when their `surface` and `deny` sets are identical; otherwise collapsing would hand a
+  mandate a surface it was denied.
+- **The gap gate reads across every scratch.** `check-gaps.sh --ledger A --ledger B ...` — repeated
+  `--ledger` exists for exactly this, because gap rows are never merged and would otherwise be deleted
+  before anyone read them.
+- **RECONCILE merges findings only.** `U-` and `G-` rows stay in their mandate's scratch. Merging
+  coverage would imply the panel had one coverage frontier when it has one per mandate; merging gaps
+  would duplicate a gap two mandates both found.
+- **One grade, over the merged canonical ledger.** Not one grade per mandate. The artifact gets a
+  verdict, not four.
+
+Everything after this point — RECONCILE, GATE, GRADE, FIX — is unchanged. A panel differs in how
+findings are *produced*, not in how they are reconciled, gated or graded.
+
 ### 3. RECONCILE
 
 **The orchestrator's job, never the reviewer's.** Join scratch → durable on `(Doc, Rule)`:
@@ -63,6 +109,10 @@ For a **resume**, the same scratch is passed — the reviewer sees its own cover
 
 The coverage guard on row 3 is why an interrupted cycle can no longer silently clear findings it never
 reached.
+
+**In panel mode, join across every mandate's scratch.** A finding two mandates both raise is one row,
+deduped on `(Doc, Rule)` — which is also why the key is not the row ID: two mandates produce `M1-007`
+and `M3-004` for the same defect, and an ID-keyed join would record it twice.
 
 Then **promote every `G-` key** to the criteria-gap register — before anything is deleted. The scratch
 dies at merge; the register is git-tracked and outlives it.

@@ -401,59 +401,23 @@ the `review.panel` mode used in Step 1:
   - `.aid/.temp/review-pending/{{SCOPE}}-actback.md` (M4 rows from the clean-context
     act-back reviewer)
 
-If `.aid/.temp/review-pending/{{SCOPE}}.md` already exists (cycle N>=2), read its
-existing rows first. Each mandate reviewer's rows are identified by their `#` ID prefix
-(M1-NNN, M2-NNN, TB-NNN, AB-NNN) — the mandate reviewers have updated
-their own rows' Status in their scratch ledgers. Merge rule:
+**Reconciliation, the gap gate and the grade are `/aid-deep-review`'s panel mode.** This skill declares
+the mandates; it no longer carries the merge, the join key, the gate or the grade.
 
-1. For rows in the existing `{{SCOPE}}.md` that correspond to a mandate's scratch
-   ledger, replace the row with the scratch ledger's version (Status updated by the
-   reviewer).
-2. For new rows (new findings) in the scratch ledgers, append them with the next
-   available `MN-NNN`, `TB-NNN`, or `AB-NNN` ID within that mandate's namespace.
-3. Assign **stable per-mandate IDs** in the `#` column: `M1-001`..`M1-NNN`,
-   `M2-001`..`M2-NNN`, `TB-001`..`TB-NNN`, `AB-001`..`AB-NNN`. These IDs are
-   monotonic within each mandate's namespace and never reassigned to a different
-   finding.
-4. Each Description must carry its mandate marker prefix (`[M1]`, `[M2]`,
-   `[FIDELITY]`, `[ESSENCE-GAP]`, or `[ACTBACK]`) — the mandate reviewers have
-   written these; verify they are present. M3 rows carry `[FIDELITY]` (Divergence)
-   or `[ESSENCE-GAP]` (load-bearing Omission); M4 rows carry `[ACTBACK]`. (The M2
-   Anatomy rows additionally carry their finding-type tag, e.g. `[KB-MISSING]`,
-   `[CAL-COVERAGE]`, `[CAL-HOLLOW]`, `[CAL-TRANSCRIPTION]`, `[CAL-DEFERRAL]`, after
-   the `[M2]` prefix.)
-5. **Coverage (`U-`) and gap (`G-`) rows are NOT merged into the panel ledger.** They are
-   per-writer bookkeeping: a `U-` row records which unit *that* reviewer examined, and a `G-`
-   row records a missing criterion that stalled *that* reviewer. Merging them would produce
-   duplicate coverage for a unit two mandates both examined, and would imply the panel had a
-   single coverage frontier when it has one per mandate. Leave them in each mandate's scratch
-   ledger, where the `U-<NS>-NNN` namespace keeps them distinct.
+Each mandate keeps its **own** marker prefix in `Description` — M1/M2 carry `[M1]`/`[M2]` (M2
+additionally its finding-type tag, e.g. `[KB-MISSING]`, `[CAL-COVERAGE]`), M3 carries `[FIDELITY]` or
+`[ESSENCE-GAP]`, M4 carries `[ACTBACK]`. Verify they are present; the mandate reviewers write them.
 
-   Gaps still need to reach the orchestrator — but as an **escalation**, not as a merged row.
-   Read the `G-` rows from every scratch ledger and act on them; do not copy them into
-   `{{SCOPE}}.md`.
+Two properties `/aid-deep-review` guarantees, restated only because getting them wrong here is silent:
 
-Write the merged result to `.aid/.temp/review-pending/{{SCOPE}}.md` (the canonical
-ledger, 8-column schema).
+- **Findings merge on `(Doc, Rule)`, never on the row ID.** Two mandates finding the same defect produce
+  `M1-007` and `M3-004`; an ID-keyed join would record it twice.
+- **`U-` and `G-` rows are not merged.** They are per-mandate bookkeeping — one coverage frontier per
+  mandate, not one for the panel. The gate reads across every scratch instead
+  (`check-gaps.sh --ledger A --ledger B ...`), which is why gaps still reach the orchestrator without
+  being copied into the canonical ledger.
 
-**Rows are written by the helper, never by re-emitting the table.** Use
-`.codex/aid/scripts/review/writeback-ledger.sh --set-status` to carry a row forward and
-`--append-finding` to add one; it assigns IDs, escapes pipes, and refuses a finding with no rule
-ID. Re-typing the whole table is what the helper exists to stop.
-
-**2b. Run the existing grade.sh unchanged**
-
-```bash
-bash .codex/aid/scripts/review/check-gaps.sh --ledger .aid/.temp/review-pending/{{SCOPE}}.md   # exit 1 = an open criteria gap; do NOT grade
-bash .codex/aid/scripts/grade.sh --explain .aid/.temp/review-pending/{{SCOPE}}.md
-```
-
-`grade.sh` counts worst-severity over Status in {Pending, Recurred} across ALL rows,
-regardless of which mandate produced them. It reads only the Severity column (col 3)
-and Status column (col 4) — mandate-marker text in Description/Evidence is invisible
-to the grader. No `grade.sh` change.
-
-The grade is printed to stdout; `--explain` breakdown to stderr.
+One grade for the artifact, over the merged ledger — not one per mandate.
 
 **2c. Derive the essence verdict (Intent 2 — Blind Reconstruction + Source Confrontation)**
 
