@@ -23,10 +23,11 @@
 //   call counting and render-before-verify proof without needing filesystem fakes.
 
 import { readFileSync } from 'node:fs';
-import { resolve, dirname } from 'node:path';
+import { resolve, dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { describe, it, expect, beforeAll } from 'vitest';
 import { provenanceAppender } from '../lib/provenance/index.mjs';
+import { REPO_ROOT } from '../skills/paths.mjs';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const MODULE_PATH = resolve(__dirname, '../lib/provenance/index.mjs');
@@ -60,6 +61,70 @@ function makeSkill(dirName) {
   };
 }
 
+// ── Run-level source-file cache ──────────────────────────────────────────────
+//
+// verifyProvenance defaults to a fresh cache per call, which deduplicates reads
+// within one chart but not across the corpus. Across the corpus is where the cost
+// is: 64 of the 111 skills cite canonical/aid/templates/shortcut-engine.md, so a
+// per-call cache reads it 64 times. The appender therefore owns one cache for the
+// run and threads it through every verify call.
+
+describe('run-level file cache is shared across skills', () => {
+  /** A chart whose single node cites `file`, valid for every check. */
+  function chartCiting(skillName, file, excerpt, startLine, endLine) {
+    return {
+      skill: skillName,
+      nodes: [{
+        id: 'n1', order: 1, name: 'STEP', label: 'Step', kind: 'entry',
+        terminal: null, detail: null,
+        provenance: { file, startLine, endLine, excerpt, sourceKind: 'skill' },
+      }],
+      edges: [], entries: ['n1'], exits: [], sources: [], warnings: [],
+      shape: 'inline-states', extractor: 'test', confidence: 'derived',
+      title: `${skillName} — state flow`,
+    };
+  }
+
+  it('two different skills citing one file share a single cache entry', () => {
+    // A real file both charts can cite, so verification genuinely runs.
+    const file = 'canonical/aid/templates/shortcut-engine.md';
+    const abs  = join(REPO_ROOT, 'canonical', 'aid', 'templates', 'shortcut-engine.md');
+    const line1 = readFileSync(abs, 'utf8').split('\n')[0];
+
+    const fileCache = new Map();
+    for (const name of ['aid-add-api', 'aid-add-cli']) {
+      provenanceAppender.render(makeSkill(name), {
+        _memo: new Map(),
+        _fileCache: fileCache,
+        _buildFlowChart: () => chartCiting(name, file, line1, 1, 1),
+        _renderFragmentList: () => '## Source fragments\n\n',
+      });
+    }
+
+    // Non-vacuity: the cache was used at all, and holds exactly the shared file.
+    expect(fileCache.size).toBe(1);
+    expect(fileCache.has(file)).toBe(true);
+  });
+
+  it('render passes the run cache through rather than letting verify make its own', () => {
+    const file = 'canonical/aid/templates/shortcut-engine.md';
+    const abs  = join(REPO_ROOT, 'canonical', 'aid', 'templates', 'shortcut-engine.md');
+    const line1 = readFileSync(abs, 'utf8').split('\n')[0];
+
+    const fileCache = new Map();
+    provenanceAppender.render(makeSkill('aid-add-api'), {
+      _memo: new Map(),
+      _fileCache: fileCache,
+      _buildFlowChart: () => chartCiting('aid-add-api', file, line1, 1, 1),
+      _renderFragmentList: () => '## Source fragments\n\n',
+    });
+
+    // If render ignored _fileCache, verify would cache into its own Map and this
+    // one would still be empty.
+    expect(fileCache.size).toBeGreaterThan(0);
+  });
+});
+
 // ── AC-7: identity ────────────────────────────────────────────────────────────
 
 describe('provenanceAppender — identity', () => {
@@ -86,12 +151,19 @@ describe('field access: bodyStartLine and lineCount absent (AC-2)', () => {
     expect(src).not.toContain('lineCount');
   });
 
-  it('dirName appears in the module source (one of the two fields used)', () => {
+  it('dirName appears in the module source', () => {
     expect(src).toContain('dirName');
   });
 
-  it('sourcePath appears in the module source (one of the two fields used)', () => {
-    expect(src).toContain('sourcePath');
+  // The DETAIL anticipated two fields, dirName and sourcePath. Only dirName is
+  // read: buildFlowChart derives every path it needs from name and dir, so
+  // sourcePath had no work to do, and destructuring it purely to match the
+  // wording left a variable that was never referenced. The constraint the AC
+  // actually protects — that the per-skill line-range fields are not consulted,
+  // because a node may cite a worker or the shared engine template rather than
+  // this skill's own SKILL.md — is asserted by the two tests above and is intact.
+  it('sourcePath is not destructured, because nothing reads it', () => {
+    expect(src).not.toMatch(/const\s*\{[^}]*sourcePath[^}]*\}\s*=\s*skill/);
   });
 });
 

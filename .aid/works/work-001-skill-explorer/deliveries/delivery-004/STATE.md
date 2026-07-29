@@ -1,8 +1,8 @@
 ---
-delivery_state: Executing
-gate_tier: Small | Medium | Large
-gate_grade: "{grade or Pending}"
-gate_timestamp: "{YYYY-MM-DDTHH:MM:SSZ}"
+delivery_state: Gated
+gate_tier: Large
+gate_grade: C+
+gate_timestamp: 2026-07-29T15:20:00Z
 ticket_ref: "--"
 ---
 
@@ -51,7 +51,49 @@ with ZERO tasks; the `_none yet_` rollup below is correct and expected for a new
      delivery's branch. Reviewer Tier / Grade / Timestamp live in the YAML frontmatter block
      at the top of this file (`gate_tier`, `gate_grade`, `gate_timestamp`). -->
 
-- **Issue List:** {inline severity-tagged list, or "none" if gate passed clean}
+- **Issue List:** round 1 raised 3 (0 Critical, 0 High, 1 Medium, 2 Low), all Fixed — see below.
+
+### Gate round 1 — C+ (below the A+ floor)
+
+**[MEDIUM] The source-file cache was per-call, not per-run.** `verifyProvenance` created a
+fresh `Map` on every invocation, which deduplicates reads within one chart but not across the
+corpus — and across the corpus is the whole point. Measured before accepting the finding: 64 of
+the 111 skills cite `canonical/aid/templates/shortcut-engine.md` and 64 cite
+`work-initiation-gate.md`, so each was read 64 times. Corpus cost was 315 reads against 176
+with one run-level cache, a 1.79x amplification — precisely the doorway case the SPEC names
+when it says "once per run". The task-041 DETAIL is internally inconsistent here: its prose
+says "once per run … material when a doorway corpus shares a single engine file", but its own
+AC says to assert it "across a chart", which is a per-call claim. The prose and the SPEC agree
+with each other, so they win. Fixed by giving the appender a run-level `_runFileCache` beside
+its existing `_runMemo` and threading it into every verify call; `_cache` is promoted from a
+test-only seam to a documented parameter, and `resetProvenanceMemo()` clears both. Measured
+after: 176 reads, 139 avoided, both templates cached once. Pages are byte-unchanged, which
+confirms this is purely a cost fix.
+
+The old test was titled "once per run" but exercised a single call, so it could never have
+caught this. Retitled to say per-call, and two tests added: one proving a shared cache
+collapses three separate calls to one read, and its non-vacuity twin proving the same three
+calls read three times without it. A further pair asserts the appender actually threads its
+run cache through, rather than letting verify quietly make its own.
+
+**[LOW] P2a asserted no `file#L…`.** The DETAIL requires every throw to name the skill, the
+node id **and** the location; P2a checked the first two plus the guard name but omitted the
+third, while its sibling P2b included it. Added.
+
+**[LOW] `sourcePath` was destructured and never read.** The DETAIL says the appender uses two
+SkillRecord fields, but `buildFlowChart` builds every path it needs from `name` and `dir`, so
+`sourcePath` had no work to do; it was destructured — with a comment admitting as much — purely
+to satisfy a grep-based AC. That is an AC testing a spelling rather than a behaviour. Removed,
+and the test inverted to assert `sourcePath` is *not* destructured. The constraint the AC
+actually protects — that `bodyStartLine` and `lineCount` are never consulted, because a node
+may cite a worker file or the shared engine template rather than this skill's own `SKILL.md` —
+is unaffected and still asserted.
+
+**Delta recorded:** the appender reads exactly **one** SkillRecord field, `dirName`, not the
+two the DETAIL anticipated.
+
+After the round: 2571 tests across 41 files, build clean at 142 pages, regeneration idempotent,
+and no mutation artifacts anywhere under `site/scripts/`.
 
 ---
 

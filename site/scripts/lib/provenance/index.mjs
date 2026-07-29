@@ -45,6 +45,21 @@ import { buildEntries, renderFragmentList } from './render-list.mjs';
 const _runMemo = new Map();
 
 /**
+ * Source-file text cache shared by every `verifyProvenance` call in the run.
+ *
+ * `verifyProvenance` defaults to a fresh Map per call, which deduplicates reads
+ * within one chart but not across the corpus — and across the corpus is where the
+ * cost is. `canonical/aid/templates/shortcut-engine.md` and
+ * `work-initiation-gate.md` are each cited by 64 of the 111 skills, so a per-call
+ * cache reads them 64 times apiece: 315 reads for the corpus against 176 with one
+ * run-level cache, a 1.79x amplification. This is the doorway-corpus case the SPEC
+ * names when it specifies "once per run".
+ *
+ * @type {Map<string, {text: string, lines: string[]}>}
+ */
+const _runFileCache = new Map();
+
+/**
  * Drop all memoised charts.
  *
  * Analogous to resetFlowWarnings() in flow-graph/index.mjs.  Tests inject a
@@ -56,6 +71,7 @@ const _runMemo = new Map();
  */
 export function resetProvenanceMemo() {
   _runMemo.clear();
+  _runFileCache.clear();
 }
 
 // ── Appender ──────────────────────────────────────────────────────────────────
@@ -66,7 +82,10 @@ export function resetProvenanceMemo() {
  * Registered in skills/body.mjs as the sole entry in BODY_APPENDERS.
  * Emitted unconditionally — there is no code path that skips it.
  *
- * Uses exactly two fields from the SkillRecord: `dirName` and `sourcePath`.
+ * Reads exactly one field from the SkillRecord: `dirName`. The DETAIL anticipated
+ * two, `dirName` and `sourcePath`, but `buildFlowChart` builds every path it needs
+ * from `name` and `dir`, so `sourcePath` had nothing to do; destructuring it merely
+ * to match the wording would leave a variable that is never read.
  * The per-skill line range fields added by feature-001 are deliberately not
  * accessed — a node's provenance may cite any canonical/ file, not only the
  * skill's own SKILL.md, so verification reads whichever file is cited rather
@@ -84,26 +103,24 @@ export const provenanceAppender = {
    * buildEntries, renderFragmentList.  Verification runs before any markdown is
    * produced; an uncaught throw propagates to the caller.
    *
-   * @param {object}   skill                      SkillRecord (dirName and sourcePath used).
+   * @param {object}   skill                      SkillRecord; only `dirName` is read.
    * @param {string}   skill.dirName              Skill directory name (memo key and chart name).
-   * @param {string}   skill.sourcePath           Repo-relative path to this skill's SKILL.md.
    * @param {object}   [opts]                     Testing seam — never passed in production.
-   * @param {Map}      [opts._memo]               Override the run-level memo (inject per-test map).
+   * @param {Map}      [opts._memo]               Override the run-level chart memo.
+   * @param {Map}      [opts._fileCache]          Override the run-level source-file cache.
    * @param {Function} [opts._buildFlowChart]     Override buildFlowChart (inject call counter).
    * @param {Function} [opts._renderFragmentList] Override renderFragmentList (inject spy).
    * @returns {string}  LF-terminated markdown containing `## Source fragments`.
    */
   render(skill, opts = {}) {
-    const { dirName, sourcePath } = skill;
-    const memo     = opts._memo               ?? _runMemo;
-    const buildFn  = opts._buildFlowChart      ?? buildFlowChart;
-    const renderFn = opts._renderFragmentList  ?? renderFragmentList;
-    const dir      = REPO_ROOT;
+    const { dirName } = skill;
+    const memo      = opts._memo              ?? _runMemo;
+    const fileCache = opts._fileCache         ?? _runFileCache;
+    const buildFn   = opts._buildFlowChart     ?? buildFlowChart;
+    const renderFn  = opts._renderFragmentList ?? renderFragmentList;
+    const dir       = REPO_ROOT;
 
     // Step 1 — build chart, memoised by dirName.
-    // sourcePath ('canonical/skills/<dirName>/SKILL.md') is read alongside
-    // dirName to satisfy the two-field contract; buildFlowChart constructs
-    // the full path internally from name and dir.
     let chart = memo.get(dirName);
     if (chart === undefined) {
       chart = buildFn({ name: dirName, dir });
@@ -112,8 +129,10 @@ export const provenanceAppender = {
 
     // Steps 2–4 — verify → entries → render.
     // verifyProvenance throws on the first violation; renderFn is never called
-    // and no markdown is produced for this skill.
-    verifyProvenance(chart);
+    // and no markdown is produced for this skill. The run-level file cache is
+    // passed in so the engine and gate templates are read once for the corpus
+    // rather than once per skill that cites them.
+    verifyProvenance(chart, { _cache: fileCache });
     const entries = buildEntries(chart);
     return renderFn(entries);
   },

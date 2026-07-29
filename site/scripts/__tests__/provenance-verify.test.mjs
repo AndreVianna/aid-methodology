@@ -626,7 +626,7 @@ describe('read-once cache', () => {
   // the same claim. A readCached that called readFileSync before consulting the
   // cache would still store one entry while reading the file six times, and that
   // counter would stay green. The criterion says reads, so count reads.
-  it('reads each distinct cited file once per run — counted at readFileSync', async () => {
+  it('reads a file cited by several nodes once per call — counted at readFileSync', async () => {
     const reads = [];
 
     vi.resetModules();
@@ -654,6 +654,74 @@ describe('read-once cache', () => {
     // which must collapse to exactly one read of the file on disk.
     const goodReads = reads.filter((p) => p.endsWith('/good.md'));
     expect(goodReads).toHaveLength(1);
+  });
+
+  // The claim above is per-CALL, which is not what the SPEC asks for. "Once per
+  // run" only bites across charts: 64 of the 111 skills cite the same engine
+  // template, so a fresh cache per call reads it 64 times. A caller passes one
+  // cache through _cache to collapse that; this proves the seam actually does it.
+  it('reads a shared file once across MANY calls when one cache is passed', async () => {
+    const reads = [];
+
+    vi.resetModules();
+    vi.doMock('node:fs', async (importOriginal) => {
+      const actual = await importOriginal();
+      return {
+        ...actual,
+        default: actual,
+        readFileSync: (p, enc) => {
+          reads.push(String(p).replace(/\\/g, '/'));
+          return actual.readFileSync(p, enc);
+        },
+      };
+    });
+
+    try {
+      const { verifyProvenance: fresh } = await import('../lib/provenance/verify.mjs');
+      const shared = new Map();
+      // Three separate charts, each citing the same file — the doorway shape.
+      for (let i = 0; i < 3; i++) {
+        fresh(sameFileTwoNodeChart(), { _repoRoot: tmpRoot, _cache: shared });
+      }
+    } finally {
+      vi.doUnmock('node:fs');
+      vi.resetModules();
+    }
+
+    const goodReads = reads.filter((p) => p.endsWith('/good.md'));
+    expect(goodReads).toHaveLength(1);
+  });
+
+  // Non-vacuity for the test above: without the shared cache the same three calls
+  // read three times, so the assertion is measuring the cache and not the loop.
+  it('reads a shared file once PER call when no cache is passed', async () => {
+    const reads = [];
+
+    vi.resetModules();
+    vi.doMock('node:fs', async (importOriginal) => {
+      const actual = await importOriginal();
+      return {
+        ...actual,
+        default: actual,
+        readFileSync: (p, enc) => {
+          reads.push(String(p).replace(/\\/g, '/'));
+          return actual.readFileSync(p, enc);
+        },
+      };
+    });
+
+    try {
+      const { verifyProvenance: fresh } = await import('../lib/provenance/verify.mjs');
+      for (let i = 0; i < 3; i++) {
+        fresh(sameFileTwoNodeChart(), { _repoRoot: tmpRoot });
+      }
+    } finally {
+      vi.doUnmock('node:fs');
+      vi.resetModules();
+    }
+
+    const goodReads = reads.filter((p) => p.endsWith('/good.md'));
+    expect(goodReads).toHaveLength(3);
   });
 
   it('cache entry has text and lines properties', () => {

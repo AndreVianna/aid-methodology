@@ -579,6 +579,7 @@ describe('verifier — P0–P6 synthetic failing cases', () => {
     expect(() => verify(chart)).toThrow(/\[gen-skills\] provenance range:/);
     expect(() => verify(chart)).toThrow(/skill=test-skill/);
     expect(() => verify(chart)).toThrow(/node=n1/);
+    expect(() => verify(chart)).toThrow(/canonical\/skills\/test-skill\/good\.md#L1\.5-L2/);
     expect(() => verify(chart)).toThrow(/invalid range/);
   });
 

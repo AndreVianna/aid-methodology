@@ -2,8 +2,11 @@
 //
 // Exports `verifyProvenance(chart) -> void`.  Runs checks P0–P6 per node,
 // throwing on the first violation.  Each cited file is read at most once per
-// call via a per-run Map<file, {text, lines}> cache — material when a doorway
-// corpus shares a single engine file across many nodes.
+// cache, via a Map<file, {text, lines}>.  The default is a fresh Map per call,
+// which deduplicates reads within one chart; a caller spanning many charts passes
+// a single cache through `opts._cache` to get the SPEC's "once per run".  That is
+// the case that matters: a doorway corpus shares one engine file, and 64 of the
+// 111 skills cite canonical/aid/templates/shortcut-engine.md.
 //
 // Pure exported function — no import-time side effect.
 
@@ -291,12 +294,14 @@ function checkDetailProvenance(detail, skill, nodeId, cache, repoRoot) {
  * Verify all provenance records in a FlowChart.
  *
  * Runs checks P0–P6 per node (P1–P3 only on `detail`).  Throws on the first
- * violation.  Each cited file is read at most once per call.
+ * violation.  Each cited file is read at most once per cache.
  *
  * @param {import('../flow-graph/model.mjs').FlowChart} chart
  * @param {object}  [opts]
  * @param {string}  [opts._repoRoot]  Override repo root (testing seam only).
- * @param {Map}     [opts._cache]     Inject external cache (testing seam only).
+ * @param {Map}     [opts._cache]     Share one source-file cache across calls, so a
+ *   caller verifying many charts reads each cited file once for the whole run
+ *   rather than once per chart. Omit it and each call gets its own fresh cache.
  * @throws {Error}  On the first violated provenance check
  */
 export function verifyProvenance(chart, opts = {}) {
