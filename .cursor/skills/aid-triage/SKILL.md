@@ -144,12 +144,9 @@ Run that command to start the full requirements interview.
   from Step 3's shortcut-catalog semantic match (Cases A/B/C), it is always a
   canonical catalog `name` (`alias_of: null`); an alias row is never
   suggested directly there -- see `references/state-classify.md`.
-  **Intended exception: Case D (the QUESTION route)** suggests `/aid-ask`
-  directly -- Step 0 short-circuits past Step 3 entirely for a question, and
-  `aid-ask` is a `repurpose: true` hand-authored Q&A entry point (its
-  canonical form `/aid-query-kb` is an equivalent hand-authored skill, not a
-  thin doorway `build-shortcut-skills.py` generates), so there is no
-  doorway-duplication concern -- see `references/state-suggest.md` Case D.
+  **Case D (the QUESTION route)** hard-routes to `/aid-ask`, the canonical
+  Q&A row -- Step 0 short-circuits past Step 3 entirely, so this constraint
+  applies only to Cases A/B/C; see `references/state-suggest.md` Case D.
 - **Conservative default.** Anything short of one confident, single-match
   suggestion routes to the full path (`/aid-describe`) -- mirrors the
   conservative default that aid-describe's former TRIAGE state used before
