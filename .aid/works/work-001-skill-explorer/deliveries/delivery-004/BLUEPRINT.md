@@ -56,7 +56,19 @@ is consumed unchanged here.
 
 ## Tasks
 
-_none yet_ — `aid-detail` fills this table.
+Filled at execution time from the per-task DETAILs, matching the practice used for
+deliveries 001–003 where the same table was left unfilled by the detail phase.
+
+| Task | Type | Wave | Title |
+|------|------|------|-------|
+| task-040 | IMPLEMENT | 1 | `canonical/` deep-link builder — `lineAnchor`, `blobUrl`, path-charset guard |
+| task-041 | IMPLEMENT | 1 | Provenance verifier — P0–P6, throwing on the first violation |
+| task-042 | IMPLEMENT | 2 | Fragment-list renderer — the fenced verbatim block and its `title=` |
+| task-043 | IMPLEMENT | 3 | `## Source fragments` appender registration in `BODY_APPENDERS` |
+| task-044 | TEST | 4 | `provenance.test.mjs` — the AC-5 whole-corpus suite |
+
+Execution graph (from `PLAN.md`): 040 and 041 are file-disjoint and run in parallel;
+042 depends on 040; 043 depends on 041 and 042; 044 depends on 043.
 
 | Task | Type | Title |
 |------|------|-------|

@@ -1,5 +1,5 @@
 ---
-delivery_state: Pending-Spec
+delivery_state: Executing
 gate_tier: Small | Medium | Large
 gate_grade: "{grade or Pending}"
 gate_timestamp: "{YYYY-MM-DDTHH:MM:SSZ}"
@@ -61,15 +61,52 @@ with ZERO tasks; the `_none yet_` rollup below is correct and expected for a new
      The work-level ## Cross-phase Q&A is a DERIVED union of all delivery Q&A sections plus any
      work-owner-authored work-level entries. -->
 
-### Q{N}
+### Q1 — task-043's "exactly four lines of stdout" AC is stale
 
-- **Category:** {category, e.g., Architecture, Requirements, Security}
-- **Impact:** High | Medium | Low | Required
-- **State:** Pending | Answered | Skipped
-- **Context:** {why this matters; what the downstream phase observed}
-- **Suggested:** {answer if inferrable, or --}
-- **Answer:** {filled when State is Answered}
-- **Applied to:** {artifact(s) the answer was applied to}
+- **Category:** Requirements (AC-vs-reality conflict)
+- **Impact:** Medium
+- **State:** Answered
+- **Context:** task-043 AC reads "stdout remains **exactly four lines** per successful run".
+  That was true when feature-001 fixed the contract, but task-029 (delivery-003) added a
+  run-level flow-warning summary line plus one detail line per warning. Measured now:
+  `node scripts/gen-skills.mjs` emits **14** stdout lines — the 4 fixed lines, 1 summary
+  line, and 9 warning detail lines — with stderr silent and exit 0. Taken literally the AC
+  is unsatisfiable without deleting a feature delivery-003 shipped.
+- **Answer:** Apply the precedent the owner already set for the identical conflict in
+  task-030: the warning report **stays**, and the four-line clause is re-scoped to mean
+  *stdout is not widened by this task* — the appender itself logs nothing, the four fixed
+  lines remain exactly four, and stderr stays silent on success. This is not a new owner
+  decision; it is the task-030 ruling applied to a second instance of the same conflict.
+- **Applied to:** task-043 acceptance interpretation; recorded here rather than editing the
+  immutable DETAIL.
+
+---
+
+## Task Review Findings
+
+<!-- AUTHORED -- per-task review outcomes recorded as each task closes. -->
+
+### task-040 — `canonical/` deep-link builder
+
+Module is clean: `GITHUB_BLOB_BASE` imported read-only from `paths.mjs` and never
+redeclared, no `encodeURI`/`encodeURIComponent`, no `path.join`, no import-time side
+effect. Three test weaknesses found and fixed during review:
+
+1. One assertion compared `blobUrl`'s output to `GITHUB_BLOB_BASE + '/' + file + lineAnchor(...)`
+   — a re-computation of the implementation from the same two functions under test, so a
+   consistent mutation of both would have left it green. Replaced with a literal expected
+   string, which also makes it a genuine third data point rather than a restatement.
+2. Two of the three guard-message assertions matched only the echoed input path
+   (`/path\/with space/`, `/\.\./`). The input is echoed by **all three** messages, so
+   neither assertion could tell which guard had fired. Retargeted at wording unique to each
+   guard.
+
+Mutation-proved after the fix: rewording each of the three throw messages is now killed by
+its own test and no other (M6, M7, M8 — executed, all killed). The developer's own five
+mutants (M1–M5, on the anchor condition, the `-L` separator and each of the three guard
+predicates) were also confirmed killed.
+
+**Outcome:** Pass.
 
 ---
 
