@@ -1,5 +1,5 @@
 ---
-state: In Review
+state: Done
 review: "--"
 elapsed: "--"
 notes: "skill-node-panel.mjs + 27-test lifecycle suite; 7 mutations killed"

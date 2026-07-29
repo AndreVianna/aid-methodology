@@ -111,6 +111,59 @@ with ZERO tasks; the `_none yet_` rollup below is correct and expected for a new
 - **Applied to:** task-045 acceptance interpretation; recorded here rather than editing the
   immutable DETAIL.
 
+### Q4 — task-053's prescribed SVG fixture shape is wrong, and would re-introduce a fixed defect
+
+- **Category:** Requirements (AC-vs-reality)
+- **Impact:** High — following it literally would rebuild the exact defect wave 2 found and fixed
+- **State:** Answered
+- **Context:** task-053's DETAIL specifies the synthetic fixture as
+  `<g class="node default aidNode" id="flowchart-<id>-<n>">`, with `domId` being
+  `"flowchart-" + id + "-" + vertexCounter`, and states this shape was *"verified against the
+  locked mermaid install"*. Its acceptance criteria then require the fixture to match it.
+  Measured directly in a browser against this site's locked mermaid (11.15.0), the real ids are
+  **`mermaid-<diagramId>-flowchart-<id>-<n>`** — captured as `mermaid-11br4n7o5-flowchart-n2-1`,
+  `mermaid-rkijoq1pv-flowchart-n10-9` and `mermaid-23qhs6d31-flowchart-n1-0` across three loads,
+  the diagram id differing every render. The DETAIL's shape is the *internal* `domId` mermaid
+  computes, not the id that reaches the DOM.
+  This is not academic: task-049 shipped a start-anchored `ID_RE` built on that same assumption,
+  it matched **0 of 10** nodes on a real page, and its unit suite passed because its fixtures
+  used the same fictional shape.
+- **Answer:** **The measurement wins.** task-053's fixtures must carry the diagram-id prefix.
+  The DETAIL's stated shape is recorded here as a DETAIL defect rather than followed, and
+  task-053 is briefed with the captured ids.
+
+  One further refinement from the same measurement: the real class attribute is
+  **`node default aidEntry aidNode`** — the per-kind class sits between `default` and `aidNode`,
+  so the DETAIL's `class="node default aidNode"` is incomplete too. It does not break anything,
+  because the controller selects on `g.node.aidNode` and extra classes are harmless, but a
+  fixture that omits the kind class is less faithful than it could be. Nodes painted last, after
+  clusters / edgePaths / edgeLabels, matches what was observed and stands.
+- **Applied to:** task-053's brief and its fixture builder; the `ID_RE` regression pin in
+  `scripts/__tests__/skill-node-panel-lifecycle.test.mjs` already holds real ids.
+
+---
+
+## Gate Pre-checks (measured, not inferred)
+
+Recorded as the evidence is gathered rather than at the gate, so the reviewer can re-run each.
+
+**AC-6.4 — "the Musts underneath are provably undamaged".** The strongest available form of this
+holds: the 111 generated skill pages are **byte-identical to the delivery-004 branch tip**
+(`git diff aid/work-001-delivery-004 -- site/src/content/docs/skills` is empty). The criterion
+allows "no generated page byte changes except the three `<head>` tags"; in fact the markdown did
+not change *at all*, because the tags are injected by the Astro component at build time and never
+written into a page. Everything else that changed under `site/` is additive: the 77 sidecars wave
+1 restored, feature-006's own modules and suites.
+
+**The no-JavaScript floor is intact.** All 111 skill pages still carry `## Source fragments`
+(`index.md` has none by design). No `<script`, `client:` directive or `import` appears in any
+generated page. The appender has no conditional around its emission, so nothing can suppress the
+section — the constraint feature-005 places on feature-006.
+
+**AC-6.5 — route gate observable in the emitted HTML.** Verified against a real build: see the
+task-047/048 entry below. 111 skill pages carry each of the three tags exactly once; the other 31
+pages carry none.
+
 ---
 
 ## Task Review Findings
