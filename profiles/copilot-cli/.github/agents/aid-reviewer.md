@@ -137,29 +137,48 @@ Columns: `# | Severity | Status | Rule | Doc | Line | Description | Evidence`
 
 See schema doc for: severity enum, status enum, status lifecycle across cycles, pipe-character escape, authoring rules.
 
-**You append rows; you do NOT renumber existing rows.** On subsequent cycles, you may update an existing row's Status (Pending→Fixed, Fixed→Recurred), but never its Severity or Description.
+**You append rows; you do NOT renumber existing rows.** On subsequent cycles, you may update an existing row's Status (Pending→Fixed, Fixed→Recurred) via `--set-status`, but never its Severity, Rule or Description.
+
+**The table carries three row kinds**, told apart by the `#` column: findings, `U-NNN` coverage units, and `G-NNN` gaps. Only findings bear on the grade — a `--` in Severity makes a row invisible to `grade.sh` by construction. Checkpoint a `U-` row as you finish each unit, so an interrupted review leaves a legible record of what it had already examined. Record a `G-` row when the review's own preconditions are missing (no declared standard for the language in hand) — that is a gap in the criteria, not a defect in the artifact, and must never be graded as one.
 
 ## File Writing
 
-**Do NOT use the Write tool to create the ledger — it has a known bug in background subagents**
-(and this agent is not granted Write). Use Bash with a heredoc instead.
-
-**`cat >` overwrites the whole file, so the heredoc body MUST be the COMPLETE ledger** — the
-header row, plus EVERY prior row (with its Status updated for this cycle), plus the new rows.
-Writing only the new rows truncates all prior findings. Do **NOT** use `cat >>` (append) for the
-ledger: it duplicates the header row and cannot update a prior row's Status, which corrupts the
-table the grade is computed from. (Read the existing ledger first, then re-emit the full table.)
+**Write rows with `.github/aid/scripts/review/writeback-ledger.sh`, one Bash call per row.** Never
+re-emit the table, and never use `cat >` or `cat >>` on a ledger.
 
 ```bash
-# Cycle-2 example: row 1 carried forward (Pending→Fixed this cycle), row 2 is the new
-# finding. The heredoc holds the ENTIRE table, not just the new row.
-cat > .aid/.temp/review-pending/<scope>.md << 'LEDGEREOF'
-| # | Severity | Status | Rule | Doc | Line | Description | Evidence |
-|---|---|---|---|---|---|---|---|
-| 1 | [HIGH] | Fixed | NAR-04 | foo.md | 42 | claim Y is wrong: doc says N, actual is M | cycle-2 FIX corrected foo.md to M |
-| 2 | [MINOR] | Pending | NAR-08 | bar.md | — | formatting nit in header | heading uses `#` where `##` is expected |
-LEDGEREOF
+# One finding. The script assigns the row number and escapes any pipe for you.
+bash .github/aid/scripts/review/writeback-ledger.sh \
+  --ledger .aid/.temp/review-pending/<scope>.md --append-finding \
+  --severity '[HIGH]' --rule NAR-04 --doc foo.md --line 42 \
+  --description 'claim Y is wrong: doc says N, actual is M' \
+  --evidence '`grep -c X foo.md` = M, doc claims N'
+
+# One coverage unit, checkpointing progress. The stamp and digests are generated for you.
+bash .github/aid/scripts/review/writeback-ledger.sh \
+  --ledger .aid/.temp/review-pending/<scope>.md --append-unit \
+  --unit foo.md --rule-set NAR --status Examined
+
+# A missing criterion -- not a defect in the artifact, so it is a gap, not a finding.
+bash .github/aid/scripts/review/writeback-ledger.sh \
+  --ledger .aid/.temp/review-pending/<scope>.md --append-gap \
+  --gap-key no-shell-std --doc baz.sh \
+  --description 'no shell coding standard declared for this class' \
+  --resolution '/aid-update-kb coding-standards'
+
+# Carry a prior row forward on a later cycle. Exactly one cell changes.
+bash .github/aid/scripts/review/writeback-ledger.sh \
+  --ledger .aid/.temp/review-pending/<scope>.md --set-status --row-id 1 --status Fixed
 ```
+
+**This replaced a whole-table heredoc rewrite, and the reason matters.** Re-emitting every prior row on
+each checkpoint cost roughly 0.9–2.5k output tokens per cycle and gave you one chance per cycle to
+silently truncate every finding you had already recorded. With the helper you never emit a row you did
+not author in that call, so the truncation surface is zero — and a checkpoint after every unit becomes
+cheap enough to actually do.
+
+**Do NOT use the Write tool on a ledger** — it has a known bug in background subagents, and this agent
+is not granted Write in any case.
 
 Review outcomes and test results are recorded in the work `STATE.md` `## Tasks Status` row for the task (per FR2 §1A).
 

@@ -10,6 +10,8 @@ intent: |
   grade.sh, agents, skills, and humans all read findings identically.
 contracts:
   - "8-column table is the entire ledger file (no headers, no narrative, no sections)"
+  - "Three row kinds by # prefix: findings, U-NNN coverage units, G-NNN gaps; only findings grade"
+  - "Rows are written by writeback-ledger.sh, never by an agent re-emitting the whole table"
   - "Severity enum: [CRITICAL] | [HIGH] | [MEDIUM] | [LOW] | [MINOR]"
   - "Status enum: Pending | Fixed | Recurred | Accepted | OOS | Invalid"
   - "Rule: a finding row MUST carry a rule ID; non-finding rows carry the -- sentinel"
@@ -20,6 +22,8 @@ changelog:
   - 2026-05-28: Initial schema spec
   - 2026-07-29: Added the Rule column (8 columns). Position 4, after Status, because
       grade.sh parses by position and reads cols[3]/cols[4] only.
+  - 2026-07-29: Added the three row kinds (findings, U-NNN coverage, G-NNN gaps) and
+      writeback-ledger.sh as the sole row writer, retiring the heredoc whole-table rewrite.
 ---
 
 # Reviewer Ledger Schema
@@ -28,7 +32,10 @@ This document is the **canonical schema for every reviewer-output ledger in AID.
 
 ## File: contents
 
-The ledger file contains **exactly one markdown table.** No frontmatter, no section headers, no narrative, no summary section, no out-of-scope section. Just the table — every row is one finding (or one accepted exception).
+The ledger file contains **exactly one markdown table.** No frontmatter, no section headers, no narrative, no summary section, no out-of-scope section. Just the table.
+
+**The table carries three row kinds**, distinguished by the `#` column — findings, coverage units
+(`U-NNN`) and gaps (`G-NNN`). See **Row kinds** below. Only findings bear on the grade.
 
 ```markdown
 | # | Severity | Status | Rule | Doc | Line | Description | Evidence |
@@ -76,6 +83,70 @@ The `.aid/.temp/review-pending/` directory is gitignored (per `.gitignore` `.aid
 
 **Pipe-character escape:** if Description or Evidence contains a `|` (pipe), escape it as `\|` so the markdown table doesn't break.
 
+## Row kinds
+
+One table, three kinds of row, told apart by the `#` column alone. A reader needs no other signal, and
+`grade.sh` needs none at all — see **Grade inertness** below.
+
+| Column | Finding | Coverage unit | Gap |
+|---|---|---|---|
+| `#` | `NNN` or `<NS>-NNN` | `U-NNN` or `U-<NS>-NNN` | `G-NNN` or `G-<NS>-NNN` |
+| `Severity` | one of the five bracketed tokens | `--` | `--` |
+| `Status` | `Pending` \| `Fixed` \| `Recurred` \| `Accepted` \| `OOS` \| `Invalid` | `Unexamined` \| `In Progress` \| `Examined` \| `Skipped` | `Open` \| `Resolved` |
+| `Rule` | a catalog rule ID; **mandatory** (one exemption below) | `--` | `--` |
+| `Doc` | the artifact the finding is about | the unit's artifact | the artifact whose review stalled |
+| `Line` | line, range, or `--` | `--` | `--` |
+| `Description` | one sentence: what is wrong | `rule-set: <name>`, plus a skip reason when `Skipped` | which criterion is missing |
+| `Evidence` | disk truth, or the command producing it | UTC stamp `; art=<digest>; rs=<rule-set>@<digest>` | the resolution command, `gap-key=<key>`, `resume=N` |
+
+**ID grammar — one regex for all three kinds:**
+
+```
+^(U-|G-)?([A-Z][A-Z0-9]{0,3}-)?[0-9]{1,4}$
+```
+
+The optional middle segment is the *writer namespace*, used only when one logical review has several
+writers (`aid-discover`'s parallel mandates: `U-M1-004`). Absent in the common single-writer case.
+
+**Worked rows:**
+
+```markdown
+| # | Severity | Status | Rule | Doc | Line | Description | Evidence |
+|---|---|---|---|---|---|---|---|
+| U-001 | -- | Examined | -- | foo.md | -- | rule-set: NAR | 2026-07-29T10:00:04Z; art=f75d45bea4ae; rs=NAR@d247034 |
+| 1 | [HIGH] | Pending | NAR-04 | foo.md | 42 | claim wrong: doc says 7, disk shows 9 | `ls \| wc -l = 9` |
+| G-001 | -- | Open | -- | baz.sh | -- | no shell coding standard declared for this class | /aid-update-kb coding-standards; gap-key=no-shell-std; resume=1 |
+| U-002 | -- | Skipped | -- | qux.md | -- | rule-set: SPEC; blocked by G-001 | 2026-07-29T10:09:02Z; art=a91c02; rs=SPEC@77b3e1 |
+```
+
+**Why coverage rows exist.** A review that is interrupted leaves no trace of *what it had already
+looked at*. A `U-` row per unit makes progress legible, so a resumed review need not re-examine
+everything — and the `art=`/`rs=` digests say whether the artifact or its rule set changed underneath,
+which is what makes skipping safe rather than merely cheap.
+
+**Why gap rows exist.** When the review's own preconditions are missing — no coding standard for the
+language in hand — that is not a defect in the artifact and must not be graded as one. A `G-` row
+records the missing criterion and the command that would supply it.
+
+### Grade inertness
+
+Non-finding rows are ignored **by construction, not by convention.** `grade.sh` counts a row only when
+`Severity` is *exactly* one of the five bracketed tokens **and** `Status` is *exactly* `Pending` or
+`Recurred`. A `--` in `Severity` fails the severity match, so the status value is never even reached.
+
+That is why the coverage vocabulary can safely contain words that look grade-bearing: a row reading
+`Status: In Progress` cannot be counted, because its `Severity` is `--`.
+
+Adding, removing or re-statusing any number of `U-` or `G-` rows therefore leaves both the grade and
+`--explain`'s breakdown unchanged. `writeback-ledger.sh` **verifies this at write time by default** —
+it grades the pre-image and the post-image and refuses the write if they differ.
+
+### The `--` sentinel
+
+Non-applicable cells carry `--`, matching the `Rule` sentinel and the STATE templates' null sentinel —
+not the em-dash `—` that this schema's older `Line` examples used. `grade.sh` ignores both, so existing
+`—` cells are **not** migrated; the rule binds new rows only.
+
 ## Rule values
 
 **A finding row MUST carry a rule ID.** A finding is by definition the assertion that some declared
@@ -97,8 +168,14 @@ the rule. Do not add source tags to any column.
 
 **Enforcement.** `grade.sh` does **not** enforce this: it reads `cols[3]` and `cols[4]` only and is
 byte-unchanged apart from comments (NFR-1), so it cannot see the `Rule` column at all. The writer that
-enforces a present, well-formed `Rule` cell is **`writeback-ledger.sh`**. A reviewer emitting a ledger
-by heredoc is bound by this schema; the script is what makes it mechanical.
+enforces a present, well-formed `Rule` cell is **`writeback-ledger.sh`** — and since it is the *only*
+writer of rows, the requirement is mechanical rather than merely stated. A finding whose `Rule` is
+empty, `--`, or malformed is refused with exit 4.
+
+**The one exemption**, forced by an upstream decision rather than invented here: an artifact class no
+rule set covers is recorded as a single `Status: OOS` row carrying `--` in `Rule`. Every grade-bearing
+status, and every status that was once grade-bearing (`Fixed`, `Accepted` and `Invalid` all begin life
+as `Pending` rows that already carried a rule), still requires a real rule ID.
 
 ### Mixed shapes: the header decides
 
@@ -206,11 +283,55 @@ DONE (skill completion, e.g., /aid-discover APPROVAL granted)
   └─ If .aid/.temp/review-pending/ is empty: rmdir .aid/.temp/review-pending/
 ```
 
+## How rows are written
+
+**Rows are written by `.cursor/aid/scripts/review/writeback-ledger.sh`, one call per row.** Do not
+re-emit the table.
+
+```bash
+writeback-ledger.sh --ledger .aid/.temp/review-pending/<scope>.md --append-finding \
+    --severity '[HIGH]' --rule NAR-04 --doc foo.md --line 42 \
+    --description 'claim wrong: doc says 7, disk shows 9' --evidence '`ls | wc -l` = 9'
+
+writeback-ledger.sh --ledger ... --append-unit --unit foo.md --rule-set NAR --status Examined
+writeback-ledger.sh --ledger ... --append-gap  --gap-key no-shell-std --doc baz.sh \
+    --description 'no shell coding standard declared' --resolution '/aid-update-kb coding-standards'
+writeback-ledger.sh --ledger ... --set-status --row-id U-002 --status Examined
+writeback-ledger.sh --ledger ... --row-id U-002 --get-status
+```
+
+**Why this replaced the heredoc.** The previous contract had the reviewer read the whole ledger and
+re-emit every row inside a `cat >`. A 30-row ledger is 3.3–10 KB of table, so each checkpoint cost
+roughly 0.9–2.5k output tokens plus a comparable read — and each one was an opportunity to silently
+truncate every prior finding. One helper call carries a single row's cells, needs no read, and cuts
+per-checkpoint output by 20–30×.
+
+The truncation surface is **zero**, because the model never emits a row it did not author in that
+call. The script still rewrites the file (awk to a temp file, then `mv`), exactly as
+`writeback-state.sh` does for a state field — what went to zero is *agent-authored whole-table
+re-emission*.
+
+**What the script guarantees, so you do not have to:**
+
+- **`#` is script-assigned.** Next free integer for findings, next free `U-NNN`/`G-NNN` within the kind
+  and namespace. Existing rows are never renumbered.
+- **`--set-status` rewrites exactly one cell.** Every other cell of that row, and every other row, is
+  byte-identical afterwards. Status is validated against the target row's *kind*, so
+  `--row-id U-002 --status Recurred` is refused.
+- **A finding with no rule ID is rejected** (exit 4). The one exemption: a `Status: OOS` row may carry
+  `--` in `Rule`, for an artifact class no rule set covers.
+- **`--append-gap` is idempotent on `--gap-key`** — a repeated key appends nothing and increments
+  `resume=N` on the existing row.
+- **Pipes are escaped** (`|` → `\|`) in `--description` and `--evidence`; raw newlines are rejected.
+- **CRLF and trailing-newline invariance** hold, so a ledger written on Windows stays byte-stable.
+- **Grade inertness is verified on every non-finding write** and the write is refused if the grade
+  moves.
+
 ## Authoring rules for the reviewer
 
 **Always:**
-- Emit the table as the ENTIRE file content. No frontmatter, no headers, no narrative.
-- For new rows: assign the next sequential `#`; do NOT renumber existing rows.
+- Write rows with `writeback-ledger.sh`, one call per row. Never re-emit the table by hand.
+- Let the script assign `#`; do NOT renumber existing rows.
 - **Carry a rule ID in `Rule` on every finding row.** If no rule speaks to the concern, raise a criteria gap instead of writing a finding.
 - Cite the disk-truth in Evidence with a runnable command or specific file:line reference.
 - Read the existing ledger BEFORE appending — use the existing Status patterns to identify Recurred regressions.
@@ -262,6 +383,7 @@ The `CLAUDE.md` / `AGENTS.md` short rule (always loaded) is the trigger for ad-h
 
 ## See also
 
+- `.cursor/aid/scripts/review/writeback-ledger.sh` — the sole writer of ledger rows
 - `.cursor/aid/scripts/grade.sh` — the grader that parses this ledger
 - `.cursor/aid/templates/review-rubrics/INDEX.md` — the rule sets the `Rule` column cites
 - `.cursor/agents/aid-reviewer/AGENT.md` — sub-agent output contract (references this schema)

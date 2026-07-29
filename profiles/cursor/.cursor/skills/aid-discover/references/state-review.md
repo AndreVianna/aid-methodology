@@ -422,9 +422,24 @@ their own rows' Status in their scratch ledgers. Merge rule:
    Anatomy rows additionally carry their finding-type tag, e.g. `[KB-MISSING]`,
    `[CAL-COVERAGE]`, `[CAL-HOLLOW]`, `[CAL-TRANSCRIPTION]`, `[CAL-DEFERRAL]`, after
    the `[M2]` prefix.)
+5. **Coverage (`U-`) and gap (`G-`) rows are NOT merged into the panel ledger.** They are
+   per-writer bookkeeping: a `U-` row records which unit *that* reviewer examined, and a `G-`
+   row records a missing criterion that stalled *that* reviewer. Merging them would produce
+   duplicate coverage for a unit two mandates both examined, and would imply the panel had a
+   single coverage frontier when it has one per mandate. Leave them in each mandate's scratch
+   ledger, where the `U-<NS>-NNN` namespace keeps them distinct.
+
+   Gaps still need to reach the orchestrator — but as an **escalation**, not as a merged row.
+   Read the `G-` rows from every scratch ledger and act on them; do not copy them into
+   `{{SCOPE}}.md`.
 
 Write the merged result to `.aid/.temp/review-pending/{{SCOPE}}.md` (the canonical
 ledger, 8-column schema).
+
+**Rows are written by the helper, never by re-emitting the table.** Use
+`.cursor/aid/scripts/review/writeback-ledger.sh --set-status` to carry a row forward and
+`--append-finding` to add one; it assigns IDs, escapes pipes, and refuses a finding with no rule
+ID. Re-typing the whole table is what the helper exists to stop.
 
 **2b. Run the existing grade.sh unchanged**
 

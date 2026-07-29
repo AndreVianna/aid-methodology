@@ -132,9 +132,15 @@ assert_output_contains "$(cat "$GRADE")" 'status   = trim(cols[4])' \
 # fixtures were deliberately NOT migrated.
 # ---------------------------------------------------------------------------
 cd "$REPO" || exit 2
+# Two files legitimately discuss the OLD shape and are excluded by name, not by accident:
+#   reviewer-ledger-schema.md   states the mixed-shape rule -- a 7-column ledger stays readable
+#   review/writeback-ledger.sh  must RECOGNISE a 7-column header and refuse --rule against it
+# Both are NFR-5 machinery. Excluding them keeps the sweep meaningful instead of forcing the
+# migration to delete the very text that makes old ledgers keep working.
 stale_ref=$(grep -rn '7-column\|7 column' canonical CLAUDE.md AGENTS.md .aid/knowledge \
               --exclude=kb.html --exclude=INDEX.md 2>/dev/null \
-            | grep -v 'reviewer-ledger-schema.md' | wc -l)
+            | grep -v 'reviewer-ledger-schema.md' \
+            | grep -v 'review/writeback-ledger.sh' | wc -l)
 assert_eq "$stale_ref" "0" "EC18 no stale 7-column claim survives in the migration set"
 
 stale_hdr=$(grep -rn '| Severity | Status | Doc |' canonical CLAUDE.md AGENTS.md .aid/knowledge \
