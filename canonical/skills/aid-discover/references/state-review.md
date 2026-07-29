@@ -444,6 +444,7 @@ ID. Re-typing the whole table is what the helper exists to stop.
 **2b. Run the existing grade.sh unchanged**
 
 ```bash
+bash canonical/aid/scripts/review/check-gaps.sh --ledger .aid/.temp/review-pending/{{SCOPE}}.md   # exit 1 = an open criteria gap; do NOT grade
 bash canonical/aid/scripts/grade.sh --explain .aid/.temp/review-pending/{{SCOPE}}.md
 ```
 

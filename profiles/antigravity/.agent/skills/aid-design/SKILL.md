@@ -76,7 +76,7 @@ kept record).
 2. **Adversarial verification** -- clean-context **`aid-reviewer`** checks `DESIGN.md`:
    grounded, complete, internally consistent, consistent with KB conventions + a11y, and
    buildable. Writes a review-quality ledger to `.aid/.temp/review-pending/<work>-verify.md`.
-3. **Grade:** `bash .agent/aid/scripts/grade.sh --explain <ledger>`. Not clean -> loop
+3. **Gate, then grade:** `bash .agent/aid/scripts/review/check-gaps.sh --ledger <ledger>` (exit 1 = an open criteria gap; do not grade), then `bash .agent/aid/scripts/grade.sh --explain <ledger>`. Not clean -> loop
    to DESIGN. Circuit-breaker: 3 cycles -> IMPEDIMENT + `lifecycle: Blocked`.
 
 **Advance:** PRESENT.

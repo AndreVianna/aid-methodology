@@ -13,7 +13,7 @@ Include in the prompt:
   `.aid/.temp/review-pending/interview-<work>-cross-ref.md`. Read the existing file
   first if it exists. Output per `.cursor/aid/templates/reviewer-ledger-schema.md` —
   ONE table, no narrative. After writing the ledger, run:
-  `bash .cursor/aid/scripts/grade.sh .aid/.temp/review-pending/interview-<work>-cross-ref.md`
+  `bash .cursor/aid/scripts/review/check-gaps.sh --ledger .aid/.temp/review-pending/interview-<work>-cross-ref.md` (exit 1 = an open criteria gap; do not grade), then `bash .cursor/aid/scripts/grade.sh .aid/.temp/review-pending/interview-<work>-cross-ref.md`
   and include the grade in your return message."
 
 Then append the cross-reference process body from `references/cross-reference.md`
@@ -29,6 +29,7 @@ Wait for completion.
 After aid-reviewer returns, run grade.sh on the ledger to confirm the grade:
 
 ```bash
+bash .cursor/aid/scripts/review/check-gaps.sh --ledger .aid/.temp/review-pending/interview-<work>-cross-ref.md   # exit 1 = an open criteria gap; do NOT grade
 bash .cursor/aid/scripts/grade.sh --explain .aid/.temp/review-pending/interview-<work>-cross-ref.md
 ```
 

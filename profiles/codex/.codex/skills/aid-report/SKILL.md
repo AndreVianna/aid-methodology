@@ -87,7 +87,7 @@ analyze + consolidate:
    (sampling, significance, denominator, confounders); conflicts surfaced with reasons;
    conclusions not overstated into resolutions. Writes a review-quality ledger to
    `.aid/.temp/review-pending/<work>-verify.md`.
-3. **Grade:** `bash .codex/aid/scripts/grade.sh --explain <ledger>`. Not clean -> loop
+3. **Gate, then grade:** `bash .codex/aid/scripts/review/check-gaps.sh --ledger <ledger>` (exit 1 = an open criteria gap; do not grade), then `bash .codex/aid/scripts/grade.sh --explain <ledger>`. Not clean -> loop
    to ANALYZE. Circuit-breaker: 3 cycles -> IMPEDIMENT + `lifecycle: Blocked`.
 
 **Advance:** PRESENT.

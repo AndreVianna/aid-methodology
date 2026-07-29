@@ -109,7 +109,7 @@ throwaway spike (isolated), fold the finding into `RESEARCH.md`, continue. On **
    reason; no material angle of the question left silently unaddressed. It writes a
    review-quality 8-column ledger (`reviewer-ledger-schema.md`) to
    `.aid/.temp/review-pending/<work>-verify.md`.
-3. **Grade the response:** `bash .claude/aid/scripts/grade.sh --explain <ledger>`. Not
+3. **Gate, then grade the response:** `bash .claude/aid/scripts/review/check-gaps.sh --ledger <ledger>` (exit 1 = an open criteria gap; do not grade), then `bash .claude/aid/scripts/grade.sh --explain <ledger>`. Not
    clean -> loop back to INVESTIGATE for the researcher to revise. **Circuit-breaker: 3
    cycles** -> write `.aid/works/{work}/IMPEDIMENT-research.md`, set STATE `lifecycle: Blocked`,
    surface it.

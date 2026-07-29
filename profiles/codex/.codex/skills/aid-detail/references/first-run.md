@@ -109,6 +109,7 @@ After writing, **review immediately:** Do the tasks hold up?
 After aid-reviewer returns, run grade.sh:
 
 ```bash
+bash .codex/aid/scripts/review/check-gaps.sh --ledger .aid/.temp/review-pending/detail.md   # exit 1 = an open criteria gap; do NOT grade
 bash .codex/aid/scripts/grade.sh --explain .aid/.temp/review-pending/detail.md
 ```
 

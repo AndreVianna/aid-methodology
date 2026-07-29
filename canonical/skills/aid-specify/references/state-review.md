@@ -49,6 +49,7 @@ Dispatch the `aid-reviewer` subagent **at Large tier** (the executor is the Larg
 After the aid-reviewer returns, run grade.sh on the ledger:
 
 ```bash
+bash canonical/aid/scripts/review/check-gaps.sh --ledger .aid/.temp/review-pending/specify-<feature>.md   # exit 1 = an open criteria gap; do NOT grade
 bash canonical/aid/scripts/grade.sh --explain .aid/.temp/review-pending/specify-<feature>.md
 ```
 

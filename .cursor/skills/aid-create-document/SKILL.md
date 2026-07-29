@@ -84,7 +84,7 @@ It drafts into the work folder (not yet placed). Text formats are produced nativ
 2. **Adversarial verification** -- clean-context **`aid-reviewer`** checks the draft:
    accurate against KB + codebase, complete for its genre, no fabricated content. Writes a
    review-quality ledger to `.aid/.temp/review-pending/<work>-verify.md`.
-3. **Grade:** `bash .cursor/aid/scripts/grade.sh --explain <ledger>`. Not clean -> loop
+3. **Gate, then grade:** `bash .cursor/aid/scripts/review/check-gaps.sh --ledger <ledger>` (exit 1 = an open criteria gap; do not grade), then `bash .cursor/aid/scripts/grade.sh --explain <ledger>`. Not clean -> loop
    to AUTHOR. Circuit-breaker: 3 cycles -> IMPEDIMENT + `lifecycle: Blocked`.
 
 **Advance:** PRESENT.

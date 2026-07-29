@@ -179,6 +179,7 @@ Then delete the scratch ledgers per f005's Step 2e (the `rm -f` block with
 Run the unchanged `grade.sh`:
 
 ```bash
+bash .claude/aid/scripts/review/check-gaps.sh --ledger .aid/.temp/review-pending/update-kb.md   # exit 1 = an open criteria gap; do NOT grade
 bash .claude/aid/scripts/grade.sh --explain .aid/.temp/review-pending/update-kb.md
 ```
 

@@ -52,6 +52,7 @@ Passed checks are NOT added to the ledger (no row = no finding).
 Persist Machine Grade + per-check table to `.aid/knowledge/STATE.md` `## Knowledge Summary Status` `### Findings (last validation — Machine)`. Grade is computed by running:
 
 ```bash
+bash .codex/aid/scripts/review/check-gaps.sh --ledger .aid/.temp/review-pending/summarize.md   # exit 1 = an open criteria gap; do NOT grade
 bash .codex/aid/scripts/grade.sh --explain .aid/.temp/review-pending/summarize.md
 ```
 

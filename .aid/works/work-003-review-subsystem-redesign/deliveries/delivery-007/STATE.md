@@ -161,4 +161,4 @@ _None yet._
 
 | Gap Key | Kind | Status | Depth | Recurrences | Scope | Criterion | Resolution |
 |---|---|---|---|---|---|---|---|
-| review/gate-wiring-sites | criteria | Pending | 0 | 0 | canonical/aid/scripts/review/check-gaps.sh | the pre-grade gate is unwired: no grade site calls it yet | delivery-008 wires all 18 grade sites |
+| review/gate-wiring-sites | criteria | Answered | 0 | 0 | canonical/aid/scripts/review/check-gaps.sh | the pre-grade gate is unwired: no grade site calls it yet | canon -> all 19 grade sites gated in delivery-008; totality oracle test-gap-gate-wiring.sh keeps it that way |

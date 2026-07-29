@@ -233,6 +233,7 @@ Then append the gate-specific prompt below. The reviewer reads directly from sou
 Run `grade.sh` on the ledger file:
 
 ```bash
+bash .github/aid/scripts/review/check-gaps.sh --ledger .aid/.temp/review-pending/execute-delivery-NNN.md   # exit 1 = an open criteria gap; do NOT grade
 bash .github/aid/scripts/grade.sh --explain .aid/.temp/review-pending/execute-delivery-NNN.md
 ```
 

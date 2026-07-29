@@ -34,6 +34,7 @@ One row per distinct failing check/test/warning. Example row:
 After logging failures, run grade.sh on the ledger:
 
 ```bash
+bash .github/aid/scripts/review/check-gaps.sh --ledger .aid/.temp/review-pending/deploy.md   # exit 1 = an open criteria gap; do NOT grade
 bash .github/aid/scripts/grade.sh --explain .aid/.temp/review-pending/deploy.md
 ```
 

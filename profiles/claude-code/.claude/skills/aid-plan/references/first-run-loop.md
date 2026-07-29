@@ -159,6 +159,7 @@ After writing, **review immediately:** Does it hold up?
 After aid-reviewer returns, run grade.sh:
 
 ```bash
+bash .claude/aid/scripts/review/check-gaps.sh --ledger .aid/.temp/review-pending/plan.md   # exit 1 = an open criteria gap; do NOT grade
 bash .claude/aid/scripts/grade.sh --explain .aid/.temp/review-pending/plan.md
 ```
 

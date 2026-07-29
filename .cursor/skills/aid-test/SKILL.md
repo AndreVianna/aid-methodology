@@ -86,7 +86,7 @@ pass/fail + failures; model-eval: metric vs threshold. Every finding cites its e
    findings real and grounded in the run output, correctly severity-tagged, no
    over/under-statement, and the run actually exercised the stated scope. Writes a
    review-quality ledger to `.aid/.temp/review-pending/<work>-verify.md`.
-3. **Grade:** `bash .cursor/aid/scripts/grade.sh --explain <ledger>`. Not clean -> loop
+3. **Gate, then grade:** `bash .cursor/aid/scripts/review/check-gaps.sh --ledger <ledger>` (exit 1 = an open criteria gap; do not grade), then `bash .cursor/aid/scripts/grade.sh --explain <ledger>`. Not clean -> loop
    to RUN/consolidate. Circuit-breaker: 3 cycles -> IMPEDIMENT + `lifecycle: Blocked`.
 
 **Advance:** PRESENT.

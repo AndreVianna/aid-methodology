@@ -155,7 +155,7 @@ Purpose: ensure the review is grounded, correct, and complete before the human s
    against KB + source: flag ungrounded / hallucinated / mis-severity findings, and any
    material **gap** (a real issue the first pass missed). It writes a review-quality
    ledger to `.aid/.temp/review-pending/<work>-verify.md`.
-3. **Grade the review:** `bash .claude/aid/scripts/grade.sh --explain <verify-ledger>`.
+3. **Gate, then grade the review:** `bash .claude/aid/scripts/review/check-gaps.sh --ledger <verify-ledger>` (exit 1 = an open criteria gap; do not grade), then `bash .claude/aid/scripts/grade.sh --explain <verify-ledger>`.
    If it is not clean, loop back to REVIEW so the first reviewer revises (drop ungrounded
    findings, add missed ones). **Circuit-breaker: 3 cycles** -> write
    `.aid/works/{work}/IMPEDIMENT-review.md`, set STATE `lifecycle: Blocked` with a block reason,

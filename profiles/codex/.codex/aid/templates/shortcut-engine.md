@@ -775,6 +775,7 @@ content:
    issues as `Pending` (`reviewer-ledger-schema.md § Lifecycle`).
 2. **GRADE.**
    ```bash
+   bash .codex/aid/scripts/review/check-gaps.sh --ledger <ledger-path>   # exit 1 = an open criteria gap; do NOT grade
    bash .codex/aid/scripts/grade.sh --explain <ledger-path>
    ```
    Because the operative floor for this work is `A+` (zero findings --
