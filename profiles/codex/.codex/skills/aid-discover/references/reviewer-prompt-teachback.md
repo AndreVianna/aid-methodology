@@ -171,14 +171,14 @@ This is a binary pass/fail per Divergence and per load-bearing Omission.
 ## Output format
 
 Write all findings to `.aid/.temp/review-pending/{{SCOPE}}-teachback.md` using the
-8-column ledger schema (the `Rule` cell shows `KB-NN` because the KB rule set does not
-yet assign rule IDs -- put the real ID there once it does; never invent one):
+8-column ledger schema (the `Rule` cell cites a rule from
+`review-rubrics/kb.md`; never invent an ID):
 
 ```
 | # | Severity | Status | Rule | Doc | Line | Description | Evidence |
 |---|----------|--------|------|-----|------|-------------|----------|
-| TB-001 | [HIGH] | Pending | KB-NN | architecture.md | -- | [FIDELITY] Divergence: KB states the pipeline uses two stages; source shows three stages (ingest, transform, load). KB misrepresents the pipeline shape. | src/pipeline.py lines 12-47: three distinct stage classes; KB architecture.md "two-stage pipeline" is factually wrong |
-| TB-002 | [MED]  | Pending | KB-NN | domain-glossary.md | -- | [ESSENCE-GAP] Omission: KB reconstruction could not supply the project's data retention policy (7-day rolling window); this is a load-bearing design constraint newcomers must know. | source/config/retention.yaml: retention_days=7; domain-glossary.md has no entry for retention or data lifecycle |
+| TB-001 | [HIGH] | Pending | KB-20 | architecture.md | -- | [FIDELITY] Divergence: KB states the pipeline uses two stages; source shows three stages (ingest, transform, load). KB misrepresents the pipeline shape. | src/pipeline.py lines 12-47: three distinct stage classes; KB architecture.md "two-stage pipeline" is factually wrong |
+| TB-002 | [MED]  | Pending | KB-23 | domain-glossary.md | -- | [ESSENCE-GAP] Omission: KB reconstruction could not supply the project's data retention policy (7-day rolling window); this is a load-bearing design constraint newcomers must know. | source/config/retention.yaml: retention_days=7; domain-glossary.md has no entry for retention or data lifecycle |
 ```
 
 - Use stable IDs: `TB-001`, `TB-002`, ...

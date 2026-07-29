@@ -113,13 +113,13 @@ Route each document by its `kb-category:` and `source:` frontmatter before gradi
 ### Output format
 
 Write all findings to `.aid/.temp/review-pending/{{SCOPE}}-correctness.md` using the
-8-column ledger schema (the `Rule` cell shows `KB-NN` because the KB rule set does not
+8-column ledger schema (the `Rule` cell shows `KB-20` because the KB rule set does not
 yet assign rule IDs -- put the real ID there once it does; never invent one):
 
 ```
 | # | Severity | Status | Rule | Doc | Line | Description | Evidence |
 |---|----------|--------|------|-----|------|-------------|----------|
-| M1-001 | [CRITICAL] | Pending | KB-NN | foo.md | 42 | [M1] False version claim — stated 2.1 but package.json says 3.0 | grep "version" package.json => "3.0" |
+| M1-001 | [CRITICAL] | Pending | KB-20 | foo.md | 42 | [M1] False version claim — stated 2.1 but package.json says 3.0 | grep "version" package.json => "3.0" |
 ```
 
 - Use stable IDs: `M1-001`, `M1-002`, ...

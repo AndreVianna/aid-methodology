@@ -52,6 +52,16 @@ on the first row.
 `Step 2` is **not** a judgment escape hatch. Both axes are evidence-bearing — *name the dependent,
 or the radius is confined* — so the reviewer evaluates two checkable predicates.
 
+### A rule row's cells must contain no pipe — not even an escaped one
+
+The ledger escapes a literal `|` as `\|`, and that is safe there because `grade.sh` reads `cols[3]` and
+`cols[4]`, which precede any free text. **A rule row is different: `Severity` is the LAST cell**, so a
+pipe anywhere earlier shifts it, and escaping does not help a *positional* parse.
+
+So an `Evidence` command containing a pipe must be **described rather than pasted** — *"list the
+headings with `grep -n` and confirm the change log is last"* rather than a piped one-liner. Found by the
+catalog's own integrity suite, on rows added after the schema was written.
+
 **There is no force-floor form.** A catalog feature that looks mechanical but is honoured only by
 convention is exactly what this catalog exists to remove.
 
@@ -231,7 +241,7 @@ family's rules still apply beneath the class file, per the three-tier model.
 
 | Artifact selector | Producing skill | Class | Rule set |
 |---|---|---|---|
-| `.aid/knowledge/*.md` | `aid-discover`, `aid-update-kb` | `KB` | `kb-authoring/review-rubric.md` (referenced, not moved) |
+| `.aid/knowledge/*.md` | `aid-discover`, `aid-update-kb` | `KB` | [`kb.md`](kb.md) — which assigns the IDs and cites `kb-authoring/review-rubric.md` as the per-check authority |
 | `.aid/works/*/REQUIREMENTS.md` | `aid-describe`, `aid-define` | `REQ` | `definition.md` |
 | `.aid/works/*/features/*/SPEC.md` | `aid-specify` | `SPEC` | `definition.md` |
 | `.aid/works/*/PLAN.md`, `**/BLUEPRINT.md` | `aid-plan` | `PLAN` | `definition.md` |
