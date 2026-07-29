@@ -1,8 +1,8 @@
 ---
-state: Pending
+state: Done
 review: "--"
 elapsed: "--"
-notes: "--"
+notes: "75/75 tests pass. Fixed prefix-warning propagation (W1/W2/W4 must be pushed into chart.warnings after composeDoorwayChart)."
 ticket_ref: "--"
 ---
 

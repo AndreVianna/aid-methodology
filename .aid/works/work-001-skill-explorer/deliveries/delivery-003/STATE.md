@@ -690,6 +690,66 @@ resolves into the module split.
 
 ---
 
+## Wave 11 (tasks 035 + 036) — findings, pre-review
+
+Both doorway extractors, dispatched in parallel and file-disjoint. **2205 tests across 35 files.**
+Ten mutants, all killed after two rounds of correcting my own harness.
+
+### task-035 filed an IMPEDIMENT, correctly, and it is an AC defect
+
+AC-6 requires APPROVAL-HALT's `terminal.handoff` to mention `/aid-execute`. It cannot, and no code
+change should make it: `/aid-execute` appears three times in the APPROVAL-HALT **section prose** and
+**not once in its `**Advance:**` clause**, which is the only thing `handoff` is derived from. The two
+ways to satisfy the AC as written are both wrong — teaching `handoff` to scan section prose changes
+what handoff *means* for every skill in the corpus, and editing `shortcut-engine.md` to suit the
+renderer inverts the dependency, which is precisely the reasoning the tasks-019–029 reviewer used to
+endorse fixing rather than escalating on row 14.
+
+**Recorded as an AC defect, not a task failure.** The test asserts what is true — `advanceType === 'HALT'`
+and the real handoff substring — and the author was right to file rather than weaken silently. The
+information the AC wants is genuinely in the source; it is just not in the field the AC names.
+
+### A second text-mangling defect, same family as the backtick one
+
+The impediment's evidence quoted the handoff as *"the **-proof** fixture in feature-004's testing
+strategy"* — where the source says `halt-proof`. `_extractHandoff` stripped the terminal keyword with
+`/\bhalt\b/gi`, and `\b` treats a hyphen as a boundary, so it cut `halt` out of the middle of a
+hyphenated word. **Every other `halt` check in that module already used the hyphen-aware boundary**
+`(?<![A-Za-z0-9-])halt(?![A-Za-z0-9-])`; this was the one site left behind when the state-name strip
+was fixed for exactly this reason. Now consistent, and pinned by a test with a separable negative case
+(a standalone `halt` is still stripped).
+
+That makes three published-text defects in this delivery from the same root: a strip that is right for
+one kind of token applied to text where it is wrong. It is worth stating as a rule — **a strip that
+removes a token a reader can see needs a boundary that respects how the corpus writes words.**
+
+### My mutation harness manufactured five false findings
+
+The first pass reported **seven survivors**; five were my own bad mutants. Short target strings —
+`kind: 'sequence'`, `shape: 'engine-doorway'`, `kind bound to`, `alias of `, `'approximate'` — all
+appear in a doc comment **before** they appear in code, and a first-occurrence replacement edited the
+prose while the code ran untouched. The harness now **strips comments and refuses any mutant whose
+target is not in code**, and the mutants aim at full code lines. This is the third time in this
+delivery that a harness bug wore the costume of a coverage gap, and the standing rule earns restating:
+**a survivor is a hypothesis until the mutation is shown to have changed behaviour.**
+
+Two of the seven were genuine, and both are now closed: the 4-hop cap value was unpinned (the test
+asserted only that *some* W3 fired, and W3 covers three causes, so raising the cap to 400 still passed),
+and the W3 fallback chart's `confidence` was unasserted, so flipping it from `approximate` to `derived`
+survived — on a chart whose parent was never resolved, where `approximate` is the only honest value.
+
+### Housekeeping
+
+A subagent left `site/scripts/__tests__/_smoke-test.mjs`, a probe script, in the test directory. Removed.
+Its name would not have been collected by vitest's glob, which is why it went unnoticed.
+
+**KI-020 filed:** the delivery-002 `index.md` byte-identity assertion is intermittent in full-suite runs
+(2 of 3 tonight), passes in isolation and in pairs, and the one machine-specific factor is a dev server
+watching the same tree. Not blocking — wave 11's own suites are green and the generated tree is
+byte-unchanged. **The delivery-003 gate's CI run is the authority**, since CI has no watcher.
+
+---
+
 ## Wave 10 (tasks 033 + 034) — PASS, A+ floor met (3 cycles)
 
 Closed at `1d65326b` plus the excerpt-equality fix. **2078 tests across 33 files.** Zero Pending rows

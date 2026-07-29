@@ -541,6 +541,36 @@
 - **Surfaced by:** `/aid-detail` task decomposition, as item G of the architect's "what I had to
   decide" report — a hazard neither SPEC addresses, recorded rather than silently resolved.
 
+## KI-020: `index.md` byte-identity test is intermittent in full-suite runs only
+
+- **Type:** Flaky test (pre-existing; task-014, delivery-002)
+- **Severity:** Low-Medium — it is a real red build when it fires, but no product defect is implicated
+- **Affects:** `site/scripts/__tests__/gen-skills-index.test.mjs`, assertion 14 —
+  *"re-running the generator leaves index.md byte-identical (buffer comparison, not git diff)"*
+- **Observed 2026-07-28, wave 11:** failed **2 of 3** full `npx vitest run` invocations; passed the
+  third. Passes **every** time in isolation, and passed **two consecutive** runs of just the two
+  generator-touching suites together (`gen-skills` + `gen-skills-index`, 127 tests). So it needs the
+  full 35-file run to reproduce, which is why it did not surface during the waves that added those
+  suites.
+- **What the test does:** `execSync` the generator, read `index.md`, `execSync` again, read again,
+  compare buffers. Self-contained, and nothing between the two reads should be able to change bytes.
+- **Leading hypothesis, not yet proven: an Astro dev server watching the same tree.** One was running
+  on `:4321` throughout tonight's session, watching `site/src/`, while the generator rewrote 111 pages
+  plus the index twice per invocation. `fileParallelism: false` (KI-016) serialises test *files* and so
+  rules out two suites regenerating at once, which was the previous cause of this class. It does not
+  rule out an external watcher. Attempts to stop that server failed — `taskkill` was denied on a child
+  process — so the hypothesis is untested rather than confirmed.
+- **Why it is not blocking wave 11:** the failure is in a delivery-002 test, unrelated to feature-004's
+  scope; wave 11's own suites are green and fully mutation-proven; and the generated tree is
+  byte-unchanged, so idempotence itself is not in question — only the test's ability to observe it on
+  this machine, under this watcher.
+- **CI is the authority.** `.github/workflows/docs.yml` runs `npm test` with no dev server and no
+  editor watching, which is the environment the assertion was written for. **Check the delivery-003
+  gate's CI run specifically**: if it is green there and flaky only locally, the finding is
+  environmental and the fix is to stop running a dev server during a full suite. If it fires in CI
+  too, the test needs to stop depending on an unlocked file — capture both runs' bytes under a
+  temporary output directory rather than the live tree.
+
 ## KI-019: work-004 shrinks the skill corpus 111 → 74 and also edits `site/` — merge-order hazard
 
 - **Type:** Cross-work collision (not a defect in either work)

@@ -1017,7 +1017,12 @@ function _extractHandoff(clauseText) {
   text = text.replace(ADVANCE_KW_RE, ' ');
   text = text.replace(ARROW_RE, ' ');
   text = text.replace(/\bStop here\b/g, ' ');
-  text = text.replace(/\bhalt\b/gi, ' ');
+  // Hyphen-aware boundary, matching the four other `halt` checks in this module. `\b`
+  // treats a hyphen as a boundary, so `\bhalt\b` matched inside `halt-proof` and published
+  // the engine's APPROVAL-HALT handoff as "the -proof fixture in feature-004's testing
+  // strategy" — a word cut in half in text a reader sees. This was the last `\b` site left
+  // when the state-name strip was fixed for exactly this reason.
+  text = text.replace(/(?<![A-Za-z0-9-])halt(?![A-Za-z0-9-])/gi, ' ');
   text = text.replace(/`([^`]*)`/g, '$1');
   // Markdown emphasis markers are formatting, never part of a state name. Without
   // this, a bare `**PAUSE-FOR-USER-ACTION**` — which names no resume state — has its

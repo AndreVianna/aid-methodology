@@ -727,6 +727,23 @@ describe('Rule 4 — handoff captures the prose', () => {
     expect(result.terminal.handoff).not.toBeNull();
     expect(result.terminal.handoff).toContain('/aid-define');
   });
+
+  it('does not cut "halt" out of a hyphenated word', () => {
+    // The handoff strip removes the terminal keyword `halt`, and used `\b` to do it.
+    // A hyphen is a word boundary to `\b`, so `halt-proof` matched and the engine's
+    // APPROVAL-HALT handoff published "the -proof fixture in feature-004's testing
+    // strategy" — a word cut in half in text a reader sees. Every other `halt` check in
+    // the module already used the hyphen-aware boundary; this was the last `\b` site.
+    //
+    // Separability: the same fixture with a standalone `halt` proves the strip still
+    // works, so this pins the boundary rather than the removal.
+    const kept = parse(advBlock('CHAIN -> the halt-proof fixture asserts both'), states('DONE'));
+    expect(kept.terminal.handoff).toContain('halt-proof');
+
+    const stripped = parse(advBlock('CHAIN -> halt and then review the ledger'), states('DONE'));
+    expect(stripped.terminal.handoff).not.toMatch(/(?<![A-Za-z0-9-])halt(?![A-Za-z0-9-])/i);
+    expect(stripped.terminal.handoff).toContain('review the ledger');
+  });
 });
 
 // ── Provenance ────────────────────────────────────────────────────────────────
