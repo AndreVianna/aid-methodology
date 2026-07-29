@@ -95,9 +95,11 @@ everything). CONFIRMED in `.claude/aid/templates/grading-rubric.md` (Grade Calcu
 - **Count sets the modifier within a severity:** exactly 1 → `+`; 2-5 → none; 6+ → `-`
   (CONFIRMED in `grade.sh` `modifier_for_count`).
 
-Severity meanings (from the rubric): Minor = cosmetic; Low = works-but-deviates; Medium =
-incorrect non-critical behavior / missing edge case; High = blocks functionality / security
-/ data integrity; Critical = system failure / data loss / fundamentally wrong approach.
+**Severity meanings are not restated here.** They are defined once, at
+[`canonical/aid/templates/grading-rubric.md#severity-scale`](canonical/aid/templates/grading-rubric.md#severity-scale). Severity is looked up rather than
+judged: the violated rule's modality sets the band, and for a MUST, blast radius x reversibility
+selects within it. This section governs how a *grade* follows from counted severities -- not what
+a severity means.
 
 ---
 

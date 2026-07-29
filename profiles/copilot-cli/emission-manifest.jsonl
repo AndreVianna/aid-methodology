@@ -6,7 +6,7 @@
 {"dst": ".github/agents/aid-operator.md", "profile": "copilot-cli", "sha256": "0ab71c13549650cd70fb46f9123ac4bd6e910610d33188c06308df7dcc7b995f", "src": "canonical/agents/aid-operator/AGENT.md"}
 {"dst": ".github/agents/aid-orchestrator.md", "profile": "copilot-cli", "sha256": "4709f07ba0270b062bee3d51f5957125822aa0573abfc774d890f64e5d20fa03", "src": "canonical/agents/aid-orchestrator/AGENT.md"}
 {"dst": ".github/agents/aid-researcher.md", "profile": "copilot-cli", "sha256": "cd06df6477d62007a84ce72f5e211f79ae182822aca26b5430b089347e885eab", "src": "canonical/agents/aid-researcher/AGENT.md"}
-{"dst": ".github/agents/aid-reviewer.md", "profile": "copilot-cli", "sha256": "e824e1890a978d729dddc35fedf991f4857808944900f2201d9972c5c5e6413f", "src": "canonical/agents/aid-reviewer/AGENT.md"}
+{"dst": ".github/agents/aid-reviewer.md", "profile": "copilot-cli", "sha256": "bdca0ab55b2aef7dabb39704f3f5e8419e96ca4bbf7259894de150fd75a8741b", "src": "canonical/agents/aid-reviewer/AGENT.md"}
 {"dst": ".github/agents/aid-tech-writer.md", "profile": "copilot-cli", "sha256": "7eca7a7e36d373fe6748a39231eb2ddf72385c9152a2a16b85b0c811b8d9aea1", "src": "canonical/agents/aid-tech-writer/AGENT.md"}
 {"dst": ".github/aid/scripts/config/read-setting.sh", "profile": "copilot-cli", "sha256": "4f11714098f724dfe5d7923905550934c41253ff8add5bad46d4040f4e3decc9", "src": "canonical/scripts/config/read-setting.sh"}
 {"dst": ".github/aid/scripts/connectors/build-connectors-index.ps1", "profile": "copilot-cli", "sha256": "5f1c2060c42217d7da1f7b1e52286e1f75732554866ce1a1191ec0177572a7e9", "src": "canonical/scripts/connectors/build-connectors-index.ps1"}
@@ -32,7 +32,7 @@
 {"dst": ".github/aid/scripts/kb/discover-preflight.sh", "profile": "copilot-cli", "sha256": "ed1a1dce6fc24ae3f24a541936c7133efb88bfe19d125a38cb900cc1b4163340", "src": "canonical/scripts/kb/discover-preflight.sh"}
 {"dst": ".github/aid/scripts/kb/harvest-coined-terms.sh", "profile": "copilot-cli", "sha256": "42bc5cdb775d0c31513bd79a27912caddcbcd309d5fd3fb9817702539fdeec60", "src": "canonical/scripts/kb/harvest-coined-terms.sh"}
 {"dst": ".github/aid/scripts/kb/kb-actback-task.sh", "profile": "copilot-cli", "sha256": "63a7534a1252982753cf2d698fc5e3af63e1f2c79f905200a97da3d377cd56d5", "src": "canonical/scripts/kb/kb-actback-task.sh"}
-{"dst": ".github/aid/scripts/kb/kb-citation-lint.sh", "profile": "copilot-cli", "sha256": "98e427f0b769c374ec008c242167ba07a3bec61fae081de447062b48285efa4f", "src": "canonical/scripts/kb/kb-citation-lint.sh"}
+{"dst": ".github/aid/scripts/kb/kb-citation-lint.sh", "profile": "copilot-cli", "sha256": "d800664623d2360d1551b6a53abcfb33d2edd1cd5d4824022671bec28f68e01d", "src": "canonical/scripts/kb/kb-citation-lint.sh"}
 {"dst": ".github/aid/scripts/kb/kb-dual-intent-probes.sh", "profile": "copilot-cli", "sha256": "546c21baf89cda6f84de44f6f727bcafd9cb6d438a36c6f0495e0f48697bc6c0", "src": "canonical/scripts/kb/kb-dual-intent-probes.sh"}
 {"dst": ".github/aid/scripts/kb/kb-freshness-check.sh", "profile": "copilot-cli", "sha256": "f9adcc7c6dc14648df4a13c1b51a497896779f21aa7ce73929b1f6891f5331de", "src": "canonical/scripts/kb/kb-freshness-check.sh"}
 {"dst": ".github/aid/scripts/kb/kb-teachback-questions.sh", "profile": "copilot-cli", "sha256": "3c23e5a272320b0f75a52667b4526f5166555ddd207c43b8fc4416e51537ad3e", "src": "canonical/scripts/kb/kb-teachback-questions.sh"}
@@ -79,12 +79,12 @@
 {"dst": ".github/aid/templates/feature.md", "profile": "copilot-cli", "sha256": "f2431502406233a2f9f083346f9a06fc2b5c5d289f6f61c951099af505f731c7", "src": "canonical/templates/feature.md"}
 {"dst": ".github/aid/templates/feedback-artifacts/IMPEDIMENT.md", "profile": "copilot-cli", "sha256": "79b88f114c2ad3e1b30cb84699049c1a4fdb968e14f52fec37ed721417a22b26", "src": "canonical/templates/feedback-artifacts/IMPEDIMENT.md"}
 {"dst": ".github/aid/templates/generated-files.txt", "profile": "copilot-cli", "sha256": "8f9de68e62ca389e452e898e91e9100ee8ab9336dc000cae1d5a67b2caa5ab8f", "src": "canonical/templates/generated-files.txt"}
-{"dst": ".github/aid/templates/grading-rubric.md", "profile": "copilot-cli", "sha256": "969bcdf7625dc7f898d2dea9759861f60b3ddec931f0efa5a499bb8f2d459569", "src": "canonical/templates/grading-rubric.md"}
+{"dst": ".github/aid/templates/grading-rubric.md", "profile": "copilot-cli", "sha256": "ee76ffbaeb42357bb9ce081c420883e0ce9bb8d4498f353b67e985b03b08e4b6", "src": "canonical/templates/grading-rubric.md"}
 {"dst": ".github/aid/templates/kb-authoring/concern-model.md", "profile": "copilot-cli", "sha256": "c1f33c7b6ff0571c0f685f067ce87398a2f780104ab8d909757dce8632534874", "src": "canonical/templates/kb-authoring/concern-model.md"}
 {"dst": ".github/aid/templates/kb-authoring/domain-doc-matrix.md", "profile": "copilot-cli", "sha256": "2e164c1083746ccbdad588887464ca9e7d661f1d2c47d6a9ef66ce75939ac894", "src": "canonical/templates/kb-authoring/domain-doc-matrix.md"}
 {"dst": ".github/aid/templates/kb-authoring/frontmatter-schema.md", "profile": "copilot-cli", "sha256": "d5b4e1b24560bb6d1a0c2231df2602db958f16cb2634b25bc7411d931a9e6777", "src": "canonical/templates/kb-authoring/frontmatter-schema.md"}
 {"dst": ".github/aid/templates/kb-authoring/principles.md", "profile": "copilot-cli", "sha256": "0bc20d9f1435a57e8a4081a357859fb4ec796548d5877f3c62d9272c6edac4e6", "src": "canonical/templates/kb-authoring/principles.md"}
-{"dst": ".github/aid/templates/kb-authoring/review-rubric.md", "profile": "copilot-cli", "sha256": "4df7186bcacf3fc75d1c3f469de36699dc3bc91f4b70b453cb5041c658a83c36", "src": "canonical/templates/kb-authoring/review-rubric.md"}
+{"dst": ".github/aid/templates/kb-authoring/review-rubric.md", "profile": "copilot-cli", "sha256": "9e916e13b0298f711b462af73d86a495a997e8bb20f37bc212bab011f03544b3", "src": "canonical/templates/kb-authoring/review-rubric.md"}
 {"dst": ".github/aid/templates/kb-authoring/tier-model.md", "profile": "copilot-cli", "sha256": "ba11388131b3d9e7467e313dca61459d161aa94c57e642ac7a5b377e8172e9a2", "src": "canonical/templates/kb-authoring/tier-model.md"}
 {"dst": ".github/aid/templates/knowledge-base/architecture.md", "profile": "copilot-cli", "sha256": "e83c18e20ec7923337e031ee0e0d27d77e50e983614c861e83a6b8d9be3842cd", "src": "canonical/templates/knowledge-base/architecture.md"}
 {"dst": ".github/aid/templates/knowledge-base/coding-standards.md", "profile": "copilot-cli", "sha256": "4c79fffeed63b4a35318df7a18143f2ff20e3a7b4d6b8a9f72ae2c40c67f3879", "src": "canonical/templates/knowledge-base/coding-standards.md"}
@@ -122,7 +122,7 @@
 {"dst": ".github/aid/templates/requirements.md", "profile": "copilot-cli", "sha256": "cf78c05319ac958ade4cb707971bcae72168d37f2d30cd9a181215b65b63ab68", "src": "canonical/templates/requirements.md"}
 {"dst": ".github/aid/templates/requirements/requirements-template.md", "profile": "copilot-cli", "sha256": "d2a8bc3ff89d929f0bb3b21485d7fac51143e7fd452f2ff7604d9928f79be959", "src": "canonical/templates/requirements/requirements-template.md"}
 {"dst": ".github/aid/templates/reviewer-dispatch.md", "profile": "copilot-cli", "sha256": "dfea1607099e0455401e7d54ab320311b089fee0b4af038765f356bd20c7913c", "src": "canonical/templates/reviewer-dispatch.md"}
-{"dst": ".github/aid/templates/reviewer-ledger-schema.md", "profile": "copilot-cli", "sha256": "55b2b870f60aaab8f5311166bbcaa68812911d7886038595e212150a8692e03d", "src": "canonical/templates/reviewer-ledger-schema.md"}
+{"dst": ".github/aid/templates/reviewer-ledger-schema.md", "profile": "copilot-cli", "sha256": "24df549d43491f6c27c83a96cf2c0e3a617a788d8dab3c56797a5d17321f83b7", "src": "canonical/templates/reviewer-ledger-schema.md"}
 {"dst": ".github/aid/templates/rough-time-hints.md", "profile": "copilot-cli", "sha256": "5bb11ab80c2facbfd390376816280db8e65abe895a29c4a28b14fb967a8fb629", "src": "canonical/templates/rough-time-hints.md"}
 {"dst": ".github/aid/templates/self-review-protocol.md", "profile": "copilot-cli", "sha256": "84a4bed374301ba632de1621c5b19c9e0723a9f18194a4dc11c55b84aa398420", "src": "canonical/templates/self-review-protocol.md"}
 {"dst": ".github/aid/templates/settings.yml", "profile": "copilot-cli", "sha256": "51a3ec8a4d77383c7d063a609d0416c66d4fcd2219a6dd22dcd3d6ad785d284f", "src": "canonical/templates/settings.yml"}
@@ -259,7 +259,7 @@
 {"dst": ".github/skills/aid-document/SKILL.md", "profile": "copilot-cli", "sha256": "eb4a1d80df01b3dea7e547b548ffab83e3087dd048c2219c9ce4e717b485a94b", "src": "canonical/skills/aid-document/SKILL.md"}
 {"dst": ".github/skills/aid-execute/SKILL.md", "profile": "copilot-cli", "sha256": "5665a129330ce7e613ec498ac1c67afd0e91ed891fbbd432d9a7006e516cef2c", "src": "canonical/skills/aid-execute/SKILL.md"}
 {"dst": ".github/skills/aid-execute/references/reviewer-brief.md", "profile": "copilot-cli", "sha256": "9c6cc521a3082caf4f876a747611b083f8e2a49d4af6cedfdc3cec5b9ecf705d", "src": "canonical/skills/aid-execute/references/reviewer-brief.md"}
-{"dst": ".github/skills/aid-execute/references/reviewer-guide.md", "profile": "copilot-cli", "sha256": "7827b5132ccf3a33d78a372e9a224773d7440cd6a176e6862abb77359a85510f", "src": "canonical/skills/aid-execute/references/reviewer-guide.md"}
+{"dst": ".github/skills/aid-execute/references/reviewer-guide.md", "profile": "copilot-cli", "sha256": "cb3aad6872d357fb645bfe00d6184de5c2a44e702bfdb424d681a23ece6b3fa8", "src": "canonical/skills/aid-execute/references/reviewer-guide.md"}
 {"dst": ".github/skills/aid-execute/references/state-delivery-gate.md", "profile": "copilot-cli", "sha256": "604caa1a6f2501664a1e9a56fbf69bedc8cf2ba485be63a783e4c8f5e5ef5a0b", "src": "canonical/skills/aid-execute/references/state-delivery-gate.md"}
 {"dst": ".github/skills/aid-execute/references/state-execute-drilldown.md", "profile": "copilot-cli", "sha256": "06f7a6936f37dd0f62bf5ded296ef406ce1d2bcd83c093dbf0d52e55b52eb9a3", "src": "canonical/skills/aid-execute/references/state-execute-drilldown.md"}
 {"dst": ".github/skills/aid-execute/references/state-execute.md", "profile": "copilot-cli", "sha256": "0cb4bb4025176f159af840150d180dbb298b4344fefe617a50579404853a5392", "src": "canonical/skills/aid-execute/references/state-execute.md"}

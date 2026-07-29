@@ -1,6 +1,6 @@
 ---
-state: Pending
-review: "Pending"
+state: Done
+review: 'Small -- gate A+ cycle 2, clean'
 elapsed: "--"
 notes: "--"
 ticket_ref: "--"

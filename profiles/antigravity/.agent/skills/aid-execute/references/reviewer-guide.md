@@ -5,13 +5,8 @@ and type-specific review checklists for the reviewer agent.
 
 ## Issue Severity
 
-| Severity | Meaning |
-|----------|---------|
-| **Minor** | Cosmetic, style, trivial. Does not affect functionality. |
-| **Low** | Convention deviation, could be better but works correctly. |
-| **Medium** | Incorrect behavior, missing edge case, incomplete coverage. |
-| **High** | Blocks functionality, security risk, data integrity concern. |
-| **Critical** | System failure, data loss, security breach, fundamentally wrong. |
+Defined once, at [`.agent/aid/templates/grading-rubric.md#severity-scale`](.agent/aid/templates/grading-rubric.md#severity-scale). Modality sets
+the band; blast radius and reversibility select within the MUST band. Not restated here.
 
 ### Tagging Convention
 

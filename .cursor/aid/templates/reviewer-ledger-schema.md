@@ -74,13 +74,10 @@ The `.aid/.temp/review-pending/` directory is gitignored (per `.gitignore` `.aid
 
 ## Severity values
 
-| Tag | Meaning | Grade impact |
-|---|---|---|
-| `[CRITICAL]` | Factual error that will mislead downstream phases or break tooling. Build-broken, data-loss, security-broken category. | Drives grade to E (severity dominates) |
-| `[HIGH]` | Wrong claim, dead reference, broken citation, or missing post-merge content. | Drives grade to D |
-| `[MEDIUM]` | Internal inconsistency, off-by-1 in counts, or contract drift between docs. | Drives grade to C |
-| `[LOW]` | Stale narrative, minor process violation (e.g., P1 inline-T3 with accurate value), or single-doc cosmetic issue. | Drives grade to B |
-| `[MINOR]` | Cosmetic, wording drift, formatting nit. | Drives grade to A (or A- if >5) |
+The five tags are `[CRITICAL]`, `[HIGH]`, `[MEDIUM]`, `[LOW]`, `[MINOR]`. **What each one means
+is defined once**, at [`.cursor/aid/templates/grading-rubric.md#severity-scale`](.cursor/aid/templates/grading-rubric.md#severity-scale) --
+modality sets the band, then blast radius and reversibility select within the MUST band. This
+schema governs the ledger's *shape*, not the severity vocabulary's *meaning*.
 
 Worst severity dominates; count within that severity determines the modifier (1 → `+`, 2-5 → none, 6+ → `-`).
 

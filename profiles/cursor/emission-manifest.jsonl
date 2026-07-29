@@ -6,7 +6,7 @@
 {"dst": ".cursor/agents/aid-operator.md", "profile": "cursor", "sha256": "7adcc2805d42ecde636d435042473f03d1c020abf1201b9332714fd50112f0d8", "src": "canonical/agents/aid-operator/AGENT.md"}
 {"dst": ".cursor/agents/aid-orchestrator.md", "profile": "cursor", "sha256": "77cb74744186aa61376ae901dd07bcef28a490bce7a8f8a656867d17232e4e2c", "src": "canonical/agents/aid-orchestrator/AGENT.md"}
 {"dst": ".cursor/agents/aid-researcher.md", "profile": "cursor", "sha256": "d18fe14a3f24fbeccb52f8b200c45eadcd78ae860b1adfe71e9e993929035a20", "src": "canonical/agents/aid-researcher/AGENT.md"}
-{"dst": ".cursor/agents/aid-reviewer.md", "profile": "cursor", "sha256": "8e33463371afe97ee41b170fc264faa2c637ba977adc2a7125f619491b6573ef", "src": "canonical/agents/aid-reviewer/AGENT.md"}
+{"dst": ".cursor/agents/aid-reviewer.md", "profile": "cursor", "sha256": "2edd117919d0a1e347b4de4d96aa57c39a72ac2da247fa2588a2562d33a212b0", "src": "canonical/agents/aid-reviewer/AGENT.md"}
 {"dst": ".cursor/agents/aid-tech-writer.md", "profile": "cursor", "sha256": "b37384f9bd9fd533db024be00dabaaa7db15edf1b313330518e719c6e4447ff7", "src": "canonical/agents/aid-tech-writer/AGENT.md"}
 {"dst": ".cursor/aid/scripts/config/read-setting.sh", "profile": "cursor", "sha256": "4f11714098f724dfe5d7923905550934c41253ff8add5bad46d4040f4e3decc9", "src": "canonical/scripts/config/read-setting.sh"}
 {"dst": ".cursor/aid/scripts/connectors/build-connectors-index.ps1", "profile": "cursor", "sha256": "5f1c2060c42217d7da1f7b1e52286e1f75732554866ce1a1191ec0177572a7e9", "src": "canonical/scripts/connectors/build-connectors-index.ps1"}
@@ -32,7 +32,7 @@
 {"dst": ".cursor/aid/scripts/kb/discover-preflight.sh", "profile": "cursor", "sha256": "ed1a1dce6fc24ae3f24a541936c7133efb88bfe19d125a38cb900cc1b4163340", "src": "canonical/scripts/kb/discover-preflight.sh"}
 {"dst": ".cursor/aid/scripts/kb/harvest-coined-terms.sh", "profile": "cursor", "sha256": "d5ea7c587886439fcb7fded2ec461ff0546ca664122725dfd81f5f13b8aa8e1b", "src": "canonical/scripts/kb/harvest-coined-terms.sh"}
 {"dst": ".cursor/aid/scripts/kb/kb-actback-task.sh", "profile": "cursor", "sha256": "63a7534a1252982753cf2d698fc5e3af63e1f2c79f905200a97da3d377cd56d5", "src": "canonical/scripts/kb/kb-actback-task.sh"}
-{"dst": ".cursor/aid/scripts/kb/kb-citation-lint.sh", "profile": "cursor", "sha256": "98e427f0b769c374ec008c242167ba07a3bec61fae081de447062b48285efa4f", "src": "canonical/scripts/kb/kb-citation-lint.sh"}
+{"dst": ".cursor/aid/scripts/kb/kb-citation-lint.sh", "profile": "cursor", "sha256": "d800664623d2360d1551b6a53abcfb33d2edd1cd5d4824022671bec28f68e01d", "src": "canonical/scripts/kb/kb-citation-lint.sh"}
 {"dst": ".cursor/aid/scripts/kb/kb-dual-intent-probes.sh", "profile": "cursor", "sha256": "546c21baf89cda6f84de44f6f727bcafd9cb6d438a36c6f0495e0f48697bc6c0", "src": "canonical/scripts/kb/kb-dual-intent-probes.sh"}
 {"dst": ".cursor/aid/scripts/kb/kb-freshness-check.sh", "profile": "cursor", "sha256": "f9adcc7c6dc14648df4a13c1b51a497896779f21aa7ce73929b1f6891f5331de", "src": "canonical/scripts/kb/kb-freshness-check.sh"}
 {"dst": ".cursor/aid/scripts/kb/kb-teachback-questions.sh", "profile": "cursor", "sha256": "3c23e5a272320b0f75a52667b4526f5166555ddd207c43b8fc4416e51537ad3e", "src": "canonical/scripts/kb/kb-teachback-questions.sh"}
@@ -79,12 +79,12 @@
 {"dst": ".cursor/aid/templates/feature.md", "profile": "cursor", "sha256": "f2431502406233a2f9f083346f9a06fc2b5c5d289f6f61c951099af505f731c7", "src": "canonical/templates/feature.md"}
 {"dst": ".cursor/aid/templates/feedback-artifacts/IMPEDIMENT.md", "profile": "cursor", "sha256": "79b88f114c2ad3e1b30cb84699049c1a4fdb968e14f52fec37ed721417a22b26", "src": "canonical/templates/feedback-artifacts/IMPEDIMENT.md"}
 {"dst": ".cursor/aid/templates/generated-files.txt", "profile": "cursor", "sha256": "946b23f277c8a85025d4201a9b3a04d4f9f873cdd112c32b7e9f76a6ea8cfd13", "src": "canonical/templates/generated-files.txt"}
-{"dst": ".cursor/aid/templates/grading-rubric.md", "profile": "cursor", "sha256": "cab1d1d3715f903a3deac9bca5751e5d6d03df66e9682b6e58ab6233ae34742d", "src": "canonical/templates/grading-rubric.md"}
+{"dst": ".cursor/aid/templates/grading-rubric.md", "profile": "cursor", "sha256": "c09db35ad29935b0b5b32f1431cb7cead2c0301aab1add65ff6e8f974ebe9e6d", "src": "canonical/templates/grading-rubric.md"}
 {"dst": ".cursor/aid/templates/kb-authoring/concern-model.md", "profile": "cursor", "sha256": "52028b65ba0620ff22f943cbfad1c42c6ea80475e76f4d570025a9dd715db21e", "src": "canonical/templates/kb-authoring/concern-model.md"}
 {"dst": ".cursor/aid/templates/kb-authoring/domain-doc-matrix.md", "profile": "cursor", "sha256": "4cc3430e29bbea9140c942df3e4e4661677d00467e8356bf27b50bb2a218bfc7", "src": "canonical/templates/kb-authoring/domain-doc-matrix.md"}
 {"dst": ".cursor/aid/templates/kb-authoring/frontmatter-schema.md", "profile": "cursor", "sha256": "df611e2f7bab11f7dcd53750b017e2fe95adfbe606c2e7e01d569b3ef2fcb922", "src": "canonical/templates/kb-authoring/frontmatter-schema.md"}
 {"dst": ".cursor/aid/templates/kb-authoring/principles.md", "profile": "cursor", "sha256": "b3eeff576b9d3c776f0d8f4a8ec355c3a2923cf36be42f71949818fbd363e9a4", "src": "canonical/templates/kb-authoring/principles.md"}
-{"dst": ".cursor/aid/templates/kb-authoring/review-rubric.md", "profile": "cursor", "sha256": "f7a737f1ddb504be6e7b1e4be59eb143afcb6257388daaac7efc92e88478eaf0", "src": "canonical/templates/kb-authoring/review-rubric.md"}
+{"dst": ".cursor/aid/templates/kb-authoring/review-rubric.md", "profile": "cursor", "sha256": "6e4e9730189609ee72025588b9be1181180d85cb04e1c4724ae8a5b140fc0263", "src": "canonical/templates/kb-authoring/review-rubric.md"}
 {"dst": ".cursor/aid/templates/kb-authoring/tier-model.md", "profile": "cursor", "sha256": "6d3fbd27526cb56c4c48c1d3856a2e7928dd636bd7df5dba2834d529df1e57d8", "src": "canonical/templates/kb-authoring/tier-model.md"}
 {"dst": ".cursor/aid/templates/knowledge-base/architecture.md", "profile": "cursor", "sha256": "e83c18e20ec7923337e031ee0e0d27d77e50e983614c861e83a6b8d9be3842cd", "src": "canonical/templates/knowledge-base/architecture.md"}
 {"dst": ".cursor/aid/templates/knowledge-base/coding-standards.md", "profile": "cursor", "sha256": "4c79fffeed63b4a35318df7a18143f2ff20e3a7b4d6b8a9f72ae2c40c67f3879", "src": "canonical/templates/knowledge-base/coding-standards.md"}
@@ -122,7 +122,7 @@
 {"dst": ".cursor/aid/templates/requirements.md", "profile": "cursor", "sha256": "cf78c05319ac958ade4cb707971bcae72168d37f2d30cd9a181215b65b63ab68", "src": "canonical/templates/requirements.md"}
 {"dst": ".cursor/aid/templates/requirements/requirements-template.md", "profile": "cursor", "sha256": "d2a8bc3ff89d929f0bb3b21485d7fac51143e7fd452f2ff7604d9928f79be959", "src": "canonical/templates/requirements/requirements-template.md"}
 {"dst": ".cursor/aid/templates/reviewer-dispatch.md", "profile": "cursor", "sha256": "c7742745f29f4c666c757ac0aa8e20fcea10e3e3e1022aec730ccbcc92c67ba7", "src": "canonical/templates/reviewer-dispatch.md"}
-{"dst": ".cursor/aid/templates/reviewer-ledger-schema.md", "profile": "cursor", "sha256": "369420b8ace758fc440eabcf795267be5732b778be81de6bb37d621a81643053", "src": "canonical/templates/reviewer-ledger-schema.md"}
+{"dst": ".cursor/aid/templates/reviewer-ledger-schema.md", "profile": "cursor", "sha256": "84ab99f81a73d7edb7437ba95aa010863469a17b8baee2768e58f85613768251", "src": "canonical/templates/reviewer-ledger-schema.md"}
 {"dst": ".cursor/aid/templates/rough-time-hints.md", "profile": "cursor", "sha256": "ed9439c875b2ac558031333fe3372b7ba6edd8539ff065a73698efed0291ea9b", "src": "canonical/templates/rough-time-hints.md"}
 {"dst": ".cursor/aid/templates/self-review-protocol.md", "profile": "cursor", "sha256": "c8f42a5da3d5771112bd1ef2bc12d1e26127b1a11f173b7c5b7791d9d8e3e7d0", "src": "canonical/templates/self-review-protocol.md"}
 {"dst": ".cursor/aid/templates/settings.yml", "profile": "cursor", "sha256": "51a3ec8a4d77383c7d063a609d0416c66d4fcd2219a6dd22dcd3d6ad785d284f", "src": "canonical/templates/settings.yml"}
@@ -259,7 +259,7 @@
 {"dst": ".cursor/skills/aid-document/SKILL.md", "profile": "cursor", "sha256": "9878b4a72709f5ebaeb76736930bb6e923d836b25b11d43c834689845200eb2f", "src": "canonical/skills/aid-document/SKILL.md"}
 {"dst": ".cursor/skills/aid-execute/SKILL.md", "profile": "cursor", "sha256": "1e8561bb3eb1328f7b030802f49d8050ebc7108331ce928d95c42fbc7d7834c3", "src": "canonical/skills/aid-execute/SKILL.md"}
 {"dst": ".cursor/skills/aid-execute/references/reviewer-brief.md", "profile": "cursor", "sha256": "3ee7bfeaa64cdf275d24d73851701ce569b6d1c87c188333256730a7c8536845", "src": "canonical/skills/aid-execute/references/reviewer-brief.md"}
-{"dst": ".cursor/skills/aid-execute/references/reviewer-guide.md", "profile": "cursor", "sha256": "7827b5132ccf3a33d78a372e9a224773d7440cd6a176e6862abb77359a85510f", "src": "canonical/skills/aid-execute/references/reviewer-guide.md"}
+{"dst": ".cursor/skills/aid-execute/references/reviewer-guide.md", "profile": "cursor", "sha256": "e51ce681d9853ec95ef1a55d6cc330dc9c1019c3f1ba4789aaeb719ca0290500", "src": "canonical/skills/aid-execute/references/reviewer-guide.md"}
 {"dst": ".cursor/skills/aid-execute/references/state-delivery-gate.md", "profile": "cursor", "sha256": "407baec1a5052b8e32cfc3df21c85f88117f97cf04fedf4577cd5dc0fabbb0b5", "src": "canonical/skills/aid-execute/references/state-delivery-gate.md"}
 {"dst": ".cursor/skills/aid-execute/references/state-execute-drilldown.md", "profile": "cursor", "sha256": "230f4d9ee67636a9e1e1a7caa5aad9d695bb19604207f27fc045d2d4e40ff045", "src": "canonical/skills/aid-execute/references/state-execute-drilldown.md"}
 {"dst": ".cursor/skills/aid-execute/references/state-execute.md", "profile": "cursor", "sha256": "b149647e3ed8eeb6c7847197abed580c9899b9135c3fc88e142c62bfb5e9cfe1", "src": "canonical/skills/aid-execute/references/state-execute.md"}

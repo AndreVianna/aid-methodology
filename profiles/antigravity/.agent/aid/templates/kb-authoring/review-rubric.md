@@ -54,15 +54,9 @@ The bulk of the review effort.
 10. **Q-ID / H-ID references resolve** — every `Q##` / `H##` mentioned must exist in
     `STATE.md` (Q-IDs) or `tech-debt.md` (H-IDs). Dangling reference = MEDIUM.
 
-**Severity scale** (matches reviewer convention):
-
-| Severity | Meaning | Typical examples |
-|----------|---------|------------------|
-| CRITICAL | False claim that could cause downstream wrong decision | Wrong pattern, wrong contract, missing key doc |
-| HIGH | Significant gap or inaccuracy | Contract mismatch, broken widespread citation, cross-doc contradiction |
-| MEDIUM | Noticeable inaccuracy, but agent could work around | Dangling Q-ID, single broken citation, scope creep |
-| LOW | Minor inaccuracy, low blast radius | Awkward phrasing of an otherwise-correct claim |
-| MINOR | Style / convention issue | Single inline T3 or T4 marker; trailing whitespace |
+**Severity scale:** the single canonical scale at
+[`.agent/aid/templates/grading-rubric.md#severity-scale`](.agent/aid/templates/grading-rubric.md#severity-scale). Modality sets the band; blast radius
+and reversibility select within the MUST band. Not restated here.
 
 Worst-issue dominates the grade (per `.agent/aid/templates/grading-rubric.md`).
 

@@ -1,8 +1,8 @@
 ---
-delivery_state: Pending-Spec
+delivery_state: Done
 gate_tier: Medium
-gate_grade: "Pending"
-gate_timestamp: "--"
+gate_grade: "A+"
+gate_timestamp: "2026-07-29T00:35:00Z"
 ticket_ref: "--"
 ---
 
@@ -46,7 +46,32 @@ ticket_ref: "--"
 <!-- AUTHORED -- single writer: the delivery-gate closing step of aid-execute on this
      delivery's branch. Reviewer Tier / Grade / Timestamp live in the frontmatter above. -->
 
-- **Issue List:** --
+- **Issue List:** none counted -- gate A+ at cycle 2. Cycle 1 raised 2 `[MEDIUM]`:
+  1. `aid-reviewer/README.md:52` claims **Large tier** where the canonical frontmatter says
+     `medium`. **Real finding, routed to delivery-011, recorded `OOS` here.** Line 52 is
+     feature-006's claimed region -- features 002 and 005 both record *"52 is Q3(d) and stays"*
+     precisely to leave it there. Editing it would have been a region collision, the exact failure
+     the AGENT.md spine invariant exists to prevent, in the first delivery on that spine.
+  2. `delivery_state` still `Pending-Spec` while all three tasks were `In Review`. **Fixed.**
+     Root cause worth carrying forward: `writeback-state.sh --lifecycle` writes **silently**,
+     unlike `--field` which echoes an `OK:` line, so an earlier advance looked like a no-op.
+- **First use of the new severity scale.** The gate reviewer resolved three findings through
+  Step 1 then Step 2 and reported no ambiguity -- both `[MEDIUM]`s came out as
+  MUST -> confined + local. The scale is usable in practice, not just on paper.
+- **Two findings of my own during execution:**
+  1. **`reviewer-prompt-actback.md` is a genuine false positive**, as feature-001's own review
+     cycle 2 predicted: its `| Tag | Meaning |` table is the STATED/ASSUMED/REACH probe
+     vocabulary, not severity. Left untouched, and that is why AC-1's oracle enumerates host
+     files rather than pattern-matching.
+  2. **The generator writes `profiles/*` only.** This repo's own `.claude/` and `.cursor/`
+     dogfooding installs are tracked mirrors of the claude-code and cursor renders -- 347 of 353
+     `.claude/` files were already byte-identical -- but nothing performs that last hop. Synced
+     manually here (6 files each, including a `kb-citation-lint.sh` that delivery-002 had left
+     behind). **Every canonical-touching delivery must do this, or the repo's own installs drift
+     from what it ships.**
+- **Result:** one severity definition in the tree, six sites reduced to pointers, `grade.sh`
+  byte-unchanged (NFR-1), all seven rendered trees consistent, render idempotent across two
+  consecutive runs.
 
 ---
 
