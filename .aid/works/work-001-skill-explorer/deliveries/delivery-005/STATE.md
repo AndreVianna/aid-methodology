@@ -1,6 +1,6 @@
 ---
-delivery_state: Executing
-gate_tier: Small | Medium | Large
+delivery_state: Gated
+gate_tier: Large
 gate_grade: "{grade or Pending}"
 gate_timestamp: "{YYYY-MM-DDTHH:MM:SSZ}"
 ticket_ref: "--"
@@ -319,6 +319,69 @@ byte-identically into `dist/`, which discharges task-051's deferred check, and *
 bundle contains the island id or any corpus excerpt** — the flow JSON reaches the browser only
 as a per-page island. One grep hit in a mermaid bundle was a false positive: a Langium parser
 grammar containing `"$type":"ParserRule","fragment":true`.
+
+### task-050 / task-052 / task-053 — wave 3, executed directly
+
+**Both wave-3 sub-agents died mid-task.** Their transcripts stopped with no output for hours
+while the shell backend was throwing `Execution backend unavailable` and corrupted session-state
+warnings — the same instability that repeatedly killed the dev server. They left half-applied
+edits: panel state variables added but `openPanel` still a stub, and `decorateNode` caught
+mid-edit. Both files were backed up to `.aid/.temp/partial/` before anything was touched, and the
+remaining work was done directly rather than re-dispatched into an unstable backend.
+
+Their partial work was **kept, not discarded**, because it was sound: task-050's scaffolding
+correctly handles re-applying open state after a re-render (a genuinely subtle case, since
+`decorateNode` always resets `aria-expanded` to false, so a theme change would otherwise silently
+lose the open node), and its composed `aria-label` is well-reasoned — mermaid renders node text as
+`<tspan>`s or a `<foreignObject>`, so the computed accessible name would be unreliable.
+task-052's additions were complete and worth keeping: two literal-URL assertions that avoid the
+tautology of rebuilding the expected value from the same helper, and a non-BMP round-trip.
+
+**The panel.** Implemented as a disclosure, not a dialog: no focus trap, no overlay, no scroll
+lock, `tabindex="-1"` so Tab continues into the page and delivery-004's list stays reachable.
+Built entirely with `createElement` and `textContent`; a committed guard asserts the file contains
+no `.innerHTML`. The panel id is declared **once** and used both to set the element id and to write
+each node's `aria-controls`, with a test asserting neither site restates the literal — the direct
+lesson of this delivery's two seam mismatches. Eight mutants run, all killed, seven by their own
+dedicated test; the eighth (rendering the detail link unconditionally) kills via a null
+dereference, which is a real behaviour change but less surgical.
+
+**task-052's corpus sweep** is the highest-value part: all 111 real sidecars project successfully,
+emit exactly `PanelNode`'s field set with no excluded key at any depth, preserve node order, carry
+the excerpt byte-for-byte, and round-trip through the encoder with no literal `<`. It also asserts
+that some real fragment *does* contain a `<`, so the escaping claim measures the escaper rather
+than a tame corpus.
+
+**Two defects found by opening a browser, not by the tests.** Both had green suites:
+
+1. The Source link used the **whole GitHub URL as its link text**, where feature-006's Anatomy and
+   delivery-004's list both show the repo-relative path and anchor. Fixed by slicing from
+   `canonical/` — deriving rather than stripping a known prefix, so neither the blob base nor the
+   pinned ref is restated here.
+2. The accessible name read **"Step 1: INTAKE — INTAKE"** wherever a label repeats its node name,
+   which is 223 of 883 corpus entries. This is the third place the same redundancy has surfaced,
+   after the Mermaid node labels and the fragment list. Both the heading label and the `aria-label`
+   now collapse it, by the same case-insensitive rule those two already use.
+
+**Two fixture faults fixed while integrating.** The lifecycle projection omitted `order`, which
+real projections always carry, so the composed accessible name read "Step undefined" — a fixture
+unfaithful to the real data, the same class of gap as an invented id format. And its
+no-`innerHTML` scan ran over raw source, so it fired on the comment explaining why `innerHTML` is
+never used: a guard tripping on its own rationale. Its fake document also gained a minimal
+`createElement`, since the controller now legitimately builds a panel.
+
+**task-053** is the acceptance suite, with all six required groups. Its fixtures use the measured
+id shape rather than the DETAIL's (see Q4). Focus placement on a node is deliberately not
+asserted, with the jsdom reason stated in the file and the four manual gate checks named. One
+non-obvious accommodation: `MutationObserver` delivers asynchronously, so every assertion on
+observer-driven decoration awaits a flush — without it they read as "decoration never happened"
+when it simply had not happened yet.
+
+**Verified in a real browser, not only in jsdom:** on `/skills/aid-review/` all 6 chart nodes are
+decorated, ids resolve through the corrected pattern (`mermaid-qa2dfqn3n-flowchart-n1-0` → `n1`),
+clicking a node opens the panel with the correct order, name, kind, label and real excerpt, focus
+moves to the panel, `aria-expanded` flips to true, all three links render, and the panel is
+inserted directly after the chart.
 
 ### task-051 — panel and focus stylesheet
 
