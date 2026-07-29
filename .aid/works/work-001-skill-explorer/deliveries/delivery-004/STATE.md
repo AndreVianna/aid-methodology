@@ -184,6 +184,32 @@ HTML — which is the actual claim the unit-test `title=` assertion can only pro
 
 **Outcome:** Pass after rework.
 
+### task-044 — `provenance.test.mjs`, the AC-5 suite
+
+Delivered 34 tests in six groups. Spot-checked the criteria most often satisfied only in name,
+and these hold: the P4 message asserts `first-differing-line=`, every verifier throw asserts
+the guard name **and** `skill=` **and** `node=` rather than a bare `.toThrow()`, the sweep
+enumerates from disk with a `> 50` non-vacuity floor instead of a literal count, `detail` is
+never excerpt-compared, and the no-JS group asserts `[Source: ` count as an **equality** with
+`chart.nodes.length`. The sweep walked 111 directories and 912 nodes.
+
+One AC half was missing. The determinism criterion has two: `renderFragmentList` twice on the
+same chart, **and** "two `gen:skills` runs leave the fragment section byte-identical". Only the
+first was covered. Added a whole-corpus test for the second that compares each page's on-disk
+section against a freshly rendered one — the on-disk section *is* the previous run's output, so
+any nondeterminism surfaces there. Spawning the generator inside the suite was rejected: it
+would rewrite 111 tracked files as a side effect of running tests.
+
+Mutation-proved by changing one word inside one page's section: only the new test fails, and
+the page was confirmed byte-restored afterwards.
+
+Also confirmed clean on the failure mode that bit task-043: `git status` shows only the new
+test file, and `grep MUTANT` across `site/scripts/` finds nothing.
+
+Full suite: 2567 tests across 41 files.
+
+**Outcome:** Pass, with the second determinism half added.
+
 ### task-042 — Fragment-list renderer
 
 Two classes of problem found, both fixed on a resumed dispatch to the same developer.
