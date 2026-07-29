@@ -135,9 +135,9 @@ Purpose: gather evidence and produce the grounded findings ledger.
    `ARTIFACTS UNDER REVIEW` / `CONTEXT` / `RUBRIC` / `OUT OF SCOPE` / `OUT-OF-SCOPE
    FINDINGS POLICY`. The **RUBRIC MUST mandate** reading `.aid/knowledge/` + the relevant
    source and **citing a KB doc or a `file:line` in every finding's Evidence cell**.
-   The reviewer writes the global 7-column ledger
+   The reviewer writes the global 8-column ledger
    (`.github/aid/templates/reviewer-ledger-schema.md`:
-   `# | Severity | Status | Doc | Line | Description | Evidence`) to
+   `# | Severity | Status | Rule | Doc | Line | Description | Evidence`) to
    `.aid/.temp/review-pending/<work>-review.md`.
 
 **Advance:** VERIFY.

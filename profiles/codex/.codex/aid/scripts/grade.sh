@@ -7,10 +7,10 @@
 # Recurred by Severity column, applies the universal AID rubric (worst
 # severity dominates, count determines modifier), and prints the grade.
 #
-# Table shape expected (7-column):
-#   | # | Severity | Status | Doc | Line | Description | Evidence |
-#   |---|---|---|---|---|---|---|
-#   | 1 | [HIGH] | Pending | foo.md | 42 | ... | ... |
+# Table shape expected (8-column):
+#   | # | Severity | Status | Rule | Doc | Line | Description | Evidence |
+#   |---|---|---|---|---|---|---|---|
+#   | 1 | [HIGH] | Pending | NAR-04 | foo.md | 42 | ... | ... |
 #
 # Column indices after split on "|":
 #   cols[1] = "" (empty -- before leading |)
@@ -160,8 +160,8 @@ fi
 # ---------------------------------------------------------------------------
 # Schema-table parsing path (new default)
 #
-# The 7-column ledger schema is:
-#   | # | Severity | Status | Doc | Line | Description | Evidence |
+# The 8-column ledger schema is:
+#   | # | Severity | Status | Rule | Doc | Line | Description | Evidence |
 #
 # After split($0, cols, "|") on a row like "| 1 | [HIGH] | Pending | ...":
 #   cols[1] = "" (empty, before leading |)
@@ -169,7 +169,7 @@ fi
 #   cols[3] = " [HIGH] "  -- the Severity column (graded)
 #   cols[4] = " Pending "  -- the Status column (Pending/Recurred counted)
 #
-# Severity tags in cols[5..8] (Doc, Line, Description, Evidence) are ignored.
+# Severity tags in cols[5..9] (Rule, Doc, Line, Description, Evidence) are ignored.
 # This is the fix for the cycle-7 bug where summary prose in the old format
 # would inject severity tags into the grep count.
 # ---------------------------------------------------------------------------

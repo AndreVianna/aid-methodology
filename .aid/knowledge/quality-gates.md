@@ -2,7 +2,7 @@
 kb-category: extension
 source: hand-authored
 objective: The methodology's review-and-grade gates — the deterministic A-grade gating, the reviewer ledger, per-phase REVIEW→FIX loops, minimum-grade thresholds, and the discover review panel — that AID's own work must pass before advancing.
-summary: Read this to understand how AID grades the artifacts its pipeline produces (KB docs, specs, plans, tasks, code, releases) — distinct from the automated test suites in test-landscape.md. Covers the grade scale, the 7-column reviewer ledger, grade.sh, minimum-grade resolution, the delivery gate, and the shortcut/Lite-path GATE + APPROVAL-HALT.
+summary: Read this to understand how AID grades the artifacts its pipeline produces (KB docs, specs, plans, tasks, code, releases) — distinct from the automated test suites in test-landscape.md. Covers the grade scale, the 8-column reviewer ledger, grade.sh, minimum-grade resolution, the delivery gate, and the shortcut/Lite-path GATE + APPROVAL-HALT.
 sources:
   - .claude/aid/scripts/grade.sh
   - .claude/aid/templates/reviewer-ledger-schema.md
@@ -17,7 +17,7 @@ see_also: [test-landscape.md, authoring-conventions.md, pipeline-contracts.md]
 owner: architect
 audience: [developer, architect, pm]
 intent: |
-  The methodology's quality gates: A-grade gating, the reviewer agent + 7-column
+  The methodology's quality gates: A-grade gating, the reviewer agent + 8-column
   ledger, per-phase REVIEW loops, the A+..F scale, minimum-grade thresholds, the
   review->fix->re-review loop, the discover review panel, the delivery gate, and
   the shortcut/Lite-path GATE + APPROVAL-HALT. Distinct from the automated tests
@@ -26,7 +26,7 @@ contracts:
   - "Grade is computed ONLY from reviewer-ledger rows where Status in {Pending, Recurred}, by Severity column"
   - "Worst severity dominates; count within it sets the modifier (1 -> +, 2-5 -> none, 6+ -> -)"
   - "A skill exits REVIEW only when grade >= the resolved minimum_grade (per-skill override -> review.minimum_grade -> hardcoded default; the shortcut/Lite path's built-in default is A+)"
-  - "Every reviewer ledger is exactly one 7-column markdown table at .aid/.temp/review-pending/<scope>.md — no narrative"
+  - "Every reviewer ledger is exactly one 8-column markdown table at .aid/.temp/review-pending/<scope>.md — no narrative"
 changelog:
   - 2026-06-25: Initial discovery (aid-discover quality deep-dive)
 ---
@@ -106,11 +106,11 @@ a severity means.
 ## The Reviewer Ledger
 
 Every review — dispatched sub-agent, script validator, or ad-hoc user-prompted — writes its
-findings to a single canonical artifact: a **7-column markdown table** and nothing else.
+findings to a single canonical artifact: an **8-column markdown table** and nothing else.
 CONFIRMED in `.claude/aid/templates/reviewer-ledger-schema.md`.
 
 ```
-| # | Severity | Status | Doc | Line | Description | Evidence |
+| # | Severity | Status | Rule | Doc | Line | Description | Evidence |
 ```
 
 - **Path:** `.aid/.temp/review-pending/<scope>.md`, where `<scope>` names the skill (and

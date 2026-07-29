@@ -1,7 +1,7 @@
 # M4 -- Blind Work-Simulation FOCUS Body
 
 **Mandate:** M4 -- Operational Sufficiency (Blind Work-Simulation / assertiveness gate, keystone hard gate)
-**Ledger:** Write findings to `.aid/.temp/review-pending/{{SCOPE}}-actback.md` (7-column schema).
+**Ledger:** Write findings to `.aid/.temp/review-pending/{{SCOPE}}-actback.md` (8-column schema).
 **Do NOT write to STATE.md.** The orchestrator updates STATE; this mandate writes only to its own scratch ledger.
 
 ---
@@ -162,15 +162,16 @@ with quality.
 ### Output format
 
 Write all findings to `.aid/.temp/review-pending/{{SCOPE}}-actback.md` using the
-7-column ledger schema:
+8-column ledger schema (the `Rule` cell shows `KB-NN` because the KB rule set does not
+yet assign rule IDs -- put the real ID there once it does; never invent one):
 
 ```
-| # | Severity | Status | Doc | Line | Description | Evidence |
-|---|----------|--------|-----|------|-------------|----------|
-| AB-001 | [HIGH] | Pending | -- | -- | [ACTBACK] Convention FAIL (WP-001 step 2): no convention stated for registering a new field -- had to ASSUME naming | coding-standards.md has no ## Conventions section; presence check: absent |
-| AB-002 | [HIGH] | Pending | schemas.md | -- | [ACTBACK] Contract FAIL (WP-002 step 3): field type constraints not stated -- plan step REACH for source | schemas.md ## Contracts absent per presence check; `sources:` defers to src/models.py |
-| AB-003 | [HIGH] | Pending | -- | -- | [ACTBACK] Plan-correctness FAIL (WP-001): cannot assemble a correct wiring plan -- step 2 (registration) has no KB anchor | No doc states how a new module is registered in the dispatch cycle |
-| AB-004 | [HIGH] | Pending | test-landscape.md | -- | [ACTBACK] Quality-bar FAIL (WP-003 step 4): plan omits the required gate -- KB states tests must pass before merge but plan does not include this step | test-landscape.md ## Quality-bars section; plan is functional but violates project's quality contract |
+| # | Severity | Status | Rule | Doc | Line | Description | Evidence |
+|---|----------|--------|------|-----|------|-------------|----------|
+| AB-001 | [HIGH] | Pending | KB-NN | -- | -- | [ACTBACK] Convention FAIL (WP-001 step 2): no convention stated for registering a new field -- had to ASSUME naming | coding-standards.md has no ## Conventions section; presence check: absent |
+| AB-002 | [HIGH] | Pending | KB-NN | schemas.md | -- | [ACTBACK] Contract FAIL (WP-002 step 3): field type constraints not stated -- plan step REACH for source | schemas.md ## Contracts absent per presence check; `sources:` defers to src/models.py |
+| AB-003 | [HIGH] | Pending | KB-NN | -- | -- | [ACTBACK] Plan-correctness FAIL (WP-001): cannot assemble a correct wiring plan -- step 2 (registration) has no KB anchor | No doc states how a new module is registered in the dispatch cycle |
+| AB-004 | [HIGH] | Pending | KB-NN | test-landscape.md | -- | [ACTBACK] Quality-bar FAIL (WP-003 step 4): plan omits the required gate -- KB states tests must pass before merge but plan does not include this step | test-landscape.md ## Quality-bars section; plan is functional but violates project's quality contract |
 ```
 
 - Use stable IDs: `AB-001`, `AB-002`, ...

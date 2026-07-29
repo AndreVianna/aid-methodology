@@ -9,14 +9,17 @@ intent: |
   enums, file lifecycle, and grade.sh integration. Single source of truth so
   grade.sh, agents, skills, and humans all read findings identically.
 contracts:
-  - "7-column table is the entire ledger file (no headers, no narrative, no sections)"
+  - "8-column table is the entire ledger file (no headers, no narrative, no sections)"
   - "Severity enum: [CRITICAL] | [HIGH] | [MEDIUM] | [LOW] | [MINOR]"
   - "Status enum: Pending | Fixed | Recurred | Accepted | OOS | Invalid"
+  - "Rule: a finding row MUST carry a rule ID; non-finding rows carry the -- sentinel"
   - "Grade is computed over rows where Status ∈ {Pending, Recurred}, by Severity column"
   - "File path: .aid/.temp/review-pending/<scope>.md (scope = skill or skill-task)"
   - "Persists across REVIEW→FIX cycles within one skill invocation; deleted at skill DONE"
 changelog:
   - 2026-05-28: Initial schema spec
+  - 2026-07-29: Added the Rule column (8 columns). Position 4, after Status, because
+      grade.sh parses by position and reads cols[3]/cols[4] only.
 ---
 
 # Reviewer Ledger Schema
@@ -28,13 +31,13 @@ This document is the **canonical schema for every reviewer-output ledger in AID.
 The ledger file contains **exactly one markdown table.** No frontmatter, no section headers, no narrative, no summary section, no out-of-scope section. Just the table — every row is one finding (or one accepted exception).
 
 ```markdown
-| # | Severity | Status | Doc | Line | Description | Evidence |
-|---|---|---|---|---|---|---|
-| 1 | [HIGH] | Pending | foo.md | 42 | claim Y is wrong | doc says Y, `wc -l target = N` shows actual Z |
-| 2 | [LOW] | Fixed | bar.md | 100 | stale path reference | path/to/foo deleted commit abc123; cycle-4 FIX removed cite |
-| 3 | [MINOR] | Accepted | baz.md | — | one-sentence body | no-docs variant accepted by user cycle-1 Q10 |
-| 4 | [HIGH] | Recurred | qux.md | 17 | count off by 1 | claim 16 vs disk 15; was Fixed cycle-3, returned cycle-5 |
-| 5 | [LOW] | OOS | quux.md | 200 | inline T3 line-count violation | accurate value but P1 policy violation; methodology-refactor pending |
+| # | Severity | Status | Rule | Doc | Line | Description | Evidence |
+|---|---|---|---|---|---|---|---|
+| 1 | [HIGH] | Pending | NAR-04 | foo.md | 42 | claim Y is wrong | doc says Y, `wc -l target = N` shows actual Z |
+| 2 | [LOW] | Fixed | NAR-03 | bar.md | 100 | stale path reference | path/to/foo deleted commit abc123; cycle-4 FIX removed cite |
+| 3 | [MINOR] | Accepted | NAR-06 | baz.md | — | one-sentence body | no-docs variant accepted by user cycle-1 Q10 |
+| 4 | [HIGH] | Recurred | NAR-04 | qux.md | 17 | count off by 1 | claim 16 vs disk 15; was Fixed cycle-3, returned cycle-5 |
+| 5 | [LOW] | OOS | NAR-08 | quux.md | 200 | inline T3 line-count violation | accurate value but P1 policy violation; methodology-refactor pending |
 ```
 
 ## File: location
@@ -65,12 +68,47 @@ The `.aid/.temp/review-pending/` directory is gitignored (per `.gitignore` `.aid
 | 1 | `#` | yes | Row counter (1, 2, 3...) for cross-reference in commit messages and fix-agent dispatches. Sequential within the file; never renumbered. |
 | 2 | `Severity` | yes | Bracketed severity tag (`[CRITICAL]`, `[HIGH]`, `[MEDIUM]`, `[LOW]`, `[MINOR]`). Brackets ensure the tag doesn't collide with bare numbers anywhere else in markdown. Drives grade computation. |
 | 3 | `Status` | yes | Plain word (no brackets): `Pending`, `Fixed`, `Recurred`, `Accepted`, `OOS`, or `Invalid`. See **Status values** below. Drives grade computation. |
-| 4 | `Doc` | yes | Affected file path (relative to repo root). Examples: `foo.md`, `.agent/aid/scripts/bar.sh`, `tests/canonical/baz.sh`. For doc-wide issues with no specific file, use `—`. |
-| 5 | `Line` | yes | Affected line number, or a line range like `42-45`, or `—` for doc-wide. |
-| 6 | `Description` | yes | ONE sentence stating what's wrong. Form: "claim X is wrong: doc says Y, actual Z." Avoid hedging or explanation; explanation goes in Evidence. |
-| 7 | `Evidence` | yes | The disk-truth that contradicts the doc's claim, AND/OR the source-of-truth command. Form: "`wc -l foo = 1070` (doc claims 1071)" or "`grep -c X bar = 5` (doc claims 6)". For Status=Fixed/Recurred/Accepted/OOS/Invalid, include enough context to justify the status (e.g., "Fixed in commit abc123" or "Accepted: user decision cycle-1 Q5"). |
+| 4 | `Rule` | yes | The ID of the rule the finding violates, from the artifact's rule set in [`.agent/aid/templates/review-rubrics/INDEX.md`](review-rubrics/INDEX.md). Format `<CLASS>-<NN>` (e.g. `CODE-03`, `NAR-04`). See **Rule values** below. |
+| 5 | `Doc` | yes | Affected file path (relative to repo root). Examples: `foo.md`, `.agent/aid/scripts/bar.sh`, `tests/canonical/baz.sh`. For doc-wide issues with no specific file, use `—`. |
+| 6 | `Line` | yes | Affected line number, or a line range like `42-45`, or `—` for doc-wide. |
+| 7 | `Description` | yes | ONE sentence stating what's wrong. Form: "claim X is wrong: doc says Y, actual Z." Avoid hedging or explanation; explanation goes in Evidence. |
+| 8 | `Evidence` | yes | The disk-truth that contradicts the doc's claim, AND/OR the source-of-truth command. Form: "`wc -l foo = 1070` (doc claims 1071)" or "`grep -c X bar = 5` (doc claims 6)". For Status=Fixed/Recurred/Accepted/OOS/Invalid, include enough context to justify the status (e.g., "Fixed in commit abc123" or "Accepted: user decision cycle-1 Q5"). |
 
 **Pipe-character escape:** if Description or Evidence contains a `|` (pipe), escape it as `\|` so the markdown table doesn't break.
+
+## Rule values
+
+**A finding row MUST carry a rule ID.** A finding is by definition the assertion that some declared
+rule is false here, so a finding with no rule has no criterion — which the catalog's admission rule
+(*no `Criterion`, no row*) makes inexpressible. If nothing in either authority ladder speaks to the
+concern, the correct output is a **criteria gap**, not a finding with an empty `Rule` cell.
+
+| Row kind | `Rule` cell |
+|---|---|
+| A finding (any Severity) | the rule ID, e.g. `CODE-03` |
+| A non-finding row | `--` (the sentinel) |
+
+**One rule per row.** A defect violating two rules produces two rows. No comma-separated lists — the
+cell stays single-valued, greppable, and countable.
+
+**The class prefix is the source.** `CODE-*`, `SPEC-*`, `KB-*` and the rest carry what the retired
+`[CODE]` / `[SPEC]` / `[ARCHITECTURE]` source tags used to assert, so the tag can no longer contradict
+the rule. Do not add source tags to any column.
+
+**Enforcement.** `grade.sh` does **not** enforce this: it reads `cols[3]` and `cols[4]` only and is
+byte-unchanged apart from comments (NFR-1), so it cannot see the `Rule` column at all. The writer that
+enforces a present, well-formed `Rule` cell is **`writeback-ledger.sh`**. A reviewer emitting a ledger
+by heredoc is bound by this schema; the script is what makes it mechanical.
+
+### Mixed shapes: the header decides
+
+A ledger is read according to **its own header row** — 7-column ledgers written before this change
+remain readable, and are not rewritten. Two consequences:
+
+- **Never mix shapes inside one file.** Every data row must match that file's header.
+- **A 7-column ledger continues to grade correctly**, because `Severity` and `Status` sit at positions
+  2 and 3 in both shapes. That is the reason the `Rule` column was inserted *after* `Status` rather
+  than anywhere earlier.
 
 ## Severity values
 
@@ -122,6 +160,16 @@ else: grade = "A+"
 
 `grade.sh` never greps prose; the table is the only source of severity tags counted. This eliminates the cycle-7 bug where a summary line "0 [CRITICAL] / 0 [HIGH]" was over-counted.
 
+**Why the `Rule` column sits at position 4.** `grade.sh` parses by column *position*: after
+`split($0, cols, "|")` it reads `cols[3]` for Severity and `cols[4]` for Status, and looks at nothing
+beyond. Inserting a column at or before position 3 would shift Severity or Status and break the
+grader. Inserting after Status is invisible to it. So the position is **constrained, not chosen** —
+and it is also where a reader asking *"why is this HIGH?"* looks, right beside the severity it
+justifies.
+
+The shape groups into three readable bands: *classification* (`#`, Severity, Status, Rule),
+*location* (Doc, Line), *content* (Description, Evidence).
+
 **Empty ledger (no rows at all) = A+** (artifact has zero findings).
 
 **Empty file (zero bytes) = A+** (same as no ledger).
@@ -163,12 +211,15 @@ DONE (skill completion, e.g., /aid-discover APPROVAL granted)
 **Always:**
 - Emit the table as the ENTIRE file content. No frontmatter, no headers, no narrative.
 - For new rows: assign the next sequential `#`; do NOT renumber existing rows.
+- **Carry a rule ID in `Rule` on every finding row.** If no rule speaks to the concern, raise a criteria gap instead of writing a finding.
 - Cite the disk-truth in Evidence with a runnable command or specific file:line reference.
 - Read the existing ledger BEFORE appending — use the existing Status patterns to identify Recurred regressions.
+- Match the shape of the file's own header row; if it is a 7-column ledger, keep writing 7 columns.
 
 **Never:**
 - Add a `## Summary` section with severity tag-strings (the cycle-7 bug — those tag strings get over-counted by simpler graders).
-- Modify existing rows' Severity or Description (they're append-only history); only Status may change across cycles.
+- Modify existing rows' Severity, `Rule` or Description (they're append-only history); only Status may change across cycles.
+- Put more than one rule ID in a `Rule` cell, or add a retired source tag (`[CODE]`, `[SPEC]`, `[ARCHITECTURE]`) to any column.
 - Include narrative analysis in the file — that goes in the agent's return-message to the orchestrator, not in the ledger.
 - Renumber rows when Fixed rows accumulate — they stay for the audit trail until DONE.
 
@@ -212,6 +263,7 @@ The `CLAUDE.md` / `AGENTS.md` short rule (always loaded) is the trigger for ad-h
 ## See also
 
 - `.agent/aid/scripts/grade.sh` — the grader that parses this ledger
+- `.agent/aid/templates/review-rubrics/INDEX.md` — the rule sets the `Rule` column cites
 - `.agent/agents/aid-reviewer/AGENT.md` — sub-agent output contract (references this schema)
 - `.agent/aid/templates/reviewer-dispatch.md` — universal reviewer dispatch brief (references this schema)
 - `CLAUDE.md` / `AGENTS.md` — global short rule (points at this schema)

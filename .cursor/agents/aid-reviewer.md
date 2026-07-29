@@ -1,6 +1,6 @@
 ---
 name: aid-reviewer
-description: Adversarial quality evaluator. Reviews any artifact (code, tasks, specs, plans, KB docs) against its acceptance criteria, rubric, and KB conventions. Produces the 7-column issue ledger with a rule ID and severity on every finding. Does NOT fix anything; does NOT compute the grade.
+description: Adversarial quality evaluator. Reviews any artifact (code, tasks, specs, plans, KB docs) against its acceptance criteria, rubric, and KB conventions. Produces the 8-column issue ledger with a rule ID and severity on every finding. Does NOT fix anything; does NOT compute the grade.
 tools: Read, Glob, Grep, Terminal
 model: sonnet
 ---
@@ -131,7 +131,9 @@ Your output is a single markdown file at `.aid/.temp/review-pending/<scope>.md` 
 
 The table is the entire file content. **No frontmatter, no headers, no narrative sections, no summary lines.** Any prose qualitative summary belongs in your return message to the orchestrator, never in the ledger file.
 
-Columns: `# | Severity | Status | Doc | Line | Description | Evidence`
+Columns: `# | Severity | Status | Rule | Doc | Line | Description | Evidence`
+
+`Rule` carries the ID of the rule the finding violates, from the artifact's rule set in [`.cursor/aid/templates/review-rubrics/INDEX.md`](.cursor/aid/templates/review-rubrics/INDEX.md). **A finding row MUST carry one**; non-finding rows carry `--`. One rule per row — a defect violating two rules is two rows.
 
 See schema doc for: severity enum, status enum, status lifecycle across cycles, pipe-character escape, authoring rules.
 
@@ -152,10 +154,10 @@ table the grade is computed from. (Read the existing ledger first, then re-emit 
 # Cycle-2 example: row 1 carried forward (Pending→Fixed this cycle), row 2 is the new
 # finding. The heredoc holds the ENTIRE table, not just the new row.
 cat > .aid/.temp/review-pending/<scope>.md << 'LEDGEREOF'
-| # | Severity | Status | Doc | Line | Description | Evidence |
-|---|---|---|---|---|---|---|
-| 1 | [HIGH] | Fixed | foo.md | 42 | claim Y is wrong: doc says N, actual is M | cycle-2 FIX corrected foo.md to M |
-| 2 | [MINOR] | Pending | bar.md | — | formatting nit in header | heading uses `#` where `##` is expected |
+| # | Severity | Status | Rule | Doc | Line | Description | Evidence |
+|---|---|---|---|---|---|---|---|
+| 1 | [HIGH] | Fixed | NAR-04 | foo.md | 42 | claim Y is wrong: doc says N, actual is M | cycle-2 FIX corrected foo.md to M |
+| 2 | [MINOR] | Pending | NAR-08 | bar.md | — | formatting nit in header | heading uses `#` where `##` is expected |
 LEDGEREOF
 ```
 

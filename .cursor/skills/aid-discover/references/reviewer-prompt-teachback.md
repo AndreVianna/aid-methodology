@@ -1,7 +1,7 @@
 # M3 -- Blind Reconstruction + Source Confrontation FOCUS Body
 
 **Mandate:** M3 -- Essence Gate (Blind Reconstruction + Source Confrontation, keystone hard gate)
-**Ledger:** Write findings to `.aid/.temp/review-pending/{{SCOPE}}-teachback.md` (7-column schema).
+**Ledger:** Write findings to `.aid/.temp/review-pending/{{SCOPE}}-teachback.md` (8-column schema).
 **Do NOT write to STATE.md.** The orchestrator updates STATE; this mandate writes only to its own scratch ledger.
 
 ---
@@ -171,13 +171,14 @@ This is a binary pass/fail per Divergence and per load-bearing Omission.
 ## Output format
 
 Write all findings to `.aid/.temp/review-pending/{{SCOPE}}-teachback.md` using the
-7-column ledger schema:
+8-column ledger schema (the `Rule` cell shows `KB-NN` because the KB rule set does not
+yet assign rule IDs -- put the real ID there once it does; never invent one):
 
 ```
-| # | Severity | Status | Doc | Line | Description | Evidence |
-|---|----------|--------|-----|------|-------------|----------|
-| TB-001 | [HIGH] | Pending | architecture.md | -- | [FIDELITY] Divergence: KB states the pipeline uses two stages; source shows three stages (ingest, transform, load). KB misrepresents the pipeline shape. | src/pipeline.py lines 12-47: three distinct stage classes; KB architecture.md "two-stage pipeline" is factually wrong |
-| TB-002 | [MED]  | Pending | domain-glossary.md | -- | [ESSENCE-GAP] Omission: KB reconstruction could not supply the project's data retention policy (7-day rolling window); this is a load-bearing design constraint newcomers must know. | source/config/retention.yaml: retention_days=7; domain-glossary.md has no entry for retention or data lifecycle |
+| # | Severity | Status | Rule | Doc | Line | Description | Evidence |
+|---|----------|--------|------|-----|------|-------------|----------|
+| TB-001 | [HIGH] | Pending | KB-NN | architecture.md | -- | [FIDELITY] Divergence: KB states the pipeline uses two stages; source shows three stages (ingest, transform, load). KB misrepresents the pipeline shape. | src/pipeline.py lines 12-47: three distinct stage classes; KB architecture.md "two-stage pipeline" is factually wrong |
+| TB-002 | [MED]  | Pending | KB-NN | domain-glossary.md | -- | [ESSENCE-GAP] Omission: KB reconstruction could not supply the project's data retention policy (7-day rolling window); this is a load-bearing design constraint newcomers must know. | source/config/retention.yaml: retention_days=7; domain-glossary.md has no entry for retention or data lifecycle |
 ```
 
 - Use stable IDs: `TB-001`, `TB-002`, ...

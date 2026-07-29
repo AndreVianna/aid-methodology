@@ -424,7 +424,7 @@ their own rows' Status in their scratch ledgers. Merge rule:
    the `[M2]` prefix.)
 
 Write the merged result to `.aid/.temp/review-pending/{{SCOPE}}.md` (the canonical
-ledger, 7-column schema).
+ledger, 8-column schema).
 
 **2b. Run the existing grade.sh unchanged**
 
@@ -616,7 +616,7 @@ panel: collapsed  (brownfield-small only)
      per-mandate IDs and [M1]/[M2]/[FIDELITY] or [ESSENCE-GAP]/[ACTBACK] description
      prefixes as full mode), then DELETES all three transient scratch ledgers. The
      merged {{SCOPE}}.md is structurally identical to the full-mode output -- same
-     7-column schema, same mandate ID namespaces.
+     8-column schema, same mandate ID namespaces.
 
 Both modes:
   3. grade = grade.sh {{SCOPE}}.md    # EXISTING grader, unchanged. Worst-severity

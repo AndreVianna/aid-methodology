@@ -10,7 +10,7 @@ The Reviewer adversarially evaluates any artifact — code, tasks, specs, plans,
 
 The Reviewer reads completed work, compares it against TASK acceptance criteria, SPEC.md constraints, and KB conventions, then produces a structured issue list. Every issue is tagged by source (CODE, TASK, SPEC, KB, ARCHITECTURE) and severity (CRITICAL, HIGH, MEDIUM, LOW, MINOR). The grade is *computed* from this list — it is not a judgment the Reviewer makes.
 
-The Reviewer consolidates the former KB-document review role (previously a separate agent scoped to aid-discover): both used the same adversarial review pattern, the same 7-column issue ledger, and the same independence rule. The only difference was the target artifact (KB docs vs. implementation/specs). Target artifact is a dispatch parameter — the review pattern is the same agent.
+The Reviewer consolidates the former KB-document review role (previously a separate agent scoped to aid-discover): both used the same adversarial review pattern, the same 8-column issue ledger, and the same independence rule. The only difference was the target artifact (KB docs vs. implementation/specs). Target artifact is a dispatch parameter — the review pattern is the same agent.
 
 This reconciles the B6 finding: discovery-reviewer lacked the `## Self-review discipline` block that the standard pattern carries. Now that both roles are merged into a single agent that uses the shared boilerplate, the Self-review block is present uniformly.
 
@@ -28,7 +28,7 @@ This reconciles the B6 finding: discovery-reviewer lacked the `## Self-review di
 
 ## What It Produces
 
-- **Structured issue list** in `.aid/.temp/review-pending/<scope>.md` — the 7-column reviewer ledger
+- **Structured issue list** in `.aid/.temp/review-pending/<scope>.md` — the 8-column reviewer ledger
 - **Test results** recorded in the work `STATE.md` `## Tasks Status` row for the task
 - Issue tags: `[CODE]`, `[TASK]`, `[SPEC]`, `[KB]`, `[ARCHITECTURE]`
 - Severity levels: `[CRITICAL]`, `[HIGH]`, `[MEDIUM]`, `[LOW]`, `[MINOR]`

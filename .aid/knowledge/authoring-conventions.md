@@ -19,7 +19,7 @@ owner: architect
 audience: [developer, architect, tech-writer, reviewer]
 contracts:
   - "Every KB doc layout: frontmatter -> title -> index -> content -> Change Log last"
-  - "Reviewer ledger is a 7-column table; Severity + Status are closed enums"
+  - "Reviewer ledger is an 8-column table; Severity + Status are closed enums"
   - "Required frontmatter fields: objective, summary, sources (lint-graded)"
 changelog:
   - 2026-07-09: housekeep KB-DELTA connectors subsystem refresh -- added the `forward-authored` value to the frontmatter `source:` rule (closed 3-value enum).
@@ -202,12 +202,12 @@ written as a single markdown table at `.aid/.temp/review-pending/<scope>.md`
 (reviewer-ledger-schema.md). The table is the **entire file**: no frontmatter, no
 headers, no narrative, no summary section.
 
-7-column shape:
+8-column shape:
 
 ```markdown
-| # | Severity | Status | Doc | Line | Description | Evidence |
-|---|---|---|---|---|---|---|
-| 1 | [HIGH] | Pending | foo.md | 42 | claim Y is wrong | doc says Y, disk shows Z |
+| # | Severity | Status | Rule | Doc | Line | Description | Evidence |
+|---|---|---|---|---|---|---|---|
+| 1 | [HIGH] | Pending | NAR-04 | foo.md | 42 | claim Y is wrong | doc says Y, disk shows Z |
 ```
 
 - **Severity** (closed, bracketed): `[CRITICAL]` `[HIGH]` `[MEDIUM]` `[LOW]` `[MINOR]`.
@@ -297,7 +297,7 @@ content.**
   fill `objective:`/`summary:`/`sources:` + a concern id in `tags:`; one concern
   only; tables over prose; no diagrams; durable citations; `## Change Log` last;
   run `lint-frontmatter.sh` + `kb-citation-lint.sh` before done.
-- **Writing a review:** emit the 7-column ledger as the whole file at
+- **Writing a review:** emit the 8-column ledger as the whole file at
   `.aid/.temp/review-pending/<scope>.md`; closed Severity/Status enums; no narrative.
 - **Resolving a tracked item:** delete its record entirely; do not keep a closure note.
 - **Authoring skill logic:** prefer SKILL.md prose; add a script only for real logic.

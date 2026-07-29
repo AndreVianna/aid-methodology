@@ -21,7 +21,7 @@ argument-hint: "<target> -- what to test/verify (a suite/module, or a kind: secu
 *author* tests (that is `/aid-create-test`, a keep-cycle create-family skill). It is
 **review-shaped**: run-a-tool is the evidence-gathering step, and consolidating results into
 severity-tagged findings that hand off to `/aid-fix` is exactly the `/aid-review` shape --
-so this **reuses `aid-review`'s machinery** (work folder, 7-column ledger, clean-context
+so this **reuses `aid-review`'s machinery** (work folder, 8-column ledger, clean-context
 verify, present, printed-suggestion handoff). The three `test-*` kind-siblings
 (`/aid-test-security`, `/aid-test-performance`, `/aid-test-data-quality`) delegate here.
 
@@ -67,7 +67,7 @@ Print the `[State: NAME] -- {purpose}` entry line on each state.
 Execute the verification **read-only** (Bash: the test runner, scanner, benchmark, or
 data-quality check per the kind; never mutate the source), capturing raw output. Then
 dispatch **`aid-reviewer`** (clean context, tiered) to **consolidate** the raw results into
-the global 7-column findings ledger (`reviewer-ledger-schema.md`) at
+the global 8-column findings ledger (`reviewer-ledger-schema.md`) at
 `.aid/.temp/review-pending/<work>-test.md`, applying the kind's guidance -- security:
 SAST/DAST/fuzz/audit findings + severity; performance: measured-vs-threshold with the
 workload/environment noted; data-quality: per-check pass/fail with thresholds; functional:

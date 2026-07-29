@@ -24,7 +24,7 @@ as if a stranger wrote it. No generation process, no prior state, no prior grade
 | M4 | Operational sufficiency (act-back, keystone) | `reviewer-prompt-actback.md` | `<scope>-actback.md` |
 
 Each FOCUS body instructs its reviewer to write to its **own transient scratch ledger**
-`.aid/.temp/review-pending/<scope>-<mandate>.md` (7-column schema). The orchestrator
+`.aid/.temp/review-pending/<scope>-<mandate>.md` (8-column schema). The orchestrator
 aggregates all four scratch ledgers into the single canonical `<scope>.md` ledger and
 deletes the transients (Step 2 of `state-review.md`).
 

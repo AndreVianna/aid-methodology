@@ -107,7 +107,7 @@ throwaway spike (isolated), fold the finding into `RESEARCH.md`, continue. On **
    `RESEARCH.md`: claims grounded and correctly attributed; conclusions evidence-backed
    and **not overstated into resolutions**; every KB<->web conflict surfaced with its
    reason; no material angle of the question left silently unaddressed. It writes a
-   review-quality 7-column ledger (`reviewer-ledger-schema.md`) to
+   review-quality 8-column ledger (`reviewer-ledger-schema.md`) to
    `.aid/.temp/review-pending/<work>-verify.md`.
 3. **Grade the response:** `bash .cursor/aid/scripts/grade.sh --explain <ledger>`. Not
    clean -> loop back to INVESTIGATE for the researcher to revise. **Circuit-breaker: 3
