@@ -28,12 +28,12 @@ flowchart TB
   classDef aidLoopBack fill:#1e3a8a,stroke:#1e3a8a,color:#fff
   classDef aidStep fill:#1a2035,stroke:#d4a853,color:#f1f5f9
   n1(["STEP-0<br/>Validate arguments"])
-  n2["STEP-1<br/>Resolve  &lt;tool&gt;  → descriptor stem; read the preset catalog"]
-  n3["STEP-2<br/>Branch on  &lt;type&gt;  — ask the config question-set"]
+  n2["STEP-1<br/>Resolve &lt;tool&gt; → descriptor stem; read the preset catalog"]
+  n3["STEP-2<br/>Branch on &lt;type&gt; — ask the config question-set"]
   n4["STEP-3<br/>Classify — ADD vs UPDATE (single stem only)"]
-  n5["STEP-4<br/>Ensure the  .secrets/  gitignore precondition — BEFORE any…"]
+  n5["STEP-4<br/>Ensure the .secrets/ gitignore precondition — BEFORE any…"]
   n6["STEP-5<br/>Author the descriptor + reconcile the secret (set-skill…"]
-  n7(["STEP-6<br/>Single-stem reconcile → rebuild  INDEX.md "])
+  n7(["STEP-6<br/>Single-stem reconcile → rebuild INDEX.md"])
   n1 --> n2
   n2 --> n3
   n3 --> n4

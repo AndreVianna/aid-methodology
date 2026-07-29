@@ -25,7 +25,7 @@
       "id": "n2",
       "order": 2,
       "name": "STEP-1",
-      "label": "Ensure `.aid/settings.yml` exists",
+      "label": "Ensure .aid/settings.yml exists",
       "kind": "step",
       "terminal": null,
       "provenance": {
@@ -108,7 +108,7 @@
       "id": "n7",
       "order": 7,
       "name": "STEP-2",
-      "label": "Ensure `.aid/settings.yml` exists",
+      "label": "Ensure .aid/settings.yml exists",
       "kind": "step",
       "terminal": null,
       "provenance": {

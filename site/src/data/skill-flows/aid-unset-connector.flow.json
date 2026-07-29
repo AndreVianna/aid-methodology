@@ -25,7 +25,7 @@
       "id": "n2",
       "order": 2,
       "name": "STEP-1",
-      "label": "Resolve `<tool>` → descriptor stem",
+      "label": "Resolve <tool> → descriptor stem",
       "kind": "step",
       "terminal": null,
       "provenance": {
@@ -41,7 +41,7 @@
       "id": "n3",
       "order": 3,
       "name": "STEP-2",
-      "label": "Single-stem REMOVE (`reconcile.md`)",
+      "label": "Single-stem REMOVE (reconcile.md)",
       "kind": "step",
       "terminal": null,
       "provenance": {
@@ -57,7 +57,7 @@
       "id": "n4",
       "order": 4,
       "name": "STEP-3",
-      "label": "Rebuild `INDEX.md`",
+      "label": "Rebuild INDEX.md",
       "kind": "exit",
       "terminal": {
         "advanceType": "UNSPECIFIED",

@@ -208,7 +208,18 @@ export function extractResidual({ skill, file, allLines, bodyLines, bodyStartLin
  * @returns {string}
  */
 function _label(text) {
-  return truncate(String(text).replace(/\s+/g, ' ').trim(), 60);
+  return truncate(
+    String(text)
+      // Unwrap code spans before collapsing. R3 step headings carry them — e.g.
+      // `### Step 1: Ensure \`.aid/settings.yml\` exists` — and the Mermaid escaper
+      // replaces each backtick with a space individually, so leaving them here produced
+      // "Ensure  .aid/settings.yml  exists" with doubled spaces on the rendered page.
+      // Unwrapping first means the collapse below sees the final text.
+      .replace(/`([^`]*)`/g, '$1')
+      .replace(/\s+/g, ' ')
+      .trim(),
+    60
+  );
 }
 
 function _tryR1(bodyLines, allLines, bodyStartLine, file) {

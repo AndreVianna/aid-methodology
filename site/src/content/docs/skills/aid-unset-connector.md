@@ -28,9 +28,9 @@ flowchart TB
   classDef aidLoopBack fill:#1e3a8a,stroke:#1e3a8a,color:#fff
   classDef aidStep fill:#1a2035,stroke:#d4a853,color:#f1f5f9
   n1(["STEP-0<br/>Validate arguments"])
-  n2["STEP-1<br/>Resolve  &lt;tool&gt;  → descriptor stem"]
-  n3["STEP-2<br/>Single-stem REMOVE ( reconcile.md )"]
-  n4(["STEP-3<br/>Rebuild  INDEX.md "])
+  n2["STEP-1<br/>Resolve &lt;tool&gt; → descriptor stem"]
+  n3["STEP-2<br/>Single-stem REMOVE (reconcile.md)"]
+  n4(["STEP-3<br/>Rebuild INDEX.md"])
   n1 --> n2
   n2 --> n3
   n3 --> n4

@@ -25,7 +25,7 @@
       "id": "n2",
       "order": 2,
       "name": "STEP-1",
-      "label": "Resolve `<tool>` → descriptor stem; read the preset catalog",
+      "label": "Resolve <tool> → descriptor stem; read the preset catalog",
       "kind": "step",
       "terminal": null,
       "provenance": {
@@ -41,7 +41,7 @@
       "id": "n3",
       "order": 3,
       "name": "STEP-2",
-      "label": "Branch on `<type>` — ask the config question-set",
+      "label": "Branch on <type> — ask the config question-set",
       "kind": "step",
       "terminal": null,
       "provenance": {
@@ -73,7 +73,7 @@
       "id": "n5",
       "order": 5,
       "name": "STEP-4",
-      "label": "Ensure the `.secrets/` gitignore precondition — BEFORE any…",
+      "label": "Ensure the .secrets/ gitignore precondition — BEFORE any…",
       "kind": "step",
       "terminal": null,
       "provenance": {
@@ -105,7 +105,7 @@
       "id": "n7",
       "order": 7,
       "name": "STEP-6",
-      "label": "Single-stem reconcile → rebuild `INDEX.md`",
+      "label": "Single-stem reconcile → rebuild INDEX.md",
       "kind": "exit",
       "terminal": {
         "advanceType": "UNSPECIFIED",

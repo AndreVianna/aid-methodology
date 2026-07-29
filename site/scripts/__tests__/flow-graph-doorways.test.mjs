@@ -493,6 +493,44 @@ describe('engine core — deep freeze at every level', () => {
 // GROUP 3 — Compose purity: no shared object identity with core
 // ══════════════════════════════════════════════════════════════════════════════
 
+describe('engine core — the nine-node spine, in order', () => {
+  // task-038's AC places this in the UNIT tier alongside memo identity and the deep
+  // freeze. It existed only in the corpus tier, asserted through a live `aid-fix` read,
+  // which is a different claim: that one checks a composed doorway page, this one checks
+  // the shared core itself. The gate flagged the gap and it is the right call — the core
+  // is what every doorway page splices, so its spine deserves an assertion that does not
+  // depend on any page.
+  const core = getEngineCore();
+
+  it('is the seven State Machine rows with each B1 node after its parent', () => {
+    expect(core.nodes.map((n) => n.name)).toEqual([
+      'INTAKE',
+      'CONTINUATION',      // B1 under INTAKE
+      'CAPTURE',
+      'SPEC',
+      'PLAN',
+      'DETAIL',
+      'GATE',
+      'Circuit breaker',   // B1 under GATE
+      'APPROVAL-HALT',
+    ]);
+  });
+
+  it('each B1 node sits immediately after its parent, not merely somewhere later', () => {
+    // Position, not membership: the list assertion above would still pass if the two B1
+    // nodes were appended at the end, which is the mistake worth catching.
+    const names = core.nodes.map((n) => n.name);
+    expect(names.indexOf('CONTINUATION')).toBe(names.indexOf('INTAKE') + 1);
+    expect(names.indexOf('Circuit breaker')).toBe(names.indexOf('GATE') + 1);
+  });
+
+  it('ids run c1…cN in that same order', () => {
+    expect(core.nodes.map((n) => n.id)).toEqual(
+      core.nodes.map((_, i) => `c${i + 1}`)
+    );
+  });
+});
+
 describe('compose purity — composed objects share no identity with core', () => {
   // Frozen 2-node (c1, c2) synthetic core — mirrors real EngineCore conventions.
   const frozenCore = makeFrozenCore();
