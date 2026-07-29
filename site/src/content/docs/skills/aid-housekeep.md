@@ -27,8 +27,8 @@ flowchart TB
   classDef aidStep fill:#1a2035,stroke:#d4a853,color:#f1f5f9
   n1(["PREFLIGHT<br/>PREFLIGHT is the synchronous gate that verifies all…"])
   n2(["KB-DELTA<br/>KB-DELTA is a lightweight, drift-focused re-discovery: you…"])
-  n3(["SUMMARY-DELTA<br/>SUMMARY-DELTA checks whether needs to be regenerated after…"])
-  n4["CLEANUP<br/>CLEANUP is the terminal gated stage of ."]
+  n3(["SUMMARY-DELTA<br/>SUMMARY-DELTA checks whether kb.html needs to be…"])
+  n4["CLEANUP<br/>CLEANUP is the terminal gated stage of /aid-housekeep."]
   n5(["DONE<br/>DONE is the terminal state."])
   n1 --> n2
   n1 --> n4

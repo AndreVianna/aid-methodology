@@ -896,7 +896,13 @@ function _extractLabelFromWorker(workerLines) {
     }
     if (/^#+ /.test(workerLines[i]) || workerLines[i] === '---') break;
     // Skip list bullets and fenced code blocks as prose candidates.
-    if (/^[-*+]|^\d+\./.test(line)) { if (proseParts.length > 0) break; continue; }
+    //
+    // The bullet class requires a following space. `[-*+]` alone also matched `**bold`,
+    // so a sentence that merely *starts* in bold ended the lead paragraph early and the
+    // label was cut mid-phrase — which is how `aid-update-kb`'s REVIEW label came to end
+    // on "checks -- a". A markdown bullet is a marker plus whitespace; bold is not a
+    // bullet, and the space is what tells them apart.
+    if (/^[-*+]\s|^\d+\.\s/.test(line)) { if (proseParts.length > 0) break; continue; }
     if (line.startsWith('```')) { if (proseParts.length > 0) break; continue; }
     proseParts.push(line);
   }
@@ -933,7 +939,21 @@ function _normaliseLabel(text) {
     .replace(/\[([^\]]+)\]\([^)]*\)/g, '$1')   // [text](url) → text
     .replace(/\*\*([^*]+)\*\*/g, '$1')           // **bold** → text
     .replace(/\*([^*]+)\*/g, '$1')               // *italic* → text
-    .replace(/`[^`]+`/g, '')                     // `code` → ''
+    // `code` → its text, NOT deleted.
+    //
+    // Deleting it welded the neighbours together: `aid-update-kb`'s REVIEW row says
+    // "two mechanical, `aid-update-kb`-specific checks", and dropping the span published
+    // "two mechanical, -specific checks" — a comma followed by a dangling hyphen, in a
+    // label a reader sees on the page.
+    //
+    // This is the fourth defect in this delivery from one root cause: a strip that is
+    // correct for one token class applied to text where it is wrong. The others were the
+    // mangled edge conditions at the tasks-019–029 checkpoint, the deleted `/aid-define`
+    // resume command in `_extractHandoff`, and `halt` cut out of `halt-proof`. The rule
+    // that falls out of all four: **a strip that removes a token a reader can see must
+    // preserve the reader's sentence** — unwrap rather than delete, unless the span is
+    // pure notation.
+    .replace(/`([^`]+)`/g, '$1')                 // `code` → code
     .replace(/^\*{0,2}Purpose:\*{0,2}\s*/i, '')  // strip leading Purpose:
     .replace(/\s+/g, ' ')
     .trim();

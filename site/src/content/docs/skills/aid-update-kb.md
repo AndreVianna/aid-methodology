@@ -29,7 +29,7 @@ flowchart TB
   n2(["SCOPE<br/>SCOPE turns ANALYZE's Impact Map into the minimal Scope…"])
   n3(["CONFIRM<br/>CONFIRM is the new pre-apply human gate -- the root fix…"])
   n4["APPLY<br/>APPLY makes targeted summary+pointer edits to the KB docs…"]
-  n5(["REVIEW<br/>REVIEW first runs two mechanical, -specific checks -- a"])
+  n5(["REVIEW<br/>REVIEW first runs two mechanical, aid-update-kb-specific…"])
   n6(["APPROVAL<br/>APPROVAL is the explicit human gate before the KB change is…"])
   n7(["DONE<br/>DONE commits the approved KB changes and closes the run."])
   n1 --> n2

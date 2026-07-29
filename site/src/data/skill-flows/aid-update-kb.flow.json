@@ -106,7 +106,7 @@
       "id": "n5",
       "order": 5,
       "name": "REVIEW",
-      "label": "REVIEW first runs two mechanical, -specific checks -- a",
+      "label": "REVIEW first runs two mechanical, aid-update-kb-specific…",
       "kind": "exit",
       "terminal": {
         "advanceType": "PAUSE-FOR-USER-ACTION",

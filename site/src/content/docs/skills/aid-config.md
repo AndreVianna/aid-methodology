@@ -27,11 +27,11 @@ flowchart TB
   classDef aidDecision fill:#92400e,stroke:#78350f,color:#fff
   classDef aidLoopBack fill:#1e3a8a,stroke:#1e3a8a,color:#fff
   classDef aidStep fill:#1a2035,stroke:#d4a853,color:#f1f5f9
-  n1(["MODE-1<br/>Mode 1 — Show all settings (…)"])
+  n1(["MODE-1<br/>Mode 1 — Show all settings (/aid-config)"])
   n2["STEP-1<br/>Ensure  .aid/settings.yml  exists"]
   n3["STEP-2<br/>Render the table"]
   n4(["STEP-3<br/>Suggest commands for unset values + the general update form"])
-  n5(["MODE-2<br/>Mode 2 — View/update one key (…)"])
+  n5(["MODE-2<br/>Mode 2 — View/update one key (/aid-config &lt;key&gt;)"])
   n6["STEP-1<br/>Validate the key argument"]
   n7["STEP-2<br/>Ensure  .aid/settings.yml  exists"]
   n8["STEP-3<br/>Read current value"]

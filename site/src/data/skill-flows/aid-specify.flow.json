@@ -31,7 +31,7 @@
       "id": "n2",
       "order": 2,
       "name": "CONTINUE",
-      "label": "Work STATE.md shows this feature ; find first or section in…",
+      "label": "Work STATE.md ## Features State shows this feature In…",
       "kind": "loop-back",
       "terminal": null,
       "provenance": {
@@ -53,7 +53,7 @@
       "id": "n3",
       "order": 3,
       "name": "SPIKE",
-      "label": "> Source: §\"Spike Needed (State 3)\" (the body below is…",
+      "label": "> Source: references/handling-outcomes.md §\"Spike Needed…",
       "kind": "exit",
       "terminal": {
         "advanceType": "PAUSE-FOR-USER-ACTION",
@@ -78,7 +78,7 @@
       "id": "n4",
       "order": 4,
       "name": "BLOCKED",
-      "label": "> Source: §\"Blocked (State 4)\" (the body below is preserved…",
+      "label": "> Source: references/handling-outcomes.md §\"Blocked (State…",
       "kind": "exit",
       "terminal": {
         "advanceType": "PAUSE-FOR-USER-ACTION",

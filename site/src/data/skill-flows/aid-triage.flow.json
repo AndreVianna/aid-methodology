@@ -31,7 +31,7 @@
       "id": "n2",
       "order": 2,
       "name": "CLASSIFY",
-      "label": "From (captured at INTAKE), infer three things in prose…",
+      "label": "From {description} (captured at INTAKE), infer three things…",
       "kind": "step",
       "terminal": null,
       "provenance": {

@@ -9,7 +9,7 @@
       "id": "n1",
       "order": 1,
       "name": "MODE-1",
-      "label": "Mode 1 — Show all settings (…)",
+      "label": "Mode 1 — Show all settings (/aid-config)",
       "kind": "entry",
       "terminal": null,
       "provenance": {
@@ -76,7 +76,7 @@
       "id": "n5",
       "order": 5,
       "name": "MODE-2",
-      "label": "Mode 2 — View/update one key (…)",
+      "label": "Mode 2 — View/update one key (/aid-config <key>)",
       "kind": "entry",
       "terminal": null,
       "provenance": {

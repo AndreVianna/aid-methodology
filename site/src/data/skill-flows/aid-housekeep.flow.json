@@ -56,7 +56,7 @@
       "id": "n3",
       "order": 3,
       "name": "SUMMARY-DELTA",
-      "label": "SUMMARY-DELTA checks whether needs to be regenerated after…",
+      "label": "SUMMARY-DELTA checks whether kb.html needs to be…",
       "kind": "exit",
       "terminal": {
         "advanceType": "PAUSE-FOR-USER-ACTION",
@@ -81,7 +81,7 @@
       "id": "n4",
       "order": 4,
       "name": "CLEANUP",
-      "label": "CLEANUP is the terminal gated stage of .",
+      "label": "CLEANUP is the terminal gated stage of /aid-housekeep.",
       "kind": "step",
       "terminal": null,
       "provenance": {

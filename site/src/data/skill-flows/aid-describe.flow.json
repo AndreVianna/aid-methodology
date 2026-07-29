@@ -9,7 +9,7 @@
       "id": "n1",
       "order": 1,
       "name": "FIRST-RUN",
-      "label": "This state runs only when STATE.md does not exist in the…",
+      "label": "This state runs only when STATE.md ## Interview State does…",
       "kind": "entry",
       "terminal": null,
       "provenance": {
@@ -31,7 +31,7 @@
       "id": "n2",
       "order": 2,
       "name": "Q-AND-A",
-      "label": "STATE.md has entries with ; resolve them one at a time…",
+      "label": "STATE.md ## Cross-phase Q&A has entries with Status…",
       "kind": "step",
       "terminal": null,
       "provenance": {
@@ -75,7 +75,7 @@
       "id": "n4",
       "order": 4,
       "name": "DESCRIBE-SEED",
-      "label": "The seed-authoring step of (the step per D3, executed today…",
+      "label": "The seed-authoring step of aid-describe (the aid-describe…",
       "kind": "step",
       "terminal": null,
       "provenance": {
@@ -97,7 +97,7 @@
       "id": "n5",
       "order": 5,
       "name": "COMPLETION",
-      "label": "All sections are Complete or N/A in STATE.md ; run quality…",
+      "label": "All sections are Complete or N/A in STATE.md ## Interview…",
       "kind": "exit",
       "terminal": {
         "advanceType": "PAUSE-FOR-USER-DECISION",

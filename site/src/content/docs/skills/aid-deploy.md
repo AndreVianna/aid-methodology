@@ -29,7 +29,7 @@ flowchart TB
   n3["VERIFYING<br/>Full build, tests, and lint are run against the combined…"]
   n4["PACKAGING<br/>Release artifacts are produced, release notes generated, KB…"]
   n5(["DONE<br/>Release complete."])
-  n6(["RE-RUN<br/>When work is Done and the user invokes again:"])
+  n6(["RE-RUN<br/>When work STATE.md ## Deploy State is Done and the user…"])
   n1 --> n2
   n2 --> n3
   n3 --> n4

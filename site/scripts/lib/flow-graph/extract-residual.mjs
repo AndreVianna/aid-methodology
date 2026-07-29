@@ -193,6 +193,24 @@ export function extractResidual({ skill, file, allLines, bodyLines, bodyStartLin
  * @param {string}   file
  * @returns {{ rawNodes: object[], rawEdges: object[], warnings: string[] } | null}
  */
+
+/**
+ * Normalise a node label: collapse whitespace, trim, then apply the shared 60-code-point
+ * cap. Every label this module emits goes through here.
+ *
+ * Whitespace collapsing is not cosmetic. Unwrapping a code span leaves the spaces that
+ * surrounded it, and rungs that strip markdown leave their own gaps, so seven labels
+ * reached the page with doubled spaces — "Ensure  .aid/settings.yml  exists". Each rung
+ * previously built its own label and only one of them collapsed, which is exactly the
+ * shape of defect that comes back the next time a rung is added.
+ *
+ * @param {string} text
+ * @returns {string}
+ */
+function _label(text) {
+  return truncate(String(text).replace(/\s+/g, ' ').trim(), 60);
+}
+
 function _tryR1(bodyLines, allLines, bodyStartLine, file) {
   // Try `State machine:` line first.
   for (let i = 0; i < bodyLines.length; i++) {
@@ -295,7 +313,7 @@ function _r1Build(names, conditions, startLineNum, endLineNum, allLines, file) {
     rawNodes.push(makeNode({
       order: i + 1,
       name: uniqueNames[i],
-      label: truncate(uniqueNames[i], 60),
+      label: _label(uniqueNames[i]),
       provenance: prov,
       terminal: isLast ? { advanceType: 'UNSPECIFIED', handoff: null } : null,
     }));
@@ -348,7 +366,7 @@ function _tryR2(bodyLines, allLines, bodyStartLine, file) {
     if (name === '') continue;
     hits.push({
       name,
-      label: truncate(name, 60),
+      label: _label(name),
       lineNum: bodyStartLine + i,
     });
   }
@@ -408,13 +426,23 @@ function _tryR3(bodyLines, allLines, bodyStartLine, file) {
     if (modeM) {
       const num = modeM[1];
       const rest = modeM[2].trim();
-      // Label: e.g. "Mode 1 — Show all settings (/aid-config)" stripped of backtick content.
-      const rawLabel = rest
-        ? `Mode ${num} \u2014 ${rest}`.replace(/`[^`]*`/g, '…')
-        : `Mode ${num}`;
+      // Label: e.g. "Mode 1 — Show all settings (/aid-config)".
+      //
+      // Code spans are **unwrapped**, not replaced by an ellipsis. Substituting '…'
+      // published "Mode 1 — Show all settings (…)" — a parenthetical whose entire
+      // contents had been thrown away, and an ellipsis that reads as truncation when
+      // nothing was truncated. The command name it removed is the informative part.
+      //
+      // Fifth site in this delivery of one root cause: a strip correct for one token
+      // class applied to text a reader sees. Whitespace is collapsed afterwards because
+      // unwrapping can leave the spaces that surrounded the span.
+      const rawLabel = (rest
+        ? `Mode ${num} \u2014 ${rest}`.replace(/`([^`]*)`/g, '$1')
+        : `Mode ${num}`
+      ).replace(/\s+/g, ' ').trim();
       events.push({
         kind: 'mode',
-        label: truncate(rawLabel, 60),
+        label: _label(rawLabel),
         name: `MODE-${num}`,
         lineNum: bodyStartLine + i,
         lineIndex: i,
@@ -430,7 +458,7 @@ function _tryR3(bodyLines, allLines, bodyStartLine, file) {
       const rawLabel = desc || `Step ${id}`;
       events.push({
         kind: 'step',
-        label: truncate(rawLabel, 60),
+        label: _label(rawLabel),
         name: `STEP-${id.toUpperCase()}`,
         lineNum: bodyStartLine + i,
         lineIndex: i,
@@ -617,7 +645,7 @@ function _tryR4(bodyLines, allLines, bodyStartLine, file) {
     rawNodes.push(makeNode({
       order: i + 1,
       name: `STEP-${i + 1}`,
-      label: truncate(text, 60),
+      label: _label(text),
       provenance: buildProvenance(file, allLines, lineNum, lineNum, 'skill'),
       terminal: isLast ? { advanceType: 'UNSPECIFIED', handoff: null } : null,
     }));

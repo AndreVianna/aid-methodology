@@ -122,7 +122,7 @@
       "id": "n6",
       "order": 6,
       "name": "RE-RUN",
-      "label": "When work is Done and the user invokes again:",
+      "label": "When work STATE.md ## Deploy State is Done and the user…",
       "kind": "exit",
       "terminal": {
         "advanceType": "HALT",

@@ -26,7 +26,7 @@ flowchart TB
   classDef aidLoopBack fill:#1e3a8a,stroke:#1e3a8a,color:#fff
   classDef aidStep fill:#1a2035,stroke:#d4a853,color:#f1f5f9
   n1(["INTAKE<br/>Capture one short free-form description in a single turn…"])
-  n2["CLASSIFY<br/>From (captured at INTAKE), infer three things in prose…"]
+  n2["CLASSIFY<br/>From {description} (captured at INTAKE), infer three things…"]
   n3["SUGGEST<br/>Emits the NFR-7 reflect-back straw-man turn proposing the…"]
   n4(["HALT<br/>Print the recommended invocation the user should type next…"])
   n1 --> n2

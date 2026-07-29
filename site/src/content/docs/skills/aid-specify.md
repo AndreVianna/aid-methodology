@@ -26,9 +26,9 @@ flowchart TB
   classDef aidLoopBack fill:#1e3a8a,stroke:#1e3a8a,color:#fff
   classDef aidStep fill:#1a2035,stroke:#d4a853,color:#f1f5f9
   n1(["INITIALIZE<br/>First run for this feature; load context, determine…"])
-  n2["CONTINUE<br/>Work STATE.md shows this feature ; find first or section in…"]
-  n3(["SPIKE<br/>&gt; Source: §&quot;Spike Needed (State 3)&quot; (the body below is…"])
-  n4(["BLOCKED<br/>&gt; Source: §&quot;Blocked (State 4)&quot; (the body below is preserved…"])
+  n2["CONTINUE<br/>Work STATE.md ## Features State shows this feature In…"]
+  n3(["SPIKE<br/>&gt; Source: references/handling-outcomes.md §&quot;Spike Needed…"])
+  n4(["BLOCKED<br/>&gt; Source: references/handling-outcomes.md §&quot;Blocked (State…"])
   n5["REVIEW<br/>All sections complete; re-review entire spec against…"]
   n6(["DONE<br/>Spec is Ready and has met the minimum grade; this feature's…"])
   n1 --> n2
