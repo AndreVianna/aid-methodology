@@ -134,6 +134,46 @@ reported killed.
 
 **Outcome:** Pass, with the read-once assertion strengthened.
 
+### task-043 — dependency note
+
+Unblocked by 041 and 042 both closing; see Q1 above for the stdout-line-count
+re-scoping that applies to its acceptance.
+
+### task-042 — Fragment-list renderer
+
+Two classes of problem found, both fixed on a resumed dispatch to the same developer.
+
+**1. The rendered format diverged from feature-005's SPEC on seven points.** The SPEC
+carries a worked example under § UI Specs → "Entry anatomy" that is authoritative, and
+neither the DETAIL's prose nor the first implementation was reconciled against it. The
+serious one: the link line rendered as `[<file><anchor>](<url>)` with no `Source: ` prefix,
+which would have made **task-044 unimplementable** — it asserts exactly one `[Source: …]`
+link per entry and counts them to prove the no-JS invariant, and that count would have been
+zero. The other six: the intro sentence was paraphrased rather than the SPEC's fixed wording;
+the detail link sat on its own line instead of joining the source link with ` · `; both link
+paths lacked their code spans; the lead-in used `**3.** \`NAME\`` instead of one bold span
+`**3 · \`NAME\`**`; `kind` was not italicised; the position came from the loop index rather
+than `node.order`; and the documented backtick-in-name fallback to escaped plain text was
+missing entirely.
+
+Verified after the fix by rendering the SPEC's own example node and diffing against the
+SPEC's literal markdown block: **byte-identical across all seven lines.** Using the loop
+index deserves the same objection as re-sorting — it is a second ordering authority that
+agrees with `node.order` only because feature-003 guarantees contiguous ordering.
+
+**2. Two reported mutation kills were coincidental.** M6 (`terminal !== null` inverted) was
+reported killed by *"multi-node: ALL fences carry title="*, and M8 (`detail !== null`
+inverted) by *"fragment with no tildes uses the floor of 4"*. A fence-width test is not
+evidence that the `detail` condition is correct; both were collateral damage from a null
+dereference, and the behaviours themselves were unproven. Both are if-and-only-ifs, so each
+now has two fixtures differing *only* in the field under test. Re-ran both mutants: the
+dedicated proofs are now among the killers, and the "IS present" direction fails
+behaviourally rather than by crashing.
+
+Full suite after the change: 2501 tests across 39 files, green.
+
+**Outcome:** Pass after rework.
+
 ---
 
 <!-- ============================================================

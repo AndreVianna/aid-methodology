@@ -1,8 +1,8 @@
 ---
-state: In Progress
-review: "--"
+state: Done
+review: "SPEC-aligned (7 format divergences fixed 2026-07-29)"
 elapsed: "--"
-notes: "--"
+notes: "render-list.mjs and provenance-render-list.test.mjs updated to match feature-005/SPEC.md § Entry anatomy. 67/67 tests pass."
 ticket_ref: "--"
 ---
 
