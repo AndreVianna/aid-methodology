@@ -65,6 +65,26 @@ This is the single state file for the **Discovery area** — persistent project 
 | Mermaid Version | {pinned version or —} |
 | Mermaid Cached | {.aid/knowledge/.cache/mermaid.min.js (sha256) or —} |
 
+## Criteria Gaps
+
+<!-- AUTHORED by gap-register.sh, never by hand. This is the KB-scope register: gaps raised while
+     reviewing Knowledge Base documents land here.
+
+     A criteria gap is "there is no rule to judge this by" -- a missing PRECONDITION of the review,
+     not a defect in the artifact under review.
+
+     A KB-scope gap ALSO gets a companion `Impact: Required` entry in ## Q&A (Pending) below. That
+     is not duplication: it makes the existing Q-AND-A state pick the gap up with no change to that
+     state at all, because Q-AND-A already drives every Pending entry to a terminal answer and
+     already makes APPROVAL unreachable while any remains.
+
+     This file is git-tracked, so the record outlives both the halt and the ledger's deletion at
+     DONE. Full cell contracts: work-state-template.md ## Criteria Gaps. -->
+
+| Gap Key | Kind | Status | Depth | Recurrences | Scope | Criterion | Resolution |
+|---|---|---|---|---|---|---|---|
+| _none yet_ | | | | | | | |
+
 ## Q&A (Pending)
 
 > Open questions about KB facts, raised by any skill, awaiting human input or downstream resolution. Each entry: ID, category, impact, suggested answer (if inferrable), status.

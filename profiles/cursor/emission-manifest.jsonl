@@ -6,7 +6,7 @@
 {"dst": ".cursor/agents/aid-operator.md", "profile": "cursor", "sha256": "7adcc2805d42ecde636d435042473f03d1c020abf1201b9332714fd50112f0d8", "src": "canonical/agents/aid-operator/AGENT.md"}
 {"dst": ".cursor/agents/aid-orchestrator.md", "profile": "cursor", "sha256": "77cb74744186aa61376ae901dd07bcef28a490bce7a8f8a656867d17232e4e2c", "src": "canonical/agents/aid-orchestrator/AGENT.md"}
 {"dst": ".cursor/agents/aid-researcher.md", "profile": "cursor", "sha256": "d18fe14a3f24fbeccb52f8b200c45eadcd78ae860b1adfe71e9e993929035a20", "src": "canonical/agents/aid-researcher/AGENT.md"}
-{"dst": ".cursor/agents/aid-reviewer.md", "profile": "cursor", "sha256": "fca87af041d975208ca4bd0ae5e94e917fcbfba192710971a3cc326eee595ad6", "src": "canonical/agents/aid-reviewer/AGENT.md"}
+{"dst": ".cursor/agents/aid-reviewer.md", "profile": "cursor", "sha256": "aa0bc0fb35c1a1512af0a03c7579f824e6e8b9a4df1d3d0d89a34d0b082fa589", "src": "canonical/agents/aid-reviewer/AGENT.md"}
 {"dst": ".cursor/agents/aid-tech-writer.md", "profile": "cursor", "sha256": "b37384f9bd9fd533db024be00dabaaa7db15edf1b313330518e719c6e4447ff7", "src": "canonical/agents/aid-tech-writer/AGENT.md"}
 {"dst": ".cursor/aid/scripts/config/read-setting.sh", "profile": "cursor", "sha256": "4f11714098f724dfe5d7923905550934c41253ff8add5bad46d4040f4e3decc9", "src": "canonical/scripts/config/read-setting.sh"}
 {"dst": ".cursor/aid/scripts/connectors/build-connectors-index.ps1", "profile": "cursor", "sha256": "5f1c2060c42217d7da1f7b1e52286e1f75732554866ce1a1191ec0177572a7e9", "src": "canonical/scripts/connectors/build-connectors-index.ps1"}
@@ -42,7 +42,9 @@
 {"dst": ".cursor/aid/scripts/migrate/migrate-work-hierarchy.ps1", "profile": "cursor", "sha256": "f74d98d633602378e22f840da8ad9868ddcb1a64595afdf85ca46ccebd7c201b", "src": "canonical/scripts/migrate/migrate-work-hierarchy.ps1"}
 {"dst": ".cursor/aid/scripts/migrate/migrate-work-hierarchy.sh", "profile": "cursor", "sha256": "258d2d97fa4f05c03c493dbe331799501b8bf707f8eec67e0b1f6f405a9b6bdb", "src": "canonical/scripts/migrate/migrate-work-hierarchy.sh"}
 {"dst": ".cursor/aid/scripts/release/check-version-sync.sh", "profile": "cursor", "sha256": "9756b3aafedd2e3f0aa9694ea8efe7ac6a2deacb132e1cdb5f78139510dc75da", "src": "canonical/scripts/release/check-version-sync.sh"}
-{"dst": ".cursor/aid/scripts/review/writeback-ledger.sh", "profile": "cursor", "sha256": "1e7f654b894f62718119ca180be9c4b90e09b203ec7eeaa0df71283ea29898ea", "src": "canonical/scripts/review/writeback-ledger.sh"}
+{"dst": ".cursor/aid/scripts/review/check-gaps.sh", "profile": "cursor", "sha256": "dc7b0249213ccbd7c4a3f15865aee2b26d4a6ff5306c805ce27505e6a3b7c2e5", "src": "canonical/scripts/review/check-gaps.sh"}
+{"dst": ".cursor/aid/scripts/review/gap-register.sh", "profile": "cursor", "sha256": "055655957cf385d070ade0c7243ca6be363d4faabf36161596e6c98d1c8e677d", "src": "canonical/scripts/review/gap-register.sh"}
+{"dst": ".cursor/aid/scripts/review/writeback-ledger.sh", "profile": "cursor", "sha256": "69d5718abdaa85e9c96ecb883bfa4a24df7c8d40d53cccc4159caa1d0097860c", "src": "canonical/scripts/review/writeback-ledger.sh"}
 {"dst": ".cursor/aid/scripts/summarize/assemble-3part.ps1", "profile": "cursor", "sha256": "8e331e683afbb10e31f908095c1ded778167871b230e5345c0269cf98a79cc10", "src": "canonical/scripts/summarize/assemble-3part.ps1"}
 {"dst": ".cursor/aid/scripts/summarize/assemble-3part.sh", "profile": "cursor", "sha256": "f1636405ad7f7419217b41924ab72e3e98a0140aa54d78b5e9d5f34c4f6406cc", "src": "canonical/scripts/summarize/assemble-3part.sh"}
 {"dst": ".cursor/aid/scripts/summarize/assemble.sh", "profile": "cursor", "sha256": "ddcb0ec5a1cdb852770953bce3600f053af32602bc9d39da483985b204dcd9b9", "src": "canonical/scripts/summarize/assemble.sh"}
@@ -68,12 +70,13 @@
 {"dst": ".cursor/aid/templates/connectors/preset-catalog.md", "profile": "cursor", "sha256": "b80bac04e86cc642e63e733c7ad338a93bdd4e61a9ffa346f9818ca54b72c038", "src": "canonical/templates/connectors/preset-catalog.md"}
 {"dst": ".cursor/aid/templates/connectors/reconcile.md", "profile": "cursor", "sha256": "2cc814b620e73ee339bb19efba81ffb8a2332e2f5ae16ebd698562537299c120", "src": "canonical/templates/connectors/reconcile.md"}
 {"dst": ".cursor/aid/templates/connectors/ticket-resolution.md", "profile": "cursor", "sha256": "d89053433e944452fe1d13f46e2ccd7373d37429dd5bfe847fcf73d5256ea9a2", "src": "canonical/templates/connectors/ticket-resolution.md"}
+{"dst": ".cursor/aid/templates/criteria-gap-protocol.md", "profile": "cursor", "sha256": "32445b169f9af2c44706861091f19bca9f8746a0e575a8e1d945ed9659225c9e", "src": "canonical/templates/criteria-gap-protocol.md"}
 {"dst": ".cursor/aid/templates/delivery-blueprint-template.md", "profile": "cursor", "sha256": "ab1776254484d2534cc667ad6dfa44a5abd349238a6455f425e4e23930fd7a5c", "src": "canonical/templates/delivery-blueprint-template.md"}
 {"dst": ".cursor/aid/templates/delivery-issues.md", "profile": "cursor", "sha256": "6924dccf6c5a8c8f0caaa9e54b92745a18220904c07b846b457a506e7a0058dd", "src": "canonical/templates/delivery-issues.md"}
 {"dst": ".cursor/aid/templates/delivery-plans/flattened-plan-template.md", "profile": "cursor", "sha256": "f89f292c1ae7550cdd40d49cc1ff5677b6f48fc7eefb226bb5eda7ef8941c063", "src": "canonical/templates/delivery-plans/flattened-plan-template.md"}
 {"dst": ".cursor/aid/templates/delivery-plans/task-template.md", "profile": "cursor", "sha256": "12c9e04352cd6df9e6e355ab412933af60ed006b1043707c93a7a34891ca86f1", "src": "canonical/templates/delivery-plans/task-template.md"}
-{"dst": ".cursor/aid/templates/delivery-state-template.md", "profile": "cursor", "sha256": "9fa47fce6d4a639c0a88416dd55587f3dd05a998ddcdc1315bf3ff19e865e5ee", "src": "canonical/templates/delivery-state-template.md"}
-{"dst": ".cursor/aid/templates/discovery-state-template.md", "profile": "cursor", "sha256": "eb4420b89e73d9ef31f0806393393e3cf52b042a99d4287248ec96daf1cf9586", "src": "canonical/templates/discovery-state-template.md"}
+{"dst": ".cursor/aid/templates/delivery-state-template.md", "profile": "cursor", "sha256": "cfef9898aa23fb77eff610a17cc9a10582b7bad4b3f566247fa4f331f3e35c3d", "src": "canonical/templates/delivery-state-template.md"}
+{"dst": ".cursor/aid/templates/discovery-state-template.md", "profile": "cursor", "sha256": "a32bb8c71976a186f401747287edfbce44ce6696d8fb5e404d9e5ca2d8e98e36", "src": "canonical/templates/discovery-state-template.md"}
 {"dst": ".cursor/aid/templates/dispatch-protocol-checklist.md", "profile": "cursor", "sha256": "901bee904b169329796a5ae3cf5fa5dc968f789a247c541b942287b2ccb41ceb", "src": "canonical/templates/dispatch-protocol-checklist.md"}
 {"dst": ".cursor/aid/templates/downstream-worktree-entry.md", "profile": "cursor", "sha256": "76685381614c7375ae6142dc798d98514c04f78b5d62d814d85289b1863af1eb", "src": "canonical/templates/downstream-worktree-entry.md"}
 {"dst": ".cursor/aid/templates/feature-inventory.md", "profile": "cursor", "sha256": "81d14cc8d0bd7bf7b1c900779d617e5dbfd68c19bd2320c9ab9839258fa43de6", "src": "canonical/templates/feature-inventory.md"}
@@ -132,7 +135,7 @@
 {"dst": ".cursor/aid/templates/review-rubrics/process.md", "profile": "cursor", "sha256": "35282d37ad827ba18e3925cd19ee71c0d5084c529b7c1aec2b6c180ef2f57f6e", "src": "canonical/templates/review-rubrics/process.md"}
 {"dst": ".cursor/aid/templates/review-rubrics/summary.md", "profile": "cursor", "sha256": "3a92e58a409dc8d5d2ba1de02dae2fb1a9e8c83fa57e8e55a32985be62c34aa2", "src": "canonical/templates/review-rubrics/summary.md"}
 {"dst": ".cursor/aid/templates/reviewer-dispatch.md", "profile": "cursor", "sha256": "c7742745f29f4c666c757ac0aa8e20fcea10e3e3e1022aec730ccbcc92c67ba7", "src": "canonical/templates/reviewer-dispatch.md"}
-{"dst": ".cursor/aid/templates/reviewer-ledger-schema.md", "profile": "cursor", "sha256": "f9e373935e4a2454fe543009d755e4eddbb806cf889932154f7a0647a06b0c48", "src": "canonical/templates/reviewer-ledger-schema.md"}
+{"dst": ".cursor/aid/templates/reviewer-ledger-schema.md", "profile": "cursor", "sha256": "fd2b1cf2a9d3d1f2bfa78066c4a5903b6348b0fdcc9f439fcd3504c1d2eea98b", "src": "canonical/templates/reviewer-ledger-schema.md"}
 {"dst": ".cursor/aid/templates/rough-time-hints.md", "profile": "cursor", "sha256": "ed9439c875b2ac558031333fe3372b7ba6edd8539ff065a73698efed0291ea9b", "src": "canonical/templates/rough-time-hints.md"}
 {"dst": ".cursor/aid/templates/self-review-protocol.md", "profile": "cursor", "sha256": "c8f42a5da3d5771112bd1ef2bc12d1e26127b1a11f173b7c5b7791d9d8e3e7d0", "src": "canonical/templates/self-review-protocol.md"}
 {"dst": ".cursor/aid/templates/settings.yml", "profile": "cursor", "sha256": "51a3ec8a4d77383c7d063a609d0416c66d4fcd2219a6dd22dcd3d6ad785d284f", "src": "canonical/templates/settings.yml"}
@@ -151,7 +154,7 @@
 {"dst": ".cursor/aid/templates/task-detail-template.md", "profile": "cursor", "sha256": "27eea30883783e391762b405019e39f173f0d18d8c9a49b67aaae09ff98639e6", "src": "canonical/templates/task-detail-template.md"}
 {"dst": ".cursor/aid/templates/task-state-template.md", "profile": "cursor", "sha256": "e547113b2c20a5f55b018d3b0228661eb8178f804d277f313336dcc0a09fcca9", "src": "canonical/templates/task-state-template.md"}
 {"dst": ".cursor/aid/templates/work-initiation-gate.md", "profile": "cursor", "sha256": "26cf4b6df4e4ac7f4a0aabfc2f8187beadf5af824274a6c932161a3cadc1540d", "src": "canonical/templates/work-initiation-gate.md"}
-{"dst": ".cursor/aid/templates/work-state-template.md", "profile": "cursor", "sha256": "4240e144eadb1f8efbfa5c5e5b2fe8e7a10d3a6547cc0156e5387bd7838301bf", "src": "canonical/templates/work-state-template.md"}
+{"dst": ".cursor/aid/templates/work-state-template.md", "profile": "cursor", "sha256": "a77b35ae0ef1355dfd93a4e1cbe16206fac5b551bfb6f85f59033d73b5d3da48", "src": "canonical/templates/work-state-template.md"}
 {"dst": ".cursor/aid/templates/worktree-lifecycle.md", "profile": "cursor", "sha256": "dcb20fb03449b82d3e5eb27d1c6cf04f72543a970c6ffd39a9d3e94acaf95752", "src": "canonical/templates/worktree-lifecycle.md"}
 {"dst": ".cursor/skills/aid-add-api/SKILL.md", "profile": "cursor", "sha256": "9a5a5ac95afe5f4c9fe822deac0040ca51ee8b3187a426f0028c24743404de4c", "src": "canonical/skills/aid-add-api/SKILL.md"}
 {"dst": ".cursor/skills/aid-add-cli/SKILL.md", "profile": "cursor", "sha256": "3ee8e28e81e0d474625ae612fad71dc4e2c679768f936f34674d014038728105", "src": "canonical/skills/aid-add-cli/SKILL.md"}

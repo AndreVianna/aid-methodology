@@ -99,9 +99,19 @@ wb --ledger "$L" --append-finding --severity '[LOW]' --rule '--' --doc a.md \
    --description 'x' --evidence 'y' >/dev/null 2>&1
 assert_eq "$?" "4" "WL12 '--' in Rule is rejected on a grade-bearing finding (exit 4)"
 
+# The interim OOS exemption is RETIRED. An unmatched artifact class is a [GAP:CRITERIA] gap row now,
+# so an ungrounded finding must be unwritable at EVERY status -- including the one that used to be
+# the escape hatch.
 wb --ledger "$L" --append-finding --severity '[LOW]' --status OOS --doc a.md \
    --description 'unmatched artifact class' --evidence 'no rule set routes here' >/dev/null 2>&1
-assert_eq "$?" "0" "WL13 a Status=OOS row MAY carry '--' in Rule (the one exemption)"
+assert_eq "$?" "4" "WL13 a Status=OOS row may NO LONGER carry '--' in Rule (exemption retired)"
+
+for st in Pending Fixed Recurred Accepted OOS Invalid; do
+  wb --ledger "$L" --append-finding --severity '[LOW]' --status "$st" --rule '--' --doc a.md \
+     --description 'x' --evidence 'y' >/dev/null 2>&1
+  [[ "$?" -eq 4 ]] || fail "WL13b an ungrounded finding is writable at status $st"
+done
+pass "WL13b an ungrounded finding is unwritable at every status"
 
 # ---------------------------------------------------------------------------
 # WL14-WL17 -- --set-status is surgical: one cell, no renumbering, byte-stable.

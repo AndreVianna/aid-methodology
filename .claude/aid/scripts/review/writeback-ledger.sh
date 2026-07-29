@@ -45,8 +45,8 @@
 #   1 ledger unreadable, or parent directory absent
 #   2 lock contention -- a BUG SIGNAL, not a normal path (today's writers are single-writer)
 #   3 write produced empty or unverifiable output; original preserved
-#   4 invalid argument -- bad severity token, status illegal for the row kind, `--` in Rule on a
-#     grade-bearing finding, raw newline, --rule against a 7-column ledger
+#   4 invalid argument -- bad severity token, status illegal for the row kind, a missing or
+#     malformed Rule on a finding, raw newline, --rule against a 7-column ledger
 #   5 missing required argument
 #   6 malformed ledger -- no header, or a header that is neither 7 nor 8 columns
 #   7 --row-id not found
@@ -442,17 +442,16 @@ mode_append_finding() {
     # AC-3, mechanically. This is the ONLY place it can be enforced: grade.sh cannot do it under
     # NFR-1, and this helper is the only writer of rows.
     #
-    # ONE EXEMPTION, forced by an upstream decision rather than invented here: an unmatched artifact
-    # class is recorded as a single `Status: OOS` row with `--` in Rule. Every grade-bearing status,
-    # and every status that was once grade-bearing (Fixed/Accepted/Invalid all begin life as Pending
-    # rows that already carried a rule), still requires a real rule ID.
-    if [[ "$STATUS" == "OOS" ]]; then
-        [[ -z "$RULE" ]] && RULE="--"
-    else
-        [[ -n "$RULE" ]] || die "--rule is required on a finding row (AC-3); only a Status=OOS row may carry '--'" 4
-        [[ "$RULE" == "--" ]] && die "'--' in --rule is permitted only when --status is OOS (AC-3)" 4
-        [[ "$RULE" =~ $RULE_RE ]] || die "invalid --rule '$RULE'; expected <CLASS>-<NN> matching ${RULE_RE}" 4
-    fi
+    # NO EXEMPTION. An earlier revision let a `Status: OOS` row carry `--` in Rule, as an interim
+    # carrier for "no rule set covers this artifact class". That carrier is retired: the gap protocol
+    # gives that outcome its own row kind, so an unmatched class is a `[GAP:CRITERIA]` gap row rather
+    # than a finding nobody can trace to a rule.
+    #
+    # An ungrounded finding is therefore unwritable AT EVERY STATUS, which is the point -- it is what
+    # stops "I could not find a rule" from quietly becoming "here is a finding anyway".
+    [[ -n "$RULE" ]] || die "--rule is required on every finding row, at every status (AC-3). If no rule set covers this artifact, record a gap instead: --append-gap with a '[GAP:CRITERIA]' description." 4
+    [[ "$RULE" == "--" ]] && die "'--' is not a rule. An unmatched artifact class is a [GAP:CRITERIA] gap row, not a finding -- see aid/templates/criteria-gap-protocol.md" 4
+    [[ "$RULE" =~ $RULE_RE ]] || die "invalid --rule '$RULE'; expected <CLASS>-<NN> matching ${RULE_RE}" 4
 
     create_if_absent
     local w; w="$(header_width)"

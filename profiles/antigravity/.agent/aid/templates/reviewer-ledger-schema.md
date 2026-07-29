@@ -172,10 +172,12 @@ enforces a present, well-formed `Rule` cell is **`writeback-ledger.sh`** — and
 writer of rows, the requirement is mechanical rather than merely stated. A finding whose `Rule` is
 empty, `--`, or malformed is refused with exit 4.
 
-**The one exemption**, forced by an upstream decision rather than invented here: an artifact class no
-rule set covers is recorded as a single `Status: OOS` row carrying `--` in `Rule`. Every grade-bearing
-status, and every status that was once grade-bearing (`Fixed`, `Accepted` and `Invalid` all begin life
-as `Pending` rows that already carried a rule), still requires a real rule ID.
+**There is no exemption.** A finding row requires a rule ID at *every* status. An earlier revision let
+a `Status: OOS` row carry `--` as an interim carrier for "no rule set covers this artifact class";
+that carrier is **retired**, because the gap protocol now gives that outcome its own row kind. An
+unmatched class is a `[GAP:CRITERIA]` gap row — not a finding nobody can trace to a rule.
+
+See [`criteria-gap-protocol.md`](criteria-gap-protocol.md).
 
 ### Mixed shapes: the header decides
 

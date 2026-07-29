@@ -287,6 +287,38 @@ different places.
 
 _None yet. Each delivery-NNN/STATE.md carries its own gate block._
 
+## Criteria Gaps
+
+<!-- AUTHORED by gap-register.sh, never by hand.
+
+     A criteria gap is "there is no rule to judge this by" -- a missing PRECONDITION of the
+     review, not a defect in the artifact. Recording it here is what makes that outcome
+     expressible instead of an invitation to invent a criterion.
+
+     WHY THIS SECTION AND NOT ## Cross-phase Q&A: that section is DERIVED, holds prose blocks
+     rather than a table, and legitimately carries entries designed to sit Pending for weeks. A
+     gap that GATES A GRADE cannot share a section with those. A table is also what
+     writeback-state.sh already edits surgically, so the writer follows a proven pattern.
+
+     THIS FILE IS GIT-TRACKED, and that is load-bearing: the reviewer ledger under .aid/.temp/
+     is deleted at skill DONE, so the register is the only thing that survives both the halt and
+     that deletion. A "no" answer recorded here is never re-asked.
+
+     Status: Pending | Answered | Declined | Superseded   (Declined is a recorded "no")
+     Kind:   criteria | evidence                          (only `criteria` gates a grade)
+     Depth:  0-2. 0 = the original review, 1 = resolving its gap, 2 = a gap raised while
+             resolving a gap. At 2 the gap is DEMOTED to non-blocking, never discarded.
+     Recurrences: incremented ONLY when an Answered/Declined key returns -- never while a gap
+             is still Pending, or a slow human would look like a loop.
+     Gap Key: content-derived, e.g. `code-sh/coding-standard`. MUST NOT contain a row ID, cycle
+             number, date, or movable path -- any of those break dedupe, and dedupe is what
+             makes "never re-ask" and loop detection work at all.
+     Escape a literal pipe in any cell as \| , per the ledger schema. -->
+
+| Gap Key | Kind | Status | Depth | Recurrences | Scope | Criterion | Resolution |
+|---|---|---|---|---|---|---|---|
+| _none yet_ | | | | | | | |
+
 ## Cross-phase Q&A
 
 <!-- DERIVED -- read-only union of:

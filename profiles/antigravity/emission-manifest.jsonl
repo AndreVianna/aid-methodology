@@ -6,7 +6,7 @@
 {"dst": ".agent/agents/aid-operator.md", "profile": "antigravity", "sha256": "4832f6ff12a277acf242c6d51d1583bb9a167b7954035dc95f27de7fd41f4d9c", "src": "canonical/agents/aid-operator/AGENT.md"}
 {"dst": ".agent/agents/aid-orchestrator.md", "profile": "antigravity", "sha256": "0ee99f9a27b80f97590803eb6e3e8d382ddb8f9648033d08f2c9bdfddc3b185d", "src": "canonical/agents/aid-orchestrator/AGENT.md"}
 {"dst": ".agent/agents/aid-researcher.md", "profile": "antigravity", "sha256": "7e5c7548f5de42ee0cea063791921522bdc0d3a325604913c9c3c51a1f2c0b28", "src": "canonical/agents/aid-researcher/AGENT.md"}
-{"dst": ".agent/agents/aid-reviewer.md", "profile": "antigravity", "sha256": "95401488606f273cd0bf3c86bb37c9471fd18d8907976770ce78493d40c77445", "src": "canonical/agents/aid-reviewer/AGENT.md"}
+{"dst": ".agent/agents/aid-reviewer.md", "profile": "antigravity", "sha256": "6f90fd22e957bfb74df17fbe3406f0ea94d5c9cd7317c24b272d418dd915a20e", "src": "canonical/agents/aid-reviewer/AGENT.md"}
 {"dst": ".agent/agents/aid-tech-writer.md", "profile": "antigravity", "sha256": "0a4d7dc303faa0d01bcabf11578247d26721eef52b0c0c0af431eda23e35e251", "src": "canonical/agents/aid-tech-writer/AGENT.md"}
 {"dst": ".agent/aid/scripts/config/read-setting.sh", "profile": "antigravity", "sha256": "4f11714098f724dfe5d7923905550934c41253ff8add5bad46d4040f4e3decc9", "src": "canonical/scripts/config/read-setting.sh"}
 {"dst": ".agent/aid/scripts/connectors/build-connectors-index.ps1", "profile": "antigravity", "sha256": "5f1c2060c42217d7da1f7b1e52286e1f75732554866ce1a1191ec0177572a7e9", "src": "canonical/scripts/connectors/build-connectors-index.ps1"}
@@ -42,7 +42,9 @@
 {"dst": ".agent/aid/scripts/migrate/migrate-work-hierarchy.ps1", "profile": "antigravity", "sha256": "f74d98d633602378e22f840da8ad9868ddcb1a64595afdf85ca46ccebd7c201b", "src": "canonical/scripts/migrate/migrate-work-hierarchy.ps1"}
 {"dst": ".agent/aid/scripts/migrate/migrate-work-hierarchy.sh", "profile": "antigravity", "sha256": "258d2d97fa4f05c03c493dbe331799501b8bf707f8eec67e0b1f6f405a9b6bdb", "src": "canonical/scripts/migrate/migrate-work-hierarchy.sh"}
 {"dst": ".agent/aid/scripts/release/check-version-sync.sh", "profile": "antigravity", "sha256": "9756b3aafedd2e3f0aa9694ea8efe7ac6a2deacb132e1cdb5f78139510dc75da", "src": "canonical/scripts/release/check-version-sync.sh"}
-{"dst": ".agent/aid/scripts/review/writeback-ledger.sh", "profile": "antigravity", "sha256": "1e7f654b894f62718119ca180be9c4b90e09b203ec7eeaa0df71283ea29898ea", "src": "canonical/scripts/review/writeback-ledger.sh"}
+{"dst": ".agent/aid/scripts/review/check-gaps.sh", "profile": "antigravity", "sha256": "dc7b0249213ccbd7c4a3f15865aee2b26d4a6ff5306c805ce27505e6a3b7c2e5", "src": "canonical/scripts/review/check-gaps.sh"}
+{"dst": ".agent/aid/scripts/review/gap-register.sh", "profile": "antigravity", "sha256": "055655957cf385d070ade0c7243ca6be363d4faabf36161596e6c98d1c8e677d", "src": "canonical/scripts/review/gap-register.sh"}
+{"dst": ".agent/aid/scripts/review/writeback-ledger.sh", "profile": "antigravity", "sha256": "69d5718abdaa85e9c96ecb883bfa4a24df7c8d40d53cccc4159caa1d0097860c", "src": "canonical/scripts/review/writeback-ledger.sh"}
 {"dst": ".agent/aid/scripts/summarize/assemble-3part.ps1", "profile": "antigravity", "sha256": "8e331e683afbb10e31f908095c1ded778167871b230e5345c0269cf98a79cc10", "src": "canonical/scripts/summarize/assemble-3part.ps1"}
 {"dst": ".agent/aid/scripts/summarize/assemble-3part.sh", "profile": "antigravity", "sha256": "f1636405ad7f7419217b41924ab72e3e98a0140aa54d78b5e9d5f34c4f6406cc", "src": "canonical/scripts/summarize/assemble-3part.sh"}
 {"dst": ".agent/aid/scripts/summarize/assemble.sh", "profile": "antigravity", "sha256": "ddcb0ec5a1cdb852770953bce3600f053af32602bc9d39da483985b204dcd9b9", "src": "canonical/scripts/summarize/assemble.sh"}
@@ -68,12 +70,13 @@
 {"dst": ".agent/aid/templates/connectors/preset-catalog.md", "profile": "antigravity", "sha256": "b80bac04e86cc642e63e733c7ad338a93bdd4e61a9ffa346f9818ca54b72c038", "src": "canonical/templates/connectors/preset-catalog.md"}
 {"dst": ".agent/aid/templates/connectors/reconcile.md", "profile": "antigravity", "sha256": "e156a3b66e20f6228b33cb2cbd8852c6f09d34c89c0f30d829df5f4fb8bba1d7", "src": "canonical/templates/connectors/reconcile.md"}
 {"dst": ".agent/aid/templates/connectors/ticket-resolution.md", "profile": "antigravity", "sha256": "83688e081fc138dbb3f5f38289012dceb319ab6f1a499dc79f18709d1184dd39", "src": "canonical/templates/connectors/ticket-resolution.md"}
+{"dst": ".agent/aid/templates/criteria-gap-protocol.md", "profile": "antigravity", "sha256": "55fe11a4d44fa43868ccd61c691b4e4e8158a20e4f8cd9939ca2bf0f065538ba", "src": "canonical/templates/criteria-gap-protocol.md"}
 {"dst": ".agent/aid/templates/delivery-blueprint-template.md", "profile": "antigravity", "sha256": "ab1776254484d2534cc667ad6dfa44a5abd349238a6455f425e4e23930fd7a5c", "src": "canonical/templates/delivery-blueprint-template.md"}
 {"dst": ".agent/aid/templates/delivery-issues.md", "profile": "antigravity", "sha256": "e6c328c648b6ac3aec779eda11809c9481e56206cf1367bb5403528747ebbc19", "src": "canonical/templates/delivery-issues.md"}
 {"dst": ".agent/aid/templates/delivery-plans/flattened-plan-template.md", "profile": "antigravity", "sha256": "f89f292c1ae7550cdd40d49cc1ff5677b6f48fc7eefb226bb5eda7ef8941c063", "src": "canonical/templates/delivery-plans/flattened-plan-template.md"}
 {"dst": ".agent/aid/templates/delivery-plans/task-template.md", "profile": "antigravity", "sha256": "12c9e04352cd6df9e6e355ab412933af60ed006b1043707c93a7a34891ca86f1", "src": "canonical/templates/delivery-plans/task-template.md"}
-{"dst": ".agent/aid/templates/delivery-state-template.md", "profile": "antigravity", "sha256": "448730000040c7a46a87a0707947d7390f7282c9078fcc006d2ea84ef4fb49af", "src": "canonical/templates/delivery-state-template.md"}
-{"dst": ".agent/aid/templates/discovery-state-template.md", "profile": "antigravity", "sha256": "e48295fe353998370284c5ebb88166135145df11531fb32048eb8ccd95159542", "src": "canonical/templates/discovery-state-template.md"}
+{"dst": ".agent/aid/templates/delivery-state-template.md", "profile": "antigravity", "sha256": "483db87aecbc9a43fbc918fe63ef5b226c8d12792af6fe530908471953157bb4", "src": "canonical/templates/delivery-state-template.md"}
+{"dst": ".agent/aid/templates/discovery-state-template.md", "profile": "antigravity", "sha256": "badd59e843a7ad5d51b49e895b5ae9829f8158428993e5a0114205ec72dcc1e6", "src": "canonical/templates/discovery-state-template.md"}
 {"dst": ".agent/aid/templates/dispatch-protocol-checklist.md", "profile": "antigravity", "sha256": "4070e6cd1a9f970f798e51139503f45e1c8845efb2dcaab77eb44194e262abd0", "src": "canonical/templates/dispatch-protocol-checklist.md"}
 {"dst": ".agent/aid/templates/downstream-worktree-entry.md", "profile": "antigravity", "sha256": "56dd8fd1b7d9e1b9696b6c414ac638ee32a47174225615a0f57e5d37780a0a7f", "src": "canonical/templates/downstream-worktree-entry.md"}
 {"dst": ".agent/aid/templates/feature-inventory.md", "profile": "antigravity", "sha256": "81d14cc8d0bd7bf7b1c900779d617e5dbfd68c19bd2320c9ab9839258fa43de6", "src": "canonical/templates/feature-inventory.md"}
@@ -132,7 +135,7 @@
 {"dst": ".agent/aid/templates/review-rubrics/process.md", "profile": "antigravity", "sha256": "e1ee12afad14279359b9344abf07d924ef48d1891f1253a1df065824c99d0dcb", "src": "canonical/templates/review-rubrics/process.md"}
 {"dst": ".agent/aid/templates/review-rubrics/summary.md", "profile": "antigravity", "sha256": "3a92e58a409dc8d5d2ba1de02dae2fb1a9e8c83fa57e8e55a32985be62c34aa2", "src": "canonical/templates/review-rubrics/summary.md"}
 {"dst": ".agent/aid/templates/reviewer-dispatch.md", "profile": "antigravity", "sha256": "b726e28b6ed0ae3083b111d5fe1cac73c0d6e8032ec37504afd63eccce7f7fab", "src": "canonical/templates/reviewer-dispatch.md"}
-{"dst": ".agent/aid/templates/reviewer-ledger-schema.md", "profile": "antigravity", "sha256": "4c70a13390899722b29cd2996a931145e08e78d69f4bcfce3bb1d66037f0118f", "src": "canonical/templates/reviewer-ledger-schema.md"}
+{"dst": ".agent/aid/templates/reviewer-ledger-schema.md", "profile": "antigravity", "sha256": "95909e807ec905326399ce099f28dee35d687c21ba8de5ae4b8f8dea602852a6", "src": "canonical/templates/reviewer-ledger-schema.md"}
 {"dst": ".agent/aid/templates/rough-time-hints.md", "profile": "antigravity", "sha256": "c2ade084bc1923ab0fad44ec6ae3cdc149f5d3efea6abab20bf2d50f3847dac2", "src": "canonical/templates/rough-time-hints.md"}
 {"dst": ".agent/aid/templates/self-review-protocol.md", "profile": "antigravity", "sha256": "10a9e6d79fec69e9f4865b37018813910a7c0d328ecb8431779c7c7dd8e55c00", "src": "canonical/templates/self-review-protocol.md"}
 {"dst": ".agent/aid/templates/settings.yml", "profile": "antigravity", "sha256": "51a3ec8a4d77383c7d063a609d0416c66d4fcd2219a6dd22dcd3d6ad785d284f", "src": "canonical/templates/settings.yml"}
@@ -151,7 +154,7 @@
 {"dst": ".agent/aid/templates/task-detail-template.md", "profile": "antigravity", "sha256": "230c07e928110de96d2c1f678e505c8ec870ca5efbbfd9714f35451a5abe9ae0", "src": "canonical/templates/task-detail-template.md"}
 {"dst": ".agent/aid/templates/task-state-template.md", "profile": "antigravity", "sha256": "04a534014f781a3e40d2f503686ab28593d1a128c5ee86227c9b2547415ee6fd", "src": "canonical/templates/task-state-template.md"}
 {"dst": ".agent/aid/templates/work-initiation-gate.md", "profile": "antigravity", "sha256": "01bd8b8a34a7a879c93212979b5d88128555553cf21d74508265ffdcb388a021", "src": "canonical/templates/work-initiation-gate.md"}
-{"dst": ".agent/aid/templates/work-state-template.md", "profile": "antigravity", "sha256": "73cfa3deb190693f949a605946364e1e0f29bb643cb8ccc38a1fbce3fed5ba60", "src": "canonical/templates/work-state-template.md"}
+{"dst": ".agent/aid/templates/work-state-template.md", "profile": "antigravity", "sha256": "60759324718348752e3b7ef862d81fc6efb3374360d5473b09ddb93bb93abe25", "src": "canonical/templates/work-state-template.md"}
 {"dst": ".agent/aid/templates/worktree-lifecycle.md", "profile": "antigravity", "sha256": "7da48f7e6240194a9329ea0e86e0bcfbca0951b27dde5742d16b54bff970b760", "src": "canonical/templates/worktree-lifecycle.md"}
 {"dst": ".agent/skills/aid-add-api/SKILL.md", "profile": "antigravity", "sha256": "a1d6acb9649574672c17b2a870d59ef06cd6712c2bfb606517c1a5c115859ce3", "src": "canonical/skills/aid-add-api/SKILL.md"}
 {"dst": ".agent/skills/aid-add-cli/SKILL.md", "profile": "antigravity", "sha256": "21b88eab7f9b7bd97cf6922e38ca0b2dc716197a2a1862fb1fe987b1b9df7c34", "src": "canonical/skills/aid-add-cli/SKILL.md"}

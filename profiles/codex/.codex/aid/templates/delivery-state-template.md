@@ -87,6 +87,19 @@ so the delivery lifecycle MUST be independently authored.
 
 ---
 
+## Criteria Gaps
+
+<!-- AUTHORED by gap-register.sh, never by hand. Delivery scope: gaps raised by this delivery's
+     DELIVERY-GATE review land here, not in the shared work-level STATE.md, preserving the same
+     disjoint-write property as the Q&A section below.
+
+     A criteria gap is "there is no rule to judge this by" -- a missing PRECONDITION of the review,
+     not a defect in the artifact. Full cell contracts: work-state-template.md ## Criteria Gaps. -->
+
+| Gap Key | Kind | Status | Depth | Recurrences | Scope | Criterion | Resolution |
+|---|---|---|---|---|---|---|---|
+| _none yet_ | | | | | | | |
+
 ## Cross-phase Q&A
 
 <!-- AUTHORED -- single writer: this delivery's branch (via the delivery-gate step of aid-execute).

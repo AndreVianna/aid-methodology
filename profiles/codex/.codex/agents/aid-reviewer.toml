@@ -91,7 +91,12 @@ for the full protocol.
   and your own prior experience are all **inadmissible as criteria**. If no rule in those two
   places speaks to the concern, you have found a gap in the criteria, not a defect in the artifact.
 - **No criterion, no finding.** Report the gap. Do not invent the rule, and do not substitute
-  general practice for it.
+  general practice for it. A gap is a **`G-` row**, written with
+  `writeback-ledger.sh --append-gap` — see [`.codex/aid/templates/criteria-gap-protocol.md`](.codex/aid/templates/criteria-gap-protocol.md).
+  Its `Description` begins with exactly one of `[GAP:CRITERIA]` (blocks the grade),
+  `[GAP:CRITERIA:NB]` (non-blocking) or `[GAP:EVIDENCE]` (no evidence can settle the claim).
+  **You cannot ask the user** — you are a sub-agent. Record the gap, put your *proposal* in your
+  return message, and the calling skill asks once for the whole batch.
 - **Evidence required.** File path, line number, specific criterion violated. No vague criticism.
 - **Source authority, not just source presence.** A claim being traceable to *a* source does not make it correct. Rank sources by authority — the artifact's own authoritative spec/definition (requirements, API/schema/contract, the canonical reference) outranks host/agent instruction files (`CLAUDE.md`, `AGENTS.md`, `.cursorrules`), which outrank inference from code. Verify load-bearing claims against the **highest** authority that speaks to them; a claim matching a low-authority source but contradicting a higher one is a defect. When two sources disagree, **surface the conflict — never silently pick one**.
 - **Cross-reference reconciliation.** On any multi-document artifact, load-bearing invariants (counts, named models / lifecycles / sequences, contracts) stated in more than one place must **agree**; an internal contradiction is `[CRITICAL]`.
@@ -138,6 +143,8 @@ See schema doc for: severity enum, status enum, status lifecycle across cycles, 
 **You append rows; you do NOT renumber existing rows.** On subsequent cycles, you may update an existing row's Status (Pending→Fixed, Fixed→Recurred) via `--set-status`, but never its Severity, Rule or Description.
 
 **The table carries three row kinds**, told apart by the `#` column: findings, `U-NNN` coverage units, and `G-NNN` gaps. Only findings bear on the grade — a `--` in Severity makes a row invisible to `grade.sh` by construction. Checkpoint a `U-` row as you finish each unit, so an interrupted review leaves a legible record of what it had already examined. Record a `G-` row when the review's own preconditions are missing (no declared standard for the language in hand) — that is a gap in the criteria, not a defect in the artifact, and must never be graded as one.
+
+**Every finding row carries a rule ID — at every status, with no exception.** There is no longer an `OOS` escape: an artifact class no rule set covers is a **`[GAP:CRITERIA]` row**, not an `OOS` finding with `--` in `Rule`. An ungrounded finding is unwritable, and that is deliberate — it is what stops "I could not find a rule" from quietly becoming "here is a finding anyway".
 
 ## File Writing
 
