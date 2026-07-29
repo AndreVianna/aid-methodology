@@ -1,6 +1,6 @@
 ---
-state: In Review
-review: "--"
+state: Done
+review: "PASS (wave 11) -- 2 open rows resolved as DETAIL defects, not code defects"
 elapsed: "--"
 notes: "--"
 ticket_ref: "--"

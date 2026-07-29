@@ -690,7 +690,56 @@ resolves into the module split.
 
 ---
 
-## Wave 11 (tasks 035 + 036) — findings, pre-review
+## Wave 11 (tasks 035 + 036) — PASS. Two DETAIL statements corrected against the corpus.
+
+Reviewer verdict: **passes**, at C+ on two open rows — both of which turn out to be **factual errors in
+the immutable DETAILs**, found by measurement, not defects in the delivered code. Recording the
+orchestrator decision on each, which closes them.
+
+### AC-6 (task-035) is factually wrong — Accepted as a DETAIL defect
+
+**Status: Accepted — DETAIL defect, test asserts reality, content question routed.**
+
+AC-6 requires APPROVAL-HALT's `terminal.handoff` to mention `/aid-execute`. Measured:
+`/aid-execute` appears **three times in that state's section prose and zero times in its
+`**Advance:**` clause**, which is the only text `handoff` derives from. The reviewer independently
+confirmed both the measurement and the reasoning.
+
+Neither route to "satisfying" it is right. Teaching `handoff` to scan section prose changes what
+handoff means for **every skill in the corpus** — a cross-cutting semantic change to a graded module,
+to satisfy one assertion. Editing `shortcut-engine.md` to add the command to its Advance clause edits
+authored methodology prose to suit a renderer, which inverts the dependency; that is the exact
+reasoning the tasks-019–029 reviewer used to endorse fixing rather than escalating on row 14.
+
+So the AC is recorded as defective and the test asserts what is true (`advanceType === 'HALT'`, plus
+the real handoff substring). **Routed as a content question, not a code question:** whether
+`shortcut-engine.md`'s APPROVAL-HALT Advance clause *should* name the resume command is a question for
+whoever owns that template, and it is worth asking, because a reader of the chart currently learns the
+run halts but not what to run next. Filed against the methodology content, not against this work.
+
+### "One skill whose parent is residual-shaped" — there is no such skill
+
+**Status: Accepted — DETAIL statement stale; the reviewer's LOW is unclosable as written.**
+
+task-036's DETAIL says confidence weakening "matters for exactly one skill, whose parent is a
+residual-shape skill", and the reviewer filed a [LOW] that this real fixture is not exercised with a
+live file read. Measured across the corpus: **all 13 sibling-doorway skills resolve to `inline-states`
+parents** — nine to `aid-create-document`, three to `aid-test`, one to `aid-prototype`. None is
+residual. The count matches `shapeCounts`' 13.
+
+So there is no live fixture to add, and the W4 weakening path is reachable **only** through the
+synthetic fixture the author already wrote. That is the correct coverage for a rule with no corpus
+instance, and manufacturing a "real" one would mean either mislabelling a skill or asserting against a
+shape that does not exist. Recorded rather than closed with a fabricated test.
+
+**Both rows share a shape worth naming:** a DETAIL written months ago asserts something about the
+corpus that measurement now contradicts. Neither was catchable by reading the DETAIL — only by
+checking it against the files. Waves 12–14 should expect more of these as feature-004 finishes
+touching the corpus.
+
+---
+
+## Wave 11 (tasks 035 + 036) — findings
 
 Both doorway extractors, dispatched in parallel and file-disjoint. **2205 tests across 35 files.**
 Ten mutants, all killed after two rounds of correcting my own harness.
