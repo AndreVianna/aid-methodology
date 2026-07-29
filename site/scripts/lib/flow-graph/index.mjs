@@ -26,6 +26,8 @@ import { splitFrontmatter } from './source.mjs';
 import { extractDispatch } from './extract-dispatch.mjs';
 import { extractInline } from './extract-inline.mjs';
 import { extractResidual } from './extract-residual.mjs';
+import { extractEngineDoorway } from './extract-engine.mjs';
+import { extractSiblingDoorway } from './extract-sibling.mjs';
 
 // Re-export supporting primitives as the public façade API.
 export { classifySkill, validateChart, renderMermaid, serializeChart };
@@ -33,7 +35,25 @@ export { classifySkill, validateChart, renderMermaid, serializeChart };
 // ── Authored shapes handled by this façade ─────────────────────────────────
 
 /** Shapes whose extractors are wired here; doorway shapes are handled by task-037. */
+/**
+ * The three shapes feature-003 charts from a skill's own body.
+ *
+ * Kept as its own constant, and still exported-by-use below, because the *authored*
+ * distinction remains meaningful after task-037: the two doorway shapes chart by
+ * composing a shared segment rather than by reading a state machine out of the skill.
+ */
 const AUTHORED_SHAPES = new Set(['dispatch-table', 'inline-states', 'residual']);
+
+/**
+ * The two doorway shapes, charted by composing the shared engine or a parent's chart
+ * rather than by reading a state machine out of the skill's own body.
+ *
+ * Declared for the same reason AUTHORED_SHAPES is: the distinction stays meaningful
+ * after task-037 even though both now dispatch. Together the two sets are the whole
+ * five-member classifier enum, which is what `skills/body.mjs` relies on to guarantee
+ * that exactly one body provider claims each skill.
+ */
+const DOORWAY_SHAPES = new Set(['engine-doorway', 'sibling-doorway']);
 
 /**
  * Build a validated FlowChart for a skill with one of the three authored shapes.
@@ -80,14 +100,20 @@ export function buildFlowChart({ name, dir }) {
   const bodyText = bodyLines.join('\n');
   const { shape } = classifySkill({ name, dir, frontmatter, body: bodyText });
 
-  if (!AUTHORED_SHAPES.has(shape)) {
-    throw new Error(
-      `[gen-skills] buildFlowChart: shape '${shape}' is not an authored shape` +
-      ` (${skillRelPath}:1)`
-    );
-  }
+  // No pre-switch shape guard. There was one, admitting the three authored shapes and
+  // throwing for the two doorways — correct until task-037 wired the doorway rows, at
+  // which point every classifier value charts and the guard could only ever pass.
+  // Widening it to all five made it unreachable **and** redundant: the `default:` arm
+  // below throws the same error with the same file path, and is the single place a
+  // future sixth shape would surface. Two guards for one condition, one of which no
+  // input can reach, is worse than one.
 
   // ── Dispatch ────────────────────────────────────────────────────────────
+  //
+  // task-037 adds the two doorway rows (E-DEP-1). The three authored rows are
+  // unchanged; this is the additive extension feature-003's Feature Flow named as the
+  // declared seam. With all five present, every classifier value now charts, which is
+  // what makes FR-2 hold at the page level rather than only for authored shapes.
 
   let chart;
   switch (shape) {
@@ -107,8 +133,18 @@ export function buildFlowChart({ name, dir }) {
         frontmatter,
       });
       break;
+    case 'engine-doorway':
+      chart = extractEngineDoorway({
+        dirName: name, body: bodyText, bodyStartLine, sourcePath: skillRelPath,
+      });
+      break;
+    case 'sibling-doorway':
+      chart = extractSiblingDoorway({
+        dirName: name, body: bodyText, bodyStartLine, sourcePath: skillRelPath,
+      });
+      break;
     default:
-      // Unreachable: AUTHORED_SHAPES guard above ensures shape is one of three values.
+      // Unreachable: the CHARTED_SHAPES guard above admits only the five enum values.
       throw new Error(`[gen-skills] buildFlowChart: unhandled shape '${shape}' (${skillRelPath}:1)`);
   }
 

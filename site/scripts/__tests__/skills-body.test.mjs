@@ -14,13 +14,19 @@
 // All assertions are mutation-proved (break source → that specific test fails).
 
 import { describe, it, expect, afterEach } from 'vitest';
-import { readFileSync } from 'node:fs';
-import { resolve, dirname } from 'node:path';
+import { readFileSync, readdirSync } from 'node:fs';
+import { resolve, dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { BODY_PROVIDERS, BODY_APPENDERS, renderSkillBody } from '../skills/body.mjs';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const BODY_SRC = resolve(__dirname, '../skills/body.mjs');
+const REPO_ROOT = resolve(__dirname, '../../../');
+
+// Snapshot the shipped registries at import, before any test mutates them, so the
+// afterEach below can put them back exactly as the module declared them.
+const REAL_PROVIDERS = [...BODY_PROVIDERS];
+const REAL_APPENDERS = [...BODY_APPENDERS];
 
 // ── Fixtures ──────────────────────────────────────────────────────────────────
 
@@ -44,10 +50,14 @@ describe('BODY_PROVIDERS', () => {
     expect(Array.isArray(BODY_PROVIDERS)).toBe(true);
   });
 
-  it('has exactly one registered provider (flow-chart-authored, added by task-029)', () => {
-    // Mutation probe: remove the flow-chart-authored entry → toHaveLength(1) fails.
-    expect(BODY_PROVIDERS).toHaveLength(1);
-    expect(BODY_PROVIDERS[0].id).toBe('flow-chart-authored');
+  it('has exactly two registered providers, in declaration order', () => {
+    // Was one (flow-chart-authored, task-029); task-037 adds flow-chart-doorway, and
+    // feature-004's is the last provider this work registers. Ids are asserted rather
+    // than only the count, so swapping one for a wrong entry fails too.
+    expect(BODY_PROVIDERS.map((p) => p.id)).toEqual([
+      'flow-chart-authored',
+      'flow-chart-doorway',
+    ]);
   });
 
   it('is declared as a static array literal containing the flow-chart-authored entry in the source', () => {
@@ -143,9 +153,17 @@ describe('renderSkillBody — unclaimed skill (AC-3)', () => {
 
 describe('renderSkillBody — contract with populated registries (AC-6)', () => {
   afterEach(() => {
-    // Restore both registries to empty after each test.
+    // RESTORE the real registries, rather than leaving them empty.
+    //
+    // This previously emptied both and stopped there, which silently broke every test
+    // defined after this block: they saw a registry with no providers, so "no provider
+    // claims this skill" was vacuously true. It went unnoticed because nothing later in
+    // the file needed the real entries until task-037's partition guard, which then
+    // reported all 111 skills unclaimed while the generator was charting all 111 happily.
     BODY_PROVIDERS.length = 0;
+    BODY_PROVIDERS.push(...REAL_PROVIDERS);
     BODY_APPENDERS.length = 0;
+    BODY_APPENDERS.push(...REAL_APPENDERS);
   });
 
   it('returns the first matching provider output when a provider applies', () => {
@@ -205,5 +223,94 @@ describe('renderSkillBody — contract with populated registries (AC-6)', () => 
     BODY_APPENDERS.push({ id: 'capture', render: (s) => { captured.push(s.dirName); return ''; } });
     renderSkillBody(EMPTY_SKILL);
     expect(captured).toEqual(['aid-fixture']);
+  });
+});
+
+// ── task-037: the provider partition ──────────────────────────────────────────
+//
+// The DETAIL makes a point of this being a TEST, not a comment: array order must not be
+// load-bearing. `classifySkill` returns one value from a five-member enum; the authored
+// provider claims three shapes and the doorway provider claims two, and the two sets
+// partition the enum. So at most one predicate can ever fire, and the day a sixth shape
+// is added it goes unclaimed and these tests fail loudly — rather than being routed
+// silently to whichever provider happens to be listed first.
+
+describe('task-037 — exactly one provider claims each skill', () => {
+  const dirNames = readdirSync(join(REPO_ROOT, 'canonical', 'skills'), { withFileTypes: true })
+    .filter((d) => d.isDirectory())
+    .map((d) => d.name)
+    .sort();
+
+  /** A SkillRecord shaped like discover.mjs output, read from the live file. */
+  function recordFor(dirName) {
+    const raw = readFileSync(join(REPO_ROOT, 'canonical', 'skills', dirName, 'SKILL.md'), 'utf8');
+    const lines = raw.split('\n').map((l) => l.replace(/\r$/, ''));
+    let fences = 0;
+    let start = 0;
+    for (let i = 0; i < lines.length; i++) {
+      if (/^---\s*$/.test(lines[i])) {
+        fences++;
+        if (fences === 2) { start = i + 1; break; }
+      }
+    }
+    return { dirName, body: lines.slice(start).join('\n'), fields: [] };
+  }
+
+  it('every directory under canonical/skills/ is claimed by exactly one provider', () => {
+    // Non-vacuity: an empty listing would make the loop below prove nothing.
+    expect(dirNames.length).toBeGreaterThan(50);
+
+    const unclaimed = [];
+    const contested = [];
+    for (const dirName of dirNames) {
+      const skill = recordFor(dirName);
+      const hits = BODY_PROVIDERS.filter((p) => p.applies(skill)).map((p) => p.id);
+      if (hits.length === 0) unclaimed.push(dirName);
+      if (hits.length > 1) contested.push(`${dirName}: ${hits.join(' + ')}`);
+    }
+
+    // Named, not counted — a bare count would not say which skill regressed.
+    expect(unclaimed).toEqual([]);
+    expect(contested).toEqual([]);
+  });
+
+  it('the two providers partition the five-shape enum — no overlap, no gap', () => {
+    const src = readFileSync(BODY_SRC, 'utf8');
+    const authored = ['dispatch-table', 'inline-states', 'residual'];
+    const doorway = ['engine-doorway', 'sibling-doorway'];
+
+    // Both sets are declared in the module, and they are disjoint and complete.
+    for (const s of [...authored, ...doorway]) expect(src).toContain(`'${s}'`);
+    expect(authored.filter((s) => doorway.includes(s))).toEqual([]);
+    expect([...authored, ...doorway].sort()).toEqual([
+      'dispatch-table', 'engine-doorway', 'inline-states', 'residual', 'sibling-doorway',
+    ].sort());
+  });
+
+  it('both providers emit the identical ## Flow heading, compared not inspected', () => {
+    // The AC asks for this to be established by comparing rendered outputs. Two real
+    // skills, one of each family.
+    const authoredOut = BODY_PROVIDERS
+      .find((p) => p.id === 'flow-chart-authored')
+      .render(recordFor('aid-review'));
+    const doorwayOut = BODY_PROVIDERS
+      .find((p) => p.id === 'flow-chart-doorway')
+      .render(recordFor('aid-create-api'));
+
+    const headingOf = (s) => s.split('\n')[0];
+    expect(headingOf(authoredOut)).toBe('## Flow');
+    expect(headingOf(doorwayOut)).toBe(headingOf(authoredOut));
+  });
+
+  it('order is not load-bearing: reversing the providers changes nothing', () => {
+    // The partition claim, exercised rather than asserted. If the two predicate sets
+    // ever overlapped, first-match-wins would make this fail.
+    const reversed = [...BODY_PROVIDERS].reverse();
+    for (const dirName of dirNames) {
+      const skill = recordFor(dirName);
+      const forward = BODY_PROVIDERS.find((p) => p.applies(skill));
+      const backward = reversed.find((p) => p.applies(skill));
+      expect(backward.id).toBe(forward.id);
+    }
   });
 });
