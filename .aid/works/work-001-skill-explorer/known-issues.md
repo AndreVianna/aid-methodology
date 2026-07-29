@@ -575,6 +575,29 @@
 
 ---
 
+## KI-020: `index.md` byte-identity test is intermittent in full-suite runs only — **CLOSED, root cause was a 5s test budget**
+
+**Resolution (delivery-005, wave 2).** Not flakiness and never a byte difference: the test
+shells the whole generator out **twice** and carried **no explicit timeout**, so it ran against
+vitest's 5000 ms default. One generator run measures ~2.4 s, so the pair sits exactly on that
+budget and tips over under any additional load — which is precisely the "full-suite runs only"
+signature. The failure surfaced as `Test timed out in 5000ms`, which reads like a determinism
+failure and sent the original investigation toward parallelism and the dev server.
+
+The sibling two-run test in `gen-skills.test.mjs` had already solved this, budgeting **90000 ms**
+at line 748. The index suite now matches it. Verified green both in isolation and in a full
+suite run **with the dev server running**, the condition that previously provoked it.
+
+Aggravated, though not caused, by delivery-005 wave 1: fixing KI-021 took the generator from 34
+sidecars to 111, lengthening each run and moving the pair from "usually just under" to "usually
+just over".
+
+**Lesson:** a test that shells out to a real build step needs a budget sized to that step. A
+timeout reported as a test failure is easy to misread as the behaviour under test being wrong.
+
+<details>
+<summary>Original entry, kept for the investigation record</summary>
+
 ## KI-020: `index.md` byte-identity test is intermittent in full-suite runs only
 
 - **Type:** Flaky test (pre-existing; task-014, delivery-002)
@@ -604,6 +627,10 @@
   environmental and the fix is to stop running a dev server during a full suite. If it fires in CI
   too, the test needs to stop depending on an unlocked file — capture both runs' bytes under a
   temporary output directory rather than the live tree.
+
+</details>
+
+---
 
 ## KI-019: work-004 shrinks the skill corpus 111 → 74 and also edits `site/` — merge-order hazard
 

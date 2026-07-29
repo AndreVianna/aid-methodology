@@ -190,6 +190,88 @@ fires. The defect class is closed in both directions from here.
 *any* chart opens a panel. The panel would have been absent from 77 of 111 pages, and the
 route gate would have looked like the culprit.
 
+### task-049 — client controller lifecycle, and a defect only the browser could show
+
+The controller's structure is sound: the three-part readiness predicate is implemented as
+KI-011 requires, binding is once-per-container via a `WeakSet` keyed on element identity,
+decoration is idempotent through `data-aid-node`, and `init()` is wrapped so an unexpected
+throw degrades to the no-JavaScript state.
+
+**The defect: the node-id pattern matched nothing on a real page.** `ID_RE` was
+`/^flowchart-([A-Za-z][A-Za-z0-9_]{0,31})-\d+$/`, anchored at the start. The ids mermaid
+actually emits are `mermaid-<diagramId>-flowchart-<nodeId>-<n>` — measured on the running site
+as `mermaid-rkijoq1pv-flowchart-n10-9`, with the diagram id differing on every render
+(`11br4n7o5`, `rkijoq1pv`, `23qhs6d31` across three loads). The start anchor matched **0 of 10**
+nodes. Every node would have failed to resolve, the container would have gone `BOUND_INERT`, and
+the panel would never have opened on any page — while the unit suite stayed green.
+
+It stayed green because the fixtures built ids as `flowchart-n1-0`, a format no page produces.
+The suite tested a fiction consistently, so nothing inside it could disagree. This is the same
+shape as KI-021 from wave 1: **an assumption held identically by the code and its tests is
+invisible to those tests.**
+
+Fixed by dropping the start anchor while keeping the end anchor, which leaves the capture
+unambiguous — feature-003's id charset contains no `-`, so in `…-flowchart-n10-9` group 1 can
+only be `n10`. All fixtures now carry a realistic diagram-id prefix, and a regression test pins
+four ids **copied verbatim from rendered pages**, asserts the pattern is not start-anchored, and
+asserts it is still end-anchored.
+
+Proven: restoring the start anchor now fails **9 tests** including the dedicated real-id case,
+where before the change the suite passed with the bug present.
+
+**Not a defect: a chart that failed to render.** `aid-create-api` showed mermaid's "Syntax error
+in text" on load, twice. Chased to ground because a broken chart would sink this delivery: the
+generated source **parses and renders fine** when driven directly (a 200 KB SVG), the two
+charts for `aid-add-api` and `aid-create-api` are byte-identical apart from one label, and with
+the browser cache disabled the page renders perfectly. It was a stale cached page from an
+earlier poisoned render — KI-018's family, not a regression, and not caused by anything in this
+delivery. Worth recording that the KI-018 workaround is doing its job: `data-diagram` held the
+correct source throughout.
+
+### task-051 — panel and focus stylesheet
+
+`site/public/skill-node-panel.css` covers the block and all eight Anatomy elements, and styles
+nothing outside that list. Executed directly rather than dispatched, since delivery-003's UI
+work already established how this site's theming behaves.
+
+Two decisions worth recording.
+
+**Nodes are selected by their decoration, not by a container class.** The rules key off
+`g.node[role='button']` — the attribute the controller applies — rather than any wrapper name.
+That keeps this file off task-049's ground while it was being written in parallel, and it is
+also the more honest selector: the styling applies to exactly those nodes that are actually
+interactive.
+
+**Colours come only from Starlight's `--sl-color-*` variables.** `casulo.css` maps those per
+theme, dark under `:root:not([data-theme='light'])` and light under the explicit light scope,
+so referencing them tracks both themes with no second palette here. `!important` is used on the
+shape-stroke rules for the same load-bearing reason it is used on the edge rules in
+`casulo.css`: mermaid injects a `<style>` block inside each generated SVG scoped by the
+diagram's generated id, and an id selector outranks any attribute selector a stylesheet can
+write.
+
+The criteria here are mostly **negative** — no hard-coded colour, no animation or transition on
+focus and open states, no `position: fixed`, no scroll lock, no second breakpoint — and
+negatives rot silently: an edit that adds a hex colour or a transition breaks a stated property
+of the feature (theme tracking, and `prefers-reduced-motion` needing no branch) without
+breaking anything a rendering test would notice. So they are now a committed guard,
+`scripts/__tests__/skill-node-panel-css.test.mjs`, 17 tests, which strips comments first so no
+criterion can be satisfied by prose that merely mentions the thing.
+
+Proven capable of failing, not merely passing: five perturbations — a hard-coded hex, a
+transition on focus, dropping one shape from the focus selector list, making the panel
+`position: fixed`, and removing the fragment's height cap — are each caught by the relevant
+check.
+
+The narrow-screen rule reuses the site's existing 50rem breakpoint from `shell.css`, where the
+header tab row folds, rather than introducing one; a test asserts that is the only media query
+in the file.
+
+Deferred to the wave-2 build: confirming the file is copied verbatim into `dist/`. Running a
+build here would have regenerated 111 pages while tasks 047 and 049 were working. The mechanism
+is not in doubt — `CNAME`, `favicon.svg` and `robots.txt` all reach `dist/` from `public/` — so
+this is a check of the specific file, not of Astro's behaviour.
+
 **A benign measurement drift, recorded so it is not re-investigated.** task-046's DETAIL says
 "four pages carry `generatedFrom` today". It is now five: `reference/agents.md`,
 `reference/kb.md` and `reference/settings.md` cite paths outside `canonical/skills/`, and

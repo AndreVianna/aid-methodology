@@ -475,7 +475,13 @@ describe('assertion 14 — index.md is byte-identical across two generator runs'
     const run2 = readFileSync(INDEX_PATH);
 
     expect(run2.equals(run1)).toBe(true);
-  });
+    // Explicit timeout, matching the equivalent two-run test in gen-skills.test.mjs.
+    // This test shells the whole generator out twice; one run takes ~2.4s, so the
+    // pair sits right on vitest's 5s default and tips over under any load. That is
+    // the whole of KI-020's "intermittent in full-suite runs only" — it was a test
+    // budget too small for the work, never a byte difference, and the failure it
+    // produced was a timeout that read like a determinism failure.
+  }, 90000);
 });
 
 // ── Assertion 15 — divergence note ────────────────────────────────────────────

@@ -1,8 +1,8 @@
 ---
-state: In Progress
+state: In Review
 review: "--"
 elapsed: "--"
-notes: "--"
+notes: "skill-node-panel.mjs + 27-test lifecycle suite; 7 mutations killed"
 ticket_ref: "--"
 ---
 
