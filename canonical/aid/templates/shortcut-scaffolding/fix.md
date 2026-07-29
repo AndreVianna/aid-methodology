@@ -90,11 +90,11 @@ route elsewhere; do not fold them into this shortcut's task set:
 | Request | Route to | Why not `aid-fix` |
 |---|---|---|
 | Broad test-authoring not scoped to *this* defect | `aid-test` | `aid-fix`'s own `task-002` is coverage scoped narrowly to proving this one defect closed, not general test authoring |
-| New behavior / intent (not a defect) | `aid-change` | not corrective -- a defect is "the code violates its own spec/intent"; new intent is a change |
+| New behavior / intent (not a defect) | `aid-update` | not corrective -- a defect is "the code violates its own spec/intent"; new intent is a change |
 | Behavior-preserving cleanup | `aid-refactor` | no observable defect being corrected |
 | Security **verification** (SAST/DAST/fuzz/dependency audit) beyond the one exploit path `task-002` closes | `aid-test-security` | deep security verification is its own specialized activity, not a regression test |
 | Incident **postmortem / runbook** | `aid-document-runbook` | documentation-of-the-incident is a DOCUMENT-typed deliverable, distinct from the IMPLEMENT mitigation |
-| Infra provisioning to close an incident | `aid-change-infra` | infrastructure change, not application-level correction |
+| Infra provisioning to close an incident | `aid-update-infra` | infrastructure change, not application-level correction |
 
 `aid-fix` itself performs the security **remediation** (the vulnerability
 patch) and the incident **mitigation** (the code/config fix) -- only the

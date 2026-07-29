@@ -1,12 +1,12 @@
 # Shortcut Scaffolding: document
 
 **Genre-structures reference for the document family (work-005 reframe of feature-010).**
-`document` is now a create/change **artifact**, not an engine verb: it is served by the
-hand-authored collapse skills `aid-create-document` / `aid-change-document` (+ the `-add`/
-`-update` aliases, the genre kind-siblings `aid-document-decision`/`-architecture`/
-`-guideline`/`-standard`/`-runbook`/`-tutorial`/`-changelog`, and the `aid-create-diagram`
-format sibling). This file is **no longer consulted by the shared engine** -- instead the
-hand-authored `aid-create-document`/`aid-change-document` bodies read it for the per-genre
+`document` is now a create/update **artifact**, not an engine verb: it is served by the
+hand-authored collapse skills `aid-create-document` / `aid-update-document` (plus the
+genre kind-siblings `aid-document-decision`/`-architecture`/`-guideline`/`-standard`/
+`-runbook`/`-tutorial`/`-changelog`, and the `aid-create-diagram` format sibling). This
+file is **no longer consulted by the shared engine** -- instead the hand-authored
+`aid-create-document`/`aid-update-document` bodies read it for the per-genre
 document **structure** (ADR, C4/arc42, runbook, tutorial, changelog, Diataxis, ...) they
 produce. Free-form prose, like any other `state-*.md` reference doc -- read for judgment,
 not machine-parsed. (The CAPTURE/SPEC/DETAIL sections below are retained as that structural
@@ -81,7 +81,7 @@ not yet built routes the build to `aid-create[-artifact]` first (the doc then
 describes reality -- `task-type-rules.md ## DOCUMENT` "verify accuracy against
 current codebase"). An ADR mandating a refactor: the ADR is `aid-document-decision`,
 the refactor is `aid-refactor`. A runbook needing new observability wiring: the
-wiring is `aid-change-infra`/`aid-monitor`, the runbook is `aid-document-runbook`.
+wiring is `aid-update-infra`/`aid-monitor`, the runbook is `aid-document-runbook`.
 **Analytical** reports (insight derived from data) cede to `aid-report` (G11) --
 `aid-document` communicates already-known information; only the **status/progress**
 half of the legacy `add-report`/`change-report` recipes (narration of known state)
@@ -89,7 +89,7 @@ stays here, as the bare `aid-document` shape.
 
 ## See also
 
-- `canonical/skills/aid-create-document/SKILL.md` (+ `aid-change-document`) -- the
+- `canonical/skills/aid-create-document/SKILL.md` (+ `aid-update-document`) -- the
   hand-authored collapse bodies that read this file for per-genre document structure
   (work-005; `document` is no longer engine-consulted)
 - `canonical/aid/templates/shortcut-scaffolding/analyze-report.md § Ownership
