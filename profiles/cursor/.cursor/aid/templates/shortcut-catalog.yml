@@ -1,10 +1,11 @@
 # canonical/aid/templates/shortcut-catalog.yml
 #
 # Single-source manifest for the direct-entry shortcut engine (feature-003,
-# work-001-lite-aid-skills). One row per invocation name -- both a canonical
-# verb+artifact form and its thin alias forms (aid-add-* mirrors aid-create-*;
-# aid-update-* mirrors aid-change-*) are separate rows/directories; the generator
-# provides no runtime alias/redirect mechanism (research/spec-grounding.md § Q-A2).
+# work-001-lite-aid-skills). One row per capability, one directory per row.
+# `create` and `update` are the two canonical grid verbs. There is no alias
+# form, no synonym data, and no redirect -- a name that is not a row is not
+# invocable at all. The generator provides no runtime redirect mechanism
+# (research/spec-grounding.md § Q-A2).
 #
 # Renders as VERBATIM BYTES to `<root>/aid/templates/shortcut-catalog.yml` in all 5
 # profiles -- a `.yml` is not in render.py's `_TEXT_EXTENSIONS`, matching the shipped
@@ -27,28 +28,34 @@
 #   name          (required, string) -- the invocation name AND the skill directory name
 #                 AND the rendered `/command` name. `render.py` sets
 #                 `skill_slug = skill_dir.name` and carries the frontmatter `name:`
-#                 through untouched -- there is no command-alias mechanism, so every
-#                 name a user can type is its own `canonical/skills/<name>/SKILL.md`
-#                 directory. MUST be `aid-` prefixed and MUST equal the directory it
+#                 through untouched -- there is no command-alias mechanism and no
+#                 runtime redirect, so every row name is its own
+#                 `canonical/skills/<name>/SKILL.md` directory and nothing else is
+#                 invocable. MUST be `aid-` prefixed and MUST equal the directory it
 #                 lives in.
 #
 #   verb          (required, string) -- the verb the engine dispatches on (e.g. `create`,
-#                 `fix`, `experiment`). An alias row carries the SAME verb as its
-#                 canonical mirror (`aid-add-api` -> `verb: create`, matching
-#                 `aid-create-api`) -- aliases are separate directories with an
-#                 identical `{verb, artifact}` binding, not a runtime redirect.
+#                 `update`, `fix`, `experiment`). `create` and `update` are the two
+#                 canonical grid verbs (FR-10 / Q3). The engine's family-scaffolding
+#                 consult keys on this field to resolve per-artifact CAPTURE slots and
+#                 SPEC-section activation (shortcut-engine.md § Family Scaffolding
+#                 Consult; feature-005 owns the `update`-family groupings-table binding).
 #
 #   artifact      (required, string, may be `""`) -- the artifact-type suffix (e.g.
 #                 `api`, `ui`, `data-model`). `""` for bare verbs that take no artifact
 #                 suffix (`aid-fix`, `aid-refactor`, `aid-experiment`, `aid-report`, ...).
 #
-#   alias_of      (required, string or `null`) -- `null` for a canonical row; the
-#                 mirrored CANONICAL `name` for an alias row (`aid-add-api` ->
-#                 `alias_of: aid-create-api`; `aid-update-api` ->
-#                 `alias_of: aid-change-api`). An alias is a full, separate
-#                 `canonical/skills/<name>/SKILL.md` directory -- see the Topology note
-#                 above; this field is bookkeeping for the parity check and
-#                 `/aid-triage`, not a redirect the generator resolves.
+#   alias_of      (required, string or `null`) -- **always `null`**; vestigial but
+#                 deliberately retained as a required field. Removal is a scheduled
+#                 follow-on after features 004, 005, and 006 land. Three consumers
+#                 block its removal today: `_REQUIRED_FIELDS` in
+#                 `build-shortcut-skills.py` (reports every row as invalid if the
+#                 field is absent), the `r.alias_of === 'null'` family-split check in
+#                 `site/scripts/gen-reference.mjs` (reclassifies every row as an alias
+#                 if the field is missing), and assertion `DC01a` in
+#                 `tests/canonical/test-doc-counts.sh` (asserts
+#                 `CANON + ALIAS == ROWS`, derived by `grep -c` on `^    alias_of:`).
+#                 Every row now reads `alias_of: null` — no exception.
 #
 #   default_type  (required, string) -- the default task Type this shortcut's DETAIL
 #                 emits, one of the closed 8-enum (byte-stable; extending it is a
@@ -68,20 +75,13 @@
 #                 Fix). Organizational metadata; NOT a task Type.
 #
 #   intent        (required, string) -- a one-line human-readable summary of what this
-#                 shortcut does. For an alias row this is simply
-#                 `"Alias of <canonical-name>."`.
+#                 shortcut does.
 #
-#   repurpose     (optional, boolean, default `false`) -- `true` ONLY for the 4
-#                 hand-authored skills this catalog also registers so the parity
-#                 check and `/aid-triage` recognise them: the 2 pre-existing FAT
-#                 pipeline skills `aid-deploy` / `aid-monitor` (feature-012
-#                 re-purposes them; G9/G10), plus the 2 Q&A skills `aid-query-kb`
-#                 (pre-existing) / `aid-ask` (v2.1.0 coverage-gap follow-on;
-#                 restored here as `aid-query-kb`'s friendly-named thin alias, NOT
-#                 pre-existing -- G11; see those rows' own comment block). The
-#                 maintainer build helper (`build-shortcut-skills.py`) SKIPS
-#                 `repurpose: true` rows -- it never generates or overwrites their
-#                 `SKILL.md` (they are hand-authored, not thin doorways).
+#   repurpose     (optional, boolean, default `false`) -- `true` for rows whose
+#                 `SKILL.md` is hand-authored rather than generated. The maintainer
+#                 build helper (`build-shortcut-skills.py`) SKIPS `repurpose: true`
+#                 rows -- it never generates or overwrites their `SKILL.md`. 24 rows
+#                 carry `repurpose: true`.
 #
 # ---------------------------------------------------------------------------
 # Row shape (documentation only -- illustrative; NOT a live row. Family features
@@ -92,17 +92,17 @@
 #   - name: aid-create-api      # == skill directory == /command (render.py: name == dir)
 #     verb: create               # the verb the engine dispatches on
 #     artifact: api               # artifact suffix ("" for bare verbs: fix, refactor, ...)
-#     alias_of: null              # null = canonical form
+#     alias_of: null              # always null; vestigial-but-required (see alias_of contract)
 #     default_type: IMPLEMENT     # default task Type (closed 8-enum; see shortcut-engine.md § A-6)
 #     group: G4                   # activity group (REQUIREMENTS.md §5.1)
 #     intent: "Create an API endpoint / middleware (contract, handler, validation)."
-#   - name: aid-add-api
-#     verb: create                 # add == create (alias family)
+#   - name: aid-update-api       # canonical update-family row
+#     verb: update                # update is the second canonical grid verb
 #     artifact: api
-#     alias_of: aid-create-api     # thin alias; identical engine binding
+#     alias_of: null              # always null; vestigial-but-required (see alias_of contract)
 #     default_type: IMPLEMENT
-#     group: G4
-#     intent: "Alias of aid-create-api."
+#     group: G5                   # G5: Change + Refactor family
+#     intent: "Update an existing API endpoint / middleware's contract or behavior."
 #     # repurpose: false           # illustrative -- normally omitted (default false)
 #
 # ---------------------------------------------------------------------------
@@ -117,7 +117,9 @@ shortcuts:
     group: G6
     intent: "Diagnose and correct a defect, regression, incident, or vulnerability."
 
-  # --- G4: Create family (feature-006, task-015) -- 12 canonical + 12 aid-add-* aliases ---
+  # --- G4: Create family (feature-006, task-015) -- 16 canonical rows (12 in this
+  # section; aid-create-test in G7, aid-create-document and aid-create-diagram in G8,
+  # aid-create-dashboard in G11) ---
   - name: aid-create
     verb: create
     artifact: ""
@@ -202,178 +204,95 @@ shortcuts:
     default_type: IMPLEMENT
     group: G4
     intent: "Provision a new infrastructure resource."
-  - name: aid-add
-    verb: create
-    artifact: ""
-    alias_of: aid-create
-    default_type: IMPLEMENT
-    group: G4
-    intent: "Alias of aid-create."
-  - name: aid-add-api
-    verb: create
-    artifact: api
-    alias_of: aid-create-api
-    default_type: IMPLEMENT
-    group: G4
-    intent: "Alias of aid-create-api."
-  - name: aid-add-ui
-    verb: create
-    artifact: ui
-    alias_of: aid-create-ui
-    default_type: IMPLEMENT
-    group: G4
-    intent: "Alias of aid-create-ui."
-  - name: aid-add-theme
-    verb: create
-    artifact: theme
-    alias_of: aid-create-theme
-    default_type: IMPLEMENT
-    group: G4
-    intent: "Alias of aid-create-theme."
-  - name: aid-add-cli
-    verb: create
-    artifact: cli
-    alias_of: aid-create-cli
-    default_type: IMPLEMENT
-    group: G4
-    intent: "Alias of aid-create-cli."
-  - name: aid-add-data-model
-    verb: create
-    artifact: data-model
-    alias_of: aid-create-data-model
-    default_type: MIGRATE
-    group: G4
-    intent: "Alias of aid-create-data-model."
-  - name: aid-add-data-pipeline
-    verb: create
-    artifact: data-pipeline
-    alias_of: aid-create-data-pipeline
-    default_type: IMPLEMENT
-    group: G4
-    intent: "Alias of aid-create-data-pipeline."
-  - name: aid-add-messaging
-    verb: create
-    artifact: messaging
-    alias_of: aid-create-messaging
-    default_type: IMPLEMENT
-    group: G4
-    intent: "Alias of aid-create-messaging."
-  - name: aid-add-integration
-    verb: create
-    artifact: integration
-    alias_of: aid-create-integration
-    default_type: IMPLEMENT
-    group: G4
-    intent: "Alias of aid-create-integration."
-  - name: aid-add-job
-    verb: create
-    artifact: job
-    alias_of: aid-create-job
-    default_type: IMPLEMENT
-    group: G4
-    intent: "Alias of aid-create-job."
-  - name: aid-add-config
-    verb: create
-    artifact: config
-    alias_of: aid-create-config
-    default_type: CONFIGURE
-    group: G4
-    intent: "Alias of aid-create-config."
-  - name: aid-add-infra
-    verb: create
-    artifact: infra
-    alias_of: aid-create-infra
-    default_type: IMPLEMENT
-    group: G4
-    intent: "Alias of aid-create-infra."
 
   # --- G5: Change + Refactor family (feature-007, task-017) --
-  # -- 13 canonical (aid-change + 11 suffixes + aid-refactor) + 12 aid-update-* aliases.
-  # -- aid-refactor is bare with NO alias and no artifact suffixes.
-  - name: aid-change
-    verb: change
+  # -- 15 canonical aid-update* rows (12 in this section; aid-update-test in G7,
+  # -- aid-update-document in G8, aid-update-dashboard in G11) + aid-refactor.
+  # -- aid-refactor is bare with no artifact suffixes.
+  - name: aid-update
+    verb: update
     artifact: ""
     alias_of: null
     default_type: IMPLEMENT
     group: G5
-    intent: "Change an existing internal code artifact's behavior under new acceptance criteria."
-  - name: aid-change-api
-    verb: change
+    intent: "Update an existing internal code artifact's behavior under new acceptance criteria."
+  - name: aid-update-api
+    verb: update
     artifact: api
     alias_of: null
     default_type: IMPLEMENT
     group: G5
-    intent: "Change an existing API endpoint / middleware's contract or behavior."
-  - name: aid-change-ui
-    verb: change
+    intent: "Update an existing API endpoint / middleware's contract or behavior."
+  - name: aid-update-ui
+    verb: update
     artifact: ui
     alias_of: null
     default_type: IMPLEMENT
     group: G5
-    intent: "Change an existing UI component or page."
-  - name: aid-change-theme
-    verb: change
+    intent: "Update an existing UI component or page."
+  - name: aid-update-theme
+    verb: update
     artifact: theme
     alias_of: null
     default_type: IMPLEMENT
     group: G5
-    intent: "Change an existing visual theme or style-token set."
-  - name: aid-change-cli
-    verb: change
+    intent: "Update an existing visual theme or style-token set."
+  - name: aid-update-cli
+    verb: update
     artifact: cli
     alias_of: null
     default_type: IMPLEMENT
     group: G5
-    intent: "Change an existing CLI command."
-  - name: aid-change-data-model
-    verb: change
+    intent: "Update an existing CLI command."
+  - name: aid-update-data-model
+    verb: update
     artifact: data-model
     alias_of: null
     default_type: MIGRATE
     group: G5
-    intent: "Change an existing data model/entity's schema, with forward+rollback migration."
-  - name: aid-change-data-pipeline
-    verb: change
+    intent: "Update an existing data model/entity's schema, with forward+rollback migration."
+  - name: aid-update-data-pipeline
+    verb: update
     artifact: data-pipeline
     alias_of: null
     default_type: IMPLEMENT
     group: G5
-    intent: "Change an existing data pipeline's source, transform, sink, or schedule."
-  - name: aid-change-messaging
-    verb: change
+    intent: "Update an existing data pipeline's source, transform, sink, or schedule."
+  - name: aid-update-messaging
+    verb: update
     artifact: messaging
     alias_of: null
     default_type: IMPLEMENT
     group: G5
-    intent: "Change an existing message/event schema or its emission."
-  - name: aid-change-integration
-    verb: change
+    intent: "Update an existing message/event schema or its emission."
+  - name: aid-update-integration
+    verb: update
     artifact: integration
     alias_of: null
     default_type: IMPLEMENT
     group: G5
-    intent: "Change an existing external-service integration."
-  - name: aid-change-job
-    verb: change
+    intent: "Update an existing external-service integration."
+  - name: aid-update-job
+    verb: update
     artifact: job
     alias_of: null
     default_type: IMPLEMENT
     group: G5
-    intent: "Change an existing scheduled or background job."
-  - name: aid-change-config
-    verb: change
+    intent: "Update an existing scheduled or background job."
+  - name: aid-update-config
+    verb: update
     artifact: config
     alias_of: null
     default_type: CONFIGURE
     group: G5
-    intent: "Change an existing configuration option or feature flag."
-  - name: aid-change-infra
-    verb: change
+    intent: "Update an existing configuration option or feature flag."
+  - name: aid-update-infra
+    verb: update
     artifact: infra
     alias_of: null
     default_type: IMPLEMENT
     group: G5
-    intent: "Change an existing infrastructure resource."
+    intent: "Update an existing infrastructure resource."
   - name: aid-refactor
     verb: refactor
     artifact: ""
@@ -381,96 +300,11 @@ shortcuts:
     default_type: REFACTOR
     group: G5
     intent: "Restructure or optimize code without changing behavior (rename, restructure, or improve performance)."
-  - name: aid-update
-    verb: change
-    artifact: ""
-    alias_of: aid-change
-    default_type: IMPLEMENT
-    group: G5
-    intent: "Alias of aid-change."
-  - name: aid-update-api
-    verb: change
-    artifact: api
-    alias_of: aid-change-api
-    default_type: IMPLEMENT
-    group: G5
-    intent: "Alias of aid-change-api."
-  - name: aid-update-ui
-    verb: change
-    artifact: ui
-    alias_of: aid-change-ui
-    default_type: IMPLEMENT
-    group: G5
-    intent: "Alias of aid-change-ui."
-  - name: aid-update-theme
-    verb: change
-    artifact: theme
-    alias_of: aid-change-theme
-    default_type: IMPLEMENT
-    group: G5
-    intent: "Alias of aid-change-theme."
-  - name: aid-update-cli
-    verb: change
-    artifact: cli
-    alias_of: aid-change-cli
-    default_type: IMPLEMENT
-    group: G5
-    intent: "Alias of aid-change-cli."
-  - name: aid-update-data-model
-    verb: change
-    artifact: data-model
-    alias_of: aid-change-data-model
-    default_type: MIGRATE
-    group: G5
-    intent: "Alias of aid-change-data-model."
-  - name: aid-update-data-pipeline
-    verb: change
-    artifact: data-pipeline
-    alias_of: aid-change-data-pipeline
-    default_type: IMPLEMENT
-    group: G5
-    intent: "Alias of aid-change-data-pipeline."
-  - name: aid-update-messaging
-    verb: change
-    artifact: messaging
-    alias_of: aid-change-messaging
-    default_type: IMPLEMENT
-    group: G5
-    intent: "Alias of aid-change-messaging."
-  - name: aid-update-integration
-    verb: change
-    artifact: integration
-    alias_of: aid-change-integration
-    default_type: IMPLEMENT
-    group: G5
-    intent: "Alias of aid-change-integration."
-  - name: aid-update-job
-    verb: change
-    artifact: job
-    alias_of: aid-change-job
-    default_type: IMPLEMENT
-    group: G5
-    intent: "Alias of aid-change-job."
-  - name: aid-update-config
-    verb: change
-    artifact: config
-    alias_of: aid-change-config
-    default_type: CONFIGURE
-    group: G5
-    intent: "Alias of aid-change-config."
-  - name: aid-update-infra
-    verb: change
-    artifact: infra
-    alias_of: aid-change-infra
-    default_type: IMPLEMENT
-    group: G5
-    intent: "Alias of aid-change-infra."
 
   # --- G5: Remove + Deprecate + Migrate (v2.1.0 coverage-gap follow-on,
-  # work-001-lite-aid-skills) -- 4 rows: aid-remove + aid-delete alias,
-  # aid-deprecate, aid-migrate. Bare verbs, no artifact suffixes. Non-schema
-  # data/dependency/platform migration; schema migrations stay
-  # create/change-data-model. Family scaffolding:
+  # work-001-lite-aid-skills) -- 3 rows: aid-remove, aid-deprecate, aid-migrate.
+  # Bare verbs, no artifact suffixes. Non-schema data/dependency/platform migration;
+  # schema migrations stay create/update-data-model. Family scaffolding:
   # shortcut-scaffolding/change-refactor.md.
   - name: aid-remove
     verb: remove
@@ -479,13 +313,6 @@ shortcuts:
     default_type: REFACTOR
     group: G5
     intent: "Remove or delete a code artifact, endpoint, dependency, feature, or dead code; update dependents, tests, and docs."
-  - name: aid-delete
-    verb: remove
-    artifact: ""
-    alias_of: aid-remove
-    default_type: REFACTOR
-    group: G5
-    intent: "Alias of aid-remove."
   - name: aid-deprecate
     verb: deprecate
     artifact: ""
@@ -499,11 +326,11 @@ shortcuts:
     alias_of: null
     default_type: MIGRATE
     group: G5
-    intent: "Migrate data, a dependency, framework, or platform, with a rollback plan (non-schema; schema migrations use create/change-data-model)."
+    intent: "Migrate data, a dependency, framework, or platform, with a rollback plan (non-schema; schema migrations use create/update-data-model)."
 
   # --- G7: Test + Experiment family -- work-005 restructure of feature-009 --
-  # Test AUTHORING is a create/change ARTIFACT: aid-create-test / aid-change-test (+ add/update
-  # aliases) -- ENGINE-DRIVEN, keep-cycle, executed by aid-developer (test code is code);
+  # Test AUTHORING is a create/update ARTIFACT: aid-create-test / aid-update-test --
+  # ENGINE-DRIVEN, keep-cycle, executed by aid-developer (test code is code);
   # artifact=test, group G7 for discovery; they consult create.md / change-refactor.md.
   # Test RUNNING is aid-test -- a HAND-AUTHORED collapse (run any suite/verification +
   # consolidate findings; aid-reviewer, review-shaped; resolves nothing; fixes -> /aid-fix).
@@ -516,27 +343,13 @@ shortcuts:
     default_type: TEST
     group: G7
     intent: "Author new tests (unit/integration/e2e); each test traces to an acceptance criterion; framework inferred from the KB."
-  - name: aid-add-test
-    verb: create
-    artifact: test
-    alias_of: aid-create-test
-    default_type: TEST
-    group: G7
-    intent: "Alias of aid-create-test."
-  - name: aid-change-test
-    verb: change
+  - name: aid-update-test
+    verb: update
     artifact: test
     alias_of: null
     default_type: TEST
     group: G7
-    intent: "Change or extend existing tests."
-  - name: aid-update-test
-    verb: change
-    artifact: test
-    alias_of: aid-change-test
-    default_type: TEST
-    group: G7
-    intent: "Alias of aid-change-test."
+    intent: "Update or extend existing tests."
   - name: aid-test
     verb: test
     artifact: ""
@@ -610,11 +423,11 @@ shortcuts:
     repurpose: true
 
   # --- G8: Document family -- work-005 reframe of feature-010 --
-  # `document` is a create/change ARTIFACT, not a verb. HAND-AUTHORED collapse skills.
-  # Canonical: aid-create-document / aid-change-document (generic; format+genre resolved by
-  # intelligence) + aid-add/update-document pure aliases. The 8 legacy aid-document* and
-  # aid-create-diagram are KIND-SIBLINGS (repurpose, alias_of null, own {verb,artifact};
-  # their hand-authored body delegates to aid-create-document, binding a genre/format hint).
+  # `document` is a create/update ARTIFACT, not a verb. HAND-AUTHORED collapse skills.
+  # Canonical: aid-create-document / aid-update-document (generic; format+genre resolved by
+  # intelligence). The 8 legacy aid-document* and aid-create-diagram are KIND-SIBLINGS
+  # (repurpose, alias_of null, own {verb,artifact}; their hand-authored body delegates to
+  # aid-create-document, binding a genre/format hint).
   # Producer aid-tech-writer, verifier aid-reviewer; present-before-place; NEVER writes
   # .aid/knowledge/ (that is aid-update-kb's territory). See specs/aid-document.md.
   - name: aid-create-document
@@ -625,29 +438,13 @@ shortcuts:
     group: G8
     intent: "Create a document NOW (format/genre resolved by intelligence -- markdown, diagram, ADR, runbook, ...); resolves nothing; present before placing."
     repurpose: true
-  - name: aid-add-document
-    verb: create
-    artifact: document
-    alias_of: aid-create-document
-    default_type: DOCUMENT
-    group: G8
-    intent: "Alias of aid-create-document."
-    repurpose: true
-  - name: aid-change-document
-    verb: change
+  - name: aid-update-document
+    verb: update
     artifact: document
     alias_of: null
     default_type: DOCUMENT
     group: G8
     intent: "Update an existing document NOW; resolves nothing; present before placing."
-    repurpose: true
-  - name: aid-update-document
-    verb: change
-    artifact: document
-    alias_of: aid-change-document
-    default_type: DOCUMENT
-    group: G8
-    intent: "Alias of aid-change-document."
     repurpose: true
   - name: aid-create-diagram
     verb: create
@@ -735,9 +532,9 @@ shortcuts:
     group: G11
     intent: "Analyze data or usage and communicate insight (EDA, metrics, A/B analysis)."
     repurpose: true
-  # dashboard: work-005 reframe of show-dashboard into a create/change ARTIFACT --
-  # ENGINE-DRIVEN, keep-cycle (a durable/published BI view is a real build). aid-show-dashboard
-  # kept as a backward-compat alias of aid-create-dashboard. group G11 for discovery. Boundary:
+  # dashboard: work-005 reframe of show-dashboard into a create/update ARTIFACT --
+  # ENGINE-DRIVEN, keep-cycle (a durable/published BI view is a real build).
+  # group G11 for discovery. Boundary:
   # aid-create-dashboard = durable/refreshable BI view; aid-report = one-time analysis.
   # See specs/aid-dashboard.md.
   - name: aid-create-dashboard
@@ -747,42 +544,20 @@ shortcuts:
     default_type: IMPLEMENT
     group: G11
     intent: "Build a durable dashboard / BI view (source -> visualization -> publish/refresh)."
-  - name: aid-add-dashboard
-    verb: create
-    artifact: dashboard
-    alias_of: aid-create-dashboard
-    default_type: IMPLEMENT
-    group: G11
-    intent: "Alias of aid-create-dashboard."
-  - name: aid-change-dashboard
-    verb: change
+  - name: aid-update-dashboard
+    verb: update
     artifact: dashboard
     alias_of: null
     default_type: IMPLEMENT
     group: G11
-    intent: "Change an existing dashboard / BI view (source, visualization, or refresh cadence)."
-  - name: aid-update-dashboard
-    verb: change
-    artifact: dashboard
-    alias_of: aid-change-dashboard
-    default_type: IMPLEMENT
-    group: G11
-    intent: "Alias of aid-change-dashboard."
-  - name: aid-show-dashboard
-    verb: create
-    artifact: dashboard
-    alias_of: aid-create-dashboard
-    default_type: IMPLEMENT
-    group: G11
-    intent: "Alias of aid-create-dashboard (backward-compatible name)."
+    intent: "Update an existing dashboard / BI view (source, visualization, or refresh cadence)."
 
   # --- G11: Review + Research (v2.1.0 coverage-gap follow-on,
-  # work-001-lite-aid-skills) -- 5 rows: aid-review + aid-audit alias,
-  # aid-research + aid-investigate/aid-spike aliases. Bare verbs, no artifact
-  # suffixes. Family scaffolding: shortcut-scaffolding/analyze-report.md (same
-  # RESEARCH-ends-in-a-recommendation shape as aid-report).
-  # aid-review / aid-audit: HAND-AUTHORED collapse skills (work-005). repurpose: true so
-  # build-shortcut-skills.py never generates/overwrites them. A review runs NOW and returns
+  # work-001-lite-aid-skills) -- 2 rows: aid-review, aid-research. Bare verbs,
+  # no artifact suffixes. Family scaffolding: shortcut-scaffolding/analyze-report.md
+  # (same RESEARCH-ends-in-a-recommendation shape as aid-report).
+  # aid-review: HAND-AUTHORED collapse skill (work-005). repurpose: true so
+  # build-shortcut-skills.py never generates/overwrites it. A review runs NOW and returns
   # findings + a grade (single-shot: INTAKE -> REVIEW -> VERIFY -> PRESENT -> PUBLISH -> DONE);
   # it no longer plans-and-halts through the shortcut engine. See
   # .aid/work-005-lite-skills-refactor/specs/aid-review.md.
@@ -794,15 +569,7 @@ shortcuts:
     group: G11
     intent: "Review/assess an existing artifact -- code, a change/diff, or a design -- against criteria; produce findings + recommendations."
     repurpose: true
-  - name: aid-audit
-    verb: review
-    artifact: ""
-    alias_of: aid-review
-    default_type: RESEARCH
-    group: G11
-    intent: "Alias of aid-review."
-    repurpose: true
-  # aid-research / aid-investigate / aid-spike: HAND-AUTHORED collapse skills (work-005).
+  # aid-research: HAND-AUTHORED collapse skill (work-005).
   # A research investigation runs NOW and returns a curated, verified answer -- it RESOLVES
   # NOTHING (presents conclusions +/-, conflicts with their reasons, and gaps for the user
   # to resolve). aid-researcher produces, aid-reviewer verifies. See
@@ -814,22 +581,6 @@ shortcuts:
     default_type: RESEARCH
     group: G11
     intent: "Investigate an open technical question (evaluate options or run a feasibility spike); present curated, verified conclusions, conflicts, and gaps for the user to resolve."
-    repurpose: true
-  - name: aid-investigate
-    verb: research
-    artifact: ""
-    alias_of: aid-research
-    default_type: RESEARCH
-    group: G11
-    intent: "Alias of aid-research."
-    repurpose: true
-  - name: aid-spike
-    verb: research
-    artifact: ""
-    alias_of: aid-research
-    default_type: RESEARCH
-    group: G11
-    intent: "Alias of aid-research."
     repurpose: true
 
   # --- G9/G10: Deploy + Monitor re-purpose (feature-012, task-034) -- 2 rows, no
@@ -854,28 +605,15 @@ shortcuts:
     intent: "Run, observe, and sustain a live asset (SLOs, observability, toil, capacity)."
     repurpose: true
 
-  # --- Q&A re-purpose (v2.1.0 coverage-gap follow-on, work-001-lite-aid-skills)
-  # -- 2 rows, repurpose: true, like G9/G10 above. aid-query-kb is the
-  # pre-existing hand-authored single-shot Q&A skill (renamed FROM aid-ask in
-  # commit cf6cb1af); aid-ask is restored here as its friendly-named thin
-  # alias (canonical/skills/aid-ask/SKILL.md, hand-authored, NOT generated by
-  # build-shortcut-skills.py). Group G11 (Analyze & Report): closest in-scope
-  # activity group -- answering a project question by citing KB/codebase/
-  # in-flight-work evidence is this family's "extract insight, communicate it"
-  # shape applied on demand, one-shot, without a work folder.
-  - name: aid-query-kb
+  # --- Q&A re-purpose (v2.1.0 coverage-gap follow-on, work-001-lite-aid-skills) -- 1 row,
+  # repurpose: true. aid-ask: hand-authored single-shot Q&A skill (NOT generated by
+  # build-shortcut-skills.py). Group G11 (Analyze & Report): answering a project question
+  # by citing KB/codebase/in-flight-work evidence, one-shot, without a work folder.
+  - name: aid-ask
     verb: query
     artifact: ""
     alias_of: null
     default_type: RESEARCH
     group: G11
     intent: "Answer a free-form question about the project from the KB, codebase, and in-flight works -- read-only, cited, gap-capturing."
-    repurpose: true
-  - name: aid-ask
-    verb: query
-    artifact: ""
-    alias_of: aid-query-kb
-    default_type: RESEARCH
-    group: G11
-    intent: "Alias of aid-query-kb."
     repurpose: true

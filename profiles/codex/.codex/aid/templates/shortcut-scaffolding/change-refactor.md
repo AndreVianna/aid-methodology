@@ -1,38 +1,36 @@
-# Shortcut Scaffolding: change / refactor
+# Shortcut Scaffolding: update / refactor
 
-Per-family scaffolding reference for the **`change`** verb (bare `aid-change`
+Per-family scaffolding reference for the **`update`** verb (bare `aid-update`
 plus the same eleven artifact-suffixed forms as `create`), the **`refactor`**
 verb (bare `aid-refactor` only -- no artifact suffixes; feature-007,
 work-001-lite-aid-skills), and, as a v2.1.0 coverage-gap follow-on, the bare
-**`remove`** (`aid-remove` + `aid-delete` alias), **`deprecate`**
+**`remove`** (`aid-remove`), **`deprecate`**
 (`aid-deprecate`), and **`migrate`** (`aid-migrate`) verbs -- none of the three
 takes an artifact suffix. Consulted by the shared engine
 (`.codex/aid/templates/shortcut-engine.md § Family Scaffolding Consult`) at
 CAPTURE, SPEC, and DETAIL for every `{verb, artifact}` whose `verb` field
-resolves to `change`, `refactor`, `remove`, `deprecate`, or `migrate` -- which
-includes every `aid-update-*` alias row for `change` and the `aid-delete` alias
-row for `remove` (an alias's `verb` already equals its canonical mirror's).
+resolves to `update`, `refactor`, `remove`, `deprecate`, or `migrate`.
 Free-form prose, like any other `state-*.md` reference doc -- the dispatched
 `aid-architect` reads this for judgment; it is not machine-parsed.
 
-Grounded in the `change-*` recipes this family generalizes (`change-schema`:
+Grounded in the `update-*` recipes this family generalizes (`update-schema`:
 current-shape -> target-shape -> rationale) plus `rename-symbol` and
 `improve-performance` (both absorbed into bare `aid-refactor`). Editing
 **content** is routed to `aid-document`, not here.
 
-**This file does not duplicate the artifact matrix.** `aid-change`'s
+**This file does not duplicate the artifact matrix.** `aid-update`'s
 per-artifact SPEC-section activation and task-breakdown counts/types are
 **identical to `aid-create`'s** (`shortcut-scaffolding/create.md`), just
 modify-framed -- edit artifact specifics there, once; this file only adds the
-change-specific capture on top and covers `aid-refactor`, `aid-remove`,
+update-specific capture on top and covers `aid-refactor`, `aid-remove`,
 `aid-deprecate`, and `aid-migrate` (none of which `create.md` touches at all --
 all four are bare verbs with their own CAPTURE/SPEC/DETAIL below, not
 artifact-matrix entries).
 
-## `change` -- CAPTURE, on top of the inherited artifact slots
+## `update` -- CAPTURE, on top of the inherited artifact slots
 
-`aid-change[-artifact]` first pulls the same per-artifact CAPTURE slots
-`create.md § CAPTURE` lists for that `{artifact}` (e.g. `change-api` still
+`aid-update[-artifact]` first pulls the same per-artifact CAPTURE slots
+`create.md § CAPTURE` lists for that `{artifact}` (e.g. `update-api` still
 needs resource/endpoint/schema/security-notes), then adds:
 
 | Slot | Notes |
@@ -47,13 +45,13 @@ the one combined CAPTURE question only when the current-shape/target-shape
 delta or the new acceptance criteria cannot be made concrete and testable from
 `{verb, artifact, description}` + KB context.
 
-## `change` -- SPEC section activation
+## `update` -- SPEC section activation
 
-Identical to `create.md § SPEC` for the same `{artifact}` (e.g. `change-api`
-activates `### API Contracts`, `change-data-model` activates
+Identical to `create.md § SPEC` for the same `{artifact}` (e.g. `update-api`
+activates `### API Contracts`, `update-data-model` activates
 `### Migration Plan`) -- consult that table directly; it is not repeated here.
 
-## `change` -- DETAIL task breakdown
+## `update` -- DETAIL task breakdown
 
 **The task count and types equal `create.md`'s artifact-matrix row for the
 same `{artifact}`** -- a change to artifact X emits the same tasks as creating
@@ -181,7 +179,7 @@ Bare verb, no artifact parameter (v2.1.0 coverage-gap follow-on):
 | Slot | Notes |
 |---|---|
 | From -> To | the current state and the target state (a dependency version, a framework, a platform, or a dataset's current location) |
-| Scope | closed enum: `data` \| `dependency` \| `framework` \| `platform` -- narrows what the MIGRATE task actually moves. Non-schema: a schema/entity migration stays `aid-create-data-model`/`aid-change-data-model`, not here |
+| Scope | closed enum: `data` \| `dependency` \| `framework` \| `platform` -- narrows what the MIGRATE task actually moves. Non-schema: a schema/entity migration stays `aid-create-data-model`/`aid-update-data-model`, not here |
 | Rollback plan | how to revert if the migration fails partway -- `task-type-rules.md ## MIGRATE` requires this unconditionally |
 
 **Escalation.** Same rule: escalate only when the From -> To delta or the
@@ -203,24 +201,24 @@ plan the MIGRATE task executes against.
 
 ## Ownership boundary
 
-`aid-change` = modify an existing artifact's **behavior/intent** (new
+`aid-update` = modify an existing artifact's **behavior/intent** (new
 acceptance criteria). `aid-refactor` = restructure/optimize **without**
 changing behavior -- the split is behavior-changing vs. not. Creating a *new*
 artifact is `aid-create` (`shortcut-scaffolding/create.md`). Correcting a
-**defect** is `aid-fix` (`shortcut-scaffolding/fix.md`), not `aid-change` --
+**defect** is `aid-fix` (`shortcut-scaffolding/fix.md`), not `aid-update` --
 a defect is "the code violates its own spec/intent"; new intent is a change.
 Behavior-preserving cleanup with no observable defect is `aid-refactor`, not
 `aid-fix`. Editing **content/docs** is `aid-document`; changing **tests** is
-`aid-test`; the legacy `change-report`/`change-docs` recipe territory moves to
-G8/G11 per the artifact-ownership boundary and is **not** a `aid-change`
-artifact. **Removing** an artifact outright is `aid-remove`, not `aid-change` --
+`aid-test`; the legacy `update-report`/`update-docs` recipe territory moves to
+G8/G11 per the artifact-ownership boundary and is **not** a `aid-update`
+artifact. **Removing** an artifact outright is `aid-remove`, not `aid-update` --
 a change modifies behavior in place, a removal deletes the artifact and its
-call sites. **Deprecating** is the middle step between `aid-change`/no action
+call sites. **Deprecating** is the middle step between `aid-update`/no action
 and `aid-remove`: the target still works, but callers are warned off it ahead
 of a later, separate removal -- `aid-deprecate` never deletes anything itself.
 **Migrating** data/a dependency/a framework/a platform is `aid-migrate`, kept
 distinct from a **schema** migration (`aid-create-data-model`/
-`aid-change-data-model`, G4/G5's own `data-model` artifact suffix) by scope,
+`aid-update-data-model`, G4/G5's own `data-model` artifact suffix) by scope,
 not by verb family. Assessing whether something *should* be removed/deprecated/
 migrated, before committing to the change, is `aid-review`/`aid-research`
 (G11, `shortcut-scaffolding/analyze-report.md`) -- this file's four verbs all

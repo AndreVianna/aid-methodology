@@ -59,16 +59,11 @@ with a one-line disclaimer that none confidently matched.
 ## Case D -- QUESTION (v2.1.0 coverage-gap follow-on; `state-classify.md` Step 0
 short-circuited -- `{description}` asks for information, not a change)
 
-**Intended exception, not a violation, of the "canonical names only" rule
-(SKILL.md Constraints; `state-classify.md` Step 3):** this case suggests the
-alias `/aid-ask` directly rather than its canonical form `/aid-query-kb`.
-The rule exists to stop a thin, `build-shortcut-skills.py`-generated doorway
-alias from being suggested in place of its canonical mirror; `aid-ask` is not
-that -- it is a `repurpose: true`, hand-authored, user-facing Q&A entry point
-that the catalog registers purely so /aid-triage recognizes it, and its
-canonical form `aid-query-kb` is an equivalent hand-authored skill, not a
-generated doorway. There is no doorway-duplication concern, so surfacing the
-friendlier name here is deliberate.
+Case D hard-routes to `/aid-ask`, the canonical Q&A row. The "canonical names
+only" constraint (SKILL.md Constraints; `state-classify.md` Step 3) applies
+only to Cases A/B/C -- Step 0 short-circuits past Step 3 entirely, so that
+rule is not in play here. `aid-ask` is a `repurpose: true` hand-authored
+Q&A entry point with its own catalogue row.
 
 ```
 This reads like a question about the project, not a change request.

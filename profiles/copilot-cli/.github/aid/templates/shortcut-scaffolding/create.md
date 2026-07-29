@@ -5,9 +5,7 @@ internal code, no artifact suffix -- plus the eleven artifact-suffixed forms;
 feature-006, work-001-lite-aid-skills). Consulted by the shared engine
 (`.github/aid/templates/shortcut-engine.md § Family Scaffolding Consult`) at
 CAPTURE, SPEC, and DETAIL for every `{verb, artifact}` whose `verb` field
-resolves to `create` -- which includes every `aid-add-*` alias row (an alias's
-`verb` already equals its canonical mirror's, per the engine's own resolution
-rule). Free-form prose, like any other `state-*.md` reference doc -- the
+resolves to `create`. Free-form prose, like any other `state-*.md` reference doc -- the
 dispatched `aid-architect` reads this for judgment; it is not machine-parsed.
 
 Grounded in the `add-*` recipes this family generalizes (`add-api`, `add-ui`,
@@ -74,7 +72,7 @@ activate none beyond the mandatory three):
 Every task chain below is one type per task (`artifact-schemas.md § Task
 SPEC.md` -- never mixed), natural ordering
 MIGRATE first when present, then RESEARCH -> DESIGN -> IMPLEMENT -> TEST ->
-DOCUMENT. This table is the **canonical artifact matrix** the `aid-change`/
+DOCUMENT. This table is the **canonical artifact matrix** the `aid-update`/
 `aid-refactor` family (`shortcut-scaffolding/change-refactor.md`) inherits by
 reference rather than duplicating -- edit artifact specifics here, once.
 
@@ -103,7 +101,7 @@ DETAIL's `## Execution Graph` places each in its own wave.
 
 Bare `aid-create` owns **internal code** (module/interface/type/member -- no
 `-code` suffix, which would collide with the bare verb). **Authoring test code
-IS this family** -- the `test` artifact (`aid-create-test` / `aid-change-test`,
+IS this family** -- the `test` artifact (`aid-create-test` / `aid-update-test`,
 work-005): committed test code, keep-cycle, executed by `aid-developer`. What
 does **not** belong to create: **running tests / verification -> `aid-test`**
 (+ its `security`/`performance`/`data-quality` kind-siblings; a hand-authored
@@ -112,7 +110,7 @@ collapse, work-005), **experiment -> `aid-experiment`**, **doc/content ->
 `aid-create-dashboard`**. A create work for a non-test artifact still emits its
 own `TEST` task for the artifact it builds (coverage of the new artifact, not a
 standalone test-authoring request). Modifying an **existing** artifact is
-`aid-change` (`shortcut-scaffolding/change-refactor.md`), not create.
+`aid-update` (`shortcut-scaffolding/change-refactor.md`), not create.
 
 ## See also
 
