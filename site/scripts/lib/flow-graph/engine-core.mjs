@@ -44,7 +44,21 @@ const GATE_REL     = 'canonical/aid/templates/work-initiation-gate.md';
 
 // ── D1 heading pattern — matches `## State Machine` exactly ───────────────────
 
-const D1_HEADING_RE = /^#{2,}\s+(Dispatch|State Machine)\s*$/;
+// Only `State Machine`, not classify.mjs's `(Dispatch|State Machine)`. This module reads
+// exactly one file, whose table sits under `## State Machine`; its only other candidate
+// heading is `## Dispatch Protocol`, which an exact-text match rejects anyway. So the
+// `Dispatch` alternative was unreachable here — removing it killed no test, which is how
+// wave 10's review found it. Narrowed rather than pinned, for the same reason the inert
+// `\b` in advance.mjs was deleted in wave 8: a test for an alternative no input can reach
+// is a test that cannot fail.
+//
+// A consequence worth stating so it is not re-filed as a gap: putting `Dispatch|` back is
+// now also a no-op, because nothing in this file's input can match it either way. That
+// mutant is inert, not uncaught.
+//
+// Deliberately a separate constant from classify.mjs's, which is not exported and whose
+// module the DETAIL forbids this task from touching.
+const D1_HEADING_RE = /^#{2,}\s+State Machine\s*$/;
 
 // ── Maintenance-note pattern (W5) ─────────────────────────────────────────────
 // Matches the `> **Maintenance note:** the states in order are X -> Y -> …`
@@ -75,9 +89,29 @@ let _memo = null;
  * Derive the shortcut-engine chart once per process and return a deeply-frozen
  * EngineCore.  Subsequent calls return the identical frozen object reference.
  *
+ * ## The `sources` parameter is a test seam, and why it exists
+ *
+ * Called with no argument — the only way production calls it — this reads the two real
+ * template files and memoizes. Called with `{ engineText, gateText }` it derives from
+ * those strings instead and **does not touch the memo**, so a fixture-driven call can
+ * never poison the shared instance or be poisoned by one.
+ *
+ * Without this, several rules the DETAIL states as contract cannot be tested at all,
+ * because the derivation's only inputs were two fixed paths. Wave 10's review proved
+ * that concretely: five mutations survived — removing `does not run` and `instead of
+ * looping further` from B1's trigger set, widening L1's phrasing from `Loop back` to
+ * `Loop`, turning W5's warning into a throw, and dropping the shared truncator from a B1
+ * condition. Every one is a stated contract, and every one was unreachable because the
+ * real corpus happens not to discriminate them. Narrowing the code to match what the
+ * corpus exercises was the alternative and was rejected: the DETAIL names all four
+ * trigger tokens, so the right move is to make the contract assertable rather than to
+ * shrink it to what today's two files happen to reach.
+ *
+ * @param {{ engineText?: string, gateText?: string }} [sources]  Test-only override.
  * @returns {EngineCore}
  */
-export function getEngineCore() {
+export function getEngineCore(sources) {
+  if (sources) return _deepFreeze(_buildEngineCore(sources));
   if (_memo !== null) return _memo;
   _memo = _deepFreeze(_buildEngineCore());
   return _memo;
@@ -89,14 +123,20 @@ export function getEngineCore() {
  * Read both source files, derive the D1 spine, apply E-rules L1 and B1,
  * assign c1…cN ids, and return a plain (unfrozen) EngineCore.
  *
+ * @param {{ engineText?: string, gateText?: string }} [override]  Test-only override;
+ *   when a text is supplied the corresponding file is not read. Named `override` rather
+ *   than `sources` because this function already has a local `sources` — the chart's
+ *   source-file list, which is a different thing.
  * @returns {EngineCore}
  */
-function _buildEngineCore() {
+function _buildEngineCore(override = {}) {
   const warnings = [];
 
   // ── 1. Read source files ──────────────────────────────────────────────────
-  const engineText = readFileSync(join(REPO_ROOT, ENGINE_REL), 'utf8');
-  const gateText   = readFileSync(join(REPO_ROOT, GATE_REL),   'utf8');
+  // Provenance paths stay ENGINE_REL / GATE_REL even under an override, so a fixture
+  // produces the same shape of chart as the real derivation.
+  const engineText = override.engineText ?? readFileSync(join(REPO_ROOT, ENGINE_REL), 'utf8');
+  const gateText   = override.gateText   ?? readFileSync(join(REPO_ROOT, GATE_REL),   'utf8');
 
   const engineLines = engineText.split('\n').map((l) => l.replace(/\r$/, ''));
   const gateLines   = gateText.split('\n').map((l) => l.replace(/\r$/, ''));
