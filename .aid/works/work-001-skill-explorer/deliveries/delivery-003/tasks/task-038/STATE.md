@@ -1,8 +1,8 @@
 ---
 state: Done
-review: "--"
+review: "PASS (gate) — nine conceptual mutations re-run and all killed"
 elapsed: "--"
-notes: "89 tests pass; unit tier complete with inline fixtures for E1/E2/S1/S2/S3/W1 binding rungs, engine-core memo+freeze, compose purity, and W1-W5 degradation."
+notes: "Unit tier: 89 tests over inline fixtures — both binding ladders, engine-core memo and deep freeze, compose purity, and W1–W5 degradation. Suite total at delivery close is 2370."
 ticket_ref: "--"
 ---
 
@@ -71,9 +71,9 @@ in-flight `work-003-state-schema` frontmatter conventions.
      No grade is recorded here -- grading is per-delivery, not per-task. -->
 
 - **Reviewer Tier:** Small (quick check always uses Small tier)
-- **Findings:**
-  - [CRITICAL] {description} -- {source-file:line} -- Fixed-on-spot
-  - [HIGH] {description} -- {source-file:line} -- Deferred-to-gate
+- **Findings:** none at task level. This delivery reviewed per WAVE and at the
+  delivery gate rather than per task, so findings are recorded in
+  `deliveries/delivery-003/STATE.md` against the wave that produced them.
 
 ---
 

@@ -1,8 +1,8 @@
 ---
-delivery_state: Executing
-gate_tier: Small | Medium | Large
-gate_grade: "{grade or Pending}"
-gate_timestamp: "{YYYY-MM-DDTHH:MM:SSZ}"
+delivery_state: Done
+gate_tier: Large
+gate_grade: "A+"
+gate_timestamp: "2026-07-29T02:20:00Z"
 ticket_ref: "--"
 ---
 
@@ -39,9 +39,13 @@ with ZERO tasks; the `_none yet_` rollup below is correct and expected for a new
 <!-- AUTHORED -- single writer: this delivery's branch only. The **State** scalar lives in the
      YAML frontmatter block at the top of this file (`delivery_state`). -->
 
-- **Updated:** 2026-07-27T14:46:50Z
+- **Updated:** 2026-07-29T02:20:00Z
 - **Block Reason:** --
 - **Block Artifact:** --
+- **Closed:** delivery-003 is **Done** at gate grade **A+** (Large tier, 3 gate rounds).
+  Features 003 and 004 complete. **All 111 skills carry a `## Flow` chart**, up from 34 at the
+  start of the delivery. Suite **2370 tests across 36 files**; build clean at 142 pages;
+  generation idempotent across pages, sidecars, index and manifest.
 
 ---
 
@@ -51,7 +55,39 @@ with ZERO tasks; the `_none yet_` rollup below is correct and expected for a new
      delivery's branch. Reviewer Tier / Grade / Timestamp live in the YAML frontmatter block
      at the top of this file (`gate_tier`, `gate_grade`, `gate_timestamp`). -->
 
-- **Issue List:** {inline severity-tagged list, or "none" if gate passed clean}
+- **Issue List:** 12 rows across three gate rounds. **0 Pending above [LOW].**
+  - **[HIGH] ×2 — Fixed (round 1).** Both were visible chart-text defects on `aid-update-kb`:
+    `_normaliseLabel` deleted backtick spans, publishing *"two mechanical, -specific checks"*; and
+    `_extractLabelFromWorker`'s bullet class `[-*+]` matched `**bold`, ending the lead paragraph
+    early and cutting the label mid-phrase.
+  - **[MEDIUM] ×1 — Fixed (round 2).** task-038's nine-node-names AC belongs in the **unit** tier and
+    existed only in the corpus tier. Added with two assertions the list alone does not make: each B1
+    node sits *immediately* after its parent, and ids run `c1…cN`. Mutation-tested with a
+    B1-deferred-to-end mutant, which all three assertions kill.
+  - **[LOW] ×1 — Fixed (round 2).** Doubled spaces in nine residual labels. Root cause traced by the
+    reviewer: R3 step headings carry code spans and the Mermaid escaper replaces each backtick with a
+    space individually, so `_label` now unwraps spans before collapsing whitespace.
+  - **[LOW] ×4 — Fixed (post-gate).** Task-state hygiene: blank `review` cells, a stale note, and
+    unfilled `{description}` placeholders in eleven task files. Graded [LOW], closed anyway — the
+    tracking rule is imperative and a delivery should not close on placeholder records.
+  - **[MINOR] ×2 — Accepted.** Two immutable DETAIL statements are factually wrong, each confirmed by
+    measurement and each with the test asserting reality: APPROVAL-HALT's handoff cannot mention
+    `/aid-execute` (that string is in the state's section prose, not its `**Advance:**` clause), and
+    "exactly one skill whose parent is residual-shaped" describes no skill — all 13 sibling doorways
+    resolve to `inline-states` parents.
+  - **[MINOR] ×2 — Recorded, not fixed.** `aid-discover`'s APPROVAL label truncates on an infinitive
+    (`"…asks the user to…"`), an honest ellipsis cut at the 60-code-point boundary; and two latent
+    backtick-deleting sites in `engine-core.mjs` that reach no page today because the spans fall past
+    that boundary.
+
+- **The finding worth carrying out of this delivery.** Five separate defects traced to one root cause:
+  **a strip that is correct for one token class, applied to text a reader sees.** Mangled edge
+  conditions, a deleted `/aid-define` resume command, `halt` cut out of `halt-proof`, a deleted
+  `aid-update-kb`-specific, and a parenthetical replaced by a bare ellipsis. Four were fixed one at a
+  time; the fifth was found only when the reported instance was finally treated as a *class* and swept
+  for — 1429 labels and 251 edge conditions across all 111 pages, against twelve patterns drawn from
+  the earlier defects. That sweep took the corpus from eleven suspects to one. **On finding a defect
+  class, sweep for it rather than fixing the instance in front of you.**
 
 ---
 

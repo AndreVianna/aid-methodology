@@ -71,9 +71,9 @@ in-flight `work-003-state-schema` frontmatter conventions.
      No grade is recorded here -- grading is per-delivery, not per-task. -->
 
 - **Reviewer Tier:** Small (quick check always uses Small tier)
-- **Findings:**
-  - [CRITICAL] {description} -- {source-file:line} -- Fixed-on-spot
-  - [HIGH] {description} -- {source-file:line} -- Deferred-to-gate
+- **Findings:** none at task level. This delivery reviewed per WAVE and at the
+  delivery gate rather than per task, so findings are recorded in
+  `deliveries/delivery-003/STATE.md` against the wave that produced them.
 
 ---
 

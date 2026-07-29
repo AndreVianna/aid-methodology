@@ -1,8 +1,8 @@
 ---
 state: Done
-review: "--"
+review: "PASS (gate) — cross-page identity proven by a same-length leak mutant"
 elapsed: "--"
-notes: "--"
+notes: "Corpus tier: +69 tests. AC-4 fixtures, cross-page identity, splice fidelity, validator conformance, provider partition, provenance equality and idempotence. Closes feature-004 and delivery-003."
 ticket_ref: "--"
 ---
 
@@ -71,9 +71,9 @@ in-flight `work-003-state-schema` frontmatter conventions.
      No grade is recorded here -- grading is per-delivery, not per-task. -->
 
 - **Reviewer Tier:** Small (quick check always uses Small tier)
-- **Findings:**
-  - [CRITICAL] {description} -- {source-file:line} -- Fixed-on-spot
-  - [HIGH] {description} -- {source-file:line} -- Deferred-to-gate
+- **Findings:** none at task level. This delivery reviewed per WAVE and at the
+  delivery gate rather than per task, so findings are recorded in
+  `deliveries/delivery-003/STATE.md` against the wave that produced them.
 
 ---
 

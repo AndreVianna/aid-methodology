@@ -1,8 +1,8 @@
 ---
-state: In Review
-review: "--"
+state: Done
+review: "PASS (wave 12) — partition guard added as a test, not a comment"
 elapsed: "--"
-notes: "--"
+notes: "Wired both doorway dispatch rows and the flow-chart-doorway provider; all 111 skills now chart. Found and fixed a pre-existing afterEach that emptied BODY_PROVIDERS for every later test."
 ticket_ref: "--"
 ---
 
@@ -71,9 +71,9 @@ in-flight `work-003-state-schema` frontmatter conventions.
      No grade is recorded here -- grading is per-delivery, not per-task. -->
 
 - **Reviewer Tier:** Small (quick check always uses Small tier)
-- **Findings:**
-  - [CRITICAL] {description} -- {source-file:line} -- Fixed-on-spot
-  - [HIGH] {description} -- {source-file:line} -- Deferred-to-gate
+- **Findings:** none at task level. This delivery reviewed per WAVE and at the
+  delivery gate rather than per task, so findings are recorded in
+  `deliveries/delivery-003/STATE.md` against the wave that produced them.
 
 ---
 
