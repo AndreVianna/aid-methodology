@@ -83,7 +83,11 @@ Columns: `# | Severity | Status | Rule | Doc | Line | Description | Evidence`
 
 See schema doc for: severity enum, status enum, status lifecycle across cycles, pipe-character escape, authoring rules.
 
-**You append rows; you do NOT renumber existing rows.** On subsequent cycles, you may update an existing row's Status (Pending→Fixed, Fixed→Recurred) via `--set-status`, but never its Severity, Rule or Description.
+**You append rows; you do NOT renumber existing rows.** You never update a *prior cycle's* row Status — the orchestrator reconciles your findings against the durable ledger on `(Doc, Rule)` after you return. Deciding that a finding is now `Fixed` is a set difference between two lists, not a judgment about the artifact, so it is not your job and you are deliberately not given the prior verdict needed to do it.
+
+**You are given ONE ledger path, and it is a scratch.** You are never told the durable ledger's path. If the scratch you were given is empty, this is a fresh attempt — examine everything. If it already contains **your own rows**, this is a **resume** of the same attempt: continue from your coverage rows instead of starting over. Use `--list-units --remaining` to see what is left.
+
+**Checkpoint each unit as a pair of writes:** `--set-status <unit> --status "In Progress"` **before** you start it, and `Examined` when you finish. The leading write is what makes an interrupted unit distinguishable from one you never reached — without it, a review killed mid-pass looks identical to a review that skipped that unit, and the orchestrator would have to guess.
 
 **The table carries three row kinds**, told apart by the `#` column: findings, `U-NNN` coverage units, and `G-NNN` gaps. Only findings bear on the grade — a `--` in Severity makes a row invisible to `grade.sh` by construction. Checkpoint a `U-` row as you finish each unit, so an interrupted review leaves a legible record of what it had already examined. Record a `G-` row when the review's own preconditions are missing (no declared standard for the language in hand) — that is a gap in the criteria, not a defect in the artifact, and must never be graded as one.
 

@@ -125,7 +125,12 @@ yet assign rule IDs -- put the real ID there once it does; never invent one):
 - Use stable IDs: `M1-001`, `M1-002`, ...
 - Prefix every Description with `[M1]`
 - Status: `Pending` for new findings
-- If re-reviewing: read existing `{{SCOPE}}-correctness.md`, update Status for your prior
+- You are given ONE ledger path. Write only there, and never look for a previous cycle's file:
+  the orchestrator reconciles your rows against the durable ledger on `(Doc, Rule)` after you
+  return. Do NOT update the Status of any prior row -- that is bookkeeping, not judgment, and
+  doing it would require seeing a verdict you are deliberately not shown.
+- If the ledger you were given ALREADY CONTAINS your own rows, this is a RESUME of the same
+  attempt: continue from your coverage rows rather than starting over.
   rows (Pending→Fixed if resolved; Fixed→Recurred if regressed), append new findings
 
 **No narrative, no summary sections — the ledger table is the entire output.**

@@ -40,6 +40,12 @@
 #   writeback-ledger.sh --ledger PATH --set-status --row-id U-002 --status Examined
 #   writeback-ledger.sh --ledger PATH --row-id U-002 --get-status          # read-only
 #
+#   writeback-ledger.sh --ledger PATH --list-units [--status S] [--remaining] [--namespace NS]
+#       read-only. TSV to stdout: row-id, status, doc, rule-set, stamp, art, rs
+#       --remaining is sugar for "Unexamined or In Progress" -- the resume contract's "treat an
+#       interrupted unit as unexamined", made mechanical in the read API instead of restated in prose
+#       at every caller.
+#
 # EXIT CODES (aligned with execute/writeback-state.sh)
 #   0 success
 #   1 ledger unreadable, or parent directory absent
@@ -73,7 +79,7 @@ LEDGER=""; MODE=""
 SEVERITY=""; STATUS=""; RULE=""; DOC=""; LINE=""; DESCRIPTION=""; EVIDENCE=""
 UNIT=""; RULE_SET=""; STAMP=""; NAMESPACE=""
 GAP_KEY=""; RESOLUTION=""; ROW_ID=""
-VERIFY_GRADE=1
+VERIFY_GRADE=1; REMAINING=0
 
 set_mode() {
     [[ -z "$MODE" ]] || die "two modes given: --$MODE and --$1" 4
@@ -88,6 +94,8 @@ while [[ $# -gt 0 ]]; do
         --append-gap)     set_mode append-gap; shift ;;
         --set-status)     set_mode set-status; shift ;;
         --get-status)     set_mode get-status; shift ;;
+        --list-units)     set_mode list-units; shift ;;
+        --remaining)      REMAINING=1; shift ;;
         --severity)       SEVERITY="${2:-}"; shift 2 ;;
         --status)         STATUS="${2:-}"; shift 2 ;;
         --rule)           RULE="${2:-}"; shift 2 ;;
@@ -630,6 +638,49 @@ mode_set_status() {
     echo "OK: ${LEDGER} -- ${ROW_ID} status set to '${STATUS}'"
 }
 
+# Read-only. Emits the coverage manifest as TSV so a planner can consume it without re-parsing
+# markdown. The `art=` and `rs=` tokens are split out of Evidence here rather than at every caller,
+# because they are what make invalidation-on-resume decidable and every caller needs them.
+mode_list_units() {
+    [[ -f "$LEDGER" ]] || die "ledger does not exist: $LEDGER" 1
+    local want="${STATUS:-}"
+    awk -v want="$want" -v remaining="$REMAINING" -v ns="$NAMESPACE" '
+      function trim(s) { gsub(/^[ \t]+|[ \t]+$/, "", s); return s }
+      function is_sep(s) { return s ~ /^\|[ \t:|-]+\|$/ }
+      /^\|/ {
+        if (is_sep($0)) next
+        n = split($0, c, "|")
+        id = trim(c[2]); gsub(/`/, "", id)
+        if (id !~ /^U-/) next
+
+        if (ns != "") { if (id !~ ("^U-" ns "-")) next }
+
+        status = trim(c[4])
+        doc    = trim(c[6])
+        desc   = trim(c[8])
+        ev     = trim(c[9])
+
+        # --remaining means Unexamined OR In Progress: an interrupted unit is treated as unexamined,
+        # which is the resume contract rather than a convenience.
+        if (remaining == 1) {
+          if (status != "Unexamined" && status != "In Progress") next
+        } else if (want != "" && status != want) next
+
+        rs_name = desc; sub(/^rule-set:[ \t]*/, "", rs_name); sub(/;.*$/, "", rs_name)
+        rs_name = trim(rs_name)
+
+        stamp = ev; sub(/;.*$/, "", stamp); stamp = trim(stamp)
+
+        art = ""
+        if (match(ev, /art=[^;|]+/)) art = trim(substr(ev, RSTART + 4, RLENGTH - 4))
+        rsd = ""
+        if (match(ev, /rs=[^;|]+/))  rsd = trim(substr(ev, RSTART + 3, RLENGTH - 3))
+
+        printf "%s\t%s\t%s\t%s\t%s\t%s\t%s\n", id, status, doc, rs_name, stamp, art, rsd
+      }
+    ' "$LEDGER"
+}
+
 mode_get_status() {
     [[ -n "$ROW_ID" ]] || die "--row-id is required for --get-status" 5
     [[ -f "$LEDGER" ]] || die "ledger does not exist: $LEDGER" 1
@@ -643,5 +694,6 @@ case "$MODE" in
     append-gap)     init_lock_file "$LEDGER"; [[ -d "$(dirname "$LEDGER")" ]] && acquire_lock; mode_append_gap ;;
     set-status)     init_lock_file "$LEDGER"; acquire_lock; mode_set_status ;;
     get-status)     mode_get_status ;;                       # read-only, no lock
+    list-units)     mode_list_units ;;                       # read-only, no lock
     *)              die "unhandled mode: $MODE" 4 ;;
 esac

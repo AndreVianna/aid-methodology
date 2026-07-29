@@ -28,10 +28,39 @@ This reconciles the B6 finding: discovery-reviewer lacked the `## Self-review di
 
 ## What It Produces
 
-- **Structured issue list** in `.aid/.temp/review-pending/<scope>.md` — the 8-column reviewer ledger
+- **Structured issue list** in a **per-attempt scratch** ledger (`<scope>-cycle<N>.md`) — the 8-column
+  reviewer ledger. The durable `<scope>.md` is written by the orchestrator alone, and the Reviewer is
+  never told its path, so cross-cycle contamination is structural rather than a rule to remember.
 - **Test results** recorded in the work `STATE.md` `## Tasks Status` row for the task
-- Issue tags: `[CODE]`, `[TASK]`, `[SPEC]`, `[KB]`, `[ARCHITECTURE]`
+- **A rule ID on every finding**, from the artifact's rule set in
+  `canonical/aid/templates/review-rubrics/INDEX.md`. The former source tags (`[CODE]`, `[TASK]`,
+  `[SPEC]`, `[KB]`, `[ARCHITECTURE]`) are **retired** — the class prefix in the rule ID carries what
+  they asserted, so the tag can no longer contradict the rule.
 - Severity levels: `[CRITICAL]`, `[HIGH]`, `[MEDIUM]`, `[LOW]`, `[MINOR]`
+- **Coverage rows** (`U-NNN`) checkpointing which units it examined, and **gap rows** (`G-NNN`) where
+  no rule existed to judge by. Neither affects the grade.
+
+## Cycles and Resume
+
+A review is one or more **attempts**. Each attempt owns a scratch ledger; the attempt ends when that
+scratch is merged and deleted.
+
+- **New cycle** (after a FIX): a fresh scratch, so coverage starts empty — correct, because a new pass
+  re-examines everything.
+- **Resume** (same attempt, interrupted): the *same* scratch, so the Reviewer sees its own coverage and
+  its own partial findings and continues where it stopped.
+
+Which one it is comes from a single `test -f` on the scratch path, not from a flag — so correctness does
+not depend on anyone declaring the mode correctly.
+
+**The Reviewer never reconciles.** It records what it finds; the orchestrator joins scratch to durable
+on `(Doc, Rule)` afterwards. That split exists because independence protects *judgment*, not
+bookkeeping: withholding the prior verdict is what keeps cycle N's severity from being anchored by
+cycle N−1's, and you cannot both withhold that verdict and ask the Reviewer to update it.
+
+A finding is only marked `Fixed` when it is absent from a later attempt **and** that attempt's coverage
+shows the artifact was actually examined. Absence alone proves nothing, which is why the coverage
+manifest exists.
 
 ## How It Differs from Similar Agents
 

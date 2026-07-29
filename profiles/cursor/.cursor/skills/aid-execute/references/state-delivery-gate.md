@@ -167,10 +167,17 @@ of per-task reviews. The package wrapper is the universal brief at
 - `{{CONTEXT}}` = `delivery-NNN aggregates tasks {NNN..MMM}; this is the post-execution quality gate before merge to main.`
 
 Include in the prompt:
-- **Ledger lifecycle:** "Read the existing `.aid/.temp/review-pending/execute-delivery-NNN.md`
-  if it exists. For each existing row: verify on disk, update Status if needed
-  (Pending→Fixed if resolved; Fixed→Recurred if regressed). Append new findings
-  as rows with Status: Pending."
+- **Ledger lifecycle:** "Write ONLY to the scratch ledger path given to you. Do NOT read the durable
+  `.aid/.temp/review-pending/execute-delivery-NNN.md`, and do NOT update the Status of any prior row —
+  the orchestrator reconciles your rows against the durable ledger on `(Doc, Rule)` after you return.
+  Record every finding as `Status: Pending`. If the ledger you were given already contains your own
+  rows, this is a RESUME of the same attempt: continue from your coverage rows rather than starting
+  over."
+
+  This replaced an instruction to read the durable ledger and update prior statuses, which
+  contradicted the clean-context rule two lines above: the reviewer cannot both be denied the previous
+  verdict and be asked to update it. Deciding a row is now `Fixed` is a set difference between two
+  finding lists, not a judgment about the artifact, so it belongs to the orchestrator.
 - **Schema reference:** "Output per `.cursor/aid/templates/reviewer-ledger-schema.md`.
   The ledger is the entire file — ONE markdown table, no headers, no narrative."
 

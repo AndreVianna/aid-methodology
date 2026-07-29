@@ -203,8 +203,8 @@ Worst severity dominates; count within that severity determines the modifier (1 
 | Status | Meaning | Counts toward grade? | Set by |
 |---|---|---|---|
 | `Pending` | Issue exists; needs fixing | **Yes** | Reviewer at first discovery |
-| `Fixed` | Was Pending; reviewer confirmed resolved this cycle | No (kept for audit history) | Reviewer in a subsequent cycle |
-| `Recurred` | Was Fixed in an earlier cycle but came back. Effectively pending again. | **Yes** (counts as Pending) | Reviewer in a subsequent cycle |
+| `Fixed` | Was Pending; the key is absent from a later attempt whose coverage shows the artifact WAS examined | No (kept for audit history) | **Reconciliation** — never the reviewer |
+| `Recurred` | Was Fixed in an earlier cycle but came back. Effectively pending again. | **Yes** (counts as Pending) | **Reconciliation**, when the key reappears in a later attempt's scratch |
 | `Accepted` | Pending but decided not to fix (e.g., acceptable carryover, no-docs variant). Description and Evidence must include the rationale + who decided. | No | Orchestrator with user authorization |
 | `OOS` | Out of scope per the review rubric (e.g., inline-T3 violations with accurate values when methodology-refactor is tech-debt). | No | Reviewer or orchestrator |
 | `Invalid` | Reviewer was wrong; the original claim was actually correct on disk. Description must explain the misread. | No | Reviewer in a subsequent cycle, or orchestrator with evidence |
@@ -212,7 +212,7 @@ Worst severity dominates; count within that severity determines the modifier (1 
 **Workflow:**
 
 1. **REVIEW (cycle 1):** create file; append rows as `Status: Pending` for every finding. Existing-file case: NO (cycle 1 is the first).
-2. **REVIEW (cycle N≥2):** read existing file. For each existing `Pending` row: verify on disk → if resolved, change Status to `Fixed`; if still wrong, leave as `Pending`. For each existing `Fixed` row: verify still resolved → if regressed, change Status to `Recurred`. Append new rows as `Pending` for newly-found issues.
+2. **REVIEW (cycle N≥2):** the reviewer writes to a **fresh per-attempt scratch ledger** and never sees the canonical one. It records what it finds, nothing more. **The orchestrator reconciles** scratch against canonical afterwards — see **Attempts and reconciliation** below.
 3. **FIX:** read Pending + Recurred rows. Address each. Do NOT mark rows `Fixed` during FIX — that's the next reviewer's job (separation of concerns: fixer fixes, reviewer verifies).
 4. **Orchestrator (any phase):** may mark a row `Accepted` with user authorization (record rationale in Description). May mark `Invalid` if reviewer was wrong, with evidence.
 5. **Skill reaches DONE:** orchestrator deletes the ledger file. If `.aid/.temp/review-pending/` is then empty, the directory is also removed.
@@ -255,35 +255,101 @@ The shape groups into three readable bands: *classification* (`#`, Severity, Sta
 
 **No file at all = A+ for the artifact being reviewed** (no review = no findings). However, the orchestrator should not advance past REVIEW state without a ledger — the reviewer must create it.
 
+## Attempts and reconciliation
+
+**Two files, and the distinction is the whole design.**
+
+| | Path | Written by | Lifetime |
+|---|---|---|---|
+| **Scratch** | `<scope>-cycle<N>.md` | the reviewer, and only the reviewer | one attempt |
+| **Canonical** | `<scope>.md` | the orchestrator, and only the orchestrator | the whole skill invocation |
+
+A reviewer is given its scratch path and **is never told the canonical path.** So contamination
+between cycles is **structural, not instructional** — there is no rule to remember, because the prior
+verdict is not reachable.
+
+**Mode selection is one `test -f`.** Scratch present at dispatch → this is a **resume** of attempt N.
+Absent → a **new cycle**, attempt N+1. The brief still declares which, so the agent knows its
+contract, but correctness does not depend on the declaration.
+
+### Why reconciliation moved off the reviewer
+
+The reviewer used to be told to read the prior ledger and update each row's Status. That instruction
+contradicted the clean-context rule in the same breath — you cannot both withhold the previous verdict
+and ask someone to update it.
+
+**Independence protects judgment, not bookkeeping.** Clean context exists so cycle N's *severity* is
+not anchored by cycle N−1's. Deciding that row 4 is now `Fixed` is not a judgment about the artifact at
+all; it is a set difference between two finding lists. Nothing is protected by making the judge do that
+arithmetic, and a great deal is lost — the judge has to be shown the prior verdict to do it.
+
+### The join key is `(Doc, Rule)`
+
+Not the row ID. A row ID is only stable across cycles if the scratch that minted it still exists, and
+scratches are deleted at merge — so an ID-keyed join has its input removed before it is read.
+
+`Line` is deliberately **excluded**: it drifts on every edit, so keying on it would report every
+fixed-then-shifted finding as new. Where one `(Doc, Rule)` pair legitimately appears twice, `Line` is
+the tiebreaker.
+
+This key only became possible when `Rule` became mandatory and single-valued.
+
+### The transition table — the orchestrator's whole job
+
+| Canonical row | Key present in scratch? | Result |
+|---|---|---|
+| `Pending` | yes | stays `Pending`. Severity and Description are authorial and never rewritten |
+| `Pending` | no, **and** the unit covering `Doc` is `Examined` | → `Fixed` |
+| `Pending` | no, and the unit is **not** `Examined` | stays `Pending` — **absence proves nothing** |
+| `Fixed` | yes | → `Recurred` |
+| `Fixed` | no | stays `Fixed` |
+| `Accepted` / `OOS` / `Invalid` | either | **never auto-changed.** These are authorization states; a re-find is narrated, not written |
+| — | key absent from canonical | append as a new finding, next free `#` |
+
+**The coverage guard on row 3 is the point.** Without it, a reviewer marks a finding `Fixed` because it
+did not see it — with no evidence it ever looked. The `U-` manifest is the first thing that makes *"I
+examined this and found nothing"* distinguishable from *"I never got there"*, so an interrupted cycle
+can no longer silently clear every finding it failed to reach.
+
+**Reconciliation runs on every reviewer return**, not only on new cycles. A resumed attempt that
+re-examines an invalidated unit re-emits findings the canonical ledger already holds, and the same join
+dedupes them. One code path, and the duplicate-row hazard needs no second mechanism.
+
 ## Lifecycle (per skill invocation)
 
 ```
 First REVIEW
-  └─ Reviewer reads existing ledger (none on first invocation → empty start)
-  └─ Reviewer appends new findings as Pending rows
-  └─ Reviewer commits the ledger file (via orchestrator)
-  └─ Orchestrator runs grade.sh on the ledger to compute the grade
+  └─ Orchestrator picks the scratch path (absent → new cycle)
+  └─ Reviewer writes findings + coverage rows to the SCRATCH only
+  └─ Orchestrator reconciles scratch → canonical on (Doc, Rule)
+  └─ Orchestrator runs check-gaps.sh, then grade.sh, on the CANONICAL ledger
   └─ State machine advances (Q-AND-A or FIX)
 
 FIX
-  └─ Fixer reads ledger; addresses all Pending and Recurred rows
-  └─ Fixer does NOT modify the ledger Status column (that's the next reviewer's job)
+  └─ Fixer reads the canonical ledger; addresses all Pending and Recurred rows
+  └─ Fixer does NOT modify the Status column (that's reconciliation's job)
   └─ State machine advances back to REVIEW
 
-Subsequent REVIEW (cycle N)
-  └─ Reviewer reads existing ledger
-  └─ For each existing row: re-verify against disk, update Status:
-       - Pending and still wrong  → leave Pending
-       - Pending and now resolved → Fixed
-       - Fixed and still resolved → leave Fixed (audit history)
-       - Fixed and regressed       → Recurred
-  └─ Append new rows as Pending for newly-found issues
-  └─ Orchestrator re-runs grade.sh
+INTERRUPTED (killed, stopped, or halted to ask)
+  └─ The scratch SURVIVES -- the merge step never ran
+  └─ plan-resume.sh recomputes art= and rs= per unit and emits keep/invalidate
+  └─ Orchestrator applies the plan with --set-status, then re-dispatches
+  └─ The reviewer receives the SAME scratch: its own coverage, its own findings
 
-DONE (skill completion, e.g., /aid-discover APPROVAL granted)
-  └─ Orchestrator deletes the ledger file: rm .aid/.temp/review-pending/<scope>.md
-  └─ If .aid/.temp/review-pending/ is empty: rmdir .aid/.temp/review-pending/
+Subsequent REVIEW (cycle N)
+  └─ Fresh scratch <scope>-cycle<N>.md; coverage starts empty, which is correct --
+     a new attempt re-examines everything
+  └─ Reviewer records what it finds; it never updates a prior Status
+  └─ Orchestrator reconciles and re-grades
+
+DONE (skill completion)
+  └─ G- keys promoted to the criteria-gap register FIRST -- they outlive the ledger
+  └─ Orchestrator deletes the canonical ledger and any scratch
+  └─ If .aid/.temp/review-pending/ is empty: rmdir it
 ```
+
+**Findings merge; coverage and gap rows live and die with their attempt.** Resume re-enters an attempt,
+so its coverage is intact. A new cycle opens a fresh attempt, so its coverage is empty.
 
 ## How rows are written
 
@@ -336,10 +402,12 @@ re-emission*.
 - Let the script assign `#`; do NOT renumber existing rows.
 - **Carry a rule ID in `Rule` on every finding row.** If no rule speaks to the concern, raise a criteria gap instead of writing a finding.
 - Cite the disk-truth in Evidence with a runnable command or specific file:line reference.
-- Read the existing ledger BEFORE appending — use the existing Status patterns to identify Recurred regressions.
 - Match the shape of the file's own header row; if it is a 7-column ledger, keep writing 7 columns.
+- Checkpoint coverage as you go: `--set-status <unit> --status "In Progress"` **before** the unit's work and `Examined` after. The leading write is what makes an interrupted unit distinguishable from one never reached.
 
 **Never:**
+- Read or write the canonical ledger. You are given a scratch path; that is the only ledger you touch.
+- Update a prior row's Status. Reconciliation does that, and it is not a judgment about the artifact — it is a set difference between two finding lists.
 - Add a `## Summary` section with severity tag-strings (the cycle-7 bug — those tag strings get over-counted by simpler graders).
 - Modify existing rows' Severity, `Rule` or Description (they're append-only history); only Status may change across cycles.
 - Put more than one rule ID in a `Rule` cell, or add a retired source tag (`[CODE]`, `[SPEC]`, `[ARCHITECTURE]`) to any column.

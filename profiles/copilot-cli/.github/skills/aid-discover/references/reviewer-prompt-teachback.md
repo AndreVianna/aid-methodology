@@ -189,7 +189,12 @@ yet assign rule IDs -- put the real ID there once it does; never invent one):
 - `Line` column: `--` for essence findings (the gap is topical, not line-localized)
   unless the Divergence is localized to a specific KB doc line.
 - Status: `Pending` for new findings
-- If re-reviewing: read existing `{{SCOPE}}-teachback.md`, update Status for prior rows
+- You are given ONE ledger path. Write only there, and never look for a previous cycle's file:
+  the orchestrator reconciles your rows against the durable ledger on `(Doc, Rule)` after you
+  return. Do NOT update the Status of any prior row -- that is bookkeeping, not judgment, and
+  doing it would require seeing a verdict you are deliberately not shown.
+- If the ledger you were given ALREADY CONTAINS your own rows, this is a RESUME of the same
+  attempt: continue from your coverage rows rather than starting over.
   (Pending->Fixed if resolved; Fixed->Recurred if regressed), append new findings.
 
 **No narrative, no summary sections -- the ledger table is the entire output.**

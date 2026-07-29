@@ -21,7 +21,17 @@
 #
 # Usage:
 #   write-control-signal.sh --task-id <NNN> --action <stop|resume>
+#   write-control-signal.sh --scope review --slug <ledger-scope> --action <stop|resume>
 #       env AID_WORK_DIR=<abs work dir>  (optional; falls back to $PWD)
+#
+# TWO SCOPES. `--scope task` (the default, so every existing caller is unchanged) signals a numbered
+# task. `--scope review` signals a REVIEW identified by its ledger scope slug.
+#
+# Why the review scope exists: this script was task-scoped, so the only reviews a user could stop were
+# those dispatched with a task id. A review run by aid-discover, aid-specify, aid-plan, aid-detail --
+# or by aid-execute's own DELIVERY GATE -- has no task id and therefore had no stop path at all. The
+# resume contract names three interruption types including user-stop; leaving most reviews unable to
+# receive one would have shipped a partial obligation.
 #
 # Target work dir: `AID_WORK_DIR` if set (even to a non-empty value), else the
 # current working directory. The dashboard server always sets `AID_WORK_DIR`
@@ -40,6 +50,13 @@
 # The `.stop` filename is built from this NORMALIZED token only -- no
 # client-supplied string ever reaches a path segment, so `../` traversal into
 # or out of `.aid/.control/` is impossible (SEC-3).
+#
+# `--slug` gets the SAME discipline, and it needs it more: unlike a task id it is a string, so it is
+# the one place a traversal could enter. It is validated against `^[a-z0-9][a-z0-9-]{0,63}$` before
+# use -- lowercase, digits and hyphens ONLY. That pattern admits no `.` and no `/`, so neither `../`
+# nor an absolute path is expressible, and the token `review-<slug>` is built only from a value that
+# already matched. Ledger scopes are already of this shape (`discovery`, `plan`, `detail`,
+# `specify-<feature>`, `execute-delivery-NNN`).
 #
 # `--action stop`: `mkdir -p` the control directory, then atomically
 # (temp-file + `mv`) create `<control-dir>/task-<NNN>.stop` containing one
@@ -64,9 +81,11 @@
 #   0 -- success (signal created/refreshed, or removed/already-absent)
 #   2 -- IO failure (control dir could not be created, temp file could not be
 #        written/renamed, or the signal file could not be removed)
-#   4 -- invalid argument value (`--task-id` outside `^[0-9]{1,3}$`, or
+#   4 -- invalid argument value (`--task-id` outside `^[0-9]{1,3}$`, `--slug`
+#        outside `^[a-z0-9][a-z0-9-]{0,63}$`, `--scope` not `task`/`review`, or
 #        `--action` not one of `stop`/`resume`)
-#   5 -- missing required argument (`--task-id`/`--action` absent, or given
+#   5 -- missing required argument (`--action` absent; `--task-id` absent under
+#        `--scope task`; `--slug` absent under `--scope review`; a flag given
 #        with no value; unknown flag)
 #
 # Output:
@@ -87,6 +106,8 @@ die() { echo "ERROR: write-control-signal.sh: $*" >&2; exit "${2:-1}"; }
 # ---------------------------------------------------------------------------
 TASK_ID=""
 ACTION=""
+SCOPE="task"          # default keeps every pre-existing caller working unchanged
+SLUG=""
 
 while [[ $# -gt 0 ]]; do
     case "$1" in
@@ -98,6 +119,14 @@ while [[ $# -gt 0 ]]; do
             [[ $# -lt 2 ]] && die "--task-id requires a value" 5
             TASK_ID="$2"; shift 2
             ;;
+        --scope)
+            [[ $# -lt 2 ]] && die "--scope requires a value" 5
+            SCOPE="$2"; shift 2
+            ;;
+        --slug)
+            [[ $# -lt 2 ]] && die "--slug requires a value" 5
+            SLUG="$2"; shift 2
+            ;;
         --action)
             [[ $# -lt 2 ]] && die "--action requires a value" 5
             ACTION="$2"; shift 2
@@ -108,7 +137,6 @@ while [[ $# -gt 0 ]]; do
     esac
 done
 
-[[ -z "$TASK_ID" ]] && die "--task-id is required" 5
 [[ -z "$ACTION" ]] && die "--action is required" 5
 
 case "$ACTION" in
@@ -116,16 +144,38 @@ case "$ACTION" in
     *) die "invalid --action '$ACTION': must be one of: stop | resume" 4 ;;
 esac
 
-# Validate BEFORE normalizing -- a client-supplied string never reaches a
-# path segment (SEC-3): only the zero-padded token derived from a value that
-# already matched this pattern is ever used to build a filename.
-[[ "$TASK_ID" =~ ^[0-9]{1,3}$ ]] || die "invalid --task-id '$TASK_ID': must match ^[0-9]{1,3}\$" 4
+case "$SCOPE" in
+    task|review) ;;
+    *) die "invalid --scope '$SCOPE': must be one of: task | review" 4 ;;
+esac
 
-# Force base-10 arithmetic before padding: a zero-padded id containing 8/9
-# (e.g. "008", "090") would otherwise be misparsed as an invalid octal
-# literal (same guard writeback-state.sh applies at every one of its own
-# padding call sites).
-TASK_TOKEN="task-$(printf '%03d' "$((10#$TASK_ID))")"
+# Validate BEFORE normalizing -- a client-supplied string never reaches a
+# path segment (SEC-3): only a token derived from a value that already matched
+# its pattern is ever used to build a filename.
+if [[ "$SCOPE" == "task" ]]; then
+    [[ -z "$TASK_ID" ]] && die "--task-id is required with --scope task" 5
+    [[ -n "$SLUG" ]] && die "--slug is not valid with --scope task (did you mean --scope review?)" 4
+    [[ "$TASK_ID" =~ ^[0-9]{1,3}$ ]] || die "invalid --task-id '$TASK_ID': must match ^[0-9]{1,3}\$" 4
+
+    # Force base-10 arithmetic before padding: a zero-padded id containing 8/9
+    # (e.g. "008", "090") would otherwise be misparsed as an invalid octal
+    # literal (same guard writeback-state.sh applies at every one of its own
+    # padding call sites).
+    SIGNAL_TOKEN="task-$(printf '%03d' "$((10#$TASK_ID))")"
+else
+    [[ -z "$SLUG" ]] && die "--slug is required with --scope review" 5
+    [[ -n "$TASK_ID" ]] && die "--task-id is not valid with --scope review (a review has no task id)" 4
+
+    # The one place a string reaches a filename, so the pattern is deliberately narrow: lowercase,
+    # digits and hyphens only. No `.` and no `/` means neither `../` nor an absolute path can be
+    # expressed, so SEC-3 holds by construction rather than by sanitising afterwards.
+    [[ "$SLUG" =~ ^[a-z0-9][a-z0-9-]{0,63}$ ]] || die "invalid --slug '$SLUG': must match ^[a-z0-9][a-z0-9-]{0,63}\$ (lowercase, digits and hyphens only -- no dots or slashes, so no path traversal is expressible)" 4
+
+    SIGNAL_TOKEN="review-${SLUG}"
+fi
+
+# Retained under its original name so any downstream reference keeps resolving.
+TASK_TOKEN="$SIGNAL_TOKEN"
 
 # ---------------------------------------------------------------------------
 # Path resolution -- WT-1: derive relative to AID_WORK_DIR (or $PWD), NEVER a
