@@ -20,7 +20,7 @@ See the repo README for npm / pipx / offline install options.
 
 This gives you:
 - `.codex/skills/aid-{phase}/SKILL.md` — Phase instructions in AgentSkills format (111 skills: 17 curated pipeline / on-demand / router skills plus the 94-row shortcut catalog's skills — 64 verb-first shortcut doorways + 30 hand-authored repurpose skills)
-- `.codex/agents/{name}.toml` — Agent definitions in Codex TOML format (9 agents with `aid-` prefix)
+- `.codex/agents/{name}.toml` — Agent definitions in Codex TOML format (10 agents with `aid-` prefix)
 - `.codex/aid/scripts/`, `.codex/aid/templates/` — AID-own support files
 - `AGENTS.md` — Project context for AI agents (edit with your project details)
 

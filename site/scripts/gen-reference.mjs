@@ -4,7 +4,7 @@
 // Generates four reference pages from canonical/ + .aid/settings.yml:
 //   reference/skills.md    — 94 skill directories (16 classic + aid-triage + aid-ask +
 //                            76 catalog-driven shortcuts), grouped + summarized
-//   reference/agents.md    — 9 agents table
+//   reference/agents.md    — 10 agents table
 //   reference/kb.md        — 14 KB doc-types table
 //   reference/settings.md  — settings keys table
 //

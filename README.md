@@ -210,7 +210,7 @@ The KB is the central artifact: a living 14-document picture of the project. Eve
 
 ### The Agent Model
 
-AID defines 9 agents across three tiers (Large / Medium / Small), mapped per tool to concrete models. The invariant enforced everywhere: the Reviewer's tier is always >= the Executor's. The agent that writes never grades its own work.
+AID defines 10 agents across three tiers (Large / Medium / Small), mapped per tool to concrete models. The invariant enforced everywhere: the Reviewer's tier is always >= the Executor's. The agent that writes never grades its own work.
 
 [Full agent roster and dispatch rules →](docs/aid-methodology.md#5-the-agent-model)
 

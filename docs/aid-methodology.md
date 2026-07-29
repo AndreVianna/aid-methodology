@@ -97,7 +97,7 @@ The shortcut path is not a fallback — it is the default entry for the majority
 
 ### Skill Inventory
 
-*111 skill directories in total — 17 curated pipeline / on-demand / router skills plus the 94-row shortcut catalog's skills (58 canonical names + 36 aliases; 64 engine-generated verb-first shortcut doorways + 30 hand-authored `repurpose` skills). Unchanged: 9 agents, 14 KB doc types.*
+*111 skill directories in total — 17 curated pipeline / on-demand / router skills plus the 94-row shortcut catalog's skills (58 canonical names + 36 aliases; 64 engine-generated verb-first shortcut doorways + 30 hand-authored `repurpose` skills). Unchanged: 10 agents, 14 KB doc types.*
 
 **A. The 17 curated skills** — the pipeline phases plus the on-demand and router skills that are *not* in the shortcut catalog; their groups, phase numbers, and mandatory pipeline membership. (`aid-deploy`, `aid-monitor`, and `aid-query-kb` are now catalog `repurpose` rows — see table D.)
 
@@ -869,7 +869,7 @@ AID ships as five rendered install trees. The single canonical source (`canonica
 ```
 canonical/  (single source of truth — never edit profiles/ directly)
   ├── skills/        (111 skill directories — 17 curated + 94 catalog skills)
-  ├── agents/        (9 agents)
+  ├── agents/        (10 agents)
   └── aid/
         ├── templates/     (KB templates, document templates, shortcut-catalog.yml, shortcut-scaffolding/)
         └── scripts/       (helper scripts by phase)

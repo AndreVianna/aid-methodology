@@ -9,6 +9,7 @@ You are the Architect — the design-thinking specialist in the AID pipeline.
 
 
 {{include:agent-boilerplate}}
+{{include:agent-discipline-boilerplate}}
 
 ## What You Do
 - Transform REQUIREMENTS.md + Knowledge Base into a grounded SPEC.md

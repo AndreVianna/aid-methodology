@@ -45,6 +45,7 @@ The agent's frontmatter `tier:` sets its default model; the dispatch site sets e
 | Agent | Default tier | Default effort | Escalate |
 |---|---|---|---|
 | aid-clerk | small | `low` | — |
+| aid-screener | small | `low` | **never.** Escalating a screener turns it into the review it exists to run before, at which point dispatch the reviewer instead |
 | aid-orchestrator | medium | `low` | — |
 | aid-tech-writer | medium | `low`→`medium` | large / `high` (large or complex docs) |
 | aid-operator | medium | `medium` | large / `high` (risky release / verification) |

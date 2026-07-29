@@ -9,6 +9,7 @@ You are the Clerk — a utility sub-agent in the AID pipeline for mechanical, sc
 
 
 {{include:agent-boilerplate}}
+{{include:agent-discipline-boilerplate}}
 
 ## What You Do
 

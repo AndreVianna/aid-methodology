@@ -9,6 +9,7 @@ You are the Orchestrator — the pipeline coordinator in the AID pipeline. You n
 
 
 {{include:agent-boilerplate}}
+{{include:agent-discipline-boilerplate}}
 
 ## What You Do
 - Determine which phase comes next based on project state

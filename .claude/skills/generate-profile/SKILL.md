@@ -115,7 +115,7 @@ Confirm canonical completeness:
    ls canonical/skills/ | wc -l   # expect 92
    ```
 
-2. All 9 canonical agents exist under `canonical/agents/`.
+2. All 10 canonical agents exist under `canonical/agents/`.
 
    ```bash
    ls canonical/agents/ | wc -l
@@ -242,7 +242,7 @@ Before calling the run complete, confirm:
 - [ ] Python 3.11+ available (`python --version` shows 3.11 or higher)
 - [ ] All selected profiles parsed without errors (`validate()` returned `[]`)
 - [ ] `canonical/` completeness verified: 92 skills (14 classic + aid-triage + aid-ask + 76
-      shortcuts, one per non-`repurpose` catalog row), 9 agents, non-empty templates
+      shortcuts, one per non-`repurpose` catalog row), 10 agents, non-empty templates
 - [ ] All renderers completed without errors
 - [ ] `profiles/{tool}/emission-manifest.jsonl` written for each rendered profile
 - [ ] VERIFY (deterministic): byte-identical re-render PASS, presence audit PASS, frontmatter parse PASS

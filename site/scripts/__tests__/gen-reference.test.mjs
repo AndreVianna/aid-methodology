@@ -144,11 +144,11 @@ describe('gen-reference: roster counts', () => {
     const agentDirs = readdirSync(AGENTS_DIR, { withFileTypes: true })
       .filter((d) => d.isDirectory())
       .map((d) => d.name);
-    expect(agentDirs).toHaveLength(9);
+    expect(agentDirs).toHaveLength(10);
 
     const agentsContent = readFileSync(join(CONTENT_DOCS, 'reference', 'agents.md'), 'utf8');
     const sections = agentsContent.split('\n').filter((l) => /^### `aid-/.test(l));
-    expect(sections).toHaveLength(9);
+    expect(sections).toHaveLength(10);
   });
 
   it('kb.md: exactly 14 KB doc-type rows matching canonical/aid/templates/knowledge-base/', () => {

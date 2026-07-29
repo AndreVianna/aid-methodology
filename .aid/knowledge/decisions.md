@@ -295,8 +295,12 @@ changelog:
   `docs/aid-methodology.md` §5 (search: "replaces the former five separate discovery-* agents"
   and "absorbs former data-engineer and devops roles").
 - **Status:** Accepted (supersedes the prior agent roster).
-
-## D16 — PowerShell 5.1 compatibility floor
+- **Amended 2026-07-29 — the roster is now ten.** `aid-screener` was added as a second Small-tier
+  agent: a cheap first pass that runs *before* an adversarial review. The tier logic of D15 is
+  unchanged and is in fact what admitted it — matching model cost to task stakes is precisely the
+  argument for a Small-tier screening pass. The title of this decision is left at "Nine" deliberately:
+  it records what was decided at the time, and rewriting a decision record to match the present would
+  destroy the history it exists to keep.
 
 - **What:** All shipped PowerShell must run on Windows PowerShell 5.1 (a fresh Windows box has
   5.1, not pwsh 7), enforced by an AST lint and a real 5.1 CI lane.

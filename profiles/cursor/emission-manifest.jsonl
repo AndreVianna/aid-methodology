@@ -7,6 +7,7 @@
 {"dst": ".cursor/agents/aid-orchestrator.md", "profile": "cursor", "sha256": "77cb74744186aa61376ae901dd07bcef28a490bce7a8f8a656867d17232e4e2c", "src": "canonical/agents/aid-orchestrator/AGENT.md"}
 {"dst": ".cursor/agents/aid-researcher.md", "profile": "cursor", "sha256": "d18fe14a3f24fbeccb52f8b200c45eadcd78ae860b1adfe71e9e993929035a20", "src": "canonical/agents/aid-researcher/AGENT.md"}
 {"dst": ".cursor/agents/aid-reviewer.md", "profile": "cursor", "sha256": "09d5b2ef54750d1ddfc260a13adf76cff16fe230af9fe9b9a5d87aa1381f8c6a", "src": "canonical/agents/aid-reviewer/AGENT.md"}
+{"dst": ".cursor/agents/aid-screener.md", "profile": "cursor", "sha256": "51c35cd7375110bc334d36b20105d3ad38f04a9902570500e9c6c9a5d01d1355", "src": "canonical/agents/aid-screener/AGENT.md"}
 {"dst": ".cursor/agents/aid-tech-writer.md", "profile": "cursor", "sha256": "b37384f9bd9fd533db024be00dabaaa7db15edf1b313330518e719c6e4447ff7", "src": "canonical/agents/aid-tech-writer/AGENT.md"}
 {"dst": ".cursor/aid/scripts/config/read-setting.sh", "profile": "cursor", "sha256": "4f11714098f724dfe5d7923905550934c41253ff8add5bad46d4040f4e3decc9", "src": "canonical/scripts/config/read-setting.sh"}
 {"dst": ".cursor/aid/scripts/connectors/build-connectors-index.ps1", "profile": "cursor", "sha256": "5f1c2060c42217d7da1f7b1e52286e1f75732554866ce1a1191ec0177572a7e9", "src": "canonical/scripts/connectors/build-connectors-index.ps1"}
@@ -65,8 +66,9 @@
 {"dst": ".cursor/aid/scripts/summarize/writeback-state.sh", "profile": "cursor", "sha256": "f28a7741468f990effa3d1736426200c242ad2526c21d5d33d38c192d548ff0a", "src": "canonical/scripts/summarize/writeback-state.sh"}
 {"dst": ".cursor/aid/scripts/works/enumerate-works.sh", "profile": "cursor", "sha256": "256b18145d15003a840b1ba7e473c2b693748ac060416cefa16d998a0b77767b", "src": "canonical/scripts/works/enumerate-works.sh"}
 {"dst": ".cursor/aid/scripts/works/worktree-lifecycle.sh", "profile": "cursor", "sha256": "1d65c114c74ea73aa4d5b6fcf7ac853168994590467576ab55480c9d4e767a1e", "src": "canonical/scripts/works/worktree-lifecycle.sh"}
-{"dst": ".cursor/aid/templates/agent-boilerplate.md", "profile": "cursor", "sha256": "2c02cf94f7a52ad397ade7ab01ff448316731ee68d3577f22d4f21eec0aa31d5", "src": "canonical/templates/agent-boilerplate.md"}
-{"dst": ".cursor/aid/templates/agent-dispatch-tiering.md", "profile": "cursor", "sha256": "af60bee6347d7983a87ff985a607edef24aaf2cd55374524be4d182a11ccaca0", "src": "canonical/templates/agent-dispatch-tiering.md"}
+{"dst": ".cursor/aid/templates/agent-boilerplate.md", "profile": "cursor", "sha256": "e6d7d3960e4e1184205ba7182accf4330e80e5b3119ae2f93a8e8fa90a4819d2", "src": "canonical/templates/agent-boilerplate.md"}
+{"dst": ".cursor/aid/templates/agent-discipline-boilerplate.md", "profile": "cursor", "sha256": "fbd87e6460bff8e9f6de814dd10515e4d20f88702358a89f6ccd0a8fafe6b000", "src": "canonical/templates/agent-discipline-boilerplate.md"}
+{"dst": ".cursor/aid/templates/agent-dispatch-tiering.md", "profile": "cursor", "sha256": "97524f42210e262a783cfd780677a537c8c345b8c873bc6cad13339c2d9a476f", "src": "canonical/templates/agent-dispatch-tiering.md"}
 {"dst": ".cursor/aid/templates/connectors/consumption-protocol.md", "profile": "cursor", "sha256": "90bbefdd1edb6717bec73a93956f7d0eb529c873026344e78da0ee966a640be3", "src": "canonical/templates/connectors/consumption-protocol.md"}
 {"dst": ".cursor/aid/templates/connectors/preset-catalog.md", "profile": "cursor", "sha256": "b80bac04e86cc642e63e733c7ad338a93bdd4e61a9ffa346f9818ca54b72c038", "src": "canonical/templates/connectors/preset-catalog.md"}
 {"dst": ".cursor/aid/templates/connectors/reconcile.md", "profile": "cursor", "sha256": "2cc814b620e73ee339bb19efba81ffb8a2332e2f5ae16ebd698562537299c120", "src": "canonical/templates/connectors/reconcile.md"}

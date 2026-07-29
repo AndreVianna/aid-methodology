@@ -311,7 +311,7 @@ concept, "human-gated phase advancement"; see Invariants).
 ## Agent / Sub-Agent Dispatch Model
 
 A skill (driven by the host tool) dispatches **specialist sub-agents** to do the work. AID
-defines **9 agents across 3 model tiers**. CONFIRMED: `canonical/agents/` holds exactly 9
+defines **10 agents across 3 model tiers**. CONFIRMED: `canonical/agents/` holds exactly 10
 (aid-architect, aid-clerk, aid-developer, aid-interviewer, aid-operator, aid-orchestrator,
 aid-researcher, aid-reviewer, aid-tech-writer) and `docs/aid-methodology.md` §5.
 

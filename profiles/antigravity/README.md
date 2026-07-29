@@ -20,7 +20,7 @@ See the repo README for npm / pipx / offline install options.
 
 This gives you:
 - `.agent/skills/aid-{phase}/SKILL.md` — Phase instructions in AgentSkills format (111 skills: 17 curated pipeline / on-demand / router skills plus the 94-row shortcut catalog's skills — 64 verb-first shortcut doorways + 30 hand-authored repurpose skills)
-- `.agent/agents/{name}.md` — Agent definitions in Markdown format (9 agents with `aid-` prefix)
+- `.agent/agents/{name}.md` — Agent definitions in Markdown format (10 agents with `aid-` prefix)
 - `.agent/aid/templates/` — Templates (grading rubric, settings schema); `.agent/aid/scripts/` — bash helpers (`grade.sh`, `kb/build-project-index.sh`)
 - `AGENTS.md` — Project context for AI agents (edit with your project details)
 

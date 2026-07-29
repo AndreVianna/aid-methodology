@@ -20,7 +20,7 @@ See the repo README for npm / pipx / offline install options.
 
 This gives you:
 - `.claude/skills/aid-{phase}/SKILL.md` — Phase instructions in AgentSkills format (111 skills: 17 curated pipeline / on-demand / router skills plus the 94-row shortcut catalog's skills — 64 verb-first shortcut doorways + 30 hand-authored repurpose skills)
-- `.claude/agents/{name}.md` — Agent definitions in Claude Code format (9 agents with `aid-` prefix)
+- `.claude/agents/{name}.md` — Agent definitions in Claude Code format (10 agents with `aid-` prefix)
 - `.claude/aid/templates/` — Templates (grading rubric, settings schema); `.claude/aid/scripts/` — bash helpers (`grade.sh`, `kb/build-project-index.sh`)
 - `CLAUDE.md` — Claude Code project configuration (edit with your project details)
 
