@@ -6,8 +6,10 @@
 // Acceptance criteria covered:
 //   AC-1  verifyProvenance runs before any markdown is produced — a chart with bad
 //         provenance produces no page bytes (renderFragmentList never called).
-//   AC-2  The appender uses only SkillRecord.dirName and sourcePath; bodyStartLine
-//         and lineCount appear nowhere in the module (source grep).
+//   AC-2  The appender reads only SkillRecord.dirName; bodyStartLine and lineCount
+//         appear nowhere in the module (source grep). The DETAIL anticipated two
+//         fields, dirName and sourcePath, but buildFlowChart derives every path it
+//         needs from name and dir, so sourcePath is not read and not destructured.
 //   AC-3  buildFlowChart is memoised per dirName — asserted by call count.
 //   AC-4  The section is emitted unconditionally for every skill; there is no code
 //         path that skips it (no conditional gate in the source, plus direct proof
@@ -27,7 +29,6 @@ import { resolve, dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { describe, it, expect, beforeAll } from 'vitest';
 import { provenanceAppender } from '../lib/provenance/index.mjs';
-import { REPO_ROOT } from '../skills/paths.mjs';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const MODULE_PATH = resolve(__dirname, '../lib/provenance/index.mjs');

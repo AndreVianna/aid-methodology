@@ -1,8 +1,8 @@
 ---
 delivery_state: Gated
 gate_tier: Large
-gate_grade: C+
-gate_timestamp: 2026-07-29T15:20:00Z
+gate_grade: A
+gate_timestamp: 2026-07-29T15:55:00Z
 ticket_ref: "--"
 ---
 
@@ -94,6 +94,46 @@ two the DETAIL anticipated.
 
 After the round: 2571 tests across 41 files, build clean at 142 pages, regeneration idempotent,
 and no mutation artifacts anywhere under `site/scripts/`.
+
+### Gate round 2 — A (still below the A+ floor)
+
+All three round-1 findings confirmed Fixed. The reviewer specifically audited the new
+`vi.doMock` cache tests for vacuity and confirmed the mock genuinely intercepts, the
+three-call/one-read assertion measures the cache, and the without-cache twin is a real
+non-vacuity control. Asked to challenge rather than rubber-stamp the `sourcePath` removal, it
+agreed: the AC over-specified a field the appender was never going to use, and the constraint
+the AC protects is intact.
+
+Two [MINOR] findings, both introduced by my own round-1 fix commit, both fixed:
+
+1. **A duplicate `REPO_ROOT` declaration.** My commit added `import { REPO_ROOT }` to
+   `provenance-appender.test.mjs`, which already declared `const REPO_ROOT` four lines below.
+   Worth more than the cosmetic note it was filed as: two declarations of one binding in module
+   scope is **not valid ESM**, and it only ran because Vitest's transform renames import
+   bindings. The existing `const` already resolves to the repo root, so the import was deleted.
+   Confirmed the file now parses outside the runner, and swept `__tests__/`, `lib/provenance/`,
+   `lib/flow-graph/` and `skills/` for the same pattern — clean.
+2. **A stale comment.** The AC-2 header still said the appender "uses only dirName and
+   sourcePath" after `sourcePath` was removed, contradicting the test below it. Reworded, with
+   the reason recorded so the next reader does not re-add the field.
+
+### Gate round 2 — A (two MINOR findings, below A+ floor)
+
+Gate re-ran on commit 155d8e08. All three round-1 rows are Fixed. Two new [MINOR] findings raised.
+
+**[MINOR] Dead `REPO_ROOT` import.** Commit 155d8e08 added
+`import { REPO_ROOT } from '../skills/paths.mjs'` to `provenance-appender.test.mjs` (L30) while
+a `const REPO_ROOT = resolve(__dirname, '../../../')` already existed at L34. The import is
+shadowed and never referenced; `REPO_ROOT` at L92 and L112 binds to the `const`. Fix: remove
+the import at L30.
+
+**[MINOR] Stale AC-2 comment.** The file-level description at L9 still says the appender "uses
+only SkillRecord.dirName and sourcePath". `sourcePath` was removed by this commit; the comment
+contradicts the test at L165 (`not.toMatch(/...sourcePath.../)`). Fix: update the comment to
+reflect one-field access.
+
+Checks: 2571/2571 tests pass, 142-page build clean, gen-skills idempotent on two runs, git
+status clean, zero mutation artifacts.
 
 ---
 
