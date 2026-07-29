@@ -198,6 +198,62 @@ describe('panel: activation', () => {
     expect(hrefs).toContain('#fragment-n1');
   });
 
+  // The Anatomy block shows the source link's TEXT as the repo-relative path and
+  // anchor, not the whole URL — matching delivery-004's list, which this panel is
+  // meant to be compared against. A full URL as link text is unreadable.
+  it('labels the Source link with the canonical path, not the whole URL', () => {
+    buildPage();
+    loadController();
+    nodeFor('n1').dispatchEvent(new window.MouseEvent('click', { bubbles: true }));
+
+    const source = [...panel().querySelectorAll('.aid-node-panel__links a')]
+      .find((a) => a.textContent.startsWith('Source:'));
+    expect(source).toBeTruthy();
+    expect(source.textContent).toBe('Source: canonical/skills/a/SKILL.md#L5');
+    // The href is still the full URL — only the text is shortened.
+    expect(source.getAttribute('href')).toBe(projection().nodes[0].source.url);
+    expect(source.textContent).not.toContain('https://');
+  });
+
+  // Same rule as render-mermaid.mjs and the fragment list: 223 of 883 corpus
+  // entries carry a label identical to the node name, so without collapsing it the
+  // heading says the word twice and the accessible name announces it twice.
+  it('drops the label when it merely repeats the name', () => {
+    const island = projection();
+    island.nodes[0].label = 'INTAKE';
+    buildPage({ island });
+    loadController();
+
+    const n1 = nodeFor('n1');
+    expect(n1.getAttribute('aria-label')).toBe('Step 1: INTAKE');
+    n1.dispatchEvent(new window.MouseEvent('click', { bubbles: true }));
+    const labelEl = panel().querySelector('.aid-node-panel__label');
+    expect(labelEl.textContent).toBe('');
+    expect(labelEl.hidden).toBe(true);
+  });
+
+  it('drops a label that repeats the name in different case', () => {
+    const island = projection();
+    island.nodes[0].name = 'ENTRY';
+    island.nodes[0].label = 'Entry';
+    buildPage({ island });
+    loadController();
+    expect(nodeFor('n1').getAttribute('aria-label')).toBe('Step 1: ENTRY');
+  });
+
+  // Non-vacuity for the two above: a label that adds meaning must survive, so the
+  // rule cannot be a blanket suppression.
+  it('keeps a label that adds meaning over the name', () => {
+    buildPage();
+    loadController();
+    const n1 = nodeFor('n1');
+    expect(n1.getAttribute('aria-label')).toBe('Step 1: INTAKE \u2014 Read the request');
+    n1.dispatchEvent(new window.MouseEvent('click', { bubbles: true }));
+    const labelEl = panel().querySelector('.aid-node-panel__label');
+    expect(labelEl.textContent).toBe('Read the request');
+    expect(labelEl.hidden).toBe(false);
+  });
+
   it('renders the full-step link only when detail is non-null', () => {
     buildPage();
     loadController();

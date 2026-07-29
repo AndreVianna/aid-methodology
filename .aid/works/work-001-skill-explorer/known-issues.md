@@ -541,6 +541,43 @@
 - **Surfaced by:** `/aid-detail` task decomposition, as item G of the architect's "what I had to
   decide" report — a hazard neither SPEC addresses, recorded rather than silently resolved.
 
+## KI-022: ELK layout intermittently not applied — diagrams fall back to dagre routing
+
+- **Type:** Rendering defect (intermittent). **OPEN** — owner deferred the fix; recorded so it is not lost.
+- **Severity:** Medium — cosmetic but conspicuous. It is a visible regression of the layout the
+  owner explicitly chose at the delivery-003 UI checkpoint ("the pure ELK is the best"), and the
+  symptom is exactly the complaint that drove that choice: "some shapes almost overlap and the
+  lines are bending strangely".
+- **Observed 2026-07-29 (delivery-005, wave 3):** `/skills/aid-define/` rendered with curved,
+  diagonally wandering edges and edge labels detached from their edges — dagre routing, not ELK's
+  orthogonal segments. Reported by the owner as intermittent: sometimes a diagram renders with the
+  correct layout, sometimes not.
+- **Ruled out** (checked at the time of the report, so a later investigation need not repeat it):
+  - `layout: 'elk'` is present in `astro.config.mjs` `mermaidConfig` (line 53) and **untouched by
+    delivery-005** — the only change that delivery makes to that file is the `Head` key
+    (`git diff aid/work-001-delivery-004 -- site/astro.config.mjs`).
+  - `@mermaid-js/layout-elk@0.2.2` and `elkjs@0.9.3` are both installed, and neither lock entry
+    was altered by this delivery's `jsdom` install.
+  - The dev server logs `[astro-mermaid] Enabling ELK support` on startup, so the integration
+    does register the loader.
+- **Two live hypotheses, in order of suspicion:**
+  1. **A race between registration and first render.** ELK is registered by a dynamic import; a
+     diagram that renders before the loader resolves would fall back to the built-in dagre layout.
+     Intermittency, and per-page variation, both fit this. It is also the same family as KI-018 and
+     as the stale-cache render failure seen earlier in this delivery.
+  2. **Session pollution during diagnosis.** While investigating an unrelated chart failure, this
+     session imported mermaid into the live page and called `initialize({ startOnLoad: false })`
+     without `layout: 'elk'`. If Vite deduped that to the integration's own instance, the live
+     config was overwritten for that tab. This would be self-inflicted and session-only — but it
+     cannot explain the owner seeing it intermittently in their own browsing, so it is at most a
+     contributing observation, not the cause.
+- **Next step when picked up:** compare a `dist` build served by `astro preview` against the dev
+  server on a clean browser profile. If `dist` is consistently ELK, the fault is in dev-mode
+  timing; if `dist` shows it too, instrument the registration to log whether the ELK loader had
+  resolved before the first `render` call. Do not start by changing the config — it is correct.
+
+---
+
 ## KI-021: `CHARTABLE_SHAPES` was never widened when the doorway extractors landed — 77 skills charted with no sidecar
 
 - **Type:** Product defect (delivery-003; found in delivery-005, wave 1). **CLOSED** by the same wave.

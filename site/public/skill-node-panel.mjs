@@ -201,7 +201,9 @@
     // Composed accessible name from projection fields — not scraped from SVG text.
     // Mermaid renders node text as <tspan>s or a <foreignObject>; the computed name
     // would be unreliable and unpunctuated, so we override it with projected data.
-    var ariaLabel = 'Step ' + panelNode.order + ': ' + panelNode.name + ' \u2014 ' + panelNode.label;
+    var ariaLabel = 'Step ' + panelNode.order + ': ' + panelNode.name;
+    var extra = meaningfulLabel(panelNode.name, panelNode.label);
+    if (extra) ariaLabel += ' \u2014 ' + extra;
     if (panelNode.exit !== null) {
       ariaLabel += ' (exit: ' + panelNode.exit.advanceType + ')';
     }
@@ -401,6 +403,37 @@
   }
 
   /**
+   * The readable half of a blob URL: `canonical/…/SKILL.md#L275`.
+   *
+   * feature-006's Anatomy shows the source link's text as the repo-relative path
+   * and anchor, not the whole URL — which matches delivery-004's list, where the
+   * link reads `[Source: `canonical/…#L275`]`. A full URL as link text is both
+   * unreadable and inconsistent with the list this panel is meant to be compared
+   * against.
+   *
+   * Derived by slicing from `canonical/` rather than by stripping a known prefix,
+   * so neither the blob base nor the pinned ref is restated here — those live in
+   * paths.mjs, and the projection's URLs are built from them.
+   */
+  function sourceLabel(url) {
+    var at = url.indexOf('canonical/');
+    return at === -1 ? url : url.slice(at);
+  }
+
+  /**
+   * The label half of a heading, or '' when the label only repeats the name.
+   *
+   * Same rule, and the same case-insensitive comparison, as render-mermaid.mjs's
+   * nodeLabel and the fragment list's labelPart: 223 of 883 corpus entries have a
+   * label identical to the node name, so without this the panel heading reads
+   * `INTAKE` twice and the accessible name announces "Step 1: INTAKE — INTAKE".
+   */
+  function meaningfulLabel(name, label) {
+    if (!label) return '';
+    return label.trim().toLowerCase() === String(name).trim().toLowerCase() ? '' : label;
+  }
+
+  /**
    * Close the panel.
    *
    * `returnFocus` moves focus back to the node that opened it, which is the
@@ -453,14 +486,17 @@
     exitEl.textContent = node.exit ? node.exit.advanceType : '';
     exitEl.hidden = !node.exit;
 
-    panelEl.querySelector('.aid-node-panel__label').textContent = node.label;
+    var labelEl = panelEl.querySelector('.aid-node-panel__label');
+    var labelText = meaningfulLabel(node.name, node.label);
+    labelEl.textContent = labelText;
+    labelEl.hidden = labelText === '';
 
     // The one assignment whose exactness is the point of the feature.
     panelEl.querySelector('.aid-node-panel__fragment code').textContent = node.fragment;
 
     var links = panelEl.querySelector('.aid-node-panel__links');
     clearChildren(links);
-    links.appendChild(makeLink(node.source.url, 'Source: ' + node.source.url));
+    links.appendChild(makeLink(node.source.url, 'Source: ' + sourceLabel(node.source.url)));
     if (node.detail) {
       links.appendChild(document.createTextNode(' \u00b7 '));
       links.appendChild(makeLink(node.detail.url, 'full step'));
