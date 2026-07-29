@@ -1,8 +1,8 @@
 ---
-delivery_state: Gated
+delivery_state: Done
 gate_tier: Large
-gate_grade: A
-gate_timestamp: 2026-07-29T15:55:00Z
+gate_grade: A+
+gate_timestamp: "2026-07-29T16:06:54Z"
 ticket_ref: "--"
 ---
 
@@ -131,6 +131,14 @@ the import at L30.
 only SkillRecord.dirName and sourcePath". `sourcePath` was removed by this commit; the comment
 contradicts the test at L165 (`not.toMatch(/...sourcePath.../)`). Fix: update the comment to
 reflect one-field access.
+
+Checks: 2571/2571 tests pass, 142-page build clean, gen-skills idempotent on two runs, git
+status clean, zero mutation artifacts.
+
+### Gate round 3 — A+ (clears the A+ floor)
+
+Both round-2 findings confirmed Fixed in commit 80199e1b. All five ledger rows now Fixed.
+No new findings. Delivery clears the A+ floor.
 
 Checks: 2571/2571 tests pass, 142-page build clean, gen-skills idempotent on two runs, git
 status clean, zero mutation artifacts.
