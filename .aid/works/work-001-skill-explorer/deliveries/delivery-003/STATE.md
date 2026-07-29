@@ -690,6 +690,67 @@ resolves into the module split.
 
 ---
 
+## Waves 12–14 (tasks 037, 038, 039) — feature-004 complete, delivery-003 code complete
+
+**2367 tests across 36 files.** Build clean at 142 pages. Every one of the 111 skills now carries a
+`## Flow` chart, up from 34.
+
+### task-037 — wiring, and three things it surfaced
+
+Two dispatch rows and one `BODY_PROVIDERS` entry. The partition is enforced **as a test**, per the
+DETAIL's insistence: every directory claimed by exactly one provider (named, not counted), the two
+predicate sets disjoint and complete, both providers emitting an identical `## Flow` heading compared
+rather than inspected, and — the sharpest of the four — **reversing the provider array changes nothing
+for any of the 111 skills**, which is the partition claim exercised rather than asserted.
+
+Three findings:
+
+- **A pre-existing test-isolation defect.** `skills-body.test.mjs` had an `afterEach` that emptied
+  `BODY_PROVIDERS` and never restored it, so every test defined *after* that block ran against an empty
+  registry. Harmless until the partition guard arrived and reported all 111 skills unclaimed while the
+  generator was charting all 111 happily. Registries are now snapshotted at import and restored.
+- **Three façade tests asserted `buildFlowChart` throws for doorway shapes** — correct while three
+  extractors were wired, and exactly what this task removes. Re-scoped to assert those same skills chart.
+- **The pre-switch shape guard is deleted, not widened.** With all five enum values dispatching, no
+  input could reach it, and the switch's `default:` arm already throws the same error with the same file
+  path. Two guards for one condition, one unreachable, is worse than one. An attempt to keep a throw
+  test by passing a nonexistent skill failed honestly — that throws `ENOENT` at the file read, long
+  before classification — so the replacement asserts all five shapes chart, which is testable and is
+  what FR-2 depends on.
+
+### tasks 038–039 — the doorway suite, and what mutation testing actually showed
+
+158 tests in `flow-graph-doorways.test.mjs` (89 unit + 69 corpus).
+
+**task-038's mutation log was conceptual — "verified the test *would* fail" — so I executed it.** Nine
+mutants: memo, deep freeze, W5, compose node identity, compose edge identity, and W1–W4. **All nine
+die.** The author's reasoning held; it just had not been run. Two rounds of my own harness bugs got in
+the way first: renaming `W1` → `W1_OFF` is inert because a substring filter still matches it, and
+replacing only the *first* occurrence lands in a doc comment. Replacing **all** occurrences with a
+label that shares no prefix is what finally reached the code.
+
+**task-039 reported two assertions as not mutation-provable. One of those claims was wrong.**
+
+- **Cross-page identity is provable, and it works.** The author argued no mutation could reach it,
+  because an engine change moves every page equally. That misses what AC-6 is *for*: per-page leakage
+  into the shared segment. Leaking the skill name into a shared node's label kills it — and once the
+  leak is made **same-length** (swapping the label's last character for a per-skill digit, so V8's
+  60-code-point cap is not tripped instead), the failures are named precisely: *"for every
+  engine-doorway skill, stripped mermaid equals aid-create-api strip"* and *"for every sibling-doorway
+  skill, spliced nodes equal parent nodes with offset"*. The sharpest guard in the delivery does what
+  it claims.
+- **APPROVAL-HALT's `advanceType === 'HALT'` remains unproven, and is recorded as such.** Four
+  candidate sites were mutated and none changed the value: `_detectAdvanceType`'s lowercase-`halt`
+  branch (which cannot fire on the uppercase keyword the template uses), the B1 edge's `advanceType`,
+  and both B1 node terminals. The assertion is specific and the value is correct; I could not construct
+  a mutant that reaches it. **Recorded as unproven rather than claimed as covered** — which is the
+  distinction this delivery has spent eleven waves learning to make.
+
+The known-defective `/aid-execute` AC recurs verbatim in task-039 and was handled the same way, per the
+acceptance already recorded under wave 11.
+
+---
+
 ## Wave 11 (tasks 035 + 036) — PASS. Two DETAIL statements corrected against the corpus.
 
 Reviewer verdict: **passes**, at C+ on two open rows — both of which turn out to be **factual errors in

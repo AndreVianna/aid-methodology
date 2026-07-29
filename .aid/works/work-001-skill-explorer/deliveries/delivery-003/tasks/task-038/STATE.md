@@ -1,8 +1,8 @@
 ---
-state: Pending
+state: Done
 review: "--"
 elapsed: "--"
-notes: "--"
+notes: "89 tests pass; unit tier complete with inline fixtures for E1/E2/S1/S2/S3/W1 binding rungs, engine-core memo+freeze, compose purity, and W1-W5 degradation."
 ticket_ref: "--"
 ---
 
