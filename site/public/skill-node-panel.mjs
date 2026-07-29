@@ -12,14 +12,20 @@
 //     readiness predicate (KI-011) is satisfied: data-processed AND svg child AND at
 //     least one resolvable node id.
 //
-// Out of scope (task-050):
-//   • Panel display, focus, and key handling.
+// Panel half (task-050):
+//   • Panel display, focus and key handling — see openPanel() / closePanel().
 //   • Toggling aria-expanded on the activated node.
 //
-// PANEL ENTRY POINT — see openPanel() below.
-// task-050 implements the panel display logic. aria-controls="aid-node-panel" names
-// the panel element task-050 creates. aria-controls is intentionally unresolved in
-// task-049's intermediate state — this is by design, not a defect.
+// The panel is a DISCLOSURE, not a dialog: no focus trap, no overlay, no scroll
+// lock. Trapping focus would cut the reader off from delivery-004's
+// `## Source fragments` list further down the page, which is the comparison this
+// panel exists to support. Opening moves focus to the panel; Escape and the close
+// button return it to the node that opened it; Tab continues into the page.
+//
+// Content is written with textContent throughout and never innerHTML. The fragment
+// is provenance.excerpt byte-for-byte, and re-parsing it as markup is precisely the
+// reinterpretation this feature exists to avoid — the same reason it carries no
+// syntax highlighting.
 //
 // Schema guard: if the island's v field is not exactly 1 this controller no-ops entirely.
 // The file is served from site/public/ which Astro copies verbatim (no content-hash),
@@ -64,6 +70,40 @@
 
   /** Guards already warned this page load; prevents repeated console.warn. */
   var warned = Object.create(null);
+
+  /**
+   * The panel's element id.
+   *
+   * Declared once and used both when creating the panel and when writing each
+   * node's `aria-controls`, so the reference cannot drift from its target. Stating
+   * it twice is exactly how this delivery's two shipped defects happened — a node-id
+   * pattern and an island id, each written independently on two sides of a seam.
+   */
+  var PANEL_ID = 'aid-node-panel';
+
+  // ── Panel state ─────────────────────────────────────────────────────────────
+
+  /**
+   * The shared panel element, created on first panel open. Null until first activation.
+   * One panel per page — the controller binds to the first pre.mermaid container only.
+   */
+  var panelEl = null;
+
+  /**
+   * The container element the panel belongs to. Set in attachContainer.
+   * Used to: (a) insert the panel as next sibling on first open;
+   * (b) re-resolve the open node by data-aid-node across re-renders.
+   */
+  var panelContainerRef = null;
+
+  /** Model id of the currently open node, or null when the panel is closed. */
+  var openNodeId = null;
+
+  /**
+   * DOM element of the currently open node, or null. May be stale after a
+   * re-render; always re-resolved via panelContainerRef before use.
+   */
+  var openNodeEl = null;
 
   // ── Id recovery ────────────────────────────────────────────────────────────
 
@@ -157,8 +197,15 @@
     el.setAttribute('role', 'button');
     el.setAttribute('tabindex', '0');
     el.setAttribute('aria-expanded', 'false');
-    el.setAttribute('aria-controls', 'aid-node-panel');
-    el.setAttribute('aria-label', panelNode.name);
+    el.setAttribute('aria-controls', PANEL_ID);
+    // Composed accessible name from projection fields — not scraped from SVG text.
+    // Mermaid renders node text as <tspan>s or a <foreignObject>; the computed name
+    // would be unreliable and unpunctuated, so we override it with projected data.
+    var ariaLabel = 'Step ' + panelNode.order + ': ' + panelNode.name + ' \u2014 ' + panelNode.label;
+    if (panelNode.exit !== null) {
+      ariaLabel += ' (exit: ' + panelNode.exit.advanceType + ')';
+    }
+    el.setAttribute('aria-label', ariaLabel);
     el.setAttribute('data-aid-node', nodeId);
   }
 
@@ -218,28 +265,215 @@
       warnOnce('panel nodes', 'zero resolvable nodes in container; panel disabled');
     } else {
       containerState.set(container, 'BOUND_READY');
+      // Re-apply open state after a re-render replaced the SVG subtree.
+      // decorateNode always sets aria-expanded="false"; if a node was open we
+      // must re-apply "true" to the newly-created element for the same model id.
+      if (openNodeId !== null && panelEl && !panelEl.hidden) {
+        var reopenEl = container.querySelector('[data-aid-node="' + openNodeId + '"]');
+        if (reopenEl) {
+          reopenEl.setAttribute('aria-expanded', 'true');
+          openNodeEl = reopenEl;
+        } else {
+          // The open node no longer exists in the new chart — close without focusing.
+          openNodeId = null;
+          openNodeEl = null;
+          panelEl.hidden = true;
+        }
+      }
     }
   }
 
   // ── Panel entry point ──────────────────────────────────────────────────────
 
   /**
-   * PANEL ENTRY POINT — task-050 implements this.
+   * Find the projection node for a model id, or null.
+   * Linear scan: charts are ~6-20 nodes, so an index would cost more than it saves.
+   */
+  function findNode(projection, nodeId) {
+    for (var i = 0; i < projection.nodes.length; i++) {
+      if (projection.nodes[i].id === nodeId) return projection.nodes[i];
+    }
+    return null;
+  }
+
+  /**
+   * Create the panel element once per page, in feature-006's Anatomy shape, and
+   * insert it directly after the chart container so it reads in document order as
+   * belonging to the chart above it.
    *
-   * Called when a decorated node is activated (click or Enter/Space keydown).
-   * nodeId is the model id recovered from data-aid-node (matches projection.nodes[].id).
-   * nodeEl is the activated g.node.aidNode DOM element.
-   * projection is the full PanelProjection for the page.
+   * Built with createElement and textContent throughout — never innerHTML. The
+   * fragment is `provenance.excerpt` byte-for-byte, and re-parsing it as HTML is
+   * exactly the reinterpretation this whole feature exists to avoid. It is also
+   * why there is no syntax highlighting here.
    *
-   * In task-049's intermediate state this is a stub that produces no visible panel.
-   * aria-controls="aid-node-panel" names the panel element task-050 creates; that
-   * element does not exist until task-050 lands, so aria-controls is unresolved here.
-   * A reviewer seeing this at task-049's gate should read it as the planned seam.
+   * Class names are fixed by the Anatomy block and are the ones
+   * public/skill-node-panel.css styles; a committed guard asserts that stylesheet
+   * styles no element outside that set, so a new name here would be unstyled.
+   */
+  function createPanel(container) {
+    var panel = document.createElement('div');
+    panel.className = 'aid-node-panel';
+    panel.id = PANEL_ID;
+    // Focusable programmatically but not in the tab sequence: opening moves focus
+    // here, while Tab continues into the page rather than cycling inside a
+    // non-modal region.
+    panel.setAttribute('tabindex', '-1');
+    panel.hidden = true;
+
+    var bar = document.createElement('div');
+    bar.className = 'aid-node-panel__bar';
+
+    // h3: semantically under the chart's `## Flow` H2. Starlight builds its table
+    // of contents from the markdown at build time, so a DOM-inserted heading
+    // cannot pollute it.
+    var heading = document.createElement('h3');
+    heading.id = PANEL_ID + '-title';
+
+    var order = document.createElement('span');
+    order.className = 'aid-node-panel__order';
+    var nameCode = document.createElement('code');
+    var kind = document.createElement('span');
+    kind.className = 'aid-node-panel__kind';
+    var exit = document.createElement('span');
+    exit.className = 'aid-node-panel__exit';
+
+    heading.appendChild(order);
+    heading.appendChild(document.createTextNode(' '));
+    heading.appendChild(nameCode);
+    heading.appendChild(document.createTextNode(' '));
+    heading.appendChild(kind);
+    heading.appendChild(document.createTextNode(' '));
+    heading.appendChild(exit);
+
+    var close = document.createElement('button');
+    close.className = 'aid-node-panel__close';
+    close.setAttribute('type', 'button');
+    close.setAttribute('aria-label', 'Close step details');
+    close.textContent = '\u00d7';
+    close.addEventListener('click', function () { closePanel(true); });
+
+    bar.appendChild(heading);
+    bar.appendChild(close);
+
+    var label = document.createElement('p');
+    label.className = 'aid-node-panel__label';
+
+    var pre = document.createElement('pre');
+    pre.className = 'aid-node-panel__fragment';
+    var code = document.createElement('code');
+    pre.appendChild(code);
+
+    var links = document.createElement('p');
+    links.className = 'aid-node-panel__links';
+
+    panel.appendChild(bar);
+    panel.appendChild(label);
+    panel.appendChild(pre);
+    panel.appendChild(links);
+
+    // Escape closes and returns focus to the node that opened the panel. Bound on
+    // the panel itself as well as the container, because focus is inside the panel
+    // once it opens and the keystroke would otherwise never reach the container.
+    panel.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape') { e.preventDefault(); closePanel(true); }
+    });
+
+    if (container.parentNode) {
+      container.parentNode.insertBefore(panel, container.nextSibling);
+    }
+    return panel;
+  }
+
+  /** Remove every child of an element without using innerHTML. */
+  function clearChildren(el) {
+    while (el.firstChild) el.removeChild(el.firstChild);
+  }
+
+  /**
+   * Build one anchor. Text is set with textContent, so a path containing markup
+   * characters cannot inject anything.
+   */
+  function makeLink(href, text) {
+    var a = document.createElement('a');
+    a.setAttribute('href', href);
+    a.textContent = text;
+    return a;
+  }
+
+  /**
+   * Close the panel.
+   *
+   * `returnFocus` moves focus back to the node that opened it, which is the
+   * behaviour Escape and the close button need. There is deliberately no focus
+   * trap while open: the panel is non-modal, and trapping would cut the reader off
+   * from delivery-004's `## Source fragments` list below — the comparison this
+   * panel exists to support.
+   */
+  function closePanel(returnFocus) {
+    if (!panelEl || panelEl.hidden) return;
+    panelEl.hidden = true;
+    var previous = openNodeEl;
+    if (previous) previous.setAttribute('aria-expanded', 'false');
+    openNodeId = null;
+    openNodeEl = null;
+    if (returnFocus && previous && typeof previous.focus === 'function') previous.focus();
+  }
+
+  /**
+   * PANEL ENTRY POINT.
+   *
+   * Called when a decorated node is activated by click or Enter/Space. Re-activating
+   * the node that is already open toggles the panel closed, which is the disclosure
+   * pattern's expected behaviour for a control whose aria-expanded is true.
    */
   function openPanel(nodeId, nodeEl, projection) {
-    void nodeId;
-    void nodeEl;
-    void projection;
+    var node = findNode(projection, nodeId);
+    // A node decorated from this projection is always findable; guard anyway so a
+    // mismatch degrades to doing nothing rather than throwing inside a listener.
+    if (!node) return;
+
+    if (openNodeId === nodeId && panelEl && !panelEl.hidden) {
+      closePanel(true);
+      return;
+    }
+
+    // Opening a different node: clear the previous node's expanded state first.
+    if (openNodeEl && openNodeEl !== nodeEl) {
+      openNodeEl.setAttribute('aria-expanded', 'false');
+    }
+
+    if (!panelEl) panelEl = createPanel(panelContainerRef || nodeEl.parentNode);
+
+    panelEl.querySelector('.aid-node-panel__order').textContent = String(node.order);
+    panelEl.querySelector('.aid-node-panel__bar h3 code').textContent = node.name;
+    panelEl.querySelector('.aid-node-panel__kind').textContent = node.kind;
+
+    // exit renders only when non-null; advanceType is a closed enum.
+    var exitEl = panelEl.querySelector('.aid-node-panel__exit');
+    exitEl.textContent = node.exit ? node.exit.advanceType : '';
+    exitEl.hidden = !node.exit;
+
+    panelEl.querySelector('.aid-node-panel__label').textContent = node.label;
+
+    // The one assignment whose exactness is the point of the feature.
+    panelEl.querySelector('.aid-node-panel__fragment code').textContent = node.fragment;
+
+    var links = panelEl.querySelector('.aid-node-panel__links');
+    clearChildren(links);
+    links.appendChild(makeLink(node.source.url, 'Source: ' + node.source.url));
+    if (node.detail) {
+      links.appendChild(document.createTextNode(' \u00b7 '));
+      links.appendChild(makeLink(node.detail.url, 'full step'));
+    }
+    links.appendChild(document.createTextNode(' \u00b7 '));
+    // delivery-004's hook. A plain in-page anchor; nothing at the target is read.
+    links.appendChild(makeLink('#fragment-' + node.id, 'show in the list below'));
+
+    panelEl.hidden = false;
+    nodeEl.setAttribute('aria-expanded', 'true');
+    openNodeId = nodeId;
+    openNodeEl = nodeEl;
+    if (typeof panelEl.focus === 'function') panelEl.focus();
   }
 
   // ── Activation handler ─────────────────────────────────────────────────────
@@ -258,6 +492,10 @@
   function handleActivation(event, projection) {
     if (event.type === 'keydown') {
       var k = event.key;
+      // Escape closes from wherever focus is inside the chart. The panel binds its
+      // own Escape handler too, because once the panel takes focus the keystroke
+      // never reaches this container.
+      if (k === 'Escape') { event.preventDefault(); closePanel(true); return; }
       if (k !== 'Enter' && k !== ' ') return;
       event.preventDefault();
     }
@@ -298,6 +536,8 @@
     if (bound.has(container)) return;
     bound.add(container);
     containerState.set(container, 'BOUND_PENDING');
+    // Store for panel insertion (next sibling) and open-node re-resolution across re-renders.
+    panelContainerRef = container;
 
     container.addEventListener('click', function (e) { handleActivation(e, projection); });
     container.addEventListener('keydown', function (e) { handleActivation(e, projection); });

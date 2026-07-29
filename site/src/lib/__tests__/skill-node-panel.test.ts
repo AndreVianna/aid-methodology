@@ -5,12 +5,15 @@
 //
 // Placement: same directory as sibling src/lib tests (feature-009, release-data).
 
-import { readFileSync } from 'node:fs';
+import { readFileSync, readdirSync } from 'node:fs';
 import { resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { describe, it, expect } from 'vitest';
 import { shouldMount, buildProjection, embedJson } from '../skill-node-panel.js';
 import type { PanelProjection } from '../skill-node-panel.js';
+
+// Top-level directory reference shared across all describe blocks.
+const moduleDir = dirname(fileURLToPath(import.meta.url));
 
 // ── Fixture helpers ───────────────────────────────────────────────────────────
 
@@ -208,6 +211,28 @@ describe('buildProjection', () => {
     expect(p.nodes[0].source.url).toContain('canonical/skills/aid-plan/SKILL.md');
   });
 
+  it('source.url is the exact literal GitHub blob URL for a single-line anchor', () => {
+    // Expected URL written literally — not derived from blobUrl() to avoid tautology.
+    const n = makeNode({
+      provenance: makeProvenance({ file: 'canonical/skills/aid-ask/SKILL.md', startLine: 5, endLine: 5 }),
+    });
+    const p = buildProjection(makeChart([n]));
+    expect(p.nodes[0].source.url).toBe(
+      'https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-ask/SKILL.md#L5',
+    );
+  });
+
+  it('source.url is the exact literal GitHub blob URL for a multi-line anchor', () => {
+    // Expected URL written literally — not derived from blobUrl() to avoid tautology.
+    const n = makeNode({
+      provenance: makeProvenance({ file: 'canonical/skills/aid-ask/SKILL.md', startLine: 10, endLine: 20 }),
+    });
+    const p = buildProjection(makeChart([n]));
+    expect(p.nodes[0].source.url).toBe(
+      'https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-ask/SKILL.md#L10-L20',
+    );
+  });
+
   it('exit is null when terminal is null', () => {
     const n = makeNode({ terminal: null });
     const p = buildProjection(makeChart([n]));
@@ -385,6 +410,26 @@ describe('embedJson', () => {
     expect(JSON.parse(out)).toEqual(withAll);
   });
 
+  it('handles a non-BMP character (U+1F389) — no literal <, round-trips', () => {
+    const withNonBmp: PanelProjection = {
+      v: 1,
+      skill: 'test',
+      confidence: 'derived',
+      nodes: [
+        {
+          id: 'n1', order: 1, name: 'N', label: '\u{1F389}', kind: 'step',
+          exit: null,
+          fragment: '🎉 non-BMP char, plus <b>html</b>',
+          source: { url: 'https://github.com/x#L1' },
+          detail: null,
+        },
+      ],
+    };
+    const out = embedJson(withNonBmp);
+    expect(out).not.toContain('<');
+    expect(JSON.parse(out)).toEqual(withNonBmp);
+  });
+
   it('leaves non-< characters unchanged', () => {
     const p = makeSimpleProjection();
     const out = embedJson(p);
@@ -402,5 +447,110 @@ describe('source code constraints', () => {
     expect(source).toContain("from '../../scripts/lib/provenance/deep-link.mjs'");
     // Must not contain #L — any URL construction is delegated to blobUrl
     expect(source).not.toContain('#L');
+  });
+});
+
+// ── Whole-corpus sweep over the real sidecars ─────────────────────────────────
+//
+// Every assertion above runs against a hand-built fixture, which is the shape of
+// gap that let two defects ship in this delivery: a node-id pattern and an island
+// id, each agreeing with its own fixtures and with nothing else. Real sidecars can
+// disagree with an assumption in a way an invented fixture cannot, so the contract
+// is also checked against all of them.
+
+/** The field set PanelNode is allowed to carry, and nothing else. */
+const PANEL_NODE_KEYS = [
+  'id', 'order', 'name', 'label', 'kind', 'exit', 'fragment', 'source', 'detail',
+].sort();
+
+/** Keys the projection must drop, checked at every depth. */
+const EXCLUDED_KEYS = [
+  'edges', 'warnings', 'sources', 'entries', 'exits', 'title', 'shape', 'extractor',
+];
+
+/** Collect every object key anywhere in a parsed JSON value. */
+function allKeysDeep(value: unknown, found: Set<string> = new Set()): Set<string> {
+  if (Array.isArray(value)) {
+    for (const v of value) allKeysDeep(v, found);
+  } else if (value && typeof value === 'object') {
+    for (const [k, v] of Object.entries(value as Record<string, unknown>)) {
+      found.add(k);
+      allKeysDeep(v, found);
+    }
+  }
+  return found;
+}
+
+describe('whole-corpus sweep over site/src/data/skill-flows', () => {
+  const flowsDir = resolve(moduleDir, '../../data/skill-flows');
+  const files = readdirSync(flowsDir).filter((f) => f.endsWith('.flow.json')).sort();
+
+  it('finds a plausible corpus, with no literal count asserted', () => {
+    // A floor rather than a number: the count moves when the skill roster does, but
+    // an empty or nearly-empty read means a broken path, not a smaller corpus.
+    expect(files.length).toBeGreaterThan(50);
+  });
+
+  it('projects every sidecar, emitting exactly PanelNode\'s field set and no excluded key', () => {
+    let nodesSeen = 0;
+
+    for (const file of files) {
+      const chart = JSON.parse(readFileSync(resolve(flowsDir, file), 'utf8'));
+      const projected = buildProjection(chart);
+
+      expect(projected.v, file).toBe(1);
+      expect(projected.skill, file).toBe(chart.skill);
+      expect(projected.nodes.length, file).toBe(chart.nodes.length);
+
+      for (let i = 0; i < projected.nodes.length; i++) {
+        const node = projected.nodes[i];
+        // Exactly PanelNode's fields — neither missing nor extra.
+        expect(Object.keys(node).sort(), `${file} node ${i}`).toEqual(PANEL_NODE_KEYS);
+        // Array order preserved, not re-sorted.
+        expect(node.id, `${file} node ${i}`).toBe(chart.nodes[i].id);
+        // The fragment is the excerpt byte-for-byte.
+        expect(node.fragment, `${file} node ${i}`).toBe(chart.nodes[i].provenance.excerpt);
+        // detail is link-only and never carries an excerpt.
+        if (node.detail !== null) {
+          expect(Object.keys(node.detail!), `${file} node ${i}`).toEqual(['url']);
+        }
+        nodesSeen++;
+      }
+
+      const keys = allKeysDeep(JSON.parse(embedJson(projected)));
+      expect(EXCLUDED_KEYS.filter((k) => keys.has(k)), file).toEqual([]);
+    }
+
+    // Non-vacuity: the loop really walked nodes, so the assertions above ran.
+    expect(nodesSeen).toBeGreaterThan(files.length);
+  });
+
+  it('encodes every sidecar with no literal < and a lossless round-trip', () => {
+    let withAngle = 0;
+
+    for (const file of files) {
+      const chart = JSON.parse(readFileSync(resolve(flowsDir, file), 'utf8'));
+      const projected = buildProjection(chart);
+      const encoded = embedJson(projected);
+
+      expect(encoded.includes('<'), file).toBe(false);
+      expect(JSON.parse(encoded), file).toEqual(projected);
+
+      if (JSON.stringify(projected).includes('<')) withAngle++;
+    }
+
+    // Non-vacuity for the escaping claim: some real fragment genuinely contains a
+    // `<`, so "no literal <" is the escaper working and not the corpus being tame.
+    expect(withAngle).toBeGreaterThan(0);
+  });
+
+  it('admits every sidecar name through the gate, and rejects a name absent from it', () => {
+    const known = new Set(files.map((f) => f.replace(/\.flow\.json$/, '')));
+
+    for (const name of known) {
+      expect(shouldMount(`canonical/skills/${name}/SKILL.md`, known), name).toBe(name);
+    }
+    // Separability: same well-formed path, name simply not in the set.
+    expect(shouldMount('canonical/skills/aid-not-a-real-skill/SKILL.md', known)).toBeNull();
   });
 });

@@ -32,6 +32,11 @@ const SCRIPT_SRC = readFileSync(SCRIPT_PATH, 'utf8');
 const HEAD_PATH = join(resolve(__dirname, '../..'), 'src', 'components', 'overrides', 'Head.astro');
 const HEAD_SRC = readFileSync(HEAD_PATH, 'utf8');
 
+/** The controller source with comments removed, for prohibition scans. */
+function sourceWithoutComments() {
+  return SCRIPT_SRC.replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '');
+}
+
 // ── Projection fixtures ───────────────────────────────────────────────────────
 
 /** Minimal valid projection (v=1) with two nodes. */
@@ -40,8 +45,11 @@ const PROJECTION = {
   skill: 'test-skill',
   confidence: 'high',
   nodes: [
-    { id: 'n1', name: 'INTAKE', label: 'Intake step', kind: 'entry', exit: null, fragment: 'f1', source: { url: 'u1' }, detail: null },
-    { id: 'n2', name: 'PROCESS', label: 'Processing', kind: 'step', exit: null, fragment: 'f2', source: { url: 'u2' }, detail: null },
+    // `order` is present because buildProjection always emits it. Omitting it made
+    // the composed aria-label read "Step undefined" — a fixture unfaithful to the
+    // real projection, the same class of gap as an invented SVG id format.
+    { id: 'n1', order: 1, name: 'INTAKE', label: 'Intake step', kind: 'entry', exit: null, fragment: 'f1', source: { url: 'u1' }, detail: null },
+    { id: 'n2', order: 2, name: 'PROCESS', label: 'Processing', kind: 'step', exit: null, fragment: 'f2', source: { url: 'u2' }, detail: null },
   ],
 };
 
@@ -155,6 +163,14 @@ function runScript({ island = PROJECTION, containers = [] } = {}) {
     getElementById: (id) => id === 'aid-flow-data' ? islandEl : null,
     querySelector: (sel) => sel === '.sl-markdown-content' ? slContent : null,
     addEventListener: (name, fn) => { docListeners[name] = fn; },
+    // The controller builds the panel with createElement once task-050 landed, so
+    // this node-environment fake has to answer for it. It stays deliberately dumb:
+    // this suite's subject is the lifecycle — readiness, binding, decoration — and
+    // panel rendering is asserted against a real DOM in the jsdom suite
+    // (skill-node-panel-panel.test.mjs). Its only job here is to let activation
+    // complete without throwing.
+    createElement: () => makeStubElement(),
+    createTextNode: (text) => ({ nodeType: 3, textContent: text }),
   };
 
   const fn = new Function('document', 'MutationObserver', 'console', SCRIPT_SRC);
@@ -169,6 +185,54 @@ function runScript({ island = PROJECTION, containers = [] } = {}) {
 }
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
+
+/**
+ * A minimal element the controller's panel builder can operate on.
+ *
+ * Supports only what createPanel/openPanel touch. `querySelector` walks the stub
+ * tree by class name so populating the panel resolves, but nothing here models
+ * layout, focus or CSS — the jsdom suite covers behaviour that needs a real DOM.
+ */
+function makeStubElement() {
+  const el = {
+    _attrs: {},
+    _children: [],
+    className: '',
+    id: '',
+    hidden: false,
+    textContent: '',
+    parentNode: null,
+    get firstChild() { return el._children[0] || null; },
+    setAttribute: (k, v) => { el._attrs[k] = String(v); },
+    getAttribute: (k) => (k in el._attrs ? el._attrs[k] : null),
+    hasAttribute: (k) => k in el._attrs,
+    addEventListener: () => {},
+    appendChild: (child) => { if (child) { child.parentNode = el; el._children.push(child); } return child; },
+    removeChild: (child) => { el._children = el._children.filter((c) => c !== child); return child; },
+    insertBefore: (child) => { el._children.push(child); return child; },
+    focus: () => {},
+    querySelector: (sel) => findInStub(el, sel),
+    querySelectorAll: () => [],
+  };
+  return el;
+}
+
+/** Resolve the last token of a selector against a stub tree, by class or tag. */
+function findInStub(root, selector) {
+  const token = selector.trim().split(/\s+/).pop();
+  const wantClass = token.startsWith('.') ? token.slice(1) : null;
+  const stack = [...root._children];
+  while (stack.length) {
+    const node = stack.shift();
+    if (!node || !node._children) continue;
+    const classes = String(node.className || '').split(/\s+/);
+    if (wantClass ? classes.includes(wantClass) : false) return node;
+    stack.push(...node._children);
+  }
+  // Tag-name selectors and misses both resolve to a throwaway stub, so populating
+  // the panel never throws in this environment.
+  return makeStubElement();
+}
 
 /**
  * A per-render diagram id in mermaid's real format. Arbitrary but realistic —
@@ -344,12 +408,15 @@ describe('skill-node-panel: happy path — successful decoration', () => {
     expect(node1.getAttribute('tabindex')).toBe('0');
     expect(node1.getAttribute('aria-expanded')).toBe('false');
     expect(node1.getAttribute('aria-controls')).toBe('aid-node-panel');
-    expect(node1.getAttribute('aria-label')).toBe('INTAKE');
+    // The accessible name is composed from projection fields rather than being the
+    // bare node name: mermaid renders node text as <tspan>s or a <foreignObject>, so
+    // the computed name would be unreliable and unpunctuated.
+    expect(node1.getAttribute('aria-label')).toBe('Step 1: INTAKE \u2014 Intake step');
     expect(node1.getAttribute('data-aid-node')).toBe('n1');
 
     expect(node2.getAttribute('role')).toBe('button');
     expect(node2.getAttribute('data-aid-node')).toBe('n2');
-    expect(node2.getAttribute('aria-label')).toBe('PROCESS');
+    expect(node2.getAttribute('aria-label')).toBe('Step 2: PROCESS \u2014 Processing');
   });
 
   it('no console warnings on a successful run', () => {
@@ -733,8 +800,11 @@ describe('skill-node-panel: static file constraints', () => {
     expect(SCRIPT_SRC).not.toContain('new Function(');
   });
 
+  // Comments are stripped first. The file legitimately explains in prose *why* it
+  // never uses innerHTML, and a scan over the raw text counts that explanation as a
+  // violation — a guard that fires on its own rationale.
   it('contains no innerHTML', () => {
-    expect(SCRIPT_SRC).not.toContain('innerHTML');
+    expect(sourceWithoutComments()).not.toMatch(/\.innerHTML/);
   });
 
 });
