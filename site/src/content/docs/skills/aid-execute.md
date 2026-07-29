@@ -52,3 +52,54 @@ flowchart TB
   class n5 aidNode
   class n6 aidNode
 ```
+## Source fragments
+
+Every node in the chart above, in chart order, with the exact `canonical/` text it was derived from.
+
+<a id="fragment-n1"></a>**1 · `EXECUTE`** — Task work is dispatched to the type-appropriate executor… · _entry_
+
+~~~~plaintext title="canonical/skills/aid-execute/SKILL.md#L197" wrap
+| EXECUTE | `references/state-execute.md` | _(type-specific — see state file; delivery-mode uses pool dispatch PD-0→PD-6)_ | → REVIEW |
+~~~~
+
+[Source: `canonical/skills/aid-execute/SKILL.md#L197`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-execute/SKILL.md#L197) · [full step: `canonical/skills/aid-execute/references/state-execute.md#L1-L772`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-execute/references/state-execute.md#L1-L772)
+
+<a id="fragment-n2"></a>**2 · `REVIEW`** — Task output is graded by a lightweight quick-check pass… · _loop-back_
+
+~~~~plaintext title="canonical/skills/aid-execute/SKILL.md#L198" wrap
+| REVIEW | `references/state-review.md` | `aid-reviewer` (Small tier, quick-check only — no grade loop per FR2) | → DONE |
+~~~~
+
+[Source: `canonical/skills/aid-execute/SKILL.md#L198`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-execute/SKILL.md#L198) · [full step: `canonical/skills/aid-execute/references/state-review.md#L1-L187`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-execute/references/state-review.md#L1-L187)
+
+<a id="fragment-n3"></a>**3 · `FIX`** — CODE-source issues from the most recent REVIEW cycle are… · _step_
+
+~~~~plaintext title="canonical/skills/aid-execute/SKILL.md#L199" wrap
+| FIX | `references/state-fix.md` | _(same type as EXECUTE)_ | → REVIEW |
+~~~~
+
+[Source: `canonical/skills/aid-execute/SKILL.md#L199`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-execute/SKILL.md#L199) · [full step: `canonical/skills/aid-execute/references/state-fix.md#L1-L34`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-execute/references/state-fix.md#L1-L34)
+
+<a id="fragment-n4"></a>**4 · `DONE`** · _exit_ · HALT
+
+~~~~plaintext title="canonical/skills/aid-execute/SKILL.md#L200" wrap
+| DONE | _(inline — task complete)_ | `inline` | → halt |
+~~~~
+
+[Source: `canonical/skills/aid-execute/SKILL.md#L200`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-execute/SKILL.md#L200)
+
+<a id="fragment-n5"></a>**5 · `RE-RUN`** — The task is already Done and the user has re-invoked… · _exit_ · PAUSE-FOR-USER-DECISION
+
+~~~~plaintext title="canonical/skills/aid-execute/SKILL.md#L201" wrap
+| RE-RUN | `references/state-re-run.md` | `inline` | → halt |
+~~~~
+
+[Source: `canonical/skills/aid-execute/SKILL.md#L201`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-execute/SKILL.md#L201) · [full step: `canonical/skills/aid-execute/references/state-re-run.md#L1-L21`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-execute/references/state-re-run.md#L1-L21)
+
+<a id="fragment-n6"></a>**6 · `DELIVERY-GATE`** — Per-delivery quality gate — runs once per delivery as the… · _exit_ · CHAIN
+
+~~~~plaintext title="canonical/skills/aid-execute/SKILL.md#L202" wrap
+| DELIVERY-GATE | `references/state-delivery-gate.md` | `aid-reviewer` (tier = complexity score) | → halt (grade ≥ min) / → FIX (grade < min) |
+~~~~
+
+[Source: `canonical/skills/aid-execute/SKILL.md#L202`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-execute/SKILL.md#L202) · [full step: `canonical/skills/aid-execute/references/state-delivery-gate.md#L1-L487`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-execute/references/state-delivery-gate.md#L1-L487)

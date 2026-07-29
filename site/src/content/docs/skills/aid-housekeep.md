@@ -46,3 +46,46 @@ flowchart TB
   class n4 aidNode
   class n5 aidNode
 ```
+## Source fragments
+
+Every node in the chart above, in chart order, with the exact `canonical/` text it was derived from.
+
+<a id="fragment-n1"></a>**1 · `PREFLIGHT`** — PREFLIGHT is the synchronous gate that verifies all… · _entry_
+
+~~~~plaintext title="canonical/skills/aid-housekeep/SKILL.md#L222" wrap
+| PREFLIGHT | `references/state-preflight.md` | inline | CHAIN → KB-DELTA (or CLEANUP if Mode=cleanup-only) |
+~~~~
+
+[Source: `canonical/skills/aid-housekeep/SKILL.md#L222`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-housekeep/SKILL.md#L222) · [full step: `canonical/skills/aid-housekeep/references/state-preflight.md#L1-L118`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-housekeep/references/state-preflight.md#L1-L118)
+
+<a id="fragment-n2"></a>**2 · `KB-DELTA`** — KB-DELTA is a lightweight, drift-focused re-discovery: you… · _exit_ · PAUSE-FOR-USER-ACTION
+
+~~~~plaintext title="canonical/skills/aid-housekeep/SKILL.md#L223" wrap
+| KB-DELTA | `references/state-kb-delta.md` | `aid-architect` (feat-002 dispatches sub-agents via `/aid-discover`) | CHAIN → SUMMARY-DELTA / PAUSE-FOR-USER-ACTION if stalled |
+~~~~
+
+[Source: `canonical/skills/aid-housekeep/SKILL.md#L223`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-housekeep/SKILL.md#L223) · [full step: `canonical/skills/aid-housekeep/references/state-kb-delta.md#L1-L887`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-housekeep/references/state-kb-delta.md#L1-L887)
+
+<a id="fragment-n3"></a>**3 · `SUMMARY-DELTA`** — SUMMARY-DELTA checks whether kb.html needs to be… · _exit_ · PAUSE-FOR-USER-ACTION
+
+~~~~plaintext title="canonical/skills/aid-housekeep/SKILL.md#L224" wrap
+| SUMMARY-DELTA | `references/state-summary-delta.md` | inline (delegates to `/aid-summarize`) | CHAIN → CLEANUP / PAUSE-FOR-USER-ACTION if stalled |
+~~~~
+
+[Source: `canonical/skills/aid-housekeep/SKILL.md#L224`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-housekeep/SKILL.md#L224) · [full step: `canonical/skills/aid-housekeep/references/state-summary-delta.md#L1-L357`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-housekeep/references/state-summary-delta.md#L1-L357)
+
+<a id="fragment-n4"></a>**4 · `CLEANUP`** — CLEANUP is the terminal gated stage of /aid-housekeep. · _step_
+
+~~~~plaintext title="canonical/skills/aid-housekeep/SKILL.md#L225" wrap
+| CLEANUP | `references/state-cleanup.md` | inline | CHAIN → DONE |
+~~~~
+
+[Source: `canonical/skills/aid-housekeep/SKILL.md#L225`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-housekeep/SKILL.md#L225) · [full step: `canonical/skills/aid-housekeep/references/state-cleanup.md#L1-L535`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-housekeep/references/state-cleanup.md#L1-L535)
+
+<a id="fragment-n5"></a>**5 · `DONE`** — DONE is the terminal state. · _exit_ · HALT
+
+~~~~plaintext title="canonical/skills/aid-housekeep/SKILL.md#L226" wrap
+| DONE | `references/state-done.md` | inline | HALT |
+~~~~
+
+[Source: `canonical/skills/aid-housekeep/SKILL.md#L226`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-housekeep/SKILL.md#L226) · [full step: `canonical/skills/aid-housekeep/references/state-done.md#L1-L73`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-housekeep/references/state-done.md#L1-L73)

@@ -51,3 +51,54 @@ flowchart TB
   class n5 aidNode
   class n6 aidNode
 ```
+## Source fragments
+
+Every node in the chart above, in chart order, with the exact `canonical/` text it was derived from.
+
+<a id="fragment-n1"></a>**1 · `STEP-1`** — Classify the question · _entry_
+
+~~~~plaintext title="canonical/skills/aid-query-kb/SKILL.md#L54" wrap
+### Step 1 — Classify the question
+~~~~
+
+[Source: `canonical/skills/aid-query-kb/SKILL.md#L54`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-query-kb/SKILL.md#L54)
+
+<a id="fragment-n2"></a>**2 · `STEP-2A`** — Trivial question: answer inline · _step_
+
+~~~~plaintext title="canonical/skills/aid-query-kb/SKILL.md#L66" wrap
+### Step 2a — Trivial question: answer inline
+~~~~
+
+[Source: `canonical/skills/aid-query-kb/SKILL.md#L66`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-query-kb/SKILL.md#L66)
+
+<a id="fragment-n3"></a>**3 · `STEP-2B`** — Broad/expensive question: dispatch aid-researcher · _step_
+
+~~~~plaintext title="canonical/skills/aid-query-kb/SKILL.md#L80" wrap
+### Step 2b — Broad/expensive question: dispatch aid-researcher
+~~~~
+
+[Source: `canonical/skills/aid-query-kb/SKILL.md#L80`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-query-kb/SKILL.md#L80)
+
+<a id="fragment-n4"></a>**4 · `STEP-2C`** — Connector enrichment (optional) · _step_
+
+~~~~plaintext title="canonical/skills/aid-query-kb/SKILL.md#L105" wrap
+### Step 2c — Connector enrichment (optional)
+~~~~
+
+[Source: `canonical/skills/aid-query-kb/SKILL.md#L105`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-query-kb/SKILL.md#L105)
+
+<a id="fragment-n5"></a>**5 · `STEP-3`** — Compose and emit the reply · _step_
+
+~~~~plaintext title="canonical/skills/aid-query-kb/SKILL.md#L115" wrap
+### Step 3 — Compose and emit the reply
+~~~~
+
+[Source: `canonical/skills/aid-query-kb/SKILL.md#L115`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-query-kb/SKILL.md#L115)
+
+<a id="fragment-n6"></a>**6 · `STEP-4`** — Gap capture · _exit_ · UNSPECIFIED
+
+~~~~plaintext title="canonical/skills/aid-query-kb/SKILL.md#L162" wrap
+### Step 4 -- Gap capture
+~~~~
+
+[Source: `canonical/skills/aid-query-kb/SKILL.md#L162`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-query-kb/SKILL.md#L162)

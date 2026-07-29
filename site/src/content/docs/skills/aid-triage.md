@@ -41,3 +41,38 @@ flowchart TB
   class n3 aidNode
   class n4 aidNode
 ```
+## Source fragments
+
+Every node in the chart above, in chart order, with the exact `canonical/` text it was derived from.
+
+<a id="fragment-n1"></a>**1 · `INTAKE`** — Capture one short free-form description in a single turn… · _entry_
+
+~~~~plaintext title="canonical/skills/aid-triage/SKILL.md#L77" wrap
+| INTAKE | inline (below) | inline | CHAIN -> CLASSIFY |
+~~~~
+
+[Source: `canonical/skills/aid-triage/SKILL.md#L77`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-triage/SKILL.md#L77) · [full step: `canonical/skills/aid-triage/SKILL.md#L84-L105`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-triage/SKILL.md#L84-L105)
+
+<a id="fragment-n2"></a>**2 · `CLASSIFY`** — From {description} (captured at INTAKE), infer three things… · _step_
+
+~~~~plaintext title="canonical/skills/aid-triage/SKILL.md#L78" wrap
+| CLASSIFY | `references/state-classify.md` | inline | CHAIN -> SUGGEST |
+~~~~
+
+[Source: `canonical/skills/aid-triage/SKILL.md#L78`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-triage/SKILL.md#L78) · [full step: `canonical/skills/aid-triage/references/state-classify.md#L1-L150`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-triage/references/state-classify.md#L1-L150)
+
+<a id="fragment-n3"></a>**3 · `SUGGEST`** — Emits the NFR-7 reflect-back straw-man turn proposing the… · _step_
+
+~~~~plaintext title="canonical/skills/aid-triage/SKILL.md#L79" wrap
+| SUGGEST | `references/state-suggest.md` | inline | CHAIN -> HALT |
+~~~~
+
+[Source: `canonical/skills/aid-triage/SKILL.md#L79`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-triage/SKILL.md#L79) · [full step: `canonical/skills/aid-triage/references/state-suggest.md#L1-L103`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-triage/references/state-suggest.md#L1-L103)
+
+<a id="fragment-n4"></a>**4 · `HALT`** — Print the recommended invocation the user should type next… · _exit_ · HALT
+
+~~~~plaintext title="canonical/skills/aid-triage/SKILL.md#L80" wrap
+| HALT | inline (below) | inline | -> halt |
+~~~~
+
+[Source: `canonical/skills/aid-triage/SKILL.md#L80`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-triage/SKILL.md#L80) · [full step: `canonical/skills/aid-triage/SKILL.md#L109-L133`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-triage/SKILL.md#L109-L133)

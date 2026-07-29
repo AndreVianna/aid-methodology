@@ -55,3 +55,62 @@ flowchart TB
   class n6 aidNode
   class n7 aidNode
 ```
+## Source fragments
+
+Every node in the chart above, in chart order, with the exact `canonical/` text it was derived from.
+
+<a id="fragment-n1"></a>**1 · `STEP-0`** — Validate arguments · _entry_
+
+~~~~plaintext title="canonical/skills/aid-set-connector/SKILL.md#L42" wrap
+### Step 0: Validate arguments
+~~~~
+
+[Source: `canonical/skills/aid-set-connector/SKILL.md#L42`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-set-connector/SKILL.md#L42)
+
+<a id="fragment-n2"></a>**2 · `STEP-1`** — Resolve &lt;tool> → descriptor stem; read the preset catalog · _step_
+
+~~~~plaintext title="canonical/skills/aid-set-connector/SKILL.md#L69" wrap
+## Step 1: Resolve `<tool>` → descriptor stem; read the preset catalog
+~~~~
+
+[Source: `canonical/skills/aid-set-connector/SKILL.md#L69`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-set-connector/SKILL.md#L69)
+
+<a id="fragment-n3"></a>**3 · `STEP-2`** — Branch on &lt;type> — ask the config question-set · _step_
+
+~~~~plaintext title="canonical/skills/aid-set-connector/SKILL.md#L94" wrap
+## Step 2: Branch on `<type>` — ask the config question-set
+~~~~
+
+[Source: `canonical/skills/aid-set-connector/SKILL.md#L94`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-set-connector/SKILL.md#L94)
+
+<a id="fragment-n4"></a>**4 · `STEP-3`** — Classify — ADD vs UPDATE (single stem only) · _step_
+
+~~~~plaintext title="canonical/skills/aid-set-connector/SKILL.md#L115" wrap
+## Step 3: Classify — ADD vs UPDATE (single stem only)
+~~~~
+
+[Source: `canonical/skills/aid-set-connector/SKILL.md#L115`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-set-connector/SKILL.md#L115)
+
+<a id="fragment-n5"></a>**5 · `STEP-4`** — Ensure the .secrets/ gitignore precondition — BEFORE any… · _step_
+
+~~~~plaintext title="canonical/skills/aid-set-connector/SKILL.md#L137" wrap
+## Step 4: Ensure the `.secrets/` gitignore precondition — BEFORE any write under `.aid/connectors/`
+~~~~
+
+[Source: `canonical/skills/aid-set-connector/SKILL.md#L137`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-set-connector/SKILL.md#L137)
+
+<a id="fragment-n6"></a>**6 · `STEP-5`** — Author the descriptor + reconcile the secret (set-skill… · _step_
+
+~~~~plaintext title="canonical/skills/aid-set-connector/SKILL.md#L159" wrap
+## Step 5: Author the descriptor + reconcile the secret (set-skill logic)
+~~~~
+
+[Source: `canonical/skills/aid-set-connector/SKILL.md#L159`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-set-connector/SKILL.md#L159)
+
+<a id="fragment-n7"></a>**7 · `STEP-6`** — Single-stem reconcile → rebuild INDEX.md · _exit_ · UNSPECIFIED
+
+~~~~plaintext title="canonical/skills/aid-set-connector/SKILL.md#L203" wrap
+## Step 6: Single-stem reconcile → rebuild `INDEX.md`
+~~~~
+
+[Source: `canonical/skills/aid-set-connector/SKILL.md#L203`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-set-connector/SKILL.md#L203)

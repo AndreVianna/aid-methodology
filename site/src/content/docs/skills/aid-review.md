@@ -53,3 +53,75 @@ flowchart TB
   class n5 aidNode
   class n6 aidNode
 ```
+## Source fragments
+
+Every node in the chart above, in chart order, with the exact `canonical/` text it was derived from.
+
+<a id="fragment-n1"></a>**1 · `INTAKE`** · _entry_
+
+~~~~plaintext title="canonical/skills/aid-review/SKILL.md#L38-L40" wrap
+## State: INTAKE
+
+Purpose: resolve the target + criteria, pick the path, allocate the work folder.
+~~~~
+
+[Source: `canonical/skills/aid-review/SKILL.md#L38-L40`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-review/SKILL.md#L38-L40) · [full step: `canonical/skills/aid-review/SKILL.md#L38-L118`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-review/SKILL.md#L38-L118)
+
+<a id="fragment-n2"></a>**2 · `REVIEW`** · _loop-back_
+
+~~~~plaintext title="canonical/skills/aid-review/SKILL.md#L122-L124" wrap
+## State: REVIEW
+
+Purpose: gather evidence and produce the grounded findings ledger.
+~~~~
+
+[Source: `canonical/skills/aid-review/SKILL.md#L122-L124`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-review/SKILL.md#L122-L124) · [full step: `canonical/skills/aid-review/SKILL.md#L122-L143`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-review/SKILL.md#L122-L143)
+
+<a id="fragment-n3"></a>**3 · `VERIFY`** — who reviews the reviewer · _loop-back_
+
+~~~~plaintext title="canonical/skills/aid-review/SKILL.md#L147-L149" wrap
+## State: VERIFY  (who reviews the reviewer)
+
+Purpose: ensure the review is grounded, correct, and complete before the human sees it.
+~~~~
+
+[Source: `canonical/skills/aid-review/SKILL.md#L147-L149`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-review/SKILL.md#L147-L149) · [full step: `canonical/skills/aid-review/SKILL.md#L147-L167`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-review/SKILL.md#L147-L167)
+
+<a id="fragment-n4"></a>**4 · `PRESENT-FINDINGS`** — always a hard stop -- human final say · _decision_
+
+~~~~plaintext title="canonical/skills/aid-review/SKILL.md#L171-L173" wrap
+## State: PRESENT-FINDINGS  (always a hard stop -- human final say)
+
+Set STATE `lifecycle: Paused-Awaiting-Input`. Present:
+~~~~
+
+[Source: `canonical/skills/aid-review/SKILL.md#L171-L173`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-review/SKILL.md#L171-L173) · [full step: `canonical/skills/aid-review/SKILL.md#L171-L184`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-review/SKILL.md#L171-L184)
+
+<a id="fragment-n5"></a>**5 · `PUBLISH`** — only on approval · _loop-back_
+
+~~~~plaintext title="canonical/skills/aid-review/SKILL.md#L188-L197" wrap
+## State: PUBLISH  (only on approval)
+
+Deliver by the method appropriate to the target, chosen by judgment (not a hardcoded
+enum): a PR comment via `gh`; a ticket comment via `/aid-update-ticket comment
+[<connector>:]<ticket-id> <text>` (still user-authorized -- the approval just given at
+PRESENT-FINDINGS is what authorizes this call, and the skill previews the exact payload again
+at its own CONFIRM before posting); a findings report in the work folder (+ optional
+inline-comment suggestions) for code; inline notes for a document. **Graceful fallback:** no PR /
+no catalogued connector / unknown target -> present the exact text for the human to paste.
+Publishing is optional and never blocks DONE.
+~~~~
+
+[Source: `canonical/skills/aid-review/SKILL.md#L188-L197`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-review/SKILL.md#L188-L197) · [full step: `canonical/skills/aid-review/SKILL.md#L188-L199`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-review/SKILL.md#L188-L199)
+
+<a id="fragment-n6"></a>**6 · `DONE`** · _exit_ · UNSPECIFIED
+
+~~~~plaintext title="canonical/skills/aid-review/SKILL.md#L203-L207" wrap
+## State: DONE
+
+Set STATE `lifecycle: Completed`, `updated` now, append a `## Lifecycle History` row.
+Leave the findings ledger on disk (`.aid/.temp/review-pending/<work>-review.md`) so a
+follow-up `/aid-fix` can consume it. Keep the work folder as the audit record.
+~~~~
+
+[Source: `canonical/skills/aid-review/SKILL.md#L203-L207`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-review/SKILL.md#L203-L207) · [full step: `canonical/skills/aid-review/SKILL.md#L203-L207`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-review/SKILL.md#L203-L207)

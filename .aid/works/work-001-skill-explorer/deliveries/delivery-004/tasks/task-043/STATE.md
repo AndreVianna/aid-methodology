@@ -1,8 +1,8 @@
 ---
-state: In Progress
+state: Done
 review: "--"
 elapsed: "--"
-notes: "--"
+notes: "Corpus verified clean. 2526 tests pass (40 files). 5 mutations killed. 111 pages regenerated with ## Source fragments section."
 ticket_ref: "--"
 ---
 
@@ -71,9 +71,7 @@ in-flight `work-003-state-schema` frontmatter conventions.
      No grade is recorded here -- grading is per-delivery, not per-task. -->
 
 - **Reviewer Tier:** Small (quick check always uses Small tier)
-- **Findings:**
-  - [CRITICAL] {description} -- {source-file:line} -- Fixed-on-spot
-  - [HIGH] {description} -- {source-file:line} -- Deferred-to-gate
+- **Findings:** None
 
 ---
 

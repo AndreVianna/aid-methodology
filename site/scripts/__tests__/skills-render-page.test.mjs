@@ -19,14 +19,23 @@
 // The real modules (render-page.mjs, body.mjs, summary.mjs) are imported and
 // driven directly — not re-implemented — so assertions verify the shipped code.
 
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { renderSkillPage } from '../skills/render-page.mjs';
+import { BODY_APPENDERS } from '../skills/body.mjs';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const RENDER_PAGE_SRC = resolve(__dirname, '../skills/render-page.mjs');
+
+// Clear BODY_APPENDERS for every test in this file so the provenanceAppender
+// does not throw when renderSkillPage is called with a fixture skill that has
+// no real SKILL.md on disk. Appender behaviour is tested in
+// provenance-appender.test.mjs; these tests cover renderSkillPage structure.
+let _savedAppenders = [];
+beforeEach(() => { _savedAppenders = BODY_APPENDERS.splice(0); });
+afterEach(() => { BODY_APPENDERS.push(..._savedAppenders); _savedAppenders = []; });
 
 // ── Fixtures ─────────────────────────────────────────────────────────────────
 

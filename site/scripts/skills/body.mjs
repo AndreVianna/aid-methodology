@@ -16,6 +16,7 @@ import { existsSync } from 'node:fs';
 import { join } from 'node:path';
 import { REPO_ROOT } from './paths.mjs';
 import { classifySkill, buildFlowChart, renderMermaid } from '../lib/flow-graph/index.mjs';
+import { provenanceAppender } from '../lib/provenance/index.mjs';
 
 // ── Authored-shape set (mirrors index.mjs; declared locally to avoid a cycle) ─
 
@@ -154,7 +155,7 @@ export const BODY_PROVIDERS = [
  *
  * @type {Array<{ id: string, render(skill: object): string }>}
  */
-export const BODY_APPENDERS = [];
+export const BODY_APPENDERS = [provenanceAppender];
 
 /**
  * Render the body content for a skill page.

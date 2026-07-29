@@ -13,7 +13,7 @@
 // Fixtures are minimal SkillRecord-shaped objects sufficient for the tests.
 // All assertions are mutation-proved (break source → that specific test fails).
 
-import { describe, it, expect, afterEach } from 'vitest';
+import { describe, it, expect, afterEach, beforeEach } from 'vitest';
 import { readFileSync, readdirSync } from 'node:fs';
 import { resolve, dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -73,13 +73,14 @@ describe('BODY_APPENDERS', () => {
     expect(Array.isArray(BODY_APPENDERS)).toBe(true);
   });
 
-  it('is empty on module load (no pre-registered appenders)', () => {
-    expect(BODY_APPENDERS).toHaveLength(0);
+  it('has exactly one appender on module load (provenanceAppender)', () => {
+    expect(BODY_APPENDERS).toHaveLength(1);
+    expect(BODY_APPENDERS[0].id).toBe('source-fragments');
   });
 
-  it('is declared as "export const BODY_APPENDERS = []" in the source (static literal)', () => {
+  it('is declared as "export const BODY_APPENDERS = [provenanceAppender]" in the source (static literal)', () => {
     const src = readFileSync(BODY_SRC, 'utf8');
-    expect(src).toMatch(/export const BODY_APPENDERS\s*=\s*\[\]/);
+    expect(src).toMatch(/export const BODY_APPENDERS\s*=\s*\[provenanceAppender\]/);
   });
 });
 
@@ -113,6 +114,12 @@ describe('renderSkillBody — unclaimed skill (AC-3)', () => {
   // All three tests below use a skill no provider claims (no body field).
   // They stay green even if the provider's applies() is broken (always false).
   // The mutation-proof companion tests below use a CLAIMED skill.
+  //
+  // BODY_APPENDERS is cleared for this block so the provenanceAppender does not
+  // throw when it tries to read a non-existent fixture skill from disk.
+  // The appender's own behaviour is tested in provenance-appender.test.mjs.
+  beforeEach(() => { BODY_APPENDERS.length = 0; });
+  afterEach(() => { BODY_APPENDERS.length = 0; BODY_APPENDERS.push(...REAL_APPENDERS); });
 
   it('returns empty string for a skill with no body (no provider claims it)', () => {
     // Mutation probe: if provider.applies() returned true here → render() would try
@@ -152,6 +159,14 @@ describe('renderSkillBody — unclaimed skill (AC-3)', () => {
 // design, to keep the seam static).
 
 describe('renderSkillBody — contract with populated registries (AC-6)', () => {
+  // Clear both registries before each test so the real provenanceAppender
+  // does not run against EMPTY_SKILL (fixture, no real file on disk).
+  // The afterEach below restores both from the module-load snapshots.
+  beforeEach(() => {
+    BODY_PROVIDERS.length = 0;
+    BODY_APPENDERS.length = 0;
+  });
+
   afterEach(() => {
     // RESTORE the real registries, rather than leaving them empty.
     //

@@ -39,3 +39,30 @@ flowchart TB
   class n2 aidNode
   class n3 aidNode
 ```
+## Source fragments
+
+Every node in the chart above, in chart order, with the exact `canonical/` text it was derived from.
+
+<a id="fragment-n1"></a>**1 · `ENTRY`** · _entry_
+
+~~~~plaintext title="canonical/skills/aid-update-document/SKILL.md#L1" wrap
+---
+~~~~
+
+[Source: `canonical/skills/aid-update-document/SKILL.md#L1`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-document/SKILL.md#L1)
+
+<a id="fragment-n2"></a>**2 · `RUN`** — Run Alias of /aid-change-document -- update an EXISTING… · _step_
+
+~~~~plaintext title="canonical/skills/aid-update-document/SKILL.md#L3" wrap
+description: >
+~~~~
+
+[Source: `canonical/skills/aid-update-document/SKILL.md#L3`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-document/SKILL.md#L3)
+
+<a id="fragment-n3"></a>**3 · `EXIT`** · _exit_ · HALT
+
+~~~~plaintext title="canonical/skills/aid-update-document/SKILL.md#L14" wrap
+---
+~~~~
+
+[Source: `canonical/skills/aid-update-document/SKILL.md#L14`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-document/SKILL.md#L14)

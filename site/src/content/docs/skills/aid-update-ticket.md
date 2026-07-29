@@ -51,3 +51,54 @@ flowchart TB
   class n5 aidNode
   class n6 aidNode
 ```
+## Source fragments
+
+Every node in the chart above, in chart order, with the exact `canonical/` text it was derived from.
+
+<a id="fragment-n1"></a>**1 · `PARSE-ARGS`** · _entry_
+
+~~~~plaintext title="canonical/skills/aid-update-ticket/SKILL.md#L65" wrap
+### State 1 — PARSE-ARGS
+~~~~
+
+[Source: `canonical/skills/aid-update-ticket/SKILL.md#L65`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-ticket/SKILL.md#L65)
+
+<a id="fragment-n2"></a>**2 · `RESOLVE-CONNECTOR`** · _step_
+
+~~~~plaintext title="canonical/skills/aid-update-ticket/SKILL.md#L77" wrap
+### State 2 — RESOLVE-CONNECTOR
+~~~~
+
+[Source: `canonical/skills/aid-update-ticket/SKILL.md#L77`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-ticket/SKILL.md#L77)
+
+<a id="fragment-n3"></a>**3 · `LOAD-CONTEXT`** · _step_
+
+~~~~plaintext title="canonical/skills/aid-update-ticket/SKILL.md#L87" wrap
+### State 3 — LOAD-CONTEXT
+~~~~
+
+[Source: `canonical/skills/aid-update-ticket/SKILL.md#L87`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-ticket/SKILL.md#L87)
+
+<a id="fragment-n4"></a>**4 · `COMPOSE`** · _step_
+
+~~~~plaintext title="canonical/skills/aid-update-ticket/SKILL.md#L106" wrap
+### State 4 — COMPOSE
+~~~~
+
+[Source: `canonical/skills/aid-update-ticket/SKILL.md#L106`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-ticket/SKILL.md#L106)
+
+<a id="fragment-n5"></a>**5 · `CONFIRM`** · _step_
+
+~~~~plaintext title="canonical/skills/aid-update-ticket/SKILL.md#L130" wrap
+### State 5 — CONFIRM
+~~~~
+
+[Source: `canonical/skills/aid-update-ticket/SKILL.md#L130`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-ticket/SKILL.md#L130)
+
+<a id="fragment-n6"></a>**6 · `WRITE`** · _exit_ · UNSPECIFIED
+
+~~~~plaintext title="canonical/skills/aid-update-ticket/SKILL.md#L156" wrap
+### State 6 — WRITE
+~~~~
+
+[Source: `canonical/skills/aid-update-ticket/SKILL.md#L156`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-ticket/SKILL.md#L156)

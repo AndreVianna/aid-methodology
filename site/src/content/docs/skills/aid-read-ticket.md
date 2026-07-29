@@ -43,3 +43,38 @@ flowchart TB
   class n3 aidNode
   class n4 aidNode
 ```
+## Source fragments
+
+Every node in the chart above, in chart order, with the exact `canonical/` text it was derived from.
+
+<a id="fragment-n1"></a>**1 · `PARSE-ARGS`** · _entry_
+
+~~~~plaintext title="canonical/skills/aid-read-ticket/SKILL.md#L68" wrap
+### State 1 — PARSE-ARGS
+~~~~
+
+[Source: `canonical/skills/aid-read-ticket/SKILL.md#L68`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-read-ticket/SKILL.md#L68)
+
+<a id="fragment-n2"></a>**2 · `RESOLVE-CONNECTOR`** · _step_
+
+~~~~plaintext title="canonical/skills/aid-read-ticket/SKILL.md#L77" wrap
+### State 2 — RESOLVE-CONNECTOR
+~~~~
+
+[Source: `canonical/skills/aid-read-ticket/SKILL.md#L77`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-read-ticket/SKILL.md#L77)
+
+<a id="fragment-n3"></a>**3 · `FETCH`** · _step_
+
+~~~~plaintext title="canonical/skills/aid-read-ticket/SKILL.md#L103" wrap
+### State 3 — FETCH
+~~~~
+
+[Source: `canonical/skills/aid-read-ticket/SKILL.md#L103`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-read-ticket/SKILL.md#L103)
+
+<a id="fragment-n4"></a>**4 · `DISPLAY`** · _exit_ · UNSPECIFIED
+
+~~~~plaintext title="canonical/skills/aid-read-ticket/SKILL.md#L117" wrap
+### State 4 — DISPLAY
+~~~~
+
+[Source: `canonical/skills/aid-read-ticket/SKILL.md#L117`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-read-ticket/SKILL.md#L117)

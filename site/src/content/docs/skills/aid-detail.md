@@ -37,3 +37,30 @@ flowchart TB
   class n2 aidNode
   class n3 aidNode
 ```
+## Source fragments
+
+Every node in the chart above, in chart order, with the exact `canonical/` text it was derived from.
+
+<a id="fragment-n1"></a>**1 · `FIRST-RUN`** — No task files exist yet. · _entry_
+
+~~~~plaintext title="canonical/skills/aid-detail/SKILL.md#L85" wrap
+| FIRST-RUN | `references/first-run.md` | `aid-architect` | `→ REVIEW` |
+~~~~
+
+[Source: `canonical/skills/aid-detail/SKILL.md#L85`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-detail/SKILL.md#L85) · [full step: `canonical/skills/aid-detail/references/first-run.md#L1-L152`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-detail/references/first-run.md#L1-L152)
+
+<a id="fragment-n2"></a>**2 · `REVIEW`** — Existing task files found; re-review against current… · _step_
+
+~~~~plaintext title="canonical/skills/aid-detail/SKILL.md#L86" wrap
+| REVIEW | `references/review.md` | `aid-reviewer` | `→ DONE` |
+~~~~
+
+[Source: `canonical/skills/aid-detail/SKILL.md#L86`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-detail/SKILL.md#L86) · [full step: `canonical/skills/aid-detail/references/review.md#L1-L75`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-detail/references/review.md#L1-L75)
+
+<a id="fragment-n3"></a>**3 · `DONE`** · _exit_ · HALT
+
+~~~~plaintext title="canonical/skills/aid-detail/SKILL.md#L87" wrap
+| DONE | — | `inline` | `→ halt` |
+~~~~
+
+[Source: `canonical/skills/aid-detail/SKILL.md#L87`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-detail/SKILL.md#L87)

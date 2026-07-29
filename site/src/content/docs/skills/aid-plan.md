@@ -39,3 +39,30 @@ flowchart TB
   class n2 aidNode
   class n3 aidNode
 ```
+## Source fragments
+
+Every node in the chart above, in chart order, with the exact `canonical/` text it was derived from.
+
+<a id="fragment-n1"></a>**1 · `FIRST-RUN`** — No PLAN.md found; begin dependency mapping and deliverable… · _entry_
+
+~~~~plaintext title="canonical/skills/aid-plan/SKILL.md#L152" wrap
+| FIRST-RUN | `references/first-run-loop.md` | `aid-architect` | → REVIEW |
+~~~~
+
+[Source: `canonical/skills/aid-plan/SKILL.md#L152`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-plan/SKILL.md#L152) · [full step: `canonical/skills/aid-plan/references/first-run-loop.md#L1-L226`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-plan/references/first-run-loop.md#L1-L226)
+
+<a id="fragment-n2"></a>**2 · `REVIEW`** — PLAN.md exists and was previously completed; re-review… · _loop-back_
+
+~~~~plaintext title="canonical/skills/aid-plan/SKILL.md#L153" wrap
+| REVIEW | `references/review-deliverables.md` | `aid-reviewer` | → DONE |
+~~~~
+
+[Source: `canonical/skills/aid-plan/SKILL.md#L153`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-plan/SKILL.md#L153) · [full step: `canonical/skills/aid-plan/references/review-deliverables.md#L1-L72`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-plan/references/review-deliverables.md#L1-L72)
+
+<a id="fragment-n3"></a>**3 · `DONE`** · _exit_ · HALT
+
+~~~~plaintext title="canonical/skills/aid-plan/SKILL.md#L154" wrap
+| DONE | _(inline — plan complete; print summary and exit)_ | `inline` | → halt |
+~~~~
+
+[Source: `canonical/skills/aid-plan/SKILL.md#L154`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-plan/SKILL.md#L154)

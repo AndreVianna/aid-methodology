@@ -59,6 +59,30 @@ function nameSpan(name) {
   return escapeLabel(name);
 }
 
+/**
+ * The ` — <label>` half of the lead-in, or '' when the label adds nothing.
+ *
+ * Without this, 223 of 883 entries across 98 of the 111 skills read
+ * `**3 · \`CONTINUATION\`** — CONTINUATION`, saying the same word twice. The
+ * label exists to carry meaning the name does not; when it repeats the name it
+ * is noise a reader has to look past, and this list is already dense.
+ *
+ * Same rule and same case-insensitive comparison as `nodeLabel` in
+ * render-mermaid.mjs, which collapsed `INTAKE<br/>INTAKE` for the same reason —
+ * one rule, applied in both places a label is rendered. Case-insensitive
+ * because the extractors title-case a derived label while a state name is
+ * upper-case: comparing exactly would leave `ENTRY — Entry` and `EXIT — Exit`
+ * in place, 16 of the 223 occurrences, which to a reader are the same word.
+ *
+ * @param {string} name   Node name, unescaped.
+ * @param {string} label  Derived label, unescaped.
+ * @returns {string}      Either '' or ' — <escaped label>'.
+ */
+function labelPart(name, label) {
+  if (label.trim().toLowerCase() === name.trim().toLowerCase()) return '';
+  return ' — ' + escapeLabel(label);
+}
+
 // ── Fence-width calculator ────────────────────────────────────────────────────
 
 /**
@@ -125,7 +149,6 @@ export function renderFragmentList(entries) {
     const anchor = lineAnchor(startLine, endLine);
     const url = blobUrl(file, startLine, endLine);
     const title = file + anchor;
-    const escapedLabel = escapeLabel(label);
 
     // Exit marker: reads terminal.advanceType only; handoff is deliberately omitted.
     const exitMarker = terminal !== null ? ` · ${terminal.advanceType}` : '';
@@ -133,7 +156,11 @@ export function renderFragmentList(entries) {
     // Lead-in paragraph: inline anchor on same line as text so CommonMark parses
     // it as inline HTML inside a paragraph, not as an HTML block.
     // Position comes from node.order (the model integer), not the loop index.
-    parts.push(`<a id="fragment-${id}"></a>**${node.order} · ${nameSpan(name)}** — ${escapedLabel} · _${kind}_${exitMarker}`);
+    parts.push(
+      `<a id="fragment-${id}"></a>**${node.order} · ${nameSpan(name)}**` +
+      labelPart(name, label) +
+      ` · _${kind}_${exitMarker}`
+    );
     parts.push('');
 
     // Tilde-fenced verbatim block: title= before wrap (SPEC order); no escaping.

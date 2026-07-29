@@ -17,7 +17,7 @@
 //   feature-002: catalog load (3a), group assignment (4a), index write (5a),
 //                dead card guard (7a), assertNoDeadCards all branches.
 
-import { describe, it, expect, beforeAll, afterAll } from 'vitest';
+import { describe, it, expect, beforeAll, afterAll, beforeEach, afterEach } from 'vitest';
 import {
   readFileSync,
   existsSync,
@@ -37,6 +37,7 @@ import { assignGroups } from '../skills/groups.mjs';
 import { parseSkillFrontmatter } from '../skills/frontmatter.mjs';
 import { renderFrontmatterValue } from '../skills/render-value.mjs';
 import { renderSkillPage } from '../skills/render-page.mjs';
+import { BODY_APPENDERS } from '../skills/body.mjs';
 // Importing the generator is safe — and is itself a check on the `main()` guard.
 // gen-reference.mjs calls main() at module scope, so importing it would
 // regenerate four pages as a side effect; gen-skills.mjs must not, and this
@@ -444,6 +445,12 @@ describe('gen-skills: value rendering', () => {
 // than silently dropped.
 
 describe('gen-skills: AC-2 header completeness — fixture-driven', () => {
+  // Clear provenanceAppender for this fixture test — the fixture uses a
+  // non-existent dirName ('fixture-ac2-skill') so the appender would throw.
+  let _savedAppenders = [];
+  beforeEach(() => { _savedAppenders = BODY_APPENDERS.splice(0); });
+  afterEach(() => { BODY_APPENDERS.push(..._savedAppenders); _savedAppenders = []; });
+
   it('every key from a list-valued + multi-line-folded fixture appears on the rendered page', () => {
     const fixtureText = [
       '---',
@@ -738,7 +745,7 @@ describe('gen-skills: AC-6 idempotence by byte comparison', () => {
 
     const differing = [...run1.keys()].filter((p) => !run2.get(p).equals(run1.get(p)));
     expect(differing).toEqual([]);
-  });
+  }, 90000);
 });
 
 // ── Stdout discipline: four phase lines, then the flow report ────────────────

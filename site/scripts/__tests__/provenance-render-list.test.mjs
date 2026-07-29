@@ -748,6 +748,50 @@ describe('lead-in shape: bold span, italic kind, position from node.order', () =
     expect(rendered).toContain('**1 · `CONTINUE`**');
   });
 
+  // Duplicate-label collapse. Same rule as render-mermaid.mjs's nodeLabel, which
+  // collapsed `INTAKE<br/>INTAKE`: one rule wherever a label is rendered.
+  // Assertions stop at the ` ·` that follows the bold span, so they do not depend
+  // on the kind buildChart derives for a lone node (which is `exit`, not `entry`).
+  it('renders the label when it adds meaning over the name', () => {
+    const chart = makeChart([rawNode(1, 'CONTINUE', { label: 'Resume the interview' })]);
+    const rendered = renderFragmentList(buildEntries(chart));
+    expect(rendered).toContain('**1 · `CONTINUE`** — Resume the interview ·');
+  });
+
+  it('drops the label when it merely repeats the name', () => {
+    const chart = makeChart([rawNode(1, 'CONTINUATION', { label: 'CONTINUATION' })]);
+    const rendered = renderFragmentList(buildEntries(chart));
+    expect(rendered).toContain('**1 · `CONTINUATION`** ·');
+    // The em-dash half is gone entirely, not merely emptied.
+    expect(rendered).not.toContain('— CONTINUATION');
+  });
+
+  // The arm an exact comparison would miss: the extractors title-case a derived
+  // label while the state name is upper-case, so `ENTRY` / `Entry` is the
+  // commonest form of the repetition — 16 of the 223 corpus occurrences.
+  it('drops a label that repeats the name in different case', () => {
+    const chart = makeChart([rawNode(1, 'ENTRY', { label: 'Entry' })]);
+    const rendered = renderFragmentList(buildEntries(chart));
+    expect(rendered).toContain('**1 · `ENTRY`** ·');
+    expect(rendered).not.toContain('— Entry');
+  });
+
+  it('drops a label that repeats the name modulo surrounding whitespace', () => {
+    const chart = makeChart([rawNode(1, 'SEED', { label: '  SEED  ' })]);
+    const rendered = renderFragmentList(buildEntries(chart));
+    expect(rendered).toContain('**1 · `SEED`** ·');
+    expect(rendered).not.toMatch(/— +SEED/);
+  });
+
+  // Non-vacuity for the three drop cases above: a label that merely *contains*
+  // the name is not a repeat and must survive, so the rule cannot be a
+  // substring test that silently eats meaningful labels.
+  it('keeps a label that only contains the name as a substring', () => {
+    const chart = makeChart([rawNode(1, 'SEED', { label: 'SEED the brownfield KB' })]);
+    const rendered = renderFragmentList(buildEntries(chart));
+    expect(rendered).toContain('**1 · `SEED`** — SEED the brownfield KB ·');
+  });
+
   it('kind is wrapped in italic markers: · _<kind>_', () => {
     const chart = makeChart(
       [rawNode(1, 'START'), rawNode(2, 'END', { terminal: halt() })],

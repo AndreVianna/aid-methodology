@@ -43,3 +43,38 @@ flowchart TB
   class n3 aidNode
   class n4 aidNode
 ```
+## Source fragments
+
+Every node in the chart above, in chart order, with the exact `canonical/` text it was derived from.
+
+<a id="fragment-n1"></a>**1 · `STEP-0`** — Validate arguments · _entry_
+
+~~~~plaintext title="canonical/skills/aid-unset-connector/SKILL.md#L38" wrap
+### Step 0: Validate arguments
+~~~~
+
+[Source: `canonical/skills/aid-unset-connector/SKILL.md#L38`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-unset-connector/SKILL.md#L38)
+
+<a id="fragment-n2"></a>**2 · `STEP-1`** — Resolve &lt;tool> → descriptor stem · _step_
+
+~~~~plaintext title="canonical/skills/aid-unset-connector/SKILL.md#L57" wrap
+## Step 1: Resolve `<tool>` → descriptor stem
+~~~~
+
+[Source: `canonical/skills/aid-unset-connector/SKILL.md#L57`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-unset-connector/SKILL.md#L57)
+
+<a id="fragment-n3"></a>**3 · `STEP-2`** — Single-stem REMOVE (reconcile.md) · _step_
+
+~~~~plaintext title="canonical/skills/aid-unset-connector/SKILL.md#L71" wrap
+## Step 2: Single-stem REMOVE (`reconcile.md`)
+~~~~
+
+[Source: `canonical/skills/aid-unset-connector/SKILL.md#L71`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-unset-connector/SKILL.md#L71)
+
+<a id="fragment-n4"></a>**4 · `STEP-3`** — Rebuild INDEX.md · _exit_ · UNSPECIFIED
+
+~~~~plaintext title="canonical/skills/aid-unset-connector/SKILL.md#L101" wrap
+## Step 3: Rebuild `INDEX.md`
+~~~~
+
+[Source: `canonical/skills/aid-unset-connector/SKILL.md#L101`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-unset-connector/SKILL.md#L101)

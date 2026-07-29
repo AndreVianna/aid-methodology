@@ -134,10 +134,55 @@ reported killed.
 
 **Outcome:** Pass, with the read-once assertion strengthened.
 
-### task-043 — dependency note
+### task-043 — `## Source fragments` appender registration
 
-Unblocked by 041 and 042 both closing; see Q1 above for the stdout-line-count
-re-scoping that applies to its acceptance.
+The headline result is genuine and worth stating plainly: **`verifyProvenance` passed over the
+whole corpus on its first run.** Every node of all 111 charts has an `excerpt` byte-identical
+to its cited `canonical/` slice, with P0 and P5 clean. `body.mjs` changed by exactly the two
+lines specified — one import, `BODY_APPENDERS = [provenanceAppender]` — and stdout stayed at
+14 lines with stderr silent, so the appender widened nothing (see Q1).
+
+Three findings, all resolved.
+
+**F-1 (serious, process). An un-restored mutation artifact shipped into a production module.**
+`index.mjs` line 107 read `memo.get("__MUTANT__")` — the developer applied its own M1
+memoization mutant, observed the kill, and never restored the file. Memoization was therefore
+dead: `buildFlowChart` ran on every `render()` call rather than once per directory, and the
+pages were generated in that state. The failure was reported as a *passing* mutation kill,
+which is why re-verification caught it and the report did not. Restored to `memo.get(dirName)`;
+AC-3 now holds and the suite is green at 2531 across 40 files. Swept the whole of
+`site/scripts/` for other artifacts — none.
+
+**F-2 (quality). The duplicate-label redundancy from delivery-003 had reappeared here.**
+223 of 883 lead-in lines across 98 of the 111 skills rendered as
+`**3 · \`CONTINUATION\`** — CONTINUATION`, saying the same word twice — the same defect the
+owner objected to as `INTAKE<br/>INTAKE` at the delivery-003 UI checkpoint. Applied the rule
+already established in `render-mermaid.mjs`'s `nodeLabel`, including its case-insensitive
+comparison: an exact comparison would have left `ENTRY — Entry` and `EXIT — Exit` in place,
+16 of the 223. Corpus duplication now measures 0. Mutation-proved with four mutants — removing
+the collapse, inverting it, weakening the comparison to case-sensitive, and weakening it to a
+substring test. The case-sensitive weakening is killed by **exactly one** test, the dedicated
+different-case case, so that arm is provably load-bearing; the substring weakening is killed by
+the non-vacuity case that keeps a label merely *containing* the name.
+
+**F-3 (DETAIL/SPEC factual defect, no code change). The stated rationale for `title=` does not
+reproduce.** Both task-042 and task-044 assert that omitting `title=` lets Expressive Code's
+frames plugin delete a heading line from "four known corpus lines". Tested by A/B build with a
+detector that finds at-risk fragments *without* keying off `title=` (the first version of that
+detector did key off it, and so reported a vacuous pass — noted because it is the same error
+class this delivery keeps finding): 236 fragments begin with `#`, and **zero were deleted in
+either build**. Cause: `getFileNameFromComment` resolves a `LanguageGroup` for the block's
+language, and `plaintext` is a member of no group, so extraction bails before it can match.
+The language choice alone already disarms the scan. `title=` is **kept** regardless — the SPEC
+mandates it as the visible provenance caption — but its justification is now recorded as
+unverified, and task-044's assertion stands on the SPEC requirement rather than on the
+four-line claim.
+
+Verified beyond the ACs: regeneration is idempotent (second run byte-identical), the real
+Astro build completes at 142 pages, and all 236 at-risk heading lines survive into the built
+HTML — which is the actual claim the unit-test `title=` assertion can only proxy.
+
+**Outcome:** Pass after rework.
 
 ### task-042 — Fragment-list renderer
 
