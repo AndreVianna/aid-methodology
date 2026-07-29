@@ -6,7 +6,7 @@
 {"dst": ".agent/agents/aid-operator.md", "profile": "antigravity", "sha256": "4832f6ff12a277acf242c6d51d1583bb9a167b7954035dc95f27de7fd41f4d9c", "src": "canonical/agents/aid-operator/AGENT.md"}
 {"dst": ".agent/agents/aid-orchestrator.md", "profile": "antigravity", "sha256": "0ee99f9a27b80f97590803eb6e3e8d382ddb8f9648033d08f2c9bdfddc3b185d", "src": "canonical/agents/aid-orchestrator/AGENT.md"}
 {"dst": ".agent/agents/aid-researcher.md", "profile": "antigravity", "sha256": "7e5c7548f5de42ee0cea063791921522bdc0d3a325604913c9c3c51a1f2c0b28", "src": "canonical/agents/aid-researcher/AGENT.md"}
-{"dst": ".agent/agents/aid-reviewer.md", "profile": "antigravity", "sha256": "2d417f493fa4f7234edd75df4974ded114bddd7a28e036735e40e1b87f8ea813", "src": "canonical/agents/aid-reviewer/AGENT.md"}
+{"dst": ".agent/agents/aid-reviewer.md", "profile": "antigravity", "sha256": "ecb62b8eaea6eab2254d21c3aac613703faf3b9463226560dd977ba7066f45a3", "src": "canonical/agents/aid-reviewer/AGENT.md"}
 {"dst": ".agent/agents/aid-screener.md", "profile": "antigravity", "sha256": "a69c53f4b0582e962f24d628345d758f81fc56a467516d7680cdead1c108a9ec", "src": "canonical/agents/aid-screener/AGENT.md"}
 {"dst": ".agent/agents/aid-tech-writer.md", "profile": "antigravity", "sha256": "0a4d7dc303faa0d01bcabf11578247d26721eef52b0c0c0af431eda23e35e251", "src": "canonical/agents/aid-tech-writer/AGENT.md"}
 {"dst": ".agent/aid/scripts/config/read-setting.sh", "profile": "antigravity", "sha256": "4f11714098f724dfe5d7923905550934c41253ff8add5bad46d4040f4e3decc9", "src": "canonical/scripts/config/read-setting.sh"}

@@ -6,7 +6,7 @@
 {"dst": ".github/agents/aid-operator.md", "profile": "copilot-cli", "sha256": "0ab71c13549650cd70fb46f9123ac4bd6e910610d33188c06308df7dcc7b995f", "src": "canonical/agents/aid-operator/AGENT.md"}
 {"dst": ".github/agents/aid-orchestrator.md", "profile": "copilot-cli", "sha256": "4709f07ba0270b062bee3d51f5957125822aa0573abfc774d890f64e5d20fa03", "src": "canonical/agents/aid-orchestrator/AGENT.md"}
 {"dst": ".github/agents/aid-researcher.md", "profile": "copilot-cli", "sha256": "cd06df6477d62007a84ce72f5e211f79ae182822aca26b5430b089347e885eab", "src": "canonical/agents/aid-researcher/AGENT.md"}
-{"dst": ".github/agents/aid-reviewer.md", "profile": "copilot-cli", "sha256": "309083ae5d7c4fa494c3e8b57d5e64c5fdb3fd73d5959d9ee309f6aa3ec0c03f", "src": "canonical/agents/aid-reviewer/AGENT.md"}
+{"dst": ".github/agents/aid-reviewer.md", "profile": "copilot-cli", "sha256": "7b0da153a5fa3e1bcf70d4ee50e639693cb74b1bbc462ec3f0954b92328641b1", "src": "canonical/agents/aid-reviewer/AGENT.md"}
 {"dst": ".github/agents/aid-screener.md", "profile": "copilot-cli", "sha256": "4d07dc5c78291781532c49540bba0084ed6ba81b552fd176d5e3df7525df1338", "src": "canonical/agents/aid-screener/AGENT.md"}
 {"dst": ".github/agents/aid-tech-writer.md", "profile": "copilot-cli", "sha256": "7eca7a7e36d373fe6748a39231eb2ddf72385c9152a2a16b85b0c811b8d9aea1", "src": "canonical/agents/aid-tech-writer/AGENT.md"}
 {"dst": ".github/aid/scripts/config/read-setting.sh", "profile": "copilot-cli", "sha256": "4f11714098f724dfe5d7923905550934c41253ff8add5bad46d4040f4e3decc9", "src": "canonical/scripts/config/read-setting.sh"}

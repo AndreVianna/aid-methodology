@@ -31,7 +31,8 @@ This reconciles the B6 finding: discovery-reviewer lacked the `## Self-review di
 - **Structured issue list** in a **per-attempt scratch** ledger (`<scope>-cycle<N>.md`) — the 8-column
   reviewer ledger. The durable `<scope>.md` is written by the orchestrator alone, and the Reviewer is
   never told its path, so cross-cycle contamination is structural rather than a rule to remember.
-- **Test results** recorded in the work `STATE.md` `## Tasks Status` row for the task
+- **Test results** recorded in the **task's own** `delivery-NNN/tasks/task-NNN/STATE.md`. Not the
+  work-level file — its `## Tasks State` section is DERIVED and never written directly.
 - **A rule ID on every finding**, from the artifact's rule set in
   `canonical/aid/templates/review-rubrics/INDEX.md`. The former source tags (`[CODE]`, `[TASK]`,
   `[SPEC]`, `[KB]`, `[ARCHITECTURE]`) are **retired** — the class prefix in the rule ID carries what
@@ -78,7 +79,19 @@ manifest exists.
 
 ## Tier
 
-**Large tier** — required by the reviewer-tier-≥-executor invariant (`architecture.md` §3). The highest executor the Reviewer grades is large-tier (aid-architect, aid-researcher), so the Reviewer must be at parity or above. This also ensures the Reviewer can catch issues that a lower-capability agent might miss.
+**Medium by default, escalated to Large per dispatch.** The canonical frontmatter is `tier: medium`,
+and the dispatch tiering table gives the escalation as *"large / `high`–`xhigh` (complex / security /
+design / delivery gate, or to match a large executor)"*.
+
+The **reviewer tier ≥ executor tier** invariant (`architecture.md` § Load-Bearing Boundaries and
+§ Invariants) is what drives the escalation — it is not an argument for a blanket Large default. Where
+the executor is the Large `aid-architect`, the dispatch site says so explicitly: `aid-detail`'s
+first-run and `aid-define`'s cross-reference both dispatch the Reviewer **at Large tier** and cite the
+invariant by name.
+
+Stating Large as the *default* would contradict the frontmatter that actually configures the model, and
+would over-spend on every ordinary review. Escalation is per dispatch, decided where the executor's
+tier is known.
 
 ## Examples
 

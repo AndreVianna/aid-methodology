@@ -6,7 +6,7 @@
 {"dst": ".codex/agents/aid-operator.toml", "profile": "codex", "sha256": "2114eea3db1420df8601437f93b9d00ae02dec930fc20a8973338eab4b08152f", "src": "canonical/agents/aid-operator/AGENT.md"}
 {"dst": ".codex/agents/aid-orchestrator.toml", "profile": "codex", "sha256": "128a5b189240e1513a2fac42cbe2e0a471ccb2464033d48c9af087653d249dde", "src": "canonical/agents/aid-orchestrator/AGENT.md"}
 {"dst": ".codex/agents/aid-researcher.toml", "profile": "codex", "sha256": "a4f63f0349db3bb4fe76795eeb22bcca975389c6a64817035d698934cbc1b749", "src": "canonical/agents/aid-researcher/AGENT.md"}
-{"dst": ".codex/agents/aid-reviewer.toml", "profile": "codex", "sha256": "e5e519e23b0851cc84c4835ee819b6fcfee7da8318ac6ea0af00031645a5421b", "src": "canonical/agents/aid-reviewer/AGENT.md"}
+{"dst": ".codex/agents/aid-reviewer.toml", "profile": "codex", "sha256": "6f6df1971e06abb8454a07db3a8dfdff2b3ec8399050274b9a68ccfca2747c2c", "src": "canonical/agents/aid-reviewer/AGENT.md"}
 {"dst": ".codex/agents/aid-screener.toml", "profile": "codex", "sha256": "beacbf34af53f17a4ead26dfbe91a72866ecf31db55d5a089fd53081632c2494", "src": "canonical/agents/aid-screener/AGENT.md"}
 {"dst": ".codex/agents/aid-tech-writer.toml", "profile": "codex", "sha256": "bb2afbb6da18359022b380e70aeff702a7c6346be4622eb272df9265ffa174c6", "src": "canonical/agents/aid-tech-writer/AGENT.md"}
 {"dst": ".codex/aid/scripts/config/read-setting.sh", "profile": "codex", "sha256": "4f11714098f724dfe5d7923905550934c41253ff8add5bad46d4040f4e3decc9", "src": "canonical/scripts/config/read-setting.sh"}
