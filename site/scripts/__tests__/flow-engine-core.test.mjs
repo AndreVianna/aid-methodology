@@ -9,7 +9,13 @@
 // Run: cd site && npx vitest run scripts/__tests__/flow-engine-core.test.mjs
 
 import { describe, it, expect } from 'vitest';
+import { readFileSync } from 'node:fs';
+import { dirname, join, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { getEngineCore } from '../lib/flow-graph/engine-core.mjs';
+import { sliceLines } from '../lib/flow-graph/source.mjs';
+
+const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '../../../');
 
 // ── Shared fixture (one call per suite run) ───────────────────────────────────
 
@@ -419,15 +425,57 @@ describe('sources and provenance', () => {
     }
   });
 
-  it('every node provenance has a non-empty excerpt', () => {
+  it('every node provenance excerpt EQUALS the live slice of its cited file', () => {
+    // Was `excerpt.length > 0`, which any non-empty wrong string satisfies — the AC says
+    // "excerpt equals the live slice", and that is a different claim. Nodes here cite two
+    // different files (the engine template and the gate template), so the comparison has
+    // to read whichever file the node names.
+    const cache = new Map();
+    const linesOf = (rel) => {
+      if (!cache.has(rel)) {
+        const text = readFileSync(join(REPO_ROOT, rel), 'utf8');
+        cache.set(rel, text.split('\n').map((l) => l.replace(/\r$/, '')));
+      }
+      return cache.get(rel);
+    };
+
+    expect(core.nodes.length).toBeGreaterThan(0);          // non-vacuity
+    const filesSeen = new Set();
+
     for (const node of core.nodes) {
-      expect(node.provenance.excerpt.length).toBeGreaterThan(0);
+      const { file, startLine, endLine, excerpt } = node.provenance;
+      filesSeen.add(file);
+      expect(sliceLines(linesOf(file), startLine, endLine)).toBe(excerpt);
     }
+
+    // Both templates must actually be exercised, or this would pass while only ever
+    // checking one of them — the CONTINUATION node is the only one citing the gate.
+    expect([...filesSeen].sort()).toEqual([
+      'canonical/aid/templates/shortcut-engine.md',
+      'canonical/aid/templates/work-initiation-gate.md',
+    ]);
   });
 
   it('every edge provenance file starts with canonical/', () => {
     for (const edge of core.edges) {
       expect(edge.provenance.file).toMatch(/^canonical\//);
+    }
+  });
+
+  it('every edge provenance excerpt EQUALS the live slice of its cited file', () => {
+    const cache = new Map();
+    const linesOf = (rel) => {
+      if (!cache.has(rel)) {
+        const text = readFileSync(join(REPO_ROOT, rel), 'utf8');
+        cache.set(rel, text.split('\n').map((l) => l.replace(/\r$/, '')));
+      }
+      return cache.get(rel);
+    };
+
+    expect(core.edges.length).toBeGreaterThan(0);          // non-vacuity
+    for (const edge of core.edges) {
+      const { file, startLine, endLine, excerpt } = edge.provenance;
+      expect(sliceLines(linesOf(file), startLine, endLine)).toBe(excerpt);
     }
   });
 });

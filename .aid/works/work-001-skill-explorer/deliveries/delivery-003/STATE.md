@@ -690,7 +690,67 @@ resolves into the module split.
 
 ---
 
-## Wave 10 (tasks 033 + 034) — findings, pre-review
+## Wave 10 (tasks 033 + 034) — PASS, A+ floor met (3 cycles)
+
+Closed at `1d65326b` plus the excerpt-equality fix. **2078 tests across 33 files.** Zero Pending rows
+above [LOW]; the two remaining mutation survivors are confirmed **inert**, not uncaught.
+
+### The finding that mattered: five contracts were untestable, not untested
+
+Cycle 1 graded C on seven survivors, and five had one root cause — `getEngineCore()` read two fixed
+files, so any rule the real corpus does not happen to discriminate was unreachable by **any** test.
+The five were B1's `does not run` and `instead of looping further` trigger tokens, L1's `Loop back`
+phrasing (widening it to `Loop` killed nothing), W5's warn-never-throw half, and the shared truncator
+on a B1 condition. Every one is stated contract in the DETAIL.
+
+`getEngineCore()` now takes a test-only `{ engineText, gateText }` override and **does not memoize
+when given one**. Narrowing the code to what the corpus exercises was the alternative and was
+rejected: the DETAIL names all four trigger tokens, so the contract should become assertable rather
+than be shrunk to what today's two files reach. The reviewer confirmed the seam is airtight — a mutant
+that lets an override poison the memo dies.
+
+### Two inert survivors, both confirmed by the reviewer
+
+- **`engine-core`'s `sources` sort is a no-op.** `sources` is the fixed literal
+  `[ENGINE_REL, GATE_REL]`, and `shortcut-engine.md` already sorts before
+  `work-initiation-gate.md`, so deleting `.sort()` changes nothing observable. This **corrected a false
+  claim in my own comment**, which had asserted insertion and sorted order differ there. `compose.mjs`'s
+  sort is a different case — its input is a runtime union, and it is proven against a fixture whose
+  insertion order genuinely differs.
+- **Restoring `Dispatch|` to the engine's narrowed D1 regex is a no-op**, because `## Dispatch Protocol`
+  fails the exact-text anchor either way.
+
+### Four things learned the hard way, worth carrying
+
+The fixtures took **four attempts**, and every failure was mine misunderstanding the code rather than
+the code being wrong: L1 and B1 apply only to the states literally named `INTAKE` and `GATE`; INTAKE's
+arm matcher is `On **name**` with a trigger in the same paragraph; the B1 condition derives from the arm
+**name**, not the guard sentence; and `truncate` cuts at a word boundary, so the evidence of truncation
+is a trailing ellipsis rather than any particular length. **"The fixture never reached the rule" is the
+same defect as a test that cannot fail, arrived at from the other side** — and it is invisible, because
+such a test passes.
+
+### The self-referential sort, third appearance
+
+The reviewer caught my fix as **half-applied**: I found the pattern in `flow-compose.test.mjs` and did
+not sweep for it, leaving the identical assertion standing in `flow-engine-core.test.mjs`. Swept the
+whole suite this time; the remaining `.slice().sort()` uses compare two *different* arrays and are
+legitimate. The lesson is not about sorting — **on finding a defect class, sweep for it rather than
+fixing the instance in front of you.** That is the same lesson the tasks-019–029 checkpoint took eight
+cycles to teach, recurring in a new form.
+
+### Cycle 2's single blocker
+
+`every node provenance has a non-empty excerpt` asserted `length > 0` where the AC says the excerpt
+**equals the live slice** — a different and much weaker claim, which any non-empty wrong string
+satisfies. Now compared against `sliceLines` of the cited file for every node **and** every edge, with a
+guard that both templates are actually exercised (only the `CONTINUATION` node cites the gate, so a
+one-file check would have passed while covering half the corpus). Proven with two mutants: a non-empty
+wrong excerpt, and an off-by-one slice.
+
+---
+
+## Wave 10 (tasks 033 + 034) — findings
 
 First feature-004 wave, both tasks dispatched in parallel (file-disjoint: `engine-core.mjs` and
 `compose.mjs`). **2067 tests across 33 files**, up from 1921. Twelve mutants, all killed. No
