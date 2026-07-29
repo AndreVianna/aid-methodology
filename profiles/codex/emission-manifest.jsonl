@@ -6,7 +6,7 @@
 {"dst": ".codex/agents/aid-operator.toml", "profile": "codex", "sha256": "2114eea3db1420df8601437f93b9d00ae02dec930fc20a8973338eab4b08152f", "src": "canonical/agents/aid-operator/AGENT.md"}
 {"dst": ".codex/agents/aid-orchestrator.toml", "profile": "codex", "sha256": "128a5b189240e1513a2fac42cbe2e0a471ccb2464033d48c9af087653d249dde", "src": "canonical/agents/aid-orchestrator/AGENT.md"}
 {"dst": ".codex/agents/aid-researcher.toml", "profile": "codex", "sha256": "a4f63f0349db3bb4fe76795eeb22bcca975389c6a64817035d698934cbc1b749", "src": "canonical/agents/aid-researcher/AGENT.md"}
-{"dst": ".codex/agents/aid-reviewer.toml", "profile": "codex", "sha256": "0940812a0729fe7327ce729494d1184bc3374821fe2685721fa70496f2692fb1", "src": "canonical/agents/aid-reviewer/AGENT.md"}
+{"dst": ".codex/agents/aid-reviewer.toml", "profile": "codex", "sha256": "fdc640ba15a475858ee3be2447c65117fc91006686958522547363bc5ce50b7c", "src": "canonical/agents/aid-reviewer/AGENT.md"}
 {"dst": ".codex/agents/aid-tech-writer.toml", "profile": "codex", "sha256": "bb2afbb6da18359022b380e70aeff702a7c6346be4622eb272df9265ffa174c6", "src": "canonical/agents/aid-tech-writer/AGENT.md"}
 {"dst": ".codex/aid/scripts/config/read-setting.sh", "profile": "codex", "sha256": "4f11714098f724dfe5d7923905550934c41253ff8add5bad46d4040f4e3decc9", "src": "canonical/scripts/config/read-setting.sh"}
 {"dst": ".codex/aid/scripts/connectors/build-connectors-index.ps1", "profile": "codex", "sha256": "5f1c2060c42217d7da1f7b1e52286e1f75732554866ce1a1191ec0177572a7e9", "src": "canonical/scripts/connectors/build-connectors-index.ps1"}
@@ -121,6 +121,15 @@
 {"dst": ".codex/aid/templates/package.md", "profile": "codex", "sha256": "d8bbbe4e1daa2cc548d3c0c544525ad3a7f827e568b94a3f815798973ce63044", "src": "canonical/templates/package.md"}
 {"dst": ".codex/aid/templates/requirements.md", "profile": "codex", "sha256": "cf78c05319ac958ade4cb707971bcae72168d37f2d30cd9a181215b65b63ab68", "src": "canonical/templates/requirements.md"}
 {"dst": ".codex/aid/templates/requirements/requirements-template.md", "profile": "codex", "sha256": "d2a8bc3ff89d929f0bb3b21485d7fac51143e7fd452f2ff7604d9928f79be959", "src": "canonical/templates/requirements/requirements-template.md"}
+{"dst": ".codex/aid/templates/review-rubrics/INDEX.md", "profile": "codex", "sha256": "6b4cb5500ea5c9c93657bb617e64cf95d03509b69ef164ca6ddc8f20ed290fc6", "src": "canonical/templates/review-rubrics/INDEX.md"}
+{"dst": ".codex/aid/templates/review-rubrics/aid.md", "profile": "codex", "sha256": "cd87654a0955399b75a33fbce5cb1acca598ab735229c323c3669155fc3fbee9", "src": "canonical/templates/review-rubrics/aid.md"}
+{"dst": ".codex/aid/templates/review-rubrics/definition.md", "profile": "codex", "sha256": "e5b5675709869b79a411904c5e0d28c7628ae899d181621e07155604e804dc01", "src": "canonical/templates/review-rubrics/definition.md"}
+{"dst": ".codex/aid/templates/review-rubrics/executable.md", "profile": "codex", "sha256": "5b6fb9a4d8bb58c4fe361b70cb71ed9c73bc6088e591a69983a3fca626afe2bc", "src": "canonical/templates/review-rubrics/executable.md"}
+{"dst": ".codex/aid/templates/review-rubrics/interface.md", "profile": "codex", "sha256": "21b24c46ee2c909407f674aa164692a90521f30856fdf5e657a863b1edc73fdf", "src": "canonical/templates/review-rubrics/interface.md"}
+{"dst": ".codex/aid/templates/review-rubrics/narrative.md", "profile": "codex", "sha256": "2cb50dd42bbe93f4b61ad3c7a30aeb81b4d30dbcb396de283f6177fa08c12833", "src": "canonical/templates/review-rubrics/narrative.md"}
+{"dst": ".codex/aid/templates/review-rubrics/presentation.md", "profile": "codex", "sha256": "013ba6bdc3727fdbca3d633c38da9c2528345f43f129ccaa1046019995f041ea", "src": "canonical/templates/review-rubrics/presentation.md"}
+{"dst": ".codex/aid/templates/review-rubrics/process.md", "profile": "codex", "sha256": "bf9fb81fc0eb7fba158099e062d125b3e979631a416938dc5d064d70a2ce4c10", "src": "canonical/templates/review-rubrics/process.md"}
+{"dst": ".codex/aid/templates/review-rubrics/summary.md", "profile": "codex", "sha256": "3a92e58a409dc8d5d2ba1de02dae2fb1a9e8c83fa57e8e55a32985be62c34aa2", "src": "canonical/templates/review-rubrics/summary.md"}
 {"dst": ".codex/aid/templates/reviewer-dispatch.md", "profile": "codex", "sha256": "c80a14b6e34d778177fbdc59b33b052b490f935f2cb40661ea03a59c02105a45", "src": "canonical/templates/reviewer-dispatch.md"}
 {"dst": ".codex/aid/templates/reviewer-ledger-schema.md", "profile": "codex", "sha256": "5c0e813680089e8a76079934ec72d09fc3d19995243a13e797f34a34efaf0b3a", "src": "canonical/templates/reviewer-ledger-schema.md"}
 {"dst": ".codex/aid/templates/rough-time-hints.md", "profile": "codex", "sha256": "e86ae0ad046dc94ee5f410554713c3a43bd84bd86be2ec3cfc0f76ab904fa2a6", "src": "canonical/templates/rough-time-hints.md"}

@@ -1909,7 +1909,7 @@ _prune_tool_dirs() {
 #   antigravity: .agent/rules/                (rules dir retired)
 #   all tools:   .cursor/rules/, .agent/rules/ are cursor/antigravity only
 #
-# Ownership markers applied (content-isolation.md rules 1+2):
+# Ownership markers applied (authoring-conventions.md Content Isolation, rules 1+2):
 #   Marker 1: filename starts with "aid-" (tool-native dir files)
 #   Marker 2: lives inside an "aid/" subtree
 #
@@ -2326,7 +2326,7 @@ install_tool() {
     # Runs BEFORE manifest_write so a contaminated bundle never writes to disk.
     # Assert that the new bundle's path set does NOT contain any retired roots.
     # If a retired path leaked into the new manifest, fail loudly -- do not prune
-    # against a contaminated manifest (content-isolation cornerstone).
+    # against a contaminated manifest (authoring-conventions.md Content Isolation).
     local _retired_roots=(".agents/" ".cursor/rules/" ".agent/rules/")
     local _rr _leaked
     for _rr in "${_retired_roots[@]}"; do

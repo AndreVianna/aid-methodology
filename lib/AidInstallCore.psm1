@@ -1438,7 +1438,7 @@ function Invoke-PruneToolDirs {
 #   cursor:      .cursor\rules\               (rules dir retired)
 #   antigravity: .agent\rules\                (rules dir retired)
 #
-# Ownership markers applied (content-isolation.md rules 1+2):
+# Ownership markers applied (authoring-conventions.md Content Isolation, rules 1+2):
 #   Marker 1: filename starts with "aid-" (tool-native dir files)
 #   Marker 2: lives inside an "aid\" subtree
 #
@@ -1851,7 +1851,7 @@ function Install-AidTool {
     # Runs BEFORE Write-AidManifest so a contaminated bundle never writes to disk.
     # Assert that the new bundle's path set does NOT contain any retired roots.
     # If a retired path leaked into the new manifest, fail loudly -- do not prune
-    # against a contaminated manifest (content-isolation cornerstone).
+    # against a contaminated manifest (authoring-conventions.md Content Isolation).
     $retiredRoots = @('.agents/', '.cursor/rules/', '.agent/rules/')
     foreach ($rr in $retiredRoots) {
         foreach ($p in $installPaths) {

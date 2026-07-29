@@ -6,7 +6,7 @@
 {"dst": ".cursor/agents/aid-operator.md", "profile": "cursor", "sha256": "7adcc2805d42ecde636d435042473f03d1c020abf1201b9332714fd50112f0d8", "src": "canonical/agents/aid-operator/AGENT.md"}
 {"dst": ".cursor/agents/aid-orchestrator.md", "profile": "cursor", "sha256": "77cb74744186aa61376ae901dd07bcef28a490bce7a8f8a656867d17232e4e2c", "src": "canonical/agents/aid-orchestrator/AGENT.md"}
 {"dst": ".cursor/agents/aid-researcher.md", "profile": "cursor", "sha256": "d18fe14a3f24fbeccb52f8b200c45eadcd78ae860b1adfe71e9e993929035a20", "src": "canonical/agents/aid-researcher/AGENT.md"}
-{"dst": ".cursor/agents/aid-reviewer.md", "profile": "cursor", "sha256": "2edd117919d0a1e347b4de4d96aa57c39a72ac2da247fa2588a2562d33a212b0", "src": "canonical/agents/aid-reviewer/AGENT.md"}
+{"dst": ".cursor/agents/aid-reviewer.md", "profile": "cursor", "sha256": "951b71a84cc48ecfe89a87b877df9f9e1a7aa659422f1acf7fdd0426ba346198", "src": "canonical/agents/aid-reviewer/AGENT.md"}
 {"dst": ".cursor/agents/aid-tech-writer.md", "profile": "cursor", "sha256": "b37384f9bd9fd533db024be00dabaaa7db15edf1b313330518e719c6e4447ff7", "src": "canonical/agents/aid-tech-writer/AGENT.md"}
 {"dst": ".cursor/aid/scripts/config/read-setting.sh", "profile": "cursor", "sha256": "4f11714098f724dfe5d7923905550934c41253ff8add5bad46d4040f4e3decc9", "src": "canonical/scripts/config/read-setting.sh"}
 {"dst": ".cursor/aid/scripts/connectors/build-connectors-index.ps1", "profile": "cursor", "sha256": "5f1c2060c42217d7da1f7b1e52286e1f75732554866ce1a1191ec0177572a7e9", "src": "canonical/scripts/connectors/build-connectors-index.ps1"}
@@ -121,6 +121,15 @@
 {"dst": ".cursor/aid/templates/package.md", "profile": "cursor", "sha256": "d8bbbe4e1daa2cc548d3c0c544525ad3a7f827e568b94a3f815798973ce63044", "src": "canonical/templates/package.md"}
 {"dst": ".cursor/aid/templates/requirements.md", "profile": "cursor", "sha256": "cf78c05319ac958ade4cb707971bcae72168d37f2d30cd9a181215b65b63ab68", "src": "canonical/templates/requirements.md"}
 {"dst": ".cursor/aid/templates/requirements/requirements-template.md", "profile": "cursor", "sha256": "d2a8bc3ff89d929f0bb3b21485d7fac51143e7fd452f2ff7604d9928f79be959", "src": "canonical/templates/requirements/requirements-template.md"}
+{"dst": ".cursor/aid/templates/review-rubrics/INDEX.md", "profile": "cursor", "sha256": "f93e71145a290d95db7bb441181365c18823434fdf7dbe64820d2aa6ad2a3f82", "src": "canonical/templates/review-rubrics/INDEX.md"}
+{"dst": ".cursor/aid/templates/review-rubrics/aid.md", "profile": "cursor", "sha256": "cd87654a0955399b75a33fbce5cb1acca598ab735229c323c3669155fc3fbee9", "src": "canonical/templates/review-rubrics/aid.md"}
+{"dst": ".cursor/aid/templates/review-rubrics/definition.md", "profile": "cursor", "sha256": "ab4120f37d8e2603748c0cc8d19cf16398de945970b72940f4e0d391fdc53144", "src": "canonical/templates/review-rubrics/definition.md"}
+{"dst": ".cursor/aid/templates/review-rubrics/executable.md", "profile": "cursor", "sha256": "5b6fb9a4d8bb58c4fe361b70cb71ed9c73bc6088e591a69983a3fca626afe2bc", "src": "canonical/templates/review-rubrics/executable.md"}
+{"dst": ".cursor/aid/templates/review-rubrics/interface.md", "profile": "cursor", "sha256": "21b24c46ee2c909407f674aa164692a90521f30856fdf5e657a863b1edc73fdf", "src": "canonical/templates/review-rubrics/interface.md"}
+{"dst": ".cursor/aid/templates/review-rubrics/narrative.md", "profile": "cursor", "sha256": "d34cd375d5a7d1923e65c357d4c5042eda63f34e9f042565a56d056b3a0ca0d4", "src": "canonical/templates/review-rubrics/narrative.md"}
+{"dst": ".cursor/aid/templates/review-rubrics/presentation.md", "profile": "cursor", "sha256": "013ba6bdc3727fdbca3d633c38da9c2528345f43f129ccaa1046019995f041ea", "src": "canonical/templates/review-rubrics/presentation.md"}
+{"dst": ".cursor/aid/templates/review-rubrics/process.md", "profile": "cursor", "sha256": "35282d37ad827ba18e3925cd19ee71c0d5084c529b7c1aec2b6c180ef2f57f6e", "src": "canonical/templates/review-rubrics/process.md"}
+{"dst": ".cursor/aid/templates/review-rubrics/summary.md", "profile": "cursor", "sha256": "3a92e58a409dc8d5d2ba1de02dae2fb1a9e8c83fa57e8e55a32985be62c34aa2", "src": "canonical/templates/review-rubrics/summary.md"}
 {"dst": ".cursor/aid/templates/reviewer-dispatch.md", "profile": "cursor", "sha256": "c7742745f29f4c666c757ac0aa8e20fcea10e3e3e1022aec730ccbcc92c67ba7", "src": "canonical/templates/reviewer-dispatch.md"}
 {"dst": ".cursor/aid/templates/reviewer-ledger-schema.md", "profile": "cursor", "sha256": "84ab99f81a73d7edb7437ba95aa010863469a17b8baee2768e58f85613768251", "src": "canonical/templates/reviewer-ledger-schema.md"}
 {"dst": ".cursor/aid/templates/rough-time-hints.md", "profile": "cursor", "sha256": "ed9439c875b2ac558031333fe3372b7ba6edd8539ff065a73698efed0291ea9b", "src": "canonical/templates/rough-time-hints.md"}
