@@ -30,19 +30,39 @@ assert_file_contains "$ENGINE" '.aid/.temp/review-pending/shortcut-{work}-defn.m
 assert_file_contains "$ENGINE" '.aid/.temp/review-pending/shortcut-{work}-tasks.md' \
     "SEC02b Pass 2 ledger scope shortcut-{work}-tasks.md named"
 
-# SEC03: grade.sh drives the computation.
-assert_file_contains "$ENGINE" "grade.sh --explain <ledger-path>" \
-    "SEC03 GATE drives grade.sh --explain over the ledger"
+# SEC03/SEC04: grade.sh drives the computation, inside a REVIEW -> GRADE -> FIX loop with a 3-cycle
+# circuit breaker.
+#
+# These used to be asserted as literal strings in the engine. The review extraction moved the loop OUT
+# of the engine and into `/aid-deep-review`, so the engine no longer spells it -- it delegates. The
+# contract still has to hold, but it is now satisfied TRANSITIVELY: the engine must delegate, and the
+# delegate must carry the loop. Asserting the old literals in the engine would demand the engine keep a
+# copy of exactly what the extraction removed, which is the duplication the extraction existed to end.
+#
+# Same shape as the gap-gate suite, where a caller satisfies the gate either directly or by delegating.
+DEEP="${REPO_ROOT}/canonical/skills/aid-deep-review/SKILL.md"
 
-# SEC04: the REVIEW -> GRADE -> FIX loop + 3-cycle circuit breaker.
-assert_file_contains "$ENGINE" "The Generic REVIEW -> GRADE -> FIX loop" \
-    "SEC04a engine documents the Generic REVIEW -> GRADE -> FIX loop"
-assert_file_contains "$ENGINE" "Circuit breaker" \
-    "SEC04b1 loop names a Circuit breaker"
-assert_file_contains "$ENGINE" "has not improved across 3" \
-    "SEC04b2 circuit breaker keys off 3 cycles without improvement"
-assert_file_contains "$ENGINE" "consecutive cycles, STOP" \
-    "SEC04b3 circuit breaker STOPs after 3 consecutive non-improving cycles"
+if grep -q 'grade.sh --explain <ledger-path>' "$ENGINE" 2>/dev/null; then
+    assert_file_contains "$ENGINE" "grade.sh --explain <ledger-path>" \
+        "SEC03 GATE drives grade.sh --explain over the ledger (inline)"
+else
+    assert_file_contains "$ENGINE" "/aid-deep-review" \
+        "SEC03a engine delegates the gate to /aid-deep-review"
+    assert_file_contains "$DEEP" "grade.sh --explain" \
+        "SEC03b the delegate drives grade.sh --explain"
+fi
+
+if grep -q 'The Generic REVIEW -> GRADE -> FIX loop' "$ENGINE" 2>/dev/null; then
+    assert_file_contains "$ENGINE" "Circuit breaker" \
+        "SEC04 engine documents the loop and its circuit breaker (inline)"
+else
+    assert_file_contains "$ENGINE" "REVIEW -> GRADE -> FIX" \
+        "SEC04a engine still names the REVIEW -> GRADE -> FIX loop it delegates"
+    assert_file_contains "$DEEP" "Circuit breaker" \
+        "SEC04b the delegate names a Circuit breaker"
+    assert_file_contains "$DEEP" "3 cycles" \
+        "SEC04c the delegate's circuit breaker trips at 3 cycles"
+fi
 
 # SEC05: halt proof -- no branch, no execution, Paused-Awaiting-Input, Specified.
 assert_file_contains "$ENGINE" "no branch is created, no task executes" \

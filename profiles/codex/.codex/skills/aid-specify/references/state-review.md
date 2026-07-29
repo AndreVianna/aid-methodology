@@ -27,6 +27,17 @@ For each section in SPEC.md, run step 4 of the loop against current state:
 4. **Missing sections** — New conditional sections should now be activated?
 5. **Stale content** — Section contradicts what now exists?
 
+### Modality gate (before dispatching a review)
+
+```bash
+bash .codex/aid/scripts/kb/lint-modality.sh --file .aid/works/{work}/features/{feature}/SPEC.md
+```
+
+Exit 1 means an acceptance criterion in this SPEC carries no modality. **Fix it before dispatching**,
+because the reviewer cannot grade a finding against an untagged criterion — it would have to raise a
+criteria gap, which halts the review it just started. Paying a script here is cheaper than paying a
+dispatch and a user round trip there.
+
 ### Review
 
 CHAIN to `/aid-deep-review` with this manifest. It owns the dispatch, the ledger, the gap gate, the

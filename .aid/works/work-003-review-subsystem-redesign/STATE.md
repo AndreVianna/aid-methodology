@@ -159,6 +159,49 @@ _None yet._
 <!-- DERIVED -- union of per-delivery Q&A plus WORK-OWNER-AUTHORED entries below
      (work owner is the single writer for those). -->
 
+### Q15 -- Three defects found while executing delivery-013 (2026-07-29)
+
+- **Category:** Defect / process
+- **Impact:** Medium
+- **Status:** Resolved
+
+Delivery-013 itself was small (a modality lint, four template/skill edits, a back-fill), but running the
+full suite around it surfaced three separate problems. Recorded because two of them will recur.
+
+**1. The test suite is not hermetic with respect to `AID_WORK_DIR`. [HIGH]**
+`writeback-state.sh` resolves the work folder from `AID_WORK_DIR`. That variable was exported into the
+shell used to update this delivery's own task states; `tests/run-all.sh` inherited it, and every
+`writeback-state` test then wrote into **this work's real delivery folders** instead of its temp
+fixtures. It flipped `delivery-001/task-001` from `Done` back to `In Progress` and deleted its Quick
+Check Findings block, and it set `delivery-009/task-006` notes to the test's own literal
+`auto-resolved`. 47 of 143 suites failed as a result; the corrupted files were restored from git.
+
+The immediate cause was mine, but the underlying defect is the product's: **a test suite that mutates
+real project state when an ambient environment variable happens to be set is a hazard**, and the damage
+here was silent — it looked like unrelated test failures, not data loss. The tests should neutralise
+`AID_WORK_DIR` (and any sibling resolver input) rather than inherit it. **Not fixed here** — it belongs
+to whoever owns the test harness, and the fix is a one-line `unset` per suite plus a guard asserting the
+resolved path is under a temp root.
+
+**2. `test-shortcut-engine-contract.sh` was left red by delivery-012. [MEDIUM] -- fixed**
+Delivery-012 moved the REVIEW -> GRADE -> FIX loop and its 3-cycle circuit breaker out of
+`shortcut-engine.md` and into `/aid-deep-review`. The contract test still asserted the old literals in
+the engine, so it had been failing since that migration — five assertions, on a delivery graded A+.
+Fixed the same way delivery-008 handled the gap gate: the contract is now satisfied **transitively**,
+asserting that the engine delegates and that the delegate carries the loop. Demanding the literals stay
+in the engine would require it to keep a copy of exactly what the extraction removed.
+
+**3. The dogfood `.claude/` tree is a THIRD destination, and re-rendering does not update it. [HIGH] -- fixed**
+AID installs itself: `.claude/` at the repo root is an installed copy of `profiles/claude-code/.claude/`,
+held byte-identical by `test-dogfood-byte-identity.sh`. Editing `canonical/` and running the profile
+generator updates two of the three trees and silently leaves the dogfood copy stale — here it broke
+exactly the five files this delivery touched (748 other assertions still passed, which is what made the
+attribution unambiguous). Synced, and the suite returned to 753 pass / 0 fail.
+
+This is the mirror image of delivery-004's failure, where the repo root was edited and the canonical
+source was not. **Any delivery that edits `canonical/` must update all three trees**, and no current
+gate says so — worth a checklist line wherever the render step is documented.
+
 ### Q1 -- Review extraction: two skills, or one skill with a depth mode?
 
 - **Category:** Design-Decision / scope-shaping

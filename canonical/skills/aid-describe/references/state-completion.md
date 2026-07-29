@@ -4,7 +4,21 @@ All sections are Complete or N/A in STATE.md `## Interview State`; run quality c
 
 ### Step 1: Quality Check
 
-Before presenting for approval, verify:
+**Run the modality gate first — it is mechanical, so there is no reason to spend judgment on what a
+script settles:**
+
+```bash
+bash canonical/aid/scripts/kb/lint-modality.sh --file .aid/works/{work}/REQUIREMENTS.md
+```
+
+Exit 0 to continue. **Exit 1 means a requirement or acceptance criterion carries no modality — fix it
+here, before approval.** This is not a formatting nicety: the modality is the first thing the severity
+scale reads, so an untagged criterion makes every later finding against it ungradeable, and a reviewer
+who meets one must raise a criteria gap that blocks the grade and costs a round trip with the user.
+Ask which of MUST / SHOULD / COULD applies rather than guessing — guessing is what the field exists to
+prevent.
+
+Then verify by reading:
 - [ ] All "Must" requirements in §5 have acceptance criteria in §9
 - [ ] No contradictions between sections
 - [ ] Scope (§4) is consistent with Functional Requirements (§5)

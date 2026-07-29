@@ -244,22 +244,22 @@ These are existing invariants the design must respect, not preferences:
 
 ## 9. Acceptance Criteria
 
-| # | Criterion |
-|---|-----------|
-| AC-1 | Exactly one severity definition exists in the canonical tree. A grep for competing severity tables returns only pointers. |
-| AC-2 | The string "established best practice" no longer appears as a criterion source, and no shipped checklist contains an undefined quality term. |
-| AC-3 | Every finding produced by a deep review cites a rule from the rubric catalog. A finding with no rule reference is rejected. |
-| AC-4 | Reviewing an artifact whose standard is undefined produces a Type 2 gap and halts before grading -- it never produces an invented finding. |
-| AC-5 | Answering a gap with "no" records the decision durably; a re-run of the same review does not re-ask. |
-| AC-6 | A review interrupted at any point resumes without re-examining Examined units and without skipping Unexamined ones. |
-| AC-7 | A review killed mid-unit (involuntary) resumes correctly, re-examining only the interrupted unit. |
-| AC-8 | Changing a criterion invalidates and re-reviews exactly the affected units -- verifiable on a fixture. |
-| AC-9 | Adding coverage and gap rows to a ledger does not change the grade `grade.sh` computes for the same findings. |
-| AC-10 | The same gap raised twice halts with a loop flag without user intervention. |
-| AC-11 | A pipeline skill that previously carried its own review logic invokes the shared capability instead, and is measurably shorter. |
-| AC-12 | The full render produces identical review behavior on all five profiles. |
-| AC-13 | **The split is measurably cheaper on a normal artifact, not just on paper.** For a fixture artifact taken through one full gate passage, measure total dispatch count and FIX-cycle count. **Amended at delivery-001, 2026-07-28:** this criterion originally said the numbers come from *"the always-on `## Dispatch Log` / `## Calibration Log` telemetry"*. **They do not — that telemetry is not written.** Verified: across 49 sub-agent dispatches in this work's own pipeline, every one of those sections holds a header row and zero data rows, despite the templates describing them as "always-on, never optional". So **populating the Dispatch Log is a prerequisite of this criterion, not an input to it**, and the **per-dispatch tier is dropped from the measure** — it was never recorded and the weighting was never defined. Dispatch count and FIX cycles are counted identically before and after, so that comparison is valid and it catches the failure mode that matters: a split that adds dispatches without removing cycles. Pre-migration baseline and the nominated fixture (feature-005's Specify gate: 3 dispatches, 1 FIX cycle) are recorded in `deliveries/delivery-001/BASELINE-ac13.md`. Post-migration, the tier-weighted dispatch cost and the FIX-cycle count must both be **no greater** than the pre-migration baseline on the same artifact. The baseline is captured in feature-006's delivery D0, alongside AC-11's B and C metrics, and before any edit. **This is the acceptance criterion NFR-3 lacked** — a MUST about cost with nothing testing it. Without AC-13 the work can pass every other gate and still be a net cost increase, which would defeat the reason it was started. |
-| AC-14 | **A citation in a work artifact resolves.** Every `file:NNN` or "`file` lines NNN–MMM" reference points at an existing file with at least NNN lines, and every string presented as a quotation from a named file appears in that file. Verified by a lint over `REQUIREMENTS.md`, `SPEC.md`, `PLAN.md`, `BLUEPRINT.md` and task `DETAIL.md`, on fixtures that fail in both directions. |
+| # | Modality | Criterion |
+|---|----------|-----------|
+| AC-1 | MUST | Exactly one severity definition exists in the canonical tree. A grep for competing severity tables returns only pointers. |
+| AC-2 | MUST | The string "established best practice" no longer appears as a criterion source, and no shipped checklist contains an undefined quality term. |
+| AC-3 | MUST | Every finding produced by a deep review cites a rule from the rubric catalog. A finding with no rule reference is rejected. |
+| AC-4 | MUST | Reviewing an artifact whose standard is undefined produces a Type 2 gap and halts before grading -- it never produces an invented finding. |
+| AC-5 | MUST | Answering a gap with "no" records the decision durably; a re-run of the same review does not re-ask. |
+| AC-6 | MUST | A review interrupted at any point resumes without re-examining Examined units and without skipping Unexamined ones. |
+| AC-7 | MUST | A review killed mid-unit (involuntary) resumes correctly, re-examining only the interrupted unit. |
+| AC-8 | MUST | Changing a criterion invalidates and re-reviews exactly the affected units -- verifiable on a fixture. |
+| AC-9 | MUST | Adding coverage and gap rows to a ledger does not change the grade `grade.sh` computes for the same findings. |
+| AC-10 | MUST | The same gap raised twice halts with a loop flag without user intervention. |
+| AC-11 | SHOULD | A pipeline skill that previously carried its own review logic invokes the shared capability instead, and is measurably shorter. |
+| AC-12 | MUST | The full render produces identical review behavior on all five profiles. |
+| AC-13 | SHOULD | **The split is measurably cheaper on a normal artifact, not just on paper.** For a fixture artifact taken through one full gate passage, measure total dispatch count and FIX-cycle count. **Amended at delivery-001, 2026-07-28:** this criterion originally said the numbers come from *"the always-on `## Dispatch Log` / `## Calibration Log` telemetry"*. **They do not — that telemetry is not written.** Verified: across 49 sub-agent dispatches in this work's own pipeline, every one of those sections holds a header row and zero data rows, despite the templates describing them as "always-on, never optional". So **populating the Dispatch Log is a prerequisite of this criterion, not an input to it**, and the **per-dispatch tier is dropped from the measure** — it was never recorded and the weighting was never defined. Dispatch count and FIX cycles are counted identically before and after, so that comparison is valid and it catches the failure mode that matters: a split that adds dispatches without removing cycles. Pre-migration baseline and the nominated fixture (feature-005's Specify gate: 3 dispatches, 1 FIX cycle) are recorded in `deliveries/delivery-001/BASELINE-ac13.md`. Post-migration, the tier-weighted dispatch cost and the FIX-cycle count must both be **no greater** than the pre-migration baseline on the same artifact. The baseline is captured in feature-006's delivery D0, alongside AC-11's B and C metrics, and before any edit. **This is the acceptance criterion NFR-3 lacked** — a MUST about cost with nothing testing it. Without AC-13 the work can pass every other gate and still be a net cost increase, which would defeat the reason it was started. |
+| AC-14 | MUST | **A citation in a work artifact resolves.** Every `file:NNN` or "`file` lines NNN–MMM" reference points at an existing file with at least NNN lines, and every string presented as a quotation from a named file appears in that file. Verified by a lint over `REQUIREMENTS.md`, `SPEC.md`, `PLAN.md`, `BLUEPRINT.md` and task `DETAIL.md`, on fixtures that fail in both directions. |
 
 ## 10. Priority
 

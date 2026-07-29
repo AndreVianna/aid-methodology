@@ -60,7 +60,11 @@ template from `../../../templates/feature.md`. Fill in:
 - **Description:** synthesized from §5 in stakeholder language
 - **User Stories:** extracted or synthesized from REQUIREMENTS.md, using user types from §3
 - **Priority:** from §10 or context (Must / Should / Could)
-- **Acceptance Criteria:** from §9 mapped to this feature, or synthesized from §5
+- **Acceptance Criteria:** from §9 mapped to this feature, or synthesized from §5. **Carry each
+  criterion's `Modality` across with it** — a mapped criterion keeps the modality it had in §9, and a
+  criterion *synthesized* from §5 inherits the modality of the requirement it discharges. Do not default
+  to `MUST`: it is the first thing the severity scale reads, so flattening it here silently inflates the
+  severity of every future finding against that criterion.
 - **Technical Specification:** leave as template placeholder (added by /aid-specify)
 
 ## Step 5: Update Meta-Documents
