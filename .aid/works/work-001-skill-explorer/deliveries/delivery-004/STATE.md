@@ -108,6 +108,32 @@ predicates) were also confirmed killed.
 
 **Outcome:** Pass.
 
+### task-041 — Provenance verifier (P0–P6)
+
+Module is sound. `chart.skill` was checked against `model.mjs` and is a real `FlowChart`
+field, so messages name the skill rather than `undefined`. P1 correctly runs *before* P0 —
+P0 must read the file, which requires it to exist — and the developer documented that
+ordering rather than leaving it to be rediscovered. The separability table is genuine: each
+P*n* fixture is valid for P0..P*n-1*, and P5 is proven the hard way on a file whose line 2
+really is spaces, so P4 passes and only P5 fires.
+
+One coverage gap found and closed:
+
+1. The read-once criterion says each cited file is **read** once per run, but the test
+   counted `Map.set` calls. Those are different claims — a `readCached` that called
+   `readFileSync` *before* consulting the cache would still store exactly one entry while
+   reading the file six times (two nodes × P0/P3/P4), leaving the counter green. Added a
+   test that counts `readFileSync` itself via a `vi.doMock` passthrough on `node:fs`.
+
+Mutation-proved by hand-applying that exact defect (reorder `readCached` so the read
+precedes the cache check): the new test fails, and **the original `Map.set` counter passes**
+— confirming the gap was real and is now covered. The developer's own nine mutants (P0
+CRLF token, P1 canonical prefix and `..` segment, P2 lower bound, P3 comparison operator,
+P4 and P5 predicate polarity, cache-hit skip, and dropping P3 from the detail path) were
+reported killed.
+
+**Outcome:** Pass, with the read-once assertion strengthened.
+
 ---
 
 <!-- ============================================================
