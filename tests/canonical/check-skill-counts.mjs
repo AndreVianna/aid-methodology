@@ -214,6 +214,7 @@ const HISTORY_SHAPES = [
 const wrong = [];
 const marked = [];
 let history = 0;
+const historyLines = [];
 let checked = 0;
 
 for (const file of files) {
@@ -258,6 +259,15 @@ for (const file of files) {
   lines.forEach((line, i) => {
     if (HISTORY_SHAPES.some((re) => re.test(line))) {
       history++;
+      // Report the ones that actually CARRY a count, not just the count of skipped lines.
+      // The rule is evadable by construction (a live false claim formatted as a dated bullet
+      // is skipped), so the only defence is that every skip carrying a number is visible and
+      // auditable rather than folded into an aggregate.
+      for (const [re, , what] of CLAIMS) {
+        for (const m of line.matchAll(new RegExp(re.source, re.flags))) {
+          historyLines.push(`${rel}:${i + 1}  "${m[0]}"  (${what}, history-shaped line)`);
+        }
+      }
       return;
     }
     const isMarked = line.includes(MARKER);
@@ -297,6 +307,8 @@ console.log(`=== repo-wide skill-count guard ===`);
 console.log(`Files scanned : ${files.length}`);
 console.log(`Claims checked: ${checked}`);
 console.log(`History lines : ${history} (dated rows/bullets, skipped by shape)`);
+console.log(`  ...of which carry a count: ${historyLines.length}`);
+for (const h of historyLines) console.log(`  [shape-skip] ${h}`);
 console.log(`Marked history: ${marked.length}`);
 if (marked.length) for (const m of marked) console.log(`  [history] ${m}`);
 

@@ -1,5 +1,15 @@
 # Triage record — the whole `site/` vitest suite on a clean install
 
+
+> **§7 AMENDED — read before the §7 references below (2026-07-30, delivery-006).**
+> This document was authored while REQUIREMENTS §7 froze `gen-reference.mjs`. The **second
+> amendment to §7** (work-level Q4, at `REQUIREMENTS.md` § Constraints) lifted that freeze so
+> delivery-006 could **hollow out** `reference/skills.md` — shedding the duplicated roster and
+> keeping only the shortcut-engine narrative. Every "§7 freezes/forbids", "frozen generator" and
+> "terse family summary" statement below was TRUE WHEN WRITTEN and is kept as the design record;
+> none describes the repository today. The grouping divergence they reason about did not vanish
+> either — it moved from a competing PAGE to the curated roster, and is now derived (KI-010).
+
 **Task:** task-002 (RESEARCH) · **Delivery:** delivery-001 · **Work:** work-001-skill-explorer
 **Measured:** 2026-07-26, in the `work-001` worktree at
 `C:\Projects\Personal\AID\.claude\worktrees\work-001`, after `rm`-free clean `npm ci`.

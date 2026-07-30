@@ -22,7 +22,12 @@ and doing it earlier would have put a third concurrent editor on `astro.config.m
 
 Every quantity below was re-derived on 2026-07-29 before planning, not taken from the Q4 record.
 
-**The triple is 111 / 21 / 64** — 111 directories under `canonical/skills/`; 21 curated entries
+~~**The triple is 111 / 21 / 64**~~ — **amended 2026-07-30 (gate cycle 4): the decomposition
+that SUMS is 111 = 17 curated + 94 catalog** (itself 64 verb-first + 30 `repurpose`). The 21
+curated figure counts four skills that are ALSO catalog rows — `aid-deploy`, `aid-monitor`,
+`aid-query-kb` and the `aid-ask` alias — so pairing it with a catalog count double-counts
+them. That is the defect this delivery shipped onto the home page and then corrected.
+111 directories under `canonical/skills/`; 21 curated entries
 (19 classic + `/aid-triage` + `/aid-ask`); 64 emitting catalog rows. The generated
 `reference/skills.md` already renders these correctly at line 9, because it derives them at build
 time. So **KI-003 is stale comments, not stale output** — `gen-reference.mjs` lines 5–6, 147 and
@@ -51,7 +56,11 @@ table this delivery sheds, so KI-009 closes **by deletion** rather than by arith
       reintroduced. A wrong number is a red build, not a reader's discovery.
 - [ ] **The stale triple is corrected everywhere it appears** — `index.mdx` (4 sites, which
       absorbs delivery-001's escalation **E-1**), `reference/overview.md` line 16, and
-      `gen-reference.mjs`'s header comments (**KI-003**).
+      `gen-reference.mjs`'s header comments (**KI-003**). **Amended at gate cycle 4:** this
+      enumeration was incomplete in both directions — 55 stale counts were found repo-wide
+      across 15 files, most of them in `.aid/knowledge/`, because the guard was rooted at
+      `site/` and could not see them. "Everywhere it appears" is now enforced by
+      `tests/canonical/check-skill-counts.mjs` rather than by an enumeration in this document.
 - [ ] **Inbound links route readers to the better page.** The 8 hand-authored links into
       `/reference/skills/` (7 in `guides/pipeline.mdx`, 1 in `reference/overview.md`) point at
       `/skills/`, verified by grep over the built output as well as the source.

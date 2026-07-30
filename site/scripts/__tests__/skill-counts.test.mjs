@@ -197,9 +197,11 @@ describe('hand-authored pages state no superseded or unguarded claim', () => {
  * `N shortcut-catalog skills` — five more phrasings live on three of the pages it
  * already read, including `and 61 others`, a number delivery-006 itself wrote.
  *
- * So the vocabulary is the unit now, not the test. Adding a phrasing here extends
- * coverage to all seven pages at once, and `discovers no unguarded roster claim`
- * below fails on any digit-plus-roster-noun shape that is NOT in this list.
+ * So the vocabulary is the unit now, not the test. Adding a phrasing here extends coverage
+ * to all seven pages at once, and `discovers no unguarded roster claim` (above) builds its
+ * regex FROM this table -- so it flags a page stating any phrasing that IS in this list but
+ * is not on a guarded page. A phrasing nobody has added here is still invisible to it; the
+ * table is the coverage boundary, and that is a limit rather than a guarantee.
  */
 const CLAIM_PATTERNS = [
   { re: /\b(\d+) (?:AID )?skills\b/g, of: (c) => c.directories, what: 'corpus total' },
@@ -380,6 +382,8 @@ describe('the roster has one home', () => {
       "// page — individually they'd be 67 near-identical H3 blocks of pure noise.",
       '  // The 64 direct-entry shortcuts are rendered as an H3 family-summary table',
       'the home page promised 92 skills while the site shipped 111 cards.',
+      '  // 17 curated skills across four groups',            // `N curated`
+      'plus 26 collapse skills from work-005',                 // `N collapse skills`
     ];
     for (const text of regressions) {
       expect(

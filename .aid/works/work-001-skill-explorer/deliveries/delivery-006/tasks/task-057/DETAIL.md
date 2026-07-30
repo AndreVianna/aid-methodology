@@ -1,5 +1,7 @@
 # task-057: Hollow out `reference/skills.md` — keep the narrative, shed the roster (closes KI-009)
 
+
+
 [!NOTE]
 This is the TASK-LEVEL DETAIL.md for task-057. It is the IMMUTABLE DEFINITION for this task.
 Shape: 6 sections matching .claude/aid/templates/delivery-plans/task-template.md.

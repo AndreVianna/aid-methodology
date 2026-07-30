@@ -1,5 +1,7 @@
 # Requirements
 
+
+
 - **Name:** Skill Explorer
 - **Description:** A generated section of the product site that pairs every AID skill's frontmatter with a flow chart derived from its own instructions, so a reader can understand what a skill does step-by-step without reading its source.
 

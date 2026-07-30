@@ -1,12 +1,14 @@
 ---
 delivery_state: Gated
 gate_tier: Large
-gate_grade: "In progress — cycle 3"
+gate_grade: "In progress — cycle 4 fixes applied"
 gate_timestamp: "--"
 ticket_ref: "--"
 ---
 
 # Delivery State -- delivery-006
+
+
 
 > **Delivery:** delivery-006 — unify the two skill sections
 > **Work:** work-001-skill-explorer
@@ -25,7 +27,14 @@ ticket_ref: "--"
   `8e02d174` (054 derivation + guard) → `8eff0803` (055 correction) → `d2f0440c` (056 links) →
   `923431a4` (057 hollowing) → `21c0f0a3` + `52e65e90` (an out-of-delivery `writeback-state.sh`
   fix, and its propagation to `canonical/`) → `873677e6` (KI-009 closure + rollup) → the
-  head-gate fixture fix → `23017900` (gate cycle 1: the five `[HIGH]`s).
+  head-gate fixture fix → `23017900` (cycle 1's five `[HIGH]`s) → `cb1b84f1` + `65c677b1`
+  (cycle 1's MEDIUM/LOW/MINOR tail) → `74b46da7` (cycle 2: red CI + the count I introduced
+  while fixing counts) → `a6fad75d` (**root cause 1** — the guard was rooted at `site/`) →
+  `6c5de74a` (**root cause 2** — the superseded-freeze class) → `2fd7feeb` (**root cause 3**
+  — wrong-layer edits; plus KB coverage and KI persistence) → `24adf603` (cycle 3: two
+  falsified records reverted) → the LOW/MINOR tail → the render propagation → `3d58d967`
+  (the FIX contract, F1–F6) → `a4270dd2` (cycle 4, worked as classes).
+  The chain is listed in full because an omitted commit is how this row went stale twice.
 - **Commit order note.** 055's prose landed **before** 054, inverting the BLUEPRINT's declared
   dependency. Deliberate: 054 adds a guard asserting the pages 055 corrects, so landing 054 first
   leaves a commit whose own new test is red. The stated dependency is about where 055's *numbers*
@@ -72,7 +81,8 @@ ticket_ref: "--"
     with the fragment `<pre>` and a GitHub source link.
   - Console: the only two errors were CORS failures from the reviewer's own `fetch()` probe
     against a `github.com` URL — not page defects. No page-originated errors.
-- Still to do: clear the gate to A+ (cycle 2 verifying), work-level gate, PR.
+- Still to do: clear the gate to A+ (cycle 4 fixes applied; cycle 5 not yet dispatched),
+  work-level gate, PR.
 - **KI-022 (ELK layout) — remains DEFERRED**, per its own entry ("owner deferred the fix"). Not
   pulled into this delivery; carried forward as a known-open item and disclosed in the PR.
 

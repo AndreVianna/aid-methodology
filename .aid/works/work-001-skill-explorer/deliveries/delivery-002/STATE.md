@@ -8,6 +8,16 @@ ticket_ref: "--"
 
 # Delivery State -- delivery-002
 
+
+> **§7 AMENDED — read before the §7 references below (2026-07-30, delivery-006).**
+> This document was authored while REQUIREMENTS §7 froze `gen-reference.mjs`. The **second
+> amendment to §7** (work-level Q4, at `REQUIREMENTS.md` § Constraints) lifted that freeze so
+> delivery-006 could **hollow out** `reference/skills.md` — shedding the duplicated roster and
+> keeping only the shortcut-engine narrative. Every "§7 freezes/forbids", "frozen generator" and
+> "terse family summary" statement below was TRUE WHEN WRITTEN and is kept as the design record;
+> none describes the repository today. The grouping divergence they reason about did not vanish
+> either — it moved from a competing PAGE to the curated roster, and is now derived (KI-010).
+
 [!NOTE]
 This is the DELIVERY-LEVEL STATE.md. It is divided into three zones:
   FRONTMATTER (single writer = this delivery's branch, machine-parsed scalars) --

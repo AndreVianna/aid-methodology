@@ -8,8 +8,8 @@ see_also: [README.md, INDEX.md]
 owner: skill-self
 audience: [developer, architect]
 kb_status: Approved
-kb_grade: A+
-last_kb_review: 2026-07-09
+kb_grade: Pending
+last_kb_review: 2026-07-09  # KB edits of 2026-07-30 are unreviewed; see Review History
 summary_approved: yes
 last_summary: 2026-07-09
 ---
@@ -251,6 +251,7 @@ This is the single state file for the **Discovery area** — persistent project 
 | 4 | 2026-07-09 | A+ | hybrid:methodology-tooling+software-cli | none (retired) | .aid/dashboard/kb.html (679695 bytes, 4194 lines, 21 sections) | /aid-housekeep SUMMARY-DELTA: surgical refresh of the existing summary for the work-002 connectors subsystem + release drift — version 2.0.0->2.0.6, test count 82->105, new Connector Registry glossary card + integration-map connectors row + lede clause. Machine A+ 68/68; Human A+ 30/30 (V1 orchestrator visual gate via Playwright — light+dark + lightbox verified). |
 | 5 | 2026-07-16 | A+ | hybrid:methodology-tooling+software-cli | none (retired) | kb.html | /aid-housekeep SUMMARY-DELTA targeted count-patch (the skill's STALE-CHECK was DONE-IDEMPOTENT because the lighter manual KB count-fix did not advance the Review-History date, so no full GENERATE ran): synced the live skill/catalog counts in 5 kb.html spots (92 skills/76 shortcuts/80-row -> 108/64/94-row, 58 canonical + 36 aliases, 30 repurpose). Human V1 visual gate passed (orchestrator; rendered kb.html confirmed by the user). |
 | 6 | 2026-07-24 | A+ | hybrid:methodology-tooling+software-cli | none (retired) | kb.html (687715 bytes) | /aid-housekeep SUMMARY-DELTA targeted count-patch (STALE-CHECK would have been DONE-IDEMPOTENT — the KB-DELTA Q8 refresh did not advance the Review-History date, so no full GENERATE ran): synced kb.html to the Q8 KB refresh + accumulated staleness — canonical suite count 118->133 (4 spots incl. the "Total suites" stat card, staler at 105->133) and GitHub Actions workflows 4->5 (added coverage-parity.yml to the risk-table cell, the CI-workflows stat card + sub, and the workflow table row). Human V1 visual gate passed (user confirmed rendered kb.html: hero/glossary/pipeline-SVG + corrected 133-suite/5-workflow counts). |
+| 7 | 2026-07-30 | Pending | work-001 delivery-006 gate | Six primary docs revised outside a discover cycle: architecture, module-map, decisions, pipeline-contracts, test-landscape, tech-debt. Corrected live stale skill counts (55 found repo-wide across 15 files), reversed module-map's `site/ X canonical/` "key non-dependency" to the enforced build-time dependency work-001 created, added the five Skill Explorer module rows, and migrated work-001's 12 open known-issues into tech-debt as W1-1..W1-12 so they survive the work folder being pruned. Guarded going forward by `tests/canonical/check-skill-counts.mjs` (195 claims). `kb_grade` reset to Pending — these edits have had no KB review panel. |
 
 ## Calibration Log
 
