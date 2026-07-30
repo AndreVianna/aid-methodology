@@ -29,7 +29,7 @@ Map rather than leaving it stale (Step 5).
 
 **Cross-delivery dependency (task-014/f005):** ANALYZE loads
 `.aid/knowledge/INDEX.md` (f002 routing table) -- the same navigation table
-`aid-query-kb` and `aid-discover` use -- to locate the docs the instruction
+`aid-ask` and `aid-discover` use -- to locate the docs the instruction
 actually concerns.
 
 **Cross-delivery dependency (task-040/f007):** `kb-freshness-check.sh`

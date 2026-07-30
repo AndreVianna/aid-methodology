@@ -12,7 +12,6 @@ description: >
   date. A KB<->web contradiction is surfaced to you with its reason, never
   silently resolved. Produced by the aid-researcher agent and independently
   verified by aid-reviewer before you see it. Allocates a work-NNN folder.
-  /aid-investigate and /aid-spike are aliases.
 allowed-tools: Read, Glob, Grep, shell, Write, Edit, Agent
 argument-hint: "<question> -- an open technical question to investigate"
 ---
@@ -20,12 +19,11 @@ argument-hint: "<question> -- an open technical question to investigate"
 # Research (investigate now, resolve nothing)
 
 `/aid-research` investigates an open question **now** and returns a **curated, verified
-answer** -- the complete picture, presented clearly. It is `aid-query-kb`'s bigger
-sibling: where query-kb *retrieves an answer that already exists* in the project's
-knowledge (one read-only pass, no work folder), research *builds a new judgment* for a
-question the KB can't already answer -- with option evaluation, external context, an
-optional authorized spike, verification, and a human-facing presentation.
-`/aid-investigate` and `/aid-spike` are aliases.
+answer** -- the complete picture, presented clearly. It is `aid-ask`'s bigger
+sibling: where `aid-ask` *retrieves an answer that already exists* in the project's
+context (one read-only pass, no work folder), research *builds a new judgment* for a
+question the available context can't already answer -- with option evaluation, external
+context, an optional authorized spike, verification, and a human-facing presentation.
 
 - **Resolves nothing.** No "I recommend X." It lays out conclusions (+/-), conflicts, and
   gaps; the user decides.
@@ -135,7 +133,7 @@ gaps are first-class, never buried under positives.
 
 Offer the natural next steps as **printed suggestions**, each requiring the user to act:
 record an ADR (`/aid-document-decision` -> once landed, `/aid-create-document`), update the
-KB (`/aid-update-kb`), act on a conclusion (`/aid-create*` / `/aid-change*`), or comment on
+KB (`/aid-update-kb`), act on a conclusion (`/aid-create*` / `/aid-update*`), or comment on
 a source ticket (`/aid-update-ticket comment [<connector>:]<ticket-id> <text>`). Never
 auto-invoked; never a resolution.
 

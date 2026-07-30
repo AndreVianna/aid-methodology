@@ -107,7 +107,7 @@ conflicts with reasons, and gaps. Assert no resolution.
 ## State: HANDOFF  (optional; printed suggestions only)
 
 Printed suggestions the user may act on: make it recurring (`/aid-create-dashboard`), record
-a decision (`/aid-document-decision`), act on a conclusion (`/aid-create*` / `/aid-change*`),
+a decision (`/aid-document-decision`), act on a conclusion (`/aid-create*` / `/aid-update*`),
 or comment on a source ticket (`/aid-update-ticket comment [<connector>:]<ticket-id> <text>`).
 Never auto-invoked; never a resolution.
 

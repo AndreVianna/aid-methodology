@@ -94,7 +94,7 @@ the user decides whether/when to build it.
 
 ## State: HANDOFF  (optional; printed suggestions only)
 
-Printed suggestions: build it (`/aid-create*` / `/aid-change*`, referencing the design), or
+Printed suggestions: build it (`/aid-create*` / `/aid-update*`, referencing the design), or
 capture it as a formal doc (`/aid-create-document`). Never auto-invoked; never a resolution.
 
 **Advance:** DONE.
