@@ -162,8 +162,11 @@ discovered by `tests/run-all.sh`. A green local `run-all.sh` does not exercise i
 
 ## CI Lanes and Where They Run
 
-AID has five GitHub Actions workflows. Critically, the heavy correctness gates run on
-**master and release tags only** — feature branches get the installer matrix instead.
+AID has five GitHub Actions workflows. The **canonical** correctness gates (`test.yml`) run on
+`master` and release tags only, so a branch with no open PR gets the installer matrix instead.
+**`docs.yml` is the exception** — it also gates pull requests to `master`, and its `build` job
+runs the site vitest suite. Read the per-lane rows below rather than generalising from this
+sentence; the exception is the whole reason KI-007 was raised against an earlier version of it.
 
 | Workflow | Trigger | Jobs / gates | Runs on feature branches? |
 |---|---|---|---|
@@ -174,7 +177,8 @@ AID has five GitHub Actions workflows. Critically, the heavy correctness gates r
 | `.github/workflows/coverage-parity.yml` (Coverage Parity) | push + PR to `master`, path-filtered to `tests/**`; `workflow_dispatch` | Separate lane from `canonical-tests`: serially re-collects the executed-assertion inventory (~6-7 min) and diffs it against a committed baseline — advisory (warns, exits 0) until the baseline is bootstrapped, then enforces | No — master only (+ path filter) |
 
 CONFIRMED by the `on:` blocks of each workflow — re-verified 2026-07-30 against
-`.github/workflows/docs.yml`:10-28, which has no `release:` key.
+`.github/workflows/docs.yml`:10-29 (the whole `on:` block: `push`, `pull_request`,
+`workflow_dispatch`), which has no `release:` key.
 
 **Why this matters (gotcha).** The full canonical suite (test.yml) runs only on `master` and on
 release tags (release.yml `gate`). A branch that has **no open PR to master** sees only
@@ -185,9 +189,17 @@ only fail after merge. Run `bash tests/run-all.sh` (HOME-pinned) before claiming
 `pull_request` to `master` (delivery-001 of work-001 added the `npm test` step, closing KI-006),
 so the site vitest suite **and** the Astro build do validate every PR that touches `site/**`,
 `docs/**`, `canonical/**` or `VERSION`. Only the `deploy` job is master-only. Two consequences a
-maintainer needs: a **canonical-only** commit still rebuilds the site — the reference pages and
-skill-page anchors are derived from `canonical/` — and the site build is the lane that catches
-`canonical/` → `profiles/` render drift reaching the docs. See `tech-debt.md` Gotchas.
+maintainer needs: a **canonical-only** commit still rebuilds the site, because the reference pages
+and skill-page anchors are derived from `canonical/`; and the site suite is what catches a
+`canonical/` edit that breaks *generated site content* — a drifted skill roster, a stale count, a
+dangling deep-link anchor.
+
+**It does NOT catch `canonical/` → `profiles/` render drift.** That is a different gate in a
+different workflow: `test.yml`'s `render-drift` job, which re-runs
+`.claude/skills/generate-profile/scripts/run_generator.py` and asserts `git diff --exit-code --
+profiles/`. `site/` never reads `profiles/` at all, so the site build cannot observe that drift.
+Both facts matter and they are easy to conflate; see `tech-debt.md` § Gotchas, "Master-only heavy
+gates".
 
 **CI must not silently skip.** Both `test.yml` (`canonical-tests`) and `release.yml`
 (`gate`) assert `node` and `pwsh` are present and fail loudly if either is missing — because

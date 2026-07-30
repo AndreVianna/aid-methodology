@@ -64,7 +64,6 @@ frontmatter descriptions, but shows no skill's internal flow at all — and it d
 collapsed the direct-entry shortcuts into family summary tables rather than describing
 them individually. *(Past tense as of delivery-006: that family table is deleted — see
 § Constraints, §7's second amendment. The page keeps only the shortcut-engine narrative.)*
-individually.
 
 ## 3. Users & Stakeholders
 
@@ -186,7 +185,7 @@ option; confirm at read-back)*:
   it is separately corrected — an accepted, recorded inconsistency, logged as an observation for
   the existing page rather than fixed here.~~
   **Superseded 2026-07-30 by work-level Q4 / §7's second amendment, executed as delivery-006**
-  (same amendment that superseded §4:107-114). Two clauses of the struck text are now false and
+  (same amendment that superseded §4:109-116). Two clauses of the struck text are now false and
   one locator in the paragraph above it had moved:
   - The generator **was** modified: `gen-reference.mjs` no longer emits a roster or a family
     table, and `SKILL_GROUPS` was extracted out of it into

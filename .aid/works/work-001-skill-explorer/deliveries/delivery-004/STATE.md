@@ -151,7 +151,7 @@ a grep for `AC-7` across every delivery STATE.md found only unrelated hits. The 
 gate found that and performed the check. Recorded here, at the criterion's own delivery, rather
 than only at the gate that noticed.
 
-**AC-7 as specified** (`REQUIREMENTS.md`:363-366): *"A reader unfamiliar with a given skill can
+**AC-7 as specified** (`REQUIREMENTS.md`:383-386): *"A reader unfamiliar with a given skill can
 state its step order and exit points correctly from the chart alone. **Non-blocking** — a
 judgement check, not a CI gate — but recorded because it is the only criterion that tests the
 stated outcome directly."*

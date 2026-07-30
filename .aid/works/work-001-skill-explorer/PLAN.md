@@ -311,10 +311,22 @@ wave 4: task-053
   there is no arithmetic left to repair. Fixing the arithmetic and keeping the table was
   explicitly rejected as the wrong close.
 - **Why it is not a replan:** it removes duplicated output and adds no new capability, so nothing
-  in deliveries 001–005 depends on it and it touches no file they still own. Its own gate criteria
-  require the other three generated reference pages to be **byte-unchanged** and the 111 skill
-  detail pages plus sidecars to be **byte-unchanged**, which is the machine-checkable statement
-  that it cannot damage what shipped beneath it.
+  in deliveries 001–005 depends on it. Its gate criteria bound the blast radius with
+  byte-comparisons rather than argument — but read them in their **amended** form, not as
+  originally written. Both were amended at gate cycle 5 because the work falsified them, and
+  restating the original wording here would reintroduce exactly the superseded-claim defect this
+  delivery's own gate spent five cycles on:
+  - Of the other three generated reference pages, `agents.md` and `kb.md` are byte-unchanged;
+    **`settings.md` gained one row**, because the owner lowered `minimum_grade` to `B-` and that
+    page is generated FROM `.aid/settings.yml`. A data change flowing through an untouched code
+    path is the pipeline working, not drift.
+  - Of the 111 skill pages and their sidecars, **two artifacts legitimately changed** —
+    `skills/aid-execute.md` and `aid-execute.flow.json` — because `state-fix.md` grew from 34 to
+    122 lines when the FIX contract was added and the flow extractor deep-links a line RANGE into
+    it. The generator correctly re-emitted the range. No other page or sidecar changed, and the
+    change is reproducible by re-running the generator.
+
+  Amendment text: `deliveries/delivery-006/BLUEPRINT.md`:75-80 and :83-90.
 
 #### Execution Graph
 
@@ -329,11 +341,21 @@ wave 4: task-053
 |------------------------|
 | *(none — a strict serial chain)* |
 
-> **No parallelism at all**, which is unusual for this work and is a property of the subject
-> rather than an oversight: all four tasks edit the same two modules (`gen-reference.mjs` and the
-> roster/count derivation it reads), and three of them assert **byte-unchanged** output for pages
-> a sibling would be rewriting. Transcribed from each task's own `Depends on:` field, not inferred
-> from what could in principle overlap.
+> **No parallelism at all**, which is unusual for this work. The edges above are transcribed from
+> each task's own `Depends on:` field, not inferred from what could in principle overlap. The
+> reason for each link is a **shared file**, and each task states its own:
+> - **054 → 055:** task-054 extracts `SKILL_GROUPS` and the count derivation; task-055's prose
+>   corrections are checked against that derivation.
+> - **055 → 056:** `reference/overview.md` line 16 — task-055 rewrites that line's prose, task-056
+>   changes its link target, and task-056's Scope says so explicitly and requires task-055's
+>   corrected triple be preserved exactly (`tasks/task-056/DETAIL.md`:35-37).
+> - **056 → 057:** both edit `gen-reference.mjs`, and task-057 is the one that changes what it
+>   emits.
+>
+> Note that 055 and 056 are **content-only** — task-055 is "prose only … no generated file
+> touched" and task-056 edits `guides/pipeline.mdx` and `reference/overview.md`. Only 054 and 057
+> touch the generator. An earlier draft of this note claimed all four edit the same two modules;
+> those two tasks' own DETAILs contradict it.
 >
 > **task-054 extracts `SKILL_GROUPS`** out of `gen-reference.mjs` into
 > `site/scripts/skills/curated-roster.mjs`. It gates everything after it because the remaining
@@ -380,7 +402,7 @@ item had never been considered.
 | KI-009 (family table renders six `0` rows and `-1 typed forms`), KI-010 (stale `SKILL_GROUPS`), KI-003 (stale header comment) | All inside `gen-reference.mjs`, which §7 freezes. Fixing them is a different work. | ~~The §7 freeze lifts. At that point feature-002's divergence note should be **deleted**, not left to rot.~~ **SUPERSEDED 2026-07-30** — the trigger fired inside this work, not after it: §7's second amendment (work-level Q4) lifted the freeze, and **delivery-006** hollowed out `reference/skills.md`. KI-009 and KI-003 are **closed**; KI-010 stays open and is now tracked as `tech-debt.md` `W1-6`. The divergence note was **not** deleted, contrary to this row's instruction — measurement showed the competing grouping was never the reference *page* but the curated roster itself, which still exists, so the note was rebuilt as a **derived** disclosure instead (delivery-006 STATE.md Q5; `render-index.mjs § findGroupingDivergence`). |
 | KI-002 (KB structural-shape figures are stale) | A KB correction, not a product change. The live figures belong in delivery-003's `shapeCounts` manifest entry. | The KB update at ship — regenerate the row from the manifest or remove its numbers. **Still open**, carried as `tech-debt.md` `W1-2`. |
 | KI-007 (the KB's `docs.yml` trigger row is wrong in both directions) | KB correction. Delivery-001 makes it further wrong. | ~~The KB update accompanying delivery-001's ship.~~ **RESOLVED 2026-07-30 at the work-level final gate** — late, since delivery-001 shipped 2026-07-26 and this row named that as the trigger. Fixed as a class: the same wrong lane was found in `infrastructure.md` and `integration-map.md` as well as the cited `test-landscape.md`. |
-| AC-7 formalized into a repeatable review step | §10 Could; feature-005 wires it into nothing deliberately. | ~~A Fail or Pass-with-observations verdict at delivery-004's AC-7 spot-check.~~ **Trigger never fired, because the spot-check itself was never performed at delivery-004's gate** — found by the work-level final gate and performed there instead, against a clean-context reader. See § Deferred note below. |
+| AC-7 formalized into a repeatable review step | §10 Could; feature-005 wires it into nothing deliberately. | ~~A Fail or Pass-with-observations verdict at delivery-004's AC-7 spot-check.~~ **Trigger never fired, because the spot-check itself was never performed at delivery-004's gate** — found by the work-level final gate and performed there instead, against a clean-context reader barred from reading the repo. The verdict and method are recorded at `deliveries/delivery-004/STATE.md` § AC-7. |
 | feature-002 OQ-1 — do `aid-query-kb` / `aid-ask` stay in Knowledge Base Maintenance? | Default implemented (they stay), which leaves the `query` family rendering no section. Non-blocking. | Owner review of the rendered index at delivery-002's gate. Reversal is two names deleted from one array. |
 | feature-004 OQ-2 — `aid-ask`'s own `## Pre-flight` guard is not drawn | Accepted as a recorded warning; a rule tuned to one file is worse than the loss. | A second sibling-doorway skill acquires its own control-flow sections. |
 | feature-005 OQ-1 — the doorway fragment list repeats across most of the corpus | Default is render in full, per FR-6's standalone-page promise. Alternatives are each a one-line change. | Measured Pagefind index size or a search-quality complaint after delivery-004. |

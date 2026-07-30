@@ -211,8 +211,11 @@ in `release.sh` (the `home.html` lockstep comment names the other four). See `te
 
 A standalone Astro Starlight site under `site/` (separate build, own `package.json` /
 `node_modules` / `dist/`), deployed to **GitHub Pages at https://aid.casuloailabs.com**.
-`docs.yml` runs `npm ci && npm run build` (with a build-time fetch of `VERSION` + the GitHub
-Releases API for version injection) and deploys via `actions/deploy-pages`. It is decoupled
+`docs.yml`'s `build` job runs `npm ci` → **`npm test` (the site vitest suite)** → `npm run build`
+(with a build-time fetch of `VERSION` + the GitHub Releases API for version injection), then
+`deploy` publishes via `actions/deploy-pages`. The test step is the point, not a detail: it makes
+`docs.yml` the site's **pull-request gate**, since the same job runs on `pull_request` to
+`master`. It is decoupled
 from `release.yml`. Pages deploys only from `master` (push or manual `workflow_dispatch`) —
 the `github-pages` environment permits master-ref deploys only, so a tag/release ref is
 rejected; after a release, refresh release-bound content with a `workflow_dispatch` on master.

@@ -61,7 +61,46 @@ with ZERO tasks; the `_none yet_` rollup below is correct and expected for a new
      delivery's branch. Reviewer Tier / Grade / Timestamp live in the YAML frontmatter block
      at the top of this file (`gate_tier`, `gate_grade`, `gate_timestamp`). -->
 
-- **Issue List:** {inline severity-tagged list, or "none" if gate passed clean}
+- **Issue List:** transcribed below at the work-001 final gate, 2026-07-30. This block was left as
+  an unfilled template placeholder when the delivery closed, so its `gate_grade: A+` had no
+  findings record behind it in any tracked file. The ledgers lived only under `.aid/.temp/`, which
+  is **gitignored** — `git ls-files .aid/.temp` is empty — so they reach neither `master` nor a
+  fresh clone, and the work folder is prunable. Transcribed here because that is the tracked,
+  durable location.
+
+**Findings across all six ledgers for this delivery** (per-ledger tallies, by severity/status):
+
+| Ledger | CRITICAL | HIGH | MEDIUM | LOW | MINOR |
+|---|---|---|---|---|---|
+| wave-1 | 1 Pending | 3 Pending | — | — | — |
+| wave-3 | — | 1 Fixed | — | — | — |
+| wave-4 | — | — | — | — | — |
+| wave-5 | — | 3 Fixed | — | — | — |
+| checkpoint (task-016) | — | 2 Fixed | 4 Fixed | 1 Fixed, 1 Accepted, 4 Pending | 1 Fixed, 4 Pending |
+| gate | — | 3 Fixed | 2 Fixed | 6 Pending | 2 Fixed, 5 Pending |
+
+The wave-1 CRITICAL and its three HIGHs are recorded `Pending` in that wave's own ledger and were
+closed in later waves without the earlier ledger being updated — the "mark from the artifact, not
+from intent" problem, visible here as a stale file rather than a wrong fix.
+
+**The most consequential finding of this delivery's gate, recorded because it shaped later
+process:** a systematic tracking-discipline failure across **14 of 14 tasks** — every task
+STATE.md moved `Pending` → `Done` in a single write with no `In Progress` and no `In Review`, the
+exact failure mode CLAUDE.md names verbatim; `## Quick Check Findings` was an unfilled template
+stub in all 14, carrying literal placeholder rows asserting a `[CRITICAL]` and a `[HIGH]` for every
+task; and `## Dispatch Log` was empty in all 14 against a template calling it "always-on, never
+optional". All three were fixed at cycle 2. The owner accepted the audit-trail limitation that
+transitions were written to disk live but committed per wave, so only the endpoint survives in
+history — a disclosed limitation, not a fabricated record.
+
+⚠️ **Unreconciled, and flagged for the owner rather than silently resolved:** this gate's own
+ledger closes with **6 LOW + 5 MINOR still `Pending`**. Under the rubric in force at the time
+(`A+` = zero issues at any severity) that is not A+; >5 lows grades **B-**. Either those rows were
+fixed and never marked, or the delivery closed above its bar. The final gate did not re-adjudicate
+a delivery that shipped three deliveries ago — it records the discrepancy so it is visible. Four of
+the eleven were still live when re-checked at the final gate; the one with consequences beyond
+this work folder (a test writing a scratch page into the tracked content collection) is now carried
+as `tech-debt.md` `W1-17`.
 
 ---
 

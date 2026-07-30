@@ -223,7 +223,7 @@
   no `release:` key), names the `npm test` step, and answers the feature-branch column with the
   distinction that actually holds — the test+build job gates every PR, only `deploy` is
   master-only. The "CONFIRMED by the `on:` blocks" claim was re-verified against
-  `.github/workflows/docs.yml`:10-28 and dated.
+  `.github/workflows/docs.yml`:10-29 (the whole `on:` block) and dated.
   **Fixed as a class, not as the cited line.** Grepping the signature found the same wrong lane in
   two more KB docs the ledger did not cite — `infrastructure.md`'s release/deploy row and
   `integration-map.md`'s trigger row — both corrected in the same pass. The corresponding

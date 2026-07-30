@@ -72,8 +72,11 @@ in-flight `work-003-state-schema` frontmatter conventions.
 
 - **Reviewer Tier:** Small (quick check always uses Small tier)
 - **Findings:**
-  - [CRITICAL] {description} -- {source-file:line} -- Fixed-on-spot
-  - [HIGH] {description} -- {source-file:line} -- Deferred-to-gate
+  - _None recorded._ The quick check for this task raised nothing that was tracked here;
+    the `review:` frontmatter scalar is `--`. Written at the work-001 final gate, which found
+    this block still carrying the unfilled template stub -- two literal placeholder rows that
+    ASSERTED a [CRITICAL] and a [HIGH] for this task. Absence of a finding is now recorded as
+    absence, rather than as two fabricated findings.
 
 ---
 

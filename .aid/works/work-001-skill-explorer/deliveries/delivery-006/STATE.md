@@ -265,9 +265,19 @@ ticket_ref: "--"
      legitimate reason to fix it here and an illegitimate reason to leave it untraced.
   2. **It was also authored at the wrong layer first** — `21c0f0a3` edited only the `.claude/`
      dogfood render; `52e65e90` back-propagated to `canonical/`. That is a recurrence of this
-     delivery's cycle-1 CRITICAL class, self-corrected on-branch. All nine copies are now
-     byte-identical and all five manifests sha-consistent. It is the concrete case that motivated
-     the provenance banner now carried at the top of the canonical file.
+     delivery's cycle-1 CRITICAL class, self-corrected on-branch. **Eight** copies are now
+     byte-identical — `canonical/`, `.claude/`, `.cursor/` and the five `profiles/*` renders — and
+     the canonical sha256 appears once in each of the five `profiles/*/emission-manifest.jsonl`.
+     ⚠️ A **ninth** `writeback-state.sh` exists in the tree and must **NOT** match:
+     `dashboard/scripts/writeback-state.sh` is a **deliberate fork, not a render**. Its own header
+     says so and says why — it additionally accepts `Deploy` as a Phase value, and "overwriting it
+     from `canonical/` silently removes that, and **NO TEST WOULD CATCH IT**". An earlier version
+     of this entry read "all nine copies are now byte-identical", which is precisely the belief
+     that leads someone to resync the fork and break it silently. Corrected at the work-level final
+     gate after a reviewer measured the hashes: one hash across the eight renders, a different one
+     for the fork.
+     This is the concrete case that motivated the provenance banner now carried at the top of the
+     canonical file.
   3. **The regression is now guarded.** `tests/canonical/test-writeback-state.sh` **Unit 24** was
      added at the final gate. The gap was real and total: the suite exports
      `AID_DELIVERY_ISSUES_DIR` file-wide, so no other unit can reach that branch, and

@@ -97,15 +97,15 @@ with ZERO tasks; the `_none yet_` rollup below is correct and expected for a new
      The work-level ## Cross-phase Q&A is a DERIVED union of all delivery Q&A sections plus any
      work-owner-authored work-level entries. -->
 
-### Q{N}
+_None. delivery-003 raised no cross-phase question._
 
-- **Category:** {category, e.g., Architecture, Requirements, Security}
-- **Impact:** High | Medium | Low | Required
-- **State:** Pending | Answered | Skipped
-- **Context:** {why this matters; what the downstream phase observed}
-- **Suggested:** {answer if inferrable, or --}
-- **Answer:** {filled when State is Answered}
-- **Applied to:** {artifact(s) the answer was applied to}
+<!-- The unfilled `### Q{N}` template stub that stood here was removed at the work-001 final
+     gate. It mattered because the work-level § Cross-phase Q&A is a DERIVED read-only union of
+     these sections, so a dashboard unioned the stub in as a Q&A entry whose Category read
+     "{category, e.g., Architecture, Requirements, Security}". This delivery's own gate closed
+     the identical class in eleven task files -- "a delivery should not close on placeholder
+     records" -- while leaving one in its own state file. A grep for template braces across the
+     work folder now returns only delivery-002's disclosed gate-block line. -->
 
 ---
 

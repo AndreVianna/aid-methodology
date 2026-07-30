@@ -107,6 +107,16 @@ step is a PR to `master`.
 (`http://localhost:4321/skills/aid-describe/`, a 5-node authored chart). Real browser, real
 build — not jsdom, which is exactly why task-053 deferred these four rather than asserting them.
 
+⚠️ **Coverage limit, stated for checks 1 and 2 as explicitly as for 3 and 4.** All four checks were
+performed on **one page**, carrying an **authored inline-state** chart. The verdicts below are
+therefore evidence about that chart shape, and the generalising language in checks 1 and 2 should
+be read within that bound. Not observed: a **doorway/engine** chart (64 pages, a much larger node
+set from the other chart provider) or a **kind-sibling** chart (13 pages, where feature-004 splices
+a parent chart in whole, so declaration order is not self-evidently step order). The panel
+controller mounts on all 111 pages — `shouldMount` at `site/src/lib/skill-node-panel.ts`:81-88
+matches every one — so those shapes are in scope for it and simply were not sampled. Extending the
+sample is one further browser pass, not a redesign.
+
 | # | Check | Verdict | Evidence |
 |---|-------|---------|----------|
 | 1 | Focus order | **PASS** | All 5 `g.node.aidNode` are decorated `role=button tabindex=0`. Tab from node 1 lands on 2, then 3, 4, 5 — tab order equals document order equals the chart's step order (`aria-label`s read "Step 1…" → "Step 5…"). **Also settles the question task-053 could not:** an SVG `<g>` carrying `tabindex` *is* focusable in Chromium — `nodes[0].focus()` sets `document.activeElement` to that `<g>`. jsdom's focusable-area model could not answer this, which is why the suite asserts attributes instead. |

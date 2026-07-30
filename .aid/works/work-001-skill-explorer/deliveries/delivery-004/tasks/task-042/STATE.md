@@ -72,8 +72,10 @@ in-flight `work-003-state-schema` frontmatter conventions.
 
 - **Reviewer Tier:** Small (quick check always uses Small tier)
 - **Findings:**
-  - [CRITICAL] {description} -- {source-file:line} -- Fixed-on-spot
-  - [HIGH] {description} -- {source-file:line} -- Deferred-to-gate
+  - Recorded outcome: **SPEC-aligned (7 format divergences fixed 2026-07-29)**. Detail lives in this delivery's gate block, not here.
+    Written at the work-001 final gate, which found this block still carrying the unfilled
+    template stub -- two literal placeholder rows that ASSERTED a [CRITICAL] and a [HIGH] for
+    this task. Transcribed from this file's own `review:` scalar.
 
 ---
 

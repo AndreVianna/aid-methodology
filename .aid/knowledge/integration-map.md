@@ -128,9 +128,11 @@ CONFIRMED: `docs/aid-methodology.md` ("Offline / air-gapped environments");
 | `release.yml` (Release) | push tag `v*`, dispatch | builds artifacts and cuts the GitHub Release |
 | `coverage-parity.yml` (Coverage Parity) | push/PR to `master` under `tests/**`, dispatch | advisory executed-assertion coverage-regression gate (`tests/coverage-parity.sh`), separate serial lane from `test.yml`'s canonical suites |
 
-CONFIRMED by the `on:` blocks of each file under `.github/workflows/`. Note: the heavy gates
-(canonical suites, Astro build) run only on `master`; feature branches skip them — see project
-memory on `master`-only CI.
+CONFIRMED by the `on:` blocks of each file under `.github/workflows/`. Note: the **canonical
+suites** (`test.yml`) run only on `master` and release tags, so a branch with no open PR skips
+them. The **Astro build is not in that set** — `docs.yml` triggers on `pull_request` to `master`
+too and its `build` job runs the site vitest suite plus the build, so a PR touching `site/`,
+`docs/`, `canonical/` or `VERSION` is gated on it; only `deploy` is master-only.
 
 ---
 
