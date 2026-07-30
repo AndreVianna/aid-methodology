@@ -1,4 +1,25 @@
 #!/usr/bin/env bash
+#
+# ============================================================================
+#  THIS FILE IS THE SOURCE. NINE COPIES OF IT EXIST -- EDIT NONE OF THEM.
+#
+#  canonical/aid/scripts/execute/writeback-state.sh   <- you are here (edit this)
+#  profiles/{claude-code,codex,cursor,copilot-cli,antigravity}/.../writeback-state.sh
+#  .claude/aid/scripts/execute/writeback-state.sh     (dogfood render)
+#  .cursor/aid/scripts/execute/writeback-state.sh     (dogfood render)
+#  dashboard/scripts/writeback-state.sh               (deliberate FORK: also accepts
+#                                                      `Deploy` as a Phase value)
+#
+#  After editing: run the profile generator, then resync the dogfood trees.
+#  `tests/canonical/test-dogfood-byte-identity.sh` fails if you skip that.
+#
+#  This banner exists because the mistake was made: a fix landed in the .claude/
+#  render only, which turned repo CI red and would have been erased by the next
+#  render, reaching no adopter. The invariant was already documented
+#  (architecture.md: "Editing a rendered or vendored copy is a defect") -- what was
+#  missing was the file saying so at the moment someone opens it.
+# ============================================================================
+#
 # writeback-state.sh -- row-level write coordination for FR6 parallel pool
 # x per-unit STATE writes in AID aid-execute.
 #

@@ -67,6 +67,36 @@ flows; Medium = growing cost, becomes high if unaddressed in 1-2 cycles; Low = k
 urgent.
 
 ---
+| **W1-1** | Third-party integration bug | `astro-mermaid` never forwards the site's custom `themeVariables` to `mermaid.initialize` — it destructures only `{theme, autoTheme, mermaidConfig, iconPacks, enableLog}`, so the configured dark palette is inert and every diagram renders with the stock theme. Fix is to nest the palette under `mermaidConfig`. Mitigated, not resolved: generated charts emit a self-contained `classDef` block, so they are legible either way. | `site/astro.config.mjs`:30-47 vs `astro-mermaid-integration.js`:229-235 | Low | S | P3 |
+| **W1-2** | Stale KB facts | `module-map.md` § Skill Structural Shapes carries per-shape population figures that no measurement supports ("roughly 94 of the 111"). Two independent scans agreed on the inline-state population but differed on the doorway/residual split. The live figures belong in the generator's `shapeCounts` manifest entry, not in prose — the row should be regenerated from it or lose its numbers. | `.aid/knowledge/module-map.md` § Skill Structural Shapes | Low | S | P3 |
+| **W1-3** | Graceful-degradation gap | Client-side mermaid rendering means a reader without JavaScript sees raw `flowchart TB …` source inside an animated placeholder. Accepted at design time (the below-chart ordered list is static markdown and carries the same information), but it now affects all 111 skill detail pages rather than 4. | `astro-mermaid-integration.js`:64, 316-318 | Low | M | P3 |
+| **W1-4** | Wrong KB fact | `test-landscape.md`'s CI-lane row for `docs.yml` is wrong in three ways: it omits the `canonical/**` path filter, keeps a `release: published` trigger that does not exist, and says "master only" when `pull_request` is the trigger delivery-001 turned into the site's test gate — then claims "CONFIRMED by the `on:` blocks". A maintainer reading it gets the CI model wrong. | `.aid/knowledge/test-landscape.md`:171-174 | **Medium** | S | **P2** |
+| **W1-5** | Extractor gap | The `X (optional) then Y` advance form is not split by the flow extractor, so a state carrying it renders one edge where two are meant. | `site/scripts/lib/flow-graph/advance.mjs` | Low | S | P3 |
+| **W1-6** | Stale curated roster | `SKILL_GROUPS` files `aid-triage` under *Definition* where FR-5 puts it in *Support*. No longer rendered anywhere, but still read by the corpus drift guard, by `skill-counts.mjs`'s `curatedOnly`, and by the derived grouping-divergence note on `/skills/` — so correcting it is a real change with real consequences, deliberately not folded into delivery-006. | `site/scripts/skills/curated-roster.mjs` | Low | S | P3 |
+| **W1-7** | Misleading signal | `data-processed` on a mermaid container means "render attempted", not "SVG present" — an error `<div>` also carries it. Consumers must check for an actual `<svg>`. | `astro-mermaid-integration.js` | Low | S | P3 |
+| **W1-8** | Missing re-entrancy guard | `initMermaid()` has no re-entrancy guard, so rapid theme toggling can interleave two render passes over the same container. | `astro-mermaid-integration.js` | Low | S | P3 |
+| **W1-9** | Contradictory templates | The two task templates disagree with each other, and one claims a conformance property it does not enforce. | `canonical/aid/templates/delivery-plans/` | Low | S | P3 |
+| **W1-10** | Environment trap (Windows) | Worktrees for this repo must be created with **Windows git**, never WSL git — a WSL-created worktree produces paths the Windows toolchain cannot resolve, and the failure is confusing rather than immediate. | process / dev environment | **Medium** | — (documented) | **P2** |
+| **W1-11** | Third-party integration bug | `astro-mermaid` re-renders from its own output on theme change, so a second render can consume already-rendered SVG rather than the source. | `astro-mermaid-integration.js` | Low | M | P3 |
+| **W1-12** | Cross-work collision | work-004 shrinks the skill corpus 111 → 74 and also renames skills. Every count guarded by `tests/canonical/check-skill-counts.mjs` derives automatically, but hand-written *names* and any prose enumerating skills will need reconciliation when that work lands. | repo-wide | **Medium** | M | **P2** |
+| **W1-13** | Flaky test | `gen-skills-index.test.mjs`'s `index.md` byte-identity assertion is intermittent in full-suite runs only (passes in isolation and in pair runs). Root cause was traced to a 5s test budget and the budget was raised; retained here because the underlying hypothesis (an external watcher touching the tree mid-run) was never disproven. | `site/scripts/__tests__/gen-skills-index.test.mjs` | Low | S | P3 |
+| **W1-14** | Incomplete widening | `CHARTABLE_SHAPES` was never widened when the doorway shapes were added, so some doorway skills fall back to a less specific chart shape than they could use. | `site/scripts/lib/flow-graph/` | Low | S | P3 |
+| **W1-15** | Intermittent rendering defect | ELK layout is intermittently not applied — diagrams fall back to dagre routing, producing the curved, overlapping edges the owner explicitly rejected at the delivery-003 UI checkpoint. `layout: 'elk'` is present and the loader registers; two hypotheses remain live and untested. **Owner-deferred**, shipped open and disclosed. | `site/astro.config.mjs`:47 + `@mermaid-js/layout-elk` | **Medium** | M | **P2** |
+
+### work-001 (Skill Explorer) — issues that outlive the work folder
+
+work-001 recorded 22 known issues in `.aid/works/work-001-skill-explorer/known-issues.md`.
+Seven closed during the work. The **fifteen still open** are listed above as `W1-1`..`W1-15`
+because of the project's own rule that **work folders are transient**: `.aid/works/work-NNN-*/`
+may be pruned once a work ships, and no permanent artifact may depend on it. Left only there,
+these fifteen would have been deleted along with the folder — including two Medium-priority
+traps (`W1-4`, a KB row that teaches the wrong CI model; `W1-10`, a Windows worktree trap that
+costs an afternoon) and the one item the owner explicitly deferred rather than resolved
+(`W1-15`).
+
+They are restated here in full rather than cross-referenced, for the same reason: a pointer
+into a folder that is allowed to disappear is not a record. The work folder keeps the fuller
+investigation notes for as long as it exists; this inventory is what survives it.
 
 ## Detailed Debt Items
 
