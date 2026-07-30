@@ -312,12 +312,15 @@ Print:
 
 ---
 
-### Branch C — Below-minimum grade / V1 fail / declined (`**Summary Stage:** stalled`)
+### Branch C — Below-minimum grade / unanswered checklist / declined (`**Summary Stage:** stalled`)
 
 **Detection:** `/aid-summarize` returned without producing a fresh
 `**User Approved:** yes` for this run. This covers:
-- Machine or Human grade below minimum (e.g. diagram parse failure → auto-F on
-  D1; V1 human-visual fail → Human Grade forced F).
+- The grade came in below minimum — one grade, from `grade.sh` over the ledger. A failing
+  human visual check is a `SUMMARY-06` finding at `[HIGH]` and lands here like any other.
+- **The human checklist was never answered**, so no grade was produced at all. This is a
+  distinct stall from a failing grade and must not be recorded as one: it is a pause waiting
+  on a human, not a quality verdict. `<stall-reason>` should say so.
 - User answered "no" or "changes-needed" at `/aid-summarize`'s APPROVAL prompt.
 - `/aid-summarize`'s preflight failed (KB not approved — implies C1 guard
   above was somehow bypassed; the delegated preflight is a second safety net).

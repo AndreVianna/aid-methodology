@@ -1,8 +1,8 @@
 ---
-state: Pending
+state: Done
 review: "Pending"
 elapsed: "--"
-notes: "--"
+notes: 'Two-grade model removed over a derived sweep (9 files); only retirement-explaining passages remain. state-validate.md severity table realigned to the catalog (L1/L2/H1 were [HIGH], catalog says [LOW]/[MEDIUM]/[MEDIUM]). D1/D2 pass-criteria deleted; pool vocabulary gone from state-fix.md. Historical two-grade values in .aid/knowledge/STATE.md left as history per AC-2. 1 [HIGH] quick-check finding (frontmatter description), fixed. Two pre-existing defects recorded, not fixed: validate-visuals.mjs never invoked; 11 SKILL.md dead links.'
 ticket_ref: "--"
 ---
 
@@ -33,13 +33,10 @@ ticket_ref: "--"
 
 ## Quick Check Findings
 
-<!-- AUTHORED -- written during the per-task quick-check step of aid-execute. Records the reviewer
-     tier and all [HIGH] and [CRITICAL] findings. [CRITICAL] triggers fix-on-spot; [HIGH] defers to
-     the delivery gate. No grade is recorded here -- grading is per-delivery. -->
-
 - **Reviewer Tier:** Small (quick check always uses Small tier)
-- **Findings:** _none yet_
-
+- **Findings:**
+  - [HIGH] The skill's own frontmatter `description:` still declared "Two-grade quality gate (Machine + Human) ... APPROVAL requires BOTH grades >= minimum", contradicting its own body eight lines later and, being the description, the single most visible surface of all -- it is what the skill catalogue renders. My derived sweep missed it because I dropped `two-grade` from the final pattern after using it in the first pass -- canonical/skills/aid-summarize/SKILL.md:9-10 -- Fixed-on-spot (rewritten to the one-backend model; the sweep was re-run with the complete pattern and every remaining hit is a passage explaining the retirement). The same edit also removed a duplicated "fact fact-grounding" left by the prior session.
+- **Method note (why the miss matters more than the line):** a derived file set is only as good as the pattern that derives it. The corrected sweep pattern is recorded in the task-006 requirements so the assertion outlives this task.
 ---
 
 ## Dispatch Log

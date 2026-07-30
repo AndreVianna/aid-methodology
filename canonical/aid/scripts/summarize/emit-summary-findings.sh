@@ -6,8 +6,13 @@
 #
 # WHY THE SECOND GRADER WAS RETIRED
 # AID had two grading models. `grade.sh` derives a letter from the worst finding severity and a count.
-# This script derived one from a weighted percentage ladder over sixteen checks. They disagreed by
-# construction:
+# This script derived one from a weighted percentage ladder: 14 scored checks worth 68 points, plus a
+# 30-point manual pool, plus 4 more checks (T1/T2/T3/NM) that carried zero weight and "blocked DONE" in
+# prose only. The 14-and-68 are derived rather than asserted -- against the retired file:
+#   git show 7a9df485:canonical/aid/scripts/summarize/grade-summary.sh \
+#     | awk '/^declare -A WEIGHTS=\(/,/^\)/' | grep -oE '\[[A-Z0-9]+\]=[0-9]+' \
+#     | awk -F= '{s+=$2} END {print NR, s}'
+# They disagreed by construction:
 #
 #   * different alphabets -- the ladder knew 11 grades (A+ A A- B+ B B- C+ C C- D F) and grade.sh knows
 #     16. `D+`, `D-`, `E+`, `E`, `E-` could not be produced here at all, so the same artifact could not

@@ -96,6 +96,65 @@ task's declared scope):
 | 14 | `review-rubrics/summary.md` mapping table | Omits `T1`, `T2`, `T3` and `NM` while claiming "Every check it scored is accounted for here". `T1`/`T2` appear only inside the `V1` row's note; `T3` and `NM` appear nowhere. `MP02` asserts 17 checks, so it cannot see the gap | task-004 (it owns the visual-gate split) |
 | 15 | `review-rubrics/summary.md` Change Log | Says "Seven content-truth rules"; the file defines **nine** (`SUMMARY-01`…`09`) | task-004 |
 
+### Two pre-existing defects the sweep turned up — recorded, deliberately NOT fixed here
+
+Both were found by task-005's derived sweep, both predate this delivery, and neither is in its scope
+(`## Scope` names the grading backend). Recorded with the evidence and the fix so the decision to
+defer is visible rather than silent.
+
+**A. `validate-visuals.mjs` has never been invoked by anything. [HIGH]**
+
+Six surfaces describe the §7 visual-fidelity gate (T1/T2/T3) as part of VALIDATE, and
+`state-validate.md` listed it as check **1 of 3** that `emit-summary-findings.sh` "orchestrates".
+Nothing invokes it:
+
+```bash
+grep -rn validate-visuals canonical/ --include=*.sh --include=*.mjs   # only its own file
+```
+
+`emit-summary-findings.sh` runs `validate-html-output.sh` and `contrast-check.mjs`, and does the
+coverage and retired-runtime checks inline. **The retired `grade-summary.sh` invoked the same two**
+(`git show 7a9df485:...grade-summary.sh | grep -E '\.mjs|bash '`), so this delivery neither caused it
+nor reduced coverage — the delivery gate criterion *"reduces no assertion"* holds. It is the same
+false-wiring class this work already found twice: feature-007's frontmatter lint, and feature-008's
+`quality-gates.md` claim that the citation lint runs in CI.
+
+It also falsifies feature-007 SPEC §1c, which says the retained script *"Keeps: ... the four
+validator invocations"*. There were **two**.
+
+*Done here:* every surface now says the validator is available but not invoked, points at the manual
+invocation, and names the mandatory human visual check as the live safeguard — which is the fallback
+already specified for a host without Playwright. *Not done here:* wiring it. That is a behaviour
+change, needs Playwright plus a real `kb.html` to test, and belongs to whoever owns the visual gate.
+
+**B. 11 canonical `SKILL.md` files carry a dead relative link, and it ships. [MEDIUM]**
+
+```bash
+grep -rlc '](\.\./\.\./templates/state-machine-chaining.md)' canonical/skills/   # 11 files
+grep -rlc '](\.\./\.\./aid/templates/state-machine-chaining.md)' canonical/skills/ # 2 files, correct
+```
+
+From `canonical/skills/<skill>/SKILL.md`, `../../templates/` resolves to `canonical/templates/`,
+which does not exist; the file is at `canonical/aid/templates/`. `aid-create-ticket` and `aid-define`
+use the correct `../../aid/templates/` form. **The renderer does not rewrite it** — the dogfood
+`.claude/skills/aid-summarize/SKILL.md` carries the identical broken path — so it is dead in all five
+profiles and both dogfood trees, i.e. shipped to adopters.
+
+The fix is mechanical (`../../templates/` → `../../aid/templates/` in 11 files) and the delivery
+re-renders anyway. Deferred regardless: delivery-015's gate criteria are all about grading, and
+touching 11 unrelated skills inside it would make the diff unreviewable against those criteria.
+**Raised for a scope decision rather than assumed either way.**
+
+### AC-2 is satisfied BY the historical rows, not despite them
+
+`.aid/knowledge/STATE.md` still records `| Machine Grade | A+ (grade-summary AUTO_POOL 68/68) |`,
+`| Human Grade | A+ ... |` and `**Overall Grade:** A+` from a past run. Those are **left exactly as
+they are, on purpose** — task-005's second acceptance criterion says historical recorded values stay
+as history, because re-deriving a letter for findings that were never itemised would be fabrication.
+The template that governs *future* writes (`discovery-state-template.md`) now emits `Grade` +
+`Checklist`. Flagged here so the delivery gate does not read a deliberately-preserved record as a
+missed surface.
+
 **NFR-2 (five profiles) is discharged once for the delivery, not per task.** Tasks 001-002 left the
 render un-run: `emit-summary-findings.sh` exists only in `canonical/`, and `grade-summary.sh` is
 still present in all five `profiles/` trees and both dogfood trees (`.claude/`, `.cursor/`).
