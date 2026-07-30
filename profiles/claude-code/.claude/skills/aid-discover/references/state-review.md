@@ -499,11 +499,11 @@ raised.
 ```
 panel: full  (brownfield-large)
   1. Four mandate reviewers run in parallel (M1..M4), each writing to its own
-     scratch ledger. M3 writes [HIGH] [FIDELITY] rows for Divergence FAILs and
-     [MEDIUM] [ESSENCE-GAP] rows for load-bearing Omission FAILs (no separate
-     verdict sentinel). M4 writes one [HIGH] [ACTBACK] row per FAIL item
-     (plan-correctness, sufficiency, AND quality FAILs alike -- no separate
-     verdict sentinel).
+     scratch ledger. M3 writes [FIDELITY] rows for Divergence FAILs and
+     [ESSENCE-GAP] rows for load-bearing Omission FAILs (no separate verdict
+     sentinel). M4 writes one [ACTBACK] row per FAIL item (plan-correctness,
+     sufficiency, AND quality FAILs alike -- no separate verdict sentinel).
+     Every severity is the cited rule's anchor; none is fixed here.
   2. Orchestrator MERGES all 4 scratch ledgers into {{SCOPE}}.md (stable per-mandate
      IDs M1-NNN/M2-NNN/TB-NNN/AB-NNN; [M1]/[M2]/[FIDELITY] or [ESSENCE-GAP]/[ACTBACK]
      description prefixes), then DELETES the 4 transient scratch ledgers.
@@ -512,8 +512,9 @@ panel: collapsed  (brownfield-small only)
   1. ONE reviewer runs M1/M2 as separate sequential passes in one agent,
      writing both passes' findings to {{SCOPE}}-content.md (mandate rows
      M1-NNN/M2-NNN). ONE clean-context reviewer handles M3, writing
-     [HIGH] [FIDELITY] and [MEDIUM] [ESSENCE-GAP] rows to {{SCOPE}}-teachback.md.
-     ONE clean-context reviewer handles M4, writing [HIGH] [ACTBACK] rows to
+     [FIDELITY] and [ESSENCE-GAP] rows to {{SCOPE}}-teachback.md, each at its
+     cited rule's anchor.
+     ONE clean-context reviewer handles M4, writing [ACTBACK] rows to
      {{SCOPE}}-actback.md. All three dispatches run in parallel with each other
      (M1-M2 sequential WITHIN dispatch 1 only).
   2. Orchestrator MERGES the 3 scratch ledgers ({{SCOPE}}-content.md +

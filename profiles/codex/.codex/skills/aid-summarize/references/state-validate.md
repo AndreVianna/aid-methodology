@@ -40,9 +40,12 @@ section's transition table:
 > `Fixed`" rule would mark an unresolved human visual failure `Fixed` on the very next VALIDATE, and
 > `state-fix.md` tells the fixer not to touch Status precisely because it trusts this step. That is the
 > hazard `reviewer-ledger-schema.md` states as *"absence proves nothing"* unless the covering unit is
-> `Examined`; the emitter's mechanical sweep is what makes absence evidential **for its own eleven
-> rules and for nothing else** — all twelve of them. A rule the emitter can emit but this list omits is
-worse than either: its rows would never reconcile, so the loop could not converge for them.
+> `Examined`; the emitter's mechanical sweep is what makes absence evidential **for its own twelve
+> rules and for nothing else**. A rule the emitter can emit but this list omits is worse than either:
+> its rows would never reconcile, so the loop could not converge for it. That contract broke three
+> times before it was mechanised — `tests/canonical/test-one-grading-backend.sh` (`RS01`–`RS03`) now
+> asserts the emitter's rule set against this list, the check table below, and `state-fix.md`'s repair
+> bullets.
 
 | Canonical row (emitter-owned `Rule` only) | Key in this cycle's scratch? | Result |
 |---|---|---|
@@ -97,6 +100,13 @@ It orchestrates the machine-verifiable checks only.
 > `SUMMARY-05` (claim truth) and `SUMMARY-06` (the human visual check) — and those come from
 > MANUAL-CHECKLIST, not from here.
 
+**`SUMMARY-01` and `PRE-11` are the only checks that emit per INSTANCE.** Coverage writes one row
+per unreferenced document (naming it) and contrast one per failing token pair (keyed by theme and
+pair in `Line`). Every other check emits **one row for the check**, carrying the validator's own
+reported count in its Evidence — the emitter loops check IDs, not instances. Earlier wording here
+promised "one row per broken link / per reported error / per CDN reference", which the script does
+not do; a reader sizing a FIX from this table would have expected N rows and seen one.
+
 Every row cites the rule it breaks, per the ledger schema's `Rule` column. The check-to-rule mapping
 is the one recorded in `review-rubrics/summary.md § Where the retired per-check scores went`.
 
@@ -114,15 +124,15 @@ corrected below, exactly the re-derivation feature-007 §1b called for.
 | T1 (visual text not readable — font-size below threshold or zero-height-clipped) | `SUMMARY-06` | `[HIGH]` | one row per failing visual — **NOT emitted today**, see the note above |
 | T2 (visual child element overlap exceeds 20% tolerance) | `SUMMARY-06` | `[HIGH]` | one row per failing visual — **NOT emitted today**, see the note above |
 | T3 (visual collapsed or empty — non-trivial dimensions assertion failed) | `SUMMARY-06` | `[HIGH]` | one row per failing visual — **NOT emitted today**, see the note above |
-| L1 (broken anchor links) | `SUMMARY-08` | `[LOW]` | one row per broken link — a dead in-page jump is contained and fixed by regenerating |
-| L2 (broken .md links) | `SUMMARY-09` | `[MEDIUM]` | one row per broken path — it sends the reader out of the summary to nothing |
-| H1 (HTML validity failure) | `SUMMARY-02` | `[MEDIUM]` | one row per reported error |
+| L1 (broken anchor links) | `SUMMARY-08` | `[LOW]` | **one row for the check**, not per link — the emitter loops check IDs, and the validator's own line reports the count. A dead in-page jump is contained and fixed by regenerating |
+| L2 (broken .md links) | `SUMMARY-09` | `[MEDIUM]` | **one row for the check**, not per path; it sends the reader out of the summary to nothing |
+| H1 (HTML validity failure) | `SUMMARY-02` | `[MEDIUM]` | **one row for the check**, not per error |
 | A1 (missing semantic landmarks) | `PRE-02` | `[MEDIUM]` | one row |
 | A2 (missing ARIA on lightbox) | `PRE-04` | `[MEDIUM]` | one row |
 | A3 (focus trap missing) | `PRE-04` | `[MEDIUM]` | one row |
 | A4 (reduced-motion block missing) | `PRE-05` | `[MEDIUM]` | one row |
 | A5 (visible focus missing) | `PRE-03` | `[MEDIUM]` | one row |
-| S2 (CDN reference found — page not self-contained) | `SUMMARY-03` | `[HIGH]` | one row per CDN reference — an offline reader gets a broken page, so the radius has escaped |
+| S2 (CDN reference found — page not self-contained) | `SUMMARY-03` | `[HIGH]` | **one row for the check**, not per reference — an offline reader gets a broken page, so the radius has escaped |
 | NM (Mermaid engine detected in output — should not be present in D-012) | `SUMMARY-07` | `[HIGH]` | one row |
 | C1/C2 (WCAG contrast fail) | `PRE-11` | `[MEDIUM]` | one row per failing color pair, `Line` = `theme/pair` so N rows share one rule without collapsing to one join key |
 | Structural: `noscript fallback present`, `color-scheme: light dark` | `PRE-01` | `[MEDIUM]` | one row per unmet item, `Line` = the item's label. The validator's third structural check, `skip-link present`, is **not** mapped — no `PRE` rule cites the checklist section that declares it, so it surfaces through the unmapped-check guard instead of being pinned on a criterion that does not cover it |

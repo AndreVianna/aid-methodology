@@ -18,7 +18,15 @@ For each Pending/Recurred row, apply the corresponding repair autonomously:
 - **`SUMMARY-09` (L2 — relative md links)** — correct the relative path.
 - **`SUMMARY-02` (H1 — HTML validity)** — fix the reported markup error (from tidy / html-validate / regex, whichever ran).
 - **`PRE-02` / `PRE-04` / `PRE-05` / `PRE-03` (A1–A5 — accessibility)** — add the missing landmark / ARIA attribute / focus-trap marker / reduced-motion block / focus-visible rule.
-- **`PRE-11` (C1 / C2 — contrast, one rule across both themes)** — adjust the offending color in the inlined CSS to meet the ratio.
+- **`PRE-11` (C1 / C2 — contrast, one rule across both themes)** — adjust the offending color in the inlined CSS to meet the ratio. The row's `Line` names the theme and the token pair.
+- **`SUMMARY-03` (S2 — page not self-contained)** — the assembled HTML carries an external reference. Remove the `<script src="https://…">` or `<link href="https://…">` and inline what it provided; the summary must render with the network disabled.
+- **`PRE-01` (document-level accessibility)** — add the missing item the row's `Line` names: a `<noscript>` fallback listing the doc-set, or a `color-scheme: light dark` declaration. Both are MUST items in `knowledge-summary/accessibility-checklist.md § Document level`.
+
+> **This list must name every rule the emitter can emit — all twelve.** It carried ten: `SUMMARY-03`
+> and `PRE-01` were missing, so a row for either reached FIX with no repair instruction and could
+> never reach `Fixed`, which stalls the VALIDATE → FIX → VALIDATE loop for it. Keep it in step with
+> `emit-summary-findings.sh`'s `RULE_FOR` plus its two direct emitters (`SUMMARY-01`, `PRE-11`);
+> `tests/canonical/test-one-grading-backend.sh` asserts the three surfaces agree.
 
 Edit ONLY the failing parts; leave everything else untouched. After all mechanically-fixable findings are addressed, return to VALIDATE.
 

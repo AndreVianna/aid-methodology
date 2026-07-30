@@ -145,8 +145,15 @@ After working through each probe:
 
 ### Severity and verdict (single mechanism, identical to teach-back)
 
-**Severity:** Every FAIL item from ANY limb (plan-correctness, sufficiency, quality) =
-`[HIGH]` `[ACTBACK]` row.
+**Severity comes from the rule the row cites, and is never chosen here.** Every FAIL item from any
+limb (plan-correctness, sufficiency, quality) is an `[ACTBACK]` row at its cited rule's anchor:
+`[HIGH]` for `KB-22`–`KB-25` (an unstated contract, invariant, gotcha or quality bar), `[LOW]`
+(escaping to `[MEDIUM]` beyond one doc) for `KB-26`, and `Step 2` for `KB-20`/`KB-21`, where the
+instance's reach and reversibility decide.
+
+This used to read *"Every FAIL item ... = `[HIGH]` `[ACTBACK]` row"*, which its own example row below
+contradicts — `AB-001` is a `KB-26` convention FAIL at `[LOW]` — and which no `KB-26` row could
+satisfy without putting its Severity cell at odds with its `Rule` cell.
 
 **Verdict (single mechanism):** Blind Work-Simulation is PASS iff zero open `[ACTBACK]` rows
 across ALL work probes. There is NO separate verdict sentinel -- the rows ARE the verdict.

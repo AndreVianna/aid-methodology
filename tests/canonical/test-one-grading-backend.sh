@@ -108,6 +108,21 @@ printf '{}\n' > "$MCT/empty.json"
 bash "$MC" --input "$MCT/empty.json" >/dev/null 2>&1
 chk "$?" 2 MC05 "--input rejects a JSON with no answers with exit 2, not a silent exit 1"
 
+# Every value-taking flag given as the LAST argument. `shift 2` with one argument left fails under
+# `set -euo pipefail`, and the script exited 1 with empty stdout AND stderr -- silence, at the code its
+# header reserves for "user aborted". The contract is exit 2 with a reason, for all seven.
+mc_flag_bad=()
+for flag in --html --out --input --k1 --k2 --v1 --notes; do
+    msg=$(bash "$MC" "$flag" 2>&1); rc=$?
+    [[ "$rc" -eq 2 ]] || mc_flag_bad+=("${flag}:exit${rc}")
+    printf '%s' "$msg" | grep -q . || mc_flag_bad+=("${flag}:silent")
+done
+if [[ "${#mc_flag_bad[@]}" -eq 0 ]]; then
+    ok MC07 "all 7 value-taking flags exit 2 with a reason when given no value"
+else
+    no MC07 "flags that did not exit 2 with a message: ${mc_flag_bad[*]}"
+fi
+
 # And normalising must not be lossy. The rewrite once dropped `notes` -- the one field here that nothing
 # else can reconstruct, and the one state-fix.md's expose-propose-ask loop reads.
 bash "$MC" --k1 y --k2 p --v1 n --notes 'quoted "ok" and back\slash' --html h.html \
@@ -406,6 +421,94 @@ fi
 grep -rqE '^\| `SUMMARY-99` ' "$RUBRIC_DIR" 2>/dev/null \
     && no RID02 "SUMMARY-99 unexpectedly exists; the control is void" \
     || ok RID02 "the resolver rejects a non-existent ID (control: SUMMARY-99)"
+
+echo
+echo "== every rule the emitter can emit is named on all three downstream surfaces =="
+# This contract has broken THREE times in this delivery, each time the same way: a rule wired into the
+# emitter and into some-but-not-all of the surfaces that consume it. A rule missing from the
+# reconciliation list can never reach `Fixed`; one missing from the FIX repair list reaches the fixer
+# with no instruction. Either stalls the VALIDATE -> FIX -> VALIDATE loop for that rule, silently.
+# Prose review caught it three times and would have to keep catching it; this closes it mechanically.
+VALSTATE_F="$ROOT/canonical/skills/aid-summarize/references/state-validate.md"
+FIXSTATE_F="$ROOT/canonical/skills/aid-summarize/references/state-fix.md"
+
+# The emitter's rule set = its RULE_FOR values + the rules it emits by direct call.
+mapfile -t emit_rules < <(
+  { grep -oE '="(SUMMARY|PRE)-[0-9]{2}"' "$EMIT" | tr -d '="' ;
+    grep -oE 'emit "(SUMMARY|PRE)-[0-9]{2}"' "$EMIT" | grep -oE '(SUMMARY|PRE)-[0-9]{2}' ; } | sort -u
+)
+if [[ "${#emit_rules[@]}" -ge 10 ]]; then
+    ok RS01 "the emitter's rule set resolves to ${#emit_rules[@]} rules (not vacuous)"
+else
+    no RS01 "only ${#emit_rules[@]} emitter rules found -- the extraction is broken, so RS02/RS03 mean nothing"
+fi
+
+# Both checks require the STRUCTURE that carries the obligation, not a mention of the rule anywhere in
+# the file. A bare `grep -F` passes on the prose that explains the requirement -- verified: removing
+# SUMMARY-03's repair bullet left the guard green, because the note above it names SUMMARY-03. A guard
+# satisfied by a sentence about itself is the vacuity this suite exists to prevent.
+rs_missing=()
+for r in "${emit_rules[@]}"; do
+    # A row of the check->rule table: a table line naming the rule.
+    grep -E "^\| .*${r}" "$VALSTATE_F" >/dev/null 2>&1 || rs_missing+=("state-validate-table:$r")
+done
+if [[ "${#rs_missing[@]}" -eq 0 ]]; then
+    ok RS02 "every emitter rule has a row in state-validate.md's check-to-rule table"
+else
+    no RS02 "emitter rules with no table row in state-validate.md: ${rs_missing[*]}"
+fi
+
+rs_missing2=()
+for r in "${emit_rules[@]}"; do
+    # Inside a repair BULLET (a line starting `- **`), not merely somewhere in the file. Several rules
+    # legitimately share one bullet -- PRE-02/03/04/05 all take the same "add the missing landmark /
+    # attribute / marker" action -- so the rule need not lead it. The explanatory note above the list
+    # starts with `>` and is excluded, which is what stops a sentence about the requirement satisfying it.
+    grep -E "^- \*\*.*${r}" "$FIXSTATE_F" >/dev/null 2>&1 || rs_missing2+=("state-fix:$r")
+done
+if [[ "${#rs_missing2[@]}" -eq 0 ]]; then
+    ok RS03 "every emitter rule appears in a repair bullet in state-fix.md"
+else
+    no RS03 "emitter rules with no FIX repair bullet: ${rs_missing2[*]}"
+fi
+
+# Control: RS02/RS03 must fail for a rule the surfaces genuinely do not name.
+if grep -qF 'SUMMARY-98' "$VALSTATE_F" || grep -qF 'SUMMARY-98' "$FIXSTATE_F"; then
+    no RS04 "SUMMARY-98 unexpectedly present; the control is void"
+else
+    ok RS04 "the surface check rejects a rule no surface names (control: SUMMARY-98)"
+fi
+
+echo
+echo "== distinct findings keep distinct join keys =="
+# Reconciliation joins on (Doc, Rule) with Line as its only tiebreaker. Two rules emit N rows for one
+# (Doc, Rule) -- PRE-11 (one per token pair) and PRE-04 (A2 and A3 share it) -- so both depend on emit()
+# passing a Line. Deleting that one parameter collapses them, fixing one pair silently clears the others,
+# and the loop stops converging. Both suites stayed green under exactly that mutation, so assert the
+# BEHAVIOUR: run the emitter and require the keys to be distinct.
+JK="$(mktemp -d)"
+mkdir -p "$JK/.aid/knowledge"
+printf 'knowledge:\n  doc_set:\n    - a.md | o | required\n' > "$JK/.aid/settings.yml"
+printf '# a\n' > "$JK/.aid/knowledge/a.md"
+# Tokens that resolve but fail contrast in BOTH themes -> several PRE-11 rows; no lightbox -> A2 and A3.
+{
+  printf '%s\n' '<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><title>a</title>'
+  printf '%s\n' '<style>:root{--text:#eee;--bg:#fff;--text-muted:#f4f4f4;--accent:#fafafa;--border:#fdfdfd;--card:#fff;--code-bg:#fff;--link:#f5f5f5}</style></head>'
+  printf '%s\n' '<body><main>a.md</main></body></html>'
+} > "$JK/.aid/knowledge/kb.html"
+mapfile -t jk_rows < <(cd "$JK" && bash "$EMIT" .aid/knowledge/kb.html --dry-run 2>/dev/null | grep -E '^\[')
+rm -rf "$JK"
+# Build the join key each row would reconcile on: Rule + Doc + Line (fields 2,3,4 of the dry-run shape).
+mapfile -t jk_keys < <(printf '%s\n' "${jk_rows[@]}" | awk -F' [|] ' 'NF>=4 {print $2 "\t" $3 "\t" $4}')
+n_rows="${#jk_keys[@]}"
+n_uniq=$(printf '%s\n' "${jk_keys[@]}" | sort -u | wc -l)
+if [[ "$n_rows" -lt 4 ]]; then
+    no JK01 "fixture produced only ${n_rows} rows -- too few to test key distinctness"
+elif [[ "$n_rows" -eq "$n_uniq" ]]; then
+    ok JK01 "all ${n_rows} emitted rows carry a distinct (Rule, Doc, Line) join key"
+else
+    no JK01 "${n_rows} rows collapse to ${n_uniq} join keys -- reconciliation would clear findings it never fixed"
+fi
 
 echo
 echo "== no assertion pattern contains a stray control byte =="

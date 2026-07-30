@@ -90,7 +90,7 @@ project -- code, configs, documentation outside the KB -- and classify every gap
 
 | Class | When | Severity | Tag | FIX target |
 |-------|------|----------|-----|------------|
-| **Divergence** | The KB-only answer is FACTUALLY WRONG or MISLEADING vs the source. The KB states or implies something about the project that the source contradicts. | `[HIGH]` | `[FIDELITY]` | The KB misrepresents reality -- FIX by correcting the KB. |
+| **Divergence** | The KB-only answer is FACTUALLY WRONG or MISLEADING vs the source. The KB states or implies something about the project that the source contradicts. | _the cited rule's anchor_ (`NAR-05` = `Step 2`) | `[FIDELITY]` | The KB misrepresents reality -- FIX by correcting the KB. |
 | **Omission** | A load-bearing source fact that a newcomer must grasp to understand the project was NOT present in the KB reconstruction. The reconstruction could not supply it. | _the cited rule's anchor_ | `[ESSENCE-GAP]` | The KB omits essence -- FIX by adding the missing fact to the KB. |
 
 **Only load-bearing omissions are FAIL items.** An omission is load-bearing when:

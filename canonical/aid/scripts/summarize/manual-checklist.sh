@@ -79,14 +79,29 @@ while [ $# -gt 0 ]; do
             sed -n '2,/^[^#]/{ /^#/!d; s/^# \{0,1\}//; p }' "$0"
             exit 0
             ;;
-        --html)        HTML_FILE="${2:-}"; shift 2 ;;
-        --out)         OUT_FILE="${2:-}"; shift 2 ;;
-        --input)       INPUT_FILE="${2:-}"; shift 2 ;;
+        # need_value: a value-taking flag given as the LAST argument used to `shift 2` with only one
+        # argument left, which fails under `set -euo pipefail` and exited **1 with empty stdout and
+        # stderr** -- silence, at the code this header reserves for "user aborted". The contract says 2
+        # for an invocation error, and the caller gets a reason. This is the same defect already fixed
+        # for `--input`'s answer extraction; it lived on in all seven value-taking flags.
+        --html|--out|--input|--k1|--k2|--v1|--notes)
+            if [[ $# -lt 2 ]]; then
+                echo "❌ $1 requires a value" >&2
+                echo "   Run 'manual-checklist.sh --help' for usage." >&2
+                exit 2
+            fi
+            case "$1" in
+                --html)  HTML_FILE="$2" ;;
+                --out)   OUT_FILE="$2" ;;
+                --input) INPUT_FILE="$2" ;;
+                --k1)    K1_ANS=$(printf '%s' "$2" | tr '[:upper:]' '[:lower:]') ;;
+                --k2)    K2_ANS=$(printf '%s' "$2" | tr '[:upper:]' '[:lower:]') ;;
+                --v1)    V1_ANS=$(printf '%s' "$2" | tr '[:upper:]' '[:lower:]') ;;
+                --notes) NOTES="$2" ;;
+            esac
+            shift 2
+            ;;
         --interactive) FORCE_INTERACTIVE=1; shift ;;
-        --k1)          K1_ANS=$(echo "${2:-}" | tr '[:upper:]' '[:lower:]'); shift 2 ;;
-        --k2)          K2_ANS=$(echo "${2:-}" | tr '[:upper:]' '[:lower:]'); shift 2 ;;
-        --v1)          V1_ANS=$(echo "${2:-}" | tr '[:upper:]' '[:lower:]'); shift 2 ;;
-        --notes)       NOTES="${2:-}"; shift 2 ;;
         *)
             echo "❌ Unknown argument: $1" >&2
             echo "   Run 'manual-checklist.sh --help' for usage." >&2

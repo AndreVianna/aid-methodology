@@ -5,11 +5,11 @@ pipeline:
 started: "2026-07-27"
 minimum_grade: "A"
 user_approved: yes
-lifecycle: Paused-Awaiting-Input
+lifecycle: Running
 phase: Execute
-active_skill: none
-updated: '2026-07-30T11:49:03Z'
-pause_reason: 'delivery-015 gate ran 6 Large-tier cycles (D- to D+ to D); all 60 findings fixed but the A+ minimum is not met. Awaiting a human decision between accepting the current grade, narrowing the gate scope, or continuing to cycle -- see deliveries/delivery-015/STATE.md, ''Why six cycles did not reach A+''.'
+active_skill: aid-execute
+updated: '2026-07-30T13:15:28Z'
+pause_reason: --
 block_reason: --
 block_artifact: --
 ticket_ref: "--"
