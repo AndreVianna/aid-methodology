@@ -1,7 +1,8 @@
 # Shortcut Scaffolding: update / refactor
 
 Per-family scaffolding reference for the **`update`** verb (bare `aid-update`
-plus the same eleven artifact-suffixed forms as `create`), the **`refactor`**
+plus fourteen artifact-suffixed forms -- `create`'s fifteen minus `diagram`,
+which has no `update` counterpart), the **`refactor`**
 verb (bare `aid-refactor` only -- no artifact suffixes; feature-007,
 work-001-lite-aid-skills), and, as a v2.1.0 coverage-gap follow-on, the bare
 **`remove`** (`aid-remove`), **`deprecate`**
