@@ -1,10 +1,19 @@
 #!/usr/bin/env bash
 # manual-checklist.sh — human-review checklist for /aid-summarize MANUAL-CHECKLIST state.
 #
-# Scores the MANUAL_POOL (30 pts) that the automated grader cannot verify:
-#   K1  KB completeness   (10 pts)  y=10 p=5 n=0
-#   K2  fact grounding    (15 pts)  y=15 p=8 n=0
-#   V1  human visual gate ( 5 pts)  y=5  n=0   — MANDATORY: V1=0 blocks APPROVAL
+# RECORDS the human-judgment answers that no automated check can produce:
+#   K1  KB completeness    y | p | n
+#   K2  fact grounding     y | p | n
+#   V1  human visual check y | n      -- MANDATORY: a fail blocks APPROVAL
+#
+# IT NO LONGER SCORES THEM. The answers become ledger findings, and grade.sh derives the letter from
+# the ledger -- one grading backend for every artifact in AID. The scores this script used to compute
+# (10/15/5 into a 30-point pool) belonged to a second grading model that has been retired; see
+# review-rubrics/summary.md and knowledge-summary/grading-rubric.md.
+#
+# An UNANSWERED checklist now produces NO GRADE rather than an F. Reporting a failing grade for a check
+# nobody performed states a result that was never observed, and makes a real failure indistinguishable
+# from an absent answer.
 #
 # V1 is a GATE, not a graded scale: the reviewer must open the HTML in a real
 # browser and confirm ALL of: (a) every diagram/infographic/visual renders cleanly
@@ -12,8 +21,8 @@
 # elements do not overlap, in BOTH light and dark themes (the automated visual-fidelity
 # gate checks size/overlap/layout; the human judges clarity + quality);
 # (c) the light/dark theme toggle works; (d) the lightbox opens, Esc closes,
-# and Tab cycles focus inside it. Any failure => V1=n (0 pts) AND the summary
-# cannot be approved until fixed.
+# and Tab cycles focus inside it. Any failure => V1=n, which becomes a SUMMARY-06
+# finding AND blocks approval until fixed.
 #
 # Two modes:
 #   Non-interactive (preferred inside a host AI tool): the agent gathers the
@@ -30,7 +39,7 @@
 #   --html <file>     HTML file under review (display + recorded in JSON).
 #   --out  <file>     Output JSON path (default: .aid/.temp/summarize/manual-checklist.json).
 #   --input <file>    Validate an already-written checklist JSON, recompute
-#                     scores from its answers, and rewrite it canonically.
+#                     normalises its answers, and rewrite it canonically.
 #   --interactive     Force interactive prompts even if flags are given.
 #   -h, --help        Print this header and exit.
 #
@@ -40,7 +49,7 @@
 #   2  Invocation error (bad flag, bad value, missing --input file).
 #
 # Output JSON keys:
-#   K1_score, K2_score, V1_score, K1_answer, K2_answer, V1_answer,
+#   K1_answer, K2_answer, V1_answer,
 #   notes, html_file, timestamp
 
 set -euo pipefail
@@ -83,30 +92,26 @@ escape_json() {
     printf '%s' "$1" | sed 's/\\/\\\\/g; s/"/\\"/g'
 }
 
-score_k1() {
+# These used to return point values (10/5/0, 15/8/0, 5/0) feeding a 30-point pool. The points are gone
+# with the second grading model; the VALIDATION they also performed is not, so each now normalises the
+# answer and rejects anything outside its alphabet. An unvalidated answer would reach the JSON and, from
+# there, the ledger.
+normalize_ypn() {
+    # $1 = answer, $2 = check name (for the error message)
     case "$1" in
-        y|yes)     echo 10 ;;
-        p|partial) echo 5  ;;
-        n|no)      echo 0  ;;
-        *) echo "❌ Invalid K1 answer: '$1' (expected y|p|n)" >&2; exit 2 ;;
+        y|yes)     echo y ;;
+        p|partial) echo p ;;
+        n|no)      echo n ;;
+        *) echo "❌ Invalid $2 answer: '$1' (expected y|p|n)" >&2; exit 2 ;;
     esac
 }
 
-score_k2() {
+normalize_yn() {
+    # The human visual check is a gate: it passed or it did not. There is no partial.
     case "$1" in
-        y|yes)     echo 15 ;;
-        p|partial) echo 8  ;;
-        n|no)      echo 0  ;;
-        *) echo "❌ Invalid K2 answer: '$1' (expected y|p|n)" >&2; exit 2 ;;
-    esac
-}
-
-score_v1() {
-    # V1 is a GATE: pass (5) or fail (0). No partial.
-    case "$1" in
-        y|yes) echo 5 ;;
-        n|no)  echo 0 ;;
-        *) echo "❌ Invalid V1 answer: '$1' (expected y|n)" >&2; exit 2 ;;
+        y|yes) echo y ;;
+        n|no)  echo n ;;
+        *) echo "❌ Invalid $2 answer: '$1' (expected y|n)" >&2; exit 2 ;;
     esac
 }
 
@@ -147,11 +152,10 @@ ask_text() {
 }
 
 write_json() {
-    local k1_score k2_score v1_score total
-    k1_score=$(score_k1 "$K1_ANS")
-    k2_score=$(score_k2 "$K2_ANS")
-    v1_score=$(score_v1 "$V1_ANS")
-    total=$((k1_score + k2_score + v1_score))
+    local k1 k2 v1
+    k1=$(normalize_ypn "$K1_ANS" "K1") || exit 2
+    k2=$(normalize_ypn "$K2_ANS" "K2") || exit 2
+    v1=$(normalize_yn  "$V1_ANS" "V1") || exit 2
 
     local timestamp html_esc notes_esc out_dir
     timestamp=$(date -u +"%Y-%m-%dT%H:%M:%SZ" 2>/dev/null || date +"%Y-%m-%dT%H:%M:%SZ")
@@ -160,14 +164,13 @@ write_json() {
     out_dir=$(dirname "$OUT_FILE")
     mkdir -p "$out_dir"
 
+    # No *_score fields: this file records what the human ANSWERED. The grade is derived by grade.sh
+    # from the review ledger, and emitting scores here would resurrect the second grading model as data.
     cat > "$OUT_FILE" << EOF
 {
-  "K1_score": $k1_score,
-  "K2_score": $k2_score,
-  "V1_score": $v1_score,
-  "K1_answer": "$(echo "$K1_ANS" | cut -c1)",
-  "K2_answer": "$(echo "$K2_ANS" | cut -c1)",
-  "V1_answer": "$(echo "$V1_ANS" | cut -c1)",
+  "K1_answer": "$k1",
+  "K2_answer": "$k2",
+  "V1_answer": "$v1",
   "notes": "$notes_esc",
   "html_file": "$html_esc",
   "timestamp": "$timestamp"
@@ -176,14 +179,14 @@ EOF
 
     echo ""
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-    echo "  Manual score: $total / 30   (K1: $k1_score/10   K2: $k2_score/15   V1: $v1_score/5)"
-    if [ "$v1_score" -eq 0 ]; then
-        echo "  ⚠️  VISUAL GATE FAILED (V1=0) — the summary CANNOT be approved"
+    echo "  Answers recorded -- K1: $k1   K2: $k2   V1: $v1"
+    if [ "$v1" = "n" ]; then
+        echo "  ⚠️  VISUAL CHECK FAILED — the summary CANNOT be approved"
         echo "      until the visual issue is fixed and V1 re-confirmed."
     fi
     echo "  Saved to: $OUT_FILE"
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-    echo "  Re-run grade.sh to see the updated Human + Overall Grade."
+    echo "  Append the findings to the review ledger, then run grade.sh over it for the grade."
 }
 
 # --- Mode: --input (validate + recompute an existing JSON) ---
@@ -200,14 +203,14 @@ if [ -n "$INPUT_FILE" ]; then
         exit 2
     fi
     OUT_FILE="$INPUT_FILE"
-    echo "[manual-checklist] Validated $INPUT_FILE — recomputing scores from answers."
+    echo "[manual-checklist] Validated $INPUT_FILE — normalising answers."
     write_json
     exit 0
 fi
 
 # --- Mode: non-interactive (answers supplied via flags) ---
 if [ -n "$K1_ANS" ] && [ -n "$K2_ANS" ] && [ -n "$V1_ANS" ] && [ "$FORCE_INTERACTIVE" -eq 0 ]; then
-    echo "[manual-checklist] Non-interactive mode — scoring supplied answers."
+    echo "[manual-checklist] Non-interactive mode — recording supplied answers."
     write_json
     exit 0
 fi
@@ -218,7 +221,7 @@ echo "━━━━━━━━━━━━━━━━━━━━━━━━�
 echo "  /aid-summarize — Manual Review Checklist (interactive)"
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 [ -n "$HTML_FILE" ] && echo "  File: $HTML_FILE"
-echo "  Scores K1 (10) + K2 (15) + V1 visual gate (5) = 30 pts."
+echo "  Records K1 (KB completeness) + K2 (fact grounding) + V1 (visual check). No scoring."
 echo "  Saved to: $OUT_FILE"
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 echo ""
@@ -236,17 +239,17 @@ echo ""
 echo "Q2. K1 — KB completeness"
 echo "     Does the HTML cover every populated Knowledge Base document?"
 echo "     (y = all sections present; p = minor gaps; n = major gaps)"
-ask_ypn "     K1 score" K1_ANS
+ask_ypn "     K1 answer" K1_ANS
 echo ""
 
 echo "Q3. K2 — Fact accuracy"
 echo "     Spot-check 5 numeric/named facts against the source KB."
 echo "     (Tip: run spot-check-facts.sh first for a prepared list.)"
 echo "     (y = all verified; p = 1-2 minor discrepancies; n = errors found)"
-ask_ypn "     K2 score" K2_ANS
+ask_ypn "     K2 answer" K2_ANS
 echo ""
 
-echo "Q4. V1 — HUMAN VISUAL GATE (mandatory, 5 pts)"
+echo "Q4. V1 — HUMAN VISUAL CHECK (mandatory)"
 echo "     With the file open in a browser, confirm ALL of the following:"
 echo "       (a) every diagram / infographic / visual renders cleanly — nothing clipped, collapsed, or broken;"
 echo "       (b) text in every visual is LEGIBLE and elements do NOT overlap, in BOTH light AND dark themes"

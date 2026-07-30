@@ -1,8 +1,8 @@
 ---
-state: Pending
+state: 'In Progress'
 review: "Pending"
 elapsed: "--"
-notes: "--"
+notes: 'De-score complete; test-one-grading-backend 23/23 pass; changes uncommitted — next: commit, review, Done, then task-004'
 ticket_ref: "--"
 ---
 
