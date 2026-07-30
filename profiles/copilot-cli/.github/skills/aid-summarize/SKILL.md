@@ -103,7 +103,9 @@ The state-detection logic determines which mode this run executes:
    - grade >= minimum → MANUAL-CHECKLIST.
 
 7. After MANUAL-CHECKLIST (human-judgment answers → findings → grade.sh):
-   - checklist not completed → HALT and ask the human (a pause, not a grade).
+   - checklist not completed → **PAUSE-FOR-USER-ACTION**: print the `manual-checklist.sh` command
+     and exit. No grade is produced. **Not HALT** — HALT is terminal, and this is the one outcome
+     designed to be resumed (`references/state-manual-checklist.md`).
    - grade < minimum → FIX (loops back to VALIDATE).
    - grade >= minimum → APPROVAL.
 

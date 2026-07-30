@@ -391,8 +391,12 @@ that nothing in the ledger records or checks, which makes it an unfalsifiable cl
 than a gate. Retired for the same reason as the essence ratio; the conservative rule beside
 it is kept.
 
-All FAIL items (plan-correctness, sufficiency, quality) are ordinary `[HIGH] [ACTBACK]`
-rows. Any open `[ACTBACK]` row forces grade <= D (because `[HIGH]` rows make grade <= D
+All FAIL items (plan-correctness, sufficiency, quality) are ordinary `[ACTBACK]` rows **at the
+severity their cited rule anchors** -- `[HIGH]` for `KB-22`..`KB-25`, `[LOW]` (escaping to
+`[MEDIUM]` beyond one doc) for `KB-26`, and `Step 2` for `KB-20`/`KB-21`, where the instance's
+reach and reversibility decide. This used to read *"ordinary `[HIGH]` rows"* flatly, which
+contradicted the gate table below it and overstated the grade impact: a lone `KB-26` row grades
+`B+`, not `<= D`. Any open `[ACTBACK]` row forces grade <= D (because `[HIGH]` rows make grade <= D
 in `grade.sh`) — the assertiveness hard gate is realized entirely through the merged rows,
 the sibling-keystone mechanism. No separate boolean, no AND to reconcile.
 

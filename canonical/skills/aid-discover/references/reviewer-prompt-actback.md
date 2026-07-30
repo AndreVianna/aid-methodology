@@ -168,7 +168,7 @@ Write all findings to `.aid/.temp/review-pending/{{SCOPE}}-actback.md` using the
 ```
 | # | Severity | Status | Rule | Doc | Line | Description | Evidence |
 |---|----------|--------|------|-----|------|-------------|----------|
-| AB-001 | [HIGH] | Pending | KB-26 | -- | -- | [ACTBACK] Convention FAIL (WP-001 step 2): no convention stated for registering a new field -- had to ASSUME naming | coding-standards.md has no ## Conventions section; presence check: absent |
+| AB-001 | [LOW] | Pending | KB-26 | -- | -- | [ACTBACK] Convention FAIL (WP-001 step 2): no convention stated for registering a new field -- had to ASSUME naming | coding-standards.md has no ## Conventions section; presence check: absent |
 | AB-002 | [HIGH] | Pending | KB-22 | schemas.md | -- | [ACTBACK] Contract FAIL (WP-002 step 3): field type constraints not stated -- plan step REACH for source | schemas.md ## Contracts absent per presence check; `sources:` defers to src/models.py |
 | AB-003 | [HIGH] | Pending | KB-21 | -- | -- | [ACTBACK] Plan-correctness FAIL (WP-001): cannot assemble a correct wiring plan -- step 2 (registration) has no KB anchor | No doc states how a new module is registered in the dispatch cycle |
 | AB-004 | [HIGH] | Pending | KB-25 | test-landscape.md | -- | [ACTBACK] Quality-bar FAIL (WP-003 step 4): plan omits the required gate -- KB states tests must pass before merge but plan does not include this step | test-landscape.md ## Quality-bars section; plan is functional but violates project's quality contract |

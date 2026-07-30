@@ -90,15 +90,21 @@ unevaluated() { UNEVALUATED=$((UNEVALUATED + 1)); echo "  note: $1" >&2; }
 
 # emit RULE SEVERITY DOC DESCRIPTION EVIDENCE
 # One place decides what a finding looks like, so a new check cannot invent its own row shape.
+# $6 (LINE) is optional and carries the check id where two checks share one rule. The reconcile join is
+# `(Doc, Rule)` with Line as its ONLY tiebreaker (reviewer-ledger-schema.md § The join key): A2 and A3
+# both map to PRE-04, so with Line left at `--` their rows are the same key and fixing the lightbox ARIA
+# would silently reconcile the focus-trap finding to `Fixed` as well.
 emit() {
-    local rule="$1" sev="$2" doc="$3" desc="$4" ev="$5"
+    local rule="$1" sev="$2" doc="$3" desc="$4" ev="$5" line="${6:-}"
     FINDINGS=$((FINDINGS + 1))
     if [[ "$DRY_RUN" -eq 1 ]]; then
-        printf '%s | %s | %s | %s | %s\n' "$sev" "$rule" "$doc" "$desc" "$ev"
+        printf '%s | %s | %s | %s | %s | %s\n' "$sev" "$rule" "$doc" "${line:---}" "$desc" "$ev"
         return
     fi
+    local -a line_arg=()
+    [[ -n "$line" ]] && line_arg=(--line "$line")
     bash "$LEDGER_WRITER" --ledger "$LEDGER" --append-finding \
-        --severity "$sev" --rule "$rule" --doc "$doc" \
+        --severity "$sev" --rule "$rule" --doc "$doc" "${line_arg[@]}" \
         --description "$desc" --evidence "$ev" >/dev/null || \
         die "ledger write failed for ${rule} (${doc})"
 }
@@ -236,9 +242,9 @@ if [[ -f "$SCRIPT_DIR/validate-html-output.sh" ]]; then
     run_validator "$HTML_LOG" bash "$SCRIPT_DIR/validate-html-output.sh" "$HTML"
     vrc=$?
     if [[ "$vrc" -eq 124 ]]; then
-        echo "  WARNING: validate-html-output.sh timed out after ${VALIDATOR_TIMEOUT:-120}s -- H1/S2/L1/L2/A1-A5 NOT evaluated."
-        echo "           This is usually a missing local validator causing an npx fetch. Install tidy or"
-        echo "           html-validate locally. These checks are reported as unevaluated, not as passed."
+        echo "  WARNING: validate-html-output.sh timed out after ${VALIDATOR_TIMEOUT:-120}s -- H1/S2/L1/L2/A1-A5 NOT evaluated." >&2
+        echo "           This is usually a missing local validator causing an npx fetch. Install tidy or" >&2
+        echo "           html-validate locally. These checks are reported as unevaluated, not as passed." >&2
         HTML_LOG="/dev/null"
     fi
     if [[ "$vrc" -eq 124 ]]; then
@@ -248,7 +254,8 @@ if [[ -f "$SCRIPT_DIR/validate-html-output.sh" ]]; then
             if check_failed "$k" "$HTML_LOG"; then
                 emit "${RULE_FOR[$k]}" "${SEV_FOR[$k]}" "$(basename "$HTML")" \
                      "${NAME_FOR[$k]} check failed (${k})" \
-                     "validate-html-output.sh reported: $(check_detail "$k" "$HTML_LOG")"
+                     "validate-html-output.sh reported: $(check_detail "$k" "$HTML_LOG")" \
+                     "$k"
             fi
         done
     fi
@@ -260,7 +267,23 @@ fi
 # PRE-11 -- contrast, one rule across themes.
 # ---------------------------------------------------------------------------
 if command -v node >/dev/null 2>&1 && [[ -f "$SCRIPT_DIR/contrast-check.mjs" ]]; then
-    if ! run_validator "$CONTRAST_LOG" node "$SCRIPT_DIR/contrast-check.mjs" "$HTML"; then
+    run_validator "$CONTRAST_LOG" node "$SCRIPT_DIR/contrast-check.mjs" "$HTML"
+    crc=$?
+
+    # A pair the validator could not RESOLVE is neither a pass nor a finding, and it exits 0 -- so
+    # without this the run reported PRE-11 clean for pairs it never measured. Worse, an HTML with no
+    # `:root` block at all resolves nothing and prints "All contrast checks passed: 0/0 (light) + 0/0
+    # (dark)", a green line for zero work. Both are the unevaluated case, which is what the exit-2
+    # contract exists for.
+    unresolved=$(grep -c '⚠️' "$CONTRAST_LOG" 2>/dev/null || true)
+    if [[ "${unresolved:-0}" -gt 0 ]]; then
+        unevaluated "contrast-check.mjs could not resolve ${unresolved} token pair(s) -- PRE-11 incomplete"
+    fi
+    if grep -qE 'passed: 0/0' "$CONTRAST_LOG" 2>/dev/null; then
+        unevaluated "contrast-check.mjs measured 0 of 0 pairs (no resolvable :root tokens) -- PRE-11 not evaluated"
+    fi
+
+    if [[ "$crc" -ne 0 ]]; then
         # The theme name appears ONLY on its own header line ("[light theme]"); a failing pair line
         # carries a cross, the label and the ratio -- no theme name and no word "fail". So the previous
         # `grep -qiE "${theme}.*(fail)"` matched neither line shape and PRE-11 could never fire. The

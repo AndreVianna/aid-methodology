@@ -6,7 +6,9 @@ FIX handles two fundamentally different kinds of finding. **Route each by kind**
 
 ### Machine-detected findings — fix directly (objective; one correct fix)
 
-Read `.aid/.temp/review-pending/summarize.md`. Filter rows where Status ∈ {`Pending`, `Recurred`} — these are the open findings to address. **Do NOT modify the ledger Status column during FIX**; VALIDATE will re-run the checks and create fresh rows in the next cycle.
+Read `.aid/.temp/review-pending/summarize.md`. Filter rows where Status ∈ {`Pending`, `Recurred`} — these are the open findings to address. **Do NOT modify the ledger `Status` column during FIX** — that is reconciliation's job, and VALIDATE does it: it re-runs the checks into a per-cycle scratch ledger and reconciles scratch against this file on `(Doc, Rule)`, flipping to `Fixed` exactly the rows whose defect is gone (`references/state-validate.md`).
+
+> This used to read *"VALIDATE will re-run the checks and create fresh rows in the next cycle"*, which was wrong in both halves and made the loop non-terminating: VALIDATE appended to this same file rather than creating anything fresh, so a fixed row stayed `Pending`, `grade.sh` kept counting it, and every pass duplicated the rows that were still failing.
 
 For each Pending/Recurred row, apply the corresponding repair autonomously:
 

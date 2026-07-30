@@ -178,8 +178,13 @@ echo "== an unanswered checklist pauses instead of grading F =="
 grep -qi 'pause, not a grade\|pause, not a failing grade\|no grade at all' \
      "$ROOT/canonical/skills/aid-summarize/references/state-manual-checklist.md"
 chk "$?" 0 UA01 "MANUAL-CHECKLIST states that unanswered means no grade"
-grep -qi 'HALT and ask\|halt and ask' "$ROOT/canonical/skills/aid-summarize/SKILL.md"
-chk "$?" 0 UA02 "the skill routes an unanswered checklist to a halt"
+# The advance TYPE is the assertion, not the word "halt". UA02 used to accept "HALT and ask", which
+# pinned the router to the one type that is terminal -- so the test actively defended the bug: an
+# unanswered checklist is waiting on a human who will come back, which is PAUSE-FOR-USER-ACTION.
+grep -q 'PAUSE-FOR-USER-ACTION' "$ROOT/canonical/skills/aid-summarize/SKILL.md"
+chk "$?" 0 UA02 "the router types an unanswered checklist as PAUSE-FOR-USER-ACTION"
+grep -q 'PAUSE-FOR-USER-ACTION' "$ROOT/canonical/skills/aid-summarize/references/state-manual-checklist.md"
+chk "$?" 0 UA02b "MANUAL-CHECKLIST's own Advance agrees with the router"
 # And the old behaviour must be gone.
 c=$(grep -rc 'forces Human Grade = F\|Human Grade is forced to F' \
     "$ROOT/canonical/skills/aid-summarize/" 2>/dev/null | awk -F: '{s+=$2} END {print s+0}')
@@ -337,7 +342,10 @@ sev_bad=0
 for f in "${CITERS[@]}"; do
     [[ -f "$f" ]] || continue
     while IFS= read -r line; do
-        rule=$(printf '%s' "$line" | grep -oE '`[A-Z]+-[0-9]{2}`' | head -1 | tr -d '`')
+        # Backticked OR bare. Requiring backticks meant this loop examined ZERO rows in all four
+        # reviewer-prompt files -- their rule IDs sit in ledger EXAMPLE rows, which are bare by
+        # construction -- and five live drifts sat inside the declared scope while it reported clean.
+        rule=$(printf '%s' "$line" | grep -oE '[A-Z]{2,12}-[0-9]{2}' | head -1 | tr -d '`')
         [[ -n "$rule" ]] || continue
         stated=$(printf '%s' "$line" | grep -oE '\[(CRITICAL|HIGH|MEDIUM|LOW|MINOR)\]' | head -1)
         [[ -n "$stated" ]] || continue
@@ -350,6 +358,23 @@ for f in "${CITERS[@]}"; do
     done < <(grep -E '^\| ' "$f" | grep -E '`[A-Z]+-[0-9]{2}`')
 done
 [[ "$sev_bad" -eq 0 ]] && ok SEV01 "no surface restates a severity that disagrees with the rule it cites"
+
+# SEV01 can only report clean if it actually looked. Count the rows it examined across all eight files;
+# zero would mean the pattern is broken again, which is exactly how it passed while five drifts stood.
+sev_rows=0
+for f in "${CITERS[@]}"; do
+    [[ -f "$f" ]] || continue
+    while IFS= read -r line; do
+        printf '%s' "$line" | grep -qE '[A-Z]{2,12}-[0-9]{2}' || continue
+        printf '%s' "$line" | grep -qE '\[(CRITICAL|HIGH|MEDIUM|LOW|MINOR)\]' || continue
+        sev_rows=$((sev_rows + 1))
+    done < <(grep -E '^\| ' "$f")
+done
+if [[ "$sev_rows" -ge 10 ]]; then
+    ok SEV03 "SEV01 examined ${sev_rows} severity-bearing rows (not vacuous)"
+else
+    no SEV03 "SEV01 examined only ${sev_rows} rows -- its extraction pattern is broken"
+fi
 
 # Control: catalog_sev must actually read the catalog, else SEV01 passes on an empty comparison.
 [[ "$(catalog_sev SUMMARY-08)" == "[LOW]" ]] \

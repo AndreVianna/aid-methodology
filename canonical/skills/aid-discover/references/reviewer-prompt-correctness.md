@@ -49,10 +49,18 @@ For EVERY substantive claim in every KB document:
    replacement per P1(d)). A broken citation = `[HIGH]` if widespread, `[MEDIUM]`
    otherwise.
 
-**Severity anchors:**
-- False claim = `[CRITICAL]`
+**Severity anchors — worst case per class, not a fixed value:**
+- False claim = up to `[CRITICAL]`
 - Extractable-but-TBD, broken widespread citation = `[HIGH]`
 - Single broken citation = `[MEDIUM]`
+
+> **The Severity cell comes from the rule you cite, not from this list.** `NAR-05` and `KB-20` both
+> anchor `Step 2`, which means MUST modality with reach and reversibility read off the *instance*
+> (`review-rubrics/grading-rubric.md#severity-scale`). So a false version number confined to one KB
+> document, correctable by editing that document, is `[MEDIUM]` — see the example row below — while the
+> same class of error in a contract several documents depend on is `[CRITICAL]`. The bands above tell
+> you the ceiling of each class; the two axes tell you where a given instance lands. A row whose
+> Severity contradicts its own `Rule`'s anchor is a defect in the row.
 
 **Minimum 15 spot-checks** (verify claims against actual source files). At least 5 must
 be version verifications.
@@ -122,7 +130,7 @@ another KB statement is `KB-20`.
 ```
 | # | Severity | Status | Rule | Doc | Line | Description | Evidence |
 |---|----------|--------|------|-----|------|-------------|----------|
-| M1-001 | [CRITICAL] | Pending | NAR-05 | foo.md | 42 | [M1] False version claim — stated 2.1 but package.json says 3.0 | grep "version" package.json => "3.0" |
+| M1-001 | [MEDIUM] | Pending | NAR-05 | foo.md | 42 | [M1] False version claim — stated 2.1 but package.json says 3.0 | grep "version" package.json => "3.0" |
 ```
 
 > This block used to say *"the `Rule` cell shows `KB-20` because the KB rule set does not yet

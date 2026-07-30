@@ -5,7 +5,43 @@ VALIDATE runs the machine-verifiable quality checks (coverage, visual fidelity, 
 **It does not compute a grade.** `grade.sh` does that, from the ledger, at the end of this state — the same way every other artifact in AID is graded.
 
 ▶ validation suite starting (~1.5 min total — 3 scripts × ~30 s each per `.cursor/aid/templates/rough-time-hints.md`)
-Run `.cursor/aid/scripts/summarize/emit-summary-findings.sh .aid/knowledge/kb.html --ledger .aid/.temp/review-pending/summarize.md`. It orchestrates the machine-verifiable checks only.
+Run the emitter against a **per-cycle scratch ledger**, never against the canonical one:
+
+```bash
+N=<this cycle's number, 1 on first entry>
+bash .cursor/aid/scripts/summarize/emit-summary-findings.sh .aid/knowledge/kb.html \
+     --ledger ".aid/.temp/review-pending/summarize-cycle${N}.md"
+```
+
+> ⚠️ **Appending to the canonical ledger every cycle cannot converge, and this state used to do it.**
+> The emitter only ever *appends*; `state-fix.md` correctly forbids FIX from touching the `Status`
+> column; and nothing but DONE deletes the file. So a row stayed `Pending` after its defect was
+> genuinely fixed, `grade.sh` kept counting it, VALIDATE kept routing back to FIX — and each pass
+> duplicated every still-failing row on top. Reproducible: fix the one unreferenced document and the
+> grade does not move off `C+`.
+>
+> Scratch-per-cycle plus reconciliation is not a new mechanism invented here; it is the model
+> `reviewer-ledger-schema.md § Attempts and reconciliation` already defines, and the same one
+> `aid-discover`'s panel uses. This state simply has to follow it.
+
+**Reconcile scratch → canonical on `(Doc, Rule)`** (`Line` breaks a legitimate duplicate pair), per that
+section's transition table:
+
+| Canonical row | Key in this cycle's scratch? | Result |
+|---|---|---|
+| `Pending` | yes | stays `Pending` — Severity and Description are authorial, never rewritten |
+| `Pending` | no | → `Fixed`. The emitter is mechanical and examined every check it did not report as unevaluated, so absence here IS evidence — this is the coverage guard the schema requires, satisfied by construction rather than by a `U-` manifest |
+| `Fixed` | yes | → `Recurred` |
+| `Fixed` | no | stays `Fixed` |
+| `Accepted` / `OOS` / `Invalid` | either | never auto-changed |
+| — | key absent from canonical | append as a new finding at the next free `#` |
+
+**If the emitter exited `2`, reconcile nothing.** An unevaluated run has not examined the checks it
+skipped, so absence from its scratch proves nothing and would clear findings that still stand.
+
+Then delete the scratch: `rm -f ".aid/.temp/review-pending/summarize-cycle${N}.md"`.
+
+It orchestrates the machine-verifiable checks only.
 
 > ⚠️ **It invokes items 2 and 3 below, not item 1.** `emit-summary-findings.sh` runs
 > `validate-html-output.sh` and `contrast-check.mjs`; it also performs the doc-set coverage
