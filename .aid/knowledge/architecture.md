@@ -426,7 +426,8 @@ CONFIRMED in `project-structure.md` "Entry Points" and file headers:
 4. User-facing skills — `/aid-*` slash commands resolving to installed `SKILL.md` files.
 5. Dashboard servers — `dashboard/server/server.mjs` (Node) / `dashboard/server/server.py`.
 6. The maintainer build — `run_generator.py`; the release runbook — `release.sh`.
-7. The website — `site/` (independent Astro build).
+7. The website — `site/` (Astro build; independent of the CLI, but it DOES consume
+   `canonical/` at build time via its three generators — see module-map.md § Dependency Graph).
 
 ---
 

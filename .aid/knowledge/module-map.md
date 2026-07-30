@@ -134,14 +134,35 @@ dashboard/server/server.py  -> dashboard/reader/reader.py
 dashboard/reader/reader.py  -> parsers.py , derivation.py , models.py , locator.py
 dashboard/reader/*          -> .aid/ artifact schemas (STATE.md, settings.yml, KB)
 dashboard/server/reader.mjs <parity> dashboard/reader/*.py   (whole-reader twin -- no import; behavior-equal)
-site/                       -> (independent; no dependency on the CLI/toolkit)
+site/                       -> canonical/skills/, canonical/agents/,
+                               canonical/aid/templates/{shortcut-catalog.yml,knowledge-base/}
+                               (generators read the toolkit at build time)
+site/                       -> (independent of the CLI: bin/, lib/, install.sh)
 ```
 
-Key non-dependency (a thing that looks connected but is not):
+**`site/` DOES consume `canonical/` — this was a non-dependency and is no longer.**
 
 ```
-site/  X  canonical/        (the website does NOT consume the toolkit; it has its own build)
+site/  ->  canonical/       (hard build-time dependency, and enforced)
 ```
+
+work-001 (Skill Explorer) made the website derive its content from the toolkit rather than
+restate it. Three generators — `gen-reference.mjs`, `gen-skills.mjs`, `sync-docs.mjs` — read
+`canonical/` on every `prebuild`, and the coupling is *enforced*, not incidental:
+
+- `gen-skills.mjs` and `gen-reference.mjs` **throw** when the on-disk skill set diverges from
+  the catalog plus curated roster, so a canonical change that the site cannot account for
+  fails the build rather than silently emitting a stale page.
+- `.github/workflows/docs.yml` lists `canonical/**` on both path filters — a canonical-only
+  commit must still rebuild the site.
+- `tests/canonical/test-skill-counts.sh` compares every stated skill count in the repo against
+  a derivation rooted in `canonical/`.
+
+**Consequence for any change:** a `canonical/skills/` addition or removal is now a `site/`
+change too. Adding a skill directory without a catalog row or curated-roster entry turns the
+site build red by design. Until work-001 the entry below read "the website does NOT consume
+the toolkit; it has its own build" — it was correct when written and is kept here only so a
+reader who remembers it knows it was superseded, not forgotten.
 
 ---
 
