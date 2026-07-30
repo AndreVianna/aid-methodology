@@ -1,0 +1,268 @@
+# aid/templates/graph/relation-vocabulary.yml
+#
+# Closed relation/inverse vocabulary for relationships.md (feature-001,
+# work-005-knowledge-graph). One entry per relation type; every type is
+# paired with its inverse so a relationships.md row records both directions
+# without a second row.
+#
+# Renders as VERBATIM BYTES to `<root>/aid/templates/graph/relation-vocabulary.yml`
+# in all 5 profiles -- a `.yml` is not in render.py's `_TEXT_EXTENSIONS`,
+# matching the shipped `templates/shortcut-catalog.yml` precedent.
+#
+# ---------------------------------------------------------------------------
+# Field contract (seven keys, fixed order, one per physical line)
+# ---------------------------------------------------------------------------
+#
+#   relation       (required, plain token [a-z][a-z0-9-]*) -- the relation name
+#                  read Source -> Target; the identifying key; must be unique
+#                  across the vocabulary.
+#
+#   inverse        (required, plain token) -- the same relationship read
+#                  Target -> Source; must equal some entry's `relation` value
+#                  (the set is closed under inversion).
+#
+#   symmetry       (required, plain enum: asymmetric | symmetric) --
+#                  `symmetric` iff `inverse == relation`; `asymmetric` otherwise.
+#                  No third case is valid.
+#
+#   category       (required, plain token) -- the single grouping bucket this
+#                  type belongs to; drawn from this file's own `categories:` set.
+#                  Never blank, never multi-valued.
+#
+#   endpoint_kinds (required, non-empty flow sequence of double-quoted tokens) --
+#                  which ordered prefix pairs this relation may legally join when
+#                  it appears as S2T Relation in a row.
+#                  Token form: "<p>-><p>" where <p> is one of kb:, int:, ext:.
+#                  Tokens are always double-quoted; the colons would otherwise
+#                  parse as mappings in a plain flow-sequence scalar.
+#
+#   passes         (required, non-empty flow sequence of plain tokens) --
+#                  which extraction passes may emit this type.
+#                  Values: declared | derived | inferred.
+#
+#   definition     (required, double-quoted string, one sentence, one line) --
+#                  what the relation asserts, precise enough that two independent
+#                  authors pick the same type for the same fact. Always
+#                  double-quoted; prose reliably acquires a colon-space or comma.
+#
+# ---------------------------------------------------------------------------
+# Enum values
+# ---------------------------------------------------------------------------
+#
+#   symmetry:       asymmetric | symmetric
+#   passes values:  declared | derived | inferred
+#   endpoint kinds: kb:->kb:  | kb:->int: | kb:->ext:
+#                   int:->int: | int:->kb: | ext:->kb:
+#                   (other combinations reserved for future pairs)
+#
+# ---------------------------------------------------------------------------
+# Worked examples (illustration only; ids are repo-relative)
+# ---------------------------------------------------------------------------
+#
+# KB-to-KB (navigation):
+#   Source Id        kb:infrastructure.md
+#   Source Name      Infrastructure
+#   Target Id        kb:technology-stack.md
+#   Target Name      Technology Stack
+#   S2T Relation     cross-references
+#   T2S Relation     cross-referenced-by
+#   Provenance       declared
+#   Observation      see_also: frontmatter in infrastructure.md lists technology-stack.md
+#
+# KB-to-source (documentation):
+#   Source Id        kb:architecture.md
+#   Source Name      Architecture
+#   Target Id        int:docs/aid-methodology.md
+#   Target Name      AID Methodology Docs
+#   S2T Relation     documents
+#   T2S Relation     documented-by
+#   Provenance       declared
+#   Observation      sources: frontmatter in architecture.md includes docs/aid-methodology.md
+#
+# KB-to-external (documentation; ext:wcag-22-aa is a resolvable key in the
+#   Q4 synthetic fixture registered by task-035, delivery-002; this project's
+#   own external-sources.md has zero registered entries):
+#   Source Id        kb:domain-glossary.md
+#   Source Name      Domain Glossary
+#   Target Id        ext:wcag-22-aa
+#   Target Name      WCAG 2.2 (Level AA)
+#   S2T Relation     references
+#   T2S Relation     referenced-by
+#   Provenance       declared
+#   Observation      Synthetic fixture key; zero real ext: entries in this repository
+#
+# ---------------------------------------------------------------------------
+# Adding a relation type
+# ---------------------------------------------------------------------------
+#
+#   1. Propose a pair -- two entries (or one for a symmetric type) -- with
+#      all seven keys filled and at least one real instance it names.
+#      The Step 4 screen (feature-001 Feature Flow) applies to additions
+#      forever: traceable to a harvested instance or a §5.1 source class;
+#      definition must not overlap with an already-admitted type.
+#   2. A new `category` value requires a `categories:` entry in the same
+#      edit, or property 5 (category totality) fails at load time.
+#   3. Run the Step 6 property self-test (all five properties must pass).
+#   4. Run the FULL profile generator (never a partial render) so all five
+#      profile copies and their emission manifests move together.
+#   5. Submit through the project's normal review gate (reviewer ledger at
+#      .aid/.temp/review-pending/<scope>.md, graded by grade.sh).
+#
+# ---------------------------------------------------------------------------
+# Consumers
+# ---------------------------------------------------------------------------
+#
+#   feature-003  rel_load_vocabulary (relationship-schema.sh) --
+#                `relation` + `inverse` for V3/V4 inverse-pair validation.
+#                `symmetry` lets V4 accept a self-inverse pair as declared
+#                rather than as a tolerated accident.
+#   feature-005  edge-relation-map.yml resolver --
+#                `relation`, `inverse`, `passes`, `endpoint_kinds` for
+#                fail-closed map-load-time gates and pass-emission bounds.
+#   feature-006  coverage_bearing subset selector --
+#                `relation` + `category` for coverage predicate evaluation.
+#   feature-007/008  graph view --
+#                `category` for grouping and Overview-lens collapse (FR-13).
+#   feature-009  accessible table view --
+#                `category`, `definition` for peer rendering labels (NFR-3).
+#
+# ---------------------------------------------------------------------------
+
+pairs:
+
+  # --- category: dependency ---
+
+  - relation: dependency-of
+    inverse: depends-on
+    symmetry: asymmetric
+    category: dependency
+    endpoint_kinds: ["int:->int:"]
+    passes: [derived, declared]
+    definition: "The source artifact is a required non-executable data input for the target artifact to function correctly."
+
+  - relation: depends-on
+    inverse: dependency-of
+    symmetry: asymmetric
+    category: dependency
+    endpoint_kinds: ["int:->int:"]
+    passes: [derived, declared]
+    definition: "The source artifact requires the target non-executable artifact as a necessary data input to function correctly."
+
+  - relation: invoked-by
+    inverse: invokes
+    symmetry: asymmetric
+    category: dependency
+    endpoint_kinds: ["int:->int:"]
+    passes: [derived]
+    definition: "The source artifact is executed or dispatched by the target artifact as a subprocess or called script at runtime."
+
+  - relation: invokes
+    inverse: invoked-by
+    symmetry: asymmetric
+    category: dependency
+    endpoint_kinds: ["int:->int:"]
+    passes: [derived]
+    definition: "The source artifact executes or dispatches the target artifact as a subprocess or called script at runtime."
+
+  # --- category: documentation ---
+
+  - relation: cited-by
+    inverse: cites
+    symmetry: asymmetric
+    category: documentation
+    endpoint_kinds: ["int:->kb:", "kb:->kb:"]
+    passes: [declared]
+    definition: "The source artifact is the evidence target of a durable CONFIRMED anchor in the target KB document confirming a specific claim."
+
+  - relation: cites
+    inverse: cited-by
+    symmetry: asymmetric
+    category: documentation
+    endpoint_kinds: ["kb:->int:", "kb:->kb:"]
+    passes: [declared]
+    definition: "The source KB document contains a durable CONFIRMED anchor confirming a specific claim against the target artifact."
+
+  - relation: documented-by
+    inverse: documents
+    symmetry: asymmetric
+    category: documentation
+    endpoint_kinds: ["int:->kb:", "kb:->kb:"]
+    passes: [declared]
+    definition: "The source artifact is a primary content source that the target KB document was authored from."
+
+  - relation: documents
+    inverse: documented-by
+    symmetry: asymmetric
+    category: documentation
+    endpoint_kinds: ["kb:->int:", "kb:->kb:"]
+    passes: [declared]
+    definition: "The source KB document was authored by drawing primarily on the target artifact for its factual content."
+
+  - relation: referenced-by
+    inverse: references
+    symmetry: asymmetric
+    category: documentation
+    endpoint_kinds: ["ext:->kb:"]
+    passes: [declared]
+    definition: "The source external source registered in external-sources.md contributed content to the target KB document."
+
+  - relation: references
+    inverse: referenced-by
+    symmetry: asymmetric
+    category: documentation
+    endpoint_kinds: ["kb:->ext:"]
+    passes: [declared]
+    definition: "The source KB document drew content from the target external source whose key is registered in external-sources.md."
+
+  # --- category: generation ---
+
+  - relation: generated-by
+    inverse: generates
+    symmetry: asymmetric
+    category: generation
+    endpoint_kinds: ["int:->int:"]
+    passes: [derived]
+    definition: "The source artifact was produced from the target artifact by a deterministic script or rendering process."
+
+  - relation: generates
+    inverse: generated-by
+    symmetry: asymmetric
+    category: generation
+    endpoint_kinds: ["int:->int:"]
+    passes: [derived]
+    definition: "The source artifact produces the target artifact as output through a deterministic script or rendering process."
+
+  # --- category: navigation ---
+
+  - relation: cross-referenced-by
+    inverse: cross-references
+    symmetry: asymmetric
+    category: navigation
+    endpoint_kinds: ["kb:->kb:"]
+    passes: [declared]
+    definition: "The source KB document is pointed to from the target KB document as supplementary or related reading."
+
+  - relation: cross-references
+    inverse: cross-referenced-by
+    symmetry: asymmetric
+    category: navigation
+    endpoint_kinds: ["kb:->kb:"]
+    passes: [declared]
+    definition: "The source KB document directs a reader to the target KB document for supplementary or related information."
+
+  # --- category: obligation ---
+
+  - relation: lockstep-with
+    inverse: lockstep-with
+    symmetry: symmetric
+    category: obligation
+    endpoint_kinds: ["int:->int:"]
+    passes: [declared]
+    definition: "Both source and target share a maintenance invariant they must satisfy together with no natural primary direction."
+
+categories:
+  - "dependency|The source node requires the target node to function — as data or by calling it."
+  - "documentation|The source node records or proves facts about the target node."
+  - "generation|The source node produces the target node as output (rendering, script generation)."
+  - "navigation|The source node directs a reader toward the target for supplementary information."
+  - "obligation|Both nodes share an invariant they must maintain together (symmetric)."

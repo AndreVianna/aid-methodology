@@ -1,8 +1,8 @@
 ---
 delivery_state: Pending-Spec
-gate_tier: Small | Medium | Large
-gate_grade: "{grade or Pending}"
-gate_timestamp: "{YYYY-MM-DDTHH:MM:SSZ}"
+gate_tier: Medium
+gate_grade: A+
+gate_timestamp: '2026-07-29T04:07:16Z'
 ticket_ref: --
 ---
 
@@ -64,18 +64,11 @@ so the delivery lifecycle MUST be independently authored.
 
 ## Delivery Gate
 
-<!-- AUTHORED -- single writer: the delivery-gate closing step of `aid-execute` on this
-     delivery's branch. Written via `writeback-state.sh --delivery-id NNN --block ...`.
-     Distinct from per-task quick-check findings -- the gate aggregates those deferred [HIGH]
-     rows (via delivery-NNN-issues.md) and runs a full grade.sh pass.
-     Instances of the deferred-[HIGH] log live at `.aid/works/work-NNN/delivery-NNN-issues.md`;
-     see `.claude/aid/templates/delivery-issues.md` for the template.
-     Reviewer Tier / Grade / Timestamp live in the YAML frontmatter block at the top of this
-     file (`gate_tier`, `gate_grade`, `gate_timestamp`). Issue List stays here as markdown
-     body (a variable-length inline list doesn't fit a flat frontmatter scalar). -->
-
-- **Issue List:** {inline severity-tagged list, or "none" if gate passed clean}
-
+- **Complexity Score:** 7 (tasks=5, depth=2, risk=0, consults=0)
+- **Cycles:** 2
+- **Issue List:**
+  - [HIGH] relation-vocabulary.yml entries not sorted by category then relation -- `depends-on` preceded `dependency-of` -- Fixed (cycle 2, verified zero diff against LC_ALL=C sort)
+  - [LOW] relation-vocabulary-report.md worked rows presented as transposed key-value tables rather than the eight-column REQUIREMENTS.md 5.2 shape -- Fixed (cycle 2, reformatted; header verified against 5.2)
 ---
 
 ## Cross-phase Q&A
