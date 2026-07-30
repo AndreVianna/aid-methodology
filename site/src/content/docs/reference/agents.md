@@ -68,7 +68,7 @@ Reads and analyzes code, docs, logs, APIs, and external web sources to produce s
 
 **Tools:** Read, Glob, Grep, Bash
 
-Adversarial quality evaluator. Reviews any artifact (code, tasks, specs, plans, KB docs) against its acceptance criteria, rubric, and KB conventions. Produces the 7-column issue ledger with source and severity tags. Does NOT fix anything; does NOT compute the grade.
+Adversarial quality evaluator. Reviews any artifact (code, tasks, specs, plans, KB docs) against its acceptance criteria, rubric, and KB conventions. Produces the 8-column issue ledger with a rule ID and severity on every finding. Does NOT fix anything; does NOT compute the grade.
 
 [Definition: `canonical/agents/aid-reviewer/AGENT.md`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/agents/aid-reviewer/AGENT.md)
 
@@ -91,3 +91,11 @@ Deterministic, mechanical operations — extract, format, enumerate.
 INTERNAL UTILITY (sub-agent only — do NOT invoke from a skill). Performs one mechanical, schema-bounded operation per dispatch — file extraction, template placeholder-fill, or glob enumeration — returning a markdown table or file with path and line evidence.
 
 [Definition: `canonical/agents/aid-clerk/AGENT.md`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/agents/aid-clerk/AGENT.md)
+
+### `aid-screener`
+
+**Tools:** Read, Glob, Grep
+
+Cheap first-pass screener. Reads an artifact and reports only the obvious, high-signal problems it can see quickly — then STOPS. Deliberately NOT exhaustive: it is a filter that runs before an expensive adversarial review, never a substitute for one. Does not fix anything; does not compute a grade; does not run commands.
+
+[Definition: `canonical/agents/aid-screener/AGENT.md`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/agents/aid-screener/AGENT.md)

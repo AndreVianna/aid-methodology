@@ -83,7 +83,10 @@ FINDINGS=0
 # definition has been executed. Placed later, the call was a `command not found` on stderr that left
 # UNEVALUATED at 0, so an unevaluated run still exited 1 and looked complete.
 UNEVALUATED=0
-unevaluated() { UNEVALUATED=$((UNEVALUATED + 1)); echo "  note: $1"; }
+# The note goes to STDERR, with the exit-2 ERROR that references it ("see the notes above"). Splitting
+# them across streams put the explanation on stdout and the failure on stderr, so a caller that captures
+# only stderr -- the normal way to log a failure -- got "see the notes above" and no notes.
+unevaluated() { UNEVALUATED=$((UNEVALUATED + 1)); echo "  note: $1" >&2; }
 
 # emit RULE SEVERITY DOC DESCRIPTION EVIDENCE
 # One place decides what a finding looks like, so a new check cannot invent its own row shape.
@@ -113,6 +116,20 @@ KB_DIR=".aid/knowledge"
 missing_docs=""
 
 if [[ -f "$SETTINGS" && -d "$KB_DIR" ]]; then
+    # A settings.yml that EXISTS but declares no doc_set is not a pass. Without this the loop below ran
+    # zero times, emitted nothing, and the script exited 0 "no findings" -- reporting a clean coverage
+    # check against a doc-set it never had. `grading-rubric.md § COV` promises the opposite in as many
+    # words: "reports itself as not evaluated rather than passing".
+    DECLARED=0
+    while IFS= read -r d; do [[ -n "$d" ]] && DECLARED=$((DECLARED + 1)); done < <(awk '
+        /^[[:space:]]*doc_set:[[:space:]]*$/ { in_ds = 1; next }
+        in_ds && /^[[:space:]]*[A-Za-z_][A-Za-z0-9_]*:/ { in_ds = 0 }
+        in_ds && /^[[:space:]]*-[[:space:]]/ { print "row" }
+    ' "$SETTINGS")
+    if [[ "$DECLARED" -eq 0 ]]; then
+        unevaluated "${SETTINGS} declares no knowledge.doc_set rows -- SUMMARY-01 not evaluated"
+    fi
+
     # Resolved doc set: declared in settings AND present on disk.
     while IFS= read -r doc; do
         [[ -z "$doc" ]] && continue

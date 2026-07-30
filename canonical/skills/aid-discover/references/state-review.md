@@ -464,9 +464,9 @@ and assertiveness gate are mode-agnostic.
 
 | Intent | Gate | `#` scope | Description marker | `Rule` the gate counts | Severity | FAIL condition |
 |--------|------|-----------|--------------------|------------------------|----------|----------------|
-| Intent 2 -- Essence (M3) | Essence Gate | `TB-` | `[FIDELITY]` (Divergence) | `NAR-05` | `[HIGH]` | Any open `TB-` row with `Rule` = `NAR-05` |
-| Intent 2 -- Essence (M3) | Essence Gate | `TB-` | `[ESSENCE-GAP]` (Omission) | _(gate keys on the marker -- criteria gap, § 2c)_ | `[MEDIUM]` | Any open `TB-` row marked `[ESSENCE-GAP]` |
-| Intent 1 -- Assertiveness (M4) | Assertiveness Gate | `AB-` | `[ACTBACK]` (all FAIL classes) | `^KB-2[0-6]$` | `[HIGH]` | Any open `AB-` row with a `KB-20`..`KB-26` rule, or a quality-contract absent |
+| Intent 2 -- Essence (M3) | Essence Gate | `TB-` | `[FIDELITY]` (Divergence) | `NAR-05` | _per the cited rule_ | Any open `TB-` row with `Rule` = `NAR-05` |
+| Intent 2 -- Essence (M3) | Essence Gate | `TB-` | `[ESSENCE-GAP]` (Omission) | _(gate keys on the marker -- criteria gap, § 2c)_ | _per the cited rule_ | Any open `TB-` row marked `[ESSENCE-GAP]` |
+| Intent 1 -- Assertiveness (M4) | Assertiveness Gate | `AB-` | `[ACTBACK]` (all FAIL classes) | `^KB-2[0-6]$` | _per the cited rule_ | Any open `AB-` row with a `KB-20`..`KB-26` rule, or a quality-contract absent |
 
 Two things to read off this table. **No row carries a coverage percentage** — both ratios were
 retired; see the two "Why the ... ratio is gone" notes in § 2c and § 2d. And **every row is

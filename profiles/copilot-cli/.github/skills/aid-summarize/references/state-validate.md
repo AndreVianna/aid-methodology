@@ -57,9 +57,9 @@ corrected below, exactly the re-derivation feature-007 §1b called for.
 | Script check | Rule | Severity (per the catalog) | Rows |
 |---|---|---|---|
 | COV (a resolved doc-set document is not referenced) | `SUMMARY-01` | `[MEDIUM]` | **One row per unreferenced document, naming it.** There is no 60% cliff and no automatic F: the grade follows from how many documents are missing |
-| T1 (visual text not readable — font-size below threshold or zero-height-clipped) | `SUMMARY-06` | `[HIGH]` | one row per failing visual |
-| T2 (visual child element overlap exceeds 20% tolerance) | `SUMMARY-06` | `[HIGH]` | one row per failing visual |
-| T3 (visual collapsed or empty — non-trivial dimensions assertion failed) | `SUMMARY-06` | `[HIGH]` | one row per failing visual |
+| T1 (visual text not readable — font-size below threshold or zero-height-clipped) | `SUMMARY-06` | `[HIGH]` | one row per failing visual — **NOT emitted today**, see the note above |
+| T2 (visual child element overlap exceeds 20% tolerance) | `SUMMARY-06` | `[HIGH]` | one row per failing visual — **NOT emitted today**, see the note above |
+| T3 (visual collapsed or empty — non-trivial dimensions assertion failed) | `SUMMARY-06` | `[HIGH]` | one row per failing visual — **NOT emitted today**, see the note above |
 | L1 (broken anchor links) | `SUMMARY-08` | `[LOW]` | one row per broken link — a dead in-page jump is contained and fixed by regenerating |
 | L2 (broken .md links) | `SUMMARY-09` | `[MEDIUM]` | one row per broken path — it sends the reader out of the summary to nothing |
 | H1 (HTML validity failure) | `SUMMARY-02` | `[MEDIUM]` | one row per reported error |

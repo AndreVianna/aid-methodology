@@ -12,3 +12,11 @@
 # relative to the pre-work-024 merge-base and is already absorbed into master, so it is
 # NOT seeded here. Append one reviewed row per future re-home, then re-run the gate to
 # confirm the target landed in the after-inventory.
+
+# --- delivery-015 (one grading backend) -------------------------------------
+# grade-summary.sh was renamed emit-summary-findings.sh and stopped computing a grade, so three
+# assertion LABELS changed while the assertions themselves survived and got stricter. Re-homes, not
+# removals: each target below is present in the after-inventory.
+test-grade-summary.sh	AC3f	test-grade-summary.sh	AC3f-2	AC3f asserted two things under one label (COV=full 15/15, and Machine Grade != F). The score and the Machine Grade both ceased to exist, so the pair was re-expressed as AC3f (a full-coverage summary emits NO SUMMARY-01 row) plus AC3f-2 (the emitter reports no grade of any kind, NFR-7). Same two claims, neither weakened.
+test-grade-summary.sh	GR-C6a: grade-summary.sh COV works correctly when settings.yml also has kb_baseline block	test-grade-summary.sh	GR-C6a: doc_set parsing is unaffected by a sibling kb_baseline block in settings.yml	Same guardrail (a kb_baseline block must not break doc_set parsing), same fixture. The observable proof changed because the old one read "COV [PASS]" out of a grade report that no longer exists; it now asserts the coverage check RAN and found nothing, and fails on either "not evaluated" or a spurious row.
+test-guardrails-d012.sh	C6b grade-summary.sh reads discovery.doc_set for COV completeness	test-guardrails-d012.sh	C6b emit-summary-findings.sh reads the doc_set for COV completeness	Guardrail C6 unchanged -- the completeness check must still read the doc-set. Only the script name changed, so the assertion was retargeted rather than dropped.

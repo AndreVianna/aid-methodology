@@ -34,7 +34,13 @@ const SHORTCUT_CATALOG_SRC = 'canonical/aid/templates/shortcut-catalog.yml';
 // ── YAML frontmatter parser (minimal — no deps) ───────────────────────────────
 
 function parseFrontmatter(text) {
-  const match = text.match(/^---\n([\s\S]*?)\n---/);
+  // CRLF tolerance is load-bearing, not defensive. `canonical/**` is committed with LF, but git's
+  // autocrlf gives a Windows checkout CRLF working-copy files -- and `^---\n` does not match
+  // `---\r\n`, so this returned {} for EVERY document and the generator wrote pages whose skill and
+  // agent descriptions were all blank. It failed silently: no throw, no warning, just empty sections,
+  // which is why it survived. Normalise once here rather than sprinkling \r? through the line logic.
+  const src = text.replace(/\r\n/g, '\n');
+  const match = src.match(/^---\n([\s\S]*?)\n---/);
   if (!match) return {};
   const fm = {};
   const raw = match[1];
@@ -194,7 +200,15 @@ const SKILL_GROUPS = [
   {
     group: 'Execution',
     blurb: 'Build, review, and test.',
-    skills: [{ name: 'aid-execute', phase: 'Phase 6 · 8 task types · graded loop' }],
+    skills: [
+      { name: 'aid-execute', phase: 'Phase 6 · 8 task types · graded loop' },
+      // work-003 extracted review into two chainable skills. They were absent from this
+      // curated list, and because the drift guard below builds `expected` from it, the
+      // generator threw on every run once they landed on disk — so this page could not be
+      // regenerated at all, and it went stale silently.
+      { name: 'aid-light-review', phase: 'chain-called · cheap screening pass, never an all-clear' },
+      { name: 'aid-deep-review', phase: 'chain-called · graded adversarial review + FIX loop' },
+    ],
   },
 ];
 

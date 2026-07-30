@@ -283,7 +283,7 @@ A clean run emits nothing to the ledger and reports no grade:
 
 ```
 $ bash .agent/aid/scripts/summarize/emit-summary-findings.sh .aid/knowledge/kb.html \
-      --ledger .aid/.temp/review-pending/summary.md
+      --ledger .aid/.temp/review-pending/summarize.md
 
 === emit-summary-findings.sh: .aid/knowledge/kb.html ===
 
@@ -298,8 +298,10 @@ missing documents are **named** — the retired check reported only a percentage
 
 **In `--ledger` mode the rows go to the ledger, not to the terminal** — the writer's output is
 discarded, so a run that finds problems prints only the count. Use `--dry-run` to see the rows; that
-mode writes nothing and prints them pipe-separated, exactly as below (this is real output, not an
-illustration):
+mode writes nothing and prints them pipe-separated. The block below is real captured output, from a
+three-document fixture -- **not** from this repository, whose own `kb.html` does reference both
+`tech-debt.md` and `test-landscape.md` and so produces no coverage rows at all. Reproduce it by
+declaring three documents in a scratch `settings.yml` and referencing only the first in the HTML:
 
 ```
 $ bash .agent/aid/scripts/summarize/emit-summary-findings.sh .aid/knowledge/kb.html --dry-run
@@ -312,10 +314,15 @@ emit-summary-findings.sh: emitted 2 finding(s).
 NOTE: no grade is computed here. Run grade.sh over the ledger for the letter.
 ```
 
-The grade then comes from the one grader, over those rows — again, real output:
+The grade then comes from the one grader, over those rows. **The criteria-gap gate runs first**, and
+that order is not decorative: an open criteria gap means some finding had no rule to be judged by, and a
+grade computed over an incomplete rule set is a number with nothing behind it.
 
 ```
-$ bash .agent/aid/scripts/grade.sh --explain .aid/.temp/review-pending/summary.md
+$ bash .agent/aid/scripts/review/check-gaps.sh --ledger .aid/.temp/review-pending/summarize.md
+OK: check-gaps.sh: no open criteria gap; grading may proceed
+
+$ bash .agent/aid/scripts/grade.sh --explain .aid/.temp/review-pending/summarize.md
 
 C
 Issue counts (schema-table mode):

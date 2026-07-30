@@ -1,12 +1,12 @@
 ---
 title: 'Skills'
-description: 'All AID skills — 19 classic pipeline skills, the aid-triage router, the aid-ask Q&A alias, and the catalog-driven direct-entry shortcuts — grouped by skill group/family, with what each does and where it comes from.'
+description: 'All AID skills — 21 classic pipeline skills, the aid-triage router, the aid-ask Q&A alias, and the catalog-driven direct-entry shortcuts — grouped by skill group/family, with what each does and where it comes from.'
 generatedFrom: 'canonical/skills/*/SKILL.md, canonical/aid/templates/shortcut-catalog.yml'
 ---
 
 <!-- generated — do not edit; source: canonical/skills/*/SKILL.md -->
 
-AID ships **111 skill directories** under `canonical/skills/`: **19 classic pipeline skills** across four skill groups (Support, Knowledge Base Maintenance, Definition, Execution), the suggest-only router **`/aid-triage`**, the friendly **`/aid-ask`** Q&A alias (of `/aid-query-kb`), and **64 engine-driven direct-entry shortcut skills** generated from a 94-row catalog (58 canonical names + 36 aliases); 30 of the rows (24 canonical + 6 alias) are `repurpose: true` — the 4 classic re-registered skills plus the work-005 hand-authored single-shot "collapse" skills, all hand-authored with their own directories). The six numbered phases — Discover through Execute — form the mandatory sequential full path; every skill runs as a slash command (e.g. `/aid-config`) inside your AI host tool. Classic and router skills below are generated from each skill's own definition in `canonical/skills/`; shortcuts are summarized by family from the catalog (see "Direct-entry shortcuts" below, nested inside the Definition group).
+AID ships **113 skill directories** under `canonical/skills/`: **21 classic pipeline skills** across four skill groups (Support, Knowledge Base Maintenance, Definition, Execution), the suggest-only router **`/aid-triage`**, the friendly **`/aid-ask`** Q&A alias (of `/aid-query-kb`), and **64 engine-driven direct-entry shortcut skills** generated from a 94-row catalog (58 canonical names + 36 aliases); 30 of the rows (24 canonical + 6 alias) are `repurpose: true` — the 4 classic re-registered skills plus the work-005 hand-authored single-shot "collapse" skills, all hand-authored with their own directories). The six numbered phases — Discover through Execute — form the mandatory sequential full path; every skill runs as a slash command (e.g. `/aid-config`) inside your AI host tool. Classic and router skills below are generated from each skill's own definition in `canonical/skills/`; shortcuts are summarized by family from the catalog (see "Direct-entry shortcuts" below, nested inside the Definition group).
 
 ## Support
 
@@ -76,7 +76,7 @@ Brownfield project discovery with built-in quality gate. Run `/aid-config` first
 
 **optional viewer**
 
-Generate a single-file kb.html from .aid/knowledge/. Domain-driven, doc-set-based: one section per resolved doc derived from frontmatter (kb-category, objective, summary, tags, see_also). Audience: non-technical newcomer (visually rich; no KB authoring-rules leakage). Light/dark theme, click-to-expand lightbox, accessibility-first (WCAG AA). Two-grade quality gate (Machine + Human): script-verifiable checks score the Machine Grade; an interactive checklist scores the Human Grade (K1 KB-completeness, K2 fact-grounding, V1 mandatory human visual gate). APPROVAL requires BOTH grades >= minimum. Idempotent: re-running on an unchanged KB does nothing. State-machine: PREFLIGHT -> STALE-CHECK -> PROFILE -> GENERATE -> VALIDATE -> MANUAL-CHECKLIST -> FIX -> APPROVAL -> WRITEBACK -> DONE.
+Generate a single-file kb.html from .aid/knowledge/. Domain-driven, doc-set-based: one section per resolved doc derived from frontmatter (kb-category, objective, summary, tags, see_also). Audience: non-technical newcomer (visually rich; no KB authoring-rules leakage). Light/dark theme, click-to-expand lightbox, accessibility-first (WCAG AA). One grading backend: script-verifiable checks and an interactive human checklist (KB completeness, fact-grounding, V1 mandatory human visual check) both write findings to the review ledger, and grade.sh derives the single letter from it. APPROVAL requires that grade >= minimum AND the checklist to have been completed; an unanswered checklist produces no grade at all and pauses for the human. Idempotent: re-running on an unchanged KB does nothing. State-machine: PREFLIGHT -> STALE-CHECK -> PROFILE -> GENERATE -> VALIDATE -> MANUAL-CHECKLIST -> FIX -> APPROVAL -> WRITEBACK -> DONE.
 
 [Definition: `canonical/skills/aid-summarize/SKILL.md`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-summarize/SKILL.md)
 
@@ -221,4 +221,20 @@ Build, review, and test.
 Execute a task based on its type: RESEARCH, DESIGN, IMPLEMENT, TEST, DOCUMENT, MIGRATE, REFACTOR, or CONFIGURE. Built-in review loop per type. State machine: EXECUTE → REVIEW → FIX → back to REVIEW → DONE when grade ≥ minimum. Branch per delivery for isolation.
 
 [Definition: `canonical/skills/aid-execute/SKILL.md`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-execute/SKILL.md)
+
+### `aid-light-review`
+
+**chain-called · cheap screening pass, never an all-clear**
+
+Cheap screening pass over an artifact, callable by any skill. Dispatches aid-screener, reports what is obviously wrong, and STOPS. Computes no grade, writes no ledger, writes no coverage rows. Never a substitute for /aid-deep-review.
+
+[Definition: `canonical/skills/aid-light-review/SKILL.md`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-light-review/SKILL.md)
+
+### `aid-deep-review`
+
+**chain-called · graded adversarial review + FIX loop**
+
+The graded adversarial review, callable by any skill. Dispatches aid-reviewer against a resolved rule set, reconciles findings into the durable ledger, gates on open criteria gaps, grades, and runs the FIX loop to the caller's minimum grade. This is the pass a quality gate reads.
+
+[Definition: `canonical/skills/aid-deep-review/SKILL.md`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-deep-review/SKILL.md)
 

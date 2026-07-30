@@ -225,7 +225,7 @@ human review. This includes:
 - **Accessibility baseline** (A1/A2/A3/A4/A5), **link correctness** (L1/L2), **HTML validity** (H1),
   and **contrast** (C1/C2, via `contrast-check.mjs`).
 
-See `.github/aid/templates/knowledge-summary/grading-rubric.md` for the complete rubric and grade boundaries.
+See `.github/aid/templates/knowledge-summary/grading-rubric.md` for the per-check definitions and pass criteria. It defines no grade and carries no ladder -- the letter comes from `grade.sh` over the ledger, per `.github/aid/templates/grading-rubric.md`, AID's single grading rubric.
 
 ---
 

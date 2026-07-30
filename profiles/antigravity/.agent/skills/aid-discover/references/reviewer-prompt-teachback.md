@@ -91,7 +91,7 @@ project -- code, configs, documentation outside the KB -- and classify every gap
 | Class | When | Severity | Tag | FIX target |
 |-------|------|----------|-----|------------|
 | **Divergence** | The KB-only answer is FACTUALLY WRONG or MISLEADING vs the source. The KB states or implies something about the project that the source contradicts. | `[HIGH]` | `[FIDELITY]` | The KB misrepresents reality -- FIX by correcting the KB. |
-| **Omission** | A load-bearing source fact that a newcomer must grasp to understand the project was NOT present in the KB reconstruction. The reconstruction could not supply it. | `[MEDIUM]` | `[ESSENCE-GAP]` | The KB omits essence -- FIX by adding the missing fact to the KB. |
+| **Omission** | A load-bearing source fact that a newcomer must grasp to understand the project was NOT present in the KB reconstruction. The reconstruction could not supply it. | _the cited rule's anchor_ | `[ESSENCE-GAP]` | The KB omits essence -- FIX by adding the missing fact to the KB. |
 
 **Only load-bearing omissions are FAIL items.** An omission is load-bearing when:
 - It is a core concept, design decision, or architectural fact without which the
@@ -115,7 +115,7 @@ For each probe answer in the Stage 1 reconstruction:
 3. **Classify** any gap:
    - A factual contradiction between KB and source = Divergence = `[HIGH] [FIDELITY]`.
    - A load-bearing fact in the source that the KB-only reconstruction could not supply
-     = Omission = `[MEDIUM] [ESSENCE-GAP]`.
+     = Omission = an `[ESSENCE-GAP]` row at the cited rule's severity.
    - A match or an incidental-only gap = no FAIL item (note in evidence that the KB
      is correct on this probe).
 
@@ -148,9 +148,15 @@ instead of in an unverifiable total.
 
 ## Severity and verdict (single mechanism)
 
-**Severity:**
-- Every **Divergence** = `[HIGH]` `[FIDELITY]` row.
-- Every load-bearing **Omission** = `[MEDIUM]` `[ESSENCE-GAP]` row.
+**Severity comes from the rule the row cites, and is never chosen here.**
+- A **Divergence** cites `NAR-05`, whose anchor is `Step 2` -- derive it from the instance per the
+  canonical scale. A KB that misrepresents the project is normally `[HIGH]`.
+- A load-bearing **Omission** cites the closest `KB-22`..`KB-26`; take that rule's anchor. Those are
+  `[HIGH]` for an unstated contract, invariant, gotcha or quality bar, and `[LOW]` (escaping to
+  `[MEDIUM]` beyond one doc) for an unstated convention.
+- This used to read *"every load-bearing Omission = `[MEDIUM]`"*, which no row could satisfy: the
+  only rules available to an Omission anchor at `[HIGH]` or `[LOW]`, so a fixed `[MEDIUM]` put the
+  Severity cell in contradiction with the `Rule` cell beside it on every single row.
 
 **Verdict (single mechanism):** Essence is PASS iff no Divergence row and no
 `[ESSENCE-GAP]` row is open. There is NO separate verdict sentinel -- the rows ARE the
@@ -191,7 +197,7 @@ invent an ID — a Divergence is `NAR-05`):
 | # | Severity | Status | Rule | Doc | Line | Description | Evidence |
 |---|----------|--------|------|-----|------|-------------|----------|
 | TB-001 | [HIGH] | Pending | NAR-05 | architecture.md | -- | [FIDELITY] Divergence: KB states the pipeline uses two stages; source shows three stages (ingest, transform, load). KB misrepresents the pipeline shape. | src/pipeline.py lines 12-47: three distinct stage classes; KB architecture.md "two-stage pipeline" is factually wrong |
-| TB-002 | [MEDIUM]  | Pending | KB-23 | domain-glossary.md | -- | [ESSENCE-GAP] Omission: KB reconstruction could not supply the project's data retention policy (7-day rolling window); this is a load-bearing design constraint newcomers must know. | source/config/retention.yaml: retention_days=7; domain-glossary.md has no entry for retention or data lifecycle |
+| TB-002 | [HIGH]  | Pending | KB-23 | domain-glossary.md | -- | [ESSENCE-GAP] Omission: KB reconstruction could not supply the project's data retention policy (7-day rolling window); this is a load-bearing design constraint newcomers must know. | source/config/retention.yaml: retention_days=7; domain-glossary.md has no entry for retention or data lifecycle |
 ```
 
 - Use stable IDs: `TB-001`, `TB-002`, ... The `TB-` prefix is load-bearing, not decorative:

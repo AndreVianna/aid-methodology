@@ -186,6 +186,36 @@ c=$(grep -rc 'forces Human Grade = F\|Human Grade is forced to F' \
 chk "${c:-1}" 0 UA03 "no surface still forces a failing grade for an unanswered check"
 
 echo
+echo "== the checklist gates approval by EXISTING, not by scoring =="
+# This is task-003's second acceptance criterion, and it had no mechanical test -- the surface said
+# "the checklist must have been completed" without naming anything testable, which is a judgement call
+# dressed as a precondition.
+APPROVAL="$ROOT/canonical/skills/aid-summarize/references/state-approval.md"
+grep -q 'manual-checklist\.json' "$APPROVAL"
+chk "$?" 0 CK01 "APPROVAL's precondition names the artifact whose existence gates it"
+grep -qE 'test -f .*manual-checklist\.json' "$APPROVAL"
+chk "$?" 0 CK02 "the precondition is a file test, not a judgement"
+# It must NOT gate on a score or a second grade -- that is the thing being retired.
+# Exclude the negations -- the file legitimately says the checklist is "not scored", and a pattern that
+# cannot tell an assertion from its denial reports the fix as the defect.
+if grep -iE 'checklist[^.]*scor' "$APPROVAL" \
+   | grep -qviE 'not scored|never scored|not by a score|not on a score|rather than a score|no score'; then
+    no CK03 "APPROVAL still gates on a checklist SCORE rather than its existence"
+else
+    ok CK03 "APPROVAL gates on existence, not on a score"
+fi
+# GENERATE and APPROVAL must agree on the Checklist field's two forms, or the dashboard reads a value
+# no surface declares.
+GEN="$ROOT/canonical/skills/aid-summarize/references/state-generate.md"
+# The two forms are declared in prose that spans lines, so match the FILE, not a single line.
+if grep -q '\*\*Checklist:\*\* Not run' "$GEN" && grep -qE 'Checklist: *Completed' "$APPROVAL" \
+   && grep -qF 'Not run' "$APPROVAL" && grep -qF 'Completed YYYY-MM-DD' "$APPROVAL"; then
+    ok CK04 "GENERATE and APPROVAL agree on the Checklist field's declared value set"
+else
+    no CK04 "the Checklist field's value set is not declared consistently across GENERATE and APPROVAL"
+fi
+
+echo
 echo "== the two-grade model appears on no surface =="
 # The pattern IS the assertion. A narrower one (Machine Grade|Human Grade|Overall Grade|AUTO_POOL|
 # MANUAL_POOL) reported zero while aid-summarize's own frontmatter description still read "Two-grade
@@ -272,41 +302,9 @@ echo "== no surface restates a rule's severity differently from the catalog =="
 # A severity restated beside a rule ID is a second source of truth for the value that decides the grade.
 # state-validate.md's check table carried the retired points model's [HIGH] for L1/L2/H1 while the
 # catalog had re-derived them as [LOW]/[MEDIUM]/[MEDIUM].
-VALSTATE="$ROOT/canonical/skills/aid-summarize/references/state-validate.md"
-PRERULES="$ROOT/canonical/aid/templates/review-rubrics/presentation.md"
-
-# catalog_sev RULE -> the bracketed token the rule row declares (first one wins; "Step 2" has none)
-catalog_sev() {
-    local rule="$1" src
-    case "$rule" in SUMMARY-*) src="$SUMRULES" ;; PRE-*) src="$PRERULES" ;; *) echo ""; return ;; esac
-    grep -E "^\| \`${rule}\` " "$src" 2>/dev/null | head -1 \
-        | awk -F'|' '{print $(NF-1)}' | grep -oE '\[(CRITICAL|HIGH|MEDIUM|LOW|MINOR)\]' | head -1
-}
-
-sev_bad=0
-while IFS= read -r line; do
-    rule=$(printf '%s' "$line" | grep -oE '`(SUMMARY|PRE)-[0-9]{2}`' | head -1 | tr -d '`')
-    [[ -n "$rule" ]] || continue
-    stated=$(printf '%s' "$line" | grep -oE '\[(CRITICAL|HIGH|MEDIUM|LOW|MINOR)\]' | head -1)
-    [[ -n "$stated" ]] || continue
-    declared=$(catalog_sev "$rule")
-    [[ -n "$declared" ]] || continue
-    if [[ "$stated" != "$declared" ]]; then
-        no "SEV-${rule}" "state-validate.md says ${stated}, catalog declares ${declared}"
-        sev_bad=1
-    fi
-done < <(grep -E '^\| ' "$VALSTATE" | grep -E '`(SUMMARY|PRE)-[0-9]{2}`')
-[[ "$sev_bad" -eq 0 ]] && ok SEV01 "every severity in state-validate.md matches the rule it cites"
-
-# Control: catalog_sev must actually read the catalog, else SEV01 passes on an empty comparison.
-[[ "$(catalog_sev SUMMARY-08)" == "[LOW]" ]] \
-    && ok SEV02 "the catalog reader resolves a known severity (control: SUMMARY-08 = [LOW])" \
-    || no SEV02 "the catalog reader returned '$(catalog_sev SUMMARY-08)' for SUMMARY-08, expected [LOW]"
-
-echo
-echo "== every rule ID cited by the summarize and discover surfaces exists =="
-# A gate that counts a rule ID which no catalog declares counts nothing, silently. Two of these were
-# real: a [FIDELITY] example row cited KB-20, and the correctness prompt used KB-20 as a placeholder.
+# The surfaces that cite rule IDs. Shared by SEV01 (severity agrees with the rule) and RID01
+# (the rule exists), so the two can never drift apart in scope -- SEV01 originally swept one of
+# these eight and reported clean while five drifts sat in the others.
 CITERS=(
   "$ROOT/canonical/skills/aid-summarize/references/state-validate.md"
   "$ROOT/canonical/skills/aid-summarize/references/state-manual-checklist.md"
@@ -318,6 +316,50 @@ CITERS=(
   "$ROOT/canonical/skills/aid-discover/references/reviewer-prompt-anatomy.md"
 )
 RUBRIC_DIR="$ROOT/canonical/aid/templates/review-rubrics"
+
+VALSTATE="$ROOT/canonical/skills/aid-summarize/references/state-validate.md"
+PRERULES="$ROOT/canonical/aid/templates/review-rubrics/presentation.md"
+
+# catalog_sev RULE -> the bracketed token the rule row declares (first one wins; "Step 2" has none, and
+# returns empty so the row is skipped -- an instance-derived anchor cannot be compared to a fixed token).
+# Resolves across the WHOLE catalog rather than a per-class file map: a hardcoded map silently returns ""
+# for any class it does not list, which skips the row and passes.
+catalog_sev() {
+    local rule="$1"
+    grep -rhE "^\| \`${rule}\` " "$RUBRIC_DIR" 2>/dev/null | head -1 \
+        | awk -F'|' '{print $(NF-1)}' | grep -oE '\[(CRITICAL|HIGH|MEDIUM|LOW|MINOR)\]' | head -1
+}
+
+# SEV01 sweeps the SAME eight files RID01 does, and every rule CLASS, not just SUMMARY/PRE in one file.
+# Scoped to one file and two classes it reported clean while five live drifts sat in the sibling
+# reviewer prompts -- an assertion narrower than the defect it is named for.
+sev_bad=0
+for f in "${CITERS[@]}"; do
+    [[ -f "$f" ]] || continue
+    while IFS= read -r line; do
+        rule=$(printf '%s' "$line" | grep -oE '`[A-Z]+-[0-9]{2}`' | head -1 | tr -d '`')
+        [[ -n "$rule" ]] || continue
+        stated=$(printf '%s' "$line" | grep -oE '\[(CRITICAL|HIGH|MEDIUM|LOW|MINOR)\]' | head -1)
+        [[ -n "$stated" ]] || continue
+        declared=$(catalog_sev "$rule")
+        [[ -n "$declared" ]] || continue      # `Step 2` rules: nothing fixed to compare against
+        if [[ "$stated" != "$declared" ]]; then
+            no "SEV-$(basename "$f"):${rule}" "says ${stated}, catalog declares ${declared}"
+            sev_bad=1
+        fi
+    done < <(grep -E '^\| ' "$f" | grep -E '`[A-Z]+-[0-9]{2}`')
+done
+[[ "$sev_bad" -eq 0 ]] && ok SEV01 "no surface restates a severity that disagrees with the rule it cites"
+
+# Control: catalog_sev must actually read the catalog, else SEV01 passes on an empty comparison.
+[[ "$(catalog_sev SUMMARY-08)" == "[LOW]" ]] \
+    && ok SEV02 "the catalog reader resolves a known severity (control: SUMMARY-08 = [LOW])" \
+    || no SEV02 "the catalog reader returned '$(catalog_sev SUMMARY-08)' for SUMMARY-08, expected [LOW]"
+
+echo
+echo "== every rule ID cited by the summarize and discover surfaces exists =="
+# A gate that counts a rule ID which no catalog declares counts nothing, silently. Two of these were
+# real: a [FIDELITY] example row cited KB-20, and the correctness prompt used KB-20 as a placeholder.
 unknown=()
 for f in "${CITERS[@]}"; do
     [[ -f "$f" ]] || continue

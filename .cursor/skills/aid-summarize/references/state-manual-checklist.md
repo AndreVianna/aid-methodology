@@ -53,7 +53,7 @@ came to stand for a broken visual, a dead page, and a check nobody had run.
 | What the human found | Outcome |
 |---|---|
 | **A specific visual is broken or illegible** — the ordinary case | A `SUMMARY-06` row per failing visual, `[HIGH]`. The grade follows from the rows, exactly like any other finding, and routes to FIX. Do **not** reach for `--non-functional`: the page works, one visual in it does not. |
-| **The page produces nothing usable** — nothing renders, the file will not open, the theme toggle is dead | `bash .cursor/aid/scripts/grade.sh --non-functional`. This is the flag's declared meaning and its only legitimate use here — `grading-rubric.md § Severity scale` defines it as the whole-artifact verdict *"does not build, does not run, produces no usable output"*. Reaching for it because a diagram is ugly would make `F` mean two things again. |
+| **The page produces nothing usable** — nothing renders, the file will not open, the theme toggle is dead | `bash .cursor/aid/scripts/grade.sh --non-functional`. This is the flag's declared meaning and its only legitimate use here — `aid/templates/grading-rubric.md § Severity Scale` -- the top-level rubric, not the sibling `knowledge-summary/grading-rubric.md` -- defines it as the whole-artifact verdict *"does not build, does not run, produces no usable output"*. Reaching for it because a diagram is ugly would make `F` mean two things again. |
 | **The checklist has not been answered** | **No grade at all.** See below. |
 
 **If the checklist has NOT been completed, do not grade and do not route.** Halt and ask the human. This
@@ -65,4 +65,6 @@ nowhere to go but `F`, and `F` is what `--non-functional` produces.
 
 Print: `[State: MANUAL-CHECKLIST] complete.`
 
-**Advance:** **CHAIN** → [State: APPROVAL] if the grade ≥ minimum; **CHAIN** → [State: FIX] otherwise. Both continue inline. If the checklist is unanswered, neither — halt.
+**Advance:** **CHAIN** → [State: APPROVAL] if the grade ≥ minimum; **CHAIN** → [State: FIX] otherwise — both continue inline. If the checklist is unanswered, **PAUSE-FOR-USER-ACTION**: print the `manual-checklist.sh` command and exit, so re-invoking `/aid-summarize` resumes here.
+
+> Not **HALT**. `state-machine-chaining.md` makes HALT *terminal* — the work is finished or abandoned — whereas an unanswered checklist is waiting on a human who is expected to come back, which is exactly what PAUSE-FOR-USER-ACTION means and what the pause signal is wired to. Typing this as a halt would end the run for the one outcome designed to be resumed.

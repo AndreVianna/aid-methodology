@@ -2,7 +2,23 @@
 
 APPROVAL presents the graded summary to the user for final sign-off; it is selected when the grade meets the minimum, or when STALE-CHECK finds the HTML is current but not yet approved.
 
-**Pre-condition:** The grade must already be computed and ≥ minimum, AND the human checklist must have been completed. If the checklist has not been run, refuse to enter APPROVAL — print: `❌ Cannot approve: the human checklist has not been completed. Run /aid-summarize again to enter MANUAL-CHECKLIST.`
+**Pre-condition:** The grade must already be computed and ≥ minimum, AND the human checklist must have
+been completed. **The checklist gates by the EXISTENCE of its artifact, not by a score** — that is the
+whole substance of the change, so make it a file test rather than a judgement:
+
+```bash
+test -f .aid/.temp/summarize/manual-checklist.json
+```
+
+Absent → refuse to enter APPROVAL and print:
+`❌ Cannot approve: the human checklist has not been completed (.aid/.temp/summarize/manual-checklist.json absent). Run /aid-summarize again to enter MANUAL-CHECKLIST.`
+
+The `Checklist` field in `.aid/knowledge/STATE.md § Knowledge Summary Status` takes exactly two forms,
+and GENERATE and this state must agree on them: **`Not run`** (as GENERATE initialises it) or
+**`Completed YYYY-MM-DD`**. It is an agent-written body line, exactly like the two retired grade
+lines it replaces — `summarize/writeback-state.sh --set` owns only the five frontmatter scalars
+(`kb_status`, `kb_grade`, `last_kb_review`, `summary_approved`, `last_summary`) and deliberately not
+this one.
 
 Print summary in the standard format:
 
@@ -14,7 +30,7 @@ Print summary in the standard format:
    Doc-set:        {N resolved} of {M total} docs covered
    Grade:          {grade} (target: {min}) — grade.sh over the review ledger
    Findings:       {n} ({worst severity} worst)
-   Checklist:      Completed {date} — the human visual check is recorded, not scored
+   Checklist:      Completed {YYYY-MM-DD} — the human visual check is recorded, not scored
    Theme:          light + dark, both pass WCAG AA
    Trigger:        {reason}
 
