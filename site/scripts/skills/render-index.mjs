@@ -24,13 +24,6 @@ const PAGE_DESCRIPTION =
   'Every AID skill, one card each, grouped by skill group and \u2014' +
   ' inside Definition \u2014 by verb family.';
 
-/**
- * The three skills reference/skills.md groups differently.
- * This is a curatorial statement tied to FR-5 \u2014 not derived from
- * gen-reference.mjs\u2019s frozen SKILL_GROUPS.
- */
-const DIVERGENT_SKILLS = ['aid-triage', 'aid-deploy', 'aid-monitor'];
-
 // ── Frontmatter serializer ─────────────────────────────────────────────────────
 //
 // Mirrors the single-quoted style used by render-page.mjs, sync-docs.mjs, and
@@ -130,20 +123,24 @@ export function renderSkillIndex(records, sections) {
     `${familyCount === 1 ? 'family' : 'families'}** derived from the shortcut catalog. ` +
     `Each card below links to that skill\u2019s detail page.`;
 
-  // ── 4. Divergence note ─────────────────────────────────────────────────────
-  // Sits immediately below the intro and above the first ## heading,
-  // so it is visible to a reader but does not appear in the table of contents.
-  // The three skill names are a curatorial statement tied to FR-5 \u2014
-  // not derived, because deriving them would mean importing the frozen
-  // generator\u2019s SKILL_GROUPS (gen-reference.mjs:707 calls main() at module scope).
-  const d = DIVERGENT_SKILLS;
-  const divergenceNote =
-    `> **Note:** [Reference \u2192 Skills](/reference/skills/) is a terse family ` +
-    `**summary**, generated separately. It groups \`${d[0]}\`, \`${d[1]}\`, and ` +
-    `\`${d[2]}\` under *Definition*, while this page files them per FR-5\u2019s ` +
-    `Placement rules. Where the two pages disagree about grouping, ` +
-    `**this page is authoritative**. The difference exists because the older ` +
-    `generator is frozen, not because either page is stale-by-accident.`;
+  // ── 4. Cross-reference note ────────────────────────────────────────────
+  // Sits immediately below the intro and above the first ## heading, so it is
+  // visible to a reader but does not appear in the table of contents.
+  //
+  // This was a DIVERGENCE note until delivery-006 (task-057). It told a reader that
+  // /reference/skills/ was "a terse family summary" grouping `aid-triage`,
+  // `aid-deploy` and `aid-monitor` differently, that "this page is authoritative"
+  // where the two disagreed, and that the difference existed "because the older
+  // generator is frozen". Every one of those clauses is now false: that page has been
+  // hollowed out and carries no roster, so there is no competing grouping to be
+  // authoritative over, and work-level Q4 unfroze the generator in order to hollow it.
+  // A note whose premise has died is worse than no note, so this states the one thing
+  // still true and still useful to a reader -- where the mechanism is documented.
+  const crossRefNote =
+    `> **Note:** This page is the roster. How the verb-first shortcut skills actually ` +
+    `work — the shared shortcut engine they delegate to, and its ` +
+    `INTAKE → APPROVAL-HALT sequence — is documented at ` +
+    `[Reference → Shortcut engine](/reference/skills/).`;
 
   // ── 5. Group and family sections ───────────────────────────────────────────
   const groupLines = [];
@@ -202,7 +199,7 @@ export function renderSkillIndex(records, sections) {
     fm +
     '\n' + marker + '\n' +
     '\n' + intro + '\n' +
-    '\n' + divergenceNote + '\n' +
+    '\n' + crossRefNote + '\n' +
     '\n' + groupLines.join('\n') + '\n'
   );
 }

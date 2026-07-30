@@ -110,7 +110,7 @@ describe('gen-reference: generatedFrom frontmatter', () => {
   it('skills.md has generatedFrom frontmatter', () => {
     const content = readFileSync(join(CONTENT_DOCS, 'reference', 'skills.md'), 'utf8');
     expect(content).toContain(
-      "generatedFrom: 'canonical/skills/*/SKILL.md, canonical/aid/templates/shortcut-catalog.yml'"
+      "generatedFrom: 'canonical/aid/templates/shortcut-catalog.yml, canonical/aid/templates/shortcut-engine.md'"
     );
   });
   it('agents.md has generatedFrom frontmatter', () => {
@@ -182,21 +182,48 @@ describe('gen-reference: roster counts', () => {
     // No curated name has lost its directory.
     expect(CURATED_SKILL_NAMES.filter((n) => !skillDirs.includes(n))).toEqual([]);
 
-    const skillsContent = readFileSync(join(CONTENT_DOCS, 'reference', 'skills.md'), 'utf8');
-    // Per-skill sections render as `### \`aid-...\`` headings — one per curated skill.
-    const sections = skillsContent.split('\n').filter((l) => /^### `aid-/.test(l));
-    expect(sections).toHaveLength(CURATED_SKILL_NAMES.length);
+    // NOTE: this test used to end by counting per-skill sections on
+    // reference/skills.md, one per curated skill. delivery-006 task-057 hollowed that
+    // page out -- the roster it duplicated now lives only at /skills/ -- so that
+    // assertion's subject is gone by design (work-level Q4). Everything above is
+    // retained and unweakened: it reconciles the on-disk corpus against the catalog and
+    // the curated roster, which is delivery-001's actual guarantee and has nothing to do
+    // with what any page renders. Page-shape assertions for the new page are below.
   });
 
-  it('skills.md: the family table total matches the catalog\'s emitting rows', () => {
+  it('skills.md: keeps the shortcut-engine narrative and sheds the roster table', () => {
     const skillsContent = readFileSync(join(CONTENT_DOCS, 'reference', 'skills.md'), 'utf8');
-    expect(skillsContent).toContain('### Direct-entry shortcuts');
-    // The family table's total row sums to the catalog rows that emit a skill
-    // directory — every row except the `repurpose: true` ones.
-    const totalRow = skillsContent.split('\n').find((l) => l.includes('**Total**'));
-    expect(totalRow).toMatch(
-      new RegExp(String.raw`\*\*Total\*\*\s*\|\s*\*\*${emittingNames.length}\*\*`)
+
+    // The narrative is the REASON this page was hollowed out rather than deleted: it is
+    // the only place on the site that explains the engine. Asserted by content, per the
+    // delivery's gate criterion -- not by the file merely existing.
+    expect(skillsContent).toContain('## Direct-entry shortcuts');
+    expect(skillsContent).toContain('INTAKE → CAPTURE → SPEC → PLAN → DETAIL → GATE → APPROVAL-HALT');
+    expect(skillsContent).toContain('shortcut engine');
+    expect(skillsContent).toContain('APPROVAL-HALT. GATE grades every generated document');
+
+    // The family table is gone -- and with it KI-009. Both broken renderings ("= 0" and
+    // "-1 typed forms") came from per-family detail templates interpolating against an
+    // empty row set for the two `repurpose` families, so deleting the table IS the close;
+    // repairing the arithmetic and keeping a duplicate roster would have been the wrong one.
+    expect(skillsContent).not.toContain('**Total**');
+    expect(skillsContent).not.toContain('| Family | Count | Forms |');
+    expect(skillsContent).not.toMatch(/=\s*0\b/);
+    expect(skillsContent).not.toContain('typed forms');
+    // Non-vacuity: emittingNames is a real, non-empty set, so a table WOULD have had rows.
+    expect(emittingNames.length).toBeGreaterThan(20);
+
+    // The shortcut count itself is still stated, and still derived.
+    expect(skillsContent).toContain(
+      '**' + emittingNames.length + ' engine-driven verb-first shortcut skills**'
     );
+  });
+
+  it('skills.md: points a reader at the roster instead of repeating it', () => {
+    const skillsContent = readFileSync(join(CONTENT_DOCS, 'reference', 'skills.md'), 'utf8');
+    // Inbound links and bookmarks predating delivery-006 land here expecting the roster.
+    expect(skillsContent).toContain('/skills/');
+    expect(skillsContent).toMatch(/Looking for the list of skills/);
   });
 
   it('agents.md: exactly 9 agent sections matching canonical/agents/', () => {
@@ -221,11 +248,20 @@ describe('gen-reference: roster counts', () => {
     expect(rows).toHaveLength(14);
   });
 
-  it('skills.md: all curated (non-shortcut) skill names are present', () => {
+  it('skills.md no longer lists the curated skills, and /skills/ does', () => {
+    // The inverse of the assertion this replaces. Duplicating the roster across two pages
+    // is what delivery-006 exists to end, so "every curated name appears HERE" became the
+    // wrong contract -- while "every curated name appears somewhere a reader can find it"
+    // is still guaranteed, just on the derived page.
     const skillsContent = readFileSync(join(CONTENT_DOCS, 'reference', 'skills.md'), 'utf8');
-    for (const name of CURATED_SKILL_NAMES) {
-      expect(skillsContent).toContain(`\`${name}\``);
-    }
+    const perSkillSections = skillsContent.split('\n').filter((l) => /^### `aid-/.test(l));
+    expect(perSkillSections).toEqual([]);
+
+    const rosterPage = readFileSync(join(CONTENT_DOCS, 'skills', 'index.md'), 'utf8');
+    const missing = CURATED_SKILL_NAMES.filter((n) => !rosterPage.includes('`' + n + '`'));
+    expect(missing, 'curated skills absent from the roster page').toEqual([]);
+    // Non-vacuity: the curated set is real, so the filter had something to check.
+    expect(CURATED_SKILL_NAMES.length).toBeGreaterThan(10);
   });
 
   it('agents.md: all canonical agent names are present', () => {

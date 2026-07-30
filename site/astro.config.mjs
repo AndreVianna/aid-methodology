@@ -155,7 +155,10 @@ export default defineConfig({
           items: [
             { label: 'Overview',              slug: 'reference/overview' },
             { label: 'CLI & subcommands',     slug: 'reference/cli' },
-            { label: 'Skills',                slug: 'reference/skills' },
+            // Not 'Skills' — that page no longer carries a roster (delivery-006
+            // task-057 hollowed it out), and a second "Skills" entry here competed
+            // with the top-level Skills tab below for the same reader.
+            { label: 'Shortcut engine',       slug: 'reference/skills' },
             { label: 'Agents',                slug: 'reference/agents' },
             { label: 'Knowledge Base',        slug: 'reference/kb' },
             { label: 'Settings keys',         slug: 'reference/settings' },

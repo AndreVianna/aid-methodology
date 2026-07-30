@@ -7,7 +7,9 @@
 //   AC-4  Card intent equals skillSummary(record), escaped by renderFrontmatterValue.
 //   AC-5  Marker is byte-identical to the existing generated pages' sentence.
 //   AC-6  title: 'All Skills'; sidebar: hidden: true present and indented.
-//   AC-7  Divergence note present, before first ## , names three skills, links to /reference/skills/.
+//   AC-7  Cross-reference note present, before first ## , links to /reference/skills/, and
+//         asserts NO competing-roster claim (the divergence it used to describe died in
+//         delivery-006 task-057, which hollowed that page out).
 //   AC-8  No count literal in the module source.
 //   AC-9  End-to-end: every on-disk skill appears exactly once; no duplicates, no missing.
 //   AC-10 Idempotence: renderSkillIndex called twice with same inputs produces identical output.
@@ -182,26 +184,32 @@ describe('divergence note (AC-7)', () => {
     expect(noteStart).toBeGreaterThan(markerEnd);
   });
 
-  it('names aid-triage', () => {
-    // Extract just the note line for scoped checks.
+  it('links to the shortcut-engine page', () => {
     const noteLine = lines.find((l) => l.startsWith('> **Note:**'));
     expect(noteLine).toBeDefined();
-    expect(noteLine).toContain('`aid-triage`');
-  });
-
-  it('names aid-deploy', () => {
-    const noteLine = lines.find((l) => l.startsWith('> **Note:**'));
-    expect(noteLine).toContain('`aid-deploy`');
-  });
-
-  it('names aid-monitor', () => {
-    const noteLine = lines.find((l) => l.startsWith('> **Note:**'));
-    expect(noteLine).toContain('`aid-monitor`');
-  });
-
-  it('links to /reference/skills/', () => {
-    const noteLine = lines.find((l) => l.startsWith('> **Note:**'));
     expect(noteLine).toContain('/reference/skills/');
+  });
+
+  it('names this page as the roster and that page as the mechanism', () => {
+    const noteLine = lines.find((l) => l.startsWith('> **Note:**'));
+    expect(noteLine).toContain('This page is the roster');
+    expect(noteLine).toContain('shortcut engine');
+  });
+
+  it('makes no competing-roster or frozen-generator claim', () => {
+    // These are the clauses task-057 falsified by hollowing out /reference/skills/.
+    // Asserting their ABSENCE is what stops the note regressing to a claim that is no
+    // longer true: there is no second roster to diverge from, and the generator that
+    // built it was unfrozen by work-level Q4 in order to shed it.
+    const noteLine = lines.find((l) => l.startsWith('> **Note:**')) ?? '';
+    expect(noteLine).not.toContain('terse family');
+    expect(noteLine).not.toContain('authoritative');
+    expect(noteLine).not.toContain('frozen');
+    expect(noteLine).not.toContain('disagree');
+    // And it no longer singles out the three skills whose grouping differed.
+    for (const n of ['aid-triage', 'aid-deploy', 'aid-monitor']) {
+      expect(noteLine, `note should not single out ${n}`).not.toContain(`\`${n}\``);
+    }
   });
 
   it('does not itself match any grammar regex', () => {

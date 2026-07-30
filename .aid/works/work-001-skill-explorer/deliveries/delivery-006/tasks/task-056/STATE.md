@@ -1,6 +1,6 @@
 ---
-state: Pending
-review: "--"
+state: Done
+review: 'Quick-check: clean (no CRITICAL/HIGH)'
 elapsed: "--"
 notes: "--"
 ticket_ref: "--"
@@ -27,12 +27,8 @@ ticket_ref: "--"
 
 ## Quick Check Findings
 
-<!-- AUTHORED -- written by `writeback-state.sh --task-id NNN --findings ...` during the
-     per-task quick-check step of aid-execute. No grade is recorded here -- grading is
-     per-delivery, not per-task. -->
-
-_None yet._
-
+- **Reviewer Tier:** Small
+- **Findings:** none
 ---
 
 ## Dispatch Log

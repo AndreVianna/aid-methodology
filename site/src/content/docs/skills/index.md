@@ -10,7 +10,7 @@ sidebar:
 
 AID ships **111 skill directories** across four skill groups (Support, Knowledge Base Maintenance, Definition, Execution), with the Definition group subdivided into **17 verb families** derived from the shortcut catalog. Each card below links to that skill’s detail page.
 
-> **Note:** [Reference → Skills](/reference/skills/) is a terse family **summary**, generated separately. It groups `aid-triage`, `aid-deploy`, and `aid-monitor` under *Definition*, while this page files them per FR-5’s Placement rules. Where the two pages disagree about grouping, **this page is authoritative**. The difference exists because the older generator is frozen, not because either page is stale-by-accident.
+> **Note:** This page is the roster. How the verb-first shortcut skills actually work — the shared shortcut engine they delegate to, and its INTAKE → APPROVAL-HALT sequence — is documented at [Reference → Shortcut engine](/reference/skills/).
 
 ## Support
 
