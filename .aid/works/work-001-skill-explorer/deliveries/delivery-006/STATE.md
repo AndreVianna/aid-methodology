@@ -36,7 +36,34 @@ ticket_ref: "--"
   STATE.md. The **delivery gate** (Large tier) then found **1 CRITICAL, 5 HIGH, 11 MEDIUM, 9 LOW,
   4 MINOR** — grade **E+** on cycle 1. Fixing in progress; ledger at
   `.aid/.temp/review-pending/execute-delivery-006.md`.
-- Still to do: clear the gate to A+, KI-022 (ELK layout), browser checks, PR.
+- **Browser verification — PASS (2026-07-30, `astro preview` + Playwright, on-demand not CI).**
+  Static tests cannot see any of this, and work-017 shipped four broken surfaces past an A+ gate,
+  so every reader-facing change this delivery made was driven in a real browser:
+  - `/reference/skills/` — title and H1 `Shortcut engine`; `:::tip` renders as a real
+    `starlight-aside--tip` with **no literal `:::` leaking**; narrative present (INTAKE →
+    APPROVAL-HALT); **0** per-skill `h3[id^=aid-]`; no family table; **no KI-009 signature**
+    (`= 0` / `typed forms` both absent); links to `/skills/`; sidebar entry reads
+    `Shortcut engine`.
+  - `/guides/pipeline/` — **7** anchors to `/skills/`, all rendering `All skills`; **0** stale
+    `/reference/skills` links in `<main>`; `Skills reference` absent from the whole page; and all
+    **13** in-content link targets fetched **200** (no 404 introduced).
+  - `/skills/` — 111 skill cards; the derived note renders and its claim is **verified true in
+    the DOM**: `aid-triage` really is under the `Support` H2 on this page while the note says
+    Support-here / Definition-in-the-roster. No `terse family` or `frozen` text anywhere.
+  - `/` — both sites state `111 skills` = `17 curated` + `94-row shortcut catalog`
+    (= `64 verb-first` + `30 hand-authored repurpose`). Arithmetic checked: 17+94=111, 64+30=94.
+    No stale `92 skills` / `14 classic` / `76 verb-first` / `19 classic`.
+  - `/reference/overview/` — the `Skills` row points at `/skills/` and says which section it is
+    in; the new `Shortcut engine` row points at `/reference/skills/` and names the sequence.
+  - `/skills/aid-execute/` — **feature-006 still live**: mermaid renders, 6 `aidNode`s all
+    decorated (`role=button`, `tabindex=0`, `aria-expanded=false`, `aria-controls=aid-node-panel`,
+    non-empty `aria-label`); clicking a node **opens the panel** (visible, `aria-expanded` → true)
+    with the fragment `<pre>` and a GitHub source link.
+  - Console: the only two errors were CORS failures from the reviewer's own `fetch()` probe
+    against a `github.com` URL — not page defects. No page-originated errors.
+- Still to do: clear the gate to A+ (cycle 2 verifying), work-level gate, PR.
+- **KI-022 (ELK layout) — remains DEFERRED**, per its own entry ("owner deferred the fix"). Not
+  pulled into this delivery; carried forward as a known-open item and disclosed in the PR.
 
 ---
 
