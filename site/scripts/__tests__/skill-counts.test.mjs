@@ -24,11 +24,29 @@ const DOCS = join(SITE_ROOT, 'src', 'content', 'docs');
 
 const counts = deriveSkillCounts(REPO_ROOT);
 
-/** Hand-authored pages that state a roster claim, and must track the derivation. */
+/**
+ * Hand-authored pages that state a roster claim, and must track the derivation.
+ *
+ * This list started as just `index.mdx` and `reference/overview.md` — the two pages
+ * work-level Q4 named. Review found two more the guard was blind to: `guides/
+ * maintainer.mdx` still claimed "92 skills, 9 agents", and `concepts/faq.md` still
+ * claimed "76 shortcut skills". A guard that covers only the pages someone already
+ * thought of is not a guard against drift, so every hand-authored page that states a
+ * roster claim is listed here, and `discovers no unguarded claim` below fails if a new
+ * one appears anywhere under `docs/`.
+ */
 const CLAIM_PAGES = [
   join(DOCS, 'index.mdx'),
   join(DOCS, 'reference', 'overview.md'),
+  join(DOCS, 'reference', 'glossary.md'),
+  join(DOCS, 'reference', 'repository-structure.md'),
+  join(DOCS, 'concepts', 'methodology.md'),
+  join(DOCS, 'concepts', 'faq.md'),
+  join(DOCS, 'guides', 'maintainer.mdx'),
 ];
+
+/** Generated pages — derived at build time, so not hand-authored claims. */
+const GENERATED_PAGES = ['reference/skills.md', 'skills/'];
 
 describe('deriveSkillCounts — internal consistency', () => {
   it('finds a plausible corpus, with no literal count asserted', () => {
@@ -60,6 +78,17 @@ describe('deriveSkillCounts — internal consistency', () => {
     expect(counts.shortcutNames.filter((n) => !onDisk.has(n))).toEqual([]);
     // Non-vacuity: the sets are real, so the filters above had something to check.
     expect(counts.curatedNames.length + counts.shortcutNames.length).toBeGreaterThan(50);
+  });
+
+  it('decomposes the corpus without double-counting: curatedOnly + catalogRows = directories', () => {
+    // THE identity every reader-facing decomposition depends on. `curated` counts four
+    // skills that are also catalog rows, so a sentence built from it does not sum — which
+    // is exactly the defect this guard now prevents: the home page briefly read
+    // "111 skills — 19 classic … and 64 verb-first", i.e. 85, for a 111-skill corpus.
+    expect(counts.curatedOnly + counts.catalogRows).toBe(counts.directories);
+    // And the overlap is real, so the distinction is not academic.
+    expect(counts.curated - counts.curatedOnly).toBe(counts.classicRepurposed);
+    expect(counts.classicRepurposed).toBeGreaterThan(0);
   });
 
   it('counts the repurpose rows that re-register a curated skill', () => {
@@ -130,28 +159,89 @@ describe('hand-authored pages quote the derived triple, not a hand-counted one',
     expect(checked).toBeGreaterThan(0);
   });
 
-  it('every page stating a classic count states the derived classic count', () => {
+  it('every page stating a curated count states the SUMMING one (17, not 21 or 19)', () => {
+    // "N curated" must be curatedOnly. Stating `curated` (21) or `classic` (19) here is
+    // the double-count that stopped the home page's own sentence from adding up.
     let checked = 0;
     for (const p of CLAIM_PAGES) {
       const text = readFileSync(p, 'utf8');
-      for (const m of text.matchAll(/\b(\d+) classic\b/g)) {
-        expect(Number(m[1]), `${p}: "${m[0]}"`).toBe(counts.classic);
+      for (const m of text.matchAll(/\b(\d+) curated\b/g)) {
+        expect(Number(m[1]), `${p}: "${m[0]}"`).toBe(counts.curatedOnly);
         checked++;
       }
     }
     expect(checked).toBeGreaterThan(0);
   });
 
+  it('no hand-authored page decomposes the corpus with a classic count', () => {
+    // "N classic" is a valid internal figure but not a valid reader-facing SUMMAND, for
+    // the reason above. The pages now say "17 curated + 94 catalog" instead.
+    for (const p of CLAIM_PAGES) {
+      const text = readFileSync(p, 'utf8');
+      expect(text, `${p}: states a classic count`).not.toMatch(/\b\d+ classic pipeline\b/);
+    }
+  });
+
   it('every page stating a shortcut count states the derived shortcut count', () => {
     let checked = 0;
     for (const p of CLAIM_PAGES) {
       const text = readFileSync(p, 'utf8');
-      for (const m of text.matchAll(/\b(\d+) verb-first\b/g)) {
-        expect(Number(m[1]), `${p}: "${m[0]}"`).toBe(counts.shortcuts);
+      for (const re of [/\b(\d+) verb-first\b/g, /\b(\d+) shortcut skills\b/g]) {
+        for (const m of text.matchAll(re)) {
+          expect(Number(m[1]), `${p}: "${m[0]}"`).toBe(counts.shortcuts);
+          checked++;
+        }
+      }
+    }
+    expect(checked).toBeGreaterThan(0);
+  });
+
+  it('every page stating a catalog-row count states the derived one', () => {
+    let checked = 0;
+    for (const p of CLAIM_PAGES) {
+      const text = readFileSync(p, 'utf8');
+      for (const m of text.matchAll(/\b(\d+)-row (?:shortcut )?catalog\b/g)) {
+        expect(Number(m[1]), `${p}: "${m[0]}"`).toBe(counts.catalogRows);
+        checked++;
+      }
+      for (const m of text.matchAll(/\b(\d+) hand-authored `repurpose`/g)) {
+        expect(Number(m[1]), `${p}: "${m[0]}"`).toBe(counts.repurposed);
         checked++;
       }
     }
     expect(checked).toBeGreaterThan(0);
+  });
+
+  it('discovers no unguarded roster claim anywhere under docs/', () => {
+    // The guard above only sees pages someone listed. This walks the whole tree, so a
+    // NEW page stating a roster claim fails here instead of shipping unchecked — which is
+    // how guides/maintainer.mdx kept "92 skills" and concepts/faq.md kept "76 shortcut
+    // skills" through a delivery whose whole purpose was correcting exactly those numbers.
+    const guarded = new Set(CLAIM_PAGES);
+    const CLAIM = /\b\d+ (?:AID )?skills\b|\b\d+ curated\b|\b\d+ classic\b|\b\d+ verb-first\b|\b\d+ shortcut skills\b/;
+    const unguarded = [];
+    const walk = (dir) => {
+      for (const e of readdirSync(dir, { withFileTypes: true })) {
+        const full = join(dir, e.name);
+        if (e.isDirectory()) {
+          walk(full);
+        } else if (/\.mdx?$/.test(e.name)) {
+          const rel = full.slice(DOCS.length + 1).replace(/\\/g, '/');
+          if (GENERATED_PAGES.some((g) => rel.startsWith(g))) continue;
+          if (guarded.has(full)) continue;
+          const text = readFileSync(full, 'utf8');
+          const hit = CLAIM.exec(text);
+          if (hit) unguarded.push(`${rel}: "${hit[0]}"`);
+        }
+      }
+    };
+    walk(DOCS);
+    expect(
+      unguarded,
+      'these pages state a roster claim but are not in CLAIM_PAGES — add them',
+    ).toEqual([]);
+    // Non-vacuity: the walk really visited files and really skipped the guarded ones.
+    expect(guarded.size).toBeGreaterThan(5);
   });
 });
 

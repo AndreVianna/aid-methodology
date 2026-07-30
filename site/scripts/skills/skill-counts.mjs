@@ -38,6 +38,9 @@ const NON_CLASSIC_CURATED = ['aid-triage', 'aid-ask'];
  * @property {number}   catalogRows  All catalog rows, emitting or `repurpose`.
  * @property {number}   repurposed   Rows that re-register a hand-authored skill.
  * @property {number}   classicRepurposed  Repurpose rows naming a curated skill.
+ * @property {number}   curatedOnly  Curated skills that are NOT catalog rows — the
+ *                                   figure that makes a decomposition of the corpus
+ *                                   SUM, because it does not double-count.
  * @property {string[]} directoryNames  Sorted directory names.
  * @property {string[]} curatedNames    Sorted curated skill names.
  * @property {string[]} shortcutNames   Sorted emitting shortcut names.
@@ -85,7 +88,20 @@ export function deriveSkillCounts(repoRoot) {
     (r) => r.repurpose === 'true' && curatedSet.has(r.name),
   ).length;
 
+  // The figure a reader-facing decomposition must use. `curated` (21) counts four skills
+  // that are ALSO catalog rows -- aid-deploy, aid-monitor, aid-query-kb and the aid-ask
+  // alias -- so KI-003 "21 curated + 94 catalog" double-counts them, and the sentence
+  // KI-003 "19 classic + triage + ask + 64 shortcuts" both double-counts three of them AND
+  // omits the 26 collapse skills, landing on 85 for a 111 corpus. Excluding the overlap
+  // gives 17, and 17 + 94 = 111 exactly. That is why every page on the site states the
+  // corpus as "17 curated + 94 catalog": it is the decomposition that sums. Asserted as
+  // an identity in skill-counts.test.mjs, so a future roster change cannot quietly break it.
+  const catalogNameSet = new Set(rows.map((r) => r.name));
+  const curatedOnlyNames = curatedNames.filter((n) => !catalogNameSet.has(n));
+
   return {
+    curatedOnly: curatedOnlyNames.length,
+    curatedOnlyNames,
     directories: directoryNames.length,
     curated: curatedNames.length,
     classic: classicNames.length,
