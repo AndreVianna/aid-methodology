@@ -393,7 +393,7 @@ Load-bearing keys: `project.{name,description,type}`, `tools.installed`,
   `aid-update-ticket`, work-023) + the 94-row shortcut catalog's skills (58 canonical + 36
   aliases) — 64 verb-first direct-entry shortcut doorways (generated from the 94-row
   `shortcut-catalog.yml`) plus 30 hand-authored `repurpose` skills — up from
-  82 dirs / 67 shortcuts / a 69-row catalog before the v2.1.0 coverage-gap follow-on added the
+  82 dirs / 67 shortcuts / a 94-row catalog before the v2.1.0 coverage-gap follow-on added the
   `remove`/`deprecate`/`migrate` + `review`/`research` families. The recipe system
   (`canonical/aid/recipes/`, `parse-recipe.sh`, `{{slot}}` placeholders) was removed and
   replaced by the shortcut engine + `shortcut-scaffolding/<family>.md`; the prior "51 vs 52

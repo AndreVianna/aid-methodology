@@ -113,7 +113,7 @@ Confirm canonical completeness:
    ```
 
    **Do not hand-list the curated skills here.** A list was maintained inline and drifted:
-   it named 14 skills while claiming 17, included `aid-deploy`/`aid-monitor`/`aid-query-kb`
+   it named 14 skills while claiming 17, included `aid-deploy`/`aid-monitor`/`aid-query-kb`   <!-- count-history -->
    (catalog rows, not curated), omitted the connector and ticket skills, and then added
    `aid-triage` and `aid-ask` a second time on top — summing to 113 for a 111-skill corpus.
    Derive the set instead:

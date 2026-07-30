@@ -281,7 +281,7 @@ body; ownership counts per this document's own contracts and `project-structure.
   `canonical/skills/aid-discover/`). The `SKILL.md` carries YAML frontmatter with
   `name:`, `description:`, `allowed-tools:`, `argument-hint:` (see
   `aid-config/SKILL.md`). This is for hand-authored pipeline / on-demand skills; the
-  76 verb-first shortcut doorways are **generated**, not hand-authored -- see "How a
+  64 verb-first shortcut doorways are **generated**, not hand-authored -- see "How a
   new shortcut goes" below.
 - **Where a new agent goes:** create `canonical/agents/aid-<role>/AGENT.md` (+
   `README.md`). The `AGENT.md` frontmatter carries `name:`, `description:`,
