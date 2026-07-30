@@ -4,7 +4,7 @@ description: 'How the verb-first direct-entry shortcut skills work — the share
 generatedFrom: 'canonical/aid/templates/shortcut-catalog.yml, canonical/aid/templates/shortcut-engine.md'
 ---
 
-<!-- generated — do not edit; source: canonical/aid/templates/shortcut-catalog.yml -->
+<!-- generated — do not edit; source: canonical/aid/templates/shortcut-catalog.yml, canonical/aid/templates/shortcut-engine.md -->
 
 :::tip[Looking for the list of skills?]
 The full roster — all **111** skills, one card each, grouped by skill group and verb family — lives at [**All skills**](/skills/). This page covers the shortcut engine those skills delegate to.

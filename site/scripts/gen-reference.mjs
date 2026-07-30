@@ -158,7 +158,8 @@ function loadShortcutCatalog() {
 // classic skills — no count is stated here, because one was, and it was wrong
 // (KI-003: "16 classic" against a real 19). The count is derived in
 // skills/skill-counts.mjs. The shortcut skills are summarized separately,
-// data-driven from the shortcut catalog (see generateShortcutFamiliesSection).
+// data-driven from the shortcut catalog (see generateShortcutEngineSection; the former
+// generateShortcutFamiliesSection was deleted with the family table in task-057).
 // The roster now lives in skills/curated-roster.mjs -- see the import above. It was
 // moved so anything else can read it without importing this file, which runs main()
 // at module scope. Permitted by the second amendment to section 7 (work-level Q4).
@@ -253,7 +254,9 @@ function generateSkillsPage() {
       'all delegate to, its INTAKE → APPROVAL-HALT sequence, and where to find the full skill roster.',
     generatedFrom: 'canonical/aid/templates/shortcut-catalog.yml, canonical/aid/templates/shortcut-engine.md',
   });
-  const note = `\n<!-- generated — do not edit; source: canonical/aid/templates/shortcut-catalog.yml -->\n\n`;
+  // Marker and `generatedFrom` must name the SAME sources — they are two halves of one
+  // provenance statement, and the other three generated pages keep them identical.
+  const note = `\n<!-- generated — do not edit; source: canonical/aid/templates/shortcut-catalog.yml, canonical/aid/templates/shortcut-engine.md -->\n\n`;
 
   // The roster moved. Say so first and unmissably, because inbound links and bookmarks
   // that predate delivery-006 land here expecting to find it.

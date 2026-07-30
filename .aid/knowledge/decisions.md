@@ -19,6 +19,7 @@ intent: |
   (what / why / rejected alternatives / status / evidence), not a restatement of state.
 contracts: []
 changelog:
+  - 2026-07-30: work-001 delivery-006 gate -- D20 separated into its historical record (marked `count-history`) and a current-figures line, having stated superseded catalog figures as current.
   - 2026-07-09: work-001 lite-skills refresh — added D20 (direct-entry shortcut system + engine), D21 (/aid-triage extraction), D22 (recipe-catalog removal), D23 (BLUEPRINT/DETAIL + deliveries/ rename), D24 (aid-describe full-only), D25 (aid-monitor re-point); superseded D14's description-first-TRIAGE mechanism (its proportionality principle survives); dropped the deleted "recipes" subtree from D11.
   - 2026-07-09: Housekeep KB-DELTA refresh — connectors subsystem + release-drift refresh (added D19: connectors registry is a catalog, not a connection manager)
   - 2026-06-25: Initial discovery (aid-discover — architect deep-dive)

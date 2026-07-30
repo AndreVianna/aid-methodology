@@ -53,8 +53,9 @@ if [[ "${1:-}" == "--verbose" || "$_rc" -ne 0 ]]; then
 fi
 
 if [[ "$_rc" -eq 0 ]]; then
-    # Report the number of claims the checker actually compared, so a scan that silently
-    # stops reaching the corpus shows up as a collapsing pass count rather than a green tick.
+    # Report the count the checker compared. The pass count here is always 1, so a shrinking
+    # corpus does not show up as a falling pass count -- the guard against that lives in the
+    # checker itself (CLAIM_FLOOR), set near the live figure rather than at a token value.
     _n="$(printf '%s\n' "$_out" | sed -n 's/^Claims checked: *\([0-9]\+\).*/\1/p' | head -1)"
     _n="${_n:-0}"
     echo "PASS SC01 every stated skill count agrees with the derivation (${_n} claims compared)"

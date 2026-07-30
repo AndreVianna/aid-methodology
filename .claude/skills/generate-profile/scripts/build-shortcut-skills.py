@@ -56,7 +56,9 @@ _VALID_TYPES = frozenset({
 _REQUIRED_FIELDS = ("name", "verb", "artifact", "alias_of", "default_type", "group", "intent")
 
 # Marker embedded in every generated doorway body. Orphan cleanup only ever removes a
-# directory whose SKILL.md carries this exact marker -- hand-authored skills (the 15
+# directory whose SKILL.md carries this exact marker -- hand-authored skills (the curated
+# roster plus every `repurpose: true` catalog row; NOT "the 15 pipeline skills", which this
+# comment claimed and which understates the protected set by a wide margin)
 # shipped pipeline skills, including the 4 repurpose skills aid-deploy/aid-monitor/
 # aid-query-kb/aid-ask) never carry it and are therefore never touched, regardless of
 # catalog contents.

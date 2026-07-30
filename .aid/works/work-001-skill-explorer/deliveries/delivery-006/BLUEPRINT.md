@@ -26,7 +26,12 @@ Every quantity below was re-derived on 2026-07-29 before planning, not taken fro
 (19 classic + `/aid-triage` + `/aid-ask`); 64 emitting catalog rows. The generated
 `reference/skills.md` already renders these correctly at line 9, because it derives them at build
 time. So **KI-003 is stale comments, not stale output** — `gen-reference.mjs` lines 5–6, 147 and
-390 still claim 94 / 16 classic / 76.
+390 still claim 94 / 16 classic / 76. **Amended at gate cycle 3:** this enumeration is
+incomplete -- three further hand-counts were found in the same file, two of them in
+reader-facing OUTPUT rather than comments (a "67 near-identical H3 blocks" comment against a
+real 64, and "the 4 classic re-registered skills" hard-coded twice into the rendered page).
+Six sites, not three. The guard now matches count SHAPES rather than the two literal strings
+that had already drifted, which is what found them.
 
 **The stale prose is in hand-authored files only**, exactly where Q4 said:
 `site/src/content/docs/index.mdx` lines 76, 77, 91, 92 and

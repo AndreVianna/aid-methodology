@@ -26,6 +26,7 @@ intent: |
   gotchas a change will trip. Diagnosis, not a sprint plan.
 contracts: []
 changelog:
+  - 2026-07-30: work-001 delivery-006 gate -- added W1-1..W1-13, the work-001 known-issues that would not survive the work folder being pruned; corrected an initial mis-classification that restated three CLOSED issues as open.
   - 2026-06-25: Initial debt audit (aid-discover quality deep-dive)
 ---
 

@@ -131,8 +131,9 @@ describe('gen-reference: generatedFrom frontmatter', () => {
 // ── Roster counts match source ────────────────────────────────────────────────
 
 // The curated (non-shortcut) skill roster — the skills gen-reference.mjs's
-// SKILL_GROUPS renders as individual `### \`aid-...\`` sections. Which skills
-// get their own section is a curatorial choice living in SKILL_GROUPS, not a
+// SKILL_GROUPS USED to render as individual `### \`aid-...\`` sections, until
+// task-057 hollowed that page out; the roster now renders only at /skills/.
+// Which skills are curated is a curatorial choice living in SKILL_GROUPS, not a
 // filesystem fact, so this list stays hand-maintained rather than derived —
 // deriving it would only make the test tautological with the generator. It is
 // kept honest by the clamp assertion below, which fails BY NAME for any on-disk

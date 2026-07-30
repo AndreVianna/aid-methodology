@@ -173,7 +173,7 @@ export function renderSkillIndex(records, sections) {
     : `> **Note:** This page is the roster, and it files skills per FR-5’s Placement ` +
       `rules. ${divergent.map((d) => `\`${d.name}\` is **${d.here}** here and ` +
       `**${d.there}** in the curated roster that ` +
-      `[docs/aid-methodology.md](${'https://github.com/AndreVianna/aid-methodology/blob/master'}/docs/aid-methodology.md) ` +
+      `[the methodology's skill inventory](/concepts/methodology/) ` +
       `publishes`).join('; ')}. Where they disagree about grouping, **this page is ` +
       `authoritative**. How the shortcut skills themselves work — the shared engine ` +
       `and its INTAKE → APPROVAL-HALT sequence — is at ` +

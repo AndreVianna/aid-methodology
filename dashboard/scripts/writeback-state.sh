@@ -1,4 +1,18 @@
 #!/usr/bin/env bash
+#
+# ============================================================================
+#  THIS IS A DELIBERATE FORK, NOT A RENDER. Do not "resync" it.
+#
+#  Source of the other eight copies: canonical/aid/scripts/execute/writeback-state.sh
+#  This copy diverges on purpose: it additionally accepts `Deploy` as a Phase value,
+#  which the canonical version rejects. Overwriting it from canonical/ silently removes
+#  that, and NO TEST WOULD CATCH IT -- there is no parity suite comparing the two
+#  (`grep -rn dashboard/scripts/writeback-state tests/` returns nothing). Recorded here
+#  because the absence of that test is the actual risk, and the banner is what stands in
+#  for it until one exists.
+#
+#  Fixes that are NOT about the Phase enum belong in canonical/ first, then here.
+# ============================================================================
 # writeback-state.sh -- row-level write coordination for FR6 parallel pool
 # x per-unit STATE writes in AID aid-execute.
 #

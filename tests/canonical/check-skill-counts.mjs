@@ -33,6 +33,10 @@
 //             profiles/**          rendered from canonical/; byte-identity covers them
 //             .claude/aid/, .cursor/  dogfood renders of canonical/; ditto
 //             site/dist/, node_modules/
+//   NOT YET SCANNED (stated so the SCOPE above is not read as exhaustive):
+//             site/scripts/, tests/, dashboard/, lib/, bin/, packages/ — code trees whose
+//             counts live in comments. site/scripts/ is covered separately by
+//             site/scripts/__tests__/skill-counts.test.mjs; the rest are uncovered.
 //
 // HISTORICAL QUOTES. A line that deliberately quotes a superseded number must carry the
 // marker `count-history` (in a comment or inline). The marker is per line and is reported,
@@ -156,6 +160,11 @@ for (const s of REPO_LOCAL_SKILLS) {
  * `architecture.md:531` is a changelog row and correct; `architecture.md:515` is body prose
  * reading "(the 92 shipped skills)" and is a live falsehood. Same file, same number, opposite
  * verdicts — so the guard keys on the LINE'S SHAPE, not on the file.
+ *
+ * LIMIT, stated rather than implied: the rule is evadable. A live false claim formatted as
+ * a dated bullet is skipped. That is accepted — the shapes are conventions this repo's KB
+ * actually uses for history, and a reviewer reading a dated line reads it as history too.
+ * The guard narrows where drift can hide; it does not make hiding impossible.
  */
 const HISTORY_SHAPES = [
   /^\s*\|\s*\d+(?:\.\d+)?\s*\|\s*\d{4}-\d{2}-\d{2}\s*\|/, // versioned/dated table row
@@ -214,8 +223,13 @@ if (wrong.length) {
   process.exit(1);
 }
 
-// Non-vacuity: a guard that scans nothing passes trivially.
-if (checked < 20) {
+// Non-vacuity floor. Set near the live figure rather than at a token 20: the point is to
+// catch a scan that has silently stopped reaching the corpus (a moved tree, a broken walk,
+// a regex refactor that neuters every pattern), and a floor an order of magnitude below the
+// real count cannot do that. If a future work legitimately shrinks the corpus -- work-004
+// takes it from 111 to 74 -- lower this deliberately and say so in the commit.
+const CLAIM_FLOOR = 120;
+if (checked < CLAIM_FLOOR) {
   console.log(`\nFAIL: only ${checked} claims checked — the scan is not reaching the corpus.`);
   process.exit(1);
 }

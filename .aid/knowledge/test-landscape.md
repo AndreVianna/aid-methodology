@@ -30,6 +30,7 @@ contracts:
   - "Every canonical suite runs under `timeout 300` in an isolated bash process"
   - "node and pwsh must be present in CI or environment-dependent suites silently skip (CI fails loudly if absent)"
 changelog:
+  - 2026-07-30: work-001 delivery-006 gate -- corrected the stale shortcut counts in the body; restored the 1.3 Change Log row, which an earlier pass in this same cycle had edited (falsifying a dated audit record).
   - 2026-06-25: Initial discovery (aid-discover quality deep-dive)
 ---
 

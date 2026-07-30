@@ -7,9 +7,9 @@
 //   AC-4  Card intent equals skillSummary(record), escaped by renderFrontmatterValue.
 //   AC-5  Marker is byte-identical to the existing generated pages' sentence.
 //   AC-6  title: 'All Skills'; sidebar: hidden: true present and indented.
-//   AC-7  Cross-reference note present, before first ## , links to /reference/skills/, and
-//         asserts NO competing-roster claim (the divergence it used to describe died in
-//         delivery-006 task-057, which hollowed that page out).
+//   AC-7  Grouping-divergence + cross-reference note: present, before the first ## , links
+//         to /reference/skills/, DISCLOSES every grouping the curated roster disagrees with
+//         (derived, not hard-coded) and invents none, and makes no frozen-generator claim.
 //   AC-8  No count literal in the module source.
 //   AC-9  End-to-end: every on-disk skill appears exactly once; no duplicates, no missing.
 //   AC-10 Idempotence: renderSkillIndex called twice with same inputs produces identical output.
