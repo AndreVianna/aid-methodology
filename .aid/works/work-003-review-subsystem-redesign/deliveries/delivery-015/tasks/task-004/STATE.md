@@ -1,8 +1,8 @@
 ---
-state: Pending
+state: Done
 review: "Pending"
 elapsed: "--"
-notes: "--"
+notes: 'Both coverage ratios retired; gates keyed on the Rule enum scoped by mandate prefix; visual gate split three ways with --non-functional reserved for nothing-usable. AC-2 closed for the act-back gate and the Divergence half; the Omission half stays on the [ESSENCE-GAP] marker per human decision, logged as Declined gap kb-essence/load-bearing-fact-coverage. 3 [HIGH] quick-check findings, all fixed-on-spot.'
 ticket_ref: "--"
 ---
 
@@ -33,13 +33,12 @@ ticket_ref: "--"
 
 ## Quick Check Findings
 
-<!-- AUTHORED -- written during the per-task quick-check step of aid-execute. Records the reviewer
-     tier and all [HIGH] and [CRITICAL] findings. [CRITICAL] triggers fix-on-spot; [HIGH] defers to
-     the delivery gate. No grade is recorded here -- grading is per-delivery. -->
-
 - **Reviewer Tier:** Small (quick check always uses Small tier)
-- **Findings:** _none yet_
-
+- **Findings:**
+  - [HIGH] The teachback prompt's own example row told the M3 reviewer to write `Rule = KB-20` on a `[FIDELITY]` Divergence row, contradicting the derivation this task had just re-pointed at `Rule == NAR-05`. An agent copies the example, so the gate would have counted zero Divergences -- canonical/skills/aid-discover/references/reviewer-prompt-teachback.md:193 -- Fixed-on-spot (now `NAR-05`; all 11 example rows across the four mandate prompts re-verified to cite a real catalog ID)
+  - [HIGH] Found while checking the above: keying the gates on `Rule` alone leaks findings across them. `NAR-05` and `KB-20`..`KB-26` are legitimately available to the correctness and anatomy mandates, and an M3 Omission row must itself carry a `KB-2x` ID (the schema states "There is no exemption" for a finding row), so one omitted fact would have failed the assertiveness verdict with no act-back finding behind it -- canonical/skills/aid-discover/references/state-review.md:286,355 -- Fixed-on-spot (both gates now scoped by the existing per-mandate `#` prefix, `TB-` and `AB-`; prose, summary table and pseudo-code all agree)
+  - [HIGH] The correctness prompt still instructed reviewers to put `KB-20` in `Rule` as a placeholder "because the KB rule set does not yet assign rule IDs". It has assigned them since 2026-07-29, and as of this task the column feeds a gate -- so a stand-in ID stopped being inert text and became a wrong gate input -- canonical/skills/aid-discover/references/reviewer-prompt-correctness.md:116 -- Fixed-on-spot (points at the real catalog; example row now `NAR-05`)
+- **Note:** the reviewer also proposed setting the Omission row's `Rule` to `--`. Verified wrong and not applied: `reviewer-ledger-schema.md § Rule values` states "There is no exemption" for a finding row and `writeback-ledger.sh` refuses such a row with exit 4. Checking it is what surfaced the leak above.
 ---
 
 ## Dispatch Log

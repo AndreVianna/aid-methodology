@@ -45,10 +45,23 @@ Persist the grade and findings to `.aid/knowledge/STATE.md` `## Knowledge Summar
 - Grade ≥ minimum → APPROVAL.
 - Grade < minimum → FIX. **If the shortfall is in the human-judgment answers** or the free-text notes flagged something, FIX uses the **expose → propose → ask** loop (see `references/state-fix.md`) — never silent guess-fixing.
 
+#### A `V1` failure is three different outcomes, and they must not be conflated
+
+`V1` used to be one boolean that meant all three of these at once, which is how a single `F`
+came to stand for a broken visual, a dead page, and a check nobody had run.
+
+| What the human found | Outcome |
+|---|---|
+| **A specific visual is broken or illegible** — the ordinary case | A `SUMMARY-06` row per failing visual, `[HIGH]`. The grade follows from the rows, exactly like any other finding, and routes to FIX. Do **not** reach for `--non-functional`: the page works, one visual in it does not. |
+| **The page produces nothing usable** — nothing renders, the file will not open, the theme toggle is dead | `bash canonical/aid/scripts/grade.sh --non-functional`. This is the flag's declared meaning and its only legitimate use here — `grading-rubric.md § Severity scale` defines it as the whole-artifact verdict *"does not build, does not run, produces no usable output"*. Reaching for it because a diagram is ugly would make `F` mean two things again. |
+| **The checklist has not been answered** | **No grade at all.** See below. |
+
 **If the checklist has NOT been completed, do not grade and do not route.** Halt and ask the human. This
 is a **pause, not a failing grade** — the previous behaviour reported `F`, which asserts a result nobody
 observed and makes an unanswered check indistinguishable from a genuinely failed one. `SUMMARY-06`
 cannot be answered by an agent, so an agent proceeding here is the failure this gate exists to prevent.
+Note that this is also what keeps `--non-functional` honest: without a separate pause, "unanswered" had
+nowhere to go but `F`, and `F` is what `--non-functional` produces.
 
 Print: `[State: MANUAL-CHECKLIST] complete.`
 

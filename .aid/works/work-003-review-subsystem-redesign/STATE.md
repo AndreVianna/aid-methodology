@@ -5,13 +5,13 @@ pipeline:
 started: "2026-07-27"
 minimum_grade: "A"
 user_approved: yes
-lifecycle: Paused-Awaiting-Input
-phase: Detail
-active_skill: none
-updated: "2026-07-28T18:35:00Z"
-pause_reason: "Detail complete at A+ -- 69 tasks across 18 deliveries. Next: /aid-execute work-003, starting at delivery-001 (a hard gate)."
-block_reason: "--"
-block_artifact: "--"
+lifecycle: Running
+phase: Execute
+active_skill: aid-execute
+updated: '2026-07-30T03:45:29Z'
+pause_reason: --
+block_reason: --
+block_artifact: --
 ticket_ref: "--"
 ---
 
@@ -21,9 +21,9 @@ Redesign of AID's review subsystem: extract review into chainable light/deep
 review skills, formalize artifact-typed review criteria over a single severity
 source of truth, and close the accumulated review-path defects.
 
-> **State:** Paused -- awaiting user
-> **Phase:** Detail (complete at A+; 69 tasks across 18 deliveries)
-> **Next:** `/aid-execute work-003` -- start at delivery-001, which is a hard gate
+> **State:** Paused -- session handoff
+> **Phase:** Execute (deliveries 001-014 gated A+; delivery-015 in progress)
+> **Next:** `/aid-execute work-003` from worktree `.claude/worktrees/work-003` (branch `aid/work-003-delivery-015`) -- finish task-003, then tasks 004-006
 
 ---
 
@@ -154,10 +154,85 @@ source of truth, and close the accumulated review-path defects.
 
 _None yet._
 
+## Criteria Gaps
+
+<!-- AUTHORED by gap-register.sh, never by hand. Section created by hand on 2026-07-30 because
+     this work predates the template that introduced it, and the writer does not create it --
+     see Q18. Cell contracts: work-state-template.md ## Criteria Gaps.
+
+     A criteria gap is "there is no rule to judge this by" -- a missing PRECONDITION of the
+     review, not a defect in the artifact.
+
+     Status: Pending | Answered | Declined | Superseded   (Declined is a recorded "no")
+     Kind:   criteria | evidence                          (only `criteria` gates a grade) -->
+
+| Gap Key | Kind | Status | Depth | Recurrences | Scope | Criterion | Resolution |
+|---|---|---|---|---|---|---|---|
+| kb-essence/load-bearing-fact-coverage | criteria | Declined | 0 | 0 | aid-discover essence gate, condition 2 (Omission) -- canonical/skills/aid-discover/references/state-review.md § 2c | No KB document declares that the Knowledge Base must carry the project's load-bearing source facts. The Divergence half of the gate maps onto NAR-05; the Omission half has no declaring criterion, so review-rubrics/INDEX.md's No-Criterion-no-row contract forbids authoring a rule row for it. | 2026-07-30, human decision: leave the Omission condition keyed on the [ESSENCE-GAP] Description marker and record the gap rather than invent a rule ID or pause delivery-015 for a KB edit. Declined, not Pending -- the decision is made, so this must not be re-asked and must not gate a grade. Reopening it means adding the standard to the KB authoring conventions via /aid-update-kb, then re-pointing condition 2 at the new rule; task-004's second acceptance criterion is therefore closed for the act-back gate and the Divergence half, and open for this half. |
+
 ## Cross-phase Q&A
 
 <!-- DERIVED -- union of per-delivery Q&A plus WORK-OWNER-AUTHORED entries below
      (work owner is the single writer for those). -->
+
+### Q18 -- `gap-register.sh` finds its section by substring, and wrote a row into this file's prose (2026-07-30)
+
+- **Category:** Defect
+- **Impact:** High
+- **Status:** Open -- **NOT fixed here.** Out of delivery-015's scope (`gap-register.sh` is
+  feature-004's artifact and this delivery's Scope names only the grading backend). Recorded with a
+  reproduction so whoever owns it does not have to rediscover it.
+
+Found by using the script for real, registering delivery-015's essence-gate criteria gap.
+
+**What happened.** `gap-register.sh --promote` reported
+`OK: ... registered gap 'kb-essence/load-bearing-fact-coverage' (criteria, Declined, depth 0)`
+and exited `0`. The row was written **into the middle of `## Cross-phase Q&A`**, immediately before
+`## Calibration Log` -- with no `## Criteria Gaps` heading and no table header above it. A bare
+markdown row loose in prose. Nothing complained.
+
+**Why.** The section is located with `index($0, "## Criteria Gaps")` (lines 183, 249, 285, 318,
+346) -- a **substring test on the whole line, not an anchored heading match**. This file's Q13
+contains the sentence:
+
+> 8. **A dedicated `` ## Criteria Gaps `` table** in the work and discovery state templates, ...
+
+That line *contains* the string, so the writer treated a backticked mention inside a prose bullet as
+the section itself and appended at the next `^## ` heading it met.
+
+**Two distinct defects, and the first is the sharper one:**
+
+1. **Substring matching where an anchored match is required.** `^## Criteria Gaps[[:space:]]*$`
+   would not have matched the prose. This is *the same defect class delivery-015 exists to remove*
+   -- the essence and act-back gates were counting `[FIDELITY]`/`[ACTBACK]` as substrings of free
+   text, and task-004 just re-pointed them at the closed `Rule` enum for exactly this reason. The
+   register writer has the same bug, one directory away, and it is worse there: a gate that
+   miscounts produces a wrong grade, but a *writer* that mislocates its section corrupts the file
+   it was asked to protect.
+2. **No section-absent handling.** This work's `STATE.md` predates the template that introduced
+   `## Criteria Gaps`, so the section genuinely did not exist. The sibling writer
+   `writeback-state.sh` documents the opposite behaviour for exactly this case -- its
+   `wb_set_frontmatter` "creates the frontmatter block from scratch ... so a not-yet-migrated
+   STATE.md degrades gracefully instead of failing". `gap-register.sh` should create its section
+   the same way. Instead, with no anchor and no creation path, its `END { if (inreg && !done) ... }`
+   guard cannot fire either, so a file without the section and without an accidental prose match
+   would have silently registered **nothing at all** while still exiting `0`.
+
+**Reproduce:**
+```bash
+printf '# S\n\n## Notes\n\nSee the `## Criteria Gaps` table.\n\n## After\n' > /tmp/s.md
+bash .claude/aid/scripts/review/gap-register.sh --state /tmp/s.md --promote \
+    --gap-key a/b --kind criteria --scope s --criterion c    # exits 0
+cat /tmp/s.md            # row lands under ## Notes; no ## Criteria Gaps heading exists
+```
+
+**What was done here.** The section was created by hand in template order (between
+`## Delivery Gates` and this one), the misplaced row moved into it under a proper header, and every
+read API re-verified against the repaired file: `--resolved-keys` returns the key, `--open-keys` is
+empty (it is `Declined`), `--depth-of` returns `0`, and a repeat `--promote` adds no second row.
+The idempotence probe incremented `Recurrences` to 1 as designed for a re-promoted `Declined` key;
+since no gap actually recurred, it was reset to 0 by hand rather than left asserting a loop that
+never happened.
 
 ### Q15 -- Three defects found while executing delivery-013 (2026-07-29)
 
@@ -236,6 +311,28 @@ file across 375 files blocked for over an hour; the identical check by file hash
 seconds. This is now the third time in this work that per-item spawning has been the bottleneck
 (rule-catalog integrity, this delivery's `doc_set` loop, this sync). **On this platform, per-item
 process spawning should be treated as the default suspect** whenever something is unexpectedly slow.
+
+### Q17 -- Session handoff at delivery-015 task-003 (2026-07-30)
+
+- **Category:** Process / resume
+- **Impact:** Low
+- **Status:** Open
+
+**Where:** worktree `.claude/worktrees/work-003`, branch `aid/work-003-delivery-015`.
+
+**Done (committed):** delivery-015 task-001 (SUMMARY rule rows), task-002 (`emit-summary-findings.sh`; `grade-summary.sh` deleted).
+
+**In progress (uncommitted):** task-003 de-score — `manual-checklist.sh` is a recorder; `aid-summarize` surfaces migrated; `knowledge-summary/grading-rubric.md` COV bands removed; `tests/canonical/test-one-grading-backend.sh` added and **23/23 pass**. Staged: `grade-summary.sh` deletion (from task-002, still staged).
+
+**Next steps (in order):**
+1. Commit task-003 changes (+ test file).
+2. Dispatch review; mark task-003 `Done` at A+.
+3. task-004: retire binary verdicts in `emit-summary-findings.sh` / `grade.sh` callers.
+4. task-005: remove two-grade model from remaining surfaces.
+5. task-006: finalize NFR-7 test suite (mostly written).
+6. Delivery-015 gate (A+), then delivery-016.
+
+**Shell:** use Git Bash on Windows (`C:\Program Files\Git\bin\bash.exe`), not WSL. Unset `AID_WORK_DIR` before running `tests/run-all.sh` (see Q15).
 
 ### Q1 -- Review extraction: two skills, or one skill with a depth mode?
 
