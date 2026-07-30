@@ -15,7 +15,7 @@
 // build-time half.
 
 import { readFileSync } from 'node:fs';
-import { resolve, dirname } from 'node:path';
+import { resolve, dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { describe, it, expect, beforeAll } from 'vitest';
 import { shouldMount, buildProjection, embedJson } from '../skill-node-panel.js';
@@ -46,7 +46,13 @@ const EXCLUDED_PAGES = [
   },
   {
     page: 'reference/skills.md',
-    generatedFrom: 'canonical/skills/*/SKILL.md, canonical/aid/templates/shortcut-catalog.yml',
+    // Updated by delivery-006 task-057, which hollowed this page out: it no longer renders
+    // per-skill sections, so it is no longer generated from the SKILL.md glob. Still a
+    // comma-joined two-source string, so the property under test is unchanged — but the
+    // fixture has to match what the generator actually emits for the comment above to be
+    // true, and a fixture that has quietly stopped matching reality proves nothing.
+    generatedFrom:
+      'canonical/aid/templates/shortcut-catalog.yml, canonical/aid/templates/shortcut-engine.md',
     reason: 'comma-joined two-source string — fails anchored $ in pattern',
   },
   {
@@ -59,6 +65,32 @@ const EXCLUDED_PAGES = [
 // Maximally permissive known set: includes names that WOULD match if only the pattern
 // succeeded. Proves the pattern rejects, not the known-set membership.
 const PERMISSIVE_KNOWN = new Set(['*', 'index', 'agents', 'knowledge-base', 'settings', 'skills']);
+
+// ── The fixtures above must match what the generators actually emit ──────────────────────
+//
+// The comment heading EXCLUDED_PAGES claims its values are "sourced from the actual content
+// files". That claim silently stopped being true when delivery-006 task-057 changed
+// reference/skills.md's generatedFrom, and nothing caught it: every case still passed,
+// because a DIFFERENT comma-joined string is also rejected by the anchored pattern. A
+// fixture that has quietly stopped matching reality proves nothing about reality — so the
+// claim is now asserted rather than asserted-in-a-comment.
+describe('EXCLUDED_PAGES fixtures match the real generated pages', () => {
+  const DOCS = resolve(moduleDir, '../../content/docs');
+
+  for (const { page, generatedFrom } of EXCLUDED_PAGES) {
+    it(`${page}: fixture generatedFrom equals the page's own frontmatter`, () => {
+      const real = readFileSync(join(DOCS, page), 'utf8');
+      const m = /^generatedFrom:\s*'([^']*)'/m.exec(real);
+      expect(m, `${page}: no generatedFrom in frontmatter`).not.toBeNull();
+      expect(m![1]).toBe(generatedFrom);
+    });
+  }
+
+  // Non-vacuity: the loop really ran over every fixture.
+  it('checked every fixture', () => {
+    expect(EXCLUDED_PAGES.length).toBe(5);
+  });
+});
 
 // ── Zero-tag case: all five excluded pages (non-vacuous) ─────────────────────────────────
 
