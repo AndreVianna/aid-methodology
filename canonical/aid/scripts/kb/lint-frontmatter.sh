@@ -31,20 +31,26 @@
 # Usage:
 #   bash lint-frontmatter.sh --root <kb-root>
 #   bash lint-frontmatter.sh --root .aid/knowledge
+#   bash lint-frontmatter.sh --root .aid/knowledge --fail-on-skip   # runtime gate
+#
+# --fail-on-skip treats a SKIPPED doc as a failure. Use it wherever the lint is a gate rather than a CI
+# smoke check: without it, a fully un-migrated KB reports PASS having inspected nothing.
 #
 # Exit codes:
-#   0 -- all checked docs pass (skipped docs do not count as failures)
-#   1 -- one or more findings emitted
+#   0 -- all checked docs pass (skipped docs do not count as failures, unless --fail-on-skip)
+#   1 -- one or more findings emitted, or docs were skipped under --fail-on-skip
 
 set -eu
 
 ROOT=""
 VERBOSE=0
+FAIL_ON_SKIP=0
 
 while [[ $# -gt 0 ]]; do
     case "$1" in
         --root)    ROOT="$2";   shift 2 ;;
         --verbose) VERBOSE=1;   shift   ;;
+        --fail-on-skip) FAIL_ON_SKIP=1; shift ;;
         -h|--help)
             cat <<'HELP_EOF'
 lint-frontmatter.sh -- presence+shape lint for KB doc frontmatter.
@@ -460,6 +466,15 @@ echo "=== Frontmatter lint: $ROOT ==="
 total_checked=0
 total_skipped=0
 total_findings=0
+# Skips come in two kinds that must not be conflated:
+#   PERMANENT  -- kb-category: meta, or source: generated. These are out of scope by design and will
+#                 never be migrated, so a gate must never fail on them.
+#   PREMIGRATION -- a doc carrying none of the newer fields, absorbed by the day-one soft-skip. This is
+#                 real outstanding work and is what --fail-on-skip exists to surface.
+# Counting them together would make --fail-on-skip permanently red (this KB has 4 meta docs), and a gate
+# that can never pass gets switched off.
+skipped_permanent=0
+skipped_premigration=0
 
 while IFS= read -r f; do
     # Parse frontmatter once for the skip pre-check below (lint_doc re-parses
@@ -475,7 +490,8 @@ while IFS= read -r f; do
     if [[ "$cat" == "meta" || "$src" == "generated" || \
           ( "$cat" != "primary" && "$cat" != "extension" ) ]]; then
         total_skipped=$((total_skipped + 1))
-        [[ "$VERBOSE" -eq 1 ]] && echo "  SKIP: $(basename "$f")"
+        skipped_permanent=$((skipped_permanent + 1))
+        [[ "$VERBOSE" -eq 1 ]] && echo "  SKIP (out of scope): $(basename "$f")"
         continue
     fi
 
@@ -489,6 +505,7 @@ while IFS= read -r f; do
     done
     if [[ "$has_new" -eq 0 ]]; then
         total_skipped=$((total_skipped + 1))
+        skipped_premigration=$((skipped_premigration + 1))
         [[ "$VERBOSE" -eq 1 ]] && echo "  SKIP (pre-migration): $(basename "$f")"
         continue
     fi
@@ -501,12 +518,34 @@ while IFS= read -r f; do
 done < <(find "$ROOT" -maxdepth 1 -type f -name '*.md' ! -name '.*' | sort)
 
 echo ""
-echo "Checked: $total_checked docs | Skipped: $total_skipped docs | Findings: $total_findings"
+echo "Checked: $total_checked docs | Skipped: $total_skipped ($skipped_permanent out of scope, $skipped_premigration pre-migration) | Findings: $total_findings"
 
 if [[ "$total_findings" -gt 0 ]]; then
     echo "FAIL: $total_findings frontmatter finding(s) - see [FM-MISSING]/[FM-INVALID] above"
     exit 1
 fi
 
-echo "PASS: all checked docs are lint-clean"
+# --fail-on-skip: the soft-skip above is a DAY-ONE CI concession -- a doc carrying none of the newer
+# fields is treated as pre-migration and skipped, so CI stays green on an un-migrated KB. That is the
+# right default for CI and the wrong one for a runtime gate: a KB where every doc is un-migrated would
+# report "PASS" having checked nothing, which is a passing record for work that was never inspected.
+#
+# A skill state that gates on frontmatter passes --fail-on-skip so that "not migrated yet" is surfaced
+# as work to do rather than absorbed silently.
+# Only PRE-MIGRATION skips fail. Out-of-scope docs (meta, generated) are excluded by design.
+if [[ "$FAIL_ON_SKIP" -eq 1 && "$skipped_premigration" -gt 0 ]]; then
+    echo "FAIL: $skipped_premigration doc(s) were skipped as PRE-MIGRATION and --fail-on-skip is set."
+    echo "      A skipped doc is unchecked, not clean. Re-run with --verbose to list them"
+    echo "      (they appear as 'SKIP (pre-migration)')."
+    echo "      Migrate their frontmatter -- see kb-authoring/frontmatter-schema.md."
+    echo "      The $skipped_permanent out-of-scope doc(s) (meta / generated) are NOT counted here."
+    exit 1
+fi
+
+if [[ "$total_checked" -eq 0 ]]; then
+    echo "PASS: no docs were in scope (nothing checked)"
+    exit 0
+fi
+
+echo "PASS: all $total_checked checked docs are lint-clean"
 exit 0

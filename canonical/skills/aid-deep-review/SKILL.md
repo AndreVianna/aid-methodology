@@ -30,8 +30,27 @@ Read the invocation manifest (`reviewer-brief-template.md` § invocation manifes
    exists to prevent.
 4. **Plan the resume**, if resuming: `plan-resume.sh --ledger <scratch>` and apply its verdicts with
    `writeback-ledger.sh --set-status`. Keep what it says to keep.
-5. **Resolve the minimum grade** with `read-setting.sh --skill <caller> --key minimum_grade`. Never
-   hardcode it; a caller's configured bar is the caller's to set.
+5. **Validate the settings file, then resolve the minimum grade.**
+
+   ```bash
+   bash canonical/aid/scripts/config/lint-settings.sh --file .aid/settings.yml --quiet
+   bash canonical/aid/scripts/config/read-setting.sh --skill <caller> --key minimum_grade
+   ```
+
+   Never hardcode the bar; a caller's configured bar is the caller's to set.
+
+   **Why validate here, at consumption.** This is the moment the bar is used, so it is the moment a bad
+   value does damage. `read-setting.sh` returns whatever string it finds — a typo like `A1` is not a
+   grade, so the comparison against the computed grade never succeeds honestly, and the gate either
+   never passes or never blocks. Neither failure announces itself. Checking here catches a hand-edit
+   made long after `/aid-config` ran, which is exactly when a bar gets loosened.
+
+   Exit 1 means the settings file is invalid: **halt and report it**. Do not fall back to a default bar
+   — silently substituting one is how a gate gets quietly lowered.
+
+6. **Print the resolved bar** in the gate's output: `bar = <grade> (from .aid/settings.yml)`. A gate that
+   does not say what it is enforcing cannot be audited, and this is what makes a loosened bar visible
+   without needing a settings-history mechanism.
 
 ### 2. DISPATCH
 

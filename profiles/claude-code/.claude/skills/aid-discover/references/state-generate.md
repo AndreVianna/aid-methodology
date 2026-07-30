@@ -850,7 +850,7 @@ not the agent's word.
 bash .claude/aid/scripts/kb/kb-citation-lint.sh --root .aid/knowledge
 ```
 
-- **Exit 0 (clean):** print `[5a] Citation lint: clean.` and CHAIN to Step 5b.
+- **Exit 0 (clean):** print `[5a] Citation lint: clean.` and CHAIN to Step 5a2.
 - **Exit 1 (violations):** the script lists each `doc:line -> file.ext:LINE`. Do NOT proceed.
   Partition the violations by KB doc, resolve each doc's owner from the declared doc-set
   (`owns-<agent>` accessor), and **re-dispatch the owning agent(s)** with the violation list and
@@ -860,7 +860,31 @@ bash .claude/aid/scripts/kb/kb-citation-lint.sh --root .aid/knowledge
   exit 0 (cap at 2 rounds — any residual is escalated to a Q&A entry, never shipped silently).
 
 This gate is the model for moving any MECHANICAL authoring rule from "self-reported in GENERATE /
-caught in REVIEW" to "mechanically gated in GENERATE" (cf. `lint-frontmatter.sh` for frontmatter).
+caught in REVIEW" to "mechanically gated in GENERATE". Step 5a2 applies it to frontmatter.
+
+### Step 5a2: Frontmatter Lint Gate (mechanical authoring gate)
+
+**Run after Step 5a, before closure.** Frontmatter presence and shape is mechanical, so it belongs
+here rather than in a reviewer's judgment. `lint-frontmatter.sh` has existed for some time and **no
+skill state invoked it** — it ran only in CI, which means a KB doc could be written, reviewed and
+shipped with malformed frontmatter and the failure would surface after the fact, if at all.
+
+```bash
+bash .claude/aid/scripts/kb/lint-frontmatter.sh --root .aid/knowledge --fail-on-skip
+```
+
+- **Exit 0:** print `[5a2] Frontmatter lint: clean.` and CHAIN to Step 5b.
+- **Exit 1:** do NOT proceed. Findings are tagged `[FM-MISSING]` (required field absent or empty) or
+  `[FM-INVALID]` (present but malformed). Partition by doc, resolve each doc's owner from the declared
+  doc-set, and re-dispatch the owning agent(s) with the finding list. Re-run; cap at 2 rounds, and
+  escalate any residual to a Q&A entry rather than shipping it.
+
+**Why `--fail-on-skip` here.** The lint's default soft-skips a doc that carries none of the newer
+fields, so CI stays green on an un-migrated KB. As a *gate* that default is wrong: a KB where every doc
+is un-migrated would report `PASS` having inspected nothing, which is a passing record for work never
+checked. The flag counts only **pre-migration** skips; docs that are out of scope by design
+(`kb-category: meta`, `source: generated`) never fail it, so the gate is satisfiable rather than
+permanently red.
 
 ### Step 5b: SYNTHESIS + CLOSURE
 

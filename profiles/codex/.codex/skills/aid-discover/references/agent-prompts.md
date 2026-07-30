@@ -90,7 +90,7 @@ bare `file.ext:LINE` (line numbers drift). Before reporting, RUN the lint on you
 every violation it lists:
 
 ```bash
-bash .claude/aid/scripts/kb/kb-citation-lint.sh --root .aid/knowledge
+bash .codex/aid/scripts/kb/kb-citation-lint.sh --root .aid/knowledge
 ```
 
 Convert each flagged `file.ext:LINE` to `file.ext:<symbol or heading at that location>`. The

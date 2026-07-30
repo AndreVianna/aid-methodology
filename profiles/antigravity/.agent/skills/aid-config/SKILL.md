@@ -128,9 +128,21 @@ end of the file. Preserve all other lines and inline comments exactly as they ar
 same-directory temp file + `mv -f` for crash-safety (POSIX atomic rename), but no lock-dir
 mutex — `aid-config` is interactive single-user; concurrent writes are not a real failure mode.
 
-### Step 7: Confirm
+### Step 7: Verify the written file, then confirm
 
-Print: `✓ <key>: <old> → <new>` and exit.
+```bash
+bash .agent/aid/scripts/config/lint-settings.sh --file .aid/settings.yml
+```
+
+Step 5 validated the *value you were given*; this validates the *file you actually wrote*. They are not
+the same check — a correct value can still be written to the wrong line, appended as a duplicate key, or
+mangled by a partial replacement, and none of that is visible to Step 5.
+
+If the lint exits 1, **restore the pre-edit file and report the failure**. Leaving an invalid
+`settings.yml` in place is the worst outcome available: `minimum_grade` gates every review-state skill,
+so a file this skill has just corrupted silently changes the quality bar of the whole pipeline.
+
+Then print: `✓ <key>: <old> → <new>` and exit.
 
 ---
 

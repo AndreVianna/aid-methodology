@@ -59,8 +59,12 @@ fi
 
 [[ ${#FILES[@]} -gt 0 ]] || die "nothing to lint -- give --root or at least one --file"
 
+# An EXPLICITLY NAMED file that does not exist is a usage error, not a clean result. Skipping it would
+# make a typo'd path report "0 rows, all valid" and exit 0 -- a gate that silently checks nothing is
+# worse than no gate, because it produces a passing record. (Files discovered via --root cannot hit this.)
 for f in "${FILES[@]}"; do
-    [[ -e "$f" && ! -r "$f" ]] && die "exists but is not readable: $f"
+    [[ -e "$f" ]] || die "no such file: $f"
+    [[ -r "$f" ]] || die "exists but is not readable: $f"
 done
 
 violations=0
@@ -68,8 +72,15 @@ checked=0
 
 for f in "${FILES[@]}"; do
     [[ -f "$f" ]] || continue
+    # ONE pass decides both what counts as a requirement row and whether it is tagged. An earlier draft
+    # counted rows in a second awk with its own copy of the ID pattern; two copies of the same rule drift,
+    # and when they do the reported total silently stops describing what was actually inspected.
     while IFS= read -r report; do
         [[ -z "$report" ]] && continue
+        if [[ "$report" == __COUNT__* ]]; then
+            checked=$((checked + ${report#__COUNT__}))
+            continue
+        fi
         violations=$((violations + 1))
         [[ "$QUIET" -eq 1 ]] || printf '%s\n' "$report"
     done < <(
@@ -110,18 +121,9 @@ for f in "${FILES[@]}"; do
               }
             }
           }
-          END { printf "__CHECKED__%d\n", CHECKED+0 > "/dev/stderr" }
+          END { printf "__COUNT__%d\n", CHECKED+0 }
         ' "$f" 2>/dev/null
     )
-    n=$(awk '
-          /^\|/ {
-            if ($0 ~ /^\|[ \t:|-]+\|$/) next
-            split($0, c, "|"); id = c[2]; gsub(/[ \t`]/, "", id)
-            if (id !~ /^(FR|NFR|AC)-[A-Z]?[0-9]+$/) next
-            if ($0 ~ /~~(FR|NFR|AC)-/) next
-            k++
-          } END { print k+0 }' "$f")
-    checked=$((checked + n))
 done
 
 if [[ "$violations" -eq 0 ]]; then

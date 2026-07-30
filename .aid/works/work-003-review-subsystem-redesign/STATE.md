@@ -202,6 +202,41 @@ This is the mirror image of delivery-004's failure, where the repo root was edit
 source was not. **Any delivery that edits `canonical/` must update all three trees**, and no current
 gate says so — worth a checklist line wherever the render step is documented.
 
+### Q16 -- delivery-014 findings: a gate that can never pass, and one that runs for three minutes (2026-07-29)
+
+- **Category:** Defect / design
+- **Impact:** Medium
+- **Status:** Resolved, except where noted
+
+**1. `--fail-on-skip` was unusable as first written. [HIGH] -- fixed**
+The flag's purpose is to stop `lint-frontmatter.sh` reporting `PASS` on a KB where every doc was
+soft-skipped as pre-migration — a passing record for work never inspected. The first version failed on
+*any* skip, which conflated two unrelated things: docs skipped **permanently by design**
+(`kb-category: meta`, `source: generated`) and docs skipped as **pre-migration**. This KB has five of
+the former, so the flag could never pass, and **a gate that can never pass gets switched off** — which
+would have left the wiring worse than useless. Skips are now counted separately and only pre-migration
+ones fail. Both directions are tested: a pre-migration doc fails the flag, a meta doc does not.
+
+**2. `lint-settings.sh` silently dropped a corrupted `doc_set` row. [MEDIUM] -- fixed**
+A row that lost its leading `- ` stops being a YAML list item, so the row extractor skipped it and the
+document simply vanished from the doc set with nothing complaining. That is quieter and worse than a
+malformed row. The lint now reports any non-list line inside the block. Found by a negative control that
+was itself written wrong first — the fixture produced this case by accident.
+
+**3. The frontmatter lint takes ~190s on a 21-doc KB, and it is now a runtime gate. [MEDIUM] -- NOT fixed**
+Step 5a2 of `aid-discover` GENERATE now invokes it, so that cost is paid on every discovery run. It is
+roughly 9 seconds per document for a presence-and-shape check, caused by per-field subprocess spawns
+rather than by the work itself. **Left as-is deliberately**: fixing it means rewriting the linter's
+parser, which is not delivery-014's scope, and correctness-before-speed is the right order. Worth a
+follow-up — the same bulk-pass fix used for the rule catalog (222s to 7.2s) and for this delivery's own
+`doc_set` validation applies directly.
+
+**4. Per-file process spawns are the recurring Windows trap.** A dogfood sync that ran `cmp` once per
+file across 375 files blocked for over an hour; the identical check by file hash in PowerShell took nine
+seconds. This is now the third time in this work that per-item spawning has been the bottleneck
+(rule-catalog integrity, this delivery's `doc_set` loop, this sync). **On this platform, per-item
+process spawning should be treated as the default suspect** whenever something is unexpectedly slow.
+
 ### Q1 -- Review extraction: two skills, or one skill with a depth mode?
 
 - **Category:** Design-Decision / scope-shaping
