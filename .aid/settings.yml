@@ -3,8 +3,23 @@ name: AID
 description: AI Integrated Development
 type: brownfield
 source_control: git
-minimum_grade: A+
+minimum_grade: B-
 heartbeat_interval: 1
+
+# Minimum grade lowered A+ -> B- globally (owner decision, 2026-07-30, during work-001
+# delivery-006's gate).
+#
+# A+ means "zero issues at ANY severity" (grading-rubric.md). On artifacts that are largely
+# prose, that surface is effectively unbounded: five consecutive Large-tier gate cycles on
+# delivery-006 each closed ~12 findings and opened ~12, so the ledger grew 30 -> 43 -> 62 -> 73
+# -> 85 with no decline in the new-finding rate. An A+ gate there was not a bar being
+# approached, it was a loop that does not terminate.
+#
+# B- = "> 5 lows", i.e. the worst SURVIVING finding must be LOW. CRITICAL, HIGH and MEDIUM all
+# remain fully blocking -- nothing that misinforms a reader, breaks a build, or states a false
+# fact gets waived. What B- buys is that LOW/MINOR findings and stale file:line citations stop
+# blocking a gate from closing; they are batched and cleared at the END of a work rather than
+# re-litigated every cycle, which is where that five-cycle loop was spending itself.
 
 knowledge:
   source: master

@@ -205,6 +205,32 @@ ticket_ref: "--"
   labelled as such in that file.
 - **Applied to:** `deliveries/delivery-006/tasks/task-05{4,5,6,7}/DETAIL.md`.
 
+### Q7 — the BLUEPRINT's own triple did not sum, and that is what shipped
+
+- **Category:** Requirements (defect in this delivery's own scope statement)
+- **Impact:** Medium
+- **State:** Answered
+- **Context:** The BLUEPRINT opened with "**The triple is 111 / 21 / 64**", re-derived before
+  planning and presented as the measured fact the delivery would correct every page to. It does
+  not sum: 21 counts four skills that are ALSO catalog rows (`aid-deploy`, `aid-monitor`,
+  `aid-query-kb`, and the `aid-ask` alias), so pairing it with a catalog-derived count
+  double-counts them. task-055 then wrote that framing onto the home page as "111 skills — 19
+  classic + `/aid-triage` + `/aid-ask` + 64 verb-first", which totals **85** for a 111-skill
+  corpus. The gate caught it; the BLUEPRINT did not, because a scope statement is not tested.
+- **Answer:** The decomposition that sums is **111 = 17 curated + 94 catalog** (itself 64
+  verb-first + 30 `repurpose`), where 17 is the curated skills that are NOT catalog rows — which
+  is what `concepts/methodology.md`, `reference/glossary.md` and the KB already stated. The
+  BLUEPRINT is amended with the superseded triple struck rather than deleted, `curatedOnly` joins
+  `skill-counts.mjs`, and the identity `curatedOnly + catalogRows === directories` is asserted so
+  a future roster change cannot quietly break it again.
+- **Why it is recorded here rather than only fixed:** four gate cycles named this row, and three
+  times the fix landed on one of its three remedies. Recording the Q&A entry was the third, and
+  its absence is the clearest single example of the pattern the FIX contract's **F1** now
+  addresses — the Description's site gets fixed, the Evidence's siblings do not.
+- **Applied to:** `deliveries/delivery-006/BLUEPRINT.md` (§ Scope and Gate Criterion 2);
+  `tasks/task-055/DETAIL.md` (AC amendment); `site/scripts/skills/skill-counts.mjs`;
+  `site/src/content/docs/index.mdx`; `reference/overview.md`.
+
 ---
 
 _Recorded as each task closes._

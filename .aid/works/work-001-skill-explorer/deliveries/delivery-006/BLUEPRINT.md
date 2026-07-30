@@ -72,6 +72,12 @@ table this delivery sheds, so KI-009 closes **by deletion** rather than by arith
 - [ ] **§7's amendment is honoured and bounded.** `gen-reference.mjs` is edited — which §7 froze
       and Q4 unfroze — but the other three generated pages (`agents.md`, `kb.md`, `settings.md`)
       are byte-unchanged, and the generator stays idempotent.
+      **Amended 2026-07-30 (gate cycle 5): `settings.md` gained one row.** The owner lowered
+      `minimum_grade` to `B-` in `.aid/settings.yml`, and that page is generated FROM that file,
+      so the row appearing is the pipeline working. This criterion's intent was that the
+      generator EDIT change no output but its own page; a data change flowing correctly through
+      an untouched code path is the opposite of the drift it guards. `agents.md` and `kb.md`
+      remain byte-unchanged, and the generator is still idempotent.
 - [ ] **Deliveries 001–005 still hold.** The full site suite passes, the build is clean, and the
       111 generated skill pages plus their sidecars are byte-unchanged by this delivery.
       **Amended 2026-07-30 (gate cycle 5): TWO artifacts legitimately changed** —

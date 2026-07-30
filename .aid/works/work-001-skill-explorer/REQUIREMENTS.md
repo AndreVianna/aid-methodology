@@ -153,12 +153,16 @@ option; confirm at read-back)*:
   describe AID. Within `Definition`, cards are subdivided by **verb family** (create, change,
   fix, refactor, test, document, remove, deprecate, migrate, review, research, prototype,
   design, report, dashboard) — the same split `gen-reference.mjs` already derives from the
-  catalog's `verb` field for its family table, so it cannot drift from the catalog. This is a
+  catalog's `verb` field for ~~its family table~~ *(that table was deleted by delivery-006 —
+  the split is still derived from `verb`, now only by `gen-skills.mjs`)*, so it cannot drift
+  from the catalog. This is a
   nesting-depth decision only: no card is removed, and the all-111 coverage of FR-5 is intact.
   The catalog's `group:` field (`G3`–`G11`) is **not** used as the index taxonomy.
 
   **Placement rules (owner-corrected at cross-reference, Q1).** The `Definition` group is not
-  the eight-skill set `gen-reference.mjs` currently lists:
+  the eight-skill set `gen-reference.mjs` ~~currently lists~~ *listed at the time this was
+  written* (it lists no skills at all since delivery-006 hollowed its page out; the curated
+  roster it read from now lives at `site/scripts/skills/curated-roster.mjs`):
   - **`aid-triage` is a Support skill**, not a Definition skill. It sits under `Support`.
   - **`Definition` opens with the five full-path skills**, in pipeline order and
     **un-subdivided**: `aid-describe`, `aid-define`, `aid-specify`, `aid-plan`, `aid-detail`.
