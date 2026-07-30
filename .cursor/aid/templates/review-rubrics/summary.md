@@ -44,6 +44,52 @@ review**, not a pass.
 | `SUMMARY-05` | Every load-bearing claim is grounded in a KB document, not inferred | `authoring-conventions.md § Citation Rule (Durable Anchors)` | MUST | judgment | Name the KB document supporting each load-bearing claim. An ungrounded claim is the finding | `Step 2` |
 | `SUMMARY-06` | Every visual renders and is legible | `knowledge-summary/grading-rubric.md` — the visual-fidelity checks | MUST | judgment | **Human evidence only** — an agent cannot satisfy this rule. One row per failing visual | `[HIGH]` |
 | `SUMMARY-07` | The summary carries no diagram runtime that was retired | `knowledge-summary/grading-rubric.md` — the no-runtime check | MUST | mechanical | `grep` for the retired runtime | `[HIGH]` |
+| `SUMMARY-08` | Every in-page anchor resolves to an element in the document | `knowledge-summary/grading-rubric.md § Check definitions` — the `L1` definition | MUST | mechanical | Resolve each `href="#X"` against the document's IDs. One row per unresolved anchor | `[LOW]` — a dead in-page jump is contained, visible, and fixed by regenerating |
+| `SUMMARY-09` | Every relative document link points at a file that exists | `knowledge-summary/grading-rubric.md § Check definitions` — the `L2` definition | MUST | mechanical | Resolve each `./*.md` link against the tree. One row per broken link | `[MEDIUM]` — it sends the reader out of the summary to nothing, so the radius leaves the artifact |
+
+---
+
+## Where the retired per-check scores went
+
+The generated summary used to be graded by a **second** grading model: a weighted-points ladder over
+fourteen scored automated checks, four more that blocked DONE at zero points, and a thirty-point
+manual pool. That model is gone — `grade.sh` is now the only producer of a letter grade. **Every one
+of those checks is accounted for below**, scored or not, so retiring the ladder removes a *scoring
+mechanism*, not *coverage*.
+
+The four zero-point checks (`T1`, `T2`, `T3`, `NM`) matter most here, because they are the ones a
+points-based audit would miss: they carried no weight to trace, only prose saying they blocked. Under
+rule rows they carry `[HIGH]`, which is why the rule set is **smaller than the points table and
+strictly stronger**.
+
+| Retired check | Now expressed as | Note |
+|---|---|---|
+| `COV` resolved-doc-set coverage | `SUMMARY-01` | Was partial credit on a band; now one finding per unreferenced document |
+| `D1` Mermaid parse | **deleted** | Hardcoded `pass` since the Mermaid engine was retired |
+| `D2` Mermaid render | **deleted** | Same — together these were 10 of 68 points that could never be lost |
+| `L1` anchor links | `SUMMARY-08` | |
+| `L2` relative md links | `SUMMARY-09` | |
+| `H1` HTML validity | `SUMMARY-02` | |
+| `A1` semantic landmarks | `PRE-02` | Family rule — not repeated here |
+| `A2` ARIA on lightbox | `PRE-04` | Family rule |
+| `A3` focus trap | `PRE-04` | Family rule |
+| `A4` reduced motion | `PRE-05` | Family rule |
+| `A5` visible focus | `PRE-03` | Family rule — `:focus-visible` sits under *Keyboard reach* |
+| `C1` light theme contrast | `PRE-11` | Family gap this delivery closed |
+| `C2` dark theme contrast | `PRE-11` | One rule, both themes |
+| `S2` offline render | `SUMMARY-03` | |
+| `T1` visual text readable | `SUMMARY-06` | Machine evidence for the same rule `V1` answers by eye |
+| `T2` visual overlap | `SUMMARY-06` | Same rule, same reason |
+| `T3` visual layout non-trivial | `SUMMARY-06` | Same rule; a collapsed visual is a visual that did not render |
+| `NM` no Mermaid runtime | `SUMMARY-07` | |
+| `K1` doc-set coverage (human) | `SUMMARY-01` | Same claim as `COV`, asked of a human |
+| `K2` KB facts grounded | `SUMMARY-05` | |
+| `V1` human visual gate | `SUMMARY-06` | The human-evidence mode of the rule `T1`/`T2`/`T3` check mechanically |
+
+**Why the accessibility checks are not restated as `SUMMARY-*` rows.** This class declares that its
+family's rules "apply in full and are not repeated here". Copying `A1`–`A5` into this file would create
+a second statement of a family rule that could drift from the first — the same duplication this work
+exists to remove. They are cited above so the mapping is auditable, not restated as rules.
 
 ---
 
@@ -63,6 +109,16 @@ reason this class takes kind A in addition to kind E.
 completed, the correct outcome is **no grade at all** — a pause for the human — rather than a failing
 grade. Unanswered is not the same as failed.
 
+**`SUMMARY-06` carries both evidence modes, and a failure of it is not one outcome but three.**
+`T1`/`T2`/`T3` check size, overlap and layout mechanically; the human checks whether the result is
+actually legible, which no automated check reaches. When it fails, the outcome splits: a specific
+broken visual is one `[HIGH]` row per visual and routes to FIX; a page that produces *nothing usable*
+is `grade.sh --non-functional`, that flag's declared whole-artifact meaning and its only correct use
+here; an unanswered checklist is the pause above. Collapsing any two of these back together is how a
+single `F` came to mean a broken diagram, a dead page, and an unperformed check at once. The routing
+table lives in
+[`aid-summarize/references/state-manual-checklist.md`](../../../skills/aid-summarize/references/state-manual-checklist.md).
+
 ---
 
 ## See also
@@ -75,4 +131,5 @@ grade. Unanswered is not the same as failed.
 
 | Date | Change |
 |---|---|
-| 2026-07-28 | Created. Seven content-truth rules, per the amendment requiring this class to carry them rather than inherit Narrative. |
+| 2026-07-28 | Created. Nine content-truth rules (`SUMMARY-01`…`09`), per the amendment requiring this class to carry them rather than inherit Narrative. |
+| 2026-07-30 | Mapping table completed: `T1`, `T2`, `T3` and `NM` were missing while the table claimed every retired check was accounted for. Corrected the created-row count, which read "seven". |

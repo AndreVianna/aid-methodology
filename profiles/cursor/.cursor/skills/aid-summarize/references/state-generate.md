@@ -350,11 +350,9 @@ Write initial fields to `.aid/knowledge/STATE.md` `## Knowledge Summary Status`:
 **Theme:** default
 **Minimum Grade:** {grade}
 **Minimum Grade Source:** {.aid/settings.yml summary.minimum_grade | .aid/settings.yml review.minimum_grade | --grade flag | default}
-**Machine Grade:** Pending
-**Machine Grade Source:** `grade.sh` AUTO_POOL (68 pts)
-**Human Grade:** Pending (run `manual-checklist.sh` before APPROVAL)
-**Human Grade Source:** `manual-checklist.sh` MANUAL_POOL (K1+K2+V1, 30 pts)
-**Overall Grade:** Pending (= min of Machine and Human letter grades)
+**Grade:** Pending
+**Grade Source:** `grade.sh`, over `.aid/.temp/review-pending/summarize.md`
+**Checklist:** Not run (required before APPROVAL -- SUMMARY-06 cannot be answered by an agent)
 **Last Run:** {iso8601}
 **Trigger Reason:** {initial | stale-after-review-N | --reset | re-approval-only}
 **Output:** .aid/knowledge/kb.html

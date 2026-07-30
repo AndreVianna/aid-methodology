@@ -125,18 +125,24 @@ For each probe answer in the Stage 1 reconstruction:
 
 ### PASS contract
 
-The essence gate PASS = **no Divergence** + **load-bearing essence-coverage >= threshold**.
+The essence gate PASS = **no Divergence** + **no load-bearing Omission**.
 
-- **Zero open `[HIGH] [FIDELITY]` rows** (no KB divergence from source).
-- **Load-bearing essence-coverage >= 90%** (at most 10% of load-bearing source facts are
-  missing from the KB reconstruction; minor/incidental gaps do not count toward this).
+- **Zero open Divergence rows** — rows whose `Rule` is `NAR-05` (no KB divergence from
+  source).
+- **Zero open load-bearing Omission rows** — rows carrying `[ESSENCE-GAP]`. Judge
+  load-bearing-ness when you write the row: an incidental gap is not a finding at all, so
+  it never reaches the gate.
 
-Both conditions must hold. A KB with no Divergence but significant Omission still FAILs.
-A KB with even one Divergence FAILs regardless of coverage.
+Both conditions must hold. A KB with no Divergence but a load-bearing Omission still FAILs,
+and a KB with even one Divergence FAILs regardless.
 
-The threshold (90%) is the starting-strict calibration value (feature-016 §8 / task-086).
-Task-086 wires this into `state-review.md`'s grade aggregation; this mandate emits the
-`[FIDELITY]`/`[ESSENCE-GAP]` rows whose count and severity the aggregation reads.
+**There is no coverage percentage any more.** This gate used to read *"load-bearing
+essence-coverage >= 90%"*. Its denominator was the number of load-bearing facts your
+reconstruction *did* cover — a figure only you could state, that nothing records and no
+later reader can check. So the ratio is retired and the bar is the conservative one: emit a
+row when a load-bearing fact is genuinely absent, and any such row open fails the gate.
+That puts the whole judgement where evidence exists — in the decision to write a row —
+instead of in an unverifiable total.
 
 ---
 
@@ -146,12 +152,18 @@ Task-086 wires this into `state-review.md`'s grade aggregation; this mandate emi
 - Every **Divergence** = `[HIGH]` `[FIDELITY]` row.
 - Every load-bearing **Omission** = `[MED]` `[ESSENCE-GAP]` row.
 
-**Verdict (single mechanism):** Essence is PASS iff zero open `[FIDELITY]` rows AND
-load-bearing essence-coverage >= threshold. There is NO separate verdict sentinel --
-the rows ARE the verdict. Task-086 wires the verdict-derivation grep:
-- Count rows with `[FIDELITY]` in Description AND Status in {Pending, Recurred}.
+**Verdict (single mechanism):** Essence is PASS iff no Divergence row and no
+`[ESSENCE-GAP]` row is open. There is NO separate verdict sentinel -- the rows ARE the
+verdict. The derivation `state-review.md § 2c` runs:
+- Count rows whose `Rule` is exactly `NAR-05` AND Status in {Pending, Recurred}.
 - Count rows with `[ESSENCE-GAP]` in Description AND Status in {Pending, Recurred}.
-- `essence_verdict = PASS` iff both counts are within threshold.
+- `essence_verdict = PASS` iff both counts are zero.
+
+**Put `NAR-05` in the `Rule` cell of every Divergence row.** The gate counts that cell, not
+your Description prefix, and `writeback-ledger.sh` rejects a row whose `Rule` is missing or
+malformed. `NAR-05` is the rule a Divergence actually violates -- *"the document does not
+contradict a higher-authority source"* -- and for a KB doc under discovery the source is
+the higher authority.
 
 ---
 
@@ -171,19 +183,33 @@ This is a binary pass/fail per Divergence and per load-bearing Omission.
 ## Output format
 
 Write all findings to `.aid/.temp/review-pending/{{SCOPE}}-teachback.md` using the
-8-column ledger schema (the `Rule` cell cites a rule from
-`review-rubrics/kb.md`; never invent an ID):
+8-column ledger schema (the `Rule` cell cites a rule from `review-rubrics/kb.md` or from
+its family `review-rubrics/narrative.md`, whose rules apply to this class in full; never
+invent an ID — a Divergence is `NAR-05`):
 
 ```
 | # | Severity | Status | Rule | Doc | Line | Description | Evidence |
 |---|----------|--------|------|-----|------|-------------|----------|
-| TB-001 | [HIGH] | Pending | KB-20 | architecture.md | -- | [FIDELITY] Divergence: KB states the pipeline uses two stages; source shows three stages (ingest, transform, load). KB misrepresents the pipeline shape. | src/pipeline.py lines 12-47: three distinct stage classes; KB architecture.md "two-stage pipeline" is factually wrong |
+| TB-001 | [HIGH] | Pending | NAR-05 | architecture.md | -- | [FIDELITY] Divergence: KB states the pipeline uses two stages; source shows three stages (ingest, transform, load). KB misrepresents the pipeline shape. | src/pipeline.py lines 12-47: three distinct stage classes; KB architecture.md "two-stage pipeline" is factually wrong |
 | TB-002 | [MED]  | Pending | KB-23 | domain-glossary.md | -- | [ESSENCE-GAP] Omission: KB reconstruction could not supply the project's data retention policy (7-day rolling window); this is a load-bearing design constraint newcomers must know. | source/config/retention.yaml: retention_days=7; domain-glossary.md has no entry for retention or data lifecycle |
 ```
 
-- Use stable IDs: `TB-001`, `TB-002`, ...
+- Use stable IDs: `TB-001`, `TB-002`, ... The `TB-` prefix is load-bearing, not decorative:
+  it is what tells the assertiveness gate that a `KB-2x` row came from *this* mandate rather
+  than from the act-back mandate.
 - Prefix every Description with `[FIDELITY]` (Divergence) or `[ESSENCE-GAP]` (Omission),
   then the class name: "Divergence: ..." or "Omission: ..."
+- **A Divergence row's `Rule` is `NAR-05`.** That is the rule it violates — *"the document does
+  not contradict a higher-authority source"* — and for a KB document under discovery the source
+  is the higher authority. The essence gate counts that cell.
+- **An Omission row's `Rule` is the closest `KB-22`..`KB-26` insufficiency rule** — the unstated
+  contract, invariant, gotcha, quality bar or convention the missing fact would have been. Pick
+  by first match, as `review-rubrics/kb.md § Ordering` requires. You may not leave the cell `--`:
+  `reviewer-ledger-schema.md § Rule values` states *"There is no exemption"* for a finding row,
+  and `writeback-ledger.sh` refuses such a row with exit 4. The essence gate keys Omission on the
+  `[ESSENCE-GAP]` Description marker instead of on this cell, for the reason recorded in
+  `state-review.md § 2c` — the available IDs are act-back IDs, and keying essence on them would
+  make one finding trip both gates.
 - `Doc` column: the KB doc that should be corrected or extended to fix this finding.
   Use `--` if the gap spans the whole KB (no single doc is the fix target).
 - `Line` column: `--` for essence findings (the gap is topical, not line-localized)

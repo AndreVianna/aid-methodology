@@ -663,7 +663,8 @@ _run_essence_probes() {
   echo "  [HIGH] [FIDELITY]   -- KB-only answer is WRONG vs the source (Divergence)."
   echo "  [MED]  [ESSENCE-GAP] -- A load-bearing source fact could not be supplied (Omission)."
   echo ""
-  echo "PASS = no Divergence + load-bearing essence-coverage >= threshold."
+  echo "PASS = no Divergence + no load-bearing Omission. There is no coverage percentage:"
+  echo "a ratio would need a denominator only the reviewer can state and nothing records."
   echo ""
 
   local probe_idx=1

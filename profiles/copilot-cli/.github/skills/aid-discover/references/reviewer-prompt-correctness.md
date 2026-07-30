@@ -113,14 +113,23 @@ Route each document by its `kb-category:` and `source:` frontmatter before gradi
 ### Output format
 
 Write all findings to `.aid/.temp/review-pending/{{SCOPE}}-correctness.md` using the
-8-column ledger schema (the `Rule` cell shows `KB-20` because the KB rule set does not
-yet assign rule IDs -- put the real ID there once it does; never invent one):
+8-column ledger schema. The `Rule` cell cites a real rule from
+`review-rubrics/kb.md` or from its family `review-rubrics/narrative.md`, whose rules apply to
+this class in full; never invent one. A claim the source contradicts is `NAR-05`
+(*"the document does not contradict a higher-authority source"*); a claim contradicting
+another KB statement is `KB-20`.
 
 ```
 | # | Severity | Status | Rule | Doc | Line | Description | Evidence |
 |---|----------|--------|------|-----|------|-------------|----------|
-| M1-001 | [CRITICAL] | Pending | KB-20 | foo.md | 42 | [M1] False version claim — stated 2.1 but package.json says 3.0 | grep "version" package.json => "3.0" |
+| M1-001 | [CRITICAL] | Pending | NAR-05 | foo.md | 42 | [M1] False version claim — stated 2.1 but package.json says 3.0 | grep "version" package.json => "3.0" |
 ```
+
+> This block used to say *"the `Rule` cell shows `KB-20` because the KB rule set does not yet
+> assign rule IDs — put the real ID there once it does"*. It does now
+> (`review-rubrics/kb.md`, and the Narrative family it inherits), so the placeholder is gone.
+> Leaving it would have been worse than untidy: the essence and assertiveness gates now count
+> the `Rule` column, so a stand-in ID is no longer inert text — it is a wrong input to a gate.
 
 - Use stable IDs: `M1-001`, `M1-002`, ...
 - Prefix every Description with `[M1]`

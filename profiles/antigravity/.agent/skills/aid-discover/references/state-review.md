@@ -282,21 +282,63 @@ One grade for the artifact, over the merged ledger — not one per mandate.
 The essence verdict is NOT a stored sentinel. Read it directly from
 `.aid/.temp/review-pending/{{SCOPE}}.md`.
 
-**Essence gate PASS thresholds (both conditions must hold):**
-1. **Zero `[HIGH] [FIDELITY]` rows open** — no Divergence (KB contradicts source).
-   Count rows where Description contains `[FIDELITY]` AND Status is in {Pending, Recurred}.
-   If count > 0: essence_verdict = FAIL (Divergence threshold violated).
-2. **Load-bearing essence-coverage >= 90%** — at most 10% of load-bearing source facts
-   missing from the KB reconstruction.
-   Count rows where Description contains `[ESSENCE-GAP]` AND Status is in {Pending, Recurred}.
-   Let total_load_bearing = (open `[ESSENCE-GAP]` count) + (load-bearing facts covered by
-   the KB reconstruction, per the M3 reviewer's Stage 2 evidence). If the open gap count
-   exceeds 10% of total_load_bearing: essence_verdict = FAIL (coverage threshold violated).
-   If total_load_bearing cannot be derived from the ledger alone, apply the conservative
-   rule: any open `[ESSENCE-GAP]` row with `[HIGH]` or `[MED]` severity caps the verdict
-   at FAIL until the M3 reviewer confirms the coverage ratio.
+**Essence gate PASS conditions (both must hold):**
+Both conditions count **only this mandate's rows** — those whose `#` cell begins `TB-`.
+Mandate scoping is what keeps the three reported verdicts independent; § 2d states the
+argument in full, and it applies symmetrically here.
+
+1. **Zero Divergence rows open** — the KB does not contradict the source.
+   Count rows whose `#` begins `TB-` AND whose `Rule` cell is exactly `NAR-05` AND whose
+   Status is in {Pending, Recurred}. If count > 0: essence_verdict = FAIL.
+2. **Zero Omission rows open** — no load-bearing source fact is missing from the KB
+   reconstruction. Count rows whose `#` begins `TB-` AND whose Description contains
+   `[ESSENCE-GAP]` AND whose Status is in {Pending, Recurred}. If count > 0:
+   essence_verdict = FAIL.
 
 `essence_verdict = PASS` iff both conditions hold, else `FAIL`.
+
+**Why condition 1 keys on `Rule` and not on the Description.** `[FIDELITY]` is a
+Description *prefix* — free text. A gate that counts a substring inside free text fails in
+both directions: a reviewer who writes the prefix in prose (or quotes another row's prefix
+in its Evidence) inflates the count, and one who omits it silently zeroes the gate. `Rule`
+is a closed enum with a single-valued cell contract
+(`review-rubrics/INDEX.md § Rule ID format`), written only by `writeback-ledger.sh`, which
+rejects a row whose `Rule` is absent or malformed. `NAR-05` is the rule the finding
+actually violates — *"the document does not contradict a higher-authority source"* — so
+the gate now counts the rule rather than a label describing it. The prefix stays in the
+Description as a human-readable marker; nothing derives a verdict from it.
+
+**Condition 2 still keys on the Description prefix. That is a recorded gap with a concrete
+reason, not an oversight.** Divergence maps cleanly onto an existing rule; Omission does
+not, and there are two independent obstacles:
+
+1. **No criterion, so no rule may be authored.** Nothing in the KB declares that the
+   Knowledge Base must carry the project's load-bearing source facts — the idea is stated
+   only in `reviewer-prompt-teachback.md`'s own dispatch table, which is a skill prompt, not
+   an authority. `review-rubrics/INDEX.md` is explicit: *"No Criterion, no row."*
+2. **The IDs that *do* fit are the other gate's IDs.** An Omission row still needs a rule ID
+   — `reviewer-ledger-schema.md § Rule values` says *"There is no exemption"* for a finding
+   row, and `writeback-ledger.sh` refuses one with exit 4 — so in practice it carries the
+   closest `KB-22`..`KB-26`. Keying this condition on that cell would therefore count
+   act-back rules inside the essence gate, and one omitted fact would fail both verdicts.
+   § 2d's `AB-` mandate scoping stops the leak in the other direction; keying essence on
+   `Rule` would reopen it in this one.
+
+Logged as a **Declined criteria gap** (`kb-essence/load-bearing-fact-coverage`, work
+`STATE.md § Criteria Gaps`) per this work's own Q4/Q5 decision: the resolution is a human's
+to make, and it is not an invented rule ID. Reopening it means declaring the standard in the
+KB authoring conventions first, then re-pointing this condition at the rule that becomes
+citable. Until then the marker is the honest carrier — it is at least *the thing the
+reviewer was actually asked to emit*.
+
+**Why the ≥ 90% coverage ratio is gone.** Condition 2 used to be *"load-bearing
+essence-coverage ≥ 90%"*, whose denominator — the count of load-bearing facts the KB
+reconstruction *did* cover — has no carrier in the ledger. It was a runtime claim by an
+agent, unfalsifiable after the fact: the same class of unverifiable assertion feature-005
+rejected for per-rule invalidation. What replaces it is the conservative rule already
+written beside it. At an `A`-or-better floor the ratio never changed a decision anyway —
+one open `[MED]` `[ESSENCE-GAP]` row fails the grade on its own — so the ratio protected a
+*metric*, not a *gate*.
 
 Divergence FAIL items are ordinary `[HIGH] [FIDELITY]` rows; load-bearing Omission FAIL
 items are ordinary `[MED] [ESSENCE-GAP]` rows. Any open `[FIDELITY]` row forces grade
@@ -308,24 +350,46 @@ realized entirely through the merged rows. No separate boolean, no AND to reconc
 The assertiveness verdict is NOT a stored sentinel. Read it directly from
 `.aid/.temp/review-pending/{{SCOPE}}.md`.
 
-**Assertiveness gate PASS thresholds (all three conditions must hold):**
-1. **Zero `[HIGH] [ACTBACK]` rows open** — no load-bearing ASSUMED/REACH step and no
-   quality-contract FAIL.
-   Count rows where Description contains `[ACTBACK]` AND Status is in {Pending, Recurred}.
-   If count > 0: assertiveness_verdict = FAIL.
-2. **STATED-coverage >= 90%** — at least 90% of plan steps across all work probes must
-   be tagged STATED (KB explicitly gave the contract, convention, invariant, or schema
-   shape needed). The M4 reviewer's STATED/ASSUMED/REACH tagging in the ledger evidence
-   is the source; if the reviewer did not record step counts, apply the conservative rule:
-   any open `[ACTBACK]` row implies the threshold is violated.
-3. **All quality-contracts present** — the operational-structure presence check (inlined
+**Assertiveness gate PASS conditions (both must hold):**
+1. **Zero insufficiency rows open** — no load-bearing ASSUMED/REACH step and no
+   quality-contract FAIL. Count rows whose `#` cell begins `AB-` **and** whose `Rule` cell
+   matches `^KB-2[0-6]$` **and** whose Status is in {Pending, Recurred}. If count > 0:
+   assertiveness_verdict = FAIL.
+
+   That regex is the act-back taxonomy exactly as
+   [`review-rubrics/kb.md § Insufficiency rules`](../../../aid/templates/review-rubrics/kb.md)
+   authors it — `KB-20` contradiction, `KB-21` plan-correctness, `KB-22` contract,
+   `KB-23` invariant, `KB-24` gotcha, `KB-25` quality-bar, `KB-26` convention. Seven rules,
+   one closed range, no substring.
+
+   **The `AB-` scoping is not belt-and-braces — without it this gate reports failures the M4
+   reviewer never found.** An essence `[ESSENCE-GAP]` row must carry a rule ID like every
+   other finding row (`reviewer-ledger-schema.md § Rule values`: *"There is no exemption"*),
+   and the only rules that fit an omitted fact are these same `KB-22`..`KB-26`. So a
+   `Rule`-only count would let one M3 Omission fail the assertiveness verdict too, and the
+   triple `Grade | Essence | Assertiveness` would report an act-back failure with no act-back
+   finding behind it. The `#` prefixes (`M1-` / `M2-` / `TB-` / `AB-`, declared with the merge
+   contract below) are already stable across the merge and already per-mandate, so scoping by
+   mandate costs nothing and is what makes the two verdicts independently meaningful.
+2. **All quality-contracts present** — the operational-structure presence check (inlined
    as part of `{{ACTBACK_TASK_SPEC}}`) confirms the named first-class sections
    (`## Conventions`, `## Invariants`, `## Gotchas`, `## Contracts`) are present in the
    docs that own them (per the spine-keyed owning-table). An absent required section is
-   itself an `[ACTBACK]` row in the M4 ledger; if any such row is open, this condition
-   fails automatically.
+   itself a `KB-22`/`KB-23`/`KB-24`/`KB-25` row in the M4 ledger, so condition 1 already
+   catches it; this condition is stated separately because the presence check runs even
+   when the M4 reviewer produced no rows at all.
 
-`assertiveness_verdict = PASS` iff all three conditions hold, else `FAIL`.
+`assertiveness_verdict = PASS` iff both conditions hold, else `FAIL`.
+
+**Why the ≥ 90% STATED-coverage condition is gone.** It read *"at least 90% of plan steps
+across all work probes must be tagged STATED"*, sourced from the M4 reviewer's own
+STATED/ASSUMED/REACH tagging — and it already carried its own admission of failure: *"if
+the reviewer did not record step counts, apply the conservative rule: any open
+`[ACTBACK]` row implies the threshold is violated."* That conservative rule is condition 1.
+The ratio therefore only ever did something when the reviewer volunteered a denominator
+that nothing in the ledger records or checks, which makes it an unfalsifiable claim rather
+than a gate. Retired for the same reason as the essence ratio; the conservative rule beside
+it is kept.
 
 All FAIL items (plan-correctness, sufficiency, quality) are ordinary `[HIGH] [ACTBACK]`
 rows. Any open `[ACTBACK]` row forces grade <= D (because `[HIGH]` rows make grade <= D
@@ -398,11 +462,18 @@ and assertiveness gate are mode-agnostic.
 
 **Dual-intent gate tag reference:**
 
-| Intent | Gate | Tags | Severity | Threshold |
-|--------|------|------|----------|-----------|
-| Intent 2 -- Essence (M3) | Essence Gate | `[FIDELITY]` (Divergence) | `[HIGH]` | Zero open `[FIDELITY]` rows |
-| Intent 2 -- Essence (M3) | Essence Gate | `[ESSENCE-GAP]` (Omission) | `[MED]` | Load-bearing coverage >= 90% |
-| Intent 1 -- Assertiveness (M4) | Assertiveness Gate | `[ACTBACK]` (all FAIL classes) | `[HIGH]` | Zero open `[ACTBACK]` rows + STATED >= 90% + all quality-contracts present |
+| Intent | Gate | `#` scope | Description marker | `Rule` the gate counts | Severity | FAIL condition |
+|--------|------|-----------|--------------------|------------------------|----------|----------------|
+| Intent 2 -- Essence (M3) | Essence Gate | `TB-` | `[FIDELITY]` (Divergence) | `NAR-05` | `[HIGH]` | Any open `TB-` row with `Rule` = `NAR-05` |
+| Intent 2 -- Essence (M3) | Essence Gate | `TB-` | `[ESSENCE-GAP]` (Omission) | _(gate keys on the marker -- criteria gap, § 2c)_ | `[MED]` | Any open `TB-` row marked `[ESSENCE-GAP]` |
+| Intent 1 -- Assertiveness (M4) | Assertiveness Gate | `AB-` | `[ACTBACK]` (all FAIL classes) | `^KB-2[0-6]$` | `[HIGH]` | Any open `AB-` row with a `KB-20`..`KB-26` rule, or a quality-contract absent |
+
+Two things to read off this table. **No row carries a coverage percentage** — both ratios were
+retired; see the two "Why the ... ratio is gone" notes in § 2c and § 2d. And **every row is
+scoped by `#` prefix**, because a rule ID alone does not say which mandate found the defect:
+`NAR-05` and `KB-20`..`KB-26` are legitimately available to the correctness and anatomy
+mandates too, so an unscoped count would report a gate failure that its own reviewer never
+raised.
 
 ```
 panel: full  (brownfield-large)
@@ -441,11 +512,14 @@ Both modes:
                                       # gap is a [HIGH] row -> grade <= D -> not Ready.
                                       # No second boolean, no AND/OR to reconcile.
 
-  5. essence_verdict = FAIL iff any open [FIDELITY] row, OR
-                                load-bearing essence-coverage < 90%, else PASS.
-     assertiveness_verdict = FAIL iff any open [ACTBACK] row, OR
-                                STATED-coverage < 90%, OR
-                                any quality-contract absent, else PASS.
+  5. essence_verdict = FAIL iff any open TB- row with Rule == NAR-05, OR
+                                any open TB- [ESSENCE-GAP] row, else PASS.
+     assertiveness_verdict = FAIL iff any open AB- row with Rule matching ^KB-2[0-6]$,
+                                OR any quality-contract absent, else PASS.
+     # No coverage ratio in either. Both denominators were runtime claims by an
+     # agent with no ledger carrier; the conservative rules beside them are kept.
+     # The AB- scoping keeps an M3 Omission (which carries a KB-2x rule of its own)
+     # from failing the M4 verdict as well -- see § 2d.
 
   6. STATE + print report the TRIPLE: "Grade: <g> | Essence: <v> | Assertiveness: <v>"
 ```

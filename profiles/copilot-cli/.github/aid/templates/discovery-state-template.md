@@ -59,8 +59,8 @@ This is the single state file for the **Discovery area** — persistent project 
 | Profile Source | {auto-detected | user-specified} |
 | Profile Confidence | {high | medium | low | n/a} |
 | Theme | default | brand-{name} |
-| Machine Grade | {grade or Pending} |
-| Human Grade | {grade or Pending} |
+| Grade | {grade or Pending} |
+| Checklist | {Completed or Not run} |
 | Output | {kb.html (size) or —} |
 | Mermaid Version | {pinned version or —} |
 | Mermaid Cached | {.aid/knowledge/.cache/mermaid.min.js (sha256) or —} |

@@ -1,8 +1,8 @@
 # State: APPROVAL
 
-APPROVAL presents the graded summary to the user for final sign-off; it is selected when both Machine Grade and Human Grade meet the minimum, or when STALE-CHECK finds the HTML is current but not yet approved.
+APPROVAL presents the graded summary to the user for final sign-off; it is selected when the grade meets the minimum, or when STALE-CHECK finds the HTML is current but not yet approved.
 
-**Pre-condition:** Both Machine Grade AND Human Grade must already be computed and ≥ minimum. If Human Grade is `Pending`, refuse to enter APPROVAL — print: `❌ Cannot approve: Human Grade not yet scored. Run /aid-summarize again to enter MANUAL-CHECKLIST.`
+**Pre-condition:** The grade must already be computed and ≥ minimum, AND the human checklist must have been completed. If the checklist has not been run, refuse to enter APPROVAL — print: `❌ Cannot approve: the human checklist has not been completed. Run /aid-summarize again to enter MANUAL-CHECKLIST.`
 
 Print summary in the standard format:
 
@@ -12,9 +12,9 @@ Print summary in the standard format:
    Size:           {MB}
    Domain:         {domain value from .aid/knowledge/STATE.md ## Discovery Domain}
    Doc-set:        {N resolved} of {M total} docs covered
-   Machine Grade:  {grade} ({score}/68) — script-verified AUTO_POOL (COV + D1/D2/L1/L2/H1/A1-A5/C1/C2/S2)
-   Human Grade:    {grade} ({score}/30) — manual-checklist MANUAL_POOL (K1+K2+V1)
-   Overall Grade:  {min of above} (target: {min})
+   Grade:          {grade} (target: {min}) — grade.sh over the review ledger
+   Findings:       {n} ({worst severity} worst)
+   Checklist:      Completed {date} — the human visual check is recorded, not scored
    Theme:          light + dark, both pass WCAG AA
    Trigger:        {reason}
 
