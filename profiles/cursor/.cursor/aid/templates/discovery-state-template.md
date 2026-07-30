@@ -51,19 +51,46 @@ This is the single state file for the **Discovery area** — persistent project 
      (`last_summary`) live in the YAML frontmatter block at the top of this file --
      the single scalar there replaces the table-row-vs-bold-line dual representation
      that used to cause a silent misparse. The remaining fields below are non-approval
-     run-state (profile/theme/grades/output) and stay here as markdown body. -->
+     run-state (profile/theme/grades/output) and stay here as markdown body.
+
+     TWO FORMS, AND WHICH FIELD TAKES WHICH IS NOT A STYLE CHOICE. The table holds the
+     artifact's standing properties; the bold lines below it hold what a single run
+     produced, and are written by the state that produced them. Declaring a field in
+     one form while its writer emits the other is the misparse this section already
+     suffered once: `Grade` and `Checklist` were declared as table rows here while
+     `aid-summarize/references/state-generate.md` writes them as bold lines and
+     `state-approval.md` calls `Checklist` "an agent-written body line" -- three
+     surfaces, two forms, for a field introduced in one delivery.
+
+     NOT DECLARED HERE, and a pre-existing gap rather than part of that fix: GENERATE
+     writes 17 body lines into this section (the 3 below, plus Doc-Set Source, Doc-Set
+     Count, Domain, Domain Source, Theme, Minimum Grade, Minimum Grade Source, Last Run,
+     Trigger Reason, Output, Output Size, Last Reviewed KB Date, Last Summary Date,
+     Writeback Status). Two of those -- Theme and Output -- ALSO appear as rows of the
+     table below, which is the same dual representation in the other direction, and two
+     more restate frontmatter scalars under different names (Last Reviewed KB Date vs
+     `last_kb_review`, Last Summary Date vs `last_summary`). Count derived from
+     state-generate.md, not asserted. Reconciling all 17 is outside delivery-015's scope
+     (its scope is the grading backend); recorded in the work STATE so the next change
+     to this section starts from the real list. -->
 
 | Field | Value |
 |-------|-------|
 | Profile | {auto-detected: web-app/library/cli/microservices/data-pipeline OR user-specified} |
-| Profile Source | {auto-detected | user-specified} |
-| Profile Confidence | {high | medium | low | n/a} |
-| Theme | default | brand-{name} |
-| Grade | {grade or Pending} |
-| Checklist | {Not run, or Completed YYYY-MM-DD} |
-| Output | {kb.html (size) or —} |
-| Mermaid Version | {pinned version or —} |
-| Mermaid Cached | {.aid/knowledge/.cache/mermaid.min.js (sha256) or —} |
+| Profile Source | {auto-detected \| user-specified} |
+| Profile Confidence | {high \| medium \| low \| n/a} |
+| Theme | {default \| brand-{name}} |
+| Output | {kb.html (size) or --} |
+| Mermaid Version | {pinned version or --} |
+| Mermaid Cached | {.aid/knowledge/.cache/mermaid.min.js (sha256) or --} |
+
+Run-state body lines, written by GENERATE and updated by VALIDATE / APPROVAL:
+
+```markdown
+**Grade:** {grade or Pending}
+**Grade Source:** `grade.sh`, over `.aid/.temp/review-pending/summarize.md`
+**Checklist:** {Not run | Completed YYYY-MM-DD}
+```
 
 ## Criteria Gaps
 

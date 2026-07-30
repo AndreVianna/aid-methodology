@@ -162,7 +162,7 @@ aid-summarize  ▸ you are here
 
 **APPROVAL:**
 ```
-[State: APPROVAL] — Both Machine and Human grades meet minimum; awaiting user approval.
+[State: APPROVAL] — Grade meets minimum and the checklist is recorded; awaiting user approval.
 aid-summarize  ▸ you are here
   [✓ PREFLIGHT ] → [✓ STALE-CHECK ] → [✓ PROFILE ] → [✓ GENERATE ] → [✓ VALIDATE ] → [● APPROVAL ] → [ DONE ]
 ```

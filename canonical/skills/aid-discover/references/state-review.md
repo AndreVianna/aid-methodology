@@ -97,9 +97,11 @@ Use `{{SCOPE}}-actback-task-full.md` as the content for `{{ACTBACK_TASK_SPEC}}`.
 
 The M3 (Essence) and M4 (Assertiveness) keystone gates MUST read only *hand-authored
 project knowledge* — never the process/ledger docs (`STATE.md`, `README.md`) or generated
-docs (`INDEX.md`), which would poison the reconstruction/work-simulation and (because these
-gates fail their verdict, and at any minimum this tree configures also the grade) the grade itself. Compute the surface deterministically with the
-`list_reviewable` accessor (defined in `references/doc-set-resolve.md`):
+docs (`INDEX.md`), which would poison the reconstruction/work-simulation and, through it, the
+keystone verdict itself. Whether the grade moves too depends on the severity the cited rule
+anchors, which is a separate question — a lone `KB-26` row is `[LOW]` and grades `B+` (:417).
+The verdict is the gate that contamination defeats. Compute the surface deterministically with
+the `list_reviewable` accessor (defined in `references/doc-set-resolve.md`):
 
 ```bash
 # Inline list_reviewable from references/doc-set-resolve.md, then:
@@ -507,9 +509,11 @@ panel: full  (brownfield-large)
      sentinel). M4 writes one [ACTBACK] row per FAIL item (plan-correctness,
      sufficiency, AND quality FAILs alike -- no separate verdict sentinel).
      Every severity is the cited rule's anchor; none is fixed here.
-  2. Orchestrator MERGES all 4 scratch ledgers into {{SCOPE}}.md (stable per-mandate
-     IDs M1-NNN/M2-NNN/TB-NNN/AB-NNN; [M1]/[M2]/[FIDELITY] or [ESSENCE-GAP]/[ACTBACK]
-     description prefixes), then DELETES the 4 transient scratch ledgers.
+  2. Orchestrator derives the two VERDICTS from the scratch ledgers (step 5's rules) --
+     they are the only place those rows exist -- and only THEN MERGES all 4 scratch
+     ledgers into {{SCOPE}}.md (stable per-mandate IDs M1-NNN/M2-NNN/TB-NNN/AB-NNN;
+     [M1]/[M2]/[FIDELITY] or [ESSENCE-GAP]/[ACTBACK] description prefixes) and DELETES
+     the 4 transient scratch ledgers.
 
 panel: collapsed  (brownfield-small only)
   1. ONE reviewer runs M1/M2 as separate sequential passes in one agent,
@@ -520,10 +524,11 @@ panel: collapsed  (brownfield-small only)
      ONE clean-context reviewer handles M4, writing [ACTBACK] rows to
      {{SCOPE}}-actback.md. All three dispatches run in parallel with each other
      (M1-M2 sequential WITHIN dispatch 1 only).
-  2. Orchestrator MERGES the 3 scratch ledgers ({{SCOPE}}-content.md +
+  2. Orchestrator derives the two VERDICTS from the scratch ledgers first (step 5's
+     rules), then MERGES the 3 scratch ledgers ({{SCOPE}}-content.md +
      {{SCOPE}}-teachback.md + {{SCOPE}}-actback.md) into {{SCOPE}}.md (same stable
      per-mandate IDs and [M1]/[M2]/[FIDELITY] or [ESSENCE-GAP]/[ACTBACK] description
-     prefixes as full mode), then DELETES all three transient scratch ledgers. The
+     prefixes as full mode) and DELETES all three transient scratch ledgers. The
      merged {{SCOPE}}.md is structurally identical to the full-mode output -- same
      8-column schema, same mandate ID namespaces.
 
@@ -534,13 +539,24 @@ Both modes:
                                       # own VERDICT; the grade follows from the severity
                                       # its rule anchors, which is a separate question.
 
-  4. READY iff grade >= minimum_grade # Single gate. An open essence OR assertiveness
-                                      # gap fails its verdict, and at any minimum this
-                                      # tree configures it also fails the grade, so the
-                                      # single gate still catches it -> not Ready.
-                                      # No second boolean, no AND/OR to reconcile.
+  4. READY iff grade >= minimum_grade # ...AND essence_verdict == PASS
+     AND essence_verdict == PASS      # AND assertiveness_verdict == PASS. Three
+     AND assertiveness_verdict == PASS # booleans, exactly as Step 3 computes them.
+                                      #
+                                      # This block used to read "Single gate ... no
+                                      # second boolean" on the theory that a verdict
+                                      # FAIL always drags the grade below the minimum
+                                      # too. It does not: severity now comes from the
+                                      # cited rule, so a lone KB-26 [ACTBACK] row is
+                                      # [LOW], which grade.sh scores B+ -- above this
+                                      # tree's configured B-. The verdict fails and the
+                                      # grade passes, which is precisely the case the
+                                      # "single gate" wording said could not exist.
+                                      # The keystone gates are their OWN gate; the grade
+                                      # is a separate question (see :417).
 
-  5. Verdicts are derived from the PER-MANDATE SCRATCH ledgers, before the merge -- the
+  5. Verdicts are derived from the PER-MANDATE SCRATCH ledgers, before the merge deletes
+     them (step 2 orders this) -- the
      merge joins on (Doc, Rule), so a shared defect leaves one row with one prefix.
      essence_verdict = FAIL iff, in {{SCOPE}}-teachback.md, any open row with Rule == NAR-05
                                 OR any open [ESSENCE-GAP] row; else PASS.

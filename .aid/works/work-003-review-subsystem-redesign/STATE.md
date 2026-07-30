@@ -189,12 +189,54 @@ or worse; `[LOW]`/`[MINOR]` at the end" — are the same statement.
 
 | Gap Key | Kind | Status | Depth | Recurrences | Scope | Criterion | Resolution |
 |---|---|---|---|---|---|---|---|
+| scripts/temp-file-lifecycle-and-destructive-paths | criteria | Pending | 0 | 0 | delivery-015 gate cycle 10, row 7 (`EXE-04`) -- `canonical/aid/scripts/summarize/emit-summary-findings.sh` validator-timeout branch | No KB document declares a rule for **trap-scoped temp-file cleanup** or for **guarding a destructive path against a device node**. `coding-standards.md § Security Conventions` covers download integrity, manifest-driven removal and secret handling; `§ Error Handling` covers exit codes, message content and `\|\| true`. Neither reaches the defect found: the branch rebound `HTML_LOG=/dev/null` after a single-quoted `trap 'rm -f "$HTML_LOG"' EXIT` was installed, so the trap ran `rm -f /dev/null` and the real `mktemp` file leaked (measured under `bash -x`). | 2026-07-30: the **instance** is fixed (the rebind is gone; it was dead anyway, since the branch that runs on rc=124 never reads the log). The **criterion** is still missing, so a reviewer meeting the next instance has no rule to cite -- cycle 10 filed the finding under `EXE-04` (the branch is untested, with the bug as its Evidence) rather than invent a rule for the bug itself. Pending, not Declined: unlike the essence-coverage gap this has had no human decision. Registered BY HAND, not by `gap-register.sh`, because that writer still finds its section by substring (Q18) and would append into prose. |
 | kb-essence/load-bearing-fact-coverage | criteria | Declined | 0 | 0 | aid-discover essence gate, condition 2 (Omission) -- canonical/skills/aid-discover/references/state-review.md § 2c | No KB document declares that the Knowledge Base must carry the project's load-bearing source facts. The Divergence half of the gate maps onto NAR-05; the Omission half has no declaring criterion, so review-rubrics/INDEX.md's No-Criterion-no-row contract forbids authoring a rule row for it. | 2026-07-30, human decision: leave the Omission condition keyed on the [ESSENCE-GAP] Description marker and record the gap rather than invent a rule ID or pause delivery-015 for a KB edit. Declined, not Pending -- the decision is made, so this must not be re-asked and must not gate a grade. Reopening it means adding the standard to the KB authoring conventions via /aid-update-kb, then re-pointing condition 2 at the new rule; task-004's second acceptance criterion is therefore closed for the act-back gate and the Divergence half, and open for this half. |
 
 ## Cross-phase Q&A
 
 <!-- DERIVED -- union of per-delivery Q&A plus WORK-OWNER-AUTHORED entries below
      (work owner is the single writer for those). -->
+
+### Q20 -- four things cycle 10 turned up and did NOT fix, with the evidence (2026-07-30)
+
+- **Category:** Defect / observation
+- **Impact:** Medium (1), Low (2-4)
+- **Status:** Open -- recorded so none has to be rediscovered. Each names why it is out of
+  delivery-015's scope (the grading backend).
+
+**1. `aid-discover`'s per-document grade ladder has 9 letters; `grade.sh` has 16.**
+`canonical/skills/aid-discover/SKILL.md § Grading Criteria` defines meanings for `A+ A B+ B B- C+ C
+D F` only. A reviewer told to use that table cannot express `A-`, `C-`, `D+`, `D-`, `E+`, `E`, `E-` --
+7 of the 16 letters `grade.sh` produces. Cycle 10 removed the **second grade producer** in that
+section (the "Overall grade = weighted average where architecture, module-map and coding-standards
+count double" rule, which averaged where `grade.sh` is worst-dominated and whose weights nothing
+computed). The remaining letter-vocabulary mismatch is a prose gap, not a second producer, and
+extending the table to 16 rows is an `aid-discover` change.
+
+**2. `test-actback-fixtures.sh`'s isolation canary fails under any concurrent test run.**
+`ISO-CANARY-01` scans the whole of `$HOME` for new `.aid` directories, so it reports temp dirs
+created by *other* suites running at the same time. MEASURED: run in parallel with four other
+suites it failed, naming `/c/Users/andre.vianna/AppData/Local/Temp/tmp.*/.aid`; run alone
+immediately after, 20/20 passed. The canary is right to exist -- it caught a real HOME-escape once
+(KI/work-018) -- but it needs to be scoped to paths the suite itself could have created, or CI will
+flake as soon as suites run concurrently.
+
+**3. `\|` inside an awk regex is undefined behaviour, and the repo uses it ~67 times.**
+gawk 5.4 (local) and mawk (ubuntu-24.04, CI) both treat `/\|/` as a literal pipe, so nothing is
+broken today. But an awk that reads it as the alternation operator sees `/|/` -- empty-or-empty,
+which matches at every position -- and any count built on it becomes garbage that is still a number.
+MEASURED extent: 17 occurrences of `/\|` and 50 of `\|/` across 24 files under
+`canonical/aid/scripts/` + `tests/canonical/`. Cycle 10 hardened only the one assertion it authored
+whose arithmetic depended on it (`CK06`, now `[|]`). Converting the rest is a repo-wide sweep with
+no defect behind it.
+
+**4. `## Knowledge Summary Status` carries 17 body lines the template declares none of.**
+Cycle 10 fixed the two fields this delivery introduced (`Grade`, `Checklist` -- declared as table
+rows while `state-generate.md` writes them as body lines) and declared `Grade Source` alongside
+them. The other 14 remain undeclared, two of them (`Theme`, `Output`) declared as table rows *and*
+written as body lines, and two more restating frontmatter scalars under different names
+(`Last Reviewed KB Date` vs `last_kb_review`, `Last Summary Date` vs `last_summary`). The real list
+is recorded in `discovery-state-template.md`'s section comment so the next change starts from it.
 
 ### Q19 -- the per-skill settings override cannot be written into a file that passes its own lint (2026-07-30)
 

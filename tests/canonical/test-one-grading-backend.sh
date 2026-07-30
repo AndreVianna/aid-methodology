@@ -254,6 +254,31 @@ chk "${n_unmapped:-0}" 1 EM04 "an unmapped failure is reported even when a mappe
 n_agg=$(cd "$EMT" && bash summarize/emit-summary-findings.sh kb.html --dry-run 2>&1 \
         | grep -c 'no rule claims' || true)
 chk "${n_agg:-1}" 0 EM05 "the validator's aggregate summary line is not mistaken for an unmapped check"
+
+# EM06 -- ...nor must a check's PER-INSTANCE detail lines be. The validator marks the unit by indent
+# depth: 0 = the run's aggregate, 2 = a check verdict, 4 = one instance inside a check. Feeding the
+# 4-space lines to the guard made an ordinary broken anchor exit 2 (a check group could not be
+# evaluated -> PAUSE-FOR-USER-ACTION) rather than 1, because no RULE_FOR key claims `#does-not-exist` --
+# while L1 itself was mapped, emitted and correct. MEASURED on a real kb.html fixture with two dead
+# anchors and one dead ./x.md: four spurious notes, rc=2. The stub reproduces the exact shapes from
+# validate-html-output.sh:367 and :393.
+{ printf '%s\n' '#!/usr/bin/env bash' \
+    'echo "  ❌ L1. 2 anchor link(s) broken (of 2)"' \
+    'echo "    ❌ #does-not-exist — no matching id=\"does-not-exist\""' \
+    'echo "    ❌ #also-missing — no matching id=\"also-missing\""' \
+    'echo "  ❌ L2. 1 md link(s) broken (of 1)"' \
+    'echo "    ❌ ./missing-doc.md — file does not exist at ./missing-doc.md"' \
+    'echo "❌ HTML output validation failed: 19/21 checks passed"' \
+    'exit 1' ; } > "$EMT/summarize/validate-html-output.sh"
+inst_out=$(cd "$EMT" && bash summarize/emit-summary-findings.sh kb.html --dry-run 2>&1 || true)
+n_inst=$(printf '%s\n' "$inst_out" | grep -c 'no rule claims' || true)
+# Both checks must still be REPORTED -- a guard fixed by looking at nothing would also score 0 notes.
+n_rows=$(printf '%s\n' "$inst_out" | grep -cE 'SUMMARY-0(8|9)' || true)
+if [[ "${n_inst:-1}" -eq 0 && "${n_rows:-0}" -eq 2 ]]; then
+    ok EM06 "per-instance detail lines are attributed to their check, not reported as unmapped"
+else
+    no EM06 "expected 0 unmapped notes and 2 rule rows, got ${n_inst:-?} notes and ${n_rows:-?} rows"
+fi
 rm -rf "$EMT"
 
 echo
@@ -305,40 +330,152 @@ else
     no CK04 "the Checklist field's value set is not declared consistently across GENERATE and APPROVAL"
 fi
 
+# CK05 -- agreeing on the VALUE set is not agreeing on the FORM. CK04 compares values only, so it
+# passed while the template declared `| Grade |` and `| Checklist |` as rows of the section's
+# Field/Value table and GENERATE wrote them as `**Grade:**` / `**Checklist:**` body lines -- exactly
+# the table-row-vs-bold-line split whose earlier instance the template's own header comment records as
+# having caused a silent misparse. The writer's form wins: these are per-run values, and
+# state-approval.md already calls Checklist "an agent-written body line".
+DSTPL="$ROOT/canonical/aid/templates/discovery-state-template.md"
+form_bad=()
+for field in Grade "Grade Source" Checklist; do
+    # In the template: a body line, and NOT a row of the Field/Value table.
+    grep -qE "^\*\*${field}:\*\*" "$DSTPL" || form_bad+=("template:${field}:no-body-line")
+    grep -qE "^\| *${field} *\|" "$DSTPL" && form_bad+=("template:${field}:still-a-table-row")
+    # In the writer: the same body-line form.
+    grep -qE "^\*\*${field}:\*\*" "$GEN"  || form_bad+=("state-generate:${field}:no-body-line")
+done
+if [[ "${#form_bad[@]}" -eq 0 ]]; then
+    ok CK05 "the template and GENERATE declare Grade/Grade Source/Checklist in the SAME form (body line)"
+else
+    no CK05 "form disagreements: ${form_bad[*]}"
+fi
+
+# CK06 -- no row of that Field/Value table may carry an unescaped pipe, which silently turns a 2-column
+# row into a 3-to-5-column one. Three rows did: `| Profile Source | {auto-detected | user-specified} |`,
+# the Profile Confidence row, and `| Theme | default | brand-{name} |`.
+# Bracket classes, not `\|`. A backslash-escaped `|` in an awk ERE is undefined behaviour: gawk 5.4
+# treats it as a literal pipe, but an awk that instead reads it as the alternation operator sees
+# `/|/` -- empty-or-empty -- which matches at every position, and every count this check makes would
+# be garbage in a way that still yields a number. `[|]` cannot be read two ways.
+# Counted on a COPY with "&" as the replacement, so neither gsub perturbs $0 or the other's count.
+ragged=$(awk '
+  /^## Knowledge Summary Status/ { in_s = 1; next }
+  in_s && /^## / { in_s = 0 }
+  in_s && /^[|] / && $0 !~ /^[|][-| ]+[|]$/ {
+    line = $0
+    tot = gsub(/[|]/,   "&", line)   # every pipe, escaped or not
+    esc = gsub(/\\[|]/, "&", line)   # just the escaped ones
+    if (tot - esc != 3) print FNR ": " $0
+  }' "$DSTPL")
+if [[ -z "$ragged" ]]; then
+    ok CK06 "every row of the Knowledge Summary Status table has exactly two columns"
+else
+    no CK06 "ragged rows (unescaped pipe in a value): $(printf '%s' "$ragged" | tr '\n' ' ' | cut -c1-160)"
+fi
+
 echo
 echo "== the two-grade model appears on no surface =="
 # The pattern IS the assertion. A narrower one (Machine Grade|Human Grade|Overall Grade|AUTO_POOL|
 # MANUAL_POOL) reported zero while aid-summarize's own frontmatter description still read "Two-grade
 # quality gate (Machine + Human) ... APPROVAL requires BOTH grades >= minimum" -- the surface the skill
 # catalogue renders. Every phrasing that ever carried the model is listed here. Extend it; never trim it.
-TG_PAT='Machine Grade|Human Grade|Overall Grade|Machine total|Human total|AUTO_POOL|MANUAL_POOL'
-TG_PAT="$TG_PAT"'|MACHINE_GRADE|HUMAN_GRADE|OVERALL_GRADE|Pending Human Review|machine-pool|human-pool'
-TG_PAT="$TG_PAT"'|both Machine and Human|BOTH grades|Machine [+] Human|min[(]Machine|Machine_letter'
-TG_PAT="$TG_PAT"'|Human_letter|[Tt]wo-[Gg]rade|two grades|percentage ladder'
+# Two halves, because case matters differently for each.
+#
+# TG_PAT_CS -- FIELD NAMES, matched case-SENSITIVELY. These are literal field names as the artifacts
+# spell them. Matching them case-insensitively makes them ordinary English: "Overall grade and minimum"
+# in aid-discover's approval print block, and "there is no separate human grade to combine" in
+# state-manual-checklist.md's retirement prose, are both legitimate and neither names a field.
+TG_PAT_CS='Machine Grade|Human Grade|Overall Grade|Machine total|Human total|AUTO_POOL|MANUAL_POOL'
+TG_PAT_CS="$TG_PAT_CS"'|MACHINE_GRADE|HUMAN_GRADE|OVERALL_GRADE|Pending Human Review|machine-pool'
+TG_PAT_CS="$TG_PAT_CS"'|human-pool|Machine [+] Human|min[(]Machine|Machine_letter|Human_letter'
+#
+# TG_PAT_CI -- PHRASES, matched case-INSENSITIVELY. A phrase carries the model whatever its
+# capitalisation, and the live instruction that survived nine cycles proved it: TG_PAT spelled
+# `both Machine and Human` while the APPROVAL banner read `Both Machine and Human grades`.
+TG_PAT_CI='both machine and human|both grades|two-grade|two grades|percentage ladder'
+TG_PAT_CI="$TG_PAT_CI"'|weighted average.*grade|grade.*weighted average'
 
 # Passages that EXPLAIN the retirement are legitimate and must survive -- deleting them would leave the
-# next reader no account of why the model went. They are excluded BY FILE, and the list is deliberately
-# short: a growing exclusion list is how an assertion quietly stops asserting.
-TG_EXPLAINERS='knowledge-summary/grading-rubric.md|aid-summarize/README.md|aid-summarize/SKILL.md'
-TG_EXPLAINERS="$TG_EXPLAINERS"'|summarize/emit-summary-findings.sh|review-rubrics/summary.md'
+# next reader no account of why the model went.
+#
+# They are allowed PER LINE, by a distinctive snippet of the retirement statement itself -- NOT by file.
+# The by-file form excluded five files WHOLE, and the surviving live instruction was inside one of them:
+# aid-summarize/SKILL.md's APPROVAL banner read "Both Machine and Human grades meet minimum", a string
+# the router prints. MEASURED: appending a fresh two-grade instruction to that file's body left the suite
+# fully green, while the same line appended to state-approval.md failed TG01 -- so the guard's verdict
+# depended on which file the defect landed in. Line-level allowlisting cannot hide a body.
+#
+# Every entry is `<path-fragment>|<snippet that must appear on the same line>`. Seven entries, one per
+# known retirement statement. A new occurrence, or an edit that moves the vocabulary off these lines,
+# fails -- which is the intended cost: these seven sentences are historical statements and should not
+# churn.
+TG_ALLOW=(
+  'knowledge-summary/grading-rubric.md|two-grade minimum are gone'
+  'knowledge-summary/grading-rubric.md|were the two pools of the retired'
+  'knowledge-summary/grading-rubric.md|percentage ladder was retired'
+  'knowledge-summary/grading-rubric.md|why there are no longer'
+  'aid-summarize/README.md|One grading backend'
+  'aid-summarize/SKILL.md|why the two-grade model was retired'
+  'summarize/emit-summary-findings.sh|This script derived one from'
+  'aid-discover/SKILL.md|This used to read'
+)
+# -i, not case-sensitive matching. TG_PAT spelled `both Machine and Human` lower-case while the live
+# banner read `Both Machine and Human`, so the pattern missed it even outside an excluded file.
+# tg_disallowed -- reads `path:lineno:text` hits on stdin, prints the ones no allowance covers. TG01 and
+# its control TG03 both go through THIS, so the control cannot pass while the assertion is broken.
+tg_disallowed() {
+    local hit entry frag snip allowed
+    while IFS= read -r hit; do
+        [[ -n "$hit" ]] || continue
+        allowed=0
+        for entry in "${TG_ALLOW[@]}"; do
+            frag="${entry%%|*}"; snip="${entry#*|}"
+            [[ "$hit" == *"$frag"* && "$hit" == *"$snip"* ]] && { allowed=1; break; }
+        done
+        [[ "$allowed" -eq 1 ]] || printf '%s\n' "$hit"
+    done
+}
+# tg_raw_hits -- the whole feed, both halves, path-relative. One function, so TG01, TG04 and TG02
+# cannot drift apart in what they sweep.
+tg_raw_hits() {
+    { grep -rnE  "$TG_PAT_CS" "$ROOT/canonical/" 2>/dev/null
+      grep -rniE "$TG_PAT_CI" "$ROOT/canonical/" 2>/dev/null; } \
+        | sed "s|^${ROOT}/||" | sort -u
+}
+mapfile -t tg_hits < <(tg_raw_hits | tg_disallowed || true)
+chk "${#tg_hits[@]}" 0 TG01 "no canonical LINE carries the two-grade vocabulary outside a retirement statement"
+[[ "${#tg_hits[@]}" -eq 0 ]] || printf '       %s\n' "${tg_hits[@]:0:8}"
 
-mapfile -t tg_hits < <(grep -rlE "$TG_PAT" "$ROOT/canonical/" 2>/dev/null \
-                       | grep -vE "$TG_EXPLAINERS" | sort -u)
-chk "${#tg_hits[@]}" 0 TG01 "no canonical surface carries the two-grade vocabulary"
-[[ "${#tg_hits[@]}" -eq 0 ]] || printf '       %s\n' "${tg_hits[@]}"
+# TG01's allowlist must not be able to grow silently either: an entry that matches nothing is a stale
+# exclusion, and a stale exclusion is how the list turns back into a whole-file pass.
+tg_stale=()
+for entry in "${TG_ALLOW[@]}"; do
+    frag="${entry%%|*}"; snip="${entry#*|}"
+    tg_raw_hits | grep -F "$frag" | grep -qF "$snip" || tg_stale+=("$entry")
+done
+chk "${#tg_stale[@]}" 0 TG04 "every retirement-prose allowance still matches a real line"
+[[ "${#tg_stale[@]}" -eq 0 ]] || printf '       stale: %s\n' "${tg_stale[@]}"
 
 # In an explainer file the vocabulary may appear ONLY in retirement prose, never as a live instruction.
 # The frontmatter description is the sharpest case: it is metadata, so it cannot be explaining anything.
-fm=$(awk '/^---$/{n++; next} n==1' "$ROOT/canonical/skills/aid-summarize/SKILL.md" \
-     | grep -cE "$TG_PAT" || true)
+# Each half keeps its own case rule here too -- ORing them into one -E pattern would silently make the
+# case-insensitive half case-sensitive, which is the exact defect the split exists to fix.
+fm_block=$(awk '/^---$/{n++; next} n==1' "$ROOT/canonical/skills/aid-summarize/SKILL.md")
+fm=$(( $(printf '%s\n' "$fm_block" | grep -cE  "$TG_PAT_CS" || true) \
+     + $(printf '%s\n' "$fm_block" | grep -ciE "$TG_PAT_CI" || true) ))
 chk "${fm:-1}" 0 TG02 "aid-summarize's frontmatter description carries no two-grade vocabulary"
 
-# Control: TG01 must be able to see a planted surface, or zero hits means nothing.
-TGCTL="$(mktemp -d)"; mkdir -p "$TGCTL/skills/planted"
-printf 'APPROVAL requires BOTH grades >= minimum.\n' > "$TGCTL/skills/planted/SKILL.md"
-n_tgctl=$(grep -rlE "$TG_PAT" "$TGCTL" 2>/dev/null | grep -vE "$TG_EXPLAINERS" | wc -l)
-rm -rf "$TGCTL"
-chk "$n_tgctl" 1 TG03 "TG01 DOES find a planted two-grade surface (control)"
+# Control: TG01 must be able to see a planted live instruction, or zero hits means nothing. Two plants,
+# both through tg_disallowed: one in a file no allowance names, and one in an ALLOWED file -- the second
+# is the case the by-file form could not catch, and it is planted with the exact capitalisation that
+# defeated the old pattern.
+n_tgctl=$(printf '%s\n' \
+    'canonical/skills/planted/SKILL.md:1:APPROVAL requires BOTH grades >= minimum.' \
+    'canonical/skills/aid-summarize/SKILL.md:165:[State: APPROVAL] - Both Machine and Human grades meet minimum.' \
+    'canonical/aid/templates/knowledge-summary/grading-rubric.md:9:Report the Machine Grade beside the Human Grade.' \
+    | tg_disallowed | wc -l)
+chk "$n_tgctl" 3 TG03 "TG01 DOES find a planted live instruction, including inside an allowed file (control)"
 
 echo
 echo "== coverage tightened rather than loosened =="
@@ -422,11 +559,21 @@ sev_rows() {
 # returns empty so the row is skipped -- an instance-derived anchor cannot be compared to a fixed token).
 # Resolves across the WHOLE catalog rather than a per-class file map: a hardcoded map silently returns ""
 # for any class it does not list, which skips the row and passes.
-catalog_sev() {
-    local rule="$1"
-    grep -rhE "^\| \`${rule}\` " "$RUBRIC_DIR" 2>/dev/null | head -1 \
-        | awk -F'|' '{print $(NF-1)}' | grep -oE '\[(CRITICAL|HIGH|MEDIUM|LOW|MINOR)\]' | head -1
-}
+#
+# Built ONCE into an array, then looked up with no forks. The per-call form was 4 forks (grep -r, awk,
+# grep, head) x 42 calls across SEV01 and SEV04, and this suite runs on hosts where a fork costs ~1s.
+declare -A CATALOG_SEV=()
+while IFS='|' read -r rule token; do
+    [[ -n "$rule" ]] || continue
+    [[ -n "${CATALOG_SEV[$rule]:-}" ]] || CATALOG_SEV["$rule"]="$token"   # first one wins
+done < <(awk -F'|' '
+  $2 ~ /^ *`[A-Z]+-[0-9]+` *$/ {
+    rule = $2; gsub(/^ +| +$|`/, "", rule)
+    cell = $(NF-1)
+    if (match(cell, /\[(CRITICAL|HIGH|MEDIUM|LOW|MINOR)\]/))
+        print rule "|" substr(cell, RSTART, RLENGTH)
+  }' "$RUBRIC_DIR"/*.md)
+catalog_sev() { printf '%s' "${CATALOG_SEV[$1]:-}"; }
 
 # SEV01 sweeps the SAME eight files RID01 does, and every rule CLASS, not just SUMMARY/PRE in one file.
 # Scoped to one file and two classes it reported clean while five live drifts sat in the sibling
@@ -465,10 +612,108 @@ else
     no SEV03 "SEV01 examined only ${n_sev_rows} rows -- its feed is broken"
 fi
 
-# Control: catalog_sev must actually read the catalog, else SEV01 passes on an empty comparison.
-[[ "$(catalog_sev SUMMARY-08)" == "[LOW]" ]] \
-    && ok SEV02 "the catalog reader resolves a known severity (control: SUMMARY-08 = [LOW])" \
-    || no SEV02 "the catalog reader returned '$(catalog_sev SUMMARY-08)' for SUMMARY-08, expected [LOW]"
+# Control: catalog_sev must actually read the catalog, else SEV01 passes on an empty comparison. The
+# expected value is hardcoded ON PURPOSE -- a control that reads its own expectation from the thing
+# under test proves nothing. If the catalog legitimately re-derives SUMMARY-08, this fails loudly and
+# whoever changed it re-reads the control; that is the intended cost.
+[[ "$(catalog_sev SUMMARY-08)" == "[MEDIUM]" ]] \
+    && ok SEV02 "the catalog reader resolves a known severity (control: SUMMARY-08 = [MEDIUM])" \
+    || no SEV02 "the catalog reader returned '$(catalog_sev SUMMARY-08)' for SUMMARY-08, expected [MEDIUM]"
+
+# SEV04 -- the EMITTER's severity tokens, which are the ones that actually reach grade.sh.
+# SEV01's feed is CITERS: eight .md files that merely RESTATE a severity. The emitter was in none of
+# them, so the authoritative copy was the one surface with no guard at all. MEASURED before this
+# assertion existed: flipping SEV_FOR[L1] to [HIGH] and the direct SUMMARY-01 emit to [CRITICAL] left
+# the suite fully green. Feed = the SEV_FOR/RULE_FOR pair joined on the check key, plus every `emit`
+# call that passes a literal rule and severity.
+emit_sev_bad=()
+emit_sev_n=0
+# 1) SEV_FOR x RULE_FOR, joined on the check key. Extracted by sourcing the two declare blocks in a
+#    subshell rather than by regex, so a reformat of the arrays cannot silently empty the feed.
+while IFS='|' read -r key rule stated; do
+    [[ -n "$key" ]] || continue
+    emit_sev_n=$((emit_sev_n + 1))
+    declared=$(catalog_sev "$rule")
+    [[ -n "$declared" ]] || { emit_sev_bad+=("${key}:${rule}:no-catalog-row"); continue; }
+    [[ "$stated" == "$declared" ]] || emit_sev_bad+=("${key}(${rule}):emitter=${stated},catalog=${declared}")
+done < <(
+    eval "$(sed -n '/^declare -A RULE_FOR=(/,/^)/p;/^declare -A SEV_FOR=(/,/^)/p' "$EMIT")"
+    for k in "${!SEV_FOR[@]}"; do printf '%s|%s|%s\n' "$k" "${RULE_FOR[$k]:-}" "${SEV_FOR[$k]}"; done
+)
+# 2) Literal `emit "RULE" "[SEV]"` calls -- the two rules with no check key (SUMMARY-01, PRE-11).
+while IFS='|' read -r rule stated; do
+    [[ -n "$rule" ]] || continue
+    emit_sev_n=$((emit_sev_n + 1))
+    declared=$(catalog_sev "$rule")
+    [[ -n "$declared" ]] || { emit_sev_bad+=("${rule}:no-catalog-row"); continue; }
+    [[ "$stated" == "$declared" ]] || emit_sev_bad+=("${rule}:emitter=${stated},catalog=${declared}")
+done < <(grep -oE 'emit "[A-Z]+-[0-9]{2}" "\[(CRITICAL|HIGH|MEDIUM|LOW|MINOR)\]"' "$EMIT" \
+         | sed -E 's/emit "([A-Z]+-[0-9]{2})" "(\[[A-Z]+\])"/\1|\2/')
+if [[ "${#emit_sev_bad[@]}" -eq 0 && "$emit_sev_n" -ge 12 ]]; then
+    ok SEV04 "all ${emit_sev_n} severity tokens the emitter writes match the catalog"
+elif [[ "$emit_sev_n" -lt 12 ]]; then
+    no SEV04 "the emitter severity feed collected only ${emit_sev_n} tokens (expected >= 12) -- extraction is broken"
+else
+    no SEV04 "emitter severities disagreeing with the catalog: ${emit_sev_bad[*]}"
+fi
+
+# SEV05 -- every catalog row's Severity must sit in the band its own Modality selects. This is Step 1
+# of grading-rubric.md's scale, and nothing enforced it: SUMMARY-08 shipped MUST/[LOW], which Step 1
+# forbids (MUST -> Step 2 -> CRITICAL/HIGH/MEDIUM; [LOW] is reserved for a SHOULD), and four
+# dependent surfaces had already copied the [LOW].
+# The comparison is against the LEADING token, never the whole cell. Matching `Step 2` anywhere in the
+# cell is how this assertion first failed to fail: with the rationale reading "-- Step 2: correction is
+# local", MUST/[LOW] passed. The token is whatever the cell OPENS with; everything after it is prose,
+# and prose must not be able to license a band. Three legal cell forms, per INDEX.md § The rule row:
+#   `[MEDIUM]` -- rationale                        a fixed token
+#   `[LOW]; escaped (>1 doc) -> [MEDIUM]`          a fixed token with the SHOULD escape
+#   `Step 2` -- rationale                          instance-derived, nothing fixed to check
+# Requiring the closing backtick right after the bracket rejected all 18 escape-form rows as
+# <no-token>, which is why the leading match stops at the bracket.
+band_bad=()
+band_n=0
+while IFS='|' read -r file id modality token rest; do
+    [[ -n "$id" ]] || continue
+    band_n=$((band_n + 1))
+    case "$modality" in
+        MUST)   [[ "$token" == "[CRITICAL]" || "$token" == "[HIGH]" || "$token" == "[MEDIUM]" \
+                   || "$token" == "Step 2" ]] || band_bad+=("${file}:${id} MUST/${token:-<no-token>}")
+                # An escape may not leave the band either: a MUST cannot decay to [LOW]/[MINOR].
+                [[ "$rest" == *"[LOW]"* || "$rest" == *"[MINOR]"* ]] \
+                    && band_bad+=("${file}:${id} MUST escapes below its band: ${rest}") ;;
+        SHOULD) [[ "$token" == "[LOW]" || "$token" == "[MEDIUM]" || "$token" == "Step 2" ]] \
+                    || band_bad+=("${file}:${id} SHOULD/${token:-<no-token>}")
+                [[ "$rest" == *"[CRITICAL]"* || "$rest" == *"[HIGH]"* ]] \
+                    && band_bad+=("${file}:${id} SHOULD escapes above its band: ${rest}") ;;
+        COULD)  [[ "$token" == "[MINOR]" || "$token" == "Step 2" ]] \
+                    || band_bad+=("${file}:${id} COULD/${token:-<no-token>}")
+                [[ "$rest" == *"[CRITICAL]"* || "$rest" == *"[HIGH]"* || "$rest" == *"[MEDIUM]"* ]] \
+                    && band_bad+=("${file}:${id} COULD escapes above its band: ${rest}") ;;
+    esac
+done < <(
+    awk -F'|' '
+      $2 ~ /^ *`[A-Z]+-[0-9]+` *$/ {
+        id = $2; mod = $5; cell = $(NF-1)
+        gsub(/^ +| +$|`/, "", id); gsub(/^ +| +$/, "", mod)
+        gsub(/^ +| +$/, "", cell)
+        token = ""; rest = cell
+        if (match(cell, /^`\[(CRITICAL|HIGH|MEDIUM|LOW|MINOR)\]/)) {
+            token = substr(cell, RSTART + 1, RLENGTH - 1)      # drop the opening backtick
+            rest  = substr(cell, RSTART + RLENGTH)             # the escape clause / rationale
+        } else if (cell ~ /^`Step 2`/) {
+            token = "Step 2"; rest = ""                        # instance-derived: nothing fixed to check
+        }
+        n = split(FILENAME, parts, "/")
+        print parts[n] "|" id "|" mod "|" token "|" rest
+      }' "$RUBRIC_DIR"/*.md
+)
+if [[ "${#band_bad[@]}" -eq 0 && "$band_n" -ge 20 ]]; then
+    ok SEV05 "all ${band_n} catalog rows carry a severity inside the band their modality selects"
+elif [[ "$band_n" -lt 20 ]]; then
+    no SEV05 "the catalog row feed collected only ${band_n} rows (expected >= 20) -- extraction is broken"
+else
+    no SEV05 "modality/severity band violations: ${band_bad[*]}"
+fi
 
 echo
 echo "== every rule ID cited by the summarize and discover surfaces exists =="

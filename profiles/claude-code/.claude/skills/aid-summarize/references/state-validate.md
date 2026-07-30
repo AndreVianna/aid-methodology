@@ -115,7 +115,7 @@ convenience copy of what `review-rubrics/summary.md` and `presentation.md` decla
 and the catalog ever disagree, **the catalog wins** and this table is the defect. Restating a
 severity is how a second source of truth starts, and one already did: this table used to give
 `[HIGH]` for `L1`, `L2` and `H1` — the values the retired points model carried — while the catalog
-re-derived them against the canonical scale as `[LOW]`, `[MEDIUM]` and `[MEDIUM]`. Those three are
+re-derived them against the canonical scale as `[MEDIUM]`, `[MEDIUM]` and `[MEDIUM]`. Those three are
 corrected below, exactly the re-derivation feature-007 §1b called for.
 
 | Script check | Rule | Severity (per the catalog) | Rows |
@@ -124,7 +124,7 @@ corrected below, exactly the re-derivation feature-007 §1b called for.
 | T1 (visual text not readable — font-size below threshold or zero-height-clipped) | `SUMMARY-06` | `[HIGH]` | one row per failing visual — **NOT emitted today**, see the note above |
 | T2 (visual child element overlap exceeds 20% tolerance) | `SUMMARY-06` | `[HIGH]` | one row per failing visual — **NOT emitted today**, see the note above |
 | T3 (visual collapsed or empty — non-trivial dimensions assertion failed) | `SUMMARY-06` | `[HIGH]` | one row per failing visual — **NOT emitted today**, see the note above |
-| L1 (broken anchor links) | `SUMMARY-08` | `[LOW]` | **one row for the check**, not per link — the emitter loops check IDs, and the validator's own line reports the count. A dead in-page jump is contained and fixed by regenerating |
+| L1 (broken anchor links) | `SUMMARY-08` | `[MEDIUM]` | **one row for the check**, not per link — the emitter loops check IDs, and the validator's own line reports the count. A dead in-page jump is confined and locally correctable, which is Step 2's `[MEDIUM]` cell |
 | L2 (broken .md links) | `SUMMARY-09` | `[MEDIUM]` | **one row for the check**, not per path; it sends the reader out of the summary to nothing |
 | H1 (HTML validity failure) | `SUMMARY-02` | `[MEDIUM]` | **one row for the check**, not per error |
 | A1 (missing semantic landmarks) | `PRE-02` | `[MEDIUM]` | one row |

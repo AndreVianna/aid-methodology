@@ -44,7 +44,7 @@ review**, not a pass.
 | `SUMMARY-05` | Every load-bearing claim is grounded in a KB document, not inferred | `authoring-conventions.md § Citation Rule (Durable Anchors)` | MUST | judgment | Name the KB document supporting each load-bearing claim. An ungrounded claim is the finding | `Step 2` |
 | `SUMMARY-06` | Every visual renders and is legible | `knowledge-summary/grading-rubric.md` — the visual-fidelity checks | MUST | judgment | **Human evidence only** — an agent cannot satisfy this rule. One row per failing visual | `[HIGH]` |
 | `SUMMARY-07` | The summary carries no diagram runtime that was retired | `knowledge-summary/grading-rubric.md` — the no-runtime check | MUST | mechanical | `grep` for the retired runtime | `[HIGH]` |
-| `SUMMARY-08` | Every in-page anchor resolves to an element in the document | `knowledge-summary/grading-rubric.md § Check definitions` — the `L1` definition | MUST | mechanical | Resolve each `href="#X"` against the document's IDs. The mechanical emitter reports the check once with the validator's own count; a reviewer adding rows by hand may write one per unresolved anchor | `[LOW]` — a dead in-page jump is contained, visible, and fixed by regenerating |
+| `SUMMARY-08` | Every in-page anchor resolves to an element in the document | `knowledge-summary/grading-rubric.md § Check definitions` — the `L1` definition | MUST | mechanical | Resolve each `href="#X"` against the document's IDs. The mechanical emitter reports the check once with the validator's own count; a reviewer adding rows by hand may write one per unresolved anchor | `[MEDIUM]` — correction is local (regenerate) and no downstream artifact depends on the anchor, so the radius is confined |
 | `SUMMARY-09` | Every relative document link points at a file that exists | `knowledge-summary/grading-rubric.md § Check definitions` — the `L2` definition | MUST | mechanical | Resolve each `./*.md` link against the tree. The mechanical emitter reports the check once with the validator's own count; a reviewer adding rows by hand may write one per broken link | `[MEDIUM]` — it sends the reader out of the summary to nothing, so the radius leaves the artifact |
 
 ---
@@ -59,8 +59,15 @@ mechanism*, not *coverage*.
 
 The four zero-point checks (`T1`, `T2`, `T3`, `NM`) matter most here, because they are the ones a
 points-based audit would miss: they carried no weight to trace, only prose saying they blocked. Under
-rule rows they carry `[HIGH]`, which is why the rule set is **smaller than the points table and
-strictly stronger**.
+rule rows they carry `[HIGH]` — **stronger for exactly these four, and for `COV`**, whose band the
+ladder let good checks pay for.
+
+It is **not** uniformly stronger, and claiming so would misdescribe the trade this delivery made:
+three checks were re-derived *downward*. The ladder gave `L1`, `L2` and `H1` the weight of a
+`[HIGH]`; against the canonical scale they are `[MEDIUM]`, `[MEDIUM]` and `[MEDIUM]`
+(`aid-summarize/references/state-validate.md § Severity is looked up`). The rule set is smaller than
+the points table and **correctly** graded — each check now carries the severity its modality and blast
+radius license, which is higher for some and lower for others.
 
 | Retired check | Now expressed as | Note |
 |---|---|---|
@@ -131,5 +138,7 @@ table lives in
 
 | Date | Change |
 |---|---|
-| 2026-07-28 | Created. Nine content-truth rules (`SUMMARY-01`…`09`), per the amendment requiring this class to carry them rather than inherit Narrative. |
-| 2026-07-30 | Mapping table completed: `T1`, `T2`, `T3` and `NM` were missing while the table claimed every retired check was accounted for. Corrected the created-row count, which read "seven". |
+| 2026-07-28 | Created. Seven content-truth rules (`SUMMARY-01`…`07`), per the amendment requiring this class to carry them rather than inherit Narrative. |
+| 2026-07-29 | Added `SUMMARY-08` (in-page anchors resolve) and `SUMMARY-09` (relative document links resolve). The retiring summary grader scored these as `L1`/`L2` while no rule covered them, so retiring that grader would have dropped both checks entirely. |
+| 2026-07-30 | Mapping table completed: `T1`, `T2`, `T3` and `NM` were missing while the table claimed every retired check was accounted for. |
+| 2026-07-30 | `SUMMARY-08` re-anchored `[LOW]` → `[MEDIUM]`. Its Modality is `MUST` (the `L1` definition reads "must resolve"), and Step 1 sends a `MUST` to Step 2, whose band is `[CRITICAL]`/`[HIGH]`/`[MEDIUM]` — `[LOW]` is reserved for a `SHOULD`, so the row contradicted the scale it cites. |

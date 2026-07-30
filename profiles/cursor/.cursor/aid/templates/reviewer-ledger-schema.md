@@ -77,7 +77,7 @@ The `.aid/.temp/review-pending/` directory is gitignored (per `.gitignore` `.aid
 | 3 | `Status` | yes | Plain word (no brackets): `Pending`, `Fixed`, `Recurred`, `Accepted`, `OOS`, or `Invalid`. See **Status values** below. Drives grade computation. |
 | 4 | `Rule` | yes | The ID of the rule the finding violates, from the artifact's rule set in [`.cursor/aid/templates/review-rubrics/INDEX.md`](review-rubrics/INDEX.md). Format `<CLASS>-<NN>` (e.g. `CODE-03`, `NAR-04`). See **Rule values** below. |
 | 5 | `Doc` | yes | Affected file path (relative to repo root). Examples: `foo.md`, `.cursor/aid/scripts/bar.sh`, `tests/canonical/baz.sh`. For doc-wide issues with no specific file, use `—`. |
-| 6 | `Line` | yes | Affected line number, or a line range like `42-45`, or `—` for doc-wide. |
+| 6 | `Line` | yes | Affected line number, a line range like `42-45`, a **locator** when the artifact has no meaningful line (see below), or `--` for doc-wide. |
 | 7 | `Description` | yes | ONE sentence stating what's wrong. Form: "claim X is wrong: doc says Y, actual Z." Avoid hedging or explanation; explanation goes in Evidence. |
 | 8 | `Evidence` | yes | The disk-truth that contradicts the doc's claim, AND/OR the source-of-truth command. Form: "`wc -l foo = 1070` (doc claims 1071)" or "`grep -c X bar = 5` (doc claims 6)". For Status=Fixed/Recurred/Accepted/OOS/Invalid, include enough context to justify the status (e.g., "Fixed in commit abc123" or "Accepted: user decision cycle-1 Q5"). |
 
@@ -95,7 +95,7 @@ One table, three kinds of row, told apart by the `#` column alone. A reader need
 | `Status` | `Pending` \| `Fixed` \| `Recurred` \| `Accepted` \| `OOS` \| `Invalid` | `Unexamined` \| `In Progress` \| `Examined` \| `Skipped` | `Open` \| `Resolved` |
 | `Rule` | a catalog rule ID; **mandatory** (one exemption below) | `--` | `--` |
 | `Doc` | the artifact the finding is about | the unit's artifact | the artifact whose review stalled |
-| `Line` | line, range, or `--` | `--` | `--` |
+| `Line` | line, range, locator, or `--` | `--` | `--` |
 | `Description` | one sentence: what is wrong | `rule-set: <name>`, plus a skip reason when `Skipped` | which criterion is missing |
 | `Evidence` | disk truth, or the command producing it | UTC stamp `; art=<digest>; rs=<rule-set>@<digest>` | the resolution command, `gap-key=<key>`, `resume=N` |
 
@@ -291,6 +291,34 @@ scratches are deleted at merge — so an ID-keyed join has its input removed bef
 `Line` is deliberately **excluded**: it drifts on every edit, so keying on it would report every
 fixed-then-shifted finding as new. Where one `(Doc, Rule)` pair legitimately appears twice, `Line` is
 the tiebreaker.
+
+#### `Line` as a locator
+
+Some artifacts have no line to cite. A generated `kb.html` is one file whose defects are *checks*, not
+positions: two accessibility checks (`A2` lightbox ARIA, `A3` focus trap) both map to `PRE-04`, so with
+`Line` left at `--` their rows share one `(Doc, Rule)` key and fixing the first would silently reconcile
+the second to `Fixed`. A human checklist is another: its answers have no file at all.
+
+So where a line number does not exist, `Line` carries a **locator** — a short, stable identifier of the
+thing checked, minted by the emitting component and documented by it:
+
+| Form | Emitted by | Example |
+|---|---|---|
+| a check id | `emit-summary-findings.sh` (the HTML validator's checks) | `A2`, `L1`, `NM` |
+| a check label | same, for validator checks printed without an id | `color-scheme: light dark` |
+| `<theme>/<pair>` | same, for the per-theme contrast check | `dark/body text on bg` |
+| `human/<check>` | the manual visual checklist | `human/K1`, `human/V1` |
+
+A locator is **not** free text. It must be stable across cycles (or the tiebreaker reintroduces the
+drift `Line`'s exclusion from the key exists to avoid), and the component that mints it must document
+its value set — `aid-summarize/references/state-validate.md § the row the script writes` does this for
+the first three forms and `state-manual-checklist.md` for the fourth. `human/` is load-bearing beyond
+tie-breaking: it is what keeps a machine row and a human row for the same rule from reconciling onto
+each other.
+
+This is a widening of the value set, recorded here because the emitter shipped these values while this
+section still declared "line, range, or `--`" in two places — the schema, not the emitter, is the
+authority, and it was the surface that had not been amended.
 
 This key only became possible when `Rule` became mandatory and single-valued.
 

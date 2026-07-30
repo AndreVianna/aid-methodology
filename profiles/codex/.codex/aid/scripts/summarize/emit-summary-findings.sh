@@ -191,7 +191,7 @@ declare -A RULE_FOR=(
 )
 declare -A SEV_FOR=(
     [H1]="[MEDIUM]" [S2]="[HIGH]"
-    [L1]="[LOW]"    [L2]="[MEDIUM]"
+    [L1]="[MEDIUM]" [L2]="[MEDIUM]"
     [A1]="[MEDIUM]" [A2]="[MEDIUM]" [A3]="[MEDIUM]" [A4]="[MEDIUM]" [A5]="[MEDIUM]"
     [NM]="[HIGH]"
     ["noscript fallback present"]="[MEDIUM]"
@@ -266,12 +266,12 @@ if [[ -f "$SCRIPT_DIR/validate-html-output.sh" ]]; then
         echo "  WARNING: validate-html-output.sh timed out after ${VALIDATOR_TIMEOUT:-120}s -- H1/S2/L1/L2/A1-A5 NOT evaluated." >&2
         echo "           This is usually a missing local validator causing an npx fetch. Install tidy or" >&2
         echo "           html-validate locally. These checks are reported as unevaluated, not as passed." >&2
-        HTML_LOG="/dev/null"
-    fi
-    if [[ "$vrc" -eq 124 ]]; then
+        # HTML_LOG is deliberately NOT rebound here. It used to be set to /dev/null, which did two
+        # things and neither was the intent: the EXIT trap is single-quoted, so it expanded the REBOUND
+        # value and ran `rm -f /dev/null` while the real mktemp file leaked (measured under `bash -x`);
+        # and the rebind was dead anyway, because the branch below that runs on 124 never reads the log.
         UNEVALUATED=$((UNEVALUATED + 1))
     else
-        before_html=$FINDINGS
         for k in H1 S2 L1 L2 A1 A2 A3 A4 A5 NM \
                  "noscript fallback present" "color-scheme: light dark"; do
             if check_failed "$k" "$HTML_LOG"; then
@@ -287,6 +287,20 @@ if [[ -f "$SCRIPT_DIR/validate-html-output.sh" ]]; then
         # case, hid the unmapped one completely and the run still exited 1 ("a complete run with
         # findings"). Attribute line by line instead: a failure no key claims is a check with no rule
         # here, and reporting it as unevaluated is what turns a silent false pass into a fixable one.
+        #
+        # THE UNIT IS THE CHECK, AND THE VALIDATOR MARKS IT BY INDENT DEPTH. Three depths, and only the
+        # middle one is a check:
+        #   0 spaces  the run's own aggregate roll-up  "❌ HTML output validation failed: 19/21 ..."
+        #   2 spaces  a CHECK verdict                  "  ❌ L1. 2 anchor link(s) broken (of 41)"
+        #   4 spaces  one INSTANCE inside a check      "    ❌ #does-not-exist — no matching id=..."
+        # Feeding the 4-space instance lines to this guard made an ordinary broken anchor exit 2
+        # ("a check group could not be evaluated") instead of 1 ("findings emitted"): no RULE_FOR key
+        # claims `#does-not-exist`, so each broken instance raised a spurious unevaluated note -- while
+        # L1 itself was mapped, emitted, and correct. state-validate.md routes exit 2 to
+        # PAUSE-FOR-USER-ACTION, so a perfectly gradeable defect halted the pipeline and the printed
+        # advice named a missing validator that was present. Anchoring on exactly two spaces keeps the
+        # unit the check: instance lines belong to a check that IS claimed, and the aggregate is a
+        # roll-up of checks. EM06/EM07 hold both directions.
         while IFS= read -r fail_line; do
             [[ -n "$fail_line" ]] || continue
             claimed=0
@@ -298,11 +312,11 @@ if [[ -f "$SCRIPT_DIR/validate-html-output.sh" ]]; then
             if [[ "$claimed" -eq 0 ]]; then
                 unevaluated "validate-html-output.sh reported a failure no rule claims -- add it to RULE_FOR: $(printf '%s' "$fail_line" | sed 's/^[[:space:]]*//' | cut -c1-72)"
             fi
-        # Exclude the validator's own AGGREGATE line ("❌ HTML output validation failed: 19/21 checks
-        # passed"). It is a roll-up of the per-check lines above it, not a check, and it is unindented --
-        # so without this the guard would report an unattributed failure on every genuinely-failing run,
-        # which is a false positive that would train a reader to ignore the note.
-        done < <(grep -E '^[[:space:]]*(❌|FAIL)|\[FAIL\]' "$HTML_LOG" 2>/dev/null \
+        # `^  ` then a non-space: exactly the check depth. This also drops the unindented aggregate, so
+        # the older text-based exclusion of it is no longer load-bearing -- it stays as a second line of
+        # defence for a validator that someday indents its roll-up.
+        done < <(grep -E '^  [^[:space:]].*(❌|FAIL)|^  (❌|FAIL)' "$HTML_LOG" 2>/dev/null \
+                 | grep -E '(❌|\[FAIL\])' \
                  | grep -vE 'validation (failed|passed)|checks passed|check\(s\) failed' || true)
     fi
 else

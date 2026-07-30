@@ -371,8 +371,20 @@ When a Q&A entry in `.aid/knowledge/STATE.md` or an IMPEDIMENT triggers re-disco
 | D | Misleading — wrong information that could cause bad decisions |
 | F | Missing or empty |
 
-**Overall grade** = weighted average where architecture, module-map, and coding-standards
-count double (referenced most by downstream phases).
+**The letter itself is not computed here.** `grade.sh` derives it from the review ledger —
+worst severity dominates, count sets the modifier — and it is the only component in AID that
+produces a grade (NFR-7). The table above says what each letter *means* for a KB document; it
+is not a second way to arrive at one.
+
+This used to read *"**Overall grade** = weighted average where architecture, module-map, and
+coding-standards count double"*. That was a second grading model, and it disagreed with
+`grade.sh` in both directions an averaging rule always does: an average lets five good
+documents pay for one misleading one, where `grade.sh` is dominated by the worst finding
+deliberately, and the weights had no carrier — nothing computed them, so an agent was being
+asked to produce a letter by arithmetic no artifact recorded. Weighting *what matters most*
+is real, and it survives where it belongs: as the blast-radius axis of the severity scale
+(`grading-rubric.md § Severity Scale` Step 2), where a defect in a document other phases
+already consumed escalates because the radius has escaped.
 
 ---
 

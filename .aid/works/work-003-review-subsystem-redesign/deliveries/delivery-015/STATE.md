@@ -2,7 +2,7 @@
 delivery_state: Gated
 gate_tier: Large
 gate_grade: D
-gate_timestamp: '2026-07-30T11:48:09Z'
+gate_timestamp: '2026-07-30T23:34:34Z'
 ticket_ref: "--"
 ---
 
@@ -44,7 +44,7 @@ ticket_ref: "--"
 ## Delivery Gate
 
 - **Complexity Score:** 18 (tasks=6, depth=3, risk=9, consults=0) -> Large tier
-- **Cycles:** 9. Grades D- -> D -> D -> D -> D+ -> D -> D+ -> D -> D; findings 13 -> 15 -> 8 -> 11 -> 6 -> 7 -> 9 -> 8 -> 8. The recorded Grade is cycle 9's, the last one actually measured.
+- **Cycles:** 10. Grades D- -> D -> D -> D -> D+ -> D -> D+ -> D -> D -> D; findings 13 -> 15 -> 8 -> 11 -> 6 -> 7 -> 9 -> 8 -> 8 -> 14. The recorded Grade is cycle 10's, the last one actually measured. Cycle 10 found MORE than cycle 9 because the bar change did not change what the reviewer looks for -- and because two of its findings were guards that could not fail, which no amount of prose review would have surfaced.
 - **Minimum grade:** `B-` — **changed from `A+` at cycle 10** (human decision, 2026-07-30;
   `.aid/settings.yml`). `B-` is the lowest bar whose whole band excludes `[MEDIUM]`, so the exit
   criterion is now *zero `[MEDIUM]`/`[HIGH]`/`[CRITICAL]`*, with `[LOW]`/`[MINOR]` **deferred, not
@@ -54,7 +54,34 @@ ticket_ref: "--"
 - **Issue List:** all 85 findings across the nine cycles are FIXED and self-verified. Cycles 1-9 ran
   against the `A+` bar and never cleared it; § Cross-phase Q&A, 'Why six cycles did not reach A+'
   (written at cycle 6, and the diagnosis held through cycle 9) and § 'Method change at cycle 9'.
-- **In flight:** cycle 10's reviewer (aid-reviewer, Large tier) was dispatched at 2026-07-30T19:40Z against `86eb7584`, writing to `.aid/.temp/review-pending/execute-delivery-015-cycle10.md`. The recorded `gate_grade` is cycle 9's; it does not describe the tree at `86eb7584`, which is ungraded until that ledger is graded.
+- **Cycle 10 (graded 2026-07-30, tree `86eb7584`):** **D** — 3 `[HIGH]` + 11 `[MEDIUM]` + 0 `[LOW]` + 0 `[MINOR]`, so **nothing defers** and all 14 must be fixed to clear `B-`. Ledger: `.aid/.temp/review-pending/execute-delivery-015-cycle10.md`. Two of the 14 are guard gaps the reviewer proved by mutation, not by reading: appending a live two-grade instruction to `aid-summarize/SKILL.md`'s body left the suite 57/57 green (row 5 — `TG01` excludes three files whole), and flipping `SEV_FOR[L1]` to `[HIGH]` plus `SUMMARY-01` to `[CRITICAL]` also left it green (row 6 — the emitter is not in `SEV01`'s feed). Row 1 is a regression cycle 9's own guard rewrite introduced: per-instance detail lines from `validate-html-output.sh` are unclaimed by any rule, so an ordinary broken anchor now exits 2 (pause) instead of 1 (gradeable).
+- **Cycle 10 FIX (2026-07-30):** all 14 fixed and self-verified. The two guard gaps are closed with
+  guards, not with prose: `TG01` now sweeps **per line** with a seven-entry retirement-prose allowance
+  instead of excluding five files whole (plus `TG04`, which fails when an allowance stops matching, so
+  the list cannot rot into a whole-file pass), and `SEV04` compares the **emitter's** twelve severity
+  tokens against the catalog — the surface where the value actually reaches `grade.sh`, and the one
+  `SEV01` never covered. Added `SEV05` (every catalog row's severity must sit in the band its own
+  modality selects — the rule that `SUMMARY-08`'s `MUST`/`[LOW]` broke), `EM06` (a check's per-instance
+  detail lines are attributed to their check), `CK05` (template and writer agree on the *form* of a
+  field, not just its value set) and `CK06` (no ragged row in the Field/Value table). 58 → 64
+  assertions, every new one mutation-tested: `SEV05` first failed to fail, because the rationale prose
+  I wrote contained the words "Step 2" and the check accepted that as the instance-derived sentinel; it
+  now reads the **leading** token only. `CK06` then produced a false positive, because awk's `\\&`
+  replacement is a literal `&` that shortened the line and corrupted the second count.
+- **Class sweeps done, not just the named instances:** the modality/severity conformance sweep over all
+  83 catalog rows found `SUMMARY-08` and nothing else; the grade-coupling sweep found the second
+  instance at `state-review.md:100` that row 8 predicted; the stale-field sweep found the `Header` row
+  of `artifact-schemas.md` describing four pre-relocation field names one line above the row the
+  reviewer cited; and `TG01`'s widening surfaced a **second grade producer nobody had filed** —
+  `aid-discover/SKILL.md`'s "Overall grade = weighted average where architecture, module-map and
+  coding-standards count double", an averaging rule against `grade.sh`'s worst-dominates, with weights
+  no artifact computed. Removed.
+- **Verification:** `test-one-grading-backend.sh` 64/64; `dogfood-byte-identity` 755/755 after render +
+  dogfood sync of all 8 edited files across both trees; `ascii-only`, `review-rubrics`,
+  `reviewer-conformance`, `criteria-gaps`, `gap-gate-wiring`, `grade-summary`, `guardrails-d012`,
+  `writeback-ledger`, `settings-frontmatter-gates` (35/35), `actback-fixtures` (20/20) all green.
+- **State:** cycle 10's fixes are ungraded until a fresh reviewer runs.
+
 ---
 
 ## Cross-phase Q&A
