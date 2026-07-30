@@ -1,12 +1,12 @@
 ---
 title: 'Skills'
-description: 'All AID skills — 19 classic pipeline skills, the aid-triage router, the aid-ask Q&A alias, and the catalog-driven direct-entry shortcuts — grouped by skill group/family, with what each does and where it comes from.'
+description: 'All AID skills — 18 classic pipeline skills, the aid-triage router, the aid-ask Q&A skill, and the catalog-driven direct-entry shortcuts — grouped by skill group/family, with what each does and where it comes from.'
 generatedFrom: 'canonical/skills/*/SKILL.md, canonical/aid/templates/shortcut-catalog.yml'
 ---
 
 <!-- generated — do not edit; source: canonical/skills/*/SKILL.md -->
 
-AID ships **111 skill directories** under `canonical/skills/`: **19 classic pipeline skills** across four skill groups (Support, Knowledge Base Maintenance, Definition, Execution), the suggest-only router **`/aid-triage`**, the friendly **`/aid-ask`** Q&A alias (of `/aid-query-kb`), and **64 engine-driven direct-entry shortcut skills** generated from a 94-row catalog (58 canonical names + 36 aliases); 30 of the rows (24 canonical + 6 alias) are `repurpose: true` — the 4 classic re-registered skills plus the work-005 hand-authored single-shot "collapse" skills, all hand-authored with their own directories). The six numbered phases — Discover through Execute — form the mandatory sequential full path; every skill runs as a slash command (e.g. `/aid-config`) inside your AI host tool. Classic and router skills below are generated from each skill's own definition in `canonical/skills/`; shortcuts are summarized by family from the catalog (see "Direct-entry shortcuts" below, nested inside the Definition group).
+AID ships **75 skill directories** under `canonical/skills/`: **18 classic pipeline skills** across four skill groups (Support, Knowledge Base Maintenance, Definition, Execution), the suggest-only router **`/aid-triage`**, the **`/aid-ask`** Q&A skill, and **34 engine-driven direct-entry shortcut skills** generated from a 58-row catalog; 24 of the rows are `repurpose: true` — the 3 classic re-registered skills (`aid-deploy`/`aid-monitor`/`aid-ask`) plus the work-005 hand-authored single-shot "collapse" skills, all hand-authored with their own directories). The six numbered phases — Discover through Execute — form the mandatory sequential full path; every skill runs as a slash command (e.g. `/aid-config`) inside your AI host tool. Classic and router skills below are generated from each skill's own definition in `canonical/skills/`; shortcuts are summarized by family from the catalog (see "Direct-entry shortcuts" below, nested inside the Definition group).
 
 ## Support
 
@@ -96,19 +96,11 @@ Optional on-demand targeted KB update skill. Isolates itself in its own worktree
 
 [Definition: `canonical/skills/aid-update-kb/SKILL.md`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-kb/SKILL.md)
 
-### `aid-query-kb`
+### `aid-ask`
 
 **on demand · read-only Q&A**
 
 Optional on-demand Q&A skill. Takes a free-form question and answers it in one pass, grounded in three context sources: the Knowledge Base (.aid/knowledge/), the live codebase, and in-flight AID works (.aid/works/work-*/STATE.md + progress). Returns an answer with source citations (KB doc names, file paths, or work-NNN STATE references). When the available context cannot answer the question, states the gap explicitly rather than fabricating an answer AND captures the gap as a Query-Gap entry in the STATE.md Q&A (Pending) backlog so it feeds the KB-improvement loop. Trivial questions are answered inline (Read/Glob/Grep only); broad or expensive investigations dispatch aid-researcher in strictly read-only mode. Writes are restricted to appending a Query-Gap entry to a STATE.md Q&A (Pending) section; no KB doc, settings, or code file is ever written.
-
-[Definition: `canonical/skills/aid-query-kb/SKILL.md`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-query-kb/SKILL.md)
-
-### `aid-ask`
-
-**on demand · friendly alias of aid-query-kb**
-
-Friendly-named alias of /aid-query-kb -- the optional on-demand Q&A skill. Takes a free-form question and answers it in one pass, grounded in three context sources: the Knowledge Base (.aid/knowledge/), the live codebase, and in-flight AID works (.aid/works/work-*/STATE.md + progress). Returns an answer with source citations. When the available context cannot answer the question, states the gap explicitly and captures it as a Query-Gap entry so it feeds the KB-improvement loop. This file carries no logic of its own -- its full behavior is defined entirely by canonical/skills/aid-query-kb/SKILL.md, which this skill delegates to.
 
 [Definition: `canonical/skills/aid-ask/SKILL.md`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-ask/SKILL.md)
 
@@ -166,7 +158,7 @@ Break deliverables into small, dependency-driven, typed tasks — each one a rev
 
 ### Direct-entry shortcuts
 
-**64 engine-driven verb-first shortcut skills** — a fast, mostly-autonomous alternative to the full Describe→Detail path for a single, well-scoped change. Each is a thin doorway generated from one non-`repurpose` row of [`canonical/aid/templates/shortcut-catalog.yml`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/aid/templates/shortcut-catalog.yml) (94 rows total; the other 30 are `repurpose: true` — the 4 classic re-registered skills (`aid-deploy`/`aid-monitor`/`aid-query-kb`/`aid-ask`) plus the work-005 hand-authored single-shot "collapse" skills, all hand-authored with their own directory).
+**34 engine-driven verb-first shortcut skills** — a fast, mostly-autonomous alternative to the full Describe→Detail path for a single, well-scoped change. Each is a thin doorway generated from one non-`repurpose` row of [`canonical/aid/templates/shortcut-catalog.yml`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/aid/templates/shortcut-catalog.yml) (58 rows total; the other 24 are `repurpose: true` — the 3 classic re-registered skills (`aid-deploy`/`aid-monitor`/`aid-ask`) plus the work-005 hand-authored single-shot "collapse" skills, all hand-authored with their own directory).
 
 Every engine-driven shortcut delegates to the shared **shortcut engine** — [`canonical/aid/templates/shortcut-engine.md`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/aid/templates/shortcut-engine.md) — which collapses the five definition phases (Describe → Detail) into one mostly-autonomous run:
 
@@ -178,21 +170,20 @@ CAPTURE/SPEC/PLAN/DETAIL run without a per-phase human checkpoint (unlike the fu
 
 | Family | Count | Forms |
 |--------|-------|-------|
-| Create (+ `add` alias) | 29 | 14 canonical `aid-create*` forms + 15 `aid-add*` aliases |
-| Change (+ `update` alias) | 28 | 14 canonical `aid-change*` forms + 14 `aid-update*` aliases |
+| Create | 14 | 14 `aid-create*` forms; no alias |
+| Update | 14 | 14 `aid-update*` forms; no alias |
 | Fix | 1 | `aid-fix` — diagnose and correct a defect, regression, incident, or vulnerability; no alias |
 | Refactor | 1 | `aid-refactor` — restructure or optimize without changing behavior; no alias |
 | Test + Experiment | 1 | `aid-test` + 3 typed forms (security, performance, data-quality) = 0, plus `aid-experiment`; no alias |
 | Prototype | 0 | `aid-prototype`, `aid-prototype-ui`; no alias |
 | Document | 0 | `aid-document` + -1 typed forms (decision, architecture, guideline, standard, runbook, tutorial, changelog); no alias |
 | Report | 0 | `aid-report` — analyze data or usage and communicate insight; no alias |
-| Show dashboard | 0 | `aid-show-dashboard` — build a durable dashboard or BI view; no alias |
-| Remove (+ `delete` alias) | 2 | 1 canonical `aid-remove` form + 1 `aid-delete` alias |
+| Remove | 1 | 1 `aid-remove` form; no alias |
 | Deprecate | 1 | `aid-deprecate` — mark an artifact/API deprecated, add warnings and a migration path, without deleting yet; no alias |
 | Migrate | 1 | `aid-migrate` — migrate data, a dependency, framework, or platform, with a rollback plan; no alias |
-| Review (+ `audit` alias) | 0 | 0 canonical `aid-review` form + 0 `aid-audit` alias |
-| Research (+ `investigate`/`spike` aliases) | 0 | 0 canonical `aid-research` form + 0 `aid-investigate`/`aid-spike` aliases |
-| **Total** | **64** | |
+| Review | 0 | 0 `aid-review` form; no alias |
+| Research | 0 | 0 `aid-research` form; no alias |
+| **Total** | **34** | |
 
 ### `aid-deploy`
 
