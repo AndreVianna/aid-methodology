@@ -38,15 +38,18 @@
 #   --notes <text>    Free-text reviewer notes.
 #   --html <file>     HTML file under review (display + recorded in JSON).
 #   --out  <file>     Output JSON path (default: .aid/.temp/summarize/manual-checklist.json).
-#   --input <file>    Validate an already-written checklist JSON, recompute
-#                     normalises its answers, and rewrite it canonically.
+#   --input <file>    Validate an already-written checklist JSON, normalise its
+#                     answers, and rewrite it canonically. Lossless and
+#                     idempotent: notes and html_file are carried across unless
+#                     --notes / --html override them.
 #   --interactive     Force interactive prompts even if flags are given.
 #   -h, --help        Print this header and exit.
 #
 # Exit codes:
 #   0  Checklist completed and written.
 #   1  User aborted (interactive gate answered 'n' to "opened in browser").
-#   2  Invocation error (bad flag, bad value, missing --input file).
+#   2  Invocation error (bad flag, bad answer value, missing --input file, or an
+#      --input JSON without a usable K1/K2/V1 answer).
 #
 # Output JSON keys:
 #   K1_answer, K2_answer, V1_answer,
@@ -195,12 +198,32 @@ if [ -n "$INPUT_FILE" ]; then
         echo "❌ --input file not found: $INPUT_FILE" >&2
         exit 2
     fi
-    K1_ANS=$(grep -oE '"K1_answer"[[:space:]]*:[[:space:]]*"[ypn]"' "$INPUT_FILE" | grep -oE '"[ypn]"' | tr -d '"' | head -1)
-    K2_ANS=$(grep -oE '"K2_answer"[[:space:]]*:[[:space:]]*"[ypn]"' "$INPUT_FILE" | grep -oE '"[ypn]"' | tr -d '"' | head -1)
-    V1_ANS=$(grep -oE '"V1_answer"[[:space:]]*:[[:space:]]*"[yn]"'  "$INPUT_FILE" | grep -oE '"[yn]"'  | tr -d '"' | head -1)
+    # `|| true` on each extraction is load-bearing, not defensive noise. A missing or malformed key
+    # makes grep exit 1, and under `set -euo pipefail` that aborted the script HERE -- before the
+    # check below could run. The observable effect was exit 1 with no message for a malformed
+    # --input file, where the contract above promises exit 2 with a reason. The absent-answer case
+    # is exactly what this mode exists to reject, so it must reach the rejection.
+    K1_ANS=$(grep -oE '"K1_answer"[[:space:]]*:[[:space:]]*"[ypn]"' "$INPUT_FILE" | grep -oE '"[ypn]"' | tr -d '"' | head -1) || true
+    K2_ANS=$(grep -oE '"K2_answer"[[:space:]]*:[[:space:]]*"[ypn]"' "$INPUT_FILE" | grep -oE '"[ypn]"' | tr -d '"' | head -1) || true
+    V1_ANS=$(grep -oE '"V1_answer"[[:space:]]*:[[:space:]]*"[yn]"'  "$INPUT_FILE" | grep -oE '"[yn]"'  | tr -d '"' | head -1) || true
     if [ -z "$K1_ANS" ] || [ -z "$K2_ANS" ] || [ -z "$V1_ANS" ]; then
         echo "❌ --input JSON missing required K1_answer / K2_answer (y|p|n) / V1_answer (y|n)." >&2
         exit 2
+    fi
+    # Carry `notes` and `html_file` across the rewrite unless the caller overrode them on the command
+    # line. `write_json` below emits whatever these globals hold, and in --input mode they are empty
+    # by default -- so a rewrite silently discarded the human's free-text notes, which is the one
+    # field in this file no other artifact can reconstruct (state-fix.md's expose -> propose -> ask
+    # loop reads it). Rewriting canonically must not mean rewriting lossily.
+    if [ -z "$NOTES" ]; then
+        NOTES=$(sed -n 's/.*"notes"[[:space:]]*:[[:space:]]*"\(.*\)".*/\1/p' "$INPUT_FILE" | head -1) || true
+        # Un-escape what escape_json escaped on the way in, so a round-trip is idempotent rather
+        # than doubling every backslash each time the file is normalised.
+        NOTES=$(printf '%s' "$NOTES" | sed 's/\\"/"/g; s/\\\\/\\/g') || true
+    fi
+    if [ -z "$HTML_FILE" ]; then
+        HTML_FILE=$(sed -n 's/.*"html_file"[[:space:]]*:[[:space:]]*"\(.*\)".*/\1/p' "$INPUT_FILE" | head -1) || true
+        HTML_FILE=$(printf '%s' "$HTML_FILE" | sed 's/\\"/"/g; s/\\\\/\\/g') || true
     fi
     OUT_FILE="$INPUT_FILE"
     echo "[manual-checklist] Validated $INPUT_FILE — normalising answers."

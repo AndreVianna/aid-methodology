@@ -1,8 +1,8 @@
 ---
-state: 'In Progress'
+state: Done
 review: "Pending"
 elapsed: "--"
-notes: 'De-score complete; test-one-grading-backend 23/23 pass; changes uncommitted — next: commit, review, Done, then task-004'
+notes: 'De-scored to an answer recorder; unanswered -> pause. 4 surviving score strings + 2 doc defects fixed pre-review; quick-check found 2 [HIGH] in --input (unreachable exit-2 contract, notes/html_file data loss), both fixed-on-spot and verified.'
 ticket_ref: "--"
 ---
 
@@ -33,13 +33,10 @@ ticket_ref: "--"
 
 ## Quick Check Findings
 
-<!-- AUTHORED -- written during the per-task quick-check step of aid-execute. Records the reviewer
-     tier and all [HIGH] and [CRITICAL] findings. [CRITICAL] triggers fix-on-spot; [HIGH] defers to
-     the delivery gate. No grade is recorded here -- grading is per-delivery. -->
-
 - **Reviewer Tier:** Small (quick check always uses Small tier)
-- **Findings:** _none yet_
-
+- **Findings:**
+  - [HIGH] `--input` mode aborted at exit 1 with no message on a malformed JSON, because `set -euo pipefail` killed the script on the answer-extracting greps before the check that rejects a missing answer could run -- so the documented exit-2 contract was unreachable on the exact input the mode exists to reject -- canonical/aid/scripts/summarize/manual-checklist.sh:198-204 -- Fixed-on-spot (verified: missing/empty/bad-value all now exit 2 with the reason)
+  - [HIGH] Found while verifying the above: `--input` rewrote the file without `notes` or `html_file`, silently destroying the human free-text notes that `state-fix.md`'s expose -> propose -> ask loop reads and that nothing else can reconstruct -- canonical/aid/scripts/summarize/manual-checklist.sh:205 -- Fixed-on-spot (carried across unless --notes/--html override; round-trip now lossless and idempotent under escaping)
 ---
 
 ## Dispatch Log
