@@ -15,6 +15,7 @@
 // Pure: no import-time side effect, no writes.
 
 import { readdirSync } from 'node:fs';
+import { join } from 'node:path';
 import { CANONICAL_SKILLS_DIR } from './paths.mjs';
 import { SKILL_GROUPS } from './curated-roster.mjs';
 import { loadShortcutCatalog } from './catalog.mjs';
@@ -59,7 +60,11 @@ const NON_CLASSIC_CURATED = ['aid-triage', 'aid-ask'];
  * @returns {SkillCounts}
  */
 export function deriveSkillCounts(repoRoot) {
-  const directoryNames = readdirSync(CANONICAL_SKILLS_DIR, { withFileTypes: true })
+  // Honour `repoRoot` for BOTH reads. It used to be passed to loadShortcutCatalog while the
+  // directory scan used the module-level constant, so a caller passing a different root got a
+  // catalog from there and directories from here -- two halves of one answer, from two trees.
+  const skillsDir = repoRoot ? join(repoRoot, 'canonical', 'skills') : CANONICAL_SKILLS_DIR;
+  const directoryNames = readdirSync(skillsDir, { withFileTypes: true })
     .filter((e) => e.isDirectory())
     .map((e) => e.name)
     .sort();

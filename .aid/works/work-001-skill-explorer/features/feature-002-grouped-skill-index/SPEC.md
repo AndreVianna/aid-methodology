@@ -558,18 +558,41 @@ sidebar-size consequence of the all-111 decision FR-5 already took, and it scale
 
 #### Divergence from `reference/skills.md`
 
+> **Amended 2026-07-30 (delivery-006 task-057; gate cycle 1).** This section was written while §7
+> froze `gen-reference.mjs`. The **second amendment to §7** (work-level Q4) lifted that freeze and
+> delivery-006 **hollowed out** `reference/skills.md`, so two of the three mechanisms below rested
+> on premises that no longer hold: that page carries no roster, so it is not "a terse family
+> summary" and there is no competing grouping *on a page*; and the asymmetry in (3) is moot because
+> the generator can now be edited. The divergence itself did NOT disappear — it moved. The competing
+> grouping is the **curated roster** (`site/scripts/skills/curated-roster.mjs`), which still files
+> `aid-triage` under Definition where FR-5 puts it in Support, and which `docs/aid-methodology.md`
+> publishes in its inventory table. See `known-issues.md` **KI-010**.
+>
+> Mechanism (1) survives, **derived instead of curated**. The note now compares each skill's group
+> here against the curated roster and names whatever actually disagrees. Two consequences worth
+> recording: task-054's extraction of `SKILL_GROUPS` into `curated-roster.mjs` is what made the
+> derivation possible (the parenthetical below correctly said it was not, *at the time*), and the
+> measurement shows the hard-coded list of three names was **over-stated** — only `aid-triage`
+> diverges; `aid-deploy` and `aid-monitor` agree on both sides.
+
 §7 freezes `gen-reference.mjs`, so the two surfaces will disagree and a reader must be able to see
 *why* rather than conclude one is broken. Three mechanisms, in descending order of reliability:
 
 1. **A generated note on this page**, immediately below the intro and above the first `## `
-   heading, so it is not a TOC entry. It states, in one short paragraph: that
+   heading, so it is not a TOC entry. ~~It states, in one short paragraph: that
    [Reference → Skills](/reference/skills/) is a terse family **summary**, generated separately;
    that it groups `aid-triage`, `aid-deploy` and `aid-monitor` under *Definition* while this page
    files them per FR-5's Placement rules; that where the two disagree about grouping, **this page
    is authoritative**; and that the difference exists because the older generator is frozen, not
    because either page is stale-by-accident. The three names are a curatorial statement tied to
    FR-5, dated in the generator's comment — they are not derived, because deriving them would mean
-   importing the frozen generator's `SKILL_GROUPS` (`gen-reference.mjs`:707 forbids it).
+   importing the frozen generator's `SKILL_GROUPS` (`gen-reference.mjs`:707 forbids it).~~
+   **As amended:** it states that this page is the roster and files skills per FR-5's Placement
+   rules; names each skill the curated roster groups differently, **derived** rather than listed,
+   with both groups given; that where they disagree **this page is authoritative**; and where the
+   shortcut engine itself is documented. The "frozen generator" explanation is dropped — it is the
+   one clause the amendment genuinely falsified. Asserted by AC-7, which now also checks the
+   disclosure invents no divergence that does not exist.
 2. **Different sections, different framings.** The two pages sit in different sidebar groups and
    therefore different header tabs, with distinct titles (*Skills* vs *All Skills*) and distinct
    `description` frontmatter ("summarized by family" vs "one card per skill"). They read as two
