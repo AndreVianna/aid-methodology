@@ -8,6 +8,7 @@ import { readFileSync, existsSync, readdirSync } from 'node:fs';
 import { resolve, dirname, join, basename } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { execSync } from 'node:child_process';
+import { SKILL_GROUPS } from '../skills/curated-roster.mjs';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const SITE_ROOT = resolve(__dirname, '../../');
@@ -135,9 +136,10 @@ describe('gen-reference: generatedFrom frontmatter', () => {
 // filesystem fact, so this list stays hand-maintained rather than derived —
 // deriving it would only make the test tautological with the generator. It is
 // kept honest by the clamp assertion below, which fails BY NAME for any on-disk
-// skill directory that is neither a catalog row nor listed here. Every other
-// on-disk directory is a catalog-driven shortcut, summarized by family in the
-// "Direct-entry shortcuts" table rather than as an individual section.
+// skill directory that is neither a catalog row nor listed here.
+// (Until task-057 this comment ended by saying the other directories were
+// "summarized by family in the Direct-entry shortcuts table". That table is gone --
+// the roster moved to /skills/ and this page kept only the engine narrative.)
 const CURATED_SKILL_NAMES = [
   'aid-config', 'aid-discover', 'aid-summarize',
   'aid-triage',
@@ -149,6 +151,20 @@ const CURATED_SKILL_NAMES = [
   'aid-set-connector', 'aid-unset-connector',
   'aid-read-ticket', 'aid-create-ticket', 'aid-update-ticket',
 ].sort();
+
+// The list above is deliberately NOT derived — deriving it from the roster would make the
+// clamp below tautological with the generator it is checking. But left unchecked it is a
+// SECOND hand-maintained roster that can drift from the first, which is the KI-005 class
+// wearing a different hat. So the list stays independent and its AGREEMENT with the roster
+// is the assertion. (This became possible only when task-054 extracted SKILL_GROUPS into
+// curated-roster.mjs; while it lived inside gen-reference.mjs, importing it here would have
+// run main() and regenerated four pages as a side effect of a test.)
+describe('the two curated rosters agree', () => {
+  it('CURATED_SKILL_NAMES equals curated-roster.mjs SKILL_GROUPS membership', () => {
+    const fromRoster = [...new Set(SKILL_GROUPS.flatMap((g) => g.skills.map((s) => s.name)))].sort();
+    expect(CURATED_SKILL_NAMES).toEqual(fromRoster);
+  });
+});
 
 const catalogRows = parseCatalogRows(readFileSync(SHORTCUT_CATALOG_FILE, 'utf8'));
 const catalogNames = catalogRows.map((r) => r.name);

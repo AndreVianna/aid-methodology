@@ -12,56 +12,57 @@
 //
 // Moved verbatim; no roster content changed in the extraction.
 //
+// WHAT IS READ, as of delivery-006 task-057. Only `group` and `skills[].name` are
+// consumed -- by gen-reference.mjs (its corpus drift guard and the classic-repurposed
+// count), skill-counts.mjs (`curatedOnly`, the figure that makes a decomposition sum),
+// render-index.mjs (deriving which skills the two groupings disagree about), and the
+// tests that check those agree. The per-skill `phase`, per-group `blurb`, and
+// `shortcutsAfter` keys were removed here: all three existed only to render the
+// per-skill sections and the family table that task-057 shed, so they had become data
+// that described a page which no longer exists. Retaining unread fields that assert
+// something untrue is the same defect as a stale comment, one indirection out.
+//
 // NOTE ON SCOPE: editing gen-reference.mjs is permitted by the second amendment to
 // §7, recorded as work-level Q4. That file was frozen by this work until then.
 
 export const SKILL_GROUPS = [
   {
     group: 'Support',
-    blurb: 'Set up the workspace and manage connectors.',
     skills: [
-      { name: 'aid-config', phase: 'bootstrap · run once' },
-      { name: 'aid-set-connector', phase: 'on demand · upsert a connector into the catalog' },
-      { name: 'aid-unset-connector', phase: 'on demand · remove a connector from the catalog' },
-      { name: 'aid-read-ticket', phase: 'on demand · non-destructive ticket fetch and display' },
-      { name: 'aid-create-ticket', phase: 'on demand · preview + confirm before filing a ticket' },
-      { name: 'aid-update-ticket', phase: 'on demand · preview + confirm before mutating a ticket' },
+      { name: 'aid-config' },
+      { name: 'aid-set-connector' },
+      { name: 'aid-unset-connector' },
+      { name: 'aid-read-ticket' },
+      { name: 'aid-create-ticket' },
+      { name: 'aid-update-ticket' },
     ],
   },
   {
     group: 'Knowledge Base Maintenance',
-    blurb: "Build and keep current the team's understanding of the existing system.",
     skills: [
-      { name: 'aid-discover', phase: 'Phase 1 · brownfield' },
-      { name: 'aid-summarize', phase: 'optional viewer' },
-      { name: 'aid-housekeep', phase: 'on demand' },
-      { name: 'aid-update-kb', phase: 'on demand · targeted KB update' },
-      { name: 'aid-query-kb', phase: 'on demand · read-only Q&A' },
-      { name: 'aid-ask', phase: 'on demand · friendly alias of aid-query-kb' },
+      { name: 'aid-discover' },
+      { name: 'aid-summarize' },
+      { name: 'aid-housekeep' },
+      { name: 'aid-update-kb' },
+      { name: 'aid-query-kb' },
+      { name: 'aid-ask' },
     ],
   },
   {
     group: 'Definition',
-    blurb: 'Route, gather requirements, decide how to solve it, sequence the roadmap, and break it into tasks — the full path, or a shortcut.',
     skills: [
-      { name: 'aid-triage', phase: 'router · suggest-only' },
-      { name: 'aid-describe', phase: 'Phase 2a · full path only' },
-      { name: 'aid-define', phase: 'Phase 2b · full path only · decompose features' },
-      { name: 'aid-specify', phase: 'Phase 3 · full path only' },
-      { name: 'aid-plan', phase: 'Phase 4 · full path only' },
-      { name: 'aid-detail', phase: 'Phase 5 · full path only' },
-      { name: 'aid-deploy', phase: 'optional shortcut path · on demand' },
-      { name: 'aid-monitor', phase: 'optional shortcut path · on demand' },
+      { name: 'aid-triage' },
+      { name: 'aid-describe' },
+      { name: 'aid-define' },
+      { name: 'aid-specify' },
+      { name: 'aid-plan' },
+      { name: 'aid-detail' },
+      { name: 'aid-deploy' },
+      { name: 'aid-monitor' },
     ],
-    // The direct-entry shortcuts (and the shared shortcut engine they delegate
-    // to) are also Definition-group members — render the family summary nested
-    // here, right after the full-path skills and before the Deploy/Monitor
-    // shortcut paths.
-    shortcutsAfter: 'aid-detail',
   },
   {
     group: 'Execution',
-    blurb: 'Build, review, and test.',
-    skills: [{ name: 'aid-execute', phase: 'Phase 6 · 8 task types · graded loop' }],
+    skills: [{ name: 'aid-execute' }],
   },
 ];

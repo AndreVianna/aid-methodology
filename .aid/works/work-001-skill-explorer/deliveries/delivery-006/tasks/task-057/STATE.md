@@ -1,6 +1,6 @@
 ---
-state: 'In Review'
-review: "--"
+state: Done
+review: 'Quick-check: clean at CRITICAL/HIGH; 1 MEDIUM fixed pre-gate'
 elapsed: "--"
 notes: "--"
 ticket_ref: "--"
@@ -27,12 +27,8 @@ ticket_ref: "--"
 
 ## Quick Check Findings
 
-<!-- AUTHORED -- written by `writeback-state.sh --task-id NNN --findings ...` during the
-     per-task quick-check step of aid-execute. No grade is recorded here -- grading is
-     per-delivery, not per-task. -->
-
-_None yet._
-
+- **Reviewer Tier:** Small
+- **Findings:** none at [CRITICAL]/[HIGH]. One [MEDIUM] reported as out-of-scope-at-this-severity and fixed anyway ahead of the A+ gate: feature-006-head-gate.test.ts:47-50 still fixtured reference/skills.md's pre-hollowing generatedFrom under a comment claiming the fixtures were sourced from the real content files -- undetected because the property under test holds for the new value too. Fixture corrected and the comment's claim converted into an assertion over all five fixtures.
 ---
 
 ## Dispatch Log

@@ -163,10 +163,6 @@ function loadShortcutCatalog() {
 // moved so anything else can read it without importing this file, which runs main()
 // at module scope. Permitted by the second amendment to section 7 (work-level Q4).
 
-function readSkillDescription(name) {
-  const content = readFileSync(join(SKILLS_DIR, name, 'SKILL.md'), 'utf8');
-  return parseFrontmatter(content).description || '';
-}
 
 // ── Shortcut-engine narrative (the whole of this page after delivery-006) ────
 //
@@ -211,7 +207,7 @@ function generateShortcutEngineSection(catalog, headingLevel = 2) {
     `alternative to the full Describe→Detail path for a single, well-scoped change. Each is a thin doorway ` +
     `generated from one non-\`repurpose\` row of [\`${SHORTCUT_CATALOG_SRC}\`](${BLOB}/${SHORTCUT_CATALOG_SRC}) ` +
     `(${rows.length} rows total; the other ${repurposed} are \`repurpose: true\` — the ${classicRepurposedRows.length} classic re-registered ` +
-    `skills (${classicRepurposedNames}) plus the work-005 hand-authored ` +
+    `skills (${classicRepurposedNames}) plus the work-005 ` +
     `single-shot "collapse" skills, all hand-authored with their own directory).\n\n` +
     `Every engine-driven shortcut delegates to the shared **shortcut engine** — ` +
     `[\`${SHORTCUT_ENGINE_FILE}\`](${BLOB}/${SHORTCUT_ENGINE_FILE}) — which collapses the five definition ` +
@@ -493,7 +489,14 @@ function main() {
   mkdirSync(CONTENT_DOCS_REF, { recursive: true });
 
   const pages = [
-    { file: 'skills.md', generator: generateSkillsPage, src: 'canonical/skills/*/SKILL.md' },
+    // src must match the page's own `generatedFrom` -- the manifest and the frontmatter are
+    // two halves of one provenance contract, and task-057 changed the page without changing
+    // this, leaving the manifest asserting a source the page no longer derives from.
+    {
+      file: 'skills.md',
+      generator: generateSkillsPage,
+      src: 'canonical/aid/templates/shortcut-catalog.yml, canonical/aid/templates/shortcut-engine.md',
+    },
     { file: 'agents.md', generator: generateAgentsPage, src: 'canonical/agents/*/AGENT.md' },
     { file: 'kb.md', generator: generateKbPage, src: 'canonical/aid/templates/knowledge-base/*.md' },
     { file: 'settings.md', generator: generateSettingsPage, src: '.aid/settings.yml' },

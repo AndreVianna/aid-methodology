@@ -167,7 +167,7 @@ describe('frontmatter (AC-6)', () => {
 
 // ── AC-7: Divergence note ──────────────────────────────────────────────────────
 
-describe('divergence note (AC-7)', () => {
+describe('grouping-divergence + cross-reference note (AC-7)', () => {
   // The note sits between the intro paragraph and the first ## heading.
   const firstH2Pos = page.indexOf('\n## ');
   const noteStart  = page.indexOf('> **Note:**');

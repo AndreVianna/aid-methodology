@@ -1,5 +1,5 @@
 ---
-delivery_state: Executing
+delivery_state: Gated
 gate_tier: Large
 gate_grade: "Pending"
 gate_timestamp: "--"
@@ -20,12 +20,23 @@ ticket_ref: "--"
 - **Block Reason:** --
 - **Block Artifact:** --
 - **Resumed (2026-07-30, Claude Code):** the uncommitted wave-1/wave-2 work was verified,
-  reviewed and committed; tasks 056 and 057 executed. Tasks 054–056 are `Done`; 057 is
-  `In Review`. Six commits on `aid/work-001-delivery-005`, each verified green in isolation:
-  `b86aae3d` (scaffolding) → `129eba1b` (055 prose) → `8e02d174` (054 derivation + guard) →
-  `8eff0803` (055 correction) → `d2f0440c` (056 links) → `923431a4` (057 hollowing).
-  Per-task quick-checks found **2 CRITICAL and 4 HIGH**, all fixed on the spot — see each task's
-  STATE.md. Still to do: delivery-006 gate (A+), KI-022 (ELK layout), browser checks, PR.
+  reviewed and committed; tasks 056 and 057 executed. **All four tasks are `Done`.** Commits on
+  `aid/work-001-delivery-005`, in order: `b86aae3d` (scaffolding) → `129eba1b` (055 prose) →
+  `8e02d174` (054 derivation + guard) → `8eff0803` (055 correction) → `d2f0440c` (056 links) →
+  `923431a4` (057 hollowing) → `21c0f0a3` + `52e65e90` (an out-of-delivery `writeback-state.sh`
+  fix, and its propagation to `canonical/`) → `873677e6` (KI-009 closure + rollup) → the
+  head-gate fixture fix → `23017900` (gate cycle 1: the five `[HIGH]`s).
+- **Commit order note.** 055's prose landed **before** 054, inverting the BLUEPRINT's declared
+  dependency. Deliberate: 054 adds a guard asserting the pages 055 corrects, so landing 054 first
+  leaves a commit whose own new test is red. The stated dependency is about where 055's *numbers*
+  came from (054's derivation), not about commit order. This is **not** a claim that the order was
+  free of consequences — the 85-for-111 sentence is exactly what a prose task landing ahead of its
+  guard allows, and it was caught at review rather than by the build.
+- Per-task quick-checks found **2 CRITICAL and 4 HIGH**, all fixed on the spot — see each task's
+  STATE.md. The **delivery gate** (Large tier) then found **1 CRITICAL, 5 HIGH, 11 MEDIUM, 9 LOW,
+  4 MINOR** — grade **E+** on cycle 1. Fixing in progress; ledger at
+  `.aid/.temp/review-pending/execute-delivery-006.md`.
+- Still to do: clear the gate to A+, KI-022 (ELK layout), browser checks, PR.
 
 ---
 
@@ -116,6 +127,19 @@ ticket_ref: "--"
   consequential edits. Recorded here because it is a scope addition discovered by measurement,
   not carried by the BLUEPRINT.
 - **Applied to:** `deliveries/delivery-006/tasks/task-057/DETAIL.md` § Consequential edits.
+- **CORRECTED at the delivery gate (2026-07-30).** The answer above says "there is no competing
+  grouping left to diverge from". **That is false, and it caused a real regression.** The competing
+  grouping was never the reference *page* — it is the curated roster itself, which still exists,
+  still files `aid-triage` under Definition where `/skills/` files it under Support, and is what
+  `docs/aid-methodology.md`'s inventory table publishes. Acting on the false premise deleted a
+  **true** reader-facing disclosure and added assertions forbidding its restoration.
+  Fixed in gate cycle 1: the note is now **derived** — it compares each skill's group against
+  `curated-roster.mjs` and names whatever actually disagrees — and AC-7 checks the disclosure is
+  complete and invents no divergence, instead of banning the words "authoritative"/"disagree".
+  The derivation also shows the note's ORIGINAL hard-coded list was over-stated: it named three
+  skills, and only `aid-triage` diverges (`aid-deploy`/`aid-monitor` agree on both sides).
+  Only one clause of the old note was genuinely falsified by task-057 — "the older generator is
+  frozen" — and that is the one thing AC-7 still forbids.
 
 ### Q6 — tasks 054–057 had no `DETAIL.md`
 
@@ -146,4 +170,4 @@ _Recorded as each task closes._
 | 054 | One shared skill-count derivation + drift guard; KI-003 comments | IMPLEMENT | 1 | Done | 1 CRITICAL + 2 HIGH, all fixed | -- | Commit not green in isolation; 4 more hand-counts found (2 in reader-facing output). Guard rewritten to match count SHAPES. `8e02d174` |
 | 055 | Correct stale roster prose (index.mdx E-1, overview.md) | IMPLEMENT | 2 | Done | 1 CRITICAL + 2 HIGH, all fixed | -- | First correction didn't SUM (85 for a 111 corpus); restated as 17 curated + 94 catalog. 2 unguarded pages found. `129eba1b` + `8eff0803` |
 | 056 | Repoint 8 inbound links to /skills/ | IMPLEMENT | 2 | Done | clean | -- | 7 LinkCards + overview row; verified in `dist/`. `d2f0440c` |
-| 057 | Hollow out reference/skills.md (closes KI-009) | IMPLEMENT | 3 | In Review | -- | -- | Narrative kept, roster + family table shed; Q5 consequential edits done. `923431a4` |
+| 057 | Hollow out reference/skills.md (closes KI-009) | IMPLEMENT | 3 | Done | clean at CRITICAL/HIGH; 1 MEDIUM fixed pre-gate | -- | Narrative kept, roster + family table shed; Q5 consequential edits done. `923431a4` |

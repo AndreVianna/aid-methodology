@@ -326,6 +326,23 @@
 
 - **Type:** Bug
 - **Severity:** Medium
+- **Status:** **STILL OPEN, but half of it is resolved and the rest is now disclosed rather than
+  invisible.** Updated by delivery-006 (task-057), 2026-07-30:
+  - **The asymmetry of the remedy — resolved.** It rested on "§7 freezes `gen-reference.mjs`", and
+    §7's second amendment lifted that freeze (work-level Q4). The point is moot anyway: that page
+    no longer publishes a roster at all, so there is no longer a second grouping on a *page* for
+    the two to disagree about.
+  - **The stale grouping itself — still open.** `SKILL_GROUPS` (now at
+    `site/scripts/skills/curated-roster.mjs`, extracted by task-054) still files `aid-triage`
+    under **Definition** where FR-5 puts it in **Support**. It is no longer rendered, but it is
+    still read — by the corpus drift guard, by `skill-counts.mjs`'s `curatedOnly`, and by the
+    divergence disclosure below — so correcting it is a real change with real consequences and is
+    deliberately not folded into this delivery.
+  - **The divergence is now DERIVED, not curated.** `/skills/`'s note used to hard-code three
+    skill names; it now computes which skills the two groupings actually disagree about and names
+    those. That measurement shows the hard-coded list was itself wrong: only `aid-triage` diverges
+    — `aid-deploy` and `aid-monitor` agree (both Definition on either side). So this entry's
+    original "three skills" framing was over-stated.
 - **Affects:** feature-002-grouped-skill-index
 - **Source:** `site/scripts/gen-reference.mjs`:150-199, specifically `:179` (`aid-triage` in the
   Definition group) and `:185-186` (`aid-deploy` / `aid-monitor` as curated Definition members)
@@ -664,7 +681,8 @@ tight unit tests where 5s would be a meaningful signal.
 <details>
 <summary>Original entry, kept for the investigation record</summary>
 
-## KI-020: `index.md` byte-identity test is intermittent in full-suite runs only
+**KI-020 (original entry — superseded by the CLOSED entry above; kept for the investigation
+record, demoted from a heading so there is exactly one `## KI-020`)**
 
 - **Type:** Flaky test (pre-existing; task-014, delivery-002)
 - **Severity:** Low-Medium — it is a real red build when it fires, but no product defect is implicated

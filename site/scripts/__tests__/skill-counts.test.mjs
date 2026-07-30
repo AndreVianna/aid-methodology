@@ -305,10 +305,31 @@ describe('the roster has one home', () => {
     // Those are marked `KI-003`; every other line must be free of a stated count.
     // Keying the exemption on the marker rather than on a line range means it cannot
     // silently widen as the file is edited.
+    // The marker is a BOUNDED opt-out, not a free pass. Two bounds, because as first
+    // written it was neither: any line could silence any count just by naming KI-003.
+    //   (a) an exempted line may only quote SUPERSEDED values — the numbers that actually
+    //       drifted — so the marker cannot be used to excuse a wrong CURRENT count;
+    //   (b) the total number of exempted lines is capped, so the exemption cannot creep
+    //       file-wide one line at a time.
+    const SUPERSEDED = new Set([92, 94, 76, 16, 14, 19, 21, 67, 4]);
     let exempted = 0;
     for (const file of NO_COUNT_FILES) {
       const lines = readFileSync(file, 'utf8').split('\n');
       const kept = lines.filter((l) => !l.includes('KI-003'));
+      for (const l of lines.filter((l) => l.includes('KI-003'))) {
+        for (const shape of COUNT_SHAPES) {
+          const m = shape.exec(l);
+          if (m) {
+            // COUNT_SHAPES carry no capture group — pull the number out of the match text.
+            const n = Number(/\d+/.exec(m[0])[0]);
+            expect(
+              SUPERSEDED.has(n),
+              `${file}: KI-003-marked line quotes ${n} ("${m[0]}"), which is not a superseded `
+                + 'value — the marker exempts historical numbers, not current ones',
+            ).toBe(true);
+          }
+        }
+      }
       exempted += lines.length - kept.length;
       for (const [i, line] of kept.entries()) {
         for (const shape of COUNT_SHAPES) {
@@ -321,6 +342,8 @@ describe('the roster has one home', () => {
     // and each file was actually read.
     expect(exempted).toBeGreaterThan(0);
     expect(NO_COUNT_FILES.length).toBeGreaterThan(2);
+    // Bound (b): the opt-out cannot creep. Raising this ceiling should require a reason.
+    expect(exempted, 'too many KI-003 exemptions — the opt-out is creeping').toBeLessThanOrEqual(8);
   });
 
   it('the count shapes actually match the drift they are meant to catch', () => {

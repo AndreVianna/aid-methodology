@@ -25,7 +25,11 @@ import { loadShortcutCatalog } from './catalog.mjs';
  * `/aid-triage` is the suggest-only router and `/aid-ask` is a Q&A alias of
  * `/aid-query-kb`; both render inside a group but are counted separately, matching
  * the README and methodology framing of "N classic + /aid-triage + /aid-ask".
- * gen-reference.mjs excludes exactly these two when it computes its classic count.
+ * gen-reference.mjs USED to exclude exactly these two when it computed its own classic count;
+ * task-057 deleted that computation along with the roster it rendered, so this module is now
+ * the only place the distinction is made. `classic` itself is no longer stated on any page --
+ * `curatedOnly` is, because that is the figure a decomposition can sum with. Kept because the
+ * README and methodology still use the "N classic" framing in prose.
  */
 const NON_CLASSIC_CURATED = ['aid-triage', 'aid-ask'];
 
@@ -93,7 +97,7 @@ export function deriveSkillCounts(repoRoot) {
   // The figure a reader-facing decomposition must use. `curated` (21) counts four skills
   // that are ALSO catalog rows -- aid-deploy, aid-monitor, aid-query-kb and the aid-ask
   // alias -- so KI-003 "21 curated + 94 catalog" double-counts them, and the sentence
-  // KI-003 "19 classic + triage + ask + 64 shortcuts" both double-counts three of them AND
+  // KI-003 "19 classic + triage + ask + the shortcut count" double-counts three of them AND
   // omits the 26 collapse skills, landing on 85 for a 111 corpus. Excluding the overlap
   // gives 17, and 17 + 94 = 111 exactly. That is why every page on the site states the
   // corpus as "17 curated + 94 catalog": it is the decomposition that sums. Asserted as

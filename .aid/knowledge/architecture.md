@@ -187,9 +187,11 @@ not a running order (the numbered phases carry the sequence). Phase 2 (Describe 
 Describe → Define Phase" below); every other numbered phase is one skill. Several lifecycle labels
 from everyday SDLC talk — Init, Implement, Review, Test, Track, Triage — are **not numbered
 phases**; the table below maps each label to what it really is (CONFIRMED in
-`docs/aid-methodology.md` "Skill Inventory" and the `canonical/skills/` listing — **92 skill
-directories**: 15 classic pipeline / on-demand skills, the standalone `/aid-triage` router, and
-76 verb-first direct-entry shortcut skills):
+`docs/aid-methodology.md` "Skill Inventory" and the `canonical/skills/` listing — **111 skill
+directories**: 17 curated pipeline / on-demand / router skills (including `/aid-triage`), plus the
+94-row shortcut catalog's skills — 64 verb-first direct-entry shortcut skills and 30 hand-authored
+`repurpose` skills. 17 + 94 = 111; corrected 2026-07-30, having asserted a stale **92 / 15 / 76**
+that also contradicted this document's own reconciled figure in § Skill count below):
 
 | Workflow label | Skill(s) | Numbered phase? | What it really is |
 |----------------|----------|-----------------|-------------------|

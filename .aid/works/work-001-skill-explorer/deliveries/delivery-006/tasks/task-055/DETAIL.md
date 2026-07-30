@@ -32,11 +32,21 @@ STATE.md Q1.
 - Prose only. No structural change to either page, no link-target change (that is task-056), and
   no generated file touched.
 
+> **AC amendment (2026-07-30, at review — recorded rather than silently reworded).** The two ACs
+> immediately below originally required `111` / `19 classic` / `64 verb-first`. Review showed that
+> decomposition **does not sum**: `19 classic` counts three skills that are also catalog rows and
+> naming `/aid-ask` separately double-counts a fourth, while the 26 work-005 collapse skills are
+> omitted entirely — 19+1+1+64 = 85 for a 111-skill corpus. The delivery therefore shipped
+> `17 curated + 94 catalog = 111`, which is what the rest of the site and the KB already state.
+> The ACs are amended to match what shipped, and the superseded wording is kept visible so the
+> change reads as a correction rather than a moved goalpost.
+
 **Acceptance Criteria:**
-- [ ] All four `index.mdx` sites state `111` total, `19 classic`, `64 verb-first` — and the
-      surrounding sentence still reads correctly, with `/aid-triage` and `/aid-ask` still called
-      out separately from the classic count.
-- [ ] `reference/overview.md` line 16 states the same triple.
+- [ ] All four `index.mdx` sites state a decomposition that **sums to the derived total** —
+      `111` = `17 curated` + `94` catalog (itself `64` verb-first shortcuts + `30` `repurpose`
+      skills) — and the surrounding sentence still reads correctly, with `/aid-triage` placed
+      inside the 17 and `/aid-ask` inside the 30. ~~`111` total, `19 classic`, `64 verb-first`~~
+- [ ] `reference/overview.md` line 16 states the same decomposition.
 - [ ] Neither page still carries `92 skills`, `14 classic`, or `76 verb-first` anywhere.
 - [ ] `skill-counts.test.mjs`'s three page-claim assertions pass **non-vacuously** — each one
       proves it actually found and checked at least one claim, so a page that silently stopped
