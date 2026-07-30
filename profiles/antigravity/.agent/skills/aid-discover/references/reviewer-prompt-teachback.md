@@ -109,11 +109,11 @@ For each probe answer in the Stage 1 reconstruction:
    When sources disagree, the **authoritative spec / definition doc outranks host-instruction
    files** (`CLAUDE.md`, `AGENTS.md`, `.cursorrules`, `.github/copilot-instructions.md`, ...).
    A KB claim that matches a host-instruction file but contradicts the authoritative spec is a
-   **Divergence** `[HIGH] [FIDELITY]` -- not a pass -- because the KB grounded itself on the
+   **Divergence** (a `[FIDELITY]` row at `NAR-05`'s anchor) -- not a pass -- because the KB grounded itself on the
    wrong authority. Confront source-vs-source, not just KB-vs-one-source.
 2. **Compare** the KB-only answer to the source-of-truth.
 3. **Classify** any gap:
-   - A factual contradiction between KB and source = Divergence = `[HIGH] [FIDELITY]`.
+   - A factual contradiction between KB and source = Divergence = a `[FIDELITY]` row, severity per `NAR-05`.
    - A load-bearing fact in the source that the KB-only reconstruction could not supply
      = Omission = an `[ESSENCE-GAP]` row at the cited rule's severity.
    - A match or an incidental-only gap = no FAIL item (note in evidence that the KB

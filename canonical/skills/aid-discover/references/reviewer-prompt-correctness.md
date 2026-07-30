@@ -56,7 +56,7 @@ For EVERY substantive claim in every KB document:
 
 > **The Severity cell comes from the rule you cite, not from this list.** `NAR-05` and `KB-20` both
 > anchor `Step 2`, which means MUST modality with reach and reversibility read off the *instance*
-> (`review-rubrics/grading-rubric.md#severity-scale`). So a false version number confined to one KB
+> (`aid/templates/grading-rubric.md § Severity Scale`). So a false version number confined to one KB
 > document, correctable by editing that document, is `[MEDIUM]` — see the example row below — while the
 > same class of error in a contract several documents depend on is `[CRITICAL]`. The bands above tell
 > you the ceiling of each class; the two axes tell you where a given instance lands. A row whose

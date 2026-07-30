@@ -56,7 +56,8 @@ came to stand for a broken visual, a dead page, and a check nobody had run.
 | **The page produces nothing usable** — nothing renders, the file will not open, the theme toggle is dead | `bash canonical/aid/scripts/grade.sh --non-functional`. This is the flag's declared meaning and its only legitimate use here — `aid/templates/grading-rubric.md § Severity Scale` -- the top-level rubric, not the sibling `knowledge-summary/grading-rubric.md` -- defines it as the whole-artifact verdict *"does not build, does not run, produces no usable output"*. Reaching for it because a diagram is ugly would make `F` mean two things again. |
 | **The checklist has not been answered** | **No grade at all.** See below. |
 
-**If the checklist has NOT been completed, do not grade and do not route.** Halt and ask the human. This
+**If the checklist has NOT been completed, do not grade and do not route.** Pause and ask the human
+(PAUSE-FOR-USER-ACTION -- see this state's Advance line; not HALT, which is terminal). This
 is a **pause, not a failing grade** — the previous behaviour reported `F`, which asserts a result nobody
 observed and makes an unanswered check indistinguishable from a genuinely failed one. `SUMMARY-06`
 cannot be answered by an agent, so an agent proceeding here is the failure this gate exists to prevent.

@@ -27,14 +27,28 @@ bash .claude/aid/scripts/summarize/emit-summary-findings.sh .aid/knowledge/kb.ht
 **Reconcile scratch → canonical on `(Doc, Rule)`** (`Line` breaks a legitimate duplicate pair), per that
 section's transition table:
 
-| Canonical row | Key in this cycle's scratch? | Result |
+**Reconciliation applies ONLY to rows the emitter could have produced** — those whose `Rule` is one of
+`SUMMARY-01`, `SUMMARY-02`, `SUMMARY-03`, `SUMMARY-07`, `SUMMARY-08`, `SUMMARY-09`, `PRE-02`, `PRE-03`,
+`PRE-04`, `PRE-05`, `PRE-11`. Every other row is left exactly as it stands.
+
+> ⚠️ **This scoping is the whole safety property, not a refinement.** The same ledger also holds
+> `SUMMARY-04`, `SUMMARY-05` and `SUMMARY-06` rows — claim truth and the human visual check, the rows
+> *no script can produce*. The emitter never emits those keys, so an unscoped "absent from scratch →
+> `Fixed`" rule would mark an unresolved human visual failure `Fixed` on the very next VALIDATE, and
+> `state-fix.md` tells the fixer not to touch Status precisely because it trusts this step. That is the
+> hazard `reviewer-ledger-schema.md` states as *"absence proves nothing"* unless the covering unit is
+> `Examined`; the emitter's mechanical sweep is what makes absence evidential **for its own eleven
+> rules and for nothing else**.
+
+| Canonical row (emitter-owned `Rule` only) | Key in this cycle's scratch? | Result |
 |---|---|---|
 | `Pending` | yes | stays `Pending` — Severity and Description are authorial, never rewritten |
-| `Pending` | no | → `Fixed`. The emitter is mechanical and examined every check it did not report as unevaluated, so absence here IS evidence — this is the coverage guard the schema requires, satisfied by construction rather than by a `U-` manifest |
+| `Pending` | no | → `Fixed`. The emitter examined every check it did not report as unevaluated, so absence here IS evidence |
 | `Fixed` | yes | → `Recurred` |
 | `Fixed` | no | stays `Fixed` |
 | `Accepted` / `OOS` / `Invalid` | either | never auto-changed |
 | — | key absent from canonical | append as a new finding at the next free `#` |
+| **any row whose `Rule` is not emitter-owned** | **not consulted** | **untouched** — `SUMMARY-04/05/06` clear only through MANUAL-CHECKLIST re-answering them |
 
 **If the emitter exited `2`, reconcile nothing.** An unevaluated run has not examined the checks it
 skipped, so absence from its scratch proves nothing and would clear findings that still stand.

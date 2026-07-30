@@ -325,6 +325,14 @@ RUBRIC_DIR="$ROOT/canonical/aid/templates/review-rubrics"
 VALSTATE="$ROOT/canonical/skills/aid-summarize/references/state-validate.md"
 PRERULES="$ROOT/canonical/aid/templates/review-rubrics/presentation.md"
 
+# sev_rows FILE -- the table rows that carry BOTH a rule ID and a bracketed severity, i.e. the rows
+# SEV01 must compare. Backticked or bare: the reviewer-prompt files' IDs live in ledger EXAMPLE rows and
+# are bare by construction, so a backtick requirement silently emptied the feed for four of eight files.
+# SEV01 and SEV03 both call THIS, so the assertion and its own reach-control cannot disagree.
+sev_rows() {
+    grep -E '^\| ' "$1" 2>/dev/null         | grep -E '[A-Z]{2,12}-[0-9]{2}'         | grep -E '\[(CRITICAL|HIGH|MEDIUM|LOW|MINOR)\]'
+}
+
 # catalog_sev RULE -> the bracketed token the rule row declares (first one wins; "Step 2" has none, and
 # returns empty so the row is skipped -- an instance-derived anchor cannot be compared to a fixed token).
 # Resolves across the WHOLE catalog rather than a per-class file map: a hardcoded map silently returns ""
@@ -355,25 +363,21 @@ for f in "${CITERS[@]}"; do
             no "SEV-$(basename "$f"):${rule}" "says ${stated}, catalog declares ${declared}"
             sev_bad=1
         fi
-    done < <(grep -E '^\| ' "$f" | grep -E '`[A-Z]+-[0-9]{2}`')
+    done < <(sev_rows "$f")
 done
 [[ "$sev_bad" -eq 0 ]] && ok SEV01 "no surface restates a severity that disagrees with the rule it cites"
 
 # SEV01 can only report clean if it actually looked. Count the rows it examined across all eight files;
 # zero would mean the pattern is broken again, which is exactly how it passed while five drifts stood.
-sev_rows=0
+n_sev_rows=0
 for f in "${CITERS[@]}"; do
     [[ -f "$f" ]] || continue
-    while IFS= read -r line; do
-        printf '%s' "$line" | grep -qE '[A-Z]{2,12}-[0-9]{2}' || continue
-        printf '%s' "$line" | grep -qE '\[(CRITICAL|HIGH|MEDIUM|LOW|MINOR)\]' || continue
-        sev_rows=$((sev_rows + 1))
-    done < <(grep -E '^\| ' "$f")
+    n_sev_rows=$((n_sev_rows + $(sev_rows "$f" | wc -l)))
 done
-if [[ "$sev_rows" -ge 10 ]]; then
-    ok SEV03 "SEV01 examined ${sev_rows} severity-bearing rows (not vacuous)"
+if [[ "$n_sev_rows" -ge 10 ]]; then
+    ok SEV03 "SEV01 examined ${n_sev_rows} severity-bearing rows via the shared feed (not vacuous)"
 else
-    no SEV03 "SEV01 examined only ${sev_rows} rows -- its extraction pattern is broken"
+    no SEV03 "SEV01 examined only ${n_sev_rows} rows -- its feed is broken"
 fi
 
 # Control: catalog_sev must actually read the catalog, else SEV01 passes on an empty comparison.
@@ -390,7 +394,7 @@ for f in "${CITERS[@]}"; do
     [[ -f "$f" ]] || continue
     while IFS= read -r id; do
         grep -rqE "^\| \`${id}\` " "$RUBRIC_DIR" 2>/dev/null || unknown+=("$(basename "$f"):${id}")
-    done < <(grep -ohE '`(SUMMARY|PRE|NAR|KB|CODE|SPEC|TASK)-[0-9]{2}`' "$f" | tr -d '`' | sort -u)
+    done < <(grep -ohE '(SUMMARY|PRE|NAR|KB|CODE|SPEC|TASK)-[0-9]{2}' "$f" | sort -u)
 done
 if [[ "${#unknown[@]}" -eq 0 ]]; then
     ok RID01 "every cited rule ID resolves to a catalog rule row"
@@ -402,6 +406,44 @@ fi
 grep -rqE '^\| `SUMMARY-99` ' "$RUBRIC_DIR" 2>/dev/null \
     && no RID02 "SUMMARY-99 unexpectedly exists; the control is void" \
     || ok RID02 "the resolver rejects a non-existent ID (control: SUMMARY-99)"
+
+echo
+echo "== no assertion pattern contains a stray control byte =="
+# This class bit twice in one delivery, in two different files. A word-boundary escape written through
+# any layer that interprets backslashes lands as a literal 0x08 BACKSPACE, the pattern then matches
+# nothing, and the assertion passes unconditionally -- silently, because a grep that finds nothing looks
+# exactly like a grep that found nothing wrong. Both instances were guards for a gate criterion.
+#
+# The sweep is over the files this delivery owns; it is cheap, and it is the only check that can see the
+# difference between "asserted and clean" and "asserted nothing".
+CB_FILES=(
+  "$ROOT/tests/canonical/test-one-grading-backend.sh"
+  "$ROOT/tests/canonical/test-grade-summary.sh"
+  "$ROOT/tests/canonical/test-guardrails-d012.sh"
+  "$EMIT" "$MC"
+)
+cb_bad=()
+for f in "${CB_FILES[@]}"; do
+    [[ -f "$f" ]] || continue
+    if LC_ALL=C grep -qP '[\x00-\x08\x0b\x0c\x0e-\x1f]' "$f" 2>/dev/null; then
+        cb_bad+=("$(basename "$f")")
+    fi
+done
+if [[ "${#cb_bad[@]}" -eq 0 ]]; then
+    ok CB01 "no control byte in any of the ${#CB_FILES[@]} swept files"
+else
+    no CB01 "control byte(s) found in: ${cb_bad[*]} -- an escape was written through a layer that ate it"
+fi
+
+# Control: the detector must see a planted byte, or CB01 is itself the vacuous assertion it guards against.
+CBCTL="$(mktemp)"
+printf 'grep -qE %s60%s foo\n' "'"$'\x08' $'\x08'"'" > "$CBCTL"
+if LC_ALL=C grep -qP '[\x00-\x08\x0b\x0c\x0e-\x1f]' "$CBCTL" 2>/dev/null; then
+    ok CB02 "the detector DOES see a planted 0x08 byte (control)"
+else
+    no CB02 "the detector cannot see a planted control byte"
+fi
+rm -f "$CBCTL"
 
 echo
 printf 'test-one-grading-backend.sh: %d passed, %d failed\n' "$pass" "$fail"

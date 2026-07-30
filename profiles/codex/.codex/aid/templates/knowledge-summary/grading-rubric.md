@@ -307,8 +307,8 @@ declaring three documents in a scratch `settings.yml` and referencing only the f
 $ bash .codex/aid/scripts/summarize/emit-summary-findings.sh .aid/knowledge/kb.html --dry-run
 
 === emit-summary-findings.sh: .aid/knowledge/kb.html ===
-[MEDIUM] | SUMMARY-01 | tech-debt.md | Declared knowledge-base document is not represented in the generated summary | settings.yml knowledge.doc_set lists tech-debt.md and .aid/knowledge/tech-debt.md exists, but no reference to "tech-debt" appears in kb.html
-[MEDIUM] | SUMMARY-01 | test-landscape.md | Declared knowledge-base document is not represented in the generated summary | settings.yml knowledge.doc_set lists test-landscape.md and .aid/knowledge/test-landscape.md exists, but no reference to "test-landscape" appears in kb.html
+[MEDIUM] | SUMMARY-01 | tech-debt.md | -- | Declared knowledge-base document is not represented in the generated summary | settings.yml knowledge.doc_set lists tech-debt.md and .aid/knowledge/tech-debt.md exists, but no reference to "tech-debt" appears in kb.html
+[MEDIUM] | SUMMARY-01 | test-landscape.md | -- | Declared knowledge-base document is not represented in the generated summary | settings.yml knowledge.doc_set lists test-landscape.md and .aid/knowledge/test-landscape.md exists, but no reference to "test-landscape" appears in kb.html
 
 emit-summary-findings.sh: emitted 2 finding(s).
 NOTE: no grade is computed here. Run grade.sh over the ledger for the letter.

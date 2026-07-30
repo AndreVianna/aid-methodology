@@ -340,7 +340,9 @@ written beside it. At an `A`-or-better floor the ratio never changed a decision 
 one open `[MEDIUM]` `[ESSENCE-GAP]` row fails the grade on its own — so the ratio protected a
 *metric*, not a *gate*.
 
-Divergence FAIL items are ordinary `[HIGH] [FIDELITY]` rows; load-bearing Omission FAIL
+Divergence FAIL items are ordinary `[FIDELITY]` rows at `NAR-05`'s anchor, which is `Step 2` --
+MUST modality with reach and reversibility read off the instance, so usually but not always
+`[HIGH]`; load-bearing Omission FAIL
 items are ordinary `[MEDIUM] [ESSENCE-GAP]` rows. Any open `[FIDELITY]` row forces grade
 <= D (because `[HIGH]` rows make grade <= D in `grade.sh`) — the essence hard gate is
 realized entirely through the merged rows. No separate boolean, no AND to reconcile.
@@ -396,9 +398,11 @@ severity their cited rule anchors** -- `[HIGH]` for `KB-22`..`KB-25`, `[LOW]` (e
 `[MEDIUM]` beyond one doc) for `KB-26`, and `Step 2` for `KB-20`/`KB-21`, where the instance's
 reach and reversibility decide. This used to read *"ordinary `[HIGH]` rows"* flatly, which
 contradicted the gate table below it and overstated the grade impact: a lone `KB-26` row grades
-`B+`, not `<= D`. Any open `[ACTBACK]` row forces grade <= D (because `[HIGH]` rows make grade <= D
-in `grade.sh`) — the assertiveness hard gate is realized entirely through the merged rows,
-the sibling-keystone mechanism. No separate boolean, no AND to reconcile.
+`B+`, not `<= D`. What holds unconditionally is that any open `[ACTBACK]` row **fails the
+assertiveness verdict**; how far it moves the GRADE depends on the severity its rule anchors, and
+`grade.sh` puts a `[HIGH]` row at `<= D` and a lone `[LOW]` one at `B+`. The hard gate is realized
+entirely through the merged rows, the sibling-keystone mechanism — no separate boolean, no AND to
+reconcile; the grade is a separate question from the verdict.
 
 **2e. Delete the transients**
 

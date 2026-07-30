@@ -197,9 +197,11 @@ trap 'rm -f "$HTML_LOG" "$CONTRAST_LOG"' EXIT
 
 # External validators run under a TIMEOUT and are never allowed to reach the network.
 #
-# `validate-html-output.sh` falls back to `npx html-validate` when `tidy` is not installed, and `npx`
-# will try to FETCH the package. On a machine without it cached that call hangs indefinitely -- observed
-# here, taking a shell with it. A gate that can hang forever is worse than a gate that reports "could not
+# `validate-html-output.sh` falls back to `npx html-validate` when `tidy` is not installed. It passes
+# `--no` (no-install), so that call does NOT fetch -- an earlier version of this comment said it hangs
+# indefinitely, which is not true of the script as it stands (measured: 1.7s when absent). The timeout
+# stays as a backstop for any future caller that drops `--no`, and for anything else that blocks: a gate
+# that can hang forever is worse than a gate that reports "could not
 # evaluate": the first stops the pipeline with no diagnosis, the second says exactly what is missing.
 #
 # npm_config_offline/yes stop npx from installing; the timeout is the backstop for anything else that
@@ -217,10 +219,13 @@ run_validator() {
 # check_failed ID LOGFILE -- did the HTML validator report ID as failed?
 #
 # The validator uses TWO line shapes and both must be recognised:
-#   marker first:  "  ❌ H1. HTML validity (tidy reported errors)"   (check/check_count, H1, A*, L*)
-#   marker last:   "  S2. Offline render [FAIL] found CDN reference(s)"  (S2, NM)
-# The old detector was `grep -qE "(❌|FAIL).*\bID\b"`, which handles only the first. S2 and NM are
-# emitted in the second shape, so SUMMARY-03 and SUMMARY-07 could never fire from the validator at all.
+#   marker first:  "  ❌ H1. HTML validity (tidy reported errors)"   (H1, A*, L*, and NM.1/NM.2/NM.3)
+#   marker last:   "  S2. Offline render [FAIL] found CDN reference(s)"  (S2, and NM's PASS line)
+# The old detector required the marker to come FIRST, so **S2** -- emitted only in the second shape --
+# could never fire and SUMMARY-03 was unreachable. Be precise about NM: its FAIL lines ARE marker-first,
+# so the old detector did match them; NM was broken for an unrelated reason (a bare `grep -i mermaid`
+# over the HTML -- see the SUMMARY-07 note below). The two are fixed together here, but they were not
+# the same bug, and saying so kept a wrong claim in the file that a reader could check in one command.
 #
 # Both patterns anchor at line start and require the ID to be followed by a delimiter, so a mention of an
 # id inside another line's prose or detail text cannot trip the wrong rule.
@@ -291,9 +296,15 @@ if command -v node >/dev/null 2>&1 && [[ -f "$SCRIPT_DIR/contrast-check.mjs" ]];
         # each failing pair to the header above it instead.
         while IFS="$(printf '\t')" read -r theme detail; do
             [[ -n "$theme" ]] || continue
+            # PRE-11 is the one rule that emits N rows for one (Doc, Rule) key -- one per failing token
+            # pair -- so Line MUST distinguish them or the reconcile join collapses all N into one and
+            # fixing a single pair moves no grade. Key it on theme + the pair's own label, which is the
+            # leading text of the validator's line before the ratio.
+            pair=$(printf '%s' "$detail" | sed 's/^[^ ]* *//; s/  *[0-9.]*:1 .*$//; s/  *$//')
             emit "PRE-11" "[MEDIUM]" "$(basename "$HTML")" \
-                 "Token pair fails WCAG AA contrast in the ${theme} theme" \
-                 "contrast-check.mjs [${theme} theme]: ${detail}"
+                 "Token pair '${pair}' fails WCAG AA contrast in the ${theme} theme" \
+                 "contrast-check.mjs [${theme} theme]: ${detail}" \
+                 "${theme}/${pair}"
         # A failing PAIR line is indented; the trailing "❌ N contrast check(s) failed." summary sits at
         # column 0. Requiring the indent is what keeps that summary from being attributed to whichever
         # theme happened to come last and emitted as a phantom extra finding.

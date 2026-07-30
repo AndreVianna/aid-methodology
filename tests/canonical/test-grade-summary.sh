@@ -468,7 +468,7 @@ fi
 # ===========================================================================
 
 echo ""
-echo "=== AC3a: grade-summary.sh has no C+ cap implementation (only removed-cap comment) ==="
+echo "=== AC3a: the summary emitter assigns no grade variable, so no C+/diagram cap can exist ==="
 # The script may reference the OLD cap in a historical comment saying it was REMOVED.
 # What must NOT exist is any active logic that caps the grade at C+ based on diagram count.
 # We check that no line assigns GRADE="C+" or forces a C+ ceiling conditioned on diagram count
@@ -506,7 +506,7 @@ else
 fi
 
 echo ""
-echo "=== AC3e: grade-summary.sh COV check is the completeness gate (not diagram count) ==="
+echo "=== AC3e: the completeness gate is one SUMMARY-01 row per unreferenced doc (not diagram count) ==="
 # The completeness gate survives; the 60% threshold does not. It is now one SUMMARY-01 finding per
 # unreferenced document, which is strictly tighter -- one missing doc used to cost nothing.
 if grep -qE 'SUMMARY-01' "$GRADE_SH" && grep -qiE 'ONE ROW PER UNREFERENCED DOCUMENT' "$GRADE_SH"; then
@@ -514,14 +514,22 @@ if grep -qE 'SUMMARY-01' "$GRADE_SH" && grep -qiE 'ONE ROW PER UNREFERENCED DOCU
 else
     fail "AC3e: the emitter has no per-document SUMMARY-01 completeness gate"
 fi
-if grep -qE '60.*(cliff|threshold|coverage)|coverage.*60' "$GRADE_SH"; then
+# No word-boundary escapes anywhere in this pattern. Such an escape, written through any layer that
+# interprets backslashes, becomes a literal 0x08 BACKSPACE byte -- and this very line shipped that
+# way twice, after which the pattern matched nothing and AC3e-2 passed unconditionally. It is the
+# only mechanical guard for gate criterion 5. The character classes below do the same job in plain
+# characters, so there is nothing left to mis-encode.
+# becomes a literal 0x08 BACKSPACE, and this very line shipped that way -- the pattern then matched
+# nothing and AC3e-2 passed unconditionally, which is the only mechanical guard for gate criterion 5.
+# `[^0-9]60[^0-9]` and the two end-anchored alternatives do the same job out of plain characters.
+if grep -qE '(^|[^0-9])60([^0-9]|$).*(cliff|threshold|coverage)|coverage.*(^|[^0-9])60([^0-9]|$)' "$GRADE_SH"; then
     fail "AC3e-2: a 60% coverage threshold survives in the emitter"
 else
     pass "AC3e-2: no 60% coverage threshold survives in the emitter"
 fi
 
 echo ""
-echo "=== AC3f: grade-summary.sh grades complete diagram-light HTML as A+ (fixture test) ==="
+echo "=== AC3f: a complete diagram-light summary emits no coverage finding, and no grade (fixture) ==="
 # Build a fixture: full-coverage HTML (5/5 docs referenced) with NO mermaid blocks.
 # Expected: COV=full (15 pts), D1/D2/S2 trivially passed, COV drives grade.
 # We cannot easily pass all auto checks in unit test, so test just the COV contribution.
@@ -557,7 +565,7 @@ else
 fi
 
 echo ""
-echo "=== AC3g: grade-summary.sh forces Machine Grade F when COV < 60% (coverage gate) ==="
+echo "=== AC3g: 1-of-5 coverage emits one named SUMMARY-01 row per missing doc, no cliff (fixture) ==="
 REPO_3G="${TMPDIR_BASE}/ac3g"
 make_settings "$REPO_3G"
 mkdir -p "${REPO_3G}/.aid/knowledge"
@@ -822,7 +830,7 @@ else
 fi
 
 echo ""
-echo "=== GR-C6a: grade-summary.sh reads kb_baseline from .aid/settings.yml ==="
+echo "=== GR-C6a: the summary emitter still parses doc_set when settings.yml also has kb_baseline ==="
 # The COV check reads discovery.doc_set from settings.yml -- same file where kb_baseline lives.
 # Guardrail C6 says the kb_baseline shape must be preserved.
 # Test: settings.yml WITH kb_baseline: block is accepted (COV still reads doc_set correctly).
