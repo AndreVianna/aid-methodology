@@ -286,6 +286,73 @@ wave 3: task-048, task-050, task-052
 wave 4: task-053
 ```
 
+### delivery-006: Unify the two skill sections
+
+> **Added 2026-07-30, after the roadmap was approved.** This delivery was **not** produced by
+> `/aid-plan`. It was created directly at execution time by owner decision — work-level **Q4**,
+> which is also §7's second amendment (`REQUIREMENTS.md` § Change Log 2026-07-30, amendment text
+> at :256). It is recorded here because this file is the artifact that maps requirements onto
+> deliveries: without a section, requirement-to-delivery traceability breaks for the amendment,
+> which is what the work-level final gate found. It is **not** back-dated into the approved
+> five-delivery sequence above, and no feature owns it — the six features were decomposed before
+> the amendment existed. Its authoritative definition is
+> `deliveries/delivery-006/BLUEPRINT.md`, and the reasoning that produced it is
+> `deliveries/delivery-006/STATE.md` § Cross-phase Q&A (Q1–Q7).
+
+- **What it delivers:** one place to browse skills instead of two. `reference/skills.md` is
+  **hollowed out** — it sheds the roster and per-family table it duplicated from `/skills/`, and
+  keeps the shortcut-engine narrative (`INTAKE → … → APPROVAL-HALT`), which lives nowhere else —
+  and readers arriving there are repointed at `/skills/`.
+- **Features:** none. Sourced from REQUIREMENTS §7's second amendment directly.
+- **Depends on:** delivery-005 (it edits the generator and pages the earlier deliveries built).
+- **Priority:** owner-directed, post-approval.
+- **Closes by deletion:** **KI-009** — the family table rendered `= 0` and `-1 typed forms` from
+  two templates that interpolate against an empty array. Both templates die with the table, so
+  there is no arithmetic left to repair. Fixing the arithmetic and keeping the table was
+  explicitly rejected as the wrong close.
+- **Why it is not a replan:** it removes duplicated output and adds no new capability, so nothing
+  in deliveries 001–005 depends on it and it touches no file they still own. Its own gate criteria
+  require the other three generated reference pages to be **byte-unchanged** and the 111 skill
+  detail pages plus sidecars to be **byte-unchanged**, which is the machine-checkable statement
+  that it cannot damage what shipped beneath it.
+
+#### Execution Graph
+
+| Task | Depends On |
+|------|-----------|
+| task-054 | — *(delivery-005 complete)* |
+| task-055 | task-054 |
+| task-056 | task-055 |
+| task-057 | task-056 |
+
+| Can Be Done In Parallel |
+|------------------------|
+| *(none — a strict serial chain)* |
+
+> **No parallelism at all**, which is unusual for this work and is a property of the subject
+> rather than an oversight: all four tasks edit the same two modules (`gen-reference.mjs` and the
+> roster/count derivation it reads), and three of them assert **byte-unchanged** output for pages
+> a sibling would be rewriting. Transcribed from each task's own `Depends on:` field, not inferred
+> from what could in principle overlap.
+>
+> **task-054 extracts `SKILL_GROUPS`** out of `gen-reference.mjs` into
+> `site/scripts/skills/curated-roster.mjs`. It gates everything after it because the remaining
+> tasks edit the generator that now imports it; task-054 itself promises the generated pages
+> byte-unchanged, so it is a pure move.
+>
+> **task-057 is the only task that changes reader-facing content** — it hollows the page out. Its
+> consequential-edit scope (the `/skills/` divergence note, an unbalanced parenthesis, and the
+> sidebar label) was **discovered by measurement during the delivery**, not named by the
+> BLUEPRINT; recorded as delivery-006 STATE.md **Q5**.
+
+```wave-map
+delivery: 006
+wave 1: task-054
+wave 2: task-055
+wave 3: task-056
+wave 4: task-057
+```
+
 ## Cross-Cutting Risks
 
 | # | Risk | Impact | Mitigation |
@@ -303,12 +370,17 @@ wave 4: task-053
 Nothing is deferred **out of the plan** — every `Ready` feature is assigned to a delivery. What
 follows is work adjacent to the plan, each with its revisit trigger.
 
+Rows below carry a **`RESOLVED`** or **`SUPERSEDED`** note in the *Revisit When* cell once the
+trigger has fired. They are kept rather than deleted because this table is the design record of
+what was consciously left out of the plan; deleting a row would make the plan look as though the
+item had never been considered.
+
 | Item | Reason | Revisit When |
 |------|--------|--------------|
-| KI-009 (family table renders six `0` rows and `-1 typed forms`), KI-010 (stale `SKILL_GROUPS`), KI-003 (stale header comment) | All inside `gen-reference.mjs`, which §7 freezes. Fixing them is a different work. | The §7 freeze lifts. At that point feature-002's divergence note should be **deleted**, not left to rot. | <!-- SUPERSEDED 2026-07-30: §7's second amendment (work-level Q4) lifted the gen-reference.mjs freeze; delivery-006 hollowed out reference/skills.md. Kept as the design record. -->
-| KI-002 (KB structural-shape figures are stale) | A KB correction, not a product change. The live figures belong in delivery-003's `shapeCounts` manifest entry. | The KB update at ship — regenerate the row from the manifest or remove its numbers. |
-| KI-007 (the KB's `docs.yml` trigger row is wrong in both directions) | KB correction. Delivery-001 makes it further wrong. | The KB update accompanying delivery-001's ship. |
-| AC-7 formalized into a repeatable review step | §10 Could; feature-005 wires it into nothing deliberately. | A Fail or Pass-with-observations verdict at delivery-004's AC-7 spot-check. |
+| KI-009 (family table renders six `0` rows and `-1 typed forms`), KI-010 (stale `SKILL_GROUPS`), KI-003 (stale header comment) | All inside `gen-reference.mjs`, which §7 freezes. Fixing them is a different work. | ~~The §7 freeze lifts. At that point feature-002's divergence note should be **deleted**, not left to rot.~~ **SUPERSEDED 2026-07-30** — the trigger fired inside this work, not after it: §7's second amendment (work-level Q4) lifted the freeze, and **delivery-006** hollowed out `reference/skills.md`. KI-009 and KI-003 are **closed**; KI-010 stays open and is now tracked as `tech-debt.md` `W1-6`. The divergence note was **not** deleted, contrary to this row's instruction — measurement showed the competing grouping was never the reference *page* but the curated roster itself, which still exists, so the note was rebuilt as a **derived** disclosure instead (delivery-006 STATE.md Q5; `render-index.mjs § findGroupingDivergence`). |
+| KI-002 (KB structural-shape figures are stale) | A KB correction, not a product change. The live figures belong in delivery-003's `shapeCounts` manifest entry. | The KB update at ship — regenerate the row from the manifest or remove its numbers. **Still open**, carried as `tech-debt.md` `W1-2`. |
+| KI-007 (the KB's `docs.yml` trigger row is wrong in both directions) | KB correction. Delivery-001 makes it further wrong. | ~~The KB update accompanying delivery-001's ship.~~ **RESOLVED 2026-07-30 at the work-level final gate** — late, since delivery-001 shipped 2026-07-26 and this row named that as the trigger. Fixed as a class: the same wrong lane was found in `infrastructure.md` and `integration-map.md` as well as the cited `test-landscape.md`. |
+| AC-7 formalized into a repeatable review step | §10 Could; feature-005 wires it into nothing deliberately. | ~~A Fail or Pass-with-observations verdict at delivery-004's AC-7 spot-check.~~ **Trigger never fired, because the spot-check itself was never performed at delivery-004's gate** — found by the work-level final gate and performed there instead, against a clean-context reader. See § Deferred note below. |
 | feature-002 OQ-1 — do `aid-query-kb` / `aid-ask` stay in Knowledge Base Maintenance? | Default implemented (they stay), which leaves the `query` family rendering no section. Non-blocking. | Owner review of the rendered index at delivery-002's gate. Reversal is two names deleted from one array. |
 | feature-004 OQ-2 — `aid-ask`'s own `## Pre-flight` guard is not drawn | Accepted as a recorded warning; a rule tuned to one file is worse than the loss. | A second sibling-doorway skill acquires its own control-flow sections. |
 | feature-005 OQ-1 — the doorway fragment list repeats across most of the corpus | Default is render in full, per FR-6's standalone-page promise. Alternatives are each a one-line change. | Measured Pagefind index size or a search-quality complaint after delivery-004. |

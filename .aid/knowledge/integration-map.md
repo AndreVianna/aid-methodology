@@ -28,6 +28,7 @@ intent: |
   connectors).
 contracts: []
 changelog:
+  - 2026-07-30: work-001 final gate — corrected the `docs.yml` trigger row (third instance of the same class as the `test-landscape.md` / `infrastructure.md` fixes): it omitted the `canonical/` path filter and the `pull_request`-to-master trigger, and did not distinguish the test+build jobs (both events) from deploy (push only).
   - 2026-07-09: connectors subsystem refresh (housekeep KB-DELTA) — added the Connectors section (catalog model, .aid/connectors/ home, tool-managed vs aid-managed, .mcp.json, .gitguardian.yaml).
   - 2026-06-25: Initial generation (aid-discover brownfield deep-dive / Integrator lane)
 ---
@@ -123,7 +124,7 @@ CONFIRMED: `docs/aid-methodology.md` ("Offline / air-gapped environments");
 |----------|---------|---------|
 | `test.yml` (CI) | push/PR to `master`, dispatch | canonical helper test suites (`tests/run-all.sh`) |
 | `installer-tests.yml` | push to non-`master` branches, dispatch | cross-platform installer tests (incl. Windows lane) |
-| `docs.yml` (Docs) | push to `master` under `site/`, `docs/`, `VERSION` | builds/deploys the Astro site |
+| `docs.yml` (Docs) | push + PR to `master` under `site/`, `docs/`, `canonical/`, `VERSION` | tests + builds the Astro site (both events); deploys on push only |
 | `release.yml` (Release) | push tag `v*`, dispatch | builds artifacts and cuts the GitHub Release |
 | `coverage-parity.yml` (Coverage Parity) | push/PR to `master` under `tests/**`, dispatch | advisory executed-assertion coverage-regression gate (`tests/coverage-parity.sh`), separate serial lane from `test.yml`'s canonical suites |
 

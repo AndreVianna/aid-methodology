@@ -25,6 +25,23 @@
 
 - **Type:** Bug
 - **Severity:** Medium
+- **Status:** **RESOLVED, and the remedy this entry prescribes was proved WRONG — do not apply
+  it.** Recorded at the work-001 final gate, 2026-07-30.
+  - **What shipped.** `site/astro.config.mjs` **deleted** the `themeVariables` block rather than
+    relocating it, and moved per-theme colour into CSS where `[data-theme]` can select (the mermaid
+    block in `site/src/styles/casulo.css`). `mermaidConfig` now carries layout only — which is
+    theme-independent and therefore safe to fix in config.
+  - **Why the prescribed fix is harmful.** The Description below ends "The fix is to nest the
+    palette under `mermaidConfig`". Doing that forwards the palette successfully but pins **one**
+    palette across **both** themes `autoTheme` switches between, so the dark colours would bleed
+    into light mode. A future reader following this entry would trade an inert palette for a
+    visibly broken one. The config carries the same warning inline at `astro.config.mjs`:35-42 so
+    the correction is discoverable from the code, not only from here.
+  - **The mitigation still holds and is still load-bearing:** every generated chart emits a
+    self-contained `classDef` block, so charts are legible independent of theme config.
+  - The tech-debt inventory carries the residue as `W1-1`, which is about the upstream
+    integration never forwarding a top-level `themeVariables` at all — an `astro-mermaid` bug this
+    work worked around rather than fixed, and correctly still open.
 - **Affects:** feature-003-authored-flow-charts, feature-004-doorway-engine-charts
 - **Source:** `site/astro.config.mjs`:30-47 vs `site/node_modules/astro-mermaid/astro-mermaid-integration.js`:229-235, 362-366
 - **Description:** `astro.config.mjs` passes `themeVariables` as a **top-level** option to
@@ -201,6 +218,16 @@
 
 - **Type:** Bug
 - **Severity:** Medium
+- **Status:** **RESOLVED** at the work-001 final gate, 2026-07-30. The row now states the real
+  triggers (push **and** `pull_request` to `master`, both path-filtered including `canonical/**`;
+  no `release:` key), names the `npm test` step, and answers the feature-branch column with the
+  distinction that actually holds — the test+build job gates every PR, only `deploy` is
+  master-only. The "CONFIRMED by the `on:` blocks" claim was re-verified against
+  `.github/workflows/docs.yml`:10-28 and dated.
+  **Fixed as a class, not as the cited line.** Grepping the signature found the same wrong lane in
+  two more KB docs the ledger did not cite — `infrastructure.md`'s release/deploy row and
+  `integration-map.md`'s trigger row — both corrected in the same pass. The corresponding
+  tech-debt item `W1-4` was deleted per the KB's resolved-debt convention.
 - **Affects:** feature-005-verbatim-source-provenance, feature-001-skill-detail-pages
 - **Source:** `.aid/knowledge/test-landscape.md`:160 (and its "CONFIRMED by the `on:` blocks of each
   workflow" claim at :162) vs `.github/workflows/docs.yml`:10-25
@@ -351,8 +378,15 @@
     — `aid-deploy` and `aid-monitor` agree (both Definition on either side). So this entry's
     original "three skills" framing was over-stated.
 - **Affects:** feature-002-grouped-skill-index
-- **Source:** `site/scripts/gen-reference.mjs`:150-199, specifically `:179` (`aid-triage` in the
-  Definition group) and `:185-186` (`aid-deploy` / `aid-monitor` as curated Definition members)
+- **Source:** `site/scripts/skills/curated-roster.mjs` — the `SKILL_GROUPS` table, specifically
+  `aid-triage` listed under the `Definition` group. Task-054 extracted the constant out of
+  `site/scripts/gen-reference.mjs` (where it stood at `:150-199`, with the divergent entries at
+  `:179` and `:185-186`) into that module; `gen-reference.mjs` now imports it at `:27`. This
+  locator is deliberately kept current rather than left as a historical reference, because
+  KI-010 is carried forward **open** past the PR and this is the field a later reader will use
+  to find the code. The `aid-deploy` / `aid-monitor` half of the original locator no longer
+  describes a defect — see the Status note above: measurement showed both agree on either side,
+  and only `aid-triage` actually diverges.
 - **Description:** `reference/skills.md` groups `aid-triage` under **Definition** and lists
   `aid-deploy` / `aid-monitor` among the full-path Definition skills. Per REQUIREMENTS.md §5 FR-5
   (Placement rules, owner-corrected at cross-reference, Q1) that grouping is wrong: `aid-triage`

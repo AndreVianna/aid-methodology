@@ -28,6 +28,7 @@ contracts:
   - "All four version carriers (VERSION, package.json, pyproject.toml, tag) must agree or the release gate fails"
   - "github-release runs before npm/PyPI so the authoritative artifact channel exists first"
 changelog:
+  - 2026-07-30: work-001 final gate -- corrected the `docs.yml` row in the release/deploy view (same class as the `test-landscape.md` fix, found by grepping the signature): it omitted the `canonical/**` path filter and the `pull_request`-to-master trigger, and carried a `release: published` trigger the workflow does not have.
   - 2026-07-23: work-023 -- Project Management Tooling now documents the connectors + dedicated-skills model (three /aid-*-ticket skills; no automated pipeline ticket writes).
   - 2026-07-16: work-016 .aid/works/ container relocation -- updated the dashboard-reader and project-management-tooling STATE.md paths to `.aid/works/work-NNN-*/`.
   - 2026-06-25: Initial discovery (aid-discover quality deep-dive)
@@ -110,7 +111,7 @@ release/deploy view:
 | `.github/workflows/test.yml` | push/PR to `master` | Correctness gate: render-drift, full canonical suite, visual-fidelity, generator self-tests, KB/repo hygiene |
 | `.github/workflows/installer-tests.yml` | push to any non-`master` branch | Cross-platform installer/CLI/release validation (ubuntu bash-harness + windows native-ps1) so feature branches are validated remotely |
 | `.github/workflows/release.yml` | push of a `v*` tag (or `workflow_dispatch`) | Gate → build → publish all channels |
-| `.github/workflows/docs.yml` | push to `master` (site/docs/VERSION paths) + `release: published` | Build the Astro site and deploy to GitHub Pages |
+| `.github/workflows/docs.yml` | push **and PR** to `master`, path-filtered to `site/**`, `docs/**`, `canonical/**`, `VERSION` (or `workflow_dispatch`) | Test (site vitest) + build the Astro site on both; deploy to GitHub Pages on push only |
 | `.github/workflows/coverage-parity.yml` | PR + push to `master`, path-filtered to `tests/**` | Advisory coverage-regression gate: diffs the executed-assertion inventory against a committed baseline (enforces once bootstrapped) |
 
 CONFIRMED by each workflow's `on:` block.

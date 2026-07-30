@@ -37,7 +37,12 @@ group/family — and links to that skill's detail page. This feature also regist
 in the site's sidebar contract.
 
 **Placement rules (owner-corrected at cross-reference, Q1 — these override the grouping in
-`gen-reference.mjs`'s `SKILL_GROUPS`, which is stale):**
+`SKILL_GROUPS`, which is stale):**
+
+> **Locator note (2026-07-30):** `SKILL_GROUPS` lived in `site/scripts/gen-reference.mjs` when
+> this SPEC was written; task-054 extracted it to `site/scripts/skills/curated-roster.mjs`. The
+> staleness this section overrides is unchanged and still open as **KI-010** — only the file
+> moved.
 
 - `aid-triage` is a **Support** skill, not a Definition skill.
 - `Definition` opens with the **five full-path skills** in pipeline order, **un-subdivided**:
@@ -201,7 +206,8 @@ same script. This feature's only build-wiring edit is the sidebar group.
 
 #### Where the group and family assignment comes from
 
-Two authorities, one each, and neither is `gen-reference.mjs`'s `SKILL_GROUPS`:
+Two authorities, one each, and neither is the curated roster's `SKILL_GROUPS` (see the locator
+note under § Placement rules — it moved to `site/scripts/skills/curated-roster.mjs` in task-054):
 
 | Datum | Authority |
 |-------|-----------|

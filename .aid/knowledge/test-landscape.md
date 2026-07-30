@@ -30,6 +30,7 @@ contracts:
   - "Every canonical suite runs under `timeout 300` in an isolated bash process"
   - "node and pwsh must be present in CI or environment-dependent suites silently skip (CI fails loudly if absent)"
 changelog:
+  - 2026-07-30: work-001 final gate -- corrected the `docs.yml` CI-lane row (closing KI-007 / W1-4). It omitted the `canonical/**` path filter, carried a `release: published` trigger the workflow does not have, and answered "feature branches? No -- master only" although `pull_request` to master is live and is the site's test gate. Re-verified against the `on:` block and dated the CONFIRMED claim. Split the master-only gotcha so the site is stated as the exception it is.
   - 2026-07-30: work-001 delivery-006 gate -- corrected the stale shortcut counts in the body; restored the 1.3 Change Log row, which an earlier pass in this same cycle had edited (falsifying a dated audit record).
   - 2026-06-25: Initial discovery (aid-discover quality deep-dive)
 ---
@@ -169,17 +170,24 @@ AID has five GitHub Actions workflows. Critically, the heavy correctness gates r
 | `.github/workflows/test.yml` (CI) | push + PR to `master`; `workflow_dispatch` | `render-drift`, `canonical-tests` (full `run-all.sh`), `visual-fidelity` (Playwright), `generator-selftests`, `kb-hygiene` | No — master only |
 | `.github/workflows/installer-tests.yml` (Installer CI) | push to any branch **except** master (`branches-ignore: [master]`); `workflow_dispatch` | cross-platform installer/CLI/release matrix (ubuntu + windows) | Yes — feature branches only |
 | `.github/workflows/release.yml` (Release) | push of a `v*` tag; `workflow_dispatch` | `gate` (re-runs render-drift + version-sync + full `run-all.sh` + generator self-tests on the tagged commit), then `github-release`, `npm-publish`, `pypi-publish` | No — tag only |
-| `.github/workflows/docs.yml` (Docs) | push to `master` touching `site/**`, `docs/**`, `VERSION`, or the workflow; `release: published`; `workflow_dispatch` | Astro Starlight build → GitHub Pages deploy | No — master only (+ path filter) |
+| `.github/workflows/docs.yml` (Docs) | push **and `pull_request`** to `master`, both path-filtered to `site/**`, `docs/**`, `canonical/**`, `VERSION`, or the workflow; `workflow_dispatch` | `npm ci` → **`npm test` (site vitest suite)** → Astro Starlight build; then GitHub Pages deploy (`deploy` job skipped on PRs) | **Yes, as a PR to master** — the build+test job is a live PR gate; only the `deploy` job is master-only |
 | `.github/workflows/coverage-parity.yml` (Coverage Parity) | push + PR to `master`, path-filtered to `tests/**`; `workflow_dispatch` | Separate lane from `canonical-tests`: serially re-collects the executed-assertion inventory (~6-7 min) and diffs it against a committed baseline — advisory (warns, exits 0) until the baseline is bootstrapped, then enforces | No — master only (+ path filter) |
 
-CONFIRMED by the `on:` blocks of each workflow.
+CONFIRMED by the `on:` blocks of each workflow — re-verified 2026-07-30 against
+`.github/workflows/docs.yml`:10-28, which has no `release:` key.
 
-**Why this matters (gotcha).** The full canonical suite and the Astro site build run only on
-`master` (test.yml / docs.yml) and on release tags (release.yml `gate`). A feature branch
-sees only `installer-tests.yml`, so a change that breaks the canonical suite or the site
-build can pass all feature-branch checks and only fail after merge to master. Run
-`bash tests/run-all.sh` (HOME-pinned) and the `site` build locally before claiming green.
-See `tech-debt.md` Gotchas.
+**Why this matters (gotcha).** The full canonical suite (test.yml) runs only on `master` and on
+release tags (release.yml `gate`). A branch that has **no open PR to master** sees only
+`installer-tests.yml`, so a change that breaks the canonical suite can pass all its checks and
+only fail after merge. Run `bash tests/run-all.sh` (HOME-pinned) before claiming green.
+
+**The site is the exception, and it is a PR gate.** `docs.yml` also triggers on
+`pull_request` to `master` (delivery-001 of work-001 added the `npm test` step, closing KI-006),
+so the site vitest suite **and** the Astro build do validate every PR that touches `site/**`,
+`docs/**`, `canonical/**` or `VERSION`. Only the `deploy` job is master-only. Two consequences a
+maintainer needs: a **canonical-only** commit still rebuilds the site — the reference pages and
+skill-page anchors are derived from `canonical/` — and the site build is the lane that catches
+`canonical/` → `profiles/` render drift reaching the docs. See `tech-debt.md` Gotchas.
 
 **CI must not silently skip.** Both `test.yml` (`canonical-tests`) and `release.yml`
 (`gate`) assert `node` and `pwsh` are present and fail loudly if either is missing — because

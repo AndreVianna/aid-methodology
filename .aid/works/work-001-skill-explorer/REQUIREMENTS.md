@@ -30,6 +30,8 @@
 | 2026-07-25 | Q1 answered by owner — `aid-triage` is Support; full path is 5 skills; deploy/monitor are shortcuts. FR-5 + AC-8 rewritten | /aid-define |
 | 2026-07-25 | Q2 answered by owner — FR-6 confirmed as written; no longer an interviewer default | /aid-define |
 | 2026-07-25 | Cross-reference re-graded A+ (all 5 findings Fixed, 2 routed OOS) | /aid-define |
+| 2026-07-30 | **§7 SECOND AMENDMENT (owner decision, work-level Q4).** Lifted the `gen-reference.mjs` freeze and the "four generated reference pages keep working unchanged" constraint; added **delivery-006** (tasks 054–057) to hollow out `reference/skills.md`, repointing readers at `/skills/`. Superseded §4's "the two coexist rather than one replacing the other" (:109-116) and FR-5's "the existing generator and its output are not modified by this work" (:184-203) — both struck in place with the amendment cited. Unlike the first amendment this is a deliberate scope addition, not a correction. | owner / /aid-execute |
+| 2026-07-30 | Change Log gap closed at the work-level final gate: the amendment above had been narrated inline at §7 but never logged here, so this table understated the document's revision history by its largest post-approval change. | /aid-execute |
 
 ## 1. Objective
 
@@ -174,13 +176,31 @@ option; confirm at read-back)*:
     skills.
   - The verb-family subsections follow the five full-path skills.
 
-  ⚠️ **This knowingly diverges from `gen-reference.mjs`'s `SKILL_GROUPS`**, which puts
+  ⚠️ **This knowingly diverges from the curated roster's `SKILL_GROUPS`**, which puts
   `aid-triage` in `Definition` (see its own comment, "include `aid-triage` in the Definition
   group") and lists `aid-deploy`/`aid-monitor` as curated `Definition` members. That grouping is
-  **stale**; `/skills/` uses the corrected taxonomy above. Per §7 the existing generator and its
-  output are **not** modified by this work, so `reference/skills.md` will visibly group these
-  three skills differently from `/skills/` until it is separately corrected — an accepted,
-  recorded inconsistency, logged as an observation for the existing page rather than fixed here.
+  **stale**; `/skills/` uses the corrected taxonomy above.
+
+  ~~Per §7 the existing generator and its output are **not** modified by this work, so
+  `reference/skills.md` will visibly group these three skills differently from `/skills/` until
+  it is separately corrected — an accepted, recorded inconsistency, logged as an observation for
+  the existing page rather than fixed here.~~
+  **Superseded 2026-07-30 by work-level Q4 / §7's second amendment, executed as delivery-006**
+  (same amendment that superseded §4:107-114). Two clauses of the struck text are now false and
+  one locator in the paragraph above it had moved:
+  - The generator **was** modified: `gen-reference.mjs` no longer emits a roster or a family
+    table, and `SKILL_GROUPS` was extracted out of it into
+    `site/scripts/skills/curated-roster.mjs` by task-054. References to "`gen-reference.mjs`'s
+    `SKILL_GROUPS`" — including the one in the paragraph above, corrected in the same pass —
+    should read the curated roster module.
+  - `reference/skills.md` no longer groups these three skills at all, so it is not where the
+    divergence is visible. **The divergence itself survives**, because the competing grouping was
+    never the reference *page* — it is the curated roster, which still exists, still files
+    `aid-triage` under `Definition`, and is still what the methodology's published skill
+    inventory shows. `/skills/` therefore **discloses** the divergence in a derived note and
+    declares itself authoritative, rather than leaving it unrecorded
+    (`site/scripts/skills/render-index.mjs § findGroupingDivergence`). Closing it for real means
+    correcting the roster, which is **KI-010**, carried forward open.
 
 - **FR-6 — Doorway pages render the shared engine flow.** A skill whose body only delegates
   (shapes 3 and 4 in §8, ~94 of 111) renders the **full shared shortcut-engine chart inline**
