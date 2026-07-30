@@ -140,7 +140,7 @@ After working through each probe:
 - PASS (limb a, per probe): The KB lets you assemble a correct, executable plan in the
   project's own conventions, with no load-bearing ASSUMED/REACH step and no quality violation.
 - FAIL (limb a, per probe): The plan cannot be assembled correctly from the KB, or it is
-  assembled but wrong for this project's conventions. One `[HIGH]` `[ACTBACK]` row naming
+  assembled but wrong for this project's conventions. One `[ACTBACK]` row, at its cited rule's anchor, naming
   the specific gap.
 
 ### Severity and verdict (single mechanism, identical to teach-back)

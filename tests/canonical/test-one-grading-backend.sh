@@ -134,6 +134,33 @@ if grep -qF 'quoted \"ok\" and back\\slash' "$MCT/rt.json"; then
 else
     no MC06 "--input lost or re-escaped the notes: $(grep '"notes"' "$MCT/rt.json" || echo absent)"
 fi
+# A MULTI-LINE note. The interactive prompt invites one, and JSON forbids a raw control character inside
+# a string -- so escaping only backslash and quote produced a file that is not JSON, after which --input
+# read the notes back as "" and destroyed the only field here nothing else can reconstruct. MC06's
+# fixture is single-line, so it could not see this.
+bash "$MC" --k1 y --k2 y --v1 y --html h.html \
+     --notes "$(printf 'line1\nline2\twith "q" and back\\slash')" \
+     --out "$MCT/ml.json" >/dev/null 2>&1
+if grep -q '"notes": "line1\\nline2\\twith \\"q\\" and back\\\\slash"' "$MCT/ml.json"; then
+    ok MC08 "a multi-line note is escaped to valid JSON (newline, tab, quote, backslash)"
+else
+    no MC08 "multi-line note mis-escaped: $(grep '"notes"' "$MCT/ml.json" | head -1)"
+fi
+# A raw control byte anywhere in the file means it is not JSON, whatever the field looks like.
+if LC_ALL=C grep -qP '[\x00-\x08\x0a-\x1f]' <(tr -d '\n' < "$MCT/ml.json"); then
+    no MC09 "the written JSON contains a raw control character"
+else
+    ok MC09 "no raw control character survives into the JSON"
+fi
+# And the escaped form must survive normalisation unchanged, or every pass doubles the backslashes.
+cp "$MCT/ml.json" "$MCT/ml2.json"
+bash "$MC" --input "$MCT/ml2.json" >/dev/null 2>&1
+bash "$MC" --input "$MCT/ml2.json" >/dev/null 2>&1
+if diff <(grep '"notes"' "$MCT/ml.json") <(grep '"notes"' "$MCT/ml2.json") >/dev/null 2>&1; then
+    ok MC10 "the multi-line note is byte-identical after two --input passes"
+else
+    no MC10 "normalisation altered the note: $(grep '"notes"' "$MCT/ml2.json" | head -1)"
+fi
 rm -rf "$MCT"
 
 echo
@@ -472,7 +499,30 @@ else
     no RS03 "emitter rules with no FIX repair bullet: ${rs_missing2[*]}"
 fi
 
-# Control: RS02/RS03 must fail for a rule the surfaces genuinely do not name.
+# RS05 -- the RECONCILIATION LIST, the third surface and the one whose omission matters most: a rule
+# missing there is never swept, so its rows never reach `Fixed`. RS02/RS03 could not see it -- the list is
+# prose, so neither a table-row nor a bullet pattern reaches it, and deleting a rule from it left the
+# whole suite green. Extract the list region by its two anchors and require every emitter rule inside it.
+mapfile -t recon_list < <(
+  awk '/reconciliation applies ONLY to rows the emitter could have produced/{on=1}
+       on{print}
+       on && /Every other row is left exactly as it stands/{exit}' "$VALSTATE_F"
+)
+if [[ "${#recon_list[@]}" -eq 0 ]]; then
+    no RS05 "could not locate the reconciliation list in state-validate.md -- its anchors moved"
+else
+    rs_missing3=()
+    for r in "${emit_rules[@]}"; do
+        printf '%s\n' "${recon_list[@]}" | grep -qF "$r" || rs_missing3+=("recon-list:$r")
+    done
+    if [[ "${#rs_missing3[@]}" -eq 0 ]]; then
+        ok RS05 "every emitter rule is named in state-validate.md's reconciliation list"
+    else
+        no RS05 "emitter rules absent from the reconciliation list: ${rs_missing3[*]}"
+    fi
+fi
+
+# Control: RS02/RS03/RS05 must fail for a rule the surfaces genuinely do not name.
 if grep -qF 'SUMMARY-98' "$VALSTATE_F" || grep -qF 'SUMMARY-98' "$FIXSTATE_F"; then
     no RS04 "SUMMARY-98 unexpectedly present; the control is void"
 else

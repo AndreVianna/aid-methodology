@@ -352,7 +352,10 @@ Write initial fields to `.aid/knowledge/STATE.md` `## Knowledge Summary Status`:
 **Minimum Grade Source:** {.aid/settings.yml summary.minimum_grade | .aid/settings.yml review.minimum_grade | --grade flag | default}
 **Grade:** Pending
 **Grade Source:** `grade.sh`, over `.aid/.temp/review-pending/summarize.md`
-**Checklist:** Not run (required before APPROVAL -- SUMMARY-06 cannot be answered by an agent)
+**Checklist:** Not run
+<!-- Exactly two forms, and APPROVAL depends on it: `Not run` or `Completed YYYY-MM-DD`.
+     The reason it must be run before APPROVAL (SUMMARY-06 cannot be answered by an agent) belongs in
+     prose, not inside the field's value -- a parenthetical here made the value a third form. -->
 **Last Run:** {iso8601}
 **Trigger Reason:** {initial | stale-after-review-N | --reset | re-approval-only}
 **Output:** .aid/knowledge/kb.html

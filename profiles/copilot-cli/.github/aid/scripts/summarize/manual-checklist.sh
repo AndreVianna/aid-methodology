@@ -111,8 +111,20 @@ while [ $# -gt 0 ]; do
 done
 
 # --- Helpers ---
+# JSON forbids a RAW control character inside a string (RFC 8259 §7). This escaped only backslash and
+# double-quote, so any multi-line note -- the interactive prompt invites one -- produced a file that is
+# not JSON: `json.load` fails with "Invalid control character", and `--input` then read the notes back as
+# the empty string, silently destroying the one field here that nothing else can reconstruct. Tab and CR
+# had the same shape.
+#
+# Order matters: backslash first, or the escapes this adds get escaped again.
 escape_json() {
-    printf '%s' "$1" | sed 's/\\/\\\\/g; s/"/\\"/g'
+    printf '%s' "$1" \
+        | sed 's/\\/\\\\/g; s/"/\\"/g' \
+        | awk 'BEGIN { ORS = "" }
+               { gsub(/\t/, "\\t"); gsub(/\r/, "\\r")
+                 if (NR > 1) printf "\\n"
+                 printf "%s", $0 }'
 }
 
 # These used to return point values (10/5/0, 15/8/0, 5/0) feeding a 30-point pool. The points are gone
@@ -182,8 +194,12 @@ write_json() {
 
     local timestamp html_esc notes_esc out_dir
     timestamp=$(date -u +"%Y-%m-%dT%H:%M:%SZ" 2>/dev/null || date +"%Y-%m-%dT%H:%M:%SZ")
-    html_esc=$(escape_json "${HTML_FILE:-}")
-    notes_esc=$(escape_json "${NOTES:-}")
+    # A value carried across from --input is already escaped; re-escaping it would double every
+    # backslash on each normalisation pass.
+    if [ "${HTML_PRE_ESCAPED:-0}" -eq 1 ]; then html_esc="${HTML_FILE:-}"
+    else html_esc=$(escape_json "${HTML_FILE:-}"); fi
+    if [ "${NOTES_PRE_ESCAPED:-0}" -eq 1 ]; then notes_esc="${NOTES:-}"
+    else notes_esc=$(escape_json "${NOTES:-}"); fi
     out_dir=$(dirname "$OUT_FILE")
     mkdir -p "$out_dir"
 
@@ -235,15 +251,17 @@ if [ -n "$INPUT_FILE" ]; then
     # by default -- so a rewrite silently discarded the human's free-text notes, which is the one
     # field in this file no other artifact can reconstruct (state-fix.md's expose -> propose -> ask
     # loop reads it). Rewriting canonically must not mean rewriting lossily.
+    # Both fields are carried across in their ALREADY-ESCAPED form and re-emitted verbatim, rather than
+    # un-escaped on read and re-escaped on write. Idempotence then holds by construction: there is no
+    # inverse transform to get wrong, and no ordering hazard between un-escaping `\\` and `\"`. The
+    # earlier round-trip did un-escape, and could not represent a newline at all.
     if [ -z "$NOTES" ]; then
         NOTES=$(sed -n 's/.*"notes"[[:space:]]*:[[:space:]]*"\(.*\)".*/\1/p' "$INPUT_FILE" | head -1) || true
-        # Un-escape what escape_json escaped on the way in, so a round-trip is idempotent rather
-        # than doubling every backslash each time the file is normalised.
-        NOTES=$(printf '%s' "$NOTES" | sed 's/\\"/"/g; s/\\\\/\\/g') || true
+        NOTES_PRE_ESCAPED=1
     fi
     if [ -z "$HTML_FILE" ]; then
         HTML_FILE=$(sed -n 's/.*"html_file"[[:space:]]*:[[:space:]]*"\(.*\)".*/\1/p' "$INPUT_FILE" | head -1) || true
-        HTML_FILE=$(printf '%s' "$HTML_FILE" | sed 's/\\"/"/g; s/\\\\/\\/g') || true
+        HTML_PRE_ESCAPED=1
     fi
     OUT_FILE="$INPUT_FILE"
     echo "[manual-checklist] Validated $INPUT_FILE — normalising answers."

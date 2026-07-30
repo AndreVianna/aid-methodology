@@ -491,7 +491,7 @@ function generateAgentsPage() {
   });
 
   const intro =
-    'AID runs **9 specialized agents** across three model tiers. The separation is structural: ' +
+    `AID runs **${agents.length} specialized agents** across three model tiers. The separation is structural: ` +
     'the reviewer\'s tier is always **≥** the executor\'s, and the agent that writes code never ' +
     'grades its own work. Each profile maps these tiers to concrete models (see ' +
     '[the Agent Model](/concepts/methodology/#5-the-agent-model)). Generated from `canonical/agents/`.';
@@ -516,7 +516,7 @@ function generateAgentsPage() {
 
   const fm = serializeFrontmatter({
     title: 'Agents',
-    description: 'All 9 AID pipeline agents — grouped by model tier, with role, tools, and source definition.',
+    description: `All ${agents.length} AID pipeline agents — grouped by model tier, with role, tools, and source definition.`,
     generatedFrom: 'canonical/agents/*/AGENT.md',
   });
   const note = `\n<!-- generated — do not edit; source: canonical/agents/*/AGENT.md -->\n\n`;

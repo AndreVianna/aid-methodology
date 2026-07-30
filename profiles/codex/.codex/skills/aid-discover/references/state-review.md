@@ -98,7 +98,7 @@ Use `{{SCOPE}}-actback-task-full.md` as the content for `{{ACTBACK_TASK_SPEC}}`.
 The M3 (Essence) and M4 (Assertiveness) keystone gates MUST read only *hand-authored
 project knowledge* — never the process/ledger docs (`STATE.md`, `README.md`) or generated
 docs (`INDEX.md`), which would poison the reconstruction/work-simulation and (because these
-gates force grade ≤ D) the grade itself. Compute the surface deterministically with the
+gates fail their verdict, and at any minimum this tree configures also the grade) the grade itself. Compute the surface deterministically with the
 `list_reviewable` accessor (defined in `references/doc-set-resolve.md`):
 
 ```bash

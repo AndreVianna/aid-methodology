@@ -13,9 +13,10 @@ test -f .aid/.temp/summarize/manual-checklist.json
 Absent → refuse to enter APPROVAL and print:
 `❌ Cannot approve: the human checklist has not been completed (.aid/.temp/summarize/manual-checklist.json absent). Run /aid-summarize again to enter MANUAL-CHECKLIST.`
 
-The `Checklist` field in `.aid/knowledge/STATE.md § Knowledge Summary Status` takes exactly two forms,
-and GENERATE and this state must agree on them: **`Not run`** (as GENERATE initialises it) or
-**`Completed YYYY-MM-DD`**. It is an agent-written body line, exactly like the two retired grade
+The `Checklist` field in `.aid/knowledge/STATE.md § Knowledge Summary Status` takes exactly two forms, and
+GENERATE, `discovery-state-template.md` and this state all carry the same two: **`Not run`** (as
+GENERATE initialises it) or **`Completed YYYY-MM-DD`**. Nothing else -- an explanatory parenthetical
+inside the value, or a `Completed` with no date, is a third form that a reader cannot parse. It is an agent-written body line, exactly like the two retired grade
 lines it replaces — `summarize/writeback-state.sh --set` owns only the five frontmatter scalars
 (`kb_status`, `kb_grade`, `last_kb_review`, `summary_approved`, `last_summary`) and deliberately not
 this one.
