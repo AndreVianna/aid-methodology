@@ -26,6 +26,8 @@ intent: |
   gotchas a change will trip. Diagnosis, not a sprint plan.
 contracts: []
 changelog:
+  - 2026-07-30: work-001 final gate -- added W1-16: the flow extractor's rule 7 turns prose cross-references into loop-back arrows on published charts (verified on aid-review: 3 drawn, 1 real). Found by performing AC-7, the comprehension spot-check delivery-004 never recorded. Medium/P2, escalated to the owner rather than fixed -- tightening rule 7 changes corpus-wide generated output that two deliveries assert byte-unchanged.
+  - 2026-07-30: work-001 final gate -- added W1-13/W1-14 (node-panel accessibility: no role or accessible name; aria-controls references a lazily-created panel that does not exist before first activation) and W1-15 (the screen-reader announcement check has never been run against a real screen reader). All three surfaced by PERFORMING delivery-005's four manual browser checks, which had been made non-blocking and then never performed.
   - 2026-07-30: work-001 final gate -- RESOLVED and removed W1-4 (the `docs.yml` CI-lane row taught the wrong CI model). The fix corrected all three instances of the class, not just the cited one: `test-landscape.md`'s lane row + its gotcha, `infrastructure.md`'s release/deploy row, and `integration-map.md`'s trigger row. All three omitted the `canonical/**` path filter and the `pull_request`-to-master trigger; two also carried a `release: published` trigger `docs.yml` does not have. IDs are not renumbered, so W1-4 is now a deliberate gap.
   - 2026-07-30: work-001 delivery-006 gate -- added W1-1..W1-12, the work-001 known-issues that would not survive the work folder being pruned, with their own table header; corrected an initial mis-classification that restated three CLOSED issues as open; corrected a stale present-tense corpus count. Open debt is no longer L4 alone.
   - 2026-06-25: Initial debt audit (aid-discover quality deep-dive)
@@ -82,6 +84,10 @@ urgent.
 | **W1-9** | Contradictory templates | The two task templates disagree with each other, and one claims a conformance property it does not enforce. | `canonical/aid/templates/delivery-plans/` | Low | S | P3 |
 | **W1-10** | Environment trap (Windows) | Worktrees for this repo must be created with **Windows git**, never WSL git — a WSL-created worktree produces paths the Windows toolchain cannot resolve, and the failure is confusing rather than immediate. | process / dev environment | **Medium** | — (documented) | **P2** |
 | **W1-11** | Cross-work collision | work-004 shrinks the skill corpus 111 → 74 and also renames skills. Every count guarded by `tests/canonical/check-skill-counts.mjs` derives automatically, but hand-written *names* and any prose enumerating skills will need reconciliation when that work lands. | repo-wide | **Medium** | M | **P2** |
+| **W1-16** | Wrong published output | The flow extractor's **rule 7** emits a `loop-back` edge for *any* non-heading, non-fenced body line that mentions an earlier-ordered state, so a prose cross-reference becomes a control-flow arrow on a published chart. Verified end-to-end on `aid-review`: the chart draws 3 loop-backs, the source expresses 1 — `REVIEW -.-> INTAKE` comes from "(model+effort from INTAKE Step 4)" and `PUBLISH -.-> PRESENT-FINDINGS` from "PRESENT-FINDINGS is what authorizes this call". A reader told us so unprompted at the AC-7 spot-check. Mechanism is general; extent beyond this one skill is **unmeasured** (a crude proxy flags ~30 edges / 24 skills but misfires on wrapped-line tails). Not fixable in place: tightening rule 7 changes generated output corpus-wide, and delivery-005/006 assert those pages byte-unchanged. Needs its own task — likely "only fire inside an `**Advance:**` block or on an explicit loop verb". | `site/scripts/lib/flow-graph/extract-inline.mjs`:212 (`_scanBodyEdges`, rule 7) | **Medium** | M | **P2** |
+| **W1-13** | Accessibility gap | The node-detail panel is a `div[tabindex="-1"]` with **no `role` and no accessible name** — the accessibility tree shows it as `generic`. Activation moves focus into it, so what a screen reader announces on arrival is not deterministic across NVDA / JAWS / VoiceOver. It does carry an `<h3>` naming the step and a labelled close button, so the content is reachable; the framing is what is missing. Fix is `role="region"` (or `dialog`) plus `aria-labelledby` pointing at the existing `<h3>`. | `site/public/skill-node-panel.mjs` / `site/src/lib/skill-node-panel.ts` | Low | S | P3 |
+| **W1-14** | Invalid ARIA | Every decorated node carries `aria-controls="aid-node-panel"` from page load, but the panel is created **lazily on first activation** — so before any node is activated the attribute references an element that is not in the DOM. Confirmed on a fresh load: `document.getElementById('aid-node-panel')` is null while 5 nodes already advertise it. `aria-controls` is specified to reference an existing element. | `site/public/skill-node-panel.mjs` | Low | S | P3 |
+| **W1-15** | Unperformed verification | The **screen-reader announcement** check has never been run against a real screen reader. The work-level final gate verified the mechanism (accessibility tree + focus movement) in Chromium, which is not the same thing as the utterance. Needs one NVDA or VoiceOver pass over a skill detail page's chart. Tracked because the check is named in `REQUIREMENTS.md` and in feature-006's blocking default, and a mechanism inspection was substituted for it. | process / manual QA | Low | S | P3 |
 | **W1-12** | Intermittent rendering defect | ELK layout is intermittently not applied — diagrams fall back to dagre routing, producing the curved, overlapping edges the owner explicitly rejected at the delivery-003 UI checkpoint. `layout: 'elk'` is present and the loader registers; two hypotheses remain live and untested. **Owner-deferred**, shipped open and disclosed. | `site/astro.config.mjs`:47 + `@mermaid-js/layout-elk` | **Medium** | M | **P2** |
 
 ### work-001 (Skill Explorer) — issues that outlive the work folder
@@ -91,7 +97,7 @@ work-001 recorded 22 known issues in `.aid/works/work-001-skill-explorer/known-i
 inconsistently — some on a `Status:` line, KI-020 in its heading, KI-018 in a body bullet,
 KI-021 on its `Type:` line — which is why classifying by the presence of a `Status:` line
 mis-read four of them.
-The still-open ones are listed above as `W1-1`..`W1-3` and `W1-5`..`W1-12` — **eleven items**
+The still-open ones are listed above as `W1-1`..`W1-3` and `W1-5`..`W1-16` — **fifteen items**
 — because of the project's own rule that **work folders are transient**:
 `.aid/works/work-NNN-*/` may be pruned once a work ships, and no permanent artifact may depend on
 it. Left only there, they would have been deleted along with the folder — including a
@@ -103,6 +109,15 @@ the wrong CI model, and the work-level final gate fixed that row and its two sib
 Per this KB's convention a resolved item is **deleted** rather than marked done — the closure
 record lives in the `changelog:` frontmatter and in git. IDs are not renumbered, so the gap at
 `W1-4` is expected and any outside reference to it still resolves through history.
+
+`W1-13`..`W1-16` were **not** in `known-issues.md`. They were found at the work-level final gate by
+performing delivery-005's four manual browser checks, which the owner made non-blocking and which
+were then never performed, and by performing **AC-7**, the comprehension spot-check delivery-004
+owed and never recorded. Two are real accessibility defects in shipped code; one is the
+screen-reader pass still owed, recorded so that substituting a mechanism inspection for it does not
+read later as the check having been done; and `W1-16` is a Medium defect in published chart output
+that an unfamiliar reader spotted in the first chart shown to them. Every one of them was found by
+running a check that had been deferred as non-blocking — which is the argument for running them.
 
 > **Corrected 2026-07-30 at gate cycle 3.** The first version of this section said seven
 > closed / fifteen open and restated CLOSED issues as open (three at first, then a

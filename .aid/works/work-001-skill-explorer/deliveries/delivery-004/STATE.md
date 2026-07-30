@@ -143,6 +143,68 @@ No new findings. Delivery clears the A+ floor.
 Checks: 2571/2571 tests pass, 142-page build clean, gen-skills idempotent on two runs, git
 status clean, zero mutation artifacts.
 
+### AC-7 — comprehension spot-check: **PASS**, performed 2026-07-30 (late)
+
+This delivery's BLUEPRINT made recording AC-7 a gate criterion in two places, and the gate
+above closed A+ without it. Neither the criterion's checkbox nor any verdict was ever filled in;
+a grep for `AC-7` across every delivery STATE.md found only unrelated hits. The work-level final
+gate found that and performed the check. Recorded here, at the criterion's own delivery, rather
+than only at the gate that noticed.
+
+**AC-7 as specified** (`REQUIREMENTS.md`:363-366): *"A reader unfamiliar with a given skill can
+state its step order and exit points correctly from the chart alone. **Non-blocking** — a
+judgement check, not a CI gate — but recorded because it is the only criterion that tests the
+stated outcome directly."*
+
+**Method — and why it was not run by the executing agent.** "Unfamiliar" is the load-bearing
+word, and by this point in the work no agent that had touched the corpus could satisfy it. The
+check was given to a **clean-context reader** with the rendered `aid-review` chart pasted into
+its prompt and an explicit prohibition on opening any file. It used **zero tools**, so the
+answers are from the diagram alone. `aid-review` was chosen because it is the hardest inline-state
+shape available: 6 nodes, a decision with two labelled branches, and dotted loop-backs.
+
+**Result — the reader's answers against the source (`canonical/skills/aid-review/SKILL.md`):**
+
+| Question | Reader's answer | Source | Verdict |
+|---|---|---|---|
+| Step order | INTAKE → REVIEW → VERIFY → PRESENT-FINDINGS → PUBLISH → DONE, noting PUBLISH is conditional | `:32` state machine + the five `**Advance:**` lines | **Correct** |
+| Exit points | DONE only, reached from both branches | `:203` `## State: DONE`, the only exit | **Correct** |
+| The decision | "on approval" → PUBLISH; "otherwise" → DONE | `:184` "**Advance:** PUBLISH on approval; otherwise DONE" | **Correct** |
+
+Both criteria AC-7 actually names — **step order and exit points** — were stated correctly from
+the chart alone, unprompted, by a reader that had never seen the skill. **AC-7 passes.**
+
+**But the spot-check earned its keep by finding something no other criterion did.** Asked which
+steps loop back, the reader answered **three** — REVIEW→INTAKE, VERIFY→REVIEW,
+PUBLISH→PRESENT-FINDINGS — reading the chart faithfully. The source expresses **one**. The
+sidecar's own provenance is the evidence:
+
+| Edge | Source line | Real control flow? |
+|---|---|---|
+| `VERIFY -.-> REVIEW` | `:159` "If it is not clean, **loop back to REVIEW** so the first reviewer revises" | **Yes** |
+| `REVIEW -.-> INTAKE` | `:132` "(model+effort **from INTAKE** Step 4)" | **No** — a prose parenthetical |
+| `PUBLISH -.-> PRESENT-FINDINGS` | `:193` "**PRESENT-FINDINGS** is what authorizes this call" | **No** — a prose cross-reference |
+
+Cause is `_scanBodyEdges`'s **rule 7** in `site/scripts/lib/flow-graph/extract-inline.mjs`:212,
+which by documented design emits a `loop-back` edge for *any* non-heading, non-fenced line
+mentioning an earlier-ordered state. It cannot distinguish "loop back to REVIEW" from "from
+INTAKE Step 4". Filed as **W1-16**; it is **not** fixed here, because tightening rule 7 changes
+generated output for the whole corpus and this delivery's successors assert those pages
+byte-unchanged. Escalated to the owner rather than downgraded.
+
+**Extent — stated honestly.** Verified by reading the source end to end for **one** skill. The
+mechanism is general, so the class is not specific to `aid-review`. A proxy scan (loop-back edges
+whose provenance line lacks loop language) flags ~30 edges across 24 skills, but that proxy is
+**unreliable** — several flagged rows are wrapped-line tails whose full sentence does express a
+loop — so it is an unverified upper bound, not a defect count. 70 of the 100 loop-back edges in
+the corpus trace to lines that do use loop language, and the large doorway majority inherits one
+genuine "Loop back" line from `shortcut-engine.md`:804.
+
+**This also answers feature-005's OQ-2** ("Who performs AC-7, and when"), open until now: a
+clean-context reader agent, given only the rendered chart and barred from reading the repo, at the
+delivery gate that owns the criterion. That is repeatable, which is what the deferred item
+"AC-7 formalized into a repeatable review step" (PLAN.md § Deferred) asked for.
+
 ---
 
 ## Cross-phase Q&A

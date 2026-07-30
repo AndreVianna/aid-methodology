@@ -95,6 +95,34 @@ container and survive three re-render cycles; and the route gate is observable i
 **Outstanding, both owner-deferred and out of scope for this gate:** the four manual browser
 checks (Q2, non-blocking by owner decision) and **KI-022**, the intermittent ELK layout fallback.
 
+### The four manual browser checks — PERFORMED 2026-07-30, verdict below
+
+Q2 said the checks would still be "performed and recorded", just not as a gate precondition.
+They were not — through delivery-006 the only browser verification recorded anywhere in the work
+covered node decoration and panel opening, none of these four. The work-level final gate found
+that and performed them, because "after the gate" had arrived with nothing recorded and the next
+step is a PR to `master`.
+
+**Method.** Chromium via Playwright against `npx astro preview` on the built `dist/`
+(`http://localhost:4321/skills/aid-describe/`, a 5-node authored chart). Real browser, real
+build — not jsdom, which is exactly why task-053 deferred these four rather than asserting them.
+
+| # | Check | Verdict | Evidence |
+|---|-------|---------|----------|
+| 1 | Focus order | **PASS** | All 5 `g.node.aidNode` are decorated `role=button tabindex=0`. Tab from node 1 lands on 2, then 3, 4, 5 — tab order equals document order equals the chart's step order (`aria-label`s read "Step 1…" → "Step 5…"). **Also settles the question task-053 could not:** an SVG `<g>` carrying `tabindex` *is* focusable in Chromium — `nodes[0].focus()` sets `document.activeElement` to that `<g>`. jsdom's focusable-area model could not answer this, which is why the suite asserts attributes instead. |
+| 2 | Focus return | **PASS** | `Enter` on node 5 opens the panel and moves focus into it; `Escape` closes it, returns focus to node 5, and resets that node's `aria-expanded` to `false` with no node left expanded. |
+| 3 | Screen-reader announcement | **PASS WITH OBSERVATIONS** | Announcement works by **focus movement**, not a live region: activation moves focus into the panel, which carries an `<h3>` naming the step and a `button` labelled "Close step details". Two gaps, both recorded as debt below. **Limit of this check, stated plainly: no screen reader was run.** What was verified is the accessibility tree and the focus behaviour — the mechanism, not the utterance. A real NVDA/JAWS/VoiceOver pass is still owed and is what the check literally names. |
+| 4 | 360 px layout (observation) | **PASS WITH ONE OBSERVATION** | At a 360 px viewport (345 CSS px client width) the document does **not** scroll horizontally; the panel renders 313 px wide, fully inside the viewport; the chart container is `overflow-x: auto` and scrolls rather than overflowing. One element exceeds the viewport by 4 px — Starlight's theme `<select>` inside AID's `.aid-header`. **Measured, not assumed, whether this work caused it:** hiding the `Skills` header tab that task-016 added leaves the select at the same 349 px, so the tab is not the cause and this is pre-existing site chrome. It causes no horizontal document scroll. |
+
+**Net effect on the gate:** nothing here would have failed it. Under feature-006's default the
+three accessibility checks block, and all three pass — checks 1 and 2 cleanly, check 3 with
+observations rather than a Fail. So the owner's Q2 override cost this delivery no correctness;
+what it cost was the record, for two days, on the three checks that block.
+
+**Filed rather than fixed** (this is a verification pass, not a licence to change shipped
+behaviour at a final gate): the two check-3 gaps go to `.aid/knowledge/tech-debt.md` as `W1-13`
+and `W1-14`, and the real-screen-reader pass as `W1-15`.
+
 ---
 
 ## Cross-phase Q&A
