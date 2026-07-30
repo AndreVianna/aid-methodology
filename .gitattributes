@@ -17,3 +17,11 @@
 # so a Windows autocrlf checkout can't inject CRLF that a consumer's parser mishandles
 # (a CRLF checkout made vendor.js leak comment lines as bogus file paths).
 dashboard/MANIFEST text eol=lf
+# The install manifest is LF-only in history but had no rule, so a Windows tool that
+# rewrote it (Python's default newline translation) silently committed CRLF —
+# functionally harmless, since every consumer JSON-parses it, but it turned a 72-line
+# path deletion into an 875-line whole-file re-encode and made the diff of the very
+# artifact under review unreadable. Scoped to this one file deliberately rather than a
+# blanket *.json rule: .claude/settings.json has been CRLF since before this policy and
+# renormalising it is a separate change.
+.aid/.aid-manifest.json text eol=lf
