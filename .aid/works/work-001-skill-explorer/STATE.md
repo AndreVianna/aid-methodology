@@ -8,7 +8,7 @@ user_approved: no
 lifecycle: Running
 phase: Execute
 active_skill: aid-execute
-updated: '2026-07-26T21:06:07Z'
+updated: '2026-07-30T03:30:00Z'
 pause_reason: --
 block_reason: --
 block_artifact: --
@@ -317,8 +317,11 @@ _None yet. Each delivery-NNN/STATE.md carries its own gate block._
   rather than predicted: Pagefind indexes all 111 detail pages (13 fragments mention `aid-config`),
   and the sidebar `Skills` group shipped in task-016. `/reference/skills/` remains a leaf with only
   an `index.html`, so child routes still 404 until half 1 lands.
-- **Still to do:** this delivery is **not yet planned**. `PLAN.md` is an `aid-plan` artifact and is
-  not edited here; the new delivery needs its own BLUEPRINT and task breakdown before execution.
+- **Status (2026-07-30):** delivery-006 **Executing** — BLUEPRINT and tasks 054–057 authored.
+  task-054 and task-055 implemented in the working tree (uncommitted). Still to do: commit 054/055,
+  tasks 056–057, delivery-006 gate (A+), KI-022 (ELK layout), browser checks, PR into `master`.
+  Worktree: `.claude/worktrees/work-001`, branch `aid/work-001-delivery-005`. **Use Windows git
+  only — no WSL** (KI-017).
 
 ## Calibration Log
 
