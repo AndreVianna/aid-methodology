@@ -1,8 +1,8 @@
 ---
 delivery_state: Gated
-gate_tier: Medium
-gate_grade: "Pending"
-gate_timestamp: "--"
+gate_tier: Large
+gate_grade: D
+gate_timestamp: '2026-07-30T11:48:09Z'
 ticket_ref: "--"
 ---
 
@@ -43,11 +43,9 @@ ticket_ref: "--"
 
 ## Delivery Gate
 
-<!-- AUTHORED -- single writer: the delivery-gate closing step of aid-execute on this
-     delivery's branch. Reviewer Tier / Grade / Timestamp live in the frontmatter above. -->
-
-- **Issue List:** --
-
+- **Complexity Score:** 18 (tasks=6, depth=3, risk=9, consults=0) -> Large tier
+- **Cycles:** 6. Grades D- -> D -> D -> D -> D+ -> D; findings 13 -> 15 -> 8 -> 11 -> 6 -> 7. The recorded Grade is cycle 6's, the last one actually measured.
+- **Issue List:** all 60 findings across the six cycles are FIXED and self-verified. Cycle 6's 7 fixes have NOT been graded by a fresh reviewer, so the current tree is ungraded. **Gate NOT passed** against the A+ minimum. Reasons and options: § Cross-phase Q&A, 'Why six cycles did not reach A+'.
 ---
 
 ## Cross-phase Q&A
@@ -55,6 +53,59 @@ ticket_ref: "--"
 <!-- AUTHORED -- single writer: this delivery's branch (via the delivery-gate step of
      aid-execute). Written here, NOT into the shared work-level STATE.md, to preserve the
      disjoint-write property. -->
+
+### Why six cycles did not reach A+ (2026-07-30) — needs a human decision
+
+- **Category:** Process
+- **Impact:** High
+- **Status:** Open — gate not passed; awaiting a decision on how to close it
+
+Six Large-tier cycles. Grades `D- → D → D → D → D+ → D`. Findings `13 → 15 → 8 → 11 → 6 → 7`. All 60
+are fixed; cycle 6's seven fixes are self-verified but ungraded.
+
+**The substance is sound, and every cycle re-confirmed it independently.** Each reviewer built its own
+fixtures and *ran* the emitter and the checklist script, re-derived the coverage-parity inventory,
+mutation-tested the suites' gate-criterion assertions (7–8 mutations per cycle, all caught), and
+re-verified NFR-1 (`grade.sh` byte-identical to `7a9df485`), NFR-2 (render parity across all 8 trees,
+byte-identity 755/755), and NFR-7 (one grade producer, repo-wide). Gate criteria 1–4, 6 and 7 hold.
+
+**What kept the grade down was documentation coherence — and, materially, me.** Three of the findings
+in cycle N+1 were *caused by* a fix in cycle N:
+
+| Cycle | Introduced by the previous cycle's fix |
+|---|---|
+| 4 | `AC3e-2`'s pattern carried a literal `0x08` where `\b` was meant → the only mechanical guard for gate criterion 5 passed unconditionally |
+| 5 | `SEV01`'s row *feed* still required backticked rule IDs, so the widened extraction read 0 rows in four of eight files |
+| 6 | wiring `PRE-01` landed a literal `\n` instead of a line continuation → the emitter **aborted** under `set -u` and reported exit 1, the code for a *complete* run |
+
+All three are the same root cause: **an escape written through a layer that consumed it.** Two guards
+now exist for it (`CB01` control bytes, `CB03` literal `\n`), both mutation-tested. But the rate matters
+more than the instances: while fixing ~10 findings a cycle I was creating roughly one, so further cycles
+carry real risk of net harm rather than convergence.
+
+**The other driver is structural.** This delivery rewrote ~20 interlocking prose surfaces that all
+describe one workflow (VALIDATE → MANUAL-CHECKLIST → APPROVAL/FIX, plus the two discover gates). An A+
+floor requires *zero* open findings at `[MEDIUM]` or above, and `grade.sh` is worst-severity dominated —
+so one restated severity or one stale sentence anywhere in those twenty files pins the whole delivery at
+`D`. Cycle 6's seven findings were: one crash (mine), one unreconcilable rule (mine, cycle 5), two
+missing runbook steps, and three stale sentences. That is the shape of the residue, and it is not
+converging to zero by iteration.
+
+**Three ways to close it, for the human to pick:**
+
+1. **Accept at the current grade, with the residue documented.** The scripts, tests and gates are
+   verified; the open class is prose coherence in files that no test can bind. Records the honest grade
+   rather than an engineered one.
+2. **Narrow the gate's scope to what it can actually judge** — scripts, tests, rendered parity — and
+   move the prose-coherence sweep to its own delivery with a lint that can enforce it (a "no severity
+   restated beside a rule ID" check already exists as `SEV01`; the missing one is "no stale claim about
+   what a script does", which needs a different mechanism than review).
+3. **Keep cycling.** Cheapest to say, and the trajectory argues against it: six cycles, one grade step,
+   and a fix-induced-defect rate near one per cycle.
+
+**Recommendation: option 2.** It is the only one that changes the mechanism rather than the effort, and
+it matches what this work has already concluded twice — that a claim about a script's behaviour needs a
+lint, not a reviewer (feature-008's FR-G4, and Q16's "a gate that can never pass gets switched off").
 
 ### Resumed 2026-07-30 — what the handoff's "implementation complete" actually was
 
