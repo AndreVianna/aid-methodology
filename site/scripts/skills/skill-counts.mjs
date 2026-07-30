@@ -75,7 +75,8 @@ export function deriveSkillCounts(repoRoot) {
   // because the owner's Q1 decision made the full path exactly five skills and those
   // two ordinary shortcuts. They are still hand-authored `repurpose: true` skills, so
   // they ARE classic in the reference framing — which is what a reader-facing "N
-  // classic skills" claim means. Deriving from CURATED_GROUPS would silently say 17.
+  // classic skills" claim means. Deriving from CURATED_GROUPS would silently produce the
+  // NON-catalog figure instead, which is a different quantity with a different meaning.
   //
   // Deduped: a curated skill appears in exactly one group today, but the set
   // operation is what the count means, so a future duplicate must not inflate it.
@@ -99,19 +100,24 @@ export function deriveSkillCounts(repoRoot) {
     (r) => r.repurpose === 'true' && curatedSet.has(r.name),
   ).length;
 
-  // The figure a reader-facing decomposition must use. `curated` (21) counts four skills
-  // that are ALSO catalog rows -- aid-deploy, aid-monitor, aid-query-kb and the aid-ask
-  // alias -- so KI-003 "21 curated + 94 catalog" double-counts them, and the sentence
-  // the sentence "classic + triage + ask + shortcuts" double-counts three of them AND
-  // omits the 26 collapse skills, landing on 85 for a 111 corpus. Excluding the overlap
-  // gives 17, and 17 + 94 = 111 exactly. That is why every page on the site states the
-  // corpus as "17 curated + 94 catalog": it is the decomposition that sums. Asserted as
-  // an identity in skill-counts.test.mjs, so a future roster change cannot quietly break it.
+  // The figure a reader-facing decomposition must use.
+  //
+  // `curated` counts four skills that are ALSO catalog rows -- aid-deploy, aid-monitor,
+  // aid-query-kb and the aid-ask alias -- so pairing it with the catalog-row count
+  // double-counts those four, and the sentence "classic + triage + ask + shortcuts"
+  // double-counts three of them AND omits the work-005 collapse skills entirely. Excluding
+  // the overlap gives the figure that SUMS with the catalog rows to the corpus total, which
+  // is the decomposition every page on the site states.
+  //
+  // No figures are written above on purpose: this file is the one place the numbers are
+  // derived, so stating them in its own commentary is the defect it exists to prevent --
+  // and stating them here is exactly what the guard caught twice. The identity is asserted
+  // in skill-counts.test.mjs, so a future roster change cannot quietly break it.
   const catalogNameSet = new Set(rows.map((r) => r.name));
   const curatedOnlyNames = curatedNames.filter((n) => !catalogNameSet.has(n));
 
-  // Pages state the catalog's split as "58 canonical names + 36 aliases", so both halves
-  // are derived here too rather than being two more numbers nobody checks.
+  // Pages state the catalog's split as "N canonical names + N aliases", so both halves are
+  // derived here too rather than being two more numbers nobody checks.
   const catalogCanonical = rows.filter((r) => r.alias_of === 'null').length;
 
   return {

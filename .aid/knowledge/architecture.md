@@ -126,7 +126,7 @@ This is the architecture that makes AID a *product*. It is a SYNTHESIS concept �
 
 **The flow:**
 
-1. `canonical/` holds the single source: `skills/` (92), `agents/` (9),
+1. `canonical/` holds the single source: `skills/` (111), `agents/` (9),
    `aid/{scripts,templates}`. CONFIRMED via directory listing.
 2. `python .claude/skills/generate-profile/scripts/run_generator.py` renders the source
    into the five `profiles/*` install trees, one per `profiles/*.toml`. CONFIRMED in
@@ -163,7 +163,7 @@ The five profile roots: `.claude/` (Claude Code), `.codex/` (Codex), `.cursor/` 
 
 **Note:** the generator/`generate-profile` skill is **maintainer-only** — it lives in
 `.claude/skills/generate-profile/` and is NOT one of the 111 shipped user-facing skills in
-`canonical/skills/`. CONFIRMED: `canonical/skills/` contains 92 dirs, none named
+`canonical/skills/`. CONFIRMED: `canonical/skills/` contains 111 dirs, none named
 `generate-profile`.
 
 ---
@@ -209,7 +209,7 @@ that also contradicted this document's own reconciled figure in § Skill count b
 | Deploy | `aid-deploy` | No (Definition shortcut path) | On-demand optional shortcut path in the Definition group; not a numbered phase. |
 | Track / Monitor | `aid-monitor` | No (Definition shortcut path) | On-demand observe -> classify -> route; not a numbered phase. ("Track" has no separate referent.) Routes findings out: bug -> `/aid-fix`, change request -> `/aid-triage`. |
 | Triage | `aid-triage` (standalone skill); `aid-monitor` classify | No | `/aid-triage` is now its own **suggest-only router** skill (INTAKE -> CLASSIFY -> SUGGEST -> HALT) — the extraction of `aid-describe`'s former TRIAGE state; it writes nothing and creates no work. Monitor still classifies its own findings. |
-| Shortcut (Lite path) | 76 `aid-<verb>[-<artifact>]` skills + the shared shortcut engine | No (collapses Describe→Detail) | Verb-first direct-entry doorways (`/aid-fix`, `/aid-create-api`, …) that delegate to `canonical/aid/templates/shortcut-engine.md` (INTAKE -> CAPTURE -> SPEC -> PLAN -> DETAIL -> GATE -> APPROVAL-HALT). The autonomous Lite path — enter by naming your change. |
+| Shortcut (Lite path) | 64 `aid-<verb>[-<artifact>]` skills + the shared shortcut engine | No (collapses Describe→Detail) | Verb-first direct-entry doorways (`/aid-fix`, `/aid-create-api`, …) that delegate to `canonical/aid/templates/shortcut-engine.md` (INTAKE -> CAPTURE -> SPEC -> PLAN -> DETAIL -> GATE -> APPROVAL-HALT). The autonomous Lite path — enter by naming your change. |
 
 Knowledge Base Maintenance group (on-demand, off the numbered pipeline): `aid-housekeep`
 (KB drift reconciliation), `aid-query-kb` (Q&A + gap capture; `aid-ask` is its friendly-named

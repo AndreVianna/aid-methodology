@@ -1,7 +1,7 @@
 ---
 delivery_state: Gated
 gate_tier: Large
-gate_grade: "Pending"
+gate_grade: "In progress — cycle 3"
 gate_timestamp: "--"
 ticket_ref: "--"
 ---
@@ -32,10 +32,21 @@ ticket_ref: "--"
   came from (054's derivation), not about commit order. This is **not** a claim that the order was
   free of consequences — the 85-for-111 sentence is exactly what a prose task landing ahead of its
   guard allows, and it was caught at review rather than by the build.
-- Per-task quick-checks found **2 CRITICAL and 4 HIGH**, all fixed on the spot — see each task's
-  STATE.md. The **delivery gate** (Large tier) then found **1 CRITICAL, 5 HIGH, 11 MEDIUM, 9 LOW,
-  4 MINOR** — grade **E+** on cycle 1. Fixing in progress; ledger at
+- Per-task quick-checks found **2 CRITICAL and 4 HIGH**, all fixed on the spot.
+- **Delivery gate (Large tier), three cycles so far.** Cycle 1: 30 findings, **E+**. Cycle 2:
+  23 Fixed / **7 Recurred** / 13 new, **D+** — its finding was that fixes addressed each row's
+  Description and skipped the sibling sites its Evidence enumerated. Cycle 3: 26 Fixed / 7
+  Recurred / 29 Pending, and it caught two fixes that made things WORSE — a historical
+  comparative in `pipeline-contracts.md` corrected into a falsehood, and a dated audit row in
+  `test-landscape.md` hand-edited (the guard had already skipped that line by shape, so the
+  edit was gratuitous). Both reverted. Ledger:
   `.aid/.temp/review-pending/execute-delivery-006.md`.
+- **Root causes, addressed after cycle 2 rather than patching further:** (1) the count guard
+  was rooted at `site/`, leaving most of the repo unguardable — 55 wrong counts in 15 files;
+  now a repo-wide guard at `tests/canonical/check-skill-counts.mjs`, 169 claims clean.
+  (2) the superseded-§7-freeze class existed in 13 files, not the one a reviewer named.
+  (3) wrong-layer edits: detection existed and worked, but the rendered file did not say it
+  was rendered — `writeback-state.sh` now carries a banner into all 8 generated copies.
 - **Browser verification — PASS (2026-07-30, `astro preview` + Playwright, on-demand not CI).**
   Static tests cannot see any of this, and work-017 shipped four broken surfaces past an A+ gate,
   so every reader-facing change this delivery made was driven in a real browser:

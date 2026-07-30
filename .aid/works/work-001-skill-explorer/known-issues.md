@@ -328,7 +328,7 @@
 - **Severity:** Medium
 - **Status:** **STILL OPEN, but half of it is resolved and the rest is now disclosed rather than
   invisible.** Updated by delivery-006 (task-057), 2026-07-30:
-  - **The asymmetry of the remedy — resolved.** It rested on "§7 freezes `gen-reference.mjs`", and
+  - **The asymmetry of the remedy — resolved.** It rested on "§7 freezes `gen-reference.mjs` <!-- SUPERSEDED 2026-07-30: §7's second amendment (work-level Q4) lifted the gen-reference.mjs freeze; delivery-006 hollowed out reference/skills.md. Kept as the design record. -->", and
     §7's second amendment lifted that freeze (work-level Q4). The point is moot anyway: that page
     no longer publishes a roster at all, so there is no longer a second grouping on a *page* for
     the two to disagree about.

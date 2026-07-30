@@ -143,7 +143,7 @@ option; confirm at read-back)*:
   over collapsing the ~90 doorways into family cards, and therefore **knowingly diverges**
   from the existing `gen-reference.mjs` decision to summarize shortcuts by family because
   individually they would be "near-identical blocks of pure noise". The two surfaces may
-  legitimately differ: `reference/skills.md` stays a terse summary, `/skills/` lists
+  legitimately differ: ~~`reference/skills.md` stays a terse summary~~ *(superseded — delivery-006 hollowed it out; it now carries only the shortcut-engine narrative. See § Constraints, §7 second amendment)*, `/skills/` lists
   everything.
 
   **Grouping taxonomy — two levels.** The top level is the curated four (`Support`,

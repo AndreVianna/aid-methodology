@@ -305,7 +305,7 @@ follows is work adjacent to the plan, each with its revisit trigger.
 
 | Item | Reason | Revisit When |
 |------|--------|--------------|
-| KI-009 (family table renders six `0` rows and `-1 typed forms`), KI-010 (stale `SKILL_GROUPS`), KI-003 (stale header comment) | All inside `gen-reference.mjs`, which §7 freezes. Fixing them is a different work. | The §7 freeze lifts. At that point feature-002's divergence note should be **deleted**, not left to rot. |
+| KI-009 (family table renders six `0` rows and `-1 typed forms`), KI-010 (stale `SKILL_GROUPS`), KI-003 (stale header comment) | All inside `gen-reference.mjs`, which §7 freezes. Fixing them is a different work. | The §7 freeze lifts. At that point feature-002's divergence note should be **deleted**, not left to rot. | <!-- SUPERSEDED 2026-07-30: §7's second amendment (work-level Q4) lifted the gen-reference.mjs freeze; delivery-006 hollowed out reference/skills.md. Kept as the design record. -->
 | KI-002 (KB structural-shape figures are stale) | A KB correction, not a product change. The live figures belong in delivery-003's `shapeCounts` manifest entry. | The KB update at ship — regenerate the row from the manifest or remove its numbers. |
 | KI-007 (the KB's `docs.yml` trigger row is wrong in both directions) | KB correction. Delivery-001 makes it further wrong. | The KB update accompanying delivery-001's ship. |
 | AC-7 formalized into a repeatable review step | §10 Could; feature-005 wires it into nothing deliberately. | A Fail or Pass-with-observations verdict at delivery-004's AC-7 spot-check. |

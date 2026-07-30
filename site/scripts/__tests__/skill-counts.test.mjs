@@ -291,6 +291,12 @@ describe('the roster has one home', () => {
     /\b\d+\s+(?:AID\s+)?skills\b/,
     /\b\d+\s+(?:[\w-]+\s+)?shortcuts?\b/,
     /\b\d+\s+near-identical\b/,
+    // `curated` reached SUPERSEDED_BY_SHAPE (the half that PERMITS a number) but never
+    // this list (the half that FINDS one), so unmarked hand-counts sat in a file declared
+    // to state none. An allowlist entry with no matching finder guards nothing.
+    /\b\d+\s+curated\b/,
+    // Negative lookbehind on `-`: "work-005 collapse skills" is a work id, not a count.
+    /(?<!-)\b\d+\s+collapse skills\b/,
   ];
 
   /** Files that must state no skill count outside a `KI-003`-marked line. */

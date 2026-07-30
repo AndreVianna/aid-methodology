@@ -153,8 +153,11 @@ site/  ->  canonical/       (hard build-time dependency, and enforced)
 ```
 
 work-001 (Skill Explorer) made the website derive its content from the toolkit rather than
-restate it. Three generators — `gen-reference.mjs`, `gen-skills.mjs`, `sync-docs.mjs` — read
-`canonical/` on every `prebuild`, and the coupling is *enforced*, not incidental:
+restate it. **Two** generators — `gen-reference.mjs` and `gen-skills.mjs` — read `canonical/`
+on every `prebuild`, and the coupling is *enforced*, not incidental. (The third generator,
+`sync-docs.mjs`, reads `docs/` only and is NOT part of this coupling — it is named here
+because an earlier revision of this row wrongly counted it, and overstating a dependency to
+justify reversing a non-dependency is the same defect as understating it.)
 
 - `gen-skills.mjs` and `gen-reference.mjs` **throw** when the on-disk skill set diverges from
   the catalog plus curated roster, so a canonical change that the site cannot account for

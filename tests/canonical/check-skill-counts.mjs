@@ -58,6 +58,17 @@ const CLAIMS = [
   [/\b(\d+) (?:AID )?skills\b/g, () => c.directories, 'corpus total'],
   [/\b(\d+) skill directories\b/g, () => c.directories, 'corpus total'],
   [/\b(\d+) skill definitions\b/g, () => c.directories, 'corpus total'],
+  // These three phrasings were MISSING, and they are precisely the three live falsehoods
+  // that survived in architecture.md -- the file this guard's own commit message used as
+  // its motivating example. A digit can be separated from its noun by markdown emphasis or
+  // a backticked token, which defeats every plain-adjacency pattern.
+  [/\b(\d+) dirs\b/g, () => c.directories, 'corpus total'],
+  [/`?skills\/`?\s*\((\d+)\)/g, () => c.directories, 'corpus total'],
+  // Negative lookahead on `repurpose`: "30 `repurpose` skills" is the repurpose count and has
+  // its own pattern above. Without this, the shortcut pattern claims it and reports a CORRECT
+  // number as wrong — and a guard's false positives cost it the credibility its real findings
+  // depend on. Three of the original 55 were exactly this kind of noise.
+  [/\b(\d+) `(?!repurpose`)[^`]+` skills\b/g, () => c.shortcuts, 'emitting shortcuts'],
   [/\b(\d+) shipped (?:user-facing )?skills\b/g, () => c.directories, 'corpus total'],
   // `curated` must be followed by a skill-ish noun. Bare `\d+ curated` matched
   // "8 curated domains" (KB domains) and "feature-014 curated them" -- neither is a
