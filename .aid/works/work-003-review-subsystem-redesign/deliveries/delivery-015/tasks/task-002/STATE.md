@@ -1,5 +1,5 @@
 ---
-state: Pending
+state: 'In Progress'
 review: "Pending"
 elapsed: "--"
 notes: "--"
