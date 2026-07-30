@@ -22,11 +22,14 @@ Specifically:
 5. Flag every point where the KB did not provide the necessary guidance
    and you had to assume or guess.
 
-**Scoring:**
+**Verdict:**
 - PASS: a correct, executable plan is producible from the KB alone, with no
   insufficiency flags.
 - FAIL: the plan cannot be produced correctly from the KB, OR any insufficiency
-  flag is raised.  Each flag is a [HIGH] [ACTBACK] finding.
+  flag is raised.  Each flag is an [ACTBACK] finding at its cited rule's anchor --
+  [HIGH] for KB-22..KB-25, [LOW] for KB-26, Step 2 for KB-20/KB-21. The severity is
+  NOT fixed here: an unstated convention is a KB-26 finding at [LOW], and a lone one
+  grades B+, not <= D.
 
 **Doc set used for this task (machine-readable substrate):**
 - coding-standards.md

@@ -331,7 +331,7 @@ list_reviewable() {
 > *route by* `kb-category` (a `meta` doc gets only a Spot-Check Snapshot, not the full graded
 > checklist). `list_reviewable` extends the same intent to the M3/M4 keystone gates, which
 > otherwise read a raw `.aid/knowledge/*.md` glob and would ingest `STATE.md`/`README.md` as
-> if they were knowledge. Keystone gates fail their verdict, and at any configured minimum also the grade -- formerly stated as forcing ≤ D, so leaking ledger text there is the
+> if they were knowledge. A keystone gate that fails takes its verdict to FAIL, which is what blocks Ready -- so leaking ledger text there is the
 > highest-impact contamination — `list_reviewable` closes it deterministically.
 
 ---

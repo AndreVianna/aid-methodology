@@ -409,11 +409,14 @@ _run_task() {
   esac
 
   echo ""
-  echo "**Scoring:**"
+  echo "**Verdict:**"
   echo "- PASS: a correct, executable plan is producible from the KB alone, with no"
   echo "  insufficiency flags."
   echo "- FAIL: the plan cannot be produced correctly from the KB, OR any insufficiency"
-  echo "  flag is raised.  Each flag is a [HIGH] [ACTBACK] finding."
+  echo "  flag is raised.  Each flag is an [ACTBACK] finding at its cited rule's anchor --"
+  echo "  [HIGH] for KB-22..KB-25, [LOW] for KB-26, Step 2 for KB-20/KB-21. The severity is"
+  echo "  NOT fixed here: an unstated convention is a KB-26 finding at [LOW], and a lone one"
+  echo "  grades B+, not <= D."
   echo ""
   echo "**Doc set used for this task (machine-readable substrate):**"
   # Emit sorted filename list (from already-sorted files_tmp)

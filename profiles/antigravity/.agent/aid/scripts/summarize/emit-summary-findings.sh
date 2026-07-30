@@ -281,14 +281,29 @@ if [[ -f "$SCRIPT_DIR/validate-html-output.sh" ]]; then
                      "$k"
             fi
         done
-        # The validator FAILED but nothing this script knows how to attribute matched. That is not a
-        # clean run: it means the validator carries a check with no mapping here, which is exactly how
-        # the three [Structural checks] above went unreported while the emitter printed "no findings"
-        # and exited 0 -- the header's meaning for which is "every check passed". Refusing to call that
-        # clean converts a silent false pass into a loud, fixable one.
-        if [[ "$vrc" -ne 0 && "$FINDINGS" -eq "${before_html:-0}" ]]; then
-            unevaluated "validate-html-output.sh exited ${vrc} but no mapped check matched -- an unmapped check failed; add it to RULE_FOR"
-        fi
+        # EVERY failure line the validator printed must have been claimed by a mapped key. The earlier
+        # version compared only the aggregate finding COUNT before and after the loop, so it fired only
+        # when NOTHING matched -- one mapped failure alongside an unmapped one, which is the ordinary
+        # case, hid the unmapped one completely and the run still exited 1 ("a complete run with
+        # findings"). Attribute line by line instead: a failure no key claims is a check with no rule
+        # here, and reporting it as unevaluated is what turns a silent false pass into a fixable one.
+        while IFS= read -r fail_line; do
+            [[ -n "$fail_line" ]] || continue
+            claimed=0
+            for k in "${!RULE_FOR[@]}"; do
+                if printf '%s\n' "$fail_line" | grep -qE "^[[:space:]]*((❌|FAIL)[[:space:]]*${k}([.[:space:]]|\$)|${k}([.[:space:]]).*\[FAIL\])"; then
+                    claimed=1; break
+                fi
+            done
+            if [[ "$claimed" -eq 0 ]]; then
+                unevaluated "validate-html-output.sh reported a failure no rule claims -- add it to RULE_FOR: $(printf '%s' "$fail_line" | sed 's/^[[:space:]]*//' | cut -c1-72)"
+            fi
+        # Exclude the validator's own AGGREGATE line ("❌ HTML output validation failed: 19/21 checks
+        # passed"). It is a roll-up of the per-check lines above it, not a check, and it is unindented --
+        # so without this the guard would report an unattributed failure on every genuinely-failing run,
+        # which is a false positive that would train a reader to ignore the note.
+        done < <(grep -E '^[[:space:]]*(❌|FAIL)|\[FAIL\]' "$HTML_LOG" 2>/dev/null \
+                 | grep -vE 'validation (failed|passed)|checks passed|check\(s\) failed' || true)
     fi
 else
     unevaluated "validate-html-output.sh not found -- H1/S2/L1/L2/A1-A5/NM not evaluated"

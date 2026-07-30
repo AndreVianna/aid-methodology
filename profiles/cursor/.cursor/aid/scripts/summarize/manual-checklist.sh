@@ -118,13 +118,44 @@ done
 # had the same shape.
 #
 # Order matters: backslash first, or the escapes this adds get escaped again.
+# ONE awk pass, no sed stage. The sed that used to escape backslash and quote also SILENTLY DROPPED a
+# carriage return -- MSYS sed treats CR as a line terminator, so `a<CR>b` came out as `ab` and the
+# character never reached the escaper that would have handled it. Escaping backslash, quote and every
+# control character in a single character walk removes the stage that was mangling the input, and makes
+# the order of escapes explicit rather than dependent on two tools agreeing.
 escape_json() {
     printf '%s' "$1" \
-        | sed 's/\\/\\\\/g; s/"/\\"/g' \
-        | awk 'BEGIN { ORS = "" }
-               { gsub(/\t/, "\\t"); gsub(/\r/, "\\r")
+        | awk 'BEGIN { ORS = ""
+                       # RFC 8259 forbids EVERY unescaped C0 character (U+0000-U+001F), not just the
+                       # three with short escapes. An earlier version handled tab, CR and newline only,
+                       # so a form feed, vertical tab or ESC still produced a file that is not JSON --
+                       # after which --input read the notes back as "" and destroyed them. Any C0 with
+                       # no short form becomes \uXXXX, which is what makes this a CLASS fix rather than
+                       # three more special cases.
+                       for (c = 0; c < 32; c++) {
+                           ch = sprintf("%c", c)
+                           if      (c ==  8) esc[ch] = "\\b"
+                           else if (c ==  9) esc[ch] = "\\t"
+                           else if (c == 12) esc[ch] = "\\f"
+                           else if (c == 13) esc[ch] = "\\r"
+                           else if (c != 10) esc[ch] = sprintf("\\u%04x", c)
+                       }
+                       esc[sprintf("%c", 127)] = "\\u007f"
+                       esc["\\"] = "\\\\"
+                       esc["\""] = "\\\"" }
+               {
+                 line = $0
+                 out = ""
+                 n = length(line)
+                 for (i = 1; i <= n; i++) {
+                     ch = substr(line, i, 1)
+                     out = out ((ch in esc) ? esc[ch] : ch)
+                 }
+                 # A real newline in the input is a record separator here, so it is re-emitted as \n
+                 # between records rather than matched inside one.
                  if (NR > 1) printf "\\n"
-                 printf "%s", $0 }'
+                 printf "%s", out
+               }'
 }
 
 # These used to return point values (10/5/0, 15/8/0, 5/0) feeding a 30-point pool. The points are gone

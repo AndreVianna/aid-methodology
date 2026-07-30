@@ -119,8 +119,10 @@ overrides. The rest were artefacts of the ladder.
    grade follows from that finding like any other.
 
 **Coverage no longer has a 60% cliff.** It was the ladder's way of forcing a floor. Under `SUMMARY-01`
-each unreferenced document is its own `[MEDIUM]` finding, so coverage degrades the grade smoothly and
-names what is missing instead of announcing a percentage.
+each unreferenced document is its own `[MEDIUM]` finding, which **names what is missing** instead of
+announcing a percentage. It does not degrade the grade *smoothly*: `grade.sh` counts findings in three bands (`modifier_for_count`: 1 -> `+`, 2-5 -> none, 6+ -> `-`),
+so the measured curve for `[MEDIUM]` rows is **0 -> `A+`, 1 -> `C+`, 2-5 -> `C`, 6+ -> `C-`**. So coverage is
+finer-grained in what it REPORTS -- one row per document -- while the grade itself still moves in bands.
 
 > **Diagram-count hard rule: REMOVED**, and it stays removed. There is no minimum or maximum diagram
 > count, and neither adding nor omitting diagrams affects the grade. Visuals are judged on quality and
@@ -341,5 +343,7 @@ The letter goes to stdout on its own first line, so a caller can capture it with
 breakdown is what `--explain` adds.
 
 Re-run `/aid-summarize` to enter FIX and add the missing sections. Because each absent document is its
-own finding rather than a band, fixing one improves the grade — under the retired ladder, going from 18
+own finding rather than a band, each fix removes a row and the report names one fewer document. **The
+grade moves in bands, though**, so partial fixes may not move it: `grade.sh` counts findings in three bands (`modifier_for_count`: 1 -> `+`, 2-5 -> none, 6+ -> `-`), so the measured curve for `[MEDIUM]` rows is **0 -> `A+`, 1 -> `C+`, 2-5 -> `C`, 6+ -> `C-`**.
+Fix them all. Under the retired ladder, going from 18
 to 21 of 22 documents changed nothing until a threshold was crossed.

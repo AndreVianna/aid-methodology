@@ -279,8 +279,10 @@ One grade for the artifact, over the merged ledger — not one per mandate.
 
 **2c. Derive the essence verdict (Intent 2 — Blind Reconstruction + Source Confrontation)**
 
-The essence verdict is NOT a stored sentinel. Read it directly from
-`.aid/.temp/review-pending/{{SCOPE}}.md`.
+The essence verdict is NOT a stored sentinel -- it is read off the rows. Read it from **M3's own scratch
+ledger**, `.aid/.temp/review-pending/{{SCOPE}}-teachback.md`, NOT from the merged
+`.aid/.temp/review-pending/{{SCOPE}}.md`; the reason is below, and this sentence named the merged file
+until the scoping was introduced four lines further down, contradicting it in the same section.
 
 **Essence gate PASS conditions (both must hold):**
 Both conditions count **only this mandate's rows**, and they count them **in M3's own scratch ledger
@@ -361,8 +363,9 @@ realized entirely through the merged rows. No separate boolean, no AND to reconc
 
 **2d. Derive the assertiveness verdict (Intent 1 — Blind Work-Simulation)**
 
-The assertiveness verdict is NOT a stored sentinel. Read it directly from
-`.aid/.temp/review-pending/{{SCOPE}}.md`.
+The assertiveness verdict is NOT a stored sentinel -- it is read off the rows. Read it from **M4's own
+scratch ledger**, `.aid/.temp/review-pending/{{SCOPE}}-actback.md`, NOT from the merged
+`.aid/.temp/review-pending/{{SCOPE}}.md`, for the reason § 2c gives.
 
 **Assertiveness gate PASS conditions (both must hold):**
 1. **Zero insufficiency rows open** — no load-bearing ASSUMED/REACH step and no

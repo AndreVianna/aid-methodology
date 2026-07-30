@@ -35,7 +35,7 @@ ticket_ref: "--"
 <!-- AUTHORED -- single writer: this delivery's branch. The State scalar lives in the
      frontmatter above (delivery_state). -->
 
-- **Updated:** 2026-07-30T03:30:00Z
+- **Updated:** 2026-07-30T19:31:56Z
 - **Block Reason:** --
 - **Block Artifact:** --
 
@@ -44,8 +44,8 @@ ticket_ref: "--"
 ## Delivery Gate
 
 - **Complexity Score:** 18 (tasks=6, depth=3, risk=9, consults=0) -> Large tier
-- **Cycles:** 6. Grades D- -> D -> D -> D -> D+ -> D; findings 13 -> 15 -> 8 -> 11 -> 6 -> 7. The recorded Grade is cycle 6's, the last one actually measured.
-- **Issue List:** all 60 findings across the six cycles are FIXED and self-verified. Cycle 6's 7 fixes have NOT been graded by a fresh reviewer, so the current tree is ungraded. **Gate NOT passed** against the A+ minimum. Reasons and options: § Cross-phase Q&A, 'Why six cycles did not reach A+'.
+- **Cycles:** 9. Grades D- -> D -> D -> D -> D+ -> D -> D+ -> D -> D; findings 13 -> 15 -> 8 -> 11 -> 6 -> 7 -> 9 -> 8 -> 8. The recorded Grade is cycle 9's, the last one actually measured.
+- **Issue List:** all 85 findings across the nine cycles are FIXED and self-verified. Cycle 9's 8 fixes have NOT been graded by a fresh reviewer, so the current tree is ungraded. **Gate NOT passed** against the A+ minimum. Reasons and options: § Cross-phase Q&A, 'Why six cycles did not reach A+' (written at cycle 6; the diagnosis it records held through cycle 9) and § 'Method change at cycle 9'.
 ---
 
 ## Cross-phase Q&A
@@ -213,6 +213,33 @@ Rendering per task would publish incoherent intermediate trees — task-005's su
 contradict task-003's script. The render + dogfood sync therefore runs once, after task-005, before
 task-006 and the gate. Task-003's "All section-6 quality gates pass" is satisfied at that point;
 recorded here rather than ticked early.
+
+### Method change at cycle 9 (2026-07-30) — fix the class, not the instance
+
+Cycles 1-8 fixed what the ledger named and handed the rest back to the next reviewer. The evidence
+that this was the actual cause of non-convergence, not bad luck:
+
+| Fixed at | Found again at | The class that was never swept |
+|---|---|---|
+| cycle 8 — severities in `kb-dual-intent-probes.sh` | cycle 9 | the identical claim in its sibling `kb-actback-task.sh`, never grepped |
+| cycle 6 — "forces grade <= D" in 4 places | cycles 8 **and** 9 | 4 more instances of the same sentence |
+| cycle 8 — 3 control chars in `escape_json` | cycle 9 | 29 of the 32 C0 chars were still broken |
+| cycle 7 — added `MC09` to hold that class | cycle 9 | the guard could not fail: its fixture held only already-handled chars |
+
+From cycle 9 the FIX step is three obligations, not one:
+
+1. **Sweep the class.** A finding names a defect *kind*; its Evidence bounds the *extent*. Grep the
+   whole tree for the kind before touching the named instance.
+2. **Run it, then mutate it.** Exercise every exit path of what was changed, and for each new guard,
+   break the thing it guards and confirm the guard fails. A guard that has never failed is unproven.
+3. **Discharge the coherence obligations the fix creates.** A changed contract has readers — the
+   state docs, the rubric rows, the golden fixtures, the sibling script. Enumerate and check them.
+
+What this produced at cycle 9: 4 classes swept tree-wide, 22+ mechanical guards now holding the
+classes prose review had been re-catching each cycle (`test-one-grading-backend.sh` 23 -> 58
+assertions), every exit path of both scripts exercised, and the two golden fixtures the changes
+touched updated and re-verified. Cost: this cycle's self-review was longer than the reviewer pass it
+precedes. That is the intended trade — the reviewer is a safety net, not the mechanism.
 
 ---
 

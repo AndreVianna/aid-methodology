@@ -142,7 +142,11 @@ The row the script writes for each failed check:
 - `Severity` = per the catalog, as in the table above (bracketed; one of the five tokens)
 - `Status` = `Pending`
 - `Doc` = the failing document — `kb.html`, or the named KB document for a `SUMMARY-01` row
-- `Line` = `—` (or nearest section if identifiable)
+- `Line` = the value that distinguishes rows sharing one `(Doc, Rule)` key: the check id for the
+  validator-driven checks, `theme/pair` for `PRE-11`, the item label for `PRE-01`, and `human/<check>`
+  for a MANUAL-CHECKLIST row. It is the join's only tiebreaker, so it is never left empty for a rule
+  that can emit more than one row. Where genuinely inapplicable the schema's sentinel is `--`, not an
+  em dash.
 - `Description` = one sentence: "check X failed: {what was wrong}"
 - `Evidence` = the validator's own output line
 

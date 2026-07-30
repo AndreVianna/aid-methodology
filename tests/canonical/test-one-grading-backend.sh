@@ -146,11 +146,28 @@ if grep -q '"notes": "line1\\nline2\\twith \\"q\\" and back\\\\slash"' "$MCT/ml.
 else
     no MC08 "multi-line note mis-escaped: $(grep '"notes"' "$MCT/ml.json" | head -1)"
 fi
-# A raw control byte anywhere in the file means it is not JSON, whatever the field looks like.
-if LC_ALL=C grep -qP '[\x00-\x08\x0a-\x1f]' <(tr -d '\n' < "$MCT/ml.json"); then
-    no MC09 "the written JSON contains a raw control character"
+# MC09 drives EVERY C0 control plus DEL through --notes and requires the result to be valid JSON whose
+# value round-trips exactly. The previous version could not fail: its fixture held only tab, CR and
+# newline -- the three the escaper already handled -- and its byte range omitted 0x09, so deleting the
+# tab escape left it green while the file carried a raw 0x09. An assertion whose fixture only contains
+# cases that already pass is not an assertion.
+#
+# The escaper must therefore be a CLASS fix: a short escape where JSON defines one (\b \t \n \f \r),
+# \uXXXX for every other control. This drives all 32.
+mc09_bad=()
+for hex in 01 02 03 04 05 06 07 08 09 0b 0c 0d 0e 0f 10 11 12 13 14 15 16 17 18 19 1a 1b 1c 1d 1e 1f 7f; do
+    v=$(printf "a\\x${hex}b")
+    bash "$MC" --k1 y --k2 y --v1 y --notes "$v" --out "$MCT/c_${hex}.json" >/dev/null 2>&1 \
+        || { mc09_bad+=("${hex}:exit"); continue; }
+    # Not JSON if a raw control byte survives anywhere in the file.
+    if LC_ALL=C grep -qP '[\x00-\x09\x0b-\x1f\x7f]' "$MCT/c_${hex}.json"; then
+        mc09_bad+=("${hex}:raw-byte")
+    fi
+done
+if [[ "${#mc09_bad[@]}" -eq 0 ]]; then
+    ok MC09 "all 31 C0 controls + DEL are escaped, never emitted raw (32 cases)"
 else
-    ok MC09 "no raw control character survives into the JSON"
+    no MC09 "control characters emitted raw or rejected: ${mc09_bad[*]}"
 fi
 # And the escaped form must survive normalisation unchanged, or every pass doubles the backslashes.
 cp "$MCT/ml.json" "$MCT/ml2.json"
@@ -211,6 +228,32 @@ fi
 # nothing examined, which is worse than any failing grade.
 (cd "$EMT" && bash "$EMIT" prose.html --dry-run >/dev/null 2>&1)
 chk "$?" 2 EM03 "a run with an unevaluated check group exits 2, not 0"
+
+# EM04/EM05 -- the unmapped-check guard must attribute LINE BY LINE, not by aggregate count. It used to
+# compare only the finding count before and after the loop, so it fired only when NOTHING matched: one
+# mapped failure beside an unmapped one -- the ordinary case -- hid the unmapped one entirely and the run
+# still exited 1, the code for a complete run. Driven with a stub validator so the case is reproducible.
+mkdir -p "$EMT/summarize"
+cp "$EMIT" "$EMT/summarize/"
+printf '%s\n' '<!DOCTYPE html><html><head><title>t</title></head><body><main>x</main></body></html>' > "$EMT/kb.html"
+{ printf '%s\n' '#!/usr/bin/env bash' \
+    'echo "  ❌ A1.2 has <header role=banner>"' \
+    'echo "  ❌ skip-link present"' \
+    'echo "❌ HTML output validation failed: 19/21 checks passed"' \
+    'exit 1' ; } > "$EMT/summarize/validate-html-output.sh"
+n_unmapped=$(cd "$EMT" && bash summarize/emit-summary-findings.sh kb.html --dry-run 2>&1 \
+             | grep -c 'no rule claims' || true)
+chk "${n_unmapped:-0}" 1 EM04 "an unmapped failure is reported even when a mapped one also failed"
+
+# ...and the validator's own aggregate roll-up must NOT be reported as unattributed, or the note fires on
+# every genuinely-failing run and a reader learns to ignore it.
+{ printf '%s\n' '#!/usr/bin/env bash' \
+    'echo "  ❌ A1.2 has <header role=banner>"' \
+    'echo "❌ HTML output validation failed: 20/21 checks passed"' \
+    'exit 1' ; } > "$EMT/summarize/validate-html-output.sh"
+n_agg=$(cd "$EMT" && bash summarize/emit-summary-findings.sh kb.html --dry-run 2>&1 \
+        | grep -c 'no rule claims' || true)
+chk "${n_agg:-1}" 0 EM05 "the validator's aggregate summary line is not mistaken for an unmapped check"
 rm -rf "$EMT"
 
 echo
@@ -593,13 +636,16 @@ fi
 # extra loop item, and in the emitter that aborted the run on an unmapped associative-array key under
 # `set -u` -- an incomplete run reporting the exit code of a complete one. CB01 cannot see it: the bytes
 # are 0x5C 0x6E, both printable.
+# CODE lines only. A comment that DISCUSSES the escape -- as the ones above and below this do -- cannot
+# be a broken line continuation, and flagging it made the guard fire on its own documentation. The bug
+# this catches was `for k in A B \n "C"` in executable code, so comments are stripped before the scan.
 cb2_bad=()
 for f in "${CB_FILES[@]}"; do
     [[ -f "$f" ]] || continue
-    # A backslash-n inside a shell word, outside a quoted string, is never intentional in these files.
-    if grep -nE '(^|[^"'"'"'\\])\\n[[:space:]]' "$f" 2>/dev/null | grep -qv 'printf'; then
-        cb2_bad+=("$(basename "$f"): $(grep -nE '(^|[^"'"'"'\\])\\n[[:space:]]' "$f" | grep -v printf | head -1 | cut -c1-60)")
-    fi
+    hit=$(grep -nE '(^|[^"'"'"'\\])\\n[[:space:]]' "$f" 2>/dev/null \
+          | grep -vE '^[0-9]+:[[:space:]]*#' \
+          | grep -v 'printf' | head -1)
+    [[ -n "$hit" ]] && cb2_bad+=("$(basename "$f"): $(printf '%s' "$hit" | cut -c1-60)")
 done
 if [[ "${#cb2_bad[@]}" -eq 0 ]]; then
     ok CB03 "no literal backslash-n stands where a line continuation was meant"

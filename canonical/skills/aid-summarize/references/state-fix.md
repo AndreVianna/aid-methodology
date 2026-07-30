@@ -12,7 +12,10 @@ Read `.aid/.temp/review-pending/summarize.md`. Filter rows where Status ∈ {`Pe
 
 For each Pending/Recurred row, apply the corresponding repair autonomously:
 
-- **`SUMMARY-01` findings (resolved doc-set coverage)** — the summary is missing sections for resolved KB docs. Each finding **names the missing document**, so add a section for each one until `emit-summary-findings.sh` finds a reference to it in the HTML. Every document fixed removes one finding and improves the grade; there is no threshold to clear.
+- **`SUMMARY-01` findings (resolved doc-set coverage)** — the summary is missing sections for resolved KB docs. Each finding **names the missing document**, so add a section for each one until `emit-summary-findings.sh` finds a reference to it in the HTML. Fix them all: **fixing some but not all may not move the grade at all.** `grade.sh` counts findings in three bands (`modifier_for_count`: 1 -> `+`, 2-5 -> none, 6+ -> `-`), so the measured curve for `[MEDIUM]` rows is **0 -> `A+`, 1 -> `C+`, 2-5 -> `C`, 6+ -> `C-`**. Going from five missing documents to two is three real fixes and zero grade steps. The retired ladder's
+  60% cliff is gone, but banding is not the same as monotonicity, and an earlier version of this line
+  claimed "there is no threshold to clear" -- the thresholds it denied (1 and 5) are the ones
+  `grade.sh` actually has.
 - **`SUMMARY-07` (a retired diagram runtime is present)** — a legacy `<pre class="mermaid">` block or a Mermaid engine reference was authored by mistake. Remove it and replace it with an inline SVG visual (see `canonical/aid/templates/knowledge-summary/authored-visual-catalog.md`). This row replaces the old `D1`/`D2` entries, which are **deleted**: they were hardcoded to pass once the Mermaid engine was retired, so a repair instruction for them described a row that could not appear.
 - **`SUMMARY-08` (L1 — anchor links)** — fix the `href` or add the missing `id`.
 - **`SUMMARY-09` (L2 — relative md links)** — correct the relative path.
