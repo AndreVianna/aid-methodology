@@ -317,9 +317,13 @@ _None yet. Each delivery-NNN/STATE.md carries its own gate block._
   rather than predicted: Pagefind indexes all 111 detail pages (13 fragments mention `aid-config`),
   and the sidebar `Skills` group shipped in task-016. `/reference/skills/` remains a leaf with only
   an `index.html`, so child routes still 404 until half 1 lands.
-- **Status (2026-07-30):** delivery-006 **Executing** — BLUEPRINT and tasks 054–057 authored.
-  task-054 and task-055 implemented in the working tree (uncommitted). Still to do: commit 054/055,
-  tasks 056–057, delivery-006 gate (A+), KI-022 (ELK layout), browser checks, PR into `master`.
+- **Status (2026-07-30):** delivery-006 **Gated** — all four tasks (054–057) are `Done` and
+  committed; browser verification passed; the delivery gate is in its fourth cycle against the
+  A+ bar, with the per-cycle history in `deliveries/delivery-006/STATE.md`. Three root causes
+  were addressed rather than patched: the count guard's root (now repo-wide,
+  `tests/canonical/check-skill-counts.mjs`), the superseded-§7-freeze class, and wrong-layer
+  edits. Still to do: clear the gate to A+, work-level gate, PR into `master`.
+  KI-022 (ELK layout) remains owner-deferred and ships disclosed.
   Worktree: `.claude/worktrees/work-001`, branch `aid/work-001-delivery-005`. **Use Windows git
   only — no WSL** (KI-017).
 

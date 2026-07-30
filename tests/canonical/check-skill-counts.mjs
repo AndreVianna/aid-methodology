@@ -39,8 +39,10 @@
 //             site/scripts/__tests__/skill-counts.test.mjs; the rest are uncovered.
 //
 // HISTORICAL QUOTES. A line that deliberately quotes a superseded number must carry the
-// marker `count-history` (in a comment or inline). The marker is per line and is reported,
-// so it cannot spread silently.
+// marker `count-history` (in a comment or inline). It is BOUNDED, because an unbounded
+// per-line opt-out is not a guard: every marked line is listed on stdout whether the run
+// passes or fails, and the total is capped (MARKER_CAP) so the exemption cannot creep
+// file-by-file. Raising the cap should take a reason in the commit message.
 //
 // Usage: node tests/canonical/check-skill-counts.mjs [--list]
 // Exit 0 clean, 1 on any wrong or unmarked-stale count.
@@ -201,6 +203,9 @@ for (const file of files) {
   });
 }
 
+/** Cap on `count-history` exemptions. An opt-out that can grow without limit is not bounded. */
+const MARKER_CAP = 12;
+
 if (process.argv.includes('--list')) {
   console.log(JSON.stringify(c, null, 2));
 }
@@ -211,6 +216,14 @@ console.log(`Claims checked: ${checked}`);
 console.log(`History lines : ${history} (dated rows/bullets, skipped by shape)`);
 console.log(`Marked history: ${marked.length}`);
 if (marked.length) for (const m of marked) console.log(`  [history] ${m}`);
+
+if (marked.length > MARKER_CAP) {
+  console.log(`
+FAIL: ${marked.length} \`${MARKER}\` exemptions exceeds the cap of ${MARKER_CAP}.`);
+  console.log('The marker is for the occasional historical clause, not a way to opt whole');
+  console.log('files out. Either the numbers are stale, or the cap needs a deliberate raise.');
+  process.exit(1);
+}
 
 if (wrong.length) {
   console.log(`\nWRONG COUNTS: ${wrong.length}`);

@@ -100,6 +100,38 @@ function renderCard(card) {
  *   Fully-assigned group tree, as produced by assignGroups().
  * @returns {string}  Complete page content, LF line endings, trailing newline.
  */
+/**
+ * Which skills the two groupings disagree about.
+ *
+ * EXPORTED so the AC-7 test can assert against this function rather than re-implementing
+ * the same walk. It was re-implemented inline first, against this file's own rule that
+ * consumers "never reimplement their rules inline" -- and with nothing asserting the two
+ * copies agreed, a traversal bug would simply have been reproduced in both. That is the
+ * defect the two-curated-rosters row records, one directory over.
+ *
+ * @param {import('./groups.mjs').GroupSection[]} sections
+ * @returns {Array<{name: string, here: string, there: string}>} sorted by name
+ */
+export function findGroupingDivergence(sections) {
+  const rosterGroupOf = new Map();
+  for (const g of SKILL_GROUPS) {
+    for (const sk of g.skills) rosterGroupOf.set(sk.name, g.group);
+  }
+  const divergent = [];
+  for (const section of sections) {
+    // Both the group's own cards AND its verb-family cards. `aid-deploy` and `aid-monitor`
+    // live under `### deploy` / `### monitor` families rather than in `section.cards`, so
+    // walking cards alone would silently never compare them.
+    for (const card of [...section.cards, ...section.families.flatMap((f) => f.cards)]) {
+      const rosterGroup = rosterGroupOf.get(card.name);
+      if (rosterGroup && rosterGroup !== section.group) {
+        divergent.push({ name: card.name, here: section.group, there: rosterGroup });
+      }
+    }
+  }
+  return divergent.sort((x, y) => x.name.localeCompare(y.name));
+}
+
 export function renderSkillIndex(records, sections) {
   // ── 1. Frontmatter ─────────────────────────────────────────────────────────
   const fm = serializeFrontmatter({
@@ -144,26 +176,7 @@ export function renderSkillIndex(records, sections) {
   // calls main() at module scope -- which is what made the old hard-coded list necessary.
   // Whatever the two groupings actually disagree about is what the note names, and if
   // they stop disagreeing the note disappears on its own.
-  const rosterGroupOf = new Map();
-  for (const g of SKILL_GROUPS) {
-    for (const sk of g.skills) rosterGroupOf.set(sk.name, g.group);
-  }
-  const divergent = [];
-  for (const section of sections) {
-    // Both the group's own cards AND its verb-family cards. `aid-deploy` and `aid-monitor`
-    // live under `### deploy` / `### monitor` families rather than in `section.cards`, so
-    // walking cards alone would silently never compare them -- and they are two of the
-    // three skills the original hard-coded note named. They agree today; the point is that
-    // the derivation must be able to notice if that changes.
-    const inSection = [...section.cards, ...section.families.flatMap((f) => f.cards)];
-    for (const card of inSection) {
-      const rosterGroup = rosterGroupOf.get(card.name);
-      if (rosterGroup && rosterGroup !== section.group) {
-        divergent.push({ name: card.name, here: section.group, there: rosterGroup });
-      }
-    }
-  }
-  divergent.sort((x, y) => x.name.localeCompare(y.name));
+  const divergent = findGroupingDivergence(sections);
 
   const crossRefNote = divergent.length === 0
     ? `> **Note:** This page is the roster. How the verb-first shortcut skills actually ` +

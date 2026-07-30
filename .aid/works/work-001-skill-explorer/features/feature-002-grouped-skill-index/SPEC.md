@@ -477,9 +477,11 @@ sidebar:
   would enter the TOC as a peer of the verb families and read as one, contradicting both
   "un-subdivided" and AC-8's "carry no family". A bold paragraph labels the block for a human
   without creating a family for a parser.
-- `title: 'All Skills'` rather than `Skills`, because `reference/skills.md` already renders a page
-  titled *Skills* (`gen-reference.mjs`:442); distinct titles keep the two distinguishable in the
-  Pagefind results that will surface both.
+- `title: 'All Skills'` rather than `Skills`, because `reference/skills.md` ~~already renders a
+  page titled *Skills* (`gen-reference.mjs`:442)~~ **— superseded: since delivery-006 that page
+  is titled *Shortcut engine*, so the titles no longer collide at all.** The decision stands on
+  its second reason: distinct titles keep the two distinguishable in the Pagefind results that
+  surface both.
 - The generated marker is byte-identical to the sentence the existing pages carry
   (`gen-reference.mjs`:449, `<!-- generated — do not edit; source: … -->`, em-dash included), so
   the suites' `toContain('generated — do not edit')` idiom transfers.

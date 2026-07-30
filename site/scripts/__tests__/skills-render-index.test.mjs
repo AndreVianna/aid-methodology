@@ -20,7 +20,7 @@ import { describe, it, expect } from 'vitest';
 import { readFileSync, readdirSync, existsSync } from 'node:fs';
 import { resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { renderSkillIndex } from '../skills/render-index.mjs';
+import { renderSkillIndex, findGroupingDivergence } from '../skills/render-index.mjs';
 import { discoverSkills } from '../skills/discover.mjs';
 import { loadShortcutCatalog } from '../skills/catalog.mjs';
 import { assignGroups, CURATED_GROUPS } from '../skills/groups.mjs';
@@ -206,21 +206,16 @@ describe('grouping-divergence + cross-reference note (AC-7)', () => {
     // disclosure is DERIVED and complete instead of banning it.
     const noteLine = lines.find((l) => l.startsWith('> **Note:**')) ?? '';
 
-    const rosterGroupOf = new Map();
-    for (const g of SKILL_GROUPS) for (const sk of g.skills) rosterGroupOf.set(sk.name, g.group);
-    const expected = [];
-    for (const section of sections) {
-      for (const card of [...section.cards, ...section.families.flatMap((f) => f.cards)]) {
-        const rg = rosterGroupOf.get(card.name);
-        if (rg && rg !== section.group) expected.push(card.name);
-      }
-    }
+    // Imported, not re-implemented: the renderer and this test now read the same
+    // traversal, so a bug in it fails here instead of being reproduced in both.
+    const expected = findGroupingDivergence(sections).map((d) => d.name);
 
     for (const n of expected) {
       expect(noteLine, `note must disclose ${n}`).toContain(`\`${n}\``);
     }
     // And it must not invent a divergence that does not exist.
-    for (const n of rosterGroupOf.keys()) {
+    const allRosterNames = SKILL_GROUPS.flatMap((g) => g.skills.map((s) => s.name));
+    for (const n of allRosterNames) {
       if (!expected.includes(n)) {
         expect(noteLine, `note must NOT claim ${n} diverges`).not.toContain(`\`${n}\``);
       }

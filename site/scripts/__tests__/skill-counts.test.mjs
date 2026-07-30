@@ -156,7 +156,11 @@ describe('hand-authored pages state no superseded or unguarded claim', () => {
     // how guides/maintainer.mdx kept "92 skills" and concepts/faq.md kept "76 shortcut
     // skills" through a delivery whose whole purpose was correcting exactly those numbers.
     const guarded = new Set(CLAIM_PAGES);
-    const CLAIM = /\b\d+ (?:AID )?skills\b|\b\d+ curated\b|\b\d+ classic\b|\b\d+ verb-first\b|\b\d+ shortcut skills\b/;
+    // Built FROM the claim vocabulary rather than hand-listed beside it. This was a 5-shape
+    // regex sitting next to an 18-entry table, so 11 phrasings were invisible to the very
+    // check whose comment promised it "fails on any digit-plus-roster-noun shape NOT in this
+    // list" — `and N others` among them, the exact shape the table was extended for.
+    const CLAIM = new RegExp(CLAIM_PATTERNS.map((c) => c.re.source).join('|'));
     const unguarded = [];
     const walk = (dir) => {
       for (const e of readdirSync(dir, { withFileTypes: true })) {

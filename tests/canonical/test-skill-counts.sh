@@ -58,6 +58,10 @@ if [[ "$_rc" -eq 0 ]]; then
     # checker itself (CLAIM_FLOOR), set near the live figure rather than at a token value.
     _n="$(printf '%s\n' "$_out" | sed -n 's/^Claims checked: *\([0-9]\+\).*/\1/p' | head -1)"
     _n="${_n:-0}"
+    # Echo the marker lines even on success -- the checker header promises exemptions are
+    # reported, and suppressing stdout here is what made that promise false.
+    printf '%s
+' "$_out" | grep -E '^\s+\[history\]' || true
     echo "PASS SC01 every stated skill count agrees with the derivation (${_n} claims compared)"
     _passed=$((_passed + 1))
 else
