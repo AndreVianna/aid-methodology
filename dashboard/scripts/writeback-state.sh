@@ -1286,9 +1286,20 @@ mode_append_issue() {
     padded_id=$(printf '%03d' "$((10#$DELIVERY_ID))")
     local issues_file="${DELIVERY_ISSUES_DIR}/delivery-${padded_id}-issues.md"
 
-    # Use work-dir-based issues path when DELIVERY_ISSUES_DIR is default
-    # and WORK_DIR is resolvable, for consistency with path resolution.
-    if [[ "$DELIVERY_ISSUES_DIR" == ".aid/works/work" && -n "$AID_STATE_FILE" ]]; then
+    # Use the work-dir-based issues path whenever DELIVERY_ISSUES_DIR is still the default,
+    # for consistency with every other path this script resolves.
+    #
+    # This condition used to be gated on `-n "$AID_STATE_FILE"`, which was wrong twice over.
+    # Bare, it aborted under `set -u` -- this is the only place the variable is dereferenced
+    # without a default (line 157 uses `${AID_STATE_FILE:-...}`). And guarding on it at all
+    # was the wrong test: a caller that exports AID_WORK_DIR rather than AID_STATE_FILE --
+    # which is exactly what aid-execute's delivery gate does -- skipped the branch and then
+    # failed on a `.aid/works/work` lock directory that does not exist.
+    #
+    # `resolve_work_dir` already honours AID_WORK_DIR first and otherwise derives the root
+    # from STATE_FILE, so the no-env default (`.aid/works/work/delivery-NNN-issues.md`) is
+    # unchanged and this is strictly more permissive than what it replaces.
+    if [[ "$DELIVERY_ISSUES_DIR" == ".aid/works/work" ]]; then
         resolve_work_dir
         issues_file="${WORK_DIR}/delivery-${padded_id}-issues.md"
     fi
