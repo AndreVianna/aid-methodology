@@ -2,7 +2,7 @@
 // gen-reference.mjs — Manifest-driven reference generator (feature-006).
 //
 // Generates four reference pages from canonical/ + .aid/settings.yml:
-//   reference/skills.md    — 75 skill directories (18 classic + aid-triage + aid-ask +
+//   reference/skills.md    — 75 skill directories (16 classic + aid-triage + aid-ask +
 //                            34 catalog-driven shortcuts), grouped + summarized
 //   reference/agents.md    — 9 agents table
 //   reference/kb.md        — 14 KB doc-types table
@@ -231,23 +231,47 @@ const SHORTCUT_FAMILIES = [
   {
     label: 'Test + Experiment',
     match: (r) => r.verb === 'test' || r.verb === 'experiment',
-    detail: (rows) =>
-      `\`aid-test\` + 3 typed forms (security, performance, data-quality) = ${rows.filter((r) => r.verb === 'test').length}, plus \`aid-experiment\`; no alias`,
+    detail: (rows) => {
+      // `test`'s 4 catalog rows (aid-test + its 3 typed forms) are all
+      // `repurpose: true` today, so they never reach `rows` here — only
+      // `experiment` does. Derived from `rows` itself (not hardcoded) so this
+      // stays correct if an engine-generated `test`-verb row is ever added.
+      const testForms = rows.filter((r) => r.verb === 'test').length;
+      const experimentForms = rows.length - testForms;
+      const testNote =
+        testForms > 0
+          ? `${testForms} engine-generated \`aid-test*\` form(s)`
+          : 'no engine-generated `aid-test*` forms — `aid-test` and its 3 typed forms ' +
+            '(security, performance, data-quality) are pre-existing, hand-authored `repurpose: true` skills';
+      return `${experimentForms} \`aid-experiment\` form; ${testNote}; no alias`;
+    },
   },
   {
     label: 'Prototype',
     match: (r) => r.verb === 'prototype',
-    detail: () => '`aid-prototype`, `aid-prototype-ui`; no alias',
+    detail: (rows) =>
+      rows.length > 0
+        ? `${rows.length} \`aid-prototype*\` form(s); no alias`
+        : '0 engine-generated forms — `aid-prototype` and `aid-prototype-ui` are pre-existing, ' +
+          'hand-authored `repurpose: true` skills; no alias',
   },
   {
     label: 'Document',
     match: (r) => r.verb === 'document',
-    detail: (rows) => `\`aid-document\` + ${rows.length - 1} typed forms (decision, architecture, guideline, standard, runbook, tutorial, changelog); no alias`,
+    detail: (rows) =>
+      rows.length > 0
+        ? `${rows.length} \`aid-document*\` form(s); no alias`
+        : '0 engine-generated forms — `aid-document` + 7 typed forms (decision, architecture, ' +
+          'guideline, standard, runbook, tutorial, changelog) are pre-existing, hand-authored ' +
+          '`repurpose: true` skills; no alias',
   },
   {
     label: 'Report',
     match: (r) => r.verb === 'report',
-    detail: () => '`aid-report` — analyze data or usage and communicate insight; no alias',
+    detail: (rows) =>
+      rows.length > 0
+        ? `${rows.length} \`aid-report\` form; no alias`
+        : '0 engine-generated forms — `aid-report` is a pre-existing, hand-authored `repurpose: true` skill; no alias',
   },
   {
     label: 'Remove',
@@ -267,12 +291,18 @@ const SHORTCUT_FAMILIES = [
   {
     label: 'Review',
     match: (r) => r.verb === 'review',
-    detail: (rows) => `${rows.length} \`aid-review\` form; no alias`,
+    detail: (rows) =>
+      rows.length > 0
+        ? `${rows.length} \`aid-review\` form; no alias`
+        : '0 engine-generated forms — `aid-review` is a pre-existing, hand-authored `repurpose: true` skill; no alias',
   },
   {
     label: 'Research',
     match: (r) => r.verb === 'research',
-    detail: (rows) => `${rows.length} \`aid-research\` form; no alias`,
+    detail: (rows) =>
+      rows.length > 0
+        ? `${rows.length} \`aid-research\` form; no alias`
+        : '0 engine-generated forms — `aid-research` is a pre-existing, hand-authored `repurpose: true` skill; no alias',
   },
 ];
 
@@ -357,10 +387,19 @@ function generateSkillsPage() {
   // aid-ask is the promoted Q&A skill (a `repurpose: true` catalog row — the retired
   // query-kb skill it used to alias no longer exists), not a distinct capability of its
   // own — it renders in the Knowledge Base Maintenance group but is NOT counted
-  // among the classic skills (matching the README/methodology "18 classic + /aid-triage +
+  // among the classic skills (matching the README/methodology "16 classic + /aid-triage +
   // /aid-ask" framing). aid-triage (the suggest-only router) is likewise counted separately.
+  // "Classic" = SKILL_GROUPS members with NO catalog row (17: the curated skills,
+  // measured independently of this file at 75 dirs − 58 catalog rows), minus
+  // aid-triage (the router, counted separately) = 16. Excluding by catalog
+  // membership rather than a hardcoded name list also drops aid-deploy/aid-monitor
+  // (both `repurpose: true` catalog rows curated into SKILL_GROUPS above) without
+  // naming them here, so this stays correct if another repurposed skill joins
+  // SKILL_GROUPS later.
+  const catalogNameSet = new Set(allCatalogNames);
   const classicSkillCount = SKILL_GROUPS.reduce(
-    (sum, g) => sum + g.skills.filter((s) => s.name !== 'aid-ask' && s.name !== 'aid-triage').length,
+    (sum, g) =>
+      sum + g.skills.filter((s) => s.name !== 'aid-triage' && !catalogNameSet.has(s.name)).length,
     0
   );
 

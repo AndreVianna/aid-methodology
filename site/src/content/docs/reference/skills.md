@@ -1,12 +1,12 @@
 ---
 title: 'Skills'
-description: 'All AID skills — 18 classic pipeline skills, the aid-triage router, the aid-ask Q&A skill, and the catalog-driven direct-entry shortcuts — grouped by skill group/family, with what each does and where it comes from.'
+description: 'All AID skills — 16 classic pipeline skills, the aid-triage router, the aid-ask Q&A skill, and the catalog-driven direct-entry shortcuts — grouped by skill group/family, with what each does and where it comes from.'
 generatedFrom: 'canonical/skills/*/SKILL.md, canonical/aid/templates/shortcut-catalog.yml'
 ---
 
 <!-- generated — do not edit; source: canonical/skills/*/SKILL.md -->
 
-AID ships **75 skill directories** under `canonical/skills/`: **18 classic pipeline skills** across four skill groups (Support, Knowledge Base Maintenance, Definition, Execution), the suggest-only router **`/aid-triage`**, the **`/aid-ask`** Q&A skill, and **34 engine-driven direct-entry shortcut skills** generated from a 58-row catalog; 24 of the rows are `repurpose: true` — the 3 classic re-registered skills (`aid-deploy`/`aid-monitor`/`aid-ask`) plus the work-005 hand-authored single-shot "collapse" skills, all hand-authored with their own directories). The six numbered phases — Discover through Execute — form the mandatory sequential full path; every skill runs as a slash command (e.g. `/aid-config`) inside your AI host tool. Classic and router skills below are generated from each skill's own definition in `canonical/skills/`; shortcuts are summarized by family from the catalog (see "Direct-entry shortcuts" below, nested inside the Definition group).
+AID ships **75 skill directories** under `canonical/skills/`: **16 classic pipeline skills** across four skill groups (Support, Knowledge Base Maintenance, Definition, Execution), the suggest-only router **`/aid-triage`**, the **`/aid-ask`** Q&A skill, and **34 engine-driven direct-entry shortcut skills** generated from a 58-row catalog; 24 of the rows are `repurpose: true` — the 3 classic re-registered skills (`aid-deploy`/`aid-monitor`/`aid-ask`) plus the work-005 hand-authored single-shot "collapse" skills, all hand-authored with their own directories). The six numbered phases — Discover through Execute — form the mandatory sequential full path; every skill runs as a slash command (e.g. `/aid-config`) inside your AI host tool. Classic and router skills below are generated from each skill's own definition in `canonical/skills/`; shortcuts are summarized by family from the catalog (see "Direct-entry shortcuts" below, nested inside the Definition group).
 
 ## Support
 
@@ -174,15 +174,15 @@ CAPTURE/SPEC/PLAN/DETAIL run without a per-phase human checkpoint (unlike the fu
 | Update | 14 | 14 `aid-update*` forms; no alias |
 | Fix | 1 | `aid-fix` — diagnose and correct a defect, regression, incident, or vulnerability; no alias |
 | Refactor | 1 | `aid-refactor` — restructure or optimize without changing behavior; no alias |
-| Test + Experiment | 1 | `aid-test` + 3 typed forms (security, performance, data-quality) = 0, plus `aid-experiment`; no alias |
-| Prototype | 0 | `aid-prototype`, `aid-prototype-ui`; no alias |
-| Document | 0 | `aid-document` + -1 typed forms (decision, architecture, guideline, standard, runbook, tutorial, changelog); no alias |
-| Report | 0 | `aid-report` — analyze data or usage and communicate insight; no alias |
+| Test + Experiment | 1 | 1 `aid-experiment` form; no engine-generated `aid-test*` forms — `aid-test` and its 3 typed forms (security, performance, data-quality) are pre-existing, hand-authored `repurpose: true` skills; no alias |
+| Prototype | 0 | 0 engine-generated forms — `aid-prototype` and `aid-prototype-ui` are pre-existing, hand-authored `repurpose: true` skills; no alias |
+| Document | 0 | 0 engine-generated forms — `aid-document` + 7 typed forms (decision, architecture, guideline, standard, runbook, tutorial, changelog) are pre-existing, hand-authored `repurpose: true` skills; no alias |
+| Report | 0 | 0 engine-generated forms — `aid-report` is a pre-existing, hand-authored `repurpose: true` skill; no alias |
 | Remove | 1 | 1 `aid-remove` form; no alias |
 | Deprecate | 1 | `aid-deprecate` — mark an artifact/API deprecated, add warnings and a migration path, without deleting yet; no alias |
 | Migrate | 1 | `aid-migrate` — migrate data, a dependency, framework, or platform, with a rollback plan; no alias |
-| Review | 0 | 0 `aid-review` form; no alias |
-| Research | 0 | 0 `aid-research` form; no alias |
+| Review | 0 | 0 engine-generated forms — `aid-review` is a pre-existing, hand-authored `repurpose: true` skill; no alias |
+| Research | 0 | 0 engine-generated forms — `aid-research` is a pre-existing, hand-authored `repurpose: true` skill; no alias |
 | **Total** | **34** | |
 
 ### `aid-deploy`
