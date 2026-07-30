@@ -22,7 +22,7 @@ owner: architect
 audience: [developer, architect]
 contracts:
   - "canonical/ is the single source of truth; profiles/ and packages/_vendor are rendered/vendored copies"
-  - "111 skill directories under canonical/skills/; 9 agent directories under canonical/agents/"
+  - "75 skill directories under canonical/skills/; 9 agent directories under canonical/agents/"
   - "5 render profiles (profiles/*.toml)"
 changelog:
   - 2026-07-23: v2.3.0 release sweep -- skill count 92 -> 111 (added `aid-design` [work-005] + the 3 ticket skills `aid-read-ticket`/`aid-create-ticket`/`aid-update-ticket` [work-023]); the skill-count taxonomy is restated to the current model used across the other docs (111 = 17 curated pipeline / on-demand / router skills + the 94-row shortcut catalog's skills: 64 verb-first shortcut doorways + 30 hand-authored `repurpose` skills).
@@ -78,7 +78,7 @@ it produces. The modules fall into four planes:
 | `lib/AidInstallCore.psm1` | Distribution | PowerShell twin of the install-core library (`#Requires -Version 5.1`). | none | large | tested (`Test-AidInstaller.ps1`, `ps51-compat-check.ps1`) | Must stay WinPS-5.1 compatible (see coding-standards.md). |
 | `bin/aid`, `bin/aid.ps1`, `bin/aid.cmd` | Distribution | Persistent `aid` CLI dispatcher: parses subcommands (`update`, `remove`, `dashboard`, ...) and calls install-core. | install-core libs | medium | tested (cli-parity, registry) | `aid.cmd` is a thin cmd.exe shim over `aid.ps1`. |
 | `release.sh` | Distribution | Maintainer runbook: packages the five per-profile tarballs + checksums and cuts a GitHub Release. | `canonical/`, `profiles/`, `check-version-sync.sh` | medium | indirectly (release.yml CI) | Maintainer-only; rebuild bundle from clean HEAD. |
-| `canonical/skills/*` (111) | Toolkit | Slash-command definitions (`SKILL.md` + `references/*.md`) that drive the pipeline state machines. | `canonical/aid/scripts/*`, `templates/*` | large (collectively) | not machine-tested (by design) | The user-facing surface; one dir per skill (111 total: 17 curated pipeline / on-demand / router skills + the 94-row shortcut catalog's skills: 64 verb-first direct-entry shortcut doorways + 30 hand-authored `repurpose` skills). Phase 2 (Describe → Define) is two skills: `aid-describe` (2a) + `aid-define` (2b). Several `references/` clusters are tracked as modules -- see [Notable Skill Reference Modules](#notable-skill-reference-modules). Skill state machines are validated by dogfooding + AI/human review, NOT an automated harness (see test-landscape.md); only the helper scripts they call have suites. |
+| `canonical/skills/*` (75) | Toolkit | Slash-command definitions (`SKILL.md` + `references/*.md`) that drive the pipeline state machines. | `canonical/aid/scripts/*`, `templates/*` | large (collectively) | not machine-tested (by design) | The user-facing surface; one dir per skill (75 total: 17 curated pipeline / on-demand / router skills + the 58-row shortcut catalog's skills: 34 verb-first direct-entry shortcut doorways + 24 hand-authored `repurpose` skills). Phase 2 (Describe → Define) is two skills: `aid-describe` (2a) + `aid-define` (2b). Several `references/` clusters are tracked as modules -- see [Notable Skill Reference Modules](#notable-skill-reference-modules). Skill state machines are validated by dogfooding + AI/human review, NOT an automated harness (see test-landscape.md); only the helper scripts they call have suites. |
 | `canonical/agents/*` (9) | Toolkit | Sub-agent role definitions (`AGENT.md` + `README.md`); dispatched by skills. | `templates/agent-boilerplate.md` (include) | medium | n/a (prose) | Roles: architect, clerk, developer, interviewer, operator, orchestrator, researcher, reviewer, tech-writer. The `interviewer` agent is dispatched by `aid-describe`. |
 | `canonical/aid/scripts/*` | Toolkit | Helper scripts grouped by phase area (config, connectors, execute, housekeep, kb, migrate, release, summarize) + top-level `grade.sh`. | `config/read-setting.sh`, `grade.sh` | large | partial (per-area suites + fixtures) | See [Script Modules by Area](#script-modules-by-area). |
 | `canonical/aid/templates/*` | Toolkit | KB doc seeds, state-file templates, schemas, kb-authoring rules, the shortcut catalog + engine + scaffolding. | none (consumed by skills) | large | n/a (data) | The artifact-schema source of truth (see artifact-schemas.md). |
@@ -88,7 +88,7 @@ it produces. The modules fall into four planes:
 | `packages/pypi` | Distribution | PyPI `aid-installer` wrapper (`aid_installer/` + `_vendor/`). | `bin/`, `lib/`, `dashboard/` | medium | release smoke | `__main__.py` puts `aid` on PATH. |
 | `dashboard/reader/*` (Python) | Observation | Parses `.aid/` state (STATE.md hierarchy, settings, KB) into typed models. | `.aid/` artifact schemas | large | tested (`dashboard/reader/tests/`) | `parsers.py` + `derivation.py` + `models.py` + `locator.py` + `reader.py`. |
 | `dashboard/server/*` | Observation | Serves the dashboard: a Node `reader.mjs`/`server.mjs` twin of the Python reader, plus `server.py`, index/home HTML. | `dashboard/reader` semantics | large | tested (`dashboard/server/tests/`) | `reader.mjs` is the Node twin of the **whole** `dashboard/reader/` Python reader (its own header: "port of dashboard/reader/"), not just `parsers.py` -- a change to ANY reader `.py` (`parsers`/`derivation`/`models`/`locator`/`reader`) must be mirrored in `reader.mjs`; behavior-equal, no import. |
-| `site/` | Observation | Standalone Astro marketing + docs website. | own `package.json` (independent build) | large | tested (`site/**/__tests__`) | Unrelated to the CLI build; separate `node_modules`/`dist`. |
+| `site/` | Observation | Astro marketing + docs website. | `canonical/{skills,agents,aid/templates}`, `docs/`, `.aid/settings.yml` (build-time reads); own `package.json` | large | tested (`site/**/__tests__`) | Not part of the CLI build -- separate `node_modules`/`dist` -- but its content is **derived**: the `prebuild` step runs `scripts/sync-docs.mjs` (four pages from `docs/`) and `scripts/gen-reference.mjs` (four reference pages from `canonical/`), so a `canonical/` change can break `npm run build`. |
 | `tests/canonical/*` | Cross-cutting | Cross-platform shell test suites + `fixtures/`, run via `tests/run-all.sh`. | the modules under test | large | self | Heavy gates run on master CI only. |
 | `tests/windows/*` | Cross-cutting | Windows-only PowerShell installer tests (`Test-AidInstaller.ps1`). | installers + install-core | large | windows CI lane | NOT in `run-all.sh`; needs a Windows runner. |
 
@@ -132,13 +132,20 @@ dashboard/server/server.py  -> dashboard/reader/reader.py
 dashboard/reader/reader.py  -> parsers.py , derivation.py , models.py , locator.py
 dashboard/reader/*          -> .aid/ artifact schemas (STATE.md, settings.yml, KB)
 dashboard/server/reader.mjs <parity> dashboard/reader/*.py   (whole-reader twin -- no import; behavior-equal)
-site/                       -> (independent; no dependency on the CLI/toolkit)
+site/                       -> canonical/{skills,agents,aid/templates} , docs/ , .aid/settings.yml
+                               (build-time reads: scripts/gen-reference.mjs + scripts/sync-docs.mjs,
+                                both wired as npm `prebuild`/`predev`)
 ```
 
-Key non-dependency (a thing that looks connected but is not):
+Key asymmetry (the direction that is easy to get backwards):
 
 ```
-site/  X  canonical/        (the website does NOT consume the toolkit; it has its own build)
+canonical/  X  site/        (the toolkit never reads the website -- the only mention of site/
+                             under canonical/ is a comment in shortcut-catalog.yml naming a
+                             downstream consumer. The dependency is ONE-WAY: site/ consumes
+                             canonical/ + docs/, nothing flows back. Its BUILD is separate --
+                             own package.json, node_modules, dist -- while its CONTENT is
+                             derived, so "separate build" must not be read as "no dependency".)
 ```
 
 ---
@@ -162,9 +169,9 @@ grader).
 | `release/` | `check-version-sync.sh` | `release.sh`, CI | Verifies the version string is in lockstep across all manifests. |
 | `summarize/` | `assemble.sh`, `assemble-3part.sh`/`.ps1`, `build-md-export.sh`, `grade-summary.sh`, `manual-checklist.sh`, `spot-check-facts.sh`, `stale-check.sh`, `summarize-preflight.sh`, `validate-html-output.sh`, `validate-diagram-content.mjs`, `validate-visuals.mjs`, `contrast-check.mjs`, `writeback-state.sh` | `aid-summarize` | Builds + validates the `kb.html` visual summary (assembly, markdown export, fact/stale checks, HTML + diagram-content + visual + contrast validation via Playwright/Node). |
 
-> The installed copies under each profile (and the dogfood `.claude/aid/scripts/`)
-> are rendered from these canonical sources. Edit `canonical/`, never the rendered
-> copy.
+> The installed copies under each profile (and the dogfood `.claude/aid/scripts/` and
+> `.cursor/aid/scripts/`) are rendered from these canonical sources. Edit `canonical/`,
+> never the rendered copy.
 
 ---
 
@@ -237,7 +244,7 @@ their own right.
   `canonical/skills/aid-discover/`). The `SKILL.md` carries YAML frontmatter with
   `name:`, `description:`, `allowed-tools:`, `argument-hint:` (see
   `aid-config/SKILL.md`). This is for hand-authored pipeline / on-demand skills; the
-  76 verb-first shortcut doorways are **generated**, not hand-authored -- see "How a
+  34 verb-first shortcut doorways are **generated**, not hand-authored -- see "How a
   new shortcut goes" below.
 - **Where a new agent goes:** create `canonical/agents/aid-<role>/AGENT.md` (+
   `README.md`). The `AGENT.md` frontmatter carries `name:`, `description:`,
@@ -260,7 +267,7 @@ their own right.
   SPEC/PLAN/DETAIL scaffolding it consults lives in
   `canonical/aid/templates/shortcut-scaffolding/<family>.md`.
 - **Never edit a rendered copy.** Edit `canonical/` and regenerate; `profiles/*`,
-  `packages/*/_vendor/`, and the dogfood `.claude/` are build output.
+  `packages/*/_vendor/`, and the dogfood `.claude/` + `.cursor/` are build output.
 
 ---
 
@@ -269,8 +276,8 @@ their own right.
 > Hard MUST/MUST-NOT rules the module graph enforces silently.
 
 - **Single source of truth:** every shipped file originates in `canonical/`.
-  `profiles/`, `packages/*/_vendor/`, and `.claude/` MUST be regenerated, never
-  hand-edited. Hand-editing a rendered copy is lost on the next render.
+  `profiles/`, `packages/*/_vendor/`, and the dogfood `.claude/` + `.cursor/` MUST be
+  regenerated, never hand-edited. Hand-editing a rendered copy is lost on the next render.
 - **Render is a pure mirror bounded by the emission manifest:** the renderer may
   only delete install-tree paths present in the previous run's
   `emission-manifest.jsonl` (`removed_dst`). Files outside any manifest are never
@@ -320,10 +327,10 @@ their own right.
 ## Gotchas
 
 - **Heavy file duplication is intentional.** `reader.mjs`/`parsers.py` and the whole
-  toolkit appear many times (dashboard + npm + pypi `_vendor` + five profiles +
-  `.claude/`). Do NOT "deduplicate" -- they are rendered/vendored copies of
-  `canonical/`.
-- **Shortcut doorways are generated, not hand-authored.** The 76 `aid-<verb>[-<artifact>]`
+  toolkit appear many times (dashboard + npm + pypi `_vendor` + five profiles + the two
+  dogfood trees `.claude/` and `.cursor/`). Do NOT "deduplicate" -- they are
+  rendered/vendored copies of `canonical/`.
+- **Shortcut doorways are generated, not hand-authored.** The 34 `aid-<verb>[-<artifact>]`
   skill directories under `canonical/skills/` are emitted by
   `.claude/skills/generate-profile/scripts/build-shortcut-skills.py` from
   `shortcut-catalog.yml`. Edit the catalog + re-run the helper (then the FULL
