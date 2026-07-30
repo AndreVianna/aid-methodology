@@ -137,9 +137,9 @@
 {"dst": ".cursor/aid/templates/review-rubrics/interface.md", "profile": "cursor", "sha256": "21b24c46ee2c909407f674aa164692a90521f30856fdf5e657a863b1edc73fdf", "src": "canonical/templates/review-rubrics/interface.md"}
 {"dst": ".cursor/aid/templates/review-rubrics/kb.md", "profile": "cursor", "sha256": "4d9bc74e56e67eb6cf7b8f02310024907b62aa5fa4d4de5b9c53ba4b0b47251c", "src": "canonical/templates/review-rubrics/kb.md"}
 {"dst": ".cursor/aid/templates/review-rubrics/narrative.md", "profile": "cursor", "sha256": "d34cd375d5a7d1923e65c357d4c5042eda63f34e9f042565a56d056b3a0ca0d4", "src": "canonical/templates/review-rubrics/narrative.md"}
-{"dst": ".cursor/aid/templates/review-rubrics/presentation.md", "profile": "cursor", "sha256": "013ba6bdc3727fdbca3d633c38da9c2528345f43f129ccaa1046019995f041ea", "src": "canonical/templates/review-rubrics/presentation.md"}
+{"dst": ".cursor/aid/templates/review-rubrics/presentation.md", "profile": "cursor", "sha256": "266711c83451b7b50d1963a229963e5dacfefbc4ba95b17ef84ea9593c1c5a9c", "src": "canonical/templates/review-rubrics/presentation.md"}
 {"dst": ".cursor/aid/templates/review-rubrics/process.md", "profile": "cursor", "sha256": "35282d37ad827ba18e3925cd19ee71c0d5084c529b7c1aec2b6c180ef2f57f6e", "src": "canonical/templates/review-rubrics/process.md"}
-{"dst": ".cursor/aid/templates/review-rubrics/summary.md", "profile": "cursor", "sha256": "3a92e58a409dc8d5d2ba1de02dae2fb1a9e8c83fa57e8e55a32985be62c34aa2", "src": "canonical/templates/review-rubrics/summary.md"}
+{"dst": ".cursor/aid/templates/review-rubrics/summary.md", "profile": "cursor", "sha256": "bbb2903bbdb424ba86ebbfda7c80e993414bd5744a41051afef55c8abd4709fc", "src": "canonical/templates/review-rubrics/summary.md"}
 {"dst": ".cursor/aid/templates/reviewer-brief-template.md", "profile": "cursor", "sha256": "b64f26bef711436fadd35897230e31ba8847651ce6adeb189b43fdcc573f8dcf", "src": "canonical/templates/reviewer-brief-template.md"}
 {"dst": ".cursor/aid/templates/reviewer-dispatch.md", "profile": "cursor", "sha256": "84d899f9cd92451a7e38377a87ed11570299077d44ab7e1cd1c8400aaec1f148", "src": "canonical/templates/reviewer-dispatch.md"}
 {"dst": ".cursor/aid/templates/reviewer-ledger-schema.md", "profile": "cursor", "sha256": "4d001a6e3de26800e332c5477a80c51db275d6e6b90810d775e24bfd9ded02f8", "src": "canonical/templates/reviewer-ledger-schema.md"}

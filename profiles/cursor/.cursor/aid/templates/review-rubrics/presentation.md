@@ -40,6 +40,7 @@ section is absent the rule **cannot fire**, and the concern is a criteria gap ra
 | `PRE-08` | Type follows the declared typography scale | `knowledge-summary/design-tokens.md § Typography` | SHOULD | mechanical | `grep` for font sizes outside the scale | `[LOW]; escaped (>1 component) → [MEDIUM]` |
 | `PRE-09` | Spacing follows the declared scale | `knowledge-summary/design-tokens.md § Spacing & sizing` | SHOULD | mechanical | `grep` for spacing values outside the scale | `[LOW]; escaped (>1 component) → [MEDIUM]` |
 | `PRE-10` | A project theming override uses the declared override mechanism | `knowledge-summary/design-tokens.md § Theming overrides per project` | SHOULD | judgment | Name each override and the mechanism it uses | `[LOW]; escaped (>1 override) → [MEDIUM]` |
+| `PRE-11` | Every declared token pair meets WCAG AA contrast, in every theme the artifact ships | `knowledge-summary/accessibility-checklist.md § Color contrast (WCAG AA)` | MUST | mechanical | Run the contrast checker over the token pairs, once per theme. One row per failing pair, naming the theme and the measured ratio | `[MEDIUM]` |
 
 ---
 
@@ -75,3 +76,4 @@ responsive defect matters should **raise the criteria gap**, not invent the rule
 | Date | Change |
 |---|---|
 | 2026-07-28 | Created. Ten grounded rules; responsive behaviour and state coverage left as criteria gaps rather than invented. |
+| 2026-07-29 | Added `PRE-11` (WCAG AA contrast, per theme). The retiring summary grader scored contrast as `C1`/`C2` while no family rule covered it, so retiring that grader would have dropped the check entirely. One rule spans all themes: the criterion is identical and only the palette changes. |

@@ -44,6 +44,42 @@ review**, not a pass.
 | `SUMMARY-05` | Every load-bearing claim is grounded in a KB document, not inferred | `authoring-conventions.md § Citation Rule (Durable Anchors)` | MUST | judgment | Name the KB document supporting each load-bearing claim. An ungrounded claim is the finding | `Step 2` |
 | `SUMMARY-06` | Every visual renders and is legible | `knowledge-summary/grading-rubric.md` — the visual-fidelity checks | MUST | judgment | **Human evidence only** — an agent cannot satisfy this rule. One row per failing visual | `[HIGH]` |
 | `SUMMARY-07` | The summary carries no diagram runtime that was retired | `knowledge-summary/grading-rubric.md` — the no-runtime check | MUST | mechanical | `grep` for the retired runtime | `[HIGH]` |
+| `SUMMARY-08` | Every in-page anchor resolves to an element in the document | `knowledge-summary/grading-rubric.md § Check definitions` — the `L1` definition | MUST | mechanical | Resolve each `href="#X"` against the document's IDs. One row per unresolved anchor | `[LOW]` — a dead in-page jump is contained, visible, and fixed by regenerating |
+| `SUMMARY-09` | Every relative document link points at a file that exists | `knowledge-summary/grading-rubric.md § Check definitions` — the `L2` definition | MUST | mechanical | Resolve each `./*.md` link against the tree. One row per broken link | `[MEDIUM]` — it sends the reader out of the summary to nothing, so the radius leaves the artifact |
+
+---
+
+## Where the retired per-check scores went
+
+The generated summary used to be graded by a **second** grading model: a weighted-points ladder over
+fourteen automated checks plus a thirty-point manual pool. That model is gone — `grade.sh` is now the
+only producer of a letter grade. Every check it scored is accounted for here, so retiring the ladder
+removes a *scoring mechanism*, not *coverage*.
+
+| Retired check | Now expressed as | Note |
+|---|---|---|
+| `COV` resolved-doc-set coverage | `SUMMARY-01` | Was partial credit on a band; now one finding per unreferenced document |
+| `D1` Mermaid parse | **deleted** | Hardcoded `pass` since the Mermaid engine was retired |
+| `D2` Mermaid render | **deleted** | Same — together these were 10 of 68 points that could never be lost |
+| `L1` anchor links | `SUMMARY-08` | |
+| `L2` relative md links | `SUMMARY-09` | |
+| `H1` HTML validity | `SUMMARY-02` | |
+| `A1` semantic landmarks | `PRE-02` | Family rule — not repeated here |
+| `A2` ARIA on lightbox | `PRE-04` | Family rule |
+| `A3` focus trap | `PRE-04` | Family rule |
+| `A4` reduced motion | `PRE-05` | Family rule |
+| `A5` visible focus | `PRE-03` | Family rule — `:focus-visible` sits under *Keyboard reach* |
+| `C1` light theme contrast | `PRE-11` | Family gap this delivery closed |
+| `C2` dark theme contrast | `PRE-11` | One rule, both themes |
+| `S2` offline render | `SUMMARY-03` | |
+| `K1` doc-set coverage (human) | `SUMMARY-01` | Same claim as `COV`, asked of a human |
+| `K2` KB facts grounded | `SUMMARY-05` | |
+| `V1` human visual gate | `SUMMARY-06` | Including the `T1`/`T2` legibility and overlap sub-gates |
+
+**Why the accessibility checks are not restated as `SUMMARY-*` rows.** This class declares that its
+family's rules "apply in full and are not repeated here". Copying `A1`–`A5` into this file would create
+a second statement of a family rule that could drift from the first — the same duplication this work
+exists to remove. They are cited above so the mapping is auditable, not restated as rules.
 
 ---
 
