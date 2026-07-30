@@ -398,7 +398,7 @@ body; ownership counts per this document's own contracts and `project-structure.
   toolkit appear many times (dashboard + npm + pypi `_vendor` + five profiles +
   `.claude/`). Do NOT "deduplicate" -- they are rendered/vendored copies of
   `canonical/`.
-- **Shortcut doorways are generated, not hand-authored.** The 76 `aid-<verb>[-<artifact>]`
+- **Shortcut doorways are generated, not hand-authored.** The 64 `aid-<verb>[-<artifact>]`
   skill directories under `canonical/skills/` are emitted by
   `.claude/skills/generate-profile/scripts/build-shortcut-skills.py` from
   `shortcut-catalog.yml`. Edit the catalog + re-run the helper (then the FULL

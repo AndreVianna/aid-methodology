@@ -78,7 +78,7 @@ Every node in the chart above, in chart order, with the exact `canonical/` text 
 | FIX | `references/state-fix.md` | _(same type as EXECUTE)_ | → REVIEW |
 ~~~~
 
-[Source: `canonical/skills/aid-execute/SKILL.md#L199`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-execute/SKILL.md#L199) · [full step: `canonical/skills/aid-execute/references/state-fix.md#L1-L34`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-execute/references/state-fix.md#L1-L34)
+[Source: `canonical/skills/aid-execute/SKILL.md#L199`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-execute/SKILL.md#L199) · [full step: `canonical/skills/aid-execute/references/state-fix.md#L1-L122`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-execute/references/state-fix.md#L1-L122)
 
 <a id="fragment-n4"></a>**4 · `DONE`** · _exit_ · HALT
 

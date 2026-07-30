@@ -26,7 +26,8 @@ intent: |
   gotchas a change will trip. Diagnosis, not a sprint plan.
 contracts: []
 changelog:
-  - 2026-07-30: work-001 delivery-006 gate -- added W1-1..W1-13, the work-001 known-issues that would not survive the work folder being pruned; corrected an initial mis-classification that restated three CLOSED issues as open.
+  - 2026-07-30: work-001 delivery-006 gate -- added W1-1..W1-12, the work-001 known-issues that would not survive the work folder being pruned, with their own table header; corrected an initial mis-classification that restated three CLOSED issues as open; corrected a stale present-tense corpus count. Open debt is no longer L4 alone.
+  - 2026-07-30: work-001 delivery-006 gate -- added W1-1..W1-12, the work-001 known-issues that would not survive the work folder being pruned; corrected an initial mis-classification that restated three CLOSED issues as open.
   - 2026-06-25: Initial debt audit (aid-discover quality deep-dive)
 ---
 
@@ -68,6 +69,11 @@ flows; Medium = growing cost, becomes high if unaddressed in 1-2 cycles; Low = k
 urgent.
 
 ---
+
+### work-001 (Skill Explorer) debt — issues that outlive the work folder
+
+| ID | Type | Description | Location | Risk | Effort | Priority |
+|----|------|-------------|----------|------|--------|----------|
 | **W1-1** | Third-party integration bug | `astro-mermaid` never forwards the site's custom `themeVariables` to `mermaid.initialize` — it destructures only `{theme, autoTheme, mermaidConfig, iconPacks, enableLog}`, so the configured dark palette is inert and every diagram renders with the stock theme. Fix is to nest the palette under `mermaidConfig`. Mitigated, not resolved: generated charts emit a self-contained `classDef` block, so they are legible either way. | `site/astro.config.mjs`:30-47 vs `astro-mermaid-integration.js`:229-235 | Low | S | P3 |
 | **W1-2** | Stale KB facts | `module-map.md` § Skill Structural Shapes carries per-shape population figures that no measurement supports ("roughly 94 of the 111"). Two independent scans agreed on the inline-state population but differed on the doorway/residual split. The live figures belong in the generator's `shapeCounts` manifest entry, not in prose — the row should be regenerated from it or lose its numbers. | `.aid/knowledge/module-map.md` § Skill Structural Shapes | Low | S | P3 |
 | **W1-3** | Graceful-degradation gap | Client-side mermaid rendering means a reader without JavaScript sees raw `flowchart TB …` source inside an animated placeholder. Accepted at design time (the below-chart ordered list is static markdown and carries the same information), but it now affects all 111 skill detail pages rather than 4. | `astro-mermaid-integration.js`:64, 316-318 | Low | M | P3 |
@@ -78,25 +84,26 @@ urgent.
 | **W1-8** | Missing re-entrancy guard | `initMermaid()` has no re-entrancy guard, so rapid theme toggling can interleave two render passes over the same container. | `astro-mermaid-integration.js` | Low | S | P3 |
 | **W1-9** | Contradictory templates | The two task templates disagree with each other, and one claims a conformance property it does not enforce. | `canonical/aid/templates/delivery-plans/` | Low | S | P3 |
 | **W1-10** | Environment trap (Windows) | Worktrees for this repo must be created with **Windows git**, never WSL git — a WSL-created worktree produces paths the Windows toolchain cannot resolve, and the failure is confusing rather than immediate. | process / dev environment | **Medium** | — (documented) | **P2** |
-| **W1-11** | Third-party integration bug | `astro-mermaid` re-renders from its own output on theme change, so a second render can consume already-rendered SVG rather than the source. | `astro-mermaid-integration.js` | Low | M | P3 |
-| **W1-12** | Cross-work collision | work-004 shrinks the skill corpus 111 → 74 and also renames skills. Every count guarded by `tests/canonical/check-skill-counts.mjs` derives automatically, but hand-written *names* and any prose enumerating skills will need reconciliation when that work lands. | repo-wide | **Medium** | M | **P2** |
-| **W1-13** | Intermittent rendering defect | ELK layout is intermittently not applied — diagrams fall back to dagre routing, producing the curved, overlapping edges the owner explicitly rejected at the delivery-003 UI checkpoint. `layout: 'elk'` is present and the loader registers; two hypotheses remain live and untested. **Owner-deferred**, shipped open and disclosed. | `site/astro.config.mjs`:47 + `@mermaid-js/layout-elk` | **Medium** | M | **P2** |
+| **W1-11** | Cross-work collision | work-004 shrinks the skill corpus 111 → 74 and also renames skills. Every count guarded by `tests/canonical/check-skill-counts.mjs` derives automatically, but hand-written *names* and any prose enumerating skills will need reconciliation when that work lands. | repo-wide | **Medium** | M | **P2** |
+| **W1-12** | Intermittent rendering defect | ELK layout is intermittently not applied — diagrams fall back to dagre routing, producing the curved, overlapping edges the owner explicitly rejected at the delivery-003 UI checkpoint. `layout: 'elk'` is present and the loader registers; two hypotheses remain live and untested. **Owner-deferred**, shipped open and disclosed. | `site/astro.config.mjs`:47 + `@mermaid-js/layout-elk` | **Medium** | M | **P2** |
 
 ### work-001 (Skill Explorer) — issues that outlive the work folder
 
 work-001 recorded 22 known issues in `.aid/works/work-001-skill-explorer/known-issues.md`.
 **Ten closed** during the work (KI-003, 005, 006, 009, 012, 013, 016, 018, 020, 021 — two of
 them, KI-018 and KI-020, record their closure in the heading rather than a `Status:` line).
-The **thirteen still open** are listed above as `W1-1`..`W1-13`
+The **twelve still open** are listed above as `W1-1`..`W1-12`
 because of the project's own rule that **work folders are transient**: `.aid/works/work-NNN-*/`
 may be pruned once a work ships, and no permanent artifact may depend on it. Left only there,
-these thirteen would have been deleted along with the folder — including two Medium-priority
+these twelve would have been deleted along with the folder — including two Medium-priority
 traps (`W1-4`, a KB row that teaches the wrong CI model; `W1-10`, a Windows worktree trap that
 costs an afternoon) and the one item the owner explicitly deferred rather than resolved
-(`W1-13`).
+(`W1-12`).
 
 > **Corrected 2026-07-30 at gate cycle 3.** The first version of this section said seven
-> closed / fifteen open and restated three CLOSED issues as open — including one whose text
+> closed / fifteen open and restated CLOSED issues as open (three at first, then a
+> fourth -- KI-018, RESOLVED 2026-07-28 with a shipped fix -- which survived the first
+> correction because I recounted the split without re-checking each row against it) — including one whose text
 > ("`CHARTABLE_SHAPES` was never widened") is false on disk: `gen-skills.mjs` uses
 > `new Set(SHAPE_ORDER)` and all 111 sidecars emit. The classification had been read off the
 > presence of a `Status:` line, which two closed entries record in their heading instead.
@@ -129,7 +136,7 @@ for the **next release**.
 **Scope boundary (important):** this is about the **deterministic, machine-executed**
 surface — installers (`install.sh`/`install.ps1`/`lib`), the dashboard reader (Python +
 `.mjs`), the render/generator pipeline, the manifests, and the canonical helper scripts.
-The ~92 prompt-driven skills are **out of scope** for these techniques (there is no
+The ~111 prompt-driven skills are **out of scope** for these techniques (there is no
 deterministic pass/fail to measure) — they are covered by **dogfooding + review**, which is
 already in place. Effectiveness measurement therefore scales with the (bounded, slow-growing)
 machinery, NOT with the number of skills.
@@ -323,3 +330,4 @@ file); the full history — the initial audit and every closure — lives in git
 |-----|------|--------|-----------|
 | 2.4 | 2026-07-10 | tech-debt-followup | **L4** — no measure of test-suite effectiveness; opened High / P1 as a next-release program (see Detailed Debt Items). Sole open item. |
 | 2.5 | 2026-07-24 | work-024 test-suite-improvement KB refresh | Corrected **L4**'s stale suite count ~118 → ~133 (live total, matching `test-landscape.md`); no residual-gap row added — the ≤3min/~90s outcome is measured on the post-push CI run, and a later KB-DELTA adds an `L5` row only if the ~90s goal is missed. **L4** remains the sole open item. |
+| 2.6 | 2026-07-30 | work-001 delivery-006 gate | **L4** plus **W1-1..W1-12** — the work-001 known-issues migrated out of the transient work folder (two Medium traps among them: a KB row teaching the wrong CI model, and a Windows worktree trap), so L4 is no longer the sole open item |

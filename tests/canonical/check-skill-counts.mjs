@@ -64,12 +64,26 @@ const CLAIMS = [
   [/\b(\d+) (?:AID )?skills\b/g, () => c.directories, 'corpus total'],
   [/\b(\d+) skill directories\b/g, () => c.directories, 'corpus total'],
   [/\b(\d+) skill definitions\b/g, () => c.directories, 'corpus total'],
+  // `skill directories` as the noun, optionally with a backticked token between it and the
+  // digit: "The 76 `aid-<verb>[-<artifact>]` skill directories". Cycle 4 found this live in a
+  // KB primary doc while this guard printed "All 169 agree" over it.
+  // WITH a backticked name-template between digit and noun, the sentence counts the GENERATED
+  // DOORWAY directories ("The N `aid-<verb>[-<artifact>]` skill directories … are emitted by"),
+  // not the corpus. Same noun, different quantity — so it maps to shortcuts. The bare form
+  // above stays the corpus total. Reading the sentence, not just the noun, is the F3 rule.
+  [/\b(\d+)\s+`[^`]+`\s+skill directories\b/g, () => c.shortcuts, 'emitting shortcuts'],
+  // An adjective between the digit and `skills`, with an optional `~`: "~92 prompt-driven
+  // skills". Bounded to a NAMED set of adjectives on purpose — an open `\w+` run starts
+  // swallowing "30 hand-authored repurpose skills", which counts something else entirely.
+  [/\b~?(\d+) (?:prompt-driven|shipped|generated|classic pipeline) skills\b/g, () => c.directories, 'corpus total'],
   // These three phrasings were MISSING, and they are precisely the three live falsehoods
   // that survived in architecture.md -- the file this guard's own commit message used as
   // its motivating example. A digit can be separated from its noun by markdown emphasis or
   // a backticked token, which defeats every plain-adjacency pattern.
   [/\b(\d+) dirs\b/g, () => c.directories, 'corpus total'],
-  [/`?skills\/`?\s*\((\d+)\)/g, () => c.directories, 'corpus total'],
+  // Negative lookbehind on `/`: "site/scripts/skills/* (12)" is a MODULE count, not a skill
+  // count. Only a bare `skills/` — i.e. canonical/skills/ referred to as itself — qualifies.
+  [/(?<![\w/*])`?skills\/`?\s*\((\d+)\)/g, () => c.directories, 'corpus total'],
   // Negative lookahead on `repurpose`: "30 `repurpose` skills" is the repurpose count and has
   // its own pattern above. Without this, the shortcut pattern claims it and reports a CORRECT
   // number as wrong — and a guard's false positives cost it the credibility its real findings
@@ -95,6 +109,30 @@ const CLAIMS = [
   [/\b(\d+) canonical names\b/g, () => c.catalogCanonical, 'catalog canonical names'],
   [/\b(\d+) aliases\b/g, () => c.catalogAliases, 'catalog aliases'],
 ];
+
+/**
+ * What a marked line is allowed to say, PER QUANTITY.
+ *
+ * The marker alone was not a bound: mutation-proved, a line reading "ships 999 skills
+ * <!-- count-history -->" was accepted and labelled `[history]`. So the marker exempts a
+ * number only if it is a value this quantity ACTUALLY held — the figures below are the ones
+ * this repository's own history records. Anything else is a wrong number wearing a marker,
+ * and is reported as wrong.
+ *
+ * Keyed on the quantity (the CLAIMS label), not on the file or the line, for the same reason
+ * the history rule keys on line shape: 94 is superseded for the corpus and meaningless for
+ * the classic count, so a flat set of numbers cannot express the constraint.
+ */
+const SUPERSEDED = {
+  'corpus total': [10, 12, 13, 14, 67, 82, 92, 94],
+  'emitting shortcuts': [51, 67, 76],
+  'catalog rows': [69, 80],
+  'catalog canonical names': [45, 51],
+  'catalog aliases': [24, 29],
+  'curated (non-catalog)': [14, 15, 16, 19, 21],
+  'repurpose rows': [2, 4],
+  'classic re-registered': [4],
+};
 
 /** Files and trees the guard reads. */
 const INCLUDE_FILES = ['README.md'];
@@ -180,7 +218,43 @@ let checked = 0;
 
 for (const file of files) {
   const rel = relative(REPO_ROOT, file).split(sep).join('/');
-  const lines = readFileSync(file, 'utf8').split('\n');
+  const raw = readFileSync(file, 'utf8').split('\n');
+  // Each physical line, PLUS that line joined with the next, both de-emphasised.
+  //
+  // Two mechanisms defeated plain per-line matching, and cycle 4 found live wrong counts
+  // hiding behind each. Markdown emphasis breaks digit-noun adjacency, so "**94-row**
+  // catalog" matches nothing that "94-row catalog" would. And prose WRAPS: "The 76
+  // `aid-<verb>`\n  skill directories" is one claim on two lines. The joined form is
+  // reported against the FIRST line, which is where a reader looks.
+  //
+  // Backticks are deliberately NOT stripped — the repurpose/shortcut lookaheads key on them.
+  const deEmphasise = (t) => t.replace(/[*_]{1,3}/g, '');
+
+  // Per-line matches carry accurate line numbers. The joined form exists only to catch a
+  // claim that STRADDLES the break, so a joined match is reported only when it appears in
+  // NEITHER constituent line alone — otherwise every claim would be counted twice (once on
+  // its own line, once in the previous line's join), which inflated the claim total to 401
+  // and pushed the marker count past its own cap.
+  const single = raw.map(deEmphasise);
+  const straddling = raw.map((l, i) => {
+    if (i + 1 >= raw.length) return '';
+    const joined = deEmphasise(`${l} ${raw[i + 1].trim()}`);
+    const alone = new Set();
+    for (const [re] of CLAIMS) {
+      for (const src of [single[i], single[i + 1]]) {
+        for (const m of src.matchAll(new RegExp(re.source, re.flags))) alone.add(m[0]);
+      }
+    }
+    // Keep the joined text only if it yields a claim neither line yields by itself.
+    for (const [re] of CLAIMS) {
+      for (const m of joined.matchAll(new RegExp(re.source, re.flags))) {
+        if (!alone.has(m[0])) return joined;
+      }
+    }
+    return '';
+  });
+
+  const lines = single.map((l, i) => (straddling[i] ? straddling[i] : l));
   lines.forEach((line, i) => {
     if (HISTORY_SHAPES.some((re) => re.test(line))) {
       history++;
@@ -194,6 +268,14 @@ for (const file of files) {
         checked++;
         if (stated === want) continue;
         if (isMarked) {
+          // A marker exempts a HISTORICAL value, never an arbitrary one.
+          if (!(SUPERSEDED[what] || []).includes(stated)) {
+            wrong.push(
+              `${rel}:${i + 1}  "${m[0]}"  marked \`${MARKER}\` but ${stated} is not a value ` +
+                `${what} ever held (${(SUPERSEDED[what] || []).join(', ') || 'none recorded'})`,
+            );
+            continue;
+          }
           marked.push(`${rel}:${i + 1}  "${m[0]}"  (${what}, historical)`);
         } else {
           wrong.push(`${rel}:${i + 1}  "${m[0]}"  ${what} should be ${want}`);
@@ -205,6 +287,7 @@ for (const file of files) {
 
 /** Cap on `count-history` exemptions. An opt-out that can grow without limit is not bounded. */
 const MARKER_CAP = 12;
+
 
 if (process.argv.includes('--list')) {
   console.log(JSON.stringify(c, null, 2));

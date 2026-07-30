@@ -59,7 +59,9 @@ and easy to get wrong.
 
 The existing generated `site/src/content/docs/reference/skills.md` lists skills with their
 frontmatter descriptions, but shows no skill's internal flow at all — and it deliberately
-collapses the direct-entry shortcuts into family summary tables rather than describing them
+collapsed the direct-entry shortcuts into family summary tables rather than describing them
+~~individually~~ *(past tense as of delivery-006: that family table is deleted -- see § Constraints,
+§7's second amendment. The page keeps only the shortcut-engine narrative.)*
 individually.
 
 ## 3. Users & Stakeholders

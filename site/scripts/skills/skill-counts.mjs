@@ -70,8 +70,8 @@ export function deriveSkillCounts(repoRoot) {
     .sort();
 
   // From gen-reference's roster, not feature-002's CURATED_GROUPS. The two are
-  // different sets on purpose and both are correct: CURATED_GROUPS holds 14 members
-  // plus a 5-skill `fullPath`, deliberately excluding `aid-deploy` and `aid-monitor`
+  // different sets on purpose and both are correct: CURATED_GROUPS holds its members plus a
+  // separate `fullPath` list, deliberately excluding `aid-deploy` and `aid-monitor`
   // because the owner's Q1 decision made the full path exactly five skills and those
   // two ordinary shortcuts. They are still hand-authored `repurpose: true` skills, so
   // they ARE classic in the reference framing — which is what a reader-facing "N

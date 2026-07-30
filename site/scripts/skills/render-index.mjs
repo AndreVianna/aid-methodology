@@ -81,27 +81,10 @@ function renderCard(card) {
 // ── Index renderer ─────────────────────────────────────────────────────────────
 
 /**
- * Assembles the complete content of site/src/content/docs/skills/index.md.
- *
- * Page structure (in order):
- *   1. Frontmatter  (title, description, generatedFrom, sidebar: hidden: true)
- *   2. Generated marker  (byte-identical to the existing generated pages\u2019 sentence)
- *   3. Intro paragraph   (counts interpolated from records.length and sections)
- *   4. Divergence note   (above the first ## heading \u2014 not a TOC entry)
- *   5. Group sections    (H2 per group; H3 per verb family inside Definition)
- *
- * No count literal appears in this module or in any string it builds.  Every
- * count that reaches the page is interpolated from records.length or the
- * catalog-derived sections (REQUIREMENTS \u00a78, KI-005).
- *
- * @param {Array<{ dirName: string, route: string, field: (k: string) => { value: string } | undefined }>} records
- *   Every on-disk SkillRecord, as produced by discoverSkills().
- * @param {import('./groups.mjs').GroupSection[]} sections
- *   Fully-assigned group tree, as produced by assignGroups().
- * @returns {string}  Complete page content, LF line endings, trailing newline.
- */
-/**
  * Which skills the two groupings disagree about.
+ *
+ * (This block documents THIS function. `renderSkillIndex`'s own JSDoc sits immediately
+ * above it below -- the extraction briefly left the two transposed.)
  *
  * EXPORTED so the AC-7 test can assert against this function rather than re-implementing
  * the same walk. It was re-implemented inline first, against this file's own rule that
@@ -132,6 +115,26 @@ export function findGroupingDivergence(sections) {
   return divergent.sort((x, y) => x.name.localeCompare(y.name));
 }
 
+/**
+ * Assembles the complete content of site/src/content/docs/skills/index.md.
+ *
+ * Page structure (in order):
+ *   1. Frontmatter  (title, description, generatedFrom, sidebar: hidden: true)
+ *   2. Generated marker  (byte-identical to the existing generated pages\u2019 sentence)
+ *   3. Intro paragraph   (counts interpolated from records.length and sections)
+ *   4. Divergence note   (above the first ## heading \u2014 not a TOC entry)
+ *   5. Group sections    (H2 per group; H3 per verb family inside Definition)
+ *
+ * No count literal appears in this module or in any string it builds.  Every
+ * count that reaches the page is interpolated from records.length or the
+ * catalog-derived sections (REQUIREMENTS \u00a78, KI-005).
+ *
+ * @param {Array<{ dirName: string, route: string, field: (k: string) => { value: string } | undefined }>} records
+ *   Every on-disk SkillRecord, as produced by discoverSkills().
+ * @param {import('./groups.mjs').GroupSection[]} sections
+ *   Fully-assigned group tree, as produced by assignGroups().
+ * @returns {string}  Complete page content, LF line endings, trailing newline.
+ */
 export function renderSkillIndex(records, sections) {
   // ── 1. Frontmatter ─────────────────────────────────────────────────────────
   const fm = serializeFrontmatter({

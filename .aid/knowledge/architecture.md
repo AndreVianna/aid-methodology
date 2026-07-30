@@ -427,7 +427,8 @@ CONFIRMED in `project-structure.md` "Entry Points" and file headers:
 5. Dashboard servers — `dashboard/server/server.mjs` (Node) / `dashboard/server/server.py`.
 6. The maintainer build — `run_generator.py`; the release runbook — `release.sh`.
 7. The website — `site/` (Astro build; independent of the CLI, but it DOES consume
-   `canonical/` at build time via its three generators — see module-map.md § Dependency Graph).
+   `canonical/` at build time via `gen-reference.mjs` and `gen-skills.mjs` — see module-map.md
+   § Dependency Graph. The third generator, `sync-docs.mjs`, reads `docs/` only).
 
 ---
 

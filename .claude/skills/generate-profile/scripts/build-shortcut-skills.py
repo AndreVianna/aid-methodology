@@ -312,10 +312,14 @@ def render_doorway(row: dict) -> str:
 def find_orphans(current_names: set[str]) -> list[Path]:
     """Generated dirs no longer backed by a catalog row.
 
-    Only ever returns a directory whose SKILL.md carries the ``_GENERATED_MARKER`` --
-    hand-authored skills (the 15 shipped pipeline skills, including the 4 `repurpose`
-    skills) never carry it and are therefore never candidates, regardless of
-    whether their name happens to be absent from the catalog.
+    Only ever returns a directory whose SKILL.md carries the ``_GENERATED_MARKER``.
+    Hand-authored skills never carry it and are therefore never candidates, regardless
+    of whether their name happens to be absent from the catalog. That protected set is
+    the curated roster plus every ``repurpose: true`` catalog row -- described rather
+    than counted, because a stale number in a comment guarding a DELETE is the worst
+    place to keep one. It previously read "the 15 shipped pipeline skills, including
+    the 4 `repurpose` skills", which understated it substantially. (count-history: that
+    phrase is quoted to show what was wrong, not asserted.)
     """
     orphans: list[Path] = []
     if not SKILLS_ROOT.is_dir():
