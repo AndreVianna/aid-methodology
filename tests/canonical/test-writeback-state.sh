@@ -2039,5 +2039,72 @@ fi
 
 # ---------------------------------------------------------------------------
 echo ""
+echo "=== Unit 24: AID_WORK_DIR-only caller reaches mode_append_issue's work-dir branch ==="
+
+# WHY THIS UNIT EXISTS.
+#
+# mode_append_issue takes a work-dir-relative issues path when DELIVERY_ISSUES_DIR is
+# still its default. That condition used to ALSO require AID_STATE_FILE to be set, which
+# broke callers that export AID_WORK_DIR instead -- aid-execute's delivery gate is exactly
+# such a caller -- and sent them at a `.aid/works/work` lock directory that does not exist.
+#
+# Nothing in this suite covered it. Line 223 exports AID_DELIVERY_ISSUES_DIR for the WHOLE
+# file, so DELIVERY_ISSUES_DIR is never the default in any other unit and that branch is
+# unreachable from here. AID_WORK_DIR appeared nowhere in this file at all; a grep for it
+# under tests/ hit only test-write-control-signal.sh and coverage-baseline.tsv. So the
+# behavioural change went in unguarded, and CI would not have caught its revert.
+#
+# Every call below therefore runs under `env -u` to clear the file-level exports. That is
+# the point of the unit, not an incidental detail: with them set, these assertions pass
+# vacuously against the wrong code path.
+#
+# DISCRIMINATION MEASURED, not assumed. The pre-fix condition was re-introduced on a scratch
+# copy and the same invocation run against both:
+#     fixed:  exit=0  landed under AID_WORK_DIR=yes
+#     broken: exit=1  landed under AID_WORK_DIR=no
+# So 24a and 24b both fail on a revert. 24c does NOT discriminate -- the broken guard exits
+# before it would create the literal path -- so it is defence-in-depth against a *different*
+# future regression (one that creates the path and then succeeds), not evidence for this one.
+# Noted so nobody reads three passing assertions as three independent proofs.
+
+WD24="${TMPDIR_BASE}/wd24"
+mkdir -p "$WD24"
+
+# 24a: AID_WORK_DIR only -- no AID_STATE_FILE, no AID_DELIVERY_ISSUES_DIR.
+code=0
+env -u AID_STATE_FILE -u AID_DELIVERY_ISSUES_DIR AID_WORK_DIR="$WD24" \
+    bash "$SCRIPT" --delivery-id 7 --append-issue \
+    "| task-070 | [MEDIUM] | AID_WORK_DIR-only caller regression row | Open |" 2>/dev/null || code=$?
+assert_exit_zero "$code" "24a: AID_WORK_DIR-only --append-issue → exit 0 (no unbound-variable abort, no missing lock dir)"
+
+# 24b: and it landed under AID_WORK_DIR, not under a literal `.aid/works/work`.
+assert_file_exists "${WD24}/delivery-007-issues.md" \
+    "24b: issues file resolved to AID_WORK_DIR/delivery-007-issues.md"
+assert_file_contains "${WD24}/delivery-007-issues.md" "task-070" \
+    "24b: the row was actually written"
+
+# 24c: the literal default path must NOT have been created. See the DISCRIMINATION note
+# above: this one does not fail on a revert of the original fix, and is here to catch a
+# script that creates `.aid/works/work` and then succeeds -- which would pass 24a and 24b
+# and still be wrong.
+if [[ -e ".aid/works/work" ]]; then
+    fail "24c: a literal .aid/works/work path was created — the work-dir branch did not fire"
+else
+    pass "24c: no literal .aid/works/work path created"
+fi
+
+# 24d: idempotence holds on this path too (the branch must not bypass the dedup).
+env -u AID_STATE_FILE -u AID_DELIVERY_ISSUES_DIR AID_WORK_DIR="$WD24" \
+    bash "$SCRIPT" --delivery-id 7 --append-issue \
+    "| task-070 | [MEDIUM] | AID_WORK_DIR-only caller regression row | Open |" 2>/dev/null
+BEFORE24=$(grep -c 'task-070' "${WD24}/delivery-007-issues.md")
+if [[ "$BEFORE24" -eq 1 ]]; then
+    pass "24d: idempotent on the AID_WORK_DIR path — duplicate row not added"
+else
+    fail "24d: duplicate written on the AID_WORK_DIR path — row count is $BEFORE24, expected 1"
+fi
+
+# ---------------------------------------------------------------------------
+echo ""
 test_summary
 exit $?

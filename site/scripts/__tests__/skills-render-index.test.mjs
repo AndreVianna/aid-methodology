@@ -9,7 +9,9 @@
 //   AC-6  title: 'All Skills'; sidebar: hidden: true present and indented.
 //   AC-7  Grouping-divergence + cross-reference note: present, before the first ## , links
 //         to /reference/skills/, DISCLOSES every grouping the curated roster disagrees with
-//         (derived, not hard-coded) and invents none, and makes no frozen-generator claim.
+//         (derived, not hard-coded) and invents none, makes no frozen-generator claim, and
+//         AGREES with docs/aid-methodology.md — the document it cites as publishing that
+//         grouping — checked by reading that document rather than SKILL_GROUPS a second time.
 //   AC-8  No count literal in the module source.
 //   AC-9  End-to-end: every on-disk skill appears exactly once; no duplicates, no missing.
 //   AC-10 Idempotence: renderSkillIndex called twice with same inputs produces identical output.
@@ -27,7 +29,7 @@ import { assignGroups, CURATED_GROUPS } from '../skills/groups.mjs';
 import { SKILL_GROUPS } from '../skills/curated-roster.mjs';
 import { skillSummary } from '../skills/summary.mjs';
 import { renderFrontmatterValue } from '../skills/render-value.mjs';
-import { CANONICAL_SKILLS_DIR, SITE_SKILLS_DIR } from '../skills/paths.mjs';
+import { CANONICAL_SKILLS_DIR, SITE_SKILLS_DIR, REPO_ROOT } from '../skills/paths.mjs';
 
 // ── Index grammar regexes (verbatim from the SPEC § Index grammar) ─────────────
 //
@@ -222,6 +224,55 @@ describe('grouping-divergence + cross-reference note (AC-7)', () => {
     }
     // Non-vacuity: there really is a divergence to disclose, so the loop above ran.
     expect(expected.length).toBeGreaterThan(0);
+  });
+
+  it('agrees with the document it cites — read from that document, not from SKILL_GROUPS', () => {
+    // WHY THIS EXISTS. The note says the divergent skill sits in some group "in the curated
+    // roster that the methodology's skill inventory publishes". The VALUE comes from
+    // SKILL_GROUPS; the ATTRIBUTION is to docs/aid-methodology.md. Every other assertion in
+    // this block reads SKILL_GROUPS on both sides, so all of them would still pass if
+    // docs/aid-methodology.md were corrected to Support -- which is what FR-5 says is right --
+    // leaving the site asserting the opposite of the document it names, with a green suite.
+    // That is the KI-021 failure mode in its own words: "a guard that derives its expectation
+    // and its observation from one constant cannot detect an error in that constant."
+    //
+    // So this case reads the CITED DOCUMENT as its observation. It is deliberately the only
+    // assertion here that does. When someone fixes KI-010 (the roster) or corrects the
+    // methodology doc, this test fails and names the note as the third thing to update.
+    const methodologyPath = resolve(REPO_ROOT, 'docs', 'aid-methodology.md');
+    const doc = readFileSync(methodologyPath, 'utf8');
+
+    // The inventory rows are markdown table rows keyed by a backticked skill name whose
+    // second cell is the group. Two tables carry them (the summary inventory and the
+    // per-skill detail table); both must agree, so collect every row and require consensus
+    // rather than trusting whichever matched first.
+    const groupsClaimedFor = (skill) => {
+      const rowRe = new RegExp(`^\\|\\s*\`${skill}\`\\s*\\|\\s*([^|]+?)\\s*\\|`, 'gm');
+      return [...doc.matchAll(rowRe)].map((m) => m[1].replace(/\(.*?\)/g, '').trim());
+    };
+
+    const divergent = findGroupingDivergence(sections);
+    expect(divergent.length, 'non-vacuity: there is a divergence to check').toBeGreaterThan(0);
+
+    for (const d of divergent) {
+      const claimed = groupsClaimedFor(d.name);
+      expect(
+        claimed.length,
+        `${methodologyPath} must carry an inventory row for \`${d.name}\` — the note cites it as ` +
+          `the publisher of the roster grouping, so a missing row means the citation is stale`,
+      ).toBeGreaterThan(0);
+
+      for (const c of claimed) {
+        expect(
+          c,
+          `docs/aid-methodology.md files \`${d.name}\` under "${c}", but the note tells readers ` +
+            `the roster it publishes says "${d.there}". Three things must agree: SKILL_GROUPS ` +
+            `(site/scripts/skills/curated-roster.mjs), this document, and the note in ` +
+            `render-index.mjs. If you corrected one, correct the others — do not just make this ` +
+            `test pass.`,
+        ).toBe(d.there);
+      }
+    }
   });
 
   it('makes no frozen-generator claim', () => {

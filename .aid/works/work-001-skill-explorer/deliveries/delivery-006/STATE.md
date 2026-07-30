@@ -24,7 +24,8 @@ ticket_ref: "--"
   `aid/work-001-delivery-005`, in order: `b86aae3d` (scaffolding) → `129eba1b` (055 prose) →
   `8e02d174` (054 derivation + guard) → `8eff0803` (055 correction) → `d2f0440c` (056 links) →
   `923431a4` (057 hollowing) → `21c0f0a3` + `52e65e90` (an out-of-delivery `writeback-state.sh`
-  fix, and its propagation to `canonical/`) → `873677e6` (KI-009 closure + rollup) → the
+  fix, and its propagation to `canonical/` — traceability recorded at **Q8** below, and
+  guarded by a test added at the work-level final gate) → `873677e6` (KI-009 closure + rollup) → the
   head-gate fixture fix → `23017900` (cycle 1's five `[HIGH]`s) → `cb1b84f1` + `65c677b1`
   (cycle 1's MEDIUM/LOW/MINOR tail) → `74b46da7` (cycle 2: red CI + the count I introduced
   while fixing counts) → `a6fad75d` (**root cause 1** — the guard was rooted at `site/`) →
@@ -247,6 +248,41 @@ ticket_ref: "--"
 - **Applied to:** `deliveries/delivery-006/BLUEPRINT.md` (§ Scope and Gate Criterion 2);
   `tasks/task-055/DETAIL.md` (AC amendment); `site/scripts/skills/skill-counts.mjs`;
   `site/src/content/docs/index.mdx`; `reference/overview.md`.
+
+### Q8 — a product-code change with no task, no requirement and no test
+
+- **Raised by:** the work-level final gate, 2026-07-30 (its row 12).
+- **Question:** commits `21c0f0a3` + `52e65e90` changed shipped product code —
+  `mode_append_issue`'s guard in `canonical/aid/scripts/execute/writeback-state.sh` — inside a
+  delivery about the website. There is no task-NNN, no `DETAIL.md`, no acceptance criterion and no
+  test. On what authority did it land, and what stops it being reverted?
+- **Answer, in three parts.**
+  1. **Why it was in scope at all.** It is not website work; it is *gate* work. The delivery gate
+     itself calls `writeback-state.sh --append-issue`, exporting `AID_WORK_DIR` rather than
+     `AID_STATE_FILE`. The old guard required `AID_STATE_FILE` to be set, so that caller skipped
+     the work-dir branch and then failed against a `.aid/works/work` lock directory that does not
+     exist. The delivery could not record its own findings until this was fixed. That is a
+     legitimate reason to fix it here and an illegitimate reason to leave it untraced.
+  2. **It was also authored at the wrong layer first** — `21c0f0a3` edited only the `.claude/`
+     dogfood render; `52e65e90` back-propagated to `canonical/`. That is a recurrence of this
+     delivery's cycle-1 CRITICAL class, self-corrected on-branch. All nine copies are now
+     byte-identical and all five manifests sha-consistent. It is the concrete case that motivated
+     the provenance banner now carried at the top of the canonical file.
+  3. **The regression is now guarded.** `tests/canonical/test-writeback-state.sh` **Unit 24** was
+     added at the final gate. The gap was real and total: the suite exports
+     `AID_DELIVERY_ISSUES_DIR` file-wide, so no other unit can reach that branch, and
+     `AID_WORK_DIR` appeared nowhere in the file — a grep under `tests/` hit only
+     `test-write-control-signal.sh` and `coverage-baseline.tsv`. Unit 24 clears those exports with
+     `env -u` and asserts the issues file lands under `AID_WORK_DIR`. Its discriminating power was
+     **measured** by re-introducing the pre-fix condition on a scratch copy (fixed: exit 0, file
+     lands; broken: exit 1, no file), and the measurement is recorded in the unit's own comment,
+     including which of its four assertions does *not* discriminate.
+- **Why it is recorded rather than only fixed:** a behavioural change to shipped code that traces
+  to nothing is indistinguishable from an accident when read a year later, and the accident it most
+  resembles — an unrelated edit swept into a delivery — is one this work already committed once
+  (delivery-001's `git add -A` scope leak). The fix was right; its invisibility was the defect.
+- **Applied to:** `tests/canonical/test-writeback-state.sh` (Unit 24, 4 assertions);
+  this Q&A entry; the commit-list annotation above.
 
 ---
 
