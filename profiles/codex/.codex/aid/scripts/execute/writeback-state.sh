@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # ============================================================================
-#  THIS FILE IS THE SOURCE. NINE COPIES OF IT EXIST -- EDIT NONE OF THEM.
+#  THIS FILE IS THE SOURCE. NINE COPIES EXIST -- EDIT THIS ONE, NEVER THE OTHER EIGHT.
 #
 #  canonical/aid/scripts/execute/writeback-state.sh   <- you are here (edit this)
 #  profiles/{claude-code,codex,cursor,copilot-cli,antigravity}/.../writeback-state.sh
