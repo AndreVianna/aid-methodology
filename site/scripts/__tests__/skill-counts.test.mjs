@@ -13,7 +13,7 @@
 
 import { describe, it, expect } from 'vitest';
 import { readFileSync, readdirSync, existsSync } from 'node:fs';
-import { resolve, dirname, join } from 'node:path';
+import { resolve, dirname, join, basename } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { REPO_ROOT, CANONICAL_SKILLS_DIR } from '../skills/paths.mjs';
 import { deriveSkillCounts } from '../skills/skill-counts.mjs';
@@ -100,43 +100,47 @@ describe('deriveSkillCounts — internal consistency', () => {
   });
 
   it('agrees with every count the reference page renders', () => {
-    // The generated page derives its own numbers at build time. If this module and
-    // that generator ever disagree, one of them is lying to a reader. Each claim is
-    // checked only when present, so task-057's hollowing-out does not force a
-    // rewrite here — but `checked` proves at least one claim was really compared,
-    // so a page that renders nothing cannot pass this by being empty.
+    // The generated page derives its own numbers independently, at build time. If that
+    // generator and this module ever disagree, one of them is lying to a reader.
+    //
+    // STRICT, deliberately. This test used to skip any claim whose regex found nothing
+    // (`if (m)`), which reads as tolerant of the page evolving but is really tolerant of
+    // the TEST rotting: task-057 reworded the page and four of the five regexes silently
+    // stopped matching, leaving one claim compared out of five and a `checked === 0`
+    // fallback that could never fire. Coverage fell by 80% and the suite stayed green.
+    //
+    // So a missing claim is now a failure, not a skip. If the page's wording changes
+    // again, this test says so instead of quietly measuring less.
     const page = readFileSync(join(DOCS, 'reference', 'skills.md'), 'utf8');
     const claims = [
-      [/\*\*(\d+) skill directories\*\*/, counts.directories],
-      [/\*\*(\d+) classic\b/, counts.classic],
-      [/\*\*(\d+) engine-driven direct-entry shortcut/, counts.shortcuts],
-      [/(\d+) of the rows \(/, counts.repurposed],
-      [/— the (\d+) classic\s+re-registered/, counts.classicRepurposed],
+      ['corpus total', /all \*\*(\d+)\*\* skills/, counts.directories],
+      ['emitting shortcuts', /\*\*(\d+) engine-driven verb-first shortcut skills\*\*/, counts.shortcuts],
+      ['catalog rows', /\((\d+) rows total/, counts.catalogRows],
+      ['repurpose rows', /the other (\d+) are `repurpose/, counts.repurposed],
+      ['classic re-registered', /the (\d+) classic re-registered/, counts.classicRepurposed],
     ];
-    let checked = 0;
-    for (const [re, expected] of claims) {
+    const missing = [];
+    for (const [what, re, expected] of claims) {
       const m = re.exec(page);
-      if (m) {
-        expect(Number(m[1]), `page claim ${re}`).toBe(expected);
-        checked++;
+      if (!m) {
+        missing.push(`${what} (${re})`);
+        continue;
       }
+      expect(Number(m[1]), `reference/skills.md ${what}`).toBe(expected);
     }
-    if (checked === 0) {
-      // Page hollowed out (task-057) — then it must still carry the narrative that
-      // replaced the roster, rather than being empty or missing.
-      expect(page).toMatch(/APPROVAL-HALT/);
-    }
+    expect(missing, 'reference/skills.md no longer states these — reword the regex or the page').toEqual([]);
+
+    // The narrative the roster was traded for must still be there (task-057).
+    expect(page).toMatch(/APPROVAL-HALT/);
   });
 });
 
-describe('hand-authored pages quote the derived triple, not a hand-counted one', () => {
+describe('hand-authored pages state no superseded or unguarded claim', () => {
   it('the pages under test exist', () => {
     for (const p of CLAIM_PAGES) expect(existsSync(p), p).toBe(true);
     expect(CLAIM_PAGES.length).toBeGreaterThan(1);
   });
 
-  // The specific stale values that shipped, named so a regression to them is obvious
-  // rather than merely "a number changed". 92/14/76 were the claims; 111/19/64 are real.
   it('no page still claims the superseded 92 / 14 classic / 76 triple', () => {
     for (const p of CLAIM_PAGES) {
       const text = readFileSync(p, 'utf8');
@@ -144,72 +148,6 @@ describe('hand-authored pages quote the derived triple, not a hand-counted one',
       expect(text, `${p}: stale classic`).not.toMatch(/\b14 classic\b/);
       expect(text, `${p}: stale shortcut count`).not.toMatch(/\b76 verb-first\b/);
     }
-  });
-
-  it('every page stating a total states the derived total', () => {
-    let checked = 0;
-    for (const p of CLAIM_PAGES) {
-      const text = readFileSync(p, 'utf8');
-      for (const m of text.matchAll(/\b(\d+) (?:AID )?skills\b/g)) {
-        expect(Number(m[1]), `${p}: "${m[0]}"`).toBe(counts.directories);
-        checked++;
-      }
-    }
-    // Non-vacuity: these pages really do state a total, so the loop ran.
-    expect(checked).toBeGreaterThan(0);
-  });
-
-  it('every page stating a curated count states the SUMMING one (17, not 21 or 19)', () => {
-    // "N curated" must be curatedOnly. Stating `curated` (21) or `classic` (19) here is
-    // the double-count that stopped the home page's own sentence from adding up.
-    let checked = 0;
-    for (const p of CLAIM_PAGES) {
-      const text = readFileSync(p, 'utf8');
-      for (const m of text.matchAll(/\b(\d+) curated\b/g)) {
-        expect(Number(m[1]), `${p}: "${m[0]}"`).toBe(counts.curatedOnly);
-        checked++;
-      }
-    }
-    expect(checked).toBeGreaterThan(0);
-  });
-
-  it('no hand-authored page decomposes the corpus with a classic count', () => {
-    // "N classic" is a valid internal figure but not a valid reader-facing SUMMAND, for
-    // the reason above. The pages now say "17 curated + 94 catalog" instead.
-    for (const p of CLAIM_PAGES) {
-      const text = readFileSync(p, 'utf8');
-      expect(text, `${p}: states a classic count`).not.toMatch(/\b\d+ classic pipeline\b/);
-    }
-  });
-
-  it('every page stating a shortcut count states the derived shortcut count', () => {
-    let checked = 0;
-    for (const p of CLAIM_PAGES) {
-      const text = readFileSync(p, 'utf8');
-      for (const re of [/\b(\d+) verb-first\b/g, /\b(\d+) shortcut skills\b/g]) {
-        for (const m of text.matchAll(re)) {
-          expect(Number(m[1]), `${p}: "${m[0]}"`).toBe(counts.shortcuts);
-          checked++;
-        }
-      }
-    }
-    expect(checked).toBeGreaterThan(0);
-  });
-
-  it('every page stating a catalog-row count states the derived one', () => {
-    let checked = 0;
-    for (const p of CLAIM_PAGES) {
-      const text = readFileSync(p, 'utf8');
-      for (const m of text.matchAll(/\b(\d+)-row (?:shortcut )?catalog\b/g)) {
-        expect(Number(m[1]), `${p}: "${m[0]}"`).toBe(counts.catalogRows);
-        checked++;
-      }
-      for (const m of text.matchAll(/\b(\d+) hand-authored `repurpose`/g)) {
-        expect(Number(m[1]), `${p}: "${m[0]}"`).toBe(counts.repurposed);
-        checked++;
-      }
-    }
-    expect(checked).toBeGreaterThan(0);
   });
 
   it('discovers no unguarded roster claim anywhere under docs/', () => {
@@ -242,6 +180,94 @@ describe('hand-authored pages quote the derived triple, not a hand-counted one',
     ).toEqual([]);
     // Non-vacuity: the walk really visited files and really skipped the guarded ones.
     expect(guarded.size).toBeGreaterThan(5);
+  });
+});
+
+/**
+ * Every phrasing in which a page states a skill-count claim, and what it must equal.
+ *
+ * This replaces four separate per-phrasing tests that each grepped ONE wording. The
+ * gate review showed why that shape fails: the guard checked `N skills`, `N curated`,
+ * `N classic` and `N verb-first` and was blind to `N skill directories`,
+ * `N skill definitions`, `and N others`, `58 canonical names + 36 aliases` and
+ * `N shortcut-catalog skills` — five more phrasings live on three of the pages it
+ * already read, including `and 61 others`, a number delivery-006 itself wrote.
+ *
+ * So the vocabulary is the unit now, not the test. Adding a phrasing here extends
+ * coverage to all seven pages at once, and `discovers no unguarded roster claim`
+ * below fails on any digit-plus-roster-noun shape that is NOT in this list.
+ */
+const CLAIM_PATTERNS = [
+  { re: /\b(\d+) (?:AID )?skills\b/g, of: (c) => c.directories, what: 'corpus total' },
+  { re: /\b(\d+) skill directories\b/g, of: (c) => c.directories, what: 'corpus total' },
+  { re: /\b(\d+) skill definitions\b/g, of: (c) => c.directories, what: 'corpus total' },
+  { re: /\b(\d+) curated\b/g, of: (c) => c.curatedOnly, what: 'curated (non-catalog)' },
+  { re: /\b(\d+) verb-first\b/g, of: (c) => c.shortcuts, what: 'emitting shortcuts' },
+  { re: /\b(\d+) shortcut skills\b/g, of: (c) => c.shortcuts, what: 'emitting shortcuts' },
+  { re: /\b(\d+) engine-driven verb-first shortcut skills\b/g, of: (c) => c.shortcuts, what: 'emitting shortcuts' },
+  { re: /\b(\d+)-row (?:shortcut )?catalog\b/g, of: (c) => c.catalogRows, what: 'catalog rows' },
+  { re: /\((\d+) rows total\b/g, of: (c) => c.catalogRows, what: 'catalog rows' },
+  { re: /\b(\d+) shortcut-catalog skills\b/g, of: (c) => c.catalogRows, what: 'catalog rows' },
+  { re: /\b(\d+) catalog skills\b/g, of: (c) => c.catalogRows, what: 'catalog rows' },
+  { re: /\b(\d+) hand-authored `repurpose`/g, of: (c) => c.repurposed, what: 'repurpose rows' },
+  { re: /the other (\d+) are `repurpose/g, of: (c) => c.repurposed, what: 'repurpose rows' },
+  { re: /\b(\d+) `repurpose` skills\b/g, of: (c) => c.repurposed, what: 'repurpose rows' },
+  { re: /the (\d+) classic\s+re-registered/g, of: (c) => c.classicRepurposed, what: 'classic re-registered' },
+  { re: /\b(\d+) canonical names?\b/g, of: (c) => c.catalogCanonical, what: 'catalog canonical names' },
+  { re: /\b(\d+) canonical\b(?! names)/g, of: (c) => c.catalogCanonical, what: 'catalog canonical names' },
+  { re: /\b(\d+) aliases\b/g, of: (c) => c.catalogAliases, what: 'catalog aliases' },
+];
+
+/** Collect every recognised claim on one page, as {what, stated, expected}. */
+function claimsOn(text, c) {
+  const found = [];
+  for (const { re, of, what } of CLAIM_PATTERNS) {
+    for (const m of text.matchAll(new RegExp(re.source, re.flags))) {
+      found.push({ what, stated: Number(m[1]), expected: of(c), text: m[0] });
+    }
+  }
+  return found;
+}
+
+describe('every roster claim on every page equals the derivation', () => {
+  it('states no wrong number, on any page, in any phrasing', () => {
+    const wrong = [];
+    for (const p of CLAIM_PAGES) {
+      for (const cl of claimsOn(readFileSync(p, 'utf8'), counts)) {
+        if (cl.stated !== cl.expected) {
+          wrong.push(`${basename(p)}: "${cl.text}" — ${cl.what} is ${cl.expected}`);
+        }
+      }
+    }
+    expect(wrong).toEqual([]);
+  });
+
+  // PER PAGE, not aggregated. The gate review caught the aggregated floor: one page
+  // could drop every claim it makes and still pass on its neighbours' claims, which is
+  // exactly what task-055's AC-4 says must be impossible.
+  it.each(CLAIM_PAGES.map((p) => [basename(p), p]))(
+    '%s states at least one checked claim',
+    (_name, p) => {
+      expect(claimsOn(readFileSync(p, 'utf8'), counts).length).toBeGreaterThan(0);
+    },
+  );
+
+  it('"and N others" accounts for the skills named beside it', () => {
+    // faq.md reads "`/aid-fix`, `/aid-create-api`, `/aid-change-ui`, and 61 others".
+    // 3 + 61 must equal the shortcut count -- a claim no single-number check can make,
+    // and the phrasing the old guard was completely blind to.
+    let checked = 0;
+    for (const p of CLAIM_PAGES) {
+      for (const line of readFileSync(p, 'utf8').split('\n')) {
+        const m = /and (\d+) others\b/.exec(line);
+        if (!m) continue;
+        const named = (line.slice(0, m.index).match(/`\/aid-[a-z-]+`/g) || []).length;
+        expect(named + Number(m[1]), `${basename(p)}: ${named} named + ${m[1]} others`)
+          .toBe(counts.shortcuts);
+        checked++;
+      }
+    }
+    expect(checked).toBeGreaterThan(0);
   });
 });
 

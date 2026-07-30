@@ -24,6 +24,7 @@ import { renderSkillIndex } from '../skills/render-index.mjs';
 import { discoverSkills } from '../skills/discover.mjs';
 import { loadShortcutCatalog } from '../skills/catalog.mjs';
 import { assignGroups, CURATED_GROUPS } from '../skills/groups.mjs';
+import { SKILL_GROUPS } from '../skills/curated-roster.mjs';
 import { skillSummary } from '../skills/summary.mjs';
 import { renderFrontmatterValue } from '../skills/render-value.mjs';
 import { CANONICAL_SKILLS_DIR, SITE_SKILLS_DIR } from '../skills/paths.mjs';
@@ -190,26 +191,49 @@ describe('divergence note (AC-7)', () => {
     expect(noteLine).toContain('/reference/skills/');
   });
 
-  it('names this page as the roster and that page as the mechanism', () => {
+  it('names this page as the roster', () => {
     const noteLine = lines.find((l) => l.startsWith('> **Note:**'));
     expect(noteLine).toContain('This page is the roster');
-    expect(noteLine).toContain('shortcut engine');
   });
 
-  it('makes no competing-roster or frozen-generator claim', () => {
-    // These are the clauses task-057 falsified by hollowing out /reference/skills/.
-    // Asserting their ABSENCE is what stops the note regressing to a claim that is no
-    // longer true: there is no second roster to diverge from, and the generator that
-    // built it was unfrozen by work-level Q4 in order to shed it.
+  it('discloses every grouping the curated roster disagrees with, and only those', () => {
+    // These two assertions replaced a pair I wrote in task-057 that forbade the words
+    // "authoritative" and "disagree" outright, on the belief that hollowing out
+    // /reference/skills/ left nothing to diverge from. That was wrong: the competing
+    // grouping is the curated ROSTER, which still exists and still files `aid-triage`
+    // under Definition where this page files it under Support -- so those assertions
+    // banned a true and useful disclosure and locked the ban in. Corrected to check the
+    // disclosure is DERIVED and complete instead of banning it.
     const noteLine = lines.find((l) => l.startsWith('> **Note:**')) ?? '';
-    expect(noteLine).not.toContain('terse family');
-    expect(noteLine).not.toContain('authoritative');
-    expect(noteLine).not.toContain('frozen');
-    expect(noteLine).not.toContain('disagree');
-    // And it no longer singles out the three skills whose grouping differed.
-    for (const n of ['aid-triage', 'aid-deploy', 'aid-monitor']) {
-      expect(noteLine, `note should not single out ${n}`).not.toContain(`\`${n}\``);
+
+    const rosterGroupOf = new Map();
+    for (const g of SKILL_GROUPS) for (const sk of g.skills) rosterGroupOf.set(sk.name, g.group);
+    const expected = [];
+    for (const section of sections) {
+      for (const card of [...section.cards, ...section.families.flatMap((f) => f.cards)]) {
+        const rg = rosterGroupOf.get(card.name);
+        if (rg && rg !== section.group) expected.push(card.name);
+      }
     }
+
+    for (const n of expected) {
+      expect(noteLine, `note must disclose ${n}`).toContain(`\`${n}\``);
+    }
+    // And it must not invent a divergence that does not exist.
+    for (const n of rosterGroupOf.keys()) {
+      if (!expected.includes(n)) {
+        expect(noteLine, `note must NOT claim ${n} diverges`).not.toContain(`\`${n}\``);
+      }
+    }
+    // Non-vacuity: there really is a divergence to disclose, so the loop above ran.
+    expect(expected.length).toBeGreaterThan(0);
+  });
+
+  it('makes no frozen-generator claim', () => {
+    // The one clause task-057 genuinely falsified: work-level Q4 unfroze gen-reference.mjs.
+    const noteLine = lines.find((l) => l.startsWith('> **Note:**')) ?? '';
+    expect(noteLine).not.toContain('frozen');
+    expect(noteLine).not.toContain('terse family');
   });
 
   it('does not itself match any grammar regex', () => {

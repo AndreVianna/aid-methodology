@@ -4,6 +4,7 @@
 
 import { skillSummary } from './summary.mjs';
 import { renderFrontmatterValue } from './render-value.mjs';
+import { SKILL_GROUPS } from './curated-roster.mjs';
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
@@ -123,24 +124,60 @@ export function renderSkillIndex(records, sections) {
     `${familyCount === 1 ? 'family' : 'families'}** derived from the shortcut catalog. ` +
     `Each card below links to that skill\u2019s detail page.`;
 
-  // ── 4. Cross-reference note ────────────────────────────────────────────
+  // ── 4. Grouping-divergence + cross-reference note ──────────────────────
   // Sits immediately below the intro and above the first ## heading, so it is
   // visible to a reader but does not appear in the table of contents.
   //
-  // This was a DIVERGENCE note until delivery-006 (task-057). It told a reader that
-  // /reference/skills/ was "a terse family summary" grouping `aid-triage`,
-  // `aid-deploy` and `aid-monitor` differently, that "this page is authoritative"
-  // where the two disagreed, and that the difference existed "because the older
-  // generator is frozen". Every one of those clauses is now false: that page has been
-  // hollowed out and carries no roster, so there is no competing grouping to be
-  // authoritative over, and work-level Q4 unfroze the generator in order to hollow it.
-  // A note whose premise has died is worse than no note, so this states the one thing
-  // still true and still useful to a reader -- where the mechanism is documented.
-  const crossRefNote =
-    `> **Note:** This page is the roster. How the verb-first shortcut skills actually ` +
-    `work — the shared shortcut engine they delegate to, and its ` +
-    `INTAKE → APPROVAL-HALT sequence — is documented at ` +
-    `[Reference → Shortcut engine](/reference/skills/).`;
+  // HISTORY, because this note has now been wrong twice in opposite directions.
+  // Originally it hard-coded three skill names as grouped differently by
+  // /reference/skills/, and explained the difference as "because the older generator
+  // is frozen". delivery-006 task-057 hollowed that page out and replaced the whole
+  // note with a plain cross-reference, on the reasoning that a hollowed page has no
+  // roster left to diverge from. That reasoning was WRONG: the competing grouping was
+  // never the reference PAGE, it is the curated roster itself -- which still exists,
+  // still groups `aid-triage` under Definition, and is still what docs/aid-methodology.md
+  // publishes in its inventory table, while this page files it under Support per FR-5.
+  // Deleting the disclosure removed a true statement a reader needs.
+  //
+  // So it is DERIVED now, not curated. task-054 extracted SKILL_GROUPS into
+  // curated-roster.mjs precisely so it could be read without importing a generator that
+  // calls main() at module scope -- which is what made the old hard-coded list necessary.
+  // Whatever the two groupings actually disagree about is what the note names, and if
+  // they stop disagreeing the note disappears on its own.
+  const rosterGroupOf = new Map();
+  for (const g of SKILL_GROUPS) {
+    for (const sk of g.skills) rosterGroupOf.set(sk.name, g.group);
+  }
+  const divergent = [];
+  for (const section of sections) {
+    // Both the group's own cards AND its verb-family cards. `aid-deploy` and `aid-monitor`
+    // live under `### deploy` / `### monitor` families rather than in `section.cards`, so
+    // walking cards alone would silently never compare them -- and they are two of the
+    // three skills the original hard-coded note named. They agree today; the point is that
+    // the derivation must be able to notice if that changes.
+    const inSection = [...section.cards, ...section.families.flatMap((f) => f.cards)];
+    for (const card of inSection) {
+      const rosterGroup = rosterGroupOf.get(card.name);
+      if (rosterGroup && rosterGroup !== section.group) {
+        divergent.push({ name: card.name, here: section.group, there: rosterGroup });
+      }
+    }
+  }
+  divergent.sort((x, y) => x.name.localeCompare(y.name));
+
+  const crossRefNote = divergent.length === 0
+    ? `> **Note:** This page is the roster. How the verb-first shortcut skills actually ` +
+      `work — the shared shortcut engine they delegate to, and its ` +
+      `INTAKE → APPROVAL-HALT sequence — is documented at ` +
+      `[Reference → Shortcut engine](/reference/skills/).`
+    : `> **Note:** This page is the roster, and it files skills per FR-5’s Placement ` +
+      `rules. ${divergent.map((d) => `\`${d.name}\` is **${d.here}** here and ` +
+      `**${d.there}** in the curated roster that ` +
+      `[docs/aid-methodology.md](${'https://github.com/AndreVianna/aid-methodology/blob/master'}/docs/aid-methodology.md) ` +
+      `publishes`).join('; ')}. Where they disagree about grouping, **this page is ` +
+      `authoritative**. How the shortcut skills themselves work — the shared engine ` +
+      `and its INTAKE → APPROVAL-HALT sequence — is at ` +
+      `[Reference → Shortcut engine](/reference/skills/).`;
 
   // ── 5. Group and family sections ───────────────────────────────────────────
   const groupLines = [];

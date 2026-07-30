@@ -41,6 +41,8 @@ const NON_CLASSIC_CURATED = ['aid-triage', 'aid-ask'];
  * @property {number}   curatedOnly  Curated skills that are NOT catalog rows — the
  *                                   figure that makes a decomposition of the corpus
  *                                   SUM, because it does not double-count.
+ * @property {number}   catalogCanonical  Catalog rows that are canonical names.
+ * @property {number}   catalogAliases    Catalog rows that are aliases.
  * @property {string[]} directoryNames  Sorted directory names.
  * @property {string[]} curatedNames    Sorted curated skill names.
  * @property {string[]} shortcutNames   Sorted emitting shortcut names.
@@ -99,9 +101,15 @@ export function deriveSkillCounts(repoRoot) {
   const catalogNameSet = new Set(rows.map((r) => r.name));
   const curatedOnlyNames = curatedNames.filter((n) => !catalogNameSet.has(n));
 
+  // Pages state the catalog's split as "58 canonical names + 36 aliases", so both halves
+  // are derived here too rather than being two more numbers nobody checks.
+  const catalogCanonical = rows.filter((r) => r.alias_of === 'null').length;
+
   return {
     curatedOnly: curatedOnlyNames.length,
     curatedOnlyNames,
+    catalogCanonical,
+    catalogAliases: rows.length - catalogCanonical,
     directories: directoryNames.length,
     curated: curatedNames.length,
     classic: classicNames.length,

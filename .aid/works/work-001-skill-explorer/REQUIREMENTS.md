@@ -219,8 +219,22 @@ on top of `astro-mermaid`, which renders diagrams but provides no node interacti
   manifest; anything new should follow that same pattern.
 - The existing `site/` build and its four generated reference pages must keep working unchanged.
   In particular, `gen-reference.mjs`'s throw-on-drift guard over the `canonical/skills/` set must
-  continue to pass — adding a second generator must not fight it. **`gen-reference.mjs` itself is
-  frozen by this work.**
+  continue to pass — adding a second generator must not fight it. ~~**`gen-reference.mjs` itself is
+  frozen by this work.**~~ — **superseded by the second amendment below.**
+- **Amended 2026-07-30 (owner decision, work-level Q4 — the SECOND amendment).** The freeze on
+  `gen-reference.mjs` is **lifted**, deliberately and as a scope addition rather than a
+  correction. Q4 resolved to unify the site's two skill sections: readers are repointed at the
+  derived `/skills/` section and `reference/skills.md` is **hollowed out** — it sheds the
+  duplicated roster and keeps the shortcut-engine narrative, which lives nowhere else. That is not
+  possible without editing the frozen file, so the freeze had to go. Executed as **delivery-006**
+  (tasks 054–057). The bound that replaces the freeze: the other three generated pages
+  (`agents.md`, `kb.md`, `settings.md`) stay byte-unchanged, all 111 skill detail pages and their
+  sidecars stay byte-unchanged, and the generator stays idempotent — see
+  `deliveries/delivery-006/BLUEPRINT.md § Gate Criteria`.
+  **Consumers of the un-amended text:** `known-issues.md` **KI-010** and
+  `features/feature-002-grouped-skill-index/SPEC.md` both still reason from "the older generator is
+  frozen". Their conclusions are re-derived against this amendment rather than left standing on a
+  premise that no longer holds.
 - **Amended 2026-07-25 (owner decision at Specify review).** The original wording — "its vitest
   suites must keep passing unchanged" — was **unsatisfiable**: two assertions in
   `site/scripts/__tests__/gen-reference.test.mjs` hard-code a 94-directory corpus and a
