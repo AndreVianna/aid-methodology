@@ -1,8 +1,8 @@
 ---
-delivery_state: Gated
+delivery_state: Done
 gate_tier: Large
-gate_grade: "In progress — cycle 4 fixes applied"
-gate_timestamp: "--"
+gate_grade: "B-"
+gate_timestamp: "2026-07-30T20:35:28Z"
 ticket_ref: "--"
 ---
 
@@ -89,8 +89,25 @@ ticket_ref: "--"
 ## Delivery Gate
 
 - **Issue List:** `.aid/.temp/review-pending/execute-delivery-006.md` — 85 rows across five
-  cycles. Cycle 5: 66 Fixed, 1 Recurred, 18 Pending; **not A+**. Grades: E+ → D+ → D →
-  not-A+ → not-A+. The circuit breaker in `state-fix.md` has fired.
+  cycles. Grades: E+ → D+ → D → not-A+ → not-A+ → **B- (meets bar)**.
+- **Final tally:** 75 Fixed, 10 Pending — 1 CRITICAL, 11 HIGH, 28 MEDIUM, 29 LOW and 6 MINOR
+  closed; **zero CRITICAL/HIGH/MEDIUM survive**. The 10 survivors are 8 LOW + 2 MINOR (rows 62,
+  69, 78–85), deferred to an end-of-work cleanup batch by owner instruction alongside stale
+  `file:line` citations.
+- **Why the bar moved.** Cycles 3–5 each closed ~12 findings and opened ~12; the ledger grew
+  30 → 43 → 62 → 73 → 85 with no decline in the new-finding rate, so A+ ("zero issues at ANY
+  severity") was not a bar being approached on a largely-prose delivery. The circuit breaker in
+  `state-fix.md` fired at cycle 5, the owner lowered `minimum_grade` to B- globally, and the
+  rationale is recorded at `.aid/settings.yml`:9-22. B- keeps CRITICAL/HIGH/MEDIUM fully
+  blocking — nothing that misinforms a reader, breaks a build, or states a false fact was waived.
+- **Verification at close:** 2765 site vitest; `check-skill-counts.mjs` 204 claims / 0
+  disagreements; `test-dogfood-byte-identity.sh` 711/0; `test-doc-counts.sh` 31/0;
+  `run_generator` + `git diff --exit-code -- profiles/` clean (render-parity); KB INDEX
+  regeneration clean (kb-hygiene).
+- **Marked from the artifact, not from intent.** The nine MEDIUM closures were confirmed by a
+  separate pass that re-read each row's Evidence site before any Status cell changed (F5) —
+  the discipline added after three cycles of `Recurred` rows that had been marked `Fixed` from
+  the edit I meant to make rather than the bytes on disk.
 
 ---
 

@@ -3,7 +3,7 @@ pipeline:
   path: full
   initiator: aid-describe
 started: "2026-07-25"
-minimum_grade: "A+"
+minimum_grade: "B-"
 user_approved: no
 lifecycle: Running
 phase: Execute
@@ -317,13 +317,16 @@ _None yet. Each delivery-NNN/STATE.md carries its own gate block._
   rather than predicted: Pagefind indexes all 111 detail pages (13 fragments mention `aid-config`),
   and the sidebar `Skills` group shipped in task-016. `/reference/skills/` remains a leaf with only
   an `index.html`, so child routes still 404 until half 1 lands.
-- **Status (2026-07-30):** delivery-006 **Gated** — all four tasks (054–057) are `Done` and
-  committed; browser verification passed; the delivery gate is in its fourth cycle against the
-  A+ bar, with the per-cycle history in `deliveries/delivery-006/STATE.md`. Three root causes
-  were addressed rather than patched: the count guard's root (now repo-wide,
-  `tests/canonical/check-skill-counts.mjs`), the superseded-§7-freeze class, and wrong-layer
-  edits. Still to do: clear the gate to A+, work-level gate, PR into `master`.
-  KI-022 (ELK layout) remains owner-deferred and ships disclosed.
+- **Status (2026-07-30):** delivery-006 **Done** — all four tasks (054–057) `Done` and committed;
+  browser verification passed; the gate closed at **B-** after five cycles (E+ → D+ → D → not-A+
+  → not-A+ → B-), zero CRITICAL/HIGH/MEDIUM surviving, per-cycle history in
+  `deliveries/delivery-006/STATE.md`. Three root causes were addressed rather than patched: the
+  count guard's root (now repo-wide, `tests/canonical/check-skill-counts.mjs`), the
+  superseded-§7-freeze class, and wrong-layer edits. The A+ bar was retired globally by owner
+  decision mid-gate (`.aid/settings.yml`:6, rationale at :9-22) because five cycles closed ~12
+  findings and opened ~12 apiece with no decline in the new-finding rate.
+  Still to do: work-level gate at the B- bar, then PR into `master`, then the deferred
+  8 LOW + 2 MINOR cleanup batch. KI-022 (ELK layout) remains owner-deferred and ships disclosed.
   Worktree: `.claude/worktrees/work-001`, branch `aid/work-001-delivery-005`. **Use Windows git
   only — no WSL** (KI-017).
 
