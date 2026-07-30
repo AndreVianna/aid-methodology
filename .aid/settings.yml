@@ -3,7 +3,7 @@ name: AID
 description: AI Integrated Development
 type: brownfield
 source_control: git
-minimum_grade: A+
+minimum_grade: B-
 heartbeat_interval: 1
 
 knowledge:
