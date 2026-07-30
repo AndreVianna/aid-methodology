@@ -45,7 +45,16 @@ ticket_ref: "--"
 
 - **Complexity Score:** 18 (tasks=6, depth=3, risk=9, consults=0) -> Large tier
 - **Cycles:** 9. Grades D- -> D -> D -> D -> D+ -> D -> D+ -> D -> D; findings 13 -> 15 -> 8 -> 11 -> 6 -> 7 -> 9 -> 8 -> 8. The recorded Grade is cycle 9's, the last one actually measured.
-- **Issue List:** all 85 findings across the nine cycles are FIXED and self-verified. Cycle 9's 8 fixes have NOT been graded by a fresh reviewer, so the current tree is ungraded. **Gate NOT passed** against the A+ minimum. Reasons and options: § Cross-phase Q&A, 'Why six cycles did not reach A+' (written at cycle 6; the diagnosis it records held through cycle 9) and § 'Method change at cycle 9'.
+- **Minimum grade:** `B-` — **changed from `A+` at cycle 10** (human decision, 2026-07-30;
+  `.aid/settings.yml`). `B-` is the lowest bar whose whole band excludes `[MEDIUM]`, so the exit
+  criterion is now *zero `[MEDIUM]`/`[HIGH]`/`[CRITICAL]`*, with `[LOW]`/`[MINOR]` **deferred, not
+  waived** — they accumulate in the work `STATE.md § Deferred Findings` and are swept in one pass
+  before the work ships. Measurement and reasoning: that section. Set globally rather than per-skill
+  for the reason in work `STATE.md § Q19`.
+- **Issue List:** all 85 findings across the nine cycles are FIXED and self-verified. Cycles 1-9 ran
+  against the `A+` bar and never cleared it; § Cross-phase Q&A, 'Why six cycles did not reach A+'
+  (written at cycle 6, and the diagnosis held through cycle 9) and § 'Method change at cycle 9'.
+- **In flight:** cycle 10's reviewer (aid-reviewer, Large tier) was dispatched at 2026-07-30T19:40Z against `86eb7584`, writing to `.aid/.temp/review-pending/execute-delivery-015-cycle10.md`. The recorded `gate_grade` is cycle 9's; it does not describe the tree at `86eb7584`, which is ungraded until that ledger is graded.
 ---
 
 ## Cross-phase Q&A

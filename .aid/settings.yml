@@ -3,7 +3,17 @@ name: AID
 description: AI Integrated Development
 type: brownfield
 source_control: git
-minimum_grade: A+
+# B- is the lowest grade whose whole band excludes [MEDIUM]: grade.sh is
+# worst-severity-dominated, so one [MEDIUM] caps a ledger at C+ no matter how few,
+# while a LOW-only ledger bottoms out at B- no matter how many. This bar therefore
+# means "no [MEDIUM] or worse", and defers [LOW]/[MINOR] -- deferred, NOT waived:
+# they are swept once, at the end of the work.
+# Set globally rather than as an `execute:` per-skill override because
+# lint-settings.sh S8 rejects any top-level key the template does not seed, and the
+# template seeds no skill sections -- so the per-skill override read-setting.sh
+# documents (resolution order step 1) cannot be written into a file that passes its
+# own lint. Recorded as a defect; out of delivery-015's scope.
+minimum_grade: B-
 heartbeat_interval: 1
 
 knowledge:

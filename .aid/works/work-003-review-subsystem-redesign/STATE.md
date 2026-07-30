@@ -154,6 +154,27 @@ source of truth, and close the accumulated review-path defects.
 
 _None yet._
 
+## Deferred Findings — [LOW] / [MINOR], swept at end of work
+
+<!-- WORK-OWNER-AUTHORED. Created 2026-07-30 when the gate bar moved to B-.
+
+     These rows are DEFERRED, NOT WAIVED. `.aid/.temp/review-pending/` is transient and is
+     deleted at DONE, so a deferred row that lives only in a ledger is a lost row. Every
+     [LOW]/[MINOR] a delivery gate leaves open gets copied here, verbatim in its ledger
+     columns plus the delivery it came from, and is discharged in one sweep before the work
+     ships. The work is NOT shippable while any row here is Pending. -->
+
+**Bar: `B-` (set 2026-07-30, `.aid/settings.yml`).** Measured on `86eb7584`: `grade.sh` is
+worst-severity-dominated with a 3-band count modifier, so one `[MEDIUM]` caps a ledger at `C+`
+however few there are (8 `[LOW]` + 1 `[MEDIUM]` = `C+`), while a `[LOW]`-only ledger bottoms
+out at `B-` however many (`[LOW]` ×1 → `B+`, ×2–5 → `B`, ×6+ → `B-`). `B-` is therefore the
+lowest bar whose entire band excludes `[MEDIUM]`, and the bar and the intent — "no `[MEDIUM]`
+or worse; `[LOW]`/`[MINOR]` at the end" — are the same statement.
+
+| # | Severity | Rule | Doc | Line | Description | From | Status |
+|---|---|---|---|---|---|---|---|
+| _none yet_ | | | | | | | |
+
 ## Criteria Gaps
 
 <!-- AUTHORED by gap-register.sh, never by hand. Section created by hand on 2026-07-30 because
@@ -174,6 +195,55 @@ _None yet._
 
 <!-- DERIVED -- union of per-delivery Q&A plus WORK-OWNER-AUTHORED entries below
      (work owner is the single writer for those). -->
+
+### Q19 -- the per-skill settings override cannot be written into a file that passes its own lint (2026-07-30)
+
+- **Category:** Defect
+- **Impact:** Medium
+- **Status:** Open -- **NOT fixed here.** Out of delivery-015's scope (`lint-settings.sh` and
+  `templates/settings.yml` are delivery-014's artifacts; this delivery's Scope names the grading
+  backend). Recorded with the reproduction.
+
+Found by trying to use it: the gate bar moved to `B-` for `/aid-execute` only, which is a per-skill
+override, and it would not lint.
+
+**What happened.** `read-setting.sh` documents its resolution order at `:5-10` as *"1. Per-skill
+override key (e.g., `discover.minimum_grade`) → use if present"*, and implements it at `:235-239`
+by looking up section `$SKILL`, key `$KEY`. Writing exactly that:
+
+```yaml
+execute:
+  minimum_grade: B-
+```
+
+resolves correctly — `read-setting.sh --skill execute --key minimum_grade` returned `B-` (2 bytes,
+no quotes) while every other skill still returned the global. Then
+`lint-settings.sh --file .aid/settings.yml` exited `1`:
+
+```
+[FAIL] S8 unknown top-level key(s), not in the template: execute
+```
+
+**Why.** S8 (`lint-settings.sh:243-256`) builds its known-key set from the top-level keys of
+`canonical/aid/templates/settings.yml`, which are exactly seven — `name`, `description`, `type`,
+`source_control`, `minimum_grade`, `heartbeat_interval`, `knowledge` — plus `format_version`. The
+template seeds **no** skill sections, so **every** per-skill override the resolution order's step 1
+supports is an S8 violation. Step 1 is unreachable in any project whose settings file is linted.
+
+**Confirmed it is S8 and not the value:** with the same `B-` written to the global
+`minimum_grade` instead, the linter passes (`bar = B-`) and
+`tests/canonical/test-settings-frontmatter-gates.sh` returns 35/35. With the `execute:` section
+present, `SG05` (*the live `.aid/settings.yml` passes*) and `SG07` both failed — so the suite does
+catch it; nothing here is invisible, it is simply contradictory.
+
+**Fix, when someone owns it:** seed the skill sections in the template (commented is enough — S8
+reads the key names, and `S9` would then require each new key be validated), or teach S8 that a
+top-level key matching a known skill name is a legal section. Do not relax S8 generally: its stated
+purpose is catching a typo'd key that would otherwise silently fall through to `--default`.
+
+**Consequence accepted for now:** the `B-` bar is set **globally**, so `/aid-discover`,
+`/aid-summarize`, `/aid-specify` and the rest also stop at `B-` rather than `A+`. Recorded here
+because that is wider than the decision that was made, and it reverts by restoring one line.
 
 ### Q18 -- `gap-register.sh` finds its section by substring, and wrote a row into this file's prose (2026-07-30)
 
