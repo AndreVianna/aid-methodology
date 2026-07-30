@@ -1,5 +1,12 @@
 # Known Issues
 
+> **§7 AMENDED (2026-07-30, delivery-006).** REQUIREMENTS §7's **second amendment**
+> (work-level Q4) lifted the `gen-reference.mjs` freeze so delivery-006 could hollow out
+> `reference/skills.md`. Entries below that read "§7 freezes/forbids", "the frozen
+> generator" or "terse family summary" were TRUE WHEN FILED and are kept as the record;
+> none describes the repository today. See KI-010, which records what survived: the
+> competing grouping moved from a page to the curated roster.
+
 <!-- Scoped to this work. Only issues that affect features in this work. -->
 <!-- Created/updated by aid-specify during codebase exploration. -->
 <!-- Consumed by aid-plan for deliverable sequencing. -->

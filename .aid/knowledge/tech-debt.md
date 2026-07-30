@@ -27,7 +27,6 @@ intent: |
 contracts: []
 changelog:
   - 2026-07-30: work-001 delivery-006 gate -- added W1-1..W1-12, the work-001 known-issues that would not survive the work folder being pruned, with their own table header; corrected an initial mis-classification that restated three CLOSED issues as open; corrected a stale present-tense corpus count. Open debt is no longer L4 alone.
-  - 2026-07-30: work-001 delivery-006 gate -- added W1-1..W1-12, the work-001 known-issues that would not survive the work folder being pruned; corrected an initial mis-classification that restated three CLOSED issues as open.
   - 2026-06-25: Initial debt audit (aid-discover quality deep-dive)
 ---
 
@@ -70,8 +69,6 @@ urgent.
 
 ---
 
-### work-001 (Skill Explorer) debt — issues that outlive the work folder
-
 | ID | Type | Description | Location | Risk | Effort | Priority |
 |----|------|-------------|----------|------|--------|----------|
 | **W1-1** | Third-party integration bug | `astro-mermaid` never forwards the site's custom `themeVariables` to `mermaid.initialize` — it destructures only `{theme, autoTheme, mermaidConfig, iconPacks, enableLog}`, so the configured dark palette is inert and every diagram renders with the stock theme. Fix is to nest the palette under `mermaidConfig`. Mitigated, not resolved: generated charts emit a self-contained `classDef` block, so they are legible either way. | `site/astro.config.mjs`:30-47 vs `astro-mermaid-integration.js`:229-235 | Low | S | P3 |
@@ -90,8 +87,10 @@ urgent.
 ### work-001 (Skill Explorer) — issues that outlive the work folder
 
 work-001 recorded 22 known issues in `.aid/works/work-001-skill-explorer/known-issues.md`.
-**Ten closed** during the work (KI-003, 005, 006, 009, 012, 013, 016, 018, 020, 021 — two of
-them, KI-018 and KI-020, record their closure in the heading rather than a `Status:` line).
+**Ten closed** during the work (KI-003, 005, 006, 009, 012, 013, 016, 018, 020, 021). Their closures are recorded
+inconsistently — some on a `Status:` line, KI-020 in its heading, KI-018 in a body bullet,
+KI-021 on its `Type:` line — which is why classifying by the presence of a `Status:` line
+mis-read four of them.
 The **twelve still open** are listed above as `W1-1`..`W1-12`
 because of the project's own rule that **work folders are transient**: `.aid/works/work-NNN-*/`
 may be pruned once a work ships, and no permanent artifact may depend on it. Left only there,
@@ -106,7 +105,10 @@ costs an afternoon) and the one item the owner explicitly deferred rather than r
 > correction because I recounted the split without re-checking each row against it) — including one whose text
 > ("`CHARTABLE_SHAPES` was never widened") is false on disk: `gen-skills.mjs` uses
 > `new Set(SHAPE_ORDER)` and all 111 sidecars emit. The classification had been read off the
-> presence of a `Status:` line, which two closed entries record in their heading instead.
+> presence of a `Status:` line. Closures are recorded four different ways across the file --
+> a `Status:` line, a heading (KI-020), a body bullet (KI-018) and a `Type:` line (KI-021) --
+> so that heuristic mis-read four entries, and correcting the totals without re-checking each
+> row against the source let one of them survive a second pass.
 
 They are restated here in full rather than cross-referenced, for the same reason: a pointer
 into a folder that is allowed to disappear is not a record. The work folder keeps the fuller

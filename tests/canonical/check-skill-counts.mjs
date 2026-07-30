@@ -96,6 +96,13 @@ const CLAIMS = [
   [/\b(\d+) curated (?:pipeline|skills?|non-catalog|and|\/)/g, () => c.curatedOnly, 'curated (non-catalog)'],
   [/\b(\d+) curated\b(?= *[-—,.)]| skills)/g, () => c.curatedOnly, 'curated (non-catalog)'],
   [/\b(\d+) verb-first\b/g, () => c.shortcuts, 'emitting shortcuts'],
+  // Bare `N shortcuts`, and the README's own "N pipeline / on-demand / router skills" phrasing.
+  // Both were live in README.md and docs/ with CORRECT values, checked by nothing — a coverage
+  // gap rather than a defect, which is the more dangerous of the two because it looks clean.
+  // Negative lookbehind on `: ` — a YAML scalar. The wrapped-line pass joins `version: 1` in
+  // shortcut-catalog.yml with the next line and manufactures "1 shortcuts" out of nothing.
+  [/(?<!:\s)\b(\d+) shortcuts\b/g, () => c.shortcuts, 'emitting shortcuts'],
+  [/\b(\d+) pipeline \/ on-demand \/ router skills\b/g, () => c.curatedOnly, 'curated (non-catalog)'],
   [/\b(\d+) shortcut skills\b/g, () => c.shortcuts, 'emitting shortcuts'],
   [/\b(\d+) (?:verb-first )?(?:shortcut )?doorways\b/g, () => c.shortcuts, 'emitting shortcuts'],
   [/\b(\d+)-row (?:shortcut )?catalog\b/g, () => c.catalogRows, 'catalog rows'],

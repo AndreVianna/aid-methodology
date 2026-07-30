@@ -16,8 +16,6 @@ block_artifact: --
 
 # Work State -- work-001-skill-explorer
 
-
-
 This is the single state file for **this work** -- the full dev lifecycle from req to spec to plan
 to impl to deploy. One STATE.md per `.aid/works/work-NNN-{name}/` directory. See also: per-delivery
 `delivery-NNN/STATE.md` (delivery lifecycle + gate + delivery-scoped Q&A + derived task rollup)

@@ -8,8 +8,6 @@ ticket_ref: "--"
 
 # Delivery State -- delivery-006
 
-
-
 > **Delivery:** delivery-006 — unify the two skill sections
 > **Work:** work-001-skill-explorer
 > **Branch:** aid/work-001-delivery-005 (continued)
@@ -42,7 +40,7 @@ ticket_ref: "--"
   free of consequences — the 85-for-111 sentence is exactly what a prose task landing ahead of its
   guard allows, and it was caught at review rather than by the build.
 - Per-task quick-checks found **2 CRITICAL and 4 HIGH**, all fixed on the spot.
-- **Delivery gate (Large tier), three cycles so far.** Cycle 1: 30 findings, **E+**. Cycle 2:
+- **Delivery gate (Large tier), five cycles so far.** Cycle 1: 30 findings, **E+**. Cycle 2:
   23 Fixed / **7 Recurred** / 13 new, **D+** — its finding was that fixes addressed each row's
   Description and skipped the sibling sites its Evidence enumerated. Cycle 3: 26 Fixed / 7
   Recurred / 29 Pending, and it caught two fixes that made things WORSE — a historical
@@ -52,7 +50,7 @@ ticket_ref: "--"
   `.aid/.temp/review-pending/execute-delivery-006.md`.
 - **Root causes, addressed after cycle 2 rather than patching further:** (1) the count guard
   was rooted at `site/`, leaving most of the repo unguardable — 55 wrong counts in 15 files;
-  now a repo-wide guard at `tests/canonical/check-skill-counts.mjs`, 169 claims clean.
+  now a repo-wide guard at `tests/canonical/check-skill-counts.mjs`, 204 claims clean.
   (2) the superseded-§7-freeze class existed in 13 files, not the one a reviewer named.
   (3) wrong-layer edits: detection existed and worked, but the rendered file did not say it
   was rendered — `writeback-state.sh` now carries a banner into all 8 generated copies.
@@ -90,7 +88,9 @@ ticket_ref: "--"
 
 ## Delivery Gate
 
-- **Issue List:** Pending.
+- **Issue List:** `.aid/.temp/review-pending/execute-delivery-006.md` — 85 rows across five
+  cycles. Cycle 5: 66 Fixed, 1 Recurred, 18 Pending; **not A+**. Grades: E+ → D+ → D →
+  not-A+ → not-A+. The circuit breaker in `state-fix.md` has fired.
 
 ---
 

@@ -74,6 +74,14 @@ table this delivery sheds, so KI-009 closes **by deletion** rather than by arith
       are byte-unchanged, and the generator stays idempotent.
 - [ ] **Deliveries 001–005 still hold.** The full site suite passes, the build is clean, and the
       111 generated skill pages plus their sidecars are byte-unchanged by this delivery.
+      **Amended 2026-07-30 (gate cycle 5): TWO artifacts legitimately changed** —
+      `skills/aid-execute.md` and `aid-execute.flow.json`. `state-fix.md` grew from 34 to 122
+      lines when the FIX contract was added to it, and the flow extractor deep-links a line
+      RANGE into that file, so the generator correctly re-emitted the range. That is the
+      coupling working, not drift — but the criterion as written was false, and a criterion
+      contradicted by the work it grades has to be amended rather than explained in a commit
+      message. The bound that still holds: no OTHER page or sidecar changed, and the change
+      is reproducible by re-running the generator.
 - [ ] All section-6 quality gates pass
 
 ## Tasks

@@ -1,7 +1,5 @@
 # Requirements
 
-
-
 - **Name:** Skill Explorer
 - **Description:** A generated section of the product site that pairs every AID skill's frontmatter with a flow chart derived from its own instructions, so a reader can understand what a skill does step-by-step without reading its source.
 
@@ -61,9 +59,9 @@ and easy to get wrong.
 
 The existing generated `site/src/content/docs/reference/skills.md` lists skills with their
 frontmatter descriptions, but shows no skill's internal flow at all — and it deliberately
-collapsed the direct-entry shortcuts into family summary tables rather than describing them
-~~individually~~ *(past tense as of delivery-006: that family table is deleted -- see § Constraints,
-§7's second amendment. The page keeps only the shortcut-engine narrative.)*
+collapsed the direct-entry shortcuts into family summary tables rather than describing
+them individually. *(Past tense as of delivery-006: that family table is deleted — see
+§ Constraints, §7's second amendment. The page keeps only the shortcut-engine narrative.)*
 individually.
 
 ## 3. Users & Stakeholders
