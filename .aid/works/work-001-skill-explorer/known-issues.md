@@ -632,6 +632,20 @@ just over".
 **Lesson:** a test that shells out to a real build step needs a budget sized to that step. A
 timeout reported as a test failure is easy to misread as the behaviour under test being wrong.
 
+**Recurrence, and the wider fix (2026-07-29, post-merge).** The per-test annotation closed the
+index suite only. The same failure then appeared in `gen-skills.test.mjs` as **7 timeouts at
+once**, on a tree where the merge had touched no file under `site/` — so not a regression, just a
+slower machine. The suite has **11** `spawnSync`/`execSync` call sites that run the whole
+generator, several of them twice to prove byte-identical regeneration, and only **1** carried an
+explicit timeout. Generator wall clock measured **~2.4s idle and ~70s under load**, so against
+vitest's 5000ms default those tests are a coin flip.
+
+Closed at the class level instead of per site: `site/vitest.config.mjs` now sets
+`testTimeout: 90000` and `hookTimeout: 90000`, matching the one annotation that already existed.
+That covers tests not yet written rather than relying on each author to remember. The cost is that
+a genuinely hung test reports in 90s rather than 5s, which is acceptable here — none of these are
+tight unit tests where 5s would be a meaningful signal.
+
 <details>
 <summary>Original entry, kept for the investigation record</summary>
 
