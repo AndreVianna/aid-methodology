@@ -194,7 +194,7 @@ byte-unchanged. Escalated to the owner rather than downgraded.
 
 **Extent — stated honestly.** Verified by reading the source end to end for **one** skill. The
 mechanism is general, so the class is not specific to `aid-review`. A proxy scan (loop-back edges
-whose provenance line lacks loop language) flags ~30 edges across 24 skills, but that proxy is
+whose provenance line lacks loop language) flags ~30 edges across 24 distinct charts, but that proxy is
 **unreliable** — several flagged rows are wrapped-line tails whose full sentence does express a
 loop — so it is an unverified upper bound, not a defect count. 70 of the 100 loop-back edges in
 the corpus trace to lines that do use loop language, and the large doorway majority inherits one
