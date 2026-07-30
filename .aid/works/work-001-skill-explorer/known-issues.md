@@ -286,6 +286,16 @@
 
 - **Type:** Bug
 - **Severity:** Medium
+- **Status:** **CLOSED by delivery-006 (task-057), 2026-07-30 — by deletion.** The family table
+  is gone: work-level Q4 unified the two skill sections, so `reference/skills.md` was hollowed
+  out to the shortcut-engine narrative and the duplicated roster (table included) was shed. Every
+  symptom below went with it — the six zero-count families, the `= 0` and `-1 typed forms`
+  arithmetic, and the dead `show-dashboard` family. The arithmetic was deliberately **not**
+  repaired: repairing it would have preserved a hand-maintained family table duplicating what
+  `/skills/` derives, which is the very thing the delivery removed. Verified in the built output:
+  `dist/reference/skills/index.html` contains zero `typed forms` and zero per-skill headings.
+  Family-coverage drift for the surviving derived roster is guarded by `gen-skills.mjs` and
+  `scripts/__tests__/skills-groups.test.mjs`.
 - **Affects:** feature-002-grouped-skill-index
 - **Source:** `site/scripts/gen-reference.mjs`:212-304 (`SHORTCUT_FAMILIES`) vs
   `site/scripts/gen-reference.mjs`:132-134, 311 (the `repurpose` filter); rendered output at

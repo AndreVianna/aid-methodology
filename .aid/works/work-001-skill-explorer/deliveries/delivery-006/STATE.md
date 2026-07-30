@@ -19,9 +19,13 @@ ticket_ref: "--"
 - **Updated:** 2026-07-30
 - **Block Reason:** --
 - **Block Artifact:** --
-- **Pause / handoff (2026-07-30):** Owner continues in Claude Code. Wave 1 (task-054) and wave 2
-  prose half (task-055) are implemented in the working tree but **uncommitted**. Tasks 056–057,
-  delivery gate, KI-022, browser checks, and PR remain.
+- **Resumed (2026-07-30, Claude Code):** the uncommitted wave-1/wave-2 work was verified,
+  reviewed and committed; tasks 056 and 057 executed. Tasks 054–056 are `Done`; 057 is
+  `In Review`. Six commits on `aid/work-001-delivery-005`, each verified green in isolation:
+  `b86aae3d` (scaffolding) → `129eba1b` (055 prose) → `8e02d174` (054 derivation + guard) →
+  `8eff0803` (055 correction) → `d2f0440c` (056 links) → `923431a4` (057 hollowing).
+  Per-task quick-checks found **2 CRITICAL and 4 HIGH**, all fixed on the spot — see each task's
+  STATE.md. Still to do: delivery-006 gate (A+), KI-022 (ELK layout), browser checks, PR.
 
 ---
 
@@ -139,7 +143,7 @@ _Recorded as each task closes._
 
 | # | Task | Type | Wave | State | Review | Elapsed | Notes |
 |---|------|------|------|-------|--------|---------|-------|
-| 054 | One shared skill-count derivation + drift guard; KI-003 comments | IMPLEMENT | 1 | In Progress | -- | -- | Code done, uncommitted; commit + review next |
-| 055 | Correct stale roster prose (index.mdx E-1, overview.md) | IMPLEMENT | 2 | In Progress | -- | -- | Prose done, uncommitted |
-| 056 | Repoint 8 inbound links to /skills/ | IMPLEMENT | 2 | Pending | -- | -- | After 055 |
-| 057 | Hollow out reference/skills.md (closes KI-009) | IMPLEMENT | 3 | Pending | -- | -- | After 056 |
+| 054 | One shared skill-count derivation + drift guard; KI-003 comments | IMPLEMENT | 1 | Done | 1 CRITICAL + 2 HIGH, all fixed | -- | Commit not green in isolation; 4 more hand-counts found (2 in reader-facing output). Guard rewritten to match count SHAPES. `8e02d174` |
+| 055 | Correct stale roster prose (index.mdx E-1, overview.md) | IMPLEMENT | 2 | Done | 1 CRITICAL + 2 HIGH, all fixed | -- | First correction didn't SUM (85 for a 111 corpus); restated as 17 curated + 94 catalog. 2 unguarded pages found. `129eba1b` + `8eff0803` |
+| 056 | Repoint 8 inbound links to /skills/ | IMPLEMENT | 2 | Done | clean | -- | 7 LinkCards + overview row; verified in `dist/`. `d2f0440c` |
+| 057 | Hollow out reference/skills.md (closes KI-009) | IMPLEMENT | 3 | In Review | -- | -- | Narrative kept, roster + family table shed; Q5 consequential edits done. `923431a4` |
