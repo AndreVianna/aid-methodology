@@ -176,10 +176,16 @@ declare -A RULE_FOR=(
     [L1]="SUMMARY-08" [L2]="SUMMARY-09"
     [A1]="PRE-02"     [A2]="PRE-04" [A3]="PRE-04" [A4]="PRE-05" [A5]="PRE-03"
     [NM]="SUMMARY-07"
-    # The three [Structural checks] validate-html-output.sh emits with no id prefix. Without these
-    # PRE-01 had no key at all and could never fire, while two of the three (noscript, color-scheme)
-    # are MUST items in accessibility-checklist.md § Document level -- the criterion PRE-01 cites.
-    ["skip-link present"]="PRE-01"
+    # Two of validate-html-output.sh's [Structural checks] -- it prints them with no id prefix, so the
+    # key IS the label. Without these PRE-01 had no key at all and could never fire, though both are
+    # MUST items in accessibility-checklist.md § Document level, the criterion PRE-01 cites.
+    #
+    # Its third structural check, `skip-link present`, is deliberately NOT mapped: the skip link is
+    # declared in that checklist's separate `## Skip link` section, which no PRE rule cites, so pinning
+    # it on PRE-01 would attribute a finding to a criterion that does not cover it. "No Criterion, no
+    # row" binds this script as much as a reviewer. The unmapped-check guard below reports it as
+    # unevaluated rather than passing it silently -- which is the honest outcome for a real check with
+    # no rule to carry it.
     ["noscript fallback present"]="PRE-01"
     ["color-scheme: light dark"]="PRE-01"
 )
@@ -188,7 +194,6 @@ declare -A SEV_FOR=(
     [L1]="[LOW]"    [L2]="[MEDIUM]"
     [A1]="[MEDIUM]" [A2]="[MEDIUM]" [A3]="[MEDIUM]" [A4]="[MEDIUM]" [A5]="[MEDIUM]"
     [NM]="[HIGH]"
-    ["skip-link present"]="[MEDIUM]"
     ["noscript fallback present"]="[MEDIUM]"
     ["color-scheme: light dark"]="[MEDIUM]"
 )
@@ -198,7 +203,6 @@ declare -A NAME_FOR=(
     [A1]="Semantic landmarks"   [A2]="ARIA on lightbox" [A3]="Focus trap"
     [A4]="Reduced motion"       [A5]="Visible focus"
     [NM]="No retired diagram runtime"
-    ["skip-link present"]="Skip link present"
     ["noscript fallback present"]="Noscript fallback present"
     ["color-scheme: light dark"]="color-scheme declares light and dark"
 )
@@ -268,7 +272,8 @@ if [[ -f "$SCRIPT_DIR/validate-html-output.sh" ]]; then
         UNEVALUATED=$((UNEVALUATED + 1))
     else
         before_html=$FINDINGS
-        for k in H1 S2 L1 L2 A1 A2 A3 A4 A5 NM \n                 "skip-link present" "noscript fallback present" "color-scheme: light dark"; do
+        for k in H1 S2 L1 L2 A1 A2 A3 A4 A5 NM \
+                 "noscript fallback present" "color-scheme: light dark"; do
             if check_failed "$k" "$HTML_LOG"; then
                 emit "${RULE_FOR[$k]}" "${SEV_FOR[$k]}" "$(basename "$HTML")" \
                      "${NAME_FOR[$k]} check failed (${k})" \

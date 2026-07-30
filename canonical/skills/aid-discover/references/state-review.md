@@ -353,8 +353,10 @@ one open `[MEDIUM]` `[ESSENCE-GAP]` row fails the grade on its own — so the ra
 Divergence FAIL items are ordinary `[FIDELITY]` rows at `NAR-05`'s anchor, which is `Step 2` --
 MUST modality with reach and reversibility read off the instance, so usually but not always
 `[HIGH]`; load-bearing Omission FAIL
-items are ordinary `[MEDIUM] [ESSENCE-GAP]` rows. Any open `[FIDELITY]` row forces grade
-<= D (because `[HIGH]` rows make grade <= D in `grade.sh`) — the essence hard gate is
+items are ordinary `[ESSENCE-GAP]` rows at their own cited rule's anchor. Any open `[FIDELITY]` row
+**fails the essence verdict**; how far it moves the GRADE follows from the severity `NAR-05` anchors,
+which is `Step 2` and therefore instance-derived — the verdict and the grade are separate questions,
+and conflating them is what made the flat claim wrong. The essence hard gate is
 realized entirely through the merged rows. No separate boolean, no AND to reconcile.
 
 **2d. Derive the assertiveness verdict (Intent 1 — Blind Work-Simulation)**
@@ -524,11 +526,14 @@ panel: collapsed  (brownfield-small only)
 Both modes:
   3. grade = grade.sh {{SCOPE}}.md    # EXISTING grader, unchanged. Worst-severity
                                       # dominates, counts Status in {Pending,Recurred}.
-                                      # Any open [FIDELITY] OR [ACTBACK] row forces
-                                      # grade <= D.
+                                      # Any open [FIDELITY] or [ACTBACK] row fails its
+                                      # own VERDICT; the grade follows from the severity
+                                      # its rule anchors, which is a separate question.
 
   4. READY iff grade >= minimum_grade # Single gate. An open essence OR assertiveness
-                                      # gap is a [HIGH] row -> grade <= D -> not Ready.
+                                      # gap fails its verdict, and at any minimum this
+                                      # tree configures it also fails the grade, so the
+                                      # single gate still catches it -> not Ready.
                                       # No second boolean, no AND/OR to reconcile.
 
   5. Verdicts are derived from the PER-MANDATE SCRATCH ledgers, before the merge -- the

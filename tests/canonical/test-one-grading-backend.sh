@@ -435,6 +435,25 @@ else
     no CB01 "control byte(s) found in: ${cb_bad[*]} -- an escape was written through a layer that ate it"
 fi
 
+# CB03 -- the sibling of the control-byte class, and it bit once too: a line continuation written as the
+# two characters backslash + 'n' instead of backslash + NEWLINE. Bash then reads a bare word `n` as an
+# extra loop item, and in the emitter that aborted the run on an unmapped associative-array key under
+# `set -u` -- an incomplete run reporting the exit code of a complete one. CB01 cannot see it: the bytes
+# are 0x5C 0x6E, both printable.
+cb2_bad=()
+for f in "${CB_FILES[@]}"; do
+    [[ -f "$f" ]] || continue
+    # A backslash-n inside a shell word, outside a quoted string, is never intentional in these files.
+    if grep -nE '(^|[^"'"'"'\\])\\n[[:space:]]' "$f" 2>/dev/null | grep -qv 'printf'; then
+        cb2_bad+=("$(basename "$f"): $(grep -nE '(^|[^"'"'"'\\])\\n[[:space:]]' "$f" | grep -v printf | head -1 | cut -c1-60)")
+    fi
+done
+if [[ "${#cb2_bad[@]}" -eq 0 ]]; then
+    ok CB03 "no literal backslash-n stands where a line continuation was meant"
+else
+    no CB03 "literal backslash-n outside a quoted string: ${cb2_bad[*]}"
+fi
+
 # Control: the detector must see a planted byte, or CB01 is itself the vacuous assertion it guards against.
 CBCTL="$(mktemp)"
 printf 'grep -qE %s60%s foo\n' "'"$'\x08' $'\x08'"'" > "$CBCTL"

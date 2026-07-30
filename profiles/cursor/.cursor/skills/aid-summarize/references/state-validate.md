@@ -8,6 +8,7 @@ VALIDATE runs the machine-verifiable quality checks (coverage, links, HTML, acce
 Run the emitter against a **per-cycle scratch ledger**, never against the canonical one:
 
 ```bash
+mkdir -p .aid/.temp/review-pending      # DONE rmdir's it, so it is absent on a fresh run
 N=<this cycle's number, 1 on first entry>
 bash .cursor/aid/scripts/summarize/emit-summary-findings.sh .aid/knowledge/kb.html \
      --ledger ".aid/.temp/review-pending/summarize-cycle${N}.md"
@@ -31,7 +32,7 @@ section's transition table:
 
 **Beyond that, reconciliation applies ONLY to rows the emitter could have produced** — those whose `Rule` is one of
 `SUMMARY-01`, `SUMMARY-02`, `SUMMARY-03`, `SUMMARY-07`, `SUMMARY-08`, `SUMMARY-09`, `PRE-02`, `PRE-03`,
-`PRE-04`, `PRE-05`, `PRE-11`. Every other row is left exactly as it stands.
+`PRE-01`, `PRE-04`, `PRE-05`, `PRE-11`. Every other row is left exactly as it stands.
 
 > ⚠️ **This scoping is the whole safety property, not a refinement.** The same ledger also holds
 > `SUMMARY-04`, `SUMMARY-05` and `SUMMARY-06` rows — claim truth and the human visual check, the rows
@@ -40,7 +41,8 @@ section's transition table:
 > `state-fix.md` tells the fixer not to touch Status precisely because it trusts this step. That is the
 > hazard `reviewer-ledger-schema.md` states as *"absence proves nothing"* unless the covering unit is
 > `Examined`; the emitter's mechanical sweep is what makes absence evidential **for its own eleven
-> rules and for nothing else**.
+> rules and for nothing else** — all twelve of them. A rule the emitter can emit but this list omits is
+worse than either: its rows would never reconcile, so the loop could not converge for them.
 
 | Canonical row (emitter-owned `Rule` only) | Key in this cycle's scratch? | Result |
 |---|---|---|
@@ -122,7 +124,8 @@ corrected below, exactly the re-derivation feature-007 §1b called for.
 | A5 (visible focus missing) | `PRE-03` | `[MEDIUM]` | one row |
 | S2 (CDN reference found — page not self-contained) | `SUMMARY-03` | `[HIGH]` | one row per CDN reference — an offline reader gets a broken page, so the radius has escaped |
 | NM (Mermaid engine detected in output — should not be present in D-012) | `SUMMARY-07` | `[HIGH]` | one row |
-| C1/C2 (WCAG contrast fail) | `PRE-11` | `[MEDIUM]` | one row per failing color pair — one rule, both themes |
+| C1/C2 (WCAG contrast fail) | `PRE-11` | `[MEDIUM]` | one row per failing color pair, `Line` = `theme/pair` so N rows share one rule without collapsing to one join key |
+| Structural: `noscript fallback present`, `color-scheme: light dark` | `PRE-01` | `[MEDIUM]` | one row per unmet item, `Line` = the item's label. The validator's third structural check, `skip-link present`, is **not** mapped — no `PRE` rule cites the checklist section that declares it, so it surfaces through the unmapped-check guard instead of being pinned on a criterion that does not cover it |
 
 The row the script writes for each failed check:
 - `#` = next sequential row number (assigned by `writeback-ledger.sh`, never by hand)
@@ -139,7 +142,14 @@ Passed checks are NOT added to the ledger (no row = no finding).
 a missing validator, or no `settings.yml` for the coverage check. An empty ledger from an unrun check
 grades `A+`, which is the one outcome worse than a failing grade. Report what was missing and stop.
 
-Persist the findings and the per-check table to `.aid/knowledge/STATE.md` `## Knowledge Summary Status` `### Findings (last validation)`. The grade is then computed by the one grading backend:
+Persist the findings and the per-check table to `.aid/knowledge/STATE.md` `## Knowledge Summary Status` `### Findings (last validation)`.
+
+**A missing canonical ledger means zero findings, and that is a PASS — not an error.** A first cycle
+that finds nothing never creates the file, and `grade.sh` on a missing path exits 1 with
+`cannot read input file`, which is not a grade and must not be read as one. Treat absent-or-empty as
+zero findings and route to MANUAL-CHECKLIST; run the two commands below only when the file exists.
+
+The grade is then computed by the one grading backend:
 
 ```bash
 bash .cursor/aid/scripts/review/check-gaps.sh --ledger .aid/.temp/review-pending/summarize.md   # exit 1 = an open criteria gap; do NOT grade

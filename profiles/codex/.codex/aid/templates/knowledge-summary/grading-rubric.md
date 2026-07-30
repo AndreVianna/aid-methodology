@@ -245,7 +245,9 @@ below cover authored inline SVG.
 **H1 cascade:** `validate-html-output.sh` tries in order:
 1. `tidy -e --quiet yes` -- fails on any error line.
 2. `html-validate` -- fails on errors.
-3. Regex fallback (unclosed tags, duplicate IDs, missing `<!DOCTYPE html>`).
+3. Regex fallback — **four presence checks, not a parser**: `<!DOCTYPE html>`, an `<html>` tag,
+   `<head>`/`<body>`, and a charset `<meta>`. It does **not** detect unclosed tags or duplicate IDs;
+   an earlier version of this line claimed it did, which overstated what the fallback path guarantees.
 Warnings are allowed in all modes. **Which of the three paths ran is visible only in
 `validate-html-output.sh`'s own output** — it prints e.g. `✅ H1. HTML validity (regex fallback — less
 rigorous; install tidy for strict check)`. The emitter does not surface it (there is no grade output for
