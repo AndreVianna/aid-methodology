@@ -32,7 +32,14 @@ This writes `.aid/.temp/summarize/manual-checklist.json` with the answers, notes
 ### Step 4 — append findings, then grade
 
 For each answer short of a clean pass, append a ledger row to `.aid/.temp/review-pending/summarize.md`
-citing the rule above, then re-grade the ledger:
+citing the rule above, **with `Line` set to `human/K1`, `human/K2` or `human/V1`**, then re-grade the
+ledger:
+
+> The `human/` marker is load-bearing. `SUMMARY-01` is also emitted mechanically by
+> `emit-summary-findings.sh`, and VALIDATE's reconciliation clears emitter-owned rows that its next
+> sweep does not re-find. Without the marker a human's K1 coverage finding would be cleared by a
+> machine that never evaluated it -- and `Line` is the ledger's join-key tiebreaker, so it also keeps
+> the human row and the machine row for the same document from collapsing into one.
 
 ```bash
 bash canonical/aid/scripts/review/check-gaps.sh --ledger .aid/.temp/review-pending/summarize.md

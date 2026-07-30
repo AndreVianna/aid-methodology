@@ -176,12 +176,21 @@ declare -A RULE_FOR=(
     [L1]="SUMMARY-08" [L2]="SUMMARY-09"
     [A1]="PRE-02"     [A2]="PRE-04" [A3]="PRE-04" [A4]="PRE-05" [A5]="PRE-03"
     [NM]="SUMMARY-07"
+    # The three [Structural checks] validate-html-output.sh emits with no id prefix. Without these
+    # PRE-01 had no key at all and could never fire, while two of the three (noscript, color-scheme)
+    # are MUST items in accessibility-checklist.md § Document level -- the criterion PRE-01 cites.
+    ["skip-link present"]="PRE-01"
+    ["noscript fallback present"]="PRE-01"
+    ["color-scheme: light dark"]="PRE-01"
 )
 declare -A SEV_FOR=(
     [H1]="[MEDIUM]" [S2]="[HIGH]"
     [L1]="[LOW]"    [L2]="[MEDIUM]"
     [A1]="[MEDIUM]" [A2]="[MEDIUM]" [A3]="[MEDIUM]" [A4]="[MEDIUM]" [A5]="[MEDIUM]"
     [NM]="[HIGH]"
+    ["skip-link present"]="[MEDIUM]"
+    ["noscript fallback present"]="[MEDIUM]"
+    ["color-scheme: light dark"]="[MEDIUM]"
 )
 declare -A NAME_FOR=(
     [H1]="HTML validity"        [S2]="Offline render (self-contained)"
@@ -189,6 +198,9 @@ declare -A NAME_FOR=(
     [A1]="Semantic landmarks"   [A2]="ARIA on lightbox" [A3]="Focus trap"
     [A4]="Reduced motion"       [A5]="Visible focus"
     [NM]="No retired diagram runtime"
+    ["skip-link present"]="Skip link present"
+    ["noscript fallback present"]="Noscript fallback present"
+    ["color-scheme: light dark"]="color-scheme declares light and dark"
 )
 
 HTML_LOG="$(mktemp)"
@@ -255,7 +267,8 @@ if [[ -f "$SCRIPT_DIR/validate-html-output.sh" ]]; then
     if [[ "$vrc" -eq 124 ]]; then
         UNEVALUATED=$((UNEVALUATED + 1))
     else
-        for k in H1 S2 L1 L2 A1 A2 A3 A4 A5 NM; do
+        before_html=$FINDINGS
+        for k in H1 S2 L1 L2 A1 A2 A3 A4 A5 NM \n                 "skip-link present" "noscript fallback present" "color-scheme: light dark"; do
             if check_failed "$k" "$HTML_LOG"; then
                 emit "${RULE_FOR[$k]}" "${SEV_FOR[$k]}" "$(basename "$HTML")" \
                      "${NAME_FOR[$k]} check failed (${k})" \
@@ -263,6 +276,14 @@ if [[ -f "$SCRIPT_DIR/validate-html-output.sh" ]]; then
                      "$k"
             fi
         done
+        # The validator FAILED but nothing this script knows how to attribute matched. That is not a
+        # clean run: it means the validator carries a check with no mapping here, which is exactly how
+        # the three [Structural checks] above went unreported while the emitter printed "no findings"
+        # and exited 0 -- the header's meaning for which is "every check passed". Refusing to call that
+        # clean converts a silent false pass into a loud, fixable one.
+        if [[ "$vrc" -ne 0 && "$FINDINGS" -eq "${before_html:-0}" ]]; then
+            unevaluated "validate-html-output.sh exited ${vrc} but no mapped check matched -- an unmapped check failed; add it to RULE_FOR"
+        fi
     fi
 else
     unevaluated "validate-html-output.sh not found -- H1/S2/L1/L2/A1-A5/NM not evaluated"

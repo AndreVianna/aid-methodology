@@ -119,7 +119,7 @@ The state-detection logic determines which mode this run executes:
 
 The checks are unchanged in substance. Coverage emits one `SUMMARY-01` finding per KB document the summary does not represent, naming it, instead of scoring a coverage percentage against a 60% cliff. T1/T2/T3 are the S7 visual-fidelity checks (`validate-visuals.mjs`, Playwright-based) asserting readable text, minimal overlap and correct layout for every authored visual; `SUMMARY-07` asserts the retired Mermaid engine is absent (`validate-html-output.sh`).
 
-**The human visual check is mandatory and no agent may answer it.** When Playwright is unavailable, T1/T2/T3 skip and it carries the full visual-review responsibility — browser rendering, not source inspection. **If the checklist has not been completed, the outcome is no grade at all: halt and ask.** Reporting a failing grade for a check nobody performed asserts a result that was never observed.
+**The human visual check is mandatory and no agent may answer it.** When Playwright is unavailable, T1/T2/T3 skip and it carries the full visual-review responsibility — browser rendering, not source inspection. **If the checklist has not been completed, the outcome is no grade at all — pause and ask (PAUSE-FOR-USER-ACTION, not HALT).** Reporting a failing grade for a check nobody performed asserts a result that was never observed.
 
 See `review-rubrics/summary.md` for the rules and `knowledge-summary/grading-rubric.md` for the check definitions and why the two-grade model was retired.
 
@@ -155,7 +155,7 @@ aid-summarize  ▸ you are here
 
 **VALIDATE:**
 ```
-[State: VALIDATE] — Running machine-verifiable quality checks (visual fidelity, links, HTML, contrast).
+[State: VALIDATE] — Running machine-verifiable quality checks (coverage, links, HTML, accessibility, contrast).
 aid-summarize  ▸ you are here
   [✓ PREFLIGHT ] → [✓ STALE-CHECK ] → [✓ PROFILE ] → [✓ GENERATE ] → [● VALIDATE ] → [ APPROVAL ] → [ DONE ]
 ```

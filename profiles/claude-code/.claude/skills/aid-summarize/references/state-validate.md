@@ -1,10 +1,10 @@
 # State: VALIDATE
 
-VALIDATE runs the machine-verifiable quality checks (coverage, visual fidelity, links, HTML, contrast) and records each failure as a ledger finding; it is selected after GENERATE completes and again after FIX.
+VALIDATE runs the machine-verifiable quality checks (coverage, links, HTML, accessibility, contrast, retired-runtime) and records each failure as a ledger finding; it is selected after GENERATE completes and again after FIX. **Visual fidelity is NOT among them** -- `validate-visuals.mjs` is available but invoked by nothing, so T1/T2/T3 do not run here; see the note below and the mandatory human visual check.
 
 **It does not compute a grade.** `grade.sh` does that, from the ledger, at the end of this state — the same way every other artifact in AID is graded.
 
-▶ validation suite starting (~1.5 min total — 3 scripts × ~30 s each per `.claude/aid/templates/rough-time-hints.md`)
+▶ validation suite starting (~1 min total — **2** validators actually run, `validate-html-output.sh` and `contrast-check.mjs`, at ~30 s each per `.claude/aid/templates/rough-time-hints.md`; the coverage and retired-runtime checks are inline)
 Run the emitter against a **per-cycle scratch ledger**, never against the canonical one:
 
 ```bash
@@ -27,7 +27,9 @@ bash .claude/aid/scripts/summarize/emit-summary-findings.sh .aid/knowledge/kb.ht
 **Reconcile scratch → canonical on `(Doc, Rule)`** (`Line` breaks a legitimate duplicate pair), per that
 section's transition table:
 
-**Reconciliation applies ONLY to rows the emitter could have produced** — those whose `Rule` is one of
+**Human-authored rows are identified by a `Line` of `human/<check>`** (MANUAL-CHECKLIST writes `human/K1`, `human/K2`, `human/V1`). Reconciliation **skips any row whose `Line` starts `human/`**, whatever its `Rule`. This is not belt-and-braces: `SUMMARY-01` is emitter-owned *and* is the rule MANUAL-CHECKLIST authors from the human's K1 answer, so a rule-only carve-out would still let the machine sweep clear a human's coverage finding. The `Line` marker is what keeps the two apart, and it is also the join-key tiebreaker, so the human row and the machine row for the same document coexist instead of colliding.
+
+**Beyond that, reconciliation applies ONLY to rows the emitter could have produced** — those whose `Rule` is one of
 `SUMMARY-01`, `SUMMARY-02`, `SUMMARY-03`, `SUMMARY-07`, `SUMMARY-08`, `SUMMARY-09`, `PRE-02`, `PRE-03`,
 `PRE-04`, `PRE-05`, `PRE-11`. Every other row is left exactly as it stands.
 
@@ -148,4 +150,6 @@ If the grade >= minimum → MANUAL-CHECKLIST. Otherwise → FIX.
 
 Print: `[State: VALIDATE] complete.`
 
-**Advance:** **CHAIN** → [State: MANUAL-CHECKLIST] if the grade >= minimum; **CHAIN** → [State: FIX] otherwise. Both continue inline.
+**Advance:** **CHAIN** → [State: MANUAL-CHECKLIST] if the grade >= minimum; **CHAIN** → [State: FIX] if it is below. Both continue inline.
+
+**If the emitter exited `2`, or `check-gaps.sh` exited `1`, neither branch applies** — there is no grade to route on. Those are **PAUSE-FOR-USER-ACTION**: print what could not be evaluated (or which criteria gap is open), print the command that resolves it, and exit. Re-invoking `/aid-summarize` re-enters VALIDATE. Typing these as either CHAIN would route on a grade that was never computed, which is the whole reason the emitter has an exit-2 in the first place.

@@ -283,9 +283,19 @@ The essence verdict is NOT a stored sentinel. Read it directly from
 `.aid/.temp/review-pending/{{SCOPE}}.md`.
 
 **Essence gate PASS conditions (both must hold):**
-Both conditions count **only this mandate's rows** — those whose `#` cell begins `TB-`.
-Mandate scoping is what keeps the three reported verdicts independent; § 2d states the
-argument in full, and it applies symmetrically here.
+Both conditions count **only this mandate's rows**, and they count them **in M3's own scratch ledger
+(`{{SCOPE}}-teachback.md`), not in the merged `{{SCOPE}}.md`**. Mandate scoping is what keeps the three
+reported verdicts independent; § 2d states the argument in full and it applies symmetrically here.
+
+> **Why the scratch and not the merge.** The merge joins findings on `(Doc, Rule)`, so when two mandates
+> find the same defect **one row survives carrying one prefix** — and this delivery made that reachable
+> by pointing both M1 (correctness) and M3 (teachback) at `NAR-05`, so a false claim and a Divergence on
+> the same KB document are now one key. Read off the merged ledger, a surviving `M1-007` would let
+> `Essence: PASS` be reported with the Divergence still open. Read off M3's own scratch, the prefix is
+> unambiguous by construction. This is the same reasoning the merge section below already applies to
+> `U-`/`G-` rows — *"the gate reads across every scratch instead"* — and the verdicts belong in the same
+> category: per-mandate facts, not panel facts. The merged ledger remains the single input to `grade.sh`;
+> only the two verdicts are derived pre-merge.
 
 1. **Zero Divergence rows open** — the KB does not contradict the source.
    Count rows whose `#` begins `TB-` AND whose `Rule` cell is exactly `NAR-05` AND whose
@@ -355,8 +365,9 @@ The assertiveness verdict is NOT a stored sentinel. Read it directly from
 **Assertiveness gate PASS conditions (both must hold):**
 1. **Zero insufficiency rows open** — no load-bearing ASSUMED/REACH step and no
    quality-contract FAIL. Count rows whose `#` cell begins `AB-` **and** whose `Rule` cell
-   matches `^KB-2[0-6]$` **and** whose Status is in {Pending, Recurred}. If count > 0:
-   assertiveness_verdict = FAIL.
+   matches `^KB-2[0-6]$` **and** whose Status is in {Pending, Recurred} — counted in M4's own
+   scratch ledger (`{{SCOPE}}-actback.md`), not the merged `{{SCOPE}}.md`, for the reason § 2c
+   gives. If count > 0: assertiveness_verdict = FAIL.
 
    That regex is the act-back taxonomy exactly as
    [`review-rubrics/kb.md § Insufficiency rules`](../../../aid/templates/review-rubrics/kb.md)
@@ -470,15 +481,15 @@ and assertiveness gate are mode-agnostic.
 
 **Dual-intent gate tag reference:**
 
-| Intent | Gate | `#` scope | Description marker | `Rule` the gate counts | Severity | FAIL condition |
-|--------|------|-----------|--------------------|------------------------|----------|----------------|
-| Intent 2 -- Essence (M3) | Essence Gate | `TB-` | `[FIDELITY]` (Divergence) | `NAR-05` | _per the cited rule_ | Any open `TB-` row with `Rule` = `NAR-05` |
-| Intent 2 -- Essence (M3) | Essence Gate | `TB-` | `[ESSENCE-GAP]` (Omission) | _(gate keys on the marker -- criteria gap, § 2c)_ | _per the cited rule_ | Any open `TB-` row marked `[ESSENCE-GAP]` |
-| Intent 1 -- Assertiveness (M4) | Assertiveness Gate | `AB-` | `[ACTBACK]` (all FAIL classes) | `^KB-2[0-6]$` | _per the cited rule_ | Any open `AB-` row with a `KB-20`..`KB-26` rule, or a quality-contract absent |
+| Intent | Gate | Counted in | `#` scope | Description marker | `Rule` the gate counts | Severity | FAIL condition |
+|--------|------|-----------|-----------|--------------------|------------------------|----------|----------------|
+| Intent 2 -- Essence (M3) | Essence Gate | `{{SCOPE}}-teachback.md` | `TB-` | `[FIDELITY]` (Divergence) | `NAR-05` | _per the cited rule_ | Any open `TB-` row with `Rule` = `NAR-05` |
+| Intent 2 -- Essence (M3) | Essence Gate | `{{SCOPE}}-teachback.md` | `TB-` | `[ESSENCE-GAP]` (Omission) | _(gate keys on the marker -- criteria gap, § 2c)_ | _per the cited rule_ | Any open `TB-` row marked `[ESSENCE-GAP]` |
+| Intent 1 -- Assertiveness (M4) | Assertiveness Gate | `{{SCOPE}}-actback.md` | `AB-` | `[ACTBACK]` (all FAIL classes) | `^KB-2[0-6]$` | _per the cited rule_ | Any open `AB-` row with a `KB-20`..`KB-26` rule, or a quality-contract absent |
 
 Two things to read off this table. **No row carries a coverage percentage** — both ratios were
 retired; see the two "Why the ... ratio is gone" notes in § 2c and § 2d. And **every row is
-scoped by `#` prefix**, because a rule ID alone does not say which mandate found the defect:
+scoped by `#` prefix AND read from the mandate's own scratch**, because a rule ID alone does not say which mandate found the defect, and the merge collapses a shared defect to one row with one prefix:
 `NAR-05` and `KB-20`..`KB-26` are legitimately available to the correctness and anatomy
 mandates too, so an unscoped count would report a gate failure that its own reviewer never
 raised.
@@ -520,10 +531,12 @@ Both modes:
                                       # gap is a [HIGH] row -> grade <= D -> not Ready.
                                       # No second boolean, no AND/OR to reconcile.
 
-  5. essence_verdict = FAIL iff any open TB- row with Rule == NAR-05, OR
-                                any open TB- [ESSENCE-GAP] row, else PASS.
-     assertiveness_verdict = FAIL iff any open AB- row with Rule matching ^KB-2[0-6]$,
-                                OR any quality-contract absent, else PASS.
+  5. Verdicts are derived from the PER-MANDATE SCRATCH ledgers, before the merge -- the
+     merge joins on (Doc, Rule), so a shared defect leaves one row with one prefix.
+     essence_verdict = FAIL iff, in {{SCOPE}}-teachback.md, any open row with Rule == NAR-05
+                                OR any open [ESSENCE-GAP] row; else PASS.
+     assertiveness_verdict = FAIL iff, in {{SCOPE}}-actback.md, any open row with Rule
+                                matching ^KB-2[0-6]$ OR any quality-contract absent; else PASS.
      # No coverage ratio in either. Both denominators were runtime claims by an
      # agent with no ledger carrier; the conservative rules beside them are kept.
      # The AB- scoping keeps an M3 Omission (which carries a KB-2x rule of its own)
