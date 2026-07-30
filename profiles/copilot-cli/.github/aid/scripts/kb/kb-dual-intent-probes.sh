@@ -661,7 +661,7 @@ _run_essence_probes() {
   echo "Each probe below is answered first by a clean-context, KB-only agent (reconstruct),"
   echo "then verified by a source-grounded agent (confront). Two failure classes:"
   echo "  [HIGH] [FIDELITY]   -- KB-only answer is WRONG vs the source (Divergence)."
-  echo "  [MED]  [ESSENCE-GAP] -- A load-bearing source fact could not be supplied (Omission)."
+  echo "  [MEDIUM]  [ESSENCE-GAP] -- A load-bearing source fact could not be supplied (Omission)."
   echo ""
   echo "PASS = no Divergence + no load-bearing Omission. There is no coverage percentage:"
   echo "a ratio would need a denominator only the reviewer can state and nothing records."
@@ -675,7 +675,7 @@ _run_essence_probes() {
   echo "EP-${padded_idx} [dims:C0,C1,C2,C3,C4,C5,C6,C7,C8,C9,D] What is this project, how does it work, and why is it shaped the way it is?"
   echo "  Reconstruct: using ONLY the KB, write a coherent what/why/how narrative."
   echo "  Confront: compare the KB-only narrative against the actual project source."
-  echo "  Flag: Divergence (wrong) = [HIGH] [FIDELITY]; Omission (missing load-bearing fact) = [MED] [ESSENCE-GAP]."
+  echo "  Flag: Divergence (wrong) = [HIGH] [FIDELITY]; Omission (missing load-bearing fact) = [MEDIUM] [ESSENCE-GAP]."
   echo ""
   probe_idx=$(( probe_idx + 1 ))
 

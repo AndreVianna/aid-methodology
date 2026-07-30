@@ -72,6 +72,19 @@ fi
 
 FINDINGS=0
 
+# UNEVALUATED counts check groups that could not be run. It is NOT the same as zero findings, and
+# conflating the two is how a gate becomes decorative: with no validators installed this script used to
+# print "not evaluated" notes and exit 0 with "no findings", after which grade.sh grades an empty ledger
+# A+ and the skill routes to APPROVAL. The exit-code contract in the header promises 2 for a missing
+# validator, so honour it.
+#
+# Defined HERE, above every call site, not beside the exit check where it reads more naturally -- the
+# first caller is the SUMMARY-01 branch a few lines below, and bash resolves a function only after its
+# definition has been executed. Placed later, the call was a `command not found` on stderr that left
+# UNEVALUATED at 0, so an unevaluated run still exited 1 and looked complete.
+UNEVALUATED=0
+unevaluated() { UNEVALUATED=$((UNEVALUATED + 1)); echo "  note: $1"; }
+
 # emit RULE SEVERITY DOC DESCRIPTION EVIDENCE
 # One place decides what a finding looks like, so a new check cannot invent its own row shape.
 emit() {
@@ -128,7 +141,7 @@ if [[ -f "$SETTINGS" && -d "$KB_DIR" ]]; then
         }
     ' "$SETTINGS")
 else
-    echo "  note: no ${SETTINGS} or ${KB_DIR} -- SUMMARY-01 not evaluated"
+    unevaluated "no ${SETTINGS} or ${KB_DIR} -- SUMMARY-01 not evaluated"
 fi
 
 # ---------------------------------------------------------------------------
@@ -139,17 +152,20 @@ declare -A RULE_FOR=(
     [H1]="SUMMARY-02" [S2]="SUMMARY-03"
     [L1]="SUMMARY-08" [L2]="SUMMARY-09"
     [A1]="PRE-02"     [A2]="PRE-04" [A3]="PRE-04" [A4]="PRE-05" [A5]="PRE-03"
+    [NM]="SUMMARY-07"
 )
 declare -A SEV_FOR=(
     [H1]="[MEDIUM]" [S2]="[HIGH]"
     [L1]="[LOW]"    [L2]="[MEDIUM]"
     [A1]="[MEDIUM]" [A2]="[MEDIUM]" [A3]="[MEDIUM]" [A4]="[MEDIUM]" [A5]="[MEDIUM]"
+    [NM]="[HIGH]"
 )
 declare -A NAME_FOR=(
     [H1]="HTML validity"        [S2]="Offline render (self-contained)"
     [L1]="Anchor links resolve" [L2]="Relative document links resolve"
     [A1]="Semantic landmarks"   [A2]="ARIA on lightbox" [A3]="Focus trap"
     [A4]="Reduced motion"       [A5]="Visible focus"
+    [NM]="No retired diagram runtime"
 )
 
 HTML_LOG="$(mktemp)"
@@ -175,6 +191,30 @@ run_validator() {
     npm_config_offline=true npm_config_yes=false "$@" > "$out" 2>&1
 }
 
+# check_failed ID LOGFILE -- did the HTML validator report ID as failed?
+#
+# The validator uses TWO line shapes and both must be recognised:
+#   marker first:  "  ❌ H1. HTML validity (tidy reported errors)"   (check/check_count, H1, A*, L*)
+#   marker last:   "  S2. Offline render [FAIL] found CDN reference(s)"  (S2, NM)
+# The old detector was `grep -qE "(❌|FAIL).*\bID\b"`, which handles only the first. S2 and NM are
+# emitted in the second shape, so SUMMARY-03 and SUMMARY-07 could never fire from the validator at all.
+#
+# Both patterns anchor at line start and require the ID to be followed by a delimiter, so a mention of an
+# id inside another line's prose or detail text cannot trip the wrong rule.
+check_failed() {
+    local k="$1" log="$2"
+    grep -qE "^[[:space:]]*(❌|FAIL)[[:space:]]*${k}([.[:space:]]|\$)" "$log" && return 0
+    grep -qE "^[[:space:]]*${k}([.[:space:]]).*\[FAIL\]" "$log" && return 0
+    return 1
+}
+
+# check_detail ID LOGFILE -- the first reported line for ID, for the Evidence cell.
+check_detail() {
+    local k="$1" log="$2"
+    grep -E "^[[:space:]]*((❌|FAIL)[[:space:]]*${k}([.[:space:]]|\$)|${k}([.[:space:]]).*\[FAIL\])" \
+        "$log" | head -1 | sed 's/^[[:space:]]*//'
+}
+
 if [[ -f "$SCRIPT_DIR/validate-html-output.sh" ]]; then
     run_validator "$HTML_LOG" bash "$SCRIPT_DIR/validate-html-output.sh" "$HTML"
     vrc=$?
@@ -184,17 +224,19 @@ if [[ -f "$SCRIPT_DIR/validate-html-output.sh" ]]; then
         echo "           html-validate locally. These checks are reported as unevaluated, not as passed."
         HTML_LOG="/dev/null"
     fi
-    for k in H1 S2 L1 L2 A1 A2 A3 A4 A5; do
-        # The validator marks a failed check with a cross followed by the check id.
-        if grep -qE "(❌|FAIL).*\b${k}\b" "$HTML_LOG"; then
-            detail="$(grep -E "(❌|FAIL).*\b${k}\b" "$HTML_LOG" | head -1 | sed 's/^[[:space:]]*//')"
-            emit "${RULE_FOR[$k]}" "${SEV_FOR[$k]}" "$(basename "$HTML")" \
-                 "${NAME_FOR[$k]} check failed (${k})" \
-                 "validate-html-output.sh reported: ${detail}"
-        fi
-    done
+    if [[ "$vrc" -eq 124 ]]; then
+        UNEVALUATED=$((UNEVALUATED + 1))
+    else
+        for k in H1 S2 L1 L2 A1 A2 A3 A4 A5 NM; do
+            if check_failed "$k" "$HTML_LOG"; then
+                emit "${RULE_FOR[$k]}" "${SEV_FOR[$k]}" "$(basename "$HTML")" \
+                     "${NAME_FOR[$k]} check failed (${k})" \
+                     "validate-html-output.sh reported: $(check_detail "$k" "$HTML_LOG")"
+            fi
+        done
+    fi
 else
-    echo "  note: validate-html-output.sh not found -- H1/S2/L1/L2/A1-A5 not evaluated"
+    unevaluated "validate-html-output.sh not found -- H1/S2/L1/L2/A1-A5/NM not evaluated"
 fi
 
 # ---------------------------------------------------------------------------
@@ -202,29 +244,51 @@ fi
 # ---------------------------------------------------------------------------
 if command -v node >/dev/null 2>&1 && [[ -f "$SCRIPT_DIR/contrast-check.mjs" ]]; then
     if ! run_validator "$CONTRAST_LOG" node "$SCRIPT_DIR/contrast-check.mjs" "$HTML"; then
-        for theme in light dark; do
-            if grep -qiE "${theme}.*(fail)" "$CONTRAST_LOG"; then
-                emit "PRE-11" "[MEDIUM]" "$(basename "$HTML")" \
-                     "Token pair fails WCAG AA contrast in the ${theme} theme" \
-                     "contrast-check.mjs: $(grep -iE "${theme}.*(fail)" "$CONTRAST_LOG" | head -1 | sed 's/^[[:space:]]*//')"
-            fi
-        done
+        # The theme name appears ONLY on its own header line ("[light theme]"); a failing pair line
+        # carries a cross, the label and the ratio -- no theme name and no word "fail". So the previous
+        # `grep -qiE "${theme}.*(fail)"` matched neither line shape and PRE-11 could never fire. The
+        # retired grader DID catch contrast failures, so this was a real coverage regression. Attribute
+        # each failing pair to the header above it instead.
+        while IFS="$(printf '\t')" read -r theme detail; do
+            [[ -n "$theme" ]] || continue
+            emit "PRE-11" "[MEDIUM]" "$(basename "$HTML")" \
+                 "Token pair fails WCAG AA contrast in the ${theme} theme" \
+                 "contrast-check.mjs [${theme} theme]: ${detail}"
+        # A failing PAIR line is indented; the trailing "❌ N contrast check(s) failed." summary sits at
+        # column 0. Requiring the indent is what keeps that summary from being attributed to whichever
+        # theme happened to come last and emitted as a phantom extra finding.
+        done < <(awk '
+            /^\[[A-Za-z]+ theme\]/     { theme = $1; gsub(/[][]/, "", theme); next }
+            theme != "" && /^[[:space:]]+❌/ { line = $0; sub(/^[[:space:]]*/, "", line)
+                                              printf "%s\t%s\n", theme, line }
+        ' "$CONTRAST_LOG")
     fi
 else
-    echo "  note: node or contrast-check.mjs unavailable -- PRE-11 not evaluated"
+    unevaluated "node or contrast-check.mjs unavailable -- PRE-11 not evaluated"
 fi
 
 # ---------------------------------------------------------------------------
 # SUMMARY-07 -- no retired diagram runtime. This replaces D1/D2: rather than award points for a check
 # that cannot fail, assert the retired runtime is ABSENT, which can.
 # ---------------------------------------------------------------------------
-if grep -qi 'mermaid' "$HTML"; then
-    emit "SUMMARY-07" "[HIGH]" "$(basename "$HTML")" \
-         "Summary carries the retired Mermaid diagram runtime" \
-         "grep -i mermaid matches in $(basename "$HTML"); the engine was retired and must not reappear"
-fi
+# NM is evaluated by validate-html-output.sh, in the loop above -- NOT here.
+#
+# It used to be `grep -qi 'mermaid' "$HTML"`, which fires on any prose mention of the word. This
+# project's own kb.html contains five, every one of them a CSS comment or a sentence saying the engine
+# was RETIRED, so the check reported the presence of exactly the thing whose absence it asserts: a
+# spurious [HIGH] that alone caps the summary at D+. The validator's NM.1/NM.2/NM.3 test for an inline
+# engine bundle, a mermaid.initialize() call and a CDN <script src> -- the actual claim.
 
 echo
+if [[ "$UNEVALUATED" -gt 0 ]]; then
+    echo "ERROR: ${SCRIPT_NAME}: ${UNEVALUATED} check group(s) could not be evaluated -- see the notes above." >&2
+    echo "       ${FINDINGS} finding(s) were emitted, but this run is INCOMPLETE. Reporting it as clean" >&2
+    echo "       would let grade.sh grade an empty ledger as A+ for an artifact nothing actually checked," >&2
+    echo "       which is the exit-2 case this script's header promises. Install the missing validator(s)" >&2
+    echo "       and re-run." >&2
+    exit 2
+fi
+
 if [[ "$FINDINGS" -eq 0 ]]; then
     echo "OK: ${SCRIPT_NAME}: no findings."
     echo "NOTE: this script does not grade. Run grade.sh over the ledger for the letter."

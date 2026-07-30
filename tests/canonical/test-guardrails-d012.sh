@@ -29,7 +29,7 @@
 #
 #   C6   Completeness: kb_baseline shape in canonical settings template preserved.
 #        - canonical settings.yml template still has kb_baseline key.
-#        - grade-summary.sh COV check still reads discovery.doc_set (basis for completeness).
+#        - the summary emitter's COV check still reads discovery.doc_set (basis for completeness).
 #
 #   S5b  Page-shell alignment with home.html / index.html preserved.
 #        - html-skeleton.html has semantic shell landmarks (header/main/nav/footer).
@@ -61,7 +61,9 @@ VALIDATE_HTML_SH="${REPO_ROOT}/canonical/aid/scripts/summarize/validate-html-out
 VALIDATE_VISUALS_MJS="${REPO_ROOT}/canonical/aid/scripts/summarize/validate-visuals.mjs"
 SKELETON_HTML="${REPO_ROOT}/canonical/aid/templates/knowledge-summary/html-skeleton.html"
 SETTINGS_TEMPLATE="${REPO_ROOT}/canonical/aid/templates/settings.yml"
-GRADE_SH="${REPO_ROOT}/canonical/aid/scripts/summarize/grade-summary.sh"
+# grade-summary.sh -> emit-summary-findings.sh (delivery-015: the second grading backend
+# was retired and the script renamed for what it actually does).
+GRADE_SH="${REPO_ROOT}/canonical/aid/scripts/summarize/emit-summary-findings.sh"
 STATE_GENERATE_MD="${REPO_ROOT}/canonical/skills/aid-summarize/references/state-generate.md"
 STATE_VALIDATE_MD="${REPO_ROOT}/canonical/skills/aid-summarize/references/state-validate.md"
 
@@ -260,11 +262,17 @@ else
 fi
 
 echo ""
-echo "=== C6b: grade-summary.sh reads discovery.doc_set for COV (completeness) ==="
-if grep -qE "discovery.doc_set|doc_set" "$GRADE_SH"; then
-    pass "C6b grade-summary.sh reads discovery.doc_set for COV completeness"
+echo "=== C6b: the summary emitter reads the doc_set for COV (completeness) ==="
+# grade-summary.sh was renamed emit-summary-findings.sh when the second grading backend was retired
+# (delivery-015). The guardrail is unchanged -- the completeness check must still read the doc-set -- so
+# the assertion is retargeted rather than dropped.
+EMIT_SH="${REPO_ROOT}/canonical/aid/scripts/summarize/emit-summary-findings.sh"
+if [[ ! -f "$EMIT_SH" ]]; then
+    fail "C6b emit-summary-findings.sh not found at $EMIT_SH"
+elif grep -qE "discovery.doc_set|doc_set" "$EMIT_SH"; then
+    pass "C6b emit-summary-findings.sh reads the doc_set for COV completeness"
 else
-    fail "C6b grade-summary.sh missing discovery.doc_set reference (C6 completeness broken)"
+    fail "C6b emit-summary-findings.sh missing doc_set reference (C6 completeness broken)"
 fi
 
 # ===========================================================================

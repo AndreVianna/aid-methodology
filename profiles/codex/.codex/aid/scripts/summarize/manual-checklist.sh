@@ -71,7 +71,12 @@ NOTES=""
 while [ $# -gt 0 ]; do
     case "$1" in
         -h|--help)
-            sed -n '2,/^[^#]/{ /^#/!d; s/^# \{0,1\}//; p }' "$0" | head -48
+            # The sed range already stops at the first non-comment line, so it bounds the header on its
+            # own. A `| head -48` used to follow, which was a second cap on the same block -- and when
+            # the de-score grew the header past 48 lines it silently cut the exit codes and the whole
+            # Output JSON keys section, including the exit-2 case that same change widened. A help text
+            # that truncates as its subject grows is worse than none, because it looks complete.
+            sed -n '2,/^[^#]/{ /^#/!d; s/^# \{0,1\}//; p }' "$0"
             exit 0
             ;;
         --html)        HTML_FILE="${2:-}"; shift 2 ;;

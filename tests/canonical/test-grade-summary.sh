@@ -44,7 +44,10 @@ VERBOSE=0
 source "${SCRIPT_DIR}/../lib/assert.sh"
 
 # Canonical source paths
-GRADE_SH="${REPO_ROOT}/canonical/aid/scripts/summarize/grade-summary.sh"
+# grade-summary.sh was renamed emit-summary-findings.sh when the second grading backend was retired
+# (delivery-015). The variable name is kept so the assertion ids below stay stable and traceable to the
+# feature-015 ACs they were written for; the target is the surviving script.
+GRADE_SH="${REPO_ROOT}/canonical/aid/scripts/summarize/emit-summary-findings.sh"
 RUBRIC_MD="${REPO_ROOT}/canonical/aid/templates/knowledge-summary/grading-rubric.md"
 COMPONENT_CSS="${REPO_ROOT}/canonical/aid/templates/knowledge-summary/component-css.css"
 SKELETON_HTML="${REPO_ROOT}/canonical/aid/templates/knowledge-summary/html-skeleton.html"
@@ -471,11 +474,14 @@ echo "=== AC3a: grade-summary.sh has no C+ cap implementation (only removed-cap 
 # We check that no line assigns GRADE="C+" or forces a C+ ceiling conditioned on diagram count
 # (the active-code check: assignment of GRADE or ceiling based on ACTUAL_MERMAID comparison).
 # A comment saying the cap was removed is correct and expected.
-CAP_CODE=$(grep -nE '(GRADE|CEILING|MACHINE_GRADE).*C\+|ACTUAL_MERMAID.*C\+|C\+.*ACTUAL_MERMAID' "$GRADE_SH" 2>/dev/null | grep -v '^#\|#.*cap' || true)
+# Stronger than the original: the cap cannot exist because the script assigns no letter grade at all.
+# Only an ASSIGNMENT counts -- the header explains the retired ladder's alphabet in prose, and a comment
+# is not a cap.
+CAP_CODE=$(grep -nE '^[^#]*(GRADE|CEILING|MACHINE_GRADE)=' "$GRADE_SH" 2>/dev/null || true)
 if [[ -z "$CAP_CODE" ]]; then
-    pass "AC3a: grade-summary.sh has no active C+/diagram-count cap implementation"
+    pass "AC3a: the emitter assigns no grade variable at all, so no C+/diagram cap can exist"
 else
-    fail "AC3a: grade-summary.sh has active C+/diagram cap code:
+    fail "AC3a: the emitter assigns a grade variable (the second backend must not return):
 $CAP_CODE"
 fi
 
@@ -501,10 +507,17 @@ fi
 
 echo ""
 echo "=== AC3e: grade-summary.sh COV check is the completeness gate (not diagram count) ==="
-if grep -qE "COV.*coverage.*60|60.*COV|COV.*completeness" "$GRADE_SH"; then
-    pass "AC3e: grade-summary.sh uses COV coverage < 60% as completeness gate"
+# The completeness gate survives; the 60% threshold does not. It is now one SUMMARY-01 finding per
+# unreferenced document, which is strictly tighter -- one missing doc used to cost nothing.
+if grep -qE 'SUMMARY-01' "$GRADE_SH" && grep -qiE 'ONE ROW PER UNREFERENCED DOCUMENT' "$GRADE_SH"; then
+    pass "AC3e: the emitter's completeness gate is one SUMMARY-01 row per unreferenced document"
 else
-    fail "AC3e: grade-summary.sh missing COV coverage gate"
+    fail "AC3e: the emitter has no per-document SUMMARY-01 completeness gate"
+fi
+if grep -qE '60.*(cliff|threshold|coverage)|coverage.*60' "$GRADE_SH"; then
+    fail "AC3e-2: a 60% coverage threshold survives in the emitter"
+else
+    pass "AC3e-2: no 60% coverage threshold survives in the emitter"
 fi
 
 echo ""
@@ -521,23 +534,26 @@ done
 KB_HTML_3F="${REPO_3F}/.aid/knowledge/kb.html"
 make_kb_html "$KB_HTML_3F"
 
-# Run grade-summary.sh from the fixture dir, capture report
-GRADE_OUT_3F=$(cd "$REPO_3F" && bash "$GRADE_SH" "${KB_HTML_3F}" 2>&1 || true)
+# Run the emitter from the fixture dir, in --dry-run so it prints rows instead of writing a ledger.
+GRADE_OUT_3F=$(cd "$REPO_3F" && bash "$GRADE_SH" "${KB_HTML_3F}" --dry-run 2>&1 || true)
 
-# COV must be full (15/15) because all 5 docs are referenced in the HTML
-if echo "$GRADE_OUT_3F" | grep -qE "COV.*\[PASS\].*full|COV.*full.*\[PASS\]"; then
-    pass "AC3f: diagram-light HTML with full COV grades COV as 'full' (15/15)"
+# The assertion is inverted by the redesign and is sharper for it. "COV = full, 15/15" was a claim about
+# a score; the claim that matters is that a complete summary produces NO coverage finding.
+COV_ROWS_3F=$(echo "$GRADE_OUT_3F" | grep -c 'SUMMARY-01' || true)
+if [[ "${COV_ROWS_3F:-1}" -eq 0 ]]; then
+    pass "AC3f: full-coverage HTML emits no SUMMARY-01 row (all 5 docs represented)"
 else
-    fail "AC3f: expected COV=full in grade-summary output; got:
-$(echo "$GRADE_OUT_3F" | grep -E "COV|Coverage|Machine" | head -10)"
+    fail "AC3f: expected zero SUMMARY-01 rows for full coverage; got ${COV_ROWS_3F}:
+$(echo "$GRADE_OUT_3F" | grep 'SUMMARY-01' | head -5)"
 fi
 
-# Machine grade must NOT be F (the diagram-count cap would have forced F before)
-MACHINE_3F=$(echo "$GRADE_OUT_3F" | grep -oE "Machine Grade: [A-F][+-]?" | head -1)
-if [[ -n "$MACHINE_3F" ]] && ! echo "$MACHINE_3F" | grep -qE "Machine Grade: F$"; then
-    pass "AC3f: Machine Grade for diagram-light + full COV is NOT F (no cap applied)"
+# And no grade is produced at all -- by anything, at any severity. The old assertion was "Machine Grade
+# is not F"; the delivery's claim is that there is no Machine Grade to inspect.
+if echo "$GRADE_OUT_3F" | grep -qiE 'Machine Grade|Human Grade|Overall Grade|^Grade:'; then
+    fail "AC3f-2: the emitter still reports a grade:
+$(echo "$GRADE_OUT_3F" | grep -iE 'Machine Grade|Human Grade|Overall Grade|^Grade:' | head -3)"
 else
-    fail "AC3f: Machine Grade expected non-F for diagram-light full-COV HTML; got: $MACHINE_3F"
+    pass "AC3f-2: the emitter reports no grade of any kind (NFR-7)"
 fi
 
 echo ""
@@ -583,14 +599,39 @@ cat > "$KB_HTML_3G" <<'HTMLEOF'
 </html>
 HTMLEOF
 
-GRADE_OUT_3G=$(cd "$REPO_3G" && bash "$GRADE_SH" "${KB_HTML_3G}" 2>&1 || true)
+GRADE_OUT_3G=$(cd "$REPO_3G" && bash "$GRADE_SH" "${KB_HTML_3G}" --dry-run 2>&1 || true)
 
-# Machine Grade must be F (COV < 60% forces F)
-if echo "$GRADE_OUT_3G" | grep -qE "Machine Grade: F"; then
-    pass "AC3g: grade-summary.sh forces Machine Grade F when COV < 60% (1/5 docs = 20%)"
+# The 60%-forces-F cliff is gone, and what replaced it is stricter, not looser: ONE row per unreferenced
+# document, each NAMING the document. With 1 of 5 docs referenced that is exactly 4 rows -- and 4 open
+# [MEDIUM] rows put grade.sh below every configured minimum, so the operational outcome the cliff
+# produced is preserved while the arithmetic that produced it is gone.
+COV_ROWS_3G=$(echo "$GRADE_OUT_3G" | grep -c 'SUMMARY-01' || true)
+if [[ "${COV_ROWS_3G:-0}" -eq 4 ]]; then
+    pass "AC3g: 1-of-5 coverage emits exactly 4 SUMMARY-01 rows, one per unreferenced document"
 else
-    fail "AC3g: expected Machine Grade F for 20% coverage; got:
-$(echo "$GRADE_OUT_3G" | grep -E "COV|Coverage|Machine|coverage" | head -10)"
+    fail "AC3g: expected 4 SUMMARY-01 rows for 1-of-5 coverage; got ${COV_ROWS_3G}:
+$(echo "$GRADE_OUT_3G" | grep 'SUMMARY-01' | head -6)"
+fi
+
+# Each row must NAME its document -- the whole point of replacing a percentage with per-document rows is
+# that the report says WHICH document is missing. A count of 4 with unnamed docs would pass the check
+# above while losing the thing that was gained.
+NAMED_3G=0
+for doc in decisions.md capability-inventory.md architecture.md workflow-map.md; do
+    echo "$GRADE_OUT_3G" | grep 'SUMMARY-01' | grep -qF "$doc" && NAMED_3G=$((NAMED_3G + 1))
+done
+if [[ "$NAMED_3G" -eq 4 ]]; then
+    pass "AC3g-2: every SUMMARY-01 row names the document it is about"
+else
+    fail "AC3g-2: only ${NAMED_3G} of 4 unreferenced documents were named in their rows"
+fi
+
+# The referenced document must NOT produce a row -- otherwise the check would "pass" by flagging
+# everything, which is the same failure as flagging nothing.
+if echo "$GRADE_OUT_3G" | grep 'SUMMARY-01' | grep -qF 'domain-glossary.md'; then
+    fail "AC3g-3: the one referenced document was flagged as unreferenced (false positive)"
+else
+    pass "AC3g-3: the referenced document produces no row (no blanket flagging)"
 fi
 
 # ===========================================================================
@@ -799,13 +840,18 @@ for doc in domain-glossary.md decisions.md capability-inventory.md architecture.
 done
 KB_HTML_C6="${REPO_C6}/.aid/knowledge/kb.html"
 make_kb_html "$KB_HTML_C6"
-GRADE_OUT_C6=$(cd "$REPO_C6" && bash "$GRADE_SH" "$KB_HTML_C6" 2>&1 || true)
-# COV must still work (kb_baseline presence must not break doc_set parsing)
-if echo "$GRADE_OUT_C6" | grep -qE "COV.*\[PASS\]"; then
-    pass "GR-C6a: grade-summary.sh COV works correctly when settings.yml also has kb_baseline block"
+GRADE_OUT_C6=$(cd "$REPO_C6" && bash "$GRADE_SH" "$KB_HTML_C6" --dry-run 2>&1 || true)
+# The doc_set parse must still work with a sibling kb_baseline block present. The observable proof is
+# that the coverage check ran and found nothing to report -- the fixture references all 5 docs -- rather
+# than silently declaring itself unevaluated, which is what a broken parse looks like.
+if echo "$GRADE_OUT_C6" | grep -qE 'SUMMARY-01 not evaluated'; then
+    fail "GR-C6a: the doc_set parse broke when settings.yml also had a kb_baseline block:
+$(echo "$GRADE_OUT_C6" | grep -E 'not evaluated|SUMMARY-01' | head -5)"
+elif echo "$GRADE_OUT_C6" | grep -q 'SUMMARY-01'; then
+    fail "GR-C6a: coverage rows emitted for a fully-referenced fixture -- doc_set parsed wrongly:
+$(echo "$GRADE_OUT_C6" | grep 'SUMMARY-01' | head -5)"
 else
-    fail "GR-C6a: grade-summary.sh COV broke when settings.yml had kb_baseline; output:
-$(echo "$GRADE_OUT_C6" | grep -E "COV|Coverage|Error" | head -10)"
+    pass "GR-C6a: doc_set parsing is unaffected by a sibling kb_baseline block in settings.yml"
 fi
 
 echo ""

@@ -246,7 +246,12 @@ below cover authored inline SVG.
 1. `tidy -e --quiet yes` -- fails on any error line.
 2. `html-validate` -- fails on errors.
 3. Regex fallback (unclosed tags, duplicate IDs, missing `<!DOCTYPE html>`).
-The fallback path is noted in the grade output. Warnings allowed in all modes.
+Warnings are allowed in all modes. **Which of the three paths ran is visible only in
+`validate-html-output.sh`'s own output** — it prints e.g. `✅ H1. HTML validity (regex fallback — less
+rigorous; install tidy for strict check)`. The emitter does not surface it (there is no grade output for
+it to appear in, and the emitter discards the validator log once it has extracted the failures), so if
+you need to know whether the strict checker or the regex fallback graded the markup, run the validator
+directly.
 
 **A1:** `<header role="banner">`, `<main id="top">`, `<nav aria-label="...">`,
 `<footer>` all present.
@@ -291,25 +296,40 @@ NOTE: this script does not grade. Run grade.sh over the ledger for the letter.
 Each failure is a ledger row naming the rule it breaks and the thing that broke it. Note that the
 missing documents are **named** — the retired check reported only a percentage:
 
+**In `--ledger` mode the rows go to the ledger, not to the terminal** — the writer's output is
+discarded, so a run that finds problems prints only the count. Use `--dry-run` to see the rows; that
+mode writes nothing and prints them pipe-separated, exactly as below (this is real output, not an
+illustration):
+
 ```
-$ bash .codex/aid/scripts/summarize/emit-summary-findings.sh .aid/knowledge/kb.html \
-      --ledger .aid/.temp/review-pending/summary.md
+$ bash .codex/aid/scripts/summarize/emit-summary-findings.sh .aid/knowledge/kb.html --dry-run
 
-  [MEDIUM] SUMMARY-01  tech-debt.md      Declared knowledge-base document is not represented ...
-  [MEDIUM] SUMMARY-01  test-landscape.md Declared knowledge-base document is not represented ...
-  [MEDIUM] SUMMARY-09  kb.html           Relative document links resolve check failed (L2)
+=== emit-summary-findings.sh: .aid/knowledge/kb.html ===
+[MEDIUM] | SUMMARY-01 | tech-debt.md | Declared knowledge-base document is not represented in the generated summary | settings.yml knowledge.doc_set lists tech-debt.md and .aid/knowledge/tech-debt.md exists, but no reference to "tech-debt" appears in kb.html
+[MEDIUM] | SUMMARY-01 | test-landscape.md | Declared knowledge-base document is not represented in the generated summary | settings.yml knowledge.doc_set lists test-landscape.md and .aid/knowledge/test-landscape.md exists, but no reference to "test-landscape" appears in kb.html
 
-emit-summary-findings.sh: emitted 3 finding(s).
+emit-summary-findings.sh: emitted 2 finding(s).
 NOTE: no grade is computed here. Run grade.sh over the ledger for the letter.
 ```
 
-The grade then comes from the one grader, over those rows:
+The grade then comes from the one grader, over those rows — again, real output:
 
 ```
 $ bash .codex/aid/scripts/grade.sh --explain .aid/.temp/review-pending/summary.md
 
-Grade: C   (worst severity MEDIUM, 3 issues at that severity)
+C
+Issue counts (schema-table mode):
+  CRITICAL: 0
+  HIGH:     0
+  MEDIUM:   2
+  LOW:      0
+  MINOR:    0
+  TOTAL:    2
+Grade: C
 ```
+
+The letter goes to stdout on its own first line, so a caller can capture it with `$(...)`; the
+breakdown is what `--explain` adds.
 
 Re-run `/aid-summarize` to enter FIX and add the missing sections. Because each absent document is its
 own finding rather than a band, fixing one improves the grade — under the retired ladder, going from 18

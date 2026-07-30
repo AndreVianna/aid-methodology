@@ -30,10 +30,18 @@ Run `.github/aid/scripts/summarize/emit-summary-findings.sh .aid/knowledge/kb.ht
 
 ✓ validation suite done (record actual time, per-script pass/fail summary) — or ✗ validation suite failed: {script, reason}
 
-### Translate Script Output to Schema Rows
+### What lands in the ledger, and who puts it there
 
-After each script exits, the orchestrator translates failed checks into schema rows in
-`.aid/.temp/review-pending/summarize.md` (per `.github/aid/templates/reviewer-ledger-schema.md`):
+> ⚠️ **`emit-summary-findings.sh` writes these rows itself.** It calls
+> `writeback-ledger.sh --append-finding` once per failed check, so the orchestrator must **not**
+> translate the validator output into rows a second time. This section is the **reference for what
+> the script emits** — not a task list for the agent. Doing it by hand as well duplicates every row
+> in the table below, and `grade.sh` grades by *count*, so a duplicated `[MEDIUM]` moves the grade
+> a full step for one defect.
+>
+> The only rows an agent adds by hand are the ones no script can produce: `SUMMARY-04`,
+> `SUMMARY-05` (claim truth) and `SUMMARY-06` (the human visual check) — and those come from
+> MANUAL-CHECKLIST, not from here.
 
 Every row cites the rule it breaks, per the ledger schema's `Rule` column. The check-to-rule mapping
 is the one recorded in `review-rubrics/summary.md § Where the retired per-check scores went`.
@@ -64,16 +72,20 @@ corrected below, exactly the re-derivation feature-007 §1b called for.
 | NM (Mermaid engine detected in output — should not be present in D-012) | `SUMMARY-07` | `[HIGH]` | one row |
 | C1/C2 (WCAG contrast fail) | `PRE-11` | `[MEDIUM]` | one row per failing color pair — one rule, both themes |
 
-For each failed check, append a row:
-- `#` = next sequential row number
-- `Severity` = per mapping above (bracketed)
+The row the script writes for each failed check:
+- `#` = next sequential row number (assigned by `writeback-ledger.sh`, never by hand)
+- `Severity` = per the catalog, as in the table above (bracketed; one of the five tokens)
 - `Status` = `Pending`
-- `Doc` = `kb.html`
+- `Doc` = the failing document — `kb.html`, or the named KB document for a `SUMMARY-01` row
 - `Line` = `—` (or nearest section if identifiable)
 - `Description` = one sentence: "check X failed: {what was wrong}"
-- `Evidence` = script output excerpt or exact error message
+- `Evidence` = the validator's own output line
 
 Passed checks are NOT added to the ledger (no row = no finding).
+
+**If the script exits `2`, do not grade.** That is its "a check group could not be evaluated" code —
+a missing validator, or no `settings.yml` for the coverage check. An empty ledger from an unrun check
+grades `A+`, which is the one outcome worse than a failing grade. Report what was missing and stop.
 
 Persist the findings and the per-check table to `.aid/knowledge/STATE.md` `## Knowledge Summary Status` `### Findings (last validation)`. The grade is then computed by the one grading backend:
 

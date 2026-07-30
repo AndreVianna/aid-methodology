@@ -79,13 +79,26 @@ chk "${#echoed[@]}" 0 MC03 "no score value or scoring claim survives in the scri
 [[ "${#echoed[@]}" -eq 0 ]] || printf '       %s\n' "${echoed[@]}"
 
 # Control: MC03 must be able to see a planted score string, or it passes for the wrong reason.
+#
+# This control must run MC03's detector VERBATIM -- including the `grep -v` exclusion stage. An earlier
+# version dropped that stage, so it matched the legitimate `... No scoring.` line that is already in the
+# file and reported success without the plant ever mattering. A control that passes on the unmodified
+# file controls nothing, so it is measured before AND after: the delta is the assertion.
+mc03_detect() {   # $1 = file -> count of offending output lines, using MC03's exact pipeline
+    grep -nE '^[[:space:]]*(echo|printf)' "$1" \
+        | grep -iE '[0-9]+ ?pts|/30|/68|scoring|score' \
+        | grep -viE 'no scoring|not score|does not score' | wc -l
+}
 MCCTL="$(mktemp)"; cp "$MC" "$MCCTL"
+n_before=$(mc03_detect "$MCCTL")
 printf 'echo "  Scores K1 (10) + K2 (15) = 30 pts."\n' >> "$MCCTL"
-n_mcctl=$(grep -nE '^[[:space:]]*(echo|printf)' "$MCCTL" \
-    | grep -icE '[0-9]+ ?pts|/30|/68|scoring|score' || true)
+n_after=$(mc03_detect "$MCCTL")
 rm -f "$MCCTL"
-[[ "${n_mcctl:-0}" -ge 1 ]] && ok MC04 "MC03 DOES see a planted score string in output (control)" \
-                           || no MC04 "MC03's detector cannot see a planted score string"
+if [[ "${n_before:-1}" -eq 0 && "${n_after:-0}" -eq 1 ]]; then
+    ok MC04 "MC03's detector is silent on the real file and fires on the plant (control: 0 -> 1)"
+else
+    no MC04 "control did not isolate the plant: before=${n_before} after=${n_after}, expected 0 -> 1"
+fi
 
 # --input must reach its own rejection. Under `set -euo pipefail` the answer-extracting greps aborted
 # the script before the check below them could run, so a malformed file exited 1 in silence where the
@@ -107,6 +120,56 @@ else
     no MC06 "--input lost or re-escaped the notes: $(grep '"notes"' "$MCT/rt.json" || echo absent)"
 fi
 rm -rf "$MCT"
+
+echo
+echo "== the emitter is RUN, not just read =="
+# Every assertion above greps the emitter's text. Text assertions cannot see a detection bug, and three
+# were live: S2 and NM were parsed with a pattern that does not match the shape the validator prints
+# them in, so SUMMARY-03 and SUMMARY-07 could never fire; contrast was parsed with a pattern matching
+# neither of its line shapes, so PRE-11 could never fire either. All three greps "passed" throughout.
+EMT="$(mktemp -d)"
+
+# The two shapes validate-html-output.sh really uses, verbatim: marker-first for H1/A*/L*, marker-last
+# for S2 and NM. Extract the emitter's own detector and drive it with both.
+( eval "$(sed -n '/^check_failed() {/,/^}/p' "$EMIT")"
+  printf '%s\n' \
+    '  ❌ H1. HTML validity (tidy reported errors)' \
+    '  S2. Offline render [FAIL] found CDN reference(s) in output HTML:' \
+    '  ❌ NM.2 mermaid.initialize() call detected -- engine still wired in' \
+    '  ✅ L2. 12/12 relative md links resolve' > "$EMT/fail.log"
+  for k in H1 S2 NM; do check_failed "$k" "$EMT/fail.log" || { echo "MISS $k"; }; done
+  check_failed L2 "$EMT/fail.log" && echo "FALSEPOS L2"
+  printf '%s\n' \
+    '  ✅ H1. HTML validity (tidy: 0 errors)' \
+    '  S2. Offline render [PASS] no external CDN script or link (self-contained)' \
+    '  NM. No-Mermaid-engine [PASS] no Mermaid runtime engine or init call in output' > "$EMT/pass.log"
+  for k in H1 S2 NM; do check_failed "$k" "$EMT/pass.log" && echo "FALSEPOS $k"; done
+  true ) > "$EMT/out" 2>&1
+if [[ ! -s "$EMT/out" ]]; then
+    ok EM01 "the failure detector reads BOTH validator line shapes, with no false positive on PASS"
+else
+    no EM01 "detector wrong on a real validator line shape: $(tr '\n' ' ' < "$EMT/out")"
+fi
+
+# NM must NOT be a bare grep for "mermaid" in the HTML. This project's own kb.html says the word five
+# times -- CSS comments and sentences about the engine having been RETIRED -- so a bare grep reports the
+# presence of the very thing whose absence it asserts, and one spurious [HIGH] caps the summary at D+.
+printf '%s\n' '<!DOCTYPE html><html><head><title>t</title></head><body><main>' \
+  '<!-- Decision D-012 retired the Mermaid diagram engine; visuals are inline SVG. -->' \
+  '</main></body></html>' > "$EMT/prose.html"
+out=$(cd "$EMT" && bash "$EMIT" prose.html --dry-run 2>&1 || true)
+if printf '%s' "$out" | grep -q 'SUMMARY-07'; then
+    no EM02 "a prose mention of the retired engine still emits SUMMARY-07 (false positive)"
+else
+    ok EM02 "a prose mention of the retired engine emits no SUMMARY-07"
+fi
+
+# An unrun check is not a passed check. With no settings.yml the coverage check cannot run, and the
+# documented exit code for that is 2 -- because exit 0 with an empty ledger grades A+ for an artifact
+# nothing examined, which is worse than any failing grade.
+(cd "$EMT" && bash "$EMIT" prose.html --dry-run >/dev/null 2>&1)
+chk "$?" 2 EM03 "a run with an unevaluated check group exits 2, not 0"
+rm -rf "$EMT"
 
 echo
 echo "== an unanswered checklist pauses instead of grading F =="

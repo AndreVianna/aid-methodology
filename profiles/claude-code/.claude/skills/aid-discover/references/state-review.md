@@ -337,11 +337,11 @@ reconstruction *did* cover — has no carrier in the ledger. It was a runtime cl
 agent, unfalsifiable after the fact: the same class of unverifiable assertion feature-005
 rejected for per-rule invalidation. What replaces it is the conservative rule already
 written beside it. At an `A`-or-better floor the ratio never changed a decision anyway —
-one open `[MED]` `[ESSENCE-GAP]` row fails the grade on its own — so the ratio protected a
+one open `[MEDIUM]` `[ESSENCE-GAP]` row fails the grade on its own — so the ratio protected a
 *metric*, not a *gate*.
 
 Divergence FAIL items are ordinary `[HIGH] [FIDELITY]` rows; load-bearing Omission FAIL
-items are ordinary `[MED] [ESSENCE-GAP]` rows. Any open `[FIDELITY]` row forces grade
+items are ordinary `[MEDIUM] [ESSENCE-GAP]` rows. Any open `[FIDELITY]` row forces grade
 <= D (because `[HIGH]` rows make grade <= D in `grade.sh`) — the essence hard gate is
 realized entirely through the merged rows. No separate boolean, no AND to reconcile.
 
@@ -465,7 +465,7 @@ and assertiveness gate are mode-agnostic.
 | Intent | Gate | `#` scope | Description marker | `Rule` the gate counts | Severity | FAIL condition |
 |--------|------|-----------|--------------------|------------------------|----------|----------------|
 | Intent 2 -- Essence (M3) | Essence Gate | `TB-` | `[FIDELITY]` (Divergence) | `NAR-05` | `[HIGH]` | Any open `TB-` row with `Rule` = `NAR-05` |
-| Intent 2 -- Essence (M3) | Essence Gate | `TB-` | `[ESSENCE-GAP]` (Omission) | _(gate keys on the marker -- criteria gap, § 2c)_ | `[MED]` | Any open `TB-` row marked `[ESSENCE-GAP]` |
+| Intent 2 -- Essence (M3) | Essence Gate | `TB-` | `[ESSENCE-GAP]` (Omission) | _(gate keys on the marker -- criteria gap, § 2c)_ | `[MEDIUM]` | Any open `TB-` row marked `[ESSENCE-GAP]` |
 | Intent 1 -- Assertiveness (M4) | Assertiveness Gate | `AB-` | `[ACTBACK]` (all FAIL classes) | `^KB-2[0-6]$` | `[HIGH]` | Any open `AB-` row with a `KB-20`..`KB-26` rule, or a quality-contract absent |
 
 Two things to read off this table. **No row carries a coverage percentage** — both ratios were
@@ -479,7 +479,7 @@ raised.
 panel: full  (brownfield-large)
   1. Four mandate reviewers run in parallel (M1..M4), each writing to its own
      scratch ledger. M3 writes [HIGH] [FIDELITY] rows for Divergence FAILs and
-     [MED] [ESSENCE-GAP] rows for load-bearing Omission FAILs (no separate
+     [MEDIUM] [ESSENCE-GAP] rows for load-bearing Omission FAILs (no separate
      verdict sentinel). M4 writes one [HIGH] [ACTBACK] row per FAIL item
      (plan-correctness, sufficiency, AND quality FAILs alike -- no separate
      verdict sentinel).
@@ -491,7 +491,7 @@ panel: collapsed  (brownfield-small only)
   1. ONE reviewer runs M1/M2 as separate sequential passes in one agent,
      writing both passes' findings to {{SCOPE}}-content.md (mandate rows
      M1-NNN/M2-NNN). ONE clean-context reviewer handles M3, writing
-     [HIGH] [FIDELITY] and [MED] [ESSENCE-GAP] rows to {{SCOPE}}-teachback.md.
+     [HIGH] [FIDELITY] and [MEDIUM] [ESSENCE-GAP] rows to {{SCOPE}}-teachback.md.
      ONE clean-context reviewer handles M4, writing [HIGH] [ACTBACK] rows to
      {{SCOPE}}-actback.md. All three dispatches run in parallel with each other
      (M1-M2 sequential WITHIN dispatch 1 only).

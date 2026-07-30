@@ -204,7 +204,7 @@ KB + the visual summary (absorbs the former DISCOVERY-STATE + SUMMARY-STATE).
 | Header | `Status`: `Initial \| In Progress \| Approved`; `Current Grade`; `User Approved`; `Last KB Review`; `Last Summary`. |
 | External Documentation | table (Path, Type, Accessible, Notes). |
 | KB Documents Status | one row per doc in the confirmed `discovery.doc_set` (domain-driven, NOT hardcoded): Document, Status, Grade, Last Reviewed, Notes. |
-| Knowledge Summary Status | Profile, Profile Source/Confidence, Theme, Machine/Human Grade, User Approved, Output, Mermaid version/cache. |
+| Knowledge Summary Status | Profile, Profile Source/Confidence, Theme, Grade, Checklist, User Approved, Output, Mermaid version/cache. **One** grade, from `grade.sh` over the review ledger; `Checklist` records whether the mandatory human checklist has been completed. The former `Machine Grade` / `Human Grade` pair belonged to a second grading model that has been retired — an existing `STATE.md` may still carry those rows as history, and they are deliberately not back-converted, because re-deriving a letter for findings that were never itemised would be fabrication. |
 | Q&A (Pending) | per-Q block: ID `Q{N}`, Category, Impact (`High \| Medium \| Low \| Required`), Status (`Pending \| Answered \| Skipped`), Context, Suggested, Answer, Applied-to. |
 | Review History / Summarization History | append-only, one row per cycle/run. |
 
