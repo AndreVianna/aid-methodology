@@ -66,15 +66,20 @@
 
 - **Type:** Bug
 - **Severity:** Medium
+- **Status:** **CLOSED by delivery-006 (task-054), 2026-07-30.**
 - **Affects:** feature-001-skill-detail-pages, feature-003-authored-flow-charts
 - **Source:** `site/scripts/gen-reference.mjs`:5-7
-- **Description:** The file header says it generates "94 skill directories (16 classic +
-  aid-triage + aid-ask + 76 catalog-driven shortcuts)". The code's own runtime output says 111
-  directories / 19 classic / 64 shortcuts (`site/src/content/docs/reference/skills.md`:9), and the
-  drift guard at `gen-reference.mjs`:377-381 enforces the live set. Matters because
-  `gen-reference.mjs` is the declared pattern for this work's new sibling generator (REQUIREMENTS
-  §4), so its header is the first thing an implementer reads and it is wrong about the very
-  quantity this work is sensitive to.
+- **Description:** The file header said it generates "94 skill directories (16 classic +
+  aid-triage + aid-ask + 76 catalog-driven shortcuts)". Measured before acting: the code's
+  runtime output was always correct (111 / 19 / 64), because it derives at build time — only the
+  **comments** drifted. So this issue was narrower than recorded when filed: a comment defect
+  with no reader-visible symptom, and no rendering bug for a future reader to hunt.
+  **How it was closed:** the stale comments are gone, and authority for the triple moved to
+  `site/scripts/skills/skill-counts.mjs`, which derives it once. `skill-counts.test.mjs` guards
+  every file that could restate it — matching count *shapes* rather than the specific stale
+  values, so a NEW hand-count is caught as readily as the old one was. Review of task-054 found
+  one such survivor the first pass missed (`gen-reference.mjs` claimed "67 near-identical H3
+  blocks" against a real 64) — it is fixed, and it is why the guard checks shapes.
 
 ## KI-004: client-side mermaid rendering degrades to raw diagram source without JavaScript
 
