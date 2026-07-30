@@ -73,7 +73,7 @@ loopback only.
 | git | version control | outbound (invokes) | Critical | branch isolation per delivery; release tagging; render-drift check |
 | GitHub `gh` CLI | release tooling | outbound | High | `release.sh` cuts/uploads releases; site fetches release data |
 | GitHub Releases | distribution | both | High | offline profile tarballs + `SHA256SUMS` |
-| GitHub Actions | CI/CD | inbound (triggers) | High | four workflows: test, installer-tests, docs, release |
+| GitHub Actions | CI/CD | inbound (triggers) | High | five workflows: test, installer-tests, docs, release, coverage-parity |
 | npm registry | distribution | outbound (publish) | High | `aid-installer` package; `npm i -g` channel |
 | PyPI | distribution | outbound (publish) | High | `aid-installer` package; `pipx install` channel |
 | Claude Code / Codex / Cursor / Copilot CLI / Antigravity | host AI harness | outbound (installs into) | Critical | the five render profiles AID targets |
@@ -117,7 +117,7 @@ per-profile bundles) plus a `SHA256SUMS` file are published per tag; the offline
 CONFIRMED: `docs/aid-methodology.md` ("Offline / air-gapped environments");
 `docs/glossary.md` ("--from-bundle").
 
-**GitHub Actions (inbound CI/CD).** Four workflows under `.github/workflows/`:
+**GitHub Actions (inbound CI/CD).** Five workflows under `.github/workflows/`:
 
 | Workflow | Trigger | Purpose |
 |----------|---------|---------|
@@ -125,6 +125,7 @@ CONFIRMED: `docs/aid-methodology.md` ("Offline / air-gapped environments");
 | `installer-tests.yml` | push to non-`master` branches, dispatch | cross-platform installer tests (incl. Windows lane) |
 | `docs.yml` (Docs) | push to `master` under `site/`, `docs/`, `VERSION` | builds/deploys the Astro site |
 | `release.yml` (Release) | push tag `v*`, dispatch | builds artifacts and cuts the GitHub Release |
+| `coverage-parity.yml` (Coverage Parity) | push/PR to `master` under `tests/**`, dispatch | advisory executed-assertion coverage-regression gate (`tests/coverage-parity.sh`), separate serial lane from `test.yml`'s canonical suites |
 
 CONFIRMED by the `on:` blocks of each file under `.github/workflows/`. Note: the heavy gates
 (canonical suites, Astro build) run only on `master`; feature branches skip them — see project

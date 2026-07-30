@@ -23,17 +23,13 @@ VERBOSE=0
 [[ "${1:-}" =~ ^(-v|--verbose)$ ]] && VERBOSE=1
 
 source "$(dirname "${BASH_SOURCE[0]}")/../lib/assert.sh"
+source "$(dirname "${BASH_SOURCE[0]}")/../lib/pwsh.sh"
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 CHECK="$(dirname "${BASH_SOURCE[0]}")/ps51-compat-check.ps1"
 
 # Gate: skip when pwsh is absent (CI always has it; see the runtime-assert step).
-PWSH=""
-if command -v pwsh >/dev/null 2>&1; then
-    PWSH="pwsh"
-elif [[ -x "/home/andre.vianna/.local/pwsh/pwsh" ]]; then
-    PWSH="/home/andre.vianna/.local/pwsh/pwsh"
-fi
+PWSH="$(detect_pwsh || true)"
 if [[ -z "$PWSH" ]]; then
     echo "SKIP: pwsh not found on PATH - skipping WinPS 5.1 compatibility lint (needs PowerShell)."
     exit 0

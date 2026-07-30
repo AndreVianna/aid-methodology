@@ -2310,7 +2310,7 @@ details.accord > summary:focus-visible,
 				<tr><td><code>bin/</code></td><td>CLI entry point (<code>bin/aid</code> Bash, <code>bin/aid.ps1</code> PowerShell)</td><td>Cross-platform CLI</td></tr>
 				<tr><td><code>lib/</code></td><td>Shared install/update/remove engines (<code>aid-install-core.sh</code>, <code>AidInstallCore.psm1</code>)</td><td>Polyglot parity: Bash mirrors PowerShell</td></tr>
 				<tr><td><code>dashboard/</code></td><td>Local web dashboard: server (<code>server.mjs</code>, <code>server.py</code>) + reader (<code>reader/</code>)</td><td>Read-only, loopback-only, no LLM</td></tr>
-				<tr><td><code>tests/</code></td><td>118 canonical test suites + bespoke harnesses per language</td><td>Run via <code>tests/run-all.sh</code></td></tr>
+				<tr><td><code>tests/</code></td><td>133 canonical test suites + bespoke harnesses per language</td><td>Run via <code>tests/run-all.sh</code></td></tr>
 				<tr><td><code>site/</code></td><td>Astro-based docs site (TypeScript)</td><td>Published to https://aid.casuloailabs.com</td></tr>
 				<tr><td><code>install.sh</code></td><td>Bash curl-bootstrap installer</td><td>ASCII-only, POSIX-compatible</td></tr>
 				<tr><td><code>install.ps1</code></td><td>PowerShell irm-bootstrap installer</td><td>5.1-compatible, ASCII-only</td></tr>
@@ -3074,7 +3074,7 @@ details.accord > summary:focus-visible,
 				<tr>
 					<td>GitHub Actions</td>
 					<td>CI/CD</td>
-					<td>4 workflows: test.yml (master-only), installer-tests.yml (feature branches), release.yml (tags), docs.yml (master-only)</td>
+					<td>5 workflows: test.yml (master-only), installer-tests.yml (feature branches), release.yml (tags), docs.yml (master-only), coverage-parity.yml (advisory tests/** coverage-regression gate)</td>
 					<td>Heavy gates (canonical suite + docs build) only run on master; feature branches skip them</td>
 				</tr>
 				<tr>
@@ -3132,19 +3132,19 @@ details.accord > summary:focus-visible,
 	<header>
 		<span class="eyebrow">Automated suites &mdash; test-landscape.md</span>
 		<h2>Test Landscape</h2>
-		<p class="lede">118 canonical test suites covering the CLI installer, the multi-profile render, the dashboard, and the docs site. A single entrypoint runs all non-Windows suites locally; heavy gates run on master CI only.</p>
+		<p class="lede">133 canonical test suites covering the CLI installer, the multi-profile render, the dashboard, and the docs site. A single entrypoint runs all non-Windows suites locally; heavy gates run on master CI only.</p>
 	</header>
 
 	<div class="grid g4" style="margin-bottom:1.5rem;">
 		<div class="card">
 			<div class="kicker">Total suites</div>
-			<div class="stat">105</div>
+			<div class="stat">133</div>
 			<div class="stat-sub">canonical test suites</div>
 		</div>
 		<div class="card">
 			<div class="kicker">CI workflows</div>
-			<div class="stat">4</div>
-			<div class="stat-sub">test, installer, release, docs</div>
+			<div class="stat">5</div>
+			<div class="stat-sub">test, installer, release, docs, coverage-parity</div>
 		</div>
 		<div class="card">
 			<div class="kicker">CI lanes</div>
@@ -3181,6 +3181,11 @@ details.accord > summary:focus-visible,
 					<td><code>docs.yml</code></td>
 					<td>Push to <strong>master only</strong></td>
 					<td>Astro docs site build and deploy to GitHub Pages</td>
+				</tr>
+				<tr>
+					<td><code>coverage-parity.yml</code></td>
+					<td>Push/PR to <strong>master only</strong>, path-filtered to <code>tests/**</code></td>
+					<td>Advisory executed-assertion coverage-regression gate; serially re-collects the executed-assertion inventory and diffs it against a committed baseline; warns (exit 0) until a baseline is bootstrapped, then enforces</td>
 				</tr>
 			</tbody>
 		</table>
@@ -3424,7 +3429,7 @@ details.accord > summary:focus-visible,
 		<div class="card">
 			<div class="kicker">Layer 1</div>
 			<h3>Automated Tests</h3>
-			<p>118 canonical suites via <code>tests/run-all.sh</code>; CI-gated; catches functional regressions and format violations. Runs before quality gates.</p>
+			<p>133 canonical suites via <code>tests/run-all.sh</code>; CI-gated; catches functional regressions and format violations. Runs before quality gates.</p>
 		</div>
 		<div class="card">
 			<div class="kicker">Layer 2</div>

@@ -63,7 +63,7 @@ echo "--- Part 1: routes-only proof (FR-13) ---"
 
 FM_ALLOWED=$(awk '/^allowed-tools:/{print; exit}' "$SKILL_MD")
 assert_output_contains "$FM_ALLOWED" "Read, Glob, Grep" "TR01a allowed-tools is exactly Read, Glob, Grep"
-if echo "$FM_ALLOWED" | grep -qE 'Write|Edit'; then
+if grep -qE 'Write|Edit' <<<"$FM_ALLOWED"; then
     fail "TR01b allowed-tools excludes Write/Edit -- found: ${FM_ALLOWED}"
 else
     pass "TR01b allowed-tools excludes Write/Edit"
@@ -186,7 +186,7 @@ done
 
 # --- Broad/ambiguous fixtures: no single-row match; both resolve to /aid-describe. ---
 BROAD_DESC="rewrite the billing subsystem across 4 services"
-if echo "$BROAD_DESC" | grep -qiE 'subsystem|across [0-9]+ services'; then
+if grep -qiE 'subsystem|across [0-9]+ services' <<<"$BROAD_DESC"; then
     pass "TR30a [\"${BROAD_DESC}\"] carries the broad/multi-activity signal (whole subsystem, multiple services)"
 else
     fail "TR30a [\"${BROAD_DESC}\"] expected to carry the broad/multi-activity signal"
@@ -195,7 +195,7 @@ fi
 # TR11b above) and its resolution is Case C -> /aid-describe (asserted at TR13a/TR13b above).
 
 AMBIGUOUS_DESC="something with the reports maybe"
-if echo "$AMBIGUOUS_DESC" | grep -qiE '^[a-z ]*$' && ! echo "$AMBIGUOUS_DESC" | grep -qiE 'endpoint|entity|class|rule|doc|page|dataset'; then
+if grep -qiE '^[a-z ]*$' <<<"$AMBIGUOUS_DESC" && ! grep -qiE 'endpoint|entity|class|rule|doc|page|dataset' <<<"$AMBIGUOUS_DESC"; then
     pass "TR30b [\"${AMBIGUOUS_DESC}\"] names no concrete target artifact (ambiguous signal)"
 else
     fail "TR30b [\"${AMBIGUOUS_DESC}\"] expected to name no concrete target artifact"
@@ -244,7 +244,7 @@ declare -A QUESTION_FIXTURES=(
     ["where is rate limiting handled in the API layer?"]=1
 )
 for description in "${!QUESTION_FIXTURES[@]}"; do
-    if echo "$description" | grep -qiE '\?$' && echo "$description" | grep -qiE '^(why|where|how|what|does|is|can|should|which)\b'; then
+    if grep -qiE '\?$' <<<"$description" && grep -qiE '^(why|where|how|what|does|is|can|should|which)\b' <<<"$description"; then
         pass "TR50 [\"${description}\"] carries the QUESTION interrogative signal (state-classify.md Step 0)"
     else
         fail "TR50 [\"${description}\"] expected to carry the QUESTION interrogative signal"

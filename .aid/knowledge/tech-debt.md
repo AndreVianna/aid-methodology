@@ -60,7 +60,7 @@ structural and methodological, not littered code.
 
 | ID | Type | Description | Location | Risk | Effort | Priority |
 |----|------|-------------|----------|------|--------|----------|
-| **L4** | Test-effectiveness gap | No systematic measure of test-suite **effectiveness**. Line-coverage `%` is (still) rejected as the wrong tool for a mostly-non-instrumentable product (see `decisions.md` D26), but the AID-appropriate measures — mutation testing, invariant-anchoring, behavioral-surface coverage, escaped-defect tracking (dogfooding is already in place) — are not yet implemented as a program. Nothing today tells us whether the ~118 suites actually *bite*. | whole test suite / CI | **High** | M (phased) | **P1 — next release** |
+| **L4** | Test-effectiveness gap | No systematic measure of test-suite **effectiveness**. Line-coverage `%` is (still) rejected as the wrong tool for a mostly-non-instrumentable product (see `decisions.md` D26), but the AID-appropriate measures — mutation testing, invariant-anchoring, behavioral-surface coverage, escaped-defect tracking (dogfooding is already in place) — are not yet implemented as a program. Nothing today tells us whether the ~133 suites actually *bite*. | whole test suite / CI | **High** | M (phased) | **P1 — next release** |
 
 **Risk definitions:** High = active risk to reliability/security/maintainability of core
 flows; Medium = growing cost, becomes high if unaddressed in 1-2 cycles; Low = known, not
@@ -74,7 +74,7 @@ urgent.
 
 **Type:** Test-effectiveness gap / methodology
 
-**Description:** AID has ~118 canonical suites but **no signal for whether they are
+**Description:** AID has ~133 canonical suites but **no signal for whether they are
 effective** — i.e. whether they would actually fail if the code broke. Line-coverage `%`
 is *not* the answer and remains rejected (D26): the shippable product is ~1,800
 Markdown/prompt files + ~327 shell/PowerShell files + a byte-identical render, so a
@@ -121,7 +121,7 @@ machinery, NOT with the number of skills.
   - *Tier 1 (per-PR, curated, fast):* ~15-25 hand-authored "named fault class" mutations for
     the load-bearing invariants (delete a `MANIFEST` line; flip an installer exit code
     2->0; corrupt a checksum; off-by-one a bound). Each runs **only its relevant suite** (via
-    a test-impact map), not all ~118. Shell lives here (no good off-the-shelf shell mutator).
+    a test-impact map), not all ~133. Shell lives here (no good off-the-shelf shell mutator).
     Not meant to be complete — it *guards the classes that have burned us*.
   - *Tier 2 (nightly / pre-release, automated, scoped):* a real mutator on the instrumentable
     minority — `mutmut`/`cosmic-ray` (Python reader), `stryker` (`.mjs`/site) — to probe the
@@ -230,7 +230,7 @@ model.
 | `curl\|bash` / `irm\|iex` bootstrap | Medium (inherent) | Users pipe a remote script to a shell. Mitigated: the bootstrap fetches the CLI bundle + libs from a **pinned release tag** and verifies them against `SHA256SUMS` before sourcing (CONFIRMED in `release.sh` Step 6 comment + `install.sh` lib-fetch). The trust root is the GitHub Release. |
 | No detached signature on GitHub tarballs | Low (accepted) | `release.sh --sign` is a stub (a deferred feature, not wired into `release.yml`). Accepted as not-needed: npm publishes with `--provenance` and PyPI with PEP 740 sigstore attestations (the channels most users install from), and GitHub tarballs are checksum-verified against `SHA256SUMS`. A detached GPG signature would add key-management burden for marginal gain; revisit only if the threat model changes. |
 | Publish auth uses OIDC Trusted Publishing | Positive | npm publishes with `--provenance`; PyPI publishes with PEP 740 attestations via `pypa/gh-action-pypi-publish` — both token-less via OIDC. CONFIRMED in `release.yml`. |
-| Least-privilege CI permissions | Positive | `test.yml` / `installer-tests.yml` use `permissions: contents: read`; `release.yml` grants only `contents: write` + `id-token: write`; `docs.yml` only `pages: write` + `id-token: write`. CONFIRMED. |
+| Least-privilege CI permissions | Positive | `test.yml` / `installer-tests.yml` / `coverage-parity.yml` use `permissions: contents: read`; `release.yml` grants only `contents: write` + `id-token: write`; `docs.yml` only `pages: write` + `id-token: write`. CONFIRMED. |
 | Optional `NPM_TOKEN` classic automation token | Low | If OIDC is not used for npm, a classic `NPM_TOKEN` secret is the fallback (`release.yml` header). Prefer Trusted Publishing to avoid storing a long-lived token. |
 | No secrets committed | Positive | No credentials in tracked files; auth is via CI secrets/OIDC only. |
 | Dashboard binds localhost by default | Positive | The dashboard server binds `127.0.0.1`; `--remote` is a clear-fail stub (exit 10), so it cannot accidentally expose state on a network. CONFIRMED in `installer-tests.yml` dashboard smoke. |
@@ -285,3 +285,4 @@ file); the full history — the initial audit and every closure — lives in git
 | Rev | Date | Source | Open debt |
 |-----|------|--------|-----------|
 | 2.4 | 2026-07-10 | tech-debt-followup | **L4** — no measure of test-suite effectiveness; opened High / P1 as a next-release program (see Detailed Debt Items). Sole open item. |
+| 2.5 | 2026-07-24 | work-024 test-suite-improvement KB refresh | Corrected **L4**'s stale suite count ~118 → ~133 (live total, matching `test-landscape.md`); no residual-gap row added — the ≤3min/~90s outcome is measured on the post-push CI run, and a later KB-DELTA adds an `L5` row only if the ~90s goal is missed. **L4** remains the sole open item. |

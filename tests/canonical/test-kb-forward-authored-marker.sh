@@ -23,10 +23,6 @@
 #   FI03  Index: 6-column header emitted for Primary section (schema unchanged)
 #   FI04  Index: forward-authored row has non-empty Objective and Summary cells
 #
-#   BD01  Brownfield: existing test-kb-freshness-check.sh still passes unchanged
-#   BD02  Brownfield: existing test-frontmatter-lint.sh still passes unchanged
-#   BD03  Brownfield: existing test-build-kb-index.sh still passes unchanged
-#
 # ISOLATION:
 #   HOME pinned to a throwaway dir before any freshness invocation (FA tests).
 #   Real HOME .aid snapshot taken before/after for the isolation canary (FA07).
@@ -408,34 +404,6 @@ if [[ -f "$IOUT" ]]; then
 else
     fail "FI00 INDEX.md not created at $IOUT"
 fi
-
-# ===========================================================================
-# Section D -- Brownfield regression: existing suites still pass unchanged
-# ===========================================================================
-FRESHNESS_SUITE="${REPO_ROOT}/tests/canonical/test-kb-freshness-check.sh"
-LINT_SUITE="${REPO_ROOT}/tests/canonical/test-frontmatter-lint.sh"
-INDEX_SUITE="${REPO_ROOT}/tests/canonical/test-build-kb-index.sh"
-
-# ---------------------------------------------------------------------------
-# BD01 -- existing test-kb-freshness-check.sh still passes unchanged
-# ---------------------------------------------------------------------------
-bd01_rc=0
-bash "$FRESHNESS_SUITE" >/dev/null 2>&1 || bd01_rc=$?
-assert_exit_zero "$bd01_rc" "BD01 brownfield: test-kb-freshness-check.sh still passes unchanged"
-
-# ---------------------------------------------------------------------------
-# BD02 -- existing test-frontmatter-lint.sh still passes unchanged
-# ---------------------------------------------------------------------------
-bd02_rc=0
-bash "$LINT_SUITE" >/dev/null 2>&1 || bd02_rc=$?
-assert_exit_zero "$bd02_rc" "BD02 brownfield: test-frontmatter-lint.sh still passes unchanged"
-
-# ---------------------------------------------------------------------------
-# BD03 -- existing test-build-kb-index.sh still passes unchanged
-# ---------------------------------------------------------------------------
-bd03_rc=0
-bash "$INDEX_SUITE" >/dev/null 2>&1 || bd03_rc=$?
-assert_exit_zero "$bd03_rc" "BD03 brownfield: test-build-kb-index.sh still passes unchanged"
 
 # ---------------------------------------------------------------------------
 test_summary

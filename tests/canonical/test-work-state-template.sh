@@ -294,12 +294,12 @@ fi
 if [[ -f "$FIRST_RUN" ]]; then
     SEED_SECTION="$(awk '/### 1b-ii/,/### 1c/' "$FIRST_RUN" 2>/dev/null || true)"
     if [[ -n "$SEED_SECTION" ]]; then
-        if echo "$SEED_SECTION" | grep -qF "Print:"; then
+        if grep -qF "Print:" <<<"$SEED_SECTION"; then
             fail "WS20 seed block contains 'Print:' -- would add user-visible output (C4 violation)"
         else
             pass "WS20 seed block has no 'Print:' user-output instruction"
         fi
-        if echo "$SEED_SECTION" | grep -qE '^\[.+\]'; then
+        if grep -qE '^\[.+\]' <<<"$SEED_SECTION"; then
             fail "WS20 seed block contains menu/gate markers -- would add user-facing prompts"
         else
             pass "WS20 seed block has no menu/gate markers"

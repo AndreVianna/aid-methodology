@@ -84,7 +84,7 @@ else
 fi
 
 # DM04 — io_bounds.py regression guard.
-if echo "$declared" | grep -qx "reader/io_bounds.py"; then
+if grep -qx "reader/io_bounds.py" <<<"$declared"; then
     pass "DM04 reader/io_bounds.py is listed in MANIFEST"
 else
     fail "DM04 reader/io_bounds.py missing from MANIFEST (it is imported by reader.py at runtime)"

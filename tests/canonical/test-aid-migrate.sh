@@ -1627,14 +1627,14 @@ assert_exit_eq "$G14_DRY_RC" 0 "G14-01 aid update --dry-run on old-layout codex 
 
 # (a) Output must contain the "Would MOVE TO TRASH" block and a "move to trash:" entry for
 #     one of the retired AID paths.
-if echo "$G14_DRY_OUT" | grep -q "Would MOVE TO TRASH"; then
+if grep -q "Would MOVE TO TRASH" <<<"$G14_DRY_OUT"; then
     pass "G14-02 dry-run output contains 'Would MOVE TO TRASH (retired-layout migration):' header"
 else
     fail "G14-02 dry-run output missing 'Would MOVE TO TRASH (retired-layout migration):' header"
     if [[ "${VERBOSE:-0}" -eq 1 ]]; then printf "DRY OUTPUT:\n%s\n" "$G14_DRY_OUT"; fi
 fi
 
-if echo "$G14_DRY_OUT" | grep -q "move to trash:.*aid-orchestrator"; then
+if grep -q "move to trash:.*aid-orchestrator" <<<"$G14_DRY_OUT"; then
     pass "G14-03 dry-run output lists the retired AID file (aid-orchestrator.md) in the move-to-trash set"
 else
     fail "G14-03 dry-run output does NOT list the retired AID file (aid-orchestrator.md)"

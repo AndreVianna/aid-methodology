@@ -21,6 +21,9 @@ VERBOSE=0
 [[ "${1:-}" =~ ^(-v|--verbose)$ ]] && VERBOSE=1
 
 source "$(dirname "${BASH_SOURCE[0]}")/../lib/assert.sh"
+source "$(dirname "${BASH_SOURCE[0]}")/../lib/pwsh.sh"
+source "$(dirname "${BASH_SOURCE[0]}")/../lib/pwsh-batch.sh"
+source "$(dirname "${BASH_SOURCE[0]}")/../lib/sandbox.sh"
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
@@ -39,12 +42,7 @@ PROFILES_DIR="${REPO_ROOT}/profiles"
 # ---------------------------------------------------------------------------
 # Gate: skip when pwsh is absent.
 # ---------------------------------------------------------------------------
-PWSH=""
-if command -v pwsh >/dev/null 2>&1; then
-    PWSH="pwsh"
-elif [[ -x "/home/andre.vianna/.local/pwsh/pwsh" ]]; then
-    PWSH="/home/andre.vianna/.local/pwsh/pwsh"
-fi
+PWSH="$(detect_pwsh || true)"
 
 if [[ -z "$PWSH" ]]; then
     echo "SKIP: pwsh not found on PATH — skipping aid CLI PowerShell suite (needs PowerShell)."
@@ -52,17 +50,31 @@ if [[ -z "$PWSH" ]]; then
 fi
 
 TMP=$(mktemp -d)
-trap 'rm -rf "$TMP"' EXIT
+trap 'pwsh_session_stop; rm -rf "$TMP"' EXIT
 
 # ISOLATION (see memory: aid-scan-tests-must-pin-home): pin HOME for the WHOLE suite so the
 # update-check cache ($HOME/.aid/.update-check, written by the PS029-* tests that set
 # AID_NO_UPDATE_CHECK=0 with a fake 9.9.9 release) lands in a throwaway, never the developer's
 # real $HOME. Per-invocation HOME overrides still win. Crash-safe (HOME redirected for the whole
-# process). End-of-suite canary asserts the real $HOME cache was untouched.
-REAL_HOME="${HOME}"
-_CANARY_UPDCHK_BEFORE="$(cat "${REAL_HOME}/.aid/.update-check" 2>/dev/null || echo '<absent>')"
-export HOME="${TMP}/home"
+# process). End-of-suite canary (sandbox_assert_aid_untouched) asserts the real HOME's .aid
+# subtree was untouched. sandbox_pin_home also pins the Windows USERPROFILE/HOMEDRIVE/HOMEPATH
+# twin (a safe upgrade for this pwsh-spawning suite; no-op on Linux CI).
+sandbox_pin_home
 mkdir -p "${HOME}/.aid"
+
+# ---------------------------------------------------------------------------
+# pwsh session batching (feature-004 / FR-4, work-024 follow-up): spawn ONE
+# warm responder AFTER the HOME pin, so it inherits the SAME pinned env a cold
+# `-File` start would (a non-scan wrapper resolves the identical $HOME warm vs
+# cold). Every batched aid.ps1 round-trip reuses this one process instead of
+# paying a fresh `pwsh -File` cold start; it degrades transparently to the cold
+# `-File` path if the responder cannot start (see tests/lib/pwsh-batch.sh). The
+# EXIT trap above tears it down. AID_PWSH_NO_SESSION=1 forces the cold path.
+# Residual cold sites (per D3 residual policy): install.ps1 bootstraps,
+# `remove self` / `update self` self-teardown, and the -Command scriptblock
+# stay cold -- see per-site notes below.
+# ---------------------------------------------------------------------------
+pwsh_session_start
 
 FIXTURE_DIR="${TMP}/fixtures"
 mkdir -p "${FIXTURE_DIR}"
@@ -126,12 +138,16 @@ setup_aid_home_both() {
 
 # Helper: run aid.ps1 with an isolated AID_HOME.
 # Usage: run_aid_ps1 <aid_home> [args...]
+# Body routes through the warm pwsh responder (pwsh_session_call); transparently
+# falls back to the cold `-File` path if no session. Byte-identical to the
+# previous cold `env AID_HOME=... pwsh -NoProfile -File aid.ps1 ... 2>&1 | sed`.
 run_aid_ps1() {
     local aid_home="$1"
     shift
-    OUT=$(AID_HOME="$aid_home" AID_LIB_PATH="${aid_home}/lib/AidInstallCore.psm1" \
-          "$PWSH" -NoProfile -File "${aid_home}/bin/aid.ps1" "$@" 2>&1 | \
-          sed 's/\x1b\[[0-9;]*m//g'); RC=$?
+    pwsh_session_call "${aid_home}/bin/aid.ps1" "$PWD" \
+        "AID_HOME=${aid_home}" "AID_LIB_PATH=${aid_home}/lib/AidInstallCore.psm1" \
+        -- "$@"
+    OUT=$(printf '%s' "$PWSH_CALL_OUT" | sed 's/\x1b\[[0-9;]*m//g'); RC=$PWSH_CALL_RC
 }
 
 # Helper: run the Bash aid for parity comparisons.
@@ -143,6 +159,10 @@ run_aid_sh() {
 }
 
 # Helper: run install.ps1 with AID_LIB_PATH set (no network).
+# RESIDUAL COLD: install.ps1 (a DIFFERENT script than aid.ps1) bootstraps /
+# PATH-wires the global CLI; it is out of the aid.ps1 batching scope and stays
+# on the cold `-File` path. (Currently unused -- all PS028-A/B/C/P/R install.ps1
+# cases inline the cold invocation below.)
 run_install_ps1() {
     OUT=$("$PWSH" -NoProfile -File "$INSTALL_PS1" \
           -AidLibPath "${LIB_CORE_PS1}" "$@" 2>&1 | \
@@ -199,6 +219,9 @@ assert_output_not_contains "$OUT" "PATH wiring added" "PS028-C04 -NoPath: no 'PA
 PS028D_HOME=$(newhome)
 setup_aid_home_ps1 "${PS028D_HOME}"
 
+# RESIDUAL COLD (D3 residual policy): `remove self` tears down its own AID_HOME.
+# Left on the cold `-File` path exactly as cli-parity PAR057-P does -- not routed
+# through the warm responder.
 OUT=$(AID_HOME="${PS028D_HOME}" AID_LIB_PATH="${PS028D_HOME}/lib/AidInstallCore.psm1" \
      "$PWSH" -NoProfile -File "${PS028D_HOME}/bin/aid.ps1" \
      remove self -Force 2>&1 | sed 's/\x1b\[[0-9;]*m//g'); RC=$?
@@ -228,11 +251,12 @@ setup_aid_home_ps1 "${PS028F_HOME}"
 TF=$(newtarget)
 
 # Install codex into TF via aid.ps1.
-OUT=$(AID_HOME="${PS028F_HOME}" AID_LIB_PATH="${PS028F_HOME}/lib/AidInstallCore.psm1" \
-     "$PWSH" -NoProfile -File "${PS028F_HOME}/bin/aid.ps1" \
-     add codex \
+pwsh_session_call "${PS028F_HOME}/bin/aid.ps1" "$PWD" \
+     "AID_HOME=${PS028F_HOME}" "AID_LIB_PATH=${PS028F_HOME}/lib/AidInstallCore.psm1" \
+     -- add codex \
      -FromBundle "${FIXTURE_DIR}/aid-codex-v${VERSION}.tar.gz" \
-     -Target "${TF}" 2>&1 | sed 's/\x1b\[[0-9;]*m//g'); RC=$?
+     -Target "${TF}"
+OUT=$(printf '%s' "$PWSH_CALL_OUT" | sed 's/\x1b\[[0-9;]*m//g'); RC=$PWSH_CALL_RC
 assert_exit_eq "$RC" 0 "PS028-F01 PS1 add codex for status test → exit 0"
 
 run_aid_ps1 "${PS028F_HOME}" status -Target "${TF}"
@@ -291,9 +315,10 @@ setup_aid_home_ps1 "${PS028G2_HOME}"
 TG2=$(newtarget)
 
 # Bare aid.ps1: no subcommand arguments; run from within TG2 as cwd.
-OUT=$(cd "${TG2}" && AID_HOME="${PS028G2_HOME}" AID_LIB_PATH="${PS028G2_HOME}/lib/AidInstallCore.psm1" \
-     "$PWSH" -NoProfile -File "${PS028G2_HOME}/bin/aid.ps1" 2>&1 | \
-     sed 's/\x1b\[[0-9;]*m//g'); RC=$?
+pwsh_session_call "${PS028G2_HOME}/bin/aid.ps1" "${TG2}" \
+     "AID_HOME=${PS028G2_HOME}" "AID_LIB_PATH=${PS028G2_HOME}/lib/AidInstallCore.psm1" \
+     --
+OUT=$(printf '%s' "$PWSH_CALL_OUT" | sed 's/\x1b\[[0-9;]*m//g'); RC=$PWSH_CALL_RC
 assert_exit_eq "$RC" 0 "PS028-G2-01 bare aid.ps1 in empty dir → exit 0 (offer)"
 assert_output_contains "$OUT" "no AID project here" "PS028-G2-02 PS1 empty dir: offer message printed"
 assert_output_contains "$OUT" "aid add" "PS028-G2-03 PS1 empty dir: 'aid add' suggested"
@@ -309,16 +334,18 @@ setup_aid_home_ps1 "${PS028G3_HOME}"
 TG3=$(newtarget)
 
 # Install codex via aid.ps1.
-OUT_INSTALL=$(AID_HOME="${PS028G3_HOME}" AID_LIB_PATH="${PS028G3_HOME}/lib/AidInstallCore.psm1" \
-     "$PWSH" -NoProfile -File "${PS028G3_HOME}/bin/aid.ps1" \
-     add codex \
+pwsh_session_call "${PS028G3_HOME}/bin/aid.ps1" "$PWD" \
+     "AID_HOME=${PS028G3_HOME}" "AID_LIB_PATH=${PS028G3_HOME}/lib/AidInstallCore.psm1" \
+     -- add codex \
      -FromBundle "${FIXTURE_DIR}/aid-codex-v${VERSION}.tar.gz" \
-     -Target "${TG3}" 2>&1 | sed 's/\x1b\[[0-9;]*m//g'); RC_INSTALL=$?
+     -Target "${TG3}"
+OUT_INSTALL=$(printf '%s' "$PWSH_CALL_OUT" | sed 's/\x1b\[[0-9;]*m//g'); RC_INSTALL=$PWSH_CALL_RC
 assert_exit_eq "$RC_INSTALL" 0 "PS028-G2-07 pre-install codex for PS1 dashboard test → exit 0"
 
-OUT=$(cd "${TG3}" && AID_HOME="${PS028G3_HOME}" AID_LIB_PATH="${PS028G3_HOME}/lib/AidInstallCore.psm1" \
-     "$PWSH" -NoProfile -File "${PS028G3_HOME}/bin/aid.ps1" 2>&1 | \
-     sed 's/\x1b\[[0-9;]*m//g'); RC=$?
+pwsh_session_call "${PS028G3_HOME}/bin/aid.ps1" "${TG3}" \
+     "AID_HOME=${PS028G3_HOME}" "AID_LIB_PATH=${PS028G3_HOME}/lib/AidInstallCore.psm1" \
+     --
+OUT=$(printf '%s' "$PWSH_CALL_OUT" | sed 's/\x1b\[[0-9;]*m//g'); RC=$PWSH_CALL_RC
 assert_exit_eq "$RC" 0 "PS028-G2-08 bare aid.ps1 in project dir → exit 0"
 assert_output_contains "$OUT" "AID v${VERSION}" "PS028-G2-09 PS1 dashboard with tools: header"
 assert_output_contains "$OUT" "Installed tools (in" "PS028-G2-10 PS1 dashboard with tools: 'Installed tools (in'"
@@ -341,8 +368,10 @@ BASH_DASH=$(cd "${TG4}" && AID_HOME="${PS028G4_HOME}" AID_LIB_PATH="${PS028G4_HO
     bash "${PS028G4_HOME}/bin/aid" 2>&1)
 
 # PS1 bare-aid output.
-PS1_DASH=$(cd "${TG4}" && AID_HOME="${PS028G4_HOME}" AID_LIB_PATH="${PS028G4_HOME}/lib/AidInstallCore.psm1" \
-    "$PWSH" -NoProfile -File "${PS028G4_HOME}/bin/aid.ps1" 2>&1 | sed 's/\x1b\[[0-9;]*m//g')
+pwsh_session_call "${PS028G4_HOME}/bin/aid.ps1" "${TG4}" \
+    "AID_HOME=${PS028G4_HOME}" "AID_LIB_PATH=${PS028G4_HOME}/lib/AidInstallCore.psm1" \
+    --
+PS1_DASH=$(printf '%s' "$PWSH_CALL_OUT" | sed 's/\x1b\[[0-9;]*m//g')
 
 assert_output_contains "$BASH_DASH" "AID v${VERSION}" "PS028-G2-13a Bash dashboard: header present"
 assert_output_contains "$PS1_DASH"  "AID v${VERSION}" "PS028-G2-13b PS1 dashboard: header present"
@@ -358,20 +387,22 @@ PS028H_HOME=$(newhome)
 setup_aid_home_ps1 "${PS028H_HOME}"
 TH=$(newtarget)
 
-OUT=$(AID_HOME="${PS028H_HOME}" AID_LIB_PATH="${PS028H_HOME}/lib/AidInstallCore.psm1" \
-     "$PWSH" -NoProfile -File "${PS028H_HOME}/bin/aid.ps1" \
-     add codex \
+pwsh_session_call "${PS028H_HOME}/bin/aid.ps1" "$PWD" \
+     "AID_HOME=${PS028H_HOME}" "AID_LIB_PATH=${PS028H_HOME}/lib/AidInstallCore.psm1" \
+     -- add codex \
      -FromBundle "${FIXTURE_DIR}/aid-codex-v${VERSION}.tar.gz" \
-     -Target "${TH}" 2>&1 | sed 's/\x1b\[[0-9;]*m//g'); RC=$?
+     -Target "${TH}"
+OUT=$(printf '%s' "$PWSH_CALL_OUT" | sed 's/\x1b\[[0-9;]*m//g'); RC=$PWSH_CALL_RC
 assert_exit_eq "$RC" 0 "PS028-H01 PS1 add codex → exit 0"
 assert_dir_exists "${TH}/.codex" "PS028-H02 .codex/ created"
 assert_file_exists "${TH}/AGENTS.md" "PS028-H03 AGENTS.md created"
 assert_output_contains "$OUT" "Done." "PS028-H04 PS1 add reports Done."
 
-OUT=$(AID_HOME="${PS028H_HOME}" AID_LIB_PATH="${PS028H_HOME}/lib/AidInstallCore.psm1" \
-     "$PWSH" -NoProfile -File "${PS028H_HOME}/bin/aid.ps1" \
-     remove codex \
-     -Target "${TH}" 2>&1 | sed 's/\x1b\[[0-9;]*m//g'); RC=$?
+pwsh_session_call "${PS028H_HOME}/bin/aid.ps1" "$PWD" \
+     "AID_HOME=${PS028H_HOME}" "AID_LIB_PATH=${PS028H_HOME}/lib/AidInstallCore.psm1" \
+     -- remove codex \
+     -Target "${TH}"
+OUT=$(printf '%s' "$PWSH_CALL_OUT" | sed 's/\x1b\[[0-9;]*m//g'); RC=$PWSH_CALL_RC
 assert_exit_eq "$RC" 0 "PS028-H05 PS1 remove codex → exit 0"
 assert_eq "$([[ -d "${TH}/.codex" ]] && echo exists || echo gone)" "gone" \
     "PS028-H06 .codex/ removed after PS1 remove"
@@ -384,11 +415,12 @@ PS028I_HOME=$(newhome)
 setup_aid_home_ps1 "${PS028I_HOME}"
 TI=$(newtarget)
 
-OUT=$(AID_HOME="${PS028I_HOME}" AID_LIB_PATH="${PS028I_HOME}/lib/AidInstallCore.psm1" \
-     "$PWSH" -NoProfile -File "${PS028I_HOME}/bin/aid.ps1" \
-     add claude-code,codex \
+pwsh_session_call "${PS028I_HOME}/bin/aid.ps1" "$PWD" \
+     "AID_HOME=${PS028I_HOME}" "AID_LIB_PATH=${PS028I_HOME}/lib/AidInstallCore.psm1" \
+     -- add claude-code,codex \
      -FromBundle "${FIXTURE_DIR}" \
-     -Target "${TI}" 2>&1 | sed 's/\x1b\[[0-9;]*m//g'); RC=$?
+     -Target "${TI}"
+OUT=$(printf '%s' "$PWSH_CALL_OUT" | sed 's/\x1b\[[0-9;]*m//g'); RC=$PWSH_CALL_RC
 assert_exit_eq "$RC" 0 "PS028-I01 PS1 add claude-code,codex → exit 0"
 assert_dir_exists "${TI}/.claude" "PS028-I02 .claude/ created"
 assert_dir_exists "${TI}/.codex" "PS028-I03 .codex/ created"
@@ -403,27 +435,30 @@ setup_aid_home_ps1 "${PS028J_HOME}"
 TJ=$(newtarget)
 
 # Install then update.
-OUT=$(AID_HOME="${PS028J_HOME}" AID_LIB_PATH="${PS028J_HOME}/lib/AidInstallCore.psm1" \
-     "$PWSH" -NoProfile -File "${PS028J_HOME}/bin/aid.ps1" \
-     add codex \
+pwsh_session_call "${PS028J_HOME}/bin/aid.ps1" "$PWD" \
+     "AID_HOME=${PS028J_HOME}" "AID_LIB_PATH=${PS028J_HOME}/lib/AidInstallCore.psm1" \
+     -- add codex \
      -FromBundle "${FIXTURE_DIR}/aid-codex-v${VERSION}.tar.gz" \
-     -Target "${TJ}" 2>&1 | sed 's/\x1b\[[0-9;]*m//g'); RC=$?
+     -Target "${TJ}"
+OUT=$(printf '%s' "$PWSH_CALL_OUT" | sed 's/\x1b\[[0-9;]*m//g'); RC=$PWSH_CALL_RC
 assert_exit_eq "$RC" 0 "PS028-J01 PS1 add codex for update test → exit 0"
 
-OUT=$(AID_HOME="${PS028J_HOME}" AID_LIB_PATH="${PS028J_HOME}/lib/AidInstallCore.psm1" \
-     "$PWSH" -NoProfile -File "${PS028J_HOME}/bin/aid.ps1" \
-     update codex \
+pwsh_session_call "${PS028J_HOME}/bin/aid.ps1" "$PWD" \
+     "AID_HOME=${PS028J_HOME}" "AID_LIB_PATH=${PS028J_HOME}/lib/AidInstallCore.psm1" \
+     -- update codex \
      -FromBundle "${FIXTURE_DIR}/aid-codex-v${VERSION}.tar.gz" \
-     -Target "${TJ}" 2>&1 | sed 's/\x1b\[[0-9;]*m//g'); RC=$?
+     -Target "${TJ}"
+OUT=$(printf '%s' "$PWSH_CALL_OUT" | sed 's/\x1b\[[0-9;]*m//g'); RC=$PWSH_CALL_RC
 assert_exit_eq "$RC" 2 "PS028-J02 PS1 update <tool> positional → exit 2 (usage error)"
 assert_output_contains "$OUT" "unexpected argument" "PS028-J03 PS1 update <tool>: error mentions 'unexpected argument'"
 
 # FR10: Dir with no .aid/ → update CLI only (exit 0).
 TJ_EMPTY=$(newtarget)
-OUT=$(AID_HOME="${PS028J_HOME}" AID_LIB_PATH="${PS028J_HOME}/lib/AidInstallCore.psm1" \
-     "$PWSH" -NoProfile -File "${PS028J_HOME}/bin/aid.ps1" \
-     update \
-     -Target "${TJ_EMPTY}" 2>&1 | sed 's/\x1b\[[0-9;]*m//g'); RC=$?
+pwsh_session_call "${PS028J_HOME}/bin/aid.ps1" "$PWD" \
+     "AID_HOME=${PS028J_HOME}" "AID_LIB_PATH=${PS028J_HOME}/lib/AidInstallCore.psm1" \
+     -- update \
+     -Target "${TJ_EMPTY}"
+OUT=$(printf '%s' "$PWSH_CALL_OUT" | sed 's/\x1b\[[0-9;]*m//g'); RC=$PWSH_CALL_RC
 assert_exit_eq "$RC" 0 "PS028-J04 PS1 update dir with no .aid/ → exit 0 (CLI-only update)"
 
 # ===========================================================================
@@ -433,17 +468,19 @@ PS028K_HOME=$(newhome)
 setup_aid_home_ps1 "${PS028K_HOME}"
 TK=$(newtarget)
 
-OUT=$(AID_HOME="${PS028K_HOME}" AID_LIB_PATH="${PS028K_HOME}/lib/AidInstallCore.psm1" \
-     "$PWSH" -NoProfile -File "${PS028K_HOME}/bin/aid.ps1" \
-     add codex \
+pwsh_session_call "${PS028K_HOME}/bin/aid.ps1" "$PWD" \
+     "AID_HOME=${PS028K_HOME}" "AID_LIB_PATH=${PS028K_HOME}/lib/AidInstallCore.psm1" \
+     -- add codex \
      -FromBundle "${FIXTURE_DIR}/aid-codex-v${VERSION}.tar.gz" \
-     -Target "${TK}" 2>&1 | sed 's/\x1b\[[0-9;]*m//g'); RC=$?
+     -Target "${TK}"
+OUT=$(printf '%s' "$PWSH_CALL_OUT" | sed 's/\x1b\[[0-9;]*m//g'); RC=$PWSH_CALL_RC
 assert_exit_eq "$RC" 0 "PS028-K01 PS1 add for remove test → exit 0"
 
-OUT=$(AID_HOME="${PS028K_HOME}" AID_LIB_PATH="${PS028K_HOME}/lib/AidInstallCore.psm1" \
-     "$PWSH" -NoProfile -File "${PS028K_HOME}/bin/aid.ps1" \
-     remove -Force \
-     -Target "${TK}" 2>&1 | sed 's/\x1b\[[0-9;]*m//g'); RC=$?
+pwsh_session_call "${PS028K_HOME}/bin/aid.ps1" "$PWD" \
+     "AID_HOME=${PS028K_HOME}" "AID_LIB_PATH=${PS028K_HOME}/lib/AidInstallCore.psm1" \
+     -- remove -Force \
+     -Target "${TK}"
+OUT=$(printf '%s' "$PWSH_CALL_OUT" | sed 's/\x1b\[[0-9;]*m//g'); RC=$PWSH_CALL_RC
 assert_exit_eq "$RC" 0 "PS028-K02 PS1 remove -Force (all) → exit 0"
 assert_eq "$([[ -d "${TK}/.codex" ]] && echo exists || echo gone)" "gone" \
     "PS028-K03 .codex/ removed after PS1 remove"
@@ -458,11 +495,12 @@ setup_aid_home_ps1 "${PS028L_HOME}"
 TL=$(newtarget)
 printf 'User AGENTS.md pre-placed\n' > "${TL}/AGENTS.md"
 
-OUT=$(AID_HOME="${PS028L_HOME}" AID_LIB_PATH="${PS028L_HOME}/lib/AidInstallCore.psm1" \
-     "$PWSH" -NoProfile -File "${PS028L_HOME}/bin/aid.ps1" \
-     add codex \
+pwsh_session_call "${PS028L_HOME}/bin/aid.ps1" "$PWD" \
+     "AID_HOME=${PS028L_HOME}" "AID_LIB_PATH=${PS028L_HOME}/lib/AidInstallCore.psm1" \
+     -- add codex \
      -FromBundle "${FIXTURE_DIR}/aid-codex-v${VERSION}.tar.gz" \
-     -Target "${TL}" 2>&1 | sed 's/\x1b\[[0-9;]*m//g'); RC=$?
+     -Target "${TL}"
+OUT=$(printf '%s' "$PWSH_CALL_OUT" | sed 's/\x1b\[[0-9;]*m//g'); RC=$PWSH_CALL_RC
 assert_exit_eq "$RC" 0 "PS028-L01 PS1 add with pre-placed AGENTS.md → exit 0 (in-place update)"
 # No .aid-new sidecar — eliminated by new in-place region contract.
 assert_eq "$([[ -f "${TL}/AGENTS.md.aid-new" ]] && echo exists || echo none)" "none" \
@@ -602,6 +640,9 @@ TS=$(newtarget)
 
 # Run aid.ps1 via scriptblock/iex pattern — this simulates piped execution where
 # $PSCommandPath is null.  We use Invoke-Expression on the script content.
+# RESIDUAL COLD: this is a `-Command` scriptblock (NOT `-File aid.ps1`) that
+# exercises piped/$PSCommandPath-null mode -- deliberately outside the warm
+# file-mode responder; stays cold (D3 residual policy: nested/non-wrapper shape).
 OUT=$("$PWSH" -NoProfile -Command "
     \$env:AID_HOME = '${PS028S_HOME}'
     \$env:AID_LIB_PATH = '${PS028S_HOME}/lib/AidInstallCore.psm1'
@@ -627,9 +668,9 @@ assert_exit_eq "$RC" 0 "PS028-S01 scriptblock invocation: pwsh session survives"
 # and aid exits with error code 1 (not 7). The exit-code propagation (7) requires
 # the production code to handle piped-mode AID_CODE_HOME fallback -- tracked for
 # a future task. For now, assert the session survives (S01) and note the limitation.
-if echo "${OUT}" | grep -q "Exit code: 7"; then
+if grep -q "Exit code: 7" <<<"${OUT}"; then
     pass "PS028-S02 scriptblock: aid status exit 7 propagated via LASTEXITCODE"
-elif echo "${OUT}" | grep -q "AID_CODE_HOME unresolved"; then
+elif grep -q "AID_CODE_HOME unresolved" <<<"${OUT}"; then
     pass "PS028-S02 scriptblock: piped mode / CODE_HOME fallback not yet implemented (feature-001 limitation -- deferred)"
 else
     pass "PS028-S02 scriptblock: session survived (exit-code propagation deferred to PS1 piped-mode fix)"
@@ -684,11 +725,12 @@ setup_aid_home_both "${PS028V_HOME}"
 TV=$(newtarget)
 
 # Install both tools via PS1.
-OUT=$(AID_HOME="${PS028V_HOME}" AID_LIB_PATH="${PS028V_HOME}/lib/AidInstallCore.psm1" \
-     "$PWSH" -NoProfile -File "${PS028V_HOME}/bin/aid.ps1" \
-     add claude-code,codex \
+pwsh_session_call "${PS028V_HOME}/bin/aid.ps1" "$PWD" \
+     "AID_HOME=${PS028V_HOME}" "AID_LIB_PATH=${PS028V_HOME}/lib/AidInstallCore.psm1" \
+     -- add claude-code,codex \
      -FromBundle "${FIXTURE_DIR}" \
-     -Target "${TV}" 2>&1 | sed 's/\x1b\[[0-9;]*m//g'); RC=$?
+     -Target "${TV}"
+OUT=$(printf '%s' "$PWSH_CALL_OUT" | sed 's/\x1b\[[0-9;]*m//g'); RC=$PWSH_CALL_RC
 assert_exit_eq "$RC" 0 "PS028-V01 PS1 add 2 tools same version → exit 0"
 
 run_aid_ps1 "${PS028V_HOME}" status -Target "${TV}"
@@ -707,11 +749,12 @@ setup_aid_home_both "${PS028W2_HOME}"
 TW2=$(newtarget)
 
 # Install codex via PS1.
-OUT=$(AID_HOME="${PS028W2_HOME}" AID_LIB_PATH="${PS028W2_HOME}/lib/AidInstallCore.psm1" \
-     "$PWSH" -NoProfile -File "${PS028W2_HOME}/bin/aid.ps1" \
-     add codex \
+pwsh_session_call "${PS028W2_HOME}/bin/aid.ps1" "$PWD" \
+     "AID_HOME=${PS028W2_HOME}" "AID_LIB_PATH=${PS028W2_HOME}/lib/AidInstallCore.psm1" \
+     -- add codex \
      -FromBundle "${FIXTURE_DIR}/aid-codex-v${VERSION}.tar.gz" \
-     -Target "${TW2}" 2>&1 | sed 's/\x1b\[[0-9;]*m//g'); RC=$?
+     -Target "${TW2}"
+OUT=$(printf '%s' "$PWSH_CALL_OUT" | sed 's/\x1b\[[0-9;]*m//g'); RC=$PWSH_CALL_RC
 assert_exit_eq "$RC" 0 "PS028-W2-01 PS1 add codex for behind-test → exit 0"
 
 # Patch manifest to make tool appear older.
@@ -737,11 +780,12 @@ setup_aid_home_both "${PS028X2_HOME}"
 TX2=$(newtarget)
 
 # Install two tools.
-OUT=$(AID_HOME="${PS028X2_HOME}" AID_LIB_PATH="${PS028X2_HOME}/lib/AidInstallCore.psm1" \
-     "$PWSH" -NoProfile -File "${PS028X2_HOME}/bin/aid.ps1" \
-     add claude-code,codex \
+pwsh_session_call "${PS028X2_HOME}/bin/aid.ps1" "$PWD" \
+     "AID_HOME=${PS028X2_HOME}" "AID_LIB_PATH=${PS028X2_HOME}/lib/AidInstallCore.psm1" \
+     -- add claude-code,codex \
      -FromBundle "${FIXTURE_DIR}" \
-     -Target "${TX2}" 2>&1 | sed 's/\x1b\[[0-9;]*m//g'); RC=$?
+     -Target "${TX2}"
+OUT=$(printf '%s' "$PWSH_CALL_OUT" | sed 's/\x1b\[[0-9;]*m//g'); RC=$PWSH_CALL_RC
 assert_exit_eq "$RC" 0 "PS028-X2-01 PS1 add 2 tools for divergent test → exit 0"
 
 # Patch claude-code to older version.
@@ -817,11 +861,12 @@ TA_PS=$(newtarget)
 # Add minimal .aid/ fixture so bare aid enters dashboard (not the no-.aid/ offer path).
 mkdir -p "${TA_PS}/.aid"
 printf 'format_version: 1\n' > "${TA_PS}/.aid/settings.yml"
-OUT=$(cd "${TA_PS}" && AID_HOME="${PS029A_HOME}" AID_NO_UPDATE_CHECK=0 \
-     AID_UPDATE_CHECK_URL="${_ps_check_url_a}" \
-     AID_LIB_PATH="${PS029A_HOME}/lib/AidInstallCore.psm1" \
-     "$PWSH" -NoProfile -File "${PS029A_HOME}/bin/aid.ps1" 2>&1 | \
-     sed 's/\x1b\[[0-9;]*m//g'); RC=$?
+pwsh_session_call "${PS029A_HOME}/bin/aid.ps1" "${TA_PS}" \
+     "AID_HOME=${PS029A_HOME}" "AID_NO_UPDATE_CHECK=0" \
+     "AID_UPDATE_CHECK_URL=${_ps_check_url_a}" \
+     "AID_LIB_PATH=${PS029A_HOME}/lib/AidInstallCore.psm1" \
+     --
+OUT=$(printf '%s' "$PWSH_CALL_OUT" | sed 's/\x1b\[[0-9;]*m//g'); RC=$PWSH_CALL_RC
 assert_exit_eq "$RC" 0 "PS029-A01 bare aid.ps1 with newer version → exit 0"
 assert_output_contains "$OUT" "A newer aid CLI is available" "PS029-A02 PS1 notice shown"
 assert_output_contains "$OUT" "v9.9.9" "PS029-A03 PS1 notice: latest version"
@@ -842,17 +887,18 @@ _ps_check_url_b="file://${_ps_json_b}"
 
 TB_PS=$(newtarget)
 # Install codex so status exits 0.
-OUT=$(AID_HOME="${PS029B_HOME}" AID_LIB_PATH="${PS029B_HOME}/lib/AidInstallCore.psm1" \
-     "$PWSH" -NoProfile -File "${PS029B_HOME}/bin/aid.ps1" \
-     add codex \
+pwsh_session_call "${PS029B_HOME}/bin/aid.ps1" "$PWD" \
+     "AID_HOME=${PS029B_HOME}" "AID_LIB_PATH=${PS029B_HOME}/lib/AidInstallCore.psm1" \
+     -- add codex \
      -FromBundle "${FIXTURE_DIR}/aid-codex-v${VERSION}.tar.gz" \
-     -Target "${TB_PS}" 2>&1 | sed 's/\x1b\[[0-9;]*m//g')
-OUT=$(AID_HOME="${PS029B_HOME}" AID_NO_UPDATE_CHECK=0 \
-     AID_UPDATE_CHECK_URL="${_ps_check_url_b}" \
-     AID_LIB_PATH="${PS029B_HOME}/lib/AidInstallCore.psm1" \
-     "$PWSH" -NoProfile -File "${PS029B_HOME}/bin/aid.ps1" \
-     status -Target "${TB_PS}" 2>&1 | \
-     sed 's/\x1b\[[0-9;]*m//g'); RC=$?
+     -Target "${TB_PS}"
+OUT=$(printf '%s' "$PWSH_CALL_OUT" | sed 's/\x1b\[[0-9;]*m//g')
+pwsh_session_call "${PS029B_HOME}/bin/aid.ps1" "$PWD" \
+     "AID_HOME=${PS029B_HOME}" "AID_NO_UPDATE_CHECK=0" \
+     "AID_UPDATE_CHECK_URL=${_ps_check_url_b}" \
+     "AID_LIB_PATH=${PS029B_HOME}/lib/AidInstallCore.psm1" \
+     -- status -Target "${TB_PS}"
+OUT=$(printf '%s' "$PWSH_CALL_OUT" | sed 's/\x1b\[[0-9;]*m//g'); RC=$PWSH_CALL_RC
 assert_exit_eq "$RC" 0 "PS029-B01 aid.ps1 status with newer version → exit 0"
 assert_output_contains "$OUT" "A newer aid CLI is available" "PS029-B02 aid.ps1 status shows notice"
 assert_output_contains "$OUT" "v9.9.9" "PS029-B03 aid.ps1 status notice: latest version"
@@ -869,11 +915,12 @@ _ps_json_c="$(make_release_json_ps1 "${PS029_JSON_DIR_C}" "${VERSION}")"
 _ps_check_url_c="file://${_ps_json_c}"
 
 TC_PS=$(newtarget)
-OUT=$(cd "${TC_PS}" && AID_HOME="${PS029C_HOME}" AID_NO_UPDATE_CHECK=0 \
-     AID_UPDATE_CHECK_URL="${_ps_check_url_c}" \
-     AID_LIB_PATH="${PS029C_HOME}/lib/AidInstallCore.psm1" \
-     "$PWSH" -NoProfile -File "${PS029C_HOME}/bin/aid.ps1" 2>&1 | \
-     sed 's/\x1b\[[0-9;]*m//g'); RC=$?
+pwsh_session_call "${PS029C_HOME}/bin/aid.ps1" "${TC_PS}" \
+     "AID_HOME=${PS029C_HOME}" "AID_NO_UPDATE_CHECK=0" \
+     "AID_UPDATE_CHECK_URL=${_ps_check_url_c}" \
+     "AID_LIB_PATH=${PS029C_HOME}/lib/AidInstallCore.psm1" \
+     --
+OUT=$(printf '%s' "$PWSH_CALL_OUT" | sed 's/\x1b\[[0-9;]*m//g'); RC=$PWSH_CALL_RC
 assert_exit_eq "$RC" 0 "PS029-C01 same version → exit 0"
 assert_output_not_contains "$OUT" "A newer aid CLI is available" "PS029-C02 same version: no notice"
 
@@ -885,10 +932,11 @@ setup_aid_home_ps1 "${PS029D_HOME}"
 printf '0.1.0\n' > "${PS029D_HOME}/VERSION"
 
 TD_PS=$(newtarget)
-OUT=$(cd "${TD_PS}" && AID_HOME="${PS029D_HOME}" AID_NO_UPDATE_CHECK=1 \
-     AID_LIB_PATH="${PS029D_HOME}/lib/AidInstallCore.psm1" \
-     "$PWSH" -NoProfile -File "${PS029D_HOME}/bin/aid.ps1" 2>&1 | \
-     sed 's/\x1b\[[0-9;]*m//g'); RC=$?
+pwsh_session_call "${PS029D_HOME}/bin/aid.ps1" "${TD_PS}" \
+     "AID_HOME=${PS029D_HOME}" "AID_NO_UPDATE_CHECK=1" \
+     "AID_LIB_PATH=${PS029D_HOME}/lib/AidInstallCore.psm1" \
+     --
+OUT=$(printf '%s' "$PWSH_CALL_OUT" | sed 's/\x1b\[[0-9;]*m//g'); RC=$PWSH_CALL_RC
 assert_exit_eq "$RC" 0 "PS029-D01 AID_NO_UPDATE_CHECK=1 → exit 0"
 assert_output_not_contains "$OUT" "A newer aid CLI is available" "PS029-D02 opt-out: no notice"
 
@@ -900,11 +948,12 @@ setup_aid_home_ps1 "${PS029E_HOME}"
 printf '0.1.0\n' > "${PS029E_HOME}/VERSION"
 
 TE_PS=$(newtarget)
-OUT=$(cd "${TE_PS}" && AID_HOME="${PS029E_HOME}" AID_NO_UPDATE_CHECK=0 \
-     AID_UPDATE_CHECK_URL="file:///no/such/file.json" \
-     AID_LIB_PATH="${PS029E_HOME}/lib/AidInstallCore.psm1" \
-     "$PWSH" -NoProfile -File "${PS029E_HOME}/bin/aid.ps1" 2>&1 | \
-     sed 's/\x1b\[[0-9;]*m//g'); RC=$?
+pwsh_session_call "${PS029E_HOME}/bin/aid.ps1" "${TE_PS}" \
+     "AID_HOME=${PS029E_HOME}" "AID_NO_UPDATE_CHECK=0" \
+     "AID_UPDATE_CHECK_URL=file:///no/such/file.json" \
+     "AID_LIB_PATH=${PS029E_HOME}/lib/AidInstallCore.psm1" \
+     --
+OUT=$(printf '%s' "$PWSH_CALL_OUT" | sed 's/\x1b\[[0-9;]*m//g'); RC=$PWSH_CALL_RC
 assert_exit_eq "$RC" 0 "PS029-E01 failing check URL → command still exits 0"
 assert_output_not_contains "$OUT" "ERROR" "PS029-E02 failing check: no ERROR in output"
 
@@ -929,10 +978,12 @@ SH_NOTICE=$(cd "${TF_SH}" && AID_HOME="${PS029F_HOME_SH}" AID_NO_UPDATE_CHECK=0 
      AID_UPDATE_CHECK_URL="${_ps_check_url_f}" \
      AID_LIB_PATH="${PS029F_HOME_SH}/lib/aid-install-core.sh" \
      bash "${PS029F_HOME_SH}/bin/aid" 2>&1 | grep "A newer aid CLI")
-PS1_NOTICE=$(cd "${TF_PS}" && AID_HOME="${PS029F_HOME_PS}" AID_NO_UPDATE_CHECK=0 \
-     AID_UPDATE_CHECK_URL="${_ps_check_url_f}" \
-     AID_LIB_PATH="${PS029F_HOME_PS}/lib/AidInstallCore.psm1" \
-     "$PWSH" -NoProfile -File "${PS029F_HOME_PS}/bin/aid.ps1" 2>&1 | \
+pwsh_session_call "${PS029F_HOME_PS}/bin/aid.ps1" "${TF_PS}" \
+     "AID_HOME=${PS029F_HOME_PS}" "AID_NO_UPDATE_CHECK=0" \
+     "AID_UPDATE_CHECK_URL=${_ps_check_url_f}" \
+     "AID_LIB_PATH=${PS029F_HOME_PS}/lib/AidInstallCore.psm1" \
+     --
+PS1_NOTICE=$(printf '%s' "$PWSH_CALL_OUT" | \
      sed 's/\x1b\[[0-9;]*m//g' | grep "A newer aid CLI")
 assert_eq "$SH_NOTICE" "$PS1_NOTICE" "PS029-F01 notice text parity: Bash == PS1"
 
@@ -945,6 +996,9 @@ PS029G_HOME=$(newhome)
 setup_aid_home_ps1 "${PS029G_HOME}"
 
 # Point at a non-existent URL so Invoke-RestMethod fails immediately.
+# RESIDUAL COLD (D3 residual policy): `update self` re-bootstraps the CLI
+# (Invoke-RestMethod + re-exec) and may read stdin; left on the cold `-File`
+# path exactly as cli-parity PAR078-U does -- not routed through the responder.
 OUT=$(AID_HOME="${PS029G_HOME}" AID_NO_UPDATE_CHECK=1 \
      AID_INSTALL_URL="file:///no/such/install.ps1" \
      AID_LIB_PATH="${PS029G_HOME}/lib/AidInstallCore.psm1" \
@@ -968,20 +1022,21 @@ _ps_check_url_h="file://${_ps_json_h}"
 
 TH_PS=$(newtarget)
 # Install codex first.
-AID_HOME="${PS029H_HOME}" AID_LIB_PATH="${PS029H_HOME}/lib/AidInstallCore.psm1" \
-    "$PWSH" -NoProfile -File "${PS029H_HOME}/bin/aid.ps1" \
-    add codex \
+pwsh_session_call "${PS029H_HOME}/bin/aid.ps1" "$PWD" \
+    "AID_HOME=${PS029H_HOME}" "AID_LIB_PATH=${PS029H_HOME}/lib/AidInstallCore.psm1" \
+    -- add codex \
     -FromBundle "${FIXTURE_DIR}/aid-codex-v${VERSION}.tar.gz" \
-    -Target "${TH_PS}" >/dev/null 2>&1
+    -Target "${TH_PS}"
 
 # Run 'aid update' — must NOT show the notice.
-OUT=$(AID_HOME="${PS029H_HOME}" AID_NO_UPDATE_CHECK=0 \
-     AID_UPDATE_CHECK_URL="${_ps_check_url_h}" \
-     AID_LIB_PATH="${PS029H_HOME}/lib/AidInstallCore.psm1" \
-     "$PWSH" -NoProfile -File "${PS029H_HOME}/bin/aid.ps1" \
-     update \
+pwsh_session_call "${PS029H_HOME}/bin/aid.ps1" "$PWD" \
+     "AID_HOME=${PS029H_HOME}" "AID_NO_UPDATE_CHECK=0" \
+     "AID_UPDATE_CHECK_URL=${_ps_check_url_h}" \
+     "AID_LIB_PATH=${PS029H_HOME}/lib/AidInstallCore.psm1" \
+     -- update \
      -FromBundle "${FIXTURE_DIR}/aid-codex-v${VERSION}.tar.gz" \
-     -Target "${TH_PS}" 2>&1 | sed 's/\x1b\[[0-9;]*m//g'); RC=$?
+     -Target "${TH_PS}"
+OUT=$(printf '%s' "$PWSH_CALL_OUT" | sed 's/\x1b\[[0-9;]*m//g'); RC=$PWSH_CALL_RC
 assert_exit_eq "$RC" 0 "PS029-H01 aid.ps1 update → exit 0"
 assert_output_not_contains "$OUT" "A newer aid CLI is available" "PS029-H02 update cmd: no update check notice"
 
@@ -993,21 +1048,24 @@ assert_output_not_contains "$OUT" "A newer aid CLI is available" "PS029-H02 upda
 PS029I_HOME=$(newhome)
 setup_aid_home_ps1 "${PS029I_HOME}"
 TI_CONF=$(newtarget)
-AID_HOME="${PS029I_HOME}" AID_LIB_PATH="${PS029I_HOME}/lib/AidInstallCore.psm1" \
-    "$PWSH" -NoProfile -File "${PS029I_HOME}/bin/aid.ps1" \
-    add codex \
+pwsh_session_call "${PS029I_HOME}/bin/aid.ps1" "$PWD" \
+    "AID_HOME=${PS029I_HOME}" "AID_LIB_PATH=${PS029I_HOME}/lib/AidInstallCore.psm1" \
+    -- add codex \
     -FromBundle "${FIXTURE_DIR}/aid-codex-v${VERSION}.tar.gz" \
-    -Target "${TI_CONF}" >/dev/null 2>&1
+    -Target "${TI_CONF}"
 
 # Use -Force to guarantee no hang (non-interactive remove).
-OUT=$(AID_HOME="${PS029I_HOME}" AID_LIB_PATH="${PS029I_HOME}/lib/AidInstallCore.psm1" \
-     "$PWSH" -NoProfile -File "${PS029I_HOME}/bin/aid.ps1" \
-     remove -Force \
-     -Target "${TI_CONF}" 2>&1 | sed 's/\x1b\[[0-9;]*m//g'); RC=$?
+pwsh_session_call "${PS029I_HOME}/bin/aid.ps1" "$PWD" \
+     "AID_HOME=${PS029I_HOME}" "AID_LIB_PATH=${PS029I_HOME}/lib/AidInstallCore.psm1" \
+     -- remove -Force \
+     -Target "${TI_CONF}"
+OUT=$(printf '%s' "$PWSH_CALL_OUT" | sed 's/\x1b\[[0-9;]*m//g'); RC=$PWSH_CALL_RC
 assert_exit_eq "$RC" 0 "PS029-I01 PS1 remove -Force → exit 0 (no hang)"
 assert_output_contains "$OUT" "Uninstall complete." "PS029-I02 PS1 remove -Force: completed"
 
 # I03: remove self -Force → tears down AID_HOME
+# RESIDUAL COLD (D3 residual policy): `remove self` self-teardown, cold `-File`
+# path (see PS028-D / cli-parity PAR057-P).
 PS029I2_HOME=$(newhome)
 setup_aid_home_ps1 "${PS029I2_HOME}"
 OUT=$(AID_HOME="${PS029I2_HOME}" AID_LIB_PATH="${PS029I2_HOME}/lib/AidInstallCore.psm1" \
@@ -1037,8 +1095,10 @@ setup_aid_home_ps1 "${PS029J_HOME_PS}"
 # General help: both should contain 'Flags:' and 'aid <command> -h'.
 SH_HELP=$(AID_HOME="${PS029J_HOME_SH}" AID_LIB_PATH="${PS029J_HOME_SH}/lib/aid-install-core.sh" \
     bash "${PS029J_HOME_SH}/bin/aid" -h 2>&1)
-PS1_HELP=$(AID_HOME="${PS029J_HOME_PS}" AID_LIB_PATH="${PS029J_HOME_PS}/lib/AidInstallCore.psm1" \
-    "$PWSH" -NoProfile -File "${PS029J_HOME_PS}/bin/aid.ps1" -h 2>&1 | sed 's/\x1b\[[0-9;]*m//g')
+pwsh_session_call "${PS029J_HOME_PS}/bin/aid.ps1" "$PWD" \
+    "AID_HOME=${PS029J_HOME_PS}" "AID_LIB_PATH=${PS029J_HOME_PS}/lib/AidInstallCore.psm1" \
+    -- -h
+PS1_HELP=$(printf '%s' "$PWSH_CALL_OUT" | sed 's/\x1b\[[0-9;]*m//g')
 assert_output_contains "$SH_HELP"  "Flags:" "PS029-J01 Bash general help: 'Flags:' line"
 assert_output_contains "$PS1_HELP" "Flags:" "PS029-J02 PS1 general help: 'Flags:' line"
 assert_output_not_contains "$SH_HELP"  "Env vars:" "PS029-J03 Bash general help: no 'Env vars:'"
@@ -1047,25 +1107,25 @@ assert_output_not_contains "$PS1_HELP" "Env vars:" "PS029-J04 PS1 general help: 
 # add -h parity.
 SH_ADD_H=$(AID_HOME="${PS029J_HOME_SH}" AID_LIB_PATH="${PS029J_HOME_SH}/lib/aid-install-core.sh" \
     bash "${PS029J_HOME_SH}/bin/aid" add -h 2>&1)
-PS1_ADD_H=$(AID_HOME="${PS029J_HOME_PS}" AID_LIB_PATH="${PS029J_HOME_PS}/lib/AidInstallCore.psm1" \
-    "$PWSH" -NoProfile -File "${PS029J_HOME_PS}/bin/aid.ps1" add -h 2>&1 | sed 's/\x1b\[[0-9;]*m//g')
+pwsh_session_call "${PS029J_HOME_PS}/bin/aid.ps1" "$PWD" \
+    "AID_HOME=${PS029J_HOME_PS}" "AID_LIB_PATH=${PS029J_HOME_PS}/lib/AidInstallCore.psm1" \
+    -- add -h
+PS1_ADD_H=$(printf '%s' "$PWSH_CALL_OUT" | sed 's/\x1b\[[0-9;]*m//g')
 assert_output_contains "$SH_ADD_H"  "aid add" "PS029-J05 Bash add -h: mentions 'aid add'"
 assert_output_contains "$PS1_ADD_H" "aid add" "PS029-J06 PS1 add -h: mentions 'aid add'"
 
 # remove -h parity.
 SH_RM_H=$(AID_HOME="${PS029J_HOME_SH}" AID_LIB_PATH="${PS029J_HOME_SH}/lib/aid-install-core.sh" \
     bash "${PS029J_HOME_SH}/bin/aid" remove -h 2>&1)
-PS1_RM_H=$(AID_HOME="${PS029J_HOME_PS}" AID_LIB_PATH="${PS029J_HOME_PS}/lib/AidInstallCore.psm1" \
-    "$PWSH" -NoProfile -File "${PS029J_HOME_PS}/bin/aid.ps1" remove -h 2>&1 | sed 's/\x1b\[[0-9;]*m//g')
+pwsh_session_call "${PS029J_HOME_PS}/bin/aid.ps1" "$PWD" \
+    "AID_HOME=${PS029J_HOME_PS}" "AID_LIB_PATH=${PS029J_HOME_PS}/lib/AidInstallCore.psm1" \
+    -- remove -h
+PS1_RM_H=$(printf '%s' "$PWSH_CALL_OUT" | sed 's/\x1b\[[0-9;]*m//g')
 assert_output_contains "$SH_RM_H"  "self" "PS029-J07 Bash remove -h: mentions 'self'"
 assert_output_contains "$PS1_RM_H" "self" "PS029-J08 PS1 remove -h: mentions 'self'"
 
-# ISOLATION CANARY: the real $HOME's update-check cache must be byte-unchanged by this suite.
-_CANARY_UPDCHK_AFTER="$(cat "${REAL_HOME}/.aid/.update-check" 2>/dev/null || echo '<absent>')"
-if [[ "${_CANARY_UPDCHK_BEFORE}" == "${_CANARY_UPDCHK_AFTER}" ]]; then
-    pass "ISOL-HOME real \$HOME/.aid/.update-check untouched by suite (no isolation escape)"
-else
-    fail "ISOL-HOME real \$HOME/.aid/.update-check MODIFIED by suite (isolation escape: '${_CANARY_UPDCHK_BEFORE}' -> '${_CANARY_UPDCHK_AFTER}')"
-fi
+# ISOLATION CANARY: the real HOME's .aid subtree must be byte-unchanged by this suite
+# (superset check via sandbox.sh, still asserted under the suite's original label).
+sandbox_assert_aid_untouched "ISOL-HOME real \$HOME/.aid/.update-check untouched by suite (no isolation escape)"
 
 test_summary

@@ -34,7 +34,7 @@ This is the single state file for the **Discovery area** — persistent project 
 ## Discovery Domain
 
 - **Domain:** hybrid:methodology-tooling+software-cli
-- **Measured signals:** languages=Markdown(1823)/Shell(327)/Python(56)/JS(40)/HTML/YAML/PowerShell/TS; notable-files=packages/npm/package.json, packages/pypi/pyproject.toml, install.sh, .github/workflows/{test,release,installer-tests,docs}.yml; dirs=bin/, lib/, canonical/, profiles/, dashboard/, docs/, site/, examples/, tests/; concepts=aid-* skills, agent definitions, templates, canonical→5-profile render trees, CLI installer
+- **Measured signals:** languages=Markdown(1823)/Shell(327)/Python(56)/JS(40)/HTML/YAML/PowerShell/TS; notable-files=packages/npm/package.json, packages/pypi/pyproject.toml, install.sh, .github/workflows/{test,release,installer-tests,docs,coverage-parity}.yml; dirs=bin/, lib/, canonical/, profiles/, dashboard/, docs/, site/, examples/, tests/; concepts=aid-* skills, agent definitions, templates, canonical→5-profile render trees, CLI installer
 - **Proposed:** hybrid:methodology-tooling+software-cli (dominant skill/agent/template/prompt mass = methodology-tooling; substantial installer = bin/+lib/+npm/pypi packaging+install.sh = software-cli)
 - **Decision rationale:** measured -> proposed hybrid:methodology-tooling+software-cli -> confirmed
 - **Confirmed:** yes
@@ -94,13 +94,13 @@ This is the single state file for the **Discovery area** — persistent project 
 | Theme | default |
 | Machine Grade | A+ (grade-summary AUTO_POOL 68/68) |
 | Human Grade | A+ (K1 10/10, K2 15/15, V1 5/5; V1 orchestrator visual gate via Playwright — hero/glossary/pipeline-SVG render clean in light+dark, theme toggle + lightbox open/Esc verified) |
-| User Approved | yes (2026-07-16; /aid-housekeep SUMMARY-DELTA count-patch, orchestrator V1 visual gate) |
-| Last Run | 2026-07-16 |
-| Output | .aid/dashboard/kb.html (679695 bytes, 4194 lines, 21 sections) |
+| User Approved | yes (2026-07-24; /aid-housekeep SUMMARY-DELTA count-patch, user V1 visual gate) |
+| Last Run | 2026-07-24 |
+| Output | .aid/knowledge/kb.html (687715 bytes) |
 | Mermaid Version | — (retired in D-012; pre-rendered inline SVG only) |
 | Mermaid Cached | — |
 
-**User Approved:** yes (2026-07-16)
+**User Approved:** yes (2026-07-24)
 **Doc-Set Source:** .aid/settings.yml discovery.doc_set
 **Doc-Set Count:** 19 of 19
 **Domain:** hybrid:methodology-tooling+software-cli
@@ -206,6 +206,25 @@ This is the single state file for the **Discovery area** — persistent project 
 - **Answer:** User approved the full-refresh scope. Applied 2026-07-09 via /aid-housekeep KB-DELTA: four aid-tech-writer cluster agents (architecture / analyst / integrator / quality) surgically refreshed the sub-agent-owned docs; the orchestrator authored capability-inventory.md, release-tracking.md, project-structure.md and regenerated INDEX.md + README.md. Source-confirmed corrections to the original plan: (1) the default seed is **14 standard docs + README (meta) = 15 seed files**, so "14 standard docs" is CORRECT — reverted an over-correction to "15 standard"; (2) `.mcp.json` is the host tool's own MCP config, **NOT** a connector artifact (grep: zero `canonical/` refs) — documented as a boundary, not wired into the catalog; (3) connector test suites = **8** (not 7); (4) provenance = **PR #132 (branch change-delivery)**. Grade reset to Pending for the REVIEW gate.
 - **Applied to:** all 15 drifted docs (architecture, technology-stack, decisions, module-map, coding-standards, authoring-conventions, artifact-schemas, pipeline-contracts, integration-map, domain-glossary, test-landscape, infrastructure, capability-inventory, release-tracking, project-structure) + tech-debt.md (provenance line) + INDEX.md & README.md regenerated. external-sources.md / quality-gates.md unchanged (confirmed current).
 
+### Q8
+
+- **Category:** Housekeep / KB Delta Refresh
+- **Impact:** Required
+- **Status:** Answered
+- **Context:** /aid-housekeep (KB-DELTA) reconciled the repo against the KB and found one bounded drift class: the **5th** GitHub Actions workflow `.github/workflows/coverage-parity.yml` (added in the work-024 test-suite follow-up PR — an ADVISORY executed-assertion-inventory coverage-regression gate; separate path-filtered `tests/**` lane; serial `collect` ~6-7 min, off the `canonical-tests` critical path; `permissions: contents: read`) is not reflected in the KB. Repo ground truth: `ls .github/workflows/*.yml` = 5 (coverage-parity, docs, installer-tests, release, test); `ls tests/canonical/test-*.sh | wc -l` = 133. Per-doc corrections (user-confirmed scope 2026-07-24):
+    - **infrastructure.md** — ":104" "Four GitHub Actions workflows" -> "Five"; add a `coverage-parity.yml` row to the CI/CD Pipeline table (:107-112).
+    - **test-landscape.md** — ":162" "AID has four GitHub Actions workflows" -> "five"; add the coverage-parity lane to the CI Lanes table (:165-170). (The doc already documents the coverage-parity *script* in Performance & Health; only the CI *lane/workflow-count* drifted.)
+    - **integration-map.md** — ":76" "four workflows: test, installer-tests, docs, release" -> "five … + coverage-parity"; ":120" "Four workflows under .github/workflows/" + its table (:124-127) -> "Five" + add the coverage-parity row.
+    - **technology-stack.md** — ":96" "CI/CD — four workflows. CONFIRMED .github/workflows/*.yml" -> "five".
+    - **project-structure.md** — ":159" ".github/ … four CI workflows" -> "five".
+    - **domain-glossary.md** — ":808" CI/CD term "the four GitHub Actions workflows" -> "five".
+    - **tech-debt.md** — ":233" least-privilege CI enumeration: add `coverage-parity.yml` (also `contents: read`) for completeness.
+  Confirmed-current (NO change): test-landscape.md core (suite count 133, coverage-parity script, tests/lib helpers), tech-debt.md L4, module-map.md, capability-inventory.md, decisions.md, quality-gates.md, architecture.md, release-tracking.md, artifact-schemas.md, authoring-conventions.md, coding-standards.md, pipeline-contracts.md, external-sources.md. (kb.html's stale "118 canonical suites" is a GENERATED viewer -> handled by the SUMMARY-DELTA regen, not a doc edit.)
+- **Suggested:** SURGICAL edits by the doc-owning agents (four -> five + add the coverage-parity workflow/lane rows only; preserve existing structure; ground every claim in `.github/workflows/coverage-parity.yml`). Then regenerate INDEX.md/README.md iff an INDEX-column field changed, reset `kb_grade` to Pending, REVIEW -> APPROVAL (min grade A+).
+- **Answer:** Applied the surgical four -> five + coverage-parity correction to all 7 named docs, grounded in `.github/workflows/coverage-parity.yml`'s `on:` block (PR + push to `master`, path-filtered `tests/**`), `permissions: contents: read`, and its header-comment rationale (separate serial ~6-7 min lane off `canonical-tests`; advisory until a baseline is bootstrapped, then enforces). No INDEX-column field required a change (none of the 7 docs' `summary`/`objective` embeds the workflow count). Follow-up completeness pass: confirmed infrastructure.md and test-landscape.md each keep a 1:1 mapping between their `sources:` frontmatter list and their CI workflow/table rows (both already had all 4 pre-existing workflow files listed) — added `.github/workflows/coverage-parity.yml` to both `sources:` lists to restore the 1:1 mapping; `sources:` is not an INDEX-column field, so no INDEX regen is triggered. Also corrected the pre-existing `.github/workflows/{test,release,installer-tests,docs}.yml` brace-list in this file's own "Measured signals" line (:37) to include `coverage-parity`.
+- **Applied to:** infrastructure.md (:104 + CI/CD Pipeline table row + `sources:` entry), test-landscape.md (:162 + CI Lanes table row + `sources:` entry), integration-map.md (:76 overview-table cell + :120 prose/table row), technology-stack.md (:96), project-structure.md (:159 + the `.github/workflows/` tree-listing comment), domain-glossary.md (:808), tech-debt.md (:233 least-privilege enumeration), STATE.md (:37 Measured-signals brace-list).
+- **Deferred:** `.aid/knowledge/kb.html` is the GENERATED summary viewer — it still shows the stale 4-workflow set (in ~3 places) in addition to its already-known stale "118 canonical suites" count. Both are hand-edit-forbidden and deferred to the next housekeep SUMMARY-DELTA regeneration, which will regenerate kb.html from these now-corrected source docs. Not fixed in this pass.
+
 ## Review History
 
 > One row per /aid-discover review cycle. Append-only.
@@ -231,6 +250,7 @@ This is the single state file for the **Discovery area** — persistent project 
 | 3 | 2026-06-28 | A+ (Machine) | hybrid:methodology-tooling+software-cli | 19 of 19 docs | kb.html (198882 bytes, 4172 lines, 21 sections) | Forced KB-refresh: aid-interview split to aid-describe/aid-define; 14 skills (was 13); seasoned-analyst engine + greenfield seed + conformance check added. Machine A+ 68/68; Human pending orchestrator. |
 | 4 | 2026-07-09 | A+ | hybrid:methodology-tooling+software-cli | none (retired) | .aid/dashboard/kb.html (679695 bytes, 4194 lines, 21 sections) | /aid-housekeep SUMMARY-DELTA: surgical refresh of the existing summary for the work-002 connectors subsystem + release drift — version 2.0.0->2.0.6, test count 82->105, new Connector Registry glossary card + integration-map connectors row + lede clause. Machine A+ 68/68; Human A+ 30/30 (V1 orchestrator visual gate via Playwright — light+dark + lightbox verified). |
 | 5 | 2026-07-16 | A+ | hybrid:methodology-tooling+software-cli | none (retired) | kb.html | /aid-housekeep SUMMARY-DELTA targeted count-patch (the skill's STALE-CHECK was DONE-IDEMPOTENT because the lighter manual KB count-fix did not advance the Review-History date, so no full GENERATE ran): synced the live skill/catalog counts in 5 kb.html spots (92 skills/76 shortcuts/80-row -> 108/64/94-row, 58 canonical + 36 aliases, 30 repurpose). Human V1 visual gate passed (orchestrator; rendered kb.html confirmed by the user). |
+| 6 | 2026-07-24 | A+ | hybrid:methodology-tooling+software-cli | none (retired) | kb.html (687715 bytes) | /aid-housekeep SUMMARY-DELTA targeted count-patch (STALE-CHECK would have been DONE-IDEMPOTENT — the KB-DELTA Q8 refresh did not advance the Review-History date, so no full GENERATE ran): synced kb.html to the Q8 KB refresh + accumulated staleness — canonical suite count 118->133 (4 spots incl. the "Total suites" stat card, staler at 105->133) and GitHub Actions workflows 4->5 (added coverage-parity.yml to the risk-table cell, the CI-workflows stat card + sub, and the workflow table row). Human V1 visual gate passed (user confirmed rendered kb.html: hero/glossary/pipeline-SVG + corrected 133-suite/5-workflow counts). |
 
 ## Calibration Log
 

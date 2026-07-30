@@ -1,0 +1,14 @@
+# coverage-rehome-allowlist.tsv -- documented legitimate assertion RELOCATIONS for the
+# coverage-parity gate (consumed via 'coverage-parity.sh diff --allow').
+#
+# A reduced/removed (old-suite, old-key) is EXCUSED as a re-home iff a rule below
+# maps it to a (new-suite, new-key) that is PRESENT in the after-inventory. A rule
+# whose target is absent is reported as 'claimed but not landed' and FAILS the gate.
+#
+# Schema (TAB-separated, 5 fields); '#'-comment and blank lines are ignored:
+#   <old-suite>	<old-key>	<new-suite>	<new-key>	<rationale>
+#
+# This forward-going allowlist starts EMPTY. The work-024 SGH00a -> SEC00 re-home was
+# relative to the pre-work-024 merge-base and is already absorbed into master, so it is
+# NOT seeded here. Append one reviewed row per future re-home, then re-run the gate to
+# confirm the target landed in the after-inventory.

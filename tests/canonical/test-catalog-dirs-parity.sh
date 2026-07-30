@@ -130,7 +130,7 @@ while IFS='|' read -r name verb artifact alias_of repurpose; do
     body=$(cat "$skill_md")
 
     verb_bind="VERB=\`${verb}\`"
-    if echo "$body" | grep -qF "$verb_bind"; then
+    if [[ "$body" == *"$verb_bind"* ]]; then
         pass "CDP${i}e [${name}] body binds VERB=\`${verb}\`"
     else
         fail "CDP${i}e [${name}] body binds VERB=\`${verb}\` -- pattern not found"
@@ -141,13 +141,13 @@ while IFS='|' read -r name verb artifact alias_of repurpose; do
     else
         artifact_bind="ARTIFACT=\`${artifact}\`"
     fi
-    if echo "$body" | grep -qF "$artifact_bind"; then
+    if [[ "$body" == *"$artifact_bind"* ]]; then
         pass "CDP${i}f [${name}] body binds ${artifact_bind}"
     else
         fail "CDP${i}f [${name}] body binds ${artifact_bind} -- pattern not found"
     fi
 
-    if echo "$body" | grep -qF "$ENGINE_REF"; then
+    if [[ "$body" == *"$ENGINE_REF"* ]]; then
         pass "CDP${i}g [${name}] body delegates to ${ENGINE_REF}"
     else
         fail "CDP${i}g [${name}] body delegates to ${ENGINE_REF} -- pattern not found"

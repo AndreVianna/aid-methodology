@@ -2,15 +2,18 @@
 kb-category: primary
 source: hand-authored
 objective: The automated test suites, frameworks, CI lanes, and runnable commands that gate AID's shippable artifacts (the CLI installer, the multi-profile render, the dashboard, and the site).
-summary: Read this before writing or changing a test, or before relying on CI — it maps every automated suite to its framework, the single run-all entrypoint, which lanes run where (and which heavy gates are master-only), and the exact commands to run them.
+summary: Read this before writing or changing a test, or before relying on CI — it maps every automated suite to its framework, the single run-all entrypoint (now bounded-parallel with a coverage-parity gate), which lanes run where (and which heavy gates are master-only), and the exact commands to run them.
 sources:
   - tests/run-all.sh
   - tests/canonical/
+  - tests/coverage-parity.sh
+  - tests/lib/
   - tests/windows/Test-AidInstaller.ps1
   - .github/workflows/test.yml
   - .github/workflows/installer-tests.yml
   - .github/workflows/release.yml
   - .github/workflows/docs.yml
+  - .github/workflows/coverage-parity.yml
   - dashboard/reader/tests/
   - dashboard/server/tests/
   - .claude/skills/generate-profile/scripts
@@ -50,6 +53,7 @@ live in `quality-gates.md`.
 - [Test Data Strategy](#test-data-strategy)
 - [Known Test Gaps](#known-test-gaps)
 - [Test Commands](#test-commands)
+- [Performance & Health](#performance--health)
 - [Change Log](#change-log)
 
 ---
@@ -79,13 +83,17 @@ because it must validate Bash, PowerShell, Python, and Node code paths.
 
 | Framework / harness | Type | Location | Notes |
 |---|---|---|---|
-| Bespoke Bash test harness | Unit + integration | `tests/canonical/test-*.sh` (118 suites) | The dominant suite; run via `tests/run-all.sh`. CONFIRMED via `ls tests/canonical/test-*.sh \| wc -l` = 118. |
+| Bespoke Bash test harness | Unit + integration | `tests/canonical/test-*.sh` (133 suites) | The dominant suite; run via `tests/run-all.sh`. CONFIRMED via `ls tests/canonical/test-*.sh \| wc -l` = 133. |
 | Bespoke PowerShell test (`T<NN>` IDs) | Installer integration | `tests/windows/Test-AidInstaller.ps1` (~2406 lines) | Windows-only; not in `run-all.sh`. |
 | `pytest` | Unit | `dashboard/reader/tests/`, `dashboard/server/tests/` | Python reader/server parsers + fixtures. |
 | Node built-in test | Unit | `dashboard/server/tests/test_server_node.mjs` | Node `.mjs` server tests. |
 | Playwright (Chromium, headless) | Visual fidelity (E2E render) | `.claude/aid/scripts/summarize/validate-visuals.mjs` | Validates `kb.html` authored visuals; gated in CI. |
 | Generator `--self-test` harness | Self-test | `.claude/skills/generate-profile/scripts/*.py` | `render_lib`, `render`, `verify_deterministic`, `verify_advisory`, `test_manifest_safety`. |
 | Astro / TypeScript tests | Unit | `site/src/data/__tests__/`, `site/scripts/__tests__/` | Site data + docs-sync tests (separate build). |
+
+Of the 133 live suites, **132 are the surviving pre-existing suites** — the AC-2 must-pass
+set (134 pre-existing minus 2 dead suites removed) — and the remaining 1 is work-024's own
+`test-coverage-parity.sh` keystone self-test.
 
 CONFIRMED via `.aid/generated/project-index.md` (Top-20 Largest Source Files lists
 `reader.mjs` 4012, `test-aid-cli-parity.sh` 3198, `Test-AidInstaller.ps1` 2406) and direct
@@ -102,14 +110,17 @@ Key behaviors (CONFIRMED in `tests/run-all.sh`):
 
 - **Glob discovery.** Suites are discovered by `tests/canonical/test-*.sh` — adding a suite
   requires no edit to the runner.
-- **Isolation + timeout.** Each suite runs under `timeout 300` in its own bash process, so
-  one suite cannot leak state into another.
+- **Isolation + timeout, now parallel.** Each suite runs under `timeout 300` in its own bash
+  process; `run-all.sh` dispatches independent suites under bounded parallelism
+  (`xargs -P $(nproc)`) to per-suite `.log`/`.rc` files, then replays them single-threaded —
+  the isolation and the exact aggregate contract are preserved either way. `AID_TEST_JOBS=1`
+  restores serial ordering for debugging. See [Performance & Health](#performance--health).
 - **Exec-bit fix.** The repo is authored on Windows (committed `100644`); the runner
   `chmod +x`'s `canonical/aid/scripts` and `tests/canonical` `.sh` files first (idempotent).
 - **Exit contract.** Exit 0 only if every suite passes; exit 1 if any suite fails (or if no
   suites are found). Under CI it emits `::group::` / `::error::` annotations.
 
-Representative suite families (the 118 cover far more than these):
+Representative suite families (the 133 cover far more than these):
 
 | Family | Example suites | What they protect |
 |---|---|---|
@@ -117,7 +128,7 @@ Representative suite families (the 118 cover far more than these):
 | Release / packaging | `test-release.sh`, `test-release-install-e2e.sh`, `test-release-migrate-smoke.sh`, `test-version-sync.sh`, `test-npm-installer.sh`, `test-pypi-installer.sh` | the 3 publish channels + version-sync |
 | KB / discovery engine | `test-kb-citation-lint.sh`, `test-frontmatter-lint.sh`, `test-build-kb-index.sh`, `test-closure-check.sh`, `test-harvest-coined-terms.sh`, `test-spine-depth-coverage.sh`, `test-dual-intent-self-eval.sh` | the discovery/KB tooling |
 | Pipeline / execute | `test-writeback-state.sh`, `test-complexity-score.sh`, `test-compute-block-radius.sh`, `test-delivery-gate-aggregate.sh`, `test-grade.sh` | state writeback + delivery gating |
-| Shortcut / Lite path (work-001, +v2.1.0 follow-on) | `test-catalog-dirs-parity.sh`, `test-triage-routing.sh`, `test-describe-full-only.sh`, `test-cutover-no-dangling.sh`, `test-deploy-monitor-repurpose.sh`, `test-executor-graph-flat-plan.sh`, `test-shortcut-gate-halt-batching.sh`, and the seven `test-*-family-scaffold.sh` suites (`create`, `change-refactor`, `fix`, `document`, `prototype`, `test-experiment`, `analyze-report`) | the 76 verb-first shortcut skills, the shortcut engine's GATE/APPROVAL-HALT batching, `/aid-triage` routing, the recipe-removal cutover (no dangling `recipes/`/`parse-recipe.sh`), `/aid-describe` full-only, and the flattened Lite work layout. The 5 families the v2.1.0 follow-on added (`remove`, `deprecate`, `migrate`, `review`, `research`) have no dedicated `test-*-family-scaffold.sh` of their own yet — they're covered by `test-catalog-dirs-parity.sh`'s count-agnostic catalog↔dirs parity check instead. |
+| Shortcut / Lite path (work-001, +v2.1.0 follow-on) | `test-catalog-dirs-parity.sh`, `test-triage-routing.sh`, `test-describe-full-only.sh`, `test-cutover-no-dangling.sh`, `test-deploy-monitor-repurpose.sh`, `test-executor-graph-flat-plan.sh`, `test-shortcut-engine-contract.sh`, and the seven `test-*-family-scaffold.sh` suites (`create`, `change-refactor`, `fix`, `document`, `prototype`, `test-experiment`, `analyze-report`) | the 76 verb-first shortcut skills, the shortcut engine's GATE/APPROVAL-HALT batching (`test-shortcut-engine-contract.sh` SEC00–SEC07), `/aid-triage` routing, the recipe-removal cutover (no dangling `recipes/`/`parse-recipe.sh`), `/aid-describe` full-only, and the flattened Lite work layout. The 5 families the v2.1.0 follow-on added (`remove`, `deprecate`, `migrate`, `review`, `research`) have no dedicated `test-*-family-scaffold.sh` of their own yet — they're covered by `test-catalog-dirs-parity.sh`'s count-agnostic catalog↔dirs parity check instead. |
 | Dashboard | `test-dashboard-reader.sh`, `test-dashboard-parity.sh`, `test-dashboard-parity-h.sh`, `test-aid-dashboard-cli.sh` | reader/server parity |
 | Connectors / reconcile | `test-connector-registry.sh`, `test-connectors-registry-integration.sh`, `test-build-connectors-index.sh`, `test-connector-secret.sh`, `test-connector-secret-ps1.sh`, `test-connector-secret-ac3-leak-sweep.sh` (security: no-leak sweep of AC-3), `test-connector-twins-ps1-parity.sh` (bash↔PowerShell twin parity), `test-reconcile-scenarios.sh` | the `.aid/connectors/` catalog + INDEX generation, registry accessor integration, no-echo/path-confined secret handling, and settings reconcile behavior |
 | Compat / hygiene | `test-ps51-compat.sh`, `test-ascii-only.sh`, `test-payload-size.sh`, `test-multitool-isolation.sh`, `test-dogfood-byte-identity.sh` | portability + content isolation |
@@ -149,7 +160,7 @@ discovered by `tests/run-all.sh`. A green local `run-all.sh` does not exercise i
 
 ## CI Lanes and Where They Run
 
-AID has four GitHub Actions workflows. Critically, the heavy correctness gates run on
+AID has five GitHub Actions workflows. Critically, the heavy correctness gates run on
 **master and release tags only** — feature branches get the installer matrix instead.
 
 | Workflow | Trigger | Jobs / gates | Runs on feature branches? |
@@ -158,6 +169,7 @@ AID has four GitHub Actions workflows. Critically, the heavy correctness gates r
 | `.github/workflows/installer-tests.yml` (Installer CI) | push to any branch **except** master (`branches-ignore: [master]`); `workflow_dispatch` | cross-platform installer/CLI/release matrix (ubuntu + windows) | Yes — feature branches only |
 | `.github/workflows/release.yml` (Release) | push of a `v*` tag; `workflow_dispatch` | `gate` (re-runs render-drift + version-sync + full `run-all.sh` + generator self-tests on the tagged commit), then `github-release`, `npm-publish`, `pypi-publish` | No — tag only |
 | `.github/workflows/docs.yml` (Docs) | push to `master` touching `site/**`, `docs/**`, `VERSION`, or the workflow; `release: published`; `workflow_dispatch` | Astro Starlight build → GitHub Pages deploy | No — master only (+ path filter) |
+| `.github/workflows/coverage-parity.yml` (Coverage Parity) | push + PR to `master`, path-filtered to `tests/**`; `workflow_dispatch` | Separate lane from `canonical-tests`: serially re-collects the executed-assertion inventory (~6-7 min) and diffs it against a committed baseline — advisory (warns, exits 0) until the baseline is bootstrapped, then enforces | No — master only (+ path filter) |
 
 CONFIRMED by the `on:` blocks of each workflow.
 
@@ -240,7 +252,7 @@ lands, suite-presence + dogfooding is the floor, not the target.
 | Profile renderer / generator | Strong | render-drift + 5 self-tests + `test-assemble-determinism.sh` |
 | Discovery / KB engine | Strong | ~20 `test-*` suites (closure, harvest, citation/frontmatter lint, dual-intent, spine-depth) |
 | Pipeline execute / state writeback | Strong | `test-writeback-state.sh`, `test-delivery-gate-aggregate.sh`, `test-complexity-score.sh` |
-| Shortcut engine / Lite path | Strong | catalog↔dirs parity, `/aid-triage` routing, the seven family-scaffold suites, GATE/APPROVAL-HALT batching, flat-plan execution graph, recipe-removal cutover, describe-full-only |
+| Shortcut engine / Lite path | Strong | catalog↔dirs parity, `/aid-triage` routing, the seven family-scaffold suites, `test-shortcut-engine-contract.sh` (`SEC00`–`SEC07`) engine/gate/halt contract, flat-plan execution graph, recipe-removal cutover, describe-full-only |
 | Dashboard reader/server | Strong | pytest suites + parity suites |
 | Astro site | Moderate | `site/src/data/__tests__`, `site/scripts/__tests__`; build is the main gate |
 | Prompt-driven skill state machines | Not machine-tested (by design) | dogfooding + human/AI review only |
@@ -325,6 +337,29 @@ cd site && npm ci && npm run build
 
 ---
 
+## Performance & Health
+
+The `canonical helper suites` CI job's speed and hermeticity are tracked here so a future
+change does not re-diagnose the same slowness (work-024-test-suite-improvement).
+
+**Performance contract.** The job is committed to **≤ 3 minutes**, with a **~60–90s goal**
+(NFR-1) — down from a **~690s (~11.5 min)** baseline (master CI run `29975142862`) before
+work-024. 690s is retained only as a load-bearing before-state inflection marker; the exact
+post-optimization wall-clock is not frozen here (it drifts) — the ≤3 min / ~90s contract is.
+
+**Optimizations landed:**
+
+| Area | What changed | Where |
+|---|---|---|
+| Parallel runner | `run-all.sh` dispatches independent suites under bounded parallelism (`xargs -P $(nproc)`) to per-suite `.log`/`.rc` files, then replays them single-threaded — preserving the exact aggregate contract (glob discovery, per-suite `timeout 300`, `::group::`/`::error::` folding, PASS/FAIL summary, nonzero exit on any failure). `AID_TEST_JOBS=1` restores serial ordering for debugging. | `tests/run-all.sh` |
+| Hermeticity / port isolation | Each suite run uses a unique per-run temp dir; port-binding suites allocate an ephemeral port via a bounded pick→bind→verify retry, so concurrent suites cannot collide. | `tests/lib/net.sh` (`find_free_port`, `wait_for_port`) |
+| Coverage-parity gate | A before/after multiset inventory of executed assertion IDs; fails mechanically on any un-excused net-removed/reduced assertion, so suites can be optimized without silently losing coverage. Lives at the `tests/` root, outside the `tests/canonical/test-*.sh` glob — not itself a counted suite. | `tests/coverage-parity.sh` (`collect`/`diff`) |
+| Shared helpers | pwsh detection, the HOME escape-canary, and free-port logic live once and are sourced by every suite that needs them — no machine-specific absolute path remains in `tests/`. | `tests/lib/pwsh.sh`, `tests/lib/sandbox.sh`, `tests/lib/net.sh` |
+| Hot-suite: byte-identity | Verifies the same three directions via a single manifest pass + batched hashing instead of repeated re-scans. | `test-dogfood-byte-identity.sh` |
+| Hot-suite: CLI parity | Batches its pwsh invocations through one long-lived responder session instead of one cold start per assertion. | `test-aid-cli-parity.sh` |
+
+---
+
 ## Change Log
 
 | Rev | Date | Source | Description |
@@ -333,3 +368,4 @@ cd site && npm ci && npm run build
 | 1.1 | 2026-07-09 | aid-housekeep | connectors subsystem + release-drift refresh (housekeep KB-DELTA) |
 | 1.2 | 2026-07-09 | work-001 lite-skills refresh | Corrected canonical suite count 105 → 118 (verified `ls tests/canonical/test-*.sh \| wc -l`); added the Shortcut / Lite path suite family and Coverage row (catalog↔dirs parity, triage routing, the seven family-scaffold suites, GATE/APPROVAL-HALT batching, flat-plan graph, recipe-removal cutover, describe-full-only). |
 | 1.3 | 2026-07-09 | v2.1.0 skill-count sync | Updated the Shortcut / Lite path row to the current 76 verb-first shortcuts (up from 67); noted the 5 new families (remove, deprecate, migrate, review, research) are covered by `test-catalog-dirs-parity.sh`'s count-agnostic check, with no dedicated family-scaffold suite of their own yet. Canonical suite count unchanged at 118. |
+| 1.4 | 2026-07-24 | work-024 test-suite-improvement KB refresh | Corrected canonical suite count 118 → 133 (live total; 132 surviving pre-existing + work-024's own `test-coverage-parity.sh` keystone self-test); removed the dangling reference to feature-006's deleted GATE/APPROVAL-HALT batching suite, re-pointing shortcut-engine coverage to `test-shortcut-engine-contract.sh` (SEC00–SEC07); added the Performance & Health section (bounded-parallel `run-all.sh`, port isolation, coverage-parity gate, shared `tests/lib/` helpers, byte-identity + CLI-parity hot-suite optimizations). |

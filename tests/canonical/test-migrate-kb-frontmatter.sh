@@ -385,7 +385,7 @@ MF04_LINT_OUT=""
 MF04_LINT_RC=0
 MF04_LINT_OUT="$(bash "$LINT" --root "$MF04_KB" 2>&1)" || MF04_LINT_RC=$?
 assert_exit_zero "$MF04_LINT_RC" "MF04-02 lint-frontmatter passes on migrated fixture KB"
-if echo "$MF04_LINT_OUT" | grep -qF "[FM-MISSING]" || echo "$MF04_LINT_OUT" | grep -qF "[FM-INVALID]"; then
+if grep -qF "[FM-MISSING]" <<<"$MF04_LINT_OUT" || grep -qF "[FM-INVALID]" <<<"$MF04_LINT_OUT"; then
     fail "MF04-03 no [FM-MISSING]/[FM-INVALID] findings after migration -- found findings"
     [[ "$VERBOSE" -eq 1 ]] && echo "$MF04_LINT_OUT"
 else
@@ -425,7 +425,7 @@ else
 fi
 
 # intent: must be retired (absent from frontmatter after migration)
-if awk '/^---$/{in_fm=!in_fm;next} in_fm && /^intent:/' "$MF05_DOC" | grep -q .; then
+if grep -q . < <(awk '/^---$/{in_fm=!in_fm;next} in_fm && /^intent:/' "$MF05_DOC"); then
     fail "MF05-05 intent: must be retired (removed) after migration -- still present"
 else
     pass "MF05-05 intent: retired (absent from frontmatter)"
@@ -759,7 +759,7 @@ assert_eq "$MF11_SHA_AFTER" "$MF11_SHA_BEFORE" \
     "MF11-02 doc byte-unchanged when objective/summary are empty (intent: not retired)"
 
 # intent: must still be present in the doc (not retired)
-if awk '/^---$/{in_fm=!in_fm;next} in_fm && /^intent:/' "${MF11_KB}/doc.md" | grep -q .; then
+if grep -q . < <(awk '/^---$/{in_fm=!in_fm;next} in_fm && /^intent:/' "${MF11_KB}/doc.md"); then
     pass "MF11-03 intent: still present (not retired when objective/summary empty)"
 else
     fail "MF11-03 intent: was retired despite empty objective/summary (degrade-safe violation)"
@@ -842,7 +842,7 @@ else
 fi
 
 # Output must point at backup (mention backup or rollback in stderr)
-if echo "$MF12_OUT" | grep -qi "backup\|rollback"; then
+if grep -qi "backup\|rollback" <<<"$MF12_OUT"; then
     pass "MF12-03 failure output mentions backup/rollback"
 else
     fail "MF12-03 failure output does not mention backup/rollback: $MF12_OUT"

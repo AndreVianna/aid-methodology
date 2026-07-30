@@ -179,10 +179,8 @@ assert_output_contains "$OUT" "390" "VF16d --check-only T4 mentions 390px target
 # We do this by attempting to import playwright from the package dir.
 PW_PACKAGE_DIR="${REPO_ROOT}/canonical/aid/scripts/summarize"
 PW_AVAILABLE=0
-if node --input-type=module <<'JSEOF' 2>/dev/null; then
-import { chromium } from '/home/andre.vianna/projects/AID/canonical/aid/scripts/summarize/node_modules/playwright/index.mjs';
-process.exit(0);
-JSEOF
+if ( cd "$PW_PACKAGE_DIR" && node --input-type=module -e \
+    "import('playwright').then(()=>process.exit(0)).catch(()=>process.exit(1))" ) 2>/dev/null; then
     PW_AVAILABLE=1
 fi
 

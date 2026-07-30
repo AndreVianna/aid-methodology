@@ -74,7 +74,7 @@ if [[ -z "$STATE_MACHINE_LINE" ]]; then
 else
     pass "DFO01a frontmatter carries a 'State machine:' line"
 fi
-if echo "$STATE_MACHINE_LINE" | grep -qE 'TRIAGE|CONDENSED-INTAKE|LITE-'; then
+if grep -qE 'TRIAGE|CONDENSED-INTAKE|LITE-' <<<"$STATE_MACHINE_LINE"; then
     fail "DFO01b State machine line has no TRIAGE/CONDENSED-INTAKE/LITE- token -- found: ${STATE_MACHINE_LINE}"
 else
     pass "DFO01b State machine line has no TRIAGE/CONDENSED-INTAKE/LITE- token"
@@ -88,7 +88,7 @@ DELETED_REFS=(state-triage.md state-condensed-intake.md state-task-breakdown.md 
               lite-to-full-escalation.md)
 DISPATCH_BLOCK=$(awk '/^## Dispatch$/{f=1} f{print} f && /^---$/ && NR>1 && seen{exit} f && /^\|/{seen=1}' "$SKILL_MD")
 for ref in "${DELETED_REFS[@]}"; do
-    if echo "$DISPATCH_BLOCK" | grep -q "$ref"; then
+    if grep -q "$ref" <<<"$DISPATCH_BLOCK"; then
         fail "DFO02 [${ref}] Dispatch table carries no row resolving to this deleted reference"
     else
         pass "DFO02 [${ref}] Dispatch table carries no row resolving to this deleted reference"
@@ -99,7 +99,7 @@ done
 for state in FIRST-RUN Q-AND-A CONTINUE DESCRIBE-SEED COMPLETION; do
     assert_output_contains "$DISPATCH_BLOCK" "| ${state} |" "DFO03 [${state}] Dispatch table carries this state's row"
 done
-if echo "$DISPATCH_BLOCK" | grep -qE '\| *TRIAGE *\||CONDENSED-INTAKE|TASK-BREAKDOWN|LITE-REVIEW|LITE-DONE'; then
+if grep -qE '\| *TRIAGE *\||CONDENSED-INTAKE|TASK-BREAKDOWN|LITE-REVIEW|LITE-DONE' <<<"$DISPATCH_BLOCK"; then
     fail "DFO03b Dispatch table carries no TRIAGE/lite-path row"
 else
     pass "DFO03b Dispatch table carries no TRIAGE/lite-path row"

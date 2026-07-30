@@ -124,7 +124,7 @@ AID/
 │   ├── canonical/            # cross-platform shell test suites + fixtures
 │   └── windows/              # Windows-only PowerShell installer tests
 ├── .github/                  # GitHub config + CI workflows
-│   └── workflows/            # docs.yml, test.yml, installer-tests.yml, release.yml
+│   └── workflows/            # docs.yml, test.yml, installer-tests.yml, release.yml, coverage-parity.yml
 ├── .claude/                  # DOGFOOD install (rendered claude-code profile)
 │   ├── agents/  skills/  aid/ # the AID toolkit, used on this repo itself
 │   └── settings.json
@@ -156,7 +156,7 @@ CONFIRMED by direct `find` traversal of each subtree.
 | `docs/` | User-facing documentation: methodology, install guide, repo map, release runbook, FAQ, glossary. | Yes |
 | `examples/` | Step-by-step sample artifacts for greenfield, brownfield-full, and brownfield-lite paths. | Yes |
 | `tests/` | `canonical/` cross-platform shell suites (+ fixtures) and `windows/` PowerShell installer tests. | Yes |
-| `.github/` | Issue templates, dependabot config, and four CI workflows. | Yes |
+| `.github/` | Issue templates, dependabot config, and five CI workflows. | Yes |
 | `.claude/` | The **dogfood** AID install for this repo (a rendered claude-code profile). | No (regenerate via install) |
 | `.aid/` | The **dogfood** AID pipeline state: the Knowledge Base, tracked works, settings, and discovery scratch. | Yes (state-managed) |
 

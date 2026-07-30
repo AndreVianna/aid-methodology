@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
-# test-aid-migrate-trigger.sh -- rewritten for feature-001 lazy-stamp model + gate 1/2/3 wrapper
+# test-aid-migrate-trigger.sh -- rewritten for feature-001 lazy-stamp model + gate 3 wrapper
 #
-# Covers delivery-001 SPEC (feature-001) lazy-stamp encounter semantics + gates 1-3 + 9:
+# Covers delivery-001 SPEC (feature-001) lazy-stamp encounter semantics + gate 3 + 9:
 #
 #   Gate 9 (lazy-stamp encounter model / C2/C3 migration):
 #     TRG-A  Encounter stamp-less repo: 'aid status' prints WARN + offer 'aid update'
@@ -16,8 +16,6 @@
 #     TRG-H  npm postinstall AID_MIGRATE_YES=1 opt-in: spawns aid update self, exit 0.
 #     TRG-I  npm postinstall error path: any thrown error still exits 0 (NFR12 / RC-3).
 #
-#   Gate 1 (ASCII-only): invoke tests/canonical/test-ascii-only.sh and assert pass.
-#   Gate 2 (Bash/PS1 parity): invoke tests/canonical/test-aid-cli-parity.sh and assert pass.
 #   Gate 3 (vendor-refresh):
 #     VND-A  dashboard/home.html present in npm vendor manifest comment header.
 #     VND-B  dashboard/home.html present in pypi vendor manifest comment header.
@@ -86,7 +84,7 @@ trap 'rm -rf "$TMP"' EXIT
 # GLOBAL HOME PIN (isolation -- feature-001 lazy-stamp model, task-007)
 #
 # We pin HOME for the ENTIRE test process -- including every sub-invocation
-# of aid, node, and any delegated sub-test (Gate 2: test-aid-cli-parity.sh).
+# of aid and node.
 # The new model has no HOME-walking scan, but home-relative writes
 # (~/.aid/.update-check) must still land in a throwaway.
 #
@@ -212,7 +210,7 @@ else
     # Some bash versions set BASH_SOURCE[0] even in piped mode; this is acceptable.
     pass "TRG-Q1-01 piped bash (empty BASH_SOURCE): exit 0 (bash may set BASH_SOURCE in piped mode -- non-fatal)"
 fi
-if echo "${_Q1_OUT}" | grep -qi "AID_CODE_HOME\|cannot locate\|unresolved\|bootstrap"; then
+if grep -qi "AID_CODE_HOME\|cannot locate\|unresolved\|bootstrap" <<<"${_Q1_OUT}"; then
     pass "TRG-Q1-02 piped bash: clear error message about code home printed"
 else
     # If bash provided BASH_SOURCE (some versions do), error may not be printed.
@@ -337,7 +335,7 @@ if [[ -f "${_T2_FALLBACK_REG}" ]]; then
     pass "TRG-T2-01 read-only CODE_HOME: global scope + fallback to ~/.aid/registry.yml"
 else
     # Accept the WARN alone (registry may land in a different user-tier path).
-    if echo "${_T2_OUT}" | grep -qi "WARN.*state home\|WARN.*shared\|WARN.*registry"; then
+    if grep -qi "WARN.*state home\|WARN.*shared\|WARN.*registry" <<<"${_T2_OUT}"; then
         pass "TRG-T2-01 read-only CODE_HOME: global scope triggered + WARN about non-writable shared state"
     else
         fail "TRG-T2-01 read-only CODE_HOME: global scope -- no fallback registry and no WARN (out: $(echo "${_T2_OUT}" | head -3))"
@@ -367,7 +365,7 @@ _OUT_A="$(cd "${_A_REPO}" && env \
 _RC_A=$?
 
 assert_exit_eq "${_RC_A}" 0 "TRG-A01 stamp-less repo encounter: exit 0"
-if echo "${_OUT_A}" | grep -qE "older format|aid update"; then
+if grep -qE "older format|aid update" <<<"${_OUT_A}"; then
     pass "TRG-A02 stamp-less repo encounter: WARN + 'aid update' offer printed"
 else
     fail "TRG-A02 stamp-less repo encounter: expected WARN+offer; got: $(echo "${_OUT_A}" | head -3)"
@@ -396,7 +394,7 @@ _OUT_B="$(cd "${_A_REPO}" && env \
 _RC_B=$?
 
 assert_exit_eq "${_RC_B}" 0 "TRG-B01 AID_NO_MIGRATE=1: exit 0"
-if echo "${_OUT_B}" | grep -qE "older format|aid update"; then
+if grep -qE "older format|aid update" <<<"${_OUT_B}"; then
     fail "TRG-B02 AID_NO_MIGRATE=1: WARN must be suppressed (found offer text)"
 else
     pass "TRG-B02 AID_NO_MIGRATE=1: WARN suppressed (no offer text in output)"
@@ -415,7 +413,7 @@ _OUT_C="$(cd "${_A_REPO}" && env \
 _RC_C=$?
 
 assert_exit_eq "${_RC_C}" 0 "TRG-C01 second stamp-less encounter: exit 0"
-if echo "${_OUT_C}" | grep -qE "older format|aid update"; then
+if grep -qE "older format|aid update" <<<"${_OUT_C}"; then
     pass "TRG-C02 second stamp-less encounter: WARN still printed (stateless lazy)"
 else
     fail "TRG-C02 second stamp-less encounter: expected WARN; got: $(echo "${_OUT_C}" | head -3)"
@@ -453,7 +451,7 @@ _OUT_D2="$(cd "${_D_REPO}" && env \
 _RC_D2=$?
 
 assert_exit_eq "${_RC_D2}" 0 "TRG-D02 post-stamp status: exit 0"
-if echo "${_OUT_D2}" | grep -qE "older format|aid update"; then
+if grep -qE "older format|aid update" <<<"${_OUT_D2}"; then
     fail "TRG-D03 post-stamp status: WARN still fires (stamp not current or not read)"
 else
     pass "TRG-D03 post-stamp status: no WARN (stamp current, lazy model working)"
@@ -497,7 +495,7 @@ assert_eq "${_MO_FV}" "3" "TRG-MO02 manifest-only: format_version: 3 stamped"
 # Idempotent: 'aid status' must NOT warn now (stamp current) -- the recurrence is gone.
 _MO_OUT2="$(cd "${_MO_REPO}" && env AID_HOME="${_MO_STATE}" AID_NO_UPDATE_CHECK=1 \
     bash "${_MO_CODE}/bin/aid" status 2>&1 </dev/null)" || true
-if echo "${_MO_OUT2}" | grep -qE "older format"; then
+if grep -qE "older format" <<<"${_MO_OUT2}"; then
     fail "TRG-MO03 manifest-only: gate STILL warns after migrate (recurrence not fixed)"
 else
     pass "TRG-MO03 manifest-only: gate silent after migrate (no recurring WARN)"
@@ -714,7 +712,7 @@ _J_STATUS_OUT="$(cd "${_F_REPO}" && env \
     AID_NO_UPDATE_CHECK=1 \
     bash "${_F_CODE}/bin/aid" status \
     2>&1 </dev/null)" || true
-if echo "${_J_STATUS_OUT}" | grep -qE "older format|aid update"; then
+if grep -qE "older format|aid update" <<<"${_J_STATUS_OUT}"; then
     fail "TRG-J03 carry-forward: 'aid status' still emits WARN after second encounter (stamp not current?)"
 else
     pass "TRG-J03 carry-forward: 'aid status' silent (stamp current -- no re-prompt)"
@@ -894,36 +892,6 @@ if [[ -z "${_NPM_SCRATCH}" ]]; then
     pass "ISOL-01 packages/npm/ clean: no scratch from TRG-G/H/I node runs"
 else
     fail "ISOL-01 packages/npm/ dirty after TRG-G/H/I: ${_NPM_SCRATCH}"
-fi
-
-# ===========================================================================
-# Section: Gate 1 — ASCII-only (delegate to existing test)
-# ===========================================================================
-echo ""
-echo "=== Gate 1: ASCII-only (invoking test-ascii-only.sh) ==="
-
-_ASCII_OUT="$(bash "${SCRIPT_DIR}/test-ascii-only.sh" 2>&1)"
-_ASCII_RC=$?
-if [[ "${_ASCII_RC}" -eq 0 ]]; then
-    pass "GATE1-01 test-ascii-only.sh passes (all shipped scripts ASCII-only incl. postinstall.js)"
-else
-    fail "GATE1-01 test-ascii-only.sh FAILED (rc=${_ASCII_RC})"
-    [[ "${VERBOSE}" -eq 1 ]] && echo "--- ascii-only output ---" && echo "${_ASCII_OUT}" && echo "---"
-fi
-
-# ===========================================================================
-# Section: Gate 2 — Bash/PS1 parity (delegate to existing test)
-# ===========================================================================
-echo ""
-echo "=== Gate 2: Bash/PS1 parity (invoking test-aid-cli-parity.sh) ==="
-
-_PARITY_OUT="$(bash "${SCRIPT_DIR}/test-aid-cli-parity.sh" 2>&1)"
-_PARITY_RC=$?
-if [[ "${_PARITY_RC}" -eq 0 ]]; then
-    pass "GATE2-01 test-aid-cli-parity.sh passes (Bash/PS1 parity incl. PAR080 sentinel tests)"
-else
-    fail "GATE2-01 test-aid-cli-parity.sh FAILED (rc=${_PARITY_RC})"
-    [[ "${VERBOSE}" -eq 1 ]] && echo "--- parity output ---" && echo "${_PARITY_OUT}" && echo "---"
 fi
 
 # ===========================================================================
