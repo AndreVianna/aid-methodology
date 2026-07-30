@@ -102,7 +102,7 @@ export function deriveSkillCounts(repoRoot) {
   // The figure a reader-facing decomposition must use. `curated` (21) counts four skills
   // that are ALSO catalog rows -- aid-deploy, aid-monitor, aid-query-kb and the aid-ask
   // alias -- so KI-003 "21 curated + 94 catalog" double-counts them, and the sentence
-  // KI-003 "19 classic + triage + ask + the shortcut count" double-counts three of them AND
+  // the sentence "classic + triage + ask + shortcuts" double-counts three of them AND
   // omits the 26 collapse skills, landing on 85 for a 111 corpus. Excluding the overlap
   // gives 17, and 17 + 94 = 111 exactly. That is why every page on the site states the
   // corpus as "17 curated + 94 catalog": it is the decomposition that sums. Asserted as

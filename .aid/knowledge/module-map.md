@@ -2,7 +2,7 @@
 kb-category: primary
 source: hand-authored
 objective: Component map of the AID repository -- every major module, its purpose, dependencies, test coverage, and the wiring sequence for adding a new one.
-summary: Read this to navigate AID's parts (installer, CLI, canonical toolkit, profile renderer, packages, dashboard, site, tests) and learn how they depend on each other before any module-touching change.
+summary: Read this to navigate AID's parts (installer, CLI, canonical toolkit, profile renderer, packages, dashboard, site, tests) and learn how they depend on each other before any module-touching change. Also carries the four skill *structural* shapes (fat pipeline / hand-authored collapse / generated doorway / kind-sibling) and how they differ from the ownership taxonomy -- read before writing tooling that parses skill bodies.
 sources:
   - bin/
   - lib/

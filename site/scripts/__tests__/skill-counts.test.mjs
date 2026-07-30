@@ -311,21 +311,37 @@ describe('the roster has one home', () => {
     //       drifted — so the marker cannot be used to excuse a wrong CURRENT count;
     //   (b) the total number of exempted lines is capped, so the exemption cannot creep
     //       file-wide one line at a time.
-    const SUPERSEDED = new Set([92, 94, 76, 16, 14, 19, 21, 67, 4]);
+    // The allowlist is PER SHAPE, not a flat set of numbers. A flat set was the first
+    // attempt and it did not work: it held 94, 21, 19 and 4 — which are the CURRENT values
+    // of catalogRows, curated, classic and classicRepurposed — so a marked line reading
+    // "94 classic skills" passed while classic is 19. A number is only "superseded" with
+    // respect to the thing it counts, so that is how it is checked.
+    const SUPERSEDED_BY_SHAPE = [
+      // Negative lookahead: "N classic re-registered skills" counts a DIFFERENT noun
+      // (classicRepurposed), so it must not be judged against the classic-skills history.
+      [/\b(\d+)\s+classic\b(?!\s+re-registered)/g, [14, 15, 16]],
+      [/\b(\d+)\s+classic\s+re-registered/g, [4]],
+      [/\b(\d+)\s+skill directories\b/g, [92, 94]],
+      [/\b(\d+)\s+(?:AID\s+)?skills\b/g, [92, 94]],
+      [/\b(\d+)\s+(?:[\w-]+\s+)?shortcuts?\b/g, [76]],
+      [/\b(\d+)\s+near-identical\b/g, [67]],
+      [/\b(\d+)\s+curated\b/g, [21]],
+    ];
     let exempted = 0;
     for (const file of NO_COUNT_FILES) {
       const lines = readFileSync(file, 'utf8').split('\n');
       const kept = lines.filter((l) => !l.includes('KI-003'));
       for (const l of lines.filter((l) => l.includes('KI-003'))) {
-        for (const shape of COUNT_SHAPES) {
-          const m = shape.exec(l);
-          if (m) {
-            // COUNT_SHAPES carry no capture group — pull the number out of the match text.
-            const n = Number(/\d+/.exec(m[0])[0]);
+        for (const [shape, allowed] of SUPERSEDED_BY_SHAPE) {
+          // matchAll, not exec: exec returns only the FIRST match on the line, so a marked
+          // line could smuggle a second, current, wrong number past the check entirely.
+          for (const m of l.matchAll(new RegExp(shape.source, shape.flags))) {
+            const n = Number(m[1]);
             expect(
-              SUPERSEDED.has(n),
-              `${file}: KI-003-marked line quotes ${n} ("${m[0]}"), which is not a superseded `
-                + 'value — the marker exempts historical numbers, not current ones',
+              allowed.includes(n),
+              `${file}: KI-003-marked line quotes "${m[0]}" — ${n} is not a superseded value `
+                + `for that noun (allowed: ${allowed.join(', ')}). The marker exempts historical `
+                + 'numbers, not current or invented ones.',
             ).toBe(true);
           }
         }
