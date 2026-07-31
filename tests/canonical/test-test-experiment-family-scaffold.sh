@@ -15,9 +15,11 @@
 #      aid-experiment's RESEARCH -> [IMPLEMENT] -> RESEARCH chain, and the Ownership
 #      boundary (G7 owns test/experiment wholly, not aid-create).
 #   2. Catalog contract -- checked against the REAL catalog + skill dirs: exactly 5 G7
-#      rows (aid-test, -security, -performance, -data-quality, aid-experiment), NO alias
-#      row for any of them (feature-009's "5 canonical, no aliases"), and the
-#      test/test-* -> TEST, experiment -> RESEARCH default_type mapping.
+#      TEST/EXPERIMENT rows (aid-test, -security, -performance, -data-quality,
+#      aid-experiment), NO alias row for any of them (feature-009's "5 canonical, no
+#      aliases"), and the test/test-* -> TEST, experiment -> RESEARCH default_type mapping.
+#      Scope, because `group: G7` is a WIDER set: 7 catalog rows carry `group: G7`, the
+#      other 2 being aid-create-test and aid-update-test, which feature-009 does not own.
 #   3. Fixture-shape assertions -- three hand-authored flattened work fixtures mirroring
 #      what `/aid-test-security`, `/aid-experiment`, and `/aid-test` (model-eval mode)
 #      would produce, all halted at APPROVAL-HALT (pre-Execute).
@@ -134,7 +136,8 @@ get_row_field() {
     ' "$CATALOG"
 }
 
-# TEF-10: exactly 5 G7 rows exist, each with the aid- prefix and a matching skill dir.
+# TEF-10: exactly 5 G7 TEST/EXPERIMENT rows exist (scope = the G7_NAMES roster below, not the
+# 7 rows carrying `group: G7`), each with the aid- prefix and a matching skill dir.
 G7_NAMES=(aid-test aid-test-security aid-test-performance aid-test-data-quality aid-experiment)
 for name in "${G7_NAMES[@]}"; do
     ROW_COUNT=$(grep -c "^  - name: ${name}\$" "$CATALOG" || true)
@@ -603,7 +606,7 @@ Determine whether a green checkout button improves conversion vs. the current bl
 verb=experiment. Hypothesis, >= 2 variants (control + treatment), success metric,
 significance criteria, audience -- all captured in REQUIREMENTS.md §4.
 
-**Out of scope:** shipping the winning variant permanently (a follow-on aid-change).
+**Out of scope:** shipping the winning variant permanently (a follow-on aid-update).
 
 ## Gate Criteria
 
