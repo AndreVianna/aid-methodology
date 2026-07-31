@@ -1,23 +1,36 @@
 #!/usr/bin/env bash
 #
 # ============================================================================
-#  THIS FILE IS THE SOURCE. NINE COPIES EXIST -- EDIT THIS ONE, NEVER THE OTHER EIGHT.
+#  THIS FILE IS THE SOURCE. EIGHT RENDERS EXIST -- EDIT THIS ONE, NEVER A RENDER.
 #
 #  canonical/aid/scripts/execute/writeback-state.sh   <- you are here (edit this)
 #  profiles/{claude-code,codex,cursor,copilot-cli,antigravity}/.../writeback-state.sh
-#  .claude/aid/scripts/execute/writeback-state.sh     (dogfood render)
-#  .cursor/aid/scripts/execute/writeback-state.sh     (dogfood render)
-#  dashboard/scripts/writeback-state.sh               (deliberate FORK: also accepts
-#                                                      `Deploy` as a Phase value)
+#  ...plus this repo's own per-tool dogfood trees, one render per installed tool
+#     root, at that tool's own aid/scripts/execute/ path.
+#
+#  If you are reading this inside a tool's installed tree, you are in a RENDER.
+#  Your edit will be erased by the next generator run and will reach no adopter.
+#
+#  ONE NINTH COPY IS NOT A RENDER: dashboard/scripts/writeback-state.sh is a
+#  DELIBERATE FORK -- it additionally accepts `Deploy` as a Phase value. Do NOT
+#  resync it from here; overwriting it silently removes that, and no test catches
+#  it. Its own header says so.
 #
 #  After editing: run the profile generator, then resync the dogfood trees.
 #  `tests/canonical/test-dogfood-byte-identity.sh` fails if you skip that.
 #
-#  This banner exists because the mistake was made: a fix landed in the .claude/
+#  This banner exists because the mistake was made: a fix landed in one dogfood
 #  render only, which turned repo CI red and would have been erased by the next
 #  render, reaching no adopter. The invariant was already documented
 #  (architecture.md: "Editing a rendered or vendored copy is a defect") -- what was
 #  missing was the file saying so at the moment someone opens it.
+#
+#  Deliberately names no tool root. An earlier version listed them literally, which
+#  put another tool's root path into every render and tripped
+#  `tests/canonical/test-multitool-isolation.sh` T21-T26 (no foreign-root reference
+#  in an operational script). The guard was right: an adopter who installed one tool
+#  should not find another tool's paths in their own scripts, in a comment or
+#  anywhere else.
 # ============================================================================
 #
 # writeback-state.sh -- row-level write coordination for FR6 parallel pool
