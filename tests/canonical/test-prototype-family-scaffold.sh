@@ -11,7 +11,7 @@
 #   1. Contract assertions -- grep shortcut-scaffolding/prototype.md for the load-bearing
 #      elements: aid-prototype's CAPTURE slots (fidelity-level enum) and DESIGN ->
 #      [IMPLEMENT] breakdown, aid-prototype-ui's CAPTURE slots and ### UI Specs activation,
-#      and the Ownership-boundary handoff to aid-create/aid-change (+ testing-with-users
+#      and the Ownership-boundary handoff to aid-create/aid-update (+ testing-with-users
 #      routed to G7).
 #   2. Catalog contract -- checked against the REAL catalog + skill dirs: exactly 2 G3 rows
 #      (aid-prototype, aid-prototype-ui), both default_type DESIGN, neither carrying an
@@ -112,7 +112,7 @@ assert_output_contains "$PROTO_TXT" \
     "PFS06b aid-prototype-ui optionally builds a clickable flow prototype"
 
 # PFS-07: Ownership boundary -- validates direction, not the production build; hands off to
-# aid-create[-artifact]/aid-change; testing with users is G7.
+# aid-create[-artifact]/aid-update; testing with users is G7.
 assert_output_contains "$PROTO_TXT" \
     'A prototype **validates direction; it is not the production build**' \
     "PFS07a Ownership boundary: a prototype validates direction, is not the production build"
@@ -120,8 +120,8 @@ assert_output_contains "$PROTO_TXT" \
     'hand off to `aid-create[-artifact]` (or' \
     "PFS07b Ownership boundary: hands off to aid-create[-artifact] (wrap point 1)"
 assert_output_contains "$PROTO_TXT" \
-    '`aid-change` when the target already exists) -- prototype work never touches production' \
-    "PFS07c Ownership boundary: or aid-change when the target already exists (wrap point 2)"
+    '`aid-update` when the target already exists) -- prototype work never touches production' \
+    "PFS07c Ownership boundary: or aid-update when the target already exists (wrap point 2)"
 assert_output_contains "$PROTO_TXT" \
     'is a G7 activity' \
     "PFS07d Ownership boundary: testing the prototype with real users is a G7 activity (wrap point 1)"
@@ -375,7 +375,7 @@ Target screen/flow: the checkout page. Key interactions + states: form entry, pa
 step, loading, empty, error, success.
 
 **Out of scope:** the production build of the collapsed checkout flow (routes to
-aid-create/aid-change) and usability testing with real users (routes to aid-experiment /
+aid-create/aid-update) and usability testing with real users (routes to aid-experiment /
 aid-test).
 
 ## Gate Criteria
@@ -630,7 +630,7 @@ Validate the live-cursor direction before committing to a real-time sync backend
 Direction: live cursors reduce overwrite conflicts. Fidelity: runnable spike.
 
 **Out of scope:** the real-time sync backend / production build (routes to
-aid-create/aid-change) and usability testing with real users (routes to aid-experiment /
+aid-create/aid-update) and usability testing with real users (routes to aid-experiment /
 aid-test).
 
 ## Gate Criteria
