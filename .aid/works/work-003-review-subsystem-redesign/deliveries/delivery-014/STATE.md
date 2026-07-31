@@ -46,7 +46,11 @@ ticket_ref: "--"
 <!-- AUTHORED -- single writer: the delivery-gate closing step of aid-execute on this
      delivery's branch. Reviewer Tier / Grade / Timestamp live in the frontmatter above. -->
 
-- **Issue List:** --
+- **Issue List:** gate DISPATCHED 2026-07-31 against today's HEAD, not the commit this delivery
+  shipped at. This delivery was marked `Gated` with no gate record of any kind -- no grade, no
+  timestamp, no issue list; see work `STATE.md` Q22. Reviewing it late is strictly stronger than
+  reviewing it then: a criterion that held at ship time and has since been broken is a finding the
+  original gate could not have produced.
 
 ---
 

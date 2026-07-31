@@ -197,6 +197,38 @@ or worse; `[LOW]`/`[MINOR]` at the end" — are the same statement.
 <!-- DERIVED -- union of per-delivery Q&A plus WORK-OWNER-AUTHORED entries below
      (work owner is the single writer for those). -->
 
+### Q22 -- deliveries 013 and 014 were marked Gated with no gate ever run (2026-07-30)
+
+- **Category:** Process defect
+- **Impact:** High
+- **Status:** **Being closed now** — both gates dispatched 2026-07-31.
+
+**What was found.** Both deliveries read `delivery_state: Gated`, but their whole gate record is
+empty: `gate_grade: "Pending"`, `gate_timestamp: "--"`, `Issue List: --`. Only `gate_tier: Medium`
+was set, which is the value the *scoring* step writes before a reviewer is dispatched. Their tasks
+are all `Done` and the work shipped 48 and 58 files respectively. So the lifecycle was advanced to
+`Gated` without a gate: the state says a quality gate happened and no artifact of one exists.
+
+This is precisely the failure the tracking rule in `CLAUDE.md` exists to prevent, in its less obvious
+direction — not a task sitting at `Pending` while it runs, but a delivery *claiming* a terminal
+review state it never reached. Twelve of the fifteen executed deliveries carry `A+` with a record;
+these two carried a state with nothing behind it, and it survived because nothing cross-checks
+`delivery_state: Gated` against the presence of a grade.
+
+**What is being done.** Both gates are now running against **today's HEAD**, not the commit they
+shipped at (`9601190d` for 013, `7a9df485` for 014). Reviewing them late is not a workaround, it is
+strictly stronger: 140-odd commits and a master merge have landed on top, so a criterion that held
+then and has since been broken is a finding the original gate could not have produced. Delivery-014's
+subject matter in particular has moved underneath it — it owns `lint-settings.sh`, and
+`.aid/settings.yml` has since changed `minimum_grade` twice and had a per-skill override rejected by
+that very linter (§ Q19).
+
+**The gap that let it happen, which outlives these two deliveries.** Nothing asserts the invariant
+*`delivery_state: Gated` implies a non-empty `gate_grade`*. That is a one-line mechanical check over
+every `deliveries/*/STATE.md`, and its absence is why a missing gate looked identical to a passed one
+for three days. Recorded here rather than fixed inline — it belongs with the state-schema work, not
+in a gate FIX cycle.
+
 ### Q21 -- merging master: the circuit breaker collided with work-001's chart engine (2026-07-30)
 
 - **Category:** Integration
