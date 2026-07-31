@@ -24,19 +24,21 @@
 #   ENGINE       -- the shortcut-engine.md under test.
 #   FAMILY_BASE  -- the directory the groupings table's RELATIVE family-file paths
 #                   (`shortcut-scaffolding/<family>.md`) resolve against.
+#   CATALOG      -- the shortcut-catalog.yml SEC08a derives its verb set from.
 #
-# Both default to the live canonical tree, so an unset environment resolves exactly the
-# paths this suite resolved before the overrides existed. They exist so SEC08's negative
+# All three default to the live canonical tree, so an unset environment resolves exactly
+# the paths this suite resolved before the overrides existed. They exist so SEC08's negative
 # controls can run against a materialised OLD revision or a mutated scratch copy WITHOUT
 # editing this file: a temporary local edit reverted afterwards is worse on two counts --
 # it leaves the suite transiently wrong, and the revert is unreviewable.
 #
-# In-repo precedent for the `${VAR:-default}` form (measured 2026-07-29 with
-# `grep -rlE '\$\{[A-Z_]+:-'`): 14 files under tests/canonical/, 3 under tests/lib/, plus
-# tests/run-all.sh = 18 under tests/. The two closest in shape override a REVISION for
-# exactly this purpose -- test-release.sh:47
+# In-repo precedent for the `${VAR:-default}` form, re-measured on this tree with
+# `grep -rlE '\$\{[A-Z_]+:-' tests/`: 15 files under tests/canonical/ BEFORE this suite
+# adopted it (16 including it), 3 under tests/lib/, plus tests/run-all.sh -- 20 under
+# tests/ in total, and the decomposition sums. The two closest in shape override a
+# REVISION for exactly this purpose -- test-release.sh:47
 # (`WORKTREE_REF="${AID_TEST_REF:-$(git -C "${REPO_ROOT}" rev-parse HEAD)}"`) and
-# test-release-install-e2e.sh:79.
+# test-release-install-e2e.sh:79, both verbatim at those lines.
 #
 # ---------------------------------------------------------------------------
 # SEC08 -- what it proves, and what it deliberately does not
@@ -104,9 +106,10 @@
 #
 # Observed 2026-07-31 -- a RECORD of what the derivation resolved to, not an input; the
 # commands above name no revision: both routes agreed on LAND=bc40b7ef, giving
-# PRE=a72ab409 (926 lines), and the run reported exit 1 with
+# PRE=a72ab409 (926 lines), and the run reported "Tests passed: 23 / Tests failed: 1",
+# exit 1, on this line (the tail, listing both full verb sets, is elided here):
 #
-#   FAIL: SEC08a verb not bound to a family -- unbound catalogue verb(s): update
+#   FAIL: SEC08a verb not bound to a family — unbound catalogue verb(s): update — ...
 #
 # SEC08b is shown red by pointing ENGINE at a scratch copy whose groupings table names a
 # family file that does not exist. SEC08c by pointing FAMILY_BASE at a scratch tree
