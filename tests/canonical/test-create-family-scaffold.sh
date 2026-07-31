@@ -151,7 +151,7 @@ assert_eq "$CREATE_API_ARTIFACT" "api" "CFS11b aid-create-api row: artifact == a
 # identical to `aid-create-api`'s, `CFS11d` its artifact likewise, `CFS11e` its
 # `alias_of: aid-create-api`. feature-001 removed the row; measured here,
 # `grep -c '^  - name: aid-add-api$' shortcut-catalog.yml` returns 0 and
-# `grep -c '^    alias_of: aid-' shortcut-catalog.yml` returns 0 across all 58 rows.
+# `grep -c '^    alias_of: aid-' shortcut-catalog.yml` returns 0 for every catalogue row.
 # `get_row_field` on an absent row returns the empty string, so all three now read ""
 # and fail. There is no surviving name to re-point them AT: `aid-add-api` was retired
 # outright, not renamed, and with `alias_of` null on every row the "identical to its
@@ -171,9 +171,9 @@ assert_output_contains "$CREATE_API_BODY" 'ARTIFACT=`api`' "CFS13b aid-create-ap
 # Their subject was the GENERATED `canonical/skills/aid-add-api/SKILL.md` doorway:
 # `CFS13c`/`CFS13d` that it bound the same VERB/ARTIFACT pair as `aid-create-api`'s,
 # `CFS13e` that its body carried the sentence "thin alias of `aid-create-api`".
-# feature-004 pruned the directory (`test -d canonical/skills/aid-add-api` is false;
-# the tree is 75 dirs = 17 curated-only + 58 catalog rows, with no `aid-add*` among
-# them) and feature-002/FR-3a deleted the "thin alias of" emitter from
+# feature-004 pruned the directory (`test -d canonical/skills/aid-add-api` is false, and
+# no `aid-add*` directory survives anywhere under `canonical/skills/`) and
+# feature-002/FR-3a deleted the "thin alias of" emitter from
 # `build-shortcut-skills.py`, so no generated body carries that sentence any more.
 # `ADD_API_BODY` read that pruned path and is gone with them.
 
@@ -851,7 +851,7 @@ done
 # Why it cannot hold, rather than merely being inconvenient: an equivalence assertion
 # needs two subjects. `alias_of` names no skill on any catalogue row after feature-001
 # (`grep -c '^    alias_of: aid-' canonical/aid/templates/shortcut-catalog.yml` = 0,
-# against 58 rows all reading `alias_of: null`), and `canonical/skills/aid-add-api/` was
+# every row reading `alias_of: null`), and `canonical/skills/aid-add-api/` was
 # pruned by feature-004. So the second subject does not exist, in the catalogue or on
 # disk. Re-labelling the second fixture with a surviving name would not repair the proof
 # -- it would assert that a fixture equals itself, which is green by construction and

@@ -222,8 +222,8 @@ assert_eq "$UPDATE_API_ARTIFACT" "api" "CRF10b aid-update-api row: artifact == a
 # identical to `aid-change-api`'s, `CRF10d` the same for artifact, `CRF10e` that
 # `aid-update-api`'s `alias_of` read `aid-change-api`. There is no mirror pair left to
 # compare -- `grep -c '^  - name: aid-change-api$' shortcut-catalog.yml` returns 0, and
-# `grep -c '^    alias_of: aid-' shortcut-catalog.yml` returns 0 across all 58 rows
-# (every one reads `alias_of: null`). `CRF10c`/`CRF10d` would compare `aid-update-api`'s
+# `grep -c '^    alias_of: aid-' shortcut-catalog.yml` returns 0 for every catalogue row
+# (each reads `alias_of: null`). `CRF10c`/`CRF10d` would compare `aid-update-api`'s
 # real values against the empty string `get_row_field` returns for an absent row, and
 # `CRF10e` asserts a relationship the catalogue no longer expresses at all. The
 # `CHANGE_API_VERB` / `CHANGE_API_ARTIFACT` / `UPDATE_API_ALIAS_OF` bindings are gone
@@ -1124,8 +1124,8 @@ done
 # Why it cannot hold, rather than merely being inconvenient: an equivalence assertion
 # needs two subjects. After feature-001, `aid-change-api` is not a catalogue row
 # (`grep -c '^  - name: aid-change-api$' canonical/aid/templates/shortcut-catalog.yml`
-# = 0) and `alias_of` names no skill on any of the 58 rows
-# (`grep -c '^    alias_of: aid-' ...` = 0, all 58 reading `alias_of: null`); feature-004
+# = 0) and `alias_of` names no skill on any catalogue row
+# (`grep -c '^    alias_of: aid-' ...` = 0; each reads `alias_of: null`); feature-004
 # pruned `canonical/skills/aid-change-api/`. So the second subject does not exist, in the
 # catalogue or on disk. Re-labelling the second fixture with a surviving name would not
 # repair the proof -- it would assert that a fixture equals itself, green by construction
