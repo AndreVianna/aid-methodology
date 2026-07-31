@@ -90,6 +90,31 @@ ticket_ref: "--"
      aid-execute). Written here, NOT into the shared work-level STATE.md, to preserve the
      disjoint-write property. -->
 
+### The V1 visual gate stays agent-mediated (2026-07-30) — human decision, DECIDED
+
+- **Category:** Design
+- **Impact:** Medium
+- **Status:** **Decided — do not re-ask.** Raised by cycle 10's reviewer, which deliberately filed no
+  ledger row for it because the behaviour is as-declared; it asked for a human judgment instead.
+
+**What de-scoring changed.** The retired `grade-summary.sh` read `V1_score` and forced the Human Grade
+to `F` when the mandatory visual check failed — a hard, mechanical block. Nothing now reads
+`V1_answer`: `state-approval.md`'s precondition is `test -f` on the checklist JSON, which passes on a
+checklist recording `V1_answer: "n"`. Enforcement rests on an agent choosing to write a `SUMMARY-06`
+row, after which the grade follows from that row's severity like any other finding.
+
+**Decision: leave it agent-mediated.** It is what the rubric already declares in as many words
+(`knowledge-summary/grading-rubric.md § Hard rules` #2 — "it produces a `SUMMARY-06` finding, and the
+grade follows"), `review-rubrics/summary.md` marks `SUMMARY-06` **judgment / human evidence only**, and
+`test-landscape.md § Coverage Assessment` exempts prompt-driven skill state machines from machine
+testing by design. So no rule is broken and nothing is silently weaker than declared — this judgment
+check is enforced exactly like every other judgment check in the catalog.
+
+**What this closes.** A future cycle must not file this as a defect, and must not "fix" it by adding a
+`V1_answer` read to APPROVAL: that would make one judgment check enforced differently from the rest,
+which is the inconsistency this decision chooses against. Reopening it means changing how *judgment*
+rules are enforced generally, not patching this one.
+
 ### Why six cycles did not reach A+ (2026-07-30) — needs a human decision
 
 - **Category:** Process
