@@ -405,8 +405,24 @@ assert_file_not_contains "$SETTINGS_YML" 'update-kb:' \
 assert_file_not_contains "$SETTINGS_YML" 'update_kb:' \
   "UK89 .aid/settings.yml has no per-skill update_kb: override section (underscore variant)"
 
-assert_file_contains "$SETTINGS_YML" 'minimum_grade: A+' \
-  "UK90 .aid/settings.yml's global minimum_grade is unchanged (A+)"
+# UK90/UK91 assert the RELATIONSHIP, not a snapshot of the value.
+#
+# Both used to pin the literal `A+`. That broke the moment the project's own bar
+# changed -- the owner lowered the global `minimum_grade` to `B-` during work-001's
+# delivery-006 gate, and these two assertions failed while the invariant they exist
+# to protect was still perfectly intact.
+#
+# The invariant is the one this section's heading states: aid-update-kb carries NO
+# per-skill override, so its floor is whatever the GLOBAL floor is. Deriving the
+# expectation from the file is strictly stronger than pinning a literal: a hard-coded
+# `A+` could not detect a per-skill override that happened to also say `A+`, whereas
+# comparing the resolved floor against the global value detects any divergence at all.
+GLOBAL_FLOOR=$(sed -n 's/^minimum_grade:[[:space:]]*"\{0,1\}\([^"[:space:]]*\)"\{0,1\}[[:space:]]*$/\1/p' "$SETTINGS_YML" | head -1)
+if [[ -n "$GLOBAL_FLOOR" ]]; then
+  pass "UK90 .aid/settings.yml declares a global minimum_grade ('${GLOBAL_FLOOR}') -- value not pinned by this test"
+else
+  fail "UK90 .aid/settings.yml declares no parseable global minimum_grade -- UK91 below would compare against an empty string and pass vacuously"
+fi
 
 if [[ ! -f "$READ_SETTING" ]]; then
   echo "FATAL: read-setting.sh not found at $READ_SETTING" >&2
@@ -414,8 +430,8 @@ if [[ ! -f "$READ_SETTING" ]]; then
 fi
 
 RESOLVED_FLOOR=$(bash "$READ_SETTING" --skill update-kb --key minimum_grade --default A --file "$SETTINGS_YML" 2>/dev/null)
-assert_eq "$RESOLVED_FLOOR" "A+" \
-  "UK91 aid-update-kb's floor resolves (via read-setting.sh) to the project's global minimum_grade (A+)"
+assert_eq "$RESOLVED_FLOOR" "$GLOBAL_FLOOR" \
+  "UK91 aid-update-kb's floor resolves (via read-setting.sh) to the project's global minimum_grade ('${GLOBAL_FLOOR}') -- i.e. no per-skill override shadows it"
 
 # =============================================================================
 # UK92-UK98 -- delivery-gate FIX cycle-2 (rows 7/8): APPROVAL row CHAIN-on-[1];

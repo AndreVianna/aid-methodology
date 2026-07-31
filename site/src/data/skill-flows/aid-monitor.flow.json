@@ -1,0 +1,153 @@
+{
+  "skill": "aid-monitor",
+  "shape": "dispatch-table",
+  "extractor": "extract-dispatch",
+  "confidence": "derived",
+  "title": "aid-monitor — state flow",
+  "nodes": [
+    {
+      "id": "n1",
+      "order": 1,
+      "name": "OBSERVE",
+      "label": "No prior run context; pull telemetry signals and correlate…",
+      "kind": "entry",
+      "terminal": null,
+      "provenance": {
+        "file": "canonical/skills/aid-monitor/SKILL.md",
+        "startLine": 214,
+        "endLine": 214,
+        "sourceKind": "skill",
+        "excerpt": "| OBSERVE | `references/state-observe.md` | `aid-researcher` | → CLASSIFY |"
+      },
+      "detail": {
+        "file": "canonical/skills/aid-monitor/references/state-observe.md",
+        "startLine": 1,
+        "endLine": 35,
+        "sourceKind": "worker",
+        "excerpt": "# State: OBSERVE\n\nNo prior run context; pull telemetry signals and correlate against baselines.\n\n### Step 1: Observe\n\nPull data from configured sources. Scope the observation window:\n- **Post-deploy:** last deploy → now\n- **Scheduled:** last monitor run → now\n- **On-demand:** user-specified window\n\n▶ telemetry pull starting (~30 s–2 min per source per `canonical/aid/templates/rough-time-hints.md`)\nFor each data source, capture:\n- Raw signals (errors, latency spikes, failures, ticket clusters)\n- Metadata (timestamps, affected users/endpoints, frequency)\n- Trends vs. baseline (is this new? worsening? stable?)\n✓ telemetry pull done (record actual time, sources hit, signals collected) — or ✗ telemetry pull failed: {source, reason}\n\n▶ anomaly detection starting (~10–30 s)\n**Anomaly detection — compare to baseline:**\n- Error rate changes (new error types, rate spikes)\n- Performance degradation (latency, throughput)\n- Test instability (new flaky tests, persistent failures)\n- Behavioral anomalies (unexpected patterns in usage or data)\n\n**Correlation — connect signals:**\n- \"Error spike started 23 min after deploy of package-002\"\n- \"Performance drop coincides with new region traffic\"\n- Correlation narrows investigation scope — don't just list, connect.\n\nUse KB to filter: known conditions, expected variation, already-documented issues.\n✓ anomaly detection done (record actual time, N findings above threshold) — or ✗ anomaly detection failed: {reason}\n\n**Advance:** **CHAIN** → [State: CLASSIFY] (continue inline).\n"
+      }
+    },
+    {
+      "id": "n2",
+      "order": 2,
+      "name": "CLASSIFY",
+      "label": "Active findings are present; classify each anomaly and…",
+      "kind": "step",
+      "terminal": null,
+      "provenance": {
+        "file": "canonical/skills/aid-monitor/SKILL.md",
+        "startLine": 215,
+        "endLine": 215,
+        "sourceKind": "skill",
+        "excerpt": "| CLASSIFY | `references/state-classify.md` | `aid-researcher` | → ROUTE |"
+      },
+      "detail": {
+        "file": "canonical/skills/aid-monitor/references/state-classify.md",
+        "startLine": 1,
+        "endLine": 46,
+        "sourceKind": "worker",
+        "excerpt": "# State: CLASSIFY\n\nActive findings are present; classify each anomaly and perform root cause analysis for bugs.\n\n### Step 2: Classify\n\nFor each finding above threshold:\n\n```\nDoes code do what the feature SPEC says?\n├── NO → BUG (spec right, code wrong)\n├── YES, spec doesn't cover this case →\n│     Obvious fix? → BUG (spec gap)\n│     Needs requirements input? → CHANGE REQUEST\n├── YES, spec is now wrong → CHANGE REQUEST\n├── NOT CODE → INFRASTRUCTURE\n└── FALSE POSITIVE → NO ACTION\n```\n\nAssess severity per finding:\n- **Critical:** Data loss, security breach, total outage → Immediate\n- **High:** Core functionality broken → Same day\n- **Medium:** Non-critical affected, workaround exists → This week\n- **Low:** Minor, limited impact → Next cycle\n\n### Step 3: Analyze (BUGs only)\n\n▶ root cause analysis starting (~2–5 min per BUG per `canonical/aid/templates/rough-time-hints.md`)\nRoot cause analysis before routing:\n\n1. **Reproduce the path.** Trace from evidence: endpoint → module → function.\n2. **Identify the fault.** What specific code is wrong?\n3. **Understand why.** Spec ambiguous? Edge case? KB assumption wrong?\n4. **Assess blast radius.** Check module consumers via INDEX.md → module-map.\n5. **Define patch scope.** Exactly which files change. Minimal surface — fix the bug, don't refactor.\n6. **Test requirements.** Fix verification + regression + coverage gap.\n\nRoot cause = one sentence:\n\"The `PaymentService.Process()` method doesn't validate null `currency` field,\nwhich spec says must default to USD.\"\n✓ root cause analysis done (record actual time, root cause, patch scope) — or ✗ root cause analysis blocked: {reason — usually KB gap or unreproducible}\n\nFor threshold definitions, see `## Severity Thresholds` in SKILL.md.\n\n**Advance:** **CHAIN** → [State: ROUTE] (continue inline).\n"
+      }
+    },
+    {
+      "id": "n3",
+      "order": 3,
+      "name": "ROUTE",
+      "label": "All findings are classified; propose and execute routing…",
+      "kind": "step",
+      "terminal": null,
+      "provenance": {
+        "file": "canonical/skills/aid-monitor/SKILL.md",
+        "startLine": 216,
+        "endLine": 216,
+        "sourceKind": "skill",
+        "excerpt": "| ROUTE | `references/state-route.md` | `aid-orchestrator` | → DONE |"
+      },
+      "detail": {
+        "file": "canonical/skills/aid-monitor/references/state-route.md",
+        "startLine": 1,
+        "endLine": 60,
+        "sourceKind": "worker",
+        "excerpt": "# State: ROUTE\n\nAll findings are classified; propose and execute routing actions per finding classification.\n\n### Step 4: Propose Actions\n\nPresent findings to the user with proposed routing:\n\n```\n📊 Monitor Report — work-001 (since 2026-03-20)\n\nFinding 1: [CRITICAL] [BUG] Null currency causes 500 error\n  Evidence: 342 errors in 48h, payment module, started after package-002\n  Root cause: PaymentService.Process() missing null validation\n  Patch scope: PaymentService.cs + PaymentServiceTests.cs\n  → Proposed: Route to /aid-fix\n\nFinding 2: [MEDIUM] [CHANGE REQUEST] Reports need local timezone\n  Evidence: 12 support tickets requesting midnight-local instead of midnight-UTC\n  → Proposed: Route to /aid-triage\n\nFinding 3: [LOW] [NO ACTION] Intermittent 504 on health endpoint\n  Evidence: 3 occurrences in 7 days, all self-resolved < 30s\n  → Proposed: Document, no action\n\n[1] Approve all routes\n[2] Adjust — change routing for specific findings\n```\n\n### Step 5: Act\n\nFor each approved finding:\n\n**BUG → /aid-fix:**\n- Record the bug finding in the in-memory monitor context with: root cause, patch scope, test requirements, severity. (A persistent `MONITOR-STATE.md` is deferred until the Monitor area matures — see aid-monitor/SKILL.md.)\n- Hand off the diagnosis — root cause, patch scope, test requirements — to `/aid-fix`, which scaffolds and implements the fix directly (→ optional `aid-deploy`). The spec is already correct; only the code is wrong, so `/aid-fix` skips Specify/Plan/Detail.\n\n**CHANGE REQUEST → /aid-triage:**\n- Record the change request in the in-memory monitor context (the desired new/changed behavior, with evidence).\n- Hand off the desired change and its evidence to `/aid-triage`, which suggests the right entry — the full path via `/aid-describe` for a broad or ambiguous change (the pipeline then runs from Interview: Specify → Plan → Detail → Execute; a large-enough CR spins up a new work), or a specific direct-entry shortcut for a known single change-type.\n\n**INFRASTRUCTURE → escalate:**\n- Document in the monitor run summary with recommended ops action\n- Not in AID's scope — the user handles this\n\n**NO ACTION → close:**\n- Document justification in the monitor run summary → Resolved Findings list\n\n**Update known-issues.md** if findings reveal new known issues affecting other features.\n\n### Step 6: Update State\n\nPrint monitor run summary: date, window, finding count, routing summary.\n\nIf a catalogued `issue-tracker` connector exists in `.aid/connectors/` → print a suggestion:\nconsider filing a ticket for each BUG finding via `/aid-create-ticket`. Optional, user-initiated,\nnever auto-invoked; silent (no output) if no issue-tracker connector is catalogued.\n\n**Advance:** **CHAIN** → [State: DONE] (continue inline).\n"
+      }
+    },
+    {
+      "id": "n4",
+      "order": 4,
+      "name": "DONE",
+      "label": "Done",
+      "kind": "exit",
+      "terminal": {
+        "advanceType": "HALT",
+        "handoff": null
+      },
+      "provenance": {
+        "file": "canonical/skills/aid-monitor/SKILL.md",
+        "startLine": 217,
+        "endLine": 217,
+        "sourceKind": "skill",
+        "excerpt": "| DONE | _(inline — see Re-run below)_ | `inline` | → halt |"
+      },
+      "detail": null
+    }
+  ],
+  "edges": [
+    {
+      "from": "n1",
+      "to": "n2",
+      "kind": "sequence",
+      "condition": null,
+      "advanceType": "CHAIN",
+      "provenance": {
+        "file": "canonical/skills/aid-monitor/references/state-observe.md",
+        "startLine": 34,
+        "endLine": 34,
+        "sourceKind": "worker",
+        "excerpt": "**Advance:** **CHAIN** → [State: CLASSIFY] (continue inline)."
+      }
+    },
+    {
+      "from": "n2",
+      "to": "n3",
+      "kind": "sequence",
+      "condition": null,
+      "advanceType": "CHAIN",
+      "provenance": {
+        "file": "canonical/skills/aid-monitor/references/state-classify.md",
+        "startLine": 45,
+        "endLine": 45,
+        "sourceKind": "worker",
+        "excerpt": "**Advance:** **CHAIN** → [State: ROUTE] (continue inline)."
+      }
+    },
+    {
+      "from": "n3",
+      "to": "n4",
+      "kind": "sequence",
+      "condition": null,
+      "advanceType": "CHAIN",
+      "provenance": {
+        "file": "canonical/skills/aid-monitor/references/state-route.md",
+        "startLine": 59,
+        "endLine": 59,
+        "sourceKind": "worker",
+        "excerpt": "**Advance:** **CHAIN** → [State: DONE] (continue inline)."
+      }
+    }
+  ],
+  "entries": [
+    "n1"
+  ],
+  "exits": [
+    "n4"
+  ],
+  "sources": [
+    "canonical/skills/aid-monitor/SKILL.md",
+    "canonical/skills/aid-monitor/references/state-classify.md",
+    "canonical/skills/aid-monitor/references/state-observe.md",
+    "canonical/skills/aid-monitor/references/state-route.md"
+  ],
+  "warnings": [
+    "[gen-skills] extract-dispatch: inline detail for state 'DONE' has no matching ## State: section (canonical/skills/aid-monitor/SKILL.md)"
+  ]
+}

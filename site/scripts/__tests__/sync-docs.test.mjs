@@ -267,6 +267,19 @@ describe('sync-docs: excluded files not generated', () => {
 // ── Idempotency / drift-check ─────────────────────────────────────────────────
 
 describe('sync-docs: idempotency (drift-check)', () => {
+  // THIS TEST MUTATES FILES OTHER SUITES READ, and that is safe for a specific reason
+  // worth stating rather than leaving a reader to reconstruct.
+  //
+  // Re-running the sync rewrites the four synced pages under src/content/docs/ — four of
+  // which are `CLAIM_PAGES` in skill-counts.test.mjs. Two things make that harmless:
+  // `fileParallelism: false` (KI-016) serialises test FILES, so no sibling can read a
+  // half-written file; and the `git diff --exit-code` below is itself the proof that the
+  // rewrite changed nothing, because a rewrite that altered any byte fails THIS test. So a
+  // sibling suite cannot observe a mutated file without this test going red first.
+  //
+  // What it does mean: an uncommitted edit to a `docs/*.md` source shows up here as
+  // "drift" naming the DERIVED copy rather than the source you edited. The `sourceDoc:`
+  // frontmatter on each synced page is the pointer back.
   it('running sync:docs again produces no diff on the owned files', () => {
     // Re-run the sync
     execSync('node scripts/sync-docs.mjs', { cwd: SITE_ROOT, stdio: 'pipe' });

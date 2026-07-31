@@ -1,0 +1,130 @@
+{
+  "skill": "aid-read-ticket",
+  "shape": "residual",
+  "extractor": "residual",
+  "confidence": "approximate",
+  "title": "aid-read-ticket — state flow",
+  "nodes": [
+    {
+      "id": "n1",
+      "order": 1,
+      "name": "PARSE-ARGS",
+      "label": "PARSE-ARGS",
+      "kind": "entry",
+      "terminal": null,
+      "provenance": {
+        "file": "canonical/skills/aid-read-ticket/SKILL.md",
+        "startLine": 68,
+        "endLine": 68,
+        "sourceKind": "skill",
+        "excerpt": "### State 1 — PARSE-ARGS"
+      },
+      "detail": null
+    },
+    {
+      "id": "n2",
+      "order": 2,
+      "name": "RESOLVE-CONNECTOR",
+      "label": "RESOLVE-CONNECTOR",
+      "kind": "step",
+      "terminal": null,
+      "provenance": {
+        "file": "canonical/skills/aid-read-ticket/SKILL.md",
+        "startLine": 77,
+        "endLine": 77,
+        "sourceKind": "skill",
+        "excerpt": "### State 2 — RESOLVE-CONNECTOR"
+      },
+      "detail": null
+    },
+    {
+      "id": "n3",
+      "order": 3,
+      "name": "FETCH",
+      "label": "FETCH",
+      "kind": "step",
+      "terminal": null,
+      "provenance": {
+        "file": "canonical/skills/aid-read-ticket/SKILL.md",
+        "startLine": 103,
+        "endLine": 103,
+        "sourceKind": "skill",
+        "excerpt": "### State 3 — FETCH"
+      },
+      "detail": null
+    },
+    {
+      "id": "n4",
+      "order": 4,
+      "name": "DISPLAY",
+      "label": "DISPLAY",
+      "kind": "exit",
+      "terminal": {
+        "advanceType": "UNSPECIFIED",
+        "handoff": null
+      },
+      "provenance": {
+        "file": "canonical/skills/aid-read-ticket/SKILL.md",
+        "startLine": 117,
+        "endLine": 117,
+        "sourceKind": "skill",
+        "excerpt": "### State 4 — DISPLAY"
+      },
+      "detail": null
+    }
+  ],
+  "edges": [
+    {
+      "from": "n1",
+      "to": "n2",
+      "kind": "sequence",
+      "condition": null,
+      "advanceType": "CHAIN",
+      "provenance": {
+        "file": "canonical/skills/aid-read-ticket/SKILL.md",
+        "startLine": 68,
+        "endLine": 68,
+        "sourceKind": "skill",
+        "excerpt": "### State 1 — PARSE-ARGS"
+      }
+    },
+    {
+      "from": "n2",
+      "to": "n3",
+      "kind": "sequence",
+      "condition": null,
+      "advanceType": "CHAIN",
+      "provenance": {
+        "file": "canonical/skills/aid-read-ticket/SKILL.md",
+        "startLine": 77,
+        "endLine": 77,
+        "sourceKind": "skill",
+        "excerpt": "### State 2 — RESOLVE-CONNECTOR"
+      }
+    },
+    {
+      "from": "n3",
+      "to": "n4",
+      "kind": "sequence",
+      "condition": null,
+      "advanceType": "CHAIN",
+      "provenance": {
+        "file": "canonical/skills/aid-read-ticket/SKILL.md",
+        "startLine": 103,
+        "endLine": 103,
+        "sourceKind": "skill",
+        "excerpt": "### State 3 — FETCH"
+      }
+    }
+  ],
+  "entries": [
+    "n1"
+  ],
+  "exits": [
+    "n4"
+  ],
+  "sources": [
+    "canonical/skills/aid-read-ticket/SKILL.md"
+  ],
+  "warnings": []
+}

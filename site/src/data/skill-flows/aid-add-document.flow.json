@@ -1,0 +1,100 @@
+{
+  "skill": "aid-add-document",
+  "shape": "residual",
+  "extractor": "residual",
+  "confidence": "approximate",
+  "title": "aid-add-document — state flow",
+  "nodes": [
+    {
+      "id": "n1",
+      "order": 1,
+      "name": "ENTRY",
+      "label": "Entry",
+      "kind": "entry",
+      "terminal": null,
+      "provenance": {
+        "file": "canonical/skills/aid-add-document/SKILL.md",
+        "startLine": 1,
+        "endLine": 1,
+        "sourceKind": "skill",
+        "excerpt": "---"
+      },
+      "detail": null
+    },
+    {
+      "id": "n2",
+      "order": 2,
+      "name": "RUN",
+      "label": "Run Alias of /aid-create-document -- create a document NOW…",
+      "kind": "step",
+      "terminal": null,
+      "provenance": {
+        "file": "canonical/skills/aid-add-document/SKILL.md",
+        "startLine": 3,
+        "endLine": 3,
+        "sourceKind": "skill",
+        "excerpt": "description: >"
+      },
+      "detail": null
+    },
+    {
+      "id": "n3",
+      "order": 3,
+      "name": "EXIT",
+      "label": "Exit",
+      "kind": "exit",
+      "terminal": {
+        "advanceType": "HALT",
+        "handoff": null
+      },
+      "provenance": {
+        "file": "canonical/skills/aid-add-document/SKILL.md",
+        "startLine": 14,
+        "endLine": 14,
+        "sourceKind": "skill",
+        "excerpt": "---"
+      },
+      "detail": null
+    }
+  ],
+  "edges": [
+    {
+      "from": "n1",
+      "to": "n2",
+      "kind": "sequence",
+      "condition": null,
+      "advanceType": "CHAIN",
+      "provenance": {
+        "file": "canonical/skills/aid-add-document/SKILL.md",
+        "startLine": 1,
+        "endLine": 1,
+        "sourceKind": "skill",
+        "excerpt": "---"
+      }
+    },
+    {
+      "from": "n2",
+      "to": "n3",
+      "kind": "sequence",
+      "condition": null,
+      "advanceType": "CHAIN",
+      "provenance": {
+        "file": "canonical/skills/aid-add-document/SKILL.md",
+        "startLine": 3,
+        "endLine": 3,
+        "sourceKind": "skill",
+        "excerpt": "description: >"
+      }
+    }
+  ],
+  "entries": [
+    "n1"
+  ],
+  "exits": [
+    "n3"
+  ],
+  "sources": [
+    "canonical/skills/aid-add-document/SKILL.md"
+  ],
+  "warnings": []
+}
