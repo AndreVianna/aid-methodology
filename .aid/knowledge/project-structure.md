@@ -72,12 +72,13 @@ The repository has two faces, and understanding the split is the key to navigati
    rendered into five tool-specific copies under `profiles/`, then wrapped for
    distribution in `packages/`.
 2. **The dogfood install** — AID installed *into its own repository* so the maintainers
-   use AID to build AID. This lives in `.claude/` (the rendered claude-code profile) and
-   `.aid/` (pipeline state, work tracking, and the Knowledge Base you are reading).
+   use AID to build AID. This lives in `.claude/` (a rendered claude-code profile),
+   `.cursor/` (a rendered cursor profile), and `.aid/` (pipeline state, work tracking,
+   and the Knowledge Base you are reading).
 
 CONFIRMED. The dual nature is stated in `README.md` (a multi-skill pipeline across 9
 specialized agents and 5 AI tools) and confirmed by the `canonical/` -> `profiles/` ->
-`packages/` layout plus the dogfood `.claude/` install. See [Unusual Structure Notes](#unusual-structure-notes).
+`packages/` layout plus the dogfood `.claude/` + `.cursor/` installs. See [Unusual Structure Notes](#unusual-structure-notes).
 
 ---
 
@@ -128,13 +129,13 @@ AID/
 ├── .claude/                  # DOGFOOD install (rendered claude-code profile)
 │   ├── agents/  skills/  aid/ # the AID toolkit, used on this repo itself
 │   └── settings.json
+├── .cursor/                  # DOGFOOD install (rendered cursor profile)
+│   └── agents/  skills/  aid/ # the same toolkit, rendered for Cursor
 └── .aid/                     # DOGFOOD pipeline state + Knowledge Base
-    ├── knowledge/            # the Knowledge Base (KB docs + INDEX + STATE)
-    ├── work-001-*/  work-002-*/  # tracked works (pipeline state per work)
+    ├── knowledge/            # the Knowledge Base (KB docs + INDEX + STATE + kb.html)
+    ├── works/                # tracked works: one work-NNN-*/ folder per work
     ├── generated/            # discovery scratch (project-index, candidate-concepts)
     ├── connectors/           # connector catalog: descriptors + INDEX.md + git-ignored .secrets/
-    ├── design/               # design notes for in-flight features
-    ├── dashboard/            # generated dashboard artifacts (kb.html)
     └── settings.yml          # AID pipeline configuration (single source of truth)
 ```
 
@@ -157,8 +158,9 @@ CONFIRMED by direct `find` traversal of each subtree.
 | `examples/` | Step-by-step sample artifacts for greenfield, brownfield-full, and brownfield-lite paths. | Yes |
 | `tests/` | `canonical/` cross-platform shell suites (+ fixtures) and `windows/` PowerShell installer tests. | Yes |
 | `.github/` | Issue templates, dependabot config, and five CI workflows. | Yes |
-| `.claude/` | The **dogfood** AID install for this repo (a rendered claude-code profile). | No (regenerate via install) |
-| `.aid/` | The **dogfood** AID pipeline state: the Knowledge Base, tracked works, settings, and discovery scratch. | Yes (state-managed) |
+| `.claude/` | A **dogfood** AID install for this repo (a rendered claude-code profile). | No (regenerate via install) |
+| `.cursor/` | A **dogfood** AID install for this repo (a rendered cursor profile). | No (regenerate via install) |
+| `.aid/` | The **dogfood** AID pipeline state: the Knowledge Base, tracked works (under `works/`), settings, and discovery scratch. | Yes (state-managed) |
 
 CONFIRMED. The "edit in canonical, not profiles" rule is stated in
 `docs/repository-structure.md` ("single source of truth (never edit profiles/ directly)").
@@ -208,7 +210,7 @@ tarballs", `bin/aid` "AID CLI dispatcher (Bash side)").
 | Language | Python (>=3.8) | `packages/pypi/pyproject.toml`, `dashboard/reader/*.py`, `.claude/skills/generate-profile/scripts/*.py` |
 | Runtime | Node.js (>=18) | `packages/npm/package.json`, `dashboard/server/reader.mjs` |
 | Web framework | Astro | `site/astro.config.mjs`, `site/package.json` |
-| Web | HTML / CSS | `dashboard/index.html`, `.aid/dashboard/`, `site/src/styles/` |
+| Web | HTML / CSS | `dashboard/index.html`, `.aid/knowledge/kb.html`, `site/src/styles/` |
 | Language (site) | TypeScript | `site/tsconfig.json`, `site/src/**/*.ts` |
 | Config | YAML / JSON / TOML | `.aid/settings.yml`, `.claude/settings.json`, `profiles/*.toml` |
 | CI | GitHub Actions | `.github/workflows/*.yml` |
@@ -280,15 +282,15 @@ These are intentional or notable layout traits a newcomer will trip over:
 1. **Heavy, deliberate file duplication.** Several files appear three to six times across
    the repo (e.g. `reader.mjs` and `parsers.py` exist in `dashboard/`, `packages/npm/`,
    and `packages/pypi/aid_installer/_vendor/`; the canonical toolkit is re-rendered into
-   five `profiles/` and again into `.claude/`). This is by design — `canonical/` is the
-   source of truth and the rest are rendered/vendored copies. Do not "deduplicate" them;
-   edit `canonical/` and regenerate. CONFIRMED via the project-index "Top 20 Largest
-   Source Files" table (same path basenames repeated).
+   five `profiles/` and again into both dogfood trees, `.claude/` and `.cursor/`). This is
+   by design — `canonical/` is the source of truth and the rest are rendered/vendored
+   copies. Do not "deduplicate" them; edit `canonical/` and regenerate. CONFIRMED via the
+   project-index "Top 20 Largest Source Files" table (same path basenames repeated).
 
-2. **The repo dogfoods itself.** `.claude/` (a rendered claude-code profile) and `.aid/`
-   (pipeline state + this Knowledge Base) are AID *installed into AID*. They are real
-   working state, not examples. CONFIRMED by `.aid/settings.yml` (`project.name: AID`,
-   `project.type: brownfield`).
+2. **The repo dogfoods itself.** `.claude/` (a rendered claude-code profile), `.cursor/`
+   (a rendered cursor profile), and `.aid/` (pipeline state + this Knowledge Base) are AID
+   *installed into AID*. They are real working state, not examples. CONFIRMED by
+   `.aid/settings.yml` (`project.name: AID`, `project.type: brownfield`).
 
 3. **The website (`site/`) is a separate build, not a separate source.** It has its own
    `package.json`, `node_modules`, and `dist/`, and is not part of the CLI/toolkit build --
@@ -312,8 +314,8 @@ These are intentional or notable layout traits a newcomer will trip over:
   subtree for toolkit files) and never collides with user content; root-agent files
   (`CLAUDE.md`/`AGENTS.md`) are updated only inside the in-place AID:BEGIN/END region.
 - **`.aid/` is per-project working state** (the Knowledge Base + pipeline run-state), not part
-  of the shipped product; the dogfood `.claude/` + `.aid/` in this repo are real working state,
-  not example data.
+  of the shipped product; the dogfood `.claude/` + `.cursor/` + `.aid/` in this repo are
+  real working state, not example data.
 
 ---
 
