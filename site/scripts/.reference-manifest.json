@@ -2,7 +2,7 @@
   "generator": "site/scripts/gen-reference.mjs",
   "entries": [
     {
-      "src": "canonical/skills/*/SKILL.md",
+      "src": "canonical/aid/templates/shortcut-catalog.yml, canonical/aid/templates/shortcut-engine.md",
       "dest": "site/src/content/docs/reference/skills.md"
     },
     {
