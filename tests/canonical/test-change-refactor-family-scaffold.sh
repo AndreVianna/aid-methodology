@@ -1,29 +1,32 @@
 #!/usr/bin/env bash
 # test-change-refactor-family-scaffold.sh -- task-018 (work-001-lite-aid-skills,
-# feature-007): aid-change / aid-refactor family scaffold + alias-equivalence test.
+# feature-007): aid-update / aid-refactor family scaffold test.
 #
 # The shortcut engine + the change/refactor scaffolding reference are agent-executed
 # PROSE, not executable scripts -- a deterministic canonical test cannot "run"
-# /aid-change-data-model or /aid-refactor. This suite is therefore CONTRACT +
+# /aid-update-data-model or /aid-refactor. This suite is therefore CONTRACT +
 # FIXTURE-SHAPE, matching the other work-001 shortcut-engine suites
 # (test-fix-family-scaffold.sh, test-create-family-scaffold.sh):
 #
+#   (The file keeps its `change-refactor` name because the scaffolding reference it
+#   asserts against is still `shortcut-scaffolding/change-refactor.md`; work-004
+#   renamed the VERB `change` -> `update`, not that file.)
+#
 #   1. Contract assertions -- grep shortcut-scaffolding/change-refactor.md for the
-#      load-bearing elements: change inherits create.md's artifact matrix by reference
+#      load-bearing elements: update inherits create.md's artifact matrix by reference
 #      (not duplicated), the refactor-kind closed 3-enum, the 3 refactor-kind task
 #      templates (rename/restructure/performance), and the Ownership-boundary split
-#      (behavior-changing vs. not; defect routes to aid-fix, not aid-change).
-#   2. Alias-equivalence + bare-verb contract -- checked against the REAL catalog +
-#      skill dirs: `aid-update-api`'s row carries the identical `{verb, artifact}`
-#      binding as `aid-change-api`'s and `alias_of: aid-change-api`; `aid-refactor`
-#      carries NO alias row and NO artifact-suffixed variant (stays bare, AC-4).
+#      (behavior-changing vs. not; defect routes to aid-fix, not aid-update).
+#   2. Catalog + doorway + bare-verb contract -- checked against the REAL catalog +
+#      skill dirs: `aid-update-api`'s row carries the expected `{verb, artifact}`
+#      binding, the family's bare and artifact-suffixed doorways agree on
+#      VERB=`update`, and `aid-refactor` carries NO alias row and NO
+#      artifact-suffixed variant (stays bare, AC-4). The alias-equivalence half of
+#      this part was DELETED by work-004 delivery-003 task-002 (feature-006
+#      Decision 5) -- see the justification comments below.
 #   3. Fixture-shape assertions -- hand-authored flattened work fixtures mirroring what
-#      `/aid-change-data-model`, `/aid-refactor` (performance mode), and `/aid-refactor`
-#      (rename mode) would produce, all halted at APPROVAL-HALT (pre-Execute). A further
-#      pair of fixtures (built via the same builder, once labelled `aid-change-api` and
-#      once `aid-update-api`) proves the alias produces the byte-identical work shape
-#      (AC-1) -- diffed after normalizing the one line that legitimately differs (the
-#      invoking shortcut's own name).
+#      `/aid-update-data-model`, `/aid-refactor` (performance mode), and `/aid-refactor`
+#      (rename mode) would produce, all halted at APPROVAL-HALT (pre-Execute).
 #
 # No agent is invoked; nothing here dispatches aid-architect/aid-reviewer.
 #
@@ -43,7 +46,7 @@ CR_SCAFFOLD="${REPO_ROOT}/canonical/aid/templates/shortcut-scaffolding/change-re
 CATALOG="${REPO_ROOT}/canonical/aid/templates/shortcut-catalog.yml"
 SKILLS_ROOT="${REPO_ROOT}/canonical/skills"
 
-echo "=== aid-change/aid-refactor family scaffold + alias-equivalence (task-018, feature-007) ==="
+echo "=== aid-update/aid-refactor family scaffold (task-018, feature-007) ==="
 
 assert_file_exists "$CR_SCAFFOLD" "CRF00a shortcut-scaffolding/change-refactor.md exists"
 assert_file_exists "$CATALOG" "CRF00b shortcut-catalog.yml exists"
@@ -61,24 +64,24 @@ CR_TXT=$(cat "$CR_SCAFFOLD")
 # ===========================================================================
 echo "--- Part 1: change-refactor.md contract assertions ---"
 
-# CRF-01: change inherits create.md's artifact matrix by reference, not duplicated.
+# CRF-01: update inherits create.md's artifact matrix by reference, not duplicated.
 assert_output_contains "$CR_TXT" \
     "**This file does not duplicate the artifact matrix.**" \
     "CRF01a change-refactor.md states it does not duplicate the artifact matrix"
 assert_output_contains "$CR_TXT" \
     "per-artifact SPEC-section activation and task-breakdown counts/types are" \
-    "CRF01b change's SPEC/task-breakdown counts+types statement present (wrap point 1)"
+    "CRF01b update's SPEC/task-breakdown counts+types statement present (wrap point 1)"
 assert_output_contains "$CR_TXT" \
     "**identical to \`aid-create\`'s**" \
-    "CRF01c change's SPEC/task-breakdown counts+types identical to aid-create's (wrap point 2)"
+    "CRF01c update's SPEC/task-breakdown counts+types identical to aid-create's (wrap point 2)"
 
-# CRF-02: change DETAIL task breakdown equals create.md's artifact-matrix row (two-phrase).
+# CRF-02: update DETAIL task breakdown equals create.md's artifact-matrix row (two-phrase).
 assert_output_contains "$CR_TXT" \
     "**The task count and types equal \`create.md\`'s artifact-matrix row for the" \
-    "CRF02a change task count/types == create.md's artifact-matrix row (wrap point 1)"
+    "CRF02a update task count/types == create.md's artifact-matrix row (wrap point 1)"
 assert_output_contains "$CR_TXT" \
     'same `{artifact}`**' \
-    "CRF02b change task count/types == create.md's artifact-matrix row (wrap point 2)"
+    "CRF02b update task count/types == create.md's artifact-matrix row (wrap point 2)"
 
 # CRF-03: aid-refactor CAPTURE -- refactor-kind is a closed 3-enum.
 assert_output_contains "$CR_TXT" \
@@ -96,8 +99,8 @@ assert_output_contains "$CR_TXT" \
     '| `performance` | `task-001` REFACTOR (eliminate the bottleneck; behavior unchanged) + `task-002` TEST -- a reproducible benchmark meets the captured target vs. the captured baseline' \
     "CRF04c performance-kind: task-001 REFACTOR (behavior unchanged) + task-002 TEST (reproducible benchmark vs. baseline)"
 
-# CRF-05: Ownership boundary -- behavior-changing (change) vs. not (refactor); defect
-# routes to aid-fix, not aid-change; content/tests carved out (two-phrase pairs).
+# CRF-05: Ownership boundary -- behavior-changing (update) vs. not (refactor); defect
+# routes to aid-fix, not aid-update; content/tests carved out (two-phrase pairs).
 assert_output_contains "$CR_TXT" \
     "acceptance criteria). \`aid-refactor\` = restructure/optimize **without**" \
     "CRF05a Ownership boundary: aid-refactor = restructure/optimize without changing behavior (wrap point 1)"
@@ -178,10 +181,10 @@ assert_output_contains "$CR_TXT" \
     "CRF08h aid-migrate task-002: TEST, verify migrated state + rollback, depends on task-001"
 
 # CRF-09: Ownership boundary -- remove/deprecate/migrate distinguished from each other and
-# from aid-change, plus the review/research carve-out (assessing whether to act at all).
+# from aid-update, plus the review/research carve-out (assessing whether to act at all).
 assert_output_contains "$CR_TXT" \
-    '**Removing** an artifact outright is `aid-remove`, not `aid-change` --' \
-    "CRF09a Ownership boundary: removing outright is aid-remove, not aid-change"
+    '**Removing** an artifact outright is `aid-remove`, not `aid-update` --' \
+    "CRF09a Ownership boundary: removing outright is aid-remove, not aid-update"
 assert_output_contains "$CR_TXT" \
     'and `aid-remove`: the target still works, but callers are warned off it ahead' \
     "CRF09b Ownership boundary: aid-deprecate is the middle step before aid-remove (target still works)"
@@ -193,7 +196,7 @@ assert_output_contains "$CR_TXT" \
     "CRF09d Ownership boundary: assessing whether to remove/deprecate/migrate routes to aid-review/aid-research"
 
 echo ""
-echo "--- Part 2: alias-equivalence + bare-verb contract (checked against the real catalog + skill dirs) ---"
+echo "--- Part 2: catalog + doorway + bare-verb contract (checked against the real catalog + skill dirs) ---"
 
 get_row_field() {
     local name="$1" field="$2"
@@ -204,23 +207,33 @@ get_row_field() {
     ' "$CATALOG"
 }
 
-# CRF-10: aid-update-api carries the identical {verb, artifact} binding as
-# aid-change-api's, and alias_of points at aid-change-api exactly.
-CHANGE_API_VERB=$(get_row_field "aid-change-api" "verb")
-CHANGE_API_ARTIFACT=$(get_row_field "aid-change-api" "artifact")
+# CRF-10: aid-update-api's catalog row carries the {verb, artifact} binding the update
+# family's `api` doorway is defined by. Before work-004 the canonical row was
+# `aid-change-api` and `aid-update-api` was its alias; feature-001 RENAMED the canonical
+# row (`verb: change` -> `verb: update`, `aid-change-api` -> `aid-update-api`) and
+# dropped the alias, so CRF10a/CRF10b follow the renamed row and CRF10c-e are gone.
 UPDATE_API_VERB=$(get_row_field "aid-update-api" "verb")
 UPDATE_API_ARTIFACT=$(get_row_field "aid-update-api" "artifact")
-UPDATE_API_ALIAS_OF=$(get_row_field "aid-update-api" "alias_of")
 
-assert_eq "$CHANGE_API_VERB" "change" "CRF10a aid-change-api row: verb == change"
-assert_eq "$CHANGE_API_ARTIFACT" "api" "CRF10b aid-change-api row: artifact == api"
-assert_eq "$UPDATE_API_VERB" "$CHANGE_API_VERB" "CRF10c aid-update-api row: verb identical to aid-change-api's"
-assert_eq "$UPDATE_API_ARTIFACT" "$CHANGE_API_ARTIFACT" "CRF10d aid-update-api row: artifact identical to aid-change-api's"
-assert_eq "$UPDATE_API_ALIAS_OF" "aid-change-api" "CRF10e aid-update-api row: alias_of == aid-change-api"
+assert_eq "$UPDATE_API_VERB" "update" "CRF10a aid-update-api row: verb == update"
+assert_eq "$UPDATE_API_ARTIFACT" "api" "CRF10b aid-update-api row: artifact == api"
+# CRF10c / CRF10d / CRF10e -- DELETED by work-004 delivery-003 task-002.
+# All three were mirror-pair assertions: `CRF10c` that `aid-update-api`'s verb was
+# identical to `aid-change-api`'s, `CRF10d` the same for artifact, `CRF10e` that
+# `aid-update-api`'s `alias_of` read `aid-change-api`. There is no mirror pair left to
+# compare -- `grep -c '^  - name: aid-change-api$' shortcut-catalog.yml` returns 0, and
+# `grep -c '^    alias_of: aid-' shortcut-catalog.yml` returns 0 across all 58 rows
+# (every one reads `alias_of: null`). `CRF10c`/`CRF10d` would compare `aid-update-api`'s
+# real values against the empty string `get_row_field` returns for an absent row, and
+# `CRF10e` asserts a relationship the catalogue no longer expresses at all. The
+# `CHANGE_API_VERB` / `CHANGE_API_ARTIFACT` / `UPDATE_API_ALIAS_OF` bindings are gone
+# with them; `UPDATE_API_VERB` / `UPDATE_API_ARTIFACT` survive and are re-read by CRF10a
+# and CRF10b above. (Removing the `alias_of` FIELD is out of this work's scope -- rows
+# keep it pinned to `null`, which CRF15 still asserts.)
 
-# CRF-11: aid-change-data-model row is MIGRATE-typed (mirrors create-data-model).
-CHANGE_DM_DEFAULT_TYPE=$(get_row_field "aid-change-data-model" "default_type")
-assert_eq "$CHANGE_DM_DEFAULT_TYPE" "MIGRATE" "CRF11 aid-change-data-model row: default_type == MIGRATE"
+# CRF-11: aid-update-data-model row is MIGRATE-typed (mirrors create-data-model).
+UPDATE_DM_DEFAULT_TYPE=$(get_row_field "aid-update-data-model" "default_type")
+assert_eq "$UPDATE_DM_DEFAULT_TYPE" "MIGRATE" "CRF11 aid-update-data-model row: default_type == MIGRATE"
 
 # CRF-12: aid-refactor row is bare (artifact "") and REFACTOR-typed.
 REFACTOR_ARTIFACT=$(get_row_field "aid-refactor" "artifact")
@@ -255,15 +268,34 @@ else
 fi
 assert_dir_exists "${SKILLS_ROOT}/aid-refactor" "CRF13e canonical/skills/aid-refactor/ (the one bare doorway) exists"
 
-# CRF-14: both generated doorways (aid-change-api, aid-update-api) bind the identical
-# VERB=`change` ARTIFACT=`api` pair.
-CHANGE_API_BODY=$(cat "${SKILLS_ROOT}/aid-change-api/SKILL.md" 2>/dev/null || true)
+# CRF-14: both generated doorways of the update family -- the artifact-suffixed
+# `aid-update-api` and the bare `aid-update` -- bind the identical VERB=`update`, each
+# with its own row's ARTIFACT.
+#
+# RE-POINTED by work-004 delivery-003 task-002, and the re-point is recorded because the
+# PAIR changed, not just the names. This block used to compare the canonical doorway
+# `aid-change-api` against its ALIAS doorway `aid-update-api` (CRF14a/b on the canonical,
+# CRF14c/d on the alias, both expected to bind VERB=`change`). feature-001 renamed the
+# canonical doorway to `aid-update-api` and retired the alias, which leaves the family
+# one `api` doorway instead of two. Rather than delete two keys and lose the
+# "two doorways of one family agree on the verb" invariant, the invariant is re-pointed
+# at the pair that DOES survive -- bare `aid-update` and suffixed `aid-update-api`.
+# Same assertion mechanism, same strength, and the bare doorway (previously asserted
+# nowhere in this suite) is now covered.
 UPDATE_API_BODY=$(cat "${SKILLS_ROOT}/aid-update-api/SKILL.md" 2>/dev/null || true)
-assert_output_contains "$CHANGE_API_BODY" 'VERB=`change`' "CRF14a aid-change-api doorway binds VERB=\`change\`"
-assert_output_contains "$CHANGE_API_BODY" 'ARTIFACT=`api`' "CRF14b aid-change-api doorway binds ARTIFACT=\`api\`"
-assert_output_contains "$UPDATE_API_BODY" 'VERB=`change`' "CRF14c aid-update-api doorway binds the identical VERB=\`change\`"
-assert_output_contains "$UPDATE_API_BODY" 'ARTIFACT=`api`' "CRF14d aid-update-api doorway binds the identical ARTIFACT=\`api\`"
-assert_output_contains "$UPDATE_API_BODY" 'thin alias of `aid-change-api`' "CRF14e aid-update-api doorway self-documents as a thin alias of aid-change-api"
+UPDATE_BARE_BODY=$(cat "${SKILLS_ROOT}/aid-update/SKILL.md" 2>/dev/null || true)
+assert_output_contains "$UPDATE_API_BODY" 'VERB=`update`' "CRF14a aid-update-api doorway binds VERB=\`update\`"
+assert_output_contains "$UPDATE_API_BODY" 'ARTIFACT=`api`' "CRF14b aid-update-api doorway binds ARTIFACT=\`api\`"
+assert_output_contains "$UPDATE_BARE_BODY" 'VERB=`update`' "CRF14c bare aid-update doorway binds the identical VERB=\`update\`"
+assert_output_contains "$UPDATE_BARE_BODY" 'ARTIFACT="" (bare verb)' "CRF14d bare aid-update doorway binds ARTIFACT=\"\" (bare verb)"
+# CRF14e -- DELETED by work-004 delivery-003 task-002.
+# It asserted that `canonical/skills/aid-update-api/SKILL.md` self-documented as a
+# "thin alias of `aid-change-api`". feature-002/FR-3a deleted the emitter for that
+# sentence from `.claude/skills/generate-profile/scripts/build-shortcut-skills.py`
+# (the `if alias_of:` branch of `render_doorway`), so NO generated doorway carries the
+# sentence any more, and `aid-update-api` is no longer an alias of anything. There is no
+# successor sentence to quote, so the assertion cannot be re-pointed.
+# `CHANGE_API_BODY` read the pruned `aid-change-api/SKILL.md` and is gone with it.
 
 # CRF-15: aid-remove/aid-deprecate/aid-migrate (v2.1.0 coverage-gap follow-on) -- catalog
 # rows exist, G5, bare (artifact ""), a valid default_type from the closed 8-enum,
@@ -295,20 +327,30 @@ for name in "${!NEW_FAMILY_DEFAULT_TYPES[@]}"; do
     assert_eq "$alias_of" "null" "CRF15 [${name}] row: alias_of == null (canonical row)"
 done
 
-# CRF-16: aid-delete is a thin alias of aid-remove (identical {verb, artifact} binding).
-REMOVE_VERB=$(get_row_field "aid-remove" "verb")
-DELETE_VERB=$(get_row_field "aid-delete" "verb")
-DELETE_ARTIFACT=$(get_row_field "aid-delete" "artifact")
-DELETE_ALIAS_OF=$(get_row_field "aid-delete" "alias_of")
-assert_dir_exists "${SKILLS_ROOT}/aid-delete" "CRF16a aid-delete skill directory exists"
-assert_eq "$DELETE_VERB" "$REMOVE_VERB" "CRF16b aid-delete row: verb identical to aid-remove's"
-assert_eq "$DELETE_ARTIFACT" "" "CRF16c aid-delete row: artifact == \"\" (bare)"
-assert_eq "$DELETE_ALIAS_OF" "aid-remove" "CRF16d aid-delete row: alias_of == aid-remove"
+# CRF-16 -- DELETED by work-004 delivery-003 task-002 (all four keys).
+# The block asserted that `aid-delete` was a thin alias of `aid-remove`: `CRF16a` that
+# `canonical/skills/aid-delete/` existed, `CRF16b` that its row's verb was identical to
+# `aid-remove`'s, `CRF16c` that its artifact was `""`, `CRF16d` that its `alias_of` read
+# `aid-remove`. feature-001 removed the row and feature-004 pruned the directory --
+# `grep -c '^  - name: aid-delete$' shortcut-catalog.yml` returns 0 and
+# `test -d canonical/skills/aid-delete` is false. `aid-delete` was retired outright, not
+# renamed, so no successor name exists to re-point any of the four at.
+#
+# `CRF16c` is called out separately because it was a FALSE GREEN, not a red: it read
+# `get_row_field aid-delete artifact`, which returns "" for a row that does not exist,
+# and compared that against the expected "". It passed for the wrong reason and would
+# have kept passing forever. Deleting it removes a check that had already stopped
+# checking. `REMOVE_VERB` / `DELETE_VERB` / `DELETE_ARTIFACT` / `DELETE_ALIAS_OF` were
+# read only here.
 
-# CRF-17: aid-deprecate and aid-migrate stay bare -- no alias row, no artifact-suffixed
-# variant (mirrors CRF-13's aid-refactor-stays-bare proof; aid-remove has the one
-# aid-delete alias asserted above, so it is excluded here).
-for base in aid-deprecate aid-migrate; do
+# CRF-17: aid-remove, aid-deprecate and aid-migrate stay bare -- no alias row, no
+# artifact-suffixed variant (mirrors CRF-13's aid-refactor-stays-bare proof).
+# `aid-remove` was previously EXCLUDED from this loop because it carried the one
+# `aid-delete` alias, asserted by the deleted CRF-16 above. With that alias retired,
+# `aid-remove` is bare like its two siblings and belongs in the loop: this is where
+# CRF16d's subject -- the state of `aid-remove`'s alias relationship -- now lives, and
+# without it nothing in this suite would check that no row aliases `aid-remove`.
+for base in aid-remove aid-deprecate aid-migrate; do
     SUFFIXED_ROWS=$(grep -E "^  - name: ${base}-" "$CATALOG" || true)
     if [[ -z "$SUFFIXED_ROWS" ]]; then
         pass "CRF17 [${base}] no artifact-suffixed ${base}-* catalog row exists"
@@ -332,297 +374,30 @@ echo "--- Part 3: fixture-shape assertions ---"
 TMP=$(mktemp -d)
 trap 'rm -rf "$TMP"' EXIT
 
-# build_change_api_fixture <work-dir> <shortcut-name>
-# Hand-authors a flattened work mirroring what /aid-change-api (or its alias
-# /aid-update-api) + shortcut-engine.md would produce, per change-refactor.md's
-# inherited artifact matrix for `api`, modify-framed: IMPLEMENT (update schema/model) ->
-# IMPLEMENT (update handler+persistence) -> TEST (integration), halted pre-Execute.
-build_change_api_fixture() {
-    local work_dir="$1" shortcut="$2"
-    mkdir -p "${work_dir}/tasks/task-001" "${work_dir}/tasks/task-002" "${work_dir}/tasks/task-003"
-
-    cat > "${work_dir}/REQUIREMENTS.md" <<EOF
-# Requirements
-
-- **Name:** orders resource -- add cancellation status
-- **Description:** Change the orders resource API to support a cancellation status.
-
-## Change Log
-
-| Date | Change | Source |
-|------|--------|--------|
-| 2026-07-09 | Initial capture (shortcut: ${shortcut}) | /${shortcut} |
-
-## 1. Objective
-
-Add a cancellation status to the orders resource API.
-
-## 2. Problem Statement
-
-The orders resource cannot represent a cancelled order today.
-
-## 3. Users & Stakeholders
-
-The requesting developer/maintainer.
-
-## 4. Scope
-
-verb=change, artifact=api. Current shape: orders resource has no cancellation status.
-Target shape: orders resource carries a cancellation status field.
-
-## 5. Functional Requirements
-
-Update the schema/model, the handler + persistence, and the integration test for the
-orders resource to support a cancellation status.
-
-## 6. Non-Functional Requirements
-
-N/A
-
-## 7. Constraints
-
-N/A
-
-## 8. Assumptions & Dependencies
-
-*(pending)*
-
-## 9. Acceptance Criteria
-
-- [ ] Given an order is cancelled, when the orders endpoint is called, then the response
-  reflects the cancellation status.
-- [ ] Given the integration test, when run, then it exercises the updated handler +
-  persistence layer end to end.
-
-## 10. Priority
-
-Must
-EOF
-
-    cat > "${work_dir}/SPEC.md" <<EOF
-# orders resource -- add cancellation status
-
-## Change Log
-
-| Date | Change | Source |
-|------|--------|--------|
-| 2026-07-09 | SPEC authored from REQUIREMENTS.md | /${shortcut} |
-
-## Source
-
-- REQUIREMENTS.md §5 Functional Requirements
-- REQUIREMENTS.md §9 Acceptance Criteria
-
-## Description
-
-Add a cancellation status to the orders resource API.
-
-## User Stories
-
-- As an API consumer, I want to see an order's cancellation status so I can react to it.
-
-## Priority
-
-Must
-
-## Acceptance Criteria
-
-- [ ] Given an order is cancelled, when the orders endpoint is called, then the response
-  reflects the cancellation status.
-
----
-
-## Technical Specification
-
-### Data Model
-
-The orders entity gains a cancellation-status field.
-
-### Feature Flow
-
-Request -> validate -> handler -> persistence (now cancellation-aware) -> response.
-
-### Layers & Components
-
-The API layer (schema/model, handler, persistence) for the orders resource.
-
-### API Contracts
-
-Resource: orders. The response schema gains a cancellation-status field; no new
-security notes.
-EOF
-
-    cat > "${work_dir}/PLAN.md" <<EOF
-# Plan -- orders resource -- add cancellation status
-
-> **Work:** work-NNN-orders-cancellation-status
-> **Created:** 2026-07-09
-
----
-
-## Deliverables
-
-- **Delivery:** delivery-001 -- orders resource cancellation status
-- **What it delivers:** the updated orders resource endpoint (schema, handler,
-  persistence) + its updated integration test.
-- **Features:** feature-001-orders-cancellation-status
-- **Depends on:** -- (none)
-- **Priority:** Must
-
----
-
-## Execution Graph
-
-### Task Dependencies
-
-| Task | Depends On |
-|------|------------|
-| task-001 | -- (none) |
-| task-002 | task-001 |
-| task-003 | task-002 |
-
-### Can Be Done In Parallel
-
-| Wave | Tasks |
-|------|-------|
-| 1 | task-001 |
-| 2 | task-002 |
-| 3 | task-003 |
-EOF
-
-    cat > "${work_dir}/BLUEPRINT.md" <<EOF
-# Delivery BLUEPRINT -- delivery-001: orders resource cancellation status
-
-> **Delivery:** delivery-001
-> **Work:** work-NNN-orders-cancellation-status
-> **Created:** 2026-07-09
-
----
-
-## Objective
-
-Add a cancellation status to the orders resource API.
-
-## Scope
-
-verb=change, artifact=api. Delta only: the cancellation-status field and its handling.
-
-**Out of scope:** unrelated schema changes.
-
-## Gate Criteria
-
-- [ ] The response reflects the cancellation status once an order is cancelled.
-- [ ] The integration test exercises the updated handler + persistence layer end to end.
-- [ ] All tasks in delivery-001 are Done or Canceled.
-- [ ] All section-6 quality gates pass.
-
-## Tasks
-
-| Task | Type | Title |
-|------|------|-------|
-| task-001 | IMPLEMENT | Update schema/model for the orders resource cancellation status |
-| task-002 | IMPLEMENT | Update handler + persistence for the orders resource cancellation status |
-| task-003 | TEST | Update the integration test for the orders resource cancellation status |
-
-## Dependencies
-
-- **Depends on:** -- (none)
-- **Blocks:** -- (none)
-
-## Notes
-
-Shortcut-generated flattened Lite work. Source: /${shortcut} (change, artifact 'api').
-EOF
-
-    cat > "${work_dir}/tasks/task-001/DETAIL.md" <<EOF
-# task-001: Update schema/model for the orders resource cancellation status
-
-**Type:** IMPLEMENT
-
-**Source:** work-NNN-orders-cancellation-status -> delivery-001
-
-**Depends on:** -- (none)
-
-**Scope:**
-- Update the orders entity schema/model to add the cancellation-status field.
-
-**Acceptance Criteria:**
-- [ ] The schema/model carries the new cancellation-status field per SPEC.md.
-- [ ] All section-6 quality gates pass.
-EOF
-
-    cat > "${work_dir}/tasks/task-002/DETAIL.md" <<EOF
-# task-002: Update handler + persistence for the orders resource cancellation status
-
-**Type:** IMPLEMENT
-
-**Source:** work-NNN-orders-cancellation-status -> delivery-001
-
-**Depends on:** task-001
-
-**Scope:**
-- Update the handler and its persistence layer to read/write the cancellation status.
-
-**Acceptance Criteria:**
-- [ ] Given an order is cancelled, when the orders endpoint is called, then the response
-  reflects the cancellation status.
-- [ ] All section-6 quality gates pass.
-EOF
-
-    cat > "${work_dir}/tasks/task-003/DETAIL.md" <<EOF
-# task-003: Update the integration test for the orders resource cancellation status
-
-**Type:** TEST
-
-**Source:** work-NNN-orders-cancellation-status -> delivery-001
-
-**Depends on:** task-002
-
-**Scope:**
-- Update the integration test to exercise the updated handler + persistence layer end
-  to end, including the cancellation-status path.
-
-**Acceptance Criteria:**
-- [ ] The integration test exercises the updated handler + persistence layer end to end.
-- [ ] All section-6 quality gates pass.
-EOF
-
-    cat > "${work_dir}/STATE.md" <<EOF
-# Work State -- work-NNN-orders-cancellation-status
-
-## Pipeline State
-
-- **Lifecycle:** Paused-Awaiting-Input
-- **Phase:** Detail
-- **Active Skill:** ${shortcut}
-- **Updated:** 2026-07-09T12:00:00Z
-- **Pause Reason:** GATE cleared; awaiting user approval before /aid-execute
-- **Block Reason:** --
-- **Block Artifact:** --
-
-## Delivery Lifecycle
-
-- **State:** Specified
-- **Updated:** 2026-07-09T12:00:00Z
-- **Block Reason:** --
-- **Block Artifact:** --
-
-### Tasks lifecycle
-
-| Task | State | Review | Elapsed | Notes |
-|------|-------|--------|---------|-------|
-| task-001 | Pending | -- | -- | -- |
-| task-002 | Pending | -- | -- | -- |
-| task-003 | Pending | -- | -- | -- |
-EOF
-}
-
-# build_change_data_model_fixture <work-dir>
-# Hand-authors a flattened work mirroring what /aid-change-data-model +
+# build_change_api_fixture -- DELETED by work-004 delivery-003 task-002, together with
+# Part 4 below, which was its only caller.
+#
+# It hand-authored a flattened `api`-artifact work and took the invoking shortcut's name
+# as a parameter precisely so Part 4 could build the same work twice, once labelled
+# `aid-change-api` and once `aid-update-api`, and diff the two. With the alias retired
+# there is no second name to build under, so the builder had exactly one caller left
+# doing exactly one build whose result nothing asserted -- Part 4 held no shape
+# assertions of its own, only the byte-identity comparison. Leaving a ~285-line
+# unreachable heredoc function behind would be dead code, and it referenced
+# `/aid-change-api`, a shortcut that no longer exists.
+#
+# Nothing else in this suite called it -- after this edit the only surviving occurrences
+# of the name are inside these justification comments, none of them an invocation -- and
+# no CRF key was ever asserted against its output. The suite's fixture-shape coverage is
+# unchanged: `build_update_data_model_fixture` and `build_refactor_fixture` still drive
+# CRF20-CRF26, CRF30-CRF34, CRF40-CRF43 and the CRF50-CRF57 halt-proof loop.
+
+# build_update_data_model_fixture <work-dir>
+# Hand-authors a flattened work mirroring what /aid-update-data-model +
 # shortcut-engine.md would produce: MIGRATE (forward+rollback) -> IMPLEMENT (update
 # readers/writers) -> TEST, ### Data Model + ### Migration Plan activated, halted
 # pre-Execute.
-build_change_data_model_fixture() {
+build_update_data_model_fixture() {
     local work_dir="$1"
     mkdir -p "${work_dir}/tasks/task-001" "${work_dir}/tasks/task-002" "${work_dir}/tasks/task-003"
 
@@ -636,7 +411,7 @@ build_change_data_model_fixture() {
 
 | Date | Change | Source |
 |------|--------|--------|
-| 2026-07-09 | Initial capture (shortcut: aid-change-data-model) | /aid-change-data-model |
+| 2026-07-09 | Initial capture (shortcut: aid-update-data-model) | /aid-update-data-model |
 
 ## 1. Objective
 
@@ -652,7 +427,7 @@ The requesting developer/maintainer.
 
 ## 4. Scope
 
-verb=change, artifact=data-model. Current shape: no loyalty tier column. Target shape:
+verb=update, artifact=data-model. Current shape: no loyalty tier column. Target shape:
 customer_profile carries a loyalty_tier column.
 
 ## 5. Functional Requirements
@@ -690,7 +465,7 @@ EOF
 
 | Date | Change | Source |
 |------|--------|--------|
-| 2026-07-09 | SPEC authored from REQUIREMENTS.md | /aid-change-data-model |
+| 2026-07-09 | SPEC authored from REQUIREMENTS.md | /aid-update-data-model |
 
 ## Source
 
@@ -790,7 +565,7 @@ Add a loyalty tier column to the customer profile schema.
 
 ## Scope
 
-verb=change, artifact=data-model. Delta only: the loyalty_tier column.
+verb=update, artifact=data-model. Delta only: the loyalty_tier column.
 
 **Out of scope:** consuming services' own migrations.
 
@@ -816,7 +591,7 @@ verb=change, artifact=data-model. Delta only: the loyalty_tier column.
 
 ## Notes
 
-Shortcut-generated flattened Lite work. Source: /aid-change-data-model (change,
+Shortcut-generated flattened Lite work. Source: /aid-update-data-model (update,
 artifact 'data-model').
 EOF
 
@@ -881,7 +656,7 @@ EOF
 
 - **Lifecycle:** Paused-Awaiting-Input
 - **Phase:** Detail
-- **Active Skill:** aid-change-data-model
+- **Active Skill:** aid-update-data-model
 - **Updated:** 2026-07-09T12:00:00Z
 - **Pause Reason:** GATE cleared; awaiting user approval before /aid-execute
 - **Block Reason:** --
@@ -1242,25 +1017,25 @@ EOF
 }
 
 # ---------------------------------------------------------------------------
-# Fixture A: aid-change-data-model
+# Fixture A: aid-update-data-model
 # ---------------------------------------------------------------------------
-DM_DIR="${TMP}/work-change-data-model"
-build_change_data_model_fixture "$DM_DIR"
+DM_DIR="${TMP}/work-update-data-model"
+build_update_data_model_fixture "$DM_DIR"
 
 assert_file_contains "${DM_DIR}/SPEC.md" "### Data Model" \
-    "CRF20 change-data-model fixture: SPEC.md carries ### Data Model (mandatory section)"
+    "CRF20 update-data-model fixture: SPEC.md carries ### Data Model (mandatory section)"
 assert_file_contains "${DM_DIR}/SPEC.md" "### Migration Plan" \
-    "CRF21 change-data-model fixture: SPEC.md activates ### Migration Plan"
+    "CRF21 update-data-model fixture: SPEC.md activates ### Migration Plan"
 assert_file_contains "${DM_DIR}/tasks/task-001/DETAIL.md" "**Type:** MIGRATE" \
-    "CRF22 change-data-model fixture: task-001 is MIGRATE (forward+rollback)"
+    "CRF22 update-data-model fixture: task-001 is MIGRATE (forward+rollback)"
 assert_file_contains "${DM_DIR}/tasks/task-002/DETAIL.md" "**Type:** IMPLEMENT" \
-    "CRF23 change-data-model fixture: task-002 is IMPLEMENT (update readers/writers)"
+    "CRF23 update-data-model fixture: task-002 is IMPLEMENT (update readers/writers)"
 assert_file_contains "${DM_DIR}/tasks/task-002/DETAIL.md" "**Depends on:** task-001" \
-    "CRF24 change-data-model fixture: task-002 depends on task-001"
+    "CRF24 update-data-model fixture: task-002 depends on task-001"
 assert_file_contains "${DM_DIR}/tasks/task-003/DETAIL.md" "**Type:** TEST" \
-    "CRF25 change-data-model fixture: task-003 is TEST"
+    "CRF25 update-data-model fixture: task-003 is TEST"
 assert_file_contains "${DM_DIR}/tasks/task-003/DETAIL.md" "**Depends on:** task-002" \
-    "CRF26 change-data-model fixture: task-003 depends on task-002"
+    "CRF26 update-data-model fixture: task-003 depends on task-002"
 
 # ---------------------------------------------------------------------------
 # Fixture B: aid-refactor, performance mode
@@ -1338,38 +1113,31 @@ for FIXTURE_DIR in "$DM_DIR" "$PERF_DIR" "$RENAME_DIR"; do
 done
 
 # ===========================================================================
-# Part 4 -- Alias-equivalence fixture-shape proof: aid-update-api == aid-change-api
+# Part 4 -- DELETED by work-004 delivery-003 task-002 (feature-006 Decision 5).
+#
+# Part 4 was the alias-equivalence fixture-shape proof: it built the SAME fixture twice
+# via `build_change_api_fixture`, once labelled `aid-change-api` and once
+# `aid-update-api`, normalized away the invoking shortcut's own name, and asserted the
+# two work shapes were byte-identical -- `CRF60` once per compared file (8 executions)
+# and `CRF61` once for the aggregate verdict.
+#
+# Why it cannot hold, rather than merely being inconvenient: an equivalence assertion
+# needs two subjects. After feature-001, `aid-change-api` is not a catalogue row
+# (`grep -c '^  - name: aid-change-api$' canonical/aid/templates/shortcut-catalog.yml`
+# = 0) and `alias_of` names no skill on any of the 58 rows
+# (`grep -c '^    alias_of: aid-' ...` = 0, all 58 reading `alias_of: null`); feature-004
+# pruned `canonical/skills/aid-change-api/`. So the second subject does not exist, in the
+# catalogue or on disk. Re-labelling the second fixture with a surviving name would not
+# repair the proof -- it would assert that a fixture equals itself, green by construction
+# and checking nothing. feature-006 Decision 5 therefore mandates deletion, not repair.
+#
+# What is NOT lost: `CRF20`-`CRF26` still assert the data-model fixture's shape and
+# `CRF30`-`CRF43` the two refactor fixtures'. Part 4 carried no shape assertion of its
+# own -- only the two-name byte-identity comparison, which is exactly the claim that has
+# no subject left. `CHANGE_DIR`, `UPDATE_DIR`, `FILES_TO_COMPARE` and `alias_diff_found`
+# were read only here, and `build_change_api_fixture` (Part 4's only caller) is deleted
+# with them -- see the note where it stood, above.
 # ===========================================================================
-echo ""
-echo "--- Part 4: alias-equivalence fixture-shape proof (aid-update-api == aid-change-api) ---"
-
-CHANGE_DIR="${TMP}/work-change-api"
-build_change_api_fixture "$CHANGE_DIR" "aid-change-api"
-UPDATE_DIR="${TMP}/work-update-api"
-build_change_api_fixture "$UPDATE_DIR" "aid-update-api"
-
-FILES_TO_COMPARE=(REQUIREMENTS.md SPEC.md PLAN.md BLUEPRINT.md
-    tasks/task-001/DETAIL.md tasks/task-002/DETAIL.md tasks/task-003/DETAIL.md STATE.md)
-
-alias_diff_found=0
-for f in "${FILES_TO_COMPARE[@]}"; do
-    change_norm=$(sed -e 's/aid-change-api/SHORTCUT/g' "${CHANGE_DIR}/${f}")
-    update_norm=$(sed -e 's/aid-update-api/SHORTCUT/g' "${UPDATE_DIR}/${f}")
-    if [[ "$change_norm" == "$update_norm" ]]; then
-        pass "CRF60 [${f}] byte-identical after normalizing the invoking shortcut's own name"
-    else
-        fail "CRF60 [${f}] byte-identical after normalizing the invoking shortcut's own name -- diff found"
-        alias_diff_found=1
-        if [[ "$VERBOSE" -eq 1 ]]; then
-            diff <(echo "$change_norm") <(echo "$update_norm") || true
-        fi
-    fi
-done
-if [[ "$alias_diff_found" -eq 0 ]]; then
-    pass "CRF61 aid-update-api produces the byte-identical work shape as aid-change-api (AC-1)"
-else
-    fail "CRF61 aid-update-api produces the byte-identical work shape as aid-change-api (AC-1)"
-fi
 
 echo ""
 test_summary
