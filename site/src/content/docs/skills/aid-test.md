@@ -138,7 +138,7 @@ each with its evidence; state pass/fail against any threshold; and a printed sug
 ## State: HANDOFF  (optional; printed suggestions only)
 
 Printed suggestions: `/aid-fix` (address findings), `/aid-create-test` (add regression tests
-for a bug found), `/aid-change*` (if a fix is a real change). Never auto-invoked.
+for a bug found), `/aid-update*` (if a fix is a real change). Never auto-invoked.
 ~~~~
 
 [Source: `canonical/skills/aid-test/SKILL.md#L106-L109`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-test/SKILL.md#L106-L109) · [full step: `canonical/skills/aid-test/SKILL.md#L106-L111`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-test/SKILL.md#L106-L111)

@@ -59,7 +59,7 @@ Every node in the chart above, in chart order, with the exact `canonical/` text 
 | CLASSIFY | `references/state-classify.md` | inline | CHAIN -> SUGGEST |
 ~~~~
 
-[Source: `canonical/skills/aid-triage/SKILL.md#L78`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-triage/SKILL.md#L78) · [full step: `canonical/skills/aid-triage/references/state-classify.md#L1-L150`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-triage/references/state-classify.md#L1-L150)
+[Source: `canonical/skills/aid-triage/SKILL.md#L78`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-triage/SKILL.md#L78) · [full step: `canonical/skills/aid-triage/references/state-classify.md#L1-L143`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-triage/references/state-classify.md#L1-L143)
 
 <a id="fragment-n3"></a>**3 · `SUGGEST`** — Emits the NFR-7 reflect-back straw-man turn proposing the… · _step_
 
@@ -67,7 +67,7 @@ Every node in the chart above, in chart order, with the exact `canonical/` text 
 | SUGGEST | `references/state-suggest.md` | inline | CHAIN -> HALT |
 ~~~~
 
-[Source: `canonical/skills/aid-triage/SKILL.md#L79`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-triage/SKILL.md#L79) · [full step: `canonical/skills/aid-triage/references/state-suggest.md#L1-L103`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-triage/references/state-suggest.md#L1-L103)
+[Source: `canonical/skills/aid-triage/SKILL.md#L79`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-triage/SKILL.md#L79) · [full step: `canonical/skills/aid-triage/references/state-suggest.md#L1-L98`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-triage/references/state-suggest.md#L1-L98)
 
 <a id="fragment-n4"></a>**4 · `HALT`** — Print the recommended invocation the user should type next… · _exit_ · HALT
 

@@ -371,9 +371,9 @@ changelog:
   <!-- count-history: the two clauses above record D20's shipped state and its v2.1.0 growth;
        both were true when written. The CURRENT figures are on the next line and are the only
        ones a reader should act on. -->
-  **Currently: 64 shortcut doorways generated from a 94-row catalog (58 canonical names + 36
-  aliases; 30 `repurpose` rows carry their own hand-authored directories, so 94 rows -> 64
-  generated doorways + 30 hand-authored).** Every shortcut is a thin doorway that binds a `{verb, artifact}` pair and delegates to one
+  **Currently: 34 shortcut doorways generated from a 58-row catalog (58 canonical names, no
+  aliases; 24 `repurpose` rows carry their own hand-authored directories, so 58 rows -> 34
+  generated doorways + 24 hand-authored).** Every shortcut is a thin doorway that binds a `{verb, artifact}` pair and delegates to one
   shared engine (`canonical/aid/templates/shortcut-engine.md`) running
   `INTAKE -> CAPTURE -> SPEC -> PLAN -> DETAIL -> GATE -> APPROVAL-HALT`, which collapses the five
   definition phases (Describe -> Detail) into one fast, mostly-autonomous run and produces the
@@ -382,7 +382,7 @@ changelog:
   before the terminal APPROVAL-HALT. It never executes — `/aid-execute` is a separate,
   user-initiated run.
 - **Why:** Proportionality should be entered by *naming the change*, not weighed inside an
-  interview. A shared engine keeps all 64 doorways behaviorally identical with no per-skill logic,
+  interview. A shared engine keeps all 34 doorways behaviorally identical with no per-skill logic,
   and collapsing (not skipping) the definition phases preserves the same typed, reviewed artifact
   set at lower ceremony.
 - **Rejected:** A runtime alias/redirect mechanism (rejected — each name is its own rendered

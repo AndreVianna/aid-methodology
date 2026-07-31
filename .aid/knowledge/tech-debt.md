@@ -182,7 +182,7 @@ for the **next release**.
 **Scope boundary (important):** this is about the **deterministic, machine-executed**
 surface — installers (`install.sh`/`install.ps1`/`lib`), the dashboard reader (Python +
 `.mjs`), the render/generator pipeline, the manifests, and the canonical helper scripts.
-The ~111 prompt-driven skills are **out of scope** for these techniques (there is no
+The ~75 prompt-driven skills are **out of scope** for these techniques (there is no
 deterministic pass/fail to measure) — they are covered by **dogfooding + review**, which is
 already in place. Effectiveness measurement therefore scales with the (bounded, slow-growing)
 machinery, NOT with the number of skills.
