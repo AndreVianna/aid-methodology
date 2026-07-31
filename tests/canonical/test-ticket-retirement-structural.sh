@@ -73,7 +73,11 @@ FIRST_RUN_LOOP="${REPO_ROOT}/canonical/skills/aid-plan/references/first-run-loop
 DESCRIBE_FIRSTRUN="${REPO_ROOT}/canonical/skills/aid-describe/references/state-first-run.md"
 SPECIFY_INIT="${REPO_ROOT}/canonical/skills/aid-specify/references/state-initialize.md"
 SHORTCUT_ENGINE="${REPO_ROOT}/canonical/aid/templates/shortcut-engine.md"
-QUERY_KB="${REPO_ROOT}/canonical/skills/aid-query-kb/SKILL.md"
+# The Q&A read seam moved with feature-003: its skill directory was deleted and aid-ask
+# promoted into its place. The variable is renamed alongside the path so the name cannot
+# outlive what it points at; existence is enforced by the T000 setup loop below, before any
+# assertion reads the file.
+ASK_SKILL="${REPO_ROOT}/canonical/skills/aid-ask/SKILL.md"
 REVIEW_SKILL="${REPO_ROOT}/canonical/skills/aid-review/SKILL.md"
 DEVELOPER_AGENT="${REPO_ROOT}/canonical/agents/aid-developer/AGENT.md"
 RESEARCHER_AGENT="${REPO_ROOT}/canonical/agents/aid-researcher/AGENT.md"
@@ -94,7 +98,7 @@ SPEC_TPL="${REPO_ROOT}/canonical/aid/templates/specs/spec-template.md"
 ALL_FILES=(
     "$DESCRIBE_COMPLETION" "$DETAIL_TASKDECOMP" "$PLAN_SKILL" "$EXECUTE_SKILL"
     "$DEPLOY_PACKAGING" "$MONITOR_ROUTE" "$STATE_EXECUTE" "$FIRST_RUN_LOOP"
-    "$DESCRIBE_FIRSTRUN" "$SPECIFY_INIT" "$SHORTCUT_ENGINE" "$QUERY_KB"
+    "$DESCRIBE_FIRSTRUN" "$SPECIFY_INIT" "$SHORTCUT_ENGINE" "$ASK_SKILL"
     "$REVIEW_SKILL" "$DEVELOPER_AGENT" "$RESEARCHER_AGENT" "$RESEARCH_SKILL"
     "$REPORT_SKILL" "$CONSUMPTION_PROTOCOL" "$WORK_STATE_TPL" "$DELIVERY_STATE_TPL"
     "$TASK_STATE_TPL" "$SPEC_TPL"
@@ -236,7 +240,7 @@ declare -A READ_SEAMS=(
     ["aid-specify state-initialize.md"]="$SPECIFY_INIT"
     ["aid-plan first-run-loop.md (Step 4c record half)"]="$FIRST_RUN_LOOP"
     ["shortcut-engine.md (Step 4b)"]="$SHORTCUT_ENGINE"
-    ["aid-query-kb SKILL.md (Step 2c)"]="$QUERY_KB"
+    ["aid-ask SKILL.md (Step 2c)"]="$ASK_SKILL"
     ["aid-review SKILL.md (REVIEW Gather evidence)"]="$REVIEW_SKILL"
     ["aid-developer AGENT.md"]="$DEVELOPER_AGENT"
     ["aid-researcher AGENT.md"]="$RESEARCHER_AGENT"
@@ -252,7 +256,7 @@ declare -A OLD_NEEDLES=(
     ["aid-specify state-initialize.md"]="request the connection from the host tool's own MCP"
     ["aid-plan first-run-loop.md (Step 4c record half)"]="request the connection from the host tool's own MCP"
     ["shortcut-engine.md (Step 4b)"]="request the connection from the host tool's own MCP"
-    ["aid-query-kb SKILL.md (Step 2c)"]="request the connection from the host tool's own MCP"
+    ["aid-ask SKILL.md (Step 2c)"]="request the connection from the host tool's own MCP"
     ["aid-review SKILL.md (REVIEW Gather evidence)"]="an issue-tracker MCP to fetch a ticket"
     ["aid-developer AGENT.md"]="canonical/aid/templates/connectors/consumption-protocol.md"
     ["aid-researcher AGENT.md"]="canonical/aid/templates/connectors/consumption-protocol.md"
@@ -260,7 +264,7 @@ declare -A OLD_NEEDLES=(
 i=43
 for name in "aid-describe state-first-run.md" "aid-specify state-initialize.md" \
             "aid-plan first-run-loop.md (Step 4c record half)" "shortcut-engine.md (Step 4b)" \
-            "aid-query-kb SKILL.md (Step 2c)" "aid-review SKILL.md (REVIEW Gather evidence)" \
+            "aid-ask SKILL.md (Step 2c)" "aid-review SKILL.md (REVIEW Gather evidence)" \
             "aid-developer AGENT.md" "aid-researcher AGENT.md"; do
     file="${READ_SEAMS[$name]}"
     needle="${OLD_NEEDLES[$name]}"
@@ -292,7 +296,7 @@ done
 DELIVERY_002_FILES=(
     "$DESCRIBE_COMPLETION" "$DETAIL_TASKDECOMP" "$PLAN_SKILL" "$EXECUTE_SKILL"
     "$DEPLOY_PACKAGING" "$MONITOR_ROUTE" "$STATE_EXECUTE" "$FIRST_RUN_LOOP"
-    "$DESCRIBE_FIRSTRUN" "$SPECIFY_INIT" "$SHORTCUT_ENGINE" "$QUERY_KB"
+    "$DESCRIBE_FIRSTRUN" "$SPECIFY_INIT" "$SHORTCUT_ENGINE" "$ASK_SKILL"
     "$REVIEW_SKILL" "$DEVELOPER_AGENT" "$RESEARCHER_AGENT" "$RESEARCH_SKILL"
     "$REPORT_SKILL" "$CONSUMPTION_PROTOCOL"
 )

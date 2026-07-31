@@ -390,7 +390,11 @@ STARTERS=(
     "canonical/skills/aid-test/SKILL.md"
     "canonical/skills/aid-prototype/SKILL.md"
     "canonical/skills/aid-create-document/SKILL.md"
-    "canonical/skills/aid-change-document/SKILL.md"
+    # feature-003 moved the document-editing starter: its directory was deleted and the body
+    # promoted into aid-update-document/. One element's VALUE moves; the array's length does
+    # not -- nothing is added or removed, so the "10" below is re-checked and kept, not stale.
+    # Its twin binding in STARTER_ALLOC_ANCHOR below must move with it.
+    "canonical/skills/aid-update-document/SKILL.md"
 )
 assert_eq "${#STARTERS[@]}" "10" "G: exactly ten affected work-starters under coverage"
 
@@ -410,7 +414,7 @@ declare -A STARTER_ALLOC_ANCHOR=(
     ["canonical/skills/aid-test/SKILL.md"]="**then** allocate (\`"
     ["canonical/skills/aid-prototype/SKILL.md"]="**then** allocate (\`"
     ["canonical/skills/aid-create-document/SKILL.md"]="**then** allocate (\`"
-    ["canonical/skills/aid-change-document/SKILL.md"]="**then** allocate (\`"
+    ["canonical/skills/aid-update-document/SKILL.md"]="**then** allocate (\`"
 )
 
 for rel in "${STARTERS[@]}"; do
