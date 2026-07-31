@@ -173,7 +173,7 @@ or worse; `[LOW]`/`[MINOR]` at the end" — are the same statement.
 
 | # | Severity | Rule | Doc | Line | Description | From | Status |
 |---|---|---|---|---|---|---|---|
-| _none yet_ | | | | | | | |
+| 1 | [LOW] | EXE-08 | canonical/aid/scripts/summarize/emit-summary-findings.sh | 122 | Twelve globals are lowercase where `coding-standards.md § Naming Conventions` reserves lowercase for locals (`missing_docs`, `stem`, `doc`, `d`, `vrc`, `crc`, `unresolved`, `claimed`, `k`, `fail_line`, `pair`, `theme`/`detail`) -- and `missing_docs` is **dead**: `grep -n missing_docs` returns two lines, both writes (`:122` initialises, `:150` appends), so the accumulator is built and never consumed. Confined to one file, so the `>1 file` escape does not apply: `manual-checklist.sh`'s globals are all UPPER_SNAKE. | delivery-015 gate cycle 11, row 13 | Pending |
 
 ## Criteria Gaps
 

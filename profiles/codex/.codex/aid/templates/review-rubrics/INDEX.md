@@ -142,7 +142,7 @@ needs rule rows.**
 | **B** | Build-verify only — re-run the generator and diff; content grading skipped, the script is the authority |
 | **C** | Spot-check snapshot — current-value fields only; history and ledger rows explicitly not graded |
 | **D** | Mechanical gate — a script passes or fails; no agent, no rule rows |
-| **E** | Machine score plus a mandatory human checklist |
+| **E** | Machine gate plus a mandatory human checklist |
 
 ---
 

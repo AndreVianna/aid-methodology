@@ -286,12 +286,55 @@ if [ -n "$INPUT_FILE" ]; then
     # un-escaped on read and re-escaped on write. Idempotence then holds by construction: there is no
     # inverse transform to get wrong, and no ordering hazard between un-escaping `\\` and `\"`. The
     # earlier round-trip did un-escape, and could not represent a newline at all.
+    # The extraction is a JSON string SCAN, not a regex capture. `\(.*\)` is greedy, so on a COMPACT
+    # (single-line) input it ran to the LAST quote on the line: given
+    #   {"K1_answer":"y",...,"notes":"hi","html_file":"x.html","timestamp":"t"}
+    # `notes` came back as `hi","html_file":"x.html","timestamp":"t` and the rewrite emitted that as one
+    # value, producing duplicate `html_file`/`timestamp` keys and a corrupted note -- while the script
+    # printed "Validated ... normalising answers" and exited 0. The header three screens up promises
+    # "Lossless and idempotent: notes and html_file are carried across", and a second --input pass
+    # reproduced the corruption, so neither half of that held. The pretty form this script itself writes
+    # put one key per line, which is why every fixture in the suite hid it.
+    #
+    # json_str KEY FILE -- print the raw, still-ESCAPED string value of KEY.
+    #   rc 0  found            rc 1  key absent           rc 3  key present, string never closed
+    # Scans forward from the opening quote honouring backslash escapes, so an embedded `\"` does not end
+    # the value and `\\` does not escape the quote after it. Raw form is deliberate: both fields are
+    # re-emitted verbatim, so there is no inverse transform to get wrong (see the note above).
+    json_str() {
+        awk -v key="$1" '
+          BEGIN { pat = "\"" key "\"[[:space:]]*:[[:space:]]*\""; rc = 1 }
+          rc == 0 { next }
+          match($0, pat) {
+              i = RSTART + RLENGTH; n = length($0); out = ""
+              while (i <= n) {
+                  c = substr($0, i, 1)
+                  if (c == "\\") { out = out c substr($0, i + 1, 1); i += 2; continue }
+                  if (c == "\"") { print out; rc = 0; exit }
+                  out = out c; i++
+              }
+              rc = 3            # ran off the end of the line with the string still open
+              exit
+          }
+          END { exit rc }
+        ' "$2"
+    }
     if [ -z "$NOTES" ]; then
-        NOTES=$(sed -n 's/.*"notes"[[:space:]]*:[[:space:]]*"\(.*\)".*/\1/p' "$INPUT_FILE" | head -1) || true
+        NOTES=$(json_str notes "$INPUT_FILE") || jrc=$?
+        if [ "${jrc:-0}" -eq 3 ]; then
+            echo "❌ --input JSON is malformed: the \"notes\" string is never closed." >&2
+            exit 2
+        fi
+        unset jrc
         NOTES_PRE_ESCAPED=1
     fi
     if [ -z "$HTML_FILE" ]; then
-        HTML_FILE=$(sed -n 's/.*"html_file"[[:space:]]*:[[:space:]]*"\(.*\)".*/\1/p' "$INPUT_FILE" | head -1) || true
+        HTML_FILE=$(json_str html_file "$INPUT_FILE") || jrc=$?
+        if [ "${jrc:-0}" -eq 3 ]; then
+            echo "❌ --input JSON is malformed: the \"html_file\" string is never closed." >&2
+            exit 2
+        fi
+        unset jrc
         HTML_PRE_ESCAPED=1
     fi
     OUT_FILE="$INPUT_FILE"

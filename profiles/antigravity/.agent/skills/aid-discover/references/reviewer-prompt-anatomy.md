@@ -160,14 +160,14 @@ skip them for these checks.
 9. **Sources-anchored coverage gap (`[CAL-COVERAGE]`).** Consult output (b) above. For
    each `absent` row for a Full Primary document: verify (spot-check) the term is
    genuinely absent from the doc body. If absent with no explicit dismissal, it is a
-   load-bearing source fact the doc forgot = `[HIGH]` `[CAL-COVERAGE]`. If the doc
+   load-bearing source fact the doc forgot = `[LOW]` (escaping to `[MEDIUM]` beyond one doc) `[CAL-COVERAGE]`, the anchor `KB-09` declares. If the doc
    explicitly defers the term with a valid `sources:` pointer, do not flag. URL
    `sources:` → N/A, never flag.
 
 10. **Hollowness — too thin (`[CAL-HOLLOW]`).** Read the document alone. Can a reader
     orient from it — does it convey the *why*, *how the parts interact*, the gotchas? Or
     is it a link-farm: mostly "see X" pointers with no synthesised cross-cutting content?
-    A hollow link-farm = `[MEDIUM]` `[CAL-HOLLOW]`. *(Runtime judgment — no mechanical
+    A hollow link-farm = `[LOW]` (escaping to `[MEDIUM]` beyond one doc) `[CAL-HOLLOW]`, the anchor `KB-08` declares. *(Runtime judgment — no mechanical
     oracle exists for "does this doc convey durable understanding?". Grade
     conservatively; do not flag a concise but informative doc as hollow.)*
 
@@ -175,7 +175,7 @@ skip them for these checks.
     spirit of its `sources:`. Does the body read like a re-narrated, near-verbatim copy
     of a source — full signatures, exhaustive enumerations, copied detail — rather than
     a synthesis that explains *why* and *how things relate*? A near-verbatim restatement
-    with no added synthesis = `[MEDIUM]` `[CAL-TRANSCRIPTION]`. *(Runtime judgment from
+    with no added synthesis = `[LOW]` (escaping to `[MEDIUM]` beyond one doc) `[CAL-TRANSCRIPTION]`, the anchor `KB-08` declares. *(Runtime judgment from
     the doc text plus output (b)'s coverage signal — there is no mechanical overlap
     ratio. A doc whose body merely echoes its source's salient tokens with no
     cross-cutting *why* is transcription; judge from the prose, not a number.)*
@@ -185,12 +185,16 @@ skip them for these checks.
     durable, grep-recoverable anchor. A vague "see the code" / "see the implementation"
     with no declared `sources:` entry = `[LOW]` `[CAL-DEFERRAL]`.
 
-**Severity anchors:**
+**Severity anchors.** Every value below is the anchor its **cited rule** declares in
+`review-rubrics/kb.md`, restated here for reading convenience only — where the two disagree the
+catalog wins and this list is the defect. The three `CAL-*` lines used to read `[HIGH]`/`[MEDIUM]`,
+the values the retired flat-severity limb emitted, while the example rows below had already been
+re-derived to `[LOW]`:
 - Missing standard document, missing load-bearing part = `[HIGH]` / `[KB-MISSING]`
-- Sources-anchored coverage gap (`[CAL-COVERAGE]`) = `[HIGH]`
+- Sources-anchored coverage gap (`[CAL-COVERAGE]`) = what `KB-09` anchors: `[LOW]` (escaping to `[MEDIUM]` beyond one doc)
 - Coverage gap vs intent, cross-doc inconsistency = `[MEDIUM]`
 - Missing term definition, missing edge case = `[MEDIUM]`
-- Hollow (`[CAL-HOLLOW]`) / transcription (`[CAL-TRANSCRIPTION]`) = `[MEDIUM]`
+- Hollow (`[CAL-HOLLOW]`) / transcription (`[CAL-TRANSCRIPTION]`) = what `KB-08` anchors: `[LOW]` (escaping to `[MEDIUM]` beyond one doc)
 - Deferral without pointer (`[CAL-DEFERRAL]`) = `[LOW]`
 
 ### Rubric routing (apply per document)

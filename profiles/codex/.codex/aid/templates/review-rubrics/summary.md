@@ -24,7 +24,7 @@ and this one's family is Presentation.
 **Two kinds, and both are required.**
 
 - **Kind A** — an agent reads the whole document against the rules below and produces findings.
-- **Kind E** — a machine score plus a **mandatory human checklist**, because no agent sees a rendered
+- **Kind E** — a machine **gate** plus a **mandatory human checklist**, because no agent sees a rendered
   page. An agent's "no violations" is not a statement that the summary is legible or that its visuals
   render.
 

@@ -29,7 +29,7 @@ git log -1 --format=%cI <branch>
 ```
 
 Write `.aid/settings.yml` `kb_baseline: {branch, tip_date}` using the **append-a-new-block** idiom
-(`/aid-config` SKILL.md:126-132 -- the not-yet-present-section path). This is the **first** write of
+(`aid-config/SKILL.md`, the not-yet-present-section path -- its "otherwise append a new top-level" branch). This is the **first** write of
 the multi-line `kb_baseline` block; use a same-directory temp file + `mv -f` crash-safe rename (NOT
 the single-line "Save in place" replace, which only replaces one line):
 ```bash
@@ -45,7 +45,7 @@ mv -f .aid/settings.yml.tmp .aid/settings.yml
 ```
 If `kb_baseline` is already present (re-run after an earlier DONE), skip the append and instead
 replace only the `tip_date:` line in the existing block (the single-line "Save in place" idiom,
-`/aid-config` SKILL.md:124).
+`aid-config/SKILL.md`, its "Save in place" idiom -- the branch that replaces the existing line for a key).
 
 If git is absent, the repo has no commits, or the branch cannot be resolved, skip the baseline
 write silently (the reader degrades gracefully when `kb_baseline` is absent -- FF-A2).

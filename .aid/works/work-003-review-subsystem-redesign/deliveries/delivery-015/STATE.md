@@ -1,7 +1,7 @@
 ---
 delivery_state: Gated
 gate_tier: Large
-gate_grade: D
+gate_grade: D+
 gate_timestamp: '2026-07-30T23:34:34Z'
 ticket_ref: "--"
 ---
@@ -44,14 +44,15 @@ ticket_ref: "--"
 ## Delivery Gate
 
 - **Complexity Score:** 18 (tasks=6, depth=3, risk=9, consults=0) -> Large tier
-- **Cycles:** 10. Grades D- -> D -> D -> D -> D+ -> D -> D+ -> D -> D -> D; findings 13 -> 15 -> 8 -> 11 -> 6 -> 7 -> 9 -> 8 -> 8 -> 14. The recorded Grade is cycle 10's, the last one actually measured. Cycle 10 found MORE than cycle 9 because the bar change did not change what the reviewer looks for -- and because two of its findings were guards that could not fail, which no amount of prose review would have surfaced.
+- **Cycles:** 11. Grades D- -> D -> D -> D -> D+ -> D -> D+ -> D -> D -> D -> D+; findings 13 -> 15 -> 8 -> 11 -> 6 -> 7 -> 9 -> 8 -> 8 -> 14 -> 14 (**113** total). The recorded Grade is cycle 11's, the last one actually measured. Cycles 10 and 11 found MORE than cycle 9, not fewer: the bar change did not change what a reviewer looks for, and four of those 28 findings were **guards that could not fail** -- a class no amount of prose review surfaces, and the class that had been letting the prose defects through.
 - **Minimum grade:** `B-` — **changed from `A+` at cycle 10** (human decision, 2026-07-30;
   `.aid/settings.yml`). `B-` is the lowest bar whose whole band excludes `[MEDIUM]`, so the exit
   criterion is now *zero `[MEDIUM]`/`[HIGH]`/`[CRITICAL]`*, with `[LOW]`/`[MINOR]` **deferred, not
   waived** — they accumulate in the work `STATE.md § Deferred Findings` and are swept in one pass
   before the work ships. Measurement and reasoning: that section. Set globally rather than per-skill
   for the reason in work `STATE.md § Q19`.
-- **Issue List:** all 85 findings across the nine cycles are FIXED and self-verified. Cycles 1-9 ran
+- **Issue List:** 112 of the 113 findings across eleven cycles are FIXED and self-verified; the 113th
+  is one `[LOW]` deferred under the `B-` bar (work `STATE.md § Deferred Findings`). Cycles 1-9 ran
   against the `A+` bar and never cleared it; § Cross-phase Q&A, 'Why six cycles did not reach A+'
   (written at cycle 6, and the diagnosis held through cycle 9) and § 'Method change at cycle 9'.
 - **Cycle 10 (graded 2026-07-30, tree `86eb7584`):** **D** — 3 `[HIGH]` + 11 `[MEDIUM]` + 0 `[LOW]` + 0 `[MINOR]`, so **nothing defers** and all 14 must be fixed to clear `B-`. Ledger: `.aid/.temp/review-pending/execute-delivery-015-cycle10.md`. Two of the 14 are guard gaps the reviewer proved by mutation, not by reading: appending a live two-grade instruction to `aid-summarize/SKILL.md`'s body left the suite 57/57 green (row 5 — `TG01` excludes three files whole), and flipping `SEV_FOR[L1]` to `[HIGH]` plus `SUMMARY-01` to `[CRITICAL]` also left it green (row 6 — the emitter is not in `SEV01`'s feed). Row 1 is a regression cycle 9's own guard rewrite introduced: per-instance detail lines from `validate-html-output.sh` are unclaimed by any rule, so an ordinary broken anchor now exits 2 (pause) instead of 1 (gradeable).
@@ -80,7 +81,49 @@ ticket_ref: "--"
   dogfood sync of all 8 edited files across both trees; `ascii-only`, `review-rubrics`,
   `reviewer-conformance`, `criteria-gaps`, `gap-gate-wiring`, `grade-summary`, `guardrails-d012`,
   `writeback-ledger`, `settings-frontmatter-gates` (35/35), `actback-fixtures` (20/20) all green.
-- **State:** cycle 10's fixes are ungraded until a fresh reviewer runs.
+- **Cycle 11 (graded 2026-07-30, tree `51d730da`):** **D+** — 1 `[HIGH]` + 12 `[MEDIUM]` + 1 `[LOW]`.
+  Ledger: `.aid/.temp/review-pending/execute-delivery-015-cycle11.md`. The `[LOW]` (row 13, lowercase
+  globals + a dead `missing_docs` accumulator) is the first row to be **deferred** under the `B-` bar
+  rather than fixed; it is copied to work `STATE.md § Deferred Findings`.
+  **Two more guards that cannot fail, and one of them is mine from cycle 10:** `SEV05` strips only
+  spaces from the Modality cell, so `kb.md`'s `**SHOULD**` matches no `case` branch and the row is
+  dropped silently — and `KB-26` is the *only* such row, the one this delivery re-anchored and leaned
+  on across five surfaces. Setting it to `[CRITICAL]` left the suite green. `SEV01` extracts the rule
+  ID with `grep -oE '[A-Z]{2,12}-[0-9]{2}' | head -1`, which on a ledger example row takes the `#`
+  cell: all four `AB-00N` rows extract `AB-00`, both `TB-00N` rows extract `TB-00`, `catalog_sev`
+  returns empty and the loop `continue`s — six of eleven example rows are in the feed and never
+  compared. Cycle 10's comment claims it fixed exactly this vacuity by dropping the backtick
+  requirement; the rows entered the feed, they were just never compared. Both non-vacuity counters
+  (`SEV03`, `band_n`) count rows *seen*, not comparisons *performed*, which is why neither noticed.
+- **Cycle 11 FIX (2026-07-30):** 13 of 14 fixed; row 13 (`[LOW]`) deferred to the end-of-work sweep,
+  which is the first exercise of the `B-` bar's deferral path.
+  **The two blind guards, and why neither non-vacuity counter caught them:** both `SEV03` and `band_n`
+  counted rows *seen* entering the loop, not comparisons *performed* inside it — so a row that entered
+  and was then dropped by a `continue` or an unmatched `case` was indistinguishable from a row that was
+  compared. Both now count comparisons (`SEV03` reads 25, where the row-count form read 28 while six
+  were being dropped). `SEV01` now takes **every** rule-shaped token on a line rather than `head -1`,
+  which had been taking the `#` cell of ledger example rows, and reports a severity-bearing row that
+  resolves *no* rule instead of skipping it silently. `SEV05` normalises emphasis out of the Modality
+  cell and has a default branch that **fails** on a spelling it cannot read.
+  **New guards:** `SEV06` (a severity stated for a lint TAG in prose must match the anchor of the rule
+  that tag cites — the class `SEV01` structurally cannot see, since its feed is table rows), `MC11` (a
+  **compact** single-line `--input` round-trips exactly, 4 adversarial cases), `MC12` (an unclosed
+  string exits 2 and leaves the file untouched), `GR01` (the generated settings reference publishes the
+  *resolved* `minimum_grade`). 64 → 68 assertions, all green.
+  **`SEV06` earned itself immediately:** the row-7 fix re-anchored the lint-tag table, and `SEV06`
+  found a **second** table in the same file — the CALIBRATION definitions at `:75-78` — still stating
+  the retired flat `[MEDIUM]`/`[MEDIUM]`/`[HIGH]`. Fixed. That is the class-sweep the finding's Evidence
+  called for, caught by a guard rather than by the next reviewer.
+  **Two of my own probes were the bug, not the code:** `MC11` first failed on a value the script had
+  round-tripped correctly, because python's text-mode `print` turned the note's `\n` into `\r\n` inside
+  the probe — it now compares JSON-escaped ASCII forms, which cannot be re-encoded on the way to the
+  comparison. And an earlier hand-built fixture used `\ ` (backslash-space), which is not a valid JSON
+  escape, so the "corruption" it showed was in the input.
+  **Also closed while in the same class:** the four pre-existing bare-line citations
+  `kb-citation-lint.sh` reports under `aid-discover/references` — two of which had *already* drifted
+  (`lookup_list` is at `:170`, not the cited `:197`). That lint defaults to `.aid/knowledge`, so nothing
+  was policing them; it is now clean over that directory.
+- **State:** cycle 11's fixes are ungraded until a fresh reviewer runs.
 
 ---
 

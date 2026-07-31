@@ -99,7 +99,8 @@ The M3 (Essence) and M4 (Assertiveness) keystone gates MUST read only *hand-auth
 project knowledge* — never the process/ledger docs (`STATE.md`, `README.md`) or generated
 docs (`INDEX.md`), which would poison the reconstruction/work-simulation and, through it, the
 keystone verdict itself. Whether the grade moves too depends on the severity the cited rule
-anchors, which is a separate question — a lone `KB-26` row is `[LOW]` and grades `B+` (:417).
+anchors, which is a separate question — a lone `KB-26` row is `[LOW]` and grades `B+` (this file,
+§ *Assertiveness gate PASS conditions*, at "a lone `KB-26` row grades").
 The verdict is the gate that contamination defeats. Compute the surface deterministically with
 the `list_reviewable` accessor (defined in `references/doc-set-resolve.md`):
 

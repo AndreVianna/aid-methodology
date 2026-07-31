@@ -36,10 +36,27 @@
 #
 #   --dry-run   print the rows that would be written, write nothing. Useful in CI and in tests.
 #
-# EXIT CODES (linter alphabet: 0 clean, 1 findings, 2 usage)
-#   0  every check passed; no rows emitted
-#   1  at least one finding was emitted
-#   2  usage error, or a required validator is missing
+# EXIT CODES
+#   0  every check group ran, and every check passed; no rows emitted
+#   1  every check group ran, and at least one finding was emitted
+#   2  a usage error, OR at least one check group could not be EVALUATED
+#
+#   2 takes precedence over both 0 and 1: a run that could not evaluate a group is INCOMPLETE, and
+#   findings emitted by the groups that did run do not make it complete. An empty ledger from an
+#   unrun check grades A+, which is the one outcome worse than a failing grade.
+#
+#   The four conditions that raise 2 for an unevaluated group -- the header used to say only "a
+#   required validator is missing", which covers exactly one of them, and the printed advice told the
+#   caller to install a validator that was present:
+#     * a validator is absent, or timed out
+#     * `settings.yml` exists but declares no `doc_set` rows, so SUMMARY-01 had nothing to check
+#     * the HTML validator reported a failing check that no rule in RULE_FOR claims
+#     * the contrast checker could not resolve a token pair, or measured 0 of 0 pairs
+#
+#   This is NOT the linter alphabet (0 clean / 1 violations / 2 usage) that `lint-*.sh` uses: this
+#   script is a check RUNNER, so it needs a code for "the check did not happen", which a linter does
+#   not. `coding-standards.md § Exit Codes` reserves 2 for usage/malformed-config; the extension is
+#   declared here rather than silently taken.
 set -uo pipefail
 
 SCRIPT_NAME="emit-summary-findings.sh"
@@ -126,12 +143,21 @@ if [[ -f "$SETTINGS" && -d "$KB_DIR" ]]; then
     # zero times, emitted nothing, and the script exited 0 "no findings" -- reporting a clean coverage
     # check against a doc-set it never had. `grading-rubric.md § COV` promises the opposite in as many
     # words: "reports itself as not evaluated rather than passing".
-    DECLARED=0
-    while IFS= read -r d; do [[ -n "$d" ]] && DECLARED=$((DECLARED + 1)); done < <(awk '
-        /^[[:space:]]*doc_set:[[:space:]]*$/ { in_ds = 1; next }
-        in_ds && /^[[:space:]]*[A-Za-z_][A-Za-z0-9_]*:/ { in_ds = 0 }
-        in_ds && /^[[:space:]]*-[[:space:]]/ { print "row" }
-    ' "$SETTINGS")
+    # Read through the DECLARED ACCESSOR, never by re-parsing the YAML here.
+    # `coding-standards.md § Configuration Access` is explicit: "Read via read-setting.sh; never
+    # hand-parse the YAML in another script." Two awk blocks in this file used to do exactly that. They
+    # were not wrong -- both yielded the same 19 documents as the accessor, verified by diff -- but a
+    # second parser is a second thing to keep correct, and this one was inherited verbatim from the
+    # retired grade-summary.sh rather than chosen. The accessor returns the `name|agent|required` rows
+    # comma-joined.
+    #
+    # The path is `discovery.doc_set` while the key in the file is `knowledge.doc_set`: that is the
+    # accessor's own documented alias (`read-setting.sh`, its `discovery.doc_set)` case, which resolves
+    # to `lookup_list ... knowledge doc_set`), not a mismatch here. The note below names the real key,
+    # because that is what a reader has to go and edit.
+    DOC_SET_RAW="$(bash "${SCRIPT_DIR}/../config/read-setting.sh" --path discovery.doc_set 2>/dev/null || true)"
+    doc_set_rows() { printf '%s' "$DOC_SET_RAW" | tr ',' '\n' | sed '/^[[:space:]]*$/d'; }
+    DECLARED="$(doc_set_rows | wc -l | tr -d ' ')"
     if [[ "$DECLARED" -eq 0 ]]; then
         unevaluated "${SETTINGS} declares no knowledge.doc_set rows -- SUMMARY-01 not evaluated"
     fi
@@ -152,17 +178,7 @@ if [[ -f "$SETTINGS" && -d "$KB_DIR" ]]; then
                  "Declared knowledge-base document is not represented in the generated summary" \
                  "settings.yml knowledge.doc_set lists ${doc} and ${KB_DIR}/${doc} exists, but no reference to \"${stem}\" appears in $(basename "$HTML")"
         fi
-    done < <(awk '
-        /^[[:space:]]*doc_set:[[:space:]]*$/ { in_ds = 1; next }
-        in_ds && /^[[:space:]]*[A-Za-z_][A-Za-z0-9_]*:/ { in_ds = 0 }
-        in_ds && /^[[:space:]]*-[[:space:]]/ {
-            row = $0
-            sub(/^[[:space:]]*-[[:space:]]*/, "", row)
-            split(row, f, "|")
-            gsub(/^[ \t]+|[ \t]+$/, "", f[1])
-            print f[1]
-        }
-    ' "$SETTINGS")
+    done < <(doc_set_rows | cut -d'|' -f1 | sed 's/^[[:space:]]*//; s/[[:space:]]*$//')
 else
     unevaluated "no ${SETTINGS} or ${KB_DIR} -- SUMMARY-01 not evaluated"
 fi
@@ -300,7 +316,8 @@ if [[ -f "$SCRIPT_DIR/validate-html-output.sh" ]]; then
         # PAUSE-FOR-USER-ACTION, so a perfectly gradeable defect halted the pipeline and the printed
         # advice named a missing validator that was present. Anchoring on exactly two spaces keeps the
         # unit the check: instance lines belong to a check that IS claimed, and the aggregate is a
-        # roll-up of checks. EM06/EM07 hold both directions.
+        # roll-up of checks. EM05 (the aggregate is not reported) and EM06 (instance lines are not) hold
+        # the two directions.
         while IFS= read -r fail_line; do
             [[ -n "$fail_line" ]] || continue
             claimed=0
@@ -389,9 +406,13 @@ echo
 if [[ "$UNEVALUATED" -gt 0 ]]; then
     echo "ERROR: ${SCRIPT_NAME}: ${UNEVALUATED} check group(s) could not be evaluated -- see the notes above." >&2
     echo "       ${FINDINGS} finding(s) were emitted, but this run is INCOMPLETE. Reporting it as clean" >&2
-    echo "       would let grade.sh grade an empty ledger as A+ for an artifact nothing actually checked," >&2
-    echo "       which is the exit-2 case this script's header promises. Install the missing validator(s)" >&2
-    echo "       and re-run." >&2
+    echo "       would let grade.sh grade an empty ledger as A+ for an artifact nothing actually checked." >&2
+    # Each note above states its own cause. This line used to end "Install the missing validator(s) and
+    # re-run", which named a cause the run had not established: the ordinary trigger is a failing check
+    # with no rule to carry it, or an unresolvable contrast pair, with both validators present and
+    # running. Advising a fix for a condition that is not the one observed sends the reader to the wrong
+    # place, and it is the same defect this script's own indent-depth comment records fixing for L1.
+    echo "       Each note above names its own cause; fix those, not a cause this run did not report." >&2
     exit 2
 fi
 

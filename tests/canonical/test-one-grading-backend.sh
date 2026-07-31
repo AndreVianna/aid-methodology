@@ -178,6 +178,59 @@ if diff <(grep '"notes"' "$MCT/ml.json") <(grep '"notes"' "$MCT/ml2.json") >/dev
 else
     no MC10 "normalisation altered the note: $(grep '"notes"' "$MCT/ml2.json" | head -1)"
 fi
+
+# MC11 -- a COMPACT (single-line) --input file. Every fixture above is built BY the script, which only
+# ever writes the pretty one-key-per-line form, so no assertion here had ever fed it a compact object --
+# and the extraction was a greedy `\(.*\)` that ran to the LAST quote on the line. MEASURED before the
+# fix: notes came back as `hi","html_file":"x.html","timestamp":"t`, the rewrite emitted duplicate
+# html_file/timestamp keys, the file was no longer JSON, and the script printed "Validated" and exited 0.
+# The four cases are the ones a regex cannot tell apart from a terminator: a plain value, an embedded
+# escaped quote beside a literal backslash, escaped control characters, and a value that CONTAINS a
+# quoted key of its own.
+mc11_bad=()
+# The comparison is between JSON-ESCAPED forms, which are pure ASCII. Comparing the decoded strings
+# instead made this assertion fail on a value the script had round-tripped correctly: python's `print`
+# is text-mode, so on Windows it turned the note's `\n` into `\r\n` inside the probe, and the CR was the
+# probe's, not the script's. An expected value that can be re-encoded on its way to the comparison is
+# not an expected value.
+mc11_case() {   # mc11_case NAME COMPACT_JSON EXPECTED_JSON_PAIR
+    local name="$1" json="$2" want="$3" got
+    printf '%s\n' "$json" > "$MCT/${name}.json"
+    bash "$MC" --input "$MCT/${name}.json" >/dev/null 2>&1 || { mc11_bad+=("${name}:rc"); return; }
+    got=$(python3 -c 'import json,sys; d=json.load(open(sys.argv[1],encoding="utf-8")); print(json.dumps([d["notes"],d["html_file"]],separators=(",",":")))' \
+          "$MCT/${name}.json" 2>/dev/null) || { mc11_bad+=("${name}:not-json-after-rewrite"); return; }
+    [[ "$got" == "$want" ]] || mc11_bad+=("${name}:altered->${got}")
+}
+if command -v python3 >/dev/null 2>&1; then
+    mc11_case flat  '{"K1_answer":"y","K2_answer":"y","V1_answer":"y","notes":"hi","html_file":"x.html","timestamp":"t"}' \
+                    '["hi","x.html"]'
+    mc11_case quote '{"K1_answer":"y","K2_answer":"p","V1_answer":"n","notes":"he said \"go\" then \\ left","html_file":"a.html","timestamp":"t"}' \
+                    '["he said \"go\" then \\ left","a.html"]'
+    mc11_case ctrl  '{"K1_answer":"n","K2_answer":"y","V1_answer":"y","notes":"line1\nline2\ttabbed","html_file":"b.html","timestamp":"t"}' \
+                    '["line1\nline2\ttabbed","b.html"]'
+    mc11_case brace '{"K1_answer":"y","K2_answer":"y","V1_answer":"y","notes":"{\"html_file\":\"evil.html\"}","html_file":"c.html","timestamp":"t"}' \
+                    '["{\"html_file\":\"evil.html\"}","c.html"]'
+    if [[ "${#mc11_bad[@]}" -eq 0 ]]; then
+        ok MC11 "a compact single-line --input round-trips exactly (4 cases incl. embedded quote and brace)"
+    else
+        no MC11 "compact --input mishandled: ${mc11_bad[*]}"
+    fi
+else
+    no MC11 "python3 unavailable -- cannot verify the compact --input round trip (not a pass)"
+fi
+
+# MC12 -- and a string that is never CLOSED is a malformed input, which the contract says exits 2 with a
+# reason. The greedy form could not distinguish it: it simply captured to end-of-line and rewrote the
+# file, so a truncated hand-edited checklist was silently "normalised" into a different document.
+printf '%s\n' '{"K1_answer":"y","K2_answer":"y","V1_answer":"y","notes":"oops' > "$MCT/unclosed.json"
+cp "$MCT/unclosed.json" "$MCT/unclosed.orig"
+mc12_msg=$(bash "$MC" --input "$MCT/unclosed.json" 2>&1); mc12_rc=$?
+if [[ "$mc12_rc" -eq 2 ]] && printf '%s' "$mc12_msg" | grep -qi 'never closed' \
+   && cmp -s "$MCT/unclosed.json" "$MCT/unclosed.orig"; then
+    ok MC12 "an unclosed string exits 2 with a reason and leaves the input untouched"
+else
+    no MC12 "expected exit 2 + reason + untouched file, got rc=${mc12_rc}, msg='$(printf '%s' "$mc12_msg" | head -1)', modified=$(cmp -s "$MCT/unclosed.json" "$MCT/unclosed.orig" && echo no || echo yes)"
+fi
 rm -rf "$MCT"
 
 echo
@@ -372,6 +425,29 @@ if [[ -z "$ragged" ]]; then
     ok CK06 "every row of the Knowledge Summary Status table has exactly two columns"
 else
     no CK06 "ragged rows (unescaped pipe in a value): $(printf '%s' "$ragged" | tr '\n' ' ' | cut -c1-160)"
+fi
+
+# GR01 -- the generated settings reference must agree with the file it declares as its source.
+# `site/src/content/docs/reference/settings.md` carries `generatedFrom: .aid/settings.yml` and
+# "generated -- do not edit", and it published `minimum_grade | A+` for the whole span in which the
+# source said `B-`: the delivery re-ran the generator for agents.md and skills.md but not after the
+# settings change. Nothing anywhere covers it -- `grep -rl gen-reference tests/ .github/workflows/`
+# matches nothing, and the repo registers no generated-files manifest for the page. Comparing the
+# published value against the ACCESSOR (not against the YAML text) also means this passes only if the
+# page, the file and the resolution path all agree.
+SETTINGS_PAGE="$ROOT/site/src/content/docs/reference/settings.md"
+if [[ -f "$SETTINGS_PAGE" ]]; then
+    published=$(grep -E '^\| `minimum_grade` \|' "$SETTINGS_PAGE" | head -1 \
+                | awk -F'|' '{print $3}' | tr -d ' `')
+    resolved=$(bash "$ROOT/canonical/aid/scripts/config/read-setting.sh" \
+                    --skill execute --key minimum_grade --default A 2>/dev/null)
+    if [[ -z "$published" ]]; then
+        no GR01 "the generated settings page has no minimum_grade row -- the check reads nothing"
+    else
+        chk "$published" "$resolved" GR01 "the generated settings reference publishes the resolved minimum_grade"
+    fi
+else
+    no GR01 "the generated settings reference is missing: $SETTINGS_PAGE"
 fi
 
 echo
@@ -578,38 +654,50 @@ catalog_sev() { printf '%s' "${CATALOG_SEV[$1]:-}"; }
 # SEV01 sweeps the SAME eight files RID01 does, and every rule CLASS, not just SUMMARY/PRE in one file.
 # Scoped to one file and two classes it reported clean while five live drifts sat in the sibling
 # reviewer prompts -- an assertion narrower than the defect it is named for.
+# TAKE EVERY rule-shaped token on the line, not the first. `head -1` took the `#` cell of a ledger
+# EXAMPLE row: all four `AB-00N` rows yielded `AB-00`, both `TB-00N` rows yielded `TB-00`, catalog_sev
+# returned empty for those non-rules, and `continue` dropped the row -- six of eleven example rows sat
+# in the feed and were never compared, while cycle 10's comment claimed the vacuity was fixed because
+# the rows now ENTER the feed. Entering a feed is not being compared, and the counter below could not
+# tell the difference: it counted rows seen.
 sev_bad=0
+sev_compared=0
 for f in "${CITERS[@]}"; do
     [[ -f "$f" ]] || continue
     while IFS= read -r line; do
-        # Backticked OR bare. Requiring backticks meant this loop examined ZERO rows in all four
-        # reviewer-prompt files -- their rule IDs sit in ledger EXAMPLE rows, which are bare by
-        # construction -- and five live drifts sat inside the declared scope while it reported clean.
-        rule=$(printf '%s' "$line" | grep -oE '[A-Z]{2,12}-[0-9]{2}' | head -1 | tr -d '`')
-        [[ -n "$rule" ]] || continue
         stated=$(printf '%s' "$line" | grep -oE '\[(CRITICAL|HIGH|MEDIUM|LOW|MINOR)\]' | head -1)
         [[ -n "$stated" ]] || continue
-        declared=$(catalog_sev "$rule")
-        [[ -n "$declared" ]] || continue      # `Step 2` rules: nothing fixed to compare against
-        if [[ "$stated" != "$declared" ]]; then
-            no "SEV-$(basename "$f"):${rule}" "says ${stated}, catalog declares ${declared}"
+        matched=0
+        while IFS= read -r rule; do
+            [[ -n "$rule" ]] || continue
+            declared=$(catalog_sev "$rule")
+            [[ -n "$declared" ]] || continue   # a `#`-cell token, or a `Step 2` rule: nothing to compare
+            matched=1
+            sev_compared=$((sev_compared + 1))
+            if [[ "$stated" != "$declared" ]]; then
+                no "SEV-$(basename "$f"):${rule}" "says ${stated}, catalog declares ${declared}"
+                sev_bad=1
+            fi
+        done < <(printf '%s' "$line" | grep -oE '[A-Z]{2,12}-[0-9]{2}' | tr -d '`' | sort -u)
+        # A severity-bearing row citing NO resolvable rule is not a pass -- it is a row this assertion
+        # cannot judge, and staying silent about it is how six rows hid. `Step 2` rules are the one
+        # legitimate case, so name them explicitly rather than letting every unresolvable token through.
+        if [[ "$matched" -eq 0 ]] \
+           && ! printf '%s' "$line" | grep -qE '(KB-2[0-6]|NAR-05|SUMMARY-0[45]|INT-01|Step 2)'; then
+            no "SEV-$(basename "$f")" "severity-bearing row cites no resolvable rule: $(printf '%s' "$line" | cut -c1-90)"
             sev_bad=1
         fi
     done < <(sev_rows "$f")
 done
 [[ "$sev_bad" -eq 0 ]] && ok SEV01 "no surface restates a severity that disagrees with the rule it cites"
 
-# SEV01 can only report clean if it actually looked. Count the rows it examined across all eight files;
-# zero would mean the pattern is broken again, which is exactly how it passed while five drifts stood.
-n_sev_rows=0
-for f in "${CITERS[@]}"; do
-    [[ -f "$f" ]] || continue
-    n_sev_rows=$((n_sev_rows + $(sev_rows "$f" | wc -l)))
-done
+# SEV01 can only report clean if it actually COMPARED something. Count comparisons performed, not rows
+# seen: the row-count form read 28 while six of those rows were being dropped unjudged.
+n_sev_rows="$sev_compared"
 if [[ "$n_sev_rows" -ge 10 ]]; then
-    ok SEV03 "SEV01 examined ${n_sev_rows} severity-bearing rows via the shared feed (not vacuous)"
+    ok SEV03 "SEV01 performed ${n_sev_rows} catalog comparisons (not vacuous)"
 else
-    no SEV03 "SEV01 examined only ${n_sev_rows} rows -- its feed is broken"
+    no SEV03 "SEV01 performed only ${n_sev_rows} comparisons -- its feed or its extraction is broken"
 fi
 
 # Control: catalog_sev must actually read the catalog, else SEV01 passes on an empty comparison. The
@@ -657,6 +745,58 @@ else
     no SEV04 "emitter severities disagreeing with the catalog: ${emit_sev_bad[*]}"
 fi
 
+# SEV06 -- a severity stated for a lint TAG in PROSE must match the anchor of the rule that tag cites.
+# SEV01 cannot reach these: its feed is table rows (`^| `), and a reviewer prompt states its severities
+# in prose bullets. So while the delivery re-derived the [CAL-*] example ROWS to [LOW], five prose
+# statements in the same file still read [HIGH]/[MEDIUM]/[MEDIUM] -- the retired flat-limb values -- and
+# the lint-tag table in kb-authoring/review-rubric.md still declared them flatly too. A reviewer obeying
+# the prose would write a Severity cell contradicting its own Rule cell.
+#
+# The TAG -> RULE map is READ from that table, not hardcoded: its cells now read
+# `_the cited rule's anchor_ (`KB-08`)`. A tag whose cell is still a flat value has no rule to compare
+# against and is skipped -- which is why TAG_MAPPED below is also asserted non-empty.
+declare -A TAG_RULE=()
+while IFS='|' read -r tag rule; do
+    [[ -n "$tag" && -n "$rule" ]] && TAG_RULE["$tag"]="$rule"
+done < <(awk -F'|' '
+  $2 ~ /^ *`\[[A-Z-]+\]` *$/ && $3 ~ /cited rule/ {
+    tag = $2; cell = $3
+    gsub(/^ +| +$|`|\[|\]/, "", tag)
+    if (match(cell, /`[A-Z]+-[0-9]+`/)) {
+        rule = substr(cell, RSTART + 1, RLENGTH - 2)
+        print tag "|" rule
+    }
+  }' "$ROOT/canonical/aid/templates/kb-authoring/review-rubric.md")
+sev06_bad=()
+sev06_n=0
+for f in "${CITERS[@]}" "$ROOT/canonical/aid/templates/kb-authoring/review-rubric.md"; do
+    [[ -f "$f" ]] || continue
+    for tag in "${!TAG_RULE[@]}"; do
+        declared=$(catalog_sev "${TAG_RULE[$tag]}")
+        [[ -n "$declared" ]] || continue
+        # Every line naming this tag AND a bracketed severity, table row or prose alike.
+        while IFS= read -r line; do
+            [[ -n "$line" ]] || continue
+            sev06_n=$((sev06_n + 1))
+            # The line is fine if the declared token appears on it at all -- the escape form legitimately
+            # names two ([LOW] escaping to [MEDIUM]), and a rewrite may phrase it either way round.
+            printf '%s' "$line" | grep -qF "$declared" \
+                || sev06_bad+=("$(basename "$f"):${tag}(${TAG_RULE[$tag]}) states $(printf '%s' "$line" | grep -oE '\[(CRITICAL|HIGH|MEDIUM|LOW|MINOR)\]' | tr '\n' '/' ) want ${declared}")
+        done < <(grep -nE "\[${tag}\]" "$f" 2>/dev/null \
+                 | grep -E '\[(CRITICAL|HIGH|MEDIUM|LOW|MINOR)\]' \
+                 | grep -viE 'used to read|formerly|retired|no longer|the values the retired')
+    done
+done
+if [[ "${#TAG_RULE[@]}" -eq 0 ]]; then
+    no SEV06 "the TAG->RULE map is empty -- the lint-tag table's shape changed and this guard reads nothing"
+elif [[ "$sev06_n" -lt 3 ]]; then
+    no SEV06 "only ${sev06_n} tag/severity lines examined across ${#TAG_RULE[@]} mapped tags -- feed is broken"
+elif [[ "${#sev06_bad[@]}" -eq 0 ]]; then
+    ok SEV06 "all ${sev06_n} prose/table severities for the ${#TAG_RULE[@]} rule-mapped lint tags match the catalog"
+else
+    no SEV06 "tag severities disagreeing with their cited rule: ${sev06_bad[*]}"
+fi
+
 # SEV05 -- every catalog row's Severity must sit in the band its own Modality selects. This is Step 1
 # of grading-rubric.md's scale, and nothing enforced it: SUMMARY-08 shipped MUST/[LOW], which Step 1
 # forbids (MUST -> Step 2 -> CRITICAL/HIGH/MEDIUM; [LOW] is reserved for a SHOULD), and four
@@ -674,7 +814,18 @@ band_bad=()
 band_n=0
 while IFS='|' read -r file id modality token rest; do
     [[ -n "$id" ]] || continue
-    band_n=$((band_n + 1))
+    case "$modality" in
+        # band_n counts rows COMPARED, incremented after this gate, not rows seen. The seen-form read 83
+        # while one row was being dropped unjudged, so the non-vacuity guard could not tell the
+        # difference -- the same defect as SEV03's row count.
+        MUST|SHOULD|COULD) band_n=$((band_n + 1)) ;;
+        # A modality this case cannot read is NOT a pass. The feed stripped only spaces, so kb.md's
+        # emphasised `**SHOULD**` matched no branch and fell out of the case with no note -- and that is
+        # the ONE such row in the catalog, KB-26, the row this delivery re-anchored and leaned on across
+        # five surfaces. Setting its severity to [CRITICAL] left the whole suite green. The feed now
+        # strips emphasis and backticks; this branch is the backstop for the next unreadable spelling.
+        *) band_bad+=("${file}:${id} unreadable Modality cell '${modality}' -- not compared"); continue ;;
+    esac
     case "$modality" in
         MUST)   [[ "$token" == "[CRITICAL]" || "$token" == "[HIGH]" || "$token" == "[MEDIUM]" \
                    || "$token" == "Step 2" ]] || band_bad+=("${file}:${id} MUST/${token:-<no-token>}")
@@ -694,7 +845,11 @@ done < <(
     awk -F'|' '
       $2 ~ /^ *`[A-Z]+-[0-9]+` *$/ {
         id = $2; mod = $5; cell = $(NF-1)
-        gsub(/^ +| +$|`/, "", id); gsub(/^ +| +$/, "", mod)
+        gsub(/^ +| +$|`/, "", id)
+        # Normalise the Modality cell: emphasis and backticks are presentation, not value. Stripping
+        # only spaces left the KB-26 row (**SHOULD**) unreadable, and the case fell through in silence.
+        # No apostrophe in this comment: it sits inside a single-quoted awk program, and one closed it.
+        gsub(/[*`]/, "", mod); gsub(/^ +| +$/, "", mod)
         gsub(/^ +| +$/, "", cell)
         token = ""; rest = cell
         if (match(cell, /^`\[(CRITICAL|HIGH|MEDIUM|LOW|MINOR)\]/)) {

@@ -42,7 +42,7 @@ The ledger file contains **exactly one markdown table.** No frontmatter, no sect
 |---|---|---|---|---|---|---|---|
 | 1 | [HIGH] | Pending | NAR-04 | foo.md | 42 | claim Y is wrong | doc says Y, `wc -l target = N` shows actual Z |
 | 2 | [LOW] | Fixed | NAR-03 | bar.md | 100 | stale path reference | path/to/foo deleted commit abc123; cycle-4 FIX removed cite |
-| 3 | [MINOR] | Accepted | NAR-06 | baz.md | — | one-sentence body | no-docs variant accepted by user cycle-1 Q10 |
+| 3 | [MINOR] | Accepted | NAR-06 | baz.md | -- | one-sentence body | no-docs variant accepted by user cycle-1 Q10 |
 | 4 | [HIGH] | Recurred | NAR-04 | qux.md | 17 | count off by 1 | claim 16 vs disk 15; was Fixed cycle-3, returned cycle-5 |
 | 5 | [LOW] | OOS | NAR-08 | quux.md | 200 | inline T3 line-count violation | accurate value but P1 policy violation; methodology-refactor pending |
 ```
@@ -76,7 +76,7 @@ The `.aid/.temp/review-pending/` directory is gitignored (per `.gitignore` `.aid
 | 2 | `Severity` | yes | Bracketed severity tag (`[CRITICAL]`, `[HIGH]`, `[MEDIUM]`, `[LOW]`, `[MINOR]`). Brackets ensure the tag doesn't collide with bare numbers anywhere else in markdown. Drives grade computation. |
 | 3 | `Status` | yes | Plain word (no brackets): `Pending`, `Fixed`, `Recurred`, `Accepted`, `OOS`, or `Invalid`. See **Status values** below. Drives grade computation. |
 | 4 | `Rule` | yes | The ID of the rule the finding violates, from the artifact's rule set in [`.claude/aid/templates/review-rubrics/INDEX.md`](review-rubrics/INDEX.md). Format `<CLASS>-<NN>` (e.g. `CODE-03`, `NAR-04`). See **Rule values** below. |
-| 5 | `Doc` | yes | Affected file path (relative to repo root). Examples: `foo.md`, `.claude/aid/scripts/bar.sh`, `tests/canonical/baz.sh`. For doc-wide issues with no specific file, use `—`. |
+| 5 | `Doc` | yes | Affected file path (relative to repo root). Examples: `foo.md`, `.claude/aid/scripts/bar.sh`, `tests/canonical/baz.sh`. For doc-wide issues with no specific file, use `--` (the same sentinel as `Rule` and `Line`; **not** the em dash `—` this schema's older examples used). |
 | 6 | `Line` | yes | Affected line number, a line range like `42-45`, a **locator** when the artifact has no meaningful line (see below), or `--` for doc-wide. |
 | 7 | `Description` | yes | ONE sentence stating what's wrong. Form: "claim X is wrong: doc says Y, actual Z." Avoid hedging or explanation; explanation goes in Evidence. |
 | 8 | `Evidence` | yes | The disk-truth that contradicts the doc's claim, AND/OR the source-of-truth command. Form: "`wc -l foo = 1070` (doc claims 1071)" or "`grep -c X bar = 5` (doc claims 6)". For Status=Fixed/Recurred/Accepted/OOS/Invalid, include enough context to justify the status (e.g., "Fixed in commit abc123" or "Accepted: user decision cycle-1 Q5"). |

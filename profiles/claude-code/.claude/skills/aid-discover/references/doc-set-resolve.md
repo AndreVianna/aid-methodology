@@ -55,8 +55,9 @@ never contain `|`; a `when` hint is free text but is the last field, so any resi
 tolerated (everything after the 3rd `|` is treated as part of `presence`/`when`).
 
 > **Comment placement constraint:** inline `# comment` on an item line is stripped by
-> `lookup_list` (verified `read-setting.sh:197`). A full-line comment between items terminates
-> list accumulation early (`read-setting.sh:204` — `in_list { in_list=0 }`); place full-line
+> `lookup_list` (verified in `read-setting.sh`, function `lookup_list()`, at its
+> `sub("^[[:space:]]+-[[:space:]]+", "", item)` line). A full-line comment between items
+> terminates list accumulation early (same function, its `in_list { in_list=0 }` line); place full-line
 > comments only **after** the last item, never between items.
 
 ---

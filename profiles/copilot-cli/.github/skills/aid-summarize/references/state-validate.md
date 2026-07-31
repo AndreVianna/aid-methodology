@@ -43,9 +43,11 @@ section's transition table:
 > `Examined`; the emitter's mechanical sweep is what makes absence evidential **for its own twelve
 > rules and for nothing else**. A rule the emitter can emit but this list omits is worse than either:
 > its rows would never reconcile, so the loop could not converge for it. That contract broke three
-> times before it was mechanised — `tests/canonical/test-one-grading-backend.sh` (`RS01`–`RS03`) now
-> asserts the emitter's rule set against this list, the check table below, and `state-fix.md`'s repair
-> bullets.
+> times before it was mechanised — `tests/canonical/test-one-grading-backend.sh` now asserts the
+> emitter's rule set against three surfaces: **`RS05` against the list above** (the only one that reads
+> it — the list is prose, so neither a table-row nor a bullet pattern reaches it, and deleting a rule
+> from it left the whole suite green), `RS02` against the check table below, and `RS03` against
+> `state-fix.md`'s repair bullets. `RS01` is the non-vacuity count for the set itself.
 
 | Canonical row (emitter-owned `Rule` only) | Key in this cycle's scratch? | Result |
 |---|---|---|
@@ -152,9 +154,20 @@ The row the script writes for each failed check:
 
 Passed checks are NOT added to the ledger (no row = no finding).
 
-**If the script exits `2`, do not grade.** That is its "a check group could not be evaluated" code —
-a missing validator, or no `settings.yml` for the coverage check. An empty ledger from an unrun check
-grades `A+`, which is the one outcome worse than a failing grade. Report what was missing and stop.
+**If the script exits `2`, do not grade.** That is its "a check group could not be evaluated" code, and
+it has **four** triggers — this passage used to name only the first two, so a reader met a pause whose
+stated cause did not apply:
+
+1. a validator is absent, or timed out;
+2. `settings.yml` exists but declares no `doc_set` rows, so `SUMMARY-01` had nothing to check;
+3. the HTML validator reported a failing check that no rule in the emitter's `RULE_FOR` claims — today
+   that is `skip-link present`, deliberately unmapped because no `PRE` rule cites the checklist section
+   declaring it (see the note in the check table above);
+4. the contrast checker could not resolve a token pair, or measured 0 of 0 pairs.
+
+3 and 4 are the ordinary ones, and both occur with **both validators present and running**. An empty
+ledger from an unrun check grades `A+`, which is the one outcome worse than a failing grade. Report the
+notes the script printed — each names its own cause — and stop.
 
 Persist the findings and the per-check table to `.aid/knowledge/STATE.md` `## Knowledge Summary Status` `### Findings (last validation)`.
 
