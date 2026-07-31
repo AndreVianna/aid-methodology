@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # test-create-family-scaffold.sh -- task-016 (work-001-lite-aid-skills, feature-006):
-# aid-create family scaffold + alias-equivalence test.
+# aid-create family scaffold test.
 #
 # The shortcut engine + the create scaffolding reference are agent-executed PROSE, not
 # executable scripts -- a deterministic canonical test cannot "run" /aid-create-api. This
@@ -12,18 +12,16 @@
 #      three SPEC sections, the `api`/`data-model` conditional-section + task-breakdown
 #      rows, the strictly-sequential task-dependency rule, and the Ownership-boundary
 #      routing (test/experiment/document/report carved out of create).
-#   2. Alias-equivalence contract -- checked against the REAL catalog + skill dirs:
-#      `aid-add-api`'s row carries the identical `{verb, artifact}` binding as
-#      `aid-create-api`'s and `alias_of: aid-create-api`; both generated doorways bind the
-#      same VERB/ARTIFACT; the engine's own alias-resolution sentence is present.
+#   2. Catalog + doorway contract -- checked against the REAL catalog + skill dirs:
+#      `aid-create-api`'s row carries the expected `{verb, artifact}` binding, the
+#      `aid-create-data-model` row is MIGRATE-typed, and the generated `aid-create-api`
+#      doorway binds the same VERB/ARTIFACT pair as its catalog row.
+#      The alias-equivalence half of this part was DELETED by work-004 delivery-003
+#      task-003 (feature-006 Decision 5) -- see the justification comments below.
 #   3. Fixture-shape assertions -- two hand-authored flattened work fixtures mirroring what
 #      `/aid-create-api` and `/aid-create-data-model` would produce (API: IMPLEMENT ->
 #      IMPLEMENT -> TEST + `### API Contracts`; data-model: MIGRATE -> IMPLEMENT -> TEST +
-#      `### Migration Plan`), both halted at APPROVAL-HALT (pre-Execute). A THIRD pair of
-#      fixtures (built via the SAME builder, once labelled `aid-create-api` and once
-#      `aid-add-api`) proves the alias produces the byte-identical work shape (AC-1) --
-#      diffed after normalizing the one line that legitimately differs (the invoking
-#      shortcut's own name).
+#      `### Migration Plan`), both halted at APPROVAL-HALT (pre-Execute).
 #
 # No agent is invoked; nothing here dispatches aid-architect/aid-reviewer.
 #
@@ -44,7 +42,7 @@ ENGINE="${REPO_ROOT}/canonical/aid/templates/shortcut-engine.md"
 CATALOG="${REPO_ROOT}/canonical/aid/templates/shortcut-catalog.yml"
 SKILLS_ROOT="${REPO_ROOT}/canonical/skills"
 
-echo "=== aid-create family scaffold + alias-equivalence (task-016, feature-006) ==="
+echo "=== aid-create family scaffold (task-016, feature-006) ==="
 
 assert_file_exists "$CREATE_SCAFFOLD" "CFS00a shortcut-scaffolding/create.md exists"
 assert_file_exists "$ENGINE" "CFS00b shortcut-engine.md exists"
@@ -57,15 +55,10 @@ if [[ $FAIL -gt 0 ]]; then
 fi
 
 CREATE_TXT=$(cat "$CREATE_SCAFFOLD")
-ENGINE_TXT=$(cat "$ENGINE")
-# Whitespace-normalized (all newlines/runs of blanks collapsed to a single space)
-# copy of the engine text, used for assertions whose target prose spans a
-# hand-wrapped source line break. `assert_output_contains` greps line-by-line, so a
-# pattern that straddles two physical lines only matches if that exact hard-wrap
-# column is preserved — brittle across re-wraps/renders. Matching against the
-# flattened text instead makes the assertion wrap-column-invariant while still
-# proving the full sentence verbatim.
-ENGINE_FLAT=$(tr '\n' ' ' <<< "$ENGINE_TXT" | tr -s '[:space:]' ' ')
+# `ENGINE_TXT` / `ENGINE_FLAT` (a whitespace-flattened copy of the engine text, used to
+# match prose spanning a hand-wrapped source line break) were read ONLY by `CFS10a` and
+# `CFS10b`, both deleted below by work-004 delivery-003 task-003, so both bindings are
+# gone with them. `$ENGINE` itself survives: `CFS00b` still asserts the file exists.
 
 # ===========================================================================
 # Part 1 -- Contract assertions against shortcut-scaffolding/create.md
@@ -120,26 +113,25 @@ assert_output_contains "$CREATE_TXT" \
     '`aid-create-dashboard`**.' \
     "CFS05d Ownership boundary: dashboard -> aid-create-dashboard"
 assert_output_contains "$CREATE_TXT" \
-    '`aid-change` (`shortcut-scaffolding/change-refactor.md`),' \
-    "CFS05e Ownership boundary: modifying an existing artifact routes to aid-change"
+    '`aid-update` (`shortcut-scaffolding/change-refactor.md`),' \
+    "CFS05e Ownership boundary: modifying an existing artifact routes to aid-update"
 
 echo ""
-echo "--- Part 2: alias-equivalence contract (checked against the real catalog + skill dirs) ---"
+echo "--- Part 2: catalog + doorway contract (checked against the real catalog + skill dirs) ---"
 
-# CFS-10: the engine's own alias-resolution sentence names this exact pair. Matched
-# against the whitespace-flattened text (ENGINE_FLAT) so the assertion holds
-# regardless of the source's hard-wrap column (the sentence spans a hand-wrapped
-# line break in the canonical file, and a per-line grep against the raw text would
-# be brittle to any re-wrap of that prose).
-assert_output_contains "$ENGINE_FLAT" \
-    "canonical mirror's, so both resolve the same file -- \`aid-add-api\` and \`aid-create-api\` both resolve \`shortcut-scaffolding/create.md\`;" \
-    "CFS10a engine states an alias row's verb == its mirror's (aid-add-api/aid-create-api named, wrap-invariant)"
-assert_output_contains "$ENGINE_FLAT" \
-    'both resolve `shortcut-scaffolding/create.md`;' \
-    "CFS10b engine states both resolve shortcut-scaffolding/create.md (wrap-invariant)"
+# CFS-10 -- DELETED by work-004 delivery-003 task-003.
+# `CFS10a` asserted that the engine's alias-resolution sentence named the exact pair
+# `aid-add-api` / `aid-create-api`; `CFS10b` asserted the same sentence's second clause
+# ("both resolve `shortcut-scaffolding/create.md`;"). feature-005 removed that
+# parenthetical from `canonical/aid/templates/shortcut-engine.md` when the alias family
+# was retired -- measured here: `grep -n 'both resolve' shortcut-engine.md` returns no
+# hit, and `grep -c '^    alias_of: aid-' shortcut-catalog.yml` returns 0, so there is
+# no alias row for the sentence to describe. Neither assertion can be re-pointed: the
+# sentence it quotes verbatim no longer exists and has no successor sentence.
+# `ENGINE_FLAT` was read only by these two, so it and `ENGINE_TXT`/`$ENGINE` stay only
+# as far as CFS00b's existence check needs them.
 
-# CFS-11: catalog rows -- aid-create-api and aid-add-api carry the identical {verb, artifact}
-# binding; aid-add-api's alias_of points at aid-create-api exactly.
+# CFS-11: catalog row -- aid-create-api carries the expected {verb, artifact} binding.
 get_row_field() {
     local name="$1" field="$2"
     awk -v target="  - name: ${name}" -v fieldpat="^    ${field}:" '
@@ -151,28 +143,39 @@ get_row_field() {
 
 CREATE_API_VERB=$(get_row_field "aid-create-api" "verb")
 CREATE_API_ARTIFACT=$(get_row_field "aid-create-api" "artifact")
-ADD_API_VERB=$(get_row_field "aid-add-api" "verb")
-ADD_API_ARTIFACT=$(get_row_field "aid-add-api" "artifact")
-ADD_API_ALIAS_OF=$(get_row_field "aid-add-api" "alias_of")
 
 assert_eq "$CREATE_API_VERB" "create" "CFS11a aid-create-api row: verb == create"
 assert_eq "$CREATE_API_ARTIFACT" "api" "CFS11b aid-create-api row: artifact == api"
-assert_eq "$ADD_API_VERB" "$CREATE_API_VERB" "CFS11c aid-add-api row: verb identical to aid-create-api's"
-assert_eq "$ADD_API_ARTIFACT" "$CREATE_API_ARTIFACT" "CFS11d aid-add-api row: artifact identical to aid-create-api's"
-assert_eq "$ADD_API_ALIAS_OF" "aid-create-api" "CFS11e aid-add-api row: alias_of == aid-create-api"
+# CFS11c / CFS11d / CFS11e -- DELETED by work-004 delivery-003 task-003.
+# All three took `aid-add-api`'s catalog row as their subject: `CFS11c` its verb being
+# identical to `aid-create-api`'s, `CFS11d` its artifact likewise, `CFS11e` its
+# `alias_of: aid-create-api`. feature-001 removed the row; measured here,
+# `grep -c '^  - name: aid-add-api$' shortcut-catalog.yml` returns 0 and
+# `grep -c '^    alias_of: aid-' shortcut-catalog.yml` returns 0 across all 58 rows.
+# `get_row_field` on an absent row returns the empty string, so all three now read ""
+# and fail. There is no surviving name to re-point them AT: `aid-add-api` was retired
+# outright, not renamed, and with `alias_of` null on every row the "identical to its
+# mirror's" relationship these three exist to prove has no subject at all.
+# The `ADD_API_VERB` / `ADD_API_ARTIFACT` / `ADD_API_ALIAS_OF` bindings are gone with
+# them; nothing else in this suite read them.
 
 # CFS-12: aid-create-data-model row is MIGRATE-typed (the feature-003 reclassification).
 DATA_MODEL_DEFAULT_TYPE=$(get_row_field "aid-create-data-model" "default_type")
 assert_eq "$DATA_MODEL_DEFAULT_TYPE" "MIGRATE" "CFS12 aid-create-data-model row: default_type == MIGRATE"
 
-# CFS-13: both generated doorways bind the identical VERB=`create` ARTIFACT=`api` pair.
+# CFS-13: the generated aid-create-api doorway binds the VERB=`create` ARTIFACT=`api` pair.
 CREATE_API_BODY=$(cat "${SKILLS_ROOT}/aid-create-api/SKILL.md" 2>/dev/null || true)
-ADD_API_BODY=$(cat "${SKILLS_ROOT}/aid-add-api/SKILL.md" 2>/dev/null || true)
 assert_output_contains "$CREATE_API_BODY" 'VERB=`create`' "CFS13a aid-create-api doorway binds VERB=\`create\`"
 assert_output_contains "$CREATE_API_BODY" 'ARTIFACT=`api`' "CFS13b aid-create-api doorway binds ARTIFACT=\`api\`"
-assert_output_contains "$ADD_API_BODY" 'VERB=`create`' "CFS13c aid-add-api doorway binds the identical VERB=\`create\`"
-assert_output_contains "$ADD_API_BODY" 'ARTIFACT=`api`' "CFS13d aid-add-api doorway binds the identical ARTIFACT=\`api\`"
-assert_output_contains "$ADD_API_BODY" 'thin alias of `aid-create-api`' "CFS13e aid-add-api doorway self-documents as a thin alias of aid-create-api"
+# CFS13c / CFS13d / CFS13e -- DELETED by work-004 delivery-003 task-003.
+# Their subject was the GENERATED `canonical/skills/aid-add-api/SKILL.md` doorway:
+# `CFS13c`/`CFS13d` that it bound the same VERB/ARTIFACT pair as `aid-create-api`'s,
+# `CFS13e` that its body carried the sentence "thin alias of `aid-create-api`".
+# feature-004 pruned the directory (`test -d canonical/skills/aid-add-api` is false;
+# the tree is 75 dirs = 17 curated-only + 58 catalog rows, with no `aid-add*` among
+# them) and feature-002/FR-3a deleted the "thin alias of" emitter from
+# `build-shortcut-skills.py`, so no generated body carries that sentence any more.
+# `ADD_API_BODY` read that pruned path and is gone with them.
 
 # ===========================================================================
 # Part 3 -- Fixture-shape assertions
@@ -184,9 +187,10 @@ TMP=$(mktemp -d)
 trap 'rm -rf "$TMP"' EXIT
 
 # build_create_api_fixture <work-dir> <shortcut-name>
-# Hand-authors a flattened work mirroring what /aid-create-api (or its alias
-# /aid-add-api) + shortcut-engine.md would produce, per create.md's own SPEC-section
-# activation + task-breakdown template for the `api` artifact, halted at APPROVAL-HALT.
+# Hand-authors a flattened work mirroring what /aid-create-api + shortcut-engine.md would
+# produce, per create.md's own SPEC-section activation + task-breakdown template for the
+# `api` artifact, halted at APPROVAL-HALT. (It kept a <shortcut-name> parameter because
+# the deleted Part 4 called it twice, once per alias; Fixture A remains the one caller.)
 build_create_api_fixture() {
     local work_dir="$1" shortcut="$2"
     mkdir -p "${work_dir}/tasks/task-001" "${work_dir}/tasks/task-002" "${work_dir}/tasks/task-003"
@@ -836,36 +840,28 @@ for FIXTURE_DIR in "$API_DIR" "$DM_DIR"; do
 done
 
 # ===========================================================================
-# Part 4 -- Alias-equivalence fixture-shape proof: aid-add-api == aid-create-api
+# Part 4 -- DELETED by work-004 delivery-003 task-003 (feature-006 Decision 5).
+#
+# Part 4 was the alias-equivalence fixture-shape proof: it built the SAME fixture twice
+# via `build_create_api_fixture`, once labelled `aid-create-api` and once `aid-add-api`,
+# normalized away the invoking shortcut's own name, and asserted the two work shapes
+# were byte-identical -- `CFS50` once per compared file (8 executions) and `CFS51` once
+# for the aggregate verdict.
+#
+# Why it cannot hold, rather than merely being inconvenient: an equivalence assertion
+# needs two subjects. `alias_of` names no skill on any catalogue row after feature-001
+# (`grep -c '^    alias_of: aid-' canonical/aid/templates/shortcut-catalog.yml` = 0,
+# against 58 rows all reading `alias_of: null`), and `canonical/skills/aid-add-api/` was
+# pruned by feature-004. So the second subject does not exist, in the catalogue or on
+# disk. Re-labelling the second fixture with a surviving name would not repair the proof
+# -- it would assert that a fixture equals itself, which is green by construction and
+# checks nothing. feature-006 Decision 5 therefore mandates deletion, not repair.
+#
+# What is NOT lost with it: `build_create_api_fixture` survives (Fixture A above is its
+# caller, driving CFS20-CFS26), so the create-api fixture SHAPE is still asserted. What
+# IS lost is only the alias half -- the claim that two names produce one shape.
+# `ADD_DIR`, `FILES_TO_COMPARE` and `alias_diff_found` were read only here.
 # ===========================================================================
-echo ""
-echo "--- Part 4: alias-equivalence fixture-shape proof (aid-add-api == aid-create-api) ---"
-
-ADD_DIR="${TMP}/work-add-api"
-build_create_api_fixture "$ADD_DIR" "aid-add-api"
-
-FILES_TO_COMPARE=(REQUIREMENTS.md SPEC.md PLAN.md BLUEPRINT.md
-    tasks/task-001/DETAIL.md tasks/task-002/DETAIL.md tasks/task-003/DETAIL.md STATE.md)
-
-alias_diff_found=0
-for f in "${FILES_TO_COMPARE[@]}"; do
-    create_norm=$(sed -e 's/aid-create-api/SHORTCUT/g' "${API_DIR}/${f}")
-    add_norm=$(sed -e 's/aid-add-api/SHORTCUT/g' "${ADD_DIR}/${f}")
-    if [[ "$create_norm" == "$add_norm" ]]; then
-        pass "CFS50 [${f}] byte-identical after normalizing the invoking shortcut's own name"
-    else
-        fail "CFS50 [${f}] byte-identical after normalizing the invoking shortcut's own name -- diff found"
-        alias_diff_found=1
-        if [[ "$VERBOSE" -eq 1 ]]; then
-            diff <(echo "$create_norm") <(echo "$add_norm") || true
-        fi
-    fi
-done
-if [[ "$alias_diff_found" -eq 0 ]]; then
-    pass "CFS51 aid-add-api scaffolds the byte-identical work shape as aid-create-api (AC-1)"
-else
-    fail "CFS51 aid-add-api scaffolds the byte-identical work shape as aid-create-api (AC-1)"
-fi
 
 echo ""
 test_summary
