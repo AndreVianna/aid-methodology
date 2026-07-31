@@ -356,7 +356,8 @@ _None yet. Each delivery-NNN/STATE.md carries its own gate block._
   findings and opened ~12 apiece with no decline in the new-finding rate.
   Still to do: work-level gate at the B- bar, then PR into `master`, then the deferred
   8 LOW + 2 MINOR cleanup batch. KI-022 (ELK layout) remains owner-deferred and ships disclosed.
-  Worktree: `.claude/worktrees/work-001`, branch `aid/work-001-delivery-005`. **Use Windows git
+  Worktree: `.claude/worktrees/work-001`, branch `work-001-skill-diagrams`
+  (renamed from `aid/work-001-delivery-005` at PR time, so the whole work ships from one work-scoped branch per the project convention rather than from a per-delivery name). **Use Windows git
   only — no WSL** (KI-017).
 
 ## Calibration Log

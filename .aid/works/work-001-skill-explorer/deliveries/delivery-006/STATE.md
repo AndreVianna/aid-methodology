@@ -10,7 +10,7 @@ ticket_ref: "--"
 
 > **Delivery:** delivery-006 — unify the two skill sections
 > **Work:** work-001-skill-explorer
-> **Branch:** aid/work-001-delivery-005 (continued)
+> **Branch:** work-001-skill-diagrams (continued)  <!-- renamed from `aid/work-001-delivery-005` at PR time, so the whole work ships from one work-scoped branch per the project convention rather than from a per-delivery name -->
 
 ---
 
@@ -23,7 +23,7 @@ ticket_ref: "--"
   reviewed and committed; tasks 056 and 057 executed. **All four tasks are `Done`** — and a fifth,
   **task-058**, was added later at the work-level final gate by owner decision (fix W1-16 rather than
   ship it disclosed); it is `Done` too and is NOT part of this delivery's B- gate result. Commits on
-  `aid/work-001-delivery-005`, in order: `b86aae3d` (scaffolding) → `129eba1b` (055 prose) →
+  `aid/work-001-delivery-005` (since renamed from `aid/work-001-delivery-005` at PR time, so the whole work ships from one work-scoped branch per the project convention rather than from a per-delivery name), in order: `b86aae3d` (scaffolding) → `129eba1b` (055 prose) →
   `8e02d174` (054 derivation + guard) → `8eff0803` (055 correction) → `d2f0440c` (056 links) →
   `923431a4` (057 hollowing) → `21c0f0a3` + `52e65e90` (an out-of-delivery `writeback-state.sh`
   fix, and its propagation to `canonical/` — traceability recorded at **Q8** below, and
@@ -143,7 +143,7 @@ ticket_ref: "--"
 - **Impact:** Low
 - **State:** Answered
 - **Context:** Deliveries 001–005 each took a branch, `aid/work-001-delivery-NNN`.
-- **Answer:** Continue on `aid/work-001-delivery-005`. That branch is now pushed and tracking
+- **Answer:** Continue on `aid/work-001-delivery-005` (since renamed from `aid/work-001-delivery-005` at PR time, so the whole work ships from one work-scoped branch per the project convention rather than from a per-delivery name). That branch is now pushed and tracking
   upstream, the five delivery branches are linear, and the whole work is about to become one pull
   request — a sixth branch would fragment that history for no review benefit. Recorded so the
   deviation is deliberate rather than an oversight.

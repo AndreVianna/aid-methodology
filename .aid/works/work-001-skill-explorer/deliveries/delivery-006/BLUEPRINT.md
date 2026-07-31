@@ -2,7 +2,7 @@
 
 > **Delivery:** delivery-006 — unify the two skill sections
 > **Work:** work-001-skill-explorer
-> **Branch:** aid/work-001-delivery-005 (continued; no new branch — see Sequencing)
+> **Branch:** work-001-skill-diagrams (continued; no new branch — see Sequencing)
 > **Source:** work-level **Q4** (answered 2026-07-27 by the work owner), which amends **§7**
 
 ---
@@ -127,7 +127,7 @@ link target on line 16 and 055 rewrites that line's prose, so they are sequenced
 
 ## Sequencing
 
-Continued on `aid/work-001-delivery-005` rather than a new branch. The five delivery branches are
+Continued on `aid/work-001-delivery-005` (since renamed from `aid/work-001-delivery-005` at PR time, so the whole work ships from one work-scoped branch per the project convention rather than from a per-delivery name) rather than a new branch. The five delivery branches are
 linear and that branch is now pushed and tracking; a sixth branch would fragment a history that is
 about to become one pull request. Recorded so the deviation from the per-delivery branch pattern is
 deliberate and visible.

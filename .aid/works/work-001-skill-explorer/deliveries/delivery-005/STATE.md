@@ -30,7 +30,7 @@ with ZERO tasks; the `_none yet_` rollup below is correct and expected for a new
 
 > **Delivery:** delivery-005
 > **Work:** work-001-skill-explorer
-> **Branch:** aid/work-001-delivery-005
+> **Branch:** work-001-skill-diagrams  <!-- renamed from `aid/work-001-delivery-005` at PR time, so the whole work ships from one work-scoped branch per the project convention rather than from a per-delivery name -->
 
 ---
 
