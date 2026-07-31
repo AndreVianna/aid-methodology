@@ -88,12 +88,24 @@ and satisfied — rejection is structural, and the module contains no `'index'` 
 
 **Grade: A+.** All gate criteria met or exceeded: selection opens a dismissible panel with the
 verbatim fragment and its deep link; keyboard parity is in place with no focus trap; the Musts
-underneath are provably undamaged (generated pages byte-identical to delivery-004, not merely
-limited to the three head tags); all three degradation paths behave; handlers bind once per
-container and survive three re-render cycles; and the route gate is observable in the emitted HTML.
+underneath are provably undamaged (generated pages byte-identical to delivery-004 as at this gate
+-- the full page, not merely the three head tags; see the amendment note below, which narrows the
+byte-scope of this claim to 107 of the 111 pages); all three degradation paths behave; handlers bind
+once per container and survive three re-render cycles; and the route gate is observable in the
+emitted HTML.
 
 **Outstanding, both owner-deferred and out of scope for this gate:** the four manual browser
 checks (Q2, non-blocking by owner decision) and **KI-022**, the intermittent ELK layout fallback.
+
+> **Amendment note (work-level final gate, 2026-07-30 — task-058).** The byte-identity claim
+> above held when this gate closed and no longer holds for **4 of the 111** pages. Task-058 fixed
+> the flow extractor's rule 7, which had been turning prose cross-references into `loop-back`
+> arrows on published charts, so `aid-change-document`, `aid-design`, `aid-research` and
+> `aid-review` — and their four sidecars — legitimately changed. This is a deliberate correction of
+> wrong output taken by owner decision, not drift: 7 wrong edge-attributions removed, 1 genuine
+> edge recovered with correct provenance, cross-state `loop-back` edges 26 → 20, the 74 self-loop
+> edges untouched, and the generator still idempotent. The claim's substance — that delivery-005
+> did not damage the Musts beneath it — is unaffected; only its byte-scope is now narrower.
 
 ### The four manual browser checks — PERFORMED 2026-07-30, verdict below
 

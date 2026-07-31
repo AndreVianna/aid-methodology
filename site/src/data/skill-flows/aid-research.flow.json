@@ -32,7 +32,7 @@
       "order": 2,
       "name": "INVESTIGATE",
       "label": "INVESTIGATE",
-      "kind": "loop-back",
+      "kind": "step",
       "terminal": null,
       "provenance": {
         "file": "canonical/skills/aid-research/SKILL.md",
@@ -154,20 +154,6 @@
         "endLine": 73,
         "sourceKind": "skill",
         "excerpt": "**Advance:** INVESTIGATE."
-      }
-    },
-    {
-      "from": "n2",
-      "to": "n1",
-      "kind": "loop-back",
-      "condition": null,
-      "advanceType": "UNSPECIFIED",
-      "provenance": {
-        "file": "canonical/skills/aid-research/SKILL.md",
-        "startLine": 79,
-        "endLine": 79,
-        "sourceKind": "skill",
-        "excerpt": "Dispatch **`aid-researcher`** (clean context, model+effort from INTAKE Step 3) to gather"
       }
     },
     {

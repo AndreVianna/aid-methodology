@@ -98,7 +98,7 @@
       "order": 5,
       "name": "WRITE",
       "label": "only on approval",
-      "kind": "loop-back",
+      "kind": "step",
       "terminal": null,
       "provenance": {
         "file": "canonical/skills/aid-change-document/SKILL.md",
@@ -210,20 +210,6 @@
         "endLine": 81,
         "sourceKind": "skill",
         "excerpt": "**Advance:** WRITE on approval; else DONE (draft kept in the work folder)."
-      }
-    },
-    {
-      "from": "n5",
-      "to": "n4",
-      "kind": "loop-back",
-      "condition": null,
-      "advanceType": "UNSPECIFIED",
-      "provenance": {
-        "file": "canonical/skills/aid-change-document/SKILL.md",
-        "startLine": 87,
-        "endLine": 87,
-        "sourceKind": "skill",
-        "excerpt": "Write the revision back to the existing document (the diff was already reviewed at PRESENT)."
       }
     },
     {

@@ -88,6 +88,19 @@ table this delivery sheds, so KI-009 closes **by deletion** rather than by arith
       contradicted by the work it grades has to be amended rather than explained in a commit
       message. The bound that still holds: no OTHER page or sidecar changed, and the change
       is reproducible by re-running the generator.
+      **Amended again 2026-07-30 (work-level final gate, task-058): FOUR MORE pages and their
+      four sidecars legitimately changed** — `aid-change-document`, `aid-design`, `aid-research`
+      and `aid-review`. Task-058 fixed the flow extractor's rule 7, which had been turning prose
+      cross-references into `loop-back` arrows: `(model+effort from INTAKE Step 4)` drew
+      REVIEW→INTAKE, and `checks \`DESIGN.md\`` drew VERIFY→DESIGN. Seven wrong edge-attributions
+      are removed and **one genuine edge is recovered with correct provenance** — `aid-design`'s
+      real `loop to DESIGN` had been mis-sourced to a `DESIGN.md` mention by first-match-wins.
+      This is a **deliberate correction of published output**, taken by owner decision at the
+      final gate in preference to shipping the defect disclosed, so the criterion cannot hold as
+      written. The bounds that DO hold, all measured: exactly 8 files change (4 pages + 4
+      sidecars) and no other page or sidecar; cross-state `loop-back` edges go 26 → 20 with the
+      74 self-loop edges from `advance.mjs` untouched; every genuine edge class survives at its
+      original count; and the generator is still idempotent across two consecutive runs.
 - [ ] All section-6 quality gates pass
 
 ## Tasks

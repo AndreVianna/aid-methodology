@@ -26,6 +26,7 @@ intent: |
   gotchas a change will trip. Diagnosis, not a sprint plan.
 contracts: []
 changelog:
+  - 2026-07-30: work-001 final gate -- RESOLVED and removed W1-16 (task-058, owner chose fix-over-disclose). Rule 7 now requires a state to be the TARGET of a loop/return phrase, tested over the joined logical block rather than the physical line (three genuine loop-backs wrap the verb onto the previous line, and the shared engine wraps the other way), plus a filename guard for the state-name/artifact-name collision. Measured: cross-state loop-back edges 26 -> 20, 74 self-loops untouched, exactly 8 files changed, generator still idempotent. Re-verified by re-running the AC-7 spot-check on the corrected chart.
   - 2026-07-30: work-001 final gate -- added W1-17 (the AC-1 drift-guard test writes a scratch page into the tracked content collection, so an interrupted run breaks the next build; raised at delivery-002's gate and left Pending there).
   - 2026-07-30: work-001 final gate -- added W1-16: the flow extractor's rule 7 turns prose cross-references into loop-back arrows on published charts. Found by performing AC-7, the comprehension spot-check delivery-004 never recorded -- the unfamiliar reader reported 3 loop-backs on the first chart it was shown, where the source has 1. Extent then measured exactly by a gate reviewer: 7 fabricated arrows on 4 charts, and a second trigger the first analysis missed (a state name colliding with its artifact filename, which makes aid-design 3-drawn/0-real). Medium/P2, escalated to the owner rather than fixed -- tightening rule 7 changes corpus-wide generated output that two deliveries assert byte-unchanged.
   - 2026-07-30: work-001 final gate -- added W1-13/W1-14 (node-panel accessibility: no role or accessible name; aria-controls references a lazily-created panel that does not exist before first activation) and W1-15 (the screen-reader announcement check has never been run against a real screen reader). All three surfaced by PERFORMING delivery-005's four manual browser checks, which had been made non-blocking and then never performed.
@@ -89,7 +90,6 @@ urgent.
 | **W1-13** | Accessibility gap | The node-detail panel is a `div[tabindex="-1"]` with **no `role` and no accessible name** — the accessibility tree shows it as `generic`. Activation moves focus into it, so what a screen reader announces on arrival is not deterministic across NVDA / JAWS / VoiceOver. It does carry an `<h3>` naming the step and a labelled close button, so the content is reachable; the framing is what is missing. Fix is `role="region"` (or `dialog`) plus `aria-labelledby` pointing at the existing `<h3>`. | `site/public/skill-node-panel.mjs` / `site/src/lib/skill-node-panel.ts` | Low | S | P3 |
 | **W1-14** | Invalid ARIA | Every decorated node carries `aria-controls="aid-node-panel"` from page load, but the panel is created **lazily on first activation** — so before any node is activated the attribute references an element that is not in the DOM. Confirmed on a fresh load: `document.getElementById('aid-node-panel')` is null while 5 nodes already advertise it. `aria-controls` is specified to reference an existing element. | `site/public/skill-node-panel.mjs` | Low | S | P3 |
 | **W1-15** | Unperformed verification | The **screen-reader announcement** check has never been run against a real screen reader. The work-level final gate verified the mechanism (accessibility tree + focus movement) in Chromium, which is not the same thing as the utterance. Needs one NVDA or VoiceOver pass over a skill detail page's chart. Tracked because the check is named in `REQUIREMENTS.md` and in feature-006's blocking default, and a mechanism inspection was substituted for it. | process / manual QA | Low | S | P3 |
-| **W1-16** | Wrong published output | The flow extractor's **rule 7** emits a `loop-back` edge for *any* non-heading, non-fenced body line that mentions an earlier-ordered state, so a prose cross-reference becomes a control-flow arrow on a published chart. Verified end-to-end on `aid-review`: the chart draws 3 loop-backs, the source expresses 1 — `REVIEW -.-> INTAKE` comes from "(model+effort from INTAKE Step 4)" and `PUBLISH -.-> PRESENT-FINDINGS` from "PRESENT-FINDINGS is what authorizes this call". A reader told us so unprompted at the AC-7 spot-check. **Extent now exactly measured** across all 111 charts (a gate reviewer did what an earlier proxy scan could not): of 100 `loop-back` edges, 10 are by-design `otherwise` self-loops and 90 are cross-state edges collapsing to 14 provenance classes — **7 genuine (83 edges), 7 FABRICATED on 4 charts**. The fabricated ones: `aid-review` (REVIEW→INTAKE, PUBLISH→PRESENT-FINDINGS), `aid-research` (INVESTIGATE→INTAKE), `aid-change-document` (WRITE→PRESENT), and **`aid-design`, which draws 3 loop-backs of which 0 are real**. `aid-design` exposes a **second trigger**: its state name `DESIGN` collides with its artifact filename `DESIGN.md`, so every prose mention of the artifact emits an arrow. That generalises to any skill whose state name matches its artifact, and a fix must handle it as well as the plain prose-mention case. Not fixable in place: tightening rule 7 changes generated output corpus-wide, and delivery-005/006 assert those pages byte-unchanged. Needs its own task — likely "only fire inside an `**Advance:**` block or on an explicit loop verb". | `site/scripts/lib/flow-graph/extract-inline.mjs`:212 (`_scanBodyEdges`, rule 7) | **Medium** | M | **P2** |
 | **W1-17** | Self-inflicted build break | The AC-1 drift-guard test writes a synthetic orphan page `__test-orphan-skill__.md` **directly into the tracked content collection** (`site/src/content/docs/skills/`) and removes it only in cleanup. An interrupted or killed `npm test` leaves a scratch page in a tracked directory, and the next `npm run build` then fails on the very drift guard the test exercises — a build break caused by the test suite. Every run also momentarily injects a page into the collection a dev server is watching. `discoverSkills()` already accepts a `skillsDir` override and `mkdtempSync` is already imported in the file, so a temp-tree variant needs no new machinery. Raised at delivery-002's gate, left `Pending` there, and carried here at the final gate because it is the one of that gate's unclosed rows whose consequences outlive the work folder. | `site/scripts/__tests__/gen-skills.test.mjs`:539-545, 572-573 | Low | S | P3 |
 
 ### work-001 (Skill Explorer) — issues that outlive the work folder
@@ -104,12 +104,19 @@ pointer: this section deliberately carries **no path** to the work's issue file,
 is the section whose entire purpose is to outlive that folder being pruned. Everything a later
 reader needs is restated in the rows above.
 
-The still-open ones are listed above as `W1-1`..`W1-3` and `W1-5`..`W1-17` — **sixteen items** —
+The still-open ones are listed above as `W1-1`..`W1-3`, `W1-5`..`W1-15` and `W1-17` — **fifteen items** —
 because of the project's own rule that **work folders are transient**: `.aid/works/work-NNN-*/`
 may be pruned once a work ships, and no permanent artifact may depend on it. Left only there, they
 would have been deleted along with the folder — including a Medium-priority Windows worktree trap
 that costs an afternoon (`W1-10`) and the one item the owner explicitly deferred rather than
 resolved (`W1-12`).
+
+`W1-16` is likewise absent by resolution: it recorded the flow extractor turning prose
+cross-references into loop-back arrows on published charts. Asked whether to ship it disclosed or
+fix it, the owner chose to fix it, and **task-058** did — 7 wrong edge-attributions removed from 4
+charts, 1 genuine edge recovered with correct provenance, verified by re-running the same AC-7
+comprehension spot-check that found it (a clean-context reader now reports exactly the one
+loop-back the source expresses, where it previously reported three).
 
 `W1-4` is absent by resolution, not by oversight: it recorded the `docs.yml` CI-lane row teaching
 the wrong CI model, and the work-level final gate fixed it — in **six** places, not the one the
@@ -126,8 +133,8 @@ were then never performed; by performing **AC-7**, the comprehension spot-check 
 and never recorded; and by transcribing delivery-002's gate ledger, which had been left an unfilled
 template placeholder. Breakdown: `W1-13`/`W1-14` are real accessibility defects in shipped code;
 `W1-15` is the screen-reader pass still owed, recorded so that substituting a mechanism inspection
-for it cannot later read as the check having been done; `W1-16` is a Medium defect in published
-chart output that an unfamiliar reader spotted in the first chart shown to it; `W1-17` is a
+for it cannot later read as the check having been done; `W1-16` was a Medium defect in published chart output that an unfamiliar
+reader spotted in the first chart shown to it, **fixed by task-058 and removed from this table**; `W1-17` is a
 build-breaking test hazard that had been raised at delivery-002's gate and left `Pending` there.
 
 **Every one of the five came out of a check that had been deferred, waived as non-blocking, or

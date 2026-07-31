@@ -58,9 +58,12 @@ const TOKEN_RE = /[A-Za-z][A-Za-z0-9-]*/g;
  *      Both ranges come from `buildProvenance()` over the shared section data.
  *   4. Edges from the section's `**Advance:**` block via `extractAdvanceBlock` +
  *      `parseAdvanceBlock` (advance.mjs owns rules 1–10 and V9).
- *   5. Additional `loop-back` edges from body back-references (rule 7): any line
- *      in the section body that names a declared state with lower order than the
- *      current one emits one `loop-back` edge, deduplicated against advance edges.
+ *   5. Additional `loop-back` edges from body back-references (rule 7): a body
+ *      mention of a declared state with lower order than the current one emits one
+ *      `loop-back` edge, deduplicated against advance edges — but ONLY when that
+ *      state is the target of a loop/return phrase, tested over the joined logical
+ *      block rather than the physical line, and only when the occurrence is not part
+ *      of a filename. A bare mention is not a return (task-058, closes W1-16).
  *   6. Rule 8: a sub-heading in the section body whose text contains 'Loopback'
  *      or 'Re-entry' and names a declared state emits one `re-entry` edge.
  *   7. A state with no `**Advance:**` line and no outgoing back-reference is an
@@ -233,6 +236,77 @@ export function extractInline({ skill, file, allLines, frontmatter: _fm }) {
  * @returns {Array<{to:string, kind:string, condition:null, advanceType:'UNSPECIFIED',
  *                  provenance: import('./model.mjs').Provenance}>}
  */
+/**
+ * Rule 7 helper — is the state name at `idx` actually part of a filename?
+ *
+ * `TOKEN_RE` stops at `.`, so a state called `DESIGN` matches inside `DESIGN.md`. A file
+ * reference is not a control-flow reference. Checks only for a following extension: a
+ * leading path (`docs/DESIGN.md`) still ends in the extension, and a state legitimately
+ * named at a sentence end (`… loop back to DESIGN.`) is followed by a period plus space
+ * or EOL, not by 1-5 word characters.
+ *
+ * @param {string} line     The physical line.
+ * @param {number} idx      Index where the state token starts.
+ * @param {string} stateName The matched state name.
+ * @returns {boolean} true when the occurrence is a filename and must be ignored.
+ */
+function _isFilenameAt(line, idx, stateName) {
+  return /^\.[A-Za-z0-9]{1,5}\b/.test(line.slice(idx + stateName.length));
+}
+
+/**
+ * Rule 7 helper — does this text return control TO `stateName`?
+ *
+ * Requires a loop/return cue whose object is the state: `loop back to REVIEW`,
+ * `loop` + `to AUTHOR`, `return to BUILD`, `Loop back` + `to Step 1 (REVIEW)`.
+ *
+ * Bounded filler is allowed on both sides of `to` — up to 40 characters before it, and up
+ * to 28 after — which is what lets the two real wrap directions and a parenthetical step
+ * number through while still rejecting a cue aimed elsewhere. The 28 is the load-bearing
+ * bound: "Write the revision **back to** the existing document (the diff was already
+ * reviewed at PRESENT)" carries a genuine `back to`, but ~56 characters separate `to` from
+ * `PRESENT`, so it correctly yields nothing. Widening that number past ~50 reintroduces
+ * that exact fabricated edge.
+ *
+ * Validated against every loop-back provenance line in the corpus — 6 genuine, 7
+ * fabricated, 13/13 classified correctly — before this rule was written.
+ *
+ * @param {string} stateName Declared state name (may contain hyphens).
+ * @returns {RegExp} Case-insensitive matcher to test against a logical block.
+ */
+function _loopTargetRe(stateName) {
+  const name = stateName.replace(/-/g, '\\-');
+  return new RegExp(
+    '(?:loops?|loop\\s+back|back|returns?|re-?enter(?:s|ing)?|re-?run|retry|goes?|go)' +
+    '[\\s\\S]{0,40}?\\bto\\s+[^.\\n]{0,28}?\\*{0,2}`?' +
+    name +
+    '`?\\*{0,2}\\b',
+    'i',
+  );
+}
+
+/**
+ * Rule 7 helper — join the wrapped lines around `idx` into one logical block.
+ *
+ * Markdown hard-wraps prose, so a sentence's verb and its object routinely sit on
+ * different physical lines. The block runs between blank lines, headings and fences, and
+ * is clamped to the section being scanned so a block never leaks into a sibling state.
+ *
+ * @param {string[]} allLines       Full file lines, 0-indexed.
+ * @param {number}   idx            0-indexed line to expand around.
+ * @param {number}   bodyStart      0-indexed first body line of this section.
+ * @param {number}   sectionEndLine 1-based last line of the section (exclusive bound).
+ * @returns {string} The joined block.
+ */
+function _logicalBlock(allLines, idx, bodyStart, sectionEndLine) {
+  const isBreak = (l) => l === undefined || l.trim() === '' || /^#{1,6}\s/.test(l) || /^```/.test(l);
+  let a = idx;
+  let b = idx;
+  while (a - 1 >= bodyStart && !isBreak(allLines[a - 1])) a--;
+  while (b + 1 < sectionEndLine && !isBreak(allLines[b + 1])) b++;
+  return allLines.slice(a, b + 1).join(' ');
+}
+
 function _scanBodyEdges(
   allLines, headingLine, sectionEndLine, currentOrder, stateByName, existingTargets, file
 ) {
@@ -273,6 +347,14 @@ function _scanBodyEdges(
     // Exact-case match is required to avoid false positives from common verbs
     // ("run", "done", "review") in prose that coincidentally match an uppercase
     // state name — body text is free-form English, not structured advance syntax.
+    //
+    // Exact case alone was NOT enough, and shipped 7 fabricated arrows on 4 published
+    // charts before an unfamiliar reader caught it at an AC-7 comprehension spot-check
+    // (work-001 W1-16, task-058). Mentioning an earlier state is not the same as
+    // returning to it: `(model+effort from INTAKE Step 4)` drew REVIEW→INTAKE, and
+    // `checks \`DESIGN.md\`` drew VERIFY→DESIGN. So the state must be the TARGET of a
+    // loop/return phrase, and a filename occurrence is not a state reference at all.
+    const block = _logicalBlock(allLines, j, headingLine, sectionEndLine);
     TOKEN_RE.lastIndex = 0;
     let m;
     while ((m = TOKEN_RE.exec(line)) !== null) {
@@ -282,12 +364,26 @@ function _scanBodyEdges(
       if (state.order >= currentOrder) continue; // forward or self reference
       if (seen.has(state.id)) continue;           // already emitted
 
+      // Trigger 2 — filename collision. `TOKEN_RE` is /[A-Za-z][A-Za-z0-9-]*/g, so a
+      // state named DESIGN matches inside `DESIGN.md`. aid-design drew 3 loop-backs of
+      // which 0 were real, purely from prose mentioning its own output artifact.
+      if (_isFilenameAt(line, m.index, state.name)) continue;
+
+      // Trigger 1 — mention vs return. Tested over the joined LOGICAL BLOCK, never the
+      // physical line: three of the six genuine loop-backs in the corpus wrap the verb
+      // onto the previous line (`... -> loop` / `   to AUTHOR`), and the shared engine
+      // wraps the other way (`Loop back` / `to Step 1 (REVIEW)`). A line-scoped test
+      // deletes 15 real edges — measured, not assumed.
+      if (!_loopTargetRe(state.name).test(block)) continue;
+
       seen.add(state.id);
       result.push({
         to: state.id,
         kind: 'loop-back',
         condition: null,
         advanceType: 'UNSPECIFIED',
+        // Provenance stays on the PHYSICAL line the token matched, not the block, so
+        // deep links keep pointing at the sentence the reader is shown.
         provenance: buildProvenance(file, allLines, lineNum, lineNum, 'skill'),
       });
     }

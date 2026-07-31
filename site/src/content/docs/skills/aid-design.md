@@ -35,11 +35,9 @@ flowchart TB
   n2 --> n3
   n3 -.-> n2
   n3 --> n4
-  n4 -.-> n2
   n4 -->|"optional"| n5
   n4 --> n6
   n5 --> n6
-  n6 -.-> n2
   class n1 aidEntry
   class n2 aidStep
   class n3 aidLoopBack

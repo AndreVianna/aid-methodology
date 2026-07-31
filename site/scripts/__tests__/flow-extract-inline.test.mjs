@@ -1010,3 +1010,208 @@ describe('rule 8 explicit corpus statement', () => {
     }
   });
 });
+
+// ── Rule 7: a mention is not a return (task-058, closes W1-16) ────────────────
+//
+// WHY THIS BLOCK EXISTS. Rule 7 used to emit a loop-back edge for ANY body line naming
+// an earlier-ordered state. That shipped 7 wrong edge-attributions onto 4 published
+// charts, and no test saw it — the rule was tested only with fixtures whose mentions
+// happened to be real loops. An unfamiliar reader found it at an AC-7 comprehension
+// spot-check by reading a rendered chart and reporting three loop-backs where the source
+// had one.
+//
+// These fixtures drive the REAL extractor (`extractInline`), never a copy of the rule.
+// Each covers a shape measured in the live corpus, and each would have passed before the
+// fix only if the rule were wrong — see the per-case mutant notes.
+
+describe('rule 7 — the state must be the TARGET of a loop phrase, not merely mentioned', () => {
+  /** Edges into an earlier state, as `from->to` pairs, for terse assertions. */
+  const loopBacks = (chart) =>
+    chart.edges.filter((e) => e.kind === 'loop-back').map((e) => `${e.from}->${e.to}`);
+
+  it('a bare prose mention of an earlier state emits NO edge', () => {
+    // Shape from aid-review:132 — "(model+effort from INTAKE Step 4)". The state is named
+    // as the SOURCE of a parameter, not as a destination.
+    // Mutant: drop the _loopTargetRe guard → n2->n1 appears.
+    const chart = extractInline(parseSkill(`---
+name: mention-only
+description: Mention is not a return
+---
+
+## State: INTAKE
+
+Resolve the target.
+
+**Advance:** WORK.
+
+## State: WORK
+
+Dispatch the worker (model+effort from INTAKE Step 4) and record the result.
+
+**Advance:** DONE.
+
+## State: DONE
+
+Finish.
+`));
+    expect(loopBacks(chart)).toEqual([]);
+  });
+
+  it('an earlier state named as a filename emits NO edge', () => {
+    // Shape from aid-design — state DESIGN vs artifact DESIGN.md. TOKEN_RE stops at the
+    // dot, so `DESIGN.md` matched the state name. That chart drew 3 arrows, 2 of them
+    // from prose about the file.
+    // Mutant: drop the _isFilenameAt guard → n2->n1 appears from the `DESIGN.md` mention.
+    const chart = extractInline(parseSkill(`---
+name: filename-collision
+description: A state whose name matches its artifact file
+---
+
+## State: DESIGN
+
+Author the design.
+
+**Advance:** VERIFY.
+
+## State: VERIFY
+
+Clean-context reviewer checks \`DESIGN.md\`: grounded, complete, buildable.
+
+**Advance:** DONE.
+
+## State: DONE
+
+Keep \`DESIGN.md\` in the work folder as the record.
+`));
+    expect(loopBacks(chart)).toEqual([]);
+  });
+
+  it('a real loop still emits an edge when the verb wraps onto the PREVIOUS line', () => {
+    // The load-bearing case. aid-create-document, aid-report, aid-test and aid-design all
+    // wrap as `... -> loop` / `   to <STATE>.` — 17 of the corpus's 20 genuine cross-state
+    // edges. A line-scoped cue test deletes every one of them.
+    // Mutant: test the cue on `line` instead of the joined block → this fails.
+    const chart = extractInline(parseSkill(`---
+name: wrapped-verb
+description: Loop verb on the previous physical line
+---
+
+## State: AUTHOR
+
+Write it.
+
+**Advance:** VERIFY.
+
+## State: VERIFY
+
+3. **Grade:** run the grader on the ledger. Not clean -> loop
+   to AUTHOR. Circuit-breaker: 3 cycles -> IMPEDIMENT.
+
+**Advance:** DONE.
+
+## State: DONE
+
+Finish.
+`));
+    expect(loopBacks(chart)).toEqual(['n2->n1']);
+  });
+
+  it('a real loop still emits an edge when the TARGET wraps onto the next line', () => {
+    // The opposite wrap, as the shared shortcut engine writes it: `Loop back` ends the
+    // line and `to Step 1 (REVIEW)` begins the next — note the parenthetical step number
+    // sitting between `to` and the state name.
+    // Mutant: forbid filler between `to` and the state name → this fails.
+    const chart = extractInline(parseSkill(`---
+name: wrapped-target
+description: Loop target on the next physical line, behind a step number
+---
+
+## State: REVIEW
+
+Dispatch the reviewer.
+
+**Advance:** FIX.
+
+## State: FIX
+
+The architect addresses each row in place; it does not touch the ledger. Loop back
+to Step 1 (REVIEW) for a fresh, clean-context reviewer pass.
+
+**Advance:** DONE.
+
+## State: DONE
+
+Finish.
+`));
+    expect(loopBacks(chart)).toEqual(['n2->n1']);
+  });
+
+  it('"back to" pointing somewhere else does not capture a later-mentioned state', () => {
+    // Shape from aid-change-document:87 — "Write the revision back to the existing
+    // document (the diff was already reviewed at PRESENT)." A loop cue IS present, but
+    // its object is "the existing document", not PRESENT.
+    // Mutant: test for cue-anywhere-in-block instead of cue-targeting-the-state → n2->n1
+    // appears, which is exactly the edge this task removed from the published chart.
+    const chart = extractInline(parseSkill(`---
+name: cue-elsewhere
+description: A loop cue whose object is not the state
+---
+
+## State: PRESENT
+
+Show the diff.
+
+**Advance:** WRITE.
+
+## State: WRITE
+
+Write the revision back to the existing document (the diff was already reviewed at PRESENT).
+
+**Advance:** DONE.
+
+## State: DONE
+
+Finish.
+`));
+    expect(loopBacks(chart)).toEqual([]);
+  });
+
+  it('provenance points at the line carrying the loop phrase, not the first mention', () => {
+    // Recovered behaviour, not merely suppressed noise. In aid-design the real edge was
+    // attributed to :76 (a `DESIGN.md` mention) because first-match-won; the genuine
+    // "loop to DESIGN" at :80 never got to speak. After the fix the edge survives and
+    // carries the right line — which is why this task's AC counts 20 edges, not 19.
+    // Mutant: keep first-match-wins → provenance lands on the earlier mention line.
+    const chart = extractInline(parseSkill(`---
+name: provenance-recovery
+description: A filename mention precedes the real loop phrase in the same section
+---
+
+## State: DESIGN
+
+Author it.
+
+**Advance:** VERIFY.
+
+## State: VERIFY
+
+Reviewer checks \`DESIGN.md\` for grounding.
+Not clean -> loop
+   to DESIGN. Circuit-breaker: 3 cycles.
+
+**Advance:** DONE.
+
+## State: DONE
+
+Finish.
+`));
+    const edge = chart.edges.find((e) => e.kind === 'loop-back');
+    expect(edge).toBeDefined();
+    const cueLine = chart.nodes.length ? edge.provenance.startLine : -1;
+    // The `DESIGN.md` line and the `to DESIGN.` line are distinct; assert we took the latter
+    // by checking the recorded excerpt is the loop sentence, not the filename sentence.
+    expect(edge.provenance.excerpt).toMatch(/to DESIGN\./);
+    expect(edge.provenance.excerpt).not.toMatch(/DESIGN\.md/);
+    expect(cueLine).toBeGreaterThan(0);
+  });
+});

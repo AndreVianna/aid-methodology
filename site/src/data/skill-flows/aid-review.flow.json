@@ -32,7 +32,7 @@
       "order": 2,
       "name": "REVIEW",
       "label": "REVIEW",
-      "kind": "loop-back",
+      "kind": "step",
       "terminal": null,
       "provenance": {
         "file": "canonical/skills/aid-review/SKILL.md",
@@ -98,7 +98,7 @@
       "order": 5,
       "name": "PUBLISH",
       "label": "only on approval",
-      "kind": "loop-back",
+      "kind": "step",
       "terminal": null,
       "provenance": {
         "file": "canonical/skills/aid-review/SKILL.md",
@@ -154,20 +154,6 @@
         "endLine": 118,
         "sourceKind": "skill",
         "excerpt": "**Advance:** REVIEW."
-      }
-    },
-    {
-      "from": "n2",
-      "to": "n1",
-      "kind": "loop-back",
-      "condition": null,
-      "advanceType": "UNSPECIFIED",
-      "provenance": {
-        "file": "canonical/skills/aid-review/SKILL.md",
-        "startLine": 132,
-        "endLine": 132,
-        "sourceKind": "skill",
-        "excerpt": "2. **Dispatch `aid-reviewer` once, in a clean context** (model+effort from INTAKE Step"
       }
     },
     {
@@ -238,20 +224,6 @@
         "endLine": 184,
         "sourceKind": "skill",
         "excerpt": "**Advance:** PUBLISH on approval; otherwise DONE."
-      }
-    },
-    {
-      "from": "n5",
-      "to": "n4",
-      "kind": "loop-back",
-      "condition": null,
-      "advanceType": "UNSPECIFIED",
-      "provenance": {
-        "file": "canonical/skills/aid-review/SKILL.md",
-        "startLine": 193,
-        "endLine": 193,
-        "sourceKind": "skill",
-        "excerpt": "PRESENT-FINDINGS is what authorizes this call, and the skill previews the exact payload again"
       }
     },
     {

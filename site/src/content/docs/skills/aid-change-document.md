@@ -36,13 +36,12 @@ flowchart TB
   n3 --> n4
   n4 -->|"on approval"| n5
   n4 -->|"else"| n6
-  n5 -.-> n4
   n5 --> n6
   class n1 aidEntry
   class n2 aidStep
   class n3 aidStep
   class n4 aidDecision
-  class n5 aidLoopBack
+  class n5 aidStep
   class n6 aidExit
   class n1 aidNode
   class n2 aidNode
@@ -115,7 +114,7 @@ the current file** + the target path. Await approval. Never writes `.aid/knowled
 
 [Source: `canonical/skills/aid-change-document/SKILL.md#L76-L79`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-change-document/SKILL.md#L76-L79) · [full step: `canonical/skills/aid-change-document/SKILL.md#L76-L81`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-change-document/SKILL.md#L76-L81)
 
-<a id="fragment-n5"></a>**5 · `WRITE`** — only on approval · _loop-back_
+<a id="fragment-n5"></a>**5 · `WRITE`** — only on approval · _step_
 
 ~~~~plaintext title="canonical/skills/aid-change-document/SKILL.md#L85-L88" wrap
 ## State: WRITE  (only on approval)

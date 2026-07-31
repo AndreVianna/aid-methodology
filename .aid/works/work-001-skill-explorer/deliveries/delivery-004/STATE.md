@@ -205,6 +205,28 @@ clean-context reader agent, given only the rendered chart and barred from readin
 delivery gate that owns the criterion. That is repeatable, which is what the deferred item
 "AC-7 formalized into a repeatable review step" (PLAN.md § Deferred) asked for.
 
+#### AC-7 RE-RUN after the fix — the check that found the defect now passes on the corrected output
+
+The owner chose to **fix** W1-16 rather than ship it disclosed, so **task-058** corrected rule 7 and
+the four charts were regenerated. The spot-check was then re-run against the worst of them —
+`aid-design`, which had drawn **3** loop-backs — using the same protocol: a fresh clean-context
+reader, only the rendered chart in its prompt, no file access, **zero tools used**.
+
+It reported: *"Exactly one loop-back, shown as the single dotted arrow: VERIFY back to DESIGN. No
+other dotted arrows exist in the diagram, so no other step sends control backwards."* That is
+exactly what `aid-design/SKILL.md`:79-80 expresses (`Not clean -> loop` / `to DESIGN.`). Step order,
+the sole exit (DONE) and both decision branches were also correct, at high confidence.
+
+So the loop closes on evidence rather than on assertion: the same check, the same method, the same
+chart — three wrong arrows before the fix, one right arrow after. **This is why AC-7 was worth
+performing even though it is non-blocking**, and the argument for keeping it as a repeatable step
+rather than a one-off.
+
+Its remaining friction notes are honest and unchanged from the first reader: the loop-back edges
+carry no condition labels, so a reader can see *that* VERIFY loops and not *why*. Both readers said
+so independently. That is a legible limit of the chart form, not a defect in the derivation, and it
+is recorded here rather than filed.
+
 ---
 
 ## Cross-phase Q&A

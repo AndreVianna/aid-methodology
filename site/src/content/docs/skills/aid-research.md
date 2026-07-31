@@ -32,7 +32,6 @@ flowchart TB
   n5["HANDOFF<br/>optional; printed suggestions only"]
   n6(["DONE"])
   n1 --> n2
-  n2 -.-> n1
   n2 --> n3
   n3 -.-> n2
   n3 --> n4
@@ -40,7 +39,7 @@ flowchart TB
   n4 --> n6
   n5 --> n6
   class n1 aidEntry
-  class n2 aidLoopBack
+  class n2 aidStep
   class n3 aidLoopBack
   class n4 aidDecision
   class n5 aidStep
@@ -94,7 +93,7 @@ Every node in the chart above, in chart order, with the exact `canonical/` text 
 
 [Source: `canonical/skills/aid-research/SKILL.md#L41-L71`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-research/SKILL.md#L41-L71) · [full step: `canonical/skills/aid-research/SKILL.md#L41-L73`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-research/SKILL.md#L41-L73)
 
-<a id="fragment-n2"></a>**2 · `INVESTIGATE`** · _loop-back_
+<a id="fragment-n2"></a>**2 · `INVESTIGATE`** · _step_
 
 ~~~~plaintext title="canonical/skills/aid-research/SKILL.md#L77-L80" wrap
 ## State: INVESTIGATE

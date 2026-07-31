@@ -178,10 +178,10 @@
       "advanceType": "UNSPECIFIED",
       "provenance": {
         "file": "canonical/skills/aid-design/SKILL.md",
-        "startLine": 76,
-        "endLine": 76,
+        "startLine": 80,
+        "endLine": 80,
         "sourceKind": "skill",
-        "excerpt": "2. **Adversarial verification** -- clean-context **`aid-reviewer`** checks `DESIGN.md`:"
+        "excerpt": "   to DESIGN. Circuit-breaker: 3 cycles -> IMPEDIMENT + `lifecycle: Blocked`."
       }
     },
     {
@@ -196,20 +196,6 @@
         "endLine": 82,
         "sourceKind": "skill",
         "excerpt": "**Advance:** PRESENT."
-      }
-    },
-    {
-      "from": "n4",
-      "to": "n2",
-      "kind": "loop-back",
-      "condition": null,
-      "advanceType": "UNSPECIFIED",
-      "provenance": {
-        "file": "canonical/skills/aid-design/SKILL.md",
-        "startLine": 88,
-        "endLine": 88,
-        "sourceKind": "skill",
-        "excerpt": "Set `lifecycle: Paused-Awaiting-Input`. Present `DESIGN.md` clearly. Assert no resolution --"
       }
     },
     {
@@ -253,20 +239,6 @@
         "sourceKind": "skill",
         "excerpt": "**Advance:** DONE."
       }
-    },
-    {
-      "from": "n6",
-      "to": "n2",
-      "kind": "loop-back",
-      "condition": null,
-      "advanceType": "UNSPECIFIED",
-      "provenance": {
-        "file": "canonical/skills/aid-design/SKILL.md",
-        "startLine": 107,
-        "endLine": 107,
-        "sourceKind": "skill",
-        "excerpt": "`DESIGN.md` in the work folder as the kept design record."
-      }
     }
   ],
   "entries": [
@@ -278,7 +250,5 @@
   "sources": [
     "canonical/skills/aid-design/SKILL.md"
   ],
-  "warnings": [
-    "[gen-skills] exits fallback: no terminal-advance node found in 'aid-design'; designating highest-order node 'DONE' (n6) as exit"
-  ]
+  "warnings": []
 }

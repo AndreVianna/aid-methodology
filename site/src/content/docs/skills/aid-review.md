@@ -32,19 +32,17 @@ flowchart TB
   n5["PUBLISH<br/>only on approval"]
   n6(["DONE"])
   n1 --> n2
-  n2 -.-> n1
   n2 --> n3
   n3 -.-> n2
   n3 --> n4
   n4 -->|"on approval"| n5
   n4 -->|"otherwise"| n6
-  n5 -.-> n4
   n5 --> n6
   class n1 aidEntry
-  class n2 aidLoopBack
+  class n2 aidStep
   class n3 aidLoopBack
   class n4 aidDecision
-  class n5 aidLoopBack
+  class n5 aidStep
   class n6 aidExit
   class n1 aidNode
   class n2 aidNode
@@ -67,7 +65,7 @@ Purpose: resolve the target + criteria, pick the path, allocate the work folder.
 
 [Source: `canonical/skills/aid-review/SKILL.md#L38-L40`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-review/SKILL.md#L38-L40) · [full step: `canonical/skills/aid-review/SKILL.md#L38-L118`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-review/SKILL.md#L38-L118)
 
-<a id="fragment-n2"></a>**2 · `REVIEW`** · _loop-back_
+<a id="fragment-n2"></a>**2 · `REVIEW`** · _step_
 
 ~~~~plaintext title="canonical/skills/aid-review/SKILL.md#L122-L124" wrap
 ## State: REVIEW
@@ -97,7 +95,7 @@ Set STATE `lifecycle: Paused-Awaiting-Input`. Present:
 
 [Source: `canonical/skills/aid-review/SKILL.md#L171-L173`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-review/SKILL.md#L171-L173) · [full step: `canonical/skills/aid-review/SKILL.md#L171-L184`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-review/SKILL.md#L171-L184)
 
-<a id="fragment-n5"></a>**5 · `PUBLISH`** — only on approval · _loop-back_
+<a id="fragment-n5"></a>**5 · `PUBLISH`** — only on approval · _step_
 
 ~~~~plaintext title="canonical/skills/aid-review/SKILL.md#L188-L197" wrap
 ## State: PUBLISH  (only on approval)
