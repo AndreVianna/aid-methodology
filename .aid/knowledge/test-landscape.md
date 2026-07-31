@@ -85,7 +85,7 @@ because it must validate Bash, PowerShell, Python, and Node code paths.
 
 | Framework / harness | Type | Location | Notes |
 |---|---|---|---|
-| Bespoke Bash test harness | Unit + integration | `tests/canonical/test-*.sh` (133 suites) | The dominant suite; run via `tests/run-all.sh`. CONFIRMED via `ls tests/canonical/test-*.sh \| wc -l` = 133. |
+| Bespoke Bash test harness | Unit + integration | `tests/canonical/test-*.sh` (134 suites) | The dominant suite; run via `tests/run-all.sh`. CONFIRMED via `ls tests/canonical/test-*.sh \| wc -l` = 134. |
 | Bespoke PowerShell test (`T<NN>` IDs) | Installer integration | `tests/windows/Test-AidInstaller.ps1` (~2406 lines) | Windows-only; not in `run-all.sh`. |
 | `pytest` | Unit | `dashboard/reader/tests/`, `dashboard/server/tests/` | Python reader/server parsers + fixtures. |
 | Node built-in test | Unit | `dashboard/server/tests/test_server_node.mjs` | Node `.mjs` server tests. |
@@ -93,9 +93,10 @@ because it must validate Bash, PowerShell, Python, and Node code paths.
 | Generator `--self-test` harness | Self-test | `.claude/skills/generate-profile/scripts/*.py` | `render_lib`, `render`, `verify_deterministic`, `verify_advisory`, `test_manifest_safety`. |
 | Astro / TypeScript tests | Unit | `site/src/data/__tests__/`, `site/scripts/__tests__/` | Site data + docs-sync tests (separate build). |
 
-Of the 133 live suites, **132 are the surviving pre-existing suites** — the AC-2 must-pass
-set (134 pre-existing minus 2 dead suites removed) — and the remaining 1 is work-024's own
-`test-coverage-parity.sh` keystone self-test.
+Of the 134 live suites, **132 are the surviving pre-existing suites** — the AC-2 must-pass
+set (134 pre-existing minus 2 dead suites removed) — and the remaining 2 are keystone
+self-tests added since: work-024's `test-coverage-parity.sh` and work-001's
+`test-skill-counts.sh`, the repo-wide count guard.
 
 CONFIRMED via `.aid/generated/project-index.md` (Top-20 Largest Source Files lists
 `reader.mjs` 4012, `test-aid-cli-parity.sh` 3198, `Test-AidInstaller.ps1` 2406) and direct
@@ -122,7 +123,7 @@ Key behaviors (CONFIRMED in `tests/run-all.sh`):
 - **Exit contract.** Exit 0 only if every suite passes; exit 1 if any suite fails (or if no
   suites are found). Under CI it emits `::group::` / `::error::` annotations.
 
-Representative suite families (the 133 cover far more than these):
+Representative suite families (the 134 cover far more than these):
 
 | Family | Example suites | What they protect |
 |---|---|---|
