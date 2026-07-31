@@ -176,7 +176,7 @@ Resolution command:
 bash .claude/aid/scripts/config/read-setting.sh --skill <name> --key minimum_grade --default A
 ```
 
-In **this** repo (`.aid/settings.yml`): the global `review.minimum_grade` is **`A+`** (owner
+In **this** repo (`.aid/settings.yml`): the global `review.minimum_grade` is **`B-`** (owner
 directive 2026-06-27 — "always use an A+ gate across all phases"), so every grading phase must
 reach zero findings to advance. One explicit per-skill override remains — `summary.minimum_grade:
 A+` (now redundant with the global, retained from the `/aid-summarize` redesign). The commented

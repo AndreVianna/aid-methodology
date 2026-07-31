@@ -1016,6 +1016,13 @@ CB_FILES=(
   "$ROOT/tests/canonical/test-one-grading-backend.sh"
   "$ROOT/tests/canonical/test-grade-summary.sh"
   "$ROOT/tests/canonical/test-guardrails-d012.sh"
+  # The derived-value guard and its registry. Added after the class bit a FOURTH time: a `\b`
+  # written through a heredoc became a literal 0x08 inside a regex, so `/^\s*\|.*<BS>Supersede/`
+  # could never match and a history rule silently did nothing. It cost an hour to find, because
+  # `regex.source` PRINTS the backspace invisibly -- the pattern looks correct in every diagnostic.
+  # A byte sweep is the only oracle that sees it.
+  "$ROOT/tests/canonical/check-derived-values.mjs"
+  "$ROOT/tests/canonical/derived-values.mjs"
   "$EMIT" "$MC"
 )
 cb_bad=()

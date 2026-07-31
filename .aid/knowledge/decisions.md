@@ -86,7 +86,7 @@ changelog:
 | D12 | cwd-driven CLI, no scan, CODE/STATE split | Settled, partial impl | `.aid/design/cli-install-scope-and-migration.md` |
 | D13 | Per-repo `format_version` stamp | Settled | same design note §3.4 |
 | D14 | Lite path + description-first TRIAGE | Superseded by D20/D21/D24 | `docs/aid-methodology.md` §4 (pre-work-001) |
-| D15 | 9 agents / 3 tiers (consolidation) | Accepted (supersedes prior roster) | `docs/aid-methodology.md` §5 |
+| D15 | 9 agents / 3 tiers (consolidation) | Superseded by D27 | `docs/aid-methodology.md` §5 |
 | D16 | PowerShell 5.1 floor | Accepted | `README.md`; project memory |
 | D17 | Prose over scripts in skills | Accepted | project practice; `tests/run-all.sh` header |
 | D18 | KB no-diagrams; HTML summary yes-diagrams | Accepted | authoring standard; `.aid/design/aid-summarize-redesign.md` |
@@ -98,6 +98,7 @@ changelog:
 | D24 | `/aid-describe` reduced to full-path-only | Accepted | `canonical/skills/aid-describe/SKILL.md`; feature-013 |
 | D25 | `/aid-monitor` re-point (BUG -> `/aid-fix`, CR -> `/aid-triage`) | Accepted | `canonical/skills/aid-monitor/SKILL.md`; feature-012 |
 | D26 | No line-coverage metric; effectiveness measured via a dedicated program (tech-debt L4) | Accepted (line-coverage); L4 program open | `test-landscape.md` §Coverage Assessment; `tech-debt.md` L4 |
+| D27 | 10 agents / 3 tiers -- `aid-screener` added as a cheap first-pass filter that runs BEFORE an adversarial review, never instead of one | Accepted (supersedes D15) | `canonical/agents/aid-screener/AGENT.md`; work-003 delivery-010 |
 
 ---
 

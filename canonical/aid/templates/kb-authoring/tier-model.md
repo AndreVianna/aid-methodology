@@ -106,6 +106,7 @@ determines tier allowances and review rubric (see [review-rubric.md](review-rubr
 
 ## Edge cases
 
+<!-- derived-value-exempt: a worked example of tier classification, not a roster claim. -->
 - **"There are 22 agents"** — T2 if 22 is a contract; T3 if it's just a current
   measurement. The frontmatter `contracts:` field disambiguates: if it's listed
   there, it's T2 and the lint verifies it. Otherwise, T3 and it shouldn't be inline.

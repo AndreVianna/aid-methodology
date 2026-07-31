@@ -75,7 +75,7 @@ The repository has two faces, and understanding the split is the key to navigati
    use AID to build AID. This lives in `.claude/` (the rendered claude-code profile) and
    `.aid/` (pipeline state, work tracking, and the Knowledge Base you are reading).
 
-CONFIRMED. The dual nature is stated in `README.md` (a multi-skill pipeline across 9
+CONFIRMED. The dual nature is stated in `README.md` (a multi-skill pipeline across 10
 specialized agents and 5 AI tools) and confirmed by the `canonical/` -> `profiles/` ->
 `packages/` layout plus the dogfood `.claude/` install. See [Unusual Structure Notes](#unusual-structure-notes).
 
