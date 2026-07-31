@@ -4,79 +4,109 @@
 
 | Date | Change | Source |
 |------|--------|--------|
-| 2026-07-28 | Feature created by splitting feature-011 three ways (owner decision). Takes the canonical-authoring and render wiring (**C-2**), the manifest-lockstep obligation (**C-3**), the registration inventory, and the count-surface reconciliation. Requirements half authored fresh from REQUIREMENTS.md §5.9, §7 C-2/C-3, and the two registration acceptance criteria feature-011 carried | /aid-specify |
-| 2026-07-28 | Technical specification carved from feature-011's D1, D2, D6, L1, Feature Flow and External Integrations, then re-derived against the branch state after the three pre-existing defects were fixed | /aid-specify |
-| 2026-07-28 | Final-gate finding fixed — D1's description of `render.py`'s `skills` branch completed to include the verbatim `scripts/` copy (line 594, `is_dir()`-guarded), noted as unexercised today since no canonical skill ships one | /aid-specify |
+| 2026-07-30 | **Fix pass 2** — gate C, row 6 only (rows 3–5 stay Pending per Q27), **plus a post-merge citation re-verification of the whole document**. **Row 6:** row 2's class, one scope out. D1's amendment clause quantifies over *other* features' Layers sections, so it structurally could not reach the already-registered canonical file this feature itself amends — `generated-files.txt`, transformed class, `check-attr` → `text: unspecified`. Fixed at the quantifier rather than the symptom: CR07 now ranges over D1 **∪** L1's `canonical/` paths, D1 and D5 state the seam, M1 adds the path rule, and Open Item 5's residual is restated as the complement of `.gitattributes`'s extension list (it had omitted `.txt`, `.json` and `.ps1`). The same-class conditional residual is closed by pinning G1/G2's `.json` manifest and lockfile under `canonical/aid/scripts/graph/`, a root M1 already covers. **Re-verification:** `origin/master` merged mid-gate (PR #174). Every citation into the twelve moved files re-resolved **by text, not by offset**, and each argument resting on them re-read — `tech-debt.md` L4 is still open and both anchors still say what was claimed. The merge also moved the site's roster out of `gen-reference.mjs` into `skills/curated-roster.mjs`, added a third roster (`groups.mjs` `CURATED_GROUPS`) and a repo-wide count gate (`check-skill-counts.mjs`), and re-anchored the comments D4 Class 3 existed to fix: Class 2 re-derived on disk, Class 3 recorded as discharged, CR09 repointed at the merged **set-equality clamp**, CR10 given its first machine oracle, and Open Item 3 **withdrawn** — its premise no longer holds. The re-verification is what makes this pass **+44** lines rather than the near-zero a numbers-only correction would have cost; the D4 rewrite is the bulk of it | /aid-specify |
+| 2026-07-30 | **Fix pass 1** — gate D+, rows 1–2 only (rows 3–5 are LOW/LOW/MINOR and stay Pending per Q27). **Row 1:** D3's trigger set and its UTF-8 exemption were derived over `render.py`'s `translate="none"` branch alone and applied to all four D1 roots. Re-derived **per root** by tracing a production file down each path: `canonical/skills/` goes through `translate="skills"`, which adds two `SKILL.md`-only frontmatter triggers (`allowed-tools:` remap, `context:`/`agent:` deletion), consults no extension frozenset, and has **no** UTF-8 fallback — invalid UTF-8 there aborts the generator instead of degrading to a copy. AC-R3, CR02, CR06 and the legitimate-versus-defect table scoped with it; the comment exemption restated as its real predicate (first non-whitespace `#`, so `.md` and `.ps1` too) instead of an extension list. **Row 2:** D1 had been swept for new-file declarations only, so feature-004's two amendment declarations were missing — added as **amendment** rows, CR01 extended to both declaration kinds, and `settings.yml` given its own `.gitattributes` rule as the one D1 path the path-scoped fix did not reach. Net **+15** lines | /aid-specify |
+| 2026-07-30 | **Authored fresh** against the amended REQUIREMENTS, the frozen 001–007 spine and the passed 008/009, per STATE.md **Q26 § Fresh authoring**. Supersedes the 2026-07-28 pre-decision draft entirely; that draft was opened once as a checklist of concerns and used as a base document nowhere. Three of its claims are **not carried forward because they are false on disk**: it attributed the install-manifest lockstep hazard to `tech-debt.md` item **L4** (L4 is the test-effectiveness gap; the manifest incident is *evidence inside* L4), it cited two registration acceptance criteria in REQUIREMENTS §9 (§9 contains none — the obligation is **C-2**/**C-3**), and it said the full generator renders the dogfood `.claude/` tree (it renders `profiles/` only) | /aid-specify |
 
 ## Source
 
-- REQUIREMENTS.md §5.9 Decision paragraph — the accepted cost of a separate skill: "one more skill
-  in the canonical-to-profiles render and the install manifests"
-- REQUIREMENTS.md §5.6 consequences 2 and 4 — if the rendering research adopts a third-party
-  dependency, it lands in `technology-stack.md` / `infrastructure.md` / CI, and carries licence and
-  update obligations
-- REQUIREMENTS.md §7 Constraints — **C-2** (the skill is authored in the canonical tree and rendered
-  to every host profile by the existing profile renderer; it must not be hand-maintained per
-  profile), **C-3** (adding a skill touches the install and emission manifests, which the KB already
-  flags as lockstep hazards — the change must keep them consistent)
-- REQUIREMENTS.md §9 — the two registration criteria feature-011 carried: the skill appears in every
-  host profile install tree with no hand-maintained profile copy, and every manifest accounts for
-  the added file set
+- **REQUIREMENTS.md `:776–777` (C-2)** — the skill is authored in the canonical tree and rendered to
+  every host profile by the existing profile renderer; it must not be hand-maintained per profile.
+- **REQUIREMENTS.md `:778–779` (C-3)** — adding a skill touches the install and emission manifests,
+  which the Knowledge Base already flags as lockstep hazards; the change must keep them consistent.
+- **REQUIREMENTS.md `:704–705`** — §5.9's *Decision — separate skill, shared scripts* accepts the cost:
+  "one more skill in the canonical→profiles render and the install manifests."
+- **REQUIREMENTS.md `:664–671` (FR-32)** and **`:902–906` (AC-5)** — consumed as a **boundary**, not as
+  this feature's obligation. Their byte-identity is a **runtime** guarantee about `relationships.md`
+  across `/aid-graph` runs with **all of FR-11's staleness inputs unchanged**. The byte-identity this
+  feature owns is the **render's** (D3). Conflating the two would be a proxy defect of exactly the class
+  STATE.md Q17 flags, so the two are named separately everywhere below.
+- **REQUIREMENTS.md `:174` (§4 Out of Scope)** — enumerating generated/derived trees; the rendered
+  `profiles/` and dogfood `.claude/` trees are build output, never sources.
 
-**Carries the known debt hazard.** `.aid/knowledge/tech-debt.md` records the install-manifest
-lockstep problem as `[HIGH]`-severity item **L4**: several surfaces independently declare the shipped
-file set, and a single missed update silently ships a broken install for one channel. Adding a skill
-and a script area touches exactly that surface. This feature owns keeping them consistent and should
-be reviewed with that debt item in hand. The Knowledge Base also records that after any canonical
-edit the **full** profile generator must run, not a per-script renderer, or the render-drift gate
-fails on stale emission manifests.
+### Inbound obligations routed to this feature
 
-**Dependency position.** The earliest non-research feature. The wiring must land before the other
-features have a place to put code, and the render must run before anyone can see which surfaces the
-render does *not* cover. It is largely mechanical, and its blast radius is confined to generated
-trees and count-bearing prose — it cannot change the behaviour of any shipped skill.
+Every row was verified in the routing SPEC this session. These are the feature's mandate; nothing here
+is self-assigned.
+
+| From | Where | Obligation |
+|---|---|---|
+| feature-001 | SPEC.md`:1515` | `profiles/*/emission-manifest.jsonl` — one record per profile for the canonical vocabulary file, produced by running the full generator, never hand-edited |
+| feature-002 | SPEC.md`:1099` | The install and emission manifests account for the added file set; run the **full** generator so the manifests and the render-drift gate stay green |
+| feature-002 | SPEC.md`:1096` | `.github/dependabot.yml` plus a scoped manifest, if a dependency is adopted |
+| feature-002 | Open Item 9, SPEC.md`:1273–1279` | A vendored bundle is text-transformed into every profile and **the render-drift gate cannot detect the corruption**; the integrity check belongs in the update procedure, not as a one-time observation |
+| feature-002 | Open Item 10, SPEC.md`:1280–1285` | The repository-side payload figure — a canonical file plus one render per profile — is a packaging judgment |
+| feature-003 | Open Item 10, SPEC.md`:1970–1974` | Generated-file registry placement for `relationships.md` |
+| feature-006 | SPEC.md`:1152`, ownership at `:1154` | Migration step 5 — run the FULL profile generator, then confirm no render drift |
+| feature-007 | SPEC.md`:1603` | The vendored bundles must be classic scripts, not ES modules — a constraint on the bundle this feature wires |
+| feature-007 | SPEC.md`:1596–1598` | Whether the bundle is inlined or referenced as a companion file is this feature's choice, and it decides whether `NM.1`'s token condition becomes live |
+| feature-008 | § External Integrations — its "Licence, attribution, payload, update mechanism" and "Bundle integrity under the profile render" rows | Both are landed here, not there. **Cited by section and row name, never by line: that SPEC is being edited concurrently** |
+
+### Knowledge-Base grounding
+
+- `.aid/knowledge/module-map.md` `:310–316` (where a new skill goes), `:321–324` (where a new helper
+  script goes), `:325–327` (how a new generated file is registered), `:337–338` and `:346–348` (never
+  edit a rendered copy; every shipped file originates in `canonical/`).
+- `.aid/knowledge/infrastructure.md` `:84–98` (the render is the build; the drift gate) and `:303`
+  (the render-parity command this feature is measured by).
+- `.aid/knowledge/tech-debt.md` `:350–353` Gotchas — render-drift needs the **FULL** generator, not a
+  per-script renderer, or the gate fails on stale `profiles/` emission manifests.
+- `.aid/knowledge/tech-debt.md` `:173–175` and `:233–235` — the `io_bounds.py` incident (several
+  surfaces asserting each other while all were wrong) and the invariant-anchoring rule it produced:
+  *anchor to ground truth, not a sibling copy*. That rule is this feature's design principle.
+- `.aid/knowledge/technology-stack.md` `:217–218` — both published wrappers declare empty dependency
+  sets, "so install is fast and supply-chain-light". That invariant must survive any adoption.
+
+### Dependency position
+
+Wiring, not behaviour. Nothing here changes what any skill does at runtime; the blast radius is the
+generated trees plus the hand-written surfaces L1 enumerates. It cannot land before the artifacts it
+registers exist, and every other feature's delivery is incomplete until it has run.
 
 ## Description
 
-A new skill has to actually ship. It is authored once in the canonical source and rendered out to
-every host profile by the existing renderer; it is never hand-maintained per profile, and the
-rendered copies are never edited. Adding it touches the manifests that declare what gets installed
-and what gets emitted, and those manifests have to stay in step with each other — this is a known
-hazard in this project, not a theoretical one.
+Everything this work produces has to become a **registered, rendered, counted** part of the repository
+rather than a pile of new files. Three obligations, and reading the machinery this session inverted two
+of them relative to how the pre-decision draft framed them.
 
-Most of that machinery already tracks itself. The generator rewrites every emission manifest on each
-run and the installer walks whole directories rather than a per-skill list, so the manifests are not
-where the risk actually lives. The risk lives in the hand-written surfaces that state how many skills
-exist, and in the two hand-written rosters that name them one by one. A skill count appears in the
-project readme, in four reference documents, and inside five per-profile readmes that live in
-generated trees but are not themselves generated. A skill name appears in the site generator's
-curated roster and in the mirror of that roster its test holds. Miss one and the repository quietly
-tells a newcomer something untrue.
+**The emission machinery is enumeration-based, not declaration-based.** There is no per-file or
+per-skill list to append to. The generator walks the canonical tree and the skill directories and emits
+what it finds. So "declared where the emission machinery can see them" does not mean *adding a
+declaration* — it means each artifact **satisfying the enumeration predicates**, because a file that
+fails one is silently omitted with no error anywhere. Those predicates are the real hazard, and they are
+where this feature does its work.
 
-This feature therefore has two jobs that look different and are the same job: get the new skill into
-every tree the renderer owns, and get every hand-written number and roster that describes those trees
-back into agreement with what is actually on disk. It also fixes the count claims that are *already*
-wrong today, because the honest way to add one to a wrong number is to correct the number first.
+**"No render drift" is the wrong assertion to lead with.** The documented check re-renders and diffs
+`profiles/`. A file the generator never emitted produces no diff, no manifest record and no failure — so
+the check passes hardest in exactly the case where nothing shipped. Every assertion below therefore pins
+**presence** first and asserts **absence of change** second, in that order and never the reverse.
 
-Finally, if the rendering research selects a third-party drawing library, its packaging lands here —
-the dependency manifest, the lockfile, the update monitoring, and the licence record are all
-registration surfaces, and pre-agreeing where they go is what keeps them from being discovered
-mid-execution.
+**Counts are the third obligation and the one this work has a scar on.** A new skill directory moves one
+derived quantity, and several hand-written surfaces mirror it. The discipline is `tech-debt.md`'s
+invariant-anchoring rule — anchor to ground truth, never to a sibling copy — applied to this SPEC's own
+prose as much as to the surfaces it edits: no count of an externally-owned set appears anywhere below,
+only the derivation and the gate that decides it.
+
+A fourth job arrives conditionally. If the rendering architecture ships third-party code, its packaging,
+pinning, licensing, monitoring and **integrity under the render's text transforms** all land here. That
+last one is not hypothetical: a bundle in a text-transformed extension is rewritten on its way into every
+profile, and the drift gate is structurally blind to it.
 
 ## User Stories
 
-- As a **maintainer/architect**, I want the skill authored once canonically and rendered to every
-  host profile, so that no profile drifts and no rendered copy needs hand-maintenance.
-- As a **maintainer/architect**, I want the install and emission manifests updated together, so that
-  no distribution channel silently ships a broken install.
-- As a **maintainer/architect**, I want every count surface reconciled against what is on disk
-  rather than against a sibling copy, so that adding the next skill does not require finding eleven
-  numbers by hand.
-- As a **newcomer to the project**, I want the stated number of skills to match the number that
-  exists, so that I can trust the documentation I am reading.
-- As the **AID methodology owner**, I want any third-party rendering dependency to land in a
-  private, pinned, monitored, licence-recorded package inside the canonical script area, so that the
-  published CLI wrappers keep their empty dependency sets.
+- As a **maintainer/architect**, I want every new canonical artifact to be emitted into every host
+  profile by the existing generator, so no profile drifts and no rendered copy is ever hand-maintained.
+- As a **maintainer/architect**, I want the render verified by *presence then stability*, so a file that
+  was silently never emitted fails the check instead of passing it.
+- As a **maintainer/architect**, I want each artifact's byte-identity guarantee stated per render class,
+  so I can tell a legitimate render difference from a corruption.
+- As a **maintainer/architect**, I want every count and roster surface reconciled against ground truth
+  rather than against a sibling literal, so adding the next skill does not require hunting numbers.
+- As a **newcomer to the project**, I want the stated number of skills to match the number that exists,
+  so I can trust the documentation I am reading.
+- As the **AID methodology owner**, I want any third-party bundle private, pinned, monitored,
+  licence-recorded and integrity-checked at every version bump, so the published wrappers keep their
+  empty dependency sets and a silently mangled copy cannot ship.
 
 ## Priority
 
@@ -84,360 +114,674 @@ Must
 
 ## Acceptance Criteria
 
-- [ ] Given the new skill authored in the canonical source, when the full profile render runs, then
-      the skill appears in every host profile install tree and no profile copy is hand-maintained.
-- [ ] Given the new skill and its script area, when the install and emission manifests are checked,
-      then all of them account for the added file set consistently — no manifest is left behind.
-- [ ] Given a canonical edit for this work, when the render is verified, then the full generator has
-      been run and the render-drift check passes with no stale emission manifest.
-- [ ] Given the reconciled repository, when `tests/canonical/test-doc-counts.sh` runs, then every
-      asserted count surface states the current derived count and the suite passes with no surface
-      left behind.
-- [ ] Given a count or roster assertion anywhere in the repository, when it is reviewed after this
-      feature lands, then it compares a derived artifact to the source of truth rather than to a
-      sibling literal — no new hardcoded total is introduced, and the pre-existing hardcoded totals
-      this feature touches are replaced rather than incremented.
-- [ ] Given a third-party rendering dependency, if one is adopted, when its packaging is reviewed,
-      then it is private and unpublished, exactly pinned with a committed lockfile, covered by
-      dependency monitoring, licence-recorded, and absent from both published wrapper manifests.
+- [ ] **AC-R1** Given the work's canonical artifacts on disk, when the full generator has run, then each
+      artifact appears as an emission-manifest record in **every** profile the generator enumerates, with
+      a `sha256` matching the bytes at its `dst`, and no artifact is silently omitted.
+- [ ] **AC-R2** Given a completed render, when render parity is checked, then `profiles/` carries neither
+      a tracked modification nor an untracked addition — and this is asserted only **after** AC-R1 holds.
+- [ ] **AC-R3** Given each artifact's **root** and extension, when its render class and trigger set are
+      read off the code path that root actually takes, then that class's byte-identity guarantee holds in
+      every profile, and a difference outside **that root's** permitted causes is a defect, not a render.
+- [ ] **AC-R4** Given the repo-root dogfood tree, when the dogfood byte-identity guard runs after the
+      render and resync, then every generator-owned path added by this work is present in it and matches
+      the manifest.
+- [ ] **AC-R5** Given the new skill directory on disk, when the doc-count guard, the repo-wide count gate
+      and the site generators and their tests run, then each passes — and the skill directory's existence
+      is asserted as a precondition, so a run in which the skill was never created fails instead of passing.
+- [ ] **AC-R6** Given any count or roster surface this feature edits, when it is reviewed, then it either
+      is machine-gated against a derivation from ground truth or names the derivation instead of a
+      number; no hardcoded total of an externally-owned set is introduced or incremented.
+- [ ] **AC-R7** Given the generated-file registry, when it is read after this feature lands, then it
+      states the disposition of `/aid-graph`'s outputs and the rule behind it, rather than leaving the
+      question open for a later feature to re-ask — and carries no data line for either output.
+- [ ] **AC-R8** Given a third-party bundle, if one is adopted, when its packaging is reviewed, then every
+      condition D6 declares applicable to the chosen packaging holds — exactly pinned, absent from both
+      published wrapper manifests, licence-recorded, loadable as a classic script, and cleared by the
+      render-transform integrity check unconditionally; private, dependency-watched and lockfiled if the
+      packaging carries a manifest — with the integrity check recorded as a step in the update procedure
+      rather than as a one-time observation.
 
 ---
 
 ## Technical Specification
 
-> Grounded in `.claude/skills/generate-profile/SKILL.md` and
-> `.claude/skills/generate-profile/scripts/render.py`, `canonical/EMISSION-MANIFEST.md`,
-> `canonical/aid/templates/generated-files.txt`, `canonical/aid/templates/shortcut-catalog.yml`,
-> `tests/canonical/test-doc-counts.sh`, `site/scripts/gen-reference.mjs` +
-> `site/scripts/.reference-manifest.json` + `site/scripts/__tests__/gen-reference.test.mjs`,
-> `docs/diagram-content-reference.md`, `lib/aid-install-core.sh`, `.github/dependabot.yml`, and the
-> KB docs `module-map.md`, `infrastructure.md`, `technology-stack.md`, `tech-debt.md`.
+> **Assertion prefix: `CR*`** (canonical registration), verified unused across REQUIREMENTS.md,
+> STATE.md and every sibling SPEC. Siblings use `GV*` (007), `GC*` (008), `TV*` (009), `GL*` (006),
+> `V*`/`AC-S*` (003) and `GR*` (013).
+>
+> **A citation convention this section obeys, from STATE.md Q23.** `canonical/` and its profile renders
+> are different artifacts, so every artifact path below is the `canonical/` one. The **one** exception is
+> the generator itself: `generate-profile` is the lone skill with no canonical original — it lives only
+> at `.claude/skills/generate-profile/` (`.aid/knowledge/infrastructure.md:89–90`, "maintainer-only, the
+> lone skill outside `canonical/`") — so `render.py`, `render_lib.py` and `run_generator.py` are cited
+> there because there is nowhere else to cite them.
+>
+> Grounded in `.claude/skills/generate-profile/scripts/{run_generator,render,render_lib}.py`,
+> `canonical/EMISSION-MANIFEST.md`, `canonical/aid/templates/generated-files.txt`, `.gitattributes`,
+> `tests/canonical/{test-doc-counts,test-skill-counts,test-dogfood-byte-identity,test-ascii-only}.sh`
+> and `tests/canonical/check-skill-counts.mjs`, `tests/run-all.sh`, `site/scripts/gen-reference.mjs` +
+> its `__tests__` mirror and `site/scripts/skills/{curated-roster,groups,skill-counts}.mjs`,
+> `lib/aid-install-core.sh`, `packages/{npm,pypi}/scripts/vendor.{js,py}`,
+> `.github/{dependabot.yml,workflows/test.yml}`, and the KB docs named in § Source. **Every line citation
+> below was re-read on disk *after* the `origin/master` merge**, not before it.
 
 ### Data Model
 
-#### D1 — The registration inventory: what a new skill actually touches
+#### D1 — The registration inventory
 
-The requirements half calls the install and emission manifests a lockstep hazard. Reading the
-machinery narrows that to a precise picture, and the picture matters because it decides which tasks
-`/aid-detail` produces. The registration surfaces fall into three classes: **derived** surfaces that
-auto-track and need no source edit at all; hand-written **count** surfaces that a parameterised test
-suite already guards; and hand-written **roster** surfaces, some guarded by a hard failure and some
-by nothing at all. The manifests themselves are in the first class — the genuine hazard is narrower
-and different from where the requirements half places it.
+**The derivation is authoritative; the table is a snapshot of it verified this session.** It has **two
+kinds of row**, and sweeping for one is what leaves the other short. **New** rows: every canonical path a
+**gated** SPEC's Layers & Components section declares under a root this work introduces —
+`canonical/aid/templates/graph/`, `canonical/aid/templates/knowledge-graph/`,
+`canonical/aid/scripts/graph/`, `canonical/skills/aid-graph/`. **Amendment** rows: every
+already-registered canonical file such a section declares it **amends and owns** — already emitted, so the
+obligation is render, parity and line endings, never a new registration; one routed to a **non-gated**
+owner is Open Item 2's. A reader re-derives both kinds from those sections, not from the rows below.
+**Both quantifiers range over *other* features' sections, so neither reaches a canonical file this
+feature itself amends** — `generated-files.txt` (D5) is an **L1** row, not a D1 row. L1's canonical edit
+list is the strictly larger set, which is why CR07 is written against both; D1 alone leaves it uncovered.
 
-**Class A — derived; no source edit required.** Verified, not assumed:
+**Render class is not a choice, and the rule deciding it is per-root.** Under the three `canonical/aid/`
+roots it follows from the extension against `render.py:77–79`'s `_TEXT_EXTENSIONS` frozenset — `.md`,
+`.txt`, `.sh`, `.ps1`, `.mjs`, `.js`, `.html`, `.css`, `.py`, and **not** `.yml`: a member is
+text-transformed (`render.py:634–639`), a non-member copied byte-for-byte (`render.py:643`). Under
+`canonical/skills/` it is **never consulted** — `SKILL.md` and `references/*.md` transform
+unconditionally (`render.py:553–592`), a `scripts/` child is verbatim (`render.py:600`). D3 is per-root.
 
-| Surface | Why it auto-tracks |
+| Path | Class | Declared by |
+|---|---|---|
+| `canonical/aid/templates/graph/relationship-schema.yml` | verbatim | feature-003 SPEC.md`:1872` |
+| `canonical/aid/templates/graph/relation-vocabulary.yml` | verbatim | feature-003 SPEC.md`:1873`; content owned by feature-001 (SPEC.md`:1058–1060`) |
+| `canonical/aid/templates/graph/coverage-bearing.yml` | verbatim | feature-006 SPEC.md`:1096` |
+| `canonical/aid/templates/graph/edge-relation-map.yml` | verbatim | feature-005 SPEC.md`:1460` |
+| `canonical/aid/templates/knowledge-graph/*` — the template set named in feature-007's file tree | transformed (`.html`, `.css`, `.js`, `.md`) | feature-007 SPEC.md`:1540–1548` |
+| `canonical/aid/scripts/graph/coverage-predicate.mjs` | transformed | feature-007 SPEC.md`:1551` |
+| `canonical/aid/scripts/graph/detect-kb-gaps.mjs` | transformed | feature-006 SPEC.md`:980` |
+| `canonical/aid/scripts/graph/relationship-schema.sh`, `validate-relationships.sh` | transformed | feature-003 SPEC.md`:1875`, `:1876` |
+| `canonical/aid/scripts/graph/scan-source.sh`, `significance-rules.sh` | transformed | feature-004 SPEC.md`:2061`, `:2062` |
+| `canonical/aid/scripts/graph/harvest-declared.sh`, `derive-edges.sh`, `build-relationships.sh`, `report-endpoint-satisfiability.sh` | transformed | feature-005 SPEC.md`:1456–1459` |
+| `canonical/skills/aid-graph/` — `SKILL.md` plus its `references/*.md` state files | transformed | REQUIREMENTS.md`:333–335` (FR-7 names the skill) + `module-map.md:310–316` (where a new skill goes). **Not** cited to feature-010, whose SPEC is still the pre-decision draft |
+| `canonical/aid/templates/reviewer-ledger-schema.md`, `canonical/aid/templates/kb-authoring/frontmatter-schema.md` | transformed; **amendment** | feature-006 SPEC.md`:1095`, `:1096` — amendments to existing files, so no new registration, but they are canonical edits and therefore inside the full-generator obligation (feature-006 SPEC.md`:1089–1091` says so) |
+| `canonical/aid/scripts/config/read-setting.sh` | transformed; **amendment** | feature-004 SPEC.md`:2064` — gains `--probe`, and that row marks it owned and implemented by feature-004. Already emitted (`canonical/scripts/config/read-setting.sh` is a manifest `src` today), so no new registration; the existing `*.sh` rule already carries `text eol=lf`, so CR07 holds for it unchanged |
+| `canonical/aid/templates/settings.yml` | verbatim; **amendment** | feature-004 SPEC.md`:2065` — seeds the `graph:` section with a commented-out `ignore:` list. **The only D1 path reached by neither an existing extension rule nor the four root rules** (`git check-attr text eol` → `text: unspecified`) — L1's `generated-files.txt` is the other such file, outside D1 by the rule above — and verbatim class, so a CRLF amendment would ship to every profile and adopter with a clean diff. M1 gives it its own rule; no tracked `.yml` in the repository carries a CR byte today, verified, so that rule renormalises nothing |
+
+**One artifact is on disk today and is the live proof this feature is needed.**
+`canonical/aid/templates/graph/relation-vocabulary.yml` is **committed** (`git log` → `3fc7cdb4`) and is
+present in **no** profile tree, **no** emission manifest and **not** in the dogfood tree — verified this
+session. The repository is therefore in render drift right now. That matters twice: it makes CR05 a real
+check rather than a formality, and it is the shape a reviewer should expect from every subsequent
+artifact until this feature runs.
+
+**No marker or manifest file accompanies the template set.** feature-006 SPEC.md`:1083–1085` withdrew the
+`knowledge-graph/package.json` ESM marker with the `.mjs` repoint. Reinstating one would be actively
+harmful here: a `package.json` inside a *template* directory renders into every profile and lands a stray
+manifest in every adopter's install where their own tooling could read it.
+
+> **CR01.** Both derivation kinds are complete: every canonical path a gated SPEC's Layers section
+> declares under the roots named above, **and** every already-registered canonical file such a section
+> declares it amends and owns, appears in D1 with a render class and a citation resolving to that
+> declaration; every D1 row carries such a citation. Decided by re-deriving **both** sets against D1's.
+>
+> **CR02.** For a D1 row under a `canonical/aid/` root, the declared class is `verbatim` **iff** the
+> path's extension is absent from `render.py:77–79`'s `_TEXT_EXTENSIONS`; for the `canonical/skills/` row
+> that frozenset does not decide, and `transformed` follows from `render.py:553–592` instead.
+
+#### D2 — What the emission machinery can and cannot see
+
+C-3 calls the manifests a lockstep hazard. Reading the generator narrows that to something both smaller
+and sharper, and the narrowing decides what `/aid-detail` has to schedule.
+
+**Nothing needs declaring.** Verified:
+
+| Surface | Why it self-tracks |
 |---|---|
-| `profiles/{claude-code,codex,cursor,copilot-cli,antigravity}/emission-manifest.jsonl` | The generator emits one record per rendered file and rewrites all five manifests on every run. `canonical/EMISSION-MANIFEST.md` "Asset Kinds" maps `canonical/skills/` wholesale to each host's `skills/` root; there is no per-skill list. `render.py`'s `translate == "skills"` branch enumerates `src_dir.iterdir()` directories, requires `SKILL.md`, and emits that plus `references/*.md` **and, when present, a verbatim copy of `scripts/`** (`render.py` line 594, guarded by `scripts_dir.is_dir()`). No canonical skill currently ships a `scripts/` directory, so the branch is unexercised today — but it means a skill *may* ship one without extra wiring, which matters if `/aid-graph` later does. |
-| The five `profiles/<tool>/` install trees and the dogfood `.claude/` tree | Same render. Never hand-edited — `.aid/knowledge/module-map.md` Invariants, "Edit `canonical/`, never `profiles/`". |
-| `.aid/.aid-manifest.json` (the per-install manifest) | Written by the installer at install time from what it copied. `lib/aid-install-core.sh` walks whole tool-native directories (`_prune_native_dir "${target}/.cursor/skills"` and siblings); it holds no per-skill list. |
-| `site/src/content/docs/reference/skills.md` | Generated by `site/scripts/gen-reference.mjs` from `canonical/skills/*/SKILL.md`, per `site/scripts/.reference-manifest.json`. Its intro count comes from `onDisk.length`, so the number is data-driven. |
+| `profiles/*/emission-manifest.jsonl` | `run_generator.py:40–41,63` builds a fresh manifest per profile on every run and writes it; there is no incremental path and no per-file list |
+| `canonical/EMISSION-MANIFEST.md` § Asset Kinds (`:111–116`) | Maps directories wholesale — `canonical/aid/scripts/` and `canonical/aid/templates/` as single rows, and `canonical/skills/` as one. A new **subdirectory** under any of them needs no row, so this document takes **no edit** |
+| The install trees | `render.py:611–668` (`translate="none"`) walks `canonical/aid/` with `rglob("*")`; `render.py:536–609` (`translate="skills"`) enumerates skill directories with `iterdir()` |
+| `.aid/.aid-manifest.json` and the installer | `lib/aid-install-core.sh:1821–1834` (`_prune_aid_subtree`) and `:1858–1883` (`_prune_native_dir`) walk whole directories against the install-time manifest; neither holds a per-skill or per-file list |
+| `packages/npm/_vendor/`, `packages/pypi/.../_vendor/` | **Not a copy of canonical content.** `packages/npm/scripts/vendor.js:71` vendors `bin`, `lib`, `dashboard/reader`, `dashboard/server`; `packages/pypi/scripts/vendor.py:46–53` vendors `bin/*`, `lib/*`, `VERSION` plus the `dashboard/MANIFEST`-derived set. Neither reaches `canonical/`, so **no packaging surface here is a registration surface for this work** |
+| `tests/run-all.sh:112` | `suites=( tests/canonical/test-*.sh )` — suite discovery is a glob, so a new suite needs no runner or workflow edit. Registration affects discovery **not at all**; the suites themselves are feature-013's |
+| `site/src/content/docs/reference/skills.md` intro | `gen-reference.mjs:265` composes it from `onDisk.length`, read at `:240–243` from the skill directories, so the number is data-driven |
 
-**Class B — hand-written count surfaces, guarded by `tests/canonical/test-doc-counts.sh`.** That
-suite derives its counts from disk and then asserts each listed file states the current number:
+**What the machinery silently drops.** This is the actual hazard, and every clause is a verified
+predicate whose failure produces no error, no manifest record and no shipped file:
 
-```bash
-SKILLS=$(find canonical/skills -mindepth 1 -maxdepth 1 -type d | wc -l | tr -d ' ')
-ROWS=$(grep -c '^  - name:' "$CATALOG")
-REPURPOSE=$(grep -c '^    repurpose: true' "$CATALOG")
-SHORTCUTS=$((ROWS - REPURPOSE))
+| # | Predicate | Line | Consequence of failing it |
+|---|---|---|---|
+| P1 | A file under `canonical/aid/` must not have a dot-prefixed basename | `render.py:625` (`not f.name.startswith(".")`) | Silently not emitted |
+| P2 | No path component may be `node_modules` or `.git` | `render.py:620,626` | Silently not emitted — and this is the guarantee that a vendor install directory never ships |
+| P3 | A skill directory must contain `SKILL.md` | `render.py:549–551` | `FileNotFoundError` — the **only** loud failure in the set; the generator exits non-zero |
+| P4 | A skill's reference files must end `.md` and sit directly in `references/` | `render.py:579` (`ref_dir.glob("*.md")`) | Silently not emitted |
+| P5 | A file under a skill's `scripts/` must be a direct child | `render.py:596–599` (`iterdir()` + `is_file()`) | A nested subdirectory is silently not emitted. Unexercised today — no canonical skill ships a `scripts/` directory — so a first user of the branch gets no warning |
+| P6 | The whole `canonical/aid/` walk is a single tree walk, so a new directory needs no wiring | `render.py:728–729` | — (stated so the inventory is not padded with imagined wiring) |
+
+> **CR03.** Every D1 path satisfies P1, P2, P4 and P5, and every skill directory in D1 satisfies P3.
+> Decided per path against the cited lines. **Non-vacuous only in conjunction with CR01**, which
+> guarantees the quantified set is non-empty; stated here so the dependency is not left implicit.
+
+#### D3 — Byte-identity, per render class and per root
+
+The obligation feature-006 step 5 hands over is *run the full generator, then confirm no render drift*.
+Confirming it requires knowing what a rendered copy is **supposed** to differ by. Verified against real
+rendered instances rather than reasoned from the source.
+
+**The trigger set is per-root, and the list below is authoritative — not its length.** The substitution
+triggers bind **every** D1 root; the frontmatter trigger is `canonical/skills/`'s alone, reached through
+`translate="skills"` (`render.py:536–609`) and not through the `translate="none"` walk.
+
+| Trigger | Scope | Defined at | Effect |
+|---|---|---|---|
+| `{project_context_file}`, `{reviewer_output_file}`, `{open_questions_file}` | every root | `render_lib.py:45–56` (`_PLACEHOLDER_RE`), applied at `:108–138` | Replaced with the profile's resolved filename |
+| `canonical/(aid/)?(scripts\|templates\|recipes\|skills\|agents)/` | every root | `render_lib.py:71–80` (`_CANONICAL_PATH_RE`), applied at `:145–226` | Rewritten to the profile's install root |
+| The literal `.claude/worktrees` | every root | `render_lib.py:224` | Rewritten to `<install_root>/worktrees`. **feature-002's Open Item 9 names only `substitute_filenames` and `rewrite_install_paths`**, so this needle is added here; it is a refinement of that item's grep, not a disagreement with it |
+| `SKILL.md` frontmatter — the `allowed-tools:` line, and the `context:` / `agent:` keys | `canonical/skills/` **`SKILL.md` only**; not `references/*.md`, which get the substitution triggers and no frontmatter pass (`render.py:580–582`) | `render.py:555` → `_rewrite_skill_frontmatter`, which calls `_remap_tools` (`:105–121`) for the tools line (applied `:447–451`) and drops the `_CC_OPTIONAL` keys (`:428`) with their indented continuations (`:440–444`) | **Two effects, one substitution and one deletion.** Every listed tool the profile's `[tool_names]` table remaps is replaced, so the line differs in every profile declaring such a remap — verified on a production render: `canonical/skills/aid-summarize/SKILL.md:14` carries `Bash`, and each remapping profile's render carries that profile's name for it. Separately, for a **non-claude-code** profile the `context:` / `agent:` keys are deleted outright, so the trigger yields a byte range present in canonical and **absent** from the render. That half is inert on every canonical `SKILL.md` today — none declares either key, verified — but it is live the moment one does |
+
+**Comment lines are exempt** — `render_lib.py:213–215` preserves any line whose first non-whitespace
+character is `#`, and `:224`'s literal replacement sits in the `else` branch, so a comment line is
+protected from both. Two consequences that matter:
+
+- The exemption is **not** extension-keyed: any line whose first non-whitespace character is `#` is
+  preserved — `#`-comment prose in `.sh`, `.ps1`, `.txt`, `.py` **and `#`-first lines in `.md`**, headings
+  included. (`.yml` needs none: it is not transformed at all.) Verified in production twice:
+  `generated-files.txt`'s `#` block (`:16–26`) discusses `canonical/` paths and its cursor render changes on
+  data lines only; and `canonical/skills/aid-discover/references/doc-set-resolve.md` keeps `canonical/aid/…`
+  verbatim at its `#` lines `:109`/`:203` while its non-`#` occurrences are rewritten.
+- Files whose comment syntax opens `//`, `/*` or `<!--` — `.js`, `.mjs`, `.css`, `.html` — get **no
+  protection at all**: a `canonical/` path inside such a comment **is** rewritten.
+
+**The two guarantees, each verified with an instance:**
+
+- **Verbatim class.** Rendered bytes equal canonical bytes, in every profile, unconditionally. Verified:
+  `canonical/aid/templates/shortcut-catalog.yml` and its claude-code render share one sha256. This is the
+  precedent `relation-vocabulary.yml`'s own header comment already cites (`:8–10`).
+- **Transformed class.** Rendered bytes equal canonical bytes **iff** the file carries no in-scope trigger
+  on a non-comment line, and otherwise differ **only** at those sites, differently per profile. Verified
+  both ways: `canonical/aid/scripts/summarize/validate-visuals.mjs` carries a `canonical/` occurrence and
+  its render has a different sha256; `contrast-check.mjs` and `validate-diagram-content.mjs` carry none
+  and their renders are byte-identical. **The exemption completing the `iff` is branch-scoped:** under the
+  `canonical/aid/` roots invalid UTF-8 falls back to a verbatim copy (`render.py:640–641`) and behaves as
+  the verbatim class whatever the extension; the `canonical/skills/` branch has **none** —
+  `render.py:553`/`:580` read unguarded, `run_generator.py:41` catches nothing — so invalid UTF-8 there
+  **aborts the generator** — a loud failure like P3's, not an exemption CR06 may grant.
+
+**Legitimate difference versus defect**, stated so a reviewer can tell them apart:
+
+| Observation | Verdict |
+|---|---|
+| A transformed file's render differs from canonical at a trigger site, and differs across profiles only in the install-root basename | **Legitimate.** This is the transform doing its job |
+| A verbatim file's render differs from canonical at all | **Defect.** No code path modifies it (`render.py:643`) |
+| A transformed file's render differs from canonical anywhere **no trigger in scope for its root** is present | **Defect.** Either a line-ending divergence (below) or a hand edit of a rendered copy, which `module-map.md:337–338` forbids. Read against the wrong root the row misfires: a `SKILL.md` whose only difference is a remapped `allowed-tools:` line, or a `context:`/`agent:` key absent from a non-claude-code render, is **legitimate** — calling that a hand edit is the error the scoping exists to prevent |
+| A rendered path exists that no manifest record names | **Defect.** Caught for the claude-code tree by the dogfood guard's Direction 2 (`test-dogfood-byte-identity.sh:178–182`), which walks `profiles/claude-code/.claude/` against the manifest. **The other profiles have no equivalent reverse check**, which is why CR04 quantifies over every profile rather than deferring to that suite |
+| `run_generator.py` prints `VERIFY (deterministic): PASS` | **Required**, not incidental: `run_generator.py:71–81` exits 1 otherwise, which is what makes a re-render a fixed point and lets one diff prove both parity and stability |
+
+**Line endings are a registration surface, and this is the one place the drift gate is provably blind.**
+`.gitattributes` forces `eol=lf` for `*.sh`, `*.mjs`, `*.py`, `*.md` and `dashboard/MANIFEST` — and for
+**nothing else**, verified by reading it. Its own header (`:5–7`) states the reason: this repo is authored
+on Windows, and a CRLF commit "would break the byte-exact render-drift CI gate". D1's inventory contains
+`.yml`, `.js`, `.css` and `.html` paths, and L1's own amendment adds a `.txt` one; no rule covers any of
+them. The two failure modes differ:
+
+- **Verbatim class:** CRLF in canonical ships as CRLF to every profile and every adopter. `git diff` after
+  a re-render is clean, because a consistently-copied file matches a freshly-copied one. This is
+  feature-002 Open Item 9's blindness, one level up from the bundle case.
+- **Transformed class:** `render.py:636` reads with `read_text()` (universal newlines) and writes
+  `.encode()`, so CRLF in canonical becomes LF in the render. Canonical and render then diverge with no
+  gate asserting the pair, and again the diff is clean.
+
+The fix is **path-scoped** rules, not extension-wide ones: `*.yml text eol=lf` at repo root would change
+the checkout behaviour of every tracked `.yml` in the repository, burying an unrelated repo-wide change in
+this diff. Scoping is also what leaves the **amendments** uncovered — D1's `.yml` one and L1's own `.txt`
+one, both already-registered files sitting outside every new root — so each carries its own path rule.
+`**` is honoured in `.gitattributes` (it shares gitignore pattern rules); verified in a throwaway repo.
+
+```gitattributes
+canonical/aid/templates/graph/**             text eol=lf
+canonical/aid/templates/knowledge-graph/**   text eol=lf
+canonical/aid/scripts/graph/**               text eol=lf
+canonical/skills/aid-graph/**                text eol=lf
+canonical/aid/templates/settings.yml         text eol=lf
+canonical/aid/templates/generated-files.txt  text eol=lf
 ```
 
-Verified on the branch: `SKILLS=111`, `AGENTS=9`, `ROWS=94`, `REPURPOSE=30`, `SHORTCUTS=64`, and the
-suite passes **31/31** today. Because `/aid-graph` is a curated hand-authored skill and not a
-`shortcut-catalog.yml` row, `SKILLS` moves 111 → 112 while `AGENTS`, `ROWS`, `CANON`, `ALIAS`,
-`REPURPOSE` and `SHORTCUTS` are unchanged. Of the suite's 29 surface assertions, exactly the eleven
-parameterised on `${SKILLS}` go red:
+The root rules are also what make D6's conditional artifacts safe without a further rule, and that is why
+G1 pins their location: `.json` is verbatim class and no extension rule reaches it, so a validator
+manifest placed anywhere in the canonical script area *other* than `canonical/aid/scripts/graph/` would
+reintroduce exactly this gap.
 
-| File | Needle that must state the new count |
-|---|---|
-| `README.md` | `112 skills` |
-| `docs/repository-structure.md` | `112 skill definitions` |
-| `docs/aid-methodology.md` | `112 skill directories` |
-| `docs/glossary.md` | `112 skills total` |
-| `docs/diagram-content-reference.md` | `112 skills` |
-| `docs/install.md` | `` 112 `aid-`-prefixed skill `` |
-| `profiles/claude-code/README.md` … `profiles/antigravity/README.md` (5 files) | `112 skills` |
+> **CR04 — presence, and the assertion everything else rests on.** After the full generator run, for
+> every D1 path and for **every profile `run_generator.py:24` enumerates from `profiles/*.toml`**, that
+> profile's `emission-manifest.jsonl` carries exactly one record whose `src` equals the D1 path with
+> `render.py:656–660`'s `canonical/aid/<sub>/` → `canonical/<sub>/` normalisation applied — a **no-op**
+> for a `canonical/skills/` path, since that loop rewrites only `scripts`, `templates` and `recipes`
+> (`render.py:659`) and the skills branch records its `src` unnormalised (`render.py:569`) — and whose
+> `sha256` equals the sha256 of the bytes at that record's `dst`.
+>
+> **CR05 — then, and only then, absence of change.** `run_generator.py` exits 0 and prints
+> `VERIFY (deterministic): PASS`; `git diff --exit-code -- profiles/` exits 0; **and**
+> `git status --porcelain --untracked-files=all -- profiles/` prints nothing. The third clause is added
+> because `git diff` reports tracked paths only, so the command feature-006 step 5 names — and the CI job
+> at `.github/workflows/test.yml:36–42` — cannot see an untracked emission. Adding a clause the frozen
+> command omits is a strengthening, not a contradiction: every check that command makes still holds.
+>
+> **CR06 — class-correct byte-identity, per root.** For every verbatim D1 path, the rendered bytes in
+> every profile equal the canonical bytes. For every transformed D1 path, either the rendered bytes equal
+> the canonical bytes, or every differing byte range lies at a D3 trigger site **in scope for that path's
+> root** — so for `SKILL.md` a remapped `allowed-tools:` line, or a dropped `context:`/`agent:` key, passes.
+>
+> **CR14 — dogfood parity.** After the render and the resync, `tests/canonical/test-dogfood-byte-identity.sh`
+> exits 0, **and** for every D1 path the claude-code manifest record's `dst` exists under the repo-root
+> `.claude/` tree carrying that record's `sha256`. The second clause is what makes this non-vacuous: the
+> suite passes on the tree as it stands today, before any of this work's artifacts exist, so exit 0 alone
+> says nothing about them. `run_generator.py` renders `profiles/` only (`:24`), so the resync is a real
+> step and not a consequence of the render — which is why CR05 does not subsume this.
+>
+> **CR07 — line-ending coverage, over D1 *and* L1.** For every D1 path **and every `canonical/` path
+> L1 declares an edit to, D6's conditional artifacts included**, `git check-attr text eol -- <path>`
+> reports `text: set` and `eol: lf`; and no such file contains a CR byte. Quantifying over D1 alone is
+> the failure this clause is written against — D1 comes from *other* features' sections, so D5's
+> `generated-files.txt` is invisible to it. Decided over the union, never over either set.
 
-The five `profiles/<tool>/README.md` files are the one genuinely awkward case: they live **inside**
-generated trees but are **not** emitted by the generator. Verified: `README` matches zero records in
-all five `emission-manifest.jsonl` files, and `render.py`'s `skills` branch emits only `SKILL.md`
-plus `references/*.md`. They therefore survive the render — the pure-mirror boundary only deletes
-paths a previous manifest recorded (`canonical/EMISSION-MANIFEST.md` "Safety-Boundary Semantics") —
-and must be hand-edited. This is the real residue of the lockstep hazard and the concrete evidence
-behind tech-debt item **L4**, whose own description cites "five install manifests plus two
-installer-test lists all asserted each other and 'passed' while every one of them was missing a
-shipped, security-relevant file. The tests ran; they did not bite."
+#### D4 — Count and roster surfaces
 
-The same zero-record fact settles a second question: a **skill's own `README.md` is canonical-only
-maintainer documentation and never ships.** `canonical/skills/aid-summarize/README.md` exists and
-appears in no install tree. `canonical/skills/aid-graph/README.md` is therefore written for
-contributors reading `canonical/`, and is **not** one of the surfaces that satisfies the
-discoverability requirement — those belong to feature-013.
+Exactly one derived quantity moves when a curated skill directory lands, and several hand-written
+surfaces mirror it. **The derivation is the contract; no count of an externally-owned set appears in this
+SPEC.**
 
-**Class C — hand-written rosters.** Two are guarded by a hard failure; the rest by nothing:
+**Ground truth.** `tests/canonical/test-doc-counts.sh:44` derives the skill count as
+`find canonical/skills -mindepth 1 -maxdepth 1 -type d | wc -l`. `/aid-graph` is a curated,
+hand-authored skill and **not** a `shortcut-catalog.yml` row, so only that derivation moves: `AGENTS`
+(`:45`), `PROFILES` (`:46`), `ROWS` (`:47`), `CANON` (`:48`), `ALIAS` (`:49`), `REPURPOSE` (`:50`) and
+`SHORTCUTS` (`:51`) are all untouched, and DC01a's `CANON + ALIAS == ROWS` identity (`:56`) is unaffected.
 
-| Surface | Required change | Guard |
+**Class 1 — machine-gated mirrors.** The gates own this set, not this SPEC, and it is not restated here
+as a list of files, because restating it would create the sibling copy `tech-debt.md:233–235` forbids.
+The narrower gate is the `ASSERTIONS` entries at `test-doc-counts.sh:65–95` whose needle interpolates
+`${SKILLS}`. The wider one arrived with the `origin/master` merge: `tests/canonical/check-skill-counts.mjs`
+derives from `site/scripts/skills/skill-counts.mjs` and scans every permanent artifact its
+`INCLUDE_FILES` / `INCLUDE_TREES` / `REPO_LOCAL_SKILLS` name (`:145–168`), failing on any stated count
+that disagrees and is not marked `count-history`. It reaches surfaces the first cannot see, so the edit
+set is whatever **both** report. Verified by running each this session: both exit 0 as the branch stands,
+so no pre-existing count drift is carried into or hidden inside this change.
+
+**Why a bare numeral in `README.md` is not a Q19 proxy, stated because it looks like one.** Those doc
+literals mirror an externally-owned quantity — but they are *gated*, now by both gates above: each
+derives the truth from disk and fails on any surface that does not state it. A literal that cannot
+silently drift is a mirror, not a proxy. Q19's rule bites where nothing checks; here something does, and
+`test-doc-counts.sh:11–14` says exactly that — "you regenerate the docs, not this test".
+
+**Class 2 — roster surfaces, each guarded by a hard failure, and inseparable.** The merge relocated this
+class wholesale — the roster left `gen-reference.mjs`, and a second generator now reads the same corpus.
+Re-derived on disk after the merge.
+
+| Surface | Change | Guard |
 |---|---|---|
-| `site/scripts/gen-reference.mjs` `SKILL_GROUPS` | Add `{ name: 'aid-graph', phase: '…' }` to the **Knowledge Base Maintenance** group, beside `aid-summarize` | **Hard failure.** `generateSkillsPage()` computes `expected = curatedNames ∪ allCatalogNames` and throws `[gen-reference] skills drift` when `onDisk` differs. |
-| `site/scripts/__tests__/gen-reference.test.mjs` `CURATED_SKILL_NAMES` | Gains `aid-graph` (21 → 22) | **Hard failure**, see D2 — the roster is a hand-mirror of `SKILL_GROUPS`, so the two must move together. |
-| `.claude/skills/generate-profile/SKILL.md` | Two stale count claims re-anchored, not incremented (D2) | **None** |
-| `site/scripts/gen-reference.mjs` header comment | A stale count claim re-anchored (D2) | **None** |
-| `.aid/knowledge/module-map.md` | A `graph/` row in "Script Modules by Area", the `canonical/skills/*` count, and a `canonical/skills/aid-graph/` mention | **None** — ship time, feature-013 |
-| `.aid/knowledge/capability-inventory.md`, `.aid/knowledge/release-tracking.md` | A capability entry and an `## Unreleased` `[NEW]` item | **None** — ship time, feature-013 |
+| `site/scripts/skills/curated-roster.mjs` `SKILL_GROUPS` (`:28–68`) — the *Knowledge Base Maintenance* group at `:40–50`, beside `aid-summarize` (`:44`) | One entry: the skill name, and nothing else. The per-skill `phase` key was dropped when the roster was extracted, because the page it fed no longer exists (`:15–23`) | **Hard failure.** `gen-reference.mjs:237–248` computes `expected` as the curated names ∪ every catalog row name and throws `[gen-reference] skills drift` unless it equals `onDisk` |
+| `site/scripts/skills/groups.mjs` `CURATED_GROUPS` (`:63–111`) — a separate taxonomy, deliberately not named `SKILL_GROUPS` (`:4–5`) | The same name, placed in a group | **Hard failure.** `:212–220` throws `[gen-skills] unassignable skill` **by name** for a directory that is neither curated nor a catalog row, and `gen-skills.test.mjs:1071–1073` reaches it from the real corpus |
+| `site/scripts/__tests__/gen-reference.test.mjs` `CURATED_SKILL_NAMES` (`:144–154`) | The same name | **Hard failure.** `:164–166` asserts this list equals `SKILL_GROUPS` membership, and the clamp at `:188–190` fails **by name** for any on-disk skill directory that is neither a catalog row nor listed here |
 
-#### D2 — The count surfaces after the three defect fixes: what genuinely breaks at 112
+All of them must move together and no guard substitutes for another: omit the roster entry and the
+**generator** throws, omit the group entry and the **`/skills/` build** throws, omit the test entry and
+the **test** fails. No prose count follows by hand — `gen-reference.mjs:265` reads `onDisk.length`, and
+`skills/skill-counts.mjs` is the one derivation every stated count is now checked against.
 
-Three defects that earlier revisions of this specification routed elsewhere have been **fixed on
-this branch**, all in `canonical/` with a clean re-render (1765 files, deterministic VERIFY pass,
-dogfood byte-identity 711/711). Each is re-verified here rather than taken on report, because two of
-them change what this feature has to do.
+**Class 3 — comments in the files this feature edits: empty, and closed upstream.** This class recorded
+that `gen-reference.mjs`'s header and the sentence above the roster stated a total and a composition as
+literals, to be **re-anchored rather than incremented**. The merge did exactly that: `:11` now reads
+`NO SKILL COUNT IS WRITTEN HERE`, and `:158–160` records the count as derived in `skills/skill-counts.mjs`.
+No comment edit remains. The class is kept as a decided disposition rather than deleted, because the rule
+still governs the next comment of that shape.
 
-| # | Defect | Fix, verified on disk | Effect on this feature |
-|---|---|---|---|
-| 1 | Node floor split — preflight asserted ≥ 18 while the validators' `package.json` declares `>=20` | `summarize-preflight.sh` Check 5 now reads `[ "$NODE_VERSION_MAJOR" -lt 20 ]` with the message `Node.js >= 20 is required`, citing the Playwright 1.61.1 constraint; `state-preflight.md` item 5 matches; `.aid/knowledge/technology-stack.md` breaks the summarize validators' ≥ 20 out from the npm wrapper's ≥ 18 and its Version Concerns gotcha now reads **Four** Node floors | None here — it lands in feature-011's degradation section and feature-010's preflight. Recorded so no reader of this SPEC re-reports it. |
-| 2 | `grade-summary.sh` did not score `NM`, so an `NM`-only failure could not reduce `kb.html`'s Machine Grade | `NM` is now in the pool loop, `WEIGHTS[NM]=2` (same as `S2`), `CHECK_NAMES[NM]="No-Mermaid-engine (D-012)"`, the grade loop and the report. **Max points moved 68 → 70.** The result is derived independently of `S2` via `grep -qE "NM\..*\[PASS\]"` against the validator log, matching the emitted `NM. No-Mermaid-engine [PASS]` line | None here; it strengthens feature-011's D3 argument. |
-| 3 | `gen-reference.test.mjs` asserted hardcoded totals that were wrong | The suite is re-anchored to derived set comparisons against the skill directories and the catalog. `CURATED_SKILL_NAMES` grew 18 → **21** (it had omitted the three ticket skills) and the asserted shortcut total of 76 was itself wrong — the true catalog-emitting count is **64** | **Changes this feature's analysis.** See below. |
+**Deliberately not swept:** count claims in surfaces this feature does not otherwise edit. They are no
+longer unguarded — `check-skill-counts.mjs` reaches them repo-wide, and adding a skill moves the
+derivation they are all checked against — so there is no unrelated fix to fold into this diff and none
+to defer. Open Item 3 records the withdrawal.
 
-**The verified composition, which every count claim in this work must match.** Derived on the branch
-rather than quoted: `find canonical/skills -mindepth 1 -maxdepth 1 -type d | wc -l` → **111**;
-`grep -c '^  - name:' shortcut-catalog.yml` → **94**; `grep -c '^    repurpose: true'` → **30**.
+> **CR08 — reconcile completeness, pinned on presence.** `test -d canonical/skills/aid-graph` succeeds
+> **and** `bash tests/canonical/test-doc-counts.sh` exits 0. The first conjunct is what makes the second
+> non-vacuous: the suite passes at the previous derived count if the skill was never created.
+>
+> **CR09 — the roster set.** With `canonical/skills/aid-graph/` present, `node site/scripts/gen-reference.mjs`
+> and `node site/scripts/gen-skills.mjs` each exit 0, and `npm test` in `site/` exits 0. Same pinning
+> argument, and each guard bites in a different direction. The merge made the pin structural rather than
+> merely stated: `gen-reference.test.mjs:188–190` is a **set-equality clamp** — every on-disk skill
+> directory must be a catalog row or a curated name — so once the directory exists that suite fails **by
+> name** until the rosters carry it. `test -d` still earns its place: the clamp is silent when the
+> directory was never created.
+>
+> **CR10 — no new or incremented literal.** No clause in this SPEC, and no edit it requires, introduces
+> or increments a hardcoded count of a set another file owns. Every count surface it edits is either
+> machine-gated against a derivation (Class 1) or re-anchored to name the derivation (Class 3, now
+> discharged). Decided by reading this SPEC and the edit list at L1, **and** by
+> `bash tests/canonical/test-skill-counts.sh` exiting 0 — before the merge this clause had no machine
+> oracle at all.
 
-> **111 skill directories = 21 curated + 64 catalog-emitted + 26 catalog-repurpose.**
+#### D5 — The generated-file registry: decided, not deferred
 
-Two partitions of the same set are both correct and both appear in the repository, which is worth
-stating so a reviewer does not read one as a contradiction of the other. Four curated skills
-(`aid-deploy`, `aid-monitor`, `aid-query-kb`, `aid-ask`) are *also* `repurpose` catalog rows, so
-`21 + 64 + 26` and `docs/diagram-content-reference.md`'s `17 + 64 + 30` describe the same 111
-directories. Any number this work writes must be reconcilable to one of the two; **94** and **76**
-are reconcilable to neither and are dead literals.
+feature-003 Open Item 10 (SPEC.md`:1970–1974`) routes the placement question here, and feature-002
+`:1111–1116` records it as open. **Decision: `relationships.md` and `graph.html` are not registered in
+`canonical/aid/templates/generated-files.txt`.** Each of that registry's verified consumers would fire
+wrongly:
 
-**What actually goes red when the 112th skill lands — re-derived against the code as it now stands,
-not carried forward.**
-
-| Surface | Goes red? | Why, and what the fix costs |
+| Consumer | Line | What registration would do |
 |---|---|---|
-| `tests/canonical/test-doc-counts.sh` | **Yes — eleven assertions** | Unchanged from the earlier analysis, and re-verified: `SKILLS` is derived, so all eleven `${SKILLS}` needles move together. Eleven one-word edits across six docs and five profile READMEs. This suite needs **no edit itself**; it is the proof that the eleven landed. |
-| `site/scripts/__tests__/gen-reference.test.mjs` | **Yes — one assertion** | Not for a count reason. `expect(sections).toHaveLength(CURATED_SKILL_NAMES.length)` compares the rendered `### \`aid-…\`` sections against a hand-mirrored roster. Registering `aid-graph` in `SKILL_GROUPS` renders a 22nd section against a 21-name list. The fix is one array entry. **The derived re-anchoring did not remove this**: it made the suite immune to *catalog* growth, and the curated roster remains a hand-mirror by design, because there is nothing else on disk to derive "is this skill curated?" from. |
-| `site/scripts/gen-reference.mjs` | **Yes — throws** | `expected = curatedNames ∪ allCatalogNames` must equal `onDisk`. Without the `SKILL_GROUPS` entry the generator raises `[gen-reference] skills drift`. A hard failure, not silent drift — good, and it is why the two edits above are inseparable. |
-| `.claude/skills/generate-profile/SKILL.md` | **No — and that is the problem** | Nothing guards it. It is stale **twice**: VALIDATE step 1 says "The full taxonomy is **92 skill directories**" with `ls canonical/skills/ \| wc -l # expect 92`, and the completion checklist says "92 skills (14 classic + aid-triage + aid-ask + 76 shortcuts, one per non-`repurpose` catalog row)". Both the total and the composition are wrong: 92 → 111, 14 classic → 21 curated, 76 → 64. |
-| `site/scripts/gen-reference.mjs` comments | **No** | Two of them. The header says it generates "94 skill directories (16 classic + aid-triage + aid-ask + 76 catalog-driven shortcuts)", and the comment immediately above `SKILL_GROUPS` says "16 classic skills" where the array holds 21. The code below both is fully dynamic and correct. Deliberately left unfixed by the defect sweep and folded into this feature's scope by owner decision — they are count claims, and this is the count-reconciliation feature. |
-| `docs/diagram-content-reference.md` roster-test description | **No** | It states the `gen-reference` roster test "asserts 111 on-disk dirs = the 17 curated skill names ∪ all 94 catalog rows". After defect fix 3 the test asserts no total at all — it compares sets. The identity it describes is the *generator's*, not the test's, and the sentence needs correcting when the count moves. |
-| `.aid/knowledge/kb.html` four-plane module map | **No** | Generated, hand-edit-forbidden. Corrected by a `/aid-housekeep` SUMMARY-DELTA regeneration, which `.aid/knowledge/STATE.md` Q8 already records as `**Deferred:**`. Not this feature's edit. |
+| `/aid-discover` FIX state, step 3 | `canonical/skills/aid-discover/references/state-fix.md:61–69` | Execute the build command mid-discovery, on every cycle — contradicting FR-7, which makes `/aid-graph` an on-demand sibling of `/aid-summarize`, not a phase of discovery |
+| The same state's step 4 existence loop | `state-fix.md:71–82` | Fail on any project that has not run `/aid-graph` |
+| The KB review rubric | `canonical/aid/templates/kb-authoring/review-rubric.md:252` | Raise `[GEN-MISSING]` at **HIGH** for a registered file that does not exist |
+| `cleanup-classify.sh` | `canonical/aid/scripts/housekeep/cleanup-classify.sh:196–205` | Reclassify the outputs against a registry they do not belong to |
 
-**Design rule adopted here: anchor to the source of truth, never to a sibling literal.** This is
-tech-debt L4's own measure 2, *invariant-anchoring* — "every assertion must compare a derived
-artifact to the **source of truth** … never to a sibling copy that can drift in lockstep". Defect fix
-3 applied that rule to the site test; this feature applies it to the two surfaces that still hold
-literals:
+**And the registry cannot express the condition anyway.** `/aid-graph` is gated on an approved KB
+(FR-8) while the FIX state runs before approval, and the flat `<output-path>|<build-command>` format
+(`generated-files.txt:3–4`) has no place to put a precondition. The precedent agrees:
+`/aid-summarize`'s `kb.html` is absent from the registry today, verified — its data lines name only
+`project-index.md`, `metrics.md` and `INDEX.md`.
 
-- `generate-profile`'s VALIDATE step drops both `92` claims and asserts the identity
-  `gen-reference.mjs` already enforces: the on-disk directory set equals the curated skill names
-  union every `shortcut-catalog.yml` row name. A **set** comparison, which cannot go stale. Its
-  checklist line loses the `(14 classic + … + 76 shortcuts)` composition and cites the derived
-  command instead.
-- `gen-reference.mjs`'s header comment states the identity rather than a total, so the file that
-  *enforces* the identity also *describes* it, and the two cannot disagree.
+**The disposition is recorded where it would otherwise be re-asked, not only here.**
+`generated-files.txt`'s `#`-comment block gains one line stating that `/aid-summarize`'s and
+`/aid-graph`'s outputs are deliberately unregistered because their build commands are KB-approval-gated
+and the format cannot express that. This is safe by construction: `.txt` is transformed, and the
+comment-skip (`render_lib.py:213–215`) carries the header verbatim into every profile — which that
+block's own note at `:24–26` already documents. **This is the amendment D1 cannot see** — routed by no
+other feature's Layers section, already registered, transformed class, and reached by neither an
+extension rule nor a new-root rule (`git check-attr text eol` → `text: unspecified`) — so M1 gives it a
+path rule of its own and CR07 quantifies over L1 too. No CR byte today, verified: the rule renormalises nothing.
 
-Bumping `92 → 93` and `94 → 95` would leave both surfaces wrong and would hide pre-existing drift
-inside this work's diff. Re-anchoring fixes the class rather than the instance, and is the reason
-`test-doc-counts.sh` has stayed correct while these drifted: it derives its counts.
+> **CR11.** `generated-files.txt`'s header states the exclusion rule and names both skills, **and** no
+> data line in it matches `relationships.md` or `graph.html`. The first clause is what makes this
+> non-vacuous — a "must not appear" assertion alone passes when nothing was done at all.
 
-#### D3 — Third-party adoption gate (conditional on FR-18 / STATE.md Q2)
+#### D6 — The third-party packaging gate (conditional on FR-18)
 
-FR-18's option space is unrestricted, so a build step and a third-party renderer are both admissible;
-neither is chosen yet. This feature fixes the **gate** any such adoption must clear, so the research
-can price its options and `/aid-detail` can schedule the consequences. Every row is a consequence
-REQUIREMENTS.md §5.6 already records. It lands here rather than in feature-011 because every
-condition names a packaging, manifest, or monitoring surface — the C-2/C-3 registration surface —
-and not a validator.
+REQUIREMENTS `:43` fixes the reference architecture — `d3-force` plus a WebGL drawing layer — and
+feature-007 `:1590–1603` fixes the delivery contract: local-vendored companions under
+`.aid/knowledge/graph-assets/`, referenced relatively, loadable as **classic scripts**. What is not yet
+fixed, and what this feature owns, is the packaging: where the bundle lives canonically, how it is
+pinned, watched and licensed, and how it survives the render.
 
-| # | Gate condition | Grounded in |
+**Canonical home.** A vendored bundle is a rendered asset of the view, so it lives in a subdirectory of
+`canonical/aid/templates/knowledge-graph/` and travels the template set's own render path. It lands in the
+**transformed** class — a classic-script bundle is delivered as `.js`, which `render.py:77–79` includes —
+and choosing an extension outside that frozenset to dodge the transform is explicitly **not** the control
+this SPEC relies on; G6's grep is.
+
+| # | Condition | Grounded in |
 |---|---|---|
-| G1 | The dependency lives in a `private: true`, not-published dev/validator package **inside the canonical script area** — never in `packages/npm/package.json` or `packages/pypi/pyproject.toml`. The precedent is `canonical/aid/scripts/summarize/package.json` (`"private": true`, Playwright as a `devDependency`). | `.aid/knowledge/technology-stack.md` Key Dependencies: both wrappers declare empty dependency sets, "so install is fast and supply-chain-light". That invariant must survive. |
-| G2 | The version is pinned exactly and a lockfile is committed. | `canonical/aid/scripts/summarize/package.json` pins `"playwright": "1.61.1"` with a committed `package-lock.json`; `playwright-provisioning.md` mandates `npm ci`, never `npm install`. |
-| G3 | `node_modules/` is never shipped. Already guaranteed: `render.py` declares `_EXCLUDE_DIRS = frozenset({"node_modules", ".git"})`, so it appears in no profile tree and no emission manifest; `.gitignore` covers it. | `render.py`; `playwright-provisioning.md` "Dependency isolation" |
-| G4 | `.github/dependabot.yml` gains an ecosystem entry for the new manifest directory. It currently tracks **only** `package-ecosystem: "github-actions"`, so a new npm manifest would go unmonitored — directly the licence/update obligation of §5.6 consequence 4. | `.github/dependabot.yml` |
-| G5 | Licence and attribution are recorded: the licence text or SPDX id and the attribution the licence requires, carried with the vendored or fetched asset. | §5.6 consequence 4 |
-| G6 | `.aid/knowledge/technology-stack.md` gains rows in **Frameworks & Tooling** and **Key Dependencies**; `.aid/knowledge/infrastructure.md` gains the build step in its render/build chain. If a CI lane is needed, `.aid/knowledge/test-landscape.md`'s CI Lanes table gains it. Authored here, landed at ship time by feature-013. | §5.6 consequence 2 |
-| G7 | The graph's own preflight reports the missing toolchain with an actionable message rather than failing obscurely later — the C-5 shape. **Owned by feature-010** (its P5); named here so the gate is complete, not to claim it. | C-5; feature-010 P5 |
-| G8 | If CDN delivery is selected, AC-6's documented-prerequisites obligation is discharged in the artifact itself and in the `S2 [N/A]` validation line. **The validation-line half is feature-011's C1**; this row owns only the recorded prerequisite. §5.6 consequence 3 requires the research to state the non-portability cost plainly and prefer vendoring at comparable interaction quality. | AC-6; §5.6 consequence 3 |
+| G1 | Any dev/validator manifest is `"private": true` and unpublished, and lives **under `canonical/aid/scripts/graph/`** — never in `packages/npm/package.json` or `packages/pypi/pyproject.toml`, and not elsewhere in the canonical script area | `.aid/knowledge/technology-stack.md:217–218` (both wrappers declare empty dependency sets). Precedent: `canonical/aid/scripts/summarize/package.json` is `"private": true` with Playwright as a `devDependency`. The root is pinned rather than left to "the script area" because `.json` is verbatim class and no extension rule reaches it; that root is one M1 covers (D3) |
+| G2 | The version is pinned exactly and a lockfile is committed, beside the manifest and under the same root | Same precedent: that manifest pins `"playwright": "1.61.1"` and `canonical/aid/scripts/summarize/package-lock.json` is committed and renders alongside it (both `.json`, verbatim class). Same line-ending reason as G1 for the location |
+| G3 | No install directory ships | Already guaranteed by P2 (`render.py:620,626`), so this needs asserting rather than building |
+| G4 | `.github/dependabot.yml` gains an ecosystem entry for the new manifest directory | That file declares a single `github-actions` ecosystem (`:5–9`), so a new manifest is unwatched by default. feature-002 SPEC.md`:1096` routes this here |
+| G5 | Licence text or SPDX id and any required attribution travel with the asset | feature-002's licence findings, landed here per feature-008 § External Integrations, its "Licence, attribution, payload, update mechanism" row |
+| G6 | **Integrity under the render.** At vendor time *and at every version bump*, the bundle bytes are grepped for D3's substitution triggers — the set in scope for its root, the frontmatter trigger being unreachable from a template path — and the vendored copy is byte-compared against the upstream distribution at the pinned version | feature-002 Open Item 9 (SPEC.md`:1273–1279`): the render-drift gate compares a fresh render to a committed render, so a consistently-mangled copy passes. The upstream comparison is the only detector, and the condition is not stable across a version bump — hence a step in the update procedure, not an observation |
+| G7 | The bundle is a classic script (UMD/IIFE), not an ES-module-only distribution | feature-007 SPEC.md`:1599–1603`: a `file://` page cannot import a relative ES module, and this is routed here as a constraint on the bundle |
 
-If the research selects a vendored, no-build option, G1/G2/G3/G4/G6 collapse to nothing and only G5
-and G8 remain. That asymmetry is worth surfacing to whoever weighs the options: **the cheapest
-packaging for this repository is still vendoring**, not because FR-16 requires it — it no longer does
-— but because five of the eight gate conditions exist only to contain a build chain.
+**The inline-versus-companion choice is this feature's, and it has one named consequence.**
+feature-007 `:1596–1598` records that under the companion layout `NM.1` cannot see the bundle at all,
+and that inlining makes its token condition live. **Companion is chosen**, on two grounds already on
+disk: it keeps `NM` and `S2` passing by construction under the reference layout (feature-007
+`:1621–1622`), and it keeps the repository-side payload to one canonical copy plus one per profile
+rather than multiplying it through the assembled page. That per-profile multiplication is feature-002
+Open Item 10's point, and it is why the choice belongs to packaging rather than to the view.
+
+**Adoption is not this feature's trigger to pull, and the gate's applicability rule is stated so it is
+not read as all-or-nothing.** G1, G4 and G2's *lockfile* clause are **manifest-conditional** — a
+no-build vendored asset has no manifest to make private, to watch, or to lock. G2's *exact-pin* clause,
+G3, G5, G6 and G7 bind **any** vendored bundle, build chain or not. G6 is the important survivor: it is
+the only condition whose failure is invisible to every existing gate.
+
+> **CR12 — the gate is executable as written (unconditional).** G6's needle set is D3's trigger list for
+> the bundle's root, each member cited at its defining line, and every G-condition names the file it
+> touches. Decided by resolving every citation.
+>
+> **CR13 — on adoption (conditional).** Every G-condition applicable to the chosen packaging holds, with
+> applicability decided by the rule above rather than case by case, and G6 appears as a step in the
+> documented update procedure rather than as a one-time result.
 
 ### Feature Flow
 
-The canonical-authoring-then-render wiring (C-2), in the order a contributor must perform it. Every
-step is a real command from `.aid/knowledge/technology-stack.md` Build/Test Commands or
-`.aid/knowledge/test-landscape.md` Test Commands.
+The C-2 sequence, in the order a contributor performs it. Steps 1 and 2 are named as preconditions
+owned elsewhere, not as this feature's work.
 
-1. **Author canonically.** Create the skill directory — `SKILL.md`, `README.md`, and the eleven
-   `references/state-*.md` files feature-010's state machine declares — the six-file `graph/` script
-   area, and the `knowledge-graph/` template set (see L1). Nothing is written into `profiles/` or
-   `.claude/` by hand. This feature owns that the directory exists and is complete; it authors none
-   of the bodies.
-2. **Amend the shared templates.** feature-006's two contract amendments
-   (`reviewer-ledger-schema.md`, `kb-authoring/frontmatter-schema.md`).
-3. **Run the FULL generator** — never a per-script renderer:
+1. **(Precondition, elsewhere)** The D1 artifacts are authored in `canonical/`, including
+   `canonical/skills/aid-graph/SKILL.md`. Nothing is written into `profiles/` or `.claude/` by hand
+   (`module-map.md:337–338`).
+2. **(Precondition, elsewhere)** D1's amendment rows land — feature-006's two shared contracts
+   (`reviewer-ledger-schema.md`, `frontmatter-schema.md`) and feature-004's two (`read-setting.sh`, `settings.yml`).
+3. **Add the `.gitattributes` rules** (D3) *before* the first render **and before this feature's own
+   amendment at step 9**, so no CRLF can be committed into any canonical path CR07 quantifies over and
+   then rendered from.
+4. **Check the silent-drop predicates** (D2 P1–P5) against the authored tree. Doing this before the
+   render is what turns a silent omission into a caught one, since the render itself reports nothing.
+5. **Run the FULL generator** — never a per-script renderer (`tech-debt.md:350–353`):
    ```bash
    python .claude/skills/generate-profile/scripts/run_generator.py
    ```
-   This renders all five trees, rewrites all five emission manifests, performs the manifest
-   diff/deletion pass, and runs the verify spine. `.aid/knowledge/tech-debt.md` Gotchas is explicit:
-   "Render-drift needs the FULL generator … otherwise the render-drift gate fails on stale
-   `profiles/` emission manifests."
-4. **Confirm no render drift.** The documented check re-runs the generator and then diffs, which is
-   deliberate: a second render over an already-rendered tree must produce byte-identical output, so
-   the command proves both that `profiles/` matches `canonical/` and that the render is stable.
+   It renders every profile in `profiles/*.toml`, rewrites each emission manifest, performs the
+   pure-mirror diff/deletion pass, and runs the verify spine (`run_generator.py:24–90`).
+6. **Assert presence FIRST** (CR04). The ordering is the whole point, so the presence check appears
+   here rather than being left implicit. Manifest records are `json.dumps(…, sort_keys=True)`, so
+   `"src"` is a literal-greppable field (verified against a committed manifest line):
    ```bash
-   python .claude/skills/generate-profile/scripts/run_generator.py && git diff --exit-code -- profiles/
+   # <src> = a D1 path with render.py:656-660's normalisation applied (a no-op for canonical/skills/).
+   for m in profiles/*/emission-manifest.jsonl; do
+     grep -Fq "\"src\": \"<src>\"" "$m" || { echo "NOT EMITTED into $m: <src>"; exit 1; }
+   done
    ```
-5. **Reconcile the count surfaces.** Update the eleven Class-B files, add the `SKILL_GROUPS` roster
-   entry with its `CURATED_SKILL_NAMES` mirror, and re-anchor the two literal-holding surfaces of D2.
-   Then:
+7. **Then assert parity** (CR05):
+   ```bash
+   python .claude/skills/generate-profile/scripts/run_generator.py \
+     && git diff --exit-code -- profiles/ \
+     && test -z "$(git status --porcelain --untracked-files=all -- profiles/)"
+   ```
+   The re-run is deliberate: a second render over an already-rendered tree must be byte-identical, so
+   one command proves both that `profiles/` matches `canonical/` and that the render is a fixed point.
+   Run **after** step 6, never instead of it — on its own this block is green when nothing was emitted.
+8. **Resync the dogfood tree** from `profiles/claude-code/.claude/` — the same install copy any adopter
+   performs (`profiles/claude-code/README.md:15`). No repository script automates this; it is a stated
+   step, not an invented mechanism. Then:
+   ```bash
+   bash tests/canonical/test-dogfood-byte-identity.sh
+   ```
+   Direction 1 requires every `.claude/`-prefixed manifest `dst` to exist under the repo-root tree with
+   a matching sha256, so this is the check that catches a skipped resync — but only alongside CR14's
+   per-path clause, since the suite already passes today. No Direction-3 allowlist edit is needed: that
+   list (`:222–229`) covers non-generator files, and after step 5 these paths are generator-owned
+   manifest entries.
+9. **Reconcile the counts and rosters** (D4) **and add the registry header line** (D5). Then:
    ```bash
    bash tests/canonical/test-doc-counts.sh
+   bash tests/canonical/test-skill-counts.sh
+   cd site && node scripts/gen-reference.mjs && node scripts/gen-skills.mjs && npm test
    ```
-   `SKILLS` is derived from disk, so this suite is the mechanical proof that no count surface was
-   left behind — it is the closest thing the repository has to a documentation manifest.
-6. **Regenerate the site reference and run its tests:**
-   ```bash
-   cd site && node scripts/gen-reference.mjs && npm test
-   ```
-   Step 5's `SKILL_GROUPS` edit is a precondition: without it `gen-reference.mjs` throws
-   `[gen-reference] skills drift`, and without the matching `CURATED_SKILL_NAMES` entry the section
-   count assertion fails (D2).
+   This step follows the render deliberately: the render is what makes a hand-maintained surface inside
+   a generated tree visible as such, and reconciling first would invite a second render and a second
+   reconcile. Each command is pinned on `canonical/skills/aid-graph/` already existing (CR08, CR09,
+   CR10); run without it they pass at the previous derived count and prove nothing.
 
-Steps 3 and 4 are ordered before step 5 deliberately: the render is what makes
-`profiles/<tool>/README.md` visible as a hand-maintained exception, and doing the count reconcile
-first would invite a second render and a second reconcile.
-
-The ship-time surfaces — the four discoverability documents, the Knowledge Base entries, and the
-full HOME-pinned canonical suite — are **feature-013's**, and run after this sequence completes.
+Ship-time documentation, the Knowledge Base updates and the aggregate HOME-pinned suite run **after**
+this sequence and are feature-013's.
 
 ### Layers & Components
 
-#### L1 — New canonical files
+#### L1 — The complete edit list
 
-Following `.aid/knowledge/module-map.md` Conventions ("Where a new skill goes: create
-`canonical/skills/aid-<name>/SKILL.md` (+ a `references/` subdir for state files)") and the Skill
-contract in that doc's Contracts section (valid `name` / `description` / `allowed-tools` /
-`argument-hint` frontmatter; any REVIEW state emits a reviewer ledger graded by `grade.sh`).
-`aid-summarize` is the shape precedent: `SKILL.md` + `README.md` + ten `references/state-*.md`.
+Every file this feature changes. Nothing outside this list is touched, and its complement is L2 and L3.
 
-| Path | Owner |
+| File | Edit | Class |
+|---|---|---|
+| `.gitattributes` | Path-scoped `text eol=lf` rules — one per root D1 declares, plus one for each already-registered amendment no extension rule reaches: D1's `.yml` and this feature's own `.txt` (D3) | New rules; no existing file renormalised |
+| `canonical/aid/templates/generated-files.txt` | One header-comment line recording the exclusion rule (D5) | Comment only; comment-skip carries it verbatim to every profile. **The `canonical/` path in this list, hence inside CR07 and outside D1** |
+| `site/scripts/skills/curated-roster.mjs` | One `SKILL_GROUPS` entry — the *Knowledge Base Maintenance* `skills` array (`:42–49`) (D4 Class 2) | One data entry; every consumer derives from it |
+| `site/scripts/skills/groups.mjs` | One `CURATED_GROUPS` member — the *Knowledge Base Maintenance* `members` array (`:80–87`) | The `/skills/` taxonomy; its clamp names an unassigned directory |
+| `site/scripts/__tests__/gen-reference.test.mjs` | One `CURATED_SKILL_NAMES` entry (`:144–154`) | The inseparable mirror of the two rows above |
+| The `${SKILLS}`-parameterised surfaces at `tests/canonical/test-doc-counts.sh:65–95`, and any surface `tests/canonical/check-skill-counts.mjs` reports | Each states the current derived count | Machine-gated mirrors; the suites decide completeness |
+| `profiles/**`, `emission-manifest.jsonl` ×N, the dogfood `.claude/` tree, `site/src/content/docs/skills/**` | **Regenerated, never edited** | Build output |
+
+Conditional on FR-18 adoption: a vendored bundle subdirectory under
+`canonical/aid/templates/knowledge-graph/`, a private validator manifest and lockfile under
+`canonical/aid/scripts/graph/`, and one `.github/dependabot.yml` ecosystem entry (D6). Both canonical
+roots are M1-covered — G1 pins them for that reason; `dependabot.yml` is not a `canonical/` path, is
+never rendered, and is therefore outside CR07.
+
+#### L2 — Surfaces that need no edit, and why
+
+Each was checked rather than assumed; a reviewer should be able to disprove any row.
+
+| Surface | Why not |
 |---|---|
-| `canonical/skills/aid-graph/SKILL.md` | feature-010 (all sections but `## References`); **this feature** owns `## References` |
-| `canonical/skills/aid-graph/README.md` | **this feature** — canonical-only; not rendered into any profile tree (D1) |
-| `canonical/skills/aid-graph/references/state-{preflight,stale-check,validate,visual-gate,fix,done}.md` | feature-010 |
-| `canonical/skills/aid-graph/references/state-{enumerate,extract,emit}.md` | feature-004 / feature-005 / feature-003 |
-| `canonical/skills/aid-graph/references/state-gap-report.md` | feature-006 |
-| `canonical/skills/aid-graph/references/state-render.md` | feature-007 |
-| `canonical/aid/scripts/graph/{graph-preflight,graph-stale-check,kb-write-fence,grade-graph}.sh` | feature-010 |
-| `canonical/aid/scripts/graph/detect-kb-gaps.mjs` | feature-006 |
-| `canonical/aid/scripts/graph/coverage-predicate.mjs` — the shared coverage predicate, imported by the detector under Node and inlined into `graph.html` for the browser | feature-007 |
-| `canonical/aid/templates/knowledge-graph/*` — the graph template set | feature-007 |
+| `canonical/EMISSION-MANIFEST.md` | Its Asset Kinds table (`:111–116`) maps `canonical/aid/scripts/`, `canonical/aid/templates/` and `canonical/skills/` wholesale; a subdirectory needs no row |
+| `canonical/aid/templates/shortcut-catalog.yml` | `/aid-graph` is curated and hand-authored, not a shortcut doorway (`module-map.md:328–336`); no row, and the catalog-derived counts do not move |
+| `tests/run-all.sh`, `.github/workflows/*.yml` | Suite discovery is the `test-*.sh` glob at `tests/run-all.sh:112` — which is also how `test-skill-counts.sh` reached the runner without a wiring edit |
+| `site/scripts/gen-reference.mjs` | It was an L1 row before the merge and is not one now: the roster it held moved to `skills/curated-roster.mjs` (`:27`, `:163–165`), its drift guard reads that import, and its header no longer states a count (`:11`). Nothing in it is keyed on a skill name |
+| `tests/canonical/test-ascii-only.sh` | Its `SHIPPED_SCRIPTS` list (`:25–67`) exists for files a PowerShell host may parse under a non-UTF-8 ANSI codepage (`:3–7`). It covers `lib/`, `bin/`, `install*`, `packages/`, `dashboard/`, `canonical/aid/scripts/migrate/` and `canonical/aid/scripts/kb/`; the whole `canonical/aid/scripts/summarize/` area — `.sh` and `.mjs` alike — is absent. `graph/` follows that precedent |
+| `tests/canonical/test-dogfood-byte-identity.sh` | No edit: the Direction-3 allowlist (`:222–229`) covers non-generator files, and these paths become generator-owned |
+| `lib/aid-install-core.sh`, `lib/AidInstallCore.psm1` | Directory walks, no per-file list (D2) |
+| `packages/npm/*`, `packages/pypi/*` | The vendored payloads do not reach `canonical/` (D2) |
+| `canonical/aid/templates/knowledge-graph/package.json` | Withdrawn by feature-006 SPEC.md`:1083–1085`; `.mjs` needs no marker, and a manifest inside a template directory would render into every adopter's install |
+| `.aid/knowledge/kb.html` | Generated and hand-edit-forbidden, and deliberately outside the doc-count guard: `test-doc-counts.sh:18–20` excludes `.aid/knowledge/` by design and says it "is reconciled by `/aid-housekeep`". It **does** carry the skill count, so a regeneration is owed — routed as Open Item 6 on the precedent at `.aid/knowledge/STATE.md:226`, where a stale generated figure was deferred to the next SUMMARY-DELTA regeneration rather than hand-patched |
 
-Two render consequences, verified against `render.py` and `canonical/EMISSION-MANIFEST.md`. First,
-the template directory renders as a template set exactly as `knowledge-summary/` does. Second, and
-the one with a real constraint attached: `.mjs` is in `render.py`'s `_TEXT_EXTENSIONS`, so both
-`.mjs` files pass through `substitute_filenames` and `rewrite_install_paths` on the way into each
-tree. Neither may contain a `canonical/…` path or a filename placeholder, or the rendered copies
-diverge from canonical and feature-007's `GV02` byte-identity check between `graph.html`'s inlined
-region and the module file fails in the profile trees while passing in `canonical/`. The detector
-imports its neighbour by relative sibling specifier, which survives the rewrite untouched.
-feature-013's `GR05` is the assertion that pins the pair.
+#### L3 — What this feature does NOT do
 
-**No `package.json` accompanies either file.** An earlier revision carried a
-`canonical/aid/templates/knowledge-graph/package.json` ESM marker for feature-006; the owner
-repointed the shared module to `.mjs`, which needs no marker, and the requirement is withdrawn. That
-is the better outcome for this feature specifically: a `package.json` inside a *template* directory
-would render into all five profile trees, adding manifest surface and putting a stray manifest into
-every adopter's install where their own tooling could misread it.
-
-This feature does **not** author any of those bodies. Its obligation is that everything shippable
-ships: that the directory exists canonically, and that `SKILL.md` and every `references/*.md` render
-into all five profile trees plus the dogfood `.claude/` tree.
-
-#### L2 — The three seams this feature sits on
-
-Stated identically in the sibling SPECs so the four cannot drift.
+The three-way split of the original packaging feature — 011, 012, 013 — plus the neighbours this
+feature borders.
 
 | Boundary | This feature (012) | The other side |
 |---|---|---|
-| **012 / 010** | Owns `## References` in `SKILL.md`, the directory's existence, and the render | feature-010 owns every other `SKILL.md` section and every `graph/` bash script's body |
-| **012 / 011** | Owns the packaging and manifest surface of any adopted dependency (D3) | feature-011 owns every edit to `canonical/aid/scripts/summarize/*` and whether its two contingencies fire |
-| **012 / 013** | Owns a documentation edit whose reason is **a number**: the eleven `${SKILLS}` needles, and the literal-holding surfaces of D2 | feature-013 owns a documentation edit whose reason is **a roster entry or prose**: the skill-inventory tables, the Mermaid group boxes, the site catalogue placement, and the Knowledge Base entries |
+| **012 / 011** | The packaging, manifest and monitoring surface of any adopted dependency (D6) | **feature-011** owns every edit to `canonical/aid/scripts/summarize/*` — the `contrast-check.mjs` parameterisation, the `validate-visuals.mjs` capture exemption, any launch-flag change — and owns whether its contingencies fire at all. No clause here specifies a validator change. Cited by name and section only: that SPEC is being authored concurrently, so no line citation to it would be stable |
+| **012 / 013** | A documentation edit whose reason is **a number or a roster row**: the surfaces both count gates report, and every site roster surface D4 Class 2 names | **feature-013** owns every test suite (including the shipped-result registration suite), the ship-time Knowledge Base updates — `module-map.md`'s `graph/` row (feature-006 Migration step 4, its SPEC.md`:1151`), `artifact-schemas.md`, `capability-inventory.md`, `technology-stack.md`, `infrastructure.md`, `release-tracking.md` — and the discoverability documents |
+| **012 / 010** | The render, the manifests, the count surfaces, and this feature's own edit list | Whoever authors the skill body, its `references/*.md` state files and the `graph/` bash scripts. The pre-decision feature-010 draft also assigns `SKILL.md`'s `## References` section and `canonical/skills/aid-graph/README.md` here; that assignment is **not** adopted on a pre-decision authority — see Open Item 1. This feature authors no file **content** at all |
+| **012 / 002** | Where a bundle lives, how it is pinned and watched, and whether it survives the render | **feature-002** reports the payload, licence and update findings and derives the bench; it selects nothing this feature must wire beyond the reference architecture already fixed by the owner |
+| **012 / 003 + 007** | Nothing | The runtime output contract — `relationships.md`'s frontmatter and index behaviour, and `graph-assets/`'s runtime naming under `.aid/knowledge/` — is theirs. This feature registers **canonical sources**, not runtime outputs |
 
-The 012/013 seam is the only one where the two features edit the same *file*, and the rule above is
-what keeps them from editing the same *line*. `README.md`, `docs/aid-methodology.md` and
-`docs/diagram-content-reference.md` each take a count edit from this feature and a roster edit from
-feature-013. `/aid-detail` should sequence them in that order — count first, roster second — because
-`test-doc-counts.sh` is the cheaper gate and gives a clean signal before prose changes land on top.
-
-#### L3 — What this feature does **not** test
-
-No new test suite is introduced here. The proof of this feature is entirely existing machinery:
-
-| Proof | Suite |
-|---|---|
-| Every count surface reconciled | `tests/canonical/test-doc-counts.sh`, **unmodified** — its derived `SKILLS` count makes it the gate, and it needs no edit because it is parameterised (D1 Class B) |
-| The render is complete and stable | `run_generator.py && git diff --exit-code -- profiles/` (Feature Flow step 4) |
-| The site roster is consistent | `cd site && npm test` after the `SKILL_GROUPS` + `CURATED_SKILL_NAMES` pair lands |
-
-The suite that asserts the *shipped* result across all five trees —
-`tests/canonical/test-graph-skill-registration.sh` — is **feature-013's**, because it can only run
-after this feature's render and it asserts the same thing feature-013's documentation surfaces claim.
+The 012/013 seam is the only one where two features may edit the same *file*; the rule above is what
+keeps them off the same *line*. `/aid-detail` should sequence count before roster prose, because the
+doc-count guard is the cheaper gate and gives a clean signal first.
 
 ### External Integrations
 
-**Conditional and currently empty.** No third-party dependency is introduced by this feature as
-specified. D3 defines the eight-condition gate any FR-18 adoption must clear, and names the exact
-files each condition touches. Until STATE.md Q2 resolves, the integration surface is unchanged:
-`.aid/knowledge/technology-stack.md` Key Dependencies stays accurate, `packages/npm` and
-`packages/pypi` keep their empty dependency sets, and `.github/dependabot.yml` keeps its single
-`github-actions` ecosystem.
+**Conditional, and currently empty.** No third-party dependency is introduced by this feature as
+specified. Until the FR-18 research reports, the integration surface is unchanged:
+`.aid/knowledge/technology-stack.md:217–218`'s empty-dependency-set claim stays accurate, both published
+wrapper manifests keep their empty dependency sets, and `.github/dependabot.yml` keeps its single
+`github-actions` ecosystem (`:5–9`).
 
-This section exists rather than being omitted because the decision is live and its landing point must
-be pre-agreed: if the research recommends a bundled renderer, the work lands **here**, under D3, and
-not as an unplanned discovery during execution.
+This section exists rather than being omitted because the landing point must be pre-agreed. D6 fixes the
+gate, the canonical home and the companion-versus-inline choice now, so adoption is a scheduled
+consequence rather than a mid-execution discovery.
 
 ### Migration Plan
 
-Nothing this feature touches changes any skill's runtime behaviour. Two surfaces holding stale
-literals are re-anchored; eleven count needles move; the render runs.
+Nothing here changes any skill's runtime behaviour.
 
 | # | Change | Blast radius | Verification |
 |---|---|---|---|
-| M1 | `generate-profile`'s VALIDATE step and completion checklist re-anchored from `expect 92` / `92 skills (14 classic + … + 76 shortcuts)` to a set identity (D2) | Maintainer tooling only; not shipped | Run the skill's VALIDATE step against the live tree and confirm it passes at 112 |
-| M2 | `gen-reference.mjs`'s header comment re-anchored from `94 … 76 catalog-driven shortcuts`, and its `SKILL_GROUPS` comment from `16 classic skills`, to the identity the file enforces (D2) | Comments only; the code is already dynamic | Read-back; no behavioural test applies |
-| M3 | `SKILL_GROUPS` gains `aid-graph` and `CURATED_SKILL_NAMES` gains the mirror entry (D1 Class C) | Site generator + its test; inseparable pair | `cd site && node scripts/gen-reference.mjs && npm test` |
-| M4 | Eleven count surfaces reconciled 111 → 112 (D1 Class B) | User-facing docs + five hand-maintained profile READMEs | `bash tests/canonical/test-doc-counts.sh` |
-| M5 | Full generator run + render-drift confirmation | All five profile trees + `.claude/` | `run_generator.py && git diff --exit-code -- profiles/` |
+| M1 | Path-scoped `.gitattributes` rules, one per root D1 declares plus one per already-registered amendment outside every root — D1's `.yml` and L1's own `.txt` | New paths only; no existing file renormalised | CR07 — `git check-attr text eol` over D1 ∪ L1's `canonical/` paths, not D1 alone |
+| M2 | Silent-drop predicate check over the authored tree | None (read-only) | CR03 |
+| M3 | Full generator run | Every profile tree | CR04 then CR05, in that order |
+| M4 | Dogfood resync from `profiles/claude-code/.claude/` | The repo-root `.claude/` tree | CR14 — the suite plus the per-path check it cannot make |
+| M5 | Count surfaces reconciled to the derived value; every roster surface D4 Class 2 names; the registry header line | User-facing docs, the site's roster modules and its test, one template header | CR08, CR09, CR10, CR11 |
+| M6 | *Conditional* — bundle vendoring, private manifest and lockfile under `canonical/aid/scripts/graph/`, dependabot ecosystem entry | The template set, that script root, CI monitoring | CR13, and CR07 for the two canonical roots |
 
-M1 and M2 are the only rows that touch something already broken. Both are in scope here because this
-feature is the one that trips them, and because incrementing a stale literal would ship a known-wrong
-number inside a change whose whole purpose is keeping the count surfaces honest.
+M3 must not be attempted with a per-script renderer; `tech-debt.md:350–353` records that the drift gate
+then fails on stale emission manifests. M4 has no automating script and is the step most likely to be
+skipped, which is why its verification is a suite rather than an eyeball.
 
-#### Reported for separate resolution — not fixed here
+### Tests
 
-Two count-adjacent findings, carried over from feature-011 with the count-reconciliation scope and
-keeping their original identifiers so the ledger reads continuously across the split. The findings
-earlier revisions listed as `U1` and `U2`, and the site-test literal drift, are **gone because they
-are fixed** (D2). `U3`, `U4` and `U5` stayed with feature-011, because each is about
-`/aid-summarize`'s scripts or its grading prose rather than a count surface. `U8` is no longer a
-report — the owner folded it into this feature's scope, so it is `M2` above.
+**This feature introduces no test suite.** Its proof is existing machinery plus the assertions above;
+the shipped-result suite is feature-013's, because it can only run after this render.
 
-| # | Finding |
+| What it decides | Existing machinery |
 |---|---|
-| U6 | `.aid/knowledge/module-map.md` "Script Modules by Area" lists eight areas; `canonical/aid/scripts/` holds nine on disk (`works` is missing from the table). This work adds a tenth (`graph`), so the table needs both rows at ship time — **feature-013 D3** carries it. |
-| U7 | `docs/diagram-content-reference.md` states the `gen-reference` roster test "asserts 111 on-disk dirs"; after the defect fix the test asserts no total at all, only set membership and a section count against the curated roster (D2). The identity it describes belongs to the generator, not the test, and the sentence needs correcting when the count moves. |
+| CR04, CR05 — presence then parity | `run_generator.py` exit status and its `VERIFY (deterministic)` line; `git diff` + `git status` over `profiles/` |
+| CR06 — class-correct byte-identity | `sha256sum` of canonical against each rendered copy; `diff` at trigger sites |
+| CR14 — dogfood parity | `tests/canonical/test-dogfood-byte-identity.sh` Direction 1, **plus** the per-D1-path `dst`/`sha256` check the suite cannot supply on its own |
+| CR07 — line endings | `git check-attr text eol` per path, over D1 ∪ L1's `canonical/` paths |
+| CR03 — silent-drop predicates | Inspection against the cited `render.py` lines; P3 alone is enforced by the generator |
+| CR08 — count reconcile | `tests/canonical/test-doc-counts.sh`, **unmodified** — its derived `SKILLS` is what makes it the gate, and it needs no edit because it is already parameterised |
+| CR09 — roster set | `node site/scripts/gen-reference.mjs` and `node site/scripts/gen-skills.mjs` (each throws) + `npm test` in `site/`, whose clamp names the unregistered directory |
+| CR10 — no new or incremented literal | `tests/canonical/test-skill-counts.sh` — repo-wide, and new since the merge; the review half remains for clauses in this SPEC's own prose |
+| CR11 — registry disposition | Read-back of the header line plus a grep of the data lines |
+| CR01, CR02, CR12 — inventory, class, gate-executability | Review against the cited lines; these are document-level obligations with no runtime |
 
-**Deliberately left open.** Whether an FR-18 build step is adopted, and therefore whether D3's
-G1–G4 and G6 apply at all. The gate is specified; the trigger is not this feature's to pull.
-`/aid-detail` should schedule D3's consequences as conditional work behind D-2 and FR-18 rather than
-as committed tasks.
+`tests/canonical/test-graph-skill-registration.sh` — the suite that asserts the shipped result across
+every profile — is **feature-013's**, and is named here only so the boundary is visible.
+
+### Open Items
+
+Recorded rather than silently assumed. Where an item belongs elsewhere, the owner is named and the item
+is not absorbed here. Each carries a **Q26 class**; an item that cannot be classified confidently is
+treated as **mechanism**, the conservative default. None blocks this feature's own implementation.
+
+1. **`SKILL.md`'s `## References` section and `canonical/skills/aid-graph/README.md` have no owner this
+   SPEC will accept.** The pre-decision feature-010 draft assigns both to feature-012, but that document
+   is scheduled for fresh authoring under Q24 item 7 and is not a settled input, so adopting the
+   assignment would rest this feature on an authority that may not survive. It is also the wrong shape:
+   both items are **content authoring**, and this feature authors no file content. One verified fact the
+   re-authoring should consume rather than rediscover — a skill's own `README.md` **never ships**:
+   `render.py:536–609` emits `SKILL.md`, `references/*.md` and a verbatim `scripts/` and nothing else, so
+   a canonical `README.md` is maintainer documentation and satisfies no discoverability obligation.
+   **Owner: feature-010** (skill authoring, ungated — no reopen consequence), with **feature-013** if the
+   `README.md` is wanted as a documentation surface. **Class: mechanism** — it decides whether a file
+   exists.
+2. **Where registration meets validation.** Two gated Layers sections declare amendments to
+   `canonical/aid/scripts/summarize/*` (feature-002 SPEC.md`:1097`, `:1098`; feature-007 SPEC.md`:1567`),
+   but each names a **non-gated** owner and each is contingent, so D1's amendment clause excludes them by
+   rule, not by oversight. They stay canonical files inside this feature's full-generator-and-parity
+   obligation; both are `.mjs`, already `text eol=lf`, and a new extension falls to Open Item 5. What
+   needs coordinating is that `/aid-detail` orders the render **after** the last canonical edit of either
+   feature, so parity is not asserted against a tree about to change. **Owner: feature-011** (concurrent,
+   so cited by name and section only) **and `/aid-detail`** for the ordering. **Class: mechanism**.
+3. **Pre-existing count claims in surfaces this feature does not edit — withdrawn; the premise is false
+   after the `origin/master` merge.** This item recorded that `.claude/skills/generate-profile/SKILL.md`
+   stated a skill total and its composition as **ungated** literals, already wrong, owed a re-anchoring
+   rather than an increment. The merge landed both halves. Re-anchored: the completion checklist names
+   the derivation instead of a number (`:263–265`) and the `ls` check reads "must equal the first number
+   printed above" (`:131`). Gated: `tests/canonical/check-skill-counts.mjs` derives from
+   `skill-counts.mjs` and scans that very file (`:166–168`, `REPO_LOCAL_SKILLS`), failing on any stated
+   count that disagrees and is unmarked; the taxonomy block that remains (`:106–112`) sits inside it.
+   Re-validated by running it: exit 0. **Owner: none — closed.** **Class: editorial.**
+4. **The payload judgment (feature-002 Open Item 10).** A canonical bundle exists once in `canonical/`
+   and once per profile render, each with its own manifest `sha256`. Whether that repository-side
+   footprint is acceptable at the decided architecture's size is a packaging judgment this SPEC cannot
+   make before the research reports a size. D6's companion-over-inline choice is the part decidable now
+   and is decided. **Owner: this feature at execution, with the work owner** if the figure is large
+   enough to reopen the packaging shape. **Class: mechanism** — it can change the packaging contract.
+5. **`.gitattributes` coverage is narrower than the repository needs.** M1's rules close the gap for
+   every path CR07 quantifies over — D1's, plus L1's own `generated-files.txt` — and for nothing else.
+   The residual is stated as a **complement**, not an extension list, so it cannot be misread as
+   exhaustive: every tracked text file whose extension `.gitattributes` does not name (`*.sh`, `*.mjs`,
+   `*.py`, `*.md`, `dashboard/MANIFEST`). That includes `.yml`, `.yaml`, `.txt`, `.json`, `.js`, `.css`,
+   `.html` and `.ps1` — the last transformed class and uncovered despite sitting in `render.py:77–79`'s
+   frozenset. For the verbatim class the render-drift gate is blind to it, and path-scoping is deliberate
+   (D3). **Owner: a separate methodology fix**, outside this work. **Class: mechanism** — a gate gap.
+6. **`kb.html` will hold a stale skill count after this work, and no feature owns regenerating it.**
+   The generated viewer states the skill count and is hand-edit-forbidden;
+   `test-doc-counts.sh:18–20` excludes `.aid/knowledge/` from the guard by design and names
+   `/aid-housekeep` as the reconciler. The precedent for the disposition is
+   `.aid/knowledge/STATE.md:226`, where a stale generated figure was deferred to the next SUMMARY-DELTA
+   regeneration rather than hand-patched. This is **not** feature-013's, because 013 owns hand-authored
+   Knowledge Base documents and this is build output. **Owner: a `/aid-housekeep` SUMMARY-DELTA run**,
+   scheduled by the work owner at ship time. **Class: mechanism** — it is a regeneration, not a wording
+   change, and skipping it leaves the repository asserting something untrue about itself, which is the
+   exact failure this feature exists to prevent.
+
+### Figures
+
+**No measured quantity is asserted anywhere in this SPEC.** No node count, bench size, payload size,
+timing, line count, skill count, suite count, roster length or file count appears above — including in
+the worked examples, the inventory and the acceptance criteria. Where a quantity would have been the
+natural way to say something, the **derivation** is given and the file that owns it is cited instead:
+the skill count is `tests/canonical/test-doc-counts.sh:44`'s `find` and `skill-counts.mjs`'s
+`deriveSkillCounts`, the surfaces needing a count edit are "the `ASSERTIONS` entries at `:65–95` whose
+needle interpolates `${SKILLS}`" plus whatever `check-skill-counts.mjs` reports, the profile set is
+"every profile `run_generator.py:24` enumerates from `profiles/*.toml`", the template set is
+"the file tree at feature-007 SPEC.md`:1540–1548`", and the curated roster is `SKILL_GROUPS` membership
+as `gen-reference.test.mjs:165` derives it. The transform-trigger list in D3
+is enumerated in full **per root** and declared authoritative **as a list, not as a length**, per Q19.
+Withdrawn figures — the delivery-001 bench and the voided A-5 KB figure — appear nowhere, and no
+assertion here rests on either. Two kinds of statement that could be mistaken for measurements are
+neither: **line numbers** are locations, disproved by opening the file rather than by re-measuring; and
+the "this suite passes on the branch as it stands" claims (D4 Class 1, CR14, Open Item 3) and the
+universal negatives D1, D3 and D5 rest on — no tracked `.yml` and no `generated-files.txt` CR byte, no
+canonical `SKILL.md` declaring `context:` or `agent:` — are **pass/fail statuses** re-checkable with one
+command, stated without the assertion counts those runs printed, exactly the externally-owned quantity
+that goes stale in a document.
