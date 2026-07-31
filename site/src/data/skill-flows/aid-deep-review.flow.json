@@ -1,0 +1,190 @@
+{
+  "skill": "aid-deep-review",
+  "shape": "residual",
+  "extractor": "residual",
+  "confidence": "approximate",
+  "title": "aid-deep-review — state flow",
+  "nodes": [
+    {
+      "id": "n1",
+      "order": 1,
+      "name": "STEP-1",
+      "label": "**Resolve the rule set** through review-rubrics/INDEX.md…",
+      "kind": "entry",
+      "terminal": null,
+      "provenance": {
+        "file": "canonical/skills/aid-deep-review/SKILL.md",
+        "startLine": 22,
+        "endLine": 22,
+        "sourceKind": "skill",
+        "excerpt": "1. **Resolve the rule set** through `review-rubrics/INDEX.md`, in its stated order: exact route →"
+      },
+      "detail": null
+    },
+    {
+      "id": "n2",
+      "order": 2,
+      "name": "STEP-2",
+      "label": "**Pick the scratch ledger path.** <scope>-cycle<N>.md. Its…",
+      "kind": "step",
+      "terminal": null,
+      "provenance": {
+        "file": "canonical/skills/aid-deep-review/SKILL.md",
+        "startLine": 26,
+        "endLine": 26,
+        "sourceKind": "skill",
+        "excerpt": "2. **Pick the scratch ledger path.** `<scope>-cycle<N>.md`. Its presence decides the mode: present →"
+      },
+      "detail": null
+    },
+    {
+      "id": "n3",
+      "order": 3,
+      "name": "STEP-3",
+      "label": "**Subtract settled gaps.** gap-register.sh --resolved-keys…",
+      "kind": "step",
+      "terminal": null,
+      "provenance": {
+        "file": "canonical/skills/aid-deep-review/SKILL.md",
+        "startLine": 28,
+        "endLine": 28,
+        "sourceKind": "skill",
+        "excerpt": "3. **Subtract settled gaps.** `gap-register.sh --resolved-keys` — anything `Answered`, `Declined` or"
+      },
+      "detail": null
+    },
+    {
+      "id": "n4",
+      "order": 4,
+      "name": "STEP-4",
+      "label": "**Plan the resume**, if resuming: plan-resume.sh --ledger…",
+      "kind": "step",
+      "terminal": null,
+      "provenance": {
+        "file": "canonical/skills/aid-deep-review/SKILL.md",
+        "startLine": 31,
+        "endLine": 31,
+        "sourceKind": "skill",
+        "excerpt": "4. **Plan the resume**, if resuming: `plan-resume.sh --ledger <scratch>` and apply its verdicts with"
+      },
+      "detail": null
+    },
+    {
+      "id": "n5",
+      "order": 5,
+      "name": "STEP-5",
+      "label": "**Validate the settings file, then resolve the minimum…",
+      "kind": "step",
+      "terminal": null,
+      "provenance": {
+        "file": "canonical/skills/aid-deep-review/SKILL.md",
+        "startLine": 33,
+        "endLine": 33,
+        "sourceKind": "skill",
+        "excerpt": "5. **Validate the settings file, then resolve the minimum grade.**"
+      },
+      "detail": null
+    },
+    {
+      "id": "n6",
+      "order": 6,
+      "name": "STEP-6",
+      "label": "**Print the resolved bar** in the gate's output: bar =…",
+      "kind": "exit",
+      "terminal": {
+        "advanceType": "UNSPECIFIED",
+        "handoff": null
+      },
+      "provenance": {
+        "file": "canonical/skills/aid-deep-review/SKILL.md",
+        "startLine": 51,
+        "endLine": 51,
+        "sourceKind": "skill",
+        "excerpt": "6. **Print the resolved bar** in the gate's output: `bar = <grade> (from .aid/settings.yml)`. A gate that"
+      },
+      "detail": null
+    }
+  ],
+  "edges": [
+    {
+      "from": "n1",
+      "to": "n2",
+      "kind": "sequence",
+      "condition": null,
+      "advanceType": "CHAIN",
+      "provenance": {
+        "file": "canonical/skills/aid-deep-review/SKILL.md",
+        "startLine": 22,
+        "endLine": 22,
+        "sourceKind": "skill",
+        "excerpt": "1. **Resolve the rule set** through `review-rubrics/INDEX.md`, in its stated order: exact route →"
+      }
+    },
+    {
+      "from": "n2",
+      "to": "n3",
+      "kind": "sequence",
+      "condition": null,
+      "advanceType": "CHAIN",
+      "provenance": {
+        "file": "canonical/skills/aid-deep-review/SKILL.md",
+        "startLine": 26,
+        "endLine": 26,
+        "sourceKind": "skill",
+        "excerpt": "2. **Pick the scratch ledger path.** `<scope>-cycle<N>.md`. Its presence decides the mode: present →"
+      }
+    },
+    {
+      "from": "n3",
+      "to": "n4",
+      "kind": "sequence",
+      "condition": null,
+      "advanceType": "CHAIN",
+      "provenance": {
+        "file": "canonical/skills/aid-deep-review/SKILL.md",
+        "startLine": 28,
+        "endLine": 28,
+        "sourceKind": "skill",
+        "excerpt": "3. **Subtract settled gaps.** `gap-register.sh --resolved-keys` — anything `Answered`, `Declined` or"
+      }
+    },
+    {
+      "from": "n4",
+      "to": "n5",
+      "kind": "sequence",
+      "condition": null,
+      "advanceType": "CHAIN",
+      "provenance": {
+        "file": "canonical/skills/aid-deep-review/SKILL.md",
+        "startLine": 31,
+        "endLine": 31,
+        "sourceKind": "skill",
+        "excerpt": "4. **Plan the resume**, if resuming: `plan-resume.sh --ledger <scratch>` and apply its verdicts with"
+      }
+    },
+    {
+      "from": "n5",
+      "to": "n6",
+      "kind": "sequence",
+      "condition": null,
+      "advanceType": "CHAIN",
+      "provenance": {
+        "file": "canonical/skills/aid-deep-review/SKILL.md",
+        "startLine": 33,
+        "endLine": 33,
+        "sourceKind": "skill",
+        "excerpt": "5. **Validate the settings file, then resolve the minimum grade.**"
+      }
+    }
+  ],
+  "entries": [
+    "n1"
+  ],
+  "exits": [
+    "n6"
+  ],
+  "sources": [
+    "canonical/skills/aid-deep-review/SKILL.md"
+  ],
+  "warnings": []
+}

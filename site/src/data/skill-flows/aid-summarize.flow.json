@@ -1,0 +1,434 @@
+{
+  "skill": "aid-summarize",
+  "shape": "dispatch-table",
+  "extractor": "extract-dispatch",
+  "confidence": "derived",
+  "title": "aid-summarize — state flow",
+  "nodes": [
+    {
+      "id": "n1",
+      "order": 1,
+      "name": "PREFLIGHT",
+      "label": "PREFLIGHT is the synchronous gate that verifies all…",
+      "kind": "entry",
+      "terminal": null,
+      "provenance": {
+        "file": "canonical/skills/aid-summarize/SKILL.md",
+        "startLine": 183,
+        "endLine": 183,
+        "sourceKind": "skill",
+        "excerpt": "| PREFLIGHT | `references/state-preflight.md` | inline | → STALE-CHECK |"
+      },
+      "detail": {
+        "file": "canonical/skills/aid-summarize/references/state-preflight.md",
+        "startLine": 1,
+        "endLine": 24,
+        "sourceKind": "worker",
+        "excerpt": "# State: PREFLIGHT\n\nPREFLIGHT is the synchronous gate that verifies all prerequisites before any summarization state runs; it is selected on every invocation before state detection proceeds.\n\nRun `canonical/aid/scripts/summarize/summarize-preflight.sh` before any state. It verifies:\n\n1. `.aid/knowledge/STATE.md` exists.\n2. `**User Approved:** yes` is present in `.aid/knowledge/STATE.md`.\n3. At least one populated KB document exists (`.aid/knowledge/*.md` with real content).\n4. Not in Plan Mode (need write access).\n5. Node.js >= 18 is available (required for `validate-visuals.mjs` visual-fidelity validation; the Mermaid network-fetch check was removed in D-012 / Change 7).\n6. **Migrate legacy summary path (FR31 migration):** if `.aid/knowledge/knowledge-summary.html`\n   exists and `.aid/knowledge/kb.html` does not, `mkdir -p .aid/knowledge` and `mv -n` the old\n   file to the new path so STALE-CHECK sees the existing approved summary and skips regeneration.\n   Best-effort -- a failure prints a note and does not block. Idempotent: if the new path already\n   exists the step is a no-op.\n\nIf any check (1-5) fails, the script exits non-zero with a clear actionable message. Do NOT\nproceed; do NOT create any state files. Step 6 is best-effort only and never blocks.\n\nPrint: `[State: PREFLIGHT] complete.`\n\n**Advance:** **CHAIN** → [State: STALE-CHECK] (continue inline).\n"
+      }
+    },
+    {
+      "id": "n2",
+      "order": 2,
+      "name": "STALE-CHECK",
+      "label": "STALE-CHECK compares the KB review date against the last…",
+      "kind": "exit",
+      "terminal": {
+        "advanceType": "HALT",
+        "handoff": "For DONE-IDEMPOTENT branch:"
+      },
+      "provenance": {
+        "file": "canonical/skills/aid-summarize/SKILL.md",
+        "startLine": 184,
+        "endLine": 184,
+        "sourceKind": "skill",
+        "excerpt": "| STALE-CHECK | `references/state-stale-check.md` | inline | → PROFILE |"
+      },
+      "detail": {
+        "file": "canonical/skills/aid-summarize/references/state-stale-check.md",
+        "startLine": 1,
+        "endLine": 33,
+        "sourceKind": "worker",
+        "excerpt": "# State: STALE-CHECK\n\nSTALE-CHECK compares the KB review date against the last summary date to determine if regeneration is needed; it is selected immediately after PREFLIGHT passes.\n\nNote: PREFLIGHT's FR31 migration step (step 6) relocates a pre-d009 `knowledge-summary.html`\nto `.aid/knowledge/kb.html` before STALE-CHECK runs, so a just-migrated file is seen here\nat the new path and treated as `CURRENT_APPROVED` when the summary is still current -- no\nregeneration is needed.\n\nRun `canonical/aid/scripts/summarize/stale-check.sh`. It outputs one of:\n\n- `STALE` — KB is newer than last summary (or first run). Continue to PROFILE/GENERATE.\n- `CURRENT_APPROVED` — HTML is up-to-date and approved. Print:\n  ```\n  ✅ kb.html is already up-to-date with the current KB. Nothing to do.\n  ```\n  Exit cleanly.\n- `CURRENT_UNAPPROVED` — HTML is up-to-date but not yet approved. Print:\n  ```\n  ℹ️  HTML is current with KB but pending your approval.\n  ```\n  Skip to APPROVAL.\n\nIf STALE: tell the user *why* it's stale:\n```\nℹ️  KB was reviewed on {LAST_KB_CHANGE_DATE}, last summary was {LAST_SUMMARY_DATE}.\n   Regenerating to match latest KB...\n```\n\nPrint: `[State: STALE-CHECK] complete.`\n\n**Advance:** **CHAIN** → [State: PROFILE] (continue inline). For DONE-IDEMPOTENT branch: **HALT**.\n"
+      }
+    },
+    {
+      "id": "n3",
+      "order": 3,
+      "name": "PROFILE",
+      "label": "PROFILE reads the doc-set and domain from feature-014…",
+      "kind": "step",
+      "terminal": null,
+      "provenance": {
+        "file": "canonical/skills/aid-summarize/SKILL.md",
+        "startLine": 185,
+        "endLine": 185,
+        "sourceKind": "skill",
+        "excerpt": "| PROFILE | `references/state-profile.md` | inline | → GENERATE |"
+      },
+      "detail": {
+        "file": "canonical/skills/aid-summarize/references/state-profile.md",
+        "startLine": 1,
+        "endLine": 163,
+        "sourceKind": "worker",
+        "excerpt": "# State: PROFILE\n\nPROFILE reads the doc-set and domain from feature-014 outputs to derive the resolved section\nmanifest; it runs when STALE-CHECK finds the KB is stale and no stored manifest exists.\n\n**Do NOT auto-detect a project TYPE from KB greps.** Profile-as-project-type is retired.\nThe section set is derived from the resolved doc-set, deterministically, as described below.\n\n---\n\n## Step 1 — Read the two distinct input sources\n\nRead the following two files (they are different files; do not conflate them):\n\n| # | Derived attribute | Source field | Source file |\n|---|-------------------|--------------|-------------|\n| I1 | **Resolved doc-set** | `discovery.doc_set` (YAML list of `filename\\|owner\\|presence` entries) | `.aid/settings.yml` |\n| I2 | **Domain** | `## Discovery Domain` → `- **Domain:**` line | `.aid/knowledge/STATE.md` |\n\n**Parse I1 — doc-set entries to filenames:**\nEach `discovery.doc_set` list item has the shape `filename|owner|presence`.\nSplit on `|` and take field 1 (the filename, e.g. `architecture.md`). Fields 2 and 3 are\nnot used for section derivation.\n\n**Parse I2 — domain framing:**\nExtract the value after `**Domain:**` (e.g. `hybrid:methodology-tooling+software-cli`).\nSplit on `:` and `+` to get facet tokens. Domain informs **labels and \"what is this\"\nframing only** — it never reorders, gates, or adds a section.\n\n---\n\n## Step 2 — Resolve the doc-set\n\nThe **resolved doc-set** = the subset of I1 filenames that actually exist on disk in\n`.aid/knowledge/`. For each `discovery.doc_set` filename, check whether\n`.aid/knowledge/{filename}` exists:\n\n- File **present** on disk → included in the resolved doc-set.\n- File **absent** on disk → excluded (no phantom section, no placeholder).\n\nA `.aid/knowledge/*.md` file NOT in `discovery.doc_set` is out of scope; the doc-set is\nauthoritative for membership. The intersection (doc-set ∩ disk) is the resolved doc-set.\n\n---\n\n## Step 3 — Read frontmatter for each resolved doc\n\nFor each resolved doc, read its YAML frontmatter and extract:\n\n| Field | Use |\n|-------|-----|\n| `kb-category` | tier (`primary` \\| `extension` \\| `meta`); absent → treat as `primary` |\n| `objective:` | section heading derivation + \"why this matters\" blurb |\n| `summary:` | one-line section description + `noscript` list label |\n| `intent:` | fallback when `objective:`/`summary:` absent (pre-f001 migration window) |\n| `tags:` | rendered as keyword pills (omit if absent; no placeholder) |\n| `see_also:` | \"related\" cross-links between sections (omit if absent) |\n\n**Do NOT surface `audience:` as a role-badge** — the KB's agent-framing does not apply to\nthe summary (the newcomer does not care which agent-role a doc targets). Read the field for\ninternal use only; do not render it.\n\n---\n\n## Step 4 — Apply the section ordering rule\n\nOrder is mechanical (same input → same order):\n\n1. **\"At a Glance\"** is always first (synthesized, not a doc section — see §5 below).\n2. **Concept-first trio** — the three well-known docs appear immediately after \"At a Glance\",\n   regardless of their position in the doc-set list:\n   - `domain-glossary.md` (Glossary / concept spine)\n   - `decisions.md` (Decision / ADR cards)\n   - `capability-inventory.md` (Capability entries)\n   Only include a trio member if it is in the resolved doc-set.\n3. **Remaining `kb-category: primary` docs** in `discovery.doc_set` list order.\n4. **`kb-category: extension` docs** in `discovery.doc_set` list order.\n5. **`kb-category: meta` docs** (`external-sources.md`, `README.md`) sort last.\n6. **Knowledge Base Index** is always last (full table of resolved docs, one-liner per doc).\n\n---\n\n## Step 5 — Identify bespoke components for well-known docs\n\nThree docs receive bespoke content components (task-066 builds them; PROFILE names them):\n\n| Doc filename | Bespoke component |\n|---|---|\n| `domain-glossary.md` | Glossary / definition component (term → definition cards) |\n| `decisions.md` | Decision / ADR card component (context → decision → rationale → consequence) |\n| `capability-inventory.md` | Capability entry component (what · when · how) |\n\nAll other resolved docs fall through to the **generic fallback**: table / card / prose /\ninfographic chosen per-fact (`primary` = full section, `extension` = supporting section,\n`meta` = compact reference). No resolved doc is ever dropped.\n\n---\n\n## Step 6 — Derive the \"At a Glance\" inputs\n\n\"At a Glance\" is synthesized from:\n\n| Input | Source |\n|-------|--------|\n| **What this is** (lead) | project name (STATE.md or build file) + domain framing (I2) + `domain-glossary.md`/`capability-inventory.md` `objective:` |\n| **What it does** | `capability-inventory.md` `objective:`/`summary:` + top capability rows |\n| **Key vocabulary teaser** | first few `domain-glossary.md` terms |\n| **Key decisions teaser** | first `decisions.md` ADR title(s) |\n\n\"At a Glance\" leads with **what the project is and does** (plain language for a newcomer).\nIt does **not** lead with a software-metric card grid (module count / entity count /\nendpoint count / test count). Counts may appear as a small secondary detail but are not\nthe section's purpose.\n\n---\n\n## Step 7 — Derive the noscript doc list\n\nCollect the resolved doc-set filenames + each doc's `summary:` frontmatter. The noscript\nlist is the resolved doc-set (not a hardcoded list). Format:\n\n```\nAlways lead with INDEX.md (the generated KB map), then one entry per resolved doc:\n  <li><a href=\"./{doc}.md\">{doc}.md</a> — {summary: value or doc name de-slugified}</li>\n```\n\nNo hardcoded doc list. The list is injected by the GENERATE step into the noscript region\nof html-skeleton.html.\n\n---\n\n## Output\n\nPrint:\n```\n[State: PROFILE] Doc-set/domain read complete.\n  Domain:        {I2 value}\n  Resolved docs: {N} of {M} doc-set entries present on disk\n  Ordered sections: At a Glance | {trio present} | {primary docs} | {extension docs} | {meta docs} | KB Index\n```\n\nIf `discovery.doc_set` is missing from `.aid/settings.yml` (pre-feature-014 KB), warn:\n```\n[State: PROFILE] WARNING: discovery.doc_set not found in .aid/settings.yml.\n  Falling back to reading all .aid/knowledge/*.md files (no frontmatter ordering).\n  Run /aid-discover to produce a feature-014-compatible KB for full section derivation.\n```\n\nAnd treat all present `.aid/knowledge/*.md` files (excluding `STATE.md` and `INDEX.md`)\nas the resolved doc-set, ordered alphabetically, with `primary` tier for all.\n\nPersist to `.aid/knowledge/STATE.md` `## Knowledge Summary Status`:\n```\n**Doc-Set Source:** .aid/settings.yml discovery.doc_set\n**Doc-Set Count:** {N resolved} of {M total}\n**Domain:** {I2 value}\n**Domain Source:** .aid/knowledge/STATE.md ## Discovery Domain\n```\n\nPrint: `[State: PROFILE] complete.`\n\n**Advance:** **CHAIN** → [State: GENERATE] (continue inline).\n"
+      }
+    },
+    {
+      "id": "n4",
+      "order": 4,
+      "name": "GENERATE",
+      "label": "GENERATE builds kb.html from KB content using the resolved…",
+      "kind": "step",
+      "terminal": null,
+      "provenance": {
+        "file": "canonical/skills/aid-summarize/SKILL.md",
+        "startLine": 186,
+        "endLine": 186,
+        "sourceKind": "skill",
+        "excerpt": "| GENERATE | `references/state-generate.md` | inline | → VALIDATE |"
+      },
+      "detail": {
+        "file": "canonical/skills/aid-summarize/references/state-generate.md",
+        "startLine": 1,
+        "endLine": 380,
+        "sourceKind": "worker",
+        "excerpt": "# State: GENERATE\n\nGENERATE builds kb.html from KB content using the resolved section manifest produced by\nPROFILE; it is selected after PROFILE completes or when a stored manifest already exists\nand the KB is stale.\n\n---\n\n### 1. Load minimum grade\n\n```\nif --grade present: MIN_GRADE = flag value (and update .aid/settings.yml summary.minimum_grade via /aid-config)\nelse: MIN_GRADE = bash canonical/aid/scripts/config/read-setting.sh --skill summary --key minimum_grade --default A\n```\n\nPersist `--grade` overrides to `.aid/settings.yml` (via `/aid-config` or direct YAML edit). Do NOT write minimum_grade to STATE.md — STATE.md is for run-state (Q&A, Review History, Summarization History), not config.\n\n---\n\n### 2. Read all resolved KB documents\n\nFor each resolved doc from the PROFILE manifest, read `.aid/knowledge/{doc}.md` and extract:\n\n- **Section heading / title** — derive from `objective:` (noun-phrase) as a newcomer-phrased\n  title; fallback to doc filename de-slugified (e.g. `module-map` → \"Module Map\").\n- **One-line description** — `summary:` (one-sentence scope); fallback `objective:` →\n  `intent:` → first paragraph after H1.\n- **Purpose blurb** — `objective:` (purpose noun-phrase); fallback `intent:` → first\n  paragraph. Feeds the newcomer \"why this matters\" framing.\n- **Tier / prominence** — `kb-category:` (`primary` | `extension` | `meta`); absent →\n  treat as `primary`.\n- **Keyword pills** — `tags:` list; omit if absent (no placeholder).\n- **See-also cross-links** — `see_also:` list; omit if absent.\n- **Key facts** — numbers, names, version pins from the doc body (T1+T2 tier facts; skip\n  T3 line-counts — those are tracked separately in metrics.md).\n- **Generated-doc flag** — if frontmatter `source: generated`, render the section with a\n  small \"(auto-generated by `{generator}`)\" attribution line (mark generated files).\n\n**Do NOT render `audience:` as a role-badge.** The KB's dual-audience / agent-frontmatter\nframing does not apply to the summary. The newcomer does not care which agent-role a doc\ntargets; audience leaks the KB's machine-oriented framing into a newcomer-facing product.\n\nThe KB is **authoritative**. Do not re-grade it, re-validate it, or contradict it.\nIf the KB says X, the HTML says X.\n\n---\n\n### 3. Derive the section manifest from the resolved doc-set\n\nUsing the ordered section manifest from PROFILE:\n\n**Section structure per doc:**\n- One section per resolved doc (no more, no fewer — completeness = coverage of the\n  resolved doc-set, never a fixed section list or diagram count).\n- Section attributes: heading, one-line description, purpose blurb, keyword pills,\n  see-also links, source citation (relative `./doc.md` link), and tier-keyed prominence.\n\n**Bespoke component assignment (by filename — deterministic, no fallback for these three):**\n\nThe component-selection algorithm is applied in this order:\n\n1. If the resolved doc filename is `domain-glossary.md` →\n   **Glossary / definition component** (`id=\"glossary\"` on the section; per-term\n   `id=\"gloss-{slug}\"` anchors). Render the Concept Spine terms as `.gloss-card` items\n   inside a `.gloss-grid`. Draw from the \"Definition-as-used-here\" / \"Relates-to\" /\n   \"Aliases\" fields in each `## {Term}` subsection of the doc body.\n   HTML template: `canonical/aid/templates/knowledge-summary/section-templates/bespoke-components.md §1`.\n   **Rendered as content, not linked.** A newcomer reads the definitions in the page;\n   the only link to `domain-glossary.md` is the footer \"Source:\" citation.\n\n2. If the resolved doc filename is `decisions.md` →\n   **Decision / ADR card component** (`id=\"decisions\"` on the section; per-ADR\n   `id=\"adr-d{N}\"` anchors). Render each `## D{N} — {Title}` entry as an `.adr-card`\n   inside an `.adr-list`. Draw from the Decision / Alternatives rejected / Constraint\n   fields in each entry.\n   HTML template: `canonical/aid/templates/knowledge-summary/section-templates/bespoke-components.md §2`.\n   **Rendered as content, not linked.** A newcomer reads the ADR rationale in the page;\n   the only link to `decisions.md` is the footer \"Source:\" citation.\n\n3. If the resolved doc filename is `capability-inventory.md` →\n   **Capability entry component** (`id=\"capabilities\"` on the section; per-capability\n   `id=\"cap-{slug}\"` anchors). Render each capability row as a `.cap-card` inside a\n   `.cap-grid`, grouped by the source doc's section structure (pipeline / on-demand).\n   HTML template: `canonical/aid/templates/knowledge-summary/section-templates/bespoke-components.md §3`.\n   **Rendered as content, not linked.** A newcomer reads what the project can do in the\n   page; the only link to `capability-inventory.md` is the footer \"Source:\" citation.\n\nComponent styles are in\n`canonical/aid/templates/knowledge-summary/component-css.css` (the three\n\"Concept-first content components\" sections: `.gloss-*`, `.adr-*`, `.cap-*`).\nThese classes use the existing design tokens — do not restyle or override the page theme.\n\n**Generic fallback (all other resolved docs — no doc is ever skipped):**\n- **`kb-category: primary`** → full section (featured-ness for domain-salient docs).\n  Choose the best format per fact: tables for catalogs, cards for grids, prose for\n  narrative, infographic for structure. A doc with `kb-category: primary` MAY carry an\n  infographic if the content warrants it.\n- **`kb-category: extension`** → supporting / lower-prominence section. Same per-fact\n  format selection as primary but rendered as a secondary section.\n- **`kb-category: meta`** (`external-sources.md`, `README.md`) → compact prose /\n  reference list. Orientation, not a newcomer-concern section. May be folded into the\n  KB Index.\n\n**No resolved doc is ever skipped.** \"No bespoke component\" is never \"no section\" — the\ngeneric fallback guarantees coverage. Rendering hints by domain / tier are in\n`canonical/aid/templates/knowledge-summary/section-templates/auto-detect.md` (tier hints)\nand the domain-specific `section-templates/{domain}.md` files (per-doc hints).\n\n**Stable anchor ID contract:** the three bespoke component sections use fixed anchor IDs\n(`glossary`, `decisions`, `capabilities`) so the \"At a Glance\" teaser links (§4) and the\nTOC can reliably point to them. Per-item anchors (`gloss-{slug}`, `adr-d{N}`,\n`cap-{slug}`) use the same slugging rule: term/title lowercased, spaces replaced by\nhyphens, non-alphanumeric characters dropped.\n\n---\n\n### 4. Build the \"At a Glance\" section (always first)\n\n\"At a Glance\" is synthesized from:\n\n| Input | Source |\n|-------|--------|\n| **What this is** (lead) | project name (STATE.md / build file) + domain framing (I2) + `domain-glossary.md` / `capability-inventory.md` `objective:` |\n| **What it does** | `capability-inventory.md` `objective:`/`summary:` + top capability rows |\n| **Key vocabulary teaser** | first few `domain-glossary.md` terms (a taste of the project's language, linking down to the Glossary section) |\n| **Key decisions teaser** | first `decisions.md` ADR title(s) (\"the big calls\", linking down to the ADR cards section) |\n\nWrite \"At a Glance\" as a **newcomer-friendly plain-language section**: \"This is a {domain\nframing} that {what it does}.\" Counts (module count, test count, etc.) may appear as a\nsmall secondary detail but do **not** lead and are not the section's purpose. The lead\nis *what & why*, not LOC or metric cards.\n\nIf `domain-glossary.md` or `capability-inventory.md` are absent from the resolved doc-set,\nomit their respective teaser; the \"At a Glance\" section still renders with the available\ninputs.\n\n---\n\n### 5. Data-driven authoring into the multi-source layout\n\n> **LLM role (narrowed by Change 6 / FR-50):** The LLM authors the **per-component content**\n> of each section file (the prose, definitions, ADR cards, capability entries, tables, and\n> infographics that fill the inner content area of each section). The LLM does NOT hand-write\n> the page HTML shell, section ordering, or assembly logic — those are mechanical and handled\n> by the assembler from the manifest. Judgment is exercised only where irreducible: newcomer-\n> friendly prose, choosing best-format-per-fact, and the tone/clarity of content within each\n> component. Assembly, section ordering, inlining, and shell structure are deterministic.\n\n**Authoring layout (`.aid/.temp/summarize/summary-src/`)** — distribution is still a single\nself-contained HTML file, but sources are split for maintainability:\n\n```\n.aid/.temp/summarize/summary-src/\n├── skeleton-head.html          # <!DOCTYPE> to opening <main> (includes inlined CSS)\n├── sections/\n│   ├── 00-at-a-glance.html\n│   ├── 01-{resolved-doc-slug}.html   # one file per resolved doc (in manifest order)\n│   ├── 02-{resolved-doc-slug}.html\n│   └── ...\n├── section-manifest.txt        # DETERMINISM FILE: ordered section filenames (one per line)\n├── skeleton-foot.html          # </main> to closing shell elements\n└── post-script.html            # lightbox.js + closing </body>\n```\n\n**`section-manifest.txt` — the determinism contract (FR-50):**\nWrite this file BEFORE authoring sections. It is the machine-readable ordered list of\nsection filenames that drives deterministic assembly (same manifest = same section order =\nsame structural output). Format: one filename per line (relative to `sections/`), blank\nlines and `#` comment lines ignored:\n\n```\n# section-manifest.txt -- generated by GENERATE; do not edit by hand.\n# Ordered from: discovery.doc_set + frontmatter + section ordering rule (state-profile.md).\n# Same manifest -> same structural output (reproducible + auditable, FR-50).\n00-at-a-glance.html\n01-domain-glossary.html\n02-decisions.html\n03-capability-inventory.html\n04-architecture.html\n05-process-architecture.html\n# ... one line per resolved doc (in manifest order) ...\nNN-kb-index.html\n```\n\nThe ordering rule (from `state-profile.md` Step 4) is:\n1. `00-at-a-glance.html` (always first — synthesized, not a doc section)\n2. Concept-first trio (if present in resolved doc-set): glossary, decisions, capabilities\n3. Remaining `kb-category: primary` docs in `discovery.doc_set` list order\n4. `kb-category: extension` docs in `discovery.doc_set` list order\n5. `kb-category: meta` docs last\n6. `NN-kb-index.html` (always last — full resolved-doc table)\n\nNumber the filenames sequentially (`00-`, `01-`, etc.) matching the manifest order so the\nfilesystem listing is also ordered; the assembler reads the manifest, not the filesystem\nglob, for authoritative ordering.\n\nUse `canonical/aid/templates/knowledge-summary/html-skeleton.html` as the seed when\nscaffolding `skeleton-head.html` for the first time. The outer page shell (top bar, side\npanel, search, nav chrome) is kept consistent with `home.html` and the CLI `index.html`.\nOnly the inner content area (the sections) is domain-specific.\n\nThe skeleton already includes the full export chrome in the `.controls` block:\n- **\"Export as Markdown\"** button (`#btn-export-md`) — downloads the embedded KB payload\n  as `knowledge-base-export.md`; disabled gracefully when the payload element is absent.\n- **\"Export as PDF\"** button (`#btn-export-pdf`) — opens all `<details>` (including\n  `details.accord`) before calling `window.print()` so closed accordions are captured;\n  restores prior open states via the `afterprint` event.\n\nBoth handlers are in `canonical/aid/templates/knowledge-summary/lightbox.js` (inlined by\n`post-script.html`) and are wired into the existing `DOMContentLoaded` bootstrap via\n`initExportMarkdown()` and `initExportPDF()`. No additional wiring is required when\nscaffolding from the seed. Print CSS (`@media print`) in\n`canonical/aid/templates/knowledge-summary/component-css.css` hides nav/controls/lightbox,\nforces light-theme rendering when the page is in dark mode, and inserts page breaks between\ntop-level sections.\n\nInject into the seed when scaffolding `skeleton-head.html`:\n- Hero with project name (read from `.aid/knowledge/STATE.md` or `pom.xml` / `package.json`).\n- Inlined CSS from `canonical/aid/templates/knowledge-summary/component-css.css`.\n- **noscript doc list** derived from the resolved doc-set (see §6 below) — not a hardcoded\n  list.\n\nAuthor each section file under `sections/` from KB content:\n- Section structure follows the manifest (§3 above): bespoke component for the three\n  well-known docs; generic fallback for all others.\n- Per-section content drawn from KB (cite source via relative `./xxx.md` link).\n- Rendering hints are in `canonical/aid/templates/knowledge-summary/section-templates/`\n  (keyed by `kb-category`/spine-dimension — NOT by project-type profile).\n- **LLM scope per section file:** author the inner content HTML only (the `<section>` body).\n  Do not write the outer shell (top bar, side panel, nav, footer) — those come from the\n  skeleton templates and are assembled mechanically.\n\n`post-script.html` inlines `canonical/aid/templates/knowledge-summary/lightbox.js`.\n\n**Parallel-safe authoring** — different agents/passes can edit different `sections/NN.html`\nfiles concurrently without merge conflicts, since each section is its own file.\n\n---\n\n### 6. Derive the noscript doc list\n\nThe `noscript` region in the skeleton must list the resolved docs so a user with JS off\ncan still navigate to the source markdown files. Derive the list at generation time:\n\n```html\n<noscript>\n  <div class=\"noscript-fallback\">\n    <h2>JavaScript required</h2>\n    <p>This summary uses JavaScript to power the theme toggle, lightbox, and scrollspy.\n       With JavaScript disabled, the interactive features will not work.</p>\n    <p>Either enable JavaScript, or read the source markdown files directly in\n       <code>.aid/knowledge/</code>:</p>\n    <ul>\n      <li><a href=\"./INDEX.md\">INDEX.md</a> -- Knowledge Base map</li>\n      <!-- One <li> per resolved doc-set entry (in manifest order): -->\n      <li><a href=\"./{doc}.md\">{doc}.md</a> -- {summary: value or doc name de-slugified}</li>\n      ...\n    </ul>\n  </div>\n</noscript>\n```\n\nAlways lead with `INDEX.md`. Then one `<li>` per resolved doc, in manifest order. The\none-line text comes from each doc's `summary:` frontmatter; fallback to the filename\nde-slugified. **No hardcoded doc list survives in the skeleton or any template.**\n\n---\n\n### 7. Build the Markdown export payload\n\nBefore assembling `kb.html`, generate the hidden Markdown export payload from the KB\nsource documents. The payload is embedded in `kb.html` as a `<script type=\"text/markdown\">`\nblock that client-side export buttons read to download a portable `.md` file.\n\n```bash\nbash canonical/aid/scripts/summarize/build-md-export.sh \\\n    --kb-dir .aid/knowledge \\\n    --manifest .aid/.temp/summarize/summary-src/section-manifest.txt \\\n    --output .aid/.temp/summarize/summary-src/md-export-payload.html\n#   reads:  .aid/knowledge/*.md (in manifest section order, frontmatter stripped)\n#   writes: .aid/.temp/summarize/summary-src/md-export-payload.html\n```\n\n**Payload element contract** (consumed by the client-side export chrome):\n\n| Property | Value |\n|----------|-------|\n| **Element** | `<script type=\"text/markdown\" id=\"kb-md-export\" data-encoding=\"base64\">` |\n| **Content** | Combined KB source docs, frontmatter stripped, local images embedded as `data:` URIs (`image/svg+xml` for `.svg`; `image/png`, `image/jpeg`, `image/gif`, `image/webp` for raster). The entire payload is **base64-encoded** (UTF-8 bytes → base64 ASCII). The element body is pure base64 alphabet — no escaping needed, lossless round-trip. Remote `http(s)://` image refs are left untouched. |\n| **Access** | `const b64 = document.getElementById('kb-md-export').textContent;` (returns the base64 string exactly — no leading/trailing whitespace or newlines) |\n| **Decode (UTF-8)** | `new TextDecoder().decode(Uint8Array.from(atob(b64), c => c.charCodeAt(0)))` — or equivalently `decodeURIComponent(escape(atob(b64)))` — to recover the original Markdown text including any non-ASCII characters |\n| **Filename hint** | `'knowledge-base-export.md'` |\n| **Location in `kb.html`** | Injected between `skeleton-foot.html` and `post-script.html` by `assemble.sh` when `md-export-payload.html` is present in the source layout dir |\n\n> **PS-mirror note:** The payload injection lives in `assemble.sh` (the bash-only kb.html\n> assembler). `assemble-3part.ps1` is a separate byte-concatenation utility that joins\n> pre-assembled Part1 + Part2 files; it is not part of the documented GENERATE flow and\n> does not require a parallel update for this payload.\n\nRun `build-md-export.sh` **before** `assemble.sh`. The assembler picks up the payload\nautomatically; if the file is absent it is silently skipped (no error), preserving\nbackward compatibility for runs that do not need the Markdown export.\n\n---\n\n### 8. Assemble the single-file distribution (deterministic)\n\nRun `canonical/aid/scripts/summarize/assemble.sh` with `--manifest` to concatenate the\nmulti-source layout into the final single-file `kb.html`. The `--manifest` flag is\n**required for deterministic assembly** (same manifest = same section order = same\nstructural output, reproducible + auditable, FR-50):\n\n```bash\nmkdir -p .aid/knowledge\nbash canonical/aid/scripts/summarize/assemble.sh \\\n    --manifest .aid/.temp/summarize/summary-src/section-manifest.txt \\\n    --output .aid/knowledge/kb.html\n#   reads:  .aid/.temp/summarize/summary-src/{skeleton-head.html,\n#             sections/* in manifest order, skeleton-foot.html,\n#             md-export-payload.html (if present), post-script.html}\n#   writes: .aid/knowledge/kb.html\n```\n\nFlags:\n- `--src DIR`       — override source layout path (default `.aid/.temp/summarize/summary-src`)\n- `--manifest FILE` — section manifest (one filename per line, relative to `sections/`);\n                      required for doc-set-deterministic ordering\n- `--output PATH`   — override output path (default `.aid/knowledge/kb.html`)\n\nThe script validates that all required source files exist and are non-empty before assembling.\nWithout `--manifest` it falls back to lexical glob order (backward-compatible but not\ndoc-set-deterministic; always supply `--manifest` for new runs).\n\nThe assembled `kb.html` is a **single self-contained file**: all CSS and JS inlined, no\nCDN, no split assets, no external framework fetch, **no runtime diagram engine**. Visuals\nare authored as inline SVG / HTML+CSS and are pre-rendered at build time (Change 7 / FR-51).\nThe dashboard server allowlists only `home.html`/`kb.html` — any sub-resource reference\nwould 404.\n\n---\n\n### 9. Write Knowledge Summary Status\n\nWrite initial fields to `.aid/knowledge/STATE.md` `## Knowledge Summary Status`:\n```markdown\n**Doc-Set Source:** .aid/settings.yml discovery.doc_set\n**Doc-Set Count:** {N resolved} of {M total}\n**Domain:** {I2 value}\n**Domain Source:** .aid/knowledge/STATE.md ## Discovery Domain\n**Theme:** default\n**Minimum Grade:** {grade}\n**Minimum Grade Source:** {.aid/settings.yml summary.minimum_grade | .aid/settings.yml review.minimum_grade | --grade flag | default}\n**Grade:** Pending\n**Grade Source:** `grade.sh`, over `.aid/.temp/review-pending/summarize.md`\n**Checklist:** Not run\n<!-- Exactly two forms, and APPROVAL depends on it: `Not run` or `Completed YYYY-MM-DD`.\n     The reason it must be run before APPROVAL (SUMMARY-06 cannot be answered by an agent) belongs in\n     prose, not inside the field's value -- a parenthetical here made the value a third form. -->\n**Last Run:** {iso8601}\n**Trigger Reason:** {initial | stale-after-review-N | --reset | re-approval-only}\n**Output:** .aid/knowledge/kb.html\n**Output Size:** {MB}\n**Last Reviewed KB Date:** {YYYY-MM-DD}\n**Last Summary Date:** {YYYY-MM-DD or N/A}\n**Writeback Status:** pending\n```\n\nAlso default the approval scalar in the frontmatter block (relocated by\nwork-003-state-schema task-001/004 -- `summary_approved` replaces the OLD\n`**User Approved:** no` bold line that used to live in this same block; a fresh\nGENERATE is never pre-approved):\n\n```bash\nbash canonical/aid/scripts/summarize/writeback-state.sh --set summary_approved no\n```\n\nPrint: `[State: GENERATE] complete.`\n\n**Advance:** **CHAIN** → [State: VALIDATE] (continue inline).\n"
+      }
+    },
+    {
+      "id": "n5",
+      "order": 5,
+      "name": "VALIDATE",
+      "label": "VALIDATE runs the machine-verifiable quality checks…",
+      "kind": "decision",
+      "terminal": null,
+      "provenance": {
+        "file": "canonical/skills/aid-summarize/SKILL.md",
+        "startLine": 187,
+        "endLine": 187,
+        "sourceKind": "skill",
+        "excerpt": "| VALIDATE | `references/state-validate.md` | inline | → MANUAL-CHECKLIST (grade ≥ min) / → FIX (grade < min) |"
+      },
+      "detail": {
+        "file": "canonical/skills/aid-summarize/references/state-validate.md",
+        "startLine": 1,
+        "endLine": 193,
+        "sourceKind": "worker",
+        "excerpt": "# State: VALIDATE\n\nVALIDATE runs the machine-verifiable quality checks (coverage, links, HTML, accessibility, contrast, retired-runtime) and records each failure as a ledger finding; it is selected after GENERATE completes and again after FIX. **Visual fidelity is NOT among them** -- `validate-visuals.mjs` is available but invoked by nothing, so T1/T2/T3 do not run here; see the note below and the mandatory human visual check.\n\n**It does not compute a grade.** `grade.sh` does that, from the ledger, at the end of this state — the same way every other artifact in AID is graded.\n\n▶ validation suite starting (~1 min total — **2** validators actually run, `validate-html-output.sh` and `contrast-check.mjs`, at ~30 s each per `canonical/aid/templates/rough-time-hints.md`; the coverage and retired-runtime checks are inline)\nRun the emitter against a **per-cycle scratch ledger**, never against the canonical one:\n\n```bash\nmkdir -p .aid/.temp/review-pending      # DONE rmdir's it, so it is absent on a fresh run\nN=<this cycle's number, 1 on first entry>\nbash canonical/aid/scripts/summarize/emit-summary-findings.sh .aid/knowledge/kb.html \\\n     --ledger \".aid/.temp/review-pending/summarize-cycle${N}.md\"\n```\n\n> ⚠️ **Appending to the canonical ledger every cycle cannot converge, and this state used to do it.**\n> The emitter only ever *appends*; `state-fix.md` correctly forbids FIX from touching the `Status`\n> column; and nothing but DONE deletes the file. So a row stayed `Pending` after its defect was\n> genuinely fixed, `grade.sh` kept counting it, VALIDATE kept routing back to FIX — and each pass\n> duplicated every still-failing row on top. Reproducible: fix the one unreferenced document and the\n> grade does not move off `C+`.\n>\n> Scratch-per-cycle plus reconciliation is not a new mechanism invented here; it is the model\n> `reviewer-ledger-schema.md § Attempts and reconciliation` already defines, and the same one\n> `aid-discover`'s panel uses. This state simply has to follow it.\n\n**Reconcile scratch → canonical on `(Doc, Rule)`** (`Line` breaks a legitimate duplicate pair), per that\nsection's transition table:\n\n**Human-authored rows are identified by a `Line` of `human/<check>`** (MANUAL-CHECKLIST writes `human/K1`, `human/K2`, `human/V1`). Reconciliation **skips any row whose `Line` starts `human/`**, whatever its `Rule`. This is not belt-and-braces: `SUMMARY-01` is emitter-owned *and* is the rule MANUAL-CHECKLIST authors from the human's K1 answer, so a rule-only carve-out would still let the machine sweep clear a human's coverage finding. The `Line` marker is what keeps the two apart, and it is also the join-key tiebreaker, so the human row and the machine row for the same document coexist instead of colliding.\n\n**Beyond that, reconciliation applies ONLY to rows the emitter could have produced** — those whose `Rule` is one of\n`SUMMARY-01`, `SUMMARY-02`, `SUMMARY-03`, `SUMMARY-07`, `SUMMARY-08`, `SUMMARY-09`, `PRE-02`, `PRE-03`,\n`PRE-01`, `PRE-04`, `PRE-05`, `PRE-11`. Every other row is left exactly as it stands.\n\n> ⚠️ **This scoping is the whole safety property, not a refinement.** The same ledger also holds\n> `SUMMARY-04`, `SUMMARY-05` and `SUMMARY-06` rows — claim truth and the human visual check, the rows\n> *no script can produce*. The emitter never emits those keys, so an unscoped \"absent from scratch →\n> `Fixed`\" rule would mark an unresolved human visual failure `Fixed` on the very next VALIDATE, and\n> `state-fix.md` tells the fixer not to touch Status precisely because it trusts this step. That is the\n> hazard `reviewer-ledger-schema.md` states as *\"absence proves nothing\"* unless the covering unit is\n> `Examined`; the emitter's mechanical sweep is what makes absence evidential **for its own twelve\n> rules and for nothing else**. A rule the emitter can emit but this list omits is worse than either:\n> its rows would never reconcile, so the loop could not converge for it. That contract broke three\n> times before it was mechanised — `tests/canonical/test-one-grading-backend.sh` now asserts the\n> emitter's rule set against three surfaces: **`RS05` against the list above** (the only one that reads\n> it — the list is prose, so neither a table-row nor a bullet pattern reaches it, and deleting a rule\n> from it left the whole suite green), `RS02` against the check table below, and `RS03` against\n> `state-fix.md`'s repair bullets. `RS01` is the non-vacuity count for the set itself.\n\n| Canonical row (emitter-owned `Rule` only) | Key in this cycle's scratch? | Result |\n|---|---|---|\n| `Pending` | yes | stays `Pending` — Severity and Description are authorial, never rewritten |\n| `Pending` | no | → `Fixed`. The emitter examined every check it did not report as unevaluated, so absence here IS evidence |\n| `Fixed` | yes | → `Recurred` |\n| `Fixed` | no | stays `Fixed` |\n| `Accepted` / `OOS` / `Invalid` | either | never auto-changed |\n| — | key absent from canonical | append as a new finding at the next free `#` |\n| **any row whose `Rule` is not emitter-owned** | **not consulted** | **untouched** — `SUMMARY-04/05/06` clear only through MANUAL-CHECKLIST re-answering them |\n\n**If the emitter exited `2`, reconcile nothing.** An unevaluated run has not examined the checks it\nskipped, so absence from its scratch proves nothing and would clear findings that still stand.\n\nThen delete the scratch: `rm -f \".aid/.temp/review-pending/summarize-cycle${N}.md\"`.\n\nIt orchestrates the machine-verifiable checks only.\n\n> ⚠️ **It invokes items 2 and 3 below, not item 1.** `emit-summary-findings.sh` runs\n> `validate-html-output.sh` and `contrast-check.mjs`; it also performs the doc-set coverage\n> and retired-runtime checks inline. **It does not invoke `validate-visuals.mjs`** — and\n> neither did the `grade-summary.sh` it replaced, so this is a long-standing wiring gap and\n> not something the one-grading-backend change introduced. Verify before relying on it:\n> `grep -c validate-visuals canonical/aid/scripts/summarize/emit-summary-findings.sh`.\n> Until it is wired, run item 1 by hand and treat the **mandatory** human visual check\n> (`SUMMARY-06`, MANUAL-CHECKLIST) as the live safeguard — the same fallback already\n> specified below for a host without Playwright.\n\n1. **`canonical/aid/scripts/summarize/validate-visuals.mjs`** — **S7 visual-fidelity gate (FR-51)** — *available, not currently invoked by the orchestrator; see the note above.* Playwright-renders `kb.html` in a headless Chromium browser (offline, `file://` URL, no network) and asserts, for every authored visual (inline `<svg>` / `.diagram-box` / infographic container):\n   - **T1 — Readable text:** every visible text node inside the visual has a computed font-size >= 10 px and is NOT overflow-clipped to zero height.\n   - **T2 — Minimal/zero overlap:** the bounding boxes of the visual's child elements do not materially overlap each other (tolerance: <= 20% of the smaller element's area).\n   - **T3 — Correct basic layout:** the visual's own bounding rect has non-trivial dimensions (width > 0 AND height > 0) — the visual is rendered, not collapsed or empty.\n   A visual that fails any of T1/T2/T3 is a **generation defect that blocks DONE** (same rigor as the old \"no broken diagram\" guarantee). Exit non-zero = defect; fix in GENERATE before continuing.\n   **Visual-inspection fallback:** if Playwright is not installed, `validate-visuals.mjs` exits 0 with a SKIP message listing the visuals that require manual inspection. In this case, the **MANUAL-CHECKLIST V1 human visual gate is mandatory** — a reviewer must load `kb.html` in a browser and confirm that every visual is readable and correctly laid out. Reading or inspecting HTML/CSS source alone is NOT sufficient; it does not substitute for Playwright visual validation or a live browser inspection. Document any such skip in STATE.md before marking DONE.\n   **Replaces:** the retired `validate-diagrams.mjs` (Mermaid D1/D2 JSDOM-based check — moot once the Mermaid engine is removed in D-012 Change 7 / FR-51).\n2. **`canonical/aid/scripts/summarize/validate-html-output.sh`** — single invocation that performs link-integrity AND HTML structural/a11y checks: L1/L2 (anchor and `./*.md` link integrity), H1 (tidy → html-validate → regex cascade — script picks the most rigorous tool available and prints which), A1/A2/A4/A5 (semantic landmarks, lightbox ARIA, reduced-motion, focus-visible), S2 (offline render — CDN-free assertion: no external CDN `<script src>` or `<link href>` in the output), NM (no-Mermaid-engine assertion: output contains no Mermaid runtime engine or init call). **A3 (focus trap)** is auto-detected via `grep` of the inlined `lightbox.js` for the markers `trapFocusOnTab`, `lastFocused.focus()`, `key === 'Escape'`.\n3. **`canonical/aid/scripts/summarize/contrast-check.mjs`** — C1/C2: WCAG ratios for both themes.\n4. **`canonical/aid/scripts/summarize/validate-diagram-content.mjs`** — **diagram-content gate (complement to S7):** where S7 checks a diagram *renders* well, this checks it *says the right thing*. If a content manifest exists at `.aid/.temp/summarize/summary-src/diagram-content-manifest.json`, it asserts every diagram contains its `requires` tokens and none of its `forbids`/stale tokens (phase names, skill/agent/profile counts). This catches label drift that text-grep and the rendering gate miss (e.g. a phase box still reading \"Interview\" after a skill rename). Run `node canonical/aid/scripts/summarize/validate-diagram-content.mjs .aid/knowledge/kb.html .aid/.temp/summarize/summary-src/diagram-content-manifest.json`; exit non-zero = stale/missing label, fix in GENERATE. **No manifest present → skip (backward-compatible).** The manifest is the machine-readable companion to a human-readable diagram reference (e.g. `docs/diagram-content-reference.md`); keep both in lockstep with the diagrams.\n\n✓ validation suite done (record actual time, per-script pass/fail summary) — or ✗ validation suite failed: {script, reason}\n\n### What lands in the ledger, and who puts it there\n\n> ⚠️ **`emit-summary-findings.sh` writes these rows itself.** It calls\n> `writeback-ledger.sh --append-finding` once per failed check, so the orchestrator must **not**\n> translate the validator output into rows a second time. This section is the **reference for what\n> the script emits** — not a task list for the agent. Doing it by hand as well duplicates every row\n> in the table below, and `grade.sh` grades by *count*, so a duplicated `[MEDIUM]` moves the grade\n> a full step for one defect.\n>\n> The only rows an agent adds by hand are the ones no script can produce: `SUMMARY-04`,\n> `SUMMARY-05` (claim truth) and `SUMMARY-06` (the human visual check) — and those come from\n> MANUAL-CHECKLIST, not from here.\n\n**`SUMMARY-01` and `PRE-11` are the only checks that emit per INSTANCE.** Coverage writes one row\nper unreferenced document (naming it) and contrast one per failing token pair (keyed by theme and\npair in `Line`). Every other check emits **one row for the check**, carrying the validator's own\nreported count in its Evidence — the emitter loops check IDs, not instances. Earlier wording here\npromised \"one row per broken link / per reported error / per CDN reference\", which the script does\nnot do; a reader sizing a FIX from this table would have expected N rows and seen one.\n\nEvery row cites the rule it breaks, per the ledger schema's `Rule` column. The check-to-rule mapping\nis the one recorded in `review-rubrics/summary.md § Where the retired per-check scores went`.\n\n**Severity is looked up from the rule, never restated here.** The `Severity` column below is a\nconvenience copy of what `review-rubrics/summary.md` and `presentation.md` declare; where this table\nand the catalog ever disagree, **the catalog wins** and this table is the defect. Restating a\nseverity is how a second source of truth starts, and one already did: this table used to give\n`[HIGH]` for `L1`, `L2` and `H1` — the values the retired points model carried — while the catalog\nre-derived them against the canonical scale as `[MEDIUM]`, `[MEDIUM]` and `[MEDIUM]`. Those three are\ncorrected below, exactly the re-derivation feature-007 §1b called for.\n\n| Script check | Rule | Severity (per the catalog) | Rows |\n|---|---|---|---|\n| COV (a resolved doc-set document is not referenced) | `SUMMARY-01` | `[MEDIUM]` | **One row per unreferenced document, naming it.** There is no 60% cliff and no automatic F: the grade follows from how many documents are missing |\n| T1 (visual text not readable — font-size below threshold or zero-height-clipped) | `SUMMARY-06` | `[HIGH]` | one row per failing visual — **NOT emitted today**, see the note above |\n| T2 (visual child element overlap exceeds 20% tolerance) | `SUMMARY-06` | `[HIGH]` | one row per failing visual — **NOT emitted today**, see the note above |\n| T3 (visual collapsed or empty — non-trivial dimensions assertion failed) | `SUMMARY-06` | `[HIGH]` | one row per failing visual — **NOT emitted today**, see the note above |\n| L1 (broken anchor links) | `SUMMARY-08` | `[MEDIUM]` | **one row for the check**, not per link — the emitter loops check IDs, and the validator's own line reports the count. A dead in-page jump is confined and locally correctable, which is Step 2's `[MEDIUM]` cell |\n| L2 (broken .md links) | `SUMMARY-09` | `[MEDIUM]` | **one row for the check**, not per path; it sends the reader out of the summary to nothing |\n| H1 (HTML validity failure) | `SUMMARY-02` | `[MEDIUM]` | **one row for the check**, not per error |\n| A1 (missing semantic landmarks) | `PRE-02` | `[MEDIUM]` | one row |\n| A2 (missing ARIA on lightbox) | `PRE-04` | `[MEDIUM]` | one row |\n| A3 (focus trap missing) | `PRE-04` | `[MEDIUM]` | one row |\n| A4 (reduced-motion block missing) | `PRE-05` | `[MEDIUM]` | one row |\n| A5 (visible focus missing) | `PRE-03` | `[MEDIUM]` | one row |\n| S2 (CDN reference found — page not self-contained) | `SUMMARY-03` | `[HIGH]` | **one row for the check**, not per reference — an offline reader gets a broken page, so the radius has escaped |\n| NM (Mermaid engine detected in output — should not be present in D-012) | `SUMMARY-07` | `[HIGH]` | one row |\n| C1/C2 (WCAG contrast fail) | `PRE-11` | `[MEDIUM]` | one row per failing color pair, `Line` = `theme/pair` so N rows share one rule without collapsing to one join key |\n| Structural: `noscript fallback present`, `color-scheme: light dark` | `PRE-01` | `[MEDIUM]` | one row per unmet item, `Line` = the item's label. The validator's third structural check, `skip-link present`, is **not** mapped — no `PRE` rule cites the checklist section that declares it, so it surfaces through the unmapped-check guard instead of being pinned on a criterion that does not cover it |\n\nThe row the script writes for each failed check:\n- `#` = next sequential row number (assigned by `writeback-ledger.sh`, never by hand)\n- `Severity` = per the catalog, as in the table above (bracketed; one of the five tokens)\n- `Status` = `Pending`\n- `Doc` = the failing document — `kb.html`, or the named KB document for a `SUMMARY-01` row\n- `Line` = the value that distinguishes rows sharing one `(Doc, Rule)` key: the check id for the\n  validator-driven checks, `theme/pair` for `PRE-11`, the item label for `PRE-01`, and `human/<check>`\n  for a MANUAL-CHECKLIST row. It is the join's only tiebreaker, so it is never left empty for a rule\n  that can emit more than one row. Where genuinely inapplicable the schema's sentinel is `--`, not an\n  em dash.\n- `Description` = one sentence: \"check X failed: {what was wrong}\"\n- `Evidence` = the validator's own output line\n\nPassed checks are NOT added to the ledger (no row = no finding).\n\n**If the script exits `2`, do not grade.** That is its \"a check group could not be evaluated\" code, and\nit has **four** triggers — this passage used to name only the first two, so a reader met a pause whose\nstated cause did not apply:\n\n1. a validator is absent, or timed out;\n2. `settings.yml` exists but declares no `doc_set` rows, so `SUMMARY-01` had nothing to check;\n3. the HTML validator reported a failing check that no rule in the emitter's `RULE_FOR` claims — today\n   that is `skip-link present`, deliberately unmapped because no `PRE` rule cites the checklist section\n   declaring it (see the note in the check table above);\n4. the contrast checker could not resolve a token pair, or measured 0 of 0 pairs.\n\n3 and 4 are the ordinary ones, and both occur with **both validators present and running**. An empty\nledger from an unrun check grades `A+`, which is the one outcome worse than a failing grade. Report the\nnotes the script printed — each names its own cause — and stop.\n\nPersist the findings and the per-check table to `.aid/knowledge/STATE.md` `## Knowledge Summary Status` `### Findings (last validation)`.\n\n**A missing canonical ledger means zero findings, and that is a PASS — not an error.** A first cycle\nthat finds nothing never creates the file, and `grade.sh` on a missing path exits 1 with\n`cannot read input file`, which is not a grade and must not be read as one. Treat absent-or-empty as\nzero findings and route to MANUAL-CHECKLIST; run the two commands below only when the file exists.\n\nThe grade is then computed by the one grading backend:\n\n```bash\nbash canonical/aid/scripts/review/check-gaps.sh --ledger .aid/.temp/review-pending/summarize.md   # exit 1 = an open criteria gap; do NOT grade\nbash canonical/aid/scripts/grade.sh --explain .aid/.temp/review-pending/summarize.md\n```\n\nIf the grade >= minimum → MANUAL-CHECKLIST. Otherwise → FIX.\n\nPrint: `[State: VALIDATE] complete.`\n\n**Advance:** **CHAIN** → [State: MANUAL-CHECKLIST] if the grade >= minimum; **CHAIN** → [State: FIX] if it is below. Both continue inline.\n\n**If the emitter exited `2`, or `check-gaps.sh` exited `1`, neither branch applies** — there is no grade to route on. Those are **PAUSE-FOR-USER-ACTION**: print what could not be evaluated (or which criteria gap is open), print the command that resolves it, and exit. Re-invoking `/aid-summarize` re-enters VALIDATE. Typing these as either CHAIN would route on a grade that was never computed, which is the whole reason the emitter has an exit-2 in the first place.\n"
+      }
+    },
+    {
+      "id": "n6",
+      "order": 6,
+      "name": "MANUAL-CHECKLIST",
+      "label": "MANUAL-CHECKLIST elicits the human-judgment answers no…",
+      "kind": "exit",
+      "terminal": {
+        "advanceType": "PAUSE-FOR-USER-ACTION",
+        "handoff": "If the checklist is unanswered, : print the manual-checklist.sh command and exit, so re-invoking /aid-summarize resumes here"
+      },
+      "provenance": {
+        "file": "canonical/skills/aid-summarize/SKILL.md",
+        "startLine": 188,
+        "endLine": 188,
+        "sourceKind": "skill",
+        "excerpt": "| MANUAL-CHECKLIST | `references/state-manual-checklist.md` | inline | → APPROVAL |"
+      },
+      "detail": {
+        "file": "canonical/skills/aid-summarize/references/state-manual-checklist.md",
+        "startLine": 1,
+        "endLine": 79,
+        "sourceKind": "worker",
+        "excerpt": "# State: MANUAL-CHECKLIST\n\nMANUAL-CHECKLIST elicits the human-judgment answers no machine can produce — KB completeness, fact-grounding, and the mandatory human visual check; it is selected after VALIDATE's grade clears the minimum.\n\nThese need human judgment because the script cannot verify them. **This is agent-driven elicitation, not an interactive shell script** (the skill runs inside a host AI tool's chat — the agent gathers the answers, then writes the result file).\n\n**The checklist records answers; it does not score them.** Its answers become ledger findings like any\nother, and `grade.sh` derives the letter from the ledger. There is no separate human grade to combine.\n\n### Step 1 — generate the fact spot-check report (helps the user answer K2)\n\nRun `canonical/aid/scripts/summarize/spot-check-facts.sh`. It extracts numeric/named claims from the HTML, greps the source KB, and writes `.aid/.temp/summarize/spot-check-facts.txt` (each line: `[OK|MISS] HTML-claim | KB-evidence`). Show the user the `MISS` lines, if any.\n\n### Step 2 — elicit the human-judgment answers via `AskUserQuestion`\n\nAsk the user (use `AskUserQuestion`; the user must have actually opened the HTML in a browser first — say so):\n\n- **K1 — KB completeness (`SUMMARY-01`):** \"Open the generated HTML. Does it represent every populated KB doc you care about?\" → Full / Partial / No. A `Partial` or `No` answer becomes one `[MEDIUM]` finding **per document the user names as missing** — ask which ones.\n- **K2 — facts grounded (`SUMMARY-05`):** \"Using the spot-check report above, are the HTML's numeric/named facts accurate against the source KB?\" → Full / Partial / No. Anything short of Full becomes a finding per inaccurate fact; the spot-check report's `MISS` lines are the evidence.\n- **V1 — human visual check (`SUMMARY-06`, MANDATORY):** \"Open the HTML in a real browser. Confirm ALL of: (a) every diagram renders, no error blocks; (b) diagram + node text is legible in BOTH light AND dark themes — including the EXPANDED lightbox view; (c) theme toggle works; (d) lightbox opens / Esc closes / Tab cycles.\" → Pass / Fail. A Fail is a `[HIGH]` finding per failing visual and blocks approval. No automated check covers diagram-internal legibility — this is the only safeguard.\n- **Free-text:** \"Anything else off — framing, depth, tone, missing content?\" — capture verbatim.\n\n### Step 3 — write the result file\n\nThe agent passes the answers to `manual-checklist.sh`, which **records** them (it no longer scores them):\n```\nbash canonical/aid/scripts/summarize/manual-checklist.sh \\\n  --k1 <y|p|n> --k2 <y|p|n> --v1 <y|n> --notes \"...\" --html .aid/knowledge/kb.html\n```\nThis writes `.aid/.temp/summarize/manual-checklist.json` with the answers, notes, and timestamp. (A contributor in a raw terminal can instead run `manual-checklist.sh --interactive`.)\n\n### Step 4 — append findings, then grade\n\nFor each answer short of a clean pass, append a ledger row to `.aid/.temp/review-pending/summarize.md`\nciting the rule above, **with `Line` set to `human/K1`, `human/K2` or `human/V1`**, then re-grade the\nledger:\n\n> The `human/` marker is load-bearing. `SUMMARY-01` is also emitted mechanically by\n> `emit-summary-findings.sh`, and VALIDATE's reconciliation clears emitter-owned rows that its next\n> sweep does not re-find. Without the marker a human's K1 coverage finding would be cleared by a\n> machine that never evaluated it -- and `Line` is the ledger's join-key tiebreaker, so it also keeps\n> the human row and the machine row for the same document from collapsing into one.\n\n```bash\nbash canonical/aid/scripts/review/check-gaps.sh --ledger .aid/.temp/review-pending/summarize.md\nbash canonical/aid/scripts/grade.sh --explain .aid/.temp/review-pending/summarize.md\n```\n\nPersist the grade and findings to `.aid/knowledge/STATE.md` `## Knowledge Summary Status`\n`### Findings (last validation)`.\n\n- Grade ≥ minimum → APPROVAL.\n- Grade < minimum → FIX. **If the shortfall is in the human-judgment answers** or the free-text notes flagged something, FIX uses the **expose → propose → ask** loop (see `references/state-fix.md`) — never silent guess-fixing.\n\n#### A `V1` failure is three different outcomes, and they must not be conflated\n\n`V1` used to be one boolean that meant all three of these at once, which is how a single `F`\ncame to stand for a broken visual, a dead page, and a check nobody had run.\n\n| What the human found | Outcome |\n|---|---|\n| **A specific visual is broken or illegible** — the ordinary case | A `SUMMARY-06` row per failing visual, `[HIGH]`. The grade follows from the rows, exactly like any other finding, and routes to FIX. Do **not** reach for `--non-functional`: the page works, one visual in it does not. |\n| **The page produces nothing usable** — nothing renders, the file will not open, the theme toggle is dead | `bash canonical/aid/scripts/grade.sh --non-functional`. This is the flag's declared meaning and its only legitimate use here — `aid/templates/grading-rubric.md § Severity Scale` -- the top-level rubric, not the sibling `knowledge-summary/grading-rubric.md` -- defines it as the whole-artifact verdict *\"does not build, does not run, produces no usable output\"*. Reaching for it because a diagram is ugly would make `F` mean two things again. |\n| **The checklist has not been answered** | **No grade at all.** See below. |\n\n**If the checklist has NOT been completed, do not grade and do not route.** Pause and ask the human\n(PAUSE-FOR-USER-ACTION -- see this state's Advance line; not HALT, which is terminal). This\nis a **pause, not a failing grade** — the previous behaviour reported `F`, which asserts a result nobody\nobserved and makes an unanswered check indistinguishable from a genuinely failed one. `SUMMARY-06`\ncannot be answered by an agent, so an agent proceeding here is the failure this gate exists to prevent.\nNote that this is also what keeps `--non-functional` honest: without a separate pause, \"unanswered\" had\nnowhere to go but `F`, and `F` is what `--non-functional` produces.\n\nPrint: `[State: MANUAL-CHECKLIST] complete.`\n\n**Advance:** **CHAIN** → [State: APPROVAL] if the grade ≥ minimum; **CHAIN** → [State: FIX] otherwise — both continue inline. If the checklist is unanswered, **PAUSE-FOR-USER-ACTION**: print the `manual-checklist.sh` command and exit, so re-invoking `/aid-summarize` resumes here.\n\n> Not **HALT**. `state-machine-chaining.md` makes HALT *terminal* — the work is finished or abandoned — whereas an unanswered checklist is waiting on a human who is expected to come back, which is exactly what PAUSE-FOR-USER-ACTION means and what the pause signal is wired to. Typing this as a halt would end the run for the one outcome designed to be resumed.\n"
+      }
+    },
+    {
+      "id": "n7",
+      "order": 7,
+      "name": "FIX",
+      "label": "FIX repairs machine-detected findings autonomously and…",
+      "kind": "step",
+      "terminal": null,
+      "provenance": {
+        "file": "canonical/skills/aid-summarize/SKILL.md",
+        "startLine": 189,
+        "endLine": 189,
+        "sourceKind": "skill",
+        "excerpt": "| FIX | `references/state-fix.md` | inline | → VALIDATE |"
+      },
+      "detail": {
+        "file": "canonical/skills/aid-summarize/references/state-fix.md",
+        "startLine": 1,
+        "endLine": 51,
+        "sourceKind": "worker",
+        "excerpt": "# State: FIX\n\nFIX repairs machine-detected findings autonomously and routes human-judgment findings through the expose-propose-ask loop; it is selected when VALIDATE or MANUAL-CHECKLIST determines the grade is below minimum.\n\nFIX handles two fundamentally different kinds of finding. **Route each by kind** — do not treat them the same. The split is by *what evidence settles it*, not by which of two score pools it once belonged to; those pools are gone.\n\n### Machine-detected findings — fix directly (objective; one correct fix)\n\nRead `.aid/.temp/review-pending/summarize.md`. Filter rows where Status ∈ {`Pending`, `Recurred`} — these are the open findings to address. **Do NOT modify the ledger `Status` column during FIX** — that is reconciliation's job, and VALIDATE does it: it re-runs the checks into a per-cycle scratch ledger and reconciles scratch against this file on `(Doc, Rule)`, flipping to `Fixed` exactly the rows whose defect is gone (`references/state-validate.md`).\n\n> This used to read *\"VALIDATE will re-run the checks and create fresh rows in the next cycle\"*, which was wrong in both halves and made the loop non-terminating: VALIDATE appended to this same file rather than creating anything fresh, so a fixed row stayed `Pending`, `grade.sh` kept counting it, and every pass duplicated the rows that were still failing.\n\nFor each Pending/Recurred row, apply the corresponding repair autonomously:\n\n- **`SUMMARY-01` findings (resolved doc-set coverage)** — the summary is missing sections for resolved KB docs. Each finding **names the missing document**, so add a section for each one until `emit-summary-findings.sh` finds a reference to it in the HTML. Fix them all: **fixing some but not all may not move the grade at all.** `grade.sh` counts findings in three bands (`modifier_for_count`: 1 -> `+`, 2-5 -> none, 6+ -> `-`), so the measured curve for `[MEDIUM]` rows is **0 -> `A+`, 1 -> `C+`, 2-5 -> `C`, 6+ -> `C-`**. Going from five missing documents to two is three real fixes and zero grade steps. The retired ladder's\n  60% cliff is gone, but banding is not the same as monotonicity, and an earlier version of this line\n  claimed \"there is no threshold to clear\" -- the thresholds it denied (1 and 5) are the ones\n  `grade.sh` actually has.\n- **`SUMMARY-07` (a retired diagram runtime is present)** — a legacy `<pre class=\"mermaid\">` block or a Mermaid engine reference was authored by mistake. Remove it and replace it with an inline SVG visual (see `canonical/aid/templates/knowledge-summary/authored-visual-catalog.md`). This row replaces the old `D1`/`D2` entries, which are **deleted**: they were hardcoded to pass once the Mermaid engine was retired, so a repair instruction for them described a row that could not appear.\n- **`SUMMARY-08` (L1 — anchor links)** — fix the `href` or add the missing `id`.\n- **`SUMMARY-09` (L2 — relative md links)** — correct the relative path.\n- **`SUMMARY-02` (H1 — HTML validity)** — fix the reported markup error (from tidy / html-validate / regex, whichever ran).\n- **`PRE-02` / `PRE-04` / `PRE-05` / `PRE-03` (A1–A5 — accessibility)** — add the missing landmark / ARIA attribute / focus-trap marker / reduced-motion block / focus-visible rule.\n- **`PRE-11` (C1 / C2 — contrast, one rule across both themes)** — adjust the offending color in the inlined CSS to meet the ratio. The row's `Line` names the theme and the token pair.\n- **`SUMMARY-03` (S2 — page not self-contained)** — the assembled HTML carries an external reference. Remove the `<script src=\"https://…\">` or `<link href=\"https://…\">` and inline what it provided; the summary must render with the network disabled.\n- **`PRE-01` (document-level accessibility)** — add the missing item the row's `Line` names: a `<noscript>` fallback listing the doc-set, or a `color-scheme: light dark` declaration. Both are MUST items in `knowledge-summary/accessibility-checklist.md § Document level`.\n\n> **This list must name every rule the emitter can emit — all twelve.** It carried ten: `SUMMARY-03`\n> and `PRE-01` were missing, so a row for either reached FIX with no repair instruction and could\n> never reach `Fixed`, which stalls the VALIDATE → FIX → VALIDATE loop for it. Keep it in step with\n> `emit-summary-findings.sh`'s `RULE_FOR` plus its two direct emitters (`SUMMARY-01`, `PRE-11`);\n> `tests/canonical/test-one-grading-backend.sh` asserts the three surfaces agree.\n\nEdit ONLY the failing parts; leave everything else untouched. After all mechanically-fixable findings are addressed, return to VALIDATE.\n\n### Human-judgment / subjective findings — expose → propose → ask (NEVER fix silently)\n\nWhen a human-judgment answer fell short (KB completeness, fact grounding) or the user left a free-text complaint in `## Manual Notes`, there is **no single objective fix** — the user flagged it because their judgment is the input. Do NOT guess-and-apply. Instead, for each such issue, run the **expose → propose → ask** loop:\n\n1. **Expose** — restate the issue precisely. Quote the user's note or the failing checklist item. Name the specific HTML section(s) or claim(s) involved. Example: *\"K1 was answered `partial` — your note says the Schemas section only lists artifact names without the per-artifact schemas that `schemas.md` actually contains.\"*\n2. **Propose** — offer a concrete, specific fix. Example: *\"Proposed: expand §5 Schemas to include the field-level schema table for each of the 15 artifacts, pulled from `schemas.md §2.1-§2.15`. Adds ~40 lines.\"*\n3. **Ask** — use `AskUserQuestion` to ask the user to (a) approve the proposed fix, (b) provide their own fix / direction, or (c) mark the issue as won't-fix (accept the finding, and the grade that follows from it). Wait for the answer before editing.\n\nApply only what the user confirms. Capture the resolution in `.aid/knowledge/STATE.md` `## Knowledge Summary Status` `### Manual Notes`. After all human-judgment findings are resolved (or accepted as won't-fix), return to VALIDATE → MANUAL-CHECKLIST so the user can re-answer the checklist.\n\n**Rationale:** machine-detected issues have one objective fix; human-detected / subjective issues do not — applying the agent's guess silently risks solving the wrong problem or overwriting the user's intent. The user is the judgment input; collaboration produces the right outcome.\n\nPrint: `[State: FIX] complete.`\n\n**Advance:** **CHAIN** → [State: VALIDATE] (continue inline).\n"
+      }
+    },
+    {
+      "id": "n8",
+      "order": 8,
+      "name": "APPROVAL",
+      "label": "APPROVAL presents the graded summary to the user for final…",
+      "kind": "exit",
+      "terminal": {
+        "advanceType": "HALT",
+        "handoff": "If user rejected: (exit"
+      },
+      "provenance": {
+        "file": "canonical/skills/aid-summarize/SKILL.md",
+        "startLine": 190,
+        "endLine": 190,
+        "sourceKind": "skill",
+        "excerpt": "| APPROVAL | `references/state-approval.md` | inline | → WRITEBACK |"
+      },
+      "detail": {
+        "file": "canonical/skills/aid-summarize/references/state-approval.md",
+        "startLine": 1,
+        "endLine": 73,
+        "sourceKind": "worker",
+        "excerpt": "# State: APPROVAL\n\nAPPROVAL presents the graded summary to the user for final sign-off; it is selected when the grade meets the minimum, or when STALE-CHECK finds the HTML is current but not yet approved.\n\n**Pre-condition:** The grade must already be computed and ≥ minimum, AND the human checklist must have\nbeen completed. **The checklist gates by the EXISTENCE of its artifact, not by a score** — that is the\nwhole substance of the change, so make it a file test rather than a judgement:\n\n```bash\ntest -f .aid/.temp/summarize/manual-checklist.json\n```\n\nAbsent → refuse to enter APPROVAL and print:\n`❌ Cannot approve: the human checklist has not been completed (.aid/.temp/summarize/manual-checklist.json absent). Run /aid-summarize again to enter MANUAL-CHECKLIST.`\n\nThe `Checklist` field in `.aid/knowledge/STATE.md § Knowledge Summary Status` takes exactly two forms, and\nGENERATE, `discovery-state-template.md` and this state all carry the same two: **`Not run`** (as\nGENERATE initialises it) or **`Completed YYYY-MM-DD`**. Nothing else -- an explanatory parenthetical\ninside the value, or a `Completed` with no date, is a third form that a reader cannot parse. It is an agent-written body line, exactly like the two retired grade\nlines it replaces — `summarize/writeback-state.sh --set` owns only the five frontmatter scalars\n(`kb_status`, `kb_grade`, `last_kb_review`, `summary_approved`, `last_summary`) and deliberately not\nthis one.\n\nPrint summary in the standard format:\n\n```\n✅ kb.html ready for approval\n   Path:           .aid/knowledge/kb.html\n   Size:           {MB}\n   Domain:         {domain value from .aid/knowledge/STATE.md ## Discovery Domain}\n   Doc-set:        {N resolved} of {M total} docs covered\n   Grade:          {grade} (target: {min}) — grade.sh over the review ledger\n   Findings:       {n} ({worst severity} worst)\n   Checklist:      Completed {YYYY-MM-DD} — the human visual check is recorded, not scored\n   Theme:          light + dark, both pass WCAG AA\n   Trigger:        {reason}\n\nPreview:  python -m http.server 8000   # then open\n          http://localhost:8000/.aid/knowledge/kb.html\n   Or open the file directly in your browser.\n```\n\nUse `AskUserQuestion` to ask:\n> Approve this summary?\n> - **Approve** — record approval and update `.aid/knowledge/STATE.md` `## Summarization History`\n> - **Reject** — exit without recording\n> - **Changes needed** — describe what to change, transition to FIX\n\nThe summary's approval scalar (`summary_approved`) and its last-run date (`last_summary`)\nlive in `.aid/knowledge/STATE.md`'s leading YAML frontmatter block (relocated by\nwork-003-state-schema task-001/004 from the old `## Knowledge Summary Status` ad hoc\n`**User Approved:** yes (date)` bold line -- the exact table-row-vs-bold-line misparse\nthis delivery exists to fix). Write via the surgical frontmatter helper (never hand-edit\nthe bold line again):\n\nOn approval:\n```bash\nbash canonical/aid/scripts/summarize/writeback-state.sh --set summary_approved yes --set last_summary \"$(date -u +%Y-%m-%d)\"\n```\nthen transition to WRITEBACK.\n\nOn rejection:\n```bash\nbash canonical/aid/scripts/summarize/writeback-state.sh --set summary_approved no\n```\nexit. `## Summarization History` is NOT updated.\n\nOn changes-needed: capture the user's notes in `.aid/knowledge/STATE.md` `## Knowledge Summary Status` `### Pending Changes` (unaffected markdown-body content), transition to FIX.\n\nPrint: `[State: APPROVAL] complete.`\n\n**Advance:** If user approved: **CHAIN** → [State: WRITEBACK] (continue inline). If user rejected: **HALT** (exit; no writeback). If user said \"changes needed\": **CHAIN** → [State: FIX] (continue inline).\n"
+      }
+    },
+    {
+      "id": "n9",
+      "order": 9,
+      "name": "WRITEBACK",
+      "label": "WRITEBACK atomically records the approved summarization…",
+      "kind": "step",
+      "terminal": null,
+      "provenance": {
+        "file": "canonical/skills/aid-summarize/SKILL.md",
+        "startLine": 191,
+        "endLine": 191,
+        "sourceKind": "skill",
+        "excerpt": "| WRITEBACK | `references/state-writeback.md` | inline | → DONE |"
+      },
+      "detail": {
+        "file": "canonical/skills/aid-summarize/references/state-writeback.md",
+        "startLine": 1,
+        "endLine": 33,
+        "sourceKind": "worker",
+        "excerpt": "# State: WRITEBACK\n\nWRITEBACK atomically records the approved summarization entry in STATE.md Summarization History; it is selected after the user approves in APPROVAL.\n\n▶ writeback-state.sh starting (~5 s)\nRun `canonical/aid/scripts/summarize/writeback-state.sh`. It atomically:\n\n1. Acquires `.aid/knowledge/.state.lock` (file rename sentinel, 5s timeout).\n2. Reads `.aid/knowledge/STATE.md`.\n3. Locates `## Review History`. If `## Summarization History` does not exist, inserts\n   it immediately after the Review History table.\n4. Computes next `#` (last entry + 1, or 1 if first).\n5. Appends a new row to `## Summarization History`:\n   - **#:** {next}\n   - **Date:** {YYYY-MM-DD}\n   - **Grade:** {final}\n   - **Domain:** {domain value from .aid/knowledge/STATE.md ## Discovery Domain}\n   - **Doc-set:** {N resolved} of {M total} docs\n   - **Output:** `.aid/knowledge/kb.html ({size})`\n   - **Notes:** {one-liner — \"Initial generation\" or \"Regenerated after KB review cycle N (date)\"}\n6. Writes back, preserving everything else byte-for-byte.\n7. Releases lock.\n\n✓ writeback done (record actual time) — or ✗ writeback failed: {reason}\nOn failure (lock timeout, write error): mark `**Writeback Status:** failed` in\n`.aid/knowledge/STATE.md` `## Knowledge Summary Status`, instruct the user to manually add the entry, exit non-zero.\n\nOn success: mark `**Writeback Status:** ok` in `## Knowledge Summary Status`, transition to DONE.\n\nPrint: `[State: WRITEBACK] complete.`\n\n**Advance:** **CHAIN** → [State: DONE] (continue inline).\n"
+      }
+    },
+    {
+      "id": "n10",
+      "order": 10,
+      "name": "DONE",
+      "label": "DONE confirms the summarization is complete and the…",
+      "kind": "exit",
+      "terminal": {
+        "advanceType": "HALT",
+        "handoff": null
+      },
+      "provenance": {
+        "file": "canonical/skills/aid-summarize/SKILL.md",
+        "startLine": 192,
+        "endLine": 192,
+        "sourceKind": "skill",
+        "excerpt": "| DONE | `references/state-done.md` | inline | → halt |"
+      },
+      "detail": {
+        "file": "canonical/skills/aid-summarize/references/state-done.md",
+        "startLine": 1,
+        "endLine": 45,
+        "sourceKind": "worker",
+        "excerpt": "# State: DONE\n\nDONE confirms the summarization is complete and the Summarization History has been updated; it is selected after WRITEBACK succeeds or (as DONE-IDEMPOTENT) when STALE-CHECK finds the HTML is already up-to-date and approved.\n\n**Normal completion (after WRITEBACK):**\n\nDelete the review ledger:\n```bash\nrm -f .aid/.temp/review-pending/summarize.md\nrmdir --ignore-fail-on-non-empty .aid/.temp/review-pending/ 2>/dev/null || true\n```\n\nPrint:\n```\n✓ .aid/knowledge/STATE.md updated:\n    ## Summarization History → entry #{N} added ({date}, grade {grade})\n✓ ## Knowledge Summary Status → User Approved: yes\n\n[State: DONE]\n\nOpen .aid/knowledge/kb.html in a browser to view the summary.\n```\n\nExit with success.\n\n---\n\n**Idempotent completion (DONE-IDEMPOTENT — when STALE-CHECK finds nothing to do):**\n\nPrint:\n```\n✅ kb.html is already up-to-date with the current KB.\n   Last summary: {date} (grade {grade})\n   Last KB review: {date}\n   Nothing to do. Re-run with --reset to force regeneration.\n\n[State: DONE]\n```\n\nExit with success. `.aid/knowledge/STATE.md` `## Knowledge Summary Status` and `## Summarization History` are NOT modified.\n\n---\n\n**Advance:** **HALT**.\n"
+      }
+    }
+  ],
+  "edges": [
+    {
+      "from": "n1",
+      "to": "n2",
+      "kind": "sequence",
+      "condition": null,
+      "advanceType": "CHAIN",
+      "provenance": {
+        "file": "canonical/skills/aid-summarize/references/state-preflight.md",
+        "startLine": 23,
+        "endLine": 23,
+        "sourceKind": "worker",
+        "excerpt": "**Advance:** **CHAIN** → [State: STALE-CHECK] (continue inline)."
+      }
+    },
+    {
+      "from": "n2",
+      "to": "n3",
+      "kind": "sequence",
+      "condition": null,
+      "advanceType": "CHAIN",
+      "provenance": {
+        "file": "canonical/skills/aid-summarize/references/state-stale-check.md",
+        "startLine": 32,
+        "endLine": 32,
+        "sourceKind": "worker",
+        "excerpt": "**Advance:** **CHAIN** → [State: PROFILE] (continue inline). For DONE-IDEMPOTENT branch: **HALT**."
+      }
+    },
+    {
+      "from": "n3",
+      "to": "n4",
+      "kind": "sequence",
+      "condition": null,
+      "advanceType": "CHAIN",
+      "provenance": {
+        "file": "canonical/skills/aid-summarize/references/state-profile.md",
+        "startLine": 162,
+        "endLine": 162,
+        "sourceKind": "worker",
+        "excerpt": "**Advance:** **CHAIN** → [State: GENERATE] (continue inline)."
+      }
+    },
+    {
+      "from": "n4",
+      "to": "n5",
+      "kind": "sequence",
+      "condition": null,
+      "advanceType": "CHAIN",
+      "provenance": {
+        "file": "canonical/skills/aid-summarize/references/state-generate.md",
+        "startLine": 379,
+        "endLine": 379,
+        "sourceKind": "worker",
+        "excerpt": "**Advance:** **CHAIN** → [State: VALIDATE] (continue inline)."
+      }
+    },
+    {
+      "from": "n5",
+      "to": "n6",
+      "kind": "branch",
+      "condition": "if the grade >= minimum",
+      "advanceType": "CHAIN",
+      "provenance": {
+        "file": "canonical/skills/aid-summarize/references/state-validate.md",
+        "startLine": 190,
+        "endLine": 190,
+        "sourceKind": "worker",
+        "excerpt": "**Advance:** **CHAIN** → [State: MANUAL-CHECKLIST] if the grade >= minimum; **CHAIN** → [State: FIX] if it is below. Both continue inline."
+      }
+    },
+    {
+      "from": "n5",
+      "to": "n7",
+      "kind": "branch",
+      "condition": "if it is below",
+      "advanceType": "CHAIN",
+      "provenance": {
+        "file": "canonical/skills/aid-summarize/references/state-validate.md",
+        "startLine": 190,
+        "endLine": 190,
+        "sourceKind": "worker",
+        "excerpt": "**Advance:** **CHAIN** → [State: MANUAL-CHECKLIST] if the grade >= minimum; **CHAIN** → [State: FIX] if it is below. Both continue inline."
+      }
+    },
+    {
+      "from": "n6",
+      "to": "n7",
+      "kind": "branch",
+      "condition": "otherwise — both continue inline",
+      "advanceType": "CHAIN",
+      "provenance": {
+        "file": "canonical/skills/aid-summarize/references/state-manual-checklist.md",
+        "startLine": 76,
+        "endLine": 76,
+        "sourceKind": "worker",
+        "excerpt": "**Advance:** **CHAIN** → [State: APPROVAL] if the grade ≥ minimum; **CHAIN** → [State: FIX] otherwise — both continue inline. If the checklist is unanswered, **PAUSE-FOR-USER-ACTION**: print the `manual-checklist.sh` command and exit, so re-invoking `/aid-summarize` resumes here."
+      }
+    },
+    {
+      "from": "n6",
+      "to": "n8",
+      "kind": "branch",
+      "condition": "if the grade ≥ minimum",
+      "advanceType": "CHAIN",
+      "provenance": {
+        "file": "canonical/skills/aid-summarize/references/state-manual-checklist.md",
+        "startLine": 76,
+        "endLine": 76,
+        "sourceKind": "worker",
+        "excerpt": "**Advance:** **CHAIN** → [State: APPROVAL] if the grade ≥ minimum; **CHAIN** → [State: FIX] otherwise — both continue inline. If the checklist is unanswered, **PAUSE-FOR-USER-ACTION**: print the `manual-checklist.sh` command and exit, so re-invoking `/aid-summarize` resumes here."
+      }
+    },
+    {
+      "from": "n7",
+      "to": "n5",
+      "kind": "sequence",
+      "condition": null,
+      "advanceType": "CHAIN",
+      "provenance": {
+        "file": "canonical/skills/aid-summarize/references/state-fix.md",
+        "startLine": 50,
+        "endLine": 50,
+        "sourceKind": "worker",
+        "excerpt": "**Advance:** **CHAIN** → [State: VALIDATE] (continue inline)."
+      }
+    },
+    {
+      "from": "n8",
+      "to": "n7",
+      "kind": "sequence",
+      "condition": null,
+      "advanceType": "CHAIN",
+      "provenance": {
+        "file": "canonical/skills/aid-summarize/references/state-approval.md",
+        "startLine": 72,
+        "endLine": 72,
+        "sourceKind": "worker",
+        "excerpt": "**Advance:** If user approved: **CHAIN** → [State: WRITEBACK] (continue inline). If user rejected: **HALT** (exit; no writeback). If user said \"changes needed\": **CHAIN** → [State: FIX] (continue inline)."
+      }
+    },
+    {
+      "from": "n8",
+      "to": "n9",
+      "kind": "branch",
+      "condition": "If user approved",
+      "advanceType": "CHAIN",
+      "provenance": {
+        "file": "canonical/skills/aid-summarize/references/state-approval.md",
+        "startLine": 72,
+        "endLine": 72,
+        "sourceKind": "worker",
+        "excerpt": "**Advance:** If user approved: **CHAIN** → [State: WRITEBACK] (continue inline). If user rejected: **HALT** (exit; no writeback). If user said \"changes needed\": **CHAIN** → [State: FIX] (continue inline)."
+      }
+    },
+    {
+      "from": "n9",
+      "to": "n10",
+      "kind": "sequence",
+      "condition": null,
+      "advanceType": "CHAIN",
+      "provenance": {
+        "file": "canonical/skills/aid-summarize/references/state-writeback.md",
+        "startLine": 32,
+        "endLine": 32,
+        "sourceKind": "worker",
+        "excerpt": "**Advance:** **CHAIN** → [State: DONE] (continue inline)."
+      }
+    }
+  ],
+  "entries": [
+    "n1"
+  ],
+  "exits": [
+    "n2",
+    "n6",
+    "n8",
+    "n10"
+  ],
+  "sources": [
+    "canonical/skills/aid-summarize/SKILL.md",
+    "canonical/skills/aid-summarize/references/state-approval.md",
+    "canonical/skills/aid-summarize/references/state-done.md",
+    "canonical/skills/aid-summarize/references/state-fix.md",
+    "canonical/skills/aid-summarize/references/state-generate.md",
+    "canonical/skills/aid-summarize/references/state-manual-checklist.md",
+    "canonical/skills/aid-summarize/references/state-preflight.md",
+    "canonical/skills/aid-summarize/references/state-profile.md",
+    "canonical/skills/aid-summarize/references/state-stale-check.md",
+    "canonical/skills/aid-summarize/references/state-validate.md",
+    "canonical/skills/aid-summarize/references/state-writeback.md"
+  ],
+  "warnings": []
+}

@@ -273,7 +273,7 @@ Each capability maps to the parts that implement it (full anatomy in `module-map
 
 ## Open items
 
-- **Skill count.** AID ships **111 skill directories** under `canonical/skills/`: **17 curated
+- **Skill count.** AID ships **113 skill directories** under `canonical/skills/`: **19 curated
   skills** (the pipeline-phase, on-demand, and `/aid-triage` router skills that are *not* in the
   shortcut catalog — including the three ticket skills `aid-read-ticket`, `aid-create-ticket`,
   `aid-update-ticket` added by work-023) plus the **94-row shortcut catalog**'s skills (58

@@ -30,6 +30,8 @@ contracts:
   - "Every canonical suite runs under `timeout 300` in an isolated bash process"
   - "node and pwsh must be present in CI or environment-dependent suites silently skip (CI fails loudly if absent)"
 changelog:
+  - 2026-07-30: work-001 final gate -- corrected the `docs.yml` CI-lane row (closing KI-007 / W1-4). It omitted the `canonical/**` path filter, carried a `release: published` trigger the workflow does not have, and answered "feature branches? No -- master only" although `pull_request` to master is live and is the site's test gate. Re-verified against the `on:` block and dated the CONFIRMED claim. Split the master-only gotcha so the site is stated as the exception it is.
+  - 2026-07-30: work-001 delivery-006 gate -- corrected the stale shortcut counts in the body; restored the 1.3 Change Log row, which an earlier pass in this same cycle had edited (falsifying a dated audit record).
   - 2026-06-25: Initial discovery (aid-discover quality deep-dive)
 ---
 
@@ -128,7 +130,7 @@ Representative suite families (the 133 cover far more than these):
 | Release / packaging | `test-release.sh`, `test-release-install-e2e.sh`, `test-release-migrate-smoke.sh`, `test-version-sync.sh`, `test-npm-installer.sh`, `test-pypi-installer.sh` | the 3 publish channels + version-sync |
 | KB / discovery engine | `test-kb-citation-lint.sh`, `test-frontmatter-lint.sh`, `test-build-kb-index.sh`, `test-closure-check.sh`, `test-harvest-coined-terms.sh`, `test-spine-depth-coverage.sh`, `test-dual-intent-self-eval.sh` | the discovery/KB tooling |
 | Pipeline / execute | `test-writeback-state.sh`, `test-complexity-score.sh`, `test-compute-block-radius.sh`, `test-delivery-gate-aggregate.sh`, `test-grade.sh` | state writeback + delivery gating |
-| Shortcut / Lite path (work-001, +v2.1.0 follow-on) | `test-catalog-dirs-parity.sh`, `test-triage-routing.sh`, `test-describe-full-only.sh`, `test-cutover-no-dangling.sh`, `test-deploy-monitor-repurpose.sh`, `test-executor-graph-flat-plan.sh`, `test-shortcut-engine-contract.sh`, and the seven `test-*-family-scaffold.sh` suites (`create`, `change-refactor`, `fix`, `document`, `prototype`, `test-experiment`, `analyze-report`) | the 76 verb-first shortcut skills, the shortcut engine's GATE/APPROVAL-HALT batching (`test-shortcut-engine-contract.sh` SEC00–SEC07), `/aid-triage` routing, the recipe-removal cutover (no dangling `recipes/`/`parse-recipe.sh`), `/aid-describe` full-only, and the flattened Lite work layout. The 5 families the v2.1.0 follow-on added (`remove`, `deprecate`, `migrate`, `review`, `research`) have no dedicated `test-*-family-scaffold.sh` of their own yet — they're covered by `test-catalog-dirs-parity.sh`'s count-agnostic catalog↔dirs parity check instead. |
+| Shortcut / Lite path (work-001, +v2.1.0 follow-on) | `test-catalog-dirs-parity.sh`, `test-triage-routing.sh`, `test-describe-full-only.sh`, `test-cutover-no-dangling.sh`, `test-deploy-monitor-repurpose.sh`, `test-executor-graph-flat-plan.sh`, `test-shortcut-engine-contract.sh`, and the seven `test-*-family-scaffold.sh` suites (`create`, `change-refactor`, `fix`, `document`, `prototype`, `test-experiment`, `analyze-report`) | the 64 verb-first shortcut skills, the shortcut engine's GATE/APPROVAL-HALT batching (`test-shortcut-engine-contract.sh` SEC00–SEC07), `/aid-triage` routing, the recipe-removal cutover (no dangling `recipes/`/`parse-recipe.sh`), `/aid-describe` full-only, and the flattened Lite work layout. The 5 families the v2.1.0 follow-on added (`remove`, `deprecate`, `migrate`, `review`, `research`) have no dedicated `test-*-family-scaffold.sh` of their own yet — they're covered by `test-catalog-dirs-parity.sh`'s count-agnostic catalog↔dirs parity check instead. |
 | Dashboard | `test-dashboard-reader.sh`, `test-dashboard-parity.sh`, `test-dashboard-parity-h.sh`, `test-aid-dashboard-cli.sh` | reader/server parity |
 | Connectors / reconcile | `test-connector-registry.sh`, `test-connectors-registry-integration.sh`, `test-build-connectors-index.sh`, `test-connector-secret.sh`, `test-connector-secret-ps1.sh`, `test-connector-secret-ac3-leak-sweep.sh` (security: no-leak sweep of AC-3), `test-connector-twins-ps1-parity.sh` (bash↔PowerShell twin parity), `test-reconcile-scenarios.sh` | the `.aid/connectors/` catalog + INDEX generation, registry accessor integration, no-echo/path-confined secret handling, and settings reconcile behavior |
 | Compat / hygiene | `test-ps51-compat.sh`, `test-ascii-only.sh`, `test-payload-size.sh`, `test-multitool-isolation.sh`, `test-dogfood-byte-identity.sh` | portability + content isolation |
@@ -160,25 +162,44 @@ discovered by `tests/run-all.sh`. A green local `run-all.sh` does not exercise i
 
 ## CI Lanes and Where They Run
 
-AID has five GitHub Actions workflows. Critically, the heavy correctness gates run on
-**master and release tags only** — feature branches get the installer matrix instead.
+AID has five GitHub Actions workflows. The **canonical** correctness gates (`test.yml`) run on
+`master` and release tags only, so a branch with no open PR gets the installer matrix instead.
+**`docs.yml` is the exception** — it also gates pull requests to `master`, and its `build` job
+runs the site vitest suite. Read the per-lane rows below rather than generalising from this
+sentence; the exception is the whole reason KI-007 was raised against an earlier version of it.
 
 | Workflow | Trigger | Jobs / gates | Runs on feature branches? |
 |---|---|---|---|
 | `.github/workflows/test.yml` (CI) | push + PR to `master`; `workflow_dispatch` | `render-drift`, `canonical-tests` (full `run-all.sh`), `visual-fidelity` (Playwright), `generator-selftests`, `kb-hygiene` | No — master only |
 | `.github/workflows/installer-tests.yml` (Installer CI) | push to any branch **except** master (`branches-ignore: [master]`); `workflow_dispatch` | cross-platform installer/CLI/release matrix (ubuntu + windows) | Yes — feature branches only |
 | `.github/workflows/release.yml` (Release) | push of a `v*` tag; `workflow_dispatch` | `gate` (re-runs render-drift + version-sync + full `run-all.sh` + generator self-tests on the tagged commit), then `github-release`, `npm-publish`, `pypi-publish` | No — tag only |
-| `.github/workflows/docs.yml` (Docs) | push to `master` touching `site/**`, `docs/**`, `VERSION`, or the workflow; `release: published`; `workflow_dispatch` | Astro Starlight build → GitHub Pages deploy | No — master only (+ path filter) |
+| `.github/workflows/docs.yml` (Docs) | push **and `pull_request`** to `master`, both path-filtered to `site/**`, `docs/**`, `canonical/**`, `VERSION`, or the workflow; `workflow_dispatch` | `npm ci` → **`npm test` (site vitest suite)** → Astro Starlight build; then GitHub Pages deploy (`deploy` job skipped on PRs) | **Yes, as a PR to master** — the build+test job is a live PR gate; only the `deploy` job is master-only |
 | `.github/workflows/coverage-parity.yml` (Coverage Parity) | push + PR to `master`, path-filtered to `tests/**`; `workflow_dispatch` | Separate lane from `canonical-tests`: serially re-collects the executed-assertion inventory (~6-7 min) and diffs it against a committed baseline — advisory (warns, exits 0) until the baseline is bootstrapped, then enforces | No — master only (+ path filter) |
 
-CONFIRMED by the `on:` blocks of each workflow.
+CONFIRMED by the `on:` blocks of each workflow — re-verified 2026-07-30 against
+`.github/workflows/docs.yml`:10-29 (the whole `on:` block: `push`, `pull_request`,
+`workflow_dispatch`), which has no `release:` key.
 
-**Why this matters (gotcha).** The full canonical suite and the Astro site build run only on
-`master` (test.yml / docs.yml) and on release tags (release.yml `gate`). A feature branch
-sees only `installer-tests.yml`, so a change that breaks the canonical suite or the site
-build can pass all feature-branch checks and only fail after merge to master. Run
-`bash tests/run-all.sh` (HOME-pinned) and the `site` build locally before claiming green.
-See `tech-debt.md` Gotchas.
+**Why this matters (gotcha).** The full canonical suite (test.yml) runs only on `master` and on
+release tags (release.yml `gate`). A branch that has **no open PR to master** sees only
+`installer-tests.yml`, so a change that breaks the canonical suite can pass all its checks and
+only fail after merge. Run `bash tests/run-all.sh` (HOME-pinned) before claiming green.
+
+**The site is the exception, and it is a PR gate.** `docs.yml` also triggers on
+`pull_request` to `master` (delivery-001 of work-001 added the `npm test` step, closing KI-006),
+so the site vitest suite **and** the Astro build do validate every PR that touches `site/**`,
+`docs/**`, `canonical/**` or `VERSION`. Only the `deploy` job is master-only. Two consequences a
+maintainer needs: a **canonical-only** commit still rebuilds the site, because the reference pages
+and skill-page anchors are derived from `canonical/`; and the site suite is what catches a
+`canonical/` edit that breaks *generated site content* — a drifted skill roster, a stale count, a
+dangling deep-link anchor.
+
+**It does NOT catch `canonical/` → `profiles/` render drift.** That is a different gate in a
+different workflow: `test.yml`'s `render-drift` job, which re-runs
+`.claude/skills/generate-profile/scripts/run_generator.py` and asserts `git diff --exit-code --
+profiles/`. `site/` never reads `profiles/` at all, so the site build cannot observe that drift.
+Both facts matter and they are easy to conflate; see `tech-debt.md` § Gotchas, "Master-only heavy
+gates".
 
 **CI must not silently skip.** Both `test.yml` (`canonical-tests`) and `release.yml`
 (`gate`) assert `node` and `pwsh` are present and fail loudly if either is missing — because

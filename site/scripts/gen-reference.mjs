@@ -2,11 +2,23 @@
 // gen-reference.mjs — Manifest-driven reference generator (feature-006).
 //
 // Generates four reference pages from canonical/ + .aid/settings.yml:
-//   reference/skills.md    — 94 skill directories (16 classic + aid-triage + aid-ask +
-//                            76 catalog-driven shortcuts), grouped + summarized
-//   reference/agents.md    — 10 agents table
+//   reference/skills.md    — the shortcut-engine narrative (the roster itself now
+//                            lives at /skills/, see delivery-006 / work-level Q4)
+//   reference/agents.md    — agents table, count DERIVED from agents.length (10 on disk).
+//                            Stating a number here is what went stale: this line read 9 while
+//                            canonical/agents/ held 10.
 //   reference/kb.md        — 14 KB doc-types table
 //   reference/settings.md  — settings keys table
+//
+// NO SKILL COUNT IS WRITTEN HERE.
+//
+// This header used to state a triple that was wrong in every term:
+//   KI-003 — claimed 94 skill directories, 16 classic, 76 catalog-driven shortcuts,
+//   KI-003 — against a real 111 / 19 / 64.
+// The counts the page RENDERS were always derived correctly at build time, so only
+// the comment drifted. That is the whole of that known issue, and why it had no
+// reader-visible symptom. Numbers are stated once, in skills/skill-counts.mjs, and
+// asserted there against every page that quotes them.
 //
 // Run: node scripts/gen-reference.mjs
 // Wired as: gen:reference in package.json (chained in prebuild / predev)
@@ -14,6 +26,7 @@
 import { readFileSync, writeFileSync, mkdirSync, readdirSync } from 'node:fs';
 import { resolve, dirname, join, basename } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { SKILL_GROUPS } from './skills/curated-roster.mjs';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = resolve(__dirname, '../../');
@@ -150,208 +163,60 @@ function loadShortcutCatalog() {
 // groups — Support, Knowledge Base Maintenance, Definition, Execution — always
 // presented in that order; they are NOT the numbered pipeline phases (shown per
 // skill via `phase`). Order within each group is execution order. These are the
-// 16 classic skills — the shortcut skills are summarized separately, data-driven
-// from the shortcut catalog (see generateShortcutFamiliesSection), and rendered
-// nested inside the Definition group (see `shortcutsAfter` below).
-const SKILL_GROUPS = [
-  {
-    group: 'Support',
-    blurb: 'Set up the workspace and manage connectors.',
-    skills: [
-      { name: 'aid-config', phase: 'bootstrap · run once' },
-      { name: 'aid-set-connector', phase: 'on demand · upsert a connector into the catalog' },
-      { name: 'aid-unset-connector', phase: 'on demand · remove a connector from the catalog' },
-      { name: 'aid-read-ticket', phase: 'on demand · non-destructive ticket fetch and display' },
-      { name: 'aid-create-ticket', phase: 'on demand · preview + confirm before filing a ticket' },
-      { name: 'aid-update-ticket', phase: 'on demand · preview + confirm before mutating a ticket' },
-    ],
-  },
-  {
-    group: 'Knowledge Base Maintenance',
-    blurb: "Build and keep current the team's understanding of the existing system.",
-    skills: [
-      { name: 'aid-discover', phase: 'Phase 1 · brownfield' },
-      { name: 'aid-summarize', phase: 'optional viewer' },
-      { name: 'aid-housekeep', phase: 'on demand' },
-      { name: 'aid-update-kb', phase: 'on demand · targeted KB update' },
-      { name: 'aid-query-kb', phase: 'on demand · read-only Q&A' },
-      { name: 'aid-ask', phase: 'on demand · friendly alias of aid-query-kb' },
-    ],
-  },
-  {
-    group: 'Definition',
-    blurb: 'Route, gather requirements, decide how to solve it, sequence the roadmap, and break it into tasks — the full path, or a shortcut.',
-    skills: [
-      { name: 'aid-triage', phase: 'router · suggest-only' },
-      { name: 'aid-describe', phase: 'Phase 2a · full path only' },
-      { name: 'aid-define', phase: 'Phase 2b · full path only · decompose features' },
-      { name: 'aid-specify', phase: 'Phase 3 · full path only' },
-      { name: 'aid-plan', phase: 'Phase 4 · full path only' },
-      { name: 'aid-detail', phase: 'Phase 5 · full path only' },
-      { name: 'aid-deploy', phase: 'optional shortcut path · on demand' },
-      { name: 'aid-monitor', phase: 'optional shortcut path · on demand' },
-    ],
-    // The 64 direct-entry shortcuts (and the shared shortcut engine they delegate
-    // to) are also Definition-group members — render the family summary nested
-    // here, right after the full-path skills and before the Deploy/Monitor
-    // shortcut paths.
-    shortcutsAfter: 'aid-detail',
-  },
-  {
-    group: 'Execution',
-    blurb: 'Build, review, and test.',
-    skills: [
-      { name: 'aid-execute', phase: 'Phase 6 · 8 task types · graded loop' },
-      // work-003 extracted review into two chainable skills. They were absent from this
-      // curated list, and because the drift guard below builds `expected` from it, the
-      // generator threw on every run once they landed on disk — so this page could not be
-      // regenerated at all, and it went stale silently.
-      { name: 'aid-light-review', phase: 'chain-called · cheap screening pass, never an all-clear' },
-      { name: 'aid-deep-review', phase: 'chain-called · graded adversarial review + FIX loop' },
-    ],
-  },
-];
+// classic skills — no count is stated here, because one was, and it was wrong
+// (KI-003: "16 classic" against a real 19). The count is derived in
+// skills/skill-counts.mjs. The shortcut skills are summarized separately,
+// data-driven from the shortcut catalog (see generateShortcutEngineSection; the former
+// generateShortcutFamiliesSection was deleted with the family table in task-057).
+// The roster now lives in skills/curated-roster.mjs -- see the import above. It was
+// moved so anything else can read it without importing this file, which runs main()
+// at module scope. Permitted by the second amendment to section 7 (work-level Q4).
 
-function readSkillDescription(name) {
-  const content = readFileSync(join(SKILLS_DIR, name, 'SKILL.md'), 'utf8');
-  return parseFrontmatter(content).description || '';
-}
 
-// ── Direct-entry shortcuts section (data-driven from the catalog) ────────────
+// ── Shortcut-engine narrative (the whole of this page after delivery-006) ────
 //
-// The fact-sheet families reproduce cleanly by grouping the catalog's emitting
-// rows by `verb` (create/change further split by `alias_of` into canonical vs
-// alias forms). This is the ONLY place shortcut names are summarized on the
-// page — individually they'd be 67 near-identical H3 blocks of pure noise.
-const SHORTCUT_FAMILIES = [
-  {
-    label: 'Create (+ `add` alias)',
-    match: (r) => r.verb === 'create',
-    detail: (rows) => {
-      const canonical = rows.filter((r) => r.alias_of === 'null');
-      const aliases = rows.filter((r) => r.alias_of !== 'null');
-      return `${canonical.length} canonical \`aid-create*\` forms + ${aliases.length} \`aid-add*\` aliases`;
-    },
-  },
-  {
-    label: 'Change (+ `update` alias)',
-    match: (r) => r.verb === 'change',
-    detail: (rows) => {
-      const canonical = rows.filter((r) => r.alias_of === 'null');
-      const aliases = rows.filter((r) => r.alias_of !== 'null');
-      return `${canonical.length} canonical \`aid-change*\` forms + ${aliases.length} \`aid-update*\` aliases`;
-    },
-  },
-  {
-    label: 'Fix',
-    match: (r) => r.verb === 'fix',
-    detail: () => '`aid-fix` — diagnose and correct a defect, regression, incident, or vulnerability; no alias',
-  },
-  {
-    label: 'Refactor',
-    match: (r) => r.verb === 'refactor',
-    detail: () => '`aid-refactor` — restructure or optimize without changing behavior; no alias',
-  },
-  {
-    label: 'Test + Experiment',
-    match: (r) => r.verb === 'test' || r.verb === 'experiment',
-    detail: (rows) =>
-      `\`aid-test\` + 3 typed forms (security, performance, data-quality) = ${rows.filter((r) => r.verb === 'test').length}, plus \`aid-experiment\`; no alias`,
-  },
-  {
-    label: 'Prototype',
-    match: (r) => r.verb === 'prototype',
-    detail: () => '`aid-prototype`, `aid-prototype-ui`; no alias',
-  },
-  {
-    label: 'Document',
-    match: (r) => r.verb === 'document',
-    detail: (rows) => `\`aid-document\` + ${rows.length - 1} typed forms (decision, architecture, guideline, standard, runbook, tutorial, changelog); no alias`,
-  },
-  {
-    label: 'Report',
-    match: (r) => r.verb === 'report',
-    detail: () => '`aid-report` — analyze data or usage and communicate insight; no alias',
-  },
-  {
-    label: 'Show dashboard',
-    match: (r) => r.verb === 'show-dashboard',
-    detail: () => '`aid-show-dashboard` — build a durable dashboard or BI view; no alias',
-  },
-  {
-    label: 'Remove (+ `delete` alias)',
-    match: (r) => r.verb === 'remove',
-    detail: (rows) => {
-      const canonical = rows.filter((r) => r.alias_of === 'null');
-      const aliases = rows.filter((r) => r.alias_of !== 'null');
-      return `${canonical.length} canonical \`aid-remove\` form + ${aliases.length} \`aid-delete\` alias`;
-    },
-  },
-  {
-    label: 'Deprecate',
-    match: (r) => r.verb === 'deprecate',
-    detail: () => '`aid-deprecate` — mark an artifact/API deprecated, add warnings and a migration path, without deleting yet; no alias',
-  },
-  {
-    label: 'Migrate',
-    match: (r) => r.verb === 'migrate',
-    detail: () => '`aid-migrate` — migrate data, a dependency, framework, or platform, with a rollback plan; no alias',
-  },
-  {
-    label: 'Review (+ `audit` alias)',
-    match: (r) => r.verb === 'review',
-    detail: (rows) => {
-      const canonical = rows.filter((r) => r.alias_of === 'null');
-      const aliases = rows.filter((r) => r.alias_of !== 'null');
-      return `${canonical.length} canonical \`aid-review\` form + ${aliases.length} \`aid-audit\` alias`;
-    },
-  },
-  {
-    label: 'Research (+ `investigate`/`spike` aliases)',
-    match: (r) => r.verb === 'research',
-    detail: (rows) => {
-      const canonical = rows.filter((r) => r.alias_of === 'null');
-      const aliases = rows.filter((r) => r.alias_of !== 'null');
-      return `${canonical.length} canonical \`aid-research\` form + ${aliases.length} \`aid-investigate\`/\`aid-spike\` aliases`;
-    },
-  },
-];
+// This file used to render a SECOND full skill roster here -- per-skill H3 blocks for
+// the curated skills plus a per-family summary table for the shortcuts -- duplicating
+// /skills/, which derives the same roster from the same sources and presents it better.
+// Work-level Q4 resolved the duplication by repointing readers at /skills/ and HOLLOWING
+// OUT this page rather than deleting it, because the shortcut-engine narrative below is
+// the only place on the site that explains how the engine actually works.
+//
+// Shedding the family table is also what closes KI-009. Two families -- `aid-test` and
+// `aid-document` -- are `repurpose` rows, so `emitting.filter(match)` returned [] for
+// them and the per-family `detail()` templates interpolated `rows.filter(...).length`
+// and `rows.length - 1` against an empty array. The page shipped "`aid-test` + 3 typed
+// forms (security, performance, data-quality) = 0" and "`aid-document` + -1 typed forms".
+// Both templates die with the table, so the issue closes by deletion rather than by
+// arithmetic repair -- repairing the arithmetic and keeping a duplicate roster would
+// have been the wrong close.
+//
+// Family-coverage drift is still guarded, just not here: gen-skills.mjs groups the same
+// catalog into its verb families for /skills/, under scripts/__tests__/skills-groups.test.mjs.
 
-function generateShortcutFamiliesSection(catalog, headingLevel = 2) {
+function generateShortcutEngineSection(catalog, headingLevel = 2) {
   const { rows, emitting } = catalog;
   const heading = '#'.repeat(headingLevel);
 
-  const familyRows = SHORTCUT_FAMILIES.map((f) => {
-    const matched = emitting.filter(f.match);
-    return { label: f.label, count: matched.length, detail: f.detail(matched) };
-  });
-
-  // Every emitting row must land in exactly one family — if the catalog grows
-  // a new verb, this throws instead of silently under-reporting the count.
-  const accountedFor = familyRows.reduce((sum, f) => sum + f.count, 0);
-  if (accountedFor !== emitting.length) {
-    throw new Error(
-      `[gen-reference] shortcut family drift: families account for ${accountedFor} of ` +
-        `${emitting.length} catalog rows that emit a skill directory — a verb is unmapped`
-    );
-  }
-
-  const header = `| Family | Count | Forms |
-|--------|-------|-------|`;
-  const tableRows = familyRows.map((f) => `| ${f.label} | ${f.count} | ${f.detail} |`);
-  const table = [header, ...tableRows, `| **Total** | **${accountedFor}** | |`].join('\n');
-
   const repurposedRows = rows.filter((r) => r.repurpose === 'true');
   const repurposed = repurposedRows.length;
-  const repurposedNames = repurposedRows.map((r) => `\`${r.name}\``).join(' / ');
+
+  // Derived, not stated. Both the count and the names were hard-coded here as
+  // KI-003 -- "the 4 classic re-registered skills (`aid-deploy`/`aid-monitor`/
+  // `aid-query-kb`/`aid-ask`)" -- reader-facing and hand-counted. "Classic re-registered"
+  // means: a repurpose row whose name the curated roster already carries, as opposed to a
+  // work-005 single-shot "collapse" skill.
+  const curatedRosterNames = new Set(SKILL_GROUPS.flatMap((g) => g.skills.map((s) => s.name)));
+  const classicRepurposedRows = repurposedRows.filter((r) => curatedRosterNames.has(r.name));
+  const classicRepurposedNames = classicRepurposedRows.map((r) => `\`${r.name}\``).join('/');
 
   return (
     `${heading} Direct-entry shortcuts\n\n` +
     `**${emitting.length} engine-driven verb-first shortcut skills** — a fast, mostly-autonomous ` +
     `alternative to the full Describe→Detail path for a single, well-scoped change. Each is a thin doorway ` +
     `generated from one non-\`repurpose\` row of [\`${SHORTCUT_CATALOG_SRC}\`](${BLOB}/${SHORTCUT_CATALOG_SRC}) ` +
-    `(${rows.length} rows total; the other ${repurposed} are \`repurpose: true\` — the 4 classic re-registered ` +
-    `skills (\`aid-deploy\`/\`aid-monitor\`/\`aid-query-kb\`/\`aid-ask\`) plus the work-005 hand-authored ` +
+    `(${rows.length} rows total; the other ${repurposed} are \`repurpose: true\` — the ${classicRepurposedRows.length} classic re-registered ` +
+    `skills (${classicRepurposedNames}) plus the work-005 ` +
     `single-shot "collapse" skills, all hand-authored with their own directory).\n\n` +
     `Every engine-driven shortcut delegates to the shared **shortcut engine** — ` +
     `[\`${SHORTCUT_ENGINE_FILE}\`](${BLOB}/${SHORTCUT_ENGINE_FILE}) — which collapses the five definition ` +
@@ -362,25 +227,21 @@ function generateShortcutFamiliesSection(catalog, headingLevel = 2) {
     `and the terminal APPROVAL-HALT. GATE grades every generated document mechanically against the ` +
     `project's minimum grade before halting. The engine never executes — \`/aid-execute\` is a separate, ` +
     `user-initiated run after approval. Not sure which shortcut fits your change? \`/aid-triage\` reads ` +
-    `this same catalog and suggests exactly one.\n\n` +
-    `${table}\n`
+    `this same catalog and suggests exactly one.\n`
   );
 }
 
-// ── Skills page generator (grouped per-skill sections + shortcut summary) ────
+// ── Skills page generator (shortcut-engine narrative + pointer to the roster) ─
 
 function generateSkillsPage() {
   const catalog = loadShortcutCatalog();
-  const shortcutNames = catalog.emitting.map((r) => r.name);
 
-  // Expected skill-directory set = the curated classic skills (which already
-  // include `aid-triage` in the Definition group + the 4 classic repurpose
-  // skills deploy/monitor/query-kb/ask) ∪ EVERY catalog row name. work-005
-  // turned many `repurpose` rows into hand-authored single-shot "collapse"
-  // skills that DO have their own directory (unlike the 4 classic repurpose
-  // rows curated above), so the guard now expects every catalog row's
-  // directory — not just the engine-driven (non-`repurpose`) emitting ones.
-  // Compare against on-disk `canonical/skills/`.
+  // Drift guard, kept: this is a correctness check on the corpus, not roster rendering.
+  // Expected skill-directory set = the curated skills (which include `aid-triage`, plus
+  // the classic repurpose skills deploy/monitor/query-kb/ask) ∪ EVERY catalog row name.
+  // work-005 turned many `repurpose` rows into hand-authored single-shot "collapse" skills
+  // that DO have their own directory, so every catalog row's directory is expected — not
+  // just the engine-driven (non-`repurpose`) emitting ones.
   const curatedNames = SKILL_GROUPS.flatMap((g) => g.skills.map((s) => s.name));
   const allCatalogNames = catalog.rows.map((r) => r.name);
   const expected = [...new Set([...curatedNames, ...allCatalogNames])].sort();
@@ -394,74 +255,26 @@ function generateSkillsPage() {
     );
   }
 
-  const canonicalCatalogNames = catalog.rows.filter((r) => r.alias_of === 'null').length;
-  const aliasCatalogNames = catalog.rows.filter((r) => r.alias_of !== 'null').length;
-  const repurposedRowsForIntro = catalog.rows.filter((r) => r.repurpose === 'true');
-  const repurposedCanonicalForIntro = repurposedRowsForIntro.filter((r) => r.alias_of === 'null').length;
-  const repurposedAliasForIntro = repurposedRowsForIntro.filter((r) => r.alias_of !== 'null').length;
-  // aid-ask is an ALIAS of the classic aid-query-kb (a repurpose row), not a distinct
-  // capability — it renders in the Knowledge Base Maintenance group but is NOT counted
-  // among the classic skills (matching the README/methodology "16 classic + /aid-triage +
-  // /aid-ask" framing). aid-triage (the suggest-only router) is likewise counted separately.
-  const classicSkillCount = SKILL_GROUPS.reduce(
-    (sum, g) => sum + g.skills.filter((s) => s.name !== 'aid-ask' && s.name !== 'aid-triage').length,
-    0
-  );
-
-  const intro =
-    `AID ships **${onDisk.length} skill directories** under \`canonical/skills/\`: **${classicSkillCount} classic ` +
-    'pipeline skills** across four skill groups (Support, Knowledge Base Maintenance, Definition, Execution), the ' +
-    `suggest-only router **\`/aid-triage\`**, the friendly **\`/aid-ask\`** Q&A alias (of \`/aid-query-kb\`), and **${shortcutNames.length} engine-driven direct-entry shortcut ` +
-    `skills** generated from a ${catalog.rows.length}-row catalog (${canonicalCatalogNames} canonical ` +
-    `names + ${aliasCatalogNames} aliases); ${repurposedRowsForIntro.length} of the rows (` +
-    `${repurposedCanonicalForIntro} canonical + ${repurposedAliasForIntro} alias) are \`repurpose: true\` — the 4 classic ` +
-    're-registered skills plus the work-005 hand-authored single-shot "collapse" skills, all hand-authored with their own directories). The six numbered phases — Discover through Execute — ' +
-    'form the mandatory sequential full path; every skill runs as a slash command (e.g. `/aid-config`) ' +
-    "inside your AI host tool. Classic and router skills below are generated from each skill's own " +
-    'definition in `canonical/skills/`; shortcuts are summarized by family from the catalog (see ' +
-    '"Direct-entry shortcuts" below, nested inside the Definition group).';
-
-  // The 64 direct-entry shortcuts are rendered as an H3 family-summary table
-  // nested inside the Definition group's H2 (see SKILL_GROUPS' `shortcutsAfter`)
-  // rather than as their own top-level H2 — Groups are exactly four (Support,
-  // Knowledge Base Maintenance, Definition, Execution).
-  const shortcutsSectionH3 = generateShortcutFamiliesSection(catalog, 3);
-
-  const sections = SKILL_GROUPS.map((g) => {
-    const blocks = g.skills.map((s) => {
-      const desc = readSkillDescription(s.name);
-      const src = `canonical/skills/${s.name}/SKILL.md`;
-      return {
-        name: s.name,
-        text:
-          `### \`${s.name}\`\n\n` +
-          `**${s.phase}**\n\n` +
-          `${desc}\n\n` +
-          `[Definition: \`${src}\`](${BLOB}/${src})\n`,
-      };
-    });
-    let itemTexts = blocks.map((b) => b.text);
-    if (g.shortcutsAfter) {
-      const idx = blocks.findIndex((b) => b.name === g.shortcutsAfter);
-      itemTexts = [
-        ...itemTexts.slice(0, idx + 1),
-        shortcutsSectionH3,
-        ...itemTexts.slice(idx + 1),
-      ];
-    }
-    return `## ${g.group}\n\n${g.blurb}\n\n${itemTexts.join('\n')}`;
-  }).join('\n');
-
   const fm = serializeFrontmatter({
-    title: 'Skills',
+    title: 'Shortcut engine',
     description:
-      `All AID skills — ${classicSkillCount} classic pipeline skills, the aid-triage router, the aid-ask Q&A alias, and the ` +
-      'catalog-driven direct-entry shortcuts — grouped by skill group/family, with what each does and ' +
-      'where it comes from.',
-    generatedFrom: 'canonical/skills/*/SKILL.md, canonical/aid/templates/shortcut-catalog.yml',
+      'How the verb-first direct-entry shortcut skills work — the shared shortcut engine they ' +
+      'all delegate to, its INTAKE → APPROVAL-HALT sequence, and where to find the full skill roster.',
+    generatedFrom: 'canonical/aid/templates/shortcut-catalog.yml, canonical/aid/templates/shortcut-engine.md',
   });
-  const note = `\n<!-- generated — do not edit; source: canonical/skills/*/SKILL.md -->\n\n`;
-  return fm + note + intro + '\n\n' + sections + '\n';
+  // Marker and `generatedFrom` must name the SAME sources — they are two halves of one
+  // provenance statement, and the other three generated pages keep them identical.
+  const note = `\n<!-- generated — do not edit; source: canonical/aid/templates/shortcut-catalog.yml, canonical/aid/templates/shortcut-engine.md -->\n\n`;
+
+  // The roster moved. Say so first and unmissably, because inbound links and bookmarks
+  // that predate delivery-006 land here expecting to find it.
+  const pointer =
+    `:::tip[Looking for the list of skills?]\n` +
+    `The full roster — all **${onDisk.length}** skills, one card each, grouped by skill group and ` +
+    `verb family — lives at [**All skills**](/skills/). This page covers the shortcut engine ` +
+    `those skills delegate to.\n:::\n`;
+
+  return fm + note + pointer + '\n' + generateShortcutEngineSection(catalog, 2);
 }
 
 // ── Agents page generator (grouped per-tier sections) ───────────────────────────
@@ -687,7 +500,14 @@ function main() {
   mkdirSync(CONTENT_DOCS_REF, { recursive: true });
 
   const pages = [
-    { file: 'skills.md', generator: generateSkillsPage, src: 'canonical/skills/*/SKILL.md' },
+    // src must match the page's own `generatedFrom` -- the manifest and the frontmatter are
+    // two halves of one provenance contract, and task-057 changed the page without changing
+    // this, leaving the manifest asserting a source the page no longer derives from.
+    {
+      file: 'skills.md',
+      generator: generateSkillsPage,
+      src: 'canonical/aid/templates/shortcut-catalog.yml, canonical/aid/templates/shortcut-engine.md',
+    },
     { file: 'agents.md', generator: generateAgentsPage, src: 'canonical/agents/*/AGENT.md' },
     { file: 'kb.md', generator: generateKbPage, src: 'canonical/aid/templates/knowledge-base/*.md' },
     { file: 'settings.md', generator: generateSettingsPage, src: '.aid/settings.yml' },

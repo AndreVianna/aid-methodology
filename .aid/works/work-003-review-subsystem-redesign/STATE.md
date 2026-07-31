@@ -197,6 +197,53 @@ or worse; `[LOW]`/`[MINOR]` at the end" — are the same statement.
 <!-- DERIVED -- union of per-delivery Q&A plus WORK-OWNER-AUTHORED entries below
      (work owner is the single writer for those). -->
 
+### Q21 -- merging master: the circuit breaker collided with work-001's chart engine (2026-07-30)
+
+- **Category:** Integration
+- **Impact:** High
+- **Status:** **Decided and applied** (human decision: update master's engine + tests).
+
+Master advanced 132 commits, merging work-001's Skill Explorer. Ten files conflicted textually; the
+substantive collision was none of them.
+
+**The collision.** Our delivery-012 extracted review into `/aid-light-review` + `/aid-deep-review`,
+moving the GATE fix loop and circuit breaker OUT of `shortcut-engine.md` — that file's GATE section
+now reads "`/aid-deep-review` runs the loop" and names it owner of "the gap gate, the grade, the fix
+loop and the circuit breaker". Work-001, meanwhile, built a flow-chart engine whose **B1** rule looks
+for a bolded `**Circuit breaker.**` arm under GATE *in that exact file*, plus 44 assertions asserting
+the resulting nine-node graph with a GATE self-edge. Both changes are right on their own; they cannot
+both be true of one file. Master alone: 2772/2772 green. After the merge: 104 failing.
+
+**Decision (human): update master's engine and tests**, because the chart should describe the file as
+it is. Applied: the shortcut-engine chart is now 8 nodes with no self-edge and two exits, and every
+assertion that named the breaker asserts instead the **positive fact that replaced it** — that the
+GATE section delegates the loop and breaker, and that `/aid-deep-review` still carries the breaker.
+Trading a real assertion for "expect nothing" is the vacuous-guard failure this work has spent four
+cycles removing; the same standard applies to another work's tests. B1 stays keyed on GATE rather
+than deleted: it is generic, so a breaker returning to the file charts again with no code change.
+
+**Not all 104 were that.** The other causes, each fixed:
+- **56 were line endings.** My working tree carried CRLF in 77 files where the index and
+  `.gitattributes` both say LF, so `gen-skills.mjs` aborted on a provenance check. CI (fresh clone)
+  would have passed while my local run could not — the inverse of the usual local-only failure.
+- **Three separate rosters** each needed the two new review skills: `curated-roster.mjs`,
+  `skills/groups.mjs` — omitting it *throws* `unassignable skill`, which killed the generator
+  outright — and the deliberately-independent list in `gen-reference.test.mjs`. Verified the roster
+  entry is load-bearing by deleting it and watching the generator exit non-zero.
+- **42 stale skill counts across 22 files**, flagged by master's new repo-wide count guard because
+  work-003 takes the corpus 111 → 113 (19 curated, not 17). Driven from the guard's own file:line
+  output rather than a blanket replace; three spanned line breaks and needed hand-fixing.
+
+**Two independent branches, one decision.** Master lowered `minimum_grade` `A+` → `B-` the same day
+for the same reason (a gate loop that was not terminating). Same value, complementary rationale —
+kept both halves in `settings.yml`. And `maintainer.mdx` showed each branch fixing *one half* of the
+same stale claim: ours said 92 skills/10 agents, master's 111 skills/9 agents; disk says 113/10.
+
+**Left alone, deliberately:** `aid-deep-review`'s own page charts as a generic `residual` shape
+(STEP-1…6) because master's extractor never classified it. That is pre-existing — master has no such
+skill — not a merge regression, and teaching the extractor its state machine is a feature, not a
+merge fix.
+
 ### Q20 -- four things cycle 10 turned up and did NOT fix, with the evidence (2026-07-30)
 
 - **Category:** Defect / observation

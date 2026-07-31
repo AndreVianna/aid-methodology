@@ -1,0 +1,223 @@
+{
+  "skill": "aid-deploy",
+  "shape": "dispatch-table",
+  "extractor": "extract-dispatch",
+  "confidence": "derived",
+  "title": "aid-deploy — state flow",
+  "nodes": [
+    {
+      "id": "n1",
+      "order": 1,
+      "name": "IDLE",
+      "label": "No active release; assess eligible deliveries and…",
+      "kind": "entry",
+      "terminal": null,
+      "provenance": {
+        "file": "canonical/skills/aid-deploy/SKILL.md",
+        "startLine": 164,
+        "endLine": 164,
+        "sourceKind": "skill",
+        "excerpt": "| IDLE | `references/state-idle.md` | `aid-operator` | → SELECTING |"
+      },
+      "detail": {
+        "file": "canonical/skills/aid-deploy/references/state-idle.md",
+        "startLine": 1,
+        "endLine": 35,
+        "sourceKind": "worker",
+        "excerpt": "# State: IDLE\n\nNo active release; assess eligible deliveries and transition to SELECTING.\n\n### Step 1: Assess\n\nRead all inputs. Build a picture:\n- Which deliveries are complete (all tasks done, all grades ≥ minimum)?\n- Which deliveries are partially complete?\n- Which deliveries are already shipped (from prior packages)?\n- What does infrastructure.md § Deployment say about packaging?\n  - Build output type (executable, container, package, library, static site, installer)\n  - Target (app store, registry, cloud, on-prem, CDN)\n  - CI/CD pipeline (if any)\n  - Versioning scheme (semver, calver, custom)\n  - Environment details (runtime, config, secrets, dependencies)\n\nIf infrastructure.md has no Deployment section or it's a placeholder:\n→ Ask the user how this project gets packaged and deployed.\n→ Write a Q&A entry to `.aid/knowledge/STATE.md` `## Q&A (Pending)` to capture the answer.\n\nUpdate work `STATE.md` `## Deploy State`: Status → Selecting.\n\nEmit pipeline lifecycle state (silent state-write only — no output, no gate). Deploy is a\nseparate path, not a numbered phase, so this does NOT change the work's `Phase` (it stays at\n`Execute`); it only marks the Running lifecycle + active skill so the work-initiation gate can\nresume an interrupted deploy via `active_skill: aid-deploy`:\n```\nbash canonical/aid/scripts/execute/writeback-state.sh --pipeline --field Lifecycle --value Running\nbash canonical/aid/scripts/execute/writeback-state.sh --pipeline --field \"Active Skill\" --value aid-deploy\nbash canonical/aid/scripts/execute/writeback-state.sh --pipeline --field Updated --value \"$(date -u +%Y-%m-%dT%H:%M:%SZ)\"\n```\n\n**Advance:** **CHAIN** → [State: SELECTING] (continue inline).\n"
+      }
+    },
+    {
+      "id": "n2",
+      "order": 2,
+      "name": "SELECTING",
+      "label": "Eligible deliveries are presented to the user for inclusion…",
+      "kind": "step",
+      "terminal": null,
+      "provenance": {
+        "file": "canonical/skills/aid-deploy/SKILL.md",
+        "startLine": 165,
+        "endLine": 165,
+        "sourceKind": "skill",
+        "excerpt": "| SELECTING | `references/state-selecting.md` | `aid-operator` | → VERIFYING |"
+      },
+      "detail": {
+        "file": "canonical/skills/aid-deploy/references/state-selecting.md",
+        "startLine": 1,
+        "endLine": 39,
+        "sourceKind": "worker",
+        "excerpt": "# State: SELECTING\n\nEligible deliveries are presented to the user for inclusion in this release; a package file is created.\n\n### Step 2: Select Deliveries\n\nPresent eligible deliveries to the user:\n\n```\nReady to ship:\n  ✅ delivery-001: User Authentication (4 tasks, all A or above)\n  ✅ delivery-002: API Rate Limiting (3 tasks, all A-)\n\nAlready shipped:\n  📦 delivery-003: Core Models (in package-001-mvp)\n\nNot ready:\n  ⏳ delivery-004: Reporting Dashboard (2/5 tasks complete)\n\nWhich deliveries should be in this release? [all ready / select / cancel]\n```\n\nIf user selects \"all ready\" → include all eligible.\nIf user selects specific ones → include only those.\nIf user cancels → reset work `STATE.md` `## Deploy State` to Idle, stop.\n\nAsk for:\n- Version/tag name (suggest based on versioning scheme from KB)\n- Package name slug (for the filename: `package-NNN-{slug}.md`)\n\nCreate the package file from template (`../../templates/package.md`):\n- Fill in: deliveries, deployment type/target from KB, environment from KB\n- Determine package number (next sequential after existing packages)\n- Save to `.aid/works/{work}/packages/package-NNN-{slug}.md`\n\nUpdate work `STATE.md` `## Deploy State`: Status → Verifying, Active Package → package-NNN.\n\n**Advance:** **CHAIN** → [State: VERIFYING] (continue inline).\n"
+      }
+    },
+    {
+      "id": "n3",
+      "order": 3,
+      "name": "VERIFYING",
+      "label": "Full build, tests, and lint are run against the combined…",
+      "kind": "step",
+      "terminal": null,
+      "provenance": {
+        "file": "canonical/skills/aid-deploy/SKILL.md",
+        "startLine": 166,
+        "endLine": 166,
+        "sourceKind": "skill",
+        "excerpt": "| VERIFYING | `references/state-verifying.md` | `aid-operator` | → PACKAGING |"
+      },
+      "detail": {
+        "file": "canonical/skills/aid-deploy/references/state-verifying.md",
+        "startLine": 1,
+        "endLine": 54,
+        "sourceKind": "worker",
+        "excerpt": "# State: VERIFYING\n\nFull build, tests, and lint are run against the combined scope of all selected deliveries.\n\n### Step 3: Verify\n\nRun full verification against the COMBINED scope of all selected deliveries:\n\n1. **Full build** (not incremental) — using commands from `technology-stack.md § Commands`\n2. **Full test suite** — ALL tests, not just ones added by selected deliveries\n3. **Lint/format check** — zero warnings\n\nAll three must pass. Record results in the package file (Verification section).\n\n▶ full build + test suite + lint starting (~30 s – 5 min depending on project)\n✓ verification done (record actual time) — or ✗ verification failed: {reason}\n\n### Log failures to schema ledger\n\nFor each failing check, append a row to `.aid/.temp/review-pending/deploy.md` per\n`canonical/aid/templates/reviewer-ledger-schema.md`:\n\n| Check type | Severity |\n|---|---|\n| Build failure (compile error, link error, build exit non-zero) | `[CRITICAL]` |\n| Test failure (any test fails) | `[HIGH]` |\n| Lint/format warning or error | `[MEDIUM]` |\n\nOne row per distinct failing check/test/warning. Example row:\n```\n| 1 | [HIGH] | Pending | src/Foo.cs | 42 | test TestBar fails: NullReferenceException | `dotnet test` output: \"Test 'TestBar' failed: System.NullReferenceException\" |\n```\n\nAfter logging failures, run grade.sh on the ledger:\n\n```bash\nbash canonical/aid/scripts/review/check-gaps.sh --ledger .aid/.temp/review-pending/deploy.md   # exit 1 = an open criteria gap; do NOT grade\nbash canonical/aid/scripts/grade.sh --explain .aid/.temp/review-pending/deploy.md\n```\n\nIf any failures logged (grade below A+):\n- Show the failure clearly\n- Ask user: fix here (minor) or loop back to aid-execute (non-trivial)?\n- If fixing here: fix → re-verify → re-run grade.sh (max 3 attempts, then must loop to execute)\n- If looping back: set work `STATE.md` `## Deploy State` → Idle, keep package file as Draft\n  Delete ledger: `rm -f .aid/.temp/review-pending/deploy.md`\n\nIf all pass (ledger is empty → grade A+): proceed to PACKAGING.\nDelete ledger on success: `rm -f .aid/.temp/review-pending/deploy.md`\n\nUpdate work `STATE.md` `## Deploy State`: Status → Packaging.\n\n**Advance:** **CHAIN** → [State: PACKAGING] (continue inline).\n"
+      }
+    },
+    {
+      "id": "n4",
+      "order": 4,
+      "name": "PACKAGING",
+      "label": "Release artifacts are produced, release notes generated, KB…",
+      "kind": "step",
+      "terminal": null,
+      "provenance": {
+        "file": "canonical/skills/aid-deploy/SKILL.md",
+        "startLine": 167,
+        "endLine": 167,
+        "sourceKind": "skill",
+        "excerpt": "| PACKAGING | `references/state-packaging.md` | `aid-operator` | → DONE |"
+      },
+      "detail": {
+        "file": "canonical/skills/aid-deploy/references/state-packaging.md",
+        "startLine": 1,
+        "endLine": 99,
+        "sourceKind": "worker",
+        "excerpt": "# State: PACKAGING\n\nRelease artifacts are produced, release notes generated, KB updates routed, and statuses updated.\n\n### Step 4: Package\n\nFollow what infrastructure.md § Deployment prescribes. This step varies by project type.\n\n**The agent adapts to what the KB says. Examples:**\n- **PR-based:** Create pull request with structured description\n- **Container:** Build image, tag with version, push to registry\n- **Package/Library:** Build package, publish to registry (npm, NuGet, Maven, PyPI)\n- **Installer:** Build installer (MSIX, DMG, deb), sign if configured\n- **Static site:** Build, deploy to CDN/hosting\n- **Multiple outputs:** Some projects produce more than one — follow KB\n\nRecord what was produced in the package file (Deployment section).\n\nIf the project type isn't clear from KB → ask the user, route answer to `.aid/knowledge/STATE.md` `## Q&A (Pending)`.\n\n**PR description format (when applicable):**\n```markdown\n## Release: {version}\n\n### Deliveries\n- delivery-NNN: {name} ({task count} tasks)\n\n### Verification\n- Build: ✅\n- Tests: ✅ {count} pass ({new} new)\n- Lint: ✅\n\n### Changes\n- Files changed: {count}\n- Lines: +{add} / -{del}\n```\n\n### Step 5: Release Notes\n\nGenerate release notes in the package file (Release Notes section):\n\n```markdown\n## What's New\n{For each delivery: one paragraph summarizing user-visible changes}\n\n## Technical Changes\n{Significant architecture/infrastructure changes, if any}\n\n## Known Issues\n{From known-issues.md — anything deferred or unresolved}\n```\n\n### Step 6: KB Updates\n\nCheck if implementation revealed anything that should update the Knowledge Base:\n- New conventions → flag for coding-standards.md\n- Architecture changes → flag for architecture.md\n- New integrations → flag for integration-map.md\n- Tech debt created or resolved → flag for tech-debt.md\n- Data schema changes → flag for schemas.md\n- Deployment process changes → flag for infrastructure.md\n\nFor each KB update needed:\n→ Write a Q&A entry to `.aid/knowledge/STATE.md` `## Q&A (Pending)`\n→ The next aid-discover run will process these\n- New features shipped → add to feature-inventory.md (route through `.aid/knowledge/STATE.md` Q&A with category: Features)\n\n⚠️ Do NOT directly edit KB docs from deploy — route through Discovery.\n\n### Step 7: Update Statuses\n\n- Package file → Status: Shipped, add date\n- Each included delivery in PLAN.md → add `Shipped in: package-NNN` and date\n- Work `STATE.md` `## Tasks State` rows for included tasks → Status: Shipped\n- Work `STATE.md` `## Deploy State` → Status: Done, Active Package: —\n- Work `STATE.md` `## Deploy State` History → add entry with package name, date, delivery count\n\n### Step 8: Ticket Suggestion (conditional)\n\nIf a catalogued `issue-tracker` connector exists in `.aid/connectors/` → print a suggestion:\nconsider updating tickets for shipped tasks via `/aid-update-ticket status` (mark Done/Closed).\nOptional, user-initiated, never auto-invoked; silent (no output) if no issue-tracker connector\nis catalogued.\n\n### Step 9: Summary\n\nPrint what was done:\n```\n📦 package-NNN: {version}\n   Deliveries: {count} ({list})\n   Tasks: {total count}\n   Verification: ✅ Build + Tests + Lint\n   Output: {what was produced}\n   Package file: .aid/works/{work}/packages/package-NNN-{slug}.md\n   KB updates: {count} Q&A entries routed to .aid/knowledge/STATE.md\n```\n\n**Advance:** **CHAIN** → [State: DONE] (see `references/state-done.md`).\n"
+      }
+    },
+    {
+      "id": "n5",
+      "order": 5,
+      "name": "DONE",
+      "label": "Release complete.",
+      "kind": "exit",
+      "terminal": {
+        "advanceType": "HALT",
+        "handoff": "terminal — work is complete; user re-invokes /aid-deploy to start a new release"
+      },
+      "provenance": {
+        "file": "canonical/skills/aid-deploy/SKILL.md",
+        "startLine": 168,
+        "endLine": 168,
+        "sourceKind": "skill",
+        "excerpt": "| DONE | `references/state-done.md` | `inline` | → halt |"
+      },
+      "detail": {
+        "file": "canonical/skills/aid-deploy/references/state-done.md",
+        "startLine": 1,
+        "endLine": 33,
+        "sourceKind": "worker",
+        "excerpt": "# State: DONE\n\nRelease complete. Emit the normalized Completed lifecycle state.\n\n### Step 10: Emit Completed lifecycle state\n\nEmit the normalized Completed lifecycle state (silent state-write only — no output, no gate):\n\n```\nbash canonical/aid/scripts/execute/writeback-state.sh --pipeline --field Lifecycle --value Completed\nbash canonical/aid/scripts/execute/writeback-state.sh --pipeline --field \"Active Skill\" --value none\nbash canonical/aid/scripts/execute/writeback-state.sh --pipeline --field Updated --value \"$(date -u +%Y-%m-%dT%H:%M:%SZ)\"\n```\n\nThis is the **M6 normalized-Completed emit**: it writes the authoritative `Lifecycle: Completed`\nliteral to `## Pipeline State` so the dashboard reader can derive Completed from the normalized\nblock (not from legacy fallback signals). It mirrors the same silent-state-write pattern that\nM4/M5 use for Running/Paused/Blocked — existing transition, no new prompt, no new gate,\nno observable behavior change.\n\n### Step 11: Summary\n\nPrint the release summary:\n```\nRelease complete.\n  Package: package-NNN ({version})\n  Deliveries shipped: {count}\n  Tasks shipped: {total count}\n  All lifecycle state updated.\n```\n\n**Advance:** **HALT** (terminal — work is complete; user re-invokes /aid-deploy to start a new release).\n"
+      }
+    },
+    {
+      "id": "n6",
+      "order": 6,
+      "name": "RE-RUN",
+      "label": "When work STATE.md ## Deploy State is Done and the user…",
+      "kind": "exit",
+      "terminal": {
+        "advanceType": "HALT",
+        "handoff": "terminal — user re-invokes the skill when ready"
+      },
+      "provenance": {
+        "file": "canonical/skills/aid-deploy/SKILL.md",
+        "startLine": 169,
+        "endLine": 169,
+        "sourceKind": "skill",
+        "excerpt": "| RE-RUN | `references/state-re-run.md` | `inline` | → halt |"
+      },
+      "detail": {
+        "file": "canonical/skills/aid-deploy/references/state-re-run.md",
+        "startLine": 1,
+        "endLine": 19,
+        "sourceKind": "worker",
+        "excerpt": "# State: RE-RUN\n\nWhen work `STATE.md` `## Deploy State` is Done and the user invokes `/aid-deploy` again:\n\n```\n[State: RE-RUN] — Prior release found; confirming whether to start a new release or review.\naid-deploy  ▸ you are here\n  [✓ IDLE ] → [✓ SELECTING ] → [✓ VERIFYING ] → [✓ PACKAGING ] → [✓ DONE ] → [● RE-RUN ]\n```\n\n1. Show package history (from work `STATE.md` `## Deploy State` History section).\n2. Ask: **[1] New release** or **[2] Review package-NNN**?\n3. If [1] → reset Status to Idle, proceed with Step 1 (only unshipped deliveries eligible).\n4. If [2] → read the package file, compare against current state of tasks/deliveries,\n   flag any discrepancies (tasks modified after shipping, new known issues).\n   Offer to regenerate release notes if content changed.\n\n**Advance:** **HALT** (terminal — user re-invokes the skill when ready).\n"
+      }
+    }
+  ],
+  "edges": [
+    {
+      "from": "n1",
+      "to": "n2",
+      "kind": "sequence",
+      "condition": null,
+      "advanceType": "CHAIN",
+      "provenance": {
+        "file": "canonical/skills/aid-deploy/references/state-idle.md",
+        "startLine": 34,
+        "endLine": 34,
+        "sourceKind": "worker",
+        "excerpt": "**Advance:** **CHAIN** → [State: SELECTING] (continue inline)."
+      }
+    },
+    {
+      "from": "n2",
+      "to": "n3",
+      "kind": "sequence",
+      "condition": null,
+      "advanceType": "CHAIN",
+      "provenance": {
+        "file": "canonical/skills/aid-deploy/references/state-selecting.md",
+        "startLine": 38,
+        "endLine": 38,
+        "sourceKind": "worker",
+        "excerpt": "**Advance:** **CHAIN** → [State: VERIFYING] (continue inline)."
+      }
+    },
+    {
+      "from": "n3",
+      "to": "n4",
+      "kind": "sequence",
+      "condition": null,
+      "advanceType": "CHAIN",
+      "provenance": {
+        "file": "canonical/skills/aid-deploy/references/state-verifying.md",
+        "startLine": 53,
+        "endLine": 53,
+        "sourceKind": "worker",
+        "excerpt": "**Advance:** **CHAIN** → [State: PACKAGING] (continue inline)."
+      }
+    },
+    {
+      "from": "n4",
+      "to": "n5",
+      "kind": "sequence",
+      "condition": null,
+      "advanceType": "CHAIN",
+      "provenance": {
+        "file": "canonical/skills/aid-deploy/references/state-packaging.md",
+        "startLine": 98,
+        "endLine": 98,
+        "sourceKind": "worker",
+        "excerpt": "**Advance:** **CHAIN** → [State: DONE] (see `references/state-done.md`)."
+      }
+    }
+  ],
+  "entries": [
+    "n1",
+    "n6"
+  ],
+  "exits": [
+    "n5",
+    "n6"
+  ],
+  "sources": [
+    "canonical/skills/aid-deploy/SKILL.md",
+    "canonical/skills/aid-deploy/references/state-done.md",
+    "canonical/skills/aid-deploy/references/state-idle.md",
+    "canonical/skills/aid-deploy/references/state-packaging.md",
+    "canonical/skills/aid-deploy/references/state-re-run.md",
+    "canonical/skills/aid-deploy/references/state-selecting.md",
+    "canonical/skills/aid-deploy/references/state-verifying.md"
+  ],
+  "warnings": []
+}

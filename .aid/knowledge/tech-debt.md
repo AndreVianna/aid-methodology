@@ -26,6 +26,12 @@ intent: |
   gotchas a change will trip. Diagnosis, not a sprint plan.
 contracts: []
 changelog:
+  - 2026-07-30: work-001 final gate -- RESOLVED and removed W1-16 (task-058, owner chose fix-over-disclose). Rule 7 now requires a state to be the TARGET of a loop/return phrase, tested over the joined logical block rather than the physical line (three genuine loop-backs wrap the verb onto the previous line, and the shared engine wraps the other way), plus a filename guard for the state-name/artifact-name collision. Measured: cross-state loop-back edges 26 -> 20, 74 self-loops untouched, exactly 8 files changed, generator still idempotent. Re-verified by re-running the AC-7 spot-check on the corrected chart.
+  - 2026-07-30: work-001 final gate -- added W1-17 (the AC-1 drift-guard test writes a scratch page into the tracked content collection, so an interrupted run breaks the next build; raised at delivery-002's gate and left Pending there).
+  - 2026-07-30: work-001 final gate -- added W1-16: the flow extractor's rule 7 turns prose cross-references into loop-back arrows on published charts. Found by performing AC-7, the comprehension spot-check delivery-004 never recorded -- the unfamiliar reader reported 3 loop-backs on the first chart it was shown, where the source has 1. Extent then measured exactly by a gate reviewer: 7 fabricated arrows on 4 charts, and a second trigger the first analysis missed (a state name colliding with its artifact filename, which makes aid-design 3-drawn/0-real). Medium/P2, escalated to the owner rather than fixed -- tightening rule 7 changes corpus-wide generated output that two deliveries assert byte-unchanged.
+  - 2026-07-30: work-001 final gate -- added W1-13/W1-14 (node-panel accessibility: no role or accessible name; aria-controls references a lazily-created panel that does not exist before first activation) and W1-15 (the screen-reader announcement check has never been run against a real screen reader). All three surfaced by PERFORMING delivery-005's four manual browser checks, which had been made non-blocking and then never performed.
+  - 2026-07-30: work-001 final gate -- RESOLVED and removed W1-4 (the `docs.yml` CI-lane row taught the wrong CI model). Corrected in SIX places across three docs, after a gate reviewer showed the first pass had closed only half the class: the trigger rows in `test-landscape.md`, `infrastructure.md` and `integration-map.md` (all three omitted the `canonical/**` filter and the `pull_request`-to-master trigger; two carried a `release: published` trigger that does not exist), AND three 'heavy gates are master-only' summaries that assert the same wrong model in prose -- `tech-debt.md` Gotchas, `integration-map.md`'s CONFIRMED note, and `test-landscape.md`'s own section lead-in. The first pass also introduced a false claim (that the site build catches canonical->profiles render drift; that is `test.yml`'s `render-drift` job, and `site/` never reads `profiles/`) and left the corrected text pointing at an uncorrected instance. IDs are not renumbered, so W1-4 is now a deliberate gap.
+  - 2026-07-30: work-001 delivery-006 gate -- added W1-1..W1-12, the work-001 known-issues that would not survive the work folder being pruned, with their own table header; corrected an initial mis-classification that restated three CLOSED issues as open; corrected a stale present-tense corpus count. Open debt is no longer L4 alone.
   - 2026-06-25: Initial debt audit (aid-discover quality deep-dive)
 ---
 
@@ -68,6 +74,90 @@ urgent.
 
 ---
 
+| ID | Type | Description | Location | Risk | Effort | Priority |
+|----|------|-------------|----------|------|--------|----------|
+| **W1-1** | Third-party integration bug | `astro-mermaid` never forwards a **top-level** `themeVariables` to `mermaid.initialize` — it destructures only `{theme, autoTheme, mermaidConfig, iconPacks, enableLog}` and builds its client config as `{startOnLoad:false, theme, ...mermaidConfig}`, so a palette passed one level too high is silently dropped. **⚠️ DO NOT "fix" this by nesting the palette under `mermaidConfig`.** That forwards it successfully and thereby pins **one** palette across **both** themes `autoTheme` switches between, so the dark colours bleed into light mode — strictly worse than the inert palette. AID's resolution was to **delete** `themeVariables` and move per-theme colour to CSS, where `[data-theme]` can select (`site/src/styles/casulo.css`, mermaid block); `mermaidConfig` now carries layout only, which is theme-independent and safe to fix there. So the site is correct today and this row records only the **upstream** gap, in case a future need for config-level theming arises. Independently mitigated: generated charts emit a self-contained `classDef` block, so they are legible either way. | `site/astro.config.mjs`:35-42 (the warning, inline at the site) vs `astro-mermaid-integration.js`:229-235 | Low | S | P3 |
+| **W1-2** | Stale KB facts | `module-map.md` § Skill Structural Shapes carries per-shape population figures that no measurement supports ("roughly 94 of the 111"). Two independent scans agreed on the inline-state population but differed on the doorway/residual split. The live figures belong in the generator's `shapeCounts` manifest entry, not in prose — the row should be regenerated from it or lose its numbers. | `.aid/knowledge/module-map.md` § Skill Structural Shapes | Low | S | P3 |
+| **W1-3** | Graceful-degradation gap | Client-side mermaid rendering means a reader without JavaScript sees raw `flowchart TB …` source inside an animated placeholder. Accepted at design time (the below-chart ordered list is static markdown and carries the same information), but it now affects all 111 skill detail pages rather than 4. | `astro-mermaid-integration.js`:64, 316-318 | Low | M | P3 |
+| **W1-5** | Extractor gap | The `X (optional) then Y` advance form is not split by the flow extractor, so a state carrying it renders one edge where two are meant. | `site/scripts/lib/flow-graph/advance.mjs` | Low | S | P3 |
+| **W1-6** | Stale curated roster | `SKILL_GROUPS` files `aid-triage` under *Definition* where FR-5 puts it in *Support*. No longer rendered anywhere, but still read by the corpus drift guard, by `skill-counts.mjs`'s `curatedOnly`, and by the derived grouping-divergence note on `/skills/` — so correcting it is a real change with real consequences, deliberately not folded into delivery-006. | `site/scripts/skills/curated-roster.mjs` | Low | S | P3 |
+| **W1-7** | Misleading signal | `data-processed` on a mermaid container means "render attempted", not "SVG present" — an error `<div>` also carries it. Consumers must check for an actual `<svg>`. | `astro-mermaid-integration.js` | Low | S | P3 |
+| **W1-8** | Missing re-entrancy guard | `initMermaid()` has no re-entrancy guard, so rapid theme toggling can interleave two render passes over the same container. | `astro-mermaid-integration.js` | Low | S | P3 |
+| **W1-9** | Contradictory templates | The two task templates disagree with each other, and one claims a conformance property it does not enforce. | `canonical/aid/templates/delivery-plans/` | Low | S | P3 |
+| **W1-10** | Environment trap (Windows) | Worktrees for this repo must be created with **Windows git**, never WSL git — a WSL-created worktree produces paths the Windows toolchain cannot resolve, and the failure is confusing rather than immediate. | process / dev environment | **Medium** | — (documented) | **P2** |
+| **W1-11** | Cross-work collision | work-004 shrinks the skill corpus 111 → 74 and also renames skills. Every count guarded by `tests/canonical/check-skill-counts.mjs` derives automatically, but hand-written *names* and any prose enumerating skills will need reconciliation when that work lands. | repo-wide | **Medium** | M | **P2** |
+| **W1-12** | Intermittent rendering defect | ELK layout is intermittently not applied — diagrams fall back to dagre routing, producing the curved, overlapping edges the owner explicitly rejected at the delivery-003 UI checkpoint. `layout: 'elk'` is present and the loader registers; two hypotheses remain live and untested. **Owner-deferred**, shipped open and disclosed. | `site/astro.config.mjs`:47 + `@mermaid-js/layout-elk` | **Medium** | M | **P2** |
+| **W1-13** | Accessibility gap | The node-detail panel is a `div[tabindex="-1"]` with **no `role` and no accessible name** — the accessibility tree shows it as `generic`. Activation moves focus into it, so what a screen reader announces on arrival is not deterministic across NVDA / JAWS / VoiceOver. It does carry an `<h3>` naming the step and a labelled close button, so the content is reachable; the framing is what is missing. Fix is `role="region"` (or `dialog`) plus `aria-labelledby` pointing at the existing `<h3>`. | `site/public/skill-node-panel.mjs` / `site/src/lib/skill-node-panel.ts` | Low | S | P3 |
+| **W1-14** | Invalid ARIA | Every decorated node carries `aria-controls="aid-node-panel"` from page load, but the panel is created **lazily on first activation** — so before any node is activated the attribute references an element that is not in the DOM. Confirmed on a fresh load: `document.getElementById('aid-node-panel')` is null while 5 nodes already advertise it. `aria-controls` is specified to reference an existing element. | `site/public/skill-node-panel.mjs` | Low | S | P3 |
+| **W1-15** | Unperformed verification | The **screen-reader announcement** check has never been run against a real screen reader. The work-level final gate verified the mechanism (accessibility tree + focus movement) in Chromium, which is not the same thing as the utterance. Needs one NVDA or VoiceOver pass over a skill detail page's chart. Tracked because the check is named in `REQUIREMENTS.md` and in feature-006's blocking default, and a mechanism inspection was substituted for it. | process / manual QA | Low | S | P3 |
+| **W1-17** | Self-inflicted build break | The AC-1 drift-guard test writes a synthetic orphan page `__test-orphan-skill__.md` **directly into the tracked content collection** (`site/src/content/docs/skills/`) and removes it only in cleanup. An interrupted or killed `npm test` leaves a scratch page in a tracked directory, and the next `npm run build` then fails on the very drift guard the test exercises — a build break caused by the test suite. Every run also momentarily injects a page into the collection a dev server is watching. `discoverSkills()` already accepts a `skillsDir` override and `mkdtempSync` is already imported in the file, so a temp-tree variant needs no new machinery. Raised at delivery-002's gate, left `Pending` there, and carried here at the final gate because it is the one of that gate's unclosed rows whose consequences outlive the work folder. | `site/scripts/__tests__/gen-skills.test.mjs`:539-545, 572-573 | Low | S | P3 |
+
+### work-001 (Skill Explorer) — issues that outlive the work folder
+
+work-001 registered 22 known issues over its lifetime. **Twelve are closed** — KI-003, 005, 006,
+009, 012, 013, 016, 018, 020 and 021 during the work, then KI-001 and KI-007 at the work-level
+final gate. Their closures were recorded inconsistently — some on a `Status:` line, one in a
+heading, one in a body bullet, one on a `Type:` line — which is why classifying them by the
+presence of a `Status:` line mis-read four of them. That is a lesson about the KI format, not a
+pointer: this section deliberately carries **no path** to the work's issue file, because
+`pipeline-contracts.md § Invariants` forbids the KB from citing a work folder as a source, and this
+is the section whose entire purpose is to outlive that folder being pruned. Everything a later
+reader needs is restated in the rows above.
+
+The still-open ones are listed above as `W1-1`..`W1-3`, `W1-5`..`W1-15` and `W1-17` — **fifteen items** —
+because of the project's own rule that **work folders are transient**: `.aid/works/work-NNN-*/`
+may be pruned once a work ships, and no permanent artifact may depend on it. Left only there, they
+would have been deleted along with the folder — including a Medium-priority Windows worktree trap
+that costs an afternoon (`W1-10`) and the one item the owner explicitly deferred rather than
+resolved (`W1-12`).
+
+`W1-16` is likewise absent by resolution: it recorded the flow extractor turning prose
+cross-references into loop-back arrows on published charts. Asked whether to ship it disclosed or
+fix it, the owner chose to fix it, and **task-058** did — 7 wrong edge-attributions removed from 4
+charts, 1 genuine edge recovered with correct provenance, verified by re-running the same AC-7
+comprehension spot-check that found it (a clean-context reader now reports exactly the one
+loop-back the source expresses, where it previously reported three).
+
+`W1-4` is absent by resolution, not by oversight: it recorded the `docs.yml` CI-lane row teaching
+the wrong CI model, and the work-level final gate fixed it — in **six** places, not the one the
+finding cited. Three were table/prose rows describing the workflow's triggers; three more were
+"heavy gates are master-only" summaries that the first pass missed and a reviewer caught,
+including one that the corrected text itself pointed the reader at.
+Per this KB's convention a resolved item is **deleted** rather than marked done — the closure
+record lives in the `changelog:` frontmatter and in git. IDs are not renumbered, so the gap at
+`W1-4` is expected and any outside reference to it still resolves through history.
+
+`W1-13`..`W1-17` were **not** in the work's own issue ledger. They were found at the work-level final gate by
+performing delivery-005's four manual browser checks, which the owner made non-blocking and which
+were then never performed; by performing **AC-7**, the comprehension spot-check delivery-004 owed
+and never recorded; and by transcribing delivery-002's gate ledger, which had been left an unfilled
+template placeholder. Breakdown: `W1-13`/`W1-14` are real accessibility defects in shipped code;
+`W1-15` is the screen-reader pass still owed, recorded so that substituting a mechanism inspection
+for it cannot later read as the check having been done; `W1-16` was a Medium defect in published chart output that an unfamiliar
+reader spotted in the first chart shown to it, **fixed by task-058 and removed from this table**; `W1-17` is a
+build-breaking test hazard that had been raised at delivery-002's gate and left `Pending` there.
+
+**Every one of the five came out of a check that had been deferred, waived as non-blocking, or
+left unrecorded.** None came from the code review that ran alongside them. That is the argument
+for performing deferred checks before shipping rather than after — and, since four of the five were
+found at the *final* gate rather than at the delivery that owed them, for not accepting "recorded
+later" as equivalent to recorded.
+
+> **Corrected 2026-07-30 at gate cycle 3.** The first version of this section said seven
+> closed / fifteen open and restated CLOSED issues as open (three at first, then a
+> fourth -- KI-018, RESOLVED 2026-07-28 with a shipped fix -- which survived the first
+> correction because I recounted the split without re-checking each row against it) — including one whose text
+> ("`CHARTABLE_SHAPES` was never widened") is false on disk: `gen-skills.mjs` uses
+> `new Set(SHAPE_ORDER)` and all 111 sidecars emit. The classification had been read off the
+> presence of a `Status:` line. Closures are recorded four different ways across the file --
+> a `Status:` line, a heading (KI-020), a body bullet (KI-018) and a `Type:` line (KI-021) --
+> so that heuristic mis-read four entries, and correcting the totals without re-checking each
+> row against the source let one of them survive a second pass.
+
+They are restated here in full rather than cross-referenced, for the same reason: a pointer
+into a folder that is allowed to disappear is not a record. The work folder keeps the fuller
+investigation notes for as long as it exists; this inventory is what survives it.
+
 ## Detailed Debt Items
 
 ### [HIGH] L4 -- No measure of test-suite effectiveness
@@ -92,7 +182,7 @@ for the **next release**.
 **Scope boundary (important):** this is about the **deterministic, machine-executed**
 surface — installers (`install.sh`/`install.ps1`/`lib`), the dashboard reader (Python +
 `.mjs`), the render/generator pipeline, the manifests, and the canonical helper scripts.
-The ~92 prompt-driven skills are **out of scope** for these techniques (there is no
+The ~113 prompt-driven skills are **out of scope** for these techniques (there is no
 deterministic pass/fail to measure) — they are covered by **dogfooding + review**, which is
 already in place. Effectiveness measurement therefore scales with the (bounded, slow-growing)
 machinery, NOT with the number of skills.
@@ -242,10 +332,17 @@ model.
 > Non-obvious traps a contributor cannot infer from the code alone. State the trap, then the
 > safe way through it.
 
-- **Master-only heavy gates:** the full canonical suite (`test.yml`) and Astro build
-  (`docs.yml`) run on `master`/release-tag only; feature branches run only
-  `installer-tests.yml`. A direct merge can red-master in ways the branch never saw. Run
-  `bash tests/run-all.sh` (HOME-pinned) and the `site` build locally before merge.
+- **Master-only heavy gates — with one exception that matters.** The full canonical suite
+  (`test.yml`'s `canonical-tests`) runs on `master` and release tags only, so a branch with **no
+  open PR to master** can red-master in ways it never saw. Run `bash tests/run-all.sh`
+  (HOME-pinned) before merge.
+  **`docs.yml` is NOT master-only.** It triggers on `push` *and* `pull_request` to `master`, both
+  path-filtered to `site/**`, `docs/**`, `canonical/**`, `VERSION` or the workflow itself, and its
+  `build` job runs **`npm test` (the site vitest suite) as well as the Astro build**. Only the
+  `deploy` job is master-only. It has **no `release:`/tag trigger at all** — the `github-pages`
+  environment rejects a non-master ref, so a post-release refresh is a manual
+  `workflow_dispatch`. Two consequences: a **`canonical/`-only** commit still rebuilds the site,
+  and a PR touching those paths is genuinely gated on the site suite.
 - **HOME-pinning before any migration-scan test:** the migration scan defaults its root to
   `$HOME`; a test firing it must `export HOME=<throwaway>`, not just `AID_HOME`, or it
   migrates the developer's real repos. CI also checks the repo out (with its own `.aid/`)
@@ -286,3 +383,4 @@ file); the full history — the initial audit and every closure — lives in git
 |-----|------|--------|-----------|
 | 2.4 | 2026-07-10 | tech-debt-followup | **L4** — no measure of test-suite effectiveness; opened High / P1 as a next-release program (see Detailed Debt Items). Sole open item. |
 | 2.5 | 2026-07-24 | work-024 test-suite-improvement KB refresh | Corrected **L4**'s stale suite count ~118 → ~133 (live total, matching `test-landscape.md`); no residual-gap row added — the ≤3min/~90s outcome is measured on the post-push CI run, and a later KB-DELTA adds an `L5` row only if the ~90s goal is missed. **L4** remains the sole open item. |
+| 2.6 | 2026-07-30 | work-001 delivery-006 gate | **L4** plus **W1-1..W1-12** — the work-001 known-issues migrated out of the transient work folder (two Medium traps among them: a KB row teaching the wrong CI model, and a Windows worktree trap), so L4 is no longer the sole open item |

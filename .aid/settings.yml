@@ -3,18 +3,43 @@ name: AID
 description: AI Integrated Development
 type: brownfield
 source_control: git
-# B- is the lowest grade whose whole band excludes [MEDIUM]: grade.sh is
-# worst-severity-dominated, so one [MEDIUM] caps a ledger at C+ no matter how few,
-# while a LOW-only ledger bottoms out at B- no matter how many. This bar therefore
-# means "no [MEDIUM] or worse", and defers [LOW]/[MINOR] -- deferred, NOT waived:
-# they are swept once, at the end of the work.
-# Set globally rather than as an `execute:` per-skill override because
-# lint-settings.sh S8 rejects any top-level key the template does not seed, and the
-# template seeds no skill sections -- so the per-skill override read-setting.sh
-# documents (resolution order step 1) cannot be written into a file that passes its
-# own lint. Recorded as a defect; out of delivery-015's scope.
+# Minimum grade lowered A+ -> B- globally. Two independent decisions, same day, same value:
+# work-001 delivery-006's gate (owner, 2026-07-30) and work-003 delivery-015's gate. The rationale
+# below is the union of both -- the first half is WHY the bar moved, the second is WHY B- is the
+# threshold that expresses it.
 minimum_grade: B-
 heartbeat_interval: 1
+
+# Minimum grade lowered A+ -> B- globally (owner decision, 2026-07-30, during work-001
+# delivery-006's gate).
+#
+# A+ means "zero issues at ANY severity" (grading-rubric.md). On artifacts that are largely
+# prose, that surface is effectively unbounded: five consecutive Large-tier gate cycles on
+# delivery-006 each closed ~12 findings and opened ~12, so the ledger grew 30 -> 43 -> 62 -> 73
+# -> 85 with no decline in the new-finding rate. An A+ gate there was not a bar being
+# approached, it was a loop that does not terminate.
+#
+# B- = "> 5 lows", i.e. the worst SURVIVING finding must be LOW. CRITICAL, HIGH and MEDIUM all
+# remain fully blocking -- nothing that misinforms a reader, breaks a build, or states a false
+# fact gets waived. What B- buys is that LOW/MINOR findings and stale file:line citations stop
+# blocking a gate from closing; they are batched and cleared at the END of a work rather than
+# re-litigated every cycle, which is where that five-cycle loop was spending itself.
+#
+# WHY B- IS EXACTLY THAT BAR, measured against grade.sh rather than assumed: grade.sh is
+# worst-severity-dominated with a 3-band count modifier, so one [MEDIUM] caps a ledger at C+ however
+# few there are (8 [LOW] + 1 [MEDIUM] = C+), while a [LOW]-only ledger bottoms out at B- however many
+# ([LOW] x1 -> B+, x2-5 -> B, x6+ -> B-). B- is therefore the LOWEST bar whose entire band excludes
+# [MEDIUM]: "minimum B-" and "no [MEDIUM] or worse" are the same statement, not an approximation of
+# each other.
+#
+# Deferred is NOT waived. `.aid/.temp/review-pending/` is deleted at DONE, so a deferred row living
+# only in a ledger is a lost row: each work copies its open [LOW]/[MINOR] into its own
+# STATE.md ## Deferred Findings and is not shippable while any remains Pending.
+#
+# Set globally rather than as an `execute:` per-skill override because lint-settings.sh S8 rejects any
+# top-level key the template does not seed, and the template seeds no skill sections -- so the
+# per-skill override read-setting.sh documents (resolution order step 1) cannot be written into a file
+# that passes its own lint. Recorded as a defect in work-003's STATE.md Q19.
 
 knowledge:
   source: master

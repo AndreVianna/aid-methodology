@@ -13,7 +13,8 @@ The Reference section is information-oriented: exact facts, tables, and definiti
 | Page | What it covers |
 |------|----------------|
 | [CLI & subcommands](/reference/cli/) | Every `aid` command and flag — `add`, `update`, `remove`, `status`, `version`, `self`; exit codes; environment variables; tool auto-detect |
-| [Skills](/reference/skills/) | All 92 AID skills — the 14 classic pipeline/on-demand skills, the `/aid-triage` suggest-only router, `/aid-ask` (a Q&A alias of `/aid-query-kb`), and 76 verb-first shortcut skills (`/aid-fix`, `/aid-create-api`, …) — what each does and its source definition in `canonical/` |
+| [Skills](/skills/) | All 113 AID skills — 19 curated pipeline, on-demand and router skills (including `/aid-triage`), plus the 94-row shortcut catalog's skills: 64 verb-first shortcut skills (`/aid-fix`, `/aid-create-api`, …) and 30 hand-authored `repurpose` skills (among them `/aid-ask`, a Q&A alias of `/aid-query-kb`) — what each does and its source definition in `canonical/`. *(In the Skills section, not this one.)* |
+| [Shortcut engine](/reference/skills/) | How the verb-first shortcut skills work — the shared engine every one of them delegates to, and its `INTAKE → CAPTURE → SPEC → PLAN → DETAIL → GATE → APPROVAL-HALT` sequence |
 | [Agents](/reference/agents/) | All 9 AID pipeline agents — role, tier, tools allowed, and source definition |
 | [Knowledge Base doc types](/reference/kb/) | The 14 standard KB document templates and what each captures |
 | [Settings keys](/reference/settings/) | Every `.aid/settings.yml` key — path, current value, and description |

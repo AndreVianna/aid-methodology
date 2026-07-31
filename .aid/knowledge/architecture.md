@@ -21,6 +21,7 @@ intent: |
   Read this to understand HOW the system hangs together — not WHAT each module does.
 contracts: []
 changelog:
+  - 2026-07-30: work-001 delivery-006 gate -- corrected the live skill-count claims (the inventory triple, "92 shipped skills" x2, "skills/ (92)", "92 dirs", the shortcut row's 76) to the reconciled 111 = 17 curated + 94 catalog; corrected the Entry Points row that called the site an independent build when it consumes canonical/ at build time.
   - 2026-07-16: work-016 .aid/works/ container relocation -- updated the KB-vs-works boundary row and the pipeline-flow diagram's work location to `.aid/works/work-NNN-*/`.
   - 2026-07-09: work-001 lite-skills refresh — skill count 14 -> 82 (14 classic + `/aid-triage` router + 67 verb-first shortcuts); removed recipes / `parse-recipe.sh` / the `interview/` script area and the recipe render row; reframed `/aid-describe` as full-path-only (no TRIAGE/lite states); documented the shortcut engine + three entry points; re-pointed the Monitor loopbacks (bug -> `/aid-fix`, change request -> `/aid-triage`)
   - 2026-07-09: Housekeep KB-DELTA refresh — connectors subsystem + release-drift refresh (added ELICIT as Discover's first state, added `connectors/` to the script-area list, rephrased the Version-lockstep invariant to stop hard-coding a version number, added a connectors-registry boundary note)
@@ -126,7 +127,7 @@ This is the architecture that makes AID a *product*. It is a SYNTHESIS concept �
 
 **The flow:**
 
-1. `canonical/` holds the single source: `skills/` (92), `agents/` (9),
+1. `canonical/` holds the single source: `skills/` (113), `agents/` (9),
    `aid/{scripts,templates}`. CONFIRMED via directory listing.
 2. `python .claude/skills/generate-profile/scripts/run_generator.py` renders the source
    into the five `profiles/*` install trees, one per `profiles/*.toml`. CONFIRMED in
@@ -162,8 +163,8 @@ The five profile roots: `.claude/` (Claude Code), `.codex/` (Codex), `.cursor/` 
 (search: "The Five Profiles") and `profiles/*.toml`.
 
 **Note:** the generator/`generate-profile` skill is **maintainer-only** — it lives in
-`.claude/skills/generate-profile/` and is NOT one of the 92 shipped user-facing skills in
-`canonical/skills/`. CONFIRMED: `canonical/skills/` contains 92 dirs, none named
+`.claude/skills/generate-profile/` and is NOT one of the 113 shipped user-facing skills in
+`canonical/skills/`. CONFIRMED: `canonical/skills/` contains 113 dirs, none named
 `generate-profile`.
 
 ---
@@ -187,9 +188,10 @@ not a running order (the numbered phases carry the sequence). Phase 2 (Describe 
 Describe → Define Phase" below); every other numbered phase is one skill. Several lifecycle labels
 from everyday SDLC talk — Init, Implement, Review, Test, Track, Triage — are **not numbered
 phases**; the table below maps each label to what it really is (CONFIRMED in
-`docs/aid-methodology.md` "Skill Inventory" and the `canonical/skills/` listing — **92 skill
-directories**: 15 classic pipeline / on-demand skills, the standalone `/aid-triage` router, and
-76 verb-first direct-entry shortcut skills):
+`docs/aid-methodology.md` "Skill Inventory" and the `canonical/skills/` listing — **113 skill
+directories**: 19 curated pipeline / on-demand / router skills (including `/aid-triage`), plus the
+94-row shortcut catalog's skills — 64 verb-first direct-entry shortcut skills and 30 hand-authored
+`repurpose` skills; 17 + 94 = 111):
 
 | Workflow label | Skill(s) | Numbered phase? | What it really is |
 |----------------|----------|-----------------|-------------------|
@@ -207,7 +209,7 @@ directories**: 15 classic pipeline / on-demand skills, the standalone `/aid-tria
 | Deploy | `aid-deploy` | No (Definition shortcut path) | On-demand optional shortcut path in the Definition group; not a numbered phase. |
 | Track / Monitor | `aid-monitor` | No (Definition shortcut path) | On-demand observe -> classify -> route; not a numbered phase. ("Track" has no separate referent.) Routes findings out: bug -> `/aid-fix`, change request -> `/aid-triage`. |
 | Triage | `aid-triage` (standalone skill); `aid-monitor` classify | No | `/aid-triage` is now its own **suggest-only router** skill (INTAKE -> CLASSIFY -> SUGGEST -> HALT) — the extraction of `aid-describe`'s former TRIAGE state; it writes nothing and creates no work. Monitor still classifies its own findings. |
-| Shortcut (Lite path) | 76 `aid-<verb>[-<artifact>]` skills + the shared shortcut engine | No (collapses Describe→Detail) | Verb-first direct-entry doorways (`/aid-fix`, `/aid-create-api`, …) that delegate to `canonical/aid/templates/shortcut-engine.md` (INTAKE -> CAPTURE -> SPEC -> PLAN -> DETAIL -> GATE -> APPROVAL-HALT). The autonomous Lite path — enter by naming your change. |
+| Shortcut (Lite path) | 64 `aid-<verb>[-<artifact>]` skills + the shared shortcut engine | No (collapses Describe→Detail) | Verb-first direct-entry doorways (`/aid-fix`, `/aid-create-api`, …) that delegate to `canonical/aid/templates/shortcut-engine.md` (INTAKE -> CAPTURE -> SPEC -> PLAN -> DETAIL -> GATE -> APPROVAL-HALT). The autonomous Lite path — enter by naming your change. |
 
 Knowledge Base Maintenance group (on-demand, off the numbered pipeline): `aid-housekeep`
 (KB drift reconciliation), `aid-query-kb` (Q&A + gap capture; `aid-ask` is its friendly-named
@@ -424,7 +426,9 @@ CONFIRMED in `project-structure.md` "Entry Points" and file headers:
 4. User-facing skills — `/aid-*` slash commands resolving to installed `SKILL.md` files.
 5. Dashboard servers — `dashboard/server/server.mjs` (Node) / `dashboard/server/server.py`.
 6. The maintainer build — `run_generator.py`; the release runbook — `release.sh`.
-7. The website — `site/` (independent Astro build).
+7. The website — `site/` (Astro build; independent of the CLI, but it DOES consume
+   `canonical/` at build time via `gen-reference.mjs` and `gen-skills.mjs` — see module-map.md
+   § Dependency Graph. The third generator, `sync-docs.mjs`, reads `docs/` only).
 
 ---
 
@@ -432,7 +436,7 @@ CONFIRMED in `project-structure.md` "Entry Points" and file headers:
 
 Documented as reality + flagged; NOT silently reconciled (see `.scout-questions.tmp`):
 
-1. **Skill count (reconciled).** `canonical/skills/` has **111** directories — 17 curated
+1. **Skill count (reconciled).** `canonical/skills/` has **113** directories — 19 curated
    pipeline / on-demand / router skills plus the 94-row shortcut catalog's skills (64 verb-first
    direct-entry shortcut doorways + 30 hand-authored `repurpose` skills). History: 82/67 added by
    work-001-lite-aid-skills; extended to 92/76 by the v2.1.0 coverage-gap follow-on's
@@ -440,7 +444,7 @@ Documented as reality + flagged; NOT silently reconciled (see `.scout-questions.
    then grown to 111 by `aid-design` (work-005) and the 3 ticket skills
    `aid-read-ticket` / `aid-create-ticket` / `aid-update-ticket` (work-023). `README.md`,
    `docs/aid-methodology.md`, `docs/repository-structure.md`, and the glossary / methodology
-   surfaces all state "111 skills"; the doc-vs-code gap this item tracked stays closed (last
+   surfaces all state "113 skills"; the doc-vs-code gap this item tracked stays closed (last
    reconciled by the v2.3.0 release sweep, 2026-07-23). The prior 12-/13-/14-skill drift is resolved.
 2. **EMISSION-MANIFEST.md lists 3 profiles, reality is 5.** `canonical/EMISSION-MANIFEST.md`
    tables enumerate only claude-code/codex/cursor; the live generator globs all five
@@ -510,7 +514,7 @@ Non-obvious traps a change will trip (cannot be inferred from the code alone):
 - **The 5 install manifests must move in lockstep on the dashboard file set** — npm, pypi,
   and the three vendored copies; dropping one file from one manifest ships a broken install.
 - **`generate-profile` is maintainer-only** and lives only in `.claude/skills/` — do not look
-  for it in `canonical/skills/` (the 92 shipped skills).
+  for it in `canonical/skills/` (the 113 shipped skills).
 - **Heavy CI gates run only on `master`** (tests/run-all.sh + the Astro site build); feature
   branches skip them. Run `tests/run-all.sh` (HOME-pinned) + the site build locally before
   claiming green. (Project memory: master-ci-only-on-master.)
