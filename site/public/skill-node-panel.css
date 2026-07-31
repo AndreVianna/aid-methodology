@@ -1,0 +1,248 @@
+/*
+ * skill-node-panel.css — the node panel block, its focus styling, and the
+ * narrow-screen rules. feature-006 / task-051.
+ *
+ * A static file under public/, linked from <head>, NOT a <style> block injected
+ * from JavaScript. That is deliberate: it keeps the feature CSP-friendly, since
+ * a Content Security Policy would need only `script-src 'self'` and
+ * `style-src 'self'` — both assets are same-origin files and no style is
+ * injected at runtime anywhere in this feature.
+ *
+ * Class names are fixed by feature-006's Anatomy block, which is what lets this
+ * file be written in parallel with the controller rather than behind it.
+ *
+ * Colours come only from Starlight's `--sl-color-*` variables. casulo.css maps
+ * those per theme — dark under `:root:not([data-theme='light'])`, light under the
+ * explicit light scope — so referencing them tracks both themes with no second
+ * palette here. This file therefore defines no palette and hard-codes no hex.
+ *
+ * Focus and open state are indicated with colour and stroke-width only. There is
+ * no animation and no transition on those states, so `prefers-reduced-motion`
+ * needs no branch.
+ */
+
+/* ── Decorated chart nodes ────────────────────────────────────────────────────
+ *
+ * Selected by the decoration the controller applies — `role="button"` — rather
+ * than by a container class. The node is a disclosure control, so it must look
+ * activatable and show focus clearly.
+ *
+ * Mermaid renders client-side, so these elements exist only in the browser; the
+ * shape inside `g.node` may be a rect, polygon, circle, ellipse or path
+ * depending on the node kind, and all five are covered below.
+ */
+g.node[role='button'] {
+  cursor: pointer;
+}
+
+/*
+ * Focus ring on the group. `:focus-visible` rather than `:focus` so a pointer
+ * click does not leave a ring behind.
+ */
+g.node[role='button']:focus-visible {
+  outline: 2px solid var(--sl-color-accent-high);
+  outline-offset: 2px;
+}
+
+/*
+ * Belt and braces: also change the child shape's stroke. Several engines apply
+ * `outline` unreliably to SVG group elements, and a focus indicator that depends
+ * on one mechanism is one bug away from invisible — which for a keyboard user
+ * means the chart is unusable, not merely plain.
+ *
+ * Mermaid scopes its own node styling by the diagram's generated id, e.g.
+ * `#mermaid-abc123 .node path { stroke: ...; }`. An id selector outranks any
+ * class or attribute selector written from a stylesheet, so `!important` is
+ * load-bearing here for the same reason it is on the edge rules in casulo.css.
+ */
+g.node[role='button']:focus-visible > rect,
+g.node[role='button']:focus-visible > polygon,
+g.node[role='button']:focus-visible > circle,
+g.node[role='button']:focus-visible > ellipse,
+g.node[role='button']:focus-visible > path {
+  stroke: var(--sl-color-accent-high) !important;
+  stroke-width: 3px !important;
+}
+
+/*
+ * Open state, so a reader can see which node the panel below belongs to after
+ * focus has moved on. Colour and width only.
+ */
+g.node[role='button'][aria-expanded='true'] > rect,
+g.node[role='button'][aria-expanded='true'] > polygon,
+g.node[role='button'][aria-expanded='true'] > circle,
+g.node[role='button'][aria-expanded='true'] > ellipse,
+g.node[role='button'][aria-expanded='true'] > path {
+  stroke: var(--sl-color-accent) !important;
+  stroke-width: 3px !important;
+}
+
+/* ── The panel ────────────────────────────────────────────────────────────────
+ *
+ * In normal flow, so it stacks under the chart at any width. No `position:
+ * fixed`, no overlay, no scroll lock — a fixed bottom sheet would need both, and
+ * that is exactly the modal complexity the disclosure pattern exists to avoid.
+ */
+.aid-node-panel {
+  margin: 1rem 0 1.5rem;
+  padding: 1rem;
+  border: 1px solid var(--sl-color-hairline);
+  border-left: 3px solid var(--sl-color-accent);
+  border-radius: 0.5rem;
+  background: var(--sl-color-bg-sidebar);
+  color: var(--sl-color-text);
+}
+
+/* The panel takes focus when opened, and it is a region, not a control. */
+.aid-node-panel:focus-visible {
+  outline: 2px solid var(--sl-color-accent-high);
+  outline-offset: 2px;
+}
+
+/* ── Bar: heading on the left, close button on the right ───────────────────── */
+
+.aid-node-panel__bar {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.aid-node-panel__bar h3 {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.5rem;
+  margin: 0;
+  font-size: 1rem;
+  line-height: 1.4;
+}
+
+.aid-node-panel__order {
+  flex: none;
+  min-width: 1.5rem;
+  padding: 0 0.35rem;
+  border-radius: 0.25rem;
+  background: var(--sl-color-accent-low);
+  color: var(--sl-color-text);
+  font-variant-numeric: tabular-nums;
+  text-align: center;
+}
+
+/* kind and exit are closed enums from the model — small, quiet metadata. */
+.aid-node-panel__kind,
+.aid-node-panel__exit {
+  font-size: 0.8125rem;
+  font-weight: 400;
+}
+
+.aid-node-panel__kind {
+  color: var(--sl-color-gray-3);
+  font-style: italic;
+}
+
+.aid-node-panel__exit {
+  padding: 0.1rem 0.4rem;
+  border: 1px solid var(--sl-color-hairline-shade);
+  border-radius: 0.25rem;
+  color: var(--sl-color-text-accent);
+}
+
+.aid-node-panel__close {
+  flex: none;
+  padding: 0.15rem 0.5rem;
+  border: 1px solid var(--sl-color-hairline);
+  border-radius: 0.25rem;
+  background: transparent;
+  color: var(--sl-color-text);
+  cursor: pointer;
+  font-size: 1rem;
+  line-height: 1.2;
+}
+
+.aid-node-panel__close:hover {
+  background: var(--sl-color-gray-6);
+}
+
+.aid-node-panel__close:focus-visible {
+  outline: 2px solid var(--sl-color-accent-high);
+  outline-offset: 2px;
+}
+
+/* ── Label: the derived interpretation, capped at 60 code points by V8 ─────── */
+
+.aid-node-panel__label {
+  margin: 0.5rem 0 0.75rem;
+  color: var(--sl-color-gray-2);
+}
+
+/* ── Fragment: the verbatim excerpt ───────────────────────────────────────────
+ *
+ * Capped in height and scrolled vertically so a long dispatch-table row cannot
+ * push delivery-004's `## Source fragments` list off the screen. It wraps rather
+ * than scrolling horizontally, which is the same readability choice that
+ * delivery-004 makes with its `wrap` meta option on the fenced block.
+ */
+.aid-node-panel__fragment {
+  max-height: 18rem;
+  overflow: auto;
+  margin: 0;
+  padding: 0.75rem;
+  border: 1px solid var(--sl-color-hairline);
+  border-radius: 0.25rem;
+  background: var(--sl-color-bg-inline-code);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.aid-node-panel__fragment code {
+  background: none;
+  border: 0;
+  padding: 0;
+  font-size: 0.8125rem;
+  white-space: inherit;
+  overflow-wrap: inherit;
+}
+
+/* ── Links: source, full step, and the in-page hook into the list below ─────── */
+
+.aid-node-panel__links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem 1rem;
+  margin: 0.75rem 0 0;
+  font-size: 0.875rem;
+}
+
+.aid-node-panel__links a {
+  overflow-wrap: anywhere;
+}
+
+/* ── Narrow screens ───────────────────────────────────────────────────────────
+ *
+ * 50rem is the site's existing narrow breakpoint (shell.css, where the header
+ * tab row folds into a scroll strip) rather than a new one.
+ *
+ * Full-bleed within the content column: the panel loses its horizontal padding
+ * and rounded corners so the fragment gets the full width, which matters most on
+ * the widest lines. It stays in flow, so there is still nothing to scroll-lock.
+ */
+@media (max-width: 50rem) {
+  .aid-node-panel {
+    margin-left: 0;
+    margin-right: 0;
+    padding-left: 0.75rem;
+    padding-right: 0.75rem;
+    border-radius: 0;
+  }
+
+  .aid-node-panel__bar h3 {
+    font-size: 0.9375rem;
+  }
+
+  /* Leave more of the short viewport to the list underneath. */
+  .aid-node-panel__fragment {
+    max-height: 12rem;
+    padding: 0.5rem;
+  }
+}

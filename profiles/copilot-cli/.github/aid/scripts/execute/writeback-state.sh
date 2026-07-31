@@ -1,4 +1,38 @@
 #!/usr/bin/env bash
+#
+# ============================================================================
+#  THIS FILE IS THE SOURCE. EIGHT RENDERS EXIST -- EDIT THIS ONE, NEVER A RENDER.
+#
+#  canonical/aid/scripts/execute/writeback-state.sh   <- you are here (edit this)
+#  profiles/{claude-code,codex,cursor,copilot-cli,antigravity}/.../writeback-state.sh
+#  ...plus this repo's own per-tool dogfood trees, one render per installed tool
+#     root, at that tool's own aid/scripts/execute/ path.
+#
+#  If you are reading this inside a tool's installed tree, you are in a RENDER.
+#  Your edit will be erased by the next generator run and will reach no adopter.
+#
+#  ONE NINTH COPY IS NOT A RENDER: dashboard/scripts/writeback-state.sh is a
+#  DELIBERATE FORK -- it additionally accepts `Deploy` as a Phase value. Do NOT
+#  resync it from here; overwriting it silently removes that, and no test catches
+#  it. Its own header says so.
+#
+#  After editing: run the profile generator, then resync the dogfood trees.
+#  `tests/canonical/test-dogfood-byte-identity.sh` fails if you skip that.
+#
+#  This banner exists because the mistake was made: a fix landed in one dogfood
+#  render only, which turned repo CI red and would have been erased by the next
+#  render, reaching no adopter. The invariant was already documented
+#  (architecture.md: "Editing a rendered or vendored copy is a defect") -- what was
+#  missing was the file saying so at the moment someone opens it.
+#
+#  Deliberately names no tool root. An earlier version listed them literally, which
+#  put another tool's root path into every render and tripped
+#  `tests/canonical/test-multitool-isolation.sh` T21-T26 (no foreign-root reference
+#  in an operational script). The guard was right: an adopter who installed one tool
+#  should not find another tool's paths in their own scripts, in a comment or
+#  anywhere else.
+# ============================================================================
+#
 # writeback-state.sh -- row-level write coordination for FR6 parallel pool
 # x per-unit STATE writes in AID aid-execute.
 #
@@ -1286,9 +1320,20 @@ mode_append_issue() {
     padded_id=$(printf '%03d' "$((10#$DELIVERY_ID))")
     local issues_file="${DELIVERY_ISSUES_DIR}/delivery-${padded_id}-issues.md"
 
-    # Use work-dir-based issues path when DELIVERY_ISSUES_DIR is default
-    # and WORK_DIR is resolvable, for consistency with path resolution.
-    if [[ "$DELIVERY_ISSUES_DIR" == ".aid/works/work" && -n "$AID_STATE_FILE" ]]; then
+    # Use the work-dir-based issues path whenever DELIVERY_ISSUES_DIR is still the default,
+    # for consistency with every other path this script resolves.
+    #
+    # This condition used to be gated on `-n "$AID_STATE_FILE"`, which was wrong twice over.
+    # Bare, it aborted under `set -u` -- this is the only place the variable is dereferenced
+    # without a default (line 157 uses `${AID_STATE_FILE:-...}`). And guarding on it at all
+    # was the wrong test: a caller that exports AID_WORK_DIR rather than AID_STATE_FILE --
+    # which is exactly what aid-execute's delivery gate does -- skipped the branch and then
+    # failed on a `.aid/works/work` lock directory that does not exist.
+    #
+    # `resolve_work_dir` already honours AID_WORK_DIR first and otherwise derives the root
+    # from STATE_FILE, so the no-env default (`.aid/works/work/delivery-NNN-issues.md`) is
+    # unchanged and this is strictly more permissive than what it replaces.
+    if [[ "$DELIVERY_ISSUES_DIR" == ".aid/works/work" ]]; then
         resolve_work_dir
         issues_file="${WORK_DIR}/delivery-${padded_id}-issues.md"
     fi

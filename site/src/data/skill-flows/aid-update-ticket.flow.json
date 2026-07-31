@@ -1,0 +1,190 @@
+{
+  "skill": "aid-update-ticket",
+  "shape": "residual",
+  "extractor": "residual",
+  "confidence": "approximate",
+  "title": "aid-update-ticket — state flow",
+  "nodes": [
+    {
+      "id": "n1",
+      "order": 1,
+      "name": "PARSE-ARGS",
+      "label": "PARSE-ARGS",
+      "kind": "entry",
+      "terminal": null,
+      "provenance": {
+        "file": "canonical/skills/aid-update-ticket/SKILL.md",
+        "startLine": 65,
+        "endLine": 65,
+        "sourceKind": "skill",
+        "excerpt": "### State 1 — PARSE-ARGS"
+      },
+      "detail": null
+    },
+    {
+      "id": "n2",
+      "order": 2,
+      "name": "RESOLVE-CONNECTOR",
+      "label": "RESOLVE-CONNECTOR",
+      "kind": "step",
+      "terminal": null,
+      "provenance": {
+        "file": "canonical/skills/aid-update-ticket/SKILL.md",
+        "startLine": 77,
+        "endLine": 77,
+        "sourceKind": "skill",
+        "excerpt": "### State 2 — RESOLVE-CONNECTOR"
+      },
+      "detail": null
+    },
+    {
+      "id": "n3",
+      "order": 3,
+      "name": "LOAD-CONTEXT",
+      "label": "LOAD-CONTEXT",
+      "kind": "step",
+      "terminal": null,
+      "provenance": {
+        "file": "canonical/skills/aid-update-ticket/SKILL.md",
+        "startLine": 87,
+        "endLine": 87,
+        "sourceKind": "skill",
+        "excerpt": "### State 3 — LOAD-CONTEXT"
+      },
+      "detail": null
+    },
+    {
+      "id": "n4",
+      "order": 4,
+      "name": "COMPOSE",
+      "label": "COMPOSE",
+      "kind": "step",
+      "terminal": null,
+      "provenance": {
+        "file": "canonical/skills/aid-update-ticket/SKILL.md",
+        "startLine": 106,
+        "endLine": 106,
+        "sourceKind": "skill",
+        "excerpt": "### State 4 — COMPOSE"
+      },
+      "detail": null
+    },
+    {
+      "id": "n5",
+      "order": 5,
+      "name": "CONFIRM",
+      "label": "CONFIRM",
+      "kind": "step",
+      "terminal": null,
+      "provenance": {
+        "file": "canonical/skills/aid-update-ticket/SKILL.md",
+        "startLine": 130,
+        "endLine": 130,
+        "sourceKind": "skill",
+        "excerpt": "### State 5 — CONFIRM"
+      },
+      "detail": null
+    },
+    {
+      "id": "n6",
+      "order": 6,
+      "name": "WRITE",
+      "label": "WRITE",
+      "kind": "exit",
+      "terminal": {
+        "advanceType": "UNSPECIFIED",
+        "handoff": null
+      },
+      "provenance": {
+        "file": "canonical/skills/aid-update-ticket/SKILL.md",
+        "startLine": 156,
+        "endLine": 156,
+        "sourceKind": "skill",
+        "excerpt": "### State 6 — WRITE"
+      },
+      "detail": null
+    }
+  ],
+  "edges": [
+    {
+      "from": "n1",
+      "to": "n2",
+      "kind": "sequence",
+      "condition": null,
+      "advanceType": "CHAIN",
+      "provenance": {
+        "file": "canonical/skills/aid-update-ticket/SKILL.md",
+        "startLine": 65,
+        "endLine": 65,
+        "sourceKind": "skill",
+        "excerpt": "### State 1 — PARSE-ARGS"
+      }
+    },
+    {
+      "from": "n2",
+      "to": "n3",
+      "kind": "sequence",
+      "condition": null,
+      "advanceType": "CHAIN",
+      "provenance": {
+        "file": "canonical/skills/aid-update-ticket/SKILL.md",
+        "startLine": 77,
+        "endLine": 77,
+        "sourceKind": "skill",
+        "excerpt": "### State 2 — RESOLVE-CONNECTOR"
+      }
+    },
+    {
+      "from": "n3",
+      "to": "n4",
+      "kind": "sequence",
+      "condition": null,
+      "advanceType": "CHAIN",
+      "provenance": {
+        "file": "canonical/skills/aid-update-ticket/SKILL.md",
+        "startLine": 87,
+        "endLine": 87,
+        "sourceKind": "skill",
+        "excerpt": "### State 3 — LOAD-CONTEXT"
+      }
+    },
+    {
+      "from": "n4",
+      "to": "n5",
+      "kind": "sequence",
+      "condition": null,
+      "advanceType": "CHAIN",
+      "provenance": {
+        "file": "canonical/skills/aid-update-ticket/SKILL.md",
+        "startLine": 106,
+        "endLine": 106,
+        "sourceKind": "skill",
+        "excerpt": "### State 4 — COMPOSE"
+      }
+    },
+    {
+      "from": "n5",
+      "to": "n6",
+      "kind": "sequence",
+      "condition": null,
+      "advanceType": "CHAIN",
+      "provenance": {
+        "file": "canonical/skills/aid-update-ticket/SKILL.md",
+        "startLine": 130,
+        "endLine": 130,
+        "sourceKind": "skill",
+        "excerpt": "### State 5 — CONFIRM"
+      }
+    }
+  ],
+  "entries": [
+    "n1"
+  ],
+  "exits": [
+    "n6"
+  ],
+  "sources": [
+    "canonical/skills/aid-update-ticket/SKILL.md"
+  ],
+  "warnings": []
+}

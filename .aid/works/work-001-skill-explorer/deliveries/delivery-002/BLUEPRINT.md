@@ -1,0 +1,129 @@
+# Delivery BLUEPRINT -- delivery-002: A browsable `/skills/` catalog
+
+
+> **§7 AMENDED — read before the §7 references below (2026-07-30, delivery-006).**
+> This document was authored while REQUIREMENTS §7 froze `gen-reference.mjs`. The **second
+> amendment to §7** (work-level Q4, recorded at `REQUIREMENTS.md` § Constraints) lifted that
+> freeze so delivery-006 could **hollow out** `reference/skills.md` — shedding the duplicated
+> roster and keeping only the shortcut-engine narrative. Every "§7 freezes/forbids" and "terse
+> family summary" statement below was TRUE WHEN WRITTEN and is kept as the design record; none
+> of them describes the repository today. What replaced the freeze is a bound, not a free hand:
+> `agents.md`/`kb.md`/`settings.md` byte-unchanged, all 111 skill detail pages and sidecars
+> byte-unchanged, generator idempotent — see `deliveries/delivery-006/BLUEPRINT.md § Gate
+> Criteria`. The grouping divergence this document reasons about did not vanish; it moved from
+> a competing PAGE to the curated roster, and is now derived rather than hard-coded (KI-010).
+
+[!NOTE]
+This is the IMMUTABLE DEFINITION of delivery-002. Written once by aid-plan; not a state file —
+delivery-002's lifecycle, gate and Q&A live in `deliveries/delivery-002/STATE.md`.
+
+> **Delivery:** delivery-002
+> **Work:** work-001-skill-explorer
+> **Created:** 2026-07-26
+
+---
+
+## Objective
+
+Publish the catalog itself: a `/skills/` section of the docs site with one detail page per skill
+in `canonical/skills/`, and an index that makes them findable. Each detail page renders that
+skill's **complete** frontmatter — every key the file carries, including the list-valued and
+folded-scalar keys the existing reference generator drops — and the index lists one card per
+skill under the owner-corrected taxonomy. This is the smallest state in which a reader can find
+and read a skill's declared contract, and it is strictly more than `reference/skills.md` offers
+today. The chart body is deliberately empty here: the body slot renders as a comment, so a page
+reads as a page with an unfilled slot rather than a broken one, and delivery-003 fills it.
+
+## Scope
+
+- **feature-001 (remainder)** — the generator harness: `site/scripts/gen-skills.mjs` plus the
+  `site/scripts/skills/` module cluster; the `gen:skills` npm script threaded into
+  `prebuild`/`predev` after `gen:reference`; identity slug derivation to `/skills/<dir>/`; `.md`
+  output with the "generated — do not edit" marker; `site/scripts/.skills-manifest.json`; the
+  strict frontmatter parser that satisfies AC-2; the throw-on-drift guard; and the
+  `BODY_PROVIDERS` / `BODY_APPENDERS` body slot that deliveries 003–004 register into.
+- **feature-002** — `skills/index.md`: one card per skill, two-level grouping (the curated four,
+  with `Definition` subdivided by catalog verb family), the `catalog.mjs` one-way catalog reader,
+  the sidebar group in `site/astro.config.mjs`, and the 15-assertion AC-8 suite.
+
+**Out of scope:** every chart (delivery-003) and every verbatim fragment or deep link
+(delivery-004); the interactive panel (delivery-005); `gen-reference.mjs`, still frozen by §7,
+so KI-003, KI-009 and KI-010 remain open and the grouping divergence between `/skills/` and
+`reference/skills.md` is signposted rather than resolved.
+
+## Gate Criteria
+
+- [ ] **AC-1 — Coverage.** Every directory under `canonical/skills/` has a generated detail page,
+      and the generator **throws** when the generated page set diverges from the on-disk skill
+      set, in either direction.
+- [ ] **AC-2 — Header completeness.** Every frontmatter key present in a skill's `SKILL.md`
+      appears in its page header; no key is silently dropped. Verified at fixture granularity
+      against the list-valued and folded-scalar keys the existing parser mishandles.
+- [ ] **AC-6 — Idempotence.** Two consecutive generator runs produce byte-identical output.
+- [ ] **AC-8 — Index shape.** One card per skill, nested under the four curated groups, with
+      `Definition` cards subdivided by the catalog-derived verb family. `aid-triage` appears under
+      **Support**; `aid-deploy` and `aid-monitor` appear under their own `deploy` / `monitor`
+      families, **not** in the full-path block; the five full-path skills appear in pipeline
+      order in the un-subdivided opening block and are exempt from the family check. No assertion
+      compares against a numeric literal.
+- [ ] The **clamp** holds: a skill directory that is neither curated nor catalog-backed fails the
+      build **by name** rather than silently missing its card.
+- [ ] **Build integration clause (a):** `gen-reference.mjs` is byte-unmodified, its drift guard
+      passes, and its four generated reference pages are byte-unchanged after a full `prebuild`.
+- [ ] Every card links to a page that exists — no dead cards — and the section is reachable from
+      the sidebar and highlights in the header tab bar.
+- [ ] **UI review checkpoint — NON-BLOCKING.** After **task-016**, the site is built and browsed
+      in a real browser, and a verdict is recorded in `deliveries/delivery-002/STATE.md`. This is
+      the first point at which the interface exists: the `/skills/` index with one card per skill
+      under the curated four groups, `Definition` subdivided by verb family, the sidebar group,
+      the header tab highlighting on a detail page, and a detail page's complete frontmatter
+      header. **Chart slots are deliberately empty here** — task-010 emits a
+      `<!-- body slot: ... -->` comment rather than an empty heading, so an unfilled page reads as
+      unfilled rather than broken. Judge navigation, grouping, card density and whether 111 cards
+      under one taxonomy reads well — the concrete form of risk R7. A Fail files a ticket; it does
+      **not** block this gate.
+- [ ] All section-6 quality gates pass
+
+## Tasks
+
+| Task | Type | Title |
+|------|------|-------|
+| task-005 | IMPLEMENT | Skills-cluster path primitives and the strict frontmatter parser |
+| task-006 | IMPLEMENT | Code-span-aware frontmatter value renderer |
+| task-007 | IMPLEMENT | First-sentence skill summary rule |
+| task-008 | IMPLEMENT | One-way shortcut-catalog reader |
+| task-009 | IMPLEMENT | Skill discovery and the `SkillRecord` |
+| task-010 | IMPLEMENT | Detail-page renderer and the empty body-slot registries |
+| task-011 | IMPLEMENT | Curated taxonomy, group assignment and its four guards |
+| task-012 | IMPLEMENT | `gen-skills.mjs` entrypoint: pipeline, manifest and drift guard |
+| task-013 | CONFIGURE | `gen:skills` threaded into the `prebuild`/`predev` chains |
+| task-014 | IMPLEMENT | Index page renderer |
+| task-015 | IMPLEMENT | Index generation steps and the manifest index row in `gen-skills.mjs` |
+| task-016 | CONFIGURE | `Skills` sidebar group in `site/astro.config.mjs` |
+| task-017 | TEST | `gen-skills.test.mjs` — the AC-1 / AC-2 / AC-6 suite |
+| task-018 | TEST | `gen-skills-index.test.mjs` — the 15-assertion AC-8 suite |
+
+## Dependencies
+
+- **Depends on:** delivery-001 (its acceptance is expressed as vitest tests, which nothing runs
+  until delivery-001 lands)
+- **Blocks:** delivery-003 (body slot, manifest, `SkillRecord`, slug identity)
+
+## Notes
+
+- **This delivery is the first to open `site/astro.config.mjs`**, and two one-line ride-alongs
+  are proposed for it, both **pending owner approval** rather than assumed: **KI-012**
+  (`enableLog` defaults to true, so the production site logs to every visitor's console on every
+  page — and this work multiplies that by 111 pages) and **KI-013** (the component-map comment
+  claims the map is empty when it holds four keys, and reserves slots using a *previous* work's
+  `feature-NNN` numbers). Neither is in the gate criteria above.
+- **Risk R7 — page-count multiplication.** This adds 111 pages to the content collection and the
+  Pagefind index, plus ~112 sidebar anchors on every page of the site. Nothing is gated on a
+  budget, but feature-001 asks for the `docs.yml` build time to be read on the first run; that
+  reading belongs at this delivery's gate.
+- **feature-002 OQ-1 is open and non-blocking:** `aid-query-kb` and `aid-ask` stay in Knowledge
+  Base Maintenance by default, which leaves the `query` verb family rendering no section at all.
+  Reversal is two names deleted from one array. Best judged against the rendered index at this
+  gate.
+- Contract text frozen here is **reopened by delivery-003** — see delivery-003's Notes for the
+  four unreconciled seams. That is anticipated, not a surprise.

@@ -9,12 +9,11 @@
 //   - Guides: explicit slug items (small curated set; labels controlled here).
 //   - Releases: link: to src/pages/releases/changelog.astro (not a docs page).
 //
-// components: map is EMPTY here — this config OWNS it.
-//   Reserved slots (later deliveries add ONE key each; do not rewrite the map):
-//     Banner:     feature-009 (announcement banner)
-//     Footer:     feature-010 (feedback/casuloailabs.com back-link)
-//     Hero:       feature-008 (version badge on home hero)
+// components: map is OWNED HERE. It already holds four keys (Header, PageTitle,
+// Banner, Footer) — do not rewrite the map, only add. No slot is reserved for a
+// feature of this work.
 
+import { readFileSync } from 'node:fs';
 import { defineConfig } from 'astro/config';
 import starlight from '@astrojs/starlight';
 import sitemap from '@astrojs/sitemap';
@@ -28,22 +27,44 @@ export default defineConfig({
   integrations: [
     // astro-mermaid BEFORE starlight (transforms ```mermaid fences)
     mermaid({
+      // Fallback only. `autoTheme` (on by default) re-initializes mermaid on every
+      // `data-theme` change, mapping light -> 'default' and dark -> 'dark', so this
+      // value is used only before a theme is resolved.
       theme: 'dark',
-      themeVariables: {
-        // casulo dark palette applied to Mermaid diagrams
-        background: '#0a0e1a',
-        mainBkg: '#1a2035',
-        nodeBorder: '#d4a853',
-        clusterBkg: '#111827',
-        titleColor: '#f1f5f9',
-        edgeLabelBackground: '#1a2035',
-        primaryColor: '#1a2035',
-        primaryTextColor: '#f1f5f9',
-        primaryBorderColor: '#d4a853',
-        lineColor: '#94a3b8',
-        secondaryColor: '#111827',
-        tertiaryColor: '#212b45',
+
+      // A previous version of this block set `themeVariables` HERE, one level too high.
+      // The integration builds its config as `{ theme, ...mermaidConfig }` and reads
+      // nothing else, so those thirteen colours were silently dropped and every diagram
+      // on the site has always rendered with mermaid's stock palette. They are not
+      // reinstated under `mermaidConfig`: a fixed palette would override BOTH of the
+      // themes `autoTheme` switches between, so the dark colours would be pinned into
+      // light mode. Per-theme colour belongs in CSS, where `[data-theme]` can select —
+      // see the mermaid block in src/styles/casulo.css.
+      mermaidConfig: {
+        // Layout, which is theme-independent and therefore safe to fix here.
+        //
+        // This lived in a per-diagram YAML `config:` block emitted by
+        // render-mermaid.mjs. That had a side effect worth recording: a per-diagram
+        // `config:` makes mermaid re-init for that diagram, which discarded the site
+        // config entirely. Node fills survived because our charts set them through
+        // explicit `classDef` statements, so the loss showed up only in edge strokes and
+        // edge-label backgrounds — visible as near-invisible lines in dark mode.
+        // Declaring it once here keeps a single authority and lets `autoTheme` work.
+        layout: 'elk',
+        flowchart: {
+          // Mermaid's defaults are tuned for small hand-drawn diagrams. These charts are
+          // derived, so nodes carry two lines of real text and grow well past the
+          // spacing dagre assumes — shapes nearly touched and edges took long detours.
+          nodeSpacing: 55,
+          rankSpacing: 65,
+          padding: 12,
+          useMaxWidth: true,
+        },
       },
+
+      // KI-012: astro-mermaid defaults enableLog to true, which logs
+      // "[astro-mermaid] ..." to every visitor's console on every page.
+      enableLog: false,
     }),
 
     starlight({
@@ -67,6 +88,31 @@ export default defineConfig({
       customCss: [
         './src/styles/casulo.css',
         './src/styles/shell.css',
+      ],
+
+      // KI-018 workaround. astro-mermaid can cache a diagram's *rendered SVG* as that
+      // diagram's source, after which switching the theme feeds an SVG stylesheet to the
+      // mermaid parser and every diagram on the page reads "Syntax error in text" until
+      // a reload. The script below claims `data-diagram` from the real source first, so
+      // the integration's `if (!hasAttribute(...))` guard never overwrites it.
+      //
+      // It must beat astro-mermaid's script, which `injectScript('page', …)` emits as a
+      // deferred module. Deferred modules run after parsing, so this — a classic inline
+      // script in <head>, with `is:inline` semantics by virtue of being a raw head tag —
+      // installs its observer while the document is still being parsed and always wins.
+      //
+      // Read from a real file rather than written as a template literal here: the logic
+      // deserves to be readable and reviewable on its own, and inlining it as a string
+      // would put JavaScript inside a config comment block where nothing checks it.
+      head: [
+        {
+          tag: 'script',
+          attrs: { 'data-aid': 'mermaid-source-cache' },
+          content: readFileSync(
+            new URL('./src/scripts/mermaid-source-cache.js', import.meta.url),
+            'utf8'
+          ),
+        },
       ],
 
       favicon: '/favicon.svg',
@@ -109,13 +155,30 @@ export default defineConfig({
           items: [
             { label: 'Overview',              slug: 'reference/overview' },
             { label: 'CLI & subcommands',     slug: 'reference/cli' },
-            { label: 'Skills',                slug: 'reference/skills' },
+            // Not 'Skills' — that page no longer carries a roster (delivery-006
+            // task-057 hollowed it out), and a second "Skills" entry here competed
+            // with the top-level Skills tab below for the same reader.
+            { label: 'Shortcut engine',       slug: 'reference/skills' },
             { label: 'Agents',                slug: 'reference/agents' },
             { label: 'Knowledge Base',        slug: 'reference/kb' },
             { label: 'Settings keys',         slug: 'reference/settings' },
             { label: 'Artifacts',             slug: 'reference/artifacts' },
             { label: 'Repository structure',  slug: 'reference/repository-structure' },
             { label: 'Glossary',              slug: 'reference/glossary' },
+          ],
+        },
+        // feature-002 owns the Skills group (task-016): explicit index item first
+        // (Header.astro derives the tab's href from items[0]), then an autogenerated
+        // collapsed subgroup so the tab highlights on any of the 111 detail pages.
+        {
+          label: 'Skills',
+          items: [
+            { label: 'All skills', slug: 'skills' },
+            {
+              label: 'Every skill',
+              collapsed: true,
+              items: [{ autogenerate: { directory: 'skills' } }],
+            },
           ],
         },
         {
@@ -136,20 +199,20 @@ export default defineConfig({
         },
       ],
 
-      // Component override map — OWNED HERE, intentionally empty.
-      // Later deliveries add ONE key each (do not rewrite this map, only add):
-      //   Banner:  feature-009 (announcement banner, delivery-003)
-      //   Footer:  feature-010 (feedback + casuloailabs.com back-link, delivery-003)
-      //   Hero:    feature-008 (version badge on splash hero, delivery-002)
+      // Component override map — OWNED HERE. Already holds four keys below;
+      // do not rewrite this map, only add. No slot is reserved for a feature
+      // of this work.
       components: {
         // prototype-01 shell: two-row header (brand + section tabs) and
         // breadcrumb/eyebrow/title. See src/components/overrides/.
         Header: './src/components/overrides/Header.astro',
         PageTitle: './src/components/overrides/PageTitle.astro',
-        // Reserved slots — feature-009 (Banner) + feature-010 (Footer):
         Banner: './src/components/Banner.astro',
         Footer: './src/components/Footer.astro',
-        // Hero:   './src/components/Hero.astro',  (feature-008, delivery-002)
+        // feature-006: route-gated <head> additions for the interactive node
+        // panel. Composes Starlight's packaged Head rather than replacing it, so
+        // non-skill pages are byte-unchanged.
+        Head: './src/components/overrides/Head.astro',
       },
 
       // Pagefind (built-in) powers the search box; no extra config needed.

@@ -1,0 +1,66 @@
+---
+// Head.astro — Route-gated <head> override for feature-006 interactive node panel.
+//
+// Every page: renders Starlight's packaged Head (Default), which is a five-line
+// pass-through over Astro.locals.starlightRoute.head; composing here preserves its
+// output byte-for-byte rather than re-implementing those lines.
+//
+// Skill detail pages only: also emits exactly three tags into <head> —
+//   (1) <link rel="stylesheet" href="/skill-node-panel.css" />
+//   (2) <script type="application/json" id="aid-flow-data"> ... </script>
+//   (3) <script src="/skill-node-panel.mjs" type="module" is:inline></script>
+// when shouldMount(entry.data.generatedFrom, known) returns non-null.
+//
+// Gate is a data test (shouldMount from skill-node-panel.ts), not a path test.
+// Independent of the site `base` setting; fails closed when the sidecar set is
+// empty (sidecars not yet generated).
+//
+// The controller tag uses is:inline so the runtime conditional controls whether it
+// appears in the output, rather than Astro's module-graph deduplication pulling it
+// onto every page regardless of the conditional.
+//
+// The JSON island uses set:html (never an interpolated child): the HTML parser does
+// not decode character references inside a raw-text element, so a {expr} child would
+// be read back with literal &amp; and fail to parse. set:html inserts the pre-escaped
+// embedJson output verbatim.
+//
+// Sidecar load is per-page: one dynamic await only on pages where shouldMount passes.
+// Astro strips all frontmatter from client bundles, so no flow JSON reaches any browser.
+
+import Default from '@astrojs/starlight/components/Head.astro';
+import { shouldMount, buildProjection, embedJson } from '../../lib/skill-node-panel.js';
+
+// Lazy loaders keyed by "../../data/skill-flows/<name>.flow.json".
+// If the directory does not exist, the glob resolves to {} and every gate returns null.
+const sidecars = import.meta.glob('../../data/skill-flows/*.flow.json', { import: 'default' });
+
+// Build the known set from glob keys. Key shape: "../../data/skill-flows/<name>.flow.json"
+const known = new Set(
+  Object.keys(sidecars)
+    .map((p) => { const m = /\/([^/]+)\.flow\.json$/.exec(p); return m ? m[1] : null; })
+    .filter((n): n is string => n !== null),
+);
+
+const { entry } = Astro.locals.starlightRoute;
+const skillName = shouldMount(entry.data.generatedFrom, known);
+
+let embedded: string | null = null;
+if (skillName !== null) {
+  const loaderKey = `../../data/skill-flows/${skillName}.flow.json`;
+  const loader = sidecars[loaderKey];
+  if (loader) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const chart = (await loader()) as any;
+    embedded = embedJson(buildProjection(chart));
+  }
+}
+---
+
+<Default />
+{skillName !== null && embedded !== null && (
+  <>
+    <link rel="stylesheet" href="/skill-node-panel.css" />
+    <script type="application/json" id="aid-flow-data" is:inline set:html={embedded}></script>
+    <script src="/skill-node-panel.mjs" type="module" is:inline></script>
+  </>
+)}

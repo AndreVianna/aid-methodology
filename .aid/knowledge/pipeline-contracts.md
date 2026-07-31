@@ -23,6 +23,7 @@ intent: |
   an artifact template, or any phase boundary.
 contracts: []
 changelog:
+  - 2026-07-30: work-001 delivery-006 gate -- corrected a stale catalog-row count; restored a historical comparative that an earlier pass in this same cycle had wrongly "corrected" into a falsehood.
   - 2026-07-22: chore/prune-shipped-work-folders -- added the "work folders are transient" invariant (`.aid/works/work-NNN-*/` is disposable; no permanent artifact depends on a specific one's contents; pipeline skills/scripts operating on them at runtime are exempt).
   - 2026-07-16: work-016 .aid/works/ container relocation -- updated the on-disk work hierarchy (full + flattened Lite diagrams) and the two `.aid/{work}/` artifact-location references to the `.aid/works/work-NNN-{slug}/` container tree.
   - 2026-07-09: work-001 lite-skills refresh -- rewrote the entry model (three doors -- verb-first shortcut / /aid-triage / /aid-describe) and the flattened Lite path (shared shortcut engine INTAKE->CAPTURE->SPEC->PLAN->DETAIL->GATE->APPROVAL-HALT producing work-root REQUIREMENTS.md/SPEC.md/PLAN.md/BLUEPRINT.md + tasks/task-NNN/DETAIL.md, no per-task STATE.md); renamed delivery def to BLUEPRINT.md and task def to DETAIL.md; bound L9 -> /aid-fix and L10 -> /aid-triage; removed the recipe system and aid-describe's TRIAGE/lite states; skill taxonomy now 82 directories.
@@ -393,7 +394,7 @@ Load-bearing keys: `project.{name,description,type}`, `tools.installed`,
   `aid-update-ticket`, work-023) + the 94-row shortcut catalog's skills (58 canonical + 36
   aliases) — 64 verb-first direct-entry shortcut doorways (generated from the 94-row
   `shortcut-catalog.yml`) plus 30 hand-authored `repurpose` skills — up from
-  82 dirs / 67 shortcuts / a 69-row catalog before the v2.1.0 coverage-gap follow-on added the
+  82 dirs / 67 shortcuts / a 69-row catalog before the v2.1.0 coverage-gap follow-on added the <!-- count-history -->
   `remove`/`deprecate`/`migrate` + `review`/`research` families. The recipe system
   (`canonical/aid/recipes/`, `parse-recipe.sh`, `{{slot}}` placeholders) was removed and
   replaced by the shortcut engine + `shortcut-scaffolding/<family>.md`; the prior "51 vs 52
