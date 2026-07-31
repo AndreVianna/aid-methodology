@@ -20,7 +20,9 @@ ticket_ref: "--"
 - **Block Reason:** --
 - **Block Artifact:** --
 - **Resumed (2026-07-30, Claude Code):** the uncommitted wave-1/wave-2 work was verified,
-  reviewed and committed; tasks 056 and 057 executed. **All four tasks are `Done`.** Commits on
+  reviewed and committed; tasks 056 and 057 executed. **All four tasks are `Done`** — and a fifth,
+  **task-058**, was added later at the work-level final gate by owner decision (fix W1-16 rather than
+  ship it disclosed); it is `Done` too and is NOT part of this delivery's B- gate result. Commits on
   `aid/work-001-delivery-005`, in order: `b86aae3d` (scaffolding) → `129eba1b` (055 prose) →
   `8e02d174` (054 derivation + guard) → `8eff0803` (055 correction) → `d2f0440c` (056 links) →
   `923431a4` (057 hollowing) → `21c0f0a3` + `52e65e90` (an out-of-delivery `writeback-state.sh`
@@ -80,8 +82,13 @@ ticket_ref: "--"
     with the fragment `<pre>` and a GitHub source link.
   - Console: the only two errors were CORS failures from the reviewer's own `fetch()` probe
     against a `github.com` URL — not page defects. No page-originated errors.
-- Still to do: clear the gate to A+ (cycle 4 fixes applied; cycle 5 not yet dispatched),
-  work-level gate, PR.
+- **Closed.** The gate settled at **B-** after five cycles (see § Delivery Gate). The A+ bar was
+  retired globally mid-gate by owner decision, so "clear the gate to A+" ceased to be the target.
+  The work-level final gate then ran twice — a self-verification pass over the prior 21-row ledger,
+  then an adversarial opus review that raised 19 more (2 HIGH, 10 MEDIUM) including two of my own
+  closures being incomplete and one of my fixes introducing a fresh false claim. Both work-level
+  ledgers now grade **A+**. Still to do: the PR into `master`, and the 10-row LOW/MINOR cleanup
+  batch deferred by owner instruction.
 - **KI-022 (ELK layout) — remains DEFERRED**, per its own entry ("owner deferred the fix"). Not
   pulled into this delivery; carried forward as a known-open item and disclosed in the PR.
 
@@ -308,3 +315,4 @@ _Recorded as each task closes._
 | 055 | Correct stale roster prose (index.mdx E-1, overview.md) | IMPLEMENT | 2 | Done | 1 CRITICAL + 2 HIGH, all fixed | -- | First correction didn't SUM (85 for a 111 corpus); restated as 17 curated + 94 catalog. 2 unguarded pages found. `129eba1b` + `8eff0803` |
 | 056 | Repoint 8 inbound links to /skills/ | IMPLEMENT | 2 | Done | clean | -- | 7 LinkCards + overview row; verified in `dist/`. `d2f0440c` |
 | 057 | Hollow out reference/skills.md (closes KI-009) | IMPLEMENT | 3 | Done | clean at CRITICAL/HIGH; 1 MEDIUM fixed pre-gate | -- | Narrative kept, roster + family table shed; Q5 consequential edits done. `923431a4` |
+| 058 | Rule 7: a mention is not a return (fixes W1-16) | IMPLEMENT | 4 | Done | Verified against measurement, not assertion: 26->20 cross-state edges, 7 attributions removed + 1 recovered, exactly 8 files, idempotent; AC-7 re-run on the corrected chart reports 1 loop-back where 3 were drawn | -- | **Added at the work-level final gate by owner decision** (fix-over-disclose), after this delivery's gate had already closed at B-. Not part of the B- gate result. My first acceptance criteria were wrong -- copied from a reviewer's "3 drawn, 0 real" without re-deriving; aid-design's loop IS real, merely mis-sourced -- so the DETAIL is amended with the measurement. delivery-006 BLUEPRINT + delivery-005 gate record amended for the 4 changed charts. |
