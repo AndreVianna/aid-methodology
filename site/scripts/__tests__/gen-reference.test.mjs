@@ -148,7 +148,7 @@ const CURATED_SKILL_NAMES = [
   'aid-plan', 'aid-detail',
   'aid-execute',
   'aid-deploy', 'aid-monitor',
-  'aid-housekeep', 'aid-query-kb', 'aid-ask', 'aid-update-kb',
+  'aid-housekeep', 'aid-ask', 'aid-update-kb',
   'aid-set-connector', 'aid-unset-connector',
   'aid-read-ticket', 'aid-create-ticket', 'aid-update-ticket',
 ].sort();

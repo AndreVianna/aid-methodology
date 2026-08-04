@@ -23,8 +23,10 @@ import { loadShortcutCatalog } from './catalog.mjs';
 /**
  * Skills that are curated but are NOT counted as "classic pipeline skills".
  *
- * `/aid-triage` is the suggest-only router and `/aid-ask` is a Q&A alias of
- * `/aid-query-kb`; both render inside a group but are counted separately, matching
+ * `/aid-triage` is the suggest-only router and `/aid-ask` is the standalone Q&A skill
+ * (work-004 delivery-001 / FR-8 promoted it to canonical and retired the `/aid-query-kb`
+ * it used to alias, so it is now a `repurpose: true` catalog row in its own right);
+ * both render inside a group but are counted separately, matching
  * the README and methodology framing of "N classic + /aid-triage + /aid-ask".
  * gen-reference.mjs USED to exclude exactly these two when it computed its own classic count;
  * task-057 deleted that computation along with the roster it rendered, so this module is now
@@ -102,12 +104,12 @@ export function deriveSkillCounts(repoRoot) {
 
   // The figure a reader-facing decomposition must use.
   //
-  // `curated` counts four skills that are ALSO catalog rows -- aid-deploy, aid-monitor,
-  // aid-query-kb and the aid-ask alias -- so pairing it with the catalog-row count
-  // double-counts those four, and the sentence "classic + triage + ask + shortcuts"
-  // double-counts three of them AND omits the work-005 collapse skills entirely. Excluding
-  // the overlap gives the figure that SUMS with the catalog rows to the corpus total, which
-  // is the decomposition every page on the site states.
+  // Some curated skills are ALSO catalog rows -- aid-deploy, aid-monitor and aid-ask are
+  // `repurpose: true` rows the curated roster carries as well -- so pairing `curated` with
+  // the catalog-row count double-counts exactly those, and the sentence
+  // "classic + triage + ask + shortcuts" double-counts some of them AND omits the work-005
+  // collapse skills entirely. Excluding the overlap gives the figure that SUMS with the
+  // catalog rows to the corpus total, which is the decomposition every page on the site states.
   //
   // No figures are written above on purpose: this file is the one place the numbers are
   // derived, so stating them in its own commentary is the defect it exists to prevent --

@@ -150,17 +150,17 @@ re-derivation from this table:
 
 | Verb (representative) | Default task Type | Note |
 |---|---|---|
-| create / change (code, api, ui, cli, messaging, integration, infra) | IMPLEMENT | |
-| create-data-model / change-data-model | MIGRATE (+ IMPLEMENT) | entity/schema + migration |
-| create-config / change-config | CONFIGURE | feature-flag / rule |
+| create / update (code, api, ui, cli, messaging, integration, infra) | IMPLEMENT | |
+| create-data-model / update-data-model | MIGRATE (+ IMPLEMENT) | entity/schema + migration |
+| create-config / update-config | CONFIGURE | feature-flag / rule |
 | fix | IMPLEMENT | |
 | refactor | REFACTOR | |
-| create-test / change-test (test authoring) | TEST | each test traces to an acceptance criterion |
+| create-test / update-test (test authoring) | TEST | each test traces to an acceptance criterion |
 | experiment | RESEARCH | hypothesis -> analyze -> recommend |
-| create-dashboard / change-dashboard (BI view) | IMPLEMENT | source -> visualization -> publish/refresh; a durable BI view is code/config |
+| create-dashboard / update-dashboard (BI view) | IMPLEMENT | source -> visualization -> publish/refresh; a durable BI view is code/config |
 | remove | REFACTOR | delete without changing surviving behavior; dependents/tests/docs updated (structural, not a defect fix; v2.1.0 coverage-gap follow-on) |
 | deprecate | IMPLEMENT | add a warning + migration path; artifact still functions (v2.1.0 coverage-gap follow-on) |
-| migrate | MIGRATE | data/dependency/framework/platform move + rollback plan (non-schema; schema migrations stay create/change-data-model; v2.1.0 coverage-gap follow-on) |
+| migrate | MIGRATE | data/dependency/framework/platform move + rollback plan (non-schema; schema migrations stay create/update-data-model; v2.1.0 coverage-gap follow-on) |
 
 Multi-task shortcuts (e.g. create-data-model -> MIGRATE + IMPLEMENT + TEST) emit
 several tasks at DETAIL, each with one Type (never mixed --
@@ -168,32 +168,30 @@ several tasks at DETAIL, each with one Type (never mixed --
 
 ## Family Scaffolding Consult
 
-CAPTURE, SPEC, and DETAIL each consult the same per-family reference at
-`.agent/aid/templates/shortcut-scaffolding/{family}.md`, where `{family}` is the
-invoking row's own `verb` field, lowercase (an alias row's `verb` already equals its
-canonical mirror's, so both resolve the same file -- `aid-add-api` and `aid-create-api`
-both resolve `shortcut-scaffolding/create.md`; a family feature that groups more than
-one verb under one file documents that grouping in the file's own header -- this engine
-does not hardcode the family list, which lets families land incrementally without an
-engine change).
+CAPTURE, SPEC, and DETAIL each consult the per-family reference whose path is given in
+the **Current verb → family-file groupings** table below -- that table is **the
+authoritative verb-to-file mapping for this engine**. A family that groups more than
+one verb under one file documents that grouping in its own file header (the table
+collects them at a glance). A verb absent from the table falls back to the generic
+rules stated in this file (see Absent-file fallback).
 
-**Current verb -> family-file groupings** (a convenience index, kept current as each
-family lands; the authoritative grouping is always the named file's own header --
-this table just collects them at a glance, the same incremental-growth precedent
+**Current verb → family-file groupings** (authoritative verb-to-file mapping; kept
+current as each family lands; a family that groups more than one verb documents
+the grouping in its own file header, the same incremental-growth precedent
 `Default-Type Mapping (A-6)` above already follows):
 
 | Verb(s) | Family file |
 |---|---|
-| `create` (+ `add-*` aliases) | `shortcut-scaffolding/create.md` |
-| `change` (+ `update-*` aliases), `refactor` | `shortcut-scaffolding/change-refactor.md` |
+| `create` | `shortcut-scaffolding/create.md` |
+| `update`, `refactor` | `shortcut-scaffolding/change-refactor.md` |
 | `fix` | `shortcut-scaffolding/fix.md` |
 | `experiment` | `shortcut-scaffolding/test-experiment.md` (test AUTHORING -> create.md/change-refactor.md `test` artifact; test RUNNING -> hand-authored aid-test + kind-siblings, work-005) |
 | `remove`, `deprecate`, `migrate` | `shortcut-scaffolding/change-refactor.md` (v2.1.0 coverage-gap follow-on) |
 
-`query` (the `aid-query-kb`/`aid-ask` `repurpose: true` rows) is deliberately absent
-from this table -- those rows never enter this engine at all (their doorway is the
-hand-authored, single-shot `.agent/skills/aid-query-kb/SKILL.md`, not a generated
-thin doorway over INTAKE-DETAIL).
+`query` (the `aid-ask` `repurpose: true` row) is deliberately absent from this table
+-- that row never enters this engine at all (its doorway is the hand-authored,
+single-shot `.agent/skills/aid-ask/SKILL.md`, not a generated thin doorway over
+INTAKE-DETAIL).
 
 These reference files are free-form prose (like any other `state-*.md` reference doc)
 -- the dispatched `aid-architect` reads them for judgment; they are not

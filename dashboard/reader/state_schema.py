@@ -268,8 +268,9 @@ def parse_bool_yesno(raw: Optional[str]) -> Optional[bool]:
 # maintainer keeps in lockstep by hand.
 #
 # Any change to shortcut-catalog.yml MUST be mirrored here AND in the Node
-# twin (reader.mjs SHORTCUT_KIND_MAP). Includes every row (canonical + alias
-# + repurpose) since pipeline.initiator may name any of them.
+# twin (reader.mjs SHORTCUT_KIND_MAP). Includes every catalogue row plus
+# every historical name ever written into durable pipeline.initiator
+# frontmatter -- the map is a strict superset of the current catalogue.
 # ---------------------------------------------------------------------------
 
 SHORTCUT_KIND_MAP: dict[str, tuple[str, str]] = {
@@ -286,6 +287,10 @@ SHORTCUT_KIND_MAP: dict[str, tuple[str, str]] = {
     "aid-create-job": ("create", "job"),
     "aid-create-config": ("create", "config"),
     "aid-create-infra": ("create", "infra"),
+    "aid-create-test": ("create", "test"),
+    "aid-create-document": ("create", "document"),
+    "aid-create-dashboard": ("create", "dashboard"),
+    "aid-create-diagram": ("create", "diagram"),
     "aid-add": ("create", ""),
     "aid-add-api": ("create", "api"),
     "aid-add-ui": ("create", "ui"),
@@ -298,6 +303,9 @@ SHORTCUT_KIND_MAP: dict[str, tuple[str, str]] = {
     "aid-add-job": ("create", "job"),
     "aid-add-config": ("create", "config"),
     "aid-add-infra": ("create", "infra"),
+    "aid-add-test": ("create", "test"),
+    "aid-add-document": ("create", "document"),
+    "aid-add-dashboard": ("create", "dashboard"),
     "aid-change": ("change", ""),
     "aid-change-api": ("change", "api"),
     "aid-change-ui": ("change", "ui"),
@@ -310,19 +318,25 @@ SHORTCUT_KIND_MAP: dict[str, tuple[str, str]] = {
     "aid-change-job": ("change", "job"),
     "aid-change-config": ("change", "config"),
     "aid-change-infra": ("change", "infra"),
+    "aid-change-test": ("change", "test"),
+    "aid-change-document": ("change", "document"),
+    "aid-change-dashboard": ("change", "dashboard"),
     "aid-refactor": ("refactor", ""),
-    "aid-update": ("change", ""),
-    "aid-update-api": ("change", "api"),
-    "aid-update-ui": ("change", "ui"),
-    "aid-update-theme": ("change", "theme"),
-    "aid-update-cli": ("change", "cli"),
-    "aid-update-data-model": ("change", "data-model"),
-    "aid-update-data-pipeline": ("change", "data-pipeline"),
-    "aid-update-messaging": ("change", "messaging"),
-    "aid-update-integration": ("change", "integration"),
-    "aid-update-job": ("change", "job"),
-    "aid-update-config": ("change", "config"),
-    "aid-update-infra": ("change", "infra"),
+    "aid-update": ("update", ""),
+    "aid-update-api": ("update", "api"),
+    "aid-update-ui": ("update", "ui"),
+    "aid-update-theme": ("update", "theme"),
+    "aid-update-cli": ("update", "cli"),
+    "aid-update-data-model": ("update", "data-model"),
+    "aid-update-data-pipeline": ("update", "data-pipeline"),
+    "aid-update-messaging": ("update", "messaging"),
+    "aid-update-integration": ("update", "integration"),
+    "aid-update-job": ("update", "job"),
+    "aid-update-config": ("update", "config"),
+    "aid-update-infra": ("update", "infra"),
+    "aid-update-test": ("update", "test"),
+    "aid-update-document": ("update", "document"),
+    "aid-update-dashboard": ("update", "dashboard"),
     "aid-remove": ("remove", ""),
     "aid-delete": ("remove", ""),
     "aid-deprecate": ("deprecate", ""),
@@ -334,6 +348,7 @@ SHORTCUT_KIND_MAP: dict[str, tuple[str, str]] = {
     "aid-experiment": ("experiment", ""),
     "aid-prototype": ("prototype", ""),
     "aid-prototype-ui": ("prototype", "ui"),
+    "aid-design": ("design", ""),
     "aid-document": ("document", ""),
     "aid-document-decision": ("document", "decision"),
     "aid-document-architecture": ("document", "architecture"),

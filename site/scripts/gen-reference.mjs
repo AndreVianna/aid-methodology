@@ -137,7 +137,7 @@ function stripYamlScalar(raw) {
 
 // Rows that emit a `canonical/skills/<name>/SKILL.md` directory: every row
 // EXCEPT `repurpose: true` ones (those re-register a pre-existing hand-authored
-// skill — `aid-deploy` / `aid-monitor` / `aid-query-kb` / `aid-ask` — for
+// skill — `aid-deploy` / `aid-monitor` / `aid-ask` — for
 // /aid-triage's benefit; the maintainer build helper skips generating a
 // directory for them).
 function emittingShortcutRows(rows) {
@@ -230,7 +230,7 @@ function generateSkillsPage() {
 
   // Drift guard, kept: this is a correctness check on the corpus, not roster rendering.
   // Expected skill-directory set = the curated skills (which include `aid-triage`, plus
-  // the classic repurpose skills deploy/monitor/query-kb/ask) ∪ EVERY catalog row name.
+  // the classic repurpose skills deploy/monitor/ask) ∪ EVERY catalog row name.
   // work-005 turned many `repurpose` rows into hand-authored single-shot "collapse" skills
   // that DO have their own directory, so every catalog row's directory is expected — not
   // just the engine-driven (non-`repurpose`) emitting ones.

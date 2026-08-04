@@ -157,7 +157,7 @@ Model` stays "no schema changes" (an experiment is throwaway).
 **Test/experiment belong wholly to G7, not to `aid-create`.** `aid-test-security`
 only *verifies/plans* -- the remediation of any finding is **`aid-fix`**
 (vulnerability kind); building the feature under test is `aid-create`/
-`aid-change`; documenting a test strategy is `aid-document`; the data pipeline
+`aid-update`; documenting a test strategy is `aid-document`; the data pipeline
 that `aid-test-data-quality` checks is built by `aid-create-data-pipeline`.
 Analytical insight from usage data (as opposed to a controlled experiment) is
 `aid-report` (G11), not `aid-experiment`.

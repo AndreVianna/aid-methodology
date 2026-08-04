@@ -1,6 +1,6 @@
 ---
 title: 'aid-ask'
-description: 'Friendly-named alias of /aid-query-kb -- the optional on-demand Q&A skill.'
+description: 'Optional on-demand Q&A skill.'
 generatedFrom: 'canonical/skills/aid-ask/SKILL.md'
 ---
 
@@ -9,7 +9,7 @@ generatedFrom: 'canonical/skills/aid-ask/SKILL.md'
 ## Frontmatter
 
 - **`name`** — aid-ask
-- **`description`** — Friendly-named alias of /aid-query-kb -- the optional on-demand Q&amp;A skill. Takes a free-form question and answers it in one pass, grounded in three context sources: the Knowledge Base (.aid/knowledge/), the live codebase, and in-flight AID works (.aid/works/work-*/STATE.md + progress). Returns an answer with source citations. When the available context cannot answer the question, states the gap explicitly and captures it as a Query-Gap entry so it feeds the KB-improvement loop. This file carries no logic of its own -- its full behavior is defined entirely by canonical/skills/aid-query-kb/SKILL.md, which this skill delegates to.
+- **`description`** — Optional on-demand Q&amp;A skill. Takes a free-form question and answers it in one pass, grounded in three context sources: the Knowledge Base (.aid/knowledge/), the live codebase, and in-flight AID works (.aid/works/work-*/STATE.md + progress). Returns an answer with source citations (KB doc names, file paths, or work-NNN STATE references). When the available context cannot answer the question, states the gap explicitly rather than fabricating an answer AND captures the gap as a Query-Gap entry in the STATE.md Q&amp;A (Pending) backlog so it feeds the KB-improvement loop. Trivial questions are answered inline (Read/Glob/Grep only); broad or expensive investigations dispatch aid-researcher in strictly read-only mode. Writes are restricted to appending a Query-Gap entry to a STATE.md Q&amp;A (Pending) section; no KB doc, settings, or code file is ever written.
 - **`allowed-tools`** — Read, Glob, Grep, Agent, Write, Edit
 - **`argument-hint`** — &lt;question>  — a free-form question about the project
 
@@ -27,42 +27,78 @@ flowchart TB
   classDef aidDecision fill:#92400e,stroke:#78350f,color:#fff
   classDef aidLoopBack fill:#1e3a8a,stroke:#1e3a8a,color:#fff
   classDef aidStep fill:#1a2035,stroke:#d4a853,color:#f1f5f9
-  n1(["ENTRY"])
-  n2["RUN<br/>Run Friendly-named alias of /aid-query-kb -- the optional…"]
-  n3(["EXIT"])
+  n1(["STEP-1<br/>Classify the question"])
+  n2["STEP-2A<br/>Trivial question: answer inline"]
+  n3["STEP-2B<br/>Broad/expensive question: dispatch aid-researcher"]
+  n4["STEP-2C<br/>Connector enrichment (optional)"]
+  n5["STEP-3<br/>Compose and emit the reply"]
+  n6(["STEP-4<br/>Gap capture"])
   n1 --> n2
   n2 --> n3
+  n3 --> n4
+  n4 --> n5
+  n5 --> n6
   class n1 aidEntry
   class n2 aidStep
-  class n3 aidExit
+  class n3 aidStep
+  class n4 aidStep
+  class n5 aidStep
+  class n6 aidExit
   class n1 aidNode
   class n2 aidNode
   class n3 aidNode
+  class n4 aidNode
+  class n5 aidNode
+  class n6 aidNode
 ```
 ## Source fragments
 
 Every node in the chart above, in chart order, with the exact `canonical/` text it was derived from.
 
-<a id="fragment-n1"></a>**1 · `ENTRY`** · _entry_
+<a id="fragment-n1"></a>**1 · `STEP-1`** — Classify the question · _entry_
 
-~~~~plaintext title="canonical/skills/aid-ask/SKILL.md#L1" wrap
----
+~~~~plaintext title="canonical/skills/aid-ask/SKILL.md#L54" wrap
+### Step 1 — Classify the question
 ~~~~
 
-[Source: `canonical/skills/aid-ask/SKILL.md#L1`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-ask/SKILL.md#L1)
+[Source: `canonical/skills/aid-ask/SKILL.md#L54`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-ask/SKILL.md#L54)
 
-<a id="fragment-n2"></a>**2 · `RUN`** — Run Friendly-named alias of /aid-query-kb -- the optional… · _step_
+<a id="fragment-n2"></a>**2 · `STEP-2A`** — Trivial question: answer inline · _step_
 
-~~~~plaintext title="canonical/skills/aid-ask/SKILL.md#L3" wrap
-description: >
+~~~~plaintext title="canonical/skills/aid-ask/SKILL.md#L66" wrap
+### Step 2a — Trivial question: answer inline
 ~~~~
 
-[Source: `canonical/skills/aid-ask/SKILL.md#L3`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-ask/SKILL.md#L3)
+[Source: `canonical/skills/aid-ask/SKILL.md#L66`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-ask/SKILL.md#L66)
 
-<a id="fragment-n3"></a>**3 · `EXIT`** · _exit_ · HALT
+<a id="fragment-n3"></a>**3 · `STEP-2B`** — Broad/expensive question: dispatch aid-researcher · _step_
 
-~~~~plaintext title="canonical/skills/aid-ask/SKILL.md#L15" wrap
----
+~~~~plaintext title="canonical/skills/aid-ask/SKILL.md#L80" wrap
+### Step 2b — Broad/expensive question: dispatch aid-researcher
 ~~~~
 
-[Source: `canonical/skills/aid-ask/SKILL.md#L15`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-ask/SKILL.md#L15)
+[Source: `canonical/skills/aid-ask/SKILL.md#L80`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-ask/SKILL.md#L80)
+
+<a id="fragment-n4"></a>**4 · `STEP-2C`** — Connector enrichment (optional) · _step_
+
+~~~~plaintext title="canonical/skills/aid-ask/SKILL.md#L105" wrap
+### Step 2c — Connector enrichment (optional)
+~~~~
+
+[Source: `canonical/skills/aid-ask/SKILL.md#L105`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-ask/SKILL.md#L105)
+
+<a id="fragment-n5"></a>**5 · `STEP-3`** — Compose and emit the reply · _step_
+
+~~~~plaintext title="canonical/skills/aid-ask/SKILL.md#L115" wrap
+### Step 3 — Compose and emit the reply
+~~~~
+
+[Source: `canonical/skills/aid-ask/SKILL.md#L115`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-ask/SKILL.md#L115)
+
+<a id="fragment-n6"></a>**6 · `STEP-4`** — Gap capture · _exit_ · UNSPECIFIED
+
+~~~~plaintext title="canonical/skills/aid-ask/SKILL.md#L162" wrap
+### Step 4 -- Gap capture
+~~~~
+
+[Source: `canonical/skills/aid-ask/SKILL.md#L162`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-ask/SKILL.md#L162)

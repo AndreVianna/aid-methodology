@@ -37,8 +37,11 @@ function makeRecord(dirName, descriptionValue) {
 /**
  * Minimal folded-scalar extractor for the corpus sweep.
  * Mirrors the `>` folded-block behaviour of parseSkillFrontmatter: continuation
- * lines (2-space-indented or blank) are joined with spaces. All 111 current
- * skills use `description: >`, so this covers the full corpus.
+ * lines (2-space-indented or blank) are joined with spaces. EVERY skill in the
+ * corpus states `description: >` and no other block style appears, so this covers
+ * the full corpus at whatever size the roster happens to be — deliberately an
+ * invariant rather than an "N of M", which would need editing on every roster
+ * change and would silently lie in between.
  *
  * Re-implemented here rather than imported from skills/frontmatter.mjs:
  * that module is built by a parallel task and importing it before it is

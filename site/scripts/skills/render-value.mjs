@@ -71,9 +71,11 @@ function tokenize(text) {
  * or a card. Trailing newlines are stripped: a YAML folded or literal block with
  * clip chomping (`>` / `|`) legitimately ends in one newline, which the parser is
  * right to preserve — but emitted raw into a bullet it inserts a blank line and
- * breaks the list. Every one of the 111 skill descriptions is a folded block, so
+ * breaks the list. Skill `description` values are authored as folded blocks, so
  * this affected every page before it was stripped here rather than at one call
  * site: the trim belongs with the inline-rendering contract, not with a consumer.
+ * Stated as the authoring convention rather than as a count of affected skills,
+ * which would go stale on the next corpus change with no guard to catch it.
  *
  * A value with an INTERNAL newline — a `>` block containing a paragraph break,
  * or any `|` literal block — cannot be rendered on one line at all, and emitting

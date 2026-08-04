@@ -14,9 +14,12 @@
 #      Context->Decision->Alternatives->Consequences; runbook
 #      trigger->diagnostic->remediation->escalation; the other 6 shapes), and the
 #      Ownership-boundary cession of analytical reports to G11.
-#   2. Catalog contract -- checked against the REAL catalog + skill dirs: exactly 8 G8 rows,
-#      all default_type DOCUMENT, none carrying an alias (feature-010 SPEC "Catalog rows
-#      owned" -- 8 canonical, no aliases).
+#   2. Catalog contract -- checked against the REAL catalog + skill dirs: exactly 8 G8
+#      DOCUMENT-ARCHETYPE rows (the `G8_NAMES` array below -- aid-document plus its 7
+#      archetype suffixes), all default_type DOCUMENT, none carrying an alias (feature-010
+#      SPEC "Catalog rows owned" -- 8 canonical, no aliases). Scope, because `group: G8` is
+#      a WIDER set: 11 catalog rows carry `group: G8`, the other 3 being aid-create-document,
+#      aid-update-document and aid-create-diagram, which feature-010 does not own.
 #   3. Fixture-shape assertions -- two hand-authored flattened work fixtures mirroring what
 #      `/aid-document-decision` and `/aid-document-runbook` would produce, proving the
 #      artifact suffix selects the archetype's document STRUCTURE (not a synonym) --
@@ -145,7 +148,8 @@ get_row_field() {
     ' "$CATALOG"
 }
 
-# DFS-10: exactly 8 G8 rows exist, each with the aid- prefix and a matching skill dir.
+# DFS-10: exactly 8 G8 DOCUMENT-ARCHETYPE rows exist (scope = the G8_NAMES roster below, not
+# the 11 rows carrying `group: G8`), each with the aid- prefix and a matching skill dir.
 G8_NAMES=(aid-document aid-document-decision aid-document-architecture aid-document-guideline aid-document-standard aid-document-runbook aid-document-tutorial aid-document-changelog)
 for name in "${G8_NAMES[@]}"; do
     ROW_COUNT=$(grep -c "^  - name: ${name}\$" "$CATALOG" || true)
@@ -370,7 +374,7 @@ verb=document, artifact=decision. Subject: message-queue choice. Decision: Kafka
 Alternatives: RabbitMQ, SQS.
 
 **Out of scope:** implementing the Kafka migration itself (routes to
-aid-change-infra/aid-refactor); this work documents the decision only.
+aid-update-infra/aid-refactor); this work documents the decision only.
 
 ## Gate Criteria
 
@@ -622,7 +626,7 @@ verb=document, artifact=runbook. Trigger: p99 latency > 2s for 5 minutes. Escala
 page the owning team after 15 minutes unresolved.
 
 **Out of scope:** the observability wiring the alert itself depends on (routes to
-aid-change-infra/aid-monitor); this work documents the response procedure only.
+aid-update-infra/aid-monitor); this work documents the response procedure only.
 
 ## Gate Criteria
 

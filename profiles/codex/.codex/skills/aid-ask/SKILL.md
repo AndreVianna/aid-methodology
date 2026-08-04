@@ -1,69 +1,240 @@
 ---
 name: aid-ask
 description: >
-  Friendly-named alias of /aid-query-kb -- the optional on-demand Q&A skill.
-  Takes a free-form question and answers it in one pass, grounded in three
-  context sources: the Knowledge Base (.aid/knowledge/), the live codebase,
-  and in-flight AID works (.aid/works/work-*/STATE.md + progress). Returns an
-  answer with source citations. When the available context cannot answer the
-  question, states the gap explicitly and captures it as a Query-Gap entry so
-  it feeds the KB-improvement loop. This file carries no logic of its own --
-  its full behavior is defined entirely by
-  .codex/skills/aid-query-kb/SKILL.md, which this skill delegates to.
+  Optional on-demand Q&A skill. Takes a free-form question and answers it in
+  one pass, grounded in three context sources: the Knowledge Base
+  (.aid/knowledge/), the live codebase, and in-flight AID works
+  (.aid/works/work-*/STATE.md + progress). Returns an answer with source citations
+  (KB doc names, file paths, or work-NNN STATE references). When the available
+  context cannot answer the question, states the gap explicitly rather than
+  fabricating an answer AND captures the gap as a Query-Gap entry in the
+  STATE.md Q&A (Pending) backlog so it feeds the KB-improvement loop.
+  Trivial questions are answered inline (Read/Glob/Grep only); broad or
+  expensive investigations dispatch aid-researcher in strictly read-only mode.
+  Writes are restricted to appending a Query-Gap entry to a STATE.md Q&A
+  (Pending) section; no KB doc, settings, or code file is ever written.
 allowed-tools: Read, Glob, Grep, Agent, Write, Edit
 argument-hint: "<question>  — a free-form question about the project"
 ---
 
-# Project Q&A (alias of /aid-query-kb)
+# Project Q&A
 
-`/aid-ask` is the friendly-named alias of **`/aid-query-kb`**
-(`.codex/skills/aid-query-kb/SKILL.md`) -- `aid-query-kb` was renamed FROM
-`aid-ask` in commit `cf6cb1af`; this file restores the shorter, friendlier
-invocation name as a thin alias, per the same alias-is-a-full-directory
-convention the generated shortcut catalog uses
-(`.codex/aid/templates/shortcut-catalog.yml`'s Topology note: an alias is a
-full, separate `.codex/skills/<name>/SKILL.md` directory -- not a redirect
-the generator resolves). It is registered in the catalog as
-`alias_of: aid-query-kb`, `repurpose: true` (never generated or overwritten by
-`build-shortcut-skills.py`, which skips every `repurpose: true` row -- this
-file is hand-authored, like `aid-query-kb` itself).
+Answers a free-form question about the project in one pass. Reads context from
+the Knowledge Base, the live codebase, and in-flight AID work state, then
+replies with source citations.
 
-**This file has no logic of its own.** Its entire behavior -- question
-classification (trivial vs. broad/expensive), the inline-vs-`aid-researcher`
-dispatch, the answer format, the write-scope constraint (gap-capture only, no
-KB/settings/code file ever written), and every other rule -- is defined
-exclusively by `.codex/skills/aid-query-kb/SKILL.md`. Read that file and
-execute it exactly as written, substituting nothing except the invocation
-name in any printed usage example (`/aid-ask` instead of `/aid-query-kb`):
-single-shot, read-only except for the one gap-capture write, grounded in the
-Knowledge Base + the live codebase + in-flight `.aid/works/work-*/STATE.md` works,
-cited, no work folder, no state machine of its own. Duplicating that logic
-here would let the two skills drift out of sync (`feedback` precedent: KB
-docs never re-derive what another document already owns); this file exists
-only so a user who reaches for the shorter, friendlier name still gets the
-exact same skill.
+**Write scope (gap-capture only).** `/aid-ask` writes to exactly one place
+and only when the context is insufficient to answer: it appends a `### Q{N}`
+Query-Gap entry to a `## Q&A (Pending)` section of a `STATE.md` backlog file.
+No KB doc, settings file, or code file is ever written. The answer path stays
+fully read-only; only the gap-append branch writes (NFR-6/C4: capture-and-flag,
+never auto-apply).
+
+**Not a numbered pipeline phase.** `/aid-ask` is an optional, on-demand skill
+outside the Discover-Execute flow. No work folder, no STATE.md of its own.
+
+**Single-shot, no state machine.** One pass: read context -> answer -> exit.
+
+---
 
 ## Pre-flight
 
-Same as `aid-query-kb`'s own Pre-flight (`.codex/skills/aid-query-kb/SKILL.md
-§ Pre-flight`): confirm a question was supplied. If `/aid-ask` is invoked with
-no argument, print:
+- Confirm a question was supplied. If `/aid-ask` is invoked with no argument,
+  print:
+  ```
+  Usage: /aid-ask <question>
+  Example: /aid-ask "Which agent tier handles code review?"
+  ```
+  Then exit without answering.
+
+---
+
+## Execution: answer the question
+
+### Step 1 — Classify the question
+
+Decide whether the question is **trivial** or **broad/expensive**:
+
+- **Trivial:** answerable by reading a small number of known KB docs or a
+  specific file path. Examples: "What does aid-housekeep do?", "Where does the
+  generator output go?", "What is the allowed-tools list for aid-researcher?"
+- **Broad/expensive:** requires deep codebase traversal, cross-file pattern
+  matching, or analysis of many files. Examples: "What are all the places where
+  STATE.md is written?", "Summarize every Q&A in the current discovery cycle",
+  "How does the render pipeline handle tool-name remapping across all profiles?"
+
+### Step 2a — Trivial question: answer inline
+
+Read only the files needed to answer:
+
+1. Load `.aid/knowledge/INDEX.md` to identify which KB docs are relevant.
+2. Read the relevant KB docs (e.g., `architecture.md`, `coding-standards.md`,
+   `module-map.md`, `pipeline-contracts.md`, `schemas.md`, etc.) using `Read`.
+3. Glob or Grep specific files as needed (e.g., locate a SKILL.md or AGENT.md,
+   check a script header, read a work STATE.md).
+4. Compose the answer with inline citations:
+   - KB doc: cite as "`architecture.md` §Section" or `coding-standards.md §7b`.
+   - File path: cite as `.codex/skills/aid-ask/SKILL.md`.
+   - Work state: cite as `work-001-kb-skills STATE.md` or `work-NNN STATE.md §Section`.
+
+### Step 2b — Broad/expensive question: dispatch aid-researcher
+
+Dispatch `aid-researcher` with this prompt structure:
 
 ```
-Usage: /aid-ask <question>
-Example: /aid-ask "Which agent tier handles code review?"
+TASK: Answer the following question about the project. Operate strictly
+read-only — return your analysis as your message; do NOT write, create, edit,
+or delete any file.
+
+QUESTION: <the user's question verbatim>
+
+INSTRUCTIONS:
+1. Load .aid/knowledge/INDEX.md to navigate the KB.
+2. Read the KB docs relevant to the question.
+3. Glob or Grep the codebase as needed to gather evidence.
+4. Read .aid/works/work-*/STATE.md files if the question concerns in-flight works.
+5. Return a structured answer with source citations (KB doc names, file paths,
+   work-NNN STATE references). Do not fabricate facts; if the context cannot
+   answer the question, state the gap explicitly.
+6. Write nothing. Return everything as your message.
 ```
 
-Then exit without answering.
+Wait for `aid-researcher` to complete. Use its returned message as the answer
+body for Step 3.
 
-## Execution
+### Step 2c — Connector enrichment (optional)
 
-Delegate to `.codex/skills/aid-query-kb/SKILL.md § Execution: answer the
-question` in full -- Step 1 (classify trivial vs. broad/expensive), Step 2a
-(trivial: answer inline from KB/codebase reads), Step 2b (broad/expensive:
-dispatch `aid-researcher` read-only), Step 3 (compose the reply, with the
-gap-reply shape when context is insufficient), and Step 4 (gap capture: append
-a `### Q{N}` Query-Gap entry to the resolved backlog's `## Q&A (Pending)`
-section). Every constraint that file states (`§ Constraints`) applies here
-unchanged: cite sources, never fabricate, write nothing beyond the one
-gap-capture append, no `.aid/works/work-*/` folder or `STATE.md` of `/aid-ask`'s own.
+When the question concerns a specific item tracked in a catalogued connector (e.g. "what's the
+status of PROJ-45?"), fetch it by invoking `/aid-read-ticket [<connector>:]<ticket-id>` — the
+connector resolution and host-MCP fetch live there (feature-001); no direct-fetch recipe is
+re-implemented here — and fold what it returns into the answer, cited the same way as any other
+source (Step 3). Skip silently when no matching connector is catalogued — this never blocks or
+replaces the KB/codebase/in-flight-work answer path above; the delegated read is non-destructive,
+so no extra confirm is added.
+
+### Step 3 — Compose and emit the reply
+
+Format the answer as:
+
+```
+## Answer
+
+<answer text, grounded in the evidence gathered>
+
+## Sources
+
+- <citation 1>  (e.g., `architecture.md §Thin-Router state machine`)
+- <citation 2>  (e.g., `.codex/skills/aid-housekeep/SKILL.md`)
+- <citation 3>  (e.g., `work-NNN STATE.md §Goal`)
+```
+
+If context is insufficient to answer, emit the reply AND then capture the gap:
+
+**Reply (always emit first):**
+
+```
+## Answer
+
+The available context does not contain enough information to answer this
+question: <restate the question briefly>.
+
+## Gap
+
+<Describe specifically what is missing -- which KB doc lacks the data, which
+codebase subtree was not reachable, or which work STATE.md did not exist.>
+
+## Sources
+
+- <doc or path checked>
+- <doc or path checked>
+```
+
+**Gap capture (Step 4) -- append after emitting the reply:**
+
+Resolve the target backlog file using the rule in Step 4 below, determine the
+next free `Q{N}` in that backlog (never renumber), then append the entry.
+
+Do NOT fabricate an answer. Stating the gap and capturing it is the correct
+response when context is insufficient.
+
+---
+
+### Step 4 -- Gap capture
+
+When Step 3 emits a gap reply, immediately capture the gap into the Q&A backlog.
+
+**Target-file resolution:**
+
+- If the query was about an **in-flight work** (the question concerns a specific
+  `.aid/works/work-NNN-*/` effort whose STATE.md exists), write to that work's
+  `.aid/works/work-NNN-*/STATE.md` `## Q&A (Pending)` section.
+- Otherwise write to the **knowledge backlog** at
+  `.aid/knowledge/STATE.md` `## Q&A (Pending)`.
+- **When ambiguous** (the query touches both a work and the KB), default to
+  `.aid/knowledge/STATE.md` and name the alternative work in the entry's
+  Context field. (A Q&A append is non-destructive, so default-and-name is the
+  proportionate choice over asking the user.)
+
+**Determine `N`:** read the target backlog file, grep for all `### Q[0-9]+`
+headers, find the highest number, and set `N = highest + 1`. If no Q entries
+exist yet, set `N = 1`. Never renumber existing entries.
+
+**Classify the gap flavor:**
+
+- `KB-contradicts-code`: the KB asserts a fact that directly contradicts what
+  the live code says. Impact = `High`.
+- `KB-cannot-answer`: the KB simply lacks coverage for the question. Impact = `Medium`.
+
+**Append the following entry** (no trailing blank lines needed beyond the
+standard one-blank-line separator between entries):
+
+```
+### Q{N}
+- **Category:** Query-Gap / <KB-cannot-answer | KB-contradicts-code>
+- **Impact:** <High | Medium>
+- **Status:** Pending
+- **Context:** /aid-ask was asked "<question verbatim>". The available
+  context could not answer it: <the specific gap -- which KB doc lacks the
+  data, OR the exact KB claim that contradicts the code with both citations>.
+  Sources checked: <docs/paths>.
+- **Suggested:** Run /aid-update-kb "<the gap as an update prompt>" (or fold
+  into the next /aid-housekeep KB-DELTA) to close the gap, then
+  REVIEW -> APPROVAL.
+```
+
+Write-scope constraint (hard): **writes are restricted to appending a
+Query-Gap entry to a `STATE.md ## Q&A (Pending)` section; no KB doc,
+settings, or code file is ever written.** If the resolved target file does not
+have a `## Q&A (Pending)` section, append the section heading before the
+entry. Do not modify any other part of the file.
+
+---
+
+## Dispatch table
+
+| Condition | Worker | Output |
+|-----------|--------|--------|
+| Trivial question | inline (Read / Glob / Grep) | Answer in conversation |
+| Broad/expensive question | `aid-researcher` (read-only) | Answer in conversation |
+| Insufficient context | inline + gap-capture write | Gap reply + Q{N} entry appended to STATE.md |
+
+The dispatched `aid-researcher` MUST be instructed to operate strictly
+read-only (return analysis as its message; write nothing). See Step 2b for the
+required prompt.
+
+---
+
+## Constraints
+
+- **Write scope (gap-capture only).** Writes are restricted to appending a
+  Query-Gap `### Q{N}` entry to a `STATE.md ## Q&A (Pending)` section. No KB
+  doc, settings, or code file is ever written. The answer path stays read-only;
+  only the gap-append branch writes.
+- **No work folder.** `/aid-ask` does not create `.aid/works/work-*/` directories or
+  STATE.md files for its own use.
+- **Cite sources.** Every factual claim in the answer must be traceable to a KB
+  doc, a file path, or a work STATE.md reference.
+- **State gaps explicitly.** When the context cannot answer, say so clearly.
+  Never invent data.
+- **Read-only dispatch.** When `aid-researcher` is dispatched, its prompt MUST
+  instruct it to return analysis as its message and write nothing.

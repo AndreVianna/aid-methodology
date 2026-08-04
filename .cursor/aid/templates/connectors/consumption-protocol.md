@@ -134,14 +134,14 @@ identically to before this protocol existed.
 | `aid-specify` | Ingest | When specifying a feature whose requirements trace to a source ticket, read it **via `/aid-read-ticket`** and record `ticket_ref` at the **feature** level (the `SPEC.md` it is authoring). |
 | `aid-plan` | Ingest | When a deliverable being written corresponds to (or the user names) an external tracker item, record its `ticket_ref` at the **delivery** level (the `delivery-NNN/STATE.md`, or the work-root `STATE.md` for a flattened work, it is creating). |
 | `aid-fix` (and the shared shortcut engine every other shortcut delegates to) | Ingest | When the description this run captures names, or clearly originates from, a filed ticket, record its `ticket_ref` at the **work** level `INTAKE` just allocated. |
-| `aid-query-kb` | Enrich | May enrich an answer by reading a linked ticket's status/fields **via `/aid-read-ticket`** when the question concerns a linked tracker item; purely additive to its existing KB/codebase/in-flight-work context sources. |
-| `aid-researcher` (agent) | Enrich | May consult `.aid/connectors/INDEX.md` and, for a relevant `mcp` connector, gather additional evidence for a RESEARCH task or a broad `aid-query-kb` dispatch by reading the linked ticket **via `/aid-read-ticket`** — the same read-heavy, evidence-cited discipline it already applies to KB/codebase sources. |
+| `aid-ask` | Enrich | May enrich an answer by reading a linked ticket's status/fields **via `/aid-read-ticket`** when the question concerns a linked tracker item; purely additive to its existing KB/codebase/in-flight-work context sources. |
+| `aid-researcher` (agent) | Enrich | May consult `.aid/connectors/INDEX.md` and, for a relevant `mcp` connector, gather additional evidence for a RESEARCH task or a broad `aid-ask` dispatch by reading the linked ticket **via `/aid-read-ticket`** — the same read-heavy, evidence-cited discipline it already applies to KB/codebase sources. |
 | `aid-developer` (agent) | Enrich | May consult `.aid/connectors/INDEX.md` and, for a relevant `mcp` connector, pull additional context for an IMPLEMENT/TEST/REFACTOR/CONFIGURE/MIGRATE task by reading the linked ticket's latest description/comments **via `/aid-read-ticket`** before implementing — read-only enrichment; never a substitute for the TASK file's own Scope/Acceptance Criteria. |
 
 **Ingest vs. enrich, restated.** An **ingest** seam runs early in the pipeline (Describe/Define/Specify/
 Plan/the shortcut engine's INTAKE) and *records* a `ticket_ref` at the level it is creating, sourced
 from a **user-supplied ref** to a ticket that already exists externally, delegating any read to
-`/aid-read-ticket`. `aid-query-kb`/`aid-researcher`/`aid-developer` *enrich* an answer or an
+`/aid-read-ticket`. `aid-ask`/`aid-researcher`/`aid-developer` *enrich* an answer or an
 investigation from a connector's live data **via `/aid-read-ticket`**, without recording or
 resolving a `ticket_ref` of their own. **No seam performs an outward write** — filing, commenting,
 and status transitions are the dedicated skills' job.

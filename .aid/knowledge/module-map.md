@@ -22,7 +22,7 @@ owner: architect
 audience: [developer, architect]
 contracts:
   - "canonical/ is the single source of truth; profiles/ and packages/_vendor are rendered/vendored copies"
-  - "111 skill directories under canonical/skills/; 9 agent directories under canonical/agents/"
+  - "75 skill directories under canonical/skills/; 9 agent directories under canonical/agents/"
   - "5 render profiles (profiles/*.toml)"
   - "site/ derives its skill content from canonical/ at build time; gen-skills.mjs and gen-reference.mjs throw on corpus drift"
 changelog:
@@ -82,7 +82,7 @@ it produces. The modules fall into four planes:
 | `lib/AidInstallCore.psm1` | Distribution | PowerShell twin of the install-core library (`#Requires -Version 5.1`). | none | large | tested (`Test-AidInstaller.ps1`, `ps51-compat-check.ps1`) | Must stay WinPS-5.1 compatible (see coding-standards.md). |
 | `bin/aid`, `bin/aid.ps1`, `bin/aid.cmd` | Distribution | Persistent `aid` CLI dispatcher: parses subcommands (`update`, `remove`, `dashboard`, ...) and calls install-core. | install-core libs | medium | tested (cli-parity, registry) | `aid.cmd` is a thin cmd.exe shim over `aid.ps1`. |
 | `release.sh` | Distribution | Maintainer runbook: packages the five per-profile tarballs + checksums and cuts a GitHub Release. | `canonical/`, `profiles/`, `check-version-sync.sh` | medium | indirectly (release.yml CI) | Maintainer-only; rebuild bundle from clean HEAD. |
-| `canonical/skills/*` (111) | Toolkit | Slash-command definitions (`SKILL.md` + `references/*.md`) that drive the pipeline state machines. | `canonical/aid/scripts/*`, `templates/*` | large (collectively) | not machine-tested (by design) | The user-facing surface; one dir per skill (111 total: 17 curated pipeline / on-demand / router skills + the 94-row shortcut catalog's skills: 64 verb-first direct-entry shortcut doorways + 30 hand-authored `repurpose` skills). Phase 2 (Describe → Define) is two skills: `aid-describe` (2a) + `aid-define` (2b). Several `references/` clusters are tracked as modules -- see [Notable Skill Reference Modules](#notable-skill-reference-modules). Skill state machines are validated by dogfooding + AI/human review, NOT an automated harness (see test-landscape.md); only the helper scripts they call have suites. |
+| `canonical/skills/*` (75) | Toolkit | Slash-command definitions (`SKILL.md` + `references/*.md`) that drive the pipeline state machines. | `canonical/aid/scripts/*`, `templates/*` | large (collectively) | not machine-tested (by design) | The user-facing surface; one dir per skill (75 total: 17 curated pipeline / on-demand / router skills + the 58-row shortcut catalog's skills: 34 verb-first direct-entry shortcut doorways + 24 hand-authored `repurpose` skills). Phase 2 (Describe → Define) is two skills: `aid-describe` (2a) + `aid-define` (2b). Several `references/` clusters are tracked as modules -- see [Notable Skill Reference Modules](#notable-skill-reference-modules). Skill state machines are validated by dogfooding + AI/human review, NOT an automated harness (see test-landscape.md); only the helper scripts they call have suites. |
 | `canonical/agents/*` (9) | Toolkit | Sub-agent role definitions (`AGENT.md` + `README.md`); dispatched by skills. | `templates/agent-boilerplate.md` (include) | medium | n/a (prose) | Roles: architect, clerk, developer, interviewer, operator, orchestrator, researcher, reviewer, tech-writer. The `interviewer` agent is dispatched by `aid-describe`. |
 | `canonical/aid/scripts/*` | Toolkit | Helper scripts grouped by phase area (config, connectors, execute, housekeep, kb, migrate, release, summarize) + top-level `grade.sh`. | `config/read-setting.sh`, `grade.sh` | large | partial (per-area suites + fixtures) | See [Script Modules by Area](#script-modules-by-area). |
 | `canonical/aid/templates/*` | Toolkit | KB doc seeds, state-file templates, schemas, kb-authoring rules, the shortcut catalog + engine + scaffolding. | none (consumed by skills) | large | n/a (data) | The artifact-schema source of truth (see artifact-schemas.md). |
@@ -195,9 +195,9 @@ grader).
 | `release/` | `check-version-sync.sh` | `release.sh`, CI | Verifies the version string is in lockstep across all manifests. |
 | `summarize/` | `assemble.sh`, `assemble-3part.sh`/`.ps1`, `build-md-export.sh`, `grade-summary.sh`, `manual-checklist.sh`, `spot-check-facts.sh`, `stale-check.sh`, `summarize-preflight.sh`, `validate-html-output.sh`, `validate-diagram-content.mjs`, `validate-visuals.mjs`, `contrast-check.mjs`, `writeback-state.sh` | `aid-summarize` | Builds + validates the `kb.html` visual summary (assembly, markdown export, fact/stale checks, HTML + diagram-content + visual + contrast validation via Playwright/Node). |
 
-> The installed copies under each profile (and the dogfood `.claude/aid/scripts/`)
-> are rendered from these canonical sources. Edit `canonical/`, never the rendered
-> copy.
+> The installed copies under each profile (and the dogfood `.claude/aid/scripts/` and
+> `.cursor/aid/scripts/`) are rendered from these canonical sources. Edit `canonical/`,
+> never the rendered copy.
 
 ---
 
@@ -218,15 +218,15 @@ their own right.
 
 ## Skill Structural Shapes
 
-The 111 skill directories share one **ownership** taxonomy (17 curated + 64 generated doorways
-+ 30 hand-authored `repurpose`, per the contracts above) but four distinct **structural**
+The 75 skill directories share one **ownership** taxonomy (17 curated + 34 generated doorways
++ 24 hand-authored `repurpose`, per the contracts above) but four distinct **structural**
 shapes. The two taxonomies do not line up, and tooling that reads skill bodies must key off
 the shape, not the ownership flag.
 
 | Shape | Body structure | Typical size | Exemplars |
 |-------|----------------|--------------|-----------|
 | Fat pipeline skill | `## Dispatch` table mapping states to `references/state-*.md` workers + `Advance` targets; no inline `## State:` sections | 300+ lines | `aid-describe` (308) |
-| Hand-authored collapse skill | Six inline `## State:` sections in `SKILL.md` itself; self-contained, no delegation | 120--220 lines | Eight skills: `aid-review` (221), `aid-research` (181), `aid-test` (131), `aid-prototype` (129), `aid-design` (120), plus `aid-change-document`, `aid-create-document`, `aid-report` |
+| Hand-authored collapse skill | Six inline `## State:` sections in `SKILL.md` itself; self-contained, no delegation | 120--220 lines | Eight skills: `aid-review` (221), `aid-research` (181), `aid-test` (131), `aid-prototype` (129), `aid-design` (120), plus `aid-update-document`, `aid-create-document`, `aid-report` |
 | Generated shortcut doorway | Binds `{verb, artifact}` and delegates to `canonical/aid/templates/shortcut-engine.md` | ~18 lines | `aid-create-api`, `aid-fix` |
 | Kind-sibling doorway | Delegates to a **sibling skill**, not to the engine | ~24 lines | `aid-test-security` -> `aid-test`; the `test-*` and `create-diagram`/`create-document` clusters |
 
@@ -237,10 +237,10 @@ the shape, not the ownership flag.
 - **The two doorway shapes carry no control flow of their own.** Their real flow is the shared
   engine's `INTAKE -> CAPTURE -> SPEC -> PLAN -> DETAIL -> GATE -> APPROVAL-HALT`, so any
   per-skill flow extraction must resolve the delegation before it has anything to show.
-  **Measured 2026-07-25: 83--84 of the 111** (64 engine doorways plus 19--20 kind-siblings; the
-  exact split moves with the classifier's discriminators). The earlier "roughly 94" figure in
-  this section was an estimate and was wrong -- prefer a measurement, and do not hard-code the
-  number in tooling.
+  **Measured 2026-07-30 (post alias-removal recount): 47 of the 75** (34 engine doorways plus 13
+  kind-siblings; re-derived directly against `canonical/skills/*/SKILL.md` after the alias
+  removal cut the generated-doorway population from 64 to 34). Re-verify against a fresh scan
+  before trusting this split in tooling.
 - **There is no single reliable parse marker for a skill's state machine.** Skills variously use
   frontmatter `State machine:`, `## Dispatch` tables, inline `## State:` sections, a literal
   `## State Machine` heading, or ASCII state maps. Branch conditions are prose in parentheses
@@ -312,7 +312,7 @@ body; ownership counts per this document's own contracts and `project-structure.
   `canonical/skills/aid-discover/`). The `SKILL.md` carries YAML frontmatter with
   `name:`, `description:`, `allowed-tools:`, `argument-hint:` (see
   `aid-config/SKILL.md`). This is for hand-authored pipeline / on-demand skills; the
-  64 verb-first shortcut doorways are **generated**, not hand-authored -- see "How a
+  34 verb-first shortcut doorways are **generated**, not hand-authored -- see "How a
   new shortcut goes" below.
 - **Where a new agent goes:** create `canonical/agents/aid-<role>/AGENT.md` (+
   `README.md`). The `AGENT.md` frontmatter carries `name:`, `description:`,
@@ -335,7 +335,7 @@ body; ownership counts per this document's own contracts and `project-structure.
   SPEC/PLAN/DETAIL scaffolding it consults lives in
   `canonical/aid/templates/shortcut-scaffolding/<family>.md`.
 - **Never edit a rendered copy.** Edit `canonical/` and regenerate; `profiles/*`,
-  `packages/*/_vendor/`, and the dogfood `.claude/` are build output.
+  `packages/*/_vendor/`, and the dogfood `.claude/` + `.cursor/` are build output.
 
 ---
 
@@ -344,8 +344,8 @@ body; ownership counts per this document's own contracts and `project-structure.
 > Hard MUST/MUST-NOT rules the module graph enforces silently.
 
 - **Single source of truth:** every shipped file originates in `canonical/`.
-  `profiles/`, `packages/*/_vendor/`, and `.claude/` MUST be regenerated, never
-  hand-edited. Hand-editing a rendered copy is lost on the next render.
+  `profiles/`, `packages/*/_vendor/`, and the dogfood `.claude/` + `.cursor/` MUST be
+  regenerated, never hand-edited. Hand-editing a rendered copy is lost on the next render.
 - **Render is a pure mirror bounded by the emission manifest:** the renderer may
   only delete install-tree paths present in the previous run's
   `emission-manifest.jsonl` (`removed_dst`). Files outside any manifest are never
@@ -395,10 +395,10 @@ body; ownership counts per this document's own contracts and `project-structure.
 ## Gotchas
 
 - **Heavy file duplication is intentional.** `reader.mjs`/`parsers.py` and the whole
-  toolkit appear many times (dashboard + npm + pypi `_vendor` + five profiles +
-  `.claude/`). Do NOT "deduplicate" -- they are rendered/vendored copies of
-  `canonical/`.
-- **Shortcut doorways are generated, not hand-authored.** The 64 `aid-<verb>[-<artifact>]`
+  toolkit appear many times (dashboard + npm + pypi `_vendor` + five profiles + the two
+  dogfood trees `.claude/` and `.cursor/`). Do NOT "deduplicate" -- they are
+  rendered/vendored copies of `canonical/`.
+- **Shortcut doorways are generated, not hand-authored.** The 34 `aid-<verb>[-<artifact>]`
   skill directories under `canonical/skills/` are emitted by
   `.claude/skills/generate-profile/scripts/build-shortcut-skills.py` from
   `shortcut-catalog.yml`. Edit the catalog + re-run the helper (then the FULL

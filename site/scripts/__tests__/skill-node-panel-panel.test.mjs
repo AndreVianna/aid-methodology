@@ -215,9 +215,15 @@ describe('panel: activation', () => {
     expect(source.textContent).not.toContain('https://');
   });
 
-  // Same rule as render-mermaid.mjs and the fragment list: 223 of 883 corpus
-  // entries carry a label identical to the node name, so without collapsing it the
+  // Same rule as render-mermaid.mjs and the fragment list: label-repeats-name is
+  // a routine corpus shape, not a contrived one, so without collapsing it the
   // heading says the word twice and the accessible name announces it twice.
+  //
+  // No fraction is recorded. The live figure is whatever the sidecars under
+  // `site/src/data/skill-flows/` currently hold — re-derive it from there if the
+  // magnitude ever matters. A number pinned in a comment here would drift on the
+  // next roster change with nothing to catch it, which is how the previous "N of M"
+  // in this spot ended up describing a corpus that no longer existed.
   it('drops the label when it merely repeats the name', () => {
     const island = projection();
     island.nodes[0].label = 'INTAKE';

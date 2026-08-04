@@ -10,7 +10,15 @@
 
 **A full-lifecycle methodology for building software with AI agents** — from understanding an existing codebase to monitoring it in production.
 
-111 skills — 17 pipeline / on-demand / router skills + a 94-row shortcut catalog (64 verb-first shortcuts + 30 hand-authored repurpose skills) · 9 specialized agents · 5 AI tools · Knowledge Base that every phase reads and any phase can revise.
+**Two verbs and an artifact.** `/aid-create-<artifact>` to build something new,
+`/aid-update-<artifact>` to change something that exists — across 15 artifact types
+(api, ui, cli, data-model, job, config, infra, test, document, …). One command, the full
+pipeline underneath, one approval at the end.
+
+> [!NOTE]
+> `create` and `update` are the only verbs. Nearly every artifact takes both — `diagram` is
+> create-only. Earlier releases also accepted `add` and `change` (`/aid-add-api`,
+> `/aid-change-ui`); those names are retired and no longer resolve to anything.
 
 **Choosing your entry:** know your change → run the matching shortcut. Know it's big or new → `/aid-describe`. Not sure which? → `/aid-triage`. Just have a question? → `/aid-ask`.
 
@@ -42,7 +50,7 @@ flowchart TD
     MON -. "change request → /aid-triage" .-> TR
 ```
 
-*111 skills · 3 entry points (shortcut, `/aid-triage`, `/aid-describe`) plus `/aid-ask` for a plain question. Full methodology: [docs/aid-methodology.md](docs/aid-methodology.md).*
+*3 entry points (shortcut, `/aid-triage`, `/aid-describe`) plus `/aid-ask` for a plain question. Full methodology: [docs/aid-methodology.md](docs/aid-methodology.md).*
 
 > [!TIP]
 > New to AID? Install takes 2 minutes. Run slash commands directly in your AI coding tool — no plugins required. Jump to [Install](#install) to get started.
@@ -113,6 +121,8 @@ All four channels deliver the same `aid` CLI. See [Full install guide →](docs/
 aid add claude-code        # install AID into the current project (also: codex cursor copilot-cli antigravity)
 aid add codex,cursor       # multiple tools at once
 aid status                 # show what is installed
+aid                        # show the pipeline dashboard
+aid dashboard start python # serve it locally (also: node) — stop with `aid dashboard stop`
 aid update                 # update all installed tools
 aid update self            # update the aid CLI itself
 aid remove codex           # remove one tool
@@ -133,8 +143,8 @@ Open your AI coding tool in your project and run the skills as slash commands:
 /aid-config           # once per project — scaffolds .aid/ and KB structure
 /aid-discover         # brownfield only: analyze the codebase into the KB
 /aid-triage           # not sure where to start? suggest-only router — points you to a shortcut, /aid-describe, or /aid-ask
-/aid-<verb>[-<artifact>]  # shortcut — you know the change; e.g. /aid-fix, /aid-create-api, /aid-change-cli (64 shortcuts)
-/aid-ask              # just have a question? free-form Q&A over the KB + codebase; friendly alias of /aid-query-kb
+/aid-<verb>[-<artifact>]  # shortcut — you know the change; e.g. /aid-fix, /aid-create-api, /aid-update-cli (34 shortcuts)
+/aid-ask              # just have a question? free-form Q&A over the KB + codebase; read-only, cited
 /aid-describe         # gather requirements for broad / new-project work (full path only); on approval, run /aid-define
 /aid-define           # decompose approved requirements into features (full path only)
 /aid-specify          # write the technical spec for each feature (full path only)
@@ -145,13 +155,12 @@ Open your AI coding tool in your project and run the skills as slash commands:
 /aid-monitor          # optional — classify production findings and route fixes back (bug → /aid-fix, change request → /aid-triage)
 /aid-summarize        # optional — generate an offline HTML viewer of the KB
 /aid-housekeep        # on-demand — keep the Knowledge Base current (off-pipeline)
-/aid-query-kb         # on-demand — answer free-form questions from the KB + codebase; captures gaps
 /aid-update-kb        # on-demand — apply a targeted delta to KB docs through the review gate
 /aid-set-connector    # on-demand — create or update a connector descriptor for an external tool
 /aid-unset-connector  # on-demand — remove a connector descriptor and purge its secret
 ```
 
-**Brownfield** projects run `/aid-config` → `/aid-discover` → `/aid-describe` → `/aid-define`. **Greenfield** projects skip Discovery and start at `/aid-describe`. For a small, well-scoped change, skip straight to a shortcut instead — or run `/aid-triage` if you're not sure which one fits. Just have a question, not a change? Run `/aid-ask`. Every phase is gated — nothing advances without your approval.
+**Brownfield** projects run `/aid-config` → `/aid-discover` → `/aid-describe` → `/aid-define`. **Greenfield** projects skip Discovery and start at `/aid-describe`. For a small, well-scoped change, skip straight to a shortcut instead — or run `/aid-triage` if you're not sure which one fits. Just have a question, not a change? Run `/aid-ask`. Every phase is gated — nothing advances without your approval. The block above is the pipeline and the on-demand skills; the rest of AID's 75 skills are the verb-first shortcut doorways and the hand-authored task skills behind them, all rendered from one canonical source into 5 tool profiles.
 
 [See it applied step by step →](examples/)
 
@@ -194,7 +203,7 @@ AID's phases are gated: you approve every transition. Nothing auto-advances. [Fu
 
 ### The Lite Path
 
-AID does not make you weigh the cost of the full pipeline against the size of a change yourself — that trade-off is automated. For a small, well-scoped change, skip the full pipeline entirely: name it with a verb-first shortcut (`/aid-fix`, `/aid-create-api`, `/aid-change-cli`, …) — one of 64 shortcuts spanning the shortcut families (create · change · fix · refactor · remove · deprecate · migrate · test · experiment · prototype · design · document · report · dashboard · review · research) — and the shared shortcut engine collapses Describe → Define → Specify → Plan → Detail into one fast, mostly-autonomous run, then halts for your approval. Each shortcut is bound to one specific change type, so the engine already knows the shape of the work and skips the generic elicitation a from-scratch interview would need — that's what makes it fast, not just short.
+AID does not make you weigh the cost of the full pipeline against the size of a change yourself — that trade-off is automated. For a small, well-scoped change, skip the full pipeline entirely: name it with a verb-first shortcut (`/aid-fix`, `/aid-create-api`, `/aid-update-cli`, …) — one of 34 shortcuts spanning the shortcut families (create · update · fix · refactor · remove · deprecate · migrate · test · experiment · prototype · design · document · report · dashboard · review · research) — and the shared shortcut engine collapses Describe → Define → Specify → Plan → Detail into one fast, mostly-autonomous run, then halts for your approval. Each shortcut is bound to one specific change type, so the engine already knows the shape of the work and skips the generic elicitation a from-scratch interview would need — that's what makes it fast, not just short.
 
 Not sure which shortcut fits, or is the change broad or multi-part? `/aid-triage` reads a free-form description and suggests either the matching shortcut or the full `/aid-describe` path. Just asking a question instead of proposing a change? `/aid-triage` points you to `/aid-ask` instead. Either way, nothing runs until you approve it.
 

@@ -657,9 +657,11 @@ describe('read-once cache', () => {
   });
 
   // The claim above is per-CALL, which is not what the SPEC asks for. "Once per
-  // run" only bites across charts: 64 of the 111 skills cite the same engine
-  // template, so a fresh cache per call reads it 64 times. A caller passes one
-  // cache through _cache to collapse that; this proves the seam actually does it.
+  // run" only bites across charts: every generated shortcut doorway cites the same
+  // engine template, so a fresh cache per call re-reads it once per doorway. A
+  // caller passes one cache through _cache to collapse that; this proves the seam
+  // actually does it. The property is stated instead of a count so the comment
+  // cannot go stale as the catalog grows or shrinks.
   it('reads a shared file once across MANY calls when one cache is passed', async () => {
     const reads = [];
 

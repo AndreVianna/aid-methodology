@@ -424,16 +424,23 @@ describe('assertion 12 — no card line contains a raw < before a letter or / ou
   // checked here, deliberately, and this comment exists so nobody assumes it is.
   //
   // It cannot manifest on this page. A card's intent is `skillSummary`'s FIRST
-  // SENTENCE, capped, and measurement says **0 of 111** card intents contain a
-  // code span at all — every authored span in the corpus falls after the first
+  // SENTENCE, capped, and measurement says **NO** card intent in the corpus
+  // contains a code span at all — every authored span falls after the first
   // sentence. A test here would be vacuous, and a `spansChecked > 0` guard on it
   // fails outright.
   //
-  // The risk is real on the DETAIL pages, which render the full description:
-  // **70 of 111** carry a code span, producing 579 spans in total. It is asserted
-  // there instead — see `gen-skills.test.mjs`, "no rendered code span contains an
-  // HTML entity". Keeping the check where the construct actually occurs is what
-  // makes it able to fail.
+  // Recorded as zero-versus-nonzero rather than as an "N of M" corpus fraction:
+  // re-derive it by mapping `skillSummary` over `discoverSkills()` and looking for
+  // a backtick. A pinned fraction would need editing on every roster change and
+  // would misinform in between, while the asymmetry it is standing in for holds
+  // regardless of corpus size.
+  //
+  // The risk is real on the DETAIL pages, which render the FULL description, where
+  // authored code spans DO occur. It is asserted there instead — see
+  // `gen-skills.test.mjs`, "no rendered code span contains an HTML entity", whose
+  // own `spansChecked` floor is the running proof that the construct is still
+  // present. Keeping the check where the construct actually occurs is what makes
+  // it able to fail.
 });
 
 // ── Assertion 13 — marker, manifest row, generatedPaths, no generatedAt ──────

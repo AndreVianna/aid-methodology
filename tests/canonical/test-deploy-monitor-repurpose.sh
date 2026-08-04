@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # test-deploy-monitor-repurpose.sh -- task-035 (work-001-lite-aid-skills, feature-012
-# AC-9 / § Q-A9): Deploy/Monitor re-purpose verification + full 80-row catalog parity.
+# AC-9 / § Q-A9): Deploy/Monitor re-purpose verification + full catalog-to-dirs parity.
 #
 # `aid-deploy`/`aid-monitor` are agent-executed PROSE (pipeline state machines) -- a
 # deterministic canonical test cannot "run" them. This suite is therefore CONTRACT +
@@ -23,12 +23,15 @@
 #   Part 3 -- Shortcut mode (part a, fixture):
 #     no `work-NNN` + a free-form description -> shortcut-scaffold path; fixture proves the
 #     scaffolded flattened Lite work halts at the FR-10 approval gate (never executes); the
-#     catalog parity-exemption for the 4 repurpose rows holds (cross-checked against
+#     catalog parity-exemption for the `repurpose: true` rows holds -- spot-checked on the two
+#     pipeline ones, aid-deploy and aid-monitor (cross-checked against
 #     test-catalog-dirs-parity.sh's own CDP{i}e exemption logic).
 #
-#   Part 4 -- Full 80-row catalog-to-dirs parity:
-#     independently re-derived count: exactly 80 rows total, 51 canonical (`alias_of: null`,
-#     including the 4 `repurpose: true` rows) + 29 alias; no orphan directory, no orphan row.
+#   Part 4 -- Full catalog-to-dirs parity:
+#     independently re-derived counts: exactly 58 rows total, all 58 of them canonical
+#     (`alias_of: null`) and 0 alias -- the alias layer is retired -- of which 24 carry
+#     `repurpose: true` (hand-authored skills) and the other 34 are generated thin doorways
+#     (24 + 34 = 58); no orphan directory, no orphan row.
 #     (test-catalog-dirs-parity.sh itself stays COUNT-AGNOSTIC by design -- this is the
 #     dedicated count assertion its own header comment defers to task-035.)
 #
@@ -267,9 +270,10 @@ for FIXTURE_DIR in "$DEPLOY_FIXTURE" "$MONITOR_FIXTURE"; do
     assert_eq "$NOT_PENDING" "0" "DMR23 [${label}] every task Pending -- halts pre-Execute, never executes"
 done
 
-# DMR-24: catalog parity-exemption for the 4 repurpose rows holds (cross-check against
-# test-catalog-dirs-parity.sh's own exemption note -- both rows carry repurpose: true and
-# skip the thin-doorway body assertion).
+# DMR-24: the catalog parity-exemption for `repurpose: true` rows holds (cross-check against
+# test-catalog-dirs-parity.sh's own exemption note -- such a row is hand-authored, so it
+# carries repurpose: true and skips the thin-doorway body assertion). This checks the two
+# pipeline rows only; DMR33 below asserts the size of the exempt class as a whole.
 for name in aid-deploy aid-monitor; do
     ROW_BLOCK=$(awk -v n="$name" '
         BEGIN{on=0}
@@ -284,30 +288,47 @@ for name in aid-deploy aid-monitor; do
 done
 
 # ===========================================================================
-# Part 4 -- Full 94-row catalog-to-dirs parity (independently re-derived count)
+# Part 4 -- Full catalog-to-dirs parity (counts re-derived here from the catalog, never
+# imported from build-shortcut-skills.py's internals)
 # ===========================================================================
 echo ""
-echo "--- Part 4: full 94-row catalog-to-dirs parity ---"
 
 TOTAL_ROWS=$(grep -cE '^  - name:' "$CATALOG")
 CANONICAL_ROWS=$(grep -cE '^    alias_of: null$' "$CATALOG")
 ALIAS_ROWS=$(grep -cE '^    alias_of: aid-' "$CATALOG")
 REPURPOSE_ROWS=$(grep -cE '^    repurpose: true$' "$CATALOG")
+# Same-anchor control for DMR32's zero: the identical `^    alias_of: ` prefix with the VALUE
+# part dropped. Every row carries the field exactly once, so this must equal TOTAL_ROWS. If
+# the catalog moved, emptied, or renamed/re-indented the field, this reads 0 -- which is what
+# stops "0 alias rows" from passing for the wrong reason.
+ALIAS_FIELD_LINES=$(grep -cE '^    alias_of: ' "$CATALOG")
 
-# work-005 grew the catalog (collapse skills + artifact reframes + kind-siblings): 80 -> 94
-# rows, and repurpose:true rows 4 -> 30 (the 4 classic re-registered skills plus 26 work-005
-# hand-authored collapse/kind-sibling skills, all now owning their own directory).
-assert_eq "$TOTAL_ROWS" "94" "DMR30 catalog carries exactly 94 total rows"
-assert_eq "$CANONICAL_ROWS" "58" "DMR31 catalog carries exactly 58 canonical (alias_of: null) rows"
-assert_eq "$ALIAS_ROWS" "36" "DMR32 catalog carries exactly 36 alias rows"
-assert_eq "$REPURPOSE_ROWS" "30" "DMR33 catalog carries exactly 30 repurpose:true rows (4 classic re-registered + 26 work-005 collapse/kind-sibling skills)"
+echo "--- Part 4: full ${TOTAL_ROWS}-row catalog-to-dirs parity ---"
+
+# Catalog size, by version -- history, deliberately preserved, not overwritten:
+#   work-005 grew it (collapse skills + artifact reframes + kind-siblings): 80 -> 94 rows, and
+#   repurpose:true rows 4 -> 30 (the 4 classic re-registered skills plus 26 work-005
+#   hand-authored collapse/kind-sibling skills, all now owning their own directory).
+#   work-004 then retired the alias layer and three verb families: the 36 alias rows were
+#   dropped outright (94 -> 58 rows, 36 -> 0 alias), 16 canonical rows were renamed in place
+#   (one whole verb family, plus the Q&A row now called aid-ask) so the canonical count stayed
+#   at 58, and repurpose:true went 30 -> 24 as six of those hand-authored rows ceased to exist.
+#   The retired names themselves are deliberately NOT spelled out here: this file is swept for
+#   them and must return zero hits. `git log -- <this catalog>` is the place to read them.
+# Only the last figures in that narration are asserted; the rest is the record of how we got here.
+assert_eq "$TOTAL_ROWS" "58" "DMR30 catalog carries exactly 58 total rows"
+assert_eq "$CANONICAL_ROWS" "58" "DMR31 catalog carries exactly 58 canonical (alias_of: null) rows -- i.e. every row, the alias layer having been retired"
+assert_eq "${ALIAS_ROWS} alias of ${ALIAS_FIELD_LINES} rows carrying an alias_of field" \
+    "0 alias of 58 rows carrying an alias_of field" \
+    "DMR32 catalog carries zero alias rows, out of the 58 rows that DO carry an alias_of field (paired so a moved, emptied or re-keyed catalog cannot pass this as a free zero)"
+assert_eq "$REPURPOSE_ROWS" "24" "DMR33 catalog carries exactly 24 repurpose:true rows (the hand-authored skills; the other 34 rows are generated thin doorways -- 24 + 34 = 58)"
 CANONICAL_PLUS_ALIAS=$((CANONICAL_ROWS + ALIAS_ROWS))
 assert_eq "$CANONICAL_PLUS_ALIAS" "$TOTAL_ROWS" "DMR34 canonical + alias == total (no row miscounted/double-counted)"
 
 # DMR-35: every row's directory exists (no orphan row) -- independent re-derivation, not
 # importing build-shortcut-skills.py's internals.
 mapfile -t ALL_NAMES < <(awk '/^  - name:/ { line=$0; sub(/^  - name:[[:space:]]*/, "", line); print line }' "$CATALOG")
-assert_eq "${#ALL_NAMES[@]}" "94" "DMR35a re-derived name list carries exactly 94 entries"
+assert_eq "${#ALL_NAMES[@]}" "$TOTAL_ROWS" "DMR35a re-derived name list carries one entry per catalog row (awk name-extraction agrees with the grep row count)"
 
 orphan_row=0
 for name in "${ALL_NAMES[@]}"; do
@@ -316,7 +337,7 @@ for name in "${ALL_NAMES[@]}"; do
         orphan_row=1
     fi
 done
-[[ "$orphan_row" -eq 0 ]] && pass "DMR35b every one of the 80 rows has a matching canonical/skills/ directory (no orphan row)"
+[[ "$orphan_row" -eq 0 ]] && pass "DMR35b every one of the ${#ALL_NAMES[@]} rows has a matching canonical/skills/ directory (no orphan row)"
 
 # DMR-36: no orphan directory -- every GENERATED-marker doorway (or repurpose fat skill) has
 # a matching catalog row.

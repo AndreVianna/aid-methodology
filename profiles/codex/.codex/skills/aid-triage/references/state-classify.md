@@ -28,15 +28,6 @@ forward verbatim as the question text.
 Otherwise, continue to Step 1 as normal -- this is the common case, and every
 step below is unchanged from before this branch existed.
 
-**Intended exception to Step 3's "canonical names only" rule:** Case D
-suggests `/aid-ask` directly -- the alias, not its canonical form
-`/aid-query-kb` -- because the QUESTION route never reaches Step 3's
-catalog match in the first place (it short-circuits past it) and because
-`aid-ask` is a hand-authored, user-facing Q&A entry point (`repurpose: true`
-in the catalog), not a thin doorway alias `build-shortcut-skills.py`
-generates. There is no doorway-duplication concern here, so this is not a
-violation of Step 3's rule -- see `state-suggest.md` Case D.
-
 **Advance (QUESTION branch only):** **CHAIN** -> [State: SUGGEST] Case D.
 
 ---
@@ -91,12 +82,14 @@ the AID installation root -- the same directory that contains
 script is invoked.
 
 **Candidate set** -- every row whose `alias_of` field is `null` (canonical
-rows only; an alias row's `intent` carries no semantic content of its own --
-just `"Alias of <name>."` -- so it never wins a semantic match and does not
-need to be filtered out by hand). This canonical-only restriction is scoped
-to *this* step's semantic match (feeding Cases A/B/C) -- it has no bearing on
-Case D, which never runs Step 3 at all (Step 0 short-circuits past it) and
-intentionally suggests the alias `/aid-ask`; see Step 0 above and
+rows only; today all 58 rows read `alias_of: null`, so this filter selects
+the full catalog, but it is kept as a **defensive guard**: STATE Q4 retains
+the `alias_of` field pinned `null` with its removal scheduled as a follow-on,
+and if a future alias row were added before that removal its `intent` would
+carry no semantic content -- just `"Alias of <name>."` -- and would never win
+a semantic match anyway). This canonical-only restriction is scoped to *this*
+step's semantic match (feeding Cases A/B/C) -- it has no bearing on Case D,
+which never runs Step 3 at all (Step 0 short-circuits past it); see
 `state-suggest.md` Case D.
 
 **Narrow by `workType` first** (a light filter, not an exclusion -- if
@@ -106,8 +99,8 @@ concluding "no match"):
 | `workType` | Groups to check first |
 |------------|------------------------|
 | `bug-fix` | G6 (`aid-fix`) |
-| `refactor` | G5 (`aid-change[-artifact]`, `aid-refactor`), plus (v2.1.0 coverage-gap follow-on) G5's `aid-remove`, `aid-deprecate`, `aid-migrate`; G11 (`aid-review`, `aid-research`) |
-| `new-feature` | G4 (`aid-create[-artifact]`), G3 (`aid-prototype[-ui]`), G7 (`aid-test*`, `aid-experiment`), G8 (`aid-document[-artifact]`), G11 (`aid-report`, `aid-show-dashboard`, `aid-review`, `aid-research`) |
+| `refactor` | G5 (`aid-update[-artifact]`, `aid-refactor`), plus (v2.1.0 coverage-gap follow-on) G5's `aid-remove`, `aid-deprecate`, `aid-migrate`; G11 (`aid-review`, `aid-research`) |
+| `new-feature` | G4 (`aid-create[-artifact]`), G3 (`aid-prototype[-ui]`), G7 (`aid-test*`, `aid-experiment`), G8 (`aid-document[-artifact]`), G11 (`aid-report`, `aid-review`, `aid-research`) |
 
 (`aid-remove`/`aid-deprecate`/`aid-migrate` and `aid-review`/`aid-research` are
 the v2.1.0 coverage-gap follow-on rows -- G5 and G11 per

@@ -20,7 +20,7 @@ argument-hint: "[<connector>:]<ticket-id>"
 whatever issue tracker the project has integrated. It is tool-agnostic — it never names a
 specific tracker, and instead resolves which one to use through AID's connector layer.
 
-**Not a numbered pipeline phase.** Optional, on-demand utility skill, a peer of `aid-query-kb` /
+**Not a numbered pipeline phase.** Optional, on-demand utility skill, a peer of `aid-ask` /
 `aid-set-connector` — no phase gate references it, no `shortcut-catalog.yml` entry, no
 `work-NNN` scaffold, no `STATE.md` of its own.
 
@@ -52,7 +52,7 @@ convention — it only names which of the reference's outcomes this skill's own 
 
 Confirm exactly one positional argument was supplied. If `/aid-read-ticket` is invoked with no
 argument (or an empty/whitespace-only one), print the `argument-hint` usage line and exit without
-fetching anything — the `aid-query-kb` pre-flight pattern; `ticket-resolution.md`'s "Missing/empty
+fetching anything — the `aid-ask` pre-flight pattern; `ticket-resolution.md`'s "Missing/empty
 required args" rule:
 
 ```

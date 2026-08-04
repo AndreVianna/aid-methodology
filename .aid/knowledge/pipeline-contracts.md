@@ -92,8 +92,8 @@ Two contract facts shape every hand-off:
 ## Phase Input/Output Contracts
 
 The mandatory pipeline is six numbered phases; `aid-config` precedes it (bootstrap) and
-`aid-summarize`, `aid-deploy`, `aid-monitor`, `aid-housekeep`, `aid-query-kb` (+ its friendly
-alias `aid-ask`), `aid-update-kb` are off-pipeline or optional. The 64 verb-first shortcuts and
+`aid-summarize`, `aid-deploy`, `aid-monitor`, `aid-housekeep`, `aid-ask`,
+`aid-update-kb` are off-pipeline or optional. The 34 verb-first shortcuts and
 `/aid-triage` are direct-entry skills that sit outside the numbered pipeline (the shortcuts
 drive the shortcut engine; triage only suggests). CONFIRMED: `docs/aid-methodology.md` ("Skill
 Inventory" table, "§4 The Phases").
@@ -389,11 +389,11 @@ Load-bearing keys: `project.{name,description,type}`, `tools.installed`,
   the nested full-path `deliveries/delivery-NNN/tasks/task-NNN/DETAIL.md` shape and the flattened
   Lite `tasks/task-NNN/DETAIL.md` (no per-task `STATE.md`) shape, matching the live skills and
   templates.
-- The skill taxonomy is now **111 skill directories** under `canonical/skills/`: 17 curated
-  pipeline/on-demand/router skills (added `aid-read-ticket`, `aid-create-ticket`,
-  `aid-update-ticket`, work-023) + the 94-row shortcut catalog's skills (58 canonical + 36
-  aliases) — 64 verb-first direct-entry shortcut doorways (generated from the 94-row
-  `shortcut-catalog.yml`) plus 30 hand-authored `repurpose` skills — up from
+- The skill taxonomy is **75 skill directories** under `canonical/skills/`: 17 curated
+  pipeline/on-demand/router skills (including `aid-read-ticket`, `aid-create-ticket`,
+  `aid-update-ticket`) + the 58-row shortcut catalog's skills, every row a canonical
+  name — 34 verb-first direct-entry shortcut doorways (generated from
+  `shortcut-catalog.yml`) plus 24 hand-authored `repurpose` skills — up from
   82 dirs / 67 shortcuts / a 69-row catalog before the v2.1.0 coverage-gap follow-on added the <!-- count-history -->
   `remove`/`deprecate`/`migrate` + `review`/`research` families. The recipe system
   (`canonical/aid/recipes/`, `parse-recipe.sh`, `{{slot}}` placeholders) was removed and
