@@ -126,7 +126,7 @@
 {"dst": ".codex/aid/templates/rough-time-hints.md", "profile": "codex", "sha256": "e86ae0ad046dc94ee5f410554713c3a43bd84bd86be2ec3cfc0f76ab904fa2a6", "src": "canonical/templates/rough-time-hints.md"}
 {"dst": ".codex/aid/templates/self-review-protocol.md", "profile": "codex", "sha256": "70eec7e2214c7d1d6bb83b352c65ff16460e588f638cc517e313dd632594c7eb", "src": "canonical/templates/self-review-protocol.md"}
 {"dst": ".codex/aid/templates/settings.yml", "profile": "codex", "sha256": "51a3ec8a4d77383c7d063a609d0416c66d4fcd2219a6dd22dcd3d6ad785d284f", "src": "canonical/templates/settings.yml"}
-{"dst": ".codex/aid/templates/shortcut-catalog.yml", "profile": "codex", "sha256": "fec33d16f5d54d5371f3b418fa95b5b85d325e65f004365ef72b9b17bc7bcf68", "src": "canonical/templates/shortcut-catalog.yml"}
+{"dst": ".codex/aid/templates/shortcut-catalog.yml", "profile": "codex", "sha256": "d1de6ae5fb7be7b8dbd911714014dc0d049e9559a62c539da633a4b8cbf30c09", "src": "canonical/templates/shortcut-catalog.yml"}
 {"dst": ".codex/aid/templates/shortcut-engine.md", "profile": "codex", "sha256": "38d2551b38c1e74c3fa371937a4c13c23866ae6394a53974d5d6e80f26669c4f", "src": "canonical/templates/shortcut-engine.md"}
 {"dst": ".codex/aid/templates/shortcut-scaffolding/analyze-report.md", "profile": "codex", "sha256": "5cdb180d97c9c15551b880186b1e65c69ed20623210c6451735df52a8e0adcf3", "src": "canonical/templates/shortcut-scaffolding/analyze-report.md"}
 {"dst": ".codex/aid/templates/shortcut-scaffolding/change-refactor.md", "profile": "codex", "sha256": "9dbcee64b71e52e1be6ce86428b172b431a07315c9f6d2909ce333c1c50f324a", "src": "canonical/templates/shortcut-scaffolding/change-refactor.md"}

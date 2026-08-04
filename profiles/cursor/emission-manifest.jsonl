@@ -126,7 +126,7 @@
 {"dst": ".cursor/aid/templates/rough-time-hints.md", "profile": "cursor", "sha256": "ed9439c875b2ac558031333fe3372b7ba6edd8539ff065a73698efed0291ea9b", "src": "canonical/templates/rough-time-hints.md"}
 {"dst": ".cursor/aid/templates/self-review-protocol.md", "profile": "cursor", "sha256": "c8f42a5da3d5771112bd1ef2bc12d1e26127b1a11f173b7c5b7791d9d8e3e7d0", "src": "canonical/templates/self-review-protocol.md"}
 {"dst": ".cursor/aid/templates/settings.yml", "profile": "cursor", "sha256": "51a3ec8a4d77383c7d063a609d0416c66d4fcd2219a6dd22dcd3d6ad785d284f", "src": "canonical/templates/settings.yml"}
-{"dst": ".cursor/aid/templates/shortcut-catalog.yml", "profile": "cursor", "sha256": "fec33d16f5d54d5371f3b418fa95b5b85d325e65f004365ef72b9b17bc7bcf68", "src": "canonical/templates/shortcut-catalog.yml"}
+{"dst": ".cursor/aid/templates/shortcut-catalog.yml", "profile": "cursor", "sha256": "d1de6ae5fb7be7b8dbd911714014dc0d049e9559a62c539da633a4b8cbf30c09", "src": "canonical/templates/shortcut-catalog.yml"}
 {"dst": ".cursor/aid/templates/shortcut-engine.md", "profile": "cursor", "sha256": "f9adf47d8e1bd501b215ffee378c1c9e44ea22c8b797c252fea9124799d94367", "src": "canonical/templates/shortcut-engine.md"}
 {"dst": ".cursor/aid/templates/shortcut-scaffolding/analyze-report.md", "profile": "cursor", "sha256": "6f3de1fddb799755b02a873ecbd3a4a9c7bd1b16183fd908dcf2a708f011689b", "src": "canonical/templates/shortcut-scaffolding/analyze-report.md"}
 {"dst": ".cursor/aid/templates/shortcut-scaffolding/change-refactor.md", "profile": "cursor", "sha256": "b9f48d576e24b6ad8468e4cef3bd9e463a1e2c3e2dee10e312ab1e83e51802e7", "src": "canonical/templates/shortcut-scaffolding/change-refactor.md"}

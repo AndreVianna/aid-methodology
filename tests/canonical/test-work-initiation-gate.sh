@@ -468,6 +468,13 @@ declare -A STARTER_COVERAGE_ID=(
 # Collision-proofness is ENFORCED here, not merely asserted in prose: an ID that is
 # missing (empty) or duplicated drops the distinct non-empty count below ten and reds
 # this assertion, instead of silently merging two starters into one coverage key.
+#
+# This one oracle covers ALL THREE per-starter assertions in the loop below, not just the
+# ordering one: the other two key off `${sid}-consults` / `${sid}-create-mention`, which
+# are derived from the same `sid`, so distinctness of the ten `sid` values implies
+# distinctness of their suffixed forms. Nothing further is needed for them, and nothing
+# below may key off the starter PATH alone -- normalize_key masks a path to `<PATH>`, so a
+# path-only label collapses all ten starters into a single key.
 G_COVERAGE_IDS=()
 for rel in "${STARTERS[@]}"; do
     G_COVERAGE_IDS+=("${STARTER_COVERAGE_ID[$rel]:-}")
@@ -487,9 +494,17 @@ for rel in "${STARTERS[@]}"; do
         # (and therefore unstable) one.
         fail "GG00: ${rel} — no coverage ID configured for the ordering check"
     elif [[ -f "$f" ]]; then
-        assert_file_contains "$f" "work-initiation-gate.md" "G: ${rel} consults the shared gate"
+        # These two carry the SAME starter identity as the ordering check, plus a
+        # per-assertion suffix. A bare "${sid}" on all three would give each starter one
+        # key of count 3 and lose ASSERTION identity, which is the mirror of the defect
+        # being fixed; a path-only label loses STARTER identity (normalize_key masks the
+        # path to `<PATH>`, collapsing all ten starters into one key of count 10). The
+        # suffixed form keeps both, and step 2 takes the whole token because
+        # `[A-Za-z0-9._-]*` admits the hyphens.
+        assert_file_contains "$f" "work-initiation-gate.md" \
+            "${sid}-consults — G: ${rel} consults the shared gate"
         assert_file_contains "$f" "worktree-lifecycle.sh create" \
-            "G: ${rel} references the gate's worktree-create step at its allocation point"
+            "${sid}-create-mention — G: ${rel} references the gate's worktree-create step at its allocation point"
 
         anchor="${STARTER_ALLOC_ANCHOR[$rel]:-}"
         create_line=$(grep -nF -- "worktree-lifecycle.sh create" "$f" | head -1 | cut -d: -f1)

@@ -126,7 +126,7 @@
 {"dst": ".github/aid/templates/rough-time-hints.md", "profile": "copilot-cli", "sha256": "5bb11ab80c2facbfd390376816280db8e65abe895a29c4a28b14fb967a8fb629", "src": "canonical/templates/rough-time-hints.md"}
 {"dst": ".github/aid/templates/self-review-protocol.md", "profile": "copilot-cli", "sha256": "84a4bed374301ba632de1621c5b19c9e0723a9f18194a4dc11c55b84aa398420", "src": "canonical/templates/self-review-protocol.md"}
 {"dst": ".github/aid/templates/settings.yml", "profile": "copilot-cli", "sha256": "51a3ec8a4d77383c7d063a609d0416c66d4fcd2219a6dd22dcd3d6ad785d284f", "src": "canonical/templates/settings.yml"}
-{"dst": ".github/aid/templates/shortcut-catalog.yml", "profile": "copilot-cli", "sha256": "fec33d16f5d54d5371f3b418fa95b5b85d325e65f004365ef72b9b17bc7bcf68", "src": "canonical/templates/shortcut-catalog.yml"}
+{"dst": ".github/aid/templates/shortcut-catalog.yml", "profile": "copilot-cli", "sha256": "d1de6ae5fb7be7b8dbd911714014dc0d049e9559a62c539da633a4b8cbf30c09", "src": "canonical/templates/shortcut-catalog.yml"}
 {"dst": ".github/aid/templates/shortcut-engine.md", "profile": "copilot-cli", "sha256": "3b9de2a03812880d6027a716222579ce80a290d066e84cb91024c14762e8a286", "src": "canonical/templates/shortcut-engine.md"}
 {"dst": ".github/aid/templates/shortcut-scaffolding/analyze-report.md", "profile": "copilot-cli", "sha256": "f73ede45fb8bdb5b468758716c873baf55e5601e4e1e68015dd21a9bdd7bc31c", "src": "canonical/templates/shortcut-scaffolding/analyze-report.md"}
 {"dst": ".github/aid/templates/shortcut-scaffolding/change-refactor.md", "profile": "copilot-cli", "sha256": "a407be792f522a2a178308465a55a616b9cd1ee202fa95cf86b1e1414492e73e", "src": "canonical/templates/shortcut-scaffolding/change-refactor.md"}

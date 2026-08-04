@@ -193,8 +193,12 @@ export async function main() {
     }
     shapeCounts[shape] += 1;
 
-    // A sidecar exists only where a chart does. That is 34 of 111 until feature-004's
-    // doorway extractors land and every shape charts.
+    // A sidecar exists only where a chart does. CHARTABLE_SHAPES is derived from
+    // SHAPE_ORDER, and the guard above throws on any shape outside SHAPE_ORDER, so every
+    // classified shape charts and this `continue` never fires today. It stays as the seam
+    // that would narrow again if a shape were ever made deliberately chart-less.
+    // No corpus magnitude stated here, per this file's own rule at SHAPE_ORDER: nothing
+    // derives or checks a figure in a comment, which is why the previous one went stale.
     if (!CHARTABLE_SHAPES.has(shape)) continue;
 
     const chart = buildFlowChart({ name: skill.dirName, dir: REPO_ROOT });
@@ -350,10 +354,12 @@ export function reportFlowWarnings(log = console.log) {
  *
  * `expectedSidecars` is **required and separate from `expected`**, which is a delta
  * against S1's letter ("the same `expected` set"). A sidecar can only exist for a
- * skill that produces a chart: 34 of 111 until feature-004's doorway extractors land,
- * all 111 afterwards, at which point this set equals `expected` and S1 holds exactly.
- * Passing `expected` today would make the guard throw on 77 skills that are correctly
- * chart-less. The set is required rather than defaulted for the same reason S1 gave
+ * skill that produces a chart. Now that CHARTABLE_SHAPES is derived from SHAPE_ORDER,
+ * every shape charts, so this set currently equals `expected` and S1 holds exactly. It
+ * stays a separate parameter because that equality is a property of today's shape table
+ * rather than a guarantee: making any shape deliberately chart-less would re-open the
+ * gap, and a guard that had assumed equality would then pass silently.
+ * The set is required rather than defaulted for the same reason S1 gave
  * for `onDiskSidecars`: a defaulted set is a guard that silently passes when a caller
  * forgets it, which is the silent-skip class KI-008 has already cost this work once.
  *

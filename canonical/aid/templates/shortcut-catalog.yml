@@ -4,8 +4,9 @@
 # work-001-lite-aid-skills). One row per capability, one directory per row.
 # `create` and `update` are the two canonical grid verbs. There is no alias
 # form, no synonym data, and no redirect -- a name that is not a row is not
-# invocable at all. The generator provides no runtime redirect mechanism
-# (research/spec-grounding.md § Q-A2).
+# invocable at all. The generator provides no runtime redirect mechanism: `render.py`
+# sets `skill_slug = skill_dir.name` and carries the frontmatter `name:` through
+# untouched (see the `name` field contract below for the full consequence).
 #
 # Renders as VERBATIM BYTES to `<root>/aid/templates/shortcut-catalog.yml` in all 5
 # profiles -- a `.yml` is not in render.py's `_TEXT_EXTENSIONS`, matching the shipped
@@ -47,15 +48,39 @@
 #
 #   alias_of      (required, string or `null`) -- **always `null`**; vestigial but
 #                 deliberately retained as a required field. Removal is a scheduled
-#                 follow-on after features 004, 005, and 006 land. Three consumers
-#                 block its removal today: `_REQUIRED_FIELDS` in
-#                 `build-shortcut-skills.py` (reports every row as invalid if the
-#                 field is absent), the `r.alias_of === 'null'` family-split check in
-#                 `site/scripts/gen-reference.mjs` (reclassifies every row as an alias
-#                 if the field is missing), and assertion `DC01a` in
-#                 `tests/canonical/test-doc-counts.sh` (asserts
-#                 `CANON + ALIAS == ROWS`, derived by `grep -c` on `^    alias_of:`).
-#                 Every row now reads `alias_of: null` — no exception.
+#                 follow-on after features 004, 005, and 006 land, and is blocked today by
+#                 three CLASSES of consumer. Individual call sites rot -- the site-side
+#                 check in (b) has already moved once -- so re-derive the live set before
+#                 attempting removal, via
+#                 `git grep -nE 'alias_of' -- '*.py' '*.mjs' '*.sh'`, keeping only the
+#                 hits that read this field's PRESENCE or its `null` VALUE:
+#                   a. Builder validation -- `_REQUIRED_FIELDS` in
+#                      `build-shortcut-skills.py` reports every row as invalid if the
+#                      field is absent. Assertion `SBI04a` in
+#                      `tests/canonical/test-shortcut-builder-invariants.sh` is the oracle
+#                      pinning that requirement, so the two must move together.
+#                   b. Site count derivation -- the canonical/alias split
+#                      `rows.filter((r) => r.alias_of === 'null')` in
+#                      `site/scripts/skills/skill-counts.mjs`, whose row shape is declared
+#                      in `site/scripts/skills/catalog.mjs`. This consumer fails SILENTLY
+#                      rather than loudly: the catalog parser keeps whatever keys a row
+#                      carries, so a missing field reads back `undefined`, the canonical
+#                      count drops to zero and every row is reclassified as an alias.
+#                      This check formerly lived in `site/scripts/gen-reference.mjs`; that
+#                      file no longer reads the field at all, so do not look for it there.
+#                   c. Canonical shell assertions on the field's presence or `null` value
+#                      -- `DC01a` in `tests/canonical/test-doc-counts.sh` (asserts
+#                      `CANON + ALIAS == ROWS`, both sides derived by `grep -c` on the
+#                      anchored `^    alias_of:` prefix), `DMR31`/`DMR32` in
+#                      `test-deploy-monitor-repurpose.sh`, `TR21` in
+#                      `test-triage-routing.sh`, and the per-family row checks `CRF15`,
+#                      `DFS12`, `PFS13` and `TEF13`.
+#                 Deliberately NOT blockers, recorded so a future author does not chase
+#                 them: the `alias_of` column in `test-catalog-dirs-parity.sh` is
+#                 parsed-then-never-read dead input by that file's own note, and the
+#                 `alias_of: aid-` zero-greps in the create / fix / change-refactor family
+#                 suites hold at zero whether or not the field exists.
+#                 Every row now reads `alias_of: null` -- no exception.
 #
 #   default_type  (required, string) -- the default task Type this shortcut's DETAIL
 #                 emits, one of the closed 8-enum (byte-stable; extending it is a
@@ -335,7 +360,7 @@ shortcuts:
   # Test RUNNING is aid-test -- a HAND-AUTHORED collapse (run any suite/verification +
   # consolidate findings; aid-reviewer, review-shaped; resolves nothing; fixes -> /aid-fix).
   # aid-test-security/-performance/-data-quality are kind-siblings (repurpose; body delegates
-  # to aid-test). Removal via bare aid-remove. See specs/aid-test.md.
+  # to aid-test). Removal via bare aid-remove. See canonical/skills/aid-test/SKILL.md.
   - name: aid-create-test
     verb: create
     artifact: test
@@ -396,7 +421,7 @@ shortcuts:
   # aid-prototype-ui -> backward-compat hint-alias (ui target). aid-design: NEW -- produce a
   # KEPT design artifact (UX/flow/component/interface/a11y) to inform the build (FULL verify).
   # Both producer=aid-architect. prototype = throwaway/validate; design = kept/inform-the-build.
-  # See specs/aid-prototype-design.md.
+  # See canonical/skills/aid-prototype/SKILL.md and canonical/skills/aid-design/SKILL.md.
   - name: aid-prototype
     verb: prototype
     artifact: ""
@@ -429,7 +454,8 @@ shortcuts:
   # (repurpose, alias_of null, own {verb,artifact}; their hand-authored body delegates to
   # aid-create-document, binding a genre/format hint).
   # Producer aid-tech-writer, verifier aid-reviewer; present-before-place; NEVER writes
-  # .aid/knowledge/ (that is aid-update-kb's territory). See specs/aid-document.md.
+  # .aid/knowledge/ (that is aid-update-kb's territory).
+  # See canonical/skills/aid-create-document/SKILL.md.
   - name: aid-create-document
     verb: create
     artifact: document
@@ -523,7 +549,7 @@ shortcuts:
   # aid-report: HAND-AUTHORED collapse skill (work-005). Analyzes data/usage NOW and
   # presents an insight report (findings, conclusions +/-, caveats, conflicts, gaps);
   # resolves nothing. aid-researcher produces, aid-reviewer verifies. Durable dashboards
-  # are aid-create-dashboard's job, not this. See specs/aid-report.md.
+  # are aid-create-dashboard's job, not this. See canonical/skills/aid-report/SKILL.md.
   - name: aid-report
     verb: report
     artifact: ""
@@ -536,7 +562,7 @@ shortcuts:
   # ENGINE-DRIVEN, keep-cycle (a durable/published BI view is a real build).
   # group G11 for discovery. Boundary:
   # aid-create-dashboard = durable/refreshable BI view; aid-report = one-time analysis.
-  # See specs/aid-dashboard.md.
+  # See canonical/skills/aid-create-dashboard/SKILL.md.
   - name: aid-create-dashboard
     verb: create
     artifact: dashboard
@@ -560,7 +586,7 @@ shortcuts:
   # build-shortcut-skills.py never generates/overwrites it. A review runs NOW and returns
   # findings + a grade (single-shot: INTAKE -> REVIEW -> VERIFY -> PRESENT -> PUBLISH -> DONE);
   # it no longer plans-and-halts through the shortcut engine. See
-  # .aid/work-005-lite-skills-refactor/specs/aid-review.md.
+  # canonical/skills/aid-review/SKILL.md.
   - name: aid-review
     verb: review
     artifact: ""
@@ -573,7 +599,7 @@ shortcuts:
   # A research investigation runs NOW and returns a curated, verified answer -- it RESOLVES
   # NOTHING (presents conclusions +/-, conflicts with their reasons, and gaps for the user
   # to resolve). aid-researcher produces, aid-reviewer verifies. See
-  # .aid/work-005-lite-skills-refactor/specs/aid-research.md.
+  # canonical/skills/aid-research/SKILL.md.
   - name: aid-research
     verb: research
     artifact: ""

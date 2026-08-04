@@ -126,7 +126,7 @@
 {"dst": ".claude/aid/templates/rough-time-hints.md", "profile": "claude-code", "sha256": "d9ee322e4a269a5b904026cfa1a66ad734b0c97e44c77f5268e3bb87cc24fe0d", "src": "canonical/templates/rough-time-hints.md"}
 {"dst": ".claude/aid/templates/self-review-protocol.md", "profile": "claude-code", "sha256": "3784a426cb0daa7edecfe0c493c84aac566a7e2376ddcbfa3e1c7f7f338a07b7", "src": "canonical/templates/self-review-protocol.md"}
 {"dst": ".claude/aid/templates/settings.yml", "profile": "claude-code", "sha256": "51a3ec8a4d77383c7d063a609d0416c66d4fcd2219a6dd22dcd3d6ad785d284f", "src": "canonical/templates/settings.yml"}
-{"dst": ".claude/aid/templates/shortcut-catalog.yml", "profile": "claude-code", "sha256": "fec33d16f5d54d5371f3b418fa95b5b85d325e65f004365ef72b9b17bc7bcf68", "src": "canonical/templates/shortcut-catalog.yml"}
+{"dst": ".claude/aid/templates/shortcut-catalog.yml", "profile": "claude-code", "sha256": "d1de6ae5fb7be7b8dbd911714014dc0d049e9559a62c539da633a4b8cbf30c09", "src": "canonical/templates/shortcut-catalog.yml"}
 {"dst": ".claude/aid/templates/shortcut-engine.md", "profile": "claude-code", "sha256": "99cf534541643aed8f86e3f4286fb16d6dc452c6fe36b4e7bbe2424d29e6d9a5", "src": "canonical/templates/shortcut-engine.md"}
 {"dst": ".claude/aid/templates/shortcut-scaffolding/analyze-report.md", "profile": "claude-code", "sha256": "a00346c8c0c36df772885c337e8babc31a60f6d2a4bc7acdc88d4c445711f4ee", "src": "canonical/templates/shortcut-scaffolding/analyze-report.md"}
 {"dst": ".claude/aid/templates/shortcut-scaffolding/change-refactor.md", "profile": "claude-code", "sha256": "bbf7d380849e1d129ba286530330f3aa77f257b97087ab35a220a9750b94e8f4", "src": "canonical/templates/shortcut-scaffolding/change-refactor.md"}
