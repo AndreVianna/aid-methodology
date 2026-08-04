@@ -512,7 +512,17 @@ class TestShortcutKindMapNegativeControls(_ScratchMixin):
     """The demonstrated red, as PERMANENT tests: re-proved on every CI run rather
     than recorded once in a work folder that is transient by standing rule.
 
-    Both controls mutate COPIES under mktemp. Neither writes to the repository."""
+    FOUR controls, not two: three mutating (one-sided deletion, two-sided deletion,
+    one-sided value change) plus a proof that the repository twins are untouched by
+    the other three. The three mutating controls act only on COPIES under mktemp;
+    none of the four writes to the repository -- which is what the fourth exists to
+    demonstrate rather than assert.
+
+    Do not re-describe this set by counting from prose. Derive it:
+    `grep -cE '^    def test_' <this file>` gives the module total, and the class
+    boundaries give the split (4 legs + 4 negative controls + 3 copy-safety = 11).
+    An earlier "Both controls" reading here propagated a 4+3+3 miscount into three
+    separate work-folder records before anyone counted the methods."""
 
     def _mutation_key(self) -> str:
         """A catalogue row that is also a map key, chosen deterministically (the
