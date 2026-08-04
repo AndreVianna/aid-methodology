@@ -342,10 +342,12 @@ describe('gen-skills: parser — guards', () => {
 
 // This is the OVER-escaping half of the escaping contract, and it lives here
 // rather than in the index suite for a measured reason: a card's intent is only
-// the description's first sentence, and 0 of 111 card intents contain a code span,
-// so the construct cannot occur there. The detail pages render the FULL
-// description — 70 of 111 carry a code span, 579 in total — so this is where the
-// defect could actually appear.
+// the description's first sentence, and NO card intent in the corpus contains a
+// code span, so the construct cannot occur there. The detail pages render the FULL
+// description, where authored code spans DO occur, so this is where the defect
+// could actually appear — and the `spansChecked` floor below is the running proof
+// that they are still there. Stated as zero-versus-nonzero rather than as an
+// "N of M": the ratio moves with the roster, the asymmetry does not.
 //
 // The property asserted is absolute, not derived. Comparing against a
 // re-rendered expectation would be tautological: a broken escaper on both sides
@@ -1460,7 +1462,8 @@ describe('gen-skills: shapeCounts', () => {
     expect(run.status).toBe(0);
     // The phase lines carry the corpus total; none may carry a per-shape figure under
     // a shape's name. Checked as `<shape>` adjacency rather than bare numbers, since
-    // 111 legitimately appears in the parsed/wrote lines.
+    // the corpus total itself legitimately appears in the parsed/wrote lines —
+    // whatever that total currently is.
     for (const shape of Object.keys(counts)) {
       expect(run.stdout).not.toContain(shape);
     }

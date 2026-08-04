@@ -429,7 +429,10 @@ describe('renderFrontmatterValue — single-line contract', () => {
 
   it('does NOT throw on a single-line value, however much trailing whitespace it has', () => {
     // The negative case: it stops anyone "fixing" the guard into over-firing on
-    // the clip-chomped trailing newline that all 111 real descriptions carry.
+    // the clip-chomped trailing newline that every real description carries. No
+    // count: the corpus states `description: >` throughout, and a clip-chomped
+    // folded block ends in exactly one newline by YAML's rules — true of one
+    // skill or of a thousand.
     expect(() =>
       renderFrontmatterValue({ key: 'k', kind: 'scalar', value: 'just one line.   \n\n\n', line: 1 })
     ).not.toThrow();

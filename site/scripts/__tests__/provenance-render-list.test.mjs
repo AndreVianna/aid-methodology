@@ -767,8 +767,13 @@ describe('lead-in shape: bold span, italic kind, position from node.order', () =
   });
 
   // The arm an exact comparison would miss: the extractors title-case a derived
-  // label while the state name is upper-case, so `ENTRY` / `Entry` is the
-  // commonest form of the repetition — 16 of the 223 corpus occurrences.
+  // label while the state name is upper-case, so an `ENTRY` / `Entry` pair is a
+  // real corpus shape rather than a hypothetical one. It is a MINORITY of the
+  // label-repeats-name occurrences — the exact-match form dominates — which is
+  // precisely why an exact comparison keeps its own suite green while dropping
+  // these on the floor. No fraction is recorded: the counts live in
+  // `site/src/data/skill-flows/*.flow.json` and move with the roster, while the
+  // reason this case needs its own test does not.
   it('drops a label that repeats the name in different case', () => {
     const chart = makeChart([rawNode(1, 'ENTRY', { label: 'Entry' })]);
     const rendered = renderFragmentList(buildEntries(chart));

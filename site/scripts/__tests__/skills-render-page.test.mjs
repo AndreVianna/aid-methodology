@@ -492,12 +492,17 @@ describe('page frontmatter single-quoted escaping', () => {
 
 // ── The Frontmatter list must survive a clip-chomped block scalar ─────────────
 //
-// Every one of the 111 real skill descriptions is a YAML folded block, so the
-// parser correctly hands this renderer a value ending in one newline. Emitted
-// raw into a bullet that inserts a blank line and breaks the list — on every
-// page. The trim lives in renderFrontmatterValue, but the symptom is a PAGE
-// defect, so it is pinned here too: these cases fail if that trim is reverted,
-// which the earlier fixtures (built without trailing newlines) could not detect.
+// Every real skill description is a YAML folded block (`description: >`) — the
+// corpus uses no other block style — so the parser correctly hands this renderer
+// a value ending in one newline. Emitted raw into a bullet that inserts a blank
+// line and breaks the list — on every page. The trim lives in
+// renderFrontmatterValue, but the symptom is a PAGE defect, so it is pinned here
+// too: these cases fail if that trim is reverted, which the earlier fixtures
+// (built without trailing newlines) could not detect.
+//
+// Stated as "every", never as a count: the block style is a property of how the
+// corpus is authored, so the claim survives any change in roster size, whereas an
+// "N of M" would need re-editing on each one and would misinform in between.
 
 describe('renderSkillPage — block-scalar values do not break the bullet list', () => {
   const withTrailingNewlines = () =>
