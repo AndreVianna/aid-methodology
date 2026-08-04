@@ -64,12 +64,12 @@ function nameSpan(name) {
  *
  * Without this, every entry whose derived label equals its node name reads
  * `**3 · \`CONTINUATION\`** — CONTINUATION`, saying the same word twice. That is
- * not a rare shape — it is the majority of skills, because a label the extractor
- * derives from the name frequently reduces back to the name — so the collapse is
- * a whole-corpus concern rather than a special case. The label exists to carry
- * meaning the name does not; when it repeats the name it is noise a reader has to
- * look past, and this list is already dense. No occurrence count is stated: it
- * would drift with the corpus and nothing here guards it.
+ * not a rare shape: it reaches the majority of skills, because a label the
+ * extractor derives from the name frequently reduces back to the name — so the
+ * collapse is a whole-corpus concern rather than a special case. The label exists
+ * to carry meaning the name does not; when it repeats the name it is noise a
+ * reader has to look past, and this list is already dense. No occurrence count is
+ * stated: it would drift with the corpus and nothing here guards it.
  *
  * Same rule and same case-insensitive comparison as `nodeLabel` in
  * render-mermaid.mjs, which collapsed `INTAKE<br/>INTAKE` for the same reason —
