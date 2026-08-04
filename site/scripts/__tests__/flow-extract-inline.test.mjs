@@ -1095,8 +1095,14 @@ Keep \`DESIGN.md\` in the work folder as the record.
 
   it('a real loop still emits an edge when the verb wraps onto the PREVIOUS line', () => {
     // The load-bearing case. aid-create-document, aid-report, aid-test and aid-design all
-    // wrap as `... -> loop` / `   to <STATE>.` — 17 of the corpus's 20 genuine cross-state
-    // edges. A line-scoped cue test deletes every one of them.
+    // wrap as `... -> loop` / `   to <STATE>.`, so these are real corpus loop edges rather
+    // than hypothetical ones, and a line-scoped cue test deletes every one of them.
+    //
+    // No fraction is recorded: the live split between the wrapped and single-line cue
+    // forms lives in the sidecars under `site/src/data/skill-flows/` and moves with the
+    // roster, while the reason the cue must be tested block-scoped does not. The
+    // "N of the corpus's M genuine cross-state edges" that stood here counted a corpus
+    // that no longer exists. Nothing below asserts on either number.
     // Mutant: test the cue on `line` instead of the joined block → this fails.
     const chart = extractInline(parseSkill(`---
 name: wrapped-verb
@@ -1187,7 +1193,10 @@ Finish.
     // Recovered behaviour, not merely suppressed noise. In aid-design the real edge was
     // attributed to :76 (a `DESIGN.md` mention) because first-match-won; the genuine
     // "loop to DESIGN" at :80 never got to speak. After the fix the edge survives and
-    // carries the right line — which is why this task's AC counts 20 edges, not 19.
+    // carries the right line — which is why the fix RAISED the inline corpus's loop-back
+    // edge count by one rather than leaving it flat. The absolute totals are not restated
+    // here: those live in the sidecars under `site/src/data/skill-flows/` and move with
+    // the roster, whereas the +1 this fix is responsible for is fixed history.
     // Mutant: keep first-match-wins → provenance lands on the earlier mention line.
     const chart = extractInline(parseSkill(`---
 name: provenance-recovery

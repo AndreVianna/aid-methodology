@@ -139,16 +139,30 @@ function nodeLabel(node) {
   // prose beneath the name mostly repeats what the branches say. Name only.
   if (node.kind === 'decision') return `"${name}"`;
   // When the derived label adds nothing over the state name, render one line.
-  // Otherwise a node reads `INTAKE<br/>INTAKE` — measured at 45 of 181 nodes
-  // across the 34 charts, and 100% of the nodes in three ticket skills, where
-  // every state's lead prose was just its own name. The second line is there to
-  // carry meaning; repeating the name is visual noise a reader has to look past.
+  // Otherwise a node reads `INTAKE<br/>INTAKE`. This is a routine corpus shape, not
+  // a contrived one, and it is not confined to the odd node: there are skills whose
+  // EVERY state's lead prose is just its own name, so an unguarded render repeats the
+  // name on every node of the chart. The second line is there to carry meaning;
+  // repeating the name is visual noise a reader has to look past.
+  //
+  // No counts are recorded. The live figures are whatever the sidecars under
+  // `site/src/data/skill-flows/` hold — re-derive them there if a magnitude ever
+  // matters. The "N of M nodes across the M charts" that stood here described a
+  // corpus that no longer exists, and no test would have caught the drift.
   const label = escapeMermaid(node.label);
-  // Case-INSENSITIVE. The first version of this compared exactly, which missed the
-  // commonest form of the repetition it exists to remove: 16 nodes still rendered
-  // `ENTRY` above `Entry`, or `DONE` above `Done`, because the extractors title-case
-  // a derived label while the state name is upper-case. To a reader those are the
-  // same word twice, whatever their casing.
+  // Case-INSENSITIVE. The first version of this compared exactly, which left nodes
+  // still rendering `ENTRY` above `Entry`, or `DONE` above `Done`, because the
+  // extractors title-case a derived label while the state name is upper-case. To a
+  // reader those are the same word twice, whatever their casing.
+  //
+  // The case-differing form is a MINORITY of the label-repeats-name occurrences —
+  // the exact-match form dominates — and that is precisely why it needs its own
+  // case-insensitive comparison: an exact comparison stays green on the majority
+  // while silently dropping these. No fraction is recorded; the counts live in the
+  // sidecars under `site/src/data/skill-flows/` and move with the roster, while the
+  // reason this form needs handling does not. (An earlier wording here called the
+  // case-differing form "the commonest", which inverts the actual split; it was a
+  // minority at the figures that wording itself cited, too.)
   if (label.trim().toLowerCase() === name.trim().toLowerCase()) return `"${name}"`;
   return `"${name}<br/>${label}"`;
 }
