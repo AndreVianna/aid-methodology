@@ -170,10 +170,13 @@ describe('buildFlowChart — every shape charts (FAC-2, re-scoped by task-037)',
     expect(chart.entries).toEqual([chart.nodes[0].id]);
   });
 
-  it('charts an engine-doorway skill (aid-add)', () => {
-    const chart = buildFlowChart({ name: 'aid-add', dir: REPO_ROOT });
+  // Re-pointed off the retired `aid-add` to `aid-create`, the same form of subject:
+  // a bare-verb generated doorway. Its node count is asserted below rather than
+  // assumed, so the substitution cannot quietly weaken this test.
+  it('charts an engine-doorway skill (aid-create)', () => {
+    const chart = buildFlowChart({ name: 'aid-create', dir: REPO_ROOT });
     expect(chart.shape).toBe('engine-doorway');
-    expect(chart.nodes[0].name).toBe('aid-add');
+    expect(chart.nodes[0].name).toBe('aid-create');
     // The doorway plus the nine engine-segment nodes.
     expect(chart.nodes).toHaveLength(10);
   });
@@ -189,7 +192,7 @@ describe('buildFlowChart — every shape charts (FAC-2, re-scoped by task-037)',
     // throws ENOENT from the file read long before any classification happens, which is
     // a different guard entirely.
     const byShape = new Map();
-    for (const name of ['aid-review', 'aid-config', 'aid-summarize', 'aid-add', 'aid-test-security']) {
+    for (const name of ['aid-review', 'aid-config', 'aid-summarize', 'aid-create', 'aid-test-security']) {
       const chart = buildFlowChart({ name, dir: REPO_ROOT });
       byShape.set(chart.shape, name);
     }
@@ -275,10 +278,12 @@ describe('flow-chart-authored provider — applies() (FAC-3/FAC-4)', () => {
     ).toBe(false);
   });
 
-  it('returns false for an engine-doorway body (using aid-add dirName)', () => {
+  it('returns false for an engine-doorway body (using aid-create dirName)', () => {
     // File exists; body classifies as engine-doorway → not in AUTHORED_SHAPES → false.
+    // The dirName only has to exist on disk for the existsSync guard to pass; it was
+    // the retired `aid-add`, and `aid-create` is the live bare-verb doorway in its place.
     // Mutation probe: add engine-doorway to AUTHORED_SHAPES → returns true → fails.
-    expect(provider.applies({ dirName: 'aid-add', body: ENGINE_BODY })).toBe(false);
+    expect(provider.applies({ dirName: 'aid-create', body: ENGINE_BODY })).toBe(false);
   });
 });
 

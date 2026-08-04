@@ -833,8 +833,13 @@ describe('aid-test — PRESENT: HANDOFF (optional) then DONE (KI-008 pin)', () =
 
 // ── All 8 inline-states corpus skills ─────────────────────────────────────────
 
+// `aid-change-document` was retired and `aid-update-document` is its successor,
+// carrying the same `## State:` sections (INTAKE/AUTHOR/VERIFY/PRESENT/WRITE/DONE).
+// Listed last to keep the array alphabetical. The substitution keeps this array the
+// COMPLETE inline-states corpus rather than a sample of it: classifySkill returns
+// inline-states for exactly the skills named here and for no other live skill, which
+// is what makes the "all 8" claims below true of the array's length.
 const INLINE_SKILLS = [
-  'aid-change-document',
   'aid-create-document',
   'aid-design',
   'aid-prototype',
@@ -842,6 +847,7 @@ const INLINE_SKILLS = [
   'aid-research',
   'aid-review',
   'aid-test',
+  'aid-update-document',
 ];
 
 describe.each(INLINE_SKILLS)('corpus: %s — invariants', (skillName) => {
@@ -962,11 +968,12 @@ describe('corpus: loop-back back-reference per skill', () => {
         expect(loopEdges.length).toBeGreaterThanOrEqual(1);
       } else {
         // No earlier state name in VERIFY body → no body-scan loop-back.
-        // (aid-change-document: "loop on failure" with no explicit state name.)
+        // (aid-update-document: "loop on failure" with no explicit state name.)
         const loopEdgesFromBody = chart.edges.filter(
           (e) => e.from === verify.id && e.kind === 'loop-back'
         );
-        // aid-change-document: body says "loop on failure" but names no state.
+        // aid-update-document: body says "loop on failure" but names no state, and
+        // its VERIFY section mentions neither of the two earlier states.
         // The advance.mjs rule 5 also doesn't fire (VERIFY advance is unconditional).
         expect(loopEdgesFromBody.length).toBe(0);
       }
@@ -1147,7 +1154,7 @@ Finish.
   });
 
   it('"back to" pointing somewhere else does not capture a later-mentioned state', () => {
-    // Shape from aid-change-document:87 — "Write the revision back to the existing
+    // Shape from aid-update-document:87 — "Write the revision back to the existing
     // document (the diff was already reviewed at PRESENT)." A loop cue IS present, but
     // its object is "the existing document", not PRESENT.
     // Mutant: test for cue-anywhere-in-block instead of cue-targeting-the-state → n2->n1
