@@ -1,11 +1,11 @@
 {
   "format_version": 2,
   "aid_version": "2.3.0",
-  "installed_at": "06/06/2026 20:01:03",
+  "installed_at": "2026-06-06T20:01:03Z",
   "tools": {
     "claude-code": {
       "version": "2.3.0",
-      "installed_at": "06/06/2026 20:01:03",
+      "installed_at": "2026-06-06T20:01:03Z",
       "paths": [
         ".claude/agents/aid-architect.md",
         ".claude/agents/aid-clerk.md",
@@ -542,7 +542,7 @@
     },
     "cursor": {
       "version": "2.3.0",
-      "installed_at": "07/26/2026 17:19:24",
+      "installed_at": "2026-07-26T17:19:24Z",
       "paths": [
         ".cursor/agents/aid-architect.md",
         ".cursor/agents/aid-clerk.md",
