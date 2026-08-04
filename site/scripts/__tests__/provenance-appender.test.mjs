@@ -66,9 +66,11 @@ function makeSkill(dirName) {
 //
 // verifyProvenance defaults to a fresh cache per call, which deduplicates reads
 // within one chart but not across the corpus. Across the corpus is where the cost
-// is: 64 of the 111 skills cite canonical/aid/templates/shortcut-engine.md, so a
-// per-call cache reads it 64 times. The appender therefore owns one cache for the
-// run and threads it through every verify call.
+// is: every generated shortcut doorway cites
+// canonical/aid/templates/shortcut-engine.md, so a per-call cache re-reads that one
+// file once per doorway. The appender therefore owns one cache for the run and
+// threads it through every verify call. Stated as the sharing property rather than
+// as a count, which would drift on the next catalog change unguarded.
 
 describe('run-level file cache is shared across skills', () => {
   /** A chart whose single node cites `file`, valid for every check. */

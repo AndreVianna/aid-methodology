@@ -327,8 +327,10 @@ describe('corpus sweep', () => {
 // The output goes into a bullet-list item. A YAML folded/literal block with clip
 // chomping (`>` / `|`) legitimately ends in one newline, and the parser is right
 // to keep it — but emitted raw into a bullet it inserts a blank line and breaks
-// the list. Every one of the 111 skill descriptions is a folded block, so this
-// broke every generated page until the trim landed here.
+// the list. Skill `description` values are authored as folded blocks, so this broke
+// every generated page until the trim landed here. The authoring convention is
+// stated rather than a count of affected skills, which would go stale unguarded;
+// the corpus-wide case is exercised by the real-corpus test below, not asserted here.
 
 describe('renderFrontmatterValue — single-line contract', () => {
   it('strips the trailing newline a clip-chomped folded block carries', () => {

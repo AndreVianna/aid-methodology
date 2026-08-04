@@ -349,8 +349,11 @@ describe('family ordering', () => {
   });
 
   it('a verb whose every member is curated produces no family section', () => {
-    // The 'query' verb has both rows (aid-query-kb, aid-ask) in Knowledge Base
-    // Maintenance. Verify neither appears in any family section.
+    // Every `query` catalog row is curated -- they render inside Knowledge Base
+    // Maintenance -- so the verb must produce no family section of its own. The rows
+    // are re-derived from the catalog below rather than named here, and the assertion
+    // is skipped if that premise ever stops holding, so this cannot go stale as rows
+    // are added to or removed from the verb.
     const catalog = loadShortcutCatalog(REPO_ROOT);
     const skillDirs = readdirSync(resolve(REPO_ROOT, 'canonical', 'skills'));
     const records = skillDirs.map(rec);

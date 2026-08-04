@@ -49,11 +49,14 @@ const _runMemo = new Map();
  *
  * `verifyProvenance` defaults to a fresh Map per call, which deduplicates reads
  * within one chart but not across the corpus — and across the corpus is where the
- * cost is. `canonical/aid/templates/shortcut-engine.md` and
- * `work-initiation-gate.md` are each cited by 64 of the 111 skills, so a per-call
- * cache reads them 64 times apiece: 315 reads for the corpus against 176 with one
- * run-level cache, a 1.79x amplification. This is the doorway-corpus case the SPEC
- * names when it specifies "once per run".
+ * cost is. Every generated shortcut doorway's chart cites BOTH
+ * `canonical/aid/templates/shortcut-engine.md` and `work-initiation-gate.md`, so a
+ * per-call cache re-reads each of those two files once per doorway where a
+ * run-level cache reads each once. The amplification is therefore proportional to
+ * the size of the doorway corpus, and it is stated as that property rather than as
+ * a read count or a ratio: a ratio measured today drifts silently on the next
+ * catalog change, and nothing guards a number written here. This is the
+ * doorway-corpus case the SPEC names when it specifies "once per run".
  *
  * @type {Map<string, {text: string, lines: string[]}>}
  */

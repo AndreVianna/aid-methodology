@@ -990,9 +990,16 @@ describe('assertNoSkillsDrift — all four branches', () => {
   });
 
   it('a chart-less skill is not a missing sidecar', () => {
-    // 77 of 111 skills are correctly chart-less until feature-004's doorway
-    // extractors land. `expectedSidecars` is separate from `expected` for exactly
-    // this reason; passing `expected` here would throw on all of them.
+    // A skill that produces no chart produces no sidecar, and that is not drift.
+    // `expectedSidecars` is separate from `expected` for exactly that reason:
+    // passing `expected` here would report every chart-less skill as a missing
+    // sidecar. That separation is a property of the API and holds whatever the
+    // corpus looks like — which is why the fixture below is synthetic rather than
+    // derived. It has to be: gen-skills.mjs derives CHARTABLE_SHAPES from
+    // SHAPE_ORDER, so every shape the classifier can currently return charts and
+    // no real skill exercises the chart-less branch. Naming a corpus figure here
+    // instead would state a number that no guard checks, and an earlier version of
+    // this comment did exactly that and went stale twice over.
     expect(() =>
       assertNoSkillsDrift({
         expected: ['a', 'b', 'doorway'],

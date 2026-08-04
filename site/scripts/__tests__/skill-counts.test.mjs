@@ -259,9 +259,13 @@ describe('every roster claim on every page equals the derivation', () => {
   );
 
   it('"and N others" accounts for the skills named beside it', () => {
-    // faq.md reads "`/aid-fix`, `/aid-create-api`, `/aid-change-ui`, and 61 others".
-    // 3 + 61 must equal the shortcut count -- a claim no single-number check can make,
-    // and the phrasing the old guard was completely blind to.
+    // A claim page may name a few shortcuts inline and then say "and N others" --
+    // concepts/faq.md does. The number of names before the phrase, plus N, must equal
+    // the live shortcut count: a claim no single-number check can make, and the
+    // phrasing the old guard was completely blind to. Neither the named skills nor N
+    // are quoted here -- both are read off the page in the loop below -- so this
+    // comment cannot go stale when the page is renumbered or reworded. An earlier
+    // version quoted them and was wrong in both halves.
     let checked = 0;
     for (const p of CLAIM_PAGES) {
       for (const line of readFileSync(p, 'utf8').split('\n')) {
