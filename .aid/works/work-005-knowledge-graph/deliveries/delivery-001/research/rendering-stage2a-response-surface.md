@@ -98,6 +98,23 @@ own sweep.
 Every sample below is generated with an explicit, recorded seed (`mulberry32`, a public-domain
 32-bit PRNG), so any point is reproducible.
 
+**Verified, not merely argued: the fixture round-trips through the literal ten-column text.**
+D3's own text warns against a harness "fed a bespoke JSON structure" that "would measure a data
+path the product does not have." To close that risk rather than assert it away, the 925-node /
+1622-edge fixture used for § 7's hover-label axis (the baseline plus its five probe nodes and their
+leaves) was serialised through `toRelationshipsMd()`, written to a
+scratch file, read back byte-for-byte identical, and re-parsed by a **second, independent** parser
+(not the generator's own in-memory edge list) that reads only the pipe-table text. Result: **0
+mismatches across all 925 nodes** — every edge, every degree (including the hub's, 60 both ways)
+and every `Kind` recovered exactly, and the 64 isolated/probe-leaf nodes with degree 0 correctly
+produced **no row at all** in the parsed table, which is the real schema's own property (a
+`relationships.md` row exists only for an edge; an isolated node's existence is carried by a
+*different* producer in the real architecture — feature-004's enumerator / feature-006's derived
+unlisted-nodes set — never by a table row with no counterpart) rather than a gap in this fixture.
+The harness sweep itself consumes the generator's in-memory representation directly, which this
+verification shows is provably equivalent to parsing the literal text; the round-trip script is
+`verify-roundtrip.mjs` in the same scratch directory, run 2026-08-05.
+
 **A defect in this generator was found and fixed before any measurement was trusted, and is
 recorded rather than silently corrected**, in the same spirit Stage 1 recorded its own S1-1: the
 first version of the max-degree lever let the *filler* pass (the one that builds the base
@@ -499,6 +516,7 @@ it is not a permanent artifact and nothing permanent may cite it as a source.
 | "PixiJS 8.14.0's core `Graphics` has no native dashed-stroke primitive" | Verified against the installed package's own type/API surface while writing `harness-src.mjs` | `.aid/.temp/graph-stage2a-harness/node_modules/pixi.js`, version pinned at install (§ 9) |
 | The launch configuration matching `validate-visuals.mjs` | Verified on-disk fact, re-quoted from Stage 1 | Stage 1 report § 2.4, itself sourced to `canonical/aid/scripts/summarize/validate-visuals.mjs` lines 185–188, read 2026-08-05 by that report |
 | The generator defect (§ 2.2) and its fix | Quoted runtime output, before/after | Ad hoc `node -e` sanity checks against `generate-fixture.mjs`, run 2026-08-05, quoted inline at § 2.2 |
+| §2.2's round-trip verification (0 mismatches, 925 nodes) | Quoted runtime output | `verify-roundtrip.mjs`, run 2026-08-05 |
 | Everything named in § 1's "explicitly out of scope" table | Explicitly labelled as owed elsewhere, not measured here | Named with the task or stage that owes it |
 
 **No figure in this document is carried over from the superseded record**, and no figure states a
