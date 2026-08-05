@@ -31,6 +31,16 @@ Shape: 6 sections matching .claude/aid/templates/delivery-plans/task-template.md
   `canonical/aid/scripts/summarize/assemble.sh` contains zero graph references and the skeleton's
   ten placeholders have no filler. `canonical/skills/aid-graph/references/state-render.md` is a
   router that invokes an assembly which does not yet exist.
+- **STEP ZERO — a conformance read, before writing any model code. This task is the ASSEMBLY DRIVER;
+  it is not a rewrite of the model layer.** `graph-model.js` already ships at **93,550 bytes** and
+  already defines `project()`, `createStore`, `setLens`, `openTargetFor`, `edgeFold`, `nodeEmphasis`,
+  `coverageGaps`, `LENS_KEYS`, `PRESETS`, `LABEL_BUDGET` and `HEADER_LITERAL` — which is feature-007's
+  D1, D2, D3, D4, D6, D7 and D9 — and `graph-controls.js` ships at 46,606 bytes with
+  `buildControlManifest`. So **read those two files against feature-007's design decisions first and
+  record, per decision, whether it already holds.** Only the decisions that do **not** hold are in
+  this task's write scope. Without this step the Scope below reads as licence to rewrite ~140 KB of
+  shipped, passing template code; `task-015` applies exactly this treatment to the identical situation
+  for `graph-table.js`, and the two tasks must not disagree about the same fact.
 - Generate the `.aid/.temp/graph/graph-src` layout the reused assembler already validates —
   `skeleton-head.html`, `sections/*.html`, `section-manifest.txt`, `skeleton-foot.html`,
   `post-script.html` — and invoke

@@ -22,7 +22,7 @@ Shape: 6 sections matching .claude/aid/templates/delivery-plans/task-template.md
 
 **Source:** feature-012-canonical-registration -> delivery-001 (Wave 5)
 
-**Depends on:** task-006, task-008, task-021, task-023
+**Depends on:** task-006, task-008, task-015, task-021, task-023
 
 **Scope:**
 - **Registration itself already landed** in commit `55453fd3`: `aid-graph` is in all five

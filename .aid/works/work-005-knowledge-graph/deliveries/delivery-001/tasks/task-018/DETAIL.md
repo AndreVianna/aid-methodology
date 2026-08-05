@@ -22,7 +22,7 @@ Shape: 6 sections matching .claude/aid/templates/delivery-plans/task-template.md
 
 **Source:** feature-008-interactive-graph-canvas -> delivery-001 (Wave 3)
 
-**Depends on:** task-017
+**Depends on:** task-014, task-017
 
 **Scope:**
 - Author `tests/canonical/test-graph-canvas.sh` carrying the `GC01`-`GC19` series the SPEC names,

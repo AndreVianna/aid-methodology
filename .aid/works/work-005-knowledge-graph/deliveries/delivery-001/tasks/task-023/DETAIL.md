@@ -22,7 +22,7 @@ Shape: 6 sections matching .claude/aid/templates/delivery-plans/task-template.md
 
 **Source:** feature-012-canonical-registration -> delivery-001 (Wave 3)
 
-**Depends on:** task-011, task-017
+**Depends on:** task-011, task-017, task-019
 
 **Scope:**
 - feature-012 D6's dependency gate, which **fires** because a third-party dependency is adopted:

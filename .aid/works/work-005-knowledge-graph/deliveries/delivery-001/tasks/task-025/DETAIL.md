@@ -44,9 +44,16 @@ Shape: 6 sections matching .claude/aid/templates/delivery-plans/task-template.md
 **Acceptance Criteria:**
 - [ ] `AC-T1`'s by-name failure is real: an unclassified hand-authored file naming `/aid-summarize`
       turns the suite red, demonstrated with a temporary fixture
-- [ ] The three canonical templates that name `/aid-summarize` but **not** `/aid-graph` —
-      `discovery-state-template.md`, `reviewer-ledger-schema.md`, `state-machine-chaining.md` — are
-      each **classified by name** as either a D1 class-4 exclusion (with the reason) or a real missing
+- [ ] **Every** hand-authored file that names `/aid-summarize` but **not** `/aid-graph` is
+      **classified by name** — the set is **derived at execution time, never taken from this task as a
+      literal**, because an earlier version of this criterion named "the three canonical templates"
+      and that was a false universal: the set under `canonical/aid/templates/` alone is **thirteen**,
+      and a repo-wide sweep returns more still — and how many more depends on which extensions the
+      sweep admits, which is precisely why no count belongs here. Classifying three of thirteen would
+      leave `AC-T1`'s clamp under-scoped by the very criterion meant to prove it bites.
+      **Derivation (run it, do not trust this list):**
+      `grep -rl 'aid-summarize' canonical/ docs/ README.md tests/ | while read -r f; do grep -q 'aid-graph' "$f" || echo "$f"; done`
+      Each returned path is either a D1 class-4 exclusion **with its reason stated** or a real missing
       slot (and then filled). None is left silent
 - [ ] `AC-T4`/`AC-T5` compare **sets**, not counts, and the comparison target is `canonical/` — a
       tree-against-tree or tree-against-manifest comparison is the L4 failure mode and is rejected

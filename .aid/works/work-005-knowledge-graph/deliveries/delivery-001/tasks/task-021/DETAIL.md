@@ -44,7 +44,19 @@ Shape: 6 sections matching .claude/aid/templates/delivery-plans/task-template.md
 - [ ] Exceeding the ceiling **warns and proceeds**; no run is refused and no degraded rendering mode
       is introduced
 - [ ] `state-render.md` invokes the real assembler and routes on 0/1/2 exactly as its table states
-- [ ] `state-visual-gate.md` invokes the validators under `--profile graph`
+- [ ] **`grade-graph.sh` passes `--profile graph` to all three validators.** This is the edit that
+      makes feature-011's parameterisation actually reach an artifact, and it was previously mis-aimed:
+      the criterion named `state-visual-gate.md`, which invokes **only**
+      `canonical/aid/scripts/graph/grade-graph.sh` (its `:51`) and no validator at all. The three real
+      invocations live inside `grade-graph.sh` — `:338` the HTML validator, `:399` the contrast
+      checker, `:417` `validate-visuals.mjs` — and each currently passes `"$VIEW_HTML"` **alone**, with
+      no profile flag. feature-011's SPEC `:456` assigns this invocation to feature-010, i.e. to this
+      task. task-019 scopes itself to the three `summarize/` scripts and is explicitly forbidden from
+      editing `grade-summary.sh`'s call sites, so without this edit nothing makes `graph.html` be
+      validated under the graph profile — while task-019's own criteria assert that it is.
+      **Oracle:** `grep -n -- '--profile graph' canonical/aid/scripts/graph/grade-graph.sh` returns
+      three lines, one per validator, and a run over `graph.html` prints each validator's profile line
+      (which per feature-011 D1 prints only when the flag is passed)
 - [ ] The prerequisite text reaching the console and the page footer is the generator's own output,
       passed through unmodified
 - [ ] With `view_expected: false`, RENDER is still skipped, the `V*` rows report as skips, the human

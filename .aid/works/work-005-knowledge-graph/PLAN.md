@@ -104,18 +104,25 @@ them will either over-parallelise across a gate or under-parallelise inside one.
 | task-015 | task-013 | 2 | 6 |
 | task-016 | task-015 | 2 | 7 |
 | task-017 | task-011, task-013 | 3 | 6 |
-| task-018 | task-017 | 3 | 7 |
+| task-018 | task-014, task-017 | 3 | 7 |
 | task-019 | task-011, task-013 | 3 | 6 |
 | task-020 | task-019 | 3 | 7 |
 | task-021 | task-010, task-013, task-018, task-019 | 4 | 8 |
-| task-022 | task-014, task-016, task-018, task-020, task-021 | 4 | 9 |
-| task-023 | task-011, task-017 | 3 | 7 |
-| task-024 | task-006, task-008, task-021, task-023 | 5 | 9 |
+| task-022 | task-014, task-016, task-018, task-020, task-021, task-023 | 4 | 9 |
+| task-023 | task-011, task-017, task-019 | 3 | 7 |
+| task-024 | task-006, task-008, task-015, task-021, task-023 | 5 | 9 |
 | task-025 | task-024 | 5 | 10 |
 | task-026 | task-024 | 5 | 10 |
-| task-027 | task-025 | 5 | 11 |
+| task-027 | task-009, task-014, task-016, task-020, task-025 | 5 | 11 |
 | task-028 | task-022, task-025, task-027 | 5 | 12 |
 | task-029 | task-028 | 5 | 13 |
+
+> **`task-022` depends on `task-023`, a higher number.** That is deliberate and not a cycle:
+> the full FR-28 rubric's `V-S2` verdict over `graph.html` turns on the packaging shape
+> `task-023` implements. Task numbers are therefore **not** monotonic with dependency order
+> here. Nothing is broken by it — `task-023` sits in gate wave 3 and `task-022` in wave 4, so
+> wave ordering already satisfies the edge — and the alternative was renumbering 29 folders
+> for cosmetics. Read the graph, not the numbering.
 
 | Can Be Done In Parallel |
 |------------------------|

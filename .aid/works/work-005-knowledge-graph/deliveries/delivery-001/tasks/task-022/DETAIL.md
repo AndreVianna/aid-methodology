@@ -22,7 +22,7 @@ Shape: 6 sections matching .claude/aid/templates/delivery-plans/task-template.md
 
 **Source:** feature-010-aid-graph-skill-runtime -> delivery-001 (Wave 4)
 
-**Depends on:** task-014, task-016, task-018, task-020, task-021
+**Depends on:** task-014, task-016, task-018, task-020, task-021, task-023
 
 **Scope:**
 - The gate this delivery exists to close. Run `canonical/aid/scripts/graph/grade-graph.sh` over

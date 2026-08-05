@@ -6,9 +6,9 @@ started: "2026-07-28"
 minimum_grade: B-
 user_approved: yes
 lifecycle: Running
-phase: Plan
-active_skill: aid-plan
-updated: '2026-08-05T13:40:00Z'
+phase: Detail
+active_skill: aid-detail
+updated: '2026-08-05T18:54:42Z'
 pause_reason: --
 block_reason: --
 block_artifact: --

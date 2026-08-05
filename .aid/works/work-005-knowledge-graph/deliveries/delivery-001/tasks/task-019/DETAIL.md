@@ -22,6 +22,18 @@ Shape: 6 sections matching .claude/aid/templates/delivery-plans/task-template.md
 
 **Source:** feature-011-validator-parameterisation -> delivery-001 (Wave 3)
 
+> **RECORDED DEVIATION, with its mitigation — read before splitting any commit.** feature-011's SPEC
+> `:453–:455` states: "**Land the suite in the same change.** Steps 3–5 and the suite are inseparable:
+> an amended validator without its assertions is the unproven carve-out D5 exists to prevent, and a
+> plan that schedules them apart should be rejected." This task and `task-020` **do** schedule them
+> apart, and the reason is a hard schema constraint, not a preference: a task carries exactly one
+> Type, and an amendment (IMPLEMENT) plus its suite (TEST) cannot share one. Rather than let the
+> conflict stand silently, it is resolved in favour of the SPEC's *intent*: **the two tasks are one
+> commit.** `task-020` depends on this task, both sit in gate wave 3, and neither may be committed
+> without the other — so no amended validator ever exists in history without its assertions, which is
+> the property `:453` is protecting. The task boundary here is a **review** boundary, not a commit
+> boundary.
+
 **Depends on:** task-011, task-013
 
 **Scope:**

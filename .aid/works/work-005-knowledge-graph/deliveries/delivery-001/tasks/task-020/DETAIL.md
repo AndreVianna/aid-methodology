@@ -22,6 +22,15 @@ Shape: 6 sections matching .claude/aid/templates/delivery-plans/task-template.md
 
 **Source:** feature-011-validator-parameterisation -> delivery-001 (Wave 3)
 
+> **RECORDED DEVIATION — this task and `task-019` are ONE COMMIT.** feature-011's SPEC `:453–:455`
+> requires the suite to land in the same change as the amendment ("a plan that schedules them apart
+> should be rejected"), because an amended validator without its assertions is the unproven carve-out
+> D5 exists to prevent. The split into two tasks exists only because a task carries exactly one Type
+> and an amendment cannot share one with its suite. The SPEC's intent is preserved by committing them
+> together: this task depends on `task-019`, both sit in gate wave 3, and **neither may be committed
+> without the other.** The task boundary is a review boundary, not a commit boundary. The same note
+> is recorded on `task-019` so whichever is picked up first sees it.
+
 **Depends on:** task-019
 
 **Scope:**

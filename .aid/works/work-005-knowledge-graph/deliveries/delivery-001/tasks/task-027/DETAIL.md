@@ -22,7 +22,7 @@ Shape: 6 sections matching .claude/aid/templates/delivery-plans/task-template.md
 
 **Source:** feature-013-tests-and-docs -> delivery-001 (Wave 5)
 
-**Depends on:** task-025
+**Depends on:** task-009, task-014, task-016, task-020, task-025
 
 **Scope:**
 - `tests/run-all.sh:93` runs each suite under a hard `timeout 300`. On a Windows dev shell
