@@ -26,7 +26,7 @@
 {"dst": ".agent/aid/scripts/graph/coverage-predicate.mjs", "profile": "antigravity", "sha256": "48ab23ea28b619b894d5594ba8e1d4b329a2726e7d331db63f31f4227a41a3fd", "src": "canonical/scripts/graph/coverage-predicate.mjs"}
 {"dst": ".agent/aid/scripts/graph/derive-edges.sh", "profile": "antigravity", "sha256": "c2fb3e54849d2c01d7037ab4618d4731f47e6ef3c465d2083905960f6480df65", "src": "canonical/scripts/graph/derive-edges.sh"}
 {"dst": ".agent/aid/scripts/graph/detect-kb-gaps.mjs", "profile": "antigravity", "sha256": "aa0016f6f624d6f9f432af877789c28295eb7f6aa2d581169680879f5f28790d", "src": "canonical/scripts/graph/detect-kb-gaps.mjs"}
-{"dst": ".agent/aid/scripts/graph/grade-graph.sh", "profile": "antigravity", "sha256": "2ff488aa6a777369324e4ab72f66c051bd3a9c424d339556def8ee014a75acbc", "src": "canonical/scripts/graph/grade-graph.sh"}
+{"dst": ".agent/aid/scripts/graph/grade-graph.sh", "profile": "antigravity", "sha256": "762945d41b28275ddb0230ba364adc18c8eb801b8ee48da869aefd25648dad2f", "src": "canonical/scripts/graph/grade-graph.sh"}
 {"dst": ".agent/aid/scripts/graph/graph-preflight.sh", "profile": "antigravity", "sha256": "b8d24509bebe1cbb3e63b96457c2414591f93c3603be182f535543dc85e1f0fd", "src": "canonical/scripts/graph/graph-preflight.sh"}
 {"dst": ".agent/aid/scripts/graph/graph-stale-check.sh", "profile": "antigravity", "sha256": "289b9617ee372ab10e8f5d1dd77d441844e22d6656dd8b895dfd451c4906de47", "src": "canonical/scripts/graph/graph-stale-check.sh"}
 {"dst": ".agent/aid/scripts/graph/harvest-declared.sh", "profile": "antigravity", "sha256": "6792447633d58c47ae46cd5e37035b44da60def227f1bfaf3ee05365e5cff0b2", "src": "canonical/scripts/graph/harvest-declared.sh"}

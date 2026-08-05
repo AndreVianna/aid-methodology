@@ -471,21 +471,34 @@ while IFS=$'\t' read -r rubric severity doc description evidence; do
 done < "$W/findings"
 cut -f1-3 "$W/current" > "$W/current.keys"
 
-# Read the previous ledger, if any, into the same TSV shape. Evidence is the last cell,
-# so a pipe escaped inside it is rejoined rather than truncated.
+# Read the previous ledger, if any, back into the same TSV shape the write side
+# produced. The split is on UNESCAPED pipes only: every cell is written with its pipes
+# escaped, so protecting `\|` before the split and restoring it afterwards is what makes
+# a cell's bytes survive the round trip.
+#
+# Rejoining only the LAST cell is not enough, and the difference is load-bearing rather
+# than theoretical: a relationship-table finding quotes the ten-column header, so its
+# Description legitimately contains pipes. Splitting on every pipe truncates that cell
+# and shifts the rest, the row's identity then differs between the run that wrote it and
+# the run that reads it, and the cycle marks the row Fixed while appending a duplicate --
+# so the gate would report a defect as repaired while it persists, and count it twice.
 : > "$W/prev"
 if [ -f "$LEDGER" ]; then
-    awk -F'|' '
+    awk '
         function trim(s) { sub(/^[[:space:]]+/, "", s); sub(/[[:space:]]+$/, "", s); return s }
+        function restore(s) { gsub(SEP, "\\|", s); return trim(s) }
+        BEGIN { SEP = sprintf("%c", 1) }
         /^\|/ {
             if ($0 ~ /^\|[[:space:]]*[-:]+[[:space:]]*\|/) next
-            if (NF < 9) next
-            sev = trim($3)
+            line = $0
+            gsub(/\\\|/, SEP, line)
+            n = split(line, c, "|")
+            if (n < 9) next
+            sev = restore(c[3])
             if (sev == "Severity" || sev == "#") next
-            ev = $8
-            for (i = 9; i < NF; i++) ev = ev "|" $i
             printf "%s\t%s\t%s\t%s\t%s\t%s\t%s\n", \
-                trim($2), sev, trim($4), trim($5), trim($6), trim($7), trim(ev)
+                restore(c[2]), sev, restore(c[4]), restore(c[5]), \
+                restore(c[6]), restore(c[7]), restore(c[8])
         }
     ' "$LEDGER" > "$W/prev"
 fi
