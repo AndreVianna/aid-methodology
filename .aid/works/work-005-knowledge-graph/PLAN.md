@@ -67,15 +67,80 @@ ordering into **task ordering**, and the affected criteria all close in this one
 
 ## Execution Graph
 
-> Derived mechanically from each task's `**Depends on:**` line by
-> `.aid/.temp/build-graphs.py`, per
+> Derived mechanically from each task's `**Depends on:**` line, read off the task DETAIL.md
+> files on disk rather than from notes, per
 > `aid-detail/references/execution-graph-generation.md`.
 
-**Empty until `aid-detail` populates the task set.** The six per-delivery graphs that stood here
-were derived from the 96 discarded tasks and are removed rather than left to describe a structure
-that no longer exists -- a stale graph is worse than an absent one, because it reads as authority.
+**Two senses of "wave" are in play here, and they are not the same thing.** The `wave-map`
+block below is the **mechanically derived topological lane map** that reference prescribes and
+the dashboard reader parses: lane 1 is every task with no dependencies, lane N is every task
+whose dependencies all sit in lanes `< N`. It comes out at **13 lanes** and describes *maximum
+parallelism*. The **gate waves** recorded in each task's `Source` line are a different and
+coarser thing — five owner-chosen review batches, each closing with one B- gate. They
+deliberately do **not** align to lane boundaries (lane 5 spans gate waves 1 and 2, lane 9 spans
+4 and 5), because a gate *serialises* at its boundary: `task-013` sits in lane 5 and could start
+as soon as `task-012` lands, but waits for gate wave 1 to close. That serialisation is the
+intended cost of batching review. Both mappings are recorded because a reader who conflates
+them will either over-parallelise across a gate or under-parallelise inside one.
 
-With a single delivery every dependency edge is intra-delivery, so wave numbers are computed over
-the whole task set and nothing is satisfied implicitly by delivery ordering. The edges that used
-to be delivery boundaries are listed in `deliveries/delivery-001/BLUEPRINT.md` § Dependencies and
-must appear as real `**Depends on:**` lines in the regenerated tasks.
+### delivery-001 execution graph
+
+| Task | Depends On | Gate wave | Lane |
+|------|-----------|-----------|------|
+| task-001 | — | 1 | 1 |
+| task-002 | — | 1 | 1 |
+| task-003 | — | 1 | 1 |
+| task-004 | task-001 | 1 | 2 |
+| task-005 | — | 1 | 1 |
+| task-006 | task-005 | 1 | 2 |
+| task-007 | task-001, task-004 | 1 | 3 |
+| task-008 | task-007 | 1 | 4 |
+| task-009 | task-008 | 1 | 5 |
+| task-010 | task-003, task-005, task-007 | 1 | 4 |
+| task-011 | task-002, task-010 | 1 | 5 |
+| task-012 | task-005, task-007 | 1 | 4 |
+| task-013 | task-012 | 2 | 5 |
+| task-014 | task-013 | 2 | 6 |
+| task-015 | task-013 | 2 | 6 |
+| task-016 | task-015 | 2 | 7 |
+| task-017 | task-011, task-013 | 3 | 6 |
+| task-018 | task-017 | 3 | 7 |
+| task-019 | task-011, task-013 | 3 | 6 |
+| task-020 | task-019 | 3 | 7 |
+| task-021 | task-010, task-013, task-018, task-019 | 4 | 8 |
+| task-022 | task-014, task-016, task-018, task-020, task-021 | 4 | 9 |
+| task-023 | task-011, task-017 | 3 | 7 |
+| task-024 | task-006, task-008, task-021, task-023 | 5 | 9 |
+| task-025 | task-024 | 5 | 10 |
+| task-026 | task-024 | 5 | 10 |
+| task-027 | task-025 | 5 | 11 |
+| task-028 | task-022, task-025, task-027 | 5 | 12 |
+| task-029 | task-028 | 5 | 13 |
+
+| Can Be Done In Parallel |
+|------------------------|
+| task-001, task-002, task-003, task-005 |
+| task-004, task-006 |
+| task-008, task-010, task-012 |
+| task-009, task-011, task-013 |
+| task-014, task-015, task-017, task-019 |
+| task-016, task-018, task-020, task-023 |
+| task-022, task-024 |
+| task-025, task-026 |
+
+```wave-map
+delivery: 001
+wave 1: task-001, task-002, task-003, task-005
+wave 2: task-004, task-006
+wave 3: task-007
+wave 4: task-008, task-010, task-012
+wave 5: task-009, task-011, task-013
+wave 6: task-014, task-015, task-017, task-019
+wave 7: task-016, task-018, task-020, task-023
+wave 8: task-021
+wave 9: task-022, task-024
+wave 10: task-025, task-026
+wave 11: task-027
+wave 12: task-028
+wave 13: task-029
+```
