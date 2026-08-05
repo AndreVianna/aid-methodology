@@ -44,7 +44,7 @@ separately when methodology content changes.
 - Skills for edge cases (multi-repo, microservices, data science)
 - **Remember:** Edit `canonical/skills/aid-{phase}/SKILL.md` (and `references/` files if any),
   then run `/generate-profile`. Also update the human `skills/aid-{phase}/README.md` separately.
-- **Shortcuts are different:** the verb-first shortcut skills (`aid-fix`, `aid-create-api`, `aid-change-cli`, …)
+- **Shortcuts are different:** the verb-first shortcut skills (`aid-fix`, `aid-create-api`, `aid-update-cli`, …)
   are not hand-authored. They are generated from the catalog at
   `canonical/aid/templates/shortcut-catalog.yml` via the maintainer helper
   `.claude/skills/generate-profile/scripts/build-shortcut-skills.py`, followed by the normal

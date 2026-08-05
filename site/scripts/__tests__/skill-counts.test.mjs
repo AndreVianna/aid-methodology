@@ -259,9 +259,13 @@ describe('every roster claim on every page equals the derivation', () => {
   );
 
   it('"and N others" accounts for the skills named beside it', () => {
-    // faq.md reads "`/aid-fix`, `/aid-create-api`, `/aid-change-ui`, and 61 others".
-    // 3 + 61 must equal the shortcut count -- a claim no single-number check can make,
-    // and the phrasing the old guard was completely blind to.
+    // A claim page may name a few shortcuts inline and then say "and N others" --
+    // concepts/faq.md does. The number of names before the phrase, plus N, must equal
+    // the live shortcut count: a claim no single-number check can make, and the
+    // phrasing the old guard was completely blind to. Neither the named skills nor N
+    // are quoted here -- both are read off the page in the loop below -- so this
+    // comment cannot go stale when the page is renumbered or reworded. An earlier
+    // version quoted them and was wrong in both halves.
     let checked = 0;
     for (const p of CLAIM_PAGES) {
       for (const line of readFileSync(p, 'utf8').split('\n')) {
@@ -324,10 +328,16 @@ describe('the roster has one home', () => {
     //   (b) the total number of exempted lines is capped, so the exemption cannot creep
     //       file-wide one line at a time.
     // The allowlist is PER SHAPE, not a flat set of numbers. A flat set was the first
-    // attempt and it did not work: it held 94, 21, 19 and 4 — which are the CURRENT values
-    // of catalogRows, curated, classic and classicRepurposed — so a marked line reading
-    // "94 classic skills" passed while classic is 19. A number is only "superseded" with
-    // respect to the thing it counts, so that is how it is checked.
+    // attempt and it did not work: the values it pooled were, at the time, the CURRENT
+    // values of catalogRows, curated, classic and classicRepurposed — so a marked line
+    // could attach a number that was right for one of those nouns to a DIFFERENT noun it
+    // was wrong for, and the flat set would wave it through. A number is only
+    // "superseded" with respect to the thing it counts, so that is how it is checked.
+    // The four then-current figures are deliberately NOT repeated here: they move with
+    // the roster, so quoting them would put a self-staling number in a comment, while
+    // the hole they demonstrate does not depend on their values. The numbers this file
+    // does pin are all either historical-by-construction (SUPERSEDED_BY_SHAPE, and the
+    // shipped lines in `regressions`) or bounds rather than counts (the exemption cap).
     const SUPERSEDED_BY_SHAPE = [
       // Negative lookahead: "N classic re-registered skills" counts a DIFFERENT noun
       // (classicRepurposed), so it must not be judged against the classic-skills history.

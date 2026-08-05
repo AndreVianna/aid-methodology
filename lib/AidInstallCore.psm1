@@ -902,6 +902,46 @@ function script:Escape-JsonString {
     return $s
 }
 
+# script:Format-AidTimestamp - render a manifest timestamp back to ISO-8601 UTC.
+#
+# WHY THIS EXISTS (tech-debt W4-4). ConvertFrom-Json does NOT hand back the JSON
+# *string* for a timestamp: it silently coerces an ISO-8601 value into a
+# [System.DateTime]. Every "preserve the existing installed_at" read below therefore
+# yields a DateTime, and string-interpolating that into the JSON writer renders it in
+# the CURRENT CULTURE's short format -- '07/26/2026 17:19:24' on en-US -- destroying
+# the very value it claims to preserve.
+#
+# It is a ONE-WAY RATCHET, which is what makes it insidious: an already-corrupted
+# value parses back as a [String] and is then preserved faithfully forever. So the
+# first PowerShell install/update degrades a stamp and every later run keeps the
+# degraded form. AID's own dogfood manifest carried '2026-06-06T20:01:03Z' until an
+# `aid update` rewrote it as '06/06/2026 20:01:03', where it sat for two months.
+#
+# Verified by experiment, not inferred:
+#   '{"installed_at":"2026-07-26T17:19:24Z"}' | ConvertFrom-Json -> System.DateTime
+#                                            -> interpolates '07/26/2026 17:19:24'
+#   '{"installed_at":"06/06/2026 20:01:03"}'  | ConvertFrom-Json -> System.String
+#                                            -> passes through unchanged
+#   round-trip through this helper           -> '2026-07-26T17:19:24Z' (byte-exact)
+#
+# NOTE: `ConvertFrom-Json -AsHashtable` does NOT avoid the coercion (checked -- still
+# System.DateTime), so switching the parser is not a fix.
+#
+# The bash writers are unaffected and need no lockstep change: bin/aid emits
+# `date -u +%Y-%m-%dT%H:%M:%SZ`, and lib/aid-install-core.sh moves the value as text
+# through json.load/sed and never re-renders it (both verified).
+#
+# A non-DateTime value is returned as a plain string untouched, so an already-correct
+# ISO string and an already-corrupted one are both passed through as-is: this repairs
+# what it can render and never invents a value.
+function script:Format-AidTimestamp {
+    param($Value)
+    if ($null -eq $Value) { return '' }
+    if ($Value -is [datetime]) { return $Value.ToUniversalTime().ToString('yyyy-MM-ddTHH:mm:ssZ') }
+    if ($Value -is [datetimeoffset]) { return $Value.UtcDateTime.ToString('yyyy-MM-ddTHH:mm:ssZ') }
+    return [string]$Value
+}
+
 # script:Build-ManifestJson - build the manifest JSON string with 2-space indent + LF + trailing LF.
 # Parameters mirror Write-AidManifest internal state.
 function script:Build-ManifestJson {
@@ -1018,7 +1058,8 @@ function Write-AidManifest {
     # (schema:1) have no root-level installed_at; new-format ones (manifest_version:1) do.
     $topInstalledAt = $now
     if ($existingData -and $existingData.PSObject.Properties['installed_at'] -and $existingData.installed_at) {
-        $topInstalledAt = $existingData.installed_at
+        # Re-render: ConvertFrom-Json handed back a [DateTime], not the JSON string (W4-4).
+        $topInstalledAt = script:Format-AidTimestamp $existingData.installed_at
     }
 
     # Build the tools map preserving existing tools, then adding/merging the current tool.
@@ -1046,7 +1087,8 @@ function Write-AidManifest {
                 }
                 $toolsMap[$tid] = @{
                     Version       = if ($t.PSObject.Properties['version'] -and $t.version) { [string]$t.version } else { '' }
-                    InstalledAt   = if ($t.PSObject.Properties['installed_at'] -and $t.installed_at) { $t.installed_at } else { $now }
+                    # Re-render: ConvertFrom-Json handed back a [DateTime] (W4-4).
+                    InstalledAt   = if ($t.PSObject.Properties['installed_at'] -and $t.installed_at) { script:Format-AidTimestamp $t.installed_at } else { $now }
                     Paths         = $tP
                     RootAgentFiles = $tR
                 }
@@ -1063,7 +1105,8 @@ function Write-AidManifest {
     # tool installed_at: preserve existing.
     $toolInstalledAt = $now
     if ($existingTool -and $existingTool.PSObject.Properties['installed_at'] -and $existingTool.installed_at) {
-        $toolInstalledAt = $existingTool.installed_at
+        # Re-render: ConvertFrom-Json handed back a [DateTime] (W4-4).
+        $toolInstalledAt = script:Format-AidTimestamp $existingTool.installed_at
     }
 
     # De-duplicate paths (union, preserving order: existing first, then new).
@@ -1159,7 +1202,8 @@ function Remove-ManifestTool {
                 }
                 $toolsMap[$tid] = @{
                     Version        = if ($t.PSObject.Properties['version'] -and $t.version) { [string]$t.version } else { '' }
-                    InstalledAt    = if ($t.PSObject.Properties['installed_at'] -and $t.installed_at) { $t.installed_at } else { '' }
+                    # Re-render: ConvertFrom-Json handed back a [DateTime] (W4-4).
+                    InstalledAt    = if ($t.PSObject.Properties['installed_at'] -and $t.installed_at) { script:Format-AidTimestamp $t.installed_at } else { '' }
                     Paths          = $tP
                     RootAgentFiles = $tR
                 }
@@ -1172,7 +1216,10 @@ function Remove-ManifestTool {
         return
     }
 
-    $topIat = if ($data.PSObject.Properties['installed_at'] -and $data.installed_at) { $data.installed_at } else { ([System.DateTime]::UtcNow.ToString('yyyy-MM-ddTHH:mm:ssZ')) }
+    # Re-render the preserved value: ConvertFrom-Json handed back a [DateTime] (W4-4).
+    # The else-branch already emitted ISO-8601 correctly, which is what made the
+    # corruption look intermittent -- a fresh stamp was fine, a preserved one was not.
+    $topIat = if ($data.PSObject.Properties['installed_at'] -and $data.installed_at) { script:Format-AidTimestamp $data.installed_at } else { ([System.DateTime]::UtcNow.ToString('yyyy-MM-ddTHH:mm:ssZ')) }
     $topVer = if ($data.PSObject.Properties['aid_version'] -and $data.aid_version) { $data.aid_version } else { '0.0.0' }
 
     $json = script:Build-ManifestJson -TopInstalledAt $topIat -TopVersion $topVer -ToolsMap $toolsMap

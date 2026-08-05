@@ -833,8 +833,13 @@ describe('aid-test — PRESENT: HANDOFF (optional) then DONE (KI-008 pin)', () =
 
 // ── All 8 inline-states corpus skills ─────────────────────────────────────────
 
+// `aid-change-document` was retired and `aid-update-document` is its successor,
+// carrying the same `## State:` sections (INTAKE/AUTHOR/VERIFY/PRESENT/WRITE/DONE).
+// Listed last to keep the array alphabetical. The substitution keeps this array the
+// COMPLETE inline-states corpus rather than a sample of it: classifySkill returns
+// inline-states for exactly the skills named here and for no other live skill, which
+// is what makes the "all 8" claims below true of the array's length.
 const INLINE_SKILLS = [
-  'aid-change-document',
   'aid-create-document',
   'aid-design',
   'aid-prototype',
@@ -842,6 +847,7 @@ const INLINE_SKILLS = [
   'aid-research',
   'aid-review',
   'aid-test',
+  'aid-update-document',
 ];
 
 describe.each(INLINE_SKILLS)('corpus: %s — invariants', (skillName) => {
@@ -962,11 +968,12 @@ describe('corpus: loop-back back-reference per skill', () => {
         expect(loopEdges.length).toBeGreaterThanOrEqual(1);
       } else {
         // No earlier state name in VERIFY body → no body-scan loop-back.
-        // (aid-change-document: "loop on failure" with no explicit state name.)
+        // (aid-update-document: "loop on failure" with no explicit state name.)
         const loopEdgesFromBody = chart.edges.filter(
           (e) => e.from === verify.id && e.kind === 'loop-back'
         );
-        // aid-change-document: body says "loop on failure" but names no state.
+        // aid-update-document: body says "loop on failure" but names no state, and
+        // its VERIFY section mentions neither of the two earlier states.
         // The advance.mjs rule 5 also doesn't fire (VERIFY advance is unconditional).
         expect(loopEdgesFromBody.length).toBe(0);
       }
@@ -1088,8 +1095,14 @@ Keep \`DESIGN.md\` in the work folder as the record.
 
   it('a real loop still emits an edge when the verb wraps onto the PREVIOUS line', () => {
     // The load-bearing case. aid-create-document, aid-report, aid-test and aid-design all
-    // wrap as `... -> loop` / `   to <STATE>.` — 17 of the corpus's 20 genuine cross-state
-    // edges. A line-scoped cue test deletes every one of them.
+    // wrap as `... -> loop` / `   to <STATE>.`, so these are real corpus loop edges rather
+    // than hypothetical ones, and a line-scoped cue test deletes every one of them.
+    //
+    // No fraction is recorded: the live split between the wrapped and single-line cue
+    // forms lives in the sidecars under `site/src/data/skill-flows/` and moves with the
+    // roster, while the reason the cue must be tested block-scoped does not. The
+    // "N of the corpus's M genuine cross-state edges" that stood here counted a corpus
+    // that no longer exists. Nothing below asserts on either number.
     // Mutant: test the cue on `line` instead of the joined block → this fails.
     const chart = extractInline(parseSkill(`---
 name: wrapped-verb
@@ -1147,7 +1160,7 @@ Finish.
   });
 
   it('"back to" pointing somewhere else does not capture a later-mentioned state', () => {
-    // Shape from aid-change-document:87 — "Write the revision back to the existing
+    // Shape from aid-update-document:87 — "Write the revision back to the existing
     // document (the diff was already reviewed at PRESENT)." A loop cue IS present, but
     // its object is "the existing document", not PRESENT.
     // Mutant: test for cue-anywhere-in-block instead of cue-targeting-the-state → n2->n1
@@ -1180,7 +1193,10 @@ Finish.
     // Recovered behaviour, not merely suppressed noise. In aid-design the real edge was
     // attributed to :76 (a `DESIGN.md` mention) because first-match-won; the genuine
     // "loop to DESIGN" at :80 never got to speak. After the fix the edge survives and
-    // carries the right line — which is why this task's AC counts 20 edges, not 19.
+    // carries the right line — which is why the fix RAISED the inline corpus's loop-back
+    // edge count by one rather than leaving it flat. The absolute totals are not restated
+    // here: those live in the sidecars under `site/src/data/skill-flows/` and move with
+    // the roster, whereas the +1 this fix is responsible for is fixed history.
     // Mutant: keep first-match-wins → provenance lands on the earlier mention line.
     const chart = extractInline(parseSkill(`---
 name: provenance-recovery

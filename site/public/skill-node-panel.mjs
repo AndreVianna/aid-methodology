@@ -289,7 +289,15 @@
 
   /**
    * Find the projection node for a model id, or null.
-   * Linear scan: charts are ~6-20 nodes, so an index would cost more than it saves.
+   *
+   * Linear scan: a chart holds the states of a single skill, so its node count is
+   * bounded by that skill's state machine — building an index would cost more than
+   * the scan it saves. No node count is restated here; the sidecars under
+   * `site/src/data/skill-flows/` are the only authority for the live figures, and
+   * the scan is correct at any size. (The "~6-20 nodes" this replaces was wrong at
+   * both ends on the day it was written — charts below that floor already existed,
+   * and none came near its ceiling. It was never a measurement, which is the second
+   * reason not to restate one here.)
    */
   function findNode(projection, nodeId) {
     for (var i = 0; i < projection.nodes.length; i++) {
@@ -424,9 +432,16 @@
    * The label half of a heading, or '' when the label only repeats the name.
    *
    * Same rule, and the same case-insensitive comparison, as render-mermaid.mjs's
-   * nodeLabel and the fragment list's labelPart: 223 of 883 corpus entries have a
-   * label identical to the node name, so without this the panel heading reads
+   * nodeLabel and the fragment list's labelPart: label-repeats-name is a routine
+   * corpus shape, not a contrived one, so without this the panel heading reads
    * `INTAKE` twice and the accessible name announces "Step 1: INTAKE — INTAKE".
+   *
+   * No fraction is recorded. The live figure is whatever the sidecars under
+   * `site/src/data/skill-flows/` currently hold — re-derive it there if the
+   * magnitude ever matters. The "N of M" that stood here described a corpus that
+   * no longer exists, and nothing in the suite could have caught the drift; this
+   * guard's correctness never depended on the frequency, only on the shape
+   * occurring at all.
    */
   function meaningfulLabel(name, label) {
     if (!label) return '';

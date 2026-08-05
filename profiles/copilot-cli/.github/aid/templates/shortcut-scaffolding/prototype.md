@@ -78,7 +78,7 @@ throwaway, all DESIGN work.
 
 A prototype **validates direction; it is not the production build**. When the user's
 real intent is to build the validated thing, hand off to `aid-create[-artifact]` (or
-`aid-change` when the target already exists) -- prototype work never touches production
+`aid-update` when the target already exists) -- prototype work never touches production
 modules; its optional runnable spike / clickable flow stays throwaway. Testing the
 prototype with real users (usability testing, a controlled A/B test) is a G7 activity
 (`aid-experiment` / `aid-test`), not part of this throwaway prototype work.

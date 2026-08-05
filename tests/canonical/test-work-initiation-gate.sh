@@ -348,16 +348,27 @@ assert_file_contains "$GATE_DOC" "Create-failure guard" "F: doc documents § 3a'
 # create-before-allocate ordering: the `create` mention precedes the STATE.md-scaffold
 # mention in file order (§ 3a Feature Flow -- number resolution + create+enter happen
 # BEFORE the work folder + STATE.md are authored).
+#
+# Coverage-key discipline (`FF01-gate-doc`): the two line NUMBERS below are genuine
+# diagnostics but must NOT reach the coverage-parity key, or any unrelated edit to
+# work-initiation-gate.md re-keys this assertion. A leading multi-letter ID token
+# fixes that: normalize_key (tests/coverage-parity.sh:136) takes
+# `^[A-Za-z][A-Za-z]+[0-9][A-Za-z0-9._-]*` as the WHOLE key and discards the rest of
+# the label, so the line numbers stay visible in the log and out of the key. The
+# token is repeated on all four branches so a pass->fail flip keeps ONE key (the tool
+# counts EXECUTION, not correctness -- coverage-parity.sh:48-52). Note the digit must
+# come immediately after the letters: a hyphen before it (`FF-01`) defeats step 2 and
+# falls through to whole-label masking, which is exactly the defect being repaired.
 gate_create_line=$(grep -nF -- "worktree-lifecycle.sh create <work-id> <name>" "$GATE_DOC" | head -1 | cut -d: -f1)
 gate_scaffold_line=$(grep -nF -- 'scaffold `STATE.md`' "$GATE_DOC" | head -1 | cut -d: -f1)
 if [[ -z "$gate_create_line" ]]; then
-    fail "F: gate doc — 'worktree-lifecycle.sh create <work-id> <name>' mention not found"
+    fail "FF01-gate-doc — F: 'worktree-lifecycle.sh create <work-id> <name>' mention not found"
 elif [[ -z "$gate_scaffold_line" ]]; then
-    fail "F: gate doc — 'scaffold \`STATE.md\`' mention not found"
+    fail "FF01-gate-doc — F: 'scaffold \`STATE.md\`' mention not found"
 elif [[ "$gate_create_line" -lt "$gate_scaffold_line" ]]; then
-    pass "F: § 3a create mention (line $gate_create_line) precedes the STATE.md-scaffold mention (line $gate_scaffold_line)"
+    pass "FF01-gate-doc — F: § 3a create mention (line $gate_create_line) precedes the STATE.md-scaffold mention (line $gate_scaffold_line)"
 else
-    fail "F: § 3a create mention (line $gate_create_line) does NOT precede the STATE.md-scaffold mention (line $gate_scaffold_line)"
+    fail "FF01-gate-doc — F: § 3a create mention (line $gate_create_line) does NOT precede the STATE.md-scaffold mention (line $gate_scaffold_line)"
 fi
 
 assert_file_contains "$GATE_DOC" "Never** re-scan a local" \
@@ -390,7 +401,11 @@ STARTERS=(
     "canonical/skills/aid-test/SKILL.md"
     "canonical/skills/aid-prototype/SKILL.md"
     "canonical/skills/aid-create-document/SKILL.md"
-    "canonical/skills/aid-change-document/SKILL.md"
+    # feature-003 moved the document-editing starter: its directory was deleted and the body
+    # promoted into aid-update-document/. One element's VALUE moves; the array's length does
+    # not -- nothing is added or removed, so the "10" below is re-checked and kept, not stale.
+    # Its twin binding in STARTER_ALLOC_ANCHOR below must move with it.
+    "canonical/skills/aid-update-document/SKILL.md"
 )
 assert_eq "${#STARTERS[@]}" "10" "G: exactly ten affected work-starters under coverage"
 
@@ -410,32 +425,103 @@ declare -A STARTER_ALLOC_ANCHOR=(
     ["canonical/skills/aid-test/SKILL.md"]="**then** allocate (\`"
     ["canonical/skills/aid-prototype/SKILL.md"]="**then** allocate (\`"
     ["canonical/skills/aid-create-document/SKILL.md"]="**then** allocate (\`"
-    ["canonical/skills/aid-change-document/SKILL.md"]="**then** allocate (\`"
+    ["canonical/skills/aid-update-document/SKILL.md"]="**then** allocate (\`"
 )
+
+# Per-starter coverage ID for the ordering check below -- the token that gives each
+# starter its OWN stable coverage-parity key.
+#
+# Why this map exists: the ordering assertion's natural label carries the starter path
+# plus the two matched line numbers, and normalize_key masks the path to `<PATH>`
+# (tests/coverage-parity.sh:158-159) while leaving the NUMBERS intact. The ten starters
+# were therefore distinguished in the coverage inventory ONLY by their line-number
+# pairs, which has two consequences, both observed:
+#   * any unrelated `canonical/` edit re-keys the assertion (measured: aid-review
+#     103/111 -> 104/112 and aid-research 64/68 -> 62/66 at 69133fcf, shortcut-engine
+#     283/300 -> 281/298 at bc40b7ef -- 3 REMOVED + 3 ADDED, none of it a real
+#     coverage change); and
+#   * two starters that happened to match at the SAME line pair would collapse into
+#     one key, so the inventory would silently read 9 starters instead of 10.
+# Leading each label with a multi-letter ID token makes normalize_key's step 2
+# (coverage-parity.sh:136) take `GGnn-<starter>` as the WHOLE key and discard the rest,
+# so starter IDENTITY distinguishes the keys and the line numbers remain in the log for
+# diagnostics only. The digit must follow the letters IMMEDIATELY -- `GG-01` would put a
+# hyphen before it, defeat step 2, and fall back to whole-label masking.
+#
+# Keyed by starter PATH, not by array position, so re-ordering STARTERS is key-neutral.
+# When a starter's identity genuinely MOVES (as feature-003 moved the document-editing
+# starter into aid-update-document/), its slug moves with it and the re-key is the
+# intended signal that a different file is now under test.
+declare -A STARTER_COVERAGE_ID=(
+    ["canonical/aid/templates/shortcut-engine.md"]="GG01-shortcut-engine"
+    ["canonical/skills/aid-describe/SKILL.md"]="GG02-aid-describe"
+    ["canonical/skills/aid-review/SKILL.md"]="GG03-aid-review"
+    ["canonical/skills/aid-research/SKILL.md"]="GG04-aid-research"
+    ["canonical/skills/aid-design/SKILL.md"]="GG05-aid-design"
+    ["canonical/skills/aid-report/SKILL.md"]="GG06-aid-report"
+    ["canonical/skills/aid-test/SKILL.md"]="GG07-aid-test"
+    ["canonical/skills/aid-prototype/SKILL.md"]="GG08-aid-prototype"
+    ["canonical/skills/aid-create-document/SKILL.md"]="GG09-aid-create-document"
+    ["canonical/skills/aid-update-document/SKILL.md"]="GG10-aid-update-document"
+)
+
+# Collision-proofness is ENFORCED here, not merely asserted in prose: an ID that is
+# missing (empty) or duplicated drops the distinct non-empty count below ten and reds
+# this assertion, instead of silently merging two starters into one coverage key.
+#
+# This one oracle covers ALL THREE per-starter assertions in the loop below, not just the
+# ordering one: the other two key off `${sid}-consults` / `${sid}-create-mention`, which
+# are derived from the same `sid`, so distinctness of the ten `sid` values implies
+# distinctness of their suffixed forms. Nothing further is needed for them, and nothing
+# below may key off the starter PATH alone -- normalize_key masks a path to `<PATH>`, so a
+# path-only label collapses all ten starters into a single key.
+G_COVERAGE_IDS=()
+for rel in "${STARTERS[@]}"; do
+    G_COVERAGE_IDS+=("${STARTER_COVERAGE_ID[$rel]:-}")
+done
+assert_eq "$(printf '%s\n' "${G_COVERAGE_IDS[@]}" | sort -u | grep -c '.')" "10" \
+    "GG00: the ten Group G ordering coverage IDs are all present and pairwise distinct"
 
 for rel in "${STARTERS[@]}"; do
     f="${REPO_ROOT}/${rel}"
-    if [[ -f "$f" ]]; then
-        assert_file_contains "$f" "work-initiation-gate.md" "G: ${rel} consults the shared gate"
+    # One ID per starter, led on EVERY outcome branch below (missing file, missing
+    # anchor, either mention absent, ordering satisfied, ordering violated), so this
+    # starter contributes exactly ONE coverage key whichever branch fires -- a
+    # pass->fail flip must not re-key an assertion that still executed.
+    sid="${STARTER_COVERAGE_ID[$rel]:-}"
+    if [[ -z "$sid" ]]; then
+        # Already red via GG00 above; reuse that key rather than emit an ID-less
+        # (and therefore unstable) one.
+        fail "GG00: ${rel} — no coverage ID configured for the ordering check"
+    elif [[ -f "$f" ]]; then
+        # These two carry the SAME starter identity as the ordering check, plus a
+        # per-assertion suffix. A bare "${sid}" on all three would give each starter one
+        # key of count 3 and lose ASSERTION identity, which is the mirror of the defect
+        # being fixed; a path-only label loses STARTER identity (normalize_key masks the
+        # path to `<PATH>`, collapsing all ten starters into one key of count 10). The
+        # suffixed form keeps both, and step 2 takes the whole token because
+        # `[A-Za-z0-9._-]*` admits the hyphens.
+        assert_file_contains "$f" "work-initiation-gate.md" \
+            "${sid}-consults — G: ${rel} consults the shared gate"
         assert_file_contains "$f" "worktree-lifecycle.sh create" \
-            "G: ${rel} references the gate's worktree-create step at its allocation point"
+            "${sid}-create-mention — G: ${rel} references the gate's worktree-create step at its allocation point"
 
         anchor="${STARTER_ALLOC_ANCHOR[$rel]:-}"
         create_line=$(grep -nF -- "worktree-lifecycle.sh create" "$f" | head -1 | cut -d: -f1)
         scaffold_line=$(grep -nF -- "$anchor" "$f" | head -1 | cut -d: -f1)
         if [[ -z "$anchor" ]]; then
-            fail "G: ${rel} — no allocation-line anchor configured for the ordering check"
+            fail "${sid} — G: ${rel} no allocation-line anchor configured for the ordering check"
         elif [[ -z "$create_line" ]]; then
-            fail "G: ${rel} — 'worktree-lifecycle.sh create' mention not found"
+            fail "${sid} — G: ${rel} 'worktree-lifecycle.sh create' mention not found"
         elif [[ -z "$scaffold_line" ]]; then
-            fail "G: ${rel} — STATE.md-scaffold/allocation line not found (anchor: '$anchor')"
+            fail "${sid} — G: ${rel} STATE.md-scaffold/allocation line not found (anchor: '$anchor')"
         elif [[ "$create_line" -lt "$scaffold_line" ]]; then
-            pass "G: ${rel} — create mention (line $create_line) precedes STATE.md-scaffold/allocation line (line $scaffold_line)"
+            pass "${sid} — G: ${rel} create mention (line $create_line) precedes STATE.md-scaffold/allocation line (line $scaffold_line)"
         else
-            fail "G: ${rel} — create mention (line $create_line) does NOT precede STATE.md-scaffold/allocation line (line $scaffold_line)"
+            fail "${sid} — G: ${rel} create mention (line $create_line) does NOT precede STATE.md-scaffold/allocation line (line $scaffold_line)"
         fi
     else
-        fail "G: starter file missing: ${rel}"
+        fail "${sid} — G: starter file missing: ${rel}"
     fi
 done
 

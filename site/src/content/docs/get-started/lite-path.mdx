@@ -17,7 +17,7 @@ There is no routing step inside another skill — you enter the lite path direct
 
 - **Name your change with a shortcut.** If you already know what you're changing, invoke the
   matching verb-first shortcut directly: `/aid-fix` for a bug, `/aid-create-api` for a new
-  endpoint, `/aid-change-ui` for a UI change, and so on. Each shortcut is a thin doorway into
+  endpoint, `/aid-update-ui` for a UI change, and so on. Each shortcut is a thin doorway into
   the shared **shortcut engine**.
 - **Ask `/aid-triage` when you're not sure.** Describe your change in one free-form sentence.
   `/aid-triage` infers the work type and scope, then suggests either the matching shortcut or,
@@ -56,7 +56,7 @@ Each shortcut invocation allocates a brand-new `work-NNN`; there is no cross-ses
    /aid-fix
    ```
 
-   (or `/aid-create-api`, `/aid-change-config`, … — whichever shortcut matches your change).
+   (or `/aid-create-api`, `/aid-update-config`, … — whichever shortcut matches your change).
    Describe what you want in a sentence or two.
 
 2. **Answer the rare gap-question, if asked.**

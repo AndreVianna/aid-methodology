@@ -82,7 +82,6 @@ export const CURATED_GROUPS = [
       'aid-summarize',
       'aid-housekeep',
       'aid-update-kb',
-      'aid-query-kb',
       'aid-ask',
     ],
   },

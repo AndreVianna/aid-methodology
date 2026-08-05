@@ -7,12 +7,12 @@ generatedFrom: 'canonical/aid/templates/shortcut-catalog.yml, canonical/aid/temp
 <!-- generated — do not edit; source: canonical/aid/templates/shortcut-catalog.yml, canonical/aid/templates/shortcut-engine.md -->
 
 :::tip[Looking for the list of skills?]
-The full roster — all **111** skills, one card each, grouped by skill group and verb family — lives at [**All skills**](/skills/). This page covers the shortcut engine those skills delegate to.
+The full roster — all **75** skills, one card each, grouped by skill group and verb family — lives at [**All skills**](/skills/). This page covers the shortcut engine those skills delegate to.
 :::
 
 ## Direct-entry shortcuts
 
-**64 engine-driven verb-first shortcut skills** — a fast, mostly-autonomous alternative to the full Describe→Detail path for a single, well-scoped change. Each is a thin doorway generated from one non-`repurpose` row of [`canonical/aid/templates/shortcut-catalog.yml`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/aid/templates/shortcut-catalog.yml) (94 rows total; the other 30 are `repurpose: true` — the 4 classic re-registered skills (`aid-deploy`/`aid-monitor`/`aid-query-kb`/`aid-ask`) plus the work-005 single-shot "collapse" skills, all hand-authored with their own directory).
+**34 engine-driven verb-first shortcut skills** — a fast, mostly-autonomous alternative to the full Describe→Detail path for a single, well-scoped change. Each is a thin doorway generated from one non-`repurpose` row of [`canonical/aid/templates/shortcut-catalog.yml`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/aid/templates/shortcut-catalog.yml) (58 rows total; the other 24 are `repurpose: true` — the 3 classic re-registered skills (`aid-deploy`/`aid-monitor`/`aid-ask`) plus the work-005 single-shot "collapse" skills, all hand-authored with their own directory).
 
 Every engine-driven shortcut delegates to the shared **shortcut engine** — [`canonical/aid/templates/shortcut-engine.md`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/aid/templates/shortcut-engine.md) — which collapses the five definition phases (Describe → Detail) into one mostly-autonomous run:
 

@@ -121,7 +121,7 @@ assert_output_contains "$CLASSIFY_TXT" \
 
 # TR-12: narrow-by-workType table -- Step 3 (bug-fix->G6, refactor->G5, new-feature->G4/G3/G7/G8/G11).
 assert_output_contains "$CLASSIFY_TXT" '| `bug-fix` | G6 (`aid-fix`)' "TR12a narrowing: bug-fix -> G6 (aid-fix)"
-assert_output_contains "$CLASSIFY_TXT" '| `refactor` | G5 (`aid-change[-artifact]`, `aid-refactor`)' "TR12b narrowing: refactor -> G5"
+assert_output_contains "$CLASSIFY_TXT" '| `refactor` | G5 (`aid-update[-artifact]`, `aid-refactor`)' "TR12b narrowing: refactor -> G5"
 assert_output_contains "$CLASSIFY_TXT" 'G4 (`aid-create[-artifact]`), G3' "TR12c narrowing: new-feature -> G4 (+G3/G7/G8/G11)"
 # TR-12d/e: widened narrowing (v2.1.0 coverage-gap follow-on) surfaces the new-family verbs --
 # refactor's G5 hint widens to aid-remove/aid-deprecate/aid-migrate, and both refactor's and
@@ -130,7 +130,7 @@ assert_output_contains "$CLASSIFY_TXT" "G5's \`aid-remove\`, \`aid-deprecate\`, 
     "TR12d widened narrowing: refactor -> G5 also surfaces aid-remove/aid-deprecate/aid-migrate"
 assert_output_contains "$CLASSIFY_TXT" "G11 (\`aid-review\`, \`aid-research\`)" \
     "TR12e widened narrowing: refactor -> G11 surfaces aid-review/aid-research"
-assert_output_contains "$CLASSIFY_TXT" 'G11 (`aid-report`, `aid-show-dashboard`, `aid-review`, `aid-research`)' \
+assert_output_contains "$CLASSIFY_TXT" 'G11 (`aid-report`, `aid-review`, `aid-research`)' \
     "TR12f widened narrowing: new-feature -> G11 surfaces aid-review/aid-research"
 
 # TR-13: Case C (broad/ambiguous/no-candidate) recommends /aid-describe.
@@ -258,10 +258,21 @@ assert_output_contains "$CLASSIFY_TXT" "Hand off directly to" \
 assert_output_contains "$SUGGEST_TXT" "Case D -- QUESTION" \
     "TR53 state-suggest.md documents Case D (the QUESTION route)"
 assert_output_contains "$SUGGEST_TXT" '/aid-ask "{description}"' \
-    "TR54 Case D suggests /aid-ask (not its canonical form /aid-query-kb)"
+    "TR54 Case D suggests /aid-ask, itself the canonical Q&A catalog row"
 
-# aid-ask itself: a repurpose:true alias row (hand-authored Q&A entry point, not a
-# generated thin doorway) resolving to the canonical aid-query-kb.
+# aid-ask itself: the canonical Q&A row (`alias_of: null`), hand-authored rather than a
+# generated thin doorway -- which is what `repurpose: true` marks.
+#
+# TR55a DELETED here, deliberately. It asserted that this row resolved, through an alias_of
+# binding, to a separate canonical Q&A row. BOTH of its subjects ceased to exist in this
+# release: (1) the alias_of BINDING -- the catalog now carries zero rows whose alias_of names
+# another skill, the whole alias layer having been retired; and (2) the ROW AND DIRECTORY it
+# pointed at, deleted when aid-ask was promoted to canonical in their place. There is no
+# successor claim to re-point it at, so it is removed rather than reworded. (Its old target's
+# name is deliberately not spelled out: this file is swept for retired names and must return
+# zero hits. `git show <this file>` before this commit has the original text.)
+# TR55b/TR55c below SURVIVE UNCHANGED -- aid-ask is still a name, still a `repurpose: true`
+# row, and still owns a directory -- so this group is not wholly gone.
 ASK_ROW=$(awk -v n="aid-ask" '
     BEGIN{on=0}
     /^  - name:/ {
@@ -271,16 +282,23 @@ ASK_ROW=$(awk -v n="aid-ask" '
     }
     on { print }
 ' "$CATALOG")
-assert_output_contains "$ASK_ROW" "alias_of: aid-query-kb" \
-    "TR55a aid-ask resolves to canonical aid-query-kb in the catalog"
 assert_output_contains "$ASK_ROW" "repurpose: true" \
     "TR55b aid-ask is a repurpose:true row (hand-authored, not a generated doorway)"
 assert_file_exists "${REPO_ROOT}/canonical/skills/aid-ask/SKILL.md" \
     "TR55c aid-ask/SKILL.md exists (hand-authored friendly alias)"
 
-# The Case D exception to "canonical names only" is documented, not silently contradicted.
-assert_output_contains "$SKILL_TXT" "Intended exception: Case D" \
-    "TR56 SKILL.md documents Case D as an intended exception to the canonical-names-only rule"
+# TR56 DELETED here, deliberately. It read
+#     assert_output_contains "$SKILL_TXT" "Intended exception: Case D"
+#       "TR56 SKILL.md documents Case D as an intended exception to the canonical-names-only rule"
+# and it pinned the PRESENCE OF A SENTENCE rather than any skill name -- the "Intended
+# exception: Case D" paragraph in aid-triage/SKILL.md. That exception was DISSOLVED, not
+# reworded: it existed only because Case D routed to an alias row whose canonical form was a
+# different skill, and once aid-ask became canonical in its own right the rule it was an
+# exception to is simply satisfied by construction. SKILL.md now states plainly that Step 0
+# short-circuits past Step 3 so the canonical-names constraint applies only to Cases A/B/C --
+# a different claim, not a successor to "this is an intended exception". Asserting the new
+# sentence would be asserting a property this suite was never written to guard, so the
+# assertion is removed. TR53 above still covers that Case D is documented at all.
 
 echo ""
 test_summary

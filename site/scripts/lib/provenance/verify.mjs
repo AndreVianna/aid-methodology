@@ -5,8 +5,12 @@
 // cache, via a Map<file, {text, lines}>.  The default is a fresh Map per call,
 // which deduplicates reads within one chart; a caller spanning many charts passes
 // a single cache through `opts._cache` to get the SPEC's "once per run".  That is
-// the case that matters: a doorway corpus shares one engine file, and 64 of the
-// 111 skills cite canonical/aid/templates/shortcut-engine.md.
+// the case that matters: a doorway corpus shares its engine file — EVERY generated
+// shortcut doorway cites canonical/aid/templates/shortcut-engine.md, so a per-call
+// cache re-reads that one file once per doorway.  The sharing is the property worth
+// stating; a count is not, because it drifts with the catalog and no guard would
+// catch it (check-skill-counts.mjs does not scan site/scripts/, and this file is
+// not one of skill-counts.test.mjs's NO_COUNT_FILES).
 //
 // Pure exported function — no import-time side effect.
 

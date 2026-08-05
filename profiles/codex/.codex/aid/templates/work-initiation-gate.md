@@ -10,7 +10,7 @@ Consulted by: the direct-entry shortcut engine's INTAKE
 (`.codex/aid/templates/shortcut-engine.md`), `aid-describe`, and the
 collapse/standalone starters `aid-review`, `aid-research`, `aid-design`,
 `aid-report`, `aid-test`, `aid-prototype`, `aid-create-document`,
-`aid-change-document`. Each references THIS file at its allocation step rather
+`aid-update-document`. Each references THIS file at its allocation step rather
 than re-implementing the logic.
 
 > **Where the gate sits.** It runs at the exact point a starter would otherwise

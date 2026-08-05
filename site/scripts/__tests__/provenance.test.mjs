@@ -722,10 +722,13 @@ describe('determinism — renderFragmentList', () => {
 
 // The second half of the determinism criterion: "two gen:skills runs leave the
 // fragment section byte-identical". Rather than spawn the generator — which would
-// rewrite 111 tracked files as a side effect of running the test suite — this
-// compares the section already on disk against a freshly rendered one. If a
-// second run could produce different bytes, this is where it shows, because the
-// on-disk section IS the previous run's output.
+// rewrite every tracked skill page and flow sidecar as a side effect of running
+// the test suite — this compares the section already on disk against a freshly
+// rendered one. If a second run could produce different bytes, this is where it
+// shows, because the on-disk section IS the previous run's output.
+//
+// "Every tracked page and sidecar", not a file count: the generator's write set is
+// one-per-corpus-skill by construction, so no number here can fall out of date.
 describe('determinism — on-disk section equals a fresh render (whole corpus)', () => {
   const SECTION = '## Source fragments';
 

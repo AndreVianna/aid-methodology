@@ -30,7 +30,7 @@ described **once**, in
 [`ticket-resolution.md`](../../aid/templates/connectors/ticket-resolution.md). This `SKILL.md`
 never restates any of that — each state below points to the relevant section instead.
 
-**Absent from the mandatory pipeline flow.** Like `/aid-query-kb` and `/aid-set-connector`, this is
+**Absent from the mandatory pipeline flow.** Like `/aid-ask` and `/aid-set-connector`, this is
 an optional, on-demand utility skill outside the Discover-Execute flow: no phase gate references
 it, no `shortcut-catalog.yml` entry, no `work-NNN` scaffold, no `STATE.md` of its own — invoked
 directly by name.

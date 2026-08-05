@@ -8,51 +8,99 @@
     {
       "id": "n1",
       "order": 1,
-      "name": "ENTRY",
-      "label": "Entry",
+      "name": "STEP-1",
+      "label": "Classify the question",
       "kind": "entry",
       "terminal": null,
       "provenance": {
         "file": "canonical/skills/aid-ask/SKILL.md",
-        "startLine": 1,
-        "endLine": 1,
+        "startLine": 54,
+        "endLine": 54,
         "sourceKind": "skill",
-        "excerpt": "---"
+        "excerpt": "### Step 1 — Classify the question"
       },
       "detail": null
     },
     {
       "id": "n2",
       "order": 2,
-      "name": "RUN",
-      "label": "Run Friendly-named alias of /aid-query-kb -- the optional…",
+      "name": "STEP-2A",
+      "label": "Trivial question: answer inline",
       "kind": "step",
       "terminal": null,
       "provenance": {
         "file": "canonical/skills/aid-ask/SKILL.md",
-        "startLine": 3,
-        "endLine": 3,
+        "startLine": 66,
+        "endLine": 66,
         "sourceKind": "skill",
-        "excerpt": "description: >"
+        "excerpt": "### Step 2a — Trivial question: answer inline"
       },
       "detail": null
     },
     {
       "id": "n3",
       "order": 3,
-      "name": "EXIT",
-      "label": "Exit",
+      "name": "STEP-2B",
+      "label": "Broad/expensive question: dispatch aid-researcher",
+      "kind": "step",
+      "terminal": null,
+      "provenance": {
+        "file": "canonical/skills/aid-ask/SKILL.md",
+        "startLine": 80,
+        "endLine": 80,
+        "sourceKind": "skill",
+        "excerpt": "### Step 2b — Broad/expensive question: dispatch aid-researcher"
+      },
+      "detail": null
+    },
+    {
+      "id": "n4",
+      "order": 4,
+      "name": "STEP-2C",
+      "label": "Connector enrichment (optional)",
+      "kind": "step",
+      "terminal": null,
+      "provenance": {
+        "file": "canonical/skills/aid-ask/SKILL.md",
+        "startLine": 105,
+        "endLine": 105,
+        "sourceKind": "skill",
+        "excerpt": "### Step 2c — Connector enrichment (optional)"
+      },
+      "detail": null
+    },
+    {
+      "id": "n5",
+      "order": 5,
+      "name": "STEP-3",
+      "label": "Compose and emit the reply",
+      "kind": "step",
+      "terminal": null,
+      "provenance": {
+        "file": "canonical/skills/aid-ask/SKILL.md",
+        "startLine": 115,
+        "endLine": 115,
+        "sourceKind": "skill",
+        "excerpt": "### Step 3 — Compose and emit the reply"
+      },
+      "detail": null
+    },
+    {
+      "id": "n6",
+      "order": 6,
+      "name": "STEP-4",
+      "label": "Gap capture",
       "kind": "exit",
       "terminal": {
-        "advanceType": "HALT",
+        "advanceType": "UNSPECIFIED",
         "handoff": null
       },
       "provenance": {
         "file": "canonical/skills/aid-ask/SKILL.md",
-        "startLine": 15,
-        "endLine": 15,
+        "startLine": 162,
+        "endLine": 162,
         "sourceKind": "skill",
-        "excerpt": "---"
+        "excerpt": "### Step 4 -- Gap capture"
       },
       "detail": null
     }
@@ -66,10 +114,10 @@
       "advanceType": "CHAIN",
       "provenance": {
         "file": "canonical/skills/aid-ask/SKILL.md",
-        "startLine": 1,
-        "endLine": 1,
+        "startLine": 66,
+        "endLine": 66,
         "sourceKind": "skill",
-        "excerpt": "---"
+        "excerpt": "### Step 2a — Trivial question: answer inline"
       }
     },
     {
@@ -80,10 +128,52 @@
       "advanceType": "CHAIN",
       "provenance": {
         "file": "canonical/skills/aid-ask/SKILL.md",
-        "startLine": 3,
-        "endLine": 3,
+        "startLine": 80,
+        "endLine": 80,
         "sourceKind": "skill",
-        "excerpt": "description: >"
+        "excerpt": "### Step 2b — Broad/expensive question: dispatch aid-researcher"
+      }
+    },
+    {
+      "from": "n3",
+      "to": "n4",
+      "kind": "sequence",
+      "condition": null,
+      "advanceType": "CHAIN",
+      "provenance": {
+        "file": "canonical/skills/aid-ask/SKILL.md",
+        "startLine": 105,
+        "endLine": 105,
+        "sourceKind": "skill",
+        "excerpt": "### Step 2c — Connector enrichment (optional)"
+      }
+    },
+    {
+      "from": "n4",
+      "to": "n5",
+      "kind": "sequence",
+      "condition": null,
+      "advanceType": "CHAIN",
+      "provenance": {
+        "file": "canonical/skills/aid-ask/SKILL.md",
+        "startLine": 115,
+        "endLine": 115,
+        "sourceKind": "skill",
+        "excerpt": "### Step 3 — Compose and emit the reply"
+      }
+    },
+    {
+      "from": "n5",
+      "to": "n6",
+      "kind": "sequence",
+      "condition": null,
+      "advanceType": "CHAIN",
+      "provenance": {
+        "file": "canonical/skills/aid-ask/SKILL.md",
+        "startLine": 162,
+        "endLine": 162,
+        "sourceKind": "skill",
+        "excerpt": "### Step 4 -- Gap capture"
       }
     }
   ],
@@ -91,7 +181,7 @@
     "n1"
   ],
   "exits": [
-    "n3"
+    "n6"
   ],
   "sources": [
     "canonical/skills/aid-ask/SKILL.md"
