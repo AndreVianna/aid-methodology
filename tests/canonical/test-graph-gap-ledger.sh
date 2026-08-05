@@ -1,6 +1,17 @@
 #!/usr/bin/env bash
 # test-graph-gap-ledger.sh -- the knowledge-base gap ledger detector, end to end.
 #
+# COVERS -- the change set that must re-run this suite; see select-suites.sh.
+# A trailing slash means the directory and everything under it. Omitting the
+# header entirely is fail-safe (the suite is then always selected); a WRONG
+# entry is the only way to lose coverage, so these are reviewed as claims.
+# COVERS: canonical/aid/scripts/graph/detect-kb-gaps.mjs
+# COVERS: canonical/aid/scripts/graph/coverage-predicate.mjs
+# COVERS: canonical/aid/templates/graph/coverage-bearing.yml
+# COVERS: canonical/aid/templates/graph/relation-vocabulary.yml
+# COVERS: canonical/aid/templates/graph/relationship-schema.yml
+# COVERS: canonical/aid/scripts/grade.sh
+#
 # Subject under test:
 #   canonical/aid/scripts/graph/detect-kb-gaps.mjs, and the boundary between it and
 #   canonical/aid/scripts/graph/coverage-predicate.mjs -- the one coverage predicate,

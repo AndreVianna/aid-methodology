@@ -2,6 +2,16 @@
 # test-graph-skill-registration.sh -- is the aid-graph skill actually registered
 # everywhere the toolkit says a skill is registered?
 #
+# COVERS -- the change set that must re-run this suite; see select-suites.sh.
+# A trailing slash means the directory and everything under it. Omitting the
+# header entirely is fail-safe (the suite is then always selected); a WRONG
+# entry is the only way to lose coverage, so these are reviewed as claims.
+# COVERS: canonical/skills/aid-graph/
+# COVERS: canonical/aid/scripts/graph/
+# COVERS: canonical/aid/templates/knowledge-graph/
+# COVERS: profiles/
+# COVERS: canonical/aid/scripts/generate-profile.py
+#
 # Assertions, by the identifier the feature contract gives them:
 #   GR01  the preflight, and the reason every set comparison below is non-vacuous:
 #         (a) the canonical SKILL.md exists and declares all four frontmatter keys;

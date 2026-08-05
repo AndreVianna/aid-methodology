@@ -1,6 +1,13 @@
 #!/usr/bin/env bash
 # test-graph-schema-loader.sh -- the graph relationship-schema LIBRARY.
 #
+# COVERS -- the change set that must re-run this suite; see select-suites.sh.
+# A trailing slash means the directory and everything under it. Omitting the
+# header entirely is fail-safe (the suite is then always selected); a WRONG
+# entry is the only way to lose coverage, so these are reviewed as claims.
+# COVERS: canonical/aid/scripts/graph/relationship-schema.sh
+# COVERS: canonical/aid/templates/graph/
+#
 # Scope:
 #   canonical/aid/scripts/graph/relationship-schema.sh -- the sourceable loader and
 #   normaliser library for the `.aid/knowledge/relationships.md` relationship table

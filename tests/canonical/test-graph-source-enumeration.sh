@@ -1,6 +1,16 @@
 #!/usr/bin/env bash
 # test-graph-source-enumeration.sh -- feature-004 source/media/external enumeration.
 #
+# COVERS -- the change set that must re-run this suite; see select-suites.sh.
+# A trailing slash means the directory and everything under it. Omitting the
+# header entirely is fail-safe (the suite is then always selected); a WRONG
+# entry is the only way to lose coverage, so these are reviewed as claims.
+# COVERS: canonical/aid/scripts/graph/scan-source.sh
+# COVERS: canonical/aid/scripts/graph/significance-rules.sh
+# COVERS: canonical/aid/scripts/graph/relationship-schema.sh
+# COVERS: canonical/aid/templates/graph/relationship-schema.yml
+# COVERS: canonical/aid/scripts/config/read-setting.sh
+#
 # Subject:
 #   canonical/aid/scripts/graph/scan-source.sh        (the single walk)
 #   canonical/aid/scripts/graph/significance-rules.sh (the rule library)

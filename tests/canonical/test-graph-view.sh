@@ -2,6 +2,14 @@
 # test-graph-view.sh -- the knowledge-relationship graph view: the shell, the table
 # rendering, and the seam between them.
 #
+# COVERS -- the change set that must re-run this suite; see select-suites.sh.
+# A trailing slash means the directory and everything under it. Omitting the
+# header entirely is fail-safe (the suite is then always selected); a WRONG
+# entry is the only way to lose coverage, so these are reviewed as claims.
+# COVERS: canonical/aid/templates/knowledge-graph/
+# COVERS: canonical/aid/scripts/graph/coverage-predicate.mjs
+# COVERS: canonical/aid/scripts/summarize/validate-html-output.sh
+#
 # Auto-discovered by tests/run-all.sh (glob tests/canonical/test-*.sh), so adding
 # this suite needed no runner or workflow edit.
 #

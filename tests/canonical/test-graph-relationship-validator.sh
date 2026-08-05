@@ -1,6 +1,14 @@
 #!/usr/bin/env bash
 # test-graph-relationship-validator.sh -- the V1-V15 relationship-table linter.
 #
+# COVERS -- the change set that must re-run this suite; see select-suites.sh.
+# A trailing slash means the directory and everything under it. Omitting the
+# header entirely is fail-safe (the suite is then always selected); a WRONG
+# entry is the only way to lose coverage, so these are reviewed as claims.
+# COVERS: canonical/aid/scripts/graph/validate-relationships.sh
+# COVERS: canonical/aid/templates/graph/relation-vocabulary.yml
+# COVERS: canonical/aid/templates/graph/relationship-schema.yml
+#
 # Scope:
 #   canonical/aid/scripts/graph/validate-relationships.sh -- the read-only linter
 #   that grades a `.aid/knowledge/relationships.md` against its contract (work-005,
