@@ -31,6 +31,17 @@
 #        contract, the numeral never was.
 #   EX   the exposure surface the consumer table routes through, `passes` included
 #        (a recorded defect was its omission) -- asserted for EVERY relation.
+#   CAT  category completeness over the REAL shipped core (work-005 task-001,
+#        feature-001 AC-S3) -- every declared category classifies at least one
+#        relation, proven non-vacuous by mutating a COPY to add an orphan
+#        category the LOAD itself does not reject, plus the mechanism proof
+#        for an empty category meaning.
+#   D9   the shipped file's own four worked rows -- its header comment -- checked
+#        against the `pairs:` block they illustrate (work-005 task-001,
+#        feature-001 AC-S6): membership, pairing, the declared endpoint token,
+#        legal Provenance, and that Observation never smuggles in a relation
+#        label. Proven non-vacuous by mutating a COPY's row 1 to a
+#        real-but-wrong relation label.
 #   VK   totality, the fixed key order, and the declared key set.
 #   VV   each declared key's value rule, including the `derived_from` token grammar
 #        and its two `coined` clauses.
@@ -48,6 +59,82 @@
 #        nested-heading case a real KB cannot supply.
 #   RN   row normalisation, the duplicate key, the sort key, the class-0 extraction
 #        and the coverage-note key accessors.
+#   WT   the working-tree-untouched proof (S5): a PRE snapshot of the three real
+#        subject files, compared byte-for-byte against themselves at the end of
+#        the run, after every mutation above.
+#
+# AC-MAP -- feature-001's AC-S1..AC-S6, closed against the SHIPPED core
+# (canonical/aid/templates/graph/relation-vocabulary.yml), never a fixture.
+# Built by work-005 task-001, because AC-S1..AC-S6 had never been read against
+# this suite's and test-graph-relationship-validator.sh's actual assertion ids
+# before. A row with no id is a genuine gap the map exists to surface, not a
+# formality; task-001's Scope bounds the map to AC-S1..AC-S6, so AC-S7..AC-S11
+# and AC-2 are not mapped here.
+#
+#   AC-S1 (five inverse-pair properties + eight-key totality, over the core)
+#     mechanism (proves the loader REJECTS each violation) -- CE01 closure,
+#     CE02 involution, CE03 symmetric consistency, CE04/CE05 uniqueness,
+#     VK01-05 totality/key order, PC01-06 pair coherence.
+#     over the REAL core -- Q20-00 (the shipped core loads clean through the
+#     SAME gates the mechanism tests just proved correct; a violation of any
+#     of the five properties would make this load fail).
+#   AC-S2 (derived_from: >=1 token, closed grammar, no 'coined' in the core;
+#          every token in D1's in-scope column; classed at D6d or direct)
+#     mechanical half -- VV05 (non-empty), VV06-09 (grammar), VV10/VV11
+#     ('coined' forbidden); over the REAL core -- Q20-02 (grammar), Q20-03
+#     ('coined' absent).
+#     editorial half (D1's in-scope-column closure; direction audited at
+#     D6d) -- NO assertion id, by design. Not machine-checkable from a
+#     PERMANENT artifact: D1's traversal record is the transient research
+#     report (this feature's own Layers & Components split puts it under
+#     `.aid/works/`), so a test would have to depend on a work folder to cite
+#     it -- forbidden project-wide. The shipped file's "Flagged tokens" header
+#     comment IS the permanent record of the audit, but asserting its mere
+#     PRESENCE would be a vacuous structural check, not a check of the CLAIM
+#     (that all 64 token occurrences were actually classed against the live
+#     standards). Raised against feature-001 rather than forced: a claim about
+#     a citation's meaning and direction has no oracle short of a human
+#     re-reading the six standards, which is what the 2026-07-29 review round
+#     already did once and recorded at D6d.
+#   AC-S3 (category count == the SPEC's stated count; one-line meaning; every
+#          entry's category is a declared name; no declared category is empty)
+#     "entry's category is declared" -- mechanism: VV04; over the real core:
+#     folded into Q20-00 (category totality -- declared >= used -- is a load
+#     gate).
+#     "one-line meaning" -- mechanism: CAT03 (new, this task: an empty
+#     category meaning is rejected); over the real core: folded into Q20-00
+#     (an empty meaning could not have loaded).
+#     "no declared category is empty" (the converse -- used >= declared -- and
+#     so the count clause, since totality + this together make declared ==
+#     used) -- CAT01 (new, this task), proven non-vacuous by CAT02 (new, this
+#     task: the LOAD itself does not reject an orphan category, checked
+#     directly, so CAT01's own set-equality check is the only thing that would
+#     ever catch one).
+#   AC-S4 (endpoint_kinds: <kind>-><kind>, both sides in the Kind enum read
+#          from relationship-schema.yml, no id-prefix token)
+#     mechanism -- VV12 (an id prefix rejected), VV13 (a non-Kind side), VV14
+#     (no arrow); over the REAL core -- Q20-01 (every side is a member of
+#     `rel_kinds`, which SC07 pins to the seven-value enum read from the
+#     schema carrier).
+#   AC-S5 (pair coherence: agreement on category/derived_from/passes across an
+#          asymmetric pair; symmetric closure under transposition)
+#     mechanism -- PC01/PC02 (transpose violations), PC03/PC04/PC05
+#     (agreement violations), PC06 (the SET reading, positive); over the REAL
+#     core -- Q20-00 (pair coherence is a load gate for every relation `rel__
+#     vocab_cross_check` visits, real core included) and Q20-04 (the transpose
+#     clause restated as an explicit set property over the whole declared
+#     set).
+#   AC-S6 (a worked row per §5.1's three sources plus the image-reference
+#          mapping, using only vocabulary terms in both relation columns, free
+#          text confined to Observation)
+#     NO assertion existed before this task: the shipped file's own D9 worked
+#     rows (its header comment) were never checked against the `pairs:` block
+#     they illustrate. Added this task -- D9-00..D9-08 (parses the four rows
+#     out of the shipped file and checks each against the loaded core:
+#     membership, pairing, the declared endpoint token, legal Provenance, and
+#     that Observation never smuggles in a relation label), proven non-vacuous
+#     by D9-MUT (a mutated COPY with row 1's relation swapped to a
+#     real-but-wrong label, which the same check must now refuse).
 #
 # Fixtures:
 #   Self-built under a mktemp dir, removed on EXIT. Nothing here reads or references
@@ -93,6 +180,14 @@ ERR="$TMP/stderr.txt"
 assert_file_exists "$LIB" "PRE library present"
 assert_file_exists "$SCHEMA" "PRE schema carrier present"
 assert_file_exists "$VOCAB_CORE" "PRE core vocabulary present"
+
+# S5 snapshot: every mutation in this suite writes to a mktemp COPY and never
+# to these three real files (`mutate`'s <dst> and every `cp .../"$TMP"/...`
+# target are the only write targets a reviewer needs to check) -- WT01 at the
+# bottom of this run turns that structural claim into a checked property.
+cp "$LIB" "$TMP/.snapshot-lib.sh"
+cp "$SCHEMA" "$TMP/.snapshot-schema.yml"
+cp "$VOCAB_CORE" "$TMP/.snapshot-vocab.yml"
 
 # shellcheck source=../../canonical/aid/scripts/graph/relationship-schema.sh disable=SC1090
 source "$LIB"
@@ -445,6 +540,216 @@ if declare -F rel_symmetry >/dev/null 2>&1; then
 else
     pass "EX08 'symmetry' is validated but exposes no accessor (its only consumer is the pairing check)"
 fi
+
+# ===========================================================================
+# === CAT: category completeness over the REAL core (feature-001 AC-S3) =====
+# ===========================================================================
+echo ""
+echo "=== CAT: every declared category classifies something, over the shipped core ==="
+
+# AC-S3's count clause reads "the stated count is the count of categories that
+# actually classify something" -- so this is a SET EQUALITY (declared categories
+# == categories some relation actually uses), never a literal cardinality. The
+# loader's own category-totality gate (exercised at Q20-00 above) only checks
+# the REFERENCE half -- a relation's category must be declared -- never the
+# converse, so an orphan category the loader would happily load is exactly
+# what this new check exists to catch.
+used_cats=""
+while IFS= read -r r; do
+    [[ -n "$r" ]] || continue
+    rel__lookup "$REL_T_CATEGORY" "$r" && used_cats="${used_cats}${REL_LOOKUP}
+"
+done < <(rel_vocab_relations)
+used_cats_sorted="$(printf '%s' "$used_cats" | sort -u | grep -v '^$')"
+declared_cats_sorted="$(rel_categories | sort -u)"
+if [[ -z "$declared_cats_sorted" || -z "$used_cats_sorted" ]]; then
+    fail "CAT01 — HARNESS BUG: read $(printf '%s\n' "$declared_cats_sorted" | grep -c .) declared and $(printf '%s\n' "$used_cats_sorted" | grep -c .) used categories from the real core"
+else
+    assert_eq "$used_cats_sorted" "$declared_cats_sorted" \
+        "CAT01 the real core's declared categories: block equals the set actually used by some relation -- no declared category is empty (AC-S3)"
+fi
+
+# Non-vacuity (S3): prove the LOAD does not itself reject an orphan category,
+# so CAT01's set-equality check above is the only thing that would ever catch
+# one. Mutates a COPY of the real core, never the source tree (S5).
+cp "$VOCAB_CORE" "$TMP/core-orphan.yml"
+printf '  - "zz-orphan-category|A category no relation in this file ever names."\n' >> "$TMP/core-orphan.yml"
+rc=0
+rel_load_vocabulary "$TMP/core-orphan.yml" 2>"$ERR" || rc=$?
+if [[ $rc -ne 0 ]]; then
+    fail "CAT02 — FIXTURE BUG: appending one unused category to a COPY of the real core broke the load (rc=$rc): $(<"$ERR")"
+else
+    orphan_used=""
+    while IFS= read -r r; do
+        [[ -n "$r" ]] || continue
+        rel__lookup "$REL_T_CATEGORY" "$r" && orphan_used="${orphan_used}${REL_LOOKUP}
+"
+    done < <(rel_vocab_relations)
+    orphan_used_sorted="$(printf '%s' "$orphan_used" | sort -u | grep -v '^$')"
+    orphan_declared_sorted="$(rel_categories | sort -u)"
+    if [[ "$orphan_used_sorted" == "$orphan_declared_sorted" ]]; then
+        fail "CAT02 an orphan category added to a COPY of the real core — CAT01's own check failed to notice it"
+    else
+        pass "CAT02 the load itself does NOT reject an orphan category (category totality is reference-only), so CAT01's set-equality check is provably not vacuous"
+    fi
+fi
+
+# The other half of AC-S3's "one-line meaning" clause: the mechanism that
+# would reject an empty meaning has never been exercised by a fixture. Reuses
+# the base fixture already on disk (written before the SC section, above).
+mutate "CAT03" "$TMP/base.yml" "$TMP/v.yml" \
+    '  - "cat-two|A second placeholder category."' \
+    '  - "cat-two|"' \
+    && reject "CAT03 a categories: item with an empty meaning is rejected (mechanism proof for AC-S3's 'one-line meaning')" \
+        "$TMP/v.yml" "has an empty side"
+
+# Restore the real core as the active load for the D9 section below, which
+# also reads it through the accessors.
+rel_load_vocabulary "$VOCAB_CORE" >/dev/null 2>&1
+
+# ===========================================================================
+# === D9: the shipped worked rows, checked against the pairs: block =========
+# === (feature-001 AC-S6) ====================================================
+# ===========================================================================
+echo ""
+echo "=== D9: the vocabulary file's own worked rows are legal against itself ==="
+
+# check_worked_row <label-prefix> <s2t> <t2s> <source-kind> <target-kind>
+#                   <provenance> <observation>
+#   The six checks AC-S6 needs for one worked row: both relation labels are
+#   members, they form a declared inverse pair, the row's own kind pair is a
+#   declared endpoint token of the S2T relation, the row's Provenance is legal
+#   for that relation's `passes`, and Observation never smuggles in a relation
+#   label. Every accessor called here is already proven correct elsewhere in
+#   this suite (EX03-EX07, Q20-01); what is NEW here is comparing the header
+#   comment's prose against the `pairs:` block it illustrates, which is not
+#   vacuous by construction -- the two are independently authored text, and
+#   D9-MUT below proves a divergence between them is caught.
+check_worked_row() {
+    local lp="$1" s2t="$2" t2s="$3" skind="$4" tkind="$5" prov="$6" obs="$7" tok toks ptoks
+    if [[ -z "$s2t" || -z "$t2s" || -z "$skind" || -z "$tkind" || -z "$prov" || -z "$obs" ]]; then
+        fail "${lp} — HARNESS BUG: a required field parsed empty (s2t='$s2t' t2s='$t2s' skind='$skind' tkind='$tkind' prov='$prov' obs='$obs')"
+        return
+    fi
+    tok="${skind}->${tkind}"
+
+    rel_is_relation "$s2t" && pass "${lp}a S2T Relation '$s2t' is a member of the merged vocabulary" \
+        || fail "${lp}a S2T Relation '$s2t' is a member of the merged vocabulary — rejected"
+    rel_is_relation "$t2s" && pass "${lp}b T2S Relation '$t2s' is a member of the merged vocabulary" \
+        || fail "${lp}b T2S Relation '$t2s' is a member of the merged vocabulary — rejected"
+    rel_pair_ok "$s2t" "$t2s" && pass "${lp}c '$s2t' / '$t2s' is a declared inverse pair" \
+        || fail "${lp}c '$s2t' / '$t2s' is a declared inverse pair — rejected"
+
+    rel_endpoint_kinds_into "$s2t" && toks="$REL_LOOKUP" || toks=""
+    rel__has_word "$toks" "$tok" && pass "${lp}d the row's kind pair '$tok' is a declared endpoint of '$s2t'" \
+        || fail "${lp}d the row's kind pair '$tok' is a declared endpoint of '$s2t' — not in: $toks"
+
+    rel_passes_into "$s2t" && ptoks="$REL_LOOKUP" || ptoks=""
+    rel__has_word "$ptoks" "$prov" && pass "${lp}e Provenance '$prov' is legal for '$s2t' (a member of its 'passes')" \
+        || fail "${lp}e Provenance '$prov' is legal for '$s2t' — not in: $ptoks"
+
+    if [[ "$obs" == "(left empty)" ]]; then
+        pass "${lp}f Observation is empty -- nothing but free-text nuance, vacuously"
+    elif rel_is_relation "$obs"; then
+        fail "${lp}f Observation '$obs' is itself a vocabulary relation label"
+    else
+        pass "${lp}f Observation carries free text, never a vocabulary term"
+    fi
+}
+
+# One read of the shipped file, parsing its four worked rows (D9) out of the
+# header comment. Field names are the ten-column contract's own labels, never
+# a vocabulary value, so this stays a structural anchor rather than a content
+# literal.
+d9_records="$(awk '
+    /^# [0-9]+\. / { if (n>0) print "===RECORD==="; n++; next }
+    /^#      (Source Id|Source Kind|Source Name|Target Id|Target Kind|Target Name|S2T Relation|T2S Relation|Provenance|Observation)  / {
+        line=$0
+        sub(/^#      /, "", line)
+        key=line
+        sub(/  +.*/, "", key)
+        val=line
+        sub("^" key "  +", "", val)
+        print key "\t" val
+    }
+' "$VOCAB_CORE")"
+
+declare -A d9_row
+d9_idx=0
+d9_srcprefix=(); d9_tgtprefix=(); d9_skind=(); d9_tkind=()
+
+flush_d9_row() {
+    [[ -n "${d9_row["S2T Relation"]:-}" ]] || return 0
+    d9_idx=$((d9_idx + 1))
+    check_worked_row "D9-0${d9_idx}" "${d9_row["S2T Relation"]}" "${d9_row["T2S Relation"]}" \
+        "${d9_row["Source Kind"]}" "${d9_row["Target Kind"]}" "${d9_row["Provenance"]}" "${d9_row["Observation"]}"
+    d9_srcprefix+=("${d9_row["Source Id"]%%:*}")
+    d9_tgtprefix+=("${d9_row["Target Id"]%%:*}")
+    d9_skind+=("${d9_row["Source Kind"]}")
+    d9_tkind+=("${d9_row["Target Kind"]}")
+}
+
+while IFS=$'\t' read -r key val; do
+    if [[ "$key" == "===RECORD===" ]]; then
+        flush_d9_row
+        d9_row=()
+        continue
+    fi
+    d9_row["$key"]="$val"
+done <<< "$d9_records"
+flush_d9_row
+
+if [[ "$d9_idx" -ne 4 ]]; then
+    fail "D9-00 — the header comment carries $d9_idx worked rows, expected the 4 that §5.1's three sources plus the image-reference mapping require"
+else
+    pass "D9-00 the header comment carries exactly the four worked rows §5.1 and D6c require"
+
+    # Coverage: the four rows must span KB-to-KB, KB-to-source and KB-to-external
+    # (§5.1's three sources) plus at least one image-kind endpoint (D6c). Read
+    # from the id PREFIXES the rows themselves carry, never from a relation name.
+    combo=""
+    for i in 0 1 2 3; do
+        combo="${combo}${d9_srcprefix[$i]}->${d9_tgtprefix[$i]} "
+    done
+    assert_output_contains "$combo" "kb->kb" "D9-05 the worked rows include a KB-to-KB row (§5.1 source 1)"
+    assert_output_contains "$combo" "kb->int" "D9-06 the worked rows include a KB-to-source row (§5.1 source 2)"
+    assert_output_contains "$combo" "kb->ext" "D9-07 the worked rows include a KB-to-external row (§5.1 source 3)"
+
+    image_hit=""
+    for k in "${d9_skind[@]}" "${d9_tkind[@]}"; do
+        [[ "$k" == "image" ]] && image_hit=1
+    done
+    if [[ -n "$image_hit" ]]; then
+        pass "D9-08 the worked rows include an image-kind endpoint (D6c's image-reference mapping)"
+    else
+        fail "D9-08 the worked rows include an image-kind endpoint — none found"
+    fi
+fi
+
+# Non-vacuity (S3): the comparison above is between two independently authored
+# parts of the same file (D6's pairs: block and D9's prose), so it is not
+# vacuous by construction -- but the proof is required, not assumed. A COPY
+# with row 1's S2T Relation swapped to a label that IS a member but does NOT
+# declare the same row's kind pair must be a mismatch the same check would
+# catch.
+mutate "D9-MUT" "$VOCAB_CORE" "$TMP/vocab-badrow.yml" \
+    '#      S2T Relation   defines' \
+    '#      S2T Relation   has-part' \
+    && {
+        rc=0
+        rel_load_vocabulary "$TMP/vocab-badrow.yml" 2>"$ERR" || rc=$?
+        if [[ $rc -ne 0 ]]; then
+            fail "D9-MUT — FIXTURE BUG: a COPY of the real core with only a comment line edited failed to load (rc=$rc): $(<"$ERR")"
+        else
+            rel_endpoint_kinds_into "has-part" && badtoks="$REL_LOOKUP" || badtoks=""
+            if rel__has_word "$badtoks" "section->concept"; then
+                fail "D9-MUT — FIXTURE BUG: 'has-part' legally declares 'section->concept', so this mutation exercises nothing"
+            else
+                pass "D9-MUT row 1's cross-check against the pairs: block is provably NOT vacuous: swapping its relation to a real-but-wrong label ('has-part') is a mismatch the same check would catch"
+            fi
+        fi
+    }
+rel_load_vocabulary "$VOCAB_CORE" >/dev/null 2>&1
 
 # ===========================================================================
 # === VK: totality, the fixed key order, the declared key set ===============
@@ -1344,6 +1649,20 @@ assert_exit_eq "$rc" 2 "LIB04 an unknown argument on direct execution is a usage
 # vocabulary CONTENT into the shipped tree.
 assert_file_not_contains "$LIB" "skos:" "LIB05 no standards token is hardcoded in the library"
 assert_file_not_contains "$LIB" "cites-as-evidence" "LIB06 no shipped relation label is hardcoded in the library"
+
+# ===========================================================================
+# === WT: the working tree is untouched by every mutation above (S5) ========
+# ===========================================================================
+echo ""
+echo "=== WT: every mutation above operated on a mktemp COPY, never these files ==="
+
+if cmp -s "$LIB" "$TMP/.snapshot-lib.sh" \
+    && cmp -s "$SCHEMA" "$TMP/.snapshot-schema.yml" \
+    && cmp -s "$VOCAB_CORE" "$TMP/.snapshot-vocab.yml"; then
+    pass "WT01 the library, the schema carrier and the core vocabulary are byte-identical to their PRE snapshot"
+else
+    fail "WT01 a real subject file changed during this run -- a mutation escaped its mktemp copy"
+fi
 
 # ===========================================================================
 # Summary
