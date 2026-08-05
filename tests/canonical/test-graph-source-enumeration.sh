@@ -340,6 +340,15 @@ RA
     printf 'a,b\n1,2\n' > "$d/data/table.csv"
     printf 'print("reader")\n' > "$d/dashboard/reader/parsers.py"
     printf 'boilerplate template\n' > "$d/canonical/aid/templates/agent-boilerplate.md"
+    # The P1 tie-break shape the D3a reopen turned on: a path whose ONLY Q1 carrier
+    # is the derived executable header, and which ALSO carries a declared Q2 carrier
+    # (EMISSION-MANIFEST.md's "canonical/aid/templates/" asset-kind root, below). The
+    # clause order (Q1 > Q2) must decide the qualifier; the rejected declared-before-
+    # derived-across-clauses reading would pick the declared Q2 evidence instead.
+    cat > "$d/canonical/aid/templates/tool-helper.sh" <<'TH'
+#!/usr/bin/env bash
+echo tool-helper
+TH
 
     printf '# Demo skill\n' > "$d/canonical/skills/aid-demo/SKILL.md"
     printf 'PNGDATA\n'      > "$d/canonical/skills/aid-demo/nested.png"
@@ -544,6 +553,36 @@ assert_field NA "int:lib/shared.sh" 4 "named-unit" \
     "R-QUAL-08 a Q3 carrier with no inbound reference stays named-unit"
 assert_field NA "int:canonical/skills/aid-demo/" 4 "public-surface" \
     "R-QUAL-09 an asset-kind root makes a skill directory public-surface"
+# The promotion moves the whole record, not just the qualifier field: evidence and
+# evidence_provenance must be Q4's own, never the superseded Q3 declared strings.
+assert_field NA "int:lib/promoted.sh" 5 \
+    'lib/promoted.sh -- inbound reference (search: "lib/promoted.sh" in bin/one.sh)' \
+    "R-QUAL-10 the promoted node's evidence is the inbound-reference string (byte-exact)"
+assert_field NA "int:lib/promoted.sh" 6 "derived" \
+    "R-QUAL-11 the promoted node's evidence_provenance is Q4's own (derived), not the superseded Q3 declared class"
+assert_field_ne NA "int:lib/promoted.sh" 5 \
+    'lib/promoted.sh -- frontmatter sources: entry (search: "lib/" in .aid/knowledge/beta.md)' \
+    "R-QUAL-12 and NOT the superseded Q3 evidence beta.md's prefix carrier would have written"
+
+# --- R-PRECED --------------------------------------------------------------
+echo "--- R-PRECED: the P1 tie-break -- clause order decides over provenance order ---"
+# The shape the D3a reopen turned on: a path whose ONLY Q1 carrier is the DERIVED
+# executable header, and which ALSO carries a DECLARED Q2 carrier (EMISSION-MANIFEST's
+# canonical/aid/templates/ asset-kind root). The rejected declared-before-derived-
+# across-clauses reading would emit public-surface with the Q2 evidence; the clause
+# order Q1 > Q2 must decide entry-point with the shebang as evidence instead.
+TH_ID="int:canonical/aid/templates/tool-helper.sh"
+assert_row_present NA "$TH_ID" "R-PRECED-01 the tie-break fixture path is a node"
+assert_field NA "$TH_ID" 4 "entry-point" \
+    "R-PRECED-02 qualifier is entry-point -- clause order (Q1 > Q2) decides, never provenance"
+assert_field NA "$TH_ID" 6 "derived" \
+    "R-PRECED-03 evidence_provenance is derived -- the shebang, not the declared EMISSION-MANIFEST row"
+EXP_TH_Q1='canonical/aid/templates/tool-helper.sh -- executable header (search: "#!/usr/bin/env bash" in canonical/aid/templates/tool-helper.sh)'
+EXP_TH_Q2='canonical/aid/templates/tool-helper.sh -- asset-kind root (search: "canonical/aid/templates/" in canonical/EMISSION-MANIFEST.md)'
+assert_field NA "$TH_ID" 5 "$EXP_TH_Q1" \
+    "R-PRECED-04 evidence is the shebang line, byte-exact"
+assert_field_ne NA "$TH_ID" 5 "$EXP_TH_Q2" \
+    "R-PRECED-05 and NOT the declared Q2 evidence -- the rejected declared-across-clauses reading"
 
 # --- R-MEDIA --------------------------------------------------------------
 echo "--- R-MEDIA: the D2a partition precedes significance ---"
@@ -1037,6 +1076,59 @@ assert_output_contains "$LIBOUT" "C5=yes"           "R-LIB-25 the Class 5 allowl
 assert_output_contains "$LIBOUT" 'TOKEN=[docs/x.md]' "R-LIB-26 token formation strips the marker and the backticks"
 assert_output_contains "$LIBOUT" "IMGEV=A/LOGO.PNG -- extension 'png' listed in relationship-schema.yml (search: \"image_extensions\")" \
     "R-LIB-27 the image evidence folds the extension but keeps the path bytes"
+
+# --- R-D3B -----------------------------------------------------------------
+# Every D3b template asserted to the byte, one case per carrier. Templates 6, 12, 13
+# and 14 are already golden-byte-checked elsewhere (R-EVID over a real scan; R-LIB
+# over sig_render_evidence directly) -- this group closes the remaining ten, plus a
+# totality check over D3a's carrier -> clause map (all 14 templates, and template 15
+# does not exist and must error rather than silently match).
+echo "--- R-D3B: every D3b evidence template rendered to the byte; the clause map is total ---"
+D3BOUT="$(
+    export LC_ALL=C
+    # shellcheck disable=SC1090
+    . "$LIB"
+    echo "T1=$(sig_render_evidence 1 'bin/gen.sh' 'bin/gen.sh' 'canonical/aid/templates/generated-files.txt')"
+    echo "T2=$(sig_render_evidence 2 'docs/genout.md' 'docs/genout.md' 'canonical/aid/templates/generated-files.txt')"
+    echo "T3=$(sig_render_evidence 3 'canonical/skills/aid-demo/' 'aid-demo' 'canonical/aid/templates/shortcut-catalog.yml')"
+    echo "T4=$(sig_render_evidence 4 'canonical/agents/aid-demo/' 'aid-demo' '.aid/settings.yml')"
+    echo "T5=$(sig_render_evidence 5 'canonical/skills/aid-demo/' 'canonical/skills/' 'canonical/EMISSION-MANIFEST.md')"
+    echo "T7=$(sig_render_evidence 7 'bin/deploy.sh' 'bin/deploy.sh' '.github/workflows/release.yml')"
+    echo "T8=$(sig_render_evidence 8 'packages/npm/bin/aid.js' 'bin/aid.js' 'packages/npm/package.json')"
+    echo "T9=$(sig_render_evidence 9 'packages/npm/lib/core.js' 'lib/core.js' 'packages/npm/package.json')"
+    echo "T10=$(sig_render_evidence 10 'tests/canonical/test-x.sh' 'tests/canonical/test-*.sh' 'tests/run-all.sh')"
+    echo "T11=$(sig_render_evidence 11 'canonical/skills/aid-demo/' 'canonical/skills/*/SKILL.md' '.aid/knowledge/module-map.md' 'Where a new skill goes')"
+    for t in 1 2 3 4 5 6 7 8 9 10 11 12 13 14; do
+        echo "CLS${t}=$(sig_template_clause "$t")"
+    done
+    if sig_template_clause 15 >/dev/null 2>&1; then echo "CLS15=matched"; else echo "CLS15=rejected"; fi
+)"
+assert_output_contains "$D3BOUT" 'T1=bin/gen.sh -- build-command script (search: "bin/gen.sh" in canonical/aid/templates/generated-files.txt)' \
+    "R-D3B-01 template 1 (build-command script, Q1) renders byte-exactly"
+assert_output_contains "$D3BOUT" 'T2=docs/genout.md -- registered output path (search: "docs/genout.md" in canonical/aid/templates/generated-files.txt)' \
+    "R-D3B-02 template 2 (registered output path, Q2) renders byte-exactly"
+assert_output_contains "$D3BOUT" 'T3=canonical/skills/aid-demo/ -- shortcut catalog row (search: "aid-demo" in canonical/aid/templates/shortcut-catalog.yml)' \
+    "R-D3B-03 template 3 (shortcut catalog row, Q2) renders byte-exactly"
+assert_output_contains "$D3BOUT" 'T4=canonical/agents/aid-demo/ -- doc_set agent (search: "aid-demo" in .aid/settings.yml)' \
+    "R-D3B-04 template 4 (doc_set agent, Q2) renders byte-exactly"
+assert_output_contains "$D3BOUT" 'T5=canonical/skills/aid-demo/ -- asset-kind root (search: "canonical/skills/" in canonical/EMISSION-MANIFEST.md)' \
+    "R-D3B-05 template 5 (asset-kind root, Q2) renders byte-exactly"
+assert_output_contains "$D3BOUT" 'T7=bin/deploy.sh -- workflow command token (search: "bin/deploy.sh" in .github/workflows/release.yml)' \
+    "R-D3B-06 template 7 (workflow command token, Q1) renders byte-exactly"
+assert_output_contains "$D3BOUT" 'T8=packages/npm/bin/aid.js -- published entry point (search: "bin/aid.js" in packages/npm/package.json)' \
+    "R-D3B-07 template 8 (published entry point, Q1) renders byte-exactly"
+assert_output_contains "$D3BOUT" 'T9=packages/npm/lib/core.js -- published payload (search: "lib/core.js" in packages/npm/package.json)' \
+    "R-D3B-08 template 9 (published payload, Q2) renders byte-exactly"
+assert_output_contains "$D3BOUT" 'T10=tests/canonical/test-x.sh -- suite discovery glob (search: "tests/canonical/test-*.sh" in tests/run-all.sh)' \
+    "R-D3B-09 template 10 (suite discovery glob, Q3, declared) renders byte-exactly"
+assert_output_contains "$D3BOUT" "T11=canonical/skills/aid-demo/ -- convention 'canonical/skills/*/SKILL.md' (search: \"Where a new skill goes\" in .aid/knowledge/module-map.md)" \
+    "R-D3B-10 template 11 (Shape B convention, Q2) renders byte-exactly"
+# D3a's carrier -> clause map is total over templates 1-14 and closed exactly there.
+for pair in 1:Q1 2:Q2 3:Q2 4:Q2 5:Q2 6:Q3 7:Q1 8:Q1 9:Q2 10:Q3 11:Q2 12:Q3 13:Q4 14:Q1; do
+    tid="${pair%%:*}"; want="${pair#*:}"
+    assert_output_contains "$D3BOUT" "CLS${tid}=${want}" "R-D3B-total template ${tid} maps to clause ${want} (D3a's carrier map, checked at this tid)"
+done
+assert_output_contains "$D3BOUT" "CLS15=rejected" "R-D3B-11 template 15 does not exist -- the map is closed, not open-ended"
 
 # --- R-HELP --------------------------------------------------------------
 echo "--- R-HELP: --help documents exactly what the code parses ---"
