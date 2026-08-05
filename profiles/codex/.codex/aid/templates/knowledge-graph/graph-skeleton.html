@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="{{LANG}}" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<!-- Resolve the theme synchronously, before first paint, so the page does not flash light
+     then go dark. Shared key 'aid-dashboard-theme': theme is one property across the whole
+     dashboard rather than per page, and a key of this page's own would visibly desynchronise
+     the graph from the knowledge-base summary. Mirrors the resolution order the shared
+     script uses: saved, else the system preference, else light. -->
+<script>(function(){try{var t=localStorage.getItem('aid-dashboard-theme');if(t!=='dark'&&t!=='light'){t=(window.matchMedia&&window.matchMedia('(prefers-color-scheme: dark)').matches)?'dark':'light';}document.documentElement.setAttribute('data-theme',t);}catch(e){}})();</script>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="color-scheme" content="light dark">
+<meta name="description" content="{{PROJECT_NAME}} — knowledge relationship graph, generated from the relationship table in .aid/knowledge/">
+<meta name="generator" content="aid-graph">
+<meta name="robots" content="noindex">
+<title>{{PROJECT_NAME}} — Knowledge Relationship Graph</title>
+<style>
+{{INLINE_CSS}}
+</style>
+</head>
+<body>
+
+<!-- First focusable element. -->
+<a class="skip-link" href="#top">Skip to content</a>
+
+<!-- Sticky top bar. The breadcrumb is a static landmark: this page is generated, not
+     navigated, and it is DELIBERATELY not reachable from the dashboard -- the dashboard's
+     leaf allowlist admits two pages and this is neither, and opening the local file is the
+     intended access path. So the breadcrumb names where the reader is rather than offering a
+     way back to a page that does not link here. -->
+<header class="top-bar" role="banner">
+	<span class="app-title">AID <span class="beta-pill">graph</span></span>
+	<nav class="breadcrumb" aria-label="Breadcrumb">
+		<span>{{PROJECT_NAME}}</span>
+		<span class="sep" aria-hidden="true">›</span>
+		<span>Knowledge Base</span>
+		<span class="sep" aria-hidden="true">›</span>
+		<span class="current" id="breadcrumb-current">Relationship graph</span>
+	</nav>
+	<div class="controls">
+		<button type="button" class="btn-ghost" id="theme-toggle"
+		        aria-label="Switch theme"
+		        title="Toggle light/dark theme">
+			<span id="theme-icon" aria-hidden="true">&#9680;</span>
+			<span id="theme-label">Dark</span>
+		</button>
+	</div>
+</header>
+
+<main id="top" class="graph-page">
+
+	<!-- THE ONE ALERT REGION, first child of <main> and ahead of both renderings.
+	     Present and EMPTY from load: a live region has to exist before its content is
+	     injected in order to announce reliably, which is why this is authored empty rather
+	     than inserted whole. It is written at most once per load, and it carries whichever
+	     load-time failure occurred -- an unreadable table, in which case neither rendering
+	     mounts, or a disagreement with the recorded gap list, in which case both do. The two
+	     are mutually exclusive, so this is one region and the page has exactly two.
+	     Not dismissible: a reader who closed it would be left with a view that looks
+	     trustworthy and is not. -->
+	<div class="integrity-banner" data-alert role="alert"></div>
+
+	<h1>Knowledge relationship graph</h1>
+	<p class="lede">Every relationship recorded among this project's Knowledge Base documents,
+	   sections, claims and defined concepts, its source artifacts, and the images and web pages
+	   they reference. Everything shown here comes from the relationship table and nothing else,
+	   so what is on screen is exactly what can be checked in the file.</p>
+
+	<!-- Non-live callouts: a conflicting kind or name for one identifier, and any build-level
+	     defect. Kept out of the alert region above, which reports load-time failure only. -->
+	<div data-conflicts></div>
+
+	<!-- Four named starting points, one per purpose this view serves. Entry points, not
+	     modes: arriving through one never takes a control away and never clears a filter. -->
+	<nav class="lens-bar" data-lens-bar aria-label="Preset lenses"></nav>
+
+	<!-- The full manual control surface, available at all times. Open by default, and its
+	     contents stay in the DOM when it is closed, because the control set is asserted on
+	     presence and a panel that unmounted its controls would be missing them on a narrow
+	     viewport while passing on a wide one. -->
+	<details class="controls-panel" open>
+		<summary>Controls</summary>
+		<div class="controls-grid" data-controls-grid></div>
+		<div class="control-group controls-viewport">
+			<span class="control-group-label" id="viewport-label">Viewport</span>
+			<div class="lens-bar" data-viewport-bar role="group" aria-labelledby="viewport-label"></div>
+			<span class="control-hint">Keyboard equivalents for zoom and pan. Dragging a node to
+			   reposition it has no keyboard equivalent and needs none: it moves a mark and conveys
+			   nothing a keyboard reader is denied.</span>
+		</div>
+	</details>
+
+	<section data-groups-region aria-label="Groups" hidden>
+		<h2 class="region-head">Groups</h2>
+		<ul class="group-list" data-groups></ul>
+	</section>
+
+	<!-- The two peer renderings. Neither is nested in the other and neither is ever hidden:
+	     the table is a SIBLING of the graph, which is the structural form of "peer rendering".
+	     DOM ORDER IS TABLE-FIRST, so the keyboard reaches the surface that works everywhere
+	     before it reaches the drawing surface; the visual order is set in the stylesheet. -->
+	<div class="renderings">
+
+		<section class="table-region" data-table-region aria-label="Relationship table" id="relationship-table">
+			<div class="region-head">
+				<h2>Relationship table</h2>
+				<span class="counts" data-counts></span>
+			</div>
+		</section>
+
+		<section class="graph-region" aria-label="Relationship graph">
+			<div class="region-head">
+				<h2>Relationship graph</h2>
+				<a href="#relationship-table">Skip the graph and read the table</a>
+			</div>
+			<!-- The drawing surface. The drawing rendering creates its own canvas inside this
+			     container and marks it so the shell can keep its text alternative current. That
+			     canvas carries a graphical role and a text alternative and NOTHING ELSE: it is
+			     visual-only, and this view's conformance rests on the table rendering as the
+			     equivalent alternative. No control is ever drawn on it. -->
+			<div class="graph-surface" data-graph-surface>
+				<p class="graph-placeholder" data-graph-placeholder>
+					The interactive drawing surface is not present in this build, or this browser
+					provides no usable graphics context. Nothing is lost: the relationship table
+					above carries every relationship as text, with the same lenses and the same
+					filters applied to it.
+				</p>
+			</div>
+		</section>
+
+	</div>
+
+	<!-- The selected node, inline rather than in a dialog, so exploring never traps focus.
+	     Selecting and opening are two different gestures, and the Open control is a real
+	     button because a double click has no keyboard equivalent. -->
+	<section class="node-detail" aria-label="Selected node">
+		<h2>Selected node</h2>
+		<div data-node-detail></div>
+		<button type="button" class="btn-open" id="node-open">Open this node's artifact</button>
+	</section>
+
+	<!-- The one POLITE region. Carries the lens summary and the drawn counts, written once
+	     per lens change and never per frame. Visible, because an announcement a sighted
+	     reader cannot see is an announcement nobody can check. -->
+	<p class="status-line" data-status aria-live="polite"></p>
+
+	<section aria-label="Legend">
+		<h2>Legend</h2>
+		<div class="diagram-box">
+			<svg viewBox="0 0 560 150" width="560" height="150" role="img"
+			     aria-label="The seven node shapes, one per node kind, and the four line styles used for relationship categories. Each is named in words in the list below this diagram.">
+				<g stroke="none">
+					<circle cx="30" cy="26" r="11" fill="var(--gk-document)"/>
+					<rect x="88" y="15" width="22" height="22" fill="var(--gk-section)"/>
+					<polygon points="169,15 181,37 157,37" fill="var(--gk-fact)"/>
+					<polygon points="229,15 241,26 229,37 217,26" fill="var(--gk-concept)"/>
+					<polygon points="283,15 295,15 301,26 295,37 283,37 277,26" fill="var(--gk-source-artifact)"/>
+					<polygon points="349,15 360,23 356,36 342,36 338,23" fill="var(--gk-image)"/>
+					<circle cx="410" cy="26" r="11" fill="none" stroke="var(--gk-web-page)" stroke-width="5"/>
+				</g>
+				<g font-size="11" fill="var(--text-muted)" text-anchor="middle">
+					<text x="30" y="54">document</text>
+					<text x="99" y="54">section</text>
+					<text x="169" y="54">fact</text>
+					<text x="229" y="54">concept</text>
+					<text x="289" y="54">artifact</text>
+					<text x="349" y="54">image</text>
+					<text x="410" y="54">web page</text>
+				</g>
+				<g stroke-width="3" fill="none">
+					<line x1="20" y1="84" x2="120" y2="84" stroke="var(--gc-structure)"/>
+					<line x1="20" y1="106" x2="120" y2="106" stroke="var(--gc-taxonomy)" stroke-dasharray="9 6"/>
+					<line x1="20" y1="128" x2="120" y2="128" stroke="var(--gc-evidence)" stroke-dasharray="2 5"/>
+					<line x1="230" y1="84" x2="330" y2="84" stroke="var(--gc-documentation)"/>
+					<polygon points="330,79 342,84 330,89" fill="var(--gc-documentation)" stroke="none"/>
+					<line x1="230" y1="112" x2="342" y2="112" stroke="var(--gc-provenance)"/>
+				</g>
+				<g font-size="11" fill="var(--text-muted)">
+					<text x="132" y="88">solid — the category owns its colour</text>
+					<text x="132" y="110">dashed — shares a colour</text>
+					<text x="132" y="132">dotted — shares a colour</text>
+					<text x="352" y="88">arrowhead — reads source to target</text>
+					<text x="352" y="116">no arrowhead — reads the same both ways</text>
+				</g>
+			</svg>
+			<p class="caption">Node kind by colour and shape; relationship category by colour and line
+			   style; direction by an arrowhead, whose absence is itself the signal.</p>
+		</div>
+		<div data-legend></div>
+	</section>
+
+	<section class="coverage-panel" aria-label="Coverage report">
+		<h2>What this run could see</h2>
+		<p class="control-hint">The generating run's own report of what it enumerated and what it
+		   deliberately excluded. This is a report and nothing more: no value here decides what
+		   appears in the graph.</p>
+		<div data-coverage-panel></div>
+	</section>
+
+</main>
+
+<!-- The reused lightbox, and the only dialog on this page. Node and row detail is an inline
+     expanding region rather than a modal, so the page ships exactly one focus trap and there
+     is no second one to keep correct. -->
+<div class="lightbox" id="lightbox" role="dialog" aria-modal="true" aria-hidden="true"
+     aria-labelledby="lb-caption" aria-describedby="lb-hint">
+	<div class="lb-toolbar" role="toolbar" aria-label="Diagram zoom controls">
+		<button type="button" id="lb-zoom-out" aria-label="Zoom out" title="Zoom out (−)">−</button>
+		<button type="button" id="lb-zoom-reset" aria-label="Reset zoom" title="Reset zoom (0)">⟲</button>
+		<button type="button" id="lb-zoom-in" aria-label="Zoom in" title="Zoom in (+)">+</button>
+		<button type="button" id="lb-close" aria-label="Close (Esc)" title="Close (Esc)">✕</button>
+	</div>
+	<div class="lb-hint" id="lb-hint">Scroll to zoom · Drag to pan · Esc to close</div>
+	<div class="lb-stage" id="lb-stage">
+		<div class="lb-inner" id="lb-inner"></div>
+	</div>
+	<div class="lb-caption" id="lb-caption" aria-live="polite"></div>
+</div>
+
+<footer id="page-footer">
+	<p>Generated from <code>.aid/knowledge/relationships.md</code> on {{GENERATION_DATE}} by
+	   {{SOURCE_STAMP}} &middot; re-run <code>/aid-graph</code> to update.</p>
+	<p>Read the sources directly:
+	   <a href="./relationships.md">relationships.md</a> — every relationship this page draws;
+	   <a href="./external-sources.md">external-sources.md</a> — the file that resolves an
+	   external key to its address, which the relationship table deliberately does not carry.</p>
+	<h2>Runtime prerequisites</h2>
+	<ul class="prereqs">
+		<li><strong>A working WebGL context is required for the live graph.</strong> Without one the
+		    drawing surface does not run, and <strong>the relationship table remains fully
+		    usable</strong> — same lenses, same filters, every relationship as text.</li>
+		<li>JavaScript is required. This page builds both renderings and its whole control surface
+		    at load time; with scripting off there is nothing to read here, and the fallback below
+		    points at the files that are still readable.</li>
+		{{PREREQUISITES}}
+	</ul>
+	{{SCALE_CEILING_NOTE}}
+</footer>
+
+<!-- The honest answer to a page that needs scripting: name what is missing and give a route
+     out. Both renderings and every control are built at load time, so with scripting disabled
+     this fallback is the whole of the page, and the two files below are the ones that still
+     carry everything it would have shown. -->
+<noscript>
+	<div class="noscript-fallback">
+		<h2>JavaScript required</h2>
+		<p>This page reads its relationship table, builds both renderings and builds every control
+		   at load time. With JavaScript disabled none of that runs, so there is no graph and no
+		   table to read here.</p>
+		<p>Everything this page would have shown is in two files beside it, and both are plain
+		   readable Markdown:</p>
+		<ul>
+			<li><a href="./relationships.md">relationships.md</a> — every relationship, with both
+			    readings of each on one row, and the run's coverage report after the table. This is
+			    the single input this page renders from, so it is not a summary of the graph: it is
+			    the graph.</li>
+			<li><a href="./INDEX.md">INDEX.md</a> — the Knowledge Base map, for reading the
+			    documents the relationships are between.</li>
+		</ul>
+	</div>
+</noscript>
+
+<!-- The relationship file, embedded verbatim and base64-encoded. Two reasons for the encoding
+     rather than for escaping: the encoded body cannot contain a '<', so it can never be
+     mis-parsed as markup; and a markdown-typed script is exactly the case the page validator's
+     inline-engine heuristic excludes, so a large payload does not trip a check about something
+     else entirely. -->
+<script type="text/markdown" id="graph-relationships" data-encoding="base64">{{RELATIONSHIPS_BASE64}}</script>
+
+<!-- ONE module block. The shared coverage predicate comes first, byte for byte as authored,
+     then this view's own files in manifest order. That is one module scope, which is why none
+     of them declares a loading statement: a page opened as a local file cannot load a relative
+     module at all, so the concatenation is the delivery mechanism and not a shortcut.
+     The boot call is last, after every file's own top-level body. -->
+<script type="module">
+{{INLINE_COVERAGE_PREDICATE}}
+{{INLINE_GRAPH_JS}}
+bootGraphView();
+</script>
+
+<script>
+{{INLINE_LIGHTBOX_JS}}
+</script>
+
+</body>
+</html>

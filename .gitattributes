@@ -17,6 +17,23 @@
 # so a Windows autocrlf checkout can't inject CRLF that a consumer's parser mishandles
 # (a CRLF checkout made vendor.js leak comment lines as bogus file paths).
 dashboard/MANIFEST text eol=lf
+# The knowledge-graph work (work-005) adds four canonical roots whose file sets include
+# extensions no rule above names — `.yml` under the graph template root, and `.js`, `.css`,
+# `.html` under the knowledge-graph view templates. A `.yml` is VERBATIM class in the render
+# (render.py's _TEXT_EXTENSIONS excludes it), so a CRLF commit would ship CRLF to every
+# profile AND to every adopter with a perfectly clean render-drift diff — the one place that
+# gate is structurally blind. The rules are PATH-scoped rather than extension-wide on purpose:
+# `*.yml text eol=lf` at repo root would renormalise every tracked .yml in the repository,
+# burying an unrelated repo-wide change in this diff.
+canonical/aid/templates/graph/**             text eol=lf
+canonical/aid/templates/knowledge-graph/**   text eol=lf
+canonical/aid/scripts/graph/**               text eol=lf
+canonical/skills/aid-graph/**                text eol=lf
+# Two already-registered files the same work amends that sit outside every root above and
+# that no extension rule reaches: the settings template (verbatim class, seeds a `graph:`
+# section) and the generated-file registry (transformed class, gains a header-comment line).
+canonical/aid/templates/settings.yml         text eol=lf
+canonical/aid/templates/generated-files.txt  text eol=lf
 # The install manifest is LF-only in history but had no rule, so a Windows tool that
 # rewrote it (Python's default newline translation) silently committed CRLF —
 # functionally harmless, since every consumer JSON-parses it, but it turned a 72-line

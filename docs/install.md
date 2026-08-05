@@ -408,7 +408,7 @@ Installs into `.claude/`:
 
 - `.claude/aid/scripts/` — helper scripts (phase-specific, e.g. interview, summarize)
 - `.claude/aid/templates/` — KB document templates, task templates, and the shortcut system (`shortcut-catalog.yml`, `shortcut-engine.md`, `shortcut-scaffolding/`)
-- `.claude/skills/` — 75 `aid-`-prefixed skill markdown files (17 curated pipeline / on-demand / router skills + the 58-row shortcut catalog's skills: 34 Lite-Path shortcut doorways + 24 hand-authored repurpose skills)
+- `.claude/skills/` — 76 `aid-`-prefixed skill markdown files (18 curated pipeline / on-demand / router skills + the 58-row shortcut catalog's skills: 34 Lite-Path shortcut doorways + 24 hand-authored repurpose skills)
 - `.claude/agents/` — 9 `aid-`-prefixed agent markdown files
 - `CLAUDE.md` — project-context file at the project root (AID content fenced by `<!-- AID:BEGIN -->`/`<!-- AID:END -->`)
 

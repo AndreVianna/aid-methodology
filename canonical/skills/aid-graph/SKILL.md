@@ -130,9 +130,9 @@ not a map node; on entry it prints its re-entry target instead.
 | EMIT | `references/state-emit.md` | inline | → GAP-REPORT |
 | GAP-REPORT | `references/state-gap-report.md` | inline | → RENDER |
 | RENDER | `references/state-render.md` | inline | → VALIDATE. **Skipped when `view_expected` is false** |
-| VALIDATE | `references/state-validate.md` | inline | → VISUAL-GATE (Machine Grade ≥ the resolved floor) / → FIX (below it) |
-| VISUAL-GATE | `references/state-visual-gate.md` | inline | → DONE (Overall Grade ≥ the floor) / → FIX (below it). **N/A when `view_expected` is false**, and VALIDATE then advances straight to DONE |
-| FIX | `references/state-fix.md` | inline | → RENDER, → EXTRACT or → VALIDATE, by where the repaired input lives |
+| VALIDATE | `references/state-validate.md` | inline | → VISUAL-GATE (Machine Grade ≥ the resolved floor) / → FIX (below it) / → DONE (Machine Grade ≥ the floor and `view_expected` is false, VISUAL-GATE being N/A) |
+| VISUAL-GATE | `references/state-visual-gate.md` | inline | → DONE (Overall Grade ≥ the floor) / → FIX (below it). **N/A when `view_expected` is false** |
+| FIX | `references/state-fix.md` | inline | → RENDER / → EXTRACT / → VALIDATE, by where the repaired input lives |
 | DONE | `references/state-done.md` | inline | → halt, in one of two variants |
 
 On state entry, print `[State: NAME]` + the "you are here" map from State Detection above.

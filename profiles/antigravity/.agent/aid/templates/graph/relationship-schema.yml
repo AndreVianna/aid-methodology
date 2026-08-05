@@ -1,0 +1,153 @@
+# aid/templates/graph/relationship-schema.yml
+#
+# Machine-readable form of the `.aid/knowledge/relationships.md` table contract
+# (feature-003, work-005-knowledge-graph): the column shape, the two closed enums,
+# the node-id prefix set, and the extension set that separates an in-repo image
+# from an ordinary source artifact.
+#
+# One carrier, one loader. `rel_load_schema` in
+# `aid/scripts/graph/relationship-schema.sh` reads every key below, and no script
+# in the graph tree hardcodes the column list, either enum, the prefix set or the
+# extension set. Adding a column or a kind is therefore a change to this file plus
+# a validator-test update, not a grep across the pipeline.
+#
+# Renders as VERBATIM BYTES to `<root>/aid/templates/graph/relationship-schema.yml`
+# in every profile -- a `.yml` is not in render.py's `_TEXT_EXTENSIONS`, matching
+# the shipped `templates/shortcut-catalog.yml` precedent.
+#
+# Parsed with the project's flat-YAML awk extractors, never a YAML binary
+# (`.aid/knowledge/coding-standards.md`, "YAML/text parsing without binaries").
+# The restricted subset this file stays inside, so two independently written
+# loaders read the same values: top-level keys only, one key per physical line,
+# every flow sequence on one physical line, no anchors, no aliases, no merge keys,
+# no block scalars, no second document.
+#
+# Loading is FAIL-CLOSED. An absent, empty or malformed key exits 2 before any
+# table row is examined, so a broken enum can never be read as "every value is
+# acceptable".
+#
+# ---------------------------------------------------------------------------
+# Field contract (one key per physical line, in the order below)
+# ---------------------------------------------------------------------------
+#
+#   columns           (required, flow sequence) -- the relationship table's columns
+#                     in their fixed left-to-right order, each `Kind` adjacent to
+#                     the id it qualifies. TEN columns is the contract itself and
+#                     not a summary of one: the emitted header and delimiter rows
+#                     are byte-compared against this list, so changing it is a
+#                     breaking change by design.
+#
+#   required          (required, flow sequence) -- the subset of `columns` whose
+#                     cell may never be empty.
+#
+#   optional          (required, flow sequence) -- the complement of `required`
+#                     within `columns`. Carried explicitly rather than computed, so
+#                     a column name mistyped in either list is visible here instead
+#                     of silently becoming optional.
+#
+#   provenance        (required, flow sequence) -- the closed `Provenance` enum:
+#                     how the relationship on a row was established. It is also the
+#                     value space of a relation vocabulary entry's `passes` key,
+#                     which is validated against this list rather than against a
+#                     second copy of it.
+#
+#   prefixes          (required, flow sequence) -- the closed set of node-id
+#                     prefixes. Every id is `<prefix>:<body>`; which body grammar
+#                     and which resolution check apply is selected by `Kind`, never
+#                     by prefix.
+#
+#   kinds             (required, block sequence of double-quoted tokens) -- the
+#                     closed `Kind` enum, each value carrying the set of id
+#                     prefixes it permits.
+#                     Token form: "<kind>|<prefix>[,<prefix>...]". The kind name is
+#                     the part before the `|`; the permitted prefixes are the
+#                     comma-separated part after it, each a member of `prefixes`.
+#                     The pairing is carried as a per-kind SET rather than as a
+#                     scalar because one kind admits two prefixes -- encoding it as
+#                     data is what makes a one-to-one implementation, which would
+#                     wrongly reject valid external images, unrepresentable rather
+#                     than merely discouraged.
+#                     This list is also the value space of both sides of a relation
+#                     vocabulary `endpoint_kinds` token, so the closed set has one
+#                     carrier here and the vocabulary file holds no second copy.
+#
+#   image_extensions  (required, flow sequence) -- lower-cased, dot-less file
+#                     extensions. An enumerated in-repo path whose extension is a
+#                     member is an `image`; one whose extension is not is a
+#                     `source-artifact`. The comparison is against the lower-cased
+#                     extension of the path, so on-disk case never decides a kind.
+#
+# ---------------------------------------------------------------------------
+# What lives here, and what deliberately does not
+# ---------------------------------------------------------------------------
+#
+#   Here      the column shape, the `Provenance` enum, the id-prefix set, the
+#             `Kind` enum with its prefix pairing, and the image-extension set --
+#             one ordered list and four closed sets, all of them data.
+#
+#   Not here  the relation vocabulary. `relation-vocabulary.yml` in this directory
+#             owns every relation label, every category, and every per-entry field
+#             rule; a project may add to it at `.aid/graph/relation-vocabulary.yml`
+#             and may never redefine what the core owns.
+#
+#   Not here  the id grammars, the per-kind resolution protocols, the row
+#             normalisation and ordering rule, the emitted frontmatter block, and
+#             the validators. Each of those is a RULE rather than a set: it lives
+#             once, in `relationship-schema.sh` and `validate-relationships.sh`
+#             against feature-003's specification, because a second copy of a rule
+#             is a divergence waiting to happen.
+#
+# ---------------------------------------------------------------------------
+# Consumers
+# ---------------------------------------------------------------------------
+#
+#   feature-003  rel_load_schema (relationship-schema.sh) -- loads every key below.
+#                Called before rel_load_vocabulary, which validates each
+#                `endpoint_kinds` token against the `kinds:` list this call holds.
+#                validate-relationships.sh -- the column-shape check reads
+#                `columns:`, the provenance check reads `provenance:`, and the
+#                kind/prefix check reads `kinds:`, `prefixes:` and
+#                `image_extensions:`.
+#   feature-004  scan-source.sh -- `image_extensions:` decides `image` against
+#                `source-artifact` for every enumerated path, before significance
+#                is evaluated. It keeps no copy of the list.
+#   feature-005  build-relationships.sh -- emits the columns in `columns:` order.
+#   feature-007  the view's kind and provenance constants are authored FROM
+#                `kinds:` and `provenance:` and bound to them by its test suite,
+#                which reads this file from disk: a `file://` page gets
+#                `relationships.md` and nothing else, so the page itself can never
+#                read this file.
+#
+# ---------------------------------------------------------------------------
+# Adding a column, a kind, or an image extension
+# ---------------------------------------------------------------------------
+#
+#   1. Edit this file only -- no script hardcodes any of the sets below.
+#   2. A new column moves the header and delimiter literals the emitter writes and
+#      breaks the ten-column contract. Treat it as a breaking change: update the
+#      validator tests and the emitted frontmatter's `contracts:` line in the same
+#      edit.
+#   3. A new kind needs its permitted-prefix set here, a row in the artifact's
+#      coverage-notes kinds table, and a resolution protocol. The last is
+#      feature-003's contract, not this file's data.
+#   4. Run the FULL profile generator (never a partial render) so every profile
+#      copy and its emission manifest move together.
+#   5. Submit through the project's normal review gate (reviewer ledger at
+#      .aid/.temp/review-pending/<scope>.md, graded by grade.sh).
+#
+# ---------------------------------------------------------------------------
+
+columns: [Source Id, Source Kind, Source Name, Target Id, Target Kind, Target Name, S2T Relation, T2S Relation, Provenance, Observation]
+required: [Source Id, Source Kind, Source Name, Target Id, Target Kind, Target Name, S2T Relation, T2S Relation, Provenance]
+optional: [Observation]
+provenance: [declared, derived, inferred]
+prefixes: [kb, int, ext]
+kinds:
+  - "document|kb"
+  - "concept|kb"
+  - "fact|kb"
+  - "section|kb"
+  - "source-artifact|int"
+  - "image|int,ext"
+  - "web-page|ext"
+image_extensions: [png, jpg, jpeg, gif, svg, webp, avif, bmp, ico]

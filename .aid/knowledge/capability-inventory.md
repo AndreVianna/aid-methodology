@@ -200,6 +200,7 @@ Optional jobs run outside the linear pipeline, when the user needs them.
 | Ask the KB a question | `/aid-ask` | Answers a free-form question grounded in the KB, the live code, and in-flight work; cites sources or names the gap. |
 | Targeted KB update | `/aid-update-kb` | Applies a described change to the KB through the same review/approval gate as discovery. |
 | Housekeeping | `/aid-housekeep` | Re-discovers changed KB docs, runs the conformance check over forward-authored docs, regenerates the visual summary, and sweeps stale work artifacts. |
+| Map the KB's relationships | `/aid-graph` | Builds `relationships.md` (the machine-readable relationship table over the approved KB plus the project source) and `graph.html` (the interactive view over it); reports Knowledge Base gaps in a separate ledger and routes them onward instead of fixing or gating on them. Requires an approved KB, which stays read-only for the whole run; idempotent and content-addressed. |
 | Visual KB summary | `/aid-summarize` | Generates a single-file `kb.html` — a visually rich, newcomer-friendly view of the Knowledge Base. |
 
 ## CLI installer capabilities
@@ -261,7 +262,7 @@ Each capability maps to the parts that implement it (full anatomy in `module-map
 
 | Capability group | Parts / modules it touches |
 |------------------|----------------------------|
-| Pipeline + on-demand skills | `.claude/skills/<skill>/` (SKILL.md + references) backed by per-area helper scripts under `canonical/aid/scripts/` (`config/`, `connectors/`, `execute/`, `housekeep/`, `kb/`, `migrate/`, `release/`, `summarize/`); each skill dispatches `canonical/agents/*` sub-agents. See module-map.md "toolkit plane" + per-area script table. |
+| Pipeline + on-demand skills | `.claude/skills/<skill>/` (SKILL.md + references) backed by per-area helper scripts under `canonical/aid/scripts/` (`config/`, `connectors/`, `execute/`, `graph/`, `housekeep/`, `kb/`, `migrate/`, `release/`, `summarize/`); each skill dispatches `canonical/agents/*` sub-agents. See module-map.md "toolkit plane" + per-area script table. |
 | Requirements-gathering deep dive | `/aid-describe`'s `references/` engine corpus (`elicitation-engine.md`, `move-playbook.md`, `calibration.md`, `advisor-stance.md`, `coherence-check.md`, `state-describe-seed.md`) + the `aid-housekeep` Conformance Lane. See module-map.md "aid-describe elicitation engine" + "Conformance Lane". |
 | Direct-entry shortcuts & Lite path | 34 thin `canonical/skills/aid-<verb>[-<artifact>]/SKILL.md` doorways + the `/aid-triage` router, all delegating to `canonical/aid/templates/shortcut-engine.md`; family scaffolding in `canonical/aid/templates/shortcut-scaffolding/<family>.md`; invocation catalog `canonical/aid/templates/shortcut-catalog.yml` (built into skill dirs by `generate-profile/scripts/build-shortcut-skills.py`). |
 | External connections & tool integrations | `.aid/connectors/` (descriptors + generated `INDEX.md` + git-ignored `.secrets/`), populated by `/aid-discover` ELICIT; backed by `canonical/aid/scripts/connectors/` (`connector-registry`, `build-connectors-index`, `connector-secret` bash+PowerShell twins) and the `canonical/aid/templates/connectors/preset-catalog.md` presets. See module-map.md "connectors". |
@@ -277,7 +278,7 @@ Each capability maps to the parts that implement it (full anatomy in `module-map
 
 ## Open items
 
-- **Skill count.** AID ships **75 skill directories** under `canonical/skills/`: **17 curated
+- **Skill count.** AID ships **76 skill directories** under `canonical/skills/`: **18 curated
   skills** (the pipeline-phase, on-demand, and `/aid-triage` router skills that are *not* in the
   shortcut catalog — including the three ticket skills `aid-read-ticket`, `aid-create-ticket`,
   `aid-update-ticket`) plus the **58-row shortcut catalog**'s skills, every row a canonical

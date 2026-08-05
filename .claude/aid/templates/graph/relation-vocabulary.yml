@@ -1,0 +1,1010 @@
+# aid/templates/graph/relation-vocabulary.yml
+#
+# The core relation vocabulary for `.aid/knowledge/relationships.md` (feature-001,
+# work-005-knowledge-graph). One entry per relation type; every type is paired with
+# its inverse, so one table row records both readings of one relationship and never
+# needs a second row.
+#
+# CORE PLUS PROJECT EXTENSION. This file is the core: shipped with the tool, closed
+# to redefinition, and the same on every project. A project may add its own types at
+# `.aid/graph/relation-vocabulary.yml` in this same format; it may never redefine or
+# remove a pair shipped here. The loader merges the two and fails the run on any
+# collision, so two projects reading the same relation name always mean the same
+# thing.
+#
+# Renders as VERBATIM BYTES to `<root>/aid/templates/graph/relation-vocabulary.yml`
+# in every profile -- a `.yml` is not in render.py's `_TEXT_EXTENSIONS`, matching the
+# shipped `templates/shortcut-catalog.yml` precedent. Nothing here is path-rewritten
+# or placeholder-substituted at render time, so no field carries an install-relative
+# path and no field carries a substitution token. Paths and URLs appear only in this
+# comment block, where nothing resolves them.
+#
+# ---------------------------------------------------------------------------
+# One loader, and one carrier for every closed set this file draws on
+# ---------------------------------------------------------------------------
+#
+# `rel_load_vocabulary` in `aid/scripts/graph/relationship-schema.sh` is the ONE
+# reader. It parses this file, merges the project extension, enforces every rule
+# below, and exits 2 on any violation. Nothing that validates or emits a relationship
+# row parses this file itself, and no standard key appears anywhere in the graph
+# script tree.
+#
+# ONE EXCEPTION, stated because it is a maintenance hazard and not a design: the
+# coverage predicate in `aid/scripts/graph/coverage-predicate.mjs` carries a frozen
+# relation-to-category map of its own, because it is a dual-runtime module that is
+# forbidden to load anything. Renaming, removing or re-categorising a pair below
+# therefore means editing that file in the same change, and re-checking
+# `coverage-bearing.yml` in this directory against its criterion.
+#
+# Two closed sets this file's values are drawn from live in `relationship-schema.yml`
+# in this directory, and are deliberately NOT copied here:
+#
+#   `kinds:`       both sides of every `endpoint_kinds` token
+#   `provenance:`  every `passes` value
+#
+# A second copy of a closed set can drift from the first; a citation cannot. Adding a
+# node kind is a change to that file and to nothing here.
+#
+# ---------------------------------------------------------------------------
+# Field contract -- every key required and non-empty, one key per physical line, in
+# the fixed order below. The loader validates order as well as membership.
+# ---------------------------------------------------------------------------
+#
+#   relation        (plain token, `[a-z][a-z0-9-]*`) -- the relationship read
+#                   Source -> Target; the value that may appear in an `S2T Relation`
+#                   cell. Lowercase, hyphen-separated, active voice. The entry's
+#                   identifying key, always its first key, unique across the merged
+#                   core-plus-extension vocabulary.
+#
+#   inverse         (plain token) -- the same relationship read Target -> Source; the
+#                   value that must appear in `T2S Relation` when `S2T Relation`
+#                   holds `relation`. Must itself be some merged entry's `relation`,
+#                   so the set is closed under inversion.
+#
+#   symmetry        (plain enum: `asymmetric` | `symmetric`) -- `symmetric` IFF
+#                   `inverse` equals `relation`, `asymmetric` IFF it does not. There
+#                   is no third case. Declaring it makes a self-inverse pair a stated
+#                   fact rather than an accident a validator has to tolerate.
+#
+#   category        (plain token) -- the single grouping bucket, drawn from the
+#                   merged `categories:` set. Never blank, never multi-valued.
+#
+#   derived_from    (non-empty one-line flow sequence of double-quoted tokens) --
+#                   which published standard, or standards, the relationship derives
+#                   from. Token form `<key>:<Term>`, where `<key>` is a key of the
+#                   standards table below and `<Term>` is that standard's own local
+#                   term name verbatim, case included; or the single token `coined`.
+#                   `coined` is FORBIDDEN in this core file -- that prohibition is
+#                   what makes "standards-first" a checkable property of the artifact
+#                   rather than a claim about how it was written -- and it may never
+#                   share an entry with a standard token. An extension MAY use it;
+#                   that asymmetry is the one content rule the two files differ on.
+#                   Attribution is PAIR-level, so a cited term may name either
+#                   reading of the relationship. A token that runs target -> source
+#                   is legitimate and is listed under "Flagged tokens" below, never
+#                   left for a reader to infer.
+#
+#   endpoint_kinds  (non-empty one-line flow sequence of double-quoted tokens) --
+#                   which ordered pairs of node KINDS the relationship may join when
+#                   this entry's `relation` is a row's `S2T Relation`. Token form
+#                   `<kind>-><kind>`, each side a value in `relationship-schema.yml`'s
+#                   `kinds:` list. An id PREFIX is never a side: a token naming `kb:`,
+#                   `int:` or `ext:` is a defect and not a legacy form, because those
+#                   cannot tell a document that DEFINES a concept from a section that
+#                   merely MENTIONS one. No wildcard is accepted either: a token that
+#                   declares everything declares nothing.
+#
+#   passes          (non-empty one-line flow sequence of plain tokens) -- which
+#                   extraction passes may emit this type; a subset of
+#                   `relationship-schema.yml`'s `provenance:` list.
+#
+#   definition      (double-quoted string, one sentence, one physical line) -- what
+#                   the relationship asserts, precise enough that two independent
+#                   authors pick the same type for the same fact. Written naming the
+#                   source and the target explicitly, so the reading direction is
+#                   never in doubt. Always double-quoted; prose reliably acquires a
+#                   colon-space or a comma.
+#
+# Both list-valued keys quote every token, for one reason: a token carries a `:`,
+# which a plain scalar in flow context cannot hold safely.
+#
+# A new key is inserted BEFORE `endpoint_kinds` and never after `definition`, so the
+# one prose field stays terminal and no future key faces an arbitrary choice.
+#
+# ---------------------------------------------------------------------------
+# The properties the loader checks over the MERGED set -- this list is the contract
+# ---------------------------------------------------------------------------
+#
+#   closure               every `inverse` is some entry's `relation`.
+#   totality              every entry carries every declared key, non-empty, in the
+#                         fixed order.
+#   involution            inverse(inverse(relation)) equals relation.
+#   symmetric consistency `symmetry` is `symmetric` exactly when `inverse` equals
+#                         `relation`. Symmetric relations are the fixed points of the
+#                         involution, so a row typed with one carries the SAME label
+#                         in both relation columns; that row is valid, not a
+#                         disagreement between its two directions.
+#   category totality     every `category` is declared in the merged `categories:`
+#                         block, with its one-line meaning.
+#   pair coherence        for an asymmetric pair, the two entries agree on
+#                         `category`, `derived_from` and `passes` -- compared as
+#                         token SETS, so order is not significant -- and their
+#                         `endpoint_kinds` are exact transposes: a token is declared
+#                         on one entry IFF the token with its two sides exchanged is
+#                         declared on the other. For a symmetric entry,
+#                         `endpoint_kinds` is closed under that exchange.
+#
+# Pair coherence is why the entries below are AUTHORED one pair at a time: everything
+# but `definition` is mechanically derivable from the partner, and the two
+# definitions are different prose by design, because they read opposite directions.
+# Both halves of a pair are always written in one edit.
+#
+# ---------------------------------------------------------------------------
+# The standards basis -- the keys a `derived_from` token may use
+# ---------------------------------------------------------------------------
+#
+# Every URL below was fetched and the version string read from the document itself on
+# 2026-07-29. A token whose key is not in this table is not a legal core token. The
+# traversal record behind each token is research evidence and is not shipped, which
+# is why this table is here: a reader of an installed profile can resolve any token
+# without it.
+#
+#   skos     SKOS Simple Knowledge Organization System Reference
+#            W3C Recommendation 18 August 2009
+#            https://www.w3.org/TR/skos-reference/
+#
+#   dcterms  DCMI Metadata Terms
+#            DCMI Recommendation, Date Issued 2020-01-20
+#            https://www.dublincore.org/specifications/dublin-core/dcmi-terms/
+#
+#   prov     PROV-O: The PROV Ontology
+#            W3C Recommendation 30 April 2013
+#            https://www.w3.org/TR/prov-o/
+#
+#   schema   Schema.org vocabulary
+#            Version 30.0, released 2026-03-19 (term-page footer V30.0 | 2026-03-19)
+#            https://schema.org/
+#
+#   iana     IANA Link Relation Types registry, whose registration procedure is
+#            defined by RFC 8288 "Web Linking" (IETF Standards Track, October 2017)
+#            Registry last updated 2026-06-12
+#            https://www.iana.org/assignments/link-relations/link-relations.xhtml
+#
+#   cito     CiTO, the Citation Typing Ontology
+#            Revision 2.8.2, modified 2026-06-22
+#            https://sparontologies.github.io/cito/current/cito.html
+#
+# Where two standards attest the same relationship, `derived_from` records BOTH:
+# multiple attestation is the strongest available evidence that a relation is generic
+# rather than local. That holds ONLY where every attestation attests the same
+# assertion -- one exact token beats two of which one is wrong.
+#
+# ---------------------------------------------------------------------------
+# Flagged tokens -- read this BEFORE "correcting" or re-adding a citation
+# ---------------------------------------------------------------------------
+#
+# Each token below cites a real term of a real standard whose reading needs a note.
+# All were checked against the live document and RETAINED. A reader who verifies a
+# token against its source will land on exactly these, and this list is what stops a
+# mis-directed token being "fixed" back in by someone doing the diligent thing.
+#
+# Flag classes: DIRECTION, the standard's own subject is this entry's target;
+# ARGUMENT, the standard's other argument is not a node of any kind -- a literal, or
+# a PROV Activity, which no kind can denote; NEUTRAL, the standard fixes no
+# direction; SYMMETRY, an asymmetric term cited by a symmetric entry; VALUE TYPE, the
+# standard's value is a URL rather than a node.
+#
+#   entry               token                    flag
+#   ------------------  -----------------------  --------------------------------
+#   has-part            iana:up                  DIRECTION  registry runs part->whole
+#   broader-than        skos:broader             DIRECTION  subject is the narrower
+#   precedes            iana:prev                DIRECTION  subject is the later
+#   supersedes          iana:successor-version   DIRECTION  subject is the older
+#   canonical-form-of   iana:canonical           DIRECTION  subject is the copy
+#   canonical-form-of   prov:specializationOf    DIRECTION  subject is the specific
+#   cross-references    iana:related             NEUTRAL    registry fixes none
+#   cross-references    dcterms:relation         NEUTRAL    DCMI fixes none
+#   defines             skos:definition          ARGUMENT   annotation prop, literal
+#   exemplifies         skos:example             ARGUMENT   annotation prop, literal
+#   generated-by        prov:wasGeneratedBy      ARGUMENT   other side is an Activity
+#   depends-on          prov:used                ARGUMENT   subject is an Activity
+#   invokes             prov:used                ARGUMENT   subject is an Activity
+#   lockstep-with       dcterms:requires         SYMMETRY   the property is asymmetric
+#   same-as             schema:sameAs            VALUE TYPE the value is a URL
+#
+# Three DIRECTION flags are unpaired because no same-direction term exists to cite:
+# the registry has no inverse of `iana:up` or `iana:canonical`, and PROV-O reserves
+# `generalizationOf` as a NAME without declaring the property. Two were resolved in
+# the data instead, by citing both halves: `skos:broader` with `skos:narrower`, and
+# `iana:prev` with `iana:next`. `iana:successor-version` stays unpaired by choice --
+# `iana:predecessor-version` is `revision-of`'s token, and version-history navigation
+# is not the retirement claim `supersedes` makes.
+#
+# Four tokens were DROPPED by the same audit and must not be re-added:
+#   iana:icon              from illustrated-by  an icon represents a link's context
+#                                               and need not depict a subject
+#   iana:collection        from has-member      its subject is the member, not the
+#                                               set; iana:item runs the entry's way
+#   iana:version-history   from revision-of     its target is a history resource, not
+#                                               an earlier version
+#   schema:predecessorOf   from precedes        out of domain: schema.org credits it
+#                                               to a product vocabulary
+#
+# One class-conformance point, stated once so it need not be repeated per token: no
+# AID node is an instance of any class these standards define. A token attributes the
+# RELATIONSHIP a standard defines, never a claim that the endpoints conform to that
+# standard's classes.
+#
+# No runtime consumer interprets `derived_from`. It exists so a reviewer can
+# challenge a definition against its source instead of against an opinion -- and so
+# that a core entry with no standard behind it cannot load.
+#
+# ---------------------------------------------------------------------------
+# The categories -- closed, exactly one per relation, in the order the `categories:`
+# block at the foot of this file repeats as data
+# ---------------------------------------------------------------------------
+#
+# Duplicated deliberately as prose beside that data: the meaning is what an author
+# picking a category needs, and the data form is what the loader needs. The axis is
+# WHAT THE RELATION ASSERTS ABOUT THE TWO NODES -- never which side of the Knowledge
+# Base boundary a row spans, which a row's two `Kind` cells already recover.
+#
+#   structure       One node is a constituent, a declared member, or an ordered
+#                   neighbour of the other.
+#   taxonomy        One concept is a generalisation, a specialisation, or an
+#                   associate of another concept.
+#   definition      One node introduces or exemplifies the term the other node is.
+#   documentation   One node records or names facts about the other.
+#   evidence        One node is cited as the checkable support for a claim in the
+#                   other.
+#   provenance      One node was derived from, generated from, or reproduced from
+#                   the other.
+#   lineage         One node is a later version of, or a replacement for, the
+#                   other.
+#   dependency      One node requires, invokes, or is jointly constrained with the
+#                   other in order to function.
+#   implementation  One node realises or verifies the specification the other
+#                   states.
+#   representation  One node is a rendering, an encoding, or a depiction of the
+#                   other.
+#   identity        The two nodes denote the same thing, or are equivalent or
+#                   alternative presentations of it.
+#   agreement       One node supports, confirms, contradicts, or refutes a claim in
+#                   the other.
+#   annotation      One node qualifies or comments on the other without asserting
+#                   an independent claim.
+#   navigation      One node directs a reader to the other for related or
+#                   supplementary reading.
+#
+# The set is larger than the view's colour budget, and deliberately so. The encoding
+# is completed by line style, and the graph is made legible by the required category
+# filter -- not by shrinking the vocabulary to fit a palette, which would be the same
+# fit-to-the-constraint error the rule below exists to forbid.
+#
+# ---------------------------------------------------------------------------
+# THE RULE THAT HAS ALREADY BEEN BROKEN ONCE
+# ---------------------------------------------------------------------------
+#
+#   An entry a given repository cannot instance is KEPT, and the inability is
+#   recorded as a fact about that repository. Failing to exhibit an instance is never
+#   grounds for removing an entry, for narrowing its `endpoint_kinds`, or for
+#   reducing its `passes`.
+#
+# No relation type, category, endpoint pair or `passes` value here is defined by what
+# any one project contains. Every entry derives from a published standard, and
+# expressibility is then CHECKED against a real repository -- never decided by it.
+# `endpoint_kinds` declares what the relationship MEANS, never what a repository
+# HOLDS.
+#
+# That inversion is the whole correction. The superseded vocabulary recorded
+# decisions of the form "keep the script-to-data-file endpoint only, it is the only
+# instance harvested here", and whole families of relation were absent as a result.
+# Comprehensiveness is what makes a thin graph informative: a project with no
+# glossary yields no `concept` nodes, so every entry needing one simply produces no
+# rows, and the absence surfaces as an empty result and an `absent` coverage note
+# rather than as an edge nobody can name.
+#
+# ---------------------------------------------------------------------------
+# Worked rows -- illustration only, read by nothing. Cells are listed one per line in
+# the order `relationship-schema.yml`'s `columns:` fixes.
+# ---------------------------------------------------------------------------
+#
+# 1. Knowledge Base to Knowledge Base, on the concept kind -- the case the superseded
+#    vocabulary could not type at all:
+#
+#      Source Id      kb:domain-glossary.md#aid_home
+#      Source Kind    section
+#      Source Name    domain-glossary.md § AID_HOME
+#      Target Id      kb:concept:aid-home
+#      Target Kind    concept
+#      Target Name    AID_HOME
+#      S2T Relation   defines
+#      T2S Relation   defined-by
+#      Provenance     declared
+#      Observation    (left empty)
+#
+#    The endpoint token is `section->concept`. `mentions` declares that token too, so
+#    the precision now rests on the relation and not on the id prefix -- under the
+#    superseded prefix-keyed form, a section that DEFINES a term and one that merely
+#    MENTIONS it produced the same endpoint pair and could not be told apart.
+#
+# 2. Knowledge Base to project source, on the fact kind:
+#
+#      Source Id      kb:technology-stack.md#fact:readme-md--powershell-51
+#      Source Kind    fact
+#      Source Name    technology-stack.md § PowerShell 5.1+
+#      Target Id      int:README.md
+#      Target Kind    source-artifact
+#      Target Name    README.md
+#      S2T Relation   cites-as-evidence
+#      T2S Relation   cited-as-evidence-by
+#      Provenance     declared
+#      Observation    (left empty)
+#
+#    The fragment illustrates the fact-token algorithm's output; the authoritative
+#    token is whatever the validator recomputes. This row is also why
+#    `cites-as-evidence` is separate from `cites`: the confirmed-anchor carrier is
+#    what makes the source node a `fact` at all.
+#
+# 3. Knowledge Base to external source -- shown against a synthetic fixture, because
+#    the repository this vocabulary was checked against registers no external keys:
+#
+#      Source Id      kb:domain-glossary.md
+#      Source Kind    document
+#      Source Name    domain-glossary.md
+#      Target Id      ext:wcag-22-aa
+#      Target Kind    web-page
+#      Target Name    wcag-22-aa
+#      S2T Relation   cites
+#      T2S Relation   cited-by
+#      Provenance     declared
+#      Observation    Fixture key; that project registers no external sources
+#
+#    An empty external registry is a fact about a repository, so every relation whose
+#    endpoints name `web-page` is kept regardless. This is the rule above, applied.
+#
+# 4. An image reference, which is one relation with two producers:
+#
+#      Source Id      int:docs/aid-methodology.md
+#      Source Kind    source-artifact
+#      Source Name    docs/aid-methodology.md
+#      Target Id      int:docs/images/3-ironman.png
+#      Target Kind    image
+#      Target Name    docs/images/3-ironman.png
+#      S2T Relation   illustrated-by
+#      T2S Relation   illustrates
+#      Provenance     declared
+#      Observation    (left empty)
+#
+#    The `image` kind sits on `int:` here; the same relation with an `ext:` image is
+#    equally legal, because that kind permits a SET of prefixes. The token here is
+#    `source-artifact->image`; the `document->image` token on the same relation is
+#    produced by a different scan entirely.
+#
+# ---------------------------------------------------------------------------
+# Adding a relation type
+# ---------------------------------------------------------------------------
+#
+#   1. A proposal is a change to THIS file -- never a row in `relationships.md`
+#      carrying an unlisted term, and never a local override. A project-specific type
+#      goes in the extension file instead, which is add-only by construction.
+#   2. It arrives as a PAIR: two entries, or one self-inverse `symmetric` entry, with
+#      every key filled and both halves written in the SAME edit -- the inverse's
+#      `endpoint_kinds` transposed, its `category`, `derived_from` and `passes`
+#      identical, and its `definition` authored from the inverse reading.
+#   3. The screen applies to additions forever, and all three tests must hold:
+#      a standards antecedent recorded in `derived_from` THAT THE PROPOSER HAS READ
+#      IN THE LIVE STANDARD and shown to mean what the new `definition` says, in the
+#      new entry's own direction; no definitional overlap with an admitted type -- two
+#      interchangeable types reintroduce the ambiguity a named set exists to remove;
+#      and endpoints expressible over `relationship-schema.yml`'s `kinds:`. A new
+#      `category` value needs a `categories:` entry in the same edit, or category
+#      totality fails at load.
+#   4. Self-test the properties above by LOADING the file, never by reading it -- over
+#      the core alone, and over the core plus each extension fixture.
+#   5. Check the endpoint-satisfiability report: every declared token accounted for as
+#      reachable by a producer, inferred-only, or unreachable-with-an-argument.
+#   6. If the change RENAMES, REMOVES or RE-CATEGORISES a pair rather than adding
+#      one, update the coverage predicate's frozen map in the same edit -- see the
+#      exception noted at the top of this header.
+#   7. Run the FULL profile generator, never a partial render, so every profile copy
+#      and its emission manifest move together.
+#   8. Submit through the project's normal review gate (reviewer ledger at
+#      .aid/.temp/review-pending/<scope>.md, graded by grade.sh).
+#
+#   Adding is cheap; removing and renaming are not. Adding a pair leaves every
+#   existing row valid. Removing or renaming one invalidates rows -- but
+#   `relationships.md` is a generated artifact, so the remedy is regeneration and not
+#   a data migration. That asymmetry is why comprehensiveness is the safe bias: an
+#   over-large vocabulary costs review attention, while an over-small one forces free
+#   text into the relation columns and destroys the named-set guarantee outright.
+#
+# ---------------------------------------------------------------------------
+# Consumers -- every one of them reads through the one loader named above
+# ---------------------------------------------------------------------------
+#
+#   the table validator     `relation` + `inverse` for membership and inverse-pair
+#   (feature-003)           validation; `symmetry` so a self-inverse pair is accepted
+#                           as declared rather than tolerated as an accident;
+#                           `endpoint_kinds` for its two advisory endpoint reports,
+#                           per row and per run.
+#
+#   the table builder       `relation`, `inverse`, `passes`, `endpoint_kinds` --
+#   (feature-005)           resolves `edge-relation-map.yml`'s label to an entry,
+#                           looks the T2S label up as that entry's `inverse`, and
+#                           gates the map at load time on pass and endpoint legality.
+#
+#   the coverage predicate  `relation` + `category`, over the subset named in
+#   (feature-006)           `coverage-bearing.yml` in this directory. That subset is
+#                           chosen pair by pair, never by whole category.
+#
+#   the graph view          `category` for grouping, for the required filter axis, and
+#   (features 007, 008)     for the Overview lens collapse. The colour assignment over
+#                           the category set is the view's, not this file's.
+#
+#   the accessible table    `category` + `definition` -- groups and labels the peer
+#   (feature-009)           rendering identically to the graph, with the full relation
+#                           name always readable as text.
+#
+#   a human reviewer        `derived_from`. This is the field's only reader.
+#
+# ---------------------------------------------------------------------------
+
+pairs:
+
+  # --- category: structure ---
+
+  - relation: follows
+    inverse: precedes
+    symmetry: asymmetric
+    category: structure
+    derived_from: ["iana:next", "iana:prev"]
+    endpoint_kinds: ["section->section", "document->document"]
+    passes: [declared, derived]
+    definition: "The source and the target are members of one ordered series in which the source comes immediately after the target."
+
+  - relation: has-member
+    inverse: member-of
+    symmetry: asymmetric
+    category: structure
+    derived_from: ["skos:member", "prov:hadMember", "iana:item"]
+    endpoint_kinds: ["document->document", "concept->concept", "source-artifact->source-artifact", "document->source-artifact"]
+    passes: [declared]
+    definition: "The source declares a set in which the target is enrolled, and the target exists independently of that set."
+
+  - relation: has-part
+    inverse: part-of
+    symmetry: asymmetric
+    category: structure
+    derived_from: ["dcterms:hasPart", "schema:hasPart", "iana:up"]
+    endpoint_kinds: ["document->section", "section->section", "document->fact", "section->fact"]
+    passes: [declared, derived]
+    definition: "The target is a constituent of the source's own content and has no existence independent of it."
+
+  - relation: member-of
+    inverse: has-member
+    symmetry: asymmetric
+    category: structure
+    derived_from: ["skos:member", "prov:hadMember", "iana:item"]
+    endpoint_kinds: ["document->document", "concept->concept", "source-artifact->source-artifact", "source-artifact->document"]
+    passes: [declared]
+    definition: "The source is enrolled in a set the target declares, and the source exists independently of that set."
+
+  - relation: part-of
+    inverse: has-part
+    symmetry: asymmetric
+    category: structure
+    derived_from: ["dcterms:hasPart", "schema:hasPart", "iana:up"]
+    endpoint_kinds: ["section->document", "section->section", "fact->document", "fact->section"]
+    passes: [declared, derived]
+    definition: "The source is a constituent of the target's own content and has no existence independent of it."
+
+  - relation: precedes
+    inverse: follows
+    symmetry: asymmetric
+    category: structure
+    derived_from: ["iana:next", "iana:prev"]
+    endpoint_kinds: ["section->section", "document->document"]
+    passes: [declared, derived]
+    definition: "The source and the target are members of one ordered series in which the target comes immediately after the source."
+
+  # --- category: taxonomy ---
+
+  - relation: broader-than
+    inverse: narrower-than
+    symmetry: asymmetric
+    category: taxonomy
+    derived_from: ["skos:broader", "skos:narrower"]
+    endpoint_kinds: ["concept->concept"]
+    passes: [declared, inferred]
+    definition: "The source concept is a direct, immediate generalisation of the target concept."
+
+  - relation: narrower-than
+    inverse: broader-than
+    symmetry: asymmetric
+    category: taxonomy
+    derived_from: ["skos:broader", "skos:narrower"]
+    endpoint_kinds: ["concept->concept"]
+    passes: [declared, inferred]
+    definition: "The source concept is a direct, immediate specialisation of the target concept."
+
+  - relation: related-concept
+    inverse: related-concept
+    symmetry: symmetric
+    category: taxonomy
+    derived_from: ["skos:related"]
+    endpoint_kinds: ["concept->concept"]
+    passes: [declared, inferred]
+    definition: "The source and target concepts are associated without either being a generalisation of the other."
+
+  # --- category: definition ---
+
+  - relation: defined-by
+    inverse: defines
+    symmetry: asymmetric
+    category: definition
+    derived_from: ["skos:definition", "schema:hasDefinedTerm"]
+    endpoint_kinds: ["concept->document", "concept->section"]
+    passes: [declared]
+    definition: "The source concept is introduced by the target, which states what the source means."
+
+  - relation: defines
+    inverse: defined-by
+    symmetry: asymmetric
+    category: definition
+    derived_from: ["skos:definition", "schema:hasDefinedTerm"]
+    endpoint_kinds: ["document->concept", "section->concept"]
+    passes: [declared]
+    definition: "The source introduces the target concept by stating what it means."
+
+  - relation: exemplified-by
+    inverse: exemplifies
+    symmetry: asymmetric
+    category: definition
+    derived_from: ["skos:example", "schema:exampleOfWork"]
+    endpoint_kinds: ["concept->section", "concept->source-artifact", "concept->image", "concept->fact"]
+    passes: [declared, inferred]
+    definition: "The source concept is instanced or illustrated by the target rather than defined by it."
+
+  - relation: exemplifies
+    inverse: exemplified-by
+    symmetry: asymmetric
+    category: definition
+    derived_from: ["skos:example", "schema:exampleOfWork"]
+    endpoint_kinds: ["section->concept", "source-artifact->concept", "image->concept", "fact->concept"]
+    passes: [declared, inferred]
+    definition: "The source is an instance or illustration of the target concept rather than a statement of what it means."
+
+  # --- category: documentation ---
+
+  - relation: documented-by
+    inverse: documents
+    symmetry: asymmetric
+    category: documentation
+    derived_from: ["cito:documents", "schema:about", "iana:describes"]
+    endpoint_kinds: ["source-artifact->document", "source-artifact->section", "document->document", "document->section", "image->document", "web-page->document"]
+    passes: [declared]
+    definition: "The source is recorded by the target, an authored account written by drawing on the source for its factual content."
+
+  - relation: documents
+    inverse: documented-by
+    symmetry: asymmetric
+    category: documentation
+    derived_from: ["cito:documents", "schema:about", "iana:describes"]
+    endpoint_kinds: ["document->source-artifact", "section->source-artifact", "document->document", "section->document", "document->image", "document->web-page"]
+    passes: [declared]
+    definition: "The source is an authored record of the target, written by drawing on the target for its factual content."
+
+  - relation: mentioned-in
+    inverse: mentions
+    symmetry: asymmetric
+    category: documentation
+    derived_from: ["cito:citesForInformation", "dcterms:references"]
+    endpoint_kinds: ["concept->document", "concept->section", "concept->fact", "document->document", "document->section", "source-artifact->document", "source-artifact->section", "source-artifact->fact"]
+    passes: [declared, derived, inferred]
+    definition: "The source is named in the target's content without the target asserting that the source is its subject or its evidence."
+
+  - relation: mentions
+    inverse: mentioned-in
+    symmetry: asymmetric
+    category: documentation
+    derived_from: ["cito:citesForInformation", "dcterms:references"]
+    endpoint_kinds: ["document->concept", "section->concept", "fact->concept", "document->document", "section->document", "document->source-artifact", "section->source-artifact", "fact->source-artifact"]
+    passes: [declared, derived, inferred]
+    definition: "The source names the target in its content without asserting that the target is its subject or its evidence."
+
+  # --- category: evidence ---
+
+  - relation: cited-as-evidence-by
+    inverse: cites-as-evidence
+    symmetry: asymmetric
+    category: evidence
+    derived_from: ["cito:citesAsEvidence"]
+    endpoint_kinds: ["source-artifact->fact", "web-page->fact", "image->fact", "document->fact"]
+    passes: [declared]
+    definition: "The source is named by the target as the checkable support for one specific claim the target makes."
+
+  - relation: cited-by
+    inverse: cites
+    symmetry: asymmetric
+    category: evidence
+    derived_from: ["cito:cites", "cito:citesAsAuthority", "dcterms:references"]
+    endpoint_kinds: ["source-artifact->document", "source-artifact->section", "source-artifact->fact", "web-page->document", "web-page->section", "web-page->fact", "document->fact"]
+    passes: [declared]
+    definition: "The source is named by the target as a reference a reader may consult."
+
+  - relation: cites
+    inverse: cited-by
+    symmetry: asymmetric
+    category: evidence
+    derived_from: ["cito:cites", "cito:citesAsAuthority", "dcterms:references"]
+    endpoint_kinds: ["document->source-artifact", "section->source-artifact", "fact->source-artifact", "document->web-page", "section->web-page", "fact->web-page", "fact->document"]
+    passes: [declared]
+    definition: "The source names the target as a reference a reader may consult."
+
+  - relation: cites-as-evidence
+    inverse: cited-as-evidence-by
+    symmetry: asymmetric
+    category: evidence
+    derived_from: ["cito:citesAsEvidence"]
+    endpoint_kinds: ["fact->source-artifact", "fact->web-page", "fact->image", "fact->document"]
+    passes: [declared]
+    definition: "The source names the target as the checkable support for one specific claim the source makes."
+
+  # --- category: provenance ---
+
+  - relation: derived-from
+    inverse: source-of
+    symmetry: asymmetric
+    category: provenance
+    derived_from: ["prov:wasDerivedFrom", "prov:hadPrimarySource", "dcterms:source", "iana:via"]
+    endpoint_kinds: ["document->source-artifact", "section->source-artifact", "fact->source-artifact", "document->web-page", "fact->web-page", "source-artifact->source-artifact", "image->image"]
+    passes: [declared, derived, inferred]
+    definition: "The content of the source came from the target, whether by a person reading it or by a process transforming it."
+
+  - relation: generated-by
+    inverse: generates
+    symmetry: asymmetric
+    category: provenance
+    derived_from: ["prov:wasGeneratedBy"]
+    endpoint_kinds: ["source-artifact->source-artifact", "image->source-artifact", "document->source-artifact"]
+    passes: [derived]
+    definition: "The source was produced from the target by a named deterministic process rather than by an author."
+
+  - relation: generates
+    inverse: generated-by
+    symmetry: asymmetric
+    category: provenance
+    derived_from: ["prov:wasGeneratedBy"]
+    endpoint_kinds: ["source-artifact->source-artifact", "source-artifact->image", "source-artifact->document"]
+    passes: [derived]
+    definition: "The source produced the target by a named deterministic process, so the target is generated rather than authored."
+
+  - relation: quoted-in
+    inverse: quotes
+    symmetry: asymmetric
+    category: provenance
+    derived_from: ["prov:wasQuotedFrom"]
+    endpoint_kinds: ["source-artifact->document", "source-artifact->section", "source-artifact->fact", "web-page->document"]
+    passes: [declared]
+    definition: "The source is the origin of a passage the target reproduces verbatim."
+
+  - relation: quotes
+    inverse: quoted-in
+    symmetry: asymmetric
+    category: provenance
+    derived_from: ["prov:wasQuotedFrom"]
+    endpoint_kinds: ["document->source-artifact", "section->source-artifact", "fact->source-artifact", "document->web-page"]
+    passes: [declared]
+    definition: "The source reproduces part of the target verbatim."
+
+  - relation: source-of
+    inverse: derived-from
+    symmetry: asymmetric
+    category: provenance
+    derived_from: ["prov:wasDerivedFrom", "prov:hadPrimarySource", "dcterms:source", "iana:via"]
+    endpoint_kinds: ["source-artifact->document", "source-artifact->section", "source-artifact->fact", "web-page->document", "web-page->fact", "source-artifact->source-artifact", "image->image"]
+    passes: [declared, derived, inferred]
+    definition: "The content of the target came from the source, whether by a person reading it or by a process transforming it."
+
+  # --- category: lineage ---
+
+  - relation: has-revision
+    inverse: revision-of
+    symmetry: asymmetric
+    category: lineage
+    derived_from: ["prov:wasRevisionOf", "dcterms:isVersionOf", "iana:predecessor-version"]
+    endpoint_kinds: ["document->document", "source-artifact->source-artifact", "image->image"]
+    passes: [declared, derived]
+    definition: "The source is an earlier version of the target, both of which remain current as versions of one thing."
+
+  - relation: revision-of
+    inverse: has-revision
+    symmetry: asymmetric
+    category: lineage
+    derived_from: ["prov:wasRevisionOf", "dcterms:isVersionOf", "iana:predecessor-version"]
+    endpoint_kinds: ["document->document", "source-artifact->source-artifact", "image->image"]
+    passes: [declared, derived]
+    definition: "The source is a later version of the target, both of which remain current as versions of one thing."
+
+  - relation: superseded-by
+    inverse: supersedes
+    symmetry: asymmetric
+    category: lineage
+    derived_from: ["dcterms:replaces", "iana:successor-version"]
+    endpoint_kinds: ["document->document", "section->section", "source-artifact->source-artifact", "concept->concept", "fact->fact"]
+    passes: [declared, inferred]
+    definition: "The source is retired in favour of the target, which takes the source's place."
+
+  - relation: supersedes
+    inverse: superseded-by
+    symmetry: asymmetric
+    category: lineage
+    derived_from: ["dcterms:replaces", "iana:successor-version"]
+    endpoint_kinds: ["document->document", "section->section", "source-artifact->source-artifact", "concept->concept", "fact->fact"]
+    passes: [declared, inferred]
+    definition: "The source takes the place of the target, which is retired in the source's favour."
+
+  # --- category: dependency ---
+
+  - relation: dependency-of
+    inverse: depends-on
+    symmetry: asymmetric
+    category: dependency
+    derived_from: ["dcterms:requires", "prov:used"]
+    endpoint_kinds: ["source-artifact->source-artifact", "image->source-artifact", "web-page->source-artifact"]
+    passes: [declared, derived]
+    definition: "The source is required by the target as a data input for the target to function correctly."
+
+  - relation: depends-on
+    inverse: dependency-of
+    symmetry: asymmetric
+    category: dependency
+    derived_from: ["dcterms:requires", "prov:used"]
+    endpoint_kinds: ["source-artifact->source-artifact", "source-artifact->image", "source-artifact->web-page"]
+    passes: [declared, derived]
+    definition: "The source requires the target as a data input in order to function correctly."
+
+  - relation: invoked-by
+    inverse: invokes
+    symmetry: asymmetric
+    category: dependency
+    derived_from: ["prov:used"]
+    endpoint_kinds: ["source-artifact->source-artifact"]
+    passes: [derived]
+    definition: "The source is executed or dispatched by the target as a subprocess or called script at runtime."
+
+  - relation: invokes
+    inverse: invoked-by
+    symmetry: asymmetric
+    category: dependency
+    derived_from: ["prov:used"]
+    endpoint_kinds: ["source-artifact->source-artifact"]
+    passes: [derived]
+    definition: "The source executes or dispatches the target as a subprocess or called script at runtime."
+
+  - relation: lockstep-with
+    inverse: lockstep-with
+    symmetry: symmetric
+    category: dependency
+    derived_from: ["dcterms:requires", "skos:related"]
+    endpoint_kinds: ["source-artifact->source-artifact", "document->document"]
+    passes: [declared]
+    definition: "The source and the target share a maintenance invariant they must satisfy together, with no primary direction."
+
+  # --- category: implementation ---
+
+  - relation: implemented-by
+    inverse: implements
+    symmetry: asymmetric
+    category: implementation
+    derived_from: ["dcterms:conformsTo", "schema:isBasedOn", "iana:profile"]
+    endpoint_kinds: ["document->source-artifact", "source-artifact->source-artifact", "section->source-artifact", "fact->source-artifact"]
+    passes: [declared, inferred]
+    definition: "The source specifies the behaviour or the shape that the target realises."
+
+  - relation: implements
+    inverse: implemented-by
+    symmetry: asymmetric
+    category: implementation
+    derived_from: ["dcterms:conformsTo", "schema:isBasedOn", "iana:profile"]
+    endpoint_kinds: ["source-artifact->document", "source-artifact->source-artifact", "source-artifact->section", "source-artifact->fact"]
+    passes: [declared, inferred]
+    definition: "The source realises the behaviour or the shape that the target specifies."
+
+  - relation: tested-by
+    inverse: tests
+    symmetry: asymmetric
+    category: implementation
+    derived_from: ["cito:confirms"]
+    endpoint_kinds: ["source-artifact->source-artifact", "document->source-artifact", "fact->source-artifact", "section->source-artifact"]
+    passes: [declared, derived]
+    definition: "The source specifies or provides the behaviour that the target verifies actually holds."
+
+  - relation: tests
+    inverse: tested-by
+    symmetry: asymmetric
+    category: implementation
+    derived_from: ["cito:confirms"]
+    endpoint_kinds: ["source-artifact->source-artifact", "source-artifact->document", "source-artifact->fact", "source-artifact->section"]
+    passes: [declared, derived]
+    definition: "The source verifies that the behaviour the target specifies or provides actually holds."
+
+  # --- category: representation ---
+
+  - relation: illustrated-by
+    inverse: illustrates
+    symmetry: asymmetric
+    category: representation
+    derived_from: ["schema:image"]
+    endpoint_kinds: ["document->image", "section->image", "fact->image", "source-artifact->image"]
+    passes: [declared, derived]
+    definition: "The source is illustrated by the target image, which depicts the source's subject."
+
+  - relation: illustrates
+    inverse: illustrated-by
+    symmetry: asymmetric
+    category: representation
+    derived_from: ["schema:image"]
+    endpoint_kinds: ["image->document", "image->section", "image->fact", "image->source-artifact"]
+    passes: [declared, derived]
+    definition: "The source is an image that illustrates the target by depicting the target's subject."
+
+  - relation: rendered-from
+    inverse: renders-to
+    symmetry: asymmetric
+    category: representation
+    derived_from: ["dcterms:hasFormat", "schema:encoding"]
+    endpoint_kinds: ["source-artifact->source-artifact", "source-artifact->document", "image->image"]
+    passes: [declared, derived]
+    definition: "The source carries the same content as the target in a different format or for a different target environment."
+
+  - relation: renders-to
+    inverse: rendered-from
+    symmetry: asymmetric
+    category: representation
+    derived_from: ["dcterms:hasFormat", "schema:encoding"]
+    endpoint_kinds: ["source-artifact->source-artifact", "document->source-artifact", "image->image"]
+    passes: [declared, derived]
+    definition: "The target carries the same content as the source in a different format or for a different target environment."
+
+  # --- category: identity ---
+
+  - relation: alternate-of
+    inverse: alternate-of
+    symmetry: symmetric
+    category: identity
+    derived_from: ["prov:alternateOf", "iana:alternate"]
+    endpoint_kinds: ["source-artifact->source-artifact", "document->document", "image->image", "web-page->web-page"]
+    passes: [declared, derived]
+    definition: "The source and the target present aspects of the same thing without necessarily presenting the same aspects."
+
+  - relation: canonical-form-of
+    inverse: has-canonical-form
+    symmetry: asymmetric
+    category: identity
+    derived_from: ["iana:canonical", "prov:specializationOf"]
+    endpoint_kinds: ["source-artifact->source-artifact", "document->document", "image->image"]
+    passes: [declared, derived]
+    definition: "The source is the authoritative form of which the target is a copy or a narrower presentation."
+
+  - relation: has-canonical-form
+    inverse: canonical-form-of
+    symmetry: asymmetric
+    category: identity
+    derived_from: ["iana:canonical", "prov:specializationOf"]
+    endpoint_kinds: ["source-artifact->source-artifact", "document->document", "image->image"]
+    passes: [declared, derived]
+    definition: "The source is a copy or a narrower presentation of the target, which is the authoritative form."
+
+  - relation: same-as
+    inverse: same-as
+    symmetry: symmetric
+    category: identity
+    derived_from: ["schema:sameAs", "skos:exactMatch"]
+    endpoint_kinds: ["concept->concept", "document->document", "source-artifact->source-artifact", "image->image", "web-page->web-page"]
+    passes: [declared, inferred]
+    definition: "The source and the target are two identifiers for one and the same thing."
+
+  - relation: similar-to
+    inverse: similar-to
+    symmetry: symmetric
+    category: identity
+    derived_from: ["skos:closeMatch"]
+    endpoint_kinds: ["concept->concept", "document->document"]
+    passes: [inferred]
+    definition: "The source and the target are close enough to be interchangeable in some contexts but are not the same thing."
+
+  # --- category: agreement ---
+
+  - relation: contradicted-by
+    inverse: contradicts
+    symmetry: asymmetric
+    category: agreement
+    derived_from: ["cito:disagreesWith", "cito:refutes", "cito:corrects"]
+    endpoint_kinds: ["fact->fact", "document->fact", "document->document", "section->section"]
+    passes: [inferred]
+    definition: "The claim the source makes cannot hold together with the claim the target makes, and it is the target that asserts the disagreement."
+
+  - relation: contradicts
+    inverse: contradicted-by
+    symmetry: asymmetric
+    category: agreement
+    derived_from: ["cito:disagreesWith", "cito:refutes", "cito:corrects"]
+    endpoint_kinds: ["fact->fact", "fact->document", "document->document", "section->section"]
+    passes: [inferred]
+    definition: "The claim the source makes cannot hold together with the claim the target makes."
+
+  - relation: supported-by
+    inverse: supports
+    symmetry: asymmetric
+    category: agreement
+    derived_from: ["cito:supports", "cito:confirms", "cito:agreesWith"]
+    endpoint_kinds: ["fact->fact", "fact->document", "document->fact", "fact->section", "section->section"]
+    passes: [inferred]
+    definition: "The claim the source makes is strengthened or corroborated by the claim the target makes."
+
+  - relation: supports
+    inverse: supported-by
+    symmetry: asymmetric
+    category: agreement
+    derived_from: ["cito:supports", "cito:confirms", "cito:agreesWith"]
+    endpoint_kinds: ["fact->fact", "document->fact", "fact->document", "section->fact", "section->section"]
+    passes: [inferred]
+    definition: "The claim the source makes strengthens or corroborates the claim the target makes."
+
+  # --- category: annotation ---
+
+  - relation: annotated-by
+    inverse: annotates
+    symmetry: asymmetric
+    category: annotation
+    derived_from: ["cito:qualifies", "cito:discusses"]
+    endpoint_kinds: ["fact->section", "section->section", "source-artifact->section", "document->document", "fact->fact"]
+    passes: [inferred]
+    definition: "The source is qualified by a scoping remark, caveat or commentary the target adds without asserting a claim of its own."
+
+  - relation: annotates
+    inverse: annotated-by
+    symmetry: asymmetric
+    category: annotation
+    derived_from: ["cito:qualifies", "cito:discusses"]
+    endpoint_kinds: ["section->fact", "section->section", "section->source-artifact", "document->document", "fact->fact"]
+    passes: [inferred]
+    definition: "The source adds a scoping remark, caveat or commentary that qualifies the target without asserting a claim of its own."
+
+  # --- category: navigation ---
+
+  - relation: cross-referenced-by
+    inverse: cross-references
+    symmetry: asymmetric
+    category: navigation
+    derived_from: ["iana:related", "dcterms:relation"]
+    endpoint_kinds: ["document->document", "section->section", "section->document", "document->concept"]
+    passes: [declared]
+    definition: "The source is pointed to by the target, which instructs a reader to consult the source for supplementary or related information."
+
+  - relation: cross-references
+    inverse: cross-referenced-by
+    symmetry: asymmetric
+    category: navigation
+    derived_from: ["iana:related", "dcterms:relation"]
+    endpoint_kinds: ["document->document", "section->section", "document->section", "concept->document"]
+    passes: [declared]
+    definition: "The source instructs a reader to consult the target for supplementary or related information."
+
+categories:
+  - "structure|One node is a constituent, a declared member, or an ordered neighbour of the other."
+  - "taxonomy|One concept is a generalisation, a specialisation, or an associate of another concept."
+  - "definition|One node introduces or exemplifies the term the other node is."
+  - "documentation|One node records or names facts about the other."
+  - "evidence|One node is cited as the checkable support for a claim in the other."
+  - "provenance|One node was derived from, generated from, or reproduced from the other."
+  - "lineage|One node is a later version of, or a replacement for, the other."
+  - "dependency|One node requires, invokes, or is jointly constrained with the other in order to function."
+  - "implementation|One node realises or verifies the specification the other states."
+  - "representation|One node is a rendering, an encoding, or a depiction of the other."
+  - "identity|The two nodes denote the same thing, or are equivalent or alternative presentations of it."
+  - "agreement|One node supports, confirms, contradicts, or refutes a claim in the other."
+  - "annotation|One node qualifies or comments on the other without asserting an independent claim."
+  - "navigation|One node directs a reader to the other for related or supplementary reading."
