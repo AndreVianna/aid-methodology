@@ -14,6 +14,26 @@
 #   (work-005, feature-003). Its sibling suite, test-graph-relationship-validator.sh,
 #   covers the V1-V15 linter that consumes it.
 #
+# S1 -- SUBJECT INVOCATION BUDGET: 24 in-process loads + 2 subprocess spawns.
+#   Stated in this shape rather than as a bare number because S1's toll does not
+#   apply the same way here. S1 exists because "each subject invocation is a fixed
+#   ~10s toll" -- that is a SUBPROCESS cost. This suite sources the subject library
+#   once (:193) and drives it with 17 `rel_load_vocabulary` and 7 `rel_load_schema`
+#   in-process calls, each costing microseconds, plus exactly 2 deliberate `bash -c`
+#   spawns where a clean-environment load is the property under test. The budget to
+#   watch here is therefore the 2 spawns, not the 24 calls.
+#
+# S3 -- MUTATIONS ARE UNCONDITIONAL HERE, DELIBERATELY, AND THIS IS THE REASON.
+#   S3 puts a mutation MATRIX behind `--self-mutate` because "a mutation matrix is N
+#   suite runs" -- again a subprocess cost (and the cost defect tech-debt W5-4
+#   records). These mutations are in-process calls into the already-sourced library.
+#   Gating them behind an opt-in flag would mean CI never runs them, which would
+#   WEAKEN the vacuity coverage S3's own text asks for. The convention bears this
+#   out exactly: all 6 graph suites that carry `--self-mutate` are subprocess-based
+#   (extraction, source-enumeration, the four runtime suites); both that do not --
+#   this one and test-graph-relationship-validator.sh -- are in-process libraries.
+#   So: keep the vacuity mutations, run them by default, no flag.
+#
 #   Every assertion here runs IN PROCESS: the library is sourced once and its
 #   loaders RETURN 2 rather than calling `exit`, so a rejection class costs a
 #   function call and not a ~100 ms process fork. That is what lets this suite keep
