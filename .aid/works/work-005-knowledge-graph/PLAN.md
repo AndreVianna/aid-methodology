@@ -2,81 +2,58 @@
 
 ## Deliverables
 
-### delivery-001: Research Foundation
-- **What it delivers:** The two decisions that unblock implementation — the closed relation
-  vocabulary (FR-4–FR-6, D-1) authored as
-  `canonical/aid/templates/graph/relation-vocabulary.yml`, and the rendering-approach
-  recommendation (FR-18, D-2, STATE.md Q2) delivered as a decision record naming exactly one
-  approach with its runtime prerequisites stated explicitly. **This deliverable is not
-  standalone-functional** — it ships two decisions, not a usable capability. See the
-  BLUEPRINT objective for the recorded deviation and its reason.
-- **Features:** feature-001-relation-vocabulary-research, feature-002-graph-rendering-research
+**One delivery, by owner decision (2026-08-05).** The previous six-delivery sequence --
+Research Foundation, Relationship Table, KB Gap Ledger, Accessible View, Interactive Graph,
+Ship Gate -- is retired, and its 96 tasks are discarded rather than re-parented (STATE.md Q24
+items 10-11): the re-spec changed feature shapes, so re-parenting would carry stale DETAIL
+content into a structure it was not written for.
+
+### delivery-001: Knowledge Relationship Graph
+- **What it delivers:** the whole of work-005 -- the `/aid-graph` skill and everything it needs
+  to build, validate, report on and render a knowledge relationship graph for an AID project:
+  the relation vocabulary and rendering decision, the ten-column `relationships.md` and its
+  validator, source/media/external enumeration, the two extraction passes, the Knowledge-Base
+  gap ledger, the `graph.html` shell with its lens/view-model layer, the interactive canvas and
+  the accessible peer table, the eleven-state skill runtime with the FR-28 gate, canonical
+  registration across all five host profiles, and the suites, docs and Knowledge Base updates.
+- **Features:** all thirteen -- feature-001-relation-vocabulary-research,
+  feature-002-graph-rendering-research, feature-003-relationship-table-schema,
+  feature-004-source-enumeration, feature-005-two-pass-extraction, feature-006-kb-gap-ledger,
+  feature-007-graph-view-shell, feature-008-interactive-graph-canvas,
+  feature-009-accessible-table-view, feature-010-aid-graph-skill-runtime,
+  feature-011-validator-parameterisation, feature-012-canonical-registration,
+  feature-013-tests-and-docs
 - **Depends on:** --
 - **Priority:** Must
 
-### delivery-002: Relationship Table
-- **What it delivers:** An installed, rendered `/aid-graph` that emits a validated
-  `relationships.md`. The skill is registered canonically and present in all five host profile
-  trees; it refuses to run without an approved Knowledge Base, is a no-op on an unchanged
-  project, never writes a Knowledge Base file, enumerates the project source by structural
-  significance, and emits an eight-column table whose ids resolve, whose relation pairs are
-  valid inverses, whose rows are unique and provenance-stamped, and whose deterministic
-  majority is byte-identical across runs. Usable with no view at all — the table is readable
-  as markdown and routable by agents (§10 deliverable 2).
-- **Features:** feature-012-canonical-registration, feature-011-validator-parameterisation,
-  feature-003-relationship-table-schema, feature-004-source-enumeration,
-  feature-005-two-pass-extraction, feature-010-aid-graph-skill-runtime
-- **Depends on:** delivery-001
-- **Priority:** Must
+**What collapsing the sequence costs, stated rather than glossed.** The old boundaries were not
+decoration: they guaranteed that a stall in the rendering research could not stop
+`relationships.md` and the gap ledger from shipping, and they sequenced three criteria that are
+mutual obligations between features. With one delivery those guarantees move from delivery
+ordering into **task ordering**, and the affected criteria all close in this one gate:
 
-### delivery-003: KB Gap Ledger
-- **What it delivers:** Gap detection over feature-004's enumerated node set, reported as a
-  7-column reviewer ledger at `.aid/.temp/review-pending/graph-kb-gaps.md` with the offending
-  `int:` node as evidence, and routed onward to `/aid-update-kb` / `/aid-housekeep`. The run
-  never fails because gaps exist. This is the Knowledge-Base *quality* signal §2 item 1 exists
-  to produce.
-- **Features:** feature-006-kb-gap-ledger
-- **Depends on:** delivery-002
-- **Priority:** Must
-
-### delivery-004: Accessible View
-- **What it delivers:** The `graph.html` shell, the lens/view-model layer that both renderings
-  consume, and the accessible peer table view — sortable, filterable, keyboard-navigable,
-  screen-reader usable at WCAG AA. Four preset lenses over one data path, with manual controls
-  live throughout. Useful on its own: for the verification work this artifact exists to
-  support, a filterable list of gap rows is often the better tool than a picture.
-- **Features:** feature-007-graph-view-shell, feature-009-accessible-table-view
-- **Depends on:** delivery-002, delivery-003
-- **Priority:** Should
-- **Note on the delivery-003 edge:** this dependency is a **consequence of the owner's decision to
-  create `coverage-predicate.mjs` in delivery-003** rather than here. feature-007's `GV02`, `GV04`
-  and `GV08` assert against that module, and its Coverage lens verifies against the `kb_gaps` record
-  feature-006 writes — so the view genuinely needs the ledger deliverable, not just the table. The
-  decision traded a view→ledger edge for removing a ledger→view edge, which is the better trade
-  because it unblocks the ledger from the entire view layer; and the approved order already places
-  delivery-003 before delivery-004, so nothing reorders. Declared here rather than left implicit,
-  since feature-006's own Dependency position names only features 004 and 005.
-
-### delivery-005: Interactive Graph
-- **What it delivers:** The interactive graph canvas mounted in delivery-004's shell and drawn
-  by whatever delivery-001's rendering research recommended — layout, grouping, density, zoom
-  and pan, with reduced-motion settling, keyboard equivalents, and meaning never carried by
-  colour alone.
-- **Features:** feature-008-interactive-graph-canvas
-- **Depends on:** delivery-001, delivery-004
-- **Priority:** Should
-
-### delivery-006: Ship Gate
-- **What it delivers:** Test suites, documentation surfaces, and Knowledge Base entries — the
-  single place to ask "is this finished?". Discoverability across the four surfaces a newcomer
-  looks at, a registration suite that compares every rendered tree to the canonical source, a
-  green full canonical suite run locally, and a Knowledge Base that describes the toolkit that
-  now exists.
-- **Features:** feature-013-tests-and-docs
-- **Depends on:** delivery-001, delivery-002, delivery-003, delivery-004, delivery-005
-- **Priority:** Must
+| Was sequenced by delivery order | Now |
+|---|---|
+| FR-28's `R*` data checks (old delivery-002) then its `V*` view checks (old delivery-006) | The full rubric closes once, in this delivery's gate, over both artifacts |
+| AC-15 across features 006 / 007 / 008 | Closes here; still needs every half evidenced, not one half plus an assumption |
+| AC-9 across features 009 / 008 | Same |
+| The feature-001 -> 003/005 and feature-002 -> 008/011/012 blocking edges | Task-graph edges now; see the delivery BLUEPRINT's Dependencies table |
 
 ## Cross-Cutting Risks
+
+> **Read every `delivery-00N` below as a reference to the RETIRED six-delivery sequence.** These
+> seven risks were analysed against it and their substance is unchanged, so they are preserved
+> verbatim rather than reworded — mechanically substituting "this delivery" 34 times would have
+> distorted claims that turn on *relative order* ("the approved order already places delivery-003
+> before delivery-004"), and a distorted risk is worse than a dated one. **Only the sequencing
+> vocabulary is historical.** Every mitigation that was to be enforced by a delivery boundary is now
+> enforced by **task ordering inside delivery-001**, against the edges listed in
+> `deliveries/delivery-001/BLUEPRINT.md` § Dependencies; and every gate that a boundary used to
+> place — FR-28's split rubric, AC-9, AC-15 — now closes in this delivery's single gate, as the
+> table above records. Risk 2's premise is the sharpest case: it warns that FR-28 "cannot close" in
+> the delivery holding feature-010 because the view artifacts arrive later. With one delivery that
+> particular hazard is dissolved, but its underlying obligation is not — the `V*` checks still need
+> the view artifacts to exist before the gate runs, which is now a task-order constraint.
 
 | # | Risk | Impact | Mitigation |
 |---|------|--------|------------|
@@ -88,242 +65,17 @@
 | 6 | **The rendering decision's blast radius arrives late.** feature-002 completes in delivery-001, so the recommendation is *known* before delivery-002 — but the code that exercises it is spread across three later deliveries. feature-012's dependency-packaging criterion (private, unpublished, exactly pinned, lockfiled, monitored, licence-recorded) fires in delivery-002 only if a third-party dependency is adopted; feature-011's carve-outs are contingent the same way (`S2` only under CDN packaging, `validate-visuals.mjs` T2 only for an SVG live surface — feature-007 Open Item 4) and cannot actually be exercised until `graph.html` exists in delivery-004; and feature-008's size in delivery-005 swings substantially on the answer, with its runtime prerequisites feeding back into AC-6, which delivery-004 already closed. | M | Sequence delivery-001 first so the recommendation is in hand before any packaging or validator work is scoped, and require the decision record's runtime-prerequisite statement to be written as prose AC-6 can be checked against. Do not size feature-008 before delivery-001 lands (feature-008's own Dependency position says so). Treat delivery-005's prerequisite declaration as a re-check against delivery-004's documented prerequisites rather than as new work. |
 | 7 | **Three acceptance criteria are mutual obligations split across delivery boundaries.** AC-15 is owned by feature-006 in delivery-003 but its view side is feature-007 (delivery-004) and its graph side feature-008 (delivery-005), and every one of those SPECs states that neither owner may consider it met alone — so AC-15 cannot close before delivery-005. AC-9 is owned by feature-009 in delivery-004 while its reduced-motion clause is feature-008's in delivery-005, so it cannot fully close before delivery-005 either. AC-7 is shared between features 007 and 009, both in delivery-004, so it is the one that closes inside a single delivery. | M | Name the co-owner and the closing delivery in each affected BLUEPRINT's gate criteria rather than letting a gate silently pass on a half-met criterion. delivery-003 and delivery-004 record their halves as satisfied-but-not-closed; delivery-005's gate is where AC-9 and AC-15 close overall. feature-007's lens view-model is the mechanism that makes the parity checkable rather than asserted, and its `tests/canonical/test-graph-view-shell.sh` GV-series carries the assertions. |
 
-## Execution Graphs
+## Execution Graph
 
 > Derived mechanically from each task's `**Depends on:**` line by
 > `.aid/.temp/build-graphs.py`, per
-> `aid-detail/references/execution-graph-generation.md`. Waves are computed over
-> **intra-delivery** edges only — a dependency on an earlier delivery's task is satisfied by
-> delivery ordering and does not inflate the wave number. Cross-delivery edges are listed in
-> the Depends On column for traceability.
+> `aid-detail/references/execution-graph-generation.md`.
 
-### delivery-001 execution graph
+**Empty until `aid-detail` populates the task set.** The six per-delivery graphs that stood here
+were derived from the 96 discarded tasks and are removed rather than left to describe a structure
+that no longer exists -- a stale graph is worse than an absent one, because it reads as authority.
 
-| Task | Depends On |
-|------|-----------|
-| task-001 | — |
-| task-002 | task-001 |
-| task-003 | — |
-| task-004 | task-003 |
-| task-005 | task-004 |
-
-| Can Be Done In Parallel |
-|------------------------|
-| task-001, task-003 |
-| task-002, task-004 |
-
-```wave-map
-delivery: 001
-wave 1: task-001, task-003
-wave 2: task-002, task-004
-wave 3: task-005
-```
-
-### delivery-002 execution graph
-
-| Task | Depends On |
-|------|-----------|
-| task-006 | — |
-| task-007 | — |
-| task-008 | task-007 |
-| task-009 | task-007 |
-| task-010 | task-007 |
-| task-011 | task-010 |
-| task-012 | task-007 |
-| task-013 | task-006 |
-| task-014 | — |
-| task-015 | task-002, task-014 |
-| task-016 | task-014, task-015 |
-| task-017 | — |
-| task-018 | task-017 |
-| task-019 | task-018 |
-| task-020 | task-015 |
-| task-021 | task-014, task-020 |
-| task-022 | task-019, task-020 |
-| task-023 | task-014, task-016, task-021, task-022 |
-| task-024 | task-023 |
-| task-025 | task-007, task-024 |
-| task-026 | task-007 |
-| task-027 | task-019 |
-| task-028 | — |
-| task-029 | task-016 |
-| task-030 | task-007, task-026, task-027, task-029 |
-| task-031 | task-007, task-019, task-023, task-024 |
-| task-032 | task-019 |
-| task-033 | task-019, task-021, task-032 |
-| task-034 | task-015 |
-| task-035 | task-016 |
-| task-036 | task-021 |
-| task-037 | task-022 |
-| task-038 | task-023, task-024 |
-| task-039 | task-024 |
-| task-040 | task-026 |
-| task-041 | task-027 |
-| task-042 | task-028 |
-| task-043 | task-029, task-040 |
-| task-044 | task-008, task-009, task-013, task-016, task-019, task-024, task-025, task-028, task-029, task-030, task-031 |
-
-| Can Be Done In Parallel |
-|------------------------|
-| task-006, task-007, task-014, task-017, task-028 |
-| task-008, task-009, task-010, task-012, task-013, task-015, task-018, task-026, task-042 |
-| task-011, task-016, task-019, task-020, task-034, task-040 |
-| task-021, task-022, task-027, task-029, task-032, task-035 |
-| task-023, task-030, task-033, task-036, task-037, task-041, task-043 |
-| task-025, task-031, task-038, task-039 |
-
-```wave-map
-delivery: 002
-wave 1: task-006, task-007, task-014, task-017, task-028
-wave 2: task-008, task-009, task-010, task-012, task-013, task-015, task-018, task-026, task-042
-wave 3: task-011, task-016, task-019, task-020, task-034, task-040
-wave 4: task-021, task-022, task-027, task-029, task-032, task-035
-wave 5: task-023, task-030, task-033, task-036, task-037, task-041, task-043
-wave 6: task-024
-wave 7: task-025, task-031, task-038, task-039
-wave 8: task-044
-```
-
-### delivery-003 execution graph
-
-| Task | Depends On |
-|------|-----------|
-| task-045 | task-002, task-015 |
-| task-046 | task-019, task-023, task-045 |
-| task-047 | task-046 |
-| task-048 | — |
-| task-049 | task-048 |
-| task-050 | task-007, task-047 |
-| task-051 | task-007, task-008, task-050 |
-| task-052 | task-047 |
-| task-053 | task-052 |
-| task-054 | task-045 |
-| task-055 | task-045, task-047, task-048, task-050, task-051 |
-
-| Can Be Done In Parallel |
-|------------------------|
-| task-045, task-048 |
-| task-046, task-049, task-054 |
-| task-050, task-052 |
-| task-051, task-053 |
-
-```wave-map
-delivery: 003
-wave 1: task-045, task-048
-wave 2: task-046, task-049, task-054
-wave 3: task-047
-wave 4: task-050, task-052
-wave 5: task-051, task-053
-wave 6: task-055
-```
-
-### delivery-004 execution graph
-
-| Task | Depends On |
-|------|-----------|
-| task-056 | — |
-| task-057 | task-056 |
-| task-058 | task-056 |
-| task-059 | task-014 |
-| task-060 | task-059 |
-| task-061 | task-045, task-060 |
-| task-062 | task-057, task-060 |
-| task-063 | task-058, task-060 |
-| task-064 | task-061, task-063 |
-| task-065 | task-045, task-057, task-058, task-062, task-064 |
-| task-066 | task-007, task-065 |
-| task-067 | task-007, task-051, task-066 |
-| task-068 | task-060 |
-| task-069 | task-057, task-058, task-061, task-062, task-064, task-065, task-066, task-067, task-068 |
-| task-070 | task-054, task-069 |
-| task-071 | task-070 |
-| task-072 | task-063, task-064 |
-| task-073 | task-069 |
-| task-074 | task-069 |
-| task-075 | task-069 |
-| task-076 | task-075 |
-| task-077 | task-076 |
-
-| Can Be Done In Parallel |
-|------------------------|
-| task-056, task-059 |
-| task-057, task-058, task-060 |
-| task-061, task-062, task-063, task-068 |
-| task-065, task-072 |
-| task-070, task-073, task-074, task-075 |
-| task-071, task-076 |
-
-```wave-map
-delivery: 004
-wave 1: task-056, task-059
-wave 2: task-057, task-058, task-060
-wave 3: task-061, task-062, task-063, task-068
-wave 4: task-064
-wave 5: task-065, task-072
-wave 6: task-066
-wave 7: task-067
-wave 8: task-069
-wave 9: task-070, task-073, task-074, task-075
-wave 10: task-071, task-076
-wave 11: task-077
-```
-
-### delivery-005 execution graph
-
-| Task | Depends On |
-|------|-----------|
-| task-078 | task-005, task-056 |
-| task-079 | task-061, task-069 |
-| task-080 | task-078, task-079 |
-| task-081 | task-078, task-080 |
-| task-082 | task-081 |
-| task-083 | task-005, task-079 |
-| task-084 | task-082, task-086 |
-| task-085 | task-084 |
-| task-086 | task-082, task-083 |
-| task-087 | task-086 |
-| task-088 | task-073, task-086 |
-| task-089 | task-053, task-071, task-086 |
-
-| Can Be Done In Parallel |
-|------------------------|
-| task-078, task-079 |
-| task-080, task-083 |
-| task-084, task-087, task-088, task-089 |
-
-```wave-map
-delivery: 005
-wave 1: task-078, task-079
-wave 2: task-080, task-083
-wave 3: task-081
-wave 4: task-082
-wave 5: task-086
-wave 6: task-084, task-087, task-088, task-089
-wave 7: task-085
-```
-
-### delivery-006 execution graph
-
-| Task | Depends On |
-|------|-----------|
-| task-090 | task-069, task-086 |
-| task-091 | task-086 |
-| task-092 | task-090, task-091 |
-| task-093 | task-084, task-086 |
-| task-094 | task-091, task-093 |
-| task-095 | task-094 |
-| task-096 | task-090, task-091, task-092, task-093, task-094, task-095 |
-
-| Can Be Done In Parallel |
-|------------------------|
-| task-090, task-091, task-093 |
-| task-092, task-094 |
-
-```wave-map
-delivery: 006
-wave 1: task-090, task-091, task-093
-wave 2: task-092, task-094
-wave 3: task-095
-wave 4: task-096
-```
-
+With a single delivery every dependency edge is intra-delivery, so wave numbers are computed over
+the whole task set and nothing is satisfied implicitly by delivery ordering. The edges that used
+to be delivery boundaries are listed in `deliveries/delivery-001/BLUEPRINT.md` § Dependencies and
+must appear as real `**Depends on:**` lines in the regenerated tasks.
