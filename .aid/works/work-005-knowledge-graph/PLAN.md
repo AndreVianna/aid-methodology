@@ -144,7 +144,7 @@ them will either over-parallelise across a gate or under-parallelise inside one.
 delivery: 001
 wave 1: task-001, task-002, task-003, task-005
 wave 2: task-004, task-006
-wave 3: task-007
+wave 3: task-007, task-030
 wave 4: task-008, task-010, task-012
 wave 5: task-009, task-011, task-013
 wave 6: task-014, task-015, task-017, task-019
