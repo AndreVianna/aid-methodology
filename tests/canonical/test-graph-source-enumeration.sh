@@ -15,6 +15,14 @@
 #   canonical/aid/scripts/graph/scan-source.sh        (the single walk)
 #   canonical/aid/scripts/graph/significance-rules.sh (the rule library)
 #
+# S1 -- SUBJECT INVOCATION BUDGET: 5 scans, one per distinct input.
+#   Enumerated so a future author cannot add a sixth casually: FXA (x2 -- the second
+#   is the byte-identity re-run, a genuinely distinct input state), FXB, and FXC (x2 --
+#   the two ignore-list states). All 222 assertions read the cached output dirs those
+#   5 scans produce; none re-invokes the subject. `scan_into` at :456 is the wrapper,
+#   not a 6th call. Adding an invocation is allowed (S4 forbids trading coverage for
+#   time) but it must be counted here.
+#
 # Scope:
 #   Every assertion runs against a SELF-BUILT fixture corpus in a mktemp dir, never
 #   against this repository. That is deliberate, and it is the lesson of the first
