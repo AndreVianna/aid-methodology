@@ -195,6 +195,26 @@ manifest_normalize() {
     grep -v '"installed_at"' "$file" 2>/dev/null | tr -d ' \t'
 }
 
+# ---------------------------------------------------------------------------
+# Helper: echo every "installed_at" value in <file> that is NOT ISO-8601 UTC.
+# Empty output == every stamp is well-formed.
+#
+# WHY (tech-debt W4-4): manifest_normalize above DELETES installed_at before
+# diffing. That is correct for a content diff -- the bash and pwsh writers install
+# at different instants, so the values legitimately differ -- but it left the field
+# with NO oracle at all. The pwsh writer was silently re-rendering every preserved
+# ISO-8601 stamp into the current culture's short format ('06/06/2026 20:01:03'),
+# one-way, and the only test that compares the two writers' manifests was blind to
+# precisely this field. Shape is writer-independent, so it can be asserted even
+# though the value cannot.
+# ---------------------------------------------------------------------------
+manifest_bad_stamps() {
+    local file="$1"
+    grep -o '"installed_at"[[:space:]]*:[[:space:]]*"[^"]*"' "$file" 2>/dev/null \
+        | sed 's/.*"\([^"]*\)"$/\1/' \
+        | grep -vE '^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z$' || true
+}
+
 # ===========================================================================
 # PAR029-A: Fresh add — identical project tree after Bash vs PS1
 # ===========================================================================
@@ -228,6 +248,23 @@ done
 SH_MANI_NORM=$(manifest_normalize "${T_SH_A}/.aid/.aid-manifest.json")
 PS_MANI_NORM=$(manifest_normalize "${T_PS1_A}/.aid/.aid-manifest.json")
 assert_eq "$SH_MANI_NORM" "$PS_MANI_NORM" "PAR029-A04 Bash↔PS1 manifest content identical (modulo timestamps)"
+
+# W4-4: installed_at SHAPE, the field the diff above deliberately drops.
+# PAR029-A05c is a POSITIVE CONTROL and is not optional: A05a/A05b assert that a
+# detector returns the empty string, which passes vacuously if the detector is broken
+# (a wrong grep, a renamed key, a moved file). The control feeds it a known-corrupt
+# stamp and requires it to be reported, so a green A05a/A05b means "checked and
+# clean" rather than "never looked".
+assert_eq "$(manifest_bad_stamps "${T_SH_A}/.aid/.aid-manifest.json")" "" \
+    "PAR029-A05a Bash manifest: every installed_at is ISO-8601 UTC"
+assert_eq "$(manifest_bad_stamps "${T_PS1_A}/.aid/.aid-manifest.json")" "" \
+    "PAR029-A05b PS1 manifest: every installed_at is ISO-8601 UTC"
+
+_A05_CTL="${TMP:-/tmp}/par029-a05-control.json"
+printf '{\n  "installed_at": "06/06/2026 20:01:03",\n  "tools": {}\n}\n' > "${_A05_CTL}"
+assert_eq "$(manifest_bad_stamps "${_A05_CTL}")" "06/06/2026 20:01:03" \
+    "PAR029-A05c control: the stamp-shape detector reports a locale-format stamp"
+rm -f "${_A05_CTL}"
 
 # ===========================================================================
 # PAR029-B: status output parity after identical install

@@ -68,7 +68,31 @@ fi
 PWSH="$(detect_pwsh || true)"
 
 TMP=$(mktemp -d)
-trap 'rm -rf "$TMP"' EXIT
+
+# Temp tags this suite creates in the MAIN repository (see the clone block below),
+# registered so the EXIT trap removes them even when the suite is killed mid-clone.
+# That case is routine -- this suite sits in the per-suite-timeout set under
+# tests/run-all.sh -- and it used to leak release-shaped `aid-test-e2e-*` tags into
+# the real repo (tech-debt W4-2, same class as test-release.sh's `aid-test-clone-*`;
+# the debt entry cited only that suite, but both write to the main repo).
+#
+# The inline `tag -d` stays as the fast path; this is the net for the killed-mid-clone
+# window. EXIT alone is deliberate and sufficient: bash runs an EXIT trap on SIGTERM,
+# which is what `timeout` sends (verified), and adding INT/TERM to this same trap
+# makes the handler run TWICE.
+#
+# Guarded with :- because MAIN_REPO_ROOT is defined below this point: under `set -u`
+# an early exit would otherwise fail inside the trap. If it is unset, no tag can have
+# been registered yet either, so the loop is correctly empty.
+_MAIN_REPO_TAGS=""
+_cleanup() {
+    rm -rf "$TMP"
+    local _t
+    for _t in ${_MAIN_REPO_TAGS:-}; do
+        git -C "${MAIN_REPO_ROOT:-.}" tag -d "${_t}" >/dev/null 2>&1 || true
+    done
+}
+trap _cleanup EXIT
 
 # ---------------------------------------------------------------------------
 # Build a clean clone of the worktree branch to satisfy release.sh's
@@ -84,6 +108,9 @@ CLONE="${TMP}/e2e-clone"
 # Pin the commit under test with a temp tag, clone that, then remove it — robust under
 # CI detached-HEAD PR checkouts (a detached HEAD has no branch ref for a plain clone to find).
 _E2E_REF="aid-test-e2e-$$"
+# Register BEFORE creating it, so a kill landing between these two lines is still
+# covered by the EXIT trap (see the _cleanup definition above).
+_MAIN_REPO_TAGS="${_MAIN_REPO_TAGS} ${_E2E_REF}"
 git -C "${MAIN_REPO_ROOT}" tag -f "${_E2E_REF}" "${WORKTREE_REF}" >/dev/null 2>&1
 git clone --local --quiet --branch "${_E2E_REF}" "${MAIN_REPO_ROOT}" "${CLONE}" 2>/dev/null
 git -C "${MAIN_REPO_ROOT}" tag -d "${_E2E_REF}" >/dev/null 2>&1
