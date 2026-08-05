@@ -15,6 +15,28 @@
 #   feature-003). Its sibling suite, test-graph-schema-loader.sh, covers the
 #   sourceable library this script consumes.
 #
+# S1 -- SUBJECT INVOCATION BUDGET: 41 subprocess spawns, one per distinct fixture or
+#   flag combination; no in-process calls, because there is no library to source here
+#   -- the subject is a standalone script whose own arg parsing, exit-code contract
+#   and frontmatter/table scan only a real process boundary exercises end to end.
+#   That is the opposite shape from the sibling loader suite, and it is why every
+#   fixture below is grouped by which INDEPENDENT defects can share one artifact
+#   (see "Runtime" below) rather than run singly: each spawn costs ~4s on Windows Git
+#   Bash, so 41 is already most of a minute of pure process creation and a fixture
+#   that could share an existing spawn must.
+#
+# S3 -- WHY THIS SUITE CARRIES NO `--self-mutate`, DESPITE BEING SUBPROCESS-BASED.
+#   Six sibling graph suites gate a MUTATION MATRIX -- mutating a COPY of the
+#   SUBJECT'S OWN SOURCE and re-running assertions to prove a regression would be
+#   caught -- behind that flag, because for those subjects a fixture-only rejection
+#   case cannot exercise every code path a source mutation can. That extra layer has
+#   no work to do here: every rejecting fixture below is already a direct,
+#   guard-verified (anchor present, unique, and actually changed -- `mutate()`'s three
+#   checks) trigger of the ONE finding it names, paired one-for-one with an accepting
+#   case from the same clean baseline, which is the non-vacuous pairing S3 asks for.
+#   Adding a second, subject-source-mutating layer on top would be new scope, not a
+#   gap this task's added assertions leave open -- so none is added.
+#
 # What is asserted:
 #   Every one of V1-V15 gets BOTH halves -- a fixture the check accepts and a
 #   fixture it rejects. A linter that passed everything and one that failed
@@ -24,8 +46,12 @@
 #
 #   Also asserted: the two advisories never gate (they print and the run still exits
 #   0); the exit-code contract 0/1/2; that `--help` documents exactly the flags the
-#   script parses; and that the class-0 extraction refuses to print on a defective
-#   table.
+#   script parses; that the class-0 extraction refuses to print on a defective
+#   table; and, per AC-19, that a fixed Kind row reporting `absent`/`0` -- a carrier
+#   convention a project genuinely lacks -- is a well-formed outcome and never a
+#   REL-COVERAGE finding, which V14c's rejection of an invalid status does not by
+#   itself prove (rejecting 'unknown' says nothing about whether 'absent' is the
+#   second accepted member of that two-value enum or missing from it entirely).
 #
 # Orientation safety, which is the one place normalisation could make a report lie:
 #   Three of the clean fixture's six rows carry their ids in ascending order with the
@@ -41,6 +67,84 @@
 #   mutation testing showed a validator that dropped the reverse credit simply reported
 #   those relations on a DIFFERENT shape (the grouped "no row used these at all" line),
 #   so all three assertions passed against a demonstrably broken subject.
+#
+# AC-MAP -- feature-003's AC-1..AC-20 and AC-S1..AC-S3 (SPEC.md), read against this
+# suite's and test-graph-schema-loader.sh's actual assertion ids. Built by work-005
+# task-004, because no per-AC map existed before it (task-001's own AC-MAP, in the
+# sibling suite, is scoped to feature-001's AC-S1..AC-S6 only). A row with no id is a
+# genuine gap the map exists to surface, not a formality; two were found and closed by
+# this task (marked NEW below) and none were left open.
+#
+#   AC-1  (each id resolves by the protocol for its own Kind; ext: proven on a
+#         self-built fixture per Q4/A-6, since this repo's external-sources.md
+#         registers no keys) -- CLEAN01 (all six rows, one per non-ext Kind plus one
+#         ext: web-page, resolve) + V02a-f (one negative per protocol: ext: key
+#         unregistered, int: path missing, fact token absent, section slug absent,
+#         concept with no definition, document outside the scan set). The ext:
+#         `image` sub-case (D1a's unrecoverable-from-the-key arm) resolves via
+#         V13-POS's `ext:remote-logo`. The concept exactly-one/qualified-form branch
+#         is a library-level property (test-graph-schema-loader.sh KB39/KB40) that V2
+#         calls through `rel_resolve_id`, plus V02e/V15d at the validator boundary.
+#   AC-2  (both relation labels merged-vocabulary members and a valid inverse pair;
+#         symmetric same-label rows are valid) -- V03 (REL-VOCAB), V04 (REL-PAIR),
+#         V04-POS (a symmetric row is accepted, pinned present in the clean fixture).
+#   AC-2a (Source/Target Kind in the closed enum and agrees with its id's prefix,
+#         including the branching `image` case) -- V13a-f (both tiers, one violation
+#         per row) + V13-POS (`image` + `ext:` MUST pass, the branching case AC-2a
+#         calls out by name).
+#   AC-3  (no relationship recorded twice, neither as a repeat nor as a forward row
+#         plus a separate inverse row) -- V05a (verbatim repeat), V05b (the mirror,
+#         swapped triples and swapped labels, collapsing to the same row key).
+#   AC-4  (provenance exactly one of three, never empty) -- V06 (case violation),
+#         V06b (value outside the closed enum); "never empty" is V1's generic
+#         required-column check (V01c), which runs the same code path for every
+#         required column including Provenance, so no Provenance-specific empty
+#         fixture is a separate code path to miss.
+#   AC-5  (byte-identity of the class-0 block and the whole Coverage notes section,
+#         over all of FR-11's staleness inputs unchanged) -- task-004's own Scope
+#         bounds this to "a self-built fixture, not this repository's own KB": CON09
+#         (the extraction succeeds on a conforming table), CON10 (header included),
+#         CON11 (stops before the first inferred row), CON12 (frontmatter excluded),
+#         CON13/CON14 (refuses -- prints nothing -- on a table failing V10), CON15/16
+#         (two runs of the REPORT are byte-identical). The Coverage-notes half of the
+#         same comparison is V14's whole group. What is NOT closed here, by the task's
+#         own scope: byte-identity across two live regenerations, which needs
+#         feature-005's generator and does not exist yet.
+#   AC-16 (table side: no `int:` id carries any fragment; `kb:` ids may) -- V07
+#         (`int:tool.sh#main` rejected) + the clean fixture's own ROW_C/D/E (`kb:`
+#         fact/section/concept fragments, all accepted).
+#   AC-18 (relationships.md carries frontmatter valid for the index generator) --
+#         V09a (required key absent), V09b (required key empty), V09c/V09d (a
+#         timestamp in the marker / in a row), V09e/V09f (a pipe / a block scalar in
+#         a single-line field), V09g (frontmatter not the file's first content).
+#   AC-19 (a kind with zero nodes and Status `absent` is well-formed, not a schema
+#         violation) -- **NEW, this task**: V14-AC19a/b. No assertion existed before:
+#         V14c only proves the enum REJECTS a value outside {present, absent}, which
+#         does not by itself prove `absent` is the accepted second member rather than
+#         missing from the accepted set entirely.
+#   AC-20 (every enum kind appears in the notes, in order, including a zero count,
+#         plus the FR-22 exclusion statuses) -- CLEAN01/02 (the clean fixture itself
+#         carries all seven kinds, four of them at a `0` count, and all three
+#         exclusion rows) + V14h/i (removing a fixed kind/exclusion row is GATING,
+#         which is what makes the clean fixture's completeness an enforced property
+#         and not an unchecked convention).
+#   AC-S1 (ten columns, `Kind` adjacent to its id, no `Strength` column) -- V01a
+#         (9-cell row), V01b (unpadded cell), V01d/V01e (header/delimiter not
+#         byte-equal the carrier's ten-column form), V01f (CRLF rejected).
+#   AC-S2 (a parser reaches the table's end without reading the notes) -- CLEAN02
+#         ("Checked: 6 rows" pinned exactly against a fixture whose Coverage notes
+#         carry two further pipe-tables; an implementation that kept reading past the
+#         boundary would inflate that count) + V14l (the notes-above-table ordering
+#         defect is reported distinctly, which is what proves the boundary is an
+#         actively checked position and not an assumed one).
+#   AC-S3 (D7a-1's extra-row total order: fixed-first/contiguous, charset, no
+#         fixed-key collision, uniqueness, `LC_ALL=C` order, matching cell count) --
+#         V14a (charset), V14b (cell count), V14e (fixed-key collision), V14f
+#         (uniqueness), V14g (order), V14h/i (fixed-first -- a missing fixed row lands
+#         the wrong key at a fixed position, the same code path an inserted-above row
+#         would hit). The clean fixture's own notes carry the D7a-1 worked example's
+#         six extra keys in the SPEC's own order, which V14g's shuffle is checked
+#         against.
 #
 # Fixtures:
 #   Self-built under a mktemp dir, removed on EXIT. Nothing here reads or references
@@ -1008,6 +1112,24 @@ fi
 run_v "$TMP/v14l.md"
 expect_finding_global "V14l the notes section placed ABOVE the relationship table" \
     REL-COVERAGE "is ABOVE the relationship table's header row"
+
+# AC-19: a kind with ZERO nodes and Status 'absent' is a WELL-FORMED outcome, not a
+# schema violation -- the case a project genuinely lacking a carrier convention hits
+# on every run. V14c above already proves the two-value enum REJECTS anything outside
+# {present, absent} ('unknown'); that is a DIFFERENT claim from this one, since an
+# implementation narrowed to `present) ;;` alone -- silently breaking every such
+# project -- would still pass V14c, which never spells the word 'absent'. Only a
+# fixture that USES 'absent' and must be accepted closes that gap.
+mutate "V14-AC19" "$CLEAN" "$TMP/v14ac19.md" \
+    '| web-page | entries in the external-sources file | present | 2 |' \
+    '| web-page | entries in the external-sources file | absent | 0 |' \
+    && {
+        run_v "$TMP/v14ac19.md"
+        assert_exit_eq "$RC" 0 \
+            "V14-AC19a a fixed Kind row reporting a missing carrier convention (Status absent, Nodes 0) is well-formed"
+        assert_output_not_contains "$OUT" "[REL-COVERAGE]" \
+            "V14-AC19b ... and raises no REL-COVERAGE finding at all"
+    }
 
 # ===========================================================================
 # === V15 [REL-CONCEPT-AMBIG] -- advisory ==================================

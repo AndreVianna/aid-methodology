@@ -1197,6 +1197,24 @@ rel_fact_token_into "a/b/c.md" "Short"
 assert_eq "$REL_STR" "a-b-c-md--short" \
     "SR15 path separators and dots become hyphens, runs collapsed"
 
+# This library's own `Provides` header index (its :83-111) documents four functions
+# as thin print-wrappers over an `_into` twin -- `rel_strip_markup`, `rel_slug_heading`
+# (also D9's), `rel_normalise_term` (also D9's), and `rel_fact_token`. SR01-SR15 above
+# exercise every RULE exclusively through the `_into` form, which leaves the wrapper
+# itself -- the name the header documents as callable -- unchecked: a typo printing
+# the wrong variable, or a stale copy-paste from a sibling wrapper, would survive
+# every assertion above. One call per wrapper, each reusing an already-verified case
+# so the expected value is not re-derived, closes that.
+assert_eq "$(rel_strip_markup 'The `code` and *bold* and [link](url) text')" \
+    "The code and bold and link text" \
+    "SR16 rel_strip_markup (the public wrapper, not _into) strips backticks, emphasis and link syntax"
+assert_eq "$(rel_slug_heading "JavaScript / Node Conventions")" "javascript--node-conventions" \
+    "SR17 rel_slug_heading (the public wrapper) reproduces SR01's slug"
+assert_eq "$(rel_normalise_term "AidInstallCore")" "aid-install-core" \
+    "SR18 rel_normalise_term (the public wrapper) reproduces SR07's term"
+assert_eq "$(rel_fact_token "read-setting.sh" "lookup_list")" "read-setting-sh--lookup_list" \
+    "SR19 rel_fact_token (the public wrapper) reproduces SR12's token"
+
 # ===========================================================================
 # === ID: the per-kind id grammars and the two-tier kind check ==============
 # ===========================================================================
