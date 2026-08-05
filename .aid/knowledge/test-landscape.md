@@ -455,9 +455,42 @@ Linux CI and dominates the local loop.
 |---|---|---|
 | **S1** | Invoke each subject **once per distinct input**, never once per assertion group. Build the fixture once, run the pipeline once into a cached output dir, assert many times against those files. Declare the invocation count in the suite header. | Each subject invocation is a fixed ~10s toll before any assertion is evaluated. |
 | **S2** | Load subject output into memory in **one pass** (`while IFS= read -r`, or one `awk` pass emitting a digest) into bash arrays, then assert with `[[ ]]` and `${var}` string ops. **No command substitution per assertion**, no per-assertion `grep`/`awk`/`cut`/`wc`. | Measured: 300 command substitutions **20.7s**; 300 builtin calls **0.16s**. |
-| **S3** | Put the mutation matrix behind an explicit flag (`--self-mutate`). Default (no args) runs assertions only, so CI pays one pass. | A mutation matrix is N full suite runs. See `test-graph-source-enumeration.sh` for the pattern. |
+| **S3** | Put the mutation matrix behind an explicit flag (`--self-mutate`). Default (no args) runs assertions only, so CI pays one pass. **Require a matrix only where an assertion CAN be vacuous** — absence claims, universals over a set, derived invariants — not for assertions reading a direct positive value that obviously varies with the subject. **Each mutant runs its target assertion group, not the whole suite.** | A mutation matrix is N suite runs. The current harness in `test-graph-source-enumeration.sh` shows both the pattern and its cost defect — see [the multiplier note](#known-cost-the-mutation-matrix-multiplier) before copying it. |
 | **S4** | **Never trade coverage for time.** If an assertion genuinely needs its own subject invocation, keep it and say so in the header. Report before/after wall time *and* before/after invocation count when optimizing. | The `tests/coverage-parity.sh` gate exists because optimization is exactly when coverage silently disappears. |
 | **S5** | Mutate a **copy** in a `mktemp -d`, never the source tree, and assert the subject is byte-identical to `HEAD` afterwards. | A live mutation in a production script with a normal exit code is indistinguishable from a passing run. |
+
+### Known cost: the mutation matrix multiplier
+
+**Open problem, deliberately recorded rather than fixed.** The mutation harness as first built
+is an ~8x multiplier on an already-slow suite, and the cause is that it **breaks S1** — the
+rule sitting three rows above it.
+
+`test-graph-source-enumeration.sh:1112` runs each mutant as `bash "$SELF"`, i.e. **a full
+re-run of the entire suite**: all 189 assertions and all 5 subject scans, per mutant.
+
+| | suite runs | subject scans | wall |
+|---|---|---|---|
+| baseline | 1 | 5 | 73s |
+| 7 mutants | 7 | 35 | ~511s |
+| **total** | **8** | **40** | **~584s (~10 min)** |
+
+Forty scans at ~10s each is ~400s of pure scanning to test seven one-line defects.
+Extrapolated across the six committed suites at their measured times,
+`(196+79+73+58+29+25) x 8 ~= 3,680s ~= 61 minutes` for one deliverable. Observed
+consequence: two builders spent the bulk of a 2.5-hour run inside mutation loops.
+
+**The three changes that should fix it, in expected-payoff order:**
+
+1. **A mutant runs only its target assertion group**, never the suite. This is precisely what
+   T6's group filter exists for, so the mechanism is already a requirement.
+2. **Library-level mutants call the function directly, with no pipeline scan.** M3 and M4
+   mutate ranking logic in `significance-rules.sh` (`SIG_RANK`, the evidence selector) which
+   is a pure shell function — sourcing the library and calling it needs zero scans.
+3. **Mutants sharing a fixture share one scan.**
+
+Expected: ~511s -> ~60-90s per suite. **Do not resolve this by dropping mutants** — the
+matrix is the only oracle that caught three suites which were green against a broken subject
+(see W5-4 in `tech-debt.md` for the full sizing and the evidence).
 
 ### T1-T6 — when a suite is run
 
