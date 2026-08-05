@@ -116,3 +116,24 @@ hand-off; it is not a specification gap.
 recorded in `.aid/knowledge/test-landscape.md`, including the `# COVERS:` manifest that lets
 `tests/canonical/select-suites.sh` run only the suites a change can affect. The mutation-harness
 cost defect is tech-debt W5-4 and is deliberately not fixed inside this work.
+
+**Why every `DETAIL.md` carries two blocks beyond the six-section schema, and why they stay.** Each
+task file opens with a `[!NOTE]` provenance block and a twelve-line execution-protocol blockquote, so
+strictly it exceeds `delivery-plans/task-template.md:19`'s "Six sections … **Nothing else**". The
+files are not the thing that is wrong: **both blocks ship in `task-detail-template.md`**, the seed
+those files were written from, so they match their seed exactly and removing them would deviate from
+it instead. What is wrong is that the two templates disagree — one prescribes the blocks, the other
+forbids anything beyond six sections. That conflict is registered as tech-debt **W5-6** (together with
+the two templates' disagreement over the `Source` value and its arrow, the literal `[CRITICAL]`
+example rows in `task-state-template.md`, and the self-referential trailing criterion). Nothing that
+parses these files is affected: the dashboard's title regex and the `Type` / `Depends on` line greps
+all still resolve. Recorded here once rather than as a note in all 29 files, which would have added
+more boilerplate to answer a finding about boilerplate.
+
+**Two other gate-relevant properties recorded during the Detail review, so a later reader does not
+rediscover them as defects.** `task-006` deliberately edits `canonical/` only and leaves every render
+to `task-024`, so the byte-identity gate is *expected* to be red for the settings template between
+gate wave 1 and gate wave 5 — that divergence is bounded and intended, not drift. And `task-022`'s
+FR-28 rubric run sits in gate wave 4 while four wave-5 tasks still move shipped content, so
+`task-028` re-runs the rubric against the delivery's final state; a changed verdict there is a
+finding rather than a refresh.

@@ -18,7 +18,7 @@ Shape: 6 sections matching .claude/aid/templates/delivery-plans/task-template.md
 > `aid-execute/references/state-execute.md § MANDATORY: State-Write
 > Protocol`.
 
-**Type:** TEST
+**Type:** REFACTOR
 
 **Source:** feature-013-tests-and-docs -> delivery-001 (Wave 5)
 
@@ -51,4 +51,9 @@ Shape: 6 sections matching .claude/aid/templates/delivery-plans/task-template.md
       counted as either
 - [ ] The mutation-harness cost defect (tech-debt W5-4) is **not** fixed here — it is deliberately out
       of this work's scope
+- [ ] **All tests pass before AND after**, and **no behaviour change** (REFACTOR type-defaults,
+      `task-decomposition.md`:177). Stated with its oracle: capture each suite's own summary-line
+      totals before the spawn reduction and compare after -- identical PASS counts and identical
+      assertion ids, per S4, so a reduction that drops an assertion is caught rather than read as a
+      speed-up. `tests/coverage-parity.sh` is the mechanical check for the assertion-id half
 - [ ] All section-6 quality gates pass

@@ -79,4 +79,8 @@ Shape: 6 sections matching .claude/aid/templates/delivery-plans/task-template.md
 - [ ] Exit codes match `state-render.md`'s routing table exactly: 0 chains to VALIDATE, 1 chains only
       if a page was written, 2 aborts as an invocation error
 - [ ] Both `graph.html` and any companion files sit under `.aid/knowledge/` (FR-9, A-4, C-8)
+- [ ] **All existing tests still pass** (IMPLEMENT type-default, `task-decomposition.md`:175). Named
+      explicitly because this task touches surfaces shared beyond this work's own suites, so a
+      regression can land where the graph suites do not look: run the affected suites, not only the
+      `test-graph-*` set. Use `tests/canonical/select-suites.sh --run` to pick them by change set
 - [ ] All section-6 quality gates pass

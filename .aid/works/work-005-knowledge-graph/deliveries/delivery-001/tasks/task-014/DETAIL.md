@@ -58,4 +58,10 @@ Shape: 6 sections matching .claude/aid/templates/delivery-plans/task-template.md
 - [ ] The AC-15 and AC-7 shell halves are each labelled a half, naming feature-006, feature-008 and
       feature-009 as the respective co-owners
 - [ ] S1, S2, S4 honoured; S3 mutation cases behind `--self-mutate`; S5 proves the tree untouched
+- [ ] **Tests are deterministic** and **setup/teardown is clean** (TEST type-defaults,
+      `task-decomposition.md`:176). Neither is implied by the S1-S5 conventions this task cites: S5
+      covers only leaving the source tree untouched. Concretely -- two runs over one input produce
+      identical PASS/FAIL sets and identical counts, every fixture is built under `mktemp -d` and
+      removed on exit including on failure, and no assertion depends on execution order or on a
+      previous run's residue
 - [ ] All section-6 quality gates pass

@@ -49,4 +49,8 @@ Shape: 6 sections matching .claude/aid/templates/delivery-plans/task-template.md
       file the generator cannot see is named as hand-maintained rather than assumed emitted
 - [ ] If the decided shape is CDN packaging, feature-011's `S2` carve-out is confirmed as **in force**
       and task-019's waiver text matches; if it is not, `S2` is confirmed as a recorded no-op
+- [ ] **All existing tests still pass** (IMPLEMENT type-default, `task-decomposition.md`:175). Named
+      explicitly because this task touches surfaces shared beyond this work's own suites, so a
+      regression can land where the graph suites do not look: run the affected suites, not only the
+      `test-graph-*` set. Use `tests/canonical/select-suites.sh --run` to pick them by change set
 - [ ] All section-6 quality gates pass

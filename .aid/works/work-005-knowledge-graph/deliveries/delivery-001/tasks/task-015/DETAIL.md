@@ -48,4 +48,8 @@ Shape: 6 sections matching .claude/aid/templates/delivery-plans/task-template.md
       alternate version NFR-2 rests AA on
 - [ ] Nothing here re-derives membership, emphasis, grouping or folding; all of it is read from
       `project()`'s output (NFR-3)
+- [ ] **All existing tests still pass** (IMPLEMENT type-default, `task-decomposition.md`:175). Named
+      explicitly because this task touches surfaces shared beyond this work's own suites, so a
+      regression can land where the graph suites do not look: run the affected suites, not only the
+      `test-graph-*` set. Use `tests/canonical/select-suites.sh --run` to pick them by change set
 - [ ] All section-6 quality gates pass

@@ -20,6 +20,15 @@ Shape: 6 sections matching .claude/aid/templates/delivery-plans/task-template.md
 
 **Type:** TEST
 
+> **TYPE OVERRIDE, recorded rather than left to look like a mis-type.** `task-type-rules.md`'s TEST
+> rule is "write integration/E2E/UI/load tests as specified in the task scope", and this task writes
+> none: it *runs* the FR-28 rubric via `grade-graph.sh`, evidences each criterion and produces a graded
+> ledger. No type in the closed set (IMPLEMENT, TEST, RESEARCH, DESIGN, DOCUMENT, MIGRATE, REFACTOR,
+> CONFIGURE) names "run an acceptance rubric and evidence its verdicts", and TEST is the nearest --
+> the work is verification, and its output is a pass/fail judgement over acceptance criteria. Recorded
+> as an explicit override per `task-decomposition.md`:174 ("unless the task explicitly overrides")
+> rather than silently carrying a type whose rule text does not describe the work.
+
 **Source:** feature-010-aid-graph-skill-runtime -> delivery-001 (Wave 4)
 
 **Depends on:** task-014, task-016, task-018, task-020, task-021, task-023
@@ -48,4 +57,10 @@ Shape: 6 sections matching .claude/aid/templates/delivery-plans/task-template.md
       silently marked met
 - [ ] Any finding the run produces is written to the ledger at `.aid/.temp/review-pending/` in the
       7-column schema, with plain-text status values
+- [ ] **Tests are deterministic** and **setup/teardown is clean** (TEST type-defaults,
+      `task-decomposition.md`:176). Neither is implied by the S1-S5 conventions this task cites: S5
+      covers only leaving the source tree untouched. Concretely -- two runs over one input produce
+      identical PASS/FAIL sets and identical counts, every fixture is built under `mktemp -d` and
+      removed on exit including on failure, and no assertion depends on execution order or on a
+      previous run's residue
 - [ ] All section-6 quality gates pass

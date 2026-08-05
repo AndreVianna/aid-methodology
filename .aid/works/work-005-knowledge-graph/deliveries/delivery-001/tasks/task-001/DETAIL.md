@@ -55,4 +55,10 @@ Shape: 6 sections matching .claude/aid/templates/delivery-plans/task-template.md
       `tests/canonical/select-suites.sh` still selects it for a vocabulary edit
 - [ ] The suite passes, and its assertion total is read from the script's own summary line, not
       from grep over stdout
+- [ ] **Tests are deterministic** and **setup/teardown is clean** (TEST type-defaults,
+      `task-decomposition.md`:176). Neither is implied by the S1-S5 conventions this task cites: S5
+      covers only leaving the source tree untouched. Concretely -- two runs over one input produce
+      identical PASS/FAIL sets and identical counts, every fixture is built under `mktemp -d` and
+      removed on exit including on failure, and no assertion depends on execution order or on a
+      previous run's residue
 - [ ] All section-6 quality gates pass

@@ -18,7 +18,7 @@ Shape: 6 sections matching .claude/aid/templates/delivery-plans/task-template.md
 > `aid-execute/references/state-execute.md § MANDATORY: State-Write
 > Protocol`.
 
-**Type:** IMPLEMENT
+**Type:** CONFIGURE
 
 **Source:** feature-004-source-enumeration -> delivery-001 (Wave 1)
 
@@ -36,9 +36,14 @@ Shape: 6 sections matching .claude/aid/templates/delivery-plans/task-template.md
   inert, so there is no version bump and no reconcile rule. `/aid-config` and
   `tests/canonical/test-reconcile-scenarios.sh` are untouched by design.
 - The reader half already exists (`scan-source.sh:152` / `:171`,
-  `significance-rules.sh:722`) and is not edited here. Either render the template change into the
-  five profile roots and both dogfood trees, or leave the render to task-024 — but do not end the
-  wave with `canonical/` and the renders disagreeing.
+  `significance-rules.sh:722`) and is not edited here.
+- **The render is NOT this task's, and that is now a decision rather than an executor choice.** An
+  earlier version offered "either render it here or leave it to task-024", while also forbidding the
+  state one of those branches produces -- so an acceptance-criteria-driven executor could end gate
+  wave 1 in exactly the condition the same bullet prohibited, and no criterion covered either branch.
+  **This task edits `canonical/` only.** `task-024` owns every render, and it depends on this task.
+  The transient divergence between `canonical/` and the five profile roots is therefore expected and
+  bounded, not a defect, for the interval between wave 1 and wave 5.
 
 **Acceptance Criteria:**
 - [ ] The section is present in `canonical/aid/templates/settings.yml`, commented out, matching
@@ -56,4 +61,13 @@ Shape: 6 sections matching .claude/aid/templates/delivery-plans/task-template.md
       `declared, <n> patterns (<m> item(s) contained a comma and were split)`
 - [ ] Uncommenting the block yields a working ignore list with no other edit required
 - [ ] `test-reconcile-scenarios.sh` and the settings-template suites still pass unchanged
+- [ ] **The render is deliberately absent here**: `profiles/` and both dogfood trees are untouched by
+      this task, and the byte-identity gate is expected to be red for the settings template until
+      `task-024` renders it. Asserting a green render gate here would be asserting work this task does
+      not own
+- [ ] **Configuration is idempotent** and **no plaintext secret is introduced** (CONFIGURE
+      type-defaults, `task-decomposition.md`:178). Idempotence is the load-bearing one here: applying
+      the seeded section twice, or applying it to a tree that already carries it, must leave one
+      commented block and not two -- and re-running `/aid-config` over an install that predates the
+      section must not duplicate or uncomment it
 - [ ] All section-6 quality gates pass

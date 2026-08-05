@@ -124,16 +124,21 @@ them will either over-parallelise across a gate or under-parallelise inside one.
 > wave ordering already satisfies the edge — and the alternative was renumbering 29 folders
 > for cosmetics. Read the graph, not the numbering.
 
-| Can Be Done In Parallel |
-|------------------------|
-| task-001, task-002, task-003, task-005 |
-| task-004, task-006 |
-| task-008, task-010, task-012 |
-| task-009, task-011, task-013 |
-| task-014, task-015, task-017, task-019 |
-| task-016, task-018, task-020, task-023 |
-| task-022, task-024 |
-| task-025, task-026 |
+| Can Be Done In Parallel | Gate waves spanned |
+|------------------------|--------------------|
+| task-001, task-002, task-003, task-005 | 1 |
+| task-004, task-006 | 1 |
+| task-008, task-010, task-012 | 1 |
+| task-009, task-011, task-013 | **1, 2 — NOT concurrently runnable** |
+| task-014, task-015, task-017, task-019 | **2, 3 — NOT concurrently runnable** |
+| task-016, task-018, task-020, task-023 | **2, 3 — NOT concurrently runnable** |
+| task-022, task-024 | **4, 5 — NOT concurrently runnable** |
+| task-025, task-026 | 5 |
+
+> **Read the second column before parallelising anything.** A row spanning two gate waves is a
+> *lane* grouping, not a licence: the later-wave tasks cannot start until the earlier wave's B-
+> gate closes. Four of these rows straddle a boundary, and the table on its own would otherwise
+> authorise exactly the over-parallelisation the preamble above warns against.
 
 ```wave-map
 delivery: 001

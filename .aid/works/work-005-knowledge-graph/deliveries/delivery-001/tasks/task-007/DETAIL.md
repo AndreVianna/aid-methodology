@@ -48,9 +48,21 @@ Shape: 6 sections matching .claude/aid/templates/delivery-plans/task-template.md
       were dropped
 - [ ] D5's provenance rule asserted for every provenance value the enum admits
 - [ ] Fixtures are self-built; no assertion depends on this repository's own Knowledge Base (FR-8a)
+- [ ] **The one recorded S1 non-compliance in this work's suites is repaired here, by name:**
+      `test-graph-extraction.sh` is the only one of the five newer suites that **declares no
+      subject-invocation budget in its header**, which is what S1 requires
+      (`test-landscape.md`:456, "Declare the invocation count in the suite header"). Add that header
+      declaration -- do not read the generic "S1 honoured" below as covering it, because a missing
+      header is exactly what that phrasing has already failed to catch once
 - [ ] S1 and S2 honoured — **and this is the 783s suite, so any added cost must come from
       de-spawning, never from S4's forbidden trade of coverage for time**
 - [ ] S3 mutation cases behind `--self-mutate`; S5 proves the tree untouched
 - [ ] `# COVERS:` manifest updated if the covered set changed
 - [ ] Suite passes; total read from the script's own summary line, not from grep over stdout
+- [ ] **Tests are deterministic** and **setup/teardown is clean** (TEST type-defaults,
+      `task-decomposition.md`:176). Neither is implied by the S1-S5 conventions this task cites: S5
+      covers only leaving the source tree untouched. Concretely -- two runs over one input produce
+      identical PASS/FAIL sets and identical counts, every fixture is built under `mktemp -d` and
+      removed on exit including on failure, and no assertion depends on execution order or on a
+      previous run's residue
 - [ ] All section-6 quality gates pass

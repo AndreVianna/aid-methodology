@@ -20,12 +20,25 @@ Shape: 6 sections matching .claude/aid/templates/delivery-plans/task-template.md
 
 **Type:** DOCUMENT
 
+> **TYPE OVERRIDE and a scope bound.** DOCUMENT is correct for this task's product -- a disposition
+> recorded against every open ledger row. But the Scope below contemplates *fixing* rows, which is not
+> DOCUMENT work. The bound: this task **disposes** (Accepted / Invalid / OOS with a stated reason) and
+> **routes** anything real-but-deferred into `.aid/knowledge/tech-debt.md`. It does **not** implement
+> fixes. A row whose correct disposition is "fix it" is routed to the owning feature as its own work,
+> not repaired here -- which also keeps the B- floor's "permitted" and this task's "dispositioned"
+> from collapsing into each other.
+
 **Source:** feature-013-tests-and-docs -> delivery-001 (Wave 5)
 
 **Depends on:** task-028
 
 **Scope:**
-- **33 `[LOW]` and 24 `[MINOR]` rows are still `Pending`** across the fifteen feature-SPEC ledgers in
+- **33 `[LOW]` and 24 `[MINOR]` rows are still `Pending`.** Both figures were counted on disk and are
+  exact; the denominator in an earlier version ("the fifteen feature-SPEC ledgers") was not. Derive the
+  ledger set rather than trusting any count here: `.aid/.temp/review-pending/` holds 22 files, of which
+  13 are `feature-NNN-spec.md` plus `feature-007-reopen.md`, and the Pending rows are spread over only
+  7 of the 22 -- the rest are the delivery gate, requirements-completeness, four specify batches and
+  two task ledgers. Sweep **every** file in
   `.aid/.temp/review-pending/`, counted on disk. The `minimum_grade: B-` floor **permits** them — but
   "permitted" is not "dispositioned", and an undispositioned `Pending` row is indistinguishable from
   a forgotten one.

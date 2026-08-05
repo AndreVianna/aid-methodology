@@ -36,6 +36,14 @@ Shape: 6 sections matching .claude/aid/templates/delivery-plans/task-template.md
   asymmetric, colour additive in every case (NFR-5). The gap badge is driven by `coverageGaps` list
   membership, **never** by `nodeEmphasis` — `'focus'` outranks a gap class, so a class-derived badge
   would vanish from the one node a reader had just selected (AC-15 canvas half).
+- **SIZE RISK, stated with its escape.** This is the largest task in the set: greenfield d3-force
+  plus PixiJS, the whole interaction surface, three degraded modes, and criteria spanning `AC-S1`
+  through `AC-S10`, with **nothing pre-existing to build on** (`find canonical -iname '*canvas*'`
+  returns nothing). The merge into one task is an owner decision and stands. But if the executing
+  session cannot carry it to a reviewable state, **split at the seam this Scope already names** --
+  mount/layout/draw-record as one task, interaction/degraded-modes as the next -- and record the split
+  and its reason rather than delivering a half-done single task. Splitting is a recorded deviation;
+  silently overrunning is not.
 - **Interaction and the degraded modes** (merged into this task by owner decision): hover focus/dim;
   click writing exactly `{'focus.nodeId': id}`; double-click calling `store.openTarget(id)` with that
   same single patch and no other; wheel or empty-surface drag writing `setLens({zoom})` **once**, at
@@ -83,4 +91,8 @@ Shape: 6 sections matching .claude/aid/templates/delivery-plans/task-template.md
       it)
 - [ ] No degraded mode for a large graph is built and no ceiling warning is emitted here — the
       ceiling is task-010's measurement and task-021's warning
+- [ ] **All existing tests still pass** (IMPLEMENT type-default, `task-decomposition.md`:175). Named
+      explicitly because this task touches surfaces shared beyond this work's own suites, so a
+      regression can land where the graph suites do not look: run the affected suites, not only the
+      `test-graph-*` set. Use `tests/canonical/select-suites.sh --run` to pick them by change set
 - [ ] All section-6 quality gates pass

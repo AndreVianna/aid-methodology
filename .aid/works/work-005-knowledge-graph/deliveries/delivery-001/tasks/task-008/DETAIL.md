@@ -50,4 +50,8 @@ Shape: 6 sections matching .claude/aid/templates/delivery-plans/task-template.md
 - [ ] `grep -c coverage-notes canonical/aid/scripts/graph/build-relationships.sh` returns non-zero —
       the defect's own signature, inverted
 - [ ] The extraction suite still passes before task-009 adds the new assertions
+- [ ] **All existing tests still pass** (IMPLEMENT type-default, `task-decomposition.md`:175). Named
+      explicitly because this task touches surfaces shared beyond this work's own suites, so a
+      regression can land where the graph suites do not look: run the affected suites, not only the
+      `test-graph-*` set. Use `tests/canonical/select-suites.sh --run` to pick them by change set
 - [ ] All section-6 quality gates pass

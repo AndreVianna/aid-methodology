@@ -44,4 +44,12 @@ Shape: 6 sections matching .claude/aid/templates/delivery-plans/task-template.md
 - [ ] Suite totals cited in the census are read from each script's own summary line
 - [ ] The census output lives where a permanent artifact may reference it, or is explicitly declared
       transient — it may not become a permanent dependency on this work folder
+- [ ] **The FR-28 verdict is re-validated against the delivery's FINAL state.** `task-022` runs the
+      full rubric in gate wave 4, but four wave-5 tasks move shipped content afterwards -- `task-024`
+      re-renders across five profile roots and both dogfood trees, `task-026` rewrites Knowledge Base
+      documents, `task-027` restructures suites, `task-029` disposes ledger rows. The BLUEPRINT claims
+      the rubric "closes over both artifacts in this delivery's gate", and a wave-4 run cannot support
+      that claim on its own. So: re-run `grade-graph.sh` over `relationships.md` and `graph.html` here,
+      after those tasks have landed, and confirm every verdict `task-022` recorded still holds. A
+      changed verdict is a finding, not a refresh
 - [ ] All section-6 quality gates pass
