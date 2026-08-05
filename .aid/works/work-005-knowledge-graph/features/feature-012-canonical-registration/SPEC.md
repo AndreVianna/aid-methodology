@@ -4,6 +4,8 @@
 
 | Date | Change | Source |
 |------|--------|--------|
+| 2026-07-31 | **Fix pass 4** — gate D+, row 12 `[HIGH]` and row 13 `[LOW]`, both mechanism (rows 3–5 and 9–11 and 14–16 are LOW/MINOR editorial and stay Pending per Q26). **Row 12:** pass 3 replaced a false "the gates own the edit set" with a hand sweep that was *itself* phrasing-keyed — a fixed set of shapes — and the gate found live lines inside the gate's own corpus matching none of them, including the very line cycle 4's Evidence had named alongside one the fix did recover. Adding another shape would only have produced another escaping line, so the mechanism is replaced rather than widened: the sweep is now keyed on **values**. Its needles are the pre-landing values of every `deriveSkillCounts` field whose value this landing moves, obtained by diffing `--list` before and after; its corpus is the gate's own walk, de-emphasised as the gate de-emphasises it; and a history-shaped line is now **read** rather than skipped by shape, since the script itself records that shape as evadable. A value-keyed rule is exhaustive by construction — a surface stating an old value contains that value, and no noun, operator, emphasis run or line wrap can hold it outside the needle — so the SPEC now carries a termination argument instead of a coverage claim. False positives are accepted and the asymmetry is stated as the justification. The over-claiming sites row 12 named — Class 1's heading, the Description, CR08 and § Figures — plus AC-R5, CR10, Flow step 9, L1's sweep row, L3's 012/013 row and the CR08 and CR10 rows in § Tests are all restated as what the sweep decides; D4's opening "exactly one derived quantity moves" is corrected with them, since it is the same under-description one level up. L3 now closes ownership as a partition — inside the corpus 012's, outside it Open Item 3's, and a stale claim carrying no value at all is prose and 013's. Open Item 7 is broadened past decomposition operands and carries three grades of evidence. **Row 13:** the third gate does check values — `CLAIM_PATTERNS` over `CLAIM_PAGES`, with a **bare** `curated` shape where `check-skill-counts.mjs` is lookahead-guarded — so it gates a phrasing the other two cannot; the "forbids a count rather than checking a value" description is corrected, since AC-R6's third disjunct turns on it. Also restored: § Technical Specification's post-merge citation-scope disclosure, deleted in pass 3, `git log --merges` confirming none has landed since. Paid for by folding the regex detail into Open Item 7 rather than stating it twice | /aid-specify |
+| 2026-07-30 | **Fix pass 3** — gate D+, rows 7–8 only (rows 9–11 are MINOR/MINOR/MINOR editorial and stay Pending per Q26's mechanism/editorial split). **Row 7:** D4 Class 1 claimed the gates decide the edit set. They do not — they decide *phrasings*. Read first-hand in `check-skill-counts.mjs`: `CLAIMS` `:96`/`:97` cannot match a `curated` operand followed by `(` or `+`, and `:108–111` have no pattern for the bare phrase `catalog rows`, so a decomposition's total is checked while its parts are not; replaying the file's own `CLAIMS` array over `generate-profile/SKILL.md:106–112` shows exactly that. Class 1 now states what the gates decide and what they miss, corrects "both" to three gates, and defines a **hand sweep** over the gate's own corpus whose oracle is the derivation itself, not arithmetic — summing alone would miss a lone operand on a line carrying no total (CR08). The `:435` "repo-wide" claim is retracted against the script's NOT-YET-SCANNED comment, quoted verbatim. Open Item 3 is **restored and re-scoped** — dead body, live title — and a new **Open Item 7** routes the regex gaps to the work owner as a live repository defect, keeping first-hand evidence and cycle-4-reported evidence explicitly apart. The same false framing was swept out of AC-R5, the Description, CR10, L1, L3's 012/013 row, the Tests table and § Figures. **Row 8:** L1's build-output row now enumerates the tracked artifacts the mandated site generators write, resolved from their `writeFileSync` calls, with Flow step 9's `git status -- site/` as the partition's only oracle. Paid for by deleting merge/draft retrospection the Change Log already carries (Class 3, Class 2's intro, the Source re-read note, § External Integrations' meta-paragraph). The "repo-wide count gate" wording in the row below is superseded by this row | /aid-specify |
 | 2026-07-30 | **Fix pass 2** — gate C, row 6 only (rows 3–5 stay Pending per Q27), **plus a post-merge citation re-verification of the whole document**. **Row 6:** row 2's class, one scope out. D1's amendment clause quantifies over *other* features' Layers sections, so it structurally could not reach the already-registered canonical file this feature itself amends — `generated-files.txt`, transformed class, `check-attr` → `text: unspecified`. Fixed at the quantifier rather than the symptom: CR07 now ranges over D1 **∪** L1's `canonical/` paths, D1 and D5 state the seam, M1 adds the path rule, and Open Item 5's residual is restated as the complement of `.gitattributes`'s extension list (it had omitted `.txt`, `.json` and `.ps1`). The same-class conditional residual is closed by pinning G1/G2's `.json` manifest and lockfile under `canonical/aid/scripts/graph/`, a root M1 already covers. **Re-verification:** `origin/master` merged mid-gate (PR #174). Every citation into the twelve moved files re-resolved **by text, not by offset**, and each argument resting on them re-read — `tech-debt.md` L4 is still open and both anchors still say what was claimed. The merge also moved the site's roster out of `gen-reference.mjs` into `skills/curated-roster.mjs`, added a third roster (`groups.mjs` `CURATED_GROUPS`) and a repo-wide count gate (`check-skill-counts.mjs`), and re-anchored the comments D4 Class 3 existed to fix: Class 2 re-derived on disk, Class 3 recorded as discharged, CR09 repointed at the merged **set-equality clamp**, CR10 given its first machine oracle, and Open Item 3 **withdrawn** — its premise no longer holds. The re-verification is what makes this pass **+44** lines rather than the near-zero a numbers-only correction would have cost; the D4 rewrite is the bulk of it | /aid-specify |
 | 2026-07-30 | **Fix pass 1** — gate D+, rows 1–2 only (rows 3–5 are LOW/LOW/MINOR and stay Pending per Q27). **Row 1:** D3's trigger set and its UTF-8 exemption were derived over `render.py`'s `translate="none"` branch alone and applied to all four D1 roots. Re-derived **per root** by tracing a production file down each path: `canonical/skills/` goes through `translate="skills"`, which adds two `SKILL.md`-only frontmatter triggers (`allowed-tools:` remap, `context:`/`agent:` deletion), consults no extension frozenset, and has **no** UTF-8 fallback — invalid UTF-8 there aborts the generator instead of degrading to a copy. AC-R3, CR02, CR06 and the legitimate-versus-defect table scoped with it; the comment exemption restated as its real predicate (first non-whitespace `#`, so `.md` and `.ps1` too) instead of an extension list. **Row 2:** D1 had been swept for new-file declarations only, so feature-004's two amendment declarations were missing — added as **amendment** rows, CR01 extended to both declaration kinds, and `settings.yml` given its own `.gitattributes` rule as the one D1 path the path-scoped fix did not reach. Net **+15** lines | /aid-specify |
 | 2026-07-30 | **Authored fresh** against the amended REQUIREMENTS, the frozen 001–007 spine and the passed 008/009, per STATE.md **Q26 § Fresh authoring**. Supersedes the 2026-07-28 pre-decision draft entirely; that draft was opened once as a checklist of concerns and used as a base document nowhere. Three of its claims are **not carried forward because they are false on disk**: it attributed the install-manifest lockstep hazard to `tech-debt.md` item **L4** (L4 is the test-effectiveness gap; the manifest incident is *evidence inside* L4), it cited two registration acceptance criteria in REQUIREMENTS §9 (§9 contains none — the obligation is **C-2**/**C-3**), and it said the full generator renders the dogfood `.claude/` tree (it renders `profiles/` only) | /aid-specify |
@@ -66,8 +68,7 @@ registers exist, and every other feature's delivery is incomplete until it has r
 ## Description
 
 Everything this work produces has to become a **registered, rendered, counted** part of the repository
-rather than a pile of new files. Three obligations, and reading the machinery this session inverted two
-of them relative to how the pre-decision draft framed them.
+rather than a pile of new files. Three obligations, plus a fourth that arrives conditionally.
 
 **The emission machinery is enumeration-based, not declaration-based.** There is no per-file or
 per-skill list to append to. The generator walks the canonical tree and the skill directories and emits
@@ -85,9 +86,9 @@ the check passes hardest in exactly the case where nothing shipped. Every assert
 derived quantity, and several hand-written surfaces mirror it. The discipline is `tech-debt.md`'s
 invariant-anchoring rule — anchor to ground truth, never to a sibling copy — applied to this SPEC's own
 prose as much as to the surfaces it edits: no count of an externally-owned set appears anywhere below,
-only the derivation and the gate that decides it.
+only the derivation, the gates that decide phrasings, and the value sweep that closes their corpus.
 
-A fourth job arrives conditionally. If the rendering architecture ships third-party code, its packaging,
+The fourth job is conditional. If the rendering architecture ships third-party code, its packaging,
 pinning, licensing, monitoring and **integrity under the render's text transforms** all land here. That
 last one is not hypothetical: a bundle in a text-transformed extension is rewritten on its way into every
 profile, and the drift gate is structurally blind to it.
@@ -125,12 +126,15 @@ Must
 - [ ] **AC-R4** Given the repo-root dogfood tree, when the dogfood byte-identity guard runs after the
       render and resync, then every generator-owned path added by this work is present in it and matches
       the manifest.
-- [ ] **AC-R5** Given the new skill directory on disk, when the doc-count guard, the repo-wide count gate
-      and the site generators and their tests run, then each passes — and the skill directory's existence
-      is asserted as a precondition, so a run in which the skill was never created fails instead of passing.
-- [ ] **AC-R6** Given any count or roster surface this feature edits, when it is reviewed, then it either
-      is machine-gated against a derivation from ground truth or names the derivation instead of a
-      number; no hardcoded total of an externally-owned set is introduced or incremented.
+- [ ] **AC-R5** Given the new skill directory on disk, when the doc-count guard, the stated-count gate
+      and the site generators and their tests run, then each passes, **and** the value sweep D4 Class 1
+      defines leaves no live line in that gate's corpus still stating a moved quantity's pre-landing
+      value — the directory's existence being a precondition, so a run without it fails not passes.
+- [ ] **AC-R6** Given any count or roster surface this feature edits, when it is reviewed, then it is
+      machine-gated against a derivation from ground truth, or names the derivation instead of a number,
+      or — for a numeral no gate's patterns can match — is reconciled against that same derivation by
+      D4 Class 1's value sweep and recorded as ungated; no hardcoded total of an externally-owned set is
+      introduced or incremented.
 - [ ] **AC-R7** Given the generated-file registry, when it is read after this feature lands, then it
       states the disposition of `/aid-graph`'s outputs and the rule behind it, rather than leaving the
       question open for a later feature to re-ask — and carries no data line for either output.
@@ -159,11 +163,12 @@ Must
 > Grounded in `.claude/skills/generate-profile/scripts/{run_generator,render,render_lib}.py`,
 > `canonical/EMISSION-MANIFEST.md`, `canonical/aid/templates/generated-files.txt`, `.gitattributes`,
 > `tests/canonical/{test-doc-counts,test-skill-counts,test-dogfood-byte-identity,test-ascii-only}.sh`
-> and `tests/canonical/check-skill-counts.mjs`, `tests/run-all.sh`, `site/scripts/gen-reference.mjs` +
-> its `__tests__` mirror and `site/scripts/skills/{curated-roster,groups,skill-counts}.mjs`,
-> `lib/aid-install-core.sh`, `packages/{npm,pypi}/scripts/vendor.{js,py}`,
-> `.github/{dependabot.yml,workflows/test.yml}`, and the KB docs named in § Source. **Every line citation
-> below was re-read on disk *after* the `origin/master` merge**, not before it.
+> and `tests/canonical/check-skill-counts.mjs`, `tests/run-all.sh`,
+> `site/scripts/{gen-reference,gen-skills}.mjs` + their `__tests__` mirrors and
+> `site/scripts/skills/{curated-roster,groups,skill-counts,paths}.mjs`, `lib/aid-install-core.sh`,
+> `packages/{npm,pypi}/scripts/vendor.{js,py}`, `.github/{dependabot.yml,workflows/test.yml}`, and the
+> KB docs named in § Source. **Every line citation below was re-read on disk *after* the
+> `origin/master` merge**, not before it, and `git log --merges` shows none landed since.
 
 ### Data Model
 
@@ -383,35 +388,56 @@ reintroduce exactly this gap.
 
 #### D4 — Count and roster surfaces
 
-Exactly one derived quantity moves when a curated skill directory lands, and several hand-written
-surfaces mirror it. **The derivation is the contract; no count of an externally-owned set appears in this
-SPEC.**
+Landing a curated skill directory moves more than one derived quantity, and several hand-written
+surfaces mirror them. **The derivation is the contract; no count of an externally-owned set appears in
+this SPEC.**
 
-**Ground truth.** `tests/canonical/test-doc-counts.sh:44` derives the skill count as
-`find canonical/skills -mindepth 1 -maxdepth 1 -type d | wc -l`. `/aid-graph` is a curated,
-hand-authored skill and **not** a `shortcut-catalog.yml` row, so only that derivation moves: `AGENTS`
-(`:45`), `PROFILES` (`:46`), `ROWS` (`:47`), `CANON` (`:48`), `ALIAS` (`:49`), `REPURPOSE` (`:50`) and
-`SHORTCUTS` (`:51`) are all untouched, and DC01a's `CANON + ALIAS == ROWS` identity (`:56`) is unaffected.
+**Ground truth, in two derivations.** `tests/canonical/test-doc-counts.sh:44` derives its skill count as
+`find canonical/skills -mindepth 1 -maxdepth 1 -type d | wc -l`, and `/aid-graph` is a curated,
+hand-authored skill and **not** a `shortcut-catalog.yml` row, so of that suite's quantities only
+`SKILLS` moves: `AGENTS` (`:45`) through `SHORTCUTS` (`:51`) are untouched and DC01a's
+`CANON + ALIAS == ROWS` (`:56`) holds. `skill-counts.mjs`'s `deriveSkillCounts` is the wider one, and
+**several** of its fields move together — which is why Class 1's sweep derives its needles by diffing
+that derivation rather than by assuming one number.
 
-**Class 1 — machine-gated mirrors.** The gates own this set, not this SPEC, and it is not restated here
-as a list of files, because restating it would create the sibling copy `tech-debt.md:233–235` forbids.
-The narrower gate is the `ASSERTIONS` entries at `test-doc-counts.sh:65–95` whose needle interpolates
-`${SKILLS}`. The wider one arrived with the `origin/master` merge: `tests/canonical/check-skill-counts.mjs`
-derives from `site/scripts/skills/skill-counts.mjs` and scans every permanent artifact its
-`INCLUDE_FILES` / `INCLUDE_TREES` / `REPO_LOCAL_SKILLS` name (`:145–168`), failing on any stated count
-that disagrees and is not marked `count-history`. It reaches surfaces the first cannot see, so the edit
-set is whatever **both** report. Verified by running each this session: both exit 0 as the branch stands,
-so no pre-existing count drift is carried into or hidden inside this change.
+**Class 1 — machine-gated mirrors, plus the value sweep that closes their corpus.** The gated part is not
+restated here as a list of files, because restating it would create the sibling copy
+`tech-debt.md:233–235` forbids. **Three** gates own it, not two: `test-doc-counts.sh:65–95`'s
+`${SKILLS}`-interpolating `ASSERTIONS`; `tests/canonical/check-skill-counts.mjs`, which derives from
+`site/scripts/skills/skill-counts.mjs` and scans every permanent artifact its `INCLUDE_FILES` /
+`INCLUDE_TREES` / `REPO_LOCAL_SKILLS` name (`:145–168`), failing on any stated count that disagrees and
+is unmarked; and `site/scripts/__tests__/skill-counts.test.mjs`, which `check-skill-counts.mjs:38–39`
+names as the owner of `site/scripts/` and which **does check values**: its `CLAIM_PATTERNS` (`:206–225`)
+run at `:239–249` against the hand-authored pages `CLAIM_PAGES` (`:38–46`) lists, and its `curated`
+shape (`:210`) is **bare** where `check-skill-counts.mjs:96–97` are lookahead-guarded, so it gates a
+phrasing those two cannot — besides forbidding a count outright in the files its `NO_COUNT_FILES`
+(`:309–313`) names. All three exit 0 as the branch stands, verified by running each: evidence about
+drift **today**, and none about the post-landing edit set.
 
-**Why a bare numeral in `README.md` is not a Q19 proxy, stated because it looks like one.** Those doc
-literals mirror an externally-owned quantity — but they are *gated*, now by both gates above: each
-derives the truth from disk and fails on any surface that does not state it. A literal that cannot
-silently drift is a mirror, not a proxy. Q19's rule bites where nothing checks; here something does, and
-`test-doc-counts.sh:11–14` says exactly that — "you regenerate the docs, not this test".
+**They decide phrasings, not the edit set, and the gap is wider than a decomposition.** A gate matches a
+digit adjacent to a skill-ish noun; an operator, a parenthesis or a backticked command in that position
+makes it invisible. Replaying `CLAIMS` (`:63–118`) over the corpus the script itself walks leaves live,
+non-history-shaped lines carrying a current value that match nothing, on their own line or on either
+join — Open Item 7 quotes the regexes and grades the evidence. `generate-profile/SKILL.md:102–103`
+states the cost: "a decomposition whose parts do not add up to the total is how this file was wrong twice."
 
-**Class 2 — roster surfaces, each guarded by a hard failure, and inseparable.** The merge relocated this
-class wholesale — the roster left `gen-reference.mjs`, and a second generator now reads the same corpus.
-Re-derived on disk after the merge.
+**So the edit set is the gates' report ∪ a sweep keyed on values, not on phrasings.** Needles, derived
+and never listed: `node tests/canonical/check-skill-counts.mjs --list` (`:309–311`, `deriveSkillCounts`
+as JSON) captured before Flow step 1 authors the directory and again after — every field whose value
+differs is a quantity this landing moves, and its **before** value, in digits or words, is a needle.
+Over the corpus `check-skill-counts.mjs` walks (`:145–168` with `:172–196`), de-emphasised as the script
+itself does (`:239`), **every occurrence of a needle is read and set to that field's after value, unless
+the sentence counts something else or records a past state** — the F3 rule `:73`, applied to
+history-shaped lines by reading them rather than skipping them by shape, which `:211–214` calls evadable.
+A bare number also hits dates and line numbers: that is the trade, and the asymmetry justifies it — a
+false positive costs one read, a false negative ships a stale artifact. **Why there is no next escaping
+line.** A surface stating a moved quantity's old value contains that value, so no phrasing — a noun, an
+operator, an emphasis run, a wrap — can hold it outside a needle, and re-sweeping the *before* values
+after the edit returns only hits already dismissed. The residual is a corpus boundary, not a phrasing:
+the walk skips non-source files inside those trees (`:170`) and two log files by name (`:155–158`), and
+of those the only one stating a skill count is `kb.html` — already Open Item 6's.
+
+**Class 2 — roster surfaces, each guarded by a hard failure, and inseparable.** Re-derived on disk.
 
 | Surface | Change | Guard |
 |---|---|---|
@@ -424,21 +450,25 @@ All of them must move together and no guard substitutes for another: omit the ro
 the **test** fails. No prose count follows by hand — `gen-reference.mjs:265` reads `onDisk.length`, and
 `skills/skill-counts.mjs` is the one derivation every stated count is now checked against.
 
-**Class 3 — comments in the files this feature edits: empty, and closed upstream.** This class recorded
-that `gen-reference.mjs`'s header and the sentence above the roster stated a total and a composition as
-literals, to be **re-anchored rather than incremented**. The merge did exactly that: `:11` now reads
-`NO SKILL COUNT IS WRITTEN HERE`, and `:158–160` records the count as derived in `skills/skill-counts.mjs`.
-No comment edit remains. The class is kept as a decided disposition rather than deleted, because the rule
-still governs the next comment of that shape.
+**Class 3 — comments in the files this feature edits: empty.** `gen-reference.mjs:11` reads `NO SKILL
+COUNT IS WRITTEN HERE` and `:158–160` names the derivation; re-anchor-never-increment governs the next.
 
-**Deliberately not swept:** count claims in surfaces this feature does not otherwise edit. They are no
-longer unguarded — `check-skill-counts.mjs` reaches them repo-wide, and adding a skill moves the
-derivation they are all checked against — so there is no unrelated fix to fold into this diff and none
-to defer. Open Item 3 records the withdrawal.
+**Deliberately not swept, and the "repo-wide" claim retracted.** `check-skill-counts.mjs` is not
+repo-wide; its own header says so, verbatim at `:36–39`: "NOT YET SCANNED (stated so the SCOPE above is
+not read as exhaustive): site/scripts/, tests/, dashboard/, lib/, bin/, packages/ — code trees whose
+counts live in comments. site/scripts/ is covered separately by
+site/scripts/__tests__/skill-counts.test.mjs; the rest are uncovered." Present-tense corpus totals do
+live in those trees, this work makes them stale, and the 012/013 seam puts them outside this feature, so
+they are **deferred, not absent** — Open Item 3 names them and is restored for exactly that.
 
-> **CR08 — reconcile completeness, pinned on presence.** `test -d canonical/skills/aid-graph` succeeds
-> **and** `bash tests/canonical/test-doc-counts.sh` exits 0. The first conjunct is what makes the second
-> non-vacuous: the suite passes at the previous derived count if the skill was never created.
+> **CR08 — reconcile completeness, pinned on presence *and* on values.** `test -d
+> canonical/skills/aid-graph` succeeds, `bash tests/canonical/test-doc-counts.sh` and
+> `node tests/canonical/check-skill-counts.mjs` each exit 0, **and** D4 Class 1's value sweep leaves, in
+> the corpus that gate walks, no live line still stating a moved quantity's pre-landing value — which is
+> what the sweep decides and the whole of what it claims. Two pins, against two vacuities: the `test -d`
+> because both suites pass at the previous derived count if the skill was never created, and the sweep
+> because both report agreement over values their needles and patterns never read —
+> `test-doc-counts.sh:65–95` has no curated needle at all.
 >
 > **CR09 — the roster set.** With `canonical/skills/aid-graph/` present, `node site/scripts/gen-reference.mjs`
 > and `node site/scripts/gen-skills.mjs` each exit 0, and `npm test` in `site/` exits 0. Same pinning
@@ -449,11 +479,11 @@ to defer. Open Item 3 records the withdrawal.
 > directory was never created.
 >
 > **CR10 — no new or incremented literal.** No clause in this SPEC, and no edit it requires, introduces
-> or increments a hardcoded count of a set another file owns. Every count surface it edits is either
-> machine-gated against a derivation (Class 1) or re-anchored to name the derivation (Class 3, now
-> discharged). Decided by reading this SPEC and the edit list at L1, **and** by
-> `bash tests/canonical/test-skill-counts.sh` exiting 0 — before the merge this clause had no machine
-> oracle at all.
+> or increments a hardcoded count of a set another file owns. Every count surface it edits is
+> machine-gated against a derivation (Class 1's gated part), re-anchored to name one (Class 3), or
+> corrected by Class 1's value sweep under CR08's reconciliation — the third named explicitly because
+> it is the one with no gate behind it. Decided by reading this SPEC and the edit list at L1, **and** by
+> `bash tests/canonical/test-skill-counts.sh` exiting 0.
 
 #### D5 — The generated-file registry: decided, not deferred
 
@@ -588,13 +618,17 @@ owned elsewhere, not as this feature's work.
 9. **Reconcile the counts and rosters** (D4) **and add the registry header line** (D5). Then:
    ```bash
    bash tests/canonical/test-doc-counts.sh
-   bash tests/canonical/test-skill-counts.sh
+   bash tests/canonical/test-skill-counts.sh          # wrapper over check-skill-counts.mjs
    cd site && node scripts/gen-reference.mjs && node scripts/gen-skills.mjs && npm test
+   git status --porcelain --untracked-files=all -- site/   # every path printed must be an L1 row
    ```
    This step follows the render deliberately: the render is what makes a hand-maintained surface inside
    a generated tree visible as such, and reconciling first would invite a second render and a second
    reconcile. Each command is pinned on `canonical/skills/aid-graph/` already existing (CR08, CR09,
-   CR10); run without it they pass at the previous derived count and prove nothing.
+   CR10); run without it they pass at the previous derived count and prove nothing. Two things the
+   commands do **not** decide are done by hand: D4 Class 1's value sweep, whose *before* `--list` must
+   be captured ahead of step 1, and the `git status` line (no workflow diffs `site/`, so a generator
+   output left uncommitted, or one L1 never listed, is otherwise invisible).
 
 Ship-time documentation, the Knowledge Base updates and the aggregate HOME-pinned suite run **after**
 this sequence and are feature-013's.
@@ -612,8 +646,9 @@ Every file this feature changes. Nothing outside this list is touched, and its c
 | `site/scripts/skills/curated-roster.mjs` | One `SKILL_GROUPS` entry — the *Knowledge Base Maintenance* `skills` array (`:42–49`) (D4 Class 2) | One data entry; every consumer derives from it |
 | `site/scripts/skills/groups.mjs` | One `CURATED_GROUPS` member — the *Knowledge Base Maintenance* `members` array (`:80–87`) | The `/skills/` taxonomy; its clamp names an unassigned directory |
 | `site/scripts/__tests__/gen-reference.test.mjs` | One `CURATED_SKILL_NAMES` entry (`:144–154`) | The inseparable mirror of the two rows above |
-| The `${SKILLS}`-parameterised surfaces at `tests/canonical/test-doc-counts.sh:65–95`, and any surface `tests/canonical/check-skill-counts.mjs` reports | Each states the current derived count | Machine-gated mirrors; the suites decide completeness |
-| `profiles/**`, `emission-manifest.jsonl` ×N, the dogfood `.claude/` tree, `site/src/content/docs/skills/**` | **Regenerated, never edited** | Build output |
+| The `${SKILLS}`-parameterised surfaces at `tests/canonical/test-doc-counts.sh:65–95`; every surface `tests/canonical/check-skill-counts.mjs` reports; **and** every line D4 Class 1's value sweep finds still stating a moved quantity's pre-landing value over that gate's own corpus | Each states the current derived count | Gated mirrors **plus one ungated complement** — the suites decide completeness for the first two only, which is why the third is named rather than implied |
+| `profiles/**`, `emission-manifest.jsonl` ×N, the dogfood `.claude/` tree, `site/src/content/docs/skills/**` (the per-skill page and `index.md`) | **Regenerated, never edited** | Build output |
+| `site/src/content/docs/reference/skills.md` (`gen-reference.mjs:513` over the `pages` list at `:494–506`), `site/scripts/.reference-manifest.json` (`:528`), `site/src/data/skill-flows/<dir>.flow.json` (`gen-skills.mjs:201`), `site/scripts/.skills-manifest.json` (`:245`) | **Regenerated, never edited.** Every one tracked. The `.flow.json` sidecar is a **new** tracked file, and by mechanism rather than by coincidence: `gen-skills.mjs:95` sets `CHARTABLE_SHAPES` to the whole of `SHAPE_ORDER` and `:188–193` throws on any shape outside it, so `:198`'s skip cannot fire and exactly one sidecar is written per skill directory — `:196–197`'s comment describing a charted subset is stale. `.reference-manifest.json` is rewritten byte-unchanged, its content being the static `pages` list; the other three pages that list names read no skill directory (`SKILLS_DIR` is reached only at `gen-reference.mjs:240` and `:265`, both inside the skills page) and are byte-unchanged too | Build output of the generators Flow step 9 mandates. Enumerated because nothing gates a stale committed copy — no workflow runs `git diff` over `site/` — so step 9's `git status` line is this row's only oracle; `site/.gitignore` covers `node_modules/`, `dist/`, `.astro/` and `.release-data.json`, so that line prints build output and nothing else |
 
 Conditional on FR-18 adoption: a vendored bundle subdirectory under
 `canonical/aid/templates/knowledge-graph/`, a private validator manifest and lockfile under
@@ -646,7 +681,7 @@ feature borders.
 | Boundary | This feature (012) | The other side |
 |---|---|---|
 | **012 / 011** | The packaging, manifest and monitoring surface of any adopted dependency (D6) | **feature-011** owns every edit to `canonical/aid/scripts/summarize/*` — the `contrast-check.mjs` parameterisation, the `validate-visuals.mjs` capture exemption, any launch-flag change — and owns whether its contingencies fire at all. No clause here specifies a validator change. Cited by name and section only: that SPEC is being authored concurrently, so no line citation to it would be stable |
-| **012 / 013** | A documentation edit whose reason is **a number or a roster row**: the surfaces both count gates report, and every site roster surface D4 Class 2 names | **feature-013** owns every test suite (including the shipped-result registration suite), the ship-time Knowledge Base updates — `module-map.md`'s `graph/` row (feature-006 Migration step 4, its SPEC.md`:1151`), `artifact-schemas.md`, `capability-inventory.md`, `technology-stack.md`, `infrastructure.md`, `release-tracking.md` — and the discoverability documents |
+| **012 / 013** | A documentation edit whose reason is **a number or a roster row**: every surface the count gates report, every line D4 Class 1's **value** sweep finds still stating a moved quantity's pre-landing value in the corpus that gate walks, and every site roster surface D4 Class 2 names. Keying on values rather than on phrasings is what closes that corpus instead of sampling it, so the seam is a partition and not a gap: inside the corpus every stale value is 012's; outside it a stale value is Open Item 3's, or — for a non-source file the walk's extension filter skips — Open Item 6's; and a claim that goes stale without stating a moved quantity's value, a relative or narrative one, is prose and 013's | **feature-013** owns every test suite (including the shipped-result registration suite), the ship-time Knowledge Base updates — `module-map.md`'s `graph/` row (feature-006 Migration step 4, its SPEC.md`:1151`), `artifact-schemas.md`, `capability-inventory.md`, `technology-stack.md`, `infrastructure.md`, `release-tracking.md` — and the discoverability documents |
 | **012 / 010** | The render, the manifests, the count surfaces, and this feature's own edit list | Whoever authors the skill body, its `references/*.md` state files and the `graph/` bash scripts. The pre-decision feature-010 draft also assigns `SKILL.md`'s `## References` section and `canonical/skills/aid-graph/README.md` here; that assignment is **not** adopted on a pre-decision authority — see Open Item 1. This feature authors no file **content** at all |
 | **012 / 002** | Where a bundle lives, how it is pinned and watched, and whether it survives the render | **feature-002** reports the payload, licence and update findings and derives the bench; it selects nothing this feature must wire beyond the reference architecture already fixed by the owner |
 | **012 / 003 + 007** | Nothing | The runtime output contract — `relationships.md`'s frontmatter and index behaviour, and `graph-assets/`'s runtime naming under `.aid/knowledge/` — is theirs. This feature registers **canonical sources**, not runtime outputs |
@@ -661,11 +696,9 @@ doc-count guard is the cheaper gate and gives a clean signal first.
 specified. Until the FR-18 research reports, the integration surface is unchanged:
 `.aid/knowledge/technology-stack.md:217–218`'s empty-dependency-set claim stays accurate, both published
 wrapper manifests keep their empty dependency sets, and `.github/dependabot.yml` keeps its single
-`github-actions` ecosystem (`:5–9`).
-
-This section exists rather than being omitted because the landing point must be pre-agreed. D6 fixes the
-gate, the canonical home and the companion-versus-inline choice now, so adoption is a scheduled
-consequence rather than a mid-execution discovery.
+`github-actions` ecosystem (`:5–9`). The section is stated rather than omitted because D6 fixes the gate,
+the canonical home and the companion-versus-inline choice now, so adoption is a scheduled consequence
+rather than a mid-execution discovery.
 
 ### Migration Plan
 
@@ -696,9 +729,9 @@ the shipped-result suite is feature-013's, because it can only run after this re
 | CR14 — dogfood parity | `tests/canonical/test-dogfood-byte-identity.sh` Direction 1, **plus** the per-D1-path `dst`/`sha256` check the suite cannot supply on its own |
 | CR07 — line endings | `git check-attr text eol` per path, over D1 ∪ L1's `canonical/` paths |
 | CR03 — silent-drop predicates | Inspection against the cited `render.py` lines; P3 alone is enforced by the generator |
-| CR08 — count reconcile | `tests/canonical/test-doc-counts.sh`, **unmodified** — its derived `SKILLS` is what makes it the gate, and it needs no edit because it is already parameterised |
+| CR08 — count reconcile | `tests/canonical/test-doc-counts.sh` and `tests/canonical/check-skill-counts.mjs`, both **unmodified** — the derived `SKILLS` and `deriveSkillCounts` are what make them gates. **Plus D4 Class 1's value sweep against `deriveSkillCounts`**, because no existing machinery decides it: the gates match phrasings, and a live value in a phrasing none of them carries matches nothing at all |
 | CR09 — roster set | `node site/scripts/gen-reference.mjs` and `node site/scripts/gen-skills.mjs` (each throws) + `npm test` in `site/`, whose clamp names the unregistered directory |
-| CR10 — no new or incremented literal | `tests/canonical/test-skill-counts.sh` — repo-wide, and new since the merge; the review half remains for clauses in this SPEC's own prose |
+| CR10 — no new or incremented literal | `tests/canonical/test-skill-counts.sh`, new since the merge — wide, **not** repo-wide (`check-skill-counts.mjs:36–39`), and phrasing-keyed rather than value-keyed; the review half remains for clauses in this SPEC's own prose and for every live value the patterns miss |
 | CR11 — registry disposition | Read-back of the header line plus a grep of the data lines |
 | CR01, CR02, CR12 — inventory, class, gate-executability | Review against the cited lines; these are document-level obligations with no runtime |
 
@@ -730,15 +763,18 @@ treated as **mechanism**, the conservative default. None blocks this feature's o
    needs coordinating is that `/aid-detail` orders the render **after** the last canonical edit of either
    feature, so parity is not asserted against a tree about to change. **Owner: feature-011** (concurrent,
    so cited by name and section only) **and `/aid-detail`** for the ordering. **Class: mechanism**.
-3. **Pre-existing count claims in surfaces this feature does not edit — withdrawn; the premise is false
-   after the `origin/master` merge.** This item recorded that `.claude/skills/generate-profile/SKILL.md`
-   stated a skill total and its composition as **ungated** literals, already wrong, owed a re-anchoring
-   rather than an increment. The merge landed both halves. Re-anchored: the completion checklist names
-   the derivation instead of a number (`:263–265`) and the `ls` check reads "must equal the first number
-   printed above" (`:131`). Gated: `tests/canonical/check-skill-counts.mjs` derives from
-   `skill-counts.mjs` and scans that very file (`:166–168`, `REPO_LOCAL_SKILLS`), failing on any stated
-   count that disagrees and is unmarked; the taxonomy block that remains (`:106–112`) sits inside it.
-   Re-validated by running it: exit 0. **Owner: none — closed.** **Class: editorial.**
+3. **Pre-existing count claims in surfaces this feature does not edit — re-scoped, not withdrawn.** The
+   cycle-4 withdrawal was right about this item's *body* and wrong about its *title*, and closing it on
+   the narrower of the two lost the deferrals. Dead: the `.claude/skills/generate-profile/SKILL.md`
+   premise — the merge re-anchored that file's completion checklist to the derivation (`:263–265`) and
+   its `ls` check to "must equal the first number printed above" (`:131`), and `check-skill-counts.mjs`
+   scans it (`:166–168`, `REPO_LOCAL_SKILLS`). Live: the **present-tense** corpus totals in the trees that
+   gate's header declares NOT YET SCANNED (`:36–39`) — read on disk at
+   `site/scripts/lib/provenance/verify.mjs:9` and `site/scripts/skills/render-value.mjs:74`, with siblings
+   in the same `provenance/` module, none inside `skill-counts.test.mjs`'s `NO_COUNT_FILES` (`:309–313`).
+   This work makes each stale and nothing reports it; the 012/013 seam puts them outside this feature.
+   **Owner: the work owner**, to route — to feature-013 as documentation surfaces, or to Open Item 7's
+   scope widening. **Class: mechanism** — unrouted, the repository asserts something untrue about itself.
 4. **The payload judgment (feature-002 Open Item 10).** A canonical bundle exists once in `canonical/`
    and once per profile render, each with its own manifest `sha256`. Whether that repository-side
    footprint is acceptable at the decided architecture's size is a packaging judgment this SPEC cannot
@@ -763,6 +799,24 @@ treated as **mechanism**, the conservative default. None blocks this feature's o
    scheduled by the work owner at ship time. **Class: mechanism** — it is a regeneration, not a wording
    change, and skipping it leaves the repository asserting something untrue about itself, which is the
    exact failure this feature exists to prevent.
+7. **The count gate misses a live value wherever its `CLAIMS` set carries no phrasing for it — a live
+   defect in `check-skill-counts.mjs`, not in this SPEC, and deliberately not fixed here.** Quoted from
+   the file: `:96` `/\b(\d+) curated (?:pipeline|skills?|non-catalog|and|\/)/g` requires one of the words
+   it lists after `curated`; `:97` `/\b(\d+) curated\b(?= *[-—,.)]| skills)/g` admits the
+   **closing** paren `)` and not the opening `(`, so neither matches *N* `curated (` or *N* `curated +`;
+   and `:108–111` provide no pattern for the bare phrase *N* `catalog rows`. **The class is wider than a
+   decomposition** — the escaping lines include a value in a backticked shell command, a value in a
+   parenthetical and a value in ordinary prose, no operator anywhere near them — which is why Class 1's
+   sweep is keyed on values. **Consequence:** the gate exits 0 reporting that every stated count agrees
+   while its own corpus holds values it never read. **Three grades of evidence, kept apart.** First-hand
+   this session: the regex reading above; the value sweep run over the walk `:145–196` defines; and a
+   replay of the `CLAIMS` array, parsed out of the script rather than retyped, over the lines that sweep
+   returns, each alone and each joined with either neighbour, matching none. Reported by the cycle-6 gate
+   and **not** re-run here: the full-corpus `CLAIMS` replay that first enumerated that line set. Reported
+   by the cycle-4 gate and **not** re-run here: the landing simulation, and the operand mutation that
+   left the gate at exit 0. **Owner: the work owner** — the fix is a pattern addition plus the scope
+   widening Open Item 3 also needs, and this SPEC edits no file under `tests/`. **Class: mechanism** —
+   it decides what the next skill addition may miss.
 
 ### Figures
 
@@ -772,7 +826,8 @@ the worked examples, the inventory and the acceptance criteria. Where a quantity
 natural way to say something, the **derivation** is given and the file that owns it is cited instead:
 the skill count is `tests/canonical/test-doc-counts.sh:44`'s `find` and `skill-counts.mjs`'s
 `deriveSkillCounts`, the surfaces needing a count edit are "the `ASSERTIONS` entries at `:65–95` whose
-needle interpolates `${SKILLS}`" plus whatever `check-skill-counts.mjs` reports, the profile set is
+needle interpolates `${SKILLS}`" plus whatever `check-skill-counts.mjs` reports plus whatever D4 Class
+1's **value** sweep finds in that gate's corpus, its needles derived from `--list`, the profile set is
 "every profile `run_generator.py:24` enumerates from `profiles/*.toml`", the template set is
 "the file tree at feature-007 SPEC.md`:1540–1548`", and the curated roster is `SKILL_GROUPS` membership
 as `gen-reference.test.mjs:165` derives it. The transform-trigger list in D3
@@ -780,7 +835,7 @@ is enumerated in full **per root** and declared authoritative **as a list, not a
 Withdrawn figures — the delivery-001 bench and the voided A-5 KB figure — appear nowhere, and no
 assertion here rests on either. Two kinds of statement that could be mistaken for measurements are
 neither: **line numbers** are locations, disproved by opening the file rather than by re-measuring; and
-the "this suite passes on the branch as it stands" claims (D4 Class 1, CR14, Open Item 3) and the
+the "this suite passes on the branch as it stands" claims (D4 Class 1, CR14) and the
 universal negatives D1, D3 and D5 rest on — no tracked `.yml` and no `generated-files.txt` CR byte, no
 canonical `SKILL.md` declaring `context:` or `agent:` — are **pass/fail statuses** re-checkable with one
 command, stated without the assertion counts those runs printed, exactly the externally-owned quantity
