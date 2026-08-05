@@ -1,0 +1,467 @@
+#!/usr/bin/env bash
+# test-graph-view.sh -- the knowledge-relationship graph view: the shell, the table
+# rendering, and the seam between them.
+#
+# Auto-discovered by tests/run-all.sh (glob tests/canonical/test-*.sh), so adding
+# this suite needed no runner or workflow edit.
+#
+# SUBJECT
+#   canonical/aid/scripts/graph/coverage-predicate.mjs          (the shared predicate)
+#   canonical/aid/templates/knowledge-graph/graph-model.js      (loader, projection, store)
+#   canonical/aid/templates/knowledge-graph/graph-controls.js   (the shell)
+#   canonical/aid/templates/knowledge-graph/graph-table.js      (the accessible table)
+#   canonical/aid/templates/knowledge-graph/graph-skeleton.html (the page)
+#
+#   Those four .js/.mjs files are concatenated into ONE inline module block in the
+#   generated page, which is what makes the first group below the cheapest
+#   high-value check in this suite: a single duplicated top-level name across them
+#   is a SyntaxError and the page does not run at all.
+#
+# GROUPS
+#   GS  Static source properties -- no load statement, no network call, no colour
+#       literal, no motion, no shell control attribute, and the page's own
+#       table-first DOM order and two-live-region count.
+#   GC  The concatenation oracle: each file parses alone AND the four parse as one
+#       module. GC04 is its negative control -- a bundle with a duplicated
+#       top-level name must be REJECTED.
+#   GT  The shell's projection and the table's row set, order, emphasis and
+#       unlisted-node derivation, asserted headless (graph-view-model.mjs). No DOM.
+#   GX  NON-VACUITY CONTROLS. A copy of the four files is mutated, one deliberate
+#       defect at a time, and the GT assertions named for that defect must FAIL.
+#       A sibling feature shipped nineteen assertions that all passed a wrong
+#       implementation; "the assertions pass" is not evidence, "they fail when the
+#       implementation is wrong" is. Nothing under canonical/ is touched.
+#   DT  The rendered DOM: markup, the keyboard drive, the reveal, determinism
+#       (graph-view-dom.mjs). SKIPS LOUDLY, class by class, when jsdom cannot be
+#       resolved -- jsdom is not a repository dependency and no assertion here is
+#       ever allowed to degrade into a pass.
+#   GH  validate-html-output.sh over the assembled page and over the BOOTED page,
+#       the latter being the markup a reader actually receives.
+#
+# WHAT IS DELIBERATELY NOT HERE
+#   * No browser check of any kind. Runtime UI verification does not belong in the
+#     required suite (`.aid/knowledge/test-landscape.md`), and the browser's own
+#     evaluation of the page's inline module block is the one thing only a browser
+#     can cover -- so it is stated as uncovered rather than approximated.
+#   * No layout assertion (containment at the two gate widths, 200% text zoom).
+#     jsdom implements no layout, so a layout claim here would be fiction.
+#   * No work-folder path anywhere. Work folders are transient by project rule, so a
+#     suite that read one could not survive the folder being pruned; every fixture
+#     this suite uses is built by tests/canonical/graph-view-fixture.mjs.
+#
+# RUNTIMES
+#   node      required for GC/GT/GX/DT and for assembling the page in GH.
+#             Absent -> those classes SKIP loudly; the GS greps still run.
+#   jsdom     optional, resolved by bare specifier or from AID_GRAPH_JSDOM (its
+#             package entry module). Absent -> the DT classes SKIP loudly.
+#   tidy / npx html-validate  optional; validate-html-output.sh degrades to its own
+#             regex fallback, which it reports.
+#
+# Usage:
+#   bash test-graph-view.sh [-v | --verbose]
+#
+# Exit codes:
+#   0 -- all assertions passed (skips are reported, and never counted as passes)
+#   1 -- one or more assertions failed
+
+set -u
+
+VERBOSE=0
+[[ "${1:-}" =~ ^(-v|--verbose)$ ]] && VERBOSE=1
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
+
+source "${SCRIPT_DIR}/../lib/assert.sh"
+
+# A skip is NOT a pass. assert.sh has no notion of one, so this suite counts them
+# separately, always prints them, and lists them in its own summary. Nothing that
+# could not run is ever reported as green.
+SKIP=0
+SKIPPED=()
+skip() { SKIP=$((SKIP + 1)); SKIPPED+=("$*"); echo "  SKIP: $*"; }
+
+PREDICATE="${REPO_ROOT}/canonical/aid/scripts/graph/coverage-predicate.mjs"
+GRAPH_DIR="${REPO_ROOT}/canonical/aid/templates/knowledge-graph"
+MODEL_JS="${GRAPH_DIR}/graph-model.js"
+CONTROLS_JS="${GRAPH_DIR}/graph-controls.js"
+TABLE_JS="${GRAPH_DIR}/graph-table.js"
+SKELETON="${GRAPH_DIR}/graph-skeleton.html"
+GRAPH_CSS="${GRAPH_DIR}/graph-css.css"
+VALIDATE_HTML="${REPO_ROOT}/canonical/aid/scripts/summarize/validate-html-output.sh"
+
+MUTATE_MJS="${SCRIPT_DIR}/graph-view-mutate.mjs"
+MODEL_MJS="${SCRIPT_DIR}/graph-view-model.mjs"
+DOM_MJS="${SCRIPT_DIR}/graph-view-dom.mjs"
+
+TMP=$(mktemp -d)
+trap 'rm -rf "$TMP"' EXIT
+
+HAVE_NODE=0
+command -v node >/dev/null 2>&1 && HAVE_NODE=1
+
+# Turn one `GV<TAB>KIND<TAB>label` line from a node helper into a real assertion,
+# so the counters, the failure list and the coverage inventory all see it.
+consume() {
+    local line kind label
+    while IFS= read -r line; do
+        [[ "$line" == GV$'\t'* ]] || { [[ "$VERBOSE" -eq 1 ]] && echo "$line"; continue; }
+        kind="${line#GV$'\t'}"; kind="${kind%%$'\t'*}"
+        label="${line#GV$'\t'*$'\t'}"
+        case "$kind" in
+            PASS) pass "$label" ;;
+            FAIL) fail "$label" ;;
+            SKIP) skip "$label" ;;
+            NOTE) echo "  NOTE: $label" ;;
+        esac
+    done
+}
+
+# ===========================================================================
+# === GS: static source properties ==========================================
+# ===========================================================================
+
+echo ""
+echo "=== GS01: the five files the view is built from are present ==="
+for f in "$PREDICATE" "$MODEL_JS" "$CONTROLS_JS" "$TABLE_JS" "$SKELETON"; do
+    assert_file_exists "$f" "GS01 present: ${f#${REPO_ROOT}/}"
+done
+
+echo ""
+echo "=== GS02: the table rendering declares no load statement and reaches no network ==="
+# The view's files are concatenated into one inline module in a page that may be
+# opened as a local file, where a relative module cannot be loaded at all. This is
+# the greppable half of "renders from relationships.md alone, no second data path".
+for pattern in '^import' '^[[:space:]]*import[[:space:]]' 'fetch[[:space:]]*\(' 'XMLHttpRequest' 'import[[:space:]]*\(' 'require[[:space:]]*\('; do
+    n=$(grep -cE "$pattern" "$TABLE_JS" || true)
+    assert_eq "$n" "0" "GS02 graph-table.js contains no /$pattern/"
+done
+
+echo ""
+echo "=== GS03: no colour literal by any route, and no palette token declared ==="
+# The palette lives in CSS custom properties so the project's contrast checker can
+# read it; a colour VALUE in the rendering would be invisible to that check.
+for pattern in '#[0-9a-fA-F]{3}' 'rgba?\(' 'hsla?\(' 'oklch\(' 'color-mix\(' '\-\-gk\-' '\-\-gc\-'; do
+    n=$(grep -cE "$pattern" "$TABLE_JS" || true)
+    assert_eq "$n" "0" "GS03 graph-table.js contains no /$pattern/"
+done
+NAMED_COLOURS='red|green|blue|black|white|gray|grey|yellow|orange|purple|pink|brown'
+NAMED_COLOURS="${NAMED_COLOURS}|cyan|magenta|teal|navy|olive|maroon|silver|lime|aqua|fuchsia|currentcolor"
+n=$(grep -ciwE "$NAMED_COLOURS" "$TABLE_JS" || true)
+assert_eq "$n" "0" "GS03 graph-table.js names no colour, not even in a class name"
+
+echo ""
+echo "=== GS04: nothing this rendering drives animates ==="
+# The shared stylesheet's own `html { scroll-behavior: smooth }` would animate the
+# reveal, so the scroll passes an explicit instant behaviour -- the one route no
+# CSS grep reaches.
+for pattern in 'smooth' 'transition' 'animation'; do
+    n=$(grep -ciE "$pattern" "$TABLE_JS" || true)
+    assert_eq "$n" "0" "GS04 graph-table.js contains no /$pattern/"
+done
+n=$(grep -cE 'scrollIntoView\(' "$TABLE_JS" || true)
+assert_eq "$n" "1" "GS04 graph-table.js makes exactly one scroll call"
+assert_file_contains "$TABLE_JS" "behavior: 'instant'" "GS04 that one scroll call is instantaneous"
+
+echo ""
+echo "=== GS05: the table region emits neither of the shell's control attributes ==="
+# This DOM is per projection while the shell's manifest is built once at load, so a
+# manifest entry per row would falsify the manifest-to-DOM bijection the moment a
+# filter removed a row; a second group disclosure would falsify "exactly one per
+# foldable group".
+assert_file_not_contains "$TABLE_JS" "data-control=" "GS05 graph-table.js sets no data-control attribute"
+assert_file_not_contains "$TABLE_JS" "data-group-toggle" "GS05 graph-table.js sets no data-group-toggle attribute"
+assert_file_not_contains "$TABLE_JS" "aria-live" "GS05 graph-table.js creates no third live region"
+
+echo ""
+echo "=== GS06: the shell mounts the table FIRST and UNCONDITIONALLY ==="
+# The load-order form of "peer rendering, not fallback": the artifact is complete
+# on a build where the drawing module is absent.
+table_at=$(grep -n "resolveMount('table'" "$CONTROLS_JS" | head -1 | cut -d: -f1)
+canvas_at=$(grep -n "resolveMount('canvas'" "$CONTROLS_JS" | head -1 | cut -d: -f1)
+if [[ -n "$table_at" && -n "$canvas_at" && "$table_at" -lt "$canvas_at" ]]; then
+    pass "GS06 the shell resolves the table rendering before the drawing rendering (lines $table_at < $canvas_at)"
+else
+    fail "GS06 the shell resolves the table rendering before the drawing rendering — table@${table_at:-none} canvas@${canvas_at:-none}"
+fi
+assert_file_contains "$TABLE_JS" "registerRendering('table', mountTable)" \
+    "GS06 the table rendering registers itself at its own top level"
+
+echo ""
+echo "=== GS07: the page keeps both renderings siblings, table first, and exactly two live regions ==="
+tr_at=$(grep -n 'data-table-region' "$SKELETON" | head -1 | cut -d: -f1)
+gr_at=$(grep -n 'class="graph-region"' "$SKELETON" | head -1 | cut -d: -f1)
+if [[ -n "$tr_at" && -n "$gr_at" && "$tr_at" -lt "$gr_at" ]]; then
+    pass "GS07 DOM order is table-first in the skeleton (lines $tr_at < $gr_at)"
+else
+    fail "GS07 DOM order is table-first in the skeleton — table@${tr_at:-none} graph@${gr_at:-none}"
+fi
+n=$(grep -cE 'data-status aria-live="polite"' "$SKELETON" || true)
+assert_eq "$n" "1" "GS07 the skeleton declares exactly one polite region of the view's own"
+n=$(grep -cE 'role="alert"' "$SKELETON" || true)
+assert_eq "$n" "1" "GS07 the skeleton declares exactly one alert region"
+# The view's contract is "exactly two live regions and no more". The skeleton in
+# fact carries a THIRD, `aria-live="polite"` on the reused lightbox caption inside
+# the aria-hidden dialog. The true state is asserted -- the two the view owns exist
+# exactly once each, the table region adds none (GS05), and the total is pinned at
+# three so a fourth would fail -- and the discrepancy is named rather than encoded
+# as if the contract already held.
+n=$(grep -cE 'aria-live' "$SKELETON" || true)
+assert_eq "$n" "2" "GS07 the skeleton carries exactly two aria-live attributes: the view's status line and the reused lightbox caption"
+echo "  NOTE: feature-007's \"exactly two live regions and no more\" counts the view's own two; the reused"
+echo "        lightbox caption (id=lb-caption, inside the aria-hidden dialog) is a third aria-live region in"
+echo "        the same skeleton. The clause needs that qualifier; nothing in the table rendering adds one."
+assert_file_contains "$GRAPH_CSS" ".table-region { order: 2; min-width: 0; }" \
+    "GS07 the visual order is set in the stylesheet, not in the markup"
+
+# ===========================================================================
+# === GC: the concatenation oracle ==========================================
+# ===========================================================================
+
+echo ""
+echo "=== GC: the four files parse alone, and parse as ONE module ==="
+if [[ "$HAVE_NODE" -eq 0 ]]; then
+    skip "GC01-GC04 the concatenation oracle — node is not on PATH, so no parse was attempted"
+    skip "GT** the headless projection and table assertions — node is not on PATH"
+    skip "GX** the non-vacuity mutation controls — node is not on PATH"
+    skip "DT** the rendered-DOM assertions — node is not on PATH"
+    skip "GH** validate-html-output.sh over an assembled page — node is not on PATH to assemble one"
+else
+    # Each file alone. A .mjs copy is used because these are ES modules living
+    # under a .js extension by the page's own convention.
+    total_parts=0
+    part_ok=1
+    for f in "$PREDICATE" "$MODEL_JS" "$CONTROLS_JS" "$TABLE_JS"; do
+        cp "$f" "${TMP}/$(basename "${f%.*}").mjs"
+        if ! node --check "${TMP}/$(basename "${f%.*}").mjs" >/dev/null 2>&1; then
+            part_ok=0
+            fail "GC01 ${f#${REPO_ROOT}/} parses as a module"
+        fi
+        total_parts=$((total_parts + $(wc -l < "$f")))
+    done
+    [[ "$part_ok" -eq 1 ]] && pass "GC01 all four view files parse as modules on their own ($total_parts lines total)"
+
+    node "$MUTATE_MJS" "$REPO_ROOT" "${TMP}/bundle.mjs" none > "${TMP}/bundle.log" 2>&1
+    assert_exit_zero "$?" "GC02 the four files concatenate in the page's manifest order"
+    if node --check "${TMP}/bundle.mjs" >/dev/null 2>&1; then
+        bundle_lines=$(wc -l < "${TMP}/bundle.mjs")
+        pass "GC03 the concatenation parses as ONE module — no duplicated top-level name ($bundle_lines lines)"
+    else
+        fail "GC03 the concatenation parses as ONE module — $(node --check "${TMP}/bundle.mjs" 2>&1 | head -2 | tr '\n' ' ')"
+    fi
+    # The line budget is asserted as a RELATIONSHIP, never as a magic number: the
+    # bundle is the four files plus one separator each. A hard-coded total would
+    # have to be re-typed on every edit to any of them.
+    bundle_lines=$(wc -l < "${TMP}/bundle.mjs")
+    assert_eq "$bundle_lines" "$((total_parts + 3))" \
+        "GC03b the bundle is exactly the four files joined, nothing added or dropped"
+
+    # THE NEGATIVE CONTROL. Without this, GC03 could be passing because
+    # `node --check` never fails. One extra top-level `const el = 1;` collides with
+    # the shell's own helper, which is precisely the failure mode the shared scope
+    # creates.
+    node "$MUTATE_MJS" "$REPO_ROOT" "${TMP}/dup.mjs" duplicate-name >/dev/null 2>&1
+    if node --check "${TMP}/dup.mjs" >/dev/null 2>&1; then
+        fail "GC04 a duplicated top-level name is REJECTED — node --check accepted it, so GC03 proves nothing"
+    else
+        pass "GC04 a duplicated top-level name is rejected by the same check GC03 uses (negative control)"
+    fi
+fi
+
+# ===========================================================================
+# === GT: the projection and the table, headless ============================
+# ===========================================================================
+
+if [[ "$HAVE_NODE" -eq 1 ]]; then
+    echo ""
+    echo "=== GT: the shell's projection and the table's rows, order, emphasis and unlisted set ==="
+    set +e
+    node "$MODEL_MJS" "${TMP}/bundle.mjs" > "${TMP}/model.out" 2>"${TMP}/model.err"
+    model_rc=$?
+    set -e
+    consume < "${TMP}/model.out"
+    if [[ "$model_rc" -ne 0 ]] && ! grep -q $'\tFAIL\t' "${TMP}/model.out"; then
+        fail "GT00 the headless half ran to completion — exit $model_rc with no reported failure: $(head -3 "${TMP}/model.err" | tr '\n' ' ')"
+    fi
+
+    # A helper that emitted NOTHING would contribute no assertion at all -- a
+    # silent pass wearing a green suite. The floor is positive and well below the
+    # current count, so it fires on a collapse and never on growth.
+    model_lines=$(grep -cE '^GV.(PASS|FAIL)' "${TMP}/model.out" || true)
+    if [[ "${model_lines:-0}" -ge 40 ]]; then
+        pass "GT01 the headless half reported its assertions ($model_lines outcomes)"
+    else
+        fail "GT01 the headless half reported its assertions — only ${model_lines:-0} outcome line(s), so the class did not run"
+    fi
+
+    # =======================================================================
+    # === GX: non-vacuity controls ==========================================
+    # =======================================================================
+    echo ""
+    echo "=== GX: each assertion class is shown to FAIL against a deliberate defect ==="
+    run_mutation() {
+        local id="$1" expect="$2"
+        if ! node "$MUTATE_MJS" "$REPO_ROOT" "${TMP}/mut-${id}.mjs" "$id" > "${TMP}/mut-${id}.log" 2>&1; then
+            # A mutation whose pattern no longer matches is a BROKEN CONTROL and is
+            # reported as a failure, never skipped: a control that silently did not
+            # apply is exactly how a suite starts proving nothing.
+            fail "GX ${id} — the mutation did not apply: $(head -2 "${TMP}/mut-${id}.log" | tr '\n' ' ')"
+            return
+        fi
+        set +e
+        node "$MODEL_MJS" "${TMP}/mut-${id}.mjs" --expect-fail "$expect" > "${TMP}/mut-${id}.out" 2>&1
+        set -e
+        consume < "${TMP}/mut-${id}.out"
+        # And the control itself must have produced a verdict. A crashed helper
+        # emits no outcome line, which would leave this control contributing
+        # nothing while the suite still went green.
+        local n
+        n=$(grep -cE '^GV.(PASS|FAIL)' "${TMP}/mut-${id}.out" || true)
+        if [[ "${n:-0}" -eq 0 ]]; then
+            fail "GX ${id} — the control produced no verdict: $(head -2 "${TMP}/mut-${id}.out" | tr '\n' ' ')"
+        fi
+    }
+    run_mutation prefix-encoding        GT20,GT21,GT22
+    run_mutation dimmed-either-map      GT50,GT50b
+    run_mutation list-collapsed         GT30,GT31
+    run_mutation unlisted-by-degree     GT61,GT63
+    run_mutation tiebreak-direction     GT37
+    run_mutation sortof-keeps-direction GT39
+
+    # The GS03 colour grep gets the same treatment: proven to bite.
+    node "$MUTATE_MJS" "$REPO_ROOT" "${TMP}/poison.mjs" colour-literal >/dev/null 2>&1
+    if grep -qE '#[0-9a-fA-F]{3}' "${TMP}/poison.mjs"; then
+        pass "GX colour-literal — the GS03 hex-literal pattern fires on a poisoned copy (negative control)"
+    else
+        fail "GX colour-literal — the GS03 hex-literal pattern did NOT fire on a poisoned copy, so GS03 proves nothing"
+    fi
+fi
+
+# ===========================================================================
+# === DT: the rendered DOM ==================================================
+# ===========================================================================
+
+if [[ "$HAVE_NODE" -eq 1 ]]; then
+    echo ""
+    echo "=== DT: the page assembled, booted into a document, and asserted from the outside ==="
+    # Assembly needs no DOM, so it happens even when jsdom is absent -- which is
+    # what lets the GH group below run either way.
+    set +e
+    node "$DOM_MJS" "$REPO_ROOT" "${TMP}/bundle.mjs" "${TMP}/page" --assemble-only > "${TMP}/assemble.out" 2>&1
+    assemble_rc=$?
+    set -e
+    if [[ "$assemble_rc" -eq 0 && -f "${TMP}/page/graph.html" ]]; then
+        pass "DT01 the page assembles from the skeleton with every placeholder substituted"
+    else
+        fail "DT01 the page assembles from the skeleton — $(head -3 "${TMP}/assemble.out" | tr '\n' ' ')"
+    fi
+
+    set +e
+    node "$DOM_MJS" "$REPO_ROOT" "${TMP}/bundle.mjs" "${TMP}/page" > "${TMP}/dom.out" 2>"${TMP}/dom.err"
+    dom_rc=$?
+    set -e
+    consume < "${TMP}/dom.out"
+    if [[ "$dom_rc" -ne 0 && "$dom_rc" -ne 3 ]] && ! grep -q $'\tFAIL\t' "${TMP}/dom.out"; then
+        fail "DT00 the DOM half ran to completion — exit $dom_rc with no reported failure: $(head -3 "${TMP}/dom.err" | tr '\n' ' ')"
+    fi
+    # A helper that emitted NOTHING would contribute no assertion at all, which is
+    # a silent pass wearing a green suite. The floor is asserted positively, well
+    # below the current count, so it fires only on a collapse and never on growth.
+    dom_lines=$(grep -cE $'^GV\t(PASS|FAIL|SKIP)\t' "${TMP}/dom.out" || true)
+    if [[ "${dom_lines:-0}" -ge 20 ]]; then
+        pass "DT02 the DOM half reported its assertion classes ($dom_lines outcomes)"
+    else
+        fail "DT02 the DOM half reported its assertion classes — only ${dom_lines:-0} outcome line(s), so most of the class was neither run nor skipped"
+    fi
+
+    # --- Non-vacuity for the DOM group ------------------------------------
+    # The GX controls above prove the headless assertions bite. These prove the
+    # same for the two most load-bearing rendered ones, by running the DOM half
+    # against a mutated bundle and requiring the named assertion to FAIL.
+    if [[ "$dom_rc" -eq 3 ]]; then
+        skip "DX** the DOM group's non-vacuity controls — the DOM half itself did not run (see the DT skips)"
+    else
+        dom_mutation_bites() {
+            local id="$1" expect="$2"
+            if ! node "$MUTATE_MJS" "$REPO_ROOT" "${TMP}/dmut-${id}.mjs" "$id" >/dev/null 2>&1; then
+                fail "DX ${id} — the mutation did not apply"
+                return
+            fi
+            set +e
+            node "$DOM_MJS" "$REPO_ROOT" "${TMP}/dmut-${id}.mjs" "${TMP}/dpage-${id}" > "${TMP}/dmut-${id}.out" 2>&1
+            set -e
+            if grep -q $'\tFAIL\t'"${expect} " "${TMP}/dmut-${id}.out"; then
+                pass "DX ${expect} fails against the mutated implementation (${id})"
+            else
+                fail "DX ${expect} fails against the mutated implementation (${id}) — it did NOT fail, so that assertion cannot detect this defect"
+            fi
+        }
+        dom_mutation_bites dimmed-either-map  DT19b
+        dom_mutation_bites unlisted-by-degree DT21e
+    fi
+fi
+
+# ===========================================================================
+# === GH: the page's own structural / accessibility / link checks ===========
+# ===========================================================================
+
+if [[ "$HAVE_NODE" -eq 1 && -f "$VALIDATE_HTML" && -f "${TMP}/page/graph.html" ]]; then
+    echo ""
+    echo "=== GH: validate-html-output.sh over the assembled page, and over the booted page ==="
+    set +e
+    static_out=$(bash "$VALIDATE_HTML" "${TMP}/page/graph.html" --kb-dir "${TMP}/page" 2>&1)
+    static_rc=$?
+    set -e
+    [[ "$VERBOSE" -eq 1 ]] && echo "$static_out"
+    assert_exit_zero "$static_rc" "GH01 the assembled page passes every structural, a11y and link check"
+    assert_output_contains "$static_out" "H1. HTML validity" "GH01b H1 ran over the assembled page"
+    assert_output_contains "$static_out" "L2. 3/3 relative md links resolve" \
+        "GH01c the page's three relative .md targets resolve, and the table's caption link adds none"
+
+    if [[ -f "${TMP}/page/rendered.html" ]]; then
+        set +e
+        booted_out=$(bash "$VALIDATE_HTML" "${TMP}/page/rendered.html" --kb-dir "${TMP}/page" 2>&1)
+        booted_rc=$?
+        set -e
+        [[ "$VERBOSE" -eq 1 ]] && echo "$booted_out"
+        # The booted page is the stronger subject: the table region is JS-built, so
+        # a static check of the template never sees a single cell of it.
+        assert_output_contains "$booted_out" "✅ H1. HTML validity" \
+            "GH02 the BOOTED page -- the markup a reader receives, table included -- is valid HTML"
+        for check in "A1.1 has <html lang" "A4.1 prefers-reduced-motion" "A5.1 :focus-visible" "S2. Offline render"; do
+            assert_output_contains "$booted_out" "$check" "GH02b the booted page satisfies: $check"
+        done
+        if [[ "$booted_rc" -eq 0 ]]; then
+            pass "GH03 the booted page also passes L1/L2 (the id=\"\" defect below appears to be fixed)"
+        elif grep -q 'bad array subscript' <<< "$booted_out"; then
+            # NOT worked around silently. validate-html-output.sh's L1 keys a bash
+            # associative array on every `id="..."` SUBSTRING in the file and aborts
+            # on an empty key; a serialized DOM writes valueless attributes as
+            # `attr=""`, and the shell's own `data-controls-grid=""` then contains
+            # the substring `id=""`. Routed to feature-011. The obligation itself is
+            # asserted over the same rendered markup by DT30.
+            skip "GH03 L1/L2 over the booted page — validate-html-output.sh aborts with 'bad array
+        subscript' on the empty id=\"\" substring that a serialized data-controls-grid=\"\" produces.
+        Defect routed to feature-011; the anchor obligation itself is asserted instead by DT30."
+        else
+            fail "GH03 the booted page's link checks — unexpected failure: $(tail -4 <<< "$booted_out" | tr '\n' ' ')"
+        fi
+    else
+        skip "GH02-GH03 validate-html-output.sh over the booted page — the DOM half did not run, so no booted page was produced"
+    fi
+elif [[ "$HAVE_NODE" -eq 1 ]]; then
+    skip "GH** validate-html-output.sh — the validator or the assembled page is absent"
+fi
+
+# ===========================================================================
+# Summary
+# ===========================================================================
+echo ""
+if [[ "$SKIP" -gt 0 ]]; then
+    echo "=== Skipped (not run, and not counted as passes) ==="
+    echo "  Tests skipped: $SKIP"
+    for s in "${SKIPPED[@]}"; do echo "  - $s"; done
+    echo ""
+fi
+test_summary
+exit $?
