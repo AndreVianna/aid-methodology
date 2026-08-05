@@ -111,7 +111,10 @@ gap the enumeration implies is out of scope for the whole work (FR-27).
       generator has run, the render-drift check passes with no stale emission manifest, the skill
       appears in every host profile install tree with no hand-maintained profile copy,
       `tests/canonical/test-doc-counts.sh` passes with every `${SKILLS}` surface stating the
-      current derived count — the eleven that move from 111 to 112, including the five
+      current derived count — the eleven documentation phrases that move with it, stated as the
+      derivation rather than as a pair of numerals because work-004's alias retirement has already
+      moved this figure once (it was authored against 111; the branch now derives 76), including
+      the five
       `profiles/<tool>/README.md` files that live inside generated trees but are not emitted by
       the generator — and `site/scripts/gen-reference.mjs`'s `SKILL_GROUPS` entry and
       `site/scripts/__tests__/gen-reference.test.mjs`'s `CURATED_SKILL_NAMES` roster have moved
