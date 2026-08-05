@@ -39,7 +39,30 @@ if [[ -z "$PYTHON_CMD" ]]; then
 fi
 
 TMP=$(mktemp -d)
-trap 'rm -rf "$TMP"' EXIT
+
+# Temp tags this suite creates in the MAIN repository (see make_clone), registered
+# so the EXIT trap removes them even when the suite is killed mid-clone. That case
+# is routine -- this suite sits in the per-suite-timeout set under tests/run-all.sh --
+# and it used to leak release-shaped `aid-test-clone-*` tags into the real repo
+# (tech-debt W4-2; 8 were found locally, none had reached the remote).
+#
+# The inline `tag -d` in make_clone stays as the fast path; this is the net for the
+# killed-mid-clone window. EXIT alone is deliberate and sufficient: bash runs an EXIT
+# trap on SIGTERM, which is what `timeout` sends (verified), and adding INT/TERM to
+# this same trap makes the handler run TWICE.
+#
+# Guarded with :- because MAIN_REPO_ROOT is defined below this point: under `set -u`
+# an early exit would otherwise fail inside the trap. If it is unset, no tag can have
+# been registered yet either, so the loop is correctly empty.
+_MAIN_REPO_TAGS=""
+_cleanup() {
+    rm -rf "$TMP"
+    local _t
+    for _t in ${_MAIN_REPO_TAGS:-}; do
+        git -C "${MAIN_REPO_ROOT:-.}" tag -d "${_t}" >/dev/null 2>&1 || true
+    done
+}
+trap _cleanup EXIT
 
 # The commit to test: the current HEAD SHA. Using the SHA (not a branch name) is robust
 # in CI's detached-HEAD checkouts (PR builds check out a merge commit, where the branch
@@ -62,6 +85,10 @@ make_clone() {
     # CI's detached-HEAD PR checkouts. A detached HEAD has no branch ref, so a plain local
     # clone can omit the commit; pin it with a temp tag, clone that tag, then remove it.
     local _ref="aid-test-clone-$$"
+    # Register BEFORE creating it, so a kill landing between these two lines is
+    # still covered by the EXIT trap. Repeats across calls are harmless: the name is
+    # PID-derived, so every call in a run reuses it and `tag -d` is idempotent here.
+    _MAIN_REPO_TAGS="${_MAIN_REPO_TAGS} ${_ref}"
     git -C "${MAIN_REPO_ROOT}" tag -f "${_ref}" "${WORKTREE_REF}" >/dev/null 2>&1
     git clone --local --quiet --branch "${_ref}" "${MAIN_REPO_ROOT}" "${dest}" 2>/dev/null
     git -C "${MAIN_REPO_ROOT}" tag -d "${_ref}" >/dev/null 2>&1
