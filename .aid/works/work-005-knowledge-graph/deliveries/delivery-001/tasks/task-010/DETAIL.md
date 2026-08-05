@@ -50,4 +50,12 @@ Shape: 6 sections matching .claude/aid/templates/delivery-plans/task-template.md
 - [ ] No product code and no carrier edit — this task writes a document; the carrier write is
       task-021's
 - [ ] Written to `deliveries/delivery-001/research/`; not cited by any permanent artifact
+- [ ] **Sources cited** and an **actionable recommendation** stated (RESEARCH type-defaults,
+      `task-decomposition.md`:180) -- the recommendation being NFR-8's ceiling and NFR-7's two verdicts,
+      each stated with its measurement conditions, since `task-021` writes the ceiling into a shipped
+      carrier and an unconditioned number there would be unfalsifiable
+- [ ] **RECORDED OVERRIDE of the third RESEARCH default, "at least 2 alternatives compared."** This task
+      applies `task-003`'s surface to a derived bench and reports two windows and a ceiling; it selects
+      nothing. Substituted obligation: the bench is derived by D2's procedure over the enumerated node
+      set rather than hand-picked, and the derivation is shown
 - [ ] All section-6 quality gates pass

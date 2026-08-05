@@ -42,9 +42,9 @@ Shape: 6 sections matching .claude/aid/templates/delivery-plans/task-template.md
   § *The Canonical Helper Suites*, plus the canonical-suite figure refreshed at its live sites, plus
   the `:96–:97` arithmetic judgment (it states a live total **and** a historical decomposition of it,
   so bumping the total alone breaks the arithmetic — either the decomposition moves with it or the
-  sentence is re-framed as a record of that work). `quality-gates.md:177–:182` (SPEC `:459`) owes the
+  sentence is re-framed as a record of that work). `quality-gates.md:177–:182` (SPEC `:458`) owes the
   grade-floor drift, and its condition **fires**, because this KB pass is the next thing to touch that
-  file. `domain-glossary.md` (SPEC `:465`) owes the spine-concept judgment — up to two concepts, or a
+  file. `domain-glossary.md` (SPEC `:462`) owes the spine-concept judgment — up to two concepts, or a
   recorded decision that none belongs.
 - Refresh `kb.html` and `INDEX.md` **once, here** — they are final-state summaries, not sources, and
   mid-work staleness was correct rather than a defect.
@@ -82,4 +82,10 @@ Shape: 6 sections matching .claude/aid/templates/delivery-plans/task-template.md
 - [ ] Any resolved tech-debt item is **removed** from `tech-debt.md`'s inventory and detail and from
       the HTML cards; the closure record lives in changelog frontmatter and git, not in a lingering
       row
+- [ ] **Accuracy verified against the current codebase** (DOCUMENT type-default,
+      `task-decomposition.md`:182), and specifically for the three rows this task routes: the
+      `test-landscape.md` suite row and figure, the `quality-gates.md` grade-floor drift and the
+      `domain-glossary.md` spine judgment are each verified first-hand against the file rather than
+      against the SPEC's description of it -- the SPEC itself notes that a stated verification is what
+      suppressed the scrutiny which would have caught the drift
 - [ ] All section-6 quality gates pass

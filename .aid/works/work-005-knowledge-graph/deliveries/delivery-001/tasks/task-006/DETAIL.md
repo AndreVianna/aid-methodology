@@ -66,7 +66,7 @@ Shape: 6 sections matching .claude/aid/templates/delivery-plans/task-template.md
       `task-024` renders it. Asserting a green render gate here would be asserting work this task does
       not own
 - [ ] **Configuration is idempotent** and **no plaintext secret is introduced** (CONFIGURE
-      type-defaults, `task-decomposition.md`:178). Idempotence is the load-bearing one here: applying
+      type-defaults, `task-decomposition.md`:179). Idempotence is the load-bearing one here: applying
       the seeded section twice, or applying it to a tree that already carries it, must leave one
       commented block and not two -- and re-running `/aid-config` over an install that predates the
       section must not duplicate or uncomment it

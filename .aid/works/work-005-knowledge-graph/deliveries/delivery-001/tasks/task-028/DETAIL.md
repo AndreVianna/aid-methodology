@@ -45,11 +45,22 @@ Shape: 6 sections matching .claude/aid/templates/delivery-plans/task-template.md
 - [ ] The census output lives where a permanent artifact may reference it, or is explicitly declared
       transient — it may not become a permanent dependency on this work folder
 - [ ] **The FR-28 verdict is re-validated against the delivery's FINAL state.** `task-022` runs the
-      full rubric in gate wave 4, but four wave-5 tasks move shipped content afterwards -- `task-024`
-      re-renders across five profile roots and both dogfood trees, `task-026` rewrites Knowledge Base
-      documents, `task-027` restructures suites, `task-029` disposes ledger rows. The BLUEPRINT claims
-      the rubric "closes over both artifacts in this delivery's gate", and a wave-4 run cannot support
-      that claim on its own. So: re-run `grade-graph.sh` over `relationships.md` and `graph.html` here,
-      after those tasks have landed, and confirm every verdict `task-022` recorded still holds. A
-      changed verdict is a finding, not a refresh
+      full rubric in gate wave 4, but wave-5 tasks **inside this task's dependency closure** move
+      content the rubric reads afterwards -- `task-024` re-renders across five profile roots and both
+      dogfood trees, and `task-027` restructures suites. The BLUEPRINT claims the rubric "closes over
+      both artifacts in this delivery's gate", and a wave-4 run cannot support that claim on its own.
+      So: re-run `grade-graph.sh` over `relationships.md` and `graph.html` here and confirm every
+      verdict `task-022` recorded still holds. A changed verdict is a finding, not a refresh.
+      **Two wave-5 tasks are deliberately NOT required to precede this one, and the omission is the
+      point.** An earlier version of this criterion also demanded that `task-026` and `task-029` "have
+      landed" first, which no executor could satisfy: `task-026` stands in no dependency relation to
+      this task, and `task-029` **depends on** this task, so it can never precede it. Neither touches a
+      rubric input -- `task-026` writes Knowledge Base documents, `task-029` disposes ledger rows, and
+      FR-28 reads only `relationships.md` and `graph.html`. Their absence from the closure is therefore
+      correct, not an ordering this task must enforce
+- [ ] **Accuracy verified against the current codebase** (DOCUMENT type-default,
+      `task-decomposition.md`:182), sharpened for a census, whose whole value is that it not flatter the
+      suite set: every "covered" claim is verified by reading the assertion that would fail, never
+      inferred from the presence of a suite whose name matches the behaviour -- that inference is
+      precisely the `io_bounds.py` failure this census exists to answer
 - [ ] All section-6 quality gates pass

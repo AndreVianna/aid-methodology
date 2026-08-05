@@ -52,4 +52,8 @@ Shape: 6 sections matching .claude/aid/templates/delivery-plans/task-template.md
 - [ ] AC-S3 still holds across the re-issued record: no bench size is asserted by this feature
 - [ ] No permanent artifact cites this document (work folders are transient); the ship-time KB
       content it feeds is task-026's to write
+- [ ] **Accuracy verified against the current codebase** (DOCUMENT type-default,
+      `task-decomposition.md`:182). Load-bearing here rather than a formality: the record being replaced
+      was wrong *because* it was verified against a baseline that later moved, so verify every re-issued
+      part against the SPEC as it stands at execution time, not against this task's description of it
 - [ ] All section-6 quality gates pass

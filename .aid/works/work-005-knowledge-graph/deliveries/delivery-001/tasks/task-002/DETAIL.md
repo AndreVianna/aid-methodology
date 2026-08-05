@@ -49,4 +49,12 @@ Shape: 6 sections matching .claude/aid/templates/delivery-plans/task-template.md
 - [ ] The document is not cited by any permanent artifact (CLAUDE.md § Tracking discipline: work
       folders are transient)
 - [ ] Written to `deliveries/delivery-001/research/`, beside the Stage 1 probe
+- [ ] **Sources cited** and an **actionable recommendation** stated (RESEARCH type-defaults,
+      `task-decomposition.md`:180). Licence and attribution findings in particular are worthless without
+      their source: cite the licence file or repository page consulted, with the version it applied to
+- [ ] **RECORDED OVERRIDE of the third RESEARCH default, "at least 2 alternatives compared."** It does
+      **not** apply to D6's payload and licence findings: the renderer pair is settled by FR-18 and Q9
+      and this task is explicitly forbidden from reopening it, so there is no live alternative to
+      compare. It **does** apply to D7 -- the update mechanism is a genuine choice, so compare at least
+      two mechanisms and state why the chosen one carries the ongoing obligation it does
 - [ ] All section-6 quality gates pass

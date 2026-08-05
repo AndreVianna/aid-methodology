@@ -47,4 +47,11 @@ Shape: 6 sections matching .claude/aid/templates/delivery-plans/task-template.md
 - [ ] The harness is declared throwaway and no part of it is added to `canonical/` or `tests/`
 - [ ] Node.js >= 20 floor honoured (C-5); browser absence degrades with an actionable message
 - [ ] Written to `deliveries/delivery-001/research/`
+- [ ] **Sources cited** and an **actionable recommendation** stated (RESEARCH type-defaults,
+      `task-decomposition.md`:180) -- the recommendation being the response surface `task-010` consumes,
+      stated with the measurement conditions that make it reusable rather than as bare numbers
+- [ ] **RECORDED OVERRIDE of the third RESEARCH default, "at least 2 alternatives compared."** This task
+      measures a response surface across five named axes; it selects nothing, so there is no alternative
+      to compare. Substituted obligation: every one of D2b's five axes is actually varied and reported,
+      so the surface cannot be quietly reduced to fewer dimensions than it claims
 - [ ] All section-6 quality gates pass

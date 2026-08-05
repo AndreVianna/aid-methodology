@@ -33,13 +33,20 @@ Shape: 6 sections matching .claude/aid/templates/delivery-plans/task-template.md
 **Depends on:** task-028
 
 **Scope:**
-- **33 `[LOW]` and 24 `[MINOR]` rows are still `Pending`.** Both figures were counted on disk and are
-  exact; the denominator in an earlier version ("the fifteen feature-SPEC ledgers") was not. Derive the
-  ledger set rather than trusting any count here: `.aid/.temp/review-pending/` holds 22 files, of which
-  13 are `feature-NNN-spec.md` plus `feature-007-reopen.md`, and the Pending rows are spread over only
-  7 of the 22 -- the rest are the delivery gate, requirements-completeness, four specify batches and
-  two task ledgers. Sweep **every** file in
-  `.aid/.temp/review-pending/`, counted on disk. The `minimum_grade: B-` floor **permits** them — but
+- **33 `[LOW]` and 24 `[MINOR]` rows were `Pending` when this task was authored.** Those two figures
+  were counted on disk and were exact then. **This task deliberately states no file count for the
+  ledger directory, and no count stated here may be trusted as current.** That is a correction applied
+  twice: the first version said "the fifteen feature-SPEC ledgers", which was simply wrong; the second
+  replaced it with a file total that was *also* wrong before the same review finished, because a review
+  that produces a ledger writes it into this very directory -- so the denominator moved underneath the
+  sentence describing it. A count of this directory is not a fact about the work; it is a fact about how
+  many reviews have run.
+  **Derive the set at execution time and sweep every file it returns:**
+  `find .aid/.temp/review-pending -maxdepth 1 -type f -name "*.md"`
+  Expect the feature-scoped SPEC ledgers, the delivery gate, requirements-completeness, the specify
+  batches and the Detail-phase task ledgers -- but treat **whatever the command returns** as the scope,
+  including files this description did not anticipate, and re-count the Pending rows rather than reusing
+  the figures above. The `minimum_grade: B-` floor **permits** them — but
   "permitted" is not "dispositioned", and an undispositioned `Pending` row is indistinguishable from
   a forgotten one.
 - Set each row to a terminal status with a reason: `Fixed`, `Accepted`, `Invalid` or `OOS`. Where a
@@ -64,4 +71,8 @@ Shape: 6 sections matching .claude/aid/templates/delivery-plans/task-template.md
       swept and every instance dispositioned together
 - [ ] Any row promoted to `tech-debt.md` carries both an inventory line and a detail entry
 - [ ] Nothing is silently deleted; every row's outcome is traceable
+- [ ] **Accuracy verified against the current codebase** (DOCUMENT type-default,
+      `task-decomposition.md`:182). Already discharged in substance by this task's premise re-validation
+      rule, and recorded here so the default is not read as missing: a disposition written against a
+      premise that no longer holds on disk is exactly the inaccuracy this default guards against
 - [ ] All section-6 quality gates pass
