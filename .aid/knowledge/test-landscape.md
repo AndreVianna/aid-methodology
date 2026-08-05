@@ -471,12 +471,21 @@ re-run of the entire suite**: all 189 assertions and all 5 subject scans, per mu
 | | suite runs | subject scans | wall |
 |---|---|---|---|
 | baseline | 1 | 5 | 73s |
-| 7 mutants | 7 | 35 | ~511s |
-| **total** | **8** | **40** | **~584s (~10 min)** |
+| 7 mutants | 7 | 35 | (derived) ~511s |
+| arithmetic total | 8 | 40 | ~584s |
+| **MEASURED total** | **8** | **40** | **1,040s (17.3 min)** |
+
+The measured figure is the one to plan against, and it is **~1.8x the arithmetic**. Measured with
+`--self-mutate` end to end (7 mutants, 7 killed, 0 survived, 0 aborted) while a second suite job held
+CPU, so it is an upper bound under contention rather than a clean-machine number; the honest range is
+~584-1,040s. The arithmetic under-predicts because a mutant run pays the whole suite's fixture
+construction as well as its scans.
 
 Forty scans at ~10s each is ~400s of pure scanning to test seven one-line defects.
 Extrapolated across the six committed suites at their measured times,
-`(196+79+73+58+29+25) x 8 ~= 3,680s ~= 61 minutes` for one deliverable. Observed
+`(196+79+73+58+29+25) x 8 ~= 3,680s ~= 61 minutes` for one deliverable — and since the measured
+single-suite figure came in at ~1.8x its own arithmetic, treat 61 minutes as the FLOOR of that
+extrapolation, not the estimate. Observed
 consequence: two builders spent the bulk of a 2.5-hour run inside mutation loops.
 
 **The three changes that should fix it, in expected-payoff order:**
