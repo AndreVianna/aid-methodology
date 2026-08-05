@@ -82,8 +82,9 @@ where this feature does its work.
 the check passes hardest in exactly the case where nothing shipped. Every assertion below therefore pins
 **presence** first and asserts **absence of change** second, in that order and never the reverse.
 
-**Counts are the third obligation and the one this work has a scar on.** A new skill directory moves one
-derived quantity, and several hand-written surfaces mirror it. The discipline is `tech-debt.md`'s
+**Counts are the third obligation and the one this work has a scar on.** Landing a curated skill
+directory moves more than one derived quantity, and several hand-written surfaces mirror them. The
+discipline is `tech-debt.md`'s
 invariant-anchoring rule — anchor to ground truth, never to a sibling copy — applied to this SPEC's own
 prose as much as to the surfaces it edits: no count of an externally-owned set appears anywhere below,
 only the derivation, the gates that decide phrasings, and the value sweep that closes their corpus.
@@ -423,8 +424,13 @@ states the cost: "a decomposition whose parts do not add up to the total is how 
 
 **So the edit set is the gates' report ∪ a sweep keyed on values, not on phrasings.** Needles, derived
 and never listed: `node tests/canonical/check-skill-counts.mjs --list` (`:309–311`, `deriveSkillCounts`
-as JSON) captured before Flow step 1 authors the directory and again after — every field whose value
-differs is a quantity this landing moves, and its **before** value, in digits or words, is a needle.
+as JSON) captured before Flow step 1 authors the directory, and again **after the L1 roster edit lands
+in Flow step 9** — not merely after step 1, which authors `canonical/` only and so moves the directory
+count alone while every roster-derived field is still unchanged. The second snapshot is pinned there
+because a pair of snapshots taken either side of step 1 reports a single moved field, and a needle set
+of one is exactly the vacuity CR08 would then be satisfied over. Every field whose value differs
+between the two is a quantity this landing moves, and its **before** value, in digits or words, is a
+needle.
 Over the corpus `check-skill-counts.mjs` walks (`:145–168` with `:172–196`), de-emphasised as the script
 itself does (`:239`), **every occurrence of a needle is read and set to that field's after value, unless
 the sentence counts something else or records a past state** — the F3 rule `:73`, applied to
@@ -627,7 +633,9 @@ owned elsewhere, not as this feature's work.
    reconcile. Each command is pinned on `canonical/skills/aid-graph/` already existing (CR08, CR09,
    CR10); run without it they pass at the previous derived count and prove nothing. Two things the
    commands do **not** decide are done by hand: D4 Class 1's value sweep, whose *before* `--list` must
-   be captured ahead of step 1, and the `git status` line (no workflow diffs `site/`, so a generator
+   be captured ahead of step 1 and whose *after* `--list` must be captured **once this step's L1 roster
+   edit has landed** — taken any earlier it reports only the directory count and hands the sweep a
+   needle set of one — and the `git status` line (no workflow diffs `site/`, so a generator
    output left uncommitted, or one L1 never listed, is otherwise invisible).
 
 Ship-time documentation, the Knowledge Base updates and the aggregate HOME-pinned suite run **after**
