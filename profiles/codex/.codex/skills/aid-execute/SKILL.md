@@ -129,7 +129,7 @@ Print the state-entry line and "you are here" map:
 [State: EXECUTE] — Running the executor agent to produce task deliverables.
 aid-execute  ▸ you are here
   [● EXECUTE ] → [ REVIEW ] → [ FIX ] → [ DONE ]
-                                ↑______________|
+                ↑___________________|
 ```
 
 **REVIEW:**
@@ -137,7 +137,7 @@ aid-execute  ▸ you are here
 [State: REVIEW] — Grading task output against acceptance criteria with a clean-context reviewer.
 aid-execute  ▸ you are here
   [✓ EXECUTE ] → [● REVIEW ] → [ FIX ] → [ DONE ]
-                                 ↑______________|
+                 ↑___________________|
 ```
 
 **FIX:**
@@ -145,7 +145,7 @@ aid-execute  ▸ you are here
 [State: FIX] — Applying CODE-issue fixes and returning to REVIEW.
 aid-execute  ▸ you are here
   [✓ EXECUTE ] → [✓ REVIEW ] → [● FIX ] → [ DONE ]
-                                  ↑______________|
+                 ↑____________________|
 ```
 
 **DONE:**
