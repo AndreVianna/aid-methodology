@@ -517,13 +517,56 @@ html[data-theme="dark"]:root {
 	display: grid;
 	grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
 	gap: 0.5rem 1.25rem;
+	/* Sections have very different heights (7 kinds, 13 categories, 2 gap
+	   classes, 4 prose entries). Without this they stretch to the tallest row
+	   and their entries space out to fill it, which is what made the short
+	   columns read as half-empty. */
+	align-content: start;
 }
 
 .legend-grid dl { margin: 0; }
 
+/* A `dd` carries a 40px UA indent, which inside a 210px grid track is a fifth
+   of the column spent on nothing -- and it indented every glyph row away from
+   its own heading, so a row read as belonging to no section in particular. The
+   glyph column already provides the alignment the indent was standing in for. */
+.legend-grid dd { margin-left: 0; }
+
+/* Removing that indent took away the only thing separating a `dt` from its `dd`
+   in the prose section, where both are running text -- the term and its
+   description became one undifferentiated block. Weight and space do the job the
+   indent was doing, without spending a fifth of every column on it. */
+.legend-grid dt {
+	font-weight: 600;
+	margin-top: 0.7rem;
+}
+
+.legend-grid dt:first-child { margin-top: 0; }
+
+/* A swatch is a 3px border-top on a zero-height box, so top-aligning it puts
+   the line at the very top of the text's ascent rather than through its middle.
+   This drops it onto the first line's centre. A glyph needs no such correction:
+   it is a text character and shares the row's own line box. */
+.legend-row > .filter-swatch { margin-top: 0.6em; }
+
+/* The prose section is sentences, not rows, and at one track width it wrapped
+   every few words into a tall ragged column. Two tracks give it a readable
+   measure. Only above the breakpoint: at narrower widths `auto-fit` has already
+   collapsed the grid toward one or two columns, and a 2-track span there would
+   either overflow or squeeze the glyph sections back to nothing. */
+@media (min-width: 60rem) {
+	.legend-grid .legend-prose { grid-column: span 2; }
+}
+
 .legend-row {
 	display: flex;
-	align-items: center;
+	/* NOT `center`: that is right for a one-line row and wrong the moment one
+	   wraps, because the mark drifts down to sit beside the SECOND line and so
+	   reads as labelling the wrong text. Rows do wrap -- a narrow grid track and
+	   the longer gap-class descriptions both cause it. Top alignment keeps the
+	   mark on the first line at every column width; `.filter-swatch` gets a
+	   small margin below to sit on that line's centre rather than its ascent. */
+	align-items: flex-start;
 	gap: 0.5rem;
 	font-size: 0.87rem;
 	padding: 0.12rem 0;
@@ -547,6 +590,24 @@ html[data-theme="dark"]:root {
    `image` spans two prefixes and one prefix spans four kinds. The glyph that
    accompanies each colour is text supplied by the view model, so kind survives
    both a monochrome rendering and forced-colours mode. */
+/* The two coverage-gap badges. SEVERITY tokens, not kind tokens -- the same two
+   `graph-canvas.js` strokes the asterisk with and the same two the relationship
+   table gives these classes, so all three surfaces agree. Unbacked takes the
+   error token because it is wrong information, not missing information. */
+.gap-kb-unbacked {
+	color: var(--err);
+	/* The eight-spoked character has thinner strokes than the six-spoked heavy
+	   asterisk beside it, which left the MORE severe class looking like the
+	   lighter of the two -- the opposite of what the canvas draws, where
+	   unbacked is the larger and heavier mark. Size restores the ordering
+	   without changing the arm counts, which are what actually match the
+	   canvas's two asterisks. */
+	font-size: 1.2em;
+	line-height: 1;
+}
+
+.gap-artifact-undocumented { color: var(--warn); }
+
 .k-document { color: var(--gk-document); }
 .k-section { color: var(--gk-section); }
 .k-fact { color: var(--gk-fact); }

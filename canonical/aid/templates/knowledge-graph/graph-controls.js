@@ -536,16 +536,42 @@ function renderLegend(root, graphModel) {
 		])]));
 	}
 
-	const direction = el('dl', {}, [
-		el('dt', { text: 'Direction' }),
-		el('dd', { text: 'An arrowhead reads source to target. A relationship that reads the same in both directions has NO arrowhead, and that absence is the signal for it.' }),
-		el('dt', { text: 'Emphasis' }),
-		el('dd', { text: 'A selected node is outlined. Under the Coverage lens an unbacked knowledge-base claim is underlined with a wavy rule and an undocumented source artifact with a double rule; everything well-formed is dimmed. Under the Provenance lens the rows of a cross-side chain keep full contrast and the rest are dimmed.' }),
-		el('dt', { text: 'Relationship names' }),
-		el('dd', { text: 'Not painted on every line. They appear on hover and on selection, and every one of them is always present as text in the relationship table.' }),
+	// The coverage gap badge. Its own section rather than a line inside
+	// "Emphasis", because it is NOT on the emphasis axis: its source is
+	// `coverageGaps` membership, so a selected gap node keeps its badge where an
+	// emphasis-derived mark would lose it. Describing it under Emphasis would
+	// have taught the reader the wrong model.
+	//
+	// The two characters are chosen to MATCH WHAT THE CANVAS DRAWS: the canvas
+	// strokes a 4-arm asterisk for unbacked and a 3-arm one for undocumented, so
+	// the eight-spoked and six-spoked characters are their nearest text
+	// equivalents. Keep them in step with `graph-canvas.js`'s
+	// `GC_BADGE_ASTERISK` if the arm counts ever change.
+	const gaps = el('dl', {}, [
+		el('dt', { text: 'Coverage gap — asterisk beside the node' }),
+		el('dd', {}, [el('span', { class: 'legend-row' }, [
+			el('span', { class: 'filter-glyph gap-kb-unbacked', 'aria-hidden': 'true', text: '✳' }),
+			'unbacked claim — nothing in the source backs it',
+		])]),
+		el('dd', {}, [el('span', { class: 'legend-row' }, [
+			el('span', { class: 'filter-glyph gap-artifact-undocumented', 'aria-hidden': 'true', text: '✱' }),
+			'undocumented artifact — no knowledge-base document describes it',
+		])]),
+		el('dd', { text: 'The larger, denser asterisk is the more severe of the two: an unbacked claim is wrong information rather than missing information. A node with neither gap carries no asterisk.' }),
 	]);
 
-	host.appendChild(el('div', { class: 'legend-grid' }, [kinds, categories, direction]));
+	const direction = el('dl', { class: 'legend-prose' }, [
+		el('dt', { text: 'Direction' }),
+		el('dd', { text: 'An arrowhead reads source to target, and touches the border of the node it points at. A relationship that reads the same in both directions has NO arrowhead, and that absence is the signal for it.' }),
+		el('dt', { text: 'Emphasis' }),
+		el('dd', { text: 'A selected node is outlined with a ring. Under the Coverage lens everything well-formed is dimmed, so the gaps stand out. Under the Provenance lens the rows of a cross-side chain keep full contrast and the rest are dimmed. In the relationship table the same two gap classes are marked with a wavy rule and a double rule instead, because a table has no room for a badge.' }),
+		el('dt', { text: 'Relationship names' }),
+		el('dd', { text: 'Not painted on every line. They appear on hover and on selection, and every one of them is always present as text in the relationship table.' }),
+		el('dt', { text: 'Mouse' }),
+		el('dd', { text: 'Scroll to zoom. Drag to pan. Click a node to select it; hover a node or a line to read its name.' }),
+	]);
+
+	host.appendChild(el('div', { class: 'legend-grid' }, [kinds, categories, gaps, direction]));
 }
 
 /**

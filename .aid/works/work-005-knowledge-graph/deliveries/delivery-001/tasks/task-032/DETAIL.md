@@ -123,6 +123,12 @@ does not work" was one omission: **`view.viewport` was never written to the Pixi
   clause that shifts is AC-S9's "wheel **or empty-surface drag**": the drag mechanism becomes
   right-drag. Record that as a recorded deviation; do not silently reword the SPEC.
 - Right-button gestures **must suppress the context menu**, on the drawing surface only.
+- **Update the legend's `Mouse` entry when you change these.** `renderLegend`
+  (`graph-controls.js`) now states the gestures in words -- "Scroll to zoom. Drag to pan.
+  Click a node to select it; hover a node or a line to read its name." -- which is accurate
+  for TODAY's left-drag pan and becomes false the moment pan moves to the right button. The
+  legend is the only place the gestures are written down for a reader, so leaving it stale
+  would be worse than never having written it.
 - **Edge selection is OUT OF SCOPE -- withdrawn by the owner on 2026-08-06:** *"Discard edge selection
   for now. We will revist that later too."* It is not deferred-because-hard; it is a scope decision.
   **Build nothing for it: no 15th lens key, no `focus.edgeKey`, no edge hit-testing beyond what
