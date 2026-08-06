@@ -150,44 +150,85 @@
 	<section aria-label="Legend">
 		<h2>Legend</h2>
 		<div class="diagram-box">
-			<svg viewBox="0 0 560 150" width="560" height="150" role="img"
-			     aria-label="The seven node shapes, one per node kind, and the four line styles used for relationship categories. Each is named in words in the list below this diagram.">
+			<!-- Two columns, and the SECOND one's geometry is the whole reason this
+			     viewBox is 720 rather than 560. At 560 the right column's swatch
+			     began at x=230 while the left column's longest label
+			     ("solid — the category owns its colour", ~192px from x=132) ran to
+			     about x=324 -- so the swatch and its arrowhead were drawn straight
+			     THROUGH that text, and the right column's own longest label ran
+			     past x=560 and was clipped mid-word. Both were visible on the real
+			     page; neither is detectable by a DOM overlap check, because SVG
+			     text and SVG lines are not laid out by the box model.
+
+			     The rule this encodes, for whoever edits it next: a column here has
+			     no automatic layout of any kind. Its start must clear the previous
+			     column's WIDEST label, and the viewBox must clear its own. Measure
+			     at ~5.5px per character for this font-size, then leave margin.
+
+			     The glyph row is spread on a 95px pitch by translating each shape
+			     rather than by recomputing its points, so the shapes themselves stay
+			     exactly as authored and only their placement changes. -->
+			<svg viewBox="0 0 720 196" width="720" height="196" role="img"
+			     aria-label="The seven node shapes, one per node kind; the four line styles used for relationship categories; and the two coverage-gap asterisks. Each is named in words in the list below this diagram.">
 				<g stroke="none">
-					<circle cx="30" cy="26" r="11" fill="var(--gk-document)"/>
-					<rect x="88" y="15" width="22" height="22" fill="var(--gk-section)"/>
-					<polygon points="169,15 181,37 157,37" fill="var(--gk-fact)"/>
-					<polygon points="229,15 241,26 229,37 217,26" fill="var(--gk-concept)"/>
-					<polygon points="283,15 295,15 301,26 295,37 283,37 277,26" fill="var(--gk-source-artifact)"/>
-					<polygon points="349,15 360,23 356,36 342,36 338,23" fill="var(--gk-image)"/>
-					<circle cx="410" cy="26" r="11" fill="none" stroke="var(--gk-web-page)" stroke-width="5"/>
+					<g transform="translate(10,0)"><circle cx="30" cy="26" r="11" fill="var(--gk-document)"/></g>
+					<g transform="translate(36,0)"><rect x="88" y="15" width="22" height="22" fill="var(--gk-section)"/></g>
+					<g transform="translate(61,0)"><polygon points="169,15 181,37 157,37" fill="var(--gk-fact)"/></g>
+					<g transform="translate(96,0)"><polygon points="229,15 241,26 229,37 217,26" fill="var(--gk-concept)"/></g>
+					<g transform="translate(131,0)"><polygon points="283,15 295,15 301,26 295,37 283,37 277,26" fill="var(--gk-source-artifact)"/></g>
+					<g transform="translate(166,0)"><polygon points="349,15 360,23 356,36 342,36 338,23" fill="var(--gk-image)"/></g>
+					<g transform="translate(200,0)"><circle cx="410" cy="26" r="11" fill="none" stroke="var(--gk-web-page)" stroke-width="5"/></g>
 				</g>
 				<g font-size="11" fill="var(--text-muted)" text-anchor="middle">
-					<text x="30" y="54">document</text>
-					<text x="99" y="54">section</text>
-					<text x="169" y="54">fact</text>
-					<text x="229" y="54">concept</text>
-					<text x="289" y="54">artifact</text>
-					<text x="349" y="54">image</text>
-					<text x="410" y="54">web page</text>
+					<text x="40" y="54">document</text>
+					<text x="135" y="54">section</text>
+					<text x="230" y="54">fact</text>
+					<text x="325" y="54">concept</text>
+					<text x="420" y="54">artifact</text>
+					<text x="515" y="54">image</text>
+					<text x="610" y="54">web page</text>
 				</g>
 				<g stroke-width="3" fill="none">
 					<line x1="20" y1="84" x2="120" y2="84" stroke="var(--gc-structure)"/>
 					<line x1="20" y1="106" x2="120" y2="106" stroke="var(--gc-taxonomy)" stroke-dasharray="9 6"/>
 					<line x1="20" y1="128" x2="120" y2="128" stroke="var(--gc-evidence)" stroke-dasharray="2 5"/>
-					<line x1="230" y1="84" x2="330" y2="84" stroke="var(--gc-documentation)"/>
-					<polygon points="330,79 342,84 330,89" fill="var(--gc-documentation)" stroke="none"/>
-					<line x1="230" y1="112" x2="342" y2="112" stroke="var(--gc-provenance)"/>
+					<line x1="360" y1="84" x2="460" y2="84" stroke="var(--gc-documentation)"/>
+					<polygon points="460,79 472,84 460,89" fill="var(--gc-documentation)" stroke="none"/>
+					<line x1="360" y1="112" x2="472" y2="112" stroke="var(--gc-provenance)"/>
+				</g>
+				<!-- The two coverage-gap asterisks, drawn the way the canvas draws them:
+				     three arms each, and the SEVERITY carried by size and weight rather
+				     than by colour alone, because amber against red is the worst pair
+				     for red-green deficiency and both collapse to one foreground under
+				     forced colours. Kept in step with `graph-canvas.js`'s
+				     `GC_BADGE_ASTERISK` -- if the arm count or the radii change there,
+				     they change here. Three lines per asterisk at 0, 60 and 120 degrees,
+				     which is six rays. -->
+				<g stroke-linecap="round">
+					<g stroke="var(--err)" stroke-width="1.8">
+						<line x1="59.5" y1="152" x2="70.5" y2="152"/>
+						<line x1="62.25" y1="147.24" x2="67.75" y2="156.76"/>
+						<line x1="67.75" y1="147.24" x2="62.25" y2="156.76"/>
+					</g>
+					<g stroke="var(--warn)" stroke-width="1.2">
+						<line x1="61" y1="180" x2="69" y2="180"/>
+						<line x1="63" y1="176.54" x2="67" y2="183.46"/>
+						<line x1="67" y1="176.54" x2="63" y2="183.46"/>
+					</g>
 				</g>
 				<g font-size="11" fill="var(--text-muted)">
 					<text x="132" y="88">solid — the category owns its colour</text>
 					<text x="132" y="110">dashed — shares a colour</text>
 					<text x="132" y="132">dotted — shares a colour</text>
-					<text x="352" y="88">arrowhead — reads source to target</text>
-					<text x="352" y="116">no arrowhead — reads the same both ways</text>
+					<text x="484" y="88">arrowhead — reads source to target</text>
+					<text x="484" y="116">no arrowhead — reads the same both ways</text>
+					<text x="132" y="156">larger red asterisk — an unbacked claim, nothing in the source backs it</text>
+					<text x="132" y="184">smaller amber asterisk — an undocumented artifact, no knowledge-base document describes it</text>
 				</g>
 			</svg>
 			<p class="caption">Node kind by colour and shape; relationship category by colour and line
-			   style; direction by an arrowhead, whose absence is itself the signal.</p>
+			   style; direction by an arrowhead, whose absence is itself the signal; and a coverage
+			   gap by an asterisk beside the node, sized by severity.</p>
 		</div>
 		<div data-legend></div>
 	</section>
