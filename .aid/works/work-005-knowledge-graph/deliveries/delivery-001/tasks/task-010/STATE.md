@@ -1,8 +1,8 @@
 ---
-state: 'In Review'
+state: Done
 review: "--"
 elapsed: "--"
-notes: 'STOPPED by orchestrator 2026-08-05 23:33 after 2.5h. Bench derivation COMPLETE on disk (.aid/.temp/graph-stage2b-bench, -bench-kb, -patched): all three D2 terms have data. Frame-time measurement NOT started -- zero results. Cause: drifted into repo JS test suites (npx vitest 21:14 wedged on a package install, npm test 23:19, npm run test:core 23:31) instead of reusing the installed Stage 2a harness. Resumable: measurement + doc only.'
+notes: 'Done. Bench 1,609 nodes (479 KB + 1,130 source). BOTH AC-6a verdicts FAIL: steady 92.4/124.9ms, drag 105.1/134.9ms vs 33.33ms. NFR-8 ceiling bracketed (500,550] at this project''s own topology -- the repo is ~3x over its own ceiling. Edge term provisional (reconstructed from an unfinished pipeline). Bench TSVs predate task-030''s --probe, so the ignore-list row reads ''unavailable''.'
 ticket_ref: "--"
 ---
 
