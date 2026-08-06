@@ -64,4 +64,27 @@ Shape: 6 sections matching .claude/aid/templates/delivery-plans/task-template.md
       identical PASS/FAIL sets and identical counts, every fixture is built under `mktemp -d` and
       removed on exit including on failure, and no assertion depends on execution order or on a
       previous run's residue
+- [ ] **ADDED 2026-08-06 -- the two files task-013 created have NO test owner, and the suite of
+      record drives a STAND-IN rather than the real producer.** task-013 wrote
+      `canonical/aid/scripts/graph/build-graph-src.mjs` (the real placeholder filler) and
+      `render-graph-view.sh` (the assembler driver). Neither is named by any task's DETAIL, so nothing
+      asserts them -- the fourth ownerless obligation found in this work, after feature-013's D3 roster
+      slots, `--probe`, and `state-emit.md`'s ordering. Meanwhile `tests/canonical/graph-view-dom.mjs`
+      is a second, independent implementation of the same substitution table, and it is what
+      `test-graph-view.sh` actually drives. **Both name sets are identical TODAY** -- verified, all ten
+      (`GENERATION_DATE`, `INLINE_COVERAGE_PREDICATE`, `INLINE_CSS`, `INLINE_GRAPH_JS`,
+      `INLINE_LIGHTBOX_JS`, `LANG`, `PREREQUISITES`, `PROJECT_NAME`, `SCALE_CEILING_NOTE`,
+      `SOURCE_STAMP`) -- but nothing keeps them identical, and today `build-graph-src.mjs` could break
+      entirely while this suite stayed green. That is the same shape as AC-S7's stub, which let
+      `--probe` be absent for weeks behind passing tests.
+      **Two oracles, both required:** (a) assert the placeholder set the REAL producer fills equals the
+      set `graph-skeleton.html` declares -- derived from both files at run time, never a literal list,
+      so a new placeholder in the skeleton fails until the producer handles it; and (b) drive
+      `render-graph-view.sh` itself at least once end to end and assert `graph.html` comes out with
+      **zero** surviving `{{...}}`, so the real path is exercised and not only its stand-in
+- [ ] **S1 budget and the AC map are written into the SUITE FILE, not only into your hand-off report.**
+      Two wave-1 suites reported maps that were never written anywhere, leaving feature-004's and
+      feature-005's closure unauditable, and six of six suites were missing the budget line. Derive the
+      budget by grepping call-site multiplicity for EVERY wrapper -- counting a wrapper body once
+      instead of once per call site put one budget off by 3x
 - [ ] All section-6 quality gates pass
