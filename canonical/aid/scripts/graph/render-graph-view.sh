@@ -3,9 +3,17 @@
 # feature-007-graph-view-shell); this is what state-render.md's routing table
 # means by "invoke the view's assembly per the view's own packaging contract".
 #
-# Two steps, and NO fork of the reused assembler (AC-17, FR-12, C-4):
+# Three steps, and NO fork of the reused assembler (AC-17, FR-12, C-4):
+#   0. If canonical/aid/templates/knowledge-graph/vendor/ exists (feature-012 D6,
+#      task-023's own vendoring), its companion bundles are copied beside the
+#      output as graph-assets/vendor/ -- FR-9/A-4's "companions travel beside
+#      graph.html", and exactly the path kb-write-fence.sh's allowlist already
+#      names. Absent (a tree that has not vendored anything yet), this step is a
+#      silent no-op and the page renders in its existing degraded
+#      (mode: 'unavailable') form -- no dead reference is ever written.
 #   1. build-graph-src.mjs fills every skeleton placeholder from relationships.md
-#      (the one input, FR-3/AC-10) and writes the .aid/.temp/graph/graph-src/
+#      (the one input, FR-3/AC-10), auto-detects step 0's companions and injects
+#      their <script src> tags, and writes the .aid/.temp/graph/graph-src/
 #      layout the assembler already validates.
 #   2. The REAL canonical/aid/scripts/summarize/assemble.sh is invoked, unmodified,
 #      with its three real flags (feature-007 SPEC :1565).
@@ -65,6 +73,17 @@ MANIFEST="${SRC_DIR}/section-manifest.txt"
 NODE_ARGS=(--repo-root "$REPO_ROOT" --relationships "$RELATIONSHIPS" --src "$SRC_DIR")
 [[ -n "$PROJECT_NAME" ]] && NODE_ARGS+=(--project-name "$PROJECT_NAME")
 [[ -n "$GENERATION_DATE" ]] && NODE_ARGS+=(--generation-date "$GENERATION_DATE")
+
+# Step 0: copy the vendored companion bundles, if any exist, beside the output.
+# Deliberately BEFORE step 1: build-graph-src.mjs's own graphAssetsPresent check
+# and its <script src> auto-detection both read the destination this copies
+# into, so the copy has to land first for either to see it.
+VENDOR_SRC="${REPO_ROOT}/canonical/aid/templates/knowledge-graph/vendor"
+GRAPH_ASSETS_DIR="$(dirname -- "$OUTPUT")/graph-assets"
+if [[ -d "$VENDOR_SRC" ]]; then
+    mkdir -p -- "$GRAPH_ASSETS_DIR/vendor"
+    cp -R "$VENDOR_SRC/." "$GRAPH_ASSETS_DIR/vendor/"
+fi
 
 # Step 1: fill placeholders, write the graph-src layout. Its own exit codes
 # (0/1/2) already match this script's contract, so they are propagated verbatim

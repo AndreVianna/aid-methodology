@@ -13,3 +13,14 @@ updates:
       github-actions:
         patterns:
           - "*"
+  # Watches the graph view's vendored third-party bundles (d3-force's dependency
+  # chain plus PixiJS) -- a private, unpublished, exact-pinned manifest with no
+  # install tree of its own. See canonical/aid/scripts/graph/vendor-provisioning.md
+  # for the human follow-on procedure a version bump still requires: merging this
+  # PR alone does not re-vendor a single byte.
+  - package-ecosystem: "npm"
+    directory: "/canonical/aid/scripts/graph"
+    schedule:
+      interval: "weekly"
+    commit-message:
+      prefix: "chore"

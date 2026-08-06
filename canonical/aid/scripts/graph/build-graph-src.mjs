@@ -182,6 +182,44 @@ function main() {
 	const viewFiles = viewFileOrder.filter((f) => fs.existsSync(path.join(templatesDir, f)));
 	const inlineGraphJs = viewFiles.map((f) => readOrFail(path.join(templatesDir, f), 2, f)).join('\n');
 
+	// --- The vendored companion bundles (feature-012 D6, task-023) ----------
+	// AUTO-DETECTED, exactly like the view-file list above: absent until task-023
+	// vendors canonical/aid/templates/knowledge-graph/vendor/, present after, no
+	// edit owed here on that day either way. Companion, never inlined (D6's own
+	// choice) and never a CDN reference, so each tag is a bare relative path --
+	// this is what keeps validate-html-output.sh's S2 a recorded no-op. Classic
+	// <script src> tags execute in document order before a deferred/module
+	// script, so placing them in <head> guarantees `d3`/`PIXI` are already
+	// global by the time bootGraphView()'s module block runs (feature-007
+	// SPEC :1602). Injected here, into the in-memory `head` string, rather than
+	// as a static <script> block in graph-skeleton.html -- that file carries no
+	// vendor-specific markup, so a tree with none of these five files vendored
+	// still renders a valid (degraded, mode: 'unavailable') page with no dead
+	// <script src> pointing at a file that does not exist.
+	const VENDOR_DIR = path.join(templatesDir, 'vendor');
+	// Dependency order matters (rendering-decision-record.md Part 10): the three
+	// d3-force dependencies must load before d3-force itself; pixi.js has no
+	// ordering dependency on any of them.
+	const vendorOrder = [
+		['d3-quadtree', 'd3-quadtree.min.js'],
+		['d3-dispatch', 'd3-dispatch.min.js'],
+		['d3-timer', 'd3-timer.min.js'],
+		['d3-force', 'd3-force.min.js'],
+		['pixi.js', 'pixi.min.js'],
+	];
+	const vendorFiles = vendorOrder.filter(([dir, file]) => fs.existsSync(path.join(VENDOR_DIR, dir, file)));
+	// Relative to graph.html itself (FR-9/A-4: companions travel beside it),
+	// under the same graph-assets/ subdirectory kb-write-fence.sh already
+	// allowlists -- render-graph-view.sh is what actually copies the bytes there.
+	const vendorScriptTags = vendorFiles
+		.map(([dir, file]) => '<script src="graph-assets/vendor/' + dir + '/' + file + '"></script>')
+		.join('\n');
+	if (vendorFiles.length > 0) {
+		const headCloseAt = head.indexOf('</head>');
+		if (headCloseAt === -1) fail(2, 'graph-skeleton.html no longer contains the </head> tag this producer keys on for vendor script injection');
+		head = head.slice(0, headCloseAt) + vendorScriptTags + '\n' + head.slice(headCloseAt);
+	}
+
 	// --- The remaining substitution values ----------------------------------
 	const projectName = args.projectName || defaultProjectName(repoRoot);
 	const generationDate = args.generationDate || new Date().toISOString().slice(0, 10);
