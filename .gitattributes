@@ -42,3 +42,27 @@ canonical/aid/templates/generated-files.txt  text eol=lf
 # blanket *.json rule: .claude/settings.json has been CRLF since before this policy and
 # renormalising it is a separate change.
 .aid/.aid-manifest.json text eol=lf
+# The vendored third-party bundles (work-005 task-023). Two rules, one path, and
+# both matter for a different reason. Last-match-wins, so this must stay AFTER the
+# `canonical/aid/templates/knowledge-graph/**` rule above, which otherwise reaches
+# these files.
+#
+# `linguist-vendored=true` keeps them OUT OF THE KNOWLEDGE GRAPH.
+# `scan-source.sh` already excludes any path git reports as linguist-vendored or
+# linguist-generated (it runs `git check-attr --stdin` over the enumerated set), so
+# this is the sanctioned mechanism rather than a new exclusion list. Without it the
+# ten bundles enumerate as source artifacts, and since nobody documents
+# `pixi.min.js` in the Knowledge Base they would sit as permanent
+# "undocumented artifact" coverage gaps that no one can ever legitimately close --
+# owner's decision, 2026-08-06.
+#
+# `-text` stops git normalising their line endings. These are third-party artifacts
+# whose byte counts are VERIFIED against upstream by the packaging gate (815,219
+# bytes combined, recorded in the decision record), and the rule above currently
+# gives them `text` + `eol=lf`. Today that is harmless because every bundle happens
+# to ship LF-only -- measured, zero CR bytes. But a future re-download that arrives
+# with CRLF would be silently rewritten on commit, and the gate would then compare a
+# git-altered file against an upstream byte count and disagree, with nothing in the
+# diff to explain why. Marking them binary removes that class of failure instead of
+# relying on upstream's choice of newline.
+canonical/aid/templates/knowledge-graph/vendor/** -text linguist-vendored=true
