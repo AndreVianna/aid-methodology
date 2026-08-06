@@ -47,8 +47,22 @@ Shape: 6 sections matching .claude/aid/templates/delivery-plans/task-template.md
 - [ ] D3's false-gap classes each exercised, with a case per class that would be misreported if the
       class were dropped
 - [ ] D4's severity mapping asserted for every significance qualifier the enum admits
-- [ ] The FR-26 retention split asserted: the graded ledger is deleted at skill DONE and the
-      delivered `graph-kb-gaps.md` is retained and never graded (feature-006 D7)
+- [ ] The FR-26 retention split asserted **as the SPECs actually state it today**: `graph-kb-gaps.md`
+      is **never graded** AND is **NOT retained past skill DONE** -- it follows the standard schema
+      lifecycle and is deleted at DONE until D-6 lands (feature-006 `:777`, and `GL18` at `:1130`
+      requires the routing block to say so).
+      **CORRECTED 2026-08-05 during execution; the earlier wording was false and this note stays so it
+      is not "fixed" back.** It read "is retained and never graded (feature-006 D7)". The *never
+      graded* half was right; *retained* was a claim from feature-010's **superseded 2026-07-28
+      pre-decision draft**, which feature-010 itself withdrew when it was re-authored fresh on
+      2026-07-30 (its `:606`-`:607` records the correction, and `:632` states the replacement
+      explicitly as "a weaker guarantee than retained, and calling it that is the point"). So the
+      criterion asserted a withdrawn claim *while citing the SPEC that refutes it*. Found by this
+      task's executor, which declined to encode a false assertion -- the right call.
+      **Related, and already discharged rather than owed:** feature-006's Open Item 3 (`:1209`-`:1212`)
+      still flags feature-010 as making that retention claim at "its SPEC.md:497-498". Those lines are
+      the grading rubric today; the citation points into the superseded draft. Both SPECs now agree, so
+      the Open Item needs closing, not answering. Routed to `task-026`'s KB/SPEC pass, not fixed here
 - [ ] The external `reviewer-ledger-schema.md` retention carve-out is recorded as **unsatisfied and
       out of this work's scope** (Cross-Cutting Risk 1), not assumed present
 - [ ] The AC-15 ledger half is labelled a half, naming feature-007 and feature-008 as co-owners

@@ -54,6 +54,105 @@
 #   plus  the exit-code contract over all 27 abort sites, byte determinism across runs,
 #         and frontmatter IDEMPOTENCE across first-insert and replace-in-place
 #
+# S1 -- SUBJECT INVOCATION BUDGET (default run, no --self-mutate): 71 subprocess
+#   spawns -- 68 node + 3 grade.sh -- plus ONE conditional node spawn (NEG35) that
+#   fires only on a filesystem where chmod 444 actually removes the write bit, for
+#   72 at most. Enumerated so a future assertion cannot add a 73rd casually:
+#     11  run_detector() calls: GL07, GL13.f, GL17.c, GL19 (spread + zero),
+#         GL10 (cycles 2/3/4), DET (two runs), GL20.e
+#      9  kind_verdict() calls: KIND01-KIND09
+#      5  node -e calls parsing predicate-probe.mjs's JSON (GL09)
+#     33  neg() calls: NEG01-NEG33 (each spawns the detector once; NEG34 and
+#         NEG35 spawn it directly, outside neg(), and are counted below)
+#      1  PRE05 (node -p, the major-version probe)
+#      1  GL05/06 ledger-schema.mjs over the main ledger
+#      1  GL09 predicate-probe.mjs itself
+#      1  GL16's Evidence-cell recheck, run VERBATIM
+#      1  GL19's zero-gap ledger-schema.mjs check
+#      2  GL12.b / GL12.c, the module-binding probes
+#      2  NEG_OUT / NEG_OUT2, extra runs kept only for their stderr text
+#      1  NEG34 (the --output write failure)
+#     +1  NEG35 (the read-only --table write failure), CONDITIONAL on chmod
+#      3  grade.sh: GL08 (own-artifact), GL08.c (gap ledger), GL11 (all-Fixed)
+#   `--self-mutate` adds exactly 5 more node spawns, one per mutant (MUT01-05),
+#   because each mutant is one detector invocation over a COPY -- see the MUT
+#   section near the end. It changes nothing else: MUT01-05 are cheap (a handful
+#   of string-substring checks and one more spawn each), and CI pays for none of
+#   them by default, matching the five sibling graph suites this repository
+#   already gates a mutation matrix behind `--self-mutate`.
+#
+# AC-TO-ASSERTION MAP -- task-012's own first deliverable. SPEC id -> live
+# assertion id(s). "Raised" entries are gaps this task found and is NOT filling,
+# with the reason a mutation or fixture cannot close them:
+#   AC-14   GL07 (non-empty ledger, exit 0), every GLxx row's own Evidence anchor
+#   AC-15   GL09 (the three-carrier equality: kb_gaps, the ledger's Doc column,
+#           and an in-test predicate call). AC-15 is a THREE-way shared
+#           obligation, not two: this suite and feature-007 own the TABLE-side
+#           equality GL09 asserts; feature-008 owns a SEPARATE canvas half (the
+#           gap badge, its own GC11) that this suite does not and cannot test --
+#           its subject is a different file entirely. Naming the ledger half a
+#           half, rather than leaving AC-15 looking closed by this suite alone,
+#           is exactly what feature-008's own SPEC.md:99 does from its side
+#           ("AC-15 with feature-006 and feature-007"; its own "canvas half" is
+#           at SPEC.md:185)
+#   AC-G1   GL14, NEG11, NEG12 (both non-source-artifact kinds); MUT04 proves the
+#           check is load-bearing, not merely present
+#   AC-G2   GL15
+#   AC-G3   GL04, NEG13, NEG14 (an out-of-enum value and an empty one); MUT05
+#           proves the mapping drives the printed severity, not a coincidence
+#   AC-G4   GL16
+#   AC-G5   GL17
+#   AC-G6   GL18
+#   (exit status independent of gap count)         GL07, GL19.f/g, NEG00
+#   (seven-column shape, no bespoke, no narrative)  GL05
+#   (route onward named; no ticket; no KB write)    GL20
+#   D2  (one implementation)  ST03/ST04 name the import textually; MUT01 is the
+#       content-identity proof this task's own AC asks for: the DETECTOR copy in
+#       MUT01 is byte-identical to the shipped file and only the PREDICATE copy
+#       is mutated, so a behaviour change proves the detector's answer is decided
+#       by that file's bytes rather than by a private copy of its own logic
+#   D3  F1  NOT EXERCISED, RAISED rather than filled. F1's exclusion ("the
+#           predicate runs once, after Pass 2, over the final table only") is a
+#           PIPELINE-ORDERING property owned by feature-010's state machine --
+#           there is no code inside detect-kb-gaps.mjs that decides WHEN it runs,
+#           so no mutation of this subject could misreport it. Testing F1 belongs
+#           to whichever suite exercises feature-010's state ordering
+#       F2  GL02 (the fixture shape) + MUT02 (mutation: disabling only the
+#           ancestor-path arm turns the ancestor-covered descendant into a gap,
+#           with a control proving the DIRECTLY-covered node is unaffected)
+#       F3  GL01 (the fixture shape, an INFERRED covering row) + PROV01/PROV02
+#           (static: neither file ever names a Provenance column at all, so
+#           there is no filter to drop -- the exclusion holds by absence of code,
+#           which a mutation cannot demonstrate more strongly than an absence
+#           assertion already does)
+#       F4  GL03, unchanged: the invariant this feature DEPENDS ON rather than
+#           implements, asserted at the seam per D3's own instruction
+#       F5  NOT EXERCISED, RAISED rather than filled. F5's exclusion ("never
+#           enumerated at all") is enforced entirely by feature-004's enumerator
+#           -- there is no candidate-filtering code in THIS script for a
+#           vendored or ignore-listed path to reach, so there is nothing here to
+#           mutate or drop
+#       F6  GL17, unchanged: MEASURED rather than excluded, so "would be
+#           misreported if dropped" does not apply the way it does to F1-F5
+#   D4  GL04, NEG13, NEG14, MUT05 (see AC-G3 above -- one mapping, one clause)
+#   D7  the retention split, as this subject can actually speak to it: GL08/GL11
+#       (file separation keeps the gap ledger invisible to grade.sh), GL09.d /
+#       GL13.c-d (the durable kb_gaps carrier survives independently of the
+#       ledger file), GL18 (the routing block states the D-6 shortfall honestly).
+#       RAISED, deliberately NOT implemented: this task's own DETAIL.md bullet 5
+#       says "the delivered graph-kb-gaps.md is retained and never graded" --
+#       that is FALSE against the CURRENT feature-006 D7 (2026-07-29/30: "the
+#       retention carve-out is withdrawn"; feature-006's own Open Item 3 flags
+#       feature-010's identical claim as a correction OWED, not a fact) and
+#       against PLAN.md's Cross-Cutting Risk 1, whose mitigation column preserves
+#       the SAME now-superseded wording "verbatim" for historical reasons only
+#       (its own preamble says so). Bullet 6 of this same task's DETAIL.md
+#       states the opposite, correctly: the carve-out is "unsatisfied and out of
+#       this work's scope" -- which is what GL18.a already asserts, as an
+#       ABSENCE, and what the note beside it below now names explicitly.
+#       Skill-DONE deletion is in any case feature-010's mechanism, not this
+#       script's, so no version of "is it retained" is this suite's to test
+#
 # Fixture policy, and why it differs from the sibling registration suite:
 #   Everything here is SELF-BUILT under .aid/.temp/ (gitignored scratch, removed on
 #   exit). Nothing is read from a pipeline work folder, so this suite survives any
@@ -80,15 +179,24 @@
 #
 # Usage:
 #   bash test-graph-gap-ledger.sh [-v | --verbose]
+#   bash test-graph-gap-ledger.sh --self-mutate      # + the MUT01-MUT05 matrix
 #
 # Exit codes:
 #   0 -- every assertion passed (skips are reported and do not fail the suite)
 #   1 -- one or more assertions failed
+#   2 -- an unknown argument was given
 
 set -u
 
 VERBOSE=0
-[[ "${1:-}" =~ ^(-v|--verbose)$ ]] && VERBOSE=1
+SELF_MUTATE=0
+while [[ $# -gt 0 ]]; do
+    case "$1" in
+        -v|--verbose)  VERBOSE=1; shift ;;
+        --self-mutate) SELF_MUTATE=1; shift ;;
+        *) echo "test-graph-gap-ledger.sh: unknown argument: $1" >&2; exit 2 ;;
+    esac
+done
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
@@ -139,6 +247,50 @@ mutate() {
     fi
     pass "$label fixture differs from its source"
     return 0
+}
+
+# Mutate a COPY by exact substring replacement -- never a regex -- so a
+# mutation targeting real JavaScript (parens, brackets, `!==`) needs no sed
+# escaping and cannot silently under- or over-match a regex metacharacter.
+# Verifies the pattern occurs EXACTLY once in the source before writing anything,
+# which is mutate()'s own false-PASS-shape-1 guard restated for this content: a
+# pattern occurring zero times would mutate nothing, and more than once would
+# hit an unintended second site.
+mutate_js() {
+    local src="$1" dst="$2" from="$3" to="$4" label="$5"
+    local result
+    result=$(node -e '
+        const fs = require("fs");
+        const [src, dst, from, to] = process.argv.slice(1);
+        const text = fs.readFileSync(src, "utf8");
+        const count = text.split(from).length - 1;
+        if (count === 0) { console.log("ABSENT"); process.exit(0); }
+        if (count > 1) { console.log("AMBIGUOUS:" + count); process.exit(0); }
+        fs.writeFileSync(dst, text.split(from).join(to));
+        console.log("OK");
+    ' "$src" "$dst" "$from" "$to" 2>&1)
+    case "$result" in
+        OK)
+            if cmp -s "$src" "$dst"; then
+                fail "$label — fixture mutation changed nothing (from and to are the same bytes)"
+                return 1
+            fi
+            pass "$label fixture differs from its source (pattern matched exactly once)"
+            return 0
+            ;;
+        ABSENT)
+            fail "$label — mutation pattern not found in the source copy"
+            return 1
+            ;;
+        AMBIGUOUS:*)
+            fail "$label — mutation pattern occurs ${result#AMBIGUOUS:} times, not exactly once"
+            return 1
+            ;;
+        *)
+            fail "$label — mutation failed: $result"
+            return 1
+            ;;
+    esac
 }
 
 # Count matching lines without the "0\n0" trap of `|| echo 0`.
@@ -449,6 +601,24 @@ for forbidden in 'COVERAGE_BEARING = ' 'function isCovered' 'KB_KINDS' 'artifact
     assert_file_not_contains "$DETECTOR" "$forbidden" \
         "ST04 the detector declares no '$forbidden' of its own (one predicate, not two)"
 done
+# ST03/ST04 are textual claims about an import statement and an absence of
+# strings -- MUT01, further down, proves the same "one implementation" property
+# by CONTENT IDENTITY: mutating only the predicate copy and leaving the detector
+# copy byte-identical to the shipped file still changes the detector's output,
+# which is possible only if the detector's answer is decided by this file's
+# bytes rather than by a private copy of its own.
+
+# D3 F3: coverage counts from a row of ANY Provenance, inferred included -- and
+# the way that holds structurally, rather than by a filter that merely never
+# fires, is that NEITHER file below ever names the table's Provenance column at
+# all. Matched quoted and capitalised, exactly as every OTHER consumed column
+# name is spelled in TABLE_COLUMNS, so this does not collide with the unrelated
+# lowercase 'provenance' RELATION_CATEGORY value or with feature-004's own
+# `evidence_provenance` field (neither of which is the table's Provenance cell).
+assert_file_not_contains "$DETECTOR" "'Provenance'" \
+    "PROV01 (D3 F3) the detector names no 'Provenance' column -- there is no code path a filter could be added to"
+assert_file_not_contains "$PREDICATE" "'Provenance'" \
+    "PROV02 (D3 F3) the shared predicate names no 'Provenance' column either"
 
 # Render safety: this file is text-processed into five profile trees.
 assert_file_not_contains "$DETECTOR" 'canonical/' \
@@ -462,9 +632,17 @@ for cmd in '/aid-create-ticket' '/aid-update-ticket' '/aid-read-ticket'; do
     assert_file_not_contains "$DETECTOR" "$cmd" "GL20.a the detector references no $cmd"
 done
 
-# GL18's second half: no local retention carve-out was written into the shared schema.
+# GL18's second half: no local retention carve-out was written into the shared
+# schema. This is the assertion that keeps PLAN.md's Cross-Cutting Risk 1 (Q8 /
+# D-6 -- "the shared reviewer-ledger lifecycle deletes ledgers at skill DONE")
+# recorded as UNSATISFIED and OUT OF THIS WORK'S SCOPE rather than assumed
+# fixed: the carve-out was written once, into this same file, and was WITHDRAWN
+# by feature-006's own SPEC on 2026-07-29/30 specifically because working around
+# a shared-methodology defect locally is the workaround Q8 ruled out. Asserted
+# as an ABSENCE on purpose, per the schema's own reading: a future well-meaning
+# local carve-out re-added here must fail this suite.
 assert_file_not_contains "$LEDGER_SCHEMA" 'graph-kb-gaps' \
-    "GL18.a the shared ledger schema carries NO retention exception for graph-kb-gaps.md"
+    "GL18.a the shared ledger schema carries NO retention exception for graph-kb-gaps.md (Cross-Cutting Risk 1 unsatisfied, not assumed present)"
 
 # The abort-site pin. If a new abort is added with no negative case below, this fails.
 ABORT_SITES=$(grep -n 'fail(' "$DETECTOR" | grep -vE ':\s*(//|\*|/\*)' | grep -c . || true)
@@ -516,6 +694,16 @@ assert_output_contains "$OUT" "$F/out/graph-kb-gaps.md" "GL18.e the block echoes
 
 echo ""
 echo "=== GL01 / GL02: what clears a gap ==="
+# D3's false-gap classes F1 and F5 are NOT exercised anywhere in this suite, and
+# that is recorded here rather than left to look like an oversight. Both are
+# excluded entirely UPSTREAM of this script: F1 ("the predicate runs once, after
+# Pass 2, over the final table only") is feature-010's pipeline ordering, and F5
+# ("never enumerated at all") is feature-004's enumerator. Neither exclusion has
+# a line of code in detect-kb-gaps.mjs or coverage-predicate.mjs that could be
+# dropped, so there is no mutation and no fixture shape that would demonstrate a
+# misreport from THIS subject -- raising them here is task-012's own
+# AC-to-assertion map bullet 1 ("gaps filled or raised") applied to the two
+# classes this suite genuinely cannot close.
 # Each of these asserts the absence of a DOC CELL, delimited by its pipes -- not
 # the absence of a substring. A bare substring test fails on a path that merely
 # appears inside another row's Evidence anchor, which is a false failure of the
@@ -751,6 +939,15 @@ done < <(cut -f1 "$F/media-nodes.tsv")
 
 echo ""
 echo "=== GL09: the ledger, the carrier and the one predicate agree ==="
+# AC-15 is a THREE-way shared obligation, and GL09 below closes only this
+# feature's HALF of it. This ledger and feature-007's Coverage lens own the
+# TABLE-side equality asserted here (the kb_gaps carrier, the ledger's Doc
+# column, and an in-test predicate call, over the SAME node set); feature-008
+# owns a distinct CANVAS half -- its own gap-badge rendering, GC11 -- that this
+# suite neither exercises nor could, since its subject is a different file.
+# feature-008's own SPEC.md names both co-owners from its side (":99" -- "AC-15
+# with feature-006 and feature-007"; its canvas half at ":185"), so this suite
+# labels the half explicitly rather than letting GL09 read as the whole of AC-15.
 PROBE_JSON=$(node "$F/predicate-probe.mjs" "$PREDICATE" "$F/relationships.md" "$F/nodes.tsv" 2>&1)
 PROBE_CODE=$?
 if [[ "$PROBE_CODE" -ne 0 ]]; then
@@ -1161,6 +1358,133 @@ if [[ -s "$F/w-before.txt" ]]; then
     pass "GL20.g non-vacuity: the before-listing was non-empty"
 else
     fail "GL20.g non-vacuity: the before-listing was empty"
+fi
+
+echo ""
+echo "=== MUT01-MUT05: the mutation matrix (--self-mutate only) ==="
+# Every mutant is a COPY. In each, exactly ONE of the two subject files is
+# mutated and the OTHER is copied byte-for-byte from the shipped tree, so a
+# behaviour change proves the coupling is real rather than assumed -- this is
+# the content-identity half of D2's "one implementation" claim (task-012's own
+# AC), not merely the textual claim ST03/ST04 already make. Off by default: it
+# is five extra detector spawns, and S1's "~10s toll" rationale is a subprocess
+# cost, matching the five sibling graph suites that already gate a mutation
+# matrix behind this same flag.
+if [[ "$NODE_OK" -ne 1 ]]; then
+    skip "MUT01-MUT05 the mutation matrix — node >= 20 unavailable"
+elif [[ "$SELF_MUTATE" -ne 1 ]]; then
+    echo "Mutation matrix not run. Use --self-mutate to run it (five extra detector invocations)."
+else
+    # S5 baseline: the digest is taken NOW, before any mutant is staged, and
+    # re-verified once at the end -- every mutant below writes only under
+    # $FIXTURE, and this is what proves it rather than assumes it.
+    BASE_DIGEST=$(cat "$DETECTOR" "$PREDICATE" | md5sum)
+
+    # Run a mutant pair (a directory holding one detect-kb-gaps.mjs and one
+    # coverage-predicate.mjs, exactly one of them mutated) against one input.
+    mut_run() {
+        local dir="$1" table="$2" nodes="$3" out="$4"
+        node "$dir/detect-kb-gaps.mjs" --table "$table" --nodes "$nodes" --output "$out" \
+            > "$dir/stdout.txt" 2>&1
+    }
+
+    # --- MUT01: D2 content identity. Mutate ONLY the predicate copy -- drop
+    # 'documents' from COVERAGE_BEARING. 'documents' is what covers BOTH
+    # tools/gen.mjs (directly) and pkg/tools/deep/file.sh (via the ancestor arm)
+    # in the main fixture, so a real coupling must flip both; a detector holding
+    # a private copy of the logic -- the exact defect unifying the two files
+    # removed -- would flip neither, because nothing it reads would have changed.
+    M1="$FIXTURE/mut1"; mkdir -p "$M1"
+    cp "$DETECTOR" "$M1/detect-kb-gaps.mjs"
+    MUT01_FROM=$(printf '\t%s,' "'documents'")
+    if mutate_js "$PREDICATE" "$M1/coverage-predicate.mjs" "$MUT01_FROM" "" "MUT01"; then
+        mut_run "$M1" "$F/relationships.md" "$F/nodes.tsv" "$M1/led.md"
+        if grep -q '| tools/gen.mjs |' "$M1/led.md" 2>/dev/null \
+            && grep -q '| pkg/tools/deep/file.sh |' "$M1/led.md" 2>/dev/null; then
+            pass "MUT01 (D2, content identity) dropping 'documents' from the PREDICATE COPY alone — the detector copy is byte-identical to the shipped file — turns both previously-covered nodes into gaps: the detector's answer is decided by this file's bytes, not by a private copy"
+        else
+            fail "MUT01 (D2, content identity) the mutated predicate had no effect on the detector's output — either the detector holds its own copy of the coverage logic, or the mutation missed the live code path"
+        fi
+    fi
+
+    # --- MUT02: D3 F2. Disable ONLY the ancestor-path arm (the for-loop inside
+    # artifactEndpoints), leaving COVERAGE_BEARING untouched. The
+    # ancestor-covered descendant must flip; the directly-covered node must NOT
+    # -- isolating F2 from condition 3's membership test in general.
+    M2="$FIXTURE/mut2"; mkdir -p "$M2"
+    cp "$DETECTOR" "$M2/detect-kb-gaps.mjs"
+    if mutate_js "$PREDICATE" "$M2/coverage-predicate.mjs" \
+            'for (let i = 0; i < limit; i += 1) {' \
+            'for (let i = 0; i < 0; i += 1) {' \
+            "MUT02"; then
+        mut_run "$M2" "$F/relationships.md" "$F/nodes.tsv" "$M2/led.md"
+        if grep -q '| pkg/tools/deep/file.sh |' "$M2/led.md" 2>/dev/null; then
+            pass "MUT02 (D3 F2) disabling ONLY the ancestor-path arm turns the ancestor-covered descendant into a gap — F2 is load-bearing, not vacuous"
+        else
+            fail "MUT02 (D3 F2) the ancestor-covered descendant is STILL covered after the ancestor arm was disabled — GL02 is not exercising what it claims"
+        fi
+        if grep -q '| tools/gen.mjs |' "$M2/led.md" 2>/dev/null; then
+            fail "MUT02 (D3 F2) control: the DIRECTLY-covered node became a gap too — this mutation reached more than the ancestor arm alone"
+        else
+            pass "MUT02 (D3 F2) control: the directly-covered node is unaffected, so this mutant isolates the ancestor arm"
+        fi
+    fi
+
+    # --- MUT03: D2a condition 3. Admit 'mentions' into COVERAGE_BEARING. The
+    # mentions-only node (GL16's own case) must flip from gap to covered, or the
+    # exclusion GL16/KIND06 rely on was never live to begin with.
+    M3="$FIXTURE/mut3"; mkdir -p "$M3"
+    cp "$DETECTOR" "$M3/detect-kb-gaps.mjs"
+    MUT03_FROM=$(printf '\t%s,' "'documents'")
+    MUT03_TO=$(printf '\t%s,\n\t%s,' "'documents'" "'mentions'")
+    if mutate_js "$PREDICATE" "$M3/coverage-predicate.mjs" "$MUT03_FROM" "$MUT03_TO" "MUT03"; then
+        mut_run "$M3" "$F/relationships.md" "$F/nodes.tsv" "$M3/led.md"
+        if grep -q '| lib/mentioned.sh |' "$M3/led.md" 2>/dev/null; then
+            fail "MUT03 (D2a condition 3) the mentions-only node is STILL a gap after 'mentions' was admitted to COVERAGE_BEARING — the mutation missed the live code path"
+        else
+            pass "MUT03 (D2a condition 3) admitting 'mentions' clears the mentions-only node's gap — the exclusion is real, not coincidentally unneeded"
+        fi
+    fi
+
+    # --- MUT04: AC-G1. Disable the node_kind assertion in the DETECTOR this
+    # time (the predicate copy is untouched). NEG11's own fixture, unmutated,
+    # must stop aborting and run to completion.
+    M4="$FIXTURE/mut4"; mkdir -p "$M4"
+    cp "$PREDICATE" "$M4/coverage-predicate.mjs"
+    if mutate_js "$DETECTOR" "$M4/detect-kb-gaps.mjs" \
+            'if (kind !== CANDIDATE_KIND) {' \
+            'if (false && kind !== CANDIDATE_KIND) {' \
+            "MUT04"; then
+        node "$M4/detect-kb-gaps.mjs" --table "$F/relationships.md" --nodes "$F/n-kind.tsv" \
+            --output "$M4/led.md" > "$M4/stdout.txt" 2>&1
+        M4_CODE=$?
+        if [[ "$M4_CODE" -eq 0 ]]; then
+            pass "MUT04 (AC-G1) disabling the node_kind check turns NEG11's own aborting fixture into a clean exit — GL14's check is load-bearing"
+        else
+            fail "MUT04 (AC-G1) NEG11's fixture still aborted (exit $M4_CODE) after the check was disabled — the mutation missed the live code path"
+        fi
+    fi
+
+    # --- MUT05: AC-G3 / D4. Retarget 'named-unit' to MEDIUM in the DETECTOR
+    # copy. tools/orphan.sh (GL04's own [LOW] case) must be re-ranked.
+    M5="$FIXTURE/mut5"; mkdir -p "$M5"
+    cp "$PREDICATE" "$M5/coverage-predicate.mjs"
+    if mutate_js "$DETECTOR" "$M5/detect-kb-gaps.mjs" \
+            "'named-unit': 'LOW'," "'named-unit': 'MEDIUM'," \
+            "MUT05"; then
+        mut_run "$M5" "$F/relationships.md" "$F/nodes.tsv" "$M5/led.md"
+        if grep -q '| \[MEDIUM\] | Pending | tools/orphan.sh ' "$M5/led.md" 2>/dev/null; then
+            pass "MUT05 (AC-G3 / D4) retargeting named-unit's severity re-ranks tools/orphan.sh accordingly — GL04's mapping check is not vacuous"
+        else
+            fail "MUT05 (AC-G3 / D4) tools/orphan.sh's severity did not follow the mutated mapping"
+        fi
+    fi
+
+    # S5: every mutant above wrote only to a copy under $FIXTURE. Verify the two
+    # real subject files are still exactly the bytes this run started with.
+    NOW_DIGEST=$(cat "$DETECTOR" "$PREDICATE" | md5sum)
+    assert_eq "$NOW_DIGEST" "$BASE_DIGEST" \
+        "MUTz (S5) the shipped detector and predicate are byte-unchanged after all five mutants"
 fi
 
 # ===========================================================================
