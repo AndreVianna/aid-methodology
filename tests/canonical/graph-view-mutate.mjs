@@ -25,6 +25,14 @@
 // USAGE
 //   node graph-view-mutate.mjs <repo-root> <out-bundle.mjs> [mutation-id]
 //   Exit 0 on success; 2 when a mutation pattern did not apply exactly once.
+//
+// GRAPH_BUNDLE_INCLUDE_CANVAS=1 (env, task-018/feature-008's GC* suite) appends
+// graph-canvas.js as a FIFTH file, matching build-graph-src.mjs's own
+// auto-detected viewFileOrder (canvas mounts last, after the table -- feature-007
+// step 6). ADDITIVE AND OFF BY DEFAULT: test-graph-view-shell.sh's own four-file
+// bundle (CAT02-CAT04, GT, GV, DT) and its CAT03b line-budget arithmetic
+// (`bundle_lines == total_parts + 3`, three separators for four files) are
+// unaffected unless this variable is set, which that suite never does.
 
 import fs from 'node:fs';
 import path from 'node:path';
@@ -46,6 +54,9 @@ const FILES = [
 	['controls', 'canonical/aid/templates/knowledge-graph/graph-controls.js'],
 	['table', 'canonical/aid/templates/knowledge-graph/graph-table.js'],
 ];
+if (process.env.GRAPH_BUNDLE_INCLUDE_CANVAS === '1') {
+	FILES.push(['canvas', 'canonical/aid/templates/knowledge-graph/graph-canvas.js']);
+}
 
 /**
  * The mutation catalogue: which file, what to replace, and which defect it is.
@@ -125,6 +136,54 @@ const MUTATIONS = {
 		append: '\nconst el = 1;\n',
 		defect: 'a top-level name already declared by an earlier file in the shared scope',
 		expect: '(node --check must reject the bundle)',
+	},
+	// task-018 (feature-008's GC* suite, GRAPH_BUNDLE_INCLUDE_CANVAS=1 only) --------
+	// Narrowed to the Layer-1 (draw-record conformance) assertions that
+	// survived the owner's mid-task scope correction -- GC01/GC11/GC14/GC18 and
+	// their mutations (badge-from-emphasis, forced-opacity-leak,
+	// wheel-commits-every-event) were dropped along with the assertions they
+	// proved non-vacuous, on the finding that the full GC01-GC19 series could
+	// pass while a real page drew nothing visible. See graph-canvas-dom.mjs's
+	// own banner for the reasoning and for what moved to tests/ui/ instead.
+	//
+	// THE HISTORICAL DEFECT ITSELF (ledger row 4, CRITICAL; AC-S10, GC19).
+	// `PIXI.Renderer` is a type-only export in PixiJS v8 -- no runtime constructor
+	// exists under that name. Reverting ONLY the construction call (never the
+	// capability probe, which stays `typeof PIXI.WebGLRenderer === 'function'`)
+	// reproduces the exact bug the module's own doc comment names: the probe
+	// passes, construction always throws, and `mountCanvas` falls into
+	// `gcMountUnavailable` on every real mount. THIS IS THE ANTI-VACUITY-VARIANT-5
+	// PROOF -- a suite whose happy-path assertions (the set/content equality
+	// against the ViewModel, and the buffer-bounds check) do not go red against
+	// this is exactly the defect this file's own history recorded: "every
+	// assertion about its fallback passed green".
+	'canvas-old-renderer-symbol': {
+		file: 'canvas',
+		from: '		renderer = new PIXI.WebGLRenderer();',
+		to: '		renderer = new PIXI.Renderer();',
+		defect: 'construction reverted to the v7 symbol PIXI.Renderer, which v8 never defines, while the capability probe still checks WebGLRenderer -- capability passes, construction always throws',
+		expect: 'GC09,GC10,GC13,GC21bounds',
+	},
+	// AC-10/AC-S1/GC13/Q21: the founding defect class this whole work traces to --
+	// a mark's content derived from the identifier PREFIX instead of the
+	// ViewModel entry for its own id. The fixture's ext: pair (one web-page, one
+	// image, feature-007 AC-S3) is the construction no id-deriving canvas passes.
+	'canvas-prefix-glyph': {
+		file: 'canvas',
+		from: '			glyph: node.glyph,\n			colourToken: encoding ? encoding.colourToken : null,',
+		to: "			glyph: ({ kb: '\\u25CF', int: '\\u2B22', ext: '\\u25CB' })[node.id.split(':')[0]] || node.glyph,\n			colourToken: encoding ? encoding.colourToken : null,",
+		defect: "a node's glyph derived from its identifier prefix rather than from Node.glyph/viewModel.nodeEncoding, which the ext: web-page/image pair (same prefix, different kind) exposes",
+		expect: 'GC13',
+	},
+	// AC-S8/GC09: the platform-forced width/height are the only two attributes
+	// this feature may add. A stray tabindex is exactly AC-21's trap -- a control
+	// (a tab stop) appearing on the canvas itself.
+	'canvas-tab-stop': {
+		file: 'canvas',
+		from: "		canvasEl = document.createElement('canvas');\n",
+		to: "		canvasEl = document.createElement('canvas');\n			canvasEl.setAttribute('tabindex', '0');\n",
+		defect: 'the created canvas carries an authored tabindex, giving it a tab stop AC-S8/AC-21 forbid',
+		expect: 'GC09',
 	},
 	// Not a defect either: a colour literal, to prove the colour-literal grep bites.
 	'colour-literal': {

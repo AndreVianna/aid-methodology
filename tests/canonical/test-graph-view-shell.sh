@@ -45,8 +45,8 @@
 #        colour literal, no motion, no shell control attribute, and the page's
 #        own table-first DOM order and two-live-region count.
 #   GV   feature-007 SPEC's own numbered design-decision assertions (D10's
-#        shared-predicate/two-runtime group; GV17, GV19, GV22, GV24 are NOT YET
-#        AUTHORED -- see "OPEN, NOT AUTHORED" below).
+#        shared-predicate/two-runtime group). All 28 ids are now authored -- see
+#        "STAGE 4" below for the four that closed last (GV17, GV19, GV22, GV24).
 #   BLD  task-013's two previously-ownerless files (build-graph-src.mjs,
 #        render-graph-view.sh): the real placeholder set matches the skeleton's
 #        own, derived from both files at run time (BLD01), and the real
@@ -107,21 +107,46 @@
 #     GV28 -- a dedicated small CONNECTED fixture (never FX.FIXTURE, whose one
 #       gap node is degree-0 and therefore unreachable by any focus ball), so a
 #       live selection elsewhere still keeps every other gap id inside the ball.
-#   STILL OPEN, and for a stated reason each:
-#     GV17, GV19, GV22, GV24 -- need a real DOM: the `data-control` manifest<->DOM
-#       bijection, feature-003's heading-slug algorithm, the fold's
-#       keyboard-driven both-directions proof, and a live per-preset DOM
-#       write-back. Belong in the DOM half (graph-view-dom.mjs) once jsdom is a
-#       reachable dependency (tech-debt W5-9); asserting them headless here would
-#       misrepresent a DOM-shaped obligation as headless-provable.
 #   CLOSED IN THE FIX PASS (task-014 review row 6/7): GV18's concept
 #   defining-document (@doc) route and its fallback tie-break over two
 #   equal-rank candidates, and GV20's two label-collision sub-clauses, are now
 #   asserted over dedicated fixtures built inline in graph-view-gv.mjs (never in
 #   the shared graph-view-fixture.mjs). Neither id carries an in-line NOTE
 #   disclosing a gap any more.
-#   Owner: a follow-up task against this same suite file for the residue above;
-#   nothing here claims otherwise.
+#   STAGE 4 (task-014, closing the four that STAGE 3 left "STILL OPEN" behind a
+#   "needs a real DOM" classification cited to tech-debt W5-9) -- the premise was
+#   RE-VALIDATED against disk evidence rather than accepted, and did not survive:
+#   jsdom 29.1.1 IS present on this machine, vendored at `site/node_modules/jsdom`
+#   for the site build, and IS resolvable to this suite via the `AID_GRAPH_JSDOM`
+#   override `graph-view-dom.mjs` already documents (see that file's own header).
+#   W5-9 is RESOLVED and removed on that finding (`.aid/knowledge/tech-debt.md`
+#   changelog, 2026-08-06) -- what remains open is narrower and CI-shaped (nothing
+#   sets `AID_GRAPH_JSDOM` in `.github/workflows/test.yml`, and `site/node_modules/`
+#   is not guaranteed present on a fresh clone), not a "the harness cannot express
+#   this" gap. Two of the four were additionally OVER-SCOPED by STAGE 3's own
+#   classification, and are corrected here rather than merely unblocked:
+#     GV19 needs NO DOM at all. Its authority is `rel_slug_heading`, a bash
+#       function in feature-003's own relationship-schema.sh, invoked as a real
+#       subprocess over a self-authored fixture document (S5) -- never a second,
+#       JS-side copy of D2a-1. Authored headless in graph-view-gv.mjs.
+#     GV22 -- every clause but ONE is a plain GraphModel/ViewModel property
+#       (foldedInto, groups[].foldable/expanded, edgeFold, counts, the
+#       focus-through-the-fold precedence, and the absence of any fold under the
+#       four other dimensions), needing neither a page nor jsdom, and is authored
+#       headless as GV22a in graph-view-gv.mjs -- the SAME split GV23 already
+#       uses. Only the data-group-toggle bijection is truly DOM-shaped; it is
+#       GV22b in graph-view-dom.mjs.
+#   GV17 and GV24 are genuinely DOM-shaped as STAGE 3 said, and are now authored
+#   in graph-view-dom.mjs (GV17a-d, GV24), gated behind the SAME jsdom SKIP the
+#   file's pre-existing DT ids already use -- see that file's own header for the
+#   ids and CLASSES list. All six new ids were shown, during authorship, to fail
+#   against a deliberate mutation (a disabled control handler in a scratch copy of
+#   graph-controls.js, an orphan data-control/data-group-toggle attribute, a
+#   wrong-key expandedGroups write caught in this very pass, and a mutated
+#   `## Contents` fragment).
+#   Owner: the file is now closed against all 28 GV ids; the CI-wiring residual
+#   named above is a candidate for its own tech-debt row if the owner wants one
+#   tracked, not silently opened here.
 #
 # AC-TO-ASSERTION MAP (feature-007-graph-view-shell/SPEC.md § Tests)
 #   GV01 -> D10 rules 1-3,5; AC-10   (predicate + view files: no load statement,
@@ -155,7 +180,19 @@
 #   GV28 -> D4, D6d, D6f, D7a  (the five-value nodeEmphasis precedence and the
 #                   edge axis's own exhaustion, over a dedicated fixture;
 #                   see graph-view-gv.mjs)
-#   GV17, GV19, GV22, GV24 -> NOT YET AUTHORED (see above; need a real DOM)
+#   GV19 -> D7b  (feature-003's D2a-1 slug algorithm, over a REAL subprocess of
+#                   rel_slug_heading and a self-authored ## Contents fixture; no
+#                   DOM, no jsdom; see graph-view-gv.mjs -- STAGE 4)
+#   GV22a -> D6c, FR-13, D8, AC-8  (the fold's model/ViewModel clauses -- headless;
+#                   see graph-view-gv.mjs -- STAGE 4)
+#   GV22b -> D6c, FR-13, D8, AC-8  (the one DOM-shaped clause: the group-toggle
+#                   bijection before/after an expansion; see graph-view-dom.mjs)
+#   GV17 -> AC-21, D8, NFR-6  (the CONTROL_MANIFEST<->data-control DOM bijection,
+#                   native focusability, keyboard-driven LensState effects, the
+#                   viewport handle with/without one, and the group-toggle
+#                   presence/operability; see graph-view-dom.mjs, ids GV17a-d)
+#   GV24 -> AC-8  (after each of the four presets, every named control class stays
+#                   present, enabled and writable; see graph-view-dom.mjs)
 #
 # S1 BUDGET (one subject invocation per distinct input, enumerated by grepping
 # every call site, wrapper bodies counted once PER CALL SITE, not once per
@@ -177,13 +214,17 @@
 # already living inside GV_MJS. GV16's two non-vacuity scratch bundles are
 # NOT subprocess spawns at all (a plain in-process `import()` of a freshly
 # written temp file, same mechanism GV_MJS itself is loaded by) and so are
-# not counted in this budget either way.
+# not counted in this budget either way. GV19's three `rel_slug_heading` calls
+# (two headings plus one mutated heading, its own non-vacuity proof) ARE
+# counted below, on the same footing as GV13's contrast-check.mjs calls --
+# each is a real subprocess invocation of a subject outside this suite's own
+# four view files, even though (like GV13's) it is sub-second.
 #
-# DEFAULT (no args) -- 13 subject-script invocations:
+# DEFAULT (no args) -- 16 subject-script invocations:
 #   CAT02, CAT04                                    node MUTATE_MJS   x2
 #   GT (model over the plain bundle)                node MODEL_MJS    x1
 #   GV06-GV28 fixture layer                         node GV_MJS       x1
-#     (GV_MJS itself spawns THREE further subject invocations, counted here as
+#     (GV_MJS itself spawns SIX further subject invocations, counted here as
 #     additional call sites rather than folded into the line above:
 #       - GV23b drives render-graph-view.sh end to end a SECOND time, over its
 #         own fixture, independently of BLD02's run -- see the RENDER_VIEW line
@@ -192,16 +233,20 @@
 #         real assembled palette (component-css.css + graph-css.css) and once
 #         over a scratch copy with one extra token added, to prove the
 #         "every declared token is found" check actually discriminates. Neither
-#         is gated -- see the S3 note above.)
+#         is gated -- see the S3 note above;
+#       - GV19 drives feature-003's own rel_slug_heading (relationship-schema.sh)
+#         via bash THREE times -- two headings plus one mutated heading, its own
+#         non-vacuity proof. Not gated either -- see the S3 note above.)
 #   DT01 (--assemble-only)                          node DOM_MJS      x1
-#   DT (full DOM run)                               node DOM_MJS      x1
+#   DT (full DOM run, incl. GV17/GV22b/GV24)        node DOM_MJS      x1
 #   GH (static page, booted page)                   bash VALIDATE_HTML x2
 #   GV03-GV05                                       node graph-view-predicate-check.mjs x1
 #   BLD01/BLD02/GV02 (the suite's own end-to-end render) bash RENDER_VIEW x1
 #   GV23b (GV_MJS's own end-to-end render, a second fixture) bash RENDER_VIEW x1
 #   GV13 (GV_MJS's two contrast-check.mjs runs)     node CONTRAST_CHECK x2
+#   GV19 (GV_MJS's three rel_slug_heading runs)     bash BASH_SLUG x3
 #   ------------------------------------------------------------------------
-#   TOTAL: 13 subject-script invocations for the default run.
+#   TOTAL: 16 subject-script invocations for the default run.
 #
 # `--self-mutate` ADDS exactly 17 more subprocess spawns (30 total), all inside
 # the GX/DX mutation matrix:

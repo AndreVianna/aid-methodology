@@ -703,6 +703,88 @@ async function buildScratchBundle(patch) {
 }
 
 // ===========================================================================
+// GV19 -- every `section` fragment equals feature-003 D2a-1's slug algorithm
+// applied to the heading, and where a document's own `## Contents` links that
+// heading, the two fragments are identical.
+//
+// task-014 STAGE 3's own header comment classified this id as needing "a real
+// DOM" and deferred it to graph-view-dom.mjs (tech-debt W5-9). That premise did
+// not survive re-validation: D2a-1's authority is `rel_slug_heading`, a bash
+// function in feature-003's relationship-schema.sh (harvest-declared.sh:1124),
+// and a `## Contents` link is plain markdown text -- no page, no browser and no
+// jsdom is involved in binding the two. This block drives the REAL function as
+// a subprocess (never a JS re-implementation of D2a-1) and compares it against
+// a self-authored fixture document (S5), never against an on-disk KB doc whose
+// headings could drift independently of this test.
+// ===========================================================================
+{
+	const schemaSh = path.join(repoRoot, 'canonical/aid/scripts/graph/relationship-schema.sh');
+	/** The REAL rel_slug_heading, invoked exactly as harvest-declared.sh invokes
+	 *  it (`LC_ALL=C`, sourced, called positionally) -- never a second, JS-side
+	 *  copy of D2a-1's five steps. */
+	function slugHeading(text) {
+		return execFileSync('bash',
+			['-c', 'set -euo pipefail; export LC_ALL=C; source "$1"; rel_slug_heading "$2"', 'gv19', schemaSh, text],
+			{ encoding: 'utf8' });
+	}
+
+	// Two headings exercising D2a-1's own documented quirks -- an ampersand
+	// (deleted, not replaced, so it leaves a double hyphen behind) and an arrow
+	// (three literal hyphens, D2a-1's own no-run-collapsing rule) -- the same
+	// shape as the real on-disk instance the SPEC's changelog cites
+	// (architecture.md's "Build & Distribute Architecture ... canonical ->
+	// profiles -> packages"), reproduced here as an authored fixture (S5) rather
+	// than read off that file, so a future edit to that document's headings
+	// cannot perturb this suite.
+	const headingA = 'Build & Ship (canonical -> profiles)';
+	const headingB = 'Overview';
+	const slugA = slugHeading(headingA);
+	const slugB = slugHeading(headingB);
+
+	const fixtureDoc = '# Title\n\n## Contents\n\n- [' + headingA + '](#' + slugA + ')\n- [' + headingB + '](#' + slugB + ')\n\n'
+		+ '## ' + headingA + '\n\nBody.\n\n## ' + headingB + '\n\nBody.\n';
+	/** The Contents link's OWN fragment, read back out of the fixture text by a
+	 *  plain regex keyed on the LITERAL heading label -- never on the slug this
+	 *  block already computed -- so a defect that made the two diverge would be
+	 *  caught rather than a slug compared against itself. */
+	function contentsFragmentFor(label) {
+		const re = new RegExp('\\[' + label.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '\\]\\(#([^)]+)\\)');
+		const m = re.exec(fixtureDoc);
+		return m ? m[1] : null;
+	}
+	const contentsA = contentsFragmentFor(headingA);
+	const contentsB = contentsFragmentFor(headingB);
+
+	// A section node id embeds the slug verbatim (D7b's `kb:<doc>#<heading-slug>`
+	// grammar) and openTarget's `section` case is a plain passthrough of that
+	// fragment (graph-model.js:1314-1317) -- exercised here over a REAL model
+	// rather than asserted as a string operation this file performs itself.
+	const sectionId = 'kb:gv19-doc.md#' + slugA;
+	const row = '| kb:gv19-doc.md | document | gv19-doc.md | ' + sectionId + ' | section | ' + headingA
+		+ ' | has-part | part-of | declared |   |';
+	const gv19Model = M.parseRelationships(buildFile({ rows: [row], gaps: [] }));
+	const gv19Store = M.createStore(gv19Model, M.INITIAL_LENS);
+	const openTargetForSection = gv19Store.openTarget(sectionId);
+
+	// Non-vacuity: a heading mutated by one character must change the slug
+	// D2a-1 computes, so `slugA === contentsA` is not vacuously true regardless
+	// of content -- the REAL subprocess is shown to discriminate, not merely
+	// echo its input.
+	const slugMutated = slugHeading(headingA + 'x');
+
+	ok('GV19', 'a heading exercising D2a-1\'s ampersand-deletion and non-collapsing-hyphen rules, and a plain heading, both slugify -- via a REAL subprocess of feature-003\'s own rel_slug_heading -- to the SAME fragment the fixture document\'s own ## Contents link to each heading uses; the section node id built from that slug resolves through openTarget to the identical fragment; and a one-character heading mutation changes the computed slug',
+		slugA.length > 0 && slugB.length > 0 && slugA === contentsA && slugB === contentsB
+		&& openTargetForSection === './gv19-doc.md#' + slugA
+		&& slugMutated !== slugA,
+		'slugA=' + slugA + ' contentsA=' + contentsA + ' slugB=' + slugB + ' contentsB=' + contentsB
+		+ ' openTarget=' + openTargetForSection + ' mutated=' + slugMutated);
+	note('GV19 needs no DOM and no jsdom: the fragment obligation is a text-to-text comparison against a REAL '
+		+ 'subprocess of feature-003\'s own rel_slug_heading (relationship-schema.sh), over a self-authored fixture '
+		+ '(S5). task-014 STAGE 3\'s "needs a real DOM" classification for this id is corrected by this block -- see '
+		+ 'the task hand-off.');
+}
+
+// ===========================================================================
 // GV20 -- nodeShortLabels is stable across a filter change and a lens change;
 // nodeLabels is never the shortened form
 // ===========================================================================
@@ -819,6 +901,106 @@ async function buildScratchBundle(patch) {
 	note('GV21 this is the decisive case named in the SPEC: a PREFIX-keyed kb-unbacked test (treating any `int:` neighbour '
 		+ 'as backing) would have wrongly EXCLUDED kb:delta.md from kb-unbacked here, because docs/media/gv21-diagram.png is '
 		+ '`int:`-prefixed. The KIND-keyed test used here (Kind === source-artifact only) correctly includes it.');
+}
+
+// ===========================================================================
+// GV22a -- the Overview fold, both directions (D6c, FR-13, D8, AC-8), at the
+// GraphModel/ViewModel level. This id's one truly DOM-shaped clause -- "exactly
+// one focusable data-group-toggle element exists per group whose foldable is
+// non-zero ... before and after an expansion, and none for any other group" --
+// is asserted separately as GV22b in graph-view-dom.mjs, over a real page;
+// task-014 STAGE 3's "needs a real DOM" classification covered this id
+// wholesale, which over-scoped it -- every OTHER clause here is a plain
+// ViewModel/GraphModel property, asserted headless like every other GV id in
+// this file. See the task-014 hand-off for the correction.
+// ===========================================================================
+{
+	const model = M.parseRelationships(FX.FIXTURE);
+	const store = M.createStore(model, M.INITIAL_LENS);
+	// The `document` dimension's group KEY is the document's bare NAME (e.g.
+	// 'alpha.md'), not its `kb:`-prefixed node id -- confirmed by reading the
+	// live `groups[].key` values rather than assumed, after an earlier draft of
+	// this block silently proved nothing by adding the WRONG key to
+	// `expandedGroups` (a real premise this task-014 pass caught in itself, not
+	// only in W5-9's own premise).
+	const groupKeyAlpha = 'alpha.md';
+	const headId = 'kb:alpha.md';
+	const memberSection = 'kb:alpha.md#overview';
+	const memberFact = 'kb:alpha.md#fact:renderer-choice';
+
+	store.setLens({ grouping: 'document' });
+	const vm = store.getViewModel();
+	const group = vm.groups.find((g) => g.key === groupKeyAlpha);
+	const membersNotVisible = !vm.visibleNodes.some((n) => n.id === memberSection) && !vm.visibleNodes.some((n) => n.id === memberFact);
+	const foldedIntoOk = vm.foldedInto.get(memberSection) === headId && vm.foldedInto.get(memberFact) === headId;
+	const foldableOk = !!group && group.foldable === 2;
+	const hiddenNodesCoversFold = vm.counts.hiddenNodes >= 2;
+	const expandedFalse = !!group && group.expanded === false;
+
+	// Row 9 (alpha.md -has-part-> #overview) resolves both ends to the SAME
+	// head, so its edgeFold is the literal 'collapsed' while the ROW ITSELF
+	// stays in visibleEdges with its own id/key/row untouched (graph-model.js's
+	// own comment: "neither surface draws or lists it... two rows... stay two
+	// entries" -- the row is retained, only its fold state changes).
+	const collapsedEdge = vm.visibleEdges.find((e) => e.row === 9);
+	const collapsedOk = !!collapsedEdge && vm.edgeFold.get(collapsedEdge.key) === 'collapsed'
+		&& collapsedEdge.sourceId === headId && collapsedEdge.targetId === memberSection && collapsedEdge.key.indexOf('has-part') !== -1;
+	const hiddenEdgesCoversFold = vm.counts.hiddenEdges >= 1;
+
+	// --- Expansion, and its reversal -----------------------------------------
+	store.setLens({ expandedGroups: [groupKeyAlpha] });
+	const vmExpanded = store.getViewModel();
+	const groupExpanded = vmExpanded.groups.find((g) => g.key === groupKeyAlpha);
+	const restored = vmExpanded.visibleNodes.some((n) => n.id === memberSection) && vmExpanded.visibleNodes.some((n) => n.id === memberFact);
+	const foldableUnchanged = !!groupExpanded && groupExpanded.foldable === 2;
+	const expandedTrueOk = !!groupExpanded && groupExpanded.expanded === true;
+	const foldedIntoEmptiedForGroup = !vmExpanded.foldedInto.has(memberSection) && !vmExpanded.foldedInto.has(memberFact);
+
+	store.setLens({ expandedGroups: [] });
+	const vmRefolded = store.getViewModel();
+	const refolded = !vmRefolded.visibleNodes.some((n) => n.id === memberSection) && !vmRefolded.visibleNodes.some((n) => n.id === memberFact);
+
+	// --- Focus resolves through the fold: a folded section as focus.nodeId ---
+	store.setLens(M.INITIAL_LENS);
+	store.setLens({ grouping: 'document', 'focus.nodeId': memberSection });
+	const vmFocus = store.getViewModel();
+	const focusResolvedAway = !vmFocus.visibleNodes.some((n) => n.id === memberSection);
+	const headCarriesFocus = vmFocus.nodeEmphasis.get(headId) === 'focus';
+
+	// --- Counts are total over the WHOLE model at this lens ------------------
+	store.setLens(M.INITIAL_LENS);
+	store.setLens({ grouping: 'document' });
+	const vmCounts = store.getViewModel();
+	const countsNodesTotal = vmCounts.counts.nodes + vmCounts.counts.hiddenNodes === model.nodes.size;
+	const countsEdgesTotal = vmCounts.counts.edges + vmCounts.counts.hiddenEdges === model.rowCount;
+
+	// --- No fold at all under the four OTHER dimensions ----------------------
+	let noFoldElsewhere = true;
+	const elsewhereDetail = [];
+	for (const otherGrouping of ['none', 'relation-category', 'node-kind', 'provenance']) {
+		store.setLens(M.INITIAL_LENS);
+		store.setLens({ grouping: otherGrouping });
+		const vmOther = store.getViewModel();
+		const clean = vmOther.foldedInto.size === 0 && vmOther.groups.every((g) => g.foldable === 0);
+		if (!clean) noFoldElsewhere = false;
+		elsewhereDetail.push(otherGrouping + '=' + clean);
+	}
+	store.setLens(M.INITIAL_LENS);
+
+	ok('GV22a', 'under grouping=document a folded document\'s section AND fact members are absent from visibleNodes, present in foldedInto mapping to the document, counted in groups[].foldable (2) and in counts.hiddenNodes, with that group\'s expanded false; the has-part row between the document and its folded section keeps its own id/key/row in visibleEdges while its edgeFold reads \'collapsed\', and is counted in counts.hiddenEdges; adding the group\'s key to expandedGroups restores both members, leaves foldable unchanged, sets expanded true and empties the group\'s share of foldedInto, and removing the key folds them again; a folded section held as focus.nodeId stays absent from visibleNodes while its document carries nodeEmphasis \'focus\' instead; counts.nodes+hiddenNodes and counts.edges+hiddenEdges are each total over the WHOLE model; and foldedInto is empty with every foldable 0 under all four other grouping dimensions',
+		membersNotVisible && foldedIntoOk && foldableOk && hiddenNodesCoversFold && expandedFalse
+		&& collapsedOk && hiddenEdgesCoversFold
+		&& restored && foldableUnchanged && expandedTrueOk && foldedIntoEmptiedForGroup
+		&& refolded
+		&& focusResolvedAway && headCarriesFocus
+		&& countsNodesTotal && countsEdgesTotal
+		&& noFoldElsewhere,
+		'group=' + JSON.stringify(group) + ' collapsedEdge=' + JSON.stringify(collapsedEdge) + ' restored=' + restored
+		+ ' refolded=' + refolded + ' focusResolvedAway=' + focusResolvedAway + ' headCarriesFocus=' + headCarriesFocus
+		+ ' countsNodesTotal=' + countsNodesTotal + ' countsEdgesTotal=' + countsEdgesTotal + ' elsewhere=' + elsewhereDetail.join(','));
+	note('GV22a\'s one DOM-shaped clause -- the data-group-toggle bijection over foldable groups, before and after an '
+		+ 'expansion -- is asserted separately as GV22b in graph-view-dom.mjs, over a real page; this block covers '
+		+ 'every other clause, headless, needing neither a page nor jsdom.');
 }
 
 // ===========================================================================

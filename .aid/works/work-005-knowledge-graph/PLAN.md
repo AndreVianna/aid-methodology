@@ -119,6 +119,7 @@ them will either over-parallelise across a gate or under-parallelise inside one.
 | task-028 | task-022, task-025, task-027 | 5 | 12 |
 | task-029 | task-028 | 5 | 13 |
 | task-031 | task-013 | 3 | 6 |
+| task-032 | task-017 | 3 | 7 |
 
 > **`task-022` depends on `task-023`, a higher number.** That is deliberate and not a cycle:
 > the full FR-28 rubric's `V-S2` verdict over `graph.html` turns on the packaging shape
@@ -151,7 +152,7 @@ wave 3: task-007, task-030
 wave 4: task-008, task-010, task-012
 wave 5: task-009, task-011, task-013
 wave 6: task-014, task-015, task-017, task-019, task-031
-wave 7: task-016, task-018, task-020, task-023
+wave 7: task-016, task-018, task-020, task-023, task-032
 wave 8: task-021
 wave 9: task-022, task-024
 wave 10: task-025, task-026

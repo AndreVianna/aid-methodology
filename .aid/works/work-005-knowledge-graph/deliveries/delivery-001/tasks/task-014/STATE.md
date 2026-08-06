@@ -1,8 +1,8 @@
 ---
-state: 'In Review'
+state: Done
 review: "--"
 elapsed: "--"
-notes: 'Stage 2: fixture layer (graph-view-gv.mjs) authors GV06,07,08,09,10,11,12,14,15,18,20,21,23a,25,26,27 headless (16 ids). GV23b authored + FAILS (real finding: render-graph-view.sh prints no console summary of runtime prerequisites). Suite 152-->168 pass, 2 fail (GV23b + pre-existing dirty graph-css.css from concurrent task-017/019, not caused here). Still open: GV13,16,17,19,22,24,28 (DOM/second-subject/complex, see suite header). No reviewer sub-agent dispatched -- no Task/dispatch tool was available in this session (tool list was Read/Glob/Grep/Write/Edit/Bash only).'
+notes: 'Stage 4: re-validated Stage 3''s four blocked GV ids against disk evidence rather than accepting the block -- jsdom 29.1.1 is present (vendored under site/node_modules for the site build) and IS resolvable via the AID_GRAPH_JSDOM override the suite already documents. All four now authored and passing: GV19 needed no DOM at all (feature-003''s rel_slug_heading, a real bash subprocess) and is headless in graph-view-gv.mjs; GV22 split like GV23 already does -- GV22a headless (every clause but one), GV22b (the group-toggle bijection) in graph-view-dom.mjs; GV17 and GV24 authored in graph-view-dom.mjs behind the same jsdom SKIP gate. All 28 GV ids now closed. Full suite: 222 pass / 1 pre-existing unrelated S5 fail (concurrent agent''s own in-flight edits to build-graph-src.mjs and render-graph-view.sh, not caused here) with AID_GRAPH_JSDOM set; 162 pass without it (new ids skip loudly, exactly as designed). tech-debt.md W5-9 RESOLVED and removed (changelog 2026-08-06) -- its premise did not hold; residual CI-wiring gap (test.yml never sets AID_GRAPH_JSDOM) named in the changelog for the owner''s own call on a new row. No Task/dispatch tool available in this session either.'
 ticket_ref: "--"
 ---
 

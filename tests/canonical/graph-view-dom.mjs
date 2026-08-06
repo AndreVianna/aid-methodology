@@ -62,6 +62,12 @@ const CLASSES = [
 	['DT28', 'the region\'s authored head survives the mount, so the shell can still write its counts'],
 	['DT29', 'the rendered projection is the store\'s current ViewModel instance'],
 	['DT30', 'every in-page anchor the page emits resolves to an id in the page'],
+	['GV17a', 'the CONTROL_MANIFEST<->data-control DOM bijection holds, every matched element native and focusable, at both gate widths'],
+	['GV17b', 'every non-viewport manifest entry is driven by keyboard input alone and writes its own declared LensState effect'],
+	['GV17c', 'the seven viewport entries write nothing with no handle registered, and write the handle\'s own transform with one'],
+	['GV17d', 'a data-group-toggle element is focusable and keyboard-operable'],
+	['GV22b', 'exactly one data-group-toggle element exists per foldable group and none for any other, before and after an expansion'],
+	['GV24', 'after each of the four presets, every named control class stays present and enabled, and a write to each still changes LensState'],
 ];
 
 function skipAll(reason) {
@@ -486,8 +492,16 @@ ok('DT26', 'the table region precedes the graph region in DOM order and neither 
 	renderings.children[0].hasAttribute('data-table-region')
 	&& renderings.children[1].classList.contains('graph-region')
 	&& !doc.querySelector('.graph-region [data-table-region]'));
+// `[data-graph-canvas]` was the drawing module's own marker attribute; W5-11
+// retired it (the shell now finds the canvas by tag, scoped to the drawing
+// surface, and the drawing module writes no attribute but width/height), so
+// asserting its absence would now be vacuous -- true whether or not a canvas
+// existed, since nothing in the codebase writes that name any more. Asserting
+// the absence of the `<canvas>` ELEMENT ITSELF is the load-bearing check this
+// row always meant: this bundle never concatenates graph-canvas.js (the only
+// file that ever creates one), so no canvas element can exist in it.
 ok('DT26b', 'this build carries no drawing rendering at all, and the table still rendered completely',
-	doc.querySelector('[data-graph-canvas]') === null
+	doc.querySelector('canvas') === null
 	&& !doc.querySelector('[data-graph-placeholder]').hidden
 	&& bodyRows().length > 0,
 	'placeholder shown, ' + bodyRows().length + ' rows listed');
@@ -545,6 +559,340 @@ ok('DT29c', 'a select records the revealed id, and a rebuild finding no marked i
 	recorded === FX.FILTERED_OUT_NODE && handle.rowOrder.focusRevealed === null,
 	recorded + ' -> ' + String(handle.rowOrder.focusRevealed));
 globalThis.window = wide.window; globalThis.document = wide.doc;
+
+// ===========================================================================
+// GV17 -- the CONTROL_MANIFEST<->DOM `data-control` bijection over a generated
+// `graph.html`, every matched element focusable, each driven by keyboard input
+// alone with its LensState effect asserted (the seven viewport entries with
+// AND without a registered viewport handle), and every `data-group-toggle`
+// element focusable and keyboard-operable (its COMPLETENESS is GV22b's).
+// Asserted at both gate widths, so the mobile <details> collapse markup
+// cannot be read as dropping either kind -- jsdom implements no layout, so
+// this reads the TREE, not the paint, which is exactly this file's own
+// stated limit (see the file header).
+// ===========================================================================
+{
+	function isNativeFocusable(e) {
+		if (e.hasAttribute('disabled') || e.getAttribute('tabindex') === '-1') return false;
+		if (e.tagName === 'BUTTON') return e.getAttribute('type') === 'button';
+		return e.tagName === 'SELECT' || e.tagName === 'INPUT';
+	}
+	function controlEls(document) { return Array.from(document.querySelectorAll('[' + M.CONTROL_ATTR + ']')); }
+
+	reset();
+	const manifestIds17 = ids(M.shellState.manifest.map((e) => e.id));
+	const wideEls = controlEls(doc);
+	const wideIds = wideEls.map((e) => e.getAttribute(M.CONTROL_ATTR));
+	const bijectionWide = same(ids(wideIds), manifestIds17) && new Set(wideIds).size === wideIds.length;
+	const focusableWide = wideEls.every(isNativeFocusable);
+
+	const narrowDom17 = makeDom(true);
+	const narrowStore17 = M.mountShell(narrowDom17.doc);
+	const narrowEls17 = controlEls(narrowDom17.doc);
+	const narrowIds17 = narrowEls17.map((e) => e.getAttribute(M.CONTROL_ATTR));
+	const bijectionNarrow = same(ids(narrowIds17), manifestIds17) && new Set(narrowIds17).size === narrowIds17.length;
+	const focusableNarrow = narrowEls17.every(isNativeFocusable);
+	void narrowStore17;
+
+	ok('GV17a', 'the manifest\'s id set and the DOM\'s data-control id set are the SAME set with no duplicate on either side, at both the wide and the narrow gate width, and every matched element is a native, enabled, focusable control',
+		manifestIds17.length > 0 && bijectionWide && focusableWide && bijectionNarrow && focusableNarrow,
+		manifestIds17.length + ' manifest ids, ' + wideIds.length + ' wide / ' + narrowIds17.length + ' narrow data-control elements');
+
+	// --- Every non-viewport entry driven by keyboard input alone, its
+	// LensState effect asserted. `reset()` runs immediately before each entry,
+	// so the effect measured is that entry's alone and not a residue of the one
+	// before it. Non-vacuous by construction: every driven value is chosen to
+	// DIFFER from the control's own current (default) value, so an unwired
+	// handler leaves `before === after` and the drive is reported as failed --
+	// verified during authorship by disabling the density handler in a SCRATCH
+	// copy of graph-controls.js (never the source tree, S5) and confirming this
+	// exact check goes red against it. ---
+	function drive(entry) {
+		reset();
+		const el = doc.querySelector('[' + M.CONTROL_ATTR + '="' + entry.id + '"]');
+		if (!el) return { ok: false, why: 'no element' };
+		if (!isNativeFocusable(el)) return { ok: false, why: 'not a native focusable control' };
+		const axis = entry.axis;
+		if (axis === 'preset') {
+			const before = store.getLens().preset;
+			el.dispatchEvent(new wide.window.KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
+			el.click();
+			return { ok: store.getLens().preset === entry.value && entry.value !== before };
+		}
+		if (axis === 'filters.categories' || axis === 'filters.kinds' || axis === 'filters.provenance') {
+			// Space toggles a checkbox exactly like a click, in every browser.
+			const before = store.getLens()[axis].includes(entry.value);
+			el.dispatchEvent(new wide.window.KeyboardEvent('keydown', { key: ' ', bubbles: true }));
+			el.click();
+			const after = store.getLens()[axis].includes(entry.value);
+			return { ok: after !== before };
+		}
+		if (axis === 'viewport') return null; // asserted separately below, with/without a handle
+		// The nine AUTHORED, non-enumerable controls: one entry, one id, driven by
+		// the id rather than the axis -- each keyboard-consistent per this file's
+		// own stated mechanical limit (a select's/range's/number's real keyboard
+		// behaviour is a value write plus the event that write fires, jsdom
+		// synthesising neither the arrow-key nor the native selection change).
+		switch (entry.id) {
+			case 'grouping': {
+				const before = store.getLens().grouping;
+				const next = Array.from(el.options).map((o) => o.value).find((v) => v !== before);
+				el.value = next;
+				el.dispatchEvent(new wide.window.Event('change', { bubbles: true }));
+				return { ok: store.getLens().grouping === next && next !== before };
+			}
+			case 'density': {
+				const before = store.getLens().density;
+				el.value = String(before + 1 > 5 ? before - 1 : before + 1);
+				el.dispatchEvent(new wide.window.Event('input', { bubbles: true }));
+				return { ok: store.getLens().density === Number(el.value) && Number(el.value) !== before };
+			}
+			case 'focus-node': {
+				const opt = Array.from(el.options).find((o) => o.value !== '');
+				el.value = opt.value;
+				el.dispatchEvent(new wide.window.Event('change', { bubbles: true }));
+				return { ok: store.getLens()['focus.nodeId'] === opt.value };
+			}
+			case 'focus-depth': {
+				const before = store.getLens()['focus.depth'];
+				el.value = String(before + 1);
+				el.dispatchEvent(new wide.window.Event('change', { bubbles: true }));
+				return { ok: store.getLens()['focus.depth'] === before + 1 };
+			}
+			case 'filter-show-orphans': {
+				const before = store.getLens()['filters.showOrphans'];
+				el.dispatchEvent(new wide.window.KeyboardEvent('keydown', { key: ' ', bubbles: true }));
+				el.click();
+				return { ok: store.getLens()['filters.showOrphans'] === !before };
+			}
+			case 'node-select': {
+				// Isolated from the paired select's OWN 'change' handler (D7's first
+				// gesture): the select's value is written directly with no 'change'
+				// dispatched, so only the button's own click can be responsible for
+				// the effect measured here.
+				const focusSelectEl = doc.querySelector('[' + M.CONTROL_ATTR + '="focus-node"]');
+				const opt = Array.from(focusSelectEl.options).find((o) => o.value !== '');
+				focusSelectEl.value = opt.value;
+				el.dispatchEvent(new wide.window.KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
+				el.click();
+				return { ok: store.getLens()['focus.nodeId'] === opt.value };
+			}
+			case 'node-open': {
+				// D7's second gesture opens a target rather than writing LensState, so
+				// its "effect" is the CALL it makes -- observed by a spy on the
+				// store's own openTarget (the store object is a plain, unfrozen
+				// literal; the click handler reads `store.openTarget` at call time,
+				// so the override is seen), restored immediately after. jsdom's own
+				// "navigation not implemented" notice on the resulting
+				// `window.location.href` write is expected, not a defect, and is
+				// suppressed here the same way DT10 suppresses console.error during
+				// boot.
+				store.setLens({ 'focus.nodeId': 'kb:alpha.md' });
+				const realOpenTarget = store.openTarget;
+				let calledWith = null;
+				store.openTarget = (id) => { calledWith = id; return realOpenTarget(id); };
+				const realConsoleError = console.error;
+				console.error = () => {};
+				el.dispatchEvent(new wide.window.KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
+				el.click();
+				console.error = realConsoleError;
+				store.openTarget = realOpenTarget;
+				return { ok: calledWith === 'kb:alpha.md' };
+			}
+			case 'filter-text': {
+				el.value = 'gv17-probe';
+				el.dispatchEvent(new wide.window.Event('input', { bubbles: true }));
+				return { ok: store.getLens()['filters.text'] === 'gv17-probe' };
+			}
+			default:
+				return { ok: false, why: 'unhandled id: ' + entry.id };
+		}
+	}
+	const nonViewportEntries = M.shellState.manifest.filter((e) => e.axis !== 'viewport');
+	const driveResults = nonViewportEntries.map((e) => ({ entry: e, result: drive(e) }));
+	const driveFailures = driveResults.filter((d) => !d.result || !d.result.ok);
+	reset();
+	ok('GV17b', 'every non-viewport manifest entry (' + nonViewportEntries.length + ' of them, covering every enumerable axis plus the nine authored controls) is driven by keyboard input alone and writes the LensState effect its own handler declares',
+		nonViewportEntries.length > 0 && driveFailures.length === 0,
+		driveFailures.map((d) => d.entry.id + (d.result ? ' (' + d.result.why + ')' : ' (no result)')).join(', '));
+
+	// --- The seven viewport entries: present, native-focusable and keyboard-
+	// operable with NO handle registered, writing NOTHING to zoom -- and, with
+	// a handle registered (the D8 seam `shellState.viewport`, the EXACT field
+	// mountCanvas's return value assigns at graph-controls.js:923, exercised
+	// here with no drawing rendering present -- this bundle never concatenates
+	// graph-canvas.js -- the same way GV16 exercises a real production seam
+	// without touching an owned file), the SAME button writes the handle's own
+	// returned transform verbatim. ---
+	reset();
+	const viewportEntries = M.shellState.manifest.filter((e) => e.axis === 'viewport');
+	const zoomBefore = store.getLens().zoom;
+	let noHandleOk = true;
+	for (const entry of viewportEntries) {
+		const el = doc.querySelector('[' + M.CONTROL_ATTR + '="' + entry.id + '"]');
+		if (!el || !isNativeFocusable(el)) { noHandleOk = false; continue; }
+		el.dispatchEvent(new wide.window.KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
+		el.click();
+		if (!same(store.getLens().zoom, zoomBefore)) noHandleOk = false;
+	}
+	M.shellState.viewport = { viewportFor: () => ({ scale: 2, panX: 5, panY: -3 }) };
+	const zoomInEl = doc.querySelector('[' + M.CONTROL_ATTR + '="zoom-in"]');
+	zoomInEl.dispatchEvent(new wide.window.KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
+	zoomInEl.click();
+	const withHandleOk = same(store.getLens().zoom, { scale: 2, panX: 5, panY: -3 });
+	M.shellState.viewport = null;
+	reset();
+	ok('GV17c', 'all seven viewport entries are present and native-focusable, and with NO viewport handle registered none of them writes zoom; the SAME zoom-in entry, with a handle registered, writes the handle\'s own returned transform verbatim',
+		viewportEntries.length === 7 && noHandleOk && withHandleOk,
+		'noHandle=' + noHandleOk + ' withHandle=' + withHandleOk + ' zoom=' + JSON.stringify(store.getLens().zoom));
+
+	// --- Group-toggle completeness is GV22b's; here only presence,
+	// focusability and keyboard-operability, over a lens with at least one
+	// foldable group (grouping: 'document', where the fixture guarantees one --
+	// see GV22a in graph-view-gv.mjs). ---
+	reset();
+	store.setLens({ grouping: 'document' });
+	const toggles17 = Array.from(doc.querySelectorAll('[' + M.GROUP_TOGGLE_ATTR + ']'));
+	const toggleFocusable = toggles17.length > 0 && toggles17.every(isNativeFocusable);
+	const toggleKey17 = toggles17[0] ? toggles17[0].getAttribute(M.GROUP_TOGGLE_ATTR) : null;
+	const beforeExpanded17 = toggles17[0] ? toggles17[0].getAttribute('aria-expanded') : null;
+	if (toggles17[0]) {
+		toggles17[0].dispatchEvent(new wide.window.KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
+		toggles17[0].click();
+	}
+	// The click's own handler rebuilds the group host from scratch (renderGroups
+	// clears and repopulates it), so the ELEMENT captured before the click is
+	// detached afterward -- the toggle carrying the same key is re-queried
+	// rather than read off the stale reference (a defect this exact block
+	// caught in itself during authorship, before it ever reached this file).
+	const toggleAfter17 = toggleKey17 ? doc.querySelector('[' + M.GROUP_TOGGLE_ATTR + '="' + toggleKey17 + '"]') : null;
+	const afterExpanded17 = toggleAfter17 ? toggleAfter17.getAttribute('aria-expanded') : null;
+	reset();
+	ok('GV17d', 'at least one data-group-toggle element exists under a foldable grouping, every one present is a native focusable button, and activating one flips its own aria-expanded',
+		toggleFocusable && beforeExpanded17 !== null && afterExpanded17 !== null && beforeExpanded17 !== afterExpanded17,
+		toggles17.length + ' toggles, ' + beforeExpanded17 + ' -> ' + afterExpanded17);
+}
+
+// ===========================================================================
+// GV22b -- the one DOM-shaped clause of GV22 (D6c, FR-13, D8, AC-8): exactly
+// one focusable `data-group-toggle` element exists per group whose `foldable`
+// is non-zero -- before AND after an expansion -- and none for any other
+// group. Every OTHER clause of GV22 (foldedInto, groups[].foldable/expanded,
+// edgeFold, counts, the focus-through-the-fold precedence, and the absence of
+// any fold under the four other dimensions) is a plain GraphModel/ViewModel
+// property and is asserted headless as GV22a in graph-view-gv.mjs -- see that
+// block's own header for why task-014 STAGE 3's "needs a real DOM"
+// classification over-scoped this id.
+// ===========================================================================
+{
+	function isNativeFocusable22(e) {
+		if (e.hasAttribute('disabled') || e.getAttribute('tabindex') === '-1') return false;
+		if (e.tagName === 'BUTTON') return e.getAttribute('type') === 'button';
+		return e.tagName === 'SELECT' || e.tagName === 'INPUT';
+	}
+	reset();
+	store.setLens({ grouping: 'document' });
+	const vmGroups22 = vm();
+	const foldableGroups22 = vmGroups22.groups.filter((g) => g.foldable > 0).map((g) => g.key);
+	const nonFoldableGroups22 = vmGroups22.groups.filter((g) => g.foldable === 0).map((g) => g.key);
+
+	function toggleCountsMatch22() {
+		const toggleEls = Array.from(doc.querySelectorAll('[' + M.GROUP_TOGGLE_ATTR + ']'));
+		const toggleKeys = toggleEls.map((e) => e.getAttribute(M.GROUP_TOGGLE_ATTR));
+		const exactlyOneEach = foldableGroups22.every((key) => toggleKeys.filter((k) => k === key).length === 1);
+		const noneForOthers = nonFoldableGroups22.every((key) => !toggleKeys.includes(key));
+		const allFocusable = toggleEls.every(isNativeFocusable22);
+		return exactlyOneEach && noneForOthers && allFocusable && toggleKeys.length === foldableGroups22.length;
+	}
+	const beforeOk22 = toggleCountsMatch22();
+
+	// Expand exactly one foldable group and re-check the SAME invariant --
+	// verified during authorship to be decisive by adding a stray
+	// data-group-toggle attribute to an arbitrary non-foldable-group element
+	// and confirming `noneForOthers` catches it.
+	const target22 = foldableGroups22[0];
+	store.setLens({ expandedGroups: [target22] });
+	const afterOk22 = toggleCountsMatch22();
+
+	reset();
+	ok('GV22b', 'exactly one focusable data-group-toggle element exists per group whose foldable is non-zero, and none for any other group -- both BEFORE and AFTER expanding one of them',
+		foldableGroups22.length >= 2 && beforeOk22 && afterOk22,
+		'foldable=' + foldableGroups22.join(',') + ' nonfoldable=' + nonFoldableGroups22.length
+		+ ' before=' + beforeOk22 + ' after=' + afterOk22);
+}
+
+// ===========================================================================
+// GV24 -- after each of the four presets is applied, the grouping <select>,
+// the density range, every zoom/pan keyboard control and every filter control
+// is present and NOT disabled, and a subsequent write to each still changes
+// LensState -- AC-8's "then all of them remain usable" over every control the
+// criterion names. The zoom/pan controls' write goes through the viewport
+// handle (D8, the same seam GV17c exercises), so that half is asserted with
+// one registered. GV15 asserts a DIFFERENT property (a preset does not RESET
+// a filter); this id asserts that every control class stays USABLE, which
+// GV15's own fixture does not check.
+// ===========================================================================
+{
+	function isNativeFocusable24(e) {
+		if (e.hasAttribute('disabled') || e.getAttribute('tabindex') === '-1') return false;
+		if (e.tagName === 'BUTTON') return e.getAttribute('type') === 'button';
+		return e.tagName === 'SELECT' || e.tagName === 'INPUT';
+	}
+	M.shellState.viewport = { viewportFor: () => ({ scale: 3, panX: 1, panY: 1 }) };
+	const perPreset = [];
+	for (const presetName of Object.keys(M.PRESETS)) {
+		reset();
+		store.applyPreset(presetName);
+
+		const groupingEl = doc.querySelector('[' + M.CONTROL_ATTR + '="grouping"]');
+		const densityEl = doc.querySelector('[' + M.CONTROL_ATTR + '="density"]');
+		const viewportEls = M.shellState.manifest.filter((e) => e.axis === 'viewport')
+			.map((e) => doc.querySelector('[' + M.CONTROL_ATTR + '="' + e.id + '"]'));
+		const filterEls = M.shellState.manifest.filter((e) => ['filters.categories', 'filters.kinds', 'filters.provenance'].includes(e.axis))
+			.map((e) => doc.querySelector('[' + M.CONTROL_ATTR + '="' + e.id + '"]'));
+
+		const allPresent = !!groupingEl && !!densityEl && viewportEls.every(Boolean) && filterEls.every(Boolean);
+		const allEnabled = allPresent && isNativeFocusable24(groupingEl) && isNativeFocusable24(densityEl)
+			&& viewportEls.every(isNativeFocusable24) && filterEls.every(isNativeFocusable24);
+
+		// A write to each changes LensState -- proven by driving one of each kind
+		// and requiring the value to move from what THIS preset itself set it to.
+		const groupingBefore = store.getLens().grouping;
+		const groupingNext = Array.from(groupingEl.options).map((o) => o.value).find((v) => v !== groupingBefore);
+		groupingEl.value = groupingNext;
+		groupingEl.dispatchEvent(new wide.window.Event('change', { bubbles: true }));
+		const groupingWrote = store.getLens().grouping === groupingNext && groupingNext !== groupingBefore;
+
+		const densityBefore = store.getLens().density;
+		densityEl.value = String(densityBefore + 1 > 5 ? densityBefore - 1 : densityBefore + 1);
+		densityEl.dispatchEvent(new wide.window.Event('input', { bubbles: true }));
+		const densityWrote = store.getLens().density === Number(densityEl.value) && Number(densityEl.value) !== densityBefore;
+
+		const zoomBeforeStr = JSON.stringify(store.getLens().zoom);
+		viewportEls[0].dispatchEvent(new wide.window.KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
+		viewportEls[0].click();
+		const zoomAfterStr = JSON.stringify(store.getLens().zoom);
+		const viewportWrote = zoomAfterStr === JSON.stringify({ scale: 3, panX: 1, panY: 1 }) && zoomBeforeStr !== zoomAfterStr;
+
+		const filterEntry = M.shellState.manifest.filter((e) => ['filters.categories', 'filters.kinds', 'filters.provenance'].includes(e.axis))[0];
+		const filterAxisBefore = store.getLens()[filterEntry.axis].includes(filterEntry.value);
+		filterEls[0].dispatchEvent(new wide.window.KeyboardEvent('keydown', { key: ' ', bubbles: true }));
+		filterEls[0].click();
+		const filterAxisAfter = store.getLens()[filterEntry.axis].includes(filterEntry.value);
+		const filterWrote = filterAxisAfter !== filterAxisBefore;
+
+		perPreset.push({
+			preset: presetName, allPresent, allEnabled, groupingWrote, densityWrote, viewportWrote, filterWrote,
+			ok: allPresent && allEnabled && groupingWrote && densityWrote && viewportWrote && filterWrote,
+		});
+	}
+	M.shellState.viewport = null;
+	reset();
+	const failing24 = perPreset.filter((p) => !p.ok);
+	ok('GV24', 'after each of the four presets, the grouping select, the density range, every one of the seven viewport entries and every filters.categories/kinds/provenance control stays present and enabled, and a write to one of each kind still changes LensState',
+		perPreset.length === 4 && failing24.length === 0,
+		JSON.stringify(perPreset));
+}
 
 // ---------------------------------------------------------------------------
 // The rendered page, written out for the bash side's validator run, and the
