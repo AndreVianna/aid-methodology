@@ -34,6 +34,19 @@ Shape: 6 sections matching .claude/aid/templates/delivery-plans/task-template.md
   is built anywhere.
 - Point `state-render.md`'s router at task-013's real assembly driver and `state-visual-gate.md` at
   task-019's parameterised validators, replacing the invocations that had no implementation to reach.
+- **ADDED 2026-08-05 during wave-1 execution -- `state-emit.md`'s EMIT sequence is wrong and owned by
+  nobody.** It documents EMIT as two external steps in this order: `assemble-coverage-notes.sh` (`:12`)
+  then `build-relationships.sh` (`:30`). That sequence **could never have worked from a clean tree**: the
+  assembler's `--kb-coverage` input defaults to `.aid/.temp/graph/kb-coverage.tsv`, which is written by
+  `build-relationships.sh` itself (`:715`), i.e. by step 2. So on a first-ever run step 1 reads a file
+  that does not exist yet. Found by task-008's executor while making the renderer consume the hand-off,
+  and it is the same class as this work's other two ownerless obligations (feature-013's D3 roster slots,
+  and `--probe`, now task-030): a real defect no task carried. **It is now a documentation defect rather
+  than a functional one** -- task-008 made `build-relationships.sh` invoke the assembler itself, so the
+  script is self-sufficient and `state-emit.md`'s step 1 is redundant as well as mis-ordered. Bring the
+  doc in line with what the script actually does. This is the same kind of work as the bullet above --
+  re-pointing a feature-010 runtime doc at the implementation that exists -- which is why it lands here
+  rather than in a new task.
 - Surface the runtime-prerequisite text the view generator prints — neither compose it nor suppress
   it (`state-render.md` is explicit on this).
 - Complete D4's `V*` rubric rows, which had no artifact to run against until `graph.html` existed.
@@ -70,4 +83,10 @@ Shape: 6 sections matching .claude/aid/templates/delivery-plans/task-template.md
       explicitly because this task touches surfaces shared beyond this work's own suites, so a
       regression can land where the graph suites do not look: run the affected suites, not only the
       `test-graph-*` set. Use `tests/canonical/select-suites.sh --run` to pick them by change set
+- [ ] **`state-emit.md` describes the sequence the code actually runs.** Its two-step form is both
+      mis-ordered and now redundant: `build-relationships.sh` invokes `assemble-coverage-notes.sh`
+      itself (task-008), so EMIT has one external step, not two. **Oracle:** a clean-tree run following
+      `state-emit.md` verbatim must succeed -- the pre-task-008 sequence fails at step 1 because
+      `kb-coverage.tsv` does not exist yet, so a doc that still prescribes it is falsifiable by
+      following it
 - [ ] All section-6 quality gates pass

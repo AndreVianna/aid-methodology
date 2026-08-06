@@ -171,6 +171,7 @@
 # COVERS: canonical/aid/scripts/graph/harvest-declared.sh
 # COVERS: canonical/aid/scripts/graph/derive-edges.sh
 # COVERS: canonical/aid/scripts/graph/build-relationships.sh
+# COVERS: canonical/aid/scripts/graph/assemble-coverage-notes.sh
 # COVERS: canonical/aid/scripts/graph/report-endpoint-satisfiability.sh
 # COVERS: canonical/aid/scripts/graph/relationship-schema.sh
 # COVERS: canonical/aid/templates/graph/
@@ -251,6 +252,7 @@ HARVEST="${GRAPH}/harvest-declared.sh"
 DERIVE="${GRAPH}/derive-edges.sh"
 BUILD="${GRAPH}/build-relationships.sh"
 LIB="${GRAPH}/relationship-schema.sh"
+ASSEMBLER="${GRAPH}/assemble-coverage-notes.sh"
 
 SCHEMA="${TPL}/relationship-schema.yml"
 VOCAB="${TPL}/relation-vocabulary.yml"
@@ -967,11 +969,15 @@ run_pass1() {
 # path is passed explicitly: a mutant lives outside the shipped tree, where the
 # default `<script-dir>/../../templates/graph` resolution does not exist, and a
 # mutant that exited 2 on a usage error would "prove" whatever was asserted next.
+# `--assembler` is always the REAL canonical assemble-coverage-notes.sh unless a
+# 4th argument overrides it -- a build-relationships.sh mutant lives in its own
+# directory with no sibling assembler, and the hand-off script itself is never
+# what MUT02-MUT04 mean to exercise.
 run_build() {
-    local log="$1" out="$2" script="${3:-$BUILD}" brc=0
+    local log="$1" out="$2" script="${3:-$BUILD}" assembler="${4:-$ASSEMBLER}" brc=0
     ( cd "$FIX" && bash "$script" --temp-dir "$GT" --out "$out" \
         --schema "$SCHEMA" --vocabulary "$VOCAB" --edge-map "$EDGE_MAP" \
-        --lib "$LIB" --skip-validate ) >"$log" 2>&1 || brc=$?
+        --lib "$LIB" --assembler "$assembler" --skip-validate ) >"$log" 2>&1 || brc=$?
     printf '%s' "$brc"
 }
 
@@ -1057,6 +1063,7 @@ if [[ "$NEED_PIPELINE" -eq 1 ]]; then
     cp "$ART" "$TMP/artifact.run1"
     cp "$ROWS0" "$TMP/rows0.run1"
     cp "$COV" "$TMP/cov.run1"
+    cp "$GT/coverage-notes.md" "$TMP/coverage-notes.run1"
     [[ "$W3_COMPUTED" -eq 1 ]] && cp "$W3" "$TMP/w3.run1"
     cp "$DISP" "$TMP/dispositions.keep"
 fi
@@ -1662,6 +1669,24 @@ do
     if [[ "$ART_TEXT" == *"$needle"* ]]; then pass "$lbl"; else fail "$lbl — not found in the artifact"; fi
 done
 
+# feature-010 D7, Open Item 7: build-relationships.sh no longer composes the
+# `## Coverage notes` section -- it runs assemble-coverage-notes.sh and moves its
+# bytes. This is the load-bearing proof: the section in the emitted artifact is
+# byte-identical to the hand-off file the SAME run wrote at coverage-notes.md, not
+# a second, possibly-diverging rendering of the same content.
+if [[ -f "$TMP/coverage-notes.run1" ]]; then
+    notes_expected="$(<"$TMP/coverage-notes.run1")"
+    notes_rest="${ART_TEXT#*"## Coverage notes"}"
+    notes_actual="## Coverage notes${notes_rest}"
+    if [[ "$notes_actual" == "$notes_expected" ]]; then
+        pass "REN06a the emitted '## Coverage notes' section is byte-identical to assemble-coverage-notes.sh's own hand-off file (feature-010 D7)"
+    else
+        fail "REN06a the emitted section diverges from the hand-off file -- build-relationships.sh is composing bytes of its own again"
+    fi
+else
+    fail "REN06a — FIXTURE BUG: no coverage-notes.run1 snapshot was taken"
+fi
+
 assert_nonempty "$art_data" "REN07 the rendered table has data rows"
 assert_count_eq "$art_bad_arity" 0 "REN08 every data row has exactly ten cells"
 assert_count_eq "$art_double_space" 0 "REN09 no cell renders as two spaces (D1 fixes an empty cell at one)"
@@ -1711,6 +1736,71 @@ for line in "${cov_excl_rows[@]}"; do
 done
 assert_count_eq "$excl_empty_note" 0 \
     "REN18 every exclusion row carries its Note (the five-field producer shape is read correctly)"
+
+# --- REN19-24: the hand-off's three loud-failure branches (feature-010 D7, Open
+# Item 7). "Nothing guarantees feature-010 ran first" is a real runtime state --
+# an absent, failing, empty or truncated coverage-notes.md must abort the run with
+# NOTHING written, never fall back to composing the section itself. Each shim
+# below stands in for a differently-broken assembler; the real one is used
+# everywhere else in this suite.
+if [[ "$NEED_PIPELINE" -eq 1 ]]; then
+    SHIM_EMPTY="$TMP/shim-empty.sh"
+    cat > "$SHIM_EMPTY" <<'SHIMEOF'
+#!/usr/bin/env bash
+out=""
+while [ $# -gt 0 ]; do
+    case "$1" in --output) out="$2"; shift 2 ;; *) shift ;; esac
+done
+: > "$out"
+exit 0
+SHIMEOF
+    SHIM_GARBAGE="$TMP/shim-garbage.sh"
+    cat > "$SHIM_GARBAGE" <<'SHIMEOF'
+#!/usr/bin/env bash
+out=""
+while [ $# -gt 0 ]; do
+    case "$1" in --output) out="$2"; shift 2 ;; *) shift ;; esac
+done
+printf 'not a coverage section\n' > "$out"
+exit 0
+SHIMEOF
+
+    # REN19-20: the assembler script itself is absent.
+    rm -f "$TMP/hand.missing.md"
+    HAND_RC="$(run_build "$TMP/hand.missing.build" "$TMP/hand.missing.md" "" "$TMP/no-such-assembler.sh")"
+    HAND_OUT="$(<"$TMP/hand.missing.build")"
+    assert_exit_eq "$HAND_RC" 2 "REN19 a missing assembler aborts with exit 2, not a silent self-render"
+    assert_output_contains "$HAND_OUT" "assembler is not found" "REN19a and the reason is named"
+    if [[ -f "$TMP/hand.missing.md" ]]; then
+        fail "REN20 no artifact was written when the assembler is missing"
+    else
+        pass "REN20 no artifact was written when the assembler is missing"
+    fi
+
+    # REN21-22: the assembler ran and exited 0 but produced an EMPTY hand-off.
+    rm -f "$TMP/hand.empty.md"
+    HAND_RC="$(run_build "$TMP/hand.empty.build" "$TMP/hand.empty.md" "" "$SHIM_EMPTY")"
+    HAND_OUT="$(<"$TMP/hand.empty.build")"
+    assert_exit_eq "$HAND_RC" 2 "REN21 an empty hand-off aborts with exit 2, not a silent self-render"
+    assert_output_contains "$HAND_OUT" "absent or empty" "REN21a and the reason is named"
+    if [[ -f "$TMP/hand.empty.md" ]]; then
+        fail "REN22 no artifact was written when the hand-off is empty"
+    else
+        pass "REN22 no artifact was written when the hand-off is empty"
+    fi
+
+    # REN23-24: the assembler ran and exited 0 but produced a TRUNCATED/malformed hand-off.
+    rm -f "$TMP/hand.garbage.md"
+    HAND_RC="$(run_build "$TMP/hand.garbage.build" "$TMP/hand.garbage.md" "" "$SHIM_GARBAGE")"
+    HAND_OUT="$(<"$TMP/hand.garbage.build")"
+    assert_exit_eq "$HAND_RC" 2 "REN23 a truncated/malformed hand-off aborts with exit 2, not a silent self-render"
+    assert_output_contains "$HAND_OUT" "truncated or malformed" "REN23a and the reason is named"
+    if [[ -f "$TMP/hand.garbage.md" ]]; then
+        fail "REN24 no artifact was written when the hand-off is malformed"
+    else
+        pass "REN24 no artifact was written when the hand-off is malformed"
+    fi
+fi
 
 # ===========================================================================
 # DET -- byte identity across two full pipeline runs (FR-32, AC-5)
