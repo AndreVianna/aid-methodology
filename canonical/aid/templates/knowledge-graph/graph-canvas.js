@@ -1095,6 +1095,43 @@ function gcApplyStageTransform(view) {
 }
 
 /**
+ * Empty one layer AND RELEASE WHAT WAS IN IT.
+ *
+ * THIS IS NOT A TIDINESS HELPER. `removeChildren()` detaches; it does not
+ * destroy. Every `PIXI.Graphics` and `PIXI.Text` this module builds owns GPU-side
+ * geometry that the renderer holds until the object is destroyed -- JS garbage
+ * collection alone does not reclaim it, because the renderer is still tracking
+ * it. So a draw loop that detaches and rebuilds leaks its entire scene EVERY
+ * FRAME.
+ *
+ * How that presented, and why it hid for so long: the whole frame is rebuilt
+ * from scratch, so one node plus one edge per mark is roughly
+ * `nodes + edges` objects per frame. On the 14-node test fixture that is 27
+ * objects a frame -- a leak too slow to see in any check this work ran. On this
+ * repository's own relationship file it is 976 + 3532 = 4508 objects a frame at
+ * several frames a second, and the page rendered correctly and then took the
+ * renderer down a few seconds later. The defect never changed; only the row
+ * count did. A leak whose only symptom is a crash at scale is exactly the kind
+ * a small fixture cannot show, which is the lesson worth keeping from it.
+ *
+ * `context: true` is required and is not the default everywhere: for Graphics
+ * the geometry lives on its `GraphicsContext`, and each Graphics here builds
+ * and owns its own (none are shared), so releasing it is both safe and the
+ * whole point. Every call is feature-guarded because this module is written
+ * against a renderer it does not bundle.
+ */
+function gcClearLayer(layer) {
+	if (!layer || typeof layer.removeChildren !== 'function') return;
+	const removed = layer.removeChildren();
+	if (!removed || typeof removed.length !== 'number') return;
+	for (const child of removed) {
+		if (child && typeof child.destroy === 'function') {
+			child.destroy({ children: true, texture: false, context: true });
+		}
+	}
+}
+
+/**
  * Draw edges, then nodes, then labels, then the caption; append one frame
  * sample. No ARIA write, no live-region write, no DOM style read, no layout
  * measurement (AC-S5) -- colours come from `view.palette`, sizes from
@@ -1106,9 +1143,9 @@ function gcDrawFrame(view, meta) {
 	const marks = view.record.marks || { nodes: [], edges: [] };
 	const alpha = view.record.mode === 'settled' ? 0 : (view.simulation ? view.simulation.alpha() : 0);
 
-	view.edgeLayer.removeChildren();
-	view.nodeLayer.removeChildren();
-	view.labelLayer.removeChildren();
+	gcClearLayer(view.edgeLayer);
+	gcClearLayer(view.nodeLayer);
+	gcClearLayer(view.labelLayer);
 
 	// Drawn glyph radius per node id, built once for this frame. The edge pass
 	// needs it to stop each line at the glyph's border rather than its centre,
