@@ -1,970 +1,588 @@
-# Rendering Decision Record
-## Feature-002: Graph Rendering Research — Steps 6-8 of Feature Flow
+# Rendering Decision Record (re-issued)
+## Feature-002: Graph Rendering Research — Viability & Performance Validation
 
-**Work:** work-005-knowledge-graph  
-**Delivery:** delivery-001, Task-005 (revised after adversarial review)  
-**Date:** 2026-07-28  
-**Resolves:** STATE.md Q2 — "Which rendering approach does the graph view use?"  
-**Minimum grade:** A+
+**Work:** work-005-knowledge-graph
+**Delivery:** delivery-001, Task-011 (re-issue of the 2026-07-28 record against the amended SPEC)
+**Date:** 2026-08-06
+**Resolves:** STATE.md Q2 (closed by owner decision, Q9 — see Part 0) and feature-002's D10, the
+decision record's required parts
+**Specification authority:** `features/feature-002-graph-rendering-research/SPEC.md` (re-specified
+2026-07-29, gated A+ 2026-07-30)
 
----
-
-## Part 1 — Question and Scope
-
-### Q2 as amended
-
-STATE.md Q2 asks: *"Which rendering approach does the graph view use?"* This question was
-opened at the DESCRIBE phase as Impact High / Deferred to RESEARCH. Its resolution unblocks
-feature-008 (interactive graph canvas) and provides firing conditions for feature-011's
-conditional validator carve-outs and feature-012's dependency-packaging gate.
-
-The question was widened on 2026-07-28 when REQUIREMENTS.md §5.6 FR-16 was amended. The
-pre-amendment constraint required the graph artifact to be self-contained and single-file.
-FR-16 as amended explicitly **drops** all three original packaging restrictions:
-
-> "All three original packaging restrictions are dropped: it **may** ship as multiple files,
-> it **may** fetch from a CDN or the network, and it **may** be produced by a real build step."
-
-The SPEC recaps the same widening: "the packaging constraints that once bounded it are
-withdrawn, so a candidate may ship as multiple files, may fetch from a content delivery
-network, and may require a real build step with third-party dependencies."
-
-### What the widened option space admits
-
-Before the amendment, only Shape 1 (inline vendored subset within a single self-contained
-file) was practically available without violating the packaging constraint. After the
-amendment, all five packaging shapes are admissible for all renderer classes:
-
-- **Shape 2 (inline whole library):** enables large libraries like Cytoscape.js (425 KB) and
-  Sigma.js (255 KB) to be evaluated on quality and interaction merit rather than dismissed on
-  payload grounds.
-- **Shape 3 (companion files):** enables AntV G6 (1.32 MB — impractical inline) to be evaluated
-  via the companion-file shape FR-16 now permits.
-- **Shape 4 (CDN fetch):** enables network-sourced delivery, with documented cost in §5.6
-  consequence 3.
-- **Shape 5 (build-step output):** enables tree-shaken bundles and shape 5 maintainer-time
-  builds, matching the precedent of `packages/npm/scripts/vendor.js` and the `profiles/`
-  render-drift gate.
-
-The research uses this widening: every one of the 25 surviving candidates is evaluated across
-whichever shapes apply to it (not merely Shape 1), and the five candidates larger than the
-pre-amendment implicit threshold are evaluated on their interaction quality, legibility, and
-accessibility cost before being rejected on their merits. Parts 4 and 6 make this explicit.
+> **This document is a research artifact under a transient work folder.** Per `CLAUDE.md` §
+> Tracking discipline and the SPEC's own § Layers & Components, no permanent artifact may cite
+> this document or depend on its contents. The facts that must survive land in
+> `technology-stack.md` and `infrastructure.md` at ship time (feature-013) and in the packaging
+> wiring (feature-012); Part 15 below drafts that content without landing it.
 
 ---
 
-## Part 2 — Research Inputs
+## Part 0 — Why this record is re-issued, and what changed underneath it
 
-All sources were accessed on 2026-07-28 and are attributed below. Sources marked `pipeline`
-are internal research artifacts from earlier tasks in this delivery.
+**The 2026-07-28 record this document replaces resolved a question that no longer exists.** It
+scored six renderer classes (SVG, DOM, Canvas, WebGL, Multi, Hand-rolled) against five packaging
+shapes across twelve dimensions, including accessibility cost as a per-candidate axis, and
+recommended a static SVG graph that settles once before first paint. On 2026-07-29 the owner
+**decided** the renderer by fiat (STATE.md Q9): `d3-force` on the CPU for physics, PixiJS on WebGL
+for drawing, two dimensions — the split Obsidian's graph view uses. The canvas is **visual-only**;
+WCAG AA is carried by the accessible table view as the conforming alternate version (NFR-2), not by
+a hand-built DOM proxy. FR-18 was rewritten the same day: the renderer question is closed, and what
+remains is a **viability-and-performance validation** in a fixed three-stage order. The entire
+comparison apparatus the 2026-07-28 record built is therefore answering a question FR-18 no longer
+asks.
 
-| # | Source | Type | Used in |
-|---|--------|------|---------|
-| A | `rendering-bench-and-options.md` (task-003 output) | pipeline | Parts 3, 4, 6 |
-| B | `rendering-spike-matrix.md` (task-004 output) | pipeline | Parts 4, 5, 6, 8, 10, 11, 12, 13, 15 |
-| C | REQUIREMENTS.md §5.6 (FR-16–FR-18, NFR-1–NFR-6, A-5, FR-22, FR-23) | project doc | Parts 1, 3, 6, 10, 12 |
-| D | STATE.md Q2 | project doc | Part 1 |
-| E | `.github/dependabot.yml` (verified on disk 2026-07-28) | project file | Part 9 |
-| F | `.aid/knowledge/technology-stack.md` (§Frameworks & Tooling, §Key Dependencies, §Build Commands, §Version Concerns) | KB doc | Part 13 |
-| G | `.aid/knowledge/infrastructure.md` (§The Build: Multi-Profile Render, §CI/CD Pipeline) | KB doc | Part 14 |
-| H | feature-007-graph-view-shell/SPEC.md | feature spec | Step 8 |
-| I | feature-008-interactive-graph-canvas/SPEC.md | feature spec | Parts 12, 15, Step 8 |
-| J | feature-009-accessible-table-view/SPEC.md | feature spec | Parts 11, Step 8 |
-| K | feature-011-validator-parameterisation/SPEC.md | feature spec | Step 8 |
-| L | feature-012-canonical-registration/SPEC.md | feature spec | Parts 13, 14, Step 8 |
-| M | "Accessible Interactive Data Visualization", interactive-data-visualization.com | web | Part 2 dossier, Parts 11, 12 |
-| N | PkgPulse "Cytoscape.js vs vis-network vs Sigma.js 2026" | web | Part 2 dossier |
-| O | Elastic Kibana issue #248471 | web | Parts 6, 11 |
-| P | sigmajs.org (Sigma.js project description) | web | Part 12 |
-| Q | npm registry (all libraries verified at evaluated versions) | web | Parts 4, 8 |
-| R | D3.js ISC Licence, https://github.com/d3/d3/blob/main/LICENSE | web | Part 8 |
+**The audit table below is the SPEC's own, carried forward rather than dropped**, so a reader who
+has seen the earlier revision can see that its absence here is deliberate, not an omission
+(feature-002 SPEC § "Requirements baseline for this section"):
 
-### Prior-art dossier summary
+| The previous revision relied on | Status now | Replaced by |
+|---|---|---|
+| "The option space is **unrestricted**" (FR-18, 2026-07-28) | **Void** | FR-18 as rewritten: the architecture is decided; the former option space is closed |
+| Six renderer classes × five packaging shapes, scored | **Void** | Nothing. There is no comparison. The packaging shapes survive only as a description of what the *decided* architecture must be delivered as (Part 10) |
+| Five hard screens (WCAG reachability, single data path, NFR-4–6 capability, four lenses, licence) | **Void as screens** | Screens exist to eliminate candidates. With one architecture they became obligations to verify, and reappear as measurands (Part 6) and Stage-3 findings (Parts 10–12) |
+| "Accessibility cost" as a per-candidate dimension — whether the renderer yields accessibility-tree semantics or needs a hand-built proxy | **Void** | Q9: the canvas is visual-only; AA is met by the accessible table view; **no DOM proxy layer is built.** The proxy-line-count arithmetic that dominated the superseded record priced work this feature does not do |
+| The scale-versus-accessibility tension | **Void** | Both poles it traded off between are gone: the renderer is chosen and the accessibility route is chosen |
+| "Node counts are bounded to the hundreds (FR-22, FR-23, A-5)" | **Void** | A-5 is voided; FR-23's granularity is widened; NFR-7 states no count and NFR-8 makes the ceiling a measured output (Part 4, Part 9) |
+| A **static** SVG graph settling once before first paint | **Superseded** | FR-2 and FR-18: continuous simulation is the default; NFR-4's settled render is the reduced-motion **fallback**, not the whole behaviour |
+| Edge labels drawn every tick as the binding cost | **Superseded** | Persistent labels dropped (Q11); category carried by colour + line style; the name shown on hover or selection (Part 6, measurands 4–5) |
+| A five-category vocabulary | **Void** | feature-001's re-specified SPEC states **fourteen** categories (Part 5, Part 6) |
+| `validate-visuals.mjs` T2 failing by design for an SVG graph | **Conditional, and now a recorded no-op** | A `<canvas>` matches none of that script's three selectors (D1b). No carve-out fires |
 
-**Renderer / accessibility matrix** (source M, 2026-07-28): "only SVG and the DOM produce
-accessibility-tree semantics for free. Canvas and WebGL render pixels into an opaque buffer
-that exposes nothing to assistive technology" — the renderer choice "dictates how much
-accessibility work you must do by hand." For graphs with fewer than ~1,000 marks: native SVG
-with labeled marks, A11y cost LOW. For 1k–100k marks: Canvas + DOM proxy, cost HIGH. For
->100k: WebGL + DOM proxy + summary, cost HIGH plus no per-mark focus without additional work.
-
-**Library landscape** (source N, 2026-07-28): SVG slows past "a few thousand" elements
-(D3.js ceiling per PkgPulse); Canvas is CPU-bound in the "tens of thousands" (Cytoscape.js);
-WebGL (Sigma.js) targets "graphs of thousands of nodes and edges" — its own scale claim
-(source P, 2026-07-28). Sigma.js v3.0.3 is the current npm `latest` tag (not v4 — that claim
-in the dossier was corrected by task-003, rendering-bench-and-options.md §Dossier Corrections).
-
-**Kibana evidence** (source O, 2026-07-28): "the current Cytoscape.js implementation has poor
-accessibility because it uses canvas-only rendering" — keyboard navigation, screen reader
-support, focus indicators, and ARIA all absent or limited. Documents the proxy-absent failure
-mode for Canvas.
-
-**Dossier corrections confirmed by task-003:** D3.js licence is ISC (not MIT); vis-network is
-Apache-2.0 OR MIT dual-licensed; Data Navigator v3.0.0 is the current release (not v2.4.x);
-Sigma.js v3.0.3 is current (no v4 on public registry). See rendering-bench-and-options.md
-§Dossier Corrections for full evidence.
+**What this document is not.** It does not reopen the renderer comparison — Q9 decided, and the
+SPEC's own validation boundary forbids re-scoring candidates. Reporting a measured failure with
+evidence, which this document does in Part 4 and Part 6–9, is a different act from re-opening that
+choice, and nothing below does the latter.
 
 ---
 
-## Part 3 — Bench Scale and Derivation
+## Part 1 — Question and Scope (D10 part 1)
 
-*Source: rendering-bench-and-options.md §Step 2 (task-003 output, measured 2026-07-28).*
+**The question, from FR-18 as rewritten:** can the decided architecture (`d3-force` + PixiJS/WebGL)
+be validated by this project's own toolchain, and does it meet the requirements' own measured
+floors and ceilings? Three stages, fixed order:
 
-| Metric | Value | Notes |
-|--------|-------|-------|
-| `int:` nodes | **583** | Counted directly from FS per FR-21/FR-22 rules |
-| `kb:` nodes | **~201** | 21 docs + ~180 meaningful concept-level headings |
-| `ext:` nodes | **0** | external-sources.md has no entries |
-| **Total nodes (measured)** | **~784** | Central estimate; reproducible via commands in task-003 |
-| **Total edges (measured minimum)** | **~589** | Enumerated carriers: 62 see_also + 161 sources + 226 CONFIRMED + 1 generated-files + 1 coined-term + 133 run-all.sh + 5 lockstep |
-| **Total edges (estimated range)** | **~589–750** | Upper bound adds unenumerated int:→int: invocations |
-| **A-5 assumption ("hundreds, not tens of thousands")** | **CONFIRMED** | 784 nodes / 589–750 edges — both firmly in the hundreds |
-| **Overshoot bench** | **~7,840 nodes / ~7,500 edges** | fixture-10x.json, 10× scale; tests the A-5-violation case |
-
-The spike fixtures (rendering-spike-matrix.md §Fixture Regeneration Procedure, task-004)
-are `fixture-1x.json` (784 nodes / 750 edges, max-degree 187) and `fixture-10x.json`
-(7,840 nodes / 7,500 edges, max-degree 1,942). No other fixture exists; no hub-heavy
-sub-fixture at 120 nodes / 340 edges was generated. The bench fixture uses
-Barabási-Albert preferential attachment seeded from real AID graph hub carriers, producing a
-hub-heavy scale-free topology representative of a real KB graph.
-
----
-
-## Part 4 — The Comparison Matrix
-
-*Source: rendering-spike-matrix.md §The 25-Cell Comparison Matrix (task-004 output, measured 2026-07-28). Every cell is reproduced; cell basis (measured vs. derived) follows the spike matrix.*
-
-**Column abbreviations:** `Build` = build requirement; `L@bench` = legibility at 784 nodes; `L@10×` = legibility at 7,840 nodes; `Interact` = FR-13/FR-14 interaction coverage (built-in behaviours + must-write work); `A11y cost` = WCAG AA accessibility cost; `Val` = validator trigger summary; `Update` = upstream update mechanism; `f008` = feature-008 size; `Basis` = measured/derived.
-
-The 25 combinations arose from the **six renderer classes** (SVG, DOM, Canvas, WebGL, Multi, Hand-rolled) × five packaging shapes, after pre-screen drops. DOM has no viable standalone candidate and collapses into SVG or Canvas for edge drawing; Data Navigator (DOM overlay) is a composable layer, not a standalone renderer. Pre-screen drops before the five screens: D3.js × Shape 2, Cytoscape.js × Shape 1, vis-network × Shape 1, Sigma.js × Shape 1, AntV G6 × Shapes 1 and 2, Hand-rolled SVG × Shapes 2–5 (no vendor dependency — authored code has no "whole library" or "build output" form). See rendering-bench-and-options.md §Pre-screen drops for rationale.
-
-All 25 survivors passed all five hard screens with no elimination. See Part 4A below.
-
-### Part 4A — Five Hard Screens (task-003)
-
-*Source: rendering-bench-and-options.md §Step 4 (task-003 output).*
-
-| Screen | Criterion | Governing requirement | Eliminates |
+| Stage | Question | Task | Deliverable cited here |
 |---|---|---|---|
-| 1 | Can reach WCAG AA for the graph rendering with accessibility work priced in | NFR-1 | None — all 25 pass (cost varies: low for SVG, high for Canvas, very high for WebGL) |
-| 2 | Can be driven from `relationships.md` alone via feature-007's lens view-model; no second extraction path | FR-3, AC-10 | None — all libraries accept external node/edge data |
-| 3 | Can honour reduced-motion settling, keyboard zoom and pan, and non-colour encoding | NFR-4, NFR-5, NFR-6 | None — all libraries expose stop/tick, zoom, translate APIs |
-| 4 | Can express four lenses including Impact's adjustable-depth neighbourhood; manual controls live after preset | FR-13, FR-14, AC-8 | None — BFS available natively (Cytoscape, graphology, G6) or inline ~30 lines (D3.js, vis-network) |
-| 5 | Licence permits redistribution inside a generated artifact in a third party's repository, under MIT terms | Root `LICENSE` | None — ISC, MIT, Apache-2.0 all pass; vis-network MIT branch chosen over Apache-2.0 |
+| **1** | Can the Playwright toolchain FR-12 reuses validate a WebGL canvas at all, headless, with no GPU? | task-002 (D1) | `research/rendering-stage1-webgl-probe.md` |
+| **2a** | How does frame time respond to node count, edge count, maximum degree, category count and hover-label count? | task-003 (D2b) | `research/rendering-stage2a-response-surface.md` |
+| **2b** | Does the derived bench clear NFR-7's floor, and where is NFR-8's ceiling? | task-010 (D2, D5) | `research/rendering-stage2b-bench-and-verdicts.md` |
+| **3** | What does the project take on — payload, licence, update? | task-002 (D6, D7) | `research/rendering-stage3-payload-licence-update.md` |
 
-**Result: all 25 combinations survive to the spike (task-004).**
+All three stage deliverables are complete. **This document discharges nothing itself** — every
+measured claim below is attributed to the stage document that produced it, per this task's own
+DETAIL: "every D10 required part is present and attributed to the stage that discharged it; nothing
+is carried over from the superseded revision without being re-derived."
 
-### Part 4B — 25-Cell Comparison Matrix
-
-| # | Candidate | Rend. | Shape | Licence | Payload | Build | L@bench | L@10× | Interact | A11y cost | Val | Update | f008 | Basis | Verdict |
-|---|-----------|-------|-------|---------|---------|-------|---------|-------|----------|-----------|-----|--------|------|-------|---------|
-| 1 | D3.js v7.9.0 (d3-force+zoom+selection+drag) | SVG | 1 inline subset | ISC | **35,992 B (35.1 KB) inlined** | maintainer-time (concat 4 .min.js; re-inline on update) | GOOD–EXCELLENT: hub (deg 187) prominent; ≈3,600×3,600 px spread; 3,102 SVG elements | POOR: 31,104 SVG elements; pan/zoom degrades; hub forces extreme spread | Built-in: force, zoom, pan, drag, select. Must-write: BFS ~30 lines, filter, group | LOW: SVG native; ~50 lines ARIA+focus (spike scope; see Part 11 for 69-line full WCAG AA budget) | T2 FAIL by design; T1/T3/T4 PASS; S2 PASS; NM PASS | npm update 4 modules; ISC; re-inline .min.js | SMALL | **measured** | **recommended** |
-| 2 | D3.js v7.9.0 | SVG | 3 companion | ISC | 35,992 B as graph.js companion | none | Same as row 1 | Same as row 1 | Same as row 1 | Same | Same | Same as row 1; manage separate file | SMALL | derived | rejected — companion adds deploy complexity; no rendering benefit |
-| 3 | D3.js v7.9.0 | SVG | 4 CDN | ISC | 0 shipped; ~35 KB fetched | none | Same (if CDN available) | Same | Same as row 1 | Same | **S2 FAIL**; T2 FAIL; NM PASS | CDN URL pin; version risk | SMALL | derived | rejected — S2 FAIL; CDN dependency; offline fragility |
-| 4 | D3.js v7.9.0 | SVG | 5 build+commit | ISC | 35,992 B committed | maintainer-time (bundler+commit) | Same as row 1 | Same as row 1 | Same as row 1 | Same | Same; S2 PASS | npm update → rebuild → commit | SMALL | derived | rejected — build step + committed artifact; no benefit over row 1 |
-| 5 | Cytoscape.js v3.34.0 | Canvas | 2 inline whole | MIT | **435,328 B (425 KB) inlined** | none (copy cytoscape.min.js) | GOOD: Canvas; hub clear; data load <5ms | GOOD: Canvas handles 7,840 nodes; data load 198ms | Built-in: cose layout, zoom, pan, drag, cy.bfs(), filter, select. Must-write: depth slider (Impact lens) | HIGH: ~200–400 lines DOM proxy required | T1–T4 not triggered (Canvas); S2 PASS; NM PASS | npm update; MIT; copy new .min.js | SMALL | **measured** | rejected — 12× larger payload vs D3 subset; Canvas requires 200–400 line proxy; no perf advantage at 784 nodes |
-| 6 | Cytoscape.js v3.34.0 | Canvas | 3 companion | MIT | 425 KB companion | none | Same as row 5 | Same | Same as row 5 | Same | S2 PASS; T1–T4 N/A | Same as row 5; manage separate file | SMALL | derived | rejected — same Canvas proxy; companion deploy complexity |
-| 7 | Cytoscape.js v3.34.0 | Canvas | 4 CDN | MIT | 0 shipped; ~425 KB fetched | none | Same (if CDN) | Same | Same as row 5 | Same | **S2 FAIL**; T1–T4 N/A; NM PASS | CDN URL pin; availability risk | SMALL | derived | rejected — S2 FAIL; CDN; Canvas proxy |
-| 8 | Cytoscape.js v3.34.0 | Canvas | 5 build+commit | MIT | 425 KB committed | maintainer-time | Same | Same | Same as row 5 | Same | S2 PASS; T1–T4 N/A | npm update → rebuild → commit | SMALL | derived | rejected — build step; Canvas proxy; same Canvas reasons |
-| 9 | vis-network v10.1.0 | Canvas | 2 inline whole | Apache-2.0 OR MIT | **426,912 B (417 KB) inlined** | none (copy UMD bundle) | GOOD: Canvas; hub clear | GOOD: Canvas; similar timing to rows 5–8 | Built-in: force, zoom, pan, drag, clustering. Must-write: BFS ~30 lines, depth slider | HIGH: ~200–400 lines DOM proxy | T1–T4 N/A; S2 PASS; NM PASS | npm update; MIT branch; copy .min.js | SMALL | derived (Canvas class; payload from npm) | rejected — same Canvas proxy; dual-licence adds attribution decision |
-| 10 | vis-network v10.1.0 | Canvas | 3 companion | Apache-2.0 OR MIT | 417 KB companion | none | Same | Same | Same as row 9 | Same | S2 PASS; T1–T4 N/A | Same as row 9; manage separate file | SMALL | derived | rejected — companion; same as row 9 |
-| 11 | vis-network v10.1.0 | Canvas | 4 CDN | Apache-2.0 OR MIT | 0 shipped; ~417 KB fetched | none | Same (if CDN) | Same | Same as row 9 | Same | **S2 FAIL**; T1–T4 N/A; NM PASS | CDN URL pin; availability risk | SMALL | derived | rejected — S2 FAIL; CDN |
-| 12 | vis-network v10.1.0 | Canvas | 5 build+commit | Apache-2.0 OR MIT | 417 KB committed | maintainer-time | Same | Same | Same as row 9 | Same | S2 PASS; T1–T4 N/A | npm update → rebuild → commit | SMALL | derived | rejected — build step; same as row 9 |
-| 13 | Sigma.js v3.0.3 + graphology v0.26.0 | WebGL | 2 inline whole bundle | MIT+MIT | **261,505 B (255 KB) combined inlined** | maintainer-time (bundle sigma+graphology) | GOOD: WebGL renders trivially; ForceAtlas2 179ms bench | GOOD rendering; ForceAtlas2 **21,649ms** at 10× (CPU-bound; 33% slower than path graph due to hub concentration) | Built-in: FA2 layout, camera zoom/pan, hover, click. Must-write: BFS (graphology-traversal or inline), filter, group | VERY HIGH: ~300–500 lines DOM proxy + sigma.graphToViewport() coord transform | T1–T4 not triggered (WebGL canvas); S2 PASS; NM PASS | npm update sigma+graphology (2 pkgs); MIT; rebundle | SMALL | **measured** | rejected — no perf benefit at 784 nodes (CONFIRMED); highest A11y cost; 7× larger than D3 subset |
-| 14 | Sigma.js v3.0.3 + graphology v0.26.0 | WebGL | 3 companion | MIT+MIT | 255 KB companion files | none | Same | Same | Same as row 13 | Same | S2 PASS; T1–T4 N/A | Same as row 13; manage separate files | SMALL | derived | rejected — same WebGL reasons |
-| 15 | Sigma.js v3.0.3 + graphology v0.26.0 | WebGL | 4 CDN | MIT+MIT | 0 shipped; ~255 KB fetched | none | Same (if CDN) | Same | Same as row 13 | Same | **S2 FAIL**; T1–T4 N/A; NM PASS | CDN URL pin; CDN risk | SMALL | derived | rejected — S2 FAIL; CDN; WebGL no-benefit |
-| 16 | Sigma.js v3.0.3 + graphology v0.26.0 | WebGL | 5 build+commit | MIT+MIT | 255 KB committed bundle | maintainer-time | Same | Same | Same as row 13 | Same | S2 PASS; T1–T4 N/A | npm update 2 pkgs → rebundle → commit | SMALL | derived | rejected — build step; same WebGL reasons |
-| 17 | AntV G6 v5.1.1 | Multi (Canvas default) | 3 companion | MIT | **1,383,347 B (1.32 MB) companion g6.js** | none | GOOD: Canvas; hub clear | GOOD: Canvas; similar to rows 5–8 | Built-in: layouts, zoom, pan, drag, combo, neighbour. Must-write: depth slider; @antv/algorithm optional | HIGH (Canvas default): ~200–400 lines proxy | T1–T4 N/A; S2 PASS; NM PASS | npm update 16 @antv/* pkgs; high breaking-change risk | **LARGE** (16 @antv/* sub-packages) | **measured** | rejected — 1.32 MB bundle (38× D3 subset); LARGE feature-008; 16 @antv/* coordinated updates; Canvas proxy |
-| 18 | AntV G6 v5.1.1 | Multi | 4 CDN | MIT | 0 shipped; ~1.32 MB fetched | none | Same (if CDN) | Same | Same as row 17 | Same | **S2 FAIL**; T1–T4 N/A; NM PASS | CDN URL pin; risk amplified by 1.32 MB bundle | LARGE | derived | rejected — S2 FAIL; CDN; same G6 reasons |
-| 19 | AntV G6 v5.1.1 | Multi | 5 build+commit | MIT | 1.32 MB committed | maintainer-time | Same | Same | Same as row 17 | Same | S2 PASS; T1–T4 N/A | npm update 16 pkgs → rebuild → commit | LARGE | derived | rejected — build step; same G6 reasons |
-| 20 | Hand-rolled SVG | SVG | 1 inline authored code | none | ~0 external bytes (authored ~5–15 KB) | none | GOOD (SVG class; same legibility as row 1) | POOR (SVG class; same 31,104+ element limit) | Must-write ALL: force sim, zoom, pan, drag, BFS, filter, group — no built-in behaviours | LOW: SVG native; ~50 lines ARIA+focus (same class as row 1) | T2 FAIL by design; T1/T3/T4 PASS; S2 PASS; NM PASS | No external deps; update = skill template change | NONE (no external deps) | derived (SVG class; payload by inspection) | rejected — requires writing all interaction from scratch (~500–1,000 lines vs ~50 lines calling D3 APIs) |
-| 21 | Hand-rolled Canvas | Canvas | 1 inline authored code | none | ~0 external bytes (authored ~500–1,500 lines) | none | GOOD (Canvas class) | GOOD (Canvas) | Must-write ALL: Canvas draw (nodes/edges/labels), force sim, zoom matrix, hit-test, BFS, filter | HIGH+extra: Canvas proxy (200–400) + hand-written Canvas drawing (~500–1,500) = combined ~700–1,900 lines | T1–T4 N/A; S2 PASS; NM PASS | No external deps; update = skill template change | NONE | derived | rejected — most implementation work of any candidate; no benefit over rows 5–12 |
-| 22 | Data Navigator v3.0.0 (+ chosen renderer) | DOM overlay | 1/2 inline (85 KB ESM) | MIT | **87,466 B (85 KB) inline** PLUS renderer payload | maintainer-time | N/A — DN provides no graph rendering (depends on paired renderer) | N/A | N/A — DN provides keyboard nav layer only; all graph rendering from paired renderer | MEDIUM additive: ~80 lines to build DN structure object; DN handles focus + ARIA; eliminates proxy hand-code | T1–T4 not triggered by DN alone; S2 PASS; NM PASS | npm update data-navigator; MIT; UNCERTAIN cadence (CMU research project) | SMALL | **measured** | rejected as standalone — not a complete renderer; D3.js+DN pairing (row 1 + row 22, ~120 KB total) merits accessibility-layer consideration |
-| 23 | Data Navigator v3.0.0 (+ renderer) | DOM overlay | 3 companion | MIT | 85 KB companion PLUS renderer | none | Same as row 22 | Same | Same as row 22 | Same | T1–T4 N/A; S2 PASS; NM PASS | Same as row 22 | SMALL | derived | rejected — same as row 22 |
-| 24 | Data Navigator v3.0.0 (+ renderer) | DOM overlay | 4 CDN | MIT | 0 shipped; ~85 KB fetched PLUS renderer | none | Same | Same | Same as row 22 | Same | **S2 FAIL** (CDN); NM PASS | CDN URL pin; UNCERTAIN cadence | SMALL | derived | rejected — S2 FAIL; CDN; not standalone |
-| 25 | Data Navigator v3.0.0 (+ renderer) | DOM overlay | 5 build+commit | MIT | 85 KB committed PLUS renderer | maintainer-time | Same | Same | Same as row 22 | Same | S2 PASS | npm update + rebuild + commit | SMALL | derived | rejected — build step; not standalone |
+**Explicitly out of scope, per the SPEC's own § "The validation boundary":** choosing a renderer
+(Q9 decided); building a degraded rendering mode (NFR-8: measure, document, warn — no adaptive
+degradation anywhere, by design); pricing an accessibility proxy layer (there is none); authoring
+the palette; writing product code or Knowledge Base content; deriving the bench by counting files;
+stating a bench size as this feature's own assertion (AC-S3 — every count below is Stage 2b's
+measured output, never a size feature-002 specifies).
 
 ---
 
-## Part 5 — The Recommendation
+## Part 2 — Stage 1: the WebGL-under-headless probe (D10 part 2, AC-S1)
 
-**D3.js v7.9.0 (four-module ISC subset: d3-selection, d3-force, d3-zoom, d3-drag) × Shape 1 — Inline Vendored Subset**
+*Source: `rendering-stage1-webgl-probe.md` §§ 2, 4.*
 
-Matrix row 1. Concatenate the four `.min.js` distribution files and inline them in a
-`/* D3 VENDOR BEGIN */`…`/* D3 VENDOR END */` comment block inside `graph.html`'s `<script>`
-element. No CDN fetch. No companion files. No build toolchain at adopter time. One
-self-contained HTML file.
+| Environment | L1 context | L2 readable pixels | L3 capturable pixels |
+|---|---|---|---|
+| ENV-1 — CI `visual-fidelity` runner (`ubuntu-24.04`) | NOT VERIFIED | NOT VERIFIED | NOT VERIFIED — unreachable from this host |
+| **ENV-2 — developer machine, Playwright provisioned** (Windows 11) | **PASS** | **PASS** | **PASS**, with one synchronisation qualification (below) |
+| ENV-3 — Playwright not provisioned | NOT DETERMINABLE (correctly — the pre-existing C-5 skip path, undisturbed) | NOT DETERMINABLE | NOT DETERMINABLE |
 
-**Library:** D3.js, https://d3js.org / https://github.com/d3/d3, v7.9.0  
-**Modules:** `d3-selection@3.0.0`, `d3-force@3.0.0`, `d3-zoom@3.0.0`, `d3-drag@3.0.0`  
-**Licence:** ISC (all four modules)  
-**Inlined payload:** 35,992 bytes (35.1 KB) — measured from spike harness
-(rendering-spike-matrix.md §Spike 1, §Bundle sizes CONFIRMED)  
-**Renderer:** SVG (D3 manipulates the DOM; no `<canvas>` or WebGL context)
+**Renderer identity, verbatim, recorded because a pass on a software rasteriser and a pass on a
+discrete GPU are different facts:**
 
----
+```
+UNMASKED_VENDOR_WEBGL    : "Google Inc. (Google)"
+UNMASKED_RENDERER_WEBGL  : "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)"
+```
 
-## Part 6 — Rejected Alternatives
+**Every ENV-2 pass was produced by a CPU software rasteriser (SwiftShader), not a GPU**, under the
+unmodified launch configuration `validate-visuals.mjs` uses (`headless: true`, no GPU flag). A
+hardware-backed context (`ANGLE (NVIDIA, NVIDIA RTX 2000 Ada Generation Laptop GPU …)`) is reachable
+on this host with one added launch flag (`--use-angle=d3d11`), which is the comparand Part 7 below
+uses.
 
-### Why the widened option space was used, not re-narrowed
+**The one loud qualification:** `canvas.toDataURL()` called *outside* the drawing frame on a
+default-attribute WebGL canvas returns a fully transparent buffer (`preserveDrawingBuffer: false`
+semantics), for both a single-draw and a continuously-simulating canvas. This is not an L3 negative
+— the Playwright element screenshot (the route FR-12 actually reuses) passes on default-attribute
+canvases regardless, and the same canvas passes `toDataURL()` when captured inside the drawing
+frame. It is a synchronisation constraint for feature-008's draw loop (Stage 1 § 6.2), not a
+renderer finding.
 
-Before FR-16 was amended, only a vendored inline subset within a single self-contained file
-was practically admissible — which, for D3.js's four-module subset at 35.1 KB, is exactly
-Shape 1 anyway. The amendment's value was enabling a genuine quality-first evaluation of:
-
-- **Cytoscape.js v3.34.0 (425 KB, Canvas):** the richest library-backed option with built-in
-  graph algorithms (`cy.bfs()`, `cy.neighborhood()`), the clearest quality/interaction
-  upgrade the widening could have delivered. Previously dismissible on payload grounds
-  alone; now evaluable on its merits. It was evaluated and rejected on Canvas accessibility
-  cost (~200–400 line proxy, no perf advantage at 784 nodes) — not on packaging.
-- **Sigma.js + graphology (255 KB, WebGL):** previously too large for a self-contained
-  constraint; now evaluable inline (Shape 2). Evaluated and rejected because GPU rendering
-  provides zero measured performance benefit at 784 nodes (ForceAtlas2 is CPU-bound; 179ms
-  at bench is no faster than any other renderer class at the same scale) while imposing the
-  highest accessibility cost (~300–500 line proxy + coordinate transform).
-- **AntV G6 v5.1.1 (1.32 MB, Multi):** evaluable via companion file (Shape 3) after the
-  amendment. Evaluated and rejected: 38× larger payload than D3.js subset; LARGE feature-008
-  due to 16 coordinated @antv/* sub-package updates.
-- **Build-step shapes (Shape 5):** explicitly evaluated for every renderer class. Rejected
-  for all: no payload saving over Shape 1 for D3.js (the tree-shaken bundle of four modules
-  would be marginally smaller than concatenating their .min.js files, not worth a bundler
-  toolchain); the AID CI pipeline has no npm build phase (infrastructure.md §Build Commands).
-- **CDN shapes (Shape 4):** explicitly evaluated; rejected for all. Every CDN row trips S2
-  (`validate-html-output.sh` S2: no external CDN `<script src>`) and introduces an offline
-  dependency at no quality advantage.
-- **Data Navigator pairing (D3.js + DN, ~120 KB):** evaluated as an accessibility enhancement
-  (rows 22–25). D3.js's native SVG semantics satisfy NFR-1 at 69 lines; adding DN would
-  enhance keyboard graph traversal semantics at the cost of an additional 85 KB and a second
-  dependency. Deferred: the SVG native semantics at 69 lines are sufficient for the A+
-  quality bar; DN can be revisited if feature-009's gap analysis reveals a deficit.
-
-**The recommendation lands on the same renderer class as a pre-amendment analysis would have,
-but the widening was substantively used:** Cytoscape.js, Sigma.js, and AntV G6 were each
-evaluated on quality and interaction merit under the packaging shapes the amendment newly
-permitted, and each was rejected on those merits. The pre-amendment answer would have
-dismissed them on payload grounds without evaluating them on quality grounds; this record
-does not.
-
-### Rejected renderer classes
-
-#### 6.1 Canvas (Cytoscape.js v3.34.0, vis-network v10.1.0, Hand-rolled Canvas)
-
-*Evidence: rendering-spike-matrix.md §Spike 2 (Cytoscape.js representative); §Accessibility Cost Summary.*
-
-Canvas renders an opaque pixel buffer. The browser's accessibility tree sees only a single
-`<canvas>` element with no navigable children. The Kibana evidence (source O, 2026-07-28)
-documents the failure mode when no proxy is present. Reaching NFR-1 (WCAG AA) requires a
-hand-built DOM proxy overlaying the canvas: ARIA roles, focus management, coordinate
-synchronisation between pixel space and DOM space. The spike assessed this at **~200–400
-lines** of proxy code.
-
-At 784 nodes (bench), Cytoscape.js's Canvas renderer loads data in **< 5ms** — the same
-order of magnitude as D3.js's SVG join. Force-directed layout (cose algorithm) is CPU-bound
-like all others; no measured performance advantage at bench scale. Bundle size: 425 KB
-(rows 5–8), 12× larger than the D3.js four-module subset, with no interaction quality
-advantage that justifies the payload at this scale.
-
-vis-network (417 KB, rows 9–12) is similar in rendering class and accessibility cost. Its
-Apache-2.0 OR MIT dual licence was evaluated; MIT branch passes Screen 5, but the dual
-licence adds an attribution decision step.
-
-Hand-rolled Canvas (row 21) is the worst-case candidate: same Canvas proxy requirement
-(~200–400 lines) plus hand-written Canvas drawing code (~500–1,500 lines) = combined
-~700–1,900 lines.
-
-**Rejection reason:** Canvas proxy cost (~200–400 lines) is 4–6× the SVG approach (69 lines
-to reach full WCAG AA per Part 11 §11.2) with zero measured performance advantage at 784 nodes.
-
-#### 6.2 WebGL (Sigma.js v3.0.3 + graphology v0.26.0)
-
-*Evidence: rendering-spike-matrix.md §Spike 3, §WebGL No-Benefit Claim Verification.*
-
-**Measured (CONFIRMED):** ForceAtlas2 on hub-heavy bench fixture (784 nodes, 750 edges,
-max-degree 187): **179ms** for 50 iterations. At overshoot (7,840 nodes, max-degree 1,942):
-**21,649ms**.
-
-The GPU rasterisation step (WebGL rendering) accelerates painting pixels to the GPU
-framebuffer. It does NOT accelerate the force-directed layout step — that runs on the CPU
-regardless of renderer class. At 784 nodes, the CPU-bound layout dominates total frame time;
-the GPU is idle during simulation. **WebGL provides no measured performance benefit at bench
-scale.** (rendering-spike-matrix.md §WebGL No-Benefit Claim Verification, CONFIRMED.)
-
-Accessibility cost is the highest of all classes: the WebGL surface is an opaque `<canvas>`
-with no DOM structure. WCAG AA requires a DOM proxy plus the additional step of converting
-WebGL geometry coordinates to screen coordinates via `sigma.graphToViewport()` for focus
-management. The spike assessed this at **~300–500 lines** of proxy + coordinate transform
-code.
-
-Bundle: 261,505 bytes (255 KB) combined (sigma.min.js + graphology.umd.min.js) —
-rendering-spike-matrix.md §Spike 3, CONFIRMED. This is 7× larger than the D3.js subset.
-
-**Rejection reason:** Zero measured performance benefit at 784 nodes; highest accessibility
-cost (~300–500 lines proxy); 7× larger payload.
-
-#### 6.3 Multi-renderer (AntV G6 v5.1.1)
-
-*Evidence: rendering-spike-matrix.md §Spike 4.*
-
-AntV G6 v5.1.1 bundle: **1,383,347 bytes (1.32 MB)** — rendering-spike-matrix.md §Spike 4,
-CONFIRMED. This is 38× larger than the D3.js four-module subset. G6's Canvas default mode
-carries the same ~200–400 line WCAG AA proxy requirement as Cytoscape.js. G6 v5's SVG mode
-is experimental (UNCERTAIN production stability). The 16 coordinated @antv/* sub-package
-updates make feature-008 LARGE.
-
-**Rejection reason:** 38× payload; LARGE feature-008; Canvas proxy; experimental SVG mode.
-
-#### 6.4 Hand-rolled SVG
-
-*Evidence: rendering-spike-matrix.md §The 25-Cell Comparison Matrix, row 20.*
-
-D3.js's four-module subset implements exactly what hand-rolling would produce — a force
-simulation (d3-force), SVG DOM selection and data binding (d3-selection), zoom transform
-(d3-zoom), and drag behaviour (d3-drag) — under an ISC licence in 35.1 KB of tested,
-maintained code. There is no correctness, performance, or licensing advantage to hand-rolling.
-The spike estimated hand-rolled SVG at ~500–1,000 lines of interaction code versus ~50 lines
-calling D3 APIs for the same behaviours.
-
-**Rejection reason:** Pure duplication of D3.js's tested implementation at far greater cost.
-
-### Rejected packaging shapes
-
-#### 6.5 CDN Fetch (Shape 4) — all candidates
-
-Every CDN row (3, 7, 11, 15, 18, 24) triggers the `validate-html-output.sh` S2 assertion
-(`<script src="https://…">` found). S2 is a hard gate; it cannot be waived for `graph.html`
-without a feature-011 parameterisation task (task-076/077). Additionally: CDN delivery
-introduces a hard runtime network dependency (offline users cannot view the graph); the SRI
-hash must be manually updated on every library release; IP tracking by the CDN provider. At
-35.1 KB the payload cost of inlining D3.js is negligible, and the CDN tradeoffs are negative
-on every dimension.
-
-**Rejection reason:** S2 FAIL trips delivery gate; offline dependency; SRI maintenance burden;
-no quality advantage at 35.1 KB payload.
-
-#### 6.6 Build-step Output (Shape 5) — all candidates
-
-Shape 5 candidates (rows 4, 8, 12, 16, 19, 25) require a maintainer-time bundler run with
-the output committed. The AID CI pipeline is currently shell-only with no npm build phase
-(infrastructure.md §Build Commands). Adding a bundler (rollup, esbuild) to produce a
-committed artifact adds toolchain complexity for no measurable payload saving over
-concatenating pre-minified .min.js files. The committed output is not human-readable, making
-diffs opaque.
-
-**Rejection reason:** Toolchain cost incompatible with current shell-only pipeline; committed
-non-diffable artifact; no payload saving.
-
-#### 6.7 Inline Whole Library (Shape 2) — candidates larger than D3 subset
-
-D3.js Shape 2 (all 30+ modules inlined) was pre-screen dropped: the "whole" D3 package
-includes geographical, statistical, and other modules irrelevant to graph rendering; including
-them adds ~180 KB of unused code with no semantic distinction from Shape 1. For Cytoscape.js
-(425 KB, row 5), vis-network (417 KB, row 9), Sigma.js (255 KB, row 13), and Data Navigator
-(85 KB, row 22), Shape 2 was the minimum viable inline shape — these were evaluated (not
-dropped) and rejected on renderer-class grounds above.
-
-#### 6.8 Companion Files (Shape 3)
-
-Shape 3 (rows 2, 6, 10, 14, 17, 23) commits a `.js` file beside `graph.html`. An adopter
-who copies only `graph.html` gets a broken page. The payload bytes still travel; no savings.
-For D3.js (35.1 KB), a companion adds distribution fragility for no benefit over inlining.
-For larger candidates (Cytoscape.js at 425 KB, vis-network at 417 KB, AntV G6 at 1.32 MB),
-the companion shape was evaluated on quality grounds and rejected on renderer-class grounds.
-
-**Rejection reason:** Two-file dependency; fragile distribution for a documentation artifact;
-no payload advantage over inlining for D3.js's subset.
+**ENV-1 is an honest gap, not a result** — not reachable from this host, and a live repo defect
+(`.github/workflows/test.yml:105` points the `visual-fidelity` job at `.aid/dashboard/kb.html`,
+which does not exist; the job has taken its SKIP branch on every run since commit `5f2b3682`,
+2026-06-26) means the gate the ENV-1 verdict would protect does not currently execute at all. Both
+are recorded with owners in the Stage 1 report §§ 5, 10 and are not fixed by this document.
 
 ---
 
-## Part 7 — Runtime Prerequisites
+## Part 3 — Stage 1 escalation (D10 part 3, AC-S2)
 
-`graph.html` is a single, self-contained HTML file. At the time a reader opens it, the
-following conditions must hold and nothing more:
+*Source: `rendering-stage1-webgl-probe.md` § 6.*
 
-The file requires **no network access**. There is no CDN fetch, no external resource
-reference, and no WebSocket or HTTP call at runtime. The D3.js modules are concatenated
-verbatim into the file's `<script>` block at generation time; they are present in the file
-before it is served or opened. A reader can open the file from a USB drive, an offline laptop,
-or a network share with no internet access, and the graph will render.
+All three levels PASS on ENV-2 and no level is negative anywhere, so D1a's escalation rows for a
+negative verdict (rows 2–4: capture-blank, context-produces-nothing, no-context-at-all) **do not
+fire**, and nothing is handed to the work owner for a renderer-changing decision. The applicable row
+is the first: *"L1 ✓ L2 ✓ L3 ✓ — record the renderer identity string as evidence and move to Stage
+2."* Discharged.
 
-The file requires **no companion asset files**. There are no external `.css`, `.js`, `.woff`,
-or image files that must reside alongside `graph.html`. A reader can move the file to any
-location on any filesystem, and it will render.
-
-There is **no build output required at adopter time**. An adopter who installs the AID
-tool-set gets `graph.html` as a committed artifact. No `npm install`, no `npm run build`, and
-no environment variable is required to open the file. The only prerequisite is a
-JavaScript-enabled browser (FR-17).
-
-**At update time (maintainer only):** when D3.js modules are updated (see Part 9), the
-maintainer must fetch the new `.min.js` files for the four modules, concatenate them in
-declaration order (d3-selection, d3-force, d3-zoom, d3-drag), replace the
-`/* D3 VENDOR BEGIN */`…`/* D3 VENDOR END */` block in `graph.html`, update the version
-comment, and commit. No build toolchain is installed at the adopter site. No other files
-change.
+**The one recommendation Stage 1 does owe on evidence, stated even though the escalation did not
+fire:** if feature-008's drawing code ever needs `canvas.toDataURL()` (export, fixture, test), the
+call must be made inside the frame that drew, or the context must request
+`preserveDrawingBuffer: true`. This is a constraint on feature-008's seam, not a request to change
+the decided architecture, and feature-011 is asked for nothing arising from Stage 1.
 
 ---
 
-## Part 8 — Payload, Licence, and Attribution
+## Part 4 — The bench derivation procedure and derived figures (D10 part 4, AC-S3, AC-S6)
 
-### Payload
+*Source: `rendering-stage2b-bench-and-verdicts.md` § 2.*
 
-| Item | Value | Source |
+**The bench is a procedure (SPEC § D2), not a stated figure, and every number below is Stage 2b's
+measured output of running that procedure over this repository's own producer streams — never an
+assertion of this feature's own.**
+
+| Term | Producer | Measured value |
 |---|---|---|
-| D3.js four-module subset (inlined) | **35,992 bytes (35.1 KB, uncompressed)** | rendering-spike-matrix.md §Spike 1, Bundle sizes CONFIRMED |
-| — d3-selection@3.0.0 | 13,522 bytes | rendering-spike-matrix.md §Spike 1 |
-| — d3-force@3.0.0 | 8,300 bytes | rendering-spike-matrix.md §Spike 1 |
-| — d3-zoom@3.0.0 | 9,984 bytes | rendering-spike-matrix.md §Spike 1 |
-| — d3-drag@3.0.0 | 4,186 bytes | rendering-spike-matrix.md §Spike 1 |
-| graph.html template overhead | ~3–5 KB | Estimated from feature-007 shell structure |
-| CDN fetch at load time | None | Shape 1 — no network dependency |
-| `node_modules` committed | None | Shape 1 — no package manager at adopter site |
-| npm/build toolchain required | None | Shape 1 — no build step |
+| 1 — KB-side node set | feature-005's Pass 1a, after Q13's concept merge | **479** (`document` 21, `section` 340, `fact` 86, `concept` 32) |
+| 2 — source-artifact / image / web-page set | feature-004's enumerator | **1,130** (`source-artifact` 1,126, `image` 4, `web-page` 0) |
+| **Total nodes** | — | **1,609** |
+| 3 — edge set and degree distribution | feature-005 Pass 1/Pass 2, Q13's merge | **6,171** unique edges (deduplicated union — see limitation below); median degree 6 (connected nodes); 95th-percentile degree 42; **maximum degree 329** (`kb:concept:canonical`); 962 of 1,609 nodes touched by ≥1 edge (59.8 %); 647 isolated (40.2 %, kept deliberately per D3) |
 
-### Licence
+**Categories actually exercised:** 7 of the vocabulary's 14 categories appear in this bench's real
+edge set (`structure`, `documentation`, `evidence`, `dependency`, `navigation`, `definition`,
+`representation`) — a finding about this repository's own graph shape, not a defect in the
+derivation.
 
-All four modules are distributed under the **ISC Licence** by Mike Bostock and Observable,
-Inc. ISC is a two-clause permissive licence equivalent in effect to MIT. Source: npm
-registry `d3-selection@3.0.0`, `d3-force@3.0.0`, `d3-zoom@3.0.0`, `d3-drag@3.0.0`
-(verified 2026-07-28, source Q); D3.js ISC Licence text, https://github.com/d3/d3/blob/main/LICENSE
-(source R, accessed 2026-07-28).
+**The edge-set term's own honest limitation, stated rather than smoothed over.** The 6,171-edge
+figure is a **measured-but-provisional** union of three classification-pass row files
+(`rows-pass1a.tsv`, `rows-pass1b.tsv`, `rows-class0.tsv`) reconstructed from a stopped-mid-run
+pipeline, not the output of a finished `relationships.md` produced by feature-004/feature-005's
+shipped code — that code ships in delivery-002. Two of the three source files disagree on which of
+two competing classification passes is authoritative for the same edges, so the union is a
+best-effort deduplicated superset: it is very unlikely to undercount real edges, and may modestly
+overcount. **This is flagged, not hidden**, and it is the reason the verdict fixture in Part 7 below
+converges to fewer edges (3,854) than this term states (6,171) — making that verdict conservative in
+the "understates the real cost" direction, per Stage 2b § 3.
 
-ISC requires:
-1. The copyright notice is preserved in the distributed code.
-2. The licence text is preserved in the distributed code.
-
-ISC does **not** require a user-visible attribution notice, a footer, an about panel, or a
-companion NOTICE file.
-
-### Attribution — the specific place
-
-**The copyright notices and licence text must appear in the `/* D3 VENDOR BEGIN */` comment
-block inside `graph.html`'s `<script>` element, immediately preceding the inlined module
-code.** No other location is required.
-
-Concretely, the block must open with the verbatim ISC copyright notices from each module's
-`.min.js` header:
-
-```
-/* D3 VENDOR BEGIN — d3-selection@3.0.0, d3-force@3.0.0, d3-zoom@3.0.0, d3-drag@3.0.0
-   Copyright 2010-2024 Mike Bostock
-   ISC License: https://github.com/d3/d3/blob/main/LICENSE
-   [Per-module copyright notices from .min.js headers follow]
-*/
-```
-
-This satisfies the ISC "copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software" requirement. The block is present in every
-copy of the file regardless of where it is moved. No visible footer, about panel, or
-companion file is required or added.
+**AC-S3 compliance, stated explicitly.** No node count, edge count or degree figure in this Part is
+an assertion feature-002 makes about a bench size. Every figure is Stage 2b's runtime output of
+running D2's named procedure against this repository's own on-disk producer streams, cited with its
+command (Stage 2b §§ 2, 8), and it should be re-derived once delivery-002 ships a finished
+`relationships.md` (Stage 2b § 7, item 5).
 
 ---
 
-## Part 9 — Update Story
+## Part 5 — The response surface (D10 part 5, AC-S4)
 
-### Current baseline
+*Source: `rendering-stage2a-response-surface.md` §§ 3–8, all figures runtime outputs of a synthetic
+self-built fixture generator, never this repository's own graph.*
 
-The file `.github/dependabot.yml` (verified on disk 2026-07-28) declares:
+| D2b axis | Range sampled | Observed shape | Verdict |
+|---|---|---|---|
+| 1 — node count | 200 → 4,000 (mean degree, max degree held fixed) | **Super-linear.** Total median frame time: 3.3 ms → 371.6 ms. Each doubling more than triples total time in three of four steps sampled | Draw dominates total at every point (contrast the superseded record's "layout dominates" finding, not reproduced here) |
+| 2 — edge count | mean degree 1 → 16 (node count held fixed) | **Approximately linear.** Doubling edge count yields ×1.89–2.01 total-time growth | Edge redraw is the near-linear cost driver; nodes-and-edges growing **together** compounds super-linearly, edges alone do not |
+| 3 — maximum degree | hub degree 15 → 240 (edge budget held fixed) | **Flat**, ±2 ms across a 16× range | **Conditioned**: this holds *because* the generator conserves the overall edge budget while concentrating degree into the hub. A hub that is a genuine net *addition* of edges falls under axis 2's sensitivity instead |
+| 4 — category count | 1, 2, 4, 8, 14 | **A step, not a ramp.** 1→2 costs almost nothing; 2→4 nearly doubles total time; 4→8→14 flat | **Root cause, read from source**: PixiJS 8.14.0's core `Graphics` API has no native dashed-stroke primitive. `dotted`/`dash-dot` line styles (the 3rd/4th of four patterns) enter the mix only at `categoryCount ≥ 4`, and cost roughly double the solid/dashed budget — a step function of style count, not category count |
+| 5 — concurrent hover-label count | 4 → 60 labels | **Flat**, within a ~7 ms band, not distinguishable from the no-hover baseline | Feasible; on this ~1,600-edge fixture its cost is not measurably distinguishable from the base edge-redraw cost. Scoped: a much sparser fixture, or a materially larger hub than 60, was not tested |
 
-```yaml
-version: 2
-updates:
-  - package-ecosystem: "github-actions"
-    directory: "/"
-    schedule:
-      interval: "weekly"
-    commit-message:
-      prefix: "ci"
-    groups:
-      github-actions:
-        patterns:
-          - "*"
-```
-
-**Today, nothing in the repository notices upstream movement of any D3.js module.** There is
-no `package.json` declaring the D3 dependencies, no lockfile, no dependabot npm entry, and no
-CI check that reads D3 version strings from `graph.html`. A D3 security advisory or breaking
-change would go undetected until a maintainer manually checked.
-
-### Required mechanism
-
-The mechanism is: **a scoped `package.json` at `canonical/aid/scripts/graph/package.json`
-declaring the four D3 modules at exact version, plus a new Dependabot `npm` entry targeting
-that directory.**
-
-This follows the precedent of `canonical/aid/scripts/summarize/package.json` — the
-summarize skill's scoped `"private": true` manifest pinning its dependencies without
-committing `node_modules` (rendering-bench-and-options.md §External Integrations, paragraph
-on precedent; infrastructure.md §The Build: Multi-Profile Render). The scoped manifest does
-not require `npm install` at adopter time. Its sole purpose is version declaration for
-Dependabot and the maintainer update procedure.
-
-**Required `canonical/aid/scripts/graph/package.json`:**
-```json
-{
-  "name": "@aid/graph-vendor",
-  "version": "0.0.0",
-  "private": true,
-  "description": "Version declarations for D3.js modules inlined in graph.html. Not an npm package — Dependabot tracking only.",
-  "dependencies": {
-    "d3-selection": "3.0.0",
-    "d3-force": "3.0.0",
-    "d3-zoom": "3.0.0",
-    "d3-drag": "3.0.0"
-  }
-}
-```
-
-**Required addition to `.github/dependabot.yml`:**
-```yaml
-  - package-ecosystem: "npm"
-    directory: "/canonical/aid/scripts/graph"
-    schedule:
-      interval: "weekly"
-    commit-message:
-      prefix: "deps(graph)"
-    groups:
-      d3-graph:
-        patterns:
-          - "d3-*"
-```
-
-When Dependabot opens a PR for a new module version, the maintainer follows the procedure in
-Part 7 to re-inline the updated `.min.js` files and commit. This is a **named mechanism** —
-a Dependabot ecosystem entry — not an intention.
+**The headless-conservatism comparison** (software vs. a hardware-forced launch flag, same fixture):
+hardware is faster at every sampled point, but the margin **shrinks sharply with scale** — 34.3 % at
+500 nodes to 1.5 % at 2,000 nodes. This is the comparison Part 7 below applies to the actual bench
+verdict.
 
 ---
 
-## Part 10 — Accessibility Confirmation
+## Part 6 — Every measurand in D4's set (D10 part 6, AC-S5)
 
-*Demonstrating — not asserting — that three WCAG AA behaviours are reachable with D3.js SVG.
-Every claim cites a specific line in rendering-spike-matrix.md §Spike 1.*
+*Sources: `rendering-stage2a-response-surface.md` (measurands 1–5, 7–8 partial), and note where a
+measurand is not covered.*
 
-### 10.1 Reduced-motion settling (NFR-4)
-
-*Source: rendering-spike-matrix.md §Spike 1, "Other confirmed behaviours (unchanged from v1)"
-line: "Reduced-motion: `sim.stop()` immediately; `sim.tick(N)` headless for settled layout ✓"*
-
-D3.js `d3-force` ForceSimulation exposes `simulation.stop()` (halts immediately) and
-`simulation.tick(n)` (advances n ticks synchronously, no animation callbacks). When
-`window.matchMedia('(prefers-reduced-motion: reduce)').matches` is true:
-1. `simulation.stop()` is called before any `requestAnimationFrame` fires.
-2. `simulation.tick(300)` (or sufficient ticks for convergence) runs synchronously.
-3. The final settled node positions are written to the SVG DOM in one synchronous pass.
-4. The browser paints the settled layout in one frame; no animation plays.
-
-**Status: CONFIRMED reachable** — the API exists and is exercised in the spike.
-
-**One-time cost note:** The 300-tick headless run takes **750ms** at bench scale (measured —
-rendering-spike-matrix.md §Spike 1, Force simulation table: "1× (bench) | 784 | 750 | 187 |
-300 ticks headless | **750ms**"). This is a CPU-bound synchronous cost that runs once at page
-load before the first paint. It is not an interaction latency (zoom, pan, and drag are
-real-time after layout). Part 12 addresses whether 750ms is acceptable.
-
-### 10.2 Keyboard zoom and pan (NFR-6)
-
-*Source: rendering-spike-matrix.md §Spike 1, "Other confirmed behaviours (unchanged from v1)"
-line: "Zoom/pan: `zoom.scaleBy()` + `zoom.translateBy()` available ✓"*
-
-D3.js `d3-zoom` exposes `zoom.scaleBy(selection, factor)` and
-`zoom.translateBy(selection, dx, dy)` — programmatic API calls that drive the zoom transform
-independently of pointer events. The spike confirmed these methods are available and callable:
-- `+`/`-` keys → `zoom.scaleBy(svgSelection, 1.2)` and `zoom.scaleBy(svgSelection, 1/1.2)`
-- Arrow keys → `zoom.translateBy(svgSelection, ±50, 0)` and `zoom.translateBy(svgSelection, 0, ±50)`
-- `0` key → reset to identity
-
-All state changes update the same SVG transform that the visual rendering uses; the spatial
-position of nodes is consistent between the visual and accessible representations.
-
-**Status: CONFIRMED reachable** — the API exists and is callable from `keydown` handlers.
-Estimated implementation: ~15 lines of `keydown` handler code.
-
-### 10.3 Non-colour encoding (NFR-5)
-
-*Source: rendering-spike-matrix.md §Spike 1, "Other confirmed behaviours (unchanged from v1)"
-line: "SVG accessibility: native DOM tree; `<circle role="img">`, `<g tabIndex="0">` ✓"*
-
-D3.js SVG renders real DOM elements. Node type can be conveyed by **shape** in addition to
-fill colour via `d3-selection`'s `selection.append('rect')` / `.append('circle')` /
-`.append('polygon')` per the node's `type` field in the `GraphModel` (feature-007 SPEC.md
-§Data model). Edge type can be conveyed by **stroke-dasharray** pattern in addition to
-stroke colour. No information need be encoded by colour alone.
-
-**Status: CONFIRMED reachable** — SVG shape selection is standard D3 data-join logic.
-Estimated implementation: ~20 lines of shape-selection code in the node-drawing function.
-
----
-
-## Part 11 — Accessibility Cost
-
-*Distinct from Part 10. Part 10 confirmed behaviours are reachable; Part 11 prices the work.*
-
-### 11.1 Native accessibility-tree semantics
-
-**Yes — D3.js SVG yields a native browser accessibility tree.** Every D3 selection call
-produces real DOM elements: `<g class="node">`, `<circle>`, `<rect>`, `<line>`, `<text>`.
-The browser exposes these elements in its accessibility tree without any additional code.
-A `<g>` representing a node can carry `tabindex="0"`, `role="button"`,
-`aria-label="Node: {id}"`, and `aria-describedby` pointing to a `<desc>` element.
-
-**No hand-built proxy layer is required.** The accessible representation IS the rendered SVG,
-not a separate mirrored structure. This is the fundamental WCAG AA cost difference between
-SVG and Canvas/WebGL at this scale. (Source: rendering-spike-matrix.md §Accessibility Cost
-Summary, SVG row: "Proxy layer required? NO".)
-
-### 11.2 Implementation cost to reach WCAG AA
-
-The spike assessed the SVG accessibility cost at **~50 lines ARIA + focus**
-(rendering-spike-matrix.md §Accessibility Cost Summary, SVG row: "~50 lines (ARIA attributes
-+ CSS `:focus-visible`)"). The full budget including reduced-motion and non-colour encoding:
-
-| Behaviour | Mechanism | Est. lines |
+| # | Measurand | Verdict |
 |---|---|---|
-| Tab-focusable nodes | `tabindex="0"` on each `<g.node>` | 2 |
-| ARIA label on each node | `aria-label` set in D3 data join | 3 |
-| ARIA label on each edge | `aria-label` set in D3 data join | 3 |
-| Focus ring (visible indicator) | CSS `:focus-visible` outline on `.node` | 5 |
-| Keyboard activation (Enter/Space) | `keydown` handler per node | 8 |
-| Keyboard zoom/pan (Part 10.2) | Global `keydown` handler | 15 |
-| Reduced-motion settling (Part 10.1) | `prefers-reduced-motion` branch | 10 |
-| Non-colour encoding (Part 10.3) | Shape-selection logic in data join | 20 |
-| Skip-to-table link (NFR-2 peer table) | `<a href="#table">` above SVG | 3 |
-| **Total** | | **69 lines** |
-
-> **Scope note (Part 4B reconciliation):** Part 4B row 1 states "~50 lines ARIA+focus" —
-> this reproduces the spike matrix's narrower assessment (ARIA attributes + CSS
-> `:focus-visible` only; rendering-spike-matrix.md §Accessibility Cost Summary, SVG row).
-> The 69-line total above is the **full WCAG AA budget**: it adds keyboard zoom/pan handlers
-> (15 lines), reduced-motion settling (10 lines), non-colour encoding (20 lines), and the
-> skip-to-table link (3 lines) on top of the spike's ~50-line ARIA+CSS core. The two figures
-> are consistent in scope; the 19-line difference is WCAG AA work required by NFR-1 through
-> NFR-6 but outside the spike's narrow ARIA+CSS measurement.
-
-### 11.3 Implication for feature-009
-
-Feature-009 (accessible-table-view) renders the same `ViewModel` as the graph in a `<table>`
-element (feature-009 SPEC.md). It is the primary vehicle for comprehensive screen-reader
-traversal (NFR-1, NFR-2). Because D3.js SVG provides native semantics, the two renderings
-are complementary: the SVG graph view supports spatial exploration with WCAG AA; the table
-view supports linear traversal.
-
-**Feature-009's implementation cost is unchanged by the renderer choice.** The table view
-reads from `ViewModel`, not from the SVG DOM. Feature-009 does not need to produce a shadow
-accessibility structure for the graph. The 69 lines of WCAG AA budget land in
-feature-008, not feature-009.
-
-**Cost verdict:** D3.js SVG imposes **69 lines of WCAG AA infrastructure on
-feature-008** and **zero additional lines on feature-009** beyond what any renderer choice
-would require.
+| 1 | Layout tick cost | Minority contributor at every sampled point (12–19 % of total, Stage 2a § 3) — the superseded record's "layout dominates" claim is **not reproduced** in this implementation |
+| 2 | Node draw cost, across every `Kind` value | Architecturally cheap: position-only update on geometry built once per node. All seven `Kind` values render distinctly (shape + colour), confirmed by direct screenshot inspection (Stage 2a § 7.2) |
+| 3 | Directed-edge arrowheads | Feasible, cheap: ~1.2 ms of draw time at 1,502 edges (~4 % of draw budget), A/B isolated (Stage 2a § 7.1) |
+| 4 | Four line styles (solid/dashed/dotted/dash-dot) | **Feasible, not free.** No native dashed-stroke primitive in PixiJS 8.14.0's `Graphics`; dotted/dash-dot roughly double the draw cost of solid/dashed once introduced (Stage 2a § 6) |
+| 5 | Hover labels at max-degree worst case | Feasible; not measurably distinguishable from base edge-redraw cost up to 60 concurrent labels on the tested fixture (Stage 2a § 7) |
+| 6 | Node drag | **Measured at Stage 2b, not Stage 2a** (not one of D2b's five axes). See Part 7 — does not clear NFR-7 |
+| 7 | Category filtering, full category count | Steady cost at 14 categories: 36.05 ms median / 46.9 ms p95 — over budget at this synthetic point (not the derived bench). Filter-toggle transition (8.4 ms, single-frame sample) is **not** a spike above the post-filter steady state (6.3 ms median) for this implementation's `.visible`-flag toggling strategy (Stage 2a § 6.1) |
+| 8 | Reduced-motion settled render | **Not measured by any stage.** Not one of D2b's five axes (Stage 2a's own scope exclusion); no stage built or drove the NFR-4 fallback path for the decided architecture. Recorded as a gap — see Part 8 |
+| 9 | Vendored-bundle token / render-transform checks | **Clean at the evaluated versions.** Zero hits for `mermaid`, `canonical/`, or any of the three substitution placeholders across all five vendored files (Stage 3 § 3.4) |
 
 ---
 
-## Part 12 — Scale-versus-Accessibility Tension, Resolved
+## Part 7 — The frame-time predicate, and NFR-7's two verdicts at the derived bench (D10 part 7, AC-S7)
 
-### The tension stated
+**The predicate** (D4b, applied identically by Stage 2a and Stage 2b): median and 95th percentile
+over 150 sampled frames, after 30 excluded warm-up frames, against a 33.33 ms/frame (30 fps)
+threshold. Applied **separately** to steady simulation and to node drag. "Clears" is decided on p95
+(the conservative statistic).
 
-The owner dropped the packaging restrictions to permit maximum rendering power. The tension:
-at very high node counts (tens of thousands), Canvas/WebGL's throughput advantage can
-outweigh their accessibility proxy cost. At low node counts, SVG is comfortably within its
-ceiling and its native semantics make WCAG AA dramatically cheaper.
+**The headless-conservatism argument, and why it does not rescue the verdict below.** Stage 2a found
+the software/hardware gap narrows to under 2 % by 2,000 nodes. Stage 2b's own words: *"that caveat
+does not apply here in the failing direction: the margin by which this bench misses the floor … is
+far larger than any plausible few-percent hardware speedup could close."*
 
-### At the measured bench scale (784 nodes)
+**This is the single most consequential finding in this document, and it is recorded plainly rather
+than softened.** *Source: `rendering-stage2b-bench-and-verdicts.md` § 3.*
 
-*Source: rendering-spike-matrix.md §WebGL No-Benefit Claim Verification, CONFIRMED.*
+| Window | tick median/p95 (ms) | draw median/p95 (ms) | **total median/p95 (ms)** | Clears 33.33 ms at p95? |
+|---|---|---|---|---|
+| **Steady simulation** | 13.7 / 23.6 | 78.15 / 103.1 | **92.4 / 124.9** | **No — does NOT clear.** ~3.7× over budget at both median and p95 |
+| **Node drag** (hub pinned and swept, the worst case) | 13.05 / 19.2 | 92.9 / 119.6 | **105.1 / 134.9** | **No — does NOT clear.** ~3.2–4× over budget, and *worse than steady* — dragging re-heats the simulation and adds pointer-handling cost on top of an already-failing baseline |
 
-**D3.js force simulation (300 ticks headless) at 784 nodes / 750 edges / max-degree 187:
-750ms.** (rendering-spike-matrix.md §Spike 1, Force simulation table, 1× row.) The spike
-text itself assesses this: "D3's force simulation (300 ticks, more thorough convergence)
-takes **750ms** — still acceptable for a one-time initial layout."
-(rendering-spike-matrix.md §WebGL No-Benefit Claim Verification, Analysis point 2.)
+**Both verdicts are measured at this project's own derived bench** — 1,609 nodes, converging to
+3,854 edges against the bench's real 6,171 (Part 4's honest limitation), maximum degree 329 — using
+the identical d3-force + PixiJS harness and Playwright launch configuration Stage 1 and Stage 2a
+characterised. **Both figures are conservative in the direction of understating the real bench's
+cost**, because the verdict fixture's actual edge count (3,854) undershoots the bench's own measured
+edge count (6,171), and Stage 2a's own edge-count axis found cost tracks edges near-linearly — more
+edges would cost more, not less.
 
-**ForceAtlas2 (Sigma.js/WebGL) at the same scale: 179ms** (50 iterations).
-(rendering-spike-matrix.md §Spike 3, Measured CONFIRMED, 1× row.)
-
-These two timings are **one-time initial layout costs**, not interaction latencies:
-- After the layout settles, pan and zoom are instant (SVG transform attribute updates).
-- Drag is instant (per-node SVG coordinate update).
-- The simulation does not re-run on user interaction unless explicitly restarted.
-- For NFR-4 (reduced-motion): the 750ms runs synchronously before the first paint, after
-  which the DOM is painted once in settled state. No animation plays. This complies with NFR-4.
-
-**WebGL's GPU advantage does not apply to this 750ms cost.** WebGL accelerates the render
-step (painting to the GPU framebuffer). The force simulation runs on the CPU regardless of
-renderer class. At 784 nodes, the CPU-bound simulation dominates total frame time; the GPU
-is idle during it. Choosing WebGL would produce a ForceAtlas2 1× layout in 179ms (vs D3.js's
-750ms for 300 ticks), but would impose a ~300–500 line WCAG AA proxy plus coordinate
-transform — a net regression. (Source: rendering-spike-matrix.md §WebGL No-Benefit Claim
-Verification, Analysis points 1–4, CONFIRMED.)
-
-**The tension runs in one direction at 784 nodes:** the most powerful renderer (WebGL) offers
-zero GPU render benefit at this scale while imposing the highest accessibility cost. The
-least powerful renderer (SVG) is comfortably within its ceiling
-(rendering-bench-and-options.md §Scale-versus-Accessibility Tension: "SVG slows past a few
-thousand elements; at 784 nodes, SVG is comfortably below that ceiling") and imposes the
-lowest accessibility cost.
-
-**At the overshoot scale (7,840 nodes):** D3.js 10× layout takes **17,735ms**
-(rendering-spike-matrix.md §Spike 1, Force simulation table, 10× row); ForceAtlas2 takes
-**21,649ms** (rendering-spike-matrix.md §Spike 3). Both are far beyond an interactive budget.
-SVG additionally degrades at 31,104 elements. This is the A-5-violation case: if the project
-ever exceeds the "hundreds" bound, the rendering approach must be revisited. At current
-trajectory (784 nodes in a mature repository), this is not a practical concern.
-
-### Pole chosen: Accessibility
-
-The recommendation chooses the **accessibility pole** — D3.js SVG with native DOM semantics
-— over the performance pole (Canvas/WebGL).
-
-**Cost of that choice:**
-1. **750ms one-time layout cost** at bench scale. Accepted as stated in the spike's own
-   assessment ("still acceptable for a one-time initial layout"). This is a page-load cost,
-   not an interaction latency; the artifact is a documentation viewer, not a real-time dashboard.
-2. **T2 validator carve-out required.** The `validate-visuals.mjs` T2 overlap check cannot
-   pass for a force-directed SVG layout by design. Feature-011 C2 contingency fires
-   (tasks 084/085). See Step 8.
-3. **Theoretical performance ceiling at ~5,000–10,000 nodes.** Acknowledged; not a practical
-   concern given A-5.
-
-**What the choice saves:**
-1. Accessibility proxy lines avoided — per renderer class (arithmetic from Part 11's 69-line SVG budget):
-   - vs. Canvas (rows 5–12, 21): ~200–400 lines proxy − 69 lines SVG budget = **~131–331 lines saved**
-   - vs. WebGL (rows 13–16): ~300–500 lines proxy + coord transform − 69 = **~231–431 lines saved**
-2. The SRI hash maintenance, CDN dependency risk, and S2 carve-out that Shape 4 would require.
-3. A build toolchain at adopter time.
+**AC-6a is answered, and stated without euphemism: at the derived bench, the graph does not sustain
+NFR-7's ≥30 fps floor during steady simulation, and it does not sustain it during node drag either.**
+Per NFR-8's own governing text (Q14 item 7) and the SPEC's own validation boundary, **exceeding a
+measured floor or ceiling is a finding this validation reports, not a defect this validation
+resolves — no adaptive degradation is built anywhere by design, and this document does not invent
+one.** What this implies for the artifact's shippability is the work owner's decision, not this
+document's; Part 4's edge-set limitation and the recommendation at Part 9 bound what is and is not
+yet knowable about it.
 
 ---
 
-## Part 13 — Draft technology-stack.md Entry
+## Part 8 — Settle time: reported and not gated (D10 part 8, AC-S8)
 
-*Draft for task-095 (delivery-006) to land. Do NOT edit `.aid/knowledge/technology-stack.md` now.*
+**This part is not discharged, and that is recorded rather than papered over.** D4b's own text: "settle
+time is reported and not gated… so that a reader cannot mistake a number presented beside a gated
+one for a second gate." No stage document measured a settle-time figure for the decided
+architecture. Stage 2a's harness runs the simulation with `alphaDecay(0)` — it deliberately **never**
+settles, because FR-2's default path is continuous simulation, not the one-time-settle behaviour the
+superseded (SVG) record measured. The NFR-4 reduced-motion **fallback** path — which is where a
+"time to converge" figure would actually apply — was not built or driven by any stage (D4 measurand
+8, Part 6 above).
 
-The standing claim in technology-stack.md §Key Dependencies is that "AID deliberately ships
-zero runtime dependencies for the CLI." D3.js is not a CLI dependency — it is a browser
-dependency inside a generated HTML artifact. The drafted entry scopes this explicitly.
+**Consequence, stated as a gap rather than as a decision this document is not authorised to make:**
+AC-S8 asks the report to state settle time explicitly, with the words that say it is not gated. This
+document cannot supply a measured figure because none exists yet. **Flagged as an open question for
+the owner**: whether a settle-time measurement for the NFR-4 fallback path is scheduled as a small
+follow-on task, or whether the fallback's convergence time is accepted as unmeasured pending
+feature-008's build (at which point the fallback path will actually exist to drive). This document
+does not decide between those options.
 
 ---
 
-**Proposed addition to `technology-stack.md` §Key Dependencies (after `summarize` skill entry):**
+## Part 9 — The ceiling: NFR-8, curve, threshold, degree sensitivity, comparand (D10 part 9, AC-S9, AC-16a)
+
+*Source: `rendering-stage2b-bench-and-verdicts.md` § 4.*
+
+**Method, bracketed downward rather than swept exhaustively**, per this task's own scope
+instruction: two brackets, at two different, both-real degree distributions, because D5 requires the
+ceiling to be stated at a stated degree distribution and requires its sensitivity to be shown.
+
+| Bracket | Topology | Ceiling |
+|---|---|---|
+| **A** — Stage 2a's own baseline (mean degree 4, max degree 60, 14 categories, ~5 % isolated) | Not this project's own topology; reused because already measured | **(500, 1,000] nodes** |
+| **B** — this project's own measured degree distribution (mean degree target 7.67, max degree 329, 7 of 14 categories, ~40 % isolated) | **This project's own** | **(500, 550] nodes** — clears comfortably at 500 (p95 30.7 ms), fails at 550 by 0.4 ms at p95, clearly fails at 600 (median within 3 ms of threshold) |
+
+**NFR-8's stated ceiling for this project is Bracket B, not Bracket A.** Bracket A is retained only
+to show the degree sensitivity NFR-8's own wording requires: Bracket A's topology has half this
+project's mean degree and a fifth of its maximum degree, and its ceiling is correspondingly roughly
+double Bracket B's — consistent with Part 5's own finding that edge count, not node count alone, is
+the dominant cost driver. **This project's own current bench (1,609 nodes) is roughly 3× past the
+upper edge of its own measured ceiling.**
+
+**The comparand question is not resolved by this document**, per D5's own instruction. NFR-8 and
+AC-16a name "node count," but Part 5's axis-3 finding (max degree, with edge total held fixed, does
+not move frame time) means a bare node-count warning would be wrong in both directions on a
+differently-shaped graph. **This document supplies the evidence and states the tension; the choice
+between a raw-node-count comparand and a degree-aware one is feature-010's implementation decision
+(Open Item 6 of the SPEC), not decided here.**
+
+---
+
+## Part 10 — Payload, at every tracked copy, and the render-transform integrity verdict (D10 part 10, AC-S10)
+
+*Source: `rendering-stage3-payload-licence-update.md` §§ 2–3.*
+
+**The vendored set is five files, not two — a finding this document owes before it can price
+anything.** `d3-force`'s classic-script build does not stand alone: it requires `d3-quadtree`,
+`d3-dispatch` and `d3-timer` to already be merged onto the same global before it runs. PixiJS carries
+no such chain.
+
+| File | Version | Bytes | Licence |
+|---|---|---|---|
+| `d3-quadtree.min.js` | 3.0.1 | 5,279 | ISC |
+| `d3-dispatch.min.js` | 3.0.1 | 1,901 | ISC |
+| `d3-timer.min.js` | 3.0.1 | 1,947 | ISC |
+| `d3-force.min.js` | 3.0.0 | 8,300 | ISC |
+| `pixi.min.js` | 8.19.0 | 797,792 | MIT |
+| **Combined, one copy** | — | **815,219 bytes** (≈ 796 KiB) | — |
+
+**The repository-side multiplier: a corrected finding, not the SPEC's stated 6×.** The SPEC states
+six tracked copies (canonical + five profile renders). Verified against the sibling
+`canonical/aid/templates/graph/` directory: this repository also carries **root-level dogfood
+mirrors** at `.claude/` and `.cursor/`, byte-identical to their `profiles/` counterparts, that the
+SPEC's 6× figure does not count. **The multiplier is stated as a range, 6×–8×** (4,891,314 –
+6,521,752 bytes), because the vendor directory itself does not exist on disk yet and cannot be
+measured directly — feature-012 should re-run the check once it authors that directory and pin the
+real number.
+
+**Render-transform integrity verdict: clean at the evaluated versions.** All five files are `.js`,
+which is inside `render.py`'s `_TEXT_EXTENSIONS`, so all five are run through `substitute_filenames`
+and `rewrite_install_paths` on their way into every profile render. Grepping the actual downloaded
+bytes for every trigger string (`canonical/`, the three placeholder tokens, `mermaid`): **zero hits
+in every file.** This is **not stable across a version bump** — the update procedure (Part 12) must
+re-run this check every time, not once.
+
+---
+
+## Part 11 — Licence and attribution, per library, exact version (D10 part 11, AC-S11)
+
+*Source: `rendering-stage3-payload-licence-update.md` § 4.*
+
+All four D3 modules are **ISC** (Mike Bostock, 2010–2021), read from each package's upstream
+`LICENSE` file at its pinned version, not from a registry field or a summary page. PixiJS is **MIT**
+(Mathew Groves, Chad Engler, 2013–2023), same discipline. Both are permissive, non-copyleft licences
+with no source-disclosure obligation; the redistributed unit is a file generated into a **third
+party's** repository under this project's own MIT terms, and a permissive licence poses no problem
+under that combination.
+
+**Neither bundle's own inline header comment is sufficient attribution by itself** — each carries a
+one-line project/version/copyright comment, but not the full permission-notice paragraph either
+licence's wording requires to travel with the software.
+
+**Where attribution should appear — the recommendation, and why.** A **companion `LICENSE` file
+placed beside each vendored bundle**, copied verbatim from the upstream package at the pinned
+version. This satisfies "included in all copies" for both ISC and MIT directly, and is
+**structurally immune** to Part 10's corruption risk: a file literally named `LICENSE` has no
+suffix, so it is not a member of `render.py`'s `_TEXT_EXTENSIONS` and renders byte-identical to every
+profile, the same way `.yml` data files do. Editing the notice into the vendored `.js` bytes directly
+was considered and rejected — it would defeat the update procedure's own byte-comparison check
+(Part 12).
+
+---
+
+## Part 12 — The update mechanism, against the verified Dependabot baseline (D10 part 12, AC-S12)
+
+*Source: `rendering-stage3-payload-licence-update.md` §§ 6–8.*
+
+**Verified baseline, re-confirmed on disk rather than carried forward:** `.github/dependabot.yml`
+declares exactly one ecosystem, `github-actions`, scoped to `/`. **Nothing in this repository watches
+a JavaScript dependency today** — not one declared in a manifest, pinned to a CDN, or vendored into a
+generated artifact.
+
+**Two distinct questions, both named because the second is new and no prior reading asked it:**
+
+1. **Who notices upstream moved?** Recommended: a scoped, `"private": true`
+   `canonical/aid/scripts/graph/package.json` pinning all five packages at exact versions, plus a new
+   `.github/dependabot.yml` entry targeting that directory. This reuses the shape of the existing
+   Playwright-manifest precedent (`canonical/aid/scripts/summarize/package.json`) rather than adding
+   a bespoke CI script this project alone would maintain. **Its ongoing obligation, stated rather
+   than left implicit:** a merged Dependabot PR is only a version-bump notification — it does not
+   re-vendor the bytes. A human must, every time: re-download the dist files, re-run Part 10's
+   integrity grep, re-verify Part 11's licence text, re-measure the payload, and only then replace
+   the vendored bytes.
+2. **Who notices if the shipped copy silently stops equalling upstream?** Under the recommended
+   manifest alone: nobody, mechanically — the render-drift CI job compares a fresh render to a
+   committed render, so a consistently-mangled copy matches a freshly-mangled one perfectly. The
+   answer becomes "the person executing the update procedure, if it is followed," once Part 10's
+   grep plus a byte-comparison against a fresh upstream download at the pinned version is made a
+   **named step inside the update procedure** — run at vendor time and at every version bump, not
+   once. This is feature-012's own G6 condition, and this document supplies the check's method and
+   its clean result; feature-012 owns wiring it in.
+
+---
+
+## Part 13 — Runtime prerequisites, in prose (D10 part 13, AC-6)
+
+*Source: `rendering-stage2b-bench-and-verdicts.md` § 5, verbatim — quotable by feature-007 and
+feature-010 without paraphrase, per this task's own criterion.*
+
+> `graph.html` requires, at the point it is opened: **(1) WebGL** — a browser able to create a
+> `webgl2` or `webgl` rendering context. This project's own validation toolchain has already
+> confirmed this is satisfiable headless, with no GPU, on the exact Playwright/Chromium launch
+> configuration the project reuses (Part 2 above: L1/L2/L3 all PASS on the software-rasteriser
+> environment); the escalation matrix at feature-002 SPEC's D1a states what changes for an
+> environment where it is not. **(2) No network access** — the vendored `d3-force`/PixiJS bundle and
+> its companion files are loaded from local disk beside `graph.html`, never fetched from a CDN (Part
+> 14's recommended packaging shape), and this project's own visual-validation harness enforces the
+> same rule by aborting every non-`file://` request during validation. **(3) The companion vendor
+> assets physically present beside `graph.html`** — the artifact is a small set of files, not a
+> single self-contained document (Part 10: five tracked files, not two). **(4) No build step at open
+> time** — the vendored bundle is produced once, at authoring/render time, not in the reader's
+> browser.
+
+This is the receipt for **task-017** (canvas sizing and runtime prerequisites): the prose above is
+the statement it consumes directly, without inference.
+
+---
+
+## Part 14 — AC-21's keyboard validation route, independent of the drawing surface (D10 part 14, AC-S13, AC-21)
+
+*Structural, decided by Q9 and stated at the SPEC's own D9 — not re-derived by any stage, because
+none of the three stages touches it. Reused rather than re-measured, consistent with this task's
+instruction to attribute rather than re-derive what a stage did not need to re-establish.*
+
+**The canvas is visual-only (Q9). No control is drawn on it.** NFR-6's own consequence: the
+accessible table view provides the keyboard-operable route to select and open, so the canvas's mouse
+gestures are an enhancement rather than the only path. Every control is a real focusable HTML
+element (AC-9 as scoped: the DOM-level checks apply to the page structure and the table view, not to
+the canvas). **AC-21 is therefore decided against the DOM**, and a keyboard-only drive plus a
+focus-order and activation assertion needs no graphics context at all — it survives every Stage-1
+outcome, including the worst (L1 ✗, had it occurred).
+
+**The trap this route must not fall into, stated because AC-21's own wording names it:** the
+criterion is a test of *where the controls live*, not merely a test of whether keyboard handlers
+work. The check that decides it must assert the control set is *complete* in the DOM — every filter
+axis, every lens, select and open — not merely that the DOM controls present are reachable. A
+control drawn on the canvas would pass a narrower check and fail this one.
+
+**Owners of the controls:** feature-007 (shell, lens bar, filters), feature-008 (canvas gestures as
+enhancement only), feature-009 (the table's select/open route). This document supplies the route and
+its independence; it builds none of the controls.
+
+---
+
+## Part 15 — Drafted `technology-stack.md` and `infrastructure.md` content (D10 part 15)
+
+*Drafts only, for feature-013 to land at ship time. Not written to `.aid/knowledge/` by this
+document.*
+
+**Proposed addition to `technology-stack.md` § Key Dependencies:**
 
 ```markdown
-### Graph View — D3.js Subset (browser-only; inside `graph.html`)
+### Graph View — d3-force + PixiJS (browser-only; inside graph.html and its companions)
 
-Four D3.js v7 modules are vendored inline into `graph.html` at maintainer time by
-concatenating their `.min.js` distribution files. They are **not** installed at adopter
-time and do not affect the CLI's runtime environment. The CLI and all shell skills remain
-free of runtime dependencies.
+Five vendored classic-script (UMD/IIFE) builds ship as local companion files beside `graph.html`,
+loaded via `<script src>` in dependency order. Not installed at adopter time; do not affect the
+CLI's runtime environment.
 
-| Module | Version | Licence | Minified size |
-|--------|---------|---------|---------------|
-| d3-selection | 3.0.0 | ISC | 13,522 bytes |
-| d3-force | 3.0.0 | ISC | 8,300 bytes |
-| d3-zoom | 3.0.0 | ISC | 9,984 bytes |
-| d3-drag | 3.0.0 | ISC | 4,186 bytes |
-| **Total** | | **ISC** | **35,992 bytes (35.1 KB)** |
+| File | Version | Licence | Bytes |
+|------|---------|---------|-------|
+| d3-quadtree.min.js | 3.0.1 | ISC | 5,279 |
+| d3-dispatch.min.js | 3.0.1 | ISC | 1,901 |
+| d3-timer.min.js | 3.0.1 | ISC | 1,947 |
+| d3-force.min.js | 3.0.0 | ISC | 8,300 |
+| pixi.min.js | 8.19.0 | MIT | 797,792 |
+| **Total** | | | **815,219 bytes (≈796 KiB)** |
 
-Sizes measured from spike harness `node_modules/*/dist/*.min.js` (task-004, 2026-07-28).
+Attribution: a companion `LICENSE` file per library, copied verbatim from the upstream package at
+the pinned version, placed beside its bundle.
 
-**Attribution:** ISC copyright notices from each module's `.min.js` header are preserved
-verbatim in the `/* D3 VENDOR BEGIN */` comment block in `graph.html`. No user-visible
-notice is required by ISC.
-
-**Version tracking:** `canonical/aid/scripts/graph/package.json` (private; Dependabot npm
-entry in `.github/dependabot.yml` directory `/canonical/aid/scripts/graph`).
-
-**Update procedure:** When Dependabot opens a PR, the maintainer fetches the updated
-`.min.js` files, re-concatenates them, replaces the vendor block in `graph.html`, updates
-the version comment, and commits. No adopter-site build toolchain change is needed.
+Version tracking: `canonical/aid/scripts/graph/package.json` (private; Dependabot npm entry).
 ```
 
-**Proposed addition to `technology-stack.md` §Version Concerns:**
+**Proposed addition to `technology-stack.md` § Version Concerns:**
 
 ```markdown
-- **D3.js subset (graph.html):** Vendored at d3-selection@3.0.0, d3-force@3.0.0,
-  d3-zoom@3.0.0, d3-drag@3.0.0. A d3-force major version bump may change the simulation
-  API; the vendor block and feature-008's drawing code will need a coordinated update.
-  Track via Dependabot PR for `canonical/aid/scripts/graph/package.json`.
+- **d3-force / PixiJS (graph.html companions):** pinned at d3-force@3.0.0 (+ d3-quadtree@3.0.1,
+  d3-dispatch@3.0.1, d3-timer@3.0.1) and pixi.js@8.19.0. A major bump to either changes the
+  simulation or drawing API and requires a coordinated update to feature-008's drawing code.
+  Every Dependabot PR against the scoped manifest is a version-bump notification only — re-vendoring
+  the bytes, re-running the integrity grep and re-checking the licence text are separate,
+  required follow-on steps (see infrastructure.md's vendoring procedure).
 ```
 
----
-
-## Part 14 — Draft infrastructure.md Entry
-
-*Draft for task-095 (delivery-006) to land. Do NOT edit `.aid/knowledge/infrastructure.md` now.*
-
-No build step is added to the CI/CD pipeline. The vendoring procedure (Part 7) is a
-maintainer-time operation triggered by a Dependabot PR, not a CI step.
-
-**Proposed addition to `infrastructure.md` §The Build: Multi-Profile Render (or a new
-§Dependency Vendoring subsection):**
+**Proposed addition to `infrastructure.md` § The Build: Multi-Profile Render (or a new §
+Dependency Vendoring subsection):**
 
 ```markdown
 ### Graph View Dependency Vendoring (maintainer task; not in CI build)
 
-The `graph.html` artifact inlines four D3.js v7 modules. This is a **maintainer-time
-operation**, not a CI step. It does not run during `bash build.sh`. It is triggered
-manually when Dependabot opens a version-bump PR for
-`canonical/aid/scripts/graph/package.json`.
+Triggered by a Dependabot PR against `canonical/aid/scripts/graph/package.json`. Procedure:
+1. Fetch the bumped package(s)' dist files at the exact new version.
+2. Grep the new bytes for `canonical/`, the three render.py placeholder tokens, and `mermaid`
+   (render-transform integrity check — must be clean before proceeding).
+3. Byte-diff the new files against the currently-vendored copies to confirm what changed.
+4. Replace the vendored `.min.js` files and their companion `LICENSE` files.
+5. Re-run the render.py integrity grep against the newly-vendored bytes.
+6. Update the version comment and commit.
 
-**Procedure:**
-1. Identify the bumped modules from the Dependabot PR (one or more of: `d3-selection`,
-   `d3-force`, `d3-zoom`, `d3-drag`).
-2. Fetch the updated `.min.js` files for the bumped modules (e.g., download from
-   `https://cdn.jsdelivr.net/npm/d3-{module}@{version}/dist/d3-{module}.min.js` —
-   network access required only during this maintainer step, not at adopter runtime).
-3. Concatenate the four files in declaration order: `d3-selection`, `d3-force`, `d3-zoom`,
-   `d3-drag`.
-4. Replace the content of the `/* D3 VENDOR BEGIN */`…`/* D3 VENDOR END */` block in
-   `graph.html` with the concatenated content, preserving ISC copyright notices at the top.
-5. Update the version comment immediately after `/* D3 VENDOR BEGIN */`.
-6. Commit with message `deps(graph): update D3 modules to {version}`.
-
-**CI impact:** None. `bash build.sh` does not change. The committed `graph.html` is a source
-file, not a build output, for CI purposes.
-
-**Note:** `canonical/aid/scripts/graph/node_modules/` must be in `.gitignore` if a
-maintainer runs `npm install` locally for inspection. The `package.json` is version-
-declaration-only; no `node_modules` directory is committed.
+CI impact: none. The committed vendor files are source files for CI purposes.
 ```
 
 ---
 
-## Part 15 — Feature-008 Size Implication
+## Part 16 — Implication for feature-008's size (D10 part 16 — a range with named drivers, not a line count)
 
-*Source: feature-008-interactive-graph-canvas/SPEC.md §"What changes with feature-002's
-answer"; rendering-spike-matrix.md §The 25-Cell Comparison Matrix, row 1.*
+**The superseded record's ~279-line estimate is void (Q9 removed the accessibility-proxy work it
+priced), and this document does not replace it with a new line count.** Per the SPEC's own D10 part
+16 instruction, what follows is a range with its drivers named:
 
-### Renderer-dependent work items (resolved to D3.js SVG)
+| Driver | Direction | Basis |
+|---|---|---|
+| No DOM accessibility proxy | **Reduces** size, relative to any Canvas/WebGL candidate the superseded comparison considered | Q9: canvas is visual-only, AA carried by the table view |
+| Node draw (position-only, geometry built once) | Small, flat contributor | Part 6, measurand 2 |
+| Edge redraw, every frame (both endpoints move under continuous simulation) | **Dominant** cost driver and dominant code-size driver — arrowhead geometry, per-edge line-style segmentation | Part 5 axis 2; Part 6, measurands 3–4 |
+| Four line styles via hand-segmented subpaths (no native dashed-stroke primitive in PixiJS's core `Graphics`) | Adds drawing-code complexity beyond a single `.stroke()` call per edge | Part 5 axis 4; Part 6, measurand 4 |
+| Category filtering as a `.visible` flag flip (not object destroy/rebuild) | Small, if this implementation strategy is followed — Stage 2a's own finding is scoped to that strategy | Part 6, measurand 7 |
+| Node drag driving pointer handling and re-heating the simulation | Adds interaction code; also the more expensive runtime path (Part 7) | Part 7 |
+| Palette-as-CSS-custom-properties integration (D8) | Adds an integration seam between the drawing code and the CSS design tokens, not previously required under the superseded SVG design | SPEC § D8; routed to feature-007/008 as Open Items 4–5 |
+| `toDataURL()` synchronisation constraint (Part 3) | Adds a documented constraint on any export/test code path, not a steady-state cost | Part 2, § 2.5 of the Stage 1 report |
 
-| Item | D3.js SVG outcome |
-|---|---|
-| Mark element type | `<g class="node">` with child `<rect>`/`<circle>`/`<polygon>` per node type |
-| Focus management | `tabindex="0"` + `:focus-visible` CSS on `<g>` elements |
-| Accessibility attributes | `aria-label`, `role` on SVG elements (native tree) |
-| Hit testing | Browser-native `pointer-events` on SVG elements |
-| Zoom/pan state | D3 `ZoomTransform` via `zoom.on('zoom', …)` |
-| T2 validator | FAILS by design (force-directed SVG overlaps `<g>` bounding boxes); task-084/085 fires |
-
-### Feature-008 size estimate
-
-The spike matrix labels row 1 f008 size as **SMALL** (rendering-spike-matrix.md §The 25-Cell
-Comparison Matrix, row 1 "f008 size" column: "SMALL"). The implementation:
-
-| Component | Est. lines |
-|---|---|
-| Graph data join (nodes + edges, D3 selection) | ~60 |
-| Force simulation setup (d3-force) | ~40 |
-| d3-zoom behavior setup (svg.call, transform listener; keydown handlers are in WCAG AA budget below) | ~15 |
-| d3-drag setup | ~20 |
-| Edge stroke-dasharray style mapping (edge type → stroke pattern) | ~15 |
-| Lens filter application (ViewModel → filtered render) | ~30 |
-| Tooltip/detail panel on node activation | ~30 |
-| WCAG AA budget (Part 11 §11.2: ARIA+focus, keyboard zoom/pan handlers, non-colour encoding logic, reduced-motion settling, skip-link) | **69** |
-| **Total implementation estimate** | **~279 lines** |
-
-> **Derivation note:** prior draft figures of ~305 and ~325 lines were revised down to ~279
-> by a net reduction of exactly **46 lines**, composed of four named adjustments:
-> (a) keyboard zoom/pan handlers removed from rendering components and consolidated into the
-> WCAG AA budget: **−15 lines**;
-> (b) non-colour encoding / shape-selection logic removed from rendering components and
-> consolidated into the WCAG AA budget: **−20 lines**;
-> (c) reduced-motion settling branch removed from rendering components and consolidated into
-> the WCAG AA budget: **−10 lines**;
-> (d) WCAG AA budget corrected from the prior draft's ~70 to the verified table total of 69:
-> **−1 line**.
-> Total reduction: 15 + 20 + 10 + 1 = **46 lines**. 325 − 46 = **279**. ✓
-> The rendering components (~210 lines) are estimated from D3.js API surface; the WCAG AA
-> budget (69 lines) is the scoped figure from Part 11 §11.2. Both are labelled estimates.
-
-This is a **small** feature. The spike validated the core drawing loop; feature-008
-is primarily assembly, not invention.
-
-### T2 sequencing implication for delivery-005
-
-Feature-011's C2 contingency (tasks 084/085: add `--profile` flag to `validate-visuals.mjs`)
-must be completed **before** feature-008's CI visual-regression gate is enabled. Delivery-005
-must place tasks 084/085 as a prerequisite for the feature-008 CI step that enables the
-visual regression check.
+**No numeric estimate is offered.** The honest position, consistent with this document's own
+measurement posture, is that feature-008's size depends on which of the above drivers its
+implementation strategy engages most heavily — and Part 7's finding that the decided architecture
+does not clear NFR-7 at this project's own bench is itself a fact feature-008's implementers need
+before sizing anything, since it bears on whether optimisation work (not scoped by this feature,
+and not decided here) becomes part of feature-008's own work.
 
 ---
 
-## Step 8 — Hand-Off to Downstream Consumers
+## Part 17 — Hand-off: firing conditions readable as yes/no (BLUEPRINT edge 2)
 
-### Consumer 1: Feature-007 — Graph View Shell
+Per this task's scope, feature-002 sits before features 008, 011 and 012 in the BLUEPRINT, and three
+downstream tasks read their firing conditions directly off this document:
 
-**What feature-007 takes:**
-- Part 7 (runtime prerequisites): single self-contained `graph.html`; no companion file
-  reference in `<head>`; vendor block marked with `/* D3 VENDOR BEGIN */`…`/* D3 VENDOR END */`.
-- Part 5 (packaging Shape 1): no companion `.js` file added to shell.
-- Part 8 (attribution): shell template opens vendor block with ISC copyright notices.
-
-**Conditional tasks:** None. Feature-007 is unconditionally unblocked.
-
----
-
-### Consumer 2: Feature-008 — Interactive Graph Canvas
-
-**What feature-008 takes:**
-- Part 5: D3.js SVG, four-module subset; drawing code uses `d3.select`, `d3.forceSimulation`,
-  `d3.zoom`, `d3.drag`.
-- Parts 10–11: WCAG AA budget 69 lines (Part 11 §11.2); keyboard zoom/pan handlers and reduced-motion settling are included in the 69-line total, not separate additions.
-- Part 15: SMALL feature; ~279 lines (corrected from earlier draft; see Part 15 derivation note); T2 contingency (tasks 084/085) must precede CI gate.
-
-**Conditional tasks:** task-084/085 must precede feature-008's CI visual-regression gate.
+| Consumer | Firing condition | Answer |
+|---|---|---|
+| **task-017** (canvas sizing, runtime prerequisites) | Reads Part 13's prose statement | **Statement supplied, quotable verbatim** — no inference required |
+| **task-019** (feature-011's `validate-html-output.sh` S2 CDN carve-out) | Fires only if the recommended packaging shape references a CDN | **Does not fire.** Part 14 (Stage 3 § 5): the recommended shape is five local companion files, no CDN reference anywhere. S2 never triggers under this packaging; the carve-out held in reserve is a **recorded no-op** |
+| — (the `validate-visuals.mjs` T2 live-surface exclusion, also held in reserve) | Fires only if the live surface matches one of T2's three selectors | **Does not fire.** A `<canvas>` matches none of `.diagram-box`, `.infographic`, or the bare-`svg` walk (D1b, confirmed by `rendering-stage1-webgl-probe.md` § 4's re-run of `validate-visuals.mjs` against `kb.html`, still 4/4 PASS with the graph work present in the tree) |
+| **task-023** (feature-012's dependency-packaging gate, D6 G1–G7) | Fires whenever a third-party library is adopted as a vendored dependency | **Fires.** Two libraries — five files — under ISC/MIT, at the exact versions in Part 10, with the licence/attribution facts of Part 11 and the update mechanism of Part 12 mapped directly onto G1–G7 in Stage 3 § 5's own table |
 
 ---
 
-### Consumer 3: Feature-009 — Accessible Table View
+## Part 18 — Attribution of every figure (D10 part 17, AC-S6)
 
-**What feature-009 takes:**
-- Part 11: D3.js SVG provides native accessibility-tree semantics; no proxy layer; feature-009
-  is the primary screen-reader vehicle (NFR-2) and does not need to provide a shadow DOM.
-  Its own implementation cost is unchanged by the renderer choice.
-
-**Conditional tasks:** None. Feature-009 is renderer-independent by design.
-
----
-
-### Consumer 4: Feature-011 — Validator Parameterisation
-
-**task-076/077 (S2 CDN carve-out for `validate-html-output.sh`): DOES NOT FIRE.**  
-Reason: Shape 4 (CDN delivery) was rejected. No `<script src="https://…">` in `graph.html`.
-S2 passes without carve-out.
-
-**task-084/085 (`validate-visuals.mjs` T2 SVG live-surface exclusion): FIRES.**  
-Reason: The recommended renderer is SVG. A force-directed SVG layout places nodes at
-physics-determined positions; `<g>` bounding boxes overlap by design. The T2 check (sibling
-overlap > 20%) cannot pass for `graph.html` under any valid force layout. Feature-011 must
-add a `--profile` (or equivalent) flag so `graph.html` runs under a permissive T2 profile
-while `kb.html` retains the strict T2 check. Tasks 084/085 are **unconditionally required**
-given the SVG renderer choice.
+Every figure in Parts 2–13 is one of the three admissible forms and is attributed at its own point
+of use to the stage document that produced it: a **quoted runtime output** (Parts 2, 3, 5, 6, 7, 9,
+10 payload bytes, integrity grep), a **verified on-disk or upstream fact with its command and read
+date** (Part 10's multiplier check, Part 11's licence files, Part 12's Dependabot baseline), or an
+**explicitly labelled quantity still owed** (Part 4's edge-set provisional flag, Part 8's settle-time
+gap, Part 16's deliberately-absent line count). No figure in this document is carried over from the
+superseded 2026-07-28 record. Where this document restates a figure already attributed in a stage
+document, it cites that document and section rather than re-deriving the number.
 
 ---
 
-### Consumer 5: Feature-012 — Canonical Registration
+## Quality Gates — self-check against this task's acceptance criteria
 
-**What feature-012 takes:**
-- Parts 13, 14: draft technology-stack.md entry (with per-module byte sizes), scoped
-  `package.json`, vendoring procedure.
-- Part 9: Dependabot npm entry for `canonical/aid/scripts/graph`.
-
-**task-083 (dependency-packaging gate — third-party adoption): FIRES.**  
-Reason: A third-party library (D3.js, four modules, ISC) IS adopted as a vendored inline
-dependency. Feature-012's D3 gate applies. Because Shape 1 (no-build vendored inline) is
-selected, the conditions that apply are:
-
-- **G4 (semantic version pinned):** Satisfied by `canonical/aid/scripts/graph/package.json`
-  declaring exact versions (`"d3-selection": "3.0.0"`, etc.) and by the version comment in
-  the vendor block. Task-083 must confirm the version is recorded.
-- **G5 (licence and attribution recorded):** Satisfied by Part 8 (ISC notices in the vendor
-  block) and Part 13 (technology-stack.md draft entry). Task-083 must verify this record is
-  in place.
-- G1 (private package), G2 (no npm install at adopter time), G3 (no build at adopter time),
-  G6 (no transitive deps), G7–G8 (CDN-related): collapse or are N/A for vendored inline
-  no-build shape.
-
-Task-083 fires and is lightweight: verify G4 and G5, update manifest count surfaces, confirm
-Dependabot entry is present.
+- [x] Every D10 required part present and attributed to its discharging stage (Parts 1–17; Part 8
+      is explicitly **not discharged**, and is recorded as a gap rather than papered over)
+- [x] The superseded-baseline audit table carried forward (Part 0)
+- [x] Runtime-prerequisite sentence stated as prose, quotable verbatim (Part 13)
+- [x] feature-011's S2 firing condition and feature-012's D6 gate firing condition readable as
+      yes/no (Part 17)
+- [x] No renderer comparison reopened — Part 7 reports a measured failure with evidence; Part 0
+      states explicitly that this is a different act
+- [x] AC-S3 holds: no bench size is asserted by this feature (Part 4's compliance statement; every
+      count attributed to Stage 2b's measured output)
+- [x] No permanent artifact cites this document (header note; this is a transient work-folder
+      artifact per `CLAUDE.md` § Tracking discipline)
+- [x] Accuracy verified against the current SPEC at execution time — read in full on 2026-08-06,
+      not against this task's own brief's summary of it
+- [x] Section-6 quality gates: this checklist
 
 ---
 
-*End of record. Written by aid-researcher, task-005 (revised after adversarial review),
-delivery-001, work-005-knowledge-graph. 2026-07-28.*
+*End of re-issued record. Written by aid-tech-writer, task-011, delivery-001,
+work-005-knowledge-graph, re-issuing task-005's 2026-07-28 revision against the amended SPEC.
+2026-08-06.*
