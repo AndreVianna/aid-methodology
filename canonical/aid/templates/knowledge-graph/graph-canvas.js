@@ -1942,7 +1942,9 @@ function gcViewportFor(view, action) {
 }
 
 /**
- * Apply the one automatic fit, if it is still owed and the layout has come to rest.
+ * Keep the drawing fitted to its surface while the viewport is still the view's own
+ * to choose -- applied whenever the layout is at rest, and given up permanently at
+ * the reader's first gesture.
  *
  * `gcFitViewport` has always computed the right transform and was called by nothing
  * except the (now removed) "Fit graph to view" button -- so a freshly loaded page
@@ -1956,10 +1958,26 @@ function gcViewportFor(view, action) {
  * already uses to stop scheduling itself, so no new notion of "finished" is
  * invented here.
  *
- * ONCE, and never against the reader: the flag is cleared before the transform is
- * written, so this cannot re-enter through the `setLens` below, and any zoom or pan
- * gesture clears it too. A view that re-fitted itself after the reader had chosen a
- * viewport would be a worse defect than the one this fixes.
+ * UNTIL THE READER TAKES OVER -- not exactly once, and the difference is a defect
+ * the owner reported. The first version cleared the flag as soon as it had fitted,
+ * so the fit was a one-time event. But the fit depends on the SURFACE SIZE as much
+ * as on the layout, and `gcResize` changes that size and redraws without refitting.
+ * So every window resize left the drawing at the scale computed for the OLD size:
+ * empty margins when the window grew, marks pushed off the edge when it shrank.
+ * From the reader's chair that is simply "the page does not resize", in both
+ * directions, which is exactly how it was reported.
+ *
+ * So the flag now means "the reader has not taken the viewport yet", and only a
+ * real gesture clears it -- a wheel, a pan, a node drag. While it stands, the view
+ * re-fits whenever the layout is at rest, which covers the resize case for free
+ * because a resize IS a redraw at rest. After the reader's first gesture the view
+ * never fits again on its own; a view that re-fitted itself over a viewport
+ * somebody had deliberately chosen would be a worse defect than the one this fixes.
+ *
+ * Re-entry is bounded by the equality check rather than by the flag: a fit is a
+ * pure function of the drawn extent and the surface size, so once both hold still
+ * the computed transform stops changing and no further `setLens` is issued. Without
+ * that check this would notify the store on every frame after rest.
  */
 function gcMaybeAutoFit(view) {
 	if (!view.autoFit) return;
@@ -1968,12 +1986,24 @@ function gcMaybeAutoFit(view) {
 		|| view.simulation.alpha() < GC_IDLE_ALPHA;
 	if (!atRest) return;
 	if (view.positions.size === 0) return;
-	view.autoFit = false;
 	const next = gcFitViewport(view);
+	const current = view.viewport;
+	if (gcViewportsAgree(current, next)) return;
 	view.viewport = next;
 	// Committed like any other viewport change, so `lensState.zoom` and the drawn
 	// transform agree from the first rest onward rather than silently diverging.
 	view.store.setLens({ zoom: Object.assign({}, next) });
+}
+
+/** Two viewports are the same to the reader well before they are the same to
+ *  `===`. The tolerance is what stops a fit that is already correct from
+ *  notifying the store every frame on sub-pixel float noise -- half a pixel of
+ *  pan and a thousandth of a scale step are both invisible. */
+function gcViewportsAgree(a, b) {
+	if (!a || !b) return false;
+	return Math.abs(a.scale - b.scale) < 0.001
+		&& Math.abs(a.panX - b.panX) < 0.5
+		&& Math.abs(a.panY - b.panY) < 0.5;
 }
 
 /** A fit is a function of the drawn extent, which lives in `positions`. */
