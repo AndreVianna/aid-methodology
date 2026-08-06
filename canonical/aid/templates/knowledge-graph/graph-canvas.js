@@ -510,6 +510,12 @@ function mountCanvas(context) {
 		record: gcEmptyRecord(),
 		hover: null,
 		drag: null,
+		// The last press: which mark was under the pointer when the button went
+		// down, and whether the pointer then moved far enough to be a drag. Held
+		// separately from `drag` because `gcOnPointerUp` clears that before the
+		// platform dispatches `click`, and because selection must read the press
+		// rather than re-pick -- see `gcOnClick`.
+		press: null,
 		frameHandle: null,
 		lastNodeIds: new Set(),
 		lastGroupKey: '',
@@ -1662,34 +1668,78 @@ function gcRefreshReveal(view) {
 	}
 }
 
+/**
+ * How far the pointer must travel before a press becomes a DRAG.
+ *
+ * Without a threshold there is no such thing as a click on this surface: every
+ * press immediately began a gesture, which had two visible consequences the owner
+ * reported as one bug ("the graph is moving a little to the right but no node is
+ * selected").
+ *
+ * Pressing a node pinned it and re-heated the simulation on the spot, so the whole
+ * layout shifted under a pointer that had not moved. Measured on the real page
+ * with a stationary pointer and an ordinary human dwell of ~160ms between press
+ * and release: **the pressed node travelled 64px**, against a pick radius of 10.
+ * The `click` handler then re-picked at the pointer, found nothing within six pick
+ * radii, and selected nothing. The gesture destroyed its own target.
+ *
+ * So a press now commits to nothing until the pointer proves it is a drag, and
+ * selection reads the id captured AT PRESS TIME rather than re-picking afterwards
+ * -- press is the one moment the pointer and the mark are known to coincide.
+ */
+const GC_DRAG_THRESHOLD_PX = 4;
+
 function gcOnPointerDown(view, event) {
 	const p = gcLocalPoint(view, event.clientX, event.clientY);
 	const id = view.index.nearest(p.x, p.y, GC_PICK_RADIUS / view.viewport.scale);
-	if (id) {
-		const pos = view.positions.get(id);
-		view.drag = { nodeId: id, startX: event.clientX, startY: event.clientY, origin: pos ? { x: pos.x, y: pos.y } : null };
-		if (pos) { pos.fx = pos.x; pos.fy = pos.y; }
-		// Under `mode: 'settled'` the re-heat is DEFERRED TO THE RELEASE: the
-		// simulation stays stopped, so every other mark holds still, and only
-		// the pinned node's position is driven directly by the pointer below
-		// (§ Reduced motion). Live mode re-heats immediately, and its
-		// neighbours follow through the link/collide forces.
-		if (view.record.mode !== 'settled') gcReheat(view);
-	} else {
-		view.drag = { nodeId: null, startX: event.clientX, startY: event.clientY, startViewport: Object.assign({}, view.viewport) };
-	}
+	// NOTHING is pinned, nothing is re-heated and no pan begins here. All of it is
+	// deferred to `gcOnPointerDrag`, once the movement threshold says this is a
+	// drag rather than a click.
+	view.drag = {
+		nodeId: id,
+		started: false,
+		startX: event.clientX,
+		startY: event.clientY,
+		origin: null,
+		startViewport: Object.assign({}, view.viewport),
+	};
+	// What a following `click` will select. Kept OUTSIDE `view.drag` because
+	// `gcOnPointerUp` clears that before the platform dispatches `click`, and
+	// because it must survive to `dblclick` too -- which re-picked and drifted for
+	// exactly the same reason.
+	view.press = { nodeId: id, moved: false };
 }
 
 function gcOnPointerDrag(view, event) {
 	if (!view.drag) return;
+	const dx = event.clientX - view.drag.startX;
+	const dy = event.clientY - view.drag.startY;
+
+	if (!view.drag.started) {
+		if (Math.sqrt(dx * dx + dy * dy) < GC_DRAG_THRESHOLD_PX) return;
+		view.drag.started = true;
+		// A gesture that moved is not a selection, whatever it started on.
+		if (view.press) view.press.moved = true;
+		if (view.drag.nodeId) {
+			// The pin and the re-heat happen HERE, at the first real movement,
+			// rather than at the press. Under `mode: 'settled'` the re-heat is
+			// deferred further still, to the release: the simulation stays stopped
+			// so every other mark holds still, and only the pinned node is driven
+			// by the pointer (§ Reduced motion). Live mode re-heats now, and the
+			// neighbours follow through the link/collide forces.
+			const pos = view.positions.get(view.drag.nodeId);
+			view.drag.origin = pos ? { x: pos.x, y: pos.y } : null;
+			if (pos) { pos.fx = pos.x; pos.fy = pos.y; }
+			if (view.record.mode !== 'settled') gcReheat(view);
+		}
+	}
+
 	if (view.drag.nodeId) {
 		const p = gcLocalPoint(view, event.clientX, event.clientY);
 		const pos = view.positions.get(view.drag.nodeId);
 		if (pos) { pos.x = p.x; pos.y = p.y; pos.fx = p.x; pos.fy = p.y; }
 		gcDrawFrame(view, { tickMs: 0 });
-	} else if (view.drag.startViewport) {
-		const dx = event.clientX - view.drag.startX;
-		const dy = event.clientY - view.drag.startY;
+	} else {
 		view.viewport = { scale: view.drag.startViewport.scale, panX: view.drag.startViewport.panX + dx, panY: view.drag.startViewport.panY + dy };
 		gcDrawFrame(view, { tickMs: 0 });
 	}
@@ -1699,8 +1749,13 @@ function gcOnPointerDrag(view, event) {
  *  `setLens({zoom})`, once, whole -- happens only at the gesture's end. */
 function gcOnPointerUp(view, event) {
 	if (!view.drag) return;
-	const wasNodeDrag = !!view.drag.nodeId;
-	const wasViewportDrag = !!view.drag.startViewport;
+	// Only a gesture that PASSED THE THRESHOLD has anything to undo or commit. A
+	// press that never moved pinned nothing, re-heated nothing and panned nothing,
+	// so releasing it must do nothing either -- it is a click, and the click
+	// handler owns it.
+	const started = view.drag.started;
+	const wasNodeDrag = started && !!view.drag.nodeId;
+	const wasViewportDrag = started && !view.drag.nodeId;
 	const settled = view.record.mode === 'settled';
 	if (wasNodeDrag) {
 		const pos = view.positions.get(view.drag.nodeId);
@@ -1717,23 +1772,38 @@ function gcOnPointerUp(view, event) {
 	}
 }
 
-/** Only the FIRST click of a sequence selects (`MouseEvent.detail`); the
- *  repeat that precedes a real `dblclick` is ignored, which is the whole of
- *  the double-click accommodation (AC-S9). One dotted key and no other
- *  write. */
+/**
+ * Select the node that was under the pointer AT PRESS TIME.
+ *
+ * It does NOT re-pick. Re-picking is what made selection unusable: the graph is a
+ * live simulation, so by the time `click` is dispatched the mark has moved --
+ * measured at 64px for an ordinary ~160ms press against a 10px pick radius -- and
+ * the handler reliably found nothing under a pointer that had never moved. Press
+ * is the one instant at which the pointer and the mark are known to coincide, so
+ * press is what decides.
+ *
+ * A gesture that moved past the drag threshold selects nothing: that was a drag,
+ * and finishing a drag on top of some node is not a request to select it.
+ *
+ * Only the FIRST click of a sequence selects (`MouseEvent.detail`); the repeat that
+ * precedes a real `dblclick` is ignored, which is the whole of the double-click
+ * accommodation (AC-S9). One dotted key and no other write.
+ */
 function gcOnClick(view, event) {
 	if (event.detail > 1) return;
-	const p = gcLocalPoint(view, event.clientX, event.clientY);
-	const id = view.index.nearest(p.x, p.y, GC_PICK_RADIUS / view.viewport.scale);
-	if (!id) return;
-	view.store.setLens({ 'focus.nodeId': id });
+	const press = view.press;
+	if (!press || press.moved || !press.nodeId) return;
+	view.store.setLens({ 'focus.nodeId': press.nodeId });
 }
 
+/** Same rule as `gcOnClick`, for the same measured reason: the id comes from the
+ *  press, never from a re-pick. `view.press` is deliberately NOT cleared by the
+ *  single-click handler, because a double click is two presses and the second one
+ *  has already overwritten it with the value this needs. */
 function gcOnDblClick(view, event) {
-	const p = gcLocalPoint(view, event.clientX, event.clientY);
-	const id = view.index.nearest(p.x, p.y, GC_PICK_RADIUS / view.viewport.scale);
-	if (!id) return;
-	const target = view.store.openTarget(id);
+	const press = view.press;
+	if (!press || press.moved || !press.nodeId) return;
+	const target = view.store.openTarget(press.nodeId);
 	if (target) window.location.href = target;
 }
 
