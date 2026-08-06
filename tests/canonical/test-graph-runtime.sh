@@ -23,9 +23,10 @@
 #   Cost is dominated by PROCESS SPAWNS, not by input size, so the suite spends its budget
 #   on subject invocations and almost nothing on its own assertions:
 #
-#     SUBJECT INVOCATIONS: 45, and each one is a DISTINCT input the contract names --
+#     SUBJECT INVOCATIONS: 47, and each one is a DISTINCT input the contract names --
 #       5   --help, one per script (the flag set is per-script)
-#       5   read-setting.sh: four resolution steps + the --probe degradation
+#       7   read-setting.sh: four resolution steps + --probe's usage error, declared,
+#           and undeclared states (D4a, task-030/W5-8 -- it is no longer unsupported)
 #       9   graph-preflight.sh: P1, P2, P3, P4, P6, P7, the P2-scoping fixture, the
 #           external-sources non-refusal, and an unknown flag
 #      12   kb-write-fence.sh: allowlist, fail-closed verify, two snapshots (idempotence),
@@ -898,11 +899,19 @@ for f in "${MINE[@]}"; do
     ok_contains "${TXT[$f]}" 'SELF="' "HH05 ${f} prefixes its diagnostics with its own name"
 done
 
-# read-setting.sh has no --probe mode; consumers degrade with a notice rather than
-# assuming one. Asserted, not assumed.
-PROBE_OUT=$(bash "${REPO_ROOT}/canonical/aid/scripts/config/read-setting.sh" --probe 2>&1); PROBE_RC=$?
-assert_exit_eq "$PROBE_RC" "2" "HH06 read-setting.sh has no --probe mode (usage error)"
-ok_contains "$PROBE_OUT" "unknown flag: --probe" "HH07 read-setting.sh names the unknown flag it rejected"
+# read-setting.sh gains --probe (D4a, task-030/W5-8): a declared/undeclared
+# availability probe, not a consumer-side degradation any more -- asserted directly
+# against the real resolver, not assumed absent and not read through $STUB.
+RSP="${REPO_ROOT}/canonical/aid/scripts/config/read-setting.sh"
+PROBE_OUT=$(bash "$RSP" --probe 2>&1); PROBE_RC=$?
+assert_exit_eq "$PROBE_RC" "2" "HH06 read-setting.sh --probe with no --path is a usage error"
+ok_contains "$PROBE_OUT" "requires either" "HH07 and names what it still needs (no --path/--skill given at all)"
+printf 'name: x\ngraph:\n  ignore:\n    - a/**\n' > "$TMP/hh-decl.yml"
+PROBE_DECL=$(bash "$RSP" --probe --path graph.ignore --file "$TMP/hh-decl.yml")
+assert_eq "$PROBE_DECL" "declared" "HH08 read-setting.sh --probe reports declared for a declared list"
+printf 'name: x\n' > "$TMP/hh-undecl.yml"
+PROBE_UNDECL=$(bash "$RSP" --probe --path graph.ignore --file "$TMP/hh-undecl.yml")
+assert_eq "$PROBE_UNDECL" "undeclared" "HH09 read-setting.sh --probe reports undeclared for an absent section"
 
 fi
 

@@ -290,12 +290,12 @@ assert_exit_zero "$RC" "CH04 ENUMERATE — scan-source.sh walks the project sour
 for s in nodes.tsv media-nodes.tsv observations.tsv candidates.tsv coverage.tsv; do
     assert_file_exists "$CHP/.aid/.temp/graph/$s" "CH05 ENUMERATE wrote the stream ${s}"
 done
-# The read-setting.sh degradation, observed LIVE rather than assumed: the resolver has no
-# --probe mode, so the ignore list is unavailable and the walk proceeds with a notice. If
-# --probe ever lands, this and the primary suite's HH06/HH07 flip together, which is the
-# correct coupling.
-ok_contains "$SCAN" "does not support --probe" \
-    "CH06 the enumerator degrades with a NOTICE when the resolver cannot be probed, and still exits 0"
+# read-setting.sh now carries --probe (D4a, task-030/W5-8), so this fixture's graph-less
+# settings.yml probes as UNDECLARED rather than UNSUPPORTED -- observed LIVE rather than
+# assumed, and flipped together with the primary suite's HH06-HH09 per the coupling this
+# comment used to anticipate.
+ok_contains "$SCAN" "graph.ignore not declared" \
+    "CH06 the enumerator reports the ignore list UNDECLARED for this fixture, and still exits 0"
 
 OUT=$(bash "$CHG/harvest-declared.sh" 2>&1); RC=$?
 assert_exit_zero "$RC" "CH07 EXTRACT Pass 1a — harvest-declared.sh (the blocker that is now closed)"

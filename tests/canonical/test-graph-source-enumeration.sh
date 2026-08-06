@@ -18,10 +18,11 @@
 # S1 -- SUBJECT INVOCATION BUDGET: 5 scans, one per distinct input.
 #   Enumerated so a future author cannot add a sixth casually: FXA (x2 -- the second
 #   is the byte-identity re-run, a genuinely distinct input state), FXB, and FXC (x2 --
-#   the two ignore-list states). All 222 assertions read the cached output dirs those
-#   5 scans produce; none re-invokes the subject. `scan_into` at :456 is the wrapper,
-#   not a 6th call. Adding an invocation is allowed (S4 forbids trading coverage for
-#   time) but it must be counted here.
+#   the two ignore-list states). All 227 assertions read the cached output dirs those
+#   5 scans produce, or (R-IGN-14..27, R-LIB) call the rule library / read-setting.sh
+#   directly with no scan at all; none re-invokes the subject. `scan_into` at :456 is
+#   the wrapper, not a 6th call. Adding an invocation is allowed (S4 forbids trading
+#   coverage for time) but it must be counted here.
 #
 # Scope:
 #   Every assertion runs against a SELF-BUILT fixture corpus in a mktemp dir, never
@@ -412,9 +413,11 @@ build_fixture_c() {
     git -C "$d" init -q .
 }
 
-# A stub resolver standing in for `read-setting.sh --probe`. The real resolver does
-# NOT carry --probe (R-IGN-01 asserts that rather than assuming it), so the declared
-# and undeclared states are unreachable end-to-end without one.
+# A stub resolver standing in for `read-setting.sh --probe`. The real resolver DOES
+# carry --probe (R-IGN-01/-24..-27 assert that against REAL_RESOLVER, not $STUB --
+# task-030/W5-8), so this stub is kept only to run fixture C's two end-to-end scans
+# against an installed-tree layout isolated from this repository's own resolver,
+# never because the real one is unsupported.
 build_stub_install() {
     local root="$1"
     mkdir -p "$root/aid/scripts/graph" "$root/aid/scripts/config" "$root/aid/templates/graph"
@@ -814,15 +817,25 @@ assert_eq "$CLOCK" "0" "R-COV-16 no timestamp appears in any stream"
 
 # --- R-IGN ---------------------------------------------------------------
 echo "--- R-IGN: the ignore list, all three states plus the comma case ---"
+# R-IGN-01 drives the probe through REAL_RESOLVER (:113), never $STUB -- this is
+# W5-8's oracle half (task-030): the flag's ABSENCE must fail this assertion, not
+# merely fail to be exercised. Fixture A's settings.yml carries no graph: section
+# at all, so the real resolver's honest answer is `undeclared` at exit 0 -- NOT a
+# usage/unsupported failure, which is what the pre-task-030 resolver produced and
+# what the old form of this assertion checked for.
 REAL_PROBE_RC=0
+REAL_PROBE_OUT=""
 if [[ -f "$REAL_RESOLVER" ]]; then
-    bash "$REAL_RESOLVER" --probe --path graph.ignore --file "$FXA/.aid/settings.yml" >/dev/null 2>&1 \
+    REAL_PROBE_OUT=$(bash "$REAL_RESOLVER" --probe --path graph.ignore --file "$FXA/.aid/settings.yml" 2>/dev/null) \
         || REAL_PROBE_RC=$?
 fi
-assert_exit_nonzero "$REAL_PROBE_RC" "R-IGN-01 the real read-setting.sh does NOT support --probe (asserted, not assumed)"
+assert_exit_eq "$REAL_PROBE_RC" 0 \
+    "R-IGN-01 the real read-setting.sh SUPPORTS --probe and exits 0 (drives REAL_RESOLVER, not \$STUB -- the flag's absence fails this)"
+assert_eq "$REAL_PROBE_OUT" "undeclared" \
+    "R-IGN-01b and reports undeclared against fixture A's graph-less settings.yml, through the real resolver"
 tsv_field_at VA 7 5; IGN_NOTE_A="$TSV_FIELD"; tsv_field_at VA 7 3; IGN_APP_A="$TSV_FIELD"
 assert_output_contains "$IGN_NOTE_A" "ignore list unavailable (D-4)" \
-    "R-IGN-02 with no --probe the run degrades and SAYS SO in the durable note"
+    "R-IGN-02 with graph.ignore undeclared the run degrades and SAYS SO in the durable note"
 assert_eq "$IGN_APP_A" "no" "R-IGN-03 the ignore arm reports itself not applied"
 assert_file_contains "$WORK/errA" "[scan] notice:" "R-IGN-04 and a notice reaches stderr"
 tsv_field_at VA 5 3
@@ -873,6 +886,32 @@ assert_output_contains "$IGN_LIB" "N_COMMA=declared, 2 patterns (1 item(s) conta
 assert_output_contains "$IGN_LIB" "A_UNDECL=no" "R-IGN-20 an unavailable list is not applied"
 assert_output_contains "$IGN_LIB" "A_DECL=yes"  "R-IGN-21 a declared list is applied"
 assert_output_contains "$IGN_LIB" "WARN=1"      "R-IGN-22 the probe warns on stderr for the comma item"
+# R-IGN-24..27 close the other half of W5-8's oracle gap: R-IGN-14/-15 above prove
+# the DECLARED states reachable only through $STUB, so re-run the identical checks
+# through sig_probe_ignore_list against REAL_RESOLVER (:113) directly -- no scan
+# needed, so this costs nothing against the S1 budget. Together with R-IGN-01/-01b
+# above (the UNDECLARED state, end-to-end), this is AC-S7's "all three states
+# reachable in production, not two of three stub-only" against the real resolver.
+IGN_REAL="$(
+    export LC_ALL=C
+    # shellcheck disable=SC1090
+    . "$LIB"
+    printf 'format_version: 3\nname: x\ngraph:\n  ignore:\n'                  > "$WORK/real-decl-empty.yml"
+    printf 'format_version: 3\nname: x\ngraph:\n  ignore:\n    - drop/**\n'    > "$WORK/real-decl.yml"
+    printf 'format_version: 3\nname: x\ngraph:\n  ignore:\n    - a/**,b/**\n' > "$WORK/real-decl-comma.yml"
+    sig_probe_ignore_list "$REAL_RESOLVER" "$WORK/real-decl-empty.yml" "$WORK/rpe1"; echo "R_EMPTY=$SIG_PROBE"
+    sig_probe_ignore_list "$REAL_RESOLVER" "$WORK/real-decl.yml"       "$WORK/rpe2"; echo "R_DECL=$SIG_PROBE"
+    sig_probe_ignore_list "$REAL_RESOLVER" "$WORK/real-decl-comma.yml" "$WORK/rpe3"; echo "R_COMMA=$SIG_PROBE"
+    printf 'R_WARN=%s\n' "$(grep -c 'contains a comma' "$WORK/rpe3" || true)"
+)"
+assert_output_contains "$IGN_REAL" "R_EMPTY=declared" \
+    "R-IGN-24 REAL_RESOLVER: state DECLARED-EMPTY probes as declared (not stub-only)"
+assert_output_contains "$IGN_REAL" "R_DECL=declared" \
+    "R-IGN-25 REAL_RESOLVER: state DECLARED-WITH-PATTERNS probes as declared (not stub-only)"
+assert_output_contains "$IGN_REAL" "R_COMMA=declared" \
+    "R-IGN-26 REAL_RESOLVER: a comma-containing item still probes as declared"
+assert_output_contains "$IGN_REAL" "R_WARN=1" \
+    "R-IGN-27 REAL_RESOLVER: the comma item warns on stderr exactly once, through the real resolver"
 # The three reports must be pairwise distinct -- that is the whole of FR-22's rule.
 if [[ "$IGN_NOTE_A" != "$IGN_NOTE_C1" && "$IGN_NOTE_C1" != "$IGN_NOTE_C2" && "$IGN_NOTE_A" != "$IGN_NOTE_C2" ]]; then
     pass "R-IGN-23 the three observed ignore-list reports are pairwise DISTINCT"
