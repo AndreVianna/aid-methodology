@@ -1,0 +1,1411 @@
+/* ============================================================================
+ * graph-canvas.js -- the drawing rendering (feature-008, task-017).
+ *
+ * The second of the two peer renderings. It draws visibleNodes/visibleEdges as
+ * a live, physically-simulated bitmap and hosts every pointer gesture the
+ * drawing surface offers. It is visual-only -- the table rendering carries the
+ * accessibility standard for the whole artifact -- and it mounts LAST, after
+ * the table, and OPTIONALLY: with no working library or no WebGL context it
+ * degrades to `mode: 'unavailable'` and the rest of the page stays fully
+ * usable (AC-S10).
+ *
+ * WHERE THIS FILE RUNS
+ *   Inside the page's single inline module block, concatenated after
+ *   graph-model.js, graph-controls.js and graph-table.js (`build-graph-src.mjs`
+ *   :181, auto-detected -- no edit there landed this file). That is ONE module
+ *   scope, so this file declares no loading statement and reaches
+ *   `registerRendering`, `el`, `clear`, `byId`, `KIND_ENCODING`,
+ *   `CATEGORY_ENCODING`, `compareStrings` by plain reference. ONE SCOPE IS A
+ *   CONSTRAINT: every top-level declaration below except `mountCanvas` itself
+ *   is prefixed `GC_`/`gc`, and the generic names the earlier files own --
+ *   basename, bump, clear, el, slug, unquote, toInteger, ellipsise, prefixOf,
+ *   compareStrings, narrate, project, byId -- are reused rather than
+ *   redeclared.
+ *
+ * THE TWO GLOBALS THIS FILE READS, AND WHAT IT ASSUMES OF EACH
+ *   `d3` and `PIXI` are read as GLOBALS from classic `<script src>` builds
+ *   loaded before this module block -- never imported, never fetched. Neither
+ *   is vendored yet (packaging is task-023's, which depends on this file); the
+ *   contract below is what task-023 has to satisfy, stated at the CAPABILITY
+ *   level rather than by exact symbol, because the adopted version is
+ *   feature-002 Stage 3's to fix:
+ *     - `d3`: a force-simulation build exposing `forceSimulation(nodes)`,
+ *       chainable `.force(name, force)` with `forceManyBody()`, `forceLink
+ *       (links).id(fn)`, `forceCenter(x, y)`, `forceCollide(radius)`, and
+ *       `.alpha()/.alphaTarget()/.restart()/.stop()/.on('tick', fn)` -- the
+ *       d3-force v2/v3 shape.
+ *     - `PIXI`: a WebGL 2D scene-graph library exposing `new PIXI.WebGLRenderer()`
+ *       (no constructor arguments -- v8 moved every option to the separate,
+ *       asynchronous `renderer.init({view, width, height, antialias,
+ *       backgroundAlpha})`, a `Promise<void>`), `PIXI.Container`, `PIXI.Graphics`
+ *       with `lineStyle`/`beginFill`/`drawCircle`/`drawRect`/`drawPolygon`/
+ *       `moveTo`/`lineTo`, and `PIXI.Text`. This module drives its own
+ *       `requestAnimationFrame` loop and calls `renderer.render(stage)`
+ *       explicitly, only once `init()` has resolved -- the "draw call this
+ *       feature controls the timing of" the SPEC names -- rather than PIXI's
+ *       own ticker.
+ *   Absence of either global, a failure constructing the renderer, no WebGL
+ *   context obtainable from a scratch canvas, OR a later rejection of the
+ *   renderer's own asynchronous `init()` all resolve to the SAME outcome:
+ *   `mode: 'unavailable'` (AC-S10) -- the last of those arrives after
+ *   `mountCanvas` has already returned, so it is a TRANSITION into that state
+ *   (`gcTransitionToUnavailable`) rather than a return from it.
+ *
+ * WHAT THIS FILE NEVER READS
+ *   `Node.prefix` is read NOWHERE in this file, and no prefix literal (`kb`,
+ *   `int`, `ext`) appears in it: a node's class for every drawing purpose
+ *   comes from `Node.kind` and the projection's own maps, never from where an
+ *   id came from. `lensState.zoom` is the ONLY `LensState` field this file
+ *   reads (AC-S2) -- no membership, emphasis, grouping, fold or label decision
+ *   is computed here; every one of those is `project()`'s alone and arrives
+ *   already decided on the `ViewModel`.
+ *
+ * COLOUR: RESOLVED FROM CSS, NEVER A LITERAL, NEVER INSIDE A FRAME
+ *   Every colour this file draws with is read from a CSS custom property
+ *   (`--gk-*`/`--gc-*`) or, under forced-colours, from the `.gc-colour-probe`
+ *   element's computed `color`/`backgroundColor` (graph-css.css). That read
+ *   happens exactly at two invalidation points -- a `data-theme` change and a
+ *   `forcedColours` preference change -- and is cached in `GC_PALETTE`
+ *   (private structure `palette`, D2). The frame path performs no DOM style
+ *   read of any kind (AC-S4, AC-S5).
+ * ========================================================================== */
+
+
+/* ==========================================================================
+ * 1. Constants -- every one a labelled design choice, none a requirement's
+ *    figure. Tuning belongs to the mandatory human visual gate.
+ * ========================================================================== */
+
+/** Ring length for the per-frame instrumentation window (D3 `frames`). Sized
+ *  to comfortably cover a steady-state sampling window and a drag window. */
+const GC_FRAME_RING = 240;
+
+/** Force constants, the one place they are tuned. `density`/grouping never
+ *  reach here as a value -- FR-14a forbids exposing any physics parameter and
+ *  no `LensState` field names one. */
+const GC_FORCE = Object.freeze({
+	charge: -220,
+	linkDistance: 70,
+	linkStrength: 0.5,
+	collideRadius: 16,
+	centerStrength: 0.04,
+	groupStrength: 0.06,
+});
+
+/** The settle budget for the reduced-motion pre-first-paint layout: a fixed
+ *  iteration cap with an early exit on a movement threshold. */
+const GC_SETTLE_MAX_TICKS = 300;
+const GC_SETTLE_MOVE_THRESHOLD = 0.01;
+
+/** The idle threshold the live loop stops requesting frames at, and resumes
+ *  from on any perturbation. */
+const GC_IDLE_ALPHA = 0.001;
+
+/** Viewport step factors for the keyboard-driven manifest controls (D8). */
+const GC_ZOOM_STEP = 1.25;
+const GC_PAN_STEP = 60;
+const GC_ZOOM_MIN = 0.1;
+const GC_ZOOM_MAX = 8;
+
+/** Emphasis channel magnitudes -- the ordinal floor/ceiling, one place each. */
+const GC_DIM_OPACITY = 0.35;
+const GC_FOCUS_SCALE = 1.45;
+const GC_CHAIN_WEIGHT = 2.5;
+const GC_BASE_WEIGHT = 1;
+const GC_BASE_RADIUS = 6;
+
+/** Label legibility floor in CSS pixels, the on-canvas persistent label is
+ *  suppressed (never shrunk) below it. Taken from `validate-visuals.mjs`'s own
+ *  10px default as a reference point, not a citation of a shared value. */
+const GC_LABEL_FLOOR_PX = 10;
+
+/** Device-pixel-ratio cap on the backing store, so a high-DPR display cannot
+ *  multiply fill cost without bound. */
+const GC_DPR_CAP = 2;
+
+/** Pointer-picking radius, in CSS pixels, around a mark's centre. */
+const GC_PICK_RADIUS = 10;
+
+/** The two gap badge glyphs, additive and never inside the kind glyph. */
+const GC_BADGE = Object.freeze({ 'kb-unbacked': '≈', 'artifact-undocumented': '‡' });
+
+/** The stable console prefix AC-S10 fixes. */
+const GC_WARN_PREFIX = 'graph.html: canvas unavailable';
+
+
+/* ==========================================================================
+ * 2. Capability -- both unavailability paths resolve here, once, at mount
+ * ========================================================================== */
+
+/** @returns {boolean} the two library globals are present at the capability
+ *  level this file depends on. `PIXI.Renderer` is a TYPE-ONLY export in v8 --
+ *  no runtime constructor exists under that name -- so this probes for
+ *  `PIXI.WebGLRenderer`, exactly the constructor `mountCanvas` below actually
+ *  calls. Never probe for one symbol and construct another: that gap is what
+ *  let this capability check pass while construction always failed. */
+function gcHasLibraries() {
+	return typeof d3 !== 'undefined' && typeof d3.forceSimulation === 'function'
+		&& typeof PIXI !== 'undefined' && typeof PIXI.WebGLRenderer === 'function';
+}
+
+/** @returns {boolean} a WebGL context can be obtained from a scratch canvas,
+ *  independent of whether PIXI itself can construct a renderer. */
+function gcHasWebGL() {
+	try {
+		const probe = document.createElement('canvas');
+		const ctx = probe.getContext('webgl2') || probe.getContext('webgl') || probe.getContext('experimental-webgl');
+		return !!ctx;
+	} catch (error) {
+		return false;
+	}
+}
+
+
+/* ==========================================================================
+ * 3. The palette cache -- D2's `palette`
+ * ========================================================================== */
+
+/** Every colour TOKEN NAME this file will ever resolve, taken from the
+ *  vocabularies graph-model.js already builds rather than re-typed here. */
+function gcColourTokens() {
+	const tokens = new Set();
+	for (const entry of Object.values(KIND_ENCODING)) tokens.add(entry.colourToken);
+	for (const entry of Object.values(CATEGORY_ENCODING)) tokens.add(entry.colourToken);
+	return Array.from(tokens);
+}
+
+/** Find or create the hidden forced-colours probe element, once. */
+function gcEnsureProbe(root) {
+	let probe = root.querySelector('.gc-colour-probe');
+	if (!probe) {
+		probe = el('div', { class: 'gc-colour-probe', 'aria-hidden': 'true' });
+		(root.body || root).appendChild(probe);
+	}
+	return probe;
+}
+
+/**
+ * Resolve every token this build uses against the current stylesheet, plus
+ * the two forced-colours system colours from the probe. Called ONLY at mount
+ * and at the two invalidation points (a `data-theme` flip, a `forcedColours`
+ * preference flip) -- never inside the frame path (AC-S4, AC-S5).
+ *
+ * @param {Document} root
+ * @returns {Map<string,string>}
+ */
+function gcResolvePalette(root) {
+	const style = getComputedStyle(root.documentElement);
+	const probe = gcEnsureProbe(root);
+	const probeStyle = getComputedStyle(probe);
+	const map = new Map();
+	for (const token of gcColourTokens()) map.set(token, style.getPropertyValue(token).trim());
+	map.set('__forced_fg', probeStyle.color);
+	map.set('__forced_bg', probeStyle.backgroundColor);
+	return map;
+}
+
+/** The colour a mark draws with: the resolved token, or the single forced
+ *  foreground when forced-colours is active -- never a literal either way. */
+function gcColourFor(palette, token, forcedColours) {
+	if (forcedColours) return palette.get('__forced_fg') || 'CanvasText';
+	return palette.get(token) || palette.get('__forced_fg') || 'CanvasText';
+}
+
+
+/* ==========================================================================
+ * 4. Deterministic seeding and the private `positions` structure (D2)
+ * ========================================================================== */
+
+/** A small, stable string hash (FNV-1a), so a node's initial position is a
+ *  pure function of its id and one fixture yields one arrangement across
+ *  runs (GC08/GC16). */
+function gcHash(text) {
+	let h = 0x811c9dc5;
+	for (let i = 0; i < text.length; i += 1) {
+		h ^= text.charCodeAt(i);
+		h = Math.imul(h, 0x01000193);
+	}
+	return h >>> 0;
+}
+
+/** A deterministic seed position for a fresh node, spread over a large disc
+ *  so the initial layout is not degenerate at the origin. */
+function gcSeedPosition(id) {
+	const h = gcHash(id);
+	const angle = (h % 3600) / 3600 * Math.PI * 2;
+	const radius = 40 + ((h >>> 8) % 400);
+	return { x: Math.cos(angle) * radius, y: Math.sin(angle) * radius };
+}
+
+/** A newly-admitted node's placement: the centroid of its already-placed
+ *  neighbours (or of its group where it has none), else the deterministic
+ *  seed. A membership change therefore rearranges the picture locally instead
+ *  of relaunching it (AC-S3). */
+function gcPlaceNewNode(id, positions, neighbourIds) {
+	const known = neighbourIds.filter((n) => positions.has(n));
+	if (known.length > 0) {
+		let sx = 0, sy = 0;
+		for (const n of known) { const p = positions.get(n); sx += p.x; sy += p.y; }
+		return { x: sx / known.length + (gcHash(id) % 20) - 10, y: sy / known.length + (gcHash(id + '#') % 20) - 10 };
+	}
+	return gcSeedPosition(id);
+}
+
+
+/* ==========================================================================
+ * 5. The draw record -- D3's published interface, `window.__aidGraphCanvas`
+ * ========================================================================== */
+
+/** A fresh, empty record, the shape every consumer can rely on regardless of
+ *  `mode`. */
+function gcEmptyRecord() {
+	return {
+		revision: 0,
+		mode: 'unavailable',
+		forcedColours: false,
+		nodes: [],
+		edges: [],
+		marks: { nodes: [], edges: [] },
+		reveal: { kind: null, target: null, text: '', neighbourhood: [] },
+		captions: { counts: '', groups: [] },
+		viewport: { scale: 1, panX: 0, panY: 0 },
+		positions: {},
+		frames: [],
+	};
+}
+
+/** Publish the one global this file creates, mirroring graph-controls.js's own
+ *  `publishHandle` -- one name, read-and-attach, never a second write route. */
+function gcPublishRecord(record) {
+	if (typeof window !== 'undefined') window.__aidGraphCanvas = record;
+	return record;
+}
+
+/**
+ * Derive this projection's marks from the `ViewModel` alone (AC-10, AC-S1).
+ * `sourceId`/`targetId` on an edge mark are `edgeFold`'s resolved endpoints,
+ * never `Edge.sourceId`/`targetId` (rule 7) -- so the drawn line is always
+ * between the ids the fold names and the raw ids are cited on the mark only
+ * to let an assertion name the row it came from.
+ *
+ * @param {object} viewModel
+ * @param {boolean} forcedColours
+ * @returns {{nodeMarks: Map, edgeMarks: Map}}
+ */
+function gcDeriveMarks(viewModel, forcedColours) {
+	const nodeMarks = new Map();
+	for (const node of viewModel.visibleNodes) {
+		const encoding = viewModel.nodeEncoding.get(node.id);
+		const emphasis = viewModel.nodeEmphasis.get(node.id) || 'normal';
+		const gapBadge = viewModel.coverageGaps.kbUnbacked.indexOf(node.id) !== -1 ? 'kb-unbacked'
+			: (viewModel.coverageGaps.artifactUndocumented.indexOf(node.id) !== -1 ? 'artifact-undocumented' : null);
+		nodeMarks.set(node.id, {
+			id: node.id,
+			kind: node.kind,
+			glyph: node.glyph,
+			colourToken: encoding ? encoding.colourToken : null,
+			emphasis: emphasis,
+			emphasisDraw: gcNodeEmphasisDraw(emphasis, forcedColours),
+			gapBadge: gapBadge,
+			labelDrawn: false,
+		});
+	}
+
+	const edgeMarks = new Map();
+	for (const edge of viewModel.visibleEdges) {
+		const fold = viewModel.edgeFold.get(edge.key);
+		if (fold === 'collapsed') continue;
+		const encoding = viewModel.edgeEncoding.get(edge.key);
+		const emphasis = viewModel.edgeEmphasis.get(edge.key) || 'normal';
+		edgeMarks.set(edge.key, {
+			key: edge.key,
+			row: edge.row,
+			sourceId: fold.sourceId,
+			targetId: fold.targetId,
+			category: edge.category,
+			colourToken: encoding ? encoding.colourToken : null,
+			lineStyle: encoding ? encoding.lineStyle : 'solid',
+			arrowhead: encoding ? encoding.arrowhead : false,
+			emphasis: emphasis,
+			emphasisDraw: gcEdgeEmphasisDraw(emphasis, forcedColours),
+		});
+	}
+
+	return { nodeMarks: nodeMarks, edgeMarks: edgeMarks };
+}
+
+/** One node class's drawn channels. Colour-mode carries the ordinal in
+ *  opacity; forced-colours carries it in mark scale instead (§ Forced
+ *  colours), so `opacity` is `null` there and never both are active at once. */
+function gcNodeEmphasisDraw(emphasis, forcedColours) {
+	const focus = emphasis === 'focus';
+	const dimmed = emphasis === 'dimmed';
+	const scale = focus ? GC_FOCUS_SCALE : 1;
+	return {
+		opacity: forcedColours ? null : (dimmed ? GC_DIM_OPACITY : 1),
+		markScale: forcedColours ? (dimmed ? 1 : scale) : scale,
+		ring: focus,
+	};
+}
+
+/** One edge class's drawn channels -- stroke weight is the forced-colours
+ *  substitute for opacity, free because no relation property ever drives
+ *  width (the `Strength` column was dropped). */
+function gcEdgeEmphasisDraw(emphasis, forcedColours) {
+	const chain = emphasis === 'chain';
+	const dimmed = emphasis === 'dimmed';
+	const weight = chain ? GC_CHAIN_WEIGHT : GC_BASE_WEIGHT;
+	return {
+		opacity: forcedColours ? null : (dimmed ? GC_DIM_OPACITY : 1),
+		weight: forcedColours ? weight : GC_BASE_WEIGHT,
+	};
+}
+
+
+/* ==========================================================================
+ * 6. mountCanvas -- the whole flow
+ * ========================================================================== */
+
+/**
+ * @param {{store: object, graphModel: object, region: Element, surface: Element, root: (Document|Element)}} context
+ * @returns {{viewportFor: function(string): (object|undefined)}|undefined}
+ */
+function mountCanvas(context) {
+	const surface = context && context.surface ? context.surface : null;
+	if (!surface || !context.store) {
+		console.error('graph.html: the drawing rendering found no surface to mount into');
+		return undefined;
+	}
+	const root = context.root && context.root.nodeType ? (context.root.ownerDocument || document) : document;
+	const store = context.store;
+
+	if (!gcHasLibraries() || !gcHasWebGL()) {
+		return gcMountUnavailable(surface, store);
+	}
+
+	let renderer;
+	let canvasEl;
+	try {
+		canvasEl = document.createElement('canvas');
+		// `role="img"` and `data-graph-canvas` are the two attributes this
+		// module itself puts on the element: the graphical role the skeleton's
+		// own comment names, and the marker the shell's existing lookup
+		// (`graph-controls.js` :943, `[data-graph-canvas]`) needs to find the
+		// canvas and keep its `aria-label` current. Both are the mechanism the
+		// shell already ships, not a styling or interactive attribute; the
+		// `width`/`height` the sizing rule writes below are the drawing
+		// buffer itself and the only attributes AC-S8 is stated against.
+		canvasEl.setAttribute('role', 'img');
+		canvasEl.setAttribute('data-graph-canvas', '');
+		// `WebGLRenderer`'s own constructor takes NO arguments in v8 -- every
+		// option v7's single-call `new PIXI.Renderer({...})` accepted moved to
+		// the separate, asynchronous `init()` kicked off below, once `view` (D2)
+		// exists to hand its rejection to.
+		renderer = new PIXI.WebGLRenderer();
+	} catch (error) {
+		return gcMountUnavailable(surface, store);
+	}
+
+	surface.appendChild(canvasEl);
+	const stage = new PIXI.Container();
+	const edgeLayer = new PIXI.Container();
+	const nodeLayer = new PIXI.Container();
+	const labelLayer = new PIXI.Container();
+	stage.addChild(edgeLayer, nodeLayer, labelLayer);
+
+	const view = {
+		root: root,
+		store: store,
+		surface: surface,
+		canvas: canvasEl,
+		renderer: renderer,
+		stage: stage,
+		edgeLayer: edgeLayer,
+		nodeLayer: nodeLayer,
+		labelLayer: labelLayer,
+		// D2's four private structures.
+		positions: new Map(),
+		palette: gcResolvePalette(root),
+		index: gcMakeIndex(),
+		text: new Map(),
+		// The one graph-private viewport transform.
+		viewport: { scale: 1, panX: 0, panY: 0 },
+		simulation: null,
+		record: gcEmptyRecord(),
+		hover: null,
+		drag: null,
+		frameHandle: null,
+		lastNodeIds: new Set(),
+		lastGroupKey: '',
+		// The ONLY thing gated on `renderer.init()` settling. Every draw call up
+		// to and including `gcDrawFrame` runs exactly as it always has -- the
+		// stage's children are rebuilt on every tick regardless -- only the
+		// actual GPU `render()` call (`gcResize`, `gcDrawFrame`) is withheld
+		// until this turns true, so a tick that lands before `init()` resolves
+		// is deferred, never dropped.
+		rendererReady: false,
+	};
+
+	gcWatchTheme(view);
+	view.unsubscribePreferences = store.subscribePreferences((prefs) => gcOnPreferencesChange(view, prefs));
+
+	gcResize(view);
+	if (typeof ResizeObserver === 'function') {
+		const ro = new ResizeObserver(() => gcResize(view));
+		ro.observe(surface);
+		view.resizeObserver = ro;
+	}
+
+	gcBindPointerEvents(view);
+
+	const prefs = store.getPreferences();
+	view.record.mode = prefs.reducedMotion ? 'settled' : 'live';
+	gcSyncViewport(view, store.getLens());
+	gcApplyProjection(view, store.getViewModel(), true);
+
+	view.unsubscribe = store.subscribe((viewModel, lens, changedKeys) => { gcOnNotify(view, viewModel, lens, changedKeys); });
+
+	// The deferred half of construction. `mountCanvas` itself returns
+	// synchronously below, before this promise ever settles -- its caller
+	// (`graph-controls.js` :923) reads `handle.viewportFor` the instant this
+	// call returns, so nothing here is awaited and `mountCanvas` exports no
+	// promise of its own. A resolve flips `rendererReady` and performs the
+	// one `render()` call every prior tick withheld (`view.stage`'s children
+	// are already current, built by those same withheld ticks); a reject --
+	// no WebGL context obtainable from THIS canvas via THIS renderer, despite
+	// the scratch probe in `gcHasWebGL` above having found one from a
+	// DIFFERENT canvas -- transitions the already-mounted view into the
+	// AC-S10 end state, after the fact (`gcTransitionToUnavailable`).
+	renderer.init({ view: canvasEl, antialias: true, backgroundAlpha: 0, width: 10, height: 10 }).then(() => {
+		view.rendererReady = true;
+		if (view.renderer && typeof view.renderer.resize === 'function') {
+			view.renderer.resize(view.canvas.width, view.canvas.height);
+		}
+		if (view.renderer && typeof view.renderer.render === 'function') view.renderer.render(view.stage);
+	}).catch((error) => gcTransitionToUnavailable(view, error));
+
+	return {
+		viewportFor(action) { return gcViewportFor(view, action); },
+	};
+}
+
+registerRendering('canvas', mountCanvas);
+
+/** The `mode: 'unavailable'` path (AC-S10). No canvas, no gesture bound, a
+ *  static sentence as ordinary text -- never a live region -- and one
+ *  console.warn with the stable prefix. */
+function gcMountUnavailable(surface, store) {
+	const record = gcEmptyRecord();
+	record.forcedColours = !!(store.getPreferences && store.getPreferences().forcedColours);
+	const vm = store.getViewModel ? store.getViewModel() : null;
+	if (vm) record.revision = vm.revision;
+	gcPublishRecord(record);
+	surface.appendChild(el('p', { class: 'graph-placeholder', text:
+		'The live drawing surface needs a working WebGL context and this browser, or this build, does '
+		+ 'not provide one. Nothing is lost: the relationship table below carries every relationship as '
+		+ 'text, with the same lenses and the same filters applied to it.' }));
+	console.warn(GC_WARN_PREFIX, { hasLibraries: gcHasLibraries(), hasWebGL: gcHasWebGL() });
+	return undefined;
+}
+
+/**
+ * The late-failure transition (ledger row 4, AC-S10). `gcMountUnavailable`
+ * above only ever runs BEFORE a canvas exists -- `mountCanvas` has already
+ * returned before `renderer.init()` can settle, so a rejection here finds a
+ * canvas appended, gestures bound, the store subscribed to and (maybe) a
+ * simulation already running. This neutralises every one of those in place,
+ * then hands off to `gcMountUnavailable` for the actual end state -- ONE
+ * fresh `mode: 'unavailable'` record published, ONE static sentence appended
+ * to the same surface, ONE `console.warn` with `GC_WARN_PREFIX` -- so the two
+ * paths converge on one outcome rather than producing two.
+ *
+ * `error` is deliberately not surfaced through a second warning of its own:
+ * AC-S10 fixes exactly one `console.warn`, and `gcMountUnavailable` already
+ * issues it.
+ *
+ * What this deliberately does NOT do: unbind the window-level `mousemove`/
+ * `mouseup` listeners `gcBindPointerEvents` attached, or drop `view` itself.
+ * Both are inert once `view.canvas` is detached (a detached element receives
+ * no real pointer events, so `gcOnPointerDown` can never re-arm `view.drag`)
+ * and `view.drag` is nulled below (so a drag already in flight at the exact
+ * moment of this transition cannot keep publishing frames afterwards). A
+ * general teardown (`gcUnmount`) that reclaims those listeners themselves,
+ * and everything else this file never tears down (`view.themeObserver`
+ * aside), is ledger row 6's, not this one's.
+ *
+ * @param {object} view
+ * @param {*} error the `init()` rejection reason, unused beyond this comment
+ */
+function gcTransitionToUnavailable(view, error) {
+	if (typeof view.unsubscribe === 'function') view.unsubscribe();
+	if (typeof view.unsubscribePreferences === 'function') view.unsubscribePreferences();
+	if (view.simulation) view.simulation.stop();
+	view.simulation = null;
+	if (view.resizeObserver) view.resizeObserver.disconnect();
+	view.resizeObserver = null;
+	if (view.themeObserver) view.themeObserver.disconnect();
+	view.themeObserver = null;
+	if (view.frameHandle) {
+		if (typeof cancelAnimationFrame === 'function') cancelAnimationFrame(view.frameHandle);
+		if (typeof clearTimeout === 'function') clearTimeout(view.frameHandle);
+		view.frameHandle = null;
+	}
+	if (view.wheelCommitTimer) { clearTimeout(view.wheelCommitTimer); view.wheelCommitTimer = null; }
+	view.drag = null;
+	if (view.canvas && view.canvas.parentNode) view.canvas.parentNode.removeChild(view.canvas);
+	view.rendererReady = false;
+	view.renderer = null;
+	gcMountUnavailable(view.surface, view.store);
+}
+
+
+/* ==========================================================================
+ * 7. The spatial index (D2) -- this module's own code over `positions`
+ * ========================================================================== */
+
+/** A flat scan over the last-drawn node marks. Picking is bounded by the
+ *  drawn node count, which the reader's own density and filter controls
+ *  already bound; no third vendored library is needed for it. */
+function gcMakeIndex() {
+	return {
+		entries: [],
+		rebuild(positions, nodeIds) {
+			this.entries = nodeIds.map((id) => ({ id: id, p: positions.get(id) })).filter((e) => e.p);
+		},
+		nearest(x, y, maxDist) {
+			let best = null;
+			let bestDist = maxDist * maxDist;
+			for (const entry of this.entries) {
+				const dx = entry.p.x - x;
+				const dy = entry.p.y - y;
+				const d2 = dx * dx + dy * dy;
+				if (d2 <= bestDist) { bestDist = d2; best = entry.id; }
+			}
+			return best;
+		},
+	};
+}
+
+
+/* ==========================================================================
+ * 8. Theme invalidation (D2 -- "verified, not assumed")
+ * ========================================================================== */
+
+/** A `MutationObserver` on `<html data-theme>`, the complete and cheapest
+ *  invalidation trigger for the palette cache. No `getComputedStyle` call is
+ *  made inside a frame. */
+function gcWatchTheme(view) {
+	if (typeof MutationObserver !== 'function') return;
+	const target = view.root.documentElement;
+	const observer = new MutationObserver(() => {
+		view.palette = gcResolvePalette(view.root);
+		gcRepaintUnchanged(view);
+	});
+	observer.observe(target, { attributes: true, attributeFilter: ['data-theme'] });
+	view.themeObserver = observer;
+}
+
+
+/* ==========================================================================
+ * 9. Resize -- preserves the viewport, re-places and re-heats nothing (AC-S3)
+ * ========================================================================== */
+
+function gcResize(view) {
+	const rect = view.surface.getBoundingClientRect();
+	const width = Math.max(1, Math.round(rect.width));
+	const height = Math.max(1, Math.round(rect.height));
+	const dpr = Math.min(GC_DPR_CAP, (typeof window !== 'undefined' && window.devicePixelRatio) || 1);
+	const bw = Math.max(1, Math.round(width * dpr));
+	const bh = Math.max(1, Math.round(height * dpr));
+	view.canvas.width = bw;
+	view.canvas.height = bh;
+	view.width = width;
+	view.height = height;
+	// Gated on `rendererReady` (D2, `mountCanvas`), not merely on the method's
+	// existence: v8's `WebGLRenderer.resize`/`.render` exist on the instance
+	// from construction but throw if called before `init()` has resolved --
+	// unlike v7, where construction and readiness were the same event.
+	if (view.rendererReady && view.renderer && typeof view.renderer.resize === 'function') view.renderer.resize(bw, bh);
+	if (view.stage) view.stage.scale && (view.stage.scale.set ? view.stage.scale.set(dpr, dpr) : null);
+	gcDrawFrame(view, { tickMs: 0 });
+}
+
+
+/* ==========================================================================
+ * 10. Notification handling -- step 5's classification
+ * ========================================================================== */
+
+function gcOnNotify(view, viewModel, lens, changedKeys) {
+	// `zoom` is the ONLY `LensState` field this file reads (AC-S2, rule 1).
+	// A write that came from this feature's own gesture already applied the
+	// transform locally; a write that came from the shell's keyboard-driven
+	// control (D8) has not, so the sync below is what actually moves the
+	// canvas for that path. It is idempotent where the two already agree.
+	gcSyncViewport(view, lens);
+	if (Array.isArray(changedKeys) && changedKeys.length === 1 && changedKeys[0] === 'zoom') {
+		// Apply the transform. No layout, no re-place, no re-heat.
+		gcDrawFrame(view, { tickMs: 0 });
+		return;
+	}
+	if (Array.isArray(changedKeys) && changedKeys.length === 1 && changedKeys[0] === 'sort') {
+		// The table's own private field.
+		return;
+	}
+	gcApplyProjection(view, viewModel, false);
+}
+
+/** Sync the private viewport transform from `lensState.zoom`, the one field
+ *  this file reads from `LensState`. A no-op where the two already agree,
+ *  which is the common case for a gesture that already applied the
+ *  transform locally before committing it. */
+function gcSyncViewport(view, lens) {
+	const zoom = lens && lens.zoom;
+	if (!zoom) return;
+	if (zoom.scale === view.viewport.scale && zoom.panX === view.viewport.panX && zoom.panY === view.viewport.panY) return;
+	view.viewport = { scale: zoom.scale, panX: zoom.panX, panY: zoom.panY };
+}
+
+/** A mid-session preference flip (D1's separate preference route -- no
+ *  `revision` bump, no `subscribe` notification). Repaints, re-resolves the
+ *  palette, and transitions `mode` between `'live'` and `'settled'` -- the
+ *  standing half of NFR-4, not only its load-time half. */
+function gcOnPreferencesChange(view, prefs) {
+	view.palette = gcResolvePalette(view.root);
+	const wasSettled = view.record.mode === 'settled';
+	const viewModel = view.store.getViewModel();
+	const forcedColours = !!prefs.forcedColours;
+	// `forcedColours` is baked into every mark's `emphasisDraw` at derive time
+	// (`gcNodeEmphasisDraw`/`gcEdgeEmphasisDraw`) and read again by the frame
+	// path from `view.record.forcedColours` (`gcDrawFrame`) -- so BOTH must be
+	// refreshed on EVERY preference-change tick, not only when `reducedMotion`
+	// also flips, and not only on a `revision`-changing `subscribe` notify.
+	// Membership cannot change on this route (no `revision` bump here), so
+	// `view.positions`/`view.simulation`/`view.lastNodeIds` are left untouched
+	// below in every branch -- at rest, no mark moves (AC-S3).
+	const { nodeMarks, edgeMarks } = gcDeriveMarks(viewModel, forcedColours);
+	const nodeIds = Array.from(nodeMarks.keys());
+	view.record.forcedColours = forcedColours;
+	view.record.nodes = nodeIds;
+	view.record.edges = Array.from(edgeMarks.keys());
+	view.record.marks = { nodes: Array.from(nodeMarks.values()), edges: Array.from(edgeMarks.values()) };
+	if (prefs.reducedMotion && !wasSettled) {
+		if (!view.simulation) gcEnsureSimulation(view, nodeIds, edgeMarks, viewModel);
+		gcSettleBeforeFirstPaint(view, viewModel);
+		return;
+	}
+	if (!prefs.reducedMotion && wasSettled) {
+		view.record.mode = 'live';
+		gcReheat(view);
+		return;
+	}
+	gcRepaintUnchanged(view);
+}
+
+/**
+ * @param {object} view
+ * @param {object} viewModel
+ * @param {boolean} isFirst
+ */
+function gcApplyProjection(view, viewModel, isFirst) {
+	const forcedColours = !!(view.store.getPreferences().forcedColours);
+	const { nodeMarks, edgeMarks } = gcDeriveMarks(viewModel, forcedColours);
+	const nodeIds = Array.from(nodeMarks.keys());
+	const nextIds = new Set(nodeIds);
+
+	// Drop positions for a node no longer in GraphModel at all (D2).
+	for (const id of Array.from(view.positions.keys())) {
+		if (!viewModel.visibleNodes.some((n) => n.id === id) && !nextIds.has(id)) view.positions.delete(id);
+	}
+
+	const groupKey = viewModel.groups.map((g) => g.key + ':' + g.nodeIds.join(',')).join('|');
+	const setsChanged = !gcSameSet(view.lastNodeIds, nextIds);
+	const groupsChanged = groupKey !== view.lastGroupKey;
+
+	if (isFirst || setsChanged) {
+		gcDiffPlaceNodes(view, viewModel, nextIds);
+	}
+
+	view.lastNodeIds = nextIds;
+	view.lastGroupKey = groupKey;
+
+	view.record = {
+		revision: viewModel.revision,
+		// `mode` is set exactly by: `mountCanvas` at capability failure
+		// ('unavailable'), `gcSettleBeforeFirstPaint` ('settled') and
+		// `gcOnPreferencesChange` (both transitions). It is carried through
+		// here untouched -- a projection never decides it.
+		mode: view.record.mode,
+		forcedColours: forcedColours,
+		nodes: nodeIds,
+		edges: Array.from(edgeMarks.keys()),
+		marks: { nodes: Array.from(nodeMarks.values()), edges: Array.from(edgeMarks.values()) },
+		reveal: view.record.reveal,
+		captions: gcBuildCaptions(viewModel),
+		viewport: Object.assign({}, view.viewport),
+		positions: gcPositionsSnapshot(view.positions, nodeIds),
+		frames: view.record.frames || [],
+	};
+	gcPublishRecord(view.record);
+	view.index.rebuild(view.positions, nodeIds);
+
+	// Nothing structural changed: repaint from `positions` unchanged. The
+	// simulation, if any, is left exactly as it was -- neither rebuilt nor
+	// touched -- so at rest no mark moves (AC-S3). This is the one branch
+	// that never calls `gcEnsureSimulation`.
+	if (!isFirst && !setsChanged && !groupsChanged) {
+		gcDrawFrame(view, { tickMs: 0 });
+		return;
+	}
+
+	// The drawn sets or the partition changed (or this is the first paint):
+	// (re)build the simulation's topology over the CURRENT positions -- every
+	// surviving node keeps its coordinate, only a new id was placed above --
+	// then heat it. `gcEnsureSimulation` itself never starts a tick.
+	gcEnsureSimulation(view, nodeIds, edgeMarks, viewModel);
+
+	const reducedMotion = !!(view.store.getPreferences().reducedMotion);
+	if (isFirst && reducedMotion) {
+		gcSettleBeforeFirstPaint(view, viewModel);
+		return;
+	}
+	if (view.record.mode === 'settled') {
+		// A perturbation under the standing settled mode resumes the loop
+		// UNPAINTED and paints once at release (§ Reduced motion).
+		gcSettleBeforeFirstPaint(view, viewModel);
+		return;
+	}
+	gcReheat(view);
+}
+
+function gcSameSet(a, b) {
+	if (!a || a.size !== b.size) return false;
+	for (const id of a) if (!b.has(id)) return false;
+	return true;
+}
+
+function gcPositionsSnapshot(positions, nodeIds) {
+	const out = {};
+	for (const id of nodeIds) { const p = positions.get(id); if (p) out[id] = { x: p.x, y: p.y }; }
+	return out;
+}
+
+function gcBuildCaptions(viewModel) {
+	const counts = viewModel.counts.nodes + ' of ' + (viewModel.counts.nodes + viewModel.counts.hiddenNodes) + ' nodes, '
+		+ viewModel.counts.edges + ' of ' + (viewModel.counts.edges + viewModel.counts.hiddenEdges) + ' relationships';
+	const groups = viewModel.groups.map((g) => ({
+		label: g.label,
+		foldedText: g.foldable > 0 ? (g.foldable + ' folded into this document') : null,
+	}));
+	return { counts: counts, groups: groups };
+}
+
+/** Diff the drawn node set against `positions`: keep every surviving id's
+ *  entry untouched, place only the new ones, drop the departed. */
+function gcDiffPlaceNodes(view, viewModel, nextIds) {
+	const adjacency = new Map();
+	for (const edge of viewModel.visibleEdges) {
+		const fold = viewModel.edgeFold.get(edge.key);
+		if (fold === 'collapsed') continue;
+		if (!adjacency.has(fold.sourceId)) adjacency.set(fold.sourceId, []);
+		if (!adjacency.has(fold.targetId)) adjacency.set(fold.targetId, []);
+		adjacency.get(fold.sourceId).push(fold.targetId);
+		adjacency.get(fold.targetId).push(fold.sourceId);
+	}
+	for (const id of nextIds) {
+		if (view.positions.has(id)) continue;
+		const seed = gcPlaceNewNode(id, view.positions, adjacency.get(id) || []);
+		view.positions.set(id, { x: seed.x, y: seed.y, vx: 0, vy: 0, fx: null, fy: null });
+	}
+	for (const id of Array.from(view.positions.keys())) {
+		if (!nextIds.has(id)) view.positions.delete(id);
+	}
+}
+
+
+/* ==========================================================================
+ * 11. The simulation
+ * ========================================================================== */
+
+function gcEnsureSimulation(view, nodeIds, edgeMarks, viewModel) {
+	const nodeRecords = nodeIds.map((id) => Object.assign({ id: id }, view.positions.get(id)));
+	const links = Array.from(edgeMarks.values()).filter((m) => m.sourceId !== m.targetId)
+		.map((m) => ({ source: m.sourceId, target: m.targetId }));
+
+	if (view.simulation) view.simulation.stop();
+	const groupCentres = gcGroupCentres(viewModel, view.positions);
+	const sim = d3.forceSimulation(nodeRecords)
+		.force('charge', d3.forceManyBody().strength(GC_FORCE.charge))
+		.force('link', d3.forceLink(links).id((d) => d.id).distance(GC_FORCE.linkDistance).strength(GC_FORCE.linkStrength))
+		.force('center', d3.forceCenter(0, 0).strength(GC_FORCE.centerStrength))
+		.force('collide', d3.forceCollide(GC_FORCE.collideRadius))
+		.force('group', gcGroupForce(viewModel, groupCentres, GC_FORCE.groupStrength))
+		.on('tick', () => gcOnTick(view, nodeRecords));
+	sim.alphaTarget(0);
+	// Deterministic regardless of the adopted d3-force build's own auto-start
+	// behaviour at construction: this module decides when a heat begins, via
+	// `gcReheat`/`gcSettleBeforeFirstPaint`, and never the mere act of
+	// (re)building the simulation's topology -- which is what keeps an
+	// emphasis-only re-projection from moving a mark (AC-S3).
+	sim.stop();
+	view.simulation = sim;
+	view.simNodeRecords = nodeRecords;
+}
+
+/** A minimal custom force -- pulls each node toward its group's centroid, the
+ *  layout half of what `groups` is for. */
+function gcGroupForce(viewModel, centres, strength) {
+	let nodes;
+	function force(alpha) {
+		for (const node of nodes) {
+			const centre = centres.get(node.id);
+			if (!centre) continue;
+			node.vx = (node.vx || 0) + (centre.x - node.x) * strength * alpha;
+			node.vy = (node.vy || 0) + (centre.y - node.y) * strength * alpha;
+		}
+	}
+	force.initialize = (n) => { nodes = n; };
+	return force;
+}
+
+function gcGroupCentres(viewModel, positions) {
+	const centres = new Map();
+	for (const group of viewModel.groups) {
+		let sx = 0, sy = 0, n = 0;
+		for (const id of group.nodeIds) {
+			const p = positions.get(id);
+			if (p) { sx += p.x; sy += p.y; n += 1; }
+		}
+		if (n === 0) continue;
+		const centre = { x: sx / n, y: sy / n };
+		for (const id of group.nodeIds) centres.set(id, centre);
+	}
+	return centres;
+}
+
+function gcOnTick(view, nodeRecords) {
+	const t0 = (typeof performance !== 'undefined' ? performance.now() : Date.now());
+	for (const rec of nodeRecords) {
+		const p = view.positions.get(rec.id);
+		if (p) { p.x = rec.x; p.y = rec.y; p.vx = rec.vx; p.vy = rec.vy; p.fx = rec.fx; p.fy = rec.fy; }
+	}
+	const tickMs = (typeof performance !== 'undefined' ? performance.now() : Date.now()) - t0;
+	if (view.simulation && view.simulation.alpha() < GC_IDLE_ALPHA && !view.drag) {
+		view.simulation.stop();
+	}
+	gcScheduleFrame(view, tickMs);
+}
+
+function gcReheat(view) {
+	if (!view.simulation) return;
+	view.simulation.alpha(1).restart();
+}
+
+
+/* ==========================================================================
+ * 12. Reduced motion -- the settled render (NFR-4)
+ * ========================================================================== */
+
+/** Step the ALREADY-BUILT simulation (the caller's job -- `gcEnsureSimulation`
+ *  -- since this runs both at first paint and at every later perturbation
+ *  under the standing settled mode) to convergence, painting once at the end
+ *  and never mid-loop. `mode` becomes/stays `'settled'`. */
+function gcSettleBeforeFirstPaint(view, viewModel) {
+	const sim = view.simulation;
+	if (!sim) return;
+	sim.stop();
+	let iterations = 0;
+	let moved = Infinity;
+	while (iterations < GC_SETTLE_MAX_TICKS && moved > GC_SETTLE_MOVE_THRESHOLD) {
+		moved = 0;
+		sim.tick();
+		for (const rec of view.simNodeRecords) {
+			moved += Math.abs(rec.vx || 0) + Math.abs(rec.vy || 0);
+			const p = view.positions.get(rec.id);
+			if (p) { p.x = rec.x; p.y = rec.y; p.vx = 0; p.vy = 0; }
+		}
+		iterations += 1;
+	}
+	sim.stop();
+	view.record.mode = 'settled';
+	gcDrawFrame(view, { tickMs: 0 });
+}
+
+/** Resume a stopped simulation for a perturbation. Under `'settled'` the loop
+ *  runs unpainted until it idles again and paints exactly once at release --
+ *  the one exception being a drag's own pinned node, drawn per frame while
+ *  every other mark holds still (§ Reduced motion). */
+function gcRepaintUnchanged(view) {
+	gcDrawFrame(view, { tickMs: 0 });
+}
+
+
+/* ==========================================================================
+ * 13. The frame path -- ticks are scheduled here, nothing else runs in it
+ * ========================================================================== */
+
+function gcScheduleFrame(view, tickMs) {
+	if (view.frameHandle) return;
+	const raf = (typeof requestAnimationFrame === 'function') ? requestAnimationFrame : (fn) => setTimeout(fn, 16);
+	view.frameHandle = raf(() => { view.frameHandle = null; gcDrawFrame(view, { tickMs: tickMs }); });
+}
+
+/**
+ * Draw edges, then nodes, then labels, then the caption; append one frame
+ * sample. No ARIA write, no live-region write, no DOM style read, no layout
+ * measurement (AC-S5) -- colours come from `view.palette`, sizes from
+ * `view.width`/`view.height`, cached at the last resize.
+ */
+function gcDrawFrame(view, meta) {
+	const t0 = (typeof performance !== 'undefined' ? performance.now() : Date.now());
+	const forcedColours = view.record.forcedColours;
+	const marks = view.record.marks || { nodes: [], edges: [] };
+	const alpha = view.record.mode === 'settled' ? 0 : (view.simulation ? view.simulation.alpha() : 0);
+
+	view.edgeLayer.removeChildren();
+	view.nodeLayer.removeChildren();
+	view.labelLayer.removeChildren();
+
+	for (const mark of marks.edges) {
+		const a = view.positions.get(mark.sourceId);
+		const b = view.positions.get(mark.targetId);
+		if (!a || !b) continue;
+		const g = new PIXI.Graphics();
+		const colour = gcColourFor(view.palette, mark.colourToken, forcedColours);
+		const width = mark.emphasisDraw.weight * GC_BASE_WEIGHT;
+		if (typeof g.lineStyle === 'function') g.lineStyle(width, gcColourToNumber(colour), mark.emphasisDraw.opacity == null ? 1 : mark.emphasisDraw.opacity);
+		gcDrawDashedLine(g, a.x, a.y, b.x, b.y, mark.lineStyle);
+		if (mark.arrowhead) gcDrawArrowhead(g, a.x, a.y, b.x, b.y, colour);
+		view.edgeLayer.addChild(g);
+	}
+
+	for (const mark of marks.nodes) {
+		const p = view.positions.get(mark.id);
+		if (!p) continue;
+		const g = new PIXI.Graphics();
+		const colour = gcColourFor(view.palette, mark.colourToken, forcedColours);
+		gcDrawGlyph(g, mark.kind, GC_BASE_RADIUS * mark.emphasisDraw.markScale, colour, mark.emphasisDraw.opacity);
+		if (mark.emphasisDraw.ring) gcDrawRing(g, GC_BASE_RADIUS * mark.emphasisDraw.markScale + 4, colour);
+		if (mark.gapBadge) gcDrawBadge(g, mark.gapBadge, GC_BASE_RADIUS * mark.emphasisDraw.markScale, colour);
+		g.position && g.position.set && g.position.set(p.x, p.y);
+		view.nodeLayer.addChild(g);
+	}
+
+	// Gated on `rendererReady` (D2, `mountCanvas`): a tick that lands before
+	// `renderer.init()` has resolved still rebuilds `stage`'s children above
+	// (nothing about deriving the frame is skipped) but withholds the actual
+	// GPU draw call. `mountCanvas`'s own `init().then()` performs the one
+	// `render()` this withholds once ready, so the first paint is deferred,
+	// never dropped.
+	if (view.rendererReady && view.renderer && typeof view.renderer.render === 'function') view.renderer.render(view.stage);
+
+	const frames = view.record.frames;
+	frames.push({
+		t: t0,
+		tickMs: meta && typeof meta.tickMs === 'number' ? meta.tickMs : 0,
+		drawMs: (typeof performance !== 'undefined' ? performance.now() : Date.now()) - t0,
+		alpha: alpha,
+		dragging: !!(view.drag && view.drag.nodeId),
+		applied: Object.assign({}, view.viewport),
+	});
+	if (frames.length > GC_FRAME_RING) frames.shift();
+	view.record.positions = gcPositionsSnapshot(view.positions, view.record.nodes);
+	gcPublishRecord(view.record);
+
+	if (view.simulation && view.simulation.alpha() >= GC_IDLE_ALPHA && view.record.mode !== 'settled') {
+		gcScheduleFrame(view, 0);
+	}
+}
+
+/** A colour string, resolved from CSS, turned into a PIXI-friendly number
+ *  where the runtime supports it -- never a colour value authored in this
+ *  file, only a format conversion of one already resolved from the
+ *  stylesheet. */
+function gcColourToNumber(colour) {
+	const hex = typeof colour === 'string' ? colour.match(/^#([0-9a-fA-F]{6})$/) : null;
+	if (hex) return parseInt(hex[1], 16);
+	// A system colour keyword (e.g. `CanvasText`) or an `rgb()` string is
+	// returned as-is rather than converted: it is left for PIXI/the canvas
+	// backend to resolve natively where the call site accepts a string. No
+	// literal colour value is authored on this path -- `colour` is always
+	// already resolved from the stylesheet or the probe (AC-S4).
+	return colour;
+}
+
+function gcDrawDashedLine(g, x1, y1, x2, y2, lineStyle) {
+	if (typeof g.moveTo !== 'function') return;
+	g.moveTo(x1, y1);
+	if (lineStyle === 'solid' || !lineStyle) { g.lineTo(x2, y2); return; }
+	const pattern = lineStyle === 'dashed' ? [8, 5] : [2, 4];
+	const dx = x2 - x1, dy = y2 - y1;
+	const len = Math.sqrt(dx * dx + dy * dy) || 1;
+	const ux = dx / len, uy = dy / len;
+	let drawn = 0, i = 0, on = true;
+	let cx = x1, cy = y1;
+	while (drawn < len) {
+		const step = Math.min(pattern[i % 2], len - drawn);
+		const nx = cx + ux * step, ny = cy + uy * step;
+		if (on) g.lineTo(nx, ny); else g.moveTo(nx, ny);
+		cx = nx; cy = ny; drawn += step; i += 1; on = !on;
+	}
+}
+
+function gcDrawArrowhead(g, x1, y1, x2, y2, colour) {
+	if (typeof g.drawPolygon !== 'function' && typeof g.beginFill !== 'function') return;
+	const angle = Math.atan2(y2 - y1, x2 - x1);
+	const size = 6;
+	const bx = x2 - Math.cos(angle) * size;
+	const by = y2 - Math.sin(angle) * size;
+	const p1 = { x: bx + Math.cos(angle + Math.PI / 2) * (size / 2), y: by + Math.sin(angle + Math.PI / 2) * (size / 2) };
+	const p2 = { x: bx + Math.cos(angle - Math.PI / 2) * (size / 2), y: by + Math.sin(angle - Math.PI / 2) * (size / 2) };
+	if (typeof g.beginFill === 'function') g.beginFill(gcColourToNumber(colour));
+	if (typeof g.drawPolygon === 'function') g.drawPolygon([x2, y2, p1.x, p1.y, p2.x, p2.y]);
+	if (typeof g.endFill === 'function') g.endFill();
+}
+
+/** One glyph per `KIND_ENCODING` shape -- the authority for the mapping is
+ *  graph-model.js's own table and it is not restated here beyond the shape
+ *  name each kind already carries. */
+function gcDrawGlyph(g, kind, radius, colour, opacity) {
+	const shape = KIND_ENCODING[kind] ? KIND_ENCODING[kind].shape : 'circle';
+	const alpha = opacity == null ? 1 : opacity;
+	if (typeof g.beginFill === 'function') g.beginFill(gcColourToNumber(colour), alpha);
+	switch (shape) {
+		case 'circle':
+			if (typeof g.drawCircle === 'function') g.drawCircle(0, 0, radius);
+			break;
+		case 'ring':
+			if (typeof g.lineStyle === 'function') g.lineStyle(2, gcColourToNumber(colour), alpha);
+			if (typeof g.drawCircle === 'function') g.drawCircle(0, 0, radius);
+			break;
+		case 'square':
+			if (typeof g.drawRect === 'function') g.drawRect(-radius, -radius, radius * 2, radius * 2);
+			break;
+		case 'diamond':
+			if (typeof g.drawPolygon === 'function') g.drawPolygon([0, -radius, radius, 0, 0, radius, -radius, 0]);
+			break;
+		case 'triangle':
+			if (typeof g.drawPolygon === 'function') g.drawPolygon([0, -radius, radius, radius, -radius, radius]);
+			break;
+		case 'hexagon':
+			if (typeof g.drawPolygon === 'function') g.drawPolygon(gcPolygonPoints(6, radius));
+			break;
+		case 'pentagon':
+			if (typeof g.drawPolygon === 'function') g.drawPolygon(gcPolygonPoints(5, radius));
+			break;
+		default:
+			if (typeof g.drawCircle === 'function') g.drawCircle(0, 0, radius);
+	}
+	if (typeof g.endFill === 'function') g.endFill();
+}
+
+function gcPolygonPoints(sides, radius) {
+	const points = [];
+	for (let i = 0; i < sides; i += 1) {
+		const a = (Math.PI * 2 * i) / sides - Math.PI / 2;
+		points.push(Math.cos(a) * radius, Math.sin(a) * radius);
+	}
+	return points;
+}
+
+function gcDrawRing(g, radius, colour) {
+	if (typeof g.lineStyle === 'function') g.lineStyle(2, gcColourToNumber(colour), 1);
+	if (typeof g.drawCircle === 'function') g.drawCircle(0, 0, radius);
+}
+
+/** The gap badge -- additive, beside the mark, never inside it, and never a
+ *  function of `nodeEmphasis` (its source is `coverageGaps` alone, D1). */
+function gcDrawBadge(g, badgeClass, radius, colour) {
+	const glyph = GC_BADGE[badgeClass];
+	if (!glyph || typeof g.drawCircle !== 'function') return;
+	if (typeof g.beginFill === 'function') g.beginFill(gcColourToNumber(colour));
+	g.drawCircle(radius + 5, -radius - 5, 3);
+	if (typeof g.endFill === 'function') g.endFill();
+}
+
+
+/* ==========================================================================
+ * 14. Interaction
+ * ========================================================================== */
+
+function gcBindPointerEvents(view) {
+	const canvas = view.canvas;
+	canvas.addEventListener('mousemove', (event) => gcOnPointerMove(view, event));
+	canvas.addEventListener('mouseleave', () => gcOnPointerLeave(view));
+	canvas.addEventListener('mousedown', (event) => gcOnPointerDown(view, event));
+	window.addEventListener('mousemove', (event) => gcOnPointerDrag(view, event));
+	window.addEventListener('mouseup', (event) => gcOnPointerUp(view, event));
+	canvas.addEventListener('click', (event) => gcOnClick(view, event));
+	canvas.addEventListener('dblclick', (event) => gcOnDblClick(view, event));
+	canvas.addEventListener('wheel', (event) => gcOnWheel(view, event), { passive: false });
+}
+
+function gcLocalPoint(view, clientX, clientY) {
+	const rect = view.canvas.getBoundingClientRect();
+	const cx = clientX - rect.left - view.width / 2;
+	const cy = clientY - rect.top - view.height / 2;
+	return { x: (cx - view.viewport.panX) / view.viewport.scale, y: (cy - view.viewport.panY) / view.viewport.scale };
+}
+
+/** Shortest distance from a point to a segment, this module's own code (like
+ *  `index`, D2) -- an edge mark has no hit area PIXI hands back, so picking
+ *  one needs the same private geometry a node's picking already uses. */
+function gcDistanceToSegment(px, py, x1, y1, x2, y2) {
+	const dx = x2 - x1, dy = y2 - y1;
+	const lenSq = dx * dx + dy * dy;
+	let t = lenSq > 0 ? ((px - x1) * dx + (py - y1) * dy) / lenSq : 0;
+	t = Math.max(0, Math.min(1, t));
+	const cx = x1 + t * dx, cy = y1 + t * dy;
+	const ex = px - cx, ey = py - cy;
+	return Math.sqrt(ex * ex + ey * ey);
+}
+
+/** The nearest edge mark within `maxDist`, or `null`. Two rows between the
+ *  same drawn pair are two distinct marks here too -- this scans every
+ *  edge mark and picks the closest, never a pair (AC-S6). */
+function gcNearestEdge(view, x, y, maxDist) {
+	let best = null;
+	let bestDist = maxDist;
+	for (const mark of view.record.marks.edges) {
+		const a = view.positions.get(mark.sourceId);
+		const b = view.positions.get(mark.targetId);
+		if (!a || !b) continue;
+		const d = gcDistanceToSegment(x, y, a.x, a.y, b.x, b.y);
+		if (d <= bestDist) { bestDist = d; best = mark.key; }
+	}
+	return best;
+}
+
+/** Hover changes appearance only. Nothing is written to the store and the
+ *  drawn sets are identical before, during and after (AC-S7). A node takes
+ *  priority over an edge at the same point, matching the pick radius each
+ *  already uses for its own gesture. */
+function gcOnPointerMove(view, event) {
+	if (view.drag) return;
+	const p = gcLocalPoint(view, event.clientX, event.clientY);
+	const pickRadius = GC_PICK_RADIUS / view.viewport.scale;
+	const nodeId = view.index.nearest(p.x, p.y, pickRadius);
+	const edgeKey = nodeId ? null : gcNearestEdge(view, p.x, p.y, pickRadius);
+	if (nodeId === view.hover && edgeKey === view.hoverEdge) return;
+	view.hover = nodeId;
+	view.hoverEdge = edgeKey;
+	gcRefreshReveal(view);
+	gcDrawFrame(view, { tickMs: 0 });
+}
+
+function gcOnPointerLeave(view) {
+	if (view.hover === null && !view.hoverEdge) return;
+	view.hover = null;
+	view.hoverEdge = null;
+	gcRefreshReveal(view);
+	gcDrawFrame(view, { tickMs: 0 });
+}
+
+/** Published as `reveal` (D3), never as an emphasis class -- hover is local
+ *  and transient and no hover may write one (rule 6). */
+function gcRefreshReveal(view) {
+	const viewModel = view.store.getViewModel();
+	if (view.hover) {
+		const neighbourhood = [view.hover];
+		for (const mark of view.record.marks.edges) {
+			if (mark.sourceId === view.hover) neighbourhood.push(mark.targetId);
+			if (mark.targetId === view.hover) neighbourhood.push(mark.sourceId);
+		}
+		view.record.reveal = {
+			kind: 'node', target: view.hover,
+			text: viewModel.nodeLabels.get(view.hover) || '',
+			neighbourhood: neighbourhood,
+		};
+	} else if (view.hoverEdge) {
+		// `s2t` (also `t2s` when symmetric) lives on the raw `Edge`, not on the
+		// mark (D1) -- the mark carries only what the bitmap draws with.
+		const edge = viewModel.visibleEdges.find((e) => e.key === view.hoverEdge);
+		const mark = view.record.marks.edges.find((m) => m.key === view.hoverEdge);
+		view.record.reveal = edge && mark ? {
+			kind: 'edge', target: view.hoverEdge, text: edge.s2t,
+			neighbourhood: [mark.sourceId, mark.targetId],
+		} : { kind: null, target: null, text: '', neighbourhood: [] };
+	} else {
+		view.record.reveal = { kind: null, target: null, text: '', neighbourhood: [] };
+	}
+}
+
+function gcOnPointerDown(view, event) {
+	const p = gcLocalPoint(view, event.clientX, event.clientY);
+	const id = view.index.nearest(p.x, p.y, GC_PICK_RADIUS / view.viewport.scale);
+	if (id) {
+		const pos = view.positions.get(id);
+		view.drag = { nodeId: id, startX: event.clientX, startY: event.clientY, origin: pos ? { x: pos.x, y: pos.y } : null };
+		if (pos) { pos.fx = pos.x; pos.fy = pos.y; }
+		// Under `mode: 'settled'` the re-heat is DEFERRED TO THE RELEASE: the
+		// simulation stays stopped, so every other mark holds still, and only
+		// the pinned node's position is driven directly by the pointer below
+		// (§ Reduced motion). Live mode re-heats immediately, and its
+		// neighbours follow through the link/collide forces.
+		if (view.record.mode !== 'settled') gcReheat(view);
+	} else {
+		view.drag = { nodeId: null, startX: event.clientX, startY: event.clientY, startViewport: Object.assign({}, view.viewport) };
+	}
+}
+
+function gcOnPointerDrag(view, event) {
+	if (!view.drag) return;
+	if (view.drag.nodeId) {
+		const p = gcLocalPoint(view, event.clientX, event.clientY);
+		const pos = view.positions.get(view.drag.nodeId);
+		if (pos) { pos.x = p.x; pos.y = p.y; pos.fx = p.x; pos.fy = p.y; }
+		gcDrawFrame(view, { tickMs: 0 });
+	} else if (view.drag.startViewport) {
+		const dx = event.clientX - view.drag.startX;
+		const dy = event.clientY - view.drag.startY;
+		view.viewport = { scale: view.drag.startViewport.scale, panX: view.drag.startViewport.panX + dx, panY: view.drag.startViewport.panY + dy };
+		gcDrawFrame(view, { tickMs: 0 });
+	}
+}
+
+/** A gesture in flight applies its transform locally; the store write --
+ *  `setLens({zoom})`, once, whole -- happens only at the gesture's end. */
+function gcOnPointerUp(view, event) {
+	if (!view.drag) return;
+	const wasNodeDrag = !!view.drag.nodeId;
+	const wasViewportDrag = !!view.drag.startViewport;
+	const settled = view.record.mode === 'settled';
+	if (wasNodeDrag) {
+		const pos = view.positions.get(view.drag.nodeId);
+		if (pos) { pos.fx = null; pos.fy = null; }
+	}
+	view.drag = null;
+	if (wasViewportDrag) view.store.setLens({ zoom: Object.assign({}, view.viewport) });
+	if (wasNodeDrag && settled) {
+		// The deferred re-heat: settle once more from the dropped position and
+		// paint exactly once at the release.
+		gcSettleBeforeFirstPaint(view, view.store.getViewModel());
+	} else if (wasNodeDrag) {
+		gcDrawFrame(view, { tickMs: 0 });
+	}
+}
+
+/** Only the FIRST click of a sequence selects (`MouseEvent.detail`); the
+ *  repeat that precedes a real `dblclick` is ignored, which is the whole of
+ *  the double-click accommodation (AC-S9). One dotted key and no other
+ *  write. */
+function gcOnClick(view, event) {
+	if (event.detail > 1) return;
+	const p = gcLocalPoint(view, event.clientX, event.clientY);
+	const id = view.index.nearest(p.x, p.y, GC_PICK_RADIUS / view.viewport.scale);
+	if (!id) return;
+	view.store.setLens({ 'focus.nodeId': id });
+}
+
+function gcOnDblClick(view, event) {
+	const p = gcLocalPoint(view, event.clientX, event.clientY);
+	const id = view.index.nearest(p.x, p.y, GC_PICK_RADIUS / view.viewport.scale);
+	if (!id) return;
+	const target = view.store.openTarget(id);
+	if (target) window.location.href = target;
+}
+
+/** Wheel scales the viewport about the pointer. Applied locally and repainted
+ *  on EVERY event so zoom never feels dead mid-gesture; the `setLens({zoom})`
+ *  commit itself is deferred to the gesture's end. Wheel has no native "end"
+ *  event (unlike a pointer drag, which ends at `mouseup`), so "end" here is a
+ *  trailing idle window: each new event resets the timer, and only the timer
+ *  that survives uncancelled fires -- exactly one commit for one continuous
+ *  scroll burst, matching the Interaction table and GC18's singular hook. */
+function gcOnWheel(view, event) {
+	event.preventDefault();
+	const factor = event.deltaY < 0 ? GC_ZOOM_STEP : 1 / GC_ZOOM_STEP;
+	const nextScale = gcClamp(view.viewport.scale * factor, GC_ZOOM_MIN, GC_ZOOM_MAX);
+	view.viewport = Object.assign({}, view.viewport, { scale: nextScale });
+	gcDrawFrame(view, { tickMs: 0 });
+	gcScheduleWheelCommit(view);
+}
+
+/** The trailing-edge debounce that stands in for a wheel gesture's missing
+ *  "end" event. Stored on `view` (alongside `resizeObserver`/`themeObserver`,
+ *  which this file also never tears down) so a future teardown path -- this
+ *  file has none today -- would have a single handle to clear. */
+const GC_WHEEL_GESTURE_IDLE_MS = 150;
+
+function gcScheduleWheelCommit(view) {
+	if (view.wheelCommitTimer) clearTimeout(view.wheelCommitTimer);
+	view.wheelCommitTimer = setTimeout(() => {
+		view.wheelCommitTimer = null;
+		view.store.setLens({ zoom: Object.assign({}, view.viewport) });
+	}, GC_WHEEL_GESTURE_IDLE_MS);
+}
+
+function gcClamp(value, min, max) { return value < min ? min : (value > max ? max : value); }
+
+
+/* ==========================================================================
+ * 15. The viewport handle (D8) -- the shell's own control writes the result
+ * ========================================================================== */
+
+/**
+ * @param {object} view
+ * @param {string} action one of the seven manifest tokens
+ * @returns {{scale:number, panX:number, panY:number}|undefined}
+ */
+function gcViewportFor(view, action) {
+	const current = view.viewport;
+	switch (action) {
+		case 'zoom-in':
+			return { scale: gcClamp(current.scale * GC_ZOOM_STEP, GC_ZOOM_MIN, GC_ZOOM_MAX), panX: current.panX, panY: current.panY };
+		case 'zoom-out':
+			return { scale: gcClamp(current.scale / GC_ZOOM_STEP, GC_ZOOM_MIN, GC_ZOOM_MAX), panX: current.panX, panY: current.panY };
+		case 'zoom-fit':
+			return gcFitViewport(view);
+		case 'pan-left':
+			return { scale: current.scale, panX: current.panX + GC_PAN_STEP, panY: current.panY };
+		case 'pan-right':
+			return { scale: current.scale, panX: current.panX - GC_PAN_STEP, panY: current.panY };
+		case 'pan-up':
+			return { scale: current.scale, panX: current.panX, panY: current.panY + GC_PAN_STEP };
+		case 'pan-down':
+			return { scale: current.scale, panX: current.panX, panY: current.panY - GC_PAN_STEP };
+		default:
+			return undefined;
+	}
+}
+
+/** A fit is a function of the drawn extent, which lives in `positions`. */
+function gcFitViewport(view) {
+	const points = Array.from(view.positions.values());
+	if (points.length === 0) return { scale: 1, panX: 0, panY: 0 };
+	let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+	for (const p of points) {
+		if (p.x < minX) minX = p.x; if (p.x > maxX) maxX = p.x;
+		if (p.y < minY) minY = p.y; if (p.y > maxY) maxY = p.y;
+	}
+	const w = Math.max(1, maxX - minX);
+	const h = Math.max(1, maxY - minY);
+	const scale = gcClamp(Math.min((view.width || 400) / w, (view.height || 400) / h) * 0.9, GC_ZOOM_MIN, GC_ZOOM_MAX);
+	return { scale: scale, panX: -((minX + maxX) / 2) * scale, panY: -((minY + maxY) / 2) * scale };
+}
+
+
+/* ==========================================================================
+ * 16. What this file publishes
+ *
+ * In the page these are plain declarations in a shared module scope; the
+ * export keyword makes the same file loadable by a test process with no
+ * change to a byte of behaviour.
+ * ========================================================================== */
+
+export {
+	mountCanvas,
+	gcHasLibraries,
+	gcHasWebGL,
+	gcDeriveMarks,
+	gcNodeEmphasisDraw,
+	gcEdgeEmphasisDraw,
+	gcResolvePalette,
+	gcColourFor,
+	gcSeedPosition,
+	gcPlaceNewNode,
+	gcViewportFor,
+	gcFitViewport,
+	gcEmptyRecord,
+	GC_WARN_PREFIX,
+	GC_FRAME_RING,
+};
