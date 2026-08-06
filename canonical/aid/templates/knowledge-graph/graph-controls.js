@@ -542,15 +542,15 @@ function renderLegend(root, graphModel) {
 	// emphasis-derived mark would lose it. Describing it under Emphasis would
 	// have taught the reader the wrong model.
 	//
-	// The two characters are chosen to MATCH WHAT THE CANVAS DRAWS: the canvas
-	// strokes a 4-arm asterisk for unbacked and a 3-arm one for undocumented, so
-	// the eight-spoked and six-spoked characters are their nearest text
-	// equivalents. Keep them in step with `graph-canvas.js`'s
-	// `GC_BADGE_ASTERISK` if the arm counts ever change.
+	// ONE character for both, because the canvas now strokes three arms for both
+	// -- the owner compared three against four on the real page and chose three.
+	// The severity difference is size and weight there, so it is size here too
+	// (`.gap-kb-unbacked` is set larger in the stylesheet). Using two different
+	// characters would claim a distinction the canvas no longer draws.
 	const gaps = el('dl', {}, [
 		el('dt', { text: 'Coverage gap — asterisk beside the node' }),
 		el('dd', {}, [el('span', { class: 'legend-row' }, [
-			el('span', { class: 'filter-glyph gap-kb-unbacked', 'aria-hidden': 'true', text: '✳' }),
+			el('span', { class: 'filter-glyph gap-kb-unbacked', 'aria-hidden': 'true', text: '✱' }),
 			'unbacked claim — nothing in the source backs it',
 		])]),
 		el('dd', {}, [el('span', { class: 'legend-row' }, [

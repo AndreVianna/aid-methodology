@@ -129,6 +129,31 @@ const GC_BASE_RADIUS = 8;
  *  a zero gap would still tuck the tip slightly under those shapes along their
  *  faces. A small constant clearance reads correctly for every kind without
  *  per-shape geometry. */
+/**
+ * How much the HOVERED mark alone is lifted -- a node's radius, an edge's stroke
+ * weight -- plus the opacity a hovered mark is raised to.
+ *
+ * Scope, owner's ruling: **the hovered mark, and nothing else.** The SPEC also
+ * described dimming the rest and lighting the neighbourhood, and
+ * `reveal.neighbourhood` is computed on every hover for exactly that -- the owner
+ * tried it and withdrew it: the label already says what the mark is, so
+ * highlighting the one mark under the pointer is enough. So `neighbourhood` stays
+ * published and deliberately undrawn.
+ *
+ * Size and weight rather than a ring, because a ring already means `focus`
+ * (`emphasisDraw.ring`) -- and rather than colour, because colour already carries
+ * kind on a node and category on an edge. Scale is also the one channel that
+ * survives forced colours, where opacity is null and `markScale`/`weight` are
+ * what the ordinal channel already rides on.
+ *
+ * Raising opacity matters as much as the size: under the Coverage and Provenance
+ * lenses most marks are deliberately dimmed, and a dimmed mark that grows but
+ * stays faint does not read as picked out.
+ */
+const GC_HOVER_SCALE = 1.4;
+const GC_HOVER_WEIGHT = 2.6;
+const GC_HOVER_OPACITY = 1;
+
 const GC_ARROW_SIZE = 5;
 const GC_EDGE_GAP = 1.5;
 
@@ -1078,8 +1103,20 @@ function gcDrawFrame(view, meta) {
 	// and only the node pass knows each mark's `markScale`. The ring/badge
 	// additions are deliberately NOT included: an arrow should touch the SHAPE,
 	// which is what the reader perceives as the node's edge.
+	// The hovered mark, read from `reveal` at DRAW time rather than from an
+	// emphasis class -- rule 6 forbids a hover writing a class, and the 2026-07-30
+	// SPEC revision moved the highlight to `reveal` for exactly that reason. Only
+	// the mark under the pointer is affected; its neighbourhood is not (see
+	// `GC_HOVER_SCALE`).
+	const reveal = view.record.reveal || {};
+	const hoverNodeId = reveal.kind === 'node' ? reveal.target : null;
+	const hoverEdgeKey = reveal.kind === 'edge' ? reveal.target : null;
+
 	const glyphRadius = new Map();
-	for (const mark of marks.nodes) glyphRadius.set(mark.id, GC_BASE_RADIUS * mark.emphasisDraw.markScale);
+	for (const mark of marks.nodes) {
+		const lift = mark.id === hoverNodeId ? GC_HOVER_SCALE : 1;
+		glyphRadius.set(mark.id, GC_BASE_RADIUS * mark.emphasisDraw.markScale * lift);
+	}
 
 	for (const mark of marks.edges) {
 		const a = view.positions.get(mark.sourceId);
@@ -1095,13 +1132,16 @@ function gcDrawFrame(view, meta) {
 		if (!seg) continue;
 		const g = new PIXI.Graphics();
 		const colour = gcColourFor(view.palette, mark.colourToken, forcedColours);
-		const width = mark.emphasisDraw.weight * GC_BASE_WEIGHT;
-		if (typeof g.lineStyle === 'function') g.lineStyle(width, gcColourToNumber(colour), mark.emphasisDraw.opacity == null ? 1 : mark.emphasisDraw.opacity);
+		const hovered = mark.key === hoverEdgeKey;
+		const width = mark.emphasisDraw.weight * GC_BASE_WEIGHT * (hovered ? GC_HOVER_WEIGHT : 1);
+		const baseOpacity = mark.emphasisDraw.opacity == null ? 1 : mark.emphasisDraw.opacity;
+		const opacity = hovered ? GC_HOVER_OPACITY : baseOpacity;
+		if (typeof g.lineStyle === 'function') g.lineStyle(width, gcColourToNumber(colour), opacity);
 		gcDrawDashedLine(g, seg.x1, seg.y1, seg.x2, seg.y2, mark.lineStyle);
 		// Flush the line before the arrowhead's own fill. Without this the line
 		// rendered ONLY as a side effect of that fill, so a symmetric edge --
 		// which draws no arrowhead by design -- was invisible (see `gcStroke`).
-		gcStroke(g, width, colour, mark.emphasisDraw.opacity == null ? 1 : mark.emphasisDraw.opacity);
+		gcStroke(g, width, colour, opacity);
 		if (mark.arrowhead) gcDrawArrowhead(g, seg.x1, seg.y1, seg.x2, seg.y2, colour);
 		view.edgeLayer.addChild(g);
 	}
@@ -1111,13 +1151,19 @@ function gcDrawFrame(view, meta) {
 		if (!p) continue;
 		const g = new PIXI.Graphics();
 		const colour = gcColourFor(view.palette, mark.colourToken, forcedColours);
-		gcDrawGlyph(g, mark.kind, GC_BASE_RADIUS * mark.emphasisDraw.markScale, colour, mark.emphasisDraw.opacity);
-		if (mark.emphasisDraw.ring) gcDrawRing(g, GC_BASE_RADIUS * mark.emphasisDraw.markScale + 4, colour);
+		// The map already carries the hover lift, so glyph, ring and badge all
+		// grow together and the badge stays tucked to the outline.
+		const radius = glyphRadius.get(mark.id);
+		const opacity = mark.id === hoverNodeId
+			? GC_HOVER_OPACITY
+			: mark.emphasisDraw.opacity;
+		gcDrawGlyph(g, mark.kind, radius, colour, opacity);
+		if (mark.emphasisDraw.ring) gcDrawRing(g, radius + 4, colour);
 		// The badge takes the SEVERITY colour, not the node's kind colour -- the
 		// fill already spends kind, and reusing it would have made the badge a
 		// second copy of information the glyph already carries.
 		if (mark.gapBadge) {
-			gcDrawBadge(g, mark.gapBadge, GC_BASE_RADIUS * mark.emphasisDraw.markScale,
+			gcDrawBadge(g, mark.gapBadge, radius,
 				gcColourFor(view.palette, GC_BADGE_TOKEN[mark.gapBadge], forcedColours), mark.kind);
 		}
 		g.position && g.position.set && g.position.set(p.x, p.y);
@@ -1409,13 +1455,13 @@ function gcDrawRing(g, radius, colour) {
  * The gap badge -- additive, beside the mark, never inside it, and never a
  * function of `nodeEmphasis` (its source is `coverageGaps` alone, D1).
  *
- * An asterisk, per the owner, in the two severity colours -- and it carries a
- * second, NON-COLOUR channel besides: the more severe class draws more arms,
- * slightly larger and slightly heavier. Colour and density then say the same
- * thing twice, which is what AC-15 requires ("distinguishable by a non-colour
- * channel, and the two gap classes distinguishable from each other") and what
- * keeps the badge readable in forced-colours mode, where every token collapses
- * to a single foreground and colour stops carrying anything at all.
+ * A three-arm asterisk, per the owner, in the two severity colours -- and it
+ * carries a second, NON-COLOUR channel besides: the more severe class is drawn
+ * distinctly larger and heavier. Colour and mass then say the same thing twice,
+ * which is what AC-15 requires ("distinguishable by a non-colour channel, and the
+ * two gap classes distinguishable from each other") and what keeps the badge
+ * readable in forced-colours mode, where every token collapses to a single
+ * foreground and colour stops carrying anything at all.
  *
  * Previously this looked `GC_BADGE` up only to decide WHETHER to draw, then
  * drew an identical 3px filled dot for both classes and discarded the glyph.
@@ -1446,14 +1492,19 @@ function gcDrawRing(g, radius, colour) {
  * same ordering so the two views agree.
  */
 const GC_BADGE_ASTERISK = Object.freeze({
-	// Arm count and weight are the NON-COLOUR half: a denser, slightly heavier
-	// asterisk for the more severe class. Colour and density then say the same
-	// thing twice, which is what survives forced colours and colour blindness --
-	// if the two differed only by tint, the amber/red pair would be the single
-	// worst choice for red-green deficiency and would collapse to one glyph
-	// entirely under a forced palette.
-	'kb-unbacked': Object.freeze({ arms: 4, radius: 4.5, weight: 1.6 }),
-	'artifact-undocumented': Object.freeze({ arms: 3, radius: 4, weight: 1.3 }),
+	// BOTH draw three arms (six rays). The owner compared a four-arm asterisk
+	// against a three-arm one on the real page and judged three the better mark,
+	// so arm count is no longer the thing that separates the two classes.
+	//
+	// SIZE and WEIGHT carry that difference instead, and they still have to,
+	// because colour cannot: amber against red is the single worst pair for
+	// red-green deficiency, and under forced colours both collapse to one
+	// foreground. So the more severe class is drawn distinctly larger and heavier
+	// -- ~40% more radius and 50% more stroke, which is a difference in mass
+	// rather than a difference in kind, and reads at a glance without either mark
+	// looking like a different symbol.
+	'kb-unbacked': Object.freeze({ arms: 3, radius: 5.5, weight: 1.8 }),
+	'artifact-undocumented': Object.freeze({ arms: 3, radius: 4, weight: 1.2 }),
 });
 
 /** An asterisk: `arms` lines through a common centre, evenly spaced over the
