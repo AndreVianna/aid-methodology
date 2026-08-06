@@ -431,13 +431,30 @@ assert_file_contains "$TABLE_JS" "registerRendering('table', mountTable)" \
     "GS06 the table rendering registers itself at its own top level"
 
 echo ""
-echo "=== GS07: the page keeps both renderings siblings, table first, and exactly two live regions ==="
+echo "=== GS07: the graph page declares no table region, links to the one that does, and keeps exactly two live regions ==="
+# WAS "DOM order is table-first". It cannot be: on 2026-08-06 the owner removed the
+# relationship table from this page (the repo's own extraction produced thousands of
+# rows, which dominated the page the table existed to support), so there is no table
+# region left to come first. Asserting an order between two elements when one of them
+# is gone is not a weaker test, it is a test of nothing.
+#
+# What replaces it is the property that actually protects the reader now. The table
+# was this page's CONFORMING ALTERNATE VERSION -- the canvas is visual-only and builds
+# no DOM proxy -- so with the table on a separate page (`table.html`, task-033), the
+# thing that must hold is that the alternative is REACHABLE FROM HERE. A link is what
+# carries that, and a page with no table region AND no link would be the real
+# regression this hook now catches.
 tr_at=$(grep -n 'data-table-region' "$SKELETON" | head -1 | cut -d: -f1)
-gr_at=$(grep -n 'class="graph-region"' "$SKELETON" | head -1 | cut -d: -f1)
-if [[ -n "$tr_at" && -n "$gr_at" && "$tr_at" -lt "$gr_at" ]]; then
-    pass "GS07 DOM order is table-first in the skeleton (lines $tr_at < $gr_at)"
+if [[ -z "$tr_at" ]]; then
+    pass "GS07 the graph skeleton declares no table region (the table lives on its own page)"
 else
-    fail "GS07 DOM order is table-first in the skeleton — table@${tr_at:-none} graph@${gr_at:-none}"
+    fail "GS07 the graph skeleton declares a table region at line $tr_at — the table was removed from this page; either the removal was reverted or a stray mount point returned"
+fi
+n=$(grep -cE 'href="\./table\.html"' "$SKELETON" || true)
+if [[ "$n" -ge 2 ]]; then
+    pass "GS07 the graph skeleton links to the accessible table page in $n places (the lede, and the placeholder shown when the drawing surface cannot run)"
+else
+    fail "GS07 the graph skeleton links to ./table.html only $n time(s) — the conforming alternate version must be reachable from this page both in the lede and from the placeholder"
 fi
 n=$(grep -cE 'data-status aria-live="polite"' "$SKELETON" || true)
 assert_eq "$n" "1" "GS07 the skeleton declares exactly one polite region of the view's own"

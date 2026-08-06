@@ -716,35 +716,38 @@ globalThis.window = wide.window; globalThis.document = wide.doc;
 		nonViewportEntries.length > 0 && driveFailures.length === 0,
 		driveFailures.map((d) => d.entry.id + (d.result ? ' (' + d.result.why + ')' : ' (no result)')).join(', '));
 
-	// --- The seven viewport entries: present, native-focusable and keyboard-
-	// operable with NO handle registered, writing NOTHING to zoom -- and, with
-	// a handle registered (the D8 seam `shellState.viewport`, the EXACT field
-	// mountCanvas's return value assigns at graph-controls.js:923, exercised
-	// here with no drawing rendering present -- this bundle never concatenates
-	// graph-canvas.js -- the same way GV16 exercises a real production seam
-	// without touching an owned file), the SAME button writes the handle's own
-	// returned transform verbatim. ---
+	// --- The viewport axis: EMPTY, by the owner's decision on 2026-08-06.
+	//
+	// This hook used to assert that all seven viewport buttons (zoom in/out/fit,
+	// pan left/right/up/down) were present, focusable and wired to the
+	// `shellState.viewport` handle. Those buttons are gone -- the owner removed
+	// them from the panel because the mouse gestures (wheel to zoom, drag to pan)
+	// do the same job without spending a third of the panel's height on it.
+	//
+	// So the assertion is INVERTED rather than deleted, and that matters: an
+	// emptied enumerable axis is exactly the kind of change that leaves other
+	// assertions passing VACUOUSLY (GV24 below maps over this axis and its
+	// `.every()` goes trivially true on an empty array). Asserting the emptiness
+	// directly is what stops "no controls" from reading the same as "controls all
+	// fine" -- and it goes red the moment an entry reappears in the manifest
+	// without a DOM control to match, which is the bijection GV17a guards.
+	//
+	// What is NOT asserted here any more, deliberately: that a registered
+	// `shellState.viewport` handle writes zoom. Nothing in the shell calls
+	// `viewportFor` now, so there is no production path left to exercise -- and a
+	// test that called the handle itself would be asserting the test's own call,
+	// not the shell's. The consequence for keyboard users is real and is recorded
+	// as tech debt (W5-16), not hidden behind a green test.
 	reset();
 	const viewportEntries = M.shellState.manifest.filter((e) => e.axis === 'viewport');
-	const zoomBefore = store.getLens().zoom;
-	let noHandleOk = true;
-	for (const entry of viewportEntries) {
-		const el = doc.querySelector('[' + M.CONTROL_ATTR + '="' + entry.id + '"]');
-		if (!el || !isNativeFocusable(el)) { noHandleOk = false; continue; }
-		el.dispatchEvent(new wide.window.KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
-		el.click();
-		if (!same(store.getLens().zoom, zoomBefore)) noHandleOk = false;
-	}
-	M.shellState.viewport = { viewportFor: () => ({ scale: 2, panX: 5, panY: -3 }) };
-	const zoomInEl = doc.querySelector('[' + M.CONTROL_ATTR + '="zoom-in"]');
-	zoomInEl.dispatchEvent(new wide.window.KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
-	zoomInEl.click();
-	const withHandleOk = same(store.getLens().zoom, { scale: 2, panX: 5, panY: -3 });
-	M.shellState.viewport = null;
+	const viewportDomControls = Array.from(doc.querySelectorAll('[' + M.CONTROL_ATTR + ']'))
+		.filter((el) => M.VIEWPORT_ACTIONS.includes(el.getAttribute(M.CONTROL_ATTR)));
+	const handleSeamIntact = typeof M.shellState.viewport !== 'undefined';
 	reset();
-	ok('GV17c', 'all seven viewport entries are present and native-focusable, and with NO viewport handle registered none of them writes zoom; the SAME zoom-in entry, with a handle registered, writes the handle\'s own returned transform verbatim',
-		viewportEntries.length === 7 && noHandleOk && withHandleOk,
-		'noHandle=' + noHandleOk + ' withHandle=' + withHandleOk + ' zoom=' + JSON.stringify(store.getLens().zoom));
+	ok('GV17c', 'the viewport axis is empty in BOTH the manifest and the DOM -- zero viewport entries, and not one control carrying any of the seven viewport action ids -- so the removed buttons cannot silently return, and the `shellState.viewport` seam still exists for a future re-wiring',
+		viewportEntries.length === 0 && viewportDomControls.length === 0 && handleSeamIntact,
+		viewportEntries.length + ' manifest entries, ' + viewportDomControls.length + ' DOM controls ('
+			+ viewportDomControls.map((el) => el.getAttribute(M.CONTROL_ATTR)).join(', ') + '), seam=' + handleSeamIntact);
 
 	// --- Group-toggle completeness is GV22b's; here only presence,
 	// focusability and keyboard-operability, over a lens with at least one
@@ -838,7 +841,9 @@ globalThis.window = wide.window; globalThis.document = wide.doc;
 		if (e.tagName === 'BUTTON') return e.getAttribute('type') === 'button';
 		return e.tagName === 'SELECT' || e.tagName === 'INPUT';
 	}
-	M.shellState.viewport = { viewportFor: () => ({ scale: 3, panX: 1, panY: 1 }) };
+	// No `shellState.viewport` stub is installed: nothing this hook drives reads
+	// it now that the viewport buttons are gone, and setup that no assertion
+	// depends on is just a claim that something is exercised when it is not.
 	const perPreset = [];
 	for (const presetName of Object.keys(M.PRESETS)) {
 		reset();
@@ -846,14 +851,17 @@ globalThis.window = wide.window; globalThis.document = wide.doc;
 
 		const groupingEl = doc.querySelector('[' + M.CONTROL_ATTR + '="grouping"]');
 		const densityEl = doc.querySelector('[' + M.CONTROL_ATTR + '="density"]');
-		const viewportEls = M.shellState.manifest.filter((e) => e.axis === 'viewport')
-			.map((e) => doc.querySelector('[' + M.CONTROL_ATTR + '="' + e.id + '"]'));
+		// The viewport axis is intentionally empty (the owner removed the seven
+		// buttons on 2026-08-06), so it is NOT mapped over here. Mapping an empty
+		// axis and calling `.every(Boolean)` on the result reads green while
+		// proving nothing -- the vacuity trap. Its emptiness is asserted once, and
+		// on purpose, by GV17c above.
 		const filterEls = M.shellState.manifest.filter((e) => ['filters.categories', 'filters.kinds', 'filters.provenance'].includes(e.axis))
 			.map((e) => doc.querySelector('[' + M.CONTROL_ATTR + '="' + e.id + '"]'));
 
-		const allPresent = !!groupingEl && !!densityEl && viewportEls.every(Boolean) && filterEls.every(Boolean);
+		const allPresent = !!groupingEl && !!densityEl && filterEls.every(Boolean);
 		const allEnabled = allPresent && isNativeFocusable24(groupingEl) && isNativeFocusable24(densityEl)
-			&& viewportEls.every(isNativeFocusable24) && filterEls.every(isNativeFocusable24);
+			&& filterEls.every(isNativeFocusable24);
 
 		// A write to each changes LensState -- proven by driving one of each kind
 		// and requiring the value to move from what THIS preset itself set it to.
@@ -868,11 +876,9 @@ globalThis.window = wide.window; globalThis.document = wide.doc;
 		densityEl.dispatchEvent(new wide.window.Event('input', { bubbles: true }));
 		const densityWrote = store.getLens().density === Number(densityEl.value) && Number(densityEl.value) !== densityBefore;
 
-		const zoomBeforeStr = JSON.stringify(store.getLens().zoom);
-		viewportEls[0].dispatchEvent(new wide.window.KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
-		viewportEls[0].click();
-		const zoomAfterStr = JSON.stringify(store.getLens().zoom);
-		const viewportWrote = zoomAfterStr === JSON.stringify({ scale: 3, panX: 1, panY: 1 }) && zoomBeforeStr !== zoomAfterStr;
+		// The viewport write is not driven here: with the seven buttons removed
+		// there is no control to drive, and `viewportEls[0]` would be `undefined`
+		// -- a TypeError, not a clean red. GV17c asserts the axis is empty.
 
 		const filterEntry = M.shellState.manifest.filter((e) => ['filters.categories', 'filters.kinds', 'filters.provenance'].includes(e.axis))[0];
 		const filterAxisBefore = store.getLens()[filterEntry.axis].includes(filterEntry.value);
@@ -882,14 +888,13 @@ globalThis.window = wide.window; globalThis.document = wide.doc;
 		const filterWrote = filterAxisAfter !== filterAxisBefore;
 
 		perPreset.push({
-			preset: presetName, allPresent, allEnabled, groupingWrote, densityWrote, viewportWrote, filterWrote,
-			ok: allPresent && allEnabled && groupingWrote && densityWrote && viewportWrote && filterWrote,
+			preset: presetName, allPresent, allEnabled, groupingWrote, densityWrote, filterWrote,
+			ok: allPresent && allEnabled && groupingWrote && densityWrote && filterWrote,
 		});
 	}
-	M.shellState.viewport = null;
 	reset();
 	const failing24 = perPreset.filter((p) => !p.ok);
-	ok('GV24', 'after each of the four presets, the grouping select, the density range, every one of the seven viewport entries and every filters.categories/kinds/provenance control stays present and enabled, and a write to one of each kind still changes LensState',
+	ok('GV24', 'after each of the four presets, the grouping select, the density range and every filters.categories/kinds/provenance control stays present and enabled, and a write to one of each kind still changes LensState (the viewport entries are excluded because there are none -- see GV17c)',
 		perPreset.length === 4 && failing24.length === 0,
 		JSON.stringify(perPreset));
 }

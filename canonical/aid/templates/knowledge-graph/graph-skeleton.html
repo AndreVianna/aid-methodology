@@ -64,7 +64,10 @@
 	<p class="lede">Every relationship recorded among this project's Knowledge Base documents,
 	   sections, claims and defined concepts, its source artifacts, and the images and web pages
 	   they reference. Everything shown here comes from the relationship table and nothing else,
-	   so what is on screen is exactly what can be checked in the file.</p>
+	   so what is on screen is exactly what can be checked in the file.
+	   Every relationship is also available as
+	   <a href="./table.html">an accessible text table of every relationship</a>, with no graph,
+	   for keyboard and screen-reader use.</p>
 
 	<!-- Non-live callouts: a conflicting kind or name for one identifier, and any build-level
 	     defect. Kept out of the alert region above, which reports load-time failure only. -->
@@ -74,21 +77,6 @@
 	     modes: arriving through one never takes a control away and never clears a filter. -->
 	<nav class="lens-bar" data-lens-bar aria-label="Preset lenses"></nav>
 
-	<!-- The full manual control surface, available at all times. Open by default, and its
-	     contents stay in the DOM when it is closed, because the control set is asserted on
-	     presence and a panel that unmounted its controls would be missing them on a narrow
-	     viewport while passing on a wide one. -->
-	<details class="controls-panel" open>
-		<summary>Controls</summary>
-		<div class="controls-grid" data-controls-grid></div>
-		<div class="control-group controls-viewport">
-			<span class="control-group-label" id="viewport-label">Viewport</span>
-			<div class="lens-bar" data-viewport-bar role="group" aria-labelledby="viewport-label"></div>
-			<span class="control-hint">Keyboard equivalents for zoom and pan. Dragging a node to
-			   reposition it has no keyboard equivalent and needs none: it moves a mark and conveys
-			   nothing a keyboard reader is denied.</span>
-		</div>
-	</details>
 
 	<section data-groups-region aria-label="Groups" hidden>
 		<h2 class="region-head">Groups</h2>
@@ -130,19 +118,50 @@
 			     buffer; the shell finds that canvas by tag, scoped to this container, and keeps
 			     its graphical role and text alternative current -- no marker attribute of any
 			     kind passes between the two. That canvas carries a graphical role and a text
-			     alternative and NOTHING ELSE: it is visual-only. While the table is excluded
-			     there is no equivalent alternative on the page at all; see the note above. -->
+			     alternative and NOTHING ELSE: it is visual-only. The equivalent alternative is
+			     therefore NOT on this page: it is `table.html`, linked from the lede above and
+			     again from the placeholder below. Those two links are what makes this page
+			     conformant, because a conforming alternate version has to be REACHABLE from the
+			     page it stands in for -- so neither link is decoration, and deleting either one
+			     is an accessibility regression, not a wording change. -->
 			<div class="graph-surface" data-graph-surface>
 				<p class="graph-placeholder" data-graph-placeholder>
 					The interactive drawing surface is not present in this build, or this browser
 					provides no usable graphics context. Every relationship this page draws is
-					recorded as text in the project's own relationship file, which is linked in
-					the summary above this graph.
+					also recorded as <a href="./table.html">a text table of every relationship</a>,
+					which needs no drawing surface to run.
 				</p>
 			</div>
 		</section>
 
 	</div>
+
+	<!-- THE CONTROL PANEL SITS BELOW THE GRAPH -- owner's decision. It was above, open by
+	     default, and 630px tall, so on a 1000px-high display it and the page heading pushed
+	     the drawing surface almost entirely below the fold: the first thing a reader saw was
+	     the supporting tools rather than the data they support. The owner's words: "The data
+	     (the graph and the table) is the first class info. The graph controls are just
+	     supporting tools."
+
+	     Still `open` and still complete. Its contents stay in the DOM when it is closed,
+	     because the control set is asserted on PRESENCE -- a panel that unmounted its
+	     controls would be missing them on a narrow viewport while passing on a wide one.
+	     Moving it costs no keyboard reachability: the drawing surface it now follows carries
+	     no tab stop of its own, deliberately, so nothing was inserted into the tab order
+	     ahead of these controls.
+
+	     THE SEVEN VIEWPORT BUTTONS ARE GONE -- zoom in/out, fit, and pan in four directions.
+	     The owner chose this explicitly ("The viewport controls should be only by mouse, no
+	     buttons") after being shown the consequence, which is real and is recorded rather
+	     than glossed: NFR-6 and AC-21 require KEYBOARD equivalents for the viewport
+	     actions, and with the buttons removed there are none. Zoom and pan are now
+	     mouse-only. The legend states the gestures in words, which is discoverability, not
+	     a keyboard equivalent -- the deviation is tracked in the debt register and in
+	     task-032. -->
+	<details class="controls-panel" open>
+		<summary>Controls</summary>
+		<div class="controls-grid" data-controls-grid></div>
+	</details>
 
 	<!-- The selected node, inline rather than in a dialog, so exploring never traps focus.
 	     Selecting and opening are two different gestures, and the Open control is a real

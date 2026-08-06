@@ -52,17 +52,17 @@ const GROUP_TOGGLE_ATTR = 'data-group-toggle';
  * back. With no drawing rendering present the entries stay present, focusable and
  * never disabled, and write nothing -- there is nothing drawn to transform.
  */
+/* NO LONGER A CONTROL LIST. With the buttons removed this is only the VOCABULARY
+   the drawing rendering's viewport handle accepts (`gcViewportFor`'s seven action
+   tokens, D8) -- kept because that handle still exists, is still returned by
+   `mountCanvas`, and is still recorded on `shellState.viewport`, so the contract
+   survives the buttons and is what a future keyboard route would drive. It is
+   deliberately NOT fed into the control manifest any more; see the note there. */
 const VIEWPORT_ACTIONS = Object.freeze(['zoom-in', 'zoom-out', 'zoom-fit', 'pan-left', 'pan-right', 'pan-up', 'pan-down']);
 
-const VIEWPORT_LABELS = Object.freeze({
-	'zoom-in': 'Zoom in',
-	'zoom-out': 'Zoom out',
-	'zoom-fit': 'Fit graph to view',
-	'pan-left': 'Pan left',
-	'pan-right': 'Pan right',
-	'pan-up': 'Pan up',
-	'pan-down': 'Pan down',
-});
+/* `VIEWPORT_LABELS` lived here, one label per action, and is deleted with the
+   buttons it labelled -- an unused label table is exactly the kind of leftover that
+   later reads as evidence a feature still exists. */
 
 /**
  * The controls no data set enumerates. They are AUTHORED, and each carries the
@@ -95,9 +95,18 @@ const AUTHORED_CONTROLS = Object.freeze([
 			+ 'known node in a graph of this size is to type its name, and it is labelled a design '
 			+ 'choice rather than given a citation it does not have.',
 	}),
-].concat(VIEWPORT_ACTIONS.map((action) => Object.freeze({
-	id: action, requirement: 'NFR-6', axis: 'viewport', value: action,
-}))));
+]);
+// The seven `NFR-6` viewport entries used to be concatenated here, one per action
+// in `VIEWPORT_ACTIONS`. They are GONE, and the manifest is exactly where they had
+// to go from: a control cannot exist without an entry and an entry cannot exist
+// without a control, so leaving the entries while deleting the buttons would have
+// made the very bijection this manifest exists to guarantee false -- the coverage
+// assertion would report seven controls the page does not have.
+//
+// The owner removed the buttons deliberately ("The viewport controls should be only
+// by mouse, no buttons"), having been shown the consequence: NFR-6 and AC-21 require
+// KEYBOARD equivalents for zoom and pan, and there are now none. That deviation is
+// recorded in the debt register and in task-032, not papered over here.
 
 /** A value turned into an attribute-safe token. Values are category names, kind
  *  names and provenance names -- all lowercase words and hyphens -- so this is a
@@ -332,25 +341,6 @@ function mountControls(ctx) {
 		value + ' (' + KIND_ENCODING[value].shapeLabel + ')',
 	]));
 	grid.appendChild(filterAxis(store, ctx.manifest, 'filters.provenance', 'Provenance', (value) => [value]));
-
-	// --- The viewport controls ----------------------------------------------
-	const viewportBar = root.querySelector('[data-viewport-bar]');
-	clear(viewportBar);
-	for (const entry of ctx.manifest.filter((e) => e.axis === 'viewport')) {
-		const button = el('button', {
-			type: 'button', class: 'btn-ghost', id: entry.id, [CONTROL_ATTR]: entry.id,
-			text: VIEWPORT_LABELS[entry.value],
-		});
-		button.addEventListener('click', () => {
-			// One writer on this path. The step factor and the extent belong to
-			// the drawing rendering; the resulting transform is written here.
-			const handle = shellState.viewport;
-			if (!handle || typeof handle.viewportFor !== 'function') return;
-			const next = handle.viewportFor(entry.value);
-			if (next) store.setLens({ 'zoom': next });
-		});
-		viewportBar.appendChild(button);
-	}
 
 	// --- The open gesture ---------------------------------------------------
 	const openButton = root.querySelector('#node-open');
@@ -920,7 +910,17 @@ function mountShell(scope) {
 	};
 
 	const mountTableFn = resolveMount('table', typeof mountTable === 'function' ? mountTable : null);
-	if (mountTableFn) {
+	// THE REGION IS CHECKED FIRST, AND THAT ORDER IS THE POINT. Two independent
+	// things can be absent here -- the rendering, and the place to put it -- and
+	// only one combination is a defect. A page that declares no `[data-table-region]`
+	// has deliberately composed itself without the table, and calling the rendering
+	// anyway hands it a null region, which it correctly treats as a broken build and
+	// reports on the console. That is a false alarm manufactured by the caller: the
+	// rendering is right to complain, so the caller must not ask. (Measured: with
+	// this gated on the function alone, `test-graph-view-shell.sh`'s DT10 failed on
+	// `graph.html: the relationship table rendering found no region to mount into`
+	// for a page that was exactly as intended.)
+	if (context.region && mountTableFn) {
 		mountTableFn(context);
 	} else if (context.region) {
 		// TWO DIFFERENT SITUATIONS, and only this one is a defect: the markup

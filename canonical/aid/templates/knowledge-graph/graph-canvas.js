@@ -510,6 +510,12 @@ function mountCanvas(context) {
 		record: gcEmptyRecord(),
 		hover: null,
 		drag: null,
+		/* Fit the drawing to the surface ONCE, when the layout first comes to
+		   rest. Not at first paint: the simulation is still moving then, so a fit
+		   computed at that moment is wrong within a second. Cleared the instant the
+		   reader zooms or pans -- after that the viewport is theirs and nothing
+		   here may move it. See `gcMaybeAutoFit`. */
+		autoFit: true,
 		// The last press: which mark was under the pointer when the button went
 		// down, and whether the pointer then moved far enough to be a drag. Held
 		// separately from `drag` because `gcOnPointerUp` clears that before the
@@ -1208,6 +1214,12 @@ function gcDrawFrame(view, meta) {
 	view.record.positions = gcPositionsSnapshot(view.positions, view.record.nodes);
 	gcPublishRecord(view.record);
 
+	// The frame at which the layout comes to rest is also the frame at which the
+	// one automatic fit is owed. Checked here rather than on a timer because this
+	// condition IS "the layout stopped moving" -- the same test the scheduling
+	// below uses -- so the two can never disagree.
+	gcMaybeAutoFit(view);
+
 	if (view.simulation && view.simulation.alpha() >= GC_IDLE_ALPHA && view.record.mode !== 'settled') {
 		gcScheduleFrame(view, 0);
 	}
@@ -1720,6 +1732,10 @@ function gcOnPointerDrag(view, event) {
 		view.drag.started = true;
 		// A gesture that moved is not a selection, whatever it started on.
 		if (view.press) view.press.moved = true;
+		// A pan hands the viewport to the reader; a node drag changes the extent a
+		// fit would be computed from. Either way an automatic fit would now be
+		// fighting a deliberate action, so it is given up for good.
+		view.autoFit = false;
 		if (view.drag.nodeId) {
 			// The pin and the re-heat happen HERE, at the first real movement,
 			// rather than at the press. Under `mode: 'settled'` the re-heat is
@@ -1831,6 +1847,8 @@ function gcOnDblClick(view, event) {
  *  scroll burst, matching the Interaction table and GC18's singular hook. */
 function gcOnWheel(view, event) {
 	event.preventDefault();
+	// The viewport is the reader's from here on.
+	view.autoFit = false;
 	const factor = event.deltaY < 0 ? GC_ZOOM_STEP : 1 / GC_ZOOM_STEP;
 	const nextScale = gcClamp(view.viewport.scale * factor, GC_ZOOM_MIN, GC_ZOOM_MAX);
 	view.viewport = Object.assign({}, view.viewport, { scale: nextScale });
@@ -1884,6 +1902,41 @@ function gcViewportFor(view, action) {
 		default:
 			return undefined;
 	}
+}
+
+/**
+ * Apply the one automatic fit, if it is still owed and the layout has come to rest.
+ *
+ * `gcFitViewport` has always computed the right transform and was called by nothing
+ * except the (now removed) "Fit graph to view" button -- so a freshly loaded page
+ * sat at `scale: 1` around the origin, which is why the drawing could be smaller
+ * than its surface, or spill past it, with no relation to the space available.
+ *
+ * WHEN, and why not earlier: at first paint the simulation has barely started, so a
+ * fit computed there is stale within a second. The right moment is the first frame
+ * at which the layout is at rest -- `mode: 'settled'`, or a live simulation whose
+ * alpha has fallen below the idle floor. That is the same condition the frame loop
+ * already uses to stop scheduling itself, so no new notion of "finished" is
+ * invented here.
+ *
+ * ONCE, and never against the reader: the flag is cleared before the transform is
+ * written, so this cannot re-enter through the `setLens` below, and any zoom or pan
+ * gesture clears it too. A view that re-fitted itself after the reader had chosen a
+ * viewport would be a worse defect than the one this fixes.
+ */
+function gcMaybeAutoFit(view) {
+	if (!view.autoFit) return;
+	const atRest = view.record.mode === 'settled'
+		|| !view.simulation
+		|| view.simulation.alpha() < GC_IDLE_ALPHA;
+	if (!atRest) return;
+	if (view.positions.size === 0) return;
+	view.autoFit = false;
+	const next = gcFitViewport(view);
+	view.viewport = next;
+	// Committed like any other viewport change, so `lensState.zoom` and the drawn
+	// transform agree from the first rest onward rather than silently diverging.
+	view.store.setLens({ zoom: Object.assign({}, next) });
 }
 
 /** A fit is a function of the drawn extent, which lives in `positions`. */

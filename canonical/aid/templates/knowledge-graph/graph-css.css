@@ -121,9 +121,32 @@ html[data-theme="dark"]:root {
 /* ---------- Page frame ---------- */
 
 .graph-page {
-	max-width: 1200px;
-	margin: 0 auto;
+	/* FULL VIEWPORT WIDTH, owner's decision. The 1200px cap wasted 400px of a
+	   1600px screen and grew with the display -- and what it was capping is a
+	   drawing surface and a wide table, neither of which is prose. A measure cap
+	   is right for reading text and wrong for a canvas, so the cap moves to the
+	   two things here that ARE prose (`.lede` below, and the legend's own
+	   sections) rather than sitting on the page.
+
+	   `max-width: none` is REQUIRED and is not a redundant reset. This element IS
+	   the page's `<main>`, and the shared stylesheet caps `main` at 1200px and
+	   centres it. Deleting a `max-width` here does not widen anything -- it just
+	   falls back to that rule, which is exactly what happened on the first attempt
+	   (measured: `.graph-page` still 1200px wide inside a 1585px body). The cap
+	   has to be overridden explicitly, and `margin: 0` above likewise overrides
+	   the shared `margin: 0 auto`. */
+	max-width: none;
+	margin: 0;
 	padding: 1.5rem 1.25rem 3rem 1.25rem;
+}
+
+/* The footer is a SIBLING of `<main>`, so it keeps the shared 1200px centred cap
+   and its left edge would no longer line up with the full-width page above it.
+   Scoped by sibling combinator rather than by id so it applies only where a
+   full-width `.graph-page` is what precedes it. */
+.graph-page ~ footer {
+	max-width: none;
+	margin: 0;
 }
 
 .graph-page > h1 {
@@ -357,7 +380,20 @@ html[data-theme="dark"]:root {
 .graph-surface {
 	position: relative;
 	width: 100%;
-	height: 32rem;
+	/* Was a flat 32rem (512px) regardless of the display. Now viewport-relative,
+	   so the drawing is the dominant element on the page rather than a fixed
+	   letterbox in the middle of it -- which is what "the data is first class"
+	   means in layout terms. `min()` keeps it from becoming absurd on a very tall
+	   screen, and the floor keeps it usable on a short one.
+
+	   Why 60vh and not more: this box does not start at the top of the viewport.
+	   The heading, the lede and the lens bar sit above it (measured: 391px at
+	   1600x1000), so 72vh put the bottom edge 111px past the fold and the reader
+	   had to scroll to see the boundary of the very thing they were dragging.
+	   60vh clears it with room to spare at that size and still scales with the
+	   display, which a fixed pixel height would not. */
+	height: min(60vh, 46rem);
+	min-height: 22rem;
 	background: var(--bg-elev);
 	border: 1px solid var(--border);
 	border-radius: var(--radius);
