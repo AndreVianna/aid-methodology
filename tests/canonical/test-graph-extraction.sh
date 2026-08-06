@@ -12,6 +12,14 @@
 #   CONSUMED here, never asserted: test-graph-schema-loader.sh and
 #   test-graph-relationship-validator.sh own those.
 #
+# S1 -- SUBJECT INVOCATION BUDGET: 18 subprocess spawns (10 pipeline + 8
+#   parse-only) + 2 in-process library sources (LIB, REPORT). `--self-mutate`
+#   adds 3 more build spawns (MUT02-04); MUT01 mutates REPORT and re-sources it
+#   in a subshell, so it costs nothing extra. The pipeline and parse-only counts
+#   are enumerated rule by rule in the COST MODEL immediately below -- this line
+#   exists so a future author cannot add an eleventh spawn casually, the way the
+#   four sibling graph suites already declare their own budget in this shape.
+#
 # ---------------------------------------------------------------------------
 # COST MODEL -- read this before adding an assertion
 # ---------------------------------------------------------------------------
@@ -29,8 +37,8 @@
 #   So this suite obeys two rules, and every future edit must too:
 #
 #   1. EACH SUBJECT IS INVOKED ONCE PER DISTINCT INPUT, never once per assertion
-#      group. EIGHT subject invocations, and each one is here because the contract
-#      cannot be checked without it:
+#      group. TEN pipeline subject invocations, and each one is here because the
+#      contract cannot be checked without it:
 #
 #        harvest-declared.sh   x2  |  derive-edges.sh x2  |  build-relationships.sh x2
 #              AC-5 / FR-32 is "two runs over identical inputs produce identical
@@ -43,6 +51,23 @@
 #              the D6-part-4 SHORTFALL outcome: exit 1, every item named, artifact
 #              still written. Distinct input AND the opposite exit code, so it
 #              cannot share a run with the one above.
+#        build-relationships.sh x1 (one read-ledger entry duplicated)
+#              FR-31a part 1's at-most-once bound, made mechanical by D6 part 4's
+#              `count = 1` check: a document dispatched TWICE must fail the same
+#              way an absent one would, and neither of the two runs above touches
+#              this branch (one removes the whole ledger, the other leaves it
+#              alone) -- so dropping this run would leave the "twice" half of
+#              "at most once" unchecked.
+#        harvest-declared.sh x1, against a SEPARATE all-absent fixture KB
+#              AC-19's own claim -- a project supplying no instance of a carrier
+#              convention still exits successfully with zero nodes of the
+#              affected kind -- is a property of a KB that has NONE of that
+#              convention anywhere. The main fixture corpus cannot exercise it:
+#              every kind is deliberately present and non-zero there (that is
+#              what the REST of this suite needs). `derive-edges.sh` and
+#              `build-relationships.sh` are not re-invoked for this input because
+#              the claim is decided entirely by `kb-stats.tsv`, which
+#              `harvest-declared.sh` alone writes.
 #
 #      Plus eight parse-only invocations (four `--help`, four unknown-flag), which
 #      return before the library load and cost ~0.1 s each.
@@ -81,17 +106,23 @@
 #        sources, still valid targets), the duplicate-slug ordinal, D2b's LEVEL
 #        STACK containment, fenced-code inertness in both directions, AC-S2's
 #        one-node-per-term merge, D2d case 1's qualified split, both sides of D2e's
-#        data-driven ceiling, AC-19's featureless document, and AC-S8's
-#        statement-keyed provenance.
+#        data-driven ceiling, AC-19's featureless DOCUMENT, AC-19's KB-WIDE absent
+#        convention (a separate fixture, since the main corpus keeps every kind
+#        present on purpose), AC-S8's statement-keyed provenance, AC-4's provenance
+#        enum (universal, over every row Pass 1a emits) and AC-16's `int:` id
+#        hygiene (no `#` fragment; every id named is one feature-004 supplied).
 #   P1B  Pass 1b: each observation kind typed through the map, `path-reference`
-#        deliberately unmapped, and both branches of feature-001 D6c's
-#        resolution-keyed provenance.
+#        deliberately unmapped, both branches of feature-001 D6c's
+#        resolution-keyed provenance, and the same AC-4 / AC-16 universals P1A
+#        carries, re-run over Pass 1b's own rows.
 #   MRG  step 11's merge -- the total de-duplication rule, D7's order and class 0 as
-#        a contiguous prefix -- and each of D6's four class-1 rejections. Rejection
+#        a contiguous prefix, AC-4's provenance enum re-checked on the MERGED
+#        output (ORI06a) -- and each of D6's four class-1 rejections. Rejection
 #        2 is included because a first implementation satisfied it vacuously; MUT03
 #        is what proves this one is not the same check again.
 #   CMP  the completion check: both arms of the disposition union, the degradation
-#        outcome, and the shortfall outcome.
+#        outcome, the undispositioned-candidate shortfall, and the duplicate-read
+#        shortfall (FR-31a part 1's at-most-once bound, made mechanical).
 #   DET  byte identity of the whole artifact across two full pipeline runs, by md5.
 #   IDEM `br_reject` appends no duplicate disposition row on a re-run.
 #   D2F  the false-merge detector: the firing case, three near-misses that must NOT
@@ -116,12 +147,15 @@
 # Fixtures:
 #   Self-built under a mktemp dir, removed on EXIT. Nothing here reads or names
 #   `.aid/works/` -- work folders are transient and this suite must outlive them.
-#   The KB fixture carries a level-4 nested under a level-3, two duplicate
+#   The main KB fixture carries a level-4 nested under a level-3, two duplicate
 #   headings, a fenced heading-shaped line, a fenced citation marker, an
 #   anchor-less marker, a term defined twice, a markdown image reference, a
 #   featureless document, a generated INDEX.md, a previous relationships.md, and a
 #   four-document set exercising every arm of D2f's predicate -- none of which this
-#   repository's own Knowledge Base can supply.
+#   repository's own Knowledge Base can supply. A SECOND, separate one-document KB
+#   -- no heading below H1, no citation marker, no definition marker -- exists only
+#   for AC-19's KB-wide absent-convention claim, which the main corpus cannot make
+#   (every kind is deliberately present there).
 #
 # COVERS -- the change set that must re-run this suite; see select-suites.sh.
 #
@@ -440,6 +474,7 @@ doclink_rel="${K_RELATION[kb-inline-doc-link]:-}"
 documents_rel="${K_RELATION[frontmatter-sources-path]:-}"
 ill_rel="${K_RELATION[image-reference]:-}"
 cae_rel="${K_RELATION[kb-fact-anchor]:-}"
+haspart_rel="${K_RELATION[kb-doc-section]:-}"
 
 # ===========================================================================
 # MAP -- the D3 edge-relation map loader and its four fail-closed gates (AC-S5)
@@ -1066,14 +1101,27 @@ EXT_RE=""   # set below, once REL_CITE_EXTENSIONS is read
 declare -A P1A_SRC_COUNT=() P1A_TGT_COUNT=() P1A_S2T_COUNT=() \
            P1A_SRC_OF_TGT=() P1A_RELTGT_SKIND=() P1A_RELTGT_PROV=() \
            P1A_RELTGT_OBS=() P1A_PAIR_S2T=()
-p1a_n=0; p1a_mention_canonical=0; p1a_bad_anchor=0
+p1a_n=0; p1a_mention_canonical=0; p1a_bad_anchor=0; p1a_bad_prov=0
+p1a_int_hash=0; p1a_int_unknown=0; p1a_int_checked=0
 
 declare -A P1B_S2T_COUNT=() P1B_OBS_PROV=()
-p1b_n=0; p1b_blank=0
+p1b_n=0; p1b_blank=0; p1b_bad_prov=0; p1b_int_hash=0; p1b_int_unknown=0
 
 declare -A R0_KEYS=() R0_PAIR=()
-r0_n=0; r0_dup=0; r0_kindmismatch=0
+r0_n=0; r0_dup=0; r0_kindmismatch=0; r0_bad_prov=0
 R0_SORTKEYS=()
+
+# AC-16: the closed set of `int:` ids this feature may ever NAME as an endpoint --
+# read from the fixture's own feature-004 streams, never re-derived, because the
+# claim is "this feature emits no int: id it did not read from feature-004's
+# streams" and re-deriving the set here would test the fixture against itself.
+declare -A FIX_INT_IDS=()
+for _f in "$GT/nodes.tsv" "$GT/media-nodes.tsv"; do
+    [[ -f "$_f" ]] || continue
+    while IFS="$TAB" read -r _iid _rest || [[ -n "${_iid:-}" ]]; do
+        [[ "${_iid:-}" == int:* ]] && FIX_INT_IDS["$_iid"]=1
+    done < "$_f"
+done
 
 implied_kind() {   # sets IMPLIED, no fork
     case "$1" in
@@ -1196,6 +1244,21 @@ while IFS="$TAB" read -r cls sid skind sname tid tkind tname s2t t2s prov obs ||
         tok="${obs%% *}"
         [[ "$tok" =~ $EXT_RE ]] || p1a_bad_anchor=$((p1a_bad_anchor + 1))
     fi
+    # AC-4 (D5): Pass 1a is wholly deterministic, so every row it emits is
+    # `declared` or `derived` -- never `inferred` (that provenance is Pass 2's
+    # alone, D6 rejection 3) and never blank (D5 assigns it by the carrier rule,
+    # not left to a default).
+    case "${prov:-}" in declared|derived) ;; *) p1a_bad_prov=$((p1a_bad_prov + 1)) ;; esac
+    # AC-16: no `int:` id carries a `#` fragment of any kind, and every `int:` id
+    # this feature NAMES is a member of feature-004's own streams -- this feature
+    # mints no `int:` id of its own.
+    for _id in "$sid" "$tid"; do
+        [[ "$_id" == int:*'#'* ]] && p1a_int_hash=$((p1a_int_hash + 1))
+        if [[ "$_id" == int:* ]]; then
+            p1a_int_checked=$((p1a_int_checked + 1))
+            [[ -n "${FIX_INT_IDS[$_id]+set}" ]] || p1a_int_unknown=$((p1a_int_unknown + 1))
+        fi
+    done
 done < "$P1A"
 fi
 
@@ -1204,6 +1267,16 @@ assert_count_eq "${P1A_SRC_COUNT[kb:INDEX.md]:-0}" 0 "P1A25 no harvested row is 
 assert_count_eq "${P1A_SRC_COUNT[kb:relationships.md]:-0}" 0 "P1A26 no harvested row is SOURCED from relationships.md"
 assert_nonempty "${P1A_TGT_COUNT[kb:INDEX.md]:-0}" \
     "P1A27 INDEX.md IS a valid TARGET (a hand-authored citation of it is a real edge)"
+assert_eq "${P1A_RELTGT_PROV[${haspart_rel}|kb:a-guide.md#overview]:-}" "derived" \
+    "P1A24d a containment edge is literally 'derived' (D5: nothing STATES a section is part of its document — the scan computes it) — the positive control the next universal needs"
+assert_count_eq "$p1a_bad_prov" 0 \
+    "P1A24d1 every Pass 1a row's Provenance is 'declared' or 'derived' — never blank, never 'inferred' (AC-4, D5)"
+assert_count_eq "$p1a_int_hash" 0 \
+    "P1A24e no Pass 1a row names an 'int:' id carrying a '#' fragment of any kind (AC-16)"
+assert_nonempty "$p1a_int_checked" \
+    "P1A24f Pass 1a names at least one 'int:' id, so P1A24g is not a universal over an empty set"
+assert_count_eq "$p1a_int_unknown" 0 \
+    "P1A24g every 'int:' id Pass 1a names is a member of feature-004's own streams — this feature mints no int: id (AC-16)"
 
 # D2b: containment by LEVEL STACK, not by the block-body scan. The level-4 must
 # attach to the level-3 above it -- not to the nearest preceding heading of any
@@ -1233,6 +1306,72 @@ case "${P1A_RELTGT_OBS[${documents_rel}|int:src/tool.sh]:-}" in
     *) fail "P1A34 the anchor does not quote the written literal — got '${P1A_RELTGT_OBS[${documents_rel}|int:src/tool.sh]:-}'" ;;
 esac
 
+# ---------------------------------------------------------------------------
+# AC-19's KB-WIDE claim: a project supplying no instance of section/fact/concept's
+# carrier convention still exits successfully with ZERO nodes of the affected kind
+# — not a failed run. The main fixture above cannot exercise this: every kind is
+# deliberately present and non-zero there (P1A02/P1A03 need that). A SEPARATE,
+# minimal one-document KB is built here for exactly this claim, and it is the one
+# extra subject invocation this task adds (see the S1 budget above) — nothing
+# downstream of `kb-stats.tsv` (Pass 1b, the merge, the render) varies with this
+# claim, so `derive-edges.sh` and `build-relationships.sh` are not re-run for it.
+# `br_status_of` (build-relationships.sh) maps that flag to the rendered
+# `present`/`absent` cell with one line -- `[ "$1" = "1" ] && present || absent` --
+# reviewable by grep rather than re-run, on R8's own precedent.
+if want P1A; then
+ABSROOT="$TMP/abs"
+ABSKB="$ABSROOT/.aid/knowledge"
+ABSGT="$ABSROOT/.aid/.temp/graph"
+mkdir -p "$ABSKB" "$ABSGT"
+cat > "$ABSKB/only.md" <<'ABSEOF'
+---
+kb-category: primary
+source: hand-authored
+objective: Fixture with no carrier convention at all.
+summary: No heading below H1, no citation marker, no definition marker.
+see_also: [INDEX.md]
+owner: architect
+audience: [developer]
+---
+
+# Only
+
+A paragraph with nothing any of Pass 1a's four carrier conventions recognise: no
+ATX heading at level 2-6, no checkable source anchor, and no definition marker.
+ABSEOF
+: > "$ABSGT/nodes.tsv"
+: > "$ABSGT/media-nodes.tsv"
+( cd "$ABSROOT" && git init -q . ) >/dev/null 2>&1
+
+abs_rc=0
+( cd "$ABSROOT" && bash "$HARVEST" --temp-dir "$ABSGT" --kb-root .aid/knowledge --repo-root "$ABSROOT" ) \
+    >"$TMP/abs.harvest" 2>&1 || abs_rc=$?
+assert_exit_eq "$abs_rc" 0 \
+    "P1A35 a KB supplying NO instance of the section/fact/concept carrier still exits 0 (AC-19: absence is not a failed run)"
+
+declare -A ABS_STAT=()
+if [[ -f "$ABSGT/kb-stats.tsv" ]]; then
+while IFS="$TAB" read -r ask asv || [[ -n "${ask:-}" ]]; do
+    [[ -n "${ask:-}" ]] && ABS_STAT["$ask"]="${asv:-}"
+done < "$ABSGT/kb-stats.tsv"
+fi
+for k in section fact concept; do
+    assert_count_eq "${ABS_STAT[carrier-$k]:-X}" 0 \
+        "P1A36 the '$k' carrier flag reads 0 on a KB with no instance of it — br_status_of's only input for the rendered 'absent' cell (AC-19)"
+    assert_count_eq "${ABS_STAT[${k}s]:-X}" 0 \
+        "P1A37 the '$k' node count reads 0 on the same KB — zero nodes of the affected kind (AC-19), not an error"
+done
+abs_nodes=0
+if [[ -f "$ABSGT/kb-nodes.tsv" ]]; then
+while IFS="$TAB" read -r anid ankind _ _ || [[ -n "${anid:-}" ]]; do
+    [[ -n "${anid:-}" ]] || continue
+    case "$ankind" in section|fact|concept) abs_nodes=$((abs_nodes + 1)) ;; esac
+done < "$ABSGT/kb-nodes.tsv"
+fi
+assert_count_eq "$abs_nodes" 0 \
+    "P1A38 kb-nodes.tsv itself carries zero section/fact/concept nodes on this fixture, so P1A36/P1A37 are not reading a counter the run never touched"
+fi
+
 # ===========================================================================
 # P1B -- Pass 1b
 # ===========================================================================
@@ -1248,6 +1387,18 @@ while IFS="$TAB" read -r cls sid skind sname tid tkind tname s2t t2s prov obs ||
         *'search: "assets/logo.png"'*) P1B_OBS_PROV["${s2t}|literal"]="${prov:-}" ;;
         *'search: "logo.png"'*)        P1B_OBS_PROV["${s2t}|basename"]="${prov:-}" ;;
     esac
+    # AC-4 (D5): Pass 1b is likewise wholly deterministic (feature-004's scanner
+    # already ran), so every row is `declared` or `derived`, never `inferred` and
+    # never blank.
+    case "${prov:-}" in declared|derived) ;; *) p1b_bad_prov=$((p1b_bad_prov + 1)) ;; esac
+    # AC-16, over Pass 1b's own rows: no `int:` id carries a `#` fragment, and every
+    # `int:` id named is a member of feature-004's streams.
+    for _id in "$sid" "$tid"; do
+        [[ "$_id" == int:*'#'* ]] && p1b_int_hash=$((p1b_int_hash + 1))
+        if [[ "$_id" == int:* ]]; then
+            [[ -n "${FIX_INT_IDS[$_id]+set}" ]] || p1b_int_unknown=$((p1b_int_unknown + 1))
+        fi
+    done
 done < "$P1B"
 fi
 
@@ -1258,6 +1409,12 @@ for okind in invocation dependency image-reference; do
         "P1B02 the '$okind' observation is typed as '$expect' through the map"
 done
 assert_count_eq "$p1b_blank" 0 "P1B03 no Pass 1b row carries a blank relation label"
+assert_count_eq "$p1b_bad_prov" 0 \
+    "P1B02a every Pass 1b row's Provenance is 'declared' or 'derived' — never blank, never 'inferred' (AC-4, D5)"
+assert_count_eq "$p1b_int_hash" 0 \
+    "P1B02b no Pass 1b row names an 'int:' id carrying a '#' fragment of any kind (AC-16)"
+assert_count_eq "$p1b_int_unknown" 0 \
+    "P1B02c every 'int:' id Pass 1b names is a member of feature-004's own streams — this feature mints no int: id (AC-16)"
 
 # `path-reference` is deliberately unmapped: it becomes a Pass-2 candidate and no row.
 unmapped_candidate=0
@@ -1297,10 +1454,16 @@ while IFS="$TAB" read -r cls sid skind sname tid tkind tname s2t t2s prov obs ||
     R0_SORTKEYS+=("${cls}${TAB}${sid}${TAB}${tid}${TAB}${s2t}${TAB}${t2s}")
     implied_kind "$sid"; [[ -z "$IMPLIED" || "$IMPLIED" == "$skind" ]] || r0_kindmismatch=$((r0_kindmismatch + 1))
     implied_kind "$tid"; [[ -z "$IMPLIED" || "$IMPLIED" == "$tkind" ]] || r0_kindmismatch=$((r0_kindmismatch + 1))
+    # AC-4 (D5), re-checked on the MERGED, FROZEN output rather than trusting the
+    # two pre-merge streams: the merge's own de-duplication (step 11) is the one
+    # place a tie-break could theoretically carry a bad value forward undetected.
+    case "${prov:-}" in declared|derived) ;; *) r0_bad_prov=$((r0_bad_prov + 1)) ;; esac
 done < "$ROWS0"
 fi
 
 assert_nonempty "$r0_n" "ORI06 the frozen class-0 set is non-empty"
+assert_count_eq "$r0_bad_prov" 0 \
+    "ORI06a every frozen class-0 row's Provenance is 'declared' or 'derived' post-merge (AC-4, D5)"
 assert_eq "${P1A_PAIR_S2T[kb:z-isolated.md#remarks|kb:concept:canonical]:-}" "$mention_rel" \
     "ORI07 the pair is HARVESTED section->concept, carrying the forward relation"
 stored="${R0_PAIR[kb:concept:canonical|kb:z-isolated.md#remarks]:-}"
@@ -1615,6 +1778,7 @@ sec CMP
 # The degradation case: an ABSENT read ledger means Pass 2 was never dispatched,
 # which is a recorded TOTAL outcome and not a shortfall.
 G_RC=0; G_OUT="Pass 2 was not dispatched"; S_RC=1; S_OUT="undispositioned candidate"
+T_RC=1; T_OUT="read-ledger entries: 2"
 if want CMP; then
 mv "$GT/pass2-reads.tsv" "$TMP/reads.keep"
 G_RC="$(run_build "$TMP/runG.build" "$TMP/runG.md")"
@@ -1629,10 +1793,30 @@ mv "$TMP/reads.keep" "$GT/pass2-reads.tsv"
 mv "$DISP" "$TMP/dispositions.shortfall"
 S_RC="$(run_build "$TMP/runS.build" "$TMP/runS.md")"
 S_OUT="$(<"$TMP/runS.build")"
+
+# FR-31a part 1's "at most once" bound, tested at the point that would fail if it
+# were DROPPED: a document entered TWICE in the read ledger is exactly what a
+# re-dispatched or batched Pass 2 would produce, and D6 part 4's count check --
+# `[ "$count" = "1" ]`, never `-ge 1` -- is what catches it. Dispositions are
+# restored first, so this run isolates the read-ledger failure from CMP09's
+# undispositioned-candidate one rather than compounding both under one exit code.
+mv "$TMP/dispositions.shortfall" "$DISP"
+cp "$GT/pass2-reads.tsv" "$TMP/reads.single"
+{ cat "$GT/pass2-reads.tsv"; head -n 1 "$GT/pass2-reads.tsv"; } > "$TMP/reads.dup"
+cp "$TMP/reads.dup" "$GT/pass2-reads.tsv"
+T_RC="$(run_build "$TMP/runT.build" "$TMP/runT.md")"
+T_OUT="$(<"$TMP/runT.build")"
+cp "$TMP/reads.single" "$GT/pass2-reads.tsv"
 fi
 assert_exit_eq "$S_RC" 1 "CMP09 an undispositioned candidate exits 1 (FR-31a part 4: not a silent omission)"
 assert_output_contains "$S_OUT" "undispositioned candidate" "CMP10 the shortfall NAMES each undispositioned item"
 assert_file_exists "$TMP/runS.md" "CMP11 the artifact is still written when the completion check fails"
+assert_exit_eq "$T_RC" 1 \
+    "CMP12 a manifest document read TWICE fails the completion check (FR-31a part 1's at-most-once bound, made mechanical by D6 part 4)"
+assert_output_contains "$T_OUT" "unread manifest document" \
+    "CMP13 the duplicate read is reported through the 'unread' channel (D6 part 4 defines unread as count != 1, not count == 0)"
+assert_output_contains "$T_OUT" "read-ledger entries: 2" \
+    "CMP14 the report names the actual entry count, so a reader can tell a double-read from an absence"
 
 # ===========================================================================
 # V11 -- a routed cross-feature defect. SKIPPED LOUDLY, never encoded.
