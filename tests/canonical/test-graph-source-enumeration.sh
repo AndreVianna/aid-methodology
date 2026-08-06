@@ -15,6 +15,41 @@
 #   canonical/aid/scripts/graph/scan-source.sh        (the single walk)
 #   canonical/aid/scripts/graph/significance-rules.sh (the rule library)
 #
+# AC-MAP -- feature-004's acceptance criteria to the LIVE assertion that closes each.
+#   Added 2026-08-06 by the wave-1 gate. task-005 reported this map in its hand-off but
+#   never wrote it here, so only 4 of 12 ACs were literally tagged in-file and the rest
+#   were unauditable from the suite. An AC with no named assertion here is NOT closed.
+#
+#     AC-1    R-DOWN-09  (`int:` ids resolve; `ext:` is closed by construction in the
+#             emit loop -- verified by code read, no assertion can observe an empty set)
+#     AC-16   R-EXCL-01/02, R-IGN-06, R-COLLAPSE-07, R-DOWN-09
+#     AC-19   R-EXT-09..12, R-PREMISE-02
+#     AC-20   R-COV-01..16, R-IGN-02..23
+#     AC-S1   R-QUAL loop           AC-S2  R-EXCL-05/06
+#     AC-S3   R-QUAL-07 (Q4-only qualification, no KB carrier), R-NRFNR-04/05
+#     AC-S4   R-DOWN-02  (checkable evidence, never `inferred`)
+#     AC-S5   R-MEDIA-01/02/04/06   AC-S6  R-MEDIA-11 (an unreferenced image is a node)
+#     AC-S7   R-IGN group, R-PREMISE-01..04, and CRITICALLY R-IGN-01/01b/24-27 which
+#             drive `--probe` through $REAL_RESOLVER (:113) rather than $STUB. Before
+#             task-030 all three ignore-list states were asserted against a stub while
+#             the shipped resolver had no --probe at all, so two of three were
+#             unreachable in production while AC-S7 read as closed. Do not re-point
+#             these at the stub.
+#     AC-S8   R-DET group, R-COV-16, R-EXT-08
+#     AC-S9   R-QUAL loop + R-QUAL-10..12 (promotion, byte-exact evidence AND
+#             evidence_provenance -- the qualifier alone was covered before, so a
+#             promotion leaving stale Q3 evidence behind used to pass), R-PRECED-01..05
+#             (the derived-Q1 / declared-Q2 P1 tie-break, previously uncovered),
+#             R-EVID group, R-D3B-01..11 (all 14 of D3b's evidence templates byte-exact
+#             plus a totality check; only 4 of 14 were covered before)
+#
+#   NOT claimed, and stated so rather than left ambiguous: D5's `observation_kind` enum
+#   has no live fixture for `dependency`/`include`/`convention` -- R-REF-08 proves only
+#   that no DISALLOWED value appears, not that all six are reachable. And 9 of D2's 16
+#   `artifact_class` rules have no direct assertion. Neither is named in task-005's
+#   acceptance criteria (only in its Scope, descriptively), so both are residuals for
+#   feature-004 rather than gaps in this task's closure.
+#
 # S1 -- SUBJECT INVOCATION BUDGET: 5 scans, one per distinct input.
 #   Enumerated so a future author cannot add a sixth casually: FXA (x2 -- the second
 #   is the byte-identity re-run, a genuinely distinct input state), FXB, and FXC (x2 --

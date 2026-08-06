@@ -14,14 +14,23 @@
 #   (work-005, feature-003). Its sibling suite, test-graph-relationship-validator.sh,
 #   covers the V1-V15 linter that consumes it.
 #
-# S1 -- SUBJECT INVOCATION BUDGET: 24 in-process loads + 2 subprocess spawns.
-#   Stated in this shape rather than as a bare number because S1's toll does not
-#   apply the same way here. S1 exists because "each subject invocation is a fixed
-#   ~10s toll" -- that is a SUBPROCESS cost. This suite sources the subject library
-#   once (:193) and drives it with 17 `rel_load_vocabulary` and 7 `rel_load_schema`
-#   in-process calls, each costing microseconds, plus exactly 2 deliberate `bash -c`
-#   spawns where a clean-environment load is the property under test. The budget to
-#   watch here is therefore the 2 spawns, not the 24 calls.
+# S1 -- SUBJECT INVOCATION BUDGET: 75 in-process loads + 3 subprocess spawns.
+#   Stated in this shape rather than as a bare number because S1's toll does not apply
+#   the same way here. S1 exists because "each subject invocation is a fixed ~10s toll"
+#   -- that is a SUBPROCESS cost. This suite sources the subject library once (:193) and
+#   drives it in-process, each call costing microseconds.
+#
+#   CORRECTED 2026-08-06 by the wave-1 gate. The first version of this line said
+#   "24 in-process + 2 spawns" and was wrong on BOTH numbers, because it counted only
+#   the DIRECT `rel_load_vocabulary` lines and missed that `reject()` and `accept()` are
+#   wrappers which each load the vocabulary themselves. The derivation, by call site:
+#     61 vocabulary loads = 16 direct + 43 `reject` + 2 `accept`
+#     14 schema loads     =  8 direct +  6 `sc_reject`
+#      3 subprocess spawns = :1664 (clean-env load), :1667 (--help), :1683 (bad flag)
+#   Counting a wrapper's body once instead of once per call site is exactly the error
+#   task-012's executor flagged after its own hand-count was wrong twice. Derive this
+#   by grepping call-site multiplicity for EVERY wrapper, never by reading the file.
+#   The budget to watch is the 3 spawns; the 75 in-process calls are near-free.
 #
 # S3 -- MUTATIONS ARE UNCONDITIONAL HERE, DELIBERATELY, AND THIS IS THE REASON.
 #   S3 puts a mutation MATRIX behind `--self-mutate` because "a mutation matrix is N

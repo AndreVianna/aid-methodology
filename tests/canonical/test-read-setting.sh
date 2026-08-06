@@ -33,6 +33,19 @@ VERBOSE=0
 [[ "${1:-}" == "--verbose" ]] && VERBOSE=1
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# S1 -- SUBJECT INVOCATION BUDGET: 28 subprocess spawns.
+#   Every assertion shells `read-setting.sh` as a subprocess -- there is no in-process
+#   path, so this is a pure spawn budget and the full S1 toll applies to all 28.
+#   Derived by counting executable `"$SUT"` call sites (29 occurrences, of which :95 is
+#   the existence check, not an invocation). Three fixture builders -- settings_full (6
+#   call sites), settings_global_only (1) and settings_with_comments (2) -- only WRITE
+#   fixtures and spawn nothing, so they are deliberately not in the budget.
+#
+#   ADDED 2026-08-06 by the wave-1 gate. task-030 extended this suite 19 -> 29
+#   assertions and its criteria required the declaration; it was never written, and my
+#   own claim that "six of six suites" had been repaired was false for this file
+#   because I never checked it. If you add a spawn, update this number.
+
 SUT="${SCRIPT_DIR}/../../canonical/aid/scripts/config/read-setting.sh"
 
 source "$(dirname "${BASH_SOURCE[0]}")/../lib/assert.sh"

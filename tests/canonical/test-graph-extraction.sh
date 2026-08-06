@@ -12,6 +12,52 @@
 #   CONSUMED here, never asserted: test-graph-schema-loader.sh and
 #   test-graph-relationship-validator.sh own those.
 #
+# AC-MAP -- feature-005's acceptance criteria to the LIVE assertion that closes each.
+#   Added 2026-08-06 by the wave-1 gate. tasks 007 and 009 both reported a map in their
+#   hand-off but neither wrote it into this file, so feature-005's closure was
+#   unauditable from the suite itself -- three sibling suites carry theirs in-file.
+#   An AC with no named assertion here is NOT closed, however complete the area looks.
+#
+#     AC-1   PARTIALLY PROXIED ONLY -- see the OPEN note below. PRE03/PRE04 + ORI10.
+#     AC-2   MAP06, ORI09
+#     AC-2a  MRG08, MUT04  (Q21 -- Kind carried from the node record, never from a prefix)
+#     AC-3   MRG01
+#     AC-4   P1A24d (positive `derived` control) + P1A24d1 (universal over Pass 1a),
+#            P1B02a (universal over Pass 1b), ORI06a (universal over the merged output),
+#            MRG11 (every class-1 row is `inferred`)
+#     AC-5   DET03-DET06
+#     AC-16  P1A24e/f/g, P1B02b/c
+#     AC-19  P1A20/P1A21 (per document) + P1A35-P1A38 (KB-wide: a KB with zero instances
+#            of a carrier convention still exits 0 with zero nodes of that kind)
+#     AC-20  REN12/REN13
+#     AC-S1  PRE03, P1A10, P1A11        AC-S2  P1A14, P1A15
+#     AC-S3  MRG04                      AC-S4  CMP04-06, CMP09-14
+#     AC-S5  MAP07/08/12/13             AC-S6  W306
+#     AC-S7  D2F01-04, D2F05-08         AC-S8  P1A33, P1A34
+#     FR-31a part 1  CMP03/06 + CMP12-14 (a duplicated read fails as an absence would)
+#     FR-31a part 2  MRG04
+#     FR-31a part 3  MRG10, MRG12 (discovery), MRG13 (typing), CMP01
+#     FR-31a part 4  CMP09-11 + CMP12-14
+#     D5 provenance, all three enum values with positive controls:
+#            declared P1A33/P1B05 | derived P1A24d/P1B06 | inferred MRG11 (universal)
+#     Hand-off content (task-009): REN25 (four KB-side Kind rows carry kb-coverage.tsv's
+#            own counts), REN26 (three source-side kinds carry coverage.tsv's), proven
+#            non-vacuous by MUT05 -- a mutant hardcoding Nodes to "999" renders a
+#            structurally perfect section that REN01-24 all pass and only REN25 catches.
+#     Hand-off plumbing (task-008): REN06a (byte-identity vs the assembler's own file),
+#            REN19-REN24 (three loud-failure branches, each asserting no artifact exists)
+#
+#   OPEN, not closed, and deliberately so: AC-1/AC-2/AC-2a AS LITERALLY WORDED require
+#   V2/V3/V4/V13 to run against a GENERATED relationships.md and report no finding.
+#   NOTHING in this repository does that. This suite always passes `--skip-validate` by
+#   its author's documented choice (see the COVERS note -- "a validator change cannot
+#   alter one assertion"), and test-graph-relationship-validator.sh validates the linter
+#   against hand-built fixtures, never this feature's real pipeline output. AC-2/AC-2a are
+#   judged adequately closed by the mechanism-level assertions above; AC-1 is only
+#   partially proxied and is a genuine residual for an architect to rule on. Adding a real
+#   self-validation invocation here would cross that documented boundary AND add an 11th
+#   spawn to a suite already ~2x over run-all.sh's per-suite timeout.
+#
 # S1 -- SUBJECT INVOCATION BUDGET: 18 subprocess spawns (10 pipeline + 8
 #   parse-only) + 2 in-process library sources (LIB, REPORT). `--self-mutate`
 #   adds 4 more build spawns (MUT02-05); MUT01 mutates REPORT and re-sources it
