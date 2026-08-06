@@ -1,12 +1,12 @@
 ---
-state: 'In Progress'
+state: Pending
 review: "--"
 elapsed: "--"
 notes: "--"
 ticket_ref: "--"
 ---
 
-# Task State -- task-020
+# Task State -- task-031
 
 [!NOTE]
 This is the TASK-LEVEL STATE.md template. It is **full-path only** -- it lives at
@@ -34,7 +34,7 @@ resolution for a flattened task passes straight through to its delivery/work lev
 carry the scalar (`work-state-template.md`'s frontmatter, both layouts). Coordinate with the
 in-flight `work-003-state-schema` frontmatter conventions.
 
-> **Task:** task-020
+> **Task:** task-031
 > **Delivery:** delivery-001
 > **Work:** work-005-knowledge-graph
 

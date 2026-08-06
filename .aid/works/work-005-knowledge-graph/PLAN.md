@@ -76,7 +76,9 @@ block below is the **mechanically derived topological lane map** that reference 
 the dashboard reader parses: lane 1 is every task with no dependencies, lane N is every task
 whose dependencies all sit in lanes `< N`. It comes out at **13 lanes** and describes *maximum
 parallelism*. The **gate waves** recorded in each task's `Source` line are a different and
-coarser thing — five owner-chosen review batches, each closing with one B- gate. They
+coarser thing — five owner-chosen review batches, each closing with one **A+** gate
+(raised from B- by the owner on 2026-08-05 at `/aid-execute` invocation: "do all tasks with a
+A+ gate at the end of each wave"). A+ means ZERO findings, not a low finding count. They
 deliberately do **not** align to lane boundaries (lane 5 spans gate waves 1 and 2, lane 9 spans
 4 and 5), because a gate *serialises* at its boundary: `task-013` sits in lane 5 and could start
 as soon as `task-012` lands, but waits for gate wave 1 to close. That serialisation is the
@@ -116,6 +118,7 @@ them will either over-parallelise across a gate or under-parallelise inside one.
 | task-027 | task-009, task-014, task-016, task-020, task-025 | 5 | 11 |
 | task-028 | task-022, task-025, task-027 | 5 | 12 |
 | task-029 | task-028 | 5 | 13 |
+| task-031 | task-013 | 3 | 6 |
 
 > **`task-022` depends on `task-023`, a higher number.** That is deliberate and not a cycle:
 > the full FR-28 rubric's `V-S2` verdict over `graph.html` turns on the packaging shape
@@ -130,13 +133,13 @@ them will either over-parallelise across a gate or under-parallelise inside one.
 | task-004, task-006 | 1 |
 | task-008, task-010, task-012 | 1 |
 | task-009, task-011, task-013 | **1, 2 — NOT concurrently runnable** |
-| task-014, task-015, task-017, task-019 | **2, 3 — NOT concurrently runnable** |
+| task-014, task-015, task-017, task-019, task-031 | **2, 3 — NOT concurrently runnable** |
 | task-016, task-018, task-020, task-023 | **2, 3 — NOT concurrently runnable** |
 | task-022, task-024 | **4, 5 — NOT concurrently runnable** |
 | task-025, task-026 | 5 |
 
 > **Read the second column before parallelising anything.** A row spanning two gate waves is a
-> *lane* grouping, not a licence: the later-wave tasks cannot start until the earlier wave's B-
+> *lane* grouping, not a licence: the later-wave tasks cannot start until the earlier wave's A+
 > gate closes. Four of these rows straddle a boundary, and the table on its own would otherwise
 > authorise exactly the over-parallelisation the preamble above warns against.
 
@@ -147,7 +150,7 @@ wave 2: task-004, task-006
 wave 3: task-007, task-030
 wave 4: task-008, task-010, task-012
 wave 5: task-009, task-011, task-013
-wave 6: task-014, task-015, task-017, task-019
+wave 6: task-014, task-015, task-017, task-019, task-031
 wave 7: task-016, task-018, task-020, task-023
 wave 8: task-021
 wave 9: task-022, task-024

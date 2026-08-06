@@ -2,7 +2,7 @@
 state: 'In Review'
 review: "--"
 elapsed: "--"
-notes: "--"
+notes: 'Stage 2: fixture layer (graph-view-gv.mjs) authors GV06,07,08,09,10,11,12,14,15,18,20,21,23a,25,26,27 headless (16 ids). GV23b authored + FAILS (real finding: render-graph-view.sh prints no console summary of runtime prerequisites). Suite 152-->168 pass, 2 fail (GV23b + pre-existing dirty graph-css.css from concurrent task-017/019, not caused here). Still open: GV13,16,17,19,22,24,28 (DOM/second-subject/complex, see suite header). No reviewer sub-agent dispatched -- no Task/dispatch tool was available in this session (tool list was Read/Glob/Grep/Write/Edit/Bash only).'
 ticket_ref: "--"
 ---
 

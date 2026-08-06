@@ -77,16 +77,35 @@
 #   surface) are the other named co-owners. Neither AC is closed by this file
 #   alone.
 #
-# OPEN, NOT AUTHORED (honest boundary, not a silent gap -- task-014, time-boxed)
-#   GV06-GV28 name design decisions D1c/D6-D9 (kb_gaps mismatch materialisation,
-#   LensState/ViewModel/CONTROL_MANIFEST, grouping/folding, node gestures, label
-#   shortening, emphasis composition) that need a shell-level model/DOM harness
-#   this task did not have time to build. Each needs its own fixture at the
-#   CONTROL_MANIFEST/LensState layer, mirroring graph-view-model.mjs's pattern
-#   one layer up. AC-7's "grouping: 'none'" well-posedness clause and GV26's
-#   grouping-row/<select>-focus clause are consequently also NOT YET asserted.
-#   Owner: a follow-up task against this same suite file; nothing here claims
-#   otherwise.
+# OPEN, NOT AUTHORED -- task-014 STAGE 2 (the fixture layer landed; a residue did
+# not, honest boundary rather than a silent gap)
+#   graph-view-gv.mjs is the shell-level LensState/CONTROL_MANIFEST fixture layer
+#   the first pass deferred. It authors GV06, GV07, GV08, GV09, GV10, GV11, GV12,
+#   GV14, GV15, GV18, GV20, GV21, GV23a, GV25, GV26 and GV27, headless, with NO
+#   DOM. GV23b is authored and its assertion is a REAL FAIL: render-graph-view.sh
+#   prints no console summary naming its runtime prerequisites at all, so today
+#   only the footer (GV23a) carries them -- see the GV23 block in
+#   graph-view-gv.mjs for the finding and its evidence; it is production work
+#   outside a TEST task's authority to fix and is routed rather than muted.
+#   STILL OPEN, and for a stated reason each:
+#     GV13, GV16 -- need contrast-check.mjs and relationship-schema.yml wired in
+#       as second subjects; not attempted this pass.
+#     GV17, GV19, GV22, GV24 -- need a real DOM: the `data-control` manifest<->DOM
+#       bijection, feature-003's heading-slug algorithm, the fold's
+#       keyboard-driven both-directions proof, and a live per-preset DOM
+#       write-back. Belong in the DOM half (graph-view-dom.mjs) once jsdom is a
+#       reachable dependency (tech-debt W5-9); asserting them headless here would
+#       misrepresent a DOM-shaped obligation as headless-provable.
+#     GV28 -- the total five-value emphasis precedence over a fixture exercising
+#       every branch at once; not attempted this pass for time.
+#   CLOSED IN THE FIX PASS (task-014 review row 6/7): GV18's concept
+#   defining-document (@doc) route and its fallback tie-break over two
+#   equal-rank candidates, and GV20's two label-collision sub-clauses, are now
+#   asserted over dedicated fixtures built inline in graph-view-gv.mjs (never in
+#   the shared graph-view-fixture.mjs). Neither id carries an in-line NOTE
+#   disclosing a gap any more.
+#   Owner: a follow-up task against this same suite file for the residue above;
+#   nothing here claims otherwise.
 #
 # AC-TO-ASSERTION MAP (feature-007-graph-view-shell/SPEC.md § Tests)
 #   GV01 -> D10 rules 1-3,5; AC-10   (predicate + view files: no load statement,
@@ -107,30 +126,60 @@
 #   GS01-GS07 -> NFR-2, AC-9, D5a/b (as in the pre-rename suite)
 #   GT*, GX*, DT*, GH* -> feature-009's row/order/emphasis contract and the
 #     page's structural/a11y/link checks (as in the pre-rename suite)
+#   GV06-GV12, GV14, GV15, GV18, GV20, GV21, GV23a, GV25-GV27 -> see the table at
+#     feature-007 SPEC.md:1795-1822 for the criterion each binds; asserted by
+#     graph-view-gv.mjs over the fixture layer it builds (D1c, D6a-D9 per id).
+#   GV23b -> AC-6 (asserted; FAILS on the frozen tree -- see graph-view-gv.mjs)
+#   GV13, GV16, GV17, GV19, GV22, GV24, GV28 -> NOT YET AUTHORED (see above)
 #
 # S1 BUDGET (one subject invocation per distinct input, enumerated by grepping
 # every call site, wrapper bodies counted once PER CALL SITE, not once per
-# wrapper definition):
+# wrapper definition).
+#
+# S3: the GX/DX mutation matrix is gated behind `--self-mutate` -- every case in
+# it is a subprocess spawn (~10s-class toll), matching the ten sibling graph
+# suites (test-graph-extraction.sh, test-graph-gap-ledger.sh, etc.) that already
+# gate their own mutation matrix the same way. CAT02/CAT04 are NOT part of that
+# matrix and stay unconditional: CAT02 builds the plain concatenated bundle
+# every other group in this file consumes (it is not a design-decision mutation
+# at all -- its mutation TYPE is "none"), and CAT04 is the concatenation
+# oracle's OWN negative control (a duplicated top-level name), needed to prove
+# CAT03's `node --check` can fail at all -- not a GX/DX-class defect probe.
+#
+# DEFAULT (no args) -- 11 subject-script invocations:
 #   CAT02, CAT04                                    node MUTATE_MJS   x2
 #   GT (model over the plain bundle)                node MODEL_MJS    x1
+#   GV06-GV28 fixture layer                         node GV_MJS       x1
+#     (GV_MJS itself spawns ONE further subject invocation, counted here as a
+#     second call site rather than folded into the line above: GV23b drives
+#     render-graph-view.sh end to end a SECOND time, over its own fixture,
+#     independently of BLD02's run -- see the RENDER_VIEW line below)
+#   DT01 (--assemble-only)                          node DOM_MJS      x1
+#   DT (full DOM run)                               node DOM_MJS      x1
+#   GH (static page, booted page)                   bash VALIDATE_HTML x2
+#   GV03-GV05                                       node graph-view-predicate-check.mjs x1
+#   BLD01/BLD02/GV02 (the suite's own end-to-end render) bash RENDER_VIEW x1
+#   GV23b (GV_MJS's own end-to-end render, a second fixture) bash RENDER_VIEW x1
+#   ------------------------------------------------------------------------
+#   TOTAL: 11 subject-script invocations for the default run.
+#
+# `--self-mutate` ADDS exactly 17 more subprocess spawns (28 total), all inside
+# the GX/DX mutation matrix:
 #   run_mutation (6 call sites: prefix-encoding, dimmed-either-map,
 #     list-collapsed, unlisted-by-degree, tiebreak-direction,
 #     sortof-keeps-direction) -- each call site is 1x MUTATE_MJS + 1x MODEL_MJS
 #                                                    node             x12
 #   GX colour-literal                                node MUTATE_MJS   x1
-#   DT01 (--assemble-only)                           node DOM_MJS      x1
-#   DT (full DOM run)                                node DOM_MJS      x1
 #   dom_mutation_bites (2 call sites) -- each 1x MUTATE_MJS + 1x DOM_MJS
 #                                                    node             x4
-#   GH (static page, booted page)                    bash VALIDATE_HTML x2
-#   GV03-GV05                                        node graph-view-predicate-check.mjs x1
-#   BLD01/BLD02/GV02 (one real end-to-end render)     bash RENDER_VIEW  x1
 #   ------------------------------------------------------------------------
-#   TOTAL: 26 subject-script invocations for one full run.
+#   TOTAL WITH --self-mutate: 28 subject-script invocations.
 #   (GS01-07, GV01 and BLD01's set comparison are plain-text `grep`/`diff`
 #   utility spawns over files already on disk -- cheap, and not the ~10s-class
 #   toll S1 exists to bound, so they are not counted in this budget, matching
-#   the pre-existing GS group's own convention.)
+#   the pre-existing GS group's own convention. GV08's profiles/ walk and GV26's
+#   graph-controls.js grep are the same class, INSIDE GV_MJS, and are likewise
+#   not separately counted.)
 #
 # WHAT IS DELIBERATELY NOT HERE
 #   * No browser check of any kind. Runtime UI verification does not belong in the
@@ -153,16 +202,25 @@
 #             regex fallback, which it reports.
 #
 # Usage:
-#   bash test-graph-view-shell.sh [-v | --verbose]
+#   bash test-graph-view-shell.sh [-v | --verbose] [--self-mutate]
+#   bash test-graph-view-shell.sh --self-mutate      # + the GX/DX mutation matrix
 #
 # Exit codes:
 #   0 -- all assertions passed (skips are reported, and never counted as passes)
 #   1 -- one or more assertions failed
+#   2 -- an unknown argument was given
 
 set -u
 
 VERBOSE=0
-[[ "${1:-}" =~ ^(-v|--verbose)$ ]] && VERBOSE=1
+SELF_MUTATE=0
+while [[ $# -gt 0 ]]; do
+    case "$1" in
+        -v|--verbose)  VERBOSE=1; shift ;;
+        --self-mutate) SELF_MUTATE=1; shift ;;
+        *) echo "test-graph-view-shell.sh: unknown argument: $1" >&2; exit 2 ;;
+    esac
+done
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
@@ -190,6 +248,7 @@ BEARING_YML="${REPO_ROOT}/canonical/aid/templates/graph/coverage-bearing.yml"
 
 MUTATE_MJS="${SCRIPT_DIR}/graph-view-mutate.mjs"
 MODEL_MJS="${SCRIPT_DIR}/graph-view-model.mjs"
+GV_MJS="${SCRIPT_DIR}/graph-view-gv.mjs"
 DOM_MJS="${SCRIPT_DIR}/graph-view-dom.mjs"
 PREDICATE_CHECK_MJS="${SCRIPT_DIR}/graph-view-predicate-check.mjs"
 
@@ -483,7 +542,27 @@ if [[ "$HAVE_NODE" -eq 1 ]]; then
     fi
 
     # =======================================================================
-    # === GX: non-vacuity controls ==========================================
+    # === GV06-GV28: the shell-level LensState/CONTROL_MANIFEST fixture layer
+    # =======================================================================
+    echo ""
+    echo "=== GV06-GV28: LensState/ViewModel design decisions D1c/D6-D9, over a purpose-built fixture layer ==="
+    set +e
+    node "$GV_MJS" "${TMP}/bundle.mjs" "$REPO_ROOT" > "${TMP}/gv.out" 2>"${TMP}/gv.err"
+    gv_rc=$?
+    set -e
+    consume < "${TMP}/gv.out"
+    if [[ "$gv_rc" -ne 0 ]] && ! grep -q $'\tFAIL\t' "${TMP}/gv.out"; then
+        fail "GV00 the GV fixture layer ran to completion — exit $gv_rc with no reported failure: $(head -3 "${TMP}/gv.err" | tr '\n' ' ')"
+    fi
+    gv_lines=$(grep -cE '^GV.(PASS|FAIL)' "${TMP}/gv.out" || true)
+    if [[ "${gv_lines:-0}" -ge 15 ]]; then
+        pass "GV05b the GV06-GV28 fixture layer reported its assertions ($gv_lines outcomes)"
+    else
+        fail "GV05b the GV06-GV28 fixture layer reported its assertions — only ${gv_lines:-0} outcome line(s), so the class did not run"
+    fi
+
+    # =======================================================================
+    # === GX: non-vacuity controls (--self-mutate only, S3) =================
     # =======================================================================
     echo ""
     echo "=== GX: each assertion class is shown to FAIL against a deliberate defect ==="
@@ -509,19 +588,24 @@ if [[ "$HAVE_NODE" -eq 1 ]]; then
             fail "GX ${id} — the control produced no verdict: $(head -2 "${TMP}/mut-${id}.out" | tr '\n' ' ')"
         fi
     }
-    run_mutation prefix-encoding        GT20,GT21,GT22
-    run_mutation dimmed-either-map      GT50,GT50b
-    run_mutation list-collapsed         GT30,GT31
-    run_mutation unlisted-by-degree     GT61,GT63
-    run_mutation tiebreak-direction     GT37
-    run_mutation sortof-keeps-direction GT39
-
-    # The GS03 colour grep gets the same treatment: proven to bite.
-    node "$MUTATE_MJS" "$REPO_ROOT" "${TMP}/poison.mjs" colour-literal >/dev/null 2>&1
-    if grep -qE '#[0-9a-fA-F]{3}' "${TMP}/poison.mjs"; then
-        pass "GX colour-literal — the GS03 hex-literal pattern fires on a poisoned copy (negative control)"
+    if [[ "$SELF_MUTATE" -ne 1 ]]; then
+        echo "Mutation matrix not run. Use --self-mutate to run it (17 extra subprocess spawns: the six"
+        echo "run_mutation cases, the GS03 colour-literal control, and the two DX dom_mutation_bites cases)."
     else
-        fail "GX colour-literal — the GS03 hex-literal pattern did NOT fire on a poisoned copy, so GS03 proves nothing"
+        run_mutation prefix-encoding        GT20,GT21,GT22
+        run_mutation dimmed-either-map      GT50,GT50b
+        run_mutation list-collapsed         GT30,GT31
+        run_mutation unlisted-by-degree     GT61,GT63
+        run_mutation tiebreak-direction     GT37
+        run_mutation sortof-keeps-direction GT39
+
+        # The GS03 colour grep gets the same treatment: proven to bite.
+        node "$MUTATE_MJS" "$REPO_ROOT" "${TMP}/poison.mjs" colour-literal >/dev/null 2>&1
+        if grep -qE '#[0-9a-fA-F]{3}' "${TMP}/poison.mjs"; then
+            pass "GX colour-literal — the GS03 hex-literal pattern fires on a poisoned copy (negative control)"
+        else
+            fail "GX colour-literal — the GS03 hex-literal pattern did NOT fire on a poisoned copy, so GS03 proves nothing"
+        fi
     fi
 fi
 
@@ -562,11 +646,13 @@ if [[ "$HAVE_NODE" -eq 1 ]]; then
         fail "DT02 the DOM half reported its assertion classes — only ${dom_lines:-0} outcome line(s), so most of the class was neither run nor skipped"
     fi
 
-    # --- Non-vacuity for the DOM group ------------------------------------
+    # --- Non-vacuity for the DOM group (--self-mutate only, S3) -----------
     # The GX controls above prove the headless assertions bite. These prove the
     # same for the two most load-bearing rendered ones, by running the DOM half
     # against a mutated bundle and requiring the named assertion to FAIL.
-    if [[ "$dom_rc" -eq 3 ]]; then
+    if [[ "$SELF_MUTATE" -ne 1 ]]; then
+        echo "DX mutation matrix not run. Use --self-mutate to run it (2 extra subprocess pairs)."
+    elif [[ "$dom_rc" -eq 3 ]]; then
         skip "DX** the DOM group's non-vacuity controls — the DOM half itself did not run (see the DT skips)"
     else
         dom_mutation_bites() {
