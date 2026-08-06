@@ -82,11 +82,13 @@
 #   graph-view-gv.mjs is the shell-level LensState/CONTROL_MANIFEST fixture layer
 #   the first pass deferred. It authors GV06, GV07, GV08, GV09, GV10, GV11, GV12,
 #   GV14, GV15, GV18, GV20, GV21, GV23a, GV25, GV26 and GV27, headless, with NO
-#   DOM. GV23b is authored and its assertion is a REAL FAIL: render-graph-view.sh
-#   prints no console summary naming its runtime prerequisites at all, so today
-#   only the footer (GV23a) carries them -- see the GV23 block in
-#   graph-view-gv.mjs for the finding and its evidence; it is production work
-#   outside a TEST task's authority to fix and is routed rather than muted.
+#   DOM. GV23b was authored as a REAL FAIL: render-graph-view.sh printed no
+#   console summary naming its runtime prerequisites at all, so only the
+#   footer (GV23a) carried them -- production work outside a TEST task's
+#   authority to fix, routed rather than muted. task-031 closed that gap
+#   (build-graph-src.mjs, its own generator, now prints the same four facts
+#   the footer carries); GV23b passes unedited -- see the GV23 block in
+#   graph-view-gv.mjs.
 #   STILL OPEN, and for a stated reason each:
 #     GV13, GV16 -- need contrast-check.mjs and relationship-schema.yml wired in
 #       as second subjects; not attempted this pass.
@@ -129,7 +131,7 @@
 #   GV06-GV12, GV14, GV15, GV18, GV20, GV21, GV23a, GV25-GV27 -> see the table at
 #     feature-007 SPEC.md:1795-1822 for the criterion each binds; asserted by
 #     graph-view-gv.mjs over the fixture layer it builds (D1c, D6a-D9 per id).
-#   GV23b -> AC-6 (asserted; FAILS on the frozen tree -- see graph-view-gv.mjs)
+#   GV23b -> AC-6 (asserted; PASSES since task-031 -- see graph-view-gv.mjs)
 #   GV13, GV16, GV17, GV19, GV22, GV24, GV28 -> NOT YET AUTHORED (see above)
 #
 # S1 BUDGET (one subject invocation per distinct input, enumerated by grepping

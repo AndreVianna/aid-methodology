@@ -188,10 +188,66 @@ function main() {
 	const generator = frontmatterScalar(relText, 'generator');
 	const sourceStamp = generator ? ('<code>' + generator + '</code>') : 'an unrecorded generator';
 
+	// --- AC-6's four runtime-prerequisite facts: ONE authoring site read by
+	// BOTH carriers this generator owns -- the footer's {{PREREQUISITES}} <li>
+	// list below and the console summary printed near the end of main(). This
+	// lives in build-graph-src.mjs, not render-graph-view.sh: this file already
+	// computes the network/companion facts from disk state and already holds
+	// graph-skeleton.html's raw text, which is where the WebGL fact is READ
+	// FROM below rather than re-authored. Splitting fact computation across the
+	// bash driver and this file would be a second authoring site -- exactly the
+	// defect this task exists to close.
+	//
+	// The code this replaces was a TERNARY: network-required XOR companion-
+	// files, as if a page could only ever need one. It cannot -- graph-assets/,
+	// when it exists, is a *local* companion of a page that still makes no
+	// network request (rendering-decision-record.md Part 13, facts 2 and 3 both
+	// hold at once for this project's own vendored packaging shape). Both facts
+	// are therefore always stated below, each with its own true-for-this-run
+	// content.
+	//
+	// BUILD-OUTPUT RULING (recorded here, not left implicit): the skeleton's
+	// existing "builds both renderings ... at load time" sentence (the
+	// JavaScript-required <li> just above {{PREREQUISITES}} in the markup) is
+	// about the page's OWN script building its DOM at READ time -- a different
+	// fact from AC-6's "whether a build output is involved", which the
+	// decision record's Part 13 fact 4 states as "no build step at open time":
+	// graph.html itself is produced ONCE, at GENERATION time, by this script
+	// and the reused assembler, never recompiled by the reader. That is not
+	// discharged by the existing sentence, so a distinct one is authored below.
 	const graphAssetsDir = path.join(path.dirname(args.relationships), 'graph-assets');
-	const prerequisites = fs.existsSync(graphAssetsDir) && fs.readdirSync(graphAssetsDir).length > 0
-		? '\t\t<li>Companion files under <code>graph-assets/</code> must travel with this page.</li>'
-		: '\t\t<li>No network access is required and none is made.</li>';
+	const graphAssetsPresent = fs.existsSync(graphAssetsDir) && fs.readdirSync(graphAssetsDir).length > 0;
+
+	// The WebGL fact's WORDING lives in graph-skeleton.html alone -- its own
+	// static <li>, the one GV23a checks directly against the file on disk -- so
+	// it is extracted here rather than re-authored a second time. Editing that
+	// one sentence in the skeleton moves both carriers together exactly like
+	// the other three facts below do.
+	const prereqsListAt = skeleton.indexOf('<ul class="prereqs">');
+	if (prereqsListAt === -1) fail(2, 'graph-skeleton.html no longer contains the runtime-prerequisites <ul> this producer keys on');
+	const jsRequiredLiAt = skeleton.indexOf('<li>JavaScript is required', prereqsListAt);
+	if (jsRequiredLiAt === -1) fail(2, 'graph-skeleton.html no longer contains the JavaScript-required <li> this producer keys on');
+	const stripTags = (s) => s.replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim();
+	const webglFact = stripTags(skeleton.slice(prereqsListAt, jsRequiredLiAt));
+
+	const prerequisiteFacts = [
+		webglFact,
+		'No network access is required and none is made.',
+		graphAssetsPresent
+			? 'Companion files under <code>graph-assets/</code> must travel with this page.'
+			: 'No companion files travel with this page; everything it needs lives inside it.',
+		'This page is itself a build output: it was assembled once, at generation time, by '
+			+ '<code>build-graph-src.mjs</code> and the reused assembler — never rebuilt in the '
+			+ 'reader’s browser, and no separate build step is required to open it.',
+	];
+
+	// The footer's own WebGL <li> is graph-skeleton.html's static text (never
+	// substituted -- see above), so {{PREREQUISITES}} carries the remaining
+	// three: network, companion files, build output -- always all three,
+	// never a subset.
+	const prerequisites = prerequisiteFacts.slice(1)
+		.map((f) => '\t\t<li>' + f + '</li>')
+		.join('\n');
 
 	let scaleCeilingNote = '\t<p class="prereqs">No node-count ceiling is declared for this project.</p>';
 	if (fs.existsSync(scaleCeilingPath)) {
@@ -262,6 +318,17 @@ function main() {
 
 	process.stdout.write('Wrote graph-src layout to ' + args.src + '\n');
 	process.stdout.write('  view files inlined: ' + viewFiles.join(', ') + '\n');
+
+	// AC-6/GV23's SECOND carrier (feature-007 SPEC :1604-1608, :1817): the same
+	// four facts authored once above, now printed to the run's own console
+	// summary rather than re-authored a second time. render-graph-view.sh (the
+	// documented entry point) never redirects this file's stdout and never
+	// pipes it into anything else -- it flows straight through to whoever
+	// invoked the driver, which is what "the run's console summary" means here.
+	process.stdout.write('Runtime prerequisites for the page this layout will assemble into:\n');
+	for (const fact of prerequisiteFacts) {
+		process.stdout.write('  - ' + stripTags(fact) + '\n');
+	}
 	process.exit(0);
 }
 

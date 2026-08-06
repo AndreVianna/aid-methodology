@@ -31,8 +31,11 @@
 //     proof, or a live per-preset write-back through the DOM). Deferred to the
 //     DOM half (graph-view-dom.mjs), which SKIPS LOUDLY without jsdom -- adding
 //     them here rather than there would misrepresent them as headless-provable.
-//   GV23's console half is asserted and FAILS on the frozen tree: see the GV23
-//     block below for the concrete finding.
+//   GV23's console half was asserted and FAILED on the frozen tree until
+//     task-031 gave render-graph-view.sh a console summary (via
+//     build-graph-src.mjs, its own generator) -- see the GV23 block below,
+//     unedited by that task, which is the oracle that found the gap and now
+//     confirms the fix.
 
 import { pathToFileURL } from 'node:url';
 import { execFileSync } from 'node:child_process';
@@ -567,15 +570,17 @@ function buildFile({ header, rows, gaps, notes }) {
 	// Read the REAL rendered page's network disclosure BEFORE the tmp dir is
 	// removed. The static skeleton has no such sentence to grep -- it is filled
 	// in only at render time, from the {{PREREQUISITES}} placeholder computed in
-	// build-graph-src.mjs:192-194 -- so the skeleton was the wrong subject for
-	// this question; the real generated graph.html is the right one.
+	// build-graph-src.mjs:233-250 (task-031 moved this off the old :192-194
+	// ternary onto the single-authoring-site fact array) -- so the skeleton was
+	// the wrong subject for this question; the real generated graph.html is the
+	// right one.
 	const renderedHtml = fs.existsSync(renderedHtmlPath) ? fs.readFileSync(renderedHtmlPath, 'utf8') : '';
 	const renderedHasNetworkDisclosure = /No network access is required and none is made\./.test(renderedHtml);
 	fs.rmSync(tmp, { recursive: true, force: true });
 	const consoleHasWebGL = /WebGL/.test(consoleOut);
 
 	note('GV23a the REAL rendered graph.html DOES carry the network-access disclosure ("No network access is required '
-		+ 'and none is made."), injected via the {{PREREQUISITES}} placeholder computed in build-graph-src.mjs:192-194 -- '
+		+ 'and none is made."), injected via the {{PREREQUISITES}} placeholder computed in build-graph-src.mjs:233-250 -- '
 		+ 'verified above by reading THIS block\'s own end-to-end render (found=' + renderedHasNetworkDisclosure + '). '
 		+ 'The static graph-skeleton.html necessarily lacks the literal word "network", because that sentence is a '
 		+ 'render-time substitution, not a missing disclosure; grepping the skeleton was the wrong target for this '

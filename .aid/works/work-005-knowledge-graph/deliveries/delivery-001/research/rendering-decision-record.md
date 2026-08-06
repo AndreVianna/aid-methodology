@@ -325,6 +325,23 @@ no such chain.
 | `pixi.min.js` | 8.19.0 | 797,792 | MIT |
 | **Combined, one copy** | — | **815,219 bytes** (≈ 796 KiB) | — |
 
+> **The bench ran a different PixiJS build than the one pinned here, and that is stated rather than
+> left to be noticed.** The payload table above pins `pixi.js@**8.19.0**` (797,792 bytes, measured from
+> `https://unpkg.com/pixi.js@8.19.0/dist/pixi.min.js`), and Part 12 monitors that version. But the
+> Stage 2a/2b benches were run against the locally installed `pixi.js@**8.14.0**`
+> (`.aid/.temp/graph-stage2a-harness/node_modules/pixi.js`, version read from its own `package.json`),
+> and two of this record's *reasoned* conclusions cite that build by number: Part 5's axis-4
+> root cause ("PixiJS 8.14.0's core `Graphics` API") and Part 6's row 4 ("No native dashed-stroke
+> primitive in PixiJS 8.14.0's `Graphics`"). Same major, five minors apart, so those two API
+> conclusions almost certainly carry -- neither depends on a patch-level behaviour. **What must not be
+> read into it:** NFR-7's timing verdicts and the 797,792-byte payload figure are then attributed to
+> two different builds, and nothing here re-measures the timings against 8.19.0. Treat the timing
+> verdicts as 8.14.0 measurements and the payload as an 8.19.0 measurement, because that is what they
+> are. Recorded 2026-08-06 during wave-3 execution, when the two numbers were noticed side by side
+> while confirming the vendored set was obtainable offline; raised as ledger row 5 of task-017's
+> review. Closing it properly means either re-benching on the pinned build or pinning the benched
+> one -- an owner call, not a documentation edit.
+
 **The repository-side multiplier: a corrected finding, not the SPEC's stated 6×.** The SPEC states
 six tracked copies (canonical + five profile renders). Verified against the sibling
 `canonical/aid/templates/graph/` directory: this repository also carries **root-level dogfood
