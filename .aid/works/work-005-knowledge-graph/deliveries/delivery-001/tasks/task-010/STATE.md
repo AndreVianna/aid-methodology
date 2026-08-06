@@ -1,8 +1,8 @@
 ---
-state: 'In Progress'
+state: 'In Review'
 review: "--"
 elapsed: "--"
-notes: "--"
+notes: 'STOPPED by orchestrator 2026-08-05 23:33 after 2.5h. Bench derivation COMPLETE on disk (.aid/.temp/graph-stage2b-bench, -bench-kb, -patched): all three D2 terms have data. Frame-time measurement NOT started -- zero results. Cause: drifted into repo JS test suites (npx vitest 21:14 wedged on a package install, npm test 23:19, npm run test:core 23:31) instead of reusing the installed Stage 2a harness. Resumable: measurement + doc only.'
 ticket_ref: "--"
 ---
 
