@@ -45,8 +45,8 @@
 #        colour literal, no motion, no shell control attribute, and the page's
 #        own table-first DOM order and two-live-region count.
 #   GV   feature-007 SPEC's own numbered design-decision assertions (D10's
-#        shared-predicate/two-runtime group; GV06-GV28 are NOT YET AUTHORED --
-#        see "OPEN, NOT AUTHORED" below).
+#        shared-predicate/two-runtime group; GV17, GV19, GV22, GV24 are NOT YET
+#        AUTHORED -- see "OPEN, NOT AUTHORED" below).
 #   BLD  task-013's two previously-ownerless files (build-graph-src.mjs,
 #        render-graph-view.sh): the real placeholder set matches the skeleton's
 #        own, derived from both files at run time (BLD01), and the real
@@ -89,17 +89,31 @@
 #   (build-graph-src.mjs, its own generator, now prints the same four facts
 #   the footer carries); GV23b passes unedited -- see the GV23 block in
 #   graph-view-gv.mjs.
+#   STAGE 3 (this pass) authors GV13, GV16 and GV28, the three ids that were
+#   unasserted but not blocked:
+#     GV13 -- reads graph-css.css and drives contrast-check.mjs --profile graph
+#       over a REAL assembled fixture (component-css.css + graph-css.css). Found
+#       a REAL, VERIFIED defect in contrast-check.mjs's own `:root` fallback
+#       extraction (see the GV13 block's NOTE) -- production work outside this
+#       test task's owned files, routed rather than muted, exactly like GV23b's
+#       gap. GV13 therefore asserts token COMPLETENESS/DISCOVERABILITY, never the
+#       checker's pass/fail verdict, which is test-validator-profiles.sh's to own.
+#     GV16 -- reads relationship-schema.yml and calls buildControlManifest (the
+#       builder the published CONTROL_MANIFEST name actually is -- see
+#       graph-controls.js's own doc comment). Two in-process scratch bundles (never
+#       graph-view-mutate.mjs, outside this task's two files) prove the coverage
+#       checks bite: one grows the category vocabulary by one entry, one drops
+#       the manifest's provenance-axis loop.
+#     GV28 -- a dedicated small CONNECTED fixture (never FX.FIXTURE, whose one
+#       gap node is degree-0 and therefore unreachable by any focus ball), so a
+#       live selection elsewhere still keeps every other gap id inside the ball.
 #   STILL OPEN, and for a stated reason each:
-#     GV13, GV16 -- need contrast-check.mjs and relationship-schema.yml wired in
-#       as second subjects; not attempted this pass.
 #     GV17, GV19, GV22, GV24 -- need a real DOM: the `data-control` manifest<->DOM
 #       bijection, feature-003's heading-slug algorithm, the fold's
 #       keyboard-driven both-directions proof, and a live per-preset DOM
 #       write-back. Belong in the DOM half (graph-view-dom.mjs) once jsdom is a
 #       reachable dependency (tech-debt W5-9); asserting them headless here would
 #       misrepresent a DOM-shaped obligation as headless-provable.
-#     GV28 -- the total five-value emphasis precedence over a fixture exercising
-#       every branch at once; not attempted this pass for time.
 #   CLOSED IN THE FIX PASS (task-014 review row 6/7): GV18's concept
 #   defining-document (@doc) route and its fallback tie-break over two
 #   equal-rank candidates, and GV20's two label-collision sub-clauses, are now
@@ -132,7 +146,16 @@
 #     feature-007 SPEC.md:1795-1822 for the criterion each binds; asserted by
 #     graph-view-gv.mjs over the fixture layer it builds (D1c, D6a-D9 per id).
 #   GV23b -> AC-6 (asserted; PASSES since task-031 -- see graph-view-gv.mjs)
-#   GV13, GV16, GV17, GV19, GV22, GV24, GV28 -> NOT YET AUTHORED (see above)
+#   GV13 -> AC-S4  (token completeness/discoverability over the REAL graph-css.css
+#                   + a REAL contrast-check.mjs --profile graph run; no colour
+#                   literal in graph-canvas.js/graph-model.js; see graph-view-gv.mjs)
+#   GV16 -> AC-S7  (CONTROL_MANIFEST's coverage over categories/kinds/provenance/
+#                   presets; the KIND_ENCODING/PROVENANCE_VALUES <-> relationship-
+#                   schema.yml lockstep; see graph-view-gv.mjs)
+#   GV28 -> D4, D6d, D6f, D7a  (the five-value nodeEmphasis precedence and the
+#                   edge axis's own exhaustion, over a dedicated fixture;
+#                   see graph-view-gv.mjs)
+#   GV17, GV19, GV22, GV24 -> NOT YET AUTHORED (see above; need a real DOM)
 #
 # S1 BUDGET (one subject invocation per distinct input, enumerated by grepping
 # every call site, wrapper bodies counted once PER CALL SITE, not once per
@@ -147,25 +170,40 @@
 # at all -- its mutation TYPE is "none"), and CAT04 is the concatenation
 # oracle's OWN negative control (a duplicated top-level name), needed to prove
 # CAT03's `node --check` can fail at all -- not a GX/DX-class defect probe.
+# GV13's own non-vacuity pair (below) is likewise UNCONDITIONAL rather than
+# gated: each is a single sub-second contrast-check.mjs invocation over one
+# small HTML file, not the ~10s-class GX/DX matrix S3 exists to bound, and it
+# matches GV23b's own precedent -- a second unconditional subprocess call
+# already living inside GV_MJS. GV16's two non-vacuity scratch bundles are
+# NOT subprocess spawns at all (a plain in-process `import()` of a freshly
+# written temp file, same mechanism GV_MJS itself is loaded by) and so are
+# not counted in this budget either way.
 #
-# DEFAULT (no args) -- 11 subject-script invocations:
+# DEFAULT (no args) -- 13 subject-script invocations:
 #   CAT02, CAT04                                    node MUTATE_MJS   x2
 #   GT (model over the plain bundle)                node MODEL_MJS    x1
 #   GV06-GV28 fixture layer                         node GV_MJS       x1
-#     (GV_MJS itself spawns ONE further subject invocation, counted here as a
-#     second call site rather than folded into the line above: GV23b drives
-#     render-graph-view.sh end to end a SECOND time, over its own fixture,
-#     independently of BLD02's run -- see the RENDER_VIEW line below)
+#     (GV_MJS itself spawns THREE further subject invocations, counted here as
+#     additional call sites rather than folded into the line above:
+#       - GV23b drives render-graph-view.sh end to end a SECOND time, over its
+#         own fixture, independently of BLD02's run -- see the RENDER_VIEW line
+#         below;
+#       - GV13 drives contrast-check.mjs --profile graph TWICE -- once over the
+#         real assembled palette (component-css.css + graph-css.css) and once
+#         over a scratch copy with one extra token added, to prove the
+#         "every declared token is found" check actually discriminates. Neither
+#         is gated -- see the S3 note above.)
 #   DT01 (--assemble-only)                          node DOM_MJS      x1
 #   DT (full DOM run)                               node DOM_MJS      x1
 #   GH (static page, booted page)                   bash VALIDATE_HTML x2
 #   GV03-GV05                                       node graph-view-predicate-check.mjs x1
 #   BLD01/BLD02/GV02 (the suite's own end-to-end render) bash RENDER_VIEW x1
 #   GV23b (GV_MJS's own end-to-end render, a second fixture) bash RENDER_VIEW x1
+#   GV13 (GV_MJS's two contrast-check.mjs runs)     node CONTRAST_CHECK x2
 #   ------------------------------------------------------------------------
-#   TOTAL: 11 subject-script invocations for the default run.
+#   TOTAL: 13 subject-script invocations for the default run.
 #
-# `--self-mutate` ADDS exactly 17 more subprocess spawns (28 total), all inside
+# `--self-mutate` ADDS exactly 17 more subprocess spawns (30 total), all inside
 # the GX/DX mutation matrix:
 #   run_mutation (6 call sites: prefix-encoding, dimmed-either-map,
 #     list-collapsed, unlisted-by-degree, tiebreak-direction,
@@ -175,7 +213,7 @@
 #   dom_mutation_bites (2 call sites) -- each 1x MUTATE_MJS + 1x DOM_MJS
 #                                                    node             x4
 #   ------------------------------------------------------------------------
-#   TOTAL WITH --self-mutate: 28 subject-script invocations.
+#   TOTAL WITH --self-mutate: 30 subject-script invocations.
 #   (GS01-07, GV01 and BLD01's set comparison are plain-text `grep`/`diff`
 #   utility spawns over files already on disk -- cheap, and not the ~10s-class
 #   toll S1 exists to bound, so they are not counted in this budget, matching

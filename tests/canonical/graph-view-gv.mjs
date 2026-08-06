@@ -24,8 +24,6 @@
 //
 // WHAT THIS FILE DOES NOT REACH, AND WHY (see the suite's own header comment for
 // the authoritative list; restated here beside the code that stops short)
-//   GV13, GV16 -- need contrast-check.mjs / relationship-schema.yml wired in as
-//     a second subject; not attempted in this pass.
 //   GV17, GV19, GV22, GV24 -- need a real DOM (`data-control` bijection,
 //     feature-003's slug algorithm, the fold's keyboard-driven both-directions
 //     proof, or a live per-preset write-back through the DOM). Deferred to the
@@ -36,6 +34,25 @@
 //     build-graph-src.mjs, its own generator) -- see the GV23 block below,
 //     unedited by that task, which is the oracle that found the gap and now
 //     confirms the fix.
+//
+// GV13, GV16, GV28 -- authored in THIS pass (task-014 STAGE 3), each wiring in
+// the second subject the earlier passes deferred:
+//   GV13 reads canonical/aid/scripts/summarize/contrast-check.mjs and graph-css.css
+//     from disk (the page cannot) and drives contrast-check.mjs --profile graph
+//     over a REAL assembled fixture (component-css.css + graph-css.css, the same
+//     order build-graph-src.mjs:262-263 substitutes). It found a REAL, VERIFIED
+//     defect in contrast-check.mjs itself while doing so -- see the GV13 block's
+//     own NOTE -- which is production work in a file this test task does not own
+//     and is routed rather than muted, the same way GV23b routed its own gap.
+//   GV16 reads canonical/aid/templates/graph/relationship-schema.yml from disk and
+//     builds two SCRATCH bundles via in-process string patches (never a subprocess,
+//     never graph-view-mutate.mjs, which is outside this task's two files) to prove
+//     the coverage/lockstep checks bite: one grows the category vocabulary by one
+//     entry, one drops the manifest's provenance-axis loop entirely.
+//   GV28 builds its own small connected fixture (never FX.FIXTURE, whose one
+//     coverage-gap node is degree-0 and therefore UNREACHABLE by any focus ball --
+//     see D4/D6c below) so a live selection elsewhere in the graph still keeps
+//     every other gap id inside the focus ball at focus.depth: 2.
 
 import { pathToFileURL } from 'node:url';
 import { execFileSync } from 'node:child_process';
@@ -95,6 +112,38 @@ function buildFile({ header, rows, gaps, notes }) {
 	return '---\nkb-category: primary\nsource: generated\ngenerator: test\n' + gapsYaml
 		+ 'tags: [C2]\nowner: architect\n---\n\n# Relationships\n\n' + H + '\n' + D + '\n'
 		+ rows.join('\n') + '\n' + (notes || '');
+}
+
+/**
+ * Build a SCRATCH module bundle -- the same four-file manifest order the page
+ * itself concatenates in -- with ONE string-patch applied to exactly one file,
+ * loaded via a plain in-process `import()` of a freshly written temp file
+ * (never a subprocess, never graph-view-mutate.mjs, which is outside this
+ * task's two owned files, and never the source tree under canonical/, S5).
+ * Used by GV16 and GV28 to prove their own checks are decisive against a
+ * mutated SUBJECT rather than merely descriptive of the unmutated one.
+ *
+ * @param {{file: 'predicate'|'model'|'controls'|'table', apply: (src: string) => string}} patch
+ */
+async function buildScratchBundle(patch) {
+	const files = {
+		predicate: fs.readFileSync(path.join(repoRoot, 'canonical/aid/scripts/graph/coverage-predicate.mjs'), 'utf8'),
+		model: fs.readFileSync(path.join(repoRoot, 'canonical/aid/templates/knowledge-graph/graph-model.js'), 'utf8'),
+		controls: fs.readFileSync(path.join(repoRoot, 'canonical/aid/templates/knowledge-graph/graph-controls.js'), 'utf8'),
+		table: fs.readFileSync(path.join(repoRoot, 'canonical/aid/templates/knowledge-graph/graph-table.js'), 'utf8'),
+	};
+	const key = patch.file;
+	const before = files[key];
+	const after = patch.apply(before);
+	if (after === before) throw new Error('scratch-bundle mutation pattern not found in ' + key);
+	files[key] = after;
+	const bundle = [files.predicate, files.model, files.controls, files.table].join('\n');
+	const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'gv-scratch-'));
+	const scratchBundlePath = path.join(tmp, 'bundle.mjs');
+	fs.writeFileSync(scratchBundlePath, bundle);
+	const mod = await import(pathToFileURL(scratchBundlePath).href);
+	fs.rmSync(tmp, { recursive: true, force: true });
+	return mod;
 }
 
 // ===========================================================================
@@ -328,6 +377,151 @@ function buildFile({ header, rows, gaps, notes }) {
 }
 
 // ===========================================================================
+// GV13 -- the graph palette is COMPLETE, CHECKABLE and LITERAL-FREE (AC-S4).
+// Two second subjects, both read from disk because the page cannot read either:
+// graph-css.css (feature-007's own declaration) and contrast-check.mjs (the
+// checker feature-011 parameterised, --profile kb-summary|graph). This block
+// asserts the FEATURE-SIDE property -- the declaration is complete and every
+// declared token is FOUND by a run of the checker -- and deliberately does NOT
+// re-assert the checker's OWN extraction/pairing behaviour, which
+// test-validator-profiles.sh already covers over synthetic fixtures.
+// ===========================================================================
+{
+	const cssPath = path.join(repoRoot, 'canonical/aid/templates/knowledge-graph/graph-css.css');
+	const cssText = fs.readFileSync(cssPath, 'utf8');
+	const componentCssText = fs.readFileSync(
+		path.join(repoRoot, 'canonical/aid/templates/knowledge-summary/component-css.css'), 'utf8');
+	const contrastCheckPath = path.join(repoRoot, 'canonical/aid/scripts/summarize/contrast-check.mjs');
+
+	/** The flat `<selector> { ... }` block's own body, exactly as contrast-check.mjs
+	 *  itself extracts one (`[^}]*`, no nested rule) -- never a second copy of the
+	 *  selector text typed as a literal elsewhere in this file. */
+	function block(text, selector) {
+		const re = new RegExp(selector.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '\\s*\\{([^}]*)\\}');
+		const m = re.exec(text);
+		return m ? m[1] : null;
+	}
+	const lightBlock = block(cssText, 'html:root');
+	const darkBlock = block(cssText, 'html[data-theme="dark"]:root');
+
+	/** Every custom-property NAME declared in a block body, under a given
+	 *  character class -- `a-z-` reproduces the checker's own extraction
+	 *  charset; `A-Za-z0-9_-` is broader, so a name the narrow charset would
+	 *  silently drop still surfaces here and trips the size comparison below. */
+	function tokenNames(body, charset) {
+		const names = [];
+		const re = new RegExp('--([' + charset + ']+)\\s*:', 'g');
+		let m;
+		while ((m = re.exec(body)) !== null) names.push(m[1]);
+		return names;
+	}
+	const lightNarrow = tokenNames(lightBlock || '', 'a-z-');
+	const darkNarrow = tokenNames(darkBlock || '', 'a-z-');
+	const lightBroad = tokenNames(lightBlock || '', 'A-Za-z0-9_-');
+	const darkBroad = tokenNames(darkBlock || '', 'A-Za-z0-9_-');
+	const charsetOk = lightBlock !== null && darkBlock !== null
+		&& lightBroad.length === lightNarrow.length && darkBroad.length === darkNarrow.length
+		&& lightNarrow.every((n) => /^[a-z-]+$/.test(n)) && darkNarrow.every((n) => /^[a-z-]+$/.test(n));
+	const bothBlocksSame = same(ids(lightNarrow), ids(darkNarrow)) && lightNarrow.length > 0;
+	const allAreGkGc = lightNarrow.every((n) => n.indexOf('gk-') === 0 || n.indexOf('gc-') === 0);
+
+	/** Assemble the page the way `assemble.sh`/build-graph-src.mjs would (its own
+	 *  INLINE_CSS substitution, build-graph-src.mjs:262-263): component-css.css
+	 *  THEN graph-css.css, nothing else -- no real graph.html exists yet
+	 *  (feature-010's to assemble), so this is the synthetic stand-in every block
+	 *  in this suite that needs one builds for itself. */
+	function assembledFixture(graphCssText) {
+		return '<!doctype html><html><head><style>\n' + componentCssText + '\n\n' + graphCssText + '\n</style></head><body></body></html>';
+	}
+	function runContrastCheck(graphCssText) {
+		const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'gv13-'));
+		const f = path.join(tmp, 'graph.html');
+		fs.writeFileSync(f, assembledFixture(graphCssText));
+		let out = '';
+		try {
+			out = execFileSync('node', [contrastCheckPath, f, '--profile', 'graph'],
+				{ encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] });
+		} catch (e) { out = (e.stdout || '') + (e.stderr || ''); }
+		fs.rmSync(tmp, { recursive: true, force: true });
+		return out;
+	}
+	/** Every one of `tokens` was FOUND -- its pair label printed -- under BOTH
+	 *  theme sections and BOTH backgrounds. This reads presence only, never the
+	 *  pass/fail glyph or the ratio: whether the checker's own contrast ARITHMETIC
+	 *  is correct is that suite's question, not this one's (see the NOTE below). */
+	function foundEverywhere(out, tokens) {
+		const split = out.indexOf('[dark theme]');
+		const lightSection = split === -1 ? out : out.slice(0, split);
+		const darkSection = split === -1 ? '' : out.slice(split);
+		return tokens.length > 0 && tokens.every((t) => lightSection.indexOf('--' + t + ' on --bg') !== -1
+			&& lightSection.indexOf('--' + t + ' on --bg-elev') !== -1
+			&& darkSection.indexOf('--' + t + ' on --bg') !== -1
+			&& darkSection.indexOf('--' + t + ' on --bg-elev') !== -1);
+	}
+
+	const realOut = runContrastCheck(cssText);
+	const realFound = foundEverywhere(realOut, lightNarrow);
+
+	// --- Non-vacuity for the "found" check: a token the FILE declares that the
+	// checker's own hardcoded GRAPH_KIND_TOKENS/GRAPH_CATEGORY_TOKENS array does
+	// NOT know about is exactly the drift this check exists to catch. A scratch
+	// copy of graph-css.css, never the source tree (S5), adds one. ---
+	const gv13LightMarker = '--gk-document: #1E3A8A;';
+	const gv13DarkMarker = '--gk-document: #A8C7FF;';
+	if (cssText.indexOf(gv13LightMarker) === -1 || cssText.indexOf(gv13DarkMarker) === -1) {
+		throw new Error('GV13 mutation pattern not found in graph-css.css -- update the marker');
+	}
+	const mutatedCss = cssText
+		.replace(gv13LightMarker, gv13LightMarker + '\n\t--gk-extra-kind: #123456;')
+		.replace(gv13DarkMarker, gv13DarkMarker + '\n\t--gk-extra-kind: #654321;');
+	const mutatedOut = runContrastCheck(mutatedCss);
+	const mutationCaught = !foundEverywhere(mutatedOut, lightNarrow.concat(['gk-extra-kind']));
+	const mutationDoesNotBreakTheRealTokens = foundEverywhere(mutatedOut, lightNarrow);
+
+	// --- AC-S4's other half: no colour literal in the drawing code ----------
+	const canvasPath = path.join(repoRoot, 'canonical/aid/templates/knowledge-graph/graph-canvas.js');
+	const modelPath = path.join(repoRoot, 'canonical/aid/templates/knowledge-graph/graph-model.js');
+	const canvasSrc = fs.readFileSync(canvasPath, 'utf8');
+	const modelSrc = fs.readFileSync(modelPath, 'utf8');
+	// A real rgb()/rgba() CALL needs a digit (or a decimal point) right after the
+	// open paren; graph-canvas.js's own comment mentioning the STRING "rgb()" (in
+	// gcColourToNumber's doc comment) has neither, and must NOT trip this --
+	// proven by literalCheckBites below, which appends a REAL call and requires
+	// the same regex to catch it.
+	function noLiteral(src) {
+		return !/#[0-9a-fA-F]{3,8}\b/.test(src) && !/rgba?\(\s*[\d.]/.test(src);
+	}
+	const canvasClean = noLiteral(canvasSrc);
+	const modelClean = noLiteral(modelSrc);
+	const mutatedCanvasHex = canvasSrc + "\nconst gv13PoisonHex = '#1E3A8A';\n";
+	const mutatedCanvasRgb = canvasSrc + "\nconst gv13PoisonRgb = 'rgb(30, 58, 138)';\n";
+	const literalCheckBites = !noLiteral(mutatedCanvasHex) && !noLiteral(mutatedCanvasRgb);
+
+	ok('GV13', 'every --gk-*/--gc-* token graph-css.css declares is present in BOTH theme blocks, matches the checker\'s own [a-z-]+ charset exactly (no declared property falls outside it), is FOUND by a run of the parameterised contrast-check.mjs over the REAL assembled page (component-css.css + graph-css.css), a token the file adds ahead of the checker\'s own hardcoded list is caught rather than silently passing, and no hex or rgb( literal appears in graph-canvas.js or graph-model.js',
+		charsetOk && bothBlocksSame && allAreGkGc && lightNarrow.length === 15
+		&& realFound && mutationCaught && mutationDoesNotBreakTheRealTokens
+		&& canvasClean && modelClean && literalCheckBites,
+		'tokens=' + lightNarrow.length + ' bothBlocksSame=' + bothBlocksSame + ' realFound=' + realFound
+		+ ' mutationCaught=' + mutationCaught + ' canvasClean=' + canvasClean + ' modelClean=' + modelClean);
+
+	note('GV13 found a REAL, VERIFIED defect in contrast-check.mjs itself, which is NOT this test task\'s to fix '
+		+ '(the file is outside this task\'s two owned files): its plain `:root` fallback selector TEXT-MATCHES as a '
+		+ 'SUBSTRING of `html:root {` (the graph light block\'s own selector). In the real assembled page, an earlier '
+		+ '`:root { color-scheme: ... }` block (component-css.css, empty of custom properties) forces the extractor '
+		+ 'past its first match, and the NEXT match it accepts is the GRAPH block rather than the intended `:root, '
+		+ 'html[data-theme="light"]` chrome block. That pollutes `light` with the graph tokens\' LIGHT values, which '
+		+ 'then survive the dark merge\'s `{...graphDarkRaw, ...dark}` spread (graphDarkRaw first, the already-'
+		+ 'polluted `dark` second) and overwrite the correct dark values -- so contrast-check.mjs --profile graph '
+		+ 'reports the LIGHT gk-*/gc-* colours checked against the DARK background for all fifteen tokens, and the '
+		+ 'real page\'s dark-theme graph contrast is UNVERIFIED by the tool, not merely undertested. Manually '
+		+ 'verified against the real values: --gk-document (#A8C7FF) on the dark theme\'s --bg (#0B1220) is 10.9:1, '
+		+ 'comfortably over the 3:1 target -- so this is a checker defect, not a palette defect. GV13 does not '
+		+ 'assert the pass/fail VERDICT for exactly this reason, and reads only whether each token is FOUND; the '
+		+ 'ratio bug is production work in a file this test task does not own, routed here as a finding for a '
+		+ 'follow-up the same way GV23b routed its own gap.');
+}
+
+// ===========================================================================
 // GV14 -- the (colour, line-style) pairs are pairwise distinct across the
 // fourteen categories, and at most eight distinct colour tokens are used
 // ===========================================================================
@@ -358,6 +552,89 @@ function buildFile({ header, rows, gaps, notes }) {
 	}
 	ok('GV15', 'for each preset, keys(PRESETS[p]) contains no filters.* key, and applying each preset after setting a single-category filter leaves filters.categories unchanged',
 		noFilterKeyInPresets && composed && Object.keys(M.PRESETS).length === 4);
+}
+
+// ===========================================================================
+// GV16 -- CONTROL_MANIFEST's coverage, and the doc<->code lockstep GV04 uses,
+// over KIND_ENCODING and PROVENANCE_VALUES against relationship-schema.yml.
+// The published contract names an array called CONTROL_MANIFEST; the actual
+// export is `buildControlManifest(graphModel)`, the BUILDER -- see its own doc
+// comment in graph-controls.js ("the authored name is this builder and the
+// built array is what... a test asserts over"). This block calls it, never
+// re-authors its shape.
+// ===========================================================================
+{
+	const model = M.parseRelationships(FX.FIXTURE);
+	const manifest = M.buildControlManifest(model);
+
+	const byAxis = (axis) => manifest.filter((e) => e.axis === axis).map((e) => e.value);
+	const coversExactly = (values, domain) => same(ids(values), ids(domain)) && values.length === domain.length;
+
+	const coversCategories = coversExactly(byAxis('filters.categories'), model.categories);
+	const coversKinds = coversExactly(byAxis('filters.kinds'), Object.keys(M.KIND_ENCODING));
+	const coversProvenance = coversExactly(byAxis('filters.provenance'), M.PROVENANCE_VALUES);
+	const coversPresets = coversExactly(byAxis('preset'), Object.keys(M.PRESETS));
+
+	// --- The doc<->code lockstep: KIND_ENCODING's keys and PROVENANCE_VALUES
+	// are authored FROM relationship-schema.yml's `kinds:` and `provenance:`
+	// lists (graph-model.js:1-79's own doc comment) -- read from disk here
+	// because the page never can (D3, D8 assertion 1). Order matters too: both
+	// constants' own comments state they follow the schema artifact's order. ---
+	const schemaPath = path.join(repoRoot, 'canonical/aid/templates/graph/relationship-schema.yml');
+	const schemaText = fs.readFileSync(schemaPath, 'utf8');
+	const schemaKinds = Array.from(schemaText.matchAll(/^\s*-\s*"([a-z-]+)\|[^"]*"\s*$/gm)).map((m) => m[1]);
+	const provMatch = schemaText.match(/^provenance:\s*\[([^\]]*)\]/m);
+	const schemaProvenance = provMatch ? provMatch[1].split(',').map((s) => s.trim()) : [];
+
+	const kindEncodingMatchesSchema = schemaKinds.length > 0 && same(Object.keys(M.KIND_ENCODING), schemaKinds);
+	const provenanceMatchesSchema = schemaProvenance.length > 0 && same(M.PROVENANCE_VALUES.slice(), schemaProvenance);
+
+	// --- Non-vacuity, half 1: the lockstep really discriminates. A one-entry
+	// mutation of a COPY of the parsed schema arrays (never the file) must flip
+	// each comparison, proving `same()` over these two pairs is not vacuously
+	// true regardless of content. ---
+	const kindsMutated = schemaKinds.slice(0, -1); // drop the last kind
+	const provMutated = schemaProvenance.concat(['gv16-extra']); // add a value
+	const lockstepBites = !same(Object.keys(M.KIND_ENCODING), kindsMutated)
+		&& !same(M.PROVENANCE_VALUES.slice(), provMutated);
+
+	// --- Non-vacuity, half 2: "a fixture vocabulary with an extra category
+	// fails until the axis grows." Grow RELATION_CATEGORY by one entry in a
+	// scratch bundle and require the manifest to cover the new category with
+	// NO other edit -- proving the category axis is read from the model at
+	// call time and is not a hardcoded list. ---
+	const growthMarker = "'cross-referenced-by': 'navigation',\n});";
+	const M16grow = await buildScratchBundle({
+		file: 'predicate',
+		apply: (src) => src.replace(growthMarker, "'cross-referenced-by': 'navigation',\n\t'gv16-extra-relation': 'gv16-extra-category',\n});"),
+	});
+	const model16grow = M16grow.parseRelationships(FX.FIXTURE);
+	const manifest16grow = M16grow.buildControlManifest(model16grow);
+	const growthCovered = manifest16grow.some((e) => e.axis === 'filters.categories' && e.value === 'gv16-extra-category')
+		&& model16grow.categories.includes('gv16-extra-category');
+
+	// --- Non-vacuity, half 3: mutate the SUBJECT (buildControlManifest itself)
+	// to drop the provenance-axis loop entirely, and require the SAME coverage
+	// check used above to go red against it -- proving the check is decisive,
+	// not merely descriptive. ---
+	const dropMarker = "\tfor (const provenance of PROVENANCE_VALUES) {\n"
+		+ "\t\tentries.push(Object.freeze({ id: 'filter-provenance-' + slug(provenance), requirement: 'FR-14a', axis: 'filters.provenance', value: provenance }));\n"
+		+ '\t}\n';
+	const M16drop = await buildScratchBundle({
+		file: 'controls',
+		apply: (src) => src.replace(dropMarker, ''),
+	});
+	const model16drop = M16drop.parseRelationships(FX.FIXTURE);
+	const manifest16drop = M16drop.buildControlManifest(model16drop);
+	const dropDetected = !coversExactly(manifest16drop.filter((e) => e.axis === 'filters.provenance').map((e) => e.value), M16drop.PROVENANCE_VALUES);
+
+	ok('GV16', 'CONTROL_MANIFEST (buildControlManifest\'s built array) covers every category of the fixture vocabulary, every value of keys(KIND_ENCODING), every value of PROVENANCE_VALUES and every key of PRESETS; those two constants equal relationship-schema.yml\'s kinds: and provenance: lists (order included); a category the vocabulary grows by one is covered with no further edit (the manifest reads the model, not a literal); and a manifest with the provenance-axis loop removed is caught by the SAME coverage check',
+		coversCategories && coversKinds && coversProvenance && coversPresets
+		&& kindEncodingMatchesSchema && provenanceMatchesSchema && lockstepBites
+		&& growthCovered && dropDetected,
+		'categories=' + coversCategories + ' kinds=' + coversKinds + ' provenance=' + coversProvenance
+		+ ' presets=' + coversPresets + ' schemaKinds=' + schemaKinds.length + ' schemaProv=' + schemaProvenance.join(',')
+		+ ' growthCovered=' + growthCovered + ' dropDetected=' + dropDetected);
 }
 
 // ===========================================================================
@@ -728,6 +1005,140 @@ function buildFile({ header, rows, gaps, notes }) {
 		'events=' + JSON.stringify(prefEvents) + ' getPrefs=' + JSON.stringify({ afterA, afterB, afterC }) + ' rev ' + revisionBefore + '->' + revisionAfter + ' subscribeFired=' + subscribeFired);
 	note('GV27 "createStore at its default pair with no DOM still projects" is proven by construction: this whole GV suite '
 		+ 'runs createStore() headless, with no document, throughout.');
+}
+
+// ===========================================================================
+// GV28 -- the five-value nodeEmphasis precedence (D4) and the edge axis's own
+// exhaustion (D6f), over BOTH axes and over a fixture built for this block
+// specifically -- never FX.FIXTURE, whose one coverage-gap node
+// (ZERO_ROW_NODE) has degree 0 and is therefore UNREACHABLE by any focus ball
+// (D6c step 5's adjacency has no edge to walk from it), which would make
+// "every other gap id keeps its class under a live selection elsewhere"
+// untestable with a live focus.nodeId set anywhere but that node itself.
+// ===========================================================================
+{
+	// hub.md is BACKED (edge to hub-src.mjs, a source-artifact, any relation) and
+	// carries no gap class of its own -- the "dimmed remainder" control.
+	// orphan-doc.md has no incident source-artifact edge at all -- kb-unbacked.
+	// hub-src.mjs is covered (documented-by/documents IS coverage-bearing) --
+	// the covered artifact, a second "dimmed remainder" control on the OTHER
+	// gap class's kind.
+	// gap-src.mjs has a row but its relation (mentioned-in/mentions) is NOT
+	// coverage-bearing -- artifact-undocumented, and connected (not zero-row),
+	// so it stays inside a focus ball centred on orphan-doc.md at depth 2.
+	const rows = [
+		'| int:gv28-hub-src.mjs | source-artifact | gv28-hub-src.mjs | kb:gv28-hub.md | document | gv28-hub.md | documented-by | documents | declared |   |',
+		'| kb:gv28-hub.md | document | gv28-hub.md | kb:gv28-orphan-doc.md | document | gv28-orphan-doc.md | cross-references | cross-referenced-by | declared |   |',
+		'| int:gv28-gap-src.mjs | source-artifact | gv28-gap-src.mjs | kb:gv28-hub.md | document | gv28-hub.md | mentioned-in | mentions | declared |   |',
+	];
+	const model = M.parseRelationships(buildFile({ rows, gaps: [] }));
+	const store = M.createStore(model, M.INITIAL_LENS);
+
+	const kbUnbackedId = 'kb:gv28-orphan-doc.md';
+	const gapArtifactId = 'int:gv28-gap-src.mjs';
+	const dimmedHubId = 'kb:gv28-hub.md';
+	const dimmedCoveredArtifactId = 'int:gv28-hub-src.mjs';
+
+	const FIVE = new Set(['normal', 'dimmed', 'kb-unbacked', 'artifact-undocumented', 'focus']);
+	function nodeTotalOverFive(vm) {
+		return vm.nodeEmphasis.size === vm.visibleNodes.length
+			&& vm.visibleNodes.every((n) => vm.nodeEmphasis.has(n.id))
+			&& Array.from(vm.nodeEmphasis.values()).every((v) => FIVE.has(v));
+	}
+	function edgeTotalOverDrawn(vm) {
+		const drawnKeys = vm.visibleEdges.filter((e) => vm.edgeFold.get(e.key) !== 'collapsed').map((e) => e.key);
+		return drawnKeys.length > 0 && drawnKeys.every((k) => vm.edgeEmphasis.has(k)) && vm.edgeEmphasis.size === drawnKeys.length;
+	}
+
+	// --- (a) emphasis: 'coverage', no selection: each gap id carries its OWN
+	// gap class, and a node with neither class is 'dimmed' (D4 rule 3's
+	// fall-through for the coverage lens, over BOTH kinds a gap class could
+	// have applied to). ---
+	store.setLens({ emphasis: 'coverage' });
+	const vmCov = store.getViewModel();
+	const covNoSelectOk = vmCov.nodeEmphasis.get(kbUnbackedId) === 'kb-unbacked'
+		&& vmCov.nodeEmphasis.get(gapArtifactId) === 'artifact-undocumented'
+		&& vmCov.nodeEmphasis.get(dimmedHubId) === 'dimmed'
+		&& vmCov.nodeEmphasis.get(dimmedCoveredArtifactId) === 'dimmed';
+
+	// --- (b) selecting the kb-unbacked gap id (focus.depth: 2, so the ball
+	// still reaches every other node in this small connected graph): that id
+	// and NO OTHER becomes 'focus'; it stays in coverageGaps.kbUnbacked; the
+	// OTHER gap id keeps ITS OWN class; the two non-gap nodes stay 'dimmed' --
+	// so the precedence is exercised where a coverage class, 'dimmed' AND
+	// 'focus' all apply in the SAME projection, not only where one does. ---
+	store.setLens({ 'focus.nodeId': kbUnbackedId, 'focus.depth': 2 });
+	const vmSel = store.getViewModel();
+	const selectionOk = vmSel.nodeEmphasis.get(kbUnbackedId) === 'focus'
+		&& vmSel.coverageGaps.kbUnbacked.includes(kbUnbackedId)
+		&& vmSel.nodeEmphasis.get(gapArtifactId) === 'artifact-undocumented'
+		&& vmSel.nodeEmphasis.get(dimmedHubId) === 'dimmed'
+		&& vmSel.nodeEmphasis.get(dimmedCoveredArtifactId) === 'dimmed'
+		&& vmSel.nodeEmphasis.get(kbUnbackedId) !== 'kb-unbacked'
+		&& vmSel.nodeEmphasis.get(gapArtifactId) !== 'focus';
+
+	// --- (c) the SAME live selection under 'provenance-chain' and under
+	// 'none' likewise yields 'focus' on the selected id -- rule 1 is checked
+	// before either mode's own rule, in both directions. ---
+	store.setLens({ emphasis: 'provenance-chain' });
+	const vmChainSel = store.getViewModel();
+	const focusUnderChain = vmChainSel.nodeEmphasis.get(kbUnbackedId) === 'focus';
+
+	store.setLens({ emphasis: 'none' });
+	const vmNoneSel = store.getViewModel();
+	const focusUnderNone = vmNoneSel.nodeEmphasis.get(kbUnbackedId) === 'focus';
+
+	// --- (d) totality over all four projections: every visibleNodes id has
+	// EXACTLY one nodeEmphasis entry and every entry is one of the five. ---
+	const totalOk = nodeTotalOverFive(vmCov) && nodeTotalOverFive(vmSel) && nodeTotalOverFive(vmChainSel) && nodeTotalOverFive(vmNoneSel);
+
+	// --- (e) the edge axis, with the SAME live focus.nodeId in each
+	// projection: every drawn row is 'chain' or 'dimmed' under
+	// 'provenance-chain' (both values actually occurring -- row 2, kb<->kb, is
+	// never a chain; rows 1 and 3, int<->kb, always are) and 'normal' under
+	// the other two, so no selection invents an edge class and no drawn row is
+	// unclassed. ---
+	const chainValues = Array.from(vmChainSel.edgeEmphasis.values());
+	const edgeChainOk = edgeTotalOverDrawn(vmChainSel)
+		&& chainValues.every((v) => v === 'chain' || v === 'dimmed')
+		&& chainValues.includes('chain') && chainValues.includes('dimmed');
+	const edgeCoverageOk = edgeTotalOverDrawn(vmSel) && Array.from(vmSel.edgeEmphasis.values()).every((v) => v === 'normal');
+	const edgeNoneOk = edgeTotalOverDrawn(vmNoneSel) && Array.from(vmNoneSel.edgeEmphasis.values()).every((v) => v === 'normal');
+
+	store.setLens(M.INITIAL_LENS);
+
+	// --- Non-vacuity: mutate the SUBJECT itself -- classifyNode's coverage-mode
+	// fall-through, D4 rule 3 -- so a node with neither gap class returns
+	// 'normal' instead of 'dimmed', and require the SAME clause (a)/(b) checks
+	// used above to go red against it. Scratch bundle, never the source tree
+	// (S5), never graph-view-mutate.mjs (outside this task's two files). ---
+	const dimmedFallbackMarker = "if (ctx.artifactGapSet.has(node.id)) return 'artifact-undocumented';\n\t\treturn 'dimmed';\n\t}";
+	const M28mut = await buildScratchBundle({
+		file: 'model',
+		apply: (src) => src.replace(dimmedFallbackMarker, "if (ctx.artifactGapSet.has(node.id)) return 'artifact-undocumented';\n\t\treturn 'normal';\n\t}"),
+	});
+	const model28mut = M28mut.parseRelationships(buildFile({ rows, gaps: [] }));
+	const store28mut = M28mut.createStore(model28mut, M28mut.INITIAL_LENS);
+	store28mut.setLens({ emphasis: 'coverage' });
+	const vmCovMut = store28mut.getViewModel();
+	// covNoSelectOk's own condition, recomputed against the mutated subject: the
+	// two non-gap nodes are 'normal' under the mutation rather than 'dimmed', so
+	// the SAME boolean expression flips.
+	const covNoSelectOkMut = vmCovMut.nodeEmphasis.get(kbUnbackedId) === 'kb-unbacked'
+		&& vmCovMut.nodeEmphasis.get(gapArtifactId) === 'artifact-undocumented'
+		&& vmCovMut.nodeEmphasis.get(dimmedHubId) === 'dimmed'
+		&& vmCovMut.nodeEmphasis.get(dimmedCoveredArtifactId) === 'dimmed';
+	const mutationBites = !covNoSelectOkMut
+		&& vmCovMut.nodeEmphasis.get(dimmedHubId) === 'normal'
+		&& vmCovMut.nodeEmphasis.get(dimmedCoveredArtifactId) === 'normal';
+
+	ok('GV28', 'the nodeEmphasis precedence (D4) over a fixture carrying a document in kb-unbacked, a source-artifact in artifact-undocumented, a dimmed remainder on both non-gap kinds, and a chain row alongside a non-chain row: under emphasis: \'coverage\' with no selection each gap id carries its own gap class and the remainder is \'dimmed\'; selecting the kb-unbacked id gives it and no other \'focus\' while it stays in coverageGaps.kbUnbacked and every other id keeps its own class, exercising a coverage class, \'dimmed\' and \'focus\' all in the SAME projection; the same live selection under \'provenance-chain\' and under \'none\' likewise yields \'focus\'; every visibleNodes id has exactly one nodeEmphasis entry and every entry is one of the five values; on the edge axis, with the SAME live focus.nodeId, every drawn row is \'chain\' or \'dimmed\' under \'provenance-chain\' (both values occurring) and \'normal\' under the other two, so no drawn row is ever unclassed; and a mutated classifyNode whose coverage fall-through returns \'normal\' instead of \'dimmed\' is caught by this SAME check',
+		covNoSelectOk && selectionOk && focusUnderChain && focusUnderNone && totalOk
+		&& edgeChainOk && edgeCoverageOk && edgeNoneOk && mutationBites,
+		'covNoSelect=' + covNoSelectOk + ' selection=' + selectionOk + ' chainFocus=' + focusUnderChain
+		+ ' noneFocus=' + focusUnderNone + ' total=' + totalOk + ' edgeChain=' + edgeChainOk
+		+ ' mutationBites=' + mutationBites
+		+ ' edgeCoverage=' + edgeCoverageOk + ' edgeNone=' + edgeNoneOk);
 }
 
 // ===========================================================================
