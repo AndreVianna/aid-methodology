@@ -438,7 +438,7 @@ repository takes ~9.8s, flat across runs, of which ~8.4s is ~100 external spawns
 | `test-graph-gap-ledger.sh` | 79s | 303 | 0.26 |
 | `test-graph-source-enumeration.sh` | 73s | 189 | 0.39 |
 | `test-graph-schema-loader.sh` | 58s | 211 | 0.27 |
-| `test-graph-view.sh` | 29s | 119 | 0.24 |
+| `test-graph-view-shell.sh` (renamed from `test-graph-view.sh`, task-014) | 47s | 152 | 0.31 |
 | `test-graph-skill-registration.sh` | 25s | 207 | 0.12 |
 
 ---

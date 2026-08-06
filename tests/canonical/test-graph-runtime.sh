@@ -161,7 +161,8 @@ source "${SCRIPT_DIR}/../lib/assert.sh"
 # A skip is NOT a pass. tests/lib/assert.sh has no notion of one (verified: no skip
 # outcome in it, and its most recent commit is a pipe-safety fix), so this suite counts
 # them separately, always prints them, and lists them in its own summary -- the shape
-# test-graph-view.sh:82 and test-graph-gap-ledger.sh:107 already use.
+# test-graph-view-shell.sh:177 (renamed from test-graph-view.sh, task-014) and
+# test-graph-gap-ledger.sh:107 already use.
 SKIP=0
 SKIPPED=()
 skip() { SKIP=$((SKIP + 1)); SKIPPED+=("$*"); echo "  SKIP: $*"; }

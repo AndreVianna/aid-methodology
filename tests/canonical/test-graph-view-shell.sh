@@ -1,6 +1,13 @@
 #!/usr/bin/env bash
-# test-graph-view.sh -- the knowledge-relationship graph view: the shell, the table
-# rendering, and the seam between them.
+# test-graph-view-shell.sh -- feature-007's graph view shell: the concatenation
+# boundary, the D10 shared coverage predicate across two runtimes, the shell's
+# projection and table rendering, and the rendered DOM.
+#
+# RENAMED from test-graph-view.sh (task-014, work-005 delivery-001). The prior
+# GC01-GC04 concatenation-oracle ids are renamed CAT01-CAT04 below to free the
+# GC* prefix for feature-008's own suite (task-018); GS*, GT*, GX*, DT* and GH*
+# keep their ids unchanged. This is a coverage-parity RE-HOME event, not a
+# removal: see the task-014 hand-off for the before/after inventory `comm` proof.
 #
 # COVERS -- the change set that must re-run this suite; see select-suites.sh.
 # A trailing slash means the directory and everything under it. Omitting the
@@ -8,43 +15,122 @@
 # entry is the only way to lose coverage, so these are reviewed as claims.
 # COVERS: canonical/aid/templates/knowledge-graph/
 # COVERS: canonical/aid/scripts/graph/coverage-predicate.mjs
+# COVERS: canonical/aid/scripts/graph/build-graph-src.mjs
+# COVERS: canonical/aid/scripts/graph/render-graph-view.sh
+# COVERS: canonical/aid/templates/graph/coverage-bearing.yml
 # COVERS: canonical/aid/scripts/summarize/validate-html-output.sh
 #
 # Auto-discovered by tests/run-all.sh (glob tests/canonical/test-*.sh), so adding
-# this suite needed no runner or workflow edit.
+# this suite needed no runner or workflow edit. select-suites.sh keys on the
+# COVERS entries above, not on this file's own name, so the rename needed no
+# edit there either.
 #
 # SUBJECT
 #   canonical/aid/scripts/graph/coverage-predicate.mjs          (the shared predicate)
+#   canonical/aid/scripts/graph/build-graph-src.mjs              (task-013's real producer)
+#   canonical/aid/scripts/graph/render-graph-view.sh              (task-013's driver)
 #   canonical/aid/templates/knowledge-graph/graph-model.js      (loader, projection, store)
 #   canonical/aid/templates/knowledge-graph/graph-controls.js   (the shell)
 #   canonical/aid/templates/knowledge-graph/graph-table.js      (the accessible table)
 #   canonical/aid/templates/knowledge-graph/graph-skeleton.html (the page)
 #
-#   Those four .js/.mjs files are concatenated into ONE inline module block in the
-#   generated page, which is what makes the first group below the cheapest
-#   high-value check in this suite: a single duplicated top-level name across them
-#   is a SyntaxError and the page does not run at all.
+#   The four .js/.mjs files under knowledge-graph/ plus the predicate are
+#   concatenated into ONE inline module block in the generated page, which is
+#   what makes the first group below the cheapest high-value check in this
+#   suite: a single duplicated top-level name across them is a SyntaxError and
+#   the page does not run at all.
 #
 # GROUPS
-#   GS  Static source properties -- no load statement, no network call, no colour
-#       literal, no motion, no shell control attribute, and the page's own
-#       table-first DOM order and two-live-region count.
-#   GC  The concatenation oracle: each file parses alone AND the four parse as one
-#       module. GC04 is its negative control -- a bundle with a duplicated
-#       top-level name must be REJECTED.
-#   GT  The shell's projection and the table's row set, order, emphasis and
-#       unlisted-node derivation, asserted headless (graph-view-model.mjs). No DOM.
-#   GX  NON-VACUITY CONTROLS. A copy of the four files is mutated, one deliberate
-#       defect at a time, and the GT assertions named for that defect must FAIL.
-#       A sibling feature shipped nineteen assertions that all passed a wrong
-#       implementation; "the assertions pass" is not evidence, "they fail when the
-#       implementation is wrong" is. Nothing under canonical/ is touched.
-#   DT  The rendered DOM: markup, the keyboard drive, the reveal, determinism
-#       (graph-view-dom.mjs). SKIPS LOUDLY, class by class, when jsdom cannot be
-#       resolved -- jsdom is not a repository dependency and no assertion here is
-#       ever allowed to degrade into a pass.
-#   GH  validate-html-output.sh over the assembled page and over the BOOTED page,
-#       the latter being the markup a reader actually receives.
+#   GS   Static source properties -- no load statement, no network call, no
+#        colour literal, no motion, no shell control attribute, and the page's
+#        own table-first DOM order and two-live-region count.
+#   GV   feature-007 SPEC's own numbered design-decision assertions (D10's
+#        shared-predicate/two-runtime group; GV06-GV28 are NOT YET AUTHORED --
+#        see "OPEN, NOT AUTHORED" below).
+#   BLD  task-013's two previously-ownerless files (build-graph-src.mjs,
+#        render-graph-view.sh): the real placeholder set matches the skeleton's
+#        own, derived from both files at run time (BLD01), and the real
+#        end-to-end render leaves zero surviving {{...}} in graph.html (BLD02).
+#   CAT  The concatenation oracle (renamed from GC): each file parses alone AND
+#        the four view files parse as one module. CAT04 is its negative
+#        control -- a bundle with a duplicated top-level name must be REJECTED.
+#   GT   The shell's projection and the table's row set, order, emphasis and
+#        unlisted-node derivation, asserted headless (graph-view-model.mjs). No DOM.
+#   GX   NON-VACUITY CONTROLS. A copy of the four files is mutated, one
+#        deliberate defect at a time, and the GT assertions named for that
+#        defect must FAIL. Nothing under canonical/ is touched (S5).
+#   DT   The rendered DOM: markup, the keyboard drive, the reveal, determinism
+#        (graph-view-dom.mjs). SKIPS LOUDLY, class by class, when jsdom cannot
+#        be resolved -- jsdom is not a repository dependency and no assertion
+#        here is ever allowed to degrade into a pass.
+#   GH   validate-html-output.sh over the assembled page and over the BOOTED
+#        page, the latter being the markup a reader actually receives.
+#
+# AC-15 and AC-7, THE SHELL HALVES THIS SUITE OWNS
+#   AC-15 (the shared predicate, one implementation, two runtimes): this suite
+#   carries the SHELL half (GV01-GV05, GV02's real-render form, CAT group) --
+#   feature-006 (the Node-side detector and ledger) is the other named co-owner.
+#   AC-7 (every control usable after every preset / peer rendering, never
+#   disabled): this suite's GS/GT/DT groups carry the STRUCTURAL half (table
+#   peer to the graph, DOM order, live regions); feature-008 (the drawing
+#   surface and its viewport controls) and feature-009 (the table's own control
+#   surface) are the other named co-owners. Neither AC is closed by this file
+#   alone.
+#
+# OPEN, NOT AUTHORED (honest boundary, not a silent gap -- task-014, time-boxed)
+#   GV06-GV28 name design decisions D1c/D6-D9 (kb_gaps mismatch materialisation,
+#   LensState/ViewModel/CONTROL_MANIFEST, grouping/folding, node gestures, label
+#   shortening, emphasis composition) that need a shell-level model/DOM harness
+#   this task did not have time to build. Each needs its own fixture at the
+#   CONTROL_MANIFEST/LensState layer, mirroring graph-view-model.mjs's pattern
+#   one layer up. AC-7's "grouping: 'none'" well-posedness clause and GV26's
+#   grouping-row/<select>-focus clause are consequently also NOT YET asserted.
+#   Owner: a follow-up task against this same suite file; nothing here claims
+#   otherwise.
+#
+# AC-TO-ASSERTION MAP (feature-007-graph-view-shell/SPEC.md § Tests)
+#   GV01 -> D10 rules 1-3,5; AC-10   (predicate + view files: no load statement,
+#                                     no host global, no canonical/ path, none
+#                                     of the three filename placeholders)
+#   GV02 -> D10                      (byte-identity of the inlined predicate
+#                                     region, asserted over a REAL render-graph-
+#                                     view.sh output -- piggybacked on BLD02)
+#   GV03 -> D10                      (bare-Node import binds RELATION_CATEGORY;
+#                                     detectArtifactGaps' exact expected set)
+#   GV04 -> D10                      (COVERAGE_BEARING == coverage-bearing.yml)
+#   GV05 -> D10                      (COVERAGE_BEARING subseteq keys(RELATION_CATEGORY))
+#   BLD01 -> AC-10 (task-013 hand-off)  (producer's placeholder set == skeleton's,
+#                                        both derived at run time)
+#   BLD02 -> AC-10 (task-013 hand-off)  (render-graph-view.sh end to end; zero
+#                                        surviving {{...}} in the real graph.html)
+#   CAT01-CAT04 -> AC-15 infra (renamed from GC01-GC04; see rename note above)
+#   GS01-GS07 -> NFR-2, AC-9, D5a/b (as in the pre-rename suite)
+#   GT*, GX*, DT*, GH* -> feature-009's row/order/emphasis contract and the
+#     page's structural/a11y/link checks (as in the pre-rename suite)
+#
+# S1 BUDGET (one subject invocation per distinct input, enumerated by grepping
+# every call site, wrapper bodies counted once PER CALL SITE, not once per
+# wrapper definition):
+#   CAT02, CAT04                                    node MUTATE_MJS   x2
+#   GT (model over the plain bundle)                node MODEL_MJS    x1
+#   run_mutation (6 call sites: prefix-encoding, dimmed-either-map,
+#     list-collapsed, unlisted-by-degree, tiebreak-direction,
+#     sortof-keeps-direction) -- each call site is 1x MUTATE_MJS + 1x MODEL_MJS
+#                                                    node             x12
+#   GX colour-literal                                node MUTATE_MJS   x1
+#   DT01 (--assemble-only)                           node DOM_MJS      x1
+#   DT (full DOM run)                                node DOM_MJS      x1
+#   dom_mutation_bites (2 call sites) -- each 1x MUTATE_MJS + 1x DOM_MJS
+#                                                    node             x4
+#   GH (static page, booted page)                    bash VALIDATE_HTML x2
+#   GV03-GV05                                        node graph-view-predicate-check.mjs x1
+#   BLD01/BLD02/GV02 (one real end-to-end render)     bash RENDER_VIEW  x1
+#   ------------------------------------------------------------------------
+#   TOTAL: 26 subject-script invocations for one full run.
+#   (GS01-07, GV01 and BLD01's set comparison are plain-text `grep`/`diff`
+#   utility spawns over files already on disk -- cheap, and not the ~10s-class
+#   toll S1 exists to bound, so they are not counted in this budget, matching
+#   the pre-existing GS group's own convention.)
 #
 # WHAT IS DELIBERATELY NOT HERE
 #   * No browser check of any kind. Runtime UI verification does not belong in the
@@ -55,10 +141,11 @@
 #     jsdom implements no layout, so a layout claim here would be fiction.
 #   * No work-folder path anywhere. Work folders are transient by project rule, so a
 #     suite that read one could not survive the folder being pruned; every fixture
-#     this suite uses is built by tests/canonical/graph-view-fixture.mjs.
+#     this suite uses is built by tests/canonical/graph-view-fixture.mjs or written
+#     inline under $TMP.
 #
 # RUNTIMES
-#   node      required for GC/GT/GX/DT and for assembling the page in GH.
+#   node      required for GV/BLD/CAT/GT/GX/DT and for assembling the page in GH.
 #             Absent -> those classes SKIP loudly; the GS greps still run.
 #   jsdom     optional, resolved by bare specifier or from AID_GRAPH_JSDOM (its
 #             package entry module). Absent -> the DT classes SKIP loudly.
@@ -66,7 +153,7 @@
 #             regex fallback, which it reports.
 #
 # Usage:
-#   bash test-graph-view.sh [-v | --verbose]
+#   bash test-graph-view-shell.sh [-v | --verbose]
 #
 # Exit codes:
 #   0 -- all assertions passed (skips are reported, and never counted as passes)
@@ -97,10 +184,14 @@ TABLE_JS="${GRAPH_DIR}/graph-table.js"
 SKELETON="${GRAPH_DIR}/graph-skeleton.html"
 GRAPH_CSS="${GRAPH_DIR}/graph-css.css"
 VALIDATE_HTML="${REPO_ROOT}/canonical/aid/scripts/summarize/validate-html-output.sh"
+BUILD_SRC="${REPO_ROOT}/canonical/aid/scripts/graph/build-graph-src.mjs"
+RENDER_VIEW="${REPO_ROOT}/canonical/aid/scripts/graph/render-graph-view.sh"
+BEARING_YML="${REPO_ROOT}/canonical/aid/templates/graph/coverage-bearing.yml"
 
 MUTATE_MJS="${SCRIPT_DIR}/graph-view-mutate.mjs"
 MODEL_MJS="${SCRIPT_DIR}/graph-view-model.mjs"
 DOM_MJS="${SCRIPT_DIR}/graph-view-dom.mjs"
+PREDICATE_CHECK_MJS="${SCRIPT_DIR}/graph-view-predicate-check.mjs"
 
 TMP=$(mktemp -d)
 trap 'rm -rf "$TMP"' EXIT
@@ -223,18 +314,107 @@ assert_file_contains "$GRAPH_CSS" ".table-region { order: 2; min-width: 0; }" \
     "GS07 the visual order is set in the stylesheet, not in the markup"
 
 # ===========================================================================
-# === GC: the concatenation oracle ==========================================
+# === GV01: the D10 boundary rules, greppable (predicate + view files) =====
 # ===========================================================================
 
 echo ""
-echo "=== GC: the four files parse alone, and parse as ONE module ==="
+echo "=== GV01: coverage-predicate.mjs obeys the Node/browser boundary rules; the view's own ==="
+echo "===       .js files declare no load statement (D10 rules 1-3,5; AC-10) ==="
+for pattern in '\bimport\b' 'require[[:space:]]*\(' 'node:' 'document\.' 'window\.' 'globalThis\.' 'canonical/' \
+    '\{project_context_file\}' '\{reviewer_output_file\}' '\{open_questions_file\}'; do
+    n=$(grep -cE "$pattern" "$PREDICATE" || true)
+    assert_eq "$n" "0" "GV01 coverage-predicate.mjs contains no /$pattern/"
+done
+for f in "$MODEL_JS" "$CONTROLS_JS" "$TABLE_JS"; do
+    for pattern in '^import' '^[[:space:]]*import[[:space:]]' 'fetch[[:space:]]*\(' 'XMLHttpRequest' 'import[[:space:]]*\('; do
+        n=$(grep -cE "$pattern" "$f" || true)
+        assert_eq "$n" "0" "GV01 ${f#${REPO_ROOT}/} contains no /$pattern/"
+    done
+done
+
+# ===========================================================================
+# === GV03-GV05: the bare-Node import, and the two doc<->code lockstep =====
+# ===========================================================================
+
+echo ""
+echo "=== GV03-GV05: the predicate imports cleanly in bare Node; the two containments ==="
 if [[ "$HAVE_NODE" -eq 0 ]]; then
-    skip "GC01-GC04 the concatenation oracle — node is not on PATH, so no parse was attempted"
+    skip "GV03-GV05 the predicate import and the doc<->code containments — node is not on PATH"
+    skip "GV02, BLD01, BLD02 — node is not on PATH, so neither the real producer nor its driver could run"
+    skip "CAT01-CAT04 the concatenation oracle — node is not on PATH, so no parse was attempted"
     skip "GT** the headless projection and table assertions — node is not on PATH"
     skip "GX** the non-vacuity mutation controls — node is not on PATH"
     skip "DT** the rendered-DOM assertions — node is not on PATH"
     skip "GH** validate-html-output.sh over an assembled page — node is not on PATH to assemble one"
 else
+    node "$PREDICATE_CHECK_MJS" "$REPO_ROOT" > "${TMP}/predcheck.out" 2>"${TMP}/predcheck.err"
+    predcheck_rc=$?
+    consume < "${TMP}/predcheck.out"
+    if [[ "$predcheck_rc" -ne 0 ]] && ! grep -q $'\tFAIL\t' "${TMP}/predcheck.out"; then
+        fail "GV03 the predicate check ran to completion — exit $predcheck_rc with no reported failure: $(head -3 "${TMP}/predcheck.err" | tr '\n' ' ')"
+    fi
+
+    # ===========================================================================
+    # === GV02, BLD01, BLD02: task-013's real producer and its driver ==========
+    # ===========================================================================
+    echo ""
+    echo "=== BLD01: the REAL producer's declared substitution keys == the skeleton's own, derived ==="
+    echo "===        from BOTH files at run time -- never a literal list here ==="
+    if [[ -f "$BUILD_SRC" && -f "$SKELETON" ]]; then
+        skel_ph=$(grep -oE '\{\{[A-Z0-9_]+\}\}' "$SKELETON" | sort -u)
+        producer_ph=$(grep -oE '\{\{[A-Z0-9_]+\}\}' "$BUILD_SRC" | sort -u)
+        bld01_diff=$(diff <(printf '%s\n' "$skel_ph") <(printf '%s\n' "$producer_ph") 2>&1 || true)
+        if [[ -z "$bld01_diff" ]]; then
+            n=$(printf '%s\n' "$skel_ph" | grep -c . || true)
+            pass "BLD01 build-graph-src.mjs's declared substitution keys equal graph-skeleton.html's declared placeholders ($n names, both read from disk) -- a new skeleton placeholder fails this until the producer is taught to fill it"
+        else
+            fail "BLD01 build-graph-src.mjs's declared substitution keys equal graph-skeleton.html's declared placeholders — $(echo "$bld01_diff" | tr '\n' ' ')"
+        fi
+    else
+        fail "BLD01 — build-graph-src.mjs or graph-skeleton.html is missing on disk"
+    fi
+
+    echo ""
+    echo "=== BLD02, GV02: render-graph-view.sh driven end to end, over ONE fixture input ==="
+    BLD_FIXTURE="${TMP}/bld-relationships.md"
+    printf '# Relationships\n\nSuite fixture for the BLD group (task-014) -- non-empty text is the only\ncontract build-graph-src.mjs states on this input (AC-10/FR-3); the table\nshape itself is GraphModel'"'"'s loader contract, asserted elsewhere (GV09+).\n' > "$BLD_FIXTURE"
+    BLD_OUT="${TMP}/bld-graph.html"
+    set +e
+    bash "$RENDER_VIEW" --relationships "$BLD_FIXTURE" --output "$BLD_OUT" --src "${TMP}/bld-graph-src" \
+        --project-name "GV shell suite" --generation-date "2026-01-01" > "${TMP}/bld-render.out" 2>&1
+    bld_rc=$?
+    set -e
+    if [[ "$bld_rc" -eq 0 && -f "$BLD_OUT" ]]; then
+        pass "BLD02a render-graph-view.sh exits 0 and writes graph.html via the REAL build-graph-src.mjs + the real assemble.sh -- not the DOM half's assembly stand-in"
+    else
+        fail "BLD02a render-graph-view.sh drives the real producer end to end — exit $bld_rc: $(tail -3 "${TMP}/bld-render.out" | tr '\n' ' ')"
+    fi
+    if [[ -f "$BLD_OUT" ]]; then
+        leftover=$(grep -oE '\{\{[A-Z0-9_]+\}\}' "$BLD_OUT" | sort -u || true)
+        if [[ -z "$leftover" ]]; then
+            pass "BLD02b the REAL generated graph.html carries ZERO surviving {{...}} placeholders"
+        else
+            fail "BLD02b the REAL generated graph.html carries ZERO surviving placeholders — found: $(echo "$leftover" | tr '\n' ' ')"
+        fi
+        if node -e "
+            const fs = require('fs');
+            const html = fs.readFileSync(process.argv[1], 'utf8');
+            const predicate = fs.readFileSync(process.argv[2], 'utf8');
+            process.exit(html.includes(predicate) ? 0 : 1);
+        " "$BLD_OUT" "$PREDICATE"; then
+            pass "GV02 the predicate's inlined region in the REAL generated graph.html is byte-identical to canonical/aid/scripts/graph/coverage-predicate.mjs of the tree that generated it"
+        else
+            fail "GV02 the predicate's inlined region in the REAL generated graph.html is byte-identical to the canonical coverage-predicate.mjs — the exact bytes were not found as a substring"
+        fi
+    else
+        skip "BLD02b, GV02 (real-render half) — render-graph-view.sh wrote no graph.html"
+    fi
+
+    # ===========================================================================
+    # === CAT: the concatenation oracle (renamed from GC01-GC04) ================
+    # ===========================================================================
+    echo ""
+    echo "=== CAT01-CAT04 (renamed from GC01-GC04): the four files parse alone, and parse as ONE module ==="
     # Each file alone. A .mjs copy is used because these are ES modules living
     # under a .js extension by the page's own convention.
     total_parts=0
@@ -243,36 +423,36 @@ else
         cp "$f" "${TMP}/$(basename "${f%.*}").mjs"
         if ! node --check "${TMP}/$(basename "${f%.*}").mjs" >/dev/null 2>&1; then
             part_ok=0
-            fail "GC01 ${f#${REPO_ROOT}/} parses as a module"
+            fail "CAT01 ${f#${REPO_ROOT}/} parses as a module"
         fi
         total_parts=$((total_parts + $(wc -l < "$f")))
     done
-    [[ "$part_ok" -eq 1 ]] && pass "GC01 all four view files parse as modules on their own ($total_parts lines total)"
+    [[ "$part_ok" -eq 1 ]] && pass "CAT01 all four view files parse as modules on their own ($total_parts lines total)"
 
     node "$MUTATE_MJS" "$REPO_ROOT" "${TMP}/bundle.mjs" none > "${TMP}/bundle.log" 2>&1
-    assert_exit_zero "$?" "GC02 the four files concatenate in the page's manifest order"
+    assert_exit_zero "$?" "CAT02 the four files concatenate in the page's manifest order"
     if node --check "${TMP}/bundle.mjs" >/dev/null 2>&1; then
         bundle_lines=$(wc -l < "${TMP}/bundle.mjs")
-        pass "GC03 the concatenation parses as ONE module — no duplicated top-level name ($bundle_lines lines)"
+        pass "CAT03 the concatenation parses as ONE module — no duplicated top-level name ($bundle_lines lines)"
     else
-        fail "GC03 the concatenation parses as ONE module — $(node --check "${TMP}/bundle.mjs" 2>&1 | head -2 | tr '\n' ' ')"
+        fail "CAT03 the concatenation parses as ONE module — $(node --check "${TMP}/bundle.mjs" 2>&1 | head -2 | tr '\n' ' ')"
     fi
     # The line budget is asserted as a RELATIONSHIP, never as a magic number: the
     # bundle is the four files plus one separator each. A hard-coded total would
     # have to be re-typed on every edit to any of them.
     bundle_lines=$(wc -l < "${TMP}/bundle.mjs")
     assert_eq "$bundle_lines" "$((total_parts + 3))" \
-        "GC03b the bundle is exactly the four files joined, nothing added or dropped"
+        "CAT03b the bundle is exactly the four files joined, nothing added or dropped"
 
-    # THE NEGATIVE CONTROL. Without this, GC03 could be passing because
+    # THE NEGATIVE CONTROL. Without this, CAT03 could be passing because
     # `node --check` never fails. One extra top-level `const el = 1;` collides with
     # the shell's own helper, which is precisely the failure mode the shared scope
     # creates.
     node "$MUTATE_MJS" "$REPO_ROOT" "${TMP}/dup.mjs" duplicate-name >/dev/null 2>&1
     if node --check "${TMP}/dup.mjs" >/dev/null 2>&1; then
-        fail "GC04 a duplicated top-level name is REJECTED — node --check accepted it, so GC03 proves nothing"
+        fail "CAT04 a duplicated top-level name is REJECTED — node --check accepted it, so CAT03 proves nothing"
     else
-        pass "GC04 a duplicated top-level name is rejected by the same check GC03 uses (negative control)"
+        pass "CAT04 a duplicated top-level name is rejected by the same check CAT03 uses (negative control)"
     fi
 fi
 
@@ -459,6 +639,24 @@ if [[ "$HAVE_NODE" -eq 1 && -f "$VALIDATE_HTML" && -f "${TMP}/page/graph.html" ]
     fi
 elif [[ "$HAVE_NODE" -eq 1 ]]; then
     skip "GH** validate-html-output.sh — the validator or the assembled page is absent"
+fi
+
+# ===========================================================================
+# === S5: the source tree is untouched -- every mutation happened on a copy =
+# ===========================================================================
+
+echo ""
+echo "=== S5: this run's own subject files are byte-identical to HEAD afterwards ==="
+S5_SUBJECTS=("$PREDICATE" "$MODEL_JS" "$CONTROLS_JS" "$TABLE_JS" "$SKELETON" "$GRAPH_CSS" "$BUILD_SRC" "$RENDER_VIEW" "$BEARING_YML")
+if command -v git >/dev/null 2>&1 && git -C "$REPO_ROOT" rev-parse --is-inside-work-tree >/dev/null 2>&1; then
+    s5_out=$(git -C "$REPO_ROOT" diff --name-only -- "${S5_SUBJECTS[@]}" 2>&1)
+    if [[ -z "$s5_out" ]]; then
+        pass "S5 every subject file this suite reads is byte-identical to HEAD after the run — every mutation in GX/DX/CAT happened on a copy under \$TMP, never on the source tree"
+    else
+        fail "S5 the source tree changed during this run — modified: $(echo "$s5_out" | tr '\n' ' ')"
+    fi
+else
+    skip "S5 — git is not available, so the untouched-tree proof could not be run (no file writes into canonical/ are made by this suite regardless; see GX/CAT's copy-into-\$TMP pattern)"
 fi
 
 # ===========================================================================

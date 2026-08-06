@@ -63,4 +63,13 @@ Shape: 6 sections matching .claude/aid/templates/delivery-plans/task-template.md
       suite set: every "covered" claim is verified by reading the assertion that would fail, never
       inferred from the presence of a suite whose name matches the behaviour -- that inference is
       precisely the `io_bounds.py` failure this census exists to answer
+- [ ] **The census counts SKIPPED assertions as UNCOVERED, and names them.** A suite that passes
+      while a third of its named acceptance ids skip is exactly the "tests ran but did not bite" case
+      this census exists for -- the `io_bounds.py` shape in a new form. **Known instance, do not
+      rediscover it:** 11 of feature-009's DOM-grounded `TV` verdicts (TV04, TV05b, TV06c, TV08b,
+      TV09b, TV10, TV12, TV13b, TV15, TV17, TV18) SKIP on every machine AND in CI, because
+      `graph-view-dom.mjs` resolves jsdom by bare specifier while jsdom is declared only in
+      `site/package.json` and CI runs `tests/run-all.sh` with no install (tech-debt **W5-9**). The
+      census must report those as uncovered rather than counting `test-graph-table-view.sh`'s 116
+      passes as feature-009's coverage
 - [ ] All section-6 quality gates pass

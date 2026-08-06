@@ -4137,6 +4137,79 @@ test-grade.sh	T6 one [CRITICAL] Pending → E+	1
 test-grade.sh	T7 5 [HIGH] + 10 [LOW] Pending → D	1
 test-grade.sh	T8 mixed statuses: only Pending+Recurred counted → C+	1
 test-grade.sh	T9 pipe-escape in Description → B+	1
+test-graph-view-shell.sh	BLD01	1
+test-graph-view-shell.sh	BLD02a	1
+test-graph-view-shell.sh	BLD02b	1
+test-graph-view-shell.sh	CAT01	1
+test-graph-view-shell.sh	CAT02	1
+test-graph-view-shell.sh	CAT03	1
+test-graph-view-shell.sh	CAT03b	1
+test-graph-view-shell.sh	CAT04	1
+test-graph-view-shell.sh	DT01	1
+test-graph-view-shell.sh	DT02	1
+test-graph-view-shell.sh	GH01	1
+test-graph-view-shell.sh	GH01b	1
+test-graph-view-shell.sh	GH01c	1
+test-graph-view-shell.sh	GS01	5
+test-graph-view-shell.sh	GS02	6
+test-graph-view-shell.sh	GS03	8
+test-graph-view-shell.sh	GS04	5
+test-graph-view-shell.sh	GS05	3
+test-graph-view-shell.sh	GS06	2
+test-graph-view-shell.sh	GS07	5
+test-graph-view-shell.sh	GT01	1
+test-graph-view-shell.sh	GT10	1
+test-graph-view-shell.sh	GT10b	1
+test-graph-view-shell.sh	GT10c	1
+test-graph-view-shell.sh	GT11	1
+test-graph-view-shell.sh	GT12	1
+test-graph-view-shell.sh	GT12b	1
+test-graph-view-shell.sh	GT13	2
+test-graph-view-shell.sh	GT14	1
+test-graph-view-shell.sh	GT15	1
+test-graph-view-shell.sh	GT20	2
+test-graph-view-shell.sh	GT21	2
+test-graph-view-shell.sh	GT22	2
+test-graph-view-shell.sh	GT23	1
+test-graph-view-shell.sh	GT24	1
+test-graph-view-shell.sh	GT30	7
+test-graph-view-shell.sh	GT31	7
+test-graph-view-shell.sh	GT31b	1
+test-graph-view-shell.sh	GT32	1
+test-graph-view-shell.sh	GT32b	1
+test-graph-view-shell.sh	GT32c	1
+test-graph-view-shell.sh	GT33	2
+test-graph-view-shell.sh	GT34	1
+test-graph-view-shell.sh	GT34b	1
+test-graph-view-shell.sh	GT35	1
+test-graph-view-shell.sh	GT36	1
+test-graph-view-shell.sh	GT37	2
+test-graph-view-shell.sh	GT38	1
+test-graph-view-shell.sh	GT38b	1
+test-graph-view-shell.sh	GT39	2
+test-graph-view-shell.sh	GT40	1
+test-graph-view-shell.sh	GT50	2
+test-graph-view-shell.sh	GT50b	2
+test-graph-view-shell.sh	GT51	1
+test-graph-view-shell.sh	GT52	1
+test-graph-view-shell.sh	GT53	1
+test-graph-view-shell.sh	GT53b	1
+test-graph-view-shell.sh	GT54	1
+test-graph-view-shell.sh	GT55	1
+test-graph-view-shell.sh	GT60	1
+test-graph-view-shell.sh	GT61	2
+test-graph-view-shell.sh	GT61b	1
+test-graph-view-shell.sh	GT62	1
+test-graph-view-shell.sh	GT63	4
+test-graph-view-shell.sh	GT64	1
+test-graph-view-shell.sh	GT70	4
+test-graph-view-shell.sh	GV01	25
+test-graph-view-shell.sh	GV02	1
+test-graph-view-shell.sh	GV03	1
+test-graph-view-shell.sh	GV04	1
+test-graph-view-shell.sh	GV05	1
+test-graph-view-shell.sh	GX colour-literal — the GS03 hex-literal pattern fires on a poisoned copy (negative control)	1
+test-graph-view-shell.sh	S5 every subject file this suite reads is byte-identical to HEAD after the run — every mutation in GX<PATH> happened on a copy under $TMP, never on the source tree	1
 test-guardrails-d012.sh	5b-a html-skeleton.html has <header role='banner'> (shell landmark)	1
 test-guardrails-d012.sh	5b-b html-skeleton.html has <main id='top'>	1
 test-guardrails-d012.sh	5b-c html-skeleton.html has breadcrumb nav (shell landmark)	1
