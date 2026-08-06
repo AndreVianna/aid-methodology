@@ -1785,15 +1785,30 @@ function gcOnPointerUp(view, event) {
  * A gesture that moved past the drag threshold selects nothing: that was a drag,
  * and finishing a drag on top of some node is not a request to select it.
  *
+ * A click on EMPTY SURFACE CLEARS the selection, which is the only mouse gesture
+ * that clears one -- before this, nothing on the drawing surface could, and the
+ * sole route was the shell's "Selected node" dropdown and its "(none)" option, in
+ * a collapsed panel above the graph. A reader who selects a node by clicking it
+ * reasonably expects to unselect the same way, and clearing is a real action here
+ * rather than a cosmetic one: `focus.nodeId` drives the neighbourhood the whole
+ * projection is built around.
+ *
+ * Safe against the pan gesture by construction: a pan travels more than
+ * `GC_DRAG_THRESHOLD_PX` and so is never a click. Only a genuine stationary press
+ * on nothing reaches the clear.
+ *
  * Only the FIRST click of a sequence selects (`MouseEvent.detail`); the repeat that
  * precedes a real `dblclick` is ignored, which is the whole of the double-click
- * accommodation (AC-S9). One dotted key and no other write.
+ * accommodation (AC-S9). One dotted key and no other write, on either path.
  */
 function gcOnClick(view, event) {
 	if (event.detail > 1) return;
 	const press = view.press;
-	if (!press || press.moved || !press.nodeId) return;
-	view.store.setLens({ 'focus.nodeId': press.nodeId });
+	if (!press || press.moved) return;
+	// `null` is `focus.nodeId`'s own cleared value -- the same one `INITIAL_LENS`
+	// and the presets carry -- so this writes the field's existing empty state
+	// rather than inventing a sentinel.
+	view.store.setLens({ 'focus.nodeId': press.nodeId || null });
 }
 
 /** Same rule as `gcOnClick`, for the same measured reason: the id comes from the

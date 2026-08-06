@@ -568,7 +568,7 @@ function renderLegend(root, graphModel) {
 		el('dt', { text: 'Relationship names' }),
 		el('dd', { text: 'Not painted on every line. They appear on hover and on selection, and every one of them is always present as text in the relationship table.' }),
 		el('dt', { text: 'Mouse' }),
-		el('dd', { text: 'Scroll to zoom. Drag to pan. Click a node to select it; hover a node or a line to read its name.' }),
+		el('dd', { text: 'Scroll to zoom. Drag to pan. Click a node to select it, and click empty space to clear the selection; hover a node or a line to read its name. The Controls panel above also carries a Selected node list, whose ‘(none)’ entry clears the same way from the keyboard.' }),
 	]);
 
 	host.appendChild(el('div', { class: 'legend-grid' }, [kinds, categories, gaps, direction]));
