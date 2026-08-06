@@ -14,7 +14,7 @@
 #
 # S1 -- SUBJECT INVOCATION BUDGET: 18 subprocess spawns (10 pipeline + 8
 #   parse-only) + 2 in-process library sources (LIB, REPORT). `--self-mutate`
-#   adds 3 more build spawns (MUT02-04); MUT01 mutates REPORT and re-sources it
+#   adds 4 more build spawns (MUT02-05); MUT01 mutates REPORT and re-sources it
 #   in a subshell, so it costs nothing extra. The pipeline and parse-only counts
 #   are enumerated rule by rule in the COST MODEL immediately below -- this line
 #   exists so a future author cannot add an eleventh spawn casually, the way the
@@ -72,7 +72,7 @@
 #      Plus eight parse-only invocations (four `--help`, four unknown-flag), which
 #      return before the library load and cost ~0.1 s each.
 #
-#      `--self-mutate` adds THREE more build invocations. It is off by default so
+#      `--self-mutate` adds FOUR more build invocations. It is off by default so
 #      CI pays for one pass.
 #
 #   2. EVERY OUTPUT IS READ INTO MEMORY ONCE, AND EVERY ASSERTION IS A BUILTIN.
@@ -128,7 +128,12 @@
 #   D2F  the false-merge detector: the firing case, three near-misses that must NOT
 #        fire, the degenerate exclusion, and AC-S7a's counter arithmetic.
 #   REN  the rendered artifact: D1's byte grammar, D8's frontmatter, and D7a/D7a-1's
-#        coverage section including the extra-row order ACROSS two producer files.
+#        coverage section including the extra-row order ACROSS two producer files,
+#        the coverage-notes HAND-OFF from feature-010's assemble-coverage-notes.sh
+#        (byte-identity, the three loud-failure branches) and, task-009, the fixed
+#        Kind rows' NODES COUNT against each producer's own numbers -- proof that a
+#        well-formed but STALE or SWAPPED hand-off is caught, not merely an absent
+#        or truncated one (MUT05).
 #   V11  a routed cross-feature defect, skipped loudly rather than encoded.
 #   BSH  four bash traps this pipeline shipped and had to fix, as REGRESSION scans
 #        over all four scripts -- one awk per file computing all four counts -- each
@@ -137,9 +142,10 @@
 #        assertion is a tautology.
 #   HLP  every documented flag is parsed, every parsed flag's variable is READ, and
 #        an unknown flag is a usage error.
-#   MUT  `--self-mutate` only. Four mutants, each against a COPY in a mktemp dir.
-#        The shipped tree is never written to, and its digest is re-verified after
-#        every mutant. Every mutant must first prove it RAN: the first version of
+#   MUT  `--self-mutate` only. Five mutants, each against a COPY in a mktemp dir.
+#        The shipped tree is never written to, and its digest (or, for MUT05's
+#        assembler mutant, its own cached text) is re-verified after every mutant.
+#        Every mutant must first prove it RAN: the first version of
 #        that section forgot to stage the sibling each entry point sources, so every
 #        mutant died on its first statement and one assertion passed anyway -- the
 #        "silence" it measured was the silence of a dead process.
@@ -258,7 +264,7 @@ SCHEMA="${TPL}/relationship-schema.yml"
 VOCAB="${TPL}/relation-vocabulary.yml"
 EDGE_MAP="${TPL}/edge-relation-map.yml"
 
-for required in "$REPORT" "$HARVEST" "$DERIVE" "$BUILD" "$LIB" "$SCHEMA" "$VOCAB" "$EDGE_MAP"; do
+for required in "$REPORT" "$HARVEST" "$DERIVE" "$BUILD" "$LIB" "$SCHEMA" "$VOCAB" "$EDGE_MAP" "$ASSEMBLER"; do
     if [[ ! -f "$required" ]]; then
         echo "test-graph-extraction.sh: missing subject or carrier: $required" >&2
         exit 2
@@ -267,6 +273,16 @@ done
 
 TMP="$(mktemp -d)"
 trap 'rm -rf "$TMP"' EXIT
+
+# The hand-off's OWN subject, cached ONCE. It deliberately sits OUTSIDE
+# SUBJECT_ORDER below: BSH's regression scans and HLP's flag-hygiene loop are both
+# keyed to the three `$GRAPH_LIB`-sourcing entry points plus the report script's
+# one exec-guarded exception, and folding a fifth, differently-shaped script into
+# that loop would either skip it silently or fail it for not matching a rule it
+# was never subject to. MUT05 mutates a COPY of this file (never the original);
+# this cached text is what proves the original is untouched afterwards, the way
+# BASE_DIGEST does for the four SUBJECT_ORDER scripts.
+ASSEMBLER_TEXT="$(<"$ASSEMBLER")"
 
 TAB=$'\t'
 US=$'\x1f'
@@ -1094,9 +1110,15 @@ while IFS="$TAB" read -r sk sv || [[ -n "${sk:-}" ]]; do
 done < "$STATS"
 fi
 declare -A COV_KEY=()
+# The count field, kept in its OWN map rather than re-split from COV_KEY's
+# pipe-joined string: task-009's REN25 compares this -- kb-coverage.tsv's own
+# number -- against the rendered artifact's Nodes cell, so it must be the exact
+# substring the producer wrote and never a re-parse of an already-joined value.
+declare -A COV_COUNT=()
 if [[ -f "$COV" ]]; then
 while IFS="$TAB" read -r ck2 ck cstat ccount cnote || [[ -n "${ck2:-}" ]]; do
     [[ -n "${ck:-}" ]] && COV_KEY["$ck"]="${cstat:-}|${ccount:-}|${cnote:-}"
+    [[ -n "${ck:-}" ]] && COV_COUNT["$ck"]="${ccount:-}"
 done < "$COV"
 fi
 
@@ -1517,7 +1539,7 @@ fi
 art_data=0; art_bad_arity=0; art_double_space=0; art_empty_obs=0
 art_inferred_seen=0; art_inferred_then_not=0; art_timestamp=0
 TS_RE='[0-9]{4}-[0-9]{2}-[0-9]{2}'
-declare -A ART_COVKEY=()
+declare -A ART_COVKEY=() ART_KIND_COUNT=()
 cov_section=""; cov_kind_rows=(); cov_excl_rows=()
 for line in "${ART_LINES[@]}"; do
     [[ "$line" =~ $TS_RE ]] && art_timestamp=$((art_timestamp + 1))
@@ -1553,7 +1575,11 @@ for line in "${ART_LINES[@]}"; do
     fi
     if [[ "$cov_section" == "kinds" && "$line" == '| '[a-z]* ]]; then
         k="${line#| }"; k="${k%% |*}"
-        cov_kind_rows+=("$k"); ART_COVKEY["$k"]=1
+        # The row's LAST cell is its Nodes count (rendered order: key, note, status,
+        # count); the same suffix-slice `${line% |}` / `${line##*| }` REN18 already
+        # uses for the exclusions table's last cell, applied to this table's own.
+        cnt_body="${line% |}"; cnt="${cnt_body##*| }"
+        cov_kind_rows+=("$k"); ART_COVKEY["$k"]=1; ART_KIND_COUNT["$k"]="$cnt"
     elif [[ "$cov_section" == "excl" && "$line" == '| '* && "$line" != '| Exclusion '* ]]; then
         cov_excl_rows+=("$line")
     fi
@@ -1801,6 +1827,45 @@ SHIMEOF
         pass "REN24 no artifact was written when the hand-off is malformed"
     fi
 fi
+
+# --- REN25-26: the fixed Kind rows carry the real NODES COUNT, not merely a
+# row (feature-005 D7 / feature-010 D7a-1, task-009). REN13 proves every enum
+# kind has A row; REN06a proves the emitted section is byte-identical to the
+# file assemble-coverage-notes.sh itself wrote THIS run. Neither proves that
+# file's own content is correct: a "plausible but stale" assembler -- one that
+# renders a structurally perfect table carrying yesterday's numbers, or that
+# silently swaps two rows' counts -- satisfies every REN assertion above it and
+# is caught only here. MUT05 below is the demonstration: it hardcodes every
+# Kind row's Nodes cell, passes REN01-24/REN13-18 in full, and fails only
+# REN25/REN26.
+#
+# The four KB-side kinds never reach the artifact except through
+# kb-coverage.tsv (this feature's own D7 contribution, read into COV_COUNT
+# above) -- so comparing the RENDERED cell against that file's cell is a
+# direct check of the one hop that matters here: did the hand-off preserve the
+# number, end to end, rather than re-deriving or re-measuring it.
+kbside_mismatch=0
+for k in document section fact concept; do
+    [[ "${ART_KIND_COUNT[$k]:-__art_missing__}" == "${COV_COUNT[$k]:-__cov_absent__}" ]] \
+        || kbside_mismatch=$((kbside_mismatch + 1))
+done
+assert_count_eq "$kbside_mismatch" 0 \
+    "REN25 the four KB-side Kind rows carry the exact Nodes count kb-coverage.tsv wrote this run — not stale, not swapped with a sibling row"
+
+# The three source-side kinds never touch kb-coverage.tsv at all -- they are
+# feature-004's OWN fixture numbers, fixed at coverage.tsv's construction
+# above -- so this is also the one assertion proving the assembler's fixed
+# block is fed from BOTH producer files and not only the one this script
+# writes; REN16 already proves as much for the EXTRA rows, this closes the gap
+# on the FIXED ones.
+declare -A SRCSIDE_EXPECT=([source-artifact]=3 [image]=1 [web-page]=0)
+srcside_mismatch=0
+for k in "${!SRCSIDE_EXPECT[@]}"; do
+    [[ "${ART_KIND_COUNT[$k]:-__art_missing__}" == "${SRCSIDE_EXPECT[$k]}" ]] \
+        || srcside_mismatch=$((srcside_mismatch + 1))
+done
+assert_count_eq "$srcside_mismatch" 0 \
+    "REN26 the three source-side Kind rows carry coverage.tsv's own fixture numbers, read from the OTHER producer file"
 
 # ===========================================================================
 # DET -- byte identity across two full pipeline runs (FR-32, AC-5)
@@ -2306,6 +2371,43 @@ if mutate "MUT04" "$BUILD" "$MUTDIR/m4/build-relationships.sh" \
 fi
 tree_unchanged "MUT04z the shipped tree is byte-unchanged after MUT04"
 
+# --- MUT05: the coverage-notes hand-off, well-formed but WRONG (feature-010 D7,
+# Open Item 7 / task-009). Every Kind row's Nodes cell is hardcoded to '999' --
+# a section indistinguishable in SHAPE from a correct one, so REN01-24 and
+# REN13-18 all stay green against it, and wrong in every number REN25/REN26
+# exist to catch. This mutates a COPY of assemble-coverage-notes.sh, never
+# build-relationships.sh: the REAL renderer is what MUT01-04 exercise, and this
+# mutant proves the OTHER half of the hand-off -- the assembler's own output --
+# is not merely trusted once it exists.
+mkdir -p "$MUTDIR/m5"
+if mutate "MUT05" "$ASSEMBLER" "$MUTDIR/m5/assemble-coverage-notes.sh" \
+    '$3, $6, $4, $5 }' \
+    '$3, $6, $4, "999" }'; then
+    M5_RC="$(run_build "$TMP/mut5.build" "$TMP/mut5.md" "" "$MUTDIR/m5/assemble-coverage-notes.sh")"
+    assert_exit_eq "$M5_RC" 0 "MUT05a the mutant build exits 0, so MUT05c measures a behaviour change and not a crash"
+    m5_art="$(<"$TMP/mut5.md")"
+    m5_doc_line=""
+    while IFS= read -r line || [[ -n "$line" ]]; do
+        [[ "$line" == '| document | '* ]] && m5_doc_line="$line"
+    done <<< "$m5_art"
+    if [[ -n "$m5_doc_line" ]]; then
+        pass "MUT05b the mutant RAN and rendered a 'document' Kind row, so MUT05c reads its own output and not a stale or dead one"
+    else
+        fail "MUT05b the mutant rendered no 'document' Kind row at all — MUT05c cannot measure anything"
+    fi
+    m5_cnt_body="${m5_doc_line% |}"; m5_cnt="${m5_cnt_body##*| }"
+    if [[ "$m5_cnt" == "999" && "999" != "${COV_COUNT[document]:-}" ]]; then
+        pass "MUT05c the mutant's 'document' row carries the hardcoded, WRONG Nodes count '999' inside an otherwise well-formed section — REN25 is NOT vacuous: it reads the count, not merely the row's presence"
+    else
+        fail "MUT05c the mutant's 'document' row count is '${m5_cnt}', not the injected '999' — the mutation did not reach the render"
+    fi
+fi
+if [[ "$(<"$ASSEMBLER")" == "$ASSEMBLER_TEXT" ]]; then
+    pass "MUT05z the shipped assemble-coverage-notes.sh is byte-unchanged after MUT05 (S5: mutate() wrote only to the copy)"
+else
+    fail "MUT05z assemble-coverage-notes.sh changed on disk after MUT05 — mutate() wrote to the source, not the copy"
+fi
+
 fi   # MODE == mutate
 
 # ===========================================================================
@@ -2322,7 +2424,7 @@ _ran=$(( PASS + FAIL ))
 if [[ -n "$GROUP_FILTER" ]]; then
     _floor=1
 else
-    # 150 against a real default-mode count of 195 (and 217 with --self-mutate).
+    # 150 against a real default-mode count of 228 (and 247 with --self-mutate).
     # The gap is deliberate: this is a WHOLESALE-NO-OP detector, not an assertion
     # census, so adding or removing a few checks must never turn it red. Only a
     # collapse -- the filter misfiring, an early abort, a helper silently
@@ -2341,7 +2443,7 @@ if [[ "$SKIPPED" -gt 0 ]]; then
     echo "Skipped: $SKIPPED (each names the clause needing a ruling and its owner, above)"
 fi
 if [[ "$MODE" != "mutate" ]]; then
-    echo "Mutation matrix not run. Use --self-mutate to run it (three extra build invocations)."
+    echo "Mutation matrix not run. Use --self-mutate to run it (four extra build invocations)."
 fi
 test_summary
 exit $?
