@@ -55,6 +55,8 @@
 #   TV16  | AC-9 checklist:105-6| ROUTED, not asserted -- see below           | (none: jsdom has no layout)
 #   TV17  | AC-9                | TV17 (cites DT20)                          | DOM
 #   TV18  | AC-S8, FR-14a, D7a  | TV18 (cites DT22, GT53)                     | headless + DOM
+#   TV19  | task-033 AC 2,4     | TV19 (cites TWC01-06,06b,06c,06c-drain,10) | DOM (graph-table-window-check.mjs)
+#   TV20  | task-033 AC 3,4     | TV20 (cites TWC07,TWC08,TWC09)              | DOM (graph-table-window-check.mjs)
 #
 # TV16 IS ROUTED, NOT SKIPPED SILENTLY. jsdom implements no layout (stated by
 # graph-view-dom.mjs's own header, and by test-graph-view-shell.sh's "WHAT IS
@@ -100,13 +102,19 @@
 #   Verify: `grep -c 'node "\$MUTATE_MJS"' "$0"` must read 6 (1 default-run build +
 #   5 mutation builds), and `grep -c 'node "\$MODEL_MJS"' "$0"` must read 6 (1
 #   default-run + 5 --expect-fail runs) -- checked by TV-BUDGET below, at the tail.
+#   task-033 adds ONE further invocation, `graph-table-window-check.mjs`
+#   (WINDOW_MJS), building its OWN self-contained fixture and bundle -- it reads
+#   the four real view files directly rather than through graph-view-mutate.mjs,
+#   so it is intentionally outside this budget note's MUTATE_MJS/MODEL_MJS
+#   arithmetic and outside the S1-budget self-check's grep patterns at the tail
+#   (neither pattern names $WINDOW_MJS).
 #
 # RUNTIMES
 #   node   required for everything except the static greps. Absent -> everything
 #          past the static groups SKIPs loudly.
 #   jsdom  optional (bare specifier or AID_GRAPH_JSDOM). Absent -> every
-#          DOM-grounded TV verdict (TV01,02,04,05b,06c,08b,09b,10,12,15,17,18)
-#          reports SKIP rather than a false PASS -- tv_check below treats
+#          DOM-grounded TV verdict (TV01,02,04,05b,06c,08b,09b,10,12,15,17,18,
+#          19,20) reports SKIP rather than a false PASS -- tv_check below treats
 #          "no constituent produced PASS or FAIL" as SKIP, never as PASS.
 #
 # Usage:
@@ -144,6 +152,7 @@ VALIDATE_HTML="${REPO_ROOT}/canonical/aid/scripts/summarize/validate-html-output
 MUTATE_MJS="${SCRIPT_DIR}/graph-view-mutate.mjs"
 MODEL_MJS="${SCRIPT_DIR}/graph-view-model.mjs"
 DOM_MJS="${SCRIPT_DIR}/graph-view-dom.mjs"
+WINDOW_MJS="${SCRIPT_DIR}/graph-table-window-check.mjs"
 
 TMP=$(mktemp -d)
 trap 'rm -rf "$TMP"' EXIT
@@ -271,15 +280,21 @@ for pattern in '^import' '^[[:space:]]*import[[:space:]]' 'fetch[[:space:]]*\(' 
 done
 
 echo ""
-echo "=== TV09a -- DOM order is table-first, static (the skeleton) ==="
-SKELETON="${GRAPH_DIR}/graph-skeleton.html"
-tr_at=$(grep -n 'data-table-region' "$SKELETON" | head -1 | cut -d: -f1)
-gr_at=$(grep -n 'class="graph-region"' "$SKELETON" | head -1 | cut -d: -f1)
-if [[ -n "$tr_at" && -n "$gr_at" && "$tr_at" -lt "$gr_at" ]]; then
-    pass "TV09a the skeleton's table region precedes its graph region (lines $tr_at < $gr_at) -- AC-S1"
-else
-    fail "TV09a the skeleton's table region precedes its graph region -- table@${tr_at:-none} graph@${gr_at:-none}"
-fi
+echo "=== TV09a -- the table page declares its own mount point, unconditionally (static, the skeleton) ==="
+# WAS "DOM order is table-first" over graph-skeleton.html, comparing the table
+# region's line to the graph region's line on ONE page. Since eedacc3d/
+# task-033 the table rendering lives on its OWN page (table-view-skeleton.html),
+# which declares no graph region at all -- an ordering claim between two
+# elements when one of them is gone is not a weaker test, it is a test of
+# nothing (the same reasoning test-graph-view-shell.sh's own GS07 already
+# applies to graph-skeleton.html). What replaces it: table.html's own skeleton
+# declares the table's mount point exactly once, unconditionally -- there is
+# no OWNER_EXCLUDES_TABLE_RENDERING-style switch for this page at all
+# (build-table-src.mjs's own header: "no flag to flip here", unlike
+# build-graph-src.mjs's).
+TABLE_SKELETON="${GRAPH_DIR}/table-view-skeleton.html"
+n=$(grep -c 'data-table-region' "$TABLE_SKELETON" || true)
+assert_eq "$n" "1" "TV09a table-view-skeleton.html declares [data-table-region] exactly once, unconditionally -- AC-S1"
 
 if [[ "$HAVE_NODE" -eq 0 ]]; then
     skip "TV01,TV02,TV04,TV05b,TV06c,TV07,TV08b,TV09b,TV10,TV11,TV12,TV13b,TV15,TV17,TV18,TV03a,TV03b -- node is not on PATH"
@@ -344,6 +359,29 @@ else
     tv_check TV17 "an emptied projection states why; a populated one never renders that row (AC-9)" DT20
     tv_check TV18 "selecting a node reveals its row/unlisted-row, moves no focus, and re-arms on re-selection (AC-S8, FR-14a)" DT22 GT53
 
+    # =======================================================================
+    # === TV19/TV20 -- task-033's own load-on-demand window and the
+    #     filter-over-full-set property, over a fixture LARGER than one window
+    # =======================================================================
+    echo ""
+    echo "=== TV19/TV20 (task-033) -- windowing, keyboard-only 'Load more', and filter-over-full-set ==="
+    set +e
+    node "$WINDOW_MJS" "$REPO_ROOT" "${TMP}/window-bundle.mjs" > "${TMP}/window.out" 2>"${TMP}/window.err"
+    window_rc=$?
+    set -e
+    consume < "${TMP}/window.out"
+    window_lines=$(grep -cE '^GV.(PASS|FAIL|SKIP)' "${TMP}/window.out" || true)
+    if [[ "${window_lines:-0}" -ge 10 ]]; then
+        pass "table-view: the task-033 window/filter check reported its assertions ($window_lines outcomes) -- the ground TV19/TV20 cite"
+    else
+        fail "table-view: the task-033 window/filter check reported its assertions -- only ${window_lines:-0} outcome line(s)"
+    fi
+    [[ "$window_rc" -ne 0 && "$window_rc" -ne 3 ]] && [[ "${window_lines:-0}" -eq 0 ]] && \
+        fail "table-view: the task-033 window/filter check ran to completion -- exit $window_rc, no outcome: $(head -3 "${TMP}/window.err" | tr '\n' ' ')"
+
+    tv_check TV19 "a first window renders; a real, keyboard-operable 'Load more' button (and, as a convenience, scroll) extends it; 'Showing N of M' is correct at every checkpoint (task-033 AC 2, AC 4)" TWC01 TWC02 TWC03 TWC04 TWC05 TWC06 TWC06b TWC06c TWC06c-drain TWC10
+    tv_check TV20 "a filter applied with only the first window rendered returns a match from OUTSIDE that window, against a fixture larger than one window, and clearing the filter restores the first page (task-033 AC 3, AC 4)" TWC07 TWC08 TWC09
+
     # -----------------------------------------------------------------------
     # TV16 -- ROUTED, recorded as a SKIP with the reason, never faked.
     # -----------------------------------------------------------------------
@@ -353,24 +391,34 @@ else
 " mode (task-019/task-021). Routed there rather than asserted here or skipped without a named owner."
 
     # =======================================================================
-    # === TV03 -- validate-html-output.sh over the assembled AND booted page
+    # === TV03 -- validate-html-output.sh over the assembled AND booted TABLE
+    #     page. graph-view-dom.mjs now assembles/boots BOTH graph.html and
+    #     table.html in one run (see that file's own header); this feature's
+    #     own subject is the accessible TABLE, so TV03 validates table.html,
+    #     not graph.html -- test-graph-view-shell.sh's own GH group is what
+    #     validates graph.html.
     # =======================================================================
-    if [[ -f "$VALIDATE_HTML" && -f "${TMP}/page/graph.html" ]]; then
+    if [[ -f "$VALIDATE_HTML" && -f "${TMP}/page/table.html" ]]; then
         echo ""
-        echo "=== TV03a/TV03b -- validate-html-output.sh, the two pages that make up 'a generated graph.html' ==="
+        echo "=== TV03a/TV03b -- validate-html-output.sh, the two pages that make up 'a generated table.html' ==="
         set +e
-        static_out=$(bash "$VALIDATE_HTML" "${TMP}/page/graph.html" --kb-dir "${TMP}/page" 2>&1)
+        static_out=$(bash "$VALIDATE_HTML" "${TMP}/page/table.html" --kb-dir "${TMP}/page" 2>&1)
         static_rc=$?
         set -e
         [[ "$VERBOSE" -eq 1 ]] && echo "$static_out"
         assert_exit_zero "$static_rc" "TV03a the assembled page passes H1/A1/A4/A5/L1/L2 (AC-9)"
-        for check in "H1. HTML validity" "A1" "A4" "A5" "L2. 3/3 relative md links resolve"; do
+        # table.html's own relative-.md link set is smaller than graph.html's: one
+        # distinct target (./relationships.md, linked twice -- the footer and the
+        # noscript fallback), not graph.html's three (relationships.md,
+        # external-sources.md, INDEX.md). Verified directly against a real run
+        # rather than assumed.
+        for check in "H1. HTML validity" "A1" "A4" "A5" "L2. 1/1 relative md links resolve"; do
             assert_output_contains "$static_out" "$check" "TV03a assembled page satisfies: $check"
         done
 
-        if [[ -f "${TMP}/page/rendered.html" ]]; then
+        if [[ -f "${TMP}/page/table-rendered.html" ]]; then
             set +e
-            booted_out=$(bash "$VALIDATE_HTML" "${TMP}/page/rendered.html" --kb-dir "${TMP}/page" 2>&1)
+            booted_out=$(bash "$VALIDATE_HTML" "${TMP}/page/table-rendered.html" --kb-dir "${TMP}/page" 2>&1)
             booted_rc=$?
             set -e
             [[ "$VERBOSE" -eq 1 ]] && echo "$booted_out"

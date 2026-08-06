@@ -61,6 +61,31 @@
  *   change is conveyed there. Creating a third live region, or writing into one
  *   another module owns, would make "which region said that" unanswerable and
  *   risk doubled or lost announcements.
+ *
+ * WINDOWING (task-033, OPT IN, ABSENT BY DEFAULT)
+ *   Every row rendered with no pagination was this file's rule for as long as
+ *   the only caller was `graph.html`'s shell, where the filter and density
+ *   controls are what bounds the rendered size and a partial table would break
+ *   screen-reader row counts, find-in-page and printing. task-033's own
+ *   table-only page has thousands of candidate rows and no drawing rendering to
+ *   share the load with, so a real "Load more" affordance is added -- but it is
+ *   OPT IN, through `context.pageSize` on `mountTable`, and it changes nothing
+ *   for a caller that does not pass it: `graph.html` (which excludes the table
+ *   entirely today, see `build-graph-src.mjs`'s `OWNER_EXCLUDES_TABLE_RENDERING`)
+ *   would render exactly as before if the table were restored to it.
+ *
+ *   The "every live region is the caller's" rule above still holds. This file
+ *   creates no live-region element of its own even in windowed mode -- it calls
+ *   `context.announceWindow`, a function the caller injects, exactly the way it
+ *   already reads `context.store` and writes to `context.region`. The caller
+ *   owns the region that actually carries the announcement; this file only
+ *   knows the sentence to put in it.
+ *
+ *   The button is the contract. `context.pageSize` also arms a `window` scroll
+ *   listener as a CONVENIENCE that calls the identical growth function the
+ *   button's click handler calls -- never a second, divergent path -- because a
+ *   scroll-only trigger has no keyboard equivalent and this page exists to be
+ *   the one every other rendering can fall back to.
  * ========================================================================== */
 
 
@@ -257,6 +282,11 @@ const TBL_MOBILE_MAX_PX = 768;
  *  reader's text size rather than pinning to a device pixel. */
 const TBL_HIT_AREA = '2.75rem';
 
+/** How near the bottom of the document the convenience scroll listener fires,
+ *  in pixels. Not a design token: it is slack for the listener's own imprecise
+ *  read of `scrollHeight`, and it has no visible effect of its own. */
+const TBL_SCROLL_TRIGGER_PX = 200;
+
 
 /* ==========================================================================
  * 4. The mount point
@@ -270,7 +300,15 @@ const TBL_HIT_AREA = '2.75rem';
  * ========================================================================== */
 
 /**
- * @param {{store: object, graphModel: object, region: Element, surface: Element, root: (Document|Element)}} context
+ * @param {{store: object, graphModel: object, region: Element, surface: Element,
+ *          root: (Document|Element), pageSize: (number|undefined),
+ *          announceWindow: (function(string): void|undefined)}} context
+ *          `pageSize` and `announceWindow` are the windowing opt-in (task-033),
+ *          both absent by default -- see the file header. `pageSize` is the
+ *          number of rows a first paint (and each "Load more") reveals;
+ *          `announceWindow` is a caller-owned sink for the one sentence this
+ *          rendering has to report ("Showing N of M ..."), never a live-region
+ *          element this file would have to create itself.
  * @returns {object|undefined} this rendering's private state. The shell discards
  *          it -- the handle it keeps is the drawing rendering's viewport handle.
  *          It is returned for the same reason the shell publishes one global: an
@@ -288,6 +326,8 @@ function mountTable(context) {
 		console.error('graph.html: the relationship table rendering found no region to mount into');
 		return undefined;
 	}
+
+	const pageSize = context && Number.isInteger(context.pageSize) && context.pageSize > 0 ? context.pageSize : null;
 
 	const view = {
 		store: context.store,
@@ -309,6 +349,14 @@ function mountTable(context) {
 		narrow: false,
 		renderedFrom: null,
 		renderedLens: null,
+		// Windowing (task-033). `windowed` is false and `windowCount` is Infinity
+		// with no `pageSize` -- every row renders, exactly as before this task.
+		windowed: pageSize !== null,
+		pageSize: pageSize,
+		windowCount: pageSize || Infinity,
+		announceWindow: typeof (context && context.announceWindow) === 'function' ? context.announceWindow : null,
+		loadMoreButton: null,
+		windowStatusElement: null,
 	};
 
 	// The first element in the region, so one keystroke leaves the whole of it.
@@ -319,7 +367,17 @@ function mountTable(context) {
 
 	tblWatchWidth(view);
 	tblRender(view);
-	context.store.subscribe((viewModel, lens) => { tblRender(view, viewModel, lens); });
+	context.store.subscribe((viewModel, lens) => {
+		// A NEW projection from the store -- a filter, a sort, a selection, any
+		// lens change at all -- resets the window to its first page and
+		// re-announces the totals against it. Window GROWTH from "Load more"
+		// never goes through the store (see tblLoadMore below), so this reset
+		// can never undo it, and a filter is always read against the whole
+		// admitted set rather than against whatever window happened to be open.
+		if (view.windowed) view.windowCount = view.pageSize;
+		tblRender(view, viewModel, lens);
+	});
+	if (view.windowed) tblWatchScroll(view);
 	return view;
 }
 
@@ -362,12 +420,71 @@ function tblRender(view, viewModel, lensState) {
 	view.host.appendChild(el('span', { id: TBL_END_ID, tabindex: '-1' }));
 
 	tblRevealFocus(view, model, order);
+	tblAnnounceWindow(view, order.length);
 }
 
-/** The listed table: caption, ten sortable headers, one row per ordered row. */
+/**
+ * The one sentence windowing has to report, at every checkpoint that changes
+ * it: first paint, a "Load more" click, and any re-filter. `shown` is capped at
+ * `total` even when `windowCount` has grown past it, so the sentence is never
+ * "showing more than exist".
+ */
+function tblWindowSummary(shown, total) {
+	return 'Showing ' + Math.min(shown, total) + ' of ' + tblPlural(total, 'relationship', 'relationships') + '.';
+}
+
+/** Calls the caller-owned announcer, if windowing is on and one was supplied.
+ *  Creates no live region of its own -- see the file header. */
+function tblAnnounceWindow(view, total) {
+	if (!view.windowed || typeof view.announceWindow !== 'function') return;
+	view.announceWindow(tblWindowSummary(view.windowCount, total));
+}
+
+/**
+ * Grow the window by one page and re-render from the LAST projection this view
+ * saw -- never through the store, which is what keeps this action from
+ * colliding with the store-subscribe reset above. `windowCount` is allowed to
+ * exceed `order.length`; every reader of it (the slice below, and the summary
+ * sentence above) caps against the real total instead of against this number.
+ */
+function tblLoadMore(view) {
+	if (!view.windowed) return;
+	view.windowCount += view.pageSize;
+	tblRender(view, view.renderedFrom, view.renderedLens);
+}
+
+/**
+ * The scroll listener -- a CONVENIENCE on top of the "Load more" button, never
+ * a second path: it calls the identical `tblLoadMore`, so a keyboard or
+ * screen-reader user who cannot fire a scroll gesture loses nothing, and a
+ * mouse user who never touches the button still reaches every row. Guarded by
+ * `view.loadMoreButton` -- null once every filtered row is already rendered --
+ * so it stops firing the moment there is nothing left to load, rather than
+ * calling a no-op on every subsequent scroll.
+ */
+function tblWatchScroll(view) {
+	if (typeof window === 'undefined' || typeof window.addEventListener !== 'function') return;
+	let pending = false;
+	window.addEventListener('scroll', () => {
+		if (pending || !view.loadMoreButton) return;
+		const doc = typeof document !== 'undefined' ? document.documentElement : null;
+		if (!doc) return;
+		const nearBottom = (window.innerHeight + window.scrollY) >= (doc.scrollHeight - TBL_SCROLL_TRIGGER_PX);
+		if (!nearBottom) return;
+		pending = true;
+		tblLoadMore(view);
+		pending = false;
+	}, { passive: true });
+}
+
+/** The listed table: caption, ten sortable headers, one row per ordered row --
+ *  or, windowed, one row per row in the current WINDOW of the ordered rows,
+ *  plus the window's own status text and its "Load more" control. */
 function tblRenderListed(view, viewModel, order, sort, unlistedCount) {
+	const windowedOrder = view.windowed ? order.slice(0, view.windowCount) : order;
+
 	const table = el('table', { class: 'tbl', 'data-relationship-table': true });
-	table.appendChild(tblCaption(viewModel, unlistedCount));
+	table.appendChild(tblCaption(viewModel, unlistedCount, view.windowed ? { shown: windowedOrder.length, total: order.length } : null));
 
 	const headRow = el('tr', {});
 	for (const column of TBL_COLUMNS) headRow.appendChild(tblHeaderCell(view, column, sort));
@@ -396,9 +513,51 @@ function tblRenderListed(view, viewModel, order, sort, unlistedCount) {
 			]),
 		]));
 	} else {
-		for (const record of order) body.appendChild(tblBodyRow(view, record, offset));
+		for (const record of windowedOrder) body.appendChild(tblBodyRow(view, record, offset));
 	}
 	table.appendChild(body);
+
+	if (view.windowed) tblRenderWindowControls(view, order.length, windowedOrder.length);
+}
+
+/**
+ * The window's own status text, and its "Load more" button when rows remain
+ * outside the current window. The button IS the contract (see the file
+ * header): it is a real, focusable, native `<button type="button">`, so `Enter`
+ * and `Space` operate it by the platform's own behaviour with nothing here to
+ * re-implement, exactly like every other control this file emits.
+ *
+ * Placed OUTSIDE `.tbl-wrap` and after it, never inside the scrolling table
+ * wrapper -- a control living inside a horizontally-scrolling region would
+ * itself need a scroll-margin accounting `tblScrollMargin` does not compute for
+ * it, and it is not a table cell.
+ */
+function tblRenderWindowControls(view, total, shown) {
+	view.loadMoreButton = null;
+
+	const status = el('p', { class: 'tbl-window-status', 'data-window-status': true, tabindex: '-1' },
+		[tblWindowSummary(shown, total)]);
+	view.host.appendChild(status);
+	view.windowStatusElement = status;
+
+	if (shown >= total) return; // Every filtered row already rendered; nothing left to load.
+
+	const button = el('button', { type: 'button', 'data-load-more': true }, ['Load more relationships']);
+	tblSizeControl(button);
+	button.addEventListener('click', () => {
+		tblLoadMore(view);
+		// Focus follows the gesture: the button that fired is destroyed and
+		// rebuilt by the render it just caused (this module re-emits its whole
+		// host on every render, never patches it), so keyboard focus is moved
+		// explicitly rather than left to fall back to <body>. The new button,
+		// when rows still remain; the status text otherwise, which carries a
+		// tabindex for exactly this.
+		const next = view.host.querySelector('[data-load-more]');
+		if (next) next.focus();
+		else if (view.windowStatusElement) view.windowStatusElement.focus();
+	});
+	view.host.appendChild(button);
+	view.loadMoreButton = button;
 }
 
 /** One `<tr>`: a row header for the Source Id and nine cells. */
@@ -638,12 +797,24 @@ function tblSkipLink() {
  * how two surfaces start disagreeing about what was hidden.
  * ========================================================================== */
 
-function tblCaption(viewModel, unlistedCount) {
-	const children = [
-		el('span', {
+function tblCaption(viewModel, unlistedCount, windowInfo) {
+	// Windowed and unwindowed open with two DIFFERENT sentences, deliberately:
+	// the unwindowed one states the two DRAWN counts (every one of which has a
+	// row in the DOM), and the windowed one states what is actually IN THE DOM
+	// against the filtered total -- the property the file header's "partially
+	// present table" warning is about. Restating the drawn-count sentence here
+	// while only `windowInfo.shown` rows exist would be exactly that defect:
+	// screen readers, find-in-page and printing would all be told a count the
+	// table does not back.
+	const opening = windowInfo
+		? el('span', { text: tblWindowSummary(windowInfo.shown, windowInfo.total) + ' '
+			+ viewModel.counts.hiddenEdges + ' more hidden by the current filters. ' })
+		: el('span', {
 			text: tblPlural(viewModel.counts.edges, 'relationship', 'relationships') + ' listed, '
 				+ viewModel.counts.hiddenEdges + ' hidden. ',
-		}),
+		});
+	const children = [
+		opening,
 		el('span', { text: viewModel.lensSummary + ' ' }),
 		el('span', {}, ['Every cell is taken from ', el('a', { href: './relationships.md' }, ['relationships.md']), '.']),
 	];
@@ -1020,6 +1191,9 @@ export {
 	tblSortOf,
 	tblTokenClass,
 	tblFocusMarked,
+	// The window's own pure sentence-builder (task-033) -- pure, so it is
+	// testable with no page and no store.
+	tblWindowSummary,
 	// The column contract and the two badge maps.
 	TBL_COLUMNS,
 	TBL_SORT_COLUMNS,

@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<!-- table-view-skeleton.html -- the table-only page (task-033, feature-007/feature-009).
+     The relationship table, and NOTHING drawn: no canvas, no drawing rendering in the
+     bundle, no viewport controls. It exists because the owner removed the relationship
+     table from graph.html (eedacc3d, 2026-08-06) -- a deliberate, accepted trade against
+     a page a table of thousands of rows would otherwise dominate -- and that removal cost
+     the drawing surface its conforming alternate version. THIS page restores it, on its
+     own, loaded on demand, with no graph competing with it for the reader's attention.
+
+     Composed the SAME WAY graph.html composes the table's ABSENCE: through the shell's own
+     mount seam (`registerRendering`/`resolveMount` in graph-controls.js, unedited), never by
+     forking graph-table.js or graph-controls.js. This file is a SIBLING of
+     graph-skeleton.html, not an edit to it -- graph-skeleton.html, graph-css.css,
+     graph-controls.js and graph-canvas.js are a concurrent task's own in-flight work, and
+     composing a second page through a second skeleton plus a lean, purpose-built shell
+     (table-view-shell.js) avoids the conflict entirely rather than working around it. -->
+<html lang="{{LANG}}" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<!-- Resolve the theme synchronously, before first paint -- identical to graph-skeleton.html's
+     own inline script, and to kb.html's: theme is one property across the whole dashboard
+     family rather than per page, under the shared key 'aid-dashboard-theme'. -->
+<script>(function(){try{var t=localStorage.getItem('aid-dashboard-theme');if(t!=='dark'&&t!=='light'){t=(window.matchMedia&&window.matchMedia('(prefers-color-scheme: dark)').matches)?'dark':'light';}document.documentElement.setAttribute('data-theme',t);}catch(e){}})();</script>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="color-scheme" content="light dark">
+<meta name="description" content="{{PROJECT_NAME}} — every relationship in the Knowledge Base, as an accessible text table with no graph.">
+<meta name="generator" content="aid-graph">
+<meta name="robots" content="noindex">
+<title>{{PROJECT_NAME}} — Relationship Table</title>
+<style>
+{{INLINE_CSS}}
+</style>
+</head>
+<body>
+
+<!-- First focusable element. -->
+<a class="skip-link" href="#top">Skip to content</a>
+
+<!-- Sticky top bar -- same landmark shape as graph.html's own, deliberately not reachable
+     from the dashboard (neither page is in its leaf allowlist); opening the local file is
+     the intended access path for both. -->
+<header class="top-bar" role="banner">
+	<span class="app-title">AID <span class="beta-pill">table</span></span>
+	<nav class="breadcrumb" aria-label="Breadcrumb">
+		<span>{{PROJECT_NAME}}</span>
+		<span class="sep" aria-hidden="true">›</span>
+		<span>Knowledge Base</span>
+		<span class="sep" aria-hidden="true">›</span>
+		<span class="current" id="breadcrumb-current">Relationship table</span>
+	</nav>
+	<div class="controls">
+		<button type="button" class="btn-ghost" id="theme-toggle"
+		        aria-label="Switch theme"
+		        title="Toggle light/dark theme">
+			<span id="theme-icon" aria-hidden="true">&#9680;</span>
+			<span id="theme-label">Dark</span>
+		</button>
+	</div>
+</header>
+
+<main id="top" class="graph-page">
+
+	<!-- THE ONE ALERT REGION -- present and EMPTY from load, exactly like graph.html's own,
+	     and for the same reason: it has to exist before its content is injected in order to
+	     announce reliably. Carries a load-time failure (an unreadable table) or a
+	     disagreement with the recorded gap list; the two never collide because a fatal parse
+	     never reaches the comparison. Not dismissible. -->
+	<div class="integrity-banner" data-alert role="alert"></div>
+
+	<h1>Relationship table</h1>
+	<p class="lede">Every relationship recorded among this project's Knowledge Base documents,
+	   sections, claims and defined concepts, its source artifacts, and the images and web
+	   pages they reference — as text, and nothing else on this page draws it. This is the
+	   text equivalent of every relationship the
+	   <a href="./graph.html">interactive relationship graph</a> shows, and it stays fully
+	   usable wherever that page's drawing surface cannot run — no WebGL context, no
+	   JavaScript-drawn canvas, nothing visual-only standing between a reader and the data.
+	   Rows load a window at a time; the "Load more" button reaches every one of them.</p>
+
+	<!-- Non-live callouts: a conflicting kind or name for one identifier, and any build-level
+	     defect. Kept out of the alert region above, which reports load-time failure only. -->
+	<div data-conflicts></div>
+
+	<!-- The filter surface. The SAME four axes and the SAME store the graph view's own
+	     controls drive (category, kind, provenance, orphan toggle, plus the one design-choice
+	     text search) -- built from the SAME manifest builder
+	     (`buildControlManifest`, reused unedited from graph-controls.js) rather than a second,
+	     divergent widget on any of those fields. What this page does NOT build: grouping,
+	     density, focus/select, the viewport bar and the four preset lenses -- every one of
+	     those is either about the DRAWING surface or a graph-only concept, and this page has
+	     no drawing surface for any of them to act on. -->
+	<details class="controls-panel" open>
+		<summary>Filters</summary>
+		<div class="controls-grid" data-controls-grid></div>
+	</details>
+
+	<!-- THE ONE POLITE REGION. Dedicated to the window's own status ("Showing N of M"),
+	     written by table-view-shell.js's `announceWindow` sink and by graph-table.js's own
+	     window logic through it -- graph-table.js creates no live region of its own; see its
+	     header. Visible, because an announcement a sighted reader cannot see is an
+	     announcement nobody can check. This page's lens summary is carried by the table's own
+	     caption instead of a second announcement of the same sentence -- a caption is read on
+	     table entry by construction, so nothing is lost by not duplicating it here. -->
+	<p class="status-line" data-status aria-live="polite"></p>
+
+	<section class="graph-region" aria-label="Relationship table">
+		<div class="region-head">
+			<h2>Every relationship, as text</h2>
+		</div>
+		<!-- The table rendering's own mount point. Present UNCONDITIONALLY: this page's
+		     entire purpose is the table, so -- unlike graph.html, where the table's presence
+		     is a build-time choice behind `OWNER_EXCLUDES_TABLE_RENDERING` -- there is no
+		     "composed without it" branch for this page to reach. -->
+		<div data-table-region></div>
+	</section>
+
+</main>
+
+<!-- The reused lightbox dialog markup -- carried unused on THIS page (there is no
+     `.diagram-box` here for anything to expand into it), but kept paired with the reused
+     lightbox.js script exactly like graph.html and kb.html both pair it: that script's
+     `initLightbox` no-ops safely with no `.diagram-box` to wire (see the script's own
+     guard), and the shared HTML validator's accessibility checks (A2: role="dialog",
+     aria-modal, aria-labelledby) assume this pairing on every page that inlines the script,
+     the same way it assumes it on every other page in this family. Removing the markup
+     while keeping the script would leave those checks with no dialog to find. -->
+<div class="lightbox" id="lightbox" role="dialog" aria-modal="true" aria-hidden="true"
+     aria-labelledby="lb-caption" aria-describedby="lb-hint">
+	<div class="lb-toolbar" role="toolbar" aria-label="Diagram zoom controls">
+		<button type="button" id="lb-zoom-out" aria-label="Zoom out" title="Zoom out (−)">−</button>
+		<button type="button" id="lb-zoom-reset" aria-label="Reset zoom" title="Reset zoom (0)">⟲</button>
+		<button type="button" id="lb-zoom-in" aria-label="Zoom in" title="Zoom in (+)">+</button>
+		<button type="button" id="lb-close" aria-label="Close (Esc)" title="Close (Esc)">✕</button>
+	</div>
+	<div class="lb-hint" id="lb-hint">Scroll to zoom · Drag to pan · Esc to close</div>
+	<div class="lb-stage" id="lb-stage">
+		<div class="lb-inner" id="lb-inner"></div>
+	</div>
+	<div class="lb-caption" id="lb-caption" aria-live="polite"></div>
+</div>
+
+<footer id="page-footer">
+	<p>Generated from <code>.aid/knowledge/relationships.md</code> on {{GENERATION_DATE}} by
+	   {{SOURCE_STAMP}} &middot; re-run <code>/aid-graph</code> to update.</p>
+	<p>Read the sources directly:
+	   <a href="./relationships.md">relationships.md</a> — every relationship this page draws;
+	   <a href="./graph.html">graph.html</a> — the same data as an interactive drawing, where a
+	   working WebGL context is available.</p>
+	<h2>Runtime prerequisites</h2>
+	<ul class="prereqs">
+		<li>JavaScript is required. This page builds the table and every filter control at
+		    load time; with scripting off there is nothing to read here, and the fallback
+		    below points at the file that is still readable.</li>
+		{{PREREQUISITES}}
+	</ul>
+</footer>
+
+<!-- The honest answer to a page that needs scripting. -->
+<noscript>
+	<div class="noscript-fallback">
+		<h2>JavaScript required</h2>
+		<p>This page reads the relationship table and builds it, and every filter control, at
+		   load time. With JavaScript disabled none of that runs, so there is no table to read
+		   here.</p>
+		<p>Everything this page would have shown is in the file beside it, and it is plain
+		   readable Markdown:</p>
+		<ul>
+			<li><a href="./relationships.md">relationships.md</a> — every relationship, with
+			    both readings of each on one row. This is the single input this page renders
+			    from, so it is not a summary of the table: it is the table.</li>
+		</ul>
+	</div>
+</noscript>
+
+<!-- The relationship file, embedded verbatim and base64-encoded -- same rationale as
+     graph.html's own copy of this element: the encoded body cannot be mis-parsed as markup,
+     and a markdown-typed script is exactly the case the page validator's inline-engine
+     heuristic already excludes. -->
+<script type="text/markdown" id="graph-relationships" data-encoding="base64">{{RELATIONSHIPS_BASE64}}</script>
+
+<!-- ONE module block, exactly like graph.html's: the shared coverage predicate first, byte
+     for byte as authored, then this bundle's own files in manifest order (graph-model.js,
+     graph-controls.js, graph-table.js, table-view-shell.js). One module scope, so none of
+     them declares a loading statement. The boot call is last. -->
+<script type="module">
+{{INLINE_COVERAGE_PREDICATE}}
+{{INLINE_TABLE_VIEW_JS}}
+bootTableView();
+</script>
+
+<!-- Theme toggle only, on this page -- the lightbox dialog this file also carries wires
+     itself off when `#lightbox` is absent from the document (its own `initLightbox` guard),
+     which it is here: this page draws no diagram box to expand. Reused unedited, exactly the
+     way graph.html reuses it, rather than forked down to the theme-only half. -->
+<script>
+{{INLINE_LIGHTBOX_JS}}
+</script>
+
+</body>
+</html>

@@ -60,11 +60,18 @@
 #        deliberate defect at a time, and the GT assertions named for that
 #        defect must FAIL. Nothing under canonical/ is touched (S5).
 #   DT   The rendered DOM: markup, the keyboard drive, the reveal, determinism
-#        (graph-view-dom.mjs). SKIPS LOUDLY, class by class, when jsdom cannot
-#        be resolved -- jsdom is not a repository dependency and no assertion
-#        here is ever allowed to degrade into a pass.
-#   GH   validate-html-output.sh over the assembled page and over the BOOTED
-#        page, the latter being the markup a reader actually receives.
+#        (graph-view-dom.mjs). Since eedacc3d/task-033 this group asserts
+#        table.html's own DOM contract, not graph.html's -- graph-view-dom.mjs
+#        boots BOTH pages in one run, but the table rendering (and DT10-DT30)
+#        moved to its own page when the owner removed it from this one; GV17,
+#        GV22b and GV24 stay bound to graph.html (the SHELL's own control
+#        manifest), which is why this suite still runs the DT group at all.
+#        SKIPS LOUDLY, class by class, when jsdom cannot be resolved -- jsdom
+#        is not a repository dependency and no assertion here is ever allowed
+#        to degrade into a pass.
+#   GH   validate-html-output.sh over the assembled graph.html and over the
+#        BOOTED graph.html, the latter being the markup a reader actually
+#        receives. table.html's own pair is test-graph-table-view.sh's TV03.
 #
 # AC-15 and AC-7, THE SHELL HALVES THIS SUITE OWNS
 #   AC-15 (the shared predicate, one implementation, two runtimes): this suite
@@ -803,7 +810,7 @@ if [[ "$HAVE_NODE" -eq 1 && -f "$VALIDATE_HTML" && -f "${TMP}/page/graph.html" ]
         # The booted page is the stronger subject: the table region is JS-built, so
         # a static check of the template never sees a single cell of it.
         assert_output_contains "$booted_out" "✅ H1. HTML validity" \
-            "GH02 the BOOTED page -- the markup a reader receives, table included -- is valid HTML"
+            "GH02 the BOOTED page -- the markup a reader receives, drawing surface and shell controls included -- is valid HTML"
         for check in "A1.1 has <html lang" "A4.1 prefers-reduced-motion" "A5.1 :focus-visible" "S2. Offline render"; do
             assert_output_contains "$booted_out" "$check" "GH02b the booted page satisfies: $check"
         done
@@ -814,11 +821,17 @@ if [[ "$HAVE_NODE" -eq 1 && -f "$VALIDATE_HTML" && -f "${TMP}/page/graph.html" ]
             # associative array on every `id="..."` SUBSTRING in the file and aborts
             # on an empty key; a serialized DOM writes valueless attributes as
             # `attr=""`, and the shell's own `data-controls-grid=""` then contains
-            # the substring `id=""`. Routed to feature-011. The obligation itself is
-            # asserted over the same rendered markup by DT30.
+            # the substring `id=""`. Routed to feature-011. graph.html's own booted
+            # page hits the same abort, but its own in-page anchor obligation is
+            # trivial (the one static, unconditional `#top` skip link) and needs no
+            # DOM proof; DT30 (graph-view-dom.mjs) proves the SAME obligation over
+            # table.html's booted markup instead, where the dynamically-rendered
+            # anchors (the table's own skip link, its caption's link to the
+            # unlisted region) actually live -- see test-graph-table-view.sh's TV03.
             skip "GH03 L1/L2 over the booted page — validate-html-output.sh aborts with 'bad array
         subscript' on the empty id=\"\" substring that a serialized data-controls-grid=\"\" produces.
-        Defect routed to feature-011; the anchor obligation itself is asserted instead by DT30."
+        Defect routed to feature-011; this page's own in-page anchor set (the static #top skip link)
+        needs no DOM proof. DT30 proves the same obligation over table.html instead, where it matters."
         else
             fail "GH03 the booted page's link checks — unexpected failure: $(tail -4 <<< "$booted_out" | tr '\n' ' ')"
         fi

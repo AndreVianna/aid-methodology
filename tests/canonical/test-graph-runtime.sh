@@ -1069,14 +1069,15 @@ echo 'a doc'     > .aid/knowledge/coding-standards.md
 echo 'cached'    > .aid/knowledge/.cache/x.json
 echo 'W1'        > .aid/knowledge/relationships.md
 echo 'W2'        > .aid/knowledge/graph.html
+echo 'W2b'       > .aid/knowledge/table.html
 echo 'W3'        > .aid/knowledge/graph-assets/d3.js
 
 AL=$(bash "$FN" --list-allowlist); ALRC=$?
 assert_exit_zero "$ALRC" "FN01 --list-allowlist"
 ALN=0
 while IFS= read -r line; do [[ -n "$line" ]] && ALN=$((ALN + 1)); done <<< "$AL"
-assert_eq "$ALN" "3" "FN02 the in-KB allowlist is exactly three patterns"
-for p in relationships.md graph.html 'graph-assets/**'; do
+assert_eq "$ALN" "4" "FN02 the in-KB allowlist is exactly four patterns (task-033 adds table.html)"
+for p in relationships.md graph.html table.html 'graph-assets/**'; do
     ok_contains "$AL" "$p" "FN03 the allowlist declares ${p}"
 done
 
@@ -1105,7 +1106,7 @@ for p in kb.html INDEX.md STATE.md coding-standards.md .cache/x.json; do
         fail "FN09 [KF1/SR06] ${p} is NOT in the snapshot — the fenced set is not the complement of the allowlist"
     fi
 done
-for p in relationships.md graph.html graph-assets/d3.js; do
+for p in relationships.md graph.html table.html graph-assets/d3.js; do
     if [[ -n "${SNAPSET[$p]:-}" ]]; then
         fail "FN10 [SR06] an allowlisted path is fenced: ${p}"
     else
@@ -1128,6 +1129,7 @@ assert_exit_zero "$RC" "FN12 --verify over an unchanged tree"
 # Allowlisted writes are exactly what the run is permitted to do.
 echo 'regenerated' > .aid/knowledge/relationships.md
 echo 'regenerated' > .aid/knowledge/graph.html
+echo 'regenerated' > .aid/knowledge/table.html
 echo 'new'         > .aid/knowledge/graph-assets/pixi.js
 OUT=$(bash "$FN" --verify 2>&1); RC=$?
 assert_exit_zero "$RC" "FN13 [AC-13] rewriting every allowlisted path does not trip the fence"

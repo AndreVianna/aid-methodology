@@ -14,7 +14,8 @@
 # Order matters: scripts are executed top-to-bottom, so list dependencies first.
 #
 # DELIBERATELY NOT REGISTERED: /aid-summarize's kb.html and /aid-graph's
-# relationships.md + graph.html. Every consumer above treats a registered file as
+# relationships.md + graph.html + table.html (task-033's table-only page).
+# Every consumer above treats a registered file as
 # unconditionally buildable — the FIX state runs its build command on every cycle and
 # then `test -f`s the result — but both skills are gated on an APPROVED Knowledge Base,
 # which is not true while the FIX state runs, and the flat <output-path>|<build-command>
