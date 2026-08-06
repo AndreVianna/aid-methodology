@@ -922,12 +922,23 @@ function mountShell(scope) {
 	const mountTableFn = resolveMount('table', typeof mountTable === 'function' ? mountTable : null);
 	if (mountTableFn) {
 		mountTableFn(context);
-	} else {
-		// A missing table rendering is a real defect, not a degraded mode: it is
-		// the surface every conformance claim rests on. It is reported through the
-		// ordinary callout channel rather than through the alert region, because
-		// that region carries a LOAD-TIME failure and is written at most once per
-		// load -- and a build defect is neither of the two failures it reports.
+	} else if (context.region) {
+		// TWO DIFFERENT SITUATIONS, and only this one is a defect: the markup
+		// declares a mount point for the table and the rendering did not arrive to
+		// fill it. That is a broken build -- something asked for the table and
+		// nothing delivered it -- and it is reported loudly below.
+		//
+		// The other situation is a page that declares NO table region at all, which
+		// is a deliberate composition and is handled in the final branch. Before
+		// this distinction existed, an intentionally table-less page logged
+		// `console.error` on every single load and painted a red "not present in
+		// this build" callout, so the one signal that should mean "this build is
+		// broken" fired constantly on a build that was exactly as intended -- and a
+		// warning that always fires is a warning nobody reads.
+		//
+		// Reported through the ordinary callout channel rather than the alert
+		// region, because that region carries a LOAD-TIME failure and is written at
+		// most once per load, and a build defect is neither of the two it reports.
 		const host = root.querySelector('[data-conflicts]');
 		if (host) {
 			host.appendChild(el('div', { class: 'callout err' }, [
@@ -939,6 +950,13 @@ function mountShell(scope) {
 		}
 		console.error('graph.html: the table rendering did not mount');
 	}
+	// else: the page declares no table region, so no table was asked for. Composed
+	// that way on purpose -- see graph-skeleton.html's note and
+	// build-graph-src.mjs's `OWNER_EXCLUDES_TABLE_RENDERING`. Silent by design: it
+	// is not this file's place to complain about a composition it was handed. The
+	// accessibility consequence of composing a page this way is real and is
+	// recorded at both of those sites and in the debt register, which is where a
+	// decision belongs -- not in a console message on every load.
 
 	const mountCanvasFn = resolveMount('canvas', typeof mountCanvas === 'function' ? mountCanvas : null);
 	if (mountCanvasFn) {

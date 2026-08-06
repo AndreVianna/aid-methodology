@@ -95,38 +95,49 @@
 		<ul class="group-list" data-groups></ul>
 	</section>
 
-	<!-- The two peer renderings. Neither is nested in the other and neither is ever hidden:
-	     the table is a SIBLING of the graph, which is the structural form of "peer rendering".
-	     DOM ORDER IS TABLE-FIRST, so the keyboard reaches the surface that works everywhere
-	     before it reaches the drawing surface; the visual order is set in the stylesheet. -->
-	<div class="renderings">
+	<!-- THE TABLE RENDERING IS EXCLUDED FROM THIS PAGE -- owner's decision, 2026-08-06,
+	     and TEMPORARY. This repo's own extraction enumerated thousands of candidate
+	     relationships, and a table that size dominates the page it exists to support.
+	     `build-graph-src.mjs` holds the single switch (`OWNER_EXCLUDES_TABLE_RENDERING`)
+	     and the full rationale; `graph-table.js` stays on disk and stays tested, so this
+	     hides the rendering rather than retiring it, and restoring it means flipping one
+	     boolean and putting the section below back.
 
-		<section class="table-region" data-table-region aria-label="Relationship table" id="relationship-table">
-			<div class="region-head">
-				<h2>Relationship table</h2>
-				<span class="counts" data-counts></span>
-			</div>
-		</section>
+	     WHAT THIS COSTS, stated here rather than left for a reader to discover: the
+	     canvas is deliberately visual-only and builds no DOM proxy layer, because the
+	     table was the conforming alternate version carrying WCAG AA for the whole
+	     artifact. Without it the graph has NO accessible equivalent, and feature-009's
+	     acceptance criteria plus the table halves of AC-9 and AC-15 do not hold for this
+	     page. The owner was shown that consequence, and a row-capped alternative that
+	     would have preserved it, and chose removal for now. Tracked as debt.
+
+	     The `.renderings` wrapper is kept even with one child: it is what the stylesheet
+	     lays the region out with, and its "peer renderings" comment described a
+	     table-first DOM order that no longer exists -- so that claim is gone rather than
+	     left standing and false. -->
+	<div class="renderings">
 
 		<section class="graph-region" aria-label="Relationship graph">
 			<div class="region-head">
 				<h2>Relationship graph</h2>
-				<a href="#relationship-table">Skip the graph and read the table</a>
+				<!-- The drawn counts. Written by the SHELL (`graph-controls.js`), not by the
+				     table rendering, so it survives the table's exclusion -- it lived inside
+				     the table region's head only because that head happened to be first. -->
+				<span class="counts" data-counts></span>
 			</div>
 			<!-- The drawing surface. The drawing rendering creates its own canvas inside this
 			     container and writes nothing on it beyond the width/height that are its drawing
 			     buffer; the shell finds that canvas by tag, scoped to this container, and keeps
 			     its graphical role and text alternative current -- no marker attribute of any
 			     kind passes between the two. That canvas carries a graphical role and a text
-			     alternative and NOTHING ELSE: it is visual-only, and this view's conformance
-			     rests on the table rendering as the equivalent alternative. No control is ever
-			     drawn on it. -->
+			     alternative and NOTHING ELSE: it is visual-only. While the table is excluded
+			     there is no equivalent alternative on the page at all; see the note above. -->
 			<div class="graph-surface" data-graph-surface>
 				<p class="graph-placeholder" data-graph-placeholder>
 					The interactive drawing surface is not present in this build, or this browser
-					provides no usable graphics context. Nothing is lost: the relationship table
-					above carries every relationship as text, with the same lenses and the same
-					filters applied to it.
+					provides no usable graphics context. Every relationship this page draws is
+					recorded as text in the project's own relationship file, which is linked in
+					the summary above this graph.
 				</p>
 			</div>
 		</section>

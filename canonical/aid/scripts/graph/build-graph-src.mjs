@@ -179,7 +179,38 @@ function main() {
 	// AUTO-DETECTED, not a hard-coded list: the day graph-canvas.js (feature-008,
 	// task-017) lands, it is picked up here with no edit to this file.
 	const viewFileOrder = ['graph-model.js', 'graph-controls.js', 'graph-table.js', 'graph-canvas.js'];
-	const viewFiles = viewFileOrder.filter((f) => fs.existsSync(path.join(templatesDir, f)));
+
+	/**
+	 * TEMPORARY, AND THE OWNER'S EXPLICIT DECISION -- 2026-08-06.
+	 *
+	 * The table rendering is excluded from the page. Set this to `false` to put it
+	 * back; nothing else has to change, because the shell already tolerates the
+	 * table's absence by design (`graph-controls.js` mounts it behind
+	 * `if (mountTableFn)`, and `resolveMount` yields null when the module is not in
+	 * the bundle). `graph-table.js` STAYS ON DISK and stays fully tested --
+	 * `test-graph-table-view.sh` reads the file directly rather than through this
+	 * bundle -- so this hides the rendering, it does not retire it.
+	 *
+	 * WHY: this repo's own extraction run enumerated thousands of candidate
+	 * relationships, and a table of that size dominates the page it is supposed to
+	 * support.
+	 *
+	 * WHAT IT COSTS, recorded here because it is not a cosmetic change. The canvas
+	 * is deliberately visual-only and builds NO DOM proxy layer; the table was the
+	 * conforming alternate version that carried WCAG AA for the whole artifact
+	 * (`graph-table.js`'s own header: "THIS is the surface that carries the
+	 * accessibility standard"). With it excluded the graph has no accessible
+	 * equivalent at all, and every acceptance criterion resting on the table --
+	 * feature-009's whole set, plus the table halves of AC-9 and AC-15 -- no longer
+	 * holds for the rendered page. The owner was shown this consequence and a
+	 * row-capped alternative that would have preserved it, and chose removal for
+	 * now. Tracked as debt rather than left implicit.
+	 */
+	const OWNER_EXCLUDES_TABLE_RENDERING = true;
+
+	const viewFiles = viewFileOrder
+		.filter((f) => !(OWNER_EXCLUDES_TABLE_RENDERING && f === 'graph-table.js'))
+		.filter((f) => fs.existsSync(path.join(templatesDir, f)));
 	const inlineGraphJs = viewFiles.map((f) => readOrFail(path.join(templatesDir, f), 2, f)).join('\n');
 
 	// --- The vendored companion bundles (feature-012 D6, task-023) ----------
