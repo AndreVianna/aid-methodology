@@ -33,7 +33,7 @@
 #     AC-S1  PRE03, P1A10, P1A11        AC-S2  P1A14, P1A15
 #     AC-S3  MRG04                      AC-S4  CMP04-06, CMP09-14
 #     AC-S5  MAP07/08/12/13             AC-S6  W306
-#     AC-S7  D2F01-04, D2F05-08         AC-S8  P1A33, P1A34
+#     AC-S7  D2F01-04, D2F05-08         AC-S8  P1A33, P1A33a, P1A34
 #     FR-31a part 1  CMP03/06 + CMP12-14 (a duplicated read fails as an absence would)
 #     FR-31a part 2  MRG04
 #     FR-31a part 3  MRG10, MRG12 (discovery), MRG13 (typing), CMP01
@@ -776,6 +776,7 @@ summary: Fixture guide summary.
 sources:
   - src/lib.sh
   - tool.sh
+  - sub
 see_also: [domain-glossary.md, INDEX.md]
 owner: architect
 audience: [developer]
@@ -975,10 +976,20 @@ CONFIRMED. `src/lib.sh` (search: "must not bootstrap from the previous run")
 FIXEOF
 
 # feature-004's four streams.
+#
+# The fourth row is DIRECTORY-shaped (`int:pkg/sub/`, trailing slash) -- feature-004's
+# own carrier for a directory artifact. hd_load_inventory's basename step
+# (`${path##*/}`) yields the EMPTY STRING for a trailing-slash path, and indexing
+# BASE_IDS with an empty key is `bad array subscript` under this suite's `set -u`
+# bash (a fatal abort, not a caught error) unless the basename step first strips the
+# trailing slash. `a-guide.md`'s `sources:` list below cites this row's bare
+# basename ("sub"), so P1A33a is a live demonstration that the fix both (a) does not
+# abort Pass 1a and (b) assigns the DIRECTORY its own name as a basename, not "".
 {
   printf 'int:src/lib.sh\tsrc/lib.sh\tscript\tpublic-surface\tsrc/lib.sh -- shell function (search: "lookup_list")\tdeclared\tsource-artifact\n'
   printf 'int:src/tool.sh\tsrc/tool.sh\tscript\tentry-point\tsrc/tool.sh -- entry point (search: "main")\tdeclared\tsource-artifact\n'
   printf 'int:docs/guide.md\tdocs/guide.md\tdoc\tnamed-unit\tdocs/guide.md -- named unit (search: "Guide")\tdeclared\tsource-artifact\n'
+  printf 'int:pkg/sub/\tpkg/sub/\tdirectory\tdirectory-artifact\tpkg/sub/ -- directory artifact (search: n/a)\tdeclared\tsource-artifact\n'
 } | LC_ALL=C sort > "$GT/nodes.tsv"
 
 printf 'int:assets/logo.png\tassets/logo.png\timage\tassets/logo.png -- extension listed in relationship-schema.yml (search: "image_extensions")\tderived\n' \
@@ -1380,6 +1391,17 @@ case "${P1A_RELTGT_OBS[${documents_rel}|int:src/tool.sh]:-}" in
     *'(search: "tool.sh")'*) pass "P1A34 the anchor quotes the literal that was WRITTEN, not the path it resolved to" ;;
     *) fail "P1A34 the anchor does not quote the written literal — got '${P1A_RELTGT_OBS[${documents_rel}|int:src/tool.sh]:-}'" ;;
 esac
+
+# Regression: a DIRECTORY-shaped int: id (`int:pkg/sub/`, trailing slash) resolves
+# from the SAME bare-basename mechanism as P1A33's file. This is possible at all
+# only because Pass 1a did not abort loading `nodes.tsv` -- an empty-string
+# BASE_IDS subscript on the pre-fix basename step is a fatal `bad array subscript`
+# under `set -u`, so a red P1A01 (this fixture's own harvest exit code, asserted
+# above) would have already caught a regression here. This assertion is the
+# additional, positive proof that the basename assigned is "sub" (correct), not
+# merely that the run survived.
+assert_eq "${P1A_RELTGT_PROV[${documents_rel}|int:pkg/sub/]:-}" "declared" \
+    "P1A33a a bare-basename sources: entry naming a DIRECTORY-shaped node resolves too — BASE_IDS['sub'] is 'int:pkg/sub/', never the empty-subscript crash a trailing slash used to cause"
 
 # ---------------------------------------------------------------------------
 # AC-19's KB-WIDE claim: a project supplying no instance of section/fact/concept's
