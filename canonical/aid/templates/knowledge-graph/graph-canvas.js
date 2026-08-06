@@ -132,6 +132,12 @@ const GC_BASE_RADIUS = 8;
 const GC_ARROW_SIZE = 5;
 const GC_EDGE_GAP = 1.5;
 
+/** Clearance between a kind glyph's outline and its gap badge. Small on
+ *  purpose: the badge has to read as belonging to that node rather than
+ *  floating near it, and it is the only thing in the drawing whose meaning
+ *  depends on which mark it is attached to. */
+const GC_BADGE_CLEARANCE = 1.5;
+
 /** Label legibility floor in CSS pixels, the on-canvas persistent label is
  *  suppressed (never shrunk) below it. Taken from `validate-visuals.mjs`'s own
  *  10px default as a reference point, not a citation of a shared value. */
@@ -153,6 +159,23 @@ const GC_PICK_RADIUS = 10;
 
 /** The two gap badge glyphs, additive and never inside the kind glyph. */
 const GC_BADGE = Object.freeze({ 'kb-unbacked': '≈', 'artifact-undocumented': '‡' });
+
+/**
+ * The gap badge's colour token per class -- SEVERITY, not kind, which is why it
+ * is not on `KIND_ENCODING`'s axis and why the badge cannot reuse the node's own
+ * colour: the fill already carries kind, and two meanings on one small mark
+ * cannot both be read.
+ *
+ * These are the shared status tokens the surrounding document already defines
+ * and theme-switches, and the SAME two `graph-table.js` gives these two classes
+ * -- so the canvas and the table agree by construction rather than by a comment
+ * asking someone to keep them in step. No colour literal is authored here
+ * (AC-S4): the value is resolved from the stylesheet like every other token.
+ *
+ * Unbacked takes the error token and undocumented the warning token, per the
+ * owner's severity ruling recorded on `gcDrawBadge`.
+ */
+const GC_BADGE_TOKEN = Object.freeze({ 'kb-unbacked': '--err', 'artifact-undocumented': '--warn' });
 
 /** The stable console prefix AC-S10 fixes. */
 const GC_WARN_PREFIX = 'graph.html: canvas unavailable';
@@ -196,6 +219,10 @@ function gcColourTokens() {
 	const tokens = new Set();
 	for (const entry of Object.values(KIND_ENCODING)) tokens.add(entry.colourToken);
 	for (const entry of Object.values(CATEGORY_ENCODING)) tokens.add(entry.colourToken);
+	// The gap badge's severity tokens are on neither encoding's axis, so they
+	// have to be added explicitly or `gcResolvePalette` would never resolve them
+	// and every badge would fall back to the forced foreground.
+	for (const token of Object.values(GC_BADGE_TOKEN)) tokens.add(token);
 	return Array.from(tokens);
 }
 
@@ -1071,6 +1098,10 @@ function gcDrawFrame(view, meta) {
 		const width = mark.emphasisDraw.weight * GC_BASE_WEIGHT;
 		if (typeof g.lineStyle === 'function') g.lineStyle(width, gcColourToNumber(colour), mark.emphasisDraw.opacity == null ? 1 : mark.emphasisDraw.opacity);
 		gcDrawDashedLine(g, seg.x1, seg.y1, seg.x2, seg.y2, mark.lineStyle);
+		// Flush the line before the arrowhead's own fill. Without this the line
+		// rendered ONLY as a side effect of that fill, so a symmetric edge --
+		// which draws no arrowhead by design -- was invisible (see `gcStroke`).
+		gcStroke(g, width, colour, mark.emphasisDraw.opacity == null ? 1 : mark.emphasisDraw.opacity);
 		if (mark.arrowhead) gcDrawArrowhead(g, seg.x1, seg.y1, seg.x2, seg.y2, colour);
 		view.edgeLayer.addChild(g);
 	}
@@ -1082,7 +1113,13 @@ function gcDrawFrame(view, meta) {
 		const colour = gcColourFor(view.palette, mark.colourToken, forcedColours);
 		gcDrawGlyph(g, mark.kind, GC_BASE_RADIUS * mark.emphasisDraw.markScale, colour, mark.emphasisDraw.opacity);
 		if (mark.emphasisDraw.ring) gcDrawRing(g, GC_BASE_RADIUS * mark.emphasisDraw.markScale + 4, colour);
-		if (mark.gapBadge) gcDrawBadge(g, mark.gapBadge, GC_BASE_RADIUS * mark.emphasisDraw.markScale, colour);
+		// The badge takes the SEVERITY colour, not the node's kind colour -- the
+		// fill already spends kind, and reusing it would have made the badge a
+		// second copy of information the glyph already carries.
+		if (mark.gapBadge) {
+			gcDrawBadge(g, mark.gapBadge, GC_BASE_RADIUS * mark.emphasisDraw.markScale,
+				gcColourFor(view.palette, GC_BADGE_TOKEN[mark.gapBadge], forcedColours), mark.kind);
+		}
 		g.position && g.position.set && g.position.set(p.x, p.y);
 		view.nodeLayer.addChild(g);
 	}
@@ -1227,6 +1264,37 @@ function gcDrawHoverLabel(view) {
 	view.labelLayer.addChild(label);
 }
 
+/**
+ * Flush a stroked path, which PixiJS v8 does NOT do implicitly.
+ *
+ * This file was written in the v7 idiom -- `lineStyle(...)` and then a path --
+ * and in v7 that was the whole story. In v8 `lineStyle` only sets a style: the
+ * path is committed by a `fill()` or `stroke()` call, and **a stroke-only shape
+ * with neither draws absolutely nothing, silently.** Measured in this exact
+ * build (PixiJS 8.14.0, in-page):
+ *
+ *   lineStyle + moveTo/lineTo, nothing after  ->  local bounds 0 x 0
+ *   the same, then stroke({...})              ->  local bounds 22 x 22
+ *   lineStyle + drawCircle, nothing after     ->  local bounds 0 x 0
+ *
+ * Three things were invisible for this one reason, and only the first was
+ * noticed because the other two are conditional:
+ *   1. the gap badge's asterisk -- stroke-only;
+ *   2. `gcDrawRing`, so the focus/selection ring has NEVER drawn;
+ *   3. **symmetric edges.** An edge's line rendered only as a side effect of the
+ *      arrowhead's `endFill()` happening to flush the pending path -- and a
+ *      symmetric relation draws NO arrowhead by design, "the absence being the
+ *      signal". So every symmetric edge was a line to nowhere. Measured: the
+ *      identical sequence minus the arrowhead gives bounds 0 x 0.
+ *
+ * `stroke({...})` accepts the v7 path builders as well as the native ones, so
+ * this is additive -- no call site has to be rewritten into the v8 idiom.
+ */
+function gcStroke(g, width, colour, alpha) {
+	if (typeof g.stroke !== 'function') return;
+	g.stroke({ width: width, color: gcColourToNumber(colour), alpha: alpha == null ? 1 : alpha });
+}
+
 function gcDrawDashedLine(g, x1, y1, x2, y2, lineStyle) {
 	if (typeof g.moveTo !== 'function') return;
 	g.moveTo(x1, y1);
@@ -1332,16 +1400,101 @@ function gcPolygonPoints(sides, radius) {
 function gcDrawRing(g, radius, colour) {
 	if (typeof g.lineStyle === 'function') g.lineStyle(2, gcColourToNumber(colour), 1);
 	if (typeof g.drawCircle === 'function') g.drawCircle(0, 0, radius);
+	// Stroke-only, so it needs the explicit flush -- without it this ring has
+	// never appeared on screen at all (see `gcStroke`).
+	gcStroke(g, 2, colour, 1);
 }
 
-/** The gap badge -- additive, beside the mark, never inside it, and never a
- *  function of `nodeEmphasis` (its source is `coverageGaps` alone, D1). */
-function gcDrawBadge(g, badgeClass, radius, colour) {
-	const glyph = GC_BADGE[badgeClass];
-	if (!glyph || typeof g.drawCircle !== 'function') return;
-	if (typeof g.beginFill === 'function') g.beginFill(gcColourToNumber(colour));
-	g.drawCircle(radius + 5, -radius - 5, 3);
-	if (typeof g.endFill === 'function') g.endFill();
+/**
+ * The gap badge -- additive, beside the mark, never inside it, and never a
+ * function of `nodeEmphasis` (its source is `coverageGaps` alone, D1).
+ *
+ * An asterisk, per the owner, in the two severity colours -- and it carries a
+ * second, NON-COLOUR channel besides: the more severe class draws more arms,
+ * slightly larger and slightly heavier. Colour and density then say the same
+ * thing twice, which is what AC-15 requires ("distinguishable by a non-colour
+ * channel, and the two gap classes distinguishable from each other") and what
+ * keeps the badge readable in forced-colours mode, where every token collapses
+ * to a single foreground and colour stops carrying anything at all.
+ *
+ * Previously this looked `GC_BADGE` up only to decide WHETHER to draw, then
+ * drew an identical 3px filled dot for both classes and discarded the glyph.
+ * So the two states were indistinguishable and AC-15's second clause was
+ * unsatisfied -- the owner spotted it by eye on the first real page.
+ *
+ * Why the badge sits OUTSIDE the glyph rather than becoming its border: the
+ * node's fill already carries `kind` and a ring already means `focus`
+ * (`emphasisDraw.ring`), so a coloured or drawn border would collide with two
+ * existing channels at once. The SPEC settled this deliberately -- "a badge
+ * beside the mark instead of a hollow centre" -- and the offset below keeps it
+ * clear of both.
+ *
+ * Why an asterisk and specifically NOT a dot -- the owner's reason, and it is a
+ * constraint on any future change here: **a circle is already the `document`
+ * kind's glyph**, so a small circular badge reads as a tiny document sitting
+ * next to the node. The rule generalises past that one case: the badge must not
+ * reuse ANY shape from `KIND_ENCODING`'s vocabulary, which is exactly
+ * `circle`, `ring`, `square`, `diamond`, `triangle`, `pentagon`, `hexagon`. An
+ * asterisk is in none of them, which is what makes it unambiguous -- and it
+ * cannot be confused with the `ring` kind either, the way a hollow dot could.
+ *
+ * Severity ordering, owner's ruling: an unbacked claim outranks an undocumented
+ * artifact, because it is wrong information rather than missing information --
+ * a reader trusts it and acts on it, it looks identical to a sound claim, and it
+ * corrupts the KB that this project designates the single source of truth. An
+ * undocumented file announces itself by existing. `graph-table.js` carries the
+ * same ordering so the two views agree.
+ */
+const GC_BADGE_ASTERISK = Object.freeze({
+	// Arm count and weight are the NON-COLOUR half: a denser, slightly heavier
+	// asterisk for the more severe class. Colour and density then say the same
+	// thing twice, which is what survives forced colours and colour blindness --
+	// if the two differed only by tint, the amber/red pair would be the single
+	// worst choice for red-green deficiency and would collapse to one glyph
+	// entirely under a forced palette.
+	'kb-unbacked': Object.freeze({ arms: 4, radius: 4.5, weight: 1.6 }),
+	'artifact-undocumented': Object.freeze({ arms: 3, radius: 4, weight: 1.3 }),
+});
+
+/** An asterisk: `arms` lines through a common centre, evenly spaced over the
+ *  full turn, so `arms` strokes read as `arms * 2` rays. Its own helper because
+ *  the badge is the only thing that draws one and the arm count is the channel
+ *  that separates the two gap classes. */
+function gcDrawAsterisk(g, cx, cy, radius, arms, weight, colour) {
+	if (typeof g.lineStyle !== 'function' || typeof g.moveTo !== 'function' || typeof g.lineTo !== 'function') return;
+	g.lineStyle(weight, gcColourToNumber(colour), 1);
+	for (let i = 0; i < arms; i++) {
+		const angle = (Math.PI / arms) * i;
+		const dx = Math.cos(angle) * radius;
+		const dy = Math.sin(angle) * radius;
+		g.moveTo(cx - dx, cy - dy);
+		g.lineTo(cx + dx, cy + dy);
+	}
+	gcStroke(g, weight, colour, 1);
+}
+
+/** How far a kind's outline actually reaches from the mark's centre, which is
+ *  NOT always `radius`. Every shape draws inside its circumradius except the
+ *  square, whose corners sit at `radius * sqrt(2)` -- and the badge is placed
+ *  toward the upper-right corner, so the square is the one case that would be
+ *  overlapped by a badge positioned off the plain radius. (The triangle's far
+ *  corners are also at `radius * sqrt(2)`, but they are at the BOTTOM, away from
+ *  the badge.) Used to tuck the badge close to the outline without ever landing
+ *  inside the kind glyph, which the SPEC forbids. */
+function gcGlyphOuterRadius(kind, radius) {
+	const shape = KIND_ENCODING[kind] ? KIND_ENCODING[kind].shape : 'circle';
+	return shape === 'square' ? radius * Math.SQRT2 : radius;
+}
+
+function gcDrawBadge(g, badgeClass, radius, colour, kind) {
+	const spec = GC_BADGE_ASTERISK[badgeClass];
+	if (!spec || !Object.prototype.hasOwnProperty.call(GC_BADGE, badgeClass)) return;
+	// Placed on the upper-right diagonal, just clear of the outline rather than
+	// at a flat offset from `radius`. A flat offset read as detached: on the
+	// diagonal it put the badge sqrt(2) times further out than it looked, so the
+	// badge floated instead of reading as attached to its node.
+	const d = gcGlyphOuterRadius(kind, radius) + spec.radius + GC_BADGE_CLEARANCE;
+	gcDrawAsterisk(g, d / Math.SQRT2, -d / Math.SQRT2, spec.radius, spec.arms, spec.weight, colour);
 }
 
 

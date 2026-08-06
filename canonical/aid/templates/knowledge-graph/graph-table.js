@@ -190,8 +190,25 @@ const TBL_SORT_NEXT_WORDING = Object.freeze({
  * ========================================================================== */
 
 const TBL_NODE_BADGES = Object.freeze({
-	'kb-unbacked': Object.freeze({ text: 'no source', variant: 'badge-warn' }),
-	'artifact-undocumented': Object.freeze({ text: 'no KB doc', variant: 'badge-err' }),
+	// Severity ordering, owner's ruling 2026-08-06: an UNBACKED claim outranks an
+	// UNDOCUMENTED artifact, so it takes the error variant and undocumented the
+	// warning one. These two were previously the other way round, which also put
+	// this table in direct contradiction with the canvas.
+	//
+	// The rationale, because a future reader will otherwise reasonably assume the
+	// opposite: an unbacked claim is WRONG information, not missing information.
+	// A reader trusts it and acts on it, it is indistinguishable from a sound
+	// claim by reading it, and it corrupts the Knowledge Base that this project
+	// designates its single source of truth. An undocumented artifact announces
+	// itself by existing and leaves the KB intact, merely incomplete. The
+	// counter-argument -- that undocumented code is unknowable at scale -- is
+	// about the total remediation effort a gap represents, not about how severe
+	// one item is, and a badge marks one item.
+	//
+	// `graph-canvas.js`'s `GC_BADGE_TOKEN` carries the same ordering over the
+	// same two status tokens. Change one and you must change the other.
+	'kb-unbacked': Object.freeze({ text: 'no source', variant: 'badge-err' }),
+	'artifact-undocumented': Object.freeze({ text: 'no KB doc', variant: 'badge-warn' }),
 	// The accent variant, so the selection's badge and the selection's focus
 	// outline -- which the shared emphasis rule already draws in the accent -- read
 	// as one signal rather than two.
