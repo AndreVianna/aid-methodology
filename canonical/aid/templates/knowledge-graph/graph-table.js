@@ -940,11 +940,28 @@ function tblSizeControl(button) {
 	button.style.minHeight = TBL_HIT_AREA;
 }
 
-/** The sticky header's offset: the top bar's height, so the header pins below
- *  the bar rather than under it. */
-function tblStickyTop(cell) {
-	if (!cell.style) return;
-	cell.style.top = TBL_TOP_BAR_PX + 'px';
+/**
+ * The sticky header's vertical offset is OWNED BY THE STYLESHEET, not set here.
+ *
+ * This used to write `top: 60px` inline, to clear the page's sticky top bar. That
+ * reasoning holds only if the header sticks to the VIEWPORT, and it does not:
+ * the table is wrapped in `.tbl-wrap`, which sets `overflow-x: auto`, and CSS
+ * computes the other axis of a non-visible overflow to `auto` as well -- so the
+ * wrapper is itself a scroll container and sticky resolves against IT. Measured
+ * in Chromium: the wrapper's computed `overflow-y` is `auto`.
+ *
+ * The inline 60px therefore did not clear anything. It pushed the header row 60px
+ * DOWN from the top of its own scroll container, directly over the first body
+ * rows -- which is exactly the overlap the owner reported. The correct offset
+ * against that container is 0, and it is set in `graph-css.css` beside the rest of
+ * the table's sticky rules, where the row-header column's horizontal pinning also
+ * lives and can be reasoned about together.
+ *
+ * Kept as a named no-op rather than deleted at the call site, so the call site
+ * still says what it is doing and this explanation has somewhere to live.
+ */
+function tblStickyTop() {
+	/* Intentionally empty -- see above. */
 }
 
 /** The scroll margin covering BOTH sticky layers, so a focused row control is

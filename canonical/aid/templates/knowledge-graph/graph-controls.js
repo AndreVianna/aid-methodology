@@ -542,11 +542,11 @@ function renderLegend(root, graphModel) {
 	// emphasis-derived mark would lose it. Describing it under Emphasis would
 	// have taught the reader the wrong model.
 	//
-	// ONE character for both, because the canvas now strokes three arms for both
-	// -- the owner compared three against four on the real page and chose three.
-	// The severity difference is size and weight there, so it is size here too
-	// (`.gap-kb-unbacked` is set larger in the stylesheet). Using two different
-	// characters would claim a distinction the canvas no longer draws.
+	// ONE character AND one size for both, because the canvas draws them that way
+	// -- the owner compared three arms against four and two sizes against one, and
+	// chose three arms at one size. Colour is the only difference. A second
+	// character or a size bump here would claim a distinction the canvas does not
+	// draw, which is the failure mode a legend exists to avoid.
 	const gaps = el('dl', {}, [
 		el('dt', { text: 'Coverage gap — asterisk beside the node' }),
 		el('dd', {}, [el('span', { class: 'legend-row' }, [
@@ -557,7 +557,7 @@ function renderLegend(root, graphModel) {
 			el('span', { class: 'filter-glyph gap-artifact-undocumented', 'aria-hidden': 'true', text: '✱' }),
 			'undocumented artifact — no knowledge-base document describes it',
 		])]),
-		el('dd', { text: 'The larger, denser asterisk is the more severe of the two: an unbacked claim is wrong information rather than missing information. A node with neither gap carries no asterisk.' }),
+		el('dd', { text: 'The red asterisk is the more severe of the two: an unbacked claim is wrong information rather than missing information. A node with neither gap carries no asterisk, and the table below states both classes in words.' }),
 	]);
 
 	const direction = el('dl', { class: 'legend-prose' }, [

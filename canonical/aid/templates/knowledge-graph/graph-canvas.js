@@ -1455,13 +1455,11 @@ function gcDrawRing(g, radius, colour) {
  * The gap badge -- additive, beside the mark, never inside it, and never a
  * function of `nodeEmphasis` (its source is `coverageGaps` alone, D1).
  *
- * A three-arm asterisk, per the owner, in the two severity colours -- and it
- * carries a second, NON-COLOUR channel besides: the more severe class is drawn
- * distinctly larger and heavier. Colour and mass then say the same thing twice,
- * which is what AC-15 requires ("distinguishable by a non-colour channel, and the
- * two gap classes distinguishable from each other") and what keeps the badge
- * readable in forced-colours mode, where every token collapses to a single
- * foreground and colour stops carrying anything at all.
+ * A three-arm asterisk, per the owner, in the two severity colours -- one shape
+ * and one size for both, with colour the only difference between the two classes.
+ * See `GC_BADGE_ASTERISK` for why that satisfies AC-15 and what the residual is:
+ * the asterisk's PRESENCE is the non-colour channel the criterion's first clause
+ * asks for, and it is the presence, not the tint, that survives forced colours.
  *
  * Previously this looked `GC_BADGE` up only to decide WHETHER to draw, then
  * drew an identical 3px filled dot for both classes and discarded the glyph.
@@ -1492,18 +1490,27 @@ function gcDrawRing(g, radius, colour) {
  * same ordering so the two views agree.
  */
 const GC_BADGE_ASTERISK = Object.freeze({
-	// BOTH draw three arms (six rays). The owner compared a four-arm asterisk
-	// against a three-arm one on the real page and judged three the better mark,
-	// so arm count is no longer the thing that separates the two classes.
+	// IDENTICAL geometry for both -- three arms (six rays), one size, one weight,
+	// the owner's choice after comparing the alternatives on the real page. Arm
+	// count and size were each tried as the severity channel and each rejected:
+	// three arms reads better than four, and one size reads better than two.
+	// COLOUR alone therefore separates the two classes.
 	//
-	// SIZE and WEIGHT carry that difference instead, and they still have to,
-	// because colour cannot: amber against red is the single worst pair for
-	// red-green deficiency, and under forced colours both collapse to one
-	// foreground. So the more severe class is drawn distinctly larger and heavier
-	// -- ~40% more radius and 50% more stroke, which is a difference in mass
-	// rather than a difference in kind, and reads at a glance without either mark
-	// looking like a different symbol.
-	'kb-unbacked': Object.freeze({ arms: 3, radius: 5.5, weight: 1.8 }),
+	// That still satisfies AC-15, and it is worth being precise about why, because
+	// the criterion has two clauses and only the first constrains the channel.
+	// "Every id in `coverageGaps` is drawn and is distinguishable by a non-colour
+	// channel" -- satisfied by the asterisk's PRESENCE, which is a non-colour
+	// difference from a node that has no badge, and it survives forced colours.
+	// "And the two gap classes are distinguishable from each other" -- names no
+	// channel, so colour may carry it.
+	//
+	// The residual is real and named rather than designed around: a reader with
+	// red-green deficiency may not separate these two tints. What covers them is
+	// the path this whole view is built on -- the canvas is visual-only and the
+	// relationship table is the conforming alternative, and it states the two
+	// classes in WORDS ("no source", "no KB doc"), as does the hover label. So the
+	// distinction is never colour-only for the page, only for the bitmap.
+	'kb-unbacked': Object.freeze({ arms: 3, radius: 4, weight: 1.2 }),
 	'artifact-undocumented': Object.freeze({ arms: 3, radius: 4, weight: 1.2 }),
 });
 

@@ -574,6 +574,165 @@ html[data-theme="dark"]:root {
 
 .coverage-panel table.tbl { font-size: 0.87rem; }
 
+
+/* ---------- The relationship table ----------
+
+   THE TABLE SCROLLS SIDEWAYS RATHER THAN COMPRESSING. Ten columns of ids,
+   names and relation phrases do not fit a viewport, and the shared
+   `table.tbl { width: 100% }` made them try: every column was squeezed to a
+   share of the available width, so `wcag-contrast-figure` broke across lines,
+   a row's Select control was pushed under its own name, and the column widths
+   bore no relation to what the columns held.
+
+   `.tbl-wrap` already sets `overflow-x: auto`, so the scroll mechanism was
+   there and unreachable -- a table pinned to 100% of its wrapper can never
+   overflow it. Sizing to content is what makes that wrapper do its job.
+   Scoped to this view's two tables by their data attributes, so the shared
+   rule is overridden rather than forked (this file forks none of them).       */
+
+[data-relationship-table],
+[data-unlisted-table] {
+	width: auto;
+	/* Still fills the wrapper when the content is narrower than it, so a small
+	   table does not sit in a half-empty box. */
+	min-width: 100%;
+}
+
+/* Content decides the column width. Without this, `width: auto` alone still
+   lets the browser wrap inside a cell to reach a narrower table. Ids and
+   relation phrases are single tokens or short phrases and are meant to be read
+   on one line; the two long-prose columns opt back out below. */
+[data-relationship-table] th,
+[data-relationship-table] td,
+[data-unlisted-table] th,
+[data-unlisted-table] td {
+	white-space: nowrap;
+}
+
+/* The empty-state cell is a sentence spanning every column, and the coverage
+   note is prose -- both must wrap, or the table would scroll to the width of a
+   paragraph. */
+[data-relationship-table] [data-empty-state] td,
+[data-relationship-table] caption,
+[data-unlisted-table] caption {
+	white-space: normal;
+}
+
+/* ---- Sticky cells ----
+
+   The shared rule is `.tbl th { position: sticky; top: 0 }`, which is written
+   for a column header and lands on EVERY `th` -- including each row's
+   `scope="row"` cell. So every row's Source Id was pinned to the top of the
+   scroll container and stacked into the header band; the owner's screenshot
+   shows one sitting among the column labels.
+
+   And the header's own offset was wrong for a second, independent reason. It
+   was set inline to 60px to clear the page's sticky top bar, which is correct
+   only if the header sticks to the VIEWPORT. It does not: `.tbl-wrap` sets
+   `overflow-x: auto`, CSS computes the other axis of a non-visible overflow to
+   `auto` too, so the wrapper is itself a scroll container and sticky resolves
+   against it. Measured: the wrapper's computed `overflow-y` is `auto`. The 60px
+   therefore pushed the header DOWN over the first body rows. `tblStickyTop` no
+   longer writes it; the offset is 0 and lives here.                          */
+
+[data-relationship-table] thead th,
+[data-unlisted-table] thead th {
+	top: 0;
+	z-index: 3;
+}
+
+/* A row header stops sticking vertically and starts sticking HORIZONTALLY,
+   which is what a table this wide actually wants: the Source Id column stays
+   in view while the reader scrolls right through the other nine. Needs an
+   opaque background, or the cells it scrolls over would show through it. */
+[data-relationship-table] tbody th,
+[data-unlisted-table] tbody th {
+	top: auto;
+	left: 0;
+	z-index: 2;
+	background: var(--bg-elev);
+}
+
+/* The corner cell is pinned on both axes at once, so it must outrank both. */
+[data-relationship-table] thead th:first-child,
+[data-unlisted-table] thead th:first-child {
+	left: 0;
+	z-index: 4;
+}
+
+/* The caption is a block whose containing block is the TABLE, now ~2000px wide,
+   so its sentence laid out across the full scroll width and ran off the right
+   of the viewport. A readable measure keeps it where it can be read without
+   scrolling to find the rest of it. */
+[data-relationship-table] caption,
+[data-unlisted-table] caption {
+	max-width: 78ch;
+	text-align: left;
+}
+
+
+/* ---- The two controls the table emits ----
+
+   Both are real <button>s and stay that way: the sort control is where
+   `aria-sort` lives and where the state change is announced, and the row
+   control performs a real selection. Both also carry an inline 2.75rem
+   min-width/min-height from `tblSizeControl` -- the accessibility checklist's
+   touch target -- which is INLINE and therefore not overridable from here, and
+   must not be: a 44px hit area is the point.
+
+   What was wrong was never the size, it was that neither had any styling at
+   all, so each rendered as a default grey UA button. The header row became a
+   strip of grey boxes with wrapped labels. These rules keep the hit area and
+   stop painting it.                                                          */
+
+[data-relationship-table] thead button {
+	appearance: none;
+	background: none;
+	border: 0;
+	padding: 0;
+	margin: 0;
+	font: inherit;
+	font-weight: inherit;
+	letter-spacing: inherit;
+	text-transform: inherit;
+	color: inherit;
+	text-align: left;
+	cursor: pointer;
+	/* The label and its sort caret on ONE line inside the 44px box, rather than
+	   the label wrapping in a box sized for touch. */
+	display: inline-flex;
+	align-items: center;
+	gap: 0.35em;
+	white-space: nowrap;
+}
+
+[data-relationship-table] thead button:hover { color: var(--accent); }
+
+/* The row-selection control: readable as an action, quiet enough not to
+   dominate the name beside it. Its hit area still extends past what is
+   painted. */
+[data-relationship-table] tbody button {
+	appearance: none;
+	font: inherit;
+	font-size: 0.82em;
+	line-height: 1.6;
+	padding: 0.1em 0.7em;
+	background: none;
+	color: var(--text-muted);
+	border: 1px solid var(--border);
+	border-radius: 999px;
+	cursor: pointer;
+	/* Keeps the pill beside its name rather than under it, now that the cell is
+	   free to be as wide as its content. */
+	margin-left: 0.5em;
+	vertical-align: middle;
+}
+
+[data-relationship-table] tbody button:hover {
+	color: var(--accent);
+	border-color: var(--accent);
+}
+
 .prereqs {
 	font-size: 0.88rem;
 	color: var(--text-muted);
@@ -594,18 +753,11 @@ html[data-theme="dark"]:root {
    `graph-canvas.js` strokes the asterisk with and the same two the relationship
    table gives these classes, so all three surfaces agree. Unbacked takes the
    error token because it is wrong information, not missing information. */
-.gap-kb-unbacked {
-	color: var(--err);
-	/* The eight-spoked character has thinner strokes than the six-spoked heavy
-	   asterisk beside it, which left the MORE severe class looking like the
-	   lighter of the two -- the opposite of what the canvas draws, where
-	   unbacked is the larger and heavier mark. Size restores the ordering
-	   without changing the arm counts, which are what actually match the
-	   canvas's two asterisks. */
-	font-size: 1.2em;
-	line-height: 1;
-}
-
+/* One size for both, matching the canvas: colour is the only difference between
+   the two classes, by the owner's choice. Nothing here sets a size, so both
+   inherit the row's own -- an earlier revision bumped the unbacked one and that
+   bump is deliberately gone rather than merely reduced. */
+.gap-kb-unbacked { color: var(--err); }
 .gap-artifact-undocumented { color: var(--warn); }
 
 .k-document { color: var(--gk-document); }

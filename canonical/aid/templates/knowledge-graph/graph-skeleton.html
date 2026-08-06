@@ -197,18 +197,18 @@
 					<line x1="360" y1="112" x2="472" y2="112" stroke="var(--gc-provenance)"/>
 				</g>
 				<!-- The two coverage-gap asterisks, drawn the way the canvas draws them:
-				     three arms each, and the SEVERITY carried by size and weight rather
-				     than by colour alone, because amber against red is the worst pair
-				     for red-green deficiency and both collapse to one foreground under
-				     forced colours. Kept in step with `graph-canvas.js`'s
+				     three arms each and ONE size for both, the owner's choice after
+				     comparing the alternatives on the real page -- so colour alone
+				     separates the two classes here, exactly as on the canvas. Kept in
+				     step with `graph-canvas.js`'s
 				     `GC_BADGE_ASTERISK` -- if the arm count or the radii change there,
 				     they change here. Three lines per asterisk at 0, 60 and 120 degrees,
 				     which is six rays. -->
 				<g stroke-linecap="round">
-					<g stroke="var(--err)" stroke-width="1.8">
-						<line x1="59.5" y1="152" x2="70.5" y2="152"/>
-						<line x1="62.25" y1="147.24" x2="67.75" y2="156.76"/>
-						<line x1="67.75" y1="147.24" x2="62.25" y2="156.76"/>
+					<g stroke="var(--err)" stroke-width="1.2">
+						<line x1="61" y1="152" x2="69" y2="152"/>
+						<line x1="63" y1="148.54" x2="67" y2="155.46"/>
+						<line x1="67" y1="148.54" x2="63" y2="155.46"/>
 					</g>
 					<g stroke="var(--warn)" stroke-width="1.2">
 						<line x1="61" y1="180" x2="69" y2="180"/>
@@ -222,13 +222,13 @@
 					<text x="132" y="132">dotted — shares a colour</text>
 					<text x="484" y="88">arrowhead — reads source to target</text>
 					<text x="484" y="116">no arrowhead — reads the same both ways</text>
-					<text x="132" y="156">larger red asterisk — an unbacked claim, nothing in the source backs it</text>
-					<text x="132" y="184">smaller amber asterisk — an undocumented artifact, no knowledge-base document describes it</text>
+					<text x="132" y="156">red asterisk — an unbacked claim, nothing in the source backs it</text>
+					<text x="132" y="184">amber asterisk — an undocumented artifact, no knowledge-base document describes it</text>
 				</g>
 			</svg>
 			<p class="caption">Node kind by colour and shape; relationship category by colour and line
 			   style; direction by an arrowhead, whose absence is itself the signal; and a coverage
-			   gap by an asterisk beside the node, sized by severity.</p>
+			   gap by an asterisk beside the node, red being the more severe.</p>
 		</div>
 		<div data-legend></div>
 	</section>
