@@ -131,7 +131,7 @@ present in this bench's real edge set: `structure`, `documentation`, `evidence`,
 finding about this repository's own graph shape, not a defect in the count (feature-005's own
 D8 producer map is what bounds this, per the SPEC's own text at D2).
 
-**Isolated-node fraction is a finding worth flagging on its own.** 40.2% is far above the ~5–8%
+**Isolated-node fraction is a finding worth flagging on its own.** 40.2% is far above the ~5%
 Stage 2a's synthetic fixtures used as their default. A bench this sparse in connectivity is a
 property of a real, mixed-artifact repository (many single-reference source files with no
 declared KB counterpart) rather than of the fixture generator's own defaults.
@@ -170,7 +170,7 @@ driver) predicts more edges would cost more, not less. Command:
 
 | Window | tick median/p95 (ms) | draw median/p95 (ms) | **total median/p95 (ms)** | Clears 33.33 ms at p95? | **Verdict against NFR-7's floor** |
 |---|---|---|---|---|---|
-| **Steady simulation** | 13.7 / 23.6 | 78.15 / 103.1 | **92.4 / 124.9** | No | **Does NOT clear.** ~3.7× over budget at median, ~3.7× at p95 |
+| **Steady simulation** | 13.7 / 23.6 | 78.15 / 103.1 | **92.4 / 124.9** | No | **Does NOT clear.** ~2.8× over budget at median, ~3.7× at p95 |
 | **Node drag** (hub — the highest-degree node — pinned and swept across the canvas for the full sampled window, the worst case: dragging a hub pulls the most neighbours) | 13.05 / 19.2 | 92.9 / 119.6 | **105.1 / 134.9** | No | **Does NOT clear.** ~3.2× over budget at median, ~4× at p95, and **worse than steady** — dragging adds pointer-handling cost and re-heats the simulation on top of an already-failing baseline |
 
 **AC-6a is answered: at the derived bench, the graph does not sustain NFR-7's ≥30 fps floor

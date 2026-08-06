@@ -235,7 +235,7 @@ than softened.** *Source: `rendering-stage2b-bench-and-verdicts.md` § 3.*
 
 | Window | tick median/p95 (ms) | draw median/p95 (ms) | **total median/p95 (ms)** | Clears 33.33 ms at p95? |
 |---|---|---|---|---|
-| **Steady simulation** | 13.7 / 23.6 | 78.15 / 103.1 | **92.4 / 124.9** | **No — does NOT clear.** ~3.7× over budget at both median and p95 |
+| **Steady simulation** | 13.7 / 23.6 | 78.15 / 103.1 | **92.4 / 124.9** | **No — does NOT clear.** ~2.8× over budget at median, ~3.7× at p95 |
 | **Node drag** (hub pinned and swept, the worst case) | 13.05 / 19.2 | 92.9 / 119.6 | **105.1 / 134.9** | **No — does NOT clear.** ~3.2–4× over budget, and *worse than steady* — dragging re-heats the simulation and adds pointer-handling cost on top of an already-failing baseline |
 
 **Both verdicts are measured at this project's own derived bench** — 1,609 nodes, converging to
