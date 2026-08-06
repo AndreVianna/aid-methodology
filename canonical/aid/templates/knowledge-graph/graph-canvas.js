@@ -111,13 +111,38 @@ const GC_ZOOM_MAX = 8;
 const GC_DIM_OPACITY = 0.35;
 const GC_FOCUS_SCALE = 1.45;
 const GC_CHAIN_WEIGHT = 2.5;
-const GC_BASE_WEIGHT = 1;
-const GC_BASE_RADIUS = 6;
+const GC_BASE_WEIGHT = 0.75;
+const GC_BASE_RADIUS = 8;
+
+/** Arrowhead length in world units, and the clearance left between a glyph's
+ *  edge and the line or arrow tip that meets it.
+ *
+ *  Marks are drawn at their simulation position, which is the glyph's CENTRE,
+ *  so an edge drawn plainly from one position to the other runs UNDER both
+ *  glyphs and its arrow tip lands at the target's centre -- the arrow reads as
+ *  pointing at nothing, and its direction is hidden by the glyph on top of it.
+ *  `gcTrimSegment` pulls both ends back by the glyph radius plus this gap, so
+ *  the tip touches the border instead.
+ *
+ *  The gap is deliberately non-zero: `GC_BASE_RADIUS` is a CIRCUMradius, and
+ *  the flat-sided kinds (square, pentagon, diamond, hexagon) sit inside it, so
+ *  a zero gap would still tuck the tip slightly under those shapes along their
+ *  faces. A small constant clearance reads correctly for every kind without
+ *  per-shape geometry. */
+const GC_ARROW_SIZE = 5;
+const GC_EDGE_GAP = 1.5;
 
 /** Label legibility floor in CSS pixels, the on-canvas persistent label is
  *  suppressed (never shrunk) below it. Taken from `validate-visuals.mjs`'s own
  *  10px default as a reference point, not a citation of a shared value. */
 const GC_LABEL_FLOOR_PX = 10;
+
+/** The hover reveal chip: text size in CSS pixels (above the floor above, and
+ *  held there at every zoom by counter-scaling rather than by shrinking), and
+ *  the padding between the text and the chip's edge. */
+const GC_LABEL_FONT_PX = 12;
+const GC_LABEL_PAD = 4;
+const GC_LABEL_FONT_FAMILY = 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif';
 
 /** Device-pixel-ratio cap on the backing store, so a high-DPR display cannot
  *  multiply fill cost without bound. */
@@ -1021,16 +1046,32 @@ function gcDrawFrame(view, meta) {
 	view.nodeLayer.removeChildren();
 	view.labelLayer.removeChildren();
 
+	// Drawn glyph radius per node id, built once for this frame. The edge pass
+	// needs it to stop each line at the glyph's border rather than its centre,
+	// and only the node pass knows each mark's `markScale`. The ring/badge
+	// additions are deliberately NOT included: an arrow should touch the SHAPE,
+	// which is what the reader perceives as the node's edge.
+	const glyphRadius = new Map();
+	for (const mark of marks.nodes) glyphRadius.set(mark.id, GC_BASE_RADIUS * mark.emphasisDraw.markScale);
+
 	for (const mark of marks.edges) {
 		const a = view.positions.get(mark.sourceId);
 		const b = view.positions.get(mark.targetId);
 		if (!a || !b) continue;
+		// Both ends, not only the arrow end: a line emerging from under its
+		// source glyph reads as starting nowhere just as badly.
+		const seg = gcTrimSegment(
+			a, b,
+			(glyphRadius.get(mark.sourceId) || 0) + GC_EDGE_GAP,
+			(glyphRadius.get(mark.targetId) || 0) + GC_EDGE_GAP,
+		);
+		if (!seg) continue;
 		const g = new PIXI.Graphics();
 		const colour = gcColourFor(view.palette, mark.colourToken, forcedColours);
 		const width = mark.emphasisDraw.weight * GC_BASE_WEIGHT;
 		if (typeof g.lineStyle === 'function') g.lineStyle(width, gcColourToNumber(colour), mark.emphasisDraw.opacity == null ? 1 : mark.emphasisDraw.opacity);
-		gcDrawDashedLine(g, a.x, a.y, b.x, b.y, mark.lineStyle);
-		if (mark.arrowhead) gcDrawArrowhead(g, a.x, a.y, b.x, b.y, colour);
+		gcDrawDashedLine(g, seg.x1, seg.y1, seg.x2, seg.y2, mark.lineStyle);
+		if (mark.arrowhead) gcDrawArrowhead(g, seg.x1, seg.y1, seg.x2, seg.y2, colour);
 		view.edgeLayer.addChild(g);
 	}
 
@@ -1045,6 +1086,10 @@ function gcDrawFrame(view, meta) {
 		g.position && g.position.set && g.position.set(p.x, p.y);
 		view.nodeLayer.addChild(g);
 	}
+
+	// Last, so the chip sits above every mark: `labelLayer` is the topmost stage
+	// child, and within the frame this is the only thing that fills it.
+	gcDrawHoverLabel(view);
 
 	// Marks above are placed in world coordinates; this is what maps them into
 	// the buffer (pan, zoom, dpr and the centre origin). Must run before the
@@ -1094,6 +1139,94 @@ function gcColourToNumber(colour) {
 	return colour;
 }
 
+/**
+ * Draw the hover reveal as a chip beside the hovered mark -- the node's full
+ * label, or the edge's relationship phrase.
+ *
+ * `gcRefreshReveal` already computes WHAT to say and publishes it as
+ * `record.reveal`, for both kinds. This is the only thing that puts it on
+ * screen: nothing else reads `reveal` (a grep for it in `graph-controls.js`
+ * returns nothing), so before this existed the specified behaviour -- "the
+ * relationship's name appears when a reader hovers or selects rather than being
+ * painted" -- had the state, the text and the hit-testing all working and no
+ * output at all, and `labelLayer` was cleared on every frame and never filled.
+ *
+ * Constant on-screen size, not constant world size. The chip is counter-scaled
+ * by `1 / viewport.scale`, so the stage's `dpr * scale` leaves a net `dpr`:
+ * crisp, and legible at every zoom instead of vanishing when zoomed out. That
+ * is what holds it above `GC_LABEL_FLOOR_PX` without ever shrinking it, which
+ * is the distinction that constant means.
+ *
+ * Appearance only (AC-S7): this adds no mark, writes no store field and touches
+ * no emphasis class, so the drawn MARK sets are identical before, during and
+ * after a hover. A transient chip is not a mark -- and drawing one is the
+ * behaviour AC-S7's own feature requires, so the two do not conflict.
+ */
+function gcDrawHoverLabel(view) {
+	const reveal = view.record.reveal;
+	if (!reveal || !reveal.kind || !reveal.text) return;
+	// Capability guard in this file's own idiom. Unlike the renderer probe, a
+	// missing `Text` cannot hide total non-function: every mark still draws, and
+	// only the chip is absent.
+	if (typeof PIXI.Text !== 'function') return;
+
+	// Anchor in world coordinates, plus the clearance to keep off the mark.
+	let ax = 0;
+	let ay = 0;
+	let clear = GC_EDGE_GAP;
+	if (reveal.kind === 'node') {
+		const p = view.positions.get(reveal.target);
+		if (!p) return;
+		const mark = (view.record.marks.nodes || []).find((m) => m.id === reveal.target);
+		ax = p.x;
+		ay = p.y;
+		clear = GC_BASE_RADIUS * (mark ? mark.emphasisDraw.markScale : 1) + GC_EDGE_GAP + 2;
+	} else {
+		// `neighbourhood` is `[sourceId, targetId]` for an edge reveal, so the
+		// midpoint needs no second lookup of the edge itself.
+		const a = view.positions.get(reveal.neighbourhood[0]);
+		const b = view.positions.get(reveal.neighbourhood[1]);
+		if (!a || !b) return;
+		ax = (a.x + b.x) / 2;
+		ay = (a.y + b.y) / 2;
+		clear = GC_EDGE_GAP + 4;
+	}
+
+	const fg = view.palette.get('__forced_fg') || 'CanvasText';
+	const bg = view.palette.get('__forced_bg') || 'Canvas';
+	const label = new PIXI.Text({
+		text: reveal.text,
+		style: { fontFamily: GC_LABEL_FONT_FAMILY, fontSize: GC_LABEL_FONT_PX, fill: gcColourToNumber(fg) },
+	});
+	// PIXI measures the text itself -- no DOM style read and no layout
+	// measurement enters the frame path (AC-S5).
+	const inv = 1 / view.viewport.scale;
+	const w = (label.width + GC_LABEL_PAD * 2) * inv;
+	const h = (label.height + GC_LABEL_PAD * 2) * inv;
+
+	// Up and to the right of the mark by default, flipped where that would put
+	// the chip outside the visible world rect -- which is the inverse of the
+	// stage transform, the same relation `gcLocalPoint` uses.
+	let x = ax + clear;
+	let y = ay - clear - h;
+	const vx1 = (view.width / 2 - view.viewport.panX) / view.viewport.scale;
+	const vy0 = (-view.height / 2 - view.viewport.panY) / view.viewport.scale;
+	if (x + w > vx1) x = ax - clear - w;
+	if (y < vy0) y = ay + clear;
+
+	const chip = new PIXI.Graphics();
+	if (typeof chip.beginFill === 'function') chip.beginFill(gcColourToNumber(bg), 0.9);
+	if (typeof chip.drawRect === 'function') chip.drawRect(x, y, w, h);
+	if (typeof chip.endFill === 'function') chip.endFill();
+	if (typeof chip.lineStyle === 'function') chip.lineStyle(1 * inv, gcColourToNumber(fg), 0.35);
+	if (typeof chip.drawRect === 'function') chip.drawRect(x, y, w, h);
+	view.labelLayer.addChild(chip);
+
+	if (label.scale && label.scale.set) label.scale.set(inv, inv);
+	if (label.position && label.position.set) label.position.set(x + GC_LABEL_PAD * inv, y + GC_LABEL_PAD * inv);
+	view.labelLayer.addChild(label);
+}
+
 function gcDrawDashedLine(g, x1, y1, x2, y2, lineStyle) {
 	if (typeof g.moveTo !== 'function') return;
 	g.moveTo(x1, y1);
@@ -1112,10 +1245,36 @@ function gcDrawDashedLine(g, x1, y1, x2, y2, lineStyle) {
 	}
 }
 
+/**
+ * Pull a segment's two ends back by `trimA` and `trimB`, so a line drawn
+ * centre-to-centre instead meets each glyph's border. Returns `null` when the
+ * two glyphs are close enough that nothing legible is left between them --
+ * drawing a zero-or-negative-length segment there would put an arrowhead at a
+ * meaningless angle (`atan2` on a degenerate vector), so the caller skips the
+ * edge's stroke rather than drawing a wrong one.
+ */
+function gcTrimSegment(a, b, trimA, trimB) {
+	const dx = b.x - a.x;
+	const dy = b.y - a.y;
+	const len = Math.sqrt(dx * dx + dy * dy);
+	if (!(len > 0)) return null;
+	// Leave at least one arrow's length of visible segment; below that the edge
+	// is noise between two touching glyphs.
+	if (len - trimA - trimB < GC_ARROW_SIZE) return null;
+	const ux = dx / len;
+	const uy = dy / len;
+	return {
+		x1: a.x + ux * trimA,
+		y1: a.y + uy * trimA,
+		x2: b.x - ux * trimB,
+		y2: b.y - uy * trimB,
+	};
+}
+
 function gcDrawArrowhead(g, x1, y1, x2, y2, colour) {
 	if (typeof g.drawPolygon !== 'function' && typeof g.beginFill !== 'function') return;
 	const angle = Math.atan2(y2 - y1, x2 - x1);
-	const size = 6;
+	const size = GC_ARROW_SIZE;
 	const bx = x2 - Math.cos(angle) * size;
 	const by = y2 - Math.sin(angle) * size;
 	const p1 = { x: bx + Math.cos(angle + Math.PI / 2) * (size / 2), y: by + Math.sin(angle + Math.PI / 2) * (size / 2) };
