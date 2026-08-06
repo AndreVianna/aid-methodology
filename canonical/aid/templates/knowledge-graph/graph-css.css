@@ -386,6 +386,33 @@ html[data-theme="dark"]:root {
 	font-size: 0.92rem;
 }
 
+/* The `hidden` attribute MUST win here, and without this rule it does not.
+   `graph-controls.js` sets `placeholder.hidden = true` once a drawing rendering
+   mounts, and that is correct -- the IDL property reads `true`. But `hidden`
+   works only through the UA stylesheet's `[hidden] { display: none }`, and ANY
+   author `display` declaration outranks a UA one. The `display: flex` above is
+   exactly such a declaration, so the placeholder stayed painted.
+
+   Two symptoms, one cause, both measured in Chromium on 2026-08-06:
+     1. The page asserted "The interactive drawing surface is not present in
+        this build" while `__aidGraphCanvas.mode` was `'live'` and a real WebGL
+        2.0 context was drawing -- a false statement to every reader.
+     2. Far worse: this element is `position: absolute; inset: 0` with the
+        default `pointer-events: auto`, so it painted ABOVE the statically
+        positioned canvas and swallowed every pointer event.
+        `document.elementFromPoint` inside the surface returned this `<p>`, not
+        the canvas, so click-to-select, drag-to-pan, wheel-to-zoom and
+        double-click never reached handlers that were correctly bound all along
+        (`gcBindPointerEvents` binds to the appended element). Dragging over the
+        graph selected this paragraph's text instead of panning.
+
+   Specificity is the whole fix: `.graph-placeholder[hidden]` (0,2,0) beats
+   `.graph-placeholder` (0,1,0). No `!important` is needed or wanted. Do NOT
+   "fix" this in `graph-controls.js` -- the JS is already right. */
+.graph-placeholder[hidden] {
+	display: none;
+}
+
 /* The forced-colours system-colour probe (feature-008, task-017). A hidden
    element the drawing rendering resolves with getComputedStyle exactly as it
    resolves a palette custom property, so the two system colours it draws with

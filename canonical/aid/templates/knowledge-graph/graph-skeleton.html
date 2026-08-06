@@ -114,10 +114,13 @@
 				<a href="#relationship-table">Skip the graph and read the table</a>
 			</div>
 			<!-- The drawing surface. The drawing rendering creates its own canvas inside this
-			     container and marks it so the shell can keep its text alternative current. That
-			     canvas carries a graphical role and a text alternative and NOTHING ELSE: it is
-			     visual-only, and this view's conformance rests on the table rendering as the
-			     equivalent alternative. No control is ever drawn on it. -->
+			     container and writes nothing on it beyond the width/height that are its drawing
+			     buffer; the shell finds that canvas by tag, scoped to this container, and keeps
+			     its graphical role and text alternative current -- no marker attribute of any
+			     kind passes between the two. That canvas carries a graphical role and a text
+			     alternative and NOTHING ELSE: it is visual-only, and this view's conformance
+			     rests on the table rendering as the equivalent alternative. No control is ever
+			     drawn on it. -->
 			<div class="graph-surface" data-graph-surface>
 				<p class="graph-placeholder" data-graph-placeholder>
 					The interactive drawing surface is not present in this build, or this browser

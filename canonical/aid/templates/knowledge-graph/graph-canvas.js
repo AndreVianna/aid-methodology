@@ -387,16 +387,15 @@ function mountCanvas(context) {
 	let canvasEl;
 	try {
 		canvasEl = document.createElement('canvas');
-		// `role="img"` and `data-graph-canvas` are the two attributes this
-		// module itself puts on the element: the graphical role the skeleton's
-		// own comment names, and the marker the shell's existing lookup
-		// (`graph-controls.js` :943, `[data-graph-canvas]`) needs to find the
-		// canvas and keep its `aria-label` current. Both are the mechanism the
-		// shell already ships, not a styling or interactive attribute; the
-		// `width`/`height` the sizing rule writes below are the drawing
-		// buffer itself and the only attributes AC-S8 is stated against.
-		canvasEl.setAttribute('role', 'img');
-		canvasEl.setAttribute('data-graph-canvas', '');
+		// This module writes NO attribute on the element it creates here beyond
+		// the `width`/`height` the sizing rule (`gcResize`) sets once this is
+		// appended below -- those two ARE the drawing buffer itself, and they
+		// are the only attributes AC-S8 is stated against. `role="img"` and
+		// `aria-label` are the shell's to write (`graph-controls.js`, owned per
+		// feature-007 :1718): once `mountCanvas` returns, the shell finds this
+		// element by tag, scoped to the drawing surface it already holds, and
+		// writes both there -- no marker attribute of any kind needs to exist
+		// on this element for that lookup to work.
 		// `WebGLRenderer`'s own constructor takes NO arguments in v8 -- every
 		// option v7's single-call `new PIXI.Renderer({...})` accepted moved to
 		// the separate, asynchronous `init()` kicked off below, once `view` (D2)
@@ -626,7 +625,12 @@ function gcResize(view) {
 	// from construction but throw if called before `init()` has resolved --
 	// unlike v7, where construction and readiness were the same event.
 	if (view.rendererReady && view.renderer && typeof view.renderer.resize === 'function') view.renderer.resize(bw, bh);
-	if (view.stage) view.stage.scale && (view.stage.scale.set ? view.stage.scale.set(dpr, dpr) : null);
+	// The stage transform depends on `view.width`/`view.height` (the centre
+	// term) as well as on `dpr`, so it is NOT set here -- `gcDrawFrame` applies
+	// it on every frame, and the draw below is one of those frames. Caching
+	// `dpr` is this function's only remaining transform responsibility, since
+	// it is what sized the backing buffer.
+	view.dpr = dpr;
 	gcDrawFrame(view, { tickMs: 0 });
 }
 
@@ -949,6 +953,58 @@ function gcScheduleFrame(view, tickMs) {
 	view.frameHandle = raf(() => { view.frameHandle = null; gcDrawFrame(view, { tickMs: tickMs }); });
 }
 
+/** Device-pixel ratio, capped. Cached on the view by `gcResize` (which sizes
+ *  the backing buffer with it); recomputed identically here so a frame that
+ *  lands before the first resize still transforms correctly. */
+function gcDevicePixelRatio(view) {
+	if (view && typeof view.dpr === 'number' && view.dpr > 0) return view.dpr;
+	return Math.min(GC_DPR_CAP, (typeof window !== 'undefined' && window.devicePixelRatio) || 1);
+}
+
+/**
+ * Write `view.viewport` onto the PixiJS stage -- the ONE place the private
+ * viewport transform becomes something the renderer can see.
+ *
+ * Marks are drawn at raw simulation coordinates (`gcDrawFrame` below places
+ * each glyph at `positions.get(id)` verbatim), so pan, zoom AND the
+ * centre-origin convention all have to arrive as a stage transform. This
+ * function is the exact inverse of `gcLocalPoint`, which is what makes
+ * picking and drawing agree:
+ *
+ *     gcLocalPoint:  world = (client - rect - size/2 - pan) / scale
+ *     therefore:     buffer = world * (scale * dpr) + (pan + size/2) * dpr
+ *
+ * Two consequences worth stating, because both were live defects before this
+ * existed and both are one symptom of one cause:
+ *
+ *   1. The simulation centres its layout on world (0,0). Without the
+ *      `size/2` term the renderer put world (0,0) at the buffer's top-left
+ *      corner, so every node with a negative coordinate -- about half of
+ *      them -- drew outside the buffer, and the rest clustered in the
+ *      corner. `gcLocalPoint` meanwhile already placed world (0,0) at the
+ *      surface centre, so the pick space was offset from the draw space by
+ *      half the surface: a click on a visible node picked nothing, and a
+ *      click on empty centre picked a node drawn in the corner.
+ *   2. Every gesture (wheel zoom, drag pan) and every `setLens({zoom})`
+ *      round-trip updated `view.viewport` and repainted -- but the repaint
+ *      re-emitted the same untransformed geometry, so no gesture ever moved
+ *      a pixel. `gcOnNotify`'s "apply the transform" comment described a
+ *      step that had no implementation.
+ *
+ * Called on every frame rather than only on resize: a gesture changes the
+ * transform without changing the buffer size.
+ */
+function gcApplyStageTransform(view) {
+	if (!view.stage) return;
+	const dpr = gcDevicePixelRatio(view);
+	const vp = view.viewport;
+	const scale = dpr * vp.scale;
+	const x = (vp.panX + view.width / 2) * dpr;
+	const y = (vp.panY + view.height / 2) * dpr;
+	if (view.stage.scale && view.stage.scale.set) view.stage.scale.set(scale, scale);
+	if (view.stage.position && view.stage.position.set) view.stage.position.set(x, y);
+}
+
 /**
  * Draw edges, then nodes, then labels, then the caption; append one frame
  * sample. No ARIA write, no live-region write, no DOM style read, no layout
@@ -989,6 +1045,13 @@ function gcDrawFrame(view, meta) {
 		g.position && g.position.set && g.position.set(p.x, p.y);
 		view.nodeLayer.addChild(g);
 	}
+
+	// Marks above are placed in world coordinates; this is what maps them into
+	// the buffer (pan, zoom, dpr and the centre origin). Must run before the
+	// draw call, and on every frame -- a gesture changes the transform without
+	// changing the buffer size, so a resize-only application would make every
+	// gesture a no-op on screen.
+	gcApplyStageTransform(view);
 
 	// Gated on `rendererReady` (D2, `mountCanvas`): a tick that lands before
 	// `renderer.init()` has resolved still rebuilds `stage`'s children above

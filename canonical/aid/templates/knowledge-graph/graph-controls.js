@@ -940,9 +940,20 @@ function mountShell(scope) {
 		// state boundary rather than the draw boundary is what keeps
 		// accessibility-tree rebuilds off the frame path.
 		announce(root, viewModel.announcement);
-		const canvas = root.querySelector('[data-graph-canvas]');
-		if (canvas) canvas.setAttribute('aria-label', viewModel.canvasAlt);
 		const surface = root.querySelector('[data-graph-surface]');
+		// The drawing module (feature-008, AC-S8) writes ONLY `width`/`height` on
+		// the canvas it creates -- this shell owns `role` and `aria-label`
+		// (feature-007 :1718) and finds the element by tag, scoped to the
+		// drawing surface, so no marker attribute needs to exist for this lookup
+		// to work. The WebGL capability probe (`graph-canvas.js`'s `gcHasWebGL`)
+		// creates its own scratch canvas but never inserts it into the document,
+		// so scoping to the surface -- rather than querying the whole page --
+		// cannot pick that element up even if it somehow were reachable.
+		const canvas = surface ? surface.querySelector('canvas') : null;
+		if (canvas) {
+			canvas.setAttribute('role', 'img');
+			canvas.setAttribute('aria-label', viewModel.canvasAlt);
+		}
 		if (surface) surface.setAttribute('data-lens-revision', String(viewModel.revision));
 	}
 
