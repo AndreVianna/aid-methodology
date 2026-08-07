@@ -37,7 +37,8 @@
 #         used to bind (GC12 is DEAD; not authored -- see below).
 #   GC10  graph-canvas.js's own source: no `.prefix` read, no quoted prefix
 #         literal, no load statement, no `canonical/` substring, no filename
-#         placeholder, no `lensState` member beyond `.zoom`, no `matchMedia`
+#         placeholder, no `lens` member beyond `.zoom` and `.spacing` (the one
+#         physics parameter FR-14a permits, added 2026-08-07), no `matchMedia`
 #         call; and the record's `nodes`/`edges`/`revision` equal the
 #         ViewModel's own sets (AC-10, AC-S1, AC-S2).
 #   GC13  Every mark's content compared against the ViewModel entry for ITS

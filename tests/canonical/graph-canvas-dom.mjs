@@ -27,7 +27,8 @@
 //       of "no control on the canvas, no tab stop" now that the viewport
 //       button manifest itself is gone (task-032 -- see "GC12 is dead" below).
 //     * graph-canvas.js's own source: no `.prefix` read, no prefix literal, no
-//       colour literal, no load statement, no `lensState` member beyond `zoom`.
+//       colour literal, no load statement, no `lens` member beyond `zoom` and
+//       `spacing` (the one physics parameter FR-14a permits, added 2026-08-07).
 //     * Frame-path purity (AC-S5): zero ARIA/live-region writes, zero
 //       `getComputedStyle`, zero `getBoundingClientRect` FROM THE FRAME PATH.
 //       Genuinely hard for a screenshot to see; a plain call-count is exact.
@@ -219,7 +220,17 @@ const canvasSrc = stripComments(canvasSrcRaw);
 		ok('GC10', 'graph-canvas.js: ' + label, !new RegExp(pattern, 'm').test(canvasSrcRaw));
 	}
 	ok('GC10', 'graph-canvas.js reads no .prefix member access (comments stripped)', !/\.prefix\b/.test(canvasSrc));
-	ok('GC10', 'graph-canvas.js reads no lensState member other than .zoom', !/lensState\.(grouping|density|focus|emphasis|filters|sort|expandedGroups)\b/.test(canvasSrc));
+	// Checked against the parameter's OWN name (`lens`), not the `lensState`
+	// spelling the file's prose uses -- the earlier `lensState.` form never
+	// matched a real read in this file (the local parameter has always been
+	// `lens`), which made this check pass vacuously regardless of what it
+	// read. `spacing` (added 2026-08-07) is the one new field this file reads
+	// by design -- FR-14a's single permitted physics parameter (graph-model.js's
+	// own updated LENS_KEYS comment) -- so it joins `zoom` in the allowed set
+	// rather than the excluded one; `density` is dropped from the excluded set
+	// because it is no longer a LensState field at all, not because reading it
+	// would now be fine.
+	ok('GC10', 'graph-canvas.js reads no lens member other than .zoom and .spacing', !/\blens\.(grouping|focus|emphasis|filters|sort|expandedGroups)\b/.test(canvasSrc));
 	ok('GC10', 'graph-canvas.js calls no matchMedia — preferences arrive on the store\'s own route (Open Item 2)', !/matchMedia\s*\(/.test(canvasSrc));
 	for (const placeholder of ['{{CANONICAL_ROOT}}', '{{PROJECT_ROOT}}', '{{PROFILE_ROOT}}']) {
 		ok('GC10', 'graph-canvas.js carries no literal ' + placeholder, !canvasSrcRaw.includes(placeholder));

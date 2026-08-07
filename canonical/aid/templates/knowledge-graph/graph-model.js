@@ -144,7 +144,22 @@ const CATEGORY_ENCODING = Object.freeze({
 });
 
 /** The four grouping dimensions plus the ungrouped scope, in control order. */
-const GROUPING_VALUES = Object.freeze(['none', 'relation-category', 'document', 'node-kind', 'provenance']);
+/* `relation-category` was REMOVED from this list on 2026-08-07, on the owner's
+ * finding. It was the one dimension that grouped NODES by a property only
+ * RELATIONSHIPS have, and it resolved the mismatch arbitrarily: a node landed in
+ * whichever category its FIRST surviving edge happened to name, so a document with
+ * five rows across three categories had no meaningful group and the answer changed
+ * with row order. `provenance` is edge-derived too but is NOT arbitrary -- it takes
+ * the node's STRONGEST provenance by the enum's own order, which is a well-defined
+ * property of the node's evidence, so it stays. */
+const GROUPING_VALUES = Object.freeze(['none', 'document', 'node-kind', 'provenance']);
+
+/** The largest neighbourhood depth the control offers. `focus.depth: null` is
+ *  the reader asking for no limit at all and is the default; a number is a
+ *  deliberate narrowing. 50 is chosen to exceed any plausible component
+ *  diameter in a Knowledge Base of this shape, so the top of the range and
+ *  "no limit" agree in practice while staying distinguishable in intent. */
+const DEPTH_MAX = 50;
 
 /** The three lens-level emphasis channels. */
 const EMPHASIS_VALUES = Object.freeze(['none', 'coverage', 'provenance-chain']);
@@ -230,10 +245,14 @@ const KEY_SEP = '\u001F';
  *
  * Two absences are also part of the contract:
  *
- *   - NO PHYSICS PARAMETERS. Repulsion, link distance and centre force are
- *     internal constants of the drawing rendering, tuned once. `density` means
- *     how much is drawn, not how the simulation behaves. There is no field a
- *     repulsion slider could write to, so the boundary is structural.
+ *   - ONE PHYSICS PARAMETER, AND ONLY ONE. `spacing` (added 2026-08-07) is the
+ *     single field the drawing rendering's forces read from LensState: it scales
+ *     repulsion, link length and collision radius together. This paragraph used
+ *     to say no such field could exist -- that was true when the only nearby
+ *     control was `density`, a FILTER, and the owner reported the confusion the
+ *     wording created. The boundary is now narrower but still real: no OTHER
+ *     force value is exposed, and one axis cannot be mixed into an incoherent
+ *     layout the way three separate sliders could.
  *   - NO HOVER STATE. Hover reveals a relationship name and focuses a
  *     neighbourhood, and it is transient; routing it here would reproject on
  *     every pointer move. Hover may change appearance, never membership.
@@ -254,7 +273,15 @@ const LENS_KEYS = Object.freeze([
 	'preset',
 	'grouping',
 	'expandedGroups',
-	'density',
+	// `spacing` is the ONE key here that no projection reads. It changes how far
+	// apart the drawing rendering lets marks settle and nothing else -- not which
+	// nodes are admitted, not their order, not the table. It lives in LensState
+	// anyway because it is reader state that has to survive a preset, be reported
+	// in the lens summary, and reach the drawing rendering through the same one
+	// notification route every other control uses. A second channel for one
+	// slider would be the only way for the drawn view and `LensState` to
+	// disagree, which is the class of defect this file exists to prevent.
+	'spacing',
 	'filters.kinds',
 	'filters.categories',
 	'filters.provenance',
@@ -287,7 +314,10 @@ const INITIAL_LENS = Object.freeze({
 	'preset': null,
 	'grouping': 'none',
 	'expandedGroups': Object.freeze([]),
-	'density': 1,
+	// 3 is the MIDDLE of 1..5 and reproduces the layout that shipped before this
+	// axis existed, so a reader who never touches the slider sees exactly what
+	// they saw before and has room to move in both directions.
+	'spacing': 3,
 	'filters.kinds': Object.freeze(Object.keys(KIND_ENCODING)),
 	'filters.categories': Object.freeze(distinctCategories()),
 	'filters.provenance': PROVENANCE_VALUES,
@@ -295,7 +325,10 @@ const INITIAL_LENS = Object.freeze({
 	'filters.text': '',
 	'filters.hiddenIds': Object.freeze([]),
 	'focus.nodeId': null,
-	'focus.depth': 1,
+	// null means NO LIMIT, and that is the default on the owner's decision: a
+	// selection should ring a node, not silently shrink the graph around it.
+	// Depth is the reader's tool for narrowing, used when they ask for it.
+	'focus.depth': null,
 	'emphasis': 'none',
 	'zoom': Object.freeze({ scale: 1, panX: 0, panY: 0 }),
 	'sort': Object.freeze({ column: 'row', direction: 'asc' }),
@@ -320,26 +353,22 @@ const PRESETS = Object.freeze({
 	'coverage': Object.freeze({
 		'emphasis': 'coverage',
 		'grouping': 'node-kind',
-		'density': 1,
 		'focus.nodeId': null,
 	}),
 	'overview': Object.freeze({
 		'grouping': 'document',
 		'expandedGroups': Object.freeze([]),
-		'density': 3,
 		'emphasis': 'none',
 		'focus.nodeId': null,
 	}),
 	'impact': Object.freeze({
 		'focus.depth': 2,
-		'density': 1,
 		'emphasis': 'none',
 		'grouping': 'none',
 	}),
 	'provenance': Object.freeze({
 		'emphasis': 'provenance-chain',
 		'grouping': 'provenance',
-		'density': 1,
 	}),
 });
 
@@ -1012,8 +1041,8 @@ function toInteger(cell) {
  * The gap set is a property of the DATA and not of the lens, so it is computed
  * once per load and never per lens application. That is what makes the equality
  * the requirements ask for bind unconditionally on the SET: a mark for a gap
- * node thins with every other node at a high density level, while the list the
- * lens, the coverage panel and the ledger comparison all read is unchanged.
+ * node is hidden with every other node by whatever the lens hides, while the list
+ * the lens, the coverage panel and the ledger comparison all read is unchanged.
  *
  * Three sets, and the third is the one that must never raise an alarm:
  *
@@ -1408,7 +1437,7 @@ function conceptTarget(model, node) {
  * Order of operations, because several steps interact and the order is the
  * contract:
  *
- *   1. admit nodes  -- kind, density, orphan toggle, text
+ *   1. admit nodes  -- kind, orphan toggle, text, reader-hidden ids
  *   2. admit rows   -- category, provenance, text, and both endpoints admitted
  *   3. partition    -- the grouping dimension, over the admitted nodes
  *   4. fold         -- only the `document` dimension folds; record it
@@ -1443,10 +1472,16 @@ function project(graphModel, lensState) {
 	// count; it only removes the node (and every row naming it) from what this
 	// projection draws.
 	const hiddenIds = new Set(lens['filters.hiddenIds'] || []);
-	const density = clampInt(lens['density'], 1, 5, 1);
 	const grouping = GROUPING_VALUES.indexOf(lens['grouping']) === -1 ? 'none' : lens['grouping'];
 	const emphasisMode = EMPHASIS_VALUES.indexOf(lens['emphasis']) === -1 ? 'none' : lens['emphasis'];
-	const depth = clampInt(lens['focus.depth'], 1, 6, 1);
+	// `null` means NO LIMIT and is the default. The ceiling rose from 6 to 50 on
+	// the owner's decision -- 6 was an arbitrary stop well inside a graph whose
+	// real diameter is larger, so the control could not express "reach the whole
+	// component" at all. `Infinity` is the honest representation of no limit
+	// here: the loop below already stops when the frontier empties, so an
+	// unbounded depth terminates at the connected component and needs no
+	// special case of its own.
+	const depth = lens['focus.depth'] == null ? Infinity : clampInt(lens['focus.depth'], 1, DEPTH_MAX, DEPTH_MAX);
 	const expanded = new Set(lens['expandedGroups'] || []);
 
 	// --- 1. Node admission ---------------------------------------------------
@@ -1475,7 +1510,10 @@ function project(graphModel, lensState) {
 		// not exclude a row-less node. Above level 1 the reader has asked for
 		// less, and a row-less gap node thins like any other node -- the gap SET
 		// is what is never thinned, and it is computed once per load.
-		if (density > 1 && node.degree < density) continue;
+		// The degree FILTER is gone (owner, 2026-08-07): a slider that hid nodes by
+		// connection count was never what they wanted, and the orphan toggle below
+		// already covers the one case that mattered -- nodes with no connections at
+		// all. Nothing replaces it, deliberately.
 		admitted.add(node.id);
 	}
 
@@ -1548,10 +1586,19 @@ function project(graphModel, lensState) {
 	const resolve = (id) => (foldedInto.has(id) ? foldedInto.get(id) : id);
 
 	// --- 5. Focus, resolved through the fold ---------------------------------
+	//
+	// AT NO DEPTH LIMIT THERE IS NO BALL AT ALL, and that is not the same as a ball
+	// of unbounded radius. An unbounded ball is the selected node's CONNECTED
+	// COMPONENT, so selecting a node would still delete every node it cannot reach
+	// -- measured on the test fixture, 14 nodes became 11 the moment a node was
+	// selected. That is a narrowing the reader never asked for, and it contradicts
+	// what the control's own hint promises ("selecting a node only marks it").
+	// Skipping the ball entirely is both the correct behaviour and cheaper: no
+	// adjacency map and no traversal are built for the default case.
 	const focusId = focusExists ? resolve(rawFocus) : null;
 	let ball = null;
 	let distance = null;
-	if (focusId !== null && (preFold.has(rawFocus) || preFold.has(focusId) || nodes.has(focusId))) {
+	if (depth !== Infinity && focusId !== null && (preFold.has(rawFocus) || preFold.has(focusId) || nodes.has(focusId))) {
 		const adjacency = new Map();
 		for (const edge of surviving) {
 			const a = resolve(edge.sourceId);
@@ -1616,9 +1663,9 @@ function project(graphModel, lensState) {
 	// The two halves of the fold's own invariant, applied in order so that they
 	// cannot collide: EVERY HEAD THE RECORD NAMES IS DRAWN, and NO KEY OF IT IS.
 	// A head is drawn because its folded member was going to be, which is what
-	// makes the density level thin sub-document detail rather than the documents
-	// it folds into: a head reached only through a folded member survives even
-	// where its own degree is under the level. A head outside the focus ball is
+	// makes folding thin sub-document detail rather than the documents it folds
+	// into: a head reached only through a folded member survives on that account
+	// alone. A head outside the focus ball is
 	// not added, and its member is outside the ball too, so the two stay
 	// consistent.
 	for (const head of foldedInto.values()) {
@@ -1738,7 +1785,6 @@ function project(graphModel, lensState) {
 		provenanceFilter: provenanceFilter,
 		needle: lens['filters.text'] || '',
 		showOrphans: showOrphans,
-		density: density,
 		depth: depth,
 	});
 
@@ -1886,17 +1932,20 @@ function buildGrouping(graphModel, grouping, surviving) {
 		};
 	}
 
-	// The two edge-derived dimensions. A node with no surviving row goes to a
-	// dedicated group listed last: these dimensions are derived from rows and
-	// such a node has none, so a dedicated group neither invents a value nor
-	// drops the node.
+	// The ONE edge-derived dimension left: provenance. A node with no surviving
+	// row goes to a dedicated group listed last -- the dimension is derived from
+	// rows and such a node has none, so a dedicated group neither invents a value
+	// nor drops the node.
+	//
+	// The node takes its STRONGEST provenance, by `PROVENANCE_VALUES`' own order,
+	// and that is what keeps this dimension well defined where `relation-category`
+	// was not: a node with a declared row and an inferred row is a node whose
+	// claim is declared, which is a fact about the node. Category had no such
+	// ordering, so it fell back to whichever row came first.
 	const byNode = new Map();
-	const rank = grouping === 'provenance'
-		? (edge) => PROVENANCE_VALUES.indexOf(edge.provenance)
-		: null;
 	for (const edge of surviving) {
-		const value = grouping === 'provenance' ? edge.provenance : edge.category;
-		const order = rank ? rank(edge) : 0;
+		const value = edge.provenance;
+		const order = PROVENANCE_VALUES.indexOf(edge.provenance);
 		for (const id of [edge.sourceId, edge.targetId]) {
 			const held = byNode.get(id);
 			if (!held || order < held.order) byNode.set(id, { value: value, order: order });
@@ -1999,10 +2048,6 @@ function groupRank(grouping, graphModel, key) {
 		const at = PROVENANCE_VALUES.indexOf(key);
 		return at === -1 ? 8000 : at;
 	}
-	if (grouping === 'relation-category') {
-		const at = graphModel.categories.indexOf(key);
-		return at === -1 ? 8000 : at;
-	}
 	// The `document` dimension: document groups, then own-head single-node
 	// groups, then the concept category groups, then the external group last.
 	if (key === EXTERNAL_GROUP) return 8500;
@@ -2028,9 +2073,16 @@ function narrate(graphModel, lens, ctx) {
 	if (ctx.needle !== '') parts.push('matching "' + ctx.needle + '"');
 	if (!ctx.showOrphans) parts.push('isolated nodes hidden');
 	if (ctx.grouping !== 'none') parts.push('grouped by ' + ctx.grouping);
-	parts.push('density ' + ctx.density + ' of 5');
+	// Worded to match the CONTROL'S OWN LABEL, not the internal key. A reader
+	// using a screen reader hears this summary and reads that label; if the two
+	// use different words for the same slider there is no way to connect them.
+	// `spacing` is deliberately absent: this sentence reports WHAT IS SHOWN, and
+	// spacing changes only how far apart it settles, so including it would add
+	// noise to every announcement without ever changing the answer.
+
 	if (ctx.focusNode) {
-		parts.push('focused on ' + ctx.focusNode.name + ' at depth ' + ctx.depth);
+		parts.push('focused on ' + ctx.focusNode.name
+			+ (ctx.depth === Infinity ? ', no depth limit' : ' at depth ' + ctx.depth));
 		if (ctx.focusIsolated) parts.push('no recorded relationships');
 	}
 
@@ -2343,6 +2395,7 @@ export {
 	PROVENANCE_VALUES,
 	CATEGORY_ENCODING,
 	GROUPING_VALUES,
+	DEPTH_MAX,
 	EMPHASIS_VALUES,
 	LABEL_BUDGET,
 	NO_RELATIONSHIPS_GROUP,

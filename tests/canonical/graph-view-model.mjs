@@ -134,7 +134,7 @@ for (const patch of Object.values(M.PRESETS)) {
 }
 ok('GT14', 'no preset patch touches the filters namespace, so a filter composes rather than resets',
 	noFilterKey && Object.keys(M.PRESETS).length === 4);
-ok('GT15', 'INITIAL_LENS states all fifteen fields (task-034 adds filters.hiddenIds), with sort at the file order',
+ok('GT15', 'INITIAL_LENS states all fifteen fields (task-034 added filters.hiddenIds; `density` was removed and `spacing`, the layout axis, added 2026-08-07), with sort at the file order',
 	M.LENS_KEYS.length === 15 && M.LENS_KEYS.every((k) => Object.prototype.hasOwnProperty.call(M.INITIAL_LENS, k))
 	&& same(M.INITIAL_LENS['sort'], { column: 'row', direction: 'asc' })
 	&& same(M.INITIAL_LENS['filters.hiddenIds'], []));
@@ -334,24 +334,35 @@ ok('GT52', 'the two gap classes land on exactly the two coverage sets, and are d
 	&& badgedGap.every((id) => !badgedUnbacked.includes(id)),
 	badgedGap.length + ' undocumented, ' + badgedUnbacked.length + ' unbacked');
 
-// TV07's TRUE behaviour. The SPEC clause -- feature-009 SPEC.md:536 and its TV07
-// row -- says the listed row set is "untouched" when a gap endpoint is then
-// selected. Against the frozen upstream that is FALSE: project() restricts
-// visibleEdges to the focus ball, so a selection MOVES MEMBERSHIP. The true
-// behaviour is asserted here and the false clause is deliberately not encoded.
+// TV07's own clause, REOPENED by the owner's 2026-08-07 default change.
+// feature-009 SPEC.md:536 / TV07 say the listed row set is "untouched" when a
+// gap endpoint is selected. Against the OLD default (focus.depth: 1) that was
+// FALSE -- project() restricted visibleEdges to the depth-1 ball, so a bare
+// selection moved membership, and the false clause was deliberately left
+// unencoded. Under the NEW default (focus.depth: null, no ball at all) a bare
+// selection genuinely leaves the listed row set untouched -- TV07's own
+// clause is now literally true, and GT53c below asserts it. GT53b is kept,
+// proving the SAME narrowing it always did, over an EXPLICIT depth: the
+// projection still restricts rows to the focus ball once a reader dials the
+// depth control down, which is the behaviour that control exists to offer.
 const beforeSelect = listedRows(vm()).length;
 store.setLens({ 'focus.nodeId': 'int:tests/orphan-check.sh' });
-const afterSelect = listedRows(vm()).length;
+const afterSelectNoLimit = listedRows(vm()).length;
+store.setLens({ 'focus.depth': 1 });
+const afterSelectDepth1 = listedRows(vm()).length;
 ok('GT53', 'selecting a gap endpoint marks THAT id focus and leaves every other gap id its own class',
 	vm().nodeEmphasis.get('int:tests/orphan-check.sh') === 'focus'
 	&& ids(vm().visibleNodes.filter((n) => vm().nodeEmphasis.get(n.id) === 'artifact-undocumented').map((n) => n.id))
 		.every((id) => id !== 'int:tests/orphan-check.sh'));
-ok('GT53b', 'and a selection DOES move the listed row set -- the projection restricts rows to the focus ball',
-	afterSelect !== beforeSelect && afterSelect > 0, beforeSelect + ' rows -> ' + afterSelect + ' rows');
-note('GT53b feature-009 SPEC.md:536 and TV07 state that the listed row set is "untouched" when a gap endpoint '
-	+ 'is selected. Measured against the frozen graph-model.js it goes ' + beforeSelect + ' -> ' + afterSelect
-	+ ' rows, because project() drops every row with an endpoint outside the focus ball. That clause needs '
-	+ 're-wording (or a depth high enough to cover the graph); the true behaviour is what GT53b asserts.');
+ok('GT53b', 'a selection at an EXPLICIT depth DOES move the listed row set -- the projection restricts rows to the focus ball',
+	afterSelectDepth1 !== beforeSelect && afterSelectDepth1 > 0, beforeSelect + ' rows -> ' + afterSelectDepth1 + ' rows at depth 1');
+ok('GT53c', 'TV07\'s own clause holds under the NEW default: a bare selection with no explicit depth (focus.depth: null) leaves the listed row set UNTOUCHED',
+	afterSelectNoLimit === beforeSelect, beforeSelect + ' rows -> ' + afterSelectNoLimit + ' rows at no limit');
+note('GT53b/GT53c feature-009 SPEC.md:536 and TV07 state that the listed row set is "untouched" when a gap endpoint '
+	+ 'is selected. That was FALSE against the OLD default (focus.depth: 1, ' + beforeSelect + ' -> ' + afterSelectDepth1
+	+ ' rows) and is TRUE against the owner\'s 2026-08-07 default (focus.depth: null, ' + beforeSelect + ' -> '
+	+ afterSelectNoLimit + ' rows) -- both are now asserted, rather than only the one that used to hold.');
+reset();
 let focusWins = true;
 for (const emphasis of ['none', 'coverage', 'provenance-chain']) {
 	store.setLens(Object.assign({}, M.INITIAL_LENS, { emphasis: emphasis, 'focus.nodeId': 'kb:concept:graph-view' }));
@@ -395,10 +406,21 @@ ok('GT61b', 'and a degree===0 rule would MISS it, which is why the derivation is
 	FX.FOLD_ONLY_NODE + ' degree ' + foldOnlyDegree + '; degree-rule set = ' + byDegree.join(','));
 reset();
 
-store.setLens(Object.assign({}, M.INITIAL_LENS, { 'filters.categories': ['structure'], 'focus.nodeId': FX.FILTERED_OUT_NODE }));
-everyNodeNamed('a selected node whose every row a filter removed');
-ok('GT62', 'population 3 -- the selected node with no surviving row is in the unlisted set, and the listed set is empty',
+// "the listed set is empty" needs an EXPLICIT depth (owner's 2026-08-07 default
+// change): with no ball at all (focus.depth: null, the new default), selecting a
+// node with no surviving row of its own does not touch anyone ELSE's rows -- see
+// GT62b below. Pinning `'focus.depth': 1` here reproduces the ORIGINAL property
+// this id has always demonstrated: an explicit ball around an isolated focus
+// point (gamma.md has no surviving edge to start a BFS from) is empty, so every
+// row -- gamma.md's own and everyone else's -- is excluded.
+store.setLens(Object.assign({}, M.INITIAL_LENS, { 'filters.categories': ['structure'], 'focus.nodeId': FX.FILTERED_OUT_NODE, 'focus.depth': 1 }));
+everyNodeNamed('a selected node whose every row a filter removed, at an explicit depth');
+ok('GT62', 'population 3 -- the selected node with no surviving row is in the unlisted set, and an EXPLICIT depth\'s empty ball leaves the listed set empty too',
 	unlistedIds(vm()).includes(FX.FILTERED_OUT_NODE) && listedRows(vm()).length === 0,
+	'unlisted=' + unlistedIds(vm()).join(',') + ' listed=' + listedRows(vm()).length);
+store.setLens({ 'focus.depth': null });
+ok('GT62b', 'under the NEW default (focus.depth: null, no ball) the SAME selection still lands the node in the unlisted set, WITHOUT wiping every other surviving row -- the listed set is exactly the filter\'s own survivors',
+	unlistedIds(vm()).includes(FX.FILTERED_OUT_NODE) && listedRows(vm()).length > 0,
 	'unlisted=' + unlistedIds(vm()).join(',') + ' listed=' + listedRows(vm()).length);
 reset();
 ok('GT64', 'a node whose rows were merely FILTERED out is not in the unlisted set -- it is not drawn at all',

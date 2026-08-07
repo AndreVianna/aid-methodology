@@ -80,7 +80,7 @@ const VIEWPORT_ACTIONS = Object.freeze(['zoom-in', 'zoom-out', 'zoom-fit', 'pan-
  */
 const AUTHORED_CONTROLS = Object.freeze([
 	Object.freeze({ id: 'grouping', requirement: 'FR-14a', axis: 'grouping', value: null }),
-	Object.freeze({ id: 'density', requirement: 'FR-14a', axis: 'density', value: null }),
+	Object.freeze({ id: 'spacing', requirement: 'FR-14a', axis: 'spacing', value: null }),
 	Object.freeze({ id: 'focus-node', requirement: 'FR-14a', axis: 'focus', value: null }),
 	Object.freeze({ id: 'focus-depth', requirement: 'FR-14a', axis: 'depth', value: null }),
 	Object.freeze({ id: 'filter-show-orphans', requirement: 'FR-14a', axis: 'orphan-toggle', value: null }),
@@ -264,9 +264,13 @@ function mountControls(ctx) {
 	const grid = root.querySelector('[data-controls-grid]');
 	clear(grid);
 
-	// Grouping. The relationship-category option is here as a real option
-	// alongside the other four values, because category is a grouping dimension
-	// and not only a filter axis.
+	// Grouping, over NODE properties only. The relationship-category option used
+	// to sit here and was removed on the owner's finding: it grouped nodes by a
+	// property only relationships carry, and a node with rows in several
+	// categories was assigned whichever came first. The select is built from
+	// GROUPING_VALUES rather than from a literal list, so removing the value from
+	// the model removed the option here with no edit -- which is the property
+	// GV26 asserts and the reason no third list needed changing.
 	const groupingSelect = el('select', { id: 'grouping', [CONTROL_ATTR]: 'grouping' },
 		GROUPING_VALUES.map((value) => el('option', { value: value, text: groupingLabel(value) })));
 	groupingSelect.addEventListener('change', () => { store.setLens({ 'grouping': groupingSelect.value }); });
@@ -276,19 +280,59 @@ function mountControls(ctx) {
 		el('span', { class: 'control-hint', text: 'Only the document dimension folds sections and facts away.' }),
 	]));
 
-	// Density. This is VIEW density -- how much is drawn -- and it is not an
-	// exposure of the simulation's physics. Repulsion, link distance and centre
-	// force are internal constants of the drawing rendering, and there is no
-	// state a slider for one of them could write to.
-	const densityRange = el('input', {
-		type: 'range', min: '1', max: '5', step: '1', id: 'density', [CONTROL_ATTR]: 'density',
-		'aria-describedby': 'density-hint',
+	// NEIGHBOURHOOD DEPTH, PROMOTED INTO THE SLOT THE DENSITY SLIDER USED TO HOLD.
+	//
+	// The density slider is GONE, not renamed again. It filtered nodes by connection
+	// count, the owner did not want that filter at all, and the one case it really
+	// covered -- nodes with NO connections -- is already the orphan toggle below. So
+	// nothing replaced its behaviour; this control took its place because depth is
+	// what the reader actually reaches for.
+	//
+	// It was previously a number input capped at 6, tucked inside the "Selected node"
+	// group, so it read as a detail OF selection rather than a control of its own.
+	// Three changes, all the owner's: its own group, always enabled (never gated on a
+	// selection existing), and a range that reaches 50.
+	//
+	// ZERO ON THE SLIDER IS "no limit", which is why the value readout beside it is
+	// not decoration: a slider alone cannot show that its bottom stop means the
+	// opposite of a small number. `focus.depth: null` is the lens value it writes,
+	// and null rather than a large integer because "no limit" and "50 hops" are
+	// different statements even where they draw the same thing today.
+	const depthRange = el('input', {
+		type: 'range', min: '0', max: String(DEPTH_MAX), step: '1', id: 'focus-depth',
+		[CONTROL_ATTR]: 'focus-depth', 'aria-describedby': 'focus-depth-hint',
 	});
-	densityRange.addEventListener('input', () => { store.setLens({ 'density': parseInt(densityRange.value, 10) }); });
+	const depthValue = el('span', { class: 'control-value', id: 'focus-depth-value' });
+	const depthText = (raw) => (raw === 0 || raw == null ? 'no limit' : String(raw) + (raw === 1 ? ' hop' : ' hops'));
+	depthRange.addEventListener('input', () => {
+		const raw = parseInt(depthRange.value, 10);
+		depthValue.textContent = depthText(raw);
+		store.setLens({ 'focus.depth': raw === 0 ? null : raw });
+	});
 	grid.appendChild(el('div', { class: 'control-group' }, [
-		el('label', { for: 'density', text: 'View density' }),
-		densityRange,
-		el('span', { class: 'control-hint', id: 'density-hint', text: 'Level 1 draws everything. Levels 2 to 5 hide nodes with fewer connections.' }),
+		el('label', { for: 'focus-depth', text: 'Neighbourhood depth' }),
+		depthRange,
+		depthValue,
+		el('span', { class: 'control-hint', id: 'focus-depth-hint', text: 'How many relationships out from the selected node to keep. At no limit the whole graph stays visible and selecting a node only marks it.' }),
+	]));
+
+	// Spacing -- the control the old "density" label promised. This one IS an
+	// exposure of the simulation's physics, and it is the reason the comment that
+	// used to sit above ("there is no state a slider for one of them could write
+	// to") is gone: `spacing` is that state. It scales repulsion, link length and
+	// the collision radius together, so one slider moves the whole layout apart
+	// instead of letting a reader mix three physics values into an incoherent one.
+	// It changes NOTHING about which nodes are drawn -- the counts are identical at
+	// every level, which is exactly what separates it from the slider above.
+	const spacingRange = el('input', {
+		type: 'range', min: '1', max: '5', step: '1', id: 'spacing', [CONTROL_ATTR]: 'spacing',
+		'aria-describedby': 'spacing-hint',
+	});
+	spacingRange.addEventListener('input', () => { store.setLens({ 'spacing': parseInt(spacingRange.value, 10) }); });
+	grid.appendChild(el('div', { class: 'control-group' }, [
+		el('label', { for: 'spacing', text: 'Spacing' }),
+		spacingRange,
+		el('span', { class: 'control-hint', id: 'spacing-hint', text: 'How far apart the nodes settle. Level 1 packs them tight; level 5 spreads them out. The same nodes are drawn at every level.' }),
 	]));
 
 	// The text search. The one design-choice control.
@@ -305,15 +349,11 @@ function mountControls(ctx) {
 	// no keyboard equivalent.
 	const focusSelect = el('select', { id: 'focus-node', [CONTROL_ATTR]: 'focus-node' });
 	focusSelect.addEventListener('change', () => { store.setLens({ 'focus.nodeId': focusSelect.value || null }); });
-	const depthInput = el('input', { type: 'number', min: '1', max: '6', step: '1', id: 'focus-depth', [CONTROL_ATTR]: 'focus-depth' });
-	depthInput.addEventListener('change', () => { store.setLens({ 'focus.depth': parseInt(depthInput.value, 10) }); });
 	const selectButton = el('button', { type: 'button', class: 'btn-ghost', id: 'node-select', [CONTROL_ATTR]: 'node-select', text: 'Select node' });
 	selectButton.addEventListener('click', () => { store.setLens({ 'focus.nodeId': focusSelect.value || null }); });
 	grid.appendChild(el('div', { class: 'control-group' }, [
 		el('label', { for: 'focus-node', text: 'Selected node' }),
 		focusSelect,
-		el('label', { for: 'focus-depth', text: 'Neighbourhood depth' }),
-		depthInput,
 		selectButton,
 	]));
 
@@ -353,7 +393,7 @@ function mountControls(ctx) {
 	});
 
 	/** Reconcile every control's displayed value against the lens, so a preset
-	 *  button and a slider can never disagree about the current density. The
+	 *  button and a slider can never disagree about the current lens. The
 	 *  controls are uncontrolled inputs written into the store on change; this is
 	 *  the other half of that arrangement. */
 	function refresh(viewModel, lens) {
@@ -363,9 +403,11 @@ function mountControls(ctx) {
 			if (button) button.setAttribute('aria-pressed', lens['preset'] === entry.value ? 'true' : 'false');
 		}
 		groupingSelect.value = lens['grouping'];
-		densityRange.value = String(lens['density']);
+		spacingRange.value = String(lens['spacing']);
 		if (textInput.value !== lens['filters.text']) textInput.value = lens['filters.text'];
-		depthInput.value = String(lens['focus.depth']);
+		const depthRaw = lens['focus.depth'] == null ? 0 : lens['focus.depth'];
+		depthRange.value = String(depthRaw);
+		depthValue.textContent = depthText(depthRaw);
 		orphanBox.checked = lens['filters.showOrphans'] !== false;
 
 		for (const axis of ['filters.categories', 'filters.kinds', 'filters.provenance']) {

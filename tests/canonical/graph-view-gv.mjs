@@ -176,8 +176,20 @@ async function buildScratchBundle(patch) {
 }
 
 // ===========================================================================
-// GV07 -- the zero-row artifact: density both-halves, its own single-node
-// group under grouping=document, and its label suffix
+// GV07 -- the zero-row artifact: its own single-node group under
+// grouping=document, its membership of the "no relationships" group under
+// grouping=provenance, and its label suffix
+//
+// Density's own thinning clause and the relation-category grouping clause
+// were removed here on the owner's 2026-08-07 control changes: the density
+// axis is gone entirely (nothing replaces its per-level thinning behaviour --
+// GV07 never needed a substitute, since the "gap set is never thinned"
+// property this used to demonstrate is a load-time, lens-independent fact
+// already covered unconditionally by GT12/GT12b in graph-view-model.mjs), and
+// `relation-category` no longer exists in GROUPING_VALUES (GV26 asserts its
+// absence). What is UNCHANGED and kept below: the provenance dimension is
+// still edge-derived and a degree-0 node still falls back to
+// NO_RELATIONSHIPS_GROUP under it, exactly as before.
 // ===========================================================================
 {
 	const model = M.parseRelationships(FX.FIXTURE);
@@ -185,23 +197,11 @@ async function buildScratchBundle(patch) {
 	const zeroId = FX.ZERO_ROW_NODE;
 	const zero = model.nodes.get(zeroId);
 
-	const atDensity1 = store.getViewModel().visibleNodes.some((n) => n.id === zeroId);
-	store.setLens({ density: 5 });
-	const vm5 = store.getViewModel();
-	const atDensity5 = vm5.visibleNodes.some((n) => n.id === zeroId);
-	const inGapSet5 = vm5.coverageGaps.artifactUndocumented.includes(zeroId);
-	const inOrigin5 = vm5.coverageOrigin.has(zeroId);
-	// The VALUE, not merely presence: a zero-row node that IS in kb_gaps and has
-	// no table row of its own is the 'ledger-only' half of the coverage origin
-	// map, never 'verified' (which would need a real table row) nor 'view-only'
-	// (which would need the opposite: a row with no ledger entry).
-	const originValue5 = vm5.coverageOrigin.get(zeroId);
 	// "no mismatch alarm" -- the fixture's kb_gaps and its recomputed set agree
 	// everywhere, so the whole-model integrity status is 'verified', never
 	// 'mismatch'. This is the load-time check GV07's own criterion names; GV06
 	// is the sibling case that deliberately breaks it.
 	const noMismatchAlarm = model.integrity.status === 'verified';
-	store.setLens(M.INITIAL_LENS);
 
 	store.setLens({ grouping: 'document' });
 	const vmg = store.getViewModel();
@@ -209,18 +209,12 @@ async function buildScratchBundle(patch) {
 	const singleGroup = !!zeroGroup && zeroGroup.nodeIds.length === 1 && zeroGroup.foldable === 0 && !vmg.foldedInto.has(zeroId);
 	store.setLens(M.INITIAL_LENS);
 
-	// Membership of the "no relationships" group under the TWO EDGE-DERIVED
-	// grouping dimensions (relation-category, provenance) -- distinct from the
-	// KIND-derived `document` dimension checked above, where the zero-row node
-	// gets its OWN single-node group instead. A node with no surviving edge has
-	// no category and no provenance to key on, so both edge-derived dimensions
-	// must fall back to the dedicated NO_RELATIONSHIPS_GROUP bucket.
-	store.setLens({ grouping: 'relation-category' });
-	const vmRC = store.getViewModel();
-	const rcGroup = vmRC.groups.find((g) => g.nodeIds.includes(zeroId));
-	const inNoRelRC = !!rcGroup && rcGroup.key === M.NO_RELATIONSHIPS_GROUP;
-	store.setLens(M.INITIAL_LENS);
-
+	// Membership of the "no relationships" group under the ONE EDGE-DERIVED
+	// grouping dimension left, provenance -- distinct from the KIND-derived
+	// `document` dimension checked above, where the zero-row node gets its OWN
+	// single-node group instead. A node with no surviving edge has no
+	// provenance to key on, so this dimension must fall back to the dedicated
+	// NO_RELATIONSHIPS_GROUP bucket.
 	store.setLens({ grouping: 'provenance' });
 	const vmProv = store.getViewModel();
 	const provGroup = vmProv.groups.find((g) => g.nodeIds.includes(zeroId));
@@ -229,16 +223,14 @@ async function buildScratchBundle(patch) {
 
 	const label = store.getViewModel().nodeLabels.get(zeroId);
 
-	ok('GV07', 'the zero-row kb_gaps node is a complete record: present at density 1, thinned like any node at density 5 while the GAP SET is never thinned (its id still in coverageOrigin at the "ledger-only" VALUE), no integrity mismatch alarm, its own single-node group under grouping=document, membership of the "no relationships" group under BOTH edge-derived dimensions (relation-category, provenance), and a labelled "no recorded relationships"',
+	ok('GV07', 'the zero-row kb_gaps node is a complete record: no integrity mismatch alarm, its own single-node group under grouping=document, membership of the "no relationships" group under grouping=provenance, and a labelled "no recorded relationships"',
 		!!zero && zero.kind === 'source-artifact' && zero.degree === 0
-		&& atDensity1 && !atDensity5 && inGapSet5 && inOrigin5 && originValue5 === 'ledger-only'
 		&& noMismatchAlarm
 		&& singleGroup
-		&& inNoRelRC && inNoRelProv
+		&& inNoRelProv
 		&& label === zero.name + ' — no recorded relationships',
-		'd1=' + atDensity1 + ' d5=' + atDensity5 + ' gapSet@d5=' + inGapSet5 + ' origin=' + originValue5
-		+ ' integrity=' + model.integrity.status + ' group=' + JSON.stringify(zeroGroup)
-		+ ' rcGroup=' + (rcGroup ? rcGroup.key : null) + ' provGroup=' + (provGroup ? provGroup.key : null));
+		'integrity=' + model.integrity.status + ' group=' + JSON.stringify(zeroGroup)
+		+ ' provGroup=' + (provGroup ? provGroup.key : null));
 }
 
 // ===========================================================================
@@ -974,10 +966,13 @@ async function buildScratchBundle(patch) {
 	const countsNodesTotal = vmCounts.counts.nodes + vmCounts.counts.hiddenNodes === model.nodes.size;
 	const countsEdgesTotal = vmCounts.counts.edges + vmCounts.counts.hiddenEdges === model.rowCount;
 
-	// --- No fold at all under the four OTHER dimensions ----------------------
+	// --- No fold at all under the three OTHER dimensions ---------------------
+	// (`relation-category` dropped from this list on 2026-08-07 -- it no
+	// longer exists in GROUPING_VALUES, see GV26 -- leaving 'document' plus
+	// three others rather than four.)
 	let noFoldElsewhere = true;
 	const elsewhereDetail = [];
-	for (const otherGrouping of ['none', 'relation-category', 'node-kind', 'provenance']) {
+	for (const otherGrouping of ['none', 'node-kind', 'provenance']) {
 		store.setLens(M.INITIAL_LENS);
 		store.setLens({ grouping: otherGrouping });
 		const vmOther = store.getViewModel();
@@ -987,7 +982,7 @@ async function buildScratchBundle(patch) {
 	}
 	store.setLens(M.INITIAL_LENS);
 
-	ok('GV22a', 'under grouping=document a folded document\'s section AND fact members are absent from visibleNodes, present in foldedInto mapping to the document, counted in groups[].foldable (2) and in counts.hiddenNodes, with that group\'s expanded false; the has-part row between the document and its folded section keeps its own id/key/row in visibleEdges while its edgeFold reads \'collapsed\', and is counted in counts.hiddenEdges; adding the group\'s key to expandedGroups restores both members, leaves foldable unchanged, sets expanded true and empties the group\'s share of foldedInto, and removing the key folds them again; a folded section held as focus.nodeId stays absent from visibleNodes while its document carries nodeEmphasis \'focus\' instead; counts.nodes+hiddenNodes and counts.edges+hiddenEdges are each total over the WHOLE model; and foldedInto is empty with every foldable 0 under all four other grouping dimensions',
+	ok('GV22a', 'under grouping=document a folded document\'s section AND fact members are absent from visibleNodes, present in foldedInto mapping to the document, counted in groups[].foldable (2) and in counts.hiddenNodes, with that group\'s expanded false; the has-part row between the document and its folded section keeps its own id/key/row in visibleEdges while its edgeFold reads \'collapsed\', and is counted in counts.hiddenEdges; adding the group\'s key to expandedGroups restores both members, leaves foldable unchanged, sets expanded true and empties the group\'s share of foldedInto, and removing the key folds them again; a folded section held as focus.nodeId stays absent from visibleNodes while its document carries nodeEmphasis \'focus\' instead; counts.nodes+hiddenNodes and counts.edges+hiddenEdges are each total over the WHOLE model; and foldedInto is empty with every foldable 0 under all three other grouping dimensions',
 		membersNotVisible && foldedIntoOk && foldableOk && hiddenNodesCoversFold && expandedFalse
 		&& collapsedOk && hiddenEdgesCoversFold
 		&& restored && foldableUnchanged && expandedTrueOk && foldedIntoEmptiedForGroup
@@ -1061,12 +1056,13 @@ async function buildScratchBundle(patch) {
 }
 
 // ===========================================================================
-// GV25 -- INITIAL_LENS is stated TOTAL over all fifteen fields (task-034 adds
-// `filters.hiddenIds`, the checkbox-hide axis), and every preset differs from
-// it on at least one key the preset sets
+// GV25 -- INITIAL_LENS is stated TOTAL over all fifteen fields (task-034 added
+// `filters.hiddenIds`, the checkbox-hide axis; `density` was removed and
+// `spacing`, the layout axis, was added 2026-08-07), and every preset differs
+// from it on at least one key the preset sets
 // ===========================================================================
 {
-	const expectedKeys = ['preset', 'grouping', 'expandedGroups', 'density', 'filters.kinds', 'filters.categories',
+	const expectedKeys = ['preset', 'grouping', 'expandedGroups', 'spacing', 'filters.kinds', 'filters.categories',
 		'filters.provenance', 'filters.showOrphans', 'filters.text', 'filters.hiddenIds',
 		'focus.nodeId', 'focus.depth', 'emphasis', 'zoom', 'sort'];
 	const total = M.LENS_KEYS.length === 15 && expectedKeys.every((k) => M.LENS_KEYS.includes(k))
@@ -1082,10 +1078,10 @@ async function buildScratchBundle(patch) {
 	const provenanceTotal = same(ids(M.INITIAL_LENS['filters.provenance']), ids(M.PROVENANCE_VALUES));
 	const hiddenIdsEmpty = same(M.INITIAL_LENS['filters.hiddenIds'], []);
 	const shapeOk = M.INITIAL_LENS.preset === null && M.INITIAL_LENS.grouping === 'none'
-		&& same(M.INITIAL_LENS.expandedGroups, []) && M.INITIAL_LENS.density === 1
+		&& same(M.INITIAL_LENS.expandedGroups, []) && M.INITIAL_LENS.spacing === 3
 		&& kindsTotal && categoriesTotal && provenanceTotal && hiddenIdsEmpty
 		&& M.INITIAL_LENS['filters.text'] === '' && M.INITIAL_LENS['filters.showOrphans'] === true
-		&& M.INITIAL_LENS.emphasis === 'none' && M.INITIAL_LENS['focus.nodeId'] === null && M.INITIAL_LENS['focus.depth'] === 1
+		&& M.INITIAL_LENS.emphasis === 'none' && M.INITIAL_LENS['focus.nodeId'] === null && M.INITIAL_LENS['focus.depth'] === null
 		&& same(M.INITIAL_LENS.zoom, { scale: 1, panX: 0, panY: 0 }) && same(M.INITIAL_LENS.sort, { column: 'row', direction: 'asc' });
 	let noneIsPrivileged = true;
 	for (const preset of Object.keys(M.PRESETS)) {
@@ -1099,9 +1095,18 @@ async function buildScratchBundle(patch) {
 }
 
 // ===========================================================================
-// GV26 -- relation category is a real grouping dimension, not only a filter
-// axis: the control's domain includes it, the select is built from that same
-// domain (greppable), and project() partitions groups by category under it
+// GV26 -- INVERTED on the owner's 2026-08-07 finding: `relation-category` is
+// REMOVED from GROUPING_VALUES's domain because it grouped NODES by a property
+// only RELATIONSHIPS carry -- a node touching several categories resolved,
+// arbitrarily, to whichever surviving edge came first in row order. The
+// grouping `<select>` is still built from GROUPING_VALUES itself (greppable),
+// which is exactly why removing the one value needed no edit to the control
+// file to remove the option (graph-controls.js's own comment now says so).
+// What used to be this id's own partition proof (a node's group is its first
+// surviving edge's category) is gone with the dimension; what stays true and
+// is asserted here instead is that each of the four SURVIVING values still
+// partitions every visible node into exactly one group -- no id left out, none
+// counted twice.
 // ===========================================================================
 {
 	const controlsPath = path.join(repoRoot, 'canonical/aid/templates/knowledge-graph/graph-controls.js');
@@ -1111,33 +1116,29 @@ async function buildScratchBundle(patch) {
 
 	const model = M.parseRelationships(FX.FIXTURE);
 	const store = M.createStore(model, M.INITIAL_LENS);
-	store.setLens({ grouping: 'relation-category' });
-	const vm = store.getViewModel();
-	const nonEmptyGroups = vm.groups.length > 0;
-	const keysAreCategories = vm.groups.every((g) => model.categories.includes(g.key) || g.key === M.NO_RELATIONSHIPS_GROUP);
 
-	// The grouping's own rule (graph-model.js's edge-derived-dimension branch):
-	// a node's group is its FIRST surviving edge's category, in table row order;
-	// a node touching no surviving edge goes to the dedicated NO_RELATIONSHIPS
-	// group. Recomputed here from vm.visibleEdges rather than asserted as a
-	// literal, so a change to the tie-break fails this rather than passing it.
-	const expectedGroupOf = new Map();
-	for (const edge of vm.visibleEdges) {
-		for (const id of [edge.sourceId, edge.targetId]) {
-			if (!expectedGroupOf.has(id)) expectedGroupOf.set(id, edge.category);
+	const partitionResults = M.GROUPING_VALUES.map((value) => {
+		store.setLens({ grouping: value });
+		const vm = store.getViewModel();
+		const seen = new Set();
+		let noOverlap = true;
+		for (const g of vm.groups) {
+			for (const id of g.nodeIds) {
+				if (seen.has(id)) noOverlap = false;
+				seen.add(id);
+			}
 		}
-	}
-	const partitionsByCategory = vm.visibleNodes.every((node) => {
-		const expectedKey = expectedGroupOf.has(node.id) ? expectedGroupOf.get(node.id) : M.NO_RELATIONSHIPS_GROUP;
-		const group = vm.groups.find((g) => g.nodeIds.includes(node.id));
-		return !!group && group.key === expectedKey;
+		const totalPartitioned = vm.groups.reduce((n, g) => n + g.nodeIds.length, 0) === vm.visibleNodes.length;
+		const everyNodeCovered = vm.visibleNodes.every((n) => seen.has(n.id));
+		store.setLens(M.INITIAL_LENS);
+		return { value, ok: noOverlap && totalPartitioned && everyNodeCovered };
 	});
-	const totalPartitioned = vm.groups.reduce((n, g) => n + g.nodeIds.length, 0) === vm.visibleNodes.length;
-	store.setLens(M.INITIAL_LENS);
+	const allPartition = partitionResults.every((r) => r.ok);
 
-	ok('GV26', '`relation-category` is in GROUPING_VALUES\'s domain and the grouping `<select>` is built from that exact domain (greppable); projecting with it partitions every visible node into the group its first surviving edge\'s category names, over GraphModel.categories',
-		M.GROUPING_VALUES.includes('relation-category') && selectBuiltFromDomain
-		&& nonEmptyGroups && keysAreCategories && partitionsByCategory && totalPartitioned);
+	ok('GV26', '`relation-category` is ABSENT from GROUPING_VALUES\'s domain (removed: it grouped nodes by a property only relationships carry, resolved arbitrarily to whichever surviving edge came first); the grouping `<select>` is still built from that exact domain (greppable), so the option disappeared with no control-file edit; and each of the four remaining values (' + M.GROUPING_VALUES.join(', ') + ') still partitions every visible node into exactly one group',
+		!M.GROUPING_VALUES.includes('relation-category') && M.GROUPING_VALUES.length === 4
+		&& selectBuiltFromDomain && allPartition,
+		partitionResults.map((r) => r.value + '=' + r.ok).join(' '));
 }
 
 // ===========================================================================
@@ -1326,6 +1327,90 @@ async function buildScratchBundle(patch) {
 		+ ' noneFocus=' + focusUnderNone + ' total=' + totalOk + ' edgeChain=' + edgeChainOk
 		+ ' mutationBites=' + mutationBites
 		+ ' edgeCoverage=' + edgeCoverageOk + ' edgeNone=' + edgeNoneOk);
+}
+
+// ===========================================================================
+// GV30 -- `spacing` (added 2026-08-07, replacing the removed `density` axis)
+// changes NO node set. Projecting the SAME fixture at every level 1..5 leaves
+// counts.nodes and counts.edges identical -- exactly the property that
+// distinguishes it from the degree filter it replaces, and it is
+// headless-checkable because `spacing` reaches no projection code at all
+// (graph-model.js's own LENS_KEYS comment: "the ONE key here that no
+// projection reads").
+// ===========================================================================
+{
+	const model = M.parseRelationships(FX.FIXTURE);
+	const store = M.createStore(model, M.INITIAL_LENS);
+	const perLevel = [1, 2, 3, 4, 5].map((level) => {
+		store.setLens({ spacing: level });
+		const vmLevel = store.getViewModel();
+		return { level, nodes: vmLevel.counts.nodes, edges: vmLevel.counts.edges };
+	});
+	store.setLens(M.INITIAL_LENS);
+	const allSame = perLevel.every((r) => r.nodes === perLevel[0].nodes && r.edges === perLevel[0].edges);
+
+	ok('GV30', 'projecting the fixture at every spacing level 1..5 leaves counts.nodes and counts.edges IDENTICAL -- spacing changes no node set, only how far apart the drawing rendering lets marks settle',
+		allSame && perLevel[0].nodes > 0,
+		perLevel.map((r) => r.level + ':' + r.nodes + 'n/' + r.edges + 'e').join(' '));
+}
+
+// ===========================================================================
+// GV31 -- `focus.depth: null` (the new default, replacing the old
+// capped-at-6 `number` input that defaulted to 1) applies NO focus ball at
+// all: selecting a node with no depth limit leaves counts.nodes/counts.edges
+// EXACTLY equal to the unselected counts, never narrowed to the selected
+// node's connected component. The same selection at depth 1 then narrows
+// STRICTLY, which is what proves the no-limit case is an absence of
+// filtering and not merely "a very large radius" landing on the same answer
+// by coincidence.
+// ===========================================================================
+{
+	const model = M.parseRelationships(FX.FIXTURE);
+	const store = M.createStore(model, M.INITIAL_LENS);
+	const unselected = store.getViewModel().counts;
+
+	store.setLens({ 'focus.nodeId': 'kb:alpha.md' });
+	const noLimit = store.getViewModel().counts;
+	const sameAsUnselected = noLimit.nodes === unselected.nodes && noLimit.edges === unselected.edges;
+
+	store.setLens({ 'focus.depth': 1 });
+	const depth1 = store.getViewModel().counts;
+	const strictlySmaller = depth1.nodes < noLimit.nodes && depth1.edges < noLimit.edges;
+	store.setLens(M.INITIAL_LENS);
+
+	ok('GV31', 'selecting a node with focus.depth: null (the default) leaves counts.nodes/counts.edges IDENTICAL to the unselected state -- no ball is applied at all; the same selection at depth 1 is strictly smaller',
+		sameAsUnselected && strictlySmaller,
+		'unselected=' + unselected.nodes + 'n/' + unselected.edges + 'e noLimit=' + noLimit.nodes + 'n/' + noLimit.edges
+		+ 'e depth1=' + depth1.nodes + 'n/' + depth1.edges + 'e');
+}
+
+// ===========================================================================
+// GV32 -- DEPTH_MAX (exported so no assertion re-types the ceiling as a
+// literal) is the clamp a depth ABOVE it collapses to. The fixture's
+// reachable component from kb:alpha.md is exhausted at depth 2, well inside
+// the ceiling, so a count comparison ALONE cannot tell "clamped to 50" apart
+// from "not clamped at all, but still stops at the same component" -- both
+// read 11n/12e regardless. The DECISIVE half reads `lensSummary`'s own text
+// (`narrate()` reports the CLAMPED depth number, never the raw one): a depth
+// requested past the ceiling must be announced as depth DEPTH_MAX, not as the
+// raw number the reader asked for.
+// ===========================================================================
+{
+	const model = M.parseRelationships(FX.FIXTURE);
+	const store = M.createStore(model, M.INITIAL_LENS);
+	store.setLens({ 'focus.nodeId': 'kb:alpha.md', 'focus.depth': M.DEPTH_MAX });
+	const atCeiling = store.getViewModel();
+	store.setLens({ 'focus.depth': M.DEPTH_MAX + 949 });
+	const pastCeiling = store.getViewModel();
+	store.setLens(M.INITIAL_LENS);
+	const countsClamp = pastCeiling.counts.nodes === atCeiling.counts.nodes && pastCeiling.counts.edges === atCeiling.counts.edges;
+	const summaryNamesCeiling = pastCeiling.lensSummary.indexOf('at depth ' + M.DEPTH_MAX) !== -1;
+	const summaryDoesNotNameRaw = pastCeiling.lensSummary.indexOf('at depth ' + (M.DEPTH_MAX + 949)) === -1;
+
+	ok('GV32', 'a focus.depth requested past DEPTH_MAX (' + M.DEPTH_MAX + ') clamps to it: counts.nodes/counts.edges at depth ' + (M.DEPTH_MAX + 949) + ' equal those at depth ' + M.DEPTH_MAX + ' itself, AND (the decisive half) lensSummary announces the CLAMPED depth (' + M.DEPTH_MAX + '), never the raw requested one',
+		countsClamp && summaryNamesCeiling && summaryDoesNotNameRaw && typeof M.DEPTH_MAX === 'number' && M.DEPTH_MAX > 0,
+		'atCeiling=' + atCeiling.counts.nodes + 'n/' + atCeiling.counts.edges + 'e pastCeiling=' + pastCeiling.counts.nodes + 'n/' + pastCeiling.counts.edges
+		+ 'e summary="' + pastCeiling.lensSummary + '"');
 }
 
 // ===========================================================================

@@ -515,7 +515,13 @@ ok('DT19d', 'a selection renders its own text badge',
 treset();
 
 // --- The empty state --------------------------------------------------------
-tstore.setLens(Object.assign({}, T.INITIAL_LENS, { 'filters.categories': ['structure'], 'focus.nodeId': FX.FILTERED_OUT_NODE }));
+// `'focus.depth': 1` is EXPLICIT here (owner's 2026-08-07 default change): with
+// no ball at all (focus.depth: null, the new default) a selection whose own
+// rows a filter removed does not touch anyone else's, so the table would not
+// empty. An explicit depth-1 ball around an isolated focus point (the filter
+// leaves it no surviving edge to start a BFS from) is empty, which is what
+// empties every row -- reproducing the property this id has always tested.
+tstore.setLens(Object.assign({}, T.INITIAL_LENS, { 'filters.categories': ['structure'], 'focus.nodeId': FX.FILTERED_OUT_NODE, 'focus.depth': 1 }));
 const empty = tregion.querySelector('tbody tr[data-empty-state]');
 ok('DT20', 'an emptied table states why, spanning all six columns and quoting the lens summary',
 	!!empty && empty.querySelector('td').getAttribute('colspan') === '6'
@@ -792,7 +798,7 @@ globalThis.window = wide.window; globalThis.document = doc;
 	// before it. Non-vacuous by construction: every driven value is chosen to
 	// DIFFER from the control's own current (default) value, so an unwired
 	// handler leaves `before === after` and the drive is reported as failed --
-	// verified during authorship by disabling the density handler in a SCRATCH
+	// verified during authorship by disabling the spacing handler in a SCRATCH
 	// copy of graph-controls.js (never the source tree, S5) and confirming this
 	// exact check goes red against it. ---
 	function drive(entry) {
@@ -829,11 +835,11 @@ globalThis.window = wide.window; globalThis.document = doc;
 				el.dispatchEvent(new wide.window.Event('change', { bubbles: true }));
 				return { ok: store.getLens().grouping === next && next !== before };
 			}
-			case 'density': {
-				const before = store.getLens().density;
+			case 'spacing': {
+				const before = store.getLens().spacing;
 				el.value = String(before + 1 > 5 ? before - 1 : before + 1);
 				el.dispatchEvent(new wide.window.Event('input', { bubbles: true }));
-				return { ok: store.getLens().density === Number(el.value) && Number(el.value) !== before };
+				return { ok: store.getLens().spacing === Number(el.value) && Number(el.value) !== before };
 			}
 			case 'focus-node': {
 				const opt = Array.from(el.options).find((o) => o.value !== '');
@@ -842,10 +848,21 @@ globalThis.window = wide.window; globalThis.document = doc;
 				return { ok: store.getLens()['focus.nodeId'] === opt.value };
 			}
 			case 'focus-depth': {
+				// A `range`, driven by `input` like every other slider in this switch --
+				// not `change`, which is what it fired back when it was a `number`
+				// input. Two writes rather than one: first a non-zero level, to prove
+				// the default (null, drawn as 0) actually moves; then 0 itself, because
+				// 0 is not "depth zero" but the control's own spelling of "no limit" and
+				// has to write `null`, not the number 0 -- the one clause this case
+				// exists to catch since the promotion off the old capped `number` input.
 				const before = store.getLens()['focus.depth'];
-				el.value = String(before + 1);
-				el.dispatchEvent(new wide.window.Event('change', { bubbles: true }));
-				return { ok: store.getLens()['focus.depth'] === before + 1 };
+				el.value = '5';
+				el.dispatchEvent(new wide.window.Event('input', { bubbles: true }));
+				const wroteFive = store.getLens()['focus.depth'] === 5 && 5 !== before;
+				el.value = '0';
+				el.dispatchEvent(new wide.window.Event('input', { bubbles: true }));
+				const wroteNull = store.getLens()['focus.depth'] === null;
+				return { ok: wroteFive && wroteNull, why: 'wroteFive=' + wroteFive + ' wroteNull=' + wroteNull };
 			}
 			case 'filter-show-orphans': {
 				const before = store.getLens()['filters.showOrphans'];
@@ -937,6 +954,34 @@ globalThis.window = wide.window; globalThis.document = doc;
 		viewportEntries.length + ' manifest entries, ' + viewportDomControls.length + ' DOM controls ('
 			+ viewportDomControls.map((el) => el.getAttribute(M.CONTROL_ATTR)).join(', ') + '), seam=' + handleSeamIntact);
 
+	// --- The density axis: GONE, by the owner's decision on 2026-08-07 -- the
+	// same vacuity shape GV17c guards for the viewport axis, over the control
+	// that used to filter nodes by connection count. Asserted directly, in
+	// both the manifest and the DOM, rather than left to read as an absence
+	// nothing checks: a stray `data-control="density"` element (or a manifest
+	// entry naming it) would otherwise pass every OTHER check silently, the
+	// same way a returned viewport button would have before GV17c existed.
+	reset();
+	const densityManifestEntries = M.shellState.manifest.filter((e) => e.id === 'density' || e.axis === 'density');
+	const densityDomControls = Array.from(doc.querySelectorAll('[' + M.CONTROL_ATTR + '="density"]'));
+	reset();
+	ok('GV33', 'the density axis is empty in BOTH the manifest and the DOM -- zero manifest entries naming it and not one element carrying data-control="density" -- so the removed degree filter cannot silently return',
+		densityManifestEntries.length === 0 && densityDomControls.length === 0,
+		densityManifestEntries.length + ' manifest entries, ' + densityDomControls.length + ' DOM controls');
+
+	// --- The `focus-depth` control's `max` attribute is DEPTH_MAX itself, never
+	// a re-typed literal: a ceiling change in graph-model.js that left the
+	// control's own markup behind would otherwise let the reader's slider
+	// promise a depth the projection silently clamps below.
+	reset();
+	const depthEl34 = doc.querySelector('[' + M.CONTROL_ATTR + '="focus-depth"]');
+	const depthMaxAttr = depthEl34 ? depthEl34.getAttribute('max') : null;
+	reset();
+	ok('GV34', 'the focus-depth control is a range whose max attribute equals DEPTH_MAX (' + M.DEPTH_MAX + '), read from the constant rather than asserted as a literal',
+		!!depthEl34 && depthEl34.tagName === 'INPUT' && depthEl34.getAttribute('type') === 'range'
+		&& depthMaxAttr === String(M.DEPTH_MAX),
+		'tag=' + (depthEl34 ? depthEl34.tagName : null) + ' type=' + (depthEl34 ? depthEl34.getAttribute('type') : null) + ' max=' + depthMaxAttr);
+
 	// --- Group-toggle completeness is GV22b's; here only presence,
 	// focusability and keyboard-operability, over a lens with at least one
 	// foldable group (grouping: 'document', where the fixture guarantees one --
@@ -1014,7 +1059,7 @@ globalThis.window = wide.window; globalThis.document = doc;
 
 // ===========================================================================
 // GV24 -- after each of the four presets is applied, the grouping <select>,
-// the density range, every zoom/pan keyboard control and every filter control
+// the spacing range, every zoom/pan keyboard control and every filter control
 // is present and NOT disabled, and a subsequent write to each still changes
 // LensState -- AC-8's "then all of them remain usable" over every control the
 // criterion names. The zoom/pan controls' write goes through the viewport
@@ -1038,7 +1083,7 @@ globalThis.window = wide.window; globalThis.document = doc;
 		store.applyPreset(presetName);
 
 		const groupingEl = doc.querySelector('[' + M.CONTROL_ATTR + '="grouping"]');
-		const densityEl = doc.querySelector('[' + M.CONTROL_ATTR + '="density"]');
+		const spacingEl = doc.querySelector('[' + M.CONTROL_ATTR + '="spacing"]');
 		// The viewport axis is intentionally empty (the owner removed the seven
 		// buttons on 2026-08-06), so it is NOT mapped over here. Mapping an empty
 		// axis and calling `.every(Boolean)` on the result reads green while
@@ -1047,8 +1092,8 @@ globalThis.window = wide.window; globalThis.document = doc;
 		const filterEls = M.shellState.manifest.filter((e) => ['filters.categories', 'filters.kinds', 'filters.provenance'].includes(e.axis))
 			.map((e) => doc.querySelector('[' + M.CONTROL_ATTR + '="' + e.id + '"]'));
 
-		const allPresent = !!groupingEl && !!densityEl && filterEls.every(Boolean);
-		const allEnabled = allPresent && isNativeFocusable24(groupingEl) && isNativeFocusable24(densityEl)
+		const allPresent = !!groupingEl && !!spacingEl && filterEls.every(Boolean);
+		const allEnabled = allPresent && isNativeFocusable24(groupingEl) && isNativeFocusable24(spacingEl)
 			&& filterEls.every(isNativeFocusable24);
 
 		// A write to each changes LensState -- proven by driving one of each kind
@@ -1059,10 +1104,10 @@ globalThis.window = wide.window; globalThis.document = doc;
 		groupingEl.dispatchEvent(new wide.window.Event('change', { bubbles: true }));
 		const groupingWrote = store.getLens().grouping === groupingNext && groupingNext !== groupingBefore;
 
-		const densityBefore = store.getLens().density;
-		densityEl.value = String(densityBefore + 1 > 5 ? densityBefore - 1 : densityBefore + 1);
-		densityEl.dispatchEvent(new wide.window.Event('input', { bubbles: true }));
-		const densityWrote = store.getLens().density === Number(densityEl.value) && Number(densityEl.value) !== densityBefore;
+		const spacingBefore = store.getLens().spacing;
+		spacingEl.value = String(spacingBefore + 1 > 5 ? spacingBefore - 1 : spacingBefore + 1);
+		spacingEl.dispatchEvent(new wide.window.Event('input', { bubbles: true }));
+		const spacingWrote = store.getLens().spacing === Number(spacingEl.value) && Number(spacingEl.value) !== spacingBefore;
 
 		// The viewport write is not driven here: with the seven buttons removed
 		// there is no control to drive, and `viewportEls[0]` would be `undefined`
@@ -1076,13 +1121,13 @@ globalThis.window = wide.window; globalThis.document = doc;
 		const filterWrote = filterAxisAfter !== filterAxisBefore;
 
 		perPreset.push({
-			preset: presetName, allPresent, allEnabled, groupingWrote, densityWrote, filterWrote,
-			ok: allPresent && allEnabled && groupingWrote && densityWrote && filterWrote,
+			preset: presetName, allPresent, allEnabled, groupingWrote, spacingWrote, filterWrote,
+			ok: allPresent && allEnabled && groupingWrote && spacingWrote && filterWrote,
 		});
 	}
 	reset();
 	const failing24 = perPreset.filter((p) => !p.ok);
-	ok('GV24', 'after each of the four presets, the grouping select, the density range and every filters.categories/kinds/provenance control stays present and enabled, and a write to one of each kind still changes LensState (the viewport entries are excluded because there are none -- see GV17c)',
+	ok('GV24', 'after each of the four presets, the grouping select, the spacing range and every filters.categories/kinds/provenance control stays present and enabled, and a write to one of each kind still changes LensState (the viewport entries are excluded because there are none -- see GV17c)',
 		perPreset.length === 4 && failing24.length === 0,
 		JSON.stringify(perPreset));
 }
