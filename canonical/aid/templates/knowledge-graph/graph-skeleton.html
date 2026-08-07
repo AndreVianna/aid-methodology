@@ -206,7 +206,7 @@
 			     label ("no arrowhead - reads the same both ways", ~38 characters from
 			     x=484, ending at ~693), which the old width very nearly touched. -->
 			<svg viewBox="0 0 815 196" width="815" height="196" role="img"
-			     aria-label="The seven node shapes, one per node kind, plus the star that marks the project node; the four line styles used for relationship categories; and the two coverage-gap asterisks. Each is named in words in the list below this diagram.">
+			     aria-label="Node kind by shape and colour: a filled circle is a document, a filled square a section, a filled triangle a fact, a filled diamond a concept, a filled hexagon a source artifact, a filled pentagon an image, a hollow ring a web page, and a filled star is the project itself. Relationship category by colour and line style: a solid line means the category owns its colour, and a dashed or dotted line means it shares a colour with another category. Direction: an arrowhead reads source to target, and no arrowhead means the relationship reads the same both ways. Coverage gaps: a red asterisk beside a node is an unbacked claim, nothing in the source backs it; an amber asterisk is an undocumented artifact, no knowledge-base document describes it. The Controls panel names every node kind and every relationship category individually beside its own filter checkbox.">
 				<g stroke="none">
 					<g transform="translate(10,0)"><circle cx="30" cy="26" r="11" fill="var(--gk-document)"/></g>
 					<g transform="translate(36,0)"><rect x="88" y="15" width="22" height="22" fill="var(--gk-section)"/></g>
@@ -295,18 +295,31 @@
 		     diagram has to stay VISIBLE -- inside a closed disclosure it would measure
 		     0x0 and fail T3 by the gate's own rule. That decides which of the two moves.
 
-		     The list below discharges SC 1.1.1 for the diagram, and the diagram says so
-		     itself: its `aria-label` ends "Each is named in words in the list below this
-		     diagram." Deleting the list would make that sentence a lie and leave the SVG
-		     without its text alternative.
+		     The list below USED TO discharge SC 1.1.1 for the diagram, and the diagram
+		     said so itself: its `aria-label` ended "Each is named in words in the list
+		     below this diagram."
 
-		     A closed `<details>` keeps that alternative AVAILABLE -- in the accessibility
-		     tree, keyboard reachable, one Enter away -- which is what SC 1.1.1 asks for;
-		     it does not ask for it to be permanently on screen. The list is also not a
-		     `.diagram-box`, an `.infographic` or a top-level `<svg>`, so the visual
-		     collector never looks inside this disclosure at all. -->
+		     SECOND PASS, on the owner's second report -- "the info is redundant" --
+		     because the first pass only COLLAPSED the list, which hid the duplication
+		     rather than removing it. Measured on the real page, the duplication was
+		     three-fold rather than two-fold: the Node kind filter already labels every
+		     checkbox "<glyph> document (filled circle)", and the Relationship category
+		     filter already labels all fourteen "<swatch> structure (solid)" -- strictly
+		     more than the list carried. So the kind, category, direction and
+		     coverage-gap sections are DELETED from the list and nothing is lost.
+
+		     The `aria-label` is self-contained now, and that is the correct arrangement
+		     independently of the redundancy: this SVG carries `role="img"`, so assistive
+		     technology reads the label and never the inner `<text>` nodes -- a label that
+		     pointed at a list was never having those names read in its place anyway.
+
+		     What is left in the disclosure is BEHAVIOUR -- how emphasis reads, when
+		     relationship names appear, what the mouse does, what the star is for -- which
+		     appears nowhere else on the page. It is not a `.diagram-box`, an
+		     `.infographic` or a top-level `<svg>`, so the visual collector never looks
+		     inside it. -->
 		<details class="legend-detail">
-			<summary>Every symbol in words</summary>
+			<summary>How to read and drive the graph</summary>
 			<div data-legend></div>
 		</details>
 	</section>

@@ -566,75 +566,50 @@ function renderLegend(root, graphModel) {
 	const host = root.querySelector('[data-legend]');
 	clear(host);
 
-	const kinds = el('dl', {});
-	kinds.appendChild(el('dt', { text: 'Node kind — colour and shape' }));
-	for (const kind of Object.keys(KIND_ENCODING)) {
-		const encoding = KIND_ENCODING[kind];
-		kinds.appendChild(el('dd', {}, [el('span', { class: 'legend-row' }, [
-			el('span', { class: 'filter-glyph k-' + slug(kind), 'aria-hidden': 'true', text: encoding.glyph }),
-			kind + ' — ' + encoding.shapeLabel,
-		])]));
-	}
-
-	// The project hub (task-035), appended to the SAME list as the seven kinds
-	// rather than given a section of its own. It IS a node the reader sees and has
-	// to be able to name, and a reader looking up "what is that star" looks under
-	// node shapes. It is last and it says what it is for, so nothing about it reads
-	// as an eighth member of the Kind enum -- which it deliberately is not.
-	kinds.appendChild(el('dd', {}, [el('span', { class: 'legend-row' }, [
-		el('span', { class: 'filter-glyph k-' + slug(HUB_KIND), 'aria-hidden': 'true', text: HUB_ENCODING.glyph }),
-		HUB_KIND + ' — ' + HUB_ENCODING.shapeLabel + ', the project itself; joined to every '
-			+ 'Knowledge Base document and every file at the repository root, and the point a hop '
-			+ 'limit counts from when no node is selected',
-	])]));
-
-	const categories = el('dl', {});
-	categories.appendChild(el('dt', { text: 'Relationship category — colour and line style' }));
-	for (const category of graphModel.categories) {
-		const encoding = CATEGORY_ENCODING[category];
-		if (!encoding) continue;
-		categories.appendChild(el('dd', {}, [el('span', { class: 'legend-row' }, [
-			el('span', { class: 'filter-swatch ls-' + encoding.lineStyle + ' c-' + slug(category), 'aria-hidden': 'true' }),
-			category + ' — ' + encoding.lineStyle + ' line',
-		])]));
-	}
-
-	// The coverage gap badge. Its own section rather than a line inside
-	// "Emphasis", because it is NOT on the emphasis axis: its source is
-	// `coverageGaps` membership, so a selected gap node keeps its badge where an
-	// emphasis-derived mark would lose it. Describing it under Emphasis would
-	// have taught the reader the wrong model.
-	//
-	// ONE character AND one size for both, because the canvas draws them that way
-	// -- the owner compared three arms against four and two sizes against one, and
-	// chose three arms at one size. Colour is the only difference. A second
-	// character or a size bump here would claim a distinction the canvas does not
-	// draw, which is the failure mode a legend exists to avoid.
-	const gaps = el('dl', {}, [
-		el('dt', { text: 'Coverage gap — asterisk beside the node' }),
-		el('dd', {}, [el('span', { class: 'legend-row' }, [
-			el('span', { class: 'filter-glyph gap-kb-unbacked', 'aria-hidden': 'true', text: '✱' }),
-			'unbacked claim — nothing in the source backs it',
-		])]),
-		el('dd', {}, [el('span', { class: 'legend-row' }, [
-			el('span', { class: 'filter-glyph gap-artifact-undocumented', 'aria-hidden': 'true', text: '✱' }),
-			'undocumented artifact — no knowledge-base document describes it',
-		])]),
-		el('dd', { text: 'The red asterisk is the more severe of the two: an unbacked claim is wrong information rather than missing information. A node with neither gap carries no asterisk, and the table below states both classes in words.' }),
-	]);
-
-	const direction = el('dl', { class: 'legend-prose' }, [
-		el('dt', { text: 'Direction' }),
-		el('dd', { text: 'An arrowhead reads source to target, and touches the border of the node it points at. A relationship that reads the same in both directions has NO arrowhead, and that absence is the signal for it.' }),
+	/* WHAT THIS PANEL NO LONGER SAYS, AND WHERE EACH THING SAYS IT INSTEAD.
+	 *
+	 * The owner's finding, twice: "the legend became redundant with the full
+	 * explanation of each item just below it", and then "the info is redundant"
+	 * after the first pass only collapsed it. Collapsing was the wrong fix -- it
+	 * hid the duplication instead of removing it.
+	 *
+	 * Measured on the real page rather than reasoned about, and the duplication was
+	 * worse than TWO-fold:
+	 *
+	 *   node kinds      -- the diagram names all 8 in words, AND the Node kind
+	 *                      filter renders one checkbox per kind labelled
+	 *                      "<glyph> document (filled circle)". THREE copies.
+	 *   categories      -- the Relationship category filter renders one checkbox
+	 *                      per category labelled "<swatch> structure (solid)", all
+	 *                      14 of them, which is strictly MORE than this panel's
+	 *                      list carried. The diagram carries the 3 line styles.
+	 *   direction       -- the diagram states both readings in words.
+	 *   coverage gaps   -- the diagram draws both asterisks and names both classes.
+	 *
+	 * So all four of those sections are deleted, and nothing is lost from the page.
+	 * What is left is the content that appears NOWHERE else -- how emphasis reads,
+	 * when relationship names appear, and what the mouse does. That is behaviour,
+	 * not encoding, which is why the disclosure is titled for behaviour rather than
+	 * for symbols.
+	 *
+	 * The diagram's `aria-label` was rewritten in the same change: it used to end
+	 * "Each is named in words in the list below this diagram", delegating SC 1.1.1
+	 * to a list that no longer names them. It is self-contained now, which is the
+	 * correct arrangement anyway -- the SVG carries `role="img"`, so assistive
+	 * technology reads the label and never the inner `<text>` nodes.
+	 */
+	const behaviour = el('dl', { class: 'legend-prose' }, [
 		el('dt', { text: 'Emphasis' }),
 		el('dd', { text: 'A selected node is outlined with a ring. Under the Coverage lens everything well-formed is dimmed, so the gaps stand out. Under the Provenance lens the rows of a cross-side chain keep full contrast and the rest are dimmed. In the relationship table the same two gap classes are marked with a wavy rule and a double rule instead, because a table has no room for a badge.' }),
 		el('dt', { text: 'Relationship names' }),
 		el('dd', { text: 'Not painted on every line. They appear on hover and on selection, and every one of them is always present as text in the relationship table.' }),
 		el('dt', { text: 'Mouse' }),
 		el('dd', { text: 'Scroll to zoom. Drag to pan. Click a node to select it, and click empty space to clear the selection; hover a node or a line to read its name. The Controls panel above also carries a Selected node list, whose ‘(none)’ entry clears the same way from the keyboard.' }),
+		el('dt', { text: 'The project node' }),
+		el('dd', { text: 'The star is this project itself. It is not in the relationship file — the view adds it, joined to every Knowledge Base document and every file at the repository root — and with no node selected it is the point a hop limit counts from. Turn it off in the Controls panel and the hop limit has nothing to count from.' }),
 	]);
 
-	host.appendChild(el('div', { class: 'legend-grid' }, [kinds, categories, gaps, direction]));
+	host.appendChild(el('div', { class: 'legend-grid' }, [behaviour]));
 }
 
 /**
