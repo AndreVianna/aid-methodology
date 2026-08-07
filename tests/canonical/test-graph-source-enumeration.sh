@@ -291,7 +291,8 @@ build_fixture_a() {
     local d="$1"
     mkdir -p "$d"/{.aid/knowledge,.aid/works/w1,bin,lib,src/deep,docs/images,assets,data} \
              "$d"/{tests/canonical,canonical/skills/aid-demo,canonical/agents/aid-demo} \
-             "$d"/{canonical/aid/templates,dashboard/reader,profiles/claude-code,site/dist,node_modules/dep,plain}
+             "$d"/{canonical/aid/templates,dashboard/reader,profiles/claude-code,site/dist,node_modules/dep,plain} \
+             "$d"/{.vscode,.github/workflows,.github/ISSUE_TEMPLATE}
 
     printf 'format_version: 3\nname: fixture-a\n' > "$d/.aid/settings.yml"
 
@@ -414,6 +415,41 @@ EM
     printf 'built output, never a node\n'  > "$d/site/dist/bundle.js"
     printf 'vendored, never a node\n'      > "$d/node_modules/dep/index.js"
     printf 'nothing qualifies this\n'      > "$d/plain/orphan.txt"
+
+    # R-DOT: the generalised Class 4 dot-rule (D4, 2026-08-06). Four repo-root
+    # metadata files, none of which carries a shebang or any other carrier, so
+    # their ABSENCE from nodes.tsv is discriminating rather than a foregone
+    # conclusion (a file with no carrier at all would land in candidates.tsv
+    # with no-rule-match if merely UNQUALIFIED -- the dot-rule's job is to keep
+    # it out of the CANDIDATE set in the first place, which is what R-DOT-05
+    # checks).
+    printf '# CLAUDE.md\npointer file, never cited as truth\n' > "$d/CLAUDE.md"
+    printf '# AGENTS.md\n'                                     > "$d/AGENTS.md"
+    printf 'MIT\n'                                              > "$d/LICENSE"
+    printf '9.9.9\n'                                             > "$d/VERSION"
+    # A nested dot segment with NO root .aid/ involvement at all -- proves rule
+    # (a) fires "at any depth", not only on a path that happens to start with a
+    # carve-out's own prefix text.
+    printf '{}\n' > "$d/.vscode/settings.json"
+    # .github/workflows/ is carved out (FR-21 / D3a Q1's declared carrier); the
+    # sibling dot-trees under .github are NOT, so both arms of that split get a
+    # live fixture. lib/workflow-invoked.sh carries NO shebang and NO other
+    # carrier at all -- the workflow command token is its ONLY route to
+    # entry-point, so promoting it is the non-vacuous proof that the carve-out
+    # actually re-admits the workflow file as a readable CANDIDATE rather than
+    # merely failing to crash.
+    printf 'no shebang, no other carrier -- only the workflow token qualifies this\n' \
+        > "$d/lib/workflow-invoked.sh"
+    cat > "$d/.github/workflows/build.yml" <<'WF'
+name: build
+on: [push]
+jobs:
+  build:
+    steps:
+      - run: bash lib/workflow-invoked.sh
+WF
+    printf 'schedule:\n  - package-ecosystem: npm\n' > "$d/.github/dependabot.yml"
+    printf 'name: Feedback\n'                          > "$d/.github/ISSUE_TEMPLATE/feedback.yml"
 
     git -C "$d" init -q .
 }
@@ -971,7 +1007,8 @@ for arr in NA MA; do
         i=$((i + 1))
     done
 done
-assert_eq "$AIDN" "0" "R-EXCL-04 nothing under .aid/ becomes a node except the one allowlist entry"
+assert_eq "$AIDN" "0" \
+    "R-EXCL-04 nothing under .aid/ becomes a node except settings.yml -- .aid/knowledge/ is ALSO carved out at the predicate level (R-LIB-24) but is unreached by the walk here (R-DOT-15), so it contributes nothing to this count either"
 assert_row_absent NA "int:plain/orphan.txt" "R-EXCL-05 file existence alone never qualifies"
 DROPPED=0; tsv_len CA; i=0
 while [[ "$i" -lt "$TSV_N" ]]; do
@@ -1012,6 +1049,76 @@ done
 assert_eq "$GITEX_LEAK" "0" \
     "R-EXCL-11 a gitignored path under the allowlist never reaches the CANDIDATE set either"
 assert_nonempty_arr CB "R-EXCL-12 fixture B does produce candidates, so R-EXCL-11 is not vacuous"
+
+# --- R-DOT -----------------------------------------------------------------
+# The generalised Class 4 dot-rule (D4, 2026-08-06 owner decision) -- live,
+# end-to-end proof, not just the unit calls in R-LIB. Absence from nodes.tsv
+# alone is not discriminating (an unqualified file lands there too), so every
+# excluded path here is ALSO checked against candidates.tsv: a Class-4-excluded
+# path never reaches the candidate set at all, while a merely-unqualified one
+# (like plain/orphan.txt, R-EXCL-06) does. That is the same shape R-EXCL-08/09
+# already uses for the Class 5 override, applied to the new rule.
+echo "--- R-DOT: the generalised dot-rule, live ---"
+in_candidates() {                  # <int: id> -> 0 if CA carries a node row for it
+    local id="$1" len i l k s
+    eval "len=\${#CA[@]}"; i=0
+    while [[ "$i" -lt "$len" ]]; do
+        eval "l=\${CA[\$i]}"
+        tsv_field "$l" 1; k="$TSV_FIELD"
+        tsv_field "$l" 2; s="$TSV_FIELD"
+        if [[ "$k" == "node" && "$s" == "$id" ]]; then return 0; fi
+        i=$((i + 1))
+    done
+    return 1
+}
+assert_row_absent NA "int:CLAUDE.md" "R-DOT-01 the root pointer file CLAUDE.md is excluded"
+assert_row_absent NA "int:AGENTS.md" "R-DOT-02 the root pointer file AGENTS.md is excluded"
+assert_row_absent NA "int:LICENSE"   "R-DOT-03 the root file LICENSE is excluded"
+assert_row_absent NA "int:VERSION"   "R-DOT-04 the root file VERSION is excluded"
+if ! in_candidates "int:CLAUDE.md"; then pass "R-DOT-05 CLAUDE.md never reaches the candidate set either (cut before candidacy, not merely unqualified)"
+else fail "R-DOT-05 CLAUDE.md leaked into the candidate set"; fi
+assert_row_absent NA "int:.vscode/settings.json" \
+    "R-DOT-06 a NESTED dot segment with no root .aid/.github/.claude involvement is excluded (rule (a) fires at any depth)"
+if ! in_candidates "int:.vscode/settings.json"; then pass "R-DOT-07 .vscode/settings.json never reaches the candidate set"
+else fail "R-DOT-07 .vscode/settings.json leaked into the candidate set"; fi
+assert_row_absent NA "int:.github/dependabot.yml" \
+    "R-DOT-08 .github/dependabot.yml is excluded -- .github is a dot segment like any other"
+assert_row_absent NA "int:.github/ISSUE_TEMPLATE/feedback.yml" \
+    "R-DOT-09 .github/ISSUE_TEMPLATE/feedback.yml is excluded -- only workflows/ is carved out"
+# The carve-out for .github/workflows/ is proved by its CONSEQUENCE, not its own
+# nodehood: lib/workflow-invoked.sh carries no shebang and no other carrier, so
+# the workflow command token is its ONLY possible route to entry-point. If the
+# carve-out merely stopped the scanner from crashing but the file were still
+# excluded before its content could be read as a carrier (the FR-21 finding's
+# exact failure mode), this would be the assertion that goes red.
+WF_ID="int:lib/workflow-invoked.sh"
+assert_row_present NA "$WF_ID" \
+    "R-DOT-10 a script named ONLY by a workflow run: step is a node (the carve-out's consequence, not its nodehood)"
+assert_field NA "$WF_ID" 4 "entry-point" "R-DOT-11 its qualifier is entry-point (Q1, template 7)"
+assert_field NA "$WF_ID" 5 \
+    'lib/workflow-invoked.sh -- workflow command token (search: "lib/workflow-invoked.sh" in .github/workflows/build.yml)' \
+    "R-DOT-12 its evidence is the workflow command token, byte-exact"
+# The workflow file itself qualifies under no clause of its own (no shebang, not
+# a manifest, not referenced by path) -- it is a walked CANDIDATE (proving the
+# carve-out actually admits it) that simply never becomes a node.
+assert_row_absent NA "int:.github/workflows/build.yml" \
+    "R-DOT-13 the workflow file itself is not a node (nothing qualifies IT)"
+if in_candidates "int:.github/workflows/build.yml"; then pass "R-DOT-14 but it DID reach the candidate set -- the carve-out re-admits it as a readable carrier"
+else fail "R-DOT-14 the workflow file never reached the candidate set -- the carve-out is not actually re-admitting it"; fi
+# .aid/knowledge/ is the fourth carve-out, and its predicate admission is
+# unit-tested directly in R-LIB (sig_class4_excluded never sees a live path
+# here to confirm against, because the scanner's OWN step-4 find-prune removes
+# the whole ./.aid tree before Class 4 ever runs, and nothing in this feature
+# re-admits .aid/knowledge/** the way it re-admits .aid/settings.yml or the
+# renderer tree). That is deliberate, not an oversight: feature-004 D1 requires
+# the KB-side and int: node sets to stay disjoint, and re-admitting real KB
+# documents into this walk would risk exactly that violation the moment any
+# already-qualified file cites a KB doc path by text. The live assertion here
+# is therefore the ABSENCE of .aid/knowledge/module-map.md, for a DIFFERENT
+# reason than settings.yml's presence: the predicate would admit it, but the
+# walk never reaches it.
+assert_row_absent NA "int:.aid/knowledge/module-map.md" \
+    "R-DOT-15 .aid/knowledge/module-map.md stays absent from nodes.tsv -- unreached by the walk (D1), not merely unqualified"
 
 # --- R-DET ---------------------------------------------------------------
 echo "--- R-DET: byte-identity across two scans of one frozen fixture ---"
@@ -1125,6 +1232,20 @@ LIBOUT="$(
     if sig_class4_excluded '.aid/settings.yml'; then echo "ALLOW=excluded"; else echo "ALLOW=readmitted"; fi
     if sig_class4_excluded '.aid/knowledge/x.md'; then echo "AIDCUT=yes"; else echo "AIDCUT=no"; fi
     if sig_class5_allowlisted '.claude/skills/generate-profile/scripts/x.py'; then echo "C5=yes"; else echo "C5=no"; fi
+    # R-DOT: the generalised Class 4 dot-rule and its four carve-outs, unit level.
+    # The root-anchoring pair is the discriminating case: a carve-out is a
+    # path-PREFIX test, never a substring test, so a path that merely shares a
+    # carve-out's text at a non-root position, or shares only its leading
+    # letters, is NOT exempted by it.
+    if sig_class4_excluded 'dashboard/server/tests/fixtures/pt1-aid/.aid/knowledge/x.md'
+        then echo "NESTEDKB=cut"; else echo "NESTEDKB=admitted"; fi
+    if sig_class4_excluded '.aid/knowledge-old/x.md'; then echo "SHAREDPFX=cut"; else echo "SHAREDPFX=admitted"; fi
+    if sig_class4_excluded '.github/workflows/build.yml'; then echo "WORKFLOW=cut"; else echo "WORKFLOW=admitted"; fi
+    if sig_class4_excluded '.github/dependabot.yml'; then echo "DEPENDABOT=cut"; else echo "DEPENDABOT=admitted"; fi
+    if sig_class4_excluded 'CLAUDE.md'; then echo "ROOTCLAUDE=cut"; else echo "ROOTCLAUDE=admitted"; fi
+    if sig_class4_excluded 'docs/CLAUDE.md'; then echo "NESTEDCLAUDE=cut"; else echo "NESTEDCLAUDE=admitted"; fi
+    if sig_class4_excluded 'packages/npm/VERSION'; then echo "NESTEDVERSION=cut"; else echo "NESTEDVERSION=admitted"; fi
+    if sig_class4_excluded '.vscode/settings.json'; then echo "VSCODE=cut"; else echo "VSCODE=admitted"; fi
     echo "TOKEN=[$(sig_token '  - `docs/x.md`  ')]"
     echo "IMGEV=$(sig_render_image_evidence 'A/LOGO.PNG' 'PNG')"
 )"
@@ -1152,9 +1273,25 @@ assert_output_contains "$LIBOUT" "CLS_CATCH=source"          "R-LIB-19 the catch
 assert_output_contains "$LIBOUT" "CLS_SKILL=skill"           "R-LIB-20 a directory id resolves to skill"
 assert_output_contains "$LIBOUT" "IGNHIT=yes"       "R-LIB-21 an ignore glob matches with case semantics"
 assert_output_contains "$LIBOUT" "IGNMISS=no"       "R-LIB-22 and does not over-match"
-assert_output_contains "$LIBOUT" "ALLOW=readmitted" "R-LIB-23 the Class 4 allowlist re-admits its one entry"
-assert_output_contains "$LIBOUT" "AIDCUT=yes"       "R-LIB-24 while the rest of .aid/ stays cut"
+assert_output_contains "$LIBOUT" "ALLOW=readmitted" "R-LIB-23 .aid/settings.yml is carved out (SPEC.md:1437-1493, owner-confirmed)"
+assert_output_contains "$LIBOUT" "AIDCUT=no"        "R-LIB-24 .aid/knowledge/x.md is carved out (root-anchored)"
 assert_output_contains "$LIBOUT" "C5=yes"           "R-LIB-25 the Class 5 allowlist covers the renderer tree"
+assert_output_contains "$LIBOUT" "NESTEDKB=cut" \
+    "R-LIB-28 a NESTED .aid/knowledge/ (a fixture tree's own, not this project's) is still cut -- root-anchoring, not a substring test"
+assert_output_contains "$LIBOUT" "SHAREDPFX=cut" \
+    "R-LIB-29 .aid/knowledge-old/x.md is cut -- sharing a carve-out's TEXT is not sharing its PREFIX"
+assert_output_contains "$LIBOUT" "WORKFLOW=admitted" \
+    "R-LIB-30 .github/workflows/ is carved out (the FR-21 / D3a Q1 carrier finding)"
+assert_output_contains "$LIBOUT" "DEPENDABOT=cut" \
+    "R-LIB-31 .github/dependabot.yml is cut -- .github itself earned no carve-out, only workflows/ did"
+assert_output_contains "$LIBOUT" "ROOTCLAUDE=cut" \
+    "R-LIB-32 the repo-root CLAUDE.md is cut (rule (b))"
+assert_output_contains "$LIBOUT" "NESTEDCLAUDE=admitted" \
+    "R-LIB-33 a NESTED docs/CLAUDE.md is NOT cut by rule (b) -- an unprefixed literal match is root-anchored"
+assert_output_contains "$LIBOUT" "NESTEDVERSION=admitted" \
+    "R-LIB-34 packages/npm/VERSION is NOT cut by Class 4 -- Class 1 cuts it instead, for an unrelated reason"
+assert_output_contains "$LIBOUT" "VSCODE=cut" \
+    "R-LIB-35 .vscode/settings.json is cut -- rule (a) applies to every dot directory, not a named list"
 assert_output_contains "$LIBOUT" 'TOKEN=[docs/x.md]' "R-LIB-26 token formation strips the marker and the backticks"
 assert_output_contains "$LIBOUT" "IMGEV=A/LOGO.PNG -- extension 'png' listed in relationship-schema.yml (search: \"image_extensions\")" \
     "R-LIB-27 the image evidence folds the extension but keeps the path bytes"
@@ -1340,6 +1477,11 @@ run_mutant "M7 the external registry path leaks into evidence unrelativised" \
     scan-source.sh \
     '    sig_render_external_evidence_into "$EXTERNAL_SOURCES_REL" "$key"' \
     '    sig_render_external_evidence_into "$EXTERNAL_SOURCES" "$key"'
+
+run_mutant "M8 the generalised dot-rule stops firing (reverts to root-level dotfiles only)" \
+    significance-rules.sh \
+    '        .*|*/.*)                          return 0 ;;' \
+    '        .*)                               return 0 ;;'
 
 echo "=========================================================================="
 echo " mutants: $MUT_TOTAL   killed: $MUT_KILLED   survived: $MUT_SURVIVED   aborted: $MUT_ABORTED"
