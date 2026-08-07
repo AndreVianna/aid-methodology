@@ -298,7 +298,23 @@ echo ""
 echo "=== S5: this run's own subject files are byte-identical to HEAD afterwards ==="
 S5_SUBJECTS=("$CANVAS_JS" "$MODEL_JS" "$CONTROLS_JS" "$TABLE_JS" "$SKELETON" "$GRAPH_CSS" "$PREDICATE")
 if command -v git >/dev/null 2>&1 && git -C "$REPO_ROOT" rev-parse --is-inside-work-tree >/dev/null 2>&1; then
-    s5_out=$(git -C "$REPO_ROOT" diff --name-only -- "${S5_SUBJECTS[@]}" 2>&1)
+    # CONTENT, not `git diff`. `git diff --name-only` reports a MODE change as a
+    # difference, and CI legitimately creates one: the canonical-tests job runs
+    # `find canonical/aid/scripts tests/canonical -name '*.sh' -exec chmod +x {} +`
+    # before any suite, because the repo is authored on Windows and commits shell
+    # scripts 100644 while several suites invoke their subject directly and need the
+    # exec bit on Linux. This guard's own heading says "byte-identical to HEAD", and
+    # a chmod leaves the bytes alone -- so comparing blob hashes is both the stricter
+    # reading and the correct one. It also explains why this only ever failed on CI:
+    # `core.filemode=false` on the authoring machine makes git ignore the exec bit.
+    s5_out=""
+    for s5_file in "${S5_SUBJECTS[@]}"; do
+        s5_rel="${s5_file#"$REPO_ROOT"/}"
+        s5_have=$(git -C "$REPO_ROOT" hash-object -- "$s5_file" 2>/dev/null || echo "missing-worktree")
+        s5_want=$(git -C "$REPO_ROOT" rev-parse "HEAD:$s5_rel" 2>/dev/null || echo "missing-head")
+        [[ "$s5_have" == "$s5_want" ]] || s5_out="${s5_out}${s5_rel}"$'\n'
+    done
+    s5_out="${s5_out%$'\n'}"
     if [[ -z "$s5_out" ]]; then
         pass "S5 every subject file this suite reads is byte-identical to HEAD after the run — every mutation happened on a copy under \$TMP, never on the source tree"
     else
