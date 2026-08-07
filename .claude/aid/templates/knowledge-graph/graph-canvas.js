@@ -83,13 +83,135 @@ const GC_FRAME_RING = 240;
 /** Force constants, the one place they are tuned. `density`/grouping never
  *  reach here as a value -- FR-14a forbids exposing any physics parameter and
  *  no `LensState` field names one. */
+/**
+ * The spacing axis: level 1..5 -> a single multiplier applied to repulsion, link
+ * length and collision radius TOGETHER.
+ *
+ * One multiplier over three values rather than three sliders, and that is the
+ * design rather than a shortcut. Repulsion, link length and collision radius are
+ * not independent knobs -- raising link length while leaving repulsion alone
+ * produces long edges into a still-clumped centre, and raising repulsion alone
+ * pushes weakly-connected nodes off the surface while the core stays packed.
+ * Scaling them in step is what makes "further apart" mean one legible thing.
+ *
+ * Level 3 is the default and sits in the middle, so the reader has room in both
+ * directions. The range is narrow at the bottom and wide at the top: packing much
+ * tighter than the lowest level makes the glyphs overlap into an unreadable mat,
+ * while a 976-node graph needs several times the base separation to read at all.
+ */
+const GC_SPACING_DEFAULT = 3;
+// DOUBLED TWICE, both times on the owner's instruction after seeing the previous
+// version in a real browser at 976 nodes.
+//
+//   pass 1  [0.6, 0.8, 1, 1.5, 2.2] -> [1.2, 1.6, 2, 3, 4.4]. The range worked
+//           (mean nearest-neighbour distance rose 137 -> 250 across the five
+//           levels) but every level was too cramped to read. Level 3 stopped being
+//           1.0 here, so the DEFAULT layout is no longer the one that shipped
+//           before this axis existed -- deliberate, and why the old "level 3
+//           reproduces what shipped" note is gone rather than edited.
+//
+//   pass 2  "Double again the max distance (and the intermediate values). Keep the
+//           smaller one unchanged." So level 1 holds at 1.2 and levels 2-5 double:
+//           [1.2, 3.2, 4, 6, 8.8]. Level 1 is now the deliberate outlier -- the
+//           tight end is preserved exactly as asked, which means the step from 1 to
+//           2 is 2.7x where every later step is 1.25x to 1.5x. That is a
+//           consequence of the instruction rather than an oversight, and it is
+//           stated here so the next reader does not "fix" it into a smooth ramp:
+//           the reader asked for the packed end kept and the open end doubled, and
+//           those two together cannot also be evenly spaced.
+const GC_SPACING_SPREAD = Object.freeze([1.2, 3.2, 4, 6, 8.8]);
+
+/** Clamp a spacing level to the table and return its multiplier. A level from
+ *  `LensState` is reader input, so it is validated here rather than trusted. */
+function gcSpreadFor(level) {
+	const n = Math.round(Number(level));
+	if (!Number.isFinite(n)) return GC_SPACING_SPREAD[GC_SPACING_DEFAULT - 1];
+	const i = Math.min(GC_SPACING_SPREAD.length, Math.max(1, n)) - 1;
+	return GC_SPACING_SPREAD[i];
+}
+
+/**
+ * NODE SIZE CARRIES DEGREE, in floored doublings -- see the rule stated below.
+ *
+ * ADDITIVE IN THE DOUBLINGS, which is the owner's own refinement of their first
+ * instruction and a better rule than either extreme. Straight multiplication
+ * compounds -- twice the connections gives four times the AREA, so the busiest few
+ * swamp the view. But a flat unit per connection fails the other way on this data:
+ * measured over this repository's own graph, 976 connected nodes have median degree
+ * 4, p90 13, p99 74 and one outlier at 187 (`kb:concept:canonical`). At one unit per
+ * connection that outlier drew at radius 195 against a median of 12 -- 16x the
+ * radius, 256x the area, one node the size of a planet and no visible difference
+ * between 2 connections and 4, where most of the population actually sits.
+ *
+ * The rule, stated once so the code can be checked against it:
+ *
+ *     degree 0   ->  base
+ *     degree > 0 ->  base + unit x (floor(log2(degree)) + 1)
+ *
+ * At base 8 and unit 2 that is: 0 at 8, 1 at 10, 2-3 at 12, 4-7 at 14, 8-15 at
+ * 16, 16-31 at 18, 32-63 at 20, 64-127 at 22, 128-255 at 24. Nine bands, the
+ * busiest node in this repository's graph (187 connections) landing at 24
+ * against a median of 12.
+ *
+ * THE UNIT IS 2, NOT 1, because 1 was measured and rejected -- by eye, not by
+ * argument. It gave a total range of 8 to 16, and the owner's verdict on seeing
+ * it was that the variance was too subtle to read. Doubling the step doubles the
+ * separation between adjacent bands without changing which band a node is in, so
+ * the rule the owner reasoned about is untouched and only its legibility moved.
+ *
+ * A useful side effect, not the reason: the largest glyph is well inside the
+ * collision radius, so big nodes cannot swallow the ones they push against. The
+ * one-unit-per-connection version broke that badly enough to have needed a
+ * degree-aware collision force of its own; this one does not.
+ *
+ * DEGREE IS COUNTED OVER THE DRAWN EDGES, not the whole model. A node whose
+ * neighbours the reader has filtered away has fewer connections IN THIS VIEW, and
+ * a big glyph with two lines leaving it would be telling the reader something the
+ * drawing contradicts.
+ */
+const GC_DEGREE_UNIT = 2;
+
+/** The drawn radius for a node of this degree, before emphasis and hover, which
+ *  stay multiplicative because they are transient states rather than data. */
+function gcRadiusForDegree(degree) {
+	const d = Number.isFinite(degree) && degree > 0 ? degree : 0;
+	// `log2(1)` is 0, so a single-connection node draws at exactly the base and
+	// the sequence the owner named (1, 2, 4, 8, ...) steps one unit at a time.
+	// Degree 0 is guarded because `log2(0)` is -Infinity, which would produce a
+	// negative radius and a glyph that silently fails to draw.
+	// ZERO CONNECTIONS IS ITS OWN BAND, at the base, and every connected node is at
+	// least one unit above it. Without the `+ 1` an isolated node and a
+	// single-connection node drew at exactly the same radius, so the size channel
+	// said nothing about the one distinction the coverage story cares about most --
+	// the owner caught that, and it is why the term is here rather than folded away.
+	if (d === 0) return GC_BASE_RADIUS;
+	// FLOORED, so the size channel is a set of DISCRETE BANDS rather than a
+	// continuous ramp -- every node from 8 to 15 connections draws at exactly the
+	// same radius. That is the owner's choice and it is the stronger one for
+	// reading: a continuous log ramp gives every node a slightly different size,
+	// and slightly-different sizes are indistinguishable by eye while still
+	// costing the reader the effort of wondering whether they differ. Nine
+	// visible steps that each mean "one more doubling" can actually be compared.
+	return GC_BASE_RADIUS + (Math.floor(Math.log2(d)) + 1) * GC_DEGREE_UNIT;
+}
+
+/** The ring radius one group-centre sits at before spacing and group count
+ *  scale it. Chosen against `linkDistance: 70` -- a ring smaller than a few
+ *  link lengths cannot separate groups that links are pulling together. */
+const GC_GROUP_RING_BASE = 260;
+
 const GC_FORCE = Object.freeze({
 	charge: -220,
 	linkDistance: 70,
 	linkStrength: 0.5,
 	collideRadius: 16,
 	centerStrength: 0.04,
-	groupStrength: 0.06,
+	// RAISED FROM 0.06, which was imperceptible against `charge: -220` even after
+	// the centres were fixed. Grouping is an explicit instruction from the reader,
+	// so it has to outrank the layout's own preferences -- but not overwhelm the
+	// link force, or a grouped view would tear connected nodes apart and stop
+	// showing relationships, which is the one thing this page exists to show.
+	groupStrength: 0.9,
 });
 
 /** The settle budget for the reduced-motion pre-first-paint layout: a fixed
@@ -244,6 +366,10 @@ function gcColourTokens() {
 	const tokens = new Set();
 	for (const entry of Object.values(KIND_ENCODING)) tokens.add(entry.colourToken);
 	for (const entry of Object.values(CATEGORY_ENCODING)) tokens.add(entry.colourToken);
+	// The project hub's token, on neither encoding's axis for the same reason its
+	// kind is on neither: it is the view's own synthetic node. Without this line
+	// the hub resolves to no colour and draws in the forced-foreground fallback.
+	tokens.add(HUB_ENCODING.colourToken);
 	// The gap badge's severity tokens are on neither encoding's axis, so they
 	// have to be added explicitly or `gcResolvePalette` would never resolve them
 	// and every badge would fall back to the forced foreground.
@@ -370,6 +496,30 @@ function gcPublishRecord(record) {
  * @returns {{nodeMarks: Map, edgeMarks: Map}}
  */
 function gcDeriveMarks(viewModel, forcedColours) {
+	// Drawn degree, counted the way the model counts its own: one per endpoint
+	// occurrence, so a self-relationship contributes two to the node it names.
+	const drawnDegree = new Map();
+	for (const edge of viewModel.visibleEdges) {
+		drawnDegree.set(edge.sourceId, (drawnDegree.get(edge.sourceId) || 0) + 1);
+		drawnDegree.set(edge.targetId, (drawnDegree.get(edge.targetId) || 0) + 1);
+	}
+	// task-035: the hub's degree is its OWN line count, credited to the hub alone
+	// and to none of its targets.
+	//
+	// Without this the hub fell out of the loop above with a degree of zero -- its
+	// lines are not in `visibleEdges` -- and drew at the base radius. Seen in the
+	// browser at depth 1: the one node joined to all 32 others was the smallest
+	// mark on screen, while a document with four rows drew half again as large. The
+	// size channel says "how many things attach here", and for the hub the honest
+	// answer is the number of lines leaving it.
+	//
+	// Deliberately NOT symmetric: a target does not gain a degree step for being
+	// attached to the hub, which is the separation the whole `hubEdges` split
+	// exists to preserve. The hub is the only node whose size the scaffolding may
+	// move, because for the hub the scaffolding IS its content.
+	for (const edge of (viewModel.hubEdges || [])) {
+		drawnDegree.set(edge.sourceId, (drawnDegree.get(edge.sourceId) || 0) + 1);
+	}
 	const nodeMarks = new Map();
 	for (const node of viewModel.visibleNodes) {
 		const encoding = viewModel.nodeEncoding.get(node.id);
@@ -384,11 +534,40 @@ function gcDeriveMarks(viewModel, forcedColours) {
 			emphasis: emphasis,
 			emphasisDraw: gcNodeEmphasisDraw(emphasis, forcedColours),
 			gapBadge: gapBadge,
+			degree: drawnDegree.get(node.id) || 0,
 			labelDrawn: false,
 		});
 	}
 
+	// The hub's lines (task-035). Built into the SAME map as the recorded rows so
+	// every downstream consumer -- the link force, the draw loop, the layer clear
+	// -- reaches them with no new branch. They differ from a recorded row in
+	// exactly two drawn channels, and each difference is deliberate:
+	//
+	//   - `colourToken` is the hub's own neutral token, not a category colour.
+	//     These are not relationships and must not read as one.
+	//   - `emphasisDraw` is fixed at the dimmed channel, so the scaffolding never
+	//     competes visually with the recorded rows it sits under.
+	//
+	// They are absent from `drawnDegree` above by construction, because that loop
+	// walks `visibleEdges` and the hub's lines are published separately -- which is
+	// the whole reason they are: attaching the hub must not resize 32 nodes.
 	const edgeMarks = new Map();
+	for (const edge of (viewModel.hubEdges || [])) {
+		edgeMarks.set(edge.key, {
+			key: edge.key,
+			row: null,
+			sourceId: edge.sourceId,
+			targetId: edge.targetId,
+			category: null,
+			colourToken: HUB_ENCODING.colourToken,
+			lineStyle: 'dotted',
+			arrowhead: false,
+			emphasis: 'dimmed',
+			emphasisDraw: gcEdgeEmphasisDraw('dimmed', forcedColours),
+			hub: true,
+		});
+	}
 	for (const edge of viewModel.visibleEdges) {
 		const fold = viewModel.edgeFold.get(edge.key);
 		if (fold === 'collapsed') continue;
@@ -522,6 +701,11 @@ function mountCanvas(context) {
 		// platform dispatches `click`, and because selection must read the press
 		// rather than re-pick -- see `gcOnClick`.
 		press: null,
+		// The reader's spacing level, mirrored from `lensState.spacing` the same
+		// way `viewport` mirrors `lensState.zoom`. Held on the view because the
+		// simulation is rebuilt from it, and a rebuild that read the store
+		// directly would be the second route into this file that AC-S2 forbids.
+		spacing: GC_SPACING_DEFAULT,
 		frameHandle: null,
 		lastNodeIds: new Set(),
 		lastGroupKey: '',
@@ -549,6 +733,11 @@ function mountCanvas(context) {
 	const prefs = store.getPreferences();
 	view.record.mode = prefs.reducedMotion ? 'settled' : 'live';
 	gcSyncViewport(view, store.getLens());
+	// Seeded BEFORE the first projection, because that projection builds the
+	// simulation and reads `view.spacing` while doing it. Set afterwards, the
+	// first layout would use the default and only the reader's next change would
+	// take effect -- a restored non-default level would silently do nothing.
+	view.spacing = gcSpacingFrom(store.getLens());
 	gcApplyProjection(view, store.getViewModel(), true);
 
 	view.unsubscribe = store.subscribe((viewModel, lens, changedKeys) => { gcOnNotify(view, viewModel, lens, changedKeys); });
@@ -744,6 +933,26 @@ function gcOnNotify(view, viewModel, lens, changedKeys) {
 		// The table's own private field.
 		return;
 	}
+	// `spacing` changes the FORCES, not the node set, so it must not go through
+	// the projection path below -- that would rebuild marks and labels that are
+	// provably identical, on every step of a slider drag. It rebuilds the
+	// simulation from the same projection and re-heats, which is the smallest
+	// thing that can move already-placed nodes apart.
+	//
+	// The re-fit is deliberate and is why `autoFit` is not cleared here: a
+	// spacing change alters the drawn extent by design, so a view that was
+	// still fitting itself should fit the new extent once it settles. A reader
+	// who has taken the viewport already cleared the flag with their gesture,
+	// and this does not set it back.
+	if (Array.isArray(changedKeys) && changedKeys.length === 1 && changedKeys[0] === 'spacing') {
+		const next = gcSpacingFrom(lens);
+		if (next === view.spacing) return;
+		view.spacing = next;
+		gcApplySpacing(view, viewModel);
+		gcReheat(view);
+		return;
+	}
+	view.spacing = gcSpacingFrom(lens);
 	gcApplyProjection(view, viewModel, false);
 }
 
@@ -919,18 +1128,63 @@ function gcDiffPlaceNodes(view, viewModel, nextIds) {
  * 11. The simulation
  * ========================================================================== */
 
+/** The spacing level as this file reads it from `LensState`. Absent means the
+ *  default rather than an error: a page whose lens predates this axis is a
+ *  page with the layout that shipped before it, which is level 3. */
+function gcSpacingFrom(lens) {
+	if (!lens || lens.spacing == null) return GC_SPACING_DEFAULT;
+	const n = Math.round(Number(lens.spacing));
+	if (!Number.isFinite(n)) return GC_SPACING_DEFAULT;
+	return Math.min(GC_SPACING_SPREAD.length, Math.max(1, n));
+}
+
+/**
+ * Re-scale the three spacing-bearing forces ON THE EXISTING SIMULATION.
+ *
+ * The topology is deliberately NOT rebuilt. A spacing change alters no node and
+ * no link, so tearing the simulation down would discard every settled position
+ * and make the graph jump to a fresh random layout -- which reads as the view
+ * losing its place, not as the nodes moving apart. Mutating the forces in place
+ * keeps every node where it is and lets the re-heat carry it outward from there,
+ * so the reader sees the SAME graph breathe rather than a different one appear.
+ *
+ * Each accessor is feature-guarded: this module is written against a d3-force
+ * build it does not bundle, and a force whose setter is missing must leave the
+ * simulation working rather than throw mid-drag.
+ */
+function gcApplySpacing(view, viewModel) {
+	if (!view.simulation) return;
+	const spread = gcSpreadFor(view.spacing);
+	const charge = view.simulation.force('charge');
+	if (charge && typeof charge.strength === 'function') charge.strength(GC_FORCE.charge * spread);
+	const link = view.simulation.force('link');
+	if (link && typeof link.distance === 'function') link.distance(GC_FORCE.linkDistance * spread);
+	const collide = view.simulation.force('collide');
+	if (collide && typeof collide.radius === 'function') collide.radius(GC_FORCE.collideRadius * spread);
+	// The group ring's radius scales with spacing too, so it is REBUILT rather
+	// than tuned: its centres are captured in a closure, and leaving them at the
+	// old radius would make spacing move the nodes while their group targets
+	// stayed put -- the two forces would then fight, and at high spacing the
+	// group pull would read as a drift back toward the middle.
+	if (viewModel && typeof view.simulation.force === 'function') {
+		const centres = gcGroupCentres(viewModel, view.positions, view.spacing);
+		view.simulation.force('group', gcGroupForce(viewModel, centres, GC_FORCE.groupStrength));
+	}
+}
+
 function gcEnsureSimulation(view, nodeIds, edgeMarks, viewModel) {
 	const nodeRecords = nodeIds.map((id) => Object.assign({ id: id }, view.positions.get(id)));
 	const links = Array.from(edgeMarks.values()).filter((m) => m.sourceId !== m.targetId)
 		.map((m) => ({ source: m.sourceId, target: m.targetId }));
 
 	if (view.simulation) view.simulation.stop();
-	const groupCentres = gcGroupCentres(viewModel, view.positions);
+	const groupCentres = gcGroupCentres(viewModel, view.positions, view.spacing);
+	const spread = gcSpreadFor(view.spacing);
 	const sim = d3.forceSimulation(nodeRecords)
-		.force('charge', d3.forceManyBody().strength(GC_FORCE.charge))
-		.force('link', d3.forceLink(links).id((d) => d.id).distance(GC_FORCE.linkDistance).strength(GC_FORCE.linkStrength))
+		.force('charge', d3.forceManyBody().strength(GC_FORCE.charge * spread))
+		.force('link', d3.forceLink(links).id((d) => d.id).distance(GC_FORCE.linkDistance * spread).strength(GC_FORCE.linkStrength))
 		.force('center', d3.forceCenter(0, 0).strength(GC_FORCE.centerStrength))
-		.force('collide', d3.forceCollide(GC_FORCE.collideRadius))
+		.force('collide', d3.forceCollide(GC_FORCE.collideRadius * spread))
 		.force('group', gcGroupForce(viewModel, groupCentres, GC_FORCE.groupStrength))
 		.on('tick', () => gcOnTick(view, nodeRecords));
 	sim.alphaTarget(0);
@@ -960,17 +1214,56 @@ function gcGroupForce(viewModel, centres, strength) {
 	return force;
 }
 
-function gcGroupCentres(viewModel, positions) {
+/**
+ * One DISTINCT centre per group, laid out on a ring around the origin.
+ *
+ * WHAT THIS REPLACES, AND WHY THE OLD VERSION COULD NOT WORK AT ANY STRENGTH.
+ * Each group's centre used to be the MEAN OF ITS OWN MEMBERS' CURRENT POSITIONS.
+ * That pulls a group toward where it already is, and nothing in it pushes two
+ * different groups apart -- so every group contracted slightly toward a centroid
+ * that, on a fresh layout, sat near the origin along with all the others. The
+ * groups overlapped by construction. Turning the strength up would only have
+ * made them contract harder in the same place. The owner reported that grouping
+ * "does not change the visual in any way", and that is exactly right: the force
+ * was doing something, and that something could never separate anything.
+ *
+ * A group's centre is now a POSITION IT DOES NOT DERIVE FROM ITS MEMBERS: groups
+ * are placed at even angles on a ring, so "same value" pulls toward one point and
+ * "different value" pulls toward a different one. That is what makes the reader's
+ * own definition -- same value closer, different values further apart -- true of
+ * the drawing rather than only of the group list.
+ *
+ * The radius scales with BOTH the group count and the spacing level, because a
+ * fixed radius fails in both directions: two groups on a wide ring look unrelated,
+ * and twelve groups on a narrow one overlap again. Deterministic in group order,
+ * which the projection already sorts, so the same lens always draws the same
+ * arrangement -- a ring that reshuffled between renders would defeat the point of
+ * grouping at all.
+ */
+function gcGroupCentres(viewModel, positions, spacingLevel) {
 	const centres = new Map();
-	for (const group of viewModel.groups) {
-		let sx = 0, sy = 0, n = 0;
-		for (const id of group.nodeIds) {
-			const p = positions.get(id);
-			if (p) { sx += p.x; sy += p.y; n += 1; }
-		}
-		if (n === 0) continue;
-		const centre = { x: sx / n, y: sy / n };
-		for (const id of group.nodeIds) centres.set(id, centre);
+	// THE HUB IS EXCLUDED FROM THE RING ENTIRELY (task-035), and this is a layout
+	// decision rather than bookkeeping. The projection gives the hub a group of its
+	// own under every dimension, so on the ring it would take a slot of its own --
+	// dragging the one node whose meaning is "the centre of this project" out to the
+	// rim, away from all 32 nodes it is joined to. Left without a centre it is
+	// positioned by its links alone, which settles it among its targets: the
+	// position that says what it is.
+	const groups = (viewModel.groups || [])
+		.filter((g) => g.nodeIds && g.nodeIds.length > 0)
+		.filter((g) => g.key !== HUB_GROUP);
+	if (groups.length < 2) return centres;
+	const spread = gcSpreadFor(spacingLevel);
+	// Enough room that neighbouring rings of nodes do not merge: the ring's
+	// circumference has to grow with the number of groups, not just its radius.
+	const radius = GC_GROUP_RING_BASE * spread * Math.max(1, Math.sqrt(groups.length / 2));
+	for (let i = 0; i < groups.length; i++) {
+		const angle = (2 * Math.PI * i) / groups.length;
+		const centre = { x: Math.cos(angle) * radius, y: Math.sin(angle) * radius };
+		// Under `grouping: 'none'` there is one group holding EVERY drawn node,
+		// including the hub -- so the hub is skipped by id here as well, not only by
+		// group key above.
+		for (const id of groups[i].nodeIds) { if (id !== HUB_ID) centres.set(id, centre); }
 	}
 	return centres;
 }
@@ -1164,7 +1457,8 @@ function gcDrawFrame(view, meta) {
 	const glyphRadius = new Map();
 	for (const mark of marks.nodes) {
 		const lift = mark.id === hoverNodeId ? GC_HOVER_SCALE : 1;
-		glyphRadius.set(mark.id, GC_BASE_RADIUS * mark.emphasisDraw.markScale * lift);
+		const shapeFactor = mark.kind === HUB_KIND ? GC_STAR_MASS_FACTOR : 1;
+		glyphRadius.set(mark.id, gcRadiusForDegree(mark.degree) * shapeFactor * mark.emphasisDraw.markScale * lift);
 	}
 
 	for (const mark of marks.edges) {
@@ -1457,7 +1751,11 @@ function gcDrawArrowhead(g, x1, y1, x2, y2, colour) {
  *  graph-model.js's own table and it is not restated here beyond the shape
  *  name each kind already carries. */
 function gcDrawGlyph(g, kind, radius, colour, opacity) {
-	const shape = KIND_ENCODING[kind] ? KIND_ENCODING[kind].shape : 'circle';
+	// The hub's kind is not in `KIND_ENCODING` -- deliberately, see graph-model.js
+	// -- so it is looked up in its own record rather than falling through to the
+	// `default` circle, which would have drawn it as an unlabelled `document`.
+	const shape = kind === HUB_KIND ? HUB_ENCODING.shape
+		: (KIND_ENCODING[kind] ? KIND_ENCODING[kind].shape : 'circle');
 	const alpha = opacity == null ? 1 : opacity;
 	if (typeof g.beginFill === 'function') g.beginFill(gcColourToNumber(colour), alpha);
 	switch (shape) {
@@ -1483,6 +1781,13 @@ function gcDrawGlyph(g, kind, radius, colour, opacity) {
 		case 'pentagon':
 			if (typeof g.drawPolygon === 'function') g.drawPolygon(gcPolygonPoints(5, radius));
 			break;
+		// The project hub (task-035). A five-point star, which is the one shape in
+		// this switch with CONCAVE vertices -- every other is a convex polygon or a
+		// circle -- so it is still the odd one out at a glance in a monochrome or
+		// forced-colours rendering, where the hub's colour carries nothing.
+		case 'star':
+			if (typeof g.drawPolygon === 'function') g.drawPolygon(gcStarPoints(5, radius, radius * GC_STAR_INNER));
+			break;
 		default:
 			if (typeof g.drawCircle === 'function') g.drawCircle(0, 0, radius);
 	}
@@ -1496,6 +1801,45 @@ function gcPolygonPoints(sides, radius) {
 		points.push(Math.cos(a) * radius, Math.sin(a) * radius);
 	}
 	return points;
+}
+
+/** How deep a star's notches cut, as a fraction of its outer radius. 0.5 is
+ *  shallow enough that the shape still reads as a filled mark at the smallest
+ *  drawn radius rather than as five thin spikes. */
+const GC_STAR_INNER = 0.5;
+
+/**
+ * The star's radius compensation, and it is a MASS correction rather than a
+ * preference.
+ *
+ * `gcRadiusForDegree` returns one number for every kind, and for the eight convex
+ * shapes that number lands within a few percent of the same drawn area. A star
+ * does not: at `GC_STAR_INNER` = 0.5 its ten-vertex outline encloses roughly half
+ * the area of the circle it is inscribed in, so a star and a circle at one radius
+ * read as two different sizes. The owner saw exactly that -- "I like that the
+ * project is represented by a star. But I think it is too small" -- on a hub that
+ * was ALREADY at its degree radius.
+ *
+ * 1.4 is `1 / sqrt(0.5)` rounded, which is the factor that makes the two areas
+ * equal rather than a number picked by eye. It is applied to the hub alone
+ * because the hub is the only star: it corrects the shape, not the data, so a
+ * reader comparing the hub against a document is still comparing two marks whose
+ * AREAS carry the same meaning.
+ */
+const GC_STAR_MASS_FACTOR = 1.4;
+
+/** A star: `points` outer vertices alternating with `points` inner ones, first
+ *  vertex straight up so the shape is upright at every radius. Separate from
+ *  `gcPolygonPoints` rather than a flag on it -- that function's contract is one
+ *  vertex per side, and a star has two. */
+function gcStarPoints(points, outer, inner) {
+	const out = [];
+	for (let i = 0; i < points * 2; i += 1) {
+		const a = (Math.PI * i) / points - Math.PI / 2;
+		const r = i % 2 === 0 ? outer : inner;
+		out.push(Math.cos(a) * r, Math.sin(a) * r);
+	}
+	return out;
 }
 
 function gcDrawRing(g, radius, colour) {

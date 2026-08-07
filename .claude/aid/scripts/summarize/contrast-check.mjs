@@ -230,6 +230,18 @@ const pairs = [
 const GRAPH_KIND_TOKENS = [
 	'gk-document', 'gk-section', 'gk-fact', 'gk-concept',
 	'gk-source-artifact', 'gk-image', 'gk-web-page',
+	// The project hub's star (work-005 task-035). NOT an eighth node KIND -- the
+	// kind enum is closed at seven and bound to relationship-schema.yml -- but it
+	// IS a `--gk-*` token that the graph draws a mark with, so SC 1.4.11 applies to
+	// it exactly as it does to the seven above and it belongs on this list.
+	//
+	// Added because GV13 demanded it. That check asserts every `--gk-*`/`--gc-*`
+	// token graph-css.css declares is FOUND by a run of this file, precisely so a
+	// token added to the stylesheet ahead of this array cannot pass unchecked -- and
+	// it caught `--gk-project` on the first run after task-035 added it. The gap had
+	// been filed as tech debt W5-17 and deliberately deferred; the test showed that
+	// deferring it was not actually free, so W5-17 is withdrawn rather than carried.
+	'gk-project',
 ];
 const GRAPH_CATEGORY_TOKENS = [
 	'gc-structure', 'gc-taxonomy', 'gc-documentation', 'gc-evidence',

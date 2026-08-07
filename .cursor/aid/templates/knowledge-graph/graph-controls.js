@@ -80,10 +80,14 @@ const VIEWPORT_ACTIONS = Object.freeze(['zoom-in', 'zoom-out', 'zoom-fit', 'pan-
  */
 const AUTHORED_CONTROLS = Object.freeze([
 	Object.freeze({ id: 'grouping', requirement: 'FR-14a', axis: 'grouping', value: null }),
-	Object.freeze({ id: 'density', requirement: 'FR-14a', axis: 'density', value: null }),
+	Object.freeze({ id: 'spacing', requirement: 'FR-14a', axis: 'spacing', value: null }),
 	Object.freeze({ id: 'focus-node', requirement: 'FR-14a', axis: 'focus', value: null }),
 	Object.freeze({ id: 'focus-depth', requirement: 'FR-14a', axis: 'depth', value: null }),
 	Object.freeze({ id: 'filter-show-orphans', requirement: 'FR-14a', axis: 'orphan-toggle', value: null }),
+	// task-035. Its own axis rather than a member of `filters.kinds`: the hub's
+	// kind is deliberately absent from KIND_ENCODING, and that axis is generated
+	// from KIND_ENCODING's keys and bound to relationship-schema.yml by test.
+	Object.freeze({ id: 'filter-show-hub', requirement: 'FR-14a', axis: 'hub-toggle', value: null }),
 	Object.freeze({ id: 'node-select', requirement: 'FR-14a', axis: 'select', value: null }),
 	Object.freeze({ id: 'node-open', requirement: 'FR-14a', axis: 'open', value: null }),
 	Object.freeze({
@@ -264,9 +268,13 @@ function mountControls(ctx) {
 	const grid = root.querySelector('[data-controls-grid]');
 	clear(grid);
 
-	// Grouping. The relationship-category option is here as a real option
-	// alongside the other four values, because category is a grouping dimension
-	// and not only a filter axis.
+	// Grouping, over NODE properties only. The relationship-category option used
+	// to sit here and was removed on the owner's finding: it grouped nodes by a
+	// property only relationships carry, and a node with rows in several
+	// categories was assigned whichever came first. The select is built from
+	// GROUPING_VALUES rather than from a literal list, so removing the value from
+	// the model removed the option here with no edit -- which is the property
+	// GV26 asserts and the reason no third list needed changing.
 	const groupingSelect = el('select', { id: 'grouping', [CONTROL_ATTR]: 'grouping' },
 		GROUPING_VALUES.map((value) => el('option', { value: value, text: groupingLabel(value) })));
 	groupingSelect.addEventListener('change', () => { store.setLens({ 'grouping': groupingSelect.value }); });
@@ -276,19 +284,59 @@ function mountControls(ctx) {
 		el('span', { class: 'control-hint', text: 'Only the document dimension folds sections and facts away.' }),
 	]));
 
-	// Density. This is VIEW density -- how much is drawn -- and it is not an
-	// exposure of the simulation's physics. Repulsion, link distance and centre
-	// force are internal constants of the drawing rendering, and there is no
-	// state a slider for one of them could write to.
-	const densityRange = el('input', {
-		type: 'range', min: '1', max: '5', step: '1', id: 'density', [CONTROL_ATTR]: 'density',
-		'aria-describedby': 'density-hint',
+	// NEIGHBOURHOOD DEPTH, PROMOTED INTO THE SLOT THE DENSITY SLIDER USED TO HOLD.
+	//
+	// The density slider is GONE, not renamed again. It filtered nodes by connection
+	// count, the owner did not want that filter at all, and the one case it really
+	// covered -- nodes with NO connections -- is already the orphan toggle below. So
+	// nothing replaced its behaviour; this control took its place because depth is
+	// what the reader actually reaches for.
+	//
+	// It was previously a number input capped at 6, tucked inside the "Selected node"
+	// group, so it read as a detail OF selection rather than a control of its own.
+	// Three changes, all the owner's: its own group, always enabled (never gated on a
+	// selection existing), and a range that reaches 50.
+	//
+	// ZERO ON THE SLIDER IS "no limit", which is why the value readout beside it is
+	// not decoration: a slider alone cannot show that its bottom stop means the
+	// opposite of a small number. `focus.depth: null` is the lens value it writes,
+	// and null rather than a large integer because "no limit" and "50 hops" are
+	// different statements even where they draw the same thing today.
+	const depthRange = el('input', {
+		type: 'range', min: '0', max: String(DEPTH_MAX), step: '1', id: 'focus-depth',
+		[CONTROL_ATTR]: 'focus-depth', 'aria-describedby': 'focus-depth-hint',
 	});
-	densityRange.addEventListener('input', () => { store.setLens({ 'density': parseInt(densityRange.value, 10) }); });
+	const depthValue = el('span', { class: 'control-value', id: 'focus-depth-value' });
+	const depthText = (raw) => (raw === 0 || raw == null ? 'no limit' : String(raw) + (raw === 1 ? ' hop' : ' hops'));
+	depthRange.addEventListener('input', () => {
+		const raw = parseInt(depthRange.value, 10);
+		depthValue.textContent = depthText(raw);
+		store.setLens({ 'focus.depth': raw === 0 ? null : raw });
+	});
 	grid.appendChild(el('div', { class: 'control-group' }, [
-		el('label', { for: 'density', text: 'View density' }),
-		densityRange,
-		el('span', { class: 'control-hint', id: 'density-hint', text: 'Level 1 draws everything. Levels 2 to 5 hide nodes with fewer connections.' }),
+		el('label', { for: 'focus-depth', text: 'Neighbourhood depth' }),
+		depthRange,
+		depthValue,
+		el('span', { class: 'control-hint', id: 'focus-depth-hint', text: 'How many relationships out from the selected node to keep. At no limit the whole graph stays visible and selecting a node only marks it.' }),
+	]));
+
+	// Spacing -- the control the old "density" label promised. This one IS an
+	// exposure of the simulation's physics, and it is the reason the comment that
+	// used to sit above ("there is no state a slider for one of them could write
+	// to") is gone: `spacing` is that state. It scales repulsion, link length and
+	// the collision radius together, so one slider moves the whole layout apart
+	// instead of letting a reader mix three physics values into an incoherent one.
+	// It changes NOTHING about which nodes are drawn -- the counts are identical at
+	// every level, which is exactly what separates it from the slider above.
+	const spacingRange = el('input', {
+		type: 'range', min: '1', max: '5', step: '1', id: 'spacing', [CONTROL_ATTR]: 'spacing',
+		'aria-describedby': 'spacing-hint',
+	});
+	spacingRange.addEventListener('input', () => { store.setLens({ 'spacing': parseInt(spacingRange.value, 10) }); });
+	grid.appendChild(el('div', { class: 'control-group' }, [
+		el('label', { for: 'spacing', text: 'Spacing' }),
+		spacingRange,
+		el('span', { class: 'control-hint', id: 'spacing-hint', text: 'How far apart the nodes settle. Level 1 packs them tight; level 5 spreads them out. The same nodes are drawn at every level.' }),
 	]));
 
 	// The text search. The one design-choice control.
@@ -305,15 +353,11 @@ function mountControls(ctx) {
 	// no keyboard equivalent.
 	const focusSelect = el('select', { id: 'focus-node', [CONTROL_ATTR]: 'focus-node' });
 	focusSelect.addEventListener('change', () => { store.setLens({ 'focus.nodeId': focusSelect.value || null }); });
-	const depthInput = el('input', { type: 'number', min: '1', max: '6', step: '1', id: 'focus-depth', [CONTROL_ATTR]: 'focus-depth' });
-	depthInput.addEventListener('change', () => { store.setLens({ 'focus.depth': parseInt(depthInput.value, 10) }); });
 	const selectButton = el('button', { type: 'button', class: 'btn-ghost', id: 'node-select', [CONTROL_ATTR]: 'node-select', text: 'Select node' });
 	selectButton.addEventListener('click', () => { store.setLens({ 'focus.nodeId': focusSelect.value || null }); });
 	grid.appendChild(el('div', { class: 'control-group' }, [
 		el('label', { for: 'focus-node', text: 'Selected node' }),
 		focusSelect,
-		el('label', { for: 'focus-depth', text: 'Neighbourhood depth' }),
-		depthInput,
 		selectButton,
 	]));
 
@@ -325,6 +369,20 @@ function mountControls(ctx) {
 	grid.appendChild(el('div', { class: 'control-group' }, [
 		el('span', { class: 'control-group-label', text: 'Isolated nodes' }),
 		el('label', { class: 'toggle-row', for: 'filter-show-orphans' }, [orphanBox, 'Show nodes with no recorded relationship']),
+	]));
+
+	// The project hub (task-035). Default on, and the default is load-bearing
+	// rather than a preference: with nothing selected the hub is what the hop
+	// limit above is measured FROM, so a reader who narrows the depth before ever
+	// finding this checkbox must get a narrowing that works. The hint says so
+	// out loud, because turning the hub off makes the depth control inert again
+	// and nothing else on the page would explain why.
+	const hubBox = el('input', { type: 'checkbox', id: 'filter-show-hub', [CONTROL_ATTR]: 'filter-show-hub' });
+	hubBox.addEventListener('change', () => { store.setLens({ 'filters.showHub': hubBox.checked }); });
+	grid.appendChild(el('div', { class: 'control-group' }, [
+		el('span', { class: 'control-group-label', text: 'Project node' }),
+		el('label', { class: 'toggle-row', for: 'filter-show-hub' }, [hubBox, 'Show the project node']),
+		el('span', { class: 'control-hint', id: 'filter-show-hub-hint', text: 'One node standing for the project itself, joined to every Knowledge Base document and every file at the repository root. With no node selected, the hop limit is counted from it — turn this off and the hop limit has no starting point and stops narrowing.' }),
 	]));
 
 	// The three filter axes. Each is a real fieldset with a real legend, and each
@@ -353,7 +411,7 @@ function mountControls(ctx) {
 	});
 
 	/** Reconcile every control's displayed value against the lens, so a preset
-	 *  button and a slider can never disagree about the current density. The
+	 *  button and a slider can never disagree about the current lens. The
 	 *  controls are uncontrolled inputs written into the store on change; this is
 	 *  the other half of that arrangement. */
 	function refresh(viewModel, lens) {
@@ -363,10 +421,13 @@ function mountControls(ctx) {
 			if (button) button.setAttribute('aria-pressed', lens['preset'] === entry.value ? 'true' : 'false');
 		}
 		groupingSelect.value = lens['grouping'];
-		densityRange.value = String(lens['density']);
+		spacingRange.value = String(lens['spacing']);
 		if (textInput.value !== lens['filters.text']) textInput.value = lens['filters.text'];
-		depthInput.value = String(lens['focus.depth']);
+		const depthRaw = lens['focus.depth'] == null ? 0 : lens['focus.depth'];
+		depthRange.value = String(depthRaw);
+		depthValue.textContent = depthText(depthRaw);
 		orphanBox.checked = lens['filters.showOrphans'] !== false;
+		hubBox.checked = lens['filters.showHub'] !== false;
 
 		for (const axis of ['filters.categories', 'filters.kinds', 'filters.provenance']) {
 			const admitted = new Set(lens[axis]);
@@ -505,63 +566,50 @@ function renderLegend(root, graphModel) {
 	const host = root.querySelector('[data-legend]');
 	clear(host);
 
-	const kinds = el('dl', {});
-	kinds.appendChild(el('dt', { text: 'Node kind — colour and shape' }));
-	for (const kind of Object.keys(KIND_ENCODING)) {
-		const encoding = KIND_ENCODING[kind];
-		kinds.appendChild(el('dd', {}, [el('span', { class: 'legend-row' }, [
-			el('span', { class: 'filter-glyph k-' + slug(kind), 'aria-hidden': 'true', text: encoding.glyph }),
-			kind + ' — ' + encoding.shapeLabel,
-		])]));
-	}
-
-	const categories = el('dl', {});
-	categories.appendChild(el('dt', { text: 'Relationship category — colour and line style' }));
-	for (const category of graphModel.categories) {
-		const encoding = CATEGORY_ENCODING[category];
-		if (!encoding) continue;
-		categories.appendChild(el('dd', {}, [el('span', { class: 'legend-row' }, [
-			el('span', { class: 'filter-swatch ls-' + encoding.lineStyle + ' c-' + slug(category), 'aria-hidden': 'true' }),
-			category + ' — ' + encoding.lineStyle + ' line',
-		])]));
-	}
-
-	// The coverage gap badge. Its own section rather than a line inside
-	// "Emphasis", because it is NOT on the emphasis axis: its source is
-	// `coverageGaps` membership, so a selected gap node keeps its badge where an
-	// emphasis-derived mark would lose it. Describing it under Emphasis would
-	// have taught the reader the wrong model.
-	//
-	// ONE character AND one size for both, because the canvas draws them that way
-	// -- the owner compared three arms against four and two sizes against one, and
-	// chose three arms at one size. Colour is the only difference. A second
-	// character or a size bump here would claim a distinction the canvas does not
-	// draw, which is the failure mode a legend exists to avoid.
-	const gaps = el('dl', {}, [
-		el('dt', { text: 'Coverage gap — asterisk beside the node' }),
-		el('dd', {}, [el('span', { class: 'legend-row' }, [
-			el('span', { class: 'filter-glyph gap-kb-unbacked', 'aria-hidden': 'true', text: '✱' }),
-			'unbacked claim — nothing in the source backs it',
-		])]),
-		el('dd', {}, [el('span', { class: 'legend-row' }, [
-			el('span', { class: 'filter-glyph gap-artifact-undocumented', 'aria-hidden': 'true', text: '✱' }),
-			'undocumented artifact — no knowledge-base document describes it',
-		])]),
-		el('dd', { text: 'The red asterisk is the more severe of the two: an unbacked claim is wrong information rather than missing information. A node with neither gap carries no asterisk, and the table below states both classes in words.' }),
-	]);
-
-	const direction = el('dl', { class: 'legend-prose' }, [
-		el('dt', { text: 'Direction' }),
-		el('dd', { text: 'An arrowhead reads source to target, and touches the border of the node it points at. A relationship that reads the same in both directions has NO arrowhead, and that absence is the signal for it.' }),
+	/* WHAT THIS PANEL NO LONGER SAYS, AND WHERE EACH THING SAYS IT INSTEAD.
+	 *
+	 * The owner's finding, twice: "the legend became redundant with the full
+	 * explanation of each item just below it", and then "the info is redundant"
+	 * after the first pass only collapsed it. Collapsing was the wrong fix -- it
+	 * hid the duplication instead of removing it.
+	 *
+	 * Measured on the real page rather than reasoned about, and the duplication was
+	 * worse than TWO-fold:
+	 *
+	 *   node kinds      -- the diagram names all 8 in words, AND the Node kind
+	 *                      filter renders one checkbox per kind labelled
+	 *                      "<glyph> document (filled circle)". THREE copies.
+	 *   categories      -- the Relationship category filter renders one checkbox
+	 *                      per category labelled "<swatch> structure (solid)", all
+	 *                      14 of them, which is strictly MORE than this panel's
+	 *                      list carried. The diagram carries the 3 line styles.
+	 *   direction       -- the diagram states both readings in words.
+	 *   coverage gaps   -- the diagram draws both asterisks and names both classes.
+	 *
+	 * So all four of those sections are deleted, and nothing is lost from the page.
+	 * What is left is the content that appears NOWHERE else -- how emphasis reads,
+	 * when relationship names appear, and what the mouse does. That is behaviour,
+	 * not encoding, which is why the disclosure is titled for behaviour rather than
+	 * for symbols.
+	 *
+	 * The diagram's `aria-label` was rewritten in the same change: it used to end
+	 * "Each is named in words in the list below this diagram", delegating SC 1.1.1
+	 * to a list that no longer names them. It is self-contained now, which is the
+	 * correct arrangement anyway -- the SVG carries `role="img"`, so assistive
+	 * technology reads the label and never the inner `<text>` nodes.
+	 */
+	const behaviour = el('dl', { class: 'legend-prose' }, [
 		el('dt', { text: 'Emphasis' }),
 		el('dd', { text: 'A selected node is outlined with a ring. Under the Coverage lens everything well-formed is dimmed, so the gaps stand out. Under the Provenance lens the rows of a cross-side chain keep full contrast and the rest are dimmed. In the relationship table the same two gap classes are marked with a wavy rule and a double rule instead, because a table has no room for a badge.' }),
 		el('dt', { text: 'Relationship names' }),
 		el('dd', { text: 'Not painted on every line. They appear on hover and on selection, and every one of them is always present as text in the relationship table.' }),
 		el('dt', { text: 'Mouse' }),
 		el('dd', { text: 'Scroll to zoom. Drag to pan. Click a node to select it, and click empty space to clear the selection; hover a node or a line to read its name. The Controls panel above also carries a Selected node list, whose ‘(none)’ entry clears the same way from the keyboard.' }),
+		el('dt', { text: 'The project node' }),
+		el('dd', { text: 'The star is this project itself. It is not in the relationship file — the view adds it, joined to every Knowledge Base document and every file at the repository root — and with no node selected it is the point a hop limit counts from. Turn it off in the Controls panel and the hop limit has nothing to count from.' }),
 	]);
 
-	host.appendChild(el('div', { class: 'legend-grid' }, [kinds, categories, gaps, direction]));
+	host.appendChild(el('div', { class: 'legend-grid' }, [behaviour]));
 }
 
 /**

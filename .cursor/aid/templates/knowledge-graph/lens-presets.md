@@ -20,7 +20,7 @@ space.
 | Key | Domain | Meaning | Read by |
 |---|---|---|---|
 | `preset` | one of the four names, or null | Which preset was last applied. Advisory: it never gates a control | both |
-| `grouping` | `none`, `relation-category`, `document`, `node-kind`, `provenance` | The grouping dimension. `document` is the only one that folds | both |
+| `grouping` | `none`, `document`, `node-kind`, `provenance` | The grouping dimension, over NODE properties only. `document` is the only one that folds. `relation-category` was removed 2026-08-07 -- it grouped nodes by a relationship property and resolved a multi-category node to whichever row came first | both |
 | `expandedGroups` | array of group keys | Which groups the reader has drilled into. The disclosure **toggles** membership, so it shrinks as well as grows | both |
 | `density` | 1–5 | **View** density — how much is drawn. Level 1 thins nothing; 2–5 hide nodes with fewer connections than the level | both |
 | `filters.kinds` | subset of the seven kinds | Node kinds admitted | both |
