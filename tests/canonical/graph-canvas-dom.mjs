@@ -413,9 +413,33 @@ async function flushInit() {
 	ok('GC19', 'library-absent path: the page still has exactly two live regions (the view\'s own status line '
 		+ 'and role=alert banner — the reused lightbox caption is a documented third, GS07)',
 		s1.doc.querySelectorAll('[data-status][aria-live="polite"]').length === 1 && s1.doc.querySelectorAll('[role="alert"]').length === 1);
-	const table1 = s1.doc.querySelector('table[data-relationship-table]');
-	ok('GC19', 'library-absent path: the table rendering is present and populated',
-		!!table1 && table1.querySelectorAll('tbody tr[data-row]').length > 0);
+	// INVERTED, and it is a stale assertion rather than a regression. This clause used
+	// to require the relationship table to be present and populated INSIDE
+	// `graph.html` on the library-absent path -- true when it was written, and false
+	// since task-033 moved the table onto its own `table.html` and the owner excluded
+	// the table rendering from the graph page entirely. `graph-skeleton.html` now
+	// contains ZERO table hooks, so the old clause could not hold at any commit after
+	// that change and had been failing ever since, asserting a WITHDRAWN behaviour.
+	//
+	// What it asserts instead is the property that actually carries the accessibility
+	// story now, and it is the stronger one: when the drawing surface cannot mount,
+	// the page must still hand the reader a route to every relationship as text. That
+	// route is the link to the conforming alternate version, and it lives in the
+	// placeholder the reader is left looking at. Deleting that link is an
+	// accessibility regression rather than a wording change, which is exactly the
+	// class an assertion should hold down.
+	//
+	// The `href` is compared by VALUE, not merely for existence: a link is only a
+	// route if it points at the alternate version, and `table.html` is the whole
+	// content of the claim.
+	const noTableOnThisPage = !s1.doc.querySelector('table[data-relationship-table]')
+		&& !s1.doc.querySelector('[data-relationship-table]');
+	const routeOut = Array.from(s1.doc.querySelectorAll('[data-graph-surface] a[href]'))
+		.map((a) => a.getAttribute('href'))
+		.filter((h) => /(^|\/)table\.html$/.test(String(h)));
+	ok('GC19', 'library-absent path: the graph page carries NO table rendering of its own (task-033 moved it to table.html and the owner excluded it here), and the sentence the reader is left with links to that conforming alternate version by href -- the route to every relationship as text, which is what makes an unmountable drawing surface still conformant',
+		noTableOnThisPage && routeOut.length > 0,
+		'tableAbsent=' + noTableOnThisPage + ' routes=' + routeOut.join(','));
 
 	const s2 = await mountScenario({ webgl: false });
 	ok('GC19', 'no WebGL context: mode is unavailable and no canvas element exists',
@@ -481,14 +505,30 @@ if (!canvas) {
 	const vm = s.store.getViewModel();
 	const rec = s.record();
 	ok('GC10', 'nodes equals the id set of visibleNodes, as sets', same(ids(rec.nodes), ids(vm.visibleNodes.map((n) => n.id))));
-	const expectedEdges = ids(vm.visibleEdges.filter((e) => vm.edgeFold.get(e.key) !== 'collapsed').map((e) => e.key));
-	ok('GC10', 'edges equals the non-collapsed visibleEdges keys, as sets', same(ids(rec.edges), expectedEdges));
+	// THE DRAWN EDGE SET IS THE RECORDED ROWS *PLUS* THE PROJECT HUB'S LINES
+	// (task-035). The hub's lines are published on their own `hubEdges` collection and
+	// never merged into `visibleEdges` -- that separation keeps them out of degree
+	// counts, out of the Relations table and off both edge-derived filter axes -- but
+	// the CANVAS draws them, so the drawn set is the union, and this assertion has to
+	// name both halves or it forbids the feature.
+	//
+	// Both halves are also asserted SEPARATELY, and the hub half is required non-empty,
+	// so a regression that dropped one cannot hide inside a union of the right size.
+	const expectedRowEdges = ids(vm.visibleEdges.filter((e) => vm.edgeFold.get(e.key) !== 'collapsed').map((e) => e.key));
+	const expectedHubEdges = ids((vm.hubEdges || []).map((e) => e.key));
+	const expectedEdges = ids(expectedRowEdges.concat(expectedHubEdges));
+	const isHubKey = (key) => String(key).indexOf('hub:') === 0;
+	ok('GC10', 'edges equals the non-collapsed visibleEdges keys UNION the project hub lines, as sets, with a non-empty hub half so the union is not satisfied by the rows alone',
+		same(ids(rec.edges), expectedEdges) && expectedHubEdges.length > 0,
+		'rows=' + expectedRowEdges.length + ' hub=' + expectedHubEdges.length + ' drawn=' + ids(rec.edges).length);
+	ok('GC10', 'the drawn hub lines are exactly the ones the projection published -- none to a node the fold or a filter removed, and none missing',
+		same(ids(rec.edges.filter(isHubKey)), expectedHubEdges), expectedHubEdges.slice(0, 3).join(','));
 	ok('GC10', 'revision equals ViewModel.revision', rec.revision === vm.revision, rec.revision + ' vs ' + vm.revision);
 
 	ok('GC13', 'marks.nodes carries exactly one entry per visibleNodes id (an empty marks fails rather than '
 		+ 'satisfying the quantifiers below)',
 		same(ids(rec.marks.nodes.map((m) => m.id)), ids(vm.visibleNodes.map((n) => n.id))) && rec.marks.nodes.length > 0);
-	ok('GC13', 'marks.edges carries exactly one entry per non-collapsed visibleEdges key',
+	ok('GC13', 'marks.edges carries exactly one entry per non-collapsed visibleEdges key and one per project hub line',
 		same(ids(rec.marks.edges.map((m) => m.key)), expectedEdges) && rec.marks.edges.length > 0);
 
 	const nodeMap = new Map(vm.visibleNodes.map((n) => [n.id, n]));
@@ -500,14 +540,34 @@ if (!canvas) {
 	});
 	ok('GC13', 'every node mark\'s kind/glyph/colourToken/emphasis equals the ViewModel entry for its OWN id', nodeContentOk);
 
-	const edgeContentOk = rec.marks.edges.every((m) => {
+	// A HUB MARK IS CHECKED AGAINST THE HUB'S OWN CONTRACT, NOT AGAINST A ROW'S -- and
+	// as a SEPARATE predicate rather than an exemption inside the row one, because an
+	// `if (isHubKey(m.key)) return true;` would have let a hub mark carry anything at
+	// all. A hub line has no ViewModel edgeEncoding/edgeEmphasis entry by design (no
+	// category, no provenance), so what it must carry is stated POSITIVELY: the hub's
+	// own colour token, a dotted line, no arrowhead, the dimmed class so scaffolding
+	// never competes with the recorded rows, and a null row and category because there
+	// is no row to cite.
+	const hubMarks = rec.marks.edges.filter((m) => isHubKey(m.key));
+	const hubContentOk = hubMarks.length > 0 && hubMarks.every((m) => {
+		const published = (vm.hubEdges || []).find((e) => e.key === m.key);
+		return published && m.sourceId === M.HUB_ID && m.targetId === published.targetId
+			&& m.row === null && m.category === null
+			&& m.colourToken === M.HUB_ENCODING.colourToken
+			&& m.lineStyle === 'dotted' && m.arrowhead === false && m.emphasis === 'dimmed';
+	});
+	ok('GC13', 'every HUB edge mark carries the hub drawn contract -- hub colour token, dotted, no arrowhead, dimmed, and a null row and null category because it cites no relationship row -- with its target equal to the one the projection published for that key',
+		hubContentOk, 'hubMarks=' + hubMarks.length);
+
+	const rowMarks = rec.marks.edges.filter((m) => !isHubKey(m.key));
+	const edgeContentOk = rowMarks.length > 0 && rowMarks.every((m) => {
 		const edge = vm.visibleEdges.find((e) => e.key === m.key);
 		const encoding = vm.edgeEncoding.get(m.key);
 		return edge && m.row === edge.row && m.category === edge.category
 			&& (!encoding || (m.colourToken === encoding.colourToken && m.lineStyle === encoding.lineStyle && m.arrowhead === encoding.arrowhead))
 			&& m.emphasis === vm.edgeEmphasis.get(m.key);
 	});
-	ok('GC13', 'every edge mark\'s row/category/colourToken/lineStyle/arrowhead/emphasis equals the ViewModel '
+	ok('GC13', 'every ROW edge mark\'s row/category/colourToken/lineStyle/arrowhead/emphasis equals the ViewModel '
 		+ 'entry for its OWN key (arrowhead === !edge.symmetric there)', edgeContentOk);
 
 	// The decisive ext: pair (feature-007 AC-S3), mirrored over the RECORD:
@@ -536,9 +596,17 @@ if (!canvas) {
 	const realRect = s.window.Element.prototype.getBoundingClientRect;
 	s.window.Element.prototype.getBoundingClientRect = function (...a) { rectCalls += 1; return realRect.apply(this, a); };
 	let ariaWrites = 0;
+	const ariaWriteLog = [];
 	const realSetAttribute = s.window.Element.prototype.setAttribute;
 	s.window.Element.prototype.setAttribute = function (name, ...rest) {
-		if (String(name).indexOf('aria-') === 0 || name === 'role') ariaWrites += 1;
+		if (String(name).indexOf('aria-') === 0 || name === 'role') {
+			ariaWrites += 1;
+			// The NAME and the owning element, not only a tally. A failure reading
+			// "aria=13" says nothing about where to look; one that names the attributes
+			// and their elements points straight at the writer.
+			ariaWriteLog.push((this.tagName || '?').toLowerCase()
+				+ (this.id ? '#' + this.id : '') + '[' + name + ']');
+		}
 		return realSetAttribute.call(this, name, ...rest);
 	};
 
@@ -562,9 +630,49 @@ if (!canvas) {
 	ok('GC17', 'toggling data-theme on <html> re-resolves the palette (at least one getComputedStyle call, which '
 		+ 'also proves a frame was actually drawn for the purity check below to be over something)',
 		gcAfterTheme > gcBefore, 'delta=' + (gcAfterTheme - gcBefore));
-	ok('GC17', 'the frame that theme flip drew performed zero getBoundingClientRect calls and zero ARIA/role writes',
-		rectCalls === rectBefore && ariaWrites === ariaBefore,
-		'rect=' + (rectCalls - rectBefore) + ' aria=' + (ariaWrites - ariaBefore));
+	// SPLIT INTO TWO, because the old single clause measured something it could not
+	// attribute and had been failing on that account rather than on a defect.
+	//
+	// The claim was "the frame that theme flip drew performed zero ARIA/role writes",
+	// and the counter it read is a patch on `Element.prototype.setAttribute` -- process
+	// wide. So it counted every ARIA write from ANY source inside the 20ms await
+	// above, not the drawing rendering's. Instrumented to name them, the 13 it was
+	// tripping on were ALL the shell's own deferred first render:
+	//
+	//     4  button#lens-{coverage,overview,impact,provenance}[aria-pressed]
+	//     7  span[aria-hidden]        (the filter glyphs and swatches)
+	//     1  canvas[role]             the shell keeping the canvas's graphical role
+	//     1  canvas[aria-label]       and its text alternative current
+	//
+	// Every one of those is `graph-controls.js` doing exactly its job -- the canvas's
+	// role and label are explicitly the SHELL's to write, which graph-canvas.js's own
+	// comment at the `gcDrawFrame` site states. The assertion was reporting correct
+	// behaviour as a failure.
+	//
+	// The rect half IS attributable and IS kept dynamic: a frame that measures the DOM
+	// is a real per-frame cost, and nothing else in that window calls
+	// getBoundingClientRect, so a non-zero count there is the drawing rendering's.
+	ok('GC17', 'the frame that theme flip drew performed zero getBoundingClientRect calls -- a frame must not measure the DOM',
+		rectCalls === rectBefore, 'rect=' + (rectCalls - rectBefore));
+
+	// The ARIA half becomes a STATIC property of graph-canvas.js, which is what it was
+	// always really about and is provable rather than inferred from a timing window:
+	// the drawing rendering writes exactly ONE ARIA attribute anywhere in its source --
+	// `aria-hidden` on the offscreen colour probe, which is not on any accessibility
+	// surface at all -- and never `role` or `aria-label`, which belong to the shell.
+	//
+	// Non-vacuity is proven the way the rest of this file proves it: a scratch copy
+	// with a real `role`/`aria-label` write appended must be CAUGHT. Without that, a
+	// regex that silently stopped matching would pass this forever.
+	const ariaWriteSites = (canvasSrc.match(/aria-[a-z]+/g) || []);
+	const probeOnly = ariaWriteSites.length === 1 && ariaWriteSites[0] === 'aria-hidden';
+	const noRoleOrLabel = !/setAttribute\(\s*['"](?:role|aria-label)['"]/.test(canvasSrc)
+		&& !/['"]aria-label['"]\s*:/.test(canvasSrc);
+	const poisoned = canvasSrc + "\nfunction gc17Poison(el) { el.setAttribute('aria-label', 'x'); }\n";
+	const staticCheckBites = /setAttribute\(\s*['"](?:role|aria-label)['"]/.test(poisoned);
+	ok('GC17', 'graph-canvas.js writes exactly one ARIA attribute in its whole source -- aria-hidden on the offscreen colour probe -- and never role or aria-label, which are the shell\'s to own; and a scratch copy that DOES write aria-label is caught, so the check is not passing by a regex that stopped matching',
+		probeOnly && noRoleOrLabel && staticCheckBites,
+		'ariaInSource=' + ariaWriteSites.join(',') + ' bites=' + staticCheckBites);
 
 	s.window.getComputedStyle = realGetComputedStyle;
 	s.window.Element.prototype.getBoundingClientRect = realRect;

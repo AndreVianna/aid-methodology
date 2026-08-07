@@ -218,7 +218,7 @@ cat > "$TMP/graph-full.html" <<'CSSEOF'
 }
 html:root{
   --gk-document:#1a1a1a;--gk-section:#1a1a1a;--gk-fact:#1a1a1a;--gk-concept:#1a1a1a;
-  --gk-source-artifact:#1a1a1a;--gk-image:#1a1a1a;--gk-web-page:#1a1a1a;
+  --gk-source-artifact:#1a1a1a;--gk-image:#1a1a1a;--gk-web-page:#1a1a1a;--gk-project:#1a1a1a;
   --gc-structure:#1a1a1a;--gc-taxonomy:#1a1a1a;--gc-documentation:#1a1a1a;--gc-evidence:#1a1a1a;
   --gc-provenance:#1a1a1a;--gc-lineage:#1a1a1a;--gc-dependency:#1a1a1a;--gc-implementation:#1a1a1a;
 }
@@ -230,7 +230,7 @@ html[data-theme="dark"]{
 }
 html[data-theme="dark"]:root{
   --gk-document:#e0e0e0;--gk-section:#e0e0e0;--gk-fact:#e0e0e0;--gk-concept:#e0e0e0;
-  --gk-source-artifact:#e0e0e0;--gk-image:#e0e0e0;--gk-web-page:#e0e0e0;
+  --gk-source-artifact:#e0e0e0;--gk-image:#e0e0e0;--gk-web-page:#e0e0e0;--gk-project:#e0e0e0;
   --gc-structure:#e0e0e0;--gc-taxonomy:#e0e0e0;--gc-documentation:#e0e0e0;--gc-evidence:#e0e0e0;
   --gc-provenance:#e0e0e0;--gc-lineage:#e0e0e0;--gc-dependency:#e0e0e0;--gc-implementation:#e0e0e0;
 }
@@ -594,10 +594,10 @@ echo ""
 echo "=== GRAPHPAIR (PV13, PV14) ==="
 
 run_node "$CONTRAST" "$TMP/graph-full.html" --profile graph
-assert_exit_eq "$RC" 0 "PV13a a fully-declared graph palette (15 tokens x 2 bg x 2 themes) passes cleanly"
+assert_exit_eq "$RC" 0 "PV13a a fully-declared graph palette (16 tokens x 2 bg x 2 themes) passes cleanly"
 PASS_LINES=$(echo "$OUT" | grep -c '✅')
-assert_eq "$PASS_LINES" "84" "PV13b exactly 84 passing lines: (11 chrome + 15x2 graph)=41 x 2 themes + 2 divergence/summary lines"
-for tok in gk-document gk-section gk-fact gk-concept gk-source-artifact gk-image gk-web-page \
+assert_eq "$PASS_LINES" "88" "PV13b exactly 88 passing lines: (11 chrome + 16x2 graph)=43 x 2 themes + 2 divergence/summary lines"
+for tok in gk-document gk-section gk-fact gk-concept gk-source-artifact gk-image gk-web-page gk-project \
            gc-structure gc-taxonomy gc-documentation gc-evidence gc-provenance gc-lineage gc-dependency gc-implementation; do
     assert_output_contains "$OUT" "--$tok on --bg " "PV13c-$tok checked against --bg"
     assert_output_contains "$OUT" "--$tok on --bg-elev" "PV13d-$tok checked against --bg-elev"

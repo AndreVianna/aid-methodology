@@ -134,10 +134,21 @@ for (const patch of Object.values(M.PRESETS)) {
 }
 ok('GT14', 'no preset patch touches the filters namespace, so a filter composes rather than resets',
 	noFilterKey && Object.keys(M.PRESETS).length === 4);
-ok('GT15', 'INITIAL_LENS states all fifteen fields (task-034 added filters.hiddenIds; `density` was removed and `spacing`, the layout axis, added 2026-08-07), with sort at the file order',
-	M.LENS_KEYS.length === 15 && M.LENS_KEYS.every((k) => Object.prototype.hasOwnProperty.call(M.INITIAL_LENS, k))
+// The COUNT is asserted as well as the membership, and it is the count that has
+// moved three times now (task-034 added filters.hiddenIds; `density` out and
+// `spacing` in on 2026-08-07; `filters.showHub` added by task-035 for the project
+// hub). Asserting the number is the point: `every` over LENS_KEYS is trivially
+// true for a SHORTER list, so without the count a key silently dropped from
+// LENS_KEYS would pass here while vanishing from every preset and every reset.
+ok('GT15', 'INITIAL_LENS states all sixteen fields (filters.hiddenIds from task-034; `density` out and `spacing` in on 2026-08-07; filters.showHub from task-035), with sort at the file order and the hub shown by default',
+	M.LENS_KEYS.length === 16 && M.LENS_KEYS.every((k) => Object.prototype.hasOwnProperty.call(M.INITIAL_LENS, k))
 	&& same(M.INITIAL_LENS['sort'], { column: 'row', direction: 'asc' })
-	&& same(M.INITIAL_LENS['filters.hiddenIds'], []));
+	&& same(M.INITIAL_LENS['filters.hiddenIds'], [])
+	// Default ON, and it is load-bearing rather than cosmetic: with no selection the
+	// hub is what a finite `focus.depth` is measured FROM, so a reader who narrows the
+	// depth without ever finding the checkbox must get a narrowing that works.
+	&& M.INITIAL_LENS['filters.showHub'] === true,
+	'keys=' + M.LENS_KEYS.length + ' showHub=' + M.INITIAL_LENS['filters.showHub']);
 
 // ===========================================================================
 // GT2x  THE PREFIX ORACLE -- a class is never derived from an identifier
@@ -458,6 +469,129 @@ reset();
 note('GT70 the `impact` preset is compared against a state WITH a selection: its patch differs from INITIAL_LENS '
 	+ 'only on focus.depth, which reaches no ViewModel field while focus.nodeId is null, so from a pristine state '
 	+ 'the rendered table is byte-identical. TV01 needs that qualifier.');
+
+// ===========================================================================
+// GT71-GT76 -- THE PROJECT HUB (task-035)
+//
+// The feature had NO coverage at all when it shipped, which is the gap this
+// block closes. Every assertion here is written against a defect that actually
+// occurred during the work rather than against the happy path:
+//
+//   GT72  the whole reason the hub exists -- before it, a finite depth with
+//         nothing selected narrowed NOTHING, because a radius had no centre.
+//   GT73  the ball claimed 32 neighbours and drew 29 on the real artifact. A
+//         node reached only by a HUB edge was never added to the drawn set,
+//         because that set is built from `visibleEdges` and hub lines are not
+//         in it.
+//   GT74  the separation that keeps hub lines out of degree counts, out of the
+//         Relations table and off both edge-derived filter axes.
+//   GT76  dimming fired with nothing selected, because `classifyNode` read
+//         `distance` alone and `distance` is now populated at any finite depth.
+// ===========================================================================
+reset();
+{
+	const hubTargets = ids(model.hubEdges.map((e) => e.targetId));
+	const documentIds = ids(Array.from(model.nodes.values()).filter((n) => n.kind === 'document').map((n) => n.id));
+	// The fixture holds no repository-ROOT `int:` artifact, so its attachment set is
+	// the document nodes alone. That half of the rule is therefore checked on the
+	// PREDICATE directly rather than left unexercised -- a root path is admitted, a
+	// nested one is not, and neither answer can be reached by accident because the
+	// two inputs differ only in the separator.
+	const rootAdmitted = M.isHubEntryPoint({ kind: 'source-artifact', prefix: 'int', id: 'int:README.md' });
+	const nestedRejected = !M.isHubEntryPoint({ kind: 'source-artifact', prefix: 'int', id: 'int:src/loader.mjs' });
+	const externalRejected = !M.isHubEntryPoint({ kind: 'web-page', prefix: 'ext', id: 'ext:some-page' });
+	ok('GT71', 'the hub is derived once from the model, attaches to exactly the Knowledge Base documents in this fixture, and its predicate admits a repository-root artifact while rejecting a nested one and an external page',
+		model.hubNode !== null && model.hubNode.id === M.HUB_ID && model.hubNode.kind === M.HUB_KIND
+		&& same(hubTargets, documentIds) && hubTargets.length > 0
+		&& model.hubNode.degree === model.hubEdges.length
+		&& rootAdmitted && nestedRejected && externalRejected,
+		'targets=' + hubTargets.length + ' root=' + rootAdmitted + ' nested=' + nestedRejected);
+
+	// --- GT72: a finite depth narrows FROM THE HUB with nothing selected ----
+	const nodesAt = (depth) => { store.setLens({ 'focus.depth': depth }); return vm().counts.nodes; };
+	const atNoLimit = nodesAt(null);
+	const at50 = nodesAt(50);
+	const at2 = nodesAt(2);
+	const at1 = nodesAt(1);
+	store.setLens({ 'focus.depth': 1 });
+	const drawnAt1 = ids(vm().visibleNodes.map((n) => n.id).filter((id) => id !== M.HUB_ID));
+	ok('GT72', 'with NO node selected a finite depth narrows the graph from the hub, strictly monotonically, and at one hop the drawn set is EXACTLY the hub own targets -- the behaviour the depth control had none of before the hub existed',
+		at1 < at2 && at2 < at50 && at50 <= atNoLimit && at1 === hubTargets.length
+		&& same(drawnAt1, hubTargets)
+		&& vm().visibleNodes.length > 0,
+		'noLimit=' + atNoLimit + ' 50=' + at50 + ' 2=' + at2 + ' 1=' + at1);
+
+	// --- GT73: the ball draws everything it claims to reach -----------------
+	// The invariant the 32-vs-29 defect broke. Stated over EVERY finite depth
+	// offered, not only the one the defect was found at: the failing case was a node
+	// whose every recorded row leaves the ball, and which depth that happens at is a
+	// property of the data rather than of the rule.
+	let ballHonest = true;
+	let ballDetail = '';
+	for (const depth of [1, 2, 3, 50]) {
+		store.setLens({ 'focus.depth': depth });
+		const drawn = new Set(vm().visibleNodes.map((n) => n.id));
+		const publishedTargets = vm().hubEdges.map((e) => e.targetId);
+		if (!publishedTargets.every((id) => drawn.has(id)) || !drawn.has(M.HUB_ID)) {
+			ballHonest = false;
+			ballDetail += 'depth ' + depth + ' undrawn: ' + publishedTargets.filter((id) => !drawn.has(id)).join(',') + ' ';
+		}
+		// At one hop the two sets must agree exactly -- every target is one hop away by
+		// construction, so a target missing here is the original defect.
+		if (depth === 1 && publishedTargets.length !== hubTargets.length) {
+			ballHonest = false;
+			ballDetail += 'depth 1 published ' + publishedTargets.length + ' of ' + hubTargets.length + ' ';
+		}
+	}
+	ok('GT73', 'at every finite depth the hub draws every node it claims to reach: each published hub line ends at a DRAWN node and the hub itself is drawn, and at one hop the published lines are ALL of the hub targets rather than only those a recorded row also reaches',
+		ballHonest, ballDetail === '' ? 'all depths honest' : ballDetail);
+
+	// --- GT74: the separation, and the counts ------------------------------
+	reset();
+	const v = vm();
+	const hubInRows = v.visibleEdges.some((e) => e.sourceId === M.HUB_ID || e.targetId === M.HUB_ID);
+	// The MODEL degree is what the drawn radius and the orphan filter read. A hub
+	// line must not move it, or attaching the hub would resize every entry point and
+	// change what "isolated" means.
+	const targetDegreesUnchanged = model.hubEdges.every((e) => {
+		const node = model.nodes.get(e.targetId);
+		return node && node.degree === model.edges.filter((r) => r.sourceId === node.id || r.targetId === node.id).length;
+	});
+	ok('GT74', 'a hub line is published on hubEdges ALONE -- never in visibleEdges, so it reaches no Relations row, no category or provenance filter axis and no node model degree -- and counts reports the hub separately so nodes + hiddenNodes still partitions the model exactly',
+		!hubInRows && targetDegreesUnchanged
+		&& v.counts.hubNodes === 1 && v.counts.hubEdges === model.hubEdges.length
+		&& v.counts.nodes + v.counts.hiddenNodes === model.nodes.size
+		&& v.counts.edges + v.counts.hiddenEdges === model.rowCount
+		// The hub IS drawn and IS labelled, so "not in visibleEdges" is not achieved by
+		// the hub being absent altogether.
+		&& v.visibleNodes.some((n) => n.id === M.HUB_ID)
+		&& v.nodeLabels.get(M.HUB_ID) === M.HUB_NAME
+		&& v.nodeEncoding.get(M.HUB_ID).colourToken === M.HUB_ENCODING.colourToken,
+		JSON.stringify(v.counts));
+
+	// --- GT75: turning the hub off, and its deliberate consequence ---------
+	store.setLens({ 'filters.showHub': false, 'focus.depth': 1 });
+	const off = vm();
+	ok('GT75', 'unchecking the hub removes the node, its lines and its group -- AND stops a finite depth narrowing anything, which is the stated consequence of taking the origin away rather than a defect: with nothing selected and no hub there is no centre for a radius',
+		!off.visibleNodes.some((n) => n.id === M.HUB_ID)
+		&& off.hubEdges.length === 0 && off.counts.hubNodes === 0 && off.counts.hubEdges === 0
+		&& !off.groups.some((g) => g.key === M.HUB_GROUP)
+		&& off.counts.nodes === model.nodes.size,
+		'nodes=' + off.counts.nodes + ' of ' + model.nodes.size);
+
+	// --- GT76: the selection still wins, and nothing dims unselected -------
+	reset();
+	store.setLens({ 'focus.depth': 2 });
+	const dimmedUnselected = Array.from(vm().nodeEmphasis.values()).filter((e) => e === 'dimmed').length;
+	store.setLens({ 'focus.nodeId': 'kb:alpha.md', 'focus.depth': 1 });
+	const selected = vm();
+	ok('GT76', 'a SELECTION overrides the hub as the depth origin (the ball centres on the selected node and marks it focus), and at a finite depth with NOTHING selected no node is dimmed at all -- dimming states "far from what you picked", so with nothing picked it states nothing',
+		dimmedUnselected === 0
+		&& selected.nodeEmphasis.get('kb:alpha.md') === 'focus'
+		&& selected.visibleNodes.some((n) => n.id === 'kb:alpha.md'),
+		'dimmedUnselected=' + dimmedUnselected + ' selectedClass=' + selected.nodeEmphasis.get('kb:alpha.md'));
+}
+reset();
 
 // ===========================================================================
 // Verdict

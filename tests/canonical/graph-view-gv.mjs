@@ -490,7 +490,12 @@ async function buildScratchBundle(patch) {
 	const literalCheckBites = !noLiteral(mutatedCanvasHex) && !noLiteral(mutatedCanvasRgb);
 
 	ok('GV13', 'every --gk-*/--gc-* token graph-css.css declares is present in BOTH theme blocks, matches the checker\'s own [a-z-]+ charset exactly (no declared property falls outside it), is FOUND by a run of the parameterised contrast-check.mjs over the REAL assembled page (component-css.css + graph-css.css), a token the file adds ahead of the checker\'s own hardcoded list is caught rather than silently passing, and no hex or rgb( literal appears in graph-canvas.js or graph-model.js',
-		charsetOk && bothBlocksSame && allAreGkGc && lightNarrow.length === 15
+		// The COUNT is asserted, not just the per-token quantifiers, and it is the count
+		// that moved: 15 -> 16 when task-035 added `--gk-project` for the project hub's
+		// star. It has to stay a literal rather than be derived from the file, because
+		// every `every(...)` above is trivially TRUE over a shorter list -- a palette that
+		// silently lost a token would satisfy all of them.
+		charsetOk && bothBlocksSame && allAreGkGc && lightNarrow.length === 16
 		&& realFound && mutationCaught && mutationDoesNotBreakTheRealTokens
 		&& canvasClean && modelClean && literalCheckBites,
 		'tokens=' + lightNarrow.length + ' bothBlocksSame=' + bothBlocksSame + ' realFound=' + realFound
@@ -504,7 +509,7 @@ async function buildScratchBundle(patch) {
 		+ 'html[data-theme="light"]` chrome block. That pollutes `light` with the graph tokens\' LIGHT values, which '
 		+ 'then survive the dark merge\'s `{...graphDarkRaw, ...dark}` spread (graphDarkRaw first, the already-'
 		+ 'polluted `dark` second) and overwrite the correct dark values -- so contrast-check.mjs --profile graph '
-		+ 'reports the LIGHT gk-*/gc-* colours checked against the DARK background for all fifteen tokens, and the '
+		+ 'reports the LIGHT gk-*/gc-* colours checked against the DARK background for all sixteen tokens, and the '
 		+ 'real page\'s dark-theme graph contrast is UNVERIFIED by the tool, not merely undertested. Manually '
 		+ 'verified against the real values: --gk-document (#A8C7FF) on the dark theme\'s --bg (#0B1220) is 10.9:1, '
 		+ 'comfortably over the 3:1 target -- so this is a checker defect, not a palette defect. GV13 does not '
@@ -1056,16 +1061,17 @@ async function buildScratchBundle(patch) {
 }
 
 // ===========================================================================
-// GV25 -- INITIAL_LENS is stated TOTAL over all fifteen fields (task-034 added
+// GV25 -- INITIAL_LENS is stated TOTAL over all sixteen fields (task-034 added
 // `filters.hiddenIds`, the checkbox-hide axis; `density` was removed and
-// `spacing`, the layout axis, was added 2026-08-07), and every preset differs
-// from it on at least one key the preset sets
+// `spacing`, the layout axis, was added 2026-08-07; task-035 added
+// `filters.showHub`, the project hub), and every preset differs from it on at
+// least one key the preset sets
 // ===========================================================================
 {
 	const expectedKeys = ['preset', 'grouping', 'expandedGroups', 'spacing', 'filters.kinds', 'filters.categories',
-		'filters.provenance', 'filters.showOrphans', 'filters.text', 'filters.hiddenIds',
+		'filters.provenance', 'filters.showOrphans', 'filters.showHub', 'filters.text', 'filters.hiddenIds',
 		'focus.nodeId', 'focus.depth', 'emphasis', 'zoom', 'sort'];
-	const total = M.LENS_KEYS.length === 15 && expectedKeys.every((k) => M.LENS_KEYS.includes(k))
+	const total = M.LENS_KEYS.length === 16 && expectedKeys.every((k) => M.LENS_KEYS.includes(k))
 		&& expectedKeys.every((k) => Object.prototype.hasOwnProperty.call(M.INITIAL_LENS, k));
 	// The three enumerable filter axes, checked by VALUE against their own full
 	// domain -- never merely their KEY presence (`total` above already covers
@@ -1081,6 +1087,9 @@ async function buildScratchBundle(patch) {
 		&& same(M.INITIAL_LENS.expandedGroups, []) && M.INITIAL_LENS.spacing === 3
 		&& kindsTotal && categoriesTotal && provenanceTotal && hiddenIdsEmpty
 		&& M.INITIAL_LENS['filters.text'] === '' && M.INITIAL_LENS['filters.showOrphans'] === true
+		// task-035. Default ON because with nothing selected the hub is the origin a
+		// finite `focus.depth` is measured from -- off, the depth control narrows nothing.
+		&& M.INITIAL_LENS['filters.showHub'] === true
 		&& M.INITIAL_LENS.emphasis === 'none' && M.INITIAL_LENS['focus.nodeId'] === null && M.INITIAL_LENS['focus.depth'] === null
 		&& same(M.INITIAL_LENS.zoom, { scale: 1, panX: 0, panY: 0 }) && same(M.INITIAL_LENS.sort, { column: 'row', direction: 'asc' });
 	let noneIsPrivileged = true;
@@ -1089,9 +1098,11 @@ async function buildScratchBundle(patch) {
 		const differs = Object.keys(patch).some((k) => !same(patch[k], M.INITIAL_LENS[k]));
 		if (!differs) noneIsPrivileged = false;
 	}
-	ok('GV25', 'INITIAL_LENS states all fifteen LensState fields (total, not merely correct where checked), the four enumerable filter axes each admitting their initial domain by VALUE, and each of the four presets differs from it on at least one key the preset sets, so no preset is privileged as the default',
+	ok('GV25', 'INITIAL_LENS states all sixteen LensState fields (total, not merely correct where checked), the four enumerable filter axes each admitting their initial domain by VALUE, the two boolean filter flags both on, and each of the four presets differs from it on at least one key the preset sets, so no preset is privileged as the default',
 		total && shapeOk && noneIsPrivileged && Object.keys(M.PRESETS).length === 4,
-		'kindsTotal=' + kindsTotal + ' categoriesTotal=' + categoriesTotal + ' provenanceTotal=' + provenanceTotal + ' hiddenIdsEmpty=' + hiddenIdsEmpty);
+		'keys=' + M.LENS_KEYS.length + ' kindsTotal=' + kindsTotal + ' categoriesTotal=' + categoriesTotal
+		+ ' provenanceTotal=' + provenanceTotal + ' hiddenIdsEmpty=' + hiddenIdsEmpty
+		+ ' showHub=' + M.INITIAL_LENS['filters.showHub']);
 }
 
 // ===========================================================================
@@ -1153,6 +1164,16 @@ async function buildScratchBundle(patch) {
 	let subscribeFired = false;
 	const unsub = store.subscribe(() => { subscribeFired = true; });
 	const revisionBefore = store.getViewModel().revision;
+	// A REAL before-snapshot of the four projected channels this block claims are
+	// preference-independent. Taken here, ahead of the flips, because the comparison
+	// below is only meaningful against a value captured before them.
+	const snapshot = (vm) => JSON.stringify({
+		nodes: vm.visibleNodes.map((n) => n.id),
+		emphasis: Array.from(vm.nodeEmphasis.entries()).sort(),
+		encoding: Array.from(vm.nodeEncoding.entries()).map(([k, v]) => [k, v.colourToken, v.glyph]).sort(),
+		counts: vm.counts,
+	});
+	const snapshotBefore = snapshot(store.getViewModel());
 
 	let prefEvents = [];
 	const unsubPref = store.subscribePreferences((p) => { prefEvents.push(p); });
@@ -1181,16 +1202,28 @@ async function buildScratchBundle(patch) {
 	const notProjected = revisionBefore === revisionAfter && !subscribeFired;
 
 	// The same LensState projects non-empty, identical visibleNodes/nodeEmphasis/
-	// nodeEncoding/counts under both values of both preferences -- proven by the
-	// fact that project() itself takes no preferences argument at all, and by
-	// requiring the ViewModel snapshot to be unaffected by the flips above.
+	// nodeEncoding/counts under both values of both preferences.
+	//
+	// REWRITTEN 2026-08-07, and the old version is worth recording because it was
+	// VACUOUS. It compared `visibleNodes`' ids against "the model's node ids filtered
+	// to those present in visibleNodes" -- a tautology, true of any projection
+	// whatsoever, and it made no reference to the flips it claimed to be testing.
+	// task-035 broke it by accident and that is what exposed it: the project hub is
+	// in `visibleNodes` and NOT in `model.nodes`, so the filtered side dropped it and
+	// the two sets finally differed. The clause was failing for the one reason it
+	// could ever fail, which is not the reason it was written for.
+	//
+	// It now compares a snapshot taken BEFORE the three flips against one taken
+	// after, over all four channels the comment names. That can actually fail -- if
+	// any preference ever reached `project()` it would -- which the old form could
+	// not.
 	const vmAfter = store.getViewModel();
 	const stableViewModel = vmAfter.visibleNodes.length > 0
-		&& same(ids(vmAfter.visibleNodes.map((n) => n.id)), ids(model.nodes.size ? Array.from(model.nodes.keys()).filter((id) => vmAfter.visibleNodes.some((n) => n.id === id)) : []));
+		&& snapshot(vmAfter) === snapshotBefore;
 
 	ok('GV27', 'getPreferences() returns both keys and ITSELF follows each flip true/false/true across three writes (not only the subscribePreferences listener\'s copy); subscribePreferences receives all three pairs; the flips leave `revision` unchanged and notify NO `subscribe` listener; the ViewModel is stable across the flips',
 		reachable && getPreferencesFollows && notified && notProjected && stableViewModel,
-		'events=' + JSON.stringify(prefEvents) + ' getPrefs=' + JSON.stringify({ afterA, afterB, afterC }) + ' rev ' + revisionBefore + '->' + revisionAfter + ' subscribeFired=' + subscribeFired);
+		'events=' + JSON.stringify(prefEvents) + ' getPrefs=' + JSON.stringify({ afterA, afterB, afterC }) + ' rev ' + revisionBefore + '->' + revisionAfter + ' subscribeFired=' + subscribeFired + ' snapshotStable=' + (snapshot(vmAfter) === snapshotBefore));
 	note('GV27 "createStore at its default pair with no DOM still projects" is proven by construction: this whole GV suite '
 		+ 'runs createStore() headless, with no document, throughout.');
 }
