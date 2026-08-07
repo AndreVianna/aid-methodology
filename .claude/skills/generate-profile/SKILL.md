@@ -103,13 +103,13 @@ Confirm canonical completeness:
    parts do not add up to the total is how this file was wrong twice:
 
    ```
-   75 skill directories
-     = 17 curated (NOT catalog rows; includes the aid-triage router)
+   76 skill directories
+     = 18 curated (NOT catalog rows; includes the aid-triage router)
      + 58 catalog rows
          = 34 verb-first shortcut skills (one generated per non-`repurpose` row)
          + 24 hand-authored `repurpose` skills (each with its own directory;
            includes aid-ask, aid-deploy and aid-monitor, which are
-           re-registered classics and therefore NOT among the 17)
+           re-registered classics and therefore NOT among the 18)
    ```
 
    **Do not hand-list the curated skills here.** A list was maintained inline and drifted:
@@ -119,7 +119,8 @@ Confirm canonical completeness:
    111-skill corpus. Derive the set instead:
 
    ```bash
-   # the 17 curated = curated roster MINUS anything that is also a catalog row
+   # curatedOnly = the curated roster MINUS anything that is also a catalog row
+   # (named, not numbered: the count above is the derivation's output, never a literal to keep)
    node -e "import('./site/scripts/skills/skill-counts.mjs').then(async m => {
      const p = await import('./site/scripts/skills/paths.mjs');
      const c = m.deriveSkillCounts(p.REPO_ROOT);

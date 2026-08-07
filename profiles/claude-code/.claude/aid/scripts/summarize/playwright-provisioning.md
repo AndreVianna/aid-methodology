@@ -9,7 +9,7 @@
 
 ## What is provisioned
 
-`.claude/aid/scripts/summarize/package.json` (this directory) declares **Playwright 1.61.1**
+`package.json` at the REPOSITORY ROOT (moved there from this directory, because everything under `canonical/` renders into every adopter's install) declares **Playwright 1.61.1**
 as a `devDependency`. A matching `package-lock.json` locks every transitive dependency for
 reproducible installs. Neither file is shipped to adopters — this is dev/validator tooling
 isolated to the summarize scripts directory.

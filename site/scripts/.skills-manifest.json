@@ -154,6 +154,10 @@
       "dest": "site/src/content/docs/skills/aid-fix.md"
     },
     {
+      "src": "canonical/skills/aid-graph/SKILL.md",
+      "dest": "site/src/content/docs/skills/aid-graph.md"
+    },
+    {
       "src": "canonical/skills/aid-housekeep/SKILL.md",
       "dest": "site/src/content/docs/skills/aid-housekeep.md"
     },
@@ -345,6 +349,7 @@
     "site/src/content/docs/skills/aid-execute.md",
     "site/src/content/docs/skills/aid-experiment.md",
     "site/src/content/docs/skills/aid-fix.md",
+    "site/src/content/docs/skills/aid-graph.md",
     "site/src/content/docs/skills/aid-housekeep.md",
     "site/src/content/docs/skills/aid-migrate.md",
     "site/src/content/docs/skills/aid-monitor.md",
@@ -534,6 +539,10 @@
       "dest": "site/src/data/skill-flows/aid-fix.flow.json"
     },
     {
+      "src": "canonical/skills/aid-graph/SKILL.md",
+      "dest": "site/src/data/skill-flows/aid-graph.flow.json"
+    },
+    {
       "src": "canonical/skills/aid-housekeep/SKILL.md",
       "dest": "site/src/data/skill-flows/aid-housekeep.flow.json"
     },
@@ -687,7 +696,7 @@
     }
   ],
   "shapeCounts": {
-    "dispatch-table": 13,
+    "dispatch-table": 14,
     "inline-states": 8,
     "sibling-doorway": 13,
     "engine-doorway": 34,

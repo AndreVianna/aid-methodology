@@ -129,7 +129,7 @@ Print the state-entry line and "you are here" map:
 [State: EXECUTE] — Running the executor agent to produce task deliverables.
 aid-execute  ▸ you are here
   [● EXECUTE ] → [ REVIEW ] → [ FIX ] → [ DONE ]
-                ↑___________________|
+                 ↑__________________|
 ```
 
 **REVIEW:**

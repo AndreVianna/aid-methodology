@@ -62,15 +62,19 @@ if [ "${CLAUDE_PLAN_MODE:-}" = "1" ]; then
         "Press Shift+Tab to exit Plan Mode, then re-run."
 fi
 
-# Check 5: Node.js available (required for visual-fidelity validation)
+# Check 5: Node.js available (required for visual-fidelity validation via validate-visuals.mjs)
+# The summarize validators (validate-visuals.mjs, contrast-check.mjs) declare
+# "engines": { "node": ">=20" } in the repository-root package.json
+# alongside Playwright 1.61.1. Node 18/19 is insufficient and the visual gate
+# will fail or silently degrade on those versions.
 if ! command -v node >/dev/null 2>&1; then
     err "Node.js is required for visual-fidelity validation." \
-        "Install Node.js (>= 18) and re-run."
+        "Install Node.js (>= 20) and re-run."
 fi
 
 NODE_VERSION_MAJOR=$(node -e 'console.log(process.versions.node.split(".")[0])' 2>/dev/null)
-if [ -n "$NODE_VERSION_MAJOR" ] && [ "$NODE_VERSION_MAJOR" -lt 18 ] 2>/dev/null; then
-    err "Node.js >= 18 is required (you have $(node -v))." \
+if [ -n "$NODE_VERSION_MAJOR" ] && [ "$NODE_VERSION_MAJOR" -lt 20 ] 2>/dev/null; then
+    err "Node.js >= 20 is required (you have $(node -v))." \
         "Upgrade Node.js and re-run."
 fi
 

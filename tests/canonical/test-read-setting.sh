@@ -14,6 +14,11 @@
 #      absent + no --default → exit 1, NOT an argument error)
 #  10. Unknown flag → exits 2
 #  11. --skill without --key (or vice versa) → exits 2
+#  12. --probe (D4a): declared for a declared-empty block list, undeclared for
+#      an absent section, declared for a populated list, stdout/exit unchanged
+#      for the comma-warning case, the warning lands on stderr exactly once,
+#      the item is still reported (never silently dropped), and --probe
+#      combined with a dotless --path or --skill is a usage error (exit 2)
 #
 # Usage:
 #   read-setting.sh [--verbose]
@@ -28,6 +33,19 @@ VERBOSE=0
 [[ "${1:-}" == "--verbose" ]] && VERBOSE=1
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# S1 -- SUBJECT INVOCATION BUDGET: 28 subprocess spawns.
+#   Every assertion shells `read-setting.sh` as a subprocess -- there is no in-process
+#   path, so this is a pure spawn budget and the full S1 toll applies to all 28.
+#   Derived by counting executable `"$SUT"` call sites (29 occurrences, of which :95 is
+#   the existence check, not an invocation). Three fixture builders -- settings_full (6
+#   call sites), settings_global_only (1) and settings_with_comments (2) -- only WRITE
+#   fixtures and spawn nothing, so they are deliberately not in the budget.
+#
+#   ADDED 2026-08-06 by the wave-1 gate. task-030 extended this suite 19 -> 29
+#   assertions and its criteria required the declaration; it was never written, and my
+#   own claim that "six of six suites" had been repaired was false for this file
+#   because I never checked it. If you add a spawn, update this number.
+
 SUT="${SCRIPT_DIR}/../../canonical/aid/scripts/config/read-setting.sh"
 
 source "$(dirname "${BASH_SOURCE[0]}")/../lib/assert.sh"
@@ -356,6 +374,146 @@ if [[ "$out" == "A" && $ec -eq 0 ]]; then
     pass "T17 (F13): set -e does not abort on key-not-found; default returned"
 else
     fail "T17 (F13): set -e + miss" "got '$out' (ec=$ec), expected 'A'"
+fi
+
+# ---------------------------------------------------------------------------
+# Test 18 (D4a): --probe reports `undeclared` for a section that is absent
+# entirely -- the state the pre-probe resolver could not distinguish from a
+# declared-empty list (both returned "").
+# ---------------------------------------------------------------------------
+fixture="$TMPDIR/t18.yml"
+cat > "$fixture" <<'EOF'
+format_version: 3
+name: t18
+EOF
+out=$(bash "$SUT" --file "$fixture" --probe --path graph.ignore 2>&1)
+ec=$?
+if [[ "$out" == "undeclared" && $ec -eq 0 ]]; then
+    pass "T18 (D4a): --probe reports undeclared for an absent graph: section"
+else
+    fail "T18 (D4a): probe undeclared" "got '$out' (ec=$ec), expected 'undeclared' (ec=0)"
+fi
+
+# ---------------------------------------------------------------------------
+# Test 19 (D4a): --probe reports `declared` for a declared-EMPTY block list --
+# the other half of the distinction T18 exercises.
+# ---------------------------------------------------------------------------
+fixture="$TMPDIR/t19.yml"
+cat > "$fixture" <<'EOF'
+format_version: 3
+name: t19
+graph:
+  ignore:
+EOF
+out=$(bash "$SUT" --file "$fixture" --probe --path graph.ignore 2>&1)
+ec=$?
+if [[ "$out" == "declared" && $ec -eq 0 ]]; then
+    pass "T19 (D4a): --probe reports declared for a declared-empty list"
+else
+    fail "T19 (D4a): probe declared-empty" "got '$out' (ec=$ec), expected 'declared' (ec=0)"
+fi
+
+# ---------------------------------------------------------------------------
+# Test 20 (D4a): --probe reports `declared` for a populated block list, and
+# the ordinary --path route over the SAME file still returns the joined value
+# unchanged -- the probe and --path answers about one file must agree.
+# ---------------------------------------------------------------------------
+fixture="$TMPDIR/t20.yml"
+cat > "$fixture" <<'EOF'
+format_version: 3
+name: t20
+graph:
+  ignore:
+    - drop/**
+    - vendor/**
+EOF
+out=$(bash "$SUT" --file "$fixture" --probe --path graph.ignore 2>&1)
+ec=$?
+if [[ "$out" == "declared" && $ec -eq 0 ]]; then
+    pass "T20a (D4a): --probe reports declared for a populated list"
+else
+    fail "T20a (D4a): probe declared" "got '$out' (ec=$ec), expected 'declared' (ec=0)"
+fi
+out=$(bash "$SUT" --file "$fixture" --path graph.ignore --default '' 2>&1)
+ec=$?
+if [[ "$out" == "drop/**,vendor/**" && $ec -eq 0 ]]; then
+    pass "T20b (D4a): plain --path over the same file still returns the joined value"
+else
+    fail "T20b (D4a): path over probed file" "got '$out' (ec=$ec), expected 'drop/**,vendor/**'"
+fi
+
+# ---------------------------------------------------------------------------
+# Test 21 (D4a): a raw list item containing a comma warns on stderr exactly
+# once, while stdout stays exactly `declared` and the exit code stays 0 --
+# the assertion that keeps "no existing mode changes" true for --probe itself.
+# The item is still reported (split, not dropped) via the ordinary --path
+# route over the same file.
+# ---------------------------------------------------------------------------
+fixture="$TMPDIR/t21.yml"
+cat > "$fixture" <<'EOF'
+format_version: 3
+name: t21
+graph:
+  ignore:
+    - a/**,b/**
+    - c/**
+EOF
+out=$(bash "$SUT" --file "$fixture" --probe --path graph.ignore 2>"$TMPDIR/t21.err")
+ec=$?
+warn_count=$(grep -c 'contains a comma' "$TMPDIR/t21.err" 2>/dev/null || true)
+[[ -n "$warn_count" ]] || warn_count=0
+if [[ "$out" == "declared" && $ec -eq 0 ]]; then
+    pass "T21a (D4a): comma-item probe still prints exactly 'declared' at exit 0"
+else
+    fail "T21a (D4a): comma-item probe stdout/exit" "got '$out' (ec=$ec), expected 'declared' (ec=0)"
+fi
+if [[ "$warn_count" -eq 1 ]]; then
+    pass "T21b (D4a): the comma warning lands on stderr exactly once"
+else
+    fail "T21b (D4a): comma warning count" "got $warn_count occurrence(s) in stderr, expected 1"
+fi
+out=$(bash "$SUT" --file "$fixture" --path graph.ignore --default '' 2>&1)
+ec=$?
+if [[ "$out" == "a/**,b/**,c/**" && $ec -eq 0 ]]; then
+    pass "T21c (D4a): the comma-containing item is still reported, split rather than dropped"
+else
+    fail "T21c (D4a): comma item still reported" "got '$out' (ec=$ec), expected 'a/**,b/**,c/**'"
+fi
+
+# ---------------------------------------------------------------------------
+# Test 22 (D4a): --probe combined with a dotless --path, or with --skill, is
+# a usage error (exit 2) rather than a silent no-op -- --probe only answers
+# the nested section.key question the existing path/skill schemes don't ask.
+# ---------------------------------------------------------------------------
+fixture="$TMPDIR/t22.yml"
+settings_full > "$fixture"
+out=$(bash "$SUT" --file "$fixture" --probe --path name 2>&1)
+ec=$?
+if [[ $ec -eq 2 ]]; then
+    pass "T22a (D4a): --probe with a dotless --path exits 2"
+else
+    fail "T22a (D4a): probe dotless path" "got ec=$ec, expected 2; out='$out'"
+fi
+out=$(bash "$SUT" --file "$fixture" --probe --skill discover --key minimum_grade 2>&1)
+ec=$?
+if [[ $ec -eq 2 ]]; then
+    pass "T22b (D4a): --probe with --skill/--key exits 2"
+else
+    fail "T22b (D4a): probe skill mode" "got ec=$ec, expected 2; out='$out'"
+fi
+
+# ---------------------------------------------------------------------------
+# Test 23 (D4a): --probe against a MISSING settings file reports undeclared
+# at exit 0 -- never the --default/exit-1 path the other modes take on a
+# missing file, since --probe consults no --default.
+# ---------------------------------------------------------------------------
+fixture="$TMPDIR/does-not-exist-probe.yml"
+out=$(bash "$SUT" --file "$fixture" --probe --path graph.ignore 2>&1)
+ec=$?
+if [[ "$out" == "undeclared" && $ec -eq 0 ]]; then
+    pass "T23 (D4a): --probe on a missing settings file reports undeclared, exit 0"
+else
+    fail "T23 (D4a): probe missing file" "got '$out' (ec=$ec), expected 'undeclared' (ec=0)"
 fi
 
 # ---------------------------------------------------------------------------

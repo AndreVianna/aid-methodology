@@ -21,6 +21,7 @@ intent: |
   this for language-version or tool-version questions.
 contracts: []
 changelog:
+  - 2026-07-28: work-005 defect fixes — added fourth Node floor (summarize validators >=20, driven by Playwright 1.61.1 in package.json); updated languages row, per-context note, and Version Concerns gotcha from Three to Four floors.
   - 2026-07-09: work-001 lite-skills refresh — removed the deleted "recipes" artifact class from the Markdown languages row (recipes were deleted in work-001; the shortcut engine + shortcut-scaffolding replaced them); re-verified every language/tool version against its config file (no version drift).
   - 2026-07-09: Housekeep KB-DELTA refresh — connectors subsystem + release-drift refresh (corrected product version to match `VERSION`; recomputed the Shell file count)
   - 2026-06-25: Initial discovery (aid-discover — architect deep-dive)
@@ -70,12 +71,14 @@ Product version: **2.0.6** (`VERSION`; npm and PyPI wrappers both at `2.0.6`). C
 | **Bash / Shell** | POSIX bash | Installers, CLI (`bin/aid`), install-core (`lib/aid-install-core.sh`), phase scripts, test suites — run `find . -name '*.sh' \| wc -l` for the live count. |
 | **PowerShell** | **Windows PowerShell 5.1+** (compat floor) | Windows installer/CLI parity (`install.ps1`, `lib/AidInstallCore.psm1`, `bin/aid.ps1`). CONFIRMED `README.md` (search: "PowerShell 5.1+"). |
 | **Python** | **>=3.8** (PyPI); CI pins **3.11** | The profile renderer, dashboard reader, PyPI wrapper. CONFIRMED `packages/pypi/pyproject.toml` (search: "requires-python = \">=3.8\"") and `.github/workflows/test.yml` (search: "python-version: '3.11'"). |
-| **JavaScript (Node)** | **>=18** (npm wrapper); CI pins **20** | npm wrapper, dashboard Node server/reader (`reader.mjs`), summarize validators (`.mjs`). CONFIRMED `packages/npm/package.json` (search: "node\": \">=18") and `.github/workflows/test.yml` (search: "node-version: '20'"). |
+| **JavaScript (Node)** | **>=18** (npm wrapper); **>=20** (summarize validators); CI pins **20** | npm wrapper, dashboard Node server/reader (`reader.mjs`). The summarize validators (`validate-visuals.mjs`, `contrast-check.mjs`) require >=20 because Playwright 1.61.1 declared in their `package.json` does not support Node 18/19. CONFIRMED `packages/npm/package.json` (search: "node\": \">=18") and the repository-root `package.json` (search: "\"node\": \">=20\"") and `.github/workflows/test.yml` (search: "node-version: '20'"). |
 | **TypeScript** | **6.0.3** (site dev dep) | The Astro website only. CONFIRMED `site/package.json` (search: "typescript"). |
 
-**Per-context Node version note:** the npm CLI wrapper requires Node >=18; the site requires
-Node >=22.12.0; CI's canonical suites pin Node 20. CONFIRMED `site/package.json` (search:
-"node\": \">=22.12.0").
+**Per-context Node version note:** the npm CLI wrapper requires Node >=18; the summarize validators
+(`validate-visuals.mjs` etc.) require Node >=20 (Playwright 1.61.1 floor — set by the preflight
+gate in `canonical/aid/scripts/summarize/summarize-preflight.sh`); the site requires Node >=22.12.0;
+CI's canonical suites pin Node 20. CONFIRMED `site/package.json` (search: "node\": \">=22.12.0")
+and the repository-root `package.json` (search: "\"node\": \">=20\"").
 
 Target OS: cross-platform (Linux/macOS via Bash, Windows via PowerShell). CONFIRMED by the
 dual installer set and the Windows-only test lane (`tests/windows/`).
@@ -235,7 +238,7 @@ imports needed at runtime) — CONFIRMED by the empty PyPI dependency set and
 |------|---------|--------|------|
 | Windows PowerShell | 5.1 floor | OK (intentional) | Shipped PS MUST stay 5.1-compatible; a dedicated CI lane + AST lint guard this. |
 | Python | >=3.8 (CI 3.11) | OK | Wide floor for broad adopter reach. |
-| Node | >=18 (CLI), >=22.12 (site), 20 (CI) | OK but split | Three different Node floors across contexts — verify the right one per task. |
+| Node | >=18 (CLI), >=20 (summarize validators), >=22.12 (site), 20 (CI) | OK but split | **Four** different Node floors across contexts — verify the right one per task. CONFIRMED the repository-root `package.json` (search: "\"node\": \">=20\""). |
 | PyPI classifier | "4 - Beta" | Informational | `pyproject.toml` declares Beta development status. |
 
 No EOL or known-CVE runtime dependency was observed (the CLI ships none). See
@@ -250,3 +253,4 @@ No EOL or known-CVE runtime dependency was observed (the CLI ships none). See
 | 1.0 | 2026-06-25 | aid-discover | Initial stack inventory — polyglot languages with versions, build/lint/test commands, zero-dependency CLI, distribution channels. |
 | 1.1 | 2026-07-09 | tech-writer | Housekeep KB-DELTA refresh: connectors subsystem + release-drift refresh — corrected the product version from a stale "2.0.0"/`1.1.1` mismatch to the actual `VERSION` value (2.0.6); de-hardcoded the Shell-file count to a live `find` command (the prior "327" was stale). |
 | 1.2 | 2026-07-09 | work-001 lite-skills refresh | Removed the stale "recipes" artifact class from the Markdown languages row (recipes were deleted in work-001 — the shortcut engine + `shortcut-scaffolding/<family>.md` replaced them). Re-verified all language/tool versions against their config files (product 2.0.6; Python >=3.8 / CI 3.11; Node >=18 / site >=22.12 / CI 20; Astro 6.4.4; Starlight 0.39.3; astro-mermaid 2.0.2; marked 16.4.2; sanitize-html 2.17.0; TypeScript 6.0.3; vitest ^4.1.8; yaml ^2.8.3) — no version drift. |
+| 1.3 | 2026-07-28 | work-005 defect fixes | Added a fourth Node floor: summarize validators (`validate-visuals.mjs` etc.) require >=20, not >=18, because `canonical/aid/scripts/summarize/package.json` declares `"engines": { "node": ">=20" }` for Playwright 1.61.1. Updated the JavaScript/Node languages row, the per-context Node version note, and the Version Concerns gotcha from "Three" to "Four" different floors. CONFIRMED `canonical/aid/scripts/summarize/package.json` (search: "\"node\": \">=20\"") and `canonical/aid/scripts/summarize/summarize-preflight.sh` (search: "NODE_VERSION_MAJOR -lt 20"). |

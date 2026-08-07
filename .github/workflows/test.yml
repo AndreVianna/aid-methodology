@@ -9,6 +9,27 @@ name: CI
 #   4. cheap repo/KB hygiene                                    (CRLF, gitignore, INDEX)
 # Prompt-driven skills, the aid-reviewer semantic review, and aid-summarize's
 # V1 human visual gate require an AI host + human and are NOT gated here (dogfooding).
+#
+# THE visual-fidelity JOB WAS REMOVED on 2026-08-07, on the owner's decision, and the
+# reason it is worth a note is that it had been passing while validating NOTHING.
+# It looked for `.aid/dashboard/kb.html`; that path was ELIMINATED on 2026-07-11 by
+# `467582fa` ("move kb.html to .aid/knowledge/; eliminate .aid/dashboard/"). Its
+# graceful-degradation branch then took over -- print SKIP, exit 0 -- so for four
+# weeks it installed Chromium on every run, found no input, and reported green. That
+# is precisely the "silent skip would be a false green" failure the canonical-tests
+# job below fails loudly to avoid, running in the same file.
+#
+# Offered as three options -- repoint it at the real `.aid/knowledge/kb.html`, delete
+# it, or leave it -- the owner chose deletion. Nothing `needs:` it, so the removal is
+# self-contained.
+#
+# WHAT STILL COVERS THIS GROUND, so the removal is not read as losing the check:
+# `tests/canonical/test-visual-fidelity.sh` runs inside canonical-tests and exercises
+# `validate-visuals.mjs` including its Playwright-absent SKIP path; the root
+# `package.json` keeps Playwright pinned at 1.61.1 as the version of record that
+# `canonical/aid/scripts/summarize/playwright-provisioning.md` and
+# `.aid/knowledge/technology-stack.md` both cite; and the V1 gate itself is a HUMAN
+# gate, which the paragraph above already excludes from CI by design.
 
 on:
   pull_request:
@@ -56,64 +77,47 @@ jobs:
         # Committed 100644 (the repo is authored on Windows); several suites invoke
         # their SUT directly (e.g. "$WRITEBACK"), which needs the exec bit on Linux.
         run: find canonical/aid/scripts tests/canonical -name '*.sh' -exec chmod +x {} +
-      - name: Assert test runtimes present (node + pwsh)
+      - name: Install jsdom (DOM oracle for the graph suites)
+        shell: bash
+        # Same reasoning as the runtime assertion below, one step earlier: the graph
+        # suites resolve jsdom by bare specifier or from AID_GRAPH_JSDOM and SKIP LOUDLY
+        # without it, so test-graph-canvas.sh was running 6 of its 54 assertions here and
+        # failing its own GC00c collapse guard — the guard was right, the environment was
+        # the problem.
+        #
+        # Installed ALONE and into a prefix OUTSIDE the repo, never by a bare
+        # `npm install` at the root. The root manifest's `dependencies` block is
+        # version-tracking-only (the graph runtime uses committed vendor/ bytes), so a
+        # root node_modules would let a bare specifier resolve to a downloaded copy
+        # instead of the vendored one and mask the very defect vendoring guards against.
+        # The version comes from the manifest rather than being retyped here, so there is
+        # one place to bump and Dependabot watches it.
+        run: |
+          JSDOM_VER=$(node -e "process.stdout.write(require('./package.json').devDependencies.jsdom)")
+          npm install --no-save --no-audit --no-fund --prefix "$RUNNER_TEMP/jsdom-oracle" "jsdom@${JSDOM_VER}"
+          echo "AID_GRAPH_JSDOM=$RUNNER_TEMP/jsdom-oracle/node_modules/jsdom/lib/api.js" >> "$GITHUB_ENV"
+      - name: Assert test runtimes present (node + pwsh + jsdom)
         shell: bash
         # The .mjs and *-ps1 suites skip (exit 0) if their runtime is missing — good for
         # local dev portability, but in CI a silent skip would be a false green. node is
         # pinned above; pwsh ships in the ubuntu image. Fail loudly here if either is gone
-        # so the node/PowerShell coverage can never be silently bypassed.
+        # so the node/PowerShell coverage can never be silently bypassed. jsdom is checked
+        # the same way and for the same reason: the step above installs it, so a missing
+        # entry module here means that install broke, and letting the graph suites skip
+        # past it would hide ~48 assertions.
         run: |
           command -v node >/dev/null || { echo "::error::node missing — .mjs suites would skip"; exit 1; }
           command -v pwsh >/dev/null || { echo "::error::pwsh missing — PowerShell suites would skip"; exit 1; }
+          [[ -f "$AID_GRAPH_JSDOM" ]] || { echo "::error::jsdom entry module missing at $AID_GRAPH_JSDOM — the graph DOM suites would skip"; exit 1; }
+          # pathToFileURL, not a bare path: this mirrors exactly how the suites load the
+          # override (graph-canvas-dom.mjs:138), so the guard passes iff they will.
+          node -e "const { pathToFileURL } = require('url'); import(pathToFileURL(process.env.AID_GRAPH_JSDOM).href).then((m) => { if (typeof m.JSDOM !== 'function') { console.error('::error::jsdom resolved but exports no JSDOM constructor'); process.exit(1); } console.log('jsdom entry module exports JSDOM'); })"
           echo "node $(node --version) | $(pwsh --version)"
       - name: Run all canonical suites
         shell: bash
         # Single entrypoint shared with local dev (`bash tests/run-all.sh`); discovers
         # suites by glob, runs each under timeout 300, emits ::group::/::error:: under CI.
         run: bash tests/run-all.sh
-
-  visual-fidelity:
-    name: visual-fidelity gate (Playwright headless render)
-    runs-on: ubuntu-24.04
-    # This job is isolated to the summarize visual-fidelity gate so it does not
-    # slow unrelated lanes. It validates every authored inline SVG / HTML+CSS visual
-    # in kb.html against the §7 bar: readable text, minimal/zero overlap, correct layout.
-    # Graceful degradation: exits 0 with a clear SKIP message if kb.html is absent
-    # (the gate only fires once the summary has been generated; a missing kb.html means
-    # the file has not been built in this branch yet, not a validation failure).
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
-        with:
-          node-version: '20'
-      - name: Install Playwright + deps (pinned; reproducible)
-        working-directory: canonical/aid/scripts/summarize
-        run: |
-          npm ci
-          npx playwright install chromium --with-deps
-      - name: Run visual-fidelity gate (validate-visuals.mjs)
-        shell: bash
-        # Graceful degradation contract (mirrors how environment-dependent tests are guarded
-        # elsewhere in this repo):
-        # - If kb.html is absent: SKIP with a clear warning (the gate requires a generated
-        #   summary; no kb.html = not yet built in this branch, not a gate failure).
-        # - If validate-visuals.mjs is absent: SKIP with a clear warning (task-074 has not
-        #   yet landed; the provisioning is ready but the validator is not yet written).
-        # - If Playwright reports a visual defect: FAIL (a generation defect blocks DONE).
-        run: |
-          VALIDATOR="canonical/aid/scripts/summarize/validate-visuals.mjs"
-          SUMMARY=".aid/dashboard/kb.html"
-          if [[ ! -f "$SUMMARY" ]]; then
-            echo "SKIP: $SUMMARY not present in this branch — visual-fidelity gate requires a generated summary."
-            echo "      Generate kb.html via /aid-summarize then re-run this check."
-            exit 0
-          fi
-          if [[ ! -f "$VALIDATOR" ]]; then
-            echo "SKIP: $VALIDATOR not yet present — task-074 (validator implementation) has not landed."
-            echo "      Playwright is provisioned and ready; the validator will be wired by task-074."
-            exit 0
-          fi
-          node "$VALIDATOR" "$SUMMARY"
 
   generator-selftests:
     name: generator unit self-tests
