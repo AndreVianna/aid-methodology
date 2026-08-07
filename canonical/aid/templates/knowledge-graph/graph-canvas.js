@@ -100,13 +100,26 @@ const GC_FRAME_RING = 240;
  * while a 976-node graph needs several times the base separation to read at all.
  */
 const GC_SPACING_DEFAULT = 3;
-// DOUBLED on the owner's request after seeing the first version in a real browser:
-// the range worked (mean nearest-neighbour distance rose 137 -> 250 across the
-// five levels) but every level was too cramped to read at 976 nodes. Level 3 is
-// therefore no longer 1.0, so the DEFAULT layout is now twice as open as the one
-// that shipped before this axis existed -- deliberate, and the reason the old
-// "level 3 reproduces what shipped" note is gone rather than edited.
-const GC_SPACING_SPREAD = Object.freeze([1.2, 1.6, 2, 3, 4.4]);
+// DOUBLED TWICE, both times on the owner's instruction after seeing the previous
+// version in a real browser at 976 nodes.
+//
+//   pass 1  [0.6, 0.8, 1, 1.5, 2.2] -> [1.2, 1.6, 2, 3, 4.4]. The range worked
+//           (mean nearest-neighbour distance rose 137 -> 250 across the five
+//           levels) but every level was too cramped to read. Level 3 stopped being
+//           1.0 here, so the DEFAULT layout is no longer the one that shipped
+//           before this axis existed -- deliberate, and why the old "level 3
+//           reproduces what shipped" note is gone rather than edited.
+//
+//   pass 2  "Double again the max distance (and the intermediate values). Keep the
+//           smaller one unchanged." So level 1 holds at 1.2 and levels 2-5 double:
+//           [1.2, 3.2, 4, 6, 8.8]. Level 1 is now the deliberate outlier -- the
+//           tight end is preserved exactly as asked, which means the step from 1 to
+//           2 is 2.7x where every later step is 1.25x to 1.5x. That is a
+//           consequence of the instruction rather than an oversight, and it is
+//           stated here so the next reader does not "fix" it into a smooth ramp:
+//           the reader asked for the packed end kept and the open end doubled, and
+//           those two together cannot also be evenly spaced.
+const GC_SPACING_SPREAD = Object.freeze([1.2, 3.2, 4, 6, 8.8]);
 
 /** Clamp a spacing level to the table and return its multiplier. A level from
  *  `LensState` is reader input, so it is validated here rather than trusted. */
