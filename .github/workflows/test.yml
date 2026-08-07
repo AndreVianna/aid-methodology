@@ -86,10 +86,22 @@ jobs:
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version: '20'
+      # Installs from the REPOSITORY-ROOT package.json. It used to run in
+      # `canonical/aid/scripts/summarize`, which is where the Playwright
+      # devDependency lived until that manifest moved to the root -- everything
+      # under `canonical/` renders into every adopter's install, so a manifest
+      # there shipped to adopters whether or not it was meant to.
+      #
+      # `npm ci` needs a lockfile and the root has none (the moved manifest's lock
+      # was deleted with it: it pinned a dependency set that is never installed from
+      # this manifest, and a lock for the vendored-bundle version-tracking entries
+      # would have claimed an install tree that does not exist). `npm install` with
+      # the exact pin in `devDependencies` gives the same resolved Playwright, and
+      # the version is pinned there rather than floated, so reproducibility comes
+      # from the pin instead of from the lock.
       - name: Install Playwright + deps (pinned; reproducible)
-        working-directory: canonical/aid/scripts/summarize
         run: |
-          npm ci
+          npm install --no-audit --no-fund
           npx playwright install chromium --with-deps
       - name: Run visual-fidelity gate (validate-visuals.mjs)
         shell: bash
