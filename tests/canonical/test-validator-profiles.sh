@@ -22,10 +22,12 @@
 # ---------------------------------------------------------------------------
 # NOTE -- W5-12 (tech-debt.md), NOT asserted here on purpose. contrast-check.mjs's
 # header (:27) documents exit 2 for a missing file, but a missing file actually
-# exits 1 via an uncaught ENOENT rejection from fs.readFile -- verified in both
-# the HEAD copy and the working-tree copy (both pre-date and post-date this
-# feature; the defect is untouched by task-019). Pinning exit 1 as "correct" here
-# would fight a future fix. Left unasserted deliberately.
+# exits 1 via an uncaught ENOENT rejection from fs.readFile -- verified against the
+# pre-feature and post-feature copies alike when task-019 landed, so the defect
+# predates this feature and is untouched by it. Pinning exit 1 as "correct" here
+# would fight a future fix. Left unasserted deliberately. (That verification was a
+# one-off reading of history, not something this suite re-derives -- see W5-18 in
+# the COMPARE section for why no assertion here may depend on `git show HEAD:`.)
 #
 # NOTE -- environment ceilings (verified this session, not assumed):
 #   * Playwright is genuinely NOT INSTALLED in this environment (`import('playwright')`
@@ -63,12 +65,14 @@
 #                     CONTRAST_USAGE_OUT/HTMLOUT_USAGE_OUT/VISUALS_USAGE_OUT
 #                     for GRADE-TOKENS to reuse below -- that reuse costs 0
 #                     spawns, it is a plain variable assignment)
-#   COMPARE     12  (PV01/PV03: HEAD-copy vs working-copy x {default-path,
-#                     explicit --profile} x 3 scripts, MINUS one avoidable
-#                     duplicate this FIX cycle removed: contrast-check.mjs's
-#                     second default-path run now reads WORK_DEFAULT_OUT,
-#                     already captured earlier in this same section, instead
-#                     of re-spawning node)
+#   COMPARE      8  (PV01/PV03: {default-path, explicit --profile} x 3 scripts
+#                     = 6, plus contrast-check.mjs over the two extra
+#                     theme-divergence fixtures that replace PV01c's old
+#                     HEAD-copy proof. W5-18 removed 6 spawns of `git show
+#                     HEAD:` copies from this category; the three
+#                     no-Profile-line assertions that took over from the RED
+#                     half cost 0 spawns, because each reads a default-path
+#                     capture this section already made)
 #   GRADE-TOKENS 0  (AC-2: reuses ARGPARSE's three bad-value captures above --
 #                     0 new spawns. This is also why the patterns asserted in
 #                     that section are EXTRACTED from grade-summary.sh at
@@ -106,7 +110,7 @@
 #   HELP         0  (validate-html-output.sh --help text is asserted by
 #                     reusing KBDIR's -h capture above -- 0 new spawns)
 #   ------------------------------------------------------------------
-#   TOTAL       6+12+0+5+3+4+5+3+1+2+2+4+0 = 47 subprocess spawns in default
+#   TOTAL       6+8+0+5+3+4+5+3+1+2+2+4+0 = 43 subprocess spawns in default
 #               mode (categories listed in file order, top to bottom); +1
 #               under --self-mutate (MUT01) = 48.
 #   In-process: 0 (bash sourcing tests/lib/assert.sh only).
@@ -163,7 +167,7 @@ done
 NODE_OK=1
 command -v node >/dev/null 2>&1 || NODE_OK=0
 
-# --- S5 baseline: taken now, before any fixture or HEAD-copy work -----------
+# --- S5 baseline: taken now, before any fixture or mutant work --------------
 S5_BASE=$(cat "$CONTRAST" "$HTMLOUT" "$VISUALS" | md5sum)
 
 # --- Fixture root -------------------------------------------------------------
@@ -176,19 +180,16 @@ run_bash() { OUT=$(bash "$@" 2>&1); RC=$?; }
 echo ""
 echo "=== Fixture construction ==="
 
-# --- HEAD copies (pre-parameterisation), for PV01/PV03's red/green proof ----
-HEAD_CONTRAST="$TMP/head-contrast-check.mjs"
-HEAD_HTMLOUT="$TMP/head-validate-html-output.sh"
-HEAD_VISUALS="$TMP/head-validate-visuals.mjs"
-git -C "$REPO_ROOT" show HEAD:canonical/aid/scripts/summarize/contrast-check.mjs      > "$HEAD_CONTRAST"      2>/dev/null
-git -C "$REPO_ROOT" show HEAD:canonical/aid/scripts/summarize/validate-html-output.sh > "$HEAD_HTMLOUT"       2>/dev/null
-git -C "$REPO_ROOT" show HEAD:canonical/aid/scripts/summarize/validate-visuals.mjs    > "$HEAD_VISUALS"       2>/dev/null
-assert_file_exists "$HEAD_CONTRAST" "SETUP HEAD copy of contrast-check.mjs retrieved via git show"
-assert_file_exists "$HEAD_HTMLOUT"  "SETUP HEAD copy of validate-html-output.sh retrieved via git show"
-assert_file_exists "$HEAD_VISUALS"  "SETUP HEAD copy of validate-visuals.mjs retrieved via git show"
-
 # --- Chrome-only fixture (matches test-contrast-check.sh's own convention) --
 printf '<style>:root{--text:#000000;--bg:#ffffff;}</style>\n' > "$TMP/chrome-only.html"
+
+# --- Theme-divergence discrimination fixtures (PV01d1-PV01d3) ---------------
+# Three fixtures for three verdicts. chrome-only.html above supplies the first
+# (no dark block at all -> N/A); these two supply the other two. Together they are
+# what replaced PV01c's `git show HEAD:` proof -- a check that returns N/A, pass and
+# FAIL on three inputs cannot be the no-op PV01c was worried about.
+printf '<style>:root{--text:#000000;--bg:#ffffff;}html[data-theme="dark"]{--text:#ffffff;--bg:#000000;}</style>\n' > "$TMP/diverge-differs.html"
+printf '<style>:root{--text:#000000;--bg:#ffffff;}html[data-theme="dark"]{--text:#000000;--bg:#ffffff;}</style>\n' > "$TMP/diverge-identical.html"
 
 # --- Redeclaration fixtures (light + dark), plus no-graph-block controls ----
 printf '<style>:root{--text:#000000;--bg:#ffffff;}html:root{--text:#ff0000;}</style>\n' > "$TMP/redecl-light.html"
@@ -351,56 +352,81 @@ assert_file_contains "$HTMLOUT"  "kb-summary|graph" "PV02h validate-html-output.
 assert_file_contains "$VISUALS"  "kb-summary|graph" "PV02i validate-visuals.mjs header documents the closed set"
 
 # ===========================================================================
-# COMPARE -- PV01 (byte-identity/substance on the default path) and PV03
-# (stale-copy detectability: red against HEAD, green against the working tree).
+# COMPARE -- PV01 (the default path is unaffected by parameterisation) and PV03
+# (--profile is a real, DISCRIMINATING observable).
+#
+# W5-18. This section used to prove both by running a `git show HEAD:` copy of each
+# script beside the working copy: RED against HEAD, GREEN against the working tree.
+# That construction cannot survive its own commit. The instant the parameterisation
+# was committed, HEAD *became* the working tree, every RED assertion inverted, and
+# the suite went red on CI for a change that was correct -- PV01c, PV03a-RED,
+# PV03b-RED and PV03c-RED all failed exactly that way. There is a second, quieter
+# reason never to build a baseline this way: `pull_request` runs are SHALLOW clones,
+# so `git show HEAD:` is not guaranteed to resolve at all.
+#
+# What replaces it is not a weaker version of the same idea. It is the half of each
+# idea that was ever permanent:
+#
+#   * "the default path did not change" was a MIGRATION property. Its subject -- the
+#     pre-parameterisation copy -- exists nowhere but history now, and the migration
+#     shipped. What stays permanently checkable is the observable that carried it:
+#     the default path prints NO `Profile:` line, and the flag does not change the
+#     verdict it reaches. Both are asserted below.
+#   * "--profile is detectable" is proved BETTER without a baseline, by showing the
+#     flag discriminates three ways: passed -> the line names the profile; absent ->
+#     no line at all; bogus -> exit 2 (PV02, above). "An old copy prints nothing" is
+#     then just one more case that triple already excludes.
+#   * PV01c's real content -- "the theme-divergence check is new, not a no-op" --
+#     becomes a three-way discrimination over live fixtures: no dark block -> N/A,
+#     dark differs -> pass, dark identical to light -> FAIL. A rubber stamp cannot
+#     produce three different verdicts, which is strictly more than "the HEAD copy
+#     did not print this line" ever established.
+#
+# The rule this leaves behind, for anyone adding to this suite: an assertion may not
+# take its baseline from git history. Synthesise the contrast from a fixture or a
+# mutant under $TMP (as MUT01 and GV13 do), so the check still means something after
+# it is committed.
 # ===========================================================================
 echo ""
 echo "=== COMPARE (PV01, PV03) ==="
 
 # --- contrast-check.mjs --------------------------------------------------
-run_node "$HEAD_CONTRAST" "$TMP/chrome-only.html"
-HEAD_DEFAULT_OUT="$OUT"; HEAD_DEFAULT_RC=$RC
 run_node "$CONTRAST" "$TMP/chrome-only.html"
 WORK_DEFAULT_OUT="$OUT"; WORK_DEFAULT_RC=$RC
-assert_exit_eq "$WORK_DEFAULT_RC" "$HEAD_DEFAULT_RC" "PV01a contrast-check.mjs default-path exit status unchanged"
-assert_output_not_contains "$WORK_DEFAULT_OUT" "FAIL" "PV01b contrast-check.mjs re-taken baseline: shipped-shape chrome-only fixture still reports no FAIL"
-assert_output_not_contains "$HEAD_DEFAULT_OUT" "Theme divergence" "PV01c HEAD copy has no theme-divergence line (confirms this is the named exception, not a no-op)"
-assert_output_contains "$WORK_DEFAULT_OUT" "Theme divergence" "PV01d working copy adds exactly the theme-divergence line on the default path"
+assert_exit_eq "$WORK_DEFAULT_RC" 0 "PV01a contrast-check.mjs default path exits 0 on the shipped-shape chrome-only fixture"
+assert_output_not_contains "$WORK_DEFAULT_OUT" "FAIL" "PV01b contrast-check.mjs default path over the shipped-shape chrome-only fixture reports no FAIL"
+assert_output_not_contains "$WORK_DEFAULT_OUT" "Profile:" "PV01c contrast-check.mjs prints NO Profile: line unless the flag is passed -- the default path is silent about profiles, which is what makes PV03a below a real observation rather than a constant"
 
-run_node "$HEAD_CONTRAST" "$TMP/chrome-only.html" --profile graph
-assert_output_not_contains "$OUT" "Profile:" "PV03a-RED HEAD copy of contrast-check.mjs silently ignores --profile (no printed line) -- this IS the stale-copy risk D1 property 3 names"
+# Theme divergence: three fixtures, three verdicts. This is what replaced PV01c's
+# old HEAD-copy proof that the check exists at all (W5-18, see the block above).
+assert_output_contains "$WORK_DEFAULT_OUT" "Theme divergence" "PV01d the theme-divergence check runs on the default path"
+assert_output_contains "$WORK_DEFAULT_OUT" "nothing to diverge from" "PV01d1 ... and reports N/A when the source declares no dark-theme block"
+run_node "$CONTRAST" "$TMP/diverge-differs.html"
+assert_output_contains "$OUT" "dark theme differs from light" "PV01d2 ... PASSES when the dark block differs from light on a declared token"
+run_node "$CONTRAST" "$TMP/diverge-identical.html"
+assert_output_contains "$OUT" "FAIL Theme divergence" "PV01d3 ... FAILS when the dark block reports the light theme's values -- three distinct verdicts over three inputs, so the check cannot be a rubber stamp"
+
 run_node "$CONTRAST" "$TMP/chrome-only.html" --profile graph
-assert_output_contains "$OUT" "Profile: graph" "PV03a-GREEN working copy prints the active profile when passed explicitly"
-# No re-spawn here: this is the SAME invocation already captured as
-# WORK_DEFAULT_OUT a few lines above (FIX-cycle dedup -- see S1's COMPARE note).
-assert_output_not_contains "$WORK_DEFAULT_OUT" "Profile:" "PV03a-GREEN2 working copy prints nothing when the flag is absent (byte-identity precondition)"
+assert_output_contains "$OUT" "Profile: graph" "PV03a contrast-check.mjs prints the active profile when passed explicitly (and PV01c above proves it does not otherwise)"
 
 # --- validate-html-output.sh --------------------------------------------
-run_bash "$HEAD_HTMLOUT" "$TMP/gh/graph.html"
-HEAD_HTML_DEFAULT_OUT="$OUT"; HEAD_HTML_DEFAULT_RC=$RC
 run_bash "$HTMLOUT" "$TMP/gh/graph.html"
 WORK_HTML_DEFAULT_OUT="$OUT"; WORK_HTML_DEFAULT_RC=$RC
-assert_eq "$WORK_HTML_DEFAULT_OUT" "$HEAD_HTML_DEFAULT_OUT" "PV01e validate-html-output.sh default-path stdout is BYTE-IDENTICAL to the pre-parameterisation copy"
-assert_exit_eq "$WORK_HTML_DEFAULT_RC" "$HEAD_HTML_DEFAULT_RC" "PV01f validate-html-output.sh default-path exit status unchanged"
+assert_output_not_contains "$WORK_HTML_DEFAULT_OUT" "Profile:" "PV01e validate-html-output.sh prints NO Profile: line on the default path"
 
-run_bash "$HEAD_HTMLOUT" "$TMP/gh/graph.html" --profile graph
-assert_exit_eq "$RC" 2 "PV03b-RED HEAD copy of validate-html-output.sh rejects --profile outright (Unknown flag) -- fails PV03 a different way than silent tolerance, but still fails it"
 run_bash "$HTMLOUT" "$TMP/gh/graph.html" --profile graph
-assert_output_contains "$OUT" "Profile: graph" "PV03b-GREEN working copy prints the active profile when passed explicitly"
+assert_output_contains "$OUT" "Profile: graph" "PV03b validate-html-output.sh prints the active profile when passed explicitly"
+assert_exit_eq "$RC" "$WORK_HTML_DEFAULT_RC" "PV01f validate-html-output.sh reaches the SAME verdict with --profile graph as without it -- naming the default profile explicitly changes what is reported, not what is decided"
 
-# --- validate-visuals.mjs (default-path text is identical up to the point
-# Playwright-unavailability is detected -- both copies hit that branch here) --
-run_node "$HEAD_VISUALS" "$TMP/gh/graph.html"
-HEAD_VIS_DEFAULT_OUT="$OUT"; HEAD_VIS_DEFAULT_RC=$RC
+# --- validate-visuals.mjs (this host has no Playwright, so both runs below take
+# the real "Playwright unavailable" SKIP branch -- see the environment note) --
 run_node "$VISUALS" "$TMP/gh/graph.html"
 WORK_VIS_DEFAULT_OUT="$OUT"; WORK_VIS_DEFAULT_RC=$RC
-assert_eq "$WORK_VIS_DEFAULT_OUT" "$HEAD_VIS_DEFAULT_OUT" "PV01g validate-visuals.mjs default-path stdout is BYTE-IDENTICAL to the pre-parameterisation copy (SKIP branch, no Playwright)"
-assert_exit_eq "$WORK_VIS_DEFAULT_RC" "$HEAD_VIS_DEFAULT_RC" "PV01h validate-visuals.mjs default-path exit status unchanged"
+assert_output_not_contains "$WORK_VIS_DEFAULT_OUT" "Profile:" "PV01g validate-visuals.mjs prints NO Profile: line on the default path"
 
-run_node "$HEAD_VISUALS" "$TMP/gh/graph.html" --profile graph
-assert_exit_eq "$RC" 2 "PV03c-RED HEAD copy of validate-visuals.mjs rejects --profile outright (Unknown flag)"
 run_node "$VISUALS" "$TMP/gh/graph.html" --profile graph
-assert_output_contains "$OUT" "Profile: graph" "PV03c-GREEN working copy prints the active profile when passed explicitly"
+assert_output_contains "$OUT" "Profile: graph" "PV03c validate-visuals.mjs prints the active profile when passed explicitly"
+assert_exit_eq "$RC" "$WORK_VIS_DEFAULT_RC" "PV01h validate-visuals.mjs reaches the SAME verdict with --profile graph as without it"
 
 # ===========================================================================
 # GRADE-TOKENS -- AC-2: grade-summary.sh's own grep patterns for S2/NM/L1/L2's
@@ -805,7 +831,7 @@ fi
 echo ""
 echo "=== S5 (source tree untouched) ==="
 S5_NOW=$(cat "$CONTRAST" "$HTMLOUT" "$VISUALS" | md5sum)
-assert_eq "$S5_NOW" "$S5_BASE" "S5 the three canonical scripts are byte-unchanged after this entire run (every HEAD-copy and every mutant lived under \$TMP)"
+assert_eq "$S5_NOW" "$S5_BASE" "S5 the three canonical scripts are byte-unchanged after this entire run (every fixture and every mutant lived under \$TMP)"
 
 # ===========================================================================
 # SELF -- wholesale no-op floor (catches a filter/abort collapsing the run to
