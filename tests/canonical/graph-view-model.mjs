@@ -134,9 +134,10 @@ for (const patch of Object.values(M.PRESETS)) {
 }
 ok('GT14', 'no preset patch touches the filters namespace, so a filter composes rather than resets',
 	noFilterKey && Object.keys(M.PRESETS).length === 4);
-ok('GT15', 'INITIAL_LENS states all fourteen fields, with sort at the file order',
-	M.LENS_KEYS.length === 14 && M.LENS_KEYS.every((k) => Object.prototype.hasOwnProperty.call(M.INITIAL_LENS, k))
-	&& same(M.INITIAL_LENS['sort'], { column: 'row', direction: 'asc' }));
+ok('GT15', 'INITIAL_LENS states all fifteen fields (task-034 adds filters.hiddenIds), with sort at the file order',
+	M.LENS_KEYS.length === 15 && M.LENS_KEYS.every((k) => Object.prototype.hasOwnProperty.call(M.INITIAL_LENS, k))
+	&& same(M.INITIAL_LENS['sort'], { column: 'row', direction: 'asc' })
+	&& same(M.INITIAL_LENS['filters.hiddenIds'], []));
 
 // ===========================================================================
 // GT2x  THE PREFIX ORACLE -- a class is never derived from an identifier
@@ -284,15 +285,15 @@ ok('GT38', 'the header cycle is ascending, descending, then the file order',
 	&& same(M.tblNextSort({ column: 'provenance', direction: 'asc' }, 'provenance'), { column: 'provenance', direction: 'desc' })
 	&& same(M.tblNextSort({ column: 'provenance', direction: 'desc' }, 'provenance'), { column: 'row', direction: 'asc' }));
 const ariaFor = (sort) => M.TBL_COLUMNS.map((c) => M.tblAriaSort(sort, c.token));
-ok('GT38b', 'aria-sort is none on all ten at the file order and non-none on EXACTLY one otherwise',
+ok('GT38b', 'aria-sort is none on all six (task-034 slims TBL_COLUMNS from ten) at the file order and non-none on EXACTLY one otherwise',
 	ariaFor({ column: 'row', direction: 'asc' }).every((v) => v === 'none')
 	&& ariaFor({ column: 'provenance', direction: 'desc' }).filter((v) => v !== 'none').length === 1
 	&& ariaFor({ column: 'provenance', direction: 'desc' }).includes('descending')
-	&& M.TBL_COLUMNS.length === 10);
+	&& M.TBL_COLUMNS.length === 6);
 ok('GT39', 'an out-of-domain sort column normalises to the file order ascending, not to a reversed file order',
 	same(M.tblSortOf({ sort: { column: 'not-a-column', direction: 'desc' } }), { column: 'row', direction: 'asc' })
 	&& same(M.tblSortOf({}), { column: 'row', direction: 'asc' })
-	&& M.TBL_SORT_COLUMNS.size === 11);
+	&& M.TBL_SORT_COLUMNS.size === 7);
 ok('GT40', 'no sort changes the listed row SET',
 	same(ids(asc.map(String)), ids(fileOrder.map(String))) && same(ids(desc.map(String)), ids(fileOrder.map(String))));
 

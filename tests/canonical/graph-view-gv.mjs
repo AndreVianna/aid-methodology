@@ -1061,24 +1061,29 @@ async function buildScratchBundle(patch) {
 }
 
 // ===========================================================================
-// GV25 -- INITIAL_LENS is stated TOTAL over all fourteen fields, and every
-// preset differs from it on at least one key the preset sets
+// GV25 -- INITIAL_LENS is stated TOTAL over all fifteen fields (task-034 adds
+// `filters.hiddenIds`, the checkbox-hide axis), and every preset differs from
+// it on at least one key the preset sets
 // ===========================================================================
 {
 	const expectedKeys = ['preset', 'grouping', 'expandedGroups', 'density', 'filters.kinds', 'filters.categories',
-		'filters.provenance', 'filters.showOrphans', 'filters.text', 'focus.nodeId', 'focus.depth', 'emphasis', 'zoom', 'sort'];
-	const total = M.LENS_KEYS.length === 14 && expectedKeys.every((k) => M.LENS_KEYS.includes(k))
+		'filters.provenance', 'filters.showOrphans', 'filters.text', 'filters.hiddenIds',
+		'focus.nodeId', 'focus.depth', 'emphasis', 'zoom', 'sort'];
+	const total = M.LENS_KEYS.length === 15 && expectedKeys.every((k) => M.LENS_KEYS.includes(k))
 		&& expectedKeys.every((k) => Object.prototype.hasOwnProperty.call(M.INITIAL_LENS, k));
 	// The three enumerable filter axes, checked by VALUE against their own full
 	// domain -- never merely their KEY presence (`total` above already covers
 	// presence). A regression that narrowed any one of them to a proper subset
-	// of its domain must fail here.
+	// of its domain must fail here. `filters.hiddenIds`'s own domain is the
+	// EMPTY set at the initial state (nothing is hidden until a reader hides
+	// it), so it is asserted directly rather than folded into this triple.
 	const kindsTotal = same(ids(M.INITIAL_LENS['filters.kinds']), ids(Object.keys(M.KIND_ENCODING)));
 	const categoriesTotal = same(ids(M.INITIAL_LENS['filters.categories']), ids(M.distinctCategories()));
 	const provenanceTotal = same(ids(M.INITIAL_LENS['filters.provenance']), ids(M.PROVENANCE_VALUES));
+	const hiddenIdsEmpty = same(M.INITIAL_LENS['filters.hiddenIds'], []);
 	const shapeOk = M.INITIAL_LENS.preset === null && M.INITIAL_LENS.grouping === 'none'
 		&& same(M.INITIAL_LENS.expandedGroups, []) && M.INITIAL_LENS.density === 1
-		&& kindsTotal && categoriesTotal && provenanceTotal
+		&& kindsTotal && categoriesTotal && provenanceTotal && hiddenIdsEmpty
 		&& M.INITIAL_LENS['filters.text'] === '' && M.INITIAL_LENS['filters.showOrphans'] === true
 		&& M.INITIAL_LENS.emphasis === 'none' && M.INITIAL_LENS['focus.nodeId'] === null && M.INITIAL_LENS['focus.depth'] === 1
 		&& same(M.INITIAL_LENS.zoom, { scale: 1, panX: 0, panY: 0 }) && same(M.INITIAL_LENS.sort, { column: 'row', direction: 'asc' });
@@ -1088,9 +1093,9 @@ async function buildScratchBundle(patch) {
 		const differs = Object.keys(patch).some((k) => !same(patch[k], M.INITIAL_LENS[k]));
 		if (!differs) noneIsPrivileged = false;
 	}
-	ok('GV25', 'INITIAL_LENS states all fourteen LensState fields (total, not merely correct where checked), the three enumerable filter axes each admitting their WHOLE domain by VALUE, and each of the four presets differs from it on at least one key the preset sets, so no preset is privileged as the default',
+	ok('GV25', 'INITIAL_LENS states all fifteen LensState fields (total, not merely correct where checked), the four enumerable filter axes each admitting their initial domain by VALUE, and each of the four presets differs from it on at least one key the preset sets, so no preset is privileged as the default',
 		total && shapeOk && noneIsPrivileged && Object.keys(M.PRESETS).length === 4,
-		'kindsTotal=' + kindsTotal + ' categoriesTotal=' + categoriesTotal + ' provenanceTotal=' + provenanceTotal);
+		'kindsTotal=' + kindsTotal + ' categoriesTotal=' + categoriesTotal + ' provenanceTotal=' + provenanceTotal + ' hiddenIdsEmpty=' + hiddenIdsEmpty);
 }
 
 // ===========================================================================

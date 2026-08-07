@@ -90,18 +90,29 @@
 
 
 /* ==========================================================================
- * 1. The ten columns, and the value space of `sort`
+ * 1. The six Relations columns, and the value space of `sort`
  *
- * The rendered table has exactly the ten columns the relationship file has, in
- * the file's own order. Ten is a CONTRACT COUNT: the number is normative and
- * changing it is a breaking change by design, which is why the column count
- * below is read from this array rather than written as a literal anywhere.
+ * task-034 SLIMS this table from the file's ten columns to six: node KIND and
+ * node NAME come out, because the Files tree and the Concepts table (§ 13) now
+ * carry every node's own properties -- id, kind, name, provenance, coverage --
+ * exactly once, where before they repeated on every relationship row naming
+ * that node (86% of the cells this page rendered were exactly that repeat,
+ * measured against the live `relationships.md`). This table keeps only
+ * relationship information: both identifiers (still the row's own tie back to
+ * the file, and still where the coverage/selection badges live -- see D3's
+ * total mapping below, unchanged in substance), both relation readings,
+ * provenance and observation.
+ *
+ * Six is now the CONTRACT COUNT this file's own comment used to state as ten:
+ * the number is normative and changing it is a breaking change by design,
+ * which is why the column count is read from this array (`TBL_COLUMNS.length`)
+ * rather than written as a literal anywhere -- see feature-009 SPEC.md D3,
+ * revised in the same change as this file.
  *
  * Each descriptor carries its own sort key and its own cell builder, so the
  * header row, the comparator and the body cells are driven by ONE array. A
  * column cannot be sortable without being renderable, and a column cannot
- * render a value the comparator does not see -- which is the property that
- * keeps a narrow viewport's shortened Name text out of the sort key.
+ * render a value the comparator does not see.
  * ========================================================================== */
 
 /** The literal `sort.column` value standing for the file's own row order. */
@@ -111,32 +122,15 @@ const TBL_COLUMNS = Object.freeze([
 	Object.freeze({
 		token: 'source-id', label: 'Source Id', rowHeader: true,
 		value: (record) => record.source.id,
-		cell: (record) => tblIdCell(record.source),
-	}),
-	Object.freeze({
-		token: 'source-kind', label: 'Source Kind',
-		value: (record) => record.source.kind,
-		cell: (record) => tblKindCell(record.source),
-	}),
-	Object.freeze({
-		token: 'source-name', label: 'Source Name',
-		value: (record) => record.source.label,
-		cell: (record, view) => tblNameCell(record.source, view),
+		// The select control moves here from the (now-removed) Source Name cell:
+		// every row still carries an Id cell for each endpoint, so this is the
+		// minimal relocation -- not a new mechanism -- once Name leaves the table.
+		cell: (record, view) => tblIdCell(record.source, view),
 	}),
 	Object.freeze({
 		token: 'target-id', label: 'Target Id',
 		value: (record) => record.target.id,
-		cell: (record) => tblIdCell(record.target),
-	}),
-	Object.freeze({
-		token: 'target-kind', label: 'Target Kind',
-		value: (record) => record.target.kind,
-		cell: (record) => tblKindCell(record.target),
-	}),
-	Object.freeze({
-		token: 'target-name', label: 'Target Name',
-		value: (record) => record.target.label,
-		cell: (record, view) => tblNameCell(record.target, view),
+		cell: (record, view) => tblIdCell(record.target, view),
 	}),
 	Object.freeze({
 		token: 's2t-relation', label: 'S2T Relation',
@@ -302,13 +296,20 @@ const TBL_SCROLL_TRIGGER_PX = 200;
 /**
  * @param {{store: object, graphModel: object, region: Element, surface: Element,
  *          root: (Document|Element), pageSize: (number|undefined),
- *          announceWindow: (function(string): void|undefined)}} context
+ *          announceWindow: (function(string): void|undefined),
+ *          filesRegion: (Element|undefined), conceptsRegion: (Element|undefined)}} context
  *          `pageSize` and `announceWindow` are the windowing opt-in (task-033),
  *          both absent by default -- see the file header. `pageSize` is the
  *          number of rows a first paint (and each "Load more") reveals;
  *          `announceWindow` is a caller-owned sink for the one sentence this
  *          rendering has to report ("Showing N of M ..."), never a live-region
- *          element this file would have to create itself.
+ *          element this file would have to create itself. `filesRegion` and
+ *          `conceptsRegion` (task-034) are the Files-tree and Concepts-table
+ *          mount points, optional and independent of each other and of
+ *          `region` -- a caller that supplies neither gets exactly the
+ *          Relations table this file rendered before task-034, which is what
+ *          keeps this function backward compatible with a build that composes
+ *          itself without the node inventories.
  * @returns {object|undefined} this rendering's private state. The shell discards
  *          it -- the handle it keeps is the drawing rendering's viewport handle.
  *          It is returned for the same reason the shell publishes one global: an
@@ -331,6 +332,8 @@ function mountTable(context) {
 
 	const view = {
 		store: context.store,
+		graphModel: context.graphModel || context.store.getGraphModel(),
+		root: context.root || null,
 		region: region,
 		// Everything this rendering emits per projection lives inside ONE host
 		// element, which is what lets a rebuild clear its own output without
@@ -357,6 +360,21 @@ function mountTable(context) {
 		announceWindow: typeof (context && context.announceWindow) === 'function' ? context.announceWindow : null,
 		loadMoreButton: null,
 		windowStatusElement: null,
+		// Files tree / Concepts table (task-034). Regions are OPTIONAL; a caller
+		// that supplies neither gets this rendering exactly as it behaved before
+		// task-034 -- see the doc comment above.
+		filesRegion: (context && context.filesRegion) || null,
+		conceptsRegion: (context && context.conceptsRegion) || null,
+		// The tree's SHAPE (which folder holds which node, and each folder's
+		// subtree) is a property of the model alone and does not change with the
+		// lens, so it is built ONCE here rather than on every render -- only the
+		// per-row checkbox/coverage state is re-derived per render.
+		filesTree: null,
+		// Per-folder/per-document disclosure state, UI-local and never persisted
+		// (task-034's DETAIL.md persists the HIDE selection, not the collapse
+		// state) -- a `Set` of tree keys that are collapsed. Empty means
+		// "everything expanded", the default.
+		collapsedKeys: new Set(),
 	};
 
 	// The first element in the region, so one keystroke leaves the whole of it.
@@ -365,8 +383,17 @@ function mountTable(context) {
 	region.insertBefore(tblSkipLink(), region.firstChild);
 	region.appendChild(view.host);
 
+	if (view.filesRegion) view.filesTree = tblBuildFilesTree(view.graphModel);
+
+	// Restore the reader's checkbox-hide selection (task-034 Scope C), BEFORE
+	// the first render, so the first paint already reflects it rather than
+	// flashing an unfiltered view for one frame. Applied through the ordinary
+	// `filters.hiddenIds` lens key -- the same door a checkbox change uses --
+	// so a restore and a live edit go through one mechanism, never two.
+	tblRestoreHiddenSelection(view);
+
 	tblWatchWidth(view);
-	tblRender(view);
+	tblRenderAll(view);
 	context.store.subscribe((viewModel, lens) => {
 		// A NEW projection from the store -- a filter, a sort, a selection, any
 		// lens change at all -- resets the window to its first page and
@@ -375,10 +402,21 @@ function mountTable(context) {
 		// can never undo it, and a filter is always read against the whole
 		// admitted set rather than against whatever window happened to be open.
 		if (view.windowed) view.windowCount = view.pageSize;
-		tblRender(view, viewModel, lens);
+		tblRenderAll(view, viewModel, lens);
 	});
 	if (view.windowed) tblWatchScroll(view);
 	return view;
+}
+
+/** Re-render every region this mount owns from the CURRENT store state --
+ *  the Relations table (unchanged mechanism) plus, where the caller supplied a
+ *  mount point for it, the Files tree and/or the Concepts table (task-034).
+ *  One call site for "the store changed", so the three regions cannot drift
+ *  out of sync with each other or with the lens. */
+function tblRenderAll(view, viewModel, lensState) {
+	tblRender(view, viewModel, lensState);
+	if (view.filesRegion) tblRenderFilesTree(view);
+	if (view.conceptsRegion) tblRenderConcepts(view);
 }
 
 registerRendering('table', mountTable);
@@ -646,15 +684,32 @@ function tblRenderUnlisted(view, viewModel, nodes, index) {
  * 6. Cells
  * ========================================================================== */
 
-/** The Id cell: the identifier verbatim -- prefix included, which is how the
- *  cell text answers where the node comes from -- plus that endpoint's emphasis
- *  badge. The prefix is READ BY NOBODY here; it is present because it is part
- *  of the identifier the file carries. */
-function tblIdCell(endpoint) {
-	return [
+/**
+ * The Id cell: the identifier verbatim -- prefix included, which is how the
+ * cell text answers where the node comes from -- that endpoint's emphasis
+ * badge, and (task-034) the row's select control for that endpoint.
+ *
+ * The select control moves here from the Name cell, which the Relations table
+ * no longer carries (D3, task-034): every row still has an Id cell for each
+ * endpoint, so the FR-14a/D7a select gesture keeps exactly the mechanism it
+ * had -- one control per endpoint, writing `{'focus.nodeId': id}` -- just
+ * relocated to the cell that survived the slimming. `view` is optional so this
+ * function stays usable from a context with no select control to offer (none
+ * today; kept consistent with `tblNameCell`'s own optional `view`).
+ *
+ * The prefix is READ BY NOBODY here; it is present because it is part of the
+ * identifier the file carries.
+ */
+function tblIdCell(endpoint, view) {
+	const children = [
 		el('code', { class: TBL_EMPHASIS_CLASSES[endpoint.emphasis] || null, text: endpoint.id }),
 		tblNodeBadge(endpoint.emphasis),
 	];
+	if (view) {
+		children.push(' ');
+		children.push(tblSelectButton(view, endpoint));
+	}
+	return children;
 }
 
 /** The Kind cell: the closed enum's value as TEXT, plus the kind's shape glyph.
@@ -670,30 +725,31 @@ function tblKindCell(endpoint) {
 }
 
 /**
- * The Name cell: the accessible name, and the row's select control.
+ * The Name cell's TEXT form (task-034) -- no button, no endpoint-cell coupling.
+ * Used by the Files tree and the Concepts table (§ 13), which name a NODE
+ * rather than a relationship endpoint and carry their own, single select
+ * surface per row (the Show checkbox), not this rendering's node-select
+ * gesture.
  *
- * Content here is unbounded in length by construction -- a claim's display name
+ * Content here is unbounded in length by construction -- a `fact` display name
  * reproduces a knowledge-base anchor string verbatim -- so below the mobile
- * breakpoint the cell shows the projection's short label as its only VISIBLE
- * text and carries the full name beside it for the accessibility tree. The
- * shortened form therefore sits only inside `aria-hidden`, reaches no
- * accessibility tree, and appears nowhere above the breakpoint; the cell's
- * accessible name CONTAINS the full name rather than equalling it, because a
- * cell names itself from its contents and this cell also holds its button.
+ * breakpoint the cell shows the short label as its only VISIBLE text and
+ * carries the full name beside it for the accessibility tree, exactly the
+ * shortened-cell contract feature-007 AC-S8 and this feature's AC-S7 describe
+ * for a Name cell generally: the shortened form sits only inside
+ * `aria-hidden`, reaches no accessibility tree, and appears nowhere above the
+ * breakpoint.
+ *
+ * @param {string} label the full accessible name
+ * @param {string} shortLabel the shortened, presentation-only form
+ * @param {boolean} narrow
  */
-function tblNameCell(endpoint, view) {
-	const children = [];
-	if (view.narrow) {
-		children.push(el('span', { 'aria-hidden': 'true', text: endpoint.shortLabel }));
-		children.push(el('span', { class: 'sr-only', text: endpoint.label }));
-	} else {
-		children.push(endpoint.label);
-	}
-	// A separating space, so the name and the control do not read as one word in
-	// a text extraction of the cell.
-	children.push(' ');
-	children.push(tblSelectButton(view, endpoint));
-	return children;
+function tblTreeNameText(label, shortLabel, narrow) {
+	if (!narrow || shortLabel === label) return [label];
+	return [
+		el('span', { 'aria-hidden': 'true', text: shortLabel }),
+		el('span', { class: 'sr-only', text: label }),
+	];
 }
 
 /** A text badge, or nothing. Never colour alone: the meaning is the text. */
@@ -1165,14 +1221,532 @@ function tblWatchWidth(view) {
 	const query = window.matchMedia('(max-width: ' + TBL_MOBILE_MAX_PX + 'px)');
 	view.narrowQuery = query;
 	view.narrow = !!query.matches;
-	const push = () => { view.narrow = !!query.matches; tblRender(view); };
+	const push = () => { view.narrow = !!query.matches; tblRenderAll(view); };
 	if (typeof query.addEventListener === 'function') query.addEventListener('change', push);
 	else if (typeof query.addListener === 'function') query.addListener(push);
 }
 
 
 /* ==========================================================================
- * 12. What this file publishes
+ * 13. The Files tree and the Concepts table (task-034)
+ *
+ * Two more inventories over EVERY node in the model -- not the lens-filtered
+ * `viewModel.visibleNodes` the Relations table reads above, but
+ * `view.graphModel.nodes` itself. That is the design this task exists to
+ * state: a node's own properties (id, kind, name, provenance, coverage) are
+ * the same whatever the lens is doing to the EDGES, and showing every node
+ * unconditionally is what makes the completeness guarantee -- every node has
+ * a home, none is missing, none is duplicated -- something the lens cannot
+ * break by filtering an edge away.
+ *
+ * THE PARTITION. `kind === 'concept'` -> Concepts (flat, 32 today, over the
+ * live fixture). Every other kind -> Files: `section`/`fact` nest under the
+ * `document` their id names (`kbDocOf`, graph-model.js), and everything else
+ * (`document`, `source-artifact`, `image`, `web-page`) is a file-tree leaf,
+ * positioned by its repository path where it has one and under a synthetic
+ * "External sources" bucket where it does not (an external `image`, or any
+ * `web-page`). That is an EXHAUSTIVE rule over the seven-kind enum -- every
+ * node either is a concept or is not -- so the partition needs no enumeration
+ * of what "file" means and cannot silently miss a kind a future schema change
+ * adds.
+ *
+ * THE CHECKBOX HIDES FROM VIEW, NEVER FROM DATA. Unchecking a row writes every
+ * real node id in its subtree into `filters.hiddenIds` (graph-model.js
+ * §§ 3, 9); re-checking removes exactly that subtree's ids and nothing else --
+ * acceptance item 4's own wording. Both tables and the Relations table read
+ * the SAME store, so a hide is visible everywhere in the same tick, and
+ * nothing here re-derives coverage: the badge each row shows comes straight
+ * from `viewModel.coverageGaps`, computed once at load and untouched by this
+ * axis (graph-model.js `verifyCoverage` runs before any lens exists).
+ *
+ * PERSISTENCE (Scope C). `tblRestoreHiddenSelection` runs once, at mount,
+ * before the first render. Every subsequent checkbox edit calls
+ * `writeHiddenSelection` with the FULL current hidden-id list, so what is
+ * remembered is always the resolved set the store is actually applying, never
+ * a UI-local approximation of it.
+ *
+ * WHAT IS NOT HERE. No windowing (task-034's DETAIL.md: 520 and 32 rows,
+ * neither needs one -- windowing stays the Relations table's, over its 3550).
+ * No select control: the FR-14a/D7a node-select gesture stays on the
+ * Relations table's Id cells (§ 6), which are what the reveal mechanism
+ * (§ 10) already knows how to scroll to.
+ * ========================================================================== */
+
+const TBL_EXTERNAL_BUCKET_NAME = 'External sources';
+
+/** True for a node with no repository path of its own -- an external image or
+ *  any web page -- which the Files tree buckets together rather than
+ *  inventing a path for. Prefix-read: the in-repo/external split of an image
+ *  is exactly the question graph-model.js's own `Node` doc calls out as a
+ *  correct prefix read (its site 4/5), reused here rather than re-derived. */
+function tblIsExternalFile(node) {
+	if (node.kind === 'web-page') return true;
+	if (node.kind === 'image') return node.prefix !== 'int';
+	return false;
+}
+
+/** The repository-relative path a Files-tree leaf sorts into: the id with its
+ *  prefix removed. Meaningful only for a node `tblIsExternalFile` says is NOT
+ *  external. */
+function tblRepoPath(node) {
+	return node.id.slice(node.id.indexOf(':') + 1);
+}
+
+/**
+ * Build the Files tree once per mount. A pure function of `graphModel` alone
+ * (no lens, no store), so it needs building only once -- the model itself
+ * changes only at load.
+ *
+ * A FOLDER entry is `{type:'folder', key, name, children}`; a FILE entry is
+ * `{type:'file', key, node, children}`, `children` non-empty only for a
+ * `document` entry, holding its nested `section`/`fact` file entries. `key` is
+ * a real node id for a file and a synthetic path (trailing `/`) for a folder
+ * -- the two spaces never collide, because no node id in this vocabulary ends
+ * in `/`.
+ *
+ * @param {object} graphModel
+ * @returns {object} the root folder entry (itself never rendered as a row)
+ */
+function tblBuildFilesTree(graphModel) {
+	const root = { type: 'folder', key: '', name: '', children: [], byName: new Map() };
+	const nested = new Map(); // kbDoc -> [section/fact node, ...]
+	const fileNodes = [];
+
+	for (const node of graphModel.nodes.values()) {
+		if (node.kind === 'concept') continue;
+		if (node.kind === 'section' || node.kind === 'fact') {
+			const doc = node.kbDoc || '';
+			if (!nested.has(doc)) nested.set(doc, []);
+			nested.get(doc).push(node);
+			continue;
+		}
+		fileNodes.push(node);
+	}
+
+	function folderFor(segments) {
+		let cursor = root;
+		let soFar = '';
+		for (const seg of segments) {
+			soFar = soFar === '' ? seg : soFar + '/' + seg;
+			if (!cursor.byName.has(seg)) {
+				const folder = { type: 'folder', key: soFar + '/', name: seg, children: [], byName: new Map() };
+				cursor.byName.set(seg, folder);
+				cursor.children.push(folder);
+			}
+			cursor = cursor.byName.get(seg);
+		}
+		return cursor;
+	}
+
+	const attachedDocs = new Set();
+	for (const node of fileNodes.slice().sort((a, b) => compareStrings(a.id, b.id))) {
+		const fileEntry = { type: 'file', key: node.id, node: node, children: [] };
+		let folder;
+		if (tblIsExternalFile(node)) {
+			folder = folderFor([TBL_EXTERNAL_BUCKET_NAME]);
+		} else {
+			const segments = tblRepoPath(node).split('/');
+			segments.pop();
+			folder = folderFor(segments);
+		}
+		folder.children.push(fileEntry);
+		if (node.kind === 'document') {
+			const docKey = node.kbDoc || node.id;
+			attachedDocs.add(docKey);
+			for (const child of (nested.get(docKey) || []).slice().sort((a, b) => compareStrings(a.id, b.id))) {
+				fileEntry.children.push({ type: 'file', key: child.id, node: child, children: [] });
+			}
+		}
+	}
+
+	// A section/fact naming a document this model has no node for cannot
+	// happen on a well-formed artifact -- the schema requires a document node
+	// for every `kb:<doc>#...` id a section/fact is extracted from -- but is
+	// attached here rather than silently dropped, so the completeness
+	// guarantee (acceptance item 1) holds even against a malformed one.
+	for (const [doc, members] of nested) {
+		if (attachedDocs.has(doc)) continue;
+		const folder = folderFor([TBL_EXTERNAL_BUCKET_NAME, 'unattached: ' + (doc || '(no document)')]);
+		for (const child of members.slice().sort((a, b) => compareStrings(a.id, b.id))) {
+			folder.children.push({ type: 'file', key: child.id, node: child, children: [] });
+		}
+	}
+
+	(function sortTree(folder) {
+		folder.children.sort((a, b) => {
+			if (a.type !== b.type) return a.type === 'folder' ? -1 : 1;
+			const an = a.type === 'folder' ? a.name : a.node.id;
+			const bn = b.type === 'folder' ? b.name : b.node.id;
+			return compareStrings(an, bn);
+		});
+		for (const child of folder.children) if (child.children.length > 0 || child.type === 'folder') sortTree(child);
+	})(root);
+
+	return root;
+}
+
+/** Every REAL node id in an entry's subtree: itself (if a file) plus every
+ *  descendant file's id. A folder contributes no id of its own -- it is a
+ *  synthetic grouping, never something `filters.hiddenIds` could name. */
+function tblSubtreeIds(entry, out) {
+	const ids = out || [];
+	if (entry.type === 'file') ids.push(entry.node.id);
+	for (const child of entry.children) tblSubtreeIds(child, ids);
+	return ids;
+}
+
+/**
+ * Flatten a tree into DFS pre-order rows, each carrying the KEYS of every
+ * ancestor that has children (so is collapsible) -- the set `tblRenderFilesTree`
+ * tests a row's visibility against. The root contributes no row of its own.
+ *
+ * @param {object} root
+ * @returns {Array<{entry: object, depth: number, ancestorKeys: string[]}>}
+ */
+function tblFlattenTree(root) {
+	const rows = [];
+	(function walk(folder, depth, ancestors) {
+		for (const entry of folder.children) {
+			rows.push({ entry: entry, depth: depth, ancestorKeys: ancestors.slice() });
+			if (entry.children.length > 0) walk(entry, depth + 1, ancestors.concat([entry.key]));
+		}
+	})(root, 1, []);
+	return rows;
+}
+
+/** The store's CURRENT checkbox-hide set, read fresh on every render -- the
+ *  same discipline every other lens field in this file follows (§ 1 rule 1),
+ *  never cached across a render. */
+function tblHiddenSet(view) {
+	return new Set(view.store.getLens()['filters.hiddenIds'] || []);
+}
+
+/**
+ * Write a NEXT hidden-id list: through the store, so the Relations table, the
+ * graph and both node tables all move in the same tick, and to storage
+ * (Scope C) -- always the FULL resolved set the store is now applying, never
+ * a UI-local approximation of it, so a later restore reconstructs exactly
+ * this state.
+ */
+function tblCommitHidden(view, nextIds) {
+	const list = Array.from(new Set(nextIds));
+	view.store.setLens({ 'filters.hiddenIds': list });
+	writeHiddenSelection(list);
+}
+
+/** Toggle one row: add its subtree to the hidden set (unchecked) or remove it
+ *  (checked) -- and nothing OUTSIDE that subtree, which is acceptance item 4's
+ *  own wording ("restores exactly what was hidden and nothing else"). */
+function tblToggleHidden(view, entry, hide) {
+	const subtree = tblSubtreeIds(entry);
+	const current = tblHiddenSet(view);
+	if (hide) for (const id of subtree) current.add(id);
+	else for (const id of subtree) current.delete(id);
+	tblCommitHidden(view, Array.from(current));
+}
+
+/** Every node id's provenance values, over the WHOLE model -- built once per
+ *  render (one pass over the edges) so the Files tree and the Concepts table
+ *  can each look a node's provenance up rather than scanning the edge list
+ *  once per row. Node records carry no provenance field of their own: a
+ *  relationship's provenance is a property of the EDGE (graph-model.js
+ *  `Edge.provenance`), so a node's is the set of values across every edge
+ *  naming it. */
+function tblProvenanceIndex(graphModel) {
+	const index = new Map();
+	for (const edge of graphModel.edges) {
+		if (!index.has(edge.sourceId)) index.set(edge.sourceId, new Set());
+		if (!index.has(edge.targetId)) index.set(edge.targetId, new Set());
+		index.get(edge.sourceId).add(edge.provenance);
+		index.get(edge.targetId).add(edge.provenance);
+	}
+	return index;
+}
+
+/** A node's provenance, as text: the one value it has everywhere it appears,
+ *  or every distinct value it has where they differ, joined -- so no
+ *  information is dropped by picking one arbitrarily -- or an explicit
+ *  statement for a node this model records no edge for at all. */
+function tblProvenanceText(index, id) {
+	const set = index.get(id);
+	if (!set || set.size === 0) return 'no relationships';
+	return Array.from(set).sort(compareStrings).join(', ');
+}
+
+/**
+ * A node's coverage class, independent of the lens -- read straight from the
+ * two sets `viewModel.coverageGaps` carries (computed once at load; see
+ * graph-model.js `verifyCoverage`) rather than from `nodeEmphasis`, which only
+ * carries this distinction while the Coverage preset is active. The Files
+ * tree and Concepts table state a node's coverage state UNCONDITIONALLY
+ * (task-034 Scope A1), so they read a field that never goes quiet under a
+ * different lens.
+ */
+function tblStaticCoverageClass(kbUnbackedSet, artifactGapSet, id) {
+	if (kbUnbackedSet.has(id)) return 'kb-unbacked';
+	if (artifactGapSet.has(id)) return 'artifact-undocumented';
+	return null;
+}
+
+/** The kind glyph and colour class for a plain node record -- the same shapes
+ *  `tblKindCell` already renders for a Relations-row endpoint, adapted for a
+ *  node this file reads directly rather than through `nodeEncoding` (which is
+ *  keyed over the lens-filtered drawn set, and these tables read every node
+ *  whether the lens currently draws it or not). */
+function tblKindOf(node) {
+	const encoding = KIND_ENCODING[node.kind];
+	return { kind: node.kind, glyph: encoding ? encoding.glyph : '', kindClass: encoding ? tblTokenClass(encoding.colourToken) : '' };
+}
+
+/** The Id cell for a Files-tree or Concepts row: the identifier verbatim plus
+ *  its coverage badge -- no select control (§ 13's own header: that gesture
+ *  stays on the Relations table). */
+function tblTreeIdCell(node, coverageClass) {
+	return [
+		el('code', { class: TBL_EMPHASIS_CLASSES[coverageClass] || null, text: node.id }),
+		coverageClass ? tblNodeBadge(coverageClass) : null,
+	];
+}
+
+/**
+ * The Show checkbox for one row: checked when NO id in its subtree is hidden,
+ * unchecked when EVERY id in it is, indeterminate -- the native IDL property,
+ * which browsers map to `aria-checked="mixed"` for assistive technology with
+ * no ARIA authored here -- when some but not all are. A folder's own checkbox
+ * therefore always reflects its subtree rather than carrying separate state
+ * of its own, which is what makes acceptance item 4 ("re-checking restores
+ * exactly what was hidden and nothing else") a property of this one
+ * computation rather than something a handler has to remember separately.
+ */
+function tblShowCheckbox(view, entry, label) {
+	const subtree = tblSubtreeIds(entry);
+	const hidden = tblHiddenSet(view);
+	const hiddenCount = subtree.filter((id) => hidden.has(id)).length;
+	const box = el('input', {
+		type: 'checkbox',
+		'data-tree-show': entry.key,
+		'aria-label': 'Show ' + label,
+	});
+	box.checked = hiddenCount === 0;
+	box.indeterminate = hiddenCount > 0 && hiddenCount < subtree.length;
+	tblSizeControl(box);
+	box.addEventListener('change', () => { tblToggleHidden(view, entry, !box.checked); });
+	return box;
+}
+
+/**
+ * The collapse/expand disclosure for a row with children -- a real button, so
+ * `Enter` and `Space` operate it with nothing here re-implementing anything,
+ * and `aria-expanded` is the SAME carrier the shell's own group disclosures
+ * use (feature-007's precedent, named in this file's own "what must not
+ * regress" note) -- so a collapsed folder's state is exposed to assistive
+ * technology exactly the way an existing, already-reviewed disclosure states
+ * it. The marker attribute, `data-tree-toggle`, is spelled DIFFERENTLY from
+ * the shell's own group-disclosure marker on purpose (see this file's static
+ * grep for that literal, TV08a) -- keeping this row out of feature-007's
+ * "exactly one disclosure per foldable GROUP" count, since a lens grouping and
+ * a file-tree folder are different concepts and must not share one counter.
+ */
+function tblTreeToggle(view, entry, label) {
+	const collapsed = view.collapsedKeys.has(entry.key);
+	const button = el('button', {
+		type: 'button',
+		'data-tree-toggle': entry.key,
+		'aria-expanded': collapsed ? 'false' : 'true',
+		'aria-label': (collapsed ? 'Expand ' : 'Collapse ') + label,
+	}, [collapsed ? '▸' : '▾']);
+	tblSizeControl(button);
+	button.addEventListener('click', () => {
+		if (view.collapsedKeys.has(entry.key)) view.collapsedKeys.delete(entry.key);
+		else view.collapsedKeys.add(entry.key);
+		tblRenderFilesTree(view);
+	});
+	return button;
+}
+
+/**
+ * The Name cell: connecting-line guides for every ancestor level (indentation
+ * is presentation, per this file's "what must not regress" note -- the
+ * STRUCTURAL carrier of nesting is `aria-level`, set on the `<tr>` itself,
+ * below), the row's own disclosure button where it has children, and the
+ * text form § 6's `tblTreeNameText` already renders for a Relations endpoint,
+ * reused here verbatim.
+ */
+function tblTreeNameCell(view, row, label, shortLabel) {
+	const children = [];
+	for (let i = 1; i < row.depth; i += 1) children.push(el('span', { class: 'tbl-tree-guide', 'aria-hidden': 'true' }));
+	if (row.entry.children.length > 0) children.push(tblTreeToggle(view, row.entry, label));
+	else children.push(el('span', { class: 'tbl-tree-guide tbl-tree-leaf', 'aria-hidden': 'true' }));
+	for (const part of tblTreeNameText(label, shortLabel, view.narrow)) children.push(part);
+	return [el('span', { class: 'tbl-tree-cell' }, children)];
+}
+
+/** The six shared column headers both node tables use -- Files and Concepts
+ *  carry "the same property columns, same checkboxes" (task-034 Scope A2), so
+ *  one function builds both header rows rather than two copies drifting
+ *  apart. */
+function tblNodeTableHead() {
+	return el('thead', {}, [el('tr', {}, [
+		el('th', { scope: 'col', text: 'Show' }),
+		el('th', { scope: 'col', text: 'Name' }),
+		el('th', { scope: 'col', text: 'Id' }),
+		el('th', { scope: 'col', text: 'Kind' }),
+		el('th', { scope: 'col', text: 'Provenance' }),
+		el('th', { scope: 'col', text: 'Coverage' }),
+	])]);
+}
+
+/**
+ * The Files tree region: a collapsible table over EVERY file-backed node in
+ * the model (§ 13's partition) -- 520 rows today, none of it windowed. `role`
+ * is set to `treegrid` on the table itself, and `aria-level` plus
+ * `aria-expanded` on each row, which is the ARIA treegrid pattern for exactly
+ * this shape (a table whose rows form a hierarchy) -- the STRUCTURAL carrier
+ * "what must not regress" asks for, with the native `<table>`/`<th
+ * scope>`/`<caption>` machinery underneath it unchanged, so H1 validity holds
+ * exactly as it does for the other two tables.
+ */
+function tblRenderFilesTree(view) {
+	const container = view.filesRegion;
+	if (!container) return;
+	clear(container);
+	if (!view.filesTree) return;
+
+	const graphModel = view.graphModel;
+	const viewModel = view.store.getViewModel();
+	const kbUnbackedSet = new Set(viewModel.coverageGaps.kbUnbacked);
+	const artifactGapSet = new Set(viewModel.coverageGaps.artifactUndocumented);
+	const provenance = tblProvenanceIndex(graphModel);
+	const rows = tblFlattenTree(view.filesTree);
+	const fileRows = rows.filter((r) => r.entry.type === 'file');
+	const hidden = tblHiddenSet(view);
+	const hiddenCount = fileRows.filter((r) => hidden.has(r.entry.node.id)).length;
+
+	const table = el('table', { class: 'tbl', 'data-files-table': true, role: 'treegrid', 'aria-label': 'Project files' });
+	table.appendChild(el('caption', {}, [
+		tblPlural(fileRows.length, 'file, document or image', 'files, documents and images') + ', with sections and facts '
+		+ 'nested under their document, in a collapsible folder tree. '
+		+ (hiddenCount > 0 ? hiddenCount + ' hidden from this view and from the graph by the Show checkbox. ' : '')
+		+ 'Unchecking a row never changes relationships.md or the coverage counts.',
+	]));
+	table.appendChild(tblNodeTableHead());
+
+	const body = el('tbody', {});
+	for (const row of rows) {
+		const entry = row.entry;
+		const isFolder = entry.type === 'folder';
+		const label = isFolder ? entry.name : (viewModel.nodeLabels.get(entry.node.id) || entry.node.name);
+		const shortLabel = isFolder ? entry.name : (viewModel.nodeShortLabels.get(entry.node.id) || label);
+		const rowHidden = row.ancestorKeys.some((key) => view.collapsedKeys.has(key));
+
+		const tr = el('tr', { 'data-tree-key': entry.key, 'aria-level': String(row.depth) });
+		if (rowHidden) tr.hidden = true;
+		if (entry.children.length > 0) tr.setAttribute('aria-expanded', view.collapsedKeys.has(entry.key) ? 'false' : 'true');
+
+		tr.appendChild(el('td', {}, [tblShowCheckbox(view, entry, label)]));
+		tr.appendChild(el('th', { scope: 'row' }, tblTreeNameCell(view, row, label, shortLabel)));
+		if (isFolder) {
+			tr.appendChild(el('td', { text: '—' }));
+			tr.appendChild(el('td', { text: '—' }));
+			tr.appendChild(el('td', { text: '—' }));
+			tr.appendChild(el('td', { text: '—' }));
+		} else {
+			const coverageClass = tblStaticCoverageClass(kbUnbackedSet, artifactGapSet, entry.node.id);
+			tr.appendChild(el('td', {}, tblTreeIdCell(entry.node, coverageClass)));
+			tr.appendChild(el('td', {}, tblKindCell(tblKindOf(entry.node))));
+			tr.appendChild(el('td', { text: tblProvenanceText(provenance, entry.node.id) }));
+			tr.appendChild(el('td', { text: coverageClass ? TBL_NODE_BADGES[coverageClass].text : 'ok' }));
+		}
+		body.appendChild(tr);
+	}
+	table.appendChild(body);
+	container.appendChild(el('div', { class: 'tbl-wrap' }, [table]));
+}
+
+/** The Concepts table: a FLAT list of every `concept` node -- 32 today -- with
+ *  the same six columns and the same checkbox the Files tree carries (Scope
+ *  A2), no tree and no windowing: a concept has no path to sort into a folder
+ *  and no document to nest under (§ 13's own header explains why). */
+function tblRenderConcepts(view) {
+	const container = view.conceptsRegion;
+	if (!container) return;
+	clear(container);
+
+	const graphModel = view.graphModel;
+	const viewModel = view.store.getViewModel();
+	const kbUnbackedSet = new Set(viewModel.coverageGaps.kbUnbacked);
+	const artifactGapSet = new Set(viewModel.coverageGaps.artifactUndocumented);
+	const provenance = tblProvenanceIndex(graphModel);
+
+	const concepts = Array.from(graphModel.nodes.values()).filter((n) => n.kind === 'concept').sort((a, b) => compareStrings(a.id, b.id));
+	const hidden = tblHiddenSet(view);
+	const hiddenCount = concepts.filter((n) => hidden.has(n.id)).length;
+
+	const table = el('table', { class: 'tbl', 'data-concepts-table': true });
+	table.appendChild(el('caption', {}, [
+		tblPlural(concepts.length, 'concept', 'concepts') + ' defined in the Knowledge Base, flat: a concept has no '
+		+ 'path and no single document to nest under. '
+		+ (hiddenCount > 0 ? hiddenCount + ' hidden from this view and from the graph by the Show checkbox. ' : '')
+		+ 'Unchecking a row never changes relationships.md or the coverage counts.',
+	]));
+	table.appendChild(tblNodeTableHead());
+
+	const body = el('tbody', {});
+	for (const node of concepts) {
+		const label = viewModel.nodeLabels.get(node.id) || node.name;
+		const shortLabel = viewModel.nodeShortLabels.get(node.id) || label;
+		const entry = { type: 'file', key: node.id, node: node, children: [] };
+		const coverageClass = tblStaticCoverageClass(kbUnbackedSet, artifactGapSet, node.id);
+
+		const tr = el('tr', { 'data-tree-key': node.id });
+		tr.appendChild(el('td', {}, [tblShowCheckbox(view, entry, label)]));
+		tr.appendChild(el('th', { scope: 'row' }, tblTreeNameText(label, shortLabel, view.narrow)));
+		tr.appendChild(el('td', {}, tblTreeIdCell(node, coverageClass)));
+		tr.appendChild(el('td', {}, tblKindCell(tblKindOf(node))));
+		tr.appendChild(el('td', { text: tblProvenanceText(provenance, node.id) }));
+		tr.appendChild(el('td', { text: coverageClass ? TBL_NODE_BADGES[coverageClass].text : 'ok' }));
+		body.appendChild(tr);
+	}
+	table.appendChild(body);
+	container.appendChild(el('div', { class: 'tbl-wrap' }, [table]));
+}
+
+/**
+ * Restore the reader's stored checkbox-hide selection, once, before the first
+ * render (Scope C). Uses `resolveHiddenSelection`/`readHiddenSelection`
+ * (graph-model.js §13; module scope, concatenated before this file) rather
+ * than re-deriving either rule here -- see that file's own header for why the
+ * key algorithm and the read/write pair live there and not per page.
+ */
+function tblRestoreHiddenSelection(view) {
+	const stored = readHiddenSelection();
+	const resolved = resolveHiddenSelection(view.graphModel, stored);
+	if (resolved.hiddenIds.length > 0) view.store.setLens({ 'filters.hiddenIds': resolved.hiddenIds });
+	if (resolved.suppressed) {
+		tblReportSelectionNotice(view,
+			'Your saved view selection could not be restored because it would have hidden every file, concept and '
+			+ 'relationship. Nothing was hidden -- check the boxes you want hidden again.');
+	} else if (resolved.dropped.length > 0) {
+		tblReportSelectionNotice(view,
+			tblPlural(resolved.dropped.length, 'item', 'items') + ' from your saved view selection no longer exist '
+			+ 'and were dropped; the rest of the selection was restored.');
+	}
+}
+
+/** A persistent, non-live notice about the restore -- the shell's own
+ *  `[data-conflicts]` callout host, the SAME element `reportConflicts`
+ *  (graph-controls.js) writes into, so this is one more producer of an
+ *  EXISTING channel rather than a new live region (the page already has
+ *  exactly two, and this file creates neither -- see TV05a). */
+function tblReportSelectionNotice(view, message) {
+	const host = view.root && typeof view.root.querySelector === 'function' ? view.root.querySelector('[data-conflicts]') : null;
+	if (!host) return;
+	host.appendChild(el('div', { class: 'callout warn', 'data-hidden-selection-notice': true }, [message]));
+}
+
+
+/* ==========================================================================
+ * 14. What this file publishes
  *
  * In the page these are plain declarations in a shared module scope; the export
  * keyword makes the same file loadable by a test process with no change to a
@@ -1204,4 +1778,23 @@ export {
 	TBL_UNLISTED_ID,
 	TBL_MOBILE_MAX_PX,
 	TBL_TOP_BAR_PX,
+	// The Files tree and the Concepts table (task-034) -- pure builders/helpers
+	// first, so they are testable with no page, then the two renderers and the
+	// restore entry point.
+	TBL_EXTERNAL_BUCKET_NAME,
+	tblIsExternalFile,
+	tblRepoPath,
+	tblBuildFilesTree,
+	tblSubtreeIds,
+	tblFlattenTree,
+	tblHiddenSet,
+	tblCommitHidden,
+	tblToggleHidden,
+	tblProvenanceIndex,
+	tblProvenanceText,
+	tblStaticCoverageClass,
+	tblKindOf,
+	tblRenderFilesTree,
+	tblRenderConcepts,
+	tblRestoreHiddenSelection,
 };

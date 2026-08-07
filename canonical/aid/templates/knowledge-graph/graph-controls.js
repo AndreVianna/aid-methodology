@@ -782,6 +782,56 @@ function reportConflicts(root, graphModel) {
 }
 
 
+/**
+ * Restore the reader's checkbox-hide selection, saved on EITHER page.
+ *
+ * WHY THIS LIVES HERE AND NOT IN THE TABLE. The selection is edited on the table
+ * page, but the owner's stated purpose for it is that the GRAPH is quieter on
+ * reload -- "reduce the noise every time the graph is reload". A selection that
+ * only took effect on the page where it was made would not deliver that at all.
+ * The shell is the one place both pages pass through, so the restore belongs
+ * here rather than in either rendering.
+ *
+ * The two pages agree because `hiddenSelectionKey` scopes the stored key to the
+ * page's DIRECTORY, not its filename: `graph.html` and `table.html` are siblings
+ * written by the same run, so they read and write the same entry. That is also
+ * what keeps two different projects apart even under `file://`, where a browser
+ * may hand every page the same null origin -- the key carries the directory
+ * itself rather than trusting the browser to partition anything.
+ *
+ * WHAT IT REFUSES TO DO. `resolveHiddenSelection` is the judgement and it is pure
+ * (see its own contract): an id the model no longer has is dropped rather than
+ * fatal, and a selection that would hide EVERY node restores nothing and says so.
+ * The second rule is the important one -- a fully filtered view is
+ * indistinguishable from a broken build at a glance, so silently honouring such
+ * a selection would make the page look defective on the reader's own past
+ * instruction. Reported through the ordinary callout channel, never the alert
+ * region, which carries LOAD-TIME FAILURE and this is not one.
+ *
+ * A restore of nothing writes no lens at all, which is the common case (no
+ * selection ever made) and must stay indistinguishable from a page that has
+ * never had one -- `setLens` with an empty list would still be a notification,
+ * and a first paint that notifies for nothing is how a "why did this re-render"
+ * defect starts.
+ */
+function restoreHiddenSelection(root, store, graphModel) {
+	const resolved = resolveHiddenSelection(graphModel, readHiddenSelection());
+	if (resolved.hiddenIds.length > 0) {
+		store.setLens({ 'filters.hiddenIds': resolved.hiddenIds });
+	}
+	if (!resolved.suppressed) return;
+	const host = root.querySelector('[data-conflicts]');
+	if (!host) return;
+	host.appendChild(el('div', { class: 'callout warn' }, [
+		el('h4', { text: 'A saved selection would have hidden everything, so nothing was hidden' }),
+		el('p', { text: 'The checkbox selection stored for this view covers every node it has, which would '
+			+ 'have left an empty view that reads as a broken build rather than as a filtered one. '
+			+ 'The whole view is shown instead. Clear or narrow the selection on the relationship '
+			+ 'table page to restore filtering.' }),
+	]));
+}
+
+
 /* ==========================================================================
  * 8. System preferences
  *
@@ -884,6 +934,7 @@ function mountShell(scope) {
 
 	const store = createStore(graphModel, INITIAL_LENS, detectPreferences());
 	watchPreferences(store);
+	restoreHiddenSelection(root, store, graphModel);
 
 	const manifest = buildControlManifest(graphModel);
 	shellState.manifest = manifest;

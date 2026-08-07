@@ -372,17 +372,27 @@ function activate(element) {
 ok('DT10', 'the table page boots into a document with no thrown error and no console error',
 	!!tstore && consoleErrors.length === 0 && !!listedTable(), consoleErrors.join(' | ').slice(0, 160));
 
-ok('DT11', 'the rendered region is a real table: caption first, thead, tbody, ten column headers',
+// task-034 slims the Relations table from the file's ten columns to six --
+// Source Id, Target Id, S2T Relation, T2S Relation, Provenance, Observation --
+// because node kind and node name now live on the Files tree and the
+// Concepts table (one row per NODE) rather than repeating on every
+// relationship row naming that node. `RELATIONS_HEADER` is this table's own
+// six-column literal and is deliberately NOT `FX.HEADER` (the FILE's ten
+// columns, unchanged): the two are different contracts now, by design
+// (feature-009 SPEC.md D3, revised in the same change).
+const RELATIONS_HEADER = '| Source Id | Target Id | S2T Relation | T2S Relation | Provenance | Observation |';
+
+ok('DT11', 'the rendered region is a real table: caption first, thead, tbody, six column headers',
 	listedTable().firstElementChild.tagName === 'CAPTION'
 	&& !!listedTable().querySelector('thead') && !!listedTable().querySelector('tbody')
-	&& colHeaders().length === 10 && colHeaders().every((th) => th.getAttribute('scope') === 'col'),
+	&& colHeaders().length === 6 && colHeaders().every((th) => th.getAttribute('scope') === 'col'),
 	colHeaders().length + ' column headers');
-ok('DT11b', 'the ten header labels reconstruct the relationship file\'s own header literal',
-	'| ' + colHeaders().map((th) => th.querySelector('button').textContent.replace(/[↕↑↓]/g, '').trim()).join(' | ') + ' |' === FX.HEADER,
+ok('DT11b', 'the six header labels reconstruct this table\'s own (slimmed) header literal',
+	'| ' + colHeaders().map((th) => th.querySelector('button').textContent.replace(/[↕↑↓]/g, '').trim()).join(' | ') + ' |' === RELATIONS_HEADER,
 	'| ' + colHeaders().map((th) => th.querySelector('button').textContent.replace(/[↕↑↓]/g, '').trim()).join(' | ') + ' |');
-ok('DT11c', 'every body row is one row header plus nine cells, and the count equals the drawn row count',
+ok('DT11c', 'every body row is one row header plus five cells, and the count equals the drawn row count',
 	bodyRows().length === tvm().counts.edges && bodyRows().length > 0
-	&& bodyRows().every((tr) => tr.querySelectorAll('th[scope="row"]').length === 1 && tr.querySelectorAll('td').length === 9),
+	&& bodyRows().every((tr) => tr.querySelectorAll('th[scope="row"]').length === 1 && tr.querySelectorAll('td').length === 5),
 	bodyRows().length + ' rows');
 ok('DT11d', 'every cell of every row carries the ViewModel value for that column',
 	(() => {
@@ -391,21 +401,17 @@ ok('DT11d', 'every cell of every row carries the ViewModel value for that column
 			const row = Number(tr.getAttribute('data-row'));
 			const edge = viewModel.visibleEdges.find((e) => e.row === row);
 			const fold = viewModel.edgeFold.get(edge.key);
-			const expect = [
-				edge.sourceId, viewModel.visibleNodes.find((n) => n.id === fold.sourceId).kind, viewModel.nodeLabels.get(fold.sourceId),
-				edge.targetId, viewModel.visibleNodes.find((n) => n.id === fold.targetId).kind, viewModel.nodeLabels.get(fold.targetId),
-				edge.s2t, edge.t2s, edge.provenance, edge.observation,
-			];
-			for (let i = 0; i < 10; i += 1) {
+			const expect = [edge.sourceId, edge.targetId, edge.s2t, edge.t2s, edge.provenance, edge.observation];
+			for (let i = 0; i < 6; i += 1) {
 				if (expect[i] !== '' && tr.children[i].textContent.indexOf(expect[i]) === -1) return false;
 			}
 		}
 		return true;
 	})());
 
-ok('DT12', 'aria-sort is on the listed table\'s ten column headers and on NO other cell in the region',
+ok('DT12', 'aria-sort is on the listed table\'s six column headers and on NO other cell in the region',
 	colHeaders().every((th) => th.getAttribute('aria-sort') === 'none')
-	&& Array.from(tregion.querySelectorAll('th')).filter((th) => th.hasAttribute('aria-sort')).length === 10,
+	&& Array.from(tregion.querySelectorAll('th')).filter((th) => th.hasAttribute('aria-sort')).length === 6,
 	Array.from(tregion.querySelectorAll('th')).filter((th) => th.hasAttribute('aria-sort')).length + ' th carry it');
 ok('DT13', 'the region creates no third live region and carries neither shell control attribute',
 	tregion.querySelectorAll('[aria-live], [role="alert"], [role="status"], [role="log"]').length === 0
@@ -440,7 +446,7 @@ ok('DT15b', 'and that target receives focus', tdoc.activeElement === tdoc.getEle
 const focusables = () => Array.from(tregion.querySelectorAll('a[href], button, input, select, textarea, summary, [tabindex]'))
 	.filter((e) => e.getAttribute('tabindex') !== '-1');
 const expectedStops = () => 1 + 1 + (caption().querySelector('a[href^="#"]') ? 1 : 0)
-	+ 10 + 2 * bodyRows().length + unlistedRows().length;
+	+ 6 + 2 * bodyRows().length + unlistedRows().length;
 ok('DT16', 'the tab stops are exactly the skip link, the caption links, one per column header, two per listed row and one per unlisted row',
 	focusables().length === expectedStops() && focusables().length > 20,
 	focusables().length + ' vs ' + expectedStops());
@@ -477,7 +483,7 @@ sortNative = activate(headerFor('provenance').querySelector('button')) && sortNa
 const descending = headerFor('provenance').getAttribute('aria-sort');
 sortNative = activate(headerFor('provenance').querySelector('button')) && sortNative;
 const backToFile = colHeaders().every((th) => th.getAttribute('aria-sort') === 'none');
-ok('DT18', 'activating a header three times reads ascending, descending, then none on all ten',
+ok('DT18', 'activating a header three times reads ascending, descending, then none on all six',
 	ascending === 'ascending' && others === 1 && descending === 'descending' && backToFile && sortNative,
 	ascending + ' / ' + descending + ' / ' + (backToFile ? 'none x10' : 'not reset'));
 ok('DT18b', 'and the third activation returns the control state to the file order',
@@ -510,8 +516,8 @@ treset();
 // --- The empty state --------------------------------------------------------
 tstore.setLens(Object.assign({}, T.INITIAL_LENS, { 'filters.categories': ['structure'], 'focus.nodeId': FX.FILTERED_OUT_NODE }));
 const empty = tregion.querySelector('tbody tr[data-empty-state]');
-ok('DT20', 'an emptied table states why, spanning all ten columns and quoting the lens summary',
-	!!empty && empty.querySelector('td').getAttribute('colspan') === '10'
+ok('DT20', 'an emptied table states why, spanning all six columns and quoting the lens summary',
+	!!empty && empty.querySelector('td').getAttribute('colspan') === '6'
 	&& empty.textContent.indexOf(tvm().lensSummary) !== -1
 	&& empty.textContent.indexOf('Controls panel') !== -1 && !empty.querySelector('a'));
 ok('DT20b', 'and the node it could not list is named in the unlisted region instead',
@@ -537,7 +543,10 @@ ok('DT21d', 'every drawn node is named in the region -- in a listed row or in th
 		for (const lens of [{}, { grouping: 'document' }, { emphasis: 'coverage' }]) {
 			treset();
 			if (Object.keys(lens).length) tstore.setLens(lens);
-			const named = ids(bodyRows().flatMap((tr) => [tr.children[0], tr.children[3]])
+			// Target Id is column index 1 in the slimmed six-column layout
+			// (Source Id, Target Id, S2T, T2S, Provenance, Observation) --
+			// task-034 moved it from index 3 in the file's own ten.
+			const named = ids(bodyRows().flatMap((tr) => [tr.children[0], tr.children[1]])
 				.map((cell) => cell.querySelector('code').textContent).concat(unlistedIds()));
 			const expect = ids(tvm().visibleNodes.map((n) => n.id));
 			// An empty drawn set would satisfy the containment vacuously.
@@ -561,7 +570,9 @@ function revealed(setup) {
 	const call = twide.scrolls[twide.scrolls.length - 1] || null;
 	return { call: call, focusMoved: tdoc.activeElement !== before };
 }
-const firstRowNaming = (id) => renderedRows().find((r) => r.cells[0].indexOf(id) === 0 || r.cells[3].indexOf(id) === 0);
+// Target Id is column index 1 in the slimmed six-column layout -- see DT21d's
+// own note.
+const firstRowNaming = (id) => renderedRows().find((r) => r.cells[0].indexOf(id) === 0 || r.cells[1].indexOf(id) === 0);
 let r = revealed(() => { tregion.querySelector('[data-row-select="kb:concept:graph-view"]').click(); });
 ok('DT22', 'a select brings the first row of the CURRENT order naming that node into view, instantly, moving no focus',
 	!!r.call && r.call.options.behavior === 'instant'
@@ -599,7 +610,10 @@ function mountFresh(lens) {
 	const markup = fresh.doc.querySelector('[data-table-region]').innerHTML;
 	return markup;
 }
-const lensForDeterminism = { grouping: 'document', emphasis: 'coverage', sort: { column: 'target-name', direction: 'desc' } };
+// 'target-name' no longer exists as a sort column (task-034 removed it from
+// TBL_COLUMNS); 'target-id' is its replacement here -- same intent (a column
+// other than the file's own order), still present after the slimming.
+const lensForDeterminism = { grouping: 'document', emphasis: 'coverage', sort: { column: 'target-id', direction: 'desc' } };
 const first = mountFresh(lensForDeterminism);
 const second = mountFresh(lensForDeterminism);
 globalThis.window = twide.window; globalThis.document = tdoc;
@@ -609,15 +623,24 @@ ok('DT24', 'two independent mounts at the same control state produce byte-identi
 const wq = makeTableDom(false);
 const wqStore = T.tbvMountShell(wq.doc);
 const wqRegion = wq.doc.querySelector('[data-table-region]');
+// task-034 moves the responsive Name cell off the Relations table (which no
+// longer has a Name column at all) onto the Files tree, so THAT is the region
+// whose markup a width crossing now changes -- the Relations region's own
+// markup is width-invariant by construction (none of its six columns reads
+// `view.narrow`), which is the correct, and not merely coincidental, effect
+// of the slimming.
+const wqFilesRegion = wq.doc.querySelector('[data-files-region]');
 const wideMarkup = wqRegion.innerHTML;
+const wideFilesMarkup = wqFilesRegion ? wqFilesRegion.innerHTML : null;
 const revisionBefore = wqStore.getViewModel().revision;
 wq.scrolls.length = 0;
 wq.fire(true);
 const narrowMarkup = wqRegion.innerHTML;
+const narrowFilesMarkup = wqFilesRegion ? wqFilesRegion.innerHTML : null;
 wq.fire(false);
-ok('DT25', 'a width crossing re-emits the rows at the SAME revision, changes the markup, fires no second reveal, and reverses byte for byte',
-	wqStore.getViewModel().revision === revisionBefore && narrowMarkup !== wideMarkup
-	&& wq.scrolls.length === 0 && wqRegion.innerHTML === wideMarkup,
+ok('DT25', 'a width crossing re-emits at the SAME revision, changes the Files region\'s markup, fires no second reveal, and reverses byte for byte',
+	wqStore.getViewModel().revision === revisionBefore && narrowFilesMarkup !== wideFilesMarkup
+	&& wq.scrolls.length === 0 && wqRegion.innerHTML === wideMarkup && wqFilesRegion.innerHTML === wideFilesMarkup,
 	'revision ' + revisionBefore + ', scrolls ' + wq.scrolls.length);
 globalThis.window = twide.window; globalThis.document = tdoc;
 
@@ -637,17 +660,34 @@ ok('DT26', 'this build carries no drawing rendering at all (no <canvas> anywhere
 	bodyRows().length + ' rows listed, canvas present=' + (tdoc.querySelector('canvas') !== null));
 
 // --- The responsive Name cell ------------------------------------------------
+// task-034 moves node names -- and with them, the shortened-cell contract --
+// off the Relations table (which no longer carries a Name column at all) and
+// onto the Files tree / Concepts table (§ 13). `kb:alpha.md#fact:renderer-choice`
+// is a `fact`, nested under `kb:alpha.md` in the Files tree, so this is where
+// its Name cell now lives.
+const tfilesRegion = tdoc.querySelector('[data-files-region]');
 const shortForm = tstore.getGraphModel().nodes.get('kb:alpha.md#fact:renderer-choice').shortLabel;
 const fullForm = tvm().nodeLabels.get('kb:alpha.md#fact:renderer-choice');
-ok('DT27', 'above the breakpoint the shortened form appears nowhere in the region',
-	shortForm.indexOf('…') !== -1 && tregion.textContent.indexOf(shortForm) === -1, shortForm);
+ok('DT27', 'above the breakpoint the shortened form appears nowhere in the Files region',
+	shortForm.indexOf('…') !== -1 && !!tfilesRegion && tfilesRegion.textContent.indexOf(shortForm) === -1, shortForm);
 const narrow = makeTableDom(true);
 const narrowStore = T.tbvMountShell(narrow.doc);
 const narrowRegion = narrow.doc.querySelector('[data-table-region]');
-const factCell = Array.from(narrowRegion.querySelectorAll('tbody tr[data-row] td'))
-	.find((td) => td.textContent.indexOf(shortForm) !== -1);
+const narrowFilesRegion = narrow.doc.querySelector('[data-files-region]');
+const factCell = narrowFilesRegion
+	? Array.from(narrowFilesRegion.querySelectorAll('tr[data-tree-key] th, tr[data-tree-key] td'))
+		.find((cell) => cell.textContent.indexOf(shortForm) !== -1)
+	: null;
+// The Files tree's own tree-guide spans ALSO carry aria-hidden="true" (they
+// are presentation, per this file's own comment), so the short-label span is
+// picked out by its TEXT rather than assumed to be the first aria-hidden
+// child -- a plain `querySelector` here would grab an empty guide span
+// instead and fail this assertion on a CORRECT implementation.
+const shortSpan = factCell
+	? Array.from(factCell.querySelectorAll('span[aria-hidden="true"]')).find((s) => s.textContent === shortForm)
+	: null;
 ok('DT27b', 'below it the visible text is the short label inside aria-hidden, with the full name in an .sr-only span beside it',
-	!!factCell && factCell.querySelector('span[aria-hidden="true"]').textContent === shortForm
+	!!shortSpan
 	&& !!factCell.querySelector('span.sr-only') && factCell.querySelector('span.sr-only').textContent === fullForm
 	&& factCell.textContent.indexOf(fullForm) !== -1);
 ok('DT27c', 'the unlisted region shortens nothing at either width, and the shortening adds no tab stop',

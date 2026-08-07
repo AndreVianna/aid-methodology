@@ -23,12 +23,62 @@
 <script>(function(){try{var t=localStorage.getItem('aid-dashboard-theme');if(t!=='dark'&&t!=='light'){t=(window.matchMedia&&window.matchMedia('(prefers-color-scheme: dark)').matches)?'dark':'light';}document.documentElement.setAttribute('data-theme',t);}catch(e){}})();</script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="color-scheme" content="light dark">
-<meta name="description" content="{{PROJECT_NAME}} — every relationship in the Knowledge Base, as an accessible text table with no graph.">
+<meta name="description" content="{{PROJECT_NAME}} — every file, concept and relationship in the Knowledge Base, as three accessible text tables with no graph.">
 <meta name="generator" content="aid-graph">
 <meta name="robots" content="noindex">
-<title>{{PROJECT_NAME}} — Relationship Table</title>
+<title>{{PROJECT_NAME}} — Files, Concepts &amp; Relations</title>
 <style>
 {{INLINE_CSS}}
+</style>
+<!-- Files/Concepts tree CSS (task-034) -- literal, authored on THIS page rather than in
+     graph-css.css (a concurrent task's own in-flight file, out of scope here). Guards
+     against the three defects graph-css.css's own relationship-table block already
+     documents, over the SAME shared `.tbl` base rule those defects came from:
+       1. no author `display` beats the `hidden` attribute a collapsed folder's descendant
+          rows carry -- this block declares no `display` for `[data-files-table] tr` at all,
+          so the UA stylesheet's `[hidden] { display: none }` is never outranked;
+       2. the sticky-header override below is scoped to `[data-files-table]`/
+          `[data-concepts-table]` exactly the way graph-css.css scopes it to
+          `[data-relationship-table]`/`[data-unlisted-table]`, so a row header never sticks
+          to the top of the scroll container;
+       3. the header offset is 0 against `.tbl-wrap`'s own scroll container, never a pixel
+          figure measured against the viewport, for the same reason graph-css.css states at
+          its own sticky-cell block. -->
+<style>
+[data-files-table] thead th,
+[data-concepts-table] thead th { top: 0; z-index: 3; }
+[data-files-table] tbody th,
+[data-concepts-table] tbody th { top: auto; left: 0; z-index: 2; background: var(--bg-elev); }
+[data-files-table] thead th:first-child,
+[data-concepts-table] thead th:first-child { left: 0; z-index: 4; }
+[data-files-table] caption,
+[data-concepts-table] caption { max-width: 78ch; text-align: left; }
+[data-files-table] th, [data-files-table] td,
+[data-concepts-table] th, [data-concepts-table] td { white-space: nowrap; }
+[data-files-table] caption, [data-concepts-table] caption { white-space: normal; }
+
+/* The tree cell: connecting-line guides (presentation only -- nesting itself is carried
+   structurally by `aria-level`/`aria-expanded` on the row, per graph-table.js's own
+   comment), the disclosure button or a same-width leaf spacer, then the name. */
+.tbl-tree-cell { display: inline-flex; align-items: center; gap: 0.15em; }
+.tbl-tree-guide {
+	display: inline-block;
+	width: 1.25rem;
+	align-self: stretch;
+	border-left: 1px solid var(--border);
+	margin-right: -1px;
+}
+.tbl-tree-guide.tbl-tree-leaf { border-left-color: transparent; }
+[data-files-table] tbody button[data-tree-toggle] {
+	appearance: none;
+	background: none;
+	border: 0;
+	padding: 0 0.2em;
+	font: inherit;
+	cursor: pointer;
+	color: inherit;
+}
+[data-files-table] tbody button[data-tree-toggle]:hover { color: var(--accent); }
 </style>
 </head>
 <body>
@@ -46,7 +96,7 @@
 		<span class="sep" aria-hidden="true">›</span>
 		<span>Knowledge Base</span>
 		<span class="sep" aria-hidden="true">›</span>
-		<span class="current" id="breadcrumb-current">Relationship table</span>
+		<span class="current" id="breadcrumb-current">Files, Concepts &amp; Relations</span>
 	</nav>
 	<div class="controls">
 		<button type="button" class="btn-ghost" id="theme-toggle"
@@ -67,15 +117,21 @@
 	     never reaches the comparison. Not dismissible. -->
 	<div class="integrity-banner" data-alert role="alert"></div>
 
-	<h1>Relationship table</h1>
-	<p class="lede">Every relationship recorded among this project's Knowledge Base documents,
-	   sections, claims and defined concepts, its source artifacts, and the images and web
-	   pages they reference — as text, and nothing else on this page draws it. This is the
-	   text equivalent of every relationship the
-	   <a href="./graph.html">interactive relationship graph</a> shows, and it stays fully
-	   usable wherever that page's drawing surface cannot run — no WebGL context, no
-	   JavaScript-drawn canvas, nothing visual-only standing between a reader and the data.
-	   Rows load a window at a time; the "Load more" button reaches every one of them.</p>
+	<h1>Files, concepts and relationships</h1>
+	<p class="lede">Three tables (task-034), each carrying a different thing this project's
+	   Knowledge Base records, rather than one table repeating a node's own properties on every
+	   relationship row that names it: <strong>Files</strong>, a collapsible tree of every
+	   document, source artifact and image, with its sections and facts nested under it;
+	   <strong>Concepts</strong>, every defined term, flat; and <strong>Relations</strong>, every
+	   recorded relationship between two of the above. Every row in the first two tables carries
+	   a Show checkbox — unchecking one hides it from these tables and from the
+	   <a href="./graph.html">interactive relationship graph</a>, and ONLY from the view: it never
+	   edits <code>relationships.md</code> and never changes a coverage count, and the selection
+	   is remembered the next time either page is opened. This is the text equivalent of the
+	   graph, and it stays fully usable wherever that page's drawing surface cannot run — no
+	   WebGL context, no JavaScript-drawn canvas, nothing visual-only standing between a reader
+	   and the data. The Relations table's rows load a window at a time; the "Load more" button
+	   reaches every one of them.</p>
 
 	<!-- Non-live callouts: a conflicting kind or name for one identifier, and any build-level
 	     defect. Kept out of the alert region above, which reports load-time failure only. -->
@@ -103,9 +159,35 @@
 	     table entry by construction, so nothing is lost by not duplicating it here. -->
 	<p class="status-line" data-status aria-live="polite"></p>
 
-	<section class="graph-region" aria-label="Relationship table">
+	<!-- Files: every file-backed node (document, source artifact, image), a collapsible tree,
+	     sections and facts nested under their document (task-034 Scope A1). Present
+	     UNCONDITIONALLY, like the Relations table below -- there is no "composed without it"
+	     branch on this page. Its own skip link bounds the traversal, exactly the Relations
+	     table's own convention, because 520 rows is too many to tab through to reach Concepts
+	     or Relations. -->
+	<section class="graph-region" aria-label="Files">
+		<a href="#files-tree-end">Skip files tree</a>
 		<div class="region-head">
-			<h2>Every relationship, as text</h2>
+			<h2>Files</h2>
+		</div>
+		<div data-files-region></div>
+		<span id="files-tree-end" tabindex="-1"></span>
+	</section>
+
+	<!-- Concepts: every defined term, flat -- a concept has no path and no single document to
+	     nest under (task-034 Scope A2). 32 rows today; no skip link of its own is needed at
+	     that size, the same judgement the Relations table's caption already makes for its own
+	     unlisted-nodes region. -->
+	<section class="graph-region" aria-label="Concepts">
+		<div class="region-head">
+			<h2>Concepts</h2>
+		</div>
+		<div data-concepts-region></div>
+	</section>
+
+	<section class="graph-region" aria-label="Relations">
+		<div class="region-head">
+			<h2>Relations</h2>
 		</div>
 		<!-- The table rendering's own mount point. Present UNCONDITIONALLY: this page's
 		     entire purpose is the table, so -- unlike graph.html, where the table's presence

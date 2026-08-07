@@ -57,6 +57,11 @@
 #   TV18  | AC-S8, FR-14a, D7a  | TV18 (cites DT22, GT53)                     | headless + DOM
 #   TV19  | task-033 AC 2,4     | TV19 (cites TWC01-06,06b,06c,06c-drain,10) | DOM (graph-table-window-check.mjs)
 #   TV20  | task-033 AC 3,4     | TV20 (cites TWC07,TWC08,TWC09)              | DOM (graph-table-window-check.mjs)
+#   TV21  | task-034 AC 1       | TV21 (cites TFC01,TFC02)                    | DOM (graph-table-files-check.mjs)
+#   TV22  | task-034 AC 3,4     | TV22 (cites TFC03,TFC05,TFC06)              | DOM (graph-table-files-check.mjs)
+#   TV23  | task-034 AC 3,5     | TV23 (cites TFC04,TFC14)                    | DOM (graph-table-files-check.mjs)
+#   TV24  | task-034 AC 5       | TV24 (cites TFC10,TFC11)                    | headless (pure resolveHiddenSelection)
+#   TV25  | task-034 AC 6       | TV25 (cites TFC07,TFC08,TFC09,TFC12)        | DOM (graph-table-files-check.mjs)
 #
 # TV16 IS ROUTED, NOT SKIPPED SILENTLY. jsdom implements no layout (stated by
 # graph-view-dom.mjs's own header, and by test-graph-view-shell.sh's "WHAT IS
@@ -107,15 +112,21 @@
 #   the four real view files directly rather than through graph-view-mutate.mjs,
 #   so it is intentionally outside this budget note's MUTATE_MJS/MODEL_MJS
 #   arithmetic and outside the S1-budget self-check's grep patterns at the tail
-#   (neither pattern names $WINDOW_MJS).
+#   (neither pattern names $WINDOW_MJS). task-034 adds a second such invocation,
+#   `graph-table-files-check.mjs` (FILES_MJS), the same precedent -- also
+#   outside the MUTATE_MJS/MODEL_MJS arithmetic and the tail's grep patterns.
 #
 # RUNTIMES
 #   node   required for everything except the static greps. Absent -> everything
 #          past the static groups SKIPs loudly.
 #   jsdom  optional (bare specifier or AID_GRAPH_JSDOM). Absent -> every
 #          DOM-grounded TV verdict (TV01,02,04,05b,06c,08b,09b,10,12,15,17,18,
-#          19,20) reports SKIP rather than a false PASS -- tv_check below treats
-#          "no constituent produced PASS or FAIL" as SKIP, never as PASS.
+#          19,20,21,22,23,25) reports SKIP rather than a false PASS -- tv_check
+#          below treats "no constituent produced PASS or FAIL" as SKIP, never
+#          as PASS. TV24 (resolveHiddenSelection) is pure and needs no jsdom,
+#          but is asserted inside the same jsdom-gated script as the rest of
+#          task-034's classes, so it SKIPs alongside them when jsdom is absent
+#          rather than running standalone.
 #
 # Usage:
 #   bash test-graph-table-view.sh [-v|--verbose] [--self-mutate]
@@ -153,6 +164,7 @@ MUTATE_MJS="${SCRIPT_DIR}/graph-view-mutate.mjs"
 MODEL_MJS="${SCRIPT_DIR}/graph-view-model.mjs"
 DOM_MJS="${SCRIPT_DIR}/graph-view-dom.mjs"
 WINDOW_MJS="${SCRIPT_DIR}/graph-table-window-check.mjs"
+FILES_MJS="${SCRIPT_DIR}/graph-table-files-check.mjs"
 
 TMP=$(mktemp -d)
 trap 'rm -rf "$TMP"' EXIT
@@ -270,9 +282,17 @@ assert_file_contains "$TABLE_JS" "behavior: 'instant'" "TV14a that one scroll ca
 echo ""
 echo "=== TV06a / TV06b -- the column contract and the no-network property, static ==="
 n=$(grep -cE $'^\t\ttoken:' "$TABLE_JS" || true)
-assert_eq "$n" "10" "TV06b TBL_COLUMNS declares exactly ten column descriptors (D3's contract count)"
-for token in source-id source-kind source-name target-id target-kind target-name s2t-relation t2s-relation provenance observation; do
+# task-034 slims the Relations table from the file's ten columns to six: node
+# Kind and node Name come out, because the Files tree and the Concepts table
+# now carry every node's own properties once instead of repeating them on
+# every relationship row (feature-009 SPEC.md D3, revised in the same change).
+assert_eq "$n" "6" "TV06b TBL_COLUMNS declares exactly six column descriptors (D3's contract count, task-034)"
+for token in source-id target-id s2t-relation t2s-relation provenance observation; do
     assert_file_contains "$TABLE_JS" "token: '${token}'" "TV06b column token present and in the relationship file's own order: ${token}"
+done
+for token in source-kind source-name target-kind target-name; do
+    n=$(grep -cE "token: '${token}'" "$TABLE_JS" || true)
+    assert_eq "$n" "0" "TV06b column token retired from the Relations table (moved to the Files tree/Concepts table): ${token}"
 done
 for pattern in '^import' '^[[:space:]]*import[[:space:]]' 'fetch[[:space:]]*\(' 'XMLHttpRequest' 'import[[:space:]]*\(' 'require[[:space:]]*\('; do
     n=$(grep -cE "$pattern" "$TABLE_JS" || true)
@@ -297,7 +317,7 @@ n=$(grep -c 'data-table-region' "$TABLE_SKELETON" || true)
 assert_eq "$n" "1" "TV09a table-view-skeleton.html declares [data-table-region] exactly once, unconditionally -- AC-S1"
 
 if [[ "$HAVE_NODE" -eq 0 ]]; then
-    skip "TV01,TV02,TV04,TV05b,TV06c,TV07,TV08b,TV09b,TV10,TV11,TV12,TV13b,TV15,TV17,TV18,TV03a,TV03b -- node is not on PATH"
+    skip "TV01,TV02,TV04,TV05b,TV06c,TV07,TV08b,TV09b,TV10,TV11,TV12,TV13b,TV15,TV17,TV18,TV03a,TV03b,TV19,TV20,TV21,TV22,TV23,TV24,TV25 -- node is not on PATH"
 else
     # =======================================================================
     # === One bundle, one headless run, one DOM run (S1) =====================
@@ -381,6 +401,35 @@ else
 
     tv_check TV19 "a first window renders; a real, keyboard-operable 'Load more' button (and, as a convenience, scroll) extends it; 'Showing N of M' is correct at every checkpoint (task-033 AC 2, AC 4)" TWC01 TWC02 TWC03 TWC04 TWC05 TWC06 TWC06b TWC06c TWC06c-drain TWC10
     tv_check TV20 "a filter applied with only the first window rendered returns a match from OUTSIDE that window, against a fixture larger than one window, and clearing the filter restores the first page (task-033 AC 3, AC 4)" TWC07 TWC08 TWC09
+
+    # =======================================================================
+    # === TV21-TV25 (task-034) -- the Files tree, the Concepts table, the
+    #     checkbox-hide axis and its persistence. Follows task-033's own
+    #     precedent (graph-table-window-check.mjs): a self-contained fixture
+    #     and bundle, `mountTable` called directly, no coupling to
+    #     graph-view-mutate.mjs's own mutation catalogue.
+    # =======================================================================
+    echo ""
+    echo "=== TV21-TV25 (task-034) -- Files tree, Concepts table, checkbox-hide, persistence ==="
+    set +e
+    node "$FILES_MJS" "$REPO_ROOT" "${TMP}/files-bundle.mjs" > "${TMP}/files.out" 2>"${TMP}/files.err"
+    files_rc=$?
+    set -e
+    consume < "${TMP}/files.out"
+    files_lines=$(grep -cE '^GV.(PASS|FAIL|SKIP)' "${TMP}/files.out" || true)
+    if [[ "${files_lines:-0}" -ge 10 ]]; then
+        pass "table-view: the task-034 Files/Concepts/checkbox check reported its assertions ($files_lines outcomes) -- the ground TV21-TV25 cite"
+    else
+        fail "table-view: the task-034 Files/Concepts/checkbox check reported its assertions -- only ${files_lines:-0} outcome line(s)"
+    fi
+    [[ "$files_rc" -ne 0 && "$files_rc" -ne 3 ]] && [[ "${files_lines:-0}" -eq 0 ]] && \
+        fail "table-view: the task-034 Files/Concepts/checkbox check ran to completion -- exit $files_rc, no outcome: $(head -3 "${TMP}/files.err" | tr '\n' ' ')"
+
+    tv_check TV21 "the Files-tree file rows and the Concepts rows partition graphModel.nodes, with sections/facts nested under their document (AC-T34-1)" TFC01 TFC02
+    tv_check TV22 "unchecking a leaf or a folder hides it (and, for a folder, its whole subtree) from the Relations projection while its own row stays present and re-checkable, touching nothing outside the subtree (AC-T34-3, AC-T34-4)" TFC03 TFC05 TFC06
+    tv_check TV23 "hiding a node changes nothing about the coverage answer, and the persisted selection round-trips to the same hidden set (AC-T34-3, AC-T34-5)" TFC04 TFC14
+    tv_check TV24 "resolveHiddenSelection drops an unknown id and keeps the rest, and suppresses a selection that would hide every node (AC-T34-5)" TFC10 TFC11
+    tv_check TV25 "the Show checkbox and the collapse toggle are native, keyboard-operable controls; a folder checkbox is indeterminate on a partially-hidden subtree; collapsing uses the native hidden attribute and touches no hidden-id state; no live region or shell control marker is added (AC-T34-6)" TFC07 TFC08 TFC09 TFC12
 
     # -----------------------------------------------------------------------
     # TV16 -- ROUTED, recorded as a SKIP with the reason, never faked.

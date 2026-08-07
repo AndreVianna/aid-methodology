@@ -15,10 +15,16 @@
  *   local file open, where a relative ES module cannot be loaded at all, so this
  *   is a property of the delivery and not a style preference.
  *
- *   Nothing here reads the network, a second file, or any storage. The
- *   relationship table arrives as text from the payload element the page embeds,
- *   and it is the only input: one file in, one picture out, so what a reader sees
- *   on screen is exactly what they can verify in the file.
+ *   Nothing here reads the network or a second file. The relationship table
+ *   arrives as text from the payload element the page embeds, and it is the
+ *   only input to `parseRelationships`/`project`: one file in, one picture out,
+ *   so what a reader sees on screen is exactly what they can verify in the
+ *   file. The one exception is storage, and it is narrow and named: § 13 below
+ *   persists the reader's own checkbox-hide selection (task-034), which is
+ *   reader-local state with no home in the relationship file and no effect on
+ *   anything this header claims about the file being the sole input -- a
+ *   restored selection is fed back in through the ordinary `filters.hiddenIds`
+ *   lens key, the same door every other filter uses.
  *
  * WHAT IS AUTHORED ELSEWHERE AND WHY
  *   RELATION_CATEGORY -- the relation-to-category map over the whole core
@@ -216,11 +222,11 @@ const KEY_SEP = '\u001F';
  * The record can be logged, diffed and replayed, and no field is a function, an
  * element handle or a renderer object.
  *
- * Fourteen members. Two of them are renderer-private and that carve-out is part
+ * Fifteen members. Two of them are renderer-private and that carve-out is part
  * of the contract: `zoom` is the drawing rendering's and `sort` is the table's,
  * and NEITHER may affect which nodes or edges are present or emphasised.
- * Everything that decides membership or emphasis is in the other twelve and is
- * interpreted exactly once, in `project()`.
+ * Everything that decides membership or emphasis is in the other thirteen and
+ * is interpreted exactly once, in `project()`.
  *
  * Two absences are also part of the contract:
  *
@@ -232,6 +238,16 @@ const KEY_SEP = '\u001F';
  *     neighbourhood, and it is transient; routing it here would reproject on
  *     every pointer move. Hover may change appearance, never membership.
  *     Selection changes membership and goes through the store.
+ *
+ * `filters.hiddenIds` (task-034) is the checkbox-hide axis the Files/Concepts
+ * tree exposes: a node id in this list is excluded at node admission, exactly
+ * like a kind or provenance filter, and for the same structural reason none of
+ * those touches coverage -- `verifyCoverage` runs once at load, before any lens
+ * exists, over the WHOLE model. Hiding a node through this axis therefore can
+ * never turn a satisfied KB claim into an unbacked one: the owner's own
+ * measurement (32 of 319 claims losing their only backing artifact) was against
+ * DROPPING a node from the data, which this axis never does. A reader who
+ * unchecks a node is filtering the view, not editing `relationships.md`.
  * ========================================================================== */
 
 const LENS_KEYS = Object.freeze([
@@ -244,6 +260,7 @@ const LENS_KEYS = Object.freeze([
 	'filters.provenance',
 	'filters.showOrphans',
 	'filters.text',
+	'filters.hiddenIds',
 	'focus.nodeId',
 	'focus.depth',
 	'emphasis',
@@ -260,7 +277,7 @@ const FILTER_KEYS = Object.freeze(LENS_KEYS.filter((k) => k.indexOf('filters.') 
  * are equally primary -- privileging one would answer a question the reader has
  * not asked yet.
  *
- * Every one of the fourteen members is stated, so the record is total rather
+ * Every one of the fifteen members is stated, so the record is total rather
  * than correct only where someone looked. `focus.depth`, `zoom`, `sort` and
  * `filters.text` are here for a second reason as well: each preset patch has to
  * differ from this record on at least one key it sets, and at Impact's depth of
@@ -276,6 +293,7 @@ const INITIAL_LENS = Object.freeze({
 	'filters.provenance': PROVENANCE_VALUES,
 	'filters.showOrphans': true,
 	'filters.text': '',
+	'filters.hiddenIds': Object.freeze([]),
 	'focus.nodeId': null,
 	'focus.depth': 1,
 	'emphasis': 'none',
@@ -1418,6 +1436,13 @@ function project(graphModel, lensState) {
 	const provenanceFilter = new Set(lens['filters.provenance'] || []);
 	const showOrphans = lens['filters.showOrphans'] !== false;
 	const needle = String(lens['filters.text'] || '').toLowerCase();
+	// task-034: the checkbox-hide axis. A VIEW filter, exactly like the three
+	// above -- it never reaches `verifyCoverage`, which already ran, once, over
+	// the whole model before this function was first called (`createStore`).
+	// Hiding a node here can therefore never move a coverage badge or a gap
+	// count; it only removes the node (and every row naming it) from what this
+	// projection draws.
+	const hiddenIds = new Set(lens['filters.hiddenIds'] || []);
 	const density = clampInt(lens['density'], 1, 5, 1);
 	const grouping = GROUPING_VALUES.indexOf(lens['grouping']) === -1 ? 'none' : lens['grouping'];
 	const emphasisMode = EMPHASIS_VALUES.indexOf(lens['emphasis']) === -1 ? 'none' : lens['emphasis'];
@@ -1437,6 +1462,10 @@ function project(graphModel, lensState) {
 	const admitted = new Set();
 	for (const node of nodes.values()) {
 		if (!kindFilter.has(node.kind)) continue;
+		// task-034: the reader's own checkbox-hide. Checked first among the
+		// per-node exclusions so it reads as what it is -- an explicit reader
+		// choice -- rather than as a side effect of some other axis.
+		if (hiddenIds.has(node.id)) continue;
 		// An isolated node is precisely what the coverage lens and the gap
 		// ledger exist to surface, so hiding one is a deliberate act and the
 		// toggle defaults on.
@@ -2140,7 +2169,135 @@ function freezeLens(lens) {
 
 
 /* ==========================================================================
- * 13. What this file publishes
+ * 13. Hidden-node selection persistence (task-034)
+ *
+ * THE ONE EXCEPTION TO THIS FILE'S OWN HEADER CLAIM OF TOUCHING NO STORAGE.
+ * The checkbox-hide selection has no home in `relationships.md` -- it is
+ * reader-local, not data -- and it has to reach two different pages (this
+ * page's table, which WRITES it, and the drawing rendering's page, which only
+ * READS it) through one shared key, or the two could disagree about what a
+ * reader hid, or a re-open of one page could silently forget what the other
+ * just remembered. Putting the one key algorithm and the one read/write pair
+ * here, rather than authoring it a second time in each page's own shell, is
+ * the same "no second copy of the same knowledge" rule the rest of this file
+ * follows -- see the header's own note on `RELATION_CATEGORY`.
+ *
+ * Three small functions are the whole of the exception:
+ *   - `hiddenSelectionKey` is pure string arithmetic, no storage read at all.
+ *   - `readHiddenSelection`/`writeHiddenSelection` touch `localStorage`, each
+ *     guarded in a `try`/`catch` exactly like `lightbox.js`'s own theme
+ *     persistence (the one other place this page family remembers anything
+ *     across a reload) -- a private-browsing tab or a `localStorage`-less
+ *     embedding degrades to "nothing remembered", never to a thrown error.
+ *   - `resolveHiddenSelection` is pure (no storage, no page): it validates a
+ *     raw stored list against the CURRENT model, which is what lets it be
+ *     tested with no `localStorage` and no `window` at all.
+ * ========================================================================== */
+
+/**
+ * The storage key for a page's checkbox-hide selection, scoped to the
+ * DIRECTORY the page was opened from rather than to its own filename.
+ *
+ * That scope, and not the full path, is what the graph page and this page's
+ * table SHARE: `graph.html` and `table.html` are siblings written into the
+ * same generated `.aid/knowledge/` directory by the same run, so one reader
+ * action on either page has to be visible on the other. Scoping to the full
+ * path would put each page's own selection under a different key and the two
+ * pages could never agree; scoping to the directory is also what keeps two
+ * DIFFERENT projects' pages from colliding even where a browser gives every
+ * `file://` page the same static origin (`null`), because the key itself
+ * carries the directory rather than relying on the browser's own origin
+ * partitioning.
+ *
+ * @param {string} pathname e.g. `document.location.pathname`
+ * @returns {string}
+ */
+function hiddenSelectionKey(pathname) {
+	const path = typeof pathname === 'string' ? pathname : '';
+	const dir = path.slice(0, path.lastIndexOf('/') + 1);
+	return 'aid-graph-hidden::' + dir;
+}
+
+/**
+ * Read the raw stored selection for the CURRENT page (`location`/`localStorage`
+ * read from the ambient global, never passed in -- there is exactly one real
+ * page this ever runs against). Absence is never an error: a page opened for
+ * the first time, a private-browsing tab, or an embedding with no
+ * `localStorage` at all every read the same way, as "nothing stored yet".
+ *
+ * @returns {string[]|null} the raw list, unvalidated against any model --
+ *          `resolveHiddenSelection` does that -- or `null` when there is
+ *          nothing to restore
+ */
+function readHiddenSelection() {
+	try {
+		if (typeof localStorage === 'undefined' || typeof location === 'undefined') return null;
+		const raw = localStorage.getItem(hiddenSelectionKey(location.pathname));
+		if (!raw) return null;
+		const parsed = JSON.parse(raw);
+		return Array.isArray(parsed) ? parsed.filter((id) => typeof id === 'string') : null;
+	} catch (error) {
+		return null;
+	}
+}
+
+/**
+ * Write the selection for the CURRENT page, or clear it when given an empty
+ * list -- so "the reader unhid everything" is recorded as ABSENCE rather than
+ * as an empty array a later reader of the raw key could mistake for "nothing
+ * has ever been hidden here".
+ *
+ * @param {string[]} ids
+ */
+function writeHiddenSelection(ids) {
+	try {
+		if (typeof localStorage === 'undefined' || typeof location === 'undefined') return;
+		const key = hiddenSelectionKey(location.pathname);
+		if (!Array.isArray(ids) || ids.length === 0) localStorage.removeItem(key);
+		else localStorage.setItem(key, JSON.stringify(ids));
+	} catch (error) { /* storage unavailable -- the session still works, just unremembered */ }
+}
+
+/**
+ * Resolve a raw stored selection against the CURRENT model. Pure -- no
+ * storage, no page -- so it is testable with neither.
+ *
+ * Three rules, all from task-034's DETAIL.md, and none of them fatal:
+ *
+ *   1. an id the model no longer has (the extraction changed, a file was
+ *      renamed) is DROPPED, not fatal -- the rest of the selection still
+ *      restores;
+ *   2. a selection that would hide EVERY node in the model restores NOTHING
+ *      and says so (`suppressed: true`) -- an empty-looking graph that is
+ *      actually just fully filtered reads as broken, which is worse than an
+ *      unfiltered one;
+ *   3. an empty or absent stored selection is not a restore at all -- the
+ *      common case, a page with nothing ever hidden on it.
+ *
+ * @param {object} graphModel
+ * @param {string[]|null} storedIds
+ * @returns {{hiddenIds: string[], dropped: string[], suppressed: boolean}}
+ */
+function resolveHiddenSelection(graphModel, storedIds) {
+	if (!Array.isArray(storedIds) || storedIds.length === 0) {
+		return { hiddenIds: [], dropped: [], suppressed: false };
+	}
+	const kept = [];
+	const dropped = [];
+	for (const id of storedIds) {
+		if (graphModel.nodes.has(id)) kept.push(id);
+		else dropped.push(id);
+	}
+	const totalNodes = graphModel.nodes.size;
+	if (totalNodes > 0 && kept.length >= totalNodes) {
+		return { hiddenIds: [], dropped: dropped, suppressed: true };
+	}
+	return { hiddenIds: kept, dropped: dropped, suppressed: false };
+}
+
+
+/* ==========================================================================
+ * 14. What this file publishes
  *
  * Declared here as one list rather than scattered across the file, so a reader
  * can see the whole surface at once. In the page these are plain declarations in
@@ -2163,6 +2320,11 @@ export {
 	FILTER_KEYS,
 	PRESETS,
 	PRESET_LABELS,
+	// Hidden-node selection persistence (task-034)
+	hiddenSelectionKey,
+	readHiddenSelection,
+	writeHiddenSelection,
+	resolveHiddenSelection,
 	// The vocabularies and the palette
 	KIND_ENCODING,
 	KIND_PREFIXES,

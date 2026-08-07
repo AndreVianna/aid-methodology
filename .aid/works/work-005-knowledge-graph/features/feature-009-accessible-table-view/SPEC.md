@@ -8,6 +8,7 @@
 | 2026-07-30 | **First review cycle closed: seven findings, one of them a missing contract rather than a wrong sentence.** The select gesture's **third clause was unowned** — feature-007 D7a (its SPEC.md:1046–1047) and FR-14a (`REQUIREMENTS.md`:470–471) both have a select *show the node's rows in the table view*, this SPEC quoted that sentence twice while implementing only its emphasis and Impact-depth clauses, and `data-row` is the only node-to-`<tr>` tie, so no other surface could take it. § Feature Flow step 6 now specifies the reveal from the `ViewModel` and not from `LensState`: the target is the id `nodeEmphasis` marks `'focus'`, already fold-resolved and keyed over `visibleNodes` alone, so it is always a node this region names — with the sort-order case (the first row of the *current* order), the all-`'collapsed'` case and the unlisted-region case stated, and **AC-S8**/**TV18** as its hooks. The other six correct what a sentence claimed, three of them in the *assert only what the platform provides* class this surface exists to hold: the tab-stop enumeration and TV04's "exactly" omitted the caption's own `./relationships.md` and unlisted-region anchors, both focusable and both in the tab order, so TV04 failed against a conforming implementation; "`Enter` and `Space` operate every control" was false for the first stop in its own list, an `<a href>`, which the APG Link pattern activates on `Enter` alone — all SC 2.1.1 asks; and AC-S7/TV15's "accessible name **equals** `nodeLabels`" is unachievable while the same `Name` cell holds its select `<button>` and `role=cell` names from contents, so it is restated as **containment**, feature-007's AC-S8 being the achievable form. The unlisted region put the `nodeEmphasis` badge in the `Name` cell where D3 and the Component breakdown both put it in the **Id** cell; AC-S2's "then the order changes" is false for a uniform column, D2's tie-break being `edge.row` ascending in **both** directions, so it now states D2's comparator and TV10 carries where the directions differ and where they coincide; and NFR-5's carrier row claimed hidden **nodes** are counted in a caption that states only `counts.edges` and `counts.hiddenEdges` — editorial under Q26, the operative Caption row having been unambiguous, so the row now names removal as the carrier and cites where `counts.hiddenNodes` is reported (feature-007's SPEC.md:643). **Each class was swept rather than its instance fixed:** the empty state names the control panel in words rather than linking it (feature-007 fixes no id for that panel, and a third in-page `href` would depend on one); the checklist's `<label for>`/`aria-label` item is scoped to form **inputs**, which this feature emits none of; § Responsive's second accessible-name equality is corrected; AC-S5 gains **TV11** as thinning's hook and TV09 names AC-S1's canvas-absent case as the buildable one; and TV14 adds `scroll-behavior: smooth` to its CSS grep. No measured quantity, no new colour token, and no new `ViewModel` field | /aid-specify |
 | 2026-07-30 | **Second review cycle closed: six findings, three of them inside the reveal contract the first cycle's fix introduced** — the measured pattern on this work being that a fix pass's new prose carries the next cycle's findings. **The reveal's trigger could fail to exist.** `nodeEmphasis` gives an id **one** class and, **as the upstream then stood**, fixed **no** precedence between `'focus'` and a coverage class or `'dimmed'`, so a select made under Coverage or Provenance had two candidate classes and one slot — and **AC-S8**, keyed on the mark, went **vacuous**, so TV18 passed green while the reveal, the `selected` badge and NFR-5's text carrier for the selection were all absent. Step 6 now states the precedence this feature assumes — the resolved focused id carries `'focus'`, the reading feature-007's own **GV22** instantiates (its :1816) — AC-S8 is keyed on the **gesture** rather than on the mark, TV18 asserts the mark under every `emphasis` value, and **Open Item 5** routes the upstream silence on Open Item 1's shape: owner feature-007, class mechanism, stated and hooked, not blocking, and **no** change invented on a frozen SPEC's behalf. **`RowOrder.focusRevealed` had no clearing rule**, so select A → a preset setting `focus.nodeId: null` (feature-007 D6a, its :815–816) → select A again was not a "new" id and the reveal stayed suppressed; the field is now carried across the per-revision rebuild and **cleared** by any rebuild finding no marked id — the one rule under which both readings of its lifetime agree — with TV18 asserting the re-arm. And **"instantaneous" was hooked only to TV14's CSS grep**: `scrollIntoView` declares no CSS property, and the reused file's own `html { scroll-behavior: smooth }` (`component-css.css`:67) would have animated the reveal, so the scroll now passes an explicit `behavior: 'instant'` and TV14 greps that call too. **Each class was swept.** The vacuity audit — *would an implementation that does nothing at all pass this row?* — ran over all eighteen `TV` rows and closed four more (TV06 quantified over rendered cells and over an empty file, TV08 over emitted controls, TV14 over re-emitted rows, TV16 over emitted regions) plus TV02's zero-row fixture; the two-table scoping sweep corrected TV05's `aria-sort` universal, § Screen-reader's same universal, TV02's `<tbody>` count, TV06's cell-provenance routes and TV15's `Name` cell; the NFR-5 row's `counts.hiddenNodes` attribution now agrees with the line it cites (feature-007:643 names that field's readers, not a per-field obligation on each); the single-route sweep extended TV05 to the implicitly live roles and TV13 to every colour-literal form, since one negative clause greps only the routes it names; `orderedFor` gained the write rule the missing `focusRevealed` one exposed as a class; the precedence's own converse cost — a selected gap endpoint reading `selected` in place of its gap badge, one class per id — is stated in the Coverage row and asserted by TV07 rather than left for the next cycle; and § Figures adopts feature-006's fourth class, "an enumeration made on the spot and reproducible from the cited source" (its SPEC.md:1409–1414), which this SPEC uses throughout. Restatements another section already owned were cut throughout to pay for the new contract text. No measured quantity, no new colour token, no new `ViewModel` field, and no edit to a frozen SPEC | /aid-specify |
 | 2026-07-30 | **Upstream re-sweep after feature-007's scoped freeze exception (Q25) — bookkeeping, no design reopened.** feature-007 was reopened for four seams and re-gated; its Open Item 13 (its :1985–1990) records that its decisions answer **this SPEC's Open Item 5 in place** and that a re-sweep is owed. **The one substantive change is provenance, not content.** D4's `nodeEmphasis` row now states the composition as a **total precedence over all five values with `'focus'` first** (its :630) and **GV28** asserts all four steps (its :1822) — which is the precedence § Feature Flow step 6 had stated as *this feature's assumption* and hooked from this side. So step 6, **AC-S8** and the Coverage row attribute it to the **upstream contract** instead, `AC-S5`/`AC-S8`/**TV18** are confirmed rather than corrected, and **Open Item 5 closes as answered**, keeping its number per feature-007's own rule (its :1834–1837). **The other three seams touch nothing here, and that is the honest answer rather than a skipped check:** the store's new `getPreferences()` / `setPreferences()` / `subscribePreferences()` route is unused because this feature reads **no** preference — its reduced-motion and forced-colours clauses consume the reused `component-css.css` `@media` blocks (:658, :684) and nothing else, and its own motion claim is unconditional (`behavior: 'instant'`), which is stronger than a preference-gated one; the **viewport handle** is canvas-side and this region emits no zoom control; and the **withdrawn density exemption** leaves the Coverage row's zero-row guarantee resting solely on that preset's `density: 1`, which is the scope it was already stated at, while AC-15 binds on the gap **set** that D10 computes once per load and never thins. **One clause gained a citation that strengthens it:** the Impact row's "dimmed, not dropped" now names its route — the **endpoints'** `nodeEmphasis`, selection assigning no edge class at all (its `edgeEmphasis` row, :631) — which is what D3's mapping already meant by taking `'dimmed'` from either map. **Every line-numbered citation into feature-007 was re-verified on disk and re-pointed** — feature-007 grew by the **+25 lines** its own entry states, so every anchor below its first insertion moved: fourteen sites held a stale anchor, of which **ten were re-pointed in place over five anchors** (`:621`→`:630`, `:634`→`:643`, `:805–806`→`:815–816`, `:1036–1037`→`:1046–1047`, `:1795`→`:1816`), **three retired** with Open Item 5, and **one de-numbered** rather than re-pointed, because the line that now answers it would contradict the sentence recording the silence. `GV01`, `GV17`, `GV22` and `GV25` keep their numbers and concerns, so every `GV` citation here was re-checked for meaning as well as position. `TV01`–`TV18` keep their numbers and concerns; no measured quantity, no new colour token, no new `ViewModel` field, no new `TV` row, and no edit outside this file. Delta **−2 lines** | /aid-specify |
+| 2026-08-06 | **task-034: the ten-column Relations table becomes six, node kind and node name move to two new tables.** The owner read the real, 3550-row `relationships.md` and measured that 86% of the cells this table drew were the same node property repeated on every relationship row naming it. D3 is revised: `TBL_COLUMNS` drops `Source Kind`, `Source Name`, `Target Kind`, `Target Name`, keeping `Source Id`, `Target Id`, `S2T Relation`, `T2S Relation`, `Provenance`, `Observation` — **six is now the contract count Q19's exemption protects**, and the change log records the reduction as deliberate rather than accidental. The select control (FR-14a, feature-007 D7a) relocates from the (now-removed) Name cell to the Id cell every row still carries — the same mechanism, one native control per endpoint, not a new gesture. **A new § "The Files tree, the Concepts table, and the checkbox-hide axis"** adds the node half this reduction needs a home for: every node in the model (not the lens-filtered `visibleNodes`) partitions exhaustively into the Concepts table (`kind === 'concept'`, flat) and the Files tree (everything else, `section`/`fact` nested under their `document`, folders by repository path) — an exhaustive rule over the closed kind enum, so the partition cannot silently miss a kind. A new `LensState` field, `filters.hiddenIds` (graph-model.js §§ 3, 9 — fifteen fields now, not fourteen), is the checkbox-hide axis DETAIL.md's owner decided on: a VIEW filter, excluded at node admission exactly like a kind filter, structurally unable to reach `verifyCoverage` (which runs once at load, before any lens exists) — so `graphModel.integrity` and `viewModel.coverageGaps` are provably identical before and after any hide, which is the measured reason (32 of 319 KB claims losing their only backing artifact under a blanket data-level exclusion) the owner rejected dropping a node from the data instead. Persisted per page-directory (`hiddenSelectionKey`, `readHiddenSelection`, `writeHiddenSelection`, `resolveHiddenSelection` — graph-model.js's own one documented exception to "touches no storage"), restored once at mount, with an unknown id dropped and a hide-everything selection suppressed and reported rather than silently applied. **What is NOT retired:** the unlisted-nodes region (D4, AC-S4, TV12) stays exactly as it was — it is a property of the Relations table's own lens-filtered `visibleNodes`, orthogonal to the new tables' unfiltered inventory, and there is no cost to removing it that this task needs to pay. **What is NOT here:** restoring the persisted selection into the GRAPH page's own initial `LensState` needs a change inside `graph-controls.js`'s `mountShell`/`createStore` call, a frozen, concurrently-owned file this task does not edit — recorded as **Open Item 6**, owner feature-007/the work owner, class mechanism. Nine new test ids, **TFC01–TFC12** plus **TFC14** (`tests/canonical/graph-table-files-check.mjs`, task-033's own self-contained-fixture precedent), close acceptance items 1 and 3–6; item 2 (the `relationships.md`/coverage/gap-badge invariance) is TFC04's own subject and item 7 (the suite stays green) is this change's own verification. TV05/TV06/TV13/TV15 are revised in place rather than retired, since their CRITERIA survive the slimming even where their subject cell moved | task-034 |
 
 ## Source
 
@@ -166,8 +167,13 @@ feature-007 cites "feature-003's own AC-S2".
       reveal scrolls instantaneously by `behavior: 'instant'`, declaring motion nowhere. *Hook: **TV14**.*
 - [ ] **AC-S7** *(feature-007's **AC-S8**, table half)*: Given a node whose display name exceeds the label
       budget, then the shortened form sits only inside `aria-hidden="true"` and so reaches no accessibility
-      tree, and the cell's accessible name **contains** the full `nodeLabels` value — not equals it, since
-      `role=cell` names from contents and this cell also holds its select `<button>`. *Hook: **TV15**.*
+      tree, and the cell's accessible name **contains** the full `nodeLabels` value — asserted as containment
+      rather than equality because `role=cell` names from contents and a Files-tree Name cell may also hold a
+      collapse toggle `<button>` of its own (task-034 relocates this cell to the Files tree, D3; the
+      Relations table's own Id cell held the select `<button>` this clause originally cited, and now holds it
+      still — see D3's own relocation note). A LEAF row's Name cell, holding no other focusable content,
+      achieves equality as the tighter case containment already covers; a folder or document row's does not,
+      and containment is the property this criterion asks for either way. *Hook: **TV15**.*
 - [ ] **AC-S8** *(FR-14a and feature-007 D7a — the reveal clause)*: Given a select of any node this region
       names, then `nodeEmphasis` marks that node `'focus'` (feature-007 D4's precedence, step 1) and the
       table reveals it — the first row of the current order naming it, else its unlisted-region row —
@@ -227,8 +233,9 @@ than approximate, and this feature's half of NFR-3 and AC-7 (**AC-S3**).
 feature-007 fixes `sort` as `{column, direction}`, table-only, initial `{column: 'row', direction: 'asc'}`
 (its D6a and GV25). Its **value space is this feature's to define**, and is:
 
-- `column` — the literal `'row'`, or one token per column of feature-003 D1's ten. `'row'` is the file's
-  own order, so an unsorted table reads exactly as `relationships.md` reads (feature-003 D7).
+- `column` — the literal `'row'`, or one token per column of D3's own six (task-034; originally feature-003
+  D1's ten, back when this table's columns and the file's were identical — they no longer are). `'row'` is
+  the file's own order, so an unsorted table reads exactly as `relationships.md` reads (feature-003 D7).
 - `direction` — `'asc'` or `'desc'`.
 
 **The comparator.** Primary key is the sorted column's **value** — never its visible text, which the
@@ -247,15 +254,35 @@ load-bearing:
 - **Sorting cannot change membership.** It reorders `RowOrder.order` and writes nothing but `sort`, which
   feature-007 D3 fixes as renderer-private and forbids from affecting presence or emphasis.
 
-#### D3. Ten columns, matching the file
+#### D3. Six columns, node kind and node name moved off the row (task-034)
 
-The rendered table has exactly the **ten** columns `relationships.md` has, in feature-003 D1's order:
-`Source Id`, `Source Kind`, `Source Name`, `Target Id`, `Target Kind`, `Target Name`, `S2T Relation`,
-`T2S Relation`, `Provenance`, `Observation`. Ten is a **contract count** — the number is normative and
-changing it is a breaking change by design (Q19's exemption, feature-003 D7's own statement of it).
+**Revised by task-034, 2026-08-06 — the number itself changes, which the change log records as a deliberate
+break of Q19's own "ten is normative" statement, not an accidental drift.** The owner read the real,
+3550-row `relationships.md` this table renders and found that 86% of the cells it drew were the same fact
+restated: a node's kind and name repeat on every relationship row naming it, so a project with 976 distinct
+nodes and 3550 relationship rows was carrying 14200 node-property cells to say what 2008 would say once. The
+fix task-034 makes is the SPEC's own: a **node table** (two of them — see § The Files tree and the Concepts
+table, added by this task) plus an **edge table** says the same thing once, so this table becomes the edge
+table alone. **The ten-column count is therefore reduced to six, and stays a contract count**: `Source Id`,
+`Target Id`, `S2T Relation`, `T2S Relation`, `Provenance`, `Observation` — feature-003 D1's own order, with
+its two `Kind` columns and two `Name` columns removed. `TBL_COLUMNS.length` is still read, never written as
+a literal, so the new count cannot drift by accident any more than the old one could.
 
-**No eleventh column is added.** The two emphasis channels land on the elements they are keyed over, and
-the mapping is **total over both value spaces** so no class can render as nothing:
+**Where node kind and node name went, so a reader of this file's history is not left to guess.** Every node's
+own kind, name, provenance and coverage state now has exactly one home — its row in the Files tree or the
+Concepts table (§ 13 below) — instead of one appearance per relationship row that names it. A reader who
+wants to know a node's kind or its full name reads that row once; this table answers a different question,
+"what relates to what and how", and answers it with nothing repeated.
+
+**The select control moves from the (now-removed) Name cell to the Id cell it shares a row with.** Every row
+still carries an Id cell per endpoint — Source Id and Target Id both survive the slimming — so FR-14a's
+select gesture (feature-007 D7a) keeps exactly the mechanism it had: one native control per endpoint, one
+per row's Source Id cell and one per row's Target Id cell, writing the same `{'focus.nodeId': id}` patch.
+This is a relocation, not a new gesture, and every consumer rule this SPEC states about it (§ Feature Flow
+step 6, **AC-S8**) is unchanged in substance.
+
+**No seventh column is added.** The two emphasis channels land on the elements they are keyed over, and the
+mapping is **total over both value spaces** so no class can render as nothing:
 
 | Source | Value | Rendering |
 |---|---|---|
@@ -268,20 +295,17 @@ Every listed row has an `edgeEmphasis` entry by construction, because that map i
 rows `edgeFold` does not mark `'collapsed'` (feature-007 D4) — the same set D1 lists. The file row index is
 carried as `data-row`. So the table stays a rendering of the file rather than a re-shaped derivative of it.
 
-**Where each cell comes from.** The two `(Id, Kind, Name)` triples describe the endpoints **as `edgeFold`
-resolves them** — the ids the row is "drawn between and listed as" (feature-007 D4) — with `Kind` from that
-node's `Node.kind` and the name from `nodeLabels`, which is the accessible name on every surface. The
-relation, provenance and observation cells come from the `Edge` record.
+**Where each cell comes from.** The two Id cells name the endpoints **as `edgeFold` resolves them** — the
+ids the row is "drawn between and listed as" (feature-007 D4). The relation, provenance and observation
+cells come from the `Edge` record.
 
 **What faithfulness this claims, and where it stops.** Under `grouping: 'none'` — `INITIAL_LENS`, and every
-non-folding dimension — `edgeFold` holds identity pairs, so the ten cell **values** are the file's row
-verbatim. Two qualifiers, both narrow: `nodeLabels` diverges from the file's stored name only for a
-zero-row node, which by definition never appears in a listed row; and the *rendered* text of a `Name` cell
-may be shortened below the mobile breakpoint while its value is not (§ Responsive behaviour). Under
-`grouping: 'document'` a row whose endpoint is a `section` or `fact` is listed against its document head
-instead, which is the fold's accepted cost (feature-007 D6c clause 2), and `data-row` is what still ties
-the listed row to the file row it came from. The claim is stated at the state where it holds rather than
-asserted generally.
+non-folding dimension — `edgeFold` holds identity pairs, so the six cell **values** are the file's row
+verbatim (its Source Id, Target Id, both relation readings, Provenance and Observation columns; Kind and
+Name are no longer among the values this table states at all). Under `grouping: 'document'` a row whose
+endpoint is a `section` or `fact` is listed against its document head instead, which is the fold's accepted
+cost (feature-007 D6c clause 2), and `data-row` is what still ties the listed row to the file row it came
+from. The claim is stated at the state where it holds rather than asserted generally.
 
 #### D4. The unlisted-nodes set — derived, with no new `ViewModel` field
 
@@ -402,11 +426,11 @@ and no table CSS from scratch. Every line number below was read on disk at the `
 | Skip-past-table link | `<a href="#graph-table-end">Skip relationship table</a>`, first element in the region | Its target `<span id="graph-table-end" tabindex="-1">` is emitted after **both** tables, so the link skips all tabular content. It is **not** the shell's `class="skip-link"` element, which `validate-html-output.sh`:248 asserts and feature-007 owns |
 | Caption | `<caption>` on the main table | States `counts.edges` listed and `counts.hiddenEdges` hidden — the **drawn** counts, so the caption and the shell's header can never disagree — plus `viewModel.lensSummary`, a link to `./relationships.md`, and, when D4's set is non-empty, a link to the unlisted region. Screen readers read it on table entry, so the reader learns the scope before the data |
 | Header row | `<thead>` with `<th scope="col">` per column, each wrapping a `<button>` | The button is the sort control; `aria-sort` lives on the `<th scope="col">` and on no other `<th>` |
-| Body rows | `<tbody>` with one `<tr data-emphasis data-row>` per ordered row | Ten cells: `<th scope="row">` for `Source Id`, `<td>` for the other nine |
+| Body rows | `<tbody>` with one `<tr data-emphasis data-row>` per ordered row | Six cells (task-034): `<th scope="row">` for `Source Id`, `<td>` for the other five |
 | Emphasis badges | `.badge-*` spans placed by D3's total mapping — `nodeEmphasis` in the endpoint's Id cell, `edgeEmphasis`'s `chain` in the `S2T Relation` cell | Each carries its meaning as **text** — `no source`, `no KB doc`, `selected`, `chain` — never as colour alone |
-| Row select controls | `<button data-row-select>` in **each** of the `Source Name` and `Target Name` cells, its accessible name `Select ` + that endpoint's `nodeLabels` value | FR-14a's single-click gesture (feature-007 D7a's keyboard equivalent, "on the node's row in the table view"); D7a's third clause, the reveal, is § Feature Flow step 6's. **One per endpoint, not one per row:** feature-003 D7 normalises every row so `Source Id ≤ Target Id`, so a node whose id sorts last in every row it appears on would be **unselectable** from a source-only control. Deliberately **not** `data-control`: this DOM is per projection while `CONTROL_MANIFEST` is built once at load, so a manifest entry per row would falsify feature-007 D8 assertion 2 the moment a filter removed a row — the same reason feature-007's own group disclosure carries `data-group-toggle` instead |
-| Empty state | One `<tr>` with a single `<td colspan="10">` naming `viewModel.lensSummary` and naming the control panel **in words** | A blank `<tbody>` is indistinguishable from a broken one. It quotes `lensSummary` rather than inspecting `filters`, because consumer rule 1 permits this module only `sort`. Not a link: feature-007 fixes no id for that panel, so an in-page `href` here would depend on one and add a third **L1** input |
-| Unlisted-nodes region | A nested `<section>` with an `<h3>`, holding a three-column `<table class="tbl">`, emitted only when D4's set is non-empty | See below |
+| Row select controls | `<button data-row-select>` in **each** of the `Source Id` and `Target Id` cells (task-034 relocates it here — the `Source Name`/`Target Name` cells it used to sit in no longer exist), its accessible name `Select ` + that endpoint's `nodeLabels` value | FR-14a's single-click gesture (feature-007 D7a's keyboard equivalent, "on the node's row in the table view"); D7a's third clause, the reveal, is § Feature Flow step 6's. **One per endpoint, not one per row:** feature-003 D7 normalises every row so `Source Id ≤ Target Id`, so a node whose id sorts last in every row it appears on would be **unselectable** from a source-only control. Deliberately **not** `data-control`: this DOM is per projection while `CONTROL_MANIFEST` is built once at load, so a manifest entry per row would falsify feature-007 D8 assertion 2 the moment a filter removed a row — the same reason feature-007's own group disclosure carries a distinct marker instead |
+| Empty state | One `<tr>` with a single `<td colspan="6">` naming `viewModel.lensSummary` and naming the control panel **in words** | A blank `<tbody>` is indistinguishable from a broken one. It quotes `lensSummary` rather than inspecting `filters`, because consumer rule 1 permits this module only `sort`. Not a link: feature-007 fixes no id for that panel, so an in-page `href` here would depend on one and add a third **L1** input |
+| Unlisted-nodes region | A nested `<section>` with an `<h3>`, holding a three-column `<table class="tbl">`, emitted only when D4's set is non-empty | See below. Kept as-is by task-034 (not retired): it is a property of the Relations table's own lens-filtered `visibleNodes`, orthogonal to the Files tree/Concepts table's UNFILTERED inventory (§ 13), and removing it would cost nothing this task needs to cost |
 
 #### The unlisted-nodes region
 
@@ -479,9 +503,10 @@ Real table semantics do most of the work: the `<caption>`, the `<th scope>` asso
 the Component breakdown fixes, so the current order is announced rather than merely drawn.
 
 **`aria-sort` is used at its real value space and nowhere beyond it.** Values are `ascending`,
-`descending` and `none`; it appears on the **listed** table's ten `<th scope="col">` and nowhere else —
-never on a row header, which is not a sortable column, and never in the unlisted region, whose three column
-headers wrap no sort control — **at most one** of the ten carries a non-`none` value, and when
+`descending` and `none`; it appears on the **listed** table's six `<th scope="col">` (task-034 slims ten to
+six) and nowhere else — never on a row header, which is not a sortable column, and never in the unlisted
+region, whose three column headers wrap no sort control, nor in the Files tree's or Concepts table's own
+headers, which wrap no sort control either — **at most one** of the six carries a non-`none` value, and when
 `sort.column === 'row'` every one of them carries `none`, which is the platform-correct statement of "not
 sorted by this column" and gives the reader a way back to the file's order with no extra control.
 
@@ -552,26 +577,32 @@ ledger counterpart, and its presence does not breach the criterion.
 
 #### Responsive behaviour
 
-`.tbl-wrap` supplies the horizontal scroll a wide ten-column table legitimately needs, so the page itself
-never scrolls sideways — and that scroll is the whole responsive answer for column width, which
+`.tbl-wrap` supplies the horizontal scroll a wide table legitimately needs, so the page itself never
+scrolls sideways — and that scroll is the whole responsive answer for column width, which
 `accessibility-checklist.md` explicitly permits for a wide table (:105–106). **No cell collapses into a
 disclosure**: a `<details>` per row would add a tab stop per row for content the reader can already reach
 by scrolling, which is the opposite of the granularity judgment above.
 
-The one exception is the **listed** table's two `Name` cells, whose content is unbounded in length by
-construction — a `fact` display name reproduces a KB anchor string verbatim (feature-003 D5). Below the
-768 px mobile breakpoint (`design-tokens.md` § "Spacing & sizing", :104) those two cells render
-`nodeShortLabels` as their **visible** text with the full `nodeLabels` value in the accessibility tree
-beside it: a visible `<span aria-hidden="true">` beside a `.sr-only` span (`component-css.css`:671), which
-adds no tab stop. That is the "collapsed cell" feature-007 D9 names as the one place the shortened form may
-appear, and why **feature-007's AC-S8** holds from this side — the accessible name is never the shortened
-form (**AC-S7** and **TV15**, which state what `role=cell`'s name-from-contents allows and the equality it
-rules out). The unlisted region's `Name` column shortens **nothing**: its table is three columns wide, and
-`nodeLabels` there ends with the "no recorded relationships" fact the column exists to carry.
+**Revised by task-034: the shortened-cell contract moves to the Files tree and the Concepts table.** The
+Relations table no longer carries a `Name` cell of any kind (D3), so it has nothing left to shorten; every
+node's own name — including a `fact`'s, which reproduces a KB anchor string verbatim (feature-003 D5) and is
+the case this contract exists for — is stated once, in that node's Files-tree or Concepts-table row, and it
+is THERE that the 768 px mobile breakpoint (`design-tokens.md` § "Spacing & sizing", :104) applies: below it,
+a Name cell whose text exceeds the label budget renders `nodeShortLabels` as its **visible** text with the
+full `nodeLabels` value in the accessibility tree beside it — a visible `<span aria-hidden="true">` beside a
+`.sr-only` span (`component-css.css`:671), which adds no tab stop. That is the "collapsed cell" feature-007
+D9 names as the one place the shortened form may appear, and why **feature-007's AC-S8** holds — the
+accessible name is never the shortened form (**AC-S7** and **TV15**, relocated to the Files tree/Concepts
+table in the same change, which state what `role=cell`'s name-from-contents allows and the equality it rules
+out). The unlisted region's `Name` column shortens **nothing**, unchanged from before this task: its table is
+three columns wide, and `nodeLabels` there ends with the "no recorded relationships" fact the column exists
+to carry.
 
 Containment is checked at the two widths the visual gate uses — 732 px and 390 px, read from
 `validate-visuals.mjs`'s `OVERFLOW_VIEWPORTS` (`:95`) — so this surface is measured at the same widths as
-the rest of the artifact even though it is not collected by that gate (**TV16**).
+the rest of the artifact even though it is not collected by that gate (**TV16**). Task-034 adds two more
+tables to that same measurement, not a second scale: the Files tree and the Concepts table reuse `.tbl-wrap`
+identically.
 
 #### Reduced motion (AC-9, from this side)
 
@@ -581,6 +612,98 @@ scrolling by an explicit `behavior: 'instant'` — the route no CSS grep reaches
 `@media (prefers-reduced-motion: reduce)` block (**A4**) has nothing of **this feature's** to suppress: the
 in-page links this region emits scroll by that `html` rule, which the same block forces to `auto` (:663–665).
 AC-9's settled-graph clause is feature-008's (NFR-4).
+
+#### The Files tree, the Concepts table, and the checkbox-hide axis (task-034)
+
+Added in full by task-034, 2026-08-06, against DETAIL.md's own numbered acceptance items (cited below as
+**AC-T34-n**). This is the node half D3 retired from the Relations table: two more tables, over EVERY node
+in the model — not `viewModel.visibleNodes`, which the lens and the filters already narrow, but
+`graphModel.nodes` directly — so a reader can find and check any node whether or not the current lens draws
+it. The Relations table stays lens-filtered exactly as before; only these two are unconditional.
+
+**The partition (AC-T34-1).** `kind === 'concept'` → the Concepts table, flat (32 nodes, measured). Every
+other kind → the Files tree: `section`/`fact` nest under the `document` their id names (`kbDocOf`,
+graph-model.js); `document`, `source-artifact` and an in-repo `image` sort into a folder tree by repository
+path; an external `image` or any `web-page` — neither has a repository path — buckets into a synthetic
+"External sources" folder. That rule is **exhaustive over the closed seven-kind enum**: every node either is
+a concept or is not, so the partition needs no enumeration of what "file" means, cannot silently miss a kind
+a future schema change adds, and needs no new field — a folder is a synthetic grouping over existing ids, not
+persisted anywhere. 520 file-backed + 424 nested (section + fact) + 32 concepts = 976 over the live
+`relationships.md`, the arithmetic completeness check DETAIL.md names; this SPEC asserts no total (§ Figures)
+and the test asserts the arithmetic against its own fixture instead (**TFC01**).
+
+**Both tables carry the same six columns**: Show (the checkbox), Name, Id, Kind, Provenance, Coverage. `Id`
+and `Kind` render exactly as D3's own `tblKindCell`/badge machinery already does for a Relations-row
+endpoint, reused rather than reimplemented. `Provenance` is a NODE property nowhere else in this SPEC: a
+relationship's provenance is an `Edge` field, not a `Node` field, so a node's provenance is the set of values
+across every edge naming it, textually joined where it has more than one and stated as "no relationships"
+where it has none — computed once per render over the edge list, not per row. `Coverage` reads
+`viewModel.coverageGaps` directly rather than `nodeEmphasis`, because `nodeEmphasis`'s
+`kb-unbacked`/`artifact-undocumented` classes only populate under the Coverage preset (feature-007 D4's
+`classifyNode`), while these two tables state a node's coverage class **unconditionally** — the same two
+sets, computed once at load and never touched by this axis (below).
+
+**The checkbox hides from the VIEW, never from the DATA (AC-T34-3, the owner's ruling and why).** Unchecking
+a row writes every real node id in its subtree into a new `LensState` field, `filters.hiddenIds`
+(graph-model.js § 3), which node admission excludes at the SAME point a kind or a provenance filter does
+(graph-model.js § 9) — a view filter, structurally incapable of reaching `verifyCoverage`, which runs once at
+load, before any lens exists (`createStore`). The owner chose this over dropping a node from the data because
+a blanket dot-path exclusion — measured in the same session — stripped every backing artifact from 32 of the
+319 KB claims that have any, turning 32 satisfied claims into red gap badges caused by the filter itself. A
+checkbox that did that silently would mislead the reader about their own coverage; routing it through
+`filters.hiddenIds` instead means `graphModel.integrity` and `viewModel.coverageGaps` are **provably
+identical** before and after any hide (**TFC04**), because neither reads the lens at all. A folder's checkbox
+governs its whole subtree — every id `tblSubtreeIds` collects under it — and nothing outside it
+(**AC-T34-4**, **TFC05**/**TFC06**); a folder contributes no id of its own, so hiding one can never itself
+appear in `filters.hiddenIds`. The existing `counts.hiddenNodes` figure (feature-007's own, "the count a lens
+reports") already includes a checkbox-hidden node without any change here, because `graphModel.nodes.size` is
+untouched by this axis and only `visibleNodes.length` shrinks — the "hidden by the reader, not absent from
+the model" distinction DETAIL.md asks for is therefore a property of the existing arithmetic, not a new
+counter.
+
+**Persistence (AC-T34-5, Scope C).** The selection is written to `localStorage` under a key scoped to the
+DIRECTORY the page was opened from (`hiddenSelectionKey`, graph-model.js § 13) — not the full path, which is
+what lets `graph.html` and `table.html`, siblings in the same generated directory, share one selection, and
+not the browser's own origin partitioning, which a `file://` page cannot rely on. Restored once, at mount,
+before the first render (`tblRestoreHiddenSelection`): an id the model no longer has is dropped and the rest
+restores (**TFC10**); a selection that would hide EVERY node restores nothing and reports why, through the
+shell's existing non-live callout channel, rather than leaving an emptied artifact that reads as broken
+(**TFC11**). This is the one documented exception to graph-model.js's own header claim of touching no
+storage — see that file's § 13 for why the exception is narrow and named rather than silent.
+
+**The graph reads the same selection; this is the table's own half.** `filters.hiddenIds` flows through
+`project()` exactly like every other filter, so the drawing rendering — which consumes `viewModel.visibleNodes`
+and `visibleEdges` unconditionally — already stops drawing a hidden node with no change of its own. What
+remains outside this feature's file set is restoring the selection into the GRAPH PAGE's own initial
+`LensState`, at `graph-controls.js`'s `createStore(graphModel, INITIAL_LENS, ...)` call: a mechanism change to
+a frozen, concurrently-owned file, recorded as **Open Item 6** below rather than made here.
+
+**Accessibility.** The Files tree is a `<table role="treegrid">` (the Concepts table stays a plain `<table>`
+— it has no hierarchy); each row carries `aria-level` and, where it has children, `aria-expanded`, which is
+the STRUCTURAL carrier of nesting this task's own constraints require — indentation and connecting-line
+guides are presentation only. The collapse/expand control is a real `<button>`, marked `data-tree-toggle`
+(never feature-007's own group-disclosure marker, so the two counters — a lens grouping's and a file-tree
+folder's — cannot be confused with each other), toggling the native `hidden` attribute on descendant rows,
+never an author `display` rule (this feature's CSS declares none for a tree row, so the UA's own
+`[hidden] { display: none }` is never outranked — the first of the three defects "what must not regress"
+names, guarded against rather than merely avoided by omission). The Show checkbox is a native
+`<input type="checkbox">`; a folder's is `indeterminate` (the native IDL property, which browsers map to
+`aria-checked="mixed"` with no ARIA authored here) when some but not all of its subtree is hidden
+(**TFC08**). Every control is native, so `Enter` and `Space` operate each by the platform's own behaviour —
+verified the same way task-033's own suite verifies it, by asserting the element IS the native, enabled type
+its behaviour depends on (**TFC07**).
+
+| ID | Assertion | Criterion |
+|---|---|---|
+| **TFC01** | the Files-tree file rows and the Concepts rows partition `graphModel.nodes` — every node in exactly one, none missing, none duplicated, asserted as set equality against a self-built fixture | **AC-T34-1** |
+| **TFC02** | a document's `section`/`fact` nodes render nested under it (a strictly greater `aria-level`) and are absent from the Concepts table | **AC-T34-1** |
+| **TFC03** | unchecking a leaf hides it from the Relations projection (`visibleNodes`/`visibleEdges`) while its own row stays present, visible and re-checkable in the Files tree | **AC-T34-3** |
+| **TFC04**, **TFC14** | hiding a node changes nothing about the coverage answer, and the persisted value round-trips through `resolveHiddenSelection` to the same hidden set the store is applying | **AC-T34-3** |
+| **TFC05**, **TFC06** | unchecking a folder with two children hides both and touches no id outside the subtree; re-checking restores exactly that subtree, leaving an independently-hidden node elsewhere untouched | **AC-T34-4** |
+| **TFC07**, **TFC08** | the Show checkbox and the collapse toggle are both native, keyboard-operable controls; a folder checkbox is indeterminate when its subtree is partially hidden | **AC-T34-6** |
+| **TFC09** | collapsing hides descendant rows via the native `hidden` attribute and exposes `aria-expanded="false"`; expanding restores them; collapsing never touches `filters.hiddenIds` | **AC-T34-6** |
+| **TFC10**, **TFC11** | `resolveHiddenSelection` drops an unknown id and keeps the rest; it suppresses (restores nothing) a selection that would hide every node | **AC-T34-5** |
+| **TFC12** | the Files/Concepts regions create no live region and no `data-control`/group-disclosure marker (the two-region and manifest-bijection contracts hold with these regions present) | feature-007's own contracts |
 
 ### Tests
 
@@ -594,17 +717,17 @@ Fixtures are self-built and depend on no work folder's contents (**A-6**). The `
 | **TV02** | at `grouping: 'none'` with a single-category filter that removes some rows and leaves others, the **listed** table's `<tbody>` row count equals `counts.edges` and is non-zero, and the caption states it; and applying each preset afterwards leaves the listed row set filtered — the filter composed rather than reset | **AC-8a** parts 1–2 |
 | **TV03** | `validate-html-output.sh` passes H1, A1, A4, A5, L1 and L2 over a generated `graph.html`; the table region contains a `<table>` with `<caption>`, `<thead>`, `<th scope="col">` per column and `<th scope="row">` per row; and the L2 target set is unchanged by this feature's caption link | **AC-9** |
 | **TV04** | the region's tab stops are exactly the skip link, the caption's `./relationships.md` link, the caption's unlisted-region link where D4's set is non-empty, one button per column header, **two** `data-row-select` per listed row, and one per unlisted-region row — **no cell and no `<summary>` is focusable, at both gate widths**, so the responsive layout cannot add or drop a stop; the skip link's target receives focus; and each stop is operable by the keys its element type provides — `Enter` **and** `Space` on every `<button>`, `Enter` on every `<a href>` | **AC-9**, **AC-21**, NFR-6 |
-| **TV05** | `aria-sort` is present on every `<th scope="col">` of the **listed** table — its ten sortable columns — and on **no** other `<th>` in the region, neither a row header nor one of the unlisted region's three column headers, which wrap no sort control; it is `none` on all ten when `sort.column === 'row'` and non-`none` on **exactly one** otherwise; and no element this feature emits carries `aria-live` or any implicitly live role — `alert`, `status` or `log` — so the page's two-region count is untouched by every route into it | **AC-9**, feature-007's two-region contract |
-| **TV06** | **each** of the ten columns renders a value taken from the `ViewModel` alone — listed ids and kinds via `edgeFold` and `Node.kind`, names via `nodeLabels`, the rest from the `Edge` record — and each of the unlisted region's three likewise, from `visibleNodes` and `nodeLabels`, so an implementation rendering no cell at all fails rather than satisfying the row vacuously; and `graph-table.js` contains no top-level `import`, no `fetch`, no `XMLHttpRequest` and no dynamic `import(` | **AC-10**, feature-007 GV01 |
+| **TV05** | `aria-sort` is present on every `<th scope="col">` of the **listed** table — its **six** sortable columns (task-034 slims ten to six) — and on **no** other `<th>` in the region, neither a row header nor one of the unlisted region's three column headers, which wrap no sort control; it is `none` on all six when `sort.column === 'row'` and non-`none` on **exactly one** otherwise; and no element this feature emits carries `aria-live` or any implicitly live role — `alert`, `status` or `log` — so the page's two-region count is untouched by every route into it | **AC-9**, feature-007's two-region contract |
+| **TV06** | **each** of the six columns renders a value taken from the `ViewModel` alone — listed ids via `edgeFold`, the rest from the `Edge` record — and each of the unlisted region's three likewise, from `visibleNodes` and `nodeLabels`, so an implementation rendering no cell at all fails rather than satisfying the row vacuously; and `graph-table.js` contains no top-level `import`, no `fetch`, no `XMLHttpRequest` and no dynamic `import(`. A node's kind and name are no longer this table's cells to prove — that obligation moves to **TFC01**/**TFC02** over the Files tree and the Concepts table | **AC-10**, feature-007 GV01 |
 | **TV07** | under the Coverage preset as D6a applies it — `focus.nodeId: null`, so no id is `'focus'`-marked — the ids badged `no KB doc` equal `coverageGaps.artifactUndocumented` and equal the fixture ledger's `Doc` column; the ids badged `no source` equal `coverageGaps.kbUnbacked` and appear in **neither** the ledger nor `kb_gaps`; the two badges are textually distinct; and with a gap endpoint then selected, that id reads `selected` while the remaining badged ids equal its class minus that id and the listed row set is unchanged — the one-slot cost, asserted rather than left to be discovered | **AC-15** |
 | **TV08** | no element this feature emits carries `data-control` or `data-group-toggle`, so feature-007's GV17 bijection and GV22's "exactly one disclosure per foldable group" both hold with this region in the page; and over a fixture rendering **both** control kinds, every `data-row-select` and every header button is driven by keyboard alone with its `LensState` effect asserted — `{'focus.nodeId': id}` for the first, leaving `focus.depth` unchanged | **AC-21**, feature-007 D8, GV22 |
 | **TV09** | in a generated `graph.html` the table region precedes the graph region in **DOM order**, is not nested inside it, and renders completely when the canvas module is removed from the manifest — the buildable form of AC-S1's canvas-absent case, the WebGL-absent one being feature-008's runtime | **AC-S1** |
 | **TV10** | activating a header button three times yields `ascending`, `descending`, then `{column: 'row', direction: 'asc'}`; each order is a permutation of the same row multiset; over a column with more than one distinct value the `ascending` and `descending` orders differ, and over a **uniform** column both equal the file's own order — D2's both-directions tie-break, not a defect; two rows with equal cell text in the sorted column order by `row` ascending in **both** directions; and the order is unchanged when the test process's locale is changed | **AC-S2**, D2 |
 | **TV11** | over a fixture exercising all four presets plus a folding dimension, the listed rows are exactly the `visibleEdges` rows whose `edgeFold` entry is not `'collapsed'` — asserted as a **set equality in both directions**, so neither an extra row nor a dropped one passes — which is also thinning's carrier, removal rather than fading | **AC-S3**, **AC-S5** |
 | **TV12** | over the same fixture, every `visibleNodes` id appears in the table region — in a listed row's Id cell or in the unlisted region; and each of D4's three populations is exercised, including a **document whose every row is `'collapsed'` and whose `degree` is non-zero**, which a `degree === 0` selection would miss | **AC-S4**, D4 |
-| **TV13** | node kind, source prefix, both relation names and provenance are present as **text** in cells; **every** value of `nodeEmphasis` and `edgeEmphasis` renders per D3's mapping, with `dimmed` and `normal` the only two that render no text marker; `aria-sort` is present alongside the caret glyph; and `graph-table.js` and this feature's CSS rules declare no `--gk-*`/`--gc-*` token and contain no colour literal by any route — no hex, no `rgb(`/`hsl(`/`oklch(`, no named colour | **AC-S5** |
+| **TV13** | source prefix, both relation names and provenance are present as **text** in Relations-table cells (node kind moves to the Files tree/Concepts table, where it is stated as text there too — `role=col` `Kind` column, reused `tblKindCell`); **every** value of `nodeEmphasis` and `edgeEmphasis` renders per D3's mapping, with `dimmed` and `normal` the only two that render no text marker; `aria-sort` is present alongside the caret glyph; and `graph-table.js` and this feature's CSS rules declare no `--gk-*`/`--gc-*` token and contain no colour literal by any route — no hex, no `rgb(`/`hsl(`/`oklch(`, no named colour | **AC-S5** |
 | **TV14** | this feature's CSS rules declare no `animation`, no `transition` and no `scroll-behavior: smooth`; `graph-table.js`'s **one** scroll call passes `behavior: 'instant'` and the module contains `'smooth'` nowhere — the scripted route no CSS grep reaches, and the one the reused `html` rule would otherwise supply; and a sort, a filter and a lens change each re-emit rows with no transition property set | **AC-S6** |
-| **TV15** | below 768 px a **listed** row's `Name` cell whose node name exceeds the label budget shows `nodeShortLabels` as its only visible text, that span carrying `aria-hidden="true"` so no shortened form is in the accessibility tree, while the cell's computed accessible name **contains** the full `nodeLabels` value; and the shortened form appears nowhere above the breakpoint and nowhere in the unlisted region at either width | **AC-S7**, feature-007 AC-S8 |
+| **TV15** | **relocated to the Files tree by task-034** (the Relations table carries no `Name` cell of any kind — D3): below 768 px a Files-tree row's Name cell whose node name exceeds the label budget shows `nodeShortLabels` as its only visible text, that span carrying `aria-hidden="true"` so no shortened form is in the accessibility tree, while the cell's computed accessible name **contains** the full `nodeLabels` value; and the shortened form appears nowhere above the breakpoint and nowhere in the unlisted region at either width | **AC-S7**, feature-007 AC-S8 |
 | **TV16** | at 732 px, at 390 px, and at 200 % text zoom, over a fixture where **both** tables are present, no region this feature emits overflows its own container, with a wide table's horizontal overflow confined to `.tbl-wrap` | **AC-9** (`accessibility-checklist.md`:105–106) |
 | **TV17** | a projection with no surviving row renders the empty-state row quoting `lensSummary`, and a projection with rows never renders it | **AC-9** (an emptied table is not a broken-looking one) |
 | **TV18** | a select of a node in `visibleNodes` leaves that id `'focus'`-marked in `nodeEmphasis` — asserted under `emphasis: 'none'`, `'coverage'` **and** `'provenance-chain'`, so a projection that marks no id fails here instead of passing on a vacuous antecedent — and brings that node's **first row in the current order** into view clear of both sticky layers, asserted at the file's order and at a non-default `sort`; where every row naming the id is `'collapsed'` the unlisted-region row is brought into view instead; `document.activeElement` is unchanged across the reveal; a re-projection that leaves the marked id alone scrolls nothing; and select A, then feature-007 D6a's Coverage or Overview patch (`focus.nodeId: null`, its :815–816), then select A again reveals **again** — `focusRevealed`'s clearing rule | **AC-S8**, FR-14a, feature-007 D7a |
@@ -659,6 +782,21 @@ SPECs cite these numbers (feature-007's own rule, its :1834–1837). None blocks
    owner decision on this gate's finding), **GV28** asserts all four steps (its :1822), and feature-007's
    Open Item 13 records the answer. It is the reading this SPEC assumed, so step 6, **AC-S8** and **TV18**
    are re-attributed and unchanged in substance. Nothing is routed onward.
+6. **(task-034) The graph page does not yet restore the checkbox-hide selection on load.** The table page
+   restores it (`tblRestoreHiddenSelection`, called at `mountTable`'s own mount point) and both pages already
+   share one filtering mechanism (`filters.hiddenIds` flows through `project()` identically for both
+   renderings, so a hide made on the table page already stops the DRAWING rendering from drawing that node
+   the moment the two pages share a `LensState` — the mechanism is proven). What is missing is the one call
+   that reads the stored selection into the graph page's OWN initial `LensState`, next to
+   `createStore(graphModel, INITIAL_LENS, detectPreferences())` in `graph-controls.js`'s `mountShell` — a
+   frozen, concurrently-owned file (this task's own hard constraint: table-034 does not edit
+   `graph-skeleton.html`/`graph-css.css`/`graph-controls.js`/`graph-canvas.js`). Reachability is not in
+   question — the persisted value is correct and `resolveHiddenSelection` is exported for exactly this call —
+   the item is that the four-file boundary this task was given leaves no file of this task's own to make the
+   call from. **Owner: feature-007** (it owns `mountShell` and the graph page's initial `LensState`
+   construction) **/ the work owner** (to authorise the edit to a frozen file). **Q26 class: mechanism** — it
+   changes a concurrently-owned file's own boot sequence, even though the change itself is a single function
+   call against an already-exported, already-tested pair (`readHiddenSelection`/`resolveHiddenSelection`).
 
 ### Figures
 

@@ -26,7 +26,12 @@
  *                        reportConflicts, reportIntegrity.
  *   graph-table.js    -- mountTable, called directly with this page's own
  *                        `pageSize` and `announceWindow` (task-033's windowing
- *                        opt-in; see that file's own header).
+ *                        opt-in; see that file's own header), plus this page's
+ *                        `filesRegion`/`conceptsRegion` mount points
+ *                        (task-034) -- graph-table.js builds and wires the
+ *                        Files tree and the Concepts table itself; this file
+ *                        only points it at the two `<div>`s the skeleton
+ *                        declares.
  *   Nothing above is redeclared here. This file's own top-level names are all
  *   prefixed `TBV_`/`tbv`, per the single-module-scope rule every view file in
  *   this page's one inline module block already follows.
@@ -208,12 +213,18 @@ function tbvMountShell(scope) {
 	// on this page for it to be "first" against, but the mount point is present
 	// unconditionally exactly as feature-007's D2/step-6 requires of the graph
 	// page's own table half, and the windowing opt-in is this page's own reason
-	// to exist (task-033's DETAIL.md, Scope B).
+	// to exist (task-033's DETAIL.md, Scope B). `filesRegion`/`conceptsRegion`
+	// (task-034) are this page's own two additional, also-unconditional mount
+	// points -- graph-table.js mounts each behind a null check exactly the way
+	// it already mounts the Relations table, so a caller that omitted either
+	// attribute would simply not get that table, with nothing here to notice.
 	const region = root.querySelector('[data-table-region]');
 	mountTable({
 		store: store,
 		graphModel: graphModel,
 		region: region,
+		filesRegion: root.querySelector('[data-files-region]'),
+		conceptsRegion: root.querySelector('[data-concepts-region]'),
 		surface: null,
 		root: root,
 		pageSize: TBV_PAGE_SIZE,
