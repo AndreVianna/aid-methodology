@@ -136,7 +136,7 @@ try {
 	JSDOM = undefined;
 }
 if (typeof JSDOM !== 'function') {
-	skipAll('jsdom is not resolvable here (it is not a repository dependency; set AID_GRAPH_JSDOM to its '
+	skipAll('jsdom is not resolvable here (it IS a devDependency of the repo-root package.json, but is not installed in this environment; install it, or set AID_GRAPH_JSDOM to its '
 		+ 'package entry module to enable this class), so no DOM assertion in this class was run');
 }
 

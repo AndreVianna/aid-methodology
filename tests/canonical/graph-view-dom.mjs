@@ -235,7 +235,7 @@ try {
 	JSDOM = undefined;
 }
 if (typeof JSDOM !== 'function') {
-	skipAll('jsdom is not resolvable here (it is not a repository dependency; set AID_GRAPH_JSDOM to its '
+	skipAll('jsdom is not resolvable here (it IS a devDependency of the repo-root package.json, but is not installed in this environment; install it, or set AID_GRAPH_JSDOM to its '
 		+ 'package entry module to enable this half), so no DOM assertion in this class was run');
 }
 
@@ -864,11 +864,17 @@ globalThis.window = wide.window; globalThis.document = doc;
 				const wroteNull = store.getLens()['focus.depth'] === null;
 				return { ok: wroteFive && wroteNull, why: 'wroteFive=' + wroteFive + ' wroteNull=' + wroteNull };
 			}
-			case 'filter-show-orphans': {
-				const before = store.getLens()['filters.showOrphans'];
+			// The two plain boolean checkboxes. Same gesture, different lens key, so the
+			// key is LOOKED UP rather than the case being copied -- a copied case is how
+			// the second checkbox ends up asserting the first one's key and passing
+			// green without ever reading its own.
+			case 'filter-show-orphans':
+			case 'filter-show-hub': {
+				const lensKey = { 'filter-show-orphans': 'filters.showOrphans', 'filter-show-hub': 'filters.showHub' }[entry.id];
+				const before = store.getLens()[lensKey];
 				el.dispatchEvent(new wide.window.KeyboardEvent('keydown', { key: ' ', bubbles: true }));
 				el.click();
-				return { ok: store.getLens()['filters.showOrphans'] === !before };
+				return { ok: store.getLens()[lensKey] === !before, why: lensKey + ' ' + before + ' -> ' + store.getLens()[lensKey] };
 			}
 			case 'node-select': {
 				// Isolated from the paired select's OWN 'change' handler (D7's first
@@ -917,7 +923,7 @@ globalThis.window = wide.window; globalThis.document = doc;
 	const driveResults = nonViewportEntries.map((e) => ({ entry: e, result: drive(e) }));
 	const driveFailures = driveResults.filter((d) => !d.result || !d.result.ok);
 	reset();
-	ok('GV17b', 'every non-viewport manifest entry (' + nonViewportEntries.length + ' of them, covering every enumerable axis plus the nine authored controls) is driven by keyboard input alone and writes the LensState effect its own handler declares',
+	ok('GV17b', 'every non-viewport manifest entry (' + nonViewportEntries.length + ' of them, covering every enumerable axis plus the ten authored controls) is driven by keyboard input alone and writes the LensState effect its own handler declares',
 		nonViewportEntries.length > 0 && driveFailures.length === 0,
 		driveFailures.map((d) => d.entry.id + (d.result ? ' (' + d.result.why + ')' : ' (no result)')).join(', '));
 

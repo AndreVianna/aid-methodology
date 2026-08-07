@@ -123,7 +123,7 @@
 # DEFAULT run is a mutation case.
 #
 # ANTI-VACUITY (this file's own founding concern, restated as a control): the
-# GX matrix's three cases prove the kept assertions can FAIL against a
+# GX matrix's four cases prove the kept assertions can FAIL against a
 # deliberate defect --
 #   canvas-old-renderer-symbol reproduces the HISTORICAL DEFECT ITSELF (ledger
 #     row 4): reverting ONLY the `new PIXI.Renderer()` construction (never the
@@ -131,6 +131,13 @@
 #     fall into `gcMountUnavailable` -- the exact "capability check passes,
 #     construction always throws" shape this file's whole history is about.
 #     Every mounted-page GC09/GC10/GC13/GC17/GC21bounds clause must go red.
+#   canvas-record-offset-positions displaces the published positions snapshot
+#     from the geometry actually drawn, WITHOUT touching the mount. This is
+#     GC21bounds' own proof, and it is here because the mutation above reds
+#     GC21bounds only through the "no canvas mounted" branch -- which proves
+#     nothing about the bounds arithmetic, and would have let that arithmetic
+#     rot silently. GC21bounds alone must go red; every other kept assertion
+#     reads ids and mark CONTENT, not positions.
 #   canvas-prefix-glyph derives a node's glyph from its identifier PREFIX
 #     instead of the ViewModel -- Q21's proxy class. GC13 must go red,
 #     decisively on the fixture's ext: pair (same prefix, different Kind).
@@ -283,9 +290,10 @@ else
         fi
     }
     if [[ "$SELF_MUTATE" -ne 1 ]]; then
-        echo "Mutation matrix not run. Use --self-mutate to run it (6 extra subprocess spawns: 3 cases x 2 calls each)."
+        echo "Mutation matrix not run. Use --self-mutate to run it (8 extra subprocess spawns: 4 cases x 2 calls each)."
     else
         run_mutation canvas-old-renderer-symbol "GC09,GC10,GC13,GC21bounds"
+        run_mutation canvas-record-offset-positions "GC21bounds"
         run_mutation canvas-prefix-glyph        "GC13"
         run_mutation canvas-tab-stop            "GC09"
     fi

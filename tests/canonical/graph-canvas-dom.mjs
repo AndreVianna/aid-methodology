@@ -46,11 +46,29 @@
 //       correctly, and a blank rectangle on screen, because the layout is
 //       centred on the coordinate origin while PixiJS treats (0,0) as the
 //       buffer's TOP-LEFT CORNER and no translation is ever applied to the
-//       stage. Verified still present on disk (`graph-canvas.js`:628, :988: the
-//       stage's `.position` is never set and `g.position.set(p.x,p.y)` draws the
-//       raw simulation coordinate) -- so this assertion is EXPECTED to fail
-//       against the current, unfixed module, and this file says so rather than
-//       adjusting the check to pass.
+//       stage.
+//
+//       THAT DEFECT IS NOW FIXED, and this assertion was rewritten rather than
+//       deleted. `gcApplyStageTransform` (graph-canvas.js:1379) sets stage.scale
+//       and stage.position from the viewport on every frame; its own doc comment
+//       says of both symptoms "both were live defects BEFORE THIS EXISTED".
+//
+//       The check also had to change shape, because "EVERY visible node lands
+//       inside the buffer" was too strong to be correct even against a fixed
+//       module: a force layout is routinely larger than the viewport at scale 1,
+//       and reaching the rest of it is what pan and zoom are FOR. It reported
+//       3 of 15 outside -- three peripheral nodes, drawn correctly, off-screen
+//       legitimately. It now asserts the symptom it names and the cause it
+//       names: at least one mapped node inside the buffer ("not blank"), and the
+//       CENTROID of the mapped set near the buffer's centre. The centroid is the
+//       sharp part: drop the `size/2` term and the whole set shifts by half the
+//       buffer, so the centroid lands at ~(0,0) whatever the spread. No
+//       node-count threshold, and nothing that punishes a wide layout. What it
+//       can and cannot see is spelled out at the assertion itself, along with
+//       why the old label ("detects the stage transform defect") was never true
+//       of a check that applies the mapping in the test rather than reading the
+//       stage. Non-vacuity comes from the `canvas-record-offset-positions`
+//       mutation in graph-view-mutate.mjs, added with it.
 //
 //   DROPPED, and why each is Layer 2's (tests/ui/) rather than this file's:
 //     * GC01/GC03/GC08 (motion, drag, settle-vs-live comparison) -- proving
@@ -141,8 +159,9 @@ try {
 	JSDOM = undefined;
 }
 if (typeof JSDOM !== 'function') {
-	for (const id of ALL_IDS) skip(id, '(all clauses)', 'jsdom is not resolvable here (it is not a repository '
-		+ 'dependency; set AID_GRAPH_JSDOM to its package entry module to enable this suite)');
+	for (const id of ALL_IDS) skip(id, '(all clauses)', 'jsdom is not resolvable here (it IS a devDependency '
+		+ 'of the repo-root package.json, but is not installed in this environment; install it, or set '
+		+ 'AID_GRAPH_JSDOM to its package entry module to enable this suite)');
 	process.exit(3);
 }
 
@@ -679,31 +698,71 @@ if (!canvas) {
 	s.window.Element.prototype.setAttribute = realSetAttribute;
 
 	// =========================================================================
-	// THE NEW ASSERTION -- every drawn node's position, mapped through the
-	// recorded viewport and the buffer's own width/height by gcLocalPoint's
-	// documented inverse, must land inside the drawing buffer. EXPECTED TO FAIL
-	// against the current module (see the file banner) -- reported as found,
-	// not adjusted to pass.
+	// GC21bounds -- the drawn set actually lands ON the drawing buffer. Every
+	// visibleNodes position is mapped through the recorded viewport and the
+	// buffer's own width/height by gcLocalPoint's documented inverse, then two
+	// things are required of the result:
+	//
+	//   * at least one mark inside the buffer. This is the literal symptom the
+	//     owner reported from a real browser -- mode 'live', a frame counter
+	//     ticking, marks derived correctly, and a BLANK rectangle. Zero inside
+	//     is that state exactly.
+	//   * the centroid of the mapped set near the buffer's centre (within a
+	//     quarter of each dimension). One mark on screen can be an accident of
+	//     where a single node landed; the centroid says the SET as a whole sits
+	//     on the buffer, which is what "the layout is centred on the origin the
+	//     mapping assumes" means. A quarter-dimension tolerance leaves a wide
+	//     layout alone and still catches a set displaced by half a buffer or
+	//     more.
+	//
+	// WHAT THIS CANNOT SEE, stated because the assertion it replaced claimed
+	// otherwise: both clauses read `record.positions` and `record.viewport` and
+	// apply the inverse mapping HERE, in the test. So they check that the record's
+	// geometry and the documented mapping agree that the drawn set lands on the
+	// buffer -- they do NOT check that graph-canvas.js applies that transform to
+	// the PixiJS stage. `gcApplyStageTransform` is not observable headlessly, and
+	// proving a stage moved needs the bitmap, which is why motion and drag are in
+	// the DROPPED list above and live in tests/ui/. The old version of this
+	// assertion was labelled as detecting exactly that stage defect; it never
+	// could, and it failed for an unrelated reason (three peripheral nodes lying
+	// off-screen, which is legal).
+	//
+	// Deliberately NOT "every node is inside", which is what this asserted when
+	// it was written as an expected-failure marker against the pre-fix module. A
+	// force layout is routinely larger than the viewport at scale 1 and reaching
+	// the rest of it is what pan and zoom are for, so "all inside" fails on
+	// correct rendering -- it reported 3 of 15 outside, three peripheral nodes
+	// drawn correctly. A missing position is still a hard failure: that is the
+	// record not describing what it drew, not a node being off-screen.
 	// =========================================================================
 	const buf = { w: canvas.width, h: canvas.height };
 	const vp = rec.viewport;
 	const positions = rec.positions || {};
 	const visibleIds = rec.nodes || [];
-	const outside = [];
+	const mapped = [];
+	const missing = [];
 	for (const id of visibleIds) {
 		const p = positions[id];
-		if (!p) { outside.push(id + ':no-position'); continue; }
-		const sx = p.x * vp.scale + vp.panX + buf.w / 2;
-		const sy = p.y * vp.scale + vp.panY + buf.h / 2;
-		if (sx < 0 || sx > buf.w || sy < 0 || sy > buf.h) outside.push(id);
+		if (!p) { missing.push(id); continue; }
+		mapped.push({
+			sx: p.x * vp.scale + vp.panX + buf.w / 2,
+			sy: p.y * vp.scale + vp.panY + buf.h / 2,
+		});
 	}
-	ok('GC21bounds', 'every visibleNodes id\'s position, mapped through the recorded viewport and the buffer\'s '
-		+ 'own width/height by gcLocalPoint\'s documented inverse (screen = local*scale + pan + dimension/2), '
-		+ 'lands inside the drawing buffer — catches "mode: live, frames ticking, marks derived correctly, and '
-		+ 'nothing on screen" (real defect, found in a real browser; graph-canvas.js:628/:988 on disk never '
-		+ 'translates the stage, so this is EXPECTED to fail against the current module)',
-		outside.length === 0,
-		outside.length === 0 ? ('buffer=' + buf.w + 'x' + buf.h) : (outside.length + '/' + visibleIds.length + ' outside, e.g. ' + outside.slice(0, 3).join(',')));
+	const insideCount = mapped.filter((m) => m.sx >= 0 && m.sx <= buf.w && m.sy >= 0 && m.sy <= buf.h).length;
+	const cx = mapped.length ? mapped.reduce((a, m) => a + m.sx, 0) / mapped.length : NaN;
+	const cy = mapped.length ? mapped.reduce((a, m) => a + m.sy, 0) / mapped.length : NaN;
+	const centred = Math.abs(cx - buf.w / 2) <= buf.w / 4 && Math.abs(cy - buf.h / 2) <= buf.h / 4;
+	ok('GC21bounds', 'the drawn set lands ON the buffer: every visibleNodes position maps through the recorded '
+		+ 'viewport and the buffer\'s own width/height by gcLocalPoint\'s documented inverse (screen = '
+		+ 'local*scale + pan + dimension/2), at least one mark lands inside the buffer, and the centroid of the '
+		+ 'mapped set lands within a quarter-dimension of the buffer centre — catches "mode: live, frames '
+		+ 'ticking, marks derived correctly, and nothing on screen", whose cause is the layout being centred on '
+		+ 'world (0,0) while the buffer\'s origin is its top-left corner',
+		missing.length === 0 && mapped.length > 0 && insideCount > 0 && centred,
+		'buffer=' + buf.w + 'x' + buf.h + ' mapped=' + mapped.length + ' inside=' + insideCount
+			+ ' centroid=' + Math.round(cx) + ',' + Math.round(cy)
+			+ (missing.length ? ' NO-POSITION: ' + missing.slice(0, 3).join(',') : ''));
 }
 
 // ===========================================================================

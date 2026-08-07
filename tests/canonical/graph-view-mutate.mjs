@@ -164,6 +164,22 @@ const MUTATIONS = {
 		defect: 'construction reverted to the v7 symbol PIXI.Renderer, which v8 never defines, while the capability probe still checks WebGLRenderer -- capability passes, construction always throws',
 		expect: 'GC09,GC10,GC13,GC21bounds',
 	},
+	// GC21bounds' OWN anti-vacuity proof. The mount-failure mutation above also
+	// reds GC21bounds, but only via the "no canvas mounted" branch -- it proves
+	// nothing about the bounds arithmetic itself, so on its own it would let that
+	// arithmetic rot silently. This one displaces the recorded geometry without
+	// touching the mount: the snapshot the record publishes no longer describes
+	// where the marks are, so no mark maps onto the buffer and the centroid lands
+	// a hundred thousand units away. Every other kept assertion reads ids and
+	// mark CONTENT rather than positions, so this is expected to red GC21bounds
+	// alone.
+	'canvas-record-offset-positions': {
+		file: 'canvas',
+		from: '	for (const id of nodeIds) { const p = positions.get(id); if (p) out[id] = { x: p.x, y: p.y }; }',
+		to: '	for (const id of nodeIds) { const p = positions.get(id); if (p) out[id] = { x: p.x + 100000, y: p.y + 100000 }; }',
+		defect: 'the published positions snapshot is displaced from the geometry actually drawn, so the record describes marks that are nowhere near the drawing buffer -- the "marks derived correctly and nothing on screen" shape',
+		expect: 'GC21bounds',
+	},
 	// AC-10/AC-S1/GC13/Q21: the founding defect class this whole work traces to --
 	// a mark's content derived from the identifier PREFIX instead of the
 	// ViewModel entry for its own id. The fixture's ext: pair (one web-page, one
