@@ -57,11 +57,11 @@
 #   TV18  | AC-S8, FR-14a, D7a  | TV18 (cites DT22, GT53)                     | headless + DOM
 #   TV19  | task-033 AC 2,4     | TV19 (cites TWC01-06,06b,06c,06c-drain,10) | DOM (graph-table-window-check.mjs)
 #   TV20  | task-033 AC 3,4     | TV20 (cites TWC07,TWC08,TWC09)              | DOM (graph-table-window-check.mjs)
-#   TV21  | task-034 AC 1       | TV21 (cites TFC01,TFC02)                    | DOM (graph-table-files-check.mjs)
+#   TV21  | task-034 AC 1       | TV21 (cites TFC01,TFC02,TFC16)              | DOM (graph-table-files-check.mjs)
 #   TV22  | task-034 AC 3,4     | TV22 (cites TFC03,TFC05,TFC06)              | DOM (graph-table-files-check.mjs)
 #   TV23  | task-034 AC 3,5     | TV23 (cites TFC04,TFC14)                    | DOM (graph-table-files-check.mjs)
-#   TV24  | task-034 AC 5       | TV24 (cites TFC10,TFC11)                    | headless (pure resolveHiddenSelection)
-#   TV25  | task-034 AC 6       | TV25 (cites TFC07,TFC08,TFC09,TFC12)        | DOM (graph-table-files-check.mjs)
+#   TV24  | task-034 AC 5       | TV24 (cites TFC10,TFC11,TFC15)              | headless (pure resolveHiddenSelection)
+#   TV25  | task-034 AC 6, SC 2.4.11 | TV25 (cites TFC07,TFC08,TFC09,TFC12,TFC17) | DOM (graph-table-files-check.mjs)
 #
 # TV16 IS ROUTED, NOT SKIPPED SILENTLY. jsdom implements no layout (stated by
 # graph-view-dom.mjs's own header, and by test-graph-view-shell.sh's "WHAT IS
@@ -368,7 +368,7 @@ else
         fail "table-view: the DOM half ran to completion -- exit $dom_rc, no outcome: $(head -3 "${TMP}/dom.err" | tr '\n' ' ')"
 
     tv_check TV04 "tab stops are exactly the enumerated set at both gate widths, none is a cell or a summary (AC-9,AC-21,NFR-6)" DT15 DT16 DT25
-    tv_check TV05b "aria-sort is on the listed table's ten headers, on no other cell, correct state (AC-9)" DT12 DT13 DT18
+    tv_check TV05b "aria-sort is on the listed table's six headers (task-034 slims ten to six), on no other cell, correct state (AC-9)" DT12 DT13 DT18
     tv_check TV06c "every rendered cell value traces to the ViewModel and to the current store instance (AC-10, GV01)" DT11 DT29
     tv_check TV08b "keyboard-only activation of both control kinds drives the asserted LensState effect (AC-21, D8, GV22)" DT13 DT17
     tv_check TV09b "the region renders complete with no canvas module in the build (AC-S1)" DT26
@@ -417,7 +417,7 @@ else
     set -e
     consume < "${TMP}/files.out"
     files_lines=$(grep -cE '^GV.(PASS|FAIL|SKIP)' "${TMP}/files.out" || true)
-    if [[ "${files_lines:-0}" -ge 10 ]]; then
+    if [[ "${files_lines:-0}" -ge 17 ]]; then
         pass "table-view: the task-034 Files/Concepts/checkbox check reported its assertions ($files_lines outcomes) -- the ground TV21-TV25 cite"
     else
         fail "table-view: the task-034 Files/Concepts/checkbox check reported its assertions -- only ${files_lines:-0} outcome line(s)"
@@ -425,11 +425,11 @@ else
     [[ "$files_rc" -ne 0 && "$files_rc" -ne 3 ]] && [[ "${files_lines:-0}" -eq 0 ]] && \
         fail "table-view: the task-034 Files/Concepts/checkbox check ran to completion -- exit $files_rc, no outcome: $(head -3 "${TMP}/files.err" | tr '\n' ' ')"
 
-    tv_check TV21 "the Files-tree file rows and the Concepts rows partition graphModel.nodes, with sections/facts nested under their document (AC-T34-1)" TFC01 TFC02
+    tv_check TV21 "the Files-tree file rows and the Concepts rows partition graphModel.nodes, with sections/facts nested under their document, and a section naming an absent document (malformed input) is still attached rather than silently dropped (AC-T34-1)" TFC01 TFC02 TFC16
     tv_check TV22 "unchecking a leaf or a folder hides it (and, for a folder, its whole subtree) from the Relations projection while its own row stays present and re-checkable, touching nothing outside the subtree (AC-T34-3, AC-T34-4)" TFC03 TFC05 TFC06
     tv_check TV23 "hiding a node changes nothing about the coverage answer, and the persisted selection round-trips to the same hidden set (AC-T34-3, AC-T34-5)" TFC04 TFC14
-    tv_check TV24 "resolveHiddenSelection drops an unknown id and keeps the rest, and suppresses a selection that would hide every node (AC-T34-5)" TFC10 TFC11
-    tv_check TV25 "the Show checkbox and the collapse toggle are native, keyboard-operable controls; a folder checkbox is indeterminate on a partially-hidden subtree; collapsing uses the native hidden attribute and touches no hidden-id state; no live region or shell control marker is added (AC-T34-6)" TFC07 TFC08 TFC09 TFC12
+    tv_check TV24 "resolveHiddenSelection drops an unknown id and keeps the rest, suppresses a selection that would hide every node, and deduplicates first so a repeated id cannot inflate a false suppression (AC-T34-5)" TFC10 TFC11 TFC15
+    tv_check TV25 "the Show checkbox and the collapse toggle are native, keyboard-operable controls; a folder checkbox is indeterminate on a partially-hidden subtree; collapsing uses the native hidden attribute and touches no hidden-id state; no live region or shell control marker is added; every Files-tree/Concepts control carries scroll-margin-top over both sticky layers (AC-T34-6, SC 2.4.11)" TFC07 TFC08 TFC09 TFC12 TFC17
 
     # -----------------------------------------------------------------------
     # TV16 -- ROUTED, recorded as a SKIP with the reason, never faked.

@@ -58,6 +58,9 @@ const CLASSES = [
 	['TFC11', 'resolveHiddenSelection suppresses (restores nothing) a stored selection that would hide every node, and says why'],
 	['TFC12', 'the Files/Concepts regions create no live region and no data-control/data-group-toggle attribute (the two-region and GV22/GV17 contracts hold with these regions in the page)'],
 	['TFC13', 'no console error was logged across the whole run'],
+	['TFC15', 'resolveHiddenSelection deduplicates a stored selection before measuring it against "hides everything", so a repeated id cannot inflate a false suppression'],
+	['TFC16', 'a section/fact naming a document absent from the model (malformed input) is still attached under the Files tree\'s "unattached" fallback rather than silently dropped'],
+	['TFC17', 'every focusable Files-tree and Concepts-table control carries a numeric scroll-margin-top covering both sticky layers (SC 2.4.11), the same allowance the Relations table and its unlisted region already carry'],
 ];
 
 function skipAll(reason) {
@@ -388,6 +391,66 @@ const suppressCase = M.resolveHiddenSelection(graphModel, everyId);
 ok('TFC11', 'resolveHiddenSelection suppresses a selection that would hide every node',
 	suppressCase.suppressed === true && suppressCase.hiddenIds.length === 0,
 	JSON.stringify(suppressCase));
+
+// ===========================================================================
+// TFC15 -- ledger row 6 (MEDIUM): a raw stored selection is never assumed
+// unique. Repeating ONE real id past the model's own node count used to
+// inflate `kept.length` past `totalNodes` and trip the suppress rule even
+// though 1 of graphModel.nodes.size nodes -- not "every node" -- would
+// actually be hidden. Reproduced at fixture scale (the reviewer's own repro
+// used the live 976-node file; the arithmetic defect is identical here).
+// ===========================================================================
+const duplicateInflated = new Array(graphModel.nodes.size + 5).fill(LEAF);
+const dupCase = M.resolveHiddenSelection(graphModel, duplicateInflated);
+ok('TFC15', 'resolveHiddenSelection deduplicates before measuring "hides everything", so a repeated id cannot inflate a false suppression',
+	dupCase.suppressed === false && dupCase.dropped.length === 0
+	&& dupCase.hiddenIds.length === 1 && dupCase.hiddenIds[0] === LEAF,
+	'stored ' + duplicateInflated.length + ' entries (all the same id) against ' + graphModel.nodes.size + ' real nodes -- ' + JSON.stringify(dupCase));
+
+// ===========================================================================
+// TFC16 -- ledger row 8 (LOW): the "unattached document" fallback in
+// tblBuildFilesTree, kept for the completeness guarantee (acceptance item 1)
+// even against a malformed artifact, was reachable by no fixture at all --
+// exercised here directly against a hand-built graphModel a real
+// parseRelationships() would never emit (a section naming a document with no
+// document node), never against FX.FIXTURE, which is well-formed by
+// construction and cannot reach this branch.
+// ===========================================================================
+const orphanModel = {
+	nodes: new Map([
+		['kb:doc-a', { id: 'kb:doc-a', kind: 'document', kbDoc: 'doc-a' }],
+		['kb:doc-a#s1', { id: 'kb:doc-a#s1', kind: 'section', kbDoc: 'doc-a' }],
+		// doc-b has NO document node of its own -- the malformed case.
+		['kb:doc-b#s1', { id: 'kb:doc-b#s1', kind: 'section', kbDoc: 'doc-b' }],
+	]),
+};
+const orphanTree = M.tblBuildFilesTree(orphanModel);
+const orphanIds = M.tblFlattenTree(orphanTree).filter((r) => r.entry.type === 'file').map((r) => r.entry.node.id);
+ok('TFC16', 'a section naming an absent document is attached under the "unattached" fallback rather than silently dropped',
+	orphanIds.includes('kb:doc-b#s1') && orphanIds.includes('kb:doc-a#s1') && orphanIds.includes('kb:doc-a')
+	&& orphanIds.length === 3 && new Set(orphanIds).size === 3,
+	JSON.stringify(orphanIds));
+
+// ===========================================================================
+// TFC17 -- ledger row 4 (MEDIUM): every focusable Files-tree/Concepts control
+// carries scroll-margin-top, the same SC 2.4.11 allowance tblBodyRow and
+// tblRenderUnlisted already give the Relations table and its unlisted region
+// (graph-view-dom.mjs DT22's own regex). A control with none set would be
+// hideable behind the sticky top bar and the sticky `.tbl th` rule the moment
+// it receives keyboard focus.
+// ===========================================================================
+const marginPx = /^\d+px$/;
+const filesLeafBox = showBox(treeRow(SRC_A));
+const filesToggleBtn = toggle(treeRow('docs/'));
+const conceptRowEl = conceptsTable().querySelector('tbody tr[data-tree-key]');
+const conceptsBox = conceptRowEl ? showBox(conceptRowEl) : null;
+ok('TFC17', 'every focusable Files-tree and Concepts-table control carries a numeric scroll-margin-top',
+	!!filesLeafBox && marginPx.test(filesLeafBox.style.scrollMarginTop)
+	&& !!filesToggleBtn && marginPx.test(filesToggleBtn.style.scrollMarginTop)
+	&& !!conceptsBox && marginPx.test(conceptsBox.style.scrollMarginTop),
+	'files checkbox=' + (filesLeafBox && filesLeafBox.style.scrollMarginTop)
+	+ ' files toggle=' + (filesToggleBtn && filesToggleBtn.style.scrollMarginTop)
+	+ ' concepts checkbox=' + (conceptsBox && conceptsBox.style.scrollMarginTop));
 
 // ===========================================================================
 // TFC12 -- the two-region and GV17/GV22 contracts hold with these regions

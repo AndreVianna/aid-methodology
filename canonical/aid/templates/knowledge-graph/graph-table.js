@@ -161,7 +161,7 @@ const TBL_COLUMNS = Object.freeze([
 	}),
 ]);
 
-/** The whole `sort.column` domain: the ten column tokens plus the file order. */
+/** The whole `sort.column` domain: the six column tokens (task-034 slims ten to six) plus the file order. */
 const TBL_SORT_COLUMNS = Object.freeze(new Set(TBL_COLUMNS.map((column) => column.token).concat([TBL_FILE_ORDER])));
 
 /** The three `aria-sort` values this surface uses, and the caret that echoes
@@ -598,7 +598,7 @@ function tblRenderWindowControls(view, total, shown) {
 	view.loadMoreButton = button;
 }
 
-/** One `<tr>`: a row header for the Source Id and nine cells. */
+/** One `<tr>`: a row header for the Source Id and five cells (task-034 slims ten columns to six). */
 function tblBodyRow(view, record, offset) {
 	const row = el('tr', {
 		'data-row': String(record.row),
@@ -1630,6 +1630,12 @@ function tblRenderFilesTree(view) {
 		+ 'Unchecking a row never changes relationships.md or the coverage counts.',
 	]));
 	table.appendChild(tblNodeTableHead());
+	// Attached to the document BEFORE the offset is measured (the Relations
+	// table's own `tblBodyRow`/`tblRenderUnlisted` precedent) -- a detached
+	// <thead> reports zero height, which would leave every row control below
+	// with no allowance for the sticky header at all (ledger row 4).
+	container.appendChild(el('div', { class: 'tbl-wrap' }, [table]));
+	const offset = TBL_TOP_BAR_PX + tblMeasuredHeight(table.querySelector('thead'));
 
 	const body = el('tbody', {});
 	for (const row of rows) {
@@ -1642,6 +1648,7 @@ function tblRenderFilesTree(view) {
 		const tr = el('tr', { 'data-tree-key': entry.key, 'aria-level': String(row.depth) });
 		if (rowHidden) tr.hidden = true;
 		if (entry.children.length > 0) tr.setAttribute('aria-expanded', view.collapsedKeys.has(entry.key) ? 'false' : 'true');
+		tblScrollMargin(tr, offset);
 
 		tr.appendChild(el('td', {}, [tblShowCheckbox(view, entry, label)]));
 		tr.appendChild(el('th', { scope: 'row' }, tblTreeNameCell(view, row, label, shortLabel)));
@@ -1657,10 +1664,10 @@ function tblRenderFilesTree(view) {
 			tr.appendChild(el('td', { text: tblProvenanceText(provenance, entry.node.id) }));
 			tr.appendChild(el('td', { text: coverageClass ? TBL_NODE_BADGES[coverageClass].text : 'ok' }));
 		}
+		for (const control of tr.querySelectorAll('button, input')) tblScrollMargin(control, offset);
 		body.appendChild(tr);
 	}
 	table.appendChild(body);
-	container.appendChild(el('div', { class: 'tbl-wrap' }, [table]));
 }
 
 /** The Concepts table: a FLAT list of every `concept` node -- 32 today -- with
@@ -1690,6 +1697,10 @@ function tblRenderConcepts(view) {
 		+ 'Unchecking a row never changes relationships.md or the coverage counts.',
 	]));
 	table.appendChild(tblNodeTableHead());
+	// Attached before the offset is measured -- see tblRenderFilesTree's own
+	// note; the same zero-height-while-detached trap applies here (ledger row 4).
+	container.appendChild(el('div', { class: 'tbl-wrap' }, [table]));
+	const offset = TBL_TOP_BAR_PX + tblMeasuredHeight(table.querySelector('thead'));
 
 	const body = el('tbody', {});
 	for (const node of concepts) {
@@ -1699,16 +1710,17 @@ function tblRenderConcepts(view) {
 		const coverageClass = tblStaticCoverageClass(kbUnbackedSet, artifactGapSet, node.id);
 
 		const tr = el('tr', { 'data-tree-key': node.id });
+		tblScrollMargin(tr, offset);
 		tr.appendChild(el('td', {}, [tblShowCheckbox(view, entry, label)]));
 		tr.appendChild(el('th', { scope: 'row' }, tblTreeNameText(label, shortLabel, view.narrow)));
 		tr.appendChild(el('td', {}, tblTreeIdCell(node, coverageClass)));
 		tr.appendChild(el('td', {}, tblKindCell(tblKindOf(node))));
 		tr.appendChild(el('td', { text: tblProvenanceText(provenance, node.id) }));
 		tr.appendChild(el('td', { text: coverageClass ? TBL_NODE_BADGES[coverageClass].text : 'ok' }));
+		for (const control of tr.querySelectorAll('button, input')) tblScrollMargin(control, offset);
 		body.appendChild(tr);
 	}
 	table.appendChild(body);
-	container.appendChild(el('div', { class: 'tbl-wrap' }, [table]));
 }
 
 /**

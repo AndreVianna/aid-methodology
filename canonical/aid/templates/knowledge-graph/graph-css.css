@@ -613,9 +613,12 @@ html[data-theme="dark"]:root {
 
 /* ---------- The relationship table ----------
 
-   THE TABLE SCROLLS SIDEWAYS RATHER THAN COMPRESSING. Ten columns of ids,
-   names and relation phrases do not fit a viewport, and the shared
-   `table.tbl { width: 100% }` made them try: every column was squeezed to a
+   THE TABLE SCROLLS SIDEWAYS RATHER THAN COMPRESSING. Columns of ids and
+   relation phrases do not fit a viewport -- there were ten when this was
+   written and task-034 slimmed them to six, which narrows the problem without
+   removing it, since two full ids and two relation phrases still outrun a
+   viewport. The shared `table.tbl { width: 100% }` made them try: every column
+   was squeezed to a
    share of the available width, so `wcag-contrast-figure` broke across lines,
    a row's Select control was pushed under its own name, and the column widths
    bore no relation to what the columns held.
@@ -679,10 +682,22 @@ html[data-theme="dark"]:root {
 
 /* A row header stops sticking vertically and starts sticking HORIZONTALLY,
    which is what a table this wide actually wants: the Source Id column stays
-   in view while the reader scrolls right through the other nine. Needs an
-   opaque background, or the cells it scrolls over would show through it. */
+   in view while the reader scrolls right through the rest. Needs an opaque
+   background, or the cells it scrolls over would show through it.
+
+   EVERY table on these pages needs this, and the list below is why the rule is
+   written per-table rather than as a bare `.tbl tbody th`: the two tables added
+   by task-034 (`data-files-table`, `data-concepts-table`) carry `class="tbl"`
+   and so inherited the shared `.tbl th { position: sticky; top: 0 }` with NO
+   override -- every row header in the Files tree would have stuck to the top of
+   the scroll box and stacked over the column headers. That is the exact defect
+   this comment block was written to warn about, reproduced by the next table to
+   arrive, which is the argument for keeping this list complete rather than
+   assuming a new table is covered. */
 [data-relationship-table] tbody th,
-[data-unlisted-table] tbody th {
+[data-unlisted-table] tbody th,
+[data-files-table] tbody th,
+[data-concepts-table] tbody th {
 	top: auto;
 	left: 0;
 	z-index: 2;

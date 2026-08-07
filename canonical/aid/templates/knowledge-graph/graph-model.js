@@ -2274,6 +2274,17 @@ function writeHiddenSelection(ids) {
  *   3. an empty or absent stored selection is not a restore at all -- the
  *      common case, a page with nothing ever hidden on it.
  *
+ * A FOURTH rule, found by review rather than by DETAIL.md, and just as load-
+ * bearing as the three above: `kept` is DEDUPLICATED before it is measured
+ * against `totalNodes`. A raw stored array is never assumed unique -- it is
+ * whatever `JSON.parse` handed back from storage, and a duplicate real id
+ * inflates the RAW count past the model's node count while the number of
+ * DISTINCT ids hidden stays far short of "every node". Comparing the raw
+ * length would suppress a selection that does not actually hide everything,
+ * discarding the reader's whole selection and telling them it covered
+ * everything when it did not -- reproduced against the live, real,
+ * 976-node `relationships.md` with a single id repeated 976 times.
+ *
  * @param {object} graphModel
  * @param {string[]|null} storedIds
  * @returns {{hiddenIds: string[], dropped: string[], suppressed: boolean}}
@@ -2282,17 +2293,18 @@ function resolveHiddenSelection(graphModel, storedIds) {
 	if (!Array.isArray(storedIds) || storedIds.length === 0) {
 		return { hiddenIds: [], dropped: [], suppressed: false };
 	}
-	const kept = [];
+	const kept = new Set();
 	const dropped = [];
 	for (const id of storedIds) {
-		if (graphModel.nodes.has(id)) kept.push(id);
+		if (graphModel.nodes.has(id)) kept.add(id);
 		else dropped.push(id);
 	}
+	const hiddenIds = Array.from(kept);
 	const totalNodes = graphModel.nodes.size;
-	if (totalNodes > 0 && kept.length >= totalNodes) {
+	if (totalNodes > 0 && hiddenIds.length >= totalNodes) {
 		return { hiddenIds: [], dropped: dropped, suppressed: true };
 	}
-	return { hiddenIds: kept, dropped: dropped, suppressed: false };
+	return { hiddenIds: hiddenIds, dropped: dropped, suppressed: false };
 }
 
 

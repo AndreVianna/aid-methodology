@@ -813,13 +813,36 @@ function reportConflicts(root, graphModel) {
  * never had one -- `setLens` with an empty list would still be a notification,
  * and a first paint that notifies for nothing is how a "why did this re-render"
  * defect starts.
+ *
+ * THE LENS WRITE AND THE NOTICE ARE SPLIT ACROSS TWO FUNCTIONS ON PURPOSE, and
+ * the reason is a defect a reviewer found in the first version of this code. The
+ * notice goes into `[data-conflicts]`, and `reportConflicts` -- which runs LATER
+ * in `mountShell` -- opens with an unconditional `clear(host)` on that same
+ * element. So a single function doing both wrote a notice that was erased eight
+ * lines later, and the suppressed case reported nothing at all on the graph page
+ * while every test still passed, because no test drove the notice through
+ * `mountShell` at all. The lens has to be written EARLY (before the renderings
+ * mount, so the first projection is already filtered) and the notice LATE (after
+ * anything that clears its host). Those are two different moments, so they are
+ * two different calls, and neither can be moved next to the other without
+ * reintroducing one half of the bug.
+ *
+ * @returns {{hiddenIds: string[], dropped: string[], suppressed: boolean}} the
+ *          resolution, for `reportSuppressedHiddenSelection` to report later
  */
-function restoreHiddenSelection(root, store, graphModel) {
+function restoreHiddenSelection(store, graphModel) {
 	const resolved = resolveHiddenSelection(graphModel, readHiddenSelection());
 	if (resolved.hiddenIds.length > 0) {
 		store.setLens({ 'filters.hiddenIds': resolved.hiddenIds });
 	}
-	if (!resolved.suppressed) return;
+	return resolved;
+}
+
+/** The second half of the restore: say so when a stored selection was refused.
+ *  MUST be called after `reportConflicts`, which clears this same host -- see
+ *  `restoreHiddenSelection`'s note on why the two are separate. */
+function reportSuppressedHiddenSelection(root, resolved) {
+	if (!resolved || !resolved.suppressed) return;
 	const host = root.querySelector('[data-conflicts]');
 	if (!host) return;
 	host.appendChild(el('div', { class: 'callout warn' }, [
@@ -934,7 +957,10 @@ function mountShell(scope) {
 
 	const store = createStore(graphModel, INITIAL_LENS, detectPreferences());
 	watchPreferences(store);
-	restoreHiddenSelection(root, store, graphModel);
+	// Early, so the first projection is already filtered. The NOTICE this may owe
+	// is deliberately not written here -- `reportConflicts` below clears the host
+	// it would go into. See `restoreHiddenSelection`.
+	const restoredSelection = restoreHiddenSelection(store, graphModel);
 
 	const manifest = buildControlManifest(graphModel);
 	shellState.manifest = manifest;
@@ -943,6 +969,8 @@ function mountShell(scope) {
 
 	reportIntegrity(root, graphModel);
 	reportConflicts(root, graphModel);
+	// AFTER reportConflicts, which opens with an unconditional clear of this host.
+	reportSuppressedHiddenSelection(root, restoredSelection);
 
 	const controls = mountControls({ root: root, store: store, graphModel: graphModel, manifest: manifest });
 	renderLegend(root, graphModel);

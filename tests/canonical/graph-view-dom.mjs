@@ -83,8 +83,8 @@ const workDir = process.argv[4];
  *  rather than as a single line that hides how much did not run. */
 const CLASSES = [
 	['DT10', 'the table page boots into a document with no thrown error and no console error'],
-	['DT11', 'the rendered region is a real table: caption, thead, tbody, ten column headers, a row header per row'],
-	['DT12', 'aria-sort is on the listed table\'s ten column headers and on no other cell'],
+	['DT11', 'the rendered region is a real table: caption, thead, tbody, six column headers (task-034 slims ten to six), a row header per row'],
+	['DT12', 'aria-sort is on the listed table\'s six column headers and on no other cell'],
 	['DT13', 'the region creates no third live region and carries no shell control attribute'],
 	['DT14', 'the caption states the drawn counts, the lens summary and both links, with their targets present'],
 	['DT15', 'the skip link is the region\'s first element and its target is focusable'],
@@ -108,6 +108,7 @@ const CLASSES = [
 	['GV17d', 'a data-group-toggle element is focusable and keyboard-operable'],
 	['GV22b', 'exactly one data-group-toggle element exists per foldable group and none for any other, before and after an expansion'],
 	['GV24', 'after each of the four presets, every named control class stays present and enabled, and a write to each still changes LensState'],
+	['GV29', 'a stored selection naming every node survives a full mountShell() boot as a VISIBLE notice in [data-conflicts], not merely as resolveHiddenSelection\'s own suppressed:true'],
 ];
 
 function skipAll(reason) {
@@ -1084,6 +1085,80 @@ globalThis.window = wide.window; globalThis.document = doc;
 	ok('GV24', 'after each of the four presets, the grouping select, the density range and every filters.categories/kinds/provenance control stays present and enabled, and a write to one of each kind still changes LensState (the viewport entries are excluded because there are none -- see GV17c)',
 		perPreset.length === 4 && failing24.length === 0,
 		JSON.stringify(perPreset));
+}
+
+// ===========================================================================
+// GV29 -- ledger row 1's fix, proven past the pure function. `resolveHiddenSelection`
+// returning `suppressed: true` (TFC11's own subject) is necessary but not
+// sufficient: the reviewer's first-pass finding was that `restoreHiddenSelection`'s
+// notice into `[data-conflicts]` was written, then unconditionally erased eight
+// lines later by `reportConflicts`'s own `clear(host)` on the SAME element --
+// so the graph page reported NOTHING for a suppressed selection while every
+// existing check (which only ever drove the pure function in isolation) still
+// passed. This is the one check that drives the defect's own reproduction
+// route -- a REAL localStorage, seeded before a REAL `mountShell()` boot --
+// past the point the bug lived, past `reportConflicts`, to the notice a reader
+// would actually see.
+//
+// Needs a document booted at an `http://` URL: jsdom throws SecurityError on
+// ANY `localStorage` access under `file://`'s opaque origin (the same
+// limitation graph-table-files-check.mjs's own header documents), so this
+// section boots its OWN fresh document rather than reusing `wide` (booted at
+// a `file://` path for the rest of this file's classes) and restores every
+// global it touches afterwards -- the same discipline `mountFresh` and the
+// width-crossing sections already follow.
+// ===========================================================================
+{
+	const priorLocalStorage = globalThis.localStorage;
+	const priorLocation = globalThis.location;
+
+	const suppressDom = new JSDOM(graphHtml, {
+		runScripts: 'dangerously', pretendToBeVisual: true,
+		url: 'http://localhost/project/.aid/knowledge/graph.html',
+	});
+	globalThis.window = suppressDom.window;
+	globalThis.document = suppressDom.window.document;
+	globalThis.localStorage = suppressDom.window.localStorage;
+	globalThis.location = suppressDom.window.location;
+	globalThis.Event = suppressDom.window.Event;
+	globalThis.KeyboardEvent = suppressDom.window.KeyboardEvent;
+	globalThis.MouseEvent = suppressDom.window.MouseEvent;
+	globalThis.getComputedStyle = suppressDom.window.getComputedStyle.bind(suppressDom.window);
+	suppressDom.window.matchMedia = () => ({
+		matches: false, media: '',
+		addEventListener() {}, removeEventListener() {}, addListener() {}, removeListener() {},
+	});
+
+	// Every real node id THIS fixture's graph.html carries -- read from the
+	// already-booted `wide` store rather than re-parsed, since both documents
+	// embed the identical FX.FIXTURE payload. The actual "hide everything"
+	// case, not a stand-in for it.
+	const everyRealId = Array.from(store.getGraphModel().nodes.keys());
+	suppressDom.window.localStorage.setItem(
+		M.hiddenSelectionKey(suppressDom.window.location.pathname),
+		JSON.stringify(everyRealId));
+
+	const realConsoleError29 = console.error;
+	console.error = () => {};
+	const suppressStore = M.mountShell(suppressDom.window.document);
+	console.error = realConsoleError29;
+
+	const conflictsHost = suppressDom.window.document.querySelector('[data-conflicts]');
+	const notice = conflictsHost
+		? Array.from(conflictsHost.querySelectorAll('h4'))
+			.find((h) => h.textContent === 'A saved selection would have hidden everything, so nothing was hidden')
+		: null;
+	const hiddenIdsAfter = suppressStore ? suppressStore.getLens()['filters.hiddenIds'] : undefined;
+
+	ok('GV29', 'a stored selection naming every node survives a full mountShell() boot as a visible notice in [data-conflicts] (ledger row 1), and filters.hiddenIds stays empty -- nothing was actually hidden',
+		!!suppressStore && !!notice && Array.isArray(hiddenIdsAfter) && hiddenIdsAfter.length === 0,
+		'notice ' + (notice ? 'present' : 'ABSENT') + ', hiddenIds ' + JSON.stringify(hiddenIdsAfter));
+
+	globalThis.localStorage = priorLocalStorage;
+	globalThis.location = priorLocation;
+	globalThis.window = wide.window;
+	globalThis.document = doc;
+	globalThis.getComputedStyle = wide.window.getComputedStyle.bind(wide.window);
 }
 
 // ---------------------------------------------------------------------------
