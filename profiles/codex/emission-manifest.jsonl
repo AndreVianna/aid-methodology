@@ -272,7 +272,7 @@
 {"dst": ".codex/skills/aid-document-standard/SKILL.md", "profile": "codex", "sha256": "e2526d52a69e8ade7dd7ac03165349b5e000a1b4ab92ada27768ec014fe29d14", "src": "canonical/skills/aid-document-standard/SKILL.md"}
 {"dst": ".codex/skills/aid-document-tutorial/SKILL.md", "profile": "codex", "sha256": "3928a1c1b79b479971416ba74968ae2ec3e5b952f168f28049351b48bb3b36f8", "src": "canonical/skills/aid-document-tutorial/SKILL.md"}
 {"dst": ".codex/skills/aid-document/SKILL.md", "profile": "codex", "sha256": "6fb36d7d018aca1e7046d616f42131ff56a492041cb0f9e968a3f6b75158a90d", "src": "canonical/skills/aid-document/SKILL.md"}
-{"dst": ".codex/skills/aid-execute/SKILL.md", "profile": "codex", "sha256": "000c7074fa2a7b9937024d6cc108e19435130be7ade524fef99e734981f0d08f", "src": "canonical/skills/aid-execute/SKILL.md"}
+{"dst": ".codex/skills/aid-execute/SKILL.md", "profile": "codex", "sha256": "54bb477beae23fb1635ebaec0fa4ec68120e3194be4714ef13afae776d2e8a83", "src": "canonical/skills/aid-execute/SKILL.md"}
 {"dst": ".codex/skills/aid-execute/references/reviewer-brief.md", "profile": "codex", "sha256": "1635040c00c687392ae7091344163fcc8adfcf88f89eff20904b227166cd3d0c", "src": "canonical/skills/aid-execute/references/reviewer-brief.md"}
 {"dst": ".codex/skills/aid-execute/references/reviewer-guide.md", "profile": "codex", "sha256": "7827b5132ccf3a33d78a372e9a224773d7440cd6a176e6862abb77359a85510f", "src": "canonical/skills/aid-execute/references/reviewer-guide.md"}
 {"dst": ".codex/skills/aid-execute/references/state-delivery-gate.md", "profile": "codex", "sha256": "68c33bee197b9aae4c43f44615c4b86e794c444c59c5243537c1d5ca1e284c8f", "src": "canonical/skills/aid-execute/references/state-delivery-gate.md"}
