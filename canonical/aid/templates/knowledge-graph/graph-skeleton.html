@@ -198,8 +198,15 @@
 			     The glyph row is spread on a 95px pitch by translating each shape
 			     rather than by recomputing its points, so the shapes themselves stay
 			     exactly as authored and only their placement changes. -->
-			<svg viewBox="0 0 720 196" width="720" height="196" role="img"
-			     aria-label="The seven node shapes, one per node kind; the four line styles used for relationship categories; and the two coverage-gap asterisks. Each is named in words in the list below this diagram.">
+			<!-- task-035 widened this from 720 to 815 for the eighth glyph. Derived by the
+			     rule the comment above states rather than by eye: the row's pitch is 95px,
+			     so an eighth centre sits at x=705, and its label "project" is 7 characters
+			     at ~5.5px = ~39px, half of which is ~20px, ending at ~725. The old 720
+			     viewBox would have clipped it. 815 also clears the right column's widest
+			     label ("no arrowhead - reads the same both ways", ~38 characters from
+			     x=484, ending at ~693), which the old width very nearly touched. -->
+			<svg viewBox="0 0 815 196" width="815" height="196" role="img"
+			     aria-label="The seven node shapes, one per node kind, plus the star that marks the project node; the four line styles used for relationship categories; and the two coverage-gap asterisks. Each is named in words in the list below this diagram.">
 				<g stroke="none">
 					<g transform="translate(10,0)"><circle cx="30" cy="26" r="11" fill="var(--gk-document)"/></g>
 					<g transform="translate(36,0)"><rect x="88" y="15" width="22" height="22" fill="var(--gk-section)"/></g>
@@ -208,6 +215,17 @@
 					<g transform="translate(131,0)"><polygon points="283,15 295,15 301,26 295,37 283,37 277,26" fill="var(--gk-source-artifact)"/></g>
 					<g transform="translate(166,0)"><polygon points="349,15 360,23 356,36 342,36 338,23" fill="var(--gk-image)"/></g>
 					<g transform="translate(200,0)"><circle cx="410" cy="26" r="11" fill="none" stroke="var(--gk-web-page)" stroke-width="5"/></g>
+					<!-- The project hub (task-035). Points computed by the same rule
+					     `gcStarPoints` uses on the canvas -- five outer vertices at an
+					     11px radius alternating with five inner ones at 11 * 0.5, first
+					     vertex straight up -- so the legend's star and the drawn star are
+					     the same shape rather than two hand-drawn approximations. Its
+					     outer radius matches the seven glyphs above it: the canvas's
+					     GC_STAR_MASS_FACTOR corrects for a star's lower fill against
+					     marks whose size carries DEGREE, and nothing in this row carries
+					     degree, so applying it here would make the legend's star disagree
+					     with every other glyph in the row for no reason. -->
+					<g transform="translate(200,0)"><polygon points="505.00,15.00 508.23,21.55 515.46,22.60 510.23,27.70 511.47,34.90 505.00,31.50 498.53,34.90 499.77,27.70 494.54,22.60 501.77,21.55" fill="var(--gk-project)"/></g>
 				</g>
 				<g font-size="11" fill="var(--text-muted)" text-anchor="middle">
 					<text x="40" y="54">document</text>
@@ -217,6 +235,7 @@
 					<text x="420" y="54">artifact</text>
 					<text x="515" y="54">image</text>
 					<text x="610" y="54">web page</text>
+					<text x="705" y="54">project</text>
 				</g>
 				<g stroke-width="3" fill="none">
 					<line x1="20" y1="84" x2="120" y2="84" stroke="var(--gc-structure)"/>
@@ -258,9 +277,38 @@
 			</svg>
 			<p class="caption">Node kind by colour and shape; relationship category by colour and line
 			   style; direction by an arrowhead, whose absence is itself the signal; and a coverage
-			   gap by an asterisk beside the node, red being the more severe.</p>
+			   gap by an asterisk beside the node, red being the more severe. The star is the
+			   project itself — one node joined to every Knowledge Base document and every file at
+			   the repository root, and the point a hop limit counts from when nothing is
+			   selected.</p>
 		</div>
-		<div data-legend></div>
+		<!-- THE TEXT LEGEND IS COLLAPSED, NOT REMOVED, and the owner's finding is why it
+		     moved at all: "the legend became redundant with the full explanation of each
+		     item just below it". Two blocks stated the same encoding one under the other,
+		     and both of them are load-bearing -- for DIFFERENT reasons, which is what
+		     rules out deleting either.
+
+		     The diagram above discharges feature-011's PV16 (AC-9): under
+		     `--profile graph` the collected visual set must be non-empty and must contain
+		     this `.diagram-box` with NON-ZERO width and height. A page with no authored
+		     visual collects nothing and the whole T1-T4 gate passes vacuously. So the
+		     diagram has to stay VISIBLE -- inside a closed disclosure it would measure
+		     0x0 and fail T3 by the gate's own rule. That decides which of the two moves.
+
+		     The list below discharges SC 1.1.1 for the diagram, and the diagram says so
+		     itself: its `aria-label` ends "Each is named in words in the list below this
+		     diagram." Deleting the list would make that sentence a lie and leave the SVG
+		     without its text alternative.
+
+		     A closed `<details>` keeps that alternative AVAILABLE -- in the accessibility
+		     tree, keyboard reachable, one Enter away -- which is what SC 1.1.1 asks for;
+		     it does not ask for it to be permanently on screen. The list is also not a
+		     `.diagram-box`, an `.infographic` or a top-level `<svg>`, so the visual
+		     collector never looks inside this disclosure at all. -->
+		<details class="legend-detail">
+			<summary>Every symbol in words</summary>
+			<div data-legend></div>
+		</details>
 	</section>
 
 	<section class="coverage-panel" aria-label="Coverage report">

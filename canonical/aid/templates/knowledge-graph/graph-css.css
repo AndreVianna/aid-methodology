@@ -247,6 +247,41 @@ html[data-theme="dark"]:root {
 
 .controls-panel[open] > summary::before { transform: rotate(90deg); }
 
+/* The collapsed text legend (task-035). Selector-listed alongside
+   `.controls-panel` rather than given rules of its own, so the two disclosures on
+   this page cannot drift apart in appearance or in behaviour -- and so the
+   reduced-motion, forced-colours and print blocks below reach it through the same
+   lines that already reach the controls panel. */
+.legend-detail {
+	margin-top: 0.75rem;
+	background: var(--bg-elev);
+	border: 1px solid var(--border);
+	border-radius: var(--radius);
+}
+
+.legend-detail > summary {
+	padding: 0.7rem 1rem;
+	font-weight: 600;
+	cursor: pointer;
+	list-style: none;
+	display: flex;
+	align-items: center;
+	gap: 0.5rem;
+}
+
+.legend-detail > summary::-webkit-details-marker { display: none; }
+
+.legend-detail > summary::before {
+	content: "\25B6";
+	font-size: 0.7em;
+	color: var(--text-dim);
+	transition: transform 0.15s ease;
+}
+
+.legend-detail[open] > summary::before { transform: rotate(90deg); }
+
+.legend-detail > [data-legend] { padding: 0 1rem 1rem; }
+
 .controls-grid {
 	display: grid;
 	grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
@@ -921,6 +956,7 @@ html[data-theme="dark"]:root {
    from the store rather than from a media query. */
 @media (prefers-reduced-motion: reduce) {
 	.controls-panel > summary::before,
+	.legend-detail > summary::before,
 	.group-toggle::before {
 		transition: none;
 	}
@@ -938,6 +974,7 @@ html[data-theme="dark"]:root {
 @media (forced-colors: active) {
 	.lens-bar,
 	.controls-panel,
+	.legend-detail,
 	.filter-axis,
 	.graph-surface,
 	.node-detail,

@@ -576,6 +576,18 @@ function renderLegend(root, graphModel) {
 		])]));
 	}
 
+	// The project hub (task-035), appended to the SAME list as the seven kinds
+	// rather than given a section of its own. It IS a node the reader sees and has
+	// to be able to name, and a reader looking up "what is that star" looks under
+	// node shapes. It is last and it says what it is for, so nothing about it reads
+	// as an eighth member of the Kind enum -- which it deliberately is not.
+	kinds.appendChild(el('dd', {}, [el('span', { class: 'legend-row' }, [
+		el('span', { class: 'filter-glyph k-' + slug(HUB_KIND), 'aria-hidden': 'true', text: HUB_ENCODING.glyph }),
+		HUB_KIND + ' — ' + HUB_ENCODING.shapeLabel + ', the project itself; joined to every '
+			+ 'Knowledge Base document and every file at the repository root, and the point a hop '
+			+ 'limit counts from when no node is selected',
+	])]));
+
 	const categories = el('dl', {});
 	categories.appendChild(el('dt', { text: 'Relationship category — colour and line style' }));
 	for (const category of graphModel.categories) {
