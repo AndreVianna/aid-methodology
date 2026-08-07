@@ -64,7 +64,7 @@ fi
 
 # Check 5: Node.js available (required for visual-fidelity validation via validate-visuals.mjs)
 # The summarize validators (validate-visuals.mjs, contrast-check.mjs) declare
-# "engines": { "node": ">=20" } in canonical/aid/scripts/summarize/package.json
+# "engines": { "node": ">=20" } in the repository-root package.json
 # alongside Playwright 1.61.1. Node 18/19 is insufficient and the visual gate
 # will fail or silently degrade on those versions.
 if ! command -v node >/dev/null 2>&1; then

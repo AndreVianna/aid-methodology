@@ -71,14 +71,14 @@ Product version: **2.0.6** (`VERSION`; npm and PyPI wrappers both at `2.0.6`). C
 | **Bash / Shell** | POSIX bash | Installers, CLI (`bin/aid`), install-core (`lib/aid-install-core.sh`), phase scripts, test suites — run `find . -name '*.sh' \| wc -l` for the live count. |
 | **PowerShell** | **Windows PowerShell 5.1+** (compat floor) | Windows installer/CLI parity (`install.ps1`, `lib/AidInstallCore.psm1`, `bin/aid.ps1`). CONFIRMED `README.md` (search: "PowerShell 5.1+"). |
 | **Python** | **>=3.8** (PyPI); CI pins **3.11** | The profile renderer, dashboard reader, PyPI wrapper. CONFIRMED `packages/pypi/pyproject.toml` (search: "requires-python = \">=3.8\"") and `.github/workflows/test.yml` (search: "python-version: '3.11'"). |
-| **JavaScript (Node)** | **>=18** (npm wrapper); **>=20** (summarize validators); CI pins **20** | npm wrapper, dashboard Node server/reader (`reader.mjs`). The summarize validators (`validate-visuals.mjs`, `contrast-check.mjs`) require >=20 because Playwright 1.61.1 declared in their `package.json` does not support Node 18/19. CONFIRMED `packages/npm/package.json` (search: "node\": \">=18") and `canonical/aid/scripts/summarize/package.json` (search: "\"node\": \">=20\"") and `.github/workflows/test.yml` (search: "node-version: '20'"). |
+| **JavaScript (Node)** | **>=18** (npm wrapper); **>=20** (summarize validators); CI pins **20** | npm wrapper, dashboard Node server/reader (`reader.mjs`). The summarize validators (`validate-visuals.mjs`, `contrast-check.mjs`) require >=20 because Playwright 1.61.1 declared in their `package.json` does not support Node 18/19. CONFIRMED `packages/npm/package.json` (search: "node\": \">=18") and the repository-root `package.json` (search: "\"node\": \">=20\"") and `.github/workflows/test.yml` (search: "node-version: '20'"). |
 | **TypeScript** | **6.0.3** (site dev dep) | The Astro website only. CONFIRMED `site/package.json` (search: "typescript"). |
 
 **Per-context Node version note:** the npm CLI wrapper requires Node >=18; the summarize validators
 (`validate-visuals.mjs` etc.) require Node >=20 (Playwright 1.61.1 floor — set by the preflight
 gate in `canonical/aid/scripts/summarize/summarize-preflight.sh`); the site requires Node >=22.12.0;
 CI's canonical suites pin Node 20. CONFIRMED `site/package.json` (search: "node\": \">=22.12.0")
-and `canonical/aid/scripts/summarize/package.json` (search: "\"node\": \">=20\"").
+and the repository-root `package.json` (search: "\"node\": \">=20\"").
 
 Target OS: cross-platform (Linux/macOS via Bash, Windows via PowerShell). CONFIRMED by the
 dual installer set and the Windows-only test lane (`tests/windows/`).
@@ -238,7 +238,7 @@ imports needed at runtime) — CONFIRMED by the empty PyPI dependency set and
 |------|---------|--------|------|
 | Windows PowerShell | 5.1 floor | OK (intentional) | Shipped PS MUST stay 5.1-compatible; a dedicated CI lane + AST lint guard this. |
 | Python | >=3.8 (CI 3.11) | OK | Wide floor for broad adopter reach. |
-| Node | >=18 (CLI), >=20 (summarize validators), >=22.12 (site), 20 (CI) | OK but split | **Four** different Node floors across contexts — verify the right one per task. CONFIRMED `canonical/aid/scripts/summarize/package.json` (search: "\"node\": \">=20\""). |
+| Node | >=18 (CLI), >=20 (summarize validators), >=22.12 (site), 20 (CI) | OK but split | **Four** different Node floors across contexts — verify the right one per task. CONFIRMED the repository-root `package.json` (search: "\"node\": \">=20\""). |
 | PyPI classifier | "4 - Beta" | Informational | `pyproject.toml` declares Beta development status. |
 
 No EOL or known-CVE runtime dependency was observed (the CLI ships none). See

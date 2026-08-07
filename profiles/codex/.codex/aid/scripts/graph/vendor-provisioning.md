@@ -54,7 +54,7 @@ existed was that nothing in this repository watched a JavaScript dependency at a
 tree (eleven further packages, all leaf utilities except `gifuct-js`, which pulls in
 `js-binary-schema-parser`), each entry's `resolved` and `integrity` read from
 `registry.npmjs.org` — the same shape as the Playwright manifest precedent
-(`.codex/aid/scripts/summarize/package.json` + its lock file), and the same reason: a
+(the Playwright devDependency, now also at the repo root), and the same reason: a
 reproducible resolution record, not an install anyone runs routinely. **No `node_modules/`
 directory ever ships** — `render.py`'s emission walk already excludes any `node_modules` path
 component at any depth (the general P2 guarantee every canonical root gets), so this needs no
