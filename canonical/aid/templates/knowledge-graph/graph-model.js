@@ -103,6 +103,142 @@ const KIND_PREFIXES = Object.freeze({
 	'web-page':        Object.freeze(['ext']),
 });
 
+/* ==========================================================================
+ * The project hub (task-035)
+ * ==========================================================================
+ *
+ * ONE SYNTHETIC NODE STANDING FOR THE PROJECT ITSELF, attached to the documents
+ * that are its entry points. It exists for one reason the owner named directly:
+ * a hop limit is measured from somewhere, and with nothing selected there was
+ * nowhere to measure from, so the depth control did nothing at all until the
+ * reader clicked a node. The hub is that default origin.
+ *
+ * WHY IT IS NOT AN EIGHTH KIND IN `KIND_ENCODING`. That constant is bound to
+ * `relationship-schema.yml`'s `kinds:` list -- keys and ORDER -- by a test that
+ * reads the schema off disk, and the schema is the AUTHORING vocabulary shared
+ * with `validate-relationships.sh` and `build-relationships.sh`. Adding a kind
+ * there would tell the validator to accept authored `project:` rows and would
+ * make the emitter's contract an eight-kind one, which is a pipeline change and
+ * not a view change. The hub is synthesised BY THE VIEW, from nodes the artifact
+ * already contains, so it is described by view-only constants and stays out of
+ * that lockstep. When cross-project edges become real authored rows, THAT is the
+ * change that belongs in the schema -- and this node is the shape they attach to.
+ *
+ * WHAT THE HUB'S EDGES DELIBERATELY DO NOT DO. They are published as their own
+ * `hubEdges` collection and never merged into `visibleEdges`, so they:
+ *   - do not count toward a node's drawn degree (every root and KB document
+ *     would otherwise gain a size step for a relationship nobody recorded),
+ *   - never reach the Relations table (which lists recorded rows and would
+ *     otherwise grow tens of rows that cite no source),
+ *   - carry no `provenance` and no `category`, so neither filter axis and
+ *     neither edge-derived grouping dimension has to invent a value for them,
+ *   - do not make an orphan a non-orphan: `degree` is the model's, untouched.
+ * They DO take part in one thing only -- the depth traversal, which is the whole
+ * point of the node.
+ */
+
+/** The hub's id. `self` rather than a project name because the page has no way
+ *  to learn one: it reads `relationships.md` and nothing else, and that file's
+ *  frontmatter carries no project identity. A second project arriving later is
+ *  `project:<slug>` alongside this one. */
+const HUB_ID = 'project:self';
+
+/** View-only kind. Absent from `KIND_ENCODING` on purpose -- see above. */
+const HUB_KIND = 'project';
+
+/** The hub's own encoding, in `KIND_ENCODING`'s shape so every consumer that
+ *  already reads `{colourToken, glyph, shape, shapeLabel}` needs no new branch.
+ *  The star is unused by the seven authored kinds, so shape alone still
+ *  distinguishes the hub in a monochrome or forced-colours rendering. */
+const HUB_ENCODING = Object.freeze({
+	colourToken: '--gk-project',
+	glyph: '★',
+	shape: 'star',
+	shapeLabel: 'filled star',
+});
+
+/** The hub's accessible name and its drawing label. */
+const HUB_NAME = 'this project';
+
+/** The group the hub occupies under EVERY grouping dimension.
+ *
+ *  A dedicated group rather than a dimension-dependent answer, because none of
+ *  the four dimensions has a truthful bucket for it: it has no document, its
+ *  edges carry no provenance, and putting it in `external` or in
+ *  `no relationships` would state something false about it. Under `node-kind`
+ *  the key coincides with the hub's own kind, so the two agree rather than
+ *  compete. It sorts first everywhere -- the project is the root of the reading. */
+const HUB_GROUP = 'project';
+
+/** How the hub reaches a node, for the hover/announced text. Not a member of
+ *  `CATEGORY_ENCODING` and not a relation-vocabulary term -- these edges are
+ *  structural scaffolding, not recorded relationships. */
+const HUB_RELATION = 'contains';
+
+/**
+ * Which nodes the hub attaches to: the project's entry points, by the owner's
+ * own words -- "the root documents and KB documents".
+ *
+ *   - every `document` node, which in this artifact's id space IS a Knowledge
+ *     Base document (`kb:` with no `#`), and
+ *   - every in-repository source artifact AT THE REPOSITORY ROOT, which is the
+ *     `int:` path with no separator in it.
+ *
+ * Stated as a predicate over a node rather than as a path list so it needs no
+ * maintenance when a root file is added or removed, and so it is testable
+ * without a fixture that hardcodes today's root.
+ */
+function isHubEntryPoint(node) {
+	if (!node) return false;
+	if (node.kind === 'document') return true;
+	if (node.prefix !== 'int') return false;
+	const path = node.id.slice(node.id.indexOf(':') + 1);
+	return path.indexOf('/') === -1;
+}
+
+/**
+ * Build the hub node and its edges from a parsed model's nodes. Computed ONCE
+ * per load, not per projection: the attachment set is a property of the artifact
+ * and cannot change with the lens.
+ *
+ * Returns `{ node: null, edges: [] }` when the artifact has no entry point at
+ * all -- a hub with no edges is a floating mark that explains nothing, so there
+ * is no hub in that case rather than an isolated one.
+ */
+function buildHub(nodes) {
+	const targets = [];
+	for (const node of nodes.values()) {
+		if (isHubEntryPoint(node)) targets.push(node.id);
+	}
+	targets.sort(compareStrings);
+	if (targets.length === 0) return Object.freeze({ node: null, edges: Object.freeze([]) });
+
+	const edges = targets.map((targetId) => Object.freeze({
+		key: 'hub:' + targetId,
+		sourceId: HUB_ID,
+		targetId: targetId,
+		relation: HUB_RELATION,
+		synthetic: true,
+	}));
+
+	const node = Object.freeze({
+		id: HUB_ID,
+		kind: HUB_KIND,
+		prefix: 'project',
+		name: HUB_NAME,
+		shortLabel: HUB_NAME,
+		glyph: HUB_ENCODING.glyph,
+		kbDoc: null,
+		// The hub's degree is its own edge count, which is what the drawing
+		// layer sizes it by. It is NOT added to any other node's degree.
+		degree: edges.length,
+		degreeByKind: new Map(),
+		synthetic: true,
+	});
+
+	return Object.freeze({ node: node, edges: Object.freeze(edges) });
+}
+
 /**
  * The category palette: eight colour tokens over fourteen categories, each
  * category also carrying a line style.
@@ -286,6 +422,11 @@ const LENS_KEYS = Object.freeze([
 	'filters.categories',
 	'filters.provenance',
 	'filters.showOrphans',
+	// task-035. A `filters.` key rather than a key of its own because it does
+	// exactly what the other five do -- decide whether one node is admitted --
+	// and because that prefix is what `FILTER_KEYS` is derived from, so a preset
+	// patch cannot silently take the reader's hub away.
+	'filters.showHub',
 	'filters.text',
 	'filters.hiddenIds',
 	'focus.nodeId',
@@ -304,7 +445,7 @@ const FILTER_KEYS = Object.freeze(LENS_KEYS.filter((k) => k.indexOf('filters.') 
  * are equally primary -- privileging one would answer a question the reader has
  * not asked yet.
  *
- * Every one of the fifteen members is stated, so the record is total rather
+ * Every one of the sixteen members is stated, so the record is total rather
  * than correct only where someone looked. `focus.depth`, `zoom`, `sort` and
  * `filters.text` are here for a second reason as well: each preset patch has to
  * differ from this record on at least one key it sets, and at Impact's depth of
@@ -322,6 +463,10 @@ const INITIAL_LENS = Object.freeze({
 	'filters.categories': Object.freeze(distinctCategories()),
 	'filters.provenance': PROVENANCE_VALUES,
 	'filters.showOrphans': true,
+	// On by default: with no selection the hub is what a hop limit is measured
+	// from, so a reader who narrows the depth before ever touching this checkbox
+	// must get a narrowing that works.
+	'filters.showHub': true,
 	'filters.text': '',
 	'filters.hiddenIds': Object.freeze([]),
 	'focus.nodeId': null,
@@ -801,6 +946,14 @@ function parseRelationships(markdownText) {
 		// disjoint rather than disjoint by inspection.
 		stopOffset: stopOffset,
 	};
+
+	// task-035: the project hub, derived once. Attached to the model rather than
+	// recomputed per projection because the attachment set is a property of the
+	// artifact and no lens can change it. `hub.node` is `null` on an artifact
+	// with no entry point, and every consumer below is written for that case.
+	const hub = buildHub(nodes);
+	model.hubNode = hub.node;
+	model.hubEdges = hub.edges;
 
 	verifyCoverage(model, tableArtifactIds, orphanIds, unbackedFacts);
 	return model;
@@ -1464,6 +1617,16 @@ function project(graphModel, lensState) {
 	const categoryFilter = new Set(lens['filters.categories'] || []);
 	const provenanceFilter = new Set(lens['filters.provenance'] || []);
 	const showOrphans = lens['filters.showOrphans'] !== false;
+	// task-035. `hubNode` is null on an artifact with no entry point, so the hub
+	// is present only when the reader wants it AND there is one to show.
+	const hiddenIdsRaw = lens['filters.hiddenIds'] || [];
+	const showHub = lens['filters.showHub'] !== false
+		&& !!graphModel.hubNode
+		&& Array.prototype.indexOf.call(hiddenIdsRaw, HUB_ID) === -1;
+	const hubNode = showHub ? graphModel.hubNode : null;
+	/** The one lookup that knows about the hub. Every other read of a node by id
+	 *  in this function goes through it, so the hub cannot be half-present. */
+	const nodeOf = (id) => (id === HUB_ID ? hubNode : nodes.get(id));
 	const needle = String(lens['filters.text'] || '').toLowerCase();
 	// task-034: the checkbox-hide axis. A VIEW filter, exactly like the three
 	// above -- it never reaches `verifyCoverage`, which already ran, once, over
@@ -1471,7 +1634,7 @@ function project(graphModel, lensState) {
 	// Hiding a node here can therefore never move a coverage badge or a gap
 	// count; it only removes the node (and every row naming it) from what this
 	// projection draws.
-	const hiddenIds = new Set(lens['filters.hiddenIds'] || []);
+	const hiddenIds = new Set(hiddenIdsRaw);
 	const grouping = GROUPING_VALUES.indexOf(lens['grouping']) === -1 ? 'none' : lens['grouping'];
 	const emphasisMode = EMPHASIS_VALUES.indexOf(lens['emphasis']) === -1 ? 'none' : lens['emphasis'];
 	// `null` means NO LIMIT and is the default. The ceiling rose from 6 to 50 on
@@ -1516,6 +1679,12 @@ function project(graphModel, lensState) {
 		// all. Nothing replaces it, deliberately.
 		admitted.add(node.id);
 	}
+	// task-035: the hub is admitted alongside the model's nodes rather than
+	// special-cased at each later read. Nothing else in this function can be
+	// confused by it -- no authored row names `project:self`, and every loop that
+	// walks `admitted` against the model walks `nodes.values()`, which the hub is
+	// not a member of.
+	if (hubNode) admitted.add(HUB_ID);
 
 	// --- 2. Row admission ---------------------------------------------------
 	const surviving = [];
@@ -1531,22 +1700,46 @@ function project(graphModel, lensState) {
 		surviving.push(edge);
 	}
 
+	// --- 2b. Hub edge admission (task-035) -----------------------------------
+	// A hub edge survives when its target survived every node filter. It is NOT
+	// tested against the category or provenance axes -- it carries neither, by
+	// design -- and it is not tested against the text axis either: the hub is the
+	// project, so a text search narrowing the graph should not detach the origin
+	// the depth control measures from. The hub's own admission (`showHub`) is the
+	// only switch that removes these.
+	const survivingHubEdges = [];
+	if (hubNode) {
+		for (const edge of graphModel.hubEdges) {
+			if (!admitted.has(edge.targetId)) continue;
+			survivingHubEdges.push(edge);
+		}
+	}
+
 	// The pre-fold visible set: every endpoint of a surviving row, every admitted
 	// row-less node, and the selection. `foldable` is counted over THIS set, so
 	// it does not move when a group is expanded.
 	const preFold = new Set();
 	for (const edge of surviving) { preFold.add(edge.sourceId); preFold.add(edge.targetId); }
+	// The hub joins the pre-fold set on its own account, not through its edges:
+	// its edges' targets are already there for reasons of their own, and a hub
+	// whose every target was filtered away is still the project.
+	if (hubNode) preFold.add(HUB_ID);
 	const rawFocus = lens['focus.nodeId'];
-	const focusExists = typeof rawFocus === 'string' && nodes.has(rawFocus);
+	const focusExists = typeof rawFocus === 'string' && (nodes.has(rawFocus) || (hubNode !== null && rawFocus === HUB_ID));
 	for (const node of nodes.values()) {
 		if (node.degree === 0 && admitted.has(node.id)) preFold.add(node.id);
 	}
 	if (focusExists && admitted.has(rawFocus)) preFold.add(rawFocus);
 
 	// --- 3. Partition --------------------------------------------------------
-	const groupKeyOf = buildGrouping(graphModel, grouping, surviving);
+	// The hub is wrapped OUTSIDE `buildGrouping` rather than added as a case to
+	// each of its four branches: the answer is the same under all four, so a
+	// per-branch case would be the same line written four times and a fifth
+	// dimension added later would silently miss it.
+	const dimensionKeyOf = buildGrouping(graphModel, grouping, surviving);
+	const groupKeyOf = (node) => (node && node.id === HUB_ID ? HUB_GROUP : dimensionKeyOf(node));
 	const memberOf = new Map();
-	for (const id of preFold) memberOf.set(id, groupKeyOf(nodes.get(id)));
+	for (const id of preFold) memberOf.set(id, groupKeyOf(nodeOf(id)));
 
 	// --- 4. The fold ---------------------------------------------------------
 	// A group folds only where it has a NODE HEAD, and under the `document`
@@ -1560,11 +1753,14 @@ function project(graphModel, lensState) {
 	// So only a section and a fact ever fold, and `document` is today the only
 	// folding dimension. Every other yields no foldable member and an empty
 	// record: one code path with an empty case, not a mode.
+	// The hub cannot fold and nothing can fold into it: its group holds exactly
+	// one member, so `headOfGroup` never names it and `foldedInto` never keys it.
+	// `nodeOf` rather than `nodes.get` because the hub IS in `preFold`.
 	const headOfGroup = new Map();
 	if (grouping === 'document') {
 		for (const id of preFold) {
-			const node = nodes.get(id);
-			if (node.kind === 'document') headOfGroup.set(memberOf.get(id), id);
+			const node = nodeOf(id);
+			if (node && node.kind === 'document') headOfGroup.set(memberOf.get(id), id);
 		}
 	}
 
@@ -1596,24 +1792,50 @@ function project(graphModel, lensState) {
 	// Skipping the ball entirely is both the correct behaviour and cheaper: no
 	// adjacency map and no traversal are built for the default case.
 	const focusId = focusExists ? resolve(rawFocus) : null;
+
+	// task-035: WHERE THE HOPS ARE COUNTED FROM.
+	//
+	// A depth limit is a radius, and a radius needs a centre. Before the hub
+	// existed the only candidate was the reader's selection, so the depth control
+	// did nothing whatever until a node was clicked -- the owner's report, and it
+	// was a real hole rather than a defensible default. The hub supplies the
+	// centre for the unselected case: the project itself, one hop from every
+	// Knowledge Base document and every repository-root artifact.
+	//
+	// The SELECTION still wins when there is one. The hub is the default origin,
+	// not a competing one, so narrowing around a chosen node behaves exactly as
+	// it did.
+	const ballOrigin = focusId !== null ? focusId : (hubNode ? HUB_ID : null);
+
 	let ball = null;
 	let distance = null;
-	if (depth !== Infinity && focusId !== null && (preFold.has(rawFocus) || preFold.has(focusId) || nodes.has(focusId))) {
+	if (depth !== Infinity && ballOrigin !== null && (preFold.has(ballOrigin) || nodes.has(ballOrigin))) {
 		const adjacency = new Map();
-		for (const edge of surviving) {
-			const a = resolve(edge.sourceId);
-			const b = resolve(edge.targetId);
-			if (a === b) continue;
+		const addAdjacency = (a, b) => {
+			if (a === b) return;
 			if (!adjacency.has(a)) adjacency.set(a, new Set());
 			if (!adjacency.has(b)) adjacency.set(b, new Set());
 			adjacency.get(a).add(b);
 			adjacency.get(b).add(a);
+		};
+		for (const edge of surviving) {
+			addAdjacency(resolve(edge.sourceId), resolve(edge.targetId));
+		}
+		// The hub's edges take part in THIS and in nothing else -- they are not in
+		// `visibleEdges`, so they reach no degree count, no table row, no filter
+		// axis and no edge-derived grouping. Traversal is the one thing the hub
+		// exists for. `resolve` is applied to the target for the same reason every
+		// other edge gets it: under the `document` fold a section target has to
+		// count as its document, or a hop limit would appear to skip a document it
+		// actually reaches.
+		for (const edge of survivingHubEdges) {
+			addAdjacency(HUB_ID, resolve(edge.targetId));
 		}
 		// Depth is applied to the UNDIRECTED adjacency, because "what does this
 		// change touch" is not a directional question. Direction stays visible
 		// in the arrowheads.
-		distance = new Map([[focusId, 0]]);
-		let frontier = [focusId];
+		distance = new Map([[ballOrigin, 0]]);
+		let frontier = [ballOrigin];
 		for (let d = 1; d <= depth && frontier.length > 0; d += 1) {
 			const next = [];
 			for (const id of frontier) {
@@ -1659,6 +1881,29 @@ function project(graphModel, lensState) {
 		drawnIds.add(resolve(node.id));
 	}
 	if (focusId !== null && admitted.has(rawFocus)) drawnIds.add(focusId);
+	// task-035: the hub is drawn whenever it is admitted. `ball` never excludes it
+	// -- it is the ball's own origin in the unselected case, and in the selected
+	// case it is a node like any other and is tested as one.
+	if (hubNode && (!ball || ball.has(HUB_ID))) drawnIds.add(HUB_ID);
+	// task-035, and this one is NOT symmetric with the real-edge case above.
+	//
+	// `drawnIds` is built from the edges in `visibleEdges` plus the row-less nodes,
+	// and for a ball grown over REAL edges that is complete by construction: a node
+	// is in the ball only because some edge reached it from inside, and that edge
+	// therefore has both ends in the ball and is in `visibleEdges`.
+	//
+	// A hub target has no such guarantee, because the edge that reached it is a hub
+	// edge and hub edges are not in `visibleEdges`. Measured at depth 1 on the real
+	// artifact: the hub named 32 targets and 29 were drawn -- the three missing ones
+	// were nodes whose every recorded row leaves the ball, so nothing inside it drew
+	// them. The picture then contradicted its own claim, asserting that these nodes
+	// are one hop away while not showing them.
+	if (ball) {
+		for (const edge of survivingHubEdges) {
+			const target = resolve(edge.targetId);
+			if (ball.has(target)) drawnIds.add(target);
+		}
+	}
 
 	// The two halves of the fold's own invariant, applied in order so that they
 	// cannot collide: EVERY HEAD THE RECORD NAMES IS DRAWN, and NO KEY OF IT IS.
@@ -1674,8 +1919,31 @@ function project(graphModel, lensState) {
 	}
 	for (const member of foldedInto.keys()) drawnIds.delete(member);
 
-	const visibleNodes = Array.from(drawnIds).sort(compareStrings).map((id) => nodes.get(id)).filter(Boolean);
+	const visibleNodes = Array.from(drawnIds).sort(compareStrings).map(nodeOf).filter(Boolean);
 	const visibleIds = new Set(visibleNodes.map((n) => n.id));
+
+	// The hub's drawn edges: published separately, and gated on BOTH ends being
+	// drawn so no line is emitted to a node the fold or a filter removed.
+	const hubEdges = Object.freeze(visibleIds.has(HUB_ID)
+		? survivingHubEdges
+			.map((edge) => ({ edge: edge, targetId: resolve(edge.targetId) }))
+			.filter((entry) => entry.targetId !== HUB_ID && visibleIds.has(entry.targetId))
+			// One line per DRAWN target, not per artifact edge: under the
+			// `document` fold many sections resolve to one document, which would
+			// otherwise stack N identical lines on top of each other.
+			.reduce((acc, entry) => {
+				if (acc.seen.has(entry.targetId)) return acc;
+				acc.seen.add(entry.targetId);
+				acc.out.push(Object.freeze({
+					key: 'hub:' + entry.targetId,
+					sourceId: HUB_ID,
+					targetId: entry.targetId,
+					relation: HUB_RELATION,
+					synthetic: true,
+				}));
+				return acc;
+			}, { seen: new Set(), out: [] }).out
+		: []);
 
 	// The published record carries only the members the fold actually removed
 	// from the drawn set. A member whose head is not drawn was removed by a
@@ -1690,12 +1958,24 @@ function project(graphModel, lensState) {
 	const groups = buildGroups(grouping, graphModel, visibleNodes, memberOf, groupKeyOf, foldableByGroup, expanded);
 
 	// --- Counts, commensurable by construction ------------------------------
+	//
+	// task-035: `hiddenNodes` is a statement about the ARTIFACT -- how many of the
+	// model's nodes this lens is not showing -- so the hub must not be counted on
+	// either side of it. The hub is not in `nodes`, so counting it in
+	// `visibleNodes.length` would push `hiddenNodes` one below the truth and, on a
+	// lens showing everything, to -1. `nodes` counts the drawn model nodes; the
+	// hub is reported on its own.
 	const drawnEdgeCount = visibleEdges.reduce((n, e) => n + (edgeFold.get(e.key) === 'collapsed' ? 0 : 1), 0);
+	const hubDrawn = visibleIds.has(HUB_ID) ? 1 : 0;
 	const counts = Object.freeze({
-		nodes: visibleNodes.length,
+		nodes: visibleNodes.length - hubDrawn,
 		edges: drawnEdgeCount,
-		hiddenNodes: nodes.size - visibleNodes.length,
+		hiddenNodes: nodes.size - (visibleNodes.length - hubDrawn),
 		hiddenEdges: graphModel.rowCount - drawnEdgeCount,
+		// The hub and its lines, kept out of the four counts above so no reader of
+		// those has to know the hub exists.
+		hubNodes: hubDrawn,
+		hubEdges: hubEdges.length,
 	});
 
 	// --- Emphasis ------------------------------------------------------------
@@ -1746,8 +2026,20 @@ function project(graphModel, lensState) {
 	const nodeShortLabels = new Map();
 	const nodeEncoding = new Map();
 	for (const id of labelledIds) {
-		const node = nodes.get(id);
+		const node = nodeOf(id);
 		if (!node) continue;
+		// task-035: the hub is labelled and encoded from its own record. Handled
+		// before the row-less branch below because it is not a row-less node -- it
+		// has lines, they are simply not recorded relationships, so appending "no
+		// recorded relationships" to its name would be false, and reading its
+		// encoding out of `KIND_ENCODING` would throw on a kind that is
+		// deliberately absent from it.
+		if (node.id === HUB_ID) {
+			nodeLabels.set(id, HUB_NAME);
+			nodeShortLabels.set(id, HUB_NAME);
+			nodeEncoding.set(id, Object.freeze({ colourToken: HUB_ENCODING.colourToken, glyph: HUB_ENCODING.glyph }));
+			continue;
+		}
 		// The extra fact about a row-less node -- that it has no recorded
 		// relationship at all, the more severe of the two coverage findings --
 		// is appended to the ACCESSIBLE NAME. That is already the name on every
@@ -1778,8 +2070,13 @@ function project(graphModel, lensState) {
 		counts: counts,
 		grouping: grouping,
 		emphasisMode: emphasisMode,
-		focusNode: focusId === null ? null : nodes.get(focusId),
+		focusNode: focusId === null ? null : nodeOf(focusId),
 		focusIsolated: focusId !== null && nodes.has(focusId) && nodes.get(focusId).degree === 0,
+		// task-035: what the hop limit is measured FROM, so the announced text can
+		// say so. A depth with no stated origin is the one thing a reader cannot
+		// work out from the picture.
+		depthOrigin: depth === Infinity ? null : (focusId !== null ? 'selection' : (hubNode ? 'hub' : null)),
+		hubName: HUB_NAME,
 		categoryFilter: categoryFilter,
 		kindFilter: kindFilter,
 		provenanceFilter: provenanceFilter,
@@ -1790,6 +2087,11 @@ function project(graphModel, lensState) {
 
 	return {
 		visibleEdges: visibleEdges,
+		// task-035. Its own collection, never merged into `visibleEdges` -- see the
+		// hub block near the top of this file for the list of things that
+		// separation buys. A consumer that does not know about the hub draws and
+		// lists exactly what it drew and listed before.
+		hubEdges: hubEdges,
 		visibleNodes: visibleNodes,
 		groups: groups,
 		foldedInto: publishedFold,
@@ -1872,11 +2174,19 @@ function classifyNode(node, ctx) {
 		return 'dimmed';
 	}
 	if (ctx.emphasisMode === 'provenance-chain') return ctx.chainNodes.has(node.id) ? 'normal' : 'dimmed';
-	// A selection highlights its neighbourhood and dims the rest. Within the
+	// A SELECTION highlights its neighbourhood and dims the rest. Within the
 	// drawn ball "the rest" is everything beyond the immediate neighbourhood, so
 	// a node two or more hops out is dimmed. A design choice at the ring
 	// boundary; the requirement fixes only that a selection dims something.
-	if (ctx.distance && ctx.distance.get(node.id) > 1) return 'dimmed';
+	//
+	// `focusId` gates this, and task-035 is why: `distance` is now populated
+	// whenever a finite depth is set, INCLUDING with nothing selected, because the
+	// project hub supplies the ball's origin in that case. Reading `distance`
+	// alone would then dim every node more than one hop from the hub -- almost the
+	// whole graph -- on a lens where the reader has selected nothing and asked for
+	// no emphasis at all. Dimming states "this is far from what you picked", so
+	// with nothing picked it states nothing.
+	if (ctx.focusId !== null && ctx.distance && ctx.distance.get(node.id) > 1) return 'dimmed';
 	return 'normal';
 }
 
@@ -2039,6 +2349,11 @@ function buildGroups(grouping, graphModel, visibleNodes, memberOf, groupKeyOf, f
 /** Sort rank for a group key, so the group list is deterministic and reads in the
  *  order the dimension's own vocabulary declares. */
 function groupRank(grouping, graphModel, key) {
+	// task-035: the hub's group first under every dimension. Stated before the
+	// dimension branches so no branch can reach it and rank it by a vocabulary it
+	// is not a member of -- under `document` its key carries no `:` and would
+	// otherwise have ranked among the document groups.
+	if (key === HUB_GROUP) return -1;
 	if (key === NO_RELATIONSHIPS_GROUP) return 9000;
 	if (grouping === 'node-kind') {
 		const at = Object.keys(KIND_ENCODING).indexOf(key);
@@ -2084,6 +2399,12 @@ function narrate(graphModel, lens, ctx) {
 		parts.push('focused on ' + ctx.focusNode.name
 			+ (ctx.depth === Infinity ? ', no depth limit' : ' at depth ' + ctx.depth));
 		if (ctx.focusIsolated) parts.push('no recorded relationships');
+	} else if (ctx.depthOrigin === 'hub') {
+		// task-035: the unselected narrowing. Without this clause the summary
+		// reported a much smaller graph and gave no reason for it -- the count
+		// changed and the sentence explaining the count did not. Naming the origin
+		// is the whole content: a radius with no stated centre is unreadable.
+		parts.push('within ' + ctx.depth + (ctx.depth === 1 ? ' hop' : ' hops') + ' of ' + ctx.hubName);
 	}
 
 	const summary = parts.join(', ') + '.';
@@ -2396,6 +2717,15 @@ export {
 	CATEGORY_ENCODING,
 	GROUPING_VALUES,
 	DEPTH_MAX,
+	// The project hub (task-035). View-only -- deliberately NOT members of
+	// KIND_ENCODING / CATEGORY_ENCODING, which are bound to relationship-schema.yml.
+	HUB_ID,
+	HUB_KIND,
+	HUB_ENCODING,
+	HUB_NAME,
+	HUB_GROUP,
+	HUB_RELATION,
+	isHubEntryPoint,
 	EMPHASIS_VALUES,
 	LABEL_BUDGET,
 	NO_RELATIONSHIPS_GROUP,

@@ -353,6 +353,10 @@ function gcColourTokens() {
 	const tokens = new Set();
 	for (const entry of Object.values(KIND_ENCODING)) tokens.add(entry.colourToken);
 	for (const entry of Object.values(CATEGORY_ENCODING)) tokens.add(entry.colourToken);
+	// The project hub's token, on neither encoding's axis for the same reason its
+	// kind is on neither: it is the view's own synthetic node. Without this line
+	// the hub resolves to no colour and draws in the forced-foreground fallback.
+	tokens.add(HUB_ENCODING.colourToken);
 	// The gap badge's severity tokens are on neither encoding's axis, so they
 	// have to be added explicitly or `gcResolvePalette` would never resolve them
 	// and every badge would fall back to the forced foreground.
@@ -486,6 +490,23 @@ function gcDeriveMarks(viewModel, forcedColours) {
 		drawnDegree.set(edge.sourceId, (drawnDegree.get(edge.sourceId) || 0) + 1);
 		drawnDegree.set(edge.targetId, (drawnDegree.get(edge.targetId) || 0) + 1);
 	}
+	// task-035: the hub's degree is its OWN line count, credited to the hub alone
+	// and to none of its targets.
+	//
+	// Without this the hub fell out of the loop above with a degree of zero -- its
+	// lines are not in `visibleEdges` -- and drew at the base radius. Seen in the
+	// browser at depth 1: the one node joined to all 32 others was the smallest
+	// mark on screen, while a document with four rows drew half again as large. The
+	// size channel says "how many things attach here", and for the hub the honest
+	// answer is the number of lines leaving it.
+	//
+	// Deliberately NOT symmetric: a target does not gain a degree step for being
+	// attached to the hub, which is the separation the whole `hubEdges` split
+	// exists to preserve. The hub is the only node whose size the scaffolding may
+	// move, because for the hub the scaffolding IS its content.
+	for (const edge of (viewModel.hubEdges || [])) {
+		drawnDegree.set(edge.sourceId, (drawnDegree.get(edge.sourceId) || 0) + 1);
+	}
 	const nodeMarks = new Map();
 	for (const node of viewModel.visibleNodes) {
 		const encoding = viewModel.nodeEncoding.get(node.id);
@@ -505,7 +526,35 @@ function gcDeriveMarks(viewModel, forcedColours) {
 		});
 	}
 
+	// The hub's lines (task-035). Built into the SAME map as the recorded rows so
+	// every downstream consumer -- the link force, the draw loop, the layer clear
+	// -- reaches them with no new branch. They differ from a recorded row in
+	// exactly two drawn channels, and each difference is deliberate:
+	//
+	//   - `colourToken` is the hub's own neutral token, not a category colour.
+	//     These are not relationships and must not read as one.
+	//   - `emphasisDraw` is fixed at the dimmed channel, so the scaffolding never
+	//     competes visually with the recorded rows it sits under.
+	//
+	// They are absent from `drawnDegree` above by construction, because that loop
+	// walks `visibleEdges` and the hub's lines are published separately -- which is
+	// the whole reason they are: attaching the hub must not resize 32 nodes.
 	const edgeMarks = new Map();
+	for (const edge of (viewModel.hubEdges || [])) {
+		edgeMarks.set(edge.key, {
+			key: edge.key,
+			row: null,
+			sourceId: edge.sourceId,
+			targetId: edge.targetId,
+			category: null,
+			colourToken: HUB_ENCODING.colourToken,
+			lineStyle: 'dotted',
+			arrowhead: false,
+			emphasis: 'dimmed',
+			emphasisDraw: gcEdgeEmphasisDraw('dimmed', forcedColours),
+			hub: true,
+		});
+	}
 	for (const edge of viewModel.visibleEdges) {
 		const fold = viewModel.edgeFold.get(edge.key);
 		if (fold === 'collapsed') continue;
@@ -1180,7 +1229,16 @@ function gcGroupForce(viewModel, centres, strength) {
  */
 function gcGroupCentres(viewModel, positions, spacingLevel) {
 	const centres = new Map();
-	const groups = (viewModel.groups || []).filter((g) => g.nodeIds && g.nodeIds.length > 0);
+	// THE HUB IS EXCLUDED FROM THE RING ENTIRELY (task-035), and this is a layout
+	// decision rather than bookkeeping. The projection gives the hub a group of its
+	// own under every dimension, so on the ring it would take a slot of its own --
+	// dragging the one node whose meaning is "the centre of this project" out to the
+	// rim, away from all 32 nodes it is joined to. Left without a centre it is
+	// positioned by its links alone, which settles it among its targets: the
+	// position that says what it is.
+	const groups = (viewModel.groups || [])
+		.filter((g) => g.nodeIds && g.nodeIds.length > 0)
+		.filter((g) => g.key !== HUB_GROUP);
 	if (groups.length < 2) return centres;
 	const spread = gcSpreadFor(spacingLevel);
 	// Enough room that neighbouring rings of nodes do not merge: the ring's
@@ -1189,7 +1247,10 @@ function gcGroupCentres(viewModel, positions, spacingLevel) {
 	for (let i = 0; i < groups.length; i++) {
 		const angle = (2 * Math.PI * i) / groups.length;
 		const centre = { x: Math.cos(angle) * radius, y: Math.sin(angle) * radius };
-		for (const id of groups[i].nodeIds) centres.set(id, centre);
+		// Under `grouping: 'none'` there is one group holding EVERY drawn node,
+		// including the hub -- so the hub is skipped by id here as well, not only by
+		// group key above.
+		for (const id of groups[i].nodeIds) { if (id !== HUB_ID) centres.set(id, centre); }
 	}
 	return centres;
 }
@@ -1383,7 +1444,8 @@ function gcDrawFrame(view, meta) {
 	const glyphRadius = new Map();
 	for (const mark of marks.nodes) {
 		const lift = mark.id === hoverNodeId ? GC_HOVER_SCALE : 1;
-		glyphRadius.set(mark.id, gcRadiusForDegree(mark.degree) * mark.emphasisDraw.markScale * lift);
+		const shapeFactor = mark.kind === HUB_KIND ? GC_STAR_MASS_FACTOR : 1;
+		glyphRadius.set(mark.id, gcRadiusForDegree(mark.degree) * shapeFactor * mark.emphasisDraw.markScale * lift);
 	}
 
 	for (const mark of marks.edges) {
@@ -1676,7 +1738,11 @@ function gcDrawArrowhead(g, x1, y1, x2, y2, colour) {
  *  graph-model.js's own table and it is not restated here beyond the shape
  *  name each kind already carries. */
 function gcDrawGlyph(g, kind, radius, colour, opacity) {
-	const shape = KIND_ENCODING[kind] ? KIND_ENCODING[kind].shape : 'circle';
+	// The hub's kind is not in `KIND_ENCODING` -- deliberately, see graph-model.js
+	// -- so it is looked up in its own record rather than falling through to the
+	// `default` circle, which would have drawn it as an unlabelled `document`.
+	const shape = kind === HUB_KIND ? HUB_ENCODING.shape
+		: (KIND_ENCODING[kind] ? KIND_ENCODING[kind].shape : 'circle');
 	const alpha = opacity == null ? 1 : opacity;
 	if (typeof g.beginFill === 'function') g.beginFill(gcColourToNumber(colour), alpha);
 	switch (shape) {
@@ -1702,6 +1768,13 @@ function gcDrawGlyph(g, kind, radius, colour, opacity) {
 		case 'pentagon':
 			if (typeof g.drawPolygon === 'function') g.drawPolygon(gcPolygonPoints(5, radius));
 			break;
+		// The project hub (task-035). A five-point star, which is the one shape in
+		// this switch with CONCAVE vertices -- every other is a convex polygon or a
+		// circle -- so it is still the odd one out at a glance in a monochrome or
+		// forced-colours rendering, where the hub's colour carries nothing.
+		case 'star':
+			if (typeof g.drawPolygon === 'function') g.drawPolygon(gcStarPoints(5, radius, radius * GC_STAR_INNER));
+			break;
 		default:
 			if (typeof g.drawCircle === 'function') g.drawCircle(0, 0, radius);
 	}
@@ -1715,6 +1788,45 @@ function gcPolygonPoints(sides, radius) {
 		points.push(Math.cos(a) * radius, Math.sin(a) * radius);
 	}
 	return points;
+}
+
+/** How deep a star's notches cut, as a fraction of its outer radius. 0.5 is
+ *  shallow enough that the shape still reads as a filled mark at the smallest
+ *  drawn radius rather than as five thin spikes. */
+const GC_STAR_INNER = 0.5;
+
+/**
+ * The star's radius compensation, and it is a MASS correction rather than a
+ * preference.
+ *
+ * `gcRadiusForDegree` returns one number for every kind, and for the eight convex
+ * shapes that number lands within a few percent of the same drawn area. A star
+ * does not: at `GC_STAR_INNER` = 0.5 its ten-vertex outline encloses roughly half
+ * the area of the circle it is inscribed in, so a star and a circle at one radius
+ * read as two different sizes. The owner saw exactly that -- "I like that the
+ * project is represented by a star. But I think it is too small" -- on a hub that
+ * was ALREADY at its degree radius.
+ *
+ * 1.4 is `1 / sqrt(0.5)` rounded, which is the factor that makes the two areas
+ * equal rather than a number picked by eye. It is applied to the hub alone
+ * because the hub is the only star: it corrects the shape, not the data, so a
+ * reader comparing the hub against a document is still comparing two marks whose
+ * AREAS carry the same meaning.
+ */
+const GC_STAR_MASS_FACTOR = 1.4;
+
+/** A star: `points` outer vertices alternating with `points` inner ones, first
+ *  vertex straight up so the shape is upright at every radius. Separate from
+ *  `gcPolygonPoints` rather than a flag on it -- that function's contract is one
+ *  vertex per side, and a star has two. */
+function gcStarPoints(points, outer, inner) {
+	const out = [];
+	for (let i = 0; i < points * 2; i += 1) {
+		const a = (Math.PI * i) / points - Math.PI / 2;
+		const r = i % 2 === 0 ? outer : inner;
+		out.push(Math.cos(a) * r, Math.sin(a) * r);
+	}
+	return out;
 }
 
 function gcDrawRing(g, radius, colour) {

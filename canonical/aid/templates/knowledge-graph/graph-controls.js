@@ -84,6 +84,10 @@ const AUTHORED_CONTROLS = Object.freeze([
 	Object.freeze({ id: 'focus-node', requirement: 'FR-14a', axis: 'focus', value: null }),
 	Object.freeze({ id: 'focus-depth', requirement: 'FR-14a', axis: 'depth', value: null }),
 	Object.freeze({ id: 'filter-show-orphans', requirement: 'FR-14a', axis: 'orphan-toggle', value: null }),
+	// task-035. Its own axis rather than a member of `filters.kinds`: the hub's
+	// kind is deliberately absent from KIND_ENCODING, and that axis is generated
+	// from KIND_ENCODING's keys and bound to relationship-schema.yml by test.
+	Object.freeze({ id: 'filter-show-hub', requirement: 'FR-14a', axis: 'hub-toggle', value: null }),
 	Object.freeze({ id: 'node-select', requirement: 'FR-14a', axis: 'select', value: null }),
 	Object.freeze({ id: 'node-open', requirement: 'FR-14a', axis: 'open', value: null }),
 	Object.freeze({
@@ -367,6 +371,20 @@ function mountControls(ctx) {
 		el('label', { class: 'toggle-row', for: 'filter-show-orphans' }, [orphanBox, 'Show nodes with no recorded relationship']),
 	]));
 
+	// The project hub (task-035). Default on, and the default is load-bearing
+	// rather than a preference: with nothing selected the hub is what the hop
+	// limit above is measured FROM, so a reader who narrows the depth before ever
+	// finding this checkbox must get a narrowing that works. The hint says so
+	// out loud, because turning the hub off makes the depth control inert again
+	// and nothing else on the page would explain why.
+	const hubBox = el('input', { type: 'checkbox', id: 'filter-show-hub', [CONTROL_ATTR]: 'filter-show-hub' });
+	hubBox.addEventListener('change', () => { store.setLens({ 'filters.showHub': hubBox.checked }); });
+	grid.appendChild(el('div', { class: 'control-group' }, [
+		el('span', { class: 'control-group-label', text: 'Project node' }),
+		el('label', { class: 'toggle-row', for: 'filter-show-hub' }, [hubBox, 'Show the project node']),
+		el('span', { class: 'control-hint', id: 'filter-show-hub-hint', text: 'One node standing for the project itself, joined to every Knowledge Base document and every file at the repository root. With no node selected, the hop limit is counted from it — turn this off and the hop limit has no starting point and stops narrowing.' }),
+	]));
+
 	// The three filter axes. Each is a real fieldset with a real legend, and each
 	// value is a real checkbox with a real label, generated from the manifest.
 	grid.appendChild(filterAxis(store, ctx.manifest, 'filters.categories', 'Relationship category', (value) => {
@@ -409,6 +427,7 @@ function mountControls(ctx) {
 		depthRange.value = String(depthRaw);
 		depthValue.textContent = depthText(depthRaw);
 		orphanBox.checked = lens['filters.showOrphans'] !== false;
+		hubBox.checked = lens['filters.showHub'] !== false;
 
 		for (const axis of ['filters.categories', 'filters.kinds', 'filters.provenance']) {
 			const admitted = new Set(lens[axis]);

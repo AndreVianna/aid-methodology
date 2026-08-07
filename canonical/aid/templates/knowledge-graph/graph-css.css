@@ -66,6 +66,14 @@ html:root {
 	--gk-image: #A21CAF;
 	--gk-web-page: #B91C1C;
 
+	/* The project hub (task-035). NOT an eighth member of the Kind enum -- it is
+	   the view's own synthetic node and the schema knows nothing about it -- so it
+	   is deliberately NEUTRAL rather than a ninth hue: the seven hues above mean
+	   "kind", and giving the hub one would read as a kind it does not have. Near-
+	   black on light and near-white on dark, which is also the highest contrast
+	   available on either theme. */
+	--gk-project: #111827;
+
 	/* Relationship category -- eight colours over fourteen categories. The six
 	   categories without a colour of their own reuse a holder's colour and are
 	   separated by line style; the line-style assignment is in the view model
@@ -106,6 +114,8 @@ html[data-theme="dark"]:root {
 	--gk-source-artifact: #7FE3C0;
 	--gk-image: #FF9FE0;
 	--gk-web-page: #FFA8A8;
+
+	--gk-project: #F3F4F6;
 
 	--gc-structure: #8AB4FF;
 	--gc-taxonomy: #C79BFF;
@@ -818,6 +828,10 @@ html[data-theme="dark"]:root {
 .k-source-artifact { color: var(--gk-source-artifact); }
 .k-image { color: var(--gk-image); }
 .k-web-page { color: var(--gk-web-page); }
+/* The project hub (task-035). Same shape of rule as the seven above so any
+   surface that builds a `k-<kind>` class name reaches it with no new branch --
+   the hub's kind IS `project`. */
+.k-project { color: var(--gk-project); }
 
 /* One class per category, likewise keyed on the category value. There are
    fourteen categories and eight colour tokens, so six of these classes resolve to
