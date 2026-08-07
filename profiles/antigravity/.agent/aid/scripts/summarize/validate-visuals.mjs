@@ -4,19 +4,51 @@
 // no overflow-clip at target widths).
 //
 // Usage:
-//   node validate-visuals.mjs <html-file> [--check-only] [--min-font-size N]
+//   node validate-visuals.mjs <html-file> [--profile kb-summary|graph] [--check-only] [--min-font-size N]
 //
 // Flags:
+//   --profile kb-summary|graph
+//                         Select the validation profile (default: kb-summary;
+//                         closed set: kb-summary|graph). An unrecognised
+//                         value, or the flag with no value, exits 2. With the
+//                         flag absent, output is byte-identical to today's
+//                         behaviour. Passing the flag explicitly (either
+//                         value) prints the active profile; with it absent,
+//                         nothing is printed.
+//                         --profile graph additionally: an empty collected
+//                         visual set is a FAILURE (exit 1), rather than the
+//                         default profile's trivial pass; and a Playwright-
+//                         unavailable or missing-artifact SKIP prints an
+//                         additional, distinguishable marker so a lane that
+//                         always skips cannot be mistaken for one that
+//                         always passes.
 //   --check-only          Dry-run: resolve visuals, print what would be checked, exit 0.
 //                         Also used to confirm the script is syntactically correct
 //                         when Playwright is not installed.
 //   --min-font-size N     Override the legibility threshold (px). Default: 10.
-//   -h, --help            Print this header and exit.
+//   -h, --help            Print the one-line Usage string to stderr and exit 2
+//                         (an invocation-error exit, not a help/exit-0 path;
+//                         pre-existing behaviour, pinned by
+//                         tests/canonical/test-visual-fidelity.sh VF02/VF03).
+//
+// Second named default-path exception (same declaration as
+// contrast-check.mjs and validate-html-output.sh): every Usage/synopsis
+// string in this script -- the header line above and the single shared
+// USAGE constant echoed by every invocation-error path (no-arg, -h/--help,
+// missing <html-file>, bad or missing --profile value) -- now documents
+// "[--profile kb-summary|graph]" inline, so a mistyped invocation never
+// gets a synopsis that hides a flag the script actually accepts. This is a
+// default-path text delta, but only on an exit-2 invocation-error path; it
+// is inert for grading purposes because grade-summary.sh never invokes
+// this script at all (V1 comes from a separately-supplied manual-checklist
+// JSON, not from this script's stdout/stderr), so no grade token can move.
 //
 // Exit codes:
-//   0 -- all visuals pass (or SKIP / check-only mode)
-//   1 -- one or more visuals failed (generation defect -- blocks DONE)
-//   2 -- invocation error (file missing, etc.)
+//   0 -- all visuals pass (or SKIP / check-only mode; or 0 collected visuals
+//        under the default profile)
+//   1 -- one or more visuals failed (generation defect -- blocks DONE); or,
+//        under --profile graph, 0 collected visuals
+//   2 -- invocation error (file missing, bad/missing --profile, etc.)
 //
 // Four asserts per visual:
 //   T1 -- Readable text: every visible text node inside the visual has a computed
@@ -53,15 +85,19 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 // Argument parsing
 // ---------------------------------------------------------------------------
 
+const USAGE = 'Usage: validate-visuals.mjs <html-file> [--profile kb-summary|graph] [--check-only] [--min-font-size N]';
+const PROFILES = ['kb-summary', 'graph'];
+
 const rawArgs = process.argv.slice(2);
 if (rawArgs.length === 0 || rawArgs[0] === '--help' || rawArgs[0] === '-h') {
-  console.error('Usage: validate-visuals.mjs <html-file> [--check-only] [--min-font-size N]');
+  console.error(USAGE);
   process.exit(2);
 }
 
 let htmlPath = null;
 let checkOnly = false;
 let minFontSize = 10;
+let explicitProfile = null;
 
 for (let i = 0; i < rawArgs.length; i++) {
   const arg = rawArgs[i];
@@ -74,6 +110,14 @@ for (let i = 0; i < rawArgs.length; i++) {
       process.exit(2);
     }
     minFontSize = n;
+  } else if (arg === '--profile') {
+    const v = rawArgs[++i];
+    if (v === undefined || !PROFILES.includes(v)) {
+      console.error(USAGE);
+      console.error(`  --profile must be one of: ${PROFILES.join('|')}`);
+      process.exit(2);
+    }
+    explicitProfile = v;
   } else if (arg.startsWith('-')) {
     console.error(`Unknown flag: ${arg}`);
     process.exit(2);
@@ -83,8 +127,13 @@ for (let i = 0; i < rawArgs.length; i++) {
 }
 
 if (!htmlPath) {
-  console.error('Usage: validate-visuals.mjs <html-file> [--check-only] [--min-font-size N]');
+  console.error(USAGE);
   process.exit(2);
+}
+
+const activeProfile = explicitProfile || 'kb-summary';
+if (explicitProfile !== null) {
+  console.log(`Profile: ${activeProfile}`);
 }
 
 // ---------------------------------------------------------------------------
@@ -104,6 +153,9 @@ try {
 } catch {
   console.error(`SKIP -- html file not found: ${htmlPath}`);
   console.error('The visual-fidelity gate requires a generated kb.html. Run GENERATE first.');
+  if (activeProfile === 'graph') {
+    console.error('SKIP-RECORDED [profile: graph] -- artifact missing; no visuals were validated.');
+  }
   process.exit(0);
 }
 
@@ -141,6 +193,9 @@ if (!checkOnly) {
     console.log('');
     console.log('CI: the visual-fidelity job in test.yml runs npm ci + playwright install');
     console.log('automatically -- no manual setup needed for CI runs.');
+    if (activeProfile === 'graph') {
+      console.log('SKIP-RECORDED [profile: graph] -- Playwright unavailable; no visuals were validated.');
+    }
     process.exit(0);
   }
 }
@@ -462,6 +517,14 @@ await browser.close();
 const { visuals: visualList } = visuals;
 
 if (visualList.length === 0) {
+  if (activeProfile === 'graph') {
+    console.log('FAIL -- No authored visuals found in the HTML.');
+    console.log('  (No inline <svg>, .diagram-box, or .infographic elements detected.)');
+    console.log('  Under --profile graph an empty collected visual set is a failure, not a trivial pass.');
+    console.log('');
+    console.log('FAIL -- Visual-fidelity gate: 0 visuals collected (empty input set).');
+    process.exit(1);
+  }
   console.log('SKIP -- No authored visuals found in the HTML.');
   console.log('  (No inline <svg>, .diagram-box, or .infographic elements detected.)');
   console.log('  If the page has no visuals, this gate trivially passes.');

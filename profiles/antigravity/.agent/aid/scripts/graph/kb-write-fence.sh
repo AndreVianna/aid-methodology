@@ -66,6 +66,7 @@ MODE=""
 ALLOWLIST=(
     "relationships.md"
     "graph.html"
+    "table.html"
     "graph-assets/**"
 )
 

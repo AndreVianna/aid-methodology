@@ -70,7 +70,8 @@
 #   sig_class1_excluded <path>                       generated / derived trees
 #   sig_class2_excluded <path>                       vendored third-party code
 #   sig_class3_ignored <path> <patterns>             the project's own ignore globs
-#   sig_class4_excluded <path>                       the .aid/ partition, minus its allowlist
+#   sig_class4_excluded <path>                       the dotfile/dot-dir partition, minus its
+#                                                    four carve-outs, plus four root metadata files
 #   sig_class5_allowlisted <path>                    maintainer tooling re-admitted
 #   -- the ignore list (D4a) and the coverage notes (D7) --
 #   sig_probe_ignore_list <read-setting> <settings> [<stderr-file>]
@@ -103,8 +104,12 @@ SIG_KIND_WEB_PAGE="web-page"
 # half-done flip to tier A fails a test rather than shipping a false note.
 SIG_EXTERNAL_TIER="B"
 
-# The Class 4 allowlist - a path under .aid/ that may re-enter the candidate set.
-# An allowlist entry is an exemption from an exclusion, never a grant of nodehood.
+# The one entry of Class 4's carve-out set that scan-source.sh must re-admit from
+# the blanket ./.aid find-prune by hand (the scanner's step 4): every OTHER
+# carve-out either was never pruned at that level (.github/workflows/) or already
+# carries its own re-admission for an unrelated reason (.claude/skills/
+# generate-profile/, Class 5). An allowlist entry is an exemption from an
+# exclusion, never a grant of nodehood.
 SIG_CLASS4_ALLOWLIST=".aid/settings.yml"
 
 # Installed by sig_set_image_extensions / sig_load_schema. Never a literal list.
@@ -671,17 +676,67 @@ sig_class3_ignored() {
     return 1
 }
 
-# Class 4 - the .aid/ partition. No path under .aid/ may BECOME a node, with a
-# single declared allowlist entry. The KB-side and int: node sets must be disjoint,
-# .aid/works/** is transient, and the rest is gitignored scratch. The cut is on
-# paths becoming nodes, not on reading: external-sources.md is read as a registry
-# and never becomes an int: node.
+# Class 4 - the dotfile / dot-directory partition, plus four repo-root metadata
+# files (generalised 2026-08-06, owner decision following an FR-21 finding that
+# vetoed one candidate exclusion). A path is cut here when EITHER of two
+# independent tests holds, checked in this order:
+#
+#   (a) it does not match one of the four root-anchored carve-outs below, AND
+#       some '/'-delimited segment of the path begins with '.', at ANY depth -
+#       not only at the repo root, so a fixture tree that carries its own
+#       nested .aid/** (a project-under-test, not this one) is cut exactly like
+#       a root one. A carve-out match is a path-PREFIX test ending on a '/'
+#       boundary (or, for the one single-file entry, an exact match) - never a
+#       substring test, so a path that merely shares a carve-out's text
+#       (`.aid/knowledge-old/*`) is NOT exempted by it.
+#   (b) the path is exactly one of four repo-root pointer/metadata files:
+#       `CLAUDE.md`, `AGENTS.md`, `LICENSE`, `VERSION`. (Not
+#       `packages/npm/VERSION`, already cut by Class 1 for an unrelated reason -
+#       an unprefixed literal match is root-anchored by construction.)
+#
+# The four carve-outs, and why each earned its exemption rather than being cut
+# with the rest of its dot-tree:
+#   .aid/knowledge/                   the Knowledge Base - this graph's own
+#                                     subject (owner decision)
+#   .aid/settings.yml                 SPEC.md's "Class 4 - the .aid/ partition,
+#                                     and why it is not optional": a declared
+#                                     allowlist entry, an FR-11 staleness input,
+#                                     and the only backing several KB claims cite
+#                                     (owner decision, confirming the SPEC rather
+#                                     than reopening it)
+#   .claude/skills/generate-profile/  unique, hand-authored maintainer tooling
+#                                     with no canonical/ original (Class 5's own
+#                                     rationale, D2 rule 4 - re-admitted there
+#                                     from Class 1, and carved out here too so
+#                                     the general dot-rule does not re-cut it
+#                                     first)
+#   .github/workflows/                FR-21 / D3a's Q1 carrier table row 7: a
+#                                     workflow step's command token is a
+#                                     DECLARED entry-point carrier, and
+#                                     scan-source.sh's template-7 carrier can
+#                                     only read a workflow file if that file is
+#                                     already a walked candidate - excluding it
+#                                     retires the carrier, not just the node
+#
+# `.github/dependabot.yml` and `.github/ISSUE_TEMPLATE/**` are NOT exempted:
+# `.github` is a dot segment like any other, and only `workflows/` earned a
+# carve-out. The KB-side and int: node sets must stay disjoint (D1): the cut
+# here is on a path becoming a node, not on reading - external-sources.md is
+# read as a registry and never becomes an int: node, and nothing in this
+# feature makes `.aid/knowledge/**` reachable past the scanner's own step-4
+# find-prune, so the carve-out's admission of it is a predicate fact this
+# function upholds without this feature enumerating a single KB document as a
+# source-artifact candidate.
 sig_class4_excluded() {
-    if [ "$1" = "$SIG_CLASS4_ALLOWLIST" ]; then
-        return 1
-    fi
     case "$1" in
-        .aid/*) return 0 ;;
+        .aid/knowledge|.aid/knowledge/*)                       return 1 ;;
+        .aid/settings.yml)                                     return 1 ;;
+        .claude/skills/generate-profile|.claude/skills/generate-profile/*) return 1 ;;
+        .github/workflows|.github/workflows/*)                 return 1 ;;
+    esac
+    case "$1" in
+        .*|*/.*)                          return 0 ;;
+        CLAUDE.md|AGENTS.md|LICENSE|VERSION) return 0 ;;
     esac
     return 1
 }

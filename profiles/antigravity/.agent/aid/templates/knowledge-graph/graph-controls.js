@@ -52,17 +52,17 @@ const GROUP_TOGGLE_ATTR = 'data-group-toggle';
  * back. With no drawing rendering present the entries stay present, focusable and
  * never disabled, and write nothing -- there is nothing drawn to transform.
  */
+/* NO LONGER A CONTROL LIST. With the buttons removed this is only the VOCABULARY
+   the drawing rendering's viewport handle accepts (`gcViewportFor`'s seven action
+   tokens, D8) -- kept because that handle still exists, is still returned by
+   `mountCanvas`, and is still recorded on `shellState.viewport`, so the contract
+   survives the buttons and is what a future keyboard route would drive. It is
+   deliberately NOT fed into the control manifest any more; see the note there. */
 const VIEWPORT_ACTIONS = Object.freeze(['zoom-in', 'zoom-out', 'zoom-fit', 'pan-left', 'pan-right', 'pan-up', 'pan-down']);
 
-const VIEWPORT_LABELS = Object.freeze({
-	'zoom-in': 'Zoom in',
-	'zoom-out': 'Zoom out',
-	'zoom-fit': 'Fit graph to view',
-	'pan-left': 'Pan left',
-	'pan-right': 'Pan right',
-	'pan-up': 'Pan up',
-	'pan-down': 'Pan down',
-});
+/* `VIEWPORT_LABELS` lived here, one label per action, and is deleted with the
+   buttons it labelled -- an unused label table is exactly the kind of leftover that
+   later reads as evidence a feature still exists. */
 
 /**
  * The controls no data set enumerates. They are AUTHORED, and each carries the
@@ -95,9 +95,18 @@ const AUTHORED_CONTROLS = Object.freeze([
 			+ 'known node in a graph of this size is to type its name, and it is labelled a design '
 			+ 'choice rather than given a citation it does not have.',
 	}),
-].concat(VIEWPORT_ACTIONS.map((action) => Object.freeze({
-	id: action, requirement: 'NFR-6', axis: 'viewport', value: action,
-}))));
+]);
+// The seven `NFR-6` viewport entries used to be concatenated here, one per action
+// in `VIEWPORT_ACTIONS`. They are GONE, and the manifest is exactly where they had
+// to go from: a control cannot exist without an entry and an entry cannot exist
+// without a control, so leaving the entries while deleting the buttons would have
+// made the very bijection this manifest exists to guarantee false -- the coverage
+// assertion would report seven controls the page does not have.
+//
+// The owner removed the buttons deliberately ("The viewport controls should be only
+// by mouse, no buttons"), having been shown the consequence: NFR-6 and AC-21 require
+// KEYBOARD equivalents for zoom and pan, and there are now none. That deviation is
+// recorded in the debt register and in task-032, not papered over here.
 
 /** A value turned into an attribute-safe token. Values are category names, kind
  *  names and provenance names -- all lowercase words and hyphens -- so this is a
@@ -333,25 +342,6 @@ function mountControls(ctx) {
 	]));
 	grid.appendChild(filterAxis(store, ctx.manifest, 'filters.provenance', 'Provenance', (value) => [value]));
 
-	// --- The viewport controls ----------------------------------------------
-	const viewportBar = root.querySelector('[data-viewport-bar]');
-	clear(viewportBar);
-	for (const entry of ctx.manifest.filter((e) => e.axis === 'viewport')) {
-		const button = el('button', {
-			type: 'button', class: 'btn-ghost', id: entry.id, [CONTROL_ATTR]: entry.id,
-			text: VIEWPORT_LABELS[entry.value],
-		});
-		button.addEventListener('click', () => {
-			// One writer on this path. The step factor and the extent belong to
-			// the drawing rendering; the resulting transform is written here.
-			const handle = shellState.viewport;
-			if (!handle || typeof handle.viewportFor !== 'function') return;
-			const next = handle.viewportFor(entry.value);
-			if (next) store.setLens({ 'zoom': next });
-		});
-		viewportBar.appendChild(button);
-	}
-
 	// --- The open gesture ---------------------------------------------------
 	const openButton = root.querySelector('#node-open');
 	openButton.setAttribute(CONTROL_ATTR, 'node-open');
@@ -536,16 +526,42 @@ function renderLegend(root, graphModel) {
 		])]));
 	}
 
-	const direction = el('dl', {}, [
-		el('dt', { text: 'Direction' }),
-		el('dd', { text: 'An arrowhead reads source to target. A relationship that reads the same in both directions has NO arrowhead, and that absence is the signal for it.' }),
-		el('dt', { text: 'Emphasis' }),
-		el('dd', { text: 'A selected node is outlined. Under the Coverage lens an unbacked knowledge-base claim is underlined with a wavy rule and an undocumented source artifact with a double rule; everything well-formed is dimmed. Under the Provenance lens the rows of a cross-side chain keep full contrast and the rest are dimmed.' }),
-		el('dt', { text: 'Relationship names' }),
-		el('dd', { text: 'Not painted on every line. They appear on hover and on selection, and every one of them is always present as text in the relationship table.' }),
+	// The coverage gap badge. Its own section rather than a line inside
+	// "Emphasis", because it is NOT on the emphasis axis: its source is
+	// `coverageGaps` membership, so a selected gap node keeps its badge where an
+	// emphasis-derived mark would lose it. Describing it under Emphasis would
+	// have taught the reader the wrong model.
+	//
+	// ONE character AND one size for both, because the canvas draws them that way
+	// -- the owner compared three arms against four and two sizes against one, and
+	// chose three arms at one size. Colour is the only difference. A second
+	// character or a size bump here would claim a distinction the canvas does not
+	// draw, which is the failure mode a legend exists to avoid.
+	const gaps = el('dl', {}, [
+		el('dt', { text: 'Coverage gap — asterisk beside the node' }),
+		el('dd', {}, [el('span', { class: 'legend-row' }, [
+			el('span', { class: 'filter-glyph gap-kb-unbacked', 'aria-hidden': 'true', text: '✱' }),
+			'unbacked claim — nothing in the source backs it',
+		])]),
+		el('dd', {}, [el('span', { class: 'legend-row' }, [
+			el('span', { class: 'filter-glyph gap-artifact-undocumented', 'aria-hidden': 'true', text: '✱' }),
+			'undocumented artifact — no knowledge-base document describes it',
+		])]),
+		el('dd', { text: 'The red asterisk is the more severe of the two: an unbacked claim is wrong information rather than missing information. A node with neither gap carries no asterisk, and the table below states both classes in words.' }),
 	]);
 
-	host.appendChild(el('div', { class: 'legend-grid' }, [kinds, categories, direction]));
+	const direction = el('dl', { class: 'legend-prose' }, [
+		el('dt', { text: 'Direction' }),
+		el('dd', { text: 'An arrowhead reads source to target, and touches the border of the node it points at. A relationship that reads the same in both directions has NO arrowhead, and that absence is the signal for it.' }),
+		el('dt', { text: 'Emphasis' }),
+		el('dd', { text: 'A selected node is outlined with a ring. Under the Coverage lens everything well-formed is dimmed, so the gaps stand out. Under the Provenance lens the rows of a cross-side chain keep full contrast and the rest are dimmed. In the relationship table the same two gap classes are marked with a wavy rule and a double rule instead, because a table has no room for a badge.' }),
+		el('dt', { text: 'Relationship names' }),
+		el('dd', { text: 'Not painted on every line. They appear on hover and on selection, and every one of them is always present as text in the relationship table.' }),
+		el('dt', { text: 'Mouse' }),
+		el('dd', { text: 'Scroll to zoom. Drag to pan. Click a node to select it, and click empty space to clear the selection; hover a node or a line to read its name. The Controls panel above also carries a Selected node list, whose ‘(none)’ entry clears the same way from the keyboard.' }),
+	]);
+
+	host.appendChild(el('div', { class: 'legend-grid' }, [kinds, categories, gaps, direction]));
 }
 
 /**
@@ -766,6 +782,79 @@ function reportConflicts(root, graphModel) {
 }
 
 
+/**
+ * Restore the reader's checkbox-hide selection, saved on EITHER page.
+ *
+ * WHY THIS LIVES HERE AND NOT IN THE TABLE. The selection is edited on the table
+ * page, but the owner's stated purpose for it is that the GRAPH is quieter on
+ * reload -- "reduce the noise every time the graph is reload". A selection that
+ * only took effect on the page where it was made would not deliver that at all.
+ * The shell is the one place both pages pass through, so the restore belongs
+ * here rather than in either rendering.
+ *
+ * The two pages agree because `hiddenSelectionKey` scopes the stored key to the
+ * page's DIRECTORY, not its filename: `graph.html` and `table.html` are siblings
+ * written by the same run, so they read and write the same entry. That is also
+ * what keeps two different projects apart even under `file://`, where a browser
+ * may hand every page the same null origin -- the key carries the directory
+ * itself rather than trusting the browser to partition anything.
+ *
+ * WHAT IT REFUSES TO DO. `resolveHiddenSelection` is the judgement and it is pure
+ * (see its own contract): an id the model no longer has is dropped rather than
+ * fatal, and a selection that would hide EVERY node restores nothing and says so.
+ * The second rule is the important one -- a fully filtered view is
+ * indistinguishable from a broken build at a glance, so silently honouring such
+ * a selection would make the page look defective on the reader's own past
+ * instruction. Reported through the ordinary callout channel, never the alert
+ * region, which carries LOAD-TIME FAILURE and this is not one.
+ *
+ * A restore of nothing writes no lens at all, which is the common case (no
+ * selection ever made) and must stay indistinguishable from a page that has
+ * never had one -- `setLens` with an empty list would still be a notification,
+ * and a first paint that notifies for nothing is how a "why did this re-render"
+ * defect starts.
+ *
+ * THE LENS WRITE AND THE NOTICE ARE SPLIT ACROSS TWO FUNCTIONS ON PURPOSE, and
+ * the reason is a defect a reviewer found in the first version of this code. The
+ * notice goes into `[data-conflicts]`, and `reportConflicts` -- which runs LATER
+ * in `mountShell` -- opens with an unconditional `clear(host)` on that same
+ * element. So a single function doing both wrote a notice that was erased eight
+ * lines later, and the suppressed case reported nothing at all on the graph page
+ * while every test still passed, because no test drove the notice through
+ * `mountShell` at all. The lens has to be written EARLY (before the renderings
+ * mount, so the first projection is already filtered) and the notice LATE (after
+ * anything that clears its host). Those are two different moments, so they are
+ * two different calls, and neither can be moved next to the other without
+ * reintroducing one half of the bug.
+ *
+ * @returns {{hiddenIds: string[], dropped: string[], suppressed: boolean}} the
+ *          resolution, for `reportSuppressedHiddenSelection` to report later
+ */
+function restoreHiddenSelection(store, graphModel) {
+	const resolved = resolveHiddenSelection(graphModel, readHiddenSelection());
+	if (resolved.hiddenIds.length > 0) {
+		store.setLens({ 'filters.hiddenIds': resolved.hiddenIds });
+	}
+	return resolved;
+}
+
+/** The second half of the restore: say so when a stored selection was refused.
+ *  MUST be called after `reportConflicts`, which clears this same host -- see
+ *  `restoreHiddenSelection`'s note on why the two are separate. */
+function reportSuppressedHiddenSelection(root, resolved) {
+	if (!resolved || !resolved.suppressed) return;
+	const host = root.querySelector('[data-conflicts]');
+	if (!host) return;
+	host.appendChild(el('div', { class: 'callout warn' }, [
+		el('h4', { text: 'A saved selection would have hidden everything, so nothing was hidden' }),
+		el('p', { text: 'The checkbox selection stored for this view covers every node it has, which would '
+			+ 'have left an empty view that reads as a broken build rather than as a filtered one. '
+			+ 'The whole view is shown instead. Clear or narrow the selection on the relationship '
+			+ 'table page to restore filtering.' }),
+	]));
+}
+
+
 /* ==========================================================================
  * 8. System preferences
  *
@@ -868,6 +957,10 @@ function mountShell(scope) {
 
 	const store = createStore(graphModel, INITIAL_LENS, detectPreferences());
 	watchPreferences(store);
+	// Early, so the first projection is already filtered. The NOTICE this may owe
+	// is deliberately not written here -- `reportConflicts` below clears the host
+	// it would go into. See `restoreHiddenSelection`.
+	const restoredSelection = restoreHiddenSelection(store, graphModel);
 
 	const manifest = buildControlManifest(graphModel);
 	shellState.manifest = manifest;
@@ -876,6 +969,8 @@ function mountShell(scope) {
 
 	reportIntegrity(root, graphModel);
 	reportConflicts(root, graphModel);
+	// AFTER reportConflicts, which opens with an unconditional clear of this host.
+	reportSuppressedHiddenSelection(root, restoredSelection);
 
 	const controls = mountControls({ root: root, store: store, graphModel: graphModel, manifest: manifest });
 	renderLegend(root, graphModel);
@@ -894,14 +989,35 @@ function mountShell(scope) {
 	};
 
 	const mountTableFn = resolveMount('table', typeof mountTable === 'function' ? mountTable : null);
-	if (mountTableFn) {
+	// THE REGION IS CHECKED FIRST, AND THAT ORDER IS THE POINT. Two independent
+	// things can be absent here -- the rendering, and the place to put it -- and
+	// only one combination is a defect. A page that declares no `[data-table-region]`
+	// has deliberately composed itself without the table, and calling the rendering
+	// anyway hands it a null region, which it correctly treats as a broken build and
+	// reports on the console. That is a false alarm manufactured by the caller: the
+	// rendering is right to complain, so the caller must not ask. (Measured: with
+	// this gated on the function alone, `test-graph-view-shell.sh`'s DT10 failed on
+	// `graph.html: the relationship table rendering found no region to mount into`
+	// for a page that was exactly as intended.)
+	if (context.region && mountTableFn) {
 		mountTableFn(context);
-	} else {
-		// A missing table rendering is a real defect, not a degraded mode: it is
-		// the surface every conformance claim rests on. It is reported through the
-		// ordinary callout channel rather than through the alert region, because
-		// that region carries a LOAD-TIME failure and is written at most once per
-		// load -- and a build defect is neither of the two failures it reports.
+	} else if (context.region) {
+		// TWO DIFFERENT SITUATIONS, and only this one is a defect: the markup
+		// declares a mount point for the table and the rendering did not arrive to
+		// fill it. That is a broken build -- something asked for the table and
+		// nothing delivered it -- and it is reported loudly below.
+		//
+		// The other situation is a page that declares NO table region at all, which
+		// is a deliberate composition and is handled in the final branch. Before
+		// this distinction existed, an intentionally table-less page logged
+		// `console.error` on every single load and painted a red "not present in
+		// this build" callout, so the one signal that should mean "this build is
+		// broken" fired constantly on a build that was exactly as intended -- and a
+		// warning that always fires is a warning nobody reads.
+		//
+		// Reported through the ordinary callout channel rather than the alert
+		// region, because that region carries a LOAD-TIME failure and is written at
+		// most once per load, and a build defect is neither of the two it reports.
 		const host = root.querySelector('[data-conflicts]');
 		if (host) {
 			host.appendChild(el('div', { class: 'callout err' }, [
@@ -913,6 +1029,13 @@ function mountShell(scope) {
 		}
 		console.error('graph.html: the table rendering did not mount');
 	}
+	// else: the page declares no table region, so no table was asked for. Composed
+	// that way on purpose -- see graph-skeleton.html's note and
+	// build-graph-src.mjs's `OWNER_EXCLUDES_TABLE_RENDERING`. Silent by design: it
+	// is not this file's place to complain about a composition it was handed. The
+	// accessibility consequence of composing a page this way is real and is
+	// recorded at both of those sites and in the debt register, which is where a
+	// decision belongs -- not in a console message on every load.
 
 	const mountCanvasFn = resolveMount('canvas', typeof mountCanvas === 'function' ? mountCanvas : null);
 	if (mountCanvasFn) {
@@ -940,9 +1063,20 @@ function mountShell(scope) {
 		// state boundary rather than the draw boundary is what keeps
 		// accessibility-tree rebuilds off the frame path.
 		announce(root, viewModel.announcement);
-		const canvas = root.querySelector('[data-graph-canvas]');
-		if (canvas) canvas.setAttribute('aria-label', viewModel.canvasAlt);
 		const surface = root.querySelector('[data-graph-surface]');
+		// The drawing module (feature-008, AC-S8) writes ONLY `width`/`height` on
+		// the canvas it creates -- this shell owns `role` and `aria-label`
+		// (feature-007 :1718) and finds the element by tag, scoped to the
+		// drawing surface, so no marker attribute needs to exist for this lookup
+		// to work. The WebGL capability probe (`graph-canvas.js`'s `gcHasWebGL`)
+		// creates its own scratch canvas but never inserts it into the document,
+		// so scoping to the surface -- rather than querying the whole page --
+		// cannot pick that element up even if it somehow were reachable.
+		const canvas = surface ? surface.querySelector('canvas') : null;
+		if (canvas) {
+			canvas.setAttribute('role', 'img');
+			canvas.setAttribute('aria-label', viewModel.canvasAlt);
+		}
 		if (surface) surface.setAttribute('data-lens-revision', String(viewModel.revision));
 	}
 

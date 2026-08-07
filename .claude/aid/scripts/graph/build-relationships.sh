@@ -15,7 +15,11 @@
 #     13   apply D6's four rejections to Pass 2's returned rows and merge class 1
 #     14   the completion check (D6 part 4) -- a shortfall exits 1 AFTER the
 #          artifact is written, naming every item
-#     15   render the ten-column table and the `## Coverage notes` section
+#     15   render the ten-column table, then run feature-010's
+#          assemble-coverage-notes.sh over this feature's own kb-coverage.tsv
+#          (D7) and feature-004's coverage.tsv and render its output VERBATIM as
+#          the `## Coverage notes` section -- this script composes none of that
+#          section's content itself (feature-010 D7, Open Item 7)
 #     16   self-validate with feature-003's validate-relationships.sh
 #
 #   Ordering, keying and normalisation are reached through feature-003 D9 and are
@@ -32,7 +36,8 @@
 #                                  (default: .aid/.temp/graph)
 #   --out <file>                   the artifact
 #                                  (default: .aid/knowledge/relationships.md)
-#   --coverage <file>              feature-004 D7's coverage contribution
+#   --coverage <file>              feature-004 D7's coverage contribution, passed through
+#                                  unread to the coverage-notes assembler
 #                                  (default: <temp-dir>/coverage.tsv)
 #   --schema <file>                relationship-schema.yml
 #                                  (default: <aid-root>/templates/graph/relationship-schema.yml)
@@ -45,6 +50,11 @@
 #   --validator <file>             feature-003's validate-relationships.sh
 #                                  (default: alongside this script; step 16 is
 #                                  skipped with a notice when it is absent)
+#   --assembler <file>             feature-010's assemble-coverage-notes.sh
+#                                  (default: alongside this script; UNLIKE --validator,
+#                                  step 15's hand-off is never skipped when this is
+#                                  absent -- a missing, failing, empty or truncated
+#                                  hand-off aborts the run with nothing written)
 #   --skip-validate                do not run step 16 even when the validator exists
 #   -h, --help                     print this header
 #
@@ -66,26 +76,34 @@
 #   <temp-dir>/rows-class0.tsv                the frozen class-0 rows, in D7 order
 #   <temp-dir>/rows-class1-accepted.tsv       the class-1 rows that survived D6
 #   <temp-dir>/kb-coverage.tsv                this feature's D7 coverage contribution
+#   <temp-dir>/coverage-notes.md              feature-010's assembled `## Coverage notes`
+#                                             hand-off (feature-010 D7, Open Item 7) --
+#                                             produced by running --assembler over the
+#                                             line above and --coverage, then rendered
+#                                             into <out> VERBATIM
 #   <temp-dir>/concept-merge-candidates.tsv   D2f's advisory candidate list
 #   <temp-dir>/dispositions.tsv               appended to for every rejected class-1 row
 #
 # Exit codes:
 #   0 - success
 #   1 - a write failure, a validator finding, or a completion shortfall
-#   2 - usage error, or a missing/malformed schema, vocabulary, edge-relation map
-#       or input stream
+#   2 - usage error, or a missing/malformed schema, vocabulary, edge-relation map,
+#       input stream, or coverage-notes hand-off (absent, failing, empty or
+#       truncated -- nothing is written in any of these cases)
 #
 # ---------------------------------------------------------------------------
-# The feature-003 D9 seam -- two accessor shapes this renderer requires
+# The feature-003 D9 seam -- one accessor shape this renderer requires
 # ---------------------------------------------------------------------------
 #
 #   rel_columns  the column names of D1's contract, ONE PER LINE, in their fixed
 #                left-to-right order. The emitted header and delimiter rows are
 #                built from this list, so no script hard-codes the column set
 #                (feature-003 D1).
-#   rel_kinds    the `Kind` enum, space separated, in the carrier's order -- which
-#                is also the fixed row order of the coverage notes' kinds table
-#                (feature-003 D7a).
+#
+#   The `Kind` enum (`rel_kinds`) that fixes the coverage notes' kinds-table row
+#   order is NOT read here. assemble-coverage-notes.sh reads it through its own
+#   copy of the same schema loader, so this script no longer needs the function
+#   at all (feature-010 D7).
 #
 # Everything else is used exactly as feature-003's Provides index publishes it:
 # rel_load_schema, rel_load_vocabulary, rel_normalise_row (TEN LINES out, and
@@ -131,6 +149,7 @@ TEMP_DIR=".aid/.temp/graph"
 OUT=".aid/knowledge/relationships.md"
 COVERAGE=""
 VALIDATOR=""
+ASSEMBLER=""
 SKIP_VALIDATE=0
 SHORTFALL=0
 VALIDATOR_FINDINGS=0
@@ -737,102 +756,69 @@ br_render_delimiter() {
     printf '%s\n' "$out"
 }
 
-# The coverage contributions, read ONCE from both producer files and checked here
-# rather than while rendering: a completeness failure discovered halfway through
-# writing the artifact would leave a truncated file behind, so the check runs
-# before a byte is written.
+# ---------------------------------------------------------------------------
+# Step 15's hand-off half (feature-010 D7, Open Item 7)
+# ---------------------------------------------------------------------------
 #
-# The three FR-22 exclusion labels are D7a's skeleton wording. feature-004's
-# stream carries the key, the status and the note; this is the one place a key
-# becomes a display label, and the three fixed kind labels need no mapping
-# because §5.2's enum value IS the label.
-declare -A COV_STATUS=()
-declare -A COV_COUNT=()
-declare -A COV_NOTE=()
-declare -a COV_EXTRA_KIND=()
-declare -a COV_EXTRA_EXCL=()
-declare -A COV_FIXED_KIND=()
-BR_EXCL_FIXED="generated-trees vendored-code ignore-list"
+# feature-003 owns the `## Coverage notes` section's shape, row set, order and
+# validation (its D7a, V14); this feature supplies the content of its own four
+# kind rows and four extra rows via `kb-coverage.tsv`, just written above; and
+# feature-010's assemble-coverage-notes.sh is the ONE place those bytes and
+# feature-004's coverage.tsv become the rendered section -- the field
+# reordering, the exclusion-key -> label translation and the extra-row total
+# sort all live there and NOWHERE else (D7a-1). This function's only job is to
+# run it and verify what it wrote; br_render_coverage() below then moves those
+# bytes without composing a single one of its own, which is what makes this
+# feature's contribution and feature-010's assembly a single code path instead
+# of two renderers that could silently disagree.
+#
+# An absent, failing, empty or truncated hand-off is a LOUD failure and never a
+# silent fall-back to self-rendering -- self-rendering is exactly the defect
+# this function replaces. Every branch below returns 2, the same
+# "malformed/missing input stream" bucket br_parse_args already uses for a
+# missing schema or vocabulary, because in every one of them not one byte of
+# the artifact has been written yet (br_render, and therefore br_render_coverage,
+# has not run): a hand-off failure here costs nothing already committed to disk.
+br_assemble_coverage() {
+    local notes="${TEMP_DIR}/coverage-notes.md" first_line
 
-br_excl_label() {
-    case "$1" in
-        generated-trees) printf '%s' 'generated/derived trees' ;;
-        vendored-code)   printf '%s' 'vendored third-party code' ;;
-        ignore-list)     printf '%s' '`.aid/settings.yml` ignore list' ;;
-        *)               printf '%s' "$1" ;;
-    esac
-}
-
-br_load_coverage() {
-    local kind key status count note
-
-    while IFS="$TAB" read -r kind key status count note || [ -n "${kind:-}" ]; do
-        [ -n "${key:-}" ] || continue
-        COV_STATUS["${kind}${US}${key}"]="$status"
-        COV_COUNT["${kind}${US}${key}"]="$count"
-        COV_NOTE["${kind}${US}${key}"]="${note%$'\r'}"
-        case "$kind" in
-            kind)      COV_EXTRA_KIND+=("$key") ;;
-            exclusion) COV_EXTRA_EXCL+=("$key") ;;
-        esac
-    done < <(cat "${TEMP_DIR}/kb-coverage.tsv" "$COVERAGE")
-
-    # AC-20: every kind of the enum contributes a row, including one whose count
-    # is zero. An implementation that wrote notes only on failure would satisfy
-    # every other criterion while violating FR-9a on every healthy project.
-    # shellcheck disable=SC2086  # deliberate word splitting over a space-separated list
-    for key in $(rel_kinds); do
-        COV_FIXED_KIND["$key"]=1
-        if [ -z "${COV_STATUS[kind${US}${key}]:-}" ]; then
-            br_warn "no coverage contribution for the '${key}' kind (AC-20 requires every kind)"
-            return 2
-        fi
-    done
-    for key in $BR_EXCL_FIXED; do
-        if [ -z "${COV_STATUS[exclusion${US}${key}]:-}" ]; then
-            br_warn "no coverage contribution for the '${key}' exclusion (feature-003 D7a requires all three)"
-            return 2
-        fi
-    done
+    if [ ! -f "$ASSEMBLER" ]; then
+        br_warn "the coverage-notes assembler is not found at ${ASSEMBLER}; the '## Coverage notes' section cannot be rendered without it"
+        return 2
+    fi
+    # A stale file from an earlier run must never be mistaken for this run's
+    # hand-off -- the checks below would otherwise validate the WRONG bytes on
+    # a run whose assembler silently failed to write anything.
+    rm -f -- "$notes"
+    if ! bash "$ASSEMBLER" --coverage "$COVERAGE" --kb-coverage "${TEMP_DIR}/kb-coverage.tsv" \
+            --schema "$GRAPH_SCHEMA" --output "$notes"; then
+        br_warn "assemble-coverage-notes.sh failed; the coverage-notes hand-off was not produced"
+        return 2
+    fi
+    if [ ! -s "$notes" ]; then
+        br_warn "the coverage-notes hand-off at ${notes} is absent or empty after the assembler ran -- nothing guarantees feature-010's step ran first, and this run did not produce it either"
+        return 2
+    fi
+    first_line=$(head -n 1 -- "$notes")
+    if [ "$first_line" != "## Coverage notes" ]; then
+        br_warn "the coverage-notes hand-off at ${notes} is truncated or malformed -- it does not begin with '## Coverage notes'"
+        return 2
+    fi
     return 0
 }
 
-# Fixed rows first, complete and in their fixed order; then the extra rows in
-# LC_ALL=C ascending order by KEY, contiguous below the fixed block -- which is
-# feature-003 D7a-1 and what makes AC-5's byte-comparison of the whole section
-# achievable. Ordering on the row's own key is also why this assembly may read
-# the two producer files in ANY order: the sort makes assembly order
-# unobservable in the artifact.
+# The consumer half. feature-003 D7a-1's fixed-block-then-sorted-extras order and
+# feature-004/feature-005's exclusion-key -> label translation are NOT
+# reimplemented here -- br_assemble_coverage() already verified the file above IS
+# that rendered section, so this function moves its bytes and composes none of
+# its own. The leading blank line is the separator from the relationship table
+# above it, not part of the hand-off; the hand-off's own bytes follow untouched,
+# which is what makes AC-5's byte-comparison of the whole section a comparison
+# against feature-010's own output rather than a second, possibly-diverging
+# rendering of the same content.
 br_render_coverage() {
-    local key label
-
-    printf '\n## Coverage notes\n\n### Node kinds\n\n'
-    printf '| Kind | Carrier convention | Status | Nodes |\n'
-    printf '|------|--------------------|--------|-------|\n'
-    # shellcheck disable=SC2086  # deliberate word splitting over a space-separated list
-    for key in $(rel_kinds); do
-        br_render_row "$key" "${COV_NOTE[kind${US}${key}]}" \
-            "${COV_STATUS[kind${US}${key}]}" "${COV_COUNT[kind${US}${key}]}"
-    done
-    for key in $(printf '%s\n' "${COV_EXTRA_KIND[@]:-}" | LC_ALL=C sort -u); do
-        [ -n "$key" ] || continue
-        [ -z "${COV_FIXED_KIND[$key]:-}" ] || continue
-        br_render_row "$key" "${COV_NOTE[kind${US}${key}]}" \
-            "${COV_STATUS[kind${US}${key}]}" "${COV_COUNT[kind${US}${key}]}"
-    done
-
-    printf '\n### Enumeration exclusions\n\n'
-    printf '| Exclusion | Applied | Note |\n'
-    printf '|-----------|---------|------|\n'
-    for key in $BR_EXCL_FIXED; do
-        label=$(br_excl_label "$key")
-        br_render_row "$label" "${COV_STATUS[exclusion${US}${key}]}" "${COV_NOTE[exclusion${US}${key}]}"
-    done
-    for key in $(printf '%s\n' "${COV_EXTRA_EXCL[@]:-}" | LC_ALL=C sort -u); do
-        [ -n "$key" ] || continue
-        case " ${BR_EXCL_FIXED} " in *" ${key} "*) continue ;; esac
-        br_render_row "$key" "${COV_STATUS[exclusion${US}${key}]}" "${COV_NOTE[exclusion${US}${key}]}"
-    done
+    printf '\n'
+    cat -- "${TEMP_DIR}/coverage-notes.md"
     return 0
 }
 
@@ -931,6 +917,7 @@ BR_HELP=0
 
 br_parse_args() {
     VALIDATOR="${BR_SCRIPT_DIR}/validate-relationships.sh"
+    ASSEMBLER="${BR_SCRIPT_DIR}/assemble-coverage-notes.sh"
     while [ $# -gt 0 ]; do
         case "$1" in
             -h|--help) BR_HELP=1; return 0 ;;
@@ -943,6 +930,7 @@ br_parse_args() {
             --edge-map)             GRAPH_EDGE_MAP="${2:-}"; shift 2 ;;
             --lib)                  GRAPH_LIB="${2:-}"; shift 2 ;;
             --validator)            VALIDATOR="${2:-}"; shift 2 ;;
+            --assembler)            ASSEMBLER="${2:-}"; shift 2 ;;
             --skip-validate)        SKIP_VALIDATE=1; shift ;;
             *) br_warn "unknown option '$1'"; return 2 ;;
         esac
@@ -959,7 +947,7 @@ br_parse_args() {
 
 br_run() {
     graph_require_functions rel_normalise_row rel_row_key rel_sort_key \
-        rel_display_name rel_columns rel_kinds || return 2
+        rel_display_name rel_columns || return 2
 
     br_load_nodes "${TEMP_DIR}/kb-nodes.tsv" "${TEMP_DIR}/nodes.tsv" \
         "${TEMP_DIR}/media-nodes.tsv" || return 2
@@ -970,7 +958,7 @@ br_run() {
     br_merge_class1 || return 1
     br_completion_check || return 1
     br_write_kb_coverage
-    br_load_coverage || return 2
+    br_assemble_coverage || return 2
     br_render || return 1
     br_self_validate
 

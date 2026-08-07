@@ -301,7 +301,8 @@ hd_load_inventory() {
         path="${id#int:}"
         PATH_TO_ID["$path"]="$id"
         INT_PATHS+=("$path")
-        base="${path##*/}"
+        base="${path%/}"; base="${base##*/}"
+        [ -n "$base" ] || continue
         BASE_IDS["$base"]="${BASE_IDS[$base]:-} $id"
     done < "$nodes"
 
@@ -315,8 +316,8 @@ hd_load_inventory() {
                 path="${id#int:}"
                 PATH_TO_ID["$path"]="$id"
                 INT_PATHS+=("$path")
-                base="${path##*/}"
-                BASE_IDS["$base"]="${BASE_IDS[$base]:-} $id"
+                base="${path%/}"; base="${base##*/}"
+                [ -n "$base" ] && BASE_IDS["$base"]="${BASE_IDS[$base]:-} $id"
                 ;;
             ext:*) EXT_KEYS["${id#ext:}"]=1 ;;
         esac
@@ -436,7 +437,9 @@ hd_resolve_int() {
 hd_resolve_kb_doc() {
     local ref="${1#./}" base
     RESOLVED_ID=""
+    case "$ref" in */|'') return 1 ;; esac
     base="${ref##*/}"
+    [ -n "$base" ] || return 1
     [ -n "${SCAN_SET[$base]:-}" ] || return 1
     case "$ref" in
         "$base"|"${KB_REL}/${base}") RESOLVED_ID="kb:${base}"; return 0 ;;

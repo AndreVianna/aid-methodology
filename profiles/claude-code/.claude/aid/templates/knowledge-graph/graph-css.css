@@ -121,9 +121,32 @@ html[data-theme="dark"]:root {
 /* ---------- Page frame ---------- */
 
 .graph-page {
-	max-width: 1200px;
-	margin: 0 auto;
+	/* FULL VIEWPORT WIDTH, owner's decision. The 1200px cap wasted 400px of a
+	   1600px screen and grew with the display -- and what it was capping is a
+	   drawing surface and a wide table, neither of which is prose. A measure cap
+	   is right for reading text and wrong for a canvas, so the cap moves to the
+	   two things here that ARE prose (`.lede` below, and the legend's own
+	   sections) rather than sitting on the page.
+
+	   `max-width: none` is REQUIRED and is not a redundant reset. This element IS
+	   the page's `<main>`, and the shared stylesheet caps `main` at 1200px and
+	   centres it. Deleting a `max-width` here does not widen anything -- it just
+	   falls back to that rule, which is exactly what happened on the first attempt
+	   (measured: `.graph-page` still 1200px wide inside a 1585px body). The cap
+	   has to be overridden explicitly, and `margin: 0` above likewise overrides
+	   the shared `margin: 0 auto`. */
+	max-width: none;
+	margin: 0;
 	padding: 1.5rem 1.25rem 3rem 1.25rem;
+}
+
+/* The footer is a SIBLING of `<main>`, so it keeps the shared 1200px centred cap
+   and its left edge would no longer line up with the full-width page above it.
+   Scoped by sibling combinator rather than by id so it applies only where a
+   full-width `.graph-page` is what precedes it. */
+.graph-page ~ footer {
+	max-width: none;
+	margin: 0;
 }
 
 .graph-page > h1 {
@@ -357,7 +380,20 @@ html[data-theme="dark"]:root {
 .graph-surface {
 	position: relative;
 	width: 100%;
-	height: 32rem;
+	/* Was a flat 32rem (512px) regardless of the display. Now viewport-relative,
+	   so the drawing is the dominant element on the page rather than a fixed
+	   letterbox in the middle of it -- which is what "the data is first class"
+	   means in layout terms. `min()` keeps it from becoming absurd on a very tall
+	   screen, and the floor keeps it usable on a short one.
+
+	   Why 60vh and not more: this box does not start at the top of the viewport.
+	   The heading, the lede and the lens bar sit above it (measured: 391px at
+	   1600x1000), so 72vh put the bottom edge 111px past the fold and the reader
+	   had to scroll to see the boundary of the very thing they were dragging.
+	   60vh clears it with room to spare at that size and still scales with the
+	   display, which a fixed pixel height would not. */
+	height: min(60vh, 46rem);
+	min-height: 22rem;
 	background: var(--bg-elev);
 	border: 1px solid var(--border);
 	border-radius: var(--radius);
@@ -384,6 +420,49 @@ html[data-theme="dark"]:root {
 	text-align: center;
 	color: var(--text-muted);
 	font-size: 0.92rem;
+}
+
+/* The `hidden` attribute MUST win here, and without this rule it does not.
+   `graph-controls.js` sets `placeholder.hidden = true` once a drawing rendering
+   mounts, and that is correct -- the IDL property reads `true`. But `hidden`
+   works only through the UA stylesheet's `[hidden] { display: none }`, and ANY
+   author `display` declaration outranks a UA one. The `display: flex` above is
+   exactly such a declaration, so the placeholder stayed painted.
+
+   Two symptoms, one cause, both measured in Chromium on 2026-08-06:
+     1. The page asserted "The interactive drawing surface is not present in
+        this build" while `__aidGraphCanvas.mode` was `'live'` and a real WebGL
+        2.0 context was drawing -- a false statement to every reader.
+     2. Far worse: this element is `position: absolute; inset: 0` with the
+        default `pointer-events: auto`, so it painted ABOVE the statically
+        positioned canvas and swallowed every pointer event.
+        `document.elementFromPoint` inside the surface returned this `<p>`, not
+        the canvas, so click-to-select, drag-to-pan, wheel-to-zoom and
+        double-click never reached handlers that were correctly bound all along
+        (`gcBindPointerEvents` binds to the appended element). Dragging over the
+        graph selected this paragraph's text instead of panning.
+
+   Specificity is the whole fix: `.graph-placeholder[hidden]` (0,2,0) beats
+   `.graph-placeholder` (0,1,0). No `!important` is needed or wanted. Do NOT
+   "fix" this in `graph-controls.js` -- the JS is already right. */
+.graph-placeholder[hidden] {
+	display: none;
+}
+
+/* The forced-colours system-colour probe (feature-008, task-017). A hidden
+   element the drawing rendering resolves with getComputedStyle exactly as it
+   resolves a palette custom property, so the two system colours it draws with
+   under forced-colours mode -- the forced foreground and the forced background
+   -- live in CSS and never as a literal in the drawing code (AC-S4). It is
+   read only at the same invalidation points a palette token is (a theme
+   change, a forced-colours change), never inside the frame path (AC-S5). */
+.gc-colour-probe {
+	position: absolute;
+	width: 0;
+	height: 0;
+	overflow: hidden;
+	color: CanvasText;
+	background-color: Canvas;
 }
 
 
@@ -474,19 +553,236 @@ html[data-theme="dark"]:root {
 	display: grid;
 	grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
 	gap: 0.5rem 1.25rem;
+	/* Sections have very different heights (7 kinds, 13 categories, 2 gap
+	   classes, 4 prose entries). Without this they stretch to the tallest row
+	   and their entries space out to fill it, which is what made the short
+	   columns read as half-empty. */
+	align-content: start;
 }
 
 .legend-grid dl { margin: 0; }
 
+/* A `dd` carries a 40px UA indent, which inside a 210px grid track is a fifth
+   of the column spent on nothing -- and it indented every glyph row away from
+   its own heading, so a row read as belonging to no section in particular. The
+   glyph column already provides the alignment the indent was standing in for. */
+.legend-grid dd { margin-left: 0; }
+
+/* Removing that indent took away the only thing separating a `dt` from its `dd`
+   in the prose section, where both are running text -- the term and its
+   description became one undifferentiated block. Weight and space do the job the
+   indent was doing, without spending a fifth of every column on it. */
+.legend-grid dt {
+	font-weight: 600;
+	margin-top: 0.7rem;
+}
+
+.legend-grid dt:first-child { margin-top: 0; }
+
+/* A swatch is a 3px border-top on a zero-height box, so top-aligning it puts
+   the line at the very top of the text's ascent rather than through its middle.
+   This drops it onto the first line's centre. A glyph needs no such correction:
+   it is a text character and shares the row's own line box. */
+.legend-row > .filter-swatch { margin-top: 0.6em; }
+
+/* The prose section is sentences, not rows, and at one track width it wrapped
+   every few words into a tall ragged column. Two tracks give it a readable
+   measure. Only above the breakpoint: at narrower widths `auto-fit` has already
+   collapsed the grid toward one or two columns, and a 2-track span there would
+   either overflow or squeeze the glyph sections back to nothing. */
+@media (min-width: 60rem) {
+	.legend-grid .legend-prose { grid-column: span 2; }
+}
+
 .legend-row {
 	display: flex;
-	align-items: center;
+	/* NOT `center`: that is right for a one-line row and wrong the moment one
+	   wraps, because the mark drifts down to sit beside the SECOND line and so
+	   reads as labelling the wrong text. Rows do wrap -- a narrow grid track and
+	   the longer gap-class descriptions both cause it. Top alignment keeps the
+	   mark on the first line at every column width; `.filter-swatch` gets a
+	   small margin below to sit on that line's centre rather than its ascent. */
+	align-items: flex-start;
 	gap: 0.5rem;
 	font-size: 0.87rem;
 	padding: 0.12rem 0;
 }
 
 .coverage-panel table.tbl { font-size: 0.87rem; }
+
+
+/* ---------- The relationship table ----------
+
+   THE TABLE SCROLLS SIDEWAYS RATHER THAN COMPRESSING. Columns of ids and
+   relation phrases do not fit a viewport -- there were ten when this was
+   written and task-034 slimmed them to six, which narrows the problem without
+   removing it, since two full ids and two relation phrases still outrun a
+   viewport. The shared `table.tbl { width: 100% }` made them try: every column
+   was squeezed to a
+   share of the available width, so `wcag-contrast-figure` broke across lines,
+   a row's Select control was pushed under its own name, and the column widths
+   bore no relation to what the columns held.
+
+   `.tbl-wrap` already sets `overflow-x: auto`, so the scroll mechanism was
+   there and unreachable -- a table pinned to 100% of its wrapper can never
+   overflow it. Sizing to content is what makes that wrapper do its job.
+   Scoped to this view's two tables by their data attributes, so the shared
+   rule is overridden rather than forked (this file forks none of them).       */
+
+[data-relationship-table],
+[data-unlisted-table] {
+	width: auto;
+	/* Still fills the wrapper when the content is narrower than it, so a small
+	   table does not sit in a half-empty box. */
+	min-width: 100%;
+}
+
+/* Content decides the column width. Without this, `width: auto` alone still
+   lets the browser wrap inside a cell to reach a narrower table. Ids and
+   relation phrases are single tokens or short phrases and are meant to be read
+   on one line; the two long-prose columns opt back out below. */
+[data-relationship-table] th,
+[data-relationship-table] td,
+[data-unlisted-table] th,
+[data-unlisted-table] td {
+	white-space: nowrap;
+}
+
+/* The empty-state cell is a sentence spanning every column, and the coverage
+   note is prose -- both must wrap, or the table would scroll to the width of a
+   paragraph. */
+[data-relationship-table] [data-empty-state] td,
+[data-relationship-table] caption,
+[data-unlisted-table] caption {
+	white-space: normal;
+}
+
+/* ---- Sticky cells ----
+
+   The shared rule is `.tbl th { position: sticky; top: 0 }`, which is written
+   for a column header and lands on EVERY `th` -- including each row's
+   `scope="row"` cell. So every row's Source Id was pinned to the top of the
+   scroll container and stacked into the header band; the owner's screenshot
+   shows one sitting among the column labels.
+
+   And the header's own offset was wrong for a second, independent reason. It
+   was set inline to 60px to clear the page's sticky top bar, which is correct
+   only if the header sticks to the VIEWPORT. It does not: `.tbl-wrap` sets
+   `overflow-x: auto`, CSS computes the other axis of a non-visible overflow to
+   `auto` too, so the wrapper is itself a scroll container and sticky resolves
+   against it. Measured: the wrapper's computed `overflow-y` is `auto`. The 60px
+   therefore pushed the header DOWN over the first body rows. `tblStickyTop` no
+   longer writes it; the offset is 0 and lives here.                          */
+
+[data-relationship-table] thead th,
+[data-unlisted-table] thead th {
+	top: 0;
+	z-index: 3;
+}
+
+/* A row header stops sticking vertically and starts sticking HORIZONTALLY,
+   which is what a table this wide actually wants: the Source Id column stays
+   in view while the reader scrolls right through the rest. Needs an opaque
+   background, or the cells it scrolls over would show through it.
+
+   EVERY table on these pages needs this, and the list below is why the rule is
+   written per-table rather than as a bare `.tbl tbody th`: the two tables added
+   by task-034 (`data-files-table`, `data-concepts-table`) carry `class="tbl"`
+   and so inherited the shared `.tbl th { position: sticky; top: 0 }` with NO
+   override -- every row header in the Files tree would have stuck to the top of
+   the scroll box and stacked over the column headers. That is the exact defect
+   this comment block was written to warn about, reproduced by the next table to
+   arrive, which is the argument for keeping this list complete rather than
+   assuming a new table is covered. */
+[data-relationship-table] tbody th,
+[data-unlisted-table] tbody th,
+[data-files-table] tbody th,
+[data-concepts-table] tbody th {
+	top: auto;
+	left: 0;
+	z-index: 2;
+	background: var(--bg-elev);
+}
+
+/* The corner cell is pinned on both axes at once, so it must outrank both. */
+[data-relationship-table] thead th:first-child,
+[data-unlisted-table] thead th:first-child {
+	left: 0;
+	z-index: 4;
+}
+
+/* The caption is a block whose containing block is the TABLE, now ~2000px wide,
+   so its sentence laid out across the full scroll width and ran off the right
+   of the viewport. A readable measure keeps it where it can be read without
+   scrolling to find the rest of it. */
+[data-relationship-table] caption,
+[data-unlisted-table] caption {
+	max-width: 78ch;
+	text-align: left;
+}
+
+
+/* ---- The two controls the table emits ----
+
+   Both are real <button>s and stay that way: the sort control is where
+   `aria-sort` lives and where the state change is announced, and the row
+   control performs a real selection. Both also carry an inline 2.75rem
+   min-width/min-height from `tblSizeControl` -- the accessibility checklist's
+   touch target -- which is INLINE and therefore not overridable from here, and
+   must not be: a 44px hit area is the point.
+
+   What was wrong was never the size, it was that neither had any styling at
+   all, so each rendered as a default grey UA button. The header row became a
+   strip of grey boxes with wrapped labels. These rules keep the hit area and
+   stop painting it.                                                          */
+
+[data-relationship-table] thead button {
+	appearance: none;
+	background: none;
+	border: 0;
+	padding: 0;
+	margin: 0;
+	font: inherit;
+	font-weight: inherit;
+	letter-spacing: inherit;
+	text-transform: inherit;
+	color: inherit;
+	text-align: left;
+	cursor: pointer;
+	/* The label and its sort caret on ONE line inside the 44px box, rather than
+	   the label wrapping in a box sized for touch. */
+	display: inline-flex;
+	align-items: center;
+	gap: 0.35em;
+	white-space: nowrap;
+}
+
+[data-relationship-table] thead button:hover { color: var(--accent); }
+
+/* The row-selection control: readable as an action, quiet enough not to
+   dominate the name beside it. Its hit area still extends past what is
+   painted. */
+[data-relationship-table] tbody button {
+	appearance: none;
+	font: inherit;
+	font-size: 0.82em;
+	line-height: 1.6;
+	padding: 0.1em 0.7em;
+	background: none;
+	color: var(--text-muted);
+	border: 1px solid var(--border);
+	border-radius: 999px;
+	cursor: pointer;
+	/* Keeps the pill beside its name rather than under it, now that the cell is
+	   free to be as wide as its content. */
+	margin-left: 0.5em;
+	vertical-align: middle;
+}
+
+[data-relationship-table] tbody button:hover {
+	color: var(--accent);
+	border-color: var(--accent);
+}
 
 .prereqs {
 	font-size: 0.88rem;
@@ -504,6 +800,17 @@ html[data-theme="dark"]:root {
    `image` spans two prefixes and one prefix spans four kinds. The glyph that
    accompanies each colour is text supplied by the view model, so kind survives
    both a monochrome rendering and forced-colours mode. */
+/* The two coverage-gap badges. SEVERITY tokens, not kind tokens -- the same two
+   `graph-canvas.js` strokes the asterisk with and the same two the relationship
+   table gives these classes, so all three surfaces agree. Unbacked takes the
+   error token because it is wrong information, not missing information. */
+/* One size for both, matching the canvas: colour is the only difference between
+   the two classes, by the owner's choice. Nothing here sets a size, so both
+   inherit the row's own -- an earlier revision bumped the unbacked one and that
+   bump is deliberately gone rather than merely reduced. */
+.gap-kb-unbacked { color: var(--err); }
+.gap-artifact-undocumented { color: var(--warn); }
+
 .k-document { color: var(--gk-document); }
 .k-section { color: var(--gk-section); }
 .k-fact { color: var(--gk-fact); }
