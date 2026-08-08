@@ -132,7 +132,7 @@
 {"dst": ".codex/aid/templates/requirements/requirements-template.md", "profile": "codex", "sha256": "f9f44a7a03e44b8c65412b801df7835a4b35d37db2701161fad75ad66450a1fa", "src": "canonical/templates/requirements/requirements-template.md"}
 {"dst": ".codex/aid/templates/review-rubrics/INDEX.md", "profile": "codex", "sha256": "719dc9fb312da9c1c2d1eec95fed7d8998f7ee6b0e0b810542946eef3c2379f6", "src": "canonical/templates/review-rubrics/INDEX.md"}
 {"dst": ".codex/aid/templates/review-rubrics/aid.md", "profile": "codex", "sha256": "cd87654a0955399b75a33fbce5cb1acca598ab735229c323c3669155fc3fbee9", "src": "canonical/templates/review-rubrics/aid.md"}
-{"dst": ".codex/aid/templates/review-rubrics/definition.md", "profile": "codex", "sha256": "44278b4b538b1f76d670261ef508c098874ed260060bfb58f8760360b943ea4d", "src": "canonical/templates/review-rubrics/definition.md"}
+{"dst": ".codex/aid/templates/review-rubrics/definition.md", "profile": "codex", "sha256": "e59e6ce7f2d4e17ff678e7f053c69881a7d0f4742acbb1c50a8f585d9c71af0a", "src": "canonical/templates/review-rubrics/definition.md"}
 {"dst": ".codex/aid/templates/review-rubrics/executable.md", "profile": "codex", "sha256": "4d93b575344d7f5979d098291cb93d096e283137bc1e6c64046fe98bc2ad9950", "src": "canonical/templates/review-rubrics/executable.md"}
 {"dst": ".codex/aid/templates/review-rubrics/interface.md", "profile": "codex", "sha256": "21b24c46ee2c909407f674aa164692a90521f30856fdf5e657a863b1edc73fdf", "src": "canonical/templates/review-rubrics/interface.md"}
 {"dst": ".codex/aid/templates/review-rubrics/kb.md", "profile": "codex", "sha256": "f3ec63e32562ae932e5926573453fec59aebcfe1bd00189817c37348558cb675", "src": "canonical/templates/review-rubrics/kb.md"}

@@ -26,5 +26,5 @@
 - [ ] The content pass is dispatched and is separate from the machine validators and the human checklist
 - [ ] The human checklist question is retained -- the human confirms or extends the agent's rows and adds the verdict no agent can produce
 - [ ] The registry states both kinds for this class
-- [ ] The pass's ledger carries a row against the *Minimum Grade Thresholds* paragraph, citing the contradiction rule with `.aid/settings.yml` -- the file that paragraph itself points at -- as the winning authority on both halves: the settings key it names and the bar it states are each wrong. No such row means the sweep missed a defect measured before the pass ran, so the pass is not complete
+- [ ] The pass's ledger carries a row against the *Minimum Grade Thresholds* paragraph, citing the contradiction rule with **the KB** as the winning authority -- `SUMMARY-04`'s own authority, and `.aid/knowledge/quality-gates.md § Minimum-Grade Thresholds` carries both halves: the resolution tiers, which name no `pipeline.` key, and this repository's bar. A row resolved against `.aid/settings.yml` instead is the wrong authority for this class -- `review-rubrics/INDEX.md` routes that file to `SETTINGS`, not `SUMMARY`. No such row means the sweep missed a defect measured before the pass ran, so the pass is not complete
 - [ ] All section-6 quality gates pass

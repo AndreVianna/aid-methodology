@@ -16,8 +16,15 @@ defect is caught before a reviewer is dispatched rather than after a review cycl
 - The attributed-quote check: a string presented as verbatim from a named file must appear in that
   file, with emphasis normalisation, which is mandatory -- without it the check's first two outputs
   on this repository's own specs are both false positives.
-- The `aid-deep-review` RESOLVE gate, one site covering every definition skill plus `aid-review` plus
-  the shortcut engine.
+- The `aid-deep-review` RESOLVE gate: one site, covering every caller that invokes
+  `/aid-deep-review` -- `aid-define`, `aid-specify`, `aid-plan`, `aid-detail`, `aid-execute`'s
+  delivery gate, `aid-discover` and the shortcut engine's GATE, plus `aid-describe` and
+  `aid-update-kb`, which reach it through `aid-discover`'s panel. **Not** any review that dispatches
+  `aid-reviewer` directly -- `aid-review` / `aid-audit`, whose Tier-2 migration feature-006 planned
+  and delivery-012 scoped out; `aid-specify`'s per-section review; `aid-execute`'s Step 1.5;
+  `aid-discover`'s FIX-state re-review; and the Tier-3 dispatches feature-006 deferred. This
+  delivery gates none of them, and the residual set is derived at implementation time rather than
+  counted here.
 - The CI step: no workflow references the citation lint today, so this delivery adds it. (The KB claim that it already ran was corrected by delivery-002.)
 - The gate rows in `quality-gates.md`, and the durable-citation convention in the authoring
   principles -- including that a quote which must survive the check should be a short fragment from
@@ -33,7 +40,8 @@ which no regex reaches and which the deep reviewer covers instead.
       emphasis passes -- the third is the assertion that keeps the check usable
 - [ ] An unattributed quote is advisory and does not change the exit code, so the coverage boundary
       is reported rather than hidden
-- [ ] The RESOLVE gate runs before any dispatch, and blocks it on exit 1
+- [ ] The RESOLVE gate sits ahead of DISPATCH and blocks it on exit 1, and passes a corrected
+      artifact through -- so every caller routed through `/aid-deep-review` is covered by the one site
 - [ ] The citation lint runs in CI
 - [ ] AC-14 holds on fixtures failing in both directions
 - [ ] All section-6 quality gates pass
