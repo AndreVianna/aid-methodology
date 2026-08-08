@@ -8,7 +8,10 @@
 #   Per-template mechanical checks (run for each of the 14 seed templates):
 #   AS01  each template starts with YAML frontmatter (first line is ---)
 #   AS02  each template has a ## Contents index section
-#   AS03  each template has ## Change Log as the LAST top-level section
+#   AS03  each template has NO change-log apparatus and no work reference:
+#         AS03  no ## Change Log / ## Revision History section
+#         AS03b no changelog: frontmatter field
+#         AS03c no work-NNN reference (principles.md P1(e))
 #   AS04  no template contains a mermaid diagram fence (```mermaid)
 #   AS05  frontmatter contains the required fields (kb-category, intent)
 #
@@ -76,12 +79,22 @@ for tmpl in "${TEMPLATES[@]}"; do
   fi
 
   # -------------------------------------------------------------------------
-  # AS03: ## Change Log must be the LAST top-level (##) section
-  # The last line matching '^## ' must be '## Change Log'
+  # AS03: NO history apparatus. A KB doc carries no change-log section and no
+  # `changelog:` frontmatter field -- per-doc history lives in git, and the
+  # changelog was the main route by which transient work references leaked into
+  # the KB (kb-authoring/principles.md P1(e)).
   # -------------------------------------------------------------------------
-  last_section="$(grep '^## ' "$tmpl" | tail -1)"
-  assert_eq "$last_section" "## Change Log" \
-    "AS03 ${name}: '## Change Log' is the last top-level section"
+  hist_sections="$(grep -c '^## \(Change Log\|Revision History\)' "$tmpl" || true)"
+  assert_eq "$hist_sections" "0" \
+    "AS03 ${name}: no '## Change Log' / '## Revision History' section"
+
+  cl_field="$(grep -c '^changelog:' "$tmpl" || true)"
+  assert_eq "$cl_field" "0" \
+    "AS03b ${name}: no 'changelog:' frontmatter field"
+
+  work_refs="$(grep -cE 'work-[0-9]{3}' "$tmpl" || true)"
+  assert_eq "$work_refs" "0" \
+    "AS03c ${name}: no work reference (P1(e))"
 
   # -------------------------------------------------------------------------
   # AS04: no mermaid diagram fences
@@ -122,7 +135,7 @@ done
 # AS08: feature-inventory.md lives at canonical/aid/templates/feature-inventory.md
 # (NOT under knowledge-base/), but aid-discover Step 6 copies it into .aid/knowledge/ as a
 # KB doc, so it MUST also conform to the authoring standard (frontmatter / Contents /
-# Change Log last / no mermaid / kb-category+intent / concern tag). Guards feature-014 Q10 fix.
+# no change-log apparatus / no mermaid / kb-category+intent / concern tag).
 # ---------------------------------------------------------------------------
 FI="${REPO}/canonical/aid/templates/feature-inventory.md"
 if [[ -f "$FI" ]]; then
@@ -135,8 +148,11 @@ if [[ -f "$FI" ]]; then
     fail "AS08 feature-inventory.md: missing '## Contents' section"
   fi
 
-  assert_eq "$(grep '^## ' "$FI" | tail -1)" "## Change Log" \
-    "AS08 feature-inventory.md: '## Change Log' is the last top-level section"
+  assert_eq "$(grep -c '^## \(Change Log\|Revision History\)' "$FI" || true)" "0" \
+    "AS08 feature-inventory.md: no '## Change Log' / '## Revision History' section"
+
+  assert_eq "$(grep -c '^changelog:' "$FI" || true)" "0" \
+    "AS08b feature-inventory.md: no 'changelog:' frontmatter field"
 
   fi_merm="$(grep -c '^\`\`\`mermaid' "$FI" || true)"
   assert_eq "$fi_merm" "0" \

@@ -58,7 +58,7 @@
 {"dst": ".github/aid/scripts/kb/kb-teachback-questions.sh", "profile": "copilot-cli", "sha256": "3c23e5a272320b0f75a52667b4526f5166555ddd207c43b8fc4416e51537ad3e", "src": "canonical/scripts/kb/kb-teachback-questions.sh"}
 {"dst": ".github/aid/scripts/kb/lint-frontmatter.sh", "profile": "copilot-cli", "sha256": "defef4aa83dab1da773850358fce0340ef461db86511ad4230c1e1a19100341d", "src": "canonical/scripts/kb/lint-frontmatter.sh"}
 {"dst": ".github/aid/scripts/kb/recon-classify.sh", "profile": "copilot-cli", "sha256": "73cf153c549fe7f7e56d199d408e002ef5929b87b0b181068608cb03b3c3090b", "src": "canonical/scripts/kb/recon-classify.sh"}
-{"dst": ".github/aid/scripts/migrate/migrate-kb-frontmatter.sh", "profile": "copilot-cli", "sha256": "7238f968c46e65fff488f107ff20eeda3daa2bb331c36d8f486a326b8d41e028", "src": "canonical/scripts/migrate/migrate-kb-frontmatter.sh"}
+{"dst": ".github/aid/scripts/migrate/migrate-kb-frontmatter.sh", "profile": "copilot-cli", "sha256": "d371b67980d3e59577b6a757040aa0fbc46cf4cdc870945c2c653de059a5a9bd", "src": "canonical/scripts/migrate/migrate-kb-frontmatter.sh"}
 {"dst": ".github/aid/scripts/migrate/migrate-work-hierarchy.ps1", "profile": "copilot-cli", "sha256": "f74d98d633602378e22f840da8ad9868ddcb1a64595afdf85ca46ccebd7c201b", "src": "canonical/scripts/migrate/migrate-work-hierarchy.ps1"}
 {"dst": ".github/aid/scripts/migrate/migrate-work-hierarchy.sh", "profile": "copilot-cli", "sha256": "258d2d97fa4f05c03c493dbe331799501b8bf707f8eec67e0b1f6f405a9b6bdb", "src": "canonical/scripts/migrate/migrate-work-hierarchy.sh"}
 {"dst": ".github/aid/scripts/release/check-version-sync.sh", "profile": "copilot-cli", "sha256": "a3beb2692af72470624eae046afe941c5636e42344f27c71267732a7d082e199", "src": "canonical/scripts/release/check-version-sync.sh"}
@@ -93,7 +93,7 @@
 {"dst": ".github/aid/templates/discovery-state-template.md", "profile": "copilot-cli", "sha256": "bc4c3b1bf96e2a91d21a9612d38dc726ab3f4a744830621beb148f62a013c40e", "src": "canonical/templates/discovery-state-template.md"}
 {"dst": ".github/aid/templates/dispatch-protocol-checklist.md", "profile": "copilot-cli", "sha256": "00d41e656caf552cdca99dca3c4cc45e74e4bb876e84a2c6ac0bbb543dff72ca", "src": "canonical/templates/dispatch-protocol-checklist.md"}
 {"dst": ".github/aid/templates/downstream-worktree-entry.md", "profile": "copilot-cli", "sha256": "a1575f8a962a7e5886f7d38001479555c8ea88e431098c92e54ff6357c1bdcee", "src": "canonical/templates/downstream-worktree-entry.md"}
-{"dst": ".github/aid/templates/feature-inventory.md", "profile": "copilot-cli", "sha256": "81d14cc8d0bd7bf7b1c900779d617e5dbfd68c19bd2320c9ab9839258fa43de6", "src": "canonical/templates/feature-inventory.md"}
+{"dst": ".github/aid/templates/feature-inventory.md", "profile": "copilot-cli", "sha256": "ce60dfa9e5c6e9595ae289efb2128953f5d8bf34f8d53f3505fb77077e0bb8c3", "src": "canonical/templates/feature-inventory.md"}
 {"dst": ".github/aid/templates/feature.md", "profile": "copilot-cli", "sha256": "f2431502406233a2f9f083346f9a06fc2b5c5d289f6f61c951099af505f731c7", "src": "canonical/templates/feature.md"}
 {"dst": ".github/aid/templates/feedback-artifacts/IMPEDIMENT.md", "profile": "copilot-cli", "sha256": "79b88f114c2ad3e1b30cb84699049c1a4fdb968e14f52fec37ed721417a22b26", "src": "canonical/templates/feedback-artifacts/IMPEDIMENT.md"}
 {"dst": ".github/aid/templates/generated-files.txt", "profile": "copilot-cli", "sha256": "7f9d6192c93f4c20cbef7f0e66ad61cbe13d5c96e9e528d4c5339541f103fb7a", "src": "canonical/templates/generated-files.txt"}

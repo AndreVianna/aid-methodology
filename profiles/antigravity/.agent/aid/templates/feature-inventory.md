@@ -12,8 +12,6 @@ intent: |
   Inventory of user-facing features (what the product does for its users). Read this to see
   the feature set. Populated during Discovery Q&A + FIX; updated by Deploy on delta.
 contracts: []
-changelog:
-  - YYYY-MM-DD: Initial template (placeholder; populated during Discovery Q&A + FIX)
 ---
 
 # Feature Inventory
@@ -21,7 +19,6 @@ changelog:
 ## Contents
 
 - [Features](#features)
-- [Change Log](#change-log)
 
 ## Features
 
@@ -31,7 +28,3 @@ changelog:
 | # | Feature | Description | Status | Modules | Endpoints | Data Entities |
 |---|---------|-------------|--------|---------|-----------|---------------|
 | | *(populated during Discovery Q&A + FIX)* | | | | | |
-
-## Change Log
-
-- *(populated during Discovery Q&A + FIX)*
