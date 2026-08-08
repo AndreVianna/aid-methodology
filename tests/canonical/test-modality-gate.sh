@@ -13,7 +13,6 @@ set -uo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 LINT="$ROOT/canonical/aid/scripts/kb/lint-modality.sh"
 TMPL="$ROOT/canonical/aid/templates/requirements/requirements-template.md"
-REQ="$ROOT/.aid/works/work-003-review-subsystem-redesign/REQUIREMENTS.md"
 
 pass=0; fail=0
 ok()  { pass=$((pass+1)); printf '  ok   %s -- %s\n' "$1" "$2"; }
@@ -108,22 +107,81 @@ printf '| ID | Modality | Requirement |\n|----|----|----|\n| ~~FR-A7~~ | ~~CUT~~
 bash "$LINT" --file "$WORK/cut.md" >/dev/null 2>&1
 chk "$?" 0 MG13 "does NOT fire on a struck-through (cut) requirement"
 
-# Separator rows must never be counted as requirements.
-n=$(bash "$LINT" --file "$WORK/REQUIREMENTS.md" 2>/dev/null | grep -oE '[0-9]+ requirement' | grep -oE '[0-9]+')
-chk "${n:-0}" 4 MG14 "counts exactly the 4 real rows, no separators or headers"
+# THE COUNT ITSELF IS AN ASSERTION, and it must be able to be wrong.
+#
+# MG14 used to count $WORK/REQUIREMENTS.md, which holds only clean rows plus headers and separators --
+# and every mechanism that could have miscounted it was subsumed by the ID anchor, so the assertion
+# passed under every mutation. It could not fail, which the suite's own header promises no assertion
+# does. The fixture below adds the two shapes that DO discriminate: a results row whose first cell
+# merely begins with an ID (only the both-ends anchor excludes it) and a cut row (only the cut-skip
+# excludes it). 4 is now reachable only with both intact.
+cat > "$WORK/counting.md" <<'EOF'
+| ID | Modality | Requirement |
+|----|----------|-------------|
+| FR-1 | MUST | The system does X. |
+| FR-A2 | SHOULD | The system prefers Y. |
+| NFR-1 | COULD | The system might do Z. |
+| ~~FR-A7~~ | ~~CUT~~ | ~~Withdrawn.~~ |
+
+| # | Modality | Criterion |
+|---|----------|-----------|
+| AC-1 | MUST | Given A, when B, then C. |
+| FR-G2 resolution -- [UNRESOLVED] | 4 | not a requirement row |
+EOF
+n=$(bash "$LINT" --file "$WORK/counting.md" 2>/dev/null | grep -oE '[0-9]+ requirement' | grep -oE '[0-9]+')
+chk "${n:-0}" 4 MG14 "counts exactly the 4 real rows -- separators, headers, the cut row and the results row all excluded"
 
 echo
-echo "== VACUITY CONTROL: the count must be real =="
+echo "== VACUITY CONTROL: the count must be real, over a tree this suite builds =="
 
-# The tree-wide sweep is the expensive check here, so run it ONCE and reuse both its output and its exit
-# status below. Running it per assertion cost ~100s, uncomfortably close to run-all.sh's per-suite budget.
-sweep_out="$(bash "$LINT" --root "$ROOT/.aid/works" 2>/dev/null)"; sweep_rc=$?
+# THE SWEEP RUNS OVER A FIXTURE TREE, NOT `.aid/works`.
+#
+# This suite used to sweep the live `.aid/works` and assert against
+# `work-003-review-subsystem-redesign/REQUIREMENTS.md` by name. That made a permanent CI gate depend on
+# one transient work folder outliving the work it belongs to -- the day work-003 is pruned, four
+# assertions here break for a reason that has nothing to do with the gate they guard. CLAUDE.md states
+# the rule directly: no permanent artifact may depend on a specific work folder; tests build their own
+# fixtures. So this builds one.
+#
+# It is also a STRONGER test. The live tree happened to contain modality variation and happened to hold
+# more than 50 rows; neither was guaranteed, and neither was under this suite's control. The fixture
+# below pins both on purpose, and adds the shapes a real tree only sometimes has: separator rows, a
+# header, a cut requirement, a results row whose first cell merely begins with an ID, and a split ID.
+SWEEP="$WORK/tree"
+mkdir -p "$SWEEP/work-fixture-a" "$SWEEP/work-fixture-b/features/feature-001"
+{
+  printf '# Fixture requirements\n\n## 5. Functional Requirements\n\n'
+  printf '| ID | Modality | Requirement |\n|----|----------|-------------|\n'
+  for i in $(seq 1 40); do printf '| FR-A%d | MUST | Requirement %d. |\n' "$i" "$i"; done
+  printf '| FR-B5a | SHOULD | Split half a. |\n| FR-B5b | COULD | Split half b. |\n'
+  printf '| ~~FR-A99~~ | ~~CUT~~ | ~~Withdrawn.~~ |\n'
+  printf '\n## 9. Acceptance Criteria\n\n'
+  printf '| ID | Modality | Criterion |\n|----|----------|-----------|\n'
+  for i in $(seq 1 12); do printf '| AC-%d | MUST | Criterion %d. |\n' "$i" "$i"; done
+  printf '| AC-13 | SHOULD | A non-MUST criterion. |\n| AC-14 | COULD | Another non-MUST criterion. |\n'
+  printf '\n## Results\n\n| Check | Findings |\n|-------|----------|\n| FR-G2 resolution -- [UNRESOLVED] | 4 |\n'
+} > "$SWEEP/work-fixture-a/REQUIREMENTS.md"
+{
+  printf '# Fixture spec\n\n| ID | Modality | Criterion |\n|----|----------|-----------|\n'
+  for i in $(seq 1 6); do printf '| AC-%d | MUST | Spec criterion %d. |\n' "$i" "$i"; done
+} > "$SWEEP/work-fixture-b/features/feature-001/SPEC.md"
 
-# If the checker inspected nothing it would report 0 and still exit 0. Assert the tree-wide count is
-# non-trivial, so an accidentally-inert matcher cannot pass this suite.
+# EXPECTED TOTAL, derived by hand from the fixture above so the number is a claim, not a readout:
+#   fixture-a  40 FR-A* + 2 split (FR-B5a/b) + 14 AC = 56   (cut row skipped; results row not an ID)
+#   fixture-b  6 AC                                   =  6
+#                                                       ---
+#                                                        62
+SWEEP_EXPECT=62
+
+# Run the sweep ONCE and reuse its output and exit status: per-assertion runs cost ~100s against the
+# live tree, uncomfortably close to run-all.sh's per-suite budget.
+sweep_out="$(bash "$LINT" --root "$SWEEP" 2>/dev/null)"; sweep_rc=$?
+
+# An inert matcher would report 0 rows. Assert the EXACT count rather than a floor: the fixture is
+# fully known, so anything other than 62 means the matcher's scope changed, and a `>=` bound would
+# hide a matcher that started over-counting.
 tot=$(grep -oE '[0-9]+ requirement' <<<"$sweep_out" | grep -oE '[0-9]+')
-if [[ "${tot:-0}" -ge 50 ]]; then ok MG15 "tree-wide sweep inspects ${tot} rows (>=50, so not inert)"
-else no MG15 "tree-wide sweep inspected only ${tot:-0} rows -- matcher may be inert"; fi
+chk "${tot:-0}" "$SWEEP_EXPECT" MG15 "tree-wide sweep inspects exactly ${SWEEP_EXPECT} fixture rows (cut skipped, results row ignored, split IDs counted)"
 
 echo
 echo "== the template carries the field (gate criterion 2) =="
@@ -138,18 +196,29 @@ grep -qi 'first thing the severity scale reads\|first step' "$TMPL"
 chk "$?" 0 MG19 "template says WHY the field exists, not just that it is required"
 
 echo
-echo "== the back-fill is complete and did not flatten the distinction (gate criterion 3) =="
+echo "== a fully-tagged tree passes, and the sweep can still fail =="
 
-chk "$sweep_rc" 0 MG20 "no untagged requirement or criterion remains under .aid/works"
+chk "$sweep_rc" 0 MG20 "a fully-tagged fixture tree sweeps clean (exit 0)"
 
-# A blanket MUST would satisfy the lint while destroying the distinction the field exists to record.
-# Requiring at least one non-MUST makes that failure mode visible.
-nm=$(grep -cE '^\| AC-[0-9]+ \| (SHOULD|COULD) \|' "$REQ")
-if [[ "${nm:-0}" -ge 1 ]]; then ok MG21 "back-fill preserved modality variation (${nm} non-MUST criteria)"
-else no MG21 "every criterion is MUST -- back-fill flattened the distinction it exists to record"; fi
+# NEGATIVE CONTROL for MG20. Without it MG20 asserts only that the gate can say yes -- and this suite's
+# own header promises every acceptance is paired with a control that breaks the input. Untag one row of
+# the fixture and require the sweep to fail.
+sed -i '0,/^| FR-A7 | MUST |/s//| FR-A7 |  |/' "$SWEEP/work-fixture-a/REQUIREMENTS.md"
+bash "$LINT" --root "$SWEEP" >/dev/null 2>&1
+chk "$?" 1 MG20b "one untagged row anywhere in the tree fails the sweep (control)"
+sed -i '0,/^| FR-A7 |  |/s//| FR-A7 | MUST |/' "$SWEEP/work-fixture-a/REQUIREMENTS.md"
 
-am=$(grep -cE '^\| AC-[0-9]+ \| (MUST|SHOULD|COULD) \|' "$REQ")
-chk "${am:-0}" 14 MG22 "all 14 acceptance criteria carry a modality"
+# A blanket MUST would satisfy the lint while destroying the distinction the field exists to record, so
+# the gate must ACCEPT the non-MUST spellings rather than merely tolerate MUST everywhere. Asserted
+# against the fixture's own SHOULD/COULD rows: if the lint only ever accepted MUST, these would fail.
+printf '| ID | Modality | Requirement |\n|----|----|----|\n| FR-S1 | SHOULD | s |\n| FR-C1 | COULD | c |\n' > "$WORK/variation.md"
+bash "$LINT" --file "$WORK/variation.md" >/dev/null 2>&1
+chk "$?" 0 MG21 "SHOULD and COULD are accepted, not just MUST (the distinction survives)"
+
+# The AC rows specifically are in scope -- not only FR/NFR. The fixture holds exactly 20 (14 + 6).
+ac=$(cat "$SWEEP/work-fixture-a/REQUIREMENTS.md" "$SWEEP/work-fixture-b/features/feature-001/SPEC.md" \
+     | grep -cE '^\| AC-[0-9]+ \| (MUST|SHOULD|COULD) \|')
+chk "${ac:-0}" 20 MG22 "acceptance criteria are in scope in both REQUIREMENTS.md and SPEC.md (20 rows)"
 
 echo
 printf 'test-modality-gate.sh: %d passed, %d failed\n' "$pass" "$fail"

@@ -39,7 +39,7 @@
 {"dst": ".claude/aid/scripts/kb/kb-freshness-check.sh", "profile": "claude-code", "sha256": "f9adcc7c6dc14648df4a13c1b51a497896779f21aa7ce73929b1f6891f5331de", "src": "canonical/scripts/kb/kb-freshness-check.sh"}
 {"dst": ".claude/aid/scripts/kb/kb-teachback-questions.sh", "profile": "claude-code", "sha256": "5f0d8eff2dd3f9f779754d70f5a97d9d6cf32b25b37630cab89d15e4037417a1", "src": "canonical/scripts/kb/kb-teachback-questions.sh"}
 {"dst": ".claude/aid/scripts/kb/lint-frontmatter.sh", "profile": "claude-code", "sha256": "cd19944bdf0756d324c63e72d97b1ed7b603ada3a9059140d3591cca87d01a0b", "src": "canonical/scripts/kb/lint-frontmatter.sh"}
-{"dst": ".claude/aid/scripts/kb/lint-modality.sh", "profile": "claude-code", "sha256": "c049bf0bb88b8c9e3663b1754f9b80f2d05fd4591d24a5b5cddf022abfda205a", "src": "canonical/scripts/kb/lint-modality.sh"}
+{"dst": ".claude/aid/scripts/kb/lint-modality.sh", "profile": "claude-code", "sha256": "495f78eb9e3e61c7c8727b5c2c4fa3d6a5d26892defcd08bf6d75f3ba691d348", "src": "canonical/scripts/kb/lint-modality.sh"}
 {"dst": ".claude/aid/scripts/kb/recon-classify.sh", "profile": "claude-code", "sha256": "73cf153c549fe7f7e56d199d408e002ef5929b87b0b181068608cb03b3c3090b", "src": "canonical/scripts/kb/recon-classify.sh"}
 {"dst": ".claude/aid/scripts/migrate/migrate-kb-frontmatter.sh", "profile": "claude-code", "sha256": "7238f968c46e65fff488f107ff20eeda3daa2bb331c36d8f486a326b8d41e028", "src": "canonical/scripts/migrate/migrate-kb-frontmatter.sh"}
 {"dst": ".claude/aid/scripts/migrate/migrate-work-hierarchy.ps1", "profile": "claude-code", "sha256": "f74d98d633602378e22f840da8ad9868ddcb1a64595afdf85ca46ccebd7c201b", "src": "canonical/scripts/migrate/migrate-work-hierarchy.ps1"}

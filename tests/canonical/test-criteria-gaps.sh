@@ -165,7 +165,11 @@ assert_output_contains "$(grep '^| deep/gap |' "$S")" "| Pending |" \
 # ---------------------------------------------------------------------------
 cd "$REPO" || exit 2
 ign=0
-for p in ".aid/works/work-003-review-subsystem-redesign/STATE.md" ".aid/knowledge/STATE.md"; do
+# A SYNTHETIC work path, not a live one. `git check-ignore` evaluates the ignore RULES and needs no
+# file on disk, so the general invariant -- "a work register is not ignored" -- is provable without
+# binding a permanent test to one transient work folder (CLAUDE.md: work folders are transient; tests
+# build their own fixtures). Naming work-003 here made this suite fail the day that folder is pruned.
+for p in ".aid/works/work-999-fixture/STATE.md" ".aid/knowledge/STATE.md"; do
   git check-ignore -q "$p" 2>/dev/null && { ign=$((ign+1)); echo "    ($p IS gitignored -- the register would not survive)"; }
 done
 assert_eq "$ign" "0" "CG29 neither register file is gitignored (the record outlives the halt)"
