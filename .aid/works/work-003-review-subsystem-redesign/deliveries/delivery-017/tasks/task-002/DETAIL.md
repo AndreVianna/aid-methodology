@@ -1,4 +1,4 @@
-# task-002: INTAKE gate and CI step
+# task-002: RESOLVE gate and CI step
 
 > **Execution protocol (binding on whoever executes this task -- no exceptions):** the moment
 > this task's `State` changes, write it -- `In Progress` before starting work, `In Review` before
@@ -17,8 +17,8 @@
 **Depends on:** task-001
 
 **Scope:**
-- The `aid-deep-review` INTAKE gate, one site covering every definition skill plus `aid-review` plus the shortcut engine
-- The CI step the KB already claims exists
+- The gate in `aid-deep-review` **RESOLVE** -- the state that reads the manifest and resolves the artifacts, and the last one before DISPATCH; one site covering every definition skill plus `aid-review` plus the shortcut engine
+- The CI step, which does not exist yet: no workflow references the citation lint, so this task **adds** the step rather than making an existing one honest -- the KB claim that it already ran was corrected by delivery-002
 
 **Acceptance Criteria:**
 - [ ] The gate runs before any dispatch and blocks it on exit 1, so a citation defect costs no review cycle

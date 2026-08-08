@@ -132,7 +132,7 @@
 {"dst": ".agent/aid/templates/requirements/requirements-template.md", "profile": "antigravity", "sha256": "74e90db6802161fe5f23da395cab5ff043aa5e4339aa995cd9ad99ff103d3e4f", "src": "canonical/templates/requirements/requirements-template.md"}
 {"dst": ".agent/aid/templates/review-rubrics/INDEX.md", "profile": "antigravity", "sha256": "a5946dcec7e530afbe93be1d30ce980394031de40cf6e8d9753263f7228c3c74", "src": "canonical/templates/review-rubrics/INDEX.md"}
 {"dst": ".agent/aid/templates/review-rubrics/aid.md", "profile": "antigravity", "sha256": "cd87654a0955399b75a33fbce5cb1acca598ab735229c323c3669155fc3fbee9", "src": "canonical/templates/review-rubrics/aid.md"}
-{"dst": ".agent/aid/templates/review-rubrics/definition.md", "profile": "antigravity", "sha256": "ef0f27da4b809a1271f957fd79c5a15fb251baf2ac21fef08c77b935082c45e4", "src": "canonical/templates/review-rubrics/definition.md"}
+{"dst": ".agent/aid/templates/review-rubrics/definition.md", "profile": "antigravity", "sha256": "78af459d91431e3d096875dd7bbd0d84882231c2dd7e026f6139b31af552ded1", "src": "canonical/templates/review-rubrics/definition.md"}
 {"dst": ".agent/aid/templates/review-rubrics/executable.md", "profile": "antigravity", "sha256": "4d93b575344d7f5979d098291cb93d096e283137bc1e6c64046fe98bc2ad9950", "src": "canonical/templates/review-rubrics/executable.md"}
 {"dst": ".agent/aid/templates/review-rubrics/interface.md", "profile": "antigravity", "sha256": "21b24c46ee2c909407f674aa164692a90521f30856fdf5e657a863b1edc73fdf", "src": "canonical/templates/review-rubrics/interface.md"}
 {"dst": ".agent/aid/templates/review-rubrics/kb.md", "profile": "antigravity", "sha256": "6eaa65230bf17085285ad53022abbae0b2adc898e0ba4a783e9cde9b1c934a13", "src": "canonical/templates/review-rubrics/kb.md"}

@@ -20,9 +20,11 @@
 - A deep-review dispatch over `.aid/knowledge/kb.html` against the `SUMMARY` rule set
 - The whole-document sweep replacing the fixed-size fact spot-check
 - The class registry row recording the two review kinds
+- The inherited defect the BLUEPRINT names: the *Minimum Grade Thresholds* paragraph's claim about where the bar is configured and what this repository requires. It is left in place deliberately, as the pass's worked example; anyone fixing it corrects the generator source, never the render
 
 **Acceptance Criteria:**
 - [ ] The content pass is dispatched and is separate from the machine validators and the human checklist
 - [ ] The human checklist question is retained -- the human confirms or extends the agent's rows and adds the verdict no agent can produce
 - [ ] The registry states both kinds for this class
+- [ ] The pass's ledger carries a row against the *Minimum Grade Thresholds* paragraph, citing the contradiction rule with `.aid/settings.yml` -- the file that paragraph itself points at -- as the winning authority on both halves: the settings key it names and the bar it states are each wrong. No such row means the sweep missed a defect measured before the pass ran, so the pass is not complete
 - [ ] All section-6 quality gates pass

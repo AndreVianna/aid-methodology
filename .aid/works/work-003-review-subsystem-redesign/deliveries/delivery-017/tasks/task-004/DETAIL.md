@@ -20,6 +20,7 @@
 - FR-G4's count-claim rule row in the Definition family file, which delivery-004 deliberately left out
 
 **Acceptance Criteria:**
-- [ ] The row is a judgment-mode rule with a SHOULD modality and a severity anchor matching the catalog's regex
+- [ ] The row's `Mode` cell reads `judgment` and its `Modality` cell reads `SHOULD`
+- [ ] The row's `Severity` cell is the fixed `[LOW]` token carrying the escape to `[MEDIUM]` above one artifact -- the same cell form `INDEX.md`'s universal taxonomy class 6 (Convention deviation) already carries, copied rather than re-spelled. `Step 2` fails this criterion: modality is known at authoring, so Step 1 already fixes the token
 - [ ] Its `Criterion` cites the declaring authoring principle and resolves
 - [ ] All section-6 quality gates pass

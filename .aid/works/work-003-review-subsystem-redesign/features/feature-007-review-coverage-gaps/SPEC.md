@@ -292,11 +292,11 @@ grep -rhoE 'read-setting\.sh (--skill [a-z-]+ --key [a-z_]+|--path [a-z_.]+)' ca
 |---|---|---|---|
 | 1 | `/aid-config` Step 6, after each write, and Mode-1 INIT completion | the writer's own mistakes | **yes** |
 | 2 | `aid-discover` GENERATE, beside Step 5a's citation lint | the *other* writer — `knowledge.doc_set` / `term_exclusions` are discovery-written | **yes** |
-| 3 | `aid-deep-review` INTAKE | **a later hand-edit, at the moment it is about to loosen a gate** | **yes** |
+| 3 | `aid-deep-review` RESOLVE | **a later hand-edit, at the moment it is about to loosen a gate** | **yes** |
 | 4 | `aid-summarize` VALIDATE (reads `doc_set` for COV) | a hand-edited doc-set reaching the coverage check | optional |
 
 **Site 3 is the answer to the placement question, and it is cheap for one reason:**
-feature-006 §2 collapses every `minimum_grade` read into `aid-deep-review`'s INTAKE. Before 006
+feature-006 §2 collapses every `minimum_grade` read into `aid-deep-review`'s RESOLVE. Before 006
 this would have been 32 call sites and a maintained exclusion list; after it, one invocation per
 graded review. **Sequencing this feature last is what makes consumption-time validation
 affordable rather than a design compromise.**

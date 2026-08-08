@@ -377,10 +377,10 @@ deferred **with a named successor**, as feature-006 deferred its Tier 3 dispatch
 
 ### 4. Wiring, and the cost argument
 
-**One site: `aid-deep-review` INTAKE**, after the manifest read and artifact resolution, before the
-NFR-4 threshold branch and before any dispatch. Exit 1 → do not dispatch; return findings to the
-caller for FIX. That is Step 5a's shape, and
-`canonical/skills/aid-discover/references/state-generate.md` lines 862–863 pre-sanction it —
+**One site: `aid-deep-review` RESOLVE** — the state that reads the manifest and resolves the
+artifacts, and the last one before DISPATCH. The gate sits after that resolution and before any
+dispatch. Exit 1 → do not dispatch; return findings to the caller for FIX. That is Step 5a's shape,
+and `canonical/skills/aid-discover/references/state-generate.md` lines 862–863 pre-sanction it —
 `state-generate.md` says *"This gate is the model for moving any MECHANICAL authoring rule"*, and
 goes on to name the self-reported-to-mechanically-gated move and to cite `lint-frontmatter.sh` as
 the precedent. feature-007 §4 invoked the same sentence for the frontmatter lint.
@@ -407,11 +407,12 @@ the precedent. feature-007 §4 invoked the same sentence for the frontmatter lin
 Four edits into four contested spans, versus **one insertion into a file feature-006 creates.** And
 feature-006's manifest already carries `artifacts:` *"derived from disk, never memory"* — the
 lint's input is that field verbatim, so no new resolution logic and no argument plumbing. Because
-f006 migrates eight Tier-1 callers and f007 adds two more review sites, one INTAKE gate covers
+f006 migrates eight Tier-1 callers and f007 adds two more review sites, one gate in RESOLVE covers
 every definition skill plus `aid-review` plus the shortcut-engine GATE.
 
-**Not `aid-light-review` INTAKE:** its INTAKE can chain straight to DONE below the artifact
-threshold, so a gate there is skippable, and a skippable gate is worse than none.
+**Not `aid-light-review` RESOLVE:** that skill's own REPORT verdict says a clean light pass is
+*not* a pass, so it is not the thing a caller pays a review cycle for; a gate there would leave
+every deep-review caller ungated.
 
 **CI, and a defect to correct while there.** `quality-gates.md` lines 353–354 claim the citation
 lint runs in CI's `kb-hygiene` job and is blocking for merges to master.
@@ -426,7 +427,7 @@ that claimed set.
 form is **unavailable**: this work's `## Calibration Log` and `## Dispatches` sections are both
 `_None yet._`, so no per-dispatch agent or tier was recorded for any cycle. AC-13's instrument is
 feature-006's delivery D0 and does not exist yet. And as §Why states, retro-recoverable cycles on
-this corpus are **0 of 17** — an INTAKE gate cannot recover a cycle whose findings were semantic.
+this corpus are **0 of 17** — a pre-dispatch gate cannot recover a cycle whose findings were semantic.
 **The defensible claim is forward-looking only:** the gate makes the mechanical subset of this
 defect class cost zero review dispatches from here on, at the price of one insertion into a file
 being created anyway.
@@ -486,7 +487,7 @@ form in `state-generate.md` — a different file.
 | `canonical/aid/scripts/kb/kb-citation-lint.sh` | header block, arg parser, `find` depth, linespec character class, new verdict function | **Unclaimed by 001–007.** Existing emitting directory (14 files ship from `scripts/kb/`), so the new-directory emission caveat 003/004/005 carry does not apply |
 | `tests/canonical/test-kb-citation-lint.sh` | **extended, not created** — the file exists | Unclaimed |
 | `canonical/aid/templates/kb-authoring/principles.md` | **P1(d)** scoping paragraph; **P2(b)** carry-the-command sentence | `grep -c 'principles.md'` across all seven → **0**. Fully unclaimed |
-| `canonical/skills/aid-deep-review/` INTAKE body | one gate step | **Directory created by feature-006.** Pure insertion into a new file; f006 owns the file name |
+| `canonical/skills/aid-deep-review/` RESOLVE body | one gate step | **Directory created by feature-006.** Pure insertion into a new file; f006 owns the file name |
 | `canonical/aid/templates/review-rubrics/definition.md` | one `Mode: judgment` rule row | **File created by feature-002.** Row content only; f002 owns schema and numbering |
 | `.aid/knowledge/quality-gates.md` | one Mechanical-Gates row; one Validation-Commands line; **the 353–354 correction** | f007 claims 341–342, 348, 388, the frontmatter row of 364. **353–354 unclaimed.** The two insertions are declared collateral inside f007's table and command block; ordered after f007. Carries a Change Log row and a `README.md` revision-history entry |
 | `.aid/knowledge/authoring-conventions.md` | the rule statement near *"This is mechanically gated by `kb-citation-lint.sh`"*, and the **Durable citations** enforcement row | f002 claims this file's frontmatter `contracts:` only. Disjoint |
@@ -573,7 +574,7 @@ cross-check column the seven inventories already carry.
 Two. **D1 — the lint:** the en-dash fix, `--depth`, `--profile`, the resolver, the range check,
 oracles (a)–(g), the `principles.md` P1(d) scoping paragraph, and the fix commit on the seven specs
 (oracle (j)). **D2 — the quote check and the wiring:** FR-G3, oracles (h)/(i), the
-`aid-deep-review` INTAKE gate, the CI step, the `quality-gates.md` rows and the 353–354 correction,
+`aid-deep-review` RESOLVE gate, the CI step, the `quality-gates.md` rows and the 353–354 correction,
 and the FR-G4 rule row.
 
 D2 depends on features 002 and 006 having landed. **D1 depends on nothing and gates nothing** —

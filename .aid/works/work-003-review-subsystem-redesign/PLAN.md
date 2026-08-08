@@ -186,7 +186,7 @@ rather than dressed up as MVPs: **001** (baseline and fix-first), **005** (the e
 - **Kind:** standalone
 
 ### delivery-017: Quote check and citation wiring
-- **What it delivers:** the attributed-quote check, the `aid-deep-review` INTAKE gate, the CI step,
+- **What it delivers:** the attributed-quote check, the `aid-deep-review` RESOLVE gate, the CI step,
   and the `quality-gates.md` gate rows. AC-14.
 - **Features:** feature-008 (D2)
 - **Depends on:** delivery-002, delivery-004, delivery-012

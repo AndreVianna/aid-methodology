@@ -24,5 +24,5 @@
 **Acceptance Criteria:**
 - [ ] The step writes to the same ledger the final review grades, so it feeds one arithmetic rather than a private one
 - [ ] The bare-word vocabulary is gone -- it is the form the grading rubric itself names as producing a silent pass
-- [ ] The grade call sits behind the gap gate, making this the 19th grade site the totality oracle covers
+- [ ] The grade call sits behind the gap gate: the file that gains the `grade.sh` invocation mentions `check-gaps.sh` at an earlier line, so it joins the site set `tests/canonical/test-gap-gate-wiring.sh` derives from disk -- every file invoking `grade.sh` -- and GW02 and GW03 still pass with it added. No ordinal is asserted: the site count moves whenever grading is centralised or a caller is migrated
 - [ ] All section-6 quality gates pass
