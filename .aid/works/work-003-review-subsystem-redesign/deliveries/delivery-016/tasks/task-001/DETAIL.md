@@ -20,7 +20,7 @@
 - A deep-review dispatch over `.aid/knowledge/kb.html` against the `SUMMARY` rule set
 - The whole-document sweep replacing the fixed-size fact spot-check
 - The class registry row recording the two review kinds
-- The inherited defect the BLUEPRINT names: the *Minimum Grade Thresholds* paragraph's claim about where the bar is configured and what this repository requires. It is left in place deliberately, as the pass's worked example; anyone fixing it corrects the generator source, never the render
+- The inherited defect the BLUEPRINT names: the *Minimum Grade Thresholds* paragraph's claim about where the bar is configured and what this repository requires. It is left in place deliberately, as the pass's worked example. The remedy is the one the BLUEPRINT prescribes -- **regenerate** `kb.html`, never hand-edit the render. There is no generator source to correct: the sentence exists only in the render (`grep -rln "Minimum Grade Thresholds" .` returns `kb.html` and this file), and the KB it is generated from is already right
 
 **Acceptance Criteria:**
 - [ ] The content pass is dispatched and is separate from the machine validators and the human checklist

@@ -407,8 +407,19 @@ the precedent. feature-007 §4 invoked the same sentence for the frontmatter lin
 Four edits into four contested spans, versus **one insertion into a file feature-006 creates.** And
 feature-006's manifest already carries `artifacts:` *"derived from disk, never memory"* — the
 lint's input is that field verbatim, so no new resolution logic and no argument plumbing. Because
-f006 migrates eight Tier-1 callers and f007 adds two more review sites, one gate in RESOLVE covers
-every definition skill plus `aid-review` plus the shortcut-engine GATE.
+f006 migrates its Tier-1 callers and f007 adds two more review sites, one gate in RESOLVE covers
+every caller that reaches `/aid-deep-review`.
+
+**What that set is, and what it is not — corrected 2026-08-08.** This paragraph originally read
+"covers every definition skill plus `aid-review` plus the shortcut-engine GATE", which was
+conditioned on feature-006's Tier-2 migration. That migration was assigned to delivery-012 and did
+**not** land: `grep -c aid-deep-review canonical/skills/aid-review/SKILL.md` = 0 — it dispatches
+`aid-reviewer` directly. So the single RESOLVE site does **not** reach `aid-review`, nor
+`aid-specify`'s per-section review, `aid-execute`'s Step 1.5 quick check, `aid-discover`'s FIX-state
+re-review, or feature-006's deferred Tier-3 `repurpose` VERIFY dispatches. Callers that invoke
+`aid-discover`'s panel — `aid-describe` Step 5, `aid-update-kb` — **are** covered transitively, which
+a `grep -rc` on their own directories misses. No count is quoted here on purpose: competing regexes
+disagree, so the residual set is derived at implementation time, per feature-006's own precedent.
 
 **Not `aid-light-review` RESOLVE:** that skill's own REPORT verdict says a clean light pass is
 *not* a pass, so it is not the thing a caller pays a review cycle for; a gate there would leave

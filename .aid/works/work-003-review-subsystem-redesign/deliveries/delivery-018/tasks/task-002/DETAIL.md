@@ -17,7 +17,7 @@
 **Depends on:** task-001
 
 **Scope:**
-- The BLUEPRINT added to the artifact set of the four reviews that already run
+- The BLUEPRINT added to the artifact set of the reviews that already run. Two of the four sites already name it -- `aid-plan/references/first-run-loop.md` and `review-deliverables.md` both read `artifacts: PLAN.md and every delivery BLUEPRINT.md`, rewritten to that form by delivery-012 -- so the edit lands on the two `aid-detail` sites (`first-run.md`, `review.md`), which still read `every tasks/task-NNN/DETAIL.md on disk`. The inherited "all four" premise predates that rewrite
 - `## Tasks` scoped out at Plan and in at Detail
 - The two stale claims in the blueprint template
 
