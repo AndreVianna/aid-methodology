@@ -55,6 +55,17 @@ Must
 
 ## Acceptance Criteria
 
+<!-- Carried across from REQUIREMENTS.md section 9 by the decomposition rule: a mapped criterion keeps
+     the modality it had there. Modality is what step 1 of the severity scale reads, so a criterion
+     without one makes every finding against it ungradeable. The checklist below elaborates these
+     rows; it is not a second set of criteria. Gated by aid/scripts/kb/lint-modality.sh. -->
+
+| ID | Modality | Criterion |
+|----|----------|-----------|
+| AC-4 | MUST | Reviewing an artifact whose standard is undefined produces a Type 2 gap and halts before grading -- it never produces an invented finding. |
+| AC-5 | MUST | Answering a gap with "no" records the decision durably; a re-run of the same review does not re-ask. |
+| AC-10 | MUST | The same gap raised twice halts with a loop flag without user intervention. |
+
 - [ ] **AC-4** — Given an artifact whose standard is undefined, when it is reviewed, then a Type 2 gap is produced and the review halts before grading; no invented finding appears.
 - [ ] **AC-5** — Given a gap answered with "no", when the same review runs again, then the decision is found on record and is not re-asked.
 - [ ] **AC-10** — Given the same gap raised twice, when the second occurrence is recorded, then the review halts with a possible-loop flag without user intervention.

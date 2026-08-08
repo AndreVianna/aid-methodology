@@ -9,7 +9,7 @@
 ## Objective
 
 Capture the measurement baselines that become unrecoverable the moment editing starts, and clear
-three prerequisite defects. Scoped as a distinct unit because AC-13 is a MUST about cost whose
+three prerequisite defects. Scoped as a distinct unit because AC-13 is a SHOULD about cost whose
 instrument does not yet exist -- once any later delivery edits the review path, the pre-migration
 numbers can no longer be observed.
 

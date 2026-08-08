@@ -59,6 +59,26 @@ Should — FR-F1 through FR-F3 are Must within the feature; FR-F4 and FR-F5 are 
 
 ## Acceptance Criteria
 
+<!-- This feature owns none of REQUIREMENTS.md section 9's numbered criteria: its criteria are
+     SYNTHESIZED from group F. Each therefore inherits the modality of the requirement it
+     discharges, per the decomposition rule -- it is carried across, not chosen. The `Discharges`
+     column records which, so the inheritance stays checkable. Note FR-F6 (one grading backend)
+     has no criterion here; it is implemented and covered by test-one-grading-backend.sh, but the
+     criterion was never written. Recorded rather than invented.
+     Gated by aid/scripts/kb/lint-modality.sh. The checklist below elaborates these rows. -->
+
+| ID | Modality | Criterion | Discharges |
+|----|----------|-----------|------------|
+| AC-F1 | MUST | Given a `.aid/settings.yml` with an invalid `minimum_grade`, when the gate runs, then it fails with a non-zero exit and names the offending key. | `FR-F1` |
+| AC-F2 | MUST | Given a `.aid/settings.yml` with a malformed `discovery.doc_set` row, when the gate runs, then it fails and names the row. | `FR-F1` |
+| AC-F3 | MUST | Given a valid `.aid/settings.yml`, when the gate runs, then it exits zero and emits no finding. | `FR-F1` |
+| AC-F4 | MUST | Given a settings change that loosens `minimum_grade`, when the gate runs, then the change is surfaced rather than applied silently. | `FR-F1` |
+| AC-F5 | MUST | Given a generated `kb.html`, when the adversarial pass runs, then it produces a rule-cited findings ledger against `review-rubrics/summary.md`. | `FR-F2` |
+| AC-F6 | MUST | Given `kb.html` content that contradicts a KB document, when the adversarial pass runs, then it is reported as a contradiction with the KB winning. | `FR-F2` |
+| AC-F7 | MUST | Given a KB document with missing or malformed frontmatter, when the phase gate runs, then `lint-frontmatter.sh` fails the phase. | `FR-F3` |
+| AC-F8 | SHOULD | Given a `BLUEPRINT.md`, when its phase completes, then it has been graded against a rule set, not merely read for gate criteria. | `FR-F4` |
+| AC-F9 | SHOULD | Given an `aid-specify` per-section review, when it completes, then it has written to a ledger and computed a grade. | `FR-F5` |
+
 - [ ] Given a `.aid/settings.yml` with an invalid `minimum_grade`, when the gate runs, then it fails with a non-zero exit and names the offending key.
 - [ ] Given a `.aid/settings.yml` with a malformed `discovery.doc_set` row, when the gate runs, then it fails and names the row.
 - [ ] Given a valid `.aid/settings.yml`, when the gate runs, then it exits zero and emits no finding.

@@ -67,6 +67,24 @@ template from `../../../templates/feature.md`. Fill in:
   severity of every future finding against that criterion.
 - **Technical Specification:** leave as template placeholder (added by /aid-specify)
 
+## Step 4b: Gate the carried modalities
+
+Run the modality gate over the folders just created, before touching any meta-document:
+
+```bash
+bash .agent/aid/scripts/kb/lint-modality.sh --root .aid/works/{work}/features
+```
+
+Exit `0` means every acceptance criterion carried its `Modality` across. Exit `1` lists the rows that
+did not — fix them here, not later: an untagged criterion is invisible until a reviewer is graded
+against it, at which point it becomes a criteria gap that blocks the grade and costs a human round
+trip. Exit `2` means the sweep inspected nothing, which for a just-written feature set means the
+criteria are not in the `| AC-N | MODALITY | ... |` row shape the template declares.
+
+Without this step the instruction above is unenforced: Step 4 orders the modality carried across, and
+until this gate existed nothing checked that it had been — the only gate ran later, at `/aid-specify`,
+over one feature at a time.
+
 ## Step 5: Update Meta-Documents
 
 1. Add Review History entry in STATE.md `## Interview State`:

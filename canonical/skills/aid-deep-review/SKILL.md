@@ -170,9 +170,17 @@ the separation is what keeps a fixer from grading itself.
 Then a new cycle: fresh scratch, coverage empty (correct — a new attempt re-examines everything), back
 to DISPATCH.
 
-**Circuit breaker: 3 cycles.** Then stop, write an `IMPEDIMENT`, and set the caller's lifecycle
-`Blocked`. Three failed cycles is a signal about the criteria or the artifact, not a reason for a
-fourth.
+**Circuit breaker: the grade does not improve after 3 consecutive cycles.** Then stop, write an
+`IMPEDIMENT`, and set the caller's lifecycle `Blocked`. Three cycles that do not move the grade are a
+signal about the criteria or the artifact, not a reason for a fourth.
+
+The condition is **non-improvement**, not a cycle count. A loop that is still converging — each cycle
+closing more than it opens, the grade climbing — has not tripped anything and must not be stopped at
+an arbitrary third pass. A loop returning the same grade three times running has stopped being a
+review and become a ritual. This is the wording `pipeline-contracts.md § Circuit breaker (Execute)`
+declares and `aid-execute/references/state-fix.md` repeats; stating it as a flat "3 cycles" here made
+this skill say something different from both while a contract test that searched for the phrase
+rather than the condition reported the contract as holding.
 
 ### 7. DONE
 

@@ -48,6 +48,15 @@ Must
 
 ## Acceptance Criteria
 
+<!-- Carried across from REQUIREMENTS.md section 9 by the decomposition rule: a mapped criterion keeps
+     the modality it had there. Modality is what step 1 of the severity scale reads, so a criterion
+     without one makes every finding against it ungradeable. The checklist below elaborates these
+     rows; it is not a second set of criteria. Gated by aid/scripts/kb/lint-modality.sh. -->
+
+| ID | Modality | Criterion |
+|----|----------|-----------|
+| AC-3 | MUST | Every finding produced by a deep review cites a rule from the rubric catalog. A finding with no rule reference is rejected. |
+
 - [ ] **AC-3** — Given a deep review, when it produces a finding, then that finding cites the catalog rule that justifies its severity; a finding with no rule reference is rejected.
 - [ ] Given the catalog, when I inspect any rule row, then it carries all four elements: the check, an evidence anchor, a severity anchor, and a named tag.
 - [ ] Given an artifact of a known class, when a review begins, then the routing table resolves it to exactly one rule set.

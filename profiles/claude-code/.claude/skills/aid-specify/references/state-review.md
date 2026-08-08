@@ -33,10 +33,18 @@ For each section in SPEC.md, run step 4 of the loop against current state:
 bash .claude/aid/scripts/kb/lint-modality.sh --file .aid/works/{work}/features/{feature}/SPEC.md
 ```
 
-Exit 1 means an acceptance criterion in this SPEC carries no modality. **Fix it before dispatching**,
+Exit `1` means an acceptance criterion in this SPEC carries no modality. **Fix it before dispatching**,
 because the reviewer cannot grade a finding against an untagged criterion — it would have to raise a
 criteria gap, which halts the review it just started. Paying a script here is cheaper than paying a
 dispatch and a user round trip there.
+
+Exit `2` means the gate inspected **no criterion rows at all**, and is the answer that matters most
+here. Until 2026-08-07 the feature template wrote acceptance criteria as a `- [ ]` checklist, which
+`lint-modality.sh` cannot see — it matches `| AC-N | MODALITY | ... |` table rows. So a SPEC written to
+the shipped template could not produce exit `1` by any route, and this block certified a property it
+had no way to observe while its instruction to fix could never fire. A `2` now means the SPEC still
+carries the old checklist shape: convert the criteria to the table in `templates/feature.md` before
+dispatching, rather than reading the silence as a pass.
 
 ### Review
 

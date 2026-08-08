@@ -46,6 +46,15 @@ Must
 
 ## Acceptance Criteria
 
+<!-- Carried across from REQUIREMENTS.md section 9 by the decomposition rule: a mapped criterion keeps
+     the modality it had there. Modality is what step 1 of the severity scale reads, so a criterion
+     without one makes every finding against it ungradeable. The checklist below elaborates these
+     rows; it is not a second set of criteria. Gated by aid/scripts/kb/lint-modality.sh. -->
+
+| ID | Modality | Criterion |
+|----|----------|-----------|
+| AC-9 | MUST | Adding coverage and gap rows to a ledger does not change the grade `grade.sh` computes for the same findings. |
+
 - [ ] **AC-9** — Given a ledger, when coverage and gap rows are added to it, then the grade computed for the same findings is unchanged.
 - [ ] Given a ledger, when it carries all three row kinds, then findings, `U-NNN` and `G-NNN` rows are distinguishable by their `#` prefix and all sit in the same 7-column table.
 - [ ] Given a coverage or gap row, when the grader parses it, then it is ignored because its severity column holds `—`.

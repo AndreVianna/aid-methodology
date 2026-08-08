@@ -64,6 +64,17 @@ Must
 
 ## Acceptance Criteria
 
+<!-- Carried across from REQUIREMENTS.md section 9 by the decomposition rule: a mapped criterion keeps
+     the modality it had there. Modality is what step 1 of the severity scale reads, so a criterion
+     without one makes every finding against it ungradeable. The checklist below elaborates these
+     rows; it is not a second set of criteria. Gated by aid/scripts/kb/lint-modality.sh. -->
+
+| ID | Modality | Criterion |
+|----|----------|-----------|
+| AC-11 | SHOULD | A pipeline skill that previously carried its own review logic invokes the shared capability instead, and is measurably shorter. |
+| AC-12 | MUST | The full render produces identical review behavior on all five profiles. |
+| AC-13 | SHOULD | **The split is measurably cheaper on a normal artifact, not just on paper.** For a fixture artifact taken through one full gate passage, measure total dispatch count and FIX-cycle count. **Amended at delivery-001, 2026-07-28:** this criterion originally said the numbers come from *"the always-on `## Dispatch Log` / `## Calibration Log` telemetry"*. **They do not — that telemetry is not written.** Verified: across 49 sub-agent dispatches in this work's own pipeline, every one of those sections holds a header row and zero data rows, despite the templates describing them as "always-on, never optional". So **populating the Dispatch Log is a prerequisite of this criterion, not an input to it**, and the **per-dispatch tier is dropped from the measure** — it was never recorded and the weighting was never defined. Dispatch count and FIX cycles are counted identically before and after, so that comparison is valid and it catches the failure mode that matters: a split that adds dispatches without removing cycles. Pre-migration baseline and the nominated fixture (feature-005's Specify gate: 3 dispatches, 1 FIX cycle) are recorded in `deliveries/delivery-001/BASELINE-ac13.md`. Post-migration, the tier-weighted dispatch cost and the FIX-cycle count must both be **no greater** than the pre-migration baseline on the same artifact. The baseline is captured in feature-006's delivery D0, alongside AC-11's B and C metrics, and before any edit. **This is the acceptance criterion NFR-3 lacked** — a MUST about cost with nothing testing it. Without AC-13 the work can pass every other gate and still be a net cost increase, which would defeat the reason it was started. |
+
 - [ ] **AC-11** — Given a pipeline skill that previously carried its own review logic, when it is migrated, then it invokes the shared capability and is measurably shorter.
 - [ ] **AC-12** — Given a full render, when review behaviour is compared across all five profiles, then it is identical.
 - [ ] Given `aid-light-review`, when it completes, then no grade was computed and no ledger status lifecycle was driven.

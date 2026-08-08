@@ -47,6 +47,16 @@ Must
 
 ## Acceptance Criteria
 
+<!-- Carried across from REQUIREMENTS.md section 9 by the decomposition rule: a mapped criterion keeps
+     the modality it had there. Modality is what step 1 of the severity scale reads, so a criterion
+     without one makes every finding against it ungradeable. The checklist below elaborates these
+     rows; it is not a second set of criteria. Gated by aid/scripts/kb/lint-modality.sh. -->
+
+| ID | Modality | Criterion |
+|----|----------|-----------|
+| AC-1 | MUST | Exactly one severity definition exists in the canonical tree. A grep for competing severity tables returns only pointers. |
+| AC-2 | MUST | The string "established best practice" no longer appears as a criterion source, and no shipped checklist contains an undefined quality term. |
+
 - [ ] **AC-1** — Given the canonical tree, when I grep for severity definition tables, then exactly one definition exists and every other location is a pointer to it.
 - [ ] Given the canonical tree, when I search for the four known rival definitions (`grading-rubric.md`, `reviewer-ledger-schema.md`, `kb-authoring/review-rubric.md`, `agents/aid-reviewer/AGENT.md` and its `README.md`, `aid-execute/references/reviewer-guide.md`, `quality-gates.md`), then none of them carries its own severity meanings.
 - [ ] **AC-2** — Given the canonical tree, when I grep for "established best practice", then it no longer appears as a criterion source; and no shipped checklist contains an undefined quality term.

@@ -125,6 +125,19 @@ at by hand and three features late, is what this feature makes a rule.
 
 ---
 
+## Acceptance Criteria
+
+<!-- Carried across from REQUIREMENTS.md section 9: a mapped criterion keeps the modality it had
+     there. This feature was added post-Specify (see STATE.md Q14) and shipped with its criteria
+     stated only as a Source bullet, so `lint-modality.sh` -- which matches `| AC-N | ... |` rows --
+     could see nothing here. Gated by aid/scripts/kb/lint-modality.sh. -->
+
+| ID | Modality | Criterion |
+|----|----------|-----------|
+| AC-14 | MUST | **A citation in a work artifact resolves.** Every `file:NNN` or "`file` lines NNN–MMM" reference points at an existing file with at least NNN lines, and every string presented as a quotation from a named file appears in that file. Verified by a lint over `REQUIREMENTS.md`, `SPEC.md`, `PLAN.md`, `BLUEPRINT.md` and task `DETAIL.md`, on fixtures that fail in both directions. |
+
+---
+
 ## Scope
 
 **In scope.** Extending the existing lint to work artifacts under a second rule profile; a range

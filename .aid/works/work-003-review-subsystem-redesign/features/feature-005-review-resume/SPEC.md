@@ -54,6 +54,17 @@ Must
 
 ## Acceptance Criteria
 
+<!-- Carried across from REQUIREMENTS.md section 9 by the decomposition rule: a mapped criterion keeps
+     the modality it had there. Modality is what step 1 of the severity scale reads, so a criterion
+     without one makes every finding against it ungradeable. The checklist below elaborates these
+     rows; it is not a second set of criteria. Gated by aid/scripts/kb/lint-modality.sh. -->
+
+| ID | Modality | Criterion |
+|----|----------|-----------|
+| AC-6 | MUST | A review interrupted at any point resumes without re-examining Examined units and without skipping Unexamined ones. |
+| AC-7 | MUST | A review killed mid-unit (involuntary) resumes correctly, re-examining only the interrupted unit. |
+| AC-8 | MUST | Changing a criterion invalidates and re-reviews exactly the affected units -- verifiable on a fixture. |
+
 - [ ] **AC-6** — Given an interrupted review, when it resumes, then it re-examines no `Examined` unit and skips no `Unexamined` one.
 - [ ] **AC-7** — Given a review killed mid-unit, when it resumes, then it re-examines only the interrupted unit.
 - [ ] **AC-8** — Given a criterion change, when the review resumes, then exactly the affected units are invalidated and re-reviewed — verifiable on a fixture.

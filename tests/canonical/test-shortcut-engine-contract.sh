@@ -60,8 +60,15 @@ else
         "SEC04a engine still names the REVIEW -> GRADE -> FIX loop it delegates"
     assert_file_contains "$DEEP" "Circuit breaker" \
         "SEC04b the delegate names a Circuit breaker"
-    assert_file_contains "$DEEP" "3 cycles" \
-        "SEC04c the delegate's circuit breaker trips at 3 cycles"
+    # ASSERT THE CONDITION, NOT THE PHRASE. This used to search for the literal "3 cycles", which a
+    # flat cycle-count breaker satisfies just as well as the non-improvement one the KB declares
+    # (`pipeline-contracts.md § Circuit breaker (Execute)`: "if the grade does not improve after 3
+    # consecutive cycles"). The delegate had in fact been rewritten to the flat form, and this
+    # assertion reported the contract as holding transitively over the drop.
+    assert_file_contains "$DEEP" "3 consecutive cycles" \
+        "SEC04c the delegate's circuit breaker names 3 CONSECUTIVE cycles"
+    assert_file_contains "$DEEP" "does not improve" \
+        "SEC04d the delegate's breaker trips on NON-IMPROVEMENT, not on a cycle count"
 fi
 
 # SEC05: halt proof -- no branch, no execution, Paused-Awaiting-Input, Specified.
