@@ -127,9 +127,12 @@ dbi_rel() { printf '%s' "${1#${REPO_ROOT}/}"; }
 # ---------------------------------------------------------------------------
 
 # .claude/ : the non-generator files that legitimately live in the dogfood
-# .claude/ (no profile counterpart, not emitted by render.py). SEVEN patterns
-# over SIX case arms:
+# .claude/ (no profile counterpart, not emitted by render.py). EIGHT patterns
+# over SEVEN case arms:
 #   settings.json / settings.local.json : Claude Code settings  (one arm, two patterns)
+#   output-styles/**                     : Claude Code output styles -- maintainer-local
+#                                          host-tool config, same class as settings.json;
+#                                          never emitted to profiles, never shipped
 #   projects/**                          : Claude Code session + memory state
 #   worktrees/**                         : git worktree metadata
 #   skills/README.md                     : maintainer index of skills (AID doc, not profile-emitted)
@@ -139,6 +142,7 @@ dbi_allowlisted() {
     local rel="$1"
     case "$rel" in
         settings.json | settings.local.json) return 0 ;;
+        output-styles/*)           return 0 ;;
         projects/*)                return 0 ;;
         worktrees/*)               return 0 ;;
         skills/README.md)          return 0 ;;
