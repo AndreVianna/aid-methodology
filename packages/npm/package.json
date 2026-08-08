@@ -9,7 +9,7 @@
   },
   "type": "commonjs",
   "engines": {
-    "node": ">=18"
+    "node": ">=22"
   },
   "scripts": {
     "prepack": "node scripts/vendor.js",

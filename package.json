@@ -4,7 +4,7 @@
   "private": true,
   "description": "Node package configuration for tooling used by scripts INSIDE this repository. It lives at the repo root on the owner's rule, and the rule is sharper than a preference: everything under canonical/ is rendered into every adopter's install by design, so a manifest placed there ships whether or not it was meant to. Two manifests previously sat under canonical/aid/scripts/ and both shipped -- the summarize one while its own description said 'Not shipped to adopters'. Deliberately NOT merged into packages/npm/package.json, which is the published `aid-installer` wrapper: dependencies added there reach every npm consumer, and feature-012 D6/G1 requires the vendored bundles to be excluded from both published wrapper manifests. Deliberately carries NO \"type\" field -- the summarize manifest declared \"type\": \"module\" and at the repo root that would make every .js file in the repo ESM; it is safe to drop because both script directories are entirely .mjs, which carries module semantics in the extension.",
   "engines": {
-    "node": ">=20"
+    "node": ">=22"
   },
   "scripts": {
     "install-browsers": "playwright install chromium"

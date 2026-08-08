@@ -43,7 +43,7 @@ npm run test:headed       # in another
 ```
 
 ### Requirements
-- Node 18+ and Python 3.8+ on `PATH` (`serve.mjs` launches `dashboard/server/server.py`;
+- Node 22+ and Python 3.8+ on `PATH` (`serve.mjs` launches `dashboard/server/server.py`;
   set `AID_UI_TEST_RUNTIME=node` to exercise the `server.mjs` twin instead).
 - The target repo must have at least one pipeline with a task. The specs default to
   `work-017-cli-improvements` / `task-001`; override with `AID_UI_TEST_WORK` /

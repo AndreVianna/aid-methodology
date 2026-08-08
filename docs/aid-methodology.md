@@ -1440,7 +1440,7 @@ curl -fsSL https://raw.githubusercontent.com/AndreVianna/aid-methodology/master/
 # Windows PowerShell
 irm https://raw.githubusercontent.com/AndreVianna/aid-methodology/master/install.ps1 | iex
 
-# npm (Node >=18)
+# npm (Node >=22)
 npm i -g aid-installer
 
 # PyPI (Python >=3.8)
