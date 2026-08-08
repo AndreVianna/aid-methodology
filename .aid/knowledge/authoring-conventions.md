@@ -21,9 +21,6 @@ contracts:
   - "Every KB doc layout: frontmatter -> title -> index -> content -> Change Log last"
   - "Reviewer ledger is a 7-column table; Severity + Status are closed enums"
   - "Required frontmatter fields: objective, summary, sources (lint-graded)"
-changelog:
-  - 2026-07-09: housekeep KB-DELTA connectors subsystem refresh -- added the `forward-authored` value to the frontmatter `source:` rule (closed 3-value enum).
-  - 2026-06-25: Initial authoring (aid-discover brownfield deep-dive / Analyst)
 ---
 
 # Authoring Conventions
@@ -330,9 +327,3 @@ rubric in `kb-authoring/review-rubric.md`.
 
 ---
 
-## Change Log
-
-| Rev | Date | Source | Description |
-|-----|------|--------|-------------|
-| 1.1 | 2026-07-09 | housekeep KB-DELTA | Connectors subsystem refresh: the frontmatter `source:` rule (Frontmatter Rules) now lists the closed 3-value enum `hand-authored \| forward-authored \| generated`, matching artifact-schemas.md's inline contract. Verified the 15-doc default seed figure already stated under Concern Model is correct (no change needed there). |
-| 1.0 | 2026-06-25 | aid-discover | Initial authoring-conventions doc (Analyst) |

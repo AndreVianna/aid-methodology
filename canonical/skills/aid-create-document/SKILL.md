@@ -30,7 +30,6 @@ here binding a genre/format hint.
 - **Boundary vs `/aid-design`:** `aid-design` *produces a design* (`aid-architect`);
   `aid-create-document` *writes documentation about* something (`aid-tech-writer`).
 - **Not a numbered pipeline phase**; does not route to `/aid-execute`.
-- **Behavior contract:** `.aid/work-005-lite-skills-refactor/specs/aid-document.md`.
 - **Genre structures** (ADR / C4 / runbook / ...): `canonical/aid/templates/shortcut-scaffolding/document.md`.
 
 State machine: **INTAKE -> AUTHOR -> VERIFY (loop) -> PRESENT [human gate] -> PLACE (on

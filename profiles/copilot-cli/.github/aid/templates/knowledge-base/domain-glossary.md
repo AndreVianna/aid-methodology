@@ -11,10 +11,6 @@ audience: [developer, architect, pm]
 intent: |
   Project-specific vocabulary with definitions. Disambiguates terms that mean different things in different contexts; canonical reference for naming.
 contracts: []
-changelog:
-  - 2026-06-23: Upgraded to concept-spine structure (concept entries + retained lexicon tables; f004)
-  - 2026-06-23: Added f001 frontmatter fields (objective/summary/sources/tags/see_also/owner/audience)
-  - 2026-05-26: KB Authoring v2 template seed
 ---
 
 # Domain Glossary
@@ -36,7 +32,6 @@ This doc has two parts: the **Concept Spine** (load-bearing native concepts, eac
 - [Terms to Avoid](#terms-to-avoid)
 - [Business Process Vocabulary](#business-process-vocabulary)
 - [Invariants](#invariants)
-- [Change Log](#change-log)
 
 ---
 
@@ -182,8 +177,3 @@ This doc has two parts: the **Concept Spine** (load-bearing native concepts, eac
 
 ---
 
-## Change Log
-
-| Rev | Date | Source | Description |
-|-----|------|--------|-------------|
-| 1.0 | {date} | aid-describe | Initial glossary from stakeholder interview |

@@ -314,15 +314,13 @@ the named counts and verify against disk where the format permits.
 **When in doubt, omit.** Empty list `contracts: []` is valid. A missing field is
 treated as empty.
 
-### `changelog:` (optional, list)
+### `changelog:` (removed)
 
-Per-doc historical entries. Free-form list of dated notes.
-
-```yaml
-changelog:
-  - 2026-05-26: Migrated to v2 format (KB Authoring overhaul)
-  - 2026-06-15: Added S-X for new feature Y
-```
+**Not a valid field.** Per-doc historical entries are not carried in the document at all
+-- git records every revision with its author, date, and diff. A `changelog:` block also
+became the main route by which transient work references leaked into the KB (see
+[principles.md](principles.md) P1(e)), so it is removed rather than merely discouraged.
+Delete the field where it still appears; do not author a new one.
 
 **Exempt from review.** This is informational for human readers who don't want to
 run `git log`. Drift here doesn't affect grade.
@@ -426,10 +424,10 @@ The frontmatter block is always **Position 1** in the required doc layout:
 | 2 | Title heading |
 | 3 | Index / table of contents |
 | 4 | Content sections |
-| 5 | `## Change Log` (always last) |
 
 See [principles.md](principles.md) P10 for the full layout specification. The Anatomy
-mandate checks this order: frontmatter first, Change Log last, index present.
+mandate checks this order: frontmatter first, index present. There is no change-log
+section -- per-doc history lives in git.
 
 ## See also
 

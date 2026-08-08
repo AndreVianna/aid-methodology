@@ -28,7 +28,6 @@ criteria, where `/aid-ask` answers a free-form question.
   your approval, a publish to the reviewed target (a PR/ticket comment, doc notes).
   It never edits the reviewed code/design itself and never fixes -- fixing is
   `/aid-fix`'s job.
-- **Behavior contract:** `.aid/work-005-lite-skills-refactor/specs/aid-review.md`.
 
 State machine: **INTAKE -> REVIEW -> VERIFY (loop) -> PRESENT-FINDINGS [human] ->
 PUBLISH (on approval) -> DONE**. Print the state-entry line on entry to each state

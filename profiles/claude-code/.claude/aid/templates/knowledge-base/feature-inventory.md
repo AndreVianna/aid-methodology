@@ -13,9 +13,6 @@ audience: [pm, developer, architect]
 intent: |
   Canonical feature list with status (Shipped / Partial / Deferred), source, and traceability to work items. Read this to understand WHAT the project does at a feature level.
 contracts: []
-changelog:
-  - 2026-06-23: Added f001 frontmatter fields (objective/summary/sources/tags/see_also/owner/audience)
-  - 2026-05-26: KB Authoring v2 template seed
 ---
 
 # Feature Inventory
@@ -28,7 +25,6 @@ changelog:
 ## Contents
 
 - [Feature Table](#feature-table)
-- [Change Log](#change-log)
 
 ---
 
@@ -40,8 +36,3 @@ changelog:
 
 ---
 
-## Change Log
-
-| Rev | Date | Source | Description |
-|-----|------|--------|-------------|
-| 1.0 | {date} | aid-discover + aid-describe | Initial feature inventory |

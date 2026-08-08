@@ -557,7 +557,7 @@ parse_worksheet() {
 # Frontmatter rewriter: write the new fields into a doc.
 # Uses a temp file + mv for atomicity.
 # Inserts objective/summary/sources/approved_at_commit in canonical order
-# above contracts/changelog; retires intent: literal block.
+# above contracts:; retires intent: literal block and the changelog: field.
 # ---------------------------------------------------------------------------
 
 rewrite_doc() {
@@ -654,52 +654,35 @@ rewrite_doc() {
 }
 
 # ---------------------------------------------------------------------------
-# Append changelog row to a doc's changelog: list.
+# Remove the retired `changelog:` field from a doc's frontmatter.
+#
+# `changelog:` is no longer part of the KB frontmatter schema: per-doc history
+# lives in git, and the field was the main route by which transient work
+# references leaked into the Knowledge Base (kb-authoring/principles.md P1(e)).
+# Migration therefore STRIPS the field rather than appending to it -- otherwise
+# running this script would re-introduce content the review rubric now flags
+# HIGH. Drops the key and every indented item under it, frontmatter only.
 # ---------------------------------------------------------------------------
 
-append_changelog_row() {
-    local f="$1" note="$2"
-    local today
-    today="$(date -u +%Y-%m-%d)"
+strip_changelog_field() {
+    local f="$1"
     local tmp
     tmp="${f}.changelog-tmp"
 
-    awk -v note="$note" -v today="$today" '
-    BEGIN { in_fm=0; in_cl=0; done=0; indent=2 }
+    awk '
+    BEGIN { in_fm=0; in_cl=0 }
     /^---$/ {
         if (!in_fm && NR == 1) { in_fm=1; print; next }
         if (in_fm) { in_fm=0; in_cl=0; print; next }
         print; next
     }
-    in_fm && !done && /^changelog:/ {
-        print
-        in_cl = 1
-        next
-    }
-    in_fm && in_cl && !done {
-        # First line of changelog block
-        if (/^[[:space:]]+-/) {
-            # Prepend new row as the most-recent entry
-            print "  - " today ": " note
-            print
-            done = 1
-        } else if (/^[[:space:]]*$/ || /^[a-zA-Z]/) {
-            # Empty changelog or next field: insert before
-            print "  - " today ": " note
-            in_cl = 0
-            done = 1
-            print
-        } else {
-            print
-        }
-        next
+    in_fm && /^changelog:/ { in_cl=1; next }
+    in_fm && in_cl {
+        # swallow indented list items / blank continuation lines
+        if (/^[[:space:]]+/ || /^[[:space:]]*$/) { next }
+        in_cl = 0
     }
     { print }
-    END {
-        if (!done) {
-            print "  - " today ": " note
-        }
-    }
     ' "$f" > "$tmp"
 
     mv "$tmp" "$f"
@@ -785,7 +768,7 @@ run_apply() {
             log "DRY-RUN: would backup $doc to $backup_dir/$doc"
             log "DRY-RUN: would write objective/summary/sources/approved_at_commit to $doc"
             log "DRY-RUN: would retire intent: from $doc"
-            log "DRY-RUN: would append changelog row to $doc"
+            log "DRY-RUN: would strip retired changelog: field from $doc"
             migrated_docs+=("$doc")
             continue
         fi
@@ -799,9 +782,9 @@ run_apply() {
         rewrite_doc "$f" "$objective" "$summary_val" "$sources_block_arg" "$commit_hash"
         log "  Rewrote frontmatter: $doc"
 
-        # Append changelog row
-        append_changelog_row "$f" "Migrated by migrate-kb-frontmatter.sh: intent retired, objective/summary/sources added"
-        log "  Appended changelog: $doc"
+        # Strip the retired changelog: field (history lives in git)
+        strip_changelog_field "$f"
+        log "  Stripped changelog: $doc"
 
         migrated_docs+=("$doc")
     done

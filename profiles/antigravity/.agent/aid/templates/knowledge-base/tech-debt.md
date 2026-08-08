@@ -11,9 +11,6 @@ audience: [developer, architect, pm]
 intent: |
   Severity-tagged technical debt items with remediation paths. Read this before starting work in any area; declared debt items may affect approach or scope.
 contracts: []
-changelog:
-  - 2026-06-23: Added f001 frontmatter fields (objective/summary/sources/tags/see_also/owner/audience)
-  - 2026-05-26: KB Authoring v2 template seed
 ---
 
 # Tech Debt
@@ -39,7 +36,6 @@ This document is a diagnosis, not a sprint plan. It identifies what exists so th
 - [Duplication](#duplication)
 - [Dead Code](#dead-code)
 - [Gotchas](#gotchas)
-- [Change Log](#change-log)
 
 ---
 
@@ -161,8 +157,3 @@ This document is a diagnosis, not a sprint plan. It identifies what exists so th
 
 ---
 
-## Change Log
-
-| Rev | Date | Source | Description |
-|-----|------|--------|-------------|
-| 1.0 | {date} | aid-discover | Initial debt audit |

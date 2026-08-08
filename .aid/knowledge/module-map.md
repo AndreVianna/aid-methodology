@@ -25,15 +25,6 @@ contracts:
   - "76 skill directories under canonical/skills/; 9 agent directories under canonical/agents/"
   - "5 render profiles (profiles/*.toml)"
   - "site/ derives its skill content from canonical/ at build time; gen-skills.mjs and gen-reference.mjs throw on corpus drift"
-changelog:
-  - 2026-07-30: work-001 delivery-006 gate -- added the five Skill Explorer module rows (generator, flow extractor, gen-reference, count derivation, node panel); reversed the `site/ X canonical/` "key non-dependency" to the enforced build-time dependency it now is, with its enforcement listed; corrected the stale shortcut-doorway count.
-  - 2026-07-25: work-001-skill-explorer describe-phase hydration -- added the Skill Structural Shapes section (four body shapes vs. the ownership taxonomy; `repurpose` is an ownership flag not a structural signal; the two doorway shapes carry no flow of their own; no single reliable state-machine parse marker). Additive only; no discovery content changed.
-  - 2026-07-23: v2.3.0 release sweep -- skill count 92 -> 111 (added `aid-design` [work-005] + the 3 ticket skills `aid-read-ticket`/`aid-create-ticket`/`aid-update-ticket` [work-023]); the skill-count taxonomy is restated to the current model used across the other docs (111 = 17 curated pipeline / on-demand / router skills + the 94-row shortcut catalog's skills: 64 verb-first shortcut doorways + 30 hand-authored `repurpose` skills).
-  - 2026-07-09: work-001 lite-skills refresh -- skill count 14 -> 82 (14 classic + `/aid-triage` + 67 verb-first shortcuts); removed the `canonical/aid/recipes/` module row, the `interview/`/`parse-recipe.sh` script-area row + dependency-graph edge + gotcha, and the "how a new recipe goes" convention; added the shortcut catalog/engine/scaffolding wiring (`build-shortcut-skills.py`), the "how a new shortcut goes" convention, and the shortcut-engine dependency edges.
-  - 2026-07-09: housekeep KB-DELTA connectors subsystem refresh -- added the `connectors/` script area (registry accessor, INDEX builder, secret handler) + its test suites, the ELICIT-to-`.aid/connectors/`/`external-sources.md` wiring line, and `connectors` to the scripts-by-area enumeration.
-  - 2026-06-28: Relabeled Phase 2 from "Interview" to "Describe → Define" in module inventory note.
-  - 2026-06-28: work-001-aid-interview-improvements -- aid-interview split into aid-describe (2a) + aid-define (2b); added the aid-describe elicitation-engine corpus, greenfield seed-authoring, and the aid-housekeep Conformance Lane sub-module; skill count 13 -> 14.
-  - 2026-06-25: Initial authoring (aid-discover brownfield deep-dive / Analyst)
 ---
 
 # Module Map
@@ -93,11 +84,11 @@ it produces. The modules fall into four planes:
 | `dashboard/reader/*` (Python) | Observation | Parses `.aid/` state (STATE.md hierarchy, settings, KB) into typed models. | `.aid/` artifact schemas | large | tested (`dashboard/reader/tests/`) | `parsers.py` + `derivation.py` + `models.py` + `locator.py` + `reader.py`. |
 | `dashboard/server/*` | Observation | Serves the dashboard: a Node `reader.mjs`/`server.mjs` twin of the Python reader, plus `server.py`, index/home HTML. | `dashboard/reader` semantics | large | tested (`dashboard/server/tests/`) | `reader.mjs` is the Node twin of the **whole** `dashboard/reader/` Python reader (its own header: "port of dashboard/reader/"), not just `parsers.py` -- a change to ANY reader `.py` (`parsers`/`derivation`/`models`/`locator`/`reader`) must be mirrored in `reader.mjs`; behavior-equal, no import. |
 | `site/` | Observation | Astro marketing + docs website. **Derives its skill content from `canonical/` at build time** (see the Skill Explorer rows below). | own `package.json`; `canonical/skills/`, `canonical/agents/`, `canonical/aid/templates/` | large | tested (`site/**/__tests__`, ~2765 vitest) | Independent of the **CLI** (`bin/`, `lib/`), NOT of the toolkit. Separate `node_modules`/`dist`. |
-| `site/scripts/gen-skills.mjs` + `site/scripts/skills/*` (12) | Observation | **Skill Explorer generator** (work-001). Emits the `/skills/` section — one index page plus a detail page per skill directory — from `canonical/skills/` and the shortcut catalog. Modules: discovery, frontmatter parse, grouping (four groups; Definition subdivided by verb family), card/summary/value rendering, index + page render, path resolution, catalog read, and the shared curated roster. | `canonical/skills/`, `shortcut-catalog.yml` | large | tested (`skills-*.test.mjs`, `gen-skills*.test.mjs`) | **Throws** on corpus drift: an on-disk skill that is neither a catalog row nor a curated-roster member fails the build BY NAME. |
-| `site/scripts/lib/flow-graph/*` (14) | Observation | **Flow extractor** (work-001). Reads a skill's own instructions and derives its control flow — ordered states, loops, decision branches, exit points — then renders Mermaid. Extractors are per body shape (dispatch table, inline `## State:` sections, engine doorway, sibling, residual), over a shared compose/advance/validate core. | `canonical/skills/*/SKILL.md` + `references/*.md` | large | tested (`flow-*.test.mjs`, the largest suite group) | The four skill *structural shapes* in § Skill Structural Shapes are what these extractors dispatch on. |
-| `site/scripts/gen-reference.mjs` | Observation | Generates the four reference pages (`skills`, `agents`, `kb`, `settings`) from `canonical/` + `.aid/settings.yml`. Since delivery-006 its skills page carries only the **shortcut-engine narrative** — the roster moved to `/skills/`. | `canonical/`, `.aid/settings.yml` | medium | tested (`gen-reference.test.mjs`) | Was frozen by work-001 §7; unfrozen by that section's second amendment. |
+| `site/scripts/gen-skills.mjs` + `site/scripts/skills/*` (12) | Observation | **Skill Explorer generator**. Emits the `/skills/` section — one index page plus a detail page per skill directory — from `canonical/skills/` and the shortcut catalog. Modules: discovery, frontmatter parse, grouping (four groups; Definition subdivided by verb family), card/summary/value rendering, index + page render, path resolution, catalog read, and the shared curated roster. | `canonical/skills/`, `shortcut-catalog.yml` | large | tested (`skills-*.test.mjs`, `gen-skills*.test.mjs`) | **Throws** on corpus drift: an on-disk skill that is neither a catalog row nor a curated-roster member fails the build BY NAME. |
+| `site/scripts/lib/flow-graph/*` (14) | Observation | **Flow extractor**. Reads a skill's own instructions and derives its control flow — ordered states, loops, decision branches, exit points — then renders Mermaid. Extractors are per body shape (dispatch table, inline `## State:` sections, engine doorway, sibling, residual), over a shared compose/advance/validate core. | `canonical/skills/*/SKILL.md` + `references/*.md` | large | tested (`flow-*.test.mjs`, the largest suite group) | The four skill *structural shapes* in § Skill Structural Shapes are what these extractors dispatch on. |
+| `site/scripts/gen-reference.mjs` | Observation | Generates the four reference pages (`skills`, `agents`, `kb`, `settings`) from `canonical/` + `.aid/settings.yml`. Since delivery-006 its skills page carries only the **shortcut-engine narrative** — the roster moved to `/skills/`. | `canonical/`, `.aid/settings.yml` | medium | tested (`gen-reference.test.mjs`) | Not frozen. |
 | `site/scripts/skills/skill-counts.mjs` | Observation | **The** derivation of the skill-count triple (`directories`, `curatedOnly`, `shortcuts`, `catalogRows`, …). Every stated count in the repository is checked against it. | `canonical/skills/`, `shortcut-catalog.yml` | small | tested (`skill-counts.test.mjs`) + `tests/canonical/test-skill-counts.sh` | Pure, no import-time side effect — deliberately does not import `gen-reference.mjs`, which runs `main()` at module scope. |
-| `site/public/skill-node-panel.mjs` (runtime, ~642 lines) + `site/src/lib/skill-node-panel.ts` (build-time projection, ~149) | Observation | **Interactive node panel** (work-001 feature-006). Decorates each rendered flow-chart node with `role=button` / `tabindex` / ARIA and reveals a panel carrying that node's verbatim prompt fragment and a source deep link. | the generated per-page projection island | medium | tested (jsdom suites + manual browser gate) | Reads the JSON projection, never feature-005's DOM. Survives mermaid's theme re-render. |
+| `site/public/skill-node-panel.mjs` (runtime, ~642 lines) + `site/src/lib/skill-node-panel.ts` (build-time projection, ~149) | Observation | **Interactive node panel**. Decorates each rendered flow-chart node with `role=button` / `tabindex` / ARIA and reveals a panel carrying that node's verbatim prompt fragment and a source deep link. | the generated per-page projection island | medium | tested (jsdom suites + manual browser gate) | Reads the JSON projection, never feature-005's DOM. Survives mermaid's theme re-render. |
 | `tests/canonical/*` | Cross-cutting | Cross-platform shell test suites + `fixtures/`, run via `tests/run-all.sh`. | the modules under test | large | self | Heavy gates run on master CI only. |
 | `tests/windows/*` | Cross-cutting | Windows-only PowerShell installer tests (`Test-AidInstaller.ps1`). | installers + install-core | large | windows CI lane | NOT in `run-all.sh`; needs a Windows runner. |
 
@@ -153,8 +144,8 @@ site/                       -> (independent of the CLI: bin/, lib/, install.sh)
 site/  ->  canonical/       (hard build-time dependency, and enforced)
 ```
 
-work-001 (Skill Explorer) made the website derive its content from the toolkit rather than
-restate it. **Two** generators — `gen-reference.mjs` and `gen-skills.mjs` — read `canonical/`
+The website derives its content from the toolkit rather than restating
+it. **Two** generators — `gen-reference.mjs` and `gen-skills.mjs` — read `canonical/`
 on every `prebuild`, and the coupling is *enforced*, not incidental. (The third generator,
 `sync-docs.mjs`, reads `docs/` only and is NOT part of this coupling — it is named here
 because an earlier revision of this row wrongly counted it, and overstating a dependency to
@@ -170,9 +161,7 @@ justify reversing a non-dependency is the same defect as understating it.)
 
 **Consequence for any change:** a `canonical/skills/` addition or removal is now a `site/`
 change too. Adding a skill directory without a catalog row or curated-roster entry turns the
-site build red by design. Until work-001 the entry below read "the website does NOT consume
-the toolkit; it has its own build" — it was correct when written and is kept here only so a
-reader who remembers it knows it was superseded, not forgotten.
+site build red by design.
 
 ---
 
@@ -205,9 +194,8 @@ grader).
 ## Notable Skill Reference Modules
 
 Most skills carry their state-machine prose in `references/*.md`. Three reference
-clusters added by work-001-aid-interview-improvements (which split `aid-interview`
-into `aid-describe` + `aid-define`) are substantial enough to track as modules in
-their own right.
+clusters — those of `aid-describe` and `aid-define`, the two halves of the
+interview split — are substantial enough to track as modules in their own right.
 
 | Module | Owning skill | Purpose | Key files (durable anchors) |
 |--------|--------------|---------|-----------------------------|
@@ -415,14 +403,3 @@ body; ownership counts per this document's own contracts and `project-structure.
 
 ---
 
-## Change Log
-
-| Rev | Date | Source | Description |
-|-----|------|--------|-------------|
-| 1.6 | 2026-07-25 | work-001-skill-explorer (aid-specify measurement) | Corrected the Skill Structural Shapes section against a direct scan of all 111 directories: the hand-authored collapse shape is **eight** skills, not five (adds `aid-change-document`, `aid-create-document`, `aid-report`); the delegating population is **83--84**, not "roughly 94"; and `aid-triage` is a **Dispatch-shape** skill (it carries both a `## State Machine` heading and a `## Dispatch` table), not the marker-less exception the rev-1.5 text made it. Residual population identified as curated on-demand skills (`aid-config`, ticket, connector). |
-| 1.5 | 2026-07-25 | work-001-skill-explorer (aid-describe hydration) | Added the Skill Structural Shapes section: the four body shapes (fat pipeline / hand-authored collapse / generated doorway / kind-sibling doorway) and how they cut across the 17+64+30 ownership taxonomy; `repurpose: true` clarified as a generator-ownership flag rather than a structural signal; recorded that the two doorway shapes carry no flow of their own (~94 of 111 skills) and that no single state-machine parse marker exists. Additive; no existing content changed. |
-| 1.4 | 2026-07-09 | v2.1.0 coverage-gap follow-on | Skill count 82 -> 92 (15 classic incl. restored `/aid-ask` + `aid-triage` + 76 verb-first shortcuts, up from 67); updated the `canonical/skills/*` module row, the "how a new skill goes" / "shortcut doorways are generated" gotchas, and the frontmatter contract count (82 -> 92) for the new `remove`/`deprecate`/`migrate` (G5) and `review`/`research` (G11) shortcut families. |
-| 1.3 | 2026-07-09 | work-001 refresh | work-001 lite-skills refresh: skill count 14 -> 82 (14 classic + `aid-triage` + 67 verb-first shortcuts); removed the `canonical/aid/recipes/*` module row, the `interview/`/`parse-recipe.sh` script-area row + its dependency-graph edge + its gotcha, and the "how a new recipe goes" convention; updated the templates row (recipe template -> shortcut catalog + engine + scaffolding); added the shortcut-engine/scaffolding dependency edges + the `build-shortcut-skills.py` wiring, the "how a new shortcut goes" convention, and a "shortcut doorways are generated" gotcha; frontmatter contract 14 -> 82. General-staleness sweep also added two `summarize/` scripts (`build-md-export.sh`, `validate-diagram-content.mjs`) that were missing from the Script Modules table. |
-| 1.2 | 2026-07-09 | housekeep KB-DELTA | Connectors subsystem refresh: added the `connectors/` row to Script Modules by Area (registry accessor, INDEX builder, secret handler, Bash+PowerShell twins) + its test-suite list; added `connectors` to the scripts-by-area enumeration in Module Inventory; added the ELICIT `.aid/connectors/`/`external-sources.md` write-target line to the Dependency Graph. |
-| 1.1 | 2026-06-28 | work-001-aid-interview-improvements | Split `aid-interview` into `aid-describe` (2a) + `aid-define` (2b); skill count 13 -> 14; reassigned the `interview/` script area + interviewer agent to `aid-describe`; added the Notable Skill Reference Modules section (elicitation engine, greenfield seed-authoring, Conformance Lane) + the forward-authored design->code invariant. |
-| 1.0 | 2026-06-25 | aid-discover | Initial module map (brownfield deep-dive / Analyst) |

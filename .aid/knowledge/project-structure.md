@@ -16,9 +16,6 @@ audience: [developer, architect]
 intent: |
   Repository layout, top-level directory purposes, and file-inventory shape. Read this to understand the on-disk organization of the project before navigating any subtree.
 contracts: []
-changelog:
-  - 2026-07-09: work-001 lite-skills refresh — removed the `recipes/` tree line + the stale "12-skill / 51-recipe" drift note (recipes deleted; repository-structure.md now says 82 skills); updated the skills tree annotation and the canonical directory-purpose row to 82 skills / `aid/{scripts,templates}`; added the shortcut catalog/engine/scaffolding and `delivery-blueprint-template.md` / `task-detail-template.md` to Key Files
-  - 2026-06-25: Initial pre-scan (aid-discover Phase 1 / Scout)
 ---
 
 # Project Structure
@@ -319,13 +316,3 @@ These are intentional or notable layout traits a newcomer will trip over:
 
 ---
 
-## Change Log
-
-| Rev | Date | Source | Description |
-|-----|------|--------|-------------|
-| 1.0 | 2026-06-25 | aid-discover | Initial pre-scan inventory (Scout) |
-| 1.1 | 2026-06-28 | work-aid-interview-improvements | Corrected skill count from 13 to 14 in Unusual Structure Notes (aid-interview split into aid-describe + aid-define). |
-| 1.2 | 2026-07-09 | aid-housekeep | De-hardcoded the version in prose/tree (point at `VERSION`, kb-authoring P1); de-pinned the machine-specific root path; paraphrased the stale "12-skill" README quote; added `.aid/connectors/` to the `.aid/` tree. Connectors + release-drift refresh (housekeep KB-DELTA). |
-| 1.3 | 2026-07-09 | work-001 refresh | work-001 lite-skills refresh — removed the `recipes/` tree line and the canonical `aid/{...,recipes}` reference (recipes deleted); dropped the stale "12-skill / 51-recipe / `canonical/recipes/`" drift note (repository-structure.md now says 82 skills); annotated the skills tree/canonical row with the 82-skill taxonomy (14 classic + aid-triage + 67 shortcuts); added the shortcut catalog/engine/scaffolding and `delivery-blueprint-template.md` / `task-detail-template.md` to Key Files. |
-| 1.4 | 2026-07-09 | v2.1.0 coverage-gap follow-on | Updated the skills-tree annotation and the shortcut-catalog Key Files row: skill count 82 -> 92 (15 classic incl. restored `aid-ask` + aid-triage + 76 shortcuts, up from 67); catalog 69-row (45 canonical + 24 aliases) -> 80-row (51 canonical + 29 aliases). |
-| 1.5 | 2026-07-23 | work-023 doc-count reconciliation | Corrected the skills-tree annotation: skill count 108 -> 111, curated sub-count 14 -> 17 (added `aid-read-ticket`, `aid-create-ticket`, `aid-update-ticket`); catalog row count (94) unchanged. |

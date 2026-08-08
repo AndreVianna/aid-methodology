@@ -14,9 +14,6 @@ audience: [developer, architect]
 intent: |
   Data schemas, artifact shapes, dataflow across the pipeline, and cardinality relationships. Read this when modeling persistence, designing migrations, or tracing data lineage.
 contracts: []
-changelog:
-  - 2026-06-23: Added f001 frontmatter fields (objective/summary/sources/tags/see_also/owner/audience)
-  - 2026-05-26: KB Authoring v2 template seed
 ---
 
 # Data Model
@@ -35,7 +32,6 @@ changelog:
 - [Notable Data Patterns](#notable-data-patterns)
 - [Data Volume](#data-volume)
 - [Contracts](#contracts)
-- [Change Log](#change-log)
 
 ---
 
@@ -152,8 +148,3 @@ changelog:
 
 ---
 
-## Change Log
-
-| Rev | Date | Source | Description |
-|-----|------|--------|-------------|
-| 1.0 | {date} | aid-discover | Initial schema extraction |

@@ -26,12 +26,6 @@ intent: |
   Project-specific vocabulary with definitions. Disambiguates terms that mean something
   particular in AID; the canonical reference for naming. Concept Spine + supporting lexicon.
 contracts: []
-changelog:
-  - 2026-07-16: work-016 .aid/works/ container relocation -- updated the Work spine-concept definition and the Work lexicon row to `.aid/works/work-NNN-*/`.
-  - 2026-07-09: work-001 lite-skills refresh — removed the deleted Recipe/Slot spine concept; redefined Triage as the standalone /aid-triage router and Lite Path around the shortcut engine; added Shortcut and Shortcut Engine spine concepts and a Lexicon — Work Artifacts table; fixed the Task definition artifact (SPEC.md -> DETAIL.md) and the flat-Lite no-per-task-STATE.md accounting, the Describe/Define + Seasoned-Analyst + NFR-7 triage-extraction wording, the stale work-state-template section quote, and the summary(recipe) lexicon row.
-  - 2026-07-09: Connectors subsystem refresh (housekeep KB-DELTA) — added the Connector Registry spine concept, the Lexicon — Connectors section, broadened MCP, corrected the KB seed count 14 -> 15, corrected PR #132 provenance.
-  - 2026-06-27: aid-describe/aid-define split — rekeyed Triage to /aid-describe; added Seasoned-Analyst Engine, Describe / Define, Forward-Authored Seed, and Conformance Check spine concepts; strengthened Concept Spine (ubiquitous-language alias / greenfield seed keystone)
-  - 2026-06-25: Initial generation (aid-discover brownfield deep-dive / Integrator owns the concept spine)
 ---
 
 # Domain Glossary
@@ -860,15 +854,3 @@ lives).
 
 ---
 
-## Change Log
-
-| Rev | Date | Source | Description |
-|-----|------|--------|-------------|
-| 1.0 | 2026-06-25 | aid-discover | Initial glossary: 16 spine concepts grounded + supporting lexicon (Integrator owns the spine) |
-| 1.1 | 2026-06-25 | aid-discover (closure 5b) | Closure loop: promoted 9 load-bearing concepts to spine headings (Grade, Triage, Lite Path, Feedback Loop, Dashboard, Pipeline State, Task Status, Delivery Gate, Candidate Concepts) and added synonym Aliases on 7 existing concepts so the self-containment oracle resolves every used term |
-| 1.2 | 2026-06-27 | work-001-aid-interview-improvements | aid-describe/aid-define split: rekeyed Triage to `/aid-describe` (engine-driven 5-signal gap inventory); added Describe / Define, Seasoned-Analyst Engine, NFR-7 Suggested-Answer + Rationale, Forward-Authored Seed, and Conformance Check spine concepts; strengthened Concept Spine (ubiquitous-language alias + greenfield seed keystone); added `source`/`Seed Authoring` lexicon rows, NFR-7 acronym, forward-authored/conformance domain terms, and two greenfield invariants |
-| 1.3 | 2026-06-28 | tech-writer | Relabeled Phase 2 from "Interview" to "Describe → Define": updated Work definition, Describe/Define entry, source citation, and the One-Work-per invariant. |
-| 1.4 | 2026-07-08 | PR #132 (branch `change-delivery`) | Fixed stale Delivery/Task/Delivery Gate source citations and lexicon rows to reflect the nested `deliveries/delivery-NNN/` full-path folder and the lite-path's `delivery-NNN/`-folder-free layout (gate/Q&A authored directly in the work-root STATE.md). |
-| 1.5 | 2026-07-09 | housekeep KB-DELTA | Connectors subsystem refresh: added the Connector Registry spine concept and the Lexicon — Connectors section (Preset/Preset-Catalog, tool-managed/aid-managed, `secret_reference`); broadened the MCP acronym entry beyond Playwright; clarified the KB seed accounting (14 standard docs; the seed ships 15 template files incl. the README meta doc); corrected the 1.4 provenance to PR #132. |
-| 1.6 | 2026-07-09 | work-001 lite-skills refresh | Removed the deleted Recipe/Slot spine concept (C5); redefined Triage as the standalone `/aid-triage` router (C2) and Lite Path around the shortcut engine (C3/C6); added the Shortcut and Shortcut Engine spine concepts (C1) and a new Lexicon — Work Artifacts table (REQUIREMENTS/SPEC/PLAN/BLUEPRINT/DETAIL, C4); fixed the Task definition artifact (`task-NNN/SPEC.md` -> `DETAIL.md`) and the flat-Lite no-per-task-`STATE.md` accounting (aligning with `pipeline-contracts.md` + `shortcut-engine.md`), the Canonical/Describe-Define/Seasoned-Analyst/NFR-7 triage-extraction wording, the Work definition (shortcut-created Lite work), the stale work-state-template section quote (removed "Triage"/"Escalation Carry"), and the summary(recipe) KB-authoring lexicon row; refreshed the frontmatter `sources` (dropped the deleted `state-triage.md`, added the shortcut sources). |
-| 1.7 | 2026-07-09 | v2.1.0 skill-count sync | Updated the Shortcut spine concept to the current 76 shortcuts / 80-row catalog (51 canonical + 29 aliases, 4 repurpose rows -> 76 dirs) and the full 14-family list (5 new: remove, deprecate, migrate, review, research). |

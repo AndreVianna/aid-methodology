@@ -24,7 +24,7 @@ import { loadShortcutCatalog } from './catalog.mjs';
  * Skills that are curated but are NOT counted as "classic pipeline skills".
  *
  * `/aid-triage` is the suggest-only router and `/aid-ask` is the standalone Q&A skill
- * (work-004 delivery-001 / FR-8 promoted it to canonical and retired the `/aid-query-kb`
+ * (it was promoted to canonical, retiring the `/aid-query-kb`
  * it used to alias, so it is now a `repurpose: true` catalog row in its own right);
  * both render inside a group but are counted separately, matching
  * the README and methodology framing of "N classic + /aid-triage + /aid-ask".
@@ -95,7 +95,7 @@ export function deriveSkillCounts(repoRoot) {
   const classicNames = curatedNames.filter((n) => !NON_CLASSIC_CURATED.includes(n));
 
   // Repurpose rows that re-register a skill the curated roster already carries, as
-  // opposed to the work-005 single-shot "collapse" skills. The reference page states
+  // opposed to the single-shot "collapse" skills. The reference page states
   // this number in prose, so it is derived here rather than counted there.
   const curatedSet = new Set(curatedNames);
   const classicRepurposed = rows.filter(
@@ -107,7 +107,7 @@ export function deriveSkillCounts(repoRoot) {
   // Some curated skills are ALSO catalog rows -- aid-deploy, aid-monitor and aid-ask are
   // `repurpose: true` rows the curated roster carries as well -- so pairing `curated` with
   // the catalog-row count double-counts exactly those, and the sentence
-  // "classic + triage + ask + shortcuts" double-counts some of them AND omits the work-005
+  // "classic + triage + ask + shortcuts" double-counts some of them AND omits the
   // collapse skills entirely. Excluding the overlap gives the figure that SUMS with the
   // catalog rows to the corpus total, which is the decomposition every page on the site states.
   //

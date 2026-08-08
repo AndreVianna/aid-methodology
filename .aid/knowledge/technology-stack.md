@@ -20,11 +20,6 @@ intent: |
   actual versions from config files plus the exact runnable build/lint/test commands. Read
   this for language-version or tool-version questions.
 contracts: []
-changelog:
-  - 2026-07-28: work-005 defect fixes — added fourth Node floor (summarize validators >=20, driven by Playwright 1.61.1 in package.json); updated languages row, per-context note, and Version Concerns gotcha from Three to Four floors.
-  - 2026-07-09: work-001 lite-skills refresh — removed the deleted "recipes" artifact class from the Markdown languages row (recipes were deleted in work-001; the shortcut engine + shortcut-scaffolding replaced them); re-verified every language/tool version against its config file (no version drift).
-  - 2026-07-09: Housekeep KB-DELTA refresh — connectors subsystem + release-drift refresh (corrected product version to match `VERSION`; recomputed the Shell file count)
-  - 2026-06-25: Initial discovery (aid-discover — architect deep-dive)
 ---
 
 # Technology Stack
@@ -258,11 +253,3 @@ No EOL or known-CVE runtime dependency was observed (the CLI ships none). See
 
 ---
 
-## Change Log
-
-| Rev | Date | Source | Description |
-|-----|------|--------|-------------|
-| 1.0 | 2026-06-25 | aid-discover | Initial stack inventory — polyglot languages with versions, build/lint/test commands, zero-dependency CLI, distribution channels. |
-| 1.1 | 2026-07-09 | tech-writer | Housekeep KB-DELTA refresh: connectors subsystem + release-drift refresh — corrected the product version from a stale "2.0.0"/`1.1.1` mismatch to the actual `VERSION` value (2.0.6); de-hardcoded the Shell-file count to a live `find` command (the prior "327" was stale). |
-| 1.2 | 2026-07-09 | work-001 lite-skills refresh | Removed the stale "recipes" artifact class from the Markdown languages row (recipes were deleted in work-001 — the shortcut engine + `shortcut-scaffolding/<family>.md` replaced them). Re-verified all language/tool versions against their config files (product 2.0.6; Python >=3.8 / CI 3.11; Node >=18 / site >=22.12 / CI 20; Astro 6.4.4; Starlight 0.39.3; astro-mermaid 2.0.2; marked 16.4.2; sanitize-html 2.17.0; TypeScript 6.0.3; vitest ^4.1.8; yaml ^2.8.3) — no version drift. |
-| 1.3 | 2026-07-28 | work-005 defect fixes | Added a fourth Node floor: summarize validators (`validate-visuals.mjs` etc.) require >=20, not >=18, because `canonical/aid/scripts/summarize/package.json` declares `"engines": { "node": ">=20" }` for Playwright 1.61.1. Updated the JavaScript/Node languages row, the per-context Node version note, and the Version Concerns gotcha from "Three" to "Four" different floors. CONFIRMED `canonical/aid/scripts/summarize/package.json` (search: "\"node\": \">=20\"") and `canonical/aid/scripts/summarize/summarize-preflight.sh` (search: "NODE_VERSION_MAJOR -lt 20"). |

@@ -97,18 +97,19 @@ visual-rendering artifact and the no-diagram rule does NOT apply to it.
 
 9. **Layout order** `[AUTHORING-LAYOUT]` — Verify the top-to-bottom order:
    frontmatter block first, then title, then index/table-of-contents, then content
-   sections, then `## Change Log` last. A doc where content appears before the
-   frontmatter block, or where content follows the Change Log section, or where the
-   Change Log is absent = `[HIGH]` `[AUTHORING-LAYOUT]`.
+   sections. A doc where content appears before the frontmatter block =
+   `[HIGH]` `[AUTHORING-LAYOUT]`.
 
 10. **Index present** `[AUTHORING-LAYOUT]` — A doc with more than 3 sections MUST have
     a `## Contents` block (or equivalent table of contents) near the top, before the
     first content section. A doc with more than 3 sections and no index =
     `[MEDIUM]` `[AUTHORING-LAYOUT]`.
 
-11. **Change Log last** `[AUTHORING-LAYOUT]` — The `## Change Log` section (or equivalent
-    heading) MUST be the final section. Any section heading appearing after the Change
-    Log heading = `[HIGH]` `[AUTHORING-LAYOUT]`.
+11. **No history apparatus** `[AUTHORING-LAYOUT]` — A KB doc MUST NOT carry a
+    `## Change Log` / `## Revision History` section or a `changelog:` frontmatter field;
+    per-doc history lives in git. Any such section or field = `[HIGH]`
+    `[AUTHORING-LAYOUT]`. Relatedly, any work reference (`work-NNN`, `.aid/works/...`)
+    anywhere in the doc = `[HIGH]` — see the KB authoring principles P1(e).
 
 12. **Required frontmatter fields** `[AUTHORING-FM]` — Each Full Primary doc MUST carry
     `audience:`, `owner:`, and `tags:` in addition to the required `objective:`,
@@ -143,8 +144,8 @@ visual-rendering artifact and the no-diagram rule does NOT apply to it.
     smell is substantial content that belongs in another concern's primary section.)*
 
 **Severity anchors for authoring-standard checks:**
-- Layout order violation (content before frontmatter, content after Change Log, no Change
-  Log) = `[HIGH]` / `[AUTHORING-LAYOUT]`
+- Layout order violation (content before frontmatter), or a change-log section or a
+  `changelog:` field present = `[HIGH]` / `[AUTHORING-LAYOUT]`
 - Index absent in a doc with more than 3 sections = `[MEDIUM]` / `[AUTHORING-LAYOUT]`
 - Missing `audience:` / `owner:` / `tags:` = `[MEDIUM]` / `[AUTHORING-FM]`
 - No concern tag in `tags:` = `[MEDIUM]` / `[AUTHORING-FM]`
