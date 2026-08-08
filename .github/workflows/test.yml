@@ -71,8 +71,25 @@ jobs:
         # The .mjs summarize-validator suites (validate-visuals, contrast-check)
         # shell out to `node`; pin it so the suites gate reliably rather than
         # depending on whatever the runner image happens to ship.
+        #
+        # WHY 24, AND WHY IT DIFFERS FROM THE PUBLISHED FLOOR (>=22 in
+        # packages/npm/package.json) -- the two numbers are deliberate, not drift:
+        #
+        #   * This pin was '20' until 2026-08-08. Node 20 reached END-OF-LIFE on
+        #     2026-04-30 (nodejs/Release schedule.json), so for three months every
+        #     merge was gated on a runtime receiving no security patches. The
+        #     paragraph above justifies PINNING; it never justified the NUMBER, which
+        #     was just whatever was current LTS the day it was written. That is the
+        #     failure to avoid here: keep the pin, but re-check the number each LTS
+        #     cycle -- a pin with no expiry silently becomes a pin to something dead.
+        #   * 24 is Active LTS through 2028-04-30, and release.yml already used it for
+        #     the npm publish step. We test on the newest LTS.
+        #   * Adopters must meet 22 (supported through 2027-04-30), NOT 24. What we
+        #     test on and what we require of users are different promises, and raising
+        #     the user-facing floor to the newest LTS in the same release that removes
+        #     36 skills would be two migrations where one will do.
         with:
-          node-version: '20'
+          node-version: '24'
       - name: Make helper + test scripts executable
         # Committed 100644 (the repo is authored on Windows); several suites invoke
         # their SUT directly (e.g. "$WRITEBACK"), which needs the exec bit on Linux.
