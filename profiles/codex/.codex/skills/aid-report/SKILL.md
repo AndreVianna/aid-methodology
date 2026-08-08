@@ -26,7 +26,6 @@ rather than an open question.
   BI view is `/aid-create-dashboard`, not this. If the user wants the analysis to recur,
   that's a printed handoff to `/aid-create-dashboard`.
 - **Not a numbered pipeline phase**; does not route to `/aid-execute`.
-- **Behavior contract:** `.aid/work-005-lite-skills-refactor/specs/aid-report.md`.
 
 State machine: **INTAKE -> ANALYZE -> VERIFY (loop) -> PRESENT [user resolves] -> HANDOFF?
 -> DONE**. Print the `[State: NAME] -- {purpose}` entry line on each state.

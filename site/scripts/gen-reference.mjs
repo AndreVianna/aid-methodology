@@ -197,7 +197,7 @@ function generateShortcutEngineSection(catalog, headingLevel = 2) {
   // KI-003 -- "the 4 classic re-registered skills (`aid-deploy`/`aid-monitor`/
   // `aid-query-kb`/`aid-ask`)" -- reader-facing and hand-counted. "Classic re-registered"
   // means: a repurpose row whose name the curated roster already carries, as opposed to a
-  // work-005 single-shot "collapse" skill.
+  // Single-shot "collapse" skill.
   const curatedRosterNames = new Set(SKILL_GROUPS.flatMap((g) => g.skills.map((s) => s.name)));
   const classicRepurposedRows = repurposedRows.filter((r) => curatedRosterNames.has(r.name));
   const classicRepurposedNames = classicRepurposedRows.map((r) => `\`${r.name}\``).join('/');
@@ -208,7 +208,7 @@ function generateShortcutEngineSection(catalog, headingLevel = 2) {
     `alternative to the full Describe→Detail path for a single, well-scoped change. Each is a thin doorway ` +
     `generated from one non-\`repurpose\` row of [\`${SHORTCUT_CATALOG_SRC}\`](${BLOB}/${SHORTCUT_CATALOG_SRC}) ` +
     `(${rows.length} rows total; the other ${repurposed} are \`repurpose: true\` — the ${classicRepurposedRows.length} classic re-registered ` +
-    `skills (${classicRepurposedNames}) plus the work-005 ` +
+    `skills (${classicRepurposedNames}) plus the ` +
     `single-shot "collapse" skills, all hand-authored with their own directory).\n\n` +
     `Every engine-driven shortcut delegates to the shared **shortcut engine** — ` +
     `[\`${SHORTCUT_ENGINE_FILE}\`](${BLOB}/${SHORTCUT_ENGINE_FILE}) — which collapses the five definition ` +
@@ -231,7 +231,7 @@ function generateSkillsPage() {
   // Drift guard, kept: this is a correctness check on the corpus, not roster rendering.
   // Expected skill-directory set = the curated skills (which include `aid-triage`, plus
   // the classic repurpose skills deploy/monitor/ask) ∪ EVERY catalog row name.
-  // work-005 turned many `repurpose` rows into hand-authored single-shot "collapse" skills
+  // Many `repurpose` rows are hand-authored single-shot "collapse" skills
   // that DO have their own directory, so every catalog row's directory is expected — not
   // just the engine-driven (non-`repurpose`) emitting ones.
   const curatedNames = SKILL_GROUPS.flatMap((g) => g.skills.map((s) => s.name));

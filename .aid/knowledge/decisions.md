@@ -18,11 +18,6 @@ intent: |
   newcomer cannot reconstruct from the artifacts alone. Records decisions and reasoning
   (what / why / rejected alternatives / status / evidence), not a restatement of state.
 contracts: []
-changelog:
-  - 2026-07-30: work-001 delivery-006 gate -- D20 separated into its historical record (marked `count-history`) and a current-figures line, having stated superseded catalog figures as current.
-  - 2026-07-09: work-001 lite-skills refresh — added D20 (direct-entry shortcut system + engine), D21 (/aid-triage extraction), D22 (recipe-catalog removal), D23 (BLUEPRINT/DETAIL + deliveries/ rename), D24 (aid-describe full-only), D25 (aid-monitor re-point); superseded D14's description-first-TRIAGE mechanism (its proportionality principle survives); dropped the deleted "recipes" subtree from D11.
-  - 2026-07-09: Housekeep KB-DELTA refresh — connectors subsystem + release-drift refresh (added D19: connectors registry is a catalog, not a connection manager)
-  - 2026-06-25: Initial discovery (aid-discover — architect deep-dive)
 ---
 
 # Decisions
@@ -85,7 +80,7 @@ changelog:
 | D11 | Content isolation + AID:BEGIN/END markers | Accepted (supersedes .aid-new) | `README.md` |
 | D12 | cwd-driven CLI, no scan, CODE/STATE split | Settled, partial impl | `bin/aid` (`AID_CODE_HOME` / `AID_STATE_HOME`) |
 | D13 | Per-repo `format_version` stamp | Settled | `bin/aid` (`AID_SUPPORTED_FORMAT`) |
-| D14 | Lite path + description-first TRIAGE | Superseded by D20/D21/D24 | `docs/aid-methodology.md` §4 (pre-work-001) |
+| D14 | Lite path + description-first TRIAGE | Superseded by D20/D21/D24 | `docs/aid-methodology.md` §4 |
 | D15 | 9 agents / 3 tiers (consolidation) | Accepted (supersedes prior roster) | `docs/aid-methodology.md` §5 |
 | D16 | PowerShell 5.1 floor | Accepted | `README.md`; project memory |
 | D17 | Prose over scripts in skills | Accepted | project practice; `tests/run-all.sh` header |
@@ -282,14 +277,13 @@ changelog:
   explicit anti-pattern); a user-picked work-type menu (rejected in favor of inference — "You
   never pick this from a menu"). The old `single-doc` work-type was also removed (folded into
   new-feature/refactor).
-- **Status:** **Superseded (2026-07-09, work-001) by D20/D21/D24.** The *proportionality
+- **Status:** **Superseded by D20/D21/D24.** The *proportionality
   principle* this decision established survives — small work should not pay full-pipeline
   overhead — but its *mechanism* (description-first TRIAGE inside every `aid-describe` interview
   + recipe matching) was replaced by the three-door direct-entry model: routing extracted to the
   standalone `/aid-triage` router (D21), lite work entered by naming the change through a shortcut
   into the shared shortcut engine (D20), and `aid-describe` reduced to full-path only with no
-  TRIAGE state (D24). The recipe catalog the match depended on was removed (D22). CONFIRMED
-  (historical) `docs/aid-methodology.md` §4/§10 as they stood before work-001; the current
+  TRIAGE state (D24). The recipe catalog the match depended on was removed (D22). The current
   three-door model is documented in D20/D21/D24 and `docs/aid-methodology.md` §4 "The Lite Path:
   Direct-Entry Shortcuts".
 
@@ -405,9 +399,7 @@ changelog:
   single source of behavior); cross-session resume (accepted limitation — each invocation
   allocates a fresh `work-NNN`).
 - **Status:** Accepted. CONFIRMED `canonical/aid/templates/shortcut-engine.md` and
-  `canonical/aid/templates/shortcut-catalog.yml`. Specified by work-001 (lite-aid-skills)
-  feature-003 (direct-entry shortcut engine) and feature-004 (approval + grading gates); that
-  work folder was pruned in `eead245e` and both SPECs are recoverable at `eead245e^`.
+  `canonical/aid/templates/shortcut-catalog.yml`.
 
 ## D21 — /aid-triage extracted as a suggest-only router
 
@@ -427,9 +419,7 @@ changelog:
   suffices; it reuses the D1 opener's `Suggested:`/`Why:` UX shape as a UX-shape consumer only).
 - **Status:** Accepted. CONFIRMED `canonical/skills/aid-triage/SKILL.md` and
   `canonical/skills/aid-describe/references/elicitation-engine.md` ("The in-skill guided-triage
-  consumer has been removed"). Specified by work-001 (lite-aid-skills) feature-014 (aid-triage
-  router); that work folder was pruned in `eead245e` and the SPEC is recoverable at
-  `eead245e^`.
+  consumer has been removed").
 
 ## D22 — Recipe-catalog removal
 
@@ -447,9 +437,7 @@ changelog:
   dispatched architect reads, not a substituted template).
 - **Status:** Accepted (supersedes the recipe catalog). CONFIRMED
   `canonical/aid/templates/shortcut-scaffolding/`, and the absence of `canonical/aid/recipes/` and
-  `parse-recipe.sh` on disk. Specified by work-001 (lite-aid-skills) feature-002 (recipe
-  removal); that work folder was pruned in `eead245e` and the SPEC is recoverable at
-  `eead245e^`.
+  `parse-recipe.sh` on disk.
 
 ## D23 — Delivery and task definition rename (BLUEPRINT + DETAIL)
 
@@ -468,9 +456,7 @@ changelog:
   migrate).
 - **Status:** Accepted (supersedes the delivery/task `SPEC.md` naming and the flat `task-NNN.md`).
   CONFIRMED `canonical/aid/templates/delivery-blueprint-template.md` and
-  `canonical/aid/templates/task-detail-template.md`. Specified by work-001 (lite-aid-skills)
-  feature-001 (flattened lite work structure) and feature-015 (full-path pipeline rename); that
-  work folder was pruned in `eead245e` and both SPECs are recoverable at `eead245e^`.
+  `canonical/aid/templates/task-detail-template.md`.
 
 ## D24 — /aid-describe reduced to full-path-only
 
@@ -487,9 +473,7 @@ changelog:
   and the `/aid-triage` reflect-back's UX-shape precedent).
 - **Status:** Accepted. CONFIRMED `canonical/skills/aid-describe/SKILL.md` (frontmatter state
   machine) and `canonical/skills/aid-describe/references/elicitation-engine.md` ("`aid-describe`
-  no longer hosts a TRIAGE state"). Specified by work-001 (lite-aid-skills) feature-013
-  (aid-describe full-only); that work folder was pruned in `eead245e` and the SPEC is
-  recoverable at `eead245e^`.
+  no longer hosts a TRIAGE state").
 
 ## D25 — /aid-monitor re-point (BUG and Change-Request routing)
 
@@ -503,9 +487,7 @@ changelog:
 - **Rejected:** Continuing to route findings into `aid-describe` (rejected — those describe states
   were removed by D24).
 - **Status:** Accepted. CONFIRMED `canonical/skills/aid-monitor/SKILL.md` ("BUG -> /aid-fix",
-  "Change Request -> /aid-triage"); matches `pipeline-contracts.md` L9/L10. Specified by
-  work-001 (lite-aid-skills) feature-012 (deploy + monitor repurpose); that work folder was
-  pruned in `eead245e` and the SPEC is recoverable at `eead245e^`.
+  "Change Request -> /aid-triage"); matches `pipeline-contracts.md` L9/L10.
 
 ---
 
@@ -564,11 +546,3 @@ description-first TRIAGE-inside-`aid-describe` routing with its delivery/task `S
 
 ---
 
-## Change Log
-
-| Rev | Date | Source | Description |
-|-----|------|--------|-------------|
-| 1.0 | 2026-06-25 | aid-discover | Initial decision record — 18 load-bearing decisions with rationale, rejected alternatives, status, and evidence. |
-| 1.1 | 2026-07-09 | tech-writer | Housekeep KB-DELTA refresh: connectors subsystem + release-drift refresh — added D19 (connectors registry is a catalog, not a connection manager; delivery-002 MCP host wiring withdrawn as a consequence). |
-| 1.2 | 2026-07-09 | work-001 lite-skills refresh | Added D20–D25 (direct-entry shortcut system + shared engine; `/aid-triage` extraction; recipe-catalog removal; delivery/task `BLUEPRINT.md`/`DETAIL.md` rename + nested `deliveries/`; `aid-describe` full-only; `aid-monitor` re-point to `/aid-fix` / `/aid-triage`); marked D14 Superseded by D20/D21/D24 (proportionality principle survives, the description-first-TRIAGE mechanism replaced); dropped the deleted "recipes" subtree from D11's What; extended the Superseded list. |
-| 1.3 | 2026-07-09 | v2.1.0 skill-count sync | D20 updated to record the current shortcut count: 76 shortcuts (14 families, 5 new: remove, deprecate, migrate, review, research) generated from an 80-row catalog (51 canonical + 29 aliases, 4 repurpose rows), while preserving D20's original 67-shortcut / 69-row shipment as history. |

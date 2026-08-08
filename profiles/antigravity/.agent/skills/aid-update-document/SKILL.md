@@ -22,8 +22,7 @@ the human gate (overwrite care is central).
 
 - **Boundary vs the KB:** never writes `.aid/knowledge/`; KB edits route to `/aid-update-kb`.
 - **Not a numbered pipeline phase**; does not route to `/aid-execute`.
-- **Behavior contract:** `.aid/work-005-lite-skills-refactor/specs/aid-document.md`; genre
-  structures: `.agent/aid/templates/shortcut-scaffolding/document.md`.
+- **Genre structures:** `.agent/aid/templates/shortcut-scaffolding/document.md`.
 
 State machine: **INTAKE -> AUTHOR -> VERIFY (loop) -> PRESENT [human gate, diff] -> WRITE
 (on approval) -> DONE**. Print the `[State: NAME] -- {purpose}` entry line on each state.

@@ -35,9 +35,8 @@ not by hand-editing `graph-skeleton.html`, which carries no vendor-specific mark
 project with none of these five files vendored still renders a valid (degraded, `mode:
 'unavailable'`) page.
 
-**Full source citation:** `.aid/works/work-005-knowledge-graph/deliveries/delivery-001/research/`
-`rendering-stage3-payload-licence-update.md` and `rendering-decision-record.md` (transient work
-folder — cited here for provenance only; nothing permanent depends on either).
+The rendering-stack decision and its payload/licence analysis are recorded in this file and in
+the graph templates under `canonical/aid/templates/graph/`; nothing else depends on them.
 
 ---
 

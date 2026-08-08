@@ -13,9 +13,6 @@ audience: [developer, devops, architect]
 intent: |
   Distribution model, environments, CI/CD setup, source-control conventions, and project management tooling. Read this for deploy/release context.
 contracts: []
-changelog:
-  - 2026-06-23: Added f001 frontmatter fields (objective/summary/sources/tags/see_also/owner/audience)
-  - 2026-05-26: KB Authoring v2 template seed
 ---
 
 # Infrastructure
@@ -35,7 +32,6 @@ changelog:
 - [Monitoring and Observability](#monitoring--observability)
 - [Disaster Recovery](#disaster-recovery)
 - [Known Infrastructure Issues](#known-infrastructure-issues)
-- [Change Log](#change-log)
 
 ---
 
@@ -147,8 +143,3 @@ changelog:
 
 ---
 
-## Change Log
-
-| Rev | Date | Source | Description |
-|-----|------|--------|-------------|
-| 1.0 | {date} | aid-discover + aid-describe | Initial infrastructure mapping |

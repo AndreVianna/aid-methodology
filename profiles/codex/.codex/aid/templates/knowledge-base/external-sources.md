@@ -14,9 +14,6 @@ audience: [developer, architect]
 intent: |
   Registry of external documentation, vendor specs, and reference URLs the project depends on. Read this before fetching documentation that may already be cataloged.
 contracts: []
-changelog:
-  - 2026-06-23: Added f001 frontmatter fields (objective/summary/sources/tags/see_also/owner/audience)
-  - 2026-05-26: KB Authoring v2 template seed
 ---
 
 # External Sources
@@ -30,7 +27,6 @@ changelog:
 - [Sources](#sources)
 - [Content Inventory](#content-inventory)
 - [Discrepancies](#discrepancies)
-- [Change Log](#change-log)
 
 ---
 
@@ -76,8 +72,3 @@ or add paths during Q&A.
 
 ---
 
-## Change Log
-
-| Rev | Date | Source | Description |
-|-----|------|--------|-------------|
-| 1.0 | {date} | aid-discover | Initial external source analysis |

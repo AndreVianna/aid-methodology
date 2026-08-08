@@ -19,8 +19,7 @@ Four classes of content are commonly inlined into KB docs but rarely carry value
 - **(b) Dates without semantic anchor** — "as of 2026-05-22", "verified during cycle-N",
   inline timestamps in historical narratives. Git log carries this with higher fidelity.
   **Banned from primary docs.** Allowed in: `STATE.md` Review History (which is exempt
-  from review), per-doc `changelog:` field (frontmatter, exempt from review), and as a
-  semantic anchor only when the date marks a load-bearing inflection
+  from review), and as a semantic anchor only when the date marks a load-bearing inflection
   (e.g., "post-FR2 retirement, 2026-05") — even then, justify case-by-case.
 - **(c) Other low-value clutter** — requires judgment. When unclear whether something is
   load-bearing, ask the user. Default to removal.
@@ -31,6 +30,18 @@ Four classes of content are commonly inlined into KB docs but rarely carry value
   worth storing is that the symbol EXISTS in that file; a consuming agent greps the anchor
   to find its current location. **Bare line numbers banned from primary docs.** (Line
   *counts* are (a); this is the *pointer* form of the same drift class.)
+- **(e) Work references** — any mention of a work by id or folder: `work-042`,
+  `work-042-some-name`, `.aid/works/work-042-*/`, "specified by work-042", "added in
+  work-042", "unaffected by work-042". **Banned from every KB document, with no
+  exception** — not as provenance, not as a source citation, not as a semantic anchor,
+  not in a changelog entry, not in a heading. Work folders are transient (they are pruned
+  once the work ships), so a KB that cites one decays into dangling pointers; and the KB
+  states only the CURRENT state of the project's sources, which is a fact about the code,
+  never about which work produced it. Cite the **durable artifact** the work left behind
+  (the file, template, or symbol on disk) — that is what a reader can actually verify.
+  Where the change history genuinely matters, it lives in git, which records it in full.
+  This applies to `.aid/knowledge/**` only; skills, templates, and pipeline scripts
+  legitimately name works because they operate on them.
 
   **Signature exception (P1(d)-SIG):** a load-bearing operational contract — the
   structural signature an agent must satisfy to ACT — is explicitly exempt from the
@@ -296,9 +307,13 @@ Every KB document MUST follow this top-to-bottom layout order:
 | 2 | **Title** | `# Doc Title` heading |
 | 3 | **Index / table of contents** | A brief contents list or section-navigation aid (may be a short intro paragraph linking the sections). Required when the doc has more than 3 sections; encouraged for all. |
 | 4 | **Content sections** | The concern's substance -- the bulk of the document |
-| 5 | **Change Log** | `## Change Log` section, always LAST |
 
-The Change Log section MUST be the final section of every doc. Place it after all content sections. If a doc currently has its change log elsewhere, move it to the end.
+A KB doc has **no change-log section**. Per-doc revision history lives in git, which
+records every change with its author, date, and diff -- at higher fidelity than a
+hand-maintained table, and without the drift one accumulates. A doc that carries its own
+history is stating something other than the current state of the project's sources, which
+is the only thing a KB doc is for. If a doc still has a `## Change Log` or
+`## Revision History` section, delete it; git already holds its content.
 
 ### Why both audiences benefit from the same standard
 

@@ -13,8 +13,6 @@ audience: [developer, architect]
 intent: |
   Registry of external documentation, vendor specs, and reference URLs the project depends on. Read this before fetching documentation that may already be cataloged.
 contracts: []
-changelog:
-  - 2026-06-25: Initial pre-scan (aid-discover Phase 1 / Scout) -- no external sources provided
 ---
 
 # External Sources
@@ -36,8 +34,3 @@ No external documentation was provided during discovery. All knowledge was deriv
 
 ---
 
-## Change Log
-
-| Rev | Date | Source | Description |
-|-----|------|--------|-------------|
-| 1.0 | 2026-06-25 | aid-discover | Initial external source analysis (none provided) |

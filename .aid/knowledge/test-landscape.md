@@ -33,11 +33,6 @@ contracts:
   - "A suite with no `# COVERS:` header is treated by select-suites.sh as covering EVERYTHING and is always selected — forgetting the header costs time, never coverage"
   - "select-suites.sh is not itself a counted suite: its name falls outside the tests/canonical/test-*.sh glob, so run-all.sh never runs it"
   - "A suite never mutates the source tree: mutation runs operate on a copy in mktemp -d and assert the subject is byte-identical to HEAD afterwards (S5)"
-changelog:
-  - 2026-08-05: work-005 test-strategy update -- added the S1-S5 suite-authoring and T1-T6 run-cadence conventions and the `select-suites.sh` / `# COVERS:` change-set selection mechanism; documented the measured cause of local suite slowness (a process spawn costs ~105-137ms against ~3.4ms for a bash builtin, so wall time tracks spawn count rather than input size, with Defender-without-exclusions as the amplifier); corrected the canonical suite count 134 -> 144 and split the two quantities that had been conflated into a single self-contradicting `134` (live total vs pre-work-024 total).
-  - 2026-07-30: work-001 final gate -- corrected the `docs.yml` CI-lane row (closing KI-007 / W1-4). It omitted the `canonical/**` path filter, carried a `release: published` trigger the workflow does not have, and answered "feature branches? No -- master only" although `pull_request` to master is live and is the site's test gate. Re-verified against the `on:` block and dated the CONFIRMED claim. Split the master-only gotcha so the site is stated as the exception it is.
-  - 2026-07-30: work-001 delivery-006 gate -- corrected the stale shortcut counts in the body; restored the 1.3 Change Log row, which an earlier pass in this same cycle had edited (falsifying a dated audit record).
-  - 2026-06-25: Initial discovery (aid-discover quality deep-dive)
 ---
 
 # Test Landscape
@@ -99,16 +94,12 @@ because it must validate Bash, PowerShell, Python, and Node code paths.
 | Generator `--self-test` harness | Self-test | `.claude/skills/generate-profile/scripts/*.py` | `render_lib`, `render`, `verify_deterministic`, `verify_advisory`, `test_manifest_safety`. |
 | Astro / TypeScript tests | Unit | `site/src/data/__tests__/`, `site/scripts/__tests__/` | Site data + docs-sync tests (separate build). |
 
-Of the 144 live suites, **132 are the surviving pre-existing suites** — the AC-2 must-pass
-set, being the 134 that predated work-024 minus the 2 dead suites it removed. The other 12
-were added since: work-024's `test-coverage-parity.sh` and work-001's `test-skill-counts.sh`
-(the repo-wide count guard), `test-shortcut-builder-invariants.sh`, and work-005's **nine**
-`test-graph-*.sh` suites.
+Of the 144 live suites, **132 are the long-standing suites** — the AC-2 must-pass set. The
+other 12 are `test-coverage-parity.sh`, `test-skill-counts.sh` (the repo-wide count guard),
+`test-shortcut-builder-invariants.sh`, and the **nine** `test-graph-*.sh` suites.
 
-> **Read the count as of a date, not as a fact.** The two numbers above were previously
-> written as a single `134`, used simultaneously as the live total AND as the pre-work-024
-> total — a pair that cannot both be true, which is how the staleness went unnoticed through
-> two refreshes. They are different quantities and are now named separately.
+> **Read the count as of a date, not as a fact.** The live total and the must-pass subset are
+> different quantities; state which one a number refers to whenever you cite it.
 
 CONFIRMED via `.aid/generated/project-index.md` (Top-20 Largest Source Files lists
 `reader.mjs` 4012, `test-aid-cli-parity.sh` 3198, `Test-AidInstaller.ps1` 2406) and direct
@@ -143,7 +134,7 @@ Representative suite families (the 144 cover far more than these):
 | Release / packaging | `test-release.sh`, `test-release-install-e2e.sh`, `test-release-migrate-smoke.sh`, `test-version-sync.sh`, `test-npm-installer.sh`, `test-pypi-installer.sh` | the 3 publish channels + version-sync |
 | KB / discovery engine | `test-kb-citation-lint.sh`, `test-frontmatter-lint.sh`, `test-build-kb-index.sh`, `test-closure-check.sh`, `test-harvest-coined-terms.sh`, `test-spine-depth-coverage.sh`, `test-dual-intent-self-eval.sh` | the discovery/KB tooling |
 | Pipeline / execute | `test-writeback-state.sh`, `test-complexity-score.sh`, `test-compute-block-radius.sh`, `test-delivery-gate-aggregate.sh`, `test-grade.sh` | state writeback + delivery gating |
-| Shortcut / Lite path (work-001, +v2.1.0 follow-on) | `test-catalog-dirs-parity.sh`, `test-triage-routing.sh`, `test-describe-full-only.sh`, `test-cutover-no-dangling.sh`, `test-deploy-monitor-repurpose.sh`, `test-executor-graph-flat-plan.sh`, `test-shortcut-engine-contract.sh`, and the six `test-*-family-scaffold.sh` suites (`create`, `change-refactor`, `fix`, `document`, `prototype`, `test-experiment`) | the 34 verb-first shortcut skills, the shortcut engine's GATE/APPROVAL-HALT batching (`test-shortcut-engine-contract.sh` SEC00–SEC07), `/aid-triage` routing, the recipe-removal cutover (no dangling `recipes/`/`parse-recipe.sh`), `/aid-describe` full-only, and the flattened Lite work layout. The 5 families the v2.1.0 follow-on added (`remove`, `deprecate`, `migrate`, `review`, `research`) have no dedicated `test-*-family-scaffold.sh` of their own yet, and neither does the `analyze-report` scaffolding family — all six are covered by `test-catalog-dirs-parity.sh`'s count-agnostic catalog↔dirs parity check instead. |
+| Shortcut / Lite path (+v2.1.0 follow-on) | `test-catalog-dirs-parity.sh`, `test-triage-routing.sh`, `test-describe-full-only.sh`, `test-cutover-no-dangling.sh`, `test-deploy-monitor-repurpose.sh`, `test-executor-graph-flat-plan.sh`, `test-shortcut-engine-contract.sh`, and the six `test-*-family-scaffold.sh` suites (`create`, `change-refactor`, `fix`, `document`, `prototype`, `test-experiment`) | the 34 verb-first shortcut skills, the shortcut engine's GATE/APPROVAL-HALT batching (`test-shortcut-engine-contract.sh` SEC00–SEC07), `/aid-triage` routing, the recipe-removal cutover (no dangling `recipes/`/`parse-recipe.sh`), `/aid-describe` full-only, and the flattened Lite work layout. The 5 families the v2.1.0 follow-on added (`remove`, `deprecate`, `migrate`, `review`, `research`) have no dedicated `test-*-family-scaffold.sh` of their own yet, and neither does the `analyze-report` scaffolding family — all six are covered by `test-catalog-dirs-parity.sh`'s count-agnostic catalog↔dirs parity check instead. |
 | Dashboard | `test-dashboard-reader.sh`, `test-dashboard-parity.sh`, `test-dashboard-parity-h.sh`, `test-aid-dashboard-cli.sh` | reader/server parity |
 | Connectors / reconcile | `test-connector-registry.sh`, `test-connectors-registry-integration.sh`, `test-build-connectors-index.sh`, `test-connector-secret.sh`, `test-connector-secret-ps1.sh`, `test-connector-secret-ac3-leak-sweep.sh` (security: no-leak sweep of AC-3), `test-connector-twins-ps1-parity.sh` (bash↔PowerShell twin parity), `test-reconcile-scenarios.sh` | the `.aid/connectors/` catalog + INDEX generation, registry accessor integration, no-echo/path-confined secret handling, and settings reconcile behavior |
 | Compat / hygiene | `test-ps51-compat.sh`, `test-ascii-only.sh`, `test-payload-size.sh`, `test-multitool-isolation.sh`, `test-dogfood-byte-identity.sh` | portability + content isolation |
@@ -199,7 +190,7 @@ release tags (release.yml `gate`). A branch that has **no open PR to master** se
 only fail after merge. Run `bash tests/run-all.sh` (HOME-pinned) before claiming green.
 
 **The site is the exception, and it is a PR gate.** `docs.yml` also triggers on
-`pull_request` to `master` (delivery-001 of work-001 added the `npm test` step, closing KI-006),
+`pull_request` to `master` and runs the `npm test` step there,
 so the site vitest suite **and** the Astro build do validate every PR that touches `site/**`,
 `docs/**`, `canonical/**` or `VERSION`. Only the `deploy` job is master-only. Two consequences a
 maintainer needs: a **canonical-only** commit still rebuilds the site, because the reference pages
@@ -374,11 +365,11 @@ cd site && npm ci && npm run build
 ## Performance & Health
 
 The `canonical helper suites` CI job's speed and hermeticity are tracked here so a future
-change does not re-diagnose the same slowness (work-024-test-suite-improvement).
+change does not re-diagnose the same slowness.
 
 **Performance contract.** The job is committed to **≤ 3 minutes**, with a **~60–90s goal**
 (NFR-1) — down from a **~690s (~11.5 min)** baseline (master CI run `29975142862`) before
-work-024. 690s is retained only as a load-bearing before-state inflection marker; the exact
+the suite optimization. 690s is retained only as a load-bearing before-state marker; the exact
 post-optimization wall-clock is not frozen here (it drifts) — the ≤3 min / ~90s contract is.
 
 **Optimizations landed:**
@@ -429,7 +420,7 @@ repository takes ~9.8s, flat across runs, of which ~8.4s is ~100 external spawns
    `wc`/`cut`/`grep` fold into a neighbouring pass; `dirname`/`realpath` become `${p%/*}`.
    Keep `xargs` — it *is* the batching mechanism — and keep `mv` for atomic writes.
 
-**Measured full-set baseline for the work-005 graph suites** (2026-08-05, all passing;
+**Measured full-set baseline for the graph suites** (2026-08-05, all passing;
 1,150 assertions, ~460s total). Useful as the reference for what "slow" means here:
 
 | Suite | Wall | Assertions | s / assertion |
@@ -513,7 +504,7 @@ matrix is the only oracle that caught three suites which were green against a br
 | **T6** | Debug at the smallest granularity — re-run the **failing assertion group**, not the suite. This makes a group filter a design requirement on every suite, not a nicety. |
 
 > **T5 is auditable, not an honour system.** Per-suite invocation counts are recoverable from
-> an agent's own tool calls. This is how a single work-005 builder was found to have run one
+> an agent's own tool calls. This is how a single graph-suite builder was found to have run one
 > suite **33 times** and five suites it did not own **19 times** between them, against a
 > sibling's 8 — a difference invisible in either final report.
 
@@ -554,7 +545,7 @@ bash tests/canonical/select-suites.sh --all --run
 bash tests/canonical/select-suites.sh --glob 'test-graph-*.sh' --run
 ```
 
-**Rollout status (the limit on the payoff).** Only work-005's committed graph suites carry a
+**Rollout status (the limit on the payoff).** Only the committed graph suites carry a
 `COVERS` header today. The remaining ~135 suites have none, so they are all selected
 fail-safe on any change and `--glob` is currently needed to keep selection useful. Promoting
 `COVERS` across `tests/canonical/` is what makes this pay off repo-wide; until then the
@@ -562,13 +553,3 @@ mechanism is correct but narrow. Tracked in `tech-debt.md`.
 
 ---
 
-## Change Log
-
-| Rev | Date | Source | Description |
-|-----|------|--------|-------------|
-| 1.0 | 2026-06-25 | aid-discover | Initial test-landscape analysis (quality deep-dive) |
-| 1.1 | 2026-07-09 | aid-housekeep | connectors subsystem + release-drift refresh (housekeep KB-DELTA) |
-| 1.2 | 2026-07-09 | work-001 lite-skills refresh | Corrected canonical suite count 105 → 118 (verified `ls tests/canonical/test-*.sh \| wc -l`); added the Shortcut / Lite path suite family and Coverage row (catalog↔dirs parity, triage routing, the seven family-scaffold suites, GATE/APPROVAL-HALT batching, flat-plan graph, recipe-removal cutover, describe-full-only). |
-| 1.3 | 2026-07-09 | v2.1.0 skill-count sync | Updated the Shortcut / Lite path row to the current 76 verb-first shortcuts (up from 67); noted the 5 new families (remove, deprecate, migrate, review, research) are covered by `test-catalog-dirs-parity.sh`'s count-agnostic check, with no dedicated family-scaffold suite of their own yet. Canonical suite count unchanged at 118. |
-| 1.5 | 2026-08-05 | work-005 test-strategy update | Added **Suite Authoring (S1-S5) and Run Cadence (T1-T6)** — how a suite is structured (one subject invocation per distinct input; one in-memory load then builtin assertions; mutation behind `--self-mutate`; never trade coverage for time; mutate a copy and prove the tree untouched) and when it is run (spawn-free per-edit checks, one focused run per milestone, one full run per deliverable, a declared and reported run budget, debug at assertion-group granularity). Added the `select-suites.sh` / `# COVERS:` mechanism for running only the suites a change can affect, including its fail-safe direction and its glob exclusion from `run-all.sh`. Extended **Performance & Health** with the measured spawn-cost diagnosis (~105-137ms per spawn vs ~3.4ms per builtin; `scan-source.sh` at ~9.8s on a two-file repo, ~8.4s of it in ~100 spawns; Defender with no exclusions as the amplifier; the two levers, environment before code) and the six-suite baseline (1,150 assertions, ~460s). Corrected the canonical suite count **134 → 144** in three places and **split the two conflated quantities** — the same `134` had been used as both the live total and the pre-work-024 total, a pair that cannot both be true and the reason the staleness survived two refreshes. |
-| 1.4 | 2026-07-24 | work-024 test-suite-improvement KB refresh | Corrected canonical suite count 118 → 133 (live total; 132 surviving pre-existing + work-024's own `test-coverage-parity.sh` keystone self-test); removed the dangling reference to feature-006's deleted GATE/APPROVAL-HALT batching suite, re-pointing shortcut-engine coverage to `test-shortcut-engine-contract.sh` (SEC00–SEC07); added the Performance & Health section (bounded-parallel `run-all.sh`, port isolation, coverage-parity gate, shared `tests/lib/` helpers, byte-identity + CLI-parity hot-suite optimizations). |

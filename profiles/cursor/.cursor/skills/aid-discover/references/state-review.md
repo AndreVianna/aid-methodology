@@ -183,7 +183,8 @@ with the dual-audience authoring standard. These checks extend the Anatomy check
 |-------|----------|-----|
 | Frontmatter is the first block (before any content) | `[HIGH]` | `[AUTHORING-LAYOUT]` |
 | A `## Contents` or equivalent index/TOC section is present near the top (required for docs with more than 3 sections) | `[MEDIUM]` | `[AUTHORING-LAYOUT]` |
-| `## Change Log` (or equivalent change-log heading) is the **last** section in the document -- no content follows it | `[HIGH]` | `[AUTHORING-LAYOUT]` |
+| The document carries **no** `## Change Log` / `## Revision History` section and **no** `changelog:` frontmatter field -- per-doc history lives in git | `[HIGH]` | `[AUTHORING-LAYOUT]` |
+| The document contains **no** work reference anywhere (`work-NNN`, `.aid/works/...`, "specified by work-NNN") -- see KB authoring principles P1(e) | `[HIGH]` | `[AUTHORING-LAYOUT]` |
 | Core frontmatter fields are present: `objective:`, `summary:`, `sources:` | `[HIGH]` | `[AUTHORING-FM]` |
 | Classification fields are present: `audience:`, `owner:`, `tags:` | `[MEDIUM]` | `[AUTHORING-FM]` |
 | `tags:` includes a concern ID (C0-C9 or D) mapping the doc to a spine dimension (orientation/meta docs `external-sources`, `README` are exempt -- no concern) | `[MEDIUM]` | `[AUTHORING-FM]` |

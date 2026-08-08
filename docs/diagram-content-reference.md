@@ -130,8 +130,8 @@ building the site and viewing the page, or by reading the Mermaid source.
      "Interview"); the choice of entering via a **shortcut**, `/aid-triage`, or `/aid-describe` (the
      three entries — see README **R1**) must sit *upstream* of G2, not as a `TRIAGE{}` decision
      diamond inside it — `/aid-describe` is full-path-only now.
-  2. **§3 Knowledge Base** diagram and the **3-tier RAG retrieval** diagram — unaffected by
-     work-001; keep as-is.
+  2. **§3 Knowledge Base** diagram and the **3-tier RAG retrieval** diagram — unaffected;
+     keep as-is.
   3. **§5 Agent Model** (tier diagram) — unaffected; still 9 agents, three tiers.
   4. **§6 Feedback Loops** — the data-flow node `I["2 · Describe → Define"]` (and its siblings `D`,
      `S`, `P`, `Dt`, `E`) stay; the two Monitor loopback arrows target dedicated entry nodes, not

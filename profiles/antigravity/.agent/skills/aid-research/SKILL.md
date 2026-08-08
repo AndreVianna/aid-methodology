@@ -28,7 +28,6 @@ context, an optional authorized spike, verification, and a human-facing presenta
 - **Resolves nothing.** No "I recommend X." It lays out conclusions (+/-), conflicts, and
   gaps; the user decides.
 - **Not a numbered pipeline phase**; it does not route to `/aid-execute`.
-- **Behavior contract:** `.aid/work-005-lite-skills-refactor/specs/aid-research.md`.
 
 State machine: **INTAKE -> INVESTIGATE (-> PROPOSE-SPIKE?) -> VERIFY (loop) -> PRESENT
 [human resolves] -> HANDOFF? -> DONE**. Print the `[State: NAME] -- {purpose}` entry line

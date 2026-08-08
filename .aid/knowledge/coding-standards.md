@@ -21,9 +21,6 @@ contracts:
   - "Shipped PowerShell is Windows-PowerShell-5.1 compatible and ASCII-only"
   - "Install-core exit codes: 0 ok, 1 runtime, 2 usage, 3 fetch, 4 checksum, 6 uninstall-no-manifest"
   - "Every script carries a header comment block (Purpose/Usage/Exit codes)"
-changelog:
-  - 2026-07-09: housekeep KB-DELTA connectors subsystem refresh -- added `.aid/connectors/` to the discovery write-zone allowlist and a connector secret-handling convention (Security Conventions).
-  - 2026-06-25: Initial authoring (aid-discover brownfield deep-dive / Analyst)
 ---
 
 # Coding Standards
@@ -327,9 +324,3 @@ with matching semantics rather than inventing a new one.
 
 ---
 
-## Change Log
-
-| Rev | Date | Source | Description |
-|-----|------|--------|-------------|
-| 1.1 | 2026-07-09 | housekeep KB-DELTA | Connectors subsystem refresh: added `.aid/connectors/` to the Security Conventions discovery write-zone bullet (ELICIT connector sub-phase exemption) and a new connector secret-handling convention (`connector-secret.sh`/`.ps1`: `secret_reference` forms, no-echo capture, path confinement); clarified the "no secret store" bullet to scope it to committed config. |
-| 1.0 | 2026-06-25 | aid-discover | Initial conventions mined from code (Analyst) |

@@ -13,9 +13,6 @@ audience: [developer, architect]
 intent: |
   Per-module metadata: purpose, dependencies, owners, and key entry points. Read this to navigate the codebase before any module-touching task.
 contracts: []
-changelog:
-  - 2026-06-23: Added f001 frontmatter fields (objective/summary/sources/tags/see_also/owner/audience)
-  - 2026-05-26: KB Authoring v2 template seed
 ---
 
 # Module Map
@@ -33,7 +30,6 @@ changelog:
 - [Oversized Modules](#oversized-modules)
 - [Conventions](#conventions)
 - [Invariants](#invariants)
-- [Change Log](#change-log)
 
 ---
 
@@ -139,8 +135,3 @@ reason — e.g., `Core.Application` mixes several unrelated concerns}
 
 ---
 
-## Change Log
-
-| Rev | Date | Source | Description |
-|-----|------|--------|-------------|
-| 1.0 | {date} | aid-discover | Initial discovery |

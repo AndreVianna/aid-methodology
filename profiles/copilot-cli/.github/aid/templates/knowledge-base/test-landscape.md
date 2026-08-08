@@ -13,9 +13,6 @@ audience: [developer, architect]
 intent: |
   Test frameworks in use, coverage areas, and gaps. Read this before writing or modifying tests to follow established patterns.
 contracts: []
-changelog:
-  - 2026-06-23: Added f001 frontmatter fields (objective/summary/sources/tags/see_also/owner/audience)
-  - 2026-05-26: KB Authoring v2 template seed
 ---
 
 # Test Landscape
@@ -33,7 +30,6 @@ changelog:
 - [Test Data Strategy](#test-data-strategy)
 - [Known Test Gaps](#known-test-gaps)
 - [Test Anti-Patterns Observed](#test-anti-patterns-observed)
-- [Change Log](#change-log)
 
 ---
 
@@ -134,8 +130,3 @@ changelog:
 
 ---
 
-## Change Log
-
-| Rev | Date | Source | Description |
-|-----|------|--------|-------------|
-| 1.0 | {date} | aid-discover | Initial test landscape analysis |

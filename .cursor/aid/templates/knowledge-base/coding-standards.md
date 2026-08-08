@@ -13,9 +13,6 @@ audience: [developer, reviewer]
 intent: |
   Project-specific authoring conventions mined from actual code: naming, formatting, idioms, and any process rules the project follows. Read this before writing or reviewing code.
 contracts: []
-changelog:
-  - 2026-06-23: Added f001 frontmatter fields (objective/summary/sources/tags/see_also/owner/audience)
-  - 2026-05-26: KB Authoring v2 template seed
 ---
 
 # Coding Standards
@@ -37,7 +34,6 @@ changelog:
 - [Comments and Documentation](#comments--documentation)
 - [Observed Inconsistencies](#observed-inconsistencies)
 - [Conventions](#conventions)
-- [Change Log](#change-log)
 
 ---
 
@@ -158,8 +154,3 @@ changelog:
 
 ---
 
-## Change Log
-
-| Rev | Date | Source | Description |
-|-----|------|--------|-------------|
-| 1.0 | {date} | aid-discover | Initial conventions inferred from code |

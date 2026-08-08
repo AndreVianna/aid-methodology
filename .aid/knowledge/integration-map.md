@@ -27,10 +27,6 @@ intent: |
   integration-touching work (install channels, CI, distribution, host-tool profiles, dashboard,
   connectors).
 contracts: []
-changelog:
-  - 2026-07-30: work-001 final gate — corrected the `docs.yml` trigger row (third instance of the same class as the `test-landscape.md` / `infrastructure.md` fixes): it omitted the `canonical/` path filter and the `pull_request`-to-master trigger, and did not distinguish the test+build jobs (both events) from deploy (push only).
-  - 2026-07-09: connectors subsystem refresh (housekeep KB-DELTA) — added the Connectors section (catalog model, .aid/connectors/ home, tool-managed vs aid-managed, .mcp.json, .gitguardian.yaml).
-  - 2026-06-25: Initial generation (aid-discover brownfield deep-dive / Integrator lane)
 ---
 
 # Integration Map
@@ -362,9 +358,3 @@ CONFIRMED by the cited sources above and the project release/install memory note
 
 ---
 
-## Change Log
-
-| Rev | Date | Source | Description |
-|-----|------|--------|-------------|
-| 1.0 | 2026-06-25 | aid-discover | Initial integration surface mapping (Integrator deep-dive) |
-| 1.1 | 2026-07-09 | housekeep KB-DELTA | connectors subsystem refresh (housekeep KB-DELTA): added the Connectors section (catalog model, `.aid/connectors/` registry home, tool-managed vs aid-managed modes, `.mcp.json`, `.gitguardian.yaml` secret-scan exclusions), an Overview row, and refreshed Last Updated. |

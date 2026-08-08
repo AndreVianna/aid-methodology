@@ -22,14 +22,6 @@ intent: |
   transitions, the grading gate, and the feedback loops. Read this when modifying a skill,
   an artifact template, or any phase boundary.
 contracts: []
-changelog:
-  - 2026-07-30: work-001 delivery-006 gate -- corrected a stale catalog-row count; restored a historical comparative that an earlier pass in this same cycle had wrongly "corrected" into a falsehood.
-  - 2026-07-22: chore/prune-shipped-work-folders -- added the "work folders are transient" invariant (`.aid/works/work-NNN-*/` is disposable; no permanent artifact depends on a specific one's contents; pipeline skills/scripts operating on them at runtime are exempt).
-  - 2026-07-16: work-016 .aid/works/ container relocation -- updated the on-disk work hierarchy (full + flattened Lite diagrams) and the two `.aid/{work}/` artifact-location references to the `.aid/works/work-NNN-{slug}/` container tree.
-  - 2026-07-09: work-001 lite-skills refresh -- rewrote the entry model (three doors -- verb-first shortcut / /aid-triage / /aid-describe) and the flattened Lite path (shared shortcut engine INTAKE->CAPTURE->SPEC->PLAN->DETAIL->GATE->APPROVAL-HALT producing work-root REQUIREMENTS.md/SPEC.md/PLAN.md/BLUEPRINT.md + tasks/task-NNN/DETAIL.md, no per-task STATE.md); renamed delivery def to BLUEPRINT.md and task def to DETAIL.md; bound L9 -> /aid-fix and L10 -> /aid-triage; removed the recipe system and aid-describe's TRIAGE/lite states; skill taxonomy now 82 directories.
-  - 2026-06-28: Relabeled Phase 2 from "Interview" to "Describe → Define" throughout (Phase 2 label now "Describe → Define" in all prose).
-  - 2026-06-28: Reconciled Phase 2 to the aid-interview split (aid-describe 2a + aid-define 2b); rewrote the Phase-2 state-machine model; added the greenfield forward-authoring entry + the conformance feedback; skill count 13 -> 14
-  - 2026-06-25: Initial generation (aid-discover brownfield deep-dive / Integrator lane)
 ---
 
 # Pipeline Contracts
@@ -477,15 +469,3 @@ Load-bearing keys: `project.{name,description,type}`, `tools.installed`,
 
 ---
 
-## Change Log
-
-| Rev | Date | Source | Description |
-|-----|------|--------|-------------|
-| 1.0 | 2026-06-25 | aid-discover | Initial pipeline-contract mapping (Integrator deep-dive) |
-| 1.1 | 2026-06-28 | manual | Reconciled Phase 2 to the `aid-interview` split: Phase 2a `aid-describe` (triage + interview + lite + greenfield seed) + Phase 2b `aid-define` (feature decomposition + cross-reference). Rewrote the Phase-2 state-machine model, added the greenfield forward-authoring entry + the conformance feedback, and updated the skill count to 14. |
-| 1.2 | 2026-07-08 | PR #132 (branch `change-delivery`) | Delivery-folder layout rationalized: full path nests delivery folders under `deliveries/`; lite path drops the `delivery-001/` folder entirely (tasks live directly at `tasks/task-NNN/`; the sole delivery's gate + Q&A are AUTHORED in the work-root STATE.md). Rewrote the On-Disk Work Hierarchy section with separate full/lite diagrams and updated stale citations. |
-| 1.3 | 2026-07-09 | housekeep KB-DELTA | Added ELICIT's outputs (E1 `## External Documentation` / E2 `.aid/connectors/` registry) to the Discover Phase-I/O row and the Typed Artifact Contracts table; corrected the 1.2 provenance to PR #132. |
-| 1.4 | 2026-07-09 | work-001 lite-skills refresh | Rewrote the entry model (three doors: verb-first shortcut / `/aid-triage` / `/aid-describe`) and the flattened Lite path: the shared shortcut engine (`INTAKE→CAPTURE→SPEC→PLAN→DETAIL→GATE→APPROVAL-HALT`) authors work-root `REQUIREMENTS.md`/`SPEC.md`/`PLAN.md`/`BLUEPRINT.md` + `tasks/task-NNN/DETAIL.md` with **no per-task `STATE.md`** (cells live in `STATE.md § ### Tasks lifecycle`). Renamed the delivery definition to `BLUEPRINT.md` and the task definition to `DETAIL.md` across the phase table, artifact contracts, hierarchy trees, and state-machine table (fixing the deleted `delivery-spec-template.md` citation → `delivery-blueprint-template.md`); added a `BLUEPRINT.md` artifact-contract row. Removed `aid-describe`'s TRIAGE/lite states; added `/aid-triage` and the shortcut-engine state machines. Bound L9 → `/aid-fix` and L10 → `/aid-triage`. Retired the recipe system and the stale "14 skills / 51-52 recipes / methodology flat-layout" Known Issues; recorded the 82-directory taxonomy. |
-| 1.5 | 2026-07-09 | v2.1.0 coverage-gap follow-on | Skill taxonomy 82 -> 92 directories (15 classic incl. restored `/aid-ask` + `/aid-triage` + 76 verb-first shortcuts, up from 67; catalog 69-row -> 80-row) for the new `remove`/`deprecate`/`migrate` (G5) and `review`/`research` (G11) shortcut families; updated the Phase Input/Output Contracts off-pipeline skill list and the Known Issues skill-count entry. |
-| 1.6 | 2026-07-22 | chore/prune-shipped-work-folders | Added the "work folders are transient" invariant to `## Invariants`: `.aid/works/work-NNN-*/` is disposable per-work pipeline state and no permanent artifact may depend on a specific one's contents; pipeline skills/scripts operating on work folders as live runtime state are exempt. |
-| 1.7 | 2026-07-23 | work-023 doc-count reconciliation | Skill taxonomy 108 -> 111 directories (17 curated, up from 14, adding `aid-read-ticket`/`aid-create-ticket`/`aid-update-ticket`); catalog (94-row) and agent/KB-doc counts unchanged; updated the Known Issues skill-count entry. |
