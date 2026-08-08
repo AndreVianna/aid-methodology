@@ -71,14 +71,26 @@ Product version: **2.0.6** (`VERSION`; npm and PyPI wrappers both at `2.0.6`). C
 | **Bash / Shell** | POSIX bash | Installers, CLI (`bin/aid`), install-core (`lib/aid-install-core.sh`), phase scripts, test suites — run `find . -name '*.sh' \| wc -l` for the live count. |
 | **PowerShell** | **Windows PowerShell 5.1+** (compat floor) | Windows installer/CLI parity (`install.ps1`, `lib/AidInstallCore.psm1`, `bin/aid.ps1`). CONFIRMED `README.md` (search: "PowerShell 5.1+"). |
 | **Python** | **>=3.8** (PyPI); CI pins **3.11** | The profile renderer, dashboard reader, PyPI wrapper. CONFIRMED `packages/pypi/pyproject.toml` (search: "requires-python = \">=3.8\"") and `.github/workflows/test.yml` (search: "python-version: '3.11'"). |
-| **JavaScript (Node)** | **>=18** (npm wrapper); **>=20** (summarize validators); CI pins **20** | npm wrapper, dashboard Node server/reader (`reader.mjs`). The summarize validators (`validate-visuals.mjs`, `contrast-check.mjs`) require >=20 because Playwright 1.61.1 declared in their `package.json` does not support Node 18/19. CONFIRMED `packages/npm/package.json` (search: "node\": \">=18") and the repository-root `package.json` (search: "\"node\": \">=20\"") and `.github/workflows/test.yml` (search: "node-version: '20'"). |
+| **JavaScript (Node)** | **>=22** (npm wrapper and summarize validators); CI pins **24** | npm wrapper, dashboard Node server/reader (`reader.mjs`). The summarize validators (`validate-visuals.mjs`, `contrast-check.mjs`) require >=20 because Playwright 1.61.1 declared in their `package.json` does not support Node 18/19. CONFIRMED `packages/npm/package.json` (search: "node\": \">=18") and the repository-root `package.json` (search: "\"node\": \">=20\"") and `.github/workflows/test.yml` (search: "node-version: '20'"). |
 | **TypeScript** | **6.0.3** (site dev dep) | The Astro website only. CONFIRMED `site/package.json` (search: "typescript"). |
 
-**Per-context Node version note:** the npm CLI wrapper requires Node >=18; the summarize validators
-(`validate-visuals.mjs` etc.) require Node >=20 (Playwright 1.61.1 floor — set by the preflight
-gate in `canonical/aid/scripts/summarize/summarize-preflight.sh`); the site requires Node >=22.12.0;
-CI's canonical suites pin Node 20. CONFIRMED `site/package.json` (search: "node\": \">=22.12.0")
-and the repository-root `package.json` (search: "\"node\": \">=20\"").
+**Node version policy (one floor, one test target -- they are different promises):** every
+adopter-facing context requires Node **>=22**, and CI pins **24**.
+
+The floor is 22 because Node 20 reached END-OF-LIFE on 2026-04-30 (nodejs/Release
+`schedule.json`) while 22 is supported through 2027-04-30. Until 2026-08-08 the npm wrapper
+declared >=18 and the summarize validators >=20, and CI pinned 20 -- so for three months every
+merge was gated on a runtime receiving no security patches. The floor was raised in v3.0.0,
+which is the release that could carry a breaking change.
+
+CI pins **24** (Active LTS through 2028-04-30) rather than the floor, deliberately: we test on
+the newest LTS and require only the oldest supported one. A pin with no expiry is how the
+previous one silently became a pin to a dead runtime, so the number is re-checked each LTS
+cycle. `site/` keeps its own higher floor of >=22.12.0 (Astro), which the shared 22 satisfies.
+
+CONFIRMED `packages/npm/package.json` and the repository-root `package.json` (search:
+"node"), `site/package.json` (search: ">=22.12.0"), and `.github/workflows/test.yml`
+(search: "node-version").
 
 Target OS: cross-platform (Linux/macOS via Bash, Windows via PowerShell). CONFIRMED by the
 dual installer set and the Windows-only test lane (`tests/windows/`).

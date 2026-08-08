@@ -79,7 +79,7 @@ irm https://raw.githubusercontent.com/AndreVianna/aid-methodology/master/install
 
 Installs to `%LOCALAPPDATA%\aid\` and adds it to your User PATH. Open a new shell after.
 
-**npm (Node >=18):**
+**npm (Node >=22):**
 
 ```bash
 npm i -g aid-installer
