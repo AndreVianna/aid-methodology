@@ -22,6 +22,6 @@
 - The guidance that a quote which must survive the check should be a short fragment from a single source line
 
 **Acceptance Criteria:**
-- [ ] The gate rows describe gates that actually run
+- [ ] Every row this task adds or edits under `quality-gates.md § Mechanical Gates Run by the Orchestrator` names a gate that runs, and its `Runs in CI?` cell in the table below that section matches whether a workflow invokes it. Rows the section itself marks as not wired stay marked so -- the criterion is agreement between the two tables and disk, not that every gate is wired
 - [ ] The convention distinguishes evidence citations from ownership claims, so region-ownership inventories keep their line numbers
 - [ ] All section-6 quality gates pass

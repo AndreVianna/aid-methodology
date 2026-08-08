@@ -176,7 +176,7 @@ Resolution command:
 bash .claude/aid/scripts/config/read-setting.sh --skill <name> --key minimum_grade --default A
 ```
 
-In **this** repo (`.aid/settings.yml`): the global `review.minimum_grade` is **`B-`**, lowered
+In **this** repo (`.aid/settings.yml`): the global flat `minimum_grade` is **`B-`** (the file carries no `review:` section at all), lowered
 from `A+` by owner decision on 2026-07-30 — which supersedes the 2026-06-27 directive "always use
 an A+ gate across all phases". It does **not** mean a phase advances on zero findings: `B-` is the
 lowest bar whose entire band excludes `[MEDIUM]`, so the exit criterion is that no `[CRITICAL]`,
