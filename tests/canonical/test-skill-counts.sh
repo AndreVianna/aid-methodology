@@ -69,6 +69,55 @@ else
     _failed=$((_failed + 1))
 fi
 
+# ── mutation controls ────────────────────────────────────────────────────────────────────────
+#
+# SC01 proves the checker RUNS CLEAN. On its own it cannot distinguish "every stated count agrees"
+# from "no pattern matched anything" -- and that distinction is not hypothetical here: four of this
+# guard's patterns were added *because* they matched nothing while live falsehoods sat in the very
+# files it scans. `canonical/skills/* (111)` was rejected by a lookbehind meant to exclude
+# site/scripts/; `(111 total:` had no pattern at all; the first term of every `A + B + C`
+# decomposition fell outside the bare-curated follow set; and `generated doorways` was not among the
+# recognised doorway adjectives. Two of those hid a wrong number for three days.
+#
+# So each control below plants ONE wrong count in the exact shape that survived, and requires the
+# guard to report it. The tree is copied once and the mutated file restored between runs.
+
+_scratch="$(mktemp -d)"
+trap 'rm -rf "$_scratch"' EXIT
+mkdir -p "$_scratch/tests/canonical" "$_scratch/.aid" "$_scratch/site/src/content"
+cp -r "$_repo/canonical" "$_scratch/" 2>/dev/null || true
+cp -r "$_repo/.aid/knowledge" "$_scratch/.aid/" 2>/dev/null || true
+cp -r "$_repo/docs" "$_scratch/" 2>/dev/null || true
+cp -r "$_repo/site/scripts" "$_scratch/site/" 2>/dev/null || true
+cp -r "$_repo/site/src/content/docs" "$_scratch/site/src/content/" 2>/dev/null || true
+cp "$_repo/README.md" "$_scratch/" 2>/dev/null || true
+cp "$_here/check-skill-counts.mjs" "$_scratch/tests/canonical/"
+
+_plant() {   # _plant ID REL SED_EXPR EXPECTED_SUBSTRING DESCRIPTION
+    local id="$1" rel="$2" expr="$3" want="$4" desc="$5" out rc
+    cp "$_repo/$rel" "$_scratch/$rel"
+    sed -i "$expr" "$_scratch/$rel"
+    out="$(cd "$_scratch" && node tests/canonical/check-skill-counts.mjs 2>&1)" && rc=0 || rc=$?
+    cp "$_repo/$rel" "$_scratch/$rel"
+    if [[ "$rc" -ne 0 ]] && printf '%s' "$out" | grep -qF "$want"; then
+        echo "PASS $id $desc"
+        _passed=$((_passed + 1))
+    else
+        echo "FAIL $id $desc -- planted defect NOT reported (rc=$rc)"
+        _failed=$((_failed + 1))
+    fi
+}
+
+_mm=".aid/knowledge/module-map.md"
+_plant SC02 "$_mm" 's/(113) | Toolkit/(111) | Toolkit/' 'corpus total should be 113' \
+    'a corpus total stated as `canonical/skills/* (N)` is checked'
+_plant SC03 "$_mm" 's/(113 total/(111 total/' 'corpus total should be 113' \
+    'a corpus total stated as the header of a decomposition `(N total: ...)` is checked'
+_plant SC04 "$_mm" 's/19 curated + 64/17 curated + 64/' 'curated (non-catalog) should be 19' \
+    'the first term of an `A + B + C` decomposition is checked'
+_plant SC05 "$_mm" 's/64 generated doorways/63 generated doorways/' 'emitting shortcuts should be 64' \
+    'a doorway count carrying the `generated` adjective is checked'
+
 echo ""
 echo "=== Summary ==="
 echo "  Tests passed: ${_passed}"

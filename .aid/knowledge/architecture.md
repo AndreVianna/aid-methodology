@@ -315,13 +315,15 @@ concept, "human-gated phase advancement"; see Invariants).
 A skill (driven by the host tool) dispatches **specialist sub-agents** to do the work. AID
 defines **10 agents across 3 model tiers**. CONFIRMED: `canonical/agents/` holds exactly 10
 (aid-architect, aid-clerk, aid-developer, aid-interviewer, aid-operator, aid-orchestrator,
-aid-researcher, aid-reviewer, aid-tech-writer) and `docs/aid-methodology.md` §5.
+aid-researcher, aid-reviewer, aid-screener, aid-tech-writer) and `docs/aid-methodology.md` §5.
+
+Tiers below are the `tier:` field of each `canonical/agents/*/AGENT.md`, not a separate list.
 
 | Tier | Agents | Role |
 |------|--------|------|
 | Large (1) | aid-architect | Highest-stakes reasoning where depth pays off: architecture, design decomposition, task breakdown. |
 | Medium (7) | aid-developer, aid-operator, aid-orchestrator, aid-tech-writer, aid-interviewer, aid-researcher, aid-reviewer | Workhorses: implement, release, route, document, interview, research/KB authoring, adversarial review. |
-| Small (1) | aid-clerk | Mechanical extract/format/glob. |
+| Small (2) | aid-clerk, aid-screener | Mechanical extract/format/glob; cheap first-pass screening ahead of an adversarial review. |
 
 These are **default** tiers, not fixed ceilings (work-006). A dispatch site picks the
 model tier **and** reasoning effort from the task's difficulty via

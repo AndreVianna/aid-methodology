@@ -182,6 +182,44 @@ else
     no DV11 "the control-byte detector cannot see a planted 0x08 -- DV10 proves nothing"
 fi
 
+# DV12 -- the SINGULAR noun. Every agent-count pattern required `agents` plural, so module-map.md's
+# frontmatter contract could read "9 agent directories" while this guard's own commit was fixing
+# that same count three files away and still printed "all agree".
+out="$(plant singular-noun '.aid/knowledge/module-map.md' 's/10 agent directories/9 agent directories/')"
+if printf '%s' "$out" | grep -q 'WRONG VALUES'; then
+    ok DV12 "a stale count stated on the singular noun (\"N agent directories\") is caught"
+else
+    no DV12 "\"9 agent directories\" slipped through -- the patterns are plural-only again"
+fi
+
+# DV13 -- a per-skill pin quoted as live configuration. Two KB docs asserted
+# `summary.minimum_grade: A+`, CONFIRMED, against a settings.yml that does not contain a `summary:`
+# key at all. Every other minimum_grade pattern requires the word `is`, so both survived the sweep
+# that moved the global bar to B-.
+out="$(plant dotted-pin 'README.md' 's/10 specialized agents/10 specialized agents (summary.minimum_grade: A+)/')"
+if printf '%s' "$out" | grep -q 'WRONG VALUES'; then
+    ok DV13 "a dotted per-skill minimum_grade pin disagreeing with the resolved bar is caught"
+else
+    no DV13 "a per-skill pin stating the wrong grade was not reported"
+fi
+
+# DV14 -- the PRECONDITION behind DV13, and the reason it is not a latent false-positive factory.
+# DV13's pattern compares a per-skill pin against the GLOBAL bar, which is only correct while no
+# override exists (lint-settings.sh S8 makes one unwritable today -- work-003 Q19). If that ever
+# changes, the registry must STOP LOUDLY rather than start reporting a legitimately-different
+# override as wrong. A guard that quietly begins lying is worse than one that is absent.
+dir="$SCRATCH/override"; rm -rf "$dir"; mkdir -p "$dir/tests/canonical" "$dir/.aid"
+cp -r "$ROOT/.aid/knowledge" "$dir/.aid/" 2>/dev/null
+cp "$ROOT/.aid/settings.yml" "$dir/.aid/"
+printf '\nsummary:\n  minimum_grade: A+\n' >> "$dir/.aid/settings.yml"
+cp "$GUARD" "$REGISTRY" "$dir/tests/canonical/"
+ovr_out="$(node "$dir/tests/canonical/check-derived-values.mjs" 2>&1)"; ovr_rc=$?
+if [[ "$ovr_rc" -ne 0 ]] && printf '%s' "$ovr_out" | grep -q 'per-skill minimum_grade overrides'; then
+    ok DV14 "a newly-added per-skill override stops the guard loudly instead of misreporting it"
+else
+    no DV14 "a per-skill override did not trip the precondition (rc=$ovr_rc) -- DV13 would now compare against the wrong source"
+fi
+
 echo
 echo "=== Summary ==="
 echo "  Tests passed: $pass"

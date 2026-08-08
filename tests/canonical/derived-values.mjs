@@ -74,6 +74,32 @@ export function deriveMinimumGrade(root) {
   return m ? m[1].replace(/^["']|["']$/g, '') : null;
 }
 
+/** Per-skill `minimum_grade` overrides actually present in settings.yml.
+ *
+ *  Today this is empty, and structurally must be: `lint-settings.sh` S8 rejects any top-level key
+ *  the template does not seed, and the template seeds no skill sections -- so the per-skill override
+ *  `read-setting.sh` documents cannot be written into a file that passes its own lint (work-003 Q19).
+ *  That is what makes the `<skill>.minimum_grade: X` claim below comparable against the GLOBAL bar:
+ *  with no override possible, read-setting.sh's resolution order collapses to the global for every
+ *  skill. If S8 is ever relaxed this returns non-empty and `buildRegistry` THROWS, rather than
+ *  silently comparing a legitimately-different override against the wrong source. A loud stop beats
+ *  a guard that quietly starts lying. */
+export function derivePerSkillOverrides(root) {
+  const p = join(root, '.aid', 'settings.yml');
+  const out = new Map();
+  if (!existsSync(p)) return out;
+  let section = null;
+  for (const line of readFileSync(p, 'utf8').split('\n')) {
+    if (/^\s*#/.test(line)) continue;
+    const top = line.match(/^([a-z][a-z0-9_-]*):\s*$/);
+    if (top) { section = top[1]; continue; }
+    if (/^\S/.test(line)) { section = null; continue; }
+    const mg = line.match(/^\s+minimum_grade:\s*(\S+)\s*$/);
+    if (mg && section) out.set(section, mg[1].replace(/^["']|["']$/g, ''));
+  }
+  return out;
+}
+
 /** rule id -> the severity token its catalog row declares.
  *  Only rows whose Severity cell OPENS with a bracketed token are included: a `Step 2` row is
  *  instance-derived and has nothing fixed to compare against. */
@@ -136,6 +162,19 @@ export function buildRegistry(root) {
   const ruleSeverity = deriveRuleSeverity(root);
   const ruleModality = deriveRuleModality(root);
 
+  // Precondition for the `<skill>.minimum_grade: X` claim pattern below -- see
+  // derivePerSkillOverrides. Throwing is deliberate: the alternative is comparing a legitimately
+  // different per-skill bar against the global one and reporting a correct line as wrong.
+  const overrides = derivePerSkillOverrides(root);
+  if (overrides.size) {
+    throw new Error(
+      `derived-values: .aid/settings.yml now carries per-skill minimum_grade overrides (` +
+      `${[...overrides.keys()].join(', ')}). The \`<skill>.minimum_grade: X\` claim pattern in the ` +
+      `minimum-grade entry compares against the GLOBAL bar, which is only correct while no override ` +
+      `exists. Teach that pattern read-setting.sh's resolution order before removing this check.`
+    );
+  }
+
   return [
     {
       id: 'agent-count',
@@ -148,6 +187,10 @@ export function buildRegistry(root) {
       claims: [
         /\b(\d+)\s+(?:AID\s+|canonical\s+|specialized\s+|pipeline\s+)?agents\b/g,
         /(?<![\w/*])`?agents\/`?\s*\((\d+)\)/g,
+        // The SINGULAR noun: "9 agent directories under canonical/agents/". Every pattern above
+        // requires `agents` plural, so module-map.md's frontmatter summary stated 9 while this
+        // guard's own commit was fixing the same count three files away and reported all-agree.
+        /\b(\d+)\s+agent (?:directories|dirs)\b/g,
       ],
     },
     {
@@ -165,6 +208,13 @@ export function buildRegistry(root) {
         /minimum[_ ]grade[^\n`]{0,40}?\bis\s+`?([A-F][+-]?)`?(?![A-Za-z])/g,
         /(?:global|project|configured)\s+(?:minimum|bar)[^\n`]{0,30}?`?([A-F][+-]?)`?(?![A-Za-z])\s*(?:\.|,|$)/g,
         /\|\s*`?minimum_grade`?\s*\|\s*`?([A-F][+-]?)`?\s*\|/g,
+        // A dotted per-skill pin quoted as live configuration: "this project pins
+        // `summary.minimum_grade: A+`). CONFIRMED: `.aid/settings.yml`". Two KB docs asserted that
+        // against a settings.yml that has never held a `summary:` key and cannot hold one (S8/Q19),
+        // and every pattern above needs the word `is`, so both survived the sweep that changed the
+        // global. Comparable against the global only while no override exists -- buildRegistry
+        // throws the moment one does.
+        /\b[a-z][a-z0-9_-]*\.minimum[_ ]grade:\s*`?([A-F][+-]?)`?(?![A-Za-z])/g,
       ],
     },
     {

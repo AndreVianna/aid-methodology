@@ -176,11 +176,21 @@ Resolution command:
 bash .claude/aid/scripts/config/read-setting.sh --skill <name> --key minimum_grade --default A
 ```
 
-In **this** repo (`.aid/settings.yml`): the global `review.minimum_grade` is **`B-`** (owner
-directive 2026-06-27 — "always use an A+ gate across all phases"), so every grading phase must
-reach zero findings to advance. One explicit per-skill override remains — `summary.minimum_grade:
-A+` (now redundant with the global, retained from the `/aid-summarize` redesign). The commented
-examples show other skills can be pinned individually (e.g. `execute`, `deploy` → A+).
+In **this** repo (`.aid/settings.yml`): the global `review.minimum_grade` is **`B-`**, lowered
+from `A+` by owner decision on 2026-07-30 — which supersedes the 2026-06-27 directive "always use
+an A+ gate across all phases". It does **not** mean a phase advances on zero findings: `B-` is the
+lowest bar whose entire band excludes `[MEDIUM]`, so the exit criterion is that no `[CRITICAL]`,
+`[HIGH]` or `[MEDIUM]` finding survives, while `[LOW]` / `[MINOR]` are **deferred to a single
+end-of-work sweep, not waived**. The measurement behind that equivalence is in the file's own
+comment block.
+
+**No per-skill override is in force, and none can be written.** The `summary:` section pinning
+`minimum_grade: A+` that this repo once carried was dropped when commit `6411057f` migrated the
+file to flat `format_version: 3`; it cannot be restored, because `lint-settings.sh` S8 rejects any
+top-level key the settings template does not seed and the template seeds no skill sections. Tier 1
+of the resolution order above is therefore unreachable here, and every skill resolves to the
+global — including the commented `execute` / `deploy` examples, which document the resolver rather
+than this file's contents. Recorded as a defect in work-003 `STATE.md` § Q19.
 CONFIRMED in `.aid/settings.yml`.
 
 ---

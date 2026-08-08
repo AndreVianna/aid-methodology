@@ -23,6 +23,18 @@ spot-checks only a handful of facts.
 **Out of scope:** removing the machine validators or the human checklist; this pass is in addition
 to them, not instead of them.
 
+### Inherited defect — one known-false statement already measured
+
+`kb.html:3408` reads *"Configured in `.aid/settings.yml` under `pipeline.minimum_grade`. The AID
+dogfood repository requires A+ for all KB documents."* Both halves are false as of 2026-08-07: the
+key is the flat `minimum_grade`, not `pipeline.minimum_grade`, and the value is `B-`. Found as the
+EXTENT of delivery-015 gate cycle 12 row 1, whose other two sites (`quality-gates.md`,
+`pipeline-contracts.md`) were fixed there. **Deliberately not hand-edited**: `kb.html` is generated,
+so correcting the render rather than regenerating it is the F2 defect — and this delivery is the
+declared owner of its content. It is a worked example of exactly what this delivery exists to catch:
+a machine suite proving the HTML is well-formed over a sentence that is simply untrue. The content
+pass must produce a row for it.
+
 ## Gate Criteria
 
 - [ ] The content pass is dispatched and is separate from the machine and human gates

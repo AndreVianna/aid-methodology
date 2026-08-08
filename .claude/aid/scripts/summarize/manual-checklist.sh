@@ -48,8 +48,10 @@
 # Exit codes:
 #   0  Checklist completed and written.
 #   1  User aborted (interactive gate answered 'n' to "opened in browser").
-#   2  Invocation error (bad flag, bad answer value, missing --input file, or an
-#      --input JSON without a usable K1/K2/V1 answer).
+#   2  Invocation error (bad flag, bad answer value, missing --input file, an
+#      --input JSON whose notes string is never closed, or an --input JSON
+#      without a usable K1/K2/V1 answer). The malformed-JSON trigger is the one
+#      the header used to omit; MC12 asserts that path leaves the file untouched.
 #
 # Output JSON keys:
 #   K1_answer, K2_answer, V1_answer,

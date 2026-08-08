@@ -8,7 +8,7 @@ user_approved: yes
 lifecycle: Running
 phase: Execute
 active_skill: aid-execute
-updated: '2026-07-30T13:15:28Z'
+updated: '2026-08-08T00:00:00Z'
 pause_reason: --
 block_reason: --
 block_artifact: --
@@ -21,9 +21,13 @@ Redesign of AID's review subsystem: extract review into chainable light/deep
 review skills, formalize artifact-typed review criteria over a single severity
 source of truth, and close the accumulated review-path defects.
 
-> **State:** Paused -- session handoff
-> **Phase:** Execute (deliveries 001-014 gated A+; delivery-015 in progress)
-> **Next:** `/aid-execute work-003` from worktree `.claude/worktrees/work-003` (branch `aid/work-003-delivery-015`) -- finish task-003, then tasks 004-006
+> **State:** Running -- delivery-015 gate, FIX cycle 12 complete and awaiting a fresh reviewer
+> **Phase:** Execute. Deliveries 001-012 gated `A+` with records; **013 and 014 were marked `Gated`
+> with no gate ever run** (Q22) and their late gates are open with 24 findings between them;
+> delivery-015's six tasks are all `Done` and its gate is at cycle 12. 016-018 are `Pending-Spec`.
+> **Next:** `/aid-execute work-003` from worktree `.claude/worktrees/work-003` (branch
+> `aid/work-003-delivery-015`) -- work the delivery-013 and delivery-014 ledgers, then re-gate all
+> three deliveries.
 
 ---
 
@@ -90,6 +94,7 @@ source of truth, and close the accumulated review-path defects.
 | 2026-07-27 | KB meta-document update deliberately skipped | -- | Decomposition Step 5 asks to update `.aid/knowledge/INDEX.md` and `README.md`. Both are `source: generated`; INDEX carries an explicit DO-NOT-EDIT marker and a contract of one entry per KB document (a work reference would violate it). README's Revision History records *KB content changes*, and this work has changed no KB document yet. The README entry is owed when work-003's KB revisions (roster 9->10, architecture, decisions, agent-dispatch-tiering) actually land -- at ship, not at Define. |
 | 2026-07-27 | CROSS-REFERENCE deferred; moved to Specify | -- | The CROSS-REFERENCE entry-point question was asked and not taken up -- the user invoked `/aid-specify` instead. aid-define's State 6 is therefore **not complete**; re-running `/aid-define work-003` returns to CROSS-REFERENCE. Proceeding to Specify is legitimate (the entry point permits declining), but the KB/codebase cross-validation of REQUIREMENTS.md and the six feature boundaries has not been run. 15 concerns already stand by hand in Q7 and Q8. |
 | 2026-07-27 | Artifact inventory; feature-007 added | -- | Swept every artifact AID produces (persistent, generated, transient). Found AID already implements **five distinct review kinds** (A adversarial / B build-verify / C spot-check / D mechanical / E machine+human) never named as a set -- now FR-B11. Found 5 coverage gaps -> group F / feature-007. Work now has **7 features, 47 FRs**. |
+| 2026-08-07 | delivery-015 gate cycle 12 FIX (part 2) | -- | Part 1 (`d4af0528`) built the derived-value guard but closed only a subset of the class, and the guard was blind to every instance that survived. Both guards extended and mutation-proved (`DV12`-`DV14`, `SC02`-`SC05`); 7 stale sites fixed; `KB-02`/`NAR-08`/`EXE-09` moved `SHOULD` -> `MUST` with their severity anchors, which re-sequenced row 4 behind row 7 and invalidated a third ledger-schema example the reviewer had cleared. 9 of 9 cycle-12 rows `Fixed`; `kb.html` extent handed to delivery-016 (generated artifact, its declared scope); 11 pre-existing exit-code-header violations recorded as tech-debt `W3-1`. Ungraded until a fresh reviewer runs. |
 | 2026-07-27 | feature-001 spec **Ready** | **A+** | Authored 9 adapted sections, then 4 review cycles: **C+** (2 findings) -> **D+** (fix introduced a false positive in the AC-1 oracle) -> **B+** (fix left `quality-gates.md` uncovered, since its definition is prose not a heading) -> **A+** (0 findings). Every finding across all four cycles landed in §8's verification oracles -- the prose sections were clean from cycle 1. Ledger `specify-feature-001.md` deleted per schema at DONE; this row is the audit record. |
 
 ---
@@ -190,6 +195,7 @@ or worse; `[LOW]`/`[MINOR]` at the end" — are the same statement.
 | Gap Key | Kind | Status | Depth | Recurrences | Scope | Criterion | Resolution |
 |---|---|---|---|---|---|---|---|
 | scripts/temp-file-lifecycle-and-destructive-paths | criteria | Pending | 0 | 0 | delivery-015 gate cycle 10, row 7 (`EXE-04`) -- `canonical/aid/scripts/summarize/emit-summary-findings.sh` validator-timeout branch | No KB document declares a rule for **trap-scoped temp-file cleanup** or for **guarding a destructive path against a device node**. `coding-standards.md § Security Conventions` covers download integrity, manifest-driven removal and secret handling; `§ Error Handling` covers exit codes, message content and `\|\| true`. Neither reaches the defect found: the branch rebound `HTML_LOG=/dev/null` after a single-quoted `trap 'rm -f "$HTML_LOG"' EXIT` was installed, so the trap ran `rm -f /dev/null` and the real `mktemp` file leaked (measured under `bash -x`). | 2026-07-30: the **instance** is fixed (the rebind is gone; it was dead anyway, since the branch that runs on rc=124 never reads the log). The **criterion** is still missing, so a reviewer meeting the next instance has no rule to cite -- cycle 10 filed the finding under `EXE-04` (the branch is untested, with the bug as its Evidence) rather than invent a rule for the bug itself. Pending, not Declined: unlike the essence-coverage gap this has had no human decision. Registered BY HAND, not by `gap-register.sh`, because that writer still finds its section by substring (Q18) and would append into prose. |
+| kb-anatomy/intent-edge-case-term-coverage | criteria | Pending | 0 | 0 | delivery-015 gate cycle 12, row 4 (`NAR-05`) -- `canonical/skills/aid-discover/references/reviewer-prompt-anatomy.md` § Anatomy / Coverage checklist, items 1, 4 and 6 | No rule in any `review-rubrics/*.md` declares a criterion for **coverage against a document's declared `intent:`**, for a **missing edge case / failure mode**, or for an **undefined project-specific term** within a document's own scope. Each of the three checklist items states its own `[MEDIUM]`, and the file's "Severity anchors" block claimed every value in it was the anchor of a cited rule -- false for exactly these, because they cite none. | 2026-08-07: the **false universal claim** is fixed (the anchors block now says "where a bullet names a cited rule", and the three unanchored items are named as unanchored). The **criterion** is still missing, so their `[MEDIUM]` remains declared by the checklist itself rather than by the catalog. Pending, not Declined: no human has ruled on it. Resolving it means either adding three rules to `review-rubrics/kb.md` with criteria in `authoring-conventions.md`, or deciding the checklist is the right home for judgment checks that no catalog rule backs. Registered BY HAND for the same reason as the row below (Q18). |
 | kb-essence/load-bearing-fact-coverage | criteria | Declined | 0 | 0 | aid-discover essence gate, condition 2 (Omission) -- canonical/skills/aid-discover/references/state-review.md § 2c | No KB document declares that the Knowledge Base must carry the project's load-bearing source facts. The Divergence half of the gate maps onto NAR-05; the Omission half has no declaring criterion, so review-rubrics/INDEX.md's No-Criterion-no-row contract forbids authoring a rule row for it. | 2026-07-30, human decision: leave the Omission condition keyed on the [ESSENCE-GAP] Description marker and record the gap rather than invent a rule ID or pause delivery-015 for a KB edit. Declined, not Pending -- the decision is made, so this must not be re-asked and must not gate a grade. Reopening it means adding the standard to the KB authoring conventions via /aid-update-kb, then re-pointing condition 2 at the new rule; task-004's second acceptance criterion is therefore closed for the act-back gate and the Divergence half, and open for this half. |
 
 ## Cross-phase Q&A

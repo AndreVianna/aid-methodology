@@ -351,9 +351,12 @@ essence-coverage ≥ 90%"*, whose denominator — the count of load-bearing fact
 reconstruction *did* cover — has no carrier in the ledger. It was a runtime claim by an
 agent, unfalsifiable after the fact: the same class of unverifiable assertion feature-005
 rejected for per-rule invalidation. What replaces it is the conservative rule already
-written beside it. At an `A`-or-better floor the ratio never changed a decision anyway —
-one open `[MEDIUM]` `[ESSENCE-GAP]` row fails the grade on its own — so the ratio protected a
-*metric*, not a *gate*.
+written beside it. The ratio never changed a decision at any floor this project has used, and it
+could not: an `[ESSENCE-GAP]` row carries no severity of its own — it takes the anchor of the rule
+it cites. A `KB-22`–`KB-25` row is `[HIGH]`, which `grade.sh` grades `D+`, failing every floor from
+`A+` down to today's `B-`; a lone `KB-26` row is `[LOW]`, which grades `B+` and clears `B-` whatever
+the ratio said. So the ratio protected a *metric*, not a *gate*, in both directions. (MEASURED
+against `grade.sh` on one-row ledgers: `[HIGH]` → `D+`, `[MEDIUM]` → `C+`, `[LOW]` → `B+`.)
 
 Divergence FAIL items are ordinary `[FIDELITY]` rows at `NAR-05`'s anchor, which is `Step 2` --
 MUST modality with reach and reversibility read off the instance, so usually but not always
@@ -419,7 +422,7 @@ reach and reversibility decide. This used to read *"ordinary `[HIGH]` rows"* fla
 contradicted the gate table below it and overstated the grade impact: a lone `KB-26` row grades
 `B+`, not `<= D`. What holds unconditionally is that any open `[ACTBACK]` row **fails the
 assertiveness verdict**; how far it moves the GRADE depends on the severity its rule anchors, and
-`grade.sh` puts a `[HIGH]` row at `<= D` and a lone `[LOW]` one at `B+`. The hard gate is realized
+`grade.sh` puts a lone `[HIGH]` row at `D+` and a lone `[LOW]` one at `B+`. The hard gate is realized
 entirely through the merged rows, the sibling-keystone mechanism — no separate boolean, no AND to
 reconcile; the grade is a separate question from the verdict.
 

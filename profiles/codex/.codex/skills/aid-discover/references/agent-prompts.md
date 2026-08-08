@@ -123,6 +123,7 @@ text (the sections below) is never modified — the extension is a runtime-only 
 `owner-of <filename>` accessor (`resolve_doc_set "$raw" | awk -F'\t' -v f="$fn" '$1==f{print $2}'`).
 If the declared `owner` is one of the 5 discovery agents, the extension is appended to that
 agent's prompt. If the `owner` field does not match any of the 5 agents (unknown owner), the
+<!-- derived-value-exempt: "the 5 agents" is the KB-authoring subset named just above, not the roster. -->
 `resolve_doc_set` function routes to **`aid-researcher` (architecture doc-set)** as the generalist fallback
 (FR-P1-5 — no new agent). The Architect prompt section is then extended as above.
 

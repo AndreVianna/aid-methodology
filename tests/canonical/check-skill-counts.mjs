@@ -94,7 +94,11 @@ const CLAIMS = [
   // "8 curated domains" (KB domains) and "feature-014 curated them" -- neither is a
   // skill count. A guard that cries wolf gets its real findings ignored.
   [/\b(\d+) curated (?:pipeline|skills?|non-catalog|and|\/)/g, () => c.curatedOnly, 'curated (non-catalog)'],
-  [/\b(\d+) curated\b(?= *[-—,.)]| skills)/g, () => c.curatedOnly, 'curated (non-catalog)'],
+  // `+` added to the follow set. A decomposition writes its parts as a sum -- "(17 curated + 64
+  // generated doorways + 30 hand-authored repurpose)" -- and the old set stopped at punctuation
+  // that ENDS a clause, so the first term of every sum in the repo went unchecked. Two of them
+  // were wrong (module-map.md:221, project-structure.md:97), both reading 17 for a 19-skill set.
+  [/\b(\d+) curated\b(?= *[-—,.+)]| skills)/g, () => c.curatedOnly, 'curated (non-catalog)'],
   [/\b(\d+) verb-first\b/g, () => c.shortcuts, 'emitting shortcuts'],
   // Bare `N shortcuts`, and the README's own "N pipeline / on-demand / router skills" phrasing.
   // Both were live in README.md and docs/ with CORRECT values, checked by nothing — a coverage
@@ -104,7 +108,16 @@ const CLAIMS = [
   [/(?<!:\s)\b(\d+) shortcuts\b/g, () => c.shortcuts, 'emitting shortcuts'],
   [/\b(\d+) pipeline \/ on-demand \/ router skills\b/g, () => c.curatedOnly, 'curated (non-catalog)'],
   [/\b(\d+) shortcut skills\b/g, () => c.shortcuts, 'emitting shortcuts'],
-  [/\b(\d+) (?:verb-first )?(?:shortcut )?doorways\b/g, () => c.shortcuts, 'emitting shortcuts'],
+  [/\b(\d+) (?:verb-first |generated )?(?:shortcut )?doorways\b/g, () => c.shortcuts, 'emitting shortcuts'],
+  // The corpus total stated as a TREE-DIAGRAM cell or as a parenthesised decomposition header.
+  // `skills/ (N)` above carries a `(?<![\w/*])` lookbehind so that `site/scripts/skills/* (12)`
+  // (a module count) is not read as a skill count -- but the same lookbehind also rejects
+  // `canonical/skills/* (111)`, which IS one, and that is the form module-map.md stated it in.
+  // Naming the canonical path explicitly keeps the site/scripts exclusion intact.
+  [/canonical\/skills\/`?\s*\((\d+)\)/g, () => c.directories, 'corpus total'],
+  // "one dir per skill (111 total: 19 curated … + 64 … + 30 …)". Every PART of that sum was
+  // already checked and correct; only the total was wrong, and no pattern read a bare `N total`.
+  [/skills?\s*\((\d+) total\b/g, () => c.directories, 'corpus total'],
   [/\b(\d+)-row (?:shortcut )?catalog\b/g, () => c.catalogRows, 'catalog rows'],
   [/\b(\d+) catalog skills\b/g, () => c.catalogRows, 'catalog rows'],
   [/\b(\d+) shortcut-catalog skills\b/g, () => c.catalogRows, 'catalog rows'],

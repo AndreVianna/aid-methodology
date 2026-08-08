@@ -303,8 +303,11 @@ until the computed grade meets the project minimum. CONFIRMED: `docs/aid-methodo
 - **Grade scale:** A+ down to F, with an E band reserved for CRITICAL-severity findings.
   CONFIRMED: `.aid/settings.yml` (the `review.minimum_grade` comment listing
   `A+, A, … E+, E, E-, F`).
-- **Minimum:** `review.minimum_grade` (global default `A`), with per-skill overrides (this
-  project pins `summary.minimum_grade: A+`). CONFIRMED: `.aid/settings.yml`.
+- **Minimum:** `review.minimum_grade` (global default `A`), with per-skill overrides in the
+  resolver — though this project pins none and cannot: its settings are flat
+  `format_version: 3` and `lint-settings.sh` S8 rejects any top-level key the template does not
+  seed. The live global is `B-`. CONFIRMED: `.aid/settings.yml`;
+  [quality-gates.md](quality-gates.md) § Minimum-Grade Thresholds.
 - **Reviewer-tier invariant:** the reviewer's model tier is always ≥ the executor's; the agent
   that writes never grades its own work. CONFIRMED: `docs/aid-methodology.md` ("## 5. The Agent
   Model"). See the agent tiers in [architecture.md](architecture.md).

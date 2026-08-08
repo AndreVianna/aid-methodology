@@ -123,7 +123,52 @@ ticket_ref: "--"
   `kb-citation-lint.sh` reports under `aid-discover/references` — two of which had *already* drifted
   (`lookup_list` is at `:170`, not the cited `:197`). That lint defaults to `.aid/knowledge`, so nothing
   was policing them; it is now clean over that directory.
-- **State:** cycle 11's fixes are ungraded until a fresh reviewer runs.
+- **Cycle 12 (graded 2026-07-31, tree `51d730da`+):** **D+** — 1 `[HIGH]` + 7 `[MEDIUM]` + 1 `[LOW]`.
+  Ledger: `.aid/.temp/review-pending/execute-delivery-015-cycle12.md`. Read together with the
+  delivery-013 and delivery-014 gates that ran the same day, **20 of the 32 findings across the
+  three were one shape**: a fact stated in two or more places with one copy updated. Each had been
+  *created by the previous fix* — moving `minimum_grade` to `B-` falsified the KB's
+  `quality-gates.md`; adding two skills falsified 42 count claims at once.
+- **Cycle 12 FIX, part 1 (`d4af0528`, 2026-07-31):** built the generalised cure instead of closing
+  the rows one at a time — `derived-values.mjs` (registry) + `check-derived-values.mjs` (engine) +
+  `test-derived-values.sh` (11 assertions, 7 mutations).
+- **Cycle 12 FIX, part 2 (2026-08-07):** part 1 closed **only a subset**, and the new guard reported
+  `all 168 agree` over the instances that survived — three blind spots, each of exactly the shape the
+  guard exists to catch:
+  `agent-count` required the noun **plural**, so `module-map.md`'s contract could read "9 agent
+  directories" untouched; every `minimum_grade` pattern required the word **is**, so
+  `summary.minimum_grade: A+` stood CONFIRMED in two KB docs against a `settings.yml` that has never
+  held a `summary:` key and *cannot* (S8/Q19); and in `check-skill-counts.mjs` a lookbehind meant to
+  exclude `site/scripts/skills/* (12)` also excluded `canonical/skills/* (111)`, `(N total:` had no
+  pattern at all, and the first term of every `A + B + C` decomposition fell outside the
+  bare-`curated` follow set. **Both guards extended, then the class re-swept:** 7 stale sites, all
+  fixed. New assertions, every one mutation-proved: `DV12`–`DV14` (11→14) and `SC02`–`SC05` (1→5,
+  the skill-count suite having had **no** mutation control at all — a single green-run assertion that
+  could not distinguish "every count agrees" from "no pattern matches").
+  **`DV14` guards the guard:** the per-skill-pin pattern compares against the GLOBAL bar, which is
+  only correct while no override exists, so `buildRegistry` now THROWS if `settings.yml` ever grows
+  one rather than quietly reporting a legitimately-different override as wrong.
+  **Two findings collided and had to be sequenced.** Row 7 moves `KB-02`, `NAR-08` and `EXE-09` from
+  `SHOULD` to `MUST` (their cited criteria all say MUST in as many words) — which moves their
+  severity anchors to `Step 2` and so *changes the correct answer for row 4*, whose fix restates
+  `KB-02`'s anchor in prose. Catalog first, prose second. It also made a **third** ledger-schema
+  example row non-conformant (`NAR-08`/`[LOW]`) that the reviewer had explicitly cleared; the
+  17 example rows tree-wide were re-swept after the change, and now carry 0 violations.
+  **Class sweeps, not the named instances:** the em-dash `Line` cell was fixed in all four rows; the
+  grade-behaviour claim was re-measured against `grade.sh` (`[HIGH]`→`D+`, `[MEDIUM]`→`C+`,
+  `[LOW]`→`B+`) and the repo swept for other grade assertions (no others stale); and row 9's
+  exit-code-header class was swept across `scripts/{summarize,config,kb}` — `manual-checklist.sh` and
+  `kb-teachback-questions.sh` fixed, **11 pre-existing scripts recorded as tech-debt `W3-1`** rather
+  than folded into this gate, because none is in this delivery's change surface.
+  **Not fixed, and why:** row 1's `kb.html:3408` extent ("requires A+ for all KB documents") is a
+  GENERATED artifact whose content pass is delivery-016's declared scope; editing the render instead
+  of regenerating it is the F2 defect. Recorded there, not silently dropped.
+- **Verification:** `derived-values` 14/14 · `skill-counts` 5/5 (218 claims) · `review-rubrics` 28/28
+  · `reviewer-conformance` 33/33 · `modality-gate` 23/23 · `dogfood-byte-identity` 755/755 after
+  render + dogfood resync of 12 files — four of which (`lint-frontmatter.sh`, `spot-check-facts.sh`,
+  `tier-model.md`, `agent-prompts.md`) `d4af0528` had edited in `canonical/` and **never rendered**,
+  so the byte-identity gate would have failed in CI on that commit alone.
+- **State:** cycle 12's fixes are ungraded until a fresh reviewer runs.
 
 ---
 
