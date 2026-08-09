@@ -209,11 +209,56 @@ or worse; `[LOW]`/`[MINOR]` at the end" — are the same statement.
 | definition/task-set-discharges-upstream-obligation | criteria | Answered | 0 | 0 | aid-detail REVIEW, delivery-016/017/018 task DETAIL.md files (detail-016-018 cycle 1, G-001) | review-rubrics/definition.md declared no rule for universal taxonomy class 3 (Unmet criterion) applied to a delivery's own gate criteria, so an obligation that NO task in the delivery discharges could not be written as a finding. The /aid-detail reviewer brief demanded exactly that check ('Every delivery gate criterion is discharged by at least one task') while the catalog could not express it. Two live instances: delivery-016 BLUEPRINT's Inherited defect (kb.html:3408) carried by neither task, and delivery-017 BLUEPRINT's 'AC-14 holds on fixtures failing in both directions' carried by none of its four. | 2026-08-08, human decision: add the missing rule. DEF-08 added to review-rubrics/definition.md, citing INDEX.md universal taxonomy class 3 (Unmet criterion) exactly as DEF-04 cites class 2, so no criterion is invented. MUST / judgment / Step 2, banded one-confined -> [MEDIUM], several -> escaped -> [HIGH]. Verified by SEV05 (84 catalog rows, all in band). The two live instances now grade as ordinary DEF-08 findings. |
 | definition/work-artifact-claim-contradicted-by-disk | criteria | Answered | 0 | 0 | aid-detail REVIEW cycle 2, delivery-016/017/018 task DETAIL.md files (G-001) | Nothing in the Definition family lets a reviewer report that a task DETAIL's Scope prose states a repository fact that disk contradicts, when every identifier in it resolves. INDEX.md's per-class ladder gives TASK an intent authority of SPEC/BLUEPRINT and a manner authority of the KB, so the repository is on neither: DEF-04 needs a higher-authority artifact, DEF-06 only asks whether identifiers resolve, and DEF-07's declaring section is scoped to KB primary docs. Live instance: delivery-017 task-002's Scope claims one aid-deep-review RESOLVE site covers 'every definition skill plus aid-review plus the shortcut engine', while grep -c aid-deep-review over aid-review/SKILL.md and aid-describe/ both return 0. | 2026-08-08, human decision: add the rule. DEF-09 added to review-rubrics/definition.md -- every factual claim a work artifact makes about the repository holds on disk. MUST / judgment / Step 2. Cites authoring-conventions.md § Citation Rule (Durable Anchors), the same section narrative.md's NAR-01 cites: the narrative family already carried this rule and Definition simply lacked its analogue, so no criterion is invented. Resolution is DEF-06; truth is DEF-09. |
 | definition/task-scope-already-discharged-on-disk | criteria | Declined | 0 | 0 | aid-detail REVIEW cycle 3, delivery-016/017/018 (G-001, NON-BLOCKING) | review-rubrics/definition.md has no rule saying a task's Scope item and its acceptance criterion must name work not ALREADY discharged on disk. DEF-08 is the inverse case (a criterion no task carries) and DEF-09 needs a falsifiable claim, which a bare Scope noun phrase does not make. Live instance: delivery-016 task-001 Scope bullet 3 and AC-3 ('The registry states both kinds for this class') were already satisfied when the task was written -- review-rubrics/INDEX.md:179 reads '\| 2026-08-09, human decision: DECLINED. No rule is added for a task whose Scope and acceptance criteria were already satisfied on disk when written. The delivery gate still checks the criterion, so a pre-satisfied task costs wasted motion rather than a defect, and a new judgment rule is added surface for a review loop that took seven cycles to stabilise. The live instance (delivery-016 task-001 Scope bullet 3 and AC-3, satisfied by review-rubrics/INDEX.md:179 via commit 0dc1fa56) stands as written. Must NOT be re-raised by a reviewer. | **A + E** \|', introduced by commit 0dc1fa56 closing delivery-004. | Raised 2026-08-08 as [GAP:CRITERIA:NB] -- deliberately non-blocking, so it does not hold the grade. Two options the reviewer put: (a) add a Definition-family rule 'a task's Scope and acceptance criteria name work not already discharged on disk', MUST/judgment/Step 2, declared against pipeline-contracts.md § Phase Input/Output Contracts (the criterion DEF-02 already cites); or (b) Decline, on the grounds that a criterion satisfied early is harmless because the delivery gate still checks it. Awaiting a human decision; must NOT be re-asked by a reviewer in the meantime. |
-| def09/whitespace-normalisation-in-quoted-strings | criteria | Pending | 0 | 0 | aid-detail REVIEW cycle 4, delivery-018/task-002 (G-001, NON-BLOCKING) | No declared rule says whether a quoted string reproduced in a work artifact must match its source byte-for-byte in WHITESPACE. delivery-018/task-002 quotes 'artifacts: PLAN.md and every delivery BLUEPRINT.md' with one space where both aid-plan files carry five, so a literal grep -c returns 0/0 while the label-free fragment returns 1/1. AC-14 and delivery-017/task-001 mandate EMPHASIS normalisation and are silent on whitespace, so DEF-09 can be neither applied nor dismissed. | Raised 2026-08-08 as [GAP:CRITERIA:NB] -- non-blocking, holds no grade. Resolving it means deciding in authoring-conventions.md whether the attributed-quote check normalises runs of whitespace (as it already normalises emphasis), then aligning AC-14 and delivery-017/task-001 to that decision. Notably this is delivery-017's OWN subject matter, so the decision belongs with that delivery's execution rather than ahead of it. Must NOT be re-raised by a reviewer meanwhile. |
+| def09/whitespace-normalisation-in-quoted-strings | criteria | Answered | 0 | 0 | aid-detail REVIEW cycle 4, delivery-018/task-002 (G-001, NON-BLOCKING) | No declared rule says whether a quoted string reproduced in a work artifact must match its source byte-for-byte in WHITESPACE. delivery-018/task-002 quotes 'artifacts: PLAN.md and every delivery BLUEPRINT.md' with one space where both aid-plan files carry five, so a literal grep -c returns 0/0 while the label-free fragment returns 1/1. AC-14 and delivery-017/task-001 mandate EMPHASIS normalisation and are silent on whitespace, so DEF-09 can be neither applied nor dismissed. | 2026-08-09, human decision: FORMAT DOES NOT MATTER, MEANING DOES. Whitespace does not matter; neither does exact wording, emphasis, or any other formatting or irrelevant detail. The criterion for an attributed quote is SEMANTIC FIDELITY -- the quoted content must mean exactly what the source intends. A reworded quote that preserves the source's meaning is correct; a byte-perfect quote that misrepresents intent is the defect. This answers the whitespace question by dissolving it: normalisation rules (whitespace, emphasis) are the wrong axis entirely. The delivery-018 task-002 instance ('artifacts: PLAN.md and every delivery BLUEPRINT.md', one space vs five) is therefore NOT a defect -- the meaning is identical. CONSEQUENCE, exposed not decided: feature-008's FR-G3 is a literal substring check with emphasis/whitespace normalisation, which cannot express semantic fidelity; the same disposition FR-G4 already took (SPEC section 3, 'a review rule, not a lint check') is now an open question for FR-G3. Raised as Q25. |
 ## Cross-phase Q&A
 
 <!-- DERIVED -- union of per-delivery Q&A plus WORK-OWNER-AUTHORED entries below
      (work owner is the single writer for those). -->
+
+### Q25 -- `FR-G3` checks bytes, but the criterion is now meaning (2026-08-09)
+
+- **Category:** Requirement/implementation mismatch, created by a decision
+- **Impact:** Medium — it changes what feature-008 delivers, and delivery-017 executes it
+- **Status:** **Answered** 2026-08-09 — the lint becomes a cheap pre-filter; judgment decides on a miss
+
+**What was found.** Answering gap `def09/whitespace-normalisation-in-quoted-strings` established that
+an attributed quote is judged on **semantic fidelity**: the content must mean exactly what the source
+intends, and formatting — whitespace, emphasis, exact wording — is irrelevant.
+
+`FR-G3` as specified cannot express that. Its check is literal: *"for each `*"…"*` span, if a
+backticked file citation precedes it on the same line, the quoted text **must** appear in that file"*,
+with both sides stripped of emphasis and whitespace-collapsed first. That is a substring test. A
+faithful paraphrase fails it; a byte-perfect quote that inverts the source's meaning passes it. **Both
+error directions are wrong under the new criterion.**
+
+**The precedent is already in the same SPEC.** § 3 dispositions `FR-G4` as *"a review rule, not a lint
+check"* because counting occurrences was not mechanically reachable. Semantic fidelity is less
+mechanically reachable than counting, not more.
+
+**What is at stake beyond the rule.** § 4 carries a design note — *"a quote that must survive FR-G3
+should be a short fragment from a single source line"* — and `delivery-017/task-003` carries that
+guidance as scope. That guidance exists **only because** the check is literal. If `FR-G3` becomes a
+judgment rule, the guidance is solving a problem that no longer exists.
+
+**Answer (2026-08-09, human decision).** **`FR-G3` becomes a cheap pre-filter, not a gate.** A
+substring hit proves fidelity and exits early — cheap, mechanical, and sound in that direction. A
+**miss escalates to reviewer judgment rather than failing**, because a miss means only "not byte-
+identical", which under the meaning criterion proves nothing. The lint keeps the part that is
+genuinely mechanical; meaning goes where only judgment reaches it.
+
+**Consequences that follow, to be carried by delivery-017.**
+- `FR-G3`'s exit contract changes: a miss is no longer a failure. `[UNATTRIBUTED-QUOTE]` is already
+  advisory; the missed-quote case joins it rather than setting a non-zero exit.
+- **The short-fragment guidance survives, with its rationale rewritten.** It is no longer a rule for
+  passing a gate — it is advice for making the *cheap path* succeed, so fewer quotes escalate.
+  `delivery-017/task-003` keeps it in scope; only the reason it gives changes.
+- Emphasis/whitespace normalisation stays, but demoted: it widens the pre-filter's hit rate. It is no
+  longer load-bearing, because a normalisation miss no longer decides anything.
+- A judgment rule is needed for the escalated case. `FR-G4`'s disposition (§ 3) is the precedent for
+  how to declare one without inventing a criterion.
+
+Options declined: re-dispositioning `FR-G3` as a *pure* review rule (throws away a sound, cheap check
+and the guidance with it), and keeping it literal (enforces a criterion the owner rejected).
 
 ### Q24 -- this work states a bar of `A` that no gate enforces (2026-08-08)
 
