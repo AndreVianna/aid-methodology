@@ -736,12 +736,40 @@ process spawning should be treated as the default suspect** whenever something i
 
 - **Category:** Design-Decision / scope-shaping
 - **Impact:** High
-- **Status:** **Answered** 2026-08-09 — (a)-(d) ratified from disk; **(f) decided: merge into
-  `/aid-review`, drop `/aid-audit`**; (e) remains open and is tracked as `Q7 #4`
+- **Status:** **Answered** 2026-08-09 — **(a) REVISED: ONE skill, not two**; (b)-(d) ratified from
+  disk; (f) decided; (e) remains open and is tracked as `Q7 #4`
+- **(a) REVISED (2026-08-09, human decision) — supersedes the 2026-07-27 two-skill answer.**
+  **There is exactly one review skill: `/aid-review`.** `aid-deep-review` and `aid-light-review` both
+  merge into it, and `/aid-audit` is eliminated. Neither of the two new skills has ever shipped
+  (`git ls-tree origin/master canonical/skills/` returns **only `aid-review`**), so this is prevention,
+  not migration — no adopter ever sees `aid-deep-review` or `aid-light-review`.
+  **The cheap screening pass survives; only the second *skill* goes.** It becomes an **explicit named
+  entry path** of `/aid-review`, not a `depth` flag. The 2026-07-27 rationale for two skills — *"a
+  single skill with a `depth` flag would put both behaviours behind one entry point, and the failure
+  mode is silent"* — is honoured rather than overturned: the objection was to **silence**, and named
+  entry paths are not silent. A `depth` flag remains rejected.
+  **Three entry paths must be explicit, because there are now three callers, not two:** (1) a human
+  invoking `/aid-review` ad-hoc on an arbitrary artifact, with **no manifest**; (2) a pipeline skill
+  chain-calling the graded gate **with a full manifest**, where a missing field is *"a caller error,
+  not something to infer"*; (3) the **screening** pass — `FR-C9`'s up-front precondition scan that
+  batches gaps before the graded pass. Inferring which is intended would reproduce exactly the failure
+  this answer preserves.
+  **What this deliberately does NOT cut.** `aid-screener` stays (10-agent roster stands; it is cited in
+  9 files including `architecture.md` and `decisions.md`, and **delivery-010 already shipped `Done`**
+  splitting the agent boilerplate precisely so the screener would not inherit the exhaustiveness
+  mandate — cutting it would make that delivery work done for nothing). `FR-C9`'s primary path stands,
+  so gap resolution does **not** revert to mid-review interruption. `AC-13`/`NFR-3`'s cost claim keeps
+  its subject: light + deep still costs less than deep alone, now measured across two entry paths of
+  one skill rather than two skills.
+  **Amendments this forces, not yet applied:** `FR-A1` states the split as *"two skills"* and must be
+  amended to one skill with named entry paths; `FR-A2`, `FR-A4`, `FR-A5` and `FR-C9` survive intact but
+  their `aid-light-review` references must be re-pointed at the screening entry path.
 - **(f) Answer (2026-08-09, human decision).** **`/aid-deep-review` merges INTO `/aid-review`** — that
-  direction, not the reverse — and **`/aid-audit` is eliminated**. End state: **two** review skills,
-  `/aid-review` (deep, the default) and `/aid-light-review` (the cheap pass), with `/aid-triage`
-  routing between them.
+  direction, not the reverse — and **`/aid-audit` is eliminated**. **Superseded within the hour by the
+  `(a)` revision above:** `aid-light-review` merges in as well, so the end state is **one** review
+  skill, `/aid-review`, with named entry paths — leaving `/aid-triage` nothing to route *between*, and
+  reducing its obligation to naming the single skill. The reasoning below stands unchanged; only the
+  count does.
   **Why this direction is cheaper than the reverse, which was the option originally put.**
   `git ls-tree origin/master canonical/skills/` returns **only `aid-review`** — `aid-audit`,
   `aid-deep-review` and `aid-light-review` are all absent upstream. So (i) eliminating `/aid-audit` is
