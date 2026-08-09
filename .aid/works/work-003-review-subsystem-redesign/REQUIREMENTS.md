@@ -102,12 +102,12 @@ Six problems, all observed in the current codebase:
 
 | ID | Modality | Requirement |
 |----|----------|-------------|
-| FR-A1 | MUST | Review is extracted into **two skills** -- `aid-light-review` (screening) and `aid-deep-review` (gate) -- over **two agents**: a new `aid-screener` (small tier; read-only `Read, Glob, Grep` with **no** `Bash`) and the retained `aid-reviewer` (deep). Pipeline skills chain-call the skills instead of carrying review logic inline. The agent roster grows from 9 to 10 -- a deliberate revision of a KB-recorded count, not a violation of it. |
-| FR-A2 | MUST | `aid-light-review` computes **no grade**, runs a single pass at cheap tier/effort, and reports findings above a configurable severity floor plus any precondition gaps. |
-| FR-A3 | MUST | `aid-deep-review` runs the full severity sweep, writes the ledger, computes the grade via `grade.sh`, and drives the FIX loop with its circuit breaker. |
+| FR-A1 | MUST | Review is extracted into **one skill** -- `/aid-review` -- carrying **two named entry paths**: **screening** (cheap, ungraded) and **gate** (graded), over **two agents**: a new `aid-screener` (small tier; read-only `Read, Glob, Grep` with **no** `Bash`) and the retained `aid-reviewer` (gate). Pipeline skills chain-call the skill instead of carrying review logic inline. The agent roster grows from 9 to 10 -- a deliberate revision of a KB-recorded count, not a violation of it. **AMENDED 2026-08-09** (`STATE.md` Q1(a) revision): as written this mandated **two skills**, `aid-light-review` and `aid-deep-review`. Neither ever shipped -- `git ls-tree origin/master canonical/skills/` returns only `aid-review` -- so consolidating is prevention, not migration, and no adopter sees a retired name. The **entry paths must be named, never inferred**: the 2026-07-27 rejection of a `depth` flag stands, because its objection was to *silent* selection, and a named path is not silent. Both agents and the 10-agent roster are unaffected; `aid-screener` in particular stays, since delivery-010 shipped the boilerplate split precisely so it would not inherit the exhaustiveness mandate. |
+| FR-A2 | MUST | The **screening entry path** computes **no grade**, runs a single pass at cheap tier/effort, and reports findings above a configurable severity floor plus any precondition gaps. **AMENDED 2026-08-09** (Q1(a)): the subject was `aid-light-review`; the behaviour is unchanged and now belongs to a named entry path of `/aid-review`. |
+| FR-A3 | MUST | The **gate entry path** runs the full severity sweep, writes the ledger, computes the grade via `grade.sh`, and drives the FIX loop with its circuit breaker. **AMENDED 2026-08-09** (Q1(a)): the subject was `aid-deep-review`; the behaviour is unchanged and now belongs to a named entry path of `/aid-review`. |
 | FR-A4 | MUST | A clean light pass never shortens, replaces, or pre-clears the deep pass. It may only add findings. |
 | FR-A5 | MUST | Deep review performs its own gap detection. It must not assume light review already ran. |
-| FR-A6 | MUST | Calling skills invoke the two review skills instead of carrying their own dispatch logic and brief template. Each calling skill gets measurably shorter. |
+| FR-A6 | MUST | Calling skills invoke `/aid-review` at the entry path they need, instead of carrying their own dispatch logic and brief template. Each calling skill gets measurably shorter. **AMENDED 2026-08-09** (Q1(a)): read *"the two review skills"*. |
 | ~~FR-A7~~ | ~~SHOULD~~ | ~~Both skills are invocable by any skill, including ones that do not exist yet.~~ **CUT 2026-07-27.** An aspiration with no test — "invocable by a skill that does not exist" cannot be falsified. Nothing else in feature-006 depends on it; the feature drops to 11 FRs. |
 | FR-A8 | SHOULD | Review is the terminal portion of a calling phase, so a calling skill **chains forward** into the review skill rather than expecting control to return. This keeps the extraction inside the existing forward-only state contract. |
 | FR-A9 | MUST | `agent-boilerplate.md` splits into an **operational** block (heartbeat, cooperative stop-poll -- every agent) and a **discipline** block (adversarial self-review, "enumerate the class", "find nothing more to find" -- deep-review agents only). `aid-screener` must NOT inherit the exhaustiveness mandate: an instruction to be exhaustive is behaviourally incompatible with a cheap bounded pass, and the exhaustive instruction wins. |
@@ -144,13 +144,15 @@ Six problems, all observed in the current codebase:
 | FR-C6 | MUST | The reviewer never writes the fix. Another agent performs the update. |
 | FR-C7 | MUST | Gap-resolution reviews run in a restricted mode with a depth limit, so a gap raised while resolving a gap cannot recurse without bound. |
 | FR-C8 | MUST | Gaps are batched -- detect all, ask once -- never one interruption per gap. |
-| FR-C9 | MUST | `aid-light-review` is the up-front precondition scan that produces the batch. Resolving gaps **before** the graded pass is the primary path, so the common case needs no mid-review interruption at all. |
+| FR-C9 | MUST | The **screening entry path** is the up-front precondition scan that produces the batch. Resolving gaps **before** the graded pass is the primary path, so the common case needs no mid-review interruption at all. |
 | FR-C10 | MUST | Missing **criteria** halts and asks, universally -- including `aid-discover`. There is no relax-and-continue exception. |
 | FR-C11 | MUST | Missing **evidence** is a different axis and does not halt. Greenfield evidence-substitution is retained, because a greenfield project cannot produce as-built evidence for a design it has not built yet. |
 
 **Resolved sequencing (replaces the call-and-return problem).** The primary flow is
-`aid-light-review` -> gaps batched -> HALT with the resolution commands -> user resolves
--> `aid-deep-review` -> grade. This uses only forward chaining and halts. The coverage
+`/aid-review` **screening** -> gaps batched -> HALT with the resolution commands -> user
+resolves -> `/aid-review` **gate** -> grade. This uses only forward chaining and halts.
+The two named entry paths replace the two skills this flow was first written against
+(**amended 2026-08-09**, Q1(a)); the sequencing itself is unchanged. The coverage
 manifest in the ledger survives the halt (the ledger is deleted only at DONE), so
 re-invoking resumes rather than restarting. When deep review finds a gap anyway
 (FR-A5), it halts and re-invokes -- already the house idiom for "another skill must
