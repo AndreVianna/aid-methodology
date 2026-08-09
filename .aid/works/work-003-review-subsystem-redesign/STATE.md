@@ -326,6 +326,11 @@ genuinely mechanical; meaning goes where only judgment reaches it.
   longer load-bearing, because a normalisation miss no longer decides anything.
 - A judgment rule is needed for the escalated case. `FR-G4`'s disposition (§ 3) is the precedent for
   how to declare one without inventing a criterion.
+- **`AC-14` and `FR-G3` must be amended, and delivery-017 carries that.** Added 2026-08-09 after a
+  plan review found this consequence list had no entry for it: the re-disposition had been applied
+  to delivery-017's BLUEPRINT alone, leaving `REQUIREMENTS.md`'s `AC-14` (a **MUST**), feature-008's
+  `FR-G3`, and both task `DETAIL.md` files still asserting the byte criterion. A decision recorded
+  in one artifact and contradicted in four is the defect this work exists to remove.
 
 Options declined: re-dispositioning `FR-G3` as a *pure* review rule (throws away a sound, cheap check
 and the guidance with it), and keeping it literal (enforces a criterion the owner rejected).

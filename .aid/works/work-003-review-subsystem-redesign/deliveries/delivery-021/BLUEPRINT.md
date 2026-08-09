@@ -1,0 +1,71 @@
+# Delivery BLUEPRINT -- delivery-021: Greenfield split and record corrections
+
+> **Delivery:** delivery-021
+> **Work:** work-003-review-subsystem-redesign
+> **Created:** 2026-08-09
+
+---
+
+## Objective
+
+Deliver the greenfield criteria-vs-evidence split that `delivery-007` closed `Done` without
+delivering, and correct two statements in this work's own record that disk contradicts. Scoped as a
+distinct unit because reopening a closed delivery would rewrite what its gate actually certified --
+and the fact worth preserving is precisely that a delivery's recorded scope outran what was
+performed.
+
+## Scope
+
+- The greenfield criteria-vs-evidence edit at `canonical/skills/aid-discover/references/
+  document-expectations.md` lines 50-52. `feature-004`'s SPEC claims regions 13-19 and 36-54;
+  work-003 never touched that file -- its newest commit is from work-023 -- and `grep -i resolvable`
+  returns nothing.
+- `Q5` decision 7's text: it reads *"restart, not resume"*, which `Q6` proposal 3 consciously
+  reversed. `criteria-gap-protocol.md` ships *"coverage rows resume rather than restart"*, so the
+  entry's TEXT is wrong, not merely its status.
+- `Q8` N3's carrier claim: it asserts *"Each feature SPEC now carries this note"* about the AC-12
+  parity gate. `grep -c AC-12` across the eight returns `1,1,0,0,0,7,0,0` -- three of eight. The
+  decision is sound; the claim about where it is recorded is false.
+
+**Out of scope:** reopening `delivery-007` or any other delivery that has closed; the AC-12 parity gate's own
+design, which is sound and is not revisited here.
+
+## Gate Criteria
+
+- [ ] `document-expectations.md` carries the criteria-vs-evidence split, and the universal rule it
+      implements (`[GAP:CRITERIA]` blocks everywhere, `[GAP:EVIDENCE]` does not) is stated where a
+      greenfield reviewer will read it
+- [ ] The regions `feature-004`'s SPEC names for this edit resolve to text that exists **after** the
+      edit lands -- i.e. the SPEC's claim becomes true because the edit was made, not because the
+      SPEC was rewritten. This delivery edits `document-expectations.md`, never the SPEC
+- [ ] `Q5` decision 7 states the resume behaviour that shipped, and cites `Q6` as the supersession
+- [ ] `Q8` N3 states a measured carrier set rather than a universal claim, and each figure it gives
+      is re-derived at the time of the edit rather than copied from this criterion -- the BLUEPRINT
+      total moved from 18 to 23 while this delivery was being planned, which is exactly how the
+      original claim went stale
+- [ ] No delivery whose `delivery_state` is `Done` is modified by this delivery
+- [ ] All section-6 quality gates pass
+
+## Tasks
+
+_Derived from `tasks/task-NNN/DETAIL.md`. Written by `aid-detail`; empty until it runs._
+
+| Task | Type | Wave | Title |
+|------|------|------|-------|
+| _none yet_ | | | |
+
+## Dependencies
+
+- **Depends on:** delivery-007
+- **Blocks:** delivery-022
+
+## Notes
+
+**These are not new defects; they are decided work that was never built, found by triaging eight
+stale `Pending` Q&A entries against disk on 2026-08-09.** The stale `Status` field was the trivial
+finding. The real one was that four decisions read as settled in prose while disk disagreed, each
+inside a delivery that closed `Done` or `Gated`.
+
+**Same class as `Q22`, from the other end.** There, a delivery was marked `Gated` with no gate ever
+run. Here, a gate *did* run, over a delivery whose recorded scope included work nobody performed.
+In both cases the tracking said the work was complete and no artifact of it exists.

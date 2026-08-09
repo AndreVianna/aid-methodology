@@ -2,7 +2,8 @@
 
 > **Work:** work-003-review-subsystem-redesign
 > **Created:** 2026-07-28
-> **Deliveries:** 18 (re-cut from the 26 the eight feature SPECs recommend)
+> **Deliveries:** 23 -- 18 re-cut from the 26 the eight feature SPECs recommend, plus five added
+> 2026-08-09 to carry decisions taken after the plan was first graded (019-023)
 
 ---
 
@@ -29,9 +30,10 @@ Three obligations follow, and each spine delivery carries them as gate criteria:
 3. **No new script.** The assertion is a diff check, not tooling.
 
 **Standalone-functional vs enabling.** The methodology's "every delivery is an MVP" rule holds for
-**15 of 18**. Three ship no user-visible capability on their own and are labelled **enabling**
-rather than dressed up as MVPs: **001** (baseline and fix-first), **005** (the eighth column), and
-**010** (the boilerplate split, whose success criterion is an *empty diff*).
+**19 of 23**. Four ship no user-visible capability on their own and are labelled **enabling**
+rather than dressed up as MVPs: **001** (baseline and fix-first), **005** (the eighth column),
+**010** (the boilerplate split, whose success criterion is an *empty diff*), and **023** (the host
+chaining confirmation, whose output is evidence rather than capability).
 
 ---
 
@@ -204,6 +206,82 @@ rather than dressed up as MVPs: **001** (baseline and fix-first), **005** (the e
 - **Kind:** standalone
 - **Note:** the work's only `Should`, placed last so every `Must` precedes it.
 
+### delivery-019: Criteria and catalog additions
+- **What it delivers:** three checks a reviewer is told to perform become reportable findings, and
+  one becomes reportable for the first time. Authors the temp-file/trap convention in
+  `coding-standards.md § Shell (Bash) Conventions` and adds `EXE-14` citing it; adds the two
+  kb-anatomy rules whose criteria already exist; authors item 11 in
+  `kb-authoring/review-rubric.md § Rubric: Full Primary` and adds its rule.
+- **Features:** feature-002 (catalog extension)
+- **Depends on:** delivery-004
+- **Priority:** Must
+- **Track:** free
+- **Kind:** standalone
+- **Note:** under the No-Criterion-no-row contract these checks are currently **unwritable** — a
+  reviewer that finds one can only re-register the same criteria gap, cycle after cycle. Two of the
+  three need no KB edit; the temp-file rule and item 11 each author a criterion first, then cite it.
+
+### delivery-020: Ledger sighting log
+- **What it delivers:** a durable ledger row keeps a short list of one-line problem statements, one
+  per sighting, instead of only a status and a count — so a new defect at an already-visited
+  `(Doc, Rule)` key is distinguishable from the same defect returning.
+- **Features:** feature-003 (amendment)
+- **Depends on:** delivery-009
+- **Priority:** Must
+- **Track:** free
+- **Kind:** standalone
+- **Note:** the FIX circuit breaker is declared as non-improvement — *"each cycle closing more than
+  it opens"* — and today nothing can compute it: the durable row freezes its description at first
+  sighting, and `§ DONE` deletes the scratch files that hold the per-cycle text. Measured on this
+  this work's own `/aid-detail` review. The derivation matters, because a naive row count double-counts: the durable ledger **copies** the first sighting's description, so it overlaps the scratch ledgers. Counting cycle 1's 6 durable rows plus the 10 rows in the cycle-2..7 scratch files gives **16 sightings** over **12 distinct `(Doc, Rule)` keys**, and comparing scratch against scratch gives **0 identical descriptions** -- 3 keys were seen more than once and every repeat was textually different. Summing all seven ledgers instead yields 22 rows and 5 apparently-identical descriptions, every one of them the durable row's frozen copy. **That miscount is the defect itself** -- an analyst reading the ledger cannot tell a
+  returning defect from a new one at the same key.
+
+### delivery-021: Greenfield split and record corrections
+- **What it delivers:** the greenfield criteria-vs-evidence split that delivery-007 closed `Done`
+  without delivering, plus the two work-record statements that disk contradicts.
+- **Features:** feature-004 (undelivered scope)
+- **Depends on:** delivery-007
+- **Priority:** Must
+- **Track:** free
+- **Kind:** standalone
+- **Note:** carries decided-but-unbuilt work rather than reopening a closed delivery — reopening
+  would rewrite what that gate actually certified, and the defect worth preserving is precisely that
+  a delivery's recorded scope outran what was performed.
+
+### delivery-022: One review skill
+- **What it delivers:** `aid-deep-review` and `aid-light-review` merge into a single `/aid-review`
+  carrying **two named** entry paths — **screening** (cheap, ungraded) and **gate** (graded), per
+  `FR-A1` as amended. A human invoking `/aid-review` ad-hoc enters the **gate** path with arguments
+  in place of a manifest; that is not a third path. Retires
+  `aid-execute/references/reviewer-guide.md`, which was to have been deleted and never was.
+- **Features:** feature-006 (consolidation)
+- **Depends on:** delivery-016, delivery-017, delivery-018, delivery-019, delivery-020, delivery-021
+- **Priority:** Must
+- **Track:** spine
+- **Kind:** standalone
+- **Note:** **deliberately last.** It renames the skill this work is built around. Three deliveries name it on disk today
+  (`012`, `014`, `017` -- `grep -rl aid-deep-review` over the delivery folders), and 016-021 are
+  authored in its idiom, so running the rename earlier would force work to be written against a name
+  already decided for retirement and then re-written. Neither merged skill has ever shipped: `git ls-tree --name-only
+  origin/master:canonical/skills/` returns 76 names, among them `aid-review` and **neither**
+  `aid-deep-review` **nor** `aid-light-review`. So this is prevention, not migration, and no adopter
+  sees a retired name. The two entry paths must be **named, never inferred**: the rejection of a
+  `depth` flag stands, because its objection was to *silent* selection.
+
+### delivery-023: Host chaining confirmation
+- **What it delivers:** evidence that `/aid-review` is actually reachable by a chain-call on codex,
+  copilot-cli and antigravity — the three hosts where `skill_chaining` has only ever been declared.
+- **Features:** feature-006 (NFR-2)
+- **Depends on:** delivery-022
+- **Priority:** Must
+- **Track:** spine
+- **Kind:** enabling — it ships no capability; it retires an assumption
+- **Note:** runs **after** the merge so it confirms the shape that actually ships, not one being
+  replaced. It cannot be discharged by a canonical test: `RX13`-`RX16` prove the artifacts *render*
+  to all five profiles, which is a different claim from a chain *executing* on three of them. The
+  `skill_chaining = true` lines for those hosts predate this work, so they restate the assumption
+  rather than verify it.
+
 ---
 
 ## Dependency graph
@@ -215,29 +293,41 @@ Edges as an adjacency list, which is unambiguous where ASCII art is not:
 | 001 | -- | 003, 010 |
 | 002 | -- | 017 |
 | 003 | 001 | 004, 013 |
-| 004 | 003 | 005, 014, 015, 017 |
+| 004 | 003 | 005, 014, 015, 017, 019 |
 | 005 | 004 | 006 |
 | 006 | 005 | 007 |
-| 007 | 006 | 008, 009 |
+| 007 | 006 | 008, 009, 021 |
 | 008 | 007 | 015 |
-| 009 | 007 | 011, 012 |
+| 009 | 007 | 011, 012, 020 |
 | 010 | 001 | 011, 012 |
 | 011 | 009, 010 | -- |
 | 012 | 009, 010 | 014, 016, 017, 018 |
 | 013 | 003 | -- |
 | 014 | 004, 012 | -- |
 | 015 | 004, 008 | 016 |
-| 016 | 012, 015 | -- |
-| 017 | 002, 004, 012 | -- |
-| 018 | 012 | -- |
+| 016 | 012, 015 | 022 |
+| 017 | 002, 004, 012 | 022 |
+| 018 | 012 | 022 |
+| 019 | 004 | 022 |
+| 020 | 009 | 022 |
+| 021 | 007 | 022 |
+| 022 | 016, 017, 018, 019, 020, 021 | 023 |
+| 023 | 022 | -- |
 
 Every edge runs from a lower number to a higher one, so the ordering is a valid topological sort.
 **No cycles.**
 
 **Free tracks -- work available while the spine is blocked:** delivery-002 (fully independent),
-delivery-001 (nothing upstream), delivery-010 (needs 001 only), delivery-013 (needs 003 only). That
-is **4 free** and **14 on the spine**; no grouping breaks the spine, because it is a property of one
-file rather than of the grouping.
+delivery-001 (nothing upstream), delivery-010 (needs 001 only), delivery-013 (needs 003 only), and
+the three added 2026-08-09 -- delivery-019 (needs 004 only), delivery-020 (needs 009 only),
+delivery-021 (needs 007 only). That is **7 free** and **16 on the spine**; no grouping breaks the
+spine, because it is a property of one file rather than of the grouping.
+
+**delivery-022 is the one convergence point.** It depends on six deliveries rather than the usual
+one or two, and that is deliberate rather than accidental coupling: it renames the skill each of
+them is written against, so every edge into it exists to stop work being authored against a name
+already decided for retirement and then re-authored. It blocks only delivery-023, which verifies
+the shape 022 produces.
 
 ---
 
@@ -245,12 +335,15 @@ file rather than of the grouping.
 
 | Decision | Resolution |
 |---|---|
-| Group by feature or across features? | **By feature.** Cross-feature merging would internally re-serialize anyway, and it would break the 1:1 delivery-to-SPEC-oracle mapping -- the only mechanical verification this work has. Merged *within* features where a sub-delivery ships nothing alone: 26 -> 18. |
+| Group by feature or across features? | **By feature.** Cross-feature merging would internally re-serialize anyway, and it would break the 1:1 delivery-to-SPEC-oracle mapping -- the only mechanical verification this work has. Merged *within* features where a sub-delivery ships nothing alone: 26 -> 18. Five more were added 2026-08-09 (019-023), taking the plan to 23; they carry decisions, not a re-cut. |
 | Where does the citation lint go? | **Second, ahead of the severity work.** Its own spec: *"D1 depends on nothing and gates nothing."* Every finding across 33 review cycles was a citation or count defect, so catching them mechanically beats paying a review cycle each time. Its fix commit on the eight SPECs is the input every downstream DETAIL reads. |
 | AC-11's provisional status | delivery-012 earns AC-11 **provisionally**; **delivery-014 re-certifies it**, per feature-007's amendment to feature-006. 014 cannot move earlier -- its M2 subtraction sits in a file 012 migrates -- so the re-measure is accepted. |
-| Priority ordering | The work has one `Should` (the BLUEPRINT and specify-section reviews) and it is numbered **last**, so every `Must` precedes it. Nothing forces it earlier: it depends only on delivery-012. |
-| Extra parallelism | **Declined.** Splitting the settings gate out of 014 would add a fourth free track at the cost of another delivery gate. Three free tracks judged sufficient. |
+| Priority ordering | The work has one `Should` (the BLUEPRINT and specify-section reviews, delivery-018). It was numbered last of the original 18; the five added 2026-08-09 are all `Must` and are numbered after it, so it is **no longer last by number**, and **delivery-022 (a `Must`) does depend on it**. The original property therefore no longer holds and is not claimed. What replaces it: 022 is gated on five other deliveries besides 018, so the `Should` is never the binding constraint -- it cannot be what 022 waits on. Nothing forces it earlier: it depends only on delivery-012. |
+| Extra parallelism | **Declined at first cut.** Splitting the settings gate out of 014 would have added another free track at the cost of another delivery gate, and the three free tracks then available were judged sufficient. Superseded in effect on 2026-08-09: deliveries 019, 020 and 021 are each free, taking the plan to **7 free / 16 spine**. The decision not to split 014 stands; the scarcity that motivated it does not. |
 | The WSL gitdir bug | **Leaves this work**, per concern N4. Not review-path. |
+| Where does the skill merge go? (2026-08-09) | **Last, as delivery-022.** Owner decision. It renames the skill deliveries 016-021 are written against, so running it earlier would force each of them to be authored against `aid-deep-review`, then re-authored against `/aid-review`. Placing it last costs one thing knowingly: `delivery-017/task-002`'s Scope is the gate in `aid-deep-review` RESOLVE, so 017 builds under a name 022 then retires. That churn is bounded to a rename sweep 022 performs anyway, whereas the alternative re-details three already-graded deliveries. |
+| Does `FR-G3`'s re-disposition need its own delivery? (2026-08-09) | **No — it amends delivery-017.** `Q25` makes the attributed-quote check a cheap pre-filter whose miss escalates to judgment. That is 017's own subject matter and 017 is still `Pending-Spec`, so a separate delivery would compete with it for the same files. |
+| Why is the host-chaining check a delivery rather than a test? (2026-08-09) | **Because no test can discharge it.** `RX13`-`RX16` prove the artifacts render identically to all five profiles; the open claim is that a chain *executes* on three of them. That needs a host runtime, so it is delivery-023 with an `enabling` kind — it ships no capability, it retires an assumption. |
 
 ---
 

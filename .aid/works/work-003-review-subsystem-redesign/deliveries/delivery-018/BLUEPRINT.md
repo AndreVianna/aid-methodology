@@ -38,7 +38,7 @@ rather than becoming a terminal hand-off.
 ## Dependencies
 
 - **Depends on:** delivery-012
-- **Blocks:** -- (none)
+- **Blocks:** delivery-022
 
 ## Notes
 

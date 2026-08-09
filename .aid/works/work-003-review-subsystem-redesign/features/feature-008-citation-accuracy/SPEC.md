@@ -118,7 +118,7 @@ at by hand and three features late, is what this feature makes a rule.
 
 - **FR-G1** -- the citation validator covers work artifacts, not just the KB
 - **FR-G2** -- a cited line number must be in range
-- **FR-G3** -- a quoted string attributed to a file must appear in that file
+- **FR-G3** -- a quoted string attributed to a file must **mean what that file means** (re-dispositioned 2026-08-09, `Q25`; it read *"must appear in that file"*)
 - **FR-G4** (SHOULD) -- a count claim carries its producing command
 - **FR-G5** (SHOULD) -- line numbers stay permitted where they carry real precision
 - **AC-14** -- a citation in a work artifact resolves
@@ -134,7 +134,7 @@ at by hand and three features late, is what this feature makes a rule.
 
 | ID | Modality | Criterion |
 |----|----------|-----------|
-| AC-14 | MUST | **A citation in a work artifact resolves.** Every `file:NNN` or "`file` lines NNN–MMM" reference points at an existing file with at least NNN lines, and every string presented as a quotation from a named file appears in that file. Verified by a lint over `REQUIREMENTS.md`, `SPEC.md`, `PLAN.md`, `BLUEPRINT.md` and task `DETAIL.md`, on fixtures that fail in both directions. |
+| AC-14 | MUST | **A citation in a work artifact resolves.** Every `file:NNN` or "`file` lines NNN–MMM" reference points at an existing file with at least NNN lines, and every string presented as a quotation from a named file **means what that file means** at the cited place. **AMENDED 2026-08-09** (`Q25`): this read *"appears in that file"*. The criterion is semantic fidelity; the substring test is a cheap pre-filter whose miss escalates to judgment rather than failing. Mirrors `REQUIREMENTS.md`'s `AC-14`, which carries the same amendment. Verified by a lint over `REQUIREMENTS.md`, `SPEC.md`, `PLAN.md`, `BLUEPRINT.md` and task `DETAIL.md`, on fixtures that fail in both directions. |
 
 ---
 
@@ -291,7 +291,17 @@ what protects it is not a lint: it is feature-002 §5's taxonomy class 5 (**Stal
 a whole, plus the **Cross-check** column all seven inventories already carry. **The lint owns the
 evidence citation; the reviewer owns the ownership claim.**
 
-#### FR-G3 — an attributed quote appears in the file
+#### FR-G3 — an attributed quote means what its source means
+
+> **RE-DISPOSITIONED 2026-08-09 (`STATE.md` Q25).** This requirement read *"an attributed quote
+> appears in the file"* and its check below is a literal substring test. The criterion is now
+> **semantic fidelity**, which a substring test cannot express: a faithful reword fails it and a
+> byte-perfect string lifted out of context passes it. So the check below becomes a **cheap
+> pre-filter** -- a hit proves fidelity and exits early, a **miss escalates to reviewer judgment
+> rather than failing**. Emphasis and whitespace normalisation stay, demoted: they widen the
+> pre-filter's hit rate and no longer decide anything. Precedent: `FR-G4` is already dispositioned
+> *"a review rule, not a lint check"* in § 3, and meaning is less mechanically reachable than
+> counting.
 
 **Recognition: an explicit convention, with proximity as the free bonus.** Measured, proximity
 alone reaches 10 of 54 italic-quote constructs (19%); the markdown-blockquote construct reaches 1
@@ -308,9 +318,12 @@ File column and the quote share a line. (A first draft cited feature-002's oracl
 example; none of its oracles actually uses the pattern, so the claim is dropped rather than
 stretched.)
 
-The check: for each `*"…"*` span, if a backticked file citation precedes it on the same line, the
-quoted text **must** appear in that file. If none precedes it → `[UNATTRIBUTED-QUOTE]`, advisory,
-exit code unchanged.
+The check, **as re-dispositioned 2026-08-09 (`Q25`)**: for each `*"…"*` span, if a backticked file
+citation precedes it on the same line, the quoted text is looked for in that file as a **cheap
+pre-filter**. A hit proves fidelity and exits early. A **miss escalates to reviewer judgment and
+does not change the exit code** -- it means only *not byte-identical*, which under the semantic
+criterion proves nothing. If no citation precedes it → `[UNATTRIBUTED-QUOTE]`, advisory, exit code
+unchanged. (This read *"the quoted text **must** appear in that file"*, a byte-identity test.)
 
 **Emphasis normalisation is mandatory, and this is measured rather than anticipated.** Both
 raw-substring failures in the seven A+ specs are emphasis drift, not paraphrase:
@@ -541,7 +554,7 @@ without changing the code, matching the `visual-fidelity` SKIP precedent.
 - **(g) Exemptions preserved in both profiles** — `file.ext:symbol`,
   `concern-model.md:15-doc seed`, `server.mjs:127.0.0.1` silent under `durable` and `resolvable`
   alike. This is the hard-won part being reused; without a fixture per form the reuse is unverified.
-- **(h) Quote presence, both directions, with the negative control** — present → 0; absent → 1;
+- **(h) Quote pre-filter, both directions, with the negative control** — present → 0 (hit, exits early); **absent → 0 with an escalation recorded**, NOT 1 (`Q25`: a miss means only *not byte-identical*, which under the meaning criterion proves nothing, and `delivery-017`'s Gate Criterion 2 forbids a suite asserting that a missing quote fails);
   **present-after-emphasis-normalisation → 0.** The third is the one a weaker suite omits, and
   without it the check ships with two false positives on AID's own specs.
 - **(i) Unattributed quote is advisory** — a `*"…"*` with no preceding citation produces a finding

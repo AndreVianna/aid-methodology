@@ -39,7 +39,7 @@ the answer is durable so a refusal is never re-asked.
 ## Dependencies
 
 - **Depends on:** delivery-006
-- **Blocks:** delivery-008, delivery-009
+- **Blocks:** delivery-008, delivery-009, delivery-021
 
 ## Notes
 
