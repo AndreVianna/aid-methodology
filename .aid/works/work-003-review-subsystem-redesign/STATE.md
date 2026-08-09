@@ -215,6 +215,37 @@ or worse; `[LOW]`/`[MINOR]` at the end" — are the same statement.
 <!-- DERIVED -- union of per-delivery Q&A plus WORK-OWNER-AUTHORED entries below
      (work owner is the single writer for those). -->
 
+### Q24 -- this work states a bar of `A` that no gate enforces (2026-08-08)
+
+- **Category:** Stated-but-unenforced value — the class this work exists to fix
+- **Impact:** Low here, higher as precedent — no grade in this work turned on it
+- **Status:** Open — needs a decision: honour it, delete it, or wire it
+
+**What was found.** This file's frontmatter carries `minimum_grade: "A"` (line 6). Every review gate
+resolves its bar through `read-setting.sh`, whose header states it reads `.aid/settings.yml` and
+which returns **`B-`** for every reviewing caller:
+
+```
+aid-detail B-   aid-plan B-   aid-specify B-   aid-execute B-   aid-define B-
+```
+
+`.aid/settings.yml:10` carries a flat `minimum_grade: B-`. Nothing resolves the work-level key:
+`read-setting.sh` reads only the settings file, and `writeback-state.sh:1437` maps
+`Minimum Grade → minimum_grade` for **writing** the field, not for consuming it as a bar.
+
+**So a reader of this file sees a bar of `A` while every gate in the work enforces `B-`.** That is
+the same shape as `quality-gates.md` claiming a CI lint ran when no workflow invoked it — the defect
+delivery-002 was pulled forward to correct.
+
+**It changed nothing here.** The `/aid-detail` review closed at `A+`, which clears both bars, and
+delivery gates 013-015 are ungraded pending re-gate. No decision in this work rests on the difference.
+
+**Three options, not chosen here.** (a) The work genuinely wants a stricter bar → wire a per-skill or
+per-work override so `read-setting.sh` returns `A`, since the resolution order already provides for
+one. (b) The bar is `B-` and the frontmatter is stale → delete the key so one value has one source.
+(c) The key is meaningful to humans but never to gates → say so explicitly where it is written, so it
+is not read as enforced. **Awaiting a decision.**
+
 ### Q23 -- the ledger cannot support its own circuit-breaker condition (2026-08-08)
 
 - **Category:** Product defect in feature-003's substrate
