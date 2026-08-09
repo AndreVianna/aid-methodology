@@ -1729,8 +1729,8 @@ summarize scoring (`grade-summary.sh` + human JSON).
 
 - **Category:** Requirement-Defect / Design-Decision
 - **Impact:** High (4 blocking) / Medium (rest)
-- **Status:** **Partially answered** — triaged 2026-08-09; **#4 answered (live confirmation
-  scheduled); #11 is the only open part**
+- **Status:** **Answered** 2026-08-09 — all eleven sub-items settled; #4 schedules a live chaining
+  confirmation before ship, #11 holds the `Q3` re-triage until 016-018 execute
 - **Triage 2026-08-09.** **#1 eighth `Rule` column** and **#2 ten agents** were already CLOSED and both
   verify on disk. **#3 NFR-3 vs reviewer-tier ≥ executor-tier — resolved structurally, no carve-out
   needed.** The invariant binds *the agent that produces the graded ledger*, and `aid-screener`
@@ -1761,7 +1761,14 @@ summarize scoring (`grade-summary.sh` + human JSON).
   reviewer. The item's original sequencing premise ("before feature-007 is specified") has expired;
   the new gate is **before ship**, not before a feature. **Not yet implemented — needs a delivery to
   carry it**, and it is a host-runtime check, so it cannot be discharged by a canonical test.
-  Also closes `Q1(e)`. **#11 OPEN** — the FR-E1
+  Also closes `Q1(e)`. **#11 ANSWERED 2026-08-09 (human decision): HOLD until 016-018 execute, then
+  re-triage.** The original reason to wait still holds — several `Q3` items target files those
+  deliveries rewrite, so triaging now would sort against a tree about to change and the work would be
+  done twice. The cost of waiting is that `Q3` keeps accumulating, which is untidy but not lossy:
+  nothing is lost by deferring, only deferred. `FR-E1` stays `SHOULD` and `Q3` stays `Deferred` until
+  then. **This is now a scheduled obligation, not an open question** — re-triage is a required step
+  after 016-018 execute, and must not be skipped because the entry reads `Deferred`.
+  ~~**#11 OPEN** — the FR-E1~~ *(superseded by the answer above; original text retained:)* the FR-E1
   re-triage cannot have run: deliveries 016-018 are `Pending-Spec`, while `Q3` has **grown** (the FIX
   task-type enum, the `/aid-update-kb` branch base, feature-006's exemption mismatch, and three items
   feature-007 surfaced and left unfixed).
