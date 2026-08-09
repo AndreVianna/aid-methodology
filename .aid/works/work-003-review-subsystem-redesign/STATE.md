@@ -1293,9 +1293,15 @@ produced:
 
 - **Category:** Design-Decision
 - **Impact:** Medium
-- **Status:** **Partially answered** — triaged 2026-08-09: **27 of 31 sub-items ratified by execution;
-  4 exceptions below need a human.** Original note retained: *all items here were decided without
-  asking, under the user's overnight authorization. Scan and overturn as needed.*
+- **Status:** **Answered** 2026-08-09 — **all 31 settled: 27 RATIFIED as ratified-by-execution, 4
+  exceptions individually ruled on.** Original note retained for the record: *all items here were
+  decided without asking, under the user's overnight authorization. Scan and overturn as needed.*
+- **Ratification (2026-08-09, human decision).** The 27 sub-items verified as shipped are **ratified
+  as a block, none overturned.** Each was checked against disk individually rather than accepted from
+  the entry's own claim, and each has been load-bearing across fifteen deliveries — so overturning one
+  now would be a change to working behaviour, not the correction of an unreviewed decision. Raising a
+  specific concern later remains cheaper than re-opening all 27, and this ratification does not
+  foreclose that. The four exceptions are ruled on individually at `Q26`.
 - **Triage 2026-08-09.** Each of the 31 numbered sub-items was checked against disk individually.
   **27 shipped as decided** and can be ratified as a block: feature-003 all 6 (sentinel lock,
   `--verify-grade` default-on, screener cannot write rows, coverage/gap rows out of the panel merge,
@@ -1312,9 +1318,11 @@ produced:
   a defect, just unexecuted.
   All four are consolidated in **`Q26`**. Stale residue also noted: `REQUIREMENTS.md:290` still reads
   *"FR-A7 (still open)"* although `:111` records it **CUT 2026-07-27**.
-  **What remains for a human:** ratify the 27, and rule on (i)-(iii) — reopen, re-schedule into a new
-  delivery, or accept and record. The blanket *"scan and overturn"* the entry asks for is a human act
-  no artifact can perform.
+  **Both halves are now discharged (2026-08-09):** the 27 are ratified (see Status above), and
+  (i)-(iii) are ruled on at `Q26` — items 1-2 re-scheduled into the `/aid-review` merge delivery with
+  closed deliveries left closed, item 3 superseded by the `Q1(a)` one-skill revision. **(iv) needs no
+  ruling**: `aid-detail` writing the BLUEPRINT Tasks table is correctly scheduled into delivery-018,
+  which is `Pending-Spec` — unexecuted, not undelivered.
 
 **feature-003 (all six were the architect's own recommendations, accepted):**
 1. **Sentinel lock inherited** from `writeback-state.sh` (~20 lines, already tested). Unnecessary
