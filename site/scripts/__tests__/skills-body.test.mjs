@@ -174,7 +174,7 @@ describe('renderSkillBody — contract with populated registries (AC-6)', () => 
     // defined after this block: they saw a registry with no providers, so "no provider
     // claims this skill" was vacuously true. It went unnoticed because nothing later in
     // the file needed the real entries until task-037's partition guard, which then
-    // reported all 111 skills unclaimed while the generator was charting all 111 happily.
+    // reported EVERY skill unclaimed while the generator was charting them all happily.
     BODY_PROVIDERS.length = 0;
     BODY_PROVIDERS.push(...REAL_PROVIDERS);
     BODY_APPENDERS.length = 0;

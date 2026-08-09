@@ -62,18 +62,41 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
-          node-version: '20'
+          node-version: '24'
       - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
         with:
           python-version: '3.11'
       - name: Make helper + test scripts executable
         run: find canonical/aid/scripts tests/canonical -name '*.sh' -exec chmod +x {} +
-      - name: Assert test runtimes present (node + pwsh + python3)
+      - name: Install jsdom (DOM oracle for the graph suites)
+        shell: bash
+        # This workflow needs jsdom for a sharper reason than test.yml does. `collect`
+        # counts only "PASS:"/"FAIL:" lines (tests/coverage-parity.sh:223-224) and a SKIP
+        # is neither -- so without jsdom the ~60 jsdom-gated graph assertions are not
+        # recorded as skipped, they are ABSENT FROM THE INVENTORY ENTIRELY. A baseline
+        # captured that way cannot notice them disappearing, which is the exact
+        # false-green this gate exists to prevent, in the gate itself.
+        #
+        # Kept byte-for-byte in step with test.yml's canonical-tests job, and for the same
+        # reasons: installed ALONE into a prefix OUTSIDE the repo (a root node_modules
+        # would let a bare specifier resolve to a downloaded copy instead of the committed
+        # vendor/ bytes), with the version read from the root manifest so there is one
+        # place to bump. Both workflows must stay aligned -- a baseline collected with the
+        # oracle and diffed without it would report every gated assertion as removed.
+        run: |
+          JSDOM_VER=$(node -e "process.stdout.write(require('./package.json').devDependencies.jsdom)")
+          npm install --no-save --no-audit --no-fund --prefix "$RUNNER_TEMP/jsdom-oracle" "jsdom@${JSDOM_VER}"
+          echo "AID_GRAPH_JSDOM=$RUNNER_TEMP/jsdom-oracle/node_modules/jsdom/lib/api.js" >> "$GITHUB_ENV"
+      - name: Assert test runtimes present (node + pwsh + python3 + jsdom)
         shell: bash
         run: |
           command -v node    >/dev/null || { echo "::error::node missing";    exit 1; }
           command -v pwsh    >/dev/null || { echo "::error::pwsh missing";    exit 1; }
           command -v python3 >/dev/null || { echo "::error::python3 missing"; exit 1; }
+          [[ -f "$AID_GRAPH_JSDOM" ]] || { echo "::error::jsdom entry module missing at $AID_GRAPH_JSDOM — the graph DOM assertions would vanish from the inventory rather than skip"; exit 1; }
+          # pathToFileURL, not a bare path: mirrors how the suites load the override
+          # (graph-canvas-dom.mjs:138), so this guard passes iff they will.
+          node -e "const { pathToFileURL } = require('url'); import(pathToFileURL(process.env.AID_GRAPH_JSDOM).href).then((m) => { if (typeof m.JSDOM !== 'function') { console.error('::error::jsdom resolved but exports no JSDOM constructor'); process.exit(1); } console.log('jsdom entry module exports JSDOM'); })"
           echo "node $(node --version) | $(pwsh --version) | $(python3 --version)"
       # Bootstrap: workflow_dispatch with bootstrap=true -> capture + upload for a maintainer to commit.
       - name: Bootstrap - capture baseline

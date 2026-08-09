@@ -12,9 +12,6 @@ audience: [developer, architect]
 intent: |
   Repository layout, top-level directory purposes, and file-inventory shape. Read this to understand the on-disk organization of the project.
 contracts: []
-changelog:
-  - 2026-06-23: Added f001 frontmatter fields (objective/summary/sources/tags/see_also/owner/audience)
-  - 2026-05-26: KB Authoring v2 template seed
 ---
 
 # Project Structure
@@ -30,7 +27,6 @@ changelog:
 - [Key Files](#key-files)
 - [Detected Technologies](#detected-technologies)
 - [Documentation Found in Repository](#documentation-found-in-repository)
-- [Change Log](#change-log)
 
 ---
 
@@ -95,8 +91,3 @@ project-root/
 
 ---
 
-## Change Log
-
-| Rev | Date | Source | Description |
-|-----|------|--------|-------------|
-| 1.0 | {date} | aid-discover | Initial pre-scan |

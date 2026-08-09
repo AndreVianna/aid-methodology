@@ -105,14 +105,14 @@
         "startLine": 107,
         "endLine": 112,
         "sourceKind": "skill",
-        "excerpt": "## State: HANDOFF  (optional; printed suggestions only)\n\nPrinted suggestions the user may act on: make it recurring (`/aid-create-dashboard`), record\na decision (`/aid-document-decision`), act on a conclusion (`/aid-create*` / `/aid-change*`),\nor comment on a source ticket (`/aid-update-ticket comment [<connector>:]<ticket-id> <text>`).\nNever auto-invoked; never a resolution."
+        "excerpt": "## State: HANDOFF  (optional; printed suggestions only)\n\nPrinted suggestions the user may act on: make it recurring (`/aid-create-dashboard`), record\na decision (`/aid-document-decision`), act on a conclusion (`/aid-create*` / `/aid-update*`),\nor comment on a source ticket (`/aid-update-ticket comment [<connector>:]<ticket-id> <text>`).\nNever auto-invoked; never a resolution."
       },
       "detail": {
         "file": "canonical/skills/aid-report/SKILL.md",
         "startLine": 107,
         "endLine": 114,
         "sourceKind": "skill",
-        "excerpt": "## State: HANDOFF  (optional; printed suggestions only)\n\nPrinted suggestions the user may act on: make it recurring (`/aid-create-dashboard`), record\na decision (`/aid-document-decision`), act on a conclusion (`/aid-create*` / `/aid-change*`),\nor comment on a source ticket (`/aid-update-ticket comment [<connector>:]<ticket-id> <text>`).\nNever auto-invoked; never a resolution.\n\n**Advance:** DONE."
+        "excerpt": "## State: HANDOFF  (optional; printed suggestions only)\n\nPrinted suggestions the user may act on: make it recurring (`/aid-create-dashboard`), record\na decision (`/aid-document-decision`), act on a conclusion (`/aid-create*` / `/aid-update*`),\nor comment on a source ticket (`/aid-update-ticket comment [<connector>:]<ticket-id> <text>`).\nNever auto-invoked; never a resolution.\n\n**Advance:** DONE."
       }
     },
     {

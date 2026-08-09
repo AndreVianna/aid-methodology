@@ -24,7 +24,7 @@ invocation drives the state machine to the next natural pause point.
 
 **Optional, off-pipeline.** `/aid-update-kb` is NOT in the numbered
 phase-to-skill pipeline; no phase gate references it. It is an on-demand
-maintenance skill (like `/aid-housekeep` / `/aid-query-kb`).
+maintenance skill (like `/aid-housekeep` / `/aid-ask`).
 
 **Run-state is transient.** Its run-state lives in a project-level file
 under `.aid/.temp/` (`.aid/.temp/UPDATEKB_STATE_<ts>.md`, gitignored per

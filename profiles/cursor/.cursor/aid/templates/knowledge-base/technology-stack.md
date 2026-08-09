@@ -13,9 +13,6 @@ audience: [developer, architect, devops]
 intent: |
   Languages, runtimes, frameworks, build tools, and test infrastructure the project uses. Read this for language-version or tool-version questions.
 contracts: []
-changelog:
-  - 2026-06-23: Added f001 frontmatter fields (objective/summary/sources/tags/see_also/owner/audience)
-  - 2026-05-26: KB Authoring v2 template seed
 ---
 
 # Technology Stack
@@ -32,7 +29,6 @@ changelog:
 - [Key Dependencies](#key-dependencies)
 - [Test Frameworks](#test-frameworks)
 - [Version Concerns](#version-concerns)
-- [Change Log](#change-log)
 
 ---
 
@@ -116,8 +112,3 @@ changelog:
 
 ---
 
-## Change Log
-
-| Rev | Date | Source | Description |
-|-----|------|--------|-------------|
-| 1.0 | {date} | aid-discover | Initial stack inventory |

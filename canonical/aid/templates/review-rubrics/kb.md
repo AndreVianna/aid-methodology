@@ -40,7 +40,7 @@ spot-check, and generated docs (`INDEX.md`, `kb.html`) take build-verify.
 |---|---|---|---|---|---|---|
 | `KB-01` | Frontmatter is the document's first block, before any content | `authoring-conventions.md § KB Document Layout` | MUST | mechanical | Read line 1; anything before `---` is the finding | `[HIGH]` |
 | `KB-02` | A `## Contents` index is present near the top, for a document with more than three sections | `authoring-conventions.md § KB Document Layout` | MUST | mechanical | `grep -c '^## ' <doc>`; if > 3, require a Contents heading | `Step 2` — one doc without an index is confined → `[MEDIUM]`; widespread → escaped → `[HIGH]` |
-| `KB-03` | `## Change Log` is the **last** section — no content follows it | `authoring-conventions.md § KB Document Layout` | MUST | mechanical | List the `^## ` headings with `grep -n` and confirm the change log is the final entry | `[HIGH]` |
+| `KB-03` | The doc carries **no history apparatus** — no `## Change Log`, no `## Revision History`, no `changelog:` frontmatter field | `kb-authoring/principles.md § P1. No drift-prone information unless it carries semantic value` | MUST | mechanical | `grep -n '^## Change Log\|^## Revision History\|^changelog:' <doc>` — any hit is the finding | `[HIGH]` |
 | `KB-04` | The core frontmatter fields are present: `objective:`, `summary:`, `sources:` | `authoring-conventions.md § Frontmatter Rules` | MUST | mechanical | `bash canonical/aid/scripts/kb/lint-frontmatter.sh --root <dir>` | `[HIGH]` |
 | `KB-05` | The classification fields are present: `audience:`, `owner:`, `tags:` | `authoring-conventions.md § Frontmatter Rules`; `kb-authoring/principles.md § P10. Dual-audience authoring standard` | SHOULD | mechanical | `bash canonical/aid/scripts/kb/lint-frontmatter.sh --root <dir>` — the same lint as `KB-04`; these are the dual-audience classification fields | `[LOW]; escaped (>1 doc) → [MEDIUM]` |
 | `KB-06` | `tags:` carries a concern ID mapping the document to a spine dimension | `authoring-conventions.md § Concern Model (Doc-Set Derivation)` | SHOULD | mechanical | Check `tags:` for a concern token. Orientation docs (`external-sources`, `README`) are exempt — they own no concern | `[LOW]; escaped (>1 doc) → [MEDIUM]` |
@@ -48,8 +48,20 @@ spot-check, and generated docs (`INDEX.md`, `kb.html`) take build-verify.
 | `KB-08` | Prose is plain and concrete enough for a junior professional to follow | `authoring-conventions.md § Dual-Audience Standard` | SHOULD | judgment | Name each jargon-dense paragraph that offers no plain-language alternative | `[LOW]; escaped (>1 doc) → [MEDIUM]` |
 | `KB-09` | The document answers exactly **one** concern question, without material from an orthogonal concern | `authoring-conventions.md § Concern Model (Doc-Set Derivation)` | SHOULD | judgment | Name any section whose subject is another concern doc's declared question | `[LOW]; escaped (>1 doc) → [MEDIUM]` |
 
-**`KB-03` is stricter than it looks.** A change log that is not last means content was appended after
-it, which is how a change log stops describing the document it sits in.
+**`KB-03` INVERTED 2026-08-09, and the inversion is the point.** It previously read *"`## Change Log`
+is the **last** section"* — a rule that a KB doc must *carry* a change log. Master retired the KB
+history apparatus entirely (`97d09b1a`), so per-doc history now lives in git and the section is
+banned rather than required. Measured at the merge: **0 of 22 `.aid/knowledge/*.md` docs carry a
+`## Change Log`**, so the old rule would have flagged every document in the KB. The ID is reused
+rather than retired so existing anchors keep resolving, and because the topic is unchanged — only
+its polarity moved. Its declaring criterion moved with it, from
+`authoring-conventions.md § KB Document Layout` to `kb-authoring/principles.md § P1`, which states
+*"Where the change history genuinely matters, it lives in git, which records it in full."*
+
+**Known residue on master, not fixed here.** `.aid/knowledge/authoring-conventions.md` still lists
+`## Change Log` as *"always the last section"* in its KB Document Layout table, contradicting
+master's own `P1(e)` and its own reviewer checklist. That is a KB edit and belongs to
+`/aid-update-kb`, not to a merge resolution.
 
 ---
 

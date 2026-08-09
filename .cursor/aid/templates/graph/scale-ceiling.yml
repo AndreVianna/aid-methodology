@@ -1,0 +1,77 @@
+# aid/templates/graph/scale-ceiling.yml
+#
+# The practical node-count ceiling for the interactive graph view (feature-010
+# declares this carrier, work-005-knowledge-graph). When a run's node total exceeds
+# the threshold below, `/aid-graph` warns on stdout, names both the total and the
+# threshold, and still completes -- the exit status is unaffected. No degraded
+# rendering mode exists; the ceiling is a warning, never a refusal.
+#
+# Renders as VERBATIM BYTES to `<root>/aid/templates/graph/scale-ceiling.yml` in
+# every profile -- a `.yml` is not in render.py's `_TEXT_EXTENSIONS`, matching the
+# shipped `templates/shortcut-catalog.yml` precedent.
+#
+# This file decides a warning on stdout and never a byte of a generated artifact.
+# That property, not this file's location, is what keeps it out of the run's
+# staleness digest: editing the threshold cannot change `relationships.md` or the
+# rendered view, so it must not force their regeneration.
+#
+# ---------------------------------------------------------------------------
+# THE VALUE IS DELIBERATELY ABSENT
+# ---------------------------------------------------------------------------
+#
+# The key below ships with NO value, and that is the contract as specified, not an
+# oversight and not a placeholder awaiting a guess.
+#
+# The ceiling is a MEASURED quantity. It is read off the rendering bench's
+# frame-time surface -- the node count at which the frame-time predicate stops
+# holding, at a stated degree distribution -- and that measurement is feature-002's
+# research to conduct. That research has not run. Inventing a number here would put
+# an unmeasured figure into a shipped file, where every later reader would take it
+# for a finding.
+#
+# Until the measurement lands there is no declared threshold, so no comparison can
+# be made and no warning can be decided. What the run does with an unset key is
+# feature-010's contract, not this file's.
+#
+# What the measurement owes, when it lands: the node-count threshold at a stated
+# degree distribution, plus that threshold's sensitivity to maximum degree, so the
+# number's fragility is visible rather than implied by a bare integer.
+#
+# ---------------------------------------------------------------------------
+# Field contract
+# ---------------------------------------------------------------------------
+#
+#   node_ceiling  (required key; value currently unset) -- a positive integer, the
+#                 node count above which the run warns. The comparand is the total
+#                 node count across every producer stream, which is what the
+#                 requirement and its acceptance criterion literally specify. A
+#                 degree-aware comparand is more accurate on a hub-heavy graph and
+#                 is computable from the same table; adopting one is an owner
+#                 decision above this file, and it would change what is compared,
+#                 not the shape of this key.
+#
+# ---------------------------------------------------------------------------
+# Consumers
+# ---------------------------------------------------------------------------
+#
+#   feature-010  the `/aid-graph` run -- reads the threshold once the node set is
+#                complete, emits the warning, and repeats it at the end of the run.
+#                Its test suite writes its own fixture value and asserts no ceiling
+#                figure of its own.
+#
+# ---------------------------------------------------------------------------
+# Setting the value
+# ---------------------------------------------------------------------------
+#
+#   1. Take it from the rendering research's measured surface. Do not estimate it,
+#      and do not derive it from another project's graph.
+#   2. Record the degree distribution it was measured at alongside the research, so
+#      a reader can tell whether the number applies to their graph.
+#   3. Run the FULL profile generator (never a partial render) so every profile
+#      copy and its emission manifest move together.
+#   4. Submit through the project's normal review gate (reviewer ledger at
+#      .aid/.temp/review-pending/<scope>.md, graded by grade.sh).
+#
+# ---------------------------------------------------------------------------
+
+node_ceiling:

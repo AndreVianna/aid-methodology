@@ -76,13 +76,13 @@ export const CURATED_GROUPS = [
   },
   {
     group: 'Knowledge Base Maintenance',
-    blurb: 'Skills for discovering, querying, summarising, and maintaining the project Knowledge Base.',
+    blurb: 'Skills for discovering, querying, summarising, mapping, and maintaining the project Knowledge Base.',
     members: [
       'aid-discover',
       'aid-summarize',
+      'aid-graph',
       'aid-housekeep',
       'aid-update-kb',
-      'aid-query-kb',
       'aid-ask',
     ],
   },

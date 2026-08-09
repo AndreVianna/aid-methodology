@@ -31,6 +31,7 @@
 # Exit codes:
 #   0  success
 #   1  concepts file not found or not readable
+#   2  invocation error (unknown flag)
 
 set -euo pipefail
 

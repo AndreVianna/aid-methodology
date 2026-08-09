@@ -27,8 +27,6 @@ contracts:
   - "Worst severity dominates; count within it sets the modifier (1 -> +, 2-5 -> none, 6+ -> -)"
   - "A skill exits REVIEW only when grade >= the resolved minimum_grade (per-skill override -> review.minimum_grade -> hardcoded default; the shortcut/Lite path's built-in default is A+)"
   - "Every reviewer ledger is exactly one 8-column markdown table at .aid/.temp/review-pending/<scope>.md — no narrative"
-changelog:
-  - 2026-06-25: Initial discovery (aid-discover quality deep-dive)
 ---
 
 # Quality Gates
@@ -176,7 +174,7 @@ Resolution command:
 bash .claude/aid/scripts/config/read-setting.sh --skill <name> --key minimum_grade --default A
 ```
 
-In **this** repo (`.aid/settings.yml`): the global flat `minimum_grade` is **`B-`** (the file carries no `review:` section at all), lowered
+In **this** repo (`.aid/settings.yml`): the global flat `minimum_grade` is **`A`** (the file carries no `review:` section at all), lowered
 from `A+` by owner decision on 2026-07-30 — which supersedes the 2026-06-27 directive "always use
 an A+ gate across all phases". It does **not** mean a phase advances on zero findings: `B-` is the
 lowest bar whose entire band excludes `[MEDIUM]`, so the exit criterion is that no `[CRITICAL]`,
@@ -432,10 +430,3 @@ bash .claude/aid/scripts/grade.sh --non-functional
 
 ---
 
-## Change Log
-
-| Rev | Date | Source | Description |
-|-----|------|--------|-------------|
-| 1.0 | 2026-06-25 | aid-discover | Initial quality-gates analysis (custom C6 doc, quality deep-dive) |
-| 1.1 | 2026-06-28 | work-aid-interview-improvements | Added Conformance Check section (aid-housekeep Conformance Lane: code->design flag-not-overwrite, shadow extraction, 3 new test suites); added Conformance Check row to Blocking vs Advisory table. |
-| 1.2 | 2026-07-09 | work-001 lite-skills refresh | Added the Shortcut / Lite-Path Gate section (shortcut engine's GATE two-pass grading + APPROVAL-HALT human gate, A+ built-in default floor); corrected the stale global `review.minimum_grade` (A → A+, owner directive 2026-06-27); noted the flattened-Lite delivery gate recording into the work-root STATE.md; added shortcut GATE + APPROVAL-HALT rows to Blocking vs Advisory. |

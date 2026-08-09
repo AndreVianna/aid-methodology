@@ -177,16 +177,16 @@ Authoring Standard Checks`):
 - Body section(s) synthesizing the row's `Description` -- summary+pointer
   content per the same calibration discipline as every other Change-type
   (synthesize, do not transcribe).
-- `## Change Log` as the **last** section, with an opening entry recording
-  this run's creation (date, one-line reason, and a pointer to this
-  `/aid-update-kb` run as the source).
+  Author **no** `## Change Log` / `## Revision History` section and **no**
+  `changelog:` frontmatter field -- per-doc history lives in git -- and **no**
+  work reference of any kind (this run's own work id included), per the KB
+  authoring principles P1(e).
 
   **Idempotency (re-entry, HL-7):** if the file already exists on disk (a
   prior APPLY pass in this same run already created it before a REVIEW
-  loop-back), do NOT re-create it -- check its `## Change Log` for this
-  run's creation entry; if present, the file itself is already done, and
-  only its Change-type content (below) still needs the usual
-  check-before-write treatment.
+  loop-back), do NOT re-create it -- its existence IS the creation record, so
+  the file itself is already done, and only its Change-type content (below)
+  still needs the usual check-before-write treatment.
 
   Once the file exists (freshly created, or already present from a prior
   pass), apply the row's own Change-type action below into it, exactly as
@@ -287,8 +287,8 @@ After all edits are applied, confirm:
       Plan item itself describes.
 - [ ] Each `Kind: new-file` row's doc was created via `Write` (never `Edit`),
       following the f001 schema -- frontmatter first, `## Contents` if more
-      than 3 sections, `## Change Log` last -- and carries no
-      `approved_at_commit:` value yet.
+      than 3 sections, no change-log section or `changelog:` field, and no
+      work reference -- and carries no `approved_at_commit:` value yet.
 - [ ] No row already correctly applied in a prior pass (re-entry) was
       re-edited or duplicated -- Step 2's check-before-write guard held.
 

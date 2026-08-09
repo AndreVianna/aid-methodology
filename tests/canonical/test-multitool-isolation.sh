@@ -16,7 +16,9 @@
 #            (grep each tool's aid/scripts/ subtree for the OTHER two tools'
 #            root names), asserting tool isolation (AC4 structural half).
 #            Scope is narrowed to aid/scripts/ to avoid false positives from
-#            cross-tool documentation prose in reference and template files.
+#            cross-tool documentation prose in reference and template files, and
+#            three non-invocable mention shapes are filtered per line (see the
+#            block above scripts_have_foreign_root for why each one is sound).
 #
 #   T27-T30  Escape canary and HOME-pin verification.
 #
@@ -109,12 +111,54 @@ tree_has_ref() {
 # files only -- avoids false positives from cross-tool documentation prose
 # in reference files and agent bodies that discuss the multi-tool system).
 # ---------------------------------------------------------------------------
+# Three mention shapes are NOT foreign-root references, and are filtered out per
+# LINE rather than excused per FILE.
+#
+# The premise of T21-T26 is narrow and worth restating, because it is what makes the
+# filter sound: a foreign root under aid/scripts/ is a defect *because the wrong
+# tree's path would be invoked at runtime*. None of the shapes below can invoke
+# anything.
+#
+#   1. COMMENT lines. `# .claude/skills/... is the renderer, not a render` is prose.
+#      Both graph/scan-source.sh and graph/significance-rules.sh carry several,
+#      because their job is classifying repo paths and explaining a path
+#      classification means naming the path.
+#
+#   2. The one literal `.claude/skills/generate-profile`. That is the AID RENDERER --
+#      hand-authored maintainer tooling that lives at exactly that path in this repo
+#      and nowhere else. The source scanner has to recognise it whichever agent tool
+#      is installed, because it classifies repo files and the renderer is a repo
+#      file, not a render of canonical/. Every use of it is existence-guarded
+#      (`if [ -d ".claude/skills/generate-profile" ]`), so in a cursor-only install
+#      the branch never fires.
+#
+#   3. A TERMINAL GLOB -- `.cursor/*` where the `*` is the whole final component,
+#      i.e. followed by `|`, `)`, whitespace, or end of line. That is a `case`
+#      pattern being matched AGAINST a path, never a path being resolved: no file
+#      is literally named `*`. significance-rules.sh's prune guard
+#      `.claude/*|.cursor/*|.codex/*|.agent/*) return 0 ;;` is the only instance,
+#      and it has to name every agent root or a cursor install sitting beside a
+#      claude-code install would be classified as project source.
+#      The "terminal" part carries the weight: `bash .cursor/*/run.sh` has a
+#      component AFTER the glob, so it is not excused.
+#
+# Filtering by mention shape rather than by filename is the whole point: an ordinary
+# `source "$root/.cursor/aid/scripts/x.sh"` added to any of these files still fails
+# this check, whereas a basename allowlist would have hidden it. (2) is an EXACT
+# literal, so `.claude/skills/anything-else` still fails too.
+FOREIGN_ROOT_RENDERER_LITERAL='.claude/skills/generate-profile'
+FOREIGN_ROOT_GLOB_SED='s#\.(claude|cursor|codex|agent)/\*($|[|)[:space:]])#<ROOTGLOB>\2#g'
+
+# Both helpers below pipe rather than loop per file on purpose: this suite runs on
+# Windows too, where process spawn costs ~1s, so a per-file grep would take minutes.
 scripts_have_foreign_root() {
     local scripts_dir="$1"
     local foreign_root="$2"
-    local found
-    found="$(grep -rlF "${foreign_root}/" "${scripts_dir}" 2>/dev/null | head -1)"
-    [[ -n "$found" ]]
+    grep -rhF "${foreign_root}/" "${scripts_dir}" 2>/dev/null \
+        | grep -v '^[[:space:]]*#' \
+        | sed "s|${FOREIGN_ROOT_RENDERER_LITERAL}|<RENDERER>|g" \
+        | sed -E "${FOREIGN_ROOT_GLOB_SED}" \
+        | grep -qF "${foreign_root}/"
 }
 
 # ---------------------------------------------------------------------------
@@ -305,7 +349,12 @@ echo "=== T21-T26: no foreign-root refs in operational scripts (AC4 structural) 
 # Helper: format the list of offending files for the fail message.
 list_files_with_ref() {
     local dir="$1" pattern="$2"
-    grep -rlF "${pattern}/" "${dir}" 2>/dev/null | head -5 | sed 's/^/    /'
+    grep -rnF "${pattern}/" "${dir}" 2>/dev/null \
+        | grep -vE ':[0-9]+:[[:space:]]*#' \
+        | sed "s|${FOREIGN_ROOT_RENDERER_LITERAL}|<RENDERER>|g" \
+        | sed -E "${FOREIGN_ROOT_GLOB_SED}" \
+        | grep -F "${pattern}/" \
+        | cut -d: -f1 | sort -u | head -5 | sed 's/^/    /'
 }
 
 # --- .claude/aid/scripts/ must not reference .cursor/ or .codex/ ----------

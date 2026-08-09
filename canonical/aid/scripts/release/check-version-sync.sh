@@ -140,6 +140,31 @@ check_carrier() {
     fi
 }
 
+# _native_path <path>
+# Render a path so it can be embedded in a CODE STRING handed to a Windows-NATIVE
+# interpreter (node -p / python3 -c).
+#
+# Under MSYS/Git Bash, REPO_ROOT resolves to POSIX form (/c/Projects/...). MSYS
+# translates paths that appear in *argv*, but NOT inside a quoted code string --
+# so `node -p "require('/c/...')"` reaches a native node that cannot resolve the
+# form. The read then fails, the substitution yields the EMPTY string, and both
+# the npm and PyPI carriers are reported as diverging: a false FAIL of the very
+# gate release.yml depends on. This is why the conversion has to be explicit.
+#
+# `cygpath -m` (mixed: C:/Projects/...) is used rather than `-w` on purpose: it
+# keeps forward slashes, so the result needs no backslash re-escaping inside the
+# quoted string, and node/python accept it directly.
+#
+# On Linux/macOS `cygpath` does not exist and no conversion is wanted, so the
+# path passes through unchanged -- making this a no-op everywhere but Windows.
+_native_path() {
+    if command -v cygpath >/dev/null 2>&1; then
+        cygpath -m "$1"
+    else
+        printf '%s' "$1"
+    fi
+}
+
 # ---------------------------------------------------------------------------
 # 1. VERSION file
 # ---------------------------------------------------------------------------
@@ -157,10 +182,13 @@ if [[ "${PRERELEASE}" == "true" ]]; then
     echo "  SKIP: packages/npm/package.json exempt -- '${EXPECT}' is a pre-release (PyPI-only; npm stays on the last stable)"
 elif [[ -f "${NPM_JSON}" ]]; then
     # File present: always check, regardless of NPM_ENABLED.
+    # Both readers are native interpreters, so the path must be converted first
+    # (see _native_path) -- a POSIX path here reads as empty on Windows.
+    NPM_JSON_NATIVE="$(_native_path "${NPM_JSON}")"
     if command -v node >/dev/null 2>&1; then
-        NPM_VER="$(node -p "require('${NPM_JSON}').version" 2>/dev/null)"
+        NPM_VER="$(node -p "require('${NPM_JSON_NATIVE}').version" 2>/dev/null)"
     elif command -v python3 >/dev/null 2>&1; then
-        NPM_VER="$(python3 -c "import json; print(json.load(open('${NPM_JSON}'))['version'])")"
+        NPM_VER="$(python3 -c "import json; print(json.load(open('${NPM_JSON_NATIVE}'))['version'])")"
     else
         echo "  WARN: neither node nor python3 available to read package.json — skipping npm check"
         NPM_VER=""
@@ -185,10 +213,13 @@ PYPI_ENABLED="${PYPI_ENABLED:-false}"
 if [[ -f "${PYPI_TOML}" ]]; then
     # File present: always check, regardless of PYPI_ENABLED.
     PYPI_VER=""
+    # Native interpreter -- convert the path (see _native_path). The grep/sed
+    # fallback below is pure bash and correctly keeps the POSIX path.
+    PYPI_TOML_NATIVE="$(_native_path "${PYPI_TOML}")"
     if python3 -c "import tomllib" 2>/dev/null; then
-        PYPI_VER="$(python3 -c "import tomllib; d=tomllib.load(open('${PYPI_TOML}','rb')); print(d['project']['version'])")"
+        PYPI_VER="$(python3 -c "import tomllib; d=tomllib.load(open('${PYPI_TOML_NATIVE}','rb')); print(d['project']['version'])")"
     elif python3 -c "import tomli" 2>/dev/null; then
-        PYPI_VER="$(python3 -c "import tomli; d=tomli.load(open('${PYPI_TOML}','rb')); print(d['project']['version'])")"
+        PYPI_VER="$(python3 -c "import tomli; d=tomli.load(open('${PYPI_TOML_NATIVE}','rb')); print(d['project']['version'])")"
     else
         # Fallback: grep + sed (handles standard single-quoted and double-quoted values)
         PYPI_VER="$(grep -E '^version\s*=' "${PYPI_TOML}" | head -1 | sed 's/.*=\s*["'"'"']\(.*\)["'"'"'].*/\1/')"

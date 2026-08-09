@@ -79,10 +79,11 @@ Every KB document you produce MUST comply with the **dual-audience authoring sta
 | 2 | Title (`# Doc Title`) |
 | 3 | Index / table of contents (list of sections, required when the doc has more than 3 sections) |
 | 4 | Content sections |
-| 5 | `## Change Log` (always last) |
 
-The `## Change Log` section MUST be the last section in every document. Do not place
-content after it.
+A KB document carries **no change-log section and no `changelog:` frontmatter field**.
+Per-doc history lives in git. Never author a `## Change Log` or `## Revision History`
+heading, and never record which work produced a change — see the KB authoring
+principles P1(e).
 
 **Mechanical self-check before you report done (do NOT rely on your own reading).** Citations
 MUST be durable anchors — a file path plus a grep-recoverable symbol/heading/string — NEVER a
@@ -123,6 +124,7 @@ text (the sections below) is never modified — the extension is a runtime-only 
 `owner-of <filename>` accessor (`resolve_doc_set "$raw" | awk -F'\t' -v f="$fn" '$1==f{print $2}'`).
 If the declared `owner` is one of the 5 discovery agents, the extension is appended to that
 agent's prompt. If the `owner` field does not match any of the 5 agents (unknown owner), the
+<!-- derived-value-exempt: "the 5 agents" is the KB-authoring subset named just above, not the roster. -->
 `resolve_doc_set` function routes to **`aid-researcher` (architecture doc-set)** as the generalist fallback
 (FR-P1-5 — no new agent). The Architect prompt section is then extended as above.
 
@@ -160,7 +162,7 @@ In the write rules below, `{output_root}` refers to this dispatch parameter.
 
 > **Authoring standard:** apply the dual-audience standard from the section above to every
 > document you produce (single-concern, junior-clear, tables/bullets not diagrams, classified
-> frontmatter with concern `tags:`, layout = frontmatter->index->content->Change Log last).
+> frontmatter with concern `tags:`, layout = frontmatter->index->content; no change-log section).
 >
 > Analyze this project's repository structure and any external documentation to produce TWO
 > foundation documents:
@@ -192,7 +194,7 @@ In the write rules below, `{output_root}` refers to this dispatch parameter.
 
 > **Authoring standard:** apply the dual-audience standard from the section above to every
 > document you produce (single-concern, junior-clear, tables/bullets not diagrams, classified
-> frontmatter with concern `tags:`, layout = frontmatter->index->content->Change Log last).
+> frontmatter with concern `tags:`, layout = frontmatter->index->content; no change-log section).
 >
 > Read the reference documents first, then analyze this project's repository — all code,
 > configuration, and documentation — and produce {output_root}/architecture.md and
@@ -248,7 +250,7 @@ In the write rules below, `{output_root}` refers to this dispatch parameter.
 
 > **Authoring standard:** apply the dual-audience standard from the section above to every
 > document you produce (single-concern, junior-clear, tables/bullets not diagrams, classified
-> frontmatter with concern `tags:`, layout = frontmatter->index->content->Change Log last).
+> frontmatter with concern `tags:`, layout = frontmatter->index->content; no change-log section).
 >
 > Read the reference documents first, then analyze this project's repository — all code,
 > configuration, and documentation — and produce {output_root}/module-map.md,
@@ -291,7 +293,7 @@ In the write rules below, `{output_root}` refers to this dispatch parameter.
 
 > **Authoring standard:** apply the dual-audience standard from the section above to every
 > document you produce (single-concern, junior-clear, tables/bullets not diagrams, classified
-> frontmatter with concern `tags:`, layout = frontmatter->index->content->Change Log last).
+> frontmatter with concern `tags:`, layout = frontmatter->index->content; no change-log section).
 >
 > Read the reference documents first, then analyze this project's repository — all code,
 > configuration, and documentation — and produce {output_root}/pipeline-contracts.md,
@@ -343,7 +345,7 @@ In the write rules below, `{output_root}` refers to this dispatch parameter.
 
 > **Authoring standard:** apply the dual-audience standard from the section above to every
 > document you produce (single-concern, junior-clear, tables/bullets not diagrams, classified
-> frontmatter with concern `tags:`, layout = frontmatter->index->content->Change Log last).
+> frontmatter with concern `tags:`, layout = frontmatter->index->content; no change-log section).
 >
 > Read the reference documents first, then analyze this project's repository — all code,
 > configuration, and documentation — and produce {output_root}/test-landscape.md,

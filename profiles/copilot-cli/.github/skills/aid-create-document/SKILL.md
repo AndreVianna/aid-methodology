@@ -8,8 +8,8 @@ description: >
   project source. It RESOLVES NOTHING: it drafts the document, you approve, then
   it is placed. Produced by the aid-tech-writer agent and verified by
   aid-reviewer. NEVER writes into .aid/knowledge/ (that is /aid-update-kb's
-  territory). Allocates a work-NNN folder. /aid-add-document is its alias; the
-  genre skills (/aid-document-decision, ...) and /aid-create-diagram delegate here.
+  territory). Allocates a work-NNN folder. The genre skills
+  (/aid-document-decision, ...) and /aid-create-diagram delegate here.
 allowed-tools: Read, Glob, Grep, shell, Write, Edit, Agent
 argument-hint: "<subject> -- what to document (optionally a kind: adr, runbook, tutorial, changelog, diagram, ...)"
 ---
@@ -19,7 +19,7 @@ argument-hint: "<subject> -- what to document (optionally a kind: adr, runbook, 
 `/aid-create-document` writes a document **now** and places it on your approval. It
 determines the **format** (markdown, mermaid diagram, HTML, a table) and the **structure**
 (ADR, runbook, tutorial, changelog, general/Diataxis, ...) from the request -- deferring to
-intelligence, not a per-kind skill. `/aid-add-document` is its pure alias; the genre skills
+intelligence, not a per-kind skill. The genre skills
 (`/aid-document-decision`, `-architecture`, `-guideline`, `-standard`, `-runbook`,
 `-tutorial`, `-changelog`) and `/aid-create-diagram` are thin kind-siblings that delegate
 here binding a genre/format hint.
@@ -30,7 +30,6 @@ here binding a genre/format hint.
 - **Boundary vs `/aid-design`:** `aid-design` *produces a design* (`aid-architect`);
   `aid-create-document` *writes documentation about* something (`aid-tech-writer`).
 - **Not a numbered pipeline phase**; does not route to `/aid-execute`.
-- **Behavior contract:** `.aid/work-005-lite-skills-refactor/specs/aid-document.md`.
 - **Genre structures** (ADR / C4 / runbook / ...): `.github/aid/templates/shortcut-scaffolding/document.md`.
 
 State machine: **INTAKE -> AUTHOR -> VERIFY (loop) -> PRESENT [human gate] -> PLACE (on

@@ -15,7 +15,7 @@ generatedFrom: '.aid/settings.yml'
 | `description` | `AI Integrated Development` |  |
 | `type` | `brownfield` |  |
 | `source_control` | `git` |  |
-| `minimum_grade` | `B-` |  |
+| `minimum_grade` | `A` |  |
 | `heartbeat_interval` | `1` |  |
 | `knowledge.source` | `master` |  |
 | `knowledge.last_update` | `2026-07-09T00:44:01-04:00` |  |

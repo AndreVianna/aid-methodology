@@ -6,7 +6,7 @@ summary: Read this to understand WHY AID is shaped the way it is — the deliber
 sources:
   - docs/aid-methodology.md
   - canonical/EMISSION-MANIFEST.md
-  - .aid/design/cli-install-scope-and-migration.md
+  - bin/aid
   - .claude/aid/templates/grading-rubric.md
   - README.md
 tags: [D, decisions, rationale, trade-offs, adr]
@@ -18,11 +18,6 @@ intent: |
   newcomer cannot reconstruct from the artifacts alone. Records decisions and reasoning
   (what / why / rejected alternatives / status / evidence), not a restatement of state.
 contracts: []
-changelog:
-  - 2026-07-30: work-001 delivery-006 gate -- D20 separated into its historical record (marked `count-history`) and a current-figures line, having stated superseded catalog figures as current.
-  - 2026-07-09: work-001 lite-skills refresh — added D20 (direct-entry shortcut system + engine), D21 (/aid-triage extraction), D22 (recipe-catalog removal), D23 (BLUEPRINT/DETAIL + deliveries/ rename), D24 (aid-describe full-only), D25 (aid-monitor re-point); superseded D14's description-first-TRIAGE mechanism (its proportionality principle survives); dropped the deleted "recipes" subtree from D11.
-  - 2026-07-09: Housekeep KB-DELTA refresh — connectors subsystem + release-drift refresh (added D19: connectors registry is a catalog, not a connection manager)
-  - 2026-06-25: Initial discovery (aid-discover — architect deep-dive)
 ---
 
 # Decisions
@@ -83,13 +78,13 @@ changelog:
 | D9 | Pure-mirror manifest-bounded deletion | Accepted | `canonical/EMISSION-MANIFEST.md` |
 | D10 | Polyglot, dual-channel, zero-dep distribution | Accepted | `packages/*` manifests |
 | D11 | Content isolation + AID:BEGIN/END markers | Accepted (supersedes .aid-new) | `README.md` |
-| D12 | cwd-driven CLI, no scan, CODE/STATE split | Settled, partial impl | `.aid/design/cli-install-scope-and-migration.md` |
-| D13 | Per-repo `format_version` stamp | Settled | same design note §3.4 |
-| D14 | Lite path + description-first TRIAGE | Superseded by D20/D21/D24 | `docs/aid-methodology.md` §4 (pre-work-001) |
-| D15 | 9 agents / 3 tiers (consolidation) | Superseded by D27 | `docs/aid-methodology.md` §5 |
+| D12 | cwd-driven CLI, no scan, CODE/STATE split | Settled, partial impl | `bin/aid` (`AID_CODE_HOME` / `AID_STATE_HOME`) |
+| D13 | Per-repo `format_version` stamp | Settled | `bin/aid` (`AID_SUPPORTED_FORMAT`) |
+| D14 | Lite path + description-first TRIAGE | Superseded by D20/D21/D24 | `docs/aid-methodology.md` §4 |
+| D15 | 9 agents / 3 tiers (consolidation) | Accepted (supersedes prior roster) | `docs/aid-methodology.md` §5 |
 | D16 | PowerShell 5.1 floor | Accepted | `README.md`; project memory |
 | D17 | Prose over scripts in skills | Accepted | project practice; `tests/run-all.sh` header |
-| D18 | KB no-diagrams; HTML summary yes-diagrams | Accepted | authoring standard; `.aid/design/aid-summarize-redesign.md` |
+| D18 | KB no-diagrams; HTML summary yes-diagrams | Accepted | authoring standard; `canonical/aid/scripts/summarize/assemble.sh` |
 | D19 | Connectors registry is a catalog, not a connection manager | Accepted (delivery-002 withdrawn) | `canonical/aid/templates/connectors/preset-catalog.md`; `canonical/skills/aid-discover/references/state-elicit.md` |
 | D20 | Direct-entry shortcut system + shared engine | Accepted | `canonical/aid/templates/shortcut-engine.md`; feature-003 |
 | D21 | `/aid-triage` extracted as a suggest-only router | Accepted | `canonical/skills/aid-triage/SKILL.md`; feature-014 |
@@ -244,8 +239,12 @@ changelog:
   under sudo); a single combined `AID_HOME` for both code and state (rejected — caused the
   root-owned-state write bug).
 - **Status:** Settled pre-implementation (2026-06-15); partially implemented (self-commands
-  slice in PR #78). CONFIRMED `.aid/design/cli-install-scope-and-migration.md` (search:
-  "Settled decisions" and "Core model").
+  slice in PR #78). CONFIRMED on disk in `bin/aid` (search: `AID_CODE_HOME=` for the
+  self-located payload root, `AID_STATE_HOME=` for the `/var/lib/aid`-vs-`~/.aid` scope
+  derivation), mirrored in the PowerShell twin `bin/aid.ps1`. The pre-implementation design
+  note this was settled from, `cli-install-scope-and-migration.md` (search: "Settled decisions"
+  and "Core model"), was removed from the tree in `1d121e73` once its content had shipped and
+  is recoverable at `1d121e73^`.
 
 ## D13 — Per-repo `format_version` stamp (git model)
 
@@ -257,8 +256,14 @@ changelog:
   structurally impossible.
 - **Rejected:** A machine-level `$AID_HOME/.migrated` marker + era-by-file-presence detection
   — **removed entirely**; rejected because machine markers can't be written by unprivileged
-  `aid` and don't travel with the repo. CONFIRMED `.aid/design/cli-install-scope-and-migration.md`
-  §3.4 (search: "per-repo stamp (git model)") + Decision F.
+  `aid` and don't travel with the repo. CONFIRMED on disk in `bin/aid` (search:
+  `AID_SUPPORTED_FORMAT=` for the supported-format constant, `^format_version:` for the
+  per-repo stamp reader, and "is newer than this CLI supports" for the fail-safe refusal) and
+  `lib/aid-install-core.sh` (search: "STAMP the format_version as the first line"), which writes
+  the stamp into each repo's `.aid/settings.yml` at install time rather than carrying it in the
+  `canonical/aid/templates/settings.yml` seed. The design note's own statement of the rule,
+  `cli-install-scope-and-migration.md` §3.4 (search: "per-repo stamp (git model)") + Decision F,
+  is recoverable at `1d121e73^`.
 - **Status:** Settled. (Stop-gap `.migrated-marker` noted in project memory pending full impl.)
 
 ## D14 — Lite path + description-first TRIAGE
@@ -273,14 +278,13 @@ changelog:
   explicit anti-pattern); a user-picked work-type menu (rejected in favor of inference — "You
   never pick this from a menu"). The old `single-doc` work-type was also removed (folded into
   new-feature/refactor).
-- **Status:** **Superseded (2026-07-09, work-001) by D20/D21/D24.** The *proportionality
+- **Status:** **Superseded by D20/D21/D24.** The *proportionality
   principle* this decision established survives — small work should not pay full-pipeline
   overhead — but its *mechanism* (description-first TRIAGE inside every `aid-describe` interview
   + recipe matching) was replaced by the three-door direct-entry model: routing extracted to the
   standalone `/aid-triage` router (D21), lite work entered by naming the change through a shortcut
   into the shared shortcut engine (D20), and `aid-describe` reduced to full-path only with no
-  TRIAGE state (D24). The recipe catalog the match depended on was removed (D22). CONFIRMED
-  (historical) `docs/aid-methodology.md` §4/§10 as they stood before work-001; the current
+  TRIAGE state (D24). The recipe catalog the match depended on was removed (D22). The current
   three-door model is documented in D20/D21/D24 and `docs/aid-methodology.md` §4 "The Lite Path:
   Direct-Entry Shortcuts".
 
@@ -336,7 +340,12 @@ changelog:
 - **Rejected:** Diagrams in KB docs (rejected — hurt machine-readability/diffability); also
   the prior Mermaid-engine approach in the summary was **superseded** by pre-rendered inline
   SVG (dropping a ~3MB engine) plus a Playwright visual-fidelity gate. CONFIRMED authoring
-  standard (this discovery's brief) and `.aid/design/aid-summarize-redesign.md`.
+  standard (this discovery's brief); on disk, `canonical/aid/scripts/summarize/assemble.sh`
+  (search: "no Mermaid engine"), `canonical/aid/scripts/summarize/validate-html-output.sh`
+  (search: "No-Mermaid-engine assertion") and
+  `canonical/aid/scripts/summarize/validate-visuals.mjs`, the Playwright visual-fidelity gate.
+  The redesign note `aid-summarize-redesign.md` was removed from the tree in `1d121e73` once
+  its content had shipped and is recoverable at `1d121e73^`.
 - **Status:** Accepted (summary redesign superseded the Mermaid approach).
 
 ## D19 — Connectors registry: catalog, not connection manager (Q10)
@@ -376,9 +385,9 @@ changelog:
   <!-- count-history: the two clauses above record D20's shipped state and its v2.1.0 growth;
        both were true when written. The CURRENT figures are on the next line and are the only
        ones a reader should act on. -->
-  **Currently: 64 shortcut doorways generated from a 94-row catalog (58 canonical names + 36
-  aliases; 30 `repurpose` rows carry their own hand-authored directories, so 94 rows -> 64
-  generated doorways + 30 hand-authored).** Every shortcut is a thin doorway that binds a `{verb, artifact}` pair and delegates to one
+  **Currently: 34 shortcut doorways generated from a 58-row catalog (58 canonical names, no
+  aliases; 24 `repurpose` rows carry their own hand-authored directories, so 58 rows -> 34
+  generated doorways + 24 hand-authored).** Every shortcut is a thin doorway that binds a `{verb, artifact}` pair and delegates to one
   shared engine (`canonical/aid/templates/shortcut-engine.md`) running
   `INTAKE -> CAPTURE -> SPEC -> PLAN -> DETAIL -> GATE -> APPROVAL-HALT`, which collapses the five
   definition phases (Describe -> Detail) into one fast, mostly-autonomous run and produces the
@@ -387,17 +396,15 @@ changelog:
   before the terminal APPROVAL-HALT. It never executes — `/aid-execute` is a separate,
   user-initiated run.
 - **Why:** Proportionality should be entered by *naming the change*, not weighed inside an
-  interview. A shared engine keeps all 64 doorways behaviorally identical with no per-skill logic,
+  interview. A shared engine keeps all 34 doorways behaviorally identical with no per-skill logic,
   and collapsing (not skipping) the definition phases preserves the same typed, reviewed artifact
   set at lower ceremony.
 - **Rejected:** A runtime alias/redirect mechanism (rejected — each name is its own rendered
   `SKILL.md` directory, no redirect); per-shortcut bespoke logic (rejected — the engine is the
   single source of behavior); cross-session resume (accepted limitation — each invocation
   allocates a fresh `work-NNN`).
-- **Status:** Accepted. CONFIRMED
-  `.aid/work-001-lite-aid-skills/features/feature-003-direct-entry-shortcut-engine/SPEC.md` and
-  `.aid/work-001-lite-aid-skills/features/feature-004-approval-and-grading-gates/SPEC.md`;
-  `canonical/aid/templates/shortcut-engine.md`; `canonical/aid/templates/shortcut-catalog.yml`.
+- **Status:** Accepted. CONFIRMED `canonical/aid/templates/shortcut-engine.md` and
+  `canonical/aid/templates/shortcut-catalog.yml`.
 
 ## D21 — /aid-triage extracted as a suggest-only router
 
@@ -415,9 +422,7 @@ changelog:
   interview and forced a work folder for a decision that writes nothing); a multi-turn triage
   interview / dedicated agent (rejected as over-engineering, NFR-8 — one reflect-back turn
   suffices; it reuses the D1 opener's `Suggested:`/`Why:` UX shape as a UX-shape consumer only).
-- **Status:** Accepted. CONFIRMED
-  `.aid/work-001-lite-aid-skills/features/feature-014-aid-triage-router/SPEC.md`;
-  `canonical/skills/aid-triage/SKILL.md`;
+- **Status:** Accepted. CONFIRMED `canonical/skills/aid-triage/SKILL.md` and
   `canonical/skills/aid-describe/references/elicitation-engine.md` ("The in-skill guided-triage
   consumer has been removed").
 
@@ -436,8 +441,7 @@ changelog:
   a machine-parsed slot template (rejected — the family scaffolding is free-form prose the
   dispatched architect reads, not a substituted template).
 - **Status:** Accepted (supersedes the recipe catalog). CONFIRMED
-  `.aid/work-001-lite-aid-skills/features/feature-002-recipe-removal/SPEC.md`;
-  `canonical/aid/templates/shortcut-scaffolding/`; and the absence of `canonical/aid/recipes/` and
+  `canonical/aid/templates/shortcut-scaffolding/`, and the absence of `canonical/aid/recipes/` and
   `parse-recipe.sh` on disk.
 
 ## D23 — Delivery and task definition rename (BLUEPRINT + DETAIL)
@@ -456,10 +460,7 @@ changelog:
   source); a migration path for old-nested layouts (rejected — clean switch, no adopters to
   migrate).
 - **Status:** Accepted (supersedes the delivery/task `SPEC.md` naming and the flat `task-NNN.md`).
-  CONFIRMED
-  `.aid/work-001-lite-aid-skills/features/feature-001-flattened-lite-work-structure/SPEC.md` and
-  `.aid/work-001-lite-aid-skills/features/feature-015-full-path-pipeline-rename/SPEC.md`;
-  `canonical/aid/templates/delivery-blueprint-template.md`,
+  CONFIRMED `canonical/aid/templates/delivery-blueprint-template.md` and
   `canonical/aid/templates/task-detail-template.md`.
 
 ## D24 — /aid-describe reduced to full-path-only
@@ -475,11 +476,9 @@ changelog:
 - **Rejected:** Keeping the lite path inside `aid-describe` (rejected — superseded by the shortcut
   engine); deleting the elicitation engine (rejected — it remains the full-path interview driver
   and the `/aid-triage` reflect-back's UX-shape precedent).
-- **Status:** Accepted. CONFIRMED
-  `.aid/work-001-lite-aid-skills/features/feature-013-aid-describe-full-only/SPEC.md`;
-  `canonical/skills/aid-describe/SKILL.md` (frontmatter state machine);
-  `canonical/skills/aid-describe/references/elicitation-engine.md` ("`aid-describe` no longer hosts
-  a TRIAGE state").
+- **Status:** Accepted. CONFIRMED `canonical/skills/aid-describe/SKILL.md` (frontmatter state
+  machine) and `canonical/skills/aid-describe/references/elicitation-engine.md` ("`aid-describe`
+  no longer hosts a TRIAGE state").
 
 ## D25 — /aid-monitor re-point (BUG and Change-Request routing)
 
@@ -492,10 +491,8 @@ changelog:
   change request needs. This keeps the L9/L10 feedback loops pointed at live entries.
 - **Rejected:** Continuing to route findings into `aid-describe` (rejected — those describe states
   were removed by D24).
-- **Status:** Accepted. CONFIRMED
-  `.aid/work-001-lite-aid-skills/features/feature-012-deploy-and-monitor-repurpose/SPEC.md`;
-  `canonical/skills/aid-monitor/SKILL.md` ("BUG -> /aid-fix", "Change Request -> /aid-triage");
-  matches `pipeline-contracts.md` L9/L10.
+- **Status:** Accepted. CONFIRMED `canonical/skills/aid-monitor/SKILL.md` ("BUG -> /aid-fix",
+  "Change Request -> /aid-triage"); matches `pipeline-contracts.md` L9/L10.
 
 ---
 
@@ -554,11 +551,3 @@ description-first TRIAGE-inside-`aid-describe` routing with its delivery/task `S
 
 ---
 
-## Change Log
-
-| Rev | Date | Source | Description |
-|-----|------|--------|-------------|
-| 1.0 | 2026-06-25 | aid-discover | Initial decision record — 18 load-bearing decisions with rationale, rejected alternatives, status, and evidence. |
-| 1.1 | 2026-07-09 | tech-writer | Housekeep KB-DELTA refresh: connectors subsystem + release-drift refresh — added D19 (connectors registry is a catalog, not a connection manager; delivery-002 MCP host wiring withdrawn as a consequence). |
-| 1.2 | 2026-07-09 | work-001 lite-skills refresh | Added D20–D25 (direct-entry shortcut system + shared engine; `/aid-triage` extraction; recipe-catalog removal; delivery/task `BLUEPRINT.md`/`DETAIL.md` rename + nested `deliveries/`; `aid-describe` full-only; `aid-monitor` re-point to `/aid-fix` / `/aid-triage`); marked D14 Superseded by D20/D21/D24 (proportionality principle survives, the description-first-TRIAGE mechanism replaced); dropped the deleted "recipes" subtree from D11's What; extended the Superseded list. |
-| 1.3 | 2026-07-09 | v2.1.0 skill-count sync | D20 updated to record the current shortcut count: 76 shortcuts (14 families, 5 new: remove, deprecate, migrate, review, research) generated from an 80-row catalog (51 canonical + 29 aliases, 4 repurpose rows), while preserving D20's original 67-shortcut / 69-row shipment as history. |

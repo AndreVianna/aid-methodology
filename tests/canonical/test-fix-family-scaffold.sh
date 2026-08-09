@@ -83,7 +83,12 @@ assert_output_contains "$FIX_TXT" \
     "FFS03d regression fix-kind pins reproduction to the regressing change"
 
 # FFS-04: Ownership-boundary routing table (out-of-scope destinations).
-for route in "aid-test-security" "aid-document-runbook" "aid-test" "aid-change" "aid-refactor" "aid-change-infra"; do
+# The list is re-pointed, not resized: work-004 feature-005 rewrote fix.md's routing
+# table from the retired `aid-change`/`aid-change-infra` names to `aid-update` /
+# `aid-update-infra` (fix.md "New behavior / intent (not a defect)" -> `aid-update`,
+# "Infra provisioning to close an incident" -> `aid-update-infra`). Six routes before,
+# six after; the other four are unchanged, and no assertion here constrains the length.
+for route in "aid-test-security" "aid-document-runbook" "aid-test" "aid-update" "aid-refactor" "aid-update-infra"; do
     assert_output_contains "$FIX_TXT" "$route" "FFS04 [${route}] named as a routing destination in the Ownership boundary"
 done
 

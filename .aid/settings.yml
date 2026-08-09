@@ -3,43 +3,36 @@ name: AID
 description: AI Integrated Development
 type: brownfield
 source_control: git
-# Minimum grade lowered A+ -> B- globally. Two independent decisions, same day, same value:
-# work-001 delivery-006's gate (owner, 2026-07-30) and work-003 delivery-015's gate. The rationale
-# below is the union of both -- the first half is WHY the bar moved, the second is WHY B- is the
-# threshold that expresses it.
-minimum_grade: B-
+minimum_grade: A
 heartbeat_interval: 1
 
-# Minimum grade lowered A+ -> B- globally (owner decision, 2026-07-30, during work-001
-# delivery-006's gate).
+# Floor history: A+ -> B- (owner decision, 2026-07-30, work-001 delivery-006's gate)
+# -> A (owner decision, 2026-08-04, work-004's closing pass). The middle value is retained
+# below because the reason it existed is the reason A -- and not A+ -- is the right end state.
 #
-# A+ means "zero issues at ANY severity" (grading-rubric.md). On artifacts that are largely
-# prose, that surface is effectively unbounded: five consecutive Large-tier gate cycles on
-# delivery-006 each closed ~12 findings and opened ~12, so the ledger grew 30 -> 43 -> 62 -> 73
-# -> 85 with no decline in the new-finding rate. An A+ gate there was not a bar being
+# Why NOT A+. A+ means "zero issues at ANY severity" (grading-rubric.md). On artifacts that are
+# largely prose, that surface is effectively unbounded: five consecutive Large-tier gate cycles
+# on delivery-006 each closed ~12 findings and opened ~12, so the ledger grew 30 -> 43 -> 62
+# -> 73 -> 85 with no decline in the new-finding rate. An A+ gate there was not a bar being
 # approached, it was a loop that does not terminate.
 #
-# B- = "> 5 lows", i.e. the worst SURVIVING finding must be LOW. CRITICAL, HIGH and MEDIUM all
-# remain fully blocking -- nothing that misinforms a reader, breaks a build, or states a false
-# fact gets waived. What B- buys is that LOW/MINOR findings and stale file:line citations stop
-# blocking a gate from closing; they are batched and cleared at the END of a work rather than
-# re-litigated every cycle, which is where that five-cycle loop was spending itself.
+# Why B- was too low to keep. B- = "the worst SURVIVING finding must be LOW". CRITICAL, HIGH
+# and MEDIUM stayed fully blocking throughout, so nothing that misinformed a reader or broke a
+# build was ever waived. What B- bought was that LOW/MINOR findings stopped blocking a gate from
+# closing -- they were batched and cleared at the END of a work instead of being re-litigated
+# every cycle, which is where that five-cycle loop had been spending itself. That batching
+# worked: work-004 closed its three deliveries at B+/B-/B and then cleared 14 deferred findings
+# in one pass. But it leaves LOW defects live in the tree for the whole work, and some of them
+# are not cosmetic -- that pass found an exhausted marker budget that would have failed the next
+# author's build, and a stale count with a second instance no ledger had named.
 #
-# WHY B- IS EXACTLY THAT BAR, measured against grade.sh rather than assumed: grade.sh is
-# worst-severity-dominated with a 3-band count modifier, so one [MEDIUM] caps a ledger at C+ however
-# few there are (8 [LOW] + 1 [MEDIUM] = C+), while a [LOW]-only ledger bottoms out at B- however many
-# ([LOW] x1 -> B+, x2-5 -> B, x6+ -> B-). B- is therefore the LOWEST bar whose entire band excludes
-# [MEDIUM]: "minimum B-" and "no [MEDIUM] or worse" are the same statement, not an approximation of
-# each other.
-#
-# Deferred is NOT waived. `.aid/.temp/review-pending/` is deleted at DONE, so a deferred row living
-# only in a ledger is a lost row: each work copies its open [LOW]/[MINOR] into its own
-# STATE.md ## Deferred Findings and is not shippable while any remains Pending.
-#
-# Set globally rather than as an `execute:` per-skill override because lint-settings.sh S8 rejects any
-# top-level key the template does not seed, and the template seeds no skill sections -- so the
-# per-skill override read-setting.sh documents (resolution order step 1) cannot be written into a file
-# that passes its own lint. Recorded as a defect in work-003's STATE.md Q19.
+# Why A. A = "MINOR only may survive". LOW and above all block, so a real defect cannot be
+# deferred past a gate; MINOR may remain, which is exactly where the non-terminating nit loop
+# lived (stale file:line citations, wording, anchors that drift when a sibling edits a file).
+# A keeps the property that made B- terminate while restoring the property that made A+ worth
+# wanting. If a gate at A starts showing the delivery-006 signature -- findings closing and
+# reopening at a flat rate across cycles -- that is evidence the bar is wrong for that artifact
+# class, not a reason to grind; escalate to the owner rather than looping.
 
 knowledge:
   source: master

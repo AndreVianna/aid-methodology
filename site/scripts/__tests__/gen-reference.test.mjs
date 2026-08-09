@@ -142,7 +142,7 @@ describe('gen-reference: generatedFrom frontmatter', () => {
 // "summarized by family in the Direct-entry shortcuts table". That table is gone --
 // the roster moved to /skills/ and this page kept only the engine narrative.)
 const CURATED_SKILL_NAMES = [
-  'aid-config', 'aid-discover', 'aid-summarize',
+  'aid-config', 'aid-discover', 'aid-summarize', 'aid-graph',
   'aid-triage',
   'aid-describe', 'aid-define', 'aid-specify',
   'aid-plan', 'aid-detail',
@@ -153,7 +153,7 @@ const CURATED_SKILL_NAMES = [
   // broke at the work-003/master merge.
   'aid-light-review', 'aid-deep-review',
   'aid-deploy', 'aid-monitor',
-  'aid-housekeep', 'aid-query-kb', 'aid-ask', 'aid-update-kb',
+  'aid-housekeep', 'aid-ask', 'aid-update-kb',
   'aid-set-connector', 'aid-unset-connector',
   'aid-read-ticket', 'aid-create-ticket', 'aid-update-ticket',
 ].sort();

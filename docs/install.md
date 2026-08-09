@@ -47,14 +47,14 @@ difference is only how `aid` lands on your PATH.
 |---------|----------|--------|
 | `curl` / `irm` bootstrap (online) | Bash or PowerShell 5.1+ | Available — see [Step 1](#step-1--bootstrap-the-aid-cli-once-per-machine) |
 | `--from-bundle` (offline / air-gapped) | Bash or PowerShell 5.1+ | Available — see [Offline install](#offline--air-gapped-install) |
-| npm: `npm i -g aid-installer` | Node >=18 | Published / live — see [npm channel](#npm-channel) |
+| npm: `npm i -g aid-installer` | Node >=22 | Published / live — see [npm channel](#npm-channel) |
 | PyPI: `pipx install aid-installer` | Python >=3.8 | Published / live — see [PyPI channel](#pypi-channel) |
 
 ---
 
 ### npm channel
 
-Requires Node >=18.
+Requires Node >=22.
 
 **Global install** — puts `aid` on PATH permanently:
 
@@ -408,7 +408,7 @@ Installs into `.claude/`:
 
 - `.claude/aid/scripts/` — helper scripts (phase-specific, e.g. interview, summarize)
 - `.claude/aid/templates/` — KB document templates, task templates, and the shortcut system (`shortcut-catalog.yml`, `shortcut-engine.md`, `shortcut-scaffolding/`)
-- `.claude/skills/` — 113 `aid-`-prefixed skill markdown files (19 curated pipeline / on-demand / router skills + the 94-row shortcut catalog's skills: 64 Lite-Path shortcut doorways + 30 hand-authored repurpose skills)
+- `.claude/skills/` — 78 `aid-`-prefixed skill markdown files (20 curated pipeline / on-demand / router skills + the 58-row shortcut catalog's skills: 34 Lite-Path shortcut doorways + 24 hand-authored repurpose skills)
 - `.claude/agents/` — 10 `aid-`-prefixed agent markdown files
 - `CLAUDE.md` — project-context file at the project root (AID content fenced by `<!-- AID:BEGIN -->`/`<!-- AID:END -->`)
 
@@ -848,7 +848,7 @@ irm .../install.ps1 | iex
 | `curl … \| bash` (online, Linux / macOS / git-bash) | Bash | Available | See [Step 1](#step-1--bootstrap-the-aid-cli-once-per-machine) |
 | `irm … \| iex` (online, Windows PowerShell) | PowerShell 5.1+ | Available | See [Step 1](#step-1--bootstrap-the-aid-cli-once-per-machine) |
 | `--from-bundle <path>` (offline tarball) | Bash or PowerShell 5.1+ | Available | See [Offline install](#offline--air-gapped-install) |
-| `npm install -g aid-installer` → `aid` | Node >=18 | Published / live | See [npm channel](#npm-channel) |
+| `npm install -g aid-installer` → `aid` | Node >=22 | Published / live | See [npm channel](#npm-channel) |
 | `pipx install aid-installer` → `aid` | Python >=3.8 | Published / live | See [PyPI channel](#pypi-channel) |
 
 All four channels — `curl`/`irm` bootstrap, `--from-bundle`, npm, and PyPI — are

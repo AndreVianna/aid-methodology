@@ -27,7 +27,6 @@ verify, present, printed-suggestion handoff). The three `test-*` kind-siblings
 
 - **Read-only** on the source; never fixes (findings -> `/aid-fix`).
 - **Not a numbered pipeline phase**; does not route to `/aid-execute`.
-- **Behavior contract:** `.aid/work-005-lite-skills-refactor/specs/aid-test.md`.
 
 State machine: **INTAKE -> RUN -> VERIFY (loop) -> PRESENT [human] -> HANDOFF? -> DONE**.
 Print the `[State: NAME] -- {purpose}` entry line on each state.
@@ -106,7 +105,7 @@ each with its evidence; state pass/fail against any threshold; and a printed sug
 ## State: HANDOFF  (optional; printed suggestions only)
 
 Printed suggestions: `/aid-fix` (address findings), `/aid-create-test` (add regression tests
-for a bug found), `/aid-change*` (if a fix is a real change). Never auto-invoked.
+for a bug found), `/aid-update*` (if a fix is a real change). Never auto-invoked.
 
 **Advance:** DONE.
 

@@ -101,6 +101,7 @@ echo "$HTML_TEXT" \
     >> "$CLAIMS_TMP" || true
 
 # Pattern 3: named counts in compact form like "22 agents" already captured above
+#   derived-value-exempt: an illustration of the SHAPE of a count claim, not a claim about AID's roster.
 # Extra: "N/N" fraction-style counts (e.g. "8/8 diagrams")
 echo "$HTML_TEXT" \
     | grep -oE '[0-9]+/[0-9]+ [a-z]+' 2>/dev/null \

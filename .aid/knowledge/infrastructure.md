@@ -27,11 +27,6 @@ contracts:
   - "The release tag v<VERSION> is the single trigger that gates + publishes all channels"
   - "All four version carriers (VERSION, package.json, pyproject.toml, tag) must agree or the release gate fails"
   - "github-release runs before npm/PyPI so the authoritative artifact channel exists first"
-changelog:
-  - 2026-07-30: work-001 final gate -- corrected the `docs.yml` row in the release/deploy view (same class as the `test-landscape.md` fix, found by grepping the signature): it omitted the `canonical/**` path filter and the `pull_request`-to-master trigger, and carried a `release: published` trigger the workflow does not have.
-  - 2026-07-23: work-023 -- Project Management Tooling now documents the connectors + dedicated-skills model (three /aid-*-ticket skills; no automated pipeline ticket writes).
-  - 2026-07-16: work-016 .aid/works/ container relocation -- updated the dashboard-reader and project-management-tooling STATE.md paths to `.aid/works/work-NNN-*/`.
-  - 2026-06-25: Initial discovery (aid-discover quality deep-dive)
 ---
 
 # Infrastructure
@@ -318,10 +313,3 @@ aid dashboard stop
 
 ---
 
-## Change Log
-
-| Rev | Date | Source | Description |
-|-----|------|--------|-------------|
-| 1.0 | 2026-06-25 | aid-discover | Initial infrastructure mapping (quality deep-dive) |
-| 1.1 | 2026-07-09 | aid-housekeep | connectors subsystem + release-drift refresh (housekeep KB-DELTA) |
-| 1.2 | 2026-07-23 | work-023 | Project Management Tooling: documented the connectors + dedicated-skills model (outward ticket interaction via `/aid-read-ticket` / `/aid-create-ticket` / `/aid-update-ticket`; no automated pipeline ticket writes) |

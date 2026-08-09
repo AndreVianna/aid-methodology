@@ -128,7 +128,7 @@ Parse rules:
     the same connector); optional — see Parent Resolution below.
 - **Missing/empty required args** (no `<description>` after the flags on create; no
   `<part>`/ref/content on update; no ref on read) → print the `argument-hint` usage
-  line and exit (the `aid-query-kb` pre-flight pattern).
+  line and exit (the `aid-ask` pre-flight pattern).
 
 ## Write Preview + Confirm Gate
 

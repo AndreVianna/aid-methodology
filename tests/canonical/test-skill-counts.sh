@@ -109,13 +109,19 @@ _plant() {   # _plant ID REL SED_EXPR EXPECTED_SUBSTRING DESCRIPTION
 }
 
 _mm=".aid/knowledge/module-map.md"
-_plant SC02 "$_mm" 's/(113) | Toolkit/(111) | Toolkit/' 'corpus total should be 113' \
+_plant SC02 "$_mm" 's/(78) | Toolkit/(76) | Toolkit/' 'corpus total should be 78' \
     'a corpus total stated as `canonical/skills/* (N)` is checked'
-_plant SC03 "$_mm" 's/(113 total/(111 total/' 'corpus total should be 113' \
+# SC03 APPENDS the claim rather than mutating a live one. The corpus carried a
+# `(N total: ...)` decomposition header until master's 2026-08-09 rewrite dropped the
+# phrasing, and a plant with no anchor is a silent no-op -- it reports PASS for a pattern
+# it never exercised. The guard must still catch the shape, so the fixture supplies it:
+# the same "build your own fixture, never depend on live content" rule this work already
+# applied to the modality gate.
+_plant SC03 "$_mm" '$aAID ships skills (76 total: 20 curated + 34 generated doorways).' 'corpus total should be 78' \
     'a corpus total stated as the header of a decomposition `(N total: ...)` is checked'
-_plant SC04 "$_mm" 's/19 curated + 64/17 curated + 64/' 'curated (non-catalog) should be 19' \
+_plant SC04 "$_mm" 's/20 curated + 34/18 curated + 34/' 'curated (non-catalog) should be 20' \
     'the first term of an `A + B + C` decomposition is checked'
-_plant SC05 "$_mm" 's/64 generated doorways/63 generated doorways/' 'emitting shortcuts should be 64' \
+_plant SC05 "$_mm" 's/34 generated doorways/33 generated doorways/' 'emitting shortcuts should be 34' \
     'a doorway count carrying the `generated` adjective is checked'
 
 echo ""

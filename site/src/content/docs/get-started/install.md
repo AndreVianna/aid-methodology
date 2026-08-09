@@ -13,7 +13,7 @@ difference is only how `aid` lands on your PATH. Pick one channel per machine.
 | Channel | Requires | Best for |
 |---------|----------|----------|
 | **curl / irm** (online bootstrap) | Bash or PowerShell 5.1+ | Most users — Linux, macOS, Windows |
-| **npm** | Node >=18 | Node-heavy environments; global install via npm |
+| **npm** | Node >=22 | Node-heavy environments; global install via npm |
 | **PyPI (pipx)** | Python >=3.8 | Python environments; isolated install |
 | **Offline bundle** | Bash or PowerShell 5.1+ | Air-gapped machines; teams pinning to a specific release |
 

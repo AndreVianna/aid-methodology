@@ -103,23 +103,24 @@ Confirm canonical completeness:
    parts do not add up to the total is how this file was wrong twice:
 
    ```
-   113 skill directories
-     = 17 curated (NOT catalog rows; includes the aid-triage router)
-     + 94 catalog rows
-         = 64 verb-first shortcut skills (one generated per non-`repurpose` row)
-         + 30 hand-authored `repurpose` skills (each with its own directory;
-           includes aid-ask, aid-deploy, aid-monitor and aid-query-kb, which are
-           re-registered classics and therefore NOT among the 17)
+   78 skill directories
+     = 18 curated (NOT catalog rows; includes the aid-triage router)
+     + 58 catalog rows
+         = 34 verb-first shortcut skills (one generated per non-`repurpose` row)
+         + 24 hand-authored `repurpose` skills (each with its own directory;
+           includes aid-ask, aid-deploy and aid-monitor, which are
+           re-registered classics and therefore NOT among the 18)
    ```
 
    **Do not hand-list the curated skills here.** A list was maintained inline and drifted:
    it named 14 skills while claiming 17, included `aid-deploy`/`aid-monitor`/`aid-query-kb`   <!-- count-history -->
-   (catalog rows, not curated), omitted the connector and ticket skills, and then added
-   `aid-triage` and `aid-ask` a second time on top — summing to 113 for a 111-skill corpus.
-   Derive the set instead:
+   (catalog rows at the time, not curated), omitted the connector and ticket skills, and then
+   added `aid-triage` and `aid-ask` a second time on top — summing to 113 for what was then a
+   111-skill corpus. Derive the set instead:
 
    ```bash
-   # the 17 curated = curated roster MINUS anything that is also a catalog row
+   # curatedOnly = the curated roster MINUS anything that is also a catalog row
+   # (named, not numbered: the count above is the derivation's output, never a literal to keep)
    node -e "import('./site/scripts/skills/skill-counts.mjs').then(async m => {
      const p = await import('./site/scripts/skills/paths.mjs');
      const c = m.deriveSkillCounts(p.REPO_ROOT);
@@ -134,10 +135,7 @@ Confirm canonical completeness:
    Rather than hardcoding the shortcut names, check that every catalog row plus every
    curated skill has a rendered `canonical/skills/<name>/SKILL.md` directory.
 
-2. All 10 canonical agents exist under `canonical/agents/`, each with an `AGENT.md`
-   (`ls -d canonical/agents/*/ | wc -l` = 10 -- master carried 9, which the disk had already
-   outgrown; work-003 delivery-015 found the same stale 9 hardcoded in
-   `site/scripts/gen-reference.mjs` and made it derive from `agents.length`).
+2. All 9 canonical agents exist under `canonical/agents/`.
 
    ```bash
    ls canonical/agents/ | wc -l
@@ -265,7 +263,7 @@ Before calling the run complete, confirm:
 - [ ] All selected profiles parsed without errors (`validate()` returned `[]`)
 - [ ] `canonical/` completeness verified against the derivation above, and the decomposition
       SUMS: directories = curatedOnly + catalogRows, and catalogRows = shortcuts + repurposed.
-      Also: 10 agents, non-empty templates.
+      Also: 9 agents, non-empty templates.
 - [ ] All renderers completed without errors
 - [ ] `profiles/{tool}/emission-manifest.jsonl` written for each rendered profile
 - [ ] VERIFY (deterministic): byte-identical re-render PASS, presence audit PASS, frontmatter parse PASS

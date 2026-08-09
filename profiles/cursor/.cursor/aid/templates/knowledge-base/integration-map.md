@@ -13,9 +13,6 @@ audience: [developer, architect]
 intent: |
   External integration topology — what the project consumes, what it exposes, and the communication patterns between components. Read this for integration-touching work.
 contracts: []
-changelog:
-  - 2026-06-23: Added f001 frontmatter fields (objective/summary/sources/tags/see_also/owner/audience)
-  - 2026-05-26: KB Authoring v2 template seed
 ---
 
 # Integration Map
@@ -34,7 +31,6 @@ changelog:
 - [Third-Party Services](#third-party-services)
 - [Integration Health Risks](#integration-health-risks)
 - [Contracts](#contracts)
-- [Change Log](#change-log)
 
 ---
 
@@ -158,8 +154,3 @@ changelog:
 
 ---
 
-## Change Log
-
-| Rev | Date | Source | Description |
-|-----|------|--------|-------------|
-| 1.0 | {date} | aid-discover | Initial integration surface mapping |

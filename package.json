@@ -1,0 +1,27 @@
+{
+  "name": "aid-methodology-repo-tooling",
+  "version": "0.0.1",
+  "private": true,
+  "description": "Node package configuration for tooling used by scripts INSIDE this repository. It lives at the repo root on the owner's rule, and the rule is sharper than a preference: everything under canonical/ is rendered into every adopter's install by design, so a manifest placed there ships whether or not it was meant to. Two manifests previously sat under canonical/aid/scripts/ and both shipped -- the summarize one while its own description said 'Not shipped to adopters'. Deliberately NOT merged into packages/npm/package.json, which is the published `aid-installer` wrapper: dependencies added there reach every npm consumer, and feature-012 D6/G1 requires the vendored bundles to be excluded from both published wrapper manifests. Deliberately carries NO \"type\" field -- the summarize manifest declared \"type\": \"module\" and at the repo root that would make every .js file in the repo ESM; it is safe to drop because both script directories are entirely .mjs, which carries module semantics in the extension.",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "install-browsers": "playwright install chromium"
+  },
+  "comments": {
+    "dependencies": "VERSION TRACKING ONLY -- these are never installed from this manifest. The actual bytes live at canonical/aid/templates/knowledge-graph/vendor/<package>/, fetched by hand from each package's own upstream distribution and committed. Dependabot watches this file (.github/dependabot.yml) to notice a new upstream release; it does not and cannot re-vendor the bytes. See canonical/aid/scripts/graph/vendor-provisioning.md for the human follow-on a version bump still requires.",
+    "devDependencies": "Playwright drives the aid-summarize visual-fidelity gate (validate-visuals.mjs). Run `npm run install-browsers` to fetch the browser after `npm install`. See canonical/aid/scripts/summarize/playwright-provisioning.md. jsdom is the DOM oracle for the graph-view/graph-canvas/graph-table suites under tests/canonical/: each resolves it by bare specifier or from AID_GRAPH_JSDOM and SKIPS LOUDLY when it is absent, which on CI meant test-graph-canvas.sh ran 6 of its 54 assertions and failed its own GC00c collapse guard. The version is pinned exactly and matched to site/package.json's `^29.1.1`, which is where the copy used for local development already lives (site/node_modules/jsdom); the two declarations are separate on purpose -- site/ is the docs build and does not install for the test job. IMPORTANT: nothing in CI runs a bare `npm install` at this root, because `dependencies` above is version-tracking-only and installing it would let a bare specifier resolve to node_modules instead of the committed vendor/ bytes, masking exactly the vendoring defect those bundles exist to avoid. The canonical-tests job installs jsdom alone, into a prefix outside the repo -- see .github/workflows/test.yml."
+  },
+  "dependencies": {
+    "d3-quadtree": "3.0.1",
+    "d3-dispatch": "3.0.1",
+    "d3-timer": "3.0.1",
+    "d3-force": "3.0.0",
+    "pixi.js": "8.19.0"
+  },
+  "devDependencies": {
+    "jsdom": "30.0.1",
+    "playwright": "1.62.1"
+  }
+}

@@ -21,7 +21,6 @@ its output is **not** production. For a design you intend to **keep and build**,
 `/aid-design`. Deeper per-slot guidance: `.cursor/aid/templates/shortcut-scaffolding/prototype.md`.
 
 - **Not a numbered pipeline phase**; does not route to `/aid-execute`.
-- **Behavior contract:** `.aid/work-005-lite-skills-refactor/specs/aid-prototype-design.md`.
 
 State machine: **INTAKE -> BUILD -> VERIFY (light) -> PRESENT [user decides] -> HANDOFF? ->
 DONE**. Print the `[State: NAME] -- {purpose}` entry line on each state.

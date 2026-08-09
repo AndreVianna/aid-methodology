@@ -315,7 +315,20 @@ for (const file of files) {
   });
 }
 
-/** Cap on `count-history` exemptions. An opt-out that can grow without limit is not bounded. */
+/**
+ * Cap on `count-history` exemptions. An opt-out that can grow without limit is not bounded.
+ *
+ * This is a RATCHET, held at exactly the number of exemptions in use, so it carries no spare
+ * headroom on purpose. Slack would pre-authorise that many unexamined opt-outs, which is
+ * strictly weaker than none: the whole point is that each exemption costs a reviewed line in
+ * a commit. So tripping this cap on legitimate work is EXPECTED behaviour, not a malfunction
+ * -- the marker and the raise belong in the same commit, with the reason stated there. The
+ * failure text below says so, because a reader who only sees "exceeds the cap" concludes the
+ * guard is broken and reaches for the wrong fix.
+ *
+ * The two bounds are INDEPENDENT: `SUPERSEDED` constrains WHAT a marked line may claim, this
+ * constrains HOW MANY lines may claim it. Raising this one loosens nothing about the other.
+ */
 const MARKER_CAP = 12;
 
 
@@ -336,7 +349,21 @@ if (marked.length > MARKER_CAP) {
   console.log(`
 FAIL: ${marked.length} \`${MARKER}\` exemptions exceeds the cap of ${MARKER_CAP}.`);
   console.log('The marker is for the occasional historical clause, not a way to opt whole');
-  console.log('files out. Either the numbers are stale, or the cap needs a deliberate raise.');
+  console.log('files out. Every exemption in use is listed above, prefixed [history].');
+  console.log('');
+  console.log('THIS MAY NOT BE A BUG IN YOUR CHANGE. MARKER_CAP is a ratchet, held at exactly');
+  console.log('the number of exemptions in use, so it has no spare headroom by design and ONE');
+  console.log('new legitimate historical clause is enough to trip it. Two cases:');
+  console.log('');
+  console.log(`  1. Your clause really is history. Raise MARKER_CAP to ${marked.length} in`);
+  console.log('     tests/canonical/check-skill-counts.mjs and give the reason in the commit');
+  console.log('     message. That is the sanctioned path, not a workaround.');
+  console.log('  2. A number is simply stale. Correct it and drop the marker instead.');
+  console.log('');
+  console.log(`Raising the cap does not let a marked line say anything: SUPERSEDED still holds`);
+  console.log('each marked number to a value that quantity actually held, and that bound is');
+  console.log('checked separately. This report also runs BEFORE the wrong-count report, so');
+  console.log('re-run after fixing the cap -- there may be stale counts queued behind it.');
   process.exit(1);
 }
 
@@ -354,8 +381,9 @@ if (wrong.length) {
 // Non-vacuity floor. Set near the live figure rather than at a token 20: the point is to
 // catch a scan that has silently stopped reaching the corpus (a moved tree, a broken walk,
 // a regex refactor that neuters every pattern), and a floor an order of magnitude below the
-// real count cannot do that. If a future work legitimately shrinks the corpus -- work-004
-// takes it from 111 to 74 -- lower this deliberately and say so in the commit.
+// real count cannot do that. If a future work legitimately shrinks the corpus, lower this
+// deliberately and say so in the commit. work-004 did shrink it, 111 -> 75, and did NOT need
+// to touch this: the floor counts CLAIMS, not skills, and 174 claims survived that corpus.
 const CLAIM_FLOOR = 120;
 if (checked < CLAIM_FLOOR) {
   console.log(`\nFAIL: only ${checked} claims checked — the scan is not reaching the corpus.`);

@@ -97,9 +97,8 @@ visual-rendering artifact and the no-diagram rule does NOT apply to it.
 
 9. **Layout order** `[AUTHORING-LAYOUT]` — Verify the top-to-bottom order:
    frontmatter block first, then title, then index/table-of-contents, then content
-   sections, then `## Change Log` last. A doc where content appears before the
-   frontmatter block, or where content follows the Change Log section, or where the
-   Change Log is absent = `[HIGH]` `[AUTHORING-LAYOUT]`.
+   sections. A doc where content appears before the frontmatter block =
+   `[HIGH]` `[AUTHORING-LAYOUT]`.
 
 10. **Index present** `[AUTHORING-LAYOUT]` — A doc with more than 3 sections MUST have
     a `## Contents` block (or equivalent table of contents) near the top, before the
@@ -107,9 +106,11 @@ visual-rendering artifact and the no-diagram rule does NOT apply to it.
     `[AUTHORING-LAYOUT]` at the severity `KB-02` derives per instance (**`Step 2`**): one doc is
     confined → `[MEDIUM]`; widespread → escaped → `[HIGH]`.
 
-11. **Change Log last** `[AUTHORING-LAYOUT]` — The `## Change Log` section (or equivalent
-    heading) MUST be the final section. Any section heading appearing after the Change
-    Log heading = `[HIGH]` `[AUTHORING-LAYOUT]`.
+11. **No history apparatus** `[AUTHORING-LAYOUT]` — A KB doc MUST NOT carry a
+    `## Change Log` / `## Revision History` section or a `changelog:` frontmatter field;
+    per-doc history lives in git. Any such section or field = `[HIGH]`
+    `[AUTHORING-LAYOUT]`. Relatedly, any work reference (`work-NNN`, `.aid/works/...`)
+    anywhere in the doc = `[HIGH]` — see the KB authoring principles P1(e).
 
 12. **Required frontmatter fields** `[AUTHORING-FM]` — Each Full Primary doc MUST carry
     `audience:`, `owner:`, and `tags:` in addition to the required `objective:`,
@@ -153,8 +154,11 @@ declares in `review-rubrics/kb.md`; where the two disagree the catalog wins and 
 defect. Six of these read a flat `[MEDIUM]` until 2026-08-07 — the value the retired flat-severity
 limb emitted. Five cite `SHOULD` rules, which Step 1 of the severity scale bands at `[LOW]`; the
 sixth (`KB-02`) cites a `MUST`, which Step 1 sends to Step 2 to be banded from its own blast radius:
-- Layout order violation (content before frontmatter, content after Change Log, no Change
-  Log) = what `KB-03` anchors: `[HIGH]` / `[AUTHORING-LAYOUT]`
+- Content before the frontmatter block = what `KB-01` anchors: `[HIGH]` / `[AUTHORING-LAYOUT]`
+- History apparatus present (`## Change Log`, `## Revision History`, or a `changelog:` field —
+  item 11) = what `KB-03` anchors: `[HIGH]` / `[AUTHORING-LAYOUT]`. `KB-03` was **inverted
+  2026-08-09** to match master's retirement of the KB history apparatus: it formerly required a
+  change log and now bans one. Measured at that merge, 0 of 22 KB docs carried one.
 - Index absent in a doc with more than 3 sections = what `KB-02` anchors: **`Step 2`** —
   instance-derived; one doc confined → `[MEDIUM]`, widespread → escaped → `[HIGH]` /
   `[AUTHORING-LAYOUT]`
@@ -220,6 +224,10 @@ declared `intent:` (item 1), missing edge case (item 4), and undefined project-s
 contract forbids presenting a value as an anchor when no rule declares it. Their `[MEDIUM]` is
 declared by this checklist itself and is used as-is; the missing criterion is registered as a
 criteria gap (`kb-anatomy/intent-edge-case-term-coverage`), not invented here.
+
+**Item 11 is anchored and is not one of the three.** It arrived from master on 2026-08-09, and
+`KB-03` was inverted the same day to declare it, so it has a catalog rule and appears in the anchor
+list above. No criteria gap is raised for it.
 
 ### Rubric routing (apply per document)
 

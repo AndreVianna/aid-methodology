@@ -1,0 +1,1006 @@
+/* ============================================================================
+ * graph-css.css -- the knowledge-relationship graph view's own stylesheet.
+ *
+ * Inlined into graph.html AFTER knowledge-summary/component-css.css, which is
+ * reused verbatim and supplies every chrome rule this file leans on: the theme
+ * variables, .skip-link, :focus-visible, .callout.err / .callout.warn,
+ * .tbl-wrap / table.tbl, .diagram-box, the lightbox, and the three media blocks
+ * (prefers-reduced-motion, forced-colors, print). This file forks none of them.
+ *
+ * Two things live here and nowhere else:
+ *
+ *   1. the GRAPH PALETTE -- seven node-kind colours and eight relationship
+ *      category colours, declared as CSS custom properties in two blocks so the
+ *      project's contrast checker can read them (see the header of each block);
+ *   2. the layout and appearance of the graph region, the control panel, the
+ *      group headers, the coverage panel and the legend.
+ *
+ * Chrome colours are taken from the shared tokens with var(): --accent for focus
+ * and selection, --text-dim for dimmed marks, --err / --warn for the callouts.
+ * No colour value is authored here except the fifteen palette entries.
+ * ========================================================================== */
+
+
+/* ============================================================================
+ * THE GRAPH PALETTE -- light theme
+ *
+ * Selector choice is a contract, not a preference. The project's contrast
+ * checker locates a block by building `<selector>\s*\{([^}]*)\}` and matching it
+ * WITHOUT the global flag, so it resolves the FIRST occurrence of each selector
+ * it is asked for and reads nothing else. Three consequences, all of which this
+ * block is shaped by:
+ *
+ *   - `html:root` is used rather than `:root` because a `:root {` block already
+ *     occurs earlier in the assembled page (component-css.css declares
+ *     `color-scheme` there). A second `:root {` block here would be invisible to
+ *     the checker, and the palette would be silently unchecked;
+ *   - `html:root` also cannot capture the checker's existing `:root` lookup: that
+ *     lookup matches the first `:root\s*\{` in the page, which is the earlier
+ *     block, so this one is reachable only by a lookup asked for by name;
+ *   - the block body must contain no `}` before its end, because the extraction
+ *     regex is `[^}]*`. So this is a flat declaration block with no nested rule,
+ *     and every value is a plain hex literal -- no var() chain and no color-mix(),
+ *     neither of which the checker can resolve.
+ *
+ * Custom-property names use lowercase letters and hyphens only: the checker's
+ * property charset is `[a-z-]+`, so a digit or an underscore in a token name
+ * would make that token invisible with no warning and no failure. That is why
+ * the palette is named after kinds and categories rather than numbered.
+ *
+ * Contrast basis and target: each token is a graphical object carrying meaning
+ * (node kind by colour and shape, relationship category by colour and line
+ * style), so WCAG 2.2 SC 1.4.11 Non-text Contrast applies at 3:1 against the
+ * adjacent colour. The adjacent colour is the graph surface, which is
+ * --bg-elev in both themes (.graph-surface below sets it and nothing overrides
+ * it), so every pair is `--gk-*` or `--gc-*` against `--bg-elev`.
+ * ========================================================================== */
+html:root {
+	/* Node kind -- one colour per value of the closed seven-value Kind enum.
+	   The companion shape token is carried in the view model, not here: colour
+	   is never the sole carrier of kind. */
+	--gk-document: #1E3A8A;
+	--gk-section: #4338CA;
+	--gk-fact: #9A3412;
+	--gk-concept: #7E22CE;
+	--gk-source-artifact: #065F46;
+	--gk-image: #A21CAF;
+	--gk-web-page: #B91C1C;
+
+	/* The project hub (task-035). NOT an eighth member of the Kind enum -- it is
+	   the view's own synthetic node and the schema knows nothing about it -- so it
+	   is deliberately NEUTRAL rather than a ninth hue: the seven hues above mean
+	   "kind", and giving the hub one would read as a kind it does not have. Near-
+	   black on light and near-white on dark, which is also the highest contrast
+	   available on either theme. */
+	--gk-project: #111827;
+
+	/* Relationship category -- eight colours over fourteen categories. The six
+	   categories without a colour of their own reuse a holder's colour and are
+	   separated by line style; the line-style assignment is in the view model
+	   and is summarised in this directory's lens-presets.md. */
+	--gc-structure: #1D4ED8;
+	--gc-taxonomy: #6941C6;
+	--gc-documentation: #0F766E;
+	--gc-evidence: #B42318;
+	--gc-provenance: #B45309;
+	--gc-lineage: #86198F;
+	--gc-dependency: #15803D;
+	--gc-implementation: #0369A1;
+}
+
+/* ============================================================================
+ * THE GRAPH PALETTE -- dark theme
+ *
+ * `html[data-theme="dark"]:root` rather than `html[data-theme="dark"]` for the
+ * same reason, and for one more that is specific to the dark side. The checker's
+ * dark lookup matches `html\[data-theme="dark"\]\s*\{`, and in this selector the
+ * `]` is followed by `:root` rather than by whitespace and a brace, so this
+ * block is invisible to that lookup and reachable only by a lookup asked for by
+ * name. It also occurs EXACTLY ONCE in the assembled page and never inside
+ * `@media print`: the print block re-declares the dark theme's tokens with light
+ * values in order to force a light print rendering, so a lookup that merged
+ * every occurrence of a dark selector would read print values as though they
+ * were screen values.
+ *
+ * Both selectors match the same <html> element as the plain forms, so the
+ * cascade is unchanged: specificity 0,1,0 (html:root) and 0,2,1
+ * (html[data-theme="dark"]:root) keep the dark block winning over the light one.
+ * ========================================================================== */
+html[data-theme="dark"]:root {
+	--gk-document: #A8C7FF;
+	--gk-section: #B0AEFF;
+	--gk-fact: #FFB68A;
+	--gk-concept: #DDA8FF;
+	--gk-source-artifact: #7FE3C0;
+	--gk-image: #FF9FE0;
+	--gk-web-page: #FFA8A8;
+
+	--gk-project: #F3F4F6;
+
+	--gc-structure: #8AB4FF;
+	--gc-taxonomy: #C79BFF;
+	--gc-documentation: #5EEAD4;
+	--gc-evidence: #FF9E9E;
+	--gc-provenance: #FBBF6E;
+	--gc-lineage: #F0A6E8;
+	--gc-dependency: #86EFAC;
+	--gc-implementation: #7DD3FC;
+}
+
+
+/* ---------- Page frame ---------- */
+
+.graph-page {
+	/* FULL VIEWPORT WIDTH, owner's decision. The 1200px cap wasted 400px of a
+	   1600px screen and grew with the display -- and what it was capping is a
+	   drawing surface and a wide table, neither of which is prose. A measure cap
+	   is right for reading text and wrong for a canvas, so the cap moves to the
+	   two things here that ARE prose (`.lede` below, and the legend's own
+	   sections) rather than sitting on the page.
+
+	   `max-width: none` is REQUIRED and is not a redundant reset. This element IS
+	   the page's `<main>`, and the shared stylesheet caps `main` at 1200px and
+	   centres it. Deleting a `max-width` here does not widen anything -- it just
+	   falls back to that rule, which is exactly what happened on the first attempt
+	   (measured: `.graph-page` still 1200px wide inside a 1585px body). The cap
+	   has to be overridden explicitly, and `margin: 0` above likewise overrides
+	   the shared `margin: 0 auto`. */
+	max-width: none;
+	margin: 0;
+	padding: 1.5rem 1.25rem 3rem 1.25rem;
+}
+
+/* The footer is a SIBLING of `<main>`, so it keeps the shared 1200px centred cap
+   and its left edge would no longer line up with the full-width page above it.
+   Scoped by sibling combinator rather than by id so it applies only where a
+   full-width `.graph-page` is what precedes it. */
+.graph-page ~ footer {
+	max-width: none;
+	margin: 0;
+}
+
+.graph-page > h1 {
+	font-size: 2rem;
+	letter-spacing: -0.01em;
+	margin: 0 0 0.3em 0;
+}
+
+.graph-page .lede {
+	color: var(--text-muted);
+	max-width: 78ch;
+	margin: 0 0 1.4rem 0;
+}
+
+
+/* ---------- Lens bar (the four preset entry points) ---------- */
+
+.lens-bar {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0.5rem;
+	align-items: center;
+	padding: 0.75rem;
+	margin-bottom: 1rem;
+	background: var(--bg-elev);
+	border: 1px solid var(--border);
+	border-radius: var(--radius);
+}
+
+.lens-bar .lens-bar-label {
+	font-size: 0.74rem;
+	font-weight: 700;
+	letter-spacing: 0.08em;
+	text-transform: uppercase;
+	color: var(--text-dim);
+	margin-right: 0.35rem;
+}
+
+.lens-btn {
+	font: inherit;
+	font-weight: 600;
+	padding: 0.4rem 0.85rem;
+	background: var(--bg-sunken);
+	color: var(--text);
+	border: 1px solid var(--border-strong);
+	border-radius: var(--radius-sm);
+	cursor: pointer;
+}
+
+.lens-btn:hover { background: var(--bg); }
+
+/* aria-pressed is the state carrier; the ring is the visible echo of it, and the
+   left rule is a second, non-colour channel for the same fact. */
+.lens-btn[aria-pressed="true"] {
+	border-color: var(--accent);
+	box-shadow: inset 3px 0 0 0 var(--accent);
+	background: var(--bg-elev);
+}
+
+
+/* ---------- Control panel ---------- */
+
+.controls-panel {
+	margin-bottom: 1.25rem;
+	background: var(--bg-elev);
+	border: 1px solid var(--border);
+	border-radius: var(--radius);
+}
+
+.controls-panel > summary {
+	padding: 0.7rem 1rem;
+	font-weight: 600;
+	cursor: pointer;
+	list-style: none;
+	display: flex;
+	align-items: center;
+	gap: 0.5rem;
+}
+
+.controls-panel > summary::-webkit-details-marker { display: none; }
+
+.controls-panel > summary::before {
+	content: "\25B6";
+	font-size: 0.7em;
+	color: var(--text-dim);
+	transition: transform 0.15s ease;
+}
+
+.controls-panel[open] > summary::before { transform: rotate(90deg); }
+
+/* The collapsed text legend (task-035). Selector-listed alongside
+   `.controls-panel` rather than given rules of its own, so the two disclosures on
+   this page cannot drift apart in appearance or in behaviour -- and so the
+   reduced-motion, forced-colours and print blocks below reach it through the same
+   lines that already reach the controls panel. */
+.legend-detail {
+	margin-top: 0.75rem;
+	background: var(--bg-elev);
+	border: 1px solid var(--border);
+	border-radius: var(--radius);
+}
+
+.legend-detail > summary {
+	padding: 0.7rem 1rem;
+	font-weight: 600;
+	cursor: pointer;
+	list-style: none;
+	display: flex;
+	align-items: center;
+	gap: 0.5rem;
+}
+
+.legend-detail > summary::-webkit-details-marker { display: none; }
+
+.legend-detail > summary::before {
+	content: "\25B6";
+	font-size: 0.7em;
+	color: var(--text-dim);
+	transition: transform 0.15s ease;
+}
+
+.legend-detail[open] > summary::before { transform: rotate(90deg); }
+
+.legend-detail > [data-legend] { padding: 0 1rem 1rem; }
+
+.controls-grid {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+	gap: 1rem;
+	padding: 0 1rem 1rem 1rem;
+}
+
+.control-group {
+	display: flex;
+	flex-direction: column;
+	gap: 0.35rem;
+	min-width: 0;
+}
+
+.control-group > label,
+.control-group > .control-group-label {
+	font-size: 0.78rem;
+	font-weight: 600;
+	color: var(--text-muted);
+}
+
+.control-group input[type="search"],
+.control-group input[type="number"],
+.control-group select {
+	font: inherit;
+	padding: 0.35rem 0.5rem;
+	color: var(--text);
+	background: var(--bg);
+	border: 1px solid var(--border-strong);
+	border-radius: var(--radius-sm);
+	min-width: 0;
+	max-width: 100%;
+}
+
+.control-group input[type="range"] { width: 100%; }
+
+/* The viewport row sits below the control grid rather than inside it, because its
+   controls write one field and not a filter axis. */
+.controls-viewport { padding: 0 1rem 1rem 1rem; }
+
+.control-hint {
+	font-size: 0.78rem;
+	color: var(--text-dim);
+}
+
+/* A filter axis is a real <fieldset> with a real <legend>, so the axis name is
+   the group name in the accessibility tree rather than a visual heading. */
+.filter-axis {
+	border: 1px solid var(--border);
+	border-radius: var(--radius-sm);
+	padding: 0.5rem 0.7rem 0.6rem 0.7rem;
+	margin: 0;
+	min-width: 0;
+}
+
+.filter-axis > legend {
+	font-size: 0.78rem;
+	font-weight: 600;
+	color: var(--text-muted);
+	padding: 0 0.3rem;
+}
+
+.filter-axis .filter-values {
+	display: flex;
+	flex-direction: column;
+	gap: 0.15rem;
+	max-height: 13rem;
+	overflow-y: auto;
+}
+
+.filter-axis label {
+	display: flex;
+	align-items: center;
+	gap: 0.4rem;
+	font-size: 0.87rem;
+	padding: 0.1rem 0;
+}
+
+/* The swatch is decorative: every filter row also carries the value's name as
+   text, and a category row carries its line style as a second channel. */
+.filter-swatch {
+	flex: 0 0 auto;
+	width: 1.6rem;
+	height: 0;
+	border-top-width: 3px;
+	border-top-color: currentcolor;
+}
+
+.filter-swatch.ls-solid { border-top-style: solid; }
+.filter-swatch.ls-dashed { border-top-style: dashed; }
+.filter-swatch.ls-dotted { border-top-style: dotted; }
+.filter-swatch.ls-dash-dot { border-top-style: double; }
+
+.filter-glyph {
+	flex: 0 0 auto;
+	width: 1.1rem;
+	text-align: center;
+	font-size: 0.95em;
+}
+
+.toggle-row {
+	display: flex;
+	align-items: center;
+	gap: 0.45rem;
+	font-size: 0.9rem;
+}
+
+
+/* ---------- The two peer renderings ---------- */
+
+/* DOM order is table-first so the keyboard reaches the everywhere-usable surface
+   first; the visual order is graph-then-table on wide viewports and is set here,
+   not in the markup. Neither region is nested in the other and neither is ever
+   hidden -- they are siblings, which is the structural form of "peer rendering". */
+.renderings {
+	display: grid;
+	grid-template-columns: 1fr;
+	gap: 1.25rem;
+}
+
+.graph-region { order: 1; min-width: 0; }
+.table-region { order: 2; min-width: 0; }
+
+.region-head {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: baseline;
+	gap: 0.6rem;
+	margin-bottom: 0.5rem;
+}
+
+.region-head h2 { font-size: 1.15rem; margin: 0; }
+
+.region-head .counts {
+	font-size: 0.85rem;
+	color: var(--text-dim);
+}
+
+/* The drawing surface. Height is fixed here rather than measured, so the shell
+   has a stable box before any renderer mounts and the layout does not jump. */
+.graph-surface {
+	position: relative;
+	width: 100%;
+	/* Was a flat 32rem (512px) regardless of the display. Now viewport-relative,
+	   so the drawing is the dominant element on the page rather than a fixed
+	   letterbox in the middle of it -- which is what "the data is first class"
+	   means in layout terms. `min()` keeps it from becoming absurd on a very tall
+	   screen, and the floor keeps it usable on a short one.
+
+	   Why 60vh and not more: this box does not start at the top of the viewport.
+	   The heading, the lede and the lens bar sit above it (measured: 391px at
+	   1600x1000), so 72vh put the bottom edge 111px past the fold and the reader
+	   had to scroll to see the boundary of the very thing they were dragging.
+	   60vh clears it with room to spare at that size and still scales with the
+	   display, which a fixed pixel height would not. */
+	height: min(60vh, 46rem);
+	min-height: 22rem;
+	background: var(--bg-elev);
+	border: 1px solid var(--border);
+	border-radius: var(--radius);
+	overflow: hidden;
+}
+
+.graph-surface > canvas {
+	display: block;
+	width: 100%;
+	height: 100%;
+}
+
+/* Shown until a drawing rendering registers itself, and left in place when none
+   does. It is a statement, not a spinner: a build with no canvas is a complete
+   artifact, because the table rendering below is a peer and not a fallback. */
+.graph-placeholder {
+	position: absolute;
+	inset: 0;
+	display: flex;
+	flex-direction: column;
+	justify-content: center;
+	gap: 0.4rem;
+	padding: 1.5rem;
+	text-align: center;
+	color: var(--text-muted);
+	font-size: 0.92rem;
+}
+
+/* The `hidden` attribute MUST win here, and without this rule it does not.
+   `graph-controls.js` sets `placeholder.hidden = true` once a drawing rendering
+   mounts, and that is correct -- the IDL property reads `true`. But `hidden`
+   works only through the UA stylesheet's `[hidden] { display: none }`, and ANY
+   author `display` declaration outranks a UA one. The `display: flex` above is
+   exactly such a declaration, so the placeholder stayed painted.
+
+   Two symptoms, one cause, both measured in Chromium on 2026-08-06:
+     1. The page asserted "The interactive drawing surface is not present in
+        this build" while `__aidGraphCanvas.mode` was `'live'` and a real WebGL
+        2.0 context was drawing -- a false statement to every reader.
+     2. Far worse: this element is `position: absolute; inset: 0` with the
+        default `pointer-events: auto`, so it painted ABOVE the statically
+        positioned canvas and swallowed every pointer event.
+        `document.elementFromPoint` inside the surface returned this `<p>`, not
+        the canvas, so click-to-select, drag-to-pan, wheel-to-zoom and
+        double-click never reached handlers that were correctly bound all along
+        (`gcBindPointerEvents` binds to the appended element). Dragging over the
+        graph selected this paragraph's text instead of panning.
+
+   Specificity is the whole fix: `.graph-placeholder[hidden]` (0,2,0) beats
+   `.graph-placeholder` (0,1,0). No `!important` is needed or wanted. Do NOT
+   "fix" this in `graph-controls.js` -- the JS is already right. */
+.graph-placeholder[hidden] {
+	display: none;
+}
+
+/* The forced-colours system-colour probe (feature-008, task-017). A hidden
+   element the drawing rendering resolves with getComputedStyle exactly as it
+   resolves a palette custom property, so the two system colours it draws with
+   under forced-colours mode -- the forced foreground and the forced background
+   -- live in CSS and never as a literal in the drawing code (AC-S4). It is
+   read only at the same invalidation points a palette token is (a theme
+   change, a forced-colours change), never inside the frame path (AC-S5). */
+.gc-colour-probe {
+	position: absolute;
+	width: 0;
+	height: 0;
+	overflow: hidden;
+	color: CanvasText;
+	background-color: Canvas;
+}
+
+
+/* ---------- Group headers (the fold disclosure) ---------- */
+
+.group-list {
+	display: flex;
+	flex-direction: column;
+	gap: 0.25rem;
+	margin: 0.6rem 0 0 0;
+	padding: 0;
+	list-style: none;
+}
+
+.group-row {
+	display: flex;
+	align-items: center;
+	gap: 0.5rem;
+	font-size: 0.88rem;
+}
+
+.group-toggle {
+	font: inherit;
+	font-size: 0.85rem;
+	display: inline-flex;
+	align-items: center;
+	gap: 0.4rem;
+	padding: 0.2rem 0.55rem;
+	background: var(--bg-sunken);
+	color: var(--text);
+	border: 1px solid var(--border-strong);
+	border-radius: var(--radius-sm);
+	cursor: pointer;
+}
+
+.group-toggle:hover { background: var(--bg); }
+
+.group-toggle::before {
+	content: "\25B6";
+	font-size: 0.7em;
+	color: var(--text-dim);
+}
+
+.group-toggle[aria-expanded="true"]::before { content: "\25BC"; }
+
+.group-row .group-count { color: var(--text-dim); }
+
+
+/* ---------- Selected-node detail (inline, never a modal) ---------- */
+
+.node-detail {
+	margin-top: 1rem;
+	padding: 0.85rem 1rem;
+	background: var(--bg-elev);
+	border: 1px solid var(--border);
+	border-left: 3px solid var(--accent);
+	border-radius: var(--radius);
+}
+
+.node-detail h2 { font-size: 1rem; margin: 0 0 0.4em 0; }
+
+.node-detail dl {
+	display: grid;
+	grid-template-columns: auto 1fr;
+	gap: 0.2rem 0.7rem;
+	margin: 0 0 0.7rem 0;
+	font-size: 0.88rem;
+}
+
+.node-detail dt { color: var(--text-dim); }
+.node-detail dd { margin: 0; overflow-wrap: anywhere; }
+
+.node-detail .btn-open {
+	font: inherit;
+	font-weight: 600;
+	padding: 0.35rem 0.8rem;
+	background: var(--accent);
+	color: var(--accent-fg);
+	border: 1px solid transparent;
+	border-radius: var(--radius-sm);
+	cursor: pointer;
+}
+
+
+/* ---------- Legend, coverage panel, prerequisites ---------- */
+
+.legend-grid {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+	gap: 0.5rem 1.25rem;
+	/* Sections have very different heights (7 kinds, 13 categories, 2 gap
+	   classes, 4 prose entries). Without this they stretch to the tallest row
+	   and their entries space out to fill it, which is what made the short
+	   columns read as half-empty. */
+	align-content: start;
+}
+
+.legend-grid dl { margin: 0; }
+
+/* A `dd` carries a 40px UA indent, which inside a 210px grid track is a fifth
+   of the column spent on nothing -- and it indented every glyph row away from
+   its own heading, so a row read as belonging to no section in particular. The
+   glyph column already provides the alignment the indent was standing in for. */
+.legend-grid dd { margin-left: 0; }
+
+/* Removing that indent took away the only thing separating a `dt` from its `dd`
+   in the prose section, where both are running text -- the term and its
+   description became one undifferentiated block. Weight and space do the job the
+   indent was doing, without spending a fifth of every column on it. */
+.legend-grid dt {
+	font-weight: 600;
+	margin-top: 0.7rem;
+}
+
+.legend-grid dt:first-child { margin-top: 0; }
+
+/* A swatch is a 3px border-top on a zero-height box, so top-aligning it puts
+   the line at the very top of the text's ascent rather than through its middle.
+   This drops it onto the first line's centre. A glyph needs no such correction:
+   it is a text character and shares the row's own line box. */
+.legend-row > .filter-swatch { margin-top: 0.6em; }
+
+/* The prose section is sentences, not rows, and at one track width it wrapped
+   every few words into a tall ragged column. Two tracks give it a readable
+   measure. Only above the breakpoint: at narrower widths `auto-fit` has already
+   collapsed the grid toward one or two columns, and a 2-track span there would
+   either overflow or squeeze the glyph sections back to nothing. */
+@media (min-width: 60rem) {
+	.legend-grid .legend-prose { grid-column: span 2; }
+}
+
+.legend-row {
+	display: flex;
+	/* NOT `center`: that is right for a one-line row and wrong the moment one
+	   wraps, because the mark drifts down to sit beside the SECOND line and so
+	   reads as labelling the wrong text. Rows do wrap -- a narrow grid track and
+	   the longer gap-class descriptions both cause it. Top alignment keeps the
+	   mark on the first line at every column width; `.filter-swatch` gets a
+	   small margin below to sit on that line's centre rather than its ascent. */
+	align-items: flex-start;
+	gap: 0.5rem;
+	font-size: 0.87rem;
+	padding: 0.12rem 0;
+}
+
+.coverage-panel table.tbl { font-size: 0.87rem; }
+
+
+/* ---------- The relationship table ----------
+
+   THE TABLE SCROLLS SIDEWAYS RATHER THAN COMPRESSING. Columns of ids and
+   relation phrases do not fit a viewport -- there were ten when this was
+   written and task-034 slimmed them to six, which narrows the problem without
+   removing it, since two full ids and two relation phrases still outrun a
+   viewport. The shared `table.tbl { width: 100% }` made them try: every column
+   was squeezed to a
+   share of the available width, so `wcag-contrast-figure` broke across lines,
+   a row's Select control was pushed under its own name, and the column widths
+   bore no relation to what the columns held.
+
+   `.tbl-wrap` already sets `overflow-x: auto`, so the scroll mechanism was
+   there and unreachable -- a table pinned to 100% of its wrapper can never
+   overflow it. Sizing to content is what makes that wrapper do its job.
+   Scoped to this view's two tables by their data attributes, so the shared
+   rule is overridden rather than forked (this file forks none of them).       */
+
+[data-relationship-table],
+[data-unlisted-table] {
+	width: auto;
+	/* Still fills the wrapper when the content is narrower than it, so a small
+	   table does not sit in a half-empty box. */
+	min-width: 100%;
+}
+
+/* Content decides the column width. Without this, `width: auto` alone still
+   lets the browser wrap inside a cell to reach a narrower table. Ids and
+   relation phrases are single tokens or short phrases and are meant to be read
+   on one line; the two long-prose columns opt back out below. */
+[data-relationship-table] th,
+[data-relationship-table] td,
+[data-unlisted-table] th,
+[data-unlisted-table] td {
+	white-space: nowrap;
+}
+
+/* The empty-state cell is a sentence spanning every column, and the coverage
+   note is prose -- both must wrap, or the table would scroll to the width of a
+   paragraph. */
+[data-relationship-table] [data-empty-state] td,
+[data-relationship-table] caption,
+[data-unlisted-table] caption {
+	white-space: normal;
+}
+
+/* ---- Sticky cells ----
+
+   The shared rule is `.tbl th { position: sticky; top: 0 }`, which is written
+   for a column header and lands on EVERY `th` -- including each row's
+   `scope="row"` cell. So every row's Source Id was pinned to the top of the
+   scroll container and stacked into the header band; the owner's screenshot
+   shows one sitting among the column labels.
+
+   And the header's own offset was wrong for a second, independent reason. It
+   was set inline to 60px to clear the page's sticky top bar, which is correct
+   only if the header sticks to the VIEWPORT. It does not: `.tbl-wrap` sets
+   `overflow-x: auto`, CSS computes the other axis of a non-visible overflow to
+   `auto` too, so the wrapper is itself a scroll container and sticky resolves
+   against it. Measured: the wrapper's computed `overflow-y` is `auto`. The 60px
+   therefore pushed the header DOWN over the first body rows. `tblStickyTop` no
+   longer writes it; the offset is 0 and lives here.                          */
+
+[data-relationship-table] thead th,
+[data-unlisted-table] thead th {
+	top: 0;
+	z-index: 3;
+}
+
+/* A row header stops sticking vertically and starts sticking HORIZONTALLY,
+   which is what a table this wide actually wants: the Source Id column stays
+   in view while the reader scrolls right through the rest. Needs an opaque
+   background, or the cells it scrolls over would show through it.
+
+   EVERY table on these pages needs this, and the list below is why the rule is
+   written per-table rather than as a bare `.tbl tbody th`: the two tables added
+   by task-034 (`data-files-table`, `data-concepts-table`) carry `class="tbl"`
+   and so inherited the shared `.tbl th { position: sticky; top: 0 }` with NO
+   override -- every row header in the Files tree would have stuck to the top of
+   the scroll box and stacked over the column headers. That is the exact defect
+   this comment block was written to warn about, reproduced by the next table to
+   arrive, which is the argument for keeping this list complete rather than
+   assuming a new table is covered. */
+[data-relationship-table] tbody th,
+[data-unlisted-table] tbody th,
+[data-files-table] tbody th,
+[data-concepts-table] tbody th {
+	top: auto;
+	left: 0;
+	z-index: 2;
+	background: var(--bg-elev);
+}
+
+/* The corner cell is pinned on both axes at once, so it must outrank both. */
+[data-relationship-table] thead th:first-child,
+[data-unlisted-table] thead th:first-child {
+	left: 0;
+	z-index: 4;
+}
+
+/* The caption is a block whose containing block is the TABLE, now ~2000px wide,
+   so its sentence laid out across the full scroll width and ran off the right
+   of the viewport. A readable measure keeps it where it can be read without
+   scrolling to find the rest of it. */
+[data-relationship-table] caption,
+[data-unlisted-table] caption {
+	max-width: 78ch;
+	text-align: left;
+}
+
+
+/* ---- The two controls the table emits ----
+
+   Both are real <button>s and stay that way: the sort control is where
+   `aria-sort` lives and where the state change is announced, and the row
+   control performs a real selection. Both also carry an inline 2.75rem
+   min-width/min-height from `tblSizeControl` -- the accessibility checklist's
+   touch target -- which is INLINE and therefore not overridable from here, and
+   must not be: a 44px hit area is the point.
+
+   What was wrong was never the size, it was that neither had any styling at
+   all, so each rendered as a default grey UA button. The header row became a
+   strip of grey boxes with wrapped labels. These rules keep the hit area and
+   stop painting it.                                                          */
+
+[data-relationship-table] thead button {
+	appearance: none;
+	background: none;
+	border: 0;
+	padding: 0;
+	margin: 0;
+	font: inherit;
+	font-weight: inherit;
+	letter-spacing: inherit;
+	text-transform: inherit;
+	color: inherit;
+	text-align: left;
+	cursor: pointer;
+	/* The label and its sort caret on ONE line inside the 44px box, rather than
+	   the label wrapping in a box sized for touch. */
+	display: inline-flex;
+	align-items: center;
+	gap: 0.35em;
+	white-space: nowrap;
+}
+
+[data-relationship-table] thead button:hover { color: var(--accent); }
+
+/* The row-selection control: readable as an action, quiet enough not to
+   dominate the name beside it. Its hit area still extends past what is
+   painted. */
+[data-relationship-table] tbody button {
+	appearance: none;
+	font: inherit;
+	font-size: 0.82em;
+	line-height: 1.6;
+	padding: 0.1em 0.7em;
+	background: none;
+	color: var(--text-muted);
+	border: 1px solid var(--border);
+	border-radius: 999px;
+	cursor: pointer;
+	/* Keeps the pill beside its name rather than under it, now that the cell is
+	   free to be as wide as its content. */
+	margin-left: 0.5em;
+	vertical-align: middle;
+}
+
+[data-relationship-table] tbody button:hover {
+	color: var(--accent);
+	border-color: var(--accent);
+}
+
+.prereqs {
+	font-size: 0.88rem;
+	color: var(--text-muted);
+}
+
+.prereqs li { margin-bottom: 0.2em; }
+
+
+/* ---------- Node-kind colour and shape, for every non-canvas surface ---------- */
+
+/* One class per Kind, keyed on the Kind value and on nothing else. There is no
+   rule anywhere in this file keyed on an identifier prefix: a prefix says where
+   an id came from, not what class a node belongs to, and the two disagree --
+   `image` spans two prefixes and one prefix spans four kinds. The glyph that
+   accompanies each colour is text supplied by the view model, so kind survives
+   both a monochrome rendering and forced-colours mode. */
+/* The two coverage-gap badges. SEVERITY tokens, not kind tokens -- the same two
+   `graph-canvas.js` strokes the asterisk with and the same two the relationship
+   table gives these classes, so all three surfaces agree. Unbacked takes the
+   error token because it is wrong information, not missing information. */
+/* One size for both, matching the canvas: colour is the only difference between
+   the two classes, by the owner's choice. Nothing here sets a size, so both
+   inherit the row's own -- an earlier revision bumped the unbacked one and that
+   bump is deliberately gone rather than merely reduced. */
+.gap-kb-unbacked { color: var(--err); }
+.gap-artifact-undocumented { color: var(--warn); }
+
+.k-document { color: var(--gk-document); }
+.k-section { color: var(--gk-section); }
+.k-fact { color: var(--gk-fact); }
+.k-concept { color: var(--gk-concept); }
+.k-source-artifact { color: var(--gk-source-artifact); }
+.k-image { color: var(--gk-image); }
+.k-web-page { color: var(--gk-web-page); }
+/* The project hub (task-035). Same shape of rule as the seven above so any
+   surface that builds a `k-<kind>` class name reaches it with no new branch --
+   the hub's kind IS `project`. */
+.k-project { color: var(--gk-project); }
+
+/* One class per category, likewise keyed on the category value. There are
+   fourteen categories and eight colour tokens, so six of these classes resolve to
+   a HOLDER's token -- no seventh through fourteenth token exists, which is what
+   caps the palette at eight distinct category colours. Line style is what
+   separates the categories that share a colour, and it is carried in the view
+   model beside the token name. */
+.c-structure { color: var(--gc-structure); }
+.c-taxonomy { color: var(--gc-taxonomy); }
+.c-documentation { color: var(--gc-documentation); }
+.c-evidence { color: var(--gc-evidence); }
+.c-provenance { color: var(--gc-provenance); }
+.c-lineage { color: var(--gc-lineage); }
+.c-dependency { color: var(--gc-dependency); }
+.c-implementation { color: var(--gc-implementation); }
+.c-definition { color: var(--gc-taxonomy); }
+.c-identity { color: var(--gc-taxonomy); }
+.c-representation { color: var(--gc-structure); }
+.c-navigation { color: var(--gc-structure); }
+.c-agreement { color: var(--gc-evidence); }
+.c-annotation { color: var(--gc-documentation); }
+
+
+/* ---------- Emphasis classes ---------- */
+
+/* Emphasis is classification, not styling: the view model returns a class and
+   each surface decides what to do with it. These are the shell's own renderings
+   of the five node classes and the three edge classes -- opacity and weight,
+   never colour alone. */
+.em-dimmed { opacity: 0.45; }
+.em-focus { outline: 2px solid var(--accent); outline-offset: 1px; font-weight: 600; }
+.em-kb-unbacked { font-weight: 600; text-decoration: underline wavy; }
+.em-artifact-undocumented { font-weight: 600; text-decoration: underline double; }
+
+
+/* ---------- Live regions ---------- */
+
+/* The polite status line is visible: an announcement a sighted reader cannot see
+   is an announcement nobody can check. */
+.status-line {
+	margin: 1rem 0 0 0;
+	padding: 0.5rem 0.75rem;
+	font-size: 0.87rem;
+	color: var(--text-muted);
+	background: var(--bg-sunken);
+	border-radius: var(--radius-sm);
+	min-height: 1.4em;
+}
+
+/* The one alert region. Present and empty from load, because a live region has
+   to exist before its content is injected in order to announce reliably; empty
+   it must occupy no space, so it collapses until it carries something. */
+.integrity-banner:empty {
+	display: none;
+}
+
+
+/* ---------- Responsive ---------- */
+
+/* 768px and 1200px, matching the shared spacing scale. The graph must not
+   introduce a second breakpoint scale. */
+@media (min-width: 1024px) {
+	.renderings { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 768px) {
+	.graph-page { padding: 1rem 0.85rem 2.5rem 0.85rem; }
+	.graph-page > h1 { font-size: 1.6rem; }
+	.controls-grid { grid-template-columns: 1fr; }
+	.graph-surface { height: 22rem; }
+
+	/* Below the breakpoint the table comes first visually as well as in the DOM.
+	   The control panel collapses into its <details> disclosure, which is open by
+	   default and KEEPS ITS CONTENTS IN THE DOM when closed -- a panel that
+	   unmounted its controls would be missing them on a narrow viewport while
+	   passing on a wide one, and the control set is asserted on presence. */
+	.graph-region { order: 2; }
+	.table-region { order: 1; }
+}
+
+
+/* ---------- Reduced motion ---------- */
+
+/* The shared reduced-motion block already neutralises transitions and
+   animations page-wide. This adds only what the graph introduces: the settled
+   render itself is decided by the drawing rendering, which reads the preference
+   from the store rather than from a media query. */
+@media (prefers-reduced-motion: reduce) {
+	.controls-panel > summary::before,
+	.legend-detail > summary::before,
+	.group-toggle::before {
+		transition: none;
+	}
+}
+
+
+/* ---------- Forced colours ---------- */
+
+/* In forced-colours mode the page's colours are remapped and the drawing
+   surface's are not, because a remap applies to colours declared on elements
+   and not to pixels inside a bitmap. The response is the channel that was
+   always required: the drawing rendering drops the palette entirely and leans on
+   shape, line style and filtering, which it learns from the store. Here, the
+   page's own borders are restored so the regions stay legible. */
+@media (forced-colors: active) {
+	.lens-bar,
+	.controls-panel,
+	.legend-detail,
+	.filter-axis,
+	.graph-surface,
+	.node-detail,
+	.group-toggle,
+	.lens-btn {
+		border: 1px solid CanvasText;
+	}
+	.lens-btn[aria-pressed="true"] {
+		forced-color-adjust: none;
+	}
+	.em-dimmed { opacity: 1; }
+}
+
+
+/* ---------- Print ---------- */
+
+/* The drawing surface does not print usefully -- a bitmap with no colour
+   remapping and no reflow -- so print carries the table rendering, which holds
+   every fact the graph shows as text. The graph region is hidden rather than
+   scaled. Deliberately NOT re-declaring any theme token here: the shared print
+   block already forces light values, and a second dark-token block would give a
+   selector-merging reader print values to mistake for screen values. */
+@media print {
+	.lens-bar,
+	.controls-panel,
+	.graph-region,
+	.status-line { display: none !important; }
+	.table-region { order: 1; }
+}

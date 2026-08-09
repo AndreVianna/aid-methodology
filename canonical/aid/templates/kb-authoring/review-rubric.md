@@ -43,6 +43,18 @@ The bulk of the review effort.
    inline is a finding. Severity: MINOR per occurrence, MEDIUM if widespread.
    *Exception:* T4 markers that are LOAD-BEARING semantic anchors (e.g.,
    "post-FR2 retirement") are allowed — judgment call.
+7b. **No work references — zero tolerance, no exception** — grep the doc for
+   `work-[0-9]{3}`. Any hit is a finding: a work id or folder path (`work-042`,
+   `.aid/works/work-042-*/`, "specified by work-042", "added in work-042"), in prose,
+   in a table cell, in a heading, or in frontmatter. Severity: **HIGH** — work folders
+   are pruned when their work ships, so the cite is a dangling pointer by design, and
+   it states a fact about project history rather than about the current sources. This
+   check has **no load-bearing-anchor exception**; unlike check 7 it is not a judgment
+   call. The fix is to name the durable artifact the work left on disk, or to drop the
+   clause. See [principles.md](principles.md) P1(e).
+   *Not a finding:* a real repository path that merely contains the substring (e.g. the
+   test fixture `dashboard/server/tests/fixtures/pt1-aid/.aid/works/work-006-lite-sample/`),
+   or shortcut/command syntax being illustrated (`` `/aid-execute work-001 task-001` ``).
 8. **Citations are durable + resolve** — every cited file must exist, and any anchor
    (symbol / heading / unique string) must be findable in it. **Do NOT verify line
    numbers:** a bare `file.ext:LINE` cite is a P1(d) volatile pointer — flag it for
@@ -141,7 +153,7 @@ expected. The reviewer ONLY checks:
 2. **Frontmatter run-state scalars are current** — for STATE.md: `kb_grade`,
    `kb_status`, `last_kb_review`, `summary_approved`, `last_summary` (relocated
    from the old header-blockquote `**Current Grade:**`/`**Status:**`/
-   `**Last KB Review:**` lines by work-003-state-schema task-001/004), plus the
+   `**Last KB Review:**` lines), plus the
    still-header-blockquote `**User Approved:**` doc-set-approval line, all
    reflect the latest cycle's reality. Stale = MEDIUM (not HIGH — the values
    are skill-managed, not human-authored).

@@ -20,13 +20,6 @@ intent: |
   the gated process architecture (six-phase pipeline, skill state machines, agent dispatch).
   Read this to understand HOW the system hangs together — not WHAT each module does.
 contracts: []
-changelog:
-  - 2026-07-30: work-001 delivery-006 gate -- corrected the live skill-count claims (the inventory triple, "92 shipped skills" x2, "skills/ (92)", "92 dirs", the shortcut row's 76) to the reconciled 111 = 17 curated + 94 catalog; corrected the Entry Points row that called the site an independent build when it consumes canonical/ at build time.
-  - 2026-07-16: work-016 .aid/works/ container relocation -- updated the KB-vs-works boundary row and the pipeline-flow diagram's work location to `.aid/works/work-NNN-*/`.
-  - 2026-07-09: work-001 lite-skills refresh — skill count 14 -> 82 (14 classic + `/aid-triage` router + 67 verb-first shortcuts); removed recipes / `parse-recipe.sh` / the `interview/` script area and the recipe render row; reframed `/aid-describe` as full-path-only (no TRIAGE/lite states); documented the shortcut engine + three entry points; re-pointed the Monitor loopbacks (bug -> `/aid-fix`, change request -> `/aid-triage`)
-  - 2026-07-09: Housekeep KB-DELTA refresh — connectors subsystem + release-drift refresh (added ELICIT as Discover's first state, added `connectors/` to the script-area list, rephrased the Version-lockstep invariant to stop hard-coding a version number, added a connectors-registry boundary note)
-  - 2026-06-28: Reconciled Phase 2 to the aid-interview split (aid-describe 2a / aid-define 2b); added the seasoned-analyst elicitation engine, the greenfield forward-authoring inversion, and the build conformance check; skill count 13 -> 14
-  - 2026-06-25: Initial discovery (aid-discover — architect deep-dive)
 ---
 
 # Architecture
@@ -83,15 +76,15 @@ no single coined token names it; it is the load-bearing shape of the whole repo.
 | Face | Where it lives | What it is |
 |------|----------------|-----------|
 | **Product** | `canonical/`, `profiles/`, `packages/`, `bin/`, `lib/`, `install.sh`, `install.ps1` | The installable AID toolkit + the CLI that installs it. |
-| **Dogfood** | `.claude/` (a rendered claude-code profile) + `.aid/` (pipeline state + this Knowledge Base) | AID *installed into AID* — the maintainers use AID to build AID. |
+| **Dogfood** | `.claude/` (a rendered claude-code profile) + `.cursor/` (a rendered cursor profile) + `.aid/` (pipeline state + this Knowledge Base) | AID *installed into AID* — the maintainers use AID to build AID. |
 
 CONFIRMED. `project-structure.md` (search: "The repo dogfoods itself") and
 `docs/aid-methodology.md` describe the dual nature; `.aid/settings.yml` records
 `project.type: brownfield`.
 
 **Consequence for any change:** the same logical file frequently exists in many physical
-copies — `canonical/` (the source) → five `profiles/` (rendered) → `.claude/` (the dogfood
-render) → `packages/npm/` and `packages/pypi/.../_vendor/` (vendored for publish). Editing
+copies — `canonical/` (the source) → five `profiles/` (rendered) → `.claude/` and `.cursor/` (the
+two dogfood renders) → `packages/npm/` and `packages/pypi/.../_vendor/` (vendored for publish). Editing
 a rendered or vendored copy is a defect; edit `canonical/` and re-render. CONFIRMED via
 `project-structure.md` (search: "Heavy, deliberate file duplication").
 
@@ -106,7 +99,7 @@ The boundaries are not class/layer boundaries (this is not an OO app). They are
 |----------|------|-------------------|
 | `canonical/` vs `profiles/` | `canonical/` is the only editable source; `profiles/` is generated build output. | One source compiled to five tool dialects keeps the five host tools in lockstep. |
 | `profiles/` vs `packages/` | `packages/` vendors `bin/`, `lib/`, `dashboard/` for publication; it does not author logic. | Publication channels (npm/PyPI) wrap, never fork, the engine. |
-| Product (`canonical/`,`bin/`,`lib/`) vs Dogfood (`.aid/`,`.claude/`) | Dogfood state is real working state, never product source. | The repo eats its own cooking without contaminating the shipped artifact. |
+| Product (`canonical/`,`bin/`,`lib/`) vs Dogfood (`.aid/`,`.claude/`,`.cursor/`) | Dogfood state is real working state, never product source. | The repo eats its own cooking without contaminating the shipped artifact. |
 | Executor agent vs Reviewer agent | The agent that writes never grades its own work; reviewer tier >= executor tier. | Adversarial separation is the quality mechanism (see Agent Dispatch). |
 | `.aid/knowledge/` (KB) vs `.aid/works/work-NNN-*/` (works) | The KB is shared, cross-work, living; a work is one scoped unit. | One KB, many works — institutional memory outlives any single work. |
 | `.aid/connectors/` (registry) vs host-tool config | The connectors registry is a CATALOG — it lists the connections available to a repo's agents and how to use them; it is not a connection manager and does not wire any host tool's config. | Host tools (Claude Code, Codex, Cursor, …) already own their own MCP servers and auth for what they provide; AID records only what it itself manages. |
@@ -127,7 +120,7 @@ This is the architecture that makes AID a *product*. It is a SYNTHESIS concept �
 
 **The flow:**
 
-1. `canonical/` holds the single source: `skills/` (113), `agents/` (10),
+1. `canonical/` holds the single source: `skills/` (78), `agents/` (10),
    `aid/{scripts,templates}`. CONFIRMED via directory listing.
 2. `python .claude/skills/generate-profile/scripts/run_generator.py` renders the source
    into the five `profiles/*` install trees, one per `profiles/*.toml`. CONFIRMED in
@@ -163,8 +156,8 @@ The five profile roots: `.claude/` (Claude Code), `.codex/` (Codex), `.cursor/` 
 (search: "The Five Profiles") and `profiles/*.toml`.
 
 **Note:** the generator/`generate-profile` skill is **maintainer-only** — it lives in
-`.claude/skills/generate-profile/` and is NOT one of the 113 shipped user-facing skills in
-`canonical/skills/`. CONFIRMED: `canonical/skills/` contains 113 dirs, none named
+`.claude/skills/generate-profile/` and is NOT one of the 78 shipped user-facing skills in
+`canonical/skills/`. CONFIRMED: `canonical/skills/` contains 78 dirs, none named
 `generate-profile`.
 
 ---
@@ -188,15 +181,15 @@ not a running order (the numbered phases carry the sequence). Phase 2 (Describe 
 Describe → Define Phase" below); every other numbered phase is one skill. Several lifecycle labels
 from everyday SDLC talk — Init, Implement, Review, Test, Track, Triage — are **not numbered
 phases**; the table below maps each label to what it really is (CONFIRMED in
-`docs/aid-methodology.md` "Skill Inventory" and the `canonical/skills/` listing — **113 skill
-directories**: 19 curated pipeline / on-demand / router skills (including `/aid-triage`), plus the
-94-row shortcut catalog's skills — 64 verb-first direct-entry shortcut skills and 30 hand-authored
-`repurpose` skills; 17 + 94 = 111):
+`docs/aid-methodology.md` "Skill Inventory" and the `canonical/skills/` listing — **78 skill
+directories**: 20 curated pipeline / on-demand / router skills (the standalone `/aid-triage`
+router among them) and the 58-row shortcut catalog's skills — 34 verb-first direct-entry
+shortcut doorways plus 24 hand-authored `repurpose` skills):
 
 | Workflow label | Skill(s) | Numbered phase? | What it really is |
 |----------------|----------|-----------------|-------------------|
 | Discover | `aid-discover` | **Phase 1** | Brownfield only; builds the KB. (`aid-summarize` is an optional viewer here.) |
-| Describe | `aid-describe` | **Phase 2a** | Describe (2a) half, **full path only**: adaptive interview + COMPLETION + (greenfield) KB seed. It no longer triages or emits lite work (both removed in work-001). Driven by the seasoned-analyst engine; the `aid-interviewer` AGENT does the dialogue. |
+| Describe | `aid-describe` | **Phase 2a** | Describe (2a) half, **full path only**: adaptive interview + COMPLETION + (greenfield) KB seed. It does not triage or emit lite work. Driven by the seasoned-analyst engine; the `aid-interviewer` AGENT does the dialogue. |
 | Define | `aid-define` | **Phase 2b** | Decomposition half: feature decomposition + cross-reference (full path only); hands off to Specify. |
 | Specify | `aid-specify` | **Phase 3** | Full path only. |
 | Plan | `aid-plan` | **Phase 4** | Full path only. |
@@ -209,11 +202,11 @@ directories**: 19 curated pipeline / on-demand / router skills (including `/aid-
 | Deploy | `aid-deploy` | No (Definition shortcut path) | On-demand optional shortcut path in the Definition group; not a numbered phase. |
 | Track / Monitor | `aid-monitor` | No (Definition shortcut path) | On-demand observe -> classify -> route; not a numbered phase. ("Track" has no separate referent.) Routes findings out: bug -> `/aid-fix`, change request -> `/aid-triage`. |
 | Triage | `aid-triage` (standalone skill); `aid-monitor` classify | No | `/aid-triage` is now its own **suggest-only router** skill (INTAKE -> CLASSIFY -> SUGGEST -> HALT) — the extraction of `aid-describe`'s former TRIAGE state; it writes nothing and creates no work. Monitor still classifies its own findings. |
-| Shortcut (Lite path) | 64 `aid-<verb>[-<artifact>]` skills + the shared shortcut engine | No (collapses Describe→Detail) | Verb-first direct-entry doorways (`/aid-fix`, `/aid-create-api`, …) that delegate to `canonical/aid/templates/shortcut-engine.md` (INTAKE -> CAPTURE -> SPEC -> PLAN -> DETAIL -> GATE -> APPROVAL-HALT). The autonomous Lite path — enter by naming your change. |
+| Shortcut (Lite path) | 34 `aid-<verb>[-<artifact>]` skills + the shared shortcut engine | No (collapses Describe→Detail) | Verb-first direct-entry doorways (`/aid-fix`, `/aid-create-api`, …) that delegate to `canonical/aid/templates/shortcut-engine.md` (INTAKE -> CAPTURE -> SPEC -> PLAN -> DETAIL -> GATE -> APPROVAL-HALT). The autonomous Lite path — enter by naming your change. |
 
 Knowledge Base Maintenance group (on-demand, off the numbered pipeline): `aid-housekeep`
-(KB drift reconciliation), `aid-query-kb` (Q&A + gap capture; `aid-ask` is its friendly-named
-alias), `aid-update-kb` (targeted KB delta), `aid-summarize` (HTML KB viewer) — alongside
+(KB drift reconciliation), `aid-ask` (Q&A + gap capture),
+`aid-update-kb` (targeted KB delta), `aid-summarize` (HTML KB viewer) — alongside
 `aid-discover` (Phase 1). CONFIRMED in `docs/aid-methodology.md` "Skill Inventory".
 
 **Three entry points, two paths** (CONFIRMED in `docs/aid-methodology.md` §1 "Three Doors In"
@@ -249,8 +242,8 @@ split). CONFIRMED: `canonical/skills/` has `aid-describe/` and `aid-define/` and
 `aid-interview/`; `canonical/agents/aid-interviewer/` is unchanged.
 
 - **`aid-describe` (Phase 2a)** — adaptive interview + COMPLETION and (greenfield) the KB seed,
-  **full path only** (no TRIAGE, no lite states — the router was extracted to `/aid-triage` and
-  the lite states were removed in work-001). State machine: FIRST-RUN -> Q-AND-A -> CONTINUE ->
+  **full path only** (no TRIAGE, no lite states — the router lives in `/aid-triage`).
+  State machine: FIRST-RUN -> Q-AND-A -> CONTINUE ->
   {greenfield: DESCRIBE-SEED ->} COMPLETION [PAUSE -> `/aid-define`]. CONFIRMED in
   `canonical/skills/aid-describe/SKILL.md` (frontmatter `State machine:`).
 - **`aid-define` (Phase 2b)** — feature decomposition + cross-reference, from an approved
@@ -325,14 +318,14 @@ Tiers below are the `tier:` field of each `canonical/agents/*/AGENT.md`, not a s
 | Medium (7) | aid-developer, aid-operator, aid-orchestrator, aid-tech-writer, aid-interviewer, aid-researcher, aid-reviewer | Workhorses: implement, release, route, document, interview, research/KB authoring, adversarial review. |
 | Small (2) | aid-clerk, aid-screener | Mechanical extract/format/glob; cheap first-pass screening ahead of an adversarial review. |
 
-These are **default** tiers, not fixed ceilings (work-006). A dispatch site picks the
+These are **default** tiers, not fixed ceilings. A dispatch site picks the
 model tier **and** reasoning effort from the task's difficulty via
 `canonical/aid/templates/agent-dispatch-tiering.md`, defaulting low and escalating the
 hard minority to `large` + `high`/`xhigh`. Effort is a second, independent lever
 (often better than switching tiers) and defaults below the host `high` for routine and
 retrieval-heavy work; `aid-researcher` in particular runs at `low` effort (research
-depth does not aid retrieval). work-006 lowered interviewer/researcher/reviewer from
-Large to Medium by default; escalation restores Large where the executor or the review
+depth does not aid retrieval). `aid-interviewer`, `aid-researcher`, and `aid-reviewer`
+default to Medium; escalation restores Large where the executor or the review
 genuinely needs it.
 
 **The dispatch invariant:** the reviewer's tier is always >= the executor's tier, and the
@@ -438,16 +431,14 @@ CONFIRMED in `project-structure.md` "Entry Points" and file headers:
 
 Documented as reality + flagged; NOT silently reconciled (see `.scout-questions.tmp`):
 
-1. **Skill count (reconciled).** `canonical/skills/` has **113** directories — 19 curated
-   pipeline / on-demand / router skills plus the 94-row shortcut catalog's skills (64 verb-first
-   direct-entry shortcut doorways + 30 hand-authored `repurpose` skills). History: 82/67 added by
-   work-001-lite-aid-skills; extended to 92/76 by the v2.1.0 coverage-gap follow-on's
-   `remove`/`deprecate`/`migrate` + `review`/`research` families and the restored `/aid-ask` alias;
-   then grown to 111 by `aid-design` (work-005) and the 3 ticket skills
-   `aid-read-ticket` / `aid-create-ticket` / `aid-update-ticket` (work-023). `README.md`,
-   `docs/aid-methodology.md`, `docs/repository-structure.md`, and the glossary / methodology
-   surfaces all state "113 skills"; the doc-vs-code gap this item tracked stays closed (last
-   reconciled by the v2.3.0 release sweep, 2026-07-23). The prior 12-/13-/14-skill drift is resolved.
+1. **Skill count (reconciled).** `canonical/skills/` has **76** directories — 20 curated
+   pipeline / on-demand / router skills plus the 58-row shortcut catalog's skills (34 verb-first
+   direct-entry shortcut doorways + 24 hand-authored `repurpose` skills). `README.md`,
+   `docs/aid-methodology.md`, `docs/repository-structure.md` and `docs/glossary.md` all state this
+   taxonomy, so the doc-vs-code gap this item tracked stays closed. It cannot silently reopen:
+   `tests/canonical/test-doc-counts.sh` re-derives the figures from `canonical/skills/`,
+   `canonical/agents/` and `canonical/aid/templates/shortcut-catalog.yml`, then asserts every
+   public-facing surface against them on each CI run. The prior 12-/13-/14-skill drift is resolved.
 2. **EMISSION-MANIFEST.md lists 3 profiles, reality is 5.** `canonical/EMISSION-MANIFEST.md`
    tables enumerate only claude-code/codex/cursor; the live generator globs all five
    `profiles/*.toml` (copilot-cli and antigravity were added later). The doc predates two
@@ -503,7 +494,8 @@ What a change must never break (each stated as a hard rule + where enforced):
 Non-obvious traps a change will trip (cannot be inferred from the code alone):
 
 - **Editing a rendered/vendored copy does nothing.** The same file exists in `canonical/`,
-  five `profiles/`, `.claude/`, and both `packages/.../_vendor/`. Edit `canonical/` then run
+  five `profiles/`, the two dogfood trees `.claude/` and `.cursor/`, and both
+  `packages/.../_vendor/`. Edit `canonical/` then run
   `run_generator.py`; otherwise CI `render-drift` fails or your change is silently
   overwritten on next render. CONFIRMED `project-structure.md` "Heavy, deliberate file
   duplication".
@@ -516,22 +508,10 @@ Non-obvious traps a change will trip (cannot be inferred from the code alone):
 - **The 5 install manifests must move in lockstep on the dashboard file set** — npm, pypi,
   and the three vendored copies; dropping one file from one manifest ships a broken install.
 - **`generate-profile` is maintainer-only** and lives only in `.claude/skills/` — do not look
-  for it in `canonical/skills/` (the 113 shipped skills).
+  for it in `canonical/skills/` (the 78 shipped skills).
 - **Heavy CI gates run only on `master`** (tests/run-all.sh + the Astro site build); feature
   branches skip them. Run `tests/run-all.sh` (HOME-pinned) + the site build locally before
   claiming green. (Project memory: master-ci-only-on-master.)
 
 ---
 
-## Change Log
-
-| Rev | Date | Source | Description |
-|-----|------|--------|-------------|
-| 1.0 | 2026-06-25 | aid-discover | Initial discovery — product/dogfood anatomy, render-and-distribute architecture, six-phase process architecture, skill/agent dispatch, invariants, gotchas. |
-| 1.1 | 2026-06-26 | manual | Corrected the process-architecture model: six numbered phases (Discover→Execute), not "12 phases". Init/Implement/Review/Test/Track/Triage reframed as bootstrap / task-types / states / optional Deliver skills, not phases. |
-| 1.2 | 2026-06-28 | manual | Reconciled the Interview phase to the `aid-interview` split: Phase 2a `aid-describe` (triage + interview + lite + greenfield seed) / Phase 2b `aid-define` (feature decomposition + cross-reference). Added the seasoned-analyst elicitation engine, the greenfield forward-authoring inversion, and the build conformance check. Skill count 13 -> 14. |
-| 1.3 | 2026-06-28 | tech-writer | Relabeled Phase 2 from "Interview" to "Describe → Define" throughout; section heading renamed to "Phase 2 (Describe → Define)"; pipeline sequence updated to Describe/Define (2a/2b). |
-| 1.4 | 2026-07-09 | tech-writer | Housekeep KB-DELTA refresh: connectors subsystem + release-drift refresh — added ELICIT as Discover's first state, added `connectors/` to the script-area list, rephrased the Version-lockstep invariant to stop hard-coding a version number, and added a connectors-registry boundary row (catalog model, not a connection manager). |
-| 1.5 | 2026-07-09 | work-001 refresh | work-001 lite-skills refresh — skill count 14 -> 82 (14 classic + `/aid-triage` + 67 verb-first shortcuts); removed the recipe render row / `interview/` script area / recipe mentions; reframed `/aid-describe` full-path-only (state machine FIRST-RUN -> Q-AND-A -> CONTINUE -> {DESCRIBE-SEED ->} COMPLETION, no TRIAGE/lite); documented the shortcut engine + three entry points in the workflow table, "Two paths", and the pipeline data-flow; re-pointed Monitor loopbacks (bug -> `/aid-fix`, change request -> `/aid-triage`). |
-| 1.6 | 2026-07-09 | v2.1.0 coverage-gap follow-on | Skill count 82 -> 92 (15 classic incl. restored `/aid-ask` + `/aid-triage` + 76 verb-first shortcuts, up from 67); added the `remove`/`deprecate`/`migrate` (G5) and `review`/`research` (G11) shortcut families to the workflow-label table and off-pipeline skill list. |
-| 1.7 | 2026-07-09 | v2.1.0 skill-count sync | Closed the "Skill count" Doc-vs-Code Discrepancies item: confirmed `README.md`, `docs/aid-methodology.md`, and `docs/repository-structure.md` are refreshed to "92 skills" / "76 shortcuts" (was UNCERTAIN). |

@@ -103,7 +103,7 @@ plant() {   # plant NAME FILE_REL SED_EXPR -- returns the guard's exit code and 
 }
 
 # DV04 -- a scalar claim gone stale. The agent count is the family that was wrong in five files.
-out="$(plant scalar 'README.md' 's/10 specialized agents/9 specialized agents/')"
+out="$(plant scalar 'README.md' 's/10 agents/9 agents/')"
 if printf '%s' "$out" | grep -q 'WRONG VALUES'; then
     ok DV04 "a stale scalar claim is caught (agent count 10 -> 9 in README)"
 else
@@ -122,7 +122,7 @@ fi
 
 # DV06 -- the CLAIM MUST BE SEEN THROUGH MARKDOWN EMPHASIS. `**9** agents` is the form that
 # defeated every plain-adjacency pattern in the guard this one is modelled on.
-out="$(plant emphasis 'README.md' 's/10 specialized agents/**9** specialized agents/')"
+out="$(plant emphasis 'README.md' 's/10 agents/**9** agents/')"
 if printf '%s' "$out" | grep -q 'WRONG VALUES'; then
     ok DV06 "a stale claim wrapped in markdown emphasis is still caught"
 else
@@ -141,7 +141,7 @@ fi
 # DV08 -- ...and the marker must not be a blanket off-switch. It exempts the line it is on, not
 # the file. Plant the marker on one line and a wrong value on a DIFFERENT one.
 out="$(plant marker-scope 'README.md' \
-      's/^# AID/# AID <!-- derived-value-exempt: test -->/; s/10 specialized agents/9 specialized agents/')"
+      's/^# AID/# AID <!-- derived-value-exempt: test -->/; s/10 agents/9 agents/')"
 if printf '%s' "$out" | grep -q 'WRONG VALUES'; then
     ok DV08 "the marker exempts its own line only, not the whole file"
 else
@@ -196,7 +196,7 @@ fi
 # `summary.minimum_grade: A+`, CONFIRMED, against a settings.yml that does not contain a `summary:`
 # key at all. Every other minimum_grade pattern requires the word `is`, so both survived the sweep
 # that moved the global bar to B-.
-out="$(plant dotted-pin 'README.md' 's/10 specialized agents/10 specialized agents (summary.minimum_grade: A+)/')"
+out="$(plant dotted-pin 'README.md' 's/10 agents/10 agents (summary.minimum_grade: A+)/')"
 if printf '%s' "$out" | grep -q 'WRONG VALUES'; then
     ok DV13 "a dotted per-skill minimum_grade pin disagreeing with the resolved bar is caught"
 else

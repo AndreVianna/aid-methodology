@@ -41,10 +41,10 @@ The ledger file contains **exactly one markdown table.** No frontmatter, no sect
 | # | Severity | Status | Rule | Doc | Line | Description | Evidence |
 |---|---|---|---|---|---|---|---|
 | 1 | [HIGH] | Pending | NAR-04 | foo.md | 42 | claim Y is wrong | doc says Y, `wc -l target = N` shows actual Z |
-| 2 | [LOW] | Fixed | NAR-03 | bar.md | 100 | stale path reference | path/to/foo deleted commit abc123; cycle-4 FIX removed cite |
-| 3 | [MINOR] | Accepted | NAR-06 | baz.md | -- | one-sentence body | no-docs variant accepted by user cycle-1 Q10 |
+| 2 | [MEDIUM] | Fixed | NAR-03 | bar.md | 100 | stale path reference | path/to/foo deleted commit abc123; cycle-4 FIX removed cite |
+| 3 | [MINOR] | Accepted | NAR-11 | baz.md | -- | a 6-line script stands in for a one-paragraph explanation | prose alternative offered cycle-1 Q10; author accepted the script form |
 | 4 | [HIGH] | Recurred | NAR-04 | qux.md | 17 | count off by 1 | claim 16 vs disk 15; was Fixed cycle-3, returned cycle-5 |
-| 5 | [LOW] | OOS | NAR-08 | quux.md | 200 | inline T3 line-count violation | accurate value but P1 policy violation; methodology-refactor pending |
+| 5 | [LOW] | OOS | NAR-07 | quux.md | 200 | section duplicates module-map.md's ownership table | accurate content, but it belongs in one doc; methodology-refactor pending |
 ```
 
 ## File: location

@@ -445,8 +445,6 @@ intent: |
   Regenerated on every /aid-discover cycle.
 contracts:
   - "One entry per non-dot, non-recursive KB document under .aid/knowledge/"
-changelog:
-  - $(date -u +%Y-%m-%d): Generated
 ---
 
 <!-- AUTO-GENERATED $TS by canonical/aid/scripts/kb/build-kb-index.sh -->

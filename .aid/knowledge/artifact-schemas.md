@@ -34,12 +34,6 @@ contracts:
   - "emission-manifest.jsonl record keys: profile, src, dst, sha256 (+ _manifest_version sentinel)"
   - "Connector descriptor connection_type enum (closed, 5): mcp | api | ssh | url | cli"
   - "Connector descriptor auth_method enum (closed, 5): none | token | pat | oauth | ssh-key"
-changelog:
-  - 2026-07-16: work-016 .aid/works/ container relocation -- updated the State-File Hierarchy diagrams, the REQUIREMENTS.md location, and the flattened-path BLUEPRINT.md location to the `.aid/works/work-NNN-{name}/` container tree.
-  - 2026-07-09: work-001 lite-skills refresh -- renamed the task-definition section to Task DETAIL.md (source `task-detail-template.md`) and the delivery definition to BLUEPRINT.md (new Delivery BLUEPRINT.md section, source `delivery-blueprint-template.md`); rewrote the flattened Lite path throughout (shortcut engine produces work-root REQUIREMENTS/SPEC/PLAN/BLUEPRINT + tasks/task-NNN/DETAIL.md with NO per-task STATE.md -- cells live in the work-root STATE.md ### Tasks lifecycle); removed the retired Triage/Recipe + Escalation-Carry work-STATE blocks and the CONDENSED-INTAKE/TASK-BREAKDOWN/recipe-emit references; corrected the REQUIREMENTS.md location to the work root.
-  - 2026-07-09: housekeep KB-DELTA connectors subsystem refresh -- added the Connector Registry Artifacts section (descriptor schema, derived management mode, secret_reference forms, preset catalog, generated INDEX.md, .mcp.json boundary note); corrected the Rev 1.2 changelog attribution to PR #132.
-  - 2026-06-27: aid-describe/aid-define split -- rekeyed REQUIREMENTS.md + lite work-root SPEC.md producers to aid-describe and feature SPEC stubs to aid-define; added the forward-authored source value + greenfield 5-element seed doc-set
-  - 2026-06-25: Initial authoring (aid-discover brownfield deep-dive / Analyst); replaces the schemas.md data-model seed
 ---
 
 # Artifact Schemas
@@ -653,12 +647,3 @@ to `current` by `kb-freshness-check.sh` regardless of baseline.
 
 ---
 
-## Change Log
-
-| Rev | Date | Source | Description |
-|-----|------|--------|-------------|
-| 1.0 | 2026-06-25 | aid-discover | Initial artifact-schemas doc (Analyst); replaces the schemas.md data-model seed |
-| 1.1 | 2026-06-27 | work-001-aid-interview-improvements | aid-describe/aid-define split: rekeyed REQUIREMENTS.md + lite work-root SPEC.md producers to `aid-describe` and feature SPEC stubs to `aid-define`; added the `source: forward-authored` enum value, the greenfield 5-element seed doc-set section, the `## Seed Authoring` work-STATE block, and forward-authored contracts/validation notes |
-| 1.2 | 2026-07-08 | PR #132 (branch `change-delivery`) | Delivery-folder layout rationalized: full path nests delivery folders under `deliveries/` (`deliveries/delivery-NNN/`); lite path drops the `delivery-001/` folder entirely (tasks live directly at `tasks/task-NNN/`) and the sole delivery's `## Delivery Lifecycle` + `## Delivery Gate` + `## Cross-phase Q&A` are AUTHORED directly in the work-root STATE.md. Updated the State-File Hierarchy diagram, Work/Delivery STATE.md tables, REQUIREMENTS.md section, and How Artifacts Relate diagram for both layouts. |
-| 1.3 | 2026-07-09 | housekeep KB-DELTA | Connectors subsystem refresh: added the Connector Registry Artifacts section (descriptor frontmatter schema, derived management-mode rule, the three `secret_reference` forms, the preset-catalog format, the generated `INDEX.md` contract, and a boundary note that `.mcp.json` is not an AID artifact); added the closed `connection_type`/`auth_method` enums to the frontmatter `contracts:` list; corrected the Rev 1.2 row's Source attribution from "work-001-add-deliveries-folder task-001" to the source-verified PR #132 (branch `change-delivery`), content unchanged. |
-| 1.4 | 2026-07-09 | work-001 lite-skills refresh | Renamed the task-definition section to **Task DETAIL.md** (source `task-detail-template.md`, replacing the deleted `task-spec-template.md`) and added a new **Delivery BLUEPRINT.md** section (source `delivery-blueprint-template.md`). Rewrote the flattened Lite path across the State-File Hierarchy, Work/Delivery/Task STATE.md sections, REQUIREMENTS.md, Feature SPEC.md, How Artifacts Relate, Cardinality, Contracts, and Validation: the shortcut engine produces work-root `REQUIREMENTS.md`/`SPEC.md`/`PLAN.md`/`BLUEPRINT.md` + `tasks/task-NNN/DETAIL.md` with **no per-task `STATE.md`** (cells live in the work-root `STATE.md § ### Tasks lifecycle`). Removed the retired `## Triage` (with its `Recipe` field) and `## Escalation Carry` work-STATE rows and the `CONDENSED-INTAKE` / `TASK-BREAKDOWN` / recipe-emit references (recipes + aid-describe lite/triage removed by work-001). Corrected the REQUIREMENTS.md location from `.aid/knowledge/` to the work root `.aid/work-NNN-{name}/`. |

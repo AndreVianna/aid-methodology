@@ -8,7 +8,7 @@ Run `canonical/aid/scripts/summarize/summarize-preflight.sh` before any state. I
 2. `**User Approved:** yes` is present in `.aid/knowledge/STATE.md`.
 3. At least one populated KB document exists (`.aid/knowledge/*.md` with real content).
 4. Not in Plan Mode (need write access).
-5. Node.js >= 18 is available (required for `validate-visuals.mjs` visual-fidelity validation; the Mermaid network-fetch check was removed in D-012 / Change 7).
+5. Node.js >= 22 is available (required for `validate-visuals.mjs` visual-fidelity validation; the summarize validators declare `"engines": { "node": ">=22" }` in the repository-root `package.json` alongside Playwright 1.62.1 — Node 18/19/20 is insufficient, and Node 20 is end-of-life; the Mermaid network-fetch check was removed in D-012 / Change 7).
 6. **Migrate legacy summary path (FR31 migration):** if `.aid/knowledge/knowledge-summary.html`
    exists and `.aid/knowledge/kb.html` does not, `mkdir -p .aid/knowledge` and `mv -n` the old
    file to the new path so STALE-CHECK sees the existing approved summary and skips regeneration.

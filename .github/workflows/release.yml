@@ -143,7 +143,7 @@ jobs:
       # canonical helper suites — mirror test.yml's canonical-tests job.
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
-          node-version: '20'
+          node-version: '24'
 
       # NOTE: the old "Pre-seed pinned Mermaid" step was removed — the Mermaid
       # runtime engine was dropped in 2f0372d7 (kb.html now ships pre-rendered
@@ -251,7 +251,7 @@ jobs:
 
       # Trusted Publishing (OIDC) requires npm >= 11.5.1. npm@latest is now 12.x, whose
       # engine floor is Node >= 22.22.2 / 24.15 -- so this publish job pins Node 24
-      # (setup-node above), unlike the Node 20 used for the test suites elsewhere. The
+      # (setup-node above), matching the Node 24 used for the test suites elsewhere. The
       # package has zero runtime deps and vendors its aid-cli payload via prepack at
       # publish time, so no install step is needed -- just ensure a recent npm. If a
       # future npm major raises its Node engine floor past 24, bump node-version again.
@@ -337,7 +337,7 @@ jobs:
       # attestations: true (default) — PEP 740 / sigstore attestations emitted.
       - name: Publish via Trusted Publishing (OIDC, no token)
         if: inputs.dry_run != true
-        uses: pypa/gh-action-pypi-publish@ba38be9e461d3875417946c167d0b5f3d385a247 # v1.14.1
+        uses: pypa/gh-action-pypi-publish@dc37677b2e1c63e2034f94d8a5b11f265b73ba33 # v1.14.2
         with:
           packages-dir: packages/pypi/dist/
           skip-existing: true

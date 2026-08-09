@@ -8,7 +8,7 @@
 #   MF03  --apply refuses (exit 3) without a worksheet.
 #   MF04  --apply migrates a fixture old-format doc to lint-clean (no [FM-MISSING]/[FM-INVALID]).
 #   MF05  Migrated doc has objective:/summary:/sources:/approved_at_commit: in f001 order;
-#         intent: is retired; a changelog: row is added.
+#         intent: is retired; the retired changelog: field is stripped.
 #   MF06  Idempotent re-run: second --apply over a fully migrated KB is a byte-identical no-op.
 #   MF07  sources: [] pure-synthesis doc: migrated on first run, idempotent on second (no re-stamp).
 #   MF08  --dry-run on --propose: writes no worksheet.
@@ -206,9 +206,6 @@ sources: []
 approved_at_commit: aabbccd
 contracts: |
   - KB docs follow f001 frontmatter schema.
-changelog:
-  - 2026-05-01: Migrated by migrate-kb-frontmatter.sh: intent retired, objective/summary/sources added
-  - 2026-01-01: Initial draft.
 ---
 
 ## Body section
@@ -334,7 +331,7 @@ bash "$MIGRATE" "$MF03_KB" --apply 2>/dev/null || MF03_RC=$?
 assert_exit_eq "$MF03_RC" 3 "MF03-01 --apply without worksheet exits 3"
 
 # ===========================================================================
-# MF04/MF05 -- --apply migrates to lint-clean; fields present; intent retired; changelog added.
+# MF04/MF05 -- --apply migrates to lint-clean; fields present; intent retired; changelog stripped.
 # ===========================================================================
 echo ""
 echo "=== MF04/MF05: --apply migrates fixture doc to lint-clean ==="
@@ -431,11 +428,13 @@ else
     pass "MF05-05 intent: retired (absent from frontmatter)"
 fi
 
-# changelog: row appended (contains "Migrated by migrate-kb-frontmatter.sh")
-if grep -q "Migrated by migrate-kb-frontmatter.sh" "$MF05_DOC"; then
-    pass "MF05-06 changelog: row appended with migration note"
+# changelog: is a retired field -- migration STRIPS it (per-doc history lives in
+# git; the field was the main route by which work references leaked into the KB,
+# kb-authoring/principles.md P1(e)). The fixture carries one; it must be gone.
+if grep -q '^changelog:' "$MF05_DOC"; then
+    fail "MF05-06 retired changelog: field still present after migration"
 else
-    fail "MF05-06 changelog: migration row absent"
+    pass "MF05-06 retired changelog: field stripped by migration"
 fi
 
 # f001 canonical order: objective before summary before sources before approved_at_commit
@@ -497,9 +496,9 @@ assert_eq "$MF06_SHA_M_AFTER" "$MF06_SHA_M_BEFORE" \
 assert_eq "$MF06_SHA_S_AFTER" "$MF06_SHA_S_BEFORE" \
     "MF06-03 synthesis.md (sources:[]) byte-identical after second --apply (idempotent)"
 
-# No double changelog row (only one migration row)
-MF06_CL_COUNT="$(grep -c "Migrated by migrate-kb-frontmatter.sh" "${MF06_KB}/migrated.md" || true)"
-assert_eq "$MF06_CL_COUNT" "1" "MF06-04 no double changelog row after re-run"
+# Retired changelog: field stays stripped across re-runs
+MF06_CL_COUNT="$(grep -c '^changelog:' "${MF06_KB}/migrated.md" || true)"
+assert_eq "$MF06_CL_COUNT" "0" "MF06-04 retired changelog: field absent after re-run"
 
 # ===========================================================================
 # MF07 -- sources: [] pure-synthesis doc: migrated on first run, idempotent on second.
@@ -565,9 +564,9 @@ MF07_SHA_AFTER2="$(file_sha "${MF07_KB}/synthesis.md")"
 assert_eq "$MF07_SHA_AFTER2" "$MF07_SHA_AFTER1" \
     "MF07-04 synthesis.md byte-identical after second --apply (sources:[] idempotency)"
 
-# No double changelog row
-MF07_CL_COUNT="$(grep -c "Migrated by migrate-kb-frontmatter.sh" "${MF07_KB}/synthesis.md" || true)"
-assert_eq "$MF07_CL_COUNT" "1" "MF07-05 no double changelog row on synthesis doc re-run"
+# Retired changelog: field stays stripped across re-runs
+MF07_CL_COUNT="$(grep -c '^changelog:' "${MF07_KB}/synthesis.md" || true)"
+assert_eq "$MF07_CL_COUNT" "0" "MF07-05 retired changelog: field absent on synthesis doc re-run"
 
 # ===========================================================================
 # MF08 -- --dry-run on --propose: writes no worksheet, no doc edits.

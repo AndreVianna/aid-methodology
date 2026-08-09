@@ -14,6 +14,6 @@ Then, inside a project:
     aid remove [tool|self]   # remove
 
 This package is a thin wrapper that spawns the cross-platform AID CLI (bash / PowerShell).
-Requires Node >= 18 plus bash (Linux / macOS / WSL / Git Bash) or PowerShell (Windows).
+Requires Node >= 22 plus bash (Linux / macOS / WSL / Git Bash) or PowerShell (Windows).
 
 Full guide: https://github.com/AndreVianna/aid-methodology/blob/master/docs/install.md

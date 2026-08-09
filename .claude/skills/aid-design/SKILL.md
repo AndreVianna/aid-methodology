@@ -26,7 +26,6 @@ It fills the DESIGN lite gap (DESIGN is a task type, but there was no lite entry
   (`aid-tech-writer`, DOCUMENT). A design needing a formal written spec -> print a handoff
   to `/aid-create-document`.
 - **Not a numbered pipeline phase**; does not route to `/aid-execute`.
-- **Behavior contract:** `.aid/work-005-lite-skills-refactor/specs/aid-prototype-design.md`.
 
 State machine: **INTAKE -> DESIGN -> VERIFY (loop) -> PRESENT [user decides] -> HANDOFF? ->
 DONE**. Print the `[State: NAME] -- {purpose}` entry line on each state.
@@ -94,7 +93,7 @@ the user decides whether/when to build it.
 
 ## State: HANDOFF  (optional; printed suggestions only)
 
-Printed suggestions: build it (`/aid-create*` / `/aid-change*`, referencing the design), or
+Printed suggestions: build it (`/aid-create*` / `/aid-update*`, referencing the design), or
 capture it as a formal doc (`/aid-create-document`). Never auto-invoked; never a resolution.
 
 **Advance:** DONE.

@@ -18,8 +18,9 @@ argument-hint: "[target] -- what to review (a file/dir, PR link, ticket id, work
 # Review (run now, produce findings)
 
 `/aid-review` performs a review **now** and returns **grade + findings +
-recommendations**. It is the adversarial sibling of `/aid-query-kb`: single-shot,
-grounded, cited, no plan-and-halt. `/aid-audit` is its alias.
+recommendations**. It is the adversarial sibling of `/aid-ask`: both are single-shot,
+grounded, cited, and never plan-and-halt -- review evaluates an existing artifact against
+criteria, where `/aid-ask` answers a free-form question.
 
 - **Not a numbered pipeline phase.** It runs on demand; it does not enter the
   Discover->Execute flow and never routes to `/aid-execute`.
@@ -27,7 +28,6 @@ grounded, cited, no plan-and-halt. `/aid-audit` is its alias.
   your approval, a publish to the reviewed target (a PR/ticket comment, doc notes).
   It never edits the reviewed code/design itself and never fixes -- fixing is
   `/aid-fix`'s job.
-- **Behavior contract:** `.aid/work-005-lite-skills-refactor/specs/aid-review.md`.
 
 State machine: **INTAKE -> REVIEW -> VERIFY (loop) -> PRESENT-FINDINGS [human] ->
 PUBLISH (on approval) -> DONE**. Print the state-entry line on entry to each state
@@ -175,7 +175,7 @@ Set STATE `lifecycle: Paused-Awaiting-Input`. Present:
 - the **target grade** (from `grade.sh` on the review ledger) -- informational;
 - the **verified findings**, severity-ranked, each with its `file:line` / KB evidence;
 - **recommendations**, and a **printed suggestion** to act: "N issues found -- run
-  `/aid-fix` (or `/aid-change`) to address them" (review never starts the fix itself);
+  `/aid-fix` (or `/aid-update`) to address them" (review never starts the fix itself);
 - the **proposed delivery action + the exact comment/notes text** that would be posted.
 
 Then STOP and await the human's decision (approve / edit the text / choose a different

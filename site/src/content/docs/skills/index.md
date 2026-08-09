@@ -8,7 +8,7 @@ sidebar:
 
 <!-- generated — do not edit; source: canonical/skills/*/SKILL.md, canonical/aid/templates/shortcut-catalog.yml -->
 
-AID ships **113 skill directories** across four skill groups (Support, Knowledge Base Maintenance, Definition, Execution), with the Definition group subdivided into **17 verb families** derived from the shortcut catalog. Each card below links to that skill’s detail page.
+AID ships **78 skill directories** across four skill groups (Support, Knowledge Base Maintenance, Definition, Execution), with the Definition group subdivided into **17 verb families** derived from the shortcut catalog. Each card below links to that skill’s detail page.
 
 > **Note:** This page is the roster, and it files skills per FR-5’s Placement rules. `aid-triage` is **Support** here and **Definition** in the curated roster that [the methodology's skill inventory](/concepts/methodology/) publishes. Where they disagree about grouping, **this page is authoritative**. How the shortcut skills themselves work — the shared engine and its INTAKE → APPROVAL-HALT sequence — is at [Reference → Shortcut engine](/reference/skills/).
 
@@ -26,14 +26,14 @@ Skills for configuring AID and managing tickets and connectors. Start here if yo
 
 ## Knowledge Base Maintenance
 
-Skills for discovering, querying, summarising, and maintaining the project Knowledge Base.
+Skills for discovering, querying, summarising, mapping, and maintaining the project Knowledge Base.
 
 - [`aid-discover`](/skills/aid-discover/) — Brownfield project discovery with built-in quality gate.
 - [`aid-summarize`](/skills/aid-summarize/) — Generate a single-file kb.html from .aid/knowledge/.
+- [`aid-graph`](/skills/aid-graph/) — Build .aid/knowledge/relationships.md and .aid/knowledge/graph.html from an approved Knowledge Base and the project source.
 - [`aid-housekeep`](/skills/aid-housekeep/) — Optional on-demand housekeeping skill.
 - [`aid-update-kb`](/skills/aid-update-kb/) — Optional on-demand targeted KB update skill.
-- [`aid-query-kb`](/skills/aid-query-kb/) — Optional on-demand Q&amp;A skill.
-- [`aid-ask`](/skills/aid-ask/) — Friendly-named alias of /aid-query-kb -- the optional on-demand Q&amp;A skill.
+- [`aid-ask`](/skills/aid-ask/) — Optional on-demand Q&amp;A skill.
 
 ## Definition
 
@@ -65,59 +65,28 @@ The full AID pipeline plus every shortcut skill, grouped by verb family.
 - [`aid-create-job`](/skills/aid-create-job/) — Direct-entry Lite-path shortcut (Create a scheduled or background job.) -- skips the aid-describe interview/triage.
 - [`aid-create-config`](/skills/aid-create-config/) — Direct-entry Lite-path shortcut (Create a new configuration option or feature flag.) -- skips the aid-describe interview/triage.
 - [`aid-create-infra`](/skills/aid-create-infra/) — Direct-entry Lite-path shortcut (Provision a new infrastructure resource.) -- skips the aid-describe interview/triage.
-- [`aid-add`](/skills/aid-add/) — Direct-entry Lite-path shortcut (Alias of aid-create.) -- skips the aid-describe interview/triage.
-- [`aid-add-api`](/skills/aid-add-api/) — Direct-entry Lite-path shortcut (Alias of aid-create-api.) -- skips the aid-describe interview/triage.
-- [`aid-add-ui`](/skills/aid-add-ui/) — Direct-entry Lite-path shortcut (Alias of aid-create-ui.) -- skips the aid-describe interview/triage.
-- [`aid-add-theme`](/skills/aid-add-theme/) — Direct-entry Lite-path shortcut (Alias of aid-create-theme.) -- skips the aid-describe interview/triage.
-- [`aid-add-cli`](/skills/aid-add-cli/) — Direct-entry Lite-path shortcut (Alias of aid-create-cli.) -- skips the aid-describe interview/triage.
-- [`aid-add-data-model`](/skills/aid-add-data-model/) — Direct-entry Lite-path shortcut (Alias of aid-create-data-model.) -- skips the aid-describe interview/triage.
-- [`aid-add-data-pipeline`](/skills/aid-add-data-pipeline/) — Direct-entry Lite-path shortcut (Alias of aid-create-data-pipeline.) -- skips the aid-describe interview/triage.
-- [`aid-add-messaging`](/skills/aid-add-messaging/) — Direct-entry Lite-path shortcut (Alias of aid-create-messaging.) -- skips the aid-describe interview/triage.
-- [`aid-add-integration`](/skills/aid-add-integration/) — Direct-entry Lite-path shortcut (Alias of aid-create-integration.) -- skips the aid-describe interview/triage.
-- [`aid-add-job`](/skills/aid-add-job/) — Direct-entry Lite-path shortcut (Alias of aid-create-job.) -- skips the aid-describe interview/triage.
-- [`aid-add-config`](/skills/aid-add-config/) — Direct-entry Lite-path shortcut (Alias of aid-create-config.) -- skips the aid-describe interview/triage.
-- [`aid-add-infra`](/skills/aid-add-infra/) — Direct-entry Lite-path shortcut (Alias of aid-create-infra.) -- skips the aid-describe interview/triage.
 - [`aid-create-test`](/skills/aid-create-test/) — Direct-entry Lite-path shortcut (Author new tests (unit/integration/e2e); each test traces to an acceptance criterion; framework inferred from the KB.) --…
-- [`aid-add-test`](/skills/aid-add-test/) — Direct-entry Lite-path shortcut (Alias of aid-create-test.) -- skips the aid-describe interview/triage.
 - [`aid-create-document`](/skills/aid-create-document/) — Create a document NOW -- markdown/reference/how-to, an ADR, an architecture write-up, a runbook, a tutorial, a changelog, a mermaid diagram, a table --…
-- [`aid-add-document`](/skills/aid-add-document/) — Alias of /aid-create-document -- create a document NOW (markdown/reference/how-to, an ADR, an architecture write-up, a runbook, a tutorial, a changelog, a…
 - [`aid-create-diagram`](/skills/aid-create-diagram/) — Create a diagram NOW -- a mermaid or graphviz diagram (flowchart, sequence, ER, C4, state, ...) chosen for the subject, in one pass.
 - [`aid-create-dashboard`](/skills/aid-create-dashboard/) — Direct-entry Lite-path shortcut (Build a durable dashboard / BI view (source -> visualization -> publish/refresh).) -- skips the aid-describe…
-- [`aid-add-dashboard`](/skills/aid-add-dashboard/) — Direct-entry Lite-path shortcut (Alias of aid-create-dashboard.) -- skips the aid-describe interview/triage.
-- [`aid-show-dashboard`](/skills/aid-show-dashboard/) — Direct-entry Lite-path shortcut (Alias of aid-create-dashboard (backward-compatible name).) -- skips the aid-describe interview/triage.
 
-### `change`
+### `update`
 
-- [`aid-change`](/skills/aid-change/) — Direct-entry Lite-path shortcut (Change an existing internal code artifact's behavior under new acceptance criteria.) -- skips the aid-describe…
-- [`aid-change-api`](/skills/aid-change-api/) — Direct-entry Lite-path shortcut (Change an existing API endpoint / middleware's contract or behavior.) -- skips the aid-describe interview/triage.
-- [`aid-change-ui`](/skills/aid-change-ui/) — Direct-entry Lite-path shortcut (Change an existing UI component or page.) -- skips the aid-describe interview/triage.
-- [`aid-change-theme`](/skills/aid-change-theme/) — Direct-entry Lite-path shortcut (Change an existing visual theme or style-token set.) -- skips the aid-describe interview/triage.
-- [`aid-change-cli`](/skills/aid-change-cli/) — Direct-entry Lite-path shortcut (Change an existing CLI command.) -- skips the aid-describe interview/triage.
-- [`aid-change-data-model`](/skills/aid-change-data-model/) — Direct-entry Lite-path shortcut (Change an existing data model/entity's schema, with forward+rollback migration.) -- skips the aid-describe interview/triage.
-- [`aid-change-data-pipeline`](/skills/aid-change-data-pipeline/) — Direct-entry Lite-path shortcut (Change an existing data pipeline's source, transform, sink, or schedule.) -- skips the aid-describe interview/triage.
-- [`aid-change-messaging`](/skills/aid-change-messaging/) — Direct-entry Lite-path shortcut (Change an existing message/event schema or its emission.) -- skips the aid-describe interview/triage.
-- [`aid-change-integration`](/skills/aid-change-integration/) — Direct-entry Lite-path shortcut (Change an existing external-service integration.) -- skips the aid-describe interview/triage.
-- [`aid-change-job`](/skills/aid-change-job/) — Direct-entry Lite-path shortcut (Change an existing scheduled or background job.) -- skips the aid-describe interview/triage.
-- [`aid-change-config`](/skills/aid-change-config/) — Direct-entry Lite-path shortcut (Change an existing configuration option or feature flag.) -- skips the aid-describe interview/triage.
-- [`aid-change-infra`](/skills/aid-change-infra/) — Direct-entry Lite-path shortcut (Change an existing infrastructure resource.) -- skips the aid-describe interview/triage.
-- [`aid-update`](/skills/aid-update/) — Direct-entry Lite-path shortcut (Alias of aid-change.) -- skips the aid-describe interview/triage.
-- [`aid-update-api`](/skills/aid-update-api/) — Direct-entry Lite-path shortcut (Alias of aid-change-api.) -- skips the aid-describe interview/triage.
-- [`aid-update-ui`](/skills/aid-update-ui/) — Direct-entry Lite-path shortcut (Alias of aid-change-ui.) -- skips the aid-describe interview/triage.
-- [`aid-update-theme`](/skills/aid-update-theme/) — Direct-entry Lite-path shortcut (Alias of aid-change-theme.) -- skips the aid-describe interview/triage.
-- [`aid-update-cli`](/skills/aid-update-cli/) — Direct-entry Lite-path shortcut (Alias of aid-change-cli.) -- skips the aid-describe interview/triage.
-- [`aid-update-data-model`](/skills/aid-update-data-model/) — Direct-entry Lite-path shortcut (Alias of aid-change-data-model.) -- skips the aid-describe interview/triage.
-- [`aid-update-data-pipeline`](/skills/aid-update-data-pipeline/) — Direct-entry Lite-path shortcut (Alias of aid-change-data-pipeline.) -- skips the aid-describe interview/triage.
-- [`aid-update-messaging`](/skills/aid-update-messaging/) — Direct-entry Lite-path shortcut (Alias of aid-change-messaging.) -- skips the aid-describe interview/triage.
-- [`aid-update-integration`](/skills/aid-update-integration/) — Direct-entry Lite-path shortcut (Alias of aid-change-integration.) -- skips the aid-describe interview/triage.
-- [`aid-update-job`](/skills/aid-update-job/) — Direct-entry Lite-path shortcut (Alias of aid-change-job.) -- skips the aid-describe interview/triage.
-- [`aid-update-config`](/skills/aid-update-config/) — Direct-entry Lite-path shortcut (Alias of aid-change-config.) -- skips the aid-describe interview/triage.
-- [`aid-update-infra`](/skills/aid-update-infra/) — Direct-entry Lite-path shortcut (Alias of aid-change-infra.) -- skips the aid-describe interview/triage.
-- [`aid-change-test`](/skills/aid-change-test/) — Direct-entry Lite-path shortcut (Change or extend existing tests.) -- skips the aid-describe interview/triage.
-- [`aid-update-test`](/skills/aid-update-test/) — Direct-entry Lite-path shortcut (Alias of aid-change-test.) -- skips the aid-describe interview/triage.
-- [`aid-change-document`](/skills/aid-change-document/) — Update an EXISTING document NOW -- revise/extend a markdown doc, an ADR, a runbook, a changelog, a diagram, etc.
-- [`aid-update-document`](/skills/aid-update-document/) — Alias of /aid-change-document -- update an EXISTING document NOW (revise/extend a markdown doc, an ADR, a runbook, a changelog, a diagram, ...) in one pass.
-- [`aid-change-dashboard`](/skills/aid-change-dashboard/) — Direct-entry Lite-path shortcut (Change an existing dashboard / BI view (source, visualization, or refresh cadence).) -- skips the aid-describe…
-- [`aid-update-dashboard`](/skills/aid-update-dashboard/) — Direct-entry Lite-path shortcut (Alias of aid-change-dashboard.) -- skips the aid-describe interview/triage.
+- [`aid-update`](/skills/aid-update/) — Direct-entry Lite-path shortcut (Update an existing internal code artifact's behavior under new acceptance criteria.) -- skips the aid-describe…
+- [`aid-update-api`](/skills/aid-update-api/) — Direct-entry Lite-path shortcut (Update an existing API endpoint / middleware's contract or behavior.) -- skips the aid-describe interview/triage.
+- [`aid-update-ui`](/skills/aid-update-ui/) — Direct-entry Lite-path shortcut (Update an existing UI component or page.) -- skips the aid-describe interview/triage.
+- [`aid-update-theme`](/skills/aid-update-theme/) — Direct-entry Lite-path shortcut (Update an existing visual theme or style-token set.) -- skips the aid-describe interview/triage.
+- [`aid-update-cli`](/skills/aid-update-cli/) — Direct-entry Lite-path shortcut (Update an existing CLI command.) -- skips the aid-describe interview/triage.
+- [`aid-update-data-model`](/skills/aid-update-data-model/) — Direct-entry Lite-path shortcut (Update an existing data model/entity's schema, with forward+rollback migration.) -- skips the aid-describe interview/triage.
+- [`aid-update-data-pipeline`](/skills/aid-update-data-pipeline/) — Direct-entry Lite-path shortcut (Update an existing data pipeline's source, transform, sink, or schedule.) -- skips the aid-describe interview/triage.
+- [`aid-update-messaging`](/skills/aid-update-messaging/) — Direct-entry Lite-path shortcut (Update an existing message/event schema or its emission.) -- skips the aid-describe interview/triage.
+- [`aid-update-integration`](/skills/aid-update-integration/) — Direct-entry Lite-path shortcut (Update an existing external-service integration.) -- skips the aid-describe interview/triage.
+- [`aid-update-job`](/skills/aid-update-job/) — Direct-entry Lite-path shortcut (Update an existing scheduled or background job.) -- skips the aid-describe interview/triage.
+- [`aid-update-config`](/skills/aid-update-config/) — Direct-entry Lite-path shortcut (Update an existing configuration option or feature flag.) -- skips the aid-describe interview/triage.
+- [`aid-update-infra`](/skills/aid-update-infra/) — Direct-entry Lite-path shortcut (Update an existing infrastructure resource.) -- skips the aid-describe interview/triage.
+- [`aid-update-test`](/skills/aid-update-test/) — Direct-entry Lite-path shortcut (Update or extend existing tests.) -- skips the aid-describe interview/triage.
+- [`aid-update-document`](/skills/aid-update-document/) — Update an EXISTING document NOW -- revise/extend a markdown doc, an ADR, a runbook, a changelog, a diagram, etc.
+- [`aid-update-dashboard`](/skills/aid-update-dashboard/) — Direct-entry Lite-path shortcut (Update an existing dashboard / BI view (source, visualization, or refresh cadence).) -- skips the aid-describe…
 
 ### `refactor`
 
@@ -126,7 +95,6 @@ The full AID pipeline plus every shortcut skill, grouped by verb family.
 ### `remove`
 
 - [`aid-remove`](/skills/aid-remove/) — Direct-entry Lite-path shortcut (Remove or delete a code artifact, endpoint, dependency, feature, or dead code; update dependents, tests, and docs.) -- skips…
-- [`aid-delete`](/skills/aid-delete/) — Direct-entry Lite-path shortcut (Alias of aid-remove.) -- skips the aid-describe interview/triage.
 
 ### `deprecate`
 
@@ -174,13 +142,10 @@ The full AID pipeline plus every shortcut skill, grouped by verb family.
 ### `review`
 
 - [`aid-review`](/skills/aid-review/) — Review/assess an existing artifact -- code, a change/diff, a design, a PR, a ticket, a document, a UI, whatever the request names -- against criteria, and…
-- [`aid-audit`](/skills/aid-audit/) — Alias of /aid-review -- review/assess an existing artifact (code, a change/diff, a design, a PR, a ticket, a document, a UI, ...) against criteria and return…
 
 ### `research`
 
 - [`aid-research`](/skills/aid-research/) — Investigate an open technical question NOW -- evaluate options, or (only with your explicit authorization) run an isolated feasibility spike -- and return a…
-- [`aid-investigate`](/skills/aid-investigate/) — Alias of /aid-research -- investigate an open technical question NOW and return a curated, verified answer that RESOLVES NOTHING (presents conclusions +/-,…
-- [`aid-spike`](/skills/aid-spike/) — Alias of /aid-research -- investigate an open technical question NOW and return a curated, verified answer that RESOLVES NOTHING (presents conclusions +/-,…
 
 ### `deploy`
 
@@ -192,8 +157,6 @@ The full AID pipeline plus every shortcut skill, grouped by verb family.
 
 ## Execution
 
-Skills for executing detailed tasks and reviewing their output, each through a graded adversarial review loop.
+Skills for executing detailed tasks, each through a graded adversarial review loop.
 
 - [`aid-execute`](/skills/aid-execute/) — Execute a task based on its type: RESEARCH, DESIGN, IMPLEMENT, TEST, DOCUMENT, MIGRATE, REFACTOR, or CONFIGURE.
-- [`aid-light-review`](/skills/aid-light-review/) — Cheap screening pass over an artifact, callable by any skill.
-- [`aid-deep-review`](/skills/aid-deep-review/) — The graded adversarial review, callable by any skill.

@@ -37,6 +37,17 @@ cross-phase process state). Keeping it current is **not optional**:
   contents of a specific work folder: tests build their own fixtures, and the
   KB never cites a work folder as a source. Pipeline skills/scripts that
   create, read, or update work folders as live runtime state are exempt.
+- **Never name a work in the Knowledge Base.** `.aid/knowledge/**` must contain no
+  work id and no work-folder path — not `work-042`, not `.aid/works/work-042-*/`, not
+  "specified by work-042" or "added in work-042" — in prose, tables, headings, or
+  frontmatter. Two reasons, each sufficient: a work folder is pruned when its work
+  ships, so the cite is a dangling pointer by design; and the KB states only the
+  **current state of the project's sources**, whereas which work produced a change is
+  history. Cite the durable artifact the work left on disk instead. It follows that a
+  KB doc carries no `## Change Log` / `## Revision History` section and no `changelog:`
+  frontmatter field — git records per-doc history with author, date, and diff, at higher
+  fidelity and without drift. This binds `.aid/knowledge/` alone: skills, templates, and
+  pipeline scripts name works legitimately, because they operate on them.
 
 ## Knowledge Base
 

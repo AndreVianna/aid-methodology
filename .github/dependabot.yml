@@ -13,3 +13,23 @@ updates:
       github-actions:
         patterns:
           - "*"
+  # Watches the graph view's vendored third-party bundles (d3-force's dependency
+  # chain plus PixiJS) -- a private, unpublished, exact-pinned manifest with no
+  # install tree of its own. See canonical/aid/scripts/graph/vendor-provisioning.md
+  # for the human follow-on procedure a version bump still requires: merging this
+  # PR alone does not re-vendor a single byte.
+  #
+  # MOVED from /canonical/aid/scripts/graph to the repo root. Everything under
+  # canonical/ is rendered into every adopter's install by design, so a manifest
+  # there shipped to adopters -- and a package.json inside the installed tree also
+  # sits on the coverage predicate's module-resolution chain, which the shipped tree
+  # must not carry (test-graph-skill-registration.sh MOD01,
+  # test-graph-gap-ledger.sh GL12.a). The root manifest is never rendered and never
+  # ships. If this directory is ever wrong, Dependabot goes SILENT rather than
+  # failing, so it is checked by nothing -- keep it in step with the file by hand.
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    commit-message:
+      prefix: "chore"

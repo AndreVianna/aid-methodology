@@ -1,24 +1,18 @@
 # Shortcut Scaffolding: analyze / report
 
 Per-family scaffolding reference for the **`report`** verb (bare `aid-report` only),
-the **`show-dashboard`** verb (bare `aid-show-dashboard` only -- the whole name is
-the verb; no artifact suffix; feature-011, work-001-lite-aid-skills), the
-**`review`** verb (bare `aid-review` plus its `aid-audit` alias), and the
-**`research`** verb (bare `aid-research` plus its `aid-investigate`/`aid-spike`
-aliases; the last two verbs are a v2.1.0 coverage-gap follow-on to
-work-001-lite-aid-skills). Consulted by the shared engine
+the **`review`** verb (bare `aid-review` only), and the **`research`** verb (bare
+`aid-research` only; a v2.1.0 coverage-gap follow-on to work-001-lite-aid-skills).
+Consulted by the shared engine
 (`.codex/aid/templates/shortcut-engine.md § Family Scaffolding Consult`) at
 CAPTURE, SPEC, and DETAIL for every `{verb, artifact}` whose `verb` field resolves to
-`report`, `show-dashboard`, `review`, or `research`. None of these rows carry an
-artifact suffix; `aid-report`/`aid-show-dashboard` carry no alias (feature-011 SPEC
-"Catalog rows owned" -- 2 canonical, no aliases), while `aid-review` (-> `aid-audit`)
-and `aid-research` (-> `aid-investigate`, `aid-spike`) each carry alias rows. Free-form
-prose, like any other `state-*.md` reference doc -- the dispatched `aid-architect`
-reads this for judgment; it is not machine-parsed.
+`report`, `review`, or `research`. None of these rows carry an artifact suffix or
+alias rows. Free-form prose, like any other `state-*.md` reference doc -- the
+dispatched `aid-architect` reads this for judgment; it is not machine-parsed.
 
-Grounded in exploratory data analysis / product-metrics analysis (`aid-report`) and
-building a durable BI view (`aid-show-dashboard`). The engine infers the
-data-access/BI stack from the KB, so those are never capture slots.
+Grounded in exploratory data analysis / product-metrics analysis (`aid-report`).
+The engine infers the data-access/BI stack from the KB, so those are never capture
+slots.
 
 ## `aid-report` -- CAPTURE
 
@@ -53,35 +47,6 @@ the same finding:
 |---|---|---|
 | `task-001` | RESEARCH | EDA + metrics; at least 2 interpretations of the finding; ends with a recommendation |
 | `task-002` (optional) | DOCUMENT | write up the finding for `{audience}`; depends on `task-001` |
-
-## `aid-show-dashboard` -- CAPTURE
-
-Bare verb (the whole name `show-dashboard` is the verb; no artifact suffix):
-
-| Slot | Notes |
-|---|---|
-| Data source | where the dashboard's data comes from |
-| Metrics/dimensions | what the dashboard shows |
-| Visualization type | chart/table/view shape |
-| Refresh cadence | how often the view refreshes |
-| Publish target | where/how the dashboard is published |
-
-**Escalation.** Same rule: escalate only when the data source or the
-metrics/dimensions cannot be made concrete from `{description}` + KB context.
-
-## `aid-show-dashboard` -- SPEC
-
-Activates `### Telemetry & Tracking` + `### UI Specs` on top of the mandatory three
--- the dashboard's data/metric wiring is `### Telemetry & Tracking`; its
-visualization/layout is `### UI Specs`. `### Data Model` reads "no schema changes"
-(a dashboard reads and visualizes existing data; it does not model new schema).
-
-## `aid-show-dashboard` -- DETAIL
-
-| Task | Type | Notes |
-|---|---|---|
-| `task-001` | IMPLEMENT | build the view: source -> viz -> publish/refresh |
-| `task-002` (optional) | TEST | validate data accuracy + refresh; depends on `task-001` |
 
 ## `aid-review` -- CAPTURE
 

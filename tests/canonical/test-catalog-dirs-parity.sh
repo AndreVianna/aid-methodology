@@ -8,15 +8,27 @@
 #     (AC-1's mechanical proof)
 #   - non-`repurpose` (thin-doorway) rows: the body binds the row's {verb, artifact} and
 #     delegates to the shared engine (canonical/aid/templates/shortcut-engine.md)
-#   - `repurpose: true` rows (the 4 pre-existing FAT pipeline/hand-authored skills, aid-deploy/aid-monitor/aid-query-kb/aid-ask)
-#     are exempted to dir-exists + name-match + `aid-` prefix ONLY -- no body-content assertion
-#     (feature-012 owns their bodies)
+#   - `repurpose: true` rows -- pre-existing hand-authored skills registered AS catalog rows
+#     rather than generated from them -- are exempted to dir-exists + name-match + `aid-`
+#     prefix ONLY: no body-content assertion (feature-012 owns their bodies). Scope of the
+#     figure below is CATALOG ROWS, not skill directories: 24 `repurpose` rows. Among them,
+#     the 3 classic re-registered pipeline skills are aid-deploy, aid-monitor and aid-ask.
+#     Derived rather than recalled: `grep -c '^    repurpose: true' shortcut-catalog.yml`.
+#     The suite reads the flag per row, so it needs no edit when that figure moves.
 #   - no orphan directory (a GENERATED-marker doorway with no matching catalog row)
 #   - no orphan row (every row's directory actually exists)
 #
-# Count-AGNOSTIC BY DESIGN: passes whether the catalog carries 1 row (today -- aid-fix,
-# feature-008) or the full 80 (51 canonical + 29 alias). The full 80-row count assertion is
-# task-035's own, separate test -- NOT duplicated here.
+# Count-AGNOSTIC BY DESIGN: this suite derives its row set from the catalog and holds NO
+# expected total, so it passes at any row count. Post-change composition, measured
+# 2026-07-31, each operand carrying the scope it was measured over:
+#   CATALOG ROWS      58-row catalog = 58 canonical names (`alias_of: null`) + 0 aliases
+#   within those rows 24 `repurpose` rows (body-exempt, above) + 34 shortcuts (the generated
+#                     doorways) -- 58 - 24 = 34, and an independent awk pass counting rows
+#                     that carry no `repurpose` key also reaches 34
+#   SKILL DIRECTORIES a DIFFERENT scope and not this suite's subject: the on-disk corpus is
+#                     larger than the catalog, because curated skills have no catalog row
+# The catalog's own row-TOTAL assertion belongs to a separate suite,
+# tests/canonical/test-deploy-monitor-repurpose.sh (task-035) -- NOT duplicated here.
 #
 # Corroborating oracle: build-shortcut-skills.py --check (the maintainer helper's own byte-level
 # drift detector) is also invoked as an independent cross-check on top of this suite's own
@@ -56,6 +68,13 @@ fi
 #   name|verb|artifact|alias_of|repurpose
 # (a non-whitespace delimiter is required -- bash `read` collapses consecutive
 # IFS-whitespace delimiters, which would silently swallow an empty `artifact` field)
+#
+# `alias_of` is DEAD INPUT here, retained deliberately, and is NOT an expectation: the awk
+# program populates it and the `read -r` loop below binds it, but no line in this suite ever
+# reads that variable again -- the single branch on a parsed flag keys on `repurpose`. Every
+# catalog row now carries `alias_of: null` (0 aliases), and the field is still listed in
+# build-shortcut-skills.py's `_REQUIRED_FIELDS`, so keeping the column keeps this record
+# shape aligned with the catalog's schema. Its schema removal is a scheduled follow-on.
 #
 # Restricted YAML subset (flat single-level mappings, one row per `- name:` line) --
 # re-derived independently in awk (NOT by importing build-shortcut-skills.py's internals)

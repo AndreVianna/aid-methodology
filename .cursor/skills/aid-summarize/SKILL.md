@@ -49,7 +49,7 @@ Run `.cursor/aid/scripts/summarize/summarize-preflight.sh` before any state. It 
 2. `**User Approved:** yes` is present in `.aid/knowledge/STATE.md`.
 3. At least one populated KB document exists (`.aid/knowledge/*.md` with real content).
 4. Not in Plan Mode (need write access).
-5. Node.js >= 18 is available (required for visual-fidelity validation via `validate-visuals.mjs`).
+5. Node.js >= 22 is available (required for visual-fidelity validation via `validate-visuals.mjs`).
 
 If any check fails, the script exits non-zero with a clear actionable message. Do NOT
 proceed; do NOT create any state files.

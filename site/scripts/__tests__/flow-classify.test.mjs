@@ -446,8 +446,11 @@ describe('D4 engine-doorway', () => {
 
   // ── Real engine-doorway skill ────────────────────────────────────────────
 
-  it('real aid-add body classifies as engine-doorway', () => {
-    const body = readRealBody('aid-add');
+  // `aid-add` was retired. `aid-create` is its successor and the same KIND of
+  // subject: a bare-verb generated doorway whose body carries the
+  // GENERATED-by-build-shortcut-skills.py marker, so D4 fires for the same reason.
+  it('real aid-create body classifies as engine-doorway', () => {
+    const body = readRealBody('aid-create');
     const result = classifySkill(makeSkill(body));
     expect(result.shape).toBe('engine-doorway');
     expect(result.delegatesTo).toBeNull();

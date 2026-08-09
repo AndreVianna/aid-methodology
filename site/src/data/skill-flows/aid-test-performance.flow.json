@@ -121,14 +121,14 @@
         "startLine": 106,
         "endLine": 109,
         "sourceKind": "skill",
-        "excerpt": "## State: HANDOFF  (optional; printed suggestions only)\n\nPrinted suggestions: `/aid-fix` (address findings), `/aid-create-test` (add regression tests\nfor a bug found), `/aid-change*` (if a fix is a real change). Never auto-invoked."
+        "excerpt": "## State: HANDOFF  (optional; printed suggestions only)\n\nPrinted suggestions: `/aid-fix` (address findings), `/aid-create-test` (add regression tests\nfor a bug found), `/aid-update*` (if a fix is a real change). Never auto-invoked."
       },
       "detail": {
         "file": "canonical/skills/aid-test/SKILL.md",
         "startLine": 106,
         "endLine": 111,
         "sourceKind": "skill",
-        "excerpt": "## State: HANDOFF  (optional; printed suggestions only)\n\nPrinted suggestions: `/aid-fix` (address findings), `/aid-create-test` (add regression tests\nfor a bug found), `/aid-change*` (if a fix is a real change). Never auto-invoked.\n\n**Advance:** DONE."
+        "excerpt": "## State: HANDOFF  (optional; printed suggestions only)\n\nPrinted suggestions: `/aid-fix` (address findings), `/aid-create-test` (add regression tests\nfor a bug found), `/aid-update*` (if a fix is a real change). Never auto-invoked.\n\n**Advance:** DONE."
       }
     },
     {

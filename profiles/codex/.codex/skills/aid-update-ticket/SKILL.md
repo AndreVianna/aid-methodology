@@ -25,7 +25,7 @@ existing ticket in whatever issue-tracker connector resolves for it — `descrip
 explicit confirmation. It is the third of the three peer ticket-tracker skills alongside
 `aid-read-ticket` (fetch/display, non-destructive) and `aid-create-ticket` (file a new ticket).
 
-**Absent from the mandatory pipeline flow.** Like `aid-query-kb` and `aid-set-connector`, this is
+**Absent from the mandatory pipeline flow.** Like `aid-ask` and `aid-set-connector`, this is
 an optional, on-demand utility skill — no phase gate references it, no `shortcut-catalog.yml`
 entry, no `work-NNN` scaffold, no per-skill `STATE.md`; it is invoked directly by name
 (`features/feature-001-dedicated-ticket-skills/SPEC.md` § Layers & Components, decision 2).
@@ -48,7 +48,7 @@ after an explicit confirm.
 
 - Confirm the invocation shape before anything else. Fewer than three whitespace-separated
   pieces (missing `<part>`, missing the ref, or no `<content>` after it) → print the usage line
-  and exit (`ticket-resolution.md` § "Grammar-Parse Conventions" — the `aid-query-kb` pre-flight
+  and exit (`ticket-resolution.md` § "Grammar-Parse Conventions" — the `aid-ask` pre-flight
   pattern):
   ```
   Usage: aid-update-ticket <part> [<connector>:]<ticket-id> <content>

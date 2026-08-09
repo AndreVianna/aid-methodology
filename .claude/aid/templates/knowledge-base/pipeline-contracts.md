@@ -13,9 +13,6 @@ audience: [developer, architect]
 intent: |
   Public API surfaces, frontmatter schemas, request/response shapes, and protocol contracts. Read this when implementing or modifying any externally-visible interface.
 contracts: []
-changelog:
-  - 2026-06-23: Added f001 frontmatter fields (objective/summary/sources/tags/see_also/owner/audience)
-  - 2026-05-26: KB Authoring v2 template seed
 ---
 
 # API Contracts
@@ -33,7 +30,6 @@ changelog:
 - [Known Issues](#known-issues)
 - [Conventions](#conventions)
 - [Contracts](#contracts)
-- [Change Log](#change-log)
 
 ---
 
@@ -162,8 +158,3 @@ changelog:
 
 ---
 
-## Change Log
-
-| Rev | Date | Source | Description |
-|-----|------|--------|-------------|
-| 1.0 | {date} | aid-discover | Initial API surface mapping |

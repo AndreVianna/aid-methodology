@@ -24,16 +24,27 @@
 #   bash read-setting.sh --path tools.installed --default claude-code
 #   # → "claude-code,codex" when the file has tools.installed: [claude-code, codex]
 #
+#   # Probe mode (declared/undeclared availability, e.g. graph-source-enumeration's
+#   # D4a ignore-list check) — direct dotted --path only, no --default consulted:
+#   bash read-setting.sh --probe --path graph.ignore
+#   # → "declared" when the section+key line is present (even with zero items),
+#   #   "undeclared" when it is not. Warns on stderr, once per item, for any raw
+#   #   list item containing a comma (still reported; split downstream by the
+#   #   comma-joined transport).
+#
 # Exit codes:
-#   0 — value found (printed to stdout) or default used
-#   1 — value missing AND no --default provided
+#   0 — value found (printed to stdout) or default used; --probe: always
+#       (declared/undeclared is the answer, not a failure)
+#   1 — value missing AND no --default provided (not applicable to --probe)
 #   2 — argument error / settings.yml unreadable / malformed YAML
 #
 # Output:
 #   stdout: the resolved value (single line, no trailing newline beyond echo's default).
-#           For list-valued keys, items are comma-joined.
+#           For list-valued keys, items are comma-joined. --probe: exactly
+#           "declared" or "undeclared".
 #   stderr: nothing on success; error messages on failure (always include the
 #           absolute resolved path of the settings file for debuggability).
+#           --probe: also a warning per raw list item containing a comma.
 #
 # Format: settings.yml is YAML 1.2. This script does NOT require a YAML parser
 # binary (yq, python) — uses awk for the simple flat-section dotted-path
@@ -49,6 +60,7 @@ KEY=""
 DPATH=""
 DEFAULT=""
 HAS_DEFAULT=0
+PROBE=0
 
 while [[ $# -gt 0 ]]; do
     case "$1" in
@@ -57,6 +69,7 @@ while [[ $# -gt 0 ]]; do
         --path)    DPATH="$2";   shift 2 ;;
         --default) DEFAULT="$2"; HAS_DEFAULT=1; shift 2 ;;
         --file)    SETTINGS_FILE="$2"; shift 2 ;;
+        --probe)   PROBE=1; shift ;;
         -h|--help)
             cat <<'HELP'
 read-setting.sh — resolve a setting from .aid/settings.yml.
@@ -64,6 +77,7 @@ read-setting.sh — resolve a setting from .aid/settings.yml.
 Modes:
   --skill X --key Y     # Resolves X.Y if present, else review.Y, else default
   --path A.B            # Direct dotted-path lookup, no override resolution
+  --probe --path A.B    # declared/undeclared availability probe (no --default)
 
 Flags:
   --default V    Fallback if no value found (else exit 1)
@@ -88,6 +102,17 @@ else
     exit 2
 fi
 
+# --probe is additive over path mode only: it answers "is section.key declared",
+# which is a question about a nested section+key line, not the flat top-level
+# scheme --path also serves. A dotless --path or --skill combination is a usage
+# error here rather than a silent no-op.
+if [[ $PROBE -eq 1 ]]; then
+    if [[ "$MODE" != "path" || "$DPATH" != *.* ]]; then
+        echo "read-setting.sh: --probe requires a dotted --path A.B (section.key)" >&2
+        exit 2
+    fi
+fi
+
 # Resolve to absolute path before existence check + error reporting.
 # realpath/readlink coverage varies across BSD/GNU/macOS; use a portable fallback.
 abs_path() {
@@ -105,8 +130,15 @@ abs_path() {
 # abs_path is computed lazily at the two error sites below (not here) to avoid a
 # realpath fork on every successful lookup — this is the most-invoked script in the repo.
 
-# settings.yml missing → use default if provided, else exit 1
+# settings.yml missing → use default if provided, else exit 1. --probe never
+# consults --default or the error path: a missing file declares nothing, which
+# is "undeclared" by the same logic as an absent section, and the probe's own
+# exit-0 contract (D4a) is unconditional on this branch.
 if [[ ! -f "$SETTINGS_FILE" ]]; then
+    if [[ $PROBE -eq 1 ]]; then
+        echo "undeclared"
+        exit 0
+    fi
     if [[ $HAS_DEFAULT -eq 1 ]]; then
         echo "$DEFAULT"
         exit 0
@@ -137,16 +169,20 @@ fi
 # unhandled failures abort.
 # ---------------------------------------------------------------------------
 lookup() {
-    local file="$1" section="$2" key="$3"
+    local file="$1" section="$2" key="$3" probe="${4:-}"
     # `|| true` so an awk that finds no match (returns 0 with empty output)
     # or a defensive nonzero (rare) doesn't trigger the script's `set -e`.
-    awk -v section="$section" -v key="$key" '
+    awk -v section="$section" -v key="$key" -v probe="$probe" '
         # Enter the named top-level section when we see its bare line
         $0 ~ "^"section":[[:space:]]*$" { in_section=1; next }
         # Leave the section when we see another top-level key (column 0)
         in_section && /^[a-zA-Z]/ { in_section=0 }
         # Inside the section, look for an indented "key: value"
         in_section && $0 ~ "^[[:space:]]+"key":" {
+            # Probe mode (--probe, D4a): the declaration hit IS this branch --
+            # the same one lookup_list() enters on the identical regex -- so a
+            # 4th-arg-less call (every existing caller) never reaches this line.
+            if (probe == "1") { print "1"; exit }
             # Strip "  key:" prefix, then strip leading/trailing whitespace
             sub("^[[:space:]]+"key":[[:space:]]*", "")
             # Strip inline comments (anything after ` # `)
@@ -168,8 +204,8 @@ lookup() {
 # if the key is not present or has no items.
 # ---------------------------------------------------------------------------
 lookup_list() {
-    local file="$1" section="$2" key="$3"
-    awk -v section="$section" -v key="$key" '
+    local file="$1" section="$2" key="$3" mode="${4:-}"
+    awk -v section="$section" -v key="$key" -v mode="$mode" '
         # Enter section
         $0 ~ "^"section":[[:space:]]*$" { in_section=1; next }
         in_section && /^[a-zA-Z]/ { in_section=0; in_list=0 }
@@ -197,6 +233,15 @@ lookup_list() {
             sub("^[[:space:]]+-[[:space:]]+", "", item)
             sub("[[:space:]]+#.*$", "", item)
             gsub(/["\047]/, "", item)
+            # D4a comma warning (--probe warn mode only): the transport joins
+            # items with a comma, so a raw item that already contains one is
+            # indistinguishable downstream from two items. Warn once here, on
+            # the raw item, while it is still a separate scalar -- the item is
+            # still accumulated into items below (split and reported, never
+            # silently dropped). Existing 3-arg callers never set mode=="warn".
+            if (mode == "warn" && index(item, ",") > 0) {
+                print "read-setting.sh: warning: " section "." key " item \"" item "\" contains a comma; it will be split into separate patterns" > "/dev/stderr"
+            }
             items = items (items == "" ? "" : ",") item
             next
         }
@@ -206,6 +251,31 @@ lookup_list() {
         END { if (items != "") print items }
     ' "$file" || true
 }
+
+# ---------------------------------------------------------------------------
+# --probe (D4a): declared/undeclared availability, decided by the SAME
+# lookup() branch the existing modes use to find a value -- not a second,
+# parallel parser, so the probe and --path can never disagree about the same
+# file. Runs only when --probe was passed (PROBE=1); every existing caller
+# leaves PROBE at its default 0 and never reaches this block. Settings-file-
+# missing is handled earlier (undeclared, exit 0) before this point, so
+# $SETTINGS_FILE is guaranteed to exist here.
+# ---------------------------------------------------------------------------
+if [[ $PROBE -eq 1 ]]; then
+    _probe_section="${DPATH%%.*}"
+    _probe_key="${DPATH#*.}"
+    if [[ -n "$(lookup "$SETTINGS_FILE" "$_probe_section" "$_probe_key" 1)" ]]; then
+        # Declared: warn on stderr for any raw list item containing a comma
+        # (D4a) -- decidable only here, before the comma-joined transport
+        # collapses the distinction. A scalar-valued key has no list items to
+        # warn about; lookup_list simply finds none and stays silent.
+        lookup_list "$SETTINGS_FILE" "$_probe_section" "$_probe_key" "warn" >/dev/null
+        echo "declared"
+    else
+        echo "undeclared"
+    fi
+    exit 0
+fi
 
 # ---------------------------------------------------------------------------
 # Top-level scalar lookup — reads a column-0 `key: value`. The flat settings
