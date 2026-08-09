@@ -245,6 +245,12 @@ returns nothing and lines 50-52 still carry the pre-decision C3 text. **Delivery
 writing a ledger — *"a cheap pass must never contribute to a grade"* — and its REPORT state writes
 nothing at all. So light review records **neither findings nor gaps**, and the corollary "the calling
 skill writes them" never landed either. The `U-` half of the decision did ship.
+**SUPERSEDED 2026-08-09 by the `Q1(a)` revision — this item needs no separate ruling.** With
+`aid-light-review` merging into `/aid-review` as the **screening entry path**, the question is no
+longer "why did the skill not do what was decided" but "what does the screening path write" — and
+that must be settled *as part of the merge*, against `FR-A2` (screening computes no grade) and
+`FR-A4` (a clean screening pass may only add findings, never pre-clear the gate). **Folded into the
+merge delivery**, not carried as a defect against a delivery that has closed.
 
 **4. `Q5` decision 7, "restart, not resume", is superseded — and is the one benign case.**
 `criteria-gap-protocol.md:75` ships *"coverage rows **resume** rather than restart"*, deliberately and
