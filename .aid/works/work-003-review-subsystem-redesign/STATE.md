@@ -737,7 +737,8 @@ process spawning should be treated as the default suspect** whenever something i
 - **Category:** Design-Decision / scope-shaping
 - **Impact:** High
 - **Status:** **Answered** 2026-08-09 — **(a) REVISED: ONE skill, not two**; (b)-(d) ratified from
-  disk; (f) decided; (e) remains open and is tracked as `Q7 #4`
+  disk; (f) decided; **(e) answered 2026-08-09 — a live chaining confirmation on codex, copilot-cli
+  and antigravity is scheduled before ship; full reasoning at `Q7 #4`**
 - **(a) REVISED (2026-08-09, human decision) — supersedes the 2026-07-27 two-skill answer.**
   **There is exactly one review skill: `/aid-review`.** `aid-deep-review` and `aid-light-review` both
   merge into it, and `/aid-audit` is eliminated. Neither of the two new skills has ever shipped
@@ -1728,7 +1729,8 @@ summarize scoring (`grade-summary.sh` + human JSON).
 
 - **Category:** Requirement-Defect / Design-Decision
 - **Impact:** High (4 blocking) / Medium (rest)
-- **Status:** **Partially answered** — triaged 2026-08-09; **#4 and #11 are the only open parts**
+- **Status:** **Partially answered** — triaged 2026-08-09; **#4 answered (live confirmation
+  scheduled); #11 is the only open part**
 - **Triage 2026-08-09.** **#1 eighth `Rule` column** and **#2 ten agents** were already CLOSED and both
   verify on disk. **#3 NFR-3 vs reviewer-tier ≥ executor-tier — resolved structurally, no carve-out
   needed.** The invariant binds *the agent that produces the graded ledger*, and `aid-screener`
@@ -1749,8 +1751,17 @@ summarize scoring (`grade-summary.sh` + human JSON).
   into the SPEC *"so it cannot be tuned after the fact"*. **#10 in-flight old-schema ledgers** —
   *"the header decides"*: 7-column ledgers stay readable and are never rewritten, and grade correctly
   because `Severity`/`Status` sit at the same positions in both shapes.
-  **#4 OPEN** — chaining unconfirmed on codex/copilot-cli/antigravity (same as `Q1(e)`); the item's
-  sequencing premise ("before feature-007 is specified") has expired. **#11 OPEN** — the FR-E1
+  **#4 ANSWERED 2026-08-09 (human decision): schedule a live chaining confirmation** on codex,
+  copilot-cli and antigravity **before this work ships**. Static render parity (`RX13`-`RX16`) is not
+  sufficient evidence: it proves the artifacts *reach* all five profiles, not that a chain *executes*
+  on three of them. The `skill_chaining = true` declarations for those hosts were authored by commits
+  **predating work-003**, so they restate the assumption rather than verify it. The design carries
+  *"one fallback design, not five"*, so an unconfirmed capability leaves the fallback unexercised as
+  well — a single failure would surface as an adopter finding that a pipeline skill cannot reach its
+  reviewer. The item's original sequencing premise ("before feature-007 is specified") has expired;
+  the new gate is **before ship**, not before a feature. **Not yet implemented — needs a delivery to
+  carry it**, and it is a host-runtime check, so it cannot be discharged by a canonical test.
+  Also closes `Q1(e)`. **#11 OPEN** — the FR-E1
   re-triage cannot have run: deliveries 016-018 are `Pending-Spec`, while `Q3` has **grown** (the FIX
   task-type enum, the `/aid-update-kb` branch base, feature-006's exemption mismatch, and three items
   feature-007 surfaced and left unfixed).
