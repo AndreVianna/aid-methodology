@@ -219,7 +219,7 @@ or worse; `[LOW]`/`[MINOR]` at the end" — are the same statement.
 
 - **Category:** Stated-but-unenforced value — the class this work exists to fix
 - **Impact:** Low here, higher as precedent — no grade in this work turned on it
-- **Status:** Open — needs a decision: honour it, delete it, or wire it
+- **Status:** **Answered** 2026-08-09 — neither value is stale; `B-` is a deliberate temporary floor
 
 **What was found.** This file's frontmatter carries `minimum_grade: "A"` (line 6). Every review gate
 resolves its bar through `read-setting.sh`, whose header states it reads `.aid/settings.yml` and
@@ -240,11 +240,23 @@ delivery-002 was pulled forward to correct.
 **It changed nothing here.** The `/aid-detail` review closed at `A+`, which clears both bars, and
 delivery gates 013-015 are ungraded pending re-gate. No decision in this work rests on the difference.
 
-**Three options, not chosen here.** (a) The work genuinely wants a stricter bar → wire a per-skill or
-per-work override so `read-setting.sh` returns `A`, since the resolution order already provides for
-one. (b) The bar is `B-` and the frontmatter is stale → delete the key so one value has one source.
-(c) The key is meaningful to humans but never to gates → say so explicitly where it is written, so it
-is not read as enforced. **Awaiting a decision.**
+**Answer (2026-08-09, human decision).** **Neither value is stale, and the premise that one of them
+is drift was wrong.** `A` is this work's real bar. `.aid/settings.yml`'s `B-` is a **deliberate
+temporary floor**, lowered because reaching `A` was costing too many review cycles and tokens; the
+proper `A` gate is to be reinstated once the missing deliveries are defined. So the fix is not to
+delete either value — it is to record *why* they differ, which is the one thing disk did not say.
+The three options put (wire an override to `A`, delete the frontmatter key as stale, mark it
+non-enforcing) were all predicated on that wrong premise and are declined.
+
+**What was genuinely missing, and is now here:** nothing on disk stated that `B-` is temporary or
+what restores `A`. A reader could only see two bars disagreeing. That is the residual defect, and
+this entry is its fix.
+
+**Restore condition — not yet met.** `PLAN.md` ends at `delivery-018`; all 18 exist and every one
+carries task `DETAIL.md` files, so deliveries 016-018 are now defined. But `Q23`'s answer adds a
+requirement to `feature-003` that **no delivery yet carries**, so at least one delivery remains to be
+defined before the `A` gate goes back. **Reinstating `A` early would re-open the cost problem this
+floor was lowered to solve.**
 
 ### Q23 -- the ledger cannot support its own circuit-breaker condition (2026-08-08)
 
