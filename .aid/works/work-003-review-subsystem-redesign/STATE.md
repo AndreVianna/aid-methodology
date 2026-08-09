@@ -980,7 +980,10 @@ process spawning should be treated as the default suspect** whenever something i
 
 - **Category:** Functional-Requirement / new capability
 - **Impact:** High
-- **Status:** **Partially answered** — triaged 2026-08-09; **decision 3 half-shipped, decision 7 reversed**
+- **Status:** **Answered (text correction outstanding)** — triaged 2026-08-09; **decision 3
+  half-shipped, decision 7 reversed. No decision is open**: decision 3 is superseded by the `Q1(a)`
+  one-skill revision and decision 7's text correction is scheduled at `Q26` item 4, riding the merge
+  delivery. This entry is not awaiting a human.
 - **Triage 2026-08-09.** **Decisions 1, 2, 4, 5, 6, 8 shipped as decided** — resolve-before-grading is
   enforced by `check-gaps.sh` ahead of every grade site; the improvement-opportunity routing table and
   git-tracked register exist; a *"no"* gets its two follow-ups (what instead, canon or one-time); the
@@ -1708,7 +1711,9 @@ summarize scoring (`grade-summary.sh` + human JSON).
 
 - **Category:** Design-Risk
 - **Impact:** High (N1, N2) / Medium (N3, N4)
-- **Status:** **Partially answered** — triaged 2026-08-09; **N1/N2/N4 settled, N3's carrier claim is false**
+- **Status:** **Answered (text correction outstanding)** — triaged 2026-08-09; **N1/N2/N4 settled;
+  N3's decision is sound but its carrier claim is false. No decision is open**: the correction is
+  scheduled at `Q26`, riding the merge delivery. This entry is not awaiting a human.
 - **Triage 2026-08-09.** **N1 — adopted.** FR-A9 ships as its own delivery: delivery-010, Kind
   `enabling`, success criterion an **empty rendered diff**, with a risk row stating it is *"never
   bundled"*. `Done`. **N2 — accepted deliberately, not worked around.** The four-features-one-file
