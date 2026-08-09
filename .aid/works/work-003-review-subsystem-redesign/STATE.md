@@ -250,7 +250,7 @@ is not read as enforced. **Awaiting a decision.**
 
 - **Category:** Product defect in feature-003's substrate
 - **Impact:** Medium — it does not move any grade, it makes the loop undiagnosable
-- **Status:** Open — needs a scope decision: feature-003 requirement, or tech-debt
+- **Status:** **Answered** 2026-08-09 — becomes a `feature-003` requirement
 
 **What was found.** `aid-deep-review` § RECONCILE joins scratch onto durable on `(Doc, Rule)`, and
 `Fixed` + present-in-scratch → `Recurred`. But the durable row's `Description` is authorial and is
@@ -278,11 +278,21 @@ the only evidence its own breaker needs.
 **Not a grading bug.** `grade.sh` treats `Pending` and `Recurred` identically (both grade-bearing,
 `SPEC.md:168`), so no grade computed on this work is wrong because of this.
 
-**Two options, not chosen here.** (a) feature-003 gains a requirement: either the join key carries a
-defect discriminator, or the durable row keeps a per-cycle sighting log, so regression is separable
-from persistence. (b) Declined as tech-debt, on the grounds that the scratch files are sufficient
-when retained — which then makes scratch retention a requirement rather than a cleanup step.
-**Awaiting a decision; it is deliberately not folded into any in-flight delivery.**
+**Answer (2026-08-09, human decision).** `feature-003` gains the requirement, in the form the owner
+specified: **the row keeps a short list of one-line problem statements, one per sighting, instead of
+only a status and a count.** A count cannot be compared; a one-liner can. On a new sighting at an
+existing `(Doc, Rule)` key, the incoming description is compared against the list already there, so
+the ledger distinguishes *the same problem recurring* from *a new set of problems in the same place*
+— which is the distinction the non-improvement breaker needs and the only reason four scratch files
+had to be read to answer it.
+
+Two options put and **not** taken: a discriminator folded into the join key (does not preserve what
+the earlier problems *were*), and declining to tech-debt on the grounds that retained scratch files
+suffice (which silently converts "delete at DONE" into "retain at DONE", making cleanup a
+requirement by the back door).
+
+Not folded into an in-flight delivery: `feature-003`'s SPEC is `Ready` at `A+`, so this lands as an
+amendment to an already-graded SPEC and needs a delivery to carry it.
 
 ### Q22 -- deliveries 013 and 014 were marked Gated with no gate ever run (2026-07-30)
 
