@@ -736,7 +736,25 @@ process spawning should be treated as the default suspect** whenever something i
 
 - **Category:** Design-Decision / scope-shaping
 - **Impact:** High
-- **Status:** Pending
+- **Status:** **Partially answered** — triaged against disk 2026-08-09; **(f) is the only open part**
+- **Triage 2026-08-09.** **(a) Two skills, not a depth flag** — both `aid-deep-review/` and
+  `aid-light-review/` ship, and the deep skill states the reason: a `depth` flag *"would put both
+  behaviours behind one entry point, and the failure mode is silent."* **(b) Two agents** — a new
+  `aid-screener` (small tier, `Read, Glob, Grep`, no `Bash`) plus the retained `aid-reviewer`; roster
+  9 → 10 and the KB records it. **(c) An invocation manifest** in `reviewer-brief-template.md` — the
+  shared skill renders the brief from the manifest plus exactly two caller sections; the six per-skill
+  briefs shrank 68-101 → 31-33 lines. **(d) `/aid-deep-review` owns the REVIEW→FIX loop** and the
+  non-improvement breaker; the caller keeps only its two sections, its executor agent, its minimum
+  grade and its own state machine. **(e) Half-settled** — the design no longer forks on
+  `skill_chaining` (*"One fallback design, not five"*) and five-profile render parity is tested
+  statically (RX13-RX16), but the empirical claim is unverified: the `skill_chaining = true` lines for
+  codex/copilot-cli/antigravity were authored **before** work-003, so they are the same declaration
+  this question called unverified, not a verification of it. **(f) OPEN — untouched.**
+  `/aid-review`, `/aid-audit`, `/aid-light-review` and `/aid-deep-review` all ship and nothing
+  disambiguates them: `/aid-triage` has no routing row for the two new ones, neither new skill's
+  See-also mentions the old ones, and `/aid-review` still dispatches `aid-reviewer` directly instead of
+  calling `/aid-deep-review` — the ninth of nine caller migrations that delivery-012 scoped **in** and
+  closed `A+` without delivering.
 - **Context:** The soft/hard review split already exists three times over
   (`aid-execute` Step 1.5 quick-check vs DELIVERY-GATE; `aid-discover`
   `panel: full` vs `panel: collapsed`; `aid-review` simple vs standard/complex),
@@ -892,7 +910,27 @@ process spawning should be treated as the default suspect** whenever something i
 
 - **Category:** Functional-Requirement / new capability
 - **Impact:** High
-- **Status:** Pending
+- **Status:** **Partially answered** — triaged 2026-08-09; **decision 3 half-shipped, decision 7 reversed**
+- **Triage 2026-08-09.** **Decisions 1, 2, 4, 5, 6, 8 shipped as decided** — resolve-before-grading is
+  enforced by `check-gaps.sh` ahead of every grade site; the improvement-opportunity routing table and
+  git-tracked register exist; a *"no"* gets its two follow-ups (what instead, canon or one-time); the
+  reviewer never writes and triggers the owning skill; the recursion cost is accepted and stated
+  (*"Each level costs a full human-gated skill run"*); answer size stayed unbounded.
+  **Sub-questions (a), (b), (c), (e), (f) all shipped** — the halt is `PAUSE-FOR-USER-ACTION`, not a
+  new mechanism; recursion terminates at **depth 2 by demoting rather than discarding**
+  (`[GAP:CRITERIA]` → `[GAP:CRITERIA:NB]`, register keeps `Depth: 2`); "skip resolved" vs clean context
+  is resolved **structurally** — the reviewer is given only its scratch path and is never told the
+  canonical one; the conversation lives with the calling skill, batched and asked once; a waiver is
+  durable and *"a recurrence never resets the answer."*
+  **Decision 3 — "gap detection lives in both passes" — CONTRADICTED on the light half.**
+  `aid-light-review/SKILL.md:21-23` lists writing `G-` rows under what it deliberately does **not** do,
+  and its REPORT state writes nothing. The deep half shipped; the light half did not. See `Q26` item 3.
+  **Decision 7 — "restart, not resume" — REVERSED, deliberately.** `criteria-gap-protocol.md:75` ships
+  *"coverage rows **resume** rather than restart"*, superseded by `Q6` proposal 3. **This entry's text
+  needs correcting, not just its Status** — see `Q26` item 4.
+  **(d) greenfield criteria-vs-evidence — half-shipped.** The universal rule landed (`[GAP:CRITERIA]`
+  blocks everywhere, no greenfield exception in the reviewer body); the named edit to
+  `document-expectations.md` 50-52 never happened — see `Q26` item 2.
 - **Context:** Follows from Q4's decision. Some issues are not findings *about the
   artifact* -- they are gaps in the review's own preconditions, and they cannot be
   graded because no yardstick exists. Example: reviewing Java code when no Java
@@ -1185,8 +1223,28 @@ produced:
 
 - **Category:** Design-Decision
 - **Impact:** Medium
-- **Status:** Pending user review -- **all items here were decided without asking, under the
-  user's overnight authorization. Scan and overturn as needed.**
+- **Status:** **Partially answered** — triaged 2026-08-09: **27 of 31 sub-items ratified by execution;
+  4 exceptions below need a human.** Original note retained: *all items here were decided without
+  asking, under the user's overnight authorization. Scan and overturn as needed.*
+- **Triage 2026-08-09.** Each of the 31 numbered sub-items was checked against disk individually.
+  **27 shipped as decided** and can be ratified as a block: feature-003 all 6 (sentinel lock,
+  `--verify-grade` default-on, screener cannot write rows, coverage/gap rows out of the panel merge,
+  `--list-units`/`--get-status`, `PROJECT-INDEX` kind B); feature-004 9 of 10; feature-006 6 of 8 plus
+  the discipline-block and tiering items; feature-007 6 of 7.
+  **The four exceptions, each inside a delivery that closed `Done` or `Gated`:**
+  **(i) feature-004 #9** — the greenfield edit to `document-expectations.md` 50-52 was never made;
+  delivery-007 closed `Done`. **(ii) feature-006 #5** — `reviewer-guide.md` was to be retired and is
+  still present at 77 lines, never scheduled into any delivery; `Q3(b)`/`Q3(c)` remain open only
+  because this deletion never happened. **(iii) feature-006 #4** — shipped in a form that contradicts
+  half its own text: the `U-` half landed, the "light findings land in the canonical ledger as
+  `Pending`" half is forbidden by the skill itself. **(iv) feature-007 #5** — `aid-detail` writing the
+  BLUEPRINT Tasks table is decided and **scheduled into delivery-018, which is `Pending-Spec`** — not
+  a defect, just unexecuted.
+  All four are consolidated in **`Q26`**. Stale residue also noted: `REQUIREMENTS.md:290` still reads
+  *"FR-A7 (still open)"* although `:111` records it **CUT 2026-07-27**.
+  **What remains for a human:** ratify the 27, and rule on (i)-(iii) — reopen, re-schedule into a new
+  delivery, or accept and record. The blanket *"scan and overturn"* the entry asks for is a human act
+  no artifact can perform.
 
 **feature-003 (all six were the architect's own recommendations, accepted):**
 1. **Sentinel lock inherited** from `writeback-state.sh` (~20 lines, already tested). Unnecessary
@@ -1572,7 +1630,24 @@ summarize scoring (`grade-summary.sh` + human JSON).
 
 - **Category:** Design-Risk
 - **Impact:** High (N1, N2) / Medium (N3, N4)
-- **Status:** Pending
+- **Status:** **Partially answered** — triaged 2026-08-09; **N1/N2/N4 settled, N3's carrier claim is false**
+- **Triage 2026-08-09.** **N1 — adopted.** FR-A9 ships as its own delivery: delivery-010, Kind
+  `enabling`, success criterion an **empty rendered diff**, with a risk row stating it is *"never
+  bundled"*. `Done`. **N2 — accepted deliberately, not worked around.** The four-features-one-file
+  serialization became a **named invariant**, the AGENT.md spine `003 → 004 → 005 → 006 → 007 → 009 →
+  011`, enforced by a per-delivery `git diff` assertion and quoted-string region inventories; parallel
+  delivery is confined to four free tracks. **N4 — re-triaged out.** The WSL gitdir bug leaves this
+  work per its own recommendation, retired from FR-E1 and recorded in the PLAN's Deferred table; the
+  bug is still live, only its ownership moved. **N3 — decision sound, carrier claim FALSE.** The
+  decision (re-run parity at every delivery close; delivery-012 owns the criterion of record) is
+  provable in `PLAN.md` and `delivery-012/BLUEPRINT.md:39`. But this entry asserts *"Each feature SPEC
+  now carries this note"* — `grep -c AC-12` across the eight returns `1,1,0,0,0,7,0,0`, **three of
+  eight**. The per-delivery gate is likewise partial: **11 of 18** BLUEPRINTs carry a parity criterion.
+  **This entry's own text must be corrected, not preserved** — see `Q26`.
+  **Boundary-honesty note on FR-B5a — vindicated.** Placement held and the reach was real, but
+  under-sized exactly as the note warned: delivery-013 sits `Gated` with an open ledger recording that
+  `spec-template.md`, `task-detail-template.md` and `delivery-blueprint-template.md` still return
+  `grep -ci modality` = 0, and that `aid-plan`/`aid-detail` carry no lint invocation.
 - **N1 -- The boilerplate split is the highest-blast-radius item in the work.** All nine
   agent bodies carry `{{include:agent-boilerplate}}`, and `reviewer-dispatch.md`
   references it. FR-A9's split therefore re-renders every agent across all five
@@ -1601,7 +1676,32 @@ summarize scoring (`grade-summary.sh` + human JSON).
 
 - **Category:** Requirement-Defect / Design-Decision
 - **Impact:** High (4 blocking) / Medium (rest)
-- **Status:** Pending
+- **Status:** **Partially answered** — triaged 2026-08-09; **#4 and #11 are the only open parts**
+- **Triage 2026-08-09.** **#1 eighth `Rule` column** and **#2 ten agents** were already CLOSED and both
+  verify on disk. **#3 NFR-3 vs reviewer-tier ≥ executor-tier — resolved structurally, no carve-out
+  needed.** The invariant binds *the agent that produces the graded ledger*, and `aid-screener`
+  structurally is not that agent: no `Bash`, so it cannot run `grade.sh`; no write path, so it cannot
+  produce a ledger. Pinned `small`/`low` with escalation *"never"*. **#5 FR-B5 vs §4's out-of-scope
+  line — half done.** The scope call was made and executed (delivery-013 changed
+  `templates/requirements.md` and `feature.md`), but the requested REQUIREMENTS.md fix was never made:
+  `grep -rn "form, not content"` returns exactly one hit — this concern itself. §4 still reads *"Any
+  change to what the phases themselves produce"*, byte-identical to its first commit, sitting beside
+  FR-B5a's retroactive mandate. **#6 FR-B8 vs NFR-1 — resolved by deletion, not relocation.** FR-B8 is
+  **CUT**; it could only check `Fixed`-form severity anchors, the low-probability case, while the real
+  risk sits on `Step 2` anchors where a lint cannot help. **#7 FR-C7 depth vs FR-C3 halt** — the first
+  option was taken: FR-D9 promoted SHOULD → MUST and moved to feature-004, so the depth counter lives
+  in the git-tracked register that outlives the deleted ledger. **#8 missing FR for the lifecycle
+  rewrite** — resolved by delivery, not requirement: feature-005 owns it via delivery-009's scope line,
+  and the rewrite is on disk. **#9 AC-11's "measurably shorter"** — `BASELINE-ac11.md` defines both
+  metrics and a three-part threshold including an anti-gaming clause, with the grep pattern written
+  into the SPEC *"so it cannot be tuned after the fact"*. **#10 in-flight old-schema ledgers** —
+  *"the header decides"*: 7-column ledgers stay readable and are never rewritten, and grade correctly
+  because `Severity`/`Status` sit at the same positions in both shapes.
+  **#4 OPEN** — chaining unconfirmed on codex/copilot-cli/antigravity (same as `Q1(e)`); the item's
+  sequencing premise ("before feature-007 is specified") has expired. **#11 OPEN** — the FR-E1
+  re-triage cannot have run: deliveries 016-018 are `Pending-Spec`, while `Q3` has **grown** (the FIX
+  task-type enum, the `/aid-update-kb` branch base, feature-006's exemption mismatch, and three items
+  feature-007 surfaced and left unfixed).
 - **Blocking -- must resolve before the named feature is specified:**
   1. ~~**AC-3 has nowhere to store a rule reference.**~~ **CLOSED (2026-07-27) --
      add an 8th column.** The ledger gains a **`Rule`** column, and §4's freeze on the
