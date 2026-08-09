@@ -215,6 +215,59 @@ or worse; `[LOW]`/`[MINOR]` at the end" — are the same statement.
 <!-- DERIVED -- union of per-delivery Q&A plus WORK-OWNER-AUTHORED entries below
      (work owner is the single writer for those). -->
 
+### Q26 -- four decisions read as settled in prose and are not settled on disk (2026-08-09)
+
+- **Category:** Process defect — same class as `Q22`, found the same way
+- **Impact:** High — each sits inside a delivery that closed `Done`, so the gate passed over undelivered work
+- **Status:** Open — needs a decision on each; none is fixed here
+
+**How it surfaced.** Eight `Cross-phase Q&A` entries still read `Pending` although all were raised
+2026-07-27 and fifteen deliveries have shipped since. Triaging them against disk (rather than against
+what the entries claim) settled most of them — and turned up four decisions that the record treats as
+done while disk disagrees. **The `Status` field being stale was the trivial finding; this is the real
+one.**
+
+**1. `aid-execute/references/reviewer-guide.md` was to be retired** (`Q13` / feature-006 #5). It is
+still present at 77 lines, still opens *"Reference for Step 2 (REVIEW)"* — a step that no longer
+exists — and still carries the `CODE / TASK / SPEC / KB` source table that
+`reviewer-ledger-schema.md:165-167` and `aid-reviewer/AGENT.md:20` both declare **retired**. It was
+never scheduled into any delivery: `grep -rn reviewer-guide` over all 18 delivery folders returns only
+`delivery-001/BASELINE-ac11.md` and `delivery-004/BLUEPRINT.md:27`. **Consequence:** `Q3(b)` and
+`Q3(c)` were to be resolved *by this deletion*, so they remain open by default rather than by decision.
+
+**2. The greenfield criteria-vs-evidence split was to edit `document-expectations.md` 50-52**
+(`Q13` / feature-004 #9; `Q5(d)`). `feature-004/SPEC.md:435` claims regions 13-19 and 36-54. Work-003
+never touched that file — its newest commit is `b7490a40`, from **work-023**. `grep -i resolvable`
+returns nothing and lines 50-52 still carry the pre-decision C3 text. **Delivery-007 closed `Done`.**
+
+**3. "Light-review findings land in the canonical ledger as `Pending`"** (`Q13` / feature-006 #4;
+`Q5` decision 3). Contradicted by the skill's own text: `aid-light-review/SKILL.md:21` forbids it
+writing a ledger — *"a cheap pass must never contribute to a grade"* — and its REPORT state writes
+nothing at all. So light review records **neither findings nor gaps**, and the corollary "the calling
+skill writes them" never landed either. The `U-` half of the decision did ship.
+
+**4. `Q5` decision 7, "restart, not resume", is superseded — and is the one benign case.**
+`criteria-gap-protocol.md:75` ships *"coverage rows **resume** rather than restart"*, deliberately and
+traceably, by `Q6` proposal 3. Here the entry's **text** needs correcting, not just its `Status`;
+writing it as answered-as-recorded would preserve a decision that was consciously reversed.
+
+**A fifth, of the same shape, in `Q8` N3.** The entry asserts *"Each feature SPEC now carries this
+note"* about the AC-12 parity gate. `grep -c AC-12` across the eight feature SPECs returns
+`1,1,0,0,0,7,0,0` — **three of eight**, not eight. The per-delivery gate is likewise partial: 11 of 18
+BLUEPRINTs carry a parity criterion. The *decision* (per-delivery regression gate, delivery-012 owns
+the criterion of record) is sound and provable; only the **carrier claim** is false.
+
+**Why this matters beyond the four.** `Q22` recorded deliveries marked `Gated` with no gate ever run.
+This is the same failure from the other end: a gate that **did** run, over a delivery whose recorded
+scope included work nobody performed. In both cases the tracking said the work was complete and no
+artifact of it exists. The `/aid-detail` review that just closed `A+` cannot have caught these — its
+scope was nine task files, not the delivery record.
+
+**Not fixed here, deliberately.** Items 1-3 each need a delivery to carry them, and three of the
+affected deliveries are already `Done`; whether to reopen, re-schedule into a new delivery, or accept
+and record is a decision per item. Item 4 and the `Q8` N3 correction are text fixes to this file's own
+entries and are the cheapest of the five.
+
 ### Q25 -- `FR-G3` checks bytes, but the criterion is now meaning (2026-08-09)
 
 - **Category:** Requirement/implementation mismatch, created by a decision
@@ -725,7 +778,21 @@ process spawning should be treated as the default suspect** whenever something i
 
 - **Category:** Design-Decision / correctness
 - **Impact:** High
-- **Status:** Pending
+- **Status:** **Answered** 2026-08-09 — ratified from disk, not re-decided; see **Answer** below
+- **Answer:** **Collapsed to one source, and it shipped.** `grading-rubric.md § Severity Scale`
+  (marker-delimited `AID:SEVERITY-SCALE:BEGIN/END`) is the sole definition; the six former rivals now
+  cite it rather than define it — `reviewer-ledger-schema.md`, `kb-authoring/review-rubric.md`,
+  `aid-reviewer/AGENT.md`, its `README.md`, `quality-gates.md`, `aid-execute/references/reviewer-guide.md`.
+  The specific contradiction is gone (`grep -rn "incorrect behavior\|incomplete but not wrong"` over
+  those files returns nothing). The per-artifact **flavours became the catalog**: `review-rubrics/` =
+  `INDEX.md` plus nine class files carrying 85 rule rows, with a universal tier holding the defect
+  taxonomy, the two authority ladders, severity derivation and evidence admissibility. Severity is
+  **looked up** from the matched rule, never assigned (`AGENT.md`: *"You do not assign it"*); modality
+  `MUST/SHOULD/COULD` sets the band and blast radius × reversibility selects within it; FR-B7's damage
+  axes were cut as double-counting; confidence never modifies severity; there is no third source.
+  **Residual, tracked separately:** `reviewer-guide.md` still carries the retired `CODE/TASK/SPEC/KB`
+  source table — fallout from the un-executed file retirement, recorded as `Q26` item 1, not a
+  surviving severity definition.
 - **Context:** Severity is defined in seven places with four distinct meanings
   (`grading-rubric.md` + `reviewer-guide.md` + `quality-gates.md`;
   `agents/aid-reviewer/AGENT.md` + its `README.md`;
@@ -782,7 +849,22 @@ process spawning should be treated as the default suspect** whenever something i
 
 - **Category:** Design-Decision
 - **Impact:** High
-- **Status:** Pending
+- **Status:** **Answered** 2026-08-09 — ratified from disk, not re-decided; see **Answer** below
+- **Answer:** **Both halves shipped as decided.** *(a) Escalation.* The trigger set is a **closed
+  three-token enum** on the gap row's `Description`, not agent discretion: `[GAP:CRITERIA]` (no rule in
+  either ladder speaks to the concern) **blocks the grade**; `[GAP:CRITERIA:NB]` and `[GAP:EVIDENCE]`
+  do not. The block is enforced mechanically — `check-gaps.sh --ledger <path>` precedes every grade
+  site and `grade.sh` is *"only reachable on exit 0"*. A source **conflict** is handled separately and
+  is never the reviewer's to resolve: *"Two sources at equal rank — surface both, pick neither."* The
+  calling skill asks **once for the whole batch**, because a dispatched sub-agent cannot hold a
+  dialogue. So: batched-and-blocking for criteria, queued for evidence.
+  *(b) Self-healing is user-gated.* Ten-step lifecycle in `criteria-gap-protocol.md`: the reviewer
+  **proposes in its return message** (*"Proposals never enter the ledger"*) and **writes nothing** to
+  any source of truth; the calling skill asks the user, promotes the answer to a **git-tracked**
+  register, then halts and routes to the skill that owns the document (KB → `/aid-update-kb`,
+  REQUIREMENTS → `/aid-define`, SPEC → `/aid-specify`, PLAN/BLUEPRINT → `/aid-plan`, DETAIL →
+  `/aid-detail`). Every answer is scoped *canon or one-time*. The *"established best practice"*
+  fallback has been removed from the agent body — the hole that made self-healing necessary is closed.
 - **Context:** Two related user decisions from the 2026-07-27 discussion.
   (a) **Uncertainty escalates, never guesses.** When the reviewer cannot ground a
   finding in the KB or the spec documents, it must ask the user rather than fall
@@ -881,7 +963,22 @@ process spawning should be treated as the default suspect** whenever something i
 
 - **Category:** Design-Proposal
 - **Impact:** High
-- **Status:** Pending (proposed 2026-07-27, awaiting user decision)
+- **Status:** **Answered** 2026-08-09 — ratified from disk; every proposed item shipped
+- **Answer:** **All five proposal items accepted and shipped, plus both `DECIDED` items and all four
+  consequences.** The coverage manifest lives **in the ledger** as `U-NNN` rows — a third row kind
+  alongside findings and gaps — with the vocabulary renamed to `Unexamined | In Progress | Examined |
+  Skipped`. Mode selection is **one `test -f`** on the scratch path: present → resume, absent →
+  new-cycle. Reconciliation **moved off the reviewer to the orchestrator** (FR-D5), on the stated
+  principle *"Independence protects judgment, not bookkeeping"*. Invalidation on resume is by `art=` /
+  `rs=` digest at (artifact × rule set) granularity, via `plan-resume.sh`, which invalidates a unit on
+  `In Progress`, a changed artifact digest, or a changed rule-set digest — **never by finding**. All
+  three interruption types are in scope, with `In Progress` units treated as unexamined. Loop
+  detection rides the git-tracked gap register's `Depth` and `Recurrences` columns. `grade.sh` needed
+  **no change**, exactly as the proposal's verification predicted, because `U-`/`G-` rows are
+  grade-inert. Consequences: the schema dropped "one row = one finding"; `G-` rows are promoted to the
+  register **before** anything is deleted; the surgical helper `writeback-ledger.sh` is mandatory and
+  the old `cat >` heredoc instruction is superseded; parallel panel merges keep `U-`/`G-` rows
+  per-mandate with namespaced IDs.
 - **Context:** User asked whether resuming a review can rely on the ledger, and drew
   a distinction: **resuming** an interrupted review keeps context of what was done;
   a **new review in a grading cycle** is a fresh clean-context pass.
