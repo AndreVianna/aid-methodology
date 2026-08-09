@@ -219,7 +219,18 @@ or worse; `[LOW]`/`[MINOR]` at the end" — are the same statement.
 
 - **Category:** Process defect — same class as `Q22`, found the same way
 - **Impact:** High — each sits inside a delivery that closed `Done`, so the gate passed over undelivered work
-- **Status:** Open — needs a decision on each; none is fixed here
+- **Status:** **Answered** 2026-08-09 — items 1-2 re-scheduled into the merge delivery; item 3
+  superseded by `Q1(a)`; item 4 and the `Q8` N3 correction are text fixes to this file
+- **Answer (2026-08-09, human decision).** **Items 1 and 2 are re-scheduled into the delivery that
+  carries the `/aid-review` merge. Closed deliveries stay closed.** Reopening delivery-007 or any
+  other `Done` delivery would corrupt the record of what those gates actually certified — the gate
+  *did* run, and rewriting its outcome retrospectively destroys the evidence of the real defect, which
+  is that a delivery's recorded scope outran what was performed. A new delivery carrying the shortfall
+  keeps the history honest and places the work where it will be re-reviewed anyway. Item 1 is close to
+  free: retiring `reviewer-guide.md` is a deletion plus updating two referrers, and it **also closes
+  `Q3(b)` and `Q3(c)`**, which have been open only because the deletion never happened.
+  Item 3 needs no ruling — superseded, see above. Item 4 (`Q5` decision 7's reversed text) and the
+  `Q8` N3 carrier-claim correction are edits to this file's own entries and ride the same delivery.
 
 **How it surfaced.** Eight `Cross-phase Q&A` entries still read `Pending` although all were raised
 2026-07-27 and fifteen deliveries have shipped since. Triaging them against disk (rather than against
