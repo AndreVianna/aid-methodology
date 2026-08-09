@@ -736,7 +736,31 @@ process spawning should be treated as the default suspect** whenever something i
 
 - **Category:** Design-Decision / scope-shaping
 - **Impact:** High
-- **Status:** **Partially answered** — triaged against disk 2026-08-09; **(f) is the only open part**
+- **Status:** **Answered** 2026-08-09 — (a)-(d) ratified from disk; **(f) decided: merge into
+  `/aid-review`, drop `/aid-audit`**; (e) remains open and is tracked as `Q7 #4`
+- **(f) Answer (2026-08-09, human decision).** **`/aid-deep-review` merges INTO `/aid-review`** — that
+  direction, not the reverse — and **`/aid-audit` is eliminated**. End state: **two** review skills,
+  `/aid-review` (deep, the default) and `/aid-light-review` (the cheap pass), with `/aid-triage`
+  routing between them.
+  **Why this direction is cheaper than the reverse, which was the option originally put.**
+  `git ls-tree origin/master canonical/skills/` returns **only `aid-review`** — `aid-audit`,
+  `aid-deep-review` and `aid-light-review` are all absent upstream. So (i) eliminating `/aid-audit` is
+  **catching up with master**, which already retired it with the alias model, not a breaking change;
+  and (ii) `aid-deep-review` **has never shipped** — renaming before merge means the name never
+  reaches an adopter, with no rename churn and no deprecation cycle. Naming also improves: review is
+  deep by default and `light` marks the exception, so the qualifier leaves the common case.
+  **Cost 1 — blast radius:** 12 `canonical/` files, 4 `tests/` files, 13 work-003 artifacts. Notably
+  `delivery-017/task-002/DETAIL.md`, which passed `A+` at cycle 7 and whose whole Scope is the gate in
+  `aid-deep-review` **RESOLVE**, including `AC-3`'s command `grep -rl "/aid-deep-review"`. It has not
+  executed (delivery-017 is `Pending-Spec`), so this is pre-execution revision rather than rework — but
+  it is the single highest-defect file in this work and needs a re-review after the change.
+  **Cost 2 — a design question the merge opens, to be settled by whoever carries it.** `/aid-review` is
+  human-invoked on an arbitrary artifact; `aid-deep-review` is a callable engine whose RESOLVE states
+  *"Every field except `gap_depth` is required; a missing one is a caller error, not something to
+  infer."* The merged skill must serve **both** a human with no manifest and a pipeline skill with a
+  full one, via **two explicit entry paths**. Collapsing them into one implicit path would reproduce
+  exactly the failure `(a)` rejected: two behaviours behind one entry point, failing silently.
+  **Not yet implemented — needs a delivery to carry it.**
 - **Triage 2026-08-09.** **(a) Two skills, not a depth flag** — both `aid-deep-review/` and
   `aid-light-review/` ship, and the deep skill states the reason: a `depth` flag *"would put both
   behaviours behind one entry point, and the failure mode is silent."* **(b) Two agents** — a new
