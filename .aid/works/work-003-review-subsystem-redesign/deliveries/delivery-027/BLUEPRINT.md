@@ -17,8 +17,8 @@ Scoped last because it measures the shape that actually ships.
 - The measurement: run the review over delivery-024's corpus and report the found
   fraction, **per rule set** and overall (`FR-H2`). An aggregate alone is out -- it hides a rule that
   never fires.
-- The recorded baseline, and the rule that a later drop is a defect in the review subsystem to be
-  justified or reverted (`FR-H3`).
+- The **Lane B term** added to the series `delivery-024` ships, and `FR-H3`'s regression rule -- whose
+  trigger is the three-run floor `feature-009`'s SPEC § 3 step 5 defines, not a single-run drop.
 - `AC-16`: every **in-domain** rule set reports a figure, and none reports zero fixtures. The domain is
   the predicate in `features/feature-009-review-effectiveness/SPEC.md § 2b`, which is where it is
   defined; this line does not restate it.
@@ -72,9 +72,9 @@ being replaced. delivery-026 makes a coverage row per-claim, without which a mis
 -- you would know a defect was missed but not which pass should have caught it, which is the figure's
 whole diagnostic value.
 
-**Known risk, and the mitigation is in the plan.** The baseline arrives after most of the work has
-changed the reviewer, so a low figure cannot be attributed to any one delivery. `PLAN.md
-§ Cross-Cutting Risks` row 6 records the risk. The series that answers it is **Lane A's CI tally**,
-which runs from `delivery-024`'s close onward; the Lane B fraction cannot start earlier than
-`recall-measure.sh`, which this delivery ships. `feature-009`'s SPEC § 7 states which series begins at
-which close, and records that this corrects `STATE.md` Q31's mitigation wording.
+**Known risk, and the mitigation is in the plan.** A figure first taken this late cannot be attributed
+to any one delivery. `PLAN.md § Cross-Cutting Risks` row 6 records the risk. The series that answers it
+is `tests/recall-baseline.tsv`, which **delivery-024 ships** and which the closing step appends to at
+every delivery close from 024 onward. This delivery adds the **Lane B term** to that series; it cannot
+start earlier than `recall-measure.sh`, which this delivery ships. `feature-009`'s SPEC § 7 states which
+term joins when, and records that this corrects `STATE.md` Q31's mitigation wording.

@@ -24,6 +24,11 @@ the precision work lands -- a baseline taken after the change is not a baseline.
   corpus rather than as a silence (`FR-H1`).
 - The corpus is fixture-owned: it builds its own inputs and reads no work folder, per the transient
   work-folder rule in `CLAUDE.md`.
+- **The series file `tests/recall-baseline.tsv`**, which the closing step appends a run's Lane A terms to
+  at every delivery close from this one onward. It ships here rather than with the measurement so that a
+  series exists before the first agent-lane figure is taken (`PLAN.md § Cross-Cutting Risks` row 6).
+- `tests/recall-unseeded.tsv` -- rule rows deliberately left unseeded, each with a reason, read by the
+  per-rule coverage check.
 
 Carries `FR-H1`. Feature owner `feature-009`.
 

@@ -22,8 +22,7 @@ Two mechanisms: a corpus of artifacts carrying **known, catalogued** defects, an
 fraction** of those defects that a review pass finds. Plus one existing rule made mechanical: `F1` says
 a finding is a class, and nothing checks it, so a corrected claim keeps its siblings.
 
-Nothing changes about how a finding is severity-tagged, ruled, stored or graded. This adds a
-denominator to a system that reports only a numerator.
+This adds a denominator to a system that reports only a numerator.
 
 ## User Stories
 
@@ -67,11 +66,11 @@ Stated in full in `REQUIREMENTS.md § 9`.
 1. A fixture corpus of reviewable artifacts carrying known, catalogued defects, seeded per rule.
 2. The defect catalogue (§ 2).
 3. The two-lane measurement and its report (§ 3).
-4. The recorded baseline (§ 4), and `FR-H3`'s regression rule — which is a **review obligation, not
-   a mechanism**: a run whose fraction has dropped against the prior run for the same rule set is
-   reported as a defect in the review subsystem, to be justified or reverted. `recall-measure.sh`
-   emits the delta (§ 3 step 5); acting on it is the reviewer's, which is why § 4 assigns it no
-   further artifact.
+4. The accumulated series (§ 4), and `FR-H3`'s regression rule — a **review obligation, not a
+   mechanism**. The trigger is defined once, in § 3 step 5, and is deliberately not a single-run
+   comparison: a judgment lane is non-deterministic, so one run's movement is noise.
+   `recall-measure.sh` emits the delta; acting on a triggered regression is the reviewer's, which is
+   why § 4 assigns it no further artifact.
 5. The class-sweep obligation and its fixture (§ 5).
 
 **Out of scope**
@@ -149,8 +148,11 @@ in the oracle. It is a pass/fail suite like any other, which is what keeps `FR-F
    Either term may be `--`; NEITHER is ever `0/0`, which reads as a measured zero. Every in-domain
    rule set gets its line with both terms present, one of which may be `--`: that is what makes
    AC-16's "reported for every rule set" decidable for a rule set seeded entirely in one lane.
-5. APPEND every line to the baseline, stamped with a run identity; report the delta against the
-   most recent prior run for the same rule_set
+5. APPEND every line to the series, stamped with a run identity. Report the delta against the most
+   recent prior run for the same rule_set, and raise `FR-H3`'s REGRESSION flag only where the
+   fraction falls below the LOWEST of that rule_set's three most recent prior runs -- so ordinary
+   run-to-run movement is reported without being called a regression. Fewer than three priors: report
+   the delta, flag nothing.
 ```
 
 **The denominator.** Lane B's fraction is over `enforcement = judgment` rows only. A `script` row is
@@ -184,7 +186,7 @@ This is the feature's affected-artifact inventory. The `Delivery` column is part
 | `tests/canonical/fixtures/class-sweep/**` | `AC-17`'s fixture: a claim corrected in one file and restated in two others | 025 |
 | `tests/canonical/test-class-sweep.sh` | asserts `AC-17` on that fixture, with and without the sweep | 025 |
 | `canonical/aid/scripts/review/recall-measure.sh` | Lane B: join, then emit the § 3 report | 027 |
-| `tests/recall-baseline.tsv` | the recorded report, appended never overwritten, with a run-identity column | 027 |
+| `tests/recall-baseline.tsv` | the accumulated series, appended never overwritten, with a run-identity column. **Ships at 024**, carrying Lane A terms from that close; Lane B terms join at 027 | 024 |
 
 **Changed:**
 
@@ -193,6 +195,7 @@ This is the feature's affected-artifact inventory. The `Delivery` column is part
 | `canonical/skills/aid-execute/references/state-fix.md` | the class-sweep obligation, and the requirement that the fixer's report carry the sweep output (§ 5) | 025 |
 | `canonical/aid/scripts/review/writeback-ledger.sh` | a mode appending to an existing row's `Evidence` | 025 |
 | `canonical/aid/templates/reviewer-ledger-schema.md` | its enumeration of `writeback-ledger.sh`'s modes and guarantees, extended for the new mode | 025 |
+| `canonical/skills/aid-deep-review/SKILL.md` | `RECONCILE` gains the step that appends a fix's sweep output to the row it reconciles (§ 5) | 025 |
 | `canonical/aid/templates/review-rubrics/INDEX.md` | a pointer to the corpus, so a new rule set is told it needs a fixture | 024 |
 
 Every canonical change renders to five profiles, so `AC-12` parity and dogfood byte-identity apply.
@@ -200,16 +203,19 @@ Every canonical change renders to five profiles, so `AC-12` parity and dogfood b
 ### 5. `FR-E2` — the class sweep
 
 ```
-before marking a fix complete:
-    phrase := the distinguishing phrase quoted in the ledger row's Evidence cell
+before marking a fix complete, for each corrected claim:
+    phrase := a distinguishing substring OF THE CLAIM THE FIX CORRECTED
     grep the phrase across the work
-    report every site
+    report the phrase and every site it matched
 ```
 
-**The phrase is read out of the row, not chosen** — it is the string the row's `Evidence` already
-quotes, so two fixers discharging the same row sweep the same string. Where a row's `Evidence` quotes
-no phrase, the sweep obligation cannot be discharged mechanically and the fixer says so rather than
-inventing one.
+**The phrase is not extracted from the ledger row, and deliberately so.** An `Evidence` cell commonly
+quotes several strings — on this work's own ledgers a single row quotes up to five — so *"the string
+the row quotes"* names nothing, and `reviewer-ledger-schema.md` never required a quoted phrase in the
+first place. What is required instead is falsifiable without a canonical extraction: the fixer
+**reports the phrase it swept**, and that phrase must be a substring of the text the fix changed. A
+sweep whose phrase does not appear in the correction has not swept the corrected claim, and the
+obligation is not discharged.
 
 **A deletion sweeps like a correction.** If the corrected claim was restated elsewhere, the
 restatement goes too.
@@ -245,11 +251,19 @@ red is satisfied by any one row failing, so it must confirm *that row's* asserti
 `# COVERS:` header — read by `select-suites.sh` — which narrows change-set selection to the paths it
 names.
 
-**Lane A's tally is a run artifact, not a tracked file.** `test-recall-corpus.sh` writes
-`rule_set \t asserted \t total` to `.aid/.temp/recall-lane-a.tsv`, which `recall-measure.sh` reads
-when assembling the § 3 report. `.aid/.temp/` is gitignored, so this does not mutate the source tree
-and needs no separate tool and no CI wiring: the tally exists in whatever working tree the suite has
-run in, which is the tree Lane B runs in too.
+**Lane A's tally is a run artifact; the series is a tracked file, and they are different things.**
+`test-recall-corpus.sh` writes `rule_set \t asserted \t total` to `.aid/.temp/recall-lane-a.tsv` —
+gitignored, so no suite mutates the source tree, and no separate tool or CI wiring is needed.
+
+**The series accumulates at delivery closes, not in CI.** At each delivery close from `delivery-024`
+onward, the closing step runs the suite and **appends that run's tally to `tests/recall-baseline.tsv`**
+with a run identity. That is a deliberate act by the closing step, so a tracked file is written
+without any suite mutating the tree, and a series exists from 024 exactly as
+`PLAN.md § Cross-Cutting Risks` row 6 requires. Lane B's terms join the same file from `delivery-027`.
+
+**`recall-measure.sh` fails if `.aid/.temp/recall-lane-a.tsv` is absent.** Absence means the suite has
+not run in this tree, which is an error and not a value — reporting `--` for it would collide with
+`--`'s one meaning in § 3 and read as *"this rule set has no script-decided rule"*.
 
 **Lane B** is invoked deliberately, is not in CI, needs no credentials there, and adds nothing to CI
 time.
@@ -257,14 +271,13 @@ time.
 **When each series starts.** `PLAN.md § Cross-Cutting Risks` row 6 records the risk that a figure
 first taken at `delivery-027` is unattributable.
 
-| From | Signal available |
-|---|---|
-| `delivery-024` closing | Lane A's **pass/fail result in CI**, on every run — a script rule that stops catching its seeded defect breaks the build from this close onward |
-| `delivery-027` closing | Lane B's fraction, per deliberate run |
+| From | In the series | Also |
+|---|---|---|
+| `delivery-024` closing | Lane A's terms, appended at each close | Lane A's pass/fail in CI on every run — a script rule that stops catching its seeded defect breaks the build |
+| `delivery-027` closing | Lane B's fraction joins the same rows | |
 
-Lane A's signal is a build result, not a stored series: the tally is a run artifact. Lane B cannot
-start earlier than `recall-measure.sh`, which ships with 027. `STATE.md` Q31 carries the correction to
-its own mitigation wording.
+Lane B cannot start earlier than `recall-measure.sh`, which ships with 027. `STATE.md` Q31 carries the
+correction to its own mitigation wording.
 
 **Lane B is not counted in `AC-13`.** That criterion measures whether the review split is cheaper;
 Lane B's dispatches are measurement overhead, not review cost.
@@ -277,5 +290,5 @@ Lane B's dispatches are measurement overhead, not review cost.
 2. **Recall on fixtures is not recall on real artifacts.** The figure is a floor and a trend line.
    `FR-H3` treats a *drop* as the signal, which is robust to the absolute number being optimistic.
 3. **Judgment rows depend on a non-deterministic reviewer**, so Lane B's figure moves between runs
-   with no change at all. The baseline appends one stamped row per run per rule set, so the run count
-   is derived by counting rows over a window; a single run's movement is not a regression.
+   with no change at all. § 3 step 5's three-run floor is what keeps that noise out of `FR-H3`; the run
+   count itself is derived by counting a rule set's rows in the series.

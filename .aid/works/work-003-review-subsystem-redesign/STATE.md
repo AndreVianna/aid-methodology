@@ -255,8 +255,9 @@ as *"a Lane B run at every delivery close from `delivery-024` onward"*. **That t
 written:** the Lane B figure is computed by `recall-measure.sh`, which ships with `delivery-027`, so
 there is nothing to run at the closes of 024, 025 and 026. The **decision** above is unaffected and
 stands; what replaces the wording serves the same purpose, because the series guarding against an
-unattributable first figure is **Lane A's CI tally**, which does start at `delivery-024`'s close and is
-automatic. Recorded here rather than quietly contradicted downstream -- see
+unattributable first figure is the one `tests/recall-baseline.tsv` accumulates, which `delivery-024`
+ships and which the closing step appends to from that close onward -- so it does start at 024, as
+intended. Recorded here rather than quietly contradicted downstream -- see
 `features/feature-009-review-effectiveness/SPEC.md § 7`.
 
 **Rejected, with reasons:** *on-demand only* -- simplest to build, but nothing automatic, which is the
