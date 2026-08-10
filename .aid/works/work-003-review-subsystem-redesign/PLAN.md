@@ -304,7 +304,7 @@ reviewer behaviour on its own).
 ### delivery-024: Seeded-defect corpus
 - **What it delivers:** a fixture corpus of reviewable artifacts carrying **known, catalogued**
   defects, each seeded defect naming the rule that should catch it. FR-H1.
-- **Features:** feature-009 (**SPEC not yet authored** -- see `## Open at Plan`)
+- **Features:** feature-009
 - **Depends on:** --
 - **Priority:** Must
 - **Track:** free
@@ -319,7 +319,7 @@ reviewer behaviour on its own).
   a fix is not complete until the distinguishing phrase of the corrected claim has been grepped
   across the work and every site reported -- plus the fixture that fails without it. FR-E2,
   AC-17.
-- **Features:** feature-009 (**SPEC not yet authored**)
+- **Features:** feature-009
 - **Depends on:** --
 - **Priority:** Must
 - **Track:** free
@@ -347,7 +347,7 @@ reviewer behaviour on its own).
 - **What it delivers:** the measured fraction of seeded defects a review pass finds, reported
   **per rule set** as well as overall, and a recorded baseline against which a later drop is a
   defect. FR-H2, FR-H3, AC-16.
-- **Features:** feature-009 (**SPEC not yet authored**)
+- **Features:** feature-009
 - **Depends on:** delivery-022, delivery-024, delivery-026
 - **Priority:** Must
 - **Track:** spine
@@ -429,11 +429,11 @@ first.
 | Where does the citation lint go? | **Second, ahead of the severity work.** Its own spec: *"D1 depends on nothing and gates nothing."* Every finding across 33 review cycles was a citation or count defect, so catching them mechanically beats paying a review cycle each time. Its fix commit on the eight SPECs is the input every downstream DETAIL reads. |
 | AC-11's provisional status | delivery-012 earns AC-11 **provisionally**; **delivery-014 re-certifies it**, per feature-007's amendment to feature-006. 014 cannot move earlier -- its M2 subtraction sits in a file 012 migrates -- so the re-measure is accepted. |
 | Priority ordering | The work has one `Should` (the BLUEPRINT and specify-section reviews, delivery-018). It was numbered last of the original 18; the five added 2026-08-09 are all `Must` and are numbered after it, so it is **no longer last by number**, and **delivery-022 (a `Must`) does depend on it**. The original property therefore no longer holds and is not claimed. What replaces it: 018 depends only on delivery-012, so it is free to run as soon as 012 closes, in parallel with the five `Must` deliveries 022 also waits on. It **can** be the last of the six to finish and so **can** be 022's binding constraint -- nothing rules that out -- but nothing in the graph *forces* it late, so the `Should` adds no critical-path length that the `Must` set does not already impose. That is the weaker claim the graph actually supports. |
-| Extra parallelism | **Declined at first cut.** Splitting the settings gate out of 014 would have added another free track at the cost of another delivery gate, and the four free tracks then available (001, 002, 010, 013) were judged sufficient. Superseded in effect on 2026-08-09, and again on 2026-08-10: deliveries 019-021 and then 024-026 are each free, so the split is now the one `§ Dependency graph` states -- **cited, not restated here**, per the restatement convention in `REQUIREMENTS.md § 5`. The decision not to split 014 stands; the scarcity that motivated it does not. |
+| Extra parallelism | **Declined at first cut.** Splitting the settings gate out of 014 would have added another free track at the cost of another delivery gate, and the four free tracks then available (001, 002, 010, 013) were judged sufficient. Superseded in effect on 2026-08-09, and again on 2026-08-10: deliveries 019-021 and then 024-026 are each free, so the split is now the one `§ Dependency graph` states -- **cited, not restated here**, per the restatement convention in `REQUIREMENTS.md`'s conventions preamble. The decision not to split 014 stands; the scarcity that motivated it does not. |
 | The WSL gitdir bug | **Leaves this work**, per concern N4. Not review-path. |
 | Where does the skill merge go? (2026-08-09) | **After every delivery the rename would churn, as delivery-022.** Owner decision. `delivery-023` follows it and is unaffected, being written against the post-merge name. It renames the skill `delivery-017` is written against -- the only one of 016-021 that names it -- so running it earlier would force that delivery to be authored against `aid-deep-review`, then re-authored against `/aid-review`. Placing it there costs one thing knowingly: `delivery-017/task-002`'s Scope is the gate in `aid-deep-review` RESOLVE, so 017 builds under a name 022 then retires. That churn is bounded to a rename sweep 022 performs anyway, whereas the alternative re-details three already-graded deliveries. |
 | Does `FR-G3`'s re-disposition need its own delivery? (2026-08-09) | **No — it amends delivery-017.** `Q25` makes the attributed-quote check a cheap pre-filter whose miss escalates to judgment. That is 017's own subject matter and 017 is still `Pending-Spec`, so a separate delivery would compete with it for the same files. |
-| Why four deliveries for four amendments, not one? (2026-08-10) | **Because three of the four have different upstreams and one needs no delivery at all.** `Q30(a)`'s restatement convention is a convention -- it lands in `REQUIREMENTS.md § 5` and constrains authoring, so it ships no artifact. Of the remaining three: the corpus (024) and the class sweep (025) depend on nothing and are free tracks; per-claim coverage (026) must follow delivery-009's ledger-lifecycle migration or the join gets written twice; and the measurement (027) must follow the merged skill or it measures a shape that is being replaced. Merging any pair would re-serialize inside the delivery and hide that. |
+| Why four deliveries for four amendments, not one? (2026-08-10) | **Because three of the four have different upstreams and one needs no delivery at all.** `Q30(a)`'s restatement convention is a convention -- it lands in `REQUIREMENTS.md`'s conventions preamble and constrains authoring, so it ships no artifact. Of the remaining three: the corpus (024) and the class sweep (025) depend on nothing and are free tracks; per-claim coverage (026) must follow delivery-009's ledger-lifecycle migration or the join gets written twice; and the measurement (027) must follow the merged skill or it measures a shape that is being replaced. Merging any pair would re-serialize inside the delivery and hide that. |
 | Why does the recall corpus come early when the measurement comes last? (2026-08-10) | **Because a baseline taken after the change is not a baseline.** `REQUIREMENTS.md § 10` puts group H fifth for this reason: FR-H1 depends on nothing, so the corpus can exist before the precision work lands, while FR-H2 has to run against a built subsystem. The group straddles the order deliberately rather than by oversight. |
 | Why is the host-chaining check a delivery rather than a test? (2026-08-09) | **Because no test can discharge it.** `RX13`-`RX16` prove the artifacts render identically to all five profiles; the open claim is that a chain *executes* on three of them. That needs a host runtime, so it is delivery-023 with an `enabling` kind — it ships no capability, it retires an assumption. |
 
@@ -441,18 +441,20 @@ first.
 
 ## Open at Plan
 
-**`feature-009` has no `SPEC.md`, and three deliveries name it.** Group H (recall measurement)
-and `FR-E2` (the class sweep) were added to `REQUIREMENTS.md` on 2026-08-10, after Specify had
-closed for all eight existing features. Deliveries **024**, **025** and **027** therefore name a
-feature that has no spec, no module map and no test scenarios.
+**`feature-009`'s `SPEC.md` is authored but not yet `Ready`, and three deliveries name it.** Group H
+(recall measurement) and `FR-E2` (the class sweep) were added to `REQUIREMENTS.md` on 2026-08-10, after
+Specify had closed for all eight existing features, so deliveries **024**, **025** and **027** named a
+feature with no spec at all.
 
-**What this blocks and what it does not.** It does **not** block the other 24 deliveries, and it
-does not block this plan being graded -- the requirements those three deliveries carry are
-stated, modal and have acceptance criteria (AC-16, AC-17). It **does** block `/aid-detail` for
-those three, because a task breakdown reads the SPEC for its module map. `/aid-specify` must run
-for `feature-009` before they are detailed. Recorded here rather than silently deferred, because
-a delivery pointing at a missing SPEC is exactly the kind of dangling reference this work exists
-to catch.
+**Resolved on 2026-08-10:** `/aid-specify` ran for `feature-009` and authored the SPEC, including the
+affected-artifact inventory those three deliveries need. Its `Spec State` is `In Discussion` in
+`## Features State`, and the SPEC's own review is what advances it to `Ready`.
+
+**What remains blocked and what does not.** Nothing blocks the other 24 deliveries, and nothing blocks
+this plan being graded. `/aid-detail` for **024**, **025** and **027** waits on the SPEC reaching
+`Ready`, because a task breakdown reads the SPEC for its module map. Kept as a section rather than
+deleted, because a delivery pointing at a SPEC that is not yet graded is exactly the kind of dangling
+reference this work exists to catch.
 
 ---
 

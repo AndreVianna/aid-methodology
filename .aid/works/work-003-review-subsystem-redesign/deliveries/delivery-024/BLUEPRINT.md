@@ -15,8 +15,9 @@ the precision work lands -- a baseline taken after the change is not a baseline.
 
 ## Scope
 
-- A fixture corpus under `tests/` covering the reviewable artifact classes the rubric
-  index routes, one fixture per class at minimum.
+- A fixture corpus under `tests/canonical/fixtures/recall-corpus/` covering the corpus domain, which is
+  the predicate `features/feature-009-review-effectiveness/SPEC.md § 2b` defines. This Scope does not
+  restate the predicate; gate criterion 2 below is what enforces the coverage.
 - A **defect catalogue** pairing each seeded defect with the rule ID expected to catch it. This is
   the artifact the recall fraction divides by, so it is the deliverable of record, not the fixtures.
 - Defects seeded **per rule**, not per artifact, so a rule with no fixture shows up as a hole in the
@@ -24,8 +25,7 @@ the precision work lands -- a baseline taken after the change is not a baseline.
 - The corpus is fixture-owned: it builds its own inputs and reads no work folder, per the transient
   work-folder rule in `CLAUDE.md`.
 
-Carries `FR-H1`. Feature owner `feature-009`, whose SPEC does not yet exist -- see
-`PLAN.md § Open at Plan`.
+Carries `FR-H1`. Feature owner `feature-009`.
 
 **Out of scope:** measuring anything. Running a review over the corpus and reporting a fraction is
 delivery-027. This delivery ships the corpus and the catalogue and asserts nothing about reviewer

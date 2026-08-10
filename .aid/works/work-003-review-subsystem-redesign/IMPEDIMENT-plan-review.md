@@ -15,7 +15,7 @@ carrying its own measurement, and all four are applied.
 | Amendment | What it changes | Carried by |
 |---|---|---|
 | Q30(b) — the recommendation above | `delivery-022`'s per-site forensics leave `## Scope` for task `DETAIL.md`; the obligation stays as two gate criteria. 172 → 155 lines | applied directly |
-| Q30(a) | A derived fact is stated **once** and cited elsewhere — the **Restatement convention**, `REQUIREMENTS.md § 5` | applied directly |
+| Q30(a) | A derived fact is stated **once** and cited elsewhere — the **Restatement convention**, in `REQUIREMENTS.md`'s conventions preamble | applied directly |
 | Q29 | A fix is not complete until its class has been swept — `FR-E2`, `AC-17` | delivery-025 |
 | Q27 | A coverage row's unit becomes the **claim**, not the file — `FR-D10`, `AC-15` | delivery-026 |
 | Q28 | **Recall measurement** — a seeded corpus and a measured fraction, group H (`FR-H1`–`FR-H3`), `AC-16` | delivery-024, delivery-027 |
@@ -31,8 +31,9 @@ review whose coverage is a file-granular self-report, in a work with no term at 
 
 **Pipeline state.** `lifecycle` returns to `Running`; `block_reason` and `block_artifact` cleared.
 Deliveries `019`–`023` remain `Pending-Spec`, joined by `024`–`027`. One thing is newly open and is
-recorded in `PLAN.md § Open at Plan`: `feature-009` owns the new requirements and **has no SPEC**, so
-`/aid-specify` must run before deliveries `024`, `025` and `027` are detailed.
+recorded in `PLAN.md § Open at Plan`: `feature-009` owns the new requirements and had no SPEC.
+**Resolved 2026-08-10** — `/aid-specify` ran and authored it; it is `In Discussion` and must reach
+`Ready` before deliveries `024`, `025` and `027` are detailed.
 
 ---
 

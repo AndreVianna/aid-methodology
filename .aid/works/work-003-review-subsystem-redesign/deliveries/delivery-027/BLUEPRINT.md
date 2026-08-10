@@ -23,8 +23,7 @@ Scoped last because it measures the shape that actually ships.
   the predicate in `features/feature-009-review-effectiveness/SPEC.md § 2b`, which is where it is
   defined; this line does not restate it.
 
-Carries `FR-H2`, `FR-H3` and `AC-16`. Feature owner `feature-009` -- see
-`PLAN.md § Open at Plan`.
+Carries `FR-H2`, `FR-H3` and `AC-16`. Feature owner `feature-009`.
 
 **Out of scope:** gating on the figure. `FR-H2` is explicit that this is a measurement, not a gate: it states
 what recall **is**. `FR-H3` makes a regression a defect to be justified, which is a review
@@ -73,7 +72,9 @@ being replaced. delivery-026 makes a coverage row per-claim, without which a mis
 -- you would know a defect was missed but not which pass should have caught it, which is the figure's
 whole diagnostic value.
 
-**Known risk, and the mitigation is in the plan.** The baseline arrives after 26 deliveries have
-changed the reviewer, so a low figure cannot be attributed to any one of them. `PLAN.md
-§ Cross-Cutting Risks` row 6 records this: the measurement runs at every delivery close from 024
-onward, so a series exists before the number matters.
+**Known risk, and the mitigation is in the plan.** The baseline arrives after most of the work has
+changed the reviewer, so a low figure cannot be attributed to any one delivery. `PLAN.md
+§ Cross-Cutting Risks` row 6 records the risk. The series that answers it is **Lane A's CI tally**,
+which runs from `delivery-024`'s close onward; the Lane B fraction cannot start earlier than
+`recall-measure.sh`, which this delivery ships. `feature-009`'s SPEC § 7 states which series begins at
+which close, and records that this corrects `STATE.md` Q31's mitigation wording.

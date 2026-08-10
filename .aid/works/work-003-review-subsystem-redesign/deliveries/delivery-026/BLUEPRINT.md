@@ -68,4 +68,4 @@ installs, so running it first would mean writing the join twice.
 `Examined` still held findings, how many reviews missed each pre-existing defect, and the single
 variable with counter-evidence -- an enumerated worklist returning far more findings in one pass
 than any self-directed pass did, on the same artifacts under the same rules. Cited rather than
-restated, per the restatement convention in `REQUIREMENTS.md § 5`.
+restated, per the restatement convention in `REQUIREMENTS.md`'s conventions preamble.

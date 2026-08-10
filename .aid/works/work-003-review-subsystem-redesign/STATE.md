@@ -247,8 +247,17 @@ second grading model `FR-F6` retires.
 
 **The cost the owner accepted:** the agent half is not automatic, so a recall regression in a
 judgment-enforced rule is only caught when someone runs Lane B. The mitigation is a named trigger rather
-than an intention -- `PLAN.md § Cross-Cutting Risks` row 6 puts a Lane B run at every delivery close from
-`delivery-024` onward, so a series exists before the number matters.
+than an intention -- `PLAN.md § Cross-Cutting Risks` row 6 -- so a series exists before the number
+matters.
+
+**Correction 2026-08-10, made while specifying `feature-009`.** This entry originally named that trigger
+as *"a Lane B run at every delivery close from `delivery-024` onward"*. **That trigger cannot fire as
+written:** the Lane B figure is computed by `recall-measure.sh`, which ships with `delivery-027`, so
+there is nothing to run at the closes of 024, 025 and 026. The **decision** above is unaffected and
+stands; what replaces the wording serves the same purpose, because the series guarding against an
+unattributable first figure is **Lane A's CI tally**, which does start at `delivery-024`'s close and is
+automatic. Recorded here rather than quietly contradicted downstream -- see
+`features/feature-009-review-effectiveness/SPEC.md § 7`.
 
 **Rejected, with reasons:** *on-demand only* -- simplest to build, but nothing automatic, which is the
 same weakness that let eighteen polished passes go by; *everything in CI including the agent* -- strongest
@@ -343,7 +352,8 @@ written twice.
   allowed 18 polished-looking passes to go by. Supersedes the disposition that left this as
   tech-debt `L4` (*test-effectiveness programme, not started*) — the review-path slice of `L4` is
   now carried here. **Corrected 2026-08-10, after the SPEC was authored:** `L4`'s subject is
-  whether the ~144 canonical **test suites** bite; group H's subject is whether a **review**
+  whether the canonical **test suites** bite -- `tech-debt.md` owns that corpus size and it drifts with
+  every added suite, so it is not restated here -- while group H's subject is whether a **review**
   finds what is there. Same technique, different subject, so group H discharges a slice of `L4`
   rather than replacing it, and `L4` stays open for the rest. The decision recorded above is
   unaffected — only the scope of what it closes.
@@ -382,7 +392,7 @@ the work is *for* — from making the review subsystem tidy to making it measura
 priority order 5, and the scope-honesty note. Carried by **delivery-024** (the corpus — a free track
 that depends on nothing, so the baseline is not taken after the change) and **delivery-027** (the
 measurement, after delivery-022 so the figure describes the shape that ships). Owner `feature-009`,
-whose SPEC does not yet exist — recorded in `PLAN.md § Open at Plan`. Tech-debt `L4` is partly
+whose SPEC was authored on 2026-08-10 and is `In Discussion`. Tech-debt `L4` is partly
 discharged, not superseded (see the correction in the Answer above).
 
 ---
@@ -449,9 +459,11 @@ delivery-023"* -- that the two blueprint edits alone would have left contradicti
   `Q29`'s class sweep finds the restatements, `Q30(a)` stops them being created, and `Q27`'s worklist
   is what a reviewer checks them against.
   **APPLIED 2026-08-10, both parts.** (a) is the **Restatement convention** in
-  `REQUIREMENTS.md § 5`, beside the modality convention it parallels, and it is already dogfooded:
+  `REQUIREMENTS.md`'s conventions preamble, beside the modality convention it parallels, and it is already dogfooded:
   `PLAN.md`'s free/spine figure is now stated once in `§ Dependency graph` and cited from
-  `§ Sequencing decisions` and `§ Cross-Cutting Risks` instead of restated in each. (b) trimmed
+  `§ Sequencing decisions` and `§ Cross-Cutting Risks` instead of restated in each. (The convention
+  itself lives in `REQUIREMENTS.md`'s conventions preamble, beside the modality convention -- not in
+  `§ 5`, as this entry first said.) (b) trimmed
   `delivery-022`'s Scope -- the per-site forensics left for `/aid-detail`, the obligation kept as
   two gate criteria, `BLUEPRINT.md` down from 172 to 155 lines. The blueprint template's own
   closing line agrees: *"detailed design belongs in task DETAIL.md files."*
