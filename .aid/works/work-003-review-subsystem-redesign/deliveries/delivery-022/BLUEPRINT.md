@@ -65,14 +65,16 @@ it. `delivery-023`, which follows this one, is already written against the post-
     `/aid-deep-review` and `SEC03b` reads the deleted file (lines 164-167).
   **The repair is not a rename.** A rename leaves all four silent sites exactly as vacuous as
   the classification above says they are, which the gate criteria forbid. Three distinct repairs:
-  - **Re-point**, where the subject survives under the new name: `test-gap-gate-wiring.sh:80`,
-    `test-settings-frontmatter-gates.sh:18`, `test-shortcut-engine-contract.sh:164-167`, and
-    `RX15`/`RX16`'s render lookups.
-  - **Drop**, where the subject has no successor: `reviewer-guide.md` is retired outright, so its
-    term must leave `B_AFTER`'s sum rather than point somewhere new.
-  - **Collapse**, where two subjects become one: `RX01` (57-58) and `RX13`/`RX14` (158-159) each
-    assert over *two* skills that this delivery merges into one, so the loop and its expected
-    counts change shape, not just their strings.
+  **All seven reads are assigned**, so no site is left to an implementer's discretion:
+  - **Re-point** (2 sites), where the subject survives under the new name: `RX05` at 76, and
+    `RX15`/`RX16`'s render lookups at 172 and 183. Outside this file: `test-gap-gate-wiring.sh:80`,
+    `test-settings-frontmatter-gates.sh:18`, `test-shortcut-engine-contract.sh:164-167`.
+  - **Drop** (1 site), where the subject has no successor: `reviewer-guide.md` is retired outright,
+    so its term must leave `B_AFTER`'s sum at 92 rather than point somewhere new.
+  - **Collapse** (4 sites), where two subjects become one: `RX01` (57-58), the `cat`s that bind
+    `$light`/`$deep` (61-62), `NEW=`'s two `cat`s (95-96), and `RX13`/`RX14` (158-159). Each asserts
+    over *two* skills that this delivery merges into one, so the loop and its expected counts change
+    shape, not just their strings.
   And in every case the read must be made **loud**: an assertion whose subject file is missing has
   to fail, not skip and not fall through to `pass`.
 - `aid-execute/references/reviewer-guide.md` **retired** -- 77 lines carrying the
@@ -121,8 +123,13 @@ exhaustiveness mandate).
       is satisfied by `RX01` failing loudly while `RX05` still passes on nothing. The four, and
       what each must do: `RX05` must assert its subject exists before grepping it (a bare
       `grep -q` on a missing file exits 2 and takes the `else` branch); `B_AFTER` and `NEW` must
-      each drop `2>/dev/null` or check the file first, so a missing input errors rather than
-      contributing 0 to `SUM`; `RX15`/`RX16` must fail on an unresolved render instead of
+      **assert their inputs exist before reading them** -- dropping `2>/dev/null` is **not**
+      sufficient and must not be taken as the option: the suite runs `set -uo pipefail` with **no
+      `-e`** (line 15), so a failing `wc`/`cat` inside `$( )` completes the assignment anyway and
+      `SUM` still shrinks. Verified: `set -uo pipefail; N=$(cat /nonexistent | wc -l)` yields `N=0`
+      and execution continues, with or without the redirect. The only repair that trips is an
+      explicit existence check, or building the sum from a file list the test separately asserts is
+      complete; `RX15`/`RX16` must fail on an unresolved render instead of
       `continue`-ing past it. **Verified one at a time:** for each of the four, move its subject
       file aside in a scratch copy and confirm **that assertion** reports a failure. Four separate
       runs, four separate failures -- a single run that goes red overall is not evidence for any of
@@ -159,7 +166,7 @@ would put both behaviours behind one entry point, and the failure mode is silent
 not overturned: the objection was to **silence**, and named entry paths are not silent. Collapsing
 any of the three paths into an implicit one would reproduce exactly that failure.
 
-**Known cost, accepted when this was sequenced last.** `delivery-017/task-002`'s Scope is the gate in
+**Known cost, accepted when this was sequenced after the deliveries the rename would churn.** `delivery-017/task-002`'s Scope is the gate in
 `aid-deep-review` RESOLVE, including an AC whose command greps for `/aid-deep-review`. 017 therefore
 builds under a name this delivery retires. That churn is bounded to the rename sweep this delivery
 performs anyway; the alternative was re-detailing three already-graded deliveries.
