@@ -19,9 +19,9 @@ Scoped last because it measures the shape that actually ships.
   never fires.
 - The recorded baseline, and the rule that a later drop is a defect in the review subsystem to be
   justified or reverted (`FR-H3`).
-- `AC-16`: every rule set **reachable by a kind-A class** reports a figure, and none reports zero
-  fixtures. The kind-A bound and the reason for it are in
-  `features/feature-009-review-effectiveness/SPEC.md § 2b`.
+- `AC-16`: every **in-domain** rule set reports a figure, and none reports zero fixtures. The domain
+  is the predicate in `features/feature-009-review-effectiveness/SPEC.md § 2b` -- a rule set whose own
+  kind is `A` -- and that section is where it is defined; this line does not restate it.
 
 Carries `FR-H2`, `FR-H3` and `AC-16`. Feature owner `feature-009` -- see
 `PLAN.md § Open at Plan`.
@@ -37,9 +37,9 @@ arithmetic, which `FR-F6` forbids.
       **both** terms -- the judgment-lane fraction and the script-lane assertion count -- so every
       seeded defect appears in exactly one of them. The two are printed side by side and never blended:
       a blend would be the second grading arithmetic `FR-F6` retires, and would hide which lane moved
-- [ ] **No rule set reports zero fixtures**, over the kind-A-reachable set the corpus is bounded to.
-      Joined against the corpus catalogue; a reachable rule set with no fixture fails this criterion
-      rather than reporting an empty pass
+- [ ] **No rule set reports zero fixtures**, over the in-domain set of `SPEC.md § 2b`. Joined against
+      the corpus catalogue; an in-domain rule set with no fixture fails this criterion rather than
+      reporting an empty pass
 - [ ] The baseline is recorded where a later run can compare against it, and the comparison is
       reproducible from the recorded inputs
 - [ ] The figure describes the **merged** `/aid-review` that delivery-022 ships, not a skill being

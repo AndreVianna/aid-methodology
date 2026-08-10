@@ -34,14 +34,17 @@ behaviour.
 ## Gate Criteria
 
 - [ ] A defect catalogue exists and every entry names the rule ID expected to catch it
-- [ ] **Every rule set reachable by a kind-A artifact class has at least one fixture**, class routes
-      and family fallbacks alike. Checked by joining the catalogue against `review-rubrics/INDEX.md`'s
-      routing table and its resolution order; a reachable rule set with no fixture is a failure of this
-      criterion, because unmeasured is not the same as clean. **Bounded to kind A deliberately:** the
-      index states only kind A needs rule rows, so `SETTINGS` (kind D), `STATE` (kind C) and
-      `INDEX`/`METRICS`/`PROJECT-INDEX` (kind B) have no rule to name and cannot carry a catalogue row
-      at all -- asserting over them would make this criterion permanently unsatisfiable. The bound is
-      specified in `features/feature-009-review-effectiveness/SPEC.md § 2b`
+- [ ] **Every in-domain rule set has at least one fixture**, where the domain is the predicate
+      `features/feature-009-review-effectiveness/SPEC.md § 2b` defines -- a rule set whose own kind is
+      `A`. Read each rule set's `**Kind:**` line at check time rather than matching an enumerated list,
+      so a rule set added later fails this criterion until it is seeded. An in-domain rule set with no
+      fixture is a failure, because unmeasured is not the same as clean. **Two traps the predicate
+      exists to avoid**, both named in § 2b: a list built from the routing table's `Rule set` column
+      omits the four **family** rule sets, which declare kind `A` in their own headers and are reachable
+      only through classes that appear in no routing row; and it omits `DATA`, which the per-class
+      declarations table declares kind `A` with no routing row. Kinds B, C and D are outside the domain
+      -- they have no rule rows, so no `rule_id` can be named for them and asserting over them would
+      make this criterion permanently unsatisfiable
 - [ ] Each seeded defect is independently addressable -- the catalogue identifies it precisely enough
       that a review either found *that* defect or did not, with no judgment call at scoring time
 - [ ] The corpus builds its own fixtures and reads nothing under `.aid/works/`
