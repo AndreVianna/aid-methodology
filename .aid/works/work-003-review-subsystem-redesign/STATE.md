@@ -141,7 +141,7 @@ source of truth, and close the accumulated review-path defects.
 | 5 | feature-005-review-resume | **Ready** | **A+** | 13 | 2026-07-27 | 4 FRs (D4-D7); AC-6, AC-7, AC-8. A+ in 2 cycles (C+ -> A+). Discharged feature-003's lifecycle-rewrite debt as an AC. Amended feature-003's `U-` row Evidence contract (art=/rs= digests). Recommends 4 deliveries. |
 | 6 | feature-006-review-skills | **Ready** | **A+** | 12 | 2026-07-27 | 11 FRs (**FR-A7 cut**) + FR-C9 + FR-E1; AC-11, AC-12. A+ in 3 cycles (B -> B+ -> A+). Proved the boilerplate split is **byte-identical** -- N1's blast radius collapses to a zero-diff assertion. Recommends 5 deliveries. |
 | 8 | feature-008-citation-accuracy | **Ready** | **A+** | 8 | 2026-07-28 | 5 FRs (group G); AC-14. **Added post-Specify** -- see Q14. Extends `kb-citation-lint.sh` to work artifacts. A+ in **9 cycles**, the most of any feature, and 18 findings of which **one was itself wrong**. Collides with nothing; **D1 depends on nothing and gates nothing**, so it could ship first. |
-| 9 | feature-009-review-effectiveness | **In Discussion** | Pending | 0 | 2026-08-10 | **Added post-Plan 2026-08-10** -- see Q28/Q29. Owns group H (FR-H1-H3, recall measurement) and FR-E2 (the class sweep). Requirements half of `SPEC.md` authored 2026-08-10 following the `feature-008` precedent (Q14); `## Technical Specification` is pending and is what `/aid-specify` is authoring now. Discharges the review-path slice of tech-debt `L4`; `L4` itself stays open. Deliveries 024, 025 and 027 cannot be detailed until this reaches `Ready`. |
+| 9 | feature-009-review-effectiveness | **In Discussion** | Pending | 8 | 2026-08-10 | **Added post-Plan 2026-08-10** -- see Q28/Q29. Owns group H (FR-H1-H3, recall measurement) and FR-E2 (the class sweep). `SPEC.md` authored 2026-08-10 following the `feature-008` precedent (Q14): requirements half plus `## Technical Specification` in 8 sections, on the Q31 two-lane decision. Awaiting REVIEW. Discharges the review-path slice of tech-debt `L4`; `L4` itself stays open. Deliveries 024, 025 and 027 cannot be detailed until this reaches `Ready`. |
 | 7 | feature-007-review-coverage-gaps | **Ready** | **A+** | 12 | 2026-07-27 | 6 FRs (group F incl. FR-F6). A+ in **6 cycles** (C+ -> C+ -> B+ -> B+ -> B+ -> A+) -- the longest of the work, every finding a citation or count defect. Applied 5 amendments to features 002 and 006. Recommends 5 deliveries. |
 
 ## Plan / Deliveries
@@ -217,6 +217,47 @@ or worse; `[LOW]`/`[MINOR]` at the end" — are the same statement.
 
 <!-- DERIVED -- union of per-delivery Q&A plus WORK-OWNER-AUTHORED entries below
      (work owner is the single writer for those). -->
+
+### Q31 -- a CI runner cannot measure whether a reviewer AGENT finds a seeded defect (2026-08-10)
+
+- **Category:** Design-Decision / feature-009
+- **Impact:** High -- it decides what `FR-H2`'s number means and whether `FR-H3` has an automatic trigger
+- **Status:** **Answered** 2026-08-10 -- owner chose the hybrid split
+- **Surfaced by:** `/aid-specify` INITIALIZE for `feature-009`, Step 1 (loading `test-landscape.md`
+  and the existing fixture families)
+
+**The constraint.** `FR-H2` requires measuring the fraction of seeded defects a review pass finds. For a
+rule enforced by a **script**, that is a shell assertion. For a rule enforced by **reviewer judgment**,
+it needs a live model call, which a CI runner cannot make. Wiring one in would also make a deterministic
+gate depend on a non-deterministic agent, which is not how any other gate in this project works.
+
+**Answer (2026-08-10, owner decision): hybrid -- scripts in CI, agents on demand.**
+
+| Lane | Subject | Where it runs | Shape |
+|---|---|---|---|
+| A | rules a named script decides | CI, every run | **pass/fail assertion**, not a percentage -- expected recall for a script rule is exactly 1.0, so a miss is a bug in the lint |
+| B | rules reviewer judgment decides | on demand, deliberately | a reported fraction per rule set, plus a recorded baseline |
+
+**Why the shapes differ, and why that is load-bearing.** Lane A being an assertion rather than an average
+is what keeps `FR-F6` (one grading backend) intact: no percentage, no second arithmetic, no override
+channel. Had both lanes been averaged into one figure, this feature would have introduced exactly the
+second grading model `FR-F6` retires.
+
+**The cost the owner accepted:** the agent half is not automatic, so a recall regression in a
+judgment-enforced rule is only caught when someone runs Lane B. The mitigation is a named trigger rather
+than an intention -- `PLAN.md § Cross-Cutting Risks` row 6 puts a Lane B run at every delivery close from
+`delivery-024` onward, so a series exists before the number matters.
+
+**Rejected, with reasons:** *on-demand only* -- simplest to build, but nothing automatic, which is the
+same weakness that let eighteen polished passes go by; *everything in CI including the agent* -- strongest
+signal, but needs credentials in CI, costs money per run, and makes a deterministic gate depend on a
+non-deterministic agent.
+
+**Applied 2026-08-10** to `features/feature-009-review-effectiveness/SPEC.md`
+`## Technical Specification` -- the lane split is § 3, the `enforcement` column that routes a catalogue
+row to a lane is § 2, and the wiring and cost of each lane is § 7.
+
+---
 
 ### Q27 -- a review's coverage is recorded per FILE, and RECONCILE trusts it to clear findings (2026-08-10)
 
