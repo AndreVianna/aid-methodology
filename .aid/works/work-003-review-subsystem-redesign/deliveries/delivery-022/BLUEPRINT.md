@@ -31,11 +31,21 @@ work because it renames the skill every other delivery is written against.
   and the two skills' own `SKILL.md` files, which this delivery deletes or rewrites rather than
   re-points. The nine is the caller set, not the total, and both figures are stated so neither
   reads as the other.
-- **`tests/canonical/test-review-extraction.sh`, repaired alongside the deletions.** It reads all
-  three files this delivery removes: `reviewer-guide.md` at line 92 inside `RX07`'s `B_AFTER`
-  `wc -l ... 2>/dev/null` sum, and both retired `SKILL.md` files **unguarded** at lines 61-62. The
-  guarded one is the dangerous one -- `2>/dev/null` means the deletion loosens the `AC-11`
-  anti-gaming baseline instead of failing the suite.
+- **The four `tests/canonical/` suites that read the files this delivery deletes, repaired
+  alongside the deletions.** `grep -rln 'reviewer.guide\|aid-light-review\|aid-deep-review' tests/`
+  run from the repo root returns exactly these, and each breaks differently:
+  - `test-review-extraction.sh` -- `reviewer-guide.md` at line 92 inside `RX07`'s `B_AFTER`
+    `wc -l ... 2>/dev/null` sum, and both retired `SKILL.md` files **unguarded** at lines 61-62.
+    The guarded one is the dangerous one: `2>/dev/null` means the deletion **loosens** the `AC-11`
+    anti-gaming baseline instead of failing the suite.
+  - `test-gap-gate-wiring.sh` -- `gated_somehow()`'s `elif grep -q 'aid-deep-review'` branch at
+    line 80 falls through to `fail` once the name is gone, taking `GW04`/`GW05` with it.
+  - `test-settings-frontmatter-gates.sh` -- `$DEEP` (line 18) points at the deleted `SKILL.md`, so
+    `SG18` fails.
+  - `test-shortcut-engine-contract.sh` -- `SEC03a` asserts the engine still contains
+    `/aid-deep-review` and `SEC03b` reads the deleted file (lines 164-167).
+  Each is re-pointed at `/aid-review` and its merged `SKILL.md`; the assertions keep their subject,
+  only the name changes.
 - `aid-execute/references/reviewer-guide.md` **retired** -- 77 lines still opening *"Reference for
   Step 2 (REVIEW)"*, a step that no longer exists, and still carrying the `CODE / TASK / SPEC / KB`
   source table that two other files declare retired. Retiring it also closes `Q3(b)` and `Q3(c)`.
@@ -68,16 +78,12 @@ exhaustiveness mandate).
       **nothing** -- it has no referrers under `canonical/` today. The emission manifests are
       regenerated rather than edited, and work records that name the retired file are history and
       are not swept
-- [ ] **`tests/` is repaired in the same delivery, because deleting these three files breaks it
-      silently.** `tests/canonical/test-review-extraction.sh:92` names `reviewer-guide.md` inside
-      `RX07`'s `B_AFTER` sum under `wc -l ... 2>/dev/null`, so the deletion would subtract that
-      file's line count from the AC-11 anti-gaming baseline **without failing** -- the redirect
-      swallows the error and the clause silently loosens. The same file `cat`s
-      `canonical/skills/aid-light-review/SKILL.md` and `.../aid-deep-review/SKILL.md` **unguarded**
-      at lines 61-62, which the merge deletes. The criterion: after this delivery
-      `grep -rn 'reviewer.guide\|aid-light-review\|aid-deep-review' tests/` returns only lines that
-      reference the merged `/aid-review`, and `RX07`'s baseline is re-derived from the post-merge
-      file set rather than carrying a stale sum
+- [ ] **The four test suites in Scope are repaired in this delivery**, and the whole suite passes:
+      `grep -rln 'reviewer.guide\|aid-light-review\|aid-deep-review' tests/` run from the repo root
+      returns **nothing**, and `RX07`'s `B_AFTER` baseline is re-derived from the post-merge file
+      set rather than carrying a sum that silently shrank. The `2>/dev/null` case is the one this
+      criterion exists for: it is the only one that would otherwise pass while measuring the wrong
+      thing
 - [ ] `FR-C9`'s primary path still holds: gaps are batched before the graded pass, so the common
       case needs no mid-review interruption
 - [ ] `AC-13`'s cost claim keeps its subject -- screening + gate measured against gate alone
