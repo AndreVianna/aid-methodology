@@ -9,8 +9,9 @@
 ## Objective
 
 Collapse the review subsystem's two skills into one. `aid-deep-review` and `aid-light-review` merge
-into `/aid-review`, which carries **named** entry paths rather than a depth flag. Scoped last in the
-work because **`delivery-017` is authored against the retired name**: of the six deliveries this one
+into `/aid-review`, which carries **named** entry paths rather than a depth flag. Scoped **after
+every delivery the rename would otherwise churn** -- 023 follows it, but 023 is written against the
+post-merge name and so is unaffected -- because **`delivery-017` is authored against the retired name**: of the six deliveries this one
 waits on, `grep -rl "aid-deep-review\|aid-light-review" deliveries/delivery-01[6-9] deliveries/delivery-02[01]`
 run from the work folder returns only `delivery-017` (its BLUEPRINT and `task-002`'s DETAIL, whose
 whole Scope is the gate in `aid-deep-review` RESOLVE). Renaming earlier would force that work to be

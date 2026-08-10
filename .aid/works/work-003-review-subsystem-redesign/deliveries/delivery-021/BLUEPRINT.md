@@ -18,7 +18,8 @@ performed.
 
 - The greenfield criteria-vs-evidence edit in
   `canonical/skills/aid-discover/references/document-expectations.md`. **Both regions
-  `feature-004`'s SPEC claims are in scope, not just the split** -- `SPEC.md:435` assigns **13-19**
+  `feature-004`'s SPEC claims are in scope, not just the split** --
+  `features/feature-004-criteria-gap-interrupt/SPEC.md:435` assigns **13-19**
   (*"The mode header re-framed as criteria-versus-evidence"*) and **36-54** (which contains the
   split at 50-52), and the gate criterion below that requires *"the regions `feature-004`'s SPEC
   names for this edit"* to resolve after the edit would be undischargeable if only 50-52 were scoped.
