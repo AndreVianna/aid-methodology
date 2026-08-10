@@ -1,5 +1,5 @@
 ---
-state: Pending
+state: Done
 review: "--"
 elapsed: "--"
 notes: "--"
@@ -64,15 +64,8 @@ in-flight `work-003-state-schema` frontmatter conventions.
 
 ## Quick Check Findings
 
-<!-- AUTHORED -- written by `writeback-state.sh --task-id NNN --findings ...` during the
-     per-task quick-check step of aid-execute. Records the reviewer tier used and all [HIGH]
-     and [CRITICAL] findings for this task. [CRITICAL] findings trigger an immediate fix-on-spot;
-     [HIGH] findings are deferred to the delivery gate via delivery-NNN-issues.md.
-     No grade is recorded here -- grading is per-delivery, not per-task. -->
-
-- **Reviewer Tier:** --
-- **Findings:** --
-
+- **Reviewer Tier:** Small
+- **Findings:** 2 filed, both Fixed in one FIX cycle. [CRITICAL] the `no changelog:` rule (SPEC 3g row 19 of 19) was stated in no design template and task-004 explicitly refuses to invent a missing rule -- it was unowned, and 36 skill bodies would have inherited the gap; now stated in the seed-rules section with the real SPEC reasoning. [LOW] the `## MVP` Mechanics table shipped 6 of 7 rows; `Minimum document shape` restored. Fix swept all 19 binding-table rows as a class: 18 already present, 1 absent. No regression -- B1=1, `is not driven`=1, no `phase:`, no per-tool root. Ledger: `.aid/.temp/review-pending/exec-work-006-task-003.md`
 ---
 
 ## Dispatch Log

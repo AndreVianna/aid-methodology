@@ -130,6 +130,7 @@ AID/
 │   └── agents/  skills/  aid/ # the same toolkit, rendered for Cursor
 └── .aid/                     # DOGFOOD pipeline state + Knowledge Base
     ├── knowledge/            # the Knowledge Base (KB docs + INDEX + STATE + kb.html)
+    ├── design/               # design seeds under construction (.aid/design/README.md defines the convention)
     ├── works/                # tracked works: one work-NNN-*/ folder per work
     ├── generated/            # discovery scratch (project-index, candidate-concepts)
     ├── connectors/           # connector catalog: descriptors + INDEX.md + git-ignored .secrets/

@@ -1,5 +1,5 @@
 ---
-state: Pending
+state: Done
 review: "--"
 elapsed: "--"
 notes: "--"
@@ -64,15 +64,8 @@ in-flight `work-003-state-schema` frontmatter conventions.
 
 ## Quick Check Findings
 
-<!-- AUTHORED -- written by `writeback-state.sh --task-id NNN --findings ...` during the
-     per-task quick-check step of aid-execute. Records the reviewer tier used and all [HIGH]
-     and [CRITICAL] findings for this task. [CRITICAL] findings trigger an immediate fix-on-spot;
-     [HIGH] findings are deferred to the delivery gate via delivery-NNN-issues.md.
-     No grade is recorded here -- grading is per-delivery, not per-task. -->
-
-- **Reviewer Tier:** --
-- **Findings:** --
-
+- **Reviewer Tier:** Small
+- **Findings:** none. All 19 binding rows matched SPEC 3g member-by-member (not just count), same order, no duplicates or orphans. The one borderline row the executor self-reported -- verify depth on `create`/`update` for class 1 -- is genuinely STATED, not inferable: the table cell at :311 reads `Full verify` in plain text, and the count corroborates independently (SPEC 3e says the definition binds FOUR cells; the shipped table has exactly four `Full verify` cells). No CC restated; no regression to task-003 criteria (B1=1, `is not driven`=1, no `phase:`, F1 tokens present, siblings unchanged). Ledger: `.aid/.temp/review-pending/exec-work-006-task-004.md`
 ---
 
 ## Dispatch Log
