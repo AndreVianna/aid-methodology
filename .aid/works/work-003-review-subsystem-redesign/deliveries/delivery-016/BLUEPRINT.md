@@ -53,9 +53,10 @@ pass must produce a row for it.
 **Spine delivery.** It depends on delivery-004 having authored the `SUMMARY` class file with
 content-truth rows; without them this delivery has no rule set and its own review becomes a
 criteria gap. That dependency is now **stated directly** in `## Dependencies`, matching how every
-other delivery that needs delivery-004's output declares it -- 005, 014, 015, 017 and 019 all name
-004 explicitly even where a transitive path exists. The graph is **not** transitively reduced, so
-leaving 004 implicit here would have made this the only delivery whose stated need had no edge.
+other delivery that needs delivery-004's output declares it: `014`, `015` and `017` each name 004
+explicitly **even though a transitive path already reaches it**, and `005` and `019` name it as
+their only dependency. The graph is therefore **not** transitively reduced, so leaving 004 implicit
+here would have made this the one delivery whose stated need had no edge.
 ## Tasks
 
 _Derived from `tasks/task-NNN/DETAIL.md`. `Wave` is computed from `Depends on`, never authored -- one relation, one source._

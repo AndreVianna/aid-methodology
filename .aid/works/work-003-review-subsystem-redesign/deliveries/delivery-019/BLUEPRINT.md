@@ -90,8 +90,8 @@ _Derived from `tasks/task-NNN/DETAIL.md`. Written by `aid-detail`; empty until i
 section already in use by this catalog, so it is a pure row addition. The content-vs-purpose rule is
 nearly free but **not** a pure row addition: its criterion exists at
 `review-rubric.md § Rubric: Full Primary` item 2, keyed to the superseded `intent:`, so item 2 is **re-pointed** at
-`objective:`/`summary:` -- a criterion edit in the same canonical template item 11 touches, and the
-second of this delivery's three changes to that file. The temp-file rule and item 11 each require
+`objective:`/`summary:` -- a criterion edit in the same canonical template item 11 touches, so this
+delivery changes `review-rubric.md` for both. The temp-file rule and item 11 each require
 authoring a criterion outright, and **through different routes, because the two criteria live in
 different trees.** The temp-file criterion is a KB change -- it lands in
 `.aid/knowledge/coding-standards.md`, so it routes through `/aid-update-kb`. Item 11's criterion

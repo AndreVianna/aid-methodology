@@ -20,8 +20,8 @@ performed.
   `canonical/skills/aid-discover/references/document-expectations.md`. **Both regions
   `feature-004`'s SPEC claims are in scope, not just the split** -- `SPEC.md:435` assigns **13-19**
   (*"The mode header re-framed as criteria-versus-evidence"*) and **36-54** (which contains the
-  split at 50-52), and this delivery's second gate criterion requires the SPEC's claimed regions to
-  resolve after the edit, so scoping only 50-52 would leave that criterion undischargeable.
+  split at 50-52), and the gate criterion below that requires *"the regions `feature-004`'s SPEC
+  names for this edit"* to resolve after the edit would be undischargeable if only 50-52 were scoped.
   Work-003 never touched the file -- its newest commit is from work-023 -- and `grep -i resolvable`
   over it returns nothing.
 - `Q5` decision 7's text: it reads *"restart, not resume"*, which `Q6` proposal 3 consciously
