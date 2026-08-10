@@ -218,7 +218,7 @@ or worse; `[LOW]`/`[MINOR]` at the end" — are the same statement.
 ### Q26 -- four decisions read as settled in prose and are not settled on disk (2026-08-09)
 
 - **Category:** Process defect — same class as `Q22`, found the same way
-- **Impact:** High — each sits inside a delivery that closed `Done`, so the gate passed over undelivered work
+- **Impact:** High — **three of the four** sit inside a delivery that closed `Done`, so the gate passed over undelivered work; the fourth (item 1, `reviewer-guide.md`) was never scheduled into any delivery, so no gate ever had the chance
 - **Status:** **Answered** 2026-08-09 — items 1-2 re-scheduled into the merge delivery; item 3
   superseded by `Q1(a)`; item 4 and the `Q8` N3 correction are text fixes to this file
 - **Answer (2026-08-09, human decision).** **Items 1 and 2 are re-scheduled into the delivery that

@@ -52,7 +52,9 @@ pass must produce a row for it.
 
 **Spine delivery.** It depends on delivery-004 having authored the `SUMMARY` class file with
 content-truth rows; without them this delivery has no rule set and its own review becomes a
-criteria gap.
+criteria gap. That dependency is **transitive, not direct** -- 016 → 015 → 004 -- which is why
+`## Dependencies` names 015 and 012 rather than restating 004. The graph is transitively reduced;
+one relation, one source.
 ## Tasks
 
 _Derived from `tasks/task-NNN/DETAIL.md`. `Wave` is computed from `Depends on`, never authored -- one relation, one source._

@@ -13,7 +13,9 @@ instructs an agent to perform; the fourth -- resource cleanup -- is not instruct
 and becomes reportable for the first time. All four are currently **unwritable**: `review-rubrics/INDEX.md`'s
 No-Criterion-no-row contract forbids a finding whose `Rule` cell names no declared rule, so an agent
 that finds one can only re-register the same criteria gap on the next cycle, indefinitely. Scoped as
-a distinct unit because two of the four need a KB criterion authored *before* a rule can cite it,
+a distinct unit because two of the four need a criterion authored *before* a rule can cite it -- one
+in the KB (`.aid/knowledge/coding-standards.md`, via `/aid-update-kb`) and one in a canonical
+template (`kb-authoring/review-rubric.md`, authored here; see Notes),
 which is a different kind of change from adding a catalog row.
 
 ## Scope
@@ -31,6 +33,12 @@ which is a different kind of change from adding a catalog row.
   `authoring-conventions.md § Dual-Audience Standard`, the section `KB-08` already cites).
 - Item 11 authored into `kb-authoring/review-rubric.md § Rubric: Full Primary` for missing edge case
   / failure mode, then its rule citing it. Free IDs: `KB-10`..`KB-19`, `KB-27`+.
+  **The ordinal collides and the collision is in scope.** `§ Rubric: Full Primary` ends at item 10,
+  but `§ Rubric: Full Primary + Build-Verify` reads *"Same as Full Primary, PLUS:"* and then numbers
+  its own additions **11, 12, 13**. Adding an item 11 to Full Primary makes the Build-Verify section
+  carry two different item 11s. This delivery resolves it -- by renumbering the Build-Verify
+  additions or by numbering the new item outside their range -- rather than discovering it at
+  implementation time; whichever it picks, no `§` names one ordinal twice afterwards.
 - Clearing the residual: `reviewer-prompt-anatomy.md` lines 60-62, 71-72 and 77-81 currently declare
   `[MEDIUM]` on the reviewer's own authority; once anchored they cite their rules instead.
 
@@ -49,6 +57,9 @@ rubric family other than `executable` and `kb`.
       `migrate/migrate-work-hierarchy.sh` -- a sweep reports those three and no other `mktemp` caller
 - [ ] Three new `kb` rules exist, each with a `Criterion` cell naming a section that exists on disk;
       no rule invents a criterion
+- [ ] **No `§` in `kb-authoring/review-rubric.md` numbers one ordinal twice** once the new item
+      lands -- the `Full Primary` / `Full Primary + Build-Verify` overlap at item 11 is resolved,
+      not inherited
 - [ ] The content-vs-purpose rule is keyed to `objective:`/`summary:`, not the superseded `intent:` --
       `grep -l '^intent:' .aid/knowledge/*.md` returns 13 of 22, so an `intent:`-keyed rule would be
       dead on the rest

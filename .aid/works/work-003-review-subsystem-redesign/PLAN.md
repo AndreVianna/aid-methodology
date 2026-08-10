@@ -272,9 +272,11 @@ chaining confirmation, whose output is evidence rather than capability).
 - **Kind:** standalone
 - **Note:** **deliberately last.** It renames the skill this work is built around. Four delivery
   folders name it on disk today -- `012`, `014`, `017` and 022's own BLUEPRINT, by
-  `grep -rl "aid-deep-review\|aid-light-review" deliveries/` run from this work folder -- and 016-021 are
-  authored in its idiom, so running the rename earlier would force work to be written against a name
-  already decided for retirement and then re-written. Neither merged skill has ever shipped: `git ls-tree --name-only
+  `grep -rl "aid-deep-review\|aid-light-review" deliveries/` run from this work folder. Of the six
+  deliveries 022 waits on, **only `delivery-017` is authored against the retired name**, so running
+  the rename earlier would force that work to be written against a name already decided for
+  retirement and then re-written. (`delivery-016` says *"A deep-review dispatch"* -- the concept,
+  not the skill -- so the rename does not reach it.) Neither merged skill has ever shipped: `git ls-tree --name-only
   origin/master:canonical/skills/` returns 76 names, among them `aid-review` and **neither**
   `aid-deep-review` **nor** `aid-light-review`. So this is prevention, not migration, and no adopter
   sees a retired name. The three entry paths must be **named, never inferred**: the rejection of a
@@ -353,7 +355,7 @@ the shape 022 produces.
 | Priority ordering | The work has one `Should` (the BLUEPRINT and specify-section reviews, delivery-018). It was numbered last of the original 18; the five added 2026-08-09 are all `Must` and are numbered after it, so it is **no longer last by number**, and **delivery-022 (a `Must`) does depend on it**. The original property therefore no longer holds and is not claimed. What replaces it: 018 depends only on delivery-012, so it is free to run as soon as 012 closes, in parallel with the five `Must` deliveries 022 also waits on. It **can** be the last of the six to finish and so **can** be 022's binding constraint -- nothing rules that out -- but nothing in the graph *forces* it late, so the `Should` adds no critical-path length that the `Must` set does not already impose. That is the weaker claim the graph actually supports. |
 | Extra parallelism | **Declined at first cut.** Splitting the settings gate out of 014 would have added another free track at the cost of another delivery gate, and the three free tracks then available were judged sufficient. Superseded in effect on 2026-08-09: deliveries 019, 020 and 021 are each free, taking the plan to **7 free / 16 spine**. The decision not to split 014 stands; the scarcity that motivated it does not. |
 | The WSL gitdir bug | **Leaves this work**, per concern N4. Not review-path. |
-| Where does the skill merge go? (2026-08-09) | **Last, as delivery-022.** Owner decision. It renames the skill deliveries 016-021 are written against, so running it earlier would force each of them to be authored against `aid-deep-review`, then re-authored against `/aid-review`. Placing it last costs one thing knowingly: `delivery-017/task-002`'s Scope is the gate in `aid-deep-review` RESOLVE, so 017 builds under a name 022 then retires. That churn is bounded to a rename sweep 022 performs anyway, whereas the alternative re-details three already-graded deliveries. |
+| Where does the skill merge go? (2026-08-09) | **Last, as delivery-022.** Owner decision. It renames the skill `delivery-017` is written against -- the only one of 016-021 that names it -- so running it earlier would force that delivery to be authored against `aid-deep-review`, then re-authored against `/aid-review`. Placing it last costs one thing knowingly: `delivery-017/task-002`'s Scope is the gate in `aid-deep-review` RESOLVE, so 017 builds under a name 022 then retires. That churn is bounded to a rename sweep 022 performs anyway, whereas the alternative re-details three already-graded deliveries. |
 | Does `FR-G3`'s re-disposition need its own delivery? (2026-08-09) | **No — it amends delivery-017.** `Q25` makes the attributed-quote check a cheap pre-filter whose miss escalates to judgment. That is 017's own subject matter and 017 is still `Pending-Spec`, so a separate delivery would compete with it for the same files. |
 | Why is the host-chaining check a delivery rather than a test? (2026-08-09) | **Because no test can discharge it.** `RX13`-`RX16` prove the artifacts render identically to all five profiles; the open claim is that a chain *executes* on three of them. That needs a host runtime, so it is delivery-023 with an `enabling` kind — it ships no capability, it retires an assumption. |
 

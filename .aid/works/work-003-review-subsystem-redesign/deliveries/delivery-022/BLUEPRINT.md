@@ -10,9 +10,13 @@
 
 Collapse the review subsystem's two skills into one. `aid-deep-review` and `aid-light-review` merge
 into `/aid-review`, which carries **named** entry paths rather than a depth flag. Scoped last in the
-work because deliveries 016-021 are authored in the retired skill's idiom, so renaming earlier would
-force them to be written against a name already decided for retirement and then re-written.
-`delivery-023`, which follows this one, is already written against the post-merge name.
+work because **`delivery-017` is authored against the retired name**: of the six deliveries this one
+waits on, `grep -rl "aid-deep-review\|aid-light-review" deliveries/delivery-01[6-9] deliveries/delivery-02[01]`
+run from the work folder returns only `delivery-017` (its BLUEPRINT and `task-002`'s DETAIL, whose
+whole Scope is the gate in `aid-deep-review` RESOLVE). Renaming earlier would force that work to be
+written against a name already decided for retirement and then re-written. `delivery-016` uses the
+phrase *"A deep-review dispatch"* for the **concept**, not the skill, so the rename does not reach
+it. `delivery-023`, which follows this one, is already written against the post-merge name.
 
 ## Scope
 
