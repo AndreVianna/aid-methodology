@@ -46,9 +46,12 @@ work because it renames the skill every other delivery is written against.
     `/aid-deep-review` and `SEC03b` reads the deleted file (lines 164-167).
   Each is re-pointed at `/aid-review` and its merged `SKILL.md`; the assertions keep their subject,
   only the name changes.
-- `aid-execute/references/reviewer-guide.md` **retired** -- 77 lines still opening *"Reference for
-  Step 2 (REVIEW)"*, a step that no longer exists, and still carrying the `CODE / TASK / SPEC / KB`
-  source table that two other files declare retired. Retiring it also closes `Q3(b)` and `Q3(c)`.
+- `aid-execute/references/reviewer-guide.md` **retired** -- 77 lines carrying the
+  `CODE / TASK / SPEC / KB` source table that `reviewer-ledger-schema.md` and `aid-reviewer/AGENT.md`
+  both declare retired, and reached by nothing: `grep -rln 'reviewer.guide' canonical/` returns
+  nothing. Its opening line, *"Reference for Step 2 (REVIEW)"*, still names a **live** step --
+  `state-delivery-gate.md`'s `## Step 2: REVIEW` -- so the case for retiring it is the stale content
+  and the absent referrers, **not** a vanished step. Retiring it also closes `Q3(b)` and `Q3(c)`.
 - What the screening path writes, settled against `FR-A2` (screening computes no grade) and `FR-A4`
   (a clean screening pass may only add findings, never pre-clear the gate).
 - The work's own artifacts that name the retired skills. Measured 2026-08-09 with

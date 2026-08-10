@@ -63,8 +63,16 @@ _Derived from `tasks/task-NNN/DETAIL.md`. Written by `aid-detail`; empty until i
 
 **These are not new defects; they are decided work that was never built, found by triaging eight
 stale `Pending` Q&A entries against disk on 2026-08-09.** The stale `Status` field was the trivial
-finding. The real one was that four decisions read as settled in prose while disk disagreed, each
-inside a delivery that closed `Done` or `Gated`.
+finding. The real one was that four decisions read as settled in prose while disk disagreed --
+**three of them inside a delivery that closed `Done` or `Gated`, and one never scheduled into any
+delivery at all**: `reviewer-guide.md`'s retirement. `grep -rln reviewer-guide deliveries/`, run
+from this work folder, returns four files, and neither of the two that predate 2026-08-09 scopes the
+deletion -- `delivery-001/BASELINE-ac11.md` merely measures the file for the `AC-11` baseline, and
+`delivery-004/BLUEPRINT.md`'s **Out of scope** line calls it *"the retired `reviewer-guide.md`"*
+while assigning the deletion to no one. The other two are `delivery-021` (this file) and `delivery-022`, written on
+2026-08-09 precisely to carry the retirement that had no home (`STATE.md` `Q26` item 1). The two failure modes differ and
+both matter: a closed gate that did not cover its recorded scope, and a decision that reached no
+gate because it reached no delivery.
 
 **Same class as `Q22`, from the other end.** There, a delivery was marked `Gated` with no gate ever
 run. Here, a gate *did* run, over a delivery whose recorded scope included work nobody performed.

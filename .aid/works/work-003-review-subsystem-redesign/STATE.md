@@ -239,11 +239,14 @@ done while disk disagrees. **The `Status` field being stale was the trivial find
 one.**
 
 **1. `aid-execute/references/reviewer-guide.md` was to be retired** (`Q13` / feature-006 #5). It is
-still present at 77 lines, still opens *"Reference for Step 2 (REVIEW)"* — a step that no longer
-exists — and still carries the `CODE / TASK / SPEC / KB` source table that
+still present at 77 lines and still carries the `CODE / TASK / SPEC / KB` source table that
 `reviewer-ledger-schema.md:165-167` and `aid-reviewer/AGENT.md:20` both declare **retired**. It was
-never scheduled into any delivery: `grep -rn reviewer-guide` over all 18 delivery folders returns only
-`delivery-001/BASELINE-ac11.md` and `delivery-004/BLUEPRINT.md:27`. **Consequence:** `Q3(b)` and
+never scheduled into any delivery: at the time of this triage `grep -rln reviewer-guide deliveries/`
+over the then-18 delivery folders returned only `delivery-001/BASELINE-ac11.md`, which merely
+measures the file for the `AC-11` baseline, and `delivery-004/BLUEPRINT.md`, whose **Out of scope**
+line already calls it *"the retired `reviewer-guide.md`"* while scoping the deletion to nobody.
+(`delivery-021` and `delivery-022`, created the same day to carry this finding, now match the same
+grep -- so re-run it against the pre-2026-08-09 folders to reproduce the figure above.) **Consequence:** `Q3(b)` and
 `Q3(c)` were to be resolved *by this deletion*, so they remain open by default rather than by decision.
 
 **2. The greenfield criteria-vs-evidence split was to edit `document-expectations.md` 50-52**
