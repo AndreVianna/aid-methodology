@@ -41,10 +41,14 @@ it. `delivery-023`, which follows this one, is already written against the post-
 - **The four `tests/canonical/` suites that read the files this delivery deletes, repaired
   alongside the deletions.** `grep -rln 'reviewer.guide\|aid-light-review\|aid-deep-review' tests/`
   run from the repo root returns exactly these, and each breaks differently:
-  - `test-review-extraction.sh` -- `reviewer-guide.md` at line 92 inside `RX07`'s `B_AFTER`
-    `wc -l ... 2>/dev/null` sum, and both retired `SKILL.md` files **unguarded** at lines 61-62.
-    The guarded one is the dangerous one: `2>/dev/null` means the deletion **loosens** the `AC-11`
-    anti-gaming baseline instead of failing the suite.
+  - `test-review-extraction.sh` -- it reads the deleted files in **three** places, and `RX07`'s
+    `SUM` has **two** silently-loosening inputs, not one. `reviewer-guide.md` sits at line 92 inside
+    the `B_AFTER`
+    `wc -l ... 2>/dev/null` sum; **both retired `SKILL.md` files sit at lines 95-96 inside `RX07`'s
+    own `NEW=` half, also under `2>/dev/null`**; and both are read again **unguarded** at lines
+    61-62. The guarded sites are the dangerous ones: `2>/dev/null` means the deletion **loosens**
+    the `AC-11` anti-gaming baseline instead of failing the suite, and it loosens both sides of
+    `SUM = B_AFTER + NEW` at once. Only the unguarded read at 61-62 fails loudly.
   - `test-gap-gate-wiring.sh` -- `gated_somehow()`'s `elif grep -q 'aid-deep-review'` branch at
     line 80 falls through to `fail` once the name is gone, taking `GW04`/`GW05` with it.
   - `test-settings-frontmatter-gates.sh` -- `$DEEP` (line 18) points at the deleted `SKILL.md`, so
@@ -70,8 +74,9 @@ it. `delivery-023`, which follows this one, is already written against the post-
   `STATE.md` Q&A entry, a superseded SPEC paragraph -- are left alone; only live statements are
   re-pointed.
 
-**Out of scope:** `/aid-audit`, already removed upstream -- `git ls-tree origin/master canonical/skills/` returns
-neither it nor either merged skill; the `aid-screener` agent, which stays (the 10-agent roster
+**Out of scope:** `/aid-audit`, already removed upstream --
+`git ls-tree --name-only origin/master:canonical/skills/` returns 76 names and none of them is
+`aid-audit` or either merged skill; the `aid-screener` agent, which stays (the 10-agent roster
 stands and `delivery-010` shipped the boilerplate split precisely so it would not inherit the
 exhaustiveness mandate).
 
@@ -90,10 +95,10 @@ exhaustiveness mandate).
       are not swept
 - [ ] **The four test suites in Scope are repaired in this delivery**, and the whole suite passes:
       `grep -rln 'reviewer.guide\|aid-light-review\|aid-deep-review' tests/` run from the repo root
-      returns **nothing**, and `RX07`'s `B_AFTER` baseline is re-derived from the post-merge file
-      set rather than carrying a sum that silently shrank. The `2>/dev/null` case is the one this
-      criterion exists for: it is the only one that would otherwise pass while measuring the wrong
-      thing
+      returns **nothing**, and **both halves of `RX07`'s `SUM` -- `B_AFTER` and `NEW` -- are re-derived
+      from the post-merge file set** rather than carrying a sum that silently shrank. The two
+      `2>/dev/null` reads are what this criterion exists for: they are the ones that would
+      otherwise pass while measuring the wrong thing, one on each side of `SUM`
 - [ ] `FR-C9`'s primary path still holds: gaps are batched before the graded pass, so the common
       case needs no mid-review interruption
 - [ ] `AC-13`'s cost claim keeps its subject -- screening + gate measured against gate alone

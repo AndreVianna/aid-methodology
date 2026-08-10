@@ -340,10 +340,15 @@ delivery-021 (needs 007 only). That is **7 free** and **16 on the spine**; no gr
 spine, because it is a property of one file rather than of the grouping.
 
 **delivery-022 is the one convergence point.** It depends on six deliveries rather than the usual
-one or two, and that is deliberate rather than accidental coupling: it renames the skill each of
-them is written against, so every edge into it exists to stop work being authored against a name
-already decided for retirement and then re-authored. It blocks only delivery-023, which verifies
-the shape 022 produces.
+one or two, and that is deliberate rather than accidental coupling. **One of the six edges is the
+rename edge:** it renames the skill `delivery-017` is written against — the only one of the six
+that names it — so that edge exists to stop 017's work being authored against a name already
+decided for retirement and then re-authored. **The other five edges are sequencing, not coupling:**
+022 performs a rename sweep over the whole work, so placing it after every delivery that still
+authors text means the sweep runs once over settled artifacts instead of once per delivery as each
+lands. That is the owner decision recorded in `§ Sequencing decisions`; it is a cost choice, not a
+technical prerequisite, and no gate of 016-021 depends on 022 having run. It blocks only
+delivery-023, which verifies the shape 022 produces.
 
 ---
 

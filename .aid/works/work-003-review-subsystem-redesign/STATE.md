@@ -429,7 +429,7 @@ reproduce). Over the seven ledgers — the durable one plus `cycle2..cycle7` —
 **12 distinct `(Doc, Rule)` keys**, of which **4 keys were seen more than once**, and **0 of the 4 were
 the same defect twice**. The arithmetic closes: 12 keys plus 5 extra sightings over those 4 keys is 17.
 No row in any of the seven ledgers ever carried the literal status `Recurred` — the recurrence is visible
-only by joining on the key, which is the defect this entry describes. Three were introduced by the preceding cycle's own fix:
+only by joining on the key, which is the defect this entry describes. **Five rows over four keys, matching the figures above** (**row added 2026-08-10** — the table enumerated three keys and four events while the prose said four and five). Three of the five are traceably introduced by the preceding cycle's own fix. The `Cycles` column is **as recorded at reconcile time and is not re-derivable**: the durable ledger stamps no cycle on its rows, which is a second face of the same defect this entry describes.
 
 | Key | Cycles | What actually recurred |
 |---|---|---|
@@ -437,6 +437,7 @@ only by joining on the key, which is the defect this entry describes. Three were
 | `017/task-002` · `DEF-09` | 3 → 4 | a different sentence in the same Scope bullet (pre-existing) |
 | `016/task-001` · `DEF-09` | 3 → 5 | the sentence written in c3, invalidated by the c4 KB edit |
 | `017/task-002` · `DEF-04` | 1 → 5 | self-contradiction created when the 319-word bullet was cut in c4 |
+| `016/task-001` · `DEF-04` | 2 → 6 | a *different* self-contradiction at the same key four cycles later — c2 found `AC-4` naming the wrong winning authority, c6 found Scope and `AC-4` disagreeing over which artifact settles the *Minimum Grade Thresholds* paragraph |
 
 **Why it matters, and it is not cosmetic.** The FIX circuit breaker is declared as *non-improvement*
 — "each cycle closing more than it opens". Computing that requires knowing whether a `Recurred` row
@@ -826,7 +827,7 @@ process spawning should be treated as the default suspect** whenever something i
 - **(a) REVISED (2026-08-09, human decision) — supersedes the 2026-07-27 two-skill answer.**
   **There is exactly one review skill: `/aid-review`.** `aid-deep-review` and `aid-light-review` both
   merge into it, and `/aid-audit` is eliminated. Neither of the two new skills has ever shipped
-  (`git ls-tree origin/master canonical/skills/` returns **only `aid-review`**), so this is prevention,
+  (`git ls-tree --name-only origin/master:canonical/skills/` returns **76 names, among them `aid-review` and neither merged skill**), so this is prevention,
   not migration — no adopter ever sees `aid-deep-review` or `aid-light-review`.
   **The cheap screening pass survives; only the second *skill* goes.** It becomes an **explicit named
   entry path** of `/aid-review`, not a `depth` flag. The 2026-07-27 rationale for two skills — *"a
@@ -858,7 +859,7 @@ process spawning should be treated as the default suspect** whenever something i
   reducing its obligation to naming the single skill. The reasoning below stands unchanged; only the
   count does.
   **Why this direction is cheaper than the reverse, which was the option originally put.**
-  `git ls-tree origin/master canonical/skills/` returns **only `aid-review`** — `aid-audit`,
+  `git ls-tree --name-only origin/master:canonical/skills/` returns **76 names**, and of the four review-ish skills only `aid-review` is among them — `aid-audit`,
   `aid-deep-review` and `aid-light-review` are all absent upstream. So (i) eliminating `/aid-audit` is
   **catching up with master**, which already retired it with the alias model, not a breaking change;
   and (ii) `aid-deep-review` **has never shipped** — renaming before merge means the name never
