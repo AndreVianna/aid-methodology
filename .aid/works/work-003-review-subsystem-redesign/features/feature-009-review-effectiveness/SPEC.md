@@ -37,6 +37,38 @@ Two further points make the gap structural rather than incidental:
 - **A rigorous-looking clean pass is worse than a scruffy one**, because it invites belief. This
   feature exists so that "the review is thorough" becomes a number instead of a mandate.
 
+## Description
+
+Measure whether a review finds what is there, and make a fix account for its whole class. The feature
+adds two things AID has never had: a **corpus of artifacts carrying known, catalogued defects**, and a
+**reported fraction** of those defects that a review pass actually finds. It also makes the existing
+`F1` rule -- a finding is a class -- mechanical rather than advisory, by requiring a fix to sweep for
+the corrected claim's siblings before it is complete.
+
+It changes nothing about how a finding is severity-tagged, ruled, stored or graded. It adds a
+denominator to a system that currently reports only a numerator.
+
+## User Stories
+
+- **As the owner of this repository**, I want a number for how much a review misses, so that a clean
+  pass is evidence rather than an impression.
+- **As a reviewer agent**, I want the rule set I am graded against to have at least one worked example
+  of each defect it names, so that an ambiguous rule is visible as a rule problem rather than as my
+  miss.
+- **As a contributor changing a review rule or a linter**, I want CI to tell me immediately when my
+  change stops a check from catching the defect it exists to catch.
+- **As a fixer closing a finding**, I want the sweep for that claim's other sites to be part of
+  finishing the fix, so that a sibling is found now rather than in the next review cycle.
+
+## Priority
+
+**Must.**
+
+`REQUIREMENTS.md § 10` places group H fifth in the requirement-group order, which is a **sequencing**
+position rather than a priority: the corpus depends on nothing and is built early, while the
+measurement must run against a built subsystem. Every requirement this feature owns is `MUST` except
+`FR-H3`, which is `SHOULD` because a baseline must exist before a regression is meaningful.
+
 ## Source
 
 | Requirement | Modality | Owned here |
@@ -113,12 +145,15 @@ a non-deterministic agent. Everything below follows from that split.
 ### 1. Prior art this builds on, rather than inventing
 
 `tests/canonical/fixtures/` already holds nine committed fixture families, and one of them is already
-seeded-defect shaped: `dual-intent/content/` carries `good-kb`, `shallow-kb` and `wrong-kb` variants of
-the same document set, and `test-dual-intent-self-eval.sh` asserts over a good-vs-shallow pair
-(`DI23`–`DI26`: the shallow KB's `data-schemas.md` must lack a `## Contracts` section, the good one must
-have it).
+seeded-defect shaped: `dual-intent/` carries `good-kb` and `shallow-kb` variants of the same document
+set in each of three domains (`content/`, `data-ml/`, `design/`), and
+`test-dual-intent-self-eval.sh` asserts a presence/absence pair per domain — `DI33`/`DI34` over
+`content/`'s `content-model.md`, `DI23`/`DI24` over `data-ml/`'s `data-schemas.md`, and
+`DI25`/`DI26` over `design/`'s `design-tokens.md`. In each pair the good variant must carry a
+`## Contracts` section and the shallow one must lack it.
 
-That is exactly this feature's mechanism, hand-built for one rule. `FR-H1` generalises it:
+That is exactly this feature's mechanism, hand-built for one check and repeated three times by hand.
+`FR-H1` generalises it:
 
 | | `dual-intent` today | This feature |
 |---|---|---|
@@ -138,14 +173,21 @@ The catalogue is the deliverable of record (`delivery-024`), because a fixture w
 defect makes recall look worse than it is and gives no way to tell a miss from a mis-seed.
 
 **Format: TSV, one row per seeded defect.** Tab-separated so `join`, `comm` and `cut` work on it
-directly — the same reason `coverage-baseline.tsv` is a TSV, and the same reason the coverage-parity
-gate compares with `comm` rather than by counting.
+directly, matching `tests/coverage-baseline.tsv`'s existing shape and placement.
+
+**One thing the coverage-parity gate is *not* precedent for.** That gate compares **per-key counts** —
+its inventory rows are `<suite>\t<key>\t<count>` and its `diff` loads both sides into arrays keyed
+`<suite>\t<key>` and tests a numeric reduction. This catalogue is a **set** of uniquely-keyed rows and
+is compared by membership, not by count. The shared TSV shape is the whole of the borrowing; the
+comparison method deliberately differs, and conflating them would import a count-delta reading that
+this catalogue's uniqueness rule exists to avoid.
 
 | Column | Content | Notes |
 |---|---|---|
 | `defect_id` | `RC-NNN` | Stable across runs. Never renumbered — a renumber breaks every recorded baseline |
-| `fixture` | path under `tests/canonical/fixtures/recall-corpus/` | Must resolve; asserted (§ 6) |
-| `rule_set` | one of the rubric index's routed sets | `KB`, `REQ`, `SPEC`, `PLAN`, `TASK`, `CODE`, `TEST`, `DATA`, `AID`, `SUMMARY`, `SETTINGS`, `STATE` — twelve, read from `review-rubrics/INDEX.md` rather than hardcoded here |
+| `fixture` | fixture path, **relative to the repo root** | Under `tests/canonical/fixtures/recall-corpus/`. Repo-root-relative deliberately, so it is byte-identical to the ledger's `Doc` and the Lane B join needs no path rewriting. Must resolve; asserted (§ 6) |
+| `class` | the artifact class the fixture belongs to | Read from `review-rubrics/INDEX.md`'s routing table at build time, **never hardcoded** — a new routed class must make this column's domain grow without an edit here. Only **kind A** classes are in the corpus (§ 2b) |
+| `rule_set` | the rule-set file the class routes to | The `Rule set` column of the same table, e.g. `definition.md`. Distinct from `class`: four classes route to `definition.md`, so `class` and `rule_set` are not interchangeable and `FR-H2`'s *"per rule set"* is reported per **`rule_set`** |
 | `rule_id` | the specific rule expected to catch it | e.g. `DEF-04` |
 | `enforcement` | `script` \| `judgment` | **This column is what routes the row to a lane.** A row is `script` only when a named script can decide it |
 | `oracle` | the script for a `script` row, `--` for `judgment` | e.g. `lint-modality.sh` |
@@ -156,8 +198,39 @@ gate compares with `comm` rather than by counting.
 catalogue is joined against the rubric index — which is precisely what `AC-16` fails on. Seeding per
 artifact would let a rule be silently uncovered inside a fixture that looks populated.
 
-**One defect per fixture region.** Two seeded defects that a single finding could plausibly discharge
-would make a miss unattributable, which defeats the figure's purpose.
+**One seeded defect per `(fixture, rule_id)` pair.** Not merely one per region: the pair must be
+**unique**, so that a Lane B join on `(Doc, Rule)` addresses exactly one catalogue row. Without
+uniqueness the join cannot tell which of two same-key rows a finding discharged —
+`reviewer-ledger-schema.md`'s only tiebreaker for a legitimately repeated `(Doc, Rule)` is `Line`, and
+nothing makes a reviewer's `Line` equal this catalogue's anchor-based `locator`. A fixture may still
+carry several seeded defects; they must differ in `rule_id`.
+
+### 2b. Which classes the corpus can cover, and which it provably cannot
+
+`review-rubrics/INDEX.md` states that **only kind A needs rule rows**, and its routing table assigns a
+kind to every class. That splits the routed classes in two, and the split is a hard boundary for this
+feature rather than a scoping preference:
+
+| | Classes | Rule rows? | In the corpus |
+|---|---|---|---|
+| **kind A** | `KB`, `REQ`, `SPEC`, `PLAN`, `TASK`, `CODE`, `TEST`, `SUMMARY`, `AID` | yes | **yes** — these are what a rule-recall figure can be computed for |
+| kind B / C / D | `INDEX`/`METRICS`/`PROJECT-INDEX` (build-verify), `STATE` (spot-check), `SETTINGS` (mechanical gate) | **no** | **no** |
+
+**Why the second row is excluded rather than deferred.** § 2 requires a `rule_id` naming the rule
+expected to catch each seeded defect. For a class the index declares has *no rule rows*, there is no
+such rule to name, so a row for it cannot be authored at all — and `AC-16`'s *"no rule set reports zero
+fixtures"* would be permanently unsatisfiable for it. This is a property of what those kinds are, not a
+gap to fill later: a mechanical gate either passes or fails and needs no recall figure.
+
+`FR-F1` already puts `.aid/settings.yml` behind a kind-D mechanical gate, so `SETTINGS` is covered by
+its own gate rather than left unreviewed — that requirement is `feature-007`'s, and this feature does
+not duplicate it.
+
+**Family rule sets are covered too.** `review-rubrics/INDEX.md`'s resolution order allows a class with
+no exact route to fall back to its **family's** rules, so `interface.md`, `narrative.md`,
+`presentation.md` and `process.md` are reachable by fallback and each needs at least one fixture. The
+corpus is therefore keyed by `rule_set`, which reaches both the class files and the family files, and
+not by `class`, which would miss the fallback path entirely.
 
 ### 3. Feature flow — two lanes
 
@@ -179,14 +252,33 @@ grading backend) intact. No percentage, no second arithmetic, no override channe
 ```
 1. dispatch a review over the corpus, with the normal brief and rule set
 2. take the resulting ledger
-3. join reported (Doc, Rule) against the catalogue
-4. report: found / seeded, per rule_set and overall
-5. write the figure to the baseline
+3. join reported (Doc, Rule) against the catalogue rows where enforcement = judgment
+4. report, per rule_set:  found / seeded(judgment)   -- a fraction
+                          asserted / total(script)   -- Lane A's pass count, stated beside it
+5. write both to the baseline
 ```
 
-Step 3's join key is `(Doc, Rule)` — the same key `reviewer-ledger-schema.md § RECONCILE` already uses,
-and for the same reason: a row ID is per-dispatch and would double-count a defect two mandates both
-found.
+**The denominator, stated once so it cannot be read two ways.** Lane B's fraction is over
+`enforcement = judgment` rows **only**. A `script` row is never in a Lane B denominator, because Lane A
+already decides it and no agent behaviour can move it — leaving script rows in would understate agent
+recall by an amount that varies with how much of the corpus happens to be script-enforced.
+
+**How `FR-H2` and `AC-16` are still satisfied**, given that no single number covers both lanes:
+`FR-H2` requires the fraction of seeded defects a review pass finds, **reported per rule set**. The
+report carries **one line per `rule_set`, always both terms**, so every seeded defect appears in exactly
+one of them and every rule set is reported. `AC-16`'s *"reported for every rule set"* is decided by that
+line being present with both terms; its *"no rule set reports zero fixtures"* clause is § 6 check 2.
+This is why the two terms are printed side by side rather than blended: a blend would be the second
+grading arithmetic `FR-F6` retires, and it would also hide which lane a change moved.
+
+Step 3's join key is `(Doc, Rule)` — the same key `reviewer-ledger-schema.md § Attempts and
+reconciliation` already uses (*"The join key is (Doc, Rule)"*), and for the same reason: a row ID is
+per-dispatch and would double-count a defect two mandates both found.
+
+**Two things must line up for that join to execute**, both settled in § 2 rather than left implicit:
+the catalogue's `fixture` is written **relative to the repo root**, so it is the same string as the
+ledger's `Doc` (which `reviewer-ledger-schema.md` defines as repo-root-relative); and
+`(fixture, rule_id)` is unique, so the join addresses exactly one row and needs no tiebreaker.
 
 **Attribution depends on `FR-D10`.** A miss is only useful if it names the pass that should have caught
 it. That requires a coverage row whose unit is the claim, which is `feature-005`'s `FR-D10`
@@ -238,8 +330,9 @@ with the sweep it passes, without it fails.
 **This rule has already paid for itself twice**, before being written down. Sweeping the `delivery-022`
 trim surfaced a `PLAN.md` claim that the delivery *"blocks only delivery-023"*, which the blueprint
 edits alone would have left contradicting the dependency graph; and sweeping the amendment text
-surfaced eleven derived figures restated across up to four artifacts each, while the convention
-forbidding exactly that was being adopted.
+surfaced a further crop of derived figures restated across several artifacts each, while the
+convention forbidding exactly that was being adopted. The measured restatement count for this work is
+`STATE.md` Q30's, and is not restated here.
 
 ### 6. Verification strategy — proving the corpus is not lying
 
@@ -249,7 +342,7 @@ A corpus that cannot fail is worth nothing, so three checks come with it, all in
 | # | Check | What it catches |
 |---|---|---|
 | 1 | **Every catalogue row resolves.** `fixture` exists; `locator` is found inside it | A defect that was re-seeded or removed while its row stayed, which would report as a permanent miss |
-| 2 | **Every routed rule set has at least one row.** Joined against `review-rubrics/INDEX.md` | `AC-16`'s failure condition: a rule set reporting nothing and reading as clean |
+| 2 | **Every rule set reachable by a kind-A class has at least one row**, class routes and family fallbacks alike. Joined against `review-rubrics/INDEX.md`'s routing table and resolution order, so a newly routed class fails this check until it is seeded | `AC-16`'s failure condition: a rule set reporting nothing and reading as clean. Bounded to kind A per § 2b — kinds B/C/D have no rule rows, so they are excluded by construction, not overlooked |
 | 3 | **Mutation of the mutation.** For each `script` row, temporarily repair the seeded defect in a scratch copy and assert Lane A's assertion for that row **flips to failing** | A fixture whose oracle passes for a reason unrelated to the seeded defect — the vacuous-assertion class `delivery-022` found in `test-review-extraction.sh`, where a minority of the reads fail loudly and the rest pass on nothing (the counts are in that delivery's `BLUEPRINT.md § Scope`) |
 
 Check 3 is the one that matters, and it is the same technique tech-debt `L4` reports working: mutation
@@ -258,7 +351,7 @@ and the correct reading agreed on ordinary data. Reviewing the suite would not h
 
 **Run one at a time.** Check 3 must confirm *that row's* assertion flips, not that the suite goes red
 overall — a suite-level red is satisfied by any one row failing, which is the same defect
-`delivery-022`'s gate criteria call out for its four silent assertions.
+`delivery-022`'s gate criteria call out for the silently-failing assertions its own Scope identifies.
 
 ### 7. Wiring and cost
 
@@ -299,12 +392,14 @@ believed:
 
 ## Delivery recommendation
 
-Already reflected in `PLAN.md`, which this spec follows rather than re-decides:
+Already decided in `PLAN.md`, which owns the sequencing, the free/spine split and the dependency
+edges. This section names only **which requirement of this feature each delivery carries**, and cites
+`PLAN.md` for everything else rather than restating it:
 
-| Delivery | Carries | Track |
-|---|---|---|
-| `delivery-024` | `FR-H1` — the corpus and catalogue | free |
-| `delivery-025` | `FR-E2`, `AC-17` — the class sweep | free |
-| `delivery-027` | `FR-H2`, `FR-H3`, `AC-16` — the measurement | spine |
+| Delivery | Carries |
+|---|---|
+| `delivery-024` | `FR-H1` — the corpus and catalogue |
+| `delivery-025` | `FR-E2`, `AC-17` — the class sweep |
+| `delivery-027` | `FR-H2`, `FR-H3`, `AC-16` — the measurement |
 
 `delivery-026` carries `FR-D10` and belongs to `feature-005`, not here.

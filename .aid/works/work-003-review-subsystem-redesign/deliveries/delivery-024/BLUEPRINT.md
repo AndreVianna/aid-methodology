@@ -34,9 +34,14 @@ behaviour.
 ## Gate Criteria
 
 - [ ] A defect catalogue exists and every entry names the rule ID expected to catch it
-- [ ] **Every rule set the rubric index routes has at least one fixture.** Checked by joining the
-      catalogue against `review-rubrics/INDEX.md`; a rule set with no fixture is a failure of this
-      criterion, because unmeasured is not the same as clean
+- [ ] **Every rule set reachable by a kind-A artifact class has at least one fixture**, class routes
+      and family fallbacks alike. Checked by joining the catalogue against `review-rubrics/INDEX.md`'s
+      routing table and its resolution order; a reachable rule set with no fixture is a failure of this
+      criterion, because unmeasured is not the same as clean. **Bounded to kind A deliberately:** the
+      index states only kind A needs rule rows, so `SETTINGS` (kind D), `STATE` (kind C) and
+      `INDEX`/`METRICS`/`PROJECT-INDEX` (kind B) have no rule to name and cannot carry a catalogue row
+      at all -- asserting over them would make this criterion permanently unsatisfiable. The bound is
+      specified in `features/feature-009-review-effectiveness/SPEC.md § 2b`
 - [ ] Each seeded defect is independently addressable -- the catalogue identifies it precisely enough
       that a review either found *that* defect or did not, with no judgment call at scoring time
 - [ ] The corpus builds its own fixtures and reads nothing under `.aid/works/`
