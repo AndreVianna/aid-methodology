@@ -366,7 +366,23 @@ fixer the row it is discharging, which is where the phrase would come from.
 
 - **Category:** Design-Decision / artifact structure
 - **Impact:** Medium — it is the reason the grade could not reach `A` by editing
-- **Status:** **Pending**
+- **Status:** **Answered** 2026-08-10 — owner accepted **both** parts
+- **Answer (2026-08-10, owner decision).** **Both moves, accepted as put.**
+  **(a) Cite, do not restate.** A derived fact is stated **once**, in the artifact that owns it, and
+  cited from everywhere else. Convention for the work as a whole. The trade-off was stated when this
+  was put and is accepted: a cited fact reads less well than a restated one, and someone reading
+  `delivery-022` alone must follow a pointer to learn why it is sequenced where it is. That cost buys
+  the removal of the sweep-on-every-correction burden that produced **65 of 69** findings under the
+  two consistency rules.
+  **(b) Task-level detail leaves the delivery `BLUEPRINT`.** `artifact-schemas.md` scopes `## Scope`
+  to *"bounded in-scope deliverables"*; `delivery-022`'s Scope had accumulated a per-line forensic
+  account of seven read sites in `tests/canonical/test-review-extraction.sh`, which is task
+  `DETAIL.md` content and which produced the findings in cycles 16-19. Applied **now**, because it is
+  what `IMPEDIMENT-plan-review.md` blocks the plan on.
+  **Interaction with `Q27`/`Q29`:** both reduce restatement, so all three pull the same direction —
+  `Q29`'s class sweep finds the restatements, `Q30(a)` stops them being created, and `Q27`'s worklist
+  is what a reviewer checks them against.
+  **(b) applied 2026-08-10; (a) is a convention still to be written into the authoring guidance.**
 
 **What was measured.** Duplication of single facts across the work's artifacts:
 
