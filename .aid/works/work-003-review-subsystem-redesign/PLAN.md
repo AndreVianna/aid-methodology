@@ -182,7 +182,7 @@ chaining confirmation, whose output is evidence rather than capability).
 - **What it delivers:** an adversarial content review of the generated summary, alongside its
   existing machine validators and human checklist.
 - **Features:** feature-007 (D5)
-- **Depends on:** delivery-015, delivery-012
+- **Depends on:** delivery-004, delivery-012, delivery-015
 - **Priority:** Must
 - **Track:** spine
 - **Kind:** standalone
@@ -307,7 +307,7 @@ Edges as an adjacency list, which is unambiguous where ASCII art is not:
 | 001 | -- | 003, 010 |
 | 002 | -- | 017 |
 | 003 | 001 | 004, 013 |
-| 004 | 003 | 005, 014, 015, 017, 019 |
+| 004 | 003 | 005, 014, 015, 016, 017, 019 |
 | 005 | 004 | 006 |
 | 006 | 005 | 007 |
 | 007 | 006 | 008, 009, 021 |
@@ -319,7 +319,7 @@ Edges as an adjacency list, which is unambiguous where ASCII art is not:
 | 013 | 003 | -- |
 | 014 | 004, 012 | -- |
 | 015 | 004, 008 | 016 |
-| 016 | 012, 015 | 022 |
+| 016 | 004, 012, 015 | 022 |
 | 017 | 002, 004, 012 | 022 |
 | 018 | 012 | 022 |
 | 019 | 004 | 022 |

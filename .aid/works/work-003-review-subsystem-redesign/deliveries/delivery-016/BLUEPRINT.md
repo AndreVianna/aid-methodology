@@ -45,16 +45,17 @@ pass must produce a row for it.
 
 ## Dependencies
 
-- **Depends on:** delivery-015, delivery-012
+- **Depends on:** delivery-004, delivery-012, delivery-015
 - **Blocks:** delivery-022
 
 ## Notes
 
 **Spine delivery.** It depends on delivery-004 having authored the `SUMMARY` class file with
 content-truth rows; without them this delivery has no rule set and its own review becomes a
-criteria gap. That dependency is **transitive, not direct** -- 016 → 015 → 004 -- which is why
-`## Dependencies` names 015 and 012 rather than restating 004. The graph is transitively reduced;
-one relation, one source.
+criteria gap. That dependency is now **stated directly** in `## Dependencies`, matching how every
+other delivery that needs delivery-004's output declares it -- 005, 014, 015, 017 and 019 all name
+004 explicitly even where a transitive path exists. The graph is **not** transitively reduced, so
+leaving 004 implicit here would have made this the only delivery whose stated need had no edge.
 ## Tasks
 
 _Derived from `tasks/task-NNN/DETAIL.md`. `Wave` is computed from `Depends on`, never authored -- one relation, one source._

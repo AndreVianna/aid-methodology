@@ -39,11 +39,12 @@ consistent.
 ## Dependencies
 
 - **Depends on:** delivery-003
-- **Blocks:** delivery-005, delivery-014, delivery-015, delivery-017, delivery-019
+- **Blocks:** delivery-005, delivery-014, delivery-015, delivery-016, delivery-017, delivery-019
 
 ## Notes
 
-**Spine delivery.** The widest fan-out in the work -- four later deliveries depend on it.
+**Spine delivery.** The widest fan-out in the work -- **six** later deliveries name it directly
+(005, 014, 015, 016, 017, 019), by the `Blocks` field above and `PLAN.md § Dependency graph`.
 ## Tasks
 
 _Derived from `tasks/task-NNN/DETAIL.md`. `Wave` is computed from `Depends on`, never authored -- one relation, one source._
