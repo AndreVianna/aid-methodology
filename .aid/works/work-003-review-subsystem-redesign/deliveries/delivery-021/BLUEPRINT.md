@@ -76,10 +76,12 @@ delivery at all**, `reviewer-guide.md`'s retirement. `grep -rln reviewer-guide d
 from this work folder, returns four files, and neither of the two that predate 2026-08-09 scopes the
 deletion -- `delivery-001/BASELINE-ac11.md` merely measures the file for the `AC-11` baseline, and
 `delivery-004/BLUEPRINT.md`'s **Out of scope** line calls it *"the retired `reviewer-guide.md`"*
-while assigning the deletion to no one. The other two are `delivery-021` (this file) and `delivery-022`, written on
-2026-08-09 precisely to carry the retirement that had no home (`STATE.md` `Q26` item 1). The two failure modes differ and
-both matter: a closed gate that did not cover its recorded scope, and a decision that reached no
-gate because it reached no delivery.
+while assigning the deletion to no one. The other two are `delivery-022`, which **scopes the retirement** that had no home, and this
+file, which names it only to explain why a sibling delivery exists (`STATE.md` `Q26` item 1).
+This delivery carries items 2 and 4 and the `Q8` N3 correction; `delivery-022` carries item 1.
+The failure modes differ and all three matter: a closed gate that did not cover its recorded
+scope, a decision that reached no gate because it reached no delivery, and a record whose text
+outlived the decision it described.
 
 **Same class as `Q22`, from the other end.** There, a delivery was marked `Gated` with no gate ever
 run. Here, a gate *did* run, over a delivery whose recorded scope included work nobody performed.

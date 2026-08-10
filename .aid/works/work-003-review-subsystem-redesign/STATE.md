@@ -221,10 +221,16 @@ or worse; `[LOW]`/`[MINOR]` at the end" — are the same statement.
 
 - **Category:** Process defect — same class as `Q22`, found the same way
 - **Impact:** High — and the four fail in three different ways. **Two** (items 2 and 3) sit inside a delivery that closed `Done` over work it did not deliver, which is the process defect proper. **One** (item 1, `reviewer-guide.md`) was never scheduled into any delivery, so no gate ever had the chance. **One** (item 4, `Q5` decision 7) is **benign**: the work shipped and the decision was consciously reversed, so nothing is undelivered and only this file's own text is stale
-- **Status:** **Answered** 2026-08-09 — items 1-2 re-scheduled into the merge delivery; item 3
-  superseded by `Q1(a)`; item 4 and the `Q8` N3 correction are text fixes to this file
-- **Answer (2026-08-09, human decision).** **Items 1 and 2 are re-scheduled into the delivery that
-  carries the `/aid-review` merge. Closed deliveries stay closed.** Reopening delivery-007 or any
+- **Status:** **Answered** 2026-08-09 — items 1-2 re-scheduled into new deliveries; item 3
+  superseded by `Q1(a)`; item 4 and the `Q8` N3 correction are text fixes to this file.
+  **Carriers corrected 2026-08-10** — this read *"into the merge delivery"*, written before that
+  delivery was split in two. On disk: **item 1 is carried by `delivery-022`** (the merge),
+  and **items 2 and 4 and the `Q8` N3 correction by `delivery-021`** (record corrections and
+  the greenfield edit). Each delivery's Scope names its own share.
+- **Answer (2026-08-09, human decision).** **Items 1 and 2 are re-scheduled into new deliveries
+  rather than reopened. Closed deliveries stay closed.** (As put on 2026-08-09 this said *"the delivery
+  that carries the `/aid-review` merge"*, when one delivery was expected to carry everything;
+  the split into `delivery-021` and `delivery-022` came later the same day.) Reopening delivery-007 or any
   other `Done` delivery would corrupt the record of what those gates actually certified — the gate
   *did* run, and rewriting its outcome retrospectively destroys the evidence of the real defect, which
   is that a delivery's recorded scope outran what was performed. A new delivery carrying the shortfall
@@ -239,7 +245,8 @@ or worse; `[LOW]`/`[MINOR]` at the end" — are the same statement.
   `.aid/.aid-manifest.json` -- all six regenerated, not edited -- and one hand-maintained suite,
   `tests/canonical/test-review-extraction.sh`. So the only manual referrer edit is the test.
   Item 3 needs no ruling — superseded, see above. Item 4 (`Q5` decision 7's reversed text) and the
-  `Q8` N3 carrier-claim correction are edits to this file's own entries and ride the same delivery.
+  `Q8` N3 carrier-claim correction are edits to this file's own entries and ride `delivery-021`
+  alongside item 2, not the merge delivery.
 
 **How it surfaced.** Eight `Cross-phase Q&A` entries still read `Pending` although all were raised
 2026-07-27 and fifteen deliveries have shipped since. Triaging them against disk (rather than against
@@ -341,8 +348,14 @@ genuinely mechanical; meaning goes where only judgment reaches it.
 - **`AC-14` and `FR-G3` must be amended, and delivery-017 carries that.** Added 2026-08-09 after a
   plan review found this consequence list had no entry for it: the re-disposition had been applied
   to delivery-017's BLUEPRINT alone, leaving `REQUIREMENTS.md`'s `AC-14` (a **MUST**), feature-008's
-  `FR-G3`, and both task `DETAIL.md` files still asserting the byte criterion. A decision recorded
-  in one artifact and contradicted in four is the defect this work exists to remove.
+  `FR-G3`, and **one** task `DETAIL.md` (`task-001`) still asserting the byte criterion. A decision
+  recorded in one artifact and contradicted in three is the defect this work exists to remove.
+  **Count corrected 2026-08-10** — this read *"both task `DETAIL.md` files"* and *"contradicted in
+  four"*. At `7127acd4`, `grep -c "appear in that file"` over this delivery's four task files
+  returned `1,0,0,0`: only `task-001` ever carried the wording. `task-003` carries the short-fragment
+  *guidance* that presupposed the byte criterion, which is what the original count was reaching for,
+  but guidance whose rationale changed is not an artifact asserting the retired criterion —
+  `delivery-017`'s Scope makes exactly that distinction and says *"the one task `DETAIL.md`"*.
 
 Options declined: re-dispositioning `FR-G3` as a *pure* review rule (throws away a sound, cheap check
 and the guidance with it), and keeping it literal (enforces a criterion the owner rejected).
