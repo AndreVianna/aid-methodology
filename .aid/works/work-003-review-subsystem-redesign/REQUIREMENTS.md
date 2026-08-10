@@ -11,6 +11,7 @@
 | 2026-07-27 | Initial interview started | /aid-describe |
 | 2026-07-27 | Consolidated from the Q1-Q6 discussion recorded in STATE.md | /aid-describe |
 | 2026-07-27 | Resolved the three open decisions: two review skills (FR-A1), gap sequencing replaces call-and-return (FR-C9), criteria-vs-evidence boundary for greenfield (FR-C10/C11) | /aid-describe |
+| 2026-08-10 | **Four amendments from the 19-cycle Plan review** (`STATE.md` Q27-Q30, all Accepted): coverage granularity becomes the claim (FR-D10); a fix is not complete until its class is swept (FR-E2); **new group H -- recall measurement** (FR-H1-H3), which gives the grade a denominator; and the restatement convention below | /aid-plan (REVIEW, cycles 2-19) |
 | 2026-07-27 | Agent decisions: split into `aid-screener` + `aid-reviewer` (roster 9->10), boilerplate split (FR-A9), explicit `aid-reviewer` rewrite (FR-A10), content-isolation relocation (FR-B9); FR-B5 split into B5a/B5b | /aid-define (decomposition review) |
 
 > **Modality convention.** Every requirement below carries an explicit modality --
@@ -21,6 +22,25 @@
 > `SUGGESTION` was removed on 2026-07-27. It could never be grade-bearing, and dropping
 > it collapses modality onto the same three values feature-level `## Priority` already
 > uses -- one vocabulary instead of two.
+
+> **Restatement convention (added 2026-08-10, `STATE.md` Q30(a)).** A **derived** fact -- a
+> count, a total, an arithmetic result, a which-delivery-carries-what assignment -- is stated
+> **once**, in the artifact that owns it, and **cited** from everywhere else. It is not
+> restated.
+>
+> Measured reason: four facts in this work were each restated in three or four artifacts, so
+> every correction had to be swept across all of them. Miss one and it is a contradiction;
+> reword one imprecisely and it is a false claim. Between them those two rules accounted for
+> nearly every finding the Plan review raised, and a large share of the findings were
+> introduced by a previous fix -- which is what held the grade below the bar for cycle after
+> cycle. The figures are in `STATE.md` Q30; this note does not restate them, which is the
+> convention applying to itself.
+>
+> The cost is accepted, not denied: a cited fact reads less well than a restated one, and a
+> reader of one artifact must follow a pointer. That buys the removal of the
+> sweep-on-every-correction burden. This governs **this work's own artifacts**; `FR-G4`'s
+> command-beside-the-count rule is what makes the owning statement checkable, and `FR-E2` is
+> what finds the restatements that already exist.
 
 ---
 
@@ -171,6 +191,7 @@ run", per the work-initiation gate and the delivery gate's non-CODE path.
 | FR-D6 | MUST | On resume: a changed artifact invalidates its unit; changed criteria invalidate every unit the changed rule touches. |
 | FR-D7 | MUST | All three interruption types are handled: halt-to-ask, user stop, and involuntary (crash / timeout / context exhaustion). `In Progress` units are treated as unexamined on resume. |
 | FR-D8 | SHOULD | A repeated gap ID auto-halts with a possible-loop flag, rather than relying on the user to notice. |
+| FR-D10 | MUST | **A coverage row's unit is the CLAIM, not the file.** `U-NNN` records **what was checked**, not that a file was opened, and the brief carries an **enumerated worklist** for the scope whose item each `U-` row cites. RECONCILE's `Pending` -> `Fixed` transition then rests on *"every worklist item covering this `Doc` was checked"*, which is falsifiable, instead of on a file-granular self-report. **Why a MUST and not a convention:** `reviewer-ledger-schema.md § RECONCILE` already guards the converse case -- a `Pending` finding absent from a scratch whose unit is **not** `Examined` stays `Pending`, because *"absence proves nothing"* -- so the schema knows absence is weak evidence, and then licenses exactly that inference when a **file** is marked `Examined`. A sampling pass therefore does not merely fail to find a defect, it **clears** it. The measurement establishing all of this -- how often a file marked `Examined` still held findings, how many reviews missed each pre-existing defect, and the one variable with counter-evidence (an enumerated worklist returning an order of magnitude more findings in a single pass) -- is recorded in `STATE.md` Q27 and is **not restated here**, per the restatement convention in § 5. Owned by feature-005 (coverage rows); constrains `reviewer-ledger-schema.md` (the `U-` grammar and the RECONCILE join) and `reviewer-brief-template.md` (the worklist). |
 | FR-D9 | **MUST** | `G-NNN` rows are promoted to `STATE.md` before the ledger is deleted, so loop detection survives across invocations. **Promoted from SHOULD to MUST on 2026-07-27:** three of feature-004's acceptance criteria (AC-5, AC-10, and its depth limit) rest on this promotion, so leaving it a SHOULD would close that feature with unsatisfied MUSTs — the MUST-depending-on-SHOULD defect recorded in STATE.md Q7 #7. Owned by feature-004, not feature-005. |
 
 ### E. Defect cleanup
@@ -178,6 +199,7 @@ run", per the work-initiation gate and the delivery gate's non-CODE path.
 | ID | Modality | Requirement |
 |----|----------|-------------|
 | FR-E1 | SHOULD | The review-path defects catalogued in STATE.md Q3 are fixed once the target process is settled. |
+| FR-E2 | MUST | **A fix is not complete until its class has been swept.** `aid-execute/references/state-fix.md` states `F1` -- *a finding is a CLASS; Evidence specifies the EXTENT* -- as prose, and nothing checks it. Before marking a fix complete the fixer **greps the distinguishing phrase of the corrected claim across the work and reports every site**, so a missed sibling is visible rather than found a cycle later. The measured extent -- what share of this work's Plan-review findings were siblings of an already-corrected claim, and how many cycles the worst sibling survived -- is recorded in `STATE.md` Q29 and is not restated here. This adds no rule set: it is `F1` given an oracle instead of an instruction, and feature-003's ledger substrate already hands the fixer the row it is discharging, which is where the phrase comes from. |
 
 ### F. Review coverage gaps
 
@@ -204,6 +226,37 @@ See STATE.md Q14.*
 | FR-G3 | MUST | **A quoted string attributed to a file must mean what that file means at the cited place.** **AMENDED 2026-08-09** (`STATE.md` Q25): the criterion is **semantic fidelity**, not byte presence. A faithful reword satisfies it; a verbatim string lifted to misrepresent its source does not. The substring test survives as a **cheap pre-filter** -- a hit proves fidelity and exits early, a miss escalates to reviewer judgment rather than failing. As written this read *"must appear in that file"* and named paraphrase as the defect, which the amended `AC-14` in § 9 now contradicts: a faithful paraphrase is **not** a defect. What remains targeted is a quote that misrepresents its source, so the original rationale below is **superseded, not retained** -- it named paraphrase as the sin being caught, and paraphrase is now explicitly not a defect. Kept verbatim as the record of what the rule said: Not necessarily at the cited line — line-position matching would be drift-brittle and is not the defect being targeted. Presence alone catches paraphrase-presented-as-quote, which the review record shows is the single most common review finding. |
 | FR-G4 | SHOULD | **A count claim must carry its producing command.** A bare number asserted about the tree ("18 files", "16 cases") is unverifiable at read time and drifts silently. Where an artifact states a count, it states the command beside it. Advisory, not blocking — this one is a convention a lint can only partially reach. |
 | FR-G5 | SHOULD | **Line-number citations remain permitted where they carry real precision**, notably a spec's affected-artifact inventory, where region ownership across features depends on exact ranges. FR-G1's durable-anchor requirement therefore applies to *evidence* citations, not to *ownership* claims. A blanket ban would have removed the mechanism that kept this work's seven features from colliding. |
+
+### Group H -- Recall measurement
+
+*Added 2026-08-10, on evidence from this work's own Plan review. See `STATE.md` Q28. Supersedes
+tech-debt `L4` (test-effectiveness programme), which carried the same idea outside any work.*
+
+**Why the group exists.** Every other group improves the handling of findings that were
+**already found** -- one severity source (A/B), a rule ID on every row (B), durable surgical
+writes (D), no finding without a criterion (C), none lost to interruption (D), resolvable
+evidence (G). That is a **precision** programme end to end, and two of those features plausibly
+*lower* recall, because the no-criterion-no-row contract and severity-by-lookup both raise the
+cost of writing a finding down. Nothing in the work asks whether a review found what was
+actually **there**: `grade.sh` counts findings found, and there is no term for findings
+**missed**. Without a denominator, *"clean"* is unfalsifiable and every grade measures
+reviewer attention rather than artifact quality. The observed consequence is the sharp case, and it is measured in
+`STATE.md` Q28 rather than restated here: this work's own Plan review produced immaculate
+bookkeeping -- a rule ID on every row, resolvable citations, every criteria gap registered and
+dispositioned -- while missing each pre-existing defect several times over. A
+rigorous-looking clean pass is **more** misleading than a scruffy one, because it invites
+belief.
+
+| ID | Modality | Requirement |
+|----|----------|-------------|
+| FR-H1 | MUST | **A fixture corpus with seeded, catalogued defects exists.** Each fixture is an artifact of a reviewable class carrying a known defect set, and each seeded defect names the rule that should catch it. The catalogue is the denominator; without it there is nothing to divide by. Defects are seeded **per rule**, not per artifact, so a rule with no fixture shows up as a hole in the corpus rather than as a silence. |
+| FR-H2 | MUST | **Recall is measured and reported: the fraction of seeded defects a review pass finds.** Reported **per rule set** as well as overall, because an aggregate hides a rule that never fires. This is a measurement, not a gate -- it states what the review's recall **is**, turning *"the review is thorough"* from a mandate into a number. |
+| FR-H3 | SHOULD | **A recall regression is a defect in the review subsystem.** A change that lowers measured recall must be justified or reverted, which is what stops a precision improvement from silently trading recall away -- the failure mode groups B and C are otherwise free to cause. `SHOULD` rather than `MUST` because a baseline must exist before a regression is meaningful, and FR-H1/H2 are what establish it. |
+
+**Scope honesty.** This is **new scope**, the largest of the four 2026-08-10 amendments, and it
+arguably changes what the work is *for* -- from making the review subsystem tidy to making it
+measurable. Recorded here rather than deferred because this is the work that claims to fix
+review.
 
 ## 6. Non-Functional Requirements
 
@@ -262,6 +315,9 @@ These are existing invariants the design must respect, not preferences:
 | AC-11 | SHOULD | A pipeline skill that previously carried its own review logic invokes the shared capability instead, and is measurably shorter. |
 | AC-12 | MUST | The full render produces identical review behavior on all five profiles. |
 | AC-13 | SHOULD | **The split is measurably cheaper on a normal artifact, not just on paper.** For a fixture artifact taken through one full gate passage, measure total dispatch count and FIX-cycle count. **Amended at delivery-001, 2026-07-28:** this criterion originally said the numbers come from *"the always-on `## Dispatch Log` / `## Calibration Log` telemetry"*. **They do not — that telemetry is not written.** Verified: across 49 sub-agent dispatches in this work's own pipeline, every one of those sections holds a header row and zero data rows, despite the templates describing them as "always-on, never optional". So **populating the Dispatch Log is a prerequisite of this criterion, not an input to it**, and the **per-dispatch tier is dropped from the measure** — it was never recorded and the weighting was never defined. Dispatch count and FIX cycles are counted identically before and after, so that comparison is valid and it catches the failure mode that matters: a split that adds dispatches without removing cycles. Pre-migration baseline and the nominated fixture (feature-005's Specify gate: 3 dispatches, 1 FIX cycle) are recorded in `deliveries/delivery-001/BASELINE-ac13.md`. Post-migration, the tier-weighted dispatch cost and the FIX-cycle count must both be **no greater** than the pre-migration baseline on the same artifact. The baseline is captured in feature-006's delivery D0, alongside AC-11's B and C metrics, and before any edit. **This is the acceptance criterion NFR-3 lacked** — a MUST about cost with nothing testing it. Without AC-13 the work can pass every other gate and still be a net cost increase, which would defeat the reason it was started. |
+| AC-15 | MUST | **A coverage row names what it checked.** For a review of a scope with an enumerated worklist, every `U-` row cites a worklist item, and RECONCILE clears a `Pending` finding only when every worklist item covering that `Doc` is `Examined`. Verified on a fixture where a partial pass leaves one worklist item unexamined: the finding under it must stay `Pending`, where a file-granular `Examined` would have cleared it. (FR-D10) |
+| AC-16 | MUST | **Measured recall is reported for every rule set, and no rule set reports zero fixtures.** Run the review over the seeded corpus and read the per-rule-set recall figures; a rule set with no fixture fails this criterion, because unmeasured is not the same as clean. (FR-H1, FR-H2) |
+| AC-17 | MUST | **A fix reports its class sweep.** For a finding with a sibling seeded at another site, the fix is not accepted until the sweep output naming that sibling is on the record. Verified on a fixture whose corrected claim is restated in two other files. (FR-E2) |
 | AC-14 | MUST | **A citation in a work artifact resolves.** Every `file:NNN` or "`file` lines NNN–MMM" reference points at an existing file with at least NNN lines, and every string presented as a quotation from a named file **means what that file means** at the cited place. **AMENDED 2026-08-09** (`STATE.md` Q25): this read *"appears in that file"*, a byte-identity test. The criterion is **semantic fidelity** -- spacing, emphasis and exact wording are irrelevant -- so a faithful reword satisfies AC-14 and a verbatim string lifted to misrepresent its source does not. A substring match is retained as a **cheap pre-filter** that proves fidelity early; a miss escalates to judgment rather than failing. Verified by a lint over `REQUIREMENTS.md`, `SPEC.md`, `PLAN.md`, `BLUEPRINT.md` and task `DETAIL.md`, on fixtures that fail in both directions. |
 
 ## 10. Priority
@@ -272,7 +328,8 @@ These are existing invariants the design must respect, not preferences:
 | 2 | **C -- Criteria-gap interrupt** | Needs B's catalog to know what "missing" means. Unblocks greenfield adopters. |
 | 3 | **D -- Resume and loop detection** | Independent of B and C in principle, but C's halt-and-restart flow depends on it working. |
 | 4 | **A -- Review extraction** | Highest structural value, but cheapest to do *after* B/C/D settle what the shared capability must contain. Building the shared skill first would mean rebuilding it three times. |
-| 5 | **E -- Defect cleanup** | Explicitly deferred by decision until the target process is settled. |
+| 5 | **H -- Recall measurement** | The corpus (FR-H1) depends on nothing and can be built first; the **measurement** (FR-H2) must run against a built subsystem, so the group straddles the order deliberately. Built early precisely so B/C/D land against a baseline instead of arriving after one. |
+| 6 | **E -- Defect cleanup** | Explicitly deferred by decision until the target process is settled. FR-E2 is the exception and rides with whichever delivery first runs a FIX cycle, since it changes how fixing works rather than cleaning up a past defect. |
 | 6 | **F -- Review coverage gaps** | Sequenced **last**, after A. Its new gates must be built on the shared review capability that group A delivers, and against the rule sets group B delivers. Building them earlier would add dispatch sites that group A then has to migrate — the same rework trap §10 exists to avoid. |
 
 > **Note on ordering.** A is the requirement that started this work, and it is

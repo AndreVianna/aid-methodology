@@ -4,6 +4,40 @@
 > **Phase:** Plan (REVIEW state, scope `plan-019-023`)
 > **Raised:** 2026-08-10
 > **Bar:** `A` (`.aid/settings.yml:6`; `read-setting.sh --skill aid-plan --key minimum_grade` = `A`)
+> **Status:** **RESOLVED 2026-08-10** — option 1 taken, and the diagnosis widened
+
+## Resolution
+
+The owner took **option 1** (move the forensics) and, on the diagnostic questions this impediment
+prompted, accepted **four** amendments rather than one. They are recorded as `STATE.md` Q27–Q30, each
+carrying its own measurement, and all four are applied.
+
+| Amendment | What it changes | Carried by |
+|---|---|---|
+| Q30(b) — the recommendation above | `delivery-022`'s per-site forensics leave `## Scope` for task `DETAIL.md`; the obligation stays as two gate criteria. 172 → 155 lines | applied directly |
+| Q30(a) | A derived fact is stated **once** and cited elsewhere — the **Restatement convention**, `REQUIREMENTS.md § 5` | applied directly |
+| Q29 | A fix is not complete until its class has been swept — `FR-E2`, `AC-17` | delivery-025 |
+| Q27 | A coverage row's unit becomes the **claim**, not the file — `FR-D10`, `AC-15` | delivery-026 |
+| Q28 | **Recall measurement** — a seeded corpus and a measured fraction, group H (`FR-H1`–`FR-H3`), `AC-16` | delivery-024, delivery-027 |
+
+**Why the root cause below was necessary but not sufficient.** This document correctly identified
+the artifact-shape problem in one file. The wider measurement, taken after it was written and
+recorded in `STATE.md` Q27 and Q28, found that the loop's failure was not confined to
+`delivery-022`: every pre-existing defect had been missed by several reviews each, and the file
+most often marked `Examined` was also the file that later yielded the most findings. The three
+cycles that tripped the breaker were the visible end of that, not its cause. Q27 and Q28 address the cause: a
+review whose coverage is a file-granular self-report, in a work with no term at all for findings
+**missed**.
+
+**Pipeline state.** `lifecycle` returns to `Running`; `block_reason` and `block_artifact` cleared.
+Deliveries `019`–`023` remain `Pending-Spec`, joined by `024`–`027`. One thing is newly open and is
+recorded in `PLAN.md § Open at Plan`: `feature-009` owns the new requirements and **has no SPEC**, so
+`/aid-specify` must run before deliveries `024`, `025` and `027` are detailed.
+
+---
+
+> The original record follows unchanged. Its root-cause analysis stands; the resolution above widens
+> it rather than replacing it.
 
 ---
 

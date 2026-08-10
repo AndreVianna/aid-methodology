@@ -298,6 +298,62 @@ chaining confirmation, whose output is evidence rather than capability).
   `skill_chaining = true` lines for those hosts predate this work, so they restate the assumption
   rather than verify it.
 
+### delivery-024: Seeded-defect corpus
+- **What it delivers:** a fixture corpus of reviewable artifacts carrying **known, catalogued**
+  defects, each seeded defect naming the rule that should catch it. FR-H1.
+- **Features:** feature-009 (**SPEC not yet authored** -- see `## Open at Plan`)
+- **Depends on:** --
+- **Priority:** Must
+- **Track:** free
+- **Kind:** enabling -- it ships no reviewer behaviour; it supplies the denominator every later
+  recall figure divides by
+- **Note:** first of the four added 2026-08-10 from the Plan review's own evidence
+  (`STATE.md` Q27-Q30). Deliberately depends on nothing, so the corpus exists **before** the
+  precision work lands and the baseline is not taken after the fact.
+
+### delivery-025: Class sweep in FIX
+- **What it delivers:** the class-sweep obligation in `aid-execute/references/state-fix.md` --
+  a fix is not complete until the distinguishing phrase of the corrected claim has been grepped
+  across the work and every site reported -- plus the fixture that fails without it. FR-E2,
+  AC-17.
+- **Features:** feature-009 (**SPEC not yet authored**)
+- **Depends on:** --
+- **Priority:** Must
+- **Track:** free
+- **Kind:** standalone
+- **Note:** it gives `F1` an oracle instead of an instruction, so it needs no new rule set and
+  nothing upstream. Independent of delivery-024 despite sharing a feature: this one changes how
+  fixing works, that one measures how finding works.
+
+### delivery-026: Per-claim coverage
+- **What it delivers:** the coverage unit becomes the **claim**. The brief carries an enumerated
+  worklist for its scope, a `U-` row cites the worklist item it discharges, and RECONCILE's
+  `Pending` -> `Fixed` transition rests on every worklist item covering that `Doc` being
+  examined. FR-D10, AC-15.
+- **Features:** feature-005 (coverage rows), amending `reviewer-ledger-schema.md` and
+  `reviewer-brief-template.md`
+- **Depends on:** delivery-009
+- **Priority:** Must
+- **Track:** free
+- **Kind:** standalone
+- **Note:** it must land **after** delivery-009, which writes the ledger lifecycle and moves
+  reconciliation to the orchestrator -- this changes the join that migration installs, so doing
+  it first would mean writing the join twice.
+
+### delivery-027: Recall measurement
+- **What it delivers:** the measured fraction of seeded defects a review pass finds, reported
+  **per rule set** as well as overall, and a recorded baseline against which a later drop is a
+  defect. FR-H2, FR-H3, AC-16.
+- **Features:** feature-009 (**SPEC not yet authored**)
+- **Depends on:** delivery-022, delivery-024, delivery-026
+- **Priority:** Must
+- **Track:** spine
+- **Kind:** standalone
+- **Note:** last because it measures the shipped shape. It needs delivery-024's corpus to have
+  something to count, delivery-022's merged skill so the figure describes the review that
+  actually ships, and delivery-026 because a file-granular coverage row makes a recall figure
+  unattributable -- you would know a defect was missed but not which pass should have caught it.
+
 ---
 
 ## Dependency graph
@@ -314,7 +370,7 @@ Edges as an adjacency list, which is unambiguous where ASCII art is not:
 | 006 | 005 | 007 |
 | 007 | 006 | 008, 009, 021 |
 | 008 | 007 | 015 |
-| 009 | 007 | 011, 012, 020 |
+| 009 | 007 | 011, 012, 020, 026 |
 | 010 | 001 | 011, 012 |
 | 011 | 009, 010 | -- |
 | 012 | 009, 010 | 014, 016, 017, 018 |
@@ -327,17 +383,25 @@ Edges as an adjacency list, which is unambiguous where ASCII art is not:
 | 019 | 004 | 022 |
 | 020 | 009 | 022 |
 | 021 | 007 | 022 |
-| 022 | 016, 017, 018, 019, 020, 021 | 023 |
+| 022 | 016, 017, 018, 019, 020, 021 | 023, 027 |
 | 023 | 022 | -- |
+| 024 | -- | 027 |
+| 025 | -- | -- |
+| 026 | 009 | 027 |
+| 027 | 022, 024, 026 | -- |
 
 Every edge runs from a lower number to a higher one, so the ordering is a valid topological sort.
 **No cycles.**
 
 **Free tracks -- work available while the spine is blocked:** delivery-002 (fully independent),
-delivery-001 (nothing upstream), delivery-010 (needs 001 only), delivery-013 (needs 003 only), and
+delivery-001 (nothing upstream), delivery-010 (needs 001 only), delivery-013 (needs 003 only),
 the three added 2026-08-09 -- delivery-019 (needs 004 only), delivery-020 (needs 009 only),
-delivery-021 (needs 007 only). That is **7 free** and **16 on the spine**; no grouping breaks the
-spine, because it is a property of one file rather than of the grouping.
+delivery-021 (needs 007 only) -- and three of the four added 2026-08-10: delivery-024 and
+delivery-025 (nothing upstream) and delivery-026 (needs 009 only). **This paragraph and the
+table above are where the free/spine split is stated; nothing else restates it.** That is
+**10 free** and **17 on the spine** across the 27 deliveries. No grouping breaks the spine,
+because the spine is a property of one file rather than of the grouping. Only delivery-027 of
+the four is on the spine, and by design -- it measures the shape delivery-022 ships.
 
 **delivery-022 is the one convergence point.** It depends on six deliveries rather than the usual
 one or two, and that is deliberate rather than accidental coupling. **One of the six edges is the
@@ -347,8 +411,10 @@ decided for retirement and then re-authored. **The other five edges are sequenci
 022 performs a rename sweep over the whole work, so placing it after every delivery that still
 authors text means the sweep runs once over settled artifacts instead of once per delivery as each
 lands. That is the owner decision recorded in `§ Sequencing decisions`; it is a cost choice, not a
-technical prerequisite, and no gate of 016-021 depends on 022 having run. It blocks only
-delivery-023, which verifies the shape 022 produces.
+technical prerequisite, and no gate of 016-021 depends on 022 having run. Downstream it blocks the
+two deliveries the table above gives it, and for the same reason in both cases: delivery-023 verifies
+the shape 022 produces, and delivery-027 measures it. Neither would describe what ships if it ran
+first.
 
 ---
 
@@ -360,11 +426,30 @@ delivery-023, which verifies the shape 022 produces.
 | Where does the citation lint go? | **Second, ahead of the severity work.** Its own spec: *"D1 depends on nothing and gates nothing."* Every finding across 33 review cycles was a citation or count defect, so catching them mechanically beats paying a review cycle each time. Its fix commit on the eight SPECs is the input every downstream DETAIL reads. |
 | AC-11's provisional status | delivery-012 earns AC-11 **provisionally**; **delivery-014 re-certifies it**, per feature-007's amendment to feature-006. 014 cannot move earlier -- its M2 subtraction sits in a file 012 migrates -- so the re-measure is accepted. |
 | Priority ordering | The work has one `Should` (the BLUEPRINT and specify-section reviews, delivery-018). It was numbered last of the original 18; the five added 2026-08-09 are all `Must` and are numbered after it, so it is **no longer last by number**, and **delivery-022 (a `Must`) does depend on it**. The original property therefore no longer holds and is not claimed. What replaces it: 018 depends only on delivery-012, so it is free to run as soon as 012 closes, in parallel with the five `Must` deliveries 022 also waits on. It **can** be the last of the six to finish and so **can** be 022's binding constraint -- nothing rules that out -- but nothing in the graph *forces* it late, so the `Should` adds no critical-path length that the `Must` set does not already impose. That is the weaker claim the graph actually supports. |
-| Extra parallelism | **Declined at first cut.** Splitting the settings gate out of 014 would have added another free track at the cost of another delivery gate, and the four free tracks then available (001, 002, 010, 013) were judged sufficient. Superseded in effect on 2026-08-09: deliveries 019, 020 and 021 are each free, taking the plan to **7 free / 16 spine**. The decision not to split 014 stands; the scarcity that motivated it does not. |
+| Extra parallelism | **Declined at first cut.** Splitting the settings gate out of 014 would have added another free track at the cost of another delivery gate, and the four free tracks then available (001, 002, 010, 013) were judged sufficient. Superseded in effect on 2026-08-09, and again on 2026-08-10: deliveries 019-021 and then 024-026 are each free, so the split is now the one `§ Dependency graph` states -- **cited, not restated here**, per the restatement convention in `REQUIREMENTS.md § 5`. The decision not to split 014 stands; the scarcity that motivated it does not. |
 | The WSL gitdir bug | **Leaves this work**, per concern N4. Not review-path. |
 | Where does the skill merge go? (2026-08-09) | **After every delivery the rename would churn, as delivery-022.** Owner decision. `delivery-023` follows it and is unaffected, being written against the post-merge name. It renames the skill `delivery-017` is written against -- the only one of 016-021 that names it -- so running it earlier would force that delivery to be authored against `aid-deep-review`, then re-authored against `/aid-review`. Placing it there costs one thing knowingly: `delivery-017/task-002`'s Scope is the gate in `aid-deep-review` RESOLVE, so 017 builds under a name 022 then retires. That churn is bounded to a rename sweep 022 performs anyway, whereas the alternative re-details three already-graded deliveries. |
 | Does `FR-G3`'s re-disposition need its own delivery? (2026-08-09) | **No — it amends delivery-017.** `Q25` makes the attributed-quote check a cheap pre-filter whose miss escalates to judgment. That is 017's own subject matter and 017 is still `Pending-Spec`, so a separate delivery would compete with it for the same files. |
+| Why four deliveries for four amendments, not one? (2026-08-10) | **Because three of the four have different upstreams and one needs no delivery at all.** `Q30(a)`'s restatement convention is a convention -- it lands in `REQUIREMENTS.md § 5` and constrains authoring, so it ships no artifact. Of the remaining three: the corpus (024) and the class sweep (025) depend on nothing and are free tracks; per-claim coverage (026) must follow delivery-009's ledger-lifecycle migration or the join gets written twice; and the measurement (027) must follow the merged skill or it measures a shape that is being replaced. Merging any pair would re-serialize inside the delivery and hide that. |
+| Why does the recall corpus come early when the measurement comes last? (2026-08-10) | **Because a baseline taken after the change is not a baseline.** `REQUIREMENTS.md § 10` puts group H fifth for this reason: FR-H1 depends on nothing, so the corpus can exist before the precision work lands, while FR-H2 has to run against a built subsystem. The group straddles the order deliberately rather than by oversight. |
 | Why is the host-chaining check a delivery rather than a test? (2026-08-09) | **Because no test can discharge it.** `RX13`-`RX16` prove the artifacts render identically to all five profiles; the open claim is that a chain *executes* on three of them. That needs a host runtime, so it is delivery-023 with an `enabling` kind — it ships no capability, it retires an assumption. |
+
+---
+
+## Open at Plan
+
+**`feature-009` has no `SPEC.md`, and three deliveries name it.** Group H (recall measurement)
+and `FR-E2` (the class sweep) were added to `REQUIREMENTS.md` on 2026-08-10, after Specify had
+closed for all eight existing features. Deliveries **024**, **025** and **027** therefore name a
+feature that has no spec, no module map and no test scenarios.
+
+**What this blocks and what it does not.** It does **not** block the other 24 deliveries, and it
+does not block this plan being graded -- the requirements those three deliveries carry are
+stated, modal and have acceptance criteria (AC-16, AC-17). It **does** block `/aid-detail` for
+those three, because a task breakdown reads the SPEC for its module map. `/aid-specify` must run
+for `feature-009` before they are detailed. Recorded here rather than silently deferred, because
+a delivery pointing at a missing SPEC is exactly the kind of dangling reference this work exists
+to catch.
 
 ---
 
@@ -374,8 +459,9 @@ delivery-023, which verifies the shape 022 produces.
 |---|------|--------|------------|
 | 1 | Line-number inventories go stale the moment delivery-003 lands | H | Restate regions as quoted strings at Detail; per-delivery diff gate on `AGENT.md` |
 | 2 | AC-12 (five-profile parity) is only checked at delivery-012, so render drift from ten earlier deliveries arrives as one undiagnosable failure (concern N3) | H | Re-run parity as a regression gate at **every** delivery close; 012 owns the criterion of record |
-| 3 | One blocked spine delivery stalls the other fifteen (16 on the spine, per `§ Dependency graph`) | H | Content anchors make skip-and-return survivable; 002, 010 and 013 provide work while blocked |
+| 3 | One blocked spine delivery stalls every other delivery on the spine (the count is in `§ Dependency graph`, and is not restated here) | H | Content anchors make skip-and-return survivable; 002, 010 and 013 provide work while blocked |
 | 4 | The AC-13 cost baseline is unrecoverable once editing starts | M | delivery-001 is first and is a hard gate -- nothing else begins until the fixture gate-passage is recorded |
+| 6 | The recall baseline (delivery-027) is taken after 26 deliveries have changed the reviewer, so a low figure cannot be attributed to any one of them | M | delivery-024 lands the corpus early and free; run the measurement **at every delivery close from 024 onward**, not only at 027, so the series exists before the number matters |
 | 5 | delivery-010's success criterion is an **empty diff**, so a behavioural regression could hide inside a zero-diff claim | M | Keep 010 as its own delivery, never bundled -- feature-006's own recommendation |
 
 ---

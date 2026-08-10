@@ -5,13 +5,13 @@ pipeline:
 started: "2026-07-27"
 minimum_grade: "A"
 user_approved: yes
-lifecycle: Blocked
+lifecycle: Running
 phase: Plan
 active_skill: aid-plan
 updated: '2026-08-10T00:00:00Z'
 pause_reason: --
-block_reason: '/aid-plan REVIEW circuit breaker: grade C at cycles 17, 18 and 19 -- non-improvement over 3 consecutive cycles'
-block_artifact: IMPEDIMENT-plan-review.md
+block_reason: --
+block_artifact: --
 ticket_ref: "--"
 ---
 
@@ -141,6 +141,7 @@ source of truth, and close the accumulated review-path defects.
 | 5 | feature-005-review-resume | **Ready** | **A+** | 13 | 2026-07-27 | 4 FRs (D4-D7); AC-6, AC-7, AC-8. A+ in 2 cycles (C+ -> A+). Discharged feature-003's lifecycle-rewrite debt as an AC. Amended feature-003's `U-` row Evidence contract (art=/rs= digests). Recommends 4 deliveries. |
 | 6 | feature-006-review-skills | **Ready** | **A+** | 12 | 2026-07-27 | 11 FRs (**FR-A7 cut**) + FR-C9 + FR-E1; AC-11, AC-12. A+ in 3 cycles (B -> B+ -> A+). Proved the boilerplate split is **byte-identical** -- N1's blast radius collapses to a zero-diff assertion. Recommends 5 deliveries. |
 | 8 | feature-008-citation-accuracy | **Ready** | **A+** | 8 | 2026-07-28 | 5 FRs (group G); AC-14. **Added post-Specify** -- see Q14. Extends `kb-citation-lint.sh` to work artifacts. A+ in **9 cycles**, the most of any feature, and 18 findings of which **one was itself wrong**. Collides with nothing; **D1 depends on nothing and gates nothing**, so it could ship first. |
+| 9 | feature-009-review-effectiveness | **Pending-Spec** | -- | 0 | 2026-08-10 | **Added post-Plan 2026-08-10** -- see Q28/Q29. Owns group H (FR-H1-H3, recall measurement) and FR-E2 (the class sweep). **No SPEC yet**: it was created after Specify had closed for all eight other features, so `/aid-specify` must run before deliveries 024, 025 and 027 can be detailed. Recorded in `PLAN.md § Open at Plan`. Supersedes tech-debt `L4`. |
 | 7 | feature-007-review-coverage-gaps | **Ready** | **A+** | 12 | 2026-07-27 | 6 FRs (group F incl. FR-F6). A+ in **6 cycles** (C+ -> C+ -> B+ -> B+ -> B+ -> A+) -- the longest of the work, every finding a citation or count defect. Applied 5 amendments to features 002 and 006. Recommends 5 deliveries. |
 
 ## Plan / Deliveries
@@ -278,6 +279,10 @@ worklist item covering this `Doc` was checked", which is falsifiable.
 `reviewer-brief-template.md` would gain the worklist. `FR-D*` (feature-005) is the requirement
 family; no existing `FR` states coverage granularity at all.
 
+**APPLIED 2026-08-10.** `FR-D10` (MUST) and `AC-15` in `REQUIREMENTS.md`; carried by
+**delivery-026** (Per-claim coverage), which depends on delivery-009 so the RECONCILE join is not
+written twice.
+
 ---
 
 ### Q28 -- nothing in this work measures whether a review finds what is there (2026-08-10)
@@ -324,6 +329,12 @@ here is that it belongs **inside** this work, because this work is the one claim
 **Cost, stated plainly.** This is **new scope** and the largest of the four. It arguably changes what
 the work is *for* — from making the review subsystem tidy to making it measurable.
 
+**APPLIED 2026-08-10.** New **group H** in `REQUIREMENTS.md` (`FR-H1`–`FR-H3`) plus `AC-16`,
+priority order 5, and the scope-honesty note. Carried by **delivery-024** (the corpus — a free track
+that depends on nothing, so the baseline is not taken after the change) and **delivery-027** (the
+measurement, after delivery-022 so the figure describes the shape that ships). Owner `feature-009`,
+whose SPEC does not yet exist — recorded in `PLAN.md § Open at Plan`. Tech-debt `L4` is superseded.
+
 ---
 
 ### Q29 -- `FIX` has no mechanical obligation to sweep a finding's class (2026-08-10)
@@ -360,6 +371,11 @@ mechanical, and it needs no new rule set — it is `F1` given an oracle instead 
 **Where it lands.** `state-fix.md` owns `F1`. `feature-003`'s ledger substrate already gives the
 fixer the row it is discharging, which is where the phrase would come from.
 
+**APPLIED 2026-08-10.** `FR-E2` (MUST) and `AC-17` in `REQUIREMENTS.md`; carried by
+**delivery-025** (Class sweep in FIX), a free track that depends on nothing. It earned its keep
+immediately: sweeping the delivery-022 trim found a third site -- `PLAN.md`'s *"It blocks only
+delivery-023"* -- that the two blueprint edits alone would have left contradicting the graph.
+
 ---
 
 ### Q30 -- the same fact is restated across 3-4 artifacts, and that is what set the defect floor (2026-08-10)
@@ -382,7 +398,13 @@ fixer the row it is discharging, which is where the phrase would come from.
   **Interaction with `Q27`/`Q29`:** both reduce restatement, so all three pull the same direction —
   `Q29`'s class sweep finds the restatements, `Q30(a)` stops them being created, and `Q27`'s worklist
   is what a reviewer checks them against.
-  **(b) applied 2026-08-10; (a) is a convention still to be written into the authoring guidance.**
+  **APPLIED 2026-08-10, both parts.** (a) is the **Restatement convention** in
+  `REQUIREMENTS.md § 5`, beside the modality convention it parallels, and it is already dogfooded:
+  `PLAN.md`'s free/spine figure is now stated once in `§ Dependency graph` and cited from
+  `§ Sequencing decisions` and `§ Cross-Cutting Risks` instead of restated in each. (b) trimmed
+  `delivery-022`'s Scope -- the per-site forensics left for `/aid-detail`, the obligation kept as
+  two gate criteria, `BLUEPRINT.md` down from 172 to 155 lines. The blueprint template's own
+  closing line agrees: *"detailed design belongs in task DETAIL.md files."*
 
 **What was measured.** Duplication of single facts across the work's artifacts:
 

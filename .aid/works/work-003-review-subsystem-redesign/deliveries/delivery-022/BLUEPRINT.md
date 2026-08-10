@@ -40,43 +40,30 @@ it. `delivery-023`, which follows this one, is already written against the post-
   reads as the other.
 - **The four `tests/canonical/` suites that read the files this delivery deletes, repaired
   alongside the deletions.** `grep -rln 'reviewer.guide\|aid-light-review\|aid-deep-review' tests/`
-  run from the repo root returns exactly these, and each breaks differently:
-  - `test-review-extraction.sh` -- **it reads the deleted files in seven places, and four of
-    them fail silently.** That asymmetry is the whole reason this suite is in scope: a loud failure
-    tells the next person what to fix, a silent one leaves an assertion measuring nothing while the
-    suite still reports green. Classified by reading each site:
-    - **Fails loudly (3).** `RX01` at 57-58 asserts `[[ -f ... ]]` equals `yes`. The unguarded
-      `cat`s at 61-62 leave `$light`/`$deep` empty, which `RX02`-`RX04` then fail on.
-      `RX13`/`RX14` at 158-159 count the profile renders with `find ... | wc -l`, so a missing
-      render increments `missing` and `RX14` fails.
-    - **Fails silently (4).** `RX05` at 76 runs `grep -qiE ... aid-light-review/SKILL.md`; **`grep`
-      exits 2 on a missing file**, so the `else` branch runs and `RX05` reports `pass` having tested
-      nothing. `B_AFTER` at 92 sums `reviewer-guide.md` under `wc -l ... 2>/dev/null`, and `NEW=`
-      at 95-96 `cat`s both retired `SKILL.md` files under the same redirect -- so the deletion
-      **shrinks both sides of `SUM = B_AFTER + NEW`** and the `AC-11` anti-gaming clause loosens
-      instead of tripping. `RX15`/`RX16` at 172 and 183 resolve the render with
-      `find ... | head -1` and then `[[ -n "$f" ]] || continue`, so the loop body is skipped, the
-      `drift`/`pan` counters stay `0`, and both assertions pass vacuously.
-  - `test-gap-gate-wiring.sh` -- `gated_somehow()`'s `elif grep -q 'aid-deep-review'` branch at
-    line 80 falls through to `fail` once the name is gone, taking `GW04`/`GW05` with it.
-  - `test-settings-frontmatter-gates.sh` -- `$DEEP` (line 18) points at the deleted `SKILL.md`, so
-    `SG18` fails.
-  - `test-shortcut-engine-contract.sh` -- `SEC03a` asserts the engine still contains
-    `/aid-deep-review` and `SEC03b` reads the deleted file (lines 164-167).
-  **The repair is not a rename.** A rename leaves all four silent sites exactly as vacuous as
-  the classification above says they are, which the gate criteria forbid. Three distinct repairs:
-  **All seven reads are assigned**, so no site is left to an implementer's discretion:
-  - **Re-point** (2 sites), where the subject survives under the new name: `RX05` at 76, and
-    `RX15`/`RX16`'s render lookups at 172 and 183. Outside this file: `test-gap-gate-wiring.sh:80`,
-    `test-settings-frontmatter-gates.sh:18`, `test-shortcut-engine-contract.sh:164-167`.
-  - **Drop** (1 site), where the subject has no successor: `reviewer-guide.md` is retired outright,
-    so its term must leave `B_AFTER`'s sum at 92 rather than point somewhere new.
-  - **Collapse** (4 sites), where two subjects become one: `RX01` (57-58), the `cat`s that bind
-    `$light`/`$deep` (61-62), `NEW=`'s two `cat`s (95-96), and `RX13`/`RX14` (158-159). Each asserts
-    over *two* skills that this delivery merges into one, so the loop and its expected counts change
-    shape, not just their strings.
-  And in every case the read must be made **loud**: an assertion whose subject file is missing has
-  to fail, not skip and not fall through to `pass`.
+  run from the repo root returns exactly these. One of them needs naming separately, because it
+  breaks in a way a rename does not fix:
+  - `test-review-extraction.sh` -- **it reads the deleted files in seven places, and three of
+    those reads fail loudly while four fail silently.** That asymmetry is why this suite is named
+    here rather than left to the sweep: a loud failure tells the next person what to fix, a silent
+    one leaves an assertion measuring nothing while the suite still reports green. Two of the silent
+    four sit on **both halves of `RX07`'s `SUM = B_AFTER + NEW`**, so the deletion shrinks both
+    sides and the `AC-11` anti-gaming clause loosens instead of tripping.
+  - `test-gap-gate-wiring.sh`, `test-settings-frontmatter-gates.sh` and
+    `test-shortcut-engine-contract.sh` -- each holds a loud read that fails once the name is gone.
+  **The repair is not a rename**, and that is the delivery-level constraint: a rename leaves all
+  four silent sites exactly as vacuous as they are now, which the gate criteria forbid. Every read
+  site must be **classified loud-or-silent, assigned a repair, and made loud** -- an assertion whose
+  subject file is missing has to fail, not skip and not fall through to `pass`.
+
+  **The per-site classification is task `DETAIL.md` content, not Scope.** `artifact-schemas.md`
+  scopes this section to bounded in-scope deliverables; which line each read sits on, which shell
+  construct makes it silent, and which of re-point / drop / collapse it takes are per-site
+  implementation analysis, which `artifact-schemas.md` puts in a task's own `Scope` ("bounded list
+  of what the task produces/modifies"). `/aid-detail` derives it from the file, which is where it
+  came from in the first place -- it is re-derivable by `grep -n` and was re-derived three times
+  during review. The gate criteria below carry the obligation, so nothing is lost by not restating
+  the analysis here.
+
 - `aid-execute/references/reviewer-guide.md` **retired** -- 77 lines carrying the
   `CODE / TASK / SPEC / KB` source table that `reviewer-ledger-schema.md` and `aid-reviewer/AGENT.md`
   both declare retired, and reached by nothing: `grep -rln 'reviewer.guide' canonical/` returns
@@ -117,23 +104,19 @@ exhaustiveness mandate).
       `grep -rln 'reviewer.guide\|aid-light-review\|aid-deep-review' tests/` run from the repo root
       returns **nothing**, and **both halves of `RX07`'s `SUM` -- `B_AFTER` and `NEW` -- are
       re-derived from the post-merge file set** rather than carrying a sum that silently shrank
-- [ ] **Each of the four silent assertions fails when its own subject file is absent.** Stated
-      separately from the criterion above because the grep does not reach it -- a re-pointed
-      assertion can still be vacuous -- and stated **per assertion**, because a suite-level check
-      is satisfied by `RX01` failing loudly while `RX05` still passes on nothing. The four, and
-      what each must do: `RX05` must assert its subject exists before grepping it (a bare
-      `grep -q` on a missing file exits 2 and takes the `else` branch); `B_AFTER` and `NEW` must
-      **assert their inputs exist before reading them** -- dropping `2>/dev/null` is **not**
-      sufficient and must not be taken as the option: the suite runs `set -uo pipefail` with **no
-      `-e`** (line 15), so a failing `wc`/`cat` inside `$( )` completes the assignment anyway and
-      `SUM` still shrinks. Verified: `set -uo pipefail; N=$(cat /nonexistent | wc -l)` yields `N=0`
-      and execution continues, with or without the redirect. The only repair that trips is an
-      explicit existence check, or building the sum from a file list the test separately asserts is
-      complete; `RX15`/`RX16` must fail on an unresolved render instead of
-      `continue`-ing past it. **Verified one at a time:** for each of the four, move its subject
-      file aside in a scratch copy and confirm **that assertion** reports a failure. Four separate
-      runs, four separate failures -- a single run that goes red overall is not evidence for any of
-      them
+- [ ] **Every silently-failing assertion Scope identifies fails when its own subject file is
+      absent.** Stated separately from the criterion above because the grep does not reach it -- a
+      re-pointed assertion can still be vacuous -- and enforced **per assertion**, because a
+      suite-level check is satisfied by one assertion failing loudly while another still passes on
+      nothing. **Verified one at a time:** for each, move its subject file aside in a scratch copy
+      and confirm **that assertion** reports a failure. One run per assertion, one failure per run
+      -- a single run that goes red overall is not evidence for any of them. Which construct makes
+      each read silent, and therefore what repair trips it, is the task's to establish; this
+      criterion fixes only the outcome the task must reach
+- [ ] **The repair does not rely on dropping `2>/dev/null`.** Called out because it is the reading
+      the code invites and it does not work: the suite runs `set -uo pipefail` with **no `-e`**, so
+      a failing `wc`/`cat` inside `$( )` completes the assignment anyway. Any repair that leaves a
+      missing input contributing `0` to a sum fails this criterion however the redirect is written
 - [ ] `FR-C9`'s primary path still holds: gaps are batched before the graded pass, so the common
       case needs no mid-review interruption
 - [ ] `AC-13`'s cost claim keeps its subject -- screening + gate measured against gate alone
@@ -152,7 +135,7 @@ _Derived from `tasks/task-NNN/DETAIL.md`. Written by `aid-detail`; empty until i
 ## Dependencies
 
 - **Depends on:** delivery-016, delivery-017, delivery-018, delivery-019, delivery-020, delivery-021
-- **Blocks:** delivery-023
+- **Blocks:** delivery-023, delivery-027
 
 ## Notes
 
