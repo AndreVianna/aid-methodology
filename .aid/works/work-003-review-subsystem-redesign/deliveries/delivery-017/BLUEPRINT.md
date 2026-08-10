@@ -28,8 +28,10 @@ defect is caught before a reviewer is dispatched rather than after a review cycl
   `/aid-deep-review` -- `aid-define`, `aid-specify`, `aid-plan`, `aid-detail`, `aid-execute`'s
   delivery gate, `aid-discover` and the shortcut engine's GATE, plus `aid-describe` and
   `aid-update-kb`, which reach it through `aid-discover`'s panel. **Not** any review that dispatches
-  `aid-reviewer` directly -- `aid-review` / `aid-audit`, whose Tier-2 migration feature-006 planned
-  and delivery-012 scoped out; `aid-specify`'s per-section review; `aid-execute`'s Step 1.5;
+  `aid-reviewer` directly -- `aid-review`, whose Tier-2 migration feature-006 planned and
+  `delivery-012` scoped **in** as its ninth caller migration but which **did not land**
+  (`feature-008 SPEC § 4`; `grep -c aid-deep-review canonical/skills/aid-review/SKILL.md` = 0,
+  against `delivery-012` closed `Done`/`A+`); `aid-specify`'s per-section review; `aid-execute`'s Step 1.5;
   `aid-discover`'s FIX-state re-review; and the Tier-3 dispatches feature-006 deferred. This
   delivery gates none of them, and the residual set is derived at implementation time rather than
   counted here.
@@ -44,8 +46,13 @@ defect is caught before a reviewer is dispatched rather than after a review cycl
 - FR-G4's count-claim rule row in the Definition family file.
 - **The `AC-14` and `FR-G3` amendments themselves** (`Q25`). This delivery is their carrier: the
   re-disposition changes what those two statements require, and no other delivery is scoped to
-  touch them. Also the two task `DETAIL.md` files under this delivery that assert the retired
-  byte criterion -- they are re-detailed, not patched around.
+  touch them. The one task `DETAIL.md` under this delivery that asserted the byte criterion
+  (`task-001`) was **re-detailed in the same commit as this amendment**, not patched around:
+  `grep -rln "appear in that file" tasks/`, run from this delivery folder, now returns a single file
+  -- `tasks/task-001/DETAIL.md`, in the bullet beginning *"The check: a string presented as
+  verbatim"* -- where
+  the old wording is quoted **as labelled history**. Nothing under this delivery asserts the retired
+  criterion today, so no further re-detailing is in scope.
 
 **Out of scope:** the count-claim re-runner; the table-cell and unattributed-prose citation forms,
 which no regex reaches and which the deep reviewer covers instead.

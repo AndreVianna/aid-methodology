@@ -42,8 +42,15 @@ rather than becoming a terminal hand-off.
 
 ## Notes
 
-**Spine delivery**, and the only `Should` in the work -- placed last so every `Must` precedes it. It
-makes the per-section pass feed the single grade arithmetic instead of running a private one.
+**Spine delivery**, and the only `Should` in the work. It was numbered last of the original 18, but
+the five deliveries added 2026-08-09 are all `Must` and are numbered after it, and `delivery-022`
+(a `Must`) depends on it -- so the "every `Must` precedes it" property no longer holds and is not
+claimed. What holds instead: this delivery depends only on `delivery-012`, so it is free to run as
+soon as 012 closes, in parallel with the five `Must` deliveries 022 also waits on. It **can** be the
+last of the six to finish and so **can** be 022's binding constraint -- nothing rules that out --
+but nothing in the graph *forces* it late, so the `Should` adds no critical-path length the `Must`
+set does not already impose. It makes the per-section pass feed the single grade arithmetic
+instead of running a private one.
 ## Tasks
 
 _Derived from `tasks/task-NNN/DETAIL.md`. `Wave` is computed from `Depends on`, never authored -- one relation, one source._

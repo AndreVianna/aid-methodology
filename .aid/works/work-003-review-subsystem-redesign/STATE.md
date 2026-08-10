@@ -782,8 +782,10 @@ process spawning should be treated as the default suspect** whenever something i
   splitting the agent boilerplate precisely so the screener would not inherit the exhaustiveness
   mandate — cutting it would make that delivery work done for nothing). `FR-C9`'s primary path stands,
   so gap resolution does **not** revert to mid-review interruption. `AC-13`/`NFR-3`'s cost claim keeps
-  its subject: light + deep still costs less than deep alone, now measured across two entry paths of
-  one skill rather than two skills.
+  its subject: light + deep still costs less than deep alone, now measured across the **screening**
+  and **gate** entry paths of one skill rather than two skills. Those are two of the three paths
+  named above; the **ad-hoc** path carries no cost claim, so "two" here counts the paths the
+  comparison spans, not the paths the skill has.
   **Amendments this forces, not yet applied:** `FR-A1` states the split as *"two skills"* and must be
   amended to one skill with named entry paths; `FR-A2`, `FR-A4`, `FR-A5` and `FR-C9` survive intact but
   their `aid-light-review` references must be re-pointed at the screening entry path.

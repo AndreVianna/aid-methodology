@@ -204,7 +204,10 @@ chaining confirmation, whose output is evidence rather than capability).
 - **Priority:** Should
 - **Track:** spine
 - **Kind:** standalone
-- **Note:** the work's only `Should`, placed last so every `Must` precedes it.
+- **Note:** the work's only `Should`. It was numbered last of the original 18, but the five
+  deliveries added 2026-08-09 are all `Must` and are numbered after it, and `delivery-022` (a
+  `Must`) depends on it -- so it is neither last by number nor preceded by every `Must`. See
+  `§ Sequencing decisions`, *Priority ordering*, for what replaces that property.
 
 ### delivery-019: Criteria and catalog additions
 - **What it delivers:** three checks a reviewer is told to perform become reportable findings, and
@@ -233,7 +236,14 @@ chaining confirmation, whose output is evidence rather than capability).
 - **Note:** the FIX circuit breaker is declared as non-improvement — *"each cycle closing more than
   it opens"* — and today nothing can compute it: the durable row freezes its description at first
   sighting, and `§ DONE` deletes the scratch files that hold the per-cycle text. Measured on this
-  this work's own `/aid-detail` review. The derivation matters, because a naive row count double-counts: the durable ledger **copies** the first sighting's description, so it overlaps the scratch ledgers. Counting cycle 1's 6 durable rows plus the 10 rows in the cycle-2..7 scratch files gives **16 sightings** over **12 distinct `(Doc, Rule)` keys**, and comparing scratch against scratch gives **0 identical descriptions** -- 3 keys were seen more than once and every repeat was textually different. Summing all seven ledgers instead yields 22 rows and 5 apparently-identical descriptions, every one of them the durable row's frozen copy. **That miscount is the defect itself** -- an analyst reading the ledger cannot tell a
+  work's own `/aid-detail` review. The derivation matters, because a naive row count double-counts:
+  the durable ledger **copies** the first sighting's description, so it overlaps the scratch
+  ledgers. The seven ledgers hold **22 rows** -- 12 durable plus 10 across `cycle2..cycle7` -- of
+  which **5 durable rows repeat a scratch row's description verbatim**, so the honest total is
+  **17 sightings** over **12 distinct `(Doc, Rule)` keys**. Comparing scratch against scratch gives
+  **0 identical descriptions**: 3 keys were seen more than once and every repeat was textually
+  different, and all 5 apparent repeats are the durable row's frozen copy of a scratch row.
+  **That double-count is the defect itself** -- an analyst reading the ledger cannot tell a
   returning defect from a new one at the same key.
 
 ### delivery-021: Greenfield split and record corrections
@@ -250,22 +260,24 @@ chaining confirmation, whose output is evidence rather than capability).
 
 ### delivery-022: One review skill
 - **What it delivers:** `aid-deep-review` and `aid-light-review` merge into a single `/aid-review`
-  carrying **two named** entry paths — **screening** (cheap, ungraded) and **gate** (graded), per
-  `FR-A1` as amended. A human invoking `/aid-review` ad-hoc enters the **gate** path with arguments
-  in place of a manifest; that is not a third path. Retires
+  carrying **three named** entry paths, one per caller shape — **ad-hoc** (a human, no manifest),
+  **gate** (a pipeline skill, full manifest, graded) and **screening** (cheap, ungraded) — per
+  `FR-A1` as amended and `STATE.md` Q1(a). The ad-hoc case is **not** folded into the gate path:
+  Q1(a) rejects that inference by name. Retires
   `aid-execute/references/reviewer-guide.md`, which was to have been deleted and never was.
 - **Features:** feature-006 (consolidation)
 - **Depends on:** delivery-016, delivery-017, delivery-018, delivery-019, delivery-020, delivery-021
 - **Priority:** Must
 - **Track:** spine
 - **Kind:** standalone
-- **Note:** **deliberately last.** It renames the skill this work is built around. Three deliveries name it on disk today
-  (`012`, `014`, `017` -- `grep -rl aid-deep-review` over the delivery folders), and 016-021 are
+- **Note:** **deliberately last.** It renames the skill this work is built around. Four delivery
+  folders name it on disk today -- `012`, `014`, `017` and 022's own BLUEPRINT, by
+  `grep -rl "aid-deep-review\|aid-light-review" deliveries/` run from this work folder -- and 016-021 are
   authored in its idiom, so running the rename earlier would force work to be written against a name
   already decided for retirement and then re-written. Neither merged skill has ever shipped: `git ls-tree --name-only
   origin/master:canonical/skills/` returns 76 names, among them `aid-review` and **neither**
   `aid-deep-review` **nor** `aid-light-review`. So this is prevention, not migration, and no adopter
-  sees a retired name. The two entry paths must be **named, never inferred**: the rejection of a
+  sees a retired name. The three entry paths must be **named, never inferred**: the rejection of a
   `depth` flag stands, because its objection was to *silent* selection.
 
 ### delivery-023: Host chaining confirmation
@@ -338,7 +350,7 @@ the shape 022 produces.
 | Group by feature or across features? | **By feature.** Cross-feature merging would internally re-serialize anyway, and it would break the 1:1 delivery-to-SPEC-oracle mapping -- the only mechanical verification this work has. Merged *within* features where a sub-delivery ships nothing alone: 26 -> 18. Five more were added 2026-08-09 (019-023), taking the plan to 23; they carry decisions, not a re-cut. |
 | Where does the citation lint go? | **Second, ahead of the severity work.** Its own spec: *"D1 depends on nothing and gates nothing."* Every finding across 33 review cycles was a citation or count defect, so catching them mechanically beats paying a review cycle each time. Its fix commit on the eight SPECs is the input every downstream DETAIL reads. |
 | AC-11's provisional status | delivery-012 earns AC-11 **provisionally**; **delivery-014 re-certifies it**, per feature-007's amendment to feature-006. 014 cannot move earlier -- its M2 subtraction sits in a file 012 migrates -- so the re-measure is accepted. |
-| Priority ordering | The work has one `Should` (the BLUEPRINT and specify-section reviews, delivery-018). It was numbered last of the original 18; the five added 2026-08-09 are all `Must` and are numbered after it, so it is **no longer last by number**, and **delivery-022 (a `Must`) does depend on it**. The original property therefore no longer holds and is not claimed. What replaces it: 022 is gated on five other deliveries besides 018, so the `Should` is never the binding constraint -- it cannot be what 022 waits on. Nothing forces it earlier: it depends only on delivery-012. |
+| Priority ordering | The work has one `Should` (the BLUEPRINT and specify-section reviews, delivery-018). It was numbered last of the original 18; the five added 2026-08-09 are all `Must` and are numbered after it, so it is **no longer last by number**, and **delivery-022 (a `Must`) does depend on it**. The original property therefore no longer holds and is not claimed. What replaces it: 018 depends only on delivery-012, so it is free to run as soon as 012 closes, in parallel with the five `Must` deliveries 022 also waits on. It **can** be the last of the six to finish and so **can** be 022's binding constraint -- nothing rules that out -- but nothing in the graph *forces* it late, so the `Should` adds no critical-path length that the `Must` set does not already impose. That is the weaker claim the graph actually supports. |
 | Extra parallelism | **Declined at first cut.** Splitting the settings gate out of 014 would have added another free track at the cost of another delivery gate, and the three free tracks then available were judged sufficient. Superseded in effect on 2026-08-09: deliveries 019, 020 and 021 are each free, taking the plan to **7 free / 16 spine**. The decision not to split 014 stands; the scarcity that motivated it does not. |
 | The WSL gitdir bug | **Leaves this work**, per concern N4. Not review-path. |
 | Where does the skill merge go? (2026-08-09) | **Last, as delivery-022.** Owner decision. It renames the skill deliveries 016-021 are written against, so running it earlier would force each of them to be authored against `aid-deep-review`, then re-authored against `/aid-review`. Placing it last costs one thing knowingly: `delivery-017/task-002`'s Scope is the gate in `aid-deep-review` RESOLVE, so 017 builds under a name 022 then retires. That churn is bounded to a rename sweep 022 performs anyway, whereas the alternative re-details three already-graded deliveries. |
@@ -353,7 +365,7 @@ the shape 022 produces.
 |---|------|--------|------------|
 | 1 | Line-number inventories go stale the moment delivery-003 lands | H | Restate regions as quoted strings at Detail; per-delivery diff gate on `AGENT.md` |
 | 2 | AC-12 (five-profile parity) is only checked at delivery-012, so render drift from ten earlier deliveries arrives as one undiagnosable failure (concern N3) | H | Re-run parity as a regression gate at **every** delivery close; 012 owns the criterion of record |
-| 3 | One blocked spine delivery stalls the other thirteen | H | Content anchors make skip-and-return survivable; 002, 010 and 013 provide work while blocked |
+| 3 | One blocked spine delivery stalls the other fifteen (16 on the spine, per `§ Dependency graph`) | H | Content anchors make skip-and-return survivable; 002, 010 and 013 provide work while blocked |
 | 4 | The AC-13 cost baseline is unrecoverable once editing starts | M | delivery-001 is first and is a hard gate -- nothing else begins until the fixture gate-passage is recorded |
 | 5 | delivery-010's success criterion is an **empty diff**, so a behavioural regression could hide inside a zero-diff claim | M | Keep 010 as its own delivery, never bundled -- feature-006's own recommendation |
 

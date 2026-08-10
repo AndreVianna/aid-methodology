@@ -56,10 +56,16 @@ _Derived from `tasks/task-NNN/DETAIL.md`. Written by `aid-detail`; empty until i
 
 ## Notes
 
-**Measured on this work's own `/aid-detail` review. The derivation matters, because a naive row count double-counts: the durable ledger **copies** the first sighting's description, so it overlaps the scratch ledgers. Counting cycle 1's 6 durable rows plus the 10 rows in the cycle-2..7 scratch files gives **16 sightings** over **12 distinct `(Doc, Rule)` keys**, and comparing scratch against scratch gives **0 identical descriptions** -- 3 keys were seen more than once and every repeat was textually different. Summing all seven ledgers instead yields 22 rows and 5 apparently-identical descriptions, every one of them the durable row's frozen copy. **That miscount is the defect itself**.** Reconstructing the true figures required reading
-the per-cycle scratch files, which `§ DONE` instructs the orchestrator to delete. The label pointed at the right conclusion by
-the wrong mechanism, and answering the question at all required reading four `*-cycleN.md` scratch
-files that `§ DONE` instructs the orchestrator to delete.
+**Measured on this work's own `/aid-detail` review.** The derivation matters, because a naive row
+count double-counts: the durable ledger **copies** the first sighting's description, so it overlaps
+the scratch ledgers. The seven ledgers hold **22 rows** -- 12 durable plus 10 across
+`cycle2..cycle7` -- of which **5 durable rows repeat a scratch row's description verbatim**, so the
+honest total is **17 sightings** over **12 distinct `(Doc, Rule)` keys**. Comparing scratch against
+scratch gives **0 identical descriptions**: 3 keys were seen more than once and every repeat was
+textually different, and all 5 apparent repeats are the durable row's frozen copy of a scratch row.
+**That double-count is the defect itself.** Reconstructing the true figures required reading the six
+`*-cycleN.md` scratch files that `§ DONE` instructs the orchestrator to delete -- so the ledger that
+survives is precisely the one that cannot answer the question.
 
 **The alternative was considered and declined.** Folding a discriminator into the join key does not
 preserve *what the earlier problems were*, which is the thing a human needs to judge whether a loop
