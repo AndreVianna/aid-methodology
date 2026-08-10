@@ -330,7 +330,19 @@ the work is *for* — from making the review subsystem tidy to making it measura
 
 - **Category:** Process defect
 - **Impact:** Medium — measured at roughly 7 of 69 findings in the plan review
-- **Status:** **Pending**
+- **Status:** **Answered** 2026-08-10 — owner accepted the suggestion
+- **Answer (2026-08-10, owner decision).** **A fix is not done until its class has been swept and
+  every site listed.** Before marking a fix complete the fixer greps the distinguishing phrase of
+  the corrected claim across the work and reports every occurrence, so a missed sibling is visible
+  immediately rather than found a cycle later. This is `F1` given an **oracle** instead of an
+  instruction — no new rule set, no ledger change, and the phrase to grep comes free from the row
+  the fixer is already discharging. Rationale accepted as put: the rule already existed in prose and
+  was still broken roughly once every two cycles.
+  **Lands in:** `aid-execute/references/state-fix.md`, which already states `F1`.
+  **Interaction with `Q27`:** the swept site list is claim-shaped, so it is a natural input to the
+  enumerated worklist `Q27` introduces — a class sweep produces exactly the kind of item a coverage
+  row would then cite.
+  **Not yet applied.**
 
 **What was measured.** `aid-execute/references/state-fix.md` states `F1` — *a finding is a CLASS;
 Evidence specifies the EXTENT* — as prose. Nothing checks it. In the 18-cycle plan review, the same
