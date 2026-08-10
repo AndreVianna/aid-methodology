@@ -205,7 +205,7 @@ or worse; `[LOW]`/`[MINOR]` at the end" — are the same statement.
 | kb-anatomy/intent-edge-case-term-coverage | criteria | Answered | 0 | 0 | delivery-015 gate cycle 12, row 4 (`NAR-05`) -- `canonical/skills/aid-discover/references/reviewer-prompt-anatomy.md` § Anatomy / Coverage checklist, items 1, 4 and 6 | No rule in any `review-rubrics/*.md` declares a criterion for **coverage against a document's declared `intent:`**, for a **missing edge case / failure mode**, or for an **undefined project-specific term** within a document's own scope. Each of the three checklist items states its own `[MEDIUM]`, and the file's "Severity anchors" block claimed every value in it was the anchor of a cited rule -- false for exactly these, because they cite none. | 2026-08-09, human decision: ALL THREE BECOME RULES -- add the two that already have criteria, AND author a criterion for the third rather than leaving it open. Rationale: the No-Criterion-no-row contract makes all three unwritable as findings today, so a KB reviewer performing a check it was told to perform can only re-register the same gap cycle after cycle; that is the condition delivery-015 was chartered to remove. (1) CONTENT-VS-DECLARED-PURPOSE -- criterion already exists at kb-authoring/review-rubric.md sec Rubric: Full Primary item 2, a source review-rubrics/kb.md already cites 11 times. SUB-DECISION INCLUDED: the criterion is keyed to intent:, a SUPERSEDED frontmatter field absent from 8 of 21 KB docs when measured 2026-08-09 (9 of 22 on 2026-08-10, after the master merge added a doc; 13 carry it, which is the figure delivery-019's gate criterion states) and unchecked by lint-frontmatter.sh, so the rule is pointed at objective:/summary: and item 2 is updated to match -- writing a rule against a retiring field would be dead on 8 docs, and leaving the criterion saying intent: while the rule says objective: would invent a criterion by the back door. (2) UNDEFINED PROJECT-SPECIFIC TERM -- criterion already exists at authoring-conventions.md sec Dual-Audience Standard, the same section KB-08 cites. Expect modality SHOULD -> [LOW] escaped (>1 doc) -> [MEDIUM], matching its peer bullets KB-05..KB-08, which LOWERS it from the [MEDIUM] the checklist self-declares; also reconcile the predicate mismatch (KB says define in domain-glossary.md, the checklist flags a term undefined within the doc's own scope). (3) MISSING EDGE CASE / FAILURE MODE -- no criterion exists, so one is AUTHORED as a new item 11 in kb-authoring/review-rubric.md sec Rubric: Full Primary, the same section item 1's criterion comes from and already an admissible source; the rule then cites it. NOT reframed onto KB-24, which would raise severity [MEDIUM] -> [HIGH] and is act-back-scoped (state-review.md counts AB- rows matching ^KB-2[0-6]$). Free IDs: KB-10..KB-19, KB-27+. Residual to clear when implemented: reviewer-prompt-anatomy.md lines 60-62, 71-72, 77-81 still declare [MEDIUM] on the reviewer's own authority. NOT YET IMPLEMENTED -- needs a delivery to carry it. |
 | kb-essence/load-bearing-fact-coverage | criteria | Declined | 0 | 0 | aid-discover essence gate, condition 2 (Omission) -- canonical/skills/aid-discover/references/state-review.md § 2c | No KB document declares that the Knowledge Base must carry the project's load-bearing source facts. The Divergence half of the gate maps onto NAR-05; the Omission half has no declaring criterion, so review-rubrics/INDEX.md's No-Criterion-no-row contract forbids authoring a rule row for it. | 2026-07-30, human decision: leave the Omission condition keyed on the [ESSENCE-GAP] Description marker and record the gap rather than invent a rule ID or pause delivery-015 for a KB edit. Declined, not Pending -- the decision is made, so this must not be re-asked and must not gate a grade. Reopening it means adding the standard to the KB authoring conventions via /aid-update-kb, then re-pointing condition 2 at the new rule; task-004's second acceptance criterion is therefore closed for the act-back gate and the Divergence half, and open for this half. |
 | def01/modality-scope-task-detail-acs | criteria | Answered | 0 | 0 | aid-detail REVIEW, delivery-016/017/018 task DETAIL.md files (detail-016-018 cycle 1, G-002) | Three declared sources disagree on whether a task DETAIL acceptance criterion carries a Modality: DEF-01's Check says 'every requirement and acceptance criterion' while its Evidence reads AC tables; artifact-schemas.md Task DETAIL.md mandates plain testable checkboxes; lint-modality.sh --root discovers only REQUIREMENTS.md and SPEC.md; and task-detail-template.md gained no Modality table when feature.md and requirements.md did on 2026-08-08. If DEF-01 reaches task files, all 9 artifacts violate it. | 2026-08-08, human decision: task acceptance criteria stay PLAIN CHECKBOXES. DEF-01 is scoped to requirements and feature criteria, with the exclusion stated in the rule and cited to artifact-schemas.md. Rationale: a task criterion inherits its weight from the requirement it serves, so tagging it again is a second place for that value to drift. No back-fill of the ~70 existing task files; task-detail-template.md and the linter's discovery set are unchanged and now agree with the rule. |
-| definition/task-set-discharges-upstream-obligation | criteria | Answered | 0 | 0 | aid-detail REVIEW, delivery-016/017/018 task DETAIL.md files (detail-016-018 cycle 1, G-001) | review-rubrics/definition.md declared no rule for universal taxonomy class 3 (Unmet criterion) applied to a delivery's own gate criteria, so an obligation that NO task in the delivery discharges could not be written as a finding. The /aid-detail reviewer brief demanded exactly that check ('Every delivery gate criterion is discharged by at least one task') while the catalog could not express it. Two live instances: delivery-016 BLUEPRINT's Inherited defect (kb.html:3408) carried by neither task, and delivery-017 BLUEPRINT's 'AC-14 holds on fixtures failing in both directions' carried by none of its four. | 2026-08-08, human decision: add the missing rule. DEF-08 added to review-rubrics/definition.md, citing INDEX.md universal taxonomy class 3 (Unmet criterion) exactly as DEF-04 cites class 2, so no criterion is invented. MUST / judgment / Step 2, banded one-confined -> [MEDIUM], several -> escaped -> [HIGH]. Verified by SEV05 (85 catalog rows, all in band -- the same figure this file's feature-002 summary gives). The two live instances now grade as ordinary DEF-08 findings. |
+| definition/task-set-discharges-upstream-obligation | criteria | Answered | 0 | 0 | aid-detail REVIEW, delivery-016/017/018 task DETAIL.md files (detail-016-018 cycle 1, G-001) | review-rubrics/definition.md declared no rule for universal taxonomy class 3 (Unmet criterion) applied to a delivery's own gate criteria, so an obligation that NO task in the delivery discharges could not be written as a finding. The /aid-detail reviewer brief demanded exactly that check ('Every delivery gate criterion is discharged by at least one task') while the catalog could not express it. Two live instances: delivery-016 BLUEPRINT's Inherited defect (kb.html:3408) carried by neither task, and delivery-017 BLUEPRINT's 'AC-14 holds on fixtures failing in both directions' carried by none of its four. | 2026-08-08, human decision: add the missing rule. DEF-08 added to review-rubrics/definition.md, citing INDEX.md universal taxonomy class 3 (Unmet criterion) exactly as DEF-04 cites class 2, so no criterion is invented. MUST / judgment / Step 2, banded one-confined -> [MEDIUM], several -> escaped -> [HIGH]. Verified by SEV05 (85 catalog rows, all in band -- the same figure `Q2`'s Answer gives for the catalog, `INDEX.md` plus nine class files). The two live instances now grade as ordinary DEF-08 findings. |
 | definition/work-artifact-claim-contradicted-by-disk | criteria | Answered | 0 | 0 | aid-detail REVIEW cycle 2, delivery-016/017/018 task DETAIL.md files (G-001) | Nothing in the Definition family lets a reviewer report that a task DETAIL's Scope prose states a repository fact that disk contradicts, when every identifier in it resolves. INDEX.md's per-class ladder gives TASK an intent authority of SPEC/BLUEPRINT and a manner authority of the KB, so the repository is on neither: DEF-04 needs a higher-authority artifact, DEF-06 only asks whether identifiers resolve, and DEF-07's declaring section is scoped to KB primary docs. Live instance: delivery-017 task-002's Scope claims one aid-deep-review RESOLVE site covers 'every definition skill plus aid-review plus the shortcut engine', while grep -c aid-deep-review over aid-review/SKILL.md and aid-describe/ both return 0. | 2026-08-08, human decision: add the rule. DEF-09 added to review-rubrics/definition.md -- every factual claim a work artifact makes about the repository holds on disk. MUST / judgment / Step 2. Cites authoring-conventions.md § Citation Rule (Durable Anchors), the same section narrative.md's NAR-01 cites: the narrative family already carried this rule and Definition simply lacked its analogue, so no criterion is invented. Resolution is DEF-06; truth is DEF-09. |
 | definition/task-scope-already-discharged-on-disk | criteria | Declined | 0 | 0 | aid-detail REVIEW cycle 3, delivery-016/017/018 (G-001, NON-BLOCKING) | review-rubrics/definition.md has no rule saying a task's Scope item and its acceptance criterion must name work not ALREADY discharged on disk. DEF-08 is the inverse case (a criterion no task carries) and DEF-09 needs a falsifiable claim, which a bare Scope noun phrase does not make. Live instance: delivery-016 task-001 Scope bullet 3 and AC-3 ('The registry states both kinds for this class') were already satisfied when the task was written -- review-rubrics/INDEX.md:179 reads '\| `SUMMARY` \| **A + E** \|', introduced by commit 0dc1fa56 closing delivery-004. | 2026-08-09, human decision: DECLINED. No rule is added for a task whose Scope and acceptance criteria were already satisfied on disk when written. The delivery gate still checks the criterion, so a pre-satisfied task costs wasted motion rather than a defect, and a new judgment rule is added surface for a review loop that took seven cycles to stabilise. The live instance (delivery-016 task-001 Scope bullet 3 and AC-3, satisfied by review-rubrics/INDEX.md:179 via commit 0dc1fa56) stands as written. Must NOT be re-raised by a reviewer. // SUPERSEDED by the decision above; retained as the record of what was open -- Raised 2026-08-08 as [GAP:CRITERIA:NB] -- deliberately non-blocking, so it does not hold the grade. Two options the reviewer put: (a) add a Definition-family rule 'a task's Scope and acceptance criteria name work not already discharged on disk', MUST/judgment/Step 2, declared against pipeline-contracts.md § Phase Input/Output Contracts (the criterion DEF-02 already cites); or (b) Decline, on the grounds that a criterion satisfied early is harmless because the delivery gate still checks it. Awaiting a human decision; must NOT be re-asked by a reviewer in the meantime. |
 | def09/whitespace-normalisation-in-quoted-strings | criteria | Answered | 0 | 0 | aid-detail REVIEW cycle 4, delivery-018/task-002 (G-001, NON-BLOCKING) | No declared rule says whether a quoted string reproduced in a work artifact must match its source byte-for-byte in WHITESPACE. delivery-018/task-002 quotes 'artifacts: PLAN.md and every delivery BLUEPRINT.md' with one space where both aid-plan files carry five, so a literal grep -c returns 0/0 while the label-free fragment returns 1/1. AC-14 and delivery-017/task-001 mandate EMPHASIS normalisation and are silent on whitespace, so DEF-09 can be neither applied nor dismissed. | 2026-08-09, human decision: FORMAT DOES NOT MATTER, MEANING DOES. Whitespace does not matter; neither does exact wording, emphasis, or any other formatting or irrelevant detail. The criterion for an attributed quote is SEMANTIC FIDELITY -- the quoted content must mean exactly what the source intends. A reworded quote that preserves the source's meaning is correct; a byte-perfect quote that misrepresents intent is the defect. This answers the whitespace question by dissolving it: normalisation rules (whitespace, emphasis) are the wrong axis entirely. The delivery-018 task-002 instance ('artifacts: PLAN.md and every delivery BLUEPRINT.md', one space vs five) is therefore NOT a defect -- the meaning is identical. CONSEQUENCE, exposed not decided: feature-008's FR-G3 is a literal substring check with emphasis/whitespace normalisation, which cannot express semantic fidelity; the same disposition FR-G4 already took (SPEC section 3, 'a review rule, not a lint check') is now an open question for FR-G3. Raised as Q25. |
@@ -364,7 +364,13 @@ and the guidance with it), and keeping it literal (enforces a criterion the owne
 
 - **Category:** Stated-but-unenforced value — the class this work exists to fix
 - **Impact:** Low here, higher as precedent — no grade in this work turned on it
-- **Status:** **Answered** 2026-08-09 — neither value is stale; `B-` is a deliberate temporary floor
+- **Status:** **Answered** 2026-08-09, then **OVERTAKEN BY DISK 2026-08-10.** The answer below described a `B-`
+  floor. There is no `B-` floor any more: `.aid/settings.yml:6` reads `minimum_grade: A`, `read-setting.sh`
+  returns `A` for all five reviewing callers, and that file's own floor history records `B- → A` on
+  **2026-08-04** (work-004's closing pass, commit `2216ddc6`), which reached this branch in the 2026-08-09
+  master merge. The `A` gate was therefore already reinstated before this entry was answered, and for
+  reasons unrelated to the restore condition below. **The stated-but-unenforced defect this entry records
+  is real and its diagnosis stands; only its reading of the current bar is stale.**
 
 **What was found.** This file's frontmatter carries `minimum_grade: "A"` (line 6). Every review gate
 resolves its bar through `read-setting.sh`, whose header states it reads `.aid/settings.yml` and
@@ -374,7 +380,8 @@ which returns **`B-`** for every reviewing caller:
 aid-detail B-   aid-plan B-   aid-specify B-   aid-execute B-   aid-define B-
 ```
 
-`.aid/settings.yml:10` carries a flat `minimum_grade: B-`. Nothing resolves the work-level key:
+`.aid/settings.yml` carried a flat `minimum_grade: B-` **when this was written**; it reads `A` since
+2026-08-04. Nothing resolves the work-level key:
 `read-setting.sh` reads only the settings file, and `writeback-state.sh:1437` maps
 `Minimum Grade → minimum_grade` for **writing** the field, not for consuming it as a bar.
 
@@ -397,11 +404,13 @@ non-enforcing) were all predicated on that wrong premise and are declined.
 what restores `A`. A reader could only see two bars disagreeing. That is the residual defect, and
 this entry is its fix.
 
-**Restore condition — not yet met.** `PLAN.md` ends at `delivery-018`; all 18 exist and every one
-carries task `DETAIL.md` files, so deliveries 016-018 are now defined. But `Q23`'s answer adds a
-requirement to `feature-003` that **no delivery yet carries**, so at least one delivery remains to be
-defined before the `A` gate goes back. **Reinstating `A` early would re-open the cost problem this
-floor was lowered to solve.**
+**Restore condition — MET, and overtaken 2026-08-10.** As written this read *"not yet met"* on three
+grounds, and disk now falsifies all three. `PLAN.md` ends at **`delivery-023`**, not 018, and 23 delivery
+folders exist (019-023 are at `Pending-Spec` with no task `DETAIL.md` yet, which is correct for their
+state). `Q23`'s added `feature-003` requirement **is** carried — `delivery-020`'s first Scope bullet is
+that requirement. And the `A` gate did not wait for any of this: it went back on **2026-08-04**, by an
+owner decision recorded in `.aid/settings.yml`'s floor history. The cost concern was real when the floor
+was lowered and is not what resolved it.
 
 ### Q23 -- the ledger cannot support its own circuit-breaker condition (2026-08-08)
 
@@ -583,7 +592,7 @@ Found by trying to use it: the gate bar moved to `B-` for `/aid-execute` only, w
 override, and it would not lint.
 
 **What happened.** `read-setting.sh` documents its resolution order at `:5-10` as *"1. Per-skill
-override key (e.g., `discover.minimum_grade`) → use if present"*, and implements it at `:235-239`
+override key (e.g., `discover.minimum_grade`) → use if present"*, and implements it at `:306`
 by looking up section `$SKILL`, key `$KEY`. Writing exactly that:
 
 ```yaml
@@ -616,7 +625,7 @@ reads the key names, and `S9` would then require each new key be validated), or 
 top-level key matching a known skill name is a legal section. Do not relax S8 generally: its stated
 purpose is catching a typo'd key that would otherwise silently fall through to `--default`.
 
-**Consequence accepted for now:** the `B-` bar is set **globally**, so `/aid-discover`,
+**Consequence, accepted while the `B-` floor stood (2026-07-30 to 2026-08-04):** that bar was set **globally**, so `/aid-discover`,
 `/aid-summarize`, `/aid-specify` and the rest also stop at `B-` rather than `A+`. Recorded here
 because that is wider than the decision that was made, and it reverts by restoring one line.
 
@@ -835,7 +844,7 @@ process spawning should be treated as the default suspect** whenever something i
   and **gate** entry paths of one skill rather than two skills. Those are two of the three paths
   named above; the **ad-hoc** path carries no cost claim, so "two" here counts the paths the
   comparison spans, not the paths the skill has.
-  **Amendments this forces, not yet applied:** `FR-A1` states the split as *"two skills"* and must be
+  **Amendments this forces — ALL APPLIED as of 2026-08-09; this read *"not yet applied"*:** `FR-A1` states the split as *"two skills"* and must be
   amended to one skill with named entry paths; `FR-A2`, `FR-A4`, `FR-A5` and `FR-C9` survive intact but
   their `aid-light-review` references must be re-pointed at the screening entry path.
 - **(f) Answer (2026-08-09, human decision).** **`/aid-deep-review` merges INTO `/aid-review`** — that
@@ -860,7 +869,7 @@ process spawning should be treated as the default suspect** whenever something i
   human-invoked on an arbitrary artifact; `aid-deep-review` is a callable engine whose RESOLVE states
   *"Every field except `gap_depth` is required; a missing one is a caller error, not something to
   infer."* The merged skill must serve **both** a human with no manifest and a pipeline skill with a
-  full one, via **two explicit entry paths**. Collapsing them into one implicit path would reproduce
+  full one, via **two explicit entry paths** — **count superseded by `(a)`: three, not two.** `(a)` adds the **screening** path to this human/pipeline pair, and the note above limits this block's supersession to the *skill* count only, which left this sentence standing when it should not have. The live figure is three, everywhere. Collapsing them into one implicit path would reproduce
   exactly the failure `(a)` rejected: two behaviours behind one entry point, failing silently.
   **Not yet implemented — needs a delivery to carry it.**
 - **Triage 2026-08-09.** **(a) Two skills, not a depth flag** — both `aid-deep-review/` and
@@ -876,8 +885,8 @@ process spawning should be treated as the default suspect** whenever something i
   statically (RX13-RX16), but the empirical claim is unverified: the `skill_chaining = true` lines for
   codex/copilot-cli/antigravity were authored **before** work-003, so they are the same declaration
   this question called unverified, not a verification of it. **(f) OPEN — untouched.**
-  `/aid-review`, `/aid-audit`, `/aid-light-review` and `/aid-deep-review` all ship and nothing
-  disambiguates them: `/aid-triage` has no routing row for the two new ones, neither new skill's
+  `/aid-review`, `/aid-light-review` and `/aid-deep-review` all ship and nothing
+  disambiguates them (**corrected 2026-08-10**: this also listed `/aid-audit`, which had already been deleted by `6cb4aa1c` in work-004 — an ancestor of this branch since the 2026-07-30 master merge, ten days before this triage. `(f)`'s own Answer says master *"already retired it"*): `/aid-triage` has no routing row for the two new ones, neither new skill's
   See-also mentions the old ones, and `/aid-review` still dispatches `aid-reviewer` directly instead of
   calling `/aid-deep-review` — the ninth of nine caller migrations that delivery-012 scoped **in** and
   closed `A+` without delivering.
@@ -894,7 +903,7 @@ process spawning should be treated as the default suspect** whenever something i
   and the executor dispatch inside it; (e) `skill_chaining` capability is
   confirmed for cursor + claude-code but not yet verified for codex,
   copilot-cli, antigravity; (f) naming collision with the existing
-  on-demand `/aid-review` + `/aid-audit`.
+  on-demand `/aid-review` + `/aid-audit`. (`/aid-audit` no longer exists — work-004's `6cb4aa1c` deleted it, which reached this branch in the 2026-07-30 master merge. The question is recorded as asked; `(f)`'s answer eliminates the collision by eliminating the skill.)
 - **Suggested:** Resolve during Describe/Define; the answer shapes the
   feature decomposition.
 - **DECIDED (2026-07-27): two skills** -- `aid-light-review` and `aid-deep-review`,
@@ -915,8 +924,7 @@ process spawning should be treated as the default suspect** whenever something i
     (a cheap uniform first pass, where a negative result explicitly is not an all-clear --
     which encodes FR-A4 in the name). Skill stays `aid-light-review`, since "screen"
     already means a UI view in this codebase.
-- Still open: naming against the existing on-demand `/aid-review` + `/aid-audit`; how the
-  5-section brief is passed through a skill invocation; who owns the FIX loop.
+- ~~Still open: naming against the existing on-demand `/aid-review` + `/aid-audit`; how the 5-section brief is passed through a skill invocation; who owns the FIX loop.~~ **All three CLOSED 2026-08-09 by `Q1(a)`/`(f)`, struck rather than deleted so the record shows what was open.** Naming: one skill, `/aid-review`, with three named entry paths; `/aid-audit` is not a competing name because it does not exist. Brief passing: the invocation manifest, shipped by `delivery-012`. FIX loop: the caller's own executor agent, named per-invocation in the manifest.
 
 ### Q2 -- Severity model: collapse to one source of truth, keep artifact flavors
 
@@ -974,15 +982,13 @@ process spawning should be treated as the default suspect** whenever something i
   possibly hooks) is established, rather than patching now.
   (a) `aid-execute/references/state-review.md` contradicts itself -- opening
   line says a full reviewer "produces the full grade", closing contract note
-  says no grade is computed at task level; references a removed "Step 2" four
+  says no grade is computed at task level; references a removed "Step 2" twice (**corrected 2026-08-10**: this read *"four"*; `grep -c "Step 2"` on that file returns 2)
   times; has no Step 1 or Step 2 headings.
   (b) `aid-execute/references/reviewer-guide.md` header points at the same
   removed "Step 2".
   (c) The `references/reviewer-guide.md` pointer in the execute brief is not
   rewritten by the profile renderer, unlike every sibling path in the block.
-  (d) `agents/aid-reviewer/README.md` claims Large tier against canonical
-  `tier: medium`; six skills hardcode Large via the reviewer >= executor
-  invariant, so the medium default is nearly never used.
+  (d) ~~`agents/aid-reviewer/README.md` claims Large tier against canonical `tier: medium`~~ — **CLOSED 2026-08-10, by the `aid-reviewer` rewrite.** The README's `## Tier` section now states the opposite and agrees with the frontmatter: *"**Medium by default, escalated to Large per dispatch.** The canonical frontmatter is `tier: medium`"*, and it explicitly rejects a Large default as contradicting *"the frontmatter that actually configures the model"*. The second half stands: six skills hardcode Large via the reviewer >= executor invariant, so the medium default is nearly never used.
   (e) `worktree-lifecycle.sh` run under WSL writes a `/mnt/c/...` gitdir
   pointer that Windows-native git cannot resolve, producing an unusable
   worktree (hit while allocating this very work; repaired manually).
@@ -1038,7 +1044,8 @@ process spawning should be treated as the default suspect** whenever something i
 - **Impact:** High
 - **Status:** **Answered (text correction outstanding)** — triaged 2026-08-09; **decision 3
   half-shipped, decision 7 reversed. No decision is open**: decision 3 is superseded by the `Q1(a)`
-  one-skill revision and decision 7's text correction is scheduled at `Q26` item 4, riding the merge
+  one-skill revision and decision 7's text correction is scheduled at `Q26` item 4, carried by
+  **`delivery-021`** (carrier corrected 2026-08-10; this read *"the merge
   delivery. This entry is not awaiting a human.
 - **Triage 2026-08-09.** **Decisions 1, 2, 4, 5, 6, 8 shipped as decided** — resolve-before-grading is
   enforced by `check-gaps.sh` ahead of every grade site; the improvement-opportunity routing table and
@@ -1375,7 +1382,7 @@ produced:
   `Pending`" half is forbidden by the skill itself. **(iv) feature-007 #5** — `aid-detail` writing the
   BLUEPRINT Tasks table is decided and **scheduled into delivery-018, which is `Pending-Spec`** — not
   a defect, just unexecuted.
-  All four are consolidated in **`Q26`**. Stale residue also noted: `REQUIREMENTS.md:290` still reads
+  All four are consolidated in **`Q26`**. Stale residue also noted: `REQUIREMENTS.md:293` still reads
   *"FR-A7 (still open)"* although `:111` records it **CUT 2026-07-27**.
   **Both halves are now discharged (2026-08-09):** the 27 are ratified (see Status above), and
   (i)-(iii) are ruled on at `Q26` — items 1-2 re-scheduled into the `/aid-review` merge delivery with
@@ -1510,7 +1517,7 @@ produced:
 5. **`aid-detail` writing the BLUEPRINT Tasks table is IN scope for FR-F4.** Without it, adding
    the BLUEPRINT to `aid-detail`'s artifact set lands a **guaranteed-failing gate** -- the table
    stays `_none yet_` forever on the Full path. A parity fix, not new design:
-   `shortcut-engine.md:636` already does it on the Lite path.
+   `shortcut-engine.md:634` already does it on the Lite path.
 6. **`--non-functional` is reserved for "nothing usable" only.** An illegible visual is a `[HIGH]`
    row -> `D+` -> fails any configured minimum anyway, so the flag buys nothing and costs the
    distinction between "one defect" and "the artifact does not work".
@@ -1541,7 +1548,7 @@ produced:
   checklist, contradicting its own rubric which says Overall should read *"Pending Human Review"*.
   Now no grade at all -- a `PAUSE-FOR-USER-ACTION`.
 
-**Process lesson from the overnight run:** **19 review cycles across 7 features, and every single
+**Process lesson from the overnight run:** **24 review cycles across 7 features (`4+3+3+3+2+3+6`, re-derived from `## Features State`; **corrected 2026-08-10** — this read *"19"*, the uncomputed figure `Q14` row 1 retires), and every single
 finding was a citation or count precision defect.** Not one structural, design, or completeness
 finding was raised. Three times two successive reviewers gave *different wrong answers* for the
 same count (`test-grade.sh` cases: 14, then 15, actually 16; the M2 anchor range: 189-194, then
@@ -1769,7 +1776,9 @@ summarize scoring (`grade-summary.sh` + human JSON).
 - **Impact:** High (N1, N2) / Medium (N3, N4)
 - **Status:** **Answered (text correction outstanding)** — triaged 2026-08-09; **N1/N2/N4 settled;
   N3's decision is sound but its carrier claim is false. No decision is open**: the correction is
-  scheduled at `Q26`, riding the merge delivery. This entry is not awaiting a human.
+  scheduled at `Q26`, carried by **`delivery-021`** — carrier corrected 2026-08-10; this read
+  *"riding the merge delivery"*, which is `delivery-022` and does not scope it. This entry is not
+  awaiting a human.
 - **Triage 2026-08-09.** **N1 — adopted.** FR-A9 ships as its own delivery: delivery-010, Kind
   `enabling`, success criterion an **empty rendered diff**, with a risk row stating it is *"never
   bundled"*. `Done`. **N2 — accepted deliberately, not worked around.** The four-features-one-file
