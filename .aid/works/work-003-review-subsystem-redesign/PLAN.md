@@ -2,8 +2,9 @@
 
 > **Work:** work-003-review-subsystem-redesign
 > **Created:** 2026-07-28
-> **Deliveries:** 23 -- 18 re-cut from the 26 the eight feature SPECs recommend, plus five added
-> 2026-08-09 to carry decisions taken after the plan was first graded (019-023)
+> **Deliveries:** 27 -- 18 re-cut from the 26 the eight feature SPECs recommend, plus five added
+> 2026-08-09 (019-023) and four added 2026-08-10 (024-027), each set carrying decisions taken after
+> the plan was graded
 
 ---
 
@@ -30,10 +31,12 @@ Three obligations follow, and each spine delivery carries them as gate criteria:
 3. **No new script.** The assertion is a diff check, not tooling.
 
 **Standalone-functional vs enabling.** The methodology's "every delivery is an MVP" rule holds for
-**19 of 23**. Four ship no user-visible capability on their own and are labelled **enabling**
+**22 of 27**. Five ship no user-visible capability on their own and are labelled **enabling**
 rather than dressed up as MVPs: **001** (baseline and fix-first), **005** (the eighth column),
-**010** (the boilerplate split, whose success criterion is an *empty diff*), and **023** (the host
-chaining confirmation, whose output is evidence rather than capability).
+**010** (the boilerplate split, whose success criterion is an *empty diff*), **023** (the host
+chaining confirmation, whose output is evidence rather than capability), and **024** (the seeded-defect
+corpus, which supplies the denominator every later recall figure divides by but asserts nothing about
+reviewer behaviour on its own).
 
 ---
 
@@ -461,7 +464,7 @@ to catch.
 | 2 | AC-12 (five-profile parity) is only checked at delivery-012, so render drift from ten earlier deliveries arrives as one undiagnosable failure (concern N3) | H | Re-run parity as a regression gate at **every** delivery close; 012 owns the criterion of record |
 | 3 | One blocked spine delivery stalls every other delivery on the spine (the count is in `§ Dependency graph`, and is not restated here) | H | Content anchors make skip-and-return survivable; 002, 010 and 013 provide work while blocked |
 | 4 | The AC-13 cost baseline is unrecoverable once editing starts | M | delivery-001 is first and is a hard gate -- nothing else begins until the fixture gate-passage is recorded |
-| 6 | The recall baseline (delivery-027) is taken after 26 deliveries have changed the reviewer, so a low figure cannot be attributed to any one of them | M | delivery-024 lands the corpus early and free; run the measurement **at every delivery close from 024 onward**, not only at 027, so the series exists before the number matters |
+| 6 | The recall baseline (delivery-027) is taken after 26 deliveries have changed the reviewer, so a low figure cannot be attributed to any one of them | M | delivery-024 lands the corpus early and free, and its CI tally runs from that close onward, so a series exists before the number matters. The agent-lane figure cannot start earlier than the script that computes it -- `feature-009`'s SPEC § 7 states which series begins at which close, and this row does not restate it |
 | 5 | delivery-010's success criterion is an **empty diff**, so a behavioural regression could hide inside a zero-diff claim | M | Keep 010 as its own delivery, never bundled -- feature-006's own recommendation |
 
 ---

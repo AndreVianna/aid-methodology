@@ -19,9 +19,9 @@ Scoped last because it measures the shape that actually ships.
   never fires.
 - The recorded baseline, and the rule that a later drop is a defect in the review subsystem to be
   justified or reverted (`FR-H3`).
-- `AC-16`: every **in-domain** rule set reports a figure, and none reports zero fixtures. The domain
-  is the predicate in `features/feature-009-review-effectiveness/SPEC.md § 2b` -- a rule set whose own
-  kind is `A` -- and that section is where it is defined; this line does not restate it.
+- `AC-16`: every **in-domain** rule set reports a figure, and none reports zero fixtures. The domain is
+  the predicate in `features/feature-009-review-effectiveness/SPEC.md § 2b`, which is where it is
+  defined; this line does not restate it.
 
 Carries `FR-H2`, `FR-H3` and `AC-16`. Feature owner `feature-009` -- see
 `PLAN.md § Open at Plan`.
@@ -33,10 +33,12 @@ arithmetic, which `FR-F6` forbids.
 
 ## Gate Criteria
 
-- [ ] A per-rule-set recall figure is reported, not only an overall one, and each line carries
-      **both** terms -- the judgment-lane fraction and the script-lane assertion count -- so every
-      seeded defect appears in exactly one of them. The two are printed side by side and never blended:
-      a blend would be the second grading arithmetic `FR-F6` retires, and would hide which lane moved
+- [ ] **Both terms of `FR-H2` are produced: a figure per rule set AND an overall figure.** Each line
+      carries the lane terms that apply to it -- the judgment-lane fraction and, where the rule set has
+      script-decided rules, the script-lane assertion count. A rule set with no script-decided rule
+      prints `--` for that term, never `0/0`, which would read as a measured zero. The terms are printed
+      side by side and never blended: a blend would be the second grading arithmetic `FR-F6` retires,
+      and would hide which lane moved
 - [ ] **No rule set reports zero fixtures**, over the in-domain set of `SPEC.md § 2b`. Joined against
       the corpus catalogue; an in-domain rule set with no fixture fails this criterion rather than
       reporting an empty pass

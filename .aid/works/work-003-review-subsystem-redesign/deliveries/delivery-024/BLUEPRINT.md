@@ -34,17 +34,13 @@ behaviour.
 ## Gate Criteria
 
 - [ ] A defect catalogue exists and every entry names the rule ID expected to catch it
-- [ ] **Every in-domain rule set has at least one fixture**, where the domain is the predicate
-      `features/feature-009-review-effectiveness/SPEC.md § 2b` defines -- a rule set whose own kind is
-      `A`. Read each rule set's `**Kind:**` line at check time rather than matching an enumerated list,
-      so a rule set added later fails this criterion until it is seeded. An in-domain rule set with no
-      fixture is a failure, because unmeasured is not the same as clean. **Two traps the predicate
-      exists to avoid**, both named in § 2b: a list built from the routing table's `Rule set` column
-      omits the four **family** rule sets, which declare kind `A` in their own headers and are reachable
-      only through classes that appear in no routing row; and it omits `DATA`, which the per-class
-      declarations table declares kind `A` with no routing row. Kinds B, C and D are outside the domain
-      -- they have no rule rows, so no `rule_id` can be named for them and asserting over them would
-      make this criterion permanently unsatisfiable
+- [ ] **Every in-domain rule set has at least one fixture.** The domain is the predicate
+      `features/feature-009-review-effectiveness/SPEC.md § 2b` defines -- **a rule set that contains at
+      least one rule row** -- evaluated by reading the rule sets, never by matching a list held
+      anywhere, so a rule set added later fails this criterion until it is seeded. An in-domain rule set
+      with no fixture is a failure, because unmeasured is not the same as clean. A rule set with no rule
+      rows is outside the domain by construction: a catalogue row must name the `rule_id` expected to
+      catch its defect, and there is none to name
 - [ ] Each seeded defect is independently addressable -- the catalogue identifies it precisely enough
       that a review either found *that* defect or did not, with no judgment call at scoring time
 - [ ] The corpus builds its own fixtures and reads nothing under `.aid/works/`
