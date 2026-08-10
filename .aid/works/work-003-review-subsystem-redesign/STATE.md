@@ -5,13 +5,13 @@ pipeline:
 started: "2026-07-27"
 minimum_grade: "A"
 user_approved: yes
-lifecycle: Running
-phase: Execute
-active_skill: aid-execute
-updated: '2026-08-08T00:00:00Z'
+lifecycle: Blocked
+phase: Plan
+active_skill: aid-plan
+updated: '2026-08-10T00:00:00Z'
 pause_reason: --
-block_reason: --
-block_artifact: --
+block_reason: '/aid-plan REVIEW circuit breaker: grade C at cycles 17, 18 and 19 -- non-improvement over 3 consecutive cycles'
+block_artifact: IMPEDIMENT-plan-review.md
 ticket_ref: "--"
 ---
 
