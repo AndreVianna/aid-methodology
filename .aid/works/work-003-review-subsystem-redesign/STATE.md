@@ -6,9 +6,9 @@ started: "2026-07-27"
 minimum_grade: "A"
 user_approved: yes
 lifecycle: Running
-phase: Plan
-active_skill: aid-plan
-updated: '2026-08-10T00:00:00Z'
+phase: Specify
+active_skill: aid-specify
+updated: '2026-08-10T14:56:42Z'
 pause_reason: --
 block_reason: --
 block_artifact: --
@@ -141,7 +141,7 @@ source of truth, and close the accumulated review-path defects.
 | 5 | feature-005-review-resume | **Ready** | **A+** | 13 | 2026-07-27 | 4 FRs (D4-D7); AC-6, AC-7, AC-8. A+ in 2 cycles (C+ -> A+). Discharged feature-003's lifecycle-rewrite debt as an AC. Amended feature-003's `U-` row Evidence contract (art=/rs= digests). Recommends 4 deliveries. |
 | 6 | feature-006-review-skills | **Ready** | **A+** | 12 | 2026-07-27 | 11 FRs (**FR-A7 cut**) + FR-C9 + FR-E1; AC-11, AC-12. A+ in 3 cycles (B -> B+ -> A+). Proved the boilerplate split is **byte-identical** -- N1's blast radius collapses to a zero-diff assertion. Recommends 5 deliveries. |
 | 8 | feature-008-citation-accuracy | **Ready** | **A+** | 8 | 2026-07-28 | 5 FRs (group G); AC-14. **Added post-Specify** -- see Q14. Extends `kb-citation-lint.sh` to work artifacts. A+ in **9 cycles**, the most of any feature, and 18 findings of which **one was itself wrong**. Collides with nothing; **D1 depends on nothing and gates nothing**, so it could ship first. |
-| 9 | feature-009-review-effectiveness | **Pending-Spec** | -- | 0 | 2026-08-10 | **Added post-Plan 2026-08-10** -- see Q28/Q29. Owns group H (FR-H1-H3, recall measurement) and FR-E2 (the class sweep). **No SPEC yet**: it was created after Specify had closed for all eight other features, so `/aid-specify` must run before deliveries 024, 025 and 027 can be detailed. Recorded in `PLAN.md § Open at Plan`. Supersedes tech-debt `L4`. |
+| 9 | feature-009-review-effectiveness | **In Discussion** | Pending | 0 | 2026-08-10 | **Added post-Plan 2026-08-10** -- see Q28/Q29. Owns group H (FR-H1-H3, recall measurement) and FR-E2 (the class sweep). Requirements half of `SPEC.md` authored 2026-08-10 following the `feature-008` precedent (Q14); `## Technical Specification` is pending and is what `/aid-specify` is authoring now. Discharges the review-path slice of tech-debt `L4`; `L4` itself stays open. Deliveries 024, 025 and 027 cannot be detailed until this reaches `Ready`. |
 | 7 | feature-007-review-coverage-gaps | **Ready** | **A+** | 12 | 2026-07-27 | 6 FRs (group F incl. FR-F6). A+ in **6 cycles** (C+ -> C+ -> B+ -> B+ -> B+ -> A+) -- the longest of the work, every finding a citation or count defect. Applied 5 amendments to features 002 and 006. Recommends 5 deliveries. |
 
 ## Plan / Deliveries
@@ -297,7 +297,12 @@ written twice.
   into a measurement. Rationale accepted as put: this work's stated purpose is fixing review and it
   currently cannot tell whether review works, and parking the measurement outside the work is what
   allowed 18 polished-looking passes to go by. Supersedes the disposition that left this as
-  tech-debt `L4` (*test-effectiveness programme, not started*) — `L4` is now carried here.
+  tech-debt `L4` (*test-effectiveness programme, not started*) — the review-path slice of `L4` is
+  now carried here. **Corrected 2026-08-10, after the SPEC was authored:** `L4`'s subject is
+  whether the ~144 canonical **test suites** bite; group H's subject is whether a **review**
+  finds what is there. Same technique, different subject, so group H discharges a slice of `L4`
+  rather than replacing it, and `L4` stays open for the rest. The decision recorded above is
+  unaffected — only the scope of what it closes.
   **Accepted cost:** new scope, the largest of the four, shifting the work from making the review
   subsystem tidy to making it measurable, and adding at least one delivery.
   **Not yet applied** — needs a requirement in `REQUIREMENTS.md`, a feature owner, and a delivery.
@@ -333,7 +338,8 @@ the work is *for* — from making the review subsystem tidy to making it measura
 priority order 5, and the scope-honesty note. Carried by **delivery-024** (the corpus — a free track
 that depends on nothing, so the baseline is not taken after the change) and **delivery-027** (the
 measurement, after delivery-022 so the figure describes the shape that ships). Owner `feature-009`,
-whose SPEC does not yet exist — recorded in `PLAN.md § Open at Plan`. Tech-debt `L4` is superseded.
+whose SPEC does not yet exist — recorded in `PLAN.md § Open at Plan`. Tech-debt `L4` is partly
+discharged, not superseded (see the correction in the Answer above).
 
 ---
 

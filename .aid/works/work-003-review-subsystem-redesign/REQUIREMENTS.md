@@ -229,8 +229,14 @@ See STATE.md Q14.*
 
 ### Group H -- Recall measurement
 
-*Added 2026-08-10, on evidence from this work's own Plan review. See `STATE.md` Q28. Supersedes
-tech-debt `L4` (test-effectiveness programme), which carried the same idea outside any work.*
+*Added 2026-08-10, on evidence from this work's own Plan review. See `STATE.md` Q28.*
+
+**Relationship to tech-debt `L4`, corrected 2026-08-10.** `L4` is the same technique aimed at a
+different subject: whether AID's canonical **test suites** bite, measured by mutating the subject
+under test. Group H measures whether a **review** finds what is there. Group H therefore
+**discharges the review-path slice of `L4` and does not supersede it** -- most of `L4`'s scope is
+the canonical suite corpus, which is not review machinery and stays open. Q28 was recorded as
+superseding `L4` outright; that was too strong, and this is the corrected statement.
 
 **Why the group exists.** Every other group improves the handling of findings that were
 **already found** -- one severity source (A/B), a rule ID on every row (B), durable surgical
