@@ -63,8 +63,18 @@ it. `delivery-023`, which follows this one, is already written against the post-
     `SG18` fails.
   - `test-shortcut-engine-contract.sh` -- `SEC03a` asserts the engine still contains
     `/aid-deep-review` and `SEC03b` reads the deleted file (lines 164-167).
-  Each is re-pointed at `/aid-review` and its merged `SKILL.md`; the assertions keep their subject,
-  only the name changes.
+  **The repair is not a rename.** A rename leaves all four silent sites exactly as vacuous as
+  the classification above says they are, which the gate criteria forbid. Three distinct repairs:
+  - **Re-point**, where the subject survives under the new name: `test-gap-gate-wiring.sh:80`,
+    `test-settings-frontmatter-gates.sh:18`, `test-shortcut-engine-contract.sh:164-167`, and
+    `RX15`/`RX16`'s render lookups.
+  - **Drop**, where the subject has no successor: `reviewer-guide.md` is retired outright, so its
+    term must leave `B_AFTER`'s sum rather than point somewhere new.
+  - **Collapse**, where two subjects become one: `RX01` (57-58) and `RX13`/`RX14` (158-159) each
+    assert over *two* skills that this delivery merges into one, so the loop and its expected
+    counts change shape, not just their strings.
+  And in every case the read must be made **loud**: an assertion whose subject file is missing has
+  to fail, not skip and not fall through to `pass`.
 - `aid-execute/references/reviewer-guide.md` **retired** -- 77 lines carrying the
   `CODE / TASK / SPEC / KB` source table that `reviewer-ledger-schema.md` and `aid-reviewer/AGENT.md`
   both declare retired, and reached by nothing: `grep -rln 'reviewer.guide' canonical/` returns
@@ -105,13 +115,18 @@ exhaustiveness mandate).
       `grep -rln 'reviewer.guide\|aid-light-review\|aid-deep-review' tests/` run from the repo root
       returns **nothing**, and **both halves of `RX07`'s `SUM` -- `B_AFTER` and `NEW` -- are
       re-derived from the post-merge file set** rather than carrying a sum that silently shrank
-- [ ] **No assertion in the repaired suite can pass by reading a file that is absent.** This is the
-      criterion the four silent sites exist for, and it is stated separately because the grep above
-      does not reach it: a re-pointed assertion can still be vacuous. Each of `RX05`, `RX07`'s two
-      sums, and `RX15`/`RX16` either asserts its subject file exists before testing it, or is
-      re-pointed at a file that does. Demonstrated by deleting the merged `SKILL.md` in a scratch
-      copy and confirming the suite **fails** -- a green run against a missing input is the defect,
-      not the evidence
+- [ ] **Each of the four silent assertions fails when its own subject file is absent.** Stated
+      separately from the criterion above because the grep does not reach it -- a re-pointed
+      assertion can still be vacuous -- and stated **per assertion**, because a suite-level check
+      is satisfied by `RX01` failing loudly while `RX05` still passes on nothing. The four, and
+      what each must do: `RX05` must assert its subject exists before grepping it (a bare
+      `grep -q` on a missing file exits 2 and takes the `else` branch); `B_AFTER` and `NEW` must
+      each drop `2>/dev/null` or check the file first, so a missing input errors rather than
+      contributing 0 to `SUM`; `RX15`/`RX16` must fail on an unresolved render instead of
+      `continue`-ing past it. **Verified one at a time:** for each of the four, move its subject
+      file aside in a scratch copy and confirm **that assertion** reports a failure. Four separate
+      runs, four separate failures -- a single run that goes red overall is not evidence for any of
+      them
 - [ ] `FR-C9`'s primary path still holds: gaps are batched before the graded pass, so the common
       case needs no mid-review interruption
 - [ ] `AC-13`'s cost claim keeps its subject -- screening + gate measured against gate alone
