@@ -270,7 +270,17 @@ family; no existing `FR` states coverage granularity at all.
 - **Category:** Scope gap / the work's own subject
 - **Impact:** High — without a denominator, "clean" is unfalsifiable, and every grade in this work
   measures reviewer attention rather than artifact quality
-- **Status:** **Pending**
+- **Status:** **Answered** 2026-08-10 — owner accepted the suggestion; this becomes new scope
+- **Answer (2026-08-10, owner decision).** **Bring the recall oracle into this work.** The
+  subsystem gets a fixture corpus with **seeded, catalogued defects** and a measured fraction the
+  review finds, giving the grade a denominator and turning "the review is thorough" from a mandate
+  into a measurement. Rationale accepted as put: this work's stated purpose is fixing review and it
+  currently cannot tell whether review works, and parking the measurement outside the work is what
+  allowed 18 polished-looking passes to go by. Supersedes the disposition that left this as
+  tech-debt `L4` (*test-effectiveness programme, not started*) — `L4` is now carried here.
+  **Accepted cost:** new scope, the largest of the four, shifting the work from making the review
+  subsystem tidy to making it measurable, and adding at least one delivery.
+  **Not yet applied** — needs a requirement in `REQUIREMENTS.md`, a feature owner, and a delivery.
 
 **What was measured.** `grep -in "exhaustiv\|recall\|seeded\|false negative\|missed" REQUIREMENTS.md`
 returns **no hit on the concept** (the two matches are `FR-A1` and `FR-A9`, on other words). Across
