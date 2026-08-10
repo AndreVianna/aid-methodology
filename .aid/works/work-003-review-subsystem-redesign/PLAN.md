@@ -241,8 +241,9 @@ chaining confirmation, whose output is evidence rather than capability).
   ledgers. The seven ledgers hold **22 rows** -- 12 durable plus 10 across `cycle2..cycle7` -- of
   which **5 durable rows repeat a scratch row's description verbatim**, so the honest total is
   **17 sightings** over **12 distinct `(Doc, Rule)` keys**. Comparing scratch against scratch gives
-  **0 identical descriptions**: 3 keys were seen more than once and every repeat was textually
-  different, and all 5 apparent repeats are the durable row's frozen copy of a scratch row.
+  **0 identical descriptions**: 4 keys were seen more than once and every repeat was textually
+  different -- the 5 extra sightings over those 4 keys are exactly what takes 12 keys to 17 -- and
+  all 5 apparent repeats are the durable row's frozen copy of a scratch row.
   **That double-count is the defect itself** -- an analyst reading the ledger cannot tell a
   returning defect from a new one at the same key.
 

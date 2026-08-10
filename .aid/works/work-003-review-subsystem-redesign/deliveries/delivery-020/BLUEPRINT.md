@@ -61,8 +61,8 @@ count double-counts: the durable ledger **copies** the first sighting's descript
 the scratch ledgers. The seven ledgers hold **22 rows** -- 12 durable plus 10 across
 `cycle2..cycle7` -- of which **5 durable rows repeat a scratch row's description verbatim**, so the
 honest total is **17 sightings** over **12 distinct `(Doc, Rule)` keys**. Comparing scratch against
-scratch gives **0 identical descriptions**: 3 keys were seen more than once and every repeat was
-textually different, and all 5 apparent repeats are the durable row's frozen copy of a scratch row.
+scratch gives **0 identical descriptions**: 4 keys were seen more than once and every repeat was
+textually different, the 5 extra sightings over those 4 keys being exactly what takes 12 keys to 17, and all 5 apparent repeats are the durable row's frozen copy of a scratch row.
 **That double-count is the defect itself.** Reconstructing the true figures required reading the six
 `*-cycleN.md` scratch files that `§ DONE` instructs the orchestrator to delete -- so the ledger that
 survives is precisely the one that cannot answer the question.

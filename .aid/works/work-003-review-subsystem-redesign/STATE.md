@@ -266,7 +266,7 @@ grep -- so re-run it against the pre-2026-08-09 folders to reproduce the figure 
 `Q3(c)` were to be resolved *by this deletion*, so they remain open by default rather than by decision.
 
 **2. The greenfield criteria-vs-evidence split was to edit `document-expectations.md` 50-52**
-(`Q13` / feature-004 #9; `Q5(d)`). `feature-004/SPEC.md:435` claims regions 13-19 and 36-54. Work-003
+(`Q13` / feature-004 #9; `Q5(d)`). `features/feature-004-criteria-gap-interrupt/SPEC.md:435` claims regions 13-19 and 36-54. Work-003
 never touched that file — its newest commit is `b7490a40`, from **work-023**. `grep -i resolvable`
 returns nothing and lines 50-52 still carry the pre-decision C3 text. **Delivery-007 closed `Done`.**
 
@@ -382,7 +382,7 @@ aid-detail B-   aid-plan B-   aid-specify B-   aid-execute B-   aid-define B-
 
 `.aid/settings.yml` carried a flat `minimum_grade: B-` **when this was written**; it reads `A` since
 2026-08-04. Nothing resolves the work-level key:
-`read-setting.sh` reads only the settings file, and `writeback-state.sh:1437` maps
+`read-setting.sh` reads only the settings file, and `canonical/aid/scripts/execute/writeback-state.sh:1437` maps
 `Minimum Grade → minimum_grade` for **writing** the field, not for consuming it as a bar.
 
 **So a reader of this file sees a bar of `A` while every gate in the work enforces `B-`.** That is
@@ -424,8 +424,12 @@ never rewritten, so a *new* defect at an already-visited `(Doc, Rule)` key is re
 carrying the **first** sighting's description. The ledger therefore cannot distinguish *"the fix did
 not work"* from *"a different defect now sits at the same key"* — and those have opposite remedies.
 
-**Measured on this review.** 16 sightings, 12 distinct defects, 4 marked or implied `Recurred`, and
-**0 of the 4 were the same defect twice**. Three were introduced by the preceding cycle's own fix:
+**Measured on this review** (**figures corrected 2026-08-10**; this read *"16 sightings"*, which did not
+reproduce). Over the seven ledgers — the durable one plus `cycle2..cycle7` — **17 sightings** across
+**12 distinct `(Doc, Rule)` keys**, of which **4 keys were seen more than once**, and **0 of the 4 were
+the same defect twice**. The arithmetic closes: 12 keys plus 5 extra sightings over those 4 keys is 17.
+No row in any of the seven ledgers ever carried the literal status `Recurred` — the recurrence is visible
+only by joining on the key, which is the defect this entry describes. Three were introduced by the preceding cycle's own fix:
 
 | Key | Cycles | What actually recurred |
 |---|---|---|
@@ -437,12 +441,12 @@ not work"* from *"a different defect now sits at the same key"* — and those ha
 **Why it matters, and it is not cosmetic.** The FIX circuit breaker is declared as *non-improvement*
 — "each cycle closing more than it opens". Computing that requires knowing whether a `Recurred` row
 is a *reopen* or a *new open*, and the durable ledger holds neither the per-cycle description nor an
-open/close event. Answering it here required reading four `*-cycleN.md` scratch files — which
+open/close event. Answering it here required reading the six `*-cycleN.md` scratch files — which
 § DONE instructs the orchestrator to **delete** at merge. Following the skill as written destroys
 the only evidence its own breaker needs.
 
 **Not a grading bug.** `grade.sh` treats `Pending` and `Recurred` identically (both grade-bearing,
-`SPEC.md:168`), so no grade computed on this work is wrong because of this.
+`features/feature-003-ledger-substrate/SPEC.md:168`), so no grade computed on this work is wrong because of this.
 
 **Answer (2026-08-09, human decision).** `feature-003` gains the requirement, in the form the owner
 specified: **the row keeps a short list of one-line problem statements, one per sighting, instead of
@@ -886,7 +890,7 @@ process spawning should be treated as the default suspect** whenever something i
   codex/copilot-cli/antigravity were authored **before** work-003, so they are the same declaration
   this question called unverified, not a verification of it. **(f) OPEN — untouched.**
   `/aid-review`, `/aid-light-review` and `/aid-deep-review` all ship and nothing
-  disambiguates them (**corrected 2026-08-10**: this also listed `/aid-audit`, which had already been deleted by `6cb4aa1c` in work-004 — an ancestor of this branch since the 2026-07-30 master merge, ten days before this triage. `(f)`'s own Answer says master *"already retired it"*): `/aid-triage` has no routing row for the two new ones, neither new skill's
+  disambiguates them (**corrected 2026-08-10**: this also listed `/aid-audit`, which had already been deleted by `6cb4aa1c` in work-004. It reached this branch at the **2026-08-09** master merge `f0eaf415` — *not* the 2026-07-30 one: `git merge-base --is-ancestor 6cb4aa1c 7ba8e16c` exits 1, and `7ba8e16c` still carries `aid-audit`. So the skill was absent from this branch on the triage day itself, though only just. `(f)`'s own Answer says master *"already retired it"*): `/aid-triage` has no routing row for the two new ones, neither new skill's
   See-also mentions the old ones, and `/aid-review` still dispatches `aid-reviewer` directly instead of
   calling `/aid-deep-review` — the ninth of nine caller migrations that delivery-012 scoped **in** and
   closed `A+` without delivering.
@@ -903,7 +907,7 @@ process spawning should be treated as the default suspect** whenever something i
   and the executor dispatch inside it; (e) `skill_chaining` capability is
   confirmed for cursor + claude-code but not yet verified for codex,
   copilot-cli, antigravity; (f) naming collision with the existing
-  on-demand `/aid-review` + `/aid-audit`. (`/aid-audit` no longer exists — work-004's `6cb4aa1c` deleted it, which reached this branch in the 2026-07-30 master merge. The question is recorded as asked; `(f)`'s answer eliminates the collision by eliminating the skill.)
+  on-demand `/aid-review` + `/aid-audit`. (`/aid-audit` no longer exists — work-004's `6cb4aa1c` deleted it, which reached this branch at the 2026-08-09 master merge `f0eaf415`. The question is recorded as asked; `(f)`'s answer eliminates the collision by eliminating the skill.)
 - **Suggested:** Resolve during Describe/Define; the answer shapes the
   feature decomposition.
 - **DECIDED (2026-07-27): two skills** -- `aid-light-review` and `aid-deep-review`,
@@ -984,10 +988,8 @@ process spawning should be treated as the default suspect** whenever something i
   line says a full reviewer "produces the full grade", closing contract note
   says no grade is computed at task level; references a removed "Step 2" twice (**corrected 2026-08-10**: this read *"four"*; `grep -c "Step 2"` on that file returns 2)
   times; has no Step 1 or Step 2 headings.
-  (b) `aid-execute/references/reviewer-guide.md` header points at the same
-  removed "Step 2".
-  (c) The `references/reviewer-guide.md` pointer in the execute brief is not
-  rewritten by the profile renderer, unlike every sibling path in the block.
+  (b) ~~`aid-execute/references/reviewer-guide.md` header points at the same removed "Step 2".~~ **Premise corrected 2026-08-10: `Step 2` is not removed.** `state-delivery-gate.md:145` carries a live `## Step 2: REVIEW` heading, which `delivery-022`'s Scope states outright. The header is stale for a different reason — it points at a step in a *different* state machine than the one the file serves — and the case for retiring the file is its retired source table plus zero referrers.
+  (c) ~~The `references/reviewer-guide.md` pointer in the execute brief is not rewritten by the profile renderer, unlike every sibling path in the block.~~ **MOOT 2026-08-10: the pointer does not exist.** `grep -rln 'reviewer.guide' canonical/` exits 1 — the file has no referrers under `canonical/` at all, so there is nothing for the renderer to rewrite. Retiring the file closes this by removing the subject rather than fixing it.
   (d) ~~`agents/aid-reviewer/README.md` claims Large tier against canonical `tier: medium`~~ — **CLOSED 2026-08-10, by the `aid-reviewer` rewrite.** The README's `## Tier` section now states the opposite and agrees with the frontmatter: *"**Medium by default, escalated to Large per dispatch.** The canonical frontmatter is `tier: medium`"*, and it explicitly rejects a Large default as contradicting *"the frontmatter that actually configures the model"*. The second half stands: six skills hardcode Large via the reviewer >= executor invariant, so the medium default is nearly never used.
   (e) `worktree-lifecycle.sh` run under WSL writes a `/mnt/c/...` gitdir
   pointer that Windows-native git cannot resolve, producing an unusable
@@ -1045,8 +1047,8 @@ process spawning should be treated as the default suspect** whenever something i
 - **Status:** **Answered (text correction outstanding)** — triaged 2026-08-09; **decision 3
   half-shipped, decision 7 reversed. No decision is open**: decision 3 is superseded by the `Q1(a)`
   one-skill revision and decision 7's text correction is scheduled at `Q26` item 4, carried by
-  **`delivery-021`** (carrier corrected 2026-08-10; this read *"the merge
-  delivery. This entry is not awaiting a human.
+  **`delivery-021`** — carrier corrected 2026-08-10; this read *"riding the merge delivery"*, which is
+  `delivery-022` and does not scope it. This entry is not awaiting a human.
 - **Triage 2026-08-09.** **Decisions 1, 2, 4, 5, 6, 8 shipped as decided** — resolve-before-grading is
   enforced by `check-gaps.sh` ahead of every grade site; the improvement-opportunity routing table and
   git-tracked register exist; a *"no"* gets its two follow-ups (what instead, canon or one-time); the
@@ -1382,10 +1384,10 @@ produced:
   `Pending`" half is forbidden by the skill itself. **(iv) feature-007 #5** — `aid-detail` writing the
   BLUEPRINT Tasks table is decided and **scheduled into delivery-018, which is `Pending-Spec`** — not
   a defect, just unexecuted.
-  All four are consolidated in **`Q26`**. Stale residue also noted: `REQUIREMENTS.md:293` still reads
+  All four are consolidated in **`Q26`**. Stale residue also noted: this work's `.aid/works/work-003-review-subsystem-redesign/REQUIREMENTS.md:293` still reads
   *"FR-A7 (still open)"* although `:111` records it **CUT 2026-07-27**.
   **Both halves are now discharged (2026-08-09):** the 27 are ratified (see Status above), and
-  (i)-(iii) are ruled on at `Q26` — items 1-2 re-scheduled into the `/aid-review` merge delivery with
+  (i)-(iii) are ruled on at `Q26` — item 1 re-scheduled into `delivery-022` (the `/aid-review` merge) and item 2 into `delivery-021` (**carrier corrected 2026-08-10**; this read *"items 1-2 ... into the `/aid-review` merge delivery"*, written before the carrier split in two), with
   closed deliveries left closed, item 3 superseded by the `Q1(a)` one-skill revision. **(iv) needs no
   ruling**: `aid-detail` writing the BLUEPRINT Tasks table is correctly scheduled into delivery-018,
   which is `Pending-Spec` — unexecuted, not undelivered.
@@ -1544,7 +1546,7 @@ produced:
   derived from ledger rows; only their **ratio** conditions (>= 90% coverage) were a separate
   arithmetic, and those rest on an agent's unfalsifiable denominator. Retired in favour of the
   conservative rule already written beside them.
-- **Unanswered != failed.** `grade-summary.sh:465-467` sets `HUMAN_GRADE="F"` for an unanswered
+- **Unanswered != failed.** `grade-summary.sh` (**retired** by `delivery-015` task-003, commit `3d200962`, "de-score the manual checklist"; the surviving script is `emit-summary-findings.sh`) set `HUMAN_GRADE="F"` for an unanswered
   checklist, contradicting its own rubric which says Overall should read *"Pending Human Review"*.
   Now no grade at all -- a `PAUSE-FOR-USER-ACTION`.
 
