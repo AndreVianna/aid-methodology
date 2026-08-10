@@ -227,8 +227,13 @@ or worse; `[LOW]`/`[MINOR]` at the end" — are the same statement.
   *did* run, and rewriting its outcome retrospectively destroys the evidence of the real defect, which
   is that a delivery's recorded scope outran what was performed. A new delivery carrying the shortfall
   keeps the history honest and places the work where it will be re-reviewed anyway. Item 1 is close to
-  free: retiring `reviewer-guide.md` is a deletion plus updating two referrers, and it **also closes
-  `Q3(b)` and `Q3(c)`**, which have been open only because the deletion never happened.
+  free: retiring `reviewer-guide.md` is a deletion plus one hand-edit, and it **also closes
+  `Q3(b)` and `Q3(c)`**, which have been open only because the deletion never happened. **Referrer
+  count corrected 2026-08-10** — this read *"updating two referrers"*. There are none under
+  `canonical/` (`grep -rln 'reviewer.guide' canonical/` exits 1). Repo-wide, excluding transient
+  `.aid/.temp/` files, there are **seven**: five `profiles/*/emission-manifest.jsonl`, plus
+  `.aid/.aid-manifest.json` -- all six regenerated, not edited -- and one hand-maintained suite,
+  `tests/canonical/test-review-extraction.sh`. So the only manual referrer edit is the test.
   Item 3 needs no ruling — superseded, see above. Item 4 (`Q5` decision 7's reversed text) and the
   `Q8` N3 carrier-claim correction are edits to this file's own entries and ride the same delivery.
 

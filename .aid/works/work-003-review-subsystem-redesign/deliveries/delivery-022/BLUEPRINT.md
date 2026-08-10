@@ -10,7 +10,9 @@
 
 Collapse the review subsystem's two skills into one. `aid-deep-review` and `aid-light-review` merge
 into `/aid-review`, which carries **named** entry paths rather than a depth flag. Scoped last in the
-work because it renames the skill every other delivery is written against.
+work because deliveries 016-021 are authored in the retired skill's idiom, so renaming earlier would
+force them to be written against a name already decided for retirement and then re-written.
+`delivery-023`, which follows this one, is already written against the post-merge name.
 
 ## Scope
 

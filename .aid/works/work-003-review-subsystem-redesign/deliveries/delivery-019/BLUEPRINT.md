@@ -77,8 +77,13 @@ _Derived from `tasks/task-NNN/DETAIL.md`. Written by `aid-detail`; empty until i
 
 **Two of the four are nearly free and two are not.** The content-vs-purpose and undefined-term rules
 cite sections already in use by this catalog, so they are row additions. The temp-file rule and item
-11 each require authoring a criterion first -- and authoring a criterion is a KB change, which routes
-through `/aid-update-kb` rather than being written here.
+11 each require authoring a criterion first, but **through different routes, because the two
+criteria live in different trees.** The temp-file criterion is a KB change -- it lands in
+`.aid/knowledge/coding-standards.md`, so it routes through `/aid-update-kb`. Item 11's criterion
+lands in `canonical/aid/templates/kb-authoring/review-rubric.md`, which `/aid-update-kb` cannot
+reach: its scope table is keyed to `.aid/knowledge/<doc>.md` (`state-scope.md`) and its APPLY step
+derives the changed set with `git status --porcelain -- .aid/knowledge/` (`state-apply.md`). That
+one is authored here, as a canonical-template edit.
 
 **Expect the undefined-term rule to LOWER a severity.** Its peer bullets became `KB-05`..`KB-08`, all
 banded `SHOULD` -> `[LOW]` escaped `(>1 doc)` -> `[MEDIUM]`. The checklist currently self-declares
