@@ -217,6 +217,148 @@ or worse; `[LOW]`/`[MINOR]` at the end" — are the same statement.
 <!-- DERIVED -- union of per-delivery Q&A plus WORK-OWNER-AUTHORED entries below
      (work owner is the single writer for those). -->
 
+### Q27 -- a review's coverage is recorded per FILE, and RECONCILE trusts it to clear findings (2026-08-10)
+
+- **Category:** Design-Decision / the work's own subject
+- **Impact:** High — this is the mechanism by which a shallow pass marks a live defect `Fixed`
+- **Status:** **Pending**
+
+**What was measured.** Over the 18-cycle `/aid-plan` review of deliveries 019-023, `PLAN.md` was
+marked `Examined` **21 times** in coverage rows, and **13 findings were later reported in it**.
+Across 14 defects that were on disk before the fix cycles began, the mean number of reviews that
+missed each one was **6.6**; the worst (`delivery-022`'s *"sequenced last"* contradiction) was missed
+by **17** consecutive reviews before cycle 19 caught it.
+
+**Why the coverage row cannot carry the weight put on it.** A `U-` row asserts one thing about one
+unit — and the unit is a **file**. `reviewer-ledger-schema.md § RECONCILE` then acts on it:
+
+| Durable row | Key in scratch? | Result |
+|---|---|---|
+| `Pending` | no, **and** the unit covering `Doc` is `Examined` | → `Fixed` |
+| `Pending` | no, and the unit is **not** `Examined` | stays `Pending` — *"absence proves nothing"* |
+
+The guard on the second row shows the schema already knows absence is weak evidence. The first row
+then licenses exactly that inference on the strength of a **self-reported, file-granular** claim. So
+a sampling pass does not merely fail to find a defect — it **clears** it.
+
+**The counter-evidence that a different granularity works.** Twice during this review the reviewer
+was given an **enumerated worklist** instead of a mandate to be thorough:
+
+| Pass | Method | Findings in ONE pass |
+|---|---|---|
+| Claims sweep | a script listed all **133** quantified claims; the agent checked every one | **15** |
+| Q&A sweep | all **26** `Q` entries, no sampling | **17** |
+| Any single review cycle | the reviewer chose where to look | **1-4** |
+
+Same artifacts, same rule set, same reviewer model. Enumeration was the only variable.
+
+**Suggested reading of the evidence (NOT a decision).** `Examined` should record **what was
+checked**, not that a file was opened, and the unit should be the **claim** rather than the file.
+Minimum viable shape: the brief carries an enumerated worklist for the scope, and a `U-` row cites
+the worklist item it discharges. RECONCILE's `Pending → Fixed` transition then rests on "every
+worklist item covering this `Doc` was checked", which is falsifiable.
+
+**Amendments this would force.** `feature-005` (review resume) owns coverage rows;
+`reviewer-ledger-schema.md` owns the `U-` grammar and the RECONCILE join;
+`reviewer-brief-template.md` would gain the worklist. `FR-D*` (feature-005) is the requirement
+family; no existing `FR` states coverage granularity at all.
+
+---
+
+### Q28 -- nothing in this work measures whether a review finds what is there (2026-08-10)
+
+- **Category:** Scope gap / the work's own subject
+- **Impact:** High — without a denominator, "clean" is unfalsifiable, and every grade in this work
+  measures reviewer attention rather than artifact quality
+- **Status:** **Pending**
+
+**What was measured.** `grep -in "exhaustiv\|recall\|seeded\|false negative\|missed" REQUIREMENTS.md`
+returns **no hit on the concept** (the two matches are `FR-A1` and `FR-A9`, on other words). Across
+**10 features** and ~60 requirements, the work never asks whether a review found what was actually
+present. `grade.sh` counts findings **found**; there is no term for findings **missed**.
+
+**Why that is the load-bearing gap.** Every feature in this work improves the handling of findings
+that were already found — one severity source (`feature-001`), a rule ID on every row
+(`feature-002`), durable surgical writes (`feature-003`), no finding without a rule
+(`feature-004`), none lost to interruption (`feature-005`), resolvable evidence (`feature-008`).
+That is a **precision** programme end to end. Nothing in it raises or measures **recall**. Two of
+those features plausibly *lower* recall, because the No-Criterion-no-row contract and
+severity-by-lookup both raise the cost of writing a finding.
+
+**The consequence, observed.** This review produced immaculate bookkeeping — a rule ID on every row,
+resolvable citations, 11 criteria gaps registered, zero open keys, exact dependency reciprocity —
+while missing each defect 6.6 times on average. A rigorous-looking clean pass is **more** misleading
+than a scruffy one, because it invites belief.
+
+**Suggested reading of the evidence (NOT a decision).** The subsystem needs a **recall oracle**: a
+fixture corpus with **seeded, catalogued defects**, and a measured fraction the review finds. It
+gives the grade a denominator and turns "the review is thorough" from a mandate into a measurement.
+This is already carried as tech-debt `L4` (*test-effectiveness programme, not started*); the finding
+here is that it belongs **inside** this work, because this work is the one claiming to fix review.
+
+**Cost, stated plainly.** This is **new scope** and the largest of the four. It arguably changes what
+the work is *for* — from making the review subsystem tidy to making it measurable.
+
+---
+
+### Q29 -- `FIX` has no mechanical obligation to sweep a finding's class (2026-08-10)
+
+- **Category:** Process defect
+- **Impact:** Medium — measured at roughly 7 of 69 findings in the plan review
+- **Status:** **Pending**
+
+**What was measured.** `aid-execute/references/state-fix.md` states `F1` — *a finding is a CLASS;
+Evidence specifies the EXTENT* — as prose. Nothing checks it. In the 18-cycle plan review, the same
+claim-family was swept and missed repeatedly: `PLAN.md` alone took **10** `DEF-04` findings, each a
+different site of a claim already corrected elsewhere. Concrete instances: the "delivery-022 is
+last" claim was fixed in the BLUEPRINT at cycle 10 and found again in `PLAN.md` at cycle 19; the
+carrier-delivery correction was applied to `Q5`, `Q8` and `Q26` and missed in `Q13`; the
+`git ls-tree` wording was fixed in `PLAN.md` and `REQUIREMENTS.md` and missed twice in `STATE.md`.
+
+**Suggested reading of the evidence (NOT a decision).** Before a fix is marked complete, the fixer
+runs a **class sweep**: grep the distinguishing phrase of the corrected claim across the work and
+report every site, so a missed sibling is visible rather than discovered a cycle later. Cheap,
+mechanical, and it needs no new rule set — it is `F1` given an oracle instead of an instruction.
+
+**Where it lands.** `state-fix.md` owns `F1`. `feature-003`'s ledger substrate already gives the
+fixer the row it is discharging, which is where the phrase would come from.
+
+---
+
+### Q30 -- the same fact is restated across 3-4 artifacts, and that is what set the defect floor (2026-08-10)
+
+- **Category:** Design-Decision / artifact structure
+- **Impact:** Medium — it is the reason the grade could not reach `A` by editing
+- **Status:** **Pending**
+
+**What was measured.** Duplication of single facts across the work's artifacts:
+
+| Fact | Restated in |
+|---|---|
+| The entry-path count | 4 files |
+| The `git ls-tree` "76 names" result | 4 files |
+| The 17-sightings arithmetic | 3 files |
+| Which delivery carries which `Q26` item | 3 files |
+
+Every correction therefore had to be swept across 3-4 files. Miss one and it is a `DEF-04`
+contradiction; re-word one imprecisely and it is a `DEF-09` false claim. Those two rules are **65 of
+the work's 69 plan-review findings**. Roughly **1 in 3** findings was introduced by a previous fix,
+which is what held the grade at `C` for fourteen consecutive cycles: the bar is zero findings, and
+each repair reopened the class one level deeper.
+
+**Suggested reading of the evidence (NOT a decision).** Two moves, independent of each other:
+(a) state a derived fact **once**, in the artifact that owns it, and cite it from the others rather
+than restating it; (b) keep task-level detail out of a delivery `BLUEPRINT` — `artifact-schemas.md`
+scopes `## Scope` to *"bounded in-scope deliverables"*, and `delivery-022`'s Scope had accumulated a
+per-line forensic account of seven read sites in a bash suite, which is task `DETAIL.md` content and
+which produced the findings in cycles 16-19.
+
+**Relationship to the impediment.** `IMPEDIMENT-plan-review.md` already recommends (b) for
+`delivery-022` specifically. This entry asks whether (a) becomes a convention for the work as a
+whole.
+
+---
+
 ### Q26 -- four decisions read as settled in prose and are not settled on disk (2026-08-09)
 
 - **Category:** Process defect — same class as `Q22`, found the same way
