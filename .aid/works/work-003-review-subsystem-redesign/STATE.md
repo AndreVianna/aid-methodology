@@ -221,7 +221,22 @@ or worse; `[LOW]`/`[MINOR]` at the end" — are the same statement.
 
 - **Category:** Design-Decision / the work's own subject
 - **Impact:** High — this is the mechanism by which a shallow pass marks a live defect `Fixed`
-- **Status:** **Pending**
+- **Status:** **Answered** 2026-08-10 — owner accepted the suggestion; coverage becomes per-claim
+- **Answer (2026-08-10, owner decision).** **The coverage unit changes from FILE to CLAIM, and the
+  auto-close transition depends on it.** Three parts, accepted as put: (1) the reviewer brief carries
+  an **enumerated worklist** for the scope, rather than a mandate to be thorough; (2) a `U-` row
+  **cites the worklist item it discharges**, so `Examined` records *what was checked* instead of that
+  a file was opened; (3) RECONCILE's `Pending → Fixed` transition fires only when **every worklist
+  item covering that `Doc` was checked**, which makes the inference falsifiable. Rationale accepted
+  as put: the schema already guards *"absence proves nothing"* for an unexamined unit and then trusts
+  silence completely once a self-reported, file-granular box is ticked — which is how `PLAN.md` was
+  marked `Examined` 21 times while holding 13 findings.
+  **Accepted cost:** the widest blast radius of the four — the `U-` grammar and the RECONCILE join in
+  `reviewer-ledger-schema.md`, the brief in `reviewer-brief-template.md`, and `feature-005`'s
+  requirement family, which today states no coverage granularity at all.
+  **Interaction with `Q28`:** the recall oracle is the instrument that measures whether this change
+  works, so `Q28`'s corpus should be able to report recall per-claim as well as per-review.
+  **Not yet applied.**
 
 **What was measured.** Over the 18-cycle `/aid-plan` review of deliveries 019-023, `PLAN.md` was
 marked `Examined` **21 times** in coverage rows, and **13 findings were later reported in it**.
