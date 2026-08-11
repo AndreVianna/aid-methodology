@@ -220,6 +220,73 @@ or worse; `[LOW]`/`[MINOR]` at the end" — are the same statement.
 <!-- DERIVED -- union of per-delivery Q&A plus WORK-OWNER-AUTHORED entries below
      (work owner is the single writer for those). -->
 
+### Q33 -- three scripts were treated as authoritative evaluators when all three only check shape (2026-08-11)
+
+- **Raised by:** the owner, reading the script inventory that came out of Q32
+- **Blocks:** delivery-028 (created for this decision), and the `/aid-describe` half of `FR-B5a`
+- **Impact:** High -- it is the same error as Q32's, found a second time in a different place
+- **Status:** **Answered** 2026-08-11 -- owner set the pipeline; the four questions below are the record
+
+**The question, as the owner asked it.** Four questions about the scripts, each of which the code
+answers against the scripts:
+
+| # | Question | What the code says |
+|---|---|---|
+| 1 | The script names are extremely unclear -- give them better names | Granted. `lint-modality` sounds like it lints *whether the modality is right*; it checks a token is **present**. Six renames are now `FR-I6` |
+| 2 | How can `lint-modality` evaluate what is MUST / SHOULD / COULD? Isn't that subjective and context-dependent -- shouldn't an agent do that? | It cannot and does not. It greps for one of three literal tokens. Whether `SHOULD` was the right choice is untouched -- so gating a grade on it gated on typing, not on correctness |
+| 3 | `kb-citation-lint` can only check whether `file X, line Y` exists. How can a script judge whether the reference *corresponds*? | It cannot. Resolution is decidable; correspondence is not. So resolution stays blocking -- an unresolvable cite has no evidence behind it -- and correspondence becomes the reviewer's, with the report saying which it checked |
+| 4 | How can `check-gaps` judge what a gap is? | It does not judge one. An agent **registers** the gap; the script only asks whether any registered gap is still open. That is why it is the one legitimate blocker: an open gap means there was no rule to judge by |
+
+**The owner's reading, which is the decision.** *"I see the 3 first scripts as tooling for an agent to
+do the final call, not authoritative evaluators."* Agreed, and it generalises: **a script never judges
+quality.** It measures shape and reports what it measured, including what it did not look at.
+
+**Answer -- the pipeline, in the owner's words.**
+
+> Keep it advisory in describe only. So the reviewer agent will receive the reports from these tools
+> and do the final call. To avoid excessive token waste I propose a phase where the scripts prepare
+> their report, the full issue report is submitted to the agent as additional material for its
+> analysis. The agent does his analysis with expertise, intelligence and common sense, and reports the
+> issues with the severities. Finally `grade-from-ledger` generates the A-F grade and
+> `update-ledger-row` does the proper updates.
+
+Four steps, one direction: **scripts observe -> agent judges and writes -> grade counts -> next cycle
+reconciles.** Nothing later in the chain revises anything earlier in it.
+
+**The one amendment the owner made to the proposal.** The observation reports **stay outside the
+ledger** (`FR-I3`). The reason is what the ledger is for: a row in it is something an agent decided to
+raise, so a script observation the agent dismisses leaves no row -- and the ledger's `Status` column
+keeps meaning what it means, because `Fixed` and `Recurred` are statements about findings, not about
+grep hits.
+
+**Why the token-waste argument is real, measured on this work.** The reviewers dispatched over
+`feature-009`'s SPEC repeatedly spent tool calls re-deriving facts a script had already computed --
+counting requirement rows, resolving citations by hand. One mechanical pass up front removes the round
+trips without removing the checking.
+
+**The gate surface, before and after.**
+
+| Check | Before | After | Why |
+|---|---|---|---|
+| criteria gap open | blocks | **blocks** | the agent is missing an input; grading would invent a criterion |
+| citation resolves | blocks | **blocks** | a claim whose evidence does not resolve has no evidence |
+| citation corresponds | -- | advisory | not decidable by a script (question 3) |
+| modality present | blocks | advisory, **and only in `/aid-describe`** | it checked typing, and its stated reason for gating was to feed the lookup Q32 retired |
+
+**The risk the owner did not raise, stated so it is on the record.** A report is easy to over-trust.
+This work's own false claim -- *"fifteen cosmetic findings were graded HIGH"* -- came from exactly that:
+a script's output reported without hand-checking. `FR-I4` is the guard, and it is a MUST because the
+failure is silent in both directions: under-using the reports wastes effort, over-trusting them removes
+the check that caught this.
+
+**What landed.** `REQUIREMENTS.md` group I (`FR-I1`--`FR-I6`); `delivery-028` created to carry
+`FR-I1`--`FR-I5`, with `FR-I6`'s renames deliberately left out of it as a separate migration;
+`FR-B5a` amended to advisory-in-describe-only; `delivery-003` and `delivery-004` re-scoped, the latter
+because its stated goal read *"severity becomes a lookup rather than a judgment"* -- the exact inverse
+of Q32.
+
+---
+
 ### Q32 -- severity is computed from two proxies that both degenerate outside code (2026-08-11)
 
 - **Category:** Design-Decision / the work's own subject

@@ -2,9 +2,9 @@
 
 > **Work:** work-003-review-subsystem-redesign
 > **Created:** 2026-07-28
-> **Deliveries:** 27 -- 18 re-cut from the 26 the eight feature SPECs recommend, plus five added
-> 2026-08-09 (019-023) and four added 2026-08-10 (024-027), each set carrying decisions taken after
-> the plan was graded
+> **Deliveries:** 28 -- 18 re-cut from the 26 the eight feature SPECs recommend, plus five added
+> 2026-08-09 (019-023), four added 2026-08-10 (024-027) and one added 2026-08-11 (028), each set
+> carrying decisions taken after the plan was graded
 
 ---
 
@@ -31,7 +31,7 @@ Three obligations follow, and each spine delivery carries them as gate criteria:
 3. **No new script.** The assertion is a diff check, not tooling.
 
 **Standalone-functional vs enabling.** The methodology's "every delivery is an MVP" rule holds for
-**22 of 27**. Five ship no user-visible capability on their own and are labelled **enabling**
+**23 of 28**. Five ship no user-visible capability on their own and are labelled **enabling**
 rather than dressed up as MVPs: **001** (baseline and fix-first), **005** (the eighth column),
 **010** (the boilerplate split, whose success criterion is an *empty diff*), **023** (the host
 chaining confirmation, whose output is evidence rather than capability), and **024** (the seeded-defect
@@ -65,8 +65,14 @@ reviewer behaviour on its own).
 - **Kind:** standalone
 
 ### delivery-003: Severity single source
-- **What it delivers:** one canonical severity scale; "established best practice" removed as a
-  criterion source. AC-1, AC-2.
+- **What it delivers:** one canonical severity scale, **as a soft guideline** -- five bands described
+  in plain terms, in one place, with every other definition replaced by a pointer. "Established best
+  practice" removed as a criterion source. AC-1, AC-2.
+- **Re-scoped 2026-08-11 (`STATE.md` Q32):** the scale was to be a decision procedure -- a
+  modality->band table feeding a blast-radius x reversibility matrix. It is now a **description**, and
+  assignment is the reviewing agent's judgment with a stated reason (`FR-B5c`). The two axes survive as
+  questions a reviewer weighs, not as a matrix that returns a token. Smaller than before: one
+  guideline instead of two tables and an anchor column.
 - **Features:** feature-001 (D1)
 - **Depends on:** delivery-001
 - **Priority:** Must
@@ -75,7 +81,13 @@ reviewer behaviour on its own).
 
 ### delivery-004: Rubric catalog
 - **What it delivers:** the rubric catalog skeleton, the per-class rule sets, and the
-  content-isolation relocation -- severity becomes a lookup rather than a judgment.
+  content-isolation relocation. Each rule row says **what to check and what evidence settles it**; it
+  carries **no severity anchor**.
+- **Re-scoped 2026-08-11 (`STATE.md` Q32):** this delivery's goal read *"severity becomes a lookup
+  rather than a judgment"*, which the owner decision inverts. Severity leaves the catalog entirely.
+  The universal taxonomy keeps its six shapes as **recognition aids** and loses its `Anchor` column --
+  which also answers the objection that six shapes are neither exhaustive nor per-kind: an unlisted
+  shape is judged like any other rather than being unreportable or mis-anchored.
 - **Features:** feature-002 (D1 + D2)
 - **Depends on:** delivery-003
 - **Priority:** Must
@@ -301,6 +313,23 @@ reviewer behaviour on its own).
   `skill_chaining = true` lines for those hosts predate this work, so they restate the assumption
   rather than verify it.
 
+### delivery-028: Observation reports and the judgment boundary
+- **What it delivers:** group I. The mechanical checks emit **observation reports** carrying no verdict
+  vocabulary and stating their own blind spots; the reports are produced **before** the reviewer is
+  dispatched and passed to it as input; they stay **outside the ledger**; the reviewer is told a report
+  is evidence rather than truth and verifies what it leans on; and **only an open criteria gap may
+  block a grade** -- modality and citation *style* become advisory, citation *resolution* stays
+  blocking.
+- **Features:** feature-002 (the catalog and the checks it wires)
+- **Depends on:** delivery-004
+- **Priority:** Must
+- **Track:** free
+- **Kind:** standalone
+- **Note:** added 2026-08-11 from `STATE.md` Q32 and Q33. It is the boundary the rest of this work kept
+  crossing by accident -- a script measuring shape while being given authority over substance. The
+  rename in `FR-I6` is deliberately **not** carried here: it is a `SHOULD` over shipped names with live
+  callers, so it is a migration of its own rather than a rider on a behavioural change.
+
 ### delivery-024: Seeded-defect corpus
 - **What it delivers:** a fixture corpus of reviewable artifacts carrying **known, catalogued**
   defects, each seeded defect naming the rule that should catch it. FR-H1.
@@ -368,7 +397,7 @@ Edges as an adjacency list, which is unambiguous where ASCII art is not:
 | 001 | -- | 003, 010 |
 | 002 | -- | 017 |
 | 003 | 001 | 004, 013 |
-| 004 | 003 | 005, 014, 015, 016, 017, 019 |
+| 004 | 003 | 005, 014, 015, 016, 017, 019, 028 |
 | 005 | 004 | 006 |
 | 006 | 005 | 007 |
 | 007 | 006 | 008, 009, 021 |
@@ -389,6 +418,7 @@ Edges as an adjacency list, which is unambiguous where ASCII art is not:
 | 022 | 016, 017, 018, 019, 020, 021 | 023, 027 |
 | 023 | 022 | -- |
 | 024 | -- | 027 |
+| 028 | 004 | -- |
 | 025 | -- | -- |
 | 026 | 009 | 027 |
 | 027 | 022, 024, 026 | -- |
@@ -399,12 +429,13 @@ Every edge runs from a lower number to a higher one, so the ordering is a valid 
 **Free tracks -- work available while the spine is blocked:** delivery-002 (fully independent),
 delivery-001 (nothing upstream), delivery-010 (needs 001 only), delivery-013 (needs 003 only),
 the three added 2026-08-09 -- delivery-019 (needs 004 only), delivery-020 (needs 009 only),
-delivery-021 (needs 007 only) -- and three of the four added 2026-08-10: delivery-024 and
-delivery-025 (nothing upstream) and delivery-026 (needs 009 only). **This paragraph and the
-table above are where the free/spine split is stated; nothing else restates it.** That is
-**10 free** and **17 on the spine** across the 27 deliveries. No grouping breaks the spine,
-because the spine is a property of one file rather than of the grouping. Only delivery-027 of
-the four is on the spine, and by design -- it measures the shape delivery-022 ships.
+delivery-021 (needs 007 only) -- three of the four added 2026-08-10: delivery-024 and
+delivery-025 (nothing upstream) and delivery-026 (needs 009 only) -- and delivery-028, added
+2026-08-11 (needs 004 only). **This paragraph and the table above are where the free/spine split is
+stated; nothing else restates it.** That is **11 free** and **17 on the spine** across the 28
+deliveries. No grouping breaks the spine, because the spine is a property of one file rather than of
+the grouping. Only delivery-027 of the four is on the spine, and by design -- it measures the shape
+delivery-022 ships.
 
 **delivery-022 is the one convergence point.** It depends on six deliveries rather than the usual
 one or two, and that is deliberate rather than accidental coupling. **One of the six edges is the
