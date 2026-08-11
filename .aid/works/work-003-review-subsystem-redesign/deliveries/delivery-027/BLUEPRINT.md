@@ -17,8 +17,9 @@ Scoped last because it measures the shape that actually ships.
 - The measurement: run the review over delivery-024's corpus and report the found
   fraction, **per rule set** and overall (`FR-H2`). An aggregate alone is out -- it hides a rule that
   never fires.
-- The **Lane B term** added to the series `delivery-024` ships, and `FR-H3`'s regression rule -- whose
-  trigger is the three-run floor `feature-009`'s SPEC § 3 step 5 defines, not a single-run drop.
+- The **Lane B term** added to the series `delivery-024` ships, and `FR-H3`'s regression rule -- a
+  review obligation with no specified threshold: `recall-measure.sh` prints the new figure beside that
+  rule set's prior runs and a reviewer judges (`feature-009`'s SPEC § 3 step 5).
 - `AC-16`: every **in-domain** rule set reports a figure, and none reports zero fixtures. The domain is
   the predicate in `features/feature-009-review-effectiveness/SPEC.md § 2b`, which is where it is
   defined; this line does not restate it.
