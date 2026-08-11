@@ -141,7 +141,7 @@ source of truth, and close the accumulated review-path defects.
 | 5 | feature-005-review-resume | **Ready** | **A+** | 13 | 2026-07-27 | 4 FRs (D4-D7); AC-6, AC-7, AC-8. A+ in 2 cycles (C+ -> A+). Discharged feature-003's lifecycle-rewrite debt as an AC. Amended feature-003's `U-` row Evidence contract (art=/rs= digests). Recommends 4 deliveries. |
 | 6 | feature-006-review-skills | **Ready** | **A+** | 12 | 2026-07-27 | 11 FRs (**FR-A7 cut**) + FR-C9 + FR-E1; AC-11, AC-12. A+ in 3 cycles (B -> B+ -> A+). Proved the boilerplate split is **byte-identical** -- N1's blast radius collapses to a zero-diff assertion. Recommends 5 deliveries. |
 | 8 | feature-008-citation-accuracy | **Ready** | **A+** | 8 | 2026-07-28 | 5 FRs (group G); AC-14. **Added post-Specify** -- see Q14. Extends `kb-citation-lint.sh` to work artifacts. A+ in **9 cycles**, the most of any feature, and 18 findings of which **one was itself wrong**. Collides with nothing; **D1 depends on nothing and gates nothing**, so it could ship first. |
-| 9 | feature-009-review-effectiveness | **In Discussion** | Pending | 8 | 2026-08-10 | **Added post-Plan 2026-08-10** -- see Q28/Q29. Owns group H (FR-H1-H3, recall measurement) and FR-E2 (the class sweep). `SPEC.md` authored 2026-08-10 following the `feature-008` precedent (Q14): requirements half plus `## Technical Specification` in 8 sections, on the Q31 two-lane decision. Awaiting REVIEW. Discharges the review-path slice of tech-debt `L4`; `L4` itself stays open. Deliveries 024, 025 and 027 cannot be detailed until this reaches `Ready`. |
+| 9 | feature-009-review-effectiveness | **Ready** | **A+** | 8 | 2026-08-10 | **Added post-Plan 2026-08-10** -- see Q28/Q29. Owns group H (FR-H1-H3, recall measurement) and FR-E2 (the class sweep). `SPEC.md` authored 2026-08-10 following the `feature-008` precedent (Q14): requirements half plus `## Technical Specification` in 8 sections, on the Q31 two-lane decision. Awaiting REVIEW. Discharges the review-path slice of tech-debt `L4`; `L4` itself stays open. **A+ on cycle 10**, after nine cycles in the `D` band (D+, D, D-, D, D+, D, D+, D+, D). Cycle 10 is the first run of the reviewer process Q32/Q33 set -- observation reports first, severity judged with a stated reason, necessity as a dimension -- and returned **zero findings** plus three gap rows, one of which it re-verified and found stale. Read the caveat in Q34 before citing the A+: the reviewer reached cycle 9's ledger, so this was not a clean-context pass. Deliveries 024, 025 and 027 are now detailable. |
 | 7 | feature-007-review-coverage-gaps | **Ready** | **A+** | 12 | 2026-07-27 | 6 FRs (group F incl. FR-F6). A+ in **6 cycles** (C+ -> C+ -> B+ -> B+ -> B+ -> A+) -- the longest of the work, every finding a citation or count defect. Applied 5 amendments to features 002 and 006. Recommends 5 deliveries. |
 
 ## Plan / Deliveries
@@ -214,11 +214,61 @@ or worse; `[LOW]`/`[MINOR]` at the end" — are the same statement.
 | definition/scope-item-untested-by-gate-criteria | criteria | Declined | 0 | 0 | plan-019-023 | Whether a delivery BLUEPRINT Scope bullet that no gate criterion tests is a reportable finding. DEF-08 is the inverse (a criterion no task discharges) and is scoped to tasks, not to a delivery's own Scope-to-criteria correspondence, so the Definition family declares no rule for this direction. | Declined 2026-08-10 as an ORCHESTRATOR disposition during the work-003 plan review, NOT a human ruling -- recorded here because it was being cited to reviewers as settled while no register row existed, which is precisely the drift the register prevents. Grounds: a delivery gate is a judgment gate, not a checklist join, so a Scope bullet without a matching criterion is a completeness question for the gate reviewer rather than a rule violation; and the inverse direction (a criterion no Scope bullet covers) is already reportable as DEF-04. Reopen for a human decision if a delivery ships scope that its gate demonstrably never examined. |
 | routing/work-state-authored-sections-rule-set | criteria | Declined | 0 | 0 | plan-019-023 | review-rubrics/INDEX.md routes any STATE.md to class STATE, kind C (spot-check, no rule rows), and the Definition family's members are REQ / SPEC / PLAN-BLUEPRINT / TASK. So when a review is scoped to a work STATE.md's AUTHORED sections -- a Q&A answer, the Criteria Gaps register -- no rule set carrying rule IDs formally governs them, and a real defect there is unwritable as a graded finding. Related: definition.md declares a rule for universal taxonomy classes 2 (DEF-04), 3 (DEF-08), 4 (DEF-05) and 5 (DEF-06) but none for class 1 (Contract violation). | Declined 2026-08-10 as an ORCHESTRATOR disposition, NOT a human ruling. Working rule: where a phase review is explicitly scoped to named AUTHORED regions of a work STATE.md, those regions are graded under the phase's own rule set (here definition.md), because DEF-04 and DEF-09 cite artifact-class-agnostic criteria -- a contradiction between two live statements and a repository claim disk contradicts are defects wherever they are written. Kind C continues to govern an UNSCOPED STATE.md, which is what it was written for: a spot-check of a file nobody asked to be graded. The class-1 hole in definition.md is real and left open; it did not bind here because both findings were expressible under DEF-04. Reopen for a human decision if a defect appears in a work STATE.md that neither DEF-04 nor DEF-09 can express. |
 | definition/unmet-criterion-outside-blueprint-gate | criteria | Pending | 1 | 0 | specify-feature-009 | No definition-family rule instantiates taxonomy class 3 (Unmet criterion) for a requirement or convention declared in REQUIREMENTS -- DEF-08 reaches only a delivery BLUEPRINT's gate criteria. So FR-H3's unspecified mechanism and faithful (non-contradicting) violations of the Restatement convention are both unreportable. DEF-07, the nearest fit, cites authoring-conventions.md whose own scope is KB primary docs. | -- |
-| definition/spec-region-ownership-for-shared-file | criteria | Pending | 1 | 0 | specify-feature-009 | No rule declares whether a feature SPEC must state region ownership for a canonical file several features change. feature-009 § 4 changes review-rubrics/INDEX.md (also claimed by features 002 and 007) and state-fix.md (also claimed by 005 and 008), and is the only one of nine feature SPECs with no affected-artifact-inventory section. | -- |
+| definition/spec-region-ownership-for-shared-file | criteria | Declined | 1 | 0 | specify-feature-009 | No rule declares whether a feature SPEC must state region ownership for a canonical file several features change. feature-009 § 4 changes review-rubrics/INDEX.md (also claimed by features 002 and 007) and state-fix.md (also claimed by 005 and 008), and is the only one of nine feature SPECs with no affected-artifact-inventory section. | Declined 2026-08-11 as an ORCHESTRATOR disposition, NOT a human ruling, on a PREMISE RE-VERIFICATION that found the stated instance false. Both collisions the criterion names are gone, checked on disk rather than recalled: (1) feature-009 only READS review-rubrics/INDEX.md -- its two mentions, SPEC:111 and SPEC:120, both describe reading the class-to-rule-set map at build time, and the INDEX.md pointer row this SPEC once added was deleted (Change Log, 2026-08-11); (2) state-fix.md is not shared -- exactly one feature SPEC changes aid-execute/references/state-fix.md (feature-009, SPEC:214), while feature-005 SPEC:125 cites aid-DISCOVER/references/state-fix.md as evidence and feature-008 SPEC:494 names the bare basename only as an ambiguous-citation COUNT. So feature-009 section 4 has nothing to collide against and the missing region-ownership section costs nothing today. Declined rather than left Pending because a gap whose live instance has evaporated cannot be judged, and re-asking it each cycle is the loop the register exists to stop. RESIDUAL, named rather than buried: the general question -- whether a feature SPEC MUST state region ownership for a canonical file more than one feature changes -- is real and remains unanswered; features 005 and 008 both carry an affected-artifact-inventory-and-region-ownership section and feature-009 does not, which is an inconsistency across nine SPECs even with no collision behind it. Reopen for a human decision the first time two feature SPECs are found changing the same canonical file, which is a grep, not a judgment. |
+| definition/spec-report-shape-vs-downstream-gate-criterion | criteria | Pending | 1 | 0 | specify-feature-009 | No definition-family rule reaches a feature SPEC that DEFERS a report element a downstream delivery gate criterion requires and cites this SPEC for. DEF-08 runs BLUEPRINT-to-task and no task set exists yet; DEF-04 needs the artifact this one derives from (REQUIREMENTS, not a BLUEPRINT); DEF-09 needs a false claim, not a deferral. Live instance: deliveries/delivery-027/BLUEPRINT.md:52 gate criterion 5 requires the report to name the coverage worklist item that should have caught a miss, while SPEC:189 defers -- Attribution needs FR-D10 -- and the report shape at SPEC section 3 step 4 carries no attribution element. The intent ladder puts SPEC above BLUEPRINT, so the SPEC may be right to defer and the BLUEPRINT the artifact out of step, which is why no rule fires. Raised in cycles 7, 8, 9 and 10 and registered on the fourth sighting. | -- |
 ## Cross-phase Q&A
 
 <!-- DERIVED -- union of per-delivery Q&A plus WORK-OWNER-AUTHORED entries below
      (work owner is the single writer for those). -->
+
+### Q34 -- cycle 10 graded A+ and the run itself found a hole in FR-D4 (2026-08-11)
+
+- **Raised by:** dogfooding the Q32/Q33 process on this work, at the owner's request
+- **Impact:** Medium -- the grade is real; one caveat weakens what may be concluded from it
+- **Status:** **Recorded** 2026-08-11 -- no decision needed; `FR-I7` added for the hole
+
+**What was run.** The four-step pipeline Q33 sets, on `feature-009`'s SPEC, as cycle 10:
+
+1. **Scripts observed.** `lint-modality` (6 modal rows, all valid), `check-gaps` (no open gap),
+   `kb-citation-lint --profile resolvable` over the whole work, plus five generated observation
+   reports -- structure, internal `§` cites, cross-document paths, mechanism mentions per section, and
+   every numeric claim. Each report ends with a **Not examined** section.
+2. **The reports went in with the brief**, before dispatch, as `FR-I2` requires.
+3. **The reviewer judged** the five dimensions and assigned severity itself.
+4. **`grade.sh` counted** the ledger.
+
+**Result: `A+`.** Zero findings, nine coverage rows, three gap rows. Nine cycles under the old process
+graded `D+, D, D-, D, D+, D, D+, D+, D`.
+
+**Two things the run got right that are worth naming.** The reviewer **verified rather than repeated**
+the reports: it re-derived the `81 findings` and `49 DEF-04 rows` claims against the cycle-1..8 ledgers
+instead of taking `numeric-claims.md` at face value, which is `FR-I4` behaving as intended. And it
+**declined to grade a real defect that was out of scope** -- `delivery-027/BLUEPRINT.md` still described
+the series as one row per rule set per run, the wording cycle 9 corrected in the SPEC to include the
+OVERALL line -- reporting it outside the ledger instead. That is the opposite of the manufactured
+finding the old process rewarded. The BLUEPRINT is now fixed.
+
+**THE CAVEAT, and it is not small. The reviewer read cycle 9's ledger.** It was passed one scratch path
+and nothing else, exactly as `FR-D4` requires -- and it found the prior cycle anyway, because every
+cycle's ledger sits in `.aid/.temp/review-pending/` under a name that differs by one digit. So cycle 10
+was **not** a clean-context pass, and a reviewer that knows last cycle's eight findings is answering
+*"were these fixed"* rather than *"what is wrong with this document"*. Both questions can return zero;
+only one of them earns an `A+`.
+
+**What that changes about the conclusion.** The `A+` is not withdrawn -- the reviewer did sweep
+independently, and the three gap rows and the out-of-scope BLUEPRINT defect are not things a
+fixed-checking pass produces. But the honest statement of what cycle 10 measured is **"the new process
+returned no findings on an artifact whose previous findings it could see"**, and the clean-context
+version of that measurement has not been taken. `FR-I7` is added so the next one can be: clean context
+must be **structural**, not instructional.
+
+**Why this counts as a finding about the review subsystem rather than an accident.** `FR-D4` has said
+"clean-context pass" since 2026-07-27 and nobody asked what enforces it. The first time it was tested,
+it did not hold. That is the same shape as `FR-B5b` (a MUST nothing enforced) and the modality gate (a
+check given authority it could not carry) -- three instances of the same class, and the class is
+**stating an intent and assuming the mechanism**.
+
+---
 
 ### Q33 -- three scripts were treated as authoritative evaluators when all three only check shape (2026-08-11)
 

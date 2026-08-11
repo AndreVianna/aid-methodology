@@ -478,14 +478,17 @@ Specify had closed for all eight existing features, so deliveries **024**, **025
 feature with no spec at all.
 
 **Resolved on 2026-08-10:** `/aid-specify` ran for `feature-009` and authored the SPEC, including the
-affected-artifact inventory those three deliveries need. Its `Spec State` is `In Discussion` in
-`## Features State`, and the SPEC's own review is what advances it to `Ready`.
+affected-artifact inventory those three deliveries need.
 
-**What remains blocked and what does not.** Nothing blocks the other 24 deliveries, and nothing blocks
-this plan being graded. `/aid-detail` for **024**, **025** and **027** waits on the SPEC reaching
-`Ready`, because a task breakdown reads the SPEC for its module map. Kept as a section rather than
-deleted, because a delivery pointing at a SPEC that is not yet graded is exactly the kind of dangling
-reference this work exists to catch.
+**Closed on 2026-08-11:** the SPEC reached `Ready` at `A+`, and **024**, **025** and **027** are now
+`Specified` and detailable. `## Features State` carries the grade and the cycle history.
+
+**One delivery is still in this condition, and it is the new one.** `/aid-detail` for **028** waits on
+`feature-002`'s SPEC being amended for group I, which was added to `REQUIREMENTS.md` on 2026-08-11
+after Specify had closed for that feature -- the same shape as the 2026-08-10 case above, which is why
+this section stays rather than being deleted. `delivery-026` is in the same position against
+`feature-005` and `FR-D10`. Nothing blocks the other 26 deliveries, and nothing blocks this plan being
+graded.
 
 ---
 

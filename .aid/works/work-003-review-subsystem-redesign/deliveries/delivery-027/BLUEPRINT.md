@@ -18,7 +18,8 @@ Scoped last because it measures the shape that actually ships.
   fraction, **per rule set** and overall (`FR-H2`). An aggregate alone is out -- it hides a rule that
   never fires.
 - The series `tests/recall-baseline.tsv`, created and appended by `recall-measure.sh` itself -- one
-  run-stamped row per rule set per run, so it needs no other writer and no per-close duty.
+  run-stamped row per rule set **and the OVERALL line**, per run, so it needs no other writer and no
+  per-close duty. The SPEC states which lines are persisted and why; this Scope does not restate it.
 - `FR-H3`'s regression rule: a review obligation with no specified threshold. `recall-measure.sh` prints
   the new figure beside that rule set's prior runs and a reviewer judges
   (`feature-009`'s SPEC § 3 step 5).

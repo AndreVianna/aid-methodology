@@ -1,5 +1,5 @@
 ---
-delivery_state: Pending-Spec
+delivery_state: Specified
 gate_tier: Small
 gate_grade: "Pending"
 gate_timestamp: "--"
@@ -35,7 +35,7 @@ ticket_ref: "--"
 <!-- AUTHORED -- single writer: this delivery's branch. The State scalar lives in the
      frontmatter above (delivery_state). -->
 
-- **Updated:** 2026-08-10T00:00:00Z
+- **Updated:** 2026-08-11T00:00:00Z
 - **Block Reason:** --
 - **Block Artifact:** --
 
