@@ -27,8 +27,9 @@ the precision work lands -- a baseline taken after the change is not a baseline.
 - **The series file `tests/recall-baseline.tsv`**, which the closing step appends a run's Lane A terms to
   at every delivery close from this one onward. It ships here rather than with the measurement so that a
   series exists before the first agent-lane figure is taken (`PLAN.md § Cross-Cutting Risks` row 6).
-- `tests/recall-unseeded.tsv` -- rule rows deliberately left unseeded, each with a reason, read by the
-  per-rule coverage check.
+- Per-rule coverage: every rule row in an in-domain rule set gets a catalogue row -- seeded, or
+  `fixture = --` carrying the reason it is knowingly unseeded. One file records both, so there is no
+  second list to keep in step.
 
 Carries `FR-H1`. Feature owner `feature-009`.
 
