@@ -85,6 +85,14 @@ Six rules, in priority order. `D1` outranks everything below it.
   entry that recorded the decision, which is where it already is.
 - **D5 — After fixing, the artifact must not be longer.** If it is, the fix added justification.
   Check the line count and say what it is.
+- **D7 — One normative home per mechanism, inside the artifact too.** A mechanism is specified in
+  exactly one section; elsewhere it may be **named** but no behaviour, value, threshold or artifact
+  name is restated. **Measured on `feature-009`'s SPEC: 49 of 81 findings over eight cycles were
+  internal contradictions**, and the cause was that seven of ten mechanisms were described in three or
+  more sections, so every design change needed a sweep across all of them. This is `Q30(a)`'s
+  restatement convention applied *within* an artifact rather than across artifacts — the same defect
+  class, and it went unnoticed for eight cycles because the convention was written for the
+  cross-artifact case.
 - **D6 — A class sweep still applies** (`FR-E2`), and a deletion sweeps like a correction: if a
   deleted claim was restated elsewhere, the restatement goes too.
 

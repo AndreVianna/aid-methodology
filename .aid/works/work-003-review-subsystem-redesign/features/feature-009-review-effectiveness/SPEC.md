@@ -15,17 +15,15 @@ ticket_ref: "--"
 | 2026-08-10 | Reduced under `REVIEW-DISCIPLINE.md` `D1`-`D5`: the justification layer removed, four specification defects fixed | /aid-specify FIX cycle 5 |
 | 2026-08-10 | Section numbers restored after the reduction broke six cites; lost qualifiers restored | /aid-specify FIX cycle 6 |
 | 2026-08-10 | The tally and the series separated; `FR-H3`'s trigger defined once; the sweep phrase made falsifiable | /aid-specify FIX cycle 7 |
-| 2026-08-11 | **Mechanism reduced, 13 artifacts to 8:** the second TSV, the invented regression threshold, the ledger-plumbing chain, the Lane A series, the `rule_set` column and the `INDEX.md` pointer all deleted | /aid-specify FIX cycles 7-8 |
+| 2026-08-11 | One normative home per mechanism (§ Technical Specification), after 49 of 81 findings proved to be internal contradictions between duplicate descriptions | /aid-specify FIX cycle 8 |
+| 2026-08-11 | **Mechanism reduced:** the second TSV, the invented regression threshold, the ledger-plumbing chain, the Lane A series, the `rule_set` column and the `INDEX.md` pointer all deleted. § 4 is the inventory of record; this row states no count | /aid-specify FIX cycles 7-8 |
 
 ## Description
 
 Measure whether a review finds what is there, and make a fix account for its whole class.
 
-Two mechanisms: a corpus of artifacts carrying **known, catalogued** defects, and a **reported
-fraction** of those defects that a review pass finds. Plus one existing rule made mechanical: `F1` says
-a finding is a class, and nothing checks it, so a corrected claim keeps its siblings.
-
-This adds a denominator to a system that reports only a numerator.
+This adds a denominator to a system that reports only a numerator, and makes `F1` — a finding is a
+class — mechanical rather than advisory.
 
 ## User Stories
 
@@ -66,25 +64,39 @@ Stated in full in `REQUIREMENTS.md § 9`.
 
 **In scope**
 
-1. A fixture corpus of reviewable artifacts carrying known, catalogued defects, seeded per rule.
-2. The defect catalogue (§ 2).
+1. The fixture corpus (§ 4), and the defect catalogue that indexes it (§ 2).
 3. The two-lane measurement and its report (§ 3).
-4. The accumulated series (§ 4), and `FR-H3`'s regression rule — a **review obligation, not a
-   mechanism**. `recall-measure.sh` prints the new figure beside that rule set's prior runs, and a
-   reviewer judges whether a drop is a regression. No threshold is specified: the judgment lane is
-   non-deterministic, so any fixed trigger would be arbitrary, and `FR-H3` is a `SHOULD` addressed to
-   a reviewer rather than a gate.
+4. The accumulated series (§ 4), and `FR-H3`'s regression rule (§ 3 step 5, § 8 item 3).
 5. The class-sweep obligation and its fixture (§ 5).
 
 **Out of scope**
 
-1. **Gating on the recall figure.** `FR-H2` makes this a measurement. A pass/fail bar would need a
-   second grading arithmetic, which `FR-F6` forbids.
+1. **Gating on the recall figure** — `FR-H2` makes this a measurement, and `FR-F6` forbids a second
+   grading arithmetic (§ 3).
 2. **Automating the repair** of siblings a sweep finds.
 3. **Generating a coverage worklist** for an arbitrary artifact class — `FR-D10`, `feature-005`.
 4. **Changing what `grade.sh` counts.** `NFR-1` and `AC-9` unaffected.
 
 ## Technical Specification
+
+**One normative home per mechanism.** Each mechanism below is specified in exactly one section.
+Outside it, the mechanism may be **named** but no behaviour, value, threshold or artifact name is
+restated — including in `## Scope`, `## Source` and `## Acceptance Criteria`, which name and point.
+
+| Mechanism | Normative section |
+|---|---|
+| the defect catalogue | § 2 |
+| the corpus domain | § 2b |
+| the two lanes, the report, the denominator, the join | § 3 |
+| every artifact this feature adds or changes | § 4 |
+| the class sweep, and `AC-17`'s fixture | § 5 |
+| the verification checks | § 6 |
+| where each lane runs, and what each delivery close gives | § 7 |
+
+This is not tidiness. Eight review cycles on this artifact produced 81 findings, **49 of them internal
+contradictions**, because seven of ten mechanisms were described in three or more sections and every
+design change had to be swept across all of them. One home makes that class of defect impossible
+rather than merely discouraged.
 
 ### 2. Data model — the defect catalogue
 
@@ -249,12 +261,9 @@ red is satisfied by any one row failing, so it must confirm *that row's* asserti
 `# COVERS:` header — read by `select-suites.sh` — which narrows change-set selection to the paths it
 names.
 
-**Lane A's tally is a run artifact.** `test-recall-corpus.sh` writes
-`rule_set \t asserted \t total` to `.aid/.temp/recall-lane-a.tsv` — gitignored, so no suite mutates
-the source tree, and no separate tool or CI wiring is needed.
-
-**The series has one writer: `recall-measure.sh`.** It creates `tests/recall-baseline.tsv` if absent and
-appends to it, so the file needs no other actor and no per-close duty.
+**Neither the tally nor the series needs a writer beyond § 4's.** The tally is gitignored, so the suite
+that writes it mutates nothing tracked; the series has exactly one writer, so it needs no per-close
+duty. § 4 states both files and their writers.
 
 **There is deliberately no Lane A series.** An earlier draft had the delivery closing step append Lane A
 terms from `delivery-024` onward. That is removed, because such a series would be **inert**: § 3 fixes
@@ -288,11 +297,11 @@ Lane B's dispatches are measurement overhead, not review cost.
 ### 8. What could still go wrong
 
 1. **A seeded defect can be too easy.** A corpus of obvious defects reports high recall and proves
-   nothing. The catalogue's `summary` states what makes each defect findable, so a reviewer of the
-   corpus can judge whether it is representative.
+   nothing. There is no mechanical guard: judging whether the corpus is representative is a review of
+   the corpus, which § 2's `summary` column exists to make possible.
 2. **Recall on fixtures is not recall on real artifacts.** A fixture is smaller than a real artifact
    and its defects were placed deliberately, so the figure is likely to be **higher** than live recall.
    Read it as a trend, not as a level.
 3. **Judgment rows depend on a non-deterministic reviewer**, so Lane B's figure moves between runs
-   with no change at all. This is why § 3 step 5 prints the prior runs rather than a single delta, and
-   why `FR-H3` is left to judgment: one run below the last is not evidence of a regression.
+   with no change at all. One run below the last is therefore not evidence of a regression, which is
+   why `FR-H3` is left to a reviewer's judgment and no threshold is specified anywhere.
