@@ -1,5 +1,5 @@
 ---
-state: Pending
+state: Done
 review: "--"
 elapsed: "--"
 notes: "--"
@@ -64,15 +64,8 @@ in-flight `work-003-state-schema` frontmatter conventions.
 
 ## Quick Check Findings
 
-<!-- AUTHORED -- written by `writeback-state.sh --task-id NNN --findings ...` during the
-     per-task quick-check step of aid-execute. Records the reviewer tier used and all [HIGH]
-     and [CRITICAL] findings for this task. [CRITICAL] findings trigger an immediate fix-on-spot;
-     [HIGH] findings are deferred to the delivery gate via delivery-NNN-issues.md.
-     No grade is recorded here -- grading is per-delivery, not per-task. -->
-
-- **Reviewer Tier:** --
-- **Findings:** --
-
+- **Reviewer Tier:** sonnet (aid-reviewer, adopter-facing quick check)
+- **Findings:** 0 [CRITICAL] / 0 [HIGH] / 0 [MEDIUM] / 0 [LOW] / 0 [MINOR]. Ledger: .aid/.temp/review-pending/exec-work-006-task-006.md (header only, no rows). AC-1 oracle A section-scoped: which already exist -> 0, project-level -> 1, skill-created file-wide -> 1, all pass. AC-1 oracle B dogfood: governance artifact sentence names per-work/project-level split, project-level -> 2, pass. git diff --exit-code tests/canonical + site/scripts/__tests__ clean. No work id in concern-model.md. Three disclosed decisions judged not-defects: paragraph placement (SPEC/DETAIL name a heading target for 2a only; skill-created oracle is deliberately file-wide unlike 2a's section-scoped checks; task-007 Surface-2 edit targets Seed-coverage check, not D or Why-product-concerns, so no downstream task is misled); lowercase project-level instance is natural prose, not oracle-gaming; missing inline cross-ref is acceptable, sources frontmatter already cites concern-model.md. Doctrine coherence verified for roadmap.md/backlog.md (admissible) and a per-work sprint plan (banned). Render-parity hand-off (feature-001 SPEC Sec5 row 15) confirmed genuinely owned by delivery-003 task-060/task-061, not unowned.
 ---
 
 ## Dispatch Log

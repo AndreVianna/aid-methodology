@@ -1,5 +1,5 @@
 ---
-state: Pending
+state: Done
 review: "--"
 elapsed: "--"
 notes: "--"
@@ -64,15 +64,8 @@ in-flight `work-003-state-schema` frontmatter conventions.
 
 ## Quick Check Findings
 
-<!-- AUTHORED -- written by `writeback-state.sh --task-id NNN --findings ...` during the
-     per-task quick-check step of aid-execute. Records the reviewer tier used and all [HIGH]
-     and [CRITICAL] findings for this task. [CRITICAL] findings trigger an immediate fix-on-spot;
-     [HIGH] findings are deferred to the delivery gate via delivery-NNN-issues.md.
-     No grade is recorded here -- grading is per-delivery, not per-task. -->
-
-- **Reviewer Tier:** --
-- **Findings:** --
-
+- **Reviewer Tier:** Small
+- **Findings:** 1 [HIGH] filed, Fixed. AC-12 names THREE self-describing statements the new rows falsify; only two were corrected. The `software-cli` intro paragraph was byte-identical to HEAD, still calling `decisions.md` THE conditional entry when there are now four -- adopter-facing via all five profiles. Rewritten to name all four with their concern ids (decisions.md + roadmap.md under D, backlog.md C7, release-tracking.md C8) and the no-template mechanism that keeps the seed at 14. Class sweep found one more imprecise singular at :438 ("the 11th dimension conditional realization"), corrected to "one of two". Suites re-run green after the fix: domain-doc-matrix, spine-depth-coverage, kb-template-authoring-standard. Reviewer independently reproduced 37/37 and 165/165 and verified the +6 arithmetic (3 unique deduped pairs x 2 checks, not 24 rows). Ledger: `.aid/.temp/review-pending/exec-work-006-task-007.md`
 ---
 
 ## Dispatch Log

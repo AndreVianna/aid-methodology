@@ -1,8 +1,8 @@
 ---
-state: 'In Progress'
+state: Done
 review: "--"
 elapsed: "--"
-notes: "--"
+notes: 'Feature-002 commit range: 88764aec..6d0d9009 (single commit 6d0d9009, parent 88764aec). G3 over that range with path filter lib/ canonical/ install.sh install.ps1: exactly 3 A, 0 M, 0 D. tests/ site/ .github/ diff over the range: empty. profiles/ .claude/ .cursor/ working tree: clean. B4 verified by a real bin/aid add install into a mktemp target: no .aid/design/ created.'
 ticket_ref: "--"
 ---
 
@@ -64,15 +64,8 @@ in-flight `work-003-state-schema` frontmatter conventions.
 
 ## Quick Check Findings
 
-<!-- AUTHORED -- written by `writeback-state.sh --task-id NNN --findings ...` during the
-     per-task quick-check step of aid-execute. Records the reviewer tier used and all [HIGH]
-     and [CRITICAL] findings for this task. [CRITICAL] findings trigger an immediate fix-on-spot;
-     [HIGH] findings are deferred to the delivery gate via delivery-NNN-issues.md.
-     No grade is recorded here -- grading is per-delivery, not per-task. -->
-
-- **Reviewer Tier:** --
-- **Findings:** --
-
+- **Reviewer Tier:** Small
+- **Findings:** none. Audit initially reported 4 criteria Blocked-on-premise (G3 audits a commit range; nothing was committed) and correctly refused to substitute a working-tree diff or backfill a fabricated sha range. Orchestrator committed tasks 001-004 as one feature-002-only block 88764aec..6d0d9009; all blocked oracles then passed and were independently reproduced by the reviewer: 3 A / 0 M / 0 D under the G3 path filter, empty over tests/ site/ .github/, clean profiles/.claude/.cursor. Reviewer re-derived SPEC 7s 26-row reconciliation itself -- all 26 owned or explicitly deferred, none dropped. Ruled gate criterion 2 genuinely closed in letter AND spirit: task-005s own DETAIL assigns range-establishment as its job, and G3 is a mechanical function of tasks 001-004s independently-specified output. Ledger: `.aid/.temp/review-pending/exec-work-006-task-005.md`
 ---
 
 ## Dispatch Log

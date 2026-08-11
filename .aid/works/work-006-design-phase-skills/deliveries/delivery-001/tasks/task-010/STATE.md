@@ -1,5 +1,5 @@
 ---
-state: Pending
+state: Done
 review: "--"
 elapsed: "--"
 notes: "--"
@@ -64,15 +64,8 @@ in-flight `work-003-state-schema` frontmatter conventions.
 
 ## Quick Check Findings
 
-<!-- AUTHORED -- written by `writeback-state.sh --task-id NNN --findings ...` during the
-     per-task quick-check step of aid-execute. Records the reviewer tier used and all [HIGH]
-     and [CRITICAL] findings for this task. [CRITICAL] findings trigger an immediate fix-on-spot;
-     [HIGH] findings are deferred to the delivery gate via delivery-NNN-issues.md.
-     No grade is recorded here -- grading is per-delivery, not per-task. -->
-
-- **Reviewer Tier:** --
-- **Findings:** --
-
+- **Reviewer Tier:** Small
+- **Findings:** none. All five count facts independently reproduced against master: rows 58->61, dirs 76->79, anchored repurpose rows 24->27, emitting doorways still 34. `test-catalog-dirs-parity.sh` 353 passed / 0 failed. Descriptions 588/546/615 chars, all under the AC-12 1024 cap. Self-corrected over-restatement confirmed gone (zero hits for enumerate-works / worktree-lifecycle / grade.sh / grounding outside pointer form). The deliberate `design`-invariant restatement ruled a legitimate exception -- mandated by this task own AC and using the contract own vocabulary. delivery-003 task-059 verified as the genuine owner of the three stale catalog count comments. Ledger: `.aid/.temp/review-pending/exec-work-006-task-010.md`
 ---
 
 ## Dispatch Log

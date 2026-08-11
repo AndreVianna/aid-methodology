@@ -446,6 +446,30 @@ shortcuts:
     group: G3
     intent: "Produce a kept design artifact (UX/flow/component/interface, with a11y notes) to inform the build; resolves nothing."
     repurpose: true
+  - name: aid-design-roadmap
+    verb: design
+    artifact: roadmap
+    alias_of: null
+    default_type: DESIGN
+    group: G3
+    intent: "Develop the project's direction as a design seed -- committed vs. wanted, and the sequencing rationale; writes no KB document."
+    repurpose: true
+  - name: aid-design-mvp
+    verb: design
+    artifact: mvp
+    alias_of: null
+    default_type: DESIGN
+    group: G3
+    intent: "Draw the MVP line as a design seed -- what is in the first shippable slice, what defers, and why each cut was made."
+    repurpose: true
+  - name: aid-design-backlog
+    verb: design
+    artifact: backlog
+    alias_of: null
+    default_type: DESIGN
+    group: G3
+    intent: "Develop the defined-and-prioritized item set as a design seed, including which tech-debt.md rows to accept into the plan."
+    repurpose: true
 
   # --- G8: Document family -- work-005 reframe of feature-010 --
   # `document` is a create/update ARTIFACT, not a verb. HAND-AUTHORED collapse skills.
