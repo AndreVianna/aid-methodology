@@ -17,9 +17,11 @@ Scoped last because it measures the shape that actually ships.
 - The measurement: run the review over delivery-024's corpus and report the found
   fraction, **per rule set** and overall (`FR-H2`). An aggregate alone is out -- it hides a rule that
   never fires.
-- The **Lane B term** added to the series `delivery-024` ships, and `FR-H3`'s regression rule -- a
-  review obligation with no specified threshold: `recall-measure.sh` prints the new figure beside that
-  rule set's prior runs and a reviewer judges (`feature-009`'s SPEC § 3 step 5).
+- The series `tests/recall-baseline.tsv`, created and appended by `recall-measure.sh` itself -- one
+  run-stamped row per rule set per run, so it needs no other writer and no per-close duty.
+- `FR-H3`'s regression rule: a review obligation with no specified threshold. `recall-measure.sh` prints
+  the new figure beside that rule set's prior runs and a reviewer judges
+  (`feature-009`'s SPEC § 3 step 5).
 - `AC-16`: every **in-domain** rule set reports a figure, and none reports zero fixtures. The domain is
   the predicate in `features/feature-009-review-effectiveness/SPEC.md § 2b`, which is where it is
   defined; this line does not restate it.
@@ -73,9 +75,10 @@ being replaced. delivery-026 makes a coverage row per-claim, without which a mis
 -- you would know a defect was missed but not which pass should have caught it, which is the figure's
 whole diagnostic value.
 
-**Known risk, and the mitigation is in the plan.** A figure first taken this late cannot be attributed
-to any one delivery. `PLAN.md § Cross-Cutting Risks` row 6 records the risk. The series that answers it
-is `tests/recall-baseline.tsv`, which **delivery-024 ships** and which the closing step appends to at
-every delivery close from 024 onward. This delivery adds the **Lane B term** to that series; it cannot
-start earlier than `recall-measure.sh`, which this delivery ships. `feature-009`'s SPEC § 7 states which
-term joins when, and records that this corrects `STATE.md` Q31's mitigation wording.
+**Known risk, and what actually answers it.** A figure first taken this late cannot be attributed to any
+one delivery. `PLAN.md § Cross-Cutting Risks` row 6 records the risk. What answers it is **Lane A
+breaking the build from `delivery-024`'s close onward**: a script rule that stops catching its seeded
+defect fails CI at that close, not here. An earlier draft had a Lane A *series* accumulating from 024
+instead; that was deleted as inert -- Lane A's expected value is fixed at 1.0 and a failure breaks the
+build, so every pre-027 row would have been the same constant. `feature-009`'s SPEC § 7 states this, and
+records that it corrects `STATE.md` Q31's mitigation wording.

@@ -30,17 +30,20 @@ oracle, not a new criterion.
 
 ## Gate Criteria
 
-- [ ] `state-fix.md` states the sweep as a step with an output, not as advice, and names where that
-      output is recorded -- the fixer's report to the orchestrator, which the orchestrator carries into
-      the reconciled row's `Evidence`. The fixer cannot write the ledger itself: it has a single writer,
-      and `writeback-ledger.sh` gains the `Evidence`-append mode this delivery ships
-      (`features/feature-009-review-effectiveness/SPEC.md § 5`)
+- [ ] `state-fix.md` states the sweep as a step with an output, not as advice: the fixer runs
+      `class-sweep.sh` and includes its output in the report it already returns. **No ledger write is
+      involved** -- an earlier draft routed the output into the reconciled row's `Evidence`, needing a new
+      `writeback-ledger.sh` mode, a schema extension and a `RECONCILE` step; all three were deleted as
+      unnecessary (`features/feature-009-review-effectiveness/SPEC.md § 5`)
 - [ ] **The fixture fails without the sweep.** A corrected claim restated in **two other files** --
       `AC-17`'s own wording, not a weaker "sites" -- must leave the fix rejected until the sweep output
       naming both files is on the record. Verified in both directions: a run with the sweep passes, a run
       without it fails
-- [ ] The sweep's phrase is derived from the ledger row being discharged, not chosen freely, so two
-      fixers sweeping the same finding sweep the same thing
+- [ ] The sweep's phrase is a **substring of the text the fix changed**, which is what makes the
+      obligation falsifiable: a sweep whose phrase does not appear in the correction has not swept the
+      corrected claim. Deliberately **not** derived from the ledger row -- an `Evidence` cell commonly
+      quotes several strings, so "the string the row quotes" names nothing
+      (`features/feature-009-review-effectiveness/SPEC.md § 5`)
 - [ ] Five-profile parity re-run and clean; dogfood byte-identity passes
 - [ ] All section-6 quality gates pass
 

@@ -13,6 +13,9 @@ ticket_ref: "--"
 | 2026-08-10 | Feature created; owns group H and `FR-E2` | owner decisions `STATE.md` Q28 / Q29 |
 | 2026-08-10 | Two-lane measurement: script-decided rules asserted in CI, judgment-decided rules measured on demand | owner decision `STATE.md` Q31 |
 | 2026-08-10 | Reduced under `REVIEW-DISCIPLINE.md` `D1`-`D5`: the justification layer removed, four specification defects fixed | /aid-specify FIX cycle 5 |
+| 2026-08-10 | Section numbers restored after the reduction broke six cites; lost qualifiers restored | /aid-specify FIX cycle 6 |
+| 2026-08-10 | The tally and the series separated; `FR-H3`'s trigger defined once; the sweep phrase made falsifiable | /aid-specify FIX cycle 7 |
+| 2026-08-11 | **Mechanism reduced, 13 artifacts to 8:** the second TSV, the invented regression threshold, the ledger-plumbing chain, the Lane A series, the `rule_set` column and the `INDEX.md` pointer all deleted | /aid-specify FIX cycles 7-8 |
 
 ## Description
 
@@ -92,13 +95,17 @@ TSV, one row per seeded defect, at `tests/recall-catalogue.tsv`.
 | `defect_id` | `RC-NNN` | Never renumbered — a renumber breaks every recorded baseline |
 | `fixture` | fixture path, **relative to the repo root**, or `--` | Byte-identical to a ledger `Doc`, so the § 3 join needs no path rewriting. **`--` marks a rule deliberately left unseeded**, and then `summary` carries the reason: one file records both what is covered and what is knowingly not, so there is no second list to keep in step |
 | `class` | the artifact class the fixture belongs to | Always populated; read from `review-rubrics/INDEX.md` at build time, never hardcoded |
-| `rule_set` | the rule-set file whose rules should catch the defect | Several classes share a rule set, so this is not derivable from `class`. `FR-H2`'s *"per rule set"* is reported per `rule_set` |
 | `rule_id` | the rule expected to catch it | Mandatory. A rule set with no rule rows can supply none, which is what § 2b excludes |
 | `enforcement` | `script` \| `judgment` | Routes the row to a lane. `script` only where the named oracle can decide it |
 | `oracle` | the script for a `script` row, `--` otherwise | |
 | `polarity` | `present` \| `absent` | **Whether the seeded defect is the locator being IN the fixture or MISSING from it.** Absence-shaped rules exist — a mandated section that must be there, a missing-content class — and without this column a check for "the locator is found" fails by construction on every one of them |
 | `locator` | a content anchor | An anchor, never a line number: a fixture is edited by every re-seed. Read together with `polarity` — the defect is the anchor being present, or being absent, as that column says |
 | `summary` | one line, plain text | Machine-read, so no glyphs. **States what makes this defect findable** — the § 8 judgement about whether the corpus is representative reads this column |
+
+**`rule_set` is derived, not stored.** `FR-H2` reports *"per rule set"*, and the rule set is fixed twice
+over by columns already present: `review-rubrics/INDEX.md` maps `class` to exactly one rule set, and a
+`rule_id`'s prefix is unique across the rule-set files. Storing it would be a third source that can
+disagree with the other two.
 
 **Uniqueness: one seeded defect per `(fixture, rule_id)`.** The § 3 join is on `(Doc, Rule)`, and
 without uniqueness it cannot tell which of two same-key rows a finding discharged. A fixture may carry
@@ -124,7 +131,7 @@ would make a deterministic gate depend on a non-deterministic agent.
 **Lane A — script-decided, in CI.**
 
 ```
-for each catalogue row where enforcement = script:
+for each SEEDED catalogue row (fixture != --) where enforcement = script:
     run <oracle> over <fixture>
     assert the run REPORTS the defect -- always a positive assertion, whatever `polarity` says.
     `polarity` describes the fixture (is the anchor there, or missing?); it never inverts
@@ -141,10 +148,10 @@ in the oracle. It is a pass/fail suite like any other, which is what keeps `FR-F
 2. take the resulting ledger
 3. join reported (Doc, Rule) against catalogue rows where enforcement = judgment
 4. report one line per rule_set, then one OVERALL line, each carrying the terms that apply:
-       found / seeded(judgment)   -- a fraction, or `--` where the rule set has no
-                                    judgment-decided rule
-       asserted / total(script)   -- Lane A's count, or `--` where the rule set has no
-                                    script-decided rule
+       found / seeded(judgment)   -- a fraction over SEEDED judgment rows, or `--` where the rule
+                                    set has no seeded judgment row
+       asserted / total(script)   -- Lane A's count, or `--` where the rule set has no seeded
+                                    script row
    Either term may be `--`; NEITHER is ever `0/0`, which reads as a measured zero. Every in-domain
    rule set gets its line with both terms present, one of which may be `--`: that is what makes
    AC-16's "reported for every rule set" decidable for a rule set seeded entirely in one lane.
@@ -180,10 +187,10 @@ This is the feature's affected-artifact inventory. The `Delivery` column is part
 | `tests/recall-catalogue.tsv` | the catalogue (§ 2) | 024 |
 | `tests/canonical/test-recall-corpus.sh` | Lane A's assertions, plus § 6 checks 1-3 by default and check 4 behind a flag | 024 |
 | `tests/canonical/fixtures/class-sweep/**` | `AC-17`'s fixture: a claim corrected in one file and restated in two others | 025 |
-| `tests/canonical/test-class-sweep.sh` | asserts `AC-17` on that fixture, with and without the sweep | 025 |
+| `tests/canonical/test-class-sweep.sh` | asserts `AC-17` on that fixture: a phrase from the correction reports both other files, and a phrase absent from it reports no sites (§ 5) | 025 |
 | `canonical/aid/scripts/review/class-sweep.sh` | the sweep: takes a phrase and a root, prints every matching site (§ 5) | 025 |
 | `canonical/aid/scripts/review/recall-measure.sh` | Lane B: join, then emit the § 3 report | 027 |
-| `tests/recall-baseline.tsv` | the accumulated series, appended never overwritten, with a run-identity column. **Ships at 024**, carrying Lane A terms from that close; Lane B terms join at 027 | 024 |
+| `tests/recall-baseline.tsv` | the accumulated series: one appended, run-stamped row per rule set per Lane B run. Created and appended by `recall-measure.sh`, so it needs no other writer | 027 |
 
 **Changed:**
 
@@ -191,7 +198,6 @@ This is the feature's affected-artifact inventory. The `Delivery` column is part
 |---|---|---|
 | `canonical/skills/aid-execute/references/state-fix.md` | the class-sweep obligation: the fixer runs `class-sweep.sh` and includes its output in its report (§ 5) | 025 |
 
-| `canonical/aid/templates/review-rubrics/INDEX.md` | a pointer to the corpus, so a new rule set is told it needs a fixture | 024 |
 
 Every canonical change renders to five profiles, so `AC-12` parity and dogfood byte-identity apply.
 
@@ -230,7 +236,7 @@ flag.** Lane A is the in-CI lane, so checks 1-3 are part of it and check 4 is an
 | # | Check | What it catches |
 |---|---|---|
 | 1 | **Every seeded catalogue row resolves**, in the direction `polarity` declares: a `present` row's `locator` is found in its `fixture`, an `absent` row's is not. Rows with `fixture = --` are exempt and must carry a `summary` reason | A defect re-seeded or removed while its row stayed, which would otherwise report as a permanent miss |
-| 2 | **Every in-domain rule set has at least one row** (§ 2's predicate, evaluated by reading the rule sets) | `AC-16`'s failure condition: a rule set reporting nothing and reading as clean |
+| 2 | **Every in-domain rule set has at least one SEEDED row** — a row with a real `fixture`, not a `--` exemption. A rule set whose every row is exempt reports zero fixtures, which is exactly what this check exists to catch | `AC-16`'s failure condition: a rule set reporting nothing and reading as clean |
 | 3 | **Every rule row in an in-domain rule set has a catalogue row** — seeded, or `fixture = --` with a reason in `summary` | `FR-H1` mandates seeding **per rule**, and check 2 is per rule **set**: one seeded row satisfies check 2 while the rest of that rule set is uncovered. This closes the gap between them, and the `--` row is what makes an exemption explicit rather than silent |
 | 4 | **Mutation of the mutation**, behind an explicit flag, **for each `script` row only**: repair that row's seeded defect in a scratch copy and assert **that row's** Lane A assertion flips to failing. A `judgment` row has no Lane A assertion to flip | A fixture whose oracle passes for a reason unrelated to the seeded defect |
 
@@ -243,19 +249,24 @@ red is satisfied by any one row failing, so it must confirm *that row's* asserti
 `# COVERS:` header — read by `select-suites.sh` — which narrows change-set selection to the paths it
 names.
 
-**Lane A's tally is a run artifact; the series is a tracked file, and they are different things.**
-`test-recall-corpus.sh` writes `rule_set \t asserted \t total` to `.aid/.temp/recall-lane-a.tsv` —
-gitignored, so no suite mutates the source tree, and no separate tool or CI wiring is needed.
+**Lane A's tally is a run artifact.** `test-recall-corpus.sh` writes
+`rule_set \t asserted \t total` to `.aid/.temp/recall-lane-a.tsv` — gitignored, so no suite mutates
+the source tree, and no separate tool or CI wiring is needed.
 
-**The series accumulates at delivery closes, not in CI.** At each delivery close from `delivery-024`
-onward, the closing step runs the suite and **appends that run's tally to `tests/recall-baseline.tsv`**
-with a run identity. That is a deliberate act by the closing step, so a tracked file is written
-without any suite mutating the tree, and a series exists from 024 exactly as
-`PLAN.md § Cross-Cutting Risks` row 6 requires. Lane B's terms join the same file from `delivery-027`.
+**The series has one writer: `recall-measure.sh`.** It creates `tests/recall-baseline.tsv` if absent and
+appends to it, so the file needs no other actor and no per-close duty.
+
+**There is deliberately no Lane A series.** An earlier draft had the delivery closing step append Lane A
+terms from `delivery-024` onward. That is removed, because such a series would be **inert**: § 3 fixes
+Lane A's expected value at 1.0 and a Lane A failure breaks the build, so a delivery can only close while
+`asserted == total`. Every row before the first Lane B run would be the same constant, which makes
+nothing attributable. What actually guards against a late unattributable figure is that **Lane A breaks
+the build from `delivery-024`'s close onward** — a script rule that stops catching its seeded defect is
+caught at that close, not at 027.
 
 **`recall-measure.sh` fails if `.aid/.temp/recall-lane-a.tsv` is absent.** Absence means the suite has
 not run in this tree, which is an error and not a value — reporting `--` for it would collide with
-`--`'s one meaning in § 3 and read as *"this rule set has no script-decided rule"*.
+`--`'s one meaning in § 3.
 
 **Lane B** is invoked deliberately, is not in CI, needs no credentials there, and adds nothing to CI
 time.
@@ -263,10 +274,10 @@ time.
 **When each series starts.** `PLAN.md § Cross-Cutting Risks` row 6 records the risk that a figure
 first taken at `delivery-027` is unattributable.
 
-| From | In the series | Also |
-|---|---|---|
-| `delivery-024` closing | Lane A's terms, appended at each close | Lane A's pass/fail in CI on every run — a script rule that stops catching its seeded defect breaks the build |
-| `delivery-027` closing | Lane B's fraction joins the same rows | |
+| From | Signal |
+|---|---|
+| `delivery-024` closing | **Lane A breaks the build** — a script rule that stops catching its seeded defect fails CI from this close onward |
+| `delivery-027` closing | **Lane B's fraction**, per deliberate run, accumulating in the series |
 
 Lane B cannot start earlier than `recall-measure.sh`, which ships with 027. `STATE.md` Q31 carries the
 correction to its own mitigation wording.
@@ -279,8 +290,9 @@ Lane B's dispatches are measurement overhead, not review cost.
 1. **A seeded defect can be too easy.** A corpus of obvious defects reports high recall and proves
    nothing. The catalogue's `summary` states what makes each defect findable, so a reviewer of the
    corpus can judge whether it is representative.
-2. **Recall on fixtures is not recall on real artifacts.** The figure is a floor and a trend line.
-   `FR-H3` treats a *drop* as the signal, which is robust to the absolute number being optimistic.
+2. **Recall on fixtures is not recall on real artifacts.** A fixture is smaller than a real artifact
+   and its defects were placed deliberately, so the figure is likely to be **higher** than live recall.
+   Read it as a trend, not as a level.
 3. **Judgment rows depend on a non-deterministic reviewer**, so Lane B's figure moves between runs
    with no change at all. This is why § 3 step 5 prints the prior runs rather than a single delta, and
    why `FR-H3` is left to judgment: one run below the last is not evidence of a regression.
