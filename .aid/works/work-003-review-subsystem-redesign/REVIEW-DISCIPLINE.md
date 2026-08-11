@@ -1,4 +1,4 @@
-# Review discipline for this work — the trap, and the two instruction changes
+# Review discipline for this work — the traps, and the instruction changes they forced
 
 > **Raised:** 2026-08-10, after five `/aid-specify` FIX cycles on `feature-009` graded
 > `D+ → D → D- → D → D+`.
@@ -70,7 +70,7 @@ that should simply have gone.
 
 ## Instruction change 2 — the fixer deletes before it explains
 
-Six rules, in priority order. `D1` outranks everything below it.
+Seven rules, in priority order. `D1` outranks everything below it.
 
 - **D1 — Answer a `[PROSE]` / not-load-bearing finding by deleting the sentence.** Never by
   correcting it. If a paragraph has been found wrong twice, delete the paragraph; a third repair is
@@ -85,6 +85,8 @@ Six rules, in priority order. `D1` outranks everything below it.
   entry that recorded the decision, which is where it already is.
 - **D5 — After fixing, the artifact must not be longer.** If it is, the fix added justification.
   Check the line count and say what it is.
+- **D6 — A class sweep still applies** (`FR-E2`), and a deletion sweeps like a correction: if a
+  deleted claim was restated elsewhere, the restatement goes too.
 - **D7 — One normative home per mechanism, inside the artifact too.** A mechanism is specified in
   exactly one section; elsewhere it may be **named** but no behaviour, value, threshold or artifact
   name is restated. **Measured on `feature-009`'s SPEC: 49 of 81 findings over eight cycles were
@@ -93,8 +95,7 @@ Six rules, in priority order. `D1` outranks everything below it.
   restatement convention applied *within* an artifact rather than across artifacts — the same defect
   class, and it went unnoticed for eight cycles because the convention was written for the
   cross-artifact case.
-- **D6 — A class sweep still applies** (`FR-E2`), and a deletion sweeps like a correction: if a
-  deleted claim was restated elsewhere, the restatement goes too.
+
 
 ---
 
