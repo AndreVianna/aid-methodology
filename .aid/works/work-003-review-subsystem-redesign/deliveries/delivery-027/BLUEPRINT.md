@@ -45,7 +45,8 @@ arithmetic, which `FR-F6` forbids.
       the corpus catalogue; an in-domain rule set with no fixture fails this criterion rather than
       reporting an empty pass
 - [ ] The baseline is recorded where a later run can compare against it, and the comparison is
-      reproducible from the recorded inputs
+      reproducible from the recorded inputs -- which are the catalogue and the ledger, the only two
+      files the figure is computed from
 - [ ] The figure describes the **merged** `/aid-review` that delivery-022 ships, not a skill being
       replaced
 - [ ] A miss is attributable: for each missed seeded defect the report names the coverage worklist

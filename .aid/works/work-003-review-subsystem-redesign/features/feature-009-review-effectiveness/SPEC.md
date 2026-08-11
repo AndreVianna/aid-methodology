@@ -79,9 +79,11 @@ Stated in full in `REQUIREMENTS.md § 9`.
 
 ## Technical Specification
 
-**One normative home per mechanism.** Each mechanism below is specified in exactly one section.
-Outside it, the mechanism may be **named** but no behaviour, value, threshold or artifact name is
-restated — including in `## Scope`, `## Source` and `## Acceptance Criteria`, which name and point.
+**One normative home per mechanism.** Each mechanism below is **decided** in exactly one section:
+its behaviour, its values and its thresholds are settled there and nowhere else. Elsewhere a mechanism
+may be named, pointed at, and given a one-line purpose that adds nothing its home does not state.
+Naming an artifact outside § 4 is expected — § 4 is the home for the *inventory*, not for every mention
+of a filename.
 
 | Mechanism | Normative section |
 |---|---|
@@ -94,9 +96,9 @@ restated — including in `## Scope`, `## Source` and `## Acceptance Criteria`, 
 | where each lane runs, and what each delivery close gives | § 7 |
 
 This is not tidiness. Eight review cycles on this artifact produced 81 findings, **49 of them internal
-contradictions**, because seven of ten mechanisms were described in three or more sections and every
-design change had to be swept across all of them. One home makes that class of defect impossible
-rather than merely discouraged.
+contradictions**, because most of the mechanisms in the table above were *described* in several
+sections and every design change had to be swept across all of them. Deciding each in one place removes
+the second source a contradiction needs.
 
 ### 2. Data model — the defect catalogue
 
@@ -162,8 +164,8 @@ in the oracle. It is a pass/fail suite like any other, which is what keeps `FR-F
 4. report one line per rule_set, then one OVERALL line, each carrying the terms that apply:
        found / seeded(judgment)   -- a fraction over SEEDED judgment rows, or `--` where the rule
                                     set has no seeded judgment row
-       asserted / total(script)   -- Lane A's count, or `--` where the rule set has no seeded
-                                    script row
+       asserted / total(script)   -- counted from the catalogue's seeded script rows, or `--` where
+                                    the rule set has none. Requires that Lane A passes in this tree
    Either term may be `--`; NEITHER is ever `0/0`, which reads as a measured zero. Every in-domain
    rule set gets its line with both terms present, one of which may be `--`: that is what makes
    AC-16's "reported for every rule set" decidable for a rule set seeded entirely in one lane.
@@ -171,8 +173,9 @@ in the oracle. It is a pass/fail suite like any other, which is what keeps `FR-F
    runs alongside the new one
 ```
 
-**The denominator.** Lane B's fraction is over `enforcement = judgment` rows only. A `script` row is
-never in a Lane B denominator — Lane A decides it and no agent behaviour can move it.
+**The denominator.** Lane B's fraction is over **seeded** `enforcement = judgment` rows only — seeded,
+because an exempt row (`fixture = --`) has no defect to find. A `script` row is never in a Lane B
+denominator: Lane A decides it and no agent behaviour can move it.
 
 **Both terms of `FR-H2` are produced**: per rule set, and overall. The overall line is reported in
 addition to the per-rule-set lines, never instead of them.
@@ -197,18 +200,18 @@ This is the feature's affected-artifact inventory. The `Delivery` column is part
 |---|---|---|
 | `tests/canonical/fixtures/recall-corpus/**` | the seeded artifacts | 024 |
 | `tests/recall-catalogue.tsv` | the catalogue (§ 2) | 024 |
-| `tests/canonical/test-recall-corpus.sh` | Lane A's assertions, plus § 6 checks 1-3 by default and check 4 behind a flag | 024 |
+| `tests/canonical/test-recall-corpus.sh` | Lane A's assertions, plus § 6's checks | 024 |
 | `tests/canonical/fixtures/class-sweep/**` | `AC-17`'s fixture: a claim corrected in one file and restated in two others | 025 |
 | `tests/canonical/test-class-sweep.sh` | asserts `AC-17` on that fixture: a phrase from the correction reports both other files, and a phrase absent from it reports no sites (§ 5) | 025 |
 | `canonical/aid/scripts/review/class-sweep.sh` | the sweep: takes a phrase and a root, prints every matching site (§ 5) | 025 |
 | `canonical/aid/scripts/review/recall-measure.sh` | Lane B: join, then emit the § 3 report | 027 |
-| `tests/recall-baseline.tsv` | the accumulated series: one appended, run-stamped row per rule set per Lane B run. Created and appended by `recall-measure.sh`, so it needs no other writer | 027 |
+| `tests/recall-baseline.tsv` | the accumulated series: **every line § 3 step 5 emits** — one per rule set **and the OVERALL line** — appended and run-stamped per Lane B run. Created and appended by `recall-measure.sh`, so it needs no other writer. The OVERALL line is persisted because `FR-H3` reads a drop over time and `FR-H2`'s overall term would otherwise have no baseline | 027 |
 
 **Changed:**
 
 | Artifact | Change | Delivery |
 |---|---|---|
-| `canonical/skills/aid-execute/references/state-fix.md` | the class-sweep obligation: the fixer runs `class-sweep.sh` and includes its output in its report (§ 5) | 025 |
+| `canonical/skills/aid-execute/references/state-fix.md` | the class-sweep obligation: the fixer runs `class-sweep.sh` and records its output in the task `STATE.md` `notes` field, and a fix is not complete until it has (§ 5) | 025 |
 
 
 Every canonical change renders to five profiles, so `AC-12` parity and dogfood byte-identity apply.
@@ -229,31 +232,41 @@ in the correction has not swept the corrected claim, and is not a discharge.
 **A deletion sweeps like a correction.** If the corrected claim was restated elsewhere, the
 restatement goes too.
 
-**No ledger plumbing.** An earlier draft routed the sweep output into the reconciled row's `Evidence`,
-which needed a new `writeback-ledger.sh` mode, an extension to the ledger schema's mode enumeration,
-and a new step in `aid-deep-review`'s `RECONCILE` — three artifacts and a cross-skill duty to file one
-string. `AC-17` requires that a fix **reports** its sweep, and a suite can assert that against
-`class-sweep.sh` directly, so none of it is needed.
+**Where the record is, in full.** `AC-17` is not satisfied by a fix merely emitting text: it requires
+that *"the fix is **not accepted until** the sweep output naming that sibling is **on the record**"*.
+Both clauses bind, and an earlier draft of this section dropped them.
+
+The record is the **`notes` field in the task's own `STATE.md` frontmatter** — a field
+`writeback-state.sh` already writes and which already carries fix narratives, so `AC-17` costs **no new
+artifact**, which is what `STATE.md` Q29 requires (*"no new rule set"*). The fixer writes the sweep
+output there; *not accepted until* is then decidable by reading that field.
+
+**No ledger plumbing.** A draft before that routed the output into the reconciled row's `Evidence`,
+needing a new `writeback-ledger.sh` mode, a schema extension and a `RECONCILE` step — three artifacts
+to file one string. The `notes` field replaces all of it.
 
 **`AC-17`'s fixture is a triple**: a claim corrected in one file and **restated in two other files**.
-`test-class-sweep.sh` runs `class-sweep.sh` over it and asserts the output names **both** other files;
-it then asserts a phrase absent from the correction reports no sites, so a sweep that matches nothing
-cannot be mistaken for a sweep that found nothing to fix.
+`test-class-sweep.sh` asserts three things on it: `class-sweep.sh` names **both** other files; a phrase
+absent from the correction reports no sites, so a sweep matching nothing is not mistaken for a sweep
+that found nothing; and a `notes` field lacking the sweep output leaves the fix **not accepted**, which
+is the clause the suite exists to make decidable.
 
 ### 6. Verification — proving the corpus is not lying
 
-All in `test-recall-corpus.sh`. **Checks 1-3 run in the default pass; check 4 runs only behind its
-flag.** Lane A is the in-CI lane, so checks 1-3 are part of it and check 4 is an opt-in extra.
+All in `test-recall-corpus.sh`, all in the default pass, so all of them are part of Lane A.
 
 | # | Check | What it catches |
 |---|---|---|
 | 1 | **Every seeded catalogue row resolves**, in the direction `polarity` declares: a `present` row's `locator` is found in its `fixture`, an `absent` row's is not. Rows with `fixture = --` are exempt and must carry a `summary` reason | A defect re-seeded or removed while its row stayed, which would otherwise report as a permanent miss |
 | 2 | **Every in-domain rule set has at least one SEEDED row** — a row with a real `fixture`, not a `--` exemption. A rule set whose every row is exempt reports zero fixtures, which is exactly what this check exists to catch | `AC-16`'s failure condition: a rule set reporting nothing and reading as clean |
 | 3 | **Every rule row in an in-domain rule set has a catalogue row** — seeded, or `fixture = --` with a reason in `summary` | `FR-H1` mandates seeding **per rule**, and check 2 is per rule **set**: one seeded row satisfies check 2 while the rest of that rule set is uncovered. This closes the gap between them, and the `--` row is what makes an exemption explicit rather than silent |
-| 4 | **Mutation of the mutation**, behind an explicit flag, **for each `script` row only**: repair that row's seeded defect in a scratch copy and assert **that row's** Lane A assertion flips to failing. A `judgment` row has no Lane A assertion to flip | A fixture whose oracle passes for a reason unrelated to the seeded defect |
 
-**Check 4 runs one row at a time**, and behind a flag rather than in the default pass. A suite-level
-red is satisfied by any one row failing, so it must confirm *that row's* assertion flipped.
+**There is deliberately no mutation-of-the-mutation check.** A draft carried one, behind a flag: repair
+a seeded defect and assert that row's assertion flips. It traced to no requirement, no acceptance
+criterion, no item of this Scope and no delivery gate criterion, and nothing was specified to pass the
+flag — the same inertness that removed the Lane A series. The technique is sound and this project uses
+it elsewhere; what it lacked here was an owner. If one is wanted it is a requirement first, not a
+section-6 row.
 
 ### 7. Wiring
 
@@ -261,9 +274,14 @@ red is satisfied by any one row failing, so it must confirm *that row's* asserti
 `# COVERS:` header — read by `select-suites.sh` — which narrows change-set selection to the paths it
 names.
 
-**Neither the tally nor the series needs a writer beyond § 4's.** The tally is gitignored, so the suite
-that writes it mutates nothing tracked; the series has exactly one writer, so it needs no per-close
-duty. § 4 states both files and their writers.
+**There is deliberately no Lane A tally file.** An earlier draft had the suite write one for
+`recall-measure.sh` to read. It is not needed and has been removed: `total(script)` is the number of
+seeded `script` rows in the catalogue, which `recall-measure.sh` already joins against, and
+`asserted == total` is guaranteed by the argument above — a Lane A failure breaks the build, so a tree
+in which the suite passes has every script row asserted. A file whose contents are a theorem of a file
+it is joined against is the second source that § 2 deleted the `rule_set` column to avoid.
+
+**The series has exactly one writer, `recall-measure.sh`**, so it needs no per-close duty.
 
 **There is deliberately no Lane A series.** An earlier draft had the delivery closing step append Lane A
 terms from `delivery-024` onward. That is removed, because such a series would be **inert**: § 3 fixes
@@ -273,14 +291,10 @@ nothing attributable. What actually guards against a late unattributable figure 
 the build from `delivery-024`'s close onward** — a script rule that stops catching its seeded defect is
 caught at that close, not at 027.
 
-**`recall-measure.sh` fails if `.aid/.temp/recall-lane-a.tsv` is absent.** Absence means the suite has
-not run in this tree, which is an error and not a value — reporting `--` for it would collide with
-`--`'s one meaning in § 3.
-
 **Lane B** is invoked deliberately, is not in CI, needs no credentials there, and adds nothing to CI
 time.
 
-**When each series starts.** `PLAN.md § Cross-Cutting Risks` row 6 records the risk that a figure
+**What each delivery close gives.** `PLAN.md § Cross-Cutting Risks` row 6 records the risk that a figure
 first taken at `delivery-027` is unattributable.
 
 | From | Signal |

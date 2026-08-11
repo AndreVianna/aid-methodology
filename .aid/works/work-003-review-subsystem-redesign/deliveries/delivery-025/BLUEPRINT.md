@@ -17,8 +17,9 @@ its siblings. Scoped as a distinct unit because it needs no new rule set and not
 - The class-sweep obligation written into `aid-execute/references/state-fix.md`: before a
   fix is marked complete, the fixer greps the distinguishing phrase of the corrected claim across the
   work and reports every site (`FR-E2`).
-- The sweep output recorded where the gate can read it, so an unswept fix is visible rather than
-  assumed.
+- The sweep output recorded in the task `STATE.md` `notes` field, so an unswept fix is visible to the
+  gate rather than assumed. That field already exists and `writeback-state.sh` already writes it, so
+  `AC-17` costs no new artifact -- which `STATE.md` Q29 requires.
 - A fixture that fails without the sweep and passes with it (`AC-17`).
 - The five-profile render of the changed reference file.
 
@@ -31,10 +32,11 @@ oracle, not a new criterion.
 ## Gate Criteria
 
 - [ ] `state-fix.md` states the sweep as a step with an output, not as advice: the fixer runs
-      `class-sweep.sh` and includes its output in the report it already returns. **No ledger write is
-      involved** -- an earlier draft routed the output into the reconciled row's `Evidence`, needing a new
-      `writeback-ledger.sh` mode, a schema extension and a `RECONCILE` step; all three were deleted as
-      unnecessary (`features/feature-009-review-effectiveness/SPEC.md § 5`)
+      `class-sweep.sh` and **records its output in the task `STATE.md` `notes` field**, and a fix is not
+      complete until it has. **No ledger write is involved** -- an earlier draft routed the output into
+      the reconciled row's `Evidence`, needing a new `writeback-ledger.sh` mode, a schema extension and a
+      `RECONCILE` step; all three were deleted as unnecessary
+      (`features/feature-009-review-effectiveness/SPEC.md § 5`)
 - [ ] **The fixture fails without the sweep.** A corrected claim restated in **two other files** --
       `AC-17`'s own wording, not a weaker "sites" -- must leave the fix rejected until the sweep output
       naming both files is on the record. Verified in both directions: a run with the sweep passes, a run

@@ -87,9 +87,13 @@ Seven rules, in priority order. `D1` outranks everything below it.
   Check the line count and say what it is.
 - **D6 — A class sweep still applies** (`FR-E2`), and a deletion sweeps like a correction: if a
   deleted claim was restated elsewhere, the restatement goes too.
-- **D7 — One normative home per mechanism, inside the artifact too.** A mechanism is specified in
-  exactly one section; elsewhere it may be **named** but no behaviour, value, threshold or artifact
-  name is restated. **Measured on `feature-009`'s SPEC: 49 of 81 findings over eight cycles were
+- **D7 — One normative home per mechanism, inside the artifact too.** A mechanism's **behaviour, values
+  and thresholds are decided in exactly one section**; elsewhere it may be named, pointed at, and given
+  a one-line purpose that adds nothing its home does not state. **Narrowed 2026-08-11:** the first
+  wording also forbade restating an *artifact name* outside its home, which is unsatisfiable — the
+  inventory section owns the inventory, not every mention of a filename — and a reviewer found 20
+  literal violations of which exactly **one** carried a real disagreement. A rule that flags 19 harmless
+  sites to catch one is the open-ended sweep `D7` exists to close. **Measured on `feature-009`'s SPEC: 49 of 81 findings over eight cycles were
   internal contradictions**, and the cause was that seven of ten mechanisms were described in three or
   more sections, so every design change needed a sweep across all of them. This is `Q30(a)`'s
   restatement convention applied *within* an artifact rather than across artifacts — the same defect
