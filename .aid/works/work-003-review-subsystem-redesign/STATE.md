@@ -228,54 +228,57 @@ or worse; `[LOW]`/`[MINOR]` at the end" — are the same statement.
 - **Surfaced by:** the owner asking whether the findings were real issues or minutia, after
   `/aid-specify` cycle 9
 
-**What was measured.** Across nine review cycles on `feature-009`'s SPEC, 89 findings. Classified by
-one question -- *would this cause the wrong thing to be built, or block building at all?*
+**CORRECTED 2026-08-11, before any decision was taken.** This entry first claimed that *"fifteen
+cosmetic findings were graded `[HIGH]`"* and that severity had mis-ranked a typo above a broken
+criterion. **Both claims were false.** They came from a keyword script that sorted findings by the words
+in their Description, and it dumped material findings into the cosmetic bucket whenever they did not
+happen to use its keywords. The owner's question -- *why was the count problem set to high?* -- exposed
+it. The count problem was **never** `[HIGH]`: `~144 suites` versus the 162 on disk scored `[MEDIUM]` in
+all three cycles it appeared. What follows is the hand-checked record.
 
-| Bucket | Share | How `grade.sh` scored them |
+**What was measured, by hand.** Nine cycles, 89 findings, **20 of them `[HIGH]`**. Every one of the 20
+was read and judged against one question -- *would this cause the wrong thing to be built, or block
+building at all?*
+
+| | Count | Verdict |
 |---|---|---|
-| **Material** -- a criterion becomes unsatisfiable, a script reads a file nothing writes, two readings build different software, a gate criterion cannot be decided | ~30% | 4 `[HIGH]`, 6 `[MEDIUM]` |
-| Hygiene -- real but inert; a part tracing to no requirement | ~3% | 1 `[HIGH]`, 2 `[MEDIUM]` |
-| **Cosmetic** -- an inaccurate supporting claim no consumer acts on: a suite count, a prior-art description, a heading's plural | ~65% | **15 `[HIGH]`, 54 `[MEDIUM]`** |
+| `[HIGH]` findings | 20 | **All 20 material.** Absent mandated sections; a coverage domain specified three incompatible ways; a report missing a term `FR-H2` requires; `AC-17` undecidable; a criterion unsatisfiable for four rule sets; an owner decision silently reversed; a renumbering that left a gate criterion pointing at a section that no longer existed; a tally file with no invoker; a mechanism both unowned and inert |
+| `[MEDIUM]` findings | 54 | **Mixed** -- material-but-confined defects sitting beside pure cosmetic ones, indistinguishable |
+| `[MINOR]` | 7 | Cosmetic, correctly placed |
 
-Fifteen cosmetic findings were graded `[HIGH]`. *"`AC-16` is unsatisfiable by construction"* and
-*"the suite count is 162, not ~144"* both scored `[MEDIUM]` and moved the grade identically.
+**So the severity scale did not mis-rank anything, and the grade was never wrong.**
+`grade.sh` picks the letter from the **worst severity present**: any `[HIGH]` yields `D`, and the
+`[MEDIUM]` count only sets the modifier when there is no `[HIGH]`. There was a `[HIGH]` in all nine
+cycles, so the letter was decided entirely by findings that were all material. The grade was correctly
+reporting *"at least one material defect is present"* every single time.
 
-**Why, mechanically.** `grade.sh` reads only `cols[3]` (Severity) and `cols[4]` (Status) -- it is a
-counter, by design, and cannot see the finding. Severity is assigned upstream by
-`grading-rubric.md`: Step 1 reads modality, Step 2 selects within the MUST band on **blast radius x
-reversibility**. On this artifact all three inputs are constant:
+**The real reason the grade never improved** is therefore the one already recorded, not a scale defect:
+**every cycle contained at least one material defect, and in most cycles it was one the previous fix had
+just introduced** -- the tally with no invoker (cycle 6) came from cycle 5's repair, the inert series
+(cycle 8) from cycle 7's, the dropped `AC-17` clauses (cycle 9) from cycle 8's.
 
-| Axis | Should discriminate | On a not-yet-consumed specification |
-|---|---|---|
-| Modality | MUST / SHOULD / COULD | **All nine `definition` rules are MUST.** A constant |
-| Reversibility | local / non-local | The three deliveries are `Pending-Spec` with zero tasks written, so correction is always one markdown edit -- **the non-local column is unreachable** |
-| Blast radius | confined / escaped | *"Name the dependent, or the radius is confined."* The only candidates are three delivery BLUEPRINTs |
+**What IS still wrong, narrowed to what the evidence supports.** Not the ranking -- the **floor**.
 
-So severity collapsed to a **single two-valued question -- does another document mention this?** --
-which is orthogonal to whether it matters. And the two failures compound: the fifteen cosmetic
-`[HIGH]`s were `[HIGH]` **because the same trivia had been restated in a BLUEPRINT**, so this work's
-own duplication problem inflated the severity of its own trivia.
+`DEF-09` -- *"every factual claim the artifact makes about the repository holds on disk"* -- carries
+modality **MUST**, and after Step 2 the lowest severity a MUST can reach is `[MEDIUM]`. So a true-but-
+inconsequential claim, like a suite count no consumer reads, **cannot** be scored below `[MEDIUM]`.
+There is no reachable band for *"real defect, no consequence"*. That is why 54 findings share one band
+regardless of whether they change anything.
 
-**Root cause, stated plainly.** Blast radius and reversibility are excellent **proxies for consequence
-in code**, where a shipped break is wide and a migration cannot be un-shipped. They are proxies, not
-the thing itself, and on an artifact nothing has consumed they measure cross-reference count and
-nothing else. The reviewer reviews code, data, text, tests and specifications; a scale that
-discriminates only for one of those kinds is the defect.
+**The cost is real even though the grade was not affected.** Roughly two thirds of the 89 findings were
+cosmetic. They never moved a letter -- the `[HIGH]`s decided every grade -- so the whole of that effort
+bought nothing. Reviewer attention and fix cycles were spent on findings that **could not** affect the
+outcome, and worse, the material `[HIGH]` sat in a list beside them rather than at the top.
 
-**This is NOT `FR-B7`, and the difference is the whole proposal.** `FR-B7` -- *"damage axes (reach,
-reversibility, silence) act as severity modifiers"* -- was cut 2026-07-27 for three sound reasons, all
-of which this avoids:
-
-| `FR-B7`'s problem | Why it does not apply here |
-|---|---|
-| *reach* double-counts blast radius | Consequence is not reach. `AC-16`-unsatisfiable is **narrow** and material; a restated count is **wide** and cosmetic. The two axes disagree in both directions, which is the proof they are independent |
-| *reversibility* double-counts reversibility | Consequence is not repair cost. Both examples above are one markdown edit |
-| a reviewer-applied **modifier** reopens the judgment surface `FR-B5b` closes | This is not a modifier and not a judgment. It is a **gate with an evidence test**, phrased symmetrically to blast radius's own: **name the consumer decision this defect changes, or the defect is cosmetic** |
-
-`FR-B7`'s third axis, *silence*, was correctly moved to `feature-002` as a rule-authoring input. That
-stands and is untouched.
+**The owner's framing still holds, and is the part worth acting on.** Blast radius and reversibility are
+proxies for consequence **in code**. On a document nothing has consumed, reversibility is always local
+and radius is only *"is this mentioned elsewhere"*. That does not corrupt the letter, because modality
+and the worst-severity rule carry it -- but it does mean **the MEDIUM band cannot separate a confined
+material defect from a cosmetic one**, and the reviewer reviews code, data, text, tests and
+specifications alike.
 
 **Suggested reading of the evidence (NOT a decision).** Insert a **Step 2a** ahead of the existing
+matrix:**Suggested reading of the evidence (NOT a decision).** Insert a **Step 2a** ahead of the existing
 matrix:
 
 > **Step 2a -- consequence.** Name the consumer decision this defect changes. If no decision can be
@@ -300,11 +303,13 @@ mechanism:
 | `AID` | the render, or an adopter's install | what ships to a profile |
 | `SUMMARY` | a human reader | the belief they form about the KB |
 
-**What it would have done to this work's own review record**, which is the only honest test available:
-the 15 cosmetic `[HIGH]`s become `[MINOR]`, the 54 cosmetic `[MEDIUM]`s become `[MINOR]`/`[LOW]`, and
-the ~28 material findings keep their severities. Nine cycles would have been graded on ~28 findings
-instead of 89 -- and the two `[HIGH]`s that actually blocked `/aid-detail` would have been the top of
-the list in every cycle rather than buried among fifteen equals.
+**What it would have done to this work's own review record**, which is the only honest test available
+-- and it is a smaller claim than this entry first made. **The nine letter grades would not change at
+all**, because every one was set by a material `[HIGH]`. What changes is the working list: the cosmetic
+share of the 54 `[MEDIUM]`s drops to `[MINOR]`, so each cycle's ledger would have shown a handful of
+consequential findings instead of five to ten equals, and the material defect would have been visible
+without reading every row. The gain is **attention and cycle cost, not accuracy of the grade.** That is
+a weaker case for the change, and it is the true one.
 
 **Cost, stated plainly.** This amends the canonical severity scale, which is `feature-001`'s territory
 (`FR-B1`: one canonical scale), and the per-class ladder, which is `feature-002`'s. It is a **third
