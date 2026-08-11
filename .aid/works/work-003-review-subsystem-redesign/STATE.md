@@ -224,7 +224,32 @@ or worse; `[LOW]`/`[MINOR]` at the end" — are the same statement.
 
 - **Category:** Design-Decision / the work's own subject
 - **Impact:** High -- it is why nine cycles of real fixes never moved the grade out of the `D` band
-- **Status:** **Pending**
+- **Status:** **Answered** 2026-08-11 -- owner chose the soft guideline with a required justification
+
+**Answer (2026-08-11, owner decision).** **Remove the hard constraints on severity classification. A
+generic soft guideline describes what `CRITICAL`, `HIGH`, `MEDIUM`, `LOW` and `MINOR` mean, and the
+agent decides -- but it must state, in one line per finding, why that band, naming the consequence.**
+
+Not a rule about the answer; a requirement to show the work. What the rulebook was actually for --
+auditability and the ability to argue -- is preserved by the justification. What caused the damage --
+fixing the answer in advance -- is discarded.
+
+**The intent, as the owner stated it, which is the guideline's core.**
+
+> Be adversarial, find issues and decide how bad they are. We want **correctness, completeness,
+> clarity and coherence**, based on the **KB and the documents associated with the task being
+> reviewed**.
+
+**What this retires.** `FR-B5b` -- *"Severity is looked up from the matched rubric rule, not judged by
+the reviewer"* -- is retired as written, and the contradiction with
+`review-rubrics/INDEX.md § Step 2` is resolved in Step 2's favour. The universal taxonomy's `Anchor`
+column goes; its six shapes stay as recognition aids. `FR-B1` (one canonical scale) **stands** -- one
+scale, five bands, one place they are defined; only the assignment method changes.
+
+**Still open, put to the owner as additions rather than assumed:** whether the four dimensions gain a
+fifth for **necessity**, whether **decidability** is named or left inside completeness, whether the
+grounding names **the repository as it is** alongside the KB and the documents, and whether
+`minimum_grade` stays a hard gate now that severity is judged.
 - **Surfaced by:** the owner asking whether the findings were real issues or minutia, after
   `/aid-specify` cycle 9
 
