@@ -220,6 +220,100 @@ or worse; `[LOW]`/`[MINOR]` at the end" — are the same statement.
 <!-- DERIVED -- union of per-delivery Q&A plus WORK-OWNER-AUTHORED entries below
      (work owner is the single writer for those). -->
 
+### Q32 -- severity is computed from two proxies that both degenerate outside code (2026-08-11)
+
+- **Category:** Design-Decision / the work's own subject
+- **Impact:** High -- it is why nine cycles of real fixes never moved the grade out of the `D` band
+- **Status:** **Pending**
+- **Surfaced by:** the owner asking whether the findings were real issues or minutia, after
+  `/aid-specify` cycle 9
+
+**What was measured.** Across nine review cycles on `feature-009`'s SPEC, 89 findings. Classified by
+one question -- *would this cause the wrong thing to be built, or block building at all?*
+
+| Bucket | Share | How `grade.sh` scored them |
+|---|---|---|
+| **Material** -- a criterion becomes unsatisfiable, a script reads a file nothing writes, two readings build different software, a gate criterion cannot be decided | ~30% | 4 `[HIGH]`, 6 `[MEDIUM]` |
+| Hygiene -- real but inert; a part tracing to no requirement | ~3% | 1 `[HIGH]`, 2 `[MEDIUM]` |
+| **Cosmetic** -- an inaccurate supporting claim no consumer acts on: a suite count, a prior-art description, a heading's plural | ~65% | **15 `[HIGH]`, 54 `[MEDIUM]`** |
+
+Fifteen cosmetic findings were graded `[HIGH]`. *"`AC-16` is unsatisfiable by construction"* and
+*"the suite count is 162, not ~144"* both scored `[MEDIUM]` and moved the grade identically.
+
+**Why, mechanically.** `grade.sh` reads only `cols[3]` (Severity) and `cols[4]` (Status) -- it is a
+counter, by design, and cannot see the finding. Severity is assigned upstream by
+`grading-rubric.md`: Step 1 reads modality, Step 2 selects within the MUST band on **blast radius x
+reversibility**. On this artifact all three inputs are constant:
+
+| Axis | Should discriminate | On a not-yet-consumed specification |
+|---|---|---|
+| Modality | MUST / SHOULD / COULD | **All nine `definition` rules are MUST.** A constant |
+| Reversibility | local / non-local | The three deliveries are `Pending-Spec` with zero tasks written, so correction is always one markdown edit -- **the non-local column is unreachable** |
+| Blast radius | confined / escaped | *"Name the dependent, or the radius is confined."* The only candidates are three delivery BLUEPRINTs |
+
+So severity collapsed to a **single two-valued question -- does another document mention this?** --
+which is orthogonal to whether it matters. And the two failures compound: the fifteen cosmetic
+`[HIGH]`s were `[HIGH]` **because the same trivia had been restated in a BLUEPRINT**, so this work's
+own duplication problem inflated the severity of its own trivia.
+
+**Root cause, stated plainly.** Blast radius and reversibility are excellent **proxies for consequence
+in code**, where a shipped break is wide and a migration cannot be un-shipped. They are proxies, not
+the thing itself, and on an artifact nothing has consumed they measure cross-reference count and
+nothing else. The reviewer reviews code, data, text, tests and specifications; a scale that
+discriminates only for one of those kinds is the defect.
+
+**This is NOT `FR-B7`, and the difference is the whole proposal.** `FR-B7` -- *"damage axes (reach,
+reversibility, silence) act as severity modifiers"* -- was cut 2026-07-27 for three sound reasons, all
+of which this avoids:
+
+| `FR-B7`'s problem | Why it does not apply here |
+|---|---|
+| *reach* double-counts blast radius | Consequence is not reach. `AC-16`-unsatisfiable is **narrow** and material; a restated count is **wide** and cosmetic. The two axes disagree in both directions, which is the proof they are independent |
+| *reversibility* double-counts reversibility | Consequence is not repair cost. Both examples above are one markdown edit |
+| a reviewer-applied **modifier** reopens the judgment surface `FR-B5b` closes | This is not a modifier and not a judgment. It is a **gate with an evidence test**, phrased symmetrically to blast radius's own: **name the consumer decision this defect changes, or the defect is cosmetic** |
+
+`FR-B7`'s third axis, *silence*, was correctly moved to `feature-002` as a rule-authoring input. That
+stands and is untouched.
+
+**Suggested reading of the evidence (NOT a decision).** Insert a **Step 2a** ahead of the existing
+matrix:
+
+> **Step 2a -- consequence.** Name the consumer decision this defect changes. If no decision can be
+> named, the defect is **cosmetic**: `[MINOR]`, or `[LOW]` where it is widespread. Only a load-bearing
+> defect continues to the blast-radius x reversibility matrix.
+
+**And make it per-kind by extending a table that already exists.** `review-rubrics/INDEX.md` already
+carries a per-class ladder with `Kind`, `Intent authority` and `Manner authority`. One more column
+gives every artifact class its own meaning of *"the decision at stake"* -- no new taxonomy, no new
+mechanism:
+
+| Class | Consumer | A defect is load-bearing when it changes... |
+|---|---|---|
+| `KB` | an agent routing on it | which document it reads, or which convention it applies |
+| `REQ` | Specify and Plan | what is in scope, or what modality binds |
+| `SPEC` | Detail, then whoever builds | what gets built |
+| `PLAN` | Execute | delivery order, a dependency edge, or a delivery's contents |
+| `TASK` | the developer | the change made to the tree |
+| `CODE` | the runtime, or a caller | control flow, a value, or a resource |
+| `TEST` | the suite's verdict | whether it fails when the subject is broken |
+| `DATA` | a query, or a consuming system | an answer returned |
+| `AID` | the render, or an adopter's install | what ships to a profile |
+| `SUMMARY` | a human reader | the belief they form about the KB |
+
+**What it would have done to this work's own review record**, which is the only honest test available:
+the 15 cosmetic `[HIGH]`s become `[MINOR]`, the 54 cosmetic `[MEDIUM]`s become `[MINOR]`/`[LOW]`, and
+the ~28 material findings keep their severities. Nine cycles would have been graded on ~28 findings
+instead of 89 -- and the two `[HIGH]`s that actually blocked `/aid-detail` would have been the top of
+the list in every cycle rather than buried among fifteen equals.
+
+**Cost, stated plainly.** This amends the canonical severity scale, which is `feature-001`'s territory
+(`FR-B1`: one canonical scale), and the per-class ladder, which is `feature-002`'s. It is a **third
+axis on the scale this work exists to make authoritative**, so it is not a small amendment, and it
+touches two features already graded `A+`. It also re-opens one settled decision -- not `FR-B7`'s cut,
+but the premise that two axes suffice.
+
+---
+
 ### Q31 -- a CI runner cannot measure whether a reviewer AGENT finds a seeded defect (2026-08-10)
 
 - **Category:** Design-Decision / feature-009
