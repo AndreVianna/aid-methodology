@@ -52,11 +52,14 @@ behaviour.
 
 ## Tasks
 
-_Derived from `tasks/task-NNN/DETAIL.md`. Written by `aid-detail`; empty until it runs._
+_Derived from `tasks/task-NNN/DETAIL.md`. `Wave` is computed from `Depends on`, never authored -- one relation, one source._
 
 | Task | Type | Wave | Title |
 |------|------|------|-------|
-| _none yet_ | | | |
+| task-001 | IMPLEMENT | 1 | The catalogue's shape and its builder |
+| task-002 | IMPLEMENT | 2 | Seed the corpus, one defect per rule |
+| task-003 | TEST | 3 | Lane A and the three section-6 checks |
+| task-004 | TEST | 3 | The corpus changes no existing grade |
 
 ## Dependencies
 

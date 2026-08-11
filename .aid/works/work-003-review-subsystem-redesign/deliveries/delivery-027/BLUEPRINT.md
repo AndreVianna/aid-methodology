@@ -58,11 +58,15 @@ arithmetic, which `FR-F6` forbids.
 
 ## Tasks
 
-_Derived from `tasks/task-NNN/DETAIL.md`. Written by `aid-detail`; empty until it runs._
+_Derived from `tasks/task-NNN/DETAIL.md`. `Wave` is computed from `Depends on`, never authored -- one relation, one source._
 
 | Task | Type | Wave | Title |
 |------|------|------|-------|
-| _none yet_ | | | |
+| task-001 | IMPLEMENT | 1 | The Lane B join |
+| task-002 | IMPLEMENT | 2 | The two-term report and the series |
+| task-003 | IMPLEMENT | 3 | FR-H3's regression print |
+| task-004 | IMPLEMENT | 4 | Miss attribution |
+| task-005 | TEST | 5 | AC-16 and the FR-F6 boundary |
 
 ## Dependencies
 

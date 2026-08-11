@@ -343,6 +343,26 @@ reviewer behaviour on its own).
   (`STATE.md` Q27-Q30). Deliberately depends on nothing, so the corpus exists **before** the
   precision work lands and the baseline is not taken after the fact.
 
+#### Execution Graph
+
+| Task | Depends On |
+|------|-----------|
+| task-001 | — |
+| task-002 | task-001 |
+| task-003 | task-002 |
+| task-004 | task-002 |
+
+| Can Be Done In Parallel |
+|------------------------|
+| task-003, task-004 |
+
+```wave-map
+delivery: 024
+wave 1: task-001
+wave 2: task-002
+wave 3: task-003, task-004
+```
+
 ### delivery-025: Class sweep in FIX
 - **What it delivers:** the class-sweep obligation in `aid-execute/references/state-fix.md` --
   a fix is not complete until the distinguishing phrase of the corrected claim has been grepped
@@ -356,6 +376,26 @@ reviewer behaviour on its own).
 - **Note:** it gives `F1` an oracle instead of an instruction, so it needs no new rule set and
   nothing upstream. Independent of delivery-024 despite sharing a feature: this one changes how
   fixing works, that one measures how finding works.
+
+#### Execution Graph
+
+| Task | Depends On |
+|------|-----------|
+| task-001 | — |
+| task-002 | task-001 |
+| task-003 | task-002 |
+| task-004 | task-002 |
+
+| Can Be Done In Parallel |
+|------------------------|
+| task-003, task-004 |
+
+```wave-map
+delivery: 025
+wave 1: task-001
+wave 2: task-002
+wave 3: task-003, task-004
+```
 
 ### delivery-026: Per-claim coverage
 - **What it delivers:** the coverage unit becomes the **claim**. The brief carries an enumerated
@@ -385,6 +425,29 @@ reviewer behaviour on its own).
   something to count, delivery-022's merged skill so the figure describes the review that
   actually ships, and delivery-026 because a file-granular coverage row makes a recall figure
   unattributable -- you would know a defect was missed but not which pass should have caught it.
+
+#### Execution Graph
+
+| Task | Depends On |
+|------|-----------|
+| task-001 | — |
+| task-002 | task-001 |
+| task-003 | task-002 |
+| task-004 | task-002, task-003 |
+| task-005 | task-004 |
+
+| Can Be Done In Parallel |
+|------------------------|
+| -- none; every task consumes the previous one's output |
+
+```wave-map
+delivery: 027
+wave 1: task-001
+wave 2: task-002
+wave 3: task-003
+wave 4: task-004
+wave 5: task-005
+```
 
 ---
 
@@ -480,8 +543,8 @@ feature with no spec at all.
 **Resolved on 2026-08-10:** `/aid-specify` ran for `feature-009` and authored the SPEC, including the
 affected-artifact inventory those three deliveries need.
 
-**Closed on 2026-08-11:** the SPEC reached `Ready` at `A+`, and **024**, **025** and **027** are now
-`Specified` and detailable. `## Features State` carries the grade and the cycle history.
+**Closed on 2026-08-11:** the SPEC reached `Ready` at `A+`; **024**, **025** and **027** went
+`Specified`, and `/aid-detail` has now run for all three -- 13 tasks, `A+` on the second cycle. `## Features State` carries the grade and the cycle history.
 
 **One delivery is still in this condition, and it is the new one.** `/aid-detail` for **028** waits on
 `feature-002`'s SPEC being amended for group I, which was added to `REQUIREMENTS.md` on 2026-08-11

@@ -51,11 +51,14 @@ oracle, not a new criterion.
 
 ## Tasks
 
-_Derived from `tasks/task-NNN/DETAIL.md`. Written by `aid-detail`; empty until it runs._
+_Derived from `tasks/task-NNN/DETAIL.md`. `Wave` is computed from `Depends on`, never authored -- one relation, one source._
 
 | Task | Type | Wave | Title |
 |------|------|------|-------|
-| _none yet_ | | | |
+| task-001 | IMPLEMENT | 1 | class-sweep.sh |
+| task-002 | IMPLEMENT | 2 | The sweep obligation in state-fix.md |
+| task-003 | TEST | 3 | AC-17 asserted in both directions |
+| task-004 | CONFIGURE | 3 | Render the changed reference to five profiles |
 
 ## Dependencies
 
