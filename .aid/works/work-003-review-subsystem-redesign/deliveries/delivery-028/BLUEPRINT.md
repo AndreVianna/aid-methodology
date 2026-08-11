@@ -106,6 +106,20 @@ trusting them, since they are a snapshot:
 Plus **48 `Step 2` cells across the ten `review-rubrics/` files** — the `Severity` column `FR-B4`
 removes. Those are deletions, not rewrites, and they are the bulk of the row count.
 
+**And two shipped test suites now guard the retired rule**, found 2026-08-11:
+
+| Suite | What it asserts |
+|---|---|
+| `tests/canonical/test-one-grading-backend.sh` | `SEV05` — *"every catalog row's Severity must sit in the band its own Modality selects"*, which is Step 1 by name. It is one of 24 `SEV*` assertions in that file |
+| `tests/canonical/test-review-rubrics.sh` | the rule-row shape including its `Severity` cell |
+
+This is the sharpest case in the inventory, and it is the reason this delivery cannot be deferred
+quietly. `SEV05` was **added during `delivery-015`'s cycle-10 FIX and mutation-tested** — it is a
+working, load-bearing guard. It will now **fail** as the catalog's `Severity` column is removed, and a
+green suite is what tells anyone the change landed correctly. So the suite change is not cleanup after
+the fact: it is part of the same commit as the catalog change, or the build goes red for the right
+reason at the wrong time.
+
 **Why `lint-modality.sh` is on this list even though `FR-B5a` keeps the check.** Its failure text reads
 *"This is what step 1 of the severity scale reads. Without it, a finding against the criterion cannot be
 graded — and once a reviewer meets it, the missing modality becomes a criteria gap that blocks the
