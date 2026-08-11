@@ -277,39 +277,89 @@ and the worst-severity rule carry it -- but it does mean **the MEDIUM band canno
 material defect from a cosmetic one**, and the reviewer reviews code, data, text, tests and
 specifications alike.
 
-**Suggested reading of the evidence (NOT a decision).** Insert a **Step 2a** ahead of the existing
-matrix:**Suggested reading of the evidence (NOT a decision).** Insert a **Step 2a** ahead of the existing
-matrix:
+**AMENDED 2026-08-11 by the owner's argument, which changes the proposal rather than refining it.**
+The owner's objection: *"Missing Content is only High if the content is relevant or affects the work.
+If the content is irrelevant the issue may be medium or even low. Similar analysis goes for every
+item. That list does not seem exhaustive nor tailored for any kind of content. Applying it blindly is
+leading to mistakes. The objective is to give a guideline to the agent to use its intelligence,
+expertise and common sense, and reduce the subjectivity of the grading. Creating a fixed rulebook is
+leading to distortions."*
 
-> **Step 2a -- consequence.** Name the consumer decision this defect changes. If no decision can be
-> named, the defect is **cosmetic**: `[MINOR]`, or `[LOW]` where it is widespread. Only a load-bearing
-> defect continues to the blast-radius x reversibility matrix.
+That is correct on all three counts, and it kills the earlier suggestion in this entry -- splitting
+`DEF-09`'s modality was one more fixed rule, which is the disease and not the cure.
 
-**And make it per-kind by extending a table that already exists.** `review-rubrics/INDEX.md` already
-carries a per-class ladder with `Kind`, `Intent authority` and `Manner authority`. One more column
-gives every artifact class its own meaning of *"the decision at stake"* -- no new taxonomy, no new
-mechanism:
+**The tension the current design chose one side of.** `grading-rubric.md` states *"Assignment is two
+steps. Neither is a judgment call,"* and `FR-B5b` states *"Severity is **looked up** from the matched
+rubric rule, not judged by the reviewer."* That buys reproducibility by pre-baking the answer -- and
+pays for it with distortion, because a pre-baked answer cannot know whether the missing section
+mattered.
 
-| Class | Consumer | A defect is load-bearing when it changes... |
+**The design already contains the resolution and applies it inconsistently.**
+`review-rubrics/INDEX.md` says of Step 2: *"`Step 2` is **not** a judgment escape hatch. Both axes are
+evidence-bearing -- *name the dependent, or the radius is confined* -- so the reviewer evaluates two
+checkable predicates."* That is judgment, exercised by the agent, made reproducible **not by fixing the
+answer but by fixing the question and demanding evidence for the answer.** Two reviewers who disagree
+then disagree about a *named fact* -- is there a dependent, yes or no -- which is arguable and
+checkable. `FR-B5b` and that paragraph contradict each other today.
+
+**Suggested reading of the evidence (NOT a decision): fix the questions, not the answers.**
+
+**1. Severity is derived from three evidence-bearing questions, each answered on the record.**
+
+| # | Question | The evidence test | If unanswerable |
+|---|---|---|---|
+| Q-a | **Consequence** — what does this change? | **Name the consumer decision that comes out differently.** | no decision nameable → **cosmetic** |
+| Q-b | **Radius** — what depends on it? | **Name the dependent.** *(exists today)* | none nameable → **confined** |
+| Q-c | **Reversibility** — what does repair cost? | **Name what must be redone or discarded.** *(exists today)* | nothing nameable → **local** |
+
+Cosmetic caps at `[LOW]`/`[MINOR]` however wide the radius. Load-bearing findings continue to the
+existing radius x reversibility matrix, unchanged.
+
+**2. The category list stops assigning severity and becomes a prompt.** The universal taxonomy keeps
+its six shapes as *recognition aids* -- they help an agent notice a defect and name a rule -- and
+**stops carrying an `Anchor` column**. This answers the exhaustiveness objection directly: a defect
+shape nobody listed is no longer either unreportable or mis-anchored; it goes straight to the three
+questions like every other finding. `Missing content`'s fixed `[HIGH]` is exactly the distortion the
+owner names.
+
+**3. Per-kind tailoring comes from a table that already exists.**
+`review-rubrics/INDEX.md`'s per-class ladder already carries `Kind`, `Intent authority` and `Manner
+authority` for `KB`, `REQ`, `SPEC`, `PLAN`, `TASK`, `CODE`, `TEST`, `DATA`, `AID` and `SUMMARY`. One
+more column tells the agent what *"a consumer decision"* means for that class, so Q-a is asked in the
+right terms for code, data, text or a test -- with no new taxonomy:
+
+| Class | Consumer | Q-a is asking whether this changes... |
 |---|---|---|
 | `KB` | an agent routing on it | which document it reads, or which convention it applies |
 | `REQ` | Specify and Plan | what is in scope, or what modality binds |
 | `SPEC` | Detail, then whoever builds | what gets built |
-| `PLAN` | Execute | delivery order, a dependency edge, or a delivery's contents |
+| `PLAN` | Execute | delivery order, a dependency edge, a delivery's contents |
 | `TASK` | the developer | the change made to the tree |
-| `CODE` | the runtime, or a caller | control flow, a value, or a resource |
+| `CODE` | the runtime, or a caller | control flow, a value, a resource |
 | `TEST` | the suite's verdict | whether it fails when the subject is broken |
 | `DATA` | a query, or a consuming system | an answer returned |
 | `AID` | the render, or an adopter's install | what ships to a profile |
 | `SUMMARY` | a human reader | the belief they form about the KB |
 
-**What it would have done to this work's own review record**, which is the only honest test available
--- and it is a smaller claim than this entry first made. **The nine letter grades would not change at
-all**, because every one was set by a material `[HIGH]`. What changes is the working list: the cosmetic
-share of the 54 `[MEDIUM]`s drops to `[MINOR]`, so each cycle's ledger would have shown a handful of
-consequential findings instead of five to ten equals, and the material defect would have been visible
-without reading every row. The gain is **attention and cycle cost, not accuracy of the grade.** That is
-a weaker case for the change, and it is the true one.
+**Worked on the owner's own example.** *Three mandated schema sections absent from a feature SPEC.*
+Today: taxonomy class 4, fixed `[HIGH]`, no question asked. Under this: Q-a asks what reads
+`## Priority` in a SPEC. If `/aid-plan` reads priority from it, a decision changes -- load-bearing, and
+the radius/reversibility matrix runs as now. If nothing reads it, no decision changes -- cosmetic,
+`[LOW]`. Same rule, same reviewer, opposite severities, and the difference is **stated and checkable**
+rather than assumed.
+
+**What this does NOT do, so the earlier cut stays honoured.** It is not `FR-B7`: no modifier, nothing
+added on top of a computed severity, and *reach* and *reversibility* are not counted twice -- Q-b and
+Q-c **are** those axes, asked once. What is new is Q-a, which neither axis asks. It also does not
+reopen judgment in the loose sense `FR-B5b` feared: an answer with no name in it is not an answer, and
+defaults to the lower reading.
+
+**The honest risk.** Q-a is harder to answer than Q-b. Naming a dependent is a grep; naming a decision
+needs the agent to know what consumes the artifact. That is precisely the *"intelligence, expertise and
+common sense"* the owner wants used -- but it means a lazy reviewer can call something cosmetic to
+avoid work, where today it cannot. Two guards, both cheap: the answer must **name** the consumer and
+the decision, and `feature-009`'s seeded corpus can seed a material defect and check the review did not
+call it cosmetic -- which is a recall measurement on the severity axis rather than on detection.
 
 **Cost, stated plainly.** This amends the canonical severity scale, which is `feature-001`'s territory
 (`FR-B1`: one canonical scale), and the per-class ladder, which is `feature-002`'s. It is a **third
