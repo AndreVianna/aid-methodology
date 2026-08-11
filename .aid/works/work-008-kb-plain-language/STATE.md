@@ -219,7 +219,7 @@ different places.
 
 | Task | State | Review | Elapsed | Notes | Name |
 |------|-------|--------|---------|-------|------|
-| task-001 | In Progress | -- | -- | -- | Enumerate the coined-term and shouted-code universe and decide a disposition for every term |
+| task-001 | Failed | 1 cycle; 2 HIGH 3 MED 3 LOW 1 MINOR 1 OOS | -- | IMPEDIMENT-task-001.md: SPEC Flow A claim false; awaiting design decision | Enumerate the coined-term and shouted-code universe and decide a disposition for every term |
 | task-002 | Done | 2 cycles; 4 fixed, 1 accepted | -- | Loopback open: --top deviation needs SPEC amendment | Build `kb-language-lint.sh` and add the additive `--defined-extra` flag to `closure-check.sh` |
 | task-003 | Pending | -- | -- | -- | Cover the new lint with `test-kb-language-lint.sh` and its undefined/defined fixture pair |
 | task-004 | Pending | -- | -- | -- | Tighten the canonical KB-authoring rule set and the reviewer rubric |
