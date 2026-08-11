@@ -4,6 +4,7 @@
 
 | Date | Change | Source |
 |------|--------|--------|
+| 2026-08-11 | One citation de-lined, to line 196 of `reviewer-dispatch.md` — delivery-012 cut that file to 64 lines and the quoted sentence is gone. The co-location requirement it illustrated is unchanged | citation sweep |
 | 2026-07-27 | Feature identified from REQUIREMENTS.md §5.D (FR-D1..D3) and §5.B (FR-B8), §9 (AC-9) | /aid-define |
 
 ## Source
@@ -525,8 +526,11 @@ done
 Measured baseline today: the first pattern matches **exactly one line**
 (`canonical/agents/aid-reviewer/AGENT.md:95`) and the second matches **two** (95 and 100). Both
 are non-trivially false before implementation and both go to zero after it. The co-location
-requirement is deliberate: `reviewer-dispatch.md:196` says "bash heredoc" about rendering the
-*brief*, and an uncoupled `heredoc` sweep would fail on it forever.
+requirement is deliberate: `reviewer-dispatch.md` said "bash heredoc" about rendering the *brief*, and
+an uncoupled `heredoc` sweep would have failed on it forever. *(Line citation dropped 2026-08-11: the
+sentence is gone from that file, which delivery-012 cut from 200-odd lines to 64 when it extracted the
+mechanism into `/aid-deep-review` and `reviewer-brief-template.md`. The co-location requirement stands
+on its own reasoning and needs no live example.)*
 
 **What none of this proves, stated plainly.** "The reviewer actually checkpoints after every
 unit" is a runtime property of an agent and no static check reaches it. These oracles prove the

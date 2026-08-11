@@ -22,5 +22,5 @@
 
 **Acceptance Criteria:**
 - [ ] A requirement with no modality tag is rejected; one with a non-conforming tag is rejected
-- [ ] The accepted vocabulary is derived from the canonical scale's step 1, not restated
+- [ ] The accepted vocabulary is `MUST | SHOULD | COULD`, cited to where it is declared rather than restated *(amended 2026-08-11: this read "derived from the canonical scale's step 1"; step 1 is retired, and the vocabulary was never the scale's to own -- it is the same three values feature-level `## Priority` already uses)*
 - [ ] All section-6 quality gates pass

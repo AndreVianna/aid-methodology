@@ -8,9 +8,16 @@
 
 ## Objective
 
-Make every requirement and acceptance criterion carry an explicit modality, since the canonical
-severity scale's first step reads it. Without this, step 1 of the scale has no input and severity
-falls back to judgment.
+Make every requirement and acceptance criterion carry an explicit modality, so that how binding a
+rule is, is written down rather than inferred from its tone.
+
+**RE-STATED 2026-08-11 (`STATE.md` Q32).** This objective read: *"since the canonical severity scale's
+first step reads it. Without this, step 1 of the scale has no input and severity falls back to
+judgment."* Step 1 is retired and severity **is** judgment now, so that rationale is gone -- but the
+objective survives it, which is why this delivery is re-stated rather than re-scoped. Modality is still
+worth writing down, for a reason that never depended on the lookup: **an author who has not said
+whether a rule is mandatory has usually not decided.** What changes is the consequence of a missing
+tag -- it no longer blocks a grade (`FR-I5`), and the check moves to `aid-describe` (`FR-B5a`).
 
 ## Scope
 

@@ -18,8 +18,13 @@
 
 **Scope:**
 - The reviewer body's local severity table, replaced by a pointer to the canonical scale
-- The "severity is your judgment" instruction, replaced by severity-as-lookup
 - The two-sources rule and the no-criterion-no-finding rule, added
+
+**AMENDED 2026-08-11 (`STATE.md` Q32) -- after this task ran.** A second scope bullet read: *"the
+'severity is your judgment' instruction, replaced by severity-as-lookup."* That replacement is retired
+and its result is a defect on disk. The correction is **delivery-028**'s, not a re-run of this task.
+Note which half was right: replacing the local severity **table** with a pointer stands, and `AC-1`
+still holds. Only the sentence about who decides was wrong.
 
 **Acceptance Criteria:**
 - [ ] No severity table remains in the agent body; a pointer to the canonical scale is present

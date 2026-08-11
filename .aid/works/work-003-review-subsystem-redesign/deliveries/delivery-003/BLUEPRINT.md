@@ -14,12 +14,20 @@ every later spine delivery's line-number inventory goes stale the moment it land
 
 ## Scope
 
-- The canonical two-step severity scale (modality, then blast radius x reversibility) as the single
-  definition, in `grading-rubric.md`.
+- The canonical severity scale as the single definition, in `grading-rubric.md`.
 - The six former host files reduced to pointers.
-- `aid-reviewer/AGENT.md`: the local severity table removed; "severity is your judgment" replaced
-  with severity-as-lookup; the two-sources rule and "no criterion, no finding" added.
+- `aid-reviewer/AGENT.md`: the local severity table removed; the two-sources rule and "no criterion,
+  no finding" added.
 - `quality-gates.md`'s prose severity definition.
+
+**RE-SCOPED 2026-08-11 (`STATE.md` Q32), and this delivery already closed `Done`/`A+` on the old
+scope.** Two bullets above were: *"the canonical two-step severity scale (modality, then blast radius x
+reversibility)"*, and *"'severity is your judgment' replaced with severity-as-lookup"*. Both are
+retired. **What shipped is therefore now wrong on disk** -- `canonical/agents/aid-reviewer/AGENT.md`
+carries the two-step lookup at its `## Severity Classification` section and in three further bullets,
+and it is rendered into seven profile trees. Correcting it is **delivery-028**'s, because that
+delivery owns the judgment boundary and this one is closed. Recorded here rather than by editing this
+delivery's history, so the trail from decision to shipped defect to owner stays readable.
 
 **Out of scope:** `lint-modality.sh` and the modality back-fill (delivery-013); the rubric catalog
 (delivery-004).

@@ -4,6 +4,7 @@
 
 | Date | Change | Source |
 |------|--------|--------|
+| 2026-08-11 | Three citations de-lined — two to `reviewer-dispatch.md` (cut to 64 lines by delivery-012) and one to line 35 of `aid-execute/references/reviewer-brief.md` (now 32 lines). All three quoted requirements stand; only their line anchors are gone | citation sweep |
 | 2026-07-27 | Feature identified from REQUIREMENTS.md §5.A (FR-A1..A10), §5.C (FR-C9), §5.E (FR-E1), §9 (AC-11, AC-12) | /aid-define |
 
 ## Source
@@ -377,16 +378,19 @@ fix:
 ```
 
 Six grounded reasons: it is the only option under which the six brief files can actually shrink,
-which is where most of AC-11's saving lives; `reviewer-dispatch.md:206–207` already requires *"the
-rendered brief is logged with the dispatch record"* and nothing produces one today; `.aid/.temp/`
+which is where most of AC-11's saving lives; `reviewer-dispatch.md` required *"the rendered brief is logged
+with the dispatch record"* and nothing produced one — a requirement with no producer, which is the
+gap this option closes *(citation de-lined 2026-08-11: delivery-012 removed the sentence when it cut
+that file to 64 lines)*; `.aid/.temp/`
 is the established gitignored transient location; `read-setting.sh` already parses flat YAML with
 awk and no `yq`, so the reader needs no new dependency; a single-token argument eliminates the
 free-text quoting problem; and `{{ARTIFACTS}}`-derived-from-disk becomes *enforceable* because the
 field is written by a shell command rather than recalled by a model.
 
 **Do not delete the six brief files. Shrink them in place**, at the same paths, to the two
-genuinely per-skill sections — `RUBRIC` and `OUT OF SCOPE`, the two `reviewer-dispatch.md:185–192`
-already marks *"Static per skill"*. `OOS POLICY`, `DELIVERABLES`, `GAP POLICY` and the mode slots
+genuinely per-skill sections — `RUBRIC` and `OUT OF SCOPE`, the two `reviewer-dispatch.md` marked
+*"Static per skill"* *(citation de-lined 2026-08-11 for the same reason as above; the per-skill/static
+split it recorded is now carried by `reviewer-brief-template.md`)*. `OOS POLICY`, `DELIVERABLES`, `GAP POLICY` and the mode slots
 are static-global and move to one shared `canonical/aid/templates/reviewer-brief-template.md`.
 
 Keeping the paths preserves feature-002 §9's `RUBRIC:` re-point target and — critically — keeps
@@ -660,7 +664,7 @@ anyway:
 |---|---|
 | **Q3(a)** `aid-execute/references/state-review.md` self-contradicts | **Fix here.** Line 3 says the reviewer *"produces the full grade"*; line 177 says *"No grade is computed at the task level."* No `## Step 1` or `## Step 2` heading exists. A Tier-1 caller, rewritten by the migration. **Count correction:** Q3 says "four times"; `grep -c 'Step 2'` returns **2** (lines 68, 117) |
 | **Q3(b)** `reviewer-guide.md:3` points at the removed Step 2 | **Survives.** feature-001 deletes 6–14 and 35; line 3 is untouched by all five. Resolved by retiring the file |
-| **Q3(c)** the `references/reviewer-guide.md` pointer is renderer-blind | **Survives.** `canonical/skills/aid-execute/references/reviewer-brief.md:35` still carries the bare relative path. feature-001 fixes four *other* pointers; feature-002 fixes the `aid-discover` brief's. This one is nobody's |
+| **Q3(c)** the `references/reviewer-guide.md` pointer is renderer-blind | **Survives.** `canonical/skills/aid-execute/references/reviewer-brief.md` still carries the bare relative path — the file is now 32 lines, so the `:35` this row cited is gone *(de-lined 2026-08-11)*. feature-001 fixes four *other* pointers; feature-002 fixes the `aid-discover` brief's. This one is nobody's |
 | **Q3(d)** `README.md:52` Large tier vs canonical `medium` | **Fix here.** 002 and 005 both explicitly declined it; now load-bearing because §3's carve-out is authored here |
 | *"Six per-skill briefs"* then seven listed; `aid-describe` has none | **Resolved here** by §5's redesign. `ls … \| wc -l` = 6; `aid-describe` needs no brief file |
 | *"EXACTLY these 5 sections"* but six ship | **Resolved here**, wholesale, by the shared template |

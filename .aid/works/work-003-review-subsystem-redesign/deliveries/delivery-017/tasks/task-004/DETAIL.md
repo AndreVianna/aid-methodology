@@ -21,6 +21,6 @@
 
 **Acceptance Criteria:**
 - [ ] The row's `Mode` cell reads `judgment` and its `Modality` cell reads `SHOULD`
-- [ ] The row's `Severity` cell is the fixed `[LOW]` token carrying the escape to `[MEDIUM]` above one artifact -- the same cell form `INDEX.md`'s universal taxonomy class 6 (Convention deviation) already carries, copied rather than re-spelled. `Step 2` fails this criterion: modality is known at authoring, so Step 1 already fixes the token
+- [ ] **The row carries no `Severity` cell at all** *(rewritten 2026-08-11; `REQUIREMENTS.md` `FR-B4` removes that cell from the rule row -- `feature-002` § 1)*. This criterion read: *"the row's `Severity` cell is the fixed `[LOW]` token carrying the escape to `[MEDIUM]` above one artifact... `Step 2` fails this criterion."* Every term in it is retired. What the row must carry instead: `Mode`, `Modality`, a resolving `Criterion`, and a `Check` stated positively
 - [ ] Its `Criterion` cites the declaring authoring principle and resolves
 - [ ] All section-6 quality gates pass

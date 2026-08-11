@@ -71,7 +71,8 @@ ticket_ref: "--"
   replacement is a literal `&` that shortened the line and corrupted the second count.
 - **Class sweeps done, not just the named instances:** the modality/severity conformance sweep over all
   83 catalog rows found `SUMMARY-08` and nothing else; the grade-coupling sweep found the second
-  instance at `state-review.md:100` that row 8 predicted; the stale-field sweep found the `Header` row
+  instance at `aid-discover/references/state-review.md` § *Assertiveness gate PASS conditions* that
+  row 8 predicted; the stale-field sweep found the `Header` row
   of `artifact-schemas.md` describing four pre-relocation field names one line above the row the
   reviewer cited; and `TG01`'s widening surfaced a **second grade producer nobody had filed** —
   `aid-discover/SKILL.md`'s "Overall grade = weighted average where architecture, module-map and
@@ -271,8 +272,8 @@ see. Carried here so nothing is lost and nothing is claimed twice.
 | 2 | `manual-checklist.sh:252` | Prompt still read `HUMAN VISUAL GATE (mandatory, 5 pts)` |
 | 3 | `manual-checklist.sh:213` | Non-interactive mode announced `scoring supplied answers` |
 | 4 | `manual-checklist.sh:24` | Header still said `V1=n (0 pts)` |
-| 5 | `state-approval.md:3` | `the grade meet the minimum` — agreement error introduced by the rewrite |
-| 6 | `state-approval.md:15-17` | The three new rows broke the value-column alignment the rest of the block keeps |
+| 5 | `aid-summarize/references/state-approval.md:3` | `the grade meet the minimum` — agreement error introduced by the rewrite |
+| 6 | `aid-summarize/references/state-approval.md:15-17` | The three new rows broke the value-column alignment the rest of the block keeps |
 
 **Why the test suite did not catch 1-4.** `MC01` greps for `^\s*(K1|K2|V1)_score=` and the three
 `score_*()` definitions. All of those were genuinely gone, so it passed — while four score strings
@@ -292,7 +293,7 @@ task's declared scope):
 | 10 | same, `:212-219` | `D1`/`D2` still have live pass-criteria sections while `review-rubrics/summary.md` records them as **deleted** | task-005 |
 | 11 | same, `:51`, `:160` | `K1` cites `discovery.doc_set`; `COV` at `:54` and `summary.md` cite `knowledge.doc_set`. One of the two is wrong | task-005 |
 | 12 | `state-summary-delta.md:319` | Reads `diagram parse failure → auto-F on the human visual check` — a careless substitution that now asserts something false (a diagram parse failure is not the human visual check), and the line still says "Machine or Human grade" | task-005 |
-| 13 | `state-fix.md:14-15`, `:26` | Still carries `D1`/`D2` repair entries for deleted checks, and an example reading *"K1 scored partial"* | task-005 |
+| 13 | `aid-summarize/references/state-fix.md:14-15`, `:26` | Still carries `D1`/`D2` repair entries for deleted checks, and an example reading *"K1 scored partial"* | task-005 |
 | 14 | `review-rubrics/summary.md` mapping table | Omits `T1`, `T2`, `T3` and `NM` while claiming "Every check it scored is accounted for here". `T1`/`T2` appear only inside the `V1` row's note; `T3` and `NM` appear nowhere. `MP02` asserts 17 checks, so it cannot see the gap | task-004 (it owns the visual-gate split) |
 | 15 | `review-rubrics/summary.md` Change Log | Says "Seven content-truth rules"; the file defines **nine** (`SUMMARY-01`…`09`) | task-004 |
 

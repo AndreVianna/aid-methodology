@@ -4,19 +4,34 @@
 
 | Date | Change | Source |
 |------|--------|--------|
+| 2026-08-11 | **The rule row loses its `Severity` cell (7 -> 6) and the universal taxonomy loses its `Anchor` column.** The six defect shapes become recognition aids and stop being ordered by severity; § 13's oracle (e) is rewritten from a cell regex into a catalog-wide assertion that no band is named anywhere; two AC checklist bullets are corrected, one of them an inversion | `REQUIREMENTS.md` `FR-B4`; `STATE.md` Q32 |
 | 2026-07-27 | Feature identified from REQUIREMENTS.md §5.B (FR-B4, FR-B5b, FR-B9), §9 (AC-3) | /aid-define |
 
 ## Source
 
-- REQUIREMENTS.md §5 group B — FR-B4, FR-B5b, FR-B9
+- REQUIREMENTS.md §5 group B — FR-B4, FR-B9
+- REQUIREMENTS.md §5 group I — FR-I1 … FR-I7 (the review pipeline), added 2026-08-11
 - REQUIREMENTS.md §9 — AC-3
 - REQUIREMENTS.md §2 — problem 2 (the reviewer is licensed to use opinion)
 
+**`FR-B5b` was in this list until 2026-08-11 and is retired** (`STATE.md` Q32). Its
+replacement `FR-B5c` — the reviewing agent assigns severity and states why — is **not**
+this feature's: it constrains the agent body, whose severity regions `feature-001` owns.
+This feature is left with the catalog, which is `FR-B4`.
+
 ## Description
 
-Once severity means one thing, the next question is who decides which severity applies.
-Today the reviewer decides, by judgment, every time. This feature moves that decision out
-of the reviewer's head and into a written catalog.
+Once severity means one thing, the next question is what a reviewer is checking against.
+Today it decides that too, from memory, every time — so two reviewers of the same artifact
+check different things. This feature writes the checks down.
+
+**Re-aimed 2026-08-11 (`STATE.md` Q32).** This paragraph read: *"the next question is who
+decides which severity applies. Today the reviewer decides, by judgment, every time. This
+feature moves that decision out of the reviewer's head and into a written catalog."* Severity
+stays the reviewer's decision (`FR-B5c`). What moves out of its head is the **criteria** —
+which is the half of the original idea that was right, and the half the catalog can actually
+hold. A written check is reproducible; a written severity is a guess made earlier with less
+information.
 
 The catalog holds rule sets, one per artifact class — code, spec, plan, task set,
 requirements, documentation, release. Each rule is a row carrying four things: the check
@@ -58,18 +73,18 @@ Must
 | AC-3 | MUST | Every finding produced by a deep review cites a rule from the rubric catalog. A finding with no rule reference is rejected. |
 
 - [ ] **AC-3** — Given a deep review, when it produces a finding, then that finding cites the catalog rule that justifies its severity; a finding with no rule reference is rejected.
-- [ ] Given the catalog, when I inspect any rule row, then it carries all four elements: the check, an evidence anchor, a severity anchor, and a named tag.
+- [ ] Given the catalog, when I inspect any rule row, then it carries all three elements: the check, an evidence anchor, and a named tag. *(Amended 2026-08-11: the severity anchor is removed — `FR-B4`.)*
 - [ ] Given an artifact of a known class, when a review begins, then the routing table resolves it to exactly one rule set.
 - [ ] Given a rule set, when I read it, then it declares which checks are mechanical (evidence must be a runnable command) and which are named judgment surfaces.
-- [ ] Given a defect that matches a rule, when severity is assigned, then it is taken from the rule and not chosen by the reviewer.
+- [ ] Given a defect that matches a rule, when severity is assigned, then **the reviewing agent chose it and stated in one line what goes wrong and for whom**. *(Inverted 2026-08-11: this bullet read "taken from the rule and not chosen by the reviewer", which is retired `FR-B5b`. See `FR-B5c`.)*
 - [ ] Given the rendered `aid-reviewer` agent in an adopter project, when I read it, then it contains no AID-specific content-isolation rules.
 - [ ] Given AID's own artifacts under review, when content isolation is checked, then the rules are applied from the catalog's AID-specific entry.
 
 ## Notes for Specify
 
 - **Blocked on an open decision (STATE.md Q7 #1).** AC-3 requires every finding to cite its rule, but REQUIREMENTS.md §4 freezes the 7-column ledger set and no column holds a rule reference. The options are: embed the tag in Description or Evidence by convention, overload the `#` column, or amend the column set. **This must be resolved before this feature is specified**, because it determines the shape of every rule row. The same unsolved problem blocks the source tags (`[CODE]`, `[TASK]`, `[SPEC]`, `[KB]`, `[ARCHITECTURE]`) the reviewer already mandates — solve both together.
-- **This feature edits `canonical/agents/aid-reviewer/AGENT.md`** — it inverts "Severity is your judgment" to severity-as-lookup (FR-B5b) and removes the content-isolation section (FR-B9), including the dangling `content-isolation.md` citation, which references a KB document that does not exist anywhere in the repository.
-- Model the rule-row schema on `canonical/aid/templates/kb-authoring/review-rubric.md`, including its density rule ("one occurrence MINOR, widespread MEDIUM" — note this crosses a band, not just a modifier) and its force-floor precedent (`[TEACHBACK]` caps the grade at D).
+- **This feature edits `canonical/agents/aid-reviewer/AGENT.md`** — it removes the content-isolation section (FR-B9), including the dangling `content-isolation.md` citation, which references a KB document that does not exist anywhere in the repository. *(Amended 2026-08-11: this bullet also had the feature inverting "Severity is your judgment" to severity-as-lookup. `FR-B5b` is retired, so that sentence stays as it stands and line 36 is feature-001's to extend — see `feature-001` § 3b/3d.)*
+- Model the rule-row schema on `canonical/aid/templates/kb-authoring/review-rubric.md`. *(Amended 2026-08-11: its density rule and force-floor precedent were listed here as things to carry across. Both are severity mechanisms, and the rule row no longer carries severity — § 1 records what became of each.)*
 - Verify five-profile render parity at feature close (STATE.md concern N3).
 
 ---
@@ -89,10 +104,10 @@ per artifact family, plus class files where a class has criteria a family does n
 rather than moved — it has roughly eight inbound pointers and belongs to the
 `aid-discover` bundle. Its per-check anchors are re-derived in place.
 
-**The rule row — seven cells.**
+**The rule row — six cells.** *(Seven until 2026-08-11; see the amendment below.)*
 
 ```
-| Rule | Check | Criterion | Modality | Mode | Evidence | Severity |
+| Rule | Check | Criterion | Modality | Mode | Evidence |
 ```
 
 | Cell | Contract |
@@ -103,35 +118,32 @@ rather than moved — it has roughly eight inbound pointers and belongs to the
 | **Modality** | `MUST` / `SHOULD` / `COULD`, copied from the criterion, never invented. |
 | **Mode** | `mechanical` or `judgment`. Mechanical rows must carry a runnable command in Evidence; judgment rows must name the surface read and what is read off it. |
 | **Evidence** | Per Mode. |
-| **Severity** | One of exactly two forms — never prose. Below. |
 
-**The severity anchor has exactly two legal forms.**
+**AMENDED 2026-08-11 (`STATE.md` Q32, `REQUIREMENTS.md` `FR-B4`): the `Severity` cell is
+removed.** A rule row says **what to check and what evidence settles it**. It does not say
+how bad a violation is, because that depends on the instance — and the version of this
+section that tried to say it needed two legal forms, one of which (`Step 2`) meant *"the
+severity is not in this cell, go read the scale"*. A cell whose second legal value is
+"look elsewhere" is not carrying the information.
 
-Feature-001's scale makes MUST-band severity a function of modality × blast radius ×
-reversibility. Modality is knowable when the rule is authored; the other two are
-**instance** facts. So a rule cannot always pin one token, and pretending otherwise would
-contradict the canonical scale on the first row.
+**What the reviewer does instead** is `FR-B5c`: judge the band and state one line of
+consequence. `feature-001` § 1 describes the five bands. **This section does not restate
+them.**
 
-- **Fixed** — a single bracketed token, when the violation always has the same
-  radius/reversibility shape. May carry a stated escape threshold. The cell must match
-  oracle (e)'s regex in §13, so the only legal escape form is
-  `[LOW]; escaped (>1 doc) → [MEDIUM]` — a bracketed token first, never a modality prefix.
-- **`Step 2`** — modality is MUST; the two axes are read off the instance per
-  `canonical/aid/templates/grading-rubric.md#severity-scale`.
+**What is gained beyond removing a distortion.** The catalog stops being a place severity
+can drift. `AC-1` requires exactly one severity definition in the canonical tree, and a
+column of per-rule anchors was a second one spread across 85 rows — each individually a
+"binding" rather than a "definition", and collectively a table nobody could diff against the
+scale. That is also why oracle (e) in § 13 existed at all; it is retired with the cell.
 
-`Step 2` is not a judgment escape hatch: feature-001 made both axes evidence-bearing
-(*name the dependent, or the radius is confined*), so the reviewer evaluates two checkable
-predicates.
+**Density needed no mechanism, and now needs no explanation.** The KB rubric's "MINOR per
+occurrence, MEDIUM if widespread" is what a reviewer weighing *how much does this cost*
+concludes on its own. It was previously derived from `Step 1` plus an escape threshold
+written into the Severity cell; both of those are gone, and the conclusion is unchanged.
 
-**No force-floor form.** The `· floor:<GRADE>` annotation considered during design was
-dropped: `[TEACHBACK]` and `[ACTBACK]` anchor `[HIGH]`, which lands the grade in D-range by
-ordinary arithmetic. A catalog feature that looks mechanical but is honoured only by
-convention is exactly what this work exists to remove.
-
-**Density is not a separate mechanism.** The KB rubric's "MINOR per occurrence, MEDIUM if
-widespread" dissolves when re-derived: those checks are SHOULD-modality, so feature-001's
-Step 1 already gives `[LOW]` escaping to `[MEDIUM]`. Where a concrete count is needed it
-becomes an escape threshold inside the Severity cell, in scale vocabulary.
+**The force-floor idea stays dropped**, for its original reason: `[TEACHBACK]` and
+`[ACTBACK]` reach a D-range grade by ordinary arithmetic, so a floor annotation would be a
+mechanism honoured only by convention. Nothing in the amendment revives it.
 
 ### 2. Rule ID namespace and source-tag subsumption
 
@@ -261,24 +273,42 @@ project declares them — the same improvement loop, applied to the catalog itse
 
 ### 5. The universal defect taxonomy
 
-Declared once in `INDEX.md`, inherited by every kind-A rule set. **Ordered by severity,
-first match wins**, so two reviewers classify the same defect identically and no
-arbitration is needed.
+Declared once in `INDEX.md`, inherited by every kind-A rule set. **AMENDED 2026-08-11
+(`STATE.md` Q32): these are recognition aids, not a severity table.** They help a reviewer
+notice a defect and name a rule for it. The `Anchor` column is removed and the list is no
+longer "ordered by severity, first match wins".
 
-| # | Class | The artifact… | Modality | Anchor |
-|---|---|---|---|---|
-| 1 | **Contract violation** | breaks a declared interface, signature, schema, or closed enum | MUST | `Step 2` |
-| 2 | **Contradiction** | conflicts with a higher-authority source, or with itself | MUST | `Step 2` |
-| 3 | **Unmet criterion** | fails a requirement or AC it is bound by | *inherits the criterion's* | MUST → `Step 2`; SHOULD → `[LOW]`; COULD → `[MINOR]` |
-| 4 | **Missing content** | omits a mandated section, field, or element | MUST | `[HIGH]` |
-| 5 | **Stale reference** | cites a path, anchor, or identifier that no longer resolves | MUST | `Step 2` — one bad cite is confined → `[MEDIUM]`; widespread → escaped → `[HIGH]` |
-| 6 | **Convention deviation** | differs from a declared naming, structure, or format convention | SHOULD | `[LOW]; escaped (>1 artifact) → [MEDIUM]` |
+| # | Class | The artifact… | Modality |
+|---|---|---|---|
+| 1 | **Contract violation** | breaks a declared interface, signature, schema, or closed enum | MUST |
+| 2 | **Contradiction** | conflicts with a higher-authority source, or with itself | MUST |
+| 3 | **Unmet criterion** | fails a requirement or AC it is bound by | *inherits the criterion's* |
+| 4 | **Missing content** | omits a mandated section, field, or element | MUST |
+| 5 | **Stale reference** | cites a path, anchor, or identifier that no longer resolves | MUST |
+| 6 | **Convention deviation** | differs from a declared naming, structure, or format convention | SHOULD |
 
-Two of these need no anchor machinery of their own. **Unmet criterion** borrows the
-modality of whatever it violated — which is why FR-B5a matters: tag the ACs and this class
-grades itself. **Stale reference** needs no density rule: one dead link affects only a
-reader of that artifact (confined); dead links throughout mean consumers rely on them
-(escaped).
+**Why the `Anchor` column had to go, on the owner's example.** Class 4 anchored `[HIGH]`
+unconditionally. But a mandated section that is absent and that **nothing reads** costs
+nobody anything, while one that a downstream gate reads makes that gate undecidable. Same
+class, same rule, opposite consequences — and a fixed anchor cannot tell them apart, so it
+graded both `[HIGH]`. Multiply that across six classes and the grade stops measuring the
+artifact.
+
+**Why "first match wins" also had to go.** It existed to make two reviewers reach the same
+severity by making them reach the same class. With severity no longer read off the class,
+ordering the classes buys nothing — and a defect that is genuinely two shapes at once
+(a contradiction that is also a stale reference) is better reported as whichever a
+consumer would recognise than forced to the lower-numbered row.
+
+**Neither exhaustive nor per-artifact-kind, and that is now survivable.** Six shapes never
+covered every defect and were never tailored to code versus data versus prose. Under the
+retired design an unlisted shape was either unreportable or mis-anchored; now it is judged
+like any other finding, against the five dimensions `FR-B5c` names.
+
+**Class 3 still borrows its modality** from whatever it violated, which is why `FR-B5a`
+keeps modality on requirements and criteria. Note the narrower claim: modality tells a
+reviewer **how binding** the thing was, and is one input among several. It no longer
+selects the band.
 
 **Two outcomes that are not findings.** *Cannot measure* — a claim no available evidence
 can confirm or deny → **ask the user**; never record a softened finding. *No criterion* —
@@ -294,34 +324,43 @@ the concern is a gap rather than a finding.
 ### 6. The KB rule set — act-back re-derived
 
 The act-back limb currently emits every failure at flat `[HIGH]` across six insufficiency
-classes. Re-derived against the canonical scale, plus one class that did not exist:
+classes. Split into seven rules, adding one class that did not exist:
 
-| Rule | Class | Modality | Anchor |
-|---|---|---|---|
-| `KB-20` | **Contradiction** — two KB statements conflict; the agent had to choose | MUST | `Step 2` |
-| `KB-21` | **Plan-correctness** — no correct plan assemblable, or the plan is wrong for this project | MUST | `Step 2` |
-| `KB-22` | **Contract** — structural shape not stated; the agent reached for source | MUST | `[HIGH]` |
-| `KB-23` | **Invariant** — a rule that must hold was not stated; the agent guessed | MUST | `[HIGH]` |
-| `KB-24` | **Gotcha** — a non-obvious trap was not warned about | MUST | `[HIGH]` |
-| `KB-25` | **Quality-bar** — the KB never conveyed the project's quality contract | MUST | `[HIGH]` |
-| `KB-26` | **Convention** — no naming, path, or style convention stated; the agent assumed | **SHOULD** | `[LOW]; escaped (>1 doc) → [MEDIUM]` |
+| Rule | Class | Modality |
+|---|---|---|
+| `KB-20` | **Contradiction** — two KB statements conflict; the agent had to choose | MUST |
+| `KB-21` | **Plan-correctness** — no correct plan assemblable, or the plan is wrong for this project | MUST |
+| `KB-22` | **Contract** — structural shape not stated; the agent reached for source | MUST |
+| `KB-23` | **Invariant** — a rule that must hold was not stated; the agent guessed | MUST |
+| `KB-24` | **Gotcha** — a non-obvious trap was not warned about | MUST |
+| `KB-25` | **Quality-bar** — the KB never conveyed the project's quality contract | MUST |
+| `KB-26` | **Convention** — no naming, path, or style convention stated; the agent assumed | **SHOULD** |
+
+**AMENDED 2026-08-11: the `Anchor` column is removed here too**, per `FR-B4`. The section's
+purpose is unchanged and is the part that survives — the act-back limb emits **one flat
+severity for seven different failures**, and telling a missing gotcha apart from an unstated
+contract is what makes the output actionable. The rules do that. Assigning each a fixed band
+in advance was never what did it.
 
 **`KB-20` is new.** All six existing classes describe *absence*. None covered
 contradiction, which is worse: silence makes an agent guess and know it is guessing;
 contradiction makes it choose confidently, and different agents choose differently.
 
 **`KB-26` is the one genuine SHOULD.** A project runs fine with inconsistent naming; it does
-not run fine with unstated contracts. That single modality difference does most of the
-differentiating work, and five of seven classes stay at HIGH — closer to today's flat model
-than it appears.
+not run fine with unstated contracts. *(Amended 2026-08-11: this bullet went on to claim the
+modality difference "does most of the differentiating work, and five of seven classes stay at
+HIGH". Both halves depended on modality selecting a band, which it no longer does. Modality
+still says how binding each class is; what a given instance costs is judged.)*
 
 **Quality-bar is de-bundled.** It currently means both "the KB stated a bar and the plan
 missed it" and "the KB never stated the bar". The first is a plan-correctness failure
 (`KB-21`); only the second stays as `KB-25`.
 
-**The reviewer's classification instruction** is the same ordered, first-match-wins shape as
-§5: work down `KB-20` to `KB-26` and stop at the first match. One row per gap, naming the
-probe and step.
+**The reviewer's classification instruction:** find the class that describes the gap and
+name its rule. One row per gap, naming the probe and step. *(Amended 2026-08-11: this said
+"the same ordered, first-match-wins shape as §5". § 5 no longer has that shape — ordering
+existed to make two reviewers reach the same severity through the same class, and severity is
+no longer read off the class.)*
 
 **This respects the binary bar.** "Binary pass/fail per insufficiency" still holds — each
 gap fails or it does not, and *almost-states* still fails. What changes is that the class
@@ -467,11 +506,11 @@ for a ledger that spans the change (STATE.md Q7 #10).
 
 Ships as `tests/canonical/test-rule-catalog.sh`.
 
-- **(a) Row well-formedness.** Every data row has exactly 7 non-empty cells; `Modality` ∈ `{MUST,SHOULD,COULD}`; `Mode` ∈ `{mechanical,judgment}`.
+- **(a) Row well-formedness.** Every data row has exactly **6** non-empty cells; `Modality` ∈ `{MUST,SHOULD,COULD}`; `Mode` ∈ `{mechanical,judgment}`. *(7 until the `Severity` cell was removed on 2026-08-11.)*
 - **(b) ID shape, uniqueness, prefix conformance.** Every ID matches the regex; no duplicates catalog-wide; every prefix is in the `INDEX.md` class enum; every declared class has at least one rule.
 - **(c) Every Criterion resolves** — the cited file exists *and* the quoted anchor is greppable in it. This is the direct regression guard against another phantom `content-isolation.md`.
 - **(d) Mechanical rows carry a runnable command** — for every `Mode: mechanical` row, the Evidence cell holds a backticked token whose first word resolves to an existing path or a shell builtin.
-- **(e) Severity anchors never restate the scale.** Every Severity cell matches `^(\[(CRITICAL|HIGH|MEDIUM|LOW|MINOR)\]|Step 2)(; escaped .* → \[(HIGH|MEDIUM)\])?$`. No prose. This is what stops the catalog regressing feature-001's AC-1 by growing a sixth severity definition one row at a time.
+- **(e) The catalog names no severity at all.** *(Rewritten 2026-08-11 with the `Severity` cell's removal; it previously regex-matched that cell.)* Assert **zero** occurrences of `[CRITICAL]`, `[HIGH]`, `[MEDIUM]`, `[LOW]`, `[MINOR]` or `Step 2` anywhere in `review-rubrics/**`. Stronger than the regex it replaces, and for the same purpose: it is what stops the catalog regressing `AC-1` by growing a sixth severity definition one row at a time. The one legitimate exception is a **pointer** to `grading-rubric.md#severity-scale`, which names no band.
 - **(f) Routing totality** — closed enumeration of the six `reviewer-brief.md` files; each must name a catalog entry in full `canonical/...` form.
 - **(g) Eight columns, scoped sweep.** Scope: `canonical/`, `CLAUDE.md`, `AGENTS.md`, `.aid/knowledge/`. Expect zero `7-column` mentions, zero old header rows, and at least one new header row. All three assertions are non-trivially false today — establish the pre-migration baseline with the commands below rather than quoting a count, since an inline count is drift-prone and would be stale before implementation starts:
 
@@ -502,6 +541,59 @@ rule.
 - Retiring `grade-summary.sh`'s weighted-points backend and rewiring `aid-summarize` — **feature-007** (FR-F6). This feature authors the `SUMMARY` rule set those gates grade against.
 - The settings gate, the frontmatter-lint wiring, the BLUEPRINT review, and the per-section specify ledger — **feature-007**.
 - `task-type-rules.md` — executor guidance, not a review criterion.
+- **`FR-I6`'s six script renames** (`lint-modality.sh` → `check-modality-present.sh`, and five more). They are a `SHOULD` over shipped names with live callers, so they are a migration of their own rather than a rider on the behavioural change in § 15 — landing a rename in the same commit as a semantic change makes both unbisectable.
+
+### 15. The review pipeline — where checking stops and judgment begins (group I)
+
+*Added 2026-08-11 from `REQUIREMENTS.md` group I and `STATE.md` Q33. Carried by
+`delivery-028`, which names this feature as its owner because the checks group I constrains
+are the ones this catalog wires.*
+
+**The boundary, in one line.** A script measures **shape**. Whether what it measured
+**matters** is judgment. Everything below follows from putting those on opposite sides of a
+line and never crossing it.
+
+**What each check actually does** — established by reading them, and the reason the owner
+raised this at all:
+
+| Check | What it decides | What it cannot decide |
+|---|---|---|
+| `lint-modality.sh` | one of three literal tokens is **present** | whether `SHOULD` was the right choice |
+| `kb-citation-lint.sh` | `file:line` **resolves** | whether the cited lines say what the citing text claims |
+| `check-gaps.sh` | a **registered** gap is still open | what counts as a gap — an agent registers it |
+
+None of the three judges anything, and two of them could block a grade. That is the defect
+group I closes.
+
+**Six obligations, stated as this feature will ship them.**
+
+| FR | Modality | The obligation | Shape it takes in the catalog and its checks |
+|---|---|---|---|
+| `FR-I1` | MUST | a script never judges quality | each check emits an **observation report**: no verdict vocabulary for anything a reviewer prices, and an explicit **"Not examined"** section, so silence is never read as clean |
+| `FR-I2` | MUST | reports precede judgment | the reports are produced **before** the reviewer is dispatched and passed in with the brief — one mechanical pass, then one judgment pass |
+| `FR-I3` | MUST | reports stay **outside the ledger** | a ledger row is always a finding an agent decided to raise; a script observation the agent dismisses leaves no row, and `Status` keeps meaning what it means |
+| `FR-I4` | MUST | a report is **evidence, not truth** | the brief tells the reviewer to verify what it leans on, and to say so in a row when it cannot reproduce a reported fact |
+| `FR-I5` | MUST | **one** mechanical blocker | an open criteria gap blocks, because the reviewer is then missing an input it needs; citation **resolution** blocks, because a claim whose evidence does not resolve has no evidence. Modality and citation *style* report |
+| `FR-I7` | MUST | clean context is **structural** | a new-cycle scratch must be somewhere a prior cycle's is not reachable from — `FR-D4` states the intent and this states the mechanism |
+
+`FR-I6`'s renames are **not** in this feature's scope; see § 14.
+
+**Why `FR-I3` and not the simpler alternative.** Feeding observations straight into the
+ledger as low-severity rows would need no new file and would look tidier. It also destroys
+the one property the ledger has: that every row is something a reviewer decided was worth
+raising. A ledger holding both decisions and grep hits cannot be read, cannot be reconciled
+— `Fixed` and `Recurred` are statements about findings — and would put the grader downstream
+of a regex.
+
+**Verification** — three assertions, added to `test-rule-catalog.sh`:
+
+1. Every check in the review path emits a report carrying a **"Not examined"** section.
+   Asserted by running each check and reading its output, not by grepping the scripts.
+2. A **modality-failing artifact reaches a grade**, and an artifact with an open criteria gap
+   does not. This is `FR-I5` stated as an experiment rather than a claim.
+3. `grade.sh` returns the **same letter it returns today** for every existing fixture ledger.
+   Group I changes what reaches the ledger, never how a ledger is scored — and that is
+   exactly the kind of claim this work has previously got wrong by not testing.
 
 ### Delivery recommendation
 
@@ -510,5 +602,6 @@ Split at Plan into three:
 - **D1 — the catalog skeleton.** `INDEX.md`, the rule-row schema, the ID format, the review kinds, the two ladders, the defect taxonomy, the six families. No class rules yet. Independently verifiable by oracles (a), (b), (e).
 - **D2 — the class rule sets**, including the KB re-derivation and the `AID` relocation. Oracles (c), (d), (f).
 - **D3 — the eighth column.** The migration set enumerated in §9, the five `grade.sh` comment lines, the new 8-column fixture, and the render parity gate. Oracle (g), with its baseline captured before any edit.
+- **D4 — the observation reports and the judgment boundary** (§ 15, group I). *Added 2026-08-11.* Already cut in the plan as **delivery-028**, depending on D1 — until the rule row loses its `Severity` cell, "the reviewer assigns severity" and "the rule says the severity" are both true on disk and a report written against either is written against a moving target.
 
-D3 is separable and touches the most files; D1 gates both others.
+D3 is separable and touches the most files; D1 gates the other three.

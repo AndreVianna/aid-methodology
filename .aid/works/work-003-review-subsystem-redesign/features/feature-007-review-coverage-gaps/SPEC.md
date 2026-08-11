@@ -4,6 +4,7 @@
 
 | Date | Change | Source |
 |------|--------|--------|
+| 2026-08-11 | Amended for the retired severity lookup (`STATE.md` Q32): § 1b's mapping argument no longer reasons from Step 2, and both disagreements it named are recorded as resolved on disk. Three citations to `grade-summary.sh` rewritten to the past tense with commit `3d200962` as the anchor — the file was deleted, so they were unresolvable by design. One residual placed: `state-validate.md`'s `Severity` column now has no upstream | `REQUIREMENTS.md` `FR-B4`; `STATE.md` Q32 |
 | 2026-07-27 | Feature identified from the artifact inventory in STATE.md Q12; REQUIREMENTS.md §5 group F | /aid-define |
 
 ## Source
@@ -123,10 +124,16 @@ awk '/^declare -A WEIGHTS=\(/,/^\)/' canonical/aid/scripts/summarize/grade-summa
 Fourteen scored checks. The MANUAL_POOL's 30 is `K1 10 + K2 15 + V1 5`
 (`manual-checklist.sh` lines 88, 97, 107).
 
-**Ten of the 68 points cannot be lost.** `grade-summary.sh:248–249` sets `RESULTS[D1]=pass` and
-`RESULTS[D2]=pass` **unconditionally** — the Mermaid engine was retired, so D1 and D2 are 5 points
-each of dead weight inflating every Machine Grade. The cleanest subtraction in the feature: no
+**Ten of the 68 points could not be lost.** `grade-summary.sh` set `RESULTS[D1]=pass` and
+`RESULTS[D2]=pass` **unconditionally** — the Mermaid engine had been retired, so D1 and D2 were 5
+points each of dead weight inflating every Machine Grade. The cleanest subtraction in the feature: no
 rule row, no coverage loss, pure deletion.
+
+**Discharged, and the citation retired with the file.** `grade-summary.sh` **no longer exists** — it
+was deleted by `3d200962` (*"de-score the manual checklist"*), so the line citation this paragraph
+carried is unresolvable by design rather than by drift. Recorded in the past tense with the commit as
+the anchor, per the citation rule: cite the durable artifact, and a deleted file's contents are git's
+to hold. What guards the property now is `tests/canonical/test-one-grading-backend.sh`.
 
 #### 1b. The points-to-rules mapping
 
@@ -136,7 +143,7 @@ rule row, no coverage loss, pure deletion.
 | **D1, D2** | 5 + 5 | **Deleted.** A check that cannot fail is not a rule |
 | **L1, L2** | 5 + 5 | **No SUMMARY rule.** They are feature-002 §5's universal class 5 (*Stale reference*) verbatim — `Step 2`, one bad link confined → `[MEDIUM]`, widespread → `[HIGH]`. Inherited, not authored |
 | **H1** | 5 | `SUMMARY-02` — HTML validity. MUST, `Step 2` |
-| **A1–A5** | 5+3+5+2+3 | `SUMMARY-10…14`. MUST — `accessibility-checklist.md:3` reads *"Every `/aid-summarize` output **must** meet these criteria"*, the declaring document Step 1 needs. `Step 2` → `[MEDIUM]` |
+| **A1–A5** | 5+3+5+2+3 | `SUMMARY-10…14`. MUST — `knowledge-summary/accessibility-checklist.md:3` reads *"Every `/aid-summarize` output **must** meet these criteria"*, the declaring document the rule cites. *(Amended 2026-08-11: read "the declaring document Step 1 needs". Step 1 is retired; a rule still needs a declaring document, which is `FR-B4`'s `Criterion` cell.)* `Step 2` → `[MEDIUM]` |
 | **C1, C2** | 4 + 4 | `SUMMARY-20/21` — WCAG ratios, one row per failing token pair. MUST, `[MEDIUM]` |
 | **S2** | 2 | `SUMMARY-03` — self-contained, no external fetch. MUST, `[HIGH]`: an offline reader gets a broken page, so the radius has escaped the artifact |
 | **T1, T2, T3** | `block` (**0 pts**) | `SUMMARY-30/31/32` — visual fidelity, `[HIGH]` per failing visual |
@@ -152,13 +159,25 @@ every rule set to declare. And **four checks that "block DONE" carried zero grad
 blocking status was prose only. Under rule rows they carry `[HIGH]`, so the rule set is **smaller
 than the points table and strictly stronger**.
 
-**The mapping is not invented here.** `state-validate.md:26–39` already carries a check→severity
-translation table, and for A1–A5, A3, C1 and C2 it already says `[MEDIUM]` — which is what
-feature-001's Step 2 independently produces. FR-F6 mostly **ratifies** that table into the
-catalog. It disagrees in exactly two places: COV is currently `[CRITICAL]`, which under
-feature-001's scale requires an escaped radius **and** non-local correction (regenerating
-`kb.html` is local, so it cannot be CRITICAL); and L1/L2/H1 are `[HIGH]` where the universal
-taxonomy gives `[MEDIUM]` for a confined instance. Both are re-derived.
+**The mapping is not invented here.** `aid-summarize/references/state-validate.md` carries a
+check→severity translation table, and for A1–A5, A3, C1 and C2 it says `[MEDIUM]`. FR-F6 mostly
+**ratifies** that table into the catalog.
+
+**Both disagreements this paragraph named have since been resolved on disk, in the catalog's favour.**
+COV read `[CRITICAL]` and now reads `[MEDIUM]`; L1, L2 and H1 read `[HIGH]` and now read `[MEDIUM]`,
+and the file says so in its own words — *"this table used to give `[HIGH]` for L1, L2 and H1 — the
+values the retired points model carried"*. The line range `:26–39` is dropped rather than re-pointed:
+the table moved when the file grew, and a range that has already drifted once will drift again.
+
+**Amended 2026-08-11 for the retired scale.** The original argument ran *"which is what feature-001's
+Step 2 independently produces"* and *"COV is `[CRITICAL]`, which under feature-001's scale requires an
+escaped radius **and** non-local correction"*. Step 2 is retired (`STATE.md` Q32), so neither sentence
+can be made. The **conclusions survive their reasoning**, which is why they stand: regenerating
+`kb.html` is cheap and nothing downstream breaks, so an unreferenced doc-set document is not a
+work-stopping defect. That is now stated as the judgment it always was. The residual this creates is
+real and belongs to this feature: `state-validate.md`'s `Severity` column calls itself *"a convenience
+copy of what the catalog declares"*, and under the amended `FR-B4` **the catalog declares no severity
+at all** — so that column has no upstream. Placing it is FR-F6's, not delivery-028's.
 
 #### 1c. The fate of each script
 
@@ -205,11 +224,13 @@ one name:
    `--explain` output at **`grade.sh:80`** reads *"non-functional flag set: build/run failed or
    produced no usable output"*, and the usage comment at **`:29`** carries the shorter
    *"forces F (build/run failed)"*. Nothing else in the tree means this.
-3. **The checklist has not been answered.** Today `grade-summary.sh:465–467` sets
-   `HUMAN_GRADE="F"`, conflating *unanswered* with *failed* — and contradicting its own rubric at
+3. **The checklist has not been answered.** `grade-summary.sh` set `HUMAN_GRADE="F"`, conflating
+   *unanswered* with *failed* — and contradicting its own rubric at
    `knowledge-summary/grading-rubric.md:29–31` and `:123`, which say Overall should read
    *"Pending Human Review"*. → **not a grade at
-   all.** APPROVAL requires `manual-checklist.json` to exist; absent → `PAUSE-FOR-USER-ACTION`
+   all.** *(Past tense as of 2026-08-11: the file was deleted by `3d200962`, which made exactly this
+   change — an unanswered checklist now produces no grade, and APPROVAL's precondition became the
+   checklist's existence rather than its score.)* APPROVAL requires `manual-checklist.json` to exist; absent → `PAUSE-FOR-USER-ACTION`
    printing the `manual-checklist.sh` command. No grade is produced, so NFR-7 holds and "F means
    two things" disappears.
 
@@ -260,7 +281,7 @@ Ships as `canonical/aid/scripts/config/lint-settings.sh`, asserting:
 | `heartbeat_interval` | non-negative integer | `aid-config/SKILL.md:146` |
 | `name` | non-empty, no whitespace | `aid-config/SKILL.md:141` |
 | `description` | non-empty, single-line | `aid-config/SKILL.md:142` |
-| `knowledge.doc_set` rows | `<file>.md\|<owner>\|required\|optional` — three pipe-delimited fields, first ends `.md`, third in a closed enum | the live file's shape; `grade-summary.sh:91–103` is its only parser today |
+| `knowledge.doc_set` rows | `<file>.md\|<owner>\|required\|optional` — three pipe-delimited fields, first ends `.md`, third in a closed enum | the live file's shape. `grade-summary.sh` was its only parser and was deleted by `3d200962`, so **this row's shape now has no parser at all** — a residual this feature must place, not a citation to re-point |
 | `knowledge.term_exclusions` | a YAML block list of non-empty scalars | — |
 | `knowledge.source` | non-empty scalar | `aid-config/SKILL.md:160` |
 | `format_version` | integer **if present** — not required | absent from the template, `3` in the live file |

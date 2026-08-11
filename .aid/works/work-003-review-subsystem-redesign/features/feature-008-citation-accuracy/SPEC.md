@@ -276,7 +276,7 @@ for 51 lookups on this tree; one index grepped 51 times took **~5 s**. It also i
 
 | Form | Example | Count | Reached |
 |---|---|---|---|
-| `path:NNN`, `path:NNN–MMM` | `grade-summary.sh:465–467` | **85** | Yes |
+| `path:NNN`, `path:NNN–MMM` | `grade.sh:80` | **85** | Yes |
 | Prose, filename backticked ≤40 chars earlier, same line | `` `grade.sh` lines 207–212 `` | **27** | Yes |
 | Prose, file named in a prior sentence or row header | `Line 133 states…` | **90** | **No** |
 | Bare number in a table cell, filename in another column | `\| **75–85** \|` | 43 range-shaped, 78 single | **No** |
@@ -330,7 +330,7 @@ raw-substring failures in the seven A+ specs are emphasis drift, not paraphrase:
 
 | Citing site | Quoted as | File says |
 |---|---|---|
-| feature-007, the `A1–A5` row of its points-to-rules table, citing `accessibility-checklist.md:3` | `output **must** meet these criteria` | `output must meet these criteria` |
+| feature-007, the `A1–A5` row of its points-to-rules table, citing `knowledge-summary/accessibility-checklist.md:3` | `output **must** meet these criteria` | `output must meet these criteria` |
 | feature-005, the `quality-gates.md` row of its affected-artifact inventory | `the **reviewer** sets/updates Status` | `the *reviewer* sets/updates Status` |
 
 So both sides are stripped of `*`/`_`/backtick emphasis runs and whitespace-collapsed before
@@ -373,7 +373,7 @@ estimating."* That rule has simply never been applied outside `.aid/knowledge/`.
 | **Artifact class** | The **Definition** family file (`review-rubrics/definition.md`) — REQ, SPEC, PLAN/BLUEPRINT, TASK. An unverifiable count is an untestable criterion, which is that family's own shared criterion |
 | **Modality** | `SHOULD` — inherited from FR-G4, never invented |
 | **Mode** | `judgment`. Honest, and the reason it is a rule row rather than a lint check |
-| **Severity anchor** | `[LOW]; escaped (>1 artifact) → [MEDIUM]` — feature-002 §5 class 6's form, which is what feature-001's Step 1 gives a SHOULD-modality convention deviation. **Not `Step 2`**: modality is known at authoring, so Step 1 already fixes it, and the cell matches feature-002 oracle (e)'s regex |
+| ~~**Severity anchor**~~ | **REMOVED 2026-08-11.** `REQUIREMENTS.md` `FR-B4` takes the `Severity` cell off the rule row entirely, so this row contributes none. It read `` `[LOW]; escaped (>1 artifact) → [MEDIUM]` `` and argued from `feature-001`'s Step 1, which is retired (`STATE.md` Q32). Nothing is lost that this feature owned: a reviewer meeting an unverifiable count judges what it costs, and for a `SHOULD`-modality convention deviation that will usually be low — which is what the anchor was trying to pre-compute. |
 | **Rule ID** | feature-002 owns the numbering; this feature contributes row content only |
 
 **(b) The convention, and the one half that is mechanically total.** A lint cannot find count

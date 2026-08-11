@@ -4,6 +4,7 @@
 
 | Date | Change | Source |
 |------|--------|--------|
+| 2026-08-11 | **The two-step severity lookup is retired.** § 1 keeps the five tokens and one definition site and replaces the modality→band table and the radius × reversibility matrix with a described scale the reviewing agent applies, stating one line of consequence per finding; § 2's flow loses both steps; § 5's modality check becomes advisory and moves to `aid-describe` alone | `REQUIREMENTS.md` `FR-B1`/`FR-B5c`; `STATE.md` Q32, Q33 |
 | 2026-07-27 | Feature identified from REQUIREMENTS.md §5.B, §9 (AC-1, AC-2), §2 (problems 1 and 2) | /aid-define |
 | 2026-07-27 | Technical Specification authored — 9 adapted sections. FR-B7 cut (double-counts the scale's own axes); `SUGGESTION` modality removed; `AGENT.md` line 36 claimed by decision; modality lint made retroactive; architecture-mandate vs executor-guidance boundary added to the two-sources rule | /aid-specify |
 
@@ -60,18 +61,19 @@ Must
 - [ ] **AC-1** — Given the canonical tree, when I grep for severity definition tables, then exactly one definition exists and every other location is a pointer to it.
 - [ ] Given the canonical tree, when I search for the four known rival definitions (`grading-rubric.md`, `reviewer-ledger-schema.md`, `kb-authoring/review-rubric.md`, `agents/aid-reviewer/AGENT.md` and its `README.md`, `aid-execute/references/reviewer-guide.md`, `quality-gates.md`), then none of them carries its own severity meanings.
 - [ ] **AC-2** — Given the canonical tree, when I grep for "established best practice", then it no longer appears as a criterion source; and no shipped checklist contains an undefined quality term.
-- [ ] Given the canonical severity scale, when I read it, then it is expressed in artifact-neutral terms (blast radius and reversibility) rather than in code-specific or document-specific language.
+- [ ] Given the canonical severity scale, when I read it, then it is expressed in artifact-neutral terms — **what the defect costs a consumer** — rather than in code-specific or document-specific language. *(Amended 2026-08-11: the parenthetical read "blast radius and reversibility". Those two proxies are exactly what stopped being neutral outside code, per `STATE.md` Q32.)*
 - [ ] Given a review, when the reviewer cannot ground a criterion in the Knowledge Base or the work's spec documents, then it does not invent one.
 - [ ] Given a finding with no evidence, when it is produced, then it is inadmissible and never reaches the ledger.
-- [ ] Given a reviewer that is uncertain, when it records a finding, then its confidence has not altered the severity.
+- [ ] Given a reviewer that is uncertain, when it records a finding, then its confidence has not altered the severity — uncertainty about whether a rule applies is a question for the user, not a softer band.
+- [ ] Given any finding, when it is written, then it carries **one line naming the consequence** that justifies its band, so the severity can be argued with. *(Added 2026-08-11 with `FR-B5c`.)*
 - [ ] Given the requirements and spec templates, when an FR or AC is authored, then it carries an explicit modality (MUST / SHOULD / COULD).
 - [ ] Given an existing document written before this feature, when `lint-modality.sh` runs against it, then missing modality is reported — the lint applies retroactively.
 
 ## Notes for Specify
 
 - **This feature edits `canonical/agents/aid-reviewer/AGENT.md`** — it deletes the local severity table (FR-B1) and the "or established best practice" clause (FR-B3). Per the ownership rule in STATE.md, those two regions belong to this feature, not to FR-A10. Four other features also edit that file in non-overlapping regions; see STATE.md concern N2.
-- **FR-B5a reaches outside the review subsystem.** Enforcing explicit modality touches the requirements and spec templates and the skills that author them. Size this feature with that reach in mind — it is not purely the bounded editorial job the rest of the feature is.
-- **FR-B7 is an undecided cut candidate** (REQUIREMENTS.md §10). If it is cut, this feature drops to five FRs and ships the canonical scale without a damage-modifier layer. Neither AC-1 nor AC-2 depends on it.
+- **FR-B5a reaches outside the review subsystem.** Authoring explicit modality touches the requirements and spec templates and the skills that author them. Size this feature with that reach in mind — it is not purely the bounded editorial job the rest of the feature is. *(Amended 2026-08-11: the reach is unchanged, but its Tier 3 check is now advisory and lands in `aid-describe` only — see § 5.)*
+- **FR-B7 was cut** on 2026-07-27, so this feature ships five FRs and no damage-modifier layer. Neither AC-1 nor AC-2 depended on it. *(This bullet read "undecided cut candidate" until 2026-08-11.)*
 - Verify five-profile render parity at feature close rather than deferring it (STATE.md concern N3).
 
 ---
@@ -96,54 +98,61 @@ meanings change. This is what keeps `grade.sh` untouched and every existing ledg
 
 ---
 
-Severity is **looked up, never felt.** It is a property of the rule that was violated and
-of where the artifact sits — not of the reviewer's confidence, effort, or opinion. Two
-reviewers with the same finding and the same rule must reach the same severity. If they
-do not, the rule is underspecified; raise that instead.
+**AMENDED 2026-08-11.** The three blocks that follow — *"severity is looked up, never
+felt"*, the modality→band table, and the radius × reversibility matrix — were the shipped
+payload of this section until 2026-08-11. `STATE.md` Q32 retires them and `FR-B5b` with
+them. What replaced them is below; the retired machinery is not reproduced here, and
+`REQUIREMENTS.md § 5` `FR-B5b` carries the reasons.
 
-Assignment is two steps. Neither is a judgment call.
+**Severity is the reviewing agent's judgment, and the agent states why.** One line per
+finding, naming the consequence: `<band> because: <what goes wrong, for whom>`. That
+sentence is the whole mechanism. It is not a rule about the answer — it is what makes an
+answer arguable, and therefore overturnable, which is what the retired lookup table was
+reaching for and missed.
 
-**Step 1 — the violated rule's modality sets the band.**
+**The five bands, described rather than computed.**
 
-Every criterion comes from exactly one of two sources: the Knowledge Base, or the work's
-own specification documents (REQUIREMENTS, SPEC, BLUEPRINT, DETAIL). Each carries an
-explicit modality.
-
-| Modality of the violated rule | Severity |
+| Token | What it means |
 |---|---|
-| **MUST** | Continue to Step 2 — one of `[CRITICAL]`, `[HIGH]`, `[MEDIUM]` |
-| **SHOULD** | `[LOW]`, or `[MEDIUM]` when the blast radius has escaped |
-| **COULD** | `[MINOR]` |
+| `[CRITICAL]` | The work cannot proceed, or proceeding produces something actively wrong. |
+| `[HIGH]` | The wrong thing gets built, or a gate cannot be decided. |
+| `[MEDIUM]` | A real defect a consumer would hit and have to resolve by asking. |
+| `[LOW]` | A real defect that changes nothing anyone does. |
+| `[MINOR]` | Cosmetic. |
 
-**Step 2 — blast radius and reversibility select within the MUST band.**
+These are **artifact-neutral by being about consequence**, which is what `AC-2`'s
+artifact-neutrality bullet asks for. The retired version reached neutrality through two
+proxies — blast radius and reversibility — that only behave like consequence in code. On a
+document nothing has consumed yet, reversibility is always local and radius is only *"is
+this mentioned elsewhere"*, so the proxies collapsed and the band came out of modality
+alone.
 
-| | Correction is **local** — editing this artifact restores correctness, and nothing that already consumed it must change | Correction is **non-local** — restoring correctness requires redoing, discarding, or migrating work that already consumed this artifact |
-|---|---|---|
-| **Blast radius confined** — nothing downstream depends on the defective element yet | `[MEDIUM]` | `[HIGH]` |
-| **Blast radius escaped** — at least one downstream artifact, execution, or stored state already depends on it | `[HIGH]` | `[CRITICAL]` |
+**Five dimensions the reviewer judges**, against the KB, the documents associated with the
+artifact, and the repository as it actually is:
 
-**The two axes, defined.**
-
-- **Blast radius** — the set of things whose correctness depends on the defective
-  element. *Confined* means only a reader of this artifact is affected. *Escaped* means at
-  least one downstream artifact, execution, release, or stored state already rests on it.
-  This is a fact about the dependency graph at review time, and it is checkable:
-  **name the dependent, or the radius is confined.**
-- **Reversibility** — what correcting the defect requires. *Local* means editing this
-  artifact restores correctness and nothing else must change. *Non-local* means correction
-  requires undoing work: re-running a consumer and discarding its output, migrating data,
-  amending a published artifact, or reversing an effect outside this repository. This is a
-  fact about what the correction requires, **not about how long it would take**.
-
-**The five bands in plain terms.**
-
-| Token | Meaning |
+| Dimension | The question |
 |---|---|
-| `[CRITICAL]` | A MUST is violated, the defect has already escaped into things built on this artifact, and correcting it means undoing that downstream work. |
-| `[HIGH]` | A MUST is violated, and either it has escaped into a dependent (correctable locally) or it is still confined but correcting it forces downstream rework. |
-| `[MEDIUM]` | A MUST is violated, still confined, and a local edit fully corrects it. Also: a violated SHOULD whose effect has escaped into a dependent. |
-| `[LOW]` | A SHOULD is violated. A consumer still reaches the right outcome but pays a cost — looking elsewhere, inferring a detail, working around. |
-| `[MINOR]` | A COULD is violated. No consumer's outcome or cost changes. |
+| **Correctness** | Is what it says true? |
+| **Completeness** | Is anything a consumer needs missing? |
+| **Clarity** | Can a consumer act on it without asking? |
+| **Coherence** | Does it agree with itself and with its inputs? |
+| **Necessity** | **Does any part serve nothing?** A part that serves nothing is itself a defect, and reporting it as removable is worth more than making it correct. |
+
+**Stance: adversarial, with a floor.** Look for what is wrong — and **an honest clean pass
+reported is worth more than a manufactured finding.** The floor is stated because the
+retired scale rewarded the opposite: nine review cycles on this work's own `feature-009`
+SPEC produced 89 findings, roughly two thirds of them cosmetic, none of which could move a
+grade.
+
+**Blast radius and reversibility survive as questions, not as a matrix.** *What depends on
+this? What does repair cost?* Both are still worth asking and both remain evidence-bearing
+— **name the dependent, or the radius is confined** — but neither returns a token, and
+neither is required to be answered before a severity may be written.
+
+**Modality is not a severity input.** A `MUST` can carry a `[LOW]` finding when the defect
+changes nothing; a `SHOULD` can carry a `[HIGH]` one when it breaks a gate. `FR-B5a` keeps
+modality for what it is — a statement of how binding a requirement is, which the reviewer
+weighs like any other evidence.
 
 **Three rules that hold in every band.**
 
@@ -164,8 +173,10 @@ not build, does not run, produces no usable output — set via `grade.sh --non-f
 
 **Why this resolves the live contradiction.** The two rival definitions both described
 *what the artifact is like* — "incorrect behavior (non-critical)" versus "incomplete but
-not wrong". The new scale describes *what the defect costs*. Neither survives as a
-competing anchor, because neither is asking the scale's question.
+not wrong". This scale describes *what the defect costs*. Neither survives as a competing
+anchor, because neither is asking the scale's question. That holds unchanged under the
+2026-08-11 amendment: `AC-1` is about there being **one** definition, not about whether the
+definition is a table or a description.
 
 ### 2. Finding Admission & Severity Assignment
 
@@ -184,16 +195,19 @@ violation observed
 evidence attached (disk truth, or the command producing it)
     │
     ▼
-Step 1: modality of the violated rule ──> MUST ──> Step 2: blast radius × reversibility
-    │                                                          │
-    ├─ SHOULD ──> [LOW] | [MEDIUM] if escaped                  │
-    ├─ COULD ───> [MINOR]                                      │
-    ▼                                                          ▼
-                          ledger row (7-column)
+the agent judges the five dimensions and assigns a band,
+stating in one line what goes wrong and for whom
+    │
+    ▼
+                          ledger row (8-column)
                                     │
                                     ▼
                      grade.sh: counts cols[3] × cols[4]
 ```
+
+**Amended 2026-08-11.** The two `Step` boxes are gone with the lookup they belonged to. The
+column count is also corrected to `8`: `FR-B10` added the `Rule` column, and the diagram
+still said `7` because it was authored before that landed.
 
 **The two-sources rule, sharpened.** FR-B2 says criteria come only from the KB and the
 work's spec documents. One clarification belongs in the shipped wording, because it is the
@@ -230,7 +244,7 @@ Line numbers are from the work-003 worktree.
 | File | Region | Change |
 |---|---|---|
 | `canonical/agents/aid-reviewer/AGENT.md` | 31 | Delete "or established best practice". Restate as the two-sources rule and add the no-criterion-no-finding line. |
-| `canonical/agents/aid-reviewer/AGENT.md` | **36** | "Severity is your judgment. Grade is the script's job." → severity-is-a-lookup. **Claimed by decision, 2026-07-27** — see 3d. |
+| `canonical/agents/aid-reviewer/AGENT.md` | **36** | **No change. Line 36 already says the right thing.** *(Amended 2026-08-11.)* It reads "Severity is your judgment. Grade is the script's job.", and this row used to turn it into severity-is-a-lookup. `FR-B5b` is retired and `FR-B5c` says exactly what line 36 says, so the edit is withdrawn — what the line needs is the **addition** `FR-B5c` requires, a stated reason per finding, not a reversal. **Claimed by decision, 2026-07-27** — see 3d. |
 | `canonical/agents/aid-reviewer/README.md` | 63, **66** | Same two changes, human-facing wording. |
 | `canonical/skills/aid-execute/references/reviewer-guide.md` | 35 | **Delete** `4. Code Quality — clean code? YAGNI? No over-engineering?` and renumber. Fully subsumed by items 2 and 3, which cite real KB documents. |
 
@@ -253,6 +267,14 @@ beside it becomes a pointer, that line actively contradicts the canonical scale,
 leaving it would ship a known contradiction standing across four features. **The other
 features' edit inventories must be updated to remove line 36.**
 
+**AMENDED 2026-08-11 — the contradiction that justified the claim has evaporated, and the
+claim is kept anyway.** `FR-B5b` is retired, so line 36's "Severity is your judgment" no
+longer contradicts anything; it is now the shipped position. The claim stands because the
+line still needs an **addition** — `FR-B5c`'s one-line-reason duty and the five dimensions
+— and one owner for one line is still the right arrangement. Note what this means for the
+edit's risk: it went from a reversal of a shipped sentence to an extension of it, which is
+strictly smaller. `AC-1` and `AC-2` are unaffected either way.
+
 Explicitly **not** claimed: line 3 (`description:` frontmatter), line 8 (opening line,
 stray "The"), line 20 (`## Tasks Status` write target), lines 33–34 (source authority,
 cross-reference reconciliation), lines 39–57 (content isolation — FR-B9, feature-002),
@@ -263,8 +285,15 @@ feature-003), lines 105–108 (escalation).
 
 `kb-authoring/review-rubric.md`'s per-check severity anchors (checks 1–13), the CAL-1…CAL-4
 table (79–97), and the lint-tag→severity table (247–286) are **rule→severity bindings**,
-not rival scale definitions. They stay. They need re-deriving against the new scale, but
-that is feature-002's FR-B4 — doing it here would straddle a feature boundary.
+not rival scale definitions. They stay untouched by this feature, and what happens to them
+is feature-002's `FR-B4` — doing it here would straddle a feature boundary.
+
+**Amended 2026-08-11:** this said they "need re-deriving against the new scale". Under the
+amended `FR-B4` they are **deleted** rather than re-derived: a rule row no longer carries a
+severity at all. Which makes the boundary sharper, not blurrier — this feature leaves them
+alone either way, and `AC-1` is satisfied in the stronger direction, since 85 per-rule
+anchors were the largest remaining collection of severity values outside the one definition
+site.
 
 `canonical/aid/scripts/grade.sh` — **verified, no change** (NFR-1). Its awk path trims
 `cols[3]`/`cols[4]`, exact-matches `cols[3]` against the five bracketed literals, and skips
@@ -318,16 +347,27 @@ right thing is the default rather than a rule to remember.
   derive the affected set from the engine's own invocation contract rather than from a
   catalog row count.
 
-**Tier 3 — mechanical enforcement.** A new `canonical/aid/scripts/lint-modality.sh`,
-following `kb/lint-frontmatter.sh`'s conventions: given a REQUIREMENTS.md or a feature
-SPEC.md, assert every §5/§6 row and every §9 criterion carries exactly one of
-`MUST | SHOULD | COULD`; non-zero exit otherwise. Wired as an orchestrator-run gate at
-`aid-describe` completion and `aid-specify` REVIEW.
+**Tier 3 — a check at authoring time, advisory.** A new
+`canonical/aid/scripts/lint-modality.sh`, following `kb/lint-frontmatter.sh`'s conventions:
+given a REQUIREMENTS.md or a feature SPEC.md, assert every §5/§6 row and every §9 criterion
+carries exactly one of `MUST | SHOULD | COULD`. Wired at **`aid-describe` completion only,
+and it does not block a grade.**
 
-**Enforcement is template + lint, deliberately not reviewer-checked.** Without modality
-the reviewer cannot perform Step 1 at all, which makes a missing modality a *precondition
-gap* rather than a finding — Type 2 territory, and Type 2 is feature-004. Until 004 lands,
-the lint is the enforcement and a missing modality blocks the authoring phase, not review.
+**AMENDED 2026-08-11 (`STATE.md` Q32/Q33).** This tier previously gated `aid-specify`
+REVIEW as well, with a non-zero exit. Both changes follow from what the script actually
+does: **it checks that one of three literal tokens is present.** Whether `SHOULD` was the
+right choice for a given requirement is untouched by it, and cannot be checked by a script
+— so a grade gated on it was gated on typing. Its stated reason for gating was that Step 1
+could not run without a modality; Step 1 no longer exists.
+
+It keeps its place at authoring time, and that is not a consolation prize: an author who
+has not said whether a rule is mandatory has usually not decided. Catching that while the
+document is being written is worth more than catching it at review, when the answer gets
+guessed.
+
+**No longer a precondition gap either.** A missing modality used to be Type 2 territory
+because Step 1 needed it. Now it is evidence a reviewer weighs and can report on like any
+other omission — `FR-I5` leaves exactly one mechanical blocker, an open criteria gap.
 
 **Retroactive.** Decided 2026-07-27: the lint applies to existing documents, not
 forward-only. Back-fill required for this work's own REQUIREMENTS.md (its 12 ACs in §9

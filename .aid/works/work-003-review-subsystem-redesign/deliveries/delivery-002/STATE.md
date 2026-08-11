@@ -68,8 +68,9 @@ ticket_ref: "--"
   them, and each accepted at the gate: fenced code blocks skipped under both profiles (the lint was
   reporting its own test fixtures); `AMBIGUOUS` candidate lists capped at 3 plus a total (a bare
   `SKILL.md` matched 111 files, and a 111-path finding is unreadable); notional fixture names in
-  prose rewritten `f.md:12` -> `f.md:NN` rather than qualified, because they were never claims
-  about the tree.
+  prose rewritten from a concrete line number to the placeholder form `f.md:NN` rather than qualified,
+  because they were never claims about the tree. *(This bullet named the old form literally until
+  2026-08-11, which made the record itself the last unresolvable citation of the kind it describes.)*
 - **Result:** the work's own eight SPECs went from **29 findings to 0**. Test suite extended from
   8 to 27 assertions. Full canonical suite green.
 
