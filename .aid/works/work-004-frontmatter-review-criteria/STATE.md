@@ -4,14 +4,14 @@ pipeline:
   initiator: aid-describe
 started: "2026-08-12"
 minimum_grade: "A"
-user_approved: no
-lifecycle: Running
+user_approved: yes
+lifecycle: Paused-Awaiting-Input
 phase: Describe
 active_skill: none
-updated: "2026-08-12T16:04:10Z"
-pause_reason: "--"
-block_reason: "--"
-block_artifact: "--"
+updated: '2026-08-12T17:38:20Z'
+pause_reason: 'Requirements approved -- run /aid-define work-004-frontmatter-review-criteria to decompose into features'
+block_reason: --
+block_artifact: --
 ticket_ref: "--"
 ---
 
@@ -46,20 +46,28 @@ and per-task `delivery-NNN/tasks/task-NNN/STATE.md` (mutable task cells).
 
 <!-- AUTHORED -- updated by `aid-describe` as each section is completed. -->
 
-**State:** In Progress  **Grade:** Pending
+**Interview State:** Approved  **Grade:** Pending
 
 | # | Section | State | Last Updated |
 |---|---------|-------|--------------|
-| 1 | Objective | Pending | -- |
-| 2 | Problem Statement | Pending | -- |
-| 3 | Users & Stakeholders | Pending | -- |
-| 4 | Scope | Pending | -- |
-| 5 | Functional Requirements | Pending | -- |
-| 6 | Non-Functional Requirements | Pending | -- |
-| 7 | Constraints | Pending | -- |
-| 8 | Assumptions & Dependencies | Pending | -- |
-| 9 | Acceptance Criteria | Pending | -- |
-| 10 | Priority | Pending | -- |
+| 1 | Objective | Complete | 2026-08-12 |
+| 2 | Problem Statement | Complete | 2026-08-12 |
+| 3 | Users & Stakeholders | Complete | 2026-08-12 |
+| 4 | Scope | Complete | 2026-08-12 |
+| 5 | Functional Requirements | Complete | 2026-08-12 |
+| 6 | Non-Functional Requirements | Complete | 2026-08-12 |
+| 7 | Constraints | Complete | 2026-08-12 |
+| 8 | Assumptions & Dependencies | Complete | 2026-08-12 |
+| 9 | Acceptance Criteria | Complete | 2026-08-12 |
+| 10 | Priority | Complete | 2026-08-12 |
+
+### Review History
+
+| Date | Event | Outcome | Notes |
+|------|-------|---------|-------|
+| 2026-08-12 | COMPLETION quality check | 1 defect found and fixed | A stale `341` in FR-6 — the work-003 figure this document corrects two sections earlier |
+| 2026-08-12 | COMPLETION KB hydration | No KB write warranted | Reasons recorded in REQUIREMENTS.md § KB hydration assessment; gap check found no empty doc |
+| 2026-08-12 | Interview approved by owner | Approved | All 10 sections Complete; identity fields confirmed as "Declared Review Criteria" |
 
 ---
 
@@ -72,6 +80,7 @@ and per-task `delivery-NNN/tasks/task-NNN/STATE.md` (mutable task cells).
 | Date | Phase Transition / Gate | Grade | Notes |
 |------|------------------------|-------|-------|
 | 2026-08-12 | Work created | -- | Worktree + branch `work-004` off `master` (`9260fc88`); prior-art evidence captured in `prior-art.md` |
+| 2026-08-12 | Describe → approved | -- | REQUIREMENTS.md approved by the owner; awaiting `/aid-define` |
 
 ---
 
