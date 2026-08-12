@@ -219,8 +219,24 @@ different places.
 
 | Task | State | Review | Elapsed | Notes | Name |
 |------|-------|--------|---------|-------|------|
-| task-001 | In Review | -- | -- | -- | Reorder the index columns and fold Extension into Primary in the KB index generator |
-| task-002 | Pending | -- | -- | -- | Re-point the KB-index oracles at the new table shape and verify the restructure |
+| task-001 | Done | -- | -- | -- | Reorder the index columns and fold Extension into Primary in the KB index generator |
+| task-002 | In Review | -- | -- | -- | Re-point the KB-index oracles at the new table shape and verify the restructure |
+
+---
+
+## Quick Check Findings
+
+<!-- AUTHORED -- per-task quick-check results (state-review.md § Write Findings to STATE.md).
+     NOTE: written BY HAND here. `writeback-state.sh --task-id NNN --findings BLOCK` does NOT
+     support the flattened layout -- `mode_findings` calls `resolve_task_state_file` with no
+     `is_flat_layout` branch (contrast `mode_field`, which has one), so it dies with
+     "deliveries/delivery-NNN/tasks/task-NNN/STATE.md does not exist" on every flat work.
+     Shipped defect, surfaced to the user; not fixed here (out of this work's scope). -->
+
+### task-001
+
+- **Reviewer Tier:** Small
+- **Findings:** none
 
 ---
 
