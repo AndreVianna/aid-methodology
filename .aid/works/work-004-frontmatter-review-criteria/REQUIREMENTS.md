@@ -16,6 +16,7 @@
 | 2026-08-12 | COMPLETION KB hydration assessed — no KB write warranted yet; reasons recorded below | /aid-describe |
 | 2026-08-12 | Identity fields confirmed: Declared Review Criteria | /aid-describe |
 | 2026-08-12 | Interview complete — approved | /aid-describe |
+| 2026-08-12 | **Correction pass.** Feature decomposition found this document citing artifacts that exist only on `work-003`. Re-derived §2's enforcement gap and guard inventory, §4's stream-1 target table and stream-3 scope, FR-2/FR-3/FR-4, NFR-2, §8's collision set, AC-3/AC-4 — all against this branch's disk | /aid-define |
 
 ### KB hydration assessment (COMPLETION step 2)
 
@@ -62,10 +63,23 @@ that reported it.
 inside the reviewed surface and carried its own defects. Fixes enlarged the reviewed surface
 faster than they closed findings in it.
 
-**Why the existing remedy did not fire.** The rule that would have caught most of the 47 already
-exists — `KB-22`: *"for each entry in `contracts:`, derive the asserted fact from disk and
-compare; mismatch = HIGH."* It was cited **once** in 47 findings, because the mechanism it depends
-on is almost entirely unpopulated and instructed nowhere:
+**Why the existing remedy did not fire.** The check that would have caught most of the 47 **already
+exists on this branch** — `canonical/aid/templates/kb-authoring/review-rubric.md` item 3:
+
+> *"**Contracts hold against disk** — for each entry in `contracts:`, derive the asserted fact from
+> disk and compare. Mismatch = HIGH finding."*
+
+So does the field it reads, schema and all, in
+`canonical/aid/templates/kb-authoring/frontmatter-schema.md`. **Nothing here needs inventing.**
+Three things are wrong with what exists, and each is why it went unused:
+
+1. **It is scoped to one tree.** It lives under `kb-authoring/`, so it governs `.aid/knowledge/`
+   docs and nothing else — **22 of 315** in-scope files. A skill, an agent or a template is never
+   reached by it.
+2. **It has no rule ID.** A reviewer cannot cite "item 3 of the KB authoring rubric" in a ledger's
+   `Rule` column, so a finding derived from it has nowhere to come from. It was cited **once** in
+   `work-003`'s 47 findings (see `prior-art.md § 3`).
+3. **No surface tells an agent to read the artifact's frontmatter.** Verified on this branch:
 
 Measured on this work's own base (`master` @ `9260fc88`) across `canonical/skills/`,
 `canonical/agents/`, `canonical/aid/templates/` and `.aid/knowledge/`:
@@ -83,9 +97,9 @@ Measured on this work's own base (`master` @ `9260fc88`) across `canonical/skill
 
 - **179 files carry no frontmatter at all** — including every one of the 110
   `skills/*/references/*.md` (the procedure bodies agents actually execute) and 49 of the 78
-  `canonical/aid/templates/*.md` (among them every `review-rubrics/` file,
-  `reviewer-ledger-schema.md` and `grading-rubric.md` — the rubric catalog cannot declare what it
-  must be true against).
+  `canonical/aid/templates/*.md` — among them `grading-rubric.md`, `reviewer-ledger-schema.md`,
+  `reviewer-dispatch.md` and `kb-authoring/review-rubric.md`, so **the documents defining how review
+  works cannot declare what they must be true against**.
 - **126 files carry frontmatter that declares nothing** — all 76 `SKILL.md`
   (`name`/`description`/`allowed-tools`/`argument-hint`), all 9 `AGENT.md`
   (`name`/`description`/`tier`/`tools`), 28 templates and 13 KB docs.
@@ -98,18 +112,29 @@ Measured on this work's own base (`master` @ `9260fc88`) across `canonical/skill
 carried forward — a requirements document that states a figure no one can derive from this branch
 is the defect this work exists to remove.)*
 
-No surface instructs an agent to read it. `aid-reviewer/AGENT.md` mentions frontmatter once —
-forbidding it in its own ledger. `state-fix.md` F1–F6 mentions it once, inside F2's impact chain,
-not as post-edit re-verification. Rendered reviewer briefs mentioned it 0–1 times per cycle. That
-last gap produced cycle 17 finding #3 directly: `quality-gates.md`'s body was fixed and its own
-`contracts:` block was left contradicting it.
+   | Surface | Its only frontmatter mention |
+   |---|---|
+   | `canonical/agents/aid-reviewer/AGENT.md:73` | *"**No frontmatter**, no headers, no narrative sections"* — a rule about the reviewer's **own ledger**. It never says to read the artifact's. |
+   | `canonical/skills/aid-execute/references/state-fix.md:49` | one row of F2's impact-chain table — *"KB doc `summary:` frontmatter → `.aid/knowledge/INDEX.md`"*. Not post-edit re-verification. |
 
-**What stands in its place.** 2,816 lines of script check prose facts instead —
-`test-one-grading-backend.sh` (1304), `check-skill-counts.mjs` (426), `test-review-rubrics.sh`
-(337), `kb-citation-lint.sh` (279), `derived-values.mjs` (275), `check-derived-values.mjs` (195).
-Roughly 1,900 of those lines are contract checks wearing script costumes: each encodes one
-fact-check in code and can be wrong about the fact, where a `contracts:` line states the fact and
-delegates the checking to something that can read.
+   That second gap produced `work-003` cycle-17 finding #3 directly: `quality-gates.md`'s body was
+   fixed and its own `contracts:` block was left contradicting it.
+
+**What stands in its place.** Prose facts are checked by script instead. The archetype on this
+branch is `tests/canonical/check-skill-counts.mjs` — **379 lines** whose entire job is to find
+count claims written in prose and compare them against the corpus. That is a `contracts:` line
+wearing a script costume: it encodes one fact-check in code and can be wrong about the fact, where
+a declaration states the fact and delegates checking to something that can read.
+
+**The full inventory of such guards has not been derived and is deliberately not asserted here.**
+An earlier draft of this paragraph listed six files totalling 2,816 lines; four of them
+(`test-one-grading-backend.sh`, `test-review-rubrics.sh`, `derived-values.mjs`,
+`check-derived-values.mjs`) **do not exist on this branch** — they are `work-003`'s. Of the two that
+do, `check-skill-counts.mjs` is 379 lines (not 426) and `kb-citation-lint.sh` is 70 (not 279), and
+`kb-citation-lint.sh` checks citation **form**, not a prose fact, so no declaration replaces it and
+CI invokes it. Deriving the real inventory is the first task of stream 3 (see AC-3), because
+asserting a number this document has not verified is the defect it exists to remove — and this
+paragraph had already made that error once.
 
 ## 3. Users & Stakeholders
 
@@ -125,16 +150,28 @@ declaration that is authored but unread fails the user even though every file lo
 
 Three streams. **The order is load-bearing.**
 
-1. **Enforce the mechanism first** — `aid-reviewer/AGENT.md`, the reviewer brief template, the
-   FIX contract (`aid-execute/references/state-fix.md` F1–F6), and the rubric catalog
-   (`canonical/aid/templates/review-rubrics/`). Must land first, or the declarations authored in
-   stream 2 are read by nothing.
-2. **Populate and correct the declarations second** — the 179 files with no block, the 126 with an
-   empty one, the 9 KB docs at `contracts: []`. Add what is missing; correct what is wrong.
-3. **Remove the superseded scripts last** — or the only checks currently catching drift are
-   deleted before the replacement works. `NF01` in `test-one-grading-backend.sh` goes outright: it
-   pins `grade.sh` to commit `7a9df485` and asserts byte-identity, which is a `git diff` frozen
-   into a committed test.
+1. **Enforce the mechanism first** — must land first, or the declarations authored in stream 2 are
+   read by nothing. The surfaces, **as they exist on this branch**:
+
+   | Surface | Lines | What it must gain |
+   |---|---|---|
+   | `canonical/aid/templates/kb-authoring/review-rubric.md` | 304 | its contracts check (item 3) generalized beyond `.aid/knowledge/`, and given a citable rule ID |
+   | `canonical/aid/templates/kb-authoring/frontmatter-schema.md` | — | the `contracts` field defined for all four trees, not KB docs alone |
+   | `canonical/aid/templates/grading-rubric.md` | 83 | level 2 of FR-6's severity cascade |
+   | `canonical/agents/aid-reviewer/AGENT.md` | — | the instruction to read the artifact's own frontmatter |
+   | `canonical/aid/templates/reviewer-dispatch.md` | 311 | the declaration reaching the dispatched reviewer |
+   | `canonical/aid/templates/reviewer-ledger-schema.md` | 221 | the new rule ID citable in the `Rule` column |
+   | 6 × `canonical/skills/*/references/reviewer-brief.md` | — | the per-skill briefs naming it |
+   | `canonical/skills/aid-execute/references/state-fix.md` | 121 | F1–F6 gaining post-edit re-verification |
+
+   *There is no `review-rubrics/` catalog and no `reviewer-brief-template.md` on this branch —
+   both are `work-003` additions. An earlier draft named them as targets.*
+2. **Populate and correct the declarations second** — the files with no block, those with an empty
+   one, and the 9 KB docs at `contracts: []`. Add what is missing; correct what is wrong.
+3. **Remove the superseded scripts last** — or the only checks currently catching drift are deleted
+   before the replacement works. Stream 3 **derives its own removal set first** (see AC-3); this
+   document asserts no inventory. `NF01` and the `grade.sh` byte-identity pin named in an earlier
+   draft belong to `work-003` and do not exist here.
 
 Trees confirmed in scope: `canonical/skills/` (both `SKILL.md` and `references/*.md`),
 `canonical/agents/`, `canonical/aid/templates/`, `.aid/knowledge/`.
@@ -184,17 +221,37 @@ boundary in section 4.)*
   be validated against.
 - **FR-2** The reviewer reads that declaration as a normal part of every review — not as an
   instruction that exists and goes unread.
+
+  *Corrected scope.* An earlier draft framed this as switching on an existing rule. The check
+  exists but is **scoped to `.aid/knowledge/` and carries no ID**, so this requirement is to
+  **generalize and name it**: lift `kb-authoring/review-rubric.md` item 3 out of KB-only scope,
+  give it a citable rule ID for the ledger's `Rule` column, and instruct `aid-reviewer/AGENT.md`
+  and the six per-skill briefs to read the artifact's frontmatter.
 - **FR-3** The FIX contract requires re-verifying a file's own declaration after editing that file,
-  closing the `quality-gates.md` failure mode.
-- **FR-4** The rubric catalog routes to the declaration rather than duplicating its content.
+  closing the `quality-gates.md` failure mode. Target: `aid-execute/references/state-fix.md`, the
+  only one of the four `state-fix.md` files carrying F1–F6.
+
+  *Known gap, not silently absorbed:* `aid-discover` (125 lines), `aid-graph` (56) and
+  `aid-summarize` (38) each have a `state-fix.md` with **no F-rules at all**. Their FIX states also
+  edit files and would not re-verify. Flagged rather than scoped in — extending F1–F6 to three more
+  skills is a different change from the one this work is doing.
+- **FR-4** The declaration is the single home for a file's criteria; review surfaces **route to it
+  rather than duplicating its content**.
+
+  *Corrected scope.* An earlier draft said "the rubric catalog routes to the declaration". There is
+  no rubric catalog on this branch, so there is nothing to re-route — the requirement is the
+  narrower and stronger one that whatever surfaces FR-2 touches must point at the declaration
+  instead of restating what it says.
 - **FR-5** **One uniform field set for every in-scope tree.** A single `contracts:` field holding
   free-text assertions; the reviewer derives each from disk and compares. A `SKILL.md`, an
   `AGENT.md`, a template and a KB doc all declare the same way — no per-artifact-kind schema, no
   `references:`/`dispatches:` variants.
 
-  *Rationale (owner decision, 2026-08-12).* The field already exists and `KB-22` already reads it,
-  so one shape means one instruction in the reviewer instead of four. Four field sets would be four
-  schemas to define, lint and keep consistent — exactly the mechanism growth **C-1** exists to
+  *Rationale (owner decision, 2026-08-12).* The field already exists in
+  `kb-authoring/frontmatter-schema.md` and `kb-authoring/review-rubric.md` item 3 already derives it
+  against disk — for KB docs. Keeping one shape means **widening the scope of an existing field and
+  an existing check**, and one instruction in the reviewer instead of four. Four field sets would be
+  four schemas to define, lint and keep consistent — exactly the mechanism growth **C-1** exists to
   stop.
 
   *Known cost, accepted:* a uniform free-text field cannot express a per-tree required minimum, so
@@ -303,9 +360,12 @@ independent layers — not by a reminder, and not by a new guard.
 ### NFR-2 — The work must end with less enforcement surface than it started
 
 `work-003` failed because every fix grew the reviewed surface. This work is only successful if the
-opposite is measurable: **lines of prose-fact guard removed must exceed lines of new
-mechanism added.** Stated as a number, not a sentiment — the starting figure is 2,816 lines across
-six files, plus 1,802 lines in the 20 READMEs of FR-7.
+opposite is measurable: **lines of prose-fact guard removed must exceed lines of new mechanism
+added.** Stated as a number, not a sentiment.
+
+**Confirmed floor, derived on this branch:** 1,802 lines (the 20 READMEs of FR-7) + 379 lines
+(`check-skill-counts.mjs`) = **2,181**. The rest of the removal set is derived by stream 3, not
+asserted here — see §2.
 
 This is **C-1** promoted to a measured exit condition, because "do not over-engineer" was already
 stated in `work-003` and did not hold.
@@ -346,18 +406,14 @@ Inherited from `work-003`. Violating any of these reproduces its failure — see
 
 ### `work-003` is a source to draw from on demand, never a branch to merge
 
-`work-003` sits **131 commits ahead of `master`**, unpushed, and has rewritten **all 22 files
-stream 1 must edit**:
+`work-003` sits **131 commits ahead of `master`** and unpushed. Against review-related files under
+`canonical/`, it **modifies 26** that exist here and **adds 17** that do not — the whole
+`review-rubrics/` catalog and `reviewer-brief-template.md` among them.
 
-```
-canonical/agents/aid-reviewer/AGENT.md          canonical/aid/templates/reviewer-brief-template.md
-canonical/agents/aid-reviewer/README.md         canonical/aid/templates/reviewer-ledger-schema.md
-canonical/aid/templates/grading-rubric.md       canonical/skills/aid-summarize/references/state-fix.md
-canonical/aid/templates/review-rubrics/         canonical/skills/{define,detail,discover,execute,
-  (10 files: INDEX, aid, definition, executable,   plan,specify}/references/reviewer-brief.md
-   interface, kb, narrative, presentation,
-   process, summary)
-```
+The 26 modified files are the real collision set, and they include every stream-1 target:
+`aid-reviewer/AGENT.md`, `grading-rubric.md`, `kb-authoring/review-rubric.md`,
+`reviewer-dispatch.md`, `reviewer-ledger-schema.md`, the six per-skill `reviewer-brief.md` files,
+and `aid-summarize/references/state-fix.md`.
 
 **Decision (owner, 2026-08-12): work-004 does not merge, rebase onto, or cherry-pick `work-003`.**
 `work-003` failed to converge on its own gate; importing it wholesale would import the
@@ -388,9 +444,10 @@ All six must hold. Any one failing means it does not come across.
 
 ### Collision is a separate problem from contamination — and C-7 does not solve it
 
-C-7 keeps `work-003`'s content out. It does **not** stop the two branches editing the same 22 files.
-`review-rubrics/INDEX.md` alone was split into four files on `work-003`, so whichever branch merges
-second must re-apply its edits onto a restructured catalog.
+C-7 keeps `work-003`'s content out. It does **not** stop the two branches editing the same 26 files.
+Worse in one specific way: `work-003` **adds** a `review-rubrics/` catalog that would be a second
+home for exactly the criteria this work is putting in `kb-authoring/review-rubric.md`. Whichever
+branch merges second inherits two catalogs describing one thing.
 
 **Mitigation, and a design constraint on stream 1:** keep stream-1 edits **additive and localized** —
 a new section, a new instruction paragraph, a new rule row — never a restructure of a file
@@ -413,7 +470,8 @@ re-applying a competing reorganization is the failure that cost PR #12 63 commit
   179 files with no frontmatter, the 126 declaring nothing, and the 9 KB docs at `contracts: []`.
 - **AC-2** **The reviewer demonstrably reads the declaration in a real review.** Evidenced, not
   asserted: an instruction that exists and goes unread is the exact failure being fixed, and
-  `KB-22` proves an unread rule can sit in the catalog for a whole delivery.
+  `kb-authoring/review-rubric.md` item 3 proves an unread check can sit in the rubric for a whole
+  delivery — cited once in 47 findings.
 
   **Method — planted-defect proof, once per stream, under NFR-1.** In a disposable worktree, put a
   claim in a file's body that contradicts its own `contracts:` line, run a real review, and confirm
@@ -425,8 +483,13 @@ re-applying a competing reorganization is the failure that cost PR #12 63 commit
   Recorded as a follow-up measurement against the `1-in-47` baseline, not as an acceptance gate.
 - **AC-3** The superseded prose-fact scripts are gone, and their removal loses no check the
   declarations do not cover. Each removed check is named, with the declaration that replaces it.
+
+  **Stream 3 derives the removal set from this branch before removing anything** — the inventory is
+  an output of the work, not an input. `kb-citation-lint.sh` is a named non-candidate: it checks
+  citation form rather than a prose fact, and CI invokes it.
 - **AC-4** **Net enforcement surface is down**, per NFR-2 — removed guard lines exceed added
-  mechanism lines, stated as a number.
+  mechanism lines, stated as a number. Confirmed floor: **2,181** (1,802 READMEs + 379
+  `check-skill-counts.mjs`).
 - **AC-5** The 20 internal READMEs are deleted, with the `aid-clerk` caller contract relocated to
   `AGENT.md` and the `aid-monitor` test assertion removed alongside its file (FR-7).
 - **AC-6** Nothing from `work-003` crossed into this work except through the six C-7 gates, each

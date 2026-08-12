@@ -5,11 +5,11 @@ pipeline:
 started: "2026-08-12"
 minimum_grade: "A"
 user_approved: yes
-lifecycle: Paused-Awaiting-Input
-phase: Describe
-active_skill: none
-updated: '2026-08-12T17:38:20Z'
-pause_reason: 'Requirements approved -- run /aid-define work-004-frontmatter-review-criteria to decompose into features'
+lifecycle: Running
+phase: Define
+active_skill: aid-define
+updated: '2026-08-12T17:47:05Z'
+pause_reason: --
 block_reason: --
 block_artifact: --
 ticket_ref: "--"
