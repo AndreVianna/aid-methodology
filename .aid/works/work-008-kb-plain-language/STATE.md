@@ -15,7 +15,7 @@ block_artifact: .aid/works/work-008-kb-plain-language/IMPEDIMENT-task-001.md
 ticket_ref: --
 # --- Flattened single-delivery works only (see `## Delivery Lifecycle` below);
 #     omit these 4 keys entirely for full multi-delivery works. ---
-delivery_state: Specified
+delivery_state: Blocked
 gate_tier: Large
 gate_grade: "A"
 gate_timestamp: "2026-08-11T19:50:00Z"
@@ -186,9 +186,9 @@ different places.
      Updated/Block Reason/Block Artifact stay here as markdown body (not relocated by
      work-003-state-schema task-001; see the task's schema note). -->
 
-- **Updated:** 2026-08-11T19:35:00Z
-- **Block Reason:** --
-- **Block Artifact:** --
+- **Updated:** 2026-08-12T00:55:00Z
+- **Block Reason:** task-001 impediment -- SPEC Flow A misstates what the mechanical check covers; wave 2 held because task-003 and task-004 would encode the wrong claim
+- **Block Artifact:** IMPEDIMENT-task-001.md
 
 ### Tasks lifecycle
 
