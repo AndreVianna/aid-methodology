@@ -4,18 +4,18 @@ pipeline:
   initiator: aid-refactor
 started: "2026-08-12"
 minimum_grade: "A"
-user_approved: no
-lifecycle: Paused-Awaiting-Input
-phase: Detail
-active_skill: aid-refactor
+user_approved: yes
+lifecycle: Running
+phase: Execute
+active_skill: aid-execute
 updated: '2026-08-12T17:26:30Z'
-pause_reason: 'GATE cleared; awaiting user approval before /aid-execute'
+pause_reason: --
 block_reason: --
 block_artifact: --
 ticket_ref: --
 # --- Flattened single-delivery works only (see `## Delivery Lifecycle` below);
 #     omit these 4 keys entirely for full multi-delivery works. ---
-delivery_state: Specified
+delivery_state: Executing
 gate_tier: Large
 gate_grade: "A"
 gate_timestamp: "2026-08-12T17:25:50Z"
@@ -219,7 +219,7 @@ different places.
 
 | Task | State | Review | Elapsed | Notes | Name |
 |------|-------|--------|---------|-------|------|
-| task-001 | Pending | -- | -- | -- | Reorder the index columns and fold Extension into Primary in the KB index generator |
+| task-001 | In Review | -- | -- | -- | Reorder the index columns and fold Extension into Primary in the KB index generator |
 | task-002 | Pending | -- | -- | -- | Re-point the KB-index oracles at the new table shape and verify the restructure |
 
 ---
