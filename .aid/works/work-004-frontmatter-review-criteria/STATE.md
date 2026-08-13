@@ -8,7 +8,7 @@ user_approved: yes
 lifecycle: Running
 phase: Execute
 active_skill: aid-execute
-updated: '2026-08-13T11:15:00Z'
+updated: '2026-08-13T19:16:50Z'
 pause_reason: --
 block_reason: --
 block_artifact: --
@@ -17,8 +17,8 @@ ticket_ref: "--"
 
 # Work State -- work-004-frontmatter-review-criteria
 
-> **State:** Detailed -- 17 tasks across 3 deliveries, ready for `/aid-execute`
-> **Phase:** Detail
+> **State:** Executing -- delivery-001 in flight
+> **Phase:** Execute
 
 This is the single state file for **this work** -- the full dev lifecycle from req to spec to plan
 to impl to deploy. One STATE.md per `.aid/works/work-NNN-{name}/` directory. See also: per-delivery
@@ -103,6 +103,7 @@ gitignored -- the evidence for a closed pass has to survive the pass.
 | 2026-08-13 | Specify → all features Ready | A | All 3 feature Technical Specifications authored + grade-gated (aid-reviewer). Grades: 001 A, 002 A, 003 A. 4 gate passes total, 11 findings, all Fixed, 0 Pending. Ledgers under `review-archive/specify-feature-00N.md`. One flagged owner judgment call in feature-003 §2 (full-delete vs narrow `check-skill-counts.mjs`). Ready for `/aid-plan` |
 | 2026-08-13 | Plan → DONE | -- | PLAN.md + 3 delivery folders (BLUEPRINT + STATE, `Pending-Spec`) written. 3 deliveries, one per stream, strict linear (001→002→003), owner-chosen grouping. Single render deferred to delivery-003 (C-2/NFR-4). Grade gate (aid-reviewer, **sonnet**): plan content clean; 1 MEDIUM (this header/history lag) resolved by this row. Ledger `review-archive/plan.md`. Ready for `/aid-detail` |
 | 2026-08-13 | Detail → DONE | A | **17 tasks** across 3 deliveries (001: 7, 002: 5, 003: 5), DETAIL + STATE (`Pending`) each; execution graphs + wave-maps in PLAN.md. Per-delivery grade gates (aid-reviewer, sonnet): **12 findings total** (2 CRITICAL, 4 HIGH, 5 MEDIUM, 1 LOW), all Fixed except the one LOW **Accepted** with justification. Notable catch: a CRITICAL cross-feature gap (18 canonical carry-as-data files dropped from the rename) + the `test-skill-counts.sh` wrapper + 5 KB citations to the deleted checker. Ledgers `review-archive/detail-delivery-00N.md`. Ready for `/aid-execute` |
+| 2026-08-13 | Execute → delivery-001 started | -- | `delivery_state` Pending-Spec → Executing. task-001 executed, quick-checked and closed `Done`: 3 `[CRITICAL]` findings, all fixed-on-spot (registry exhaustiveness + two mutual-exclusivity collisions). The registry now resolves all 315 in-scope markdown files to exactly one type, confirmed by walking the selectors against the trees |
 
 ---
 

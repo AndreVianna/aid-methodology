@@ -90,23 +90,30 @@ The reviewer validates against the **union**; the most specific declaration wins
 is written **once, at the highest level where it is true** — a rule true for two files belongs at the
 type level, one true for two types belongs at global — so most files declare few criteria or none.
 
-This registry answers "what document types exist, and which one is a given file?". Selectors are
-**mutually exclusive and exhaustive** over the in-scope corpus (`canonical/skills/`, `canonical/agents/`,
-`canonical/aid/templates/`, `.aid/knowledge/`), so every in-scope file resolves to exactly one type
-(criterion `G-07`).
+This registry answers "what document types exist, and which one is a given file?". It covers the
+in-scope corpus — the markdown under `canonical/skills/`, `canonical/agents/`,
+`canonical/aid/templates/` and `.aid/knowledge/` — so every in-scope markdown file resolves to exactly
+one type (criterion `G-07`).
+
+**Resolution is first match in table order.** Rows are ordered most-specific-first and a file takes the
+first row whose selector it satisfies; the two catch-all rows (`kb-doc`, `template-own`) close their
+trees. Ordering is what makes the selectors mutually exclusive in practice rather than by careful
+wording: `.aid/knowledge/STATE.md` satisfies `state`, `kb-generated` and `kb-meta` at once, and resolves
+to `state` because that row comes first.
 
 | Type | Selector | Notes |
 |------|----------|-------|
-| `kb-doc` | a `.md` under `.aid/knowledge/` with `kb-category: primary` or `extension` and `source: hand-authored` | the hand-authored knowledge docs |
-| `kb-generated` | a `.md` under `.aid/knowledge/` with `source: generated` (e.g. `INDEX.md`, `relationships.md`) | build-verify only; content not graded (C-5) |
-| `kb-meta` | a `.md` under `.aid/knowledge/` with `kb-category: meta` (e.g. `README.md`, `external-sources.md`) | spot-check of top-level fields only |
+| `state` | any `STATE.md`, at any depth in any folder | never reviewed (see `G-04`); first row, so a `STATE.md` inside another tree never resolves to that tree's type |
+| `kb-generated` | a `.md` under `.aid/knowledge/` with `source: generated` (e.g. `INDEX.md`, `relationships.md`) | build-verify only; content not graded (C-5). Ahead of `kb-meta`, so a generated meta doc is build-verified rather than field-checked |
+| `kb-meta` | a `.md` under `.aid/knowledge/` with `kb-category: meta` (e.g. `external-sources.md`) | spot-check of top-level fields only |
+| `kb-doc` | any other `.md` under `.aid/knowledge/` | the hand-authored knowledge docs — `kb-category: primary` or `extension` with `source: hand-authored`; the catch-all that closes the KB tree |
 | `skill-generated` | a `canonical/skills/<name>/SKILL.md` whose `<name>` is a row in `shortcut-catalog.yml` | rebuilt by the generator; no file-level block (see `SK-02`) |
 | `skill-authored` | a `canonical/skills/<name>/SKILL.md` whose `<name>` is not a `shortcut-catalog.yml` row | hand-authored; may carry a file-level block |
 | `skill-reference` | a `.md` under `canonical/skills/*/references/` | the procedure bodies an agent executes |
 | `agent` | a `canonical/agents/*/AGENT.md` | may carry a file-level block; `render.py` carries it through |
+| `doc-internal` | a `README.md` beside a skill or an agent, under `canonical/skills/*/` or `canonical/agents/*/` | internal notes; installed into no tree and resolved by no instruction (see `DI-01`) |
 | `template-payload` | a file under `canonical/aid/templates/` whose frontmatter is the emitted artifact's (placeholders, or opens with a payload key such as `pipeline:` / `state:`) | no file-level block (see `TP-01`) |
-| `template-own` | any other file under `canonical/aid/templates/` — its frontmatter describes itself, or it has none | the catch-all for templates (e.g. `reviewer-ledger-schema.md`); may carry a file-level block. Ordered after `template-payload`, so a payload template never falls here |
-| `state` | any `STATE.md`, at any depth in any folder | never reviewed (see `G-04`) |
+| `template-own` | any other file under `canonical/aid/templates/` — its frontmatter describes itself, or it has none | the catch-all that closes the template tree (e.g. `reviewer-ledger-schema.md`); may carry a file-level block. Ordered after `template-payload`, so a payload template never falls here |
 
 ---
 
@@ -131,7 +138,7 @@ in the ledger's `Doc` column. A finding citing no id, or an id resolving nowhere
 | G-04 | `state` | exclude | Never reviewed, at any level, in any folder | — | bookkeeping; a completed run's rows are correct as history, so any content check fires forever |
 | G-05 | `agent-context` | exclude | The root `CLAUDE.md` / `AGENTS.md` are never content-reviewed | — | shared host files; AID owns only the `AID:BEGIN`/`AID:END` region and points at truth rather than holding it; they carry no frontmatter to declare this on |
 | G-06 | `rendered` | exclude | A file that IS a render is not content-reviewed — it appears as a `dst` in an emission manifest, OR it sits under `profiles/<tool>/` and has a corresponding `canonical/` source | — | byte-identical output of `canonical/`; the byte-compare gate is its review. Keyed on provenance not path, so authored repo-local content under a dogfood tree stays reviewable |
-| G-07 | `*` | validate | Every in-scope file resolves to exactly one type in the registry above | HIGH | FR-10 backstop; an untyped file has no resolved criteria and drifts unchecked |
+| G-07 | `*` | validate | Every in-scope markdown file resolves to exactly one type in the registry above | HIGH | FR-10 backstop; an untyped file has no resolved criteria and drifts unchecked |
 | KB-01 | `kb-doc` | validate | Required frontmatter is present and single-line: `objective`, `summary`, `sources` | HIGH | lint-graded; a missing or malformed field misroutes the doc |
 | KB-02 | `kb-doc` | validate | Exactly one concern per doc, and `## Change Log` is the last section | MEDIUM | mixing concerns is a boundary smell; layout is a fixed contract |
 | KB-03 | `kb-generated` | exclude | Content is not graded; only that the generator ran (build-verify) | — | the generator is the oracle (C-5) |
@@ -139,6 +146,7 @@ in the ledger's `Doc` column. A finding citing no id, or an id resolving nowhere
 | SK-02 | `skill-generated` | exclude | Carries no file-level `review-criteria:` block; type-level criteria only | — | rebuilt from `shortcut-catalog.yml`; anything hand-written is erased on the next run |
 | SR-01 | `skill-reference` | validate | Every instruction-content pointer resolves to a path that exists in an installed tree | HIGH | a broken pointer in a procedure body is followed at run time |
 | AG-01 | `agent` | validate | The `name:` matches the folder, and any agent it references resolves under `canonical/agents/` | MEDIUM | a name/folder mismatch mis-dispatches |
+| DI-01 | `doc-internal` | exclude | Not content-reviewed | — | it is installed into no tree and no instruction resolves to it, so a drift here reaches no agent at run time; the shipping file beside it is the reviewed surface |
 | TP-01 | `template-payload` | exclude | Carries no file-level `review-criteria:` block; its frontmatter is the emitted artifact's | — | a block here would be stamped onto every generated artifact |
 
 **Severity** on a `validate` criterion is what a violation of that criterion costs, resolved through the

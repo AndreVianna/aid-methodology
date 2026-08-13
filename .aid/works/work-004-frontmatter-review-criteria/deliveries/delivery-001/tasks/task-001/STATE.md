@@ -1,5 +1,5 @@
 ---
-state: 'In Review'
+state: Done
 review: "--"
 elapsed: "--"
 notes: "--"
@@ -24,11 +24,11 @@ ticket_ref: "--"
 
 ## Quick Check Findings
 
-<!-- AUTHORED by aid-execute quick-check. -->
-
 - **Reviewer Tier:** Small
-- **Findings:** _none yet_
-
+- **Findings:**
+  - [CRITICAL] Type registry not exhaustive -- 20 internal READMEs under canonical/skills and canonical/agents resolved to zero types -- authoring-conventions.md section Review Criteria Type Registry -- Fixed-on-spot (doc-internal row + DI-01 added)
+  - [CRITICAL] Type registry not mutually exclusive -- .aid/knowledge/README.md matched kb-meta and kb-generated -- same section -- Fixed-on-spot (first-match-in-table-order rule; kb-generated ordered ahead of kb-meta)
+  - [CRITICAL] Type registry not mutually exclusive -- .aid/knowledge/STATE.md matched state, kb-meta and kb-generated with no tiebreaker -- same section -- Fixed-on-spot (state ordered first)
 ---
 
 ## Dispatch Log
