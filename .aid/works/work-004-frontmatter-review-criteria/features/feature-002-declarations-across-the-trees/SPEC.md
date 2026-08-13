@@ -6,6 +6,8 @@
 |------|--------|--------|
 | 2026-08-12 | Feature identified from REQUIREMENTS.md §4 stream 2, §5 FR-1, FR-7 | /aid-define |
 | 2026-08-13 | Second cross-reference pass: buckets re-derived to 159/123/8 = 290 (carve-outs netted out of the buckets, not only the total); field renamed to `review-criteria:` and the withdrawn `severity:` block removed; the `aid-monitor` README's assertion count corrected from one to **three**; the `contracts: []` set scoped to the **8** in scope; C-5's carve-out re-justified on `source: generated` rather than a kb-category neither doc has | /aid-define |
+| 2026-08-13 | Technical Specification authored — 7 sections (deletion pass + prep, population walk + type resolution, authoring rule, `contracts: []` correction, on-disk data rename, AC-2 proof, out-of-scope). Application-software sections N/A | /aid-specify |
+| 2026-08-13 | Grade gate: aid-reviewer. 1 MEDIUM (§5 "no KB doc gains the key" vs the 2 field-less docs — given explicit §4 disposition) + 1 LOW (kb-authoring/README dangling-link aside — flagged as pre-existing known issue). Both Fixed → **Grade A**. Ledger `review-archive/specify-feature-002.md` | /aid-specify |
 
 ## Source
 
@@ -144,4 +146,104 @@ Must
 
 ## Technical Specification
 
-*(Added by /aid-specify — do not fill during interview.)*
+*Section set.* Like feature-001, this is a documentation/data change — no database, service, API, or UI —
+so the application-software sections are N/A. The content-bearing sections are: the **deletion pass and
+its preparation**, the **population walk and type resolution**, the **authoring rule**, the
+**`contracts: []` correction**, the **on-disk data rename**, and the **AC-2 proof**. This feature runs
+**after** feature-001 (the schema and readers must exist first) and **before** feature-003 (the render).
+Every path and count below was derived on this branch.
+
+### 1. Deletion pass and its preparation (runs first)
+
+Ordering is load-bearing: **delete before authoring**, so no declaration is written into a file about to
+be removed. The 20 internal READMEs are `canonical/skills/*/README.md` (11) + `canonical/agents/*/README.md` (9),
+verified `find canonical/skills canonical/agents -name README.md | wc -l` = 20, 1,802 lines.
+
+**Two files need preparation before deletion, or deletion regresses:**
+
+| prep | action | verify |
+|------|--------|--------|
+| `aid-clerk` caller contract | move it from `canonical/agents/aid-clerk/README.md` into `aid-clerk/AGENT.md` (which ships); then fix `canonical/skills/aid-execute/references/state-execute.md` line 166 ("Mechanical sub-tasks" → *"See `agents/aid-clerk/README.md`"*) to point at `AGENT.md`; the generated sidecar `site/src/data/skill-flows/aid-execute.flow.json` (1 ref) is **regenerated** in feature-003, never hand-edited | `grep -n "aid-clerk/README" canonical/skills/aid-execute/references/state-execute.md` currently returns line 166 |
+| `aid-monitor` README | remove **all three** assertions in `tests/canonical/test-deploy-monitor-repurpose.sh` that read it — `DMR00c` (exists), `DMR03c` (`BUG`→`/aid-fix`), `DMR03d` (`Change Request`→`/aid-triage`); because the two `DMR03*` check **content**, confirm that routing mapping is stated in a shipping file (the skill's `SKILL.md`) before the README goes | `grep -n MONITOR_README tests/canonical/test-deploy-monitor-repurpose.sh` = 3 assertions (lines 66, 96, 97) |
+
+18 of the 20 have zero inbound references (re-derived, both path-style and directory-style — see
+REQUIREMENTS FR-7); only these two are reached. The delete set is `skills/` + `agents/` READMEs **only**.
+
+*Pre-existing, out of scope, flagged not fixed:* 6 relative `](README.md)` links under
+`canonical/aid/templates/kb-authoring/` (in `concern-model.md`, `domain-doc-matrix.md`, `principles.md`)
+point at a `kb-authoring/README.md` that **does not exist on this branch** (`find
+canonical/aid/templates/kb-authoring -name README.md` is empty). This is a dangling-link defect of the
+same class this feature repairs, but it is a *missing* file, not one of FR-7's existing-README deletions,
+so it is recorded as a known issue rather than fixed here.
+
+### 2. The population walk and type resolution
+
+After the 20 deletions and the 5 KB carve-outs, **290** files remain. Each is resolved to **exactly
+one** type via feature-001's registry selector (exhaustive by construction), then placed in one of three
+disjoint buckets:
+
+| bucket | count | action |
+|--------|-------|--------|
+| no frontmatter block at all | 159 | author a whole block (110 `skills/*/references/*.md` + 49 templates) — **only if the file has criteria of its own** (§3) |
+| block exists, declares nothing | 123 | add the field where warranted; 76 `SKILL.md`, 9 `AGENT.md`, 28 templates, 10 KB docs |
+| already declares | 8 | **verify against disk, do not assume** — 7 KB docs + `reviewer-ledger-schema.md`; a stale existing declaration is the worst case |
+
+159 + 123 + 8 = 290 (carve-outs netted out of the buckets, not only the total — see REQUIREMENTS AC-1).
+The count that end up carrying a block is an **output, not a target**.
+
+### 3. Authoring rule (the exceptions pass, not a population pass)
+
+A file gets a `review-criteria:` block **only where it has a criterion or exclusion its type does not
+already cover**. A block restating a type-level criterion is a **finding**, not a completion (it is the
+duplication the cascade exists to remove). Generator-refreshed `SKILL.md` (58) and payload-carrying
+templates get **no** file-level block — their criteria live at type level in the KB, where nothing
+overwrites them. Consequently most of the 290 end with nothing, and that is the intended result.
+
+Every authored entry must be **derivable by an agent with repo access alone** (NFR-5): no network, no
+credential, no reference to a work folder.
+
+### 4. The `contracts: []` correction, and the two field-less KB docs
+
+Eight in-scope KB docs carry an explicitly empty `contracts: []` (9 on disk; `external-sources.md` is
+carved out as `kb-category: meta`). Each must either declare real criteria or state why it legitimately
+has none — an empty block is not a passing state. These include `architecture.md`, `tech-debt.md`,
+`pipeline-contracts.md`, whose stale claims were live findings in `work-003`.
+
+**The two in-scope KB docs that carry no `contracts:` key at all** — `capability-inventory.md` and
+`release-tracking.md` (of the 4 field-less docs, `README.md` and `STATE.md` are carved out) — get an
+explicit disposition here rather than being swept into the generic middle-bucket action:
+
+| doc | frontmatter | disposition |
+|-----|-------------|-------------|
+| `capability-inventory.md` | `kb-category: primary`, `source: generated` | build-verify by its type; its content is generator output, not content-graded, so **no file-level block** — the `generated` type-level treatment covers it (C-5 generalised) |
+| `release-tracking.md` | `kb-category: extension`, `source: hand-authored` | a cumulative release **log**; its rows are records of a moment (the same reason `check-skill-counts.mjs` excludes it). It takes a file-level **`exclude`** entry — *release rows are historical, not validated against current state* — with that `why` |
+
+Neither is a case of "add the field where warranted" in the drift sense; each is resolved by its type or
+by a declared exclusion, which is why §5's rename does not touch them.
+
+### 5. On-disk data rename (`contracts:` → `review-criteria:`)
+
+Feature-001 defines the rename and moves the emitters/parser/definitions; **this feature performs the
+on-disk data rename** of the 18 field-bearing KB docs and the 4 test fixtures
+(`tests/canonical/fixtures/{dual-intent ×2, kb-essence ×2}`). The 4 fixtures rename only if a consuming
+test reads the field name; feature-001's coexistence parser keeps them valid until then.
+
+**The rename adds no new key** — it touches only the 18 files that already have `contracts:`. Whether any
+doc *gains* a `review-criteria:` block is a separate question, governed by §3's authoring rule and (for
+the two field-less KB docs) resolved in §4 — not by this rename. So the two statements hold together: the
+rename creates no KB-doc key, and `capability-inventory.md`/`release-tracking.md` are dispositioned in §4
+rather than gaining one in the drift sense.
+
+### 6. AC-2 proof (verification)
+
+Per NFR-1, in a disposable worktree: a planted body-vs-`review-criteria` contradiction in a file this
+feature populated returns as a finding citing that file's criterion `id`. The plant class is
+self-announcing, so a forgotten one is caught by the next review. No maintained test is added.
+
+### 7. Out of scope for this feature
+
+The single render + dogfood resync (feature-003, C-2/NFR-4) — `profiles/` and the dogfood trees stay
+stale until then, which is correct here. READMEs that ship to adopters (`profiles/*/README.md`,
+`packages/*/README.md`) and READMEs with real consumers (KB `README.md`, `dashboard/`, `tests/`) are
+**not** in the delete set — see REQUIREMENTS §4 Out of Scope. `check-skill-counts.mjs` retirement and
+the front face are feature-003.
