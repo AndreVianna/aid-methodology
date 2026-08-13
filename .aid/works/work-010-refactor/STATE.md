@@ -219,8 +219,8 @@ different places.
 
 | Task | State | Review | Elapsed | Notes | Name |
 |------|-------|--------|---------|-------|------|
-| task-001 | Done | -- | -- | -- | Reorder the index columns and fold Extension into Primary in the KB index generator |
-| task-002 | Done | -- | -- | -- | Re-point the KB-index oracles at the new table shape and verify the restructure |
+| task-001 | Done | Small: none | 29m23s | Quick-check clean; commit d13f4e86 | Reorder the index columns and fold Extension into Primary in the KB index generator |
+| task-002 | Done | Small: none | 18m23s | Quick-check clean; commit f389836e | Re-point the KB-index oracles at the new table shape and verify the restructure |
 
 ---
 
@@ -264,9 +264,15 @@ different places.
      single-delivery works only" group. Issue List stays here as markdown body (a
      variable-length inline list doesn't fit a flat frontmatter scalar). -->
 
-- **Issue List:** none. Definition-phase GATE cleared -- Pass 1 (definition docs) A after 3
-  review cycles, Pass 2 (task set) A+ after 2. The POST-EXECUTION delivery gate (the
-  `BLUEPRINT.md § Gate Criteria` checklist) has not run: no task has executed.
+- **Complexity Score:** 6 (tasks=2, depth=1, risk=3 [REFACTOR +2, TEST +1], consults=0)
+- **Cycles:** in progress
+- **Issue List:** POST-EXECUTION delivery gate against `BLUEPRINT.md § Gate Criteria` is
+  RUNNING. Both tasks are Done (task-001 `d13f4e86`, task-002 `f389836e`). Cycle 1 graded
+  B+ against floor A -- 1 [LOW] + 1 [MINOR], both against this tracking file itself, none
+  against the generator, the regenerated index, or the tests; 1 [MINOR] OOS (full canonical
+  suite not runnable on this host -- closed by CI).
+  Earlier, definition-phase GATE cleared: Pass 1 (definition docs) A after 3 review cycles,
+  Pass 2 (task set) A+ after 2.
 
 ---
 
