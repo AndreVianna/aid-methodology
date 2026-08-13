@@ -7,8 +7,8 @@ minimum_grade: "A"
 user_approved: yes
 lifecycle: Running
 phase: Specify
-active_skill: aid-specify
-updated: '2026-08-13T09:35:00Z'
+active_skill: none
+updated: '2026-08-13T10:15:00Z'
 pause_reason: --
 block_reason: --
 block_artifact: --
@@ -17,8 +17,8 @@ ticket_ref: "--"
 
 # Work State -- work-004-frontmatter-review-criteria
 
-> **State:** Defined -- ready for `/aid-specify`
-> **Phase:** Define
+> **State:** Specified -- all features Ready, ready for `/aid-plan`
+> **Phase:** Specify
 
 This is the single state file for **this work** -- the full dev lifecycle from req to spec to plan
 to impl to deploy. One STATE.md per `.aid/works/work-NNN-{name}/` directory. See also: per-delivery
@@ -100,6 +100,7 @@ gitignored -- the evidence for a closed pass has to survive the pass.
 | 2026-08-12 | Describe → approved | -- | REQUIREMENTS.md approved by the owner; awaiting `/aid-define` |
 | 2026-08-12 | Define → decomposed | -- | 3 features created; cross-reference pending |
 | 2026-08-13 | Define → DONE | -- | Cross-reference complete after 2 passes (71 findings). `/aid-define` terminal state reached; `active_skill` → none. Ready for `/aid-specify`. No feature SPEC carries a Technical Specification yet -- that is `/aid-specify`'s output |
+| 2026-08-13 | Specify → all features Ready | A | All 3 feature Technical Specifications authored + grade-gated (aid-reviewer). Grades: 001 A, 002 A, 003 A. 4 gate passes total, 11 findings, all Fixed, 0 Pending. Ledgers under `review-archive/specify-feature-00N.md`. One flagged owner judgment call in feature-003 §2 (full-delete vs narrow `check-skill-counts.mjs`). Ready for `/aid-plan` |
 
 ---
 
