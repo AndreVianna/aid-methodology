@@ -15,10 +15,10 @@
 #   BI10  Summary predicate -- no sentence terminator -> whole collapsed line is Summary.
 #   BI11  Summary predicate -- sentence exceeding 200 chars is truncated to 200 + '...'
 #   BI12  Empty-KB guard -- no docs found emits the no-KB-docs notice.
-#   BI13  Category grouping -- primary/meta/extension docs appear in correct sections.
+#   BI13  Category grouping -- primary/meta sections only; extension folds into Primary.
 #   BI14  Alphabetical sort within a category table.
 #   BI15  Empty cell renders as a single space (table stays well-formed).
-#   BI16  Table header row emitted once per category (6-column header + separator).
+#   BI16  Table header row emitted once per emitted section (6-column header + separator).
 #   BI17  see_also bare token (no .md suffix) renders as link.
 #   BI18  see_also prose entry with spaces renders verbatim (not linked).
 #
@@ -99,9 +99,9 @@ assert_file_contains "$OUT01" "[schemas.md](../knowledge/schemas.md)" "BI01 See-
 assert_file_contains "$OUT01" "architect, developer" "BI01 Audience cell -- populated"
 
 # Verify the table header row was emitted.
-assert_file_contains "$OUT01" "| Document | Objective | Summary | Tags | See-instead | Audience |" \
+assert_file_contains "$OUT01" "| Document | Audience | Tags | See-instead | Objective | Summary |" \
     "BI01 table header row present"
-assert_file_contains "$OUT01" "|----------|-----------|---------|------|-------------|----------|" \
+assert_file_contains "$OUT01" "|----------|----------|------|-------------|-----------|---------|" \
     "BI01 table separator row present"
 
 # ===========================================================================
@@ -368,7 +368,8 @@ run_index "$KB12" "$OUT12"
 assert_file_contains "$OUT12" "*(no KB docs found" "BI12 empty KB -- no-docs notice present"
 
 # ===========================================================================
-# BI13  Category grouping -- docs appear under correct ## section headers.
+# BI13  Category grouping -- only Primary and Meta ## section headers are emitted;
+#       a kb-category: extension doc is folded into the Primary table.
 # ===========================================================================
 KB13="${TMPDIR_BASE}/kb13"
 mkdir -p "$KB13"
@@ -397,15 +398,33 @@ body"
 OUT13="${TMPDIR_BASE}/INDEX13.md"
 run_index "$KB13" "$OUT13"
 
-# Category headers
+# Category headers -- Primary and Meta are the only sections emitted; the
+# extension category no longer gets a section of its own.
 assert_file_contains "$OUT13" "## Primary" "BI13 Primary category header present"
 assert_file_contains "$OUT13" "## Meta" "BI13 Meta category header present"
-assert_file_contains "$OUT13" "## Extension" "BI13 Extension category header present"
+assert_file_not_contains "$OUT13" "## Extension" "BI13 no Extension section header emitted (extension folds into Primary)"
 
 # Each doc in its correct section -- verify by checking the file contains the link
 assert_file_contains "$OUT13" "[primary-doc.md](../knowledge/primary-doc.md)" "BI13 primary-doc.md in output"
 assert_file_contains "$OUT13" "[meta-doc.md](../knowledge/meta-doc.md)" "BI13 meta-doc.md in output"
 assert_file_contains "$OUT13" "[ext-doc.md](../knowledge/ext-doc.md)" "BI13 ext-doc.md in output"
+
+# The extension doc is not merely present -- its row must fall INSIDE the Primary
+# table, i.e. between the Primary heading and the next "## " heading.
+primary_head_line=$(grep -n "^## Primary" "$OUT13" | head -1 | cut -d: -f1)
+ext_row_line=$(grep -nF "[ext-doc.md](../knowledge/ext-doc.md)" "$OUT13" | head -1 | cut -d: -f1)
+if [[ -n "$primary_head_line" ]]; then
+    next_head_line=$(awk -v start="$primary_head_line" 'NR > start && /^## / { print NR; exit }' "$OUT13")
+    [[ -z "$next_head_line" ]] && next_head_line=$(( $(wc -l < "$OUT13") + 1 ))
+else
+    next_head_line=""
+fi
+if [[ -n "$primary_head_line" && -n "$ext_row_line" && -n "$next_head_line" \
+      && "$ext_row_line" -gt "$primary_head_line" && "$ext_row_line" -lt "$next_head_line" ]]; then
+    pass "BI13 ext-doc.md row rendered inside the Primary table (extension folded into Primary)"
+else
+    fail "BI13 ext-doc.md row not inside the Primary table -- Primary heading line '${primary_head_line:-none}', ext-doc row line '${ext_row_line:-none}', next '## ' heading line '${next_head_line:-none}'"
+fi
 
 # ===========================================================================
 # BI14  Alphabetical sort within a category table.
@@ -462,11 +481,12 @@ fi
 assert_file_contains "$OUT02" "|   |" "BI15 blank cell renders as single space (|<sp+sp+sp>| in rendered row)"
 
 # ===========================================================================
-# BI16  Table header row emitted once per category (6-column header).
+# BI16  Table header row emitted once per emitted section (6-column header).
 # ===========================================================================
-# kb13 has all three categories; each must have exactly one header row.
-header_count=$(grep -c "| Document | Objective | Summary | Tags | See-instead | Audience |" "$OUT13")
-assert_eq "$header_count" "3" "BI16 table header row emitted once per category (3 categories = 3 headers)"
+# kb13 declares all three categories, but extension folds into Primary, so only
+# two sections are emitted; each must have exactly one header row.
+header_count=$(grep -c "| Document | Audience | Tags | See-instead | Objective | Summary |" "$OUT13")
+assert_eq "$header_count" "2" "BI16 table header row emitted once per emitted section (2 sections = 2 headers)"
 
 # ===========================================================================
 # BI17  see_also bare token (no .md suffix) renders as link.

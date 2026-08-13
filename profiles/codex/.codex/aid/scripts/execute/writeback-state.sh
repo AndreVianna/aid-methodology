@@ -88,6 +88,11 @@
 #                                                       a table row per task-NNN,
 #                                                       replacing the per-task
 #                                                       STATE.md ## Task State)
+#                             ## Quick Check Findings (--task-id/--findings target;
+#                                                       a ### task-NNN sub-block per
+#                                                       task, replacing the per-task
+#                                                       STATE.md section of the same
+#                                                       name; created on first write)
 #     tasks/
 #       task-NNN/
 #         DETAIL.md      -- task definition (no per-task STATE.md in this layout)
@@ -114,6 +119,14 @@
 #       Write/replace the ## Quick Check Findings block in
 #       deliveries/delivery-NNN/tasks/task-NNN/STATE.md.
 #       Same delivery resolution as --field mode.
+#       Flattened layout (feature-001, auto-detected): there is no per-task
+#       STATE.md, so this targets a `### task-NNN` SUB-BLOCK under the
+#       work-root STATE.md's ## Quick Check Findings section instead (creating
+#       that section when absent). Only the addressed task's sub-block is
+#       replaced -- sibling tasks' sub-blocks survive byte-identical, which is
+#       what makes this safe under FR6 parallel execution (single-writer per
+#       task by construction). In the FULL layout each task owns its own file,
+#       so there the WHOLE section is replaced and no sub-heading is used.
 #
 #   writeback-state.sh --delivery-id NNN --block MARKDOWN_BLOCK
 #       Write/replace the ## Delivery Gate block in deliveries/delivery-NNN/STATE.md (SD-5).
@@ -215,7 +228,10 @@ LOCK_TIMEOUT="${AID_LOCK_TIMEOUT:-10}"   # max retries (0.5s each -> 5s default)
 
 # ---------------------------------------------------------------------------
 usage() {
-    sed -n '2,146p' "$0" | sed 's/^# \{0,1\}//'
+    # Upper bound tracks the end of the --gate-field usage stanza. Bump it
+    # whenever lines are added to the header block above it, or --help silently
+    # starts truncating (or over-printing) the usage text.
+    sed -n '2,160p' "$0" | sed 's/^# \{0,1\}//'
 }
 
 die() { echo "ERROR: writeback-state.sh: $*" >&2; exit "${2:-1}"; }
@@ -1022,15 +1038,205 @@ write_task_field_flat() {
 }
 
 # ---------------------------------------------------------------------------
+# write_task_findings_flat BLOCK TASK_ID
+# feature-001 flattened layout: write (or replace) this task's `### task-NNN`
+# sub-block under the work-root STATE.md's `## Quick Check Findings` section --
+# the single-writer home that REPLACES the now-absent per-task STATE.md section
+# of the same name.
+#
+# THE KEY DIFFERENCE FROM mode_findings' full-layout path: in the FULL layout
+# each task owns its own STATE.md, so replacing the WHOLE section is safe. Here
+# ALL tasks share ONE file, so the section is keyed by a `### task-NNN`
+# sub-heading and ONLY that sub-block is replaced -- every sibling task's
+# sub-block is reproduced byte-identically. That is what keeps this
+# single-writer-per-task under FR6 parallel execution (the shared sentinel lock
+# serializes the concurrent readers/writers of the file itself). Shape per
+# `aid-execute/references/state-review.md § Write Findings to STATE.md`, and
+# byte-compatible with the dashboard reader's own
+# `## Quick Check Findings` -> `### task-NNN` -> `**Findings:**` parse.
+#
+# Section creation (the work-state template seeds no `## Quick Check Findings`):
+# the section is opened immediately BEFORE `## Delivery Gate`, i.e. inside the
+# AUTHORED zone, after `### Tasks lifecycle` and its `---`, and well before the
+# `---` + `DERIVED / READ-ONLY VIEWS` banner. Nothing already in the file moves:
+# `### Tasks lifecycle` is untouched, `## Delivery Gate` keeps its own preceding
+# `---` (a fresh one is emitted), and the DERIVED sections are never reached. If
+# the file carries no `## Delivery Gate` at all the section is appended at EOF.
+#
+# Uses the SAME sentinel lock as --pipeline / --lifecycle / --block / --field
+# (all target $STATE_FILE for this layout), so concurrent writers serialize.
+# ---------------------------------------------------------------------------
+write_task_findings_flat() {
+    local block="$1" task_id="$2"
+    local padded_t task_block_id
+    # Force base-10 arithmetic before padding (see resolve_task_state_file above).
+    padded_t=$(printf '%03d' "$((10#$task_id))")
+    task_block_id="task-${padded_t}"
+
+    if [[ ! -f "$STATE_FILE" ]]; then
+        die "$STATE_FILE does not exist" 1
+    fi
+
+    local has_section=0
+    grep -q '^## Quick Check Findings' "$STATE_FILE" && has_section=1
+
+    local had_tasks_lifecycle=0
+    grep -q '^### Tasks lifecycle' "$STATE_FILE" && had_tasks_lifecycle=1
+
+    init_lock_file "$STATE_FILE"
+    acquire_lock
+
+    local tmp
+    tmp=$(mktemp)
+
+    # block is read from ENVIRON (not an awk `-v` assignment) because awk's
+    # `-v var=value` re-processes C-style escape sequences in `value` -- a
+    # `foo\tbar` assigned this way silently becomes "foo<TAB>bar", corrupting
+    # the findings text with a control character the caller never wrote (same
+    # bug class write_task_field_flat and wb_set_frontmatter already fix this
+    # way). ENVIRON values are NOT escape-reprocessed, so the block arrives
+    # byte-for-byte.
+    AID_WB_RAW_VALUE="$block" awk -v task_id="$task_block_id" -v has_section="$has_section" '
+        # p(): every emitted line goes through here so blank-line hygiene is
+        # tracked without re-reading the output.
+        function p(l) { print l; last_blank = (l ~ /^[ \t]*$/) }
+        function emit_task_block() {
+            if (!last_blank) p("")
+            p("### " task_id)
+            p("")
+            p(new_block)
+            p("")
+            written = 1
+        }
+
+        BEGIN {
+            new_block = ENVIRON["AID_WB_RAW_VALUE"]
+            task_id_lc = tolower(task_id)
+            in_qcf = 0; in_task = 0; written = 0; last_blank = 1
+        }
+
+        # Section absent -- open it immediately before ## Delivery Gate and
+        # re-emit that heading (with a fresh `---` separator) unchanged.
+        !has_section && /^## Delivery Gate/ {
+            p("## Quick Check Findings")
+            p("")
+            emit_task_block()
+            p("---")
+            p("")
+            p($0)
+            has_section = 1
+            next
+        }
+
+        has_section && !in_qcf && /^## Quick Check Findings/ {
+            in_qcf = 1; in_task = 0
+            p($0)
+            next
+        }
+
+        # End of the section (next `## ` heading or a bare `---` separator --
+        # the same two terminators the full-layout path and mode_delivery_block
+        # use). Flush the target block here when this task had none yet.
+        in_qcf && (/^## / || /^---[ \t]*$/) {
+            if (!written) emit_task_block()
+            in_qcf = 0; in_task = 0
+            p($0)
+            next
+        }
+
+        # A `### task-NNN` sub-heading: the ONLY thing that opens/closes a task
+        # sub-block. A non-task `### ` heading is body content of whatever
+        # sub-block it sits in (so a caller-supplied block may carry its own
+        # sub-headings without them being mistaken for a sibling boundary).
+        in_qcf && tolower($0) ~ /^###[ \t]+task-/ {
+            if (tolower($0) ~ ("^###[ \t]+" task_id_lc "[ \t]*$")) {
+                p($0)
+                p("")
+                p(new_block)
+                p("")
+                written = 1
+                in_task = 1
+            } else {
+                in_task = 0
+                p($0)
+            }
+            next
+        }
+
+        in_qcf && in_task { next }   # discard the stale block body of THIS task only
+        in_qcf { p($0); next }       # section preamble + every sibling block
+        { p($0) }
+
+        END {
+            # Section ran to EOF with no closing heading/separator.
+            if (in_qcf && !written) emit_task_block()
+            # No ## Quick Check Findings AND no ## Delivery Gate anywhere --
+            # append the section at EOF.
+            if (!has_section && !written) {
+                if (!last_blank) p("")
+                p("## Quick Check Findings")
+                p("")
+                emit_task_block()
+            }
+        }
+    ' "$STATE_FILE" > "$tmp"
+    local awk_exit=$?
+    if [[ "$awk_exit" -ne 0 ]]; then
+        rm -f "$tmp"
+        die "writeback awk failed (exit $awk_exit); $STATE_FILE preserved" "$awk_exit"
+    fi
+
+    if [[ ! -s "$tmp" ]]; then
+        rm -f "$tmp"
+        die "writeback produced empty output; $STATE_FILE preserved" 3
+    fi
+
+    # Sanity: the section, this task's sub-heading, and (if it was there before)
+    # the ### Tasks lifecycle section must all be present in the output.
+    if ! grep -q '^## Quick Check Findings' "$tmp"; then
+        rm -f "$tmp"
+        die "## Quick Check Findings section was not written to output" 3
+    fi
+    if ! grep -qiE "^###[[:space:]]+${task_block_id}[[:space:]]*\$" "$tmp"; then
+        rm -f "$tmp"
+        die "writeback sanity check failed: ### ${task_block_id} block not found in output; $STATE_FILE preserved" 3
+    fi
+    if [[ "$had_tasks_lifecycle" -eq 1 ]] && ! grep -q '^### Tasks lifecycle' "$tmp"; then
+        rm -f "$tmp"
+        die "writeback sanity check failed: ### Tasks lifecycle disappeared from output" 3
+    fi
+
+    mv "$tmp" "$STATE_FILE"
+    echo "OK: $STATE_FILE updated -- ## Quick Check Findings ### ${task_block_id} block written (flattened layout)"
+}
+
+# ---------------------------------------------------------------------------
 # Mode: [--delivery-id NNN] --task-id NNN --findings BLOCK
 # Write/replace the ## Quick Check Findings block in
 # delivery-NNN/tasks/task-NNN/STATE.md.
 # Creates the ## Quick Check Findings section if absent.
+#
+# Flattened layout (feature-001, auto-detected): routed to
+# write_task_findings_flat below -- there is no per-task STATE.md, so the
+# findings land as a `### task-NNN` sub-block in the SHARED work-root STATE.md
+# and only that sub-block may be replaced. See that function's own comment.
 # ---------------------------------------------------------------------------
 mode_findings() {
     local padded_id
     # Force base-10 arithmetic before padding (see resolve_task_state_file above).
     padded_id=$(printf '%03d' "$((10#$TASK_ID))")
+
+    # feature-001 flattened layout (auto-detected): quick-check findings live in
+    # the work-root STATE.md's ## Quick Check Findings section, keyed by a
+    # `### task-NNN` sub-heading -- no per-task STATE.md exists to target, so
+    # resolving one below would always die with "... does not exist".
+    # AID_TASK_STATE_FILE override (if set) bypasses ALL path resolution,
+    # including this flat-layout check, per its documented contract above.
+    # (Same guard shape as mode_field's.)
+    if [[ -z "$TASK_STATE_FILE" ]] && is_flat_layout; then
+        write_task_findings_flat "$FINDINGS_BLOCK" "$TASK_ID"
+        return 0
+    fi
 
     resolve_delivery_for_task_mode
     resolve_task_state_file "$DELIVERY_ID" "$TASK_ID"

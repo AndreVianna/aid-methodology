@@ -4,7 +4,10 @@
 # Tests cover:
 #   1. AGGREGATE with existing delivery-NNN-issues.md (deferred rows preserved)
 #   2. AGGREGATE with no issues file (creates empty log correctly)
-#   3. SCORE computation for 3 sample deliveries of varying complexity
+#   3. SCORE computation for 3 sample deliveries of varying complexity (3a-3c,
+#      inline arithmetic over the documented formula), plus a real
+#      complexity-score.sh run over the on-disk `<tasks-dir>/task-NNN/DETAIL.md`
+#      layout both current work layouts use (3d-3e, tier selection included)
 #   4. Grade computation via grade.sh (deterministic output verification)
 #   5. Loopback guard (grade < min does NOT re-run quick-checks, only loops review)
 #   6. FR6 interlock (gate must not fire while any task has status Failed or Blocked)
@@ -33,6 +36,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # SUTs moved in 2026-05-26 consolidation
 WRITEBACK="${SCRIPT_DIR}/../../canonical/aid/scripts/execute/writeback-state.sh"
 GRADE="${SCRIPT_DIR}/../../canonical/aid/scripts/grade.sh"
+SCORE="${SCRIPT_DIR}/../../canonical/aid/scripts/execute/complexity-score.sh"
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -210,6 +214,64 @@ run_test_3() {
     else
         fail "Test 3c: Delivery C scoring" "Got tier=$tier_c score=$score_c (expected Large/18)"
     fi
+
+    # -----------------------------------------------------------------------
+    # Test 3d/3e: the SAME Delivery A, computed by the REAL scorer against the
+    # on-disk layout the delivery gate actually reads. Tests 3a-3c above are
+    # inline arithmetic over hard-coded numbers -- they restate the formula and
+    # cannot observe a task-file LOOKUP regression. This one runs
+    # complexity-score.sh over `<tasks-dir>/task-NNN/DETAIL.md`, the shape BOTH
+    # current layouts use (full: deliveries/delivery-NNN/tasks/; flat
+    # feature-001: tasks/ directly under the work root). With a depth-1-only
+    # lookup no task file was found at all, so risk collapsed 2 -> 0, score
+    # 7 -> 5, and the gate reviewer was under-tiered Medium -> Small.
+    #
+    # AID_KB_STATE is pinned to a non-existent path so the tier assertion uses
+    # the documented defaults (Low 6 / High 14) rather than whatever thresholds
+    # the repo's own .aid/knowledge/STATE.md happens to carry.
+    # -----------------------------------------------------------------------
+    local ws
+    ws=$(mktemp -d)
+
+    cat > "$ws/PLAN.md" <<'EOF'
+## Execution Graph
+
+| Task | Depends On |
+|------|------------|
+| task-001 | — (none) |
+| task-002 | task-001 |
+| task-003 | task-002 |
+EOF
+
+    mkdir -p "$ws/tasks/task-001" "$ws/tasks/task-002" "$ws/tasks/task-003"
+    printf '# task-001\n\n**Type:** IMPLEMENT\n' > "$ws/tasks/task-001/DETAIL.md"   # +1
+    printf '# task-002\n\n**Type:** TEST\n'      > "$ws/tasks/task-002/DETAIL.md"   # +1
+    printf '# task-003\n\n**Type:** DOCUMENT\n'  > "$ws/tasks/task-003/DETAIL.md"   # +0
+
+    local score_out
+    score_out=$(AID_KB_STATE="$ws/no-such-kb-state.md" \
+        bash "$SCORE" --plan-file "$ws/PLAN.md" --tasks-dir "$ws/tasks" 2>/dev/null)
+
+    local real_risk real_score real_tier
+    real_risk=$(grep -m1 '^risk='  <<< "$score_out" | cut -d= -f2)
+    real_score=$(grep -m1 '^score=' <<< "$score_out" | cut -d= -f2)
+    real_tier=$(grep -m1 '^tier='  <<< "$score_out" | cut -d= -f2)
+
+    if [[ "$real_risk" == "2" && "$real_score" == "7" ]]; then
+        pass "Test 3d: complexity-score.sh reads task-NNN/DETAIL.md types (risk=2, score=7)"
+    else
+        fail "Test 3d: complexity-score.sh reads task-NNN/DETAIL.md types" \
+             "Got risk=$real_risk score=$real_score (expected risk=2 score=7)"
+    fi
+
+    if [[ "$real_tier" == "Medium" ]]; then
+        pass "Test 3e: score=7 selects the Medium gate reviewer tier (not under-tiered to Small)"
+    else
+        fail "Test 3e: score=7 selects the Medium gate reviewer tier" \
+             "Got tier=$real_tier (expected Medium)"
+    fi
+
+    cleanup "$ws"
 }
 
 # ---------------------------------------------------------------------------
