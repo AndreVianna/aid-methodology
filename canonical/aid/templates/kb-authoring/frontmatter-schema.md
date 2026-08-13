@@ -397,6 +397,10 @@ may not read. Its entries are graded like any other claim the file makes:
 - a `kind: exclude` entry with no `why`, or a `kind: validate` entry with no `severity`, is
   a schema error.
 
+An **unknown** key on an entry is none of the above — it is tolerated (see
+[Parsing rules](#parsing-rules-for-tools)) and simply not graded, because there is nothing yet
+to grade it against.
+
 The exemption that remains is narrower and mechanical: **the field's presence is never
 required.** A file whose type already covers it correctly declares nothing, so absence is
 never a finding — only a wrong or redundant declaration is.
@@ -440,6 +444,13 @@ the rest.
 - Body MUST be valid YAML 1.2
 - Missing fields are treated as default-empty
 - Unknown fields are tolerated (forward-compatible with future schema additions)
+- **The same tolerance applies one level down, inside a list entry.** An unknown key on a
+  `review-criteria:` entry — alongside `id`, `kind`, `criterion`, `severity`, `why` — is
+  tolerated, not a schema error, so a later key can be added to a criterion as a pure
+  addition rather than a migration across every criterion already declared. This does not
+  weaken the required keys: an entry still needs `id`, `kind` and `criterion`, `severity` on
+  a `validate`, and `why` always. Tolerating an extra key and omitting a required one are
+  different things.
 - If parsing fails, the doc is treated as `kb-category: primary, source: hand-authored`
   with empty objective/summary/intent/review-criteria/changelog AND lint emits a HIGH-severity warning
 
