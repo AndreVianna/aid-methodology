@@ -21,6 +21,7 @@
 | 2026-08-12 | **Criteria model corrected by the owner.** `contracts:` holds the *criteria a reviewer validates the file against*, resolved through a three-level cascade — global and per-document-type lists in the KB, per-file exceptions in frontmatter — written once at the highest level where true, to stop duplication and keep per-file lists short. Criteria are positive **and** negative: a non-obvious exclusion belongs in `contracts:` with its reason, never as a severity. `severity:` named and shaped as a defect-kind → level map over validatable kinds only. FR-1, FR-5, FR-6, AC-1, §4 streams 1–2 and both feature SPECs rewritten; the earlier `canonical/` placement correction withdrawn — criteria are project-specific, so the KB is right | /aid-define |
 | 2026-08-12 | **Criteria home fixed: `.aid/knowledge/authoring-conventions.md`**, both levels together as two new sections (owner decision). The concern spine puts it at C3 — conventions and standards — which is what criteria are; it is `kb-category: primary`, already tagged `enforcement`, and already carries level 1 unlabelled in `## Drift-Prone Content is Banned`, `## Citation Rule` and `## Resolved Items Leave No Trace`. Not `quality-gates.md` (C6), which keeps the grade scale, ledger and thresholds; criteria and their cost in C3, scoring in C6, cross-referenced never duplicated | /aid-define |
 | 2026-08-12 | **Criteria are a writer's contract, not a reviewer's checklist** (owner correction). FR-2 rewritten: any agent that writes or edits a file resolves its criteria first and complies; the reviewer verifies against the same list and is the backstop, not the sole enforcer. New **FR-9** (resolve-before-writing) and **FR-10** (a work that introduces or retires a document type owes the KB its registry row) — both **global instructions in `agent-boilerplate.md`**, which every AGENT.md includes, rather than per-skill edits. AC-2 now proves both directions. Field shape settled: `review-criteria:` as an array of objects (`id`/`kind`/`criterion`/`severity`/`why`), same shape at all three levels, renamed from `contracts:`; severity is a field on each criterion rather than a separate block; overrides permitted with mandatory `why` and the effective value surfaced in the gate output, which closes FR-6's parked open cost | /aid-define |
+| 2026-08-13 | **Rule column closed without a column** — every criterion carries a greppable `id` and a finding names it as a prefix inside the existing `Description` cell, so the ledger keeps 7 columns and `grade.sh` its positional parse. Two global exclusions added (`agent-context`, `rendered`); the `rendered` one keyed on **provenance via the emission manifest, not a path glob**, after a path-based draft would have exempted `render.py` and `release-aid` from review. `render.py` to carry `review-criteria` through, so the `agent` type behaves identically for canonical and repo-local members. Ledger: 33 Fixed, 1 Invalid, 0 Pending | /aid-define |
 
 ### KB hydration assessment (COMPLETION step 2)
 
@@ -389,18 +390,48 @@ boundary in section 4.)*
   file-level criteria is a **property of that type**, recorded in the registry, not a gap.
 
   **`canonical/agents/*/AGENT.md` is NOT such a case, contrary to an earlier draft.** It can carry a
-  file-level block like any other authored file. `render.py` does rebuild the shipped frontmatter as
-  a fresh dict of `name`/`description`/`tools`/`model` and drop every other key — but that is
-  correct, not a limitation: `profiles/`, `.claude/` and `.cursor/` are **never content-reviewed**
-  (see the `rendered` exclusion below), so criteria shipped there would have no reader. The only
-  review of an agent definition is of its canonical source, which has the field.
+  file-level block like any other authored file, and **`render.py` is changed to carry
+  `review-criteria` through** *(owner decision, 2026-08-13)*.
+
+  `render.py` today rebuilds the shipped agent frontmatter as a fresh dict of
+  `name`/`description`/`tools`/`model` (+ optional `permissionMode`, `background`) and drops every
+  other key. Strictly, the criteria do not need to ship: rendered trees are never content-reviewed,
+  so the only review of an agent definition is of its canonical source, which has the field.
+
+  It changes anyway, for a reason that is not about shipping:
+
+  - **A type must behave identically for every member.** The registry names one `agent` type with
+    one criteria list. A repo-local agent authored directly in `.claude/agents/` keeps its
+    file-level block; a canonical one silently loses it at render. The type's rules would be true
+    for some members and false for others, with nothing on the file saying which — the latent
+    inconsistency the cascade exists to eliminate.
+  - **A silently discarded field is a trap.** Written, rendered, gone, no complaint, no artifact to
+    review.
+  - **The cost is near zero at this moment.** One key in `new_fm`, riding the single end-of-work
+    re-render NFR-4 already mandates, rather than forcing its own re-baseline later.
+
+  *Counted honestly against NFR-2:* this is a generator edit, and it is the first one this work
+  makes. It adds a line rather than an artifact, so it stays within **C-1** — but it is recorded
+  here rather than waved through.
 
   **Two global exclusions follow, and both cover large parts of the repo:**
 
   | Type | Exclusion | Why |
   |---|---|---|
   | `agent-context` | root `CLAUDE.md` / `AGENTS.md` are never reviewed | shared host files — AID owns only the `AID:BEGIN`/`AID:END` region and the rest is the user's content; they point at truth rather than holding it, which is also why KB docs may not cite them. They carry no frontmatter, so there is nowhere to declare this on the file itself. |
-  | `rendered` | `profiles/**`, `.claude/**`, `.cursor/**` are not content-reviewed | byte-identical output of `canonical/`; `architecture.md` states that *"a rendered or vendored copy is a defect; edit `canonical/` and re-render"*, and the byte-compare gate **is** their review. This is **C-5 generalised beyond the KB**: build-verify, never content-grade. |
+  | `rendered` | a file **listed as a rendered `dst` in an emission manifest** is not content-reviewed | byte-identical output of `canonical/`; `architecture.md` states that *"a rendered or vendored copy is a defect; edit `canonical/` and re-render"*, and the byte-compare gate **is** their review. This is **C-5 generalised beyond the KB**: build-verify, never content-grade. |
+
+  **The `rendered` exclusion is keyed on PROVENANCE, not on path.** An earlier draft wrote it as
+  `profiles/**`, `.claude/**`, `.cursor/**` — which is wrong, and would have exempted real authored
+  files from all review. `.claude/` is not purely rendered: it also holds
+  `skills/generate-profile/**` (the renderer toolchain itself, including `render.py`),
+  `skills/release-aid/**` (maintainer-only ops, never shipped) and `output-styles/**`. A path glob
+  would have silently excluded the very code this work is about to edit.
+
+  `tests/canonical/test-dogfood-byte-identity.sh` already encodes the right distinction, as a
+  documented allowlist of non-generator files. The criterion follows it: **a file is excluded because
+  it IS a render — present as a `dst` in an emission manifest — not because of where it sits.**
+  Anything under a dogfood tree that the manifest does not claim is authored, and is reviewable.
 
   | Level | Holds | Lives in |
   |---|---|---|

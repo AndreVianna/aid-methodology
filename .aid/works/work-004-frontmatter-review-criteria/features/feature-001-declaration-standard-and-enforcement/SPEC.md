@@ -86,7 +86,14 @@ Must
 - [ ] Given a criterion, when it is written, then it sits at the **highest level where it is true**,
       and no type-level list restates a global one.
 - [ ] Given something that must never be validated, when it is recorded, then it is an **exclusion in
-      `contracts:`** carrying its reason — not an omission, and not a severity of zero.
+      `review-criteria:`** carrying its reason — not an omission, and not a severity of zero.
+- [ ] Given the `rendered` exclusion, when it is authored, then it is keyed on **provenance** — the
+      file appears as a `dst` in an emission manifest — and **not** on a path glob, so authored
+      repo-local content under a dogfood tree (`skills/generate-profile/**`, `skills/release-aid/**`,
+      `output-styles/**`) stays reviewable.
+- [ ] Given `render.py`, when an `AGENT.md` carries `review-criteria:`, then the key survives into
+      the rendered agent file rather than being silently discarded — verified in `profiles/` after
+      the single end-of-work render.
 - [ ] Given a reviewer validating any file, when it resolves criteria, then it reads **all three
       levels** and validates against their union, most specific winning on conflict.
 - [ ] Given **any agent that writes or edits an in-scope file**, when it begins, then
