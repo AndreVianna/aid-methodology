@@ -16,9 +16,9 @@ ticket_ref: --
 # --- Flattened single-delivery works only (see `## Delivery Lifecycle` below);
 #     omit these 4 keys entirely for full multi-delivery works. ---
 delivery_state: Gated
-gate_tier: Large
-gate_grade: "A"
-gate_timestamp: "2026-08-12T17:25:50Z"
+gate_tier: Small
+gate_grade: B+
+gate_timestamp: '2026-08-13T01:15:00Z'
 ---
 
 # Work State -- work-010-refactor
@@ -265,7 +265,7 @@ different places.
      variable-length inline list doesn't fit a flat frontmatter scalar). -->
 
 - **Complexity Score:** 6 (tasks=2, depth=1, risk=3 [REFACTOR +2, TEST +1], consults=0)
-- **Cycles:** in progress
+- **Cycles:** 2 so far (cycle 1 B+, cycle 2 B+); gate still running
 - **Issue List:** POST-EXECUTION delivery gate against `BLUEPRINT.md § Gate Criteria` is
   RUNNING. Both tasks are Done (task-001 `d13f4e86`, task-002 `f389836e`). Cycle 1 graded
   B+ against floor A -- 1 [LOW] + 1 [MINOR], both against this tracking file itself, none
