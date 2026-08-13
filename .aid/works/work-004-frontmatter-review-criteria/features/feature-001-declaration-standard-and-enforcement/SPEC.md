@@ -6,6 +6,8 @@
 |------|--------|--------|
 | 2026-08-12 | Feature identified from REQUIREMENTS.md §4 stream 1, §5 FR-2..FR-6 | /aid-define |
 | 2026-08-13 | Second cross-reference pass: FR-9/FR-10 added to Source; the override-surfacing contradiction resolved to the ledger's `Evidence` cell (owner decision); `severity:` block and `contracts:` name corrected; level-1 scope restated as re-authoring | /aid-define |
+| 2026-08-13 | Technical Specification authored — 8 sections (change surface + ordering, field schema, resolution/citation flow, enforcement placement, severity reconciliation, rename migration, AC-2 proof harness, out-of-scope). Application-software sections N/A. Every path/count re-derived on this branch | /aid-specify |
+| 2026-08-13 | Grade gate: aid-reviewer, 2 passes. Pass 1 → 2 HIGH (discover brief dropped; rename migration 46≠52) + 1 LOW (§ cross-ref). Pass 2 confirmed fixes + 1 MEDIUM (18-vs-22 KB rename surface, fixed at root in REQUIREMENTS FR-5). All Fixed, 0 Pending → **Grade A**. Ledger `review-archive/specify-feature-001.md` | /aid-specify |
 
 ## Source
 
@@ -179,4 +181,178 @@ Must
 
 ## Technical Specification
 
-*(Added by /aid-specify — do not fill during interview.)*
+*Section set.* This feature edits markdown, one KB document, and two generator scripts — there is no
+database, service layer, API, or UI. The application-software sections (Data Model as SQL, API
+Contracts, UI Specs, Events, CQRS, …) are **N/A** and omitted. The sections below are the ones that
+carry real content for a methodology-and-generator change: the **field schema**, the **KB tables**,
+the **resolution & citation flow**, the **enforcement surfaces**, the **rename migration**, the
+**severity reconciliation**, and the **AC-2 proof harness**. Every path and count below was derived on
+this branch during specification; the commands are named inline so a reviewer re-derives rather than
+trusts.
+
+### 1. Change surface and ordering
+
+Feature-001 is the **mechanism**: it makes a declaration readable and read. It does **not** populate
+the 290 files (feature-002) and does **not** delete, render, or resync anything (feature-002/003). Its
+edits, grouped by role and in dependency order:
+
+| # | File | Edit | Depends on |
+|---|------|------|------------|
+| 1 | `.aid/works/work-004-frontmatter-review-criteria/imports-from-work-003.md` | **create** it with §8's three collision figures as its first entries (it does not exist — `find . -name imports-from-work-003.md` is empty) | — |
+| 2 | `.aid/knowledge/authoring-conventions.md` | add the **type registry** and **criteria** tables (levels 1+2), §2 below | — |
+| 3 | `canonical/aid/templates/kb-authoring/frontmatter-schema.md` | rename `contracts:` → `review-criteria:`, define it for all four trees, split it out of the "stay fully exempt" legacy sentence | 2 |
+| 4 | `canonical/aid/templates/kb-authoring/review-rubric.md` | generalize item 3 beyond `.aid/knowledge/`, teach it the three-level resolve, give it the `id`-citation rule | 2, 3 |
+| 5 | `canonical/aid/templates/grading-rubric.md` | become the single severity authority that the other two homes cite (§5 below) | — |
+| 6 | `canonical/aid/templates/agent-boilerplate.md` | FR-9 + FR-10 as a new instruction in `## Self-review discipline` | 2 |
+| 7 | 5 × `profiles/<tool>/{CLAUDE,AGENTS}.md` | the same two instructions, in the `AID:BEGIN`/`AID:END` region (§4 below) | 6 |
+| 8 | `canonical/agents/aid-reviewer/AGENT.md` | verify against resolved criteria; cite the `id` in the finding | 3, 4 |
+| 9 | `canonical/aid/templates/reviewer-dispatch.md` | route the reviewer to the artifact's own frontmatter | 4, 8 |
+| 10 | `canonical/aid/templates/reviewer-ledger-schema.md` | document the `id`-as-`Description`-prefix convention; keep 7 columns | 4 |
+| 11 | **6** × `canonical/skills/*/references/reviewer-brief.md` (`define`, `detail`, `execute`, `plan`, `specify`, **`discover`**) | name the declaration | 8, 10 |
+| 12 | `canonical/skills/aid-execute/references/state-fix.md` | FR-3: F1–F6 gain post-edit self-declaration re-verify | 3 |
+| 13 | `.claude/skills/generate-profile/scripts/render.py` | carry `review-criteria:` through the agent-frontmatter rebuild | 3, 8 |
+
+**No render, no dogfood resync, no `contracts:`→`review-criteria:` data migration of the 18
+field-bearing KB docs here.** Data migration of on-disk files is feature-002; the single render is feature-003 (C-2, NFR-4).
+Feature-001 changes the **schema and the readers**; the bytes it writes are limited to the KB tables,
+the template/agent edits above, and the import log.
+
+*Two brief-facts, kept distinct:* row 11 edits **all 6** `reviewer-brief.md` files to name the
+declaration (FR-2/FR-4 routing — verified: `find canonical/skills -iname reviewer-brief.md` = 6,
+`discover` included, and its brief already cites the rubric). That is a different set from the **5 of 6**
+that cite `grading-rubric.md` for severity (`define`/`detail`/`execute`/`plan`/`specify` — not
+`discover`; §5, FR-6). An earlier draft dropped `discover` from row 11 by conflating the two.
+
+### 2. The `review-criteria:` schema and the two KB tables
+
+**Field shape** (in `frontmatter-schema.md`, one object shape at all three levels):
+
+```yaml
+review-criteria:
+  - id: F-01              # required; scope-prefixed G-/KB-/SK-/…, file-local uses F-
+    kind: validate        # required; validate | exclude
+    criterion: <what to check, or what must never be checked>   # required
+    severity: HIGH        # required ONLY when kind: validate; a schema error on exclude
+    why: <reason>         # required always; on an exclude it is the whole point
+```
+
+An **override** is not a new shape: a file-level entry whose `id` already exists higher up, carrying a
+different `severity` and a mandatory `why`. FR-5's "most specific wins" resolves it.
+
+**Two tables in `authoring-conventions.md`**, placed as new sections after `## KB Document Layout`
+(which is itself a level-2 section for one type, so the neighbourhood is right). No cell may contain a
+pipe.
+
+- **Type registry** — `| Type | Selector | Notes |`. Selectors mutually exclusive and exhaustive over
+  the in-scope corpus. Rows include the type splits this work requires: `skill-generated`
+  (58, one per `shortcut-catalog.yml` row) / `skill-authored` (18), `template-payload` / `template-own`,
+  plus `kb-doc`, `skill-reference`, `agent`, and `state` (excluded, see `G-04`).
+- **Criteria table** — `| ID | Applies to | Kind | Criterion | Severity | Why |`, one row per
+  criterion. `*` in `Applies to` = global (level 1); a type name = level 2. Duplication is visible on
+  sight: two type rows saying the same thing belong at `*`.
+
+### 3. Resolution and citation flow
+
+**Resolution (read by writer and reviewer alike).** Given a target file:
+
+1. Determine its **one** type from the registry selector (exhaustive ⇒ always resolves).
+2. Concatenate level-1 (`Applies to: *`) + level-2 (`Applies to: <type>`) + the file's own
+   `review-criteria:`.
+3. On an `id` collision, the most specific entry wins (file > type > global) — this is how an override
+   applies and how `exclude` cancels a higher-level `validate`.
+
+**Write-time (FR-2/FR-9).** Before writing or editing an in-scope file, the agent runs the resolution
+above and complies. This is the load-bearing half: the criterion is applied *before* the edit, not
+caught after.
+
+**Review-time citation (FR-2, no ledger change).** A finding names the criterion `id` as a prefix
+inside the existing `Description` cell:
+
+```
+| 3 | [HIGH] | Pending | canonical/skills/aid-plan/SKILL.md | 42 | SK-01 — dispatch table names a non-existent agent | ls canonical/agents/ |
+```
+
+A scope-prefixed `id` resolves in the criteria table; an `F-` id resolves in the file named in `Doc`.
+A finding citing no id, or an id resolving nowhere, is itself a defect. The ledger stays 7 columns;
+`grade.sh` is untouched (it reads `cols[3]`/`cols[4]` from the left and ignores `cols[5..8]`).
+
+**Override surfacing (FR-6, owner decision 2026-08-13).** When a finding is written against an
+overridden criterion, the reviewer records the **resolved severity and the overriding file's `why`** in
+the finding's **`Evidence`** cell — inert to `grade.sh` by that same `cols[5..8]` rule, so no machinery
+is added.
+
+### 4. Enforcement placement
+
+**FR-9/FR-10 land in two surfaces, because there are two kinds of agent.**
+
+- **`agent-boilerplate.md § Self-review discipline`** — included by every `canonical/agents/*/AGENT.md`,
+  so it reaches every **dispatched sub-agent**. The section already says *"Read contracts end-to-end
+  before editing"* (item 1) and *"Confirm the contracts you participate in"* (item 4); the new
+  instruction is a natural sibling: resolve the target file's `review-criteria` (global→type→file) and
+  comply before writing, and if a new document type is introduced or the last file of one is removed,
+  add/remove its registry row (FR-10).
+- **The 5 hand-authored `profiles/<tool>/{CLAUDE,AGENTS}.md`**, `AID:BEGIN`/`AID:END` region — what the
+  **session's own agent** reads (it reads no `AGENT.md`). Same instruction, as a pointer to
+  `authoring-conventions.md`. These are the sources; the repo-root file is install output from
+  `lib/aid-install-core.sh` → `_copy_root_agent_file`, so it is **not** edited directly.
+
+**FR-10 backstop:** a global criterion on `authoring-conventions.md` itself — *every in-scope file
+resolves to exactly one registry row* — so a missed type addition is caught at the next review.
+
+**`render.py` carry-through.** The agent-frontmatter rebuild (`new_fm = {name, description, tools,
+model}` + optional `permissionMode`/`background`) gains `review-criteria` when the canonical source
+carries it, so the `agent` type behaves identically for canonical and repo-local members. One key; it
+rides feature-003's single render.
+
+### 5. Severity reconciliation
+
+Three independent severity definitions exist on this branch — `grading-rubric.md § Issue Severities`,
+`reviewer-ledger-schema.md § Severity values`, and `aid-reviewer/AGENT.md § Severity Classification`.
+`grading-rubric.md` becomes the **single authority**; the other two are rewritten to **cite** it rather
+than restate the five levels. This is a reconciliation to one home, not a fourth definition — the
+distinction FR-6 draws. Per-type severity (what a kind costs in a class of document) lives beside its
+criterion in `authoring-conventions.md` (C3); the letter-grade machinery stays in `grading-rubric.md`
+and `quality-gates.md` (C6).
+
+### 6. Rename migration (`contracts:` → `review-criteria:`)
+
+Enumerated with
+`grep -rln "contracts:" --include=*.md --include=*.sh --include=*.ps1 --include=*.mjs --include=*.yml canonical .aid/knowledge tests`
+= **52 files**, in **five** kinds with different treatments. The counts sum to 52 (28 under
+`canonical/` + 18 in `.aid/knowledge/` + 6 under `tests/`); the earlier draft named only four kinds and
+accounted for 46, dropping the six `tests/` files:
+
+| kind | surfaces (count) | treatment | done by |
+|------|------------------|-----------|---------|
+| emit the field | `build-kb-index.sh`, `build-relationships.sh`, `build-metrics.sh`, `build-connectors-index.sh` **+ its `.ps1` twin** (5) | emit the new key; twins stay byte-parallel | feature-001 |
+| parse the field | `migrate/migrate-kb-frontmatter.sh` (`/^contracts:/`) (1) | accept both names during coexistence | feature-001 |
+| define/teach it | `frontmatter-schema.md` (defines), `review-rubric.md`, `principles.md`, `tier-model.md` (4) | definition moves; cites follow | feature-001 |
+| carry it as data | `knowledge-base/` doc templates, `feature-inventory.md`, `state-machine-chaining.md`, `reviewer-ledger-schema.md`, `relationship-schema.yml` comment (canonical), + the **18** KB docs on disk carrying the field (of 22 total; 4 — `README.md`, `STATE.md`, `capability-inventory.md`, `release-tracking.md` — have no `contracts:` key, `grep -L`) | mechanical key rename | **feature-002** (the on-disk data pass) |
+| **test surface** | `test-build-connectors-index.sh`, `test-migrate-kb-frontmatter.sh` (2) — the suites for the two scripts this feature edits; + 4 fixtures under `tests/canonical/fixtures/**` (dual-intent ×2, kb-essence `schemas.md` ×2) | the **2 test scripts move with their scripts here** (a renamed emit/parse changes their expected strings); the **4 fixtures are frozen sample data** — the coexistence parser keeps them valid, and any rename rides feature-002's data pass, never here | feature-001 (scripts) / feature-002 (fixtures) |
+
+The PowerShell twin, the migration parser, and the two script test-suites are what fail *after* the
+rename looks complete; all are named so the sweep does not miss them. **Grading-exemption split:**
+`frontmatter-schema.md`'s one sentence exempting `intent:`, `contracts:`, `changelog:` from content
+grading is split so `review-criteria:` becomes graded while `intent:`/`changelog:` keep their treatment.
+
+### 7. AC-2 proof harness (verification)
+
+Per NFR-1, the proof runs in a **disposable git worktree at the same commit** (`git worktree add`
+detached + `git worktree remove`), never on the work branch — the plant class is self-announcing (a
+file body contradicting its own `review-criteria:` entry), so a forgotten plant trips the very detector
+being installed. Both directions are proven:
+
+1. **Writer** — an agent dispatched to edit a typed file resolves that type's criteria and complies,
+   without being told to in the task prompt.
+2. **Reviewer** — a planted body-vs-`review-criteria` contradiction returns as a finding citing that
+   criterion's `id`.
+
+No maintained test is added; this reuses the `test-dogfood-byte-identity.sh` scratch-tree convention
+scaled from a file to a tree.
+
+### 8. Out of scope for this feature
+
+Populating the 290 files and the on-disk 22-KB-doc data rename (feature-002); deleting the 20 READMEs
+(feature-002); retiring `check-skill-counts.mjs` and the front face (feature-003); the single render +
+dogfood resync (feature-003, C-2/NFR-4). Mid-work staleness of `profiles/` and the dogfood trees is
+correct here, not a defect.

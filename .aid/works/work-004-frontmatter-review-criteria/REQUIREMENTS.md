@@ -390,10 +390,15 @@ settled by owner decision, and FR-8 now carries the deferred front face.)*
   | **Generators that emit the field** | `build-kb-index.sh`, `build-relationships.sh`, `build-metrics.sh`, `build-connectors-index.sh` **and** its PowerShell twin `build-connectors-index.ps1` | emit the new key; the twins must stay byte-parallel |
   | **A parser of the field** | `migrate/migrate-kb-frontmatter.sh` | its `/^contracts:/` match must accept both names, or already-migrated docs stop parsing |
   | **Documents defining or teaching it** | four `kb-authoring/` docs — `frontmatter-schema.md`, `review-rubric.md`, `principles.md`, `tier-model.md` | the definition moves; the other three cite it |
-  | **Files carrying it as data** | the `knowledge-base/` doc templates, `feature-inventory.md`, `state-machine-chaining.md`, `reviewer-ledger-schema.md`, `relationship-schema.yml`'s comment, and the 22 KB docs on disk | mechanical key rename |
+  | **Files carrying it as data** | the `knowledge-base/` doc templates, `feature-inventory.md`, `state-machine-chaining.md`, `reviewer-ledger-schema.md`, `relationship-schema.yml`'s comment, and the **18** KB docs on disk that carry the field | mechanical key rename |
 
   The PowerShell twin and the migration parser are the two an earlier draft would have missed
   entirely, and both would have failed **after** the rename looked complete.
+
+  *The rename surface is **18** KB docs, not the 22 the §2 survey counts.* Four KB docs carry no
+  `contracts:` key at all — `README.md`, `STATE.md`, `capability-inventory.md`, `release-tracking.md`
+  (`grep -L "contracts:" .aid/knowledge/*.md`) — so there is nothing to rename in them. An earlier draft
+  of this row wrote "22", conflating the total-doc count with the field-bearing count.
 
   **One shape at all three levels.** Every criterion — global, per-type, or per-file — is an object
   with the same fields, so resolution is a concatenation rather than a normalisation of two formats:
