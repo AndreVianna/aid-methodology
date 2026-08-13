@@ -50,3 +50,78 @@ end-of-work render (C-2 / NFR-4) lands in the last one.
 ## Deferred
 
 *None -- all three Ready features are included.*
+
+## Execution Graphs
+
+*Task numbering is global (001-017). Deliveries run in series: delivery-002 after delivery-001,
+delivery-003 after delivery-002. The graphs below are the intra-delivery order + parallelism.*
+
+### delivery-001 execution graph
+
+| Task | Depends On |
+|------|-----------|
+| task-001 | — |
+| task-002 | task-001 |
+| task-003 | task-002 |
+| task-004 | task-002, task-003 |
+| task-005 | task-001 |
+| task-006 | task-002 |
+| task-007 | task-004, task-005 |
+
+| Can Be Done In Parallel |
+|------------------------|
+| task-002, task-005 |
+| task-003, task-006 |
+
+```wave-map
+delivery: 001
+wave 1: task-001
+wave 2: task-002, task-005
+wave 3: task-003, task-006
+wave 4: task-004
+wave 5: task-007
+```
+
+### delivery-002 execution graph
+
+| Task | Depends On |
+|------|-----------|
+| task-008 | — |
+| task-009 | task-008 |
+| task-010 | task-008, task-009 |
+| task-011 | task-010 |
+| task-012 | task-009, task-010 |
+
+| Can Be Done In Parallel |
+|------------------------|
+| task-011, task-012 |
+
+```wave-map
+delivery: 002
+wave 1: task-008
+wave 2: task-009
+wave 3: task-010
+wave 4: task-011, task-012
+```
+
+### delivery-003 execution graph
+
+| Task | Depends On |
+|------|-----------|
+| task-013 | — |
+| task-014 | — |
+| task-015 | task-013, task-014 |
+| task-016 | task-013, task-015 |
+| task-017 | task-013 |
+
+| Can Be Done In Parallel |
+|------------------------|
+| task-013, task-014 |
+| task-015, task-017 |
+
+```wave-map
+delivery: 003
+wave 1: task-013, task-014
+wave 2: task-015, task-017
+wave 3: task-016
+```
