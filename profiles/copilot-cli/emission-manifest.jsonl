@@ -44,7 +44,7 @@
 {"dst": ".github/aid/scripts/housekeep/branch-commit.sh", "profile": "copilot-cli", "sha256": "4317500099dcff627c2ed2d4dd59ecaf78d1173a9536baa6a35330dd9d7b9a9f", "src": "canonical/scripts/housekeep/branch-commit.sh"}
 {"dst": ".github/aid/scripts/housekeep/cleanup-classify.sh", "profile": "copilot-cli", "sha256": "de72b269db0ac7fd40113e0a4a736904b5475e2602b3922d425690cea09562af", "src": "canonical/scripts/housekeep/cleanup-classify.sh"}
 {"dst": ".github/aid/scripts/housekeep/housekeep-state.sh", "profile": "copilot-cli", "sha256": "34efca63b146b2025d864172c0880123eee18e0b6e9a5ba0b754b652c7fe6a98", "src": "canonical/scripts/housekeep/housekeep-state.sh"}
-{"dst": ".github/aid/scripts/kb/build-kb-index.sh", "profile": "copilot-cli", "sha256": "f44f23bf2b364fd4e601bec21ce518cbfe71dd43d328d6469f6a3520d1b5addd", "src": "canonical/scripts/kb/build-kb-index.sh"}
+{"dst": ".github/aid/scripts/kb/build-kb-index.sh", "profile": "copilot-cli", "sha256": "bb769d471a709eb426798faaf3de00a3636cb8df6196e4e12b1b0e886705e925", "src": "canonical/scripts/kb/build-kb-index.sh"}
 {"dst": ".github/aid/scripts/kb/build-metrics.sh", "profile": "copilot-cli", "sha256": "2ded57247fc87a37294a9e6ecc291bc3fb19d523db33fca13f1dc05939f4e25e", "src": "canonical/scripts/kb/build-metrics.sh"}
 {"dst": ".github/aid/scripts/kb/build-project-index.sh", "profile": "copilot-cli", "sha256": "1f8c5b6a1b6e31db4eb044eeb7d8c1247116eec02a7e23ced4e4313c722eba1d", "src": "canonical/scripts/kb/build-project-index.sh"}
 {"dst": ".github/aid/scripts/kb/closure-check.sh", "profile": "copilot-cli", "sha256": "f519298ae9df7a2d0d7131c1f70b30ef7b01011566cf03cc3b1975eee98e2eb2", "src": "canonical/scripts/kb/closure-check.sh"}
