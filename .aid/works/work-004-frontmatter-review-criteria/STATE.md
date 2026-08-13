@@ -128,7 +128,7 @@ gitignored -- the evidence for a closed pass has to survive the pass.
 |---|---------|------------|------------|-----------|-------|
 | 001 | `feature-001-declaration-standard-and-enforcement` | Ready | A | 0 | Stream 1 — 8 spec sections; grade gate passed (4 findings: 2 HIGH/1 MED/1 LOW, all Fixed). Ledger: `review-archive/specify-feature-001.md` |
 | 002 | `feature-002-declarations-across-the-trees` | Ready | A | 0 | Stream 2 — 7 spec sections; grade gate passed (1 MED + 1 LOW, all Fixed). Ledger: `review-archive/specify-feature-002.md` |
-| 003 | `feature-003-superseded-guard-retirement` | Requirements side complete; Technical Specification pending | Pending | 0 | Stream 3 — derive the removal set, retire what the declarations replace, front face, single render, C-7 audit |
+| 003 | `feature-003-superseded-guard-retirement` | Ready | A | 0 | Stream 3 — 8 spec sections; grade gate passed (2 passes; 3 HIGH + 1 MED total, all Fixed). Ledger: `review-archive/specify-feature-003.md` |
 
 ## Plan / Deliveries
 

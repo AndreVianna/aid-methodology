@@ -1164,8 +1164,9 @@ re-applying a competing reorganization is the failure that cost PR #12 63 commit
   **`check-skill-counts.mjs` cannot be retired wholesale, and the replacement must be scoped before
   the removal.** Its corpus, read from `INCLUDE_FILES` / `INCLUDE_TREES` / `REPO_LOCAL_SKILLS`, is the
   root `README.md`, `docs/`, `.aid/knowledge/`, `canonical/`, `site/src/content/docs/`, and
-  `.claude/skills/{generate-profile,release-aid}` — and its extension filter is
-  `.md|.mdx|.sh|.mjs|.js|.ts|.yml|.yaml`. Two consequences a declaration cannot absorb:
+  `.claude/skills/{generate-profile,release-aid}` — and its extension filter is the regex
+  `/\.(md|mdx|sh|mjs|js|ts|py|yml|yaml)$/` (`grep -n "const EXT" tests/canonical/check-skill-counts.mjs`).
+  Two consequences a declaration cannot absorb:
 
   1. **It guards non-markdown files.** A markdown-frontmatter criterion has nowhere to live in a `.sh`
      or `.mjs`, so the cascade **structurally** cannot cover that part of its corpus.
