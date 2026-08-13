@@ -47,6 +47,14 @@
 #       Compare an after-inventory to the baseline. Exits 1 on any metric that
 #       grew by more than --tolerance percent (default 0 -- any growth fails).
 #
+#   cost-meter.py model [--root DIR] [--from-work DIR] [--shape today|batched]
+#                       [--features N] [--deliveries N] [--tasks N] [--cycles N]
+#       Price one or more GATE SHAPES over identical inputs. Gates are 60-65% of
+#       a full-path work's cost, and `collect` cannot see them -- a gate's cost
+#       is a multiplication (features x deliveries x cycles), not a file size.
+#       Prefer --from-work so artifact sizes are measured rather than assumed.
+#       Indicative in absolute terms; the RATIO between shapes is the signal.
+#
 #   cost-meter.py report [--root DIR] [--work-dir DIR] [--top N]
 #       Human-readable summary. `--work-dir` additionally scans a work folder for
 #       artifact bloat (Change Log / history sections) and review-cycle churn.
@@ -363,6 +371,143 @@ def scan_work(work: Path) -> None:
               f"(zero-grade-movement: {waste}, {100 * waste / cycles:.0f}%)")
 
 
+# --- gate model ---------------------------------------------------------------
+# `collect`/`report` measure the instruction surface a skill loads. That is real
+# cost, but it is not where the money goes: on a full-path work, REVIEW GATES are
+# 60-65% of total, because a gate multiplies three ways -- per feature, per
+# delivery, and per review cycle.
+#
+# `model` makes that arithmetic reproducible. It is a MODEL, not a measurement:
+# it multiplies real file sizes by an assumed dispatch shape. Its value is
+# COMPARATIVE -- run two gate shapes over identical inputs and the ratio between
+# them is trustworthy even where the absolute number is not.
+#
+# Dispatch floors are derived from the tree rather than hardcoded, so a change
+# that shrinks an AGENT.md or a template shows up here automatically.
+
+# Default artifact sizes. Overridden by --from-work, which is strongly preferred:
+# these were measured once and will drift.
+DEFAULT_ARTIFACTS = {"REQ": 88276, "SPEC": 21191, "PLAN": 5075, "BP": 3359, "DET": 2075}
+
+# Bytes of code/context a task's execution review reads beyond its DETAIL.
+CODE_PER_TASK = 12000
+
+
+def dispatch_floors(root: Path) -> dict[str, int]:
+    """Fresh-context floor for one dispatch of each agent, derived from disk.
+
+    Every sub-agent starts clean, so it re-reads its own definition, the shared
+    boilerplate, and whatever contract its role obliges. That floor is paid once
+    per dispatch and dominates any gate whose artifact is small.
+    """
+    t = root / "canonical" / "aid" / "templates"
+    a = root / "canonical" / "agents"
+    shared = len(read(t / "agent-boilerplate.md")) + len(read(t / "self-review-protocol.md"))
+    kb_index = len(read(root / ".aid" / "knowledge" / "INDEX.md"))
+    reviewer_contract = len(read(t / "reviewer-ledger-schema.md")) + len(read(t / "grading-rubric.md"))
+    return {
+        "architect": len(read(a / "aid-architect" / "AGENT.md")) + shared + kb_index,
+        "reviewer": len(read(a / "aid-reviewer" / "AGENT.md")) + shared + reviewer_contract,
+        "developer": len(read(a / "aid-developer" / "AGENT.md")) + shared + kb_index,
+    }
+
+
+def artifacts_from_work(work: Path) -> dict[str, int]:
+    """Measure real artifact sizes from a work folder. Beats the defaults."""
+    def avg(paths: list[Path]) -> int:
+        sizes = [len(read(p)) for p in paths]
+        return sum(sizes) // len(sizes) if sizes else 0
+
+    out = dict(DEFAULT_ARTIFACTS)
+    if (req := work / "REQUIREMENTS.md").is_file():
+        out["REQ"] = len(read(req))
+    if (plan := work / "PLAN.md").is_file():
+        out["PLAN"] = len(read(plan))
+    if specs := sorted(work.glob("features/*/SPEC.md")):
+        out["SPEC"] = avg(specs)
+    if bps := sorted(work.rglob("BLUEPRINT.md")):
+        out["BP"] = avg(bps)
+    if dets := sorted(work.rglob("tasks/*/DETAIL.md")):
+        out["DET"] = avg(dets)
+    return out
+
+
+def gate_shape(name: str, F: int, D: int, T: int, c: int, art: dict[str, int]
+               ) -> list[tuple[str, int, int, int, str]]:
+    """A gate shape as data: (label, points, artifact_bytes, cycles, fixer_role).
+
+    Cost per gate cycle = reviewer_floor + fixer_floor + 2 * artifact_bytes
+    (the reviewer reads the artifact, then the fixer reads it again).
+    """
+    per_delivery_tasks = max(1, T // max(1, D))
+    if name == "today":
+        return [
+            ("gate REQUIREMENTS",  1, art["REQ"],                              c, "architect"),
+            ("gate define",        1, art["REQ"],                              c, "architect"),
+            ("gate SPEC",          F, art["REQ"] + art["SPEC"],                c, "architect"),
+            ("gate PLAN",          1, art["PLAN"] + F * art["SPEC"],           c, "architect"),
+            ("gate DETAIL",        D, art["BP"] + per_delivery_tasks * art["DET"], c, "architect"),
+            ("delivery gate",      D, art["BP"] + per_delivery_tasks * art["DET"], c, "developer"),
+        ]
+    if name == "batched":
+        return [
+            ("gate REQUIREMENTS",  1, art["REQ"],                              c, "architect"),
+            ("gate PLAN",          1, art["PLAN"],                             c, "architect"),
+            ("gate DETAIL (all)",  1, T * art["DET"],                          c, "architect"),
+            ("per-task exec check", T, art["DET"] + CODE_PER_TASK,             1, "developer"),
+            ("delivery gate (diff)", 1, T * art["DET"] + CODE_PER_TASK,        3, "developer"),
+        ]
+    raise ValueError(f"unknown shape: {name}")
+
+
+def price_shape(rows, floors: dict[str, int]) -> tuple[int, int, list[tuple[str, int, int]]]:
+    """Return (total_bytes, gate_points, [(label, points, bytes), ...])."""
+    out, total, points = [], 0, 0
+    for label, n, artifact, cycles, fixer in rows:
+        per_cycle = floors["reviewer"] + floors[fixer] + 2 * artifact
+        cost = n * cycles * per_cycle
+        out.append((label, n, cost))
+        total += cost
+        points += n
+    return total, points, out
+
+
+def cmd_model(args: argparse.Namespace) -> int:
+    root = Path(args.root).resolve()
+    floors = dispatch_floors(root)
+    art = artifacts_from_work(Path(args.from_work).resolve()) if args.from_work else dict(DEFAULT_ARTIFACTS)
+
+    print("Gate-cost MODEL -- real file sizes x an assumed dispatch shape.")
+    print("Absolute numbers are indicative; the ratio between shapes is the signal.\n")
+    print(f"  inputs: features={args.features} deliveries={args.deliveries} "
+          f"tasks={args.tasks} cycles={args.cycles}")
+    src = args.from_work if args.from_work else "built-in defaults"
+    print(f"  artifact sizes from: {src}")
+    print("    " + "  ".join(f"{k}={v:,}" for k, v in art.items()))
+    print("  dispatch floors (derived from tree):")
+    print("    " + "  ".join(f"{k}={v:,}" for k, v in floors.items()))
+
+    results = {}
+    for shape in args.shape:
+        rows = gate_shape(shape, args.features, args.deliveries, args.tasks, args.cycles, art)
+        total, points, detail = price_shape(rows, floors)
+        results[shape] = total
+        print(f"\n{'='*70}\nshape: {shape}   ({points} gate points)\n{'='*70}")
+        for label, n, cost in detail:
+            print(f"  {label:<26} x{n:<3} {cost:>12,} B  ~{cost//CHARS_PER_TOKEN//1000:>5}k tok")
+        print(f"  {'TOTAL':<30} {total:>12,} B  ~{total//CHARS_PER_TOKEN//1000:>5}k tok")
+
+    if len(results) > 1:
+        base = results[args.shape[0]]
+        print(f"\n{'='*70}\ncomparison vs '{args.shape[0]}'\n{'='*70}")
+        for shape, total in list(results.items())[1:]:
+            delta = base - total
+            sign = "saves" if delta > 0 else "COSTS"
+            print(f"  {shape:<22} {sign} {abs(delta):>12,} B  "
+                  f"({100*abs(delta)/base:>4.0f}%)  ~{abs(delta)//CHARS_PER_TOKEN//1000}k tok")
+    return 0
+
+
 def cmd_report(args: argparse.Namespace) -> int:
     root = Path(args.root).resolve()
     rows = collect(root)
@@ -445,6 +590,17 @@ def main(argv: list[str]) -> int:
                    help="also fail when a new metric appears")
     d.set_defaults(fn=cmd_diff)
 
+    m = sub.add_parser("model", help="model gate cost for one or more gate shapes")
+    m.add_argument("--root", default=".")
+    m.add_argument("--from-work", help="measure artifact sizes from this work folder")
+    m.add_argument("--features", type=int, default=3)
+    m.add_argument("--deliveries", type=int, default=4)
+    m.add_argument("--tasks", type=int, default=16)
+    m.add_argument("--cycles", type=int, default=5)
+    m.add_argument("--shape", action="append", choices=["today", "batched"],
+                   help="gate shape to price (repeatable; first is the comparison base)")
+    m.set_defaults(fn=cmd_model)
+
     r = sub.add_parser("report", help="human-readable summary (never a gate)")
     r.add_argument("--root", default=".")
     r.add_argument("--work-dir", action="append", default=[],
@@ -453,6 +609,8 @@ def main(argv: list[str]) -> int:
     r.set_defaults(fn=cmd_report)
 
     args = ap.parse_args(argv)
+    if getattr(args, "cmd", None) == "model" and not args.shape:
+        args.shape = ["today", "batched"]
     return int(args.fn(args))
 
 

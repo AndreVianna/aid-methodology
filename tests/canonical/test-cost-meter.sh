@@ -149,6 +149,58 @@ python3 "$METER" collect --root "$FIX" --out "${TMP}/ro.tsv" >/dev/null 2>&1
 after="$(FIXTURE_SNAPSHOT)"
 assert_eq "$after" "$before" "CM17 measuring a tree never modifies it"
 
+# --- CM19..CM24 the gate model -----------------------------------------------
+# The model's absolute output is indicative, so the properties worth pinning are
+# the ones a decision rests on: it runs, it prices both shapes, the batched shape
+# is cheaper, and it scales with the multipliers it claims to model.
+python3 "$METER" model --root "$FIX" --shape today --shape batched >"${TMP}/model.txt" 2>&1
+rc=$?
+assert_exit_zero "$rc" "CM19 model exits 0"
+assert_file_contains "${TMP}/model.txt" "shape: today" "CM20 model prices the 'today' shape"
+assert_file_contains "${TMP}/model.txt" "shape: batched" "CM21 model prices the 'batched' shape"
+assert_file_contains "${TMP}/model.txt" "saves" \
+    "CM22 batched is cheaper than today (reports a saving, not a cost)"
+
+# CM23 -- cost must scale with review cycles. If it does not, the model is not
+# actually modelling the multiplier that motivates the whole change.
+one=$(python3 "$METER" model --root "$FIX" --shape today --cycles 1 2>/dev/null \
+      | awk '/^  TOTAL/{gsub(/,/,"",$2); print $2; exit}')
+ten=$(python3 "$METER" model --root "$FIX" --shape today --cycles 10 2>/dev/null \
+      | awk '/^  TOTAL/{gsub(/,/,"",$2); print $2; exit}')
+if [[ -n "${one:-}" && -n "${ten:-}" ]] && (( ten > one )); then
+    pass "CM23 modelled cost rises with --cycles (${one} -> ${ten})"
+else
+    fail "CM23 modelled cost rises with --cycles — got '${one:-?}' -> '${ten:-?}'"
+fi
+
+# CM24 -- and with feature count, which is the per-feature gate fan-out.
+f1=$(python3 "$METER" model --root "$FIX" --shape today --features 1 2>/dev/null \
+     | awk '/^  TOTAL/{gsub(/,/,"",$2); print $2; exit}')
+f8=$(python3 "$METER" model --root "$FIX" --shape today --features 8 2>/dev/null \
+     | awk '/^  TOTAL/{gsub(/,/,"",$2); print $2; exit}')
+if [[ -n "${f1:-}" && -n "${f8:-}" ]] && (( f8 > f1 )); then
+    pass "CM24 modelled cost rises with --features (${f1} -> ${f8})"
+else
+    fail "CM24 modelled cost rises with --features — got '${f1:-?}' -> '${f8:-?}'"
+fi
+
+# CM25 -- dispatch floors come from the tree, not constants: shrinking an agent
+# definition must lower the modelled cost. This is what makes the model able to
+# score a real optimization instead of just describing one.
+mkdir -p "${FIX}/canonical/agents/aid-reviewer" "${FIX}/canonical/aid/templates"
+printf '%s\n' "$(head -c 20000 /dev/zero | tr '\0' 'x')" > "${FIX}/canonical/agents/aid-reviewer/AGENT.md"
+big=$(python3 "$METER" model --root "$FIX" --shape today 2>/dev/null \
+      | awk '/^  TOTAL/{gsub(/,/,"",$2); print $2; exit}')
+printf 'x\n' > "${FIX}/canonical/agents/aid-reviewer/AGENT.md"
+small=$(python3 "$METER" model --root "$FIX" --shape today 2>/dev/null \
+        | awk '/^  TOTAL/{gsub(/,/,"",$2); print $2; exit}')
+if [[ -n "${big:-}" && -n "${small:-}" ]] && (( small < big )); then
+    pass "CM25 shrinking aid-reviewer/AGENT.md lowers modelled cost (${big} -> ${small})"
+else
+    fail "CM25 shrinking an agent definition must lower modelled cost — got '${big:-?}' -> '${small:-?}'"
+fi
+rm -f "${FIX}/canonical/agents/aid-reviewer/AGENT.md"
+
 # --- CM18 the committed baseline is present and current ---------------------
 # Advisory on drift by design: the meter exists to ENABLE cuts, so a shrunk tree
 # must never fail CI. Only growth is reported for review.
