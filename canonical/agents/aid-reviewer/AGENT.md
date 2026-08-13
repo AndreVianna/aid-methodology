@@ -58,13 +58,17 @@ Use severity `[HIGH]` for isolation violations (they break orphan-prune correctn
 
 ## Severity Classification
 
-| Severity | When |
-|----------|------|
-| `[CRITICAL]` | Wrong information; missing critical sections; would cause bad decisions; security vulnerabilities |
-| `[HIGH]` | Significant gaps; shallow coverage of important areas; missing test coverage on critical paths |
-| `[MEDIUM]` | Missing depth in an important area; incomplete but not wrong |
-| `[LOW]` | Minor convention deviation; could be better but not incorrect |
-| `[MINOR]` | Cosmetic, formatting, stylistic, nice-to-have |
+**Classify against `canonical/aid/templates/grading-rubric.md § Issue Severities` — the single
+definition of the five levels. This agent does not carry its own.** Read it before assigning a
+severity; a definition restated here would drift from the one the grade is computed against.
+
+Two rules are yours rather than the rubric's:
+
+- **Tag in the bracketed all-caps form** (`[CRITICAL]`, `[HIGH]`, `[MEDIUM]`, `[LOW]`, `[MINOR]`).
+  `grade.sh` counts the bracketed tag and nothing else, so a sentence-case severity counts as
+  zero findings and silently produces `A+`.
+- **When the finding is against a declared criterion, take that criterion's own `severity:`**
+  rather than judging one — the criterion has already priced itself against the scale.
 
 ## Output contract
 

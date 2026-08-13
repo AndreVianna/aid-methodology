@@ -114,17 +114,16 @@ The bulk of the review effort.
 10. **Q-ID / H-ID references resolve** — every `Q##` / `H##` mentioned must exist in
     `STATE.md` (Q-IDs) or `tech-debt.md` (H-IDs). Dangling reference = MEDIUM.
 
-**Severity scale** (matches reviewer convention):
+**Severity scale.** The five levels are defined once, in
+`canonical/aid/templates/grading-rubric.md § Issue Severities`; classify against that document
+rather than against a copy here. Worst issue dominates the grade
+(`grading-rubric.md § Grade Calculation`).
 
-| Severity | Meaning | Typical examples |
-|----------|---------|------------------|
-| CRITICAL | False claim that could cause downstream wrong decision | Wrong pattern, wrong contract, missing key doc |
-| HIGH | Significant gap or inaccuracy | Contract mismatch, broken widespread citation, cross-doc contradiction |
-| MEDIUM | Noticeable inaccuracy, but agent could work around | Dangling Q-ID, single broken citation, scope creep |
-| LOW | Minor inaccuracy, low blast radius | Awkward phrasing of an otherwise-correct claim |
-| MINOR | Style / convention issue | Single inline T3 or T4 marker; trailing whitespace |
-
-Worst-issue dominates the grade (per `canonical/aid/templates/grading-rubric.md`).
+What this rubric adds is how the levels land **on a KB doc specifically** — the per-check
+severities named in the numbered checks above (a false T1 concept claim is HIGH or CRITICAL, an
+inline T3 count is MINOR per occurrence, and so on). Those are prices against the scale, not a
+redefinition of it. Where the doc's own resolved criteria carry a `severity:`, that value wins:
+it was set for that criterion.
 
 ## Altitude checks (folded into the M2 Anatomy mandate) — Full Primary only
 

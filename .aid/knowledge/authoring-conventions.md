@@ -151,9 +151,16 @@ in the ledger's `Doc` column. A finding citing no id, or an id resolving nowhere
 
 **Severity** on a `validate` criterion is what a violation of that criterion costs, resolved through the
 same three levels (a file may override a higher level's severity by restating the criterion's `id` with
-a mandatory `why`; the reviewer records the effective value in the finding's `Evidence` cell). The
-five-level scale itself lives in `canonical/aid/templates/grading-rubric.md § Issue Severities`; this
-table prices each criterion against it and does not redefine the scale.
+a mandatory `why`; the reviewer records the effective value in the finding's `Evidence` cell).
+
+**Where severity lives, and where it does not.** This table is the only home for **per-type severity** —
+what a defect kind costs in a given class of document — because that is a convention, and conventions
+live here. It is deliberately not duplicated into `quality-gates.md`. What that document and
+`canonical/aid/templates/grading-rubric.md` own instead is the **grading machinery**: the five-level
+scale itself (`grading-rubric.md § Issue Severities`), the severity-to-letter mapping and quantity
+modifiers (`§ Grade Calculation`), and the thresholds a phase must clear. This table **prices** each
+criterion against that scale and redefines nothing; the two cross-reference and never restate each
+other.
 
 ---
 

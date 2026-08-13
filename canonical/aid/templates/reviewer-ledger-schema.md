@@ -74,15 +74,14 @@ The `.aid/.temp/review-pending/` directory is gitignored (per `.gitignore` `.aid
 
 ## Severity values
 
-| Tag | Meaning | Grade impact |
-|---|---|---|
-| `[CRITICAL]` | Factual error that will mislead downstream phases or break tooling. Build-broken, data-loss, security-broken category. | Drives grade to E (severity dominates) |
-| `[HIGH]` | Wrong claim, dead reference, broken citation, or missing post-merge content. | Drives grade to D |
-| `[MEDIUM]` | Internal inconsistency, off-by-1 in counts, or contract drift between docs. | Drives grade to C |
-| `[LOW]` | Stale narrative, minor process violation (e.g., P1 inline-T3 with accurate value), or single-doc cosmetic issue. | Drives grade to B |
-| `[MINOR]` | Cosmetic, wording drift, formatting nit. | Drives grade to A (or A- if >5) |
+The enum is `[CRITICAL]` | `[HIGH]` | `[MEDIUM]` | `[LOW]` | `[MINOR]`, always in the bracketed
+all-caps form — that is the form `grade.sh` counts.
 
-Worst severity dominates; count within that severity determines the modifier (1 → `+`, 2-5 → none, 6+ → `-`).
+**What each level means, and the severity-to-letter-grade mapping, are defined once in
+`canonical/aid/templates/grading-rubric.md`** (`§ Issue Severities` and `§ Grade Calculation`).
+This schema owns the ledger's *shape*, not the scale: a level restated here becomes a second
+definition that drifts from the one the grade is computed against, which is what happened to the
+per-level "grade impact" notes this section used to carry.
 
 ## Status values
 

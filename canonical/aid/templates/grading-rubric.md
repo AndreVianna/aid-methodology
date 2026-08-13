@@ -4,6 +4,12 @@ Applies to all AID phases. Grade is **deterministic** — calculated from issue 
 
 ## Issue Severities
 
+**This table is the single definition of the five levels.** Every other surface — the
+`aid-reviewer` agent, the ledger schema, each skill's reviewer brief — **cites** it and
+must not restate it. Three independent definitions existed before and had already drifted
+apart; a second copy is a defect, not a convenience, because the copy is what a reviewer
+reads while the grade is computed from this one.
+
 | Severity | Meaning |
 |----------|---------|
 | **Minor** | Cosmetic, style, trivial improvement. Does not affect functionality. |
@@ -11,6 +17,12 @@ Applies to all AID phases. Grade is **deterministic** — calculated from issue 
 | **Medium** | Incorrect behavior (non-critical), missing edge case, incomplete coverage. |
 | **High** | Blocks functionality, security risk, data integrity concern. |
 | **Critical** | System failure, data loss, security breach, fundamentally wrong approach. |
+
+**What a specific criterion costs is declared elsewhere, and that is not a second
+definition.** A criterion in a project's criteria table (`.aid/knowledge/authoring-conventions.md`)
+carries the `severity:` a violation of *that* criterion is worth — it **prices** a criterion
+against this scale. This document owns the scale and the letter grade; the criteria table owns
+which level each criterion draws from it.
 
 ## Issue Tagging Convention
 
