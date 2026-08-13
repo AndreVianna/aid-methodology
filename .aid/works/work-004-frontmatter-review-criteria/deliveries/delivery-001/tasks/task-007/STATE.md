@@ -1,5 +1,5 @@
 ---
-state: Pending
+state: Done
 review: "--"
 elapsed: "--"
 notes: "--"
@@ -24,8 +24,7 @@ ticket_ref: "--"
 ## Quick Check Findings
 
 - **Reviewer Tier:** Small
-- **Findings:** _none yet_
-
+- **Findings:** none (both proof directions PASS; evidence in ac-2-proof.md). Three findings the probes surfaced about the tracked tree are logged in delivery-001-issues.md rather than here -- they are not defects in this task's output.
 ---
 
 ## Dispatch Log
