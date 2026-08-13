@@ -1,5 +1,5 @@
 ---
-state: Pending
+state: Done
 review: "--"
 elapsed: "--"
 notes: "--"
@@ -24,8 +24,8 @@ ticket_ref: "--"
 ## Quick Check Findings
 
 - **Reviewer Tier:** Small
-- **Findings:** _none yet_
-
+- **Findings:**
+  - [HIGH] review-rubric.md section Temp ledger format keeps a stale ledger shape (# Severity Doc Line Tier Status Claim, lowercase status values) that contradicts the canonical 7-column shape this task documents, and defeats grade.sh's positional parse -- cols[4] lands on Doc, so every data row is skipped and the grade reads A+ regardless of severity -- Deferred-to-gate
 ---
 
 ## Dispatch Log

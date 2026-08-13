@@ -53,10 +53,11 @@ see_also: [other-doc.md]              # optional -- negative-routing pointers
 owner: architect                      # optional -- accountable owner-role (free string)
 audience: [architect, pm]             # optional -- who the doc is for (free strings)
 approved_at_commit: a1b2c3d           # GENERATOR-WRITTEN on approval; never hand-author
+review-criteria: []                   # optional -- criteria true of THIS file only; omit when
+                                      # the global and per-type levels already cover it
 # --- legacy, superseded by objective:/summary:, retained until f011 migration ---
 intent: |
   (superseded) One paragraph; kept only during the coexistence window.
-contracts: []
 changelog:
   - 2026-06-23: Added objective/summary/sources/tags/see_also/owner/audience
 ---
@@ -73,7 +74,7 @@ objective: One-line noun-phrase purpose (generator-written for generated docs).
 summary: One-sentence scope (generator-written for generated docs).
 intent: |
   ...
-contracts: []
+review-criteria: []
 changelog:
   - 2026-05-26: Generated for the first time
 ---
@@ -83,8 +84,8 @@ changelog:
 
 ### New fields at a glance
 
-The 8 new fields introduced by f001 (in addition to the legacy `kb-category`, `source`,
-`generator`, `intent`, `contracts`, `changelog` fields):
+The 8 new fields introduced by f001 (in addition to `kb-category`, `source`, `generator`,
+`review-criteria`, and the legacy `intent`, `changelog` fields):
 
 | Field | YAML type | Class | Default | Semantics | Well-formedness rules |
 |-------|-----------|-------|---------|-----------|----------------------|
@@ -195,7 +196,7 @@ coverage (f005).
 - Path/glob/URL *resolution* is NOT checked by this lint (that is f007 freshness); the lint checks *shape* only
 - A doc with genuinely no sources (e.g. a pure synthesis/glossary) MUST declare `sources: []` explicitly — absence is a lint error
 
-**Mirrors the existing `contracts: []` convention:** absence signals "not yet filled in" (lint error); an explicit empty list signals "intentionally sourceless."
+**Mirrors the `review-criteria: []` convention:** absence signals "not yet filled in" (lint error); an explicit empty list signals "intentionally sourceless."
 
 **Special case — `external-sources.md`:** this doc is a registry of external URLs and vendor specs, so its `sources:` entries are those external docs themselves (URLs), NOT `sources: []`.
 
@@ -289,30 +290,51 @@ During the coexistence window:
 **For the f011 migration:** content from `intent:` is split into `objective:` (noun-phrase
 summary of purpose) and `summary:` (one-sentence scope statement).
 
-### `contracts:` (optional, list)
+### `review-criteria:` (optional, list of objects)
 
-Structural cardinality claims the doc asserts that downstream tooling depends on
-(T2 Structure tier per [tier-model.md](tier-model.md)). Each entry is a human-readable assertion
-PLUS a machine-checkable predicate.
+**The criteria a reviewer validates this file against — and that whoever writes the file
+complies with first.** Not a KB-only field: it carries the same shape on a `SKILL.md`, an
+`AGENT.md`, a template, and a KB doc, because all four are authored artifacts that can drift
+from what they claim.
 
-Format: list of strings, each either:
-- A plain assertion (lint will warn if no checker is registered for it), OR
-- A tagged assertion the reviewer can spot-check: `"count:.aid/knowledge/*.md = 21"` —
-  the reviewer reads each tagged assertion and confirms against disk during REVIEW.
+Renamed from `contracts:`, which held only structural cardinality claims (T2 Structure per
+[tier-model.md](tier-model.md)). Those claims are one *kind* of criterion; this field is the
+general case, so a T2 cardinality assertion is now a `validate` entry with a severity.
 
-**Examples:**
+Each entry is an object:
+
 ```yaml
-contracts:
-  - "Lists 16 standard KB documents"
-  - "Asserts the 8-task-type catalog (RESEARCH, DESIGN, IMPLEMENT, TEST, DOCUMENT, MIGRATE, REFACTOR, CONFIGURE)"
-  - "Names the 4 lite-path sub-paths"
+review-criteria:
+  - id: F-01              # required; a scope-prefixed id (G-/KB-/SK-/...) or F- for file-local
+    kind: validate        # required; validate | exclude
+    criterion: >          # required; what to check -- or, on an exclude, what must never be checked
+      Every task type named here resolves to a section in this document
+    severity: HIGH        # required when kind: validate; a schema error on kind: exclude
+    why: >                # required always; on an exclude it is the whole point
+      An unresolvable task type is dispatched at run time and fails there
 ```
 
-Pure-textual contracts (like the above) are read by the reviewer; the lint can extract
-the named counts and verify against disk where the format permits.
+| Key | Required | Meaning |
+|-----|----------|---------|
+| `id` | always | Greppable handle a finding cites. `F-` prefix for a criterion local to this file; a scope prefix (`G-`, `KB-`, `SK-`, ...) means the entry restates or overrides one declared in the project's criteria table. |
+| `kind` | always | `validate` — a defect to look for. `exclude` — something a reviewer would reasonably check but must not, here. |
+| `criterion` | always | The check itself, stated so two reviewers reach the same verdict. |
+| `severity` | `validate` only | What a violation costs, from the scale in `grading-rubric.md § Issue Severities`. Absent on an `exclude`: an exclusion is not a defect kind, and there is no severity of zero. |
+| `why` | always | The reason. On an `exclude` this is the load-bearing half — without it the next reviewer reinstates the check. |
 
-**When in doubt, omit.** Empty list `contracts: []` is valid. A missing field is
-treated as empty.
+**Three levels, resolved as a union; most specific wins.** Criteria are declared **global**
+(project-wide) and **per document type** in the project's own conventions KB doc
+(`.aid/knowledge/authoring-conventions.md`), and **per file** in this frontmatter field. A
+criterion is written **once, at the highest level where it is true** — so most files declare
+nothing and are fully covered by their type. An **override** is not a separate shape: a
+file-level entry reusing an `id` from a higher level, with a different `severity` and a
+mandatory `why`.
+
+**Declare here only what is true of this file and nothing else.** Restating a global or
+type-level criterion is the duplication the cascade exists to prevent, and is itself a finding.
+
+**When in doubt, omit.** A missing field is treated as empty, which is the common and correct
+case. `review-criteria: []` is valid and says the same thing more loudly.
 
 ### `changelog:` (removed)
 
@@ -361,10 +383,25 @@ the lint (`lint-frontmatter.sh`) checks:
 **These are the EXISTING rubric tags** — no new tag is introduced. `[FM-INVALID]`'s
 "invalid value" semantics already cover shape errors.
 
-Legacy fields (`intent:`, `contracts:`, `changelog:`) and all optional new fields
-(`tags:`, `see_also:`, `owner:`, `audience:`) **stay fully exempt** from content
-grading. Prose quality of `objective:`/`summary:` also stays exempt (no reviewer
-judgment on prose) — only presence and mechanical shape are checked.
+The legacy fields (`intent:`, `changelog:`) and all optional new fields (`tags:`,
+`see_also:`, `owner:`, `audience:`) **stay fully exempt** from content grading. Prose
+quality of `objective:`/`summary:` also stays exempt (no reviewer judgment on prose) —
+only presence and mechanical shape are checked.
+
+**`review-criteria:` is the exception, and is graded content.** It was in the exempt list
+under its old name `contracts:`, and that exemption is withdrawn — a field whose entire
+purpose is to state what a reviewer must check cannot itself be the one thing the reviewer
+may not read. Its entries are graded like any other claim the file makes:
+
+- an entry that does not hold against disk is a finding at that entry's own `severity`;
+- an entry restating a global or type-level criterion is a finding (the duplication FR-5's
+  cascade exists to prevent);
+- a `kind: exclude` entry with no `why`, or a `kind: validate` entry with no `severity`, is
+  a schema error.
+
+The exemption that remains is narrower and mechanical: **the field's presence is never
+required.** A file whose type already covers it correctly declares nothing, so absence is
+never a finding — only a wrong or redundant declaration is.
 
 **Day-one soft-skip:** docs carrying NONE of the new fields are treated as
 pre-migration and skipped by the lint. The lint becomes a hard gate after f011 migrates
@@ -406,7 +443,7 @@ the rest.
 - Missing fields are treated as default-empty
 - Unknown fields are tolerated (forward-compatible with future schema additions)
 - If parsing fails, the doc is treated as `kb-category: primary, source: hand-authored`
-  with empty objective/summary/intent/contracts/changelog AND lint emits a HIGH-severity warning
+  with empty objective/summary/intent/review-criteria/changelog AND lint emits a HIGH-severity warning
 
 ## Project-specific overrides
 
@@ -432,5 +469,5 @@ section -- per-doc history lives in git.
 ## See also
 
 - [principles.md](principles.md) — P6 (frontmatter carve-out + partial exemption), P5 (mark generated files), P10 (dual-audience authoring standard + layout)
-- [tier-model.md](tier-model.md) — T2 structural facts go in `contracts:`
-- [review-rubric.md](review-rubric.md) — how the reviewer uses kb-category + source to pick a rubric; `[FM-MISSING]` / `[FM-INVALID]` tag definitions
+- [tier-model.md](tier-model.md) — T2 structural facts are declared as `review-criteria:` entries
+- [review-rubric.md](review-rubric.md) — how the reviewer uses kb-category + source to pick a rubric; how it resolves the three criteria levels; `[FM-MISSING]` / `[FM-INVALID]` tag definitions
