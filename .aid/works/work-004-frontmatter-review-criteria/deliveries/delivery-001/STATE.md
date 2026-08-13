@@ -1,8 +1,8 @@
 ---
-delivery_state: Gated
-gate_tier: Medium
-gate_grade: "Pending"
-gate_timestamp: "--"
+delivery_state: Done
+gate_tier: Large
+gate_grade: A+
+gate_timestamp: '2026-08-13T21:05:54Z'
 ticket_ref: "--"
 ---
 
@@ -26,10 +26,9 @@ ticket_ref: "--"
 
 ## Delivery Gate
 
-<!-- AUTHORED -- written by the delivery-gate closing step of aid-execute. -->
-
-- **Issue List:** --
-
+- **Complexity Score:** 21 (tasks=7, depth=4, risk=7, consults=3)
+- **Cycles:** 3
+- **Issue List:** 9 findings raised across 3 cycles, all Fixed, 0 Pending. Cycle 1 (E+): 1 CRITICAL (stale ledger shape in review-rubric.md defeating grade.sh's positional parse), 1 HIGH (ghost aid-describe brief in reviewer-dispatch.md), 5 MEDIUM (two scope-header contradictions introduced by task-002; the changelog: self-contradiction; the false Change-Log-last contract asserted in six places incl. KB-02 itself; a dangling contracts: field name in the KB), 1 LOW (agent-context/rendered used as Applies-to values that are not registry types). Cycle 2 (C+): all 8 Fixed, 1 new MEDIUM -- the cycle-1 fix had dropped contracts: from the Frontmatter Rules table without leaving migration guidance. Cycle 3 (A+): row 9 Fixed, no regressions, 0 new findings.
 ---
 
 ## Cross-phase Q&A
