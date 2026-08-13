@@ -5,11 +5,11 @@ pipeline:
 started: "2026-08-12"
 minimum_grade: "A"
 user_approved: yes
-lifecycle: Running
+lifecycle: Paused-Awaiting-Input
 phase: Execute
-active_skill: aid-execute
+active_skill: none
 updated: '2026-08-13T01:20:00Z'
-pause_reason: --
+pause_reason: 'Delivery Done at A+; awaiting user decision to push work-010 and open a PR (CI has not verified this branch)'
 block_reason: --
 block_artifact: --
 ticket_ref: --
