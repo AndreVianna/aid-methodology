@@ -1,7 +1,7 @@
 # Requirements
 
 - **Name:** Declared Review Criteria
-- **Description:** Every authored markdown file declares in its own frontmatter what it must be validated against, the review process is made to read that declaration, and the guard scripts that stood in for it are removed.
+- **Description:** Review criteria are declared as data — global and per-document-type lists in the Knowledge Base, per-file exceptions in a file's own frontmatter — the review process is made to resolve and apply them, and the guard scripts that stood in for them are removed.
 
 ## Change Log
 
@@ -18,6 +18,7 @@
 | 2026-08-12 | Interview complete — approved | /aid-describe |
 | 2026-08-12 | **Correction pass.** Feature decomposition found this document citing artifacts that exist only on `work-003`. Re-derived §2's enforcement gap and guard inventory, §4's stream-1 target table and stream-3 scope, FR-2/FR-3/FR-4, NFR-2, §8's collision set, AC-3/AC-4 — all against this branch's disk | /aid-define |
 | 2026-08-12 | **Cross-reference fix pass.** `aid-reviewer` raised 34 findings over 87 re-derived claims; 27 fixed here. Corrected `site/src/content/docs` 137→93, FR-6's citation list, AC-1's triple-counted population (→290 with carve-outs named), NFR-2's undefined "added" side, NFR-4's missing site chain, NFR-1's unimplementable script, the examples' false "zero references", and every bare `file:LINE` citation. Added FR-8 for the front face, which was gated with no requirement behind it | /aid-define |
+| 2026-08-12 | **Criteria model corrected by the owner.** `contracts:` holds the *criteria a reviewer validates the file against*, resolved through a three-level cascade — global and per-document-type lists in the KB, per-file exceptions in frontmatter — written once at the highest level where true, to stop duplication and keep per-file lists short. Criteria are positive **and** negative: a non-obvious exclusion belongs in `contracts:` with its reason, never as a severity. `severity:` named and shaped as a defect-kind → level map over validatable kinds only. FR-1, FR-5, FR-6, AC-1, §4 streams 1–2 and both feature SPECs rewritten; the earlier `canonical/` placement correction withdrawn — criteria are project-specific, so the KB is right | /aid-define |
 
 ### KB hydration assessment (COMPLETION step 2)
 
@@ -40,13 +41,23 @@ This work's KB changes land through **stream 2** and the single end-of-work refr
 
 ## 1. Objective
 
-Make every authored markdown file in AID declare, in its own frontmatter, what it must be
-validated against — and make the review process actually read that declaration. Then delete the
-scripts that were standing in for it.
+**Make review criteria declared data rather than code**, and make the review process resolve and
+apply them. Then delete the scripts that were standing in for them.
 
-The declaration replaces a growing pile of per-fact guard scripts with a per-file statement of
-truth, checked by an agent that can read. The point is to stop the review process from growing
-the surface it reviews every time it fixes something.
+Criteria resolve through three levels, each written once at the highest level where it is true:
+
+- **Global** and **per-document-type** lists in the Knowledge Base — where most criteria live
+- **Per-file exceptions** in a file's own frontmatter — only where a file genuinely differs
+
+A criterion says either *"validate this"* or *"never validate this, and here is why"*, and
+`severity:` says what each validatable defect kind costs. Together they replace a growing pile of
+guard scripts — each of which encoded one fact-check in code, and could be wrong about it — with a
+statement of what to check, applied by something that can read.
+
+**The point is to stop the review process from growing the surface it reviews every time it fixes
+something.** A criterion added to a KB list changes nothing about how much there is to review. A
+guard added to catch the same defect is a new artifact with its own defects — which is exactly how
+the previous attempt failed.
 
 ## 2. Problem Statement
 
@@ -165,10 +176,17 @@ Three streams. **The order is load-bearing.**
 1. **Enforce the mechanism first** — must land first, or the declarations authored in stream 2 are
    read by nothing. The surfaces, **as they exist on this branch**:
 
+   **The largest single piece is new: the KB's criteria documents.** Levels 1 and 2 of FR-5/FR-6 do
+   not exist anywhere yet — the global criteria list, the per-document-type criteria lists, and the
+   per-type severity maps all have to be authored into `.aid/knowledge/`. Most of the value lands
+   here, not in the 290 files: a criterion written once at type level covers every file of that type
+   and keeps their frontmatter empty.
+
    | Surface | Lines | What it must gain |
    |---|---|---|
-   | `canonical/aid/templates/kb-authoring/review-rubric.md` | 304 | its contracts check (item 3) generalized beyond `.aid/knowledge/`, and given a citable rule ID |
-   | `canonical/aid/templates/kb-authoring/frontmatter-schema.md` | — | the `contracts` field defined for all four trees, not KB docs alone |
+   | **`.aid/knowledge/` — new criteria documents** | — | **level 1** (global criteria + exclusions) and **level 2** (per-document-type criteria, exclusions, and severity maps). The document-type list itself must be enumerated, and every in-scope file must resolve to exactly one type. |
+   | `canonical/aid/templates/kb-authoring/review-rubric.md` | 304 | its contracts check (item 3) generalized beyond `.aid/knowledge/`, taught to resolve the three levels, and given a citable rule ID |
+   | `canonical/aid/templates/kb-authoring/frontmatter-schema.md` | — | `contracts` defined for all four trees rather than KB docs alone, carrying **positive criteria and exclusions**; plus `severity:` as a defect-kind → level map |
    | `canonical/aid/templates/grading-rubric.md` | 83 | level 2 of FR-6's severity cascade |
    | `canonical/agents/aid-reviewer/AGENT.md` | — | the instruction to read the artifact's own frontmatter |
    | `canonical/aid/templates/reviewer-dispatch.md` | 311 | the declaration reaching the dispatched reviewer |
@@ -178,8 +196,11 @@ Three streams. **The order is load-bearing.**
 
    *There is no `review-rubrics/` catalog and no `reviewer-brief-template.md` on this branch —
    both are `work-003` additions. An earlier draft named them as targets.*
-2. **Populate and correct the declarations second** — the files with no block, those with an empty
-   one, and the 9 KB docs at `contracts: []`. Add what is missing; correct what is wrong.
+2. **Populate and correct the per-file exceptions second** — walk the in-scope files, confirm each
+   resolves to a declared type, and add a `contracts:`/`severity:` block **only where the file has
+   criteria or exclusions its type does not already cover**. Correct the 9 KB docs at
+   `contracts: []` and verify the 10 that already declare. Most files will need nothing, and that is
+   the intended outcome, not an omission.
 3. **Remove the superseded scripts last** — or the only checks currently catching drift are deleted
    before the replacement works. Stream 3 **derives its own removal set first** (see AC-3); this
    document asserts no inventory. The `grade.sh` byte-identity pin named in an earlier draft belongs
@@ -239,8 +260,12 @@ Trees confirmed in scope: `canonical/skills/` (both `SKILL.md` and `references/*
 *(partial — field set settled at FR-5, severity settled at FR-6; the remaining gap is the scope
 boundary in section 4.)*
 
-- **FR-1** Every in-scope authored markdown file carries a frontmatter declaration of what it must
-  be validated against.
+- **FR-1** **Every in-scope authored markdown file is covered by a complete set of criteria** —
+  resolved across the three levels of FR-5, not necessarily written in the file.
+
+  A file carries a `contracts:` block **only where it has criteria or exclusions of its own.** A file
+  fully covered by its global and type-level criteria correctly declares nothing, and that is a
+  passing state, not a gap. Coverage is a property of the cascade; a per-file block is the exception.
 - **FR-2** The reviewer reads that declaration as a normal part of every review — not as an
   instruction that exists and goes unread.
 
@@ -264,46 +289,91 @@ boundary in section 4.)*
   no rubric catalog on this branch, so there is nothing to re-route — the requirement is the
   narrower and stronger one that whatever surfaces FR-2 touches must point at the declaration
   instead of restating what it says.
-- **FR-5** **One uniform field set for every in-scope tree.** A single `contracts:` field holding
-  free-text assertions; the reviewer derives each from disk and compares. A `SKILL.md`, an
-  `AGENT.md`, a template and a KB doc all declare the same way — no per-artifact-kind schema, no
-  `references:`/`dispatches:` variants.
+- **FR-5** **Criteria resolve through a three-level cascade, and each criterion is written once at
+  the highest level where it is true.** *(Owner decision, 2026-08-12.)*
 
-  *Rationale (owner decision, 2026-08-12).* The field already exists in
-  `kb-authoring/frontmatter-schema.md` and `kb-authoring/review-rubric.md` item 3 already derives it
-  against disk — for KB docs. Keeping one shape means **widening the scope of an existing field and
-  an existing check**, and one instruction in the reviewer instead of four. Four field sets would be
-  four schemas to define, lint and keep consistent — exactly the mechanism growth **C-1** exists to
-  stop.
+  `contracts:` holds **the list of criteria a reviewer validates this file against** — not a
+  restatement of what the file says, and not a per-fact assertion list.
 
-  *Known cost, accepted:* a uniform free-text field cannot express a per-tree required minimum, so
-  nothing structurally prevents a file from declaring too little. This is the failure the 9
-  `contracts: []` KB docs already demonstrate; addressing it is a review-criteria concern under
-  stream 1, not a schema concern.
-- **FR-6** **Severity resolves through a three-level cascade**, most specific winning
-  (owner decision, 2026-08-12):
-
-  | Level | What it declares | Where it lives |
+  | Level | Holds | Lives in |
   |---|---|---|
-  | 1 | Global severity guidelines — what each severity *means*, for any artifact | central, shared |
-  | 2 | File-class severity guidelines — what a violation costs in a class of file (KB doc, skill reference, template, agent) | central, shared; may be sections of the same document as level 1 |
-  | 3 | File-specific severity | that file's own frontmatter, beside its `contracts:` |
+  | 1 — **Global** | criteria every document in the project is validated against | the project's KB |
+  | 2 — **Document type** | criteria for that class of document (KB doc, skill, skill reference, agent, template) | the project's KB |
+  | 3 — **This document** | only what is unique to this file | the file's own `contracts:` |
 
-  A file declaring nothing at level 3 inherits its class; a class declaring nothing inherits the
-  global level. Level 3 is an override, not a requirement — which is what keeps all 315 in-scope
-  files from each needing a severity block.
+  A reviewer resolves all three and validates against the **union**. Most specific wins on conflict.
 
-  *Rationale.* This is the same Universal → Family → Class shape the rubric catalog already uses
-  for criteria, applied to severity. It makes the difference between a stale count and a false
-  claim in a routing document expressible, without forcing a per-file declaration everywhere.
+  **The three levels exist to stop duplication, not to add structure.** Their purpose is that a
+  criterion is stated exactly once, so it cannot be copied into many files and drift apart, and so
+  no single file's frontmatter inflates. The operating rules follow directly:
 
-  **Placement correction (raised during the interview).** Levels 1 and 2 must live in
-  **`canonical/aid/templates/`**, not `.aid/knowledge/`. The KB is AID's own project knowledge and
-  does not ship; `canonical/` renders to `profiles/` and installs into every adopter's `.claude/`.
-  Severity guidelines that adopters never receive would leave their reviews with no severity
-  definitions at all.
+  - A file's `contracts:` **never restates** a global or type-level criterion.
+  - The same criterion appearing in two files means it belongs at the **type** level.
+  - The same criterion appearing in two types means it belongs at **global**.
+  - Consequently most files carry **few entries or none** — a short list is the expected state, not
+    a sign of an incomplete declaration.
 
-  **Level 1 already exists** at `canonical/aid/templates/grading-rubric.md § Issue Severities` — the
+  Ignoring this reproduces the exact defect this work removes: N copies of one rule, disagreeing
+  with each other. Only the location changes — from scripts into frontmatter.
+
+  **Criteria are positive AND negative.** A criterion says either *"validate this"* or *"do not
+  validate this"*. An exclusion is recorded **where a reviewer would otherwise reasonably check and
+  would be wrong to** — not for everything merely inapplicable — and it carries its **reason**,
+  because an exclusion without one reads as an escape hatch and is how a bar gets quietly lowered.
+
+  Exclusions cascade identically: `STATE.md` is never reviewed at any level (global); a
+  `source: generated` document's *content* is not graded, only its generator (type); and anything
+  uniquely not-to-be-checked here (file).
+
+  *Why this half matters most:* in `work-003`, a guard swept a KB `STATE.md`, found five historical
+  lines, and was answered with **five allowances plus a schema amendment written to defend them** —
+  an allowlist accreting invisibly inside a script. A declared exclusion is that same knowledge,
+  stated once where it can be read and argued with.
+
+  **One uniform field for every in-scope tree.** A `SKILL.md`, an `AGENT.md`, a template and a KB
+  doc all declare the same way — no per-artifact-kind schema, no `references:`/`dispatches:`
+  variants. The field and a check that derives it already exist in
+  `kb-authoring/frontmatter-schema.md` and `kb-authoring/review-rubric.md` item 3, scoped to KB
+  docs; this widens both rather than adding a second mechanism (**C-1**).
+- **FR-6** **Severity resolves through the same three-level cascade, over validatable defect kinds
+  only.** *(Owner decision, 2026-08-12.)*
+
+  The field is **`severity:`**, and it is a **map from defect kind to level**, not one value for the
+  file — with the reason recorded inline so it can be argued with:
+
+  ```yaml
+  severity:
+    contract-violation: HIGH    # this doc is load-bearing; a false claim misroutes an agent
+    stale-count: LOW
+  ```
+
+  | Level | Holds | Lives in |
+  |---|---|---|
+  | 1 — **Global** | what each severity *means* | the universal scale, shipped |
+  | 2 — **Document type** | what each defect kind costs in that class of document | the project's KB, beside the type's criteria |
+  | 3 — **This document** | overrides only where this file genuinely differs | the file's own `severity:` |
+
+  Same anti-duplication rule as FR-5: declared once, at the highest level where it is true. Level 3
+  is an **override, not a requirement** — which is what keeps every in-scope file from needing a
+  severity block.
+
+  **`severity:` covers only what IS validated.** If something must *never* be validated, that is an
+  **exclusion in `contracts:`** (FR-5), not a severity. There is no such thing as an exclusion
+  expressed as a severity of zero, and an excluded defect kind never appears in this map at all.
+
+  *Why per-kind rather than per-file:* severity currently comes from the rule that fired, so it is
+  uniform everywhere that rule applies — a stale count and a false claim in a routing document score
+  identically. Declaring it per kind, per document, makes that difference expressible where it
+  actually differs.
+
+  **Placement — corrected.** An earlier draft of this requirement asserted that levels 1 and 2 must
+  live in `canonical/aid/templates/` rather than the KB, reasoning that the KB does not ship. That
+  was too strong and is withdrawn. Criteria and per-type severity are **project-specific** — an
+  adopter's document types are not AID's — so **each project's own KB is the right home**, exactly
+  as FR-5 states. What ships is the *template* for those KB documents plus the universal severity
+  scale below. AID's KB carries AID's lists; an adopter's carries theirs.
+
+  **The universal scale already exists** at `canonical/aid/templates/grading-rubric.md § Issue Severities` — the
   five-row Minor/Low/Medium/High/Critical table. Who actually cites it, derived on this branch:
   **5 of the 6** per-skill `reviewer-brief.md` files (`define`, `detail`, `execute`, `plan`,
   `specify` — not `discover`). `grade.sh` cites no path, only "the universal AID rubric" in a
@@ -541,9 +611,20 @@ re-applying a competing reorganization is the failure that cost PR #12 63 commit
 
 ## 9. Acceptance Criteria
 
-- **AC-1** Every in-scope authored markdown file declares what it must be validated against.
+- **AC-1** **Every in-scope authored markdown file is covered by the three-level cascade.**
 
-  **The population, derived rather than added up wrongly.** An earlier draft wrote "179 + 126 + 9",
+  Coverage is achieved by the **global and per-type criteria lists in the KB**, plus a per-file
+  `contracts:` block **only where the file has something of its own**. A file that declares nothing
+  and is fully covered by its type passes. An earlier draft demanded a declaration in every file;
+  that would have forced the duplication the cascade exists to prevent (FR-5).
+
+  Checkable as three things:
+  1. Every in-scope file **resolves to exactly one document type**, and no file is left untyped.
+  2. Every type's criteria list exists and is non-empty in the KB.
+  3. Where a file *does* carry `contracts:`, no entry restates a global or type-level criterion, and
+     every entry — positive or exclusion — is derivable from the repo.
+
+  **The population below is the survey, not a quota.** An earlier draft wrote "179 + 126 + 9",
   which triple-counts: the 9 `contracts: []` KB docs sit *inside* the 126, and the 179 still included
   the 20 READMEs FR-7 deletes first.
 
@@ -557,6 +638,12 @@ re-applying a competing reorganization is the failure that cost PR #12 63 commit
   (the 9 at `contracts: []` among them), and **10** already declare — 9 KB docs plus
   `reviewer-ledger-schema.md` — and must be **verified, not assumed**, since a stale existing
   declaration is the worst case of all.
+
+  **How many of the 290 end up carrying a block is an output, not a target.** Under the cascade most
+  will not, because their type's criteria already cover them, and a file gains frontmatter only where
+  it has a genuine exception. This also removes the earlier premise problem: a generated `SKILL.md`
+  or a template whose frontmatter slot is occupied needs no per-file block at all, provided its
+  **type** is declared in the KB.
 - **AC-2** **The reviewer demonstrably reads the declaration in a real review.** Evidenced, not
   asserted: an instruction that exists and goes unread is the exact failure being fixed, and
   `kb-authoring/review-rubric.md` item 3 proves an unread check can sit in the rubric for a whole

@@ -17,8 +17,19 @@ authored.*
 
 ## Description
 
-With the standard defined and read (feature-001), this feature is the population pass: every
-in-scope authored markdown file gains a truthful declaration of what it must be validated against.
+With the criteria system built and read (feature-001), this feature is the **exceptions pass**, not
+a population pass. Feature-001's global and per-type criteria already cover most files. This feature
+walks the corpus, confirms every file resolves to a declared type, and writes a `contracts:` /
+`severity:` block **only where a file has criteria or exclusions its type does not cover**.
+
+**Most files will end with no block, and that is the intended result.** A file whose type covers it
+declares nothing; adding a block that restates a type-level criterion is the duplication the cascade
+exists to prevent. How many files end up carrying one is an output of the walk, not a target.
+
+This is also what dissolves the objection that a third of the corpus is unauthorable: a generated
+`SKILL.md` rebuilt from `shortcut-catalog.yml`, and a template whose frontmatter slot already holds
+the emitted artifact's block, both need **no per-file declaration at all** — their criteria live at
+type level, in the KB, where nothing overwrites them.
 
 The starting state, derived on this branch:
 
@@ -82,9 +93,13 @@ Must
 - [ ] Given `state-execute.md` → “Mechanical sub-tasks”, when the `aid-clerk` README is deleted, then it points at a path
       that exists in an installed tree. `site/src/data/skill-flows/aid-execute.flow.json` is a
       **generated** sidecar: it is regenerated in feature-003's single render, never hand-edited.
-- [ ] Given the **290** files remaining after the 20 deletions and the 5 KB carve-outs, when each is
-      opened, then it declares what it must be validated against — and every one of the 290 falls
-      into exactly one of the three buckets above, with none counted twice and none left over (AC-1).
+- [ ] Given the **290** files remaining after the 20 deletions and the 5 KB carve-outs, when the walk
+      completes, then each **resolves to exactly one declared document type**, none is untyped, and
+      every one falls into exactly one of the three buckets above — none counted twice, none left
+      over (AC-1).
+- [ ] Given a file whose type-level criteria already cover it, when the walk reaches it, then it is
+      left **without** a `contracts:` block — a block restating a type-level criterion is a finding,
+      not a completion.
 - [ ] Given the 9 KB docs at `contracts: []`, when this feature completes, then each declares real
       assertions or states why it legitimately has none — an empty block is not a passing state.
 - [ ] Given any authored `contracts:` entry, when a reviewer checks it, then the assertion is

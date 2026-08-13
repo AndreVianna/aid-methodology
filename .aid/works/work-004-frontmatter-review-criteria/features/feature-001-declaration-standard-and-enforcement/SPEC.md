@@ -27,18 +27,22 @@ file is a Knowledge Base document. The check exists at
 `kb-authoring/frontmatter-schema.md`, and together they reach **22 of 315** in-scope files. Nothing
 tells a reviewer to look at a skill's, an agent's or a template's frontmatter at all.
 
-This feature makes that one check the standard for every authored markdown file in AID, and makes
-the review process actually use it. Three moves:
+This feature builds the criteria system and makes the review process use it. Four moves:
 
-1. **Widen the field.** One uniform `contracts:` field — free-text assertions the reviewer derives
-   from disk and compares — defined for skills, agents, templates and KB docs alike. No
+1. **Author the KB's criteria documents — the largest piece, and the one that does the real work.**
+   Level 1 (global criteria and exclusions) and level 2 (per-document-type criteria, exclusions and
+   severity maps) do not exist anywhere today. The set of document types must be enumerated so every
+   in-scope file resolves to exactly one. A criterion written once at type level covers every file of
+   that type, which is what keeps 290 files' frontmatter empty.
+2. **Widen the field.** One uniform `contracts:` for skills, agents, templates and KB docs alike,
+   carrying **positive criteria and exclusions**, plus `severity:` as a defect-kind → level map. No
    per-artifact-kind schema.
-2. **Name the rule.** The contracts check gains a citable rule ID so a finding can name it in a
-   ledger's `Rule` column. An unnamed check produces findings with nothing to cite, which is a large
-   part of why it was invoked once in 47 findings.
-3. **Say what a violation costs.** Severity resolves through a three-level cascade — global, then
-   file-class, then the file's own frontmatter as an override. Levels 1 and 2 extend
-   `grading-rubric.md`, which already ships; there is no second severity home.
+3. **Name the rule.** The contracts check gains a citable identifier so a finding can say what it
+   came from. An unnamed check produces findings with nothing to cite, which is a large part of why
+   it was invoked once in 47 findings. *(Where that identifier goes is unresolved — this branch's
+   ledger is 7 columns with no `Rule` column, and adding one breaks `grade.sh`'s positional parse.)*
+4. **Teach the reviewer to resolve three levels.** Global, then type, then the file's own block —
+   validating against the union, most specific winning.
 
 Then the surfaces that run a review are told to read the declaration: the reviewer agent, the
 dispatch template, the ledger schema, the six per-skill briefs — and the FIX contract, so a fixer
@@ -61,6 +65,15 @@ Must
 
 ## Acceptance Criteria
 
+- [ ] Given the KB, when this feature completes, then it carries a **global criteria list** and a
+      **per-document-type criteria list** for every document type in the project, each with its
+      severity map — and every in-scope file resolves to **exactly one** type, with none untyped.
+- [ ] Given a criterion, when it is written, then it sits at the **highest level where it is true**,
+      and no type-level list restates a global one.
+- [ ] Given something that must never be validated, when it is recorded, then it is an **exclusion in
+      `contracts:`** carrying its reason — not an omission, and not a severity of zero.
+- [ ] Given a reviewer validating any file, when it resolves criteria, then it reads **all three
+      levels** and validates against their union, most specific winning on conflict.
 - [ ] Given any in-scope authored markdown file, when a reviewer resolves criteria for it, then the
       `contracts:` field is defined for that file's tree — not for `.aid/knowledge/` alone.
 - [ ] Given a finding derived from the contracts check, when it is written to a ledger, then it
