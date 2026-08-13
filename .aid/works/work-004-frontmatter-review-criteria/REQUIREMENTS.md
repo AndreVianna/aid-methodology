@@ -17,6 +17,7 @@
 | 2026-08-12 | Identity fields confirmed: Declared Review Criteria | /aid-describe |
 | 2026-08-12 | Interview complete — approved | /aid-describe |
 | 2026-08-12 | **Correction pass.** Feature decomposition found this document citing artifacts that exist only on `work-003`. Re-derived §2's enforcement gap and guard inventory, §4's stream-1 target table and stream-3 scope, FR-2/FR-3/FR-4, NFR-2, §8's collision set, AC-3/AC-4 — all against this branch's disk | /aid-define |
+| 2026-08-12 | **Cross-reference fix pass.** `aid-reviewer` raised 34 findings over 87 re-derived claims; 27 fixed here. Corrected `site/src/content/docs` 137→93, FR-6's citation list, AC-1's triple-counted population (→290 with carve-outs named), NFR-2's undefined "added" side, NFR-4's missing site chain, NFR-1's unimplementable script, the examples' false "zero references", and every bare `file:LINE` citation. Added FR-8 for the front face, which was gated with no requirement behind it | /aid-define |
 
 ### KB hydration assessment (COMPLETION step 2)
 
@@ -81,6 +82,16 @@ Three things are wrong with what exists, and each is why it went unused:
    `work-003`'s 47 findings (see `prior-art.md § 3`).
 3. **No surface tells an agent to read the artifact's frontmatter.** Verified on this branch:
 
+   | Surface | Its only frontmatter mention |
+   |---|---|
+   | `aid-reviewer/AGENT.md` → the ledger-shape rule | *"**No frontmatter**, no headers, no narrative sections"* — a rule about the reviewer's **own ledger**. It never says to read the artifact's. |
+   | `aid-execute/references/state-fix.md` → F2's impact-chain table | one row — *"KB doc `summary:` frontmatter → `.aid/knowledge/INDEX.md`"*. Not post-edit re-verification. |
+
+   That second gap produced `work-003` cycle-17 finding #3 directly: `quality-gates.md`'s body was
+   fixed and its own `contracts:` block was left contradicting it.
+
+### The coverage this reaches
+
 Measured on this work's own base (`master` @ `9260fc88`) across `canonical/skills/`,
 `canonical/agents/`, `canonical/aid/templates/` and `.aid/knowledge/`:
 
@@ -95,14 +106,21 @@ Measured on this work's own base (`master` @ `9260fc88`) across `canonical/skill
 | `.aid/knowledge` | 22 | 22 | 9 |
 | **TOTAL** | **315** | **136** | **10** |
 
+*(The `.aid/knowledge` bucket of 22 includes 5 files that receive no authored criterion — `STATE.md`
+per C-4, `INDEX.md` and `relationships.md` per C-5, and the two `kb-category: meta` docs `README.md`
+and `external-sources.md`. AC-1 nets them out; the survey above counts them because they are markdown
+files in the tree.)*
+
 - **179 files carry no frontmatter at all** — including every one of the 110
   `skills/*/references/*.md` (the procedure bodies agents actually execute) and 49 of the 78
-  `canonical/aid/templates/*.md` — among them `grading-rubric.md`, `reviewer-ledger-schema.md`,
-  `reviewer-dispatch.md` and `kb-authoring/review-rubric.md`, so **the documents defining how review
-  works cannot declare what they must be true against**.
+  `canonical/aid/templates/*.md` — among them `grading-rubric.md`, `reviewer-dispatch.md` and
+  `kb-authoring/review-rubric.md`, so **the documents defining how review works cannot declare what
+  they must be true against**. (`reviewer-ledger-schema.md` is the exception and the one template
+  counted as declaring in the table above: it has frontmatter and a populated `contracts:` block.)
 - **126 files carry frontmatter that declares nothing** — all 76 `SKILL.md`
-  (`name`/`description`/`allowed-tools`/`argument-hint`), all 9 `AGENT.md`
-  (`name`/`description`/`tier`/`tools`), 28 templates and 13 KB docs.
+  (`name`/`description`/`allowed-tools`, plus `argument-hint` on 74 of the 76), all 9 `AGENT.md`
+  (`name`/`description`/`tier`/`tools`, with one agent also carrying `permissionMode` and another
+  `background`), 28 templates and 13 KB docs.
 - **9 of 22 KB docs carry an explicitly empty `contracts: []`** — `architecture.md`,
   `decisions.md`, `domain-glossary.md`, `external-sources.md`, `integration-map.md`,
   `pipeline-contracts.md`, `project-structure.md`, `tech-debt.md`, `technology-stack.md`.
@@ -111,14 +129,6 @@ Measured on this work's own base (`master` @ `9260fc88`) across `canonical/skill
 `work-003`'s worktree, which carries files `master` does not, and were corrected here rather than
 carried forward — a requirements document that states a figure no one can derive from this branch
 is the defect this work exists to remove.)*
-
-   | Surface | Its only frontmatter mention |
-   |---|---|
-   | `canonical/agents/aid-reviewer/AGENT.md:73` | *"**No frontmatter**, no headers, no narrative sections"* — a rule about the reviewer's **own ledger**. It never says to read the artifact's. |
-   | `canonical/skills/aid-execute/references/state-fix.md:49` | one row of F2's impact-chain table — *"KB doc `summary:` frontmatter → `.aid/knowledge/INDEX.md`"*. Not post-edit re-verification. |
-
-   That second gap produced `work-003` cycle-17 finding #3 directly: `quality-gates.md`'s body was
-   fixed and its own `contracts:` block was left contradicting it.
 
 **What stands in its place.** Prose facts are checked by script instead. The archetype on this
 branch is `tests/canonical/check-skill-counts.mjs` — **379 lines** whose entire job is to find
@@ -131,8 +141,10 @@ An earlier draft of this paragraph listed six files totalling 2,816 lines; four 
 (`test-one-grading-backend.sh`, `test-review-rubrics.sh`, `derived-values.mjs`,
 `check-derived-values.mjs`) **do not exist on this branch** — they are `work-003`'s. Of the two that
 do, `check-skill-counts.mjs` is 379 lines (not 426) and `kb-citation-lint.sh` is 70 (not 279), and
-`kb-citation-lint.sh` checks citation **form**, not a prose fact, so no declaration replaces it and
-CI invokes it. Deriving the real inventory is the first task of stream 3 (see AC-3), because
+`kb-citation-lint.sh` checks citation **form**, not a prose fact, so no declaration replaces it.
+(It is orchestrator-gated at GENERATE; CI runs only its unit test. An earlier draft said "CI invokes
+it", which overstated the reason to keep it — the reason it stays is that it checks form, not that
+CI runs it.) Deriving the real inventory is the first task of stream 3 (see AC-3), because
 asserting a number this document has not verified is the defect it exists to remove — and this
 paragraph had already made that error once.
 
@@ -170,25 +182,31 @@ Three streams. **The order is load-bearing.**
    one, and the 9 KB docs at `contracts: []`. Add what is missing; correct what is wrong.
 3. **Remove the superseded scripts last** — or the only checks currently catching drift are deleted
    before the replacement works. Stream 3 **derives its own removal set first** (see AC-3); this
-   document asserts no inventory. `NF01` and the `grade.sh` byte-identity pin named in an earlier
-   draft belong to `work-003` and do not exist here.
+   document asserts no inventory. The `grade.sh` byte-identity pin named in an earlier draft belongs
+   to `work-003` and does not exist here — **but an assertion labelled `NF01` does exist on this
+   branch**, in `test-graph-runtime.sh` → the `NF01 [SR09]` assertion, and is unrelated. A sweep reading the
+   earlier sentence literally would have skipped it.
 
 Trees confirmed in scope: `canonical/skills/` (both `SKILL.md` and `references/*.md`),
 `canonical/agents/`, `canonical/aid/templates/`, `.aid/knowledge/`.
 
 ### Out of Scope
 
-- **`site/src/content/docs` (137 files)** — informational content. It needs a different kind of
-  validation, decided separately.
+- **`site/src/content/docs` (93 `.md`; 105 files of any type)** — informational content. It needs a
+  different kind of validation, decided separately. *(An earlier draft said 137 — another off-branch
+  figure the first correction pass did not reach.)*
 - **`tests/canonical/test-dogfood-byte-identity.sh`** — it sha256s the two tracked dogfood trees
   against the render manifest, answering *"was the generator re-run"*. That is a build question,
   not a review question, and no declared contract replaces it. This is the genuine mechanical
   residue and it stays.
 - **Code files.** Markdown needs a declared content-verification criterion because it is not
   compiled or executed. Code has build, lint and test as its oracle.
-- **The deferred front-face bucket — adjusted at the very end of this work, not dismissed.** These
-  are what a user reads, so they describe the trees this work is changing; adjusting them mid-work
-  would document a state that is still moving. *(Owner decision, 2026-08-12.)*
+- **The deferred front-face bucket — DEFERRED, not out of scope.** It sits under this heading for
+  proximity only: these files are what a user reads, they describe the trees this work is changing,
+  and adjusting them mid-work would document a state that is still moving. They are **in scope and
+  gated** — `FR-8` requires them, and feature-003 carries the acceptance criterion. *(Owner decision,
+  2026-08-12; the "Out of Scope" placement without an FR was a defect — the same work cannot be both
+  unscoped and gated.)*
 
   | Files | Count | Lines |
   |---|---|---|
@@ -196,16 +214,20 @@ Trees confirmed in scope: `canonical/skills/` (both `SKILL.md` and `references/*
   | repo-root `README.md` | 1 | 257 |
   | `examples/**/README.md` | 4 | 1,237 |
 
-  The `examples/` walkthroughs are near-orphaned — `brownfield-full-path` (448 lines) and
-  `greenfield` (370 lines) have **zero** inbound references — but they are user-facing walkthroughs,
-  so they belong here rather than in FR-7's delete set.
+  *(An earlier draft called `brownfield-full-path` and `greenfield` "zero inbound references". That
+  was wrong: both are linked from `examples/README.md` as directory links — `](greenfield/)` — and
+  named in the KB's repository-structure doc. The audit behind that claim only looked for
+  `](README.md)`, so directory-style links were invisible to it. They are referenced, they are
+  user-facing, and they belong here rather than in FR-7's delete set.)*
 
 - **READMEs that ship to adopters** — `profiles/{antigravity,claude-code,codex,copilot-cli,cursor}/README.md`
   and `packages/{npm,pypi}/README.md` (7 files). Rendered/published artifacts, not internal surface.
 
-- **READMEs with real consumers** — `.aid/knowledge/README.md` (referenced from 49 files, including
-  `kb-freshness-check.sh`, `build-md-export.sh`, `kb-actback-task.sh`, and 56 rows of
-  `relationships.md`), `dashboard/README.md`, `tests/README.md`, `tests/ui/README.md`,
+- **READMEs with real consumers** — `.aid/knowledge/README.md` (an earlier draft's "49 files / 56
+  rows" figures are not reproducible on this branch and are withdrawn; note also that
+  `kb-freshness-check.sh` and `kb-actback-task.sh` name it only to **skip** it as a meta doc, which
+  is a weaker kind of consumer than the phrasing implied), `dashboard/README.md`, `tests/README.md`,
+  `tests/ui/README.md`,
   `dashboard/server/tests/fixtures/README.md`.
 
 - **Test-fixture READMEs** — `tests/canonical/fixtures/kb-essence/relative-bus/README.md` and
@@ -281,12 +303,19 @@ boundary in section 4.)*
   Severity guidelines that adopters never receive would leave their reviews with no severity
   definitions at all.
 
-  **Level 1 already exists** at `canonical/aid/templates/grading-rubric.md § Issue Severities` —
-  the five-row Minor/Low/Medium/High/Critical table, cited by `grade.sh`, `aid-reviewer/AGENT.md`,
-  `reviewer-ledger-schema.md` and seven per-skill reviewer briefs. This work **extends** that
-  document with level 2 rather than creating a second severity home; a second one would be exactly
-  the "two sources of truth for the value that decides the grade" defect `work-003` spent cycles
-  removing.
+  **Level 1 already exists** at `canonical/aid/templates/grading-rubric.md § Issue Severities` — the
+  five-row Minor/Low/Medium/High/Critical table. Who actually cites it, derived on this branch:
+  **5 of the 6** per-skill `reviewer-brief.md` files (`define`, `detail`, `execute`, `plan`,
+  `specify` — not `discover`). `grade.sh` cites no path, only "the universal AID rubric" in a
+  comment; `aid-reviewer/AGENT.md` and `reviewer-ledger-schema.md` do not cite it at all.
+
+  **There are already three severity homes, not one.** `grading-rubric.md § Issue Severities`,
+  `reviewer-ledger-schema.md § Severity values`, and `aid-reviewer/AGENT.md § Severity
+  Classification` each define all five severities independently, in different words, and neither of
+  the latter two cites the first. Extending `grading-rubric.md` alone would leave the two surfaces a
+  reviewer actually reads unchanged. **Reconciling the three is in scope for feature-001** — this is
+  a correction to an earlier draft that assumed a single home and warned only against creating a
+  second.
 
   *Open cost, carried forward:* a level-3 override is a per-file bar, so it is a place a gate can
   be quietly lowered. It needs the same treatment as `minimum_grade` — surfaced in the gate output
@@ -303,10 +332,10 @@ boundary in section 4.)*
   | Skills that even have one | **11 of 76** — not a convention, 11 exceptions |
   | How many reach an adopter | **zero.** No README under any `profiles/*/skills/` or `profiles/*/agents/`, none in either tracked dogfood tree. Rendered agents are flat files (`aid-reviewer.md`), not folders. |
   | With zero inbound references | **18 of 20** |
-  | Precedent | `canonical/skills/aid-graph/README.md` was already declined as a documentation surface |
+  | Precedent | *(withdrawn — an earlier draft cited `aid-graph/README.md` as "already declined as a documentation surface". No on-disk record of that decision exists on this branch, so the row asserted something unverifiable inside a table of verified facts.)* |
 
   Deletion is a **fix**, not only a cleanup: the single instruction-content pointer at one of them
-  is already broken. `canonical/skills/aid-execute/references/state-execute.md:166` tells an
+  is already broken. `aid-execute/references/state-execute.md` → the “Mechanical sub-tasks” paragraph tells an
   executor *"See `agents/aid-clerk/README.md` for the caller contract"*, and that path exists in no
   installed tree — the line is replicated to all five profiles and both dogfood trees, so seven
   copies of the pointer resolve to nothing.
@@ -314,15 +343,20 @@ boundary in section 4.)*
   **Two files need preparation before deletion, or deletion causes a regression:**
 
   1. **`canonical/agents/aid-clerk/README.md`** — move the caller contract into
-     `aid-clerk/AGENT.md`, which does ship; then correct `state-execute.md:166` and
-     `site/src/data/skill-flows/aid-execute.flow.json`. Deleting first would turn a broken pointer
-     into a lost contract.
-  2. **`canonical/skills/aid-monitor/README.md`** — `tests/canonical/test-deploy-monitor-repurpose.sh:66`
+     `aid-clerk/AGENT.md`, which does ship; then correct `state-execute.md` → “Mechanical sub-tasks” and **regenerate**
+     `site/src/data/skill-flows/aid-execute.flow.json`, which is a generated sidecar and must not be
+     hand-edited. Deleting first would turn a broken pointer into a lost contract.
+  2. **`canonical/skills/aid-monitor/README.md`** — `test-deploy-monitor-repurpose.sh` → the `DMR00c` assertion
      asserts `DMR00c aid-monitor/README.md exists`. The assertion is removed with the file.
 
   *Why this belongs in a work about declared criteria:* every deleted file is one fewer surface that
   can drift, and it is the inverse of adding a mechanism — **C-1** applied in the direction that
   shrinks the reviewed surface instead of growing it.
+- **FR-8** **The front face is brought into line with the changed trees, at the very end** —
+  `docs/*.md` (7), the repo-root `README.md` (257 lines) and `examples/**/README.md` (4 files, 1,237
+  lines). Deferred by owner decision because these describe trees that are still moving until stream
+  3 closes; scheduled alongside the single render of NFR-4 for the same reason. Added because the
+  deferred bucket was previously gated by feature-003 with no requirement behind it.
 
 ## 6. Non-Functional Requirements
 
@@ -333,9 +367,16 @@ plant that is forgotten becomes a genuine defect. The hazard is removed **struct
 independent layers — not by a reminder, and not by a new guard.
 
 1. **The plant is never applied to the tracked tree.** It goes into a **disposable git worktree at
-   the same commit**, created with the existing
-   `.claude/aid/scripts/works/worktree-lifecycle.sh` and destroyed afterwards. The work branch's
-   files are never edited, so there is nothing to restore and nothing to forget.
+   the same commit**, and the work branch's files are never edited — so there is nothing to restore
+   and nothing to forget.
+
+   **Correction: the named script cannot do this.**
+   `canonical/aid/scripts/works/worktree-lifecycle.sh` has exactly two verbs, `create)` and
+   `locate)` — **no destroy** — and `create` is keyed to a `work-NNN` branch and is idempotent, so
+   it returns the *existing* work-004 worktree rather than a throwaway. An earlier draft named it as
+   the mechanism. The disposable tree therefore comes from plain `git worktree add` on a detached
+   HEAD plus `git worktree remove`, which needs nothing built. *(The earlier draft also cited the
+   `.claude/` path — a render. The source of truth is `canonical/`.)*
 
    *Why a whole worktree rather than a single scratch file:* a `contracts:` assertion is derived
    from the file's **position in the tree** (*"`canonical/skills/` holds 76 directories"*), so a
@@ -363,9 +404,15 @@ independent layers — not by a reminder, and not by a new guard.
 opposite is measurable: **lines of prose-fact guard removed must exceed lines of new mechanism
 added.** Stated as a number, not a sentiment.
 
-**Confirmed floor, derived on this branch:** 1,802 lines (the 20 READMEs of FR-7) + 379 lines
-(`check-skill-counts.mjs`) = **2,181**. The rest of the removal set is derived by stream 3, not
-asserted here — see §2.
+**Both sides of the subtraction must be defined, or the criterion is unfalsifiable.** An earlier
+draft gave only a floor and never said what counts as "added".
+
+| side | definition |
+|---|---|
+| **removed** | two kinds, counted and reported **separately**: *guard lines* (script logic whose job is checking a fact stated in prose) and *documentation lines* (the 20 READMEs). Confirmed floor: **379** guard + **1,802** documentation = 2,181. Reporting them merged would let deleted prose pay for added machinery. |
+| **added** | lines of **mechanism** — new scripts, checks, validators, or process rules an agent must follow. **A `contracts:` block authored into a file is not mechanism**; it is the file stating a fact about itself, which is the whole point. Roughly 290 files gain such a block and none of it counts against this budget. |
+
+The rest of the removal set is derived by stream 3, not asserted here — see §2.
 
 This is **C-1** promoted to a measured exit condition, because "do not over-engineer" was already
 stated in `work-003` and did not hold.
@@ -376,10 +423,17 @@ A new section, a new instruction paragraph, a new rule row — never a restructu
 `work-003` has also restructured. See §8: this keeps a later reconcile cheap and satisfies **C-1**
 at the same time.
 
-### NFR-4 — The render chain is refreshed exactly once, at the end
+### NFR-4 — Every derived chain is refreshed exactly once, at the end
 
-`canonical/` → `profiles/` → the two tracked dogfood trees, per **C-2**. Mid-work staleness in the
-derived trees is correct and is not a defect.
+**Two chains, not one.** An earlier draft named only the first:
+
+1. `canonical/` → `profiles/` → the two tracked dogfood trees, per **C-2**.
+2. The **site chain** — `site/src/content/docs` and `site/src/data/skill-flows/*.flow.json`. This
+   work edits `docs/*.md` (feature-003) and `canonical/skills/aid-execute/references/state-execute.md`
+   (feature-002), both of which feed it. `aid-execute.flow.json` is generated and must be
+   regenerated, never hand-corrected.
+
+Mid-work staleness in either is correct and is not a defect. Both refresh once, in feature-003.
 
 ### NFR-5 — Every declaration must be derivable by an agent with repo access alone
 
@@ -397,6 +451,20 @@ Inherited from `work-003`. Violating any of these reproduces its failure — see
   Mid-change staleness is correct, not a defect.
 - **C-3** Do not narrate a refactor inside the artifact it produced — it is false as soon as the
   next change lands, and git records the history anyway.
+
+  **Scope, sharpened after review found this document violating it.** C-3 bans *refactor narration* —
+  "this file was split from three others", "the catalog now lives in four documents" — which is
+  describing a **move** that stops being true the moment anything else moves.
+
+  It does **not** ban a **correction record**: a note that a specific figure or claim was wrong and
+  states the derived replacement. Those carry a durable fact plus a warning, and this document has
+  the evidence that the warning is load-bearing — the `341` figure was re-introduced *after* a pass
+  dedicated to removing it, and the `Rule` column survived that same pass. The correction notes in
+  §2, §4, FR-6, FR-7 and AC-1 are kept deliberately on that basis.
+
+  *Judgement call, flagged rather than resolved silently:* a reviewer could reasonably read the
+  original C-3 as covering both. If the owner disagrees, the notes move wholesale to the Change Log
+  and git, and nothing else in the document changes.
 - **C-4** `STATE.md` is never reviewed, at any level, in any folder.
 - **C-5** `source: generated` means build-verify only. `INDEX.md` and `relationships.md` are a
   special kb-category, meta to the KB, and do not follow the other docs' rules.
@@ -409,6 +477,13 @@ Inherited from `work-003`. Violating any of these reproduces its failure — see
 `work-003` sits **131 commits ahead of `master`** and unpushed. Against review-related files under
 `canonical/`, it **modifies 26** that exist here and **adds 17** that do not — the whole
 `review-rubrics/` catalog and `reviewer-brief-template.md` among them.
+
+> **These three figures are measurements of another branch and cannot be re-derived here**, which is
+> what C-7 gate 3 forbids. They are admitted as **the first entries in
+> `imports-from-work-003.md`** — serving `§8` itself, derived by `git diff --name-status
+> master...work-003`, carrying no mechanism, and logged per gate 6. They are recorded as *known
+> collision surface*, not relied on for any design decision: every stream-1 target was independently
+> derived from this branch in §4.
 
 The 26 modified files are the real collision set, and they include every stream-1 target:
 `aid-reviewer/AGENT.md`, `grading-rubric.md`, `kb-authoring/review-rubric.md`,
@@ -466,8 +541,22 @@ re-applying a competing reorganization is the failure that cost PR #12 63 commit
 
 ## 9. Acceptance Criteria
 
-- **AC-1** Every in-scope authored markdown file declares what it must be validated against — the
-  179 files with no frontmatter, the 126 declaring nothing, and the 9 KB docs at `contracts: []`.
+- **AC-1** Every in-scope authored markdown file declares what it must be validated against.
+
+  **The population, derived rather than added up wrongly.** An earlier draft wrote "179 + 126 + 9",
+  which triple-counts: the 9 `contracts: []` KB docs sit *inside* the 126, and the 179 still included
+  the 20 READMEs FR-7 deletes first.
+
+  | step | count |
+  |---|---|
+  | surveyed in scope | 315 |
+  | − 20 internal READMEs, deleted first by FR-7 | 295 |
+  | − 5 KB files carved out: `STATE.md` (C-4), `INDEX.md` + `relationships.md` (C-5, build-verify), `README.md` + `external-sources.md` (`kb-category: meta`) | **290** |
+
+  Of those 290: **159** have no frontmatter block at all, **126** have a block that declares nothing
+  (the 9 at `contracts: []` among them), and **10** already declare — 9 KB docs plus
+  `reviewer-ledger-schema.md` — and must be **verified, not assumed**, since a stale existing
+  declaration is the worst case of all.
 - **AC-2** **The reviewer demonstrably reads the declaration in a real review.** Evidenced, not
   asserted: an instruction that exists and goes unread is the exact failure being fixed, and
   `kb-authoring/review-rubric.md` item 3 proves an unread check can sit in the rubric for a whole

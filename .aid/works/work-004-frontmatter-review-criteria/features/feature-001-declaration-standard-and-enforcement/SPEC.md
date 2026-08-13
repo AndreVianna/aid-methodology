@@ -9,7 +9,15 @@
 ## Source
 
 - REQUIREMENTS.md §4 (In Scope, stream 1), §5 FR-2, FR-3, FR-4, FR-5, FR-6
-- REQUIREMENTS.md §6 NFR-1, NFR-3, NFR-5; §7 C-1, C-6; §9 AC-2
+- REQUIREMENTS.md §6 NFR-1, NFR-3; §7 C-1, C-3, C-6, C-7; §9 AC-2
+
+*FR-5 is defined here and applied by feature-002 — this feature owns it. NFR-5 is an authoring
+constraint on the declarations themselves and is carried by feature-002, not here.*
+
+*Deliberately **not** an acceptance criterion: surfacing a level-3 severity override in the gate
+output. REQUIREMENTS.md FR-6 parks that as an "open cost, carried forward", and satisfying it would
+mean changing gate output — new mechanism, which this feature's own criteria forbid. It stays parked
+rather than being promoted to a gate by a SPEC that was never given the authority to promote it.*
 
 ## Description
 
@@ -59,12 +67,14 @@ Must
       carries a rule ID that resolves to the check, and the `Rule` column is not blank or invented.
 - [ ] Given a contract violation, when severity is assigned, then it resolves global → file-class →
       file-specific, with the most specific declaration winning and absence inheriting upward.
-- [ ] Given a file declaring a level-3 severity override, when a gate runs, then the effective value
-      is surfaced in the gate output, so a loosened bar is visible without a settings-history
-      mechanism.
+- [ ] Given the three independent severity definitions on disk — `grading-rubric.md § Issue
+      Severities`, `reviewer-ledger-schema.md § Severity values`, and `aid-reviewer/AGENT.md §
+      Severity Classification` — when this feature completes, then they are reconciled to one
+      authority that the other two cite, rather than a fourth being added beside them.
 - [ ] Given a review dispatch, when the reviewer receives its brief, then the brief directs it to
-      read the artifact's own frontmatter — evidenced in the rendered brief, not only in the
-      template.
+      read the artifact's own frontmatter — verified in `canonical/`, the source of truth. *(An
+      earlier draft required this "evidenced in the rendered brief", which cannot be met here: C-2
+      and NFR-4 defer every render to feature-003.)*
 - [ ] Given a fixer that has just edited a file, when it completes the edit, then the FIX contract
       requires re-verifying that file's own declaration before the row is addressed.
 - [ ] Given a review surface that needs criteria, when it states them, then it routes to the

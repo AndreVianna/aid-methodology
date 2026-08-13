@@ -8,8 +8,11 @@
 
 ## Source
 
-- REQUIREMENTS.md §2 (what stands in its place), §4 (stream 3; Out of Scope — deferred front-face bucket)
-- REQUIREMENTS.md §6 NFR-2, NFR-4; §9 AC-3, AC-4, AC-6; §8 C-7
+- REQUIREMENTS.md §2 (what stands in its place), §4 (stream 3; the deferred front-face bucket), §5 FR-8
+- REQUIREMENTS.md §6 NFR-1, NFR-2, NFR-4; §7 C-1, C-2, C-3, C-6; §8 C-7; §9 AC-3, AC-4, AC-6
+
+*FR-8 was added during the cross-reference correction pass: the front-face bucket was gated here
+with no requirement behind it, so the same work was simultaneously unscoped and blocking.*
 
 ## Description
 
@@ -72,7 +75,13 @@ Must
 - [ ] Given `kb-citation-lint.sh` and `test-dogfood-byte-identity.sh`, when the sweep runs, then both
       survive it, for the reasons recorded above.
 - [ ] Given the removals and additions across all three features, when the work closes, then removed
-      guard lines **exceed** added mechanism lines, stated as a number (AC-4, NFR-2).
+      **guard** lines exceed added **mechanism** lines, with guard-line and documentation-line
+      removals reported **separately** so deleted prose cannot pay for added machinery, and with
+      authored `contracts:` blocks excluded from "added mechanism" per NFR-2 (AC-4).
+- [ ] Given C-2 and NFR-4, when the work closes, then **both** derived chains have been refreshed
+      once — `canonical/` → `profiles/` → the two dogfood trees, **and** the site chain
+      (`site/src/content/docs`, `site/src/data/skill-flows/*.flow.json`), the latter **regenerated**
+      rather than hand-edited.
 - [ ] Given the deferred front-face bucket, when this feature completes, then `docs/`, the root
       `README.md` and `examples/**/README.md` describe the trees as they now are.
 - [ ] Given C-2 and NFR-4, when the work closes, then the render chain has been refreshed **exactly

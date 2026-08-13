@@ -8,8 +8,12 @@
 
 ## Source
 
-- REQUIREMENTS.md §2 (coverage table), §4 (In Scope, stream 2), §5 FR-1, FR-5, FR-7
-- REQUIREMENTS.md §6 NFR-5; §7 C-4, C-5; §9 AC-1, AC-5
+- REQUIREMENTS.md §2 (coverage table), §4 (In Scope, stream 2), §5 FR-1, FR-7
+- REQUIREMENTS.md §6 NFR-1, NFR-5; §7 C-1, C-2, C-3, C-4, C-5, C-6, C-7; §9 AC-1, AC-5
+
+*FR-5 is **defined** by feature-001 and **applied** here; it is not claimed twice. NFR-5 — every
+declaration derivable from the repo alone — is carried here, because this is where declarations are
+authored.*
 
 ## Description
 
@@ -33,23 +37,27 @@ The starting state, derived on this branch:
 have no inbound reference at all, and authoring declarations into files that are about to be deleted
 is wasted work twice over. That leaves **295** files in the population set, not 315.
 
-Deletion is also a repair. `canonical/skills/aid-execute/references/state-execute.md:166` tells an
+Deletion is also a repair. `aid-execute/references/state-execute.md` → the “Mechanical sub-tasks” paragraph tells an
 executor *"See `agents/aid-clerk/README.md` for the caller contract"*, and that path exists in no
 installed tree — the line is replicated to all five profiles and both dogfood trees, so seven copies
 of the pointer resolve to nothing. Two files therefore need preparation before removal: the
 `aid-clerk` caller contract moves into `AGENT.md`, which does ship; and
-`tests/canonical/test-deploy-monitor-repurpose.sh:66`'s `DMR00c` assertion is removed together with
-the `aid-monitor` README it guards.
+the `DMR00c` assertion in `test-deploy-monitor-repurpose.sh` is removed together with the
+`aid-monitor` README it guards.
 
-Then the population itself, which is three different edits rather than one:
+Then the population itself. After the 20 deletions and the 5 KB carve-outs (`STATE.md` per C-4,
+`INDEX.md` and `relationships.md` per C-5, and the two `kb-category: meta` docs), **290** files
+remain, in three disjoint buckets — the partition must not double-count, and every file must land in
+exactly one:
 
-- **Add a field to a block that already exists** — 76 `SKILL.md`, 9 `AGENT.md`, 28 templates, 13 KB
-  docs.
-- **Add a whole frontmatter block where there is none** — 110 `skills/*/references/*.md`, 49
-  templates.
-- **Correct what is already there** — the 9 KB docs carrying an explicitly empty `contracts: []`,
-  among them `architecture.md`, `tech-debt.md` and `pipeline-contracts.md`, whose stale claims were
-  live findings in `work-003`.
+| bucket | files | edit |
+|---|---|---|
+| **No frontmatter block at all** | 159 | author a whole block — 110 `skills/*/references/*.md` plus 49 templates |
+| **Block exists, declares nothing** | 126 | add the field — 76 `SKILL.md`, 9 `AGENT.md`, 28 templates, 13 KB docs (**the 9 at `contracts: []` are inside this bucket**, not a fourth one) |
+| **Already declares** | 10 | **verify, do not assume** — 9 KB docs plus `reviewer-ledger-schema.md`. An existing declaration that has gone stale is the worst case: it reads as checked and is not. |
+
+The 9 empty `contracts: []` docs include `architecture.md`, `tech-debt.md` and
+`pipeline-contracts.md`, whose stale claims were live findings in `work-003`.
 
 ## User Stories
 
@@ -71,10 +79,12 @@ Must
 - [ ] Given the 20 internal READMEs, when this feature begins, then they are deleted **before** any
       declaration is authored, with the `aid-clerk` caller contract relocated to `AGENT.md` and the
       `DMR00c` assertion removed alongside its file (AC-5).
-- [ ] Given `state-execute.md:166` and `site/src/data/skill-flows/aid-execute.flow.json`, when the
-      `aid-clerk` README is deleted, then both point at a path that exists in an installed tree.
-- [ ] Given every in-scope authored markdown file remaining after that deletion, when it is opened,
-      then it declares what it must be validated against (AC-1).
+- [ ] Given `state-execute.md` → “Mechanical sub-tasks”, when the `aid-clerk` README is deleted, then it points at a path
+      that exists in an installed tree. `site/src/data/skill-flows/aid-execute.flow.json` is a
+      **generated** sidecar: it is regenerated in feature-003's single render, never hand-edited.
+- [ ] Given the **290** files remaining after the 20 deletions and the 5 KB carve-outs, when each is
+      opened, then it declares what it must be validated against — and every one of the 290 falls
+      into exactly one of the three buckets above, with none counted twice and none left over (AC-1).
 - [ ] Given the 9 KB docs at `contracts: []`, when this feature completes, then each declares real
       assertions or states why it legitimately has none — an empty block is not a passing state.
 - [ ] Given any authored `contracts:` entry, when a reviewer checks it, then the assertion is
