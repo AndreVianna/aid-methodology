@@ -188,6 +188,7 @@ generator-written.
 | `see_also:`, `owner:`, `audience:` | optional | negative-routing pointers, accountable role, target readers (all free strings, not enums). |
 | `approved_at_commit:` | generator-written | git SHA freshness baseline; **never hand-authored.** |
 | `review-criteria:` | optional | the criteria a reviewer validates this doc against -- declare only what is true of THIS doc; see [Review Criteria -- Criteria by Level](#review-criteria--criteria-by-level). |
+| `contracts:` | pre-rename name of `review-criteria:` | the same field under its old name, still on disk in docs whose data has not been migrated yet. Read it as `review-criteria:`; rename it on the next touch. Its entries were plain strings, so a rename is not enough -- each becomes an object, and a string entry has no `id`, which means no finding can cite it. |
 | `intent:`, `changelog:` | legacy | `intent:` is superseded by objective+summary; `changelog:` is **not a valid field** -- delete it where it survives. |
 
 - **Rule:** a new hand-authored primary/extension doc MUST carry `objective:`,
