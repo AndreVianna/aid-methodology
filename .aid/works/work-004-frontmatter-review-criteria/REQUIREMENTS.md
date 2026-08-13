@@ -1,7 +1,7 @@
 # Requirements
 
 - **Name:** Declared Review Criteria
-- **Description:** Review criteria are declared as data — global and per-document-type lists in the Knowledge Base, per-file exceptions in a file's own frontmatter — the review process is made to resolve and apply them, and the guard scripts that stood in for them are removed.
+- **Description:** Review criteria are declared as data — global and per-document-type lists in the Knowledge Base, per-file exceptions in a file's own frontmatter — every agent that writes a file resolves them first and complies, the reviewer verifies against the same list, and the guard scripts that stood in for them are removed.
 
 ## Change Log
 
@@ -20,6 +20,7 @@
 | 2026-08-12 | **Cross-reference fix pass.** `aid-reviewer` raised 34 findings over 87 re-derived claims; 27 fixed here. Corrected `site/src/content/docs` 137→93, FR-6's citation list, AC-1's triple-counted population (→290 with carve-outs named), NFR-2's undefined "added" side, NFR-4's missing site chain, NFR-1's unimplementable script, the examples' false "zero references", and every bare `file:LINE` citation. Added FR-8 for the front face, which was gated with no requirement behind it | /aid-define |
 | 2026-08-12 | **Criteria model corrected by the owner.** `contracts:` holds the *criteria a reviewer validates the file against*, resolved through a three-level cascade — global and per-document-type lists in the KB, per-file exceptions in frontmatter — written once at the highest level where true, to stop duplication and keep per-file lists short. Criteria are positive **and** negative: a non-obvious exclusion belongs in `contracts:` with its reason, never as a severity. `severity:` named and shaped as a defect-kind → level map over validatable kinds only. FR-1, FR-5, FR-6, AC-1, §4 streams 1–2 and both feature SPECs rewritten; the earlier `canonical/` placement correction withdrawn — criteria are project-specific, so the KB is right | /aid-define |
 | 2026-08-12 | **Criteria home fixed: `.aid/knowledge/authoring-conventions.md`**, both levels together as two new sections (owner decision). The concern spine puts it at C3 — conventions and standards — which is what criteria are; it is `kb-category: primary`, already tagged `enforcement`, and already carries level 1 unlabelled in `## Drift-Prone Content is Banned`, `## Citation Rule` and `## Resolved Items Leave No Trace`. Not `quality-gates.md` (C6), which keeps the grade scale, ledger and thresholds; criteria and their cost in C3, scoring in C6, cross-referenced never duplicated | /aid-define |
+| 2026-08-12 | **Criteria are a writer's contract, not a reviewer's checklist** (owner correction). FR-2 rewritten: any agent that writes or edits a file resolves its criteria first and complies; the reviewer verifies against the same list and is the backstop, not the sole enforcer. New **FR-9** (resolve-before-writing) and **FR-10** (a work that introduces or retires a document type owes the KB its registry row) — both **global instructions in `agent-boilerplate.md`**, which every AGENT.md includes, rather than per-skill edits. AC-2 now proves both directions. Field shape settled: `review-criteria:` as an array of objects (`id`/`kind`/`criterion`/`severity`/`why`), same shape at all three levels, renamed from `contracts:`; severity is a field on each criterion rather than a separate block; overrides permitted with mandatory `why` and the effective value surfaced in the gate output, which closes FR-6's parked open cost | /aid-define |
 
 ### KB hydration assessment (COMPLETION step 2)
 
@@ -42,18 +43,23 @@ This work's KB changes land through **stream 2** and the single end-of-work refr
 
 ## 1. Objective
 
-**Make review criteria declared data rather than code**, and make the review process resolve and
-apply them. Then delete the scripts that were standing in for them.
+**Make review criteria declared data rather than code**, and put them in front of every agent that
+writes a file — not only the one that reviews it. Then delete the scripts that were standing in for
+them.
 
 Criteria resolve through three levels, each written once at the highest level where it is true:
 
 - **Global** and **per-document-type** lists in the Knowledge Base — where most criteria live
 - **Per-file exceptions** in a file's own frontmatter — only where a file genuinely differs
 
-A criterion says either *"validate this"* or *"never validate this, and here is why"*, and
-`severity:` says what each validatable defect kind costs. Together they replace a growing pile of
+Each criterion says either *"validate this"* or *"never validate this, and here is why"*, and carries
+its own severity — what a violation of that criterion costs. Together they replace a growing pile of
 guard scripts — each of which encoded one fact-check in code, and could be wrong about it — with a
 statement of what to check, applied by something that can read.
+
+**Whoever writes a file resolves its criteria before writing; whoever reviews it verifies against the
+same list.** One list, two moments. A reviewer catching what a writer was never told is the loop this
+work exists to break.
 
 **The point is to stop the review process from growing the surface it reviews every time it fixes
 something.** A criterion added to a KB list changes nothing about how much there is to review. A
@@ -187,7 +193,8 @@ Three streams. **The order is load-bearing.**
    | `canonical/aid/templates/kb-authoring/review-rubric.md` | 304 | its contracts check (item 3) generalized beyond `.aid/knowledge/`, taught to resolve the three levels, and given a citable rule ID |
    | `canonical/aid/templates/kb-authoring/frontmatter-schema.md` | — | `contracts` defined for all four trees rather than KB docs alone, carrying **positive criteria and exclusions**; plus `severity:` as a defect-kind → level map |
    | `canonical/aid/templates/grading-rubric.md` | 83 | level 2 of FR-6's severity cascade |
-   | `canonical/agents/aid-reviewer/AGENT.md` | — | the instruction to read the artifact's own frontmatter |
+   | **`canonical/aid/templates/agent-boilerplate.md`** | — | **the two global instructions (FR-9, FR-10)** — resolve a file's criteria before writing it, and update the KB when a document type is introduced or retired. Included by every `AGENT.md`, so this one edit reaches every agent. |
+   | `canonical/agents/aid-reviewer/AGENT.md` | — | the reviewer's own half: verify compliance against the resolved criteria, and cite the criterion `id` in the finding |
    | `canonical/aid/templates/reviewer-dispatch.md` | 311 | the declaration reaching the dispatched reviewer |
    | `canonical/aid/templates/reviewer-ledger-schema.md` | 221 | the new rule ID citable in the `Rule` column |
    | 6 × `canonical/skills/*/references/reviewer-brief.md` | — | the per-skill briefs naming it |
@@ -265,14 +272,29 @@ boundary in section 4.)*
   A file carries a `contracts:` block **only where it has criteria or exclusions of its own.** A file
   fully covered by its global and type-level criteria correctly declares nothing, and that is a
   passing state, not a gap. Coverage is a property of the cascade; a per-file block is the exception.
-- **FR-2** The reviewer reads that declaration as a normal part of every review — not as an
-  instruction that exists and goes unread.
+- **FR-2** **Criteria are resolved by whoever WRITES a file, and verified by whoever reviews it.**
+  Same list, two moments — not a reviewer's checklist. *(Owner correction, 2026-08-12.)*
 
-  *Corrected scope.* An earlier draft framed this as switching on an existing rule. The check
-  exists but is **scoped to `.aid/knowledge/` and carries no ID**, so this requirement is to
-  **generalize and name it**: lift `kb-authoring/review-rubric.md` item 3 out of KB-only scope,
-  give it a citable rule ID for the ledger's `Rule` column, and instruct `aid-reviewer/AGENT.md`
-  and the six per-skill briefs to read the artifact's frontmatter.
+  Before writing or editing any in-scope file, an agent resolves that file's criteria — global, then
+  its type, then the file's own — and complies. The reviewer then verifies compliance against the
+  same list.
+
+  *Why this is the load-bearing half:* if the criteria reach only the reviewer, every agent writes
+  blind and the reviewer catches the damage afterwards. That is the loop that failed — **37% of
+  `work-003`'s findings were caused by a previous fix**. A fixer editing a file while reading that
+  file's criteria would not have produced most of them: the criteria say *"no bare line-number
+  citation"* and *"no restated count"* **before** the edit, not after. The reviewer stops being the
+  only line of defence and becomes the backstop it should always have been.
+
+  This also explains the home chosen in FR-5 better than the reasoning given there:
+  `authoring-conventions.md` is the ***authoring*** conventions document. Writers read it, reviewers
+  check it, and C3 covers both because they were always the same thing.
+
+  *Corrected scope.* An earlier draft framed this as switching on an existing rule, and scoped it to
+  the reviewer alone. The check exists but is **scoped to `.aid/knowledge/` and carries no ID**, so
+  this requirement is to **generalize it, name it, and put it in front of every agent that writes**:
+  lift `kb-authoring/review-rubric.md` item 3 out of KB-only scope, give its entries citable ids
+  (FR-5), and carry the resolve-before-writing instruction in `agent-boilerplate.md` (FR-9).
 - **FR-3** The FIX contract requires re-verifying a file's own declaration after editing that file,
   closing the `quality-gates.md` failure mode. Target: `aid-execute/references/state-fix.md`, the
   only one of the four `state-fix.md` files carrying F1–F6.
@@ -291,14 +313,79 @@ boundary in section 4.)*
 - **FR-5** **Criteria resolve through a three-level cascade, and each criterion is written once at
   the highest level where it is true.** *(Owner decision, 2026-08-12.)*
 
-  `contracts:` holds **the list of criteria a reviewer validates this file against** — not a
-  restatement of what the file says, and not a per-fact assertion list.
+  The field is **`review-criteria:`** and it holds **the list of criteria a reviewer validates this
+  file against** — not a restatement of what the file says, and not a per-fact assertion list.
+
+  **Renamed from `contracts:`** *(owner decision, 2026-08-12)*. The old name reads as "assertions
+  about the world", which is how it was misread for three turns of this interview; `review-criteria`
+  says what it is. Migration is bounded: `kb-authoring/frontmatter-schema.md`,
+  `kb-authoring/review-rubric.md` item 3, and the 10 files that already declare.
+
+  **One shape at all three levels.** Every criterion — global, per-type, or per-file — is an object
+  with the same fields, so resolution is a concatenation rather than a normalisation of two formats:
+
+  | Field | Required | Meaning |
+  |---|---|---|
+  | `id` | yes | greppable, scope-prefixed (`G-`, `KB-`, `SK-`…; file-local entries use `F-`) |
+  | `kind` | yes | `validate` or `exclude` |
+  | `criterion` | yes | what to check, or what must never be checked |
+  | `severity` | **only when `kind: validate`** | what a violation costs — declaring it on an `exclude` is a schema error, not a style slip |
+  | `why` | yes | the reason. On an exclusion it is the whole point; without it an exclusion reads as an escape hatch |
+
+  ```yaml
+  review-criteria:
+    - id: F-01
+      kind: validate
+      criterion: The 7-column table is the entire file; no headers, narrative or summary sections
+      severity: HIGH
+      why: grade.sh parses by column position, so an extra section mis-grades silently
+    - id: F-03
+      kind: exclude
+      criterion: Example ledger rows in this document are not graded as real findings
+      why: they are illustrations; grading them would fault the doc for demonstrating its own schema
+  ```
+
+  **A file-local `id` needs no global uniqueness** — the ledger's existing `Doc` column disambiguates
+  it. This is also how a finding cites its criterion without any new ledger column and without
+  touching `grade.sh`'s positional parse.
 
   | Level | Holds | Lives in |
   |---|---|---|
   | 1 — **Global** | criteria every document in the project is validated against | **`.aid/knowledge/authoring-conventions.md`**, as a new section |
   | 2 — **Document type** | criteria for that class of document (KB doc, skill, skill reference, agent, template) | **the same document**, as a second new section |
   | 3 — **This document** | only what is unique to this file | the file's own `contracts:` |
+
+  **Levels 1 and 2 are expressed as two tables** in that document *(owner decision, 2026-08-12)*:
+
+  **A type registry** — answering "what types exist, and which one is this file?". Selectors must be
+  **mutually exclusive and exhaustive** over the in-scope corpus, which is the property AC-1 checks:
+
+  ```markdown
+  | Type | Selector | Notes |
+  |------|----------|-------|
+  | `kb-doc` | `.aid/knowledge/*.md` | except the meta and generated docs below |
+  | `skill` | `canonical/skills/*/SKILL.md` | |
+  | `skill-reference` | `canonical/skills/*/references/*.md` | the procedure bodies |
+  | `state` | any `STATE.md`, any depth | never reviewed — see `G-04` |
+  ```
+
+  **A criteria table** — **one row per criterion, not per type**, carrying the same fields as the
+  frontmatter object. `*` in `Applies to` means global, so levels 1 and 2 share one list and
+  duplication is visible on sight: two rows saying the same thing for two types belong at `*`.
+
+  ```markdown
+  | ID | Applies to | Kind | Criterion | Severity | Why |
+  |----|-----------|------|-----------|----------|-----|
+  | G-01 | `*` | validate | No cosmetic counts unless the count is load-bearing | MINOR | drifts every commit; the reader can run `wc -l` |
+  | G-04 | `state` | exclude | Never reviewed, at any level, in any folder | — | bookkeeping; a completed run's rows are correct as history, so any content check fires forever |
+  | SK-01 | `skill` | validate | Every agent named in a Dispatch table resolves to `canonical/agents/<name>/` | HIGH | a skill dispatching a non-existent agent fails at run time |
+  ```
+
+  A table rather than a section per type because it stays compact as types are added, and because
+  "does every in-scope file resolve to exactly one type?" is then answerable by reading one column.
+  **No cell may contain a pipe** — a criterion needing one is rephrased. *(This constrains the
+  markdown tables only; the YAML frontmatter has no such limit, which matters because real criterion
+  text does contain pipes.)*
 
   **Both levels live in `authoring-conventions.md`, and stay together.** *(Owner decision,
   2026-08-12.)* The concern spine places it at **C3 — "What conventions and standards does it
@@ -351,20 +438,38 @@ boundary in section 4.)*
 - **FR-6** **Severity resolves through the same three-level cascade, over validatable defect kinds
   only.** *(Owner decision, 2026-08-12.)*
 
-  The field is **`severity:`**, and it is a **map from defect kind to level**, not one value for the
-  file — with the reason recorded inline so it can be argued with:
+  **Severity is a field on each criterion, not a block of its own.** A criterion *is* a defect kind,
+  so a `severity` on every `review-criteria` entry already **is** the defect-kind → level map — with
+  no second block that can drift out of step with the first. An earlier draft proposed a separate
+  `severity:` map; it is withdrawn as a redundant surface (**C-1**).
 
-  ```yaml
-  severity:
-    contract-violation: HIGH    # this doc is load-bearing; a false claim misroutes an agent
-    stale-count: LOW
-  ```
+  A criterion with `kind: exclude` carries **no** severity. Declaring one is a schema error: an
+  excluded defect kind is not scored, and there is no such thing as an exclusion expressed as a
+  severity of zero.
 
   | Level | Holds | Lives in |
   |---|---|---|
   | 1 — **Global** | what each severity *means* | `canonical/aid/templates/grading-rubric.md § Issue Severities` — the universal scale, shipped |
   | 2 — **Document type** | what each defect kind costs in that class of document | **`.aid/knowledge/authoring-conventions.md`**, beside that type's criteria |
-  | 3 — **This document** | overrides only where this file genuinely differs | the file's own `severity:` |
+  | 3 — **This document** | overrides only where this file genuinely differs | the file's own `review-criteria:` |
+
+  **Overrides are permitted** *(owner decision, 2026-08-12)*, under two conditions that are not
+  optional. A file may restate a higher-level criterion's severity by referencing its `id`:
+
+  ```yaml
+  review-criteria:
+    - override: G-01           # global: no cosmetic counts, MINOR
+      severity: HIGH
+      why: this doc's counts are load-bearing; a stale one misroutes an agent
+  ```
+
+  1. **`why` is mandatory on every override**, enforced by the schema rather than by convention.
+  2. **The effective value is surfaced in the gate output.** A gate that does not say what it is
+     enforcing cannot be audited, and an override is precisely where a bar can be quietly lowered —
+     the same reasoning, and the same treatment, as `minimum_grade`.
+
+  *This resolves what an earlier draft carried as an unresolved "open cost". It is now a
+  requirement, and `feature-001` carries it as an acceptance criterion.*
 
   Level 2 sits with the criteria it prices, not in `quality-gates.md`: what a violation costs is a
   property of the criterion (C3), while turning severities into a letter grade is machinery (C6).
@@ -406,9 +511,9 @@ boundary in section 4.)*
   a correction to an earlier draft that assumed a single home and warned only against creating a
   second.
 
-  *Open cost, carried forward:* a level-3 override is a per-file bar, so it is a place a gate can
-  be quietly lowered. It needs the same treatment as `minimum_grade` — surfaced in the gate output
-  — for the same reason: an audit trail without a history mechanism.
+  *(An earlier draft carried the per-file-bar risk as an unresolved "open cost". It is resolved
+  above: overrides are permitted, `why` is mandatory, and the effective value is surfaced in the
+  gate output.)*
 - **FR-7** **Delete the 20 internal `README.md` files** under `canonical/skills/` (11) and
   `canonical/agents/` (9) — 1,802 lines. *(Owner decision, 2026-08-12: they are issue-prone surface
   that adds no value.)*
@@ -441,6 +546,35 @@ boundary in section 4.)*
   *Why this belongs in a work about declared criteria:* every deleted file is one fewer surface that
   can drift, and it is the inverse of adding a mechanism — **C-1** applied in the direction that
   shrinks the reviewed surface instead of growing it.
+- **FR-9** **Resolving criteria before writing is a global instruction to every agent, in
+  `canonical/aid/templates/agent-boilerplate.md`.** *(Owner decision, 2026-08-12.)*
+
+  That template is included by **every** `AGENT.md`, which makes it the one surface that reaches all
+  agents at once. The instruction is **not** scoped to `aid-reviewer`, and **not** distributed across
+  individual skills: an agent that writes files — developer, architect, tech-writer, clerk, operator
+  — is bound by it wherever it is dispatched from.
+
+  Per-skill instructions were considered and rejected: they would put the same rule in many places,
+  which is the duplication FR-5's cascade exists to prevent, applied to instructions instead of
+  criteria.
+
+- **FR-10** **A work that introduces a new document type owes the KB the registry row and its
+  criteria — and this too is a global instruction, not a phase's private duty.**
+  *(Owner correction, 2026-08-12.)*
+
+  It is foundational rather than procedural: **if a new document type is introduced, the KB is
+  updated**, whichever agent introduces it and whichever phase it is in. It therefore lives in
+  `agent-boilerplate.md` alongside FR-9, not in `/aid-define` and `/aid-specify` as an earlier draft
+  proposed.
+
+  **Symmetric:** a work that removes the last file of a type removes its registry row. Otherwise the
+  registry accumulates rows for types that no longer exist — the same drift, in the other direction.
+
+  **Backstop, so this does not rest on an agent noticing.** `authoring-conventions.md` carries a
+  criterion on itself: *every in-scope file resolves to exactly one registry row.* If the introducing
+  work misses the addition, the next review of that document catches it. Proactive obligation plus
+  review backstop — and neither is a mechanism (**C-1**).
+
 - **FR-8** **The front face is brought into line with the changed trees, at the very end** —
   `docs/*.md` (7), the repo-root `README.md` (257 lines) and `examples/**/README.md` (4 files, 1,237
   lines). Deferred by owner decision because these describe trees that are still moving until stream
@@ -668,10 +802,17 @@ re-applying a competing reorganization is the failure that cost PR #12 63 commit
   `kb-authoring/review-rubric.md` item 3 proves an unread check can sit in the rubric for a whole
   delivery — cited once in 47 findings.
 
-  **Method — planted-defect proof, once per stream, under NFR-1.** In a disposable worktree, put a
-  claim in a file's body that contradicts its own `contracts:` line, run a real review, and confirm
-  the finding comes back citing that contract. This is **C-6** applied to this work's own output, it
-  reuses an existing convention, and it adds no maintained test.
+  **Both directions must be proven, not just the reviewer's.** Since FR-2 makes criteria a writer's
+  contract first, testing only the reviewer would leave the more valuable half unproven:
+
+  1. **Writer** — an agent dispatched to write or edit a file of a given type resolves that type's
+     criteria and complies, without being told to in the task prompt.
+  2. **Reviewer** — given a planted contradiction between a file's body and its resolved criteria,
+     applied in a disposable worktree under NFR-1, a real review returns the finding citing that
+     criterion's `id`.
+
+  This is **C-6** applied to this work's own output, it reuses an existing convention, and it adds no
+  maintained test.
 
   *Not the method:* counting how often contract-derived rules get cited across later reviews. That
   is a stronger long-run signal but needs several reviews to accumulate, so it cannot gate the work.

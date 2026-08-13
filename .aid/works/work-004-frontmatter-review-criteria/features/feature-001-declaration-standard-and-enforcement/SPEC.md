@@ -49,8 +49,11 @@ This feature builds the criteria system and makes the review process use it. Fou
    came from. An unnamed check produces findings with nothing to cite, which is a large part of why
    it was invoked once in 47 findings. *(Where that identifier goes is unresolved — this branch's
    ledger is 7 columns with no `Rule` column, and adding one breaks `grade.sh`'s positional parse.)*
-4. **Teach the reviewer to resolve three levels.** Global, then type, then the file's own block —
-   validating against the union, most specific winning.
+4. **Put the criteria in front of every agent that writes — not just the reviewer.** One edit to
+   `canonical/aid/templates/agent-boilerplate.md`, which every `AGENT.md` includes: resolve a file's
+   criteria before writing or editing it, and update the KB's registry when a document type is
+   introduced or retired. The reviewer then verifies compliance against the same list, resolving
+   global → type → file, validating against the union with the most specific winning.
 
 Then the surfaces that run a review are told to read the declaration: the reviewer agent, the
 dispatch template, the ledger schema, the six per-skill briefs — and the FIX contract, so a fixer
@@ -86,6 +89,15 @@ Must
       `contracts:`** carrying its reason — not an omission, and not a severity of zero.
 - [ ] Given a reviewer validating any file, when it resolves criteria, then it reads **all three
       levels** and validates against their union, most specific winning on conflict.
+- [ ] Given **any agent that writes or edits an in-scope file**, when it begins, then
+      `agent-boilerplate.md` instructs it to resolve that file's criteria first and comply — the
+      instruction is global, not carried per skill and not scoped to `aid-reviewer` (FR-9).
+- [ ] Given a work that introduces or retires a document type, when it completes, then the KB's type
+      registry gained or lost its row, and `authoring-conventions.md` carries the backstop criterion
+      that **every in-scope file resolves to exactly one registry row** (FR-10).
+- [ ] Given a file that overrides a higher-level criterion, when a gate runs, then the override's
+      **effective value is surfaced in the gate output** and its `why` is present — a schema error
+      if absent (FR-6).
 - [ ] Given any in-scope authored markdown file, when a reviewer resolves criteria for it, then the
       `contracts:` field is defined for that file's tree — not for `.aid/knowledge/` alone.
 - [ ] Given a finding derived from the contracts check, when it is written to a ledger, then it
