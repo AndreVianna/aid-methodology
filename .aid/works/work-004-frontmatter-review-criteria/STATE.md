@@ -70,6 +70,9 @@ and per-task `delivery-NNN/tasks/task-NNN/STATE.md` (mutable task cells).
 | 2026-08-12 | Interview approved by owner | Approved | All 10 sections Complete; identity fields confirmed as "Declared Review Criteria" |
 | 2026-08-12 | Requirements correction pass | 7 sections re-derived | Decomposition found artifacts cited that exist only on `work-003`; §2, §4, FR-2/3/4, NFR-2, §8, AC-3/AC-4 re-derived against this branch |
 | 2026-08-12 | Feature Decomposition | 3 features created | `aid-architect` proposed 11; collapsed to 3 on owner decision — the three streams of §4, which are the natural shipping boundaries |
+| 2026-08-12 | Cross-reference pass 1 | 34 findings, 33 Fixed / 1 Invalid | Ledger archived at `review-archive/cross-reference-pass1.md` |
+| 2026-08-13 | Cross-reference pass 2 | 37 findings, all 37 Fixed | Ledger archived at `review-archive/cross-reference-pass2.md`. Owner-audited before applying: 33 valid as written, 2 valid with wrong evidence (rows 4, 21), 2 requiring an owner decision (rows 3, 4). None asked for a new mechanism. Owner decision: a severity override surfaces in the ledger's `Evidence` cell, not the gate output |
+| 2026-08-13 | Self-review of the fix pass | 2 defects introduced and caught pre-commit | A bare `profiles/**` exclusion limb that would have exempted FR-9's own five edit targets; a "7 of the 290" count that is **13**. Both fixed in place |
 
 ---
 
