@@ -44,6 +44,8 @@ load-bearing core.
 ## Contents
 
 - [KB Document Layout](#kb-document-layout)
+- [Review Criteria — Type Registry](#review-criteria--type-registry)
+- [Review Criteria — Criteria by Level](#review-criteria--criteria-by-level)
 - [Frontmatter Rules](#frontmatter-rules)
 - [Dual-Audience Standard](#dual-audience-standard)
 - [Drift-Prone Content is Banned](#drift-prone-content-is-banned)
@@ -76,6 +78,74 @@ Every KB document MUST follow this top-to-bottom order (kb-authoring P10):
 
 Example: every doc in this KB (including this one) opens with frontmatter and ends
 with `## Change Log`.
+
+---
+
+## Review Criteria — Type Registry
+
+A reviewer validates an authored artifact against the **criteria declared for it**, resolved through
+three levels: **global** criteria (this document, `Applies to: *`), **per-document-type** criteria (this
+document, keyed by type), and **per-file** exceptions (the file's own `review-criteria:` frontmatter).
+The reviewer validates against the **union**; the most specific declaration wins on conflict. A criterion
+is written **once, at the highest level where it is true** — a rule true for two files belongs at the
+type level, one true for two types belongs at global — so most files declare few criteria or none.
+
+This registry answers "what document types exist, and which one is a given file?". Selectors are
+**mutually exclusive and exhaustive** over the in-scope corpus (`canonical/skills/`, `canonical/agents/`,
+`canonical/aid/templates/`, `.aid/knowledge/`), so every in-scope file resolves to exactly one type
+(criterion `G-07`).
+
+| Type | Selector | Notes |
+|------|----------|-------|
+| `kb-doc` | a `.md` under `.aid/knowledge/` with `kb-category: primary` or `extension` and `source: hand-authored` | the hand-authored knowledge docs |
+| `kb-generated` | a `.md` under `.aid/knowledge/` with `source: generated` (e.g. `INDEX.md`, `relationships.md`) | build-verify only; content not graded (C-5) |
+| `kb-meta` | a `.md` under `.aid/knowledge/` with `kb-category: meta` (e.g. `README.md`, `external-sources.md`) | spot-check of top-level fields only |
+| `skill-generated` | a `canonical/skills/<name>/SKILL.md` whose `<name>` is a row in `shortcut-catalog.yml` | rebuilt by the generator; no file-level block (see `SK-02`) |
+| `skill-authored` | a `canonical/skills/<name>/SKILL.md` whose `<name>` is not a `shortcut-catalog.yml` row | hand-authored; may carry a file-level block |
+| `skill-reference` | a `.md` under `canonical/skills/*/references/` | the procedure bodies an agent executes |
+| `agent` | a `canonical/agents/*/AGENT.md` | may carry a file-level block; `render.py` carries it through |
+| `template-payload` | a file under `canonical/aid/templates/` whose frontmatter is the emitted artifact's (placeholders, or opens with a payload key such as `pipeline:` / `state:`) | no file-level block (see `TP-01`) |
+| `template-own` | any other file under `canonical/aid/templates/` — its frontmatter describes itself, or it has none | the catch-all for templates (e.g. `reviewer-ledger-schema.md`); may carry a file-level block. Ordered after `template-payload`, so a payload template never falls here |
+| `state` | any `STATE.md`, at any depth in any folder | never reviewed (see `G-04`) |
+
+---
+
+## Review Criteria — Criteria by Level
+
+One row per criterion, carrying the same fields as the frontmatter object (`id`, `kind`, `criterion`,
+`severity`, `why`). `*` in **Applies to** means global (level 1); a type name means level 2. A `kind:
+exclude` row records what a reviewer must **not** validate (where it would otherwise reasonably check)
+and carries **no** severity — an exclusion is not a defect kind, and there is no severity of zero. **No
+cell may contain a pipe** — a criterion needing one is rephrased (this constrains the markdown table
+only; the YAML frontmatter has no such limit).
+
+A finding cites a criterion by its `id` as a prefix inside the ledger's existing `Description` cell — a
+scope-prefixed id (`G-`, `KB-`, `SK-`, …) resolves here; a file-local `F-` id resolves in the file named
+in the ledger's `Doc` column. A finding citing no id, or an id resolving nowhere, is itself a defect.
+
+| ID | Applies to | Kind | Criterion | Severity | Why |
+|----|-----------|------|-----------|----------|-----|
+| G-01 | `*` | validate | No cosmetic count unless it is load-bearing and measured from disk at authoring time | MINOR | counts drift every commit; the reader can run `wc -l` |
+| G-02 | `*` | validate | Every citation is a durable anchor (path plus a grep-recoverable symbol or heading), never a bare `file.ext:LINE` | LOW | line numbers move on the next edit above them |
+| G-03 | `*` | validate | A resolved or closed tracked item leaves no trace — its row, detail, and closure prose are removed | MEDIUM | a resolved item still visible reads as open; git is the audit trail |
+| G-04 | `state` | exclude | Never reviewed, at any level, in any folder | — | bookkeeping; a completed run's rows are correct as history, so any content check fires forever |
+| G-05 | `agent-context` | exclude | The root `CLAUDE.md` / `AGENTS.md` are never content-reviewed | — | shared host files; AID owns only the `AID:BEGIN`/`AID:END` region and points at truth rather than holding it; they carry no frontmatter to declare this on |
+| G-06 | `rendered` | exclude | A file that IS a render is not content-reviewed — it appears as a `dst` in an emission manifest, OR it sits under `profiles/<tool>/` and has a corresponding `canonical/` source | — | byte-identical output of `canonical/`; the byte-compare gate is its review. Keyed on provenance not path, so authored repo-local content under a dogfood tree stays reviewable |
+| G-07 | `*` | validate | Every in-scope file resolves to exactly one type in the registry above | HIGH | FR-10 backstop; an untyped file has no resolved criteria and drifts unchecked |
+| KB-01 | `kb-doc` | validate | Required frontmatter is present and single-line: `objective`, `summary`, `sources` | HIGH | lint-graded; a missing or malformed field misroutes the doc |
+| KB-02 | `kb-doc` | validate | Exactly one concern per doc, and `## Change Log` is the last section | MEDIUM | mixing concerns is a boundary smell; layout is a fixed contract |
+| KB-03 | `kb-generated` | exclude | Content is not graded; only that the generator ran (build-verify) | — | the generator is the oracle (C-5) |
+| SK-01 | `skill-authored` | validate | Every agent named in a Dispatch table resolves to `canonical/agents/<name>/` | HIGH | a skill dispatching a non-existent agent fails at run time |
+| SK-02 | `skill-generated` | exclude | Carries no file-level `review-criteria:` block; type-level criteria only | — | rebuilt from `shortcut-catalog.yml`; anything hand-written is erased on the next run |
+| SR-01 | `skill-reference` | validate | Every instruction-content pointer resolves to a path that exists in an installed tree | HIGH | a broken pointer in a procedure body is followed at run time |
+| AG-01 | `agent` | validate | The `name:` matches the folder, and any agent it references resolves under `canonical/agents/` | MEDIUM | a name/folder mismatch mis-dispatches |
+| TP-01 | `template-payload` | exclude | Carries no file-level `review-criteria:` block; its frontmatter is the emitted artifact's | — | a block here would be stamped onto every generated artifact |
+
+**Severity** on a `validate` criterion is what a violation of that criterion costs, resolved through the
+same three levels (a file may override a higher level's severity by restating the criterion's `id` with
+a mandatory `why`; the reviewer records the effective value in the finding's `Evidence` cell). The
+five-level scale itself lives in `canonical/aid/templates/grading-rubric.md § Issue Severities`; this
+table prices each criterion against it and does not redefine the scale.
 
 ---
 

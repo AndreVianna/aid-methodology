@@ -6,8 +6,8 @@ started: "2026-08-12"
 minimum_grade: "A"
 user_approved: yes
 lifecycle: Running
-phase: Detail
-active_skill: none
+phase: Execute
+active_skill: aid-execute
 updated: '2026-08-13T11:15:00Z'
 pause_reason: --
 block_reason: --
