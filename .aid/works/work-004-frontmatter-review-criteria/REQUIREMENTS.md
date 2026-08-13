@@ -193,7 +193,8 @@ Three streams. **The order is load-bearing.**
    | `canonical/aid/templates/kb-authoring/review-rubric.md` | 304 | its contracts check (item 3) generalized beyond `.aid/knowledge/`, taught to resolve the three levels, and given a citable rule ID |
    | `canonical/aid/templates/kb-authoring/frontmatter-schema.md` | — | `contracts` defined for all four trees rather than KB docs alone, carrying **positive criteria and exclusions**; plus `severity:` as a defect-kind → level map |
    | `canonical/aid/templates/grading-rubric.md` | 83 | level 2 of FR-6's severity cascade |
-   | **`canonical/aid/templates/agent-boilerplate.md`** | — | **the two global instructions (FR-9, FR-10)** — resolve a file's criteria before writing it, and update the KB when a document type is introduced or retired. Included by every `AGENT.md`, so this one edit reaches every agent. |
+   | **`canonical/aid/templates/agent-boilerplate.md`** | — | **the two global instructions (FR-9, FR-10)** — resolve a file's criteria before writing it, and update the KB when a document type is introduced or retired. Included by every `canonical/agents/*/AGENT.md`, so one edit reaches every dispatched sub-agent. |
+   | **root `CLAUDE.md` / `AGENTS.md`**, `AID:BEGIN`/`AID:END` region | 5302 / 5512 bytes | the same two instructions, as pointers — this is the only surface the **main/orchestrator agent** reads, and it writes files too |
    | `canonical/agents/aid-reviewer/AGENT.md` | — | the reviewer's own half: verify compliance against the resolved criteria, and cite the criterion `id` in the finding |
    | `canonical/aid/templates/reviewer-dispatch.md` | 311 | the declaration reaching the dispatched reviewer |
    | `canonical/aid/templates/reviewer-ledger-schema.md` | 221 | the new rule ID citable in the `Rule` column |
@@ -384,10 +385,22 @@ boundary in section 4.)*
   |---|---|---|
   | **Generated `SKILL.md`** | rebuilt from `shortcut-catalog.yml`; anything hand-written is erased on the next run | type-level criteria only — which is sufficient, since generated files are uniform by construction |
   | **Templates carrying a payload block** | their frontmatter is the *emitted* artifact's, placeholders and all (`work-state-template.md` opens with `pipeline:`, `started: "{YYYY-MM-DD}"`) — a `review-criteria:` there would be stamped onto every generated STATE.md | type-level criteria only. **This splits `template` into two registry types**: those whose frontmatter is their own (e.g. `reviewer-ledger-schema.md`) and those carrying a payload. |
-  | **`AGENT.md`** | `render.py` builds the rendered frontmatter as a fresh dict of `name`/`description`/`tools`/`model` (+ optional `permissionMode`, `background`) and **discards every other key** | a file-level block never reaches an adopter — see the open decision in §8 |
+  In both the type level does the work, which is what the cascade is for. A type that cannot carry
+  file-level criteria is a **property of that type**, recorded in the registry, not a gap.
 
-  In all three the type level does the work, which is what the cascade is for. A type that cannot
-  carry file-level criteria is a **property of that type**, recorded in the registry, not a gap.
+  **`canonical/agents/*/AGENT.md` is NOT such a case, contrary to an earlier draft.** It can carry a
+  file-level block like any other authored file. `render.py` does rebuild the shipped frontmatter as
+  a fresh dict of `name`/`description`/`tools`/`model` and drop every other key — but that is
+  correct, not a limitation: `profiles/`, `.claude/` and `.cursor/` are **never content-reviewed**
+  (see the `rendered` exclusion below), so criteria shipped there would have no reader. The only
+  review of an agent definition is of its canonical source, which has the field.
+
+  **Two global exclusions follow, and both cover large parts of the repo:**
+
+  | Type | Exclusion | Why |
+  |---|---|---|
+  | `agent-context` | root `CLAUDE.md` / `AGENTS.md` are never reviewed | shared host files — AID owns only the `AID:BEGIN`/`AID:END` region and the rest is the user's content; they point at truth rather than holding it, which is also why KB docs may not cite them. They carry no frontmatter, so there is nowhere to declare this on the file itself. |
+  | `rendered` | `profiles/**`, `.claude/**`, `.cursor/**` are not content-reviewed | byte-identical output of `canonical/`; `architecture.md` states that *"a rendered or vendored copy is a defect; edit `canonical/` and re-render"*, and the byte-compare gate **is** their review. This is **C-5 generalised beyond the KB**: build-verify, never content-grade. |
 
   | Level | Holds | Lives in |
   |---|---|---|
@@ -589,10 +602,21 @@ boundary in section 4.)*
 - **FR-9** **Resolving criteria before writing is a global instruction to every agent, in
   `canonical/aid/templates/agent-boilerplate.md`.** *(Owner decision, 2026-08-12.)*
 
-  That template is included by **every** `AGENT.md`, which makes it the one surface that reaches all
-  agents at once. The instruction is **not** scoped to `aid-reviewer`, and **not** distributed across
-  individual skills: an agent that writes files — developer, architect, tech-writer, clerk, operator
-  — is bound by it wherever it is dispatched from.
+  That template is included by **every** `canonical/agents/*/AGENT.md`, which makes it the one
+  surface that reaches all **dispatched sub-agents** at once. The instruction is **not** scoped to
+  `aid-reviewer`, and **not** distributed across individual skills: an agent that writes files —
+  developer, architect, tech-writer, clerk, operator — is bound by it wherever it is dispatched from.
+
+  **A second surface is required, or the main agent is not bound.** `agent-boilerplate.md` reaches
+  sub-agents only; the main/orchestrator agent reads the root `CLAUDE.md` / `AGENTS.md`. Since the
+  main agent writes files constantly — most of this work's own artifacts were written that way — the
+  instruction must also sit in the `AID:BEGIN`/`AID:END` region of those files.
+
+  Those files being **excluded from review** (see FR-5) does not make them a poor home for it: they
+  hold pointers, not truth. `CLAUDE.md` already carries exactly this shape of instruction in
+  `## Tracking discipline (IMPERATIVE)` and `## Review output format (global)`, each pointing at a
+  definition held elsewhere. The criteria themselves stay in `authoring-conventions.md`; the context
+  file only says "resolve them before you write".
 
   Per-skill instructions were considered and rejected: they would put the same rule in many places,
   which is the duplication FR-5's cascade exists to prevent, applied to instructions instead of
