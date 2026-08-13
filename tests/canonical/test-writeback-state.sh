@@ -2106,5 +2106,190 @@ fi
 
 # ---------------------------------------------------------------------------
 echo ""
+echo "=== Unit 25: --findings on the feature-001 flattened layout ==="
+
+# On a flattened work there is NO per-task STATE.md, so --findings used to die
+# with "…/deliveries/delivery-001/tasks/task-001/STATE.md does not exist" —
+# a path that CANNOT exist in that layout — making the quick-check findings
+# write fail on EVERY flat work. The findings now land as a `### task-NNN`
+# SUB-BLOCK under the work-root STATE.md's ## Quick Check Findings section
+# (shape: aid-execute/references/state-review.md § Write Findings to STATE.md).
+#
+# The load-bearing property is SIBLING PRESERVATION: all tasks share ONE file,
+# so writing task-002's block must leave task-001's block byte-identical.
+# (Contrast the FULL layout, where each task owns its own STATE.md and the
+# WHOLE section is replaced — 25i re-asserts that path is untouched.)
+
+# qcf_block FILE TASK_ID -> the lines of that task's sub-block (heading
+# excluded), bounded by the next ### / ## heading or a bare `---`.
+qcf_block() {
+    awk -v tid="$2" '
+        $0 ~ ("^### " tid "[ \t]*$") { f=1; next }
+        f && (/^###/ || /^## / || /^---[ \t]*$/) { exit }
+        f { print }
+    ' "$1"
+}
+
+# assert_match_count FILE ERE_PATTERN EXPECTED LABEL -- number of MATCHING LINES
+# (tests/lib/assert.sh's assert_line_count counts a file's total lines instead).
+assert_match_count() {
+    local file="$1" pattern="$2" expected="$3" label="$4"
+    local actual
+    actual=$(grep -cE "$pattern" "$file" 2>/dev/null || true)
+    if [[ "${actual:-0}" -eq "$expected" ]]; then
+        pass "$label"
+    else
+        fail "$label — expected $expected line(s) matching '$pattern', got ${actual:-0} in $file"
+    fi
+}
+
+FLAT_F="${TMPDIR_BASE}/work-flat-findings"
+make_flat_work_state "$FLAT_F"
+make_flat_blueprint "$FLAT_F"
+make_flat_task_spec "$FLAT_F" 1
+make_flat_task_spec "$FLAT_F" 2
+FLAT_F_STATE="${FLAT_F}/STATE.md"
+
+# The fixture (like work-state-template.md) seeds NO ## Quick Check Findings
+# section — creating it is part of the contract under test.
+assert_file_not_contains "$FLAT_F_STATE" "## Quick Check Findings" \
+    "25 setup: fixture starts with no ## Quick Check Findings section"
+
+# A caller-supplied block carrying a literal TAB: it must survive byte-for-byte.
+# `awk -v` would re-process the C escape and corrupt it — the writer reads the
+# block from ENVIRON for exactly this reason (same guard as 23/write_task_field_flat).
+FINDINGS_T1="- **Reviewer Tier:** Small
+- **Findings:**
+  - [HIGH] col1	col2 tab-separated — {a.sh:12} — Deferred-to-gate"
+
+# 25a: first flat --findings write succeeds and creates the section
+code=0
+AID_STATE_FILE="$FLAT_F_STATE" bash "$SCRIPT" --delivery-id 1 --task-id 1 --findings "$FINDINGS_T1" 2>/dev/null || code=$?
+assert_exit_zero "$code" "25a: flat --findings write → exit 0 (no per-task STATE.md required)"
+assert_file_contains "$FLAT_F_STATE" "## Quick Check Findings" "25a: ## Quick Check Findings section created in the work-root STATE.md"
+assert_file_contains "$FLAT_F_STATE" "### task-001" "25a: findings keyed by a ### task-001 sub-heading"
+assert_file_contains "$FLAT_F_STATE" "col1	col2 tab-separated" "25a: literal TAB in the caller block survives (ENVIRON, not awk -v)"
+
+# 25b: no per-task STATE.md and no deliveries/ wrapper are conjured
+if [[ ! -f "${FLAT_F}/tasks/task-001/STATE.md" ]]; then
+    pass "25b: no per-task STATE.md created for the flat layout"
+else
+    fail "25b: a per-task STATE.md was created — flat layout must not use one"
+fi
+if [[ ! -d "${FLAT_F}/deliveries" ]]; then
+    pass "25b: no deliveries/ directory created for the flat layout"
+else
+    fail "25b: a deliveries/ directory was created — flat layout must not use one"
+fi
+
+# 25c: placement — the new section sits AFTER ### Tasks lifecycle and BEFORE
+# ## Delivery Gate, so neither that table nor the DERIVED zone is disturbed.
+LINE_TL=$(grep -n '^### Tasks lifecycle' "$FLAT_F_STATE" | head -1 | cut -d: -f1)
+LINE_QCF=$(grep -n '^## Quick Check Findings' "$FLAT_F_STATE" | head -1 | cut -d: -f1)
+LINE_GATE=$(grep -n '^## Delivery Gate' "$FLAT_F_STATE" | head -1 | cut -d: -f1)
+LINE_DERIVED=$(grep -n 'DERIVED / READ-ONLY VIEWS' "$FLAT_F_STATE" | head -1 | cut -d: -f1)
+if [[ -n "$LINE_TL" && -n "$LINE_QCF" && -n "$LINE_GATE" && -n "$LINE_DERIVED" \
+      && "$LINE_TL" -lt "$LINE_QCF" && "$LINE_QCF" -lt "$LINE_GATE" && "$LINE_GATE" -lt "$LINE_DERIVED" ]]; then
+    pass "25c: ## Quick Check Findings placed between ### Tasks lifecycle and ## Delivery Gate (DERIVED zone untouched)"
+else
+    fail "25c: ## Quick Check Findings mis-placed — Tasks lifecycle=$LINE_TL QCF=$LINE_QCF Gate=$LINE_GATE Derived=$LINE_DERIVED"
+fi
+assert_file_contains "$FLAT_F_STATE" "| _none yet_ | | | | |" "25c: ### Tasks lifecycle table survives the findings write"
+assert_file_contains "$FLAT_F_STATE" "- **Issue List:** none" "25c: ## Delivery Gate body survives the findings write"
+assert_file_contains "$FLAT_F_STATE" "| _none yet_ | | | | | | | |" "25c: DERIVED ## Tasks State placeholder untouched"
+
+# 25d: SIBLING PRESERVATION — writing task-002 leaves task-001's block intact.
+BLOCK_T1_BEFORE=$(qcf_block "$FLAT_F_STATE" task-001)
+FINDINGS_T2="- **Reviewer Tier:** Medium
+- **Findings:** none"
+code=0
+AID_STATE_FILE="$FLAT_F_STATE" bash "$SCRIPT" --delivery-id 1 --task-id 2 --findings "$FINDINGS_T2" 2>/dev/null || code=$?
+assert_exit_zero "$code" "25d: second task's flat --findings write → exit 0"
+assert_file_contains "$FLAT_F_STATE" "### task-002" "25d: ### task-002 sub-block appended to the same section"
+BLOCK_T1_AFTER=$(qcf_block "$FLAT_F_STATE" task-001)
+if [[ "$BLOCK_T1_AFTER" == "$BLOCK_T1_BEFORE" ]]; then
+    pass "25d: task-001's sub-block survived the task-002 write byte-identical (SIBLING PRESERVATION)"
+else
+    fail "25d: task-002's write clobbered task-001's sub-block — before='$BLOCK_T1_BEFORE' after='$BLOCK_T1_AFTER'"
+fi
+# Exactly one section, one block per task — not a duplicated section per write.
+assert_match_count "$FLAT_F_STATE" '^## Quick Check Findings' 1 "25d: exactly one ## Quick Check Findings section after two writes"
+assert_match_count "$FLAT_F_STATE" '^### task-001[[:space:]]*$' 1 "25d: exactly one ### task-001 sub-block"
+assert_match_count "$FLAT_F_STATE" '^### task-002[[:space:]]*$' 1 "25d: exactly one ### task-002 sub-block"
+
+# 25e: REPLACEMENT — rewriting task-001 replaces only its own block; task-002's
+# block survives byte-identical and the stale task-001 text is gone.
+BLOCK_T2_BEFORE=$(qcf_block "$FLAT_F_STATE" task-002)
+FINDINGS_T1B="- **Reviewer Tier:** Large
+- **Findings:**
+  - [CRITICAL] replaced block — {b.sh:3} — Fixed-on-spot"
+code=0
+AID_STATE_FILE="$FLAT_F_STATE" bash "$SCRIPT" --delivery-id 1 --task-id 1 --findings "$FINDINGS_T1B" 2>/dev/null || code=$?
+assert_exit_zero "$code" "25e: rewriting task-001's findings → exit 0"
+assert_file_contains "$FLAT_F_STATE" "[CRITICAL] replaced block" "25e: task-001's new block written"
+assert_file_not_contains "$FLAT_F_STATE" "col1	col2 tab-separated" "25e: task-001's stale block content removed (replaced, not appended)"
+BLOCK_T2_AFTER=$(qcf_block "$FLAT_F_STATE" task-002)
+if [[ "$BLOCK_T2_AFTER" == "$BLOCK_T2_BEFORE" ]]; then
+    pass "25e: task-002's sub-block survived the task-001 rewrite byte-identical (SIBLING PRESERVATION)"
+else
+    fail "25e: task-001's rewrite clobbered task-002's sub-block — before='$BLOCK_T2_BEFORE' after='$BLOCK_T2_AFTER'"
+fi
+assert_match_count "$FLAT_F_STATE" '^### task-001[[:space:]]*$' 1 "25e: still exactly one ### task-001 sub-block after the rewrite"
+
+# 25f: --delivery-id is not required — the flat branch is reached before any
+# delivery resolution (Source-line resolution would also work, but must not be
+# a precondition for a layout that has exactly one delivery).
+code=0
+AID_STATE_FILE="$FLAT_F_STATE" bash "$SCRIPT" --task-id 2 --findings "- **Reviewer Tier:** Small
+- **Findings:** none" 2>/dev/null || code=$?
+assert_exit_zero "$code" "25f: flat --findings without --delivery-id → exit 0"
+
+# 25g: octal footgun — a zero-padded task-id containing 8/9 resolves base-10.
+FLAT_F8="${TMPDIR_BASE}/work-flat-findings-octal"
+make_flat_work_state "$FLAT_F8"
+make_flat_blueprint "$FLAT_F8"
+make_flat_task_spec "$FLAT_F8" 8
+code=0
+AID_STATE_FILE="${FLAT_F8}/STATE.md" bash "$SCRIPT" --delivery-id 1 --task-id "008" --findings "- **Reviewer Tier:** Small
+- **Findings:** none" 2>/dev/null || code=$?
+assert_exit_zero "$code" "25g: flat --findings --task-id 008 → exit 0 (no octal parse error)"
+assert_file_contains "${FLAT_F8}/STATE.md" "### task-008" "25g: sub-block keyed task-008 (not task-000)"
+
+# 25h: a flat work with NO ## Delivery Gate section still gets the findings —
+# the section is appended at EOF rather than silently dropped.
+FLAT_FNG="${TMPDIR_BASE}/work-flat-findings-nogate"
+mkdir -p "$FLAT_FNG"
+printf '# Work State — work-flat-nogate\n\n## Pipeline State\n\n- **Lifecycle:** Running\n' > "${FLAT_FNG}/STATE.md"
+make_flat_blueprint "$FLAT_FNG"
+make_flat_task_spec "$FLAT_FNG" 1
+code=0
+AID_STATE_FILE="${FLAT_FNG}/STATE.md" bash "$SCRIPT" --delivery-id 1 --task-id 1 --findings "- **Reviewer Tier:** Small
+- **Findings:** none" 2>/dev/null || code=$?
+assert_exit_zero "$code" "25h: flat work with no ## Delivery Gate → exit 0"
+assert_file_contains "${FLAT_FNG}/STATE.md" "## Quick Check Findings" "25h: section appended at EOF when there is no ## Delivery Gate to anchor to"
+assert_file_contains "${FLAT_FNG}/STATE.md" "### task-001" "25h: ### task-001 sub-block written on the EOF-append path"
+
+# 25i: nested-layout regression — the FULL layout keeps replacing the WHOLE
+# ## Quick Check Findings section of the task's OWN STATE.md, with no
+# ### task-NNN sub-heading (each task owns its file; there is no sibling to
+# preserve). Unaffected by the flat branch.
+FLAT_SNAPSHOT_25I=$(cat "$FLAT_F_STATE")
+code=0
+AID_STATE_FILE="${WORK_DIR}/STATE.md" bash "$SCRIPT" --delivery-id 1 --task-id 2 --findings "- **Reviewer Tier:** Small
+- **Findings:**
+  - [MEDIUM] nested-layout regression finding — Deferred-to-gate" 2>/dev/null || code=$?
+assert_exit_zero "$code" "25i: nested-layout --findings write still succeeds"
+assert_file_contains "${DELIVERY_001}/tasks/task-002/STATE.md" "## Quick Check Findings" "25i: nested-layout findings still target the per-task STATE.md"
+assert_file_contains "${DELIVERY_001}/tasks/task-002/STATE.md" "nested-layout regression finding" "25i: nested-layout findings body written to the per-task STATE.md"
+assert_file_not_contains "${DELIVERY_001}/tasks/task-002/STATE.md" "### task-002" "25i: nested-layout findings carry no ### task-NNN sub-heading (whole-section replace)"
+assert_file_not_contains "${WORK_DIR}/STATE.md" "nested-layout regression finding" "25i: nested-layout findings did NOT land in the work-root STATE.md"
+if [[ "$(cat "$FLAT_F_STATE")" == "$FLAT_SNAPSHOT_25I" ]]; then
+    pass "25i: nested-layout write left the flat fixture byte-identical (no cross-layout leak)"
+else
+    fail "25i: nested-layout write modified the flat fixture STATE.md"
+fi
+
+# ---------------------------------------------------------------------------
+echo ""
 test_summary
 exit $?
