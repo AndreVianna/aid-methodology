@@ -18,7 +18,7 @@ see_also: [coding-standards.md, artifact-schemas.md]
 owner: architect
 audience: [developer, architect, tech-writer, reviewer]
 contracts:
-  - "Every KB doc layout: frontmatter -> title -> index -> content -> Change Log last"
+  - "Every KB doc layout: frontmatter -> title -> index -> content; no Change Log section"
   - "Reviewer ledger is a 7-column table; Severity + Status are closed enums"
   - "Required frontmatter fields: objective, summary, sources (lint-graded)"
 ---
@@ -60,7 +60,6 @@ load-bearing core.
 - [Generated and Temporary Files](#generated-and-temporary-files)
 - [Conventions](#conventions)
 - [Enforcement](#enforcement)
-- [Change Log](#change-log)
 
 ---
 
@@ -74,10 +73,12 @@ Every KB document MUST follow this top-to-bottom order (kb-authoring P10):
 | 2 | Title | a single `# Doc Title`. |
 | 3 | Index / contents | required when the doc has more than 3 sections. |
 | 4 | Content sections | the concern's substance. |
-| 5 | `## Change Log` | **always the last section.** |
 
-Example: every doc in this KB (including this one) opens with frontmatter and ends
-with `## Change Log`.
+**There is no history section.** A KB doc carries no `## Change Log` / `## Revision History`
+and no `changelog:` frontmatter field: git records per-doc history with author, date and diff,
+at higher fidelity and without drift. Delete the section and the field where either still
+appears; never author a new one. Every doc in this KB, including this one, ends with its last
+content section.
 
 ---
 
@@ -120,7 +121,13 @@ to `state` because that row comes first.
 ## Review Criteria — Criteria by Level
 
 One row per criterion, carrying the same fields as the frontmatter object (`id`, `kind`, `criterion`,
-`severity`, `why`). `*` in **Applies to** means global (level 1); a type name means level 2. A `kind:
+`severity`, `why`). **Applies to** takes one of three values: `*` means global (level 1); a **registry
+type name** means level 2; and a **file class named by the criterion itself** scopes a global
+exclusion to a set of files that is not a document type. Only two rows use the third form —
+`agent-context` (`G-05`) and `rendered` (`G-06`) — and each is deliberately not a registry type: the
+files they cover are not in-scope authored artifacts at all, so giving them a type would put them
+inside `G-07`'s "every in-scope file resolves to exactly one type" and make the registry claim
+something false. Each such row's `criterion` cell states its own membership test. A `kind:
 exclude` row records what a reviewer must **not** validate (where it would otherwise reasonably check)
 and carries **no** severity — an exclusion is not a defect kind, and there is no severity of zero. **No
 cell may contain a pipe** — a criterion needing one is rephrased (this constrains the markdown table
@@ -140,7 +147,7 @@ in the ledger's `Doc` column. A finding citing no id, or an id resolving nowhere
 | G-06 | `rendered` | exclude | A file that IS a render is not content-reviewed — it appears as a `dst` in an emission manifest, OR it sits under `profiles/<tool>/` and has a corresponding `canonical/` source | — | byte-identical output of `canonical/`; the byte-compare gate is its review. Keyed on provenance not path, so authored repo-local content under a dogfood tree stays reviewable |
 | G-07 | `*` | validate | Every in-scope markdown file resolves to exactly one type in the registry above | HIGH | FR-10 backstop; an untyped file has no resolved criteria and drifts unchecked |
 | KB-01 | `kb-doc` | validate | Required frontmatter is present and single-line: `objective`, `summary`, `sources` | HIGH | lint-graded; a missing or malformed field misroutes the doc |
-| KB-02 | `kb-doc` | validate | Exactly one concern per doc, and `## Change Log` is the last section | MEDIUM | mixing concerns is a boundary smell; layout is a fixed contract |
+| KB-02 | `kb-doc` | validate | Exactly one concern per doc, and the layout holds: frontmatter, title, index, content sections, and no history section | MEDIUM | mixing concerns is a boundary smell; layout is a fixed contract, and a history section drifts from git |
 | KB-03 | `kb-generated` | exclude | Content is not graded; only that the generator ran (build-verify) | — | the generator is the oracle (C-5) |
 | SK-01 | `skill-authored` | validate | Every agent named in a Dispatch table resolves to `canonical/agents/<name>/` | HIGH | a skill dispatching a non-existent agent fails at run time |
 | SK-02 | `skill-generated` | exclude | Carries no file-level `review-criteria:` block; type-level criteria only | — | rebuilt from `shortcut-catalog.yml`; anything hand-written is erased on the next run |
@@ -180,7 +187,8 @@ generator-written.
 | `tags:` | optional | concrete keywords; **MUST include the concern/dimension id** (e.g. `C2`) by convention -- that is how a doc anchors to the spine. |
 | `see_also:`, `owner:`, `audience:` | optional | negative-routing pointers, accountable role, target readers (all free strings, not enums). |
 | `approved_at_commit:` | generator-written | git SHA freshness baseline; **never hand-authored.** |
-| `intent:`, `contracts:`, `changelog:` | legacy/optional | `intent:` is superseded by objective+summary; `changelog:` newest-first. |
+| `review-criteria:` | optional | the criteria a reviewer validates this doc against -- declare only what is true of THIS doc; see [Review Criteria -- Criteria by Level](#review-criteria--criteria-by-level). |
+| `intent:`, `changelog:` | legacy | `intent:` is superseded by objective+summary; `changelog:` is **not a valid field** -- delete it where it survives. |
 
 - **Rule:** a new hand-authored primary/extension doc MUST carry `objective:`,
   `summary:`, and `sources:` -- these are lint-graded (`lint-frontmatter.sh`),
@@ -223,8 +231,7 @@ without adding knowledge (kb-authoring P1):
    The reader can run `wc -l`. Replace with a structural assertion only where the
    count is load-bearing.
 2. **Dates without semantic anchor** -- "as of 2026-05-22"; git carries this.
-   Allowed only in `STATE.md` history, the frontmatter `changelog:`, or as a
-   load-bearing inflection marker.
+   Allowed only in `STATE.md` history, or as a load-bearing inflection marker.
 3. **Other low-value clutter** -- judgment call; default to removal, ask the user
    when unclear.
 4. **Positional citations** -- see [Citation Rule](#citation-rule-durable-anchors).
@@ -271,7 +278,7 @@ contracts.
 A KB doc records **current state only** (kb-authoring P9). When a tracked item is
 resolved -- a `tech-debt.md` entry fixed, a Q&A answered, an open question closed --
 its record is removed **entirely** (the row, the detail, any "closed items"
-roll-call, any closure prose in `changelog:`). Do not keep a closure record "for
+roll-call). Do not keep a closure record "for
 history" -- git history is the only retained audit trail. A resolved item still
 visible anywhere (including in the generated `kb.html`) is a defect.
 
@@ -377,7 +384,7 @@ content.**
 
 - **Authoring a new KB doc:** start from the seed template or a custom layout;
   fill `objective:`/`summary:`/`sources:` + a concern id in `tags:`; one concern
-  only; tables over prose; no diagrams; durable citations; `## Change Log` last;
+  only; tables over prose; no diagrams; durable citations; no history section;
   run `lint-frontmatter.sh` + `kb-citation-lint.sh` before done.
 - **Writing a review:** emit the 7-column ledger as the whole file at
   `.aid/.temp/review-pending/<scope>.md`; closed Severity/Status enums; no narrative.

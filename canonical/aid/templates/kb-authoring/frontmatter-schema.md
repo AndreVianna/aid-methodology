@@ -1,9 +1,14 @@
 # KB Authoring — Frontmatter Schema
 
-> YAML frontmatter specification for `.aid/knowledge/*.md` documents.
-> Loaded by `aid-discover` (review classification — the `aid-reviewer`
-> sub-agent validates compliance semantically), `aid-config` (scaffolding), and
-> `aid-summarize` (section intent extraction).
+> YAML frontmatter specification for `.aid/knowledge/*.md` documents. Loaded by
+> `aid-discover` (review classification — the `aid-reviewer` sub-agent validates
+> compliance semantically), `aid-config` (scaffolding), and `aid-summarize` (section
+> intent extraction).
+>
+> **One field reaches wider than the KB.** `review-criteria:` carries the same shape on a
+> `SKILL.md`, an `AGENT.md` and a template as it does on a KB doc, because all four are
+> authored artifacts that can drift from what they claim. Everything else here is
+> KB-scoped.
 
 Every KB document MUST begin with a YAML frontmatter block delimited by `---` markers.
 Per [principles.md](principles.md) P6, **the frontmatter block is partially exempt from
@@ -344,15 +349,8 @@ became the main route by which transient work references leaked into the KB (see
 [principles.md](principles.md) P1(e)), so it is removed rather than merely discouraged.
 Delete the field where it still appears; do not author a new one.
 
-**Exempt from review.** This is informational for human readers who don't want to
-run `git log`. Drift here doesn't affect grade.
-
-Convention: prepend new entries to the top (most recent first). Use ISO date format
-(`YYYY-MM-DD`). One line per entry.
-
-**For the migration entry specifically:** every doc gets a single seed entry at
-Phase C migration time: `- YYYY-MM-DD: Migrated to v2 format (KB Authoring overhaul)`.
-Future contributors append as they make substantive edits.
+**Exempt from review** where it still exists: the block is being removed, not maintained, so
+its content is not graded. Deleting it is always correct; adding to it never is.
 
 ## `owner:` / `audience:` — enum vs free string (decision + justification)
 

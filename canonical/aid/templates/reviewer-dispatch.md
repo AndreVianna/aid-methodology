@@ -188,7 +188,7 @@ The expected output. Always:
 Each skill that dispatches a reviewer ships a brief template at
 `canonical/skills/<skill>/references/reviewer-brief.md`. Six per-skill briefs
 are shipped: `aid-discover`, `aid-execute`, `aid-specify`, `aid-plan`,
-`aid-detail`, `aid-describe`, `aid-define`. Each renders this protocol's 5-section structure
+`aid-detail`, `aid-define`. Each renders this protocol's 5-section structure
 with skill-specific RUBRIC + OUT OF SCOPE; the consumer state file fills the
 dynamic slots and dispatches.
 
