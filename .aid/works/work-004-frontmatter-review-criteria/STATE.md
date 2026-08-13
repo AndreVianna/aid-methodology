@@ -68,6 +68,8 @@ and per-task `delivery-NNN/tasks/task-NNN/STATE.md` (mutable task cells).
 | 2026-08-12 | COMPLETION quality check | 1 defect found and fixed | A stale `341` in FR-6 — the work-003 figure this document corrects two sections earlier |
 | 2026-08-12 | COMPLETION KB hydration | No KB write warranted | Reasons recorded in REQUIREMENTS.md § KB hydration assessment; gap check found no empty doc |
 | 2026-08-12 | Interview approved by owner | Approved | All 10 sections Complete; identity fields confirmed as "Declared Review Criteria" |
+| 2026-08-12 | Requirements correction pass | 7 sections re-derived | Decomposition found artifacts cited that exist only on `work-003`; §2, §4, FR-2/3/4, NFR-2, §8, AC-3/AC-4 re-derived against this branch |
+| 2026-08-12 | Feature Decomposition | 3 features created | `aid-architect` proposed 11; collapsed to 3 on owner decision — the three streams of §4, which are the natural shipping boundaries |
 
 ---
 
@@ -81,6 +83,7 @@ and per-task `delivery-NNN/tasks/task-NNN/STATE.md` (mutable task cells).
 |------|------------------------|-------|-------|
 | 2026-08-12 | Work created | -- | Worktree + branch `work-004` off `master` (`9260fc88`); prior-art evidence captured in `prior-art.md` |
 | 2026-08-12 | Describe → approved | -- | REQUIREMENTS.md approved by the owner; awaiting `/aid-define` |
+| 2026-08-12 | Define → decomposed | -- | 3 features created; cross-reference pending |
 
 ---
 
