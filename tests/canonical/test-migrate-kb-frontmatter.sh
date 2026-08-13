@@ -123,6 +123,10 @@ file_sha() {
 # ---------------------------------------------------------------------------
 
 # Primary doc with intent: literal block -- NOT yet migrated.
+# Deliberately keeps the PRE-RENAME `contracts:` key: an unmigrated doc on disk
+# still carries it, and the parser must accept both names during the coexistence
+# window. FIXTURE_MIGRATED_PRIMARY below carries the current `review-criteria:`
+# key, so the two fixtures cover one name each.
 FIXTURE_PRIMARY='---
 kb-category: primary
 source: hand-authored
@@ -204,7 +208,7 @@ objective: Manages the canonical KB document lifecycle
 summary: Manages the canonical KB document lifecycle.
 sources: []
 approved_at_commit: aabbccd
-contracts: |
+review-criteria: |
   - KB docs follow f001 frontmatter schema.
 ---
 

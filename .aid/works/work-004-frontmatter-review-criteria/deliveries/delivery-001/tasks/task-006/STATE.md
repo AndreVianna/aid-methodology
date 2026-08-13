@@ -1,5 +1,5 @@
 ---
-state: Pending
+state: Done
 review: "--"
 elapsed: "--"
 notes: "--"
@@ -24,8 +24,8 @@ ticket_ref: "--"
 ## Quick Check Findings
 
 - **Reviewer Tier:** Small
-- **Findings:** _none yet_
-
+- **Findings:**
+  - [HIGH] render.py mishandled the inline empty sequence: review-criteria: [] bypassed the _RawBlock capture guard (which requires an empty value) and fell through to the scalar path, whose special-character set includes the brackets, re-emitting it as the quoted string "[]" -- an empty list silently became a 2-character string -- .claude/skills/generate-profile/scripts/render.py _build_frontmatter_md -- Fixed-on-spot (a defect in code THIS task wrote, and AC-5's own subject, so fixed here rather than deferred; added _RawInline, tested before the str branch; re-verified by the same reviewer)
 ---
 
 ## Dispatch Log
