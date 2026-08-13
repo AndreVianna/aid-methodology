@@ -19,6 +19,7 @@
 | 2026-08-12 | **Correction pass.** Feature decomposition found this document citing artifacts that exist only on `work-003`. Re-derived §2's enforcement gap and guard inventory, §4's stream-1 target table and stream-3 scope, FR-2/FR-3/FR-4, NFR-2, §8's collision set, AC-3/AC-4 — all against this branch's disk | /aid-define |
 | 2026-08-12 | **Cross-reference fix pass.** `aid-reviewer` raised 34 findings over 87 re-derived claims; 27 fixed here. Corrected `site/src/content/docs` 137→93, FR-6's citation list, AC-1's triple-counted population (→290 with carve-outs named), NFR-2's undefined "added" side, NFR-4's missing site chain, NFR-1's unimplementable script, the examples' false "zero references", and every bare `file:LINE` citation. Added FR-8 for the front face, which was gated with no requirement behind it | /aid-define |
 | 2026-08-12 | **Criteria model corrected by the owner.** `contracts:` holds the *criteria a reviewer validates the file against*, resolved through a three-level cascade — global and per-document-type lists in the KB, per-file exceptions in frontmatter — written once at the highest level where true, to stop duplication and keep per-file lists short. Criteria are positive **and** negative: a non-obvious exclusion belongs in `contracts:` with its reason, never as a severity. `severity:` named and shaped as a defect-kind → level map over validatable kinds only. FR-1, FR-5, FR-6, AC-1, §4 streams 1–2 and both feature SPECs rewritten; the earlier `canonical/` placement correction withdrawn — criteria are project-specific, so the KB is right | /aid-define |
+| 2026-08-12 | **Criteria home fixed: `.aid/knowledge/authoring-conventions.md`**, both levels together as two new sections (owner decision). The concern spine puts it at C3 — conventions and standards — which is what criteria are; it is `kb-category: primary`, already tagged `enforcement`, and already carries level 1 unlabelled in `## Drift-Prone Content is Banned`, `## Citation Rule` and `## Resolved Items Leave No Trace`. Not `quality-gates.md` (C6), which keeps the grade scale, ledger and thresholds; criteria and their cost in C3, scoring in C6, cross-referenced never duplicated | /aid-define |
 
 ### KB hydration assessment (COMPLETION step 2)
 
@@ -176,15 +177,13 @@ Three streams. **The order is load-bearing.**
 1. **Enforce the mechanism first** — must land first, or the declarations authored in stream 2 are
    read by nothing. The surfaces, **as they exist on this branch**:
 
-   **The largest single piece is new: the KB's criteria documents.** Levels 1 and 2 of FR-5/FR-6 do
-   not exist anywhere yet — the global criteria list, the per-document-type criteria lists, and the
-   per-type severity maps all have to be authored into `.aid/knowledge/`. Most of the value lands
-   here, not in the 290 files: a criterion written once at type level covers every file of that type
-   and keeps their frontmatter empty.
+   **The largest single piece is the criteria themselves, in `authoring-conventions.md`.** Most of
+   the value lands here, not in the 290 files: a criterion written once at type level covers every
+   file of that type and keeps their frontmatter empty.
 
    | Surface | Lines | What it must gain |
    |---|---|---|
-   | **`.aid/knowledge/` — new criteria documents** | — | **level 1** (global criteria + exclusions) and **level 2** (per-document-type criteria, exclusions, and severity maps). The document-type list itself must be enumerated, and every in-scope file must resolve to exactly one type. |
+   | **`.aid/knowledge/authoring-conventions.md`** | 329 | **two new sections** — level 1 (global criteria + exclusions) and level 2 (per-document-type criteria, exclusions and severity maps). Level 1 largely exists already, unlabelled, in `## Drift-Prone Content is Banned`, `## Citation Rule` and `## Resolved Items Leave No Trace`; restructure rather than re-author. The document-type list must be enumerated so every in-scope file resolves to exactly one. `## Enforcement` folds in — under the new model most of its rows become "the reviewer, via these criteria". |
    | `canonical/aid/templates/kb-authoring/review-rubric.md` | 304 | its contracts check (item 3) generalized beyond `.aid/knowledge/`, taught to resolve the three levels, and given a citable rule ID |
    | `canonical/aid/templates/kb-authoring/frontmatter-schema.md` | — | `contracts` defined for all four trees rather than KB docs alone, carrying **positive criteria and exclusions**; plus `severity:` as a defect-kind → level map |
    | `canonical/aid/templates/grading-rubric.md` | 83 | level 2 of FR-6's severity cascade |
@@ -297,9 +296,23 @@ boundary in section 4.)*
 
   | Level | Holds | Lives in |
   |---|---|---|
-  | 1 — **Global** | criteria every document in the project is validated against | the project's KB |
-  | 2 — **Document type** | criteria for that class of document (KB doc, skill, skill reference, agent, template) | the project's KB |
+  | 1 — **Global** | criteria every document in the project is validated against | **`.aid/knowledge/authoring-conventions.md`**, as a new section |
+  | 2 — **Document type** | criteria for that class of document (KB doc, skill, skill reference, agent, template) | **the same document**, as a second new section |
   | 3 — **This document** | only what is unique to this file | the file's own `contracts:` |
+
+  **Both levels live in `authoring-conventions.md`, and stay together.** *(Owner decision,
+  2026-08-12.)* The concern spine places it at **C3 — "What conventions and standards does it
+  follow?"** — and the criteria *are* the conventions: a reviewer validating a document is checking
+  it against the standards it was authored under. The doc is `kb-category: primary`, already tagged
+  `enforcement`, and **already carries level 1** in unlabelled form: `## Drift-Prone Content is
+  Banned` (four criteria, with their exclusions attached), `## Citation Rule (Durable Anchors)`,
+  `## Resolved Items Leave No Trace`. `## KB Document Layout` is a level-2 section for a single type.
+
+  **Not `quality-gates.md`.** It is `kb-category: extension`, tagged **C6 — "Quality & how it is
+  checked"**, and holds the *machinery*: the grade scale, the ledger, how a grade is computed,
+  minimum-grade thresholds. That boundary must hold — criteria and what a violation costs in C3,
+  scoring in C6, cross-referenced and never duplicated. Duplication across these two is what
+  produced three independent severity definitions on this branch.
 
   A reviewer resolves all three and validates against the **union**. Most specific wins on conflict.
 
@@ -349,9 +362,15 @@ boundary in section 4.)*
 
   | Level | Holds | Lives in |
   |---|---|---|
-  | 1 — **Global** | what each severity *means* | the universal scale, shipped |
-  | 2 — **Document type** | what each defect kind costs in that class of document | the project's KB, beside the type's criteria |
+  | 1 — **Global** | what each severity *means* | `canonical/aid/templates/grading-rubric.md § Issue Severities` — the universal scale, shipped |
+  | 2 — **Document type** | what each defect kind costs in that class of document | **`.aid/knowledge/authoring-conventions.md`**, beside that type's criteria |
   | 3 — **This document** | overrides only where this file genuinely differs | the file's own `severity:` |
+
+  Level 2 sits with the criteria it prices, not in `quality-gates.md`: what a violation costs is a
+  property of the criterion (C3), while turning severities into a letter grade is machinery (C6).
+  `authoring-conventions.md`'s existing `## Enforcement` table is the *before* picture of this — it
+  already lists each convention, its enforcer, and "what breaks on violation", in prose rather than
+  as a declared level.
 
   Same anti-duplication rule as FR-5: declared once, at the highest level where it is true. Level 3
   is an **override, not a requirement** — which is what keeps every in-scope file from needing a

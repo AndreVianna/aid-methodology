@@ -29,11 +29,19 @@ tells a reviewer to look at a skill's, an agent's or a template's frontmatter at
 
 This feature builds the criteria system and makes the review process use it. Four moves:
 
-1. **Author the KB's criteria documents — the largest piece, and the one that does the real work.**
-   Level 1 (global criteria and exclusions) and level 2 (per-document-type criteria, exclusions and
-   severity maps) do not exist anywhere today. The set of document types must be enumerated so every
-   in-scope file resolves to exactly one. A criterion written once at type level covers every file of
-   that type, which is what keeps 290 files' frontmatter empty.
+1. **Build the criteria lists in `.aid/knowledge/authoring-conventions.md` — the largest piece, and
+   the one that does the real work.** Two new sections, kept together: level 1 (global criteria and
+   exclusions) and level 2 (per-document-type criteria, exclusions and severity maps). Level 1
+   largely exists already in unlabelled form — `## Drift-Prone Content is Banned`,
+   `## Citation Rule (Durable Anchors)`, `## Resolved Items Leave No Trace` — so this is mostly
+   restructuring, not authoring from nothing. Level 2 needs the document types enumerated so every
+   in-scope file resolves to exactly one. A criterion written once at type level covers every file
+   of that type, which is what keeps 290 files' frontmatter empty.
+
+   *Placement rationale:* the concern spine puts `authoring-conventions.md` at **C3 — conventions
+   and standards**, which is what criteria are; `quality-gates.md` is **C6 — how quality is
+   checked**, and keeps the grade scale, the ledger and the thresholds. Criteria and their cost in
+   C3, scoring in C6, cross-referenced and never duplicated.
 2. **Widen the field.** One uniform `contracts:` for skills, agents, templates and KB docs alike,
    carrying **positive criteria and exclusions**, plus `severity:` as a defect-kind → level map. No
    per-artifact-kind schema.
@@ -65,9 +73,13 @@ Must
 
 ## Acceptance Criteria
 
-- [ ] Given the KB, when this feature completes, then it carries a **global criteria list** and a
-      **per-document-type criteria list** for every document type in the project, each with its
-      severity map — and every in-scope file resolves to **exactly one** type, with none untyped.
+- [ ] Given `.aid/knowledge/authoring-conventions.md`, when this feature completes, then it carries a
+      **global criteria list** and a **per-document-type criteria list** for every document type in
+      the project, in two sections kept together, each type carrying its severity map — and every
+      in-scope file resolves to **exactly one** type, with none untyped.
+- [ ] Given `quality-gates.md`, when this feature completes, then it still holds the grade scale, the
+      ledger and the thresholds, and **no criterion or per-type severity is duplicated** between it
+      and `authoring-conventions.md` — the two cross-reference instead.
 - [ ] Given a criterion, when it is written, then it sits at the **highest level where it is true**,
       and no type-level list restates a global one.
 - [ ] Given something that must never be validated, when it is recorded, then it is an **exclusion in
