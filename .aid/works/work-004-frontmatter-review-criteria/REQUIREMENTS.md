@@ -295,6 +295,28 @@ boundary in section 4.)*
   this requirement is to **generalize it, name it, and put it in front of every agent that writes**:
   lift `kb-authoring/review-rubric.md` item 3 out of KB-only scope, give its entries citable ids
   (FR-5), and carry the resolve-before-writing instruction in `agent-boilerplate.md` (FR-9).
+
+  **How a finding cites its criterion — no ledger change.** A finding names the criterion `id` as a
+  prefix inside its existing `Description` cell:
+
+  ```
+  | # | Severity | Status | Doc | Line | Description | Evidence |
+  | 3 | [HIGH] | Pending | canonical/skills/aid-plan/SKILL.md | 42 | SK-01 — dispatch table names `aid-sequencer`, which does not resolve | ls canonical/agents/ |
+  ```
+
+  A scope-prefixed id (`G-`, `KB-`, `SK-`) resolves in `authoring-conventions.md`'s criteria table; a
+  file-local `F-` id resolves inside the file already named in the `Doc` column. **The ledger keeps
+  its 7 columns, `grade.sh` keeps its positional parse, and nothing new is built.**
+
+  *An earlier draft required "a citable rule ID for the ledger's `Rule` column". There is no `Rule`
+  column on this branch — the ledger is fixed at 7 columns by `reviewer-ledger-schema.md`,
+  `authoring-conventions.md` and `quality-gates.md`, and `grade.sh` reads Severity and Status by
+  position, so an eighth column would shift both and mis-grade silently. The column was an assumption
+  imported from a branch that has one. **The requirement was always for a citable criterion, not for
+  a column**, and the `id` field of FR-5 satisfies it.*
+
+  *A benefit that falls out:* a finding citing **no** id, or an id resolving nowhere, is itself a
+  defect — which is the first defence this project has had against a reviewer inventing criteria.
 - **FR-3** The FIX contract requires re-verifying a file's own declaration after editing that file,
   closing the `quality-gates.md` failure mode. Target: `aid-execute/references/state-fix.md`, the
   only one of the four `state-fix.md` files carrying F1–F6.
@@ -348,6 +370,24 @@ boundary in section 4.)*
   **A file-local `id` needs no global uniqueness** — the ledger's existing `Doc` column disambiguates
   it. This is also how a finding cites its criterion without any new ledger column and without
   touching `grade.sh`'s positional parse.
+
+  **The field must stop being exempt from grading.** `kb-authoring/frontmatter-schema.md` currently
+  states that legacy fields — `intent:`, `contracts:`, `changelog:` — *"stay fully exempt from
+  content grading"*. Under this model the field **drives** grading, so a wrong entry cannot be
+  free. The rename carries that change: `review-criteria:` is graded content, and a criterion that
+  does not hold is a finding against the file that declares it.
+
+  **Not every file type can carry a file-level block, and the registry must say so.** Three cases,
+  all verified on this branch:
+
+  | Case | Why | Consequence |
+  |---|---|---|
+  | **Generated `SKILL.md`** | rebuilt from `shortcut-catalog.yml`; anything hand-written is erased on the next run | type-level criteria only — which is sufficient, since generated files are uniform by construction |
+  | **Templates carrying a payload block** | their frontmatter is the *emitted* artifact's, placeholders and all (`work-state-template.md` opens with `pipeline:`, `started: "{YYYY-MM-DD}"`) — a `review-criteria:` there would be stamped onto every generated STATE.md | type-level criteria only. **This splits `template` into two registry types**: those whose frontmatter is their own (e.g. `reviewer-ledger-schema.md`) and those carrying a payload. |
+  | **`AGENT.md`** | `render.py` builds the rendered frontmatter as a fresh dict of `name`/`description`/`tools`/`model` (+ optional `permissionMode`, `background`) and **discards every other key** | a file-level block never reaches an adopter — see the open decision in §8 |
+
+  In all three the type level does the work, which is what the cascade is for. A type that cannot
+  carry file-level criteria is a **property of that type**, recorded in the registry, not a gap.
 
   | Level | Holds | Lives in |
   |---|---|---|

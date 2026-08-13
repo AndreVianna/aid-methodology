@@ -45,10 +45,10 @@ This feature builds the criteria system and makes the review process use it. Fou
 2. **Widen the field.** One uniform `contracts:` for skills, agents, templates and KB docs alike,
    carrying **positive criteria and exclusions**, plus `severity:` as a defect-kind → level map. No
    per-artifact-kind schema.
-3. **Name the rule.** The contracts check gains a citable identifier so a finding can say what it
-   came from. An unnamed check produces findings with nothing to cite, which is a large part of why
-   it was invoked once in 47 findings. *(Where that identifier goes is unresolved — this branch's
-   ledger is 7 columns with no `Rule` column, and adding one breaks `grade.sh`'s positional parse.)*
+3. **Name the criteria, and cite them in findings without touching the ledger.** Every criterion
+   carries a greppable `id`; a finding names it as a prefix inside its existing `Description` cell.
+   The ledger keeps its 7 columns and `grade.sh` keeps its positional parse — no `Rule` column is
+   added, and none is needed.
 4. **Put the criteria in front of every agent that writes — not just the reviewer.** One edit to
    `canonical/aid/templates/agent-boilerplate.md`, which every `AGENT.md` includes: resolve a file's
    criteria before writing or editing it, and update the KB's registry when a document type is
@@ -100,8 +100,12 @@ Must
       if absent (FR-6).
 - [ ] Given any in-scope authored markdown file, when a reviewer resolves criteria for it, then the
       `contracts:` field is defined for that file's tree — not for `.aid/knowledge/` alone.
-- [ ] Given a finding derived from the contracts check, when it is written to a ledger, then it
-      carries a rule ID that resolves to the check, and the `Rule` column is not blank or invented.
+- [ ] Given a finding derived from a criterion, when it is written to a ledger, then its
+      `Description` opens with the criterion `id`, that id **resolves** — in
+      `authoring-conventions.md` for a scope-prefixed id, or in the file named in `Doc` for an `F-`
+      id — and the ledger is still **exactly 7 columns**, with `grade.sh` unmodified.
+- [ ] Given a finding citing no id, or an id that resolves nowhere, when the ledger is read, then
+      that finding is itself treated as a defect — the reviewer invented a criterion.
 - [ ] Given a contract violation, when severity is assigned, then it resolves global → file-class →
       file-specific, with the most specific declaration winning and absence inheriting upward.
 - [ ] Given the three independent severity definitions on disk — `grading-rubric.md § Issue
