@@ -7,8 +7,8 @@ minimum_grade: "A"
 user_approved: yes
 lifecycle: Running
 phase: Define
-active_skill: aid-define
-updated: '2026-08-12T17:47:05Z'
+active_skill: none
+updated: '2026-08-13T09:20:00Z'
 pause_reason: --
 block_reason: --
 block_artifact: --
@@ -17,8 +17,8 @@ ticket_ref: "--"
 
 # Work State -- work-004-frontmatter-review-criteria
 
-> **State:** Describing
-> **Phase:** Describe
+> **State:** Defined -- ready for `/aid-specify`
+> **Phase:** Define
 
 This is the single state file for **this work** -- the full dev lifecycle from req to spec to plan
 to impl to deploy. One STATE.md per `.aid/works/work-NNN-{name}/` directory. See also: per-delivery
@@ -61,6 +61,18 @@ and per-task `delivery-NNN/tasks/task-NNN/STATE.md` (mutable task cells).
 | 9 | Acceptance Criteria | Complete | 2026-08-12 |
 | 10 | Priority | Complete | 2026-08-12 |
 
+### Cross-Reference
+
+**State:** Complete  **Passes:** 2  **Findings:** 71 raised, 70 Fixed, 1 Invalid
+
+Both ledgers are archived under `review-archive/` rather than left in `.aid/.temp/`, which is
+gitignored -- the evidence for a closed pass has to survive the pass.
+
+| Pass | Date | Raised | Fixed | Invalid | Ledger |
+|------|------|--------|-------|---------|--------|
+| 1 | 2026-08-12 | 34 | 33 | 1 | `review-archive/cross-reference-pass1.md` |
+| 2 | 2026-08-13 | 37 | 37 | 0 | `review-archive/cross-reference-pass2.md` |
+
 ### Review History
 
 | Date | Event | Outcome | Notes |
@@ -87,6 +99,7 @@ and per-task `delivery-NNN/tasks/task-NNN/STATE.md` (mutable task cells).
 | 2026-08-12 | Work created | -- | Worktree + branch `work-004` off `master` (`9260fc88`); prior-art evidence captured in `prior-art.md` |
 | 2026-08-12 | Describe → approved | -- | REQUIREMENTS.md approved by the owner; awaiting `/aid-define` |
 | 2026-08-12 | Define → decomposed | -- | 3 features created; cross-reference pending |
+| 2026-08-13 | Define → DONE | -- | Cross-reference complete after 2 passes (71 findings). `/aid-define` terminal state reached; `active_skill` → none. Ready for `/aid-specify`. No feature SPEC carries a Technical Specification yet -- that is `/aid-specify`'s output |
 
 ---
 
@@ -113,7 +126,9 @@ and per-task `delivery-NNN/tasks/task-NNN/STATE.md` (mutable task cells).
 
 | # | Feature | Spec State | Spec Grade | Q&A Count | Notes |
 |---|---------|------------|------------|-----------|-------|
-| _none yet_ | | | | | |
+| 001 | `feature-001-declaration-standard-and-enforcement` | Requirements side complete; Technical Specification pending | Pending | 0 | Stream 1 — build the criteria lists, widen and rename the field, name the criteria, put them in front of every writing agent |
+| 002 | `feature-002-declarations-across-the-trees` | Requirements side complete; Technical Specification pending | Pending | 0 | Stream 2 — delete the 20 READMEs first, then the exceptions pass over the 290-file population |
+| 003 | `feature-003-superseded-guard-retirement` | Requirements side complete; Technical Specification pending | Pending | 0 | Stream 3 — derive the removal set, retire what the declarations replace, front face, single render, C-7 audit |
 
 ## Plan / Deliveries
 
