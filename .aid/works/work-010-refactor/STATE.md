@@ -15,7 +15,7 @@ block_artifact: --
 ticket_ref: --
 # --- Flattened single-delivery works only (see `## Delivery Lifecycle` below);
 #     omit these 4 keys entirely for full multi-delivery works. ---
-delivery_state: Executing
+delivery_state: Gated
 gate_tier: Large
 gate_grade: "A"
 gate_timestamp: "2026-08-12T17:25:50Z"
@@ -220,7 +220,7 @@ different places.
 | Task | State | Review | Elapsed | Notes | Name |
 |------|-------|--------|---------|-------|------|
 | task-001 | Done | -- | -- | -- | Reorder the index columns and fold Extension into Primary in the KB index generator |
-| task-002 | In Review | -- | -- | -- | Re-point the KB-index oracles at the new table shape and verify the restructure |
+| task-002 | Done | -- | -- | -- | Re-point the KB-index oracles at the new table shape and verify the restructure |
 
 ---
 
@@ -234,6 +234,11 @@ different places.
      Shipped defect, surfaced to the user; not fixed here (out of this work's scope). -->
 
 ### task-001
+
+- **Reviewer Tier:** Small
+- **Findings:** none
+
+### task-002
 
 - **Reviewer Tier:** Small
 - **Findings:** none
@@ -344,6 +349,12 @@ _None yet._
 | 2026-08-12 | aid-reviewer | GATE Pass 1 (defn) cycle 3 REVIEW | 5-20 min | 8m28s | In band. 7 Fixed, 0 Recurred, 1 Pending. Grade B+ -> A (floor met; pass clears) |
 | 2026-08-12 | aid-reviewer | GATE Pass 2 (tasks) cycle 1 REVIEW | 5-20 min | 6m14s | In band. 3 rows: 2 MEDIUM, 1 LOW. Grade C vs floor A. Found 2 real plan gaps (script header comment; 2 more stale test comments) |
 | 2026-08-12 | aid-architect | GATE Pass 2 cycle 1 FIX | 2-4 min | 1m58s | Under band. Also caught that a repo-wide `primary/meta/extension` grep would be unsatisfiable and scoped it to the generator + 7 twins |
+| 2026-08-12 | aid-developer | task-001 EXECUTE (REFACTOR) | not measured | 29m23s | 10 edit sites + full render + INDEX regen. First aid-developer datapoint for this class; band should be seeded |
+| 2026-08-12 | aid-reviewer | task-001 quick-check (Small) | ~1 min | 3m04s | Over the SKILL.md ~1 min hint. No CRITICAL/HIGH |
+| 2026-08-12 | aid-developer | task-002 EXECUTE (TEST) | not measured | 18m23s | 5 oracle edits + suite runs + non-vacuity proof against the old generator |
+| 2026-08-12 | aid-reviewer | task-002 quick-check (Small) | ~1 min | 2m55s | Over the ~1 min hint. No CRITICAL/HIGH |
+| 2026-08-12 | aid-reviewer | DELIVERY-GATE cycle 1 (attempt 1) | 5-20 min | killed at ~3h30m | STALLED -- zero heartbeat updates after entry, zero ledger bytes. Killed and re-dispatched with a 12-min budget + incremental-ledger instruction |
+| 2026-08-13 | aid-reviewer | DELIVERY-GATE cycle 1 (attempt 2) | 5-20 min | ~30s (host crash) | Host process crashed 30s in; no ledger written. Re-dispatched |
 
 ## Dispatches
 
