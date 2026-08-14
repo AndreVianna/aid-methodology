@@ -1,5 +1,5 @@
 ---
-delivery_state: Specified
+delivery_state: Executing
 gate_tier: "--"
 gate_grade: "Pending"
 gate_timestamp: "--"

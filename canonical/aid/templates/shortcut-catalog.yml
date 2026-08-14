@@ -229,6 +229,14 @@ shortcuts:
     default_type: IMPLEMENT
     group: G4
     intent: "Provision a new infrastructure resource."
+  - name: aid-create-roadmap
+    verb: create
+    artifact: roadmap
+    alias_of: null
+    default_type: DOCUMENT
+    group: G4
+    intent: "Realize a roadmap seed into roadmap.md, creating the document on first use; leaves the MVP section to /aid-create-mvp."
+    repurpose: true
 
   # --- G5: Change + Refactor family (feature-007, task-017) --
   # -- 15 canonical aid-update* rows (12 in this section; aid-update-test in G7,

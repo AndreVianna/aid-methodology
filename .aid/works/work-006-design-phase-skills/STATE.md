@@ -5,11 +5,11 @@ pipeline:
 started: "2026-08-08"
 minimum_grade: "A"
 user_approved: yes
-lifecycle: Paused-Awaiting-Input
-phase: Detail
-active_skill: none
+lifecycle: Running
+phase: Execute
+active_skill: aid-execute
 updated: '2026-08-11T02:30:00Z'
-pause_reason: 'Owner requested a pause after task-007. Execute stopped cleanly at 8 of 74 tasks Done; task-008 not opened. Resume with /aid-execute work-006.'
+pause_reason: --
 block_reason: --
 block_artifact: --
 ---
