@@ -56,7 +56,6 @@ it produces. The modules fall into four planes:
 - [Invariants](#invariants)
 - [Contracts](#contracts)
 - [Gotchas](#gotchas)
-- [Change Log](#change-log)
 
 ---
 
@@ -400,6 +399,3 @@ body; ownership counts per this document's own contracts and `project-structure.
 - **Scan tests must pin `$HOME`.** The migration scan defaults its root to `$HOME`;
   a test firing it without `export HOME=<throwaway>` will migrate the developer's
   real repos.
-
----
-

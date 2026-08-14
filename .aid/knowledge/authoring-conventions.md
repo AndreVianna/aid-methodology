@@ -324,4 +324,3 @@ content.**
 **Read alongside:** the `minimum_grade` floor (`.aid/settings.yml`, default `A`)
 is the bar a review must clear before a phase advances; the reviewer applies the
 rubric in `kb-authoring/review-rubric.md`.
-

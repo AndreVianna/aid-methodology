@@ -37,7 +37,6 @@ contracts: []
 - [Documentation Found in Repository](#documentation-found-in-repository)
 - [Unusual Structure Notes](#unusual-structure-notes)
 - [Invariants](#invariants)
-- [Change Log](#change-log)
 
 ---
 
@@ -313,6 +312,3 @@ These are intentional or notable layout traits a newcomer will trip over:
 - **`.aid/` is per-project working state** (the Knowledge Base + pipeline run-state), not part
   of the shipped product; the dogfood `.claude/` + `.cursor/` + `.aid/` in this repo are
   real working state, not example data.
-
----
-

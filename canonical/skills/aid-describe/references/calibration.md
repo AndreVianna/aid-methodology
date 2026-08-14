@@ -171,4 +171,3 @@ entirely). The backbone-first and walking-skeleton moves (Gap rank 2 for scope-s
 unknowns; see `move-playbook.md` Move 5) are still shaped by calibration state exactly as
 described above -- they now size the backbone for the full-path interview itself, not a
 full-vs-lite decision.
-

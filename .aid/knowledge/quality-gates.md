@@ -53,7 +53,6 @@ deliverables*.
 - [Mechanical Gates Run by the Orchestrator](#mechanical-gates-run-by-the-orchestrator)
 - [Blocking vs Advisory](#blocking-vs-advisory)
 - [Validation Commands](#validation-commands)
-- [Change Log](#change-log)
 
 ---
 
@@ -389,6 +388,3 @@ bash .claude/aid/scripts/kb/build-kb-index.sh --root .aid/knowledge --output /tm
 # Force F for a non-functional artifact (build/run failed)
 bash .claude/aid/scripts/grade.sh --non-functional
 ```
-
----
-

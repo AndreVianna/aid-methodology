@@ -348,4 +348,3 @@ These invariants hold for every turn the engine runs, including the D1 opener.
 | 6 | The opener is NEVER the calibration question; the calibration ASK fires as a follow-up at gap rank 2, never on turn 1 | D1 / AC-4; calibration.md Part B gating rule |
 | 7 | Every decision defers to the user; the engine recommends and guides but never decides silently | NFR-1; advisor-stance.md "Expert-Advisor Stance" |
 | 8 | Before the host's approval gate, the assembled intent gathered across all turns is reflected back to the user for confirmation and correction (whole-picture read-back). Per-turn confirmations (Move 10 scribe) do not substitute for this -- the whole must be confirmed, not just individual decisions. In the full-path interview, state-completion.md Step 4 fulfils this invariant. Feature-003 consumers must define an equivalent confirmation step. | web-bestpractice-validation.md G2 (Mircea et al.: "validation loop"); state-completion.md Step 4 |
-

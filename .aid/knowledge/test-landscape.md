@@ -57,7 +57,6 @@ live in `quality-gates.md`.
 - [Test Commands](#test-commands)
 - [Performance & Health](#performance--health)
 - [Suite Authoring (S1-S5) and Run Cadence (T1-T6)](#suite-authoring-s1-s5-and-run-cadence-t1-t6)
-- [Change Log](#change-log)
 
 ---
 
@@ -550,6 +549,3 @@ bash tests/canonical/select-suites.sh --glob 'test-graph-*.sh' --run
 fail-safe on any change and `--glob` is currently needed to keep selection useful. Promoting
 `COVERS` across `tests/canonical/` is what makes this pay off repo-wide; until then the
 mechanism is correct but narrow. Tracked in `tech-debt.md`.
-
----
-

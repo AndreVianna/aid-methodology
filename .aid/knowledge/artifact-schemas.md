@@ -74,7 +74,6 @@ and act from this doc without reaching into the templates.
 - [Contracts](#contracts)
 - [Conventions](#conventions)
 - [Validation](#validation)
-- [Change Log](#change-log)
 
 ---
 
@@ -643,6 +642,3 @@ reader, or a skill gate owns each artifact class. The freshness baseline
 (`kb_baseline`, `approved_at_commit`) degrades gracefully when absent (treated as
 "baseline unknown", never a hard failure); a `source: forward-authored` doc is folded
 to `current` by `kb-freshness-check.sh` regardless of baseline.
-
----
-

@@ -51,7 +51,6 @@ consistent and the shipped scripts portable.
 - [Security Conventions](#security-conventions)
 - [Observed Inconsistencies](#observed-inconsistencies)
 - [Conventions](#conventions)
-- [Change Log](#change-log)
 
 ---
 
@@ -321,6 +320,3 @@ with matching semantics rather than inventing a new one.
 - **Adding a failure mode:** reuse the documented exit code with matching semantics;
   document any new code in the script header.
 - **Reading config:** always via `read-setting.sh` -- never re-parse `settings.yml`.
-
----
-

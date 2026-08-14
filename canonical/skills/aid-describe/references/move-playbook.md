@@ -354,4 +354,3 @@ conversation, not a questionnaire.
 
 See `canonical/skills/aid-describe/references/elicitation-engine.md` for the full
 five-step next-move selector and the stop check.
-

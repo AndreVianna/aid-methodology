@@ -106,5 +106,3 @@
 - `.aid/knowledge/{document}.md` rev {n} — {what changed}
 - `SPEC.md` rev {n} — {what changed, if applicable}
 - `task-NNN.md` rev {n} — {what changed, if applicable}
-
----

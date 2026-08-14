@@ -50,7 +50,6 @@ structural and methodological, not littered code.
 - [Dead Code](#dead-code)
 - [Security Observations](#security-observations)
 - [Gotchas](#gotchas)
-- [Change Log](#change-log)
 
 ---
 
@@ -379,6 +378,3 @@ model.
   HTML/CSS is not a valid review — render and visually validate (the `visual-fidelity` gate).
 - **`master` is branch-protected:** the bot identity cannot push to `master`; always open a
   PR (never direct-push/force-push master).
-
----
-

@@ -191,13 +191,13 @@ skill-names-kb	aid-create-test	0
 skill-names-kb	aid-create-theme	0
 skill-names-kb	aid-create-ticket	0
 skill-names-kb	aid-create-ui	0
-skill-names-kb	aid-define	21007
+skill-names-kb	aid-define	20939
 skill-names-kb	aid-deploy	48447
 skill-names-kb	aid-deprecate	0
-skill-names-kb	aid-describe	205901
+skill-names-kb	aid-describe	205663
 skill-names-kb	aid-design	0
 skill-names-kb	aid-detail	48447
-skill-names-kb	aid-discover	210230
+skill-names-kb	aid-discover	209958
 skill-names-kb	aid-document	0
 skill-names-kb	aid-document-architecture	0
 skill-names-kb	aid-document-changelog	0
@@ -209,7 +209,7 @@ skill-names-kb	aid-document-tutorial	0
 skill-names-kb	aid-execute	48447
 skill-names-kb	aid-experiment	0
 skill-names-kb	aid-fix	0
-skill-names-kb	aid-graph	1096024
+skill-names-kb	aid-graph	1095990
 skill-names-kb	aid-housekeep	30108
 skill-names-kb	aid-migrate	0
 skill-names-kb	aid-monitor	18339
@@ -270,7 +270,7 @@ skill-refs	aid-create-ui	0
 skill-refs	aid-define	15225
 skill-refs	aid-deploy	10598
 skill-refs	aid-deprecate	0
-skill-refs	aid-describe	124847
+skill-refs	aid-describe	124842
 skill-refs	aid-design	0
 skill-refs	aid-detail	26536
 skill-refs	aid-discover	284061
@@ -299,7 +299,7 @@ skill-refs	aid-report	0
 skill-refs	aid-research	0
 skill-refs	aid-review	0
 skill-refs	aid-set-connector	12260
-skill-refs	aid-specify	24855
+skill-refs	aid-specify	24876
 skill-refs	aid-summarize	48799
 skill-refs	aid-test	0
 skill-refs	aid-test-data-quality	0
@@ -416,7 +416,7 @@ template	dispatch-protocol-checklist.md	2457
 template	downstream-worktree-entry.md	10096
 template	feature-inventory.md	1228
 template	feature.md	525
-template	feedback-artifacts/IMPEDIMENT.md	2631
+template	feedback-artifacts/IMPEDIMENT.md	2626
 template	grading-rubric.md	3839
 template	kb-authoring/concern-model.md	22163
 template	kb-authoring/domain-doc-matrix.md	26737

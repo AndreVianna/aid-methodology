@@ -43,7 +43,6 @@ multi-profile CLI installer**. Its capabilities fall into five groups:
 - [Where each capability lives (parts it touches)](#where-each-capability-lives-parts-it-touches)
 - [What AID does NOT do](#what-aid-does-not-do)
 - [Open items](#open-items)
-- [Change Log](#change-log)
 
 ## Pipeline skills (the lifecycle)
 
@@ -286,4 +285,3 @@ Each capability maps to the parts that implement it (full anatomy in `module-map
   hand-authored `repurpose` skills, each of the 58 owning its own directory. Re-derive from
   `canonical/skills/` and `canonical/aid/templates/shortcut-catalog.yml`; the prior
   12-/13-/14-skill drift is superseded.
-

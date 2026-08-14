@@ -52,7 +52,6 @@ own machine.
 - [Project Management Tooling](#project-management-tooling)
 - [Hosting / Containers / Data — None](#hosting--containers--data--none)
 - [Release Commands](#release-commands)
-- [Change Log](#change-log)
 
 ---
 
@@ -310,6 +309,3 @@ bash release.sh --version "$(tr -d '[:space:]' < VERSION)"
 aid dashboard start node --port 8799
 aid dashboard stop
 ```
-
----
-

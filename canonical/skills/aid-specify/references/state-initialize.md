@@ -21,7 +21,7 @@ Read ALL before making any proposal:
 
 **During codebase exploration, register known issues** in `.aid/works/{work}/known-issues.md`
 (create from `../../templates/known-issues.md` if missing). Only register issues in code
-that this feature touches. See [Known Issues Scope](#known-issues-scope) for criteria.
+that this feature touches. See [Known Issues Scope](known-issues-scope.md#known-issues-scope) for criteria.
 
 ### Step 2: Determine Applicable Sections
 

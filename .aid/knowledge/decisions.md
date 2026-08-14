@@ -59,7 +59,6 @@ contracts: []
 - [D24 — /aid-describe reduced to full-path-only](#d24--aid-describe-reduced-to-full-path-only)
 - [D25 — /aid-monitor re-point (BUG and Change-Request routing)](#d25--aid-monitor-re-point-bug-and-change-request-routing)
 - [Still Load-Bearing](#still-load-bearing)
-- [Change Log](#change-log)
 
 ---
 
@@ -543,6 +542,3 @@ marker + `$HOME`-scan (by D12/D13), the five discovery-* agents (by D15), the Me
 in the summary (by D18), the recipe catalog + `parse-recipe.sh` (by D22), and the
 description-first TRIAGE-inside-`aid-describe` routing with its delivery/task `SPEC.md` naming
 (by D20/D21/D23/D24).
-
----
-

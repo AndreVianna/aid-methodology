@@ -56,7 +56,6 @@ accounting for every harvested candidate concept lives in
 - [Abbreviations and Acronyms](#abbreviations--acronyms)
 - [Terms with Specific Domain Meanings](#terms-with-specific-domain-meanings)
 - [Invariants](#invariants)
-- [Change Log](#change-log)
 
 ---
 
@@ -851,6 +850,3 @@ lives).
   deliberately (the conformance check), never silently overwritten with as-built.
 - **No bare interview question.** Every seasoned-analyst-engine emission carries a concrete
   `Suggested:` and a grounded `Why:` (NFR-7); a suggestion-less question is malformed.
-
----
-

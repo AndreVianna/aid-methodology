@@ -253,4 +253,3 @@ stakeholders' original intent." This check is the in-loop guard against that dri
 The check applies to both answer recording AND straw-man formulation: before emitting a
 `Suggested:`, confirm it reflects what the user actually said, not what the analyst would
 have proposed independently of the user's input.
-

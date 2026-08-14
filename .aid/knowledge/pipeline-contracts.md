@@ -50,7 +50,6 @@ server, is documented in [integration-map.md](integration-map.md).)
 - [Conventions](#conventions)
 - [Contracts](#contracts)
 - [Invariants](#invariants)
-- [Change Log](#change-log)
 
 ---
 
@@ -466,6 +465,3 @@ Load-bearing keys: `project.{name,description,type}`, `tools.installed`,
   that create, read, or update work folders as their live runtime state (Execute, Deploy,
   Monitor, the dashboard reader) are the intended operators of that state, not a dependency,
   and are exempt.
-
----
-

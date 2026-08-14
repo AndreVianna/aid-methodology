@@ -262,4 +262,3 @@ criterion AND the Requirement orphan set is empty.
 | 5 | After any seed or REQUIREMENTS amendment, both layers re-run in full. | Re-Run Protocol |
 | 6 | Each resolved conflict is recorded by the analyst (Move 10 scribe) before the session moves to the next conflict. | move-playbook.md Move 10; NFR-1 process discipline |
 | 7 | Zero Requirement orphans is a NECESSARY condition of the sufficiency bar; the seed-authoring step's stopping check reads this output and MUST NOT fire while any Requirement orphan remains. | RQ-A5; feature-003 SPEC Sufficiency bar |
-
