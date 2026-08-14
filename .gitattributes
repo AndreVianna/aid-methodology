@@ -17,9 +17,9 @@
 # so a Windows autocrlf checkout can't inject CRLF that a consumer's parser mishandles
 # (a CRLF checkout made vendor.js leak comment lines as bogus file paths).
 dashboard/MANIFEST text eol=lf
-# Two already-registered files the same work amends that sit outside every root above and
-# that no extension rule reaches: the settings template (verbatim class, seeds a `graph:`
-# section) and the generated-file registry (transformed class, gains a header-comment line).
+# Two registered files that sit outside every root above and that no extension rule
+# reaches: the settings template (verbatim class) and the generated-file registry
+# (transformed class).
 canonical/aid/templates/settings.yml         text eol=lf
 canonical/aid/templates/generated-files.txt  text eol=lf
 # The install manifest is LF-only in history but had no rule, so a Windows tool that
@@ -30,4 +30,3 @@ canonical/aid/templates/generated-files.txt  text eol=lf
 # blanket *.json rule: .claude/settings.json has been CRLF since before this policy and
 # renormalising it is a separate change.
 .aid/.aid-manifest.json text eol=lf
-
