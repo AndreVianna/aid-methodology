@@ -1,5 +1,5 @@
 ---
-state: 'In Progress'
+state: Done
 review: "--"
 elapsed: "--"
 notes: "--"
@@ -64,15 +64,17 @@ in-flight `work-003-state-schema` frontmatter conventions.
 
 ## Quick Check Findings
 
-<!-- AUTHORED -- written by `writeback-state.sh --task-id NNN --findings ...` during the
-     per-task quick-check step of aid-execute. Records the reviewer tier used and all [HIGH]
-     and [CRITICAL] findings for this task. [CRITICAL] findings trigger an immediate fix-on-spot;
-     [HIGH] findings are deferred to the delivery gate via delivery-NNN-issues.md.
-     No grade is recorded here -- grading is per-delivery, not per-task. -->
+- **Reviewer Tier:** Small (INDEX.md half only)
+- **Findings:** none
 
-- **Reviewer Tier:** --
-- **Findings:** --
-
+  Scope note: the `relationships.md` half of this task was **not** verified, by owner
+  decision -- `/aid-graph` is being retired, so grading its output buys nothing. The
+  `INDEX.md` half was verified against every acceptance oracle (Unreleased 0; roadmap.md
+  and backlog.md rows present with their declared objective/summary; no
+  "(no objective declared)" placeholder; regeneration reproducible apart from the
+  generator's own timestamp line). Also confirmed: `kb.html` unmodified, `graph.html`
+  untracked, only INDEX.md and relationships.md changed in the KB, and none of the 72
+  untracked paths from task-024's live render is cited in `relationships.md`.
 ---
 
 ## Dispatch Log
