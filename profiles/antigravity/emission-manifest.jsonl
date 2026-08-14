@@ -16,10 +16,10 @@
 {"dst": ".agent/aid/scripts/connectors/connector-secret.ps1", "profile": "antigravity", "sha256": "e28788564730d3c6b5970e639debef112b3622034ba1c3499c9f801104ddb3ef", "src": "canonical/scripts/connectors/connector-secret.ps1"}
 {"dst": ".agent/aid/scripts/connectors/connector-secret.sh", "profile": "antigravity", "sha256": "e9dda644f7d8ec238dd4b53492f1d6dd33154d4373537f4473988c178afca86a", "src": "canonical/scripts/connectors/connector-secret.sh"}
 {"dst": ".agent/aid/scripts/connectors/write-connector.sh", "profile": "antigravity", "sha256": "4387e45dc85935478466f24321c8c68f86e5cc7f19a4191cddc143f36a6f9fff", "src": "canonical/scripts/connectors/write-connector.sh"}
-{"dst": ".agent/aid/scripts/execute/complexity-score.sh", "profile": "antigravity", "sha256": "c906f9b512c6fecf6635254ea1f199479da2582d5b8a44c24101b1008da3583c", "src": "canonical/scripts/execute/complexity-score.sh"}
+{"dst": ".agent/aid/scripts/execute/complexity-score.sh", "profile": "antigravity", "sha256": "79424229ae44916659be6d05de6cb80db3e32d02d931b66d903e84749574135a", "src": "canonical/scripts/execute/complexity-score.sh"}
 {"dst": ".agent/aid/scripts/execute/compute-block-radius.sh", "profile": "antigravity", "sha256": "eea2a8d8dd12d5e118ea97664fb874343b738a650c984c866363e6adab5bde05", "src": "canonical/scripts/execute/compute-block-radius.sh"}
 {"dst": ".agent/aid/scripts/execute/write-control-signal.sh", "profile": "antigravity", "sha256": "4adc99a9d9aff96d5a3c418fb461af28167f48cfada8a1d2ed88b17454fb17fc", "src": "canonical/scripts/execute/write-control-signal.sh"}
-{"dst": ".agent/aid/scripts/execute/writeback-state.sh", "profile": "antigravity", "sha256": "eb451853f845ecb5f042bb42ae87748d5dc021047260783ae64c79e2eee9b03e", "src": "canonical/scripts/execute/writeback-state.sh"}
+{"dst": ".agent/aid/scripts/execute/writeback-state.sh", "profile": "antigravity", "sha256": "7b9fa597f67199f03dcdeff8bf2721e4b98846ef7e095b869e1b1a5db9e40307", "src": "canonical/scripts/execute/writeback-state.sh"}
 {"dst": ".agent/aid/scripts/grade.sh", "profile": "antigravity", "sha256": "478103d69baa1eb0f080538923ebe4a583629cbce540d04c567f15b4c76350f3", "src": "canonical/scripts/grade.sh"}
 {"dst": ".agent/aid/scripts/graph/assemble-coverage-notes.sh", "profile": "antigravity", "sha256": "9cf3286222f78b5a6f3d7e24dba7b8acab9502bd6b3d166b26ae87465454572a", "src": "canonical/scripts/graph/assemble-coverage-notes.sh"}
 {"dst": ".agent/aid/scripts/graph/build-graph-src.mjs", "profile": "antigravity", "sha256": "e959b63938e09eac9d0f8ce61f4ee5c80a70af3f244444e2e8ab015cd946825e", "src": "canonical/scripts/graph/build-graph-src.mjs"}
@@ -44,7 +44,7 @@
 {"dst": ".agent/aid/scripts/housekeep/branch-commit.sh", "profile": "antigravity", "sha256": "4317500099dcff627c2ed2d4dd59ecaf78d1173a9536baa6a35330dd9d7b9a9f", "src": "canonical/scripts/housekeep/branch-commit.sh"}
 {"dst": ".agent/aid/scripts/housekeep/cleanup-classify.sh", "profile": "antigravity", "sha256": "d9f0abab4118f3ed97f3f54c67524a8e68f6dda763edf95e918d020f3c454d8c", "src": "canonical/scripts/housekeep/cleanup-classify.sh"}
 {"dst": ".agent/aid/scripts/housekeep/housekeep-state.sh", "profile": "antigravity", "sha256": "34efca63b146b2025d864172c0880123eee18e0b6e9a5ba0b754b652c7fe6a98", "src": "canonical/scripts/housekeep/housekeep-state.sh"}
-{"dst": ".agent/aid/scripts/kb/build-kb-index.sh", "profile": "antigravity", "sha256": "39669832b102d1ce92434b940c08a37f79dd18470ae87bebb564fb7559031093", "src": "canonical/scripts/kb/build-kb-index.sh"}
+{"dst": ".agent/aid/scripts/kb/build-kb-index.sh", "profile": "antigravity", "sha256": "43f7beba5ef8321368524eb3729ce7b4750d2dfc332f1ec2f20e24c5bc51de5f", "src": "canonical/scripts/kb/build-kb-index.sh"}
 {"dst": ".agent/aid/scripts/kb/build-metrics.sh", "profile": "antigravity", "sha256": "3d63066f2cd54ccd0a5321faad95746b8dc27a20e16b8219df647dfa6f97c31e", "src": "canonical/scripts/kb/build-metrics.sh"}
 {"dst": ".agent/aid/scripts/kb/build-project-index.sh", "profile": "antigravity", "sha256": "74489d122cc2138a525a6076261707999b13bc77d9a5e8801e73955fa366ab8b", "src": "canonical/scripts/kb/build-project-index.sh"}
 {"dst": ".agent/aid/scripts/kb/closure-check.sh", "profile": "antigravity", "sha256": "b5d17e87e0260537c280e391d5f3ef7f9aeaf9ebc1d625f6355f58811aed4e03", "src": "canonical/scripts/kb/closure-check.sh"}
