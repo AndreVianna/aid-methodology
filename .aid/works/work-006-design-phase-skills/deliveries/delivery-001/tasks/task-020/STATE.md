@@ -1,8 +1,8 @@
 ---
-state: 'In Progress'
+state: 'In Review'
 review: "--"
 elapsed: "--"
-notes: "--"
+notes: 'Audit complete: 5 of 6 oracles green (405 bash assertions, 0 failed); the gen-reference vitest spec is RED on its idempotency drift-check only -- unsatisfiable in delivery-001, IMPEDIMENT.md filed. Seed unmoved (14 templates, ownership map clean); all three documents registered conditional on all four CC-4 surfaces; V18 33/2 disjoint and V20 0/35 with a promotion fixture; tree clean before and after. Evidence: EVIDENCE.md.'
 ticket_ref: "--"
 ---
 
