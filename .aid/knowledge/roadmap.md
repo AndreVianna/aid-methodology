@@ -46,7 +46,7 @@ work is in `release-tracking.md`; the rationale behind significant decisions is 
   36-skill catalog the MVP (conflates the minimum slice with the complete delivery).
 - **Status:** In progress — `canonical/skills/aid-{design,create,update}-{roadmap,mvp,backlog}`
   and `canonical/aid/templates/design-lifecycle.md` and `canonical/aid/templates/design-seed.md`
-  exist on the active branch; see `release-tracking.md` for the planned release items.
+  exist on the active branch; see `backlog.md` for the planned release items.
 
 ## Now
 
@@ -87,8 +87,7 @@ work is in `release-tracking.md`; the rationale behind significant decisions is 
   changes infrequently); embedding Mermaid diagrams in each doc (the KB forbids diagrams,
   and the graph view achieves the same goal without touching the sources).
 - **Status:** In progress — `canonical/skills/aid-graph/SKILL.md` exists and the feature is
-  executing on a dedicated branch; the Unreleased entry in `release-tracking.md` records
-  the planned release items.
+  executing on a dedicated branch; the planned release items are recorded in `backlog.md`.
 
 ## Next
 
@@ -152,5 +151,6 @@ work is in `release-tracking.md`; the rationale behind significant decisions is 
   catalog needs real-world adoption to reveal which consumption patterns are actually needed);
   auto-generating connector-specific skills from schemas (premature; the consumption surface
   is not yet designed).
-- **Status:** intent — anticipated by the architecture (see `decisions.md`), not yet
-  committed to or worked.
+- **Status:** intent — the connector catalog and MCP-first protocol are already in place and
+  aid-managed consumption is deferred by design; richer consumption is not yet committed to or
+  worked.
