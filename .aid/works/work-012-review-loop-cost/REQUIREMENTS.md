@@ -15,6 +15,7 @@
 | 2026-08-14 | **`work-004` merged to `master`.** C-1 restated from "pending merge" to landed; the work's one dependency is now on the mainline, so nothing it needs is in flight | /aid-describe |
 | 2026-08-14 | **Q-01 answered (owner).** NFR-1's exit criterion ratified as drafted: an oracle ships only where it replaces recurring human re-derivation, and the trade is measured. Two rejected alternatives recorded with their reasons | owner |
 | 2026-08-14 | **Q-02 answered (owner).** An `oracle:` value is a repo-root-relative path and oracles live outside `canonical/` — one resolution rule for AID and adopters alike, and no oracle in the render chain. FR-8 and NFR-5 updated | owner |
+| 2026-08-14 | **`work-009` merged; state format 3 → 4.** This work's `STATE.md` converted to `STATE.yml`; the two cross-references above re-pointed. No requirement changed — the merge touches none of the four L5 edit sites | /aid-describe |
 
 ## 1. Objective
 
@@ -135,7 +136,7 @@ guarding around it.
   executable check. Its absence is never a defect and never a finding. The value is a path
   resolved from the repo root, and an oracle lives OUTSIDE `canonical/` — one resolution
   rule for AID's own criteria and an adopter's alike, because a criterion is
-  project-specific and its oracle is the executable half of it (owner decision, STATE.md
+  project-specific and its oracle is the executable half of it (owner decision, STATE.yml
   Q-02).
 - **FR-9** A criterion carrying an oracle is decided by RUNNING the oracle rather than by
   a reviewer re-reading the criterion.
@@ -173,7 +174,7 @@ guarding around it.
   work measures that trade rather than asserting it.** Each oracle shipped records what
   re-derivation it replaces and what that re-derivation costs per cycle; the work reports
   the net. An oracle that replaces nothing recurring is not shipped.
-  **Owner-ratified 2026-08-14** (STATE.md Q-01). A hard numeric cap on oracle count was
+  **Owner-ratified 2026-08-14** (STATE.yml Q-01). A hard numeric cap on oracle count was
   considered and rejected as a figure with nothing to ground it; justifying an oracle by
   determinism alone was rejected because it removes the only test that stops oracles
   accumulating on criteria nobody re-derives.

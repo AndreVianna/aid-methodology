@@ -1,0 +1,291 @@
+# Work State -- work-012-review-loop-cost
+#
+# FULL multi-delivery work. Per work-state-template.yml's full-layout
+# omission rule, these keys are absent: delivery_state, gate_tier,
+# gate_grade, gate_timestamp, delivery_lifecycle, tasks_lifecycle,
+# delivery_gate. Each delivery's own lifecycle/gate will live in its
+# deliveries/delivery-NNN/STATE.yml.
+#
+# `qa` IS present, and that is a deliberate, recorded deviation -- see the
+# note above the key itself.
+#
+# Converted from the pre-format-4 STATE.md by hand, NOT by `aid migrate`'s
+# STEP 5 converter. The converter was run first, in a sandbox, and its
+# output was rejected: it dropped all four Q&A entries and mis-parsed an
+# authored table. Both defects are reproduced and recorded in
+# lifecycle_history below.
+
+# [W]
+#   path: lite | full
+#   initiator: aid-describe | aid-{shortcut-skill}
+pipeline:
+  path: full
+  initiator: aid-describe
+# [W]
+started: '2026-08-14'
+# [W] resolved at runtime by `read-setting.sh --skill describe --key minimum_grade --default A`
+minimum_grade: A
+# [W] 'yes' | 'no' -- quoted
+user_approved: 'no'
+# [W] Running | Paused-Awaiting-Input | Blocked | Completed | Canceled
+lifecycle: Paused-Awaiting-Input
+# [W] Describe | Define | Specify | Plan | Detail | Execute
+phase: Describe
+# [W] aid-{skill} | none
+active_skill: aid-describe
+# [W]
+updated: '2026-08-14T20:16:00Z'
+# [W] set only when lifecycle = Paused-Awaiting-Input
+pause_reason: 'Awaiting owner approval; Q-01 and Q-02 answered, Q-03 and Q-04 open (Specify-time, not Define-blocking)'
+# [W] set only when lifecycle = Blocked
+block_reason: --
+# [W] e.g. IMPEDIMENT-task-NNN.md, or the failed gate
+block_artifact: --
+# [W] {connector-stem}:{external-id} | --
+ticket_ref: --
+
+# [A] updated by aid-describe as each section is completed.
+#   state: In Progress | Complete | Approved
+#   grade: {grade} | Pending
+interview:
+  state: 'In Progress'
+  grade: Pending
+  sections:
+    - id: 1
+      name: Objective
+      state: Complete
+      updated: '2026-08-14'
+    - id: 2
+      name: 'Problem Statement'
+      state: Complete
+      updated: '2026-08-14'
+    - id: 3
+      name: 'Users & Stakeholders'
+      state: Complete
+      updated: '2026-08-14'
+    - id: 4
+      name: Scope
+      state: Complete
+      updated: '2026-08-14'
+    - id: 5
+      name: 'Functional Requirements'
+      state: Complete
+      updated: '2026-08-14'
+    - id: 6
+      name: 'Non-Functional Requirements'
+      state: Complete
+      updated: '2026-08-14'
+    - id: 7
+      name: Constraints
+      state: Complete
+      updated: '2026-08-14'
+    - id: 8
+      name: 'Assumptions & Dependencies'
+      state: Complete
+      updated: '2026-08-14'
+    - id: 9
+      name: 'Acceptance Criteria'
+      state: Complete
+      updated: '2026-08-14'
+    - id: 10
+      name: Priority
+      state: Complete
+      updated: '2026-08-14'
+  # [A] Why interview.state is 'In Progress' rather than 'Approved' even
+  #     though every section is Complete: COMPLETION step 5 requires an
+  #     explicit human approval that has not been given.
+  provenance: >-
+    This interview was conducted against a written brief rather than a live
+    turn-by-turn dialogue: the requester supplied the full proposal
+    (.aid/knowledge/tech-debt.md section "[MEDIUM] L5") as the requirements
+    input, together with the sequencing, the three mandatory guards, the
+    already-decided compatibility properties, the one tension to confront
+    early, and the out-of-scope list. Every section was filled from that
+    brief and re-derived against this branch's disk. Where the brief did not
+    decide something, the gap was recorded as a qa entry rather than guessed.
+  # [A] COMPLETION step 1.
+  quality_check:
+    - check: 'Every Must requirement in section 5 has an acceptance criterion in section 9'
+      result: 'Pass -- FR-1..FR-7 to AC-2/AC-3/AC-4; FR-8..FR-13 to AC-5/AC-6/AC-7/AC-8; FR-14 to AC-9; FR-15 to AC-1'
+    - check: 'No contradictions between sections'
+      result: 'Pass -- NFR-1 permits the executable surface section 4 requires, and states the exit criterion that bounds it'
+    - check: 'Section 4 Scope consistent with section 5'
+      result: 'Pass -- each in-scope bullet maps to at least one FR; each out-of-scope item maps to a constraint (C-2, C-3, C-4)'
+    - check: 'Section 7 Constraints do not conflict with section 5'
+      result: 'Pass -- C-3 and C-4 constrain HOW the remedies land, not whether; FR-11 was written to satisfy C-3'
+  # [A] COMPLETION step 2.
+  kb_hydration:
+    performed: yes
+    outcome: 'No KB write at this point'
+    reasons:
+      - 'The interview surfaced no new project fact. Its entire factual content already lives in .aid/knowledge/tech-debt.md section L5, which is where the proposal was authored.'
+      - 'C-5 makes a .aid/knowledge/ edit an owner-authorized act, and no such authorization has been given for this work.'
+      - 'The KB edit this work will eventually owe -- documenting oracle: in authoring-conventions.md -- is a deliverable of the work itself, not hydration of the interview, and it lands with the change rather than ahead of it.'
+
+# [A] written by the orchestrator on the work's active branch (single
+#     writer). Append-only, newest LAST.
+lifecycle_history:
+  - date: '2026-08-14'
+    event: 'Work created'
+    grade: --
+    notes: 'Scaffolded by /aid-describe FIRST-RUN on branch cursor/work-012-review-loop-cost-8a59, based on work-004'
+  - date: '2026-08-14'
+    event: 'Describe: FIRST-RUN -> CONTINUE -> COMPLETION'
+    grade: --
+    notes: 'All ten sections filled from the L5 brief and re-derived against disk'
+  - date: '2026-08-14'
+    event: 'Describe: COMPLETION -- paused'
+    grade: --
+    notes: 'PAUSE-FOR-USER-DECISION. Awaiting approval + Q-01..Q-04'
+  - date: '2026-08-14'
+    event: 'Describe: constraint amendment (owner)'
+    grade: --
+    notes: 'Dependency set closed at one: work-004 only. C-1 rewritten, C-2 generalised, the conditional meter reuse in section 8 withdrawn. Still paused'
+  - date: '2026-08-14'
+    event: 'Describe: dependency discharged'
+    grade: --
+    notes: 'work-004 merged to master (PR #190); branch merged master and now tracks it. C-1 restated as landed. Still paused on approval + Q-01..Q-04'
+  - date: '2026-08-14'
+    event: 'Describe: Q-01 answered (owner)'
+    grade: --
+    notes: 'NFR-1 exit criterion ratified as drafted. The Define blocker is cleared; Q-02..Q-04 remain and are Specify-time, not Define-time'
+  - date: '2026-08-14'
+    event: 'Describe: Q-02 answered (owner)'
+    grade: --
+    notes: 'Oracles are repo-root-relative and live outside canonical/. FR-8 and NFR-5 updated; Q-03 and Q-04 remain'
+  - date: '2026-08-14'
+    event: 'STATE.md -> STATE.yml (format 4)'
+    grade: --
+    notes: >-
+      work-009 merged to master and retired the markdown work-state format.
+      Converted by hand after rejecting the sanctioned converter's output.
+      TWO REPRODUCED CONVERTER DEFECTS, both silent. (1) _aid_sc_qa_entries
+      matches the heading ^### Q([0-9]+)$ only, so a hyphenated id such as
+      "### Q-01" is dropped with no warning -- all four of this work's Q&A
+      entries were lost, and the run still reported OK and exit 0. (2) The
+      same parser reads the bullet "- **State:**", but aid-describe's own
+      SKILL.md documents the Q&A entry format as "- **Status:**", so an
+      entry written exactly as the skill instructs converts to state: ''.
+      Both confirmed against a purpose-built three-entry fixture, not read
+      off the source. A third, milder issue: an authored markdown table
+      placed under "## Interview State" is absorbed into interview.sections
+      as extra rows. Reported for a tech-debt row; NOT fixed here, since
+      bin/aid is outside this work's scope.
+
+# [A] aid-deploy only; one entry per delivery.
+deploy: []
+
+# [A] DELIBERATE DEVIATION, recorded rather than silent.
+#
+# artifact-schemas.md "Work STATE.yml" says qa has "no key at all on the
+# full path (DERIVED)" -- yet the SAME row defines the derived union as
+# "each delivery's Q&A + work-owner entries". Work-owner entries are
+# therefore named as a real input to the union while having no declared
+# home on disk, and a Describe-phase work like this one has no deliveries
+# to derive from at all. Omitting the key would silently destroy four
+# owner decisions, two of them already answered and load-bearing (Q-01
+# sets NFR-1's exit criterion; Q-02 sets where an oracle lives).
+#
+# So the key is kept, in the exact per-entry shape the schema declares
+# (category / impact / state / context / suggested / answer / applied_to).
+# A reader that derives instead of reading it loses nothing. This is the
+# same class of gap the conversion already tracks as SY-4 (Seed Authoring),
+# and it is reported for its own tech-debt row.
+qa:
+  - id: 'Q-01'
+    category: 'Requirements / exit criterion'
+    impact: Required
+    state: Answered
+    context: >-
+      work-004's owner revision (2026-08-14) redefined the "added mechanism"
+      side of its NFR-2 as EXECUTABLE surface only, explicitly excluding
+      authored instruction. Remedy 2 adds executable surface by design --
+      every oracle is a script -- so this is the first work where that
+      definition bites. NFR-1 states the exit criterion as "an oracle is
+      justified only where it REPLACES recurring human re-derivation, and the
+      work measures the trade rather than asserting it". It needed owner
+      ratification before Specify, because AC-11 is derived from it and it
+      decides whether an oracle can ship at all.
+    suggested: >-
+      Ratify as written. The four grounds the owner used in the work-004
+      revision point the same way: an oracle is not a guard bolted onto
+      prose, it is the removal of a recurring re-derivation, so the cost it
+      adds is paid back per cycle rather than owed.
+    answer: >-
+      OWNER DECISION 2026-08-14 -- option A, ratified as drafted. An oracle
+      ships only where it REPLACES recurring human re-derivation, and the
+      work measures the trade rather than asserting it. Each oracle records
+      what re-derivation it replaces and that re-derivation's per-cycle cost;
+      the work reports the net. An oracle with no recorded replacement is not
+      shipped. The two rejected alternatives are recorded because the reason
+      matters downstream: a hard numeric cap was rejected as a figure
+      invented with nothing to ground it, and determinism-alone justification
+      was rejected because it removes the only test that stops oracles
+      accumulating on criteria nobody re-derives.
+    applied_to: 'REQUIREMENTS.md NFR-1 (now ratified rather than proposed) and AC-11, the criterion that tests it'
+  - id: 'Q-02'
+    category: Architecture
+    impact: High
+    state: Answered
+    context: >-
+      Where does an oracle live on disk? L5's worked example writes
+      "oracle: scripts/checks/g07-selector-partition.sh", a project-relative
+      path. But a criterion declared in a project's own
+      .aid/knowledge/authoring-conventions.md is project-specific, while G-07
+      is AID's own criterion about AID's own corpus -- and anything under
+      canonical/ renders into five profiles/ trees and two dogfood trees. The
+      choice decides whether an adopter's oracle and AID's own share a
+      resolution rule, and whether NFR-5's single render covers them.
+    suggested: >-
+      A project-relative path resolved from the repo root, so an adopter's
+      oracle and AID's own resolve identically; AID's own oracles then live
+      outside canonical/ and stay out of the render chain.
+    answer: >-
+      OWNER DECISION 2026-08-14 -- option A. An oracle: value is a path
+      resolved from the repo root, and oracles live OUTSIDE canonical/. One
+      resolution rule serves AID's own criteria and an adopter's identically,
+      which follows from the criteria themselves being project-specific --
+      the reason work-004 put the criteria tables in .aid/knowledge/ rather
+      than in canonical/. An oracle is the executable half of a
+      project-specific criterion, so it belongs to the project rather than to
+      the shipped toolkit. Second consequence, deliberate: no oracle enters
+      the canonical/ render chain, so none is multiplied across the five
+      profiles/ trees and the two dogfood trees. Rejected: shipping AID's
+      oracles under canonical/aid/scripts/ (it does not cover the adopter
+      case, so it needs this rule anyway and yields two rules instead of
+      one), and placing them beside the criteria in .aid/knowledge/ (that
+      tree is documents-only).
+    applied_to: 'REQUIREMENTS.md FR-8 (the key value contract) and NFR-5 (the render-chain exclusion)'
+  - id: 'Q-03'
+    category: 'Requirements / measurement'
+    impact: High
+    state: Pending
+    context: >-
+      AC-1 requires a before-and-after measurement on a real artifact, and
+      FR-15 requires the before figure to be captured first. Which artifact
+      and which gate are the measurement subject? It must be one that will
+      actually run enough cycles after the change to produce a comparable
+      after-figure.
+    suggested: >-
+      Name the subject at Define, once the feature decomposition shows which
+      gate this work itself will run most often -- this work's own specify
+      gate is the obvious candidate, since it makes the work its own
+      experiment.
+    answer: --
+    applied_to: --
+  - id: 'Q-04'
+    category: Process
+    impact: Medium
+    state: Pending
+    context: >-
+      Who generates an oracle, and when? FR-10 says "generated once", but not
+      whether that happens when the criterion is authored, or lazily the
+      first time a reviewer meets a criterion that ought to have one. This
+      affects whether a criterion can be declared without its oracle existing
+      yet -- which FR-8 permits, since absence is never a defect.
+    suggested: >-
+      At criterion-authoring time when the author knows the check is
+      mechanical; otherwise lazily, on the first cycle where a reviewer
+      re-derives the same criterion twice.
+    answer: --
+    applied_to: --
