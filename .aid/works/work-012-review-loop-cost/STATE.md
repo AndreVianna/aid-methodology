@@ -8,8 +8,8 @@ user_approved: no
 lifecycle: Paused-Awaiting-Input
 phase: Describe
 active_skill: aid-describe
-updated: "2026-08-14T19:42:00Z"
-pause_reason: "Requirements drafted and complete -- awaiting owner approval and the four Q&A answers below"
+updated: "2026-08-14T19:57:00Z"
+pause_reason: "Awaiting owner approval; Q-01 answered, Q-02..Q-04 open (Specify-time, not Define-blocking)"
 block_reason: --
 block_artifact: --
 ticket_ref: --
@@ -116,6 +116,7 @@ sufficient:
 | 2026-08-14 | Describe: COMPLETION -- paused | -- | PAUSE-FOR-USER-DECISION. Awaiting approval + Q-01..Q-04 |
 | 2026-08-14 | Describe: constraint amendment (owner) | -- | Dependency set closed at one: `work-004` only. C-1 rewritten, C-2 generalised, the conditional meter reuse in §8 withdrawn. Still paused |
 | 2026-08-14 | Describe: dependency discharged | -- | `work-004` merged to `master` (PR #190); branch merged `master` and now tracks it. C-1 restated as landed. Still paused on approval + Q-01..Q-04 |
+| 2026-08-14 | Describe: Q-01 answered (owner) | -- | NFR-1's exit criterion ratified as drafted. The Define blocker is cleared; Q-02..Q-04 remain and are Specify-time, not Define-time |
 
 ---
 
@@ -180,7 +181,7 @@ _None yet. Each delivery-NNN/STATE.md carries its own gate block._
 
 - **Category:** Requirements / exit criterion
 - **Impact:** Required
-- **Status:** Pending
+- **Status:** Answered
 - **Context:** `work-004`'s owner revision (2026-08-14) redefined the "added mechanism"
   side of its NFR-2 as EXECUTABLE surface only, explicitly excluding authored instruction.
   Remedy 2 adds executable surface by design -- every oracle is a script -- so this is the
@@ -193,6 +194,17 @@ _None yet. Each delivery-NNN/STATE.md carries its own gate block._
   revision point the same way: an oracle is not a guard bolted onto prose, it is the
   removal of a recurring re-derivation, so the cost it adds is paid back per cycle rather
   than owed.
+- **Answer:** OWNER DECISION 2026-08-14 -- **option A, ratified as drafted.** An oracle
+  ships only where it REPLACES recurring human re-derivation, and the work measures the
+  trade rather than asserting it. Each oracle records what re-derivation it replaces and
+  that re-derivation's per-cycle cost; the work reports the net. An oracle with no
+  recorded replacement is not shipped. The two rejected alternatives are recorded because
+  the reason matters downstream: a hard numeric cap (option B) was rejected as a figure
+  invented with nothing to ground it, and determinism-alone justification (option C) was
+  rejected because it removes the only test that stops oracles accumulating on criteria
+  nobody re-derives.
+- **Applied to:** REQUIREMENTS.md NFR-1 (unchanged -- it already carried this framing,
+  now ratified rather than proposed) and AC-11, which is the criterion that tests it.
 
 ### Q-02
 

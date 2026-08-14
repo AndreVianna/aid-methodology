@@ -13,6 +13,7 @@
 | 2026-08-14 | `work-011` reclassified from dependency to in-flight sibling (requester correction): it is still being processed, so nothing here may depend on its artifacts. AC-1's measurement made instrument-neutral, and C-2 added | /aid-describe |
 | 2026-08-14 | **Dependency set closed at one (owner decision).** `work-004` is the sole dependency; C-1 now says so and forbids another without an amendment. §4's out-of-scope bullet generalised from `work-011` to any in-flight work, and §8's conditional meter reuse withdrawn — FR-15 measures with its own local count | /aid-describe |
 | 2026-08-14 | **`work-004` merged to `master`.** C-1 restated from "pending merge" to landed; the work's one dependency is now on the mainline, so nothing it needs is in flight | /aid-describe |
+| 2026-08-14 | **Q-01 answered (owner).** NFR-1's exit criterion ratified as drafted: an oracle ships only where it replaces recurring human re-derivation, and the trade is measured. Two rejected alternatives recorded with their reasons | owner |
 
 ## 1. Objective
 
@@ -167,6 +168,10 @@ guarding around it.
   work measures that trade rather than asserting it.** Each oracle shipped records what
   re-derivation it replaces and what that re-derivation costs per cycle; the work reports
   the net. An oracle that replaces nothing recurring is not shipped.
+  **Owner-ratified 2026-08-14** (STATE.md Q-01). A hard numeric cap on oracle count was
+  considered and rejected as a figure with nothing to ground it; justifying an oracle by
+  determinism alone was rejected because it removes the only test that stops oracles
+  accumulating on criteria nobody re-derives.
 - **NFR-2** No new runtime dependency on the core path. Core AID installs assume neither
   node nor python, so an oracle on the core path is bash plus awk.
 - **NFR-3** An oracle is deterministic: two runs over an unchanged tree produce the same
