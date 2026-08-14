@@ -1009,6 +1009,12 @@ WB_GET_KV_AWK='
         n = n + 0
         l0 = 0; l1 = 0; status = "notfound"; collecting = 0; count = 0; firstitem = ""
     }
+    # CRLF tolerance (read-back only): GNU awk keeps the trailing \r of a \r\n
+    # line in $0, so a value read from a CRLF STATE.yml would carry a stray \r
+    # and never equal the \r-free value wb_state_verify compares against (exit
+    # 3). Strip it here, on the read side ONLY -- the write path preserves \r on
+    # untouched lines byte-for-byte (test 22f asserts both).
+    { sub(/\r$/, "") }
     n==1 && status=="notfound" && $0 ~ ("^" t1 ":") {
         val = $0; sub("^" t1 ":", "", val); sub(/^[ \t]*/, "", val)
         print "SCALAR|" unquote_value(val)

@@ -19,7 +19,7 @@
 {"dst": ".github/aid/scripts/execute/complexity-score.sh", "profile": "copilot-cli", "sha256": "79424229ae44916659be6d05de6cb80db3e32d02d931b66d903e84749574135a", "src": "canonical/scripts/execute/complexity-score.sh"}
 {"dst": ".github/aid/scripts/execute/compute-block-radius.sh", "profile": "copilot-cli", "sha256": "eea2a8d8dd12d5e118ea97664fb874343b738a650c984c866363e6adab5bde05", "src": "canonical/scripts/execute/compute-block-radius.sh"}
 {"dst": ".github/aid/scripts/execute/write-control-signal.sh", "profile": "copilot-cli", "sha256": "4adc99a9d9aff96d5a3c418fb461af28167f48cfada8a1d2ed88b17454fb17fc", "src": "canonical/scripts/execute/write-control-signal.sh"}
-{"dst": ".github/aid/scripts/execute/writeback-state.sh", "profile": "copilot-cli", "sha256": "bd25d4f88a6e948282b02a68af8706a95611504840a75eba9085abb4dd176ade", "src": "canonical/scripts/execute/writeback-state.sh"}
+{"dst": ".github/aid/scripts/execute/writeback-state.sh", "profile": "copilot-cli", "sha256": "9739a36476ab9af09fc018ebbdaaf387f8b495e6e1d21cdfff13eb5a3eb5b7e1", "src": "canonical/scripts/execute/writeback-state.sh"}
 {"dst": ".github/aid/scripts/grade.sh", "profile": "copilot-cli", "sha256": "478103d69baa1eb0f080538923ebe4a583629cbce540d04c567f15b4c76350f3", "src": "canonical/scripts/grade.sh"}
 {"dst": ".github/aid/scripts/graph/assemble-coverage-notes.sh", "profile": "copilot-cli", "sha256": "9cf3286222f78b5a6f3d7e24dba7b8acab9502bd6b3d166b26ae87465454572a", "src": "canonical/scripts/graph/assemble-coverage-notes.sh"}
 {"dst": ".github/aid/scripts/graph/build-graph-src.mjs", "profile": "copilot-cli", "sha256": "b08485e8d6c0bd95e48e208dff3728486d19a1ce95ca0aaca6739f19c1bb65de", "src": "canonical/scripts/graph/build-graph-src.mjs"}

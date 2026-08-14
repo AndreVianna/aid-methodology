@@ -237,7 +237,7 @@ run_field 4 1 Notes "first note"
 assert_file_contains "${DELIVERY_001}/tasks/task-004/STATE.yml" "notes: 'first note'" "task-004 Notes updated"
 
 run_field 5 1 Elapsed "12m"
-assert_file_contains "${DELIVERY_001}/tasks/task-005/STATE.yml" "elapsed: 12m" "task-005 Elapsed updated"
+assert_file_contains "${DELIVERY_001}/tasks/task-005/STATE.yml" "elapsed: '12m'" "task-005 Elapsed updated"
 
 # Isolation: work STATE.yml must NOT be touched by task field writes
 assert_file_not_contains "${WORK_DIR}/STATE.yml" "In Progress" "work STATE.yml NOT modified by task field write (isolation)"
@@ -1428,12 +1428,12 @@ assert_file_contains "$FLAT_STATE" "task-001:" "20b: tasks_lifecycle.task-001 en
 
 # 20c: a second task's first write adds its own sibling entry, and the FIRST
 # task's entry survives byte-identical (per-task mapping, not a shared row).
-BLOCK_T1_BEFORE_20=$(awk '/^  task-001:/{f=1; print; next} f && /^  [a-z]/{exit} f{print}' "$FLAT_STATE")
+BLOCK_T1_BEFORE_20=$(awk '/^  task-001:/{f=1; print; next} f && !/^    /{exit} f{print}' "$FLAT_STATE")
 code=0
 AID_STATE_FILE="$FLAT_STATE" bash "$SCRIPT" --delivery-id 1 --task-id 2 --field State --value "Pending" 2>/dev/null || code=$?
 assert_exit_zero "$code" "20c: second flat task --field write -> exit 0"
 assert_file_contains "$FLAT_STATE" "task-002:" "20c: tasks_lifecycle.task-002 entry appended"
-BLOCK_T1_AFTER_20=$(awk '/^  task-001:/{f=1; print; next} f && /^  [a-z]/{exit} f{print}' "$FLAT_STATE")
+BLOCK_T1_AFTER_20=$(awk '/^  task-001:/{f=1; print; next} f && !/^    /{exit} f{print}' "$FLAT_STATE")
 if [[ "$BLOCK_T1_AFTER_20" == "$BLOCK_T1_BEFORE_20" ]]; then
     pass "20c: task-001's mapping entry survived the task-002 write byte-identical"
 else
@@ -2044,14 +2044,14 @@ fi
 
 # 25c: SIBLING PRESERVATION -- writing task-002's findings leaves task-001's
 # quick_check entry byte-identical (each task owns its own mapping entry).
-BLOCK_T1_BEFORE_25=$(awk '/^  task-001:/{f=1; print; next} f && /^  [a-z]/{exit} f{print}' "$FLAT_F_STATE")
+BLOCK_T1_BEFORE_25=$(awk '/^  task-001:/{f=1; print; next} f && !/^    /{exit} f{print}' "$FLAT_F_STATE")
 FINDINGS_T2="- **Reviewer Tier:** Medium
 - **Findings:** none"
 code=0
 AID_STATE_FILE="$FLAT_F_STATE" bash "$SCRIPT" --delivery-id 1 --task-id 2 --findings "$FINDINGS_T2" 2>/dev/null || code=$?
 assert_exit_zero "$code" "25c: second task's flat --findings write -> exit 0"
 assert_file_contains "$FLAT_F_STATE" "task-002:" "25c: tasks_lifecycle.task-002 entry created"
-BLOCK_T1_AFTER_25=$(awk '/^  task-001:/{f=1; print; next} f && /^  [a-z]/{exit} f{print}' "$FLAT_F_STATE")
+BLOCK_T1_AFTER_25=$(awk '/^  task-001:/{f=1; print; next} f && !/^    /{exit} f{print}' "$FLAT_F_STATE")
 if [[ "$BLOCK_T1_AFTER_25" == "$BLOCK_T1_BEFORE_25" ]]; then
     pass "25c: task-001's entry survived the task-002 write byte-identical (SIBLING PRESERVATION)"
 else
