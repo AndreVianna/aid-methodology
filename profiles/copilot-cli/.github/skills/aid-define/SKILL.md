@@ -44,8 +44,17 @@ approve requirements.
                           folders and no files of their own.
 ```
 
-**First run (after approval):** Decompose functional requirements into §11 feature sections.
-**After features defined:** Cross-reference REQUIREMENTS.md against KB, grade, ask questions.
+> **Accuracy note.** `interview.state`/`interview.grade`/`interview.sections[]` are real
+> keys in `work-state-template.yml`. Features State is a DERIVED view with no key at all
+> (assembled at read time; never written directly, in either the old or new schema). A
+> per-feature "Cross-Reference" status and a Q&A-adjacent "Review History" list, as used
+> below, carry no dedicated key in `work-state-template.yml` either -- they describe this
+> skill's pre-existing, aspirational tracking design, not a currently writable structure;
+> this is a schema gap surfaced by the refactor, not something this DOCUMENT task resolves.
+> Cross-phase Q&A entries themselves DO have a real target: the `qa` sequence.
+
+**First run (after approval):** Decompose functional requirements into `REQUIREMENTS.md`
+§11 feature sections.
 **After cross-reference:** DONE — ready for `/aid-specify`.
 **Re-run decomposition:** pass `--features {work}` to re-run even if features exist.
 
@@ -78,7 +87,7 @@ Exit. Do not proceed.
 
 When no work ID is provided, resolve the `Approved` candidate set in two layers — a
 cross-worktree candidate set (the same source the other downstream skills use), refined
-by an `## Interview State: Approved` sub-filter this skill alone needs, because the
+by an `interview.state: Approved` sub-filter this skill alone needs, because the
 enumerate record carries no Interview-State field.
 
 ### Layer 1 — cross-worktree candidate set

@@ -74,14 +74,14 @@ Once approved:
    - `.aid/works/{work}/deliveries/delivery-NNN/tasks/task-NNN/DETAIL.md` -- the 6-section task
      definition, seeded from `.cursor/aid/templates/task-detail-template.md` (the former flat
      `tasks/task-NNN.md`; same schema, now lives in the task folder).
-   - `.aid/works/{work}/deliveries/delivery-NNN/tasks/task-NNN/STATE.md` -- seeded from
-     `.cursor/aid/templates/task-state-template.md`, replacing the frontmatter
-     block's placeholder lines with the real opening values (`state: Pending`,
-     `review: --`, `elapsed: --`, `notes: --` -- task-001/004; direct field edit,
-     the leading YAML block is the sole home for these 4 scalars), and the
-     correct Task/Delivery/Work header fields.
-   Do NOT write task rows into the work `STATE.md` `## Tasks State` -- that is a
-   DERIVED read-only view assembled at read time from the per-task STATE.md files.
+   - `.aid/works/{work}/deliveries/delivery-NNN/tasks/task-NNN/STATE.yml` -- seeded from
+     `.cursor/aid/templates/task-state-template.yml`, replacing the placeholder
+     top-level scalars with the real opening values (`state: Pending`,
+     `review: --`, `elapsed: --`, `notes: --` -- task-001/004; direct field edit;
+     every key in this file is top-level, no separate frontmatter/body split), and the
+     correct Task/Delivery/Work header fields (INFERRED from the folder path, not authored).
+   Do NOT write task rows into the work `STATE.yml`'s Tasks State view -- that is a
+   DERIVED read-only view assembled at read time from the per-task STATE.yml files.
 2. **Self-check before moving on** (the author reading its own output -- no dispatch,
    no grade): does each task have what it needs from the previous one? Any gap where
    something is used before it is created? Scope aligned with what the SPECs say?

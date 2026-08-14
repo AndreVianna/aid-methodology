@@ -477,7 +477,15 @@ What a change must never break (each stated as a hard rule + where enforced):
   `.claude/aid/scripts/release/check-version-sync.sh`.
 - **Polyglot parity:** behavior implemented in Bash (`lib/aid-install-core.sh`) MUST match
   the PowerShell equivalent (`lib/AidInstallCore.psm1`). Enforced by
-  `tests/canonical/test-aid-cli-parity.sh`.
+  `tests/canonical/test-aid-cli-parity.sh`. The same parity rule binds the dashboard's
+  Python/Node reader twins (`dashboard/reader/reader.py` / `dashboard/server/reader.mjs`): both
+  parse the `STATE.yml` subset through one structured parse and MUST return field-identical
+  payloads, and neither may raise a `parse_warning` a converted work does not warrant. Enforced
+  by the shared cross-runtime YAML-subset conformance corpus
+  (`dashboard/reader/tests/state_yaml_conformance_corpus.py`, run by both
+  `test_state_yaml_conformance.py` and `test_state_yaml_conformance_node.py`) and the
+  cross-format characterization suites (`test_task011_golden_master.py`,
+  `test_task011_reconcile.py`, `test_flattened_layout_parity.py`).
 - **LF + ASCII in shipped scripts:** committed `.sh` files MUST be LF-only; shipped
   PowerShell MUST be ASCII-only (Windows ANSI-codepage mis-parses non-ASCII no-BOM). Enforced
   by the `kb-hygiene` CI job and `tests/canonical/ps51-compat-check.ps1`.

@@ -1,0 +1,4 @@
+control_before: ok_before
+parent_key:
+   child_key: bad
+control_after: ok_after

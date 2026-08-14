@@ -662,7 +662,7 @@ def _run_merge_base_is_ancestor(repo_root: Path, c_src: str, baseline: str) -> s
 # PREFERRED path (normalized, feature-001 M1+):
 #   When ## Pipeline Status block is present and contains a valid Lifecycle
 #   literal, that literal is returned verbatim (source_mode=normalized).
-#   This path is implemented in parsers.py (parse_state_md / _parse_pipeline_status_line).
+#   This path is implemented in parsers.py (parse_state_md / _apply_pipeline_frontmatter).
 #   derive_lifecycle() is called for the FALLBACK path only; the caller (parsers.py) decides
 #   which path to use.
 #
@@ -677,6 +677,7 @@ def derive_lifecycle(
     pending_inputs: list[PendingInput],
     state_text: str,
     work_id: str = "",
+    latest_history_date: Optional[str] = None,
 ) -> tuple[Lifecycle, SourceMode, Optional[str], Optional[str], Optional[str], Optional[str], list[str]]:
     """Apply SM-2 fallback derivation when ## Pipeline Status is absent.
 
@@ -687,6 +688,16 @@ def derive_lifecycle(
 
     Exception: Canceled (prio-1) is the LEGITIMATE derivation path for all works,
     since Canceled is a user action with no automatic producer by design (feature-001 §3).
+
+    latest_history_date (KI-004, work-009-refactor task-021): the coarse-`updated`
+    fallback value -- max(lifecycle_history[].date) over the ALREADY-parsed sequence,
+    computed ONCE by the caller (parsers.py parse_state_md) and threaded through here,
+    twin of reader.mjs's deriveLifecycle(..., latestHistoryDate) / computeLatestHistory
+    Date(). All five branches below return this SAME value verbatim; none re-derive it.
+    Replaces the pre-task-021 per-branch call to the now-deleted _extract_latest_
+    history_date(state_text), which scanned for a markdown "## Lifecycle History"
+    *table* that no longer exists once lifecycle_history became a YAML sequence (dead
+    against every STATE.yml -- see known-issues.md § KI-004).
 
     Returns:
         (lifecycle, source_mode, pause_reason, block_reason, block_artifact, updated,
@@ -719,7 +730,7 @@ def derive_lifecycle(
             Lifecycle.Canceled,
             SourceMode.Fallback,
             None, None, None,
-            _extract_latest_history_date(state_text),
+            latest_history_date,
             warnings,
         )
 
@@ -732,7 +743,7 @@ def derive_lifecycle(
             Lifecycle.Completed,
             SourceMode.Fallback,
             None, None, None,
-            _extract_latest_history_date(state_text),
+            latest_history_date,
             warnings,
         )
 
@@ -750,7 +761,7 @@ def derive_lifecycle(
             None,  # pause_reason
             block_reason,
             block_artifact,
-            _extract_latest_history_date(state_text),
+            latest_history_date,
             warnings,
         )
 
@@ -768,7 +779,7 @@ def derive_lifecycle(
             SourceMode.Fallback,
             pause_reason,
             None, None,
-            _extract_latest_history_date(state_text),
+            latest_history_date,
             warnings,
         )
 
@@ -780,7 +791,7 @@ def derive_lifecycle(
         Lifecycle.Running,
         SourceMode.Fallback,
         None, None, None,
-        _extract_latest_history_date(state_text),
+        latest_history_date,
         warnings,
     )
 
@@ -895,52 +906,6 @@ def _has_cancellation_in_history(text: str, warnings: list[str], work_id: str = 
                     f"Gate column (ambiguous); check manually: {stripped}"
                 )
     return False
-
-
-# --- Latest history date (used as coarse updated fallback) (TEMPORARY -- KI-003) ---
-
-_RE_DATE = re.compile(r"\b(\d{4}-\d{2}-\d{2})\b")
-
-
-def _extract_latest_history_date(text: str) -> Optional[str]:
-    """Return the most recent date found in ## Lifecycle History as the coarse updated fallback.
-
-    LEGACY-COMPAT: used only when ## Pipeline Status is absent (no Updated field).
-    Live works (M4+) have authoritative Updated in ## Pipeline Status; this scan is
-    retained for legacy works created before the migration.
-
-    Scans the Date column (first column of each data row) in ## Lifecycle History.
-    Returns the lexicographically latest date string ("YYYY-MM-DD"), or None if absent.
-    """
-    in_history = False
-    header_seen = False
-    latest: Optional[str] = None
-
-    for line in text.splitlines():
-        if _RE_HISTORY_SECTION.match(line):
-            in_history = True
-            header_seen = False
-            continue
-        if in_history:
-            if re.match(r"^##\s+", line):
-                break
-            stripped = line.strip()
-            if not stripped.startswith("|"):
-                continue
-            if _RE_TABLE_SEP.match(stripped):
-                continue
-            cols = [c.strip() for c in stripped.strip("|").split("|")]
-            if not header_seen:
-                header_seen = True
-                continue
-            # Date is the first column
-            date_col = cols[0].strip() if cols else ""
-            m = _RE_DATE.search(date_col)
-            if m:
-                d = m.group(1)
-                if latest is None or d > latest:
-                    latest = d
-    return latest
 
 
 # --- Prio 2: Completed (LEGACY-COMPAT) ---

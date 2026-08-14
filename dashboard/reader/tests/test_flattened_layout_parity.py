@@ -152,54 +152,50 @@ def _build_flat_work(
             encoding="utf-8",
         )
 
-    # work-root STATE.md: Pipeline State + the 3 promoted feature-001 blocks
-    lifecycle_rows = "\n".join(
-        f"| {t['id']} | {t.get('state', 'Pending')} | {t.get('review', '--')} | "
-        f"{t.get('elapsed', '--')} | {t.get('notes', '--')} |"
-        for t in tasks
-    )
-    if not lifecycle_rows:
-        lifecycle_rows = "| _none yet_ | | | | |"
+    # work-root STATE.yml (work-009-refactor task-016: was STATE.md carrying
+    # a '## Pipeline State' block + the 3 promoted feature-001 sections
+    # ('## Delivery Lifecycle' + nested '### Tasks lifecycle' table +
+    # '## Delivery Gate') -- all retired into the flat SPEC.md sec:D-4 keys:
+    # `delivery_state` / `gate_tier` / `gate_grade` / `gate_timestamp` (top-
+    # level scalars), `delivery_lifecycle` (mapping), `tasks_lifecycle`
+    # (mapping keyed by task-NNN), `delivery_gate.issue_list`.
+    if tasks:
+        tasks_lifecycle_lines = "\n".join(
+            f"  {t['id']}:\n"
+            f"    state: {t.get('state', 'Pending')}\n"
+            f"    review: {t.get('review', '--')}\n"
+            f"    elapsed: {t.get('elapsed', '--')}\n"
+            f"    notes: {t.get('notes', '--')}\n"
+            for t in tasks
+        )
+        tasks_lifecycle_block = f"tasks_lifecycle:\n{tasks_lifecycle_lines}"
+    else:
+        tasks_lifecycle_block = "tasks_lifecycle: {}\n"
 
-    state_text = f"""# Work State -- {work_id}
-
-## Pipeline State
-
-- **Lifecycle:** {work_lifecycle}
-- **Phase:** Execute
-- **Active Skill:** aid-execute
-- **Updated:** {work_updated}
-- **Pause Reason:** --
-- **Block Reason:** --
-- **Block Artifact:** --
-
-## Delivery Lifecycle
-
-- **State:** {delivery_state}
-- **Updated:** {work_updated}
-- **Block Reason:** --
-- **Block Artifact:** --
-
-### Tasks lifecycle
-
-| Task | State | Review | Elapsed | Notes |
-|------|-------|--------|---------|-------|
-{lifecycle_rows}
-
-## Delivery Gate
-
-- **Reviewer Tier:** Small
-- **Grade:** {gate_grade}
-- **Issue List:** none
-- **Timestamp:** {work_updated}
-
-## Tasks State
-
-| # | Task | Type | Wave | State | Review | Elapsed | Notes |
-|---|------|------|------|-------|--------|---------|-------|
-| _none yet_ | | | | | | | |
+    state_text = f"""\
+pipeline:
+  path: lite
+  initiator: aid-refactor
+lifecycle: {work_lifecycle}
+phase: Execute
+active_skill: aid-execute
+updated: '{work_updated}'
+pause_reason: --
+block_reason: --
+block_artifact: --
+delivery_state: {delivery_state}
+gate_tier: Small
+gate_grade: {gate_grade}
+gate_timestamp: '{work_updated}'
+delivery_lifecycle:
+  updated: '{work_updated}'
+  block_reason: --
+  block_artifact: --
+{tasks_lifecycle_block}
+delivery_gate:
+  issue_list: []
 """
-    (work_dir / "STATE.md").write_text(state_text, encoding="utf-8")
+    (work_dir / "STATE.yml").write_text(state_text, encoding="utf-8")
 
     return work_dir
 

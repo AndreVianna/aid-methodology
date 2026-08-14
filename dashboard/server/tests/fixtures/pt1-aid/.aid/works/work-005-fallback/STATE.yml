@@ -1,0 +1,4 @@
+# Work State -- work-005-fallback (work-009-refactor task-016: was STATE.md)
+# Deliberately carries NO `lifecycle` key -- this is the LC-3 fallback-
+# derivation case (README.md: "no typed ## Pipeline Status block (fallback
+# derivation)"; the modern equivalent is "no `lifecycle` key at all").

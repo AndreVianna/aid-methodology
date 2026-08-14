@@ -12,7 +12,7 @@
 **Acceptance Criteria:**
 - [ ] {Criterion 1 — concrete and testable}
 - [ ] {Criterion 2 — concrete and testable}
-- [ ] All §6 quality gates pass
+- [ ] All section-6 quality gates pass
 
 ---
 

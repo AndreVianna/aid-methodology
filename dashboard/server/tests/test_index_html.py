@@ -918,8 +918,11 @@ class TestFeature006Router(unittest.TestCase):
         # home.html's client-side per-work path fallback (browser twin of the
         # reader per-work path re-derivation) must resolve to .aid/works/{workId}/.
         # RED-FAILS pre-fix: the fallback was ('.aid/' + workId + '/STATE.md').
-        self.assertIn("'.aid/works/' + workId + '/STATE.md'", self.src,
-                      "Client fallback path must resolve to .aid/works/{workId}/STATE.md (work-016 AC-4)")
+        # (work-009-refactor task-016: home.html itself -- production code,
+        # out of this task's edit scope -- was already retargeted to
+        # STATE.yml elsewhere; only this test's expected string was stale.)
+        self.assertIn("'.aid/works/' + workId + '/STATE.yml'", self.src,
+                      "Client fallback path must resolve to .aid/works/{workId}/STATE.yml (work-016 AC-4)")
         self.assertNotIn("'.aid/' + workId + '/STATE.md'", self.src,
                          "The old .aid/{workId}/STATE.md client fallback must be gone (no dual path)")
 

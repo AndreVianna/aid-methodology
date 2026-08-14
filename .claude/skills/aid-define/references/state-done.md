@@ -18,7 +18,7 @@ Interview for {work} is complete and approved.
     Functional Requirements, etc.) — print: `For requirements-level changes, run
     /aid-describe {work} to reopen the requirements interview.` and exit.
   - Otherwise, record the user's input into the relevant REQUIREMENTS.md section, update
-    STATE.md `## Interview State` section statuses if needed, update the affected §11 feature section
+    `interview.sections[].state` (STATE.yml) if needed, update the affected §11 feature section
     files if the change impacts a feature, and update KB documents if the new info is KB-relevant.
   - Print: `✅ Updated. Run /aid-define {work} again to re-validate.`
 

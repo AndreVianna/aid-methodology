@@ -21,7 +21,7 @@ Validate against KB and codebase.
 ## 6a. Load Context
 
 1. Read REQUIREMENTS.md (in the work folder)
-2. Read STATE.md `## Interview State` and `## Cross-phase Q&A`
+2. Read STATE.yml's `interview` key and `qa` sequence
 3. Read `.aid/knowledge/INDEX.md` (if exists)
 4. Read ALL KB documents listed in INDEX.md
 5. Read `REQUIREMENTS.md § 11 Features` — every `### Feature NNN` subsection
@@ -44,7 +44,7 @@ by severity (Minor/Low/Medium/High/Critical). Grade is calculated — worst issu
 
 Compare to minimum grade from `bash .agent/aid/scripts/config/read-setting.sh --skill interview --key minimum_grade --default A`.
 
-**Update `**Interview Grade:**` in STATE.md `## Interview State`.**
+**Update `interview.grade` in STATE.yml.**
 
 ## 6d. Present Findings
 
@@ -69,7 +69,7 @@ I have {N} questions to resolve these. Let's go through them one at a time.
 
 ## 6e. Create Q&A Entries and Ask
 
-For each finding, add a Q&A entry in STATE.md `## Cross-phase Q&A`:
+For each finding, add a Q&A entry to the `qa` sequence in STATE.yml:
 
 ```markdown
 ### Q{N}
@@ -91,5 +91,6 @@ After each answer:
 
 After all questions answered:
 
-1. Add Review History entry in STATE.md `## Interview State`
+1. Record the cross-reference event (aspirational Review History tracking -- no dedicated
+   key in `work-state-template.yml`; see `SKILL.md`'s accuracy note)
 2. Print: `✅ Cross-reference complete. Run /aid-define again to verify.`

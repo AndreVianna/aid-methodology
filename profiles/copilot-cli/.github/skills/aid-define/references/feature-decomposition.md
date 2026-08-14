@@ -92,11 +92,10 @@ files of its own.
 
 ## Step 5: Update Meta-Documents
 
-1. Add Review History entry in STATE.md `## Interview State`:
+1. Record the decomposition event (aspirational Review History tracking -- no dedicated
+   key in `work-state-template.yml`; see `SKILL.md`'s accuracy note):
    `| {N} | {today} | — | Feature Decomposition | {N} features defined |`
-2. Record the features in STATE.md `## Features State` (one row per feature —
-   this is the process view; §11 is the definition)
-3. Update `.aid/knowledge/INDEX.md` if it exists — add work reference
+2. Update `.aid/knowledge/INDEX.md` if it exists — add work reference
 
 Print:
 ```

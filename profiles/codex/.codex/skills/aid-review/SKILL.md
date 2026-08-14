@@ -107,8 +107,8 @@ empty path, surface the error and **STOP** (do not allocate on the current, poss
 available, else cwd + surface -- `worktree-lifecycle.md § Step 2`).
 
 **Only now**, inside the entered worktree, create `.aid/works/work-NNN-<slug>/` (reusing
-the `<work-id>` resolved above). Copy `.codex/aid/templates/work-state-template.md` to
-`.aid/works/work-NNN-<slug>/STATE.md` and write the opening frontmatter (direct edit):
+the `<work-id>` resolved above). Copy `.codex/aid/templates/work-state-template.yml` to
+`.aid/works/work-NNN-<slug>/STATE.yml` and write the opening frontmatter (direct edit):
 `pipeline.path: lite`, `initiator: aid-review`, `lifecycle: Running`, `active_skill:
 aid-review`, `started`/`updated` timestamps. Leave the 7-phase `phase` scalar at its
 template value -- a standalone review is not a pipeline run and does not drive it

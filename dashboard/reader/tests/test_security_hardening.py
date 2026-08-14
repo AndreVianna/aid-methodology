@@ -10,7 +10,7 @@ Covers the reader-hardening fix set (Python <-> Node twins, lockstep):
            reaching merge-base --is-ancestor: neutralized by --end-of-options
            (derivation.py _run_merge_base_is_ancestor / reader.mjs
            _runMergeBaseIsAncestor).
-  3. MEDIUM unbounded file read -> DoS: a >5 MB STATE.md is bounded-read (no
+  3. MEDIUM unbounded file read -> DoS: a >5 MB STATE.yml is bounded-read (no
            OOM) and read_repo() still yields a well-formed model.
   4. Python<->Node parity: the bounded-read fix produces the identical
            bytes_read for the same oversized file in both twins.
@@ -349,10 +349,17 @@ class TestBoundedRead(unittest.TestCase):
         self.assertEqual(len(bounded), MAX_READ_BYTES)
 
 
-class TestReadRepoSurvivesOversizedStateMd(unittest.TestCase):
-    """read_repo() end-to-end: a >5 MB STATE.md is bounded-read, never OOMs,
+class TestReadRepoSurvivesOversizedStateYml(unittest.TestCase):
+    """read_repo() end-to-end: a >5 MB STATE.yml is bounded-read, never OOMs,
     and still yields a well-formed model (the parseable header sits inside the
-    first 5 MB; only the padding tail is truncated)."""
+    first 5 MB; only the padding tail is truncated). (work-009-refactor
+    task-016: was a bullet-heading STATE.md with an embedded '## Tasks
+    Status' pipe-table -- retired, SPEC.md sec:D-4; converted to a FLAT
+    layout (BLUEPRINT.md + tasks/task-001/DETAIL.md) + a `tasks_lifecycle`
+    mapping, since a bare monolithic STATE.yml's tasks are now always []
+    regardless of content, SPEC.md L-3 -- the original "the header still
+    parses, task-001 still resolves" proof-point needs a layout where tasks
+    ARE populated to remain meaningful.)"""
 
     def setUp(self):
         self._tmp = tempfile.mkdtemp()
@@ -365,26 +372,33 @@ class TestReadRepoSurvivesOversizedStateMd(unittest.TestCase):
         aid = self.root / ".aid"
         work_dir = aid / "works" / "work-001-huge"
         work_dir.mkdir(parents=True)
-        header = (
-            "# Work State -- work-001-huge\n\n"
-            "## Pipeline Status\n\n"
-            "- **Lifecycle:** Running\n"
-            "- **Phase:** Execute\n"
-            "- **Active Skill:** aid-execute\n"
-            "- **Updated:** 2026-06-10T12:00:00Z\n"
-            "- **Pause Reason:** --\n"
-            "- **Block Reason:** --\n"
-            "- **Block Artifact:** --\n\n"
-            "## Tasks Status\n\n"
-            "| # | Task | Type | Wave | Status | Review | Elapsed | Notes |\n"
-            "|---|------|------|------|--------|--------|---------|-------|\n"
-            "| 001 | task-001 | IMPLEMENT | delivery-001 | In Progress | -- | -- | first |\n\n"
+        (work_dir / "BLUEPRINT.md").write_text("# Blueprint\n", encoding="utf-8")
+        task_dir = work_dir / "tasks" / "task-001"
+        task_dir.mkdir(parents=True)
+        (task_dir / "DETAIL.md").write_text(
+            "# task-001\n\n**Type:** IMPLEMENT\n", encoding="utf-8",
         )
-        # Pad well past the 5 MB cap; the padding is inert prose (no ## headers),
-        # so truncating it never disturbs the meaningful header parsed above.
+        header = (
+            "lifecycle: Running\n"
+            "phase: Execute\n"
+            "active_skill: aid-execute\n"
+            "updated: '2026-06-10T12:00:00Z'\n"
+            "pause_reason: --\n"
+            "block_reason: --\n"
+            "block_artifact: --\n"
+            "tasks_lifecycle:\n"
+            "  task-001:\n"
+            "    state: In Progress\n"
+            "    review: --\n"
+            "    elapsed: --\n"
+            "    notes: first\n"
+        )
+        # Pad well past the 5 MB cap; the padding is inert prose (no `key:`
+        # lines), so truncating it never disturbs the meaningful header
+        # parsed above -- it is simply skipped as a malformed line (D-3).
         padding = "x" * (MAX_READ_BYTES + (2 * 1024 * 1024))
         content = header + padding
-        state_path = work_dir / "STATE.md"
+        state_path = work_dir / "STATE.yml"
         state_path.write_text(content, encoding="utf-8")
         return state_path, len(content.encode("utf-8"))
 
@@ -406,7 +420,7 @@ class TestReadRepoSurvivesOversizedStateMd(unittest.TestCase):
 
     @unittest.skipUnless(_NODE_AVAILABLE, "node not available on PATH")
     def test_node_parity_bytes_read_identical(self):
-        """Python<->Node parity: the SAME oversized STATE.md yields the SAME
+        """Python<->Node parity: the SAME oversized STATE.yml yields the SAME
         bytes_read in both twins (bounded-read behavior is symmetric)."""
         self._make_oversized_work()
 
@@ -416,7 +430,7 @@ class TestReadRepoSurvivesOversizedStateMd(unittest.TestCase):
         self.assertEqual(node_model["work_count"], 1)
         self.assertEqual(
             py_model.read.bytes_read, node_model["bytes_read"],
-            "Python and Node must cap the oversized STATE.md read identically",
+            "Python and Node must cap the oversized STATE.yml read identically",
         )
 
 

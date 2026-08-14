@@ -1,6 +1,6 @@
 # State: FIRST-RUN
 
-This state runs only when STATE.md `## Interview State` does not exist in the work folder; it creates the scaffolding before the conversational interview begins.
+This state runs only when STATE.yml (with its `interview` key) does not exist in the work folder; it creates the scaffolding before the conversational interview begins.
 
 ### 1a. Read KB (if it exists)
 
@@ -9,19 +9,17 @@ already known about the project. This context prevents asking questions the KB a
 
 If no KB exists, that's fine — this is a greenfield project.
 
-### 1b. Create or update STATE.md
+### 1b. Create or update STATE.yml
 
-Ensure `.aid/works/{work}/STATE.md` exists and has an `## Interview State` section and a
-`## Cross-phase Q&A` section. Copy from `../../../aid/templates/work-state-template.md` if
-the file does not yet exist.
+Ensure `.aid/works/{work}/STATE.yml` exists and has its `interview` key and `qa` key.
+Copy from `../../../aid/templates/work-state-template.yml` if the file does not yet exist.
 
-### 1b-ii. Seed the frontmatter block
+### 1b-ii. Seed the frontmatter keys
 
-After the STATE.md file exists (created from the template above or already present), write
-the opening scalar values directly into `.aid/works/{work}/STATE.md`'s leading YAML frontmatter
-block (the top of the file, before the `# Work State` title), replacing every placeholder
-line the template ships with the actual opening values. Resolve this work's own minimum
-grade first:
+After the STATE.yml file exists (created from the template above or already present), write
+the opening scalar values directly into `.aid/works/{work}/STATE.yml`'s frontmatter-zone
+top-level keys, replacing every placeholder value the template ships with the actual opening
+values. Resolve this work's own minimum grade first:
 
 ```bash
 bash .cursor/aid/scripts/config/read-setting.sh --skill describe --key minimum_grade --default A
@@ -47,15 +45,16 @@ block_artifact: --
 
 (`pipeline.path` is always `full` here -- `aid-describe` is the FULL-pipeline starting
 skill, never a flattened Lite shortcut; the flattened-only `delivery_state`/`gate_tier`/
-`gate_grade`/`gate_timestamp` group is left untouched, since a full-path work's delivery
-lifecycle/gate lives in its own `delivery-NNN/STATE.md` instead.)
+`gate_grade`/`gate_timestamp` group is left untouched -- it is not even present in a
+full-layout `STATE.yml`, since a full-path work's delivery lifecycle/gate lives in its own
+`delivery-NNN/STATE.yml` instead.)
 
 This side-effect is a state-write only (no user-visible output, no gate, no prompt). It does
 not change any observable interview behavior — CONTINUE begins immediately after scaffolding.
 The `pause_reason`, `block_reason`, and `block_artifact` keys are included with the sentinel
 value `--` so every conditional key is structurally present from the start. All values are
-valid opening members of the closed enums declared in the template. The body's
-`## Pipeline State` section is a static enum-reference blockquote and is never rewritten here
+valid opening members of the closed enums declared in the template. The template's own
+STATE ADVANCEMENT ORDERING `#` comment block is static and is never rewritten here
 or by any later `writeback-state.sh --pipeline` call.
 
 **Idempotency:** if the frontmatter already has `lifecycle: Running` (the work was
@@ -91,8 +90,8 @@ skip this step. The seed only pre-fills answers; it never overrides the determin
 interview flow. (A `BUG` finding no longer routes here at all — `aid-monitor` hands bugs
 directly to `/aid-fix`; see `aid-monitor/references/state-route.md` Step 5.)
 
-**Note:** Sections are empty — no placeholder markers. The STATE.md `## Interview State` tracks
-which sections have been filled.
+**Note:** Sections are empty — no placeholder markers. `interview.sections[].state`
+(STATE.yml) tracks which sections have been filled.
 
 ### 1e. Connector awareness — record a source ticket's `ticket_ref` (optional)
 
@@ -100,8 +99,8 @@ If this interview's originating context names, or clearly traces to, an already-
 catalogued issue-tracker connector (e.g. the Monitor-routed finding in Step 1d cites one, or the
 requester names one directly), fetch it by invoking `/aid-read-ticket [<connector>:]<ticket-id>`
 — the connector resolution and host-MCP fetch live there (feature-001); no direct-fetch recipe is
-re-implemented here — and record `ticket_ref: <stem>:<external-id>` in this work's `STATE.md`
-frontmatter (the same block seeded at Step 1b-ii). Skip silently when no such ticket is named or
+re-implemented here — and record `ticket_ref: <stem>:<external-id>` in this work's `STATE.yml`
+frontmatter (the same keys seeded at Step 1b-ii). Skip silently when no such ticket is named or
 no matching connector is catalogued — purely additive; never blocks or alters the interview flow;
 the delegated read is non-destructive, so no extra confirm is added.
 

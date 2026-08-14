@@ -57,9 +57,9 @@ source "$(dirname "${BASH_SOURCE[0]}")/../lib/assert.sh"
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 PROTOCOL="${REPO_ROOT}/canonical/aid/templates/connectors/consumption-protocol.md"
-WORK_TPL="${REPO_ROOT}/canonical/aid/templates/work-state-template.md"
-DELIVERY_TPL="${REPO_ROOT}/canonical/aid/templates/delivery-state-template.md"
-TASK_TPL="${REPO_ROOT}/canonical/aid/templates/task-state-template.md"
+WORK_TPL="${REPO_ROOT}/canonical/aid/templates/work-state-template.yml"
+DELIVERY_TPL="${REPO_ROOT}/canonical/aid/templates/delivery-state-template.yml"
+TASK_TPL="${REPO_ROOT}/canonical/aid/templates/task-state-template.yml"
 SPEC_TPL="${REPO_ROOT}/canonical/aid/templates/specs/spec-template.md"
 
 for f in "$PROTOCOL" "$WORK_TPL" "$DELIVERY_TPL" "$TASK_TPL" "$SPEC_TPL"; do
@@ -101,12 +101,26 @@ for seam in "aid-describe" "aid-specify" "aid-plan" "aid-fix" "aid-ask" "aid-res
         "CL08b Wired seams table references $seam"
 done
 
-assert_file_contains "$WORK_TPL" 'ticket_ref: "{connector-stem}:{external-id}' \
-    "CL08c work-state-template.md carries the optional ticket_ref frontmatter scalar"
-assert_file_contains "$DELIVERY_TPL" 'ticket_ref: "{connector-stem}:{external-id}' \
-    "CL08d delivery-state-template.md carries the optional ticket_ref frontmatter scalar"
-assert_file_contains "$TASK_TPL" 'ticket_ref: "{connector-stem}:{external-id}' \
-    "CL08e task-state-template.md carries the optional ticket_ref frontmatter scalar"
+# task-015 addendum (SP-16/AC-8): retargeted from *-state-template.md to the
+# one-zone *-state-template.yml (work-009 task-002). The instantiated value is
+# now the bare sentinel `ticket_ref: --` (D-2/D-5 -- no live external id in a
+# never-touched template), so the old single-string assertion (which matched
+# the OLD frontmatter's un-instantiated placeholder value directly) no longer
+# has a like-for-like target; the `{connector-stem}:{external-id}` format is
+# still documented, one line above the key, as a full-line comment (D-3).
+# Each check now asserts BOTH halves: the key itself, and the format comment.
+assert_file_contains "$WORK_TPL" "ticket_ref: --" \
+    "CL08c work-state-template.yml carries the optional ticket_ref key"
+assert_file_contains "$WORK_TPL" "{connector-stem}:{external-id}" \
+    "CL08c2 work-state-template.yml documents the ticket_ref value format"
+assert_file_contains "$DELIVERY_TPL" "ticket_ref: --" \
+    "CL08d delivery-state-template.yml carries the optional ticket_ref key"
+assert_file_contains "$DELIVERY_TPL" "{connector-stem}:{external-id}" \
+    "CL08d2 delivery-state-template.yml documents the ticket_ref value format"
+assert_file_contains "$TASK_TPL" "ticket_ref: --" \
+    "CL08e task-state-template.yml carries the optional ticket_ref key"
+assert_file_contains "$TASK_TPL" "{connector-stem}:{external-id}" \
+    "CL08e2 task-state-template.yml documents the ticket_ref value format"
 assert_file_contains "$SPEC_TPL" '**Ticket:** {connector-stem}:{external-id}' \
     "CL08f spec-template.md carries the optional Ticket line (SPEC.md has no frontmatter block)"
 

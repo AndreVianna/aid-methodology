@@ -5,21 +5,21 @@ that arise during the propose→discuss→write→review loop.
 
 ## KB is Wrong or Incomplete
 
-**Simple fix:** Fix the KB document directly, note in work STATE.md `## Cross-phase Q&A`.
+**Simple fix:** Fix the KB document directly, note in the `qa` sequence (STATE.yml).
 
 **Needs re-discovery:** Add Q&A entry to `.aid/knowledge/STATE.md` `## Q&A (Pending)`,
-note the loopback in work STATE.md `## Features State`, continue with non-blocked sections.
+note the loopback in the Features State view (work STATE.yml), continue with non-blocked sections.
 
 ## Requirements are Wrong or Incomplete
 
 **Simple fix:** Fix REQUIREMENTS.md directly — both the upstream section and the feature's own §11 subsection live there.
 
-**Needs re-interview:** Add Q&A entry to `.aid/works/{work}/STATE.md` `## Cross-phase Q&A`,
-note the loopback in work STATE.md `## Features State`.
+**Needs re-interview:** Add Q&A entry to the `qa` sequence (`.aid/works/{work}/STATE.yml`),
+note the loopback in the Features State view (work STATE.yml).
 
 ## Spike Needed (State 3)
 
-1. Update STATE.md: `**State:** Spike Needed` with What/Why/Scope/Blocked Sections
+1. Update STATE.yml: `state: Spike Needed` with What/Why/Scope/Blocked Sections
 2. Print spike details and exit
 
 On return: read spike results, record in the feature's `#### Technical Specification`, resume loop.

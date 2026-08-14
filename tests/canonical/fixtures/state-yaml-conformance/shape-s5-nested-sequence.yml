@@ -1,0 +1,7 @@
+parent:
+  child:
+    - first: v1
+      next: v2
+  scalar_list:
+    - itemA
+    - itemB

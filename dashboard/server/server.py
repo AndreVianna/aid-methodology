@@ -1016,7 +1016,7 @@ _AID_CLI_PATH_PS1 = _DASHBOARD_DIR.parent / "bin" / "aid.ps1"
 # DEFAULT_MAP: writer exit code -> (http_status, error_class). Derived from
 # writeback-state.sh's exit alphabet (0 ok / 1 missing-artifact / 2 lock-contention /
 # 3 empty-or-unverifiable-write / 4 invalid-value / 5 missing-arg / 6 malformed
-# STATE.md); write-setting.sh / write-requirement.sh reuse the SAME alphabet and
+# STATE.yml); write-setting.sh / write-requirement.sh reuse the SAME alphabet and
 # never emit 2 (reserved for lock contention). An OP_TABLE row's OPTIONAL
 # `status_map` field overrides this per-op (OP-SM foundation contract for
 # features 003/004's `aid`-CLI-backed ops).
@@ -1500,7 +1500,7 @@ def _op_task_set_notes_argv(work_dir: Path, served_root: str, target: dict, args
     if delivery_id:
         argv += ["--delivery-id", str(delivery_id)]
     argv += ["--task-id", str(target.get("task_id")), "--field", "Notes", "--value", value]
-    env = {"AID_STATE_FILE": str(work_dir / "STATE.md"), "AID_WORK_DIR": str(work_dir)}
+    env = {"AID_STATE_FILE": str(work_dir / "STATE.yml"), "AID_WORK_DIR": str(work_dir)}
     return argv, env
 
 
@@ -1537,7 +1537,7 @@ def _op_pipeline_finish_argv(work_dir: Path, served_root: str, target: dict, arg
     editing stays closed per REQUIREMENTS Sec 5.2). args is accepted but ignored.
     """
     argv = ["--pipeline", "--field", "Lifecycle", "--value", "Completed"]
-    env = {"AID_STATE_FILE": str(work_dir / "STATE.md"), "AID_WORK_DIR": str(work_dir)}
+    env = {"AID_STATE_FILE": str(work_dir / "STATE.yml"), "AID_WORK_DIR": str(work_dir)}
     return argv, env
 
 
@@ -1800,7 +1800,7 @@ def _op_task_rename_argv(work_dir: Path, served_root: str, target: dict, args: d
     if delivery_id:
         argv += ["--delivery-id", str(delivery_id)]
     argv += ["--task-id", str(target.get("task_id")), "--field", "Name", "--value", value]
-    env = {"AID_STATE_FILE": str(work_dir / "STATE.md"), "AID_WORK_DIR": str(work_dir)}
+    env = {"AID_STATE_FILE": str(work_dir / "STATE.yml"), "AID_WORK_DIR": str(work_dir)}
     return argv, env
 
 
