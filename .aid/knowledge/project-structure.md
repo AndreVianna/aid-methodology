@@ -271,7 +271,7 @@ CONFIRMED. Run `find tests -name 'test-*.sh' | wc -l` for the live canonical-sui
 | `CONTRIBUTING.md` | How to contribute skills, templates, examples. |
 | `CLAUDE.md` | Repo agent instructions with an AID-managed region. |
 | `examples/` | Walkthrough samples (greenfield, brownfield full-path, brownfield lite-path). |
-| `dashboard/README.md`, `tests/README.md`, `canonical/.../README.md` | Subsystem-local READMEs. |
+| `dashboard/README.md`, `tests/README.md` | Subsystem-local READMEs. `canonical/` carries none: the per-skill and per-agent READMEs were removed, since nothing installed or ran resolved to them. |
 
 CONFIRMED by direct listing of `docs/`, root, and `examples/`.
 

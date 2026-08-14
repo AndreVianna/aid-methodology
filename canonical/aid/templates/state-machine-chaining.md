@@ -2,7 +2,7 @@
 kb-category: meta
 source: hand-authored
 objective: Defines the auto-chain rule that all AID skills follow when their state machines advance.
-summary: Defines the auto-chain rule that all AID skills follow when their state machines advance. Each AID skill (`/aid-discover`, `/aid-summarize`, etc.) is internally organized as a state machine — states a
+summary: One invocation drives through as many states as it can until a natural pause point, so a state boundary never forces a re-invocation on a happy-path run; the per-skill SKILL.md files cite this doc rather than restating the rule.
 review-criteria: []
 ---
 
