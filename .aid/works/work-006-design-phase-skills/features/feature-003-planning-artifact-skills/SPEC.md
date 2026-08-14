@@ -871,16 +871,26 @@ rather than left to the author:
 |-------|-----------------------------------------------------|
 | `aid-design-roadmap` | `/aid-design-mvp` (the first slice) — and `/aid-create-roadmap`, which is what writes the KB |
 | `aid-create-roadmap` | `/aid-create-mvp` (the `## MVP` section) and `/aid-update-roadmap` (a roadmap that already has entries) |
-| `aid-update-roadmap` | `/aid-update-mvp` (the `## MVP` section) |
+| `aid-update-roadmap` | `/aid-update-mvp` (the `## MVP` section) — and `/aid-create-roadmap` (the document's owner, its absent-destination route per §6c) |
 | `aid-design-mvp` | `/aid-design-roadmap` (direction beyond the first slice) — and `/aid-create-mvp` |
 | `aid-create-mvp` | `/aid-create-roadmap` (creates the document itself) and `/aid-update-mvp` |
-| `aid-update-mvp` | `/aid-update-roadmap` (everything outside `## MVP`) |
+| `aid-update-mvp` | `/aid-update-roadmap` (everything outside `## MVP`) — and `/aid-create-roadmap` (the document's owner, its absent-destination route per §6c) |
 | `aid-design-backlog` | `/aid-design-roadmap` (direction, not items) — and `/aid-create-backlog` |
 | `aid-create-backlog` | `/aid-update-backlog` (a backlog that already has items) |
 | `aid-update-backlog` | `/aid-create-backlog` (no backlog yet) |
 
 Each `design` row names two routes because it has two confusions to resolve — the wrong
 artifact and the wrong stage.
+
+`aid-update-roadmap` and `aid-update-mvp` each name `/aid-create-roadmap` for the same
+reason `aid-update-backlog`'s row names `/aid-create-backlog`: it is the absent-destination
+route §6c requires (a region-owning `update` skill routes to the document's *owner* on
+absence, not to its own `create` counterpart — §4, CC-5, V17), and naming it back is what
+makes the `create-roadmap` ↔ `update-roadmap` routing **mutual** as REQUIREMENTS AC-8
+requires (`aid-create-roadmap` names `/aid-update-roadmap`, so the reverse must hold).
+An earlier revision of this table omitted it from these two rows only — an inconsistency
+with the parallel `update-backlog` row that made V25's ceiling clause reject the correct,
+shipped descriptions; the omission was the defect, not the descriptions.
 
 **Ownership of these nine assignments is not in question, per REQUIREMENTS CC-9:** every
 neighbour named above is itself one of this feature's nine skills, so both sides of every
