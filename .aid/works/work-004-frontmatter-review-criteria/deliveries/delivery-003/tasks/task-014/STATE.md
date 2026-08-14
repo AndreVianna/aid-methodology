@@ -1,5 +1,5 @@
 ---
-state: Pending
+state: Done
 review: "--"
 elapsed: "--"
 notes: "--"
@@ -24,8 +24,8 @@ ticket_ref: "--"
 ## Quick Check Findings
 
 - **Reviewer Tier:** Small
-- **Findings:** _none yet_
-
+- **Findings:**
+  - [HIGH] Both Overengineering rows said the reviewer grades against "the file's own declared criteria", which implies only the per-file block counts -- inverting the mechanism, since most files carry no block and are covered entirely by the global and per-type levels -- README.md and docs/aid-methodology.md, Overengineering row -- Fixed-on-spot (reworded to name all three levels with the per-file block as the additive case; re-verified by the same reviewer)
 ---
 
 ## Dispatch Log
