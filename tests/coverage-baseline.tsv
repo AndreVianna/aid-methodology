@@ -647,6 +647,8 @@ test-aid-cli-parity.sh	PAR077-C05	1
 test-aid-cli-parity.sh	PAR077-C06	1
 test-aid-cli-parity.sh	PAR077-C07	1
 test-aid-cli-parity.sh	PAR077-C08	1
+test-aid-cli-parity.sh	PAR077-C08a	1
+test-aid-cli-parity.sh	PAR077-C08b	1
 test-aid-cli-parity.sh	PAR077-T01	1
 test-aid-cli-parity.sh	PAR077-T02	1
 test-aid-cli-parity.sh	PAR077-T03	1
@@ -1326,7 +1328,7 @@ test-aid-migrate-trigger.sh	TRG-D03 post-stamp status: no WARN (stamp current, l
 test-aid-migrate-trigger.sh	TRG-E01 AID_HOME->STATE split: registry.yml written to STATE dir	1
 test-aid-migrate-trigger.sh	TRG-E02 AID_HOME->STATE split: registry.yml NOT in CODE dir (correct)	1
 test-aid-migrate-trigger.sh	TRG-E03 CANARY: real REPO_ROOT<PATH> NOT modified	1
-test-aid-migrate-trigger.sh	TRG-F01 AC9 first-encounter: (a) format_version: 3 written into settings.yml	1
+test-aid-migrate-trigger.sh	TRG-F01 AC9 first-encounter: (a) format_version: 4 written into settings.yml	1
 test-aid-migrate-trigger.sh	TRG-F02 AC9 first-encounter: (b) repo registered in user-tier registry.yml	1
 test-aid-migrate-trigger.sh	TRG-F03 AC9 no-scan canary: (c) canary .aid<PATH> content unchanged (not touched)	1
 test-aid-migrate-trigger.sh	TRG-F04 AC9 no-scan canary: (c) canary .aid<PATH> mtime unchanged	1
@@ -1340,7 +1342,7 @@ test-aid-migrate-trigger.sh	TRG-I01 npm postinstall error-path: exit 0 (catch bl
 test-aid-migrate-trigger.sh	TRG-I02 npm postinstall error-path: WARN prefix on stderr	1
 test-aid-migrate-trigger.sh	TRG-I03 npm postinstall: process.exit(0) present in script (non-fatal final exit)	1
 test-aid-migrate-trigger.sh	TRG-J01 carry-forward: format_version stamp preserved on second encounter	1
-test-aid-migrate-trigger.sh	TRG-J02 carry-forward: format_version: 3 still present after second encounter	1
+test-aid-migrate-trigger.sh	TRG-J02 carry-forward: format_version: 4 still present after second encounter	1
 test-aid-migrate-trigger.sh	TRG-J03 carry-forward: 'aid status' silent (stamp current -- no re-prompt)	1
 test-aid-migrate-trigger.sh	TRG-K03 CANARY: real REPO_ROOT<PATH> NOT modified	1
 test-aid-migrate-trigger.sh	TRG-K1a non-global collapse: registry.yml written at AID_HOME<PATH> (collapsed path)	1
@@ -1348,7 +1350,7 @@ test-aid-migrate-trigger.sh	TRG-K1b non-global collapse: K1 repo NOT in HOME<PAT
 test-aid-migrate-trigger.sh	TRG-K2a pretend-global: repo registered in AID_STATE_HOME<PATH> (shared tier)	1
 test-aid-migrate-trigger.sh	TRG-MO00 precondition: manifest-only repo has no settings.yml	1
 test-aid-migrate-trigger.sh	TRG-MO01 manifest-only: settings.yml synthesized by migrate (era-b via manifest)	1
-test-aid-migrate-trigger.sh	TRG-MO02 manifest-only: format_version: 3 stamped	1
+test-aid-migrate-trigger.sh	TRG-MO02 manifest-only: format_version: 4 stamped	1
 test-aid-migrate-trigger.sh	TRG-MO03 manifest-only: gate silent after migrate (no recurring WARN)	1
 test-aid-migrate-trigger.sh	TRG-Q1-01 piped bash (empty BASH_SOURCE): exit 0 (bash may set BASH_SOURCE in piped mode -- non-fatal)	1
 test-aid-migrate-trigger.sh	TRG-Q1-02 piped bash: clear error message about code home printed	1
@@ -1356,6 +1358,10 @@ test-aid-migrate-trigger.sh	TRG-Q1-03 piped bash: no .aid<PATH> files created in
 test-aid-migrate-trigger.sh	TRG-Q1-04 piped bash: no .aid<PATH> files created under HOME (no side-effect)	1
 test-aid-migrate-trigger.sh	TRG-T1-01 writable CODE_HOME: per-user scope -- registry in AID_STATE_HOME (<PATH>	1
 test-aid-migrate-trigger.sh	TRG-T2-01 read-only CODE_HOME: global scope + fallback to ~<PATH>	1
+test-aid-migrate-trigger.sh	TRG-WS00 precondition: 'aid status' is silent (settings.yml already format_version: 4)	1
+test-aid-migrate-trigger.sh	TRG-WS01 legacy work-state tree: STATE.yml written on the encounter that follows (lazy model fires for work-state, not only settings)	1
+test-aid-migrate-trigger.sh	TRG-WS02 legacy work-state tree: STATE.md deleted after the verified encounter conversion	1
+test-aid-migrate-trigger.sh	TRG-WS03 converted STATE.yml carries the frontmatter scalars through	1
 test-aid-migrate-trigger.sh	VND-A01 npm vendor.js: home.html shipped via dashboard<PATH> (single source)	1
 test-aid-migrate-trigger.sh	VND-B01 pypi vendor.py: home.html shipped via dashboard<PATH> (single source)	1
 test-aid-migrate-trigger.sh	VND-C01 EMISSION-MANIFEST.md: file exists	1
@@ -1436,8 +1442,43 @@ test-aid-migrate.sh	G14-04 retired AID file still present after dry-run (no actu
 test-aid-migrate.sh	G14-05 user-file.txt byte-identical after dry-run (content-isolation)	1
 test-aid-migrate.sh	G14-06 .aid<PATH> NOT created during dry-run (zero writes confirmed)	1
 test-aid-migrate.sh	G14-07 new-layout .codex<PATH> NOT written during dry-run (zero copy writes)	1
+test-aid-migrate.sh	G15A-01 __migrate-repo with a full flat-layout STATE.md -> exit 0	1
+test-aid-migrate.sh	G15A-02 OK line names the converted file pair	1
+test-aid-migrate.sh	G15A-03 STATE.md deleted after a verified conversion	1
+test-aid-migrate.sh	G15A-04 STATE.yml written	1
+test-aid-migrate.sh	G15A-05 frontmatter lifecycle: carried through verbatim	1
+test-aid-migrate.sh	G15A-06 frontmatter phase: carried through verbatim	1
+test-aid-migrate.sh	G15A-07 interview.grade parsed from the bold State<PATH> header line	1
+test-aid-migrate.sh	G15A-08 interview.sections[0].name parsed from the table row	1
+test-aid-migrate.sh	G15A-09 lifecycle_history[0].event parsed from the table row	1
+test-aid-migrate.sh	G15A-10 deploy: [] -- the _none yet_ sentinel row emits no entries	1
+test-aid-migrate.sh	G15A-11 delivery_lifecycle.updated parsed from the Updated: bullet	1
+test-aid-migrate.sh	G15A-12 tasks_lifecycle.task-001: mapping key present	1
+test-aid-migrate.sh	G15A-13 tasks_lifecycle.task-001.display_name parsed from the Name column	1
+test-aid-migrate.sh	G15A-14 delivery_gate.issue_list: [] -- 'none' emits no entries	1
+test-aid-migrate.sh	G15A-15 qa: [] -- no ### Q blocks in the fixture	1
+test-aid-migrate.sh	G15A-16 no calibration_log: key emitted (DERIVED section, read-only, never authored here)	1
+test-aid-migrate.sh	G15A-16 no delivery_gates: key emitted (DERIVED section, read-only, never authored here)	1
+test-aid-migrate.sh	G15A-16 no dispatches: key emitted (DERIVED section, read-only, never authored here)	1
+test-aid-migrate.sh	G15A-16 no features_state: key emitted (DERIVED section, read-only, never authored here)	1
+test-aid-migrate.sh	G15A-16 no plan_deliveries: key emitted (DERIVED section, read-only, never authored here)	1
+test-aid-migrate.sh	G15A-16 no tasks_state: key emitted (DERIVED section, read-only, never authored here)	1
+test-aid-migrate.sh	G15B-01 __migrate-repo with a full-layout delivery+task pair -> exit 0	1
+test-aid-migrate.sh	G15B-02 delivery-level STATE.yml written	1
+test-aid-migrate.sh	G15B-03 task-level STATE.yml written	1
+test-aid-migrate.sh	G15B-04 both source STATE.md files deleted after a verified conversion	1
+test-aid-migrate.sh	G15B-05 delivery_lifecycle.updated parsed from the delivery-level Updated: bullet	1
+test-aid-migrate.sh	G15B-06 quick_check.reviewer_tier parsed from the task-level Reviewer Tier: bullet	1
+test-aid-migrate.sh	G15B-07 quick_check.findings[0] parsed from the task-level Findings bullet list	1
+test-aid-migrate.sh	G15B-08 dispatch_log[0].date parsed from the task-level Dispatch Log table row	1
+test-aid-migrate.sh	G15C-01 __migrate-repo exit code unaffected by a per-file DERIVED-guard refusal (WARN-not-fail)	1
+test-aid-migrate.sh	G15C-02 WARN names the guarded heading and states the refusal	1
+test-aid-migrate.sh	G15C-03 WARN states the documented remedy	1
+test-aid-migrate.sh	G15C-04 STATE.md left in place (nothing dropped) after the guard refusal	1
+test-aid-migrate.sh	G15C-05 no STATE.yml written -- the guard refused before the candidate file was ever built	1
+test-aid-migrate.sh	G15D-01 settings.yml format_version: 4 on a repo that also converted a work-level STATE.md	1
 test-aid-migrate.sh	G4A-01 __migrate-repo valid+commented fixture -> exit 0	1
-test-aid-migrate.sh	G4A-02 format_version: 3 stamped on the rewritten flat file	1
+test-aid-migrate.sh	G4A-02 format_version: 4 stamped on the rewritten flat file	1
 test-aid-migrate.sh	G4A-03 type: flattened to top level with the inline comment dropped	1
 test-aid-migrate.sh	G4A-04 max_parallel_tasks dropped (execution: block removed)	1
 test-aid-migrate.sh	G4A-05 heartbeat_interval: promoted to top level with the inline comment dropped	1
@@ -1492,6 +1533,15 @@ test-aid-migrate.sh	G6-09 Gate-5b: 2nd run exits 0	1
 test-aid-migrate.sh	G6-10 Gate-5b: 2nd run byte-identical (DISCOVERY_STATE.md fixture unchanged)	1
 test-aid-migrate.sh	G6-11 Gate-5c: 2nd run exits 0	1
 test-aid-migrate.sh	G6-12 Gate-5c: 2nd run byte-identical (no-manifest synthesized file unchanged)	1
+test-aid-migrate.sh	G6-13 Gate-15a: 2nd run exits 0	1
+test-aid-migrate.sh	G6-14 Gate-15a: 2nd run byte-identical (converted work STATE.yml unchanged)	1
+test-aid-migrate.sh	G6-15 Gate-15a: 2nd run does not resurrect STATE.md (stays absent)	1
+test-aid-migrate.sh	G6-16 Gate-15b: 2nd run exits 0	1
+test-aid-migrate.sh	G6-17 Gate-15b: 2nd run byte-identical (converted delivery STATE.yml unchanged)	1
+test-aid-migrate.sh	G6-18 Gate-15b: 2nd run byte-identical (converted task STATE.yml unchanged)	1
+test-aid-migrate.sh	G6-19 Gate-15c: 2nd run exits 0 (still WARN-not-fail)	1
+test-aid-migrate.sh	G6-20 Gate-15c: 2nd run hits the identical guard refusal (no silent drop on retry)	1
+test-aid-migrate.sh	G6-21 Gate-15c: 2nd run still writes no STATE.yml (guard re-fires identically)	1
 test-aid-migrate.sh	G7A-01 __migrate-repo with existing kb.html -> exit 0	1
 test-aid-migrate.sh	G7A-02 existing .aid<PATH> NOT overwritten (no-clobber)	1
 test-aid-migrate.sh	G7A-03 existing kb.html content byte-for-byte intact	1
@@ -1707,7 +1757,7 @@ test-build-kb-index.sh	BI09	1
 test-build-kb-index.sh	BI10	1
 test-build-kb-index.sh	BI11	3
 test-build-kb-index.sh	BI12	1
-test-build-kb-index.sh	BI13	6
+test-build-kb-index.sh	BI13	7
 test-build-kb-index.sh	BI14	1
 test-build-kb-index.sh	BI15	1
 test-build-kb-index.sh	BI16	1
@@ -2178,6 +2228,15 @@ test-complexity-score.sh	A4 2-node cycle terminates with exit 0	1
 test-complexity-score.sh	A4 acyclic linear chain depth=2 (unchanged)	1
 test-complexity-score.sh	A4 cycle still reports tasks=2	1
 test-complexity-score.sh	A4 self-loop terminates with exit 0	1
+test-complexity-score.sh	A5a directory-form tasks-dir exits 0	1
+test-complexity-score.sh	A5a risk=3 from task-NNN<PATH> (REFACTOR +2, TEST +1)	1
+test-complexity-score.sh	A5a score=6 (tasks 2 + depth 1 + risk 3 + consults 0)	1
+test-complexity-score.sh	A5b risk=2 (MIGRATE +2; the task with no DETAIL.md scores +0)	1
+test-complexity-score.sh	A5b tasks-dir with a missing task DETAIL.md exits 0	1
+test-complexity-score.sh	A5c risk=3 from task-NNN-{slug}<PATH> directories	1
+test-complexity-score.sh	A5d flat '- Type:' inside DETAIL.md still scores +0 (retired form)	1
+test-complexity-score.sh	A5e legacy task-NNN.md takes precedence over task-NNN<PATH>	1
+test-complexity-score.sh	A5f legacy-only tasks-dir still risk=1 under the depth-2 scan	1
 test-compute-block-radius.sh	B1 lite '## Execution Graph' parses (fail task-001 → task-002,task-003)	1
 test-compute-block-radius.sh	B2 absent task succeeds with empty set (exit 0, not 2)	1
 test-compute-block-radius.sh	B2 absent task warns to stderr	1
@@ -2240,8 +2299,11 @@ test-connector-consumption-linkage.sh	CL07	1
 test-connector-consumption-linkage.sh	CL08	1
 test-connector-consumption-linkage.sh	CL08b	7
 test-connector-consumption-linkage.sh	CL08c	1
+test-connector-consumption-linkage.sh	CL08c2	1
 test-connector-consumption-linkage.sh	CL08d	1
+test-connector-consumption-linkage.sh	CL08d2	1
 test-connector-consumption-linkage.sh	CL08e	1
+test-connector-consumption-linkage.sh	CL08e2	1
 test-connector-consumption-linkage.sh	CL08f	1
 test-connector-consumption-linkage.sh	CL09	1
 test-connector-consumption-linkage.sh	CL10	1
@@ -2744,24 +2806,21 @@ test-dashboard-reader.sh	DRPY1-dashboard.reader.tests.test_derivation.TestFallba
 test-dashboard-reader.sh	DRPY1-dashboard.reader.tests.test_derivation.TestFallbackHelpers.test_grade_below_false_at_minimum	1
 test-dashboard-reader.sh	DRPY1-dashboard.reader.tests.test_derivation.TestFallbackHelpers.test_grade_below_true	1
 test-dashboard-reader.sh	DRPY1-dashboard.reader.tests.test_derivation.TestFallbackHelpers.test_grade_below_unknown_grade	1
-test-dashboard-reader.sh	DRPY1-dashboard.reader.tests.test_derivation.TestFallbackHelpers.test_latest_date_extracted	1
-test-dashboard-reader.sh	DRPY1-dashboard.reader.tests.test_derivation.TestFallbackHelpers.test_latest_date_none_when_no_history	1
-test-dashboard-reader.sh	DRPY1-dashboard.reader.tests.test_derivation.TestFallbackHelpers.test_latest_date_picks_most_recent	1
 test-dashboard-reader.sh	DRPY1-dashboard.reader.tests.test_derivation.TestFallbackHelpers.test_minimum_grade_absent	1
 test-dashboard-reader.sh	DRPY1-dashboard.reader.tests.test_derivation.TestFallbackHelpers.test_no_gates_section	1
 test-dashboard-reader.sh	DRPY1-dashboard.reader.tests.test_derivation.TestFallbackHelpers.test_no_impediment_file	1
 test-dashboard-reader.sh	DRPY1-dashboard.reader.tests.test_derivation.TestFallbackHelpers.test_parses_minimum_grade	1
 test-dashboard-reader.sh	DRPY1-dashboard.reader.tests.test_derivation.TestFallbackHelpers.test_subdir_impediment_not_found	1
 test-dashboard-reader.sh	DRPY1-dashboard.reader.tests.test_derivation.TestFallbackHelpers.test_subminimum_gate_found	1
-test-dashboard-reader.sh	DRPY1-dashboard.reader.tests.test_derivation.TestFallbackIntegration.test_fallback_blocked_beats_paused	1
-test-dashboard-reader.sh	DRPY1-dashboard.reader.tests.test_derivation.TestFallbackIntegration.test_fallback_blocked_from_failed_task	1
 test-dashboard-reader.sh	DRPY1-dashboard.reader.tests.test_derivation.TestFallbackIntegration.test_fallback_blocked_from_impediment_file	1
+test-dashboard-reader.sh	DRPY1-dashboard.reader.tests.test_derivation.TestFallbackIntegration.test_fallback_both_dead_signals_still_noop_to_running	1
 test-dashboard-reader.sh	DRPY1-dashboard.reader.tests.test_derivation.TestFallbackIntegration.test_fallback_canceled_from_history	1
 test-dashboard-reader.sh	DRPY1-dashboard.reader.tests.test_derivation.TestFallbackIntegration.test_fallback_completed_from_deploy_shipped	1
-test-dashboard-reader.sh	DRPY1-dashboard.reader.tests.test_derivation.TestFallbackIntegration.test_fallback_paused_from_pending_qa	1
+test-dashboard-reader.sh	DRPY1-dashboard.reader.tests.test_derivation.TestFallbackIntegration.test_fallback_failed_task_signal_is_a_noop_via_parse_state_md	1
+test-dashboard-reader.sh	DRPY1-dashboard.reader.tests.test_derivation.TestFallbackIntegration.test_fallback_no_markdown_text_never_populates_tasks	1
+test-dashboard-reader.sh	DRPY1-dashboard.reader.tests.test_derivation.TestFallbackIntegration.test_fallback_pending_qa_signal_is_a_noop_via_parse_state_md	1
 test-dashboard-reader.sh	DRPY1-dashboard.reader.tests.test_derivation.TestFallbackIntegration.test_fallback_running_default	1
-test-dashboard-reader.sh	DRPY1-dashboard.reader.tests.test_derivation.TestFallbackIntegration.test_fallback_tasks_list_preserved	1
-test-dashboard-reader.sh	DRPY1-dashboard.reader.tests.test_derivation.TestFallbackIntegration.test_fallback_updated_from_history	1
+test-dashboard-reader.sh	DRPY1-dashboard.reader.tests.test_derivation.TestFallbackIntegration.test_fallback_updated_from_history_authored_yaml_sequence	1
 test-dashboard-reader.sh	DRPY1-dashboard.reader.tests.test_derivation.TestFallbackIntegration.test_fallback_without_work_dir_skips_impediment_scan	1
 test-dashboard-reader.sh	DRPY1-dashboard.reader.tests.test_derivation.TestFallbackIntegration.test_write_primitives_absent_in_derivation	1
 test-dashboard-reader.sh	DRPY1-dashboard.reader.tests.test_derivation.TestRollupSM3.test_blocked_beats_paused	1
@@ -2781,10 +2840,10 @@ test-dashboard-reader.sh	DRPY1-dashboard.reader.tests.test_feature009.TestT10Pro
 test-dashboard-reader.sh	DRPY1-dashboard.reader.tests.test_feature009.TestT10ProducerConsumerContract.test_pf1_description_consumed	1
 test-dashboard-reader.sh	DRPY1-dashboard.reader.tests.test_feature009.TestT10ProducerConsumerContract.test_pf1_name_consumed_as_title	1
 test-dashboard-reader.sh	DRPY1-dashboard.reader.tests.test_feature009.TestT10ProducerConsumerContract.test_pf1_objective_skips_blockquote	1
-test-dashboard-reader.sh	DRPY1-dashboard.reader.tests.test_feature009.TestT10ProducerConsumerContract.test_pf3_task_short_names_consumed	1
+test-dashboard-reader.sh	DRPY1-dashboard.reader.tests.test_feature009.TestT10ProducerConsumerContract.test_pf3_task_short_names_now_unreachable_via_monolithic_state	1
 test-dashboard-reader.sh	DRPY1-dashboard.reader.tests.test_feature009.TestT10ProducerConsumerContract.test_pf4_phase_from_pipeline_status	1
-test-dashboard-reader.sh	DRPY1-dashboard.reader.tests.test_feature009.TestT10ProducerConsumerContract.test_pf5a_delivery_from_state_wave	1
-test-dashboard-reader.sh	DRPY1-dashboard.reader.tests.test_feature009.TestT10ProducerConsumerContract.test_pf5a_lane_from_wave_map	1
+test-dashboard-reader.sh	DRPY1-dashboard.reader.tests.test_feature009.TestT10ProducerConsumerContract.test_pf5a_delivery_from_state_wave_now_unreachable	1
+test-dashboard-reader.sh	DRPY1-dashboard.reader.tests.test_feature009.TestT10ProducerConsumerContract.test_pf5a_lane_from_wave_map_now_unreachable	1
 test-dashboard-reader.sh	DRPY1-dashboard.reader.tests.test_feature009.TestT11CanonicalProducerPinning.test_pf1_canonical_pending_placeholder_is_absorbed	1
 test-dashboard-reader.sh	DRPY1-dashboard.reader.tests.test_feature009.TestT11CanonicalProducerPinning.test_pf1_canonical_template_contains_description_header	1
 test-dashboard-reader.sh	DRPY1-dashboard.reader.tests.test_feature009.TestT11CanonicalProducerPinning.test_pf1_canonical_template_contains_name_header	1
@@ -2802,6 +2861,7 @@ test-dashboard-reader.sh	DRPY1-dashboard.reader.tests.test_feature009.TestT4Phas
 test-dashboard-reader.sh	DRPY1-dashboard.reader.tests.test_feature009.TestT8FullyDegradedLegacyWork.test_description_is_none_no_blockquote	1
 test-dashboard-reader.sh	DRPY1-dashboard.reader.tests.test_feature009.TestT8FullyDegradedLegacyWork.test_lifecycle_is_valid_enum_not_crash	1
 test-dashboard-reader.sh	DRPY1-dashboard.reader.tests.test_feature009.TestT8FullyDegradedLegacyWork.test_no_task_has_zero_delivery	1
+test-dashboard-reader.sh	DRPY1-dashboard.reader.tests.test_feature009.TestT8FullyDegradedLegacyWork.test_parse_warning_names_migration_command	1
 test-dashboard-reader.sh	DRPY1-dashboard.reader.tests.test_feature009.TestT8FullyDegradedLegacyWork.test_phase_is_none_not_garbage	1
 test-dashboard-reader.sh	DRPY1-dashboard.reader.tests.test_feature009.TestT8FullyDegradedLegacyWork.test_source_mode_is_fallback	1
 test-dashboard-reader.sh	DRPY1-dashboard.reader.tests.test_feature009.TestT8FullyDegradedLegacyWork.test_t8_cross_runtime_node_mirrors_python	1
@@ -2849,8 +2909,8 @@ test-dashboard-reader.sh	DRPY1-dashboard.reader.tests.test_fixtures.TestFixtureF
 test-dashboard-reader.sh	DRPY1-dashboard.reader.tests.test_fixtures.TestFixtureFallbackBlocked.test_lifecycle_blocked	1
 test-dashboard-reader.sh	DRPY1-dashboard.reader.tests.test_fixtures.TestFixtureFallbackBlocked.test_source_mode_fallback	1
 test-dashboard-reader.sh	DRPY1-dashboard.reader.tests.test_fixtures.TestFixtureFallbackPaused.test_in_fallback_works	1
-test-dashboard-reader.sh	DRPY1-dashboard.reader.tests.test_fixtures.TestFixtureFallbackPaused.test_lifecycle_paused	1
-test-dashboard-reader.sh	DRPY1-dashboard.reader.tests.test_fixtures.TestFixtureFallbackPaused.test_pause_reason_has_question_ids	1
+test-dashboard-reader.sh	DRPY1-dashboard.reader.tests.test_fixtures.TestFixtureFallbackPaused.test_lifecycle_running_pending_qa_signal_is_a_noop	1
+test-dashboard-reader.sh	DRPY1-dashboard.reader.tests.test_fixtures.TestFixtureFallbackPaused.test_pause_reason_is_none_pending_qa_signal_is_a_noop	1
 test-dashboard-reader.sh	DRPY1-dashboard.reader.tests.test_fixtures.TestFixtureFallbackPaused.test_source_mode_fallback	1
 test-dashboard-reader.sh	DRPY1-dashboard.reader.tests.test_fixtures.TestFixtureMalformedStateMd.test_bad_work_has_valid_lifecycle_enum	1
 test-dashboard-reader.sh	DRPY1-dashboard.reader.tests.test_fixtures.TestFixtureMalformedStateMd.test_good_works_unaffected	1
@@ -2929,7 +2989,7 @@ test-dashboard-reader.sh	DRPY1-dashboard.reader.tests.test_reader.TestCreatedFie
 test-dashboard-reader.sh	DRPY1-dashboard.reader.tests.test_reader.TestCreatedField.test_created_field_exposed_on_work_model	1
 test-dashboard-reader.sh	DRPY1-dashboard.reader.tests.test_reader.TestCreatedField.test_created_is_none_without_history	1
 test-dashboard-reader.sh	DRPY1-dashboard.reader.tests.test_reader.TestCreatedField.test_created_none_propagated_when_absent	1
-test-dashboard-reader.sh	DRPY1-dashboard.reader.tests.test_reader.TestCreatedField.test_created_takes_first_row_only	1
+test-dashboard-reader.sh	DRPY1-dashboard.reader.tests.test_reader.TestCreatedField.test_created_takes_first_entry_only	1
 test-dashboard-reader.sh	DRPY1-dashboard.reader.tests.test_reader.TestEnumParsing.test_all_lifecycle_members	1
 test-dashboard-reader.sh	DRPY1-dashboard.reader.tests.test_reader.TestEnumParsing.test_all_phase_members	1
 test-dashboard-reader.sh	DRPY1-dashboard.reader.tests.test_reader.TestEnumParsing.test_all_task_status_members	1
@@ -2961,11 +3021,11 @@ test-dashboard-reader.sh	DRPY1-dashboard.reader.tests.test_reader.TestPF3TaskSho
 test-dashboard-reader.sh	DRPY1-dashboard.reader.tests.test_reader.TestPF3TaskShortName.test_standard_title	1
 test-dashboard-reader.sh	DRPY1-dashboard.reader.tests.test_reader.TestPF3TaskShortName.test_trailing_period_stripped	1
 test-dashboard-reader.sh	DRPY1-dashboard.reader.tests.test_reader.TestPF3TaskShortName.test_zero_padded_task_number	1
-test-dashboard-reader.sh	DRPY1-dashboard.reader.tests.test_reader.TestPF4PhaseSingleSource.test_no_secondary_phase_from_blockquote	1
-test-dashboard-reader.sh	DRPY1-dashboard.reader.tests.test_reader.TestPF4PhaseSingleSource.test_phase_absent_when_no_pipeline_status_block	1
-test-dashboard-reader.sh	DRPY1-dashboard.reader.tests.test_reader.TestPF4PhaseSingleSource.test_phase_from_pipeline_status	1
+test-dashboard-reader.sh	DRPY1-dashboard.reader.tests.test_reader.TestPF4PhaseSingleSource.test_no_secondary_phase_from_legacy_prose	1
+test-dashboard-reader.sh	DRPY1-dashboard.reader.tests.test_reader.TestPF4PhaseSingleSource.test_phase_absent_when_no_lifecycle_key	1
+test-dashboard-reader.sh	DRPY1-dashboard.reader.tests.test_reader.TestPF4PhaseSingleSource.test_phase_from_lifecycle_key_present	1
 test-dashboard-reader.sh	DRPY1-dashboard.reader.tests.test_reader.TestPF5ExecutionGraph.test_absent_plan_returns_empty	1
-test-dashboard-reader.sh	DRPY1-dashboard.reader.tests.test_reader.TestPF5ExecutionGraph.test_delivery_from_state_wave_column	1
+test-dashboard-reader.sh	DRPY1-dashboard.reader.tests.test_reader.TestPF5ExecutionGraph.test_delivery_from_state_wave_column_is_now_unreachable	1
 test-dashboard-reader.sh	DRPY1-dashboard.reader.tests.test_reader.TestPF5ExecutionGraph.test_legacy_prose_fallback	1
 test-dashboard-reader.sh	DRPY1-dashboard.reader.tests.test_reader.TestPF5ExecutionGraph.test_ungraphed_task_returns_none	1
 test-dashboard-reader.sh	DRPY1-dashboard.reader.tests.test_reader.TestPF5ExecutionGraph.test_wavemap_multiple_deliveries	1
@@ -3004,8 +3064,8 @@ test-dashboard-reader.sh	DRPY1-dashboard.reader.tests.test_reader.TestParseProje
 test-dashboard-reader.sh	DRPY1-dashboard.reader.tests.test_reader.TestParseProjectSettings.test_real_settings_yml_format_with_comment	1
 test-dashboard-reader.sh	DRPY1-dashboard.reader.tests.test_reader.TestParseStateMd.test_blocked_lifecycle_with_reason	1
 test-dashboard-reader.sh	DRPY1-dashboard.reader.tests.test_reader.TestParseStateMd.test_completed_lifecycle	1
-test-dashboard-reader.sh	DRPY1-dashboard.reader.tests.test_reader.TestParseStateMd.test_no_pipeline_status_uses_fallback_adapter	1
-test-dashboard-reader.sh	DRPY1-dashboard.reader.tests.test_reader.TestParseStateMd.test_none_yet_row_skipped	1
+test-dashboard-reader.sh	DRPY1-dashboard.reader.tests.test_reader.TestParseStateMd.test_no_lifecycle_key_is_a_safe_noop_fallback	1
+test-dashboard-reader.sh	DRPY1-dashboard.reader.tests.test_reader.TestParseStateMd.test_no_tasks_lifecycle_key_yields_empty_mapping	1
 test-dashboard-reader.sh	DRPY1-dashboard.reader.tests.test_reader.TestParseStateMd.test_normalized_active_skill	1
 test-dashboard-reader.sh	DRPY1-dashboard.reader.tests.test_reader.TestParseStateMd.test_normalized_block_fields_dash_is_none	1
 test-dashboard-reader.sh	DRPY1-dashboard.reader.tests.test_reader.TestParseStateMd.test_normalized_lifecycle_running	1
@@ -3014,7 +3074,7 @@ test-dashboard-reader.sh	DRPY1-dashboard.reader.tests.test_reader.TestParseState
 test-dashboard-reader.sh	DRPY1-dashboard.reader.tests.test_reader.TestParseStateMd.test_normalized_updated	1
 test-dashboard-reader.sh	DRPY1-dashboard.reader.tests.test_reader.TestParseStateMd.test_paused_lifecycle_with_reason	1
 test-dashboard-reader.sh	DRPY1-dashboard.reader.tests.test_reader.TestParseStateMd.test_pending_inputs_only_pending_status	1
-test-dashboard-reader.sh	DRPY1-dashboard.reader.tests.test_reader.TestParseStateMd.test_tasks_parsed	1
+test-dashboard-reader.sh	DRPY1-dashboard.reader.tests.test_reader.TestParseStateMd.test_tasks_lifecycle_parsed	1
 test-dashboard-reader.sh	DRPY1-dashboard.reader.tests.test_reader.TestParseStateMd.test_unknown_lifecycle_sentinel	1
 test-dashboard-reader.sh	DRPY1-dashboard.reader.tests.test_reader.TestParseStateMd.test_unknown_task_status_sentinel	1
 test-dashboard-reader.sh	DRPY1-dashboard.reader.tests.test_reader.TestParseToolInfo.test_absent_manifest_returns_false	1
@@ -3026,8 +3086,7 @@ test-dashboard-reader.sh	DRPY1-dashboard.reader.tests.test_reader.TestReadRepo.t
 test-dashboard-reader.sh	DRPY1-dashboard.reader.tests.test_reader.TestReadRepo.test_bytes_read_is_positive	1
 test-dashboard-reader.sh	DRPY1-dashboard.reader.tests.test_reader.TestReadRepo.test_kb_state_none_when_knowledge_dir_absent	1
 test-dashboard-reader.sh	DRPY1-dashboard.reader.tests.test_reader.TestReadRepo.test_kb_state_present_when_knowledge_dir_exists	1
-test-dashboard-reader.sh	DRPY1-dashboard.reader.tests.test_reader.TestReadRepo.test_malformed_state_md_yields_warning_not_exception	1
-test-dashboard-reader.sh	DRPY1-dashboard.reader.tests.test_reader.TestReadRepo.test_missing_state_md_yields_warning	1
+test-dashboard-reader.sh	DRPY1-dashboard.reader.tests.test_reader.TestReadRepo.test_missing_state_yml_yields_warning	1
 test-dashboard-reader.sh	DRPY1-dashboard.reader.tests.test_reader.TestReadRepo.test_multiple_works	1
 test-dashboard-reader.sh	DRPY1-dashboard.reader.tests.test_reader.TestReadRepo.test_name_slug_extracted	1
 test-dashboard-reader.sh	DRPY1-dashboard.reader.tests.test_reader.TestReadRepo.test_no_write_primitives_in_reader_modules	1
@@ -3036,7 +3095,9 @@ test-dashboard-reader.sh	DRPY1-dashboard.reader.tests.test_reader.TestReadRepo.t
 test-dashboard-reader.sh	DRPY1-dashboard.reader.tests.test_reader.TestReadRepo.test_single_work_normalized	1
 test-dashboard-reader.sh	DRPY1-dashboard.reader.tests.test_reader.TestReadRepo.test_tasks_in_work_model	1
 test-dashboard-reader.sh	DRPY1-dashboard.reader.tests.test_reader.TestReadRepo.test_tool_info_in_model	1
-test-dashboard-reader.sh	DRPY1-dashboard.reader.tests.test_reader.TestReadRepo.test_work_without_pipeline_status_in_fallback_works	1
+test-dashboard-reader.sh	DRPY1-dashboard.reader.tests.test_reader.TestReadRepo.test_truncated_state_yml_yields_warning_not_exception	1
+test-dashboard-reader.sh	DRPY1-dashboard.reader.tests.test_reader.TestReadRepo.test_unknown_key_degradation_path	1
+test-dashboard-reader.sh	DRPY1-dashboard.reader.tests.test_reader.TestReadRepo.test_work_without_lifecycle_key_in_fallback_works	1
 test-dashboard-reader.sh	DRPY1-dashboard.reader.tests.test_reader.TestReadRepo.test_zero_works_repo	1
 test-dashboard-reader.sh	DRPY1-dashboard.reader.tests.test_reader.TestSchemaVersion3Serialization.test_python_server_emits_schema_3	1
 test-dashboard-reader.sh	DRPY1-dashboard.reader.tests.test_reader.TestTaskModelNewFields.test_task_model_fields_settable	1
@@ -3052,8 +3113,8 @@ test-dashboard-reader.sh	DRPY1-dashboard.reader.tests.test_security_hardening.Te
 test-dashboard-reader.sh	DRPY1-dashboard.reader.tests.test_security_hardening.TestGitBranchInjectionNeutralized.test_read_repo_end_to_end_does_not_create_file	1
 test-dashboard-reader.sh	DRPY1-dashboard.reader.tests.test_security_hardening.TestMergeBaseInjectionNeutralized.test_derive_doc_freshness_end_to_end_does_not_create_file	1
 test-dashboard-reader.sh	DRPY1-dashboard.reader.tests.test_security_hardening.TestMergeBaseInjectionNeutralized.test_malicious_baseline_does_not_create_file	1
-test-dashboard-reader.sh	DRPY1-dashboard.reader.tests.test_security_hardening.TestReadRepoSurvivesOversizedStateMd.test_model_produced_without_oom_and_bytes_read_is_capped	1
-test-dashboard-reader.sh	DRPY1-dashboard.reader.tests.test_security_hardening.TestReadRepoSurvivesOversizedStateMd.test_node_parity_bytes_read_identical	1
+test-dashboard-reader.sh	DRPY1-dashboard.reader.tests.test_security_hardening.TestReadRepoSurvivesOversizedStateYml.test_model_produced_without_oom_and_bytes_read_is_capped	1
+test-dashboard-reader.sh	DRPY1-dashboard.reader.tests.test_security_hardening.TestReadRepoSurvivesOversizedStateYml.test_node_parity_bytes_read_identical	1
 test-dashboard-reader.sh	DRPY1-dashboard.reader.tests.test_shortcut_kind_map_cross_runtime_parity.TestShortcutKindMapCrossRuntimeParity.test_leg1_map_equality_keys_and_values_both_directions	1
 test-dashboard-reader.sh	DRPY1-dashboard.reader.tests.test_shortcut_kind_map_cross_runtime_parity.TestShortcutKindMapCrossRuntimeParity.test_leg2_resolver_agreement_over_the_key_set_union	1
 test-dashboard-reader.sh	DRPY1-dashboard.reader.tests.test_shortcut_kind_map_cross_runtime_parity.TestShortcutKindMapCrossRuntimeParity.test_leg3_every_catalogue_row_has_a_key_one_directional	1
@@ -3065,6 +3126,22 @@ test-dashboard-reader.sh	DRPY1-dashboard.reader.tests.test_shortcut_kind_map_cro
 test-dashboard-reader.sh	DRPY1-dashboard.reader.tests.test_shortcut_kind_map_cross_runtime_parity.TestSingleFileCopySafety.test_node_twin_exports_the_map	1
 test-dashboard-reader.sh	DRPY1-dashboard.reader.tests.test_shortcut_kind_map_cross_runtime_parity.TestSingleFileCopySafety.test_node_twin_has_no_relative_import	1
 test-dashboard-reader.sh	DRPY1-dashboard.reader.tests.test_shortcut_kind_map_cross_runtime_parity.TestSingleFileCopySafety.test_python_twin_has_no_relative_import	1
+test-dashboard-reader.sh	DRPY1-dashboard.reader.tests.test_state_yaml_conformance.TestStateYamlConformanceCorpus.test_corpus_directory_exists	1
+test-dashboard-reader.sh	DRPY1-dashboard.reader.tests.test_state_yaml_conformance.TestStateYamlConformanceCorpus.test_corpus_is_non_empty_and_every_yml_has_an_expectation	1
+test-dashboard-reader.sh	DRPY1-dashboard.reader.tests.test_state_yaml_conformance.TestStateYamlConformancePython.test_absent_key_and_empty_collections_are_distinct_rows_parsed_consistently	1
+test-dashboard-reader.sh	DRPY1-dashboard.reader.tests.test_state_yaml_conformance.TestStateYamlConformancePython.test_every_row_matches_python_engine	1
+test-dashboard-reader.sh	DRPY1-dashboard.reader.tests.test_state_yaml_conformance.TestStateYamlConformancePython.test_implicit_typing_rows_keep_the_string_on_disk	1
+test-dashboard-reader.sh	DRPY1-dashboard.reader.tests.test_state_yaml_conformance.TestStateYamlConformancePython.test_never_raises_on_any_row	1
+test-dashboard-reader.sh	DRPY1-dashboard.reader.tests.test_state_yaml_conformance.TestStateYamlConformancePython.test_permitted_shape_rows_have_no_warnings	1
+test-dashboard-reader.sh	DRPY1-dashboard.reader.tests.test_state_yaml_conformance.TestStateYamlConformancePython.test_rejected_construct_rows_skip_only_that_key	1
+test-dashboard-reader.sh	DRPY1-dashboard.reader.tests.test_state_yaml_conformance_node.TestNodeTwinExportPrecondition.test_reader_mjs_declares_parse_state_document	1
+test-dashboard-reader.sh	DRPY1-dashboard.reader.tests.test_state_yaml_conformance_node.TestStateYamlConformanceNode.test_absent_key_and_empty_collections_are_distinct_rows_parsed_consistently	1
+test-dashboard-reader.sh	DRPY1-dashboard.reader.tests.test_state_yaml_conformance_node.TestStateYamlConformanceNode.test_every_row_matches_node_engine	1
+test-dashboard-reader.sh	DRPY1-dashboard.reader.tests.test_state_yaml_conformance_node.TestStateYamlConformanceNode.test_every_row_present_in_node_output	1
+test-dashboard-reader.sh	DRPY1-dashboard.reader.tests.test_state_yaml_conformance_node.TestStateYamlConformanceNode.test_implicit_typing_rows_keep_the_string_on_disk	1
+test-dashboard-reader.sh	DRPY1-dashboard.reader.tests.test_state_yaml_conformance_node.TestStateYamlConformanceNode.test_never_raises_on_any_row	1
+test-dashboard-reader.sh	DRPY1-dashboard.reader.tests.test_state_yaml_conformance_node.TestStateYamlConformanceNode.test_permitted_shape_rows_have_no_warnings	1
+test-dashboard-reader.sh	DRPY1-dashboard.reader.tests.test_state_yaml_conformance_node.TestStateYamlConformanceNode.test_rejected_construct_rows_skip_only_that_key	1
 test-dashboard-reader.sh	DRPY1-dashboard.reader.tests.test_task002_resolve_work_dir.TestNeverThrows.test_empty_worktree_list_returns_none	1
 test-dashboard-reader.sh	DRPY1-dashboard.reader.tests.test_task002_resolve_work_dir.TestNeverThrows.test_malformed_state_md_does_not_throw	1
 test-dashboard-reader.sh	DRPY1-dashboard.reader.tests.test_task002_resolve_work_dir.TestNeverThrows.test_missing_state_md_still_resolves	1
@@ -3089,10 +3166,10 @@ test-dashboard-reader.sh	DRPY1-dashboard.reader.tests.test_task008_display_renam
 test-dashboard-reader.sh	DRPY1-dashboard.reader.tests.test_task008_display_rename.TestParseTaskStateMdDisplayName.test_no_frontmatter_key_is_none	1
 test-dashboard-reader.sh	DRPY1-dashboard.reader.tests.test_task008_display_rename.TestParseTaskStateMdDisplayName.test_null_sentinel_values_are_none	1
 test-dashboard-reader.sh	DRPY1-dashboard.reader.tests.test_task008_display_rename.TestParseTaskStateMdDisplayName.test_other_fields_unaffected	1
-test-dashboard-reader.sh	DRPY1-dashboard.reader.tests.test_task008_display_rename.TestParseTasksLifecycleMdName.test_legacy_five_column_row_yields_none	1
-test-dashboard-reader.sh	DRPY1-dashboard.reader.tests.test_task008_display_rename.TestParseTasksLifecycleMdName.test_null_sentinel_cell_yields_none	1
-test-dashboard-reader.sh	DRPY1-dashboard.reader.tests.test_task008_display_rename.TestParseTasksLifecycleMdName.test_other_columns_unaffected	1
-test-dashboard-reader.sh	DRPY1-dashboard.reader.tests.test_task008_display_rename.TestParseTasksLifecycleMdName.test_six_column_row_reads_name	1
+test-dashboard-reader.sh	DRPY1-dashboard.reader.tests.test_task008_display_rename.TestParseTasksLifecycleMdName.test_entry_with_display_name_key_reads_it	1
+test-dashboard-reader.sh	DRPY1-dashboard.reader.tests.test_task008_display_rename.TestParseTasksLifecycleMdName.test_legacy_entry_without_display_name_key_yields_none	1
+test-dashboard-reader.sh	DRPY1-dashboard.reader.tests.test_task008_display_rename.TestParseTasksLifecycleMdName.test_null_sentinel_value_yields_none	1
+test-dashboard-reader.sh	DRPY1-dashboard.reader.tests.test_task008_display_rename.TestParseTasksLifecycleMdName.test_other_fields_unaffected	1
 test-dashboard-reader.sh	DRPY1-dashboard.reader.tests.test_task008_display_rename.TestParsedTaskStateDisplayName.test_default_is_none	1
 test-dashboard-reader.sh	DRPY1-dashboard.reader.tests.test_task008_display_rename.TestReadRepoFlatLayoutDisplayName.test_legacy_five_column_table_yields_none	1
 test-dashboard-reader.sh	DRPY1-dashboard.reader.tests.test_task008_display_rename.TestReadRepoFlatLayoutDisplayName.test_name_column_value_flows_to_task_model	1
@@ -3100,13 +3177,31 @@ test-dashboard-reader.sh	DRPY1-dashboard.reader.tests.test_task008_display_renam
 test-dashboard-reader.sh	DRPY1-dashboard.reader.tests.test_task008_display_rename.TestReadRepoHierarchicalLayoutDisplayName.test_absent_frontmatter_key_yields_none	1
 test-dashboard-reader.sh	DRPY1-dashboard.reader.tests.test_task008_display_rename.TestReadRepoHierarchicalLayoutDisplayName.test_frontmatter_display_name_flows_to_task_model	1
 test-dashboard-reader.sh	DRPY1-dashboard.reader.tests.test_task008_display_rename.TestSerializedTaskCarriesDisplayName.test_ser_task_includes_display_name	1
+test-dashboard-reader.sh	DRPY1-dashboard.reader.tests.test_task011_golden_master.TestFlatConversionParity.test_converter_ran_and_produced_yaml	1
+test-dashboard-reader.sh	DRPY1-dashboard.reader.tests.test_task011_golden_master.TestFlatConversionParity.test_derived_counts_recomputed_not_persisted	1
+test-dashboard-reader.sh	DRPY1-dashboard.reader.tests.test_task011_golden_master.TestFlatConversionParity.test_node_matches_golden_baseline	1
+test-dashboard-reader.sh	DRPY1-dashboard.reader.tests.test_task011_golden_master.TestFlatConversionParity.test_python_matches_golden_baseline	1
+test-dashboard-reader.sh	DRPY1-dashboard.reader.tests.test_task011_golden_master.TestGoldenBaselineRecorded.test_flat_baseline_exists_and_well_formed	1
+test-dashboard-reader.sh	DRPY1-dashboard.reader.tests.test_task011_golden_master.TestGoldenBaselineRecorded.test_hierarchical_baseline_exists_and_well_formed	1
+test-dashboard-reader.sh	DRPY1-dashboard.reader.tests.test_task011_golden_master.TestGoldenBaselineRecorded.test_ki004_baseline_exists_and_well_formed	1
+test-dashboard-reader.sh	DRPY1-dashboard.reader.tests.test_task011_golden_master.TestGoldenBaselineRecorded.test_legacy_read_no_parse_warning_recorded	1
+test-dashboard-reader.sh	DRPY1-dashboard.reader.tests.test_task011_golden_master.TestHierarchicalConversionParity.test_converter_ran_on_every_level	1
+test-dashboard-reader.sh	DRPY1-dashboard.reader.tests.test_task011_golden_master.TestHierarchicalConversionParity.test_node_matches_golden_baseline	1
+test-dashboard-reader.sh	DRPY1-dashboard.reader.tests.test_task011_golden_master.TestHierarchicalConversionParity.test_python_matches_golden_baseline	1
+test-dashboard-reader.sh	DRPY1-dashboard.reader.tests.test_task011_golden_master.TestKI004ThreeConditionCase.test_converter_preserves_absent_lifecycle_and_updated	1
+test-dashboard-reader.sh	DRPY1-dashboard.reader.tests.test_task011_golden_master.TestKI004ThreeConditionCase.test_node_derives_same_coarse_updated_as_python	1
+test-dashboard-reader.sh	DRPY1-dashboard.reader.tests.test_task011_golden_master.TestKI004ThreeConditionCase.test_python_derives_coarse_updated_from_history	1
+test-dashboard-reader.sh	DRPY1-dashboard.reader.tests.test_task011_golden_master.TestLegacyDegradationParity.test_flat_legacy_node_degrades_identically	1
+test-dashboard-reader.sh	DRPY1-dashboard.reader.tests.test_task011_golden_master.TestLegacyDegradationParity.test_flat_legacy_python_degrades	1
+test-dashboard-reader.sh	DRPY1-dashboard.reader.tests.test_task011_golden_master.TestLegacyDegradationParity.test_hierarchical_legacy_node_degrades_identically	1
+test-dashboard-reader.sh	DRPY1-dashboard.reader.tests.test_task011_golden_master.TestLegacyDegradationParity.test_hierarchical_legacy_python_degrades	1
 test-dashboard-reader.sh	DRPY1-dashboard.reader.tests.test_task011_reconcile.TestReconcileDistinctWorks.test_two_different_work_ids_not_merged	1
 test-dashboard-reader.sh	DRPY1-dashboard.reader.tests.test_task011_reconcile.TestReconcileIntegration.test_same_work_on_two_roots_merges_to_one	1
 test-dashboard-reader.sh	DRPY1-dashboard.reader.tests.test_task011_reconcile.TestReconcileIntegration.test_state_text_cache_holds_winner	1
 test-dashboard-reader.sh	DRPY1-dashboard.reader.tests.test_task011_reconcile.TestReconcileIntegration.test_work_count_is_1_after_reconcile	1
 test-dashboard-reader.sh	DRPY1-dashboard.reader.tests.test_task011_reconcile.TestReconcileNeverThrows.test_empty_copies_is_not_called_but_survives_single_copy	1
-test-dashboard-reader.sh	DRPY1-dashboard.reader.tests.test_task011_reconcile.TestReconcileNeverThrows.test_malformed_state_md_on_disk_does_not_throw	1
-test-dashboard-reader.sh	DRPY1-dashboard.reader.tests.test_task011_reconcile.TestReconcileNeverThrows.test_missing_state_md_on_one_root_does_not_throw	1
+test-dashboard-reader.sh	DRPY1-dashboard.reader.tests.test_task011_reconcile.TestReconcileNeverThrows.test_malformed_state_yml_on_disk_does_not_throw	1
+test-dashboard-reader.sh	DRPY1-dashboard.reader.tests.test_task011_reconcile.TestReconcileNeverThrows.test_missing_state_yml_on_one_root_does_not_throw	1
 test-dashboard-reader.sh	DRPY1-dashboard.reader.tests.test_task011_reconcile.TestReconcileNeverThrows.test_none_updated_on_all_copies_does_not_throw	1
 test-dashboard-reader.sh	DRPY1-dashboard.reader.tests.test_task011_reconcile.TestReconcileNeverThrows.test_unknown_task_status_does_not_throw	1
 test-dashboard-reader.sh	DRPY1-dashboard.reader.tests.test_task011_reconcile.TestReconcileOrderIndependence.test_shuffle_10_times_same_result	1
@@ -3154,11 +3249,11 @@ test-dashboard-reader.sh	DRPY1-dashboard.reader.tests.test_task014_fixtures.Test
 test-dashboard-reader.sh	DRPY1-dashboard.reader.tests.test_task014_fixtures.TestHierarchicalWork.test_tasks_read_from_per_unit_state	1
 test-dashboard-reader.sh	DRPY1-dashboard.reader.tests.test_task014_fixtures.TestHierarchicalWork.test_work_pipeline_state_from_work_state_md	1
 test-dashboard-reader.sh	DRPY1-dashboard.reader.tests.test_task014_fixtures.TestLegacyMonolithicWork.test_legacy_lifecycle_from_pipeline_status	1
+test-dashboard-reader.sh	DRPY1-dashboard.reader.tests.test_task014_fixtures.TestLegacyMonolithicWork.test_legacy_monolithic_tasks_now_always_empty	1
 test-dashboard-reader.sh	DRPY1-dashboard.reader.tests.test_task014_fixtures.TestLegacyMonolithicWork.test_legacy_node_mirrors_python	1
 test-dashboard-reader.sh	DRPY1-dashboard.reader.tests.test_task014_fixtures.TestLegacyMonolithicWork.test_legacy_status_section_parses	1
-test-dashboard-reader.sh	DRPY1-dashboard.reader.tests.test_task014_fixtures.TestLegacyMonolithicWork.test_legacy_tasks_parsed_correctly	1
+test-dashboard-reader.sh	DRPY1-dashboard.reader.tests.test_task014_fixtures.TestLegacyMonolithicWork.test_modern_monolithic_tasks_now_always_empty	1
 test-dashboard-reader.sh	DRPY1-dashboard.reader.tests.test_task014_fixtures.TestLegacyMonolithicWork.test_modern_state_section_parses	1
-test-dashboard-reader.sh	DRPY1-dashboard.reader.tests.test_task014_fixtures.TestLegacyMonolithicWork.test_modern_state_tasks_parsed_correctly	1
 test-dashboard-reader.sh	DRPY1-dashboard.reader.tests.test_task014_fixtures.TestMixedVintageRepo.test_mixed_both_works_present	1
 test-dashboard-reader.sh	DRPY1-dashboard.reader.tests.test_task014_fixtures.TestMixedVintageRepo.test_mixed_hierarchical_routed_correctly	1
 test-dashboard-reader.sh	DRPY1-dashboard.reader.tests.test_task014_fixtures.TestMixedVintageRepo.test_mixed_hierarchical_task_state_correct	1
@@ -3370,7 +3465,6 @@ test-dashboard-reader.sh	DRPY1-dashboard.reader.tests.test_task069_detail_parser
 test-dashboard-reader.sh	DRPY1-dashboard.reader.tests.test_task069_detail_parser.TestParseDeliveryGate.test_missing_delivery_returns_all_none	1
 test-dashboard-reader.sh	DRPY1-dashboard.reader.tests.test_task069_detail_parser.TestParseDeliveryGate.test_missing_section_returns_all_none	1
 test-dashboard-reader.sh	DRPY1-dashboard.reader.tests.test_task069_detail_parser.TestParseDeliveryGate.test_parses_grade_tier_timestamp	1
-test-dashboard-reader.sh	DRPY1-dashboard.reader.tests.test_task069_detail_parser.TestParseDeliveryGate.test_plural_section_present_suppresses_singular_fallback	1
 test-dashboard-reader.sh	DRPY1-dashboard.reader.tests.test_task069_detail_parser.TestParseDeliveryGate.test_singular_delivery_gate_fallback_when_no_plural_section	1
 test-dashboard-reader.sh	DRPY1-dashboard.reader.tests.test_task069_detail_parser.TestParseDeliveryGate.test_singular_fallback_only_applies_to_delivery_001	1
 test-dashboard-reader.sh	DRPY1-dashboard.reader.tests.test_task069_detail_parser.TestParseLogAvailability.test_heartbeat_absent	1
@@ -3429,7 +3523,7 @@ test-dashboard-reader.sh	DRPY1-dashboard.reader.tests.test_work001_delivery_layo
 test-dashboard-reader.sh	DRPY1-dashboard.reader.tests.test_work001_delivery_layouts.TestLiteFlatLayout.test_work_path_defaults_to_lite	1
 test-dashboard-reader.sh	DRPY1-dashboard.reader.tests.test_work003_state_schema.TestCrossTwinParity.test_frontmatter_work_parity	1
 test-dashboard-reader.sh	DRPY1-dashboard.reader.tests.test_work003_state_schema.TestCrossTwinParity.test_frontmatter_work_parity_crlf	1
-test-dashboard-reader.sh	DRPY1-dashboard.reader.tests.test_work003_state_schema.TestCrossTwinParity.test_legacy_prose_work_parity	1
+test-dashboard-reader.sh	DRPY1-dashboard.reader.tests.test_work003_state_schema.TestCrossTwinParity.test_legacy_state_md_only_work_degrades_identically_both_runtimes	1
 test-dashboard-reader.sh	DRPY1-dashboard.reader.tests.test_work003_state_schema.TestCrossTwinParity.test_new_phase_enum_parity	1
 test-dashboard-reader.sh	DRPY1-dashboard.reader.tests.test_work003_state_schema.TestCrossTwinParity.test_yesno_normalization_parity	1
 test-dashboard-reader.sh	DRPY1-dashboard.reader.tests.test_work003_state_schema.TestManifestRegistration.test_state_schema_registered	1
@@ -3437,24 +3531,22 @@ test-dashboard-reader.sh	DRPY1-dashboard.reader.tests.test_work003_state_schema.
 test-dashboard-reader.sh	DRPY1-dashboard.reader.tests.test_work003_state_schema.TestParseBoolYesno.test_none_input	1
 test-dashboard-reader.sh	DRPY1-dashboard.reader.tests.test_work003_state_schema.TestParseBoolYesno.test_unparseable_returns_none	1
 test-dashboard-reader.sh	DRPY1-dashboard.reader.tests.test_work003_state_schema.TestParseBoolYesno.test_yes_variants	1
-test-dashboard-reader.sh	DRPY1-dashboard.reader.tests.test_work003_state_schema.TestParseDeliveryStateDualFormat.test_frontmatter_only	1
-test-dashboard-reader.sh	DRPY1-dashboard.reader.tests.test_work003_state_schema.TestParseDeliveryStateDualFormat.test_legacy_prose_only	1
-test-dashboard-reader.sh	DRPY1-dashboard.reader.tests.test_work003_state_schema.TestParseDeliveryStateDualFormat.test_mixed_frontmatter_wins_per_field	1
+test-dashboard-reader.sh	DRPY1-dashboard.reader.tests.test_work003_state_schema.TestParseDeliveryStateStructured.test_structured_document	1
 test-dashboard-reader.sh	DRPY1-dashboard.reader.tests.test_work003_state_schema.TestParseFrontmatterScalars.test_crlf_line_endings	1
 test-dashboard-reader.sh	DRPY1-dashboard.reader.tests.test_work003_state_schema.TestParseFrontmatterScalars.test_double_quoted_scalar_stripped_verbatim	1
 test-dashboard-reader.sh	DRPY1-dashboard.reader.tests.test_work003_state_schema.TestParseFrontmatterScalars.test_enum_field_with_pipe_still_filtered	1
 test-dashboard-reader.sh	DRPY1-dashboard.reader.tests.test_work003_state_schema.TestParseFrontmatterScalars.test_flat_scalar	1
 test-dashboard-reader.sh	DRPY1-dashboard.reader.tests.test_work003_state_schema.TestParseFrontmatterScalars.test_freetext_field_placeholder_still_filtered	1
 test-dashboard-reader.sh	DRPY1-dashboard.reader.tests.test_work003_state_schema.TestParseFrontmatterScalars.test_freetext_field_with_pipe_is_kept	1
-test-dashboard-reader.sh	DRPY1-dashboard.reader.tests.test_work003_state_schema.TestParseFrontmatterScalars.test_nested_dot_joined	1
-test-dashboard-reader.sh	DRPY1-dashboard.reader.tests.test_work003_state_schema.TestParseFrontmatterScalars.test_no_frontmatter_returns_empty	1
+test-dashboard-reader.sh	DRPY1-dashboard.reader.tests.test_work003_state_schema.TestParseFrontmatterScalars.test_nested_mapping	1
 test-dashboard-reader.sh	DRPY1-dashboard.reader.tests.test_work003_state_schema.TestParseFrontmatterScalars.test_placeholder_alternatives_filtered	1
 test-dashboard-reader.sh	DRPY1-dashboard.reader.tests.test_work003_state_schema.TestParseFrontmatterScalars.test_placeholder_brace_filtered	1
 test-dashboard-reader.sh	DRPY1-dashboard.reader.tests.test_work003_state_schema.TestParseFrontmatterScalars.test_placeholder_nested_filtered	1
+test-dashboard-reader.sh	DRPY1-dashboard.reader.tests.test_work003_state_schema.TestParseFrontmatterScalars.test_prose_only_returns_empty_data_with_warnings	1
 test-dashboard-reader.sh	DRPY1-dashboard.reader.tests.test_work003_state_schema.TestParseFrontmatterScalars.test_quoted_scalar_unquoted	1
 test-dashboard-reader.sh	DRPY1-dashboard.reader.tests.test_work003_state_schema.TestParseFrontmatterScalars.test_real_single_token_not_filtered	1
 test-dashboard-reader.sh	DRPY1-dashboard.reader.tests.test_work003_state_schema.TestParseFrontmatterScalars.test_single_quoted_scalar_unescapes_doubled_quote	1
-test-dashboard-reader.sh	DRPY1-dashboard.reader.tests.test_work003_state_schema.TestParseFrontmatterScalars.test_unclosed_frontmatter_returns_empty_or_partial	1
+test-dashboard-reader.sh	DRPY1-dashboard.reader.tests.test_work003_state_schema.TestParseFrontmatterScalars.test_trailing_second_document_marker_does_not_lose_prior_data	1
 test-dashboard-reader.sh	DRPY1-dashboard.reader.tests.test_work003_state_schema.TestParseHeaderBoldField.test_absent_returns_none	1
 test-dashboard-reader.sh	DRPY1-dashboard.reader.tests.test_work003_state_schema.TestParseHeaderBoldField.test_finds_blockquote_line	1
 test-dashboard-reader.sh	DRPY1-dashboard.reader.tests.test_work003_state_schema.TestParseHeaderBoldField.test_finds_plain_bold_line	1
@@ -3463,13 +3555,8 @@ test-dashboard-reader.sh	DRPY1-dashboard.reader.tests.test_work003_state_schema.
 test-dashboard-reader.sh	DRPY1-dashboard.reader.tests.test_work003_state_schema.TestParseKbStateDualFormat.test_frontmatter_wins_over_legacy_prose	1
 test-dashboard-reader.sh	DRPY1-dashboard.reader.tests.test_work003_state_schema.TestParseKbStateDualFormat.test_legacy_prose_only	1
 test-dashboard-reader.sh	DRPY1-dashboard.reader.tests.test_work003_state_schema.TestParseKbStateDualFormat.test_no_state_md_defaults_to_fallback_unapproved	1
-test-dashboard-reader.sh	DRPY1-dashboard.reader.tests.test_work003_state_schema.TestParseStateMdDualFormat.test_frontmatter_only	1
-test-dashboard-reader.sh	DRPY1-dashboard.reader.tests.test_work003_state_schema.TestParseStateMdDualFormat.test_legacy_prose_only	1
-test-dashboard-reader.sh	DRPY1-dashboard.reader.tests.test_work003_state_schema.TestParseStateMdDualFormat.test_mixed_frontmatter_wins_per_field	1
-test-dashboard-reader.sh	DRPY1-dashboard.reader.tests.test_work003_state_schema.TestParseStateMdDualFormat.test_unmigrated_template_seed_does_not_clobber_prose	1
-test-dashboard-reader.sh	DRPY1-dashboard.reader.tests.test_work003_state_schema.TestParseTaskStateDualFormat.test_frontmatter_only	1
-test-dashboard-reader.sh	DRPY1-dashboard.reader.tests.test_work003_state_schema.TestParseTaskStateDualFormat.test_legacy_prose_only	1
-test-dashboard-reader.sh	DRPY1-dashboard.reader.tests.test_work003_state_schema.TestParseTaskStateDualFormat.test_mixed_frontmatter_wins_per_field	1
+test-dashboard-reader.sh	DRPY1-dashboard.reader.tests.test_work003_state_schema.TestParseStateMdStructured.test_structured_document	1
+test-dashboard-reader.sh	DRPY1-dashboard.reader.tests.test_work003_state_schema.TestParseTaskStateStructured.test_structured_document	1
 test-dashboard-reader.sh	DRPY1-dashboard.reader.tests.test_work003_state_schema.TestPhaseTask010Migration.test_frontmatter_phase_define	1
 test-dashboard-reader.sh	DRPY1-dashboard.reader.tests.test_work003_state_schema.TestPhaseTask010Migration.test_frontmatter_phase_describe	1
 test-dashboard-reader.sh	DRPY1-dashboard.reader.tests.test_work003_state_schema.TestResolveKind.test_absent_initiator_returns_none	1
@@ -3555,6 +3642,8 @@ test-delivery-gate-aggregate.sh	Test 2: Created file has correct header	1
 test-delivery-gate-aggregate.sh	Test 3a: Delivery A (score=7) → Medium tier (expected)	1
 test-delivery-gate-aggregate.sh	Test 3b: Delivery B (score=3) → Small tier (expected)	1
 test-delivery-gate-aggregate.sh	Test 3c: Delivery C (score=18) → Large tier (expected)	1
+test-delivery-gate-aggregate.sh	Test 3d: complexity-score.sh reads task-NNN<PATH> types (risk=2, score=7)	1
+test-delivery-gate-aggregate.sh	Test 3e: score=7 selects the Medium gate reviewer tier (not under-tiered to Small)	1
 test-delivery-gate-aggregate.sh	Test 4a: grade.sh on empty issue list → A+	1
 test-delivery-gate-aggregate.sh	Test 4b: grade.sh with 1 [HIGH] → D+	1
 test-delivery-gate-aggregate.sh	Test 4c: grade.sh with 1 [CRITICAL] → E+	1
@@ -3562,12 +3651,13 @@ test-delivery-gate-aggregate.sh	Test 4d: grade.sh with 3 [MEDIUM] → C	1
 test-delivery-gate-aggregate.sh	Test 4e: grade.sh ignores tags in Description column (cycle-7 regression)	1
 test-delivery-gate-aggregate.sh	Test 5: Fix cycle does NOT append to delivery-NNN-issues.md (loopback is review-only)	1
 test-delivery-gate-aggregate.sh	Test 6a: FR6 interlock detects 1 task(s) not Done — gate should NOT fire	1
-test-delivery-gate-aggregate.sh	Test 6b: FR6 interlock correctly identifies Failed task in Tasks Status	1
+test-delivery-gate-aggregate.sh	Test 6b: FR6 interlock correctly identifies the Failed task's state: key	1
 test-delivery-gate-aggregate.sh	Test 6c: FR6 interlock passes (all tasks Done) — gate CAN fire	1
 test-delivery-gate-aggregate.sh	Test 7a: writeback-state.sh --delivery-id --block exits 0	1
-test-delivery-gate-aggregate.sh	Test 7b: deliveries<PATH> has ## Delivery Gate section	1
-test-delivery-gate-aggregate.sh	Test 7c: Gate block content written to deliveries<PATH> (Reviewer Tier present)	1
-test-delivery-gate-aggregate.sh	Test 7d: work STATE.md ## Delivery Gates NOT written by helper (DERIVED view preserved)	1
+test-delivery-gate-aggregate.sh	Test 7b: deliveries<PATH> has a delivery_gate: key	1
+test-delivery-gate-aggregate.sh	Test 7c: gate block content written to deliveries<PATH> (issue item present)	1
+test-delivery-gate-aggregate.sh	Test 7d: --gate-field Grade writes gate_grade into deliveries<PATH>	1
+test-delivery-gate-aggregate.sh	Test 7e: work STATE.yml NOT written by the helper (DERIVED view preserved)	1
 test-delivery-gate-aggregate.sh	Test 8a: state-delivery-gate.md resolves Full-path delivery acceptance criteria from BLUEPRINT.md § Gate Criteria	1
 test-delivery-gate-aggregate.sh	Test 8b: state-delivery-gate.md no longer reads delivery criteria from PLAN.md (mis-wire fixed)	1
 test-deploy-monitor-repurpose.sh	DMR00a	1
@@ -3691,6 +3781,7 @@ test-disjoint-merge.sh	DM05b	1
 test-disjoint-merge.sh	DM05c	1
 test-disjoint-merge.sh	DM05d	1
 test-disjoint-merge.sh	DM06	1
+test-disjoint-merge.sh	DM07	12
 test-doc-counts.sh	DC01a	1
 test-doc-counts.sh	DC01b	1
 test-doc-counts.sh	DC02	29
@@ -3871,12 +3962,12 @@ test-downstream-worktree-entry.sh	G1 aid-detail references the shared doc	1
 test-downstream-worktree-entry.sh	G1 aid-execute references the shared doc	1
 test-downstream-worktree-entry.sh	G1 aid-plan references the shared doc	1
 test-downstream-worktree-entry.sh	G1 aid-specify references the shared doc	1
-test-downstream-worktree-entry.sh	G2 aid-define -- pointer precedes '## State Detection' (STATE.md read) (pointer line 159 < anchor line 167)	1
-test-downstream-worktree-entry.sh	G2 aid-deploy -- pointer sits between item 2 and item 3 (item2 < pointer < item3) (before=75 < mid=83 < after=89)	1
+test-downstream-worktree-entry.sh	G2 aid-define -- pointer precedes '## State Detection' (STATE.md read) (pointer line 168 < anchor line 176)	1
+test-downstream-worktree-entry.sh	G2 aid-deploy -- pointer sits between item 2 and item 3 (item2 < pointer < item3) (before=86 < mid=94 < after=100)	1
 test-downstream-worktree-entry.sh	G2 aid-detail -- pointer precedes '### Check 2: Verify PLAN.md Exists' (pointer line 34 < anchor line 40)	1
 test-downstream-worktree-entry.sh	G2 aid-execute -- pointer sits strictly between Check-1 step 3 and step 4 (step3 < pointer < step4) (before=41 < mid=45 < after=50)	1
 test-downstream-worktree-entry.sh	G2 aid-plan -- pointer precedes '### Check 2: Verify Feature SPECs' (pointer line 86 < anchor line 92)	1
-test-downstream-worktree-entry.sh	G2 aid-specify -- pointer precedes '### Check 2: Feature Exists' (SPEC.md glob) (pointer line 100 < anchor line 110)	1
+test-downstream-worktree-entry.sh	G2 aid-specify -- pointer precedes '### Check 2: Feature Exists' (SPEC.md glob) (pointer line 113 < anchor line 123)	1
 test-downstream-worktree-entry.sh	G3 aid-define -- ## State Detection step 2 named as the authoritative post-enter Approved gate	1
 test-downstream-worktree-entry.sh	G3 aid-define -- detached-HEAD branch_label case named explicitly	1
 test-downstream-worktree-entry.sh	G3 aid-define -- detached-HEAD candidate is RETAINED (not dropped) rather than git-show-filtered	1
@@ -6187,11 +6278,14 @@ test-kb-scanner-scope.sh	S05 SKIP_DIRS arrays are byte-identical across both sca
 test-kb-template-authoring-standard.sh	AS01	14
 test-kb-template-authoring-standard.sh	AS02	14
 test-kb-template-authoring-standard.sh	AS03	14
+test-kb-template-authoring-standard.sh	AS03b	14
+test-kb-template-authoring-standard.sh	AS03c	14
 test-kb-template-authoring-standard.sh	AS04	14
 test-kb-template-authoring-standard.sh	AS05	28
 test-kb-template-authoring-standard.sh	AS06	1
 test-kb-template-authoring-standard.sh	AS07	13
 test-kb-template-authoring-standard.sh	AS08	7
+test-kb-template-authoring-standard.sh	AS08b	1
 test-md-export-embed.sh	ME01a	1
 test-md-export-embed.sh	ME01b	1
 test-md-export-embed.sh	ME01c	1
@@ -6535,7 +6629,7 @@ test-pipeline-status-walkthrough.sh	A1 phase=Define: Block Reason sentinel durin
 test-pipeline-status-walkthrough.sh	A1 phase=Define: Lifecycle=Running	1
 test-pipeline-status-walkthrough.sh	A1 phase=Define: Pause Reason sentinel during Running	1
 test-pipeline-status-walkthrough.sh	A1 phase=Define: Phase field correct	1
-test-pipeline-status-walkthrough.sh	A1 phase=Define: Tasks Status section preserved	1
+test-pipeline-status-walkthrough.sh	A1 phase=Define: Tasks Status comment content preserved	1
 test-pipeline-status-walkthrough.sh	A1 phase=Define: frontmatter key 'active_skill' appears exactly once	1
 test-pipeline-status-walkthrough.sh	A1 phase=Define: frontmatter key 'lifecycle' appears exactly once	1
 test-pipeline-status-walkthrough.sh	A1 phase=Define: frontmatter key 'phase' appears exactly once	1
@@ -6546,7 +6640,7 @@ test-pipeline-status-walkthrough.sh	A1 phase=Describe: Block Reason sentinel dur
 test-pipeline-status-walkthrough.sh	A1 phase=Describe: Lifecycle=Running	1
 test-pipeline-status-walkthrough.sh	A1 phase=Describe: Pause Reason sentinel during Running	1
 test-pipeline-status-walkthrough.sh	A1 phase=Describe: Phase field correct	1
-test-pipeline-status-walkthrough.sh	A1 phase=Describe: Tasks Status section preserved	1
+test-pipeline-status-walkthrough.sh	A1 phase=Describe: Tasks Status comment content preserved	1
 test-pipeline-status-walkthrough.sh	A1 phase=Describe: frontmatter key 'active_skill' appears exactly once	1
 test-pipeline-status-walkthrough.sh	A1 phase=Describe: frontmatter key 'lifecycle' appears exactly once	1
 test-pipeline-status-walkthrough.sh	A1 phase=Describe: frontmatter key 'phase' appears exactly once	1
@@ -6557,7 +6651,7 @@ test-pipeline-status-walkthrough.sh	A1 phase=Detail: Block Reason sentinel durin
 test-pipeline-status-walkthrough.sh	A1 phase=Detail: Lifecycle=Running	1
 test-pipeline-status-walkthrough.sh	A1 phase=Detail: Pause Reason sentinel during Running	1
 test-pipeline-status-walkthrough.sh	A1 phase=Detail: Phase field correct	1
-test-pipeline-status-walkthrough.sh	A1 phase=Detail: Tasks Status section preserved	1
+test-pipeline-status-walkthrough.sh	A1 phase=Detail: Tasks Status comment content preserved	1
 test-pipeline-status-walkthrough.sh	A1 phase=Detail: frontmatter key 'active_skill' appears exactly once	1
 test-pipeline-status-walkthrough.sh	A1 phase=Detail: frontmatter key 'lifecycle' appears exactly once	1
 test-pipeline-status-walkthrough.sh	A1 phase=Detail: frontmatter key 'phase' appears exactly once	1
@@ -6568,7 +6662,7 @@ test-pipeline-status-walkthrough.sh	A1 phase=Execute: Block Reason sentinel duri
 test-pipeline-status-walkthrough.sh	A1 phase=Execute: Lifecycle=Running	1
 test-pipeline-status-walkthrough.sh	A1 phase=Execute: Pause Reason sentinel during Running	1
 test-pipeline-status-walkthrough.sh	A1 phase=Execute: Phase field correct	1
-test-pipeline-status-walkthrough.sh	A1 phase=Execute: Tasks Status section preserved	1
+test-pipeline-status-walkthrough.sh	A1 phase=Execute: Tasks Status comment content preserved	1
 test-pipeline-status-walkthrough.sh	A1 phase=Execute: frontmatter key 'active_skill' appears exactly once	1
 test-pipeline-status-walkthrough.sh	A1 phase=Execute: frontmatter key 'lifecycle' appears exactly once	1
 test-pipeline-status-walkthrough.sh	A1 phase=Execute: frontmatter key 'phase' appears exactly once	1
@@ -6579,7 +6673,7 @@ test-pipeline-status-walkthrough.sh	A1 phase=Plan: Block Reason sentinel during 
 test-pipeline-status-walkthrough.sh	A1 phase=Plan: Lifecycle=Running	1
 test-pipeline-status-walkthrough.sh	A1 phase=Plan: Pause Reason sentinel during Running	1
 test-pipeline-status-walkthrough.sh	A1 phase=Plan: Phase field correct	1
-test-pipeline-status-walkthrough.sh	A1 phase=Plan: Tasks Status section preserved	1
+test-pipeline-status-walkthrough.sh	A1 phase=Plan: Tasks Status comment content preserved	1
 test-pipeline-status-walkthrough.sh	A1 phase=Plan: frontmatter key 'active_skill' appears exactly once	1
 test-pipeline-status-walkthrough.sh	A1 phase=Plan: frontmatter key 'lifecycle' appears exactly once	1
 test-pipeline-status-walkthrough.sh	A1 phase=Plan: frontmatter key 'phase' appears exactly once	1
@@ -6590,7 +6684,7 @@ test-pipeline-status-walkthrough.sh	A1 phase=Specify: Block Reason sentinel duri
 test-pipeline-status-walkthrough.sh	A1 phase=Specify: Lifecycle=Running	1
 test-pipeline-status-walkthrough.sh	A1 phase=Specify: Pause Reason sentinel during Running	1
 test-pipeline-status-walkthrough.sh	A1 phase=Specify: Phase field correct	1
-test-pipeline-status-walkthrough.sh	A1 phase=Specify: Tasks Status section preserved	1
+test-pipeline-status-walkthrough.sh	A1 phase=Specify: Tasks Status comment content preserved	1
 test-pipeline-status-walkthrough.sh	A1 phase=Specify: frontmatter key 'active_skill' appears exactly once	1
 test-pipeline-status-walkthrough.sh	A1 phase=Specify: frontmatter key 'lifecycle' appears exactly once	1
 test-pipeline-status-walkthrough.sh	A1 phase=Specify: frontmatter key 'phase' appears exactly once	1
@@ -6956,7 +7050,7 @@ test-registry.sh	REG-P03b aid projects add non-.aid<PATH> path -> initialized + 
 test-registry.sh	REG-P03b-02 output announces bare-project init	1
 test-registry.sh	REG-P03b-03 bare .aid<PATH> scaffolded	1
 test-registry.sh	REG-P03b-04a scaffolded settings.yml has top-level name:	1
-test-registry.sh	REG-P03b-04b scaffolded settings.yml stamped format_version: 3	1
+test-registry.sh	REG-P03b-04b scaffolded settings.yml stamped format_version: 4	1
 test-registry.sh	REG-P03b-04c scaffolded settings.yml has NO tools: block (tools live in the manifest)	1
 test-registry.sh	REG-P03b-04d minimal .aid-manifest.json scaffolded	1
 test-registry.sh	REG-P03b-04e scaffolded manifest records aid_version	1
@@ -7129,8 +7223,8 @@ test-registry.sh	REG-V04d prune-on-read: no WARN emitted for stale entry	1
 test-registry.sh	REG-V05a _aid_scan_for_repos absent from bin<PATH> (AC2: no scan)	1
 test-registry.sh	REG-V05b no-scan: canary repo outside registry untouched by update self	1
 test-registry.sh	REG-V06a update self with registered A+B -> exit 0	1
-test-registry.sh	REG-V06b registered repo A gets format_version: 3 after migrate	1
-test-registry.sh	REG-V06c registered repo B gets format_version: 3 after migrate	1
+test-registry.sh	REG-V06b registered repo A gets format_version: 4 after migrate	1
+test-registry.sh	REG-V06c registered repo B gets format_version: 4 after migrate	1
 test-registry.sh	REG-V06d unregistered repo C format_version unchanged (still 0)	1
 test-registry.sh	REG-V07a AID_HOME redirect: entry in AID_STATE_HOME registry	1
 test-registry.sh	REG-V07b AID_HOME redirect: real HOME<PATH> NOT created	1
@@ -7263,7 +7357,9 @@ test-release-install-e2e.sh	E2E11g tampered tarball -> exit 4 (checksum mismatch
 test-release-install-e2e.sh	E2E11h tampered tarball: tool NOT installed	1
 test-release-migrate-smoke.sh	RMS-CURL-01 install.sh produced a working $AID_HOME<PATH>	1
 test-release-migrate-smoke.sh	RMS-CURL-02-A -- stamp-less repo encounter: WARN 'older format' printed (lazy-stamp model)	1
-test-release-migrate-smoke.sh	RMS-CURL-02-B -- after __migrate-repo: settings.yml stamped format_version: 3	1
+test-release-migrate-smoke.sh	RMS-CURL-02-B -- after __migrate-repo: settings.yml stamped format_version: 4	1
+test-release-migrate-smoke.sh	RMS-CURL-02-C -- after __migrate-repo: legacy work-state STATE.md converted to STATE.yml	1
+test-release-migrate-smoke.sh	RMS-CURL-02-D -- after __migrate-repo: legacy STATE.md deleted (verified conversion)	1
 test-release-migrate-smoke.sh	RMS-NPM-01 npm pack + global install su<HEX>	1
 test-release-migrate-smoke.sh	RMS-NPM-02 npm install: aid binary location not found -- SKIPPED (integration path)	1
 test-release-migrate-smoke.sh	RMS-PYPI-01 wheel build + pip install su<HEX>	1
@@ -7406,6 +7502,24 @@ test-spine-depth-coverage.sh	SD10	1
 test-spine-depth-coverage.sh	SD11	2
 test-spine-depth-coverage.sh	SD12	2
 test-spine-depth-coverage.sh	SD13	10
+test-state-review-surface.sh	SR00	1
+test-state-review-surface.sh	SR01	1
+test-state-review-surface.sh	SR02	1
+test-state-review-surface.sh	SR03	1
+test-state-review-surface.sh	SR04	1
+test-state-review-surface.sh	SR05	1
+test-state-review-surface.sh	SR06	1
+test-state-review-surface.sh	SR07	1
+test-state-review-surface.sh	SR08	1
+test-state-review-surface.sh	SR09	1
+test-state-review-surface.sh	SR10	1
+test-state-review-surface.sh	SR11	1
+test-state-review-surface.sh	SR12	1
+test-state-review-surface.sh	SR13	1
+test-state-review-surface.sh	SR14	1
+test-state-review-surface.sh	SR15	1
+test-state-review-surface.sh	SR16	1
+test-state-review-surface.sh	SR17	1
 test-summarize-preflight.sh	T1a: migrate message printed	1
 test-summarize-preflight.sh	T1a: migrated file content preserved	1
 test-summarize-preflight.sh	T1a: new path exists after migrate	1
@@ -7438,10 +7552,10 @@ test-task-state-transitions.sh	writeback-state.sh --field State --value "Done"	1
 test-task-state-transitions.sh	writeback-state.sh --field State --value "In Progress"	1
 test-task-state-transitions.sh	writeback-state.sh --field State --value "In Review"	1
 test-task-state-transitions.sh	writeback-state.sh --field State --value "Pending"	1
-test-task-state-transitions.sh	writer: ### Tasks lifecycle row -> Done	1
-test-task-state-transitions.sh	writer: ### Tasks lifecycle row -> In Progress	1
-test-task-state-transitions.sh	writer: ### Tasks lifecycle row -> In Review	1
-test-task-state-transitions.sh	writer: ### Tasks lifecycle row -> Pending	1
+test-task-state-transitions.sh	writer: tasks_lifecycle.task-001.state -> Done	1
+test-task-state-transitions.sh	writer: tasks_lifecycle.task-001.state -> In Progress	1
+test-task-state-transitions.sh	writer: tasks_lifecycle.task-001.state -> In Review	1
+test-task-state-transitions.sh	writer: tasks_lifecycle.task-001.state -> Pending	1
 test-teachback-fixtures.sh	ISO-CANARY-01 real HOME (<PATH> gained no .aid dirs (no scan escaped throwaway HOME)	1
 test-teachback-fixtures.sh	T01a V-C1a spread=2 term TokenRouter generates question	1
 test-teachback-fixtures.sh	T01b V-C1a spread=2 term DispatchQueue generates question	1
@@ -7600,9 +7714,9 @@ test-ticket-retirement-structural.sh	T083 consumption-protocol.md: worked exampl
 test-ticket-retirement-structural.sh	T084 consumption-protocol.md: reads-delegate-to-<PATH> is documented at multiple seam rows (10 mentions)	1
 test-ticket-retirement-structural.sh	T085 consumption-protocol.md: writes-route documents <PATH>	1
 test-ticket-retirement-structural.sh	T086 consumption-protocol.md: writes-route documents <PATH>	1
-test-ticket-retirement-structural.sh	T087 work-state-template.md still carries the ticket_ref frontmatter key (FR-11 untouched)	1
-test-ticket-retirement-structural.sh	T088 delivery-state-template.md still carries the ticket_ref frontmatter key (FR-11 untouched)	1
-test-ticket-retirement-structural.sh	T089 task-state-template.md still carries the ticket_ref frontmatter key (FR-11 untouched)	1
+test-ticket-retirement-structural.sh	T087 work-state-template.yml still carries the ticket_ref key (FR-11 untouched)	1
+test-ticket-retirement-structural.sh	T088 delivery-state-template.yml still carries the ticket_ref key (FR-11 untouched)	1
+test-ticket-retirement-structural.sh	T089 task-state-template.yml still carries the ticket_ref key (FR-11 untouched)	1
 test-ticket-retirement-structural.sh	T090 specs<PATH> still carries the '> **Ticket:**' line (FR-11 untouched)	1
 test-ticket-retirement-structural.sh	T091 consumption-protocol.md: ticket_ref is documented as populated only from a user-supplied ref	1
 test-ticket-retirement-structural.sh	T092 aid-describe state-first-run.md: silent-skip on no-connector<PATH> is documented	1
@@ -8144,6 +8258,8 @@ test-work-initiation-gate.sh	Recon: aid-research's spike opt-in worktree sentenc
 test-work-initiation-gate.sh	Recon: aid-review documents the work-level worktree as mandatory (FR1), not optional	1
 test-work-initiation-gate.sh	Recon: aid-review references gate § 3a work-level create+enter at its allocation step	1
 test-work-initiation-gate.sh	Recon: aid-review's old work-level opt-in worktree sentence is gone	1
+test-work-state-template.sh	SP-20 canonical<PATH> no writer-owned key carries a trailing inline comment	3
+test-work-state-template.sh	SP-3 canonical<PATH> no DERIVED key present	3
 test-work-state-template.sh	WS01	1
 test-work-state-template.sh	WS02	7
 test-work-state-template.sh	WS03	5
@@ -8153,8 +8269,8 @@ test-work-state-template.sh	WS07	3
 test-work-state-template.sh	WS08	5
 test-work-state-template.sh	WS09	10
 test-work-state-template.sh	WS10	6
-test-work-state-template.sh	WS12	1
-test-work-state-template.sh	WS13	1
+test-work-state-template.sh	WS12	2
+test-work-state-template.sh	WS13	2
 test-work-state-template.sh	WS14	4
 test-work-state-template.sh	WS15	1
 test-work-state-template.sh	WS16	1
@@ -8506,15 +8622,15 @@ test-write-setting.sh	U8 embedded backslash in --value exits 4	1
 test-write-setting.sh	U9 flat top-level key written ('name: Fresh' at column 0)	1
 test-write-setting.sh	U9 no project: header created (flat write matches flat schema, no nesting)	1
 test-write-setting.sh	U9 write-setting exits 0	1
-test-writeback-state.sh	--- separator between ## Quick Check Findings and ## Dispatch Log survives the --findings rewrite	1
 test-writeback-state.sh	--lifecycle Blocked accepted (exit 0)	1
 test-writeback-state.sh	--lifecycle Done accepted (exit 0)	1
 test-writeback-state.sh	--lifecycle Executing accepted (exit 0)	1
 test-writeback-state.sh	--lifecycle Gated accepted (exit 0)	1
 test-writeback-state.sh	--lifecycle Pending-Spec accepted (exit 0)	1
-test-writeback-state.sh	--lifecycle Running (invalid; that is pipeline enum) → exit 4	1
+test-writeback-state.sh	--lifecycle Running (invalid; that is pipeline enum) -> exit 4	1
 test-writeback-state.sh	--lifecycle Specified accepted (exit 0)	1
-test-writeback-state.sh	--lifecycle active (invalid lowercase) → exit 4	1
+test-writeback-state.sh	--lifecycle active (invalid lowercase) -> exit 4	1
+test-writeback-state.sh	--lifecycle against a non-mapping STATE.yml -> exit 6 (malformed)	1
 test-writeback-state.sh	10a: Lifecycle=Blocked accepted (exit 0)	1
 test-writeback-state.sh	10a: Lifecycle=Canceled accepted (exit 0)	1
 test-writeback-state.sh	10a: Lifecycle=Completed accepted (exit 0)	1
@@ -8537,72 +8653,69 @@ test-writeback-state.sh	10g: Active Skill=aid-review accepted (exit 0)	1
 test-writeback-state.sh	10h: Active Skill=develop (no aid- prefix) rejected (exit 4)	1
 test-writeback-state.sh	10i: Active Skill=aid- (empty skill part) rejected (exit 4)	1
 test-writeback-state.sh	10j: unknown pipeline field rejected (exit 4)	1
-test-writeback-state.sh	10k: --pipeline without --field → non-zero exit	1
+test-writeback-state.sh	10k: --pipeline without --field -> non-zero exit	1
 test-writeback-state.sh	11a: Pause Reason field written	1
-test-writeback-state.sh	11a: Pause Reason write under Paused-Awaiting-Input → exit 0	1
+test-writeback-state.sh	11a: Pause Reason write under Paused-Awaiting-Input -> exit 0	1
 test-writeback-state.sh	11b: Block Artifact field written	1
-test-writeback-state.sh	11b: Block Artifact write under Blocked → exit 0	1
+test-writeback-state.sh	11b: Block Artifact write under Blocked -> exit 0	1
 test-writeback-state.sh	11b: Block Reason field written	1
-test-writeback-state.sh	11b: Block Reason write under Blocked → exit 0	1
-test-writeback-state.sh	11c: Pause Reason cleared after Lifecycle→Running	1
+test-writeback-state.sh	11b: Block Reason write under Blocked -> exit 0	1
+test-writeback-state.sh	11c: Pause Reason cleared after Lifecycle->Running	1
 test-writeback-state.sh	11c: old Pause Reason value gone after clear	1
-test-writeback-state.sh	11d: Block Artifact cleared after Lifecycle→Running	1
-test-writeback-state.sh	11d: Block Reason cleared after Lifecycle→Running	1
+test-writeback-state.sh	11d: Block Artifact cleared after Lifecycle->Running	1
+test-writeback-state.sh	11d: Block Reason cleared after Lifecycle->Running	1
 test-writeback-state.sh	11d: old Block Reason value gone after clear	1
 test-writeback-state.sh	11e: Pause Reason cleared when Lifecycle transitions to Blocked	1
 test-writeback-state.sh	11e: old Pause Reason value gone after Blocked transition	1
-test-writeback-state.sh	11f: Block Artifact cleared on Lifecycle→Completed	1
-test-writeback-state.sh	11f: Block Reason cleared on Lifecycle→Completed	1
+test-writeback-state.sh	11f: Block Artifact cleared on Lifecycle->Completed	1
+test-writeback-state.sh	11f: Block Reason cleared on Lifecycle->Completed	1
 test-writeback-state.sh	11g: Block Artifact at -- sentinel on fresh Running state	1
 test-writeback-state.sh	11g: Block Reason at -- sentinel on fresh Running state	1
 test-writeback-state.sh	11g: Pause Reason at -- sentinel on fresh Running state	1
-test-writeback-state.sh	12a: work STATE.md unchanged after task --field write	1
-test-writeback-state.sh	12b: work STATE.md unchanged after task --findings write	1
-test-writeback-state.sh	12c: work STATE.md unchanged after --block write	1
-test-writeback-state.sh	12d: work STATE.md unchanged after --lifecycle write	1
-test-writeback-state.sh	17a: active_skill line present after concurrent writes	1
-test-writeback-state.sh	17a: field 'active_skill' appears exactly once in frontmatter (no duplication)	1
-test-writeback-state.sh	17a: field 'lifecycle' appears exactly once in frontmatter (no duplication)	1
-test-writeback-state.sh	17a: field 'phase' appears exactly once in frontmatter (no duplication)	1
-test-writeback-state.sh	17a: field 'updated' appears exactly once in frontmatter (no duplication)	1
-test-writeback-state.sh	17a: lifecycle line present after concurrent writes	1
+test-writeback-state.sh	12a: work STATE.yml unchanged after task --field write	1
+test-writeback-state.sh	12b: work STATE.yml unchanged after task --findings write	1
+test-writeback-state.sh	12c: work STATE.yml unchanged after --block write	1
+test-writeback-state.sh	12d: work STATE.yml unchanged after --lifecycle write	1
+test-writeback-state.sh	13n: corrupted output discarded, original file preserved on exit 3	1
+test-writeback-state.sh	13n: original notes value untouched after the exit-3 fault	1
+test-writeback-state.sh	13n: verify-mismatch (fault-injected) -> exit 3	1
+test-writeback-state.sh	17a: field 'active_skill' appears exactly once after concurrent writes (no duplication)	1
+test-writeback-state.sh	17a: field 'lifecycle' appears exactly once after concurrent writes (no duplication)	1
+test-writeback-state.sh	17a: field 'phase' appears exactly once after concurrent writes (no duplication)	1
+test-writeback-state.sh	17a: field 'updated' appears exactly once after concurrent writes (no duplication)	1
 test-writeback-state.sh	17a: no stale lock file after concurrent pipeline writes	1
-test-writeback-state.sh	17a: phase line present after concurrent writes	1
-test-writeback-state.sh	17a: unrelated body section intact after concurrent pipeline writes	1
-test-writeback-state.sh	17a: updated line present after concurrent writes	1
+test-writeback-state.sh	17a: unrelated comment intact after concurrent pipeline writes	1
 test-writeback-state.sh	17b: field 'lifecycle' appears exactly once after mixed concurrent writes	1
 test-writeback-state.sh	17b: field 'phase' appears exactly once after mixed concurrent writes	1
-test-writeback-state.sh	17b: lifecycle line present after mixed concurrent writes	1
-test-writeback-state.sh	17b: phase line present after mixed concurrent writes	1
-test-writeback-state.sh	17b: task STATE.md intact after mixed concurrent writes	1
-test-writeback-state.sh	17b: unrelated body section intact after --pipeline ∥ --field mix	1
-test-writeback-state.sh	18a: FR16 Running — block_artifact at -- sentinel	1
-test-writeback-state.sh	18a: FR16 Running — block_reason at -- sentinel	1
-test-writeback-state.sh	18a: FR16 Running — lifecycle value derivable	1
-test-writeback-state.sh	18a: FR16 Running — pause_reason at -- sentinel	1
-test-writeback-state.sh	18b: FR16 Paused — block_artifact at -- sentinel	1
-test-writeback-state.sh	18b: FR16 Paused — block_reason at -- sentinel	1
-test-writeback-state.sh	18b: FR16 Paused — lifecycle value derivable	1
-test-writeback-state.sh	18b: FR16 Paused — pause_reason present	1
-test-writeback-state.sh	18c: FR16 Blocked — block_artifact present	1
-test-writeback-state.sh	18c: FR16 Blocked — block_reason present	1
-test-writeback-state.sh	18c: FR16 Blocked — lifecycle value derivable	1
-test-writeback-state.sh	18c: FR16 Blocked — pause_reason at -- sentinel	1
-test-writeback-state.sh	18d: FR16 Completed — block_artifact at -- sentinel	1
-test-writeback-state.sh	18d: FR16 Completed — block_reason at -- sentinel	1
-test-writeback-state.sh	18d: FR16 Completed — lifecycle value derivable	1
-test-writeback-state.sh	18d: FR16 Completed — pause_reason at -- sentinel	1
-test-writeback-state.sh	18e: FR16 active_skill value grep-recoverable from on-disk frontmatter	1
-test-writeback-state.sh	18e: FR16 lifecycle value grep-recoverable from on-disk frontmatter	1
-test-writeback-state.sh	18e: FR16 phase value grep-recoverable from on-disk frontmatter	1
+test-writeback-state.sh	17b: task STATE.yml intact after mixed concurrent writes	1
+test-writeback-state.sh	17b: unrelated comment intact after --pipeline ∥ --field mix	1
+test-writeback-state.sh	18a: FR16 Running -- block_artifact at -- sentinel	1
+test-writeback-state.sh	18a: FR16 Running -- block_reason at -- sentinel	1
+test-writeback-state.sh	18a: FR16 Running -- lifecycle value derivable	1
+test-writeback-state.sh	18a: FR16 Running -- pause_reason at -- sentinel	1
+test-writeback-state.sh	18b: FR16 Paused -- block_artifact at -- sentinel	1
+test-writeback-state.sh	18b: FR16 Paused -- block_reason at -- sentinel	1
+test-writeback-state.sh	18b: FR16 Paused -- lifecycle value derivable	1
+test-writeback-state.sh	18b: FR16 Paused -- pause_reason present	1
+test-writeback-state.sh	18c: FR16 Blocked -- block_artifact present	1
+test-writeback-state.sh	18c: FR16 Blocked -- block_reason present	1
+test-writeback-state.sh	18c: FR16 Blocked -- lifecycle value derivable	1
+test-writeback-state.sh	18c: FR16 Blocked -- pause_reason at -- sentinel	1
+test-writeback-state.sh	18d: FR16 Completed -- block_artifact at -- sentinel	1
+test-writeback-state.sh	18d: FR16 Completed -- block_reason at -- sentinel	1
+test-writeback-state.sh	18d: FR16 Completed -- lifecycle value derivable	1
+test-writeback-state.sh	18d: FR16 Completed -- pause_reason at -- sentinel	1
+test-writeback-state.sh	18e: FR16 active_skill value grep-recoverable on disk	1
+test-writeback-state.sh	18e: FR16 lifecycle value grep-recoverable on disk	1
+test-writeback-state.sh	18e: FR16 phase value grep-recoverable on disk	1
 test-writeback-state.sh	19a: Lifecycle set to Paused-Awaiting-Input	1
-test-writeback-state.sh	19a: Pause Reason emit after PAUSE transition → exit 0	1
+test-writeback-state.sh	19a: Pause Reason emit after PAUSE transition -> exit 0	1
 test-writeback-state.sh	19a: Pause Reason written	1
 test-writeback-state.sh	19b: Lifecycle returns to Running on resume	1
 test-writeback-state.sh	19b: Pause Reason cleared on Running transition (M4 resume)	1
 test-writeback-state.sh	19b: old Pause Reason text gone after clear	1
 test-writeback-state.sh	19c: Block Artifact written	1
-test-writeback-state.sh	19c: Block Reason emit after task failure → exit 0	1
+test-writeback-state.sh	19c: Block Reason emit after task failure -> exit 0	1
 test-writeback-state.sh	19c: Block Reason written	1
 test-writeback-state.sh	19c: Lifecycle set to Blocked on task failure	1
 test-writeback-state.sh	19c: Pause Reason at -- sentinel when Blocked	1
@@ -8611,140 +8724,151 @@ test-writeback-state.sh	19d: Block Reason cleared on Running transition	1
 test-writeback-state.sh	19d: Lifecycle returns to Running after impediment resolved	1
 test-writeback-state.sh	19d: old Block Artifact value gone after clear	1
 test-writeback-state.sh	19e: Block Artifact is delivery IMPEDIMENT path	1
-test-writeback-state.sh	19e: Delivery gate circuit-breaker block emit → exit 0	1
+test-writeback-state.sh	19e: Delivery gate circuit-breaker block emit -> exit 0	1
 test-writeback-state.sh	19e: Lifecycle Blocked on circuit-breaker stop	1
-test-writeback-state.sh	19f: Delivery gate non-CODE pause emit → exit 0	1
+test-writeback-state.sh	19f: Delivery gate non-CODE pause emit -> exit 0	1
 test-writeback-state.sh	19f: Lifecycle Paused on non-CODE-only gate stop	1
 test-writeback-state.sh	19f: Pause Reason explains upstream fix needed	1
-test-writeback-state.sh	20a: flat --field write → exit 0	1
-test-writeback-state.sh	20a: no per-task STATE.md created for the flat layout	1
-test-writeback-state.sh	20a: task-001 row written to ### Tasks lifecycle	1
-test-writeback-state.sh	20b: ### Tasks lifecycle placeholder row replaced by the first real task row	1
-test-writeback-state.sh	20b: unrelated plural DERIVED ## Tasks State placeholder is untouched	1
-test-writeback-state.sh	20c: appended row is contiguous with the existing table (no blank-line split)	1
-test-writeback-state.sh	20c: second flat task --field write → exit 0	1
-test-writeback-state.sh	20c: task-002 row appended to ### Tasks lifecycle	1
-test-writeback-state.sh	20d: flat --field Review write on existing row → exit 0	1
-test-writeback-state.sh	20d: task-001 Review set to A, State preserved	1
-test-writeback-state.sh	20d: task-002 row unaffected by task-001 update	1
-test-writeback-state.sh	20e: flat --lifecycle write → exit 0	1
+test-writeback-state.sh	20a: flat --field write -> exit 0	1
+test-writeback-state.sh	20a: no per-task STATE.yml created for the flat layout	1
+test-writeback-state.sh	20a: task-001 state key written under tasks_lifecycle	1
+test-writeback-state.sh	20b: tasks_lifecycle.task-001 entry present	1
+test-writeback-state.sh	20b: tasks_lifecycle: {} placeholder replaced by a real mapping	1
+test-writeback-state.sh	20c: exactly one tasks_lifecycle: parent header (no duplication)	1
+test-writeback-state.sh	20c: second flat task --field write -> exit 0	1
+test-writeback-state.sh	20c: task-001's mapping entry survived the task-002 write byte-identical	1
+test-writeback-state.sh	20c: tasks_lifecycle.task-002 entry appended	1
+test-writeback-state.sh	20d: flat --field Review write on existing task entry -> exit 0	1
+test-writeback-state.sh	20d: task-001 review set to A	1
+test-writeback-state.sh	20d: task-001 state preserved (not clobbered by the Review write)	1
+test-writeback-state.sh	20e: flat --lifecycle write -> exit 0	1
 test-writeback-state.sh	20e: no deliveries<PATH> directory created for the flat layout	1
-test-writeback-state.sh	20e: work-root frontmatter delivery_state set to Executing	1
-test-writeback-state.sh	20f: --- separator between ## Delivery Gate and ## Tasks State survives the --block rewrite	1
-test-writeback-state.sh	20f: DERIVED<PATH> VIEWS banner comment survives the --block rewrite	1
-test-writeback-state.sh	20f: DERIVED<PATH> VIEWS banner is positioned between ## Delivery Gate and ## Tasks State (not pulled up<PATH>	1
-test-writeback-state.sh	20f: flat --block write → exit 0	1
-test-writeback-state.sh	20f: plural DERIVED ## Tasks State view still shows the placeholder (untouched)	1
-test-writeback-state.sh	20f: work-root ## Delivery Gate grade written	1
-test-writeback-state.sh	20g: flat --field write is idempotent — no size change on same value	1
-test-writeback-state.sh	20h: flat work missing ### Tasks lifecycle → exit 6 (malformed)	1
+test-writeback-state.sh	20e: work-root delivery_state set to Executing	1
+test-writeback-state.sh	20f: delivery_state key survives the --block rewrite	1
+test-writeback-state.sh	20f: flat --block write -> exit 0	1
+test-writeback-state.sh	20f: work-root delivery_gate.issue_list item written	1
+test-writeback-state.sh	20g: flat --field write is idempotent -- no size change on same value	1
+test-writeback-state.sh	20h: flat work with a non-mapping STATE.yml -> exit 6 (malformed)	1
+test-writeback-state.sh	20i: flat fixture's own task-001 entry still appears exactly once (no cross-contamination)	1
 test-writeback-state.sh	20i: nested-path --field write still succeeds after flat-layout changes	1
-test-writeback-state.sh	20i: nested-path task-001 STATE.md still the write target	1
-test-writeback-state.sh	20i: nested-path write did not leak into the flat fixture	1
-test-writeback-state.sh	21a: --delivery-id 008 --task-id 008 --field → exit 0 (no octal parse error)	1
+test-writeback-state.sh	20i: nested-path task-001 STATE.yml still the write target	1
+test-writeback-state.sh	21a: --delivery-id 008 --task-id 008 --field -> exit 0 (no octal parse error)	1
 test-writeback-state.sh	21a: no delivery-000 directory was ever consulted (octal misparse would have targeted it)	1
 test-writeback-state.sh	21a: write landed in delivery-008<PATH>	1
-test-writeback-state.sh	21b: --delivery-id 090 --task-id 009 --field → exit 0 (no octal parse error)	1
+test-writeback-state.sh	21b: --delivery-id 090 --task-id 009 --field -> exit 0 (no octal parse error)	1
 test-writeback-state.sh	21b: write landed in delivery-090<PATH>	1
-test-writeback-state.sh	21c: --delivery-id 090 --lifecycle → exit 0 (no octal parse error)	1
+test-writeback-state.sh	21c: --delivery-id 090 --lifecycle -> exit 0 (no octal parse error)	1
 test-writeback-state.sh	21c: lifecycle written to delivery-090<PATH>	1
-test-writeback-state.sh	21d: --delivery-id 008 --block → exit 0 (no octal parse error)	1
+test-writeback-state.sh	21d: --delivery-id 008 --block -> exit 0 (no octal parse error)	1
 test-writeback-state.sh	21d: gate block written to delivery-008<PATH>	1
-test-writeback-state.sh	21e: --delivery-id 009 --append-issue → exit 0 (no octal parse error)	1
+test-writeback-state.sh	21e: --delivery-id 009 --append-issue -> exit 0 (no octal parse error)	1
 test-writeback-state.sh	21e: issue row appended to delivery-009-issues.md	1
-test-writeback-state.sh	21f: Source-line resolution with task-id 008 → exit 0 (no octal parse error)	1
+test-writeback-state.sh	21f: Source-line resolution with task-id 008 -> exit 0 (no octal parse error)	1
 test-writeback-state.sh	21f: Source-line-resolved write landed in delivery-008<PATH>	1
-test-writeback-state.sh	21g: flat layout --task-id 008 --field → exit 0 (no octal parse error)	1
-test-writeback-state.sh	21g: flat layout row written for task-008 (not task-000)	1
-test-writeback-state.sh	21h: --delivery-id 008 --task-id 008 --findings → exit 0 (no octal parse error)	1
+test-writeback-state.sh	21g: flat layout --task-id 008 --field -> exit 0 (no octal parse error)	1
+test-writeback-state.sh	21g: flat layout tasks_lifecycle entry written for task-008 (not task-000)	1
+test-writeback-state.sh	21h: --delivery-id 008 --task-id 008 --findings -> exit 0 (no octal parse error)	1
 test-writeback-state.sh	21h: confirmation message reports 'task-008' (padded_id resolved correctly, not 'task-000')	1
 test-writeback-state.sh	21h: findings block written to delivery-008<PATH>	1
-test-writeback-state.sh	22a: Minimum Grade write → exit 0	1
+test-writeback-state.sh	22a: Minimum Grade write -> exit 0	1
 test-writeback-state.sh	22a: Minimum Grade='Z' (invalid grade) rejected (exit 4)	1
 test-writeback-state.sh	22a: Pipeline Initiator='refactor' (no aid- prefix) rejected (exit 4)	1
-test-writeback-state.sh	22a: Pipeline Initiator=aid-refactor write → exit 0	1
+test-writeback-state.sh	22a: Pipeline Initiator=aid-refactor write -> exit 0	1
 test-writeback-state.sh	22a: Pipeline Path='medium' (invalid) rejected (exit 4)	1
-test-writeback-state.sh	22a: Pipeline Path=lite write → exit 0	1
-test-writeback-state.sh	22a: Started write → exit 0	1
+test-writeback-state.sh	22a: Pipeline Path=lite write -> exit 0	1
+test-writeback-state.sh	22a: Started write -> exit 0	1
 test-writeback-state.sh	22a: User Approved='maybe' (invalid) rejected (exit 4)	1
-test-writeback-state.sh	22a: User Approved=yes write → exit 0	1
-test-writeback-state.sh	22a: exactly one 'pipeline:' parent mapping header (path+initiator share it)	1
-test-writeback-state.sh	22a: minimum_grade frontmatter key written	1
-test-writeback-state.sh	22a: pipeline.initiator nested frontmatter key written	1
-test-writeback-state.sh	22a: pipeline.path nested frontmatter key written	1
-test-writeback-state.sh	22a: started frontmatter key written	1
-test-writeback-state.sh	22a: user_approved frontmatter key written	1
+test-writeback-state.sh	22a: User Approved=yes write -> exit 0	1
+test-writeback-state.sh	22a: exactly one 'pipeline:' parent mapping (path+initiator share it)	1
+test-writeback-state.sh	22a: minimum_grade key written	1
+test-writeback-state.sh	22a: pipeline.initiator nested key written	1
+test-writeback-state.sh	22a: pipeline.path nested key written	1
+test-writeback-state.sh	22a: started key written (single-quoted -- date-like value, D-5<PATH>	1
+test-writeback-state.sh	22a: user_approved key written (single-quoted -- yes<PATH> deny-list value, D-5<PATH>	1
 test-writeback-state.sh	22b: gate-field Grade='Z' (invalid) rejected (exit 4)	1
 test-writeback-state.sh	22b: gate-field Grade=A- accepted (exit 0)	1
 test-writeback-state.sh	22b: gate-field Tier='Huge' (invalid) rejected (exit 4)	1
 test-writeback-state.sh	22b: gate-field Tier=Medium accepted (exit 0)	1
 test-writeback-state.sh	22b: gate-field Timestamp accepted (exit 0)	1
-test-writeback-state.sh	22b: gate_grade frontmatter key written	1
-test-writeback-state.sh	22b: gate_tier frontmatter key written	1
-test-writeback-state.sh	22b: gate_timestamp frontmatter key written	1
+test-writeback-state.sh	22b: gate-value containing a newline rejected (exit 4; the ONE surviving control-char guard)	1
+test-writeback-state.sh	22b: gate_grade key written	1
+test-writeback-state.sh	22b: gate_tier key written	1
+test-writeback-state.sh	22b: gate_timestamp key written	1
 test-writeback-state.sh	22b: unknown gate-field name rejected (exit 4)	1
-test-writeback-state.sh	22c: ## Delivery Gate body Issue List bullet untouched by --gate-field	1
-test-writeback-state.sh	22d: flat-layout gate-field write → exit 0	1
+test-writeback-state.sh	22c: delivery_gate.issue_list untouched by a subsequent --gate-field write	1
+test-writeback-state.sh	22d: flat-layout gate-field write -> exit 0	1
 test-writeback-state.sh	22d: no deliveries<PATH> directory created for the flat layout gate-field write	1
-test-writeback-state.sh	22d: work-root frontmatter gate_tier set (flat layout)	1
-test-writeback-state.sh	22e: markdown BODY byte-identical (cmp) after a sequence of frontmatter writes, incl. missing final newline (critical AC)	1
-test-writeback-state.sh	22f: CRLF STATE.md frontmatter write → exit 0	1
-test-writeback-state.sh	22f: CRLF body byte-identical (cmp) after frontmatter write, incl. \r\n line endings and missing final newline	1
-test-writeback-state.sh	22f: exactly 2 frontmatter fence lines (no duplicate block prepended)	1
-test-writeback-state.sh	22f: opening fence still carries \r (CRLF preserved, no duplicate frontmatter block prepended)	1
-test-writeback-state.sh	22f: phase frontmatter key updated	1
-test-writeback-state.sh	22g: quoted (nasty) value write → exit 0	1
-test-writeback-state.sh	23a: ## Task State section still present after Name write (body untouched)	1
-test-writeback-state.sh	23a: display_name frontmatter key written (quoted -- value contains spaces)	1
-test-writeback-state.sh	23a: nested --field Name write → exit 0	1
-test-writeback-state.sh	23a: no literal 'name:' frontmatter key present (fm_key indirection correct)	1
-test-writeback-state.sh	23a: other frontmatter fields (state) untouched by the Name write	1
-test-writeback-state.sh	23b: nested Name write idempotent — no size change on same value	1
+test-writeback-state.sh	22d: work-root gate_tier set (flat layout)	1
+test-writeback-state.sh	22e: every OTHER pre-existing line byte-identical (cmp, redacting only the 5 touched keys) after a sequence of scalar writes (critical AC)	1
+test-writeback-state.sh	22e: line count unchanged (overwrite-in-place, no insertion<PATH>	1
+test-writeback-state.sh	22f: CRLF STATE.yml scalar write -> exit 0	1
+test-writeback-state.sh	22f: CRLF trailing content byte-identical (cmp) after the write, incl. \r\n line endings and missing final newline	1
+test-writeback-state.sh	22f: phase key updated	1
+test-writeback-state.sh	22f: the untouched lines still carry \r (CRLF preserved)	1
+test-writeback-state.sh	22g: quoted (nasty, pipe-bearing) value write -> exit 0	1
+test-writeback-state.sh	23a: display_name key written (quoted -- value contains spaces)	1
+test-writeback-state.sh	23a: nested --field Name write -> exit 0	1
+test-writeback-state.sh	23a: no literal 'name:' key present (fm_key indirection correct)	1
+test-writeback-state.sh	23a: other fields (state) untouched by the Name write	1
+test-writeback-state.sh	23a: unrelated sibling key survives the Name write	1
+test-writeback-state.sh	23b: nested Name write idempotent -- no size change on same value	1
 test-writeback-state.sh	23c: unknown field still rejected (exit 4)	1
 test-writeback-state.sh	23c: unknown-field error message lists Name in the allowed set	1
-test-writeback-state.sh	23d: Name value containing '|' rejected (exit 4)	1
-test-writeback-state.sh	23e: Name value containing newline rejected (exit 4)	1
-test-writeback-state.sh	23f: Name written to trailing col 7, State<PATH> preserved	1
-test-writeback-state.sh	23f: flat --field Name write → exit 0	1
-test-writeback-state.sh	23f: legacy 5-column header left byte-verbatim (no column-count reconciliation)	1
-test-writeback-state.sh	23f: legacy 5-column separator left byte-verbatim (no column-count reconciliation)	1
-test-writeback-state.sh	23g: 6-column _none yet_ placeholder row replaced by the new task row	1
-test-writeback-state.sh	23g: 6-column header (matching work-state-template.md's seed) preserved	1
-test-writeback-state.sh	23g: 6-column separator (matching work-state-template.md's seed) preserved	1
-test-writeback-state.sh	23g: flat --field Name write on a Name-column-seeded work → exit 0	1
-test-writeback-state.sh	23g: new row created with Name in col 7, other cols at -- sentinel	1
-test-writeback-state.sh	23h: work-state-template.md ### Tasks lifecycle header carries the Name column	1
-test-writeback-state.sh	23h: work-state-template.md ### Tasks lifecycle separator carries the Name column	1
-test-writeback-state.sh	24a: AID_WORK_DIR-only --append-issue → exit 0 (no unbound-variable abort, no missing lock dir)	1
+test-writeback-state.sh	23d INVERTED: Name value containing '|' now accepted (exit 0)	1
+test-writeback-state.sh	23d INVERTED: the pipe-bearing Name value round-trips intact	1
+test-writeback-state.sh	23e INVERTED: Name value containing a newline now accepted (exit 0)	1
+test-writeback-state.sh	23e INVERTED: the newline-bearing Name value round-trips (double-quoted, escaped)	1
+test-writeback-state.sh	23f: display_name written under tasks_lifecycle.task-001	1
+test-writeback-state.sh	23f: flat --field Name write -> exit 0	1
+test-writeback-state.sh	23f: task-001's existing review cell (from Unit 20d) survives the Name write	1
+test-writeback-state.sh	24a: AID_WORK_DIR-only --append-issue -> exit 0 (no unbound-variable abort, no missing lock dir)	1
 test-writeback-state.sh	24b: issues file resolved to AID_WORK_DIR<PATH>	1
 test-writeback-state.sh	24b: the row was actually written	1
 test-writeback-state.sh	24c: no literal .aid<PATH> path created	1
-test-writeback-state.sh	24d: idempotent on the AID_WORK_DIR path — duplicate row not added	1
-test-writeback-state.sh	9a: Lifecycle write with no prior frontmatter → exit 0	1
-test-writeback-state.sh	9a: frontmatter block synthesized at the top of the file	1
-test-writeback-state.sh	9a: lifecycle frontmatter key written	1
+test-writeback-state.sh	24d: idempotent on the AID_WORK_DIR path -- duplicate row not added	1
+test-writeback-state.sh	25a: caller block content present verbatim (escaped scalar)	1
+test-writeback-state.sh	25a: flat --findings write -> exit 0 (no per-task STATE.yml required)	1
+test-writeback-state.sh	25a: quick_check scalar key written under task-001	1
+test-writeback-state.sh	25a: tasks_lifecycle.task-001 entry created	1
+test-writeback-state.sh	25b: no deliveries<PATH> directory created for the flat layout	1
+test-writeback-state.sh	25b: no per-task STATE.yml created for the flat layout	1
+test-writeback-state.sh	25c: second task's flat --findings write -> exit 0	1
+test-writeback-state.sh	25c: task-001's entry survived the task-002 write byte-identical (SIBLING PRESERVATION)	1
+test-writeback-state.sh	25c: tasks_lifecycle.task-002 entry created	1
+test-writeback-state.sh	25d: rewriting task-001's findings -> exit 0	1
+test-writeback-state.sh	25d: task-001's new block written	1
+test-writeback-state.sh	25d: task-001's stale block content removed (replaced, not appended)	1
+test-writeback-state.sh	25d: task-002's entry survived the task-001 rewrite byte-identical (SIBLING PRESERVATION)	1
+test-writeback-state.sh	25e: flat --findings without --delivery-id -> exit 0	1
+test-writeback-state.sh	25f: entry keyed task-008 (not task-000)	1
+test-writeback-state.sh	25f: flat --findings --task-id 008 -> exit 0 (no octal parse error)	1
+test-writeback-state.sh	25g: nested-layout --findings write still succeeds	1
+test-writeback-state.sh	25g: nested-layout findings body written to the per-task STATE.yml	1
+test-writeback-state.sh	25g: nested-layout findings did NOT land in the work-root STATE.yml	1
+test-writeback-state.sh	25g: nested-layout findings still target the per-task STATE.yml, structured	1
+test-writeback-state.sh	25g: nested-layout write left the flat fixture byte-identical (no cross-layout leak)	1
+test-writeback-state.sh	9a: Lifecycle write with no prior base keys -> exit 0	1
+test-writeback-state.sh	9a: lifecycle key written	1
 test-writeback-state.sh	9b: Phase field written	1
-test-writeback-state.sh	9b: Phase write → exit 0	1
+test-writeback-state.sh	9b: Phase write -> exit 0	1
 test-writeback-state.sh	9c: Active Skill field written	1
-test-writeback-state.sh	9c: Active Skill write → exit 0	1
-test-writeback-state.sh	9d: Updated field written	1
-test-writeback-state.sh	9d: Updated write → exit 0	1
-test-writeback-state.sh	9e: active_skill grep-recoverable in frontmatter block	1
-test-writeback-state.sh	9e: lifecycle grep-recoverable in frontmatter block	1
-test-writeback-state.sh	9e: phase grep-recoverable in frontmatter block	1
-test-writeback-state.sh	9e: updated grep-recoverable in frontmatter block	1
-test-writeback-state.sh	9f-2: original file content preserved byte-for-byte as the BODY after frontmatter synthesis	1
-test-writeback-state.sh	9f: Deploy State section preserved after pipeline writes	1
-test-writeback-state.sh	9f: Triage section preserved after pipeline writes	1
-test-writeback-state.sh	9g: Phase field written on new frontmatter block	1
-test-writeback-state.sh	9g: Phase write with no prior frontmatter → exit 0	1
-test-writeback-state.sh	9g: frontmatter block created by Phase write	1
-test-writeback-state.sh	9h: Lifecycle field overwritten to Completed	1
+test-writeback-state.sh	9c: Active Skill write -> exit 0	1
+test-writeback-state.sh	9d: Updated field written (single-quoted -- date-like value, D-5<PATH>	1
+test-writeback-state.sh	9d: Updated write -> exit 0	1
+test-writeback-state.sh	9e: key 'active_skill' appears exactly once after four separate writes	1
+test-writeback-state.sh	9e: key 'lifecycle' appears exactly once after four separate writes	1
+test-writeback-state.sh	9e: key 'phase' appears exactly once after four separate writes	1
+test-writeback-state.sh	9e: key 'updated' appears exactly once after four separate writes	1
+test-writeback-state.sh	9f-2: every pre-existing line reproduced byte-for-byte (FR-4a) ahead of the newly-appended keys	1
+test-writeback-state.sh	9f: Deploy State comment preserved after pipeline writes	1
+test-writeback-state.sh	9f: Triage comment preserved after pipeline writes	1
+test-writeback-state.sh	9g: Phase field written on a document with no base keys yet	1
+test-writeback-state.sh	9g: Phase write with no prior base keys -> exit 0	1
+test-writeback-state.sh	9h: Lifecycle key overwritten to Completed	1
 test-writeback-state.sh	9h: old Lifecycle value Running removed	1
 test-writeback-state.sh	9i: Active Skill none written	1
-test-writeback-state.sh	9i: Active Skill=none is valid → exit 0	1
-test-writeback-state.sh	<VER>: ## Task State section present after State write	1
-test-writeback-state.sh	<VER>: 'In Review' written as state: line in the frontmatter block	1
+test-writeback-state.sh	9i: Active Skill=none is valid -> exit 0	1
+test-writeback-state.sh	<VER>: 'In Review' written as a quoted state: scalar	1
 test-writeback-state.sh	<VER>: C4 legacy State='Blocked' accepted (exit 0)	1
 test-writeback-state.sh	<VER>: C4 legacy State='Done' accepted (exit 0)	1
 test-writeback-state.sh	<VER>: C4 legacy State='Failed' accepted (exit 0)	1
@@ -8755,96 +8879,104 @@ test-writeback-state.sh	<VER>: Elapsed='running' accepted (enum does not apply t
 test-writeback-state.sh	<VER>: Notes value written successfully	1
 test-writeback-state.sh	<VER>: Notes='anything weird !@#' accepted (enum does not leak to Notes)	1
 test-writeback-state.sh	<VER>: Review='done' accepted (enum does not apply to Review)	1
-test-writeback-state.sh	<VER>: State 'Canceled' grep-recoverable from task STATE.md frontmatter	1
+test-writeback-state.sh	<VER>: State 'Canceled' grep-recoverable from task STATE.yml	1
 test-writeback-state.sh	<VER>: State 'Done' grep-recoverable after overwrite	1
-test-writeback-state.sh	<VER>: State value grep-recoverable from task STATE.md frontmatter	1
+test-writeback-state.sh	<VER>: State value grep-recoverable from task STATE.yml	1
 test-writeback-state.sh	<VER>: State='Blocked' accepted (exit 0)	1
-test-writeback-state.sh	<VER>: State='Blocked' written to task STATE.md frontmatter	1
+test-writeback-state.sh	<VER>: State='Blocked' written to task STATE.yml	1
 test-writeback-state.sh	<VER>: State='Canceled' accepted (exit 0)	1
-test-writeback-state.sh	<VER>: State='Canceled' written to task STATE.md frontmatter	1
+test-writeback-state.sh	<VER>: State='Canceled' written to task STATE.yml	1
 test-writeback-state.sh	<VER>: State='DONE' rejected (exit 4)	1
 test-writeback-state.sh	<VER>: State='Done' accepted (exit 0)	1
-test-writeback-state.sh	<VER>: State='Done' written to task STATE.md frontmatter	1
+test-writeback-state.sh	<VER>: State='Done' written to task STATE.yml	1
 test-writeback-state.sh	<VER>: State='Failed' accepted (exit 0)	1
-test-writeback-state.sh	<VER>: State='Failed' written to task STATE.md frontmatter	1
+test-writeback-state.sh	<VER>: State='Failed' written to task STATE.yml	1
 test-writeback-state.sh	<VER>: State='Finished' rejected (exit 4)	1
 test-writeback-state.sh	<VER>: State='In Progress' accepted (exit 0)	1
-test-writeback-state.sh	<VER>: State='In Progress' written to task STATE.md frontmatter	1
+test-writeback-state.sh	<VER>: State='In Progress' written to task STATE.yml	1
 test-writeback-state.sh	<VER>: State='In Review' accepted (exit 0)	1
-test-writeback-state.sh	<VER>: State='In Review' written to task STATE.md frontmatter	1
+test-writeback-state.sh	<VER>: State='In Review' written to task STATE.yml	1
 test-writeback-state.sh	<VER>: State='InProgress' rejected (exit 4)	1
 test-writeback-state.sh	<VER>: State='PENDING' rejected (exit 4)	1
 test-writeback-state.sh	<VER>: State='Pending' accepted (exit 0)	1
-test-writeback-state.sh	<VER>: State='Pending' written to task STATE.md frontmatter	1
+test-writeback-state.sh	<VER>: State='Pending' written to task STATE.yml	1
 test-writeback-state.sh	<VER>: State='Status' rejected (exit 4)	1
 test-writeback-state.sh	<VER>: State='_none yet_' placeholder accepted (exit 0)	1
 test-writeback-state.sh	<VER>: State='in progress' rejected (exit 4)	1
 test-writeback-state.sh	<VER>: State='running' rejected (exit 4)	1
 test-writeback-state.sh	<VER>: State='todo' rejected (exit 4)	1
-test-writeback-state.sh	<VER>: _none yet_ placeholder written to task STATE.md	1
-test-writeback-state.sh	<VER>: task STATE.md unchanged after rejection of 'DONE'	1
-test-writeback-state.sh	<VER>: task STATE.md unchanged after rejection of 'Finished'	1
-test-writeback-state.sh	<VER>: task STATE.md unchanged after rejection of 'InProgress'	1
-test-writeback-state.sh	<VER>: task STATE.md unchanged after rejection of 'PENDING'	1
-test-writeback-state.sh	<VER>: task STATE.md unchanged after rejection of 'Status'	1
-test-writeback-state.sh	<VER>: task STATE.md unchanged after rejection of 'in progress'	1
-test-writeback-state.sh	<VER>: task STATE.md unchanged after rejection of 'running'	1
-test-writeback-state.sh	<VER>: task STATE.md unchanged after rejection of 'todo'	1
-test-writeback-state.sh	H2 pipe in --value → exit 4	1
-test-writeback-state.sh	H2 pipe in --value: error message mentions "cannot contain '|'"	1
-test-writeback-state.sh	H2 pipe rejection: task STATE.md not modified	1
-test-writeback-state.sh	H2b newline in --value → exit 4	1
-test-writeback-state.sh	M2 missing lock dir → exit non-zero	1
+test-writeback-state.sh	<VER>: _none yet_ placeholder written to task STATE.yml	1
+test-writeback-state.sh	<VER>: task STATE.yml unchanged after rejection of 'DONE'	1
+test-writeback-state.sh	<VER>: task STATE.yml unchanged after rejection of 'Finished'	1
+test-writeback-state.sh	<VER>: task STATE.yml unchanged after rejection of 'InProgress'	1
+test-writeback-state.sh	<VER>: task STATE.yml unchanged after rejection of 'PENDING'	1
+test-writeback-state.sh	<VER>: task STATE.yml unchanged after rejection of 'Status'	1
+test-writeback-state.sh	<VER>: task STATE.yml unchanged after rejection of 'in progress'	1
+test-writeback-state.sh	<VER>: task STATE.yml unchanged after rejection of 'running'	1
+test-writeback-state.sh	<VER>: task STATE.yml unchanged after rejection of 'todo'	1
+test-writeback-state.sh	H2 INVERTED: pipe in --value now accepted -> exit 0	1
+test-writeback-state.sh	H2 INVERTED: the '|' round-trips intact through single-quote escaping	1
+test-writeback-state.sh	H2b INVERTED: newline in --value now accepted -> exit 0	1
+test-writeback-state.sh	H2b INVERTED: the double-quoted escaped form is on disk	1
+test-writeback-state.sh	M2 missing lock dir -> exit non-zero	1
 test-writeback-state.sh	M2 missing lock dir: error message mentions 'lock directory does not exist'	1
-test-writeback-state.sh	PASS in delivery-001 gate block	1
-test-writeback-state.sh	Source-line resolution: task-3 → delivery-001, exit 0	1
-test-writeback-state.sh	Source-line resolution: task-6 → delivery-002, exit 0	1
-test-writeback-state.sh	append-issue: idempotent — duplicate row not added	1
+test-writeback-state.sh	Source-line resolution: task-3 -> delivery-001, exit 0	1
+test-writeback-state.sh	Source-line resolution: task-6 -> delivery-002, exit 0	1
+test-writeback-state.sh	append-issue: idempotent -- duplicate row not added	1
+test-writeback-state.sh	clean gate (no issues) round-trips to an empty sequence	1
 test-writeback-state.sh	concurrent P1 write landed in task-001<PATH> (Done)	1
 test-writeback-state.sh	concurrent P2 write landed in task-002<PATH> (In Progress)	1
 test-writeback-state.sh	concurrent P3 write landed in task-003<PATH> (Failed)	1
 test-writeback-state.sh	concurrent P4 write landed in task-004<PATH> (Blocked)	1
 test-writeback-state.sh	concurrent P5 write landed in task-005<PATH> (In Review)	1
-test-writeback-state.sh	critical finding in task-002 STATE.md	1
-test-writeback-state.sh	cycle count updated in delivery-001	1
+test-writeback-state.sh	critical finding in task-002 STATE.yml	1
 test-writeback-state.sh	deferred status in task-001 findings	1
-test-writeback-state.sh	delivery STATE.md missing → exit 1 (--block mode)	1
-test-writeback-state.sh	delivery STATE.md missing → exit 1 (--lifecycle mode)	1
-test-writeback-state.sh	delivery-001 frontmatter delivery_state set to Gated	1
+test-writeback-state.sh	delivery STATE.yml missing -> exit 1 (--block mode)	1
+test-writeback-state.sh	delivery STATE.yml missing -> exit 1 (--lifecycle mode)	1
+test-writeback-state.sh	delivery-001 delivery_state set to Gated	1
 test-writeback-state.sh	delivery-001 gate block unaffected after delivery-002 write	1
 test-writeback-state.sh	delivery-001-issues.md created with row1	1
-test-writeback-state.sh	delivery-001<PATH> has ## Delivery Gate	1
-test-writeback-state.sh	delivery-001<PATH> has ## Delivery Lifecycle	1
-test-writeback-state.sh	delivery-002 frontmatter delivery_state advanced to Blocked	1
-test-writeback-state.sh	delivery-002<PATH> has ## Delivery Gate	1
-test-writeback-state.sh	delivery-block mode: idempotent — same block, delivery STATE.md size unchanged	1
-test-writeback-state.sh	field mode: idempotent — same value, no size change	1
-test-writeback-state.sh	findings block written to task-001 STATE.md	1
-test-writeback-state.sh	findings mode: idempotent — same block, no task STATE.md size change	1
-test-writeback-state.sh	fixed-on-spot in task-002 STATE.md	1
-test-writeback-state.sh	gate block replaced — grade A in delivery-001	1
-test-writeback-state.sh	grade A+ in delivery-001 gate block	1
-test-writeback-state.sh	grade B in delivery-002 gate block	1
+test-writeback-state.sh	delivery-001<PATH> has a delivery_gate mapping	1
+test-writeback-state.sh	delivery-002 delivery_state advanced to Blocked	1
+test-writeback-state.sh	delivery-002<PATH> gets its own gate block	1
+test-writeback-state.sh	delivery-block mode: idempotent -- same block, delivery STATE.yml size unchanged	1
+test-writeback-state.sh	field mode: idempotent -- same value, no size change	1
+test-writeback-state.sh	findings item written to task-001 STATE.yml	1
+test-writeback-state.sh	findings mode: idempotent -- same block, no task STATE.yml size change	1
+test-writeback-state.sh	fixed-on-spot in task-002 STATE.yml	1
+test-writeback-state.sh	gate block replaced -- new issue present in delivery-001	1
 test-writeback-state.sh	header present	1
-test-writeback-state.sh	invalid issue row format → exit 4	1
-test-writeback-state.sh	lock timeout → exit 2	1
-test-writeback-state.sh	missing --value → exit 5	1
-test-writeback-state.sh	no --delivery-id + no DETAIL.md → exit 5 (cannot resolve delivery)	1
-test-writeback-state.sh	no args → non-zero exit	1
-test-writeback-state.sh	non-numeric delivery-id → exit 4	1
-test-writeback-state.sh	non-numeric task-id → exit 4	1
-test-writeback-state.sh	old grade A+ removed from delivery-001	1
+test-writeback-state.sh	invalid issue row format -> exit 4	1
+test-writeback-state.sh	issue item written to delivery-001 gate block	1
+test-writeback-state.sh	lock timeout -> exit 2	1
+test-writeback-state.sh	malformed flat-layout STATE.yml (a sequence, not a mapping) -> exit 6	1
+test-writeback-state.sh	malformed task STATE.yml (not a mapping) -> exit 6	1
+test-writeback-state.sh	missing --value -> exit 5	1
+test-writeback-state.sh	multi-item findings: item 1 written	1
+test-writeback-state.sh	multi-item findings: item 2 written	1
+test-writeback-state.sh	multi-item findings: item 3 written	1
+test-writeback-state.sh	no --delivery-id + no DETAIL.md -> exit 5 (cannot resolve delivery)	1
+test-writeback-state.sh	no args -> non-zero exit	1
+test-writeback-state.sh	non-numeric delivery-id -> exit 4	1
+test-writeback-state.sh	non-numeric task-id -> exit 4	1
+test-writeback-state.sh	old issue removed from delivery-001 (replace, not append)	1
+test-writeback-state.sh	reviewer_tier written to task-001 STATE.yml	1
 test-writeback-state.sh	row1	1
 test-writeback-state.sh	row2	1
 test-writeback-state.sh	second row appended	1
+test-writeback-state.sh	shrink-on-overwrite: stale item 1 fully swallowed	1
+test-writeback-state.sh	shrink-on-overwrite: stale item 3 fully swallowed	1
+test-writeback-state.sh	shrink-on-overwrite: the new single item is present	1
+test-writeback-state.sh	single-line-diff: overwriting an existing scalar changes exactly one line (1 removed + 1 added)	1
 test-writeback-state.sh	table header present	1
-test-writeback-state.sh	task STATE.md missing → exit 1	1
-test-writeback-state.sh	task-001 STATE.md ## Dispatch Log survives the --findings rewrite	1
-test-writeback-state.sh	task-001 STATE.md has ## Quick Check Findings	1
-test-writeback-state.sh	task-001 State updated in task STATE.md	1
+test-writeback-state.sh	task STATE.yml missing -> exit 1	1
+test-writeback-state.sh	task-001 STATE.yml dispatch_log key survives the --findings rewrite	1
+test-writeback-state.sh	task-001 STATE.yml has a quick_check mapping	1
+test-writeback-state.sh	task-001 STATE.yml unrelated sibling key (notes) survives the --findings rewrite	1
+test-writeback-state.sh	task-001 State updated in task STATE.yml	1
 test-writeback-state.sh	task-001 findings still present after task-002 write	1
 test-writeback-state.sh	task-001: no stale lock file after concurrent write	1
-test-writeback-state.sh	task-002 STATE.md has ## Quick Check Findings	1
+test-writeback-state.sh	task-002 STATE.yml has a quick_check mapping	1
 test-writeback-state.sh	task-002 State updated to Done	1
 test-writeback-state.sh	task-002 still Pending (not disturbed)	1
 test-writeback-state.sh	task-002: no stale lock file after concurrent write	1
@@ -8854,14 +8986,14 @@ test-writeback-state.sh	task-003: no stale lock file after concurrent write	1
 test-writeback-state.sh	task-004 Notes updated	1
 test-writeback-state.sh	task-004: no stale lock file after concurrent write	1
 test-writeback-state.sh	task-005 Elapsed updated	1
-test-writeback-state.sh	task-005 STATE.md NOT modified by --block	1
+test-writeback-state.sh	task-005 STATE.yml NOT modified by --block	1
 test-writeback-state.sh	task-005: no stale lock file after concurrent write	1
 test-writeback-state.sh	task-006 Notes written via source-line resolution	1
-test-writeback-state.sh	unknown field name → exit 4	1
-test-writeback-state.sh	work STATE.md NOT modified by --block (isolation)	1
-test-writeback-state.sh	work STATE.md NOT modified by --findings (isolation)	1
-test-writeback-state.sh	work STATE.md NOT modified by --lifecycle (isolation)	1
-test-writeback-state.sh	work STATE.md NOT modified by Notes write (isolation)	1
-test-writeback-state.sh	work STATE.md NOT modified by task field write (isolation)	1
-test-writeback-state.sh	work STATE.md NOT touched by concurrent task writes	1
-test-writeback-state.sh	work STATE.md missing → exit 1 (--pipeline mode)	1
+test-writeback-state.sh	unknown field name -> exit 4	1
+test-writeback-state.sh	work STATE.yml NOT modified by --block (isolation)	1
+test-writeback-state.sh	work STATE.yml NOT modified by --findings (isolation)	1
+test-writeback-state.sh	work STATE.yml NOT modified by --lifecycle (isolation)	1
+test-writeback-state.sh	work STATE.yml NOT modified by Notes write (isolation)	1
+test-writeback-state.sh	work STATE.yml NOT modified by task field write (isolation)	1
+test-writeback-state.sh	work STATE.yml NOT touched by concurrent task writes	1
+test-writeback-state.sh	work STATE.yml missing -> exit 1 (--pipeline mode)	1
