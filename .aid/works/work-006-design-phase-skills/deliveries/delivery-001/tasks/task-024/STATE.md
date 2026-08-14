@@ -1,5 +1,5 @@
 ---
-state: 'In Progress'
+state: Done
 review: "--"
 elapsed: "--"
 notes: 'Throwaway dogfood render live and UNCOMMITTED; pre-render state recorded as content in this file section Pre-Render State Record (restoration target = tracked content equal to CURRENT HEAD with render-generated untracked files removed, never the manifest bytes; do-not-revert path .claude/skills/release-aid/SKILL.md is tracked in HEAD since commit 95db5981 work-021, task-009 still Pending).'
@@ -64,15 +64,8 @@ in-flight `work-003-state-schema` frontmatter conventions.
 
 ## Quick Check Findings
 
-<!-- AUTHORED -- written by `writeback-state.sh --task-id NNN --findings ...` during the
-     per-task quick-check step of aid-execute. Records the reviewer tier used and all [HIGH]
-     and [CRITICAL] findings for this task. [CRITICAL] findings trigger an immediate fix-on-spot;
-     [HIGH] findings are deferred to the delivery gate via delivery-NNN-issues.md.
-     No grade is recorded here -- grading is per-delivery, not per-task. -->
-
-- **Reviewer Tier:** --
-- **Findings:** --
-
+- **Reviewer Tier:** Small
+- **Findings:** none
 ---
 
 ## Dispatch Log
