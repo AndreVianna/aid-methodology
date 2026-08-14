@@ -398,8 +398,17 @@ def scan_work(work: Path) -> None:
 # Dispatch floors are derived from the tree rather than hardcoded, so a change
 # that shrinks an AGENT.md or a template shows up here automatically.
 
-# Default artifact sizes. Overridden by --from-work, which is strongly preferred:
-# these were measured once and will drift.
+# Default artifact sizes, used only when --from-work is absent or the work lacks
+# an artifact. Prefer --from-work; a fallback is always marked `*` in the output
+# so a default is never passed off as a measurement.
+#
+# Provenance, stated because it is NOT re-derivable: these were measured from a
+# real work folder that has since been pruned. Work folders are transient by
+# design, so any constant taken from one becomes unverifiable the moment it ships
+# -- which is the same reason nothing durable in this repo may cite a work folder.
+# They are kept because they are representative ORDERS OF MAGNITUDE for a
+# full-path work, and because the model's value is the ratio between shapes over
+# identical inputs rather than any absolute figure. Do not treat them as current.
 DEFAULT_ARTIFACTS = {"REQ": 88276, "SPEC": 21191, "PLAN": 5075, "BP": 3359, "DET": 2075}
 
 # Bytes of code/context a task's execution review reads beyond its DETAIL.
