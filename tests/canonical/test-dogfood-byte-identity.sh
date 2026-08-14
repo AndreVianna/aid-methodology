@@ -175,6 +175,10 @@ dbi_cursor_allowlisted() {
     local rel="$1"
     case "$rel" in
         worktrees/*) return 0 ;;
+        # rules/* : Cursor output-style / maintainer-local host-tool config, the
+        # cursor analog of .claude/output-styles/** above -- never emitted to
+        # profiles (0 manifest entries under .cursor/rules/), never shipped.
+        rules/*)     return 0 ;;
         *) return 1 ;;
     esac
 }
