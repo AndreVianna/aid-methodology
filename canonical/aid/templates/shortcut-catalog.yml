@@ -253,6 +253,22 @@ shortcuts:
     group: G4
     intent: "Realize an MVP seed into roadmap.md's MVP section only; the roadmap document itself is /aid-create-roadmap's to create."
     repurpose: true
+  - name: aid-create-architecture
+    verb: create
+    artifact: architecture
+    alias_of: null
+    default_type: DOCUMENT
+    group: G4
+    intent: "Realize an architecture seed into the project's build-and-shape (C1) Knowledge Base document; rejected alternatives go to the decisions document."
+    repurpose: true
+  - name: aid-create-stack
+    verb: create
+    artifact: stack
+    alias_of: null
+    default_type: DOCUMENT
+    group: G4
+    intent: "Realize a stack seed into the project's technology (C0) Knowledge Base document, versions included; rejected alternatives go to the decisions document."
+    repurpose: true
 
   # --- G5: Change + Refactor family (feature-007, task-017) --
   # -- 15 canonical aid-update* rows (12 in this section; aid-update-test in G7,
