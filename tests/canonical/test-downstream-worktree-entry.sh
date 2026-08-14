@@ -179,7 +179,7 @@ assert_pointer_before "$DEFINE_MD"  "## State Detection" \
 # would stay vacuously green even if the real section were moved after
 # Check 2.
 assert_pointer_before "$SPECIFY_MD" "### Check 2: Feature Exists" \
-    "G2 aid-specify -- pointer precedes '### Check 2: Feature Exists' (SPEC.md glob)" \
+    "G2 aid-specify -- pointer precedes '### Check 2: Feature Exists' (section resolution)" \
     "any" "### Locate + Enter the Work's Worktree" "heading"
 assert_pointer_before "$PLAN_MD"    "### Check 2: Verify Feature SPECs" \
     "G2 aid-plan -- pointer precedes '### Check 2: Verify Feature SPECs'"

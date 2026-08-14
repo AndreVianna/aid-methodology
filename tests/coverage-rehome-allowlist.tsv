@@ -12,3 +12,5 @@
 # relative to the pre-work-024 merge-base and is already absorbed into master, so it is
 # NOT seeded here. Append one reviewed row per future re-home, then re-run the gate to
 # confirm the target landed in the after-inventory.
+
+test-downstream-worktree-entry.sh	G2 aid-specify -- pointer precedes '### Check 2: Feature Exists' (SPEC.md glob) (pointer line 100 < anchor line 110)	test-downstream-worktree-entry.sh	G2 aid-specify -- pointer precedes '### Check 2: Feature Exists' (section resolution) (pointer line 101 < anchor line 111)	Same assertion, same suite, same invariant (the worktree-entry pointer precedes Check 2). Key changed for two reasons, both consequences of folding feature SPECs into REQUIREMENTS S11: the label's parenthetical said '(SPEC.md glob)', which Check 2 no longer does -- it now resolves a REQUIREMENTS.md section -- and assert_pointer_before appends the matched LINE NUMBERS to its pass message, which shifted with the edit. No coverage was removed.
