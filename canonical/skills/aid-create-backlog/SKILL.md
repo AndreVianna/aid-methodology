@@ -115,7 +115,8 @@ any of the seven columns.**
 | -- | `Title` | One noun phrase; the key the release drain matches on |
 
 **Arm 2 — release-note bullet.** Applies when the source is an already-built item from
-`release-tracking.md`'s `## Unreleased` section (the one-off migration task-018 runs):
+`release-tracking.md`'s `## Unreleased` section (a one-off migration of a pre-existing
+`## Unreleased` section into the backlog):
 
 | Source | `backlog.md` column | Rule |
 |---|---|---|
