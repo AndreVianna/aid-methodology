@@ -105,8 +105,8 @@ because it must validate Bash, PowerShell, Python, and Node code paths.
 
 | Framework / harness | Type | Location | Notes |
 |---|---|---|---|
-| Bespoke Bash test harness | Unit + integration | `tests/canonical/test-*.sh` (144 suites) | The dominant suite; run via `tests/run-all.sh`. CONFIRMED 2026-08-05 via `ls tests/canonical/test-*.sh \| wc -l` = 144. Re-run that command rather than trusting this number: it has been stale in this document twice. |
-| Bespoke PowerShell test (`T<NN>` IDs) | Installer integration | `tests/windows/Test-AidInstaller.ps1` (~2406 lines) | Windows-only; not in `run-all.sh`. |
+| Bespoke Bash test harness | Unit + integration | `tests/canonical/test-*.sh` | The dominant suite; run via `tests/run-all.sh`. **The count is deliberately not stated** -- `ls tests/canonical/test-*.sh \| wc -l` is the only reliable answer, and a figure here went stale three times before it was removed. |
+| Bespoke PowerShell test (`T<NN>` IDs) | Installer integration | `tests/windows/Test-AidInstaller.ps1` | Windows-only; not in `run-all.sh`. |
 | `pytest` | Unit | `dashboard/reader/tests/`, `dashboard/server/tests/` | Python reader/server parsers + fixtures. |
 | Node built-in test | Unit | `dashboard/server/tests/test_server_node.mjs` | Node `.mjs` server tests. |
 | Playwright (Chromium, headless) | Visual fidelity (E2E render) | `.claude/aid/scripts/summarize/validate-visuals.mjs` | Validates `kb.html` authored visuals; gated in CI. |
@@ -149,7 +149,7 @@ Key behaviors (CONFIRMED in `tests/run-all.sh`):
 - **Exit contract.** Exit 0 only if every suite passes; exit 1 if any suite fails (or if no
   suites are found). Under CI it emits `::group::` / `::error::` annotations.
 
-Representative suite families (the 144 cover far more than these):
+Representative suite families (the full set covers far more than these):
 
 | Family | Example suites | What they protect |
 |---|---|---|
