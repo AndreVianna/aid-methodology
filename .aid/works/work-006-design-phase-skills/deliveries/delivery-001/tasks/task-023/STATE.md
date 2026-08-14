@@ -66,8 +66,9 @@ in-flight `work-003-state-schema` frontmatter conventions.
 
 - **Reviewer Tier:** Small
 - **Findings:**
-  - [HIGH] V23 nine-skill coverage is 8/9 -- `aid-create-backlog` has no work-folder + no-`phase:` run record in any task STATE.md, and none in git history. Deferred to the delivery gate; neither route to closing it inside this task is open (a seventh authored run is the count criterion's own falsifier; the live state no longer exists). See EVIDENCE.md section 8.2
-  - [MEDIUM] This task's DETAIL asserts `release-aid`'s Step 9 close-out check was rewritten in task-009 as V19's scheduled evaluator; task-009 is `Pending` and `grep -c 'backlog.md' .claude/skills/release-aid/SKILL.md` returns 0, so that evaluator is not on disk. Deferred to the delivery gate. See EVIDENCE.md section 13.2
+  - [HIGH] `EVIDENCE.md:664` inflates the V23 corroboration count -- claims 23 records, its own table enumerates 19 -- Deferred-to-gate
+  - [HIGH] V23 coverage is 8 of 9: `aid-create-backlog` has no run record in any task STATE.md or in git history. Root cause is task-015 and task-021 closing Done with `notes: "--"`; confirmed pre-existing rather than an artifact of the reconstruction -- Deferred-to-gate (fix belongs to task-021, not here)
+  - [HIGH] The DETAIL's V19 premise is false on disk -- `release-aid` Step 9 carries no drain close-out check and `grep -c backlog.md` returns 0, task-009 being still Pending -- Deferred-to-gate
 ---
 
 ## Dispatch Log
