@@ -18,7 +18,7 @@ see_also: [coding-standards.md, artifact-schemas.md]
 owner: architect
 audience: [developer, architect, tech-writer, reviewer]
 contracts:
-  - "Every KB doc layout: frontmatter -> title -> index -> content -> Change Log last"
+  - "Every KB doc layout: frontmatter -> title -> index -> content; no Change Log section"
   - "Reviewer ledger is a 7-column table; Severity + Status are closed enums"
   - "Required frontmatter fields: objective, summary, sources (lint-graded)"
 ---
@@ -58,7 +58,6 @@ load-bearing core.
 - [Generated and Temporary Files](#generated-and-temporary-files)
 - [Conventions](#conventions)
 - [Enforcement](#enforcement)
-- [Change Log](#change-log)
 
 ---
 
@@ -71,11 +70,12 @@ Every KB document MUST follow this top-to-bottom order (kb-authoring P10):
 | 1 | Frontmatter | YAML block between `---` markers; first content in the file (no BOM, no blank line before). |
 | 2 | Title | a single `# Doc Title`. |
 | 3 | Index / contents | required when the doc has more than 3 sections. |
-| 4 | Content sections | the concern's substance. |
-| 5 | `## Change Log` | **always the last section.** |
+| 4 | Content sections | the concern's substance; the last one ends the document. |
 
-Example: every doc in this KB (including this one) opens with frontmatter and ends
-with `## Change Log`.
+A KB doc carries **no** `## Change Log` / `## Revision History` section and no
+`changelog:` frontmatter field. Git records per-doc history with author, date and
+full diff, at higher fidelity and without drift -- use `git log --follow -p <doc>`.
+Enforced as a `[HIGH]` `[AUTHORING-LAYOUT]` finding during review.
 
 ---
 
@@ -292,7 +292,7 @@ content.**
 
 - **Authoring a new KB doc:** start from the seed template or a custom layout;
   fill `objective:`/`summary:`/`sources:` + a concern id in `tags:`; one concern
-  only; tables over prose; no diagrams; durable citations; `## Change Log` last;
+  only; tables over prose; no diagrams; durable citations; no Change Log section;
   run `lint-frontmatter.sh` + `kb-citation-lint.sh` before done.
 - **Writing a review:** emit the 7-column ledger as the whole file at
   `.aid/.temp/review-pending/<scope>.md`; closed Severity/Status enums; no narrative.
@@ -324,6 +324,4 @@ content.**
 **Read alongside:** the `minimum_grade` floor (`.aid/settings.yml`, default `A`)
 is the bar a review must clear before a phase advances; the reviewer applies the
 rubric in `kb-authoring/review-rubric.md`.
-
----
 
