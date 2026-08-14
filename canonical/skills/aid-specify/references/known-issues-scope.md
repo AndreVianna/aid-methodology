@@ -43,7 +43,7 @@ edge cases, or critical paths, explicitly discuss:
   lint rules for input validation apply (e.g., no raw string concatenation
   in SQL queries)."
 
-Write these in the relevant SPEC.md section (e.g., within Security Specs, Feature Flow,
+Write these in the relevant technical section of the feature (e.g., within Security Specs, Feature Flow,
 or a dedicated "Quality Requirements" subsection if multiple apply).
 
 These flow down to `/aid-detail` where they become concrete acceptance criteria on tasks.

@@ -4,7 +4,7 @@
 
 Technical specification through conversational refinement, one feature at a time.
 
-The agent acts as a tech lead — reads KB, Requirements, codebase, and proposes concrete solutions. The user validates, redirects, or deepens the discussion. Writes to SPEC.md in the feature folder.
+The agent acts as a tech lead — reads KB, Requirements, codebase, and proposes concrete solutions. The user validates, redirects, or deepens the discussion. Writes the Technical Specification into that feature's section of REQUIREMENTS.md §11.
 
 ## The Universal Loop
 
@@ -13,7 +13,7 @@ Each technical section follows the same cycle:
 ```
 1. PROPOSE  → agent proposes (grounded in KB, codebase, SPEC)
 2. DISCUSS  → user and agent refine together
-3. WRITE    → save what was agreed to SPEC.md
+3. WRITE    → save what was agreed into REQUIREMENTS.md §11 / Feature NNN
 4. REVIEW   → grade against KB/codebase reality — pass? next section. fail? back to 1.
 ```
 
@@ -34,24 +34,22 @@ Each technical section follows the same cycle:
   knowledge/               ← shared KB
   works/
     work-NNN-{name}/
-      REQUIREMENTS.md
-      features/
-        feature-NNN-{name}/
-          SPEC.md            ← product (requirements + technical specification)
-          STATE.md           ← process state (section status, Q&A, loopbacks)
+      REQUIREMENTS.md        ← product: §11 Features holds one section per
+                                feature (decomposition + technical spec)
+      STATE.md               ← process state (§ Features State, § Cross-phase Q&A)
 ```
 
 ## How It Works
 
 ### First Run
 
-1. **Load context** — SPEC.md (requirements), REQUIREMENTS.md, KB docs, codebase
+1. **Load context** — the feature's section of REQUIREMENTS.md §11, the rest of REQUIREMENTS.md, KB docs, codebase
 2. **Determine sections** — 3 core (Data Model, Feature Flow, Layers & Components) + up to 20 conditional sections auto-activated or asked via default questions
 3. **Create STATE.md** — tracks section progress
 4. **Run the loop** for each section:
    - **Propose:** concrete solution referencing specific files, classes, patterns
    - **Discuss:** free-form conversation until the user is satisfied
-   - **Write:** save to SPEC.md, seed empty KB docs (greenfield)
+   - **Write:** save into the feature's `#### Technical Specification`, seed empty KB docs (greenfield)
    - **Review:** verify against KB reality and other sections — grade A/B/C
 
 ### Re-run (Review)

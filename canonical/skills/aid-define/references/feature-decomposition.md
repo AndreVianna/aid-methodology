@@ -1,7 +1,21 @@
 # Feature Decomposition Process
 
-Full process for State 5: decomposing approved Functional Requirements into discrete
-feature folders with SPEC.md files.
+Full process for State 5: decomposing approved Functional Requirements into
+feature sections of `REQUIREMENTS.md § 11 Features`.
+
+Features are **sections, not folders**. A feature is a decomposition of §5 into an
+independently implementable unit — it is not a second place to state requirements.
+Everything it needs already exists upstream in the same document: §5 states the
+requirement, §9 states the criteria, §3 states the user types. The feature section
+cites those and adds only what decomposition itself decides — the boundary, the
+priority, and (later, from `/aid-specify`) the technical approach.
+
+That is why there is one document. When each feature had its own `SPEC.md`, the
+same criterion was written twice — once in §9 and again in every SPEC that claimed
+it — and the two could disagree without anything noticing. Both CRITICAL findings
+in this project's largest work to date were exactly that: sibling specs asserting
+different values for one shared fact. Sections of a single document cannot diverge
+that way, because there is only one statement to read.
 
 ---
 
@@ -10,7 +24,7 @@ feature folders with SPEC.md files.
 Read REQUIREMENTS.md (in the work folder), focusing on:
 - §5 Functional Requirements — primary source for features
 - §4 Scope — boundaries (in scope / out of scope)
-- §9 Acceptance Criteria — distribute to features
+- §9 Acceptance Criteria — assign to features by `AC-N` id
 - §10 Priority — feature priority
 
 If KB exists, also read `.aid/knowledge/INDEX.md` and relevant KB documents
@@ -21,12 +35,11 @@ to understand existing features/modules that may influence decomposition.
 ```
 Based on the functional requirements, I've identified {N} features:
 
-| # | Folder Name | Description | Source | Priority |
-|---|-------------|-------------|--------|----------|
-| 1 | feature-001-{name} | {one-line description} | §5.x, §7.x | Must |
-| 2 | feature-002-{name} | {one-line description} | §5.x | Must |
-| 3 | feature-003-{name} | {one-line description} | §5.x | Should |
-| ... | ... | ... | ... | ... |
+| # | Feature | Description | Requirements | Criteria | Priority |
+|---|---------|-------------|--------------|----------|----------|
+| 001 | {Title} | {one-line description} | §5 FR-1, FR-2 | AC-1, AC-4 | Must |
+| 002 | {Title} | {one-line description} | §5 FR-3 | AC-2 | Must |
+| 003 | {Title} | {one-line description} | §5 FR-4 | AC-3, AC-5 | Should |
 
 Does this decomposition look right?
 
@@ -36,49 +49,65 @@ Does this decomposition look right?
 
 **Feature decomposition rules:**
 - Each feature should be independently implementable
-- Feature names use kebab-case (for folder names)
-- Every functional requirement from §5 must map to at least one feature
-- Features that are too large to implement in one sprint should be split
-- Related requirements that form a single user journey should be one feature
+- **Every §5 functional requirement maps to at least one feature** — an unmapped
+  requirement is either out of scope (say so in §4) or a missing feature
+- **Every §9 criterion is owned by exactly one feature** — two features claiming
+  one criterion means the boundary is wrong; zero means the criterion is orphaned
+- Features too large to implement in one sprint should be split
+- Related requirements forming a single user journey should be one feature
 - Priority comes from §10 or context in REQUIREMENTS.md
+
+Both coverage rules are stated as rules because they are decidable from the
+document alone: the requirement ids and criterion ids either all appear in the
+table or they do not. State the gap rather than papering over it.
 
 ## Step 3: Process Response
 
-- **[1] Approve:** Create feature folders (Step 4)
+- **[1] Approve:** Write the feature sections (Step 4)
 - **[2] Adjust:** Modify the list per user feedback. Present again. Repeat until approved.
 
-## Step 4: Create Feature Folders
+## Step 4: Write the Feature Sections
 
-Create `features/` directory inside the work folder if it doesn't exist.
+Append one `###` subsection per approved feature to `REQUIREMENTS.md § 11 Features`,
+in the shape the template defines
+(`../../../aid/templates/requirements/requirements-template.md § 11 Features`).
 
-For each approved feature, create `features/feature-{NNN}-{name}/SPEC.md` using the
-template from `../../../aid/templates/feature.md`. Fill in:
+For each feature fill:
 
-- **Title:** feature name (human-readable)
-- **Source:** relevant REQUIREMENTS.md section references
-- **Description:** synthesized from §5 in stakeholder language
-- **User Stories:** extracted or synthesized from REQUIREMENTS.md, using user types from §3
+- **Title:** human-readable feature name
 - **Priority:** from §10 or context (Must / Should / Could)
-- **Acceptance Criteria:** from §9 mapped to this feature, or synthesized from §5.
-  Each one must name an observable; a §9 criterion that does not is a defect in
-  REQUIREMENTS.md -- raise it rather than copying it forward
+- **Requirements:** the `§5 FR-N` ids this feature implements
+- **Criteria:** the `§9 AC-N` ids this feature owns — **ids only, never the
+  criterion text.** §9 is the single statement; restating it here creates two
+  copies that can disagree. If a §9 criterion does not name an observable, that is
+  a defect in §9 — raise it rather than carrying it forward
   (`../../../aid/templates/requirements/requirements-template.md § Verifiable Acceptance Criteria`)
-- **Technical Specification:** leave as template placeholder (added by /aid-specify)
+- **Description:** synthesized from §5 in stakeholder language
+- **User Stories:** extracted or synthesized, using user types from §3
+- **Technical Specification:** leave as the template placeholder — `/aid-specify`
+  fills it
+
+No `features/` directory is created, and no `SPEC.md` is written. A feature has no
+files of its own.
 
 ## Step 5: Update Meta-Documents
 
 1. Add Review History entry in STATE.md `## Interview State`:
-   `| {N} | {today} | — | Feature Decomposition | {N} features created |`
-2. Update `.aid/knowledge/INDEX.md` if it exists — add work/features reference
-3. Update `.aid/knowledge/README.md` if it exists — add work to revision history
+   `| {N} | {today} | — | Feature Decomposition | {N} features defined |`
+2. Record the features in STATE.md `## Features State` (one row per feature —
+   this is the process view; §11 is the definition)
+3. Update `.aid/knowledge/INDEX.md` if it exists — add work reference
 
 Print:
 ```
-✅ Feature decomposition complete. {N} features created in {work}/features/:
+✅ Feature decomposition complete. {N} features defined in REQUIREMENTS.md §11:
 
-{list each: feature-001-name/, feature-002-name/, ...}
+  001 — {Title}    §5 FR-1, FR-2    AC-1, AC-4    Must
+  002 — {Title}    §5 FR-3          AC-2          Must
+
+Every §5 requirement is mapped; every §9 criterion is owned exactly once.
 
 Next steps:
-- Review the feature SPEC.md files if desired
-- Run /aid-specify {work}/feature-001 to begin technical specification
+- Review §11 in REQUIREMENTS.md if desired
+- Run /aid-specify feature-001 to begin technical specification
 ```

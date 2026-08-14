@@ -19,7 +19,7 @@ agent	aid-tech-writer/README.md	3722
 always-on	context-file:AGENTS.md	5462
 always-on	context-file:CLAUDE.md	5252
 always-on	skill-count	76
-always-on	skill-descriptions	40095
+always-on	skill-descriptions	40137
 skill-closure-files	aid-ask	105
 skill-closure-files	aid-config	0
 skill-closure-files	aid-create	96
@@ -118,7 +118,7 @@ skill-names-instr	aid-create-ui	52063
 skill-names-instr	aid-define	45671
 skill-names-instr	aid-deploy	78211
 skill-names-instr	aid-deprecate	52063
-skill-names-instr	aid-describe	120327
+skill-names-instr	aid-describe	121179
 skill-names-instr	aid-design	12795
 skill-names-instr	aid-detail	52668
 skill-names-instr	aid-discover	143168
@@ -191,7 +191,7 @@ skill-names-kb	aid-create-test	0
 skill-names-kb	aid-create-theme	0
 skill-names-kb	aid-create-ticket	0
 skill-names-kb	aid-create-ui	0
-skill-names-kb	aid-define	20939
+skill-names-kb	aid-define	18339
 skill-names-kb	aid-deploy	48447
 skill-names-kb	aid-deprecate	0
 skill-names-kb	aid-describe	205525
@@ -267,7 +267,7 @@ skill-refs	aid-create-test	0
 skill-refs	aid-create-theme	0
 skill-refs	aid-create-ticket	0
 skill-refs	aid-create-ui	0
-skill-refs	aid-define	15475
+skill-refs	aid-define	17328
 skill-refs	aid-deploy	10605
 skill-refs	aid-deprecate	0
 skill-refs	aid-describe	125343
@@ -299,7 +299,7 @@ skill-refs	aid-report	0
 skill-refs	aid-research	0
 skill-refs	aid-review	0
 skill-refs	aid-set-connector	12260
-skill-refs	aid-specify	24891
+skill-refs	aid-specify	25446
 skill-refs	aid-summarize	48799
 skill-refs	aid-test	0
 skill-refs	aid-test-data-quality	0
@@ -343,7 +343,7 @@ skill-self	aid-create-test	1446
 skill-self	aid-create-theme	1374
 skill-self	aid-create-ticket	15356
 skill-self	aid-create-ui	1351
-skill-self	aid-define	10293
+skill-self	aid-define	10362
 skill-self	aid-deploy	9200
 skill-self	aid-deprecate	1459
 skill-self	aid-describe	15318
@@ -375,7 +375,7 @@ skill-self	aid-report	7078
 skill-self	aid-research	9169
 skill-self	aid-review	11393
 skill-self	aid-set-connector	14493
-skill-self	aid-specify	9079
+skill-self	aid-specify	9670
 skill-self	aid-summarize	14723
 skill-self	aid-test	6486
 skill-self	aid-test-data-quality	1390
@@ -457,7 +457,7 @@ template	known-issues.md	638
 template	long-wait-protocol.md	5620
 template	package.md	635
 template	requirements.md	349
-template	requirements/requirements-template.md	4956
+template	requirements/requirements-template.md	5808
 template	reviewer-dispatch.md	14438
 template	reviewer-ledger-schema.md	13595
 template	rough-time-hints.md	5313

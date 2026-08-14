@@ -103,7 +103,8 @@ a judgment, not when stating the observable is merely more work.
 {How do we know it's done? One criterion per line, each carrying a stable `AC-N`
 id and naming an observable -- see Verifiable Acceptance Criteria above. A
 criterion nothing could falsify is not one. Ids are never reused or renumbered:
-feature SPECs and task DETAILs cite them.}
+§11 feature sections and task DETAILs cite them. This is the ONLY place a
+criterion is stated -- features cite ids, they do not restate the text.}
 
 - **AC-1** — {criterion}
 - **AC-2** — {criterion}
@@ -111,6 +112,31 @@ feature SPECs and task DETAILs cite them.}
 ## 10. Priority
 
 {Feature/requirement priority ordering. Must/Should/Could or numbered.}
+
+## 11. Features
+
+{Added by `/aid-define`, one `###` subsection per feature. A feature is a
+decomposition of §5 into an independently implementable unit -- not a new place to
+state requirements. Every §5 functional requirement maps to at least one feature,
+and every §9 criterion is owned by exactly one feature, so both are checkable.}
+
+### Feature 001 — {Title}
+
+- **Priority:** Must | Should | Could
+- **Requirements:** §5 FR-{n}[, FR-{n}]
+- **Criteria:** AC-{n}[, AC-{n}]  ← ids from §9; never restated here
+
+#### Description
+
+{What this feature delivers, in stakeholder language.}
+
+#### User Stories
+
+{As a {§3 user type}, I want {capability}, so that {benefit}.}
+
+#### Technical Specification
+
+{Added by `/aid-specify`. Leave as this placeholder during /aid-define.}
 ```
 
 ---
@@ -122,4 +148,4 @@ feature SPECs and task DETAILs cite them.}
   change with author, date, and diff.
 
 - The stakeholder's own language is preferred in Objective and Problem Statement. Don't rewrite their words into technical jargon.
-- Acceptance Criteria should be testable — "the system is fast" is not a criterion; "API response < 200ms p95" is.
+- Acceptance Criteria must name an observable — see Verifiable Acceptance Criteria above.

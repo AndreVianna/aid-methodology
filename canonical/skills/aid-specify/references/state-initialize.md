@@ -6,7 +6,7 @@ First run for this feature; load context, determine sections, and begin The Loop
 
 Read ALL before making any proposal:
 
-1. **SPEC.md** — the feature's requirements (description, user stories, acceptance criteria)
+1. **The feature's section** — `REQUIREMENTS.md § 11 / Feature NNN`: its Description, User Stories, the `§5 FR-N` ids it implements and the `§9 AC-N` ids it owns. The criteria themselves are in §9; read them there rather than expecting a copy in the section
 2. **REQUIREMENTS.md** — full requirements for cross-reference
 3. **KB via INDEX.md** — Read `.aid/knowledge/INDEX.md` first. Use the summaries
    to decide which KB docs are relevant to this feature, then load them.
@@ -97,7 +97,7 @@ If this feature's requirements trace to, or the user names, an already-filed tic
 catalogued issue-tracker connector, fetch it by invoking `/aid-read-ticket
 [<connector>:]<ticket-id>` — the connector resolution and host-MCP fetch live there (feature-001);
 no direct-fetch recipe is re-implemented here — and record a `**Ticket:** <stem>:<external-id>`
-line in this feature's `SPEC.md` (per `specs/spec-template.md`). Skip silently when no such ticket
+line in this feature's section of `REQUIREMENTS.md §11`. Skip silently when no such ticket
 applies or no matching connector is catalogued; the delegated read is non-destructive, so no extra
 confirm is added.
 

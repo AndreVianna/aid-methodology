@@ -2,7 +2,7 @@
 
 # Feature Definition from Approved Requirements
 
-Decompose approved requirements into discrete feature folders and cross-reference them against the Knowledge Base and codebase. Produces per-feature SPEC.md stubs ready for `/aid-specify`.
+Decompose approved requirements into feature sections of `REQUIREMENTS.md §11` and cross-reference them against the Knowledge Base and codebase. Produces sections ready for `/aid-specify`.
 
 ## Core Principle
 
@@ -19,15 +19,14 @@ Decompose approved requirements into discrete feature folders and cross-referenc
   knowledge/                    <- shared KB (from Discovery)
   works/
     work-NNN-{name}/
-      REQUIREMENTS.md             <- approved (produced by /aid-describe)
-      features/
-        feature-NNN-{name}/
-          SPEC.md                 <- requirements side (from Interview) + tech spec (from /aid-specify)
+      REQUIREMENTS.md             <- approved (/aid-describe) + §11 Features
+                                     (this skill) + each feature's Technical
+                                     Specification (/aid-specify)
 ```
 
 ## When to Use
 
-- **After approval:** REQUIREMENTS.md is approved; no feature folders exist yet. Runs FEATURE-DECOMPOSITION.
+- **After approval:** REQUIREMENTS.md is approved; §11 has no feature sections yet. Runs FEATURE-DECOMPOSITION.
 - **After decomposition:** Feature folders exist; cross-reference not done. Runs CROSS-REFERENCE.
 - **Re-run decomposition:** pass `--features {work}` to redo feature decomposition.
 - **After DONE:** Ready for `/aid-specify`.
@@ -41,7 +40,7 @@ After REQUIREMENTS.md is approved, the agent proposes a feature breakdown from �
 1. Analyze functional requirements for natural feature boundaries.
 2. Propose a feature list with names, descriptions, and priorities (Must/Should/Could).
 3. User approves, adjusts, or adds features.
-4. For each approved feature, create a folder (`feature-NNN-{name}/`) with SPEC.md containing:
+4. For each approved feature, append a `### Feature NNN` subsection to `REQUIREMENTS.md §11` containing:
    - Description (stakeholder perspective)
    - User stories
    - Priority
@@ -70,7 +69,7 @@ Cross-reference complete. The work is ready for `/aid-specify`.
 
 ## Output
 
-- `.aid/works/{work}/features/feature-NNN-{name}/SPEC.md` — per-feature requirements side (description, user stories, priority, acceptance criteria).
+- `.aid/works/{work}/REQUIREMENTS.md § 11 Features` — one `###` subsection per feature (priority, the `§5 FR-N` ids it implements, the `§9 AC-N` ids it owns, description, user stories). Criteria are stated once, in §9; sections cite ids.
 - `.aid/works/{work}/STATE.md ## Interview State` — cross-reference grade and Q&A entries.
 
 ## Feedback Loops

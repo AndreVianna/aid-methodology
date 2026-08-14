@@ -3,7 +3,7 @@ name: aid-define
 description: >
   Feature decomposition and cross-reference validation from approved requirements.
   Begins from an approved REQUIREMENTS.md (produced by /aid-describe) and decomposes
-  functional requirements into discrete feature folders with SPEC.md stubs
+  functional requirements into feature sections of REQUIREMENTS.md §11
   (FEATURE-DECOMPOSITION), then validates the requirements and feature boundaries
   against the KB and codebase (CROSS-REFERENCE), then halts at DONE ready for
   /aid-specify.
@@ -25,7 +25,7 @@ aid-define is **multi-agent** — different states use different agents.
 | 7 DONE | DONE | (no dispatch) | Terminal state, user choice prompt |
 
 Decompose approved `REQUIREMENTS.md` into feature folders, then cross-reference the
-result against the Knowledge Base and codebase. Produces per-feature `SPEC.md` stubs
+result against the Knowledge Base and codebase. Produces `REQUIREMENTS.md §11` feature sections
 ready for `/aid-specify`.
 
 **Precondition:** `## Interview State: Approved` must be present in `.aid/works/{work}/STATE.md`.
@@ -38,14 +38,14 @@ approve requirements.
   knowledge/           <- shared KB (populated by /aid-discover)
   work-001-name/
     STATE.md           <- process (Interview State: Approved, Cross-Reference, Features State)
-    REQUIREMENTS.md    <- approved requirements (produced by /aid-describe)
-    features/          <- created by FEATURE-DECOMPOSITION
-      feature-001-name/
-        SPEC.md        <- requirements side (from Interview) + tech spec (added by /aid-specify)
+    REQUIREMENTS.md    <- approved requirements (/aid-describe) + §11 Features
+                          (this skill) + each feature's Technical Specification
+                          (/aid-specify). Features are sections; they have no
+                          folders and no files of their own.
 ```
 
-**First run (after approval):** Decompose functional requirements into feature folders.
-**After features created:** Cross-reference REQUIREMENTS.md against KB, grade, ask questions.
+**First run (after approval):** Decompose functional requirements into §11 feature sections.
+**After features defined:** Cross-reference REQUIREMENTS.md against KB, grade, ask questions.
 **After cross-reference:** DONE — ready for `/aid-specify`.
 **Re-run decomposition:** pass `--features {work}` to re-run even if features exist.
 
@@ -189,9 +189,9 @@ State 7:  **Path:** full, Interview State: Approved, features +
    - HALT
 3. If State is `Approved`:
    - If `--features` flag provided → **State 5: FEATURE-DECOMPOSITION**
-   - Check if `features/` directory exists and contains `feature-*` subdirectories
-   - If no feature folders → **State 5: FEATURE-DECOMPOSITION**
-   - If feature folders exist:
+   - Check if `REQUIREMENTS.md § 11 Features` exists and contains `### Feature NNN` subsections
+   - If no feature sections → **State 5: FEATURE-DECOMPOSITION**
+   - If feature sections exist:
      - Check STATE.md `## Interview State` `## Cross-Reference` sub-section for `**State:** Complete`
        (or check if cross-reference entries exist from a prior run)
      - If cross-reference not yet done → **State 6: CROSS-REFERENCE**

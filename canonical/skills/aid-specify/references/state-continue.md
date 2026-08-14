@@ -1,6 +1,6 @@
 # State: CONTINUE
 
-Work STATE.md `## Features State` shows this feature `In Discussion`; find first `Pending` or `In Discussion` section in SPEC.md and resume **The Loop** for that section.
+Work STATE.md `## Features State` shows this feature `In Discussion`; find the first `Pending` or `In Discussion` technical section for this feature and resume **The Loop** for that section.
 
 Emit pipeline phase (silent state-write only — no output, no gate):
 ```
@@ -58,7 +58,7 @@ Continue until the user is satisfied.
 
 When agreed:
 
-1. Write section to SPEC.md under `## Technical Specification`
+1. Write the section into `REQUIREMENTS.md § 11 / Feature NNN` under `#### Technical Specification`
 2. Update work STATE.md `## Features State` section status → `Written`
 4. **KB Seeding (greenfield):** If the decision fills a gap in an empty KB doc,
    update that KB doc + INDEX.md + README.md. Log which KB docs were seeded.
