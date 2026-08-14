@@ -12,7 +12,7 @@ owner: pm
 audience: [pm, developer, architect]
 intent: |
   Canonical feature list with status (Shipped / Partial / Deferred), source, and traceability to work items. Read this to understand WHAT the project does at a feature level.
-contracts: []
+review-criteria: []
 ---
 
 # Feature Inventory

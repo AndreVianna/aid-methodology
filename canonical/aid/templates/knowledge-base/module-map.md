@@ -12,7 +12,7 @@ owner: architect
 audience: [developer, architect]
 intent: |
   Per-module metadata: purpose, dependencies, owners, and key entry points. Read this to navigate the codebase before any module-touching task.
-contracts: []
+review-criteria: []
 ---
 
 # Module Map

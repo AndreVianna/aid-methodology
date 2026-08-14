@@ -11,7 +11,7 @@ audience: [developer, product]
 intent: |
   Inventory of user-facing features (what the product does for its users). Read this to see
   the feature set. Populated during Discovery Q&A + FIX; updated by Deploy on delta.
-contracts: []
+review-criteria: []
 ---
 
 # Feature Inventory

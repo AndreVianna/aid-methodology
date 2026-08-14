@@ -33,6 +33,19 @@ RUBRIC: canonical/aid/templates/grading-rubric.md (universal severity → grade 
     - Sequence respects natural ordering (RESEARCH/DESIGN before IMPLEMENT; TEST after; etc.)
     - Quality gate cascade present (REQUIREMENTS §6 inherited; feature-specific gates added)
 
+DECLARED REVIEW CRITERIA (resolve; do not invent):
+  Each artifact declares, or inherits, the criteria it must be true against. Resolve them
+  and verify against the union -- global, then the artifact's document type, then the
+  artifact's own `review-criteria:` frontmatter; most specific wins on an id collision.
+  Resolution is defined in canonical/aid/templates/kb-authoring/review-rubric.md
+  (section: Resolving review criteria); the type registry and the criteria table live in
+  .aid/knowledge/authoring-conventions.md. This brief deliberately does NOT restate them.
+  - Cite the criterion `id` as a prefix in the ledger's Description cell (7 columns, no
+    new column). A finding citing no id, or an id resolving nowhere, is itself a defect.
+  - A `kind: exclude` criterion binds you: reporting it is a defect in the review.
+  - If the severity came from a file-level override, record the resolved severity and the
+    overriding file's `why` in the Evidence cell.
+
 OUT OF SCOPE (do NOT grade against):
   - SPEC.md content — that's /aid-specify's grade
   - PLAN.md deliverable sequencing — that's /aid-plan's grade

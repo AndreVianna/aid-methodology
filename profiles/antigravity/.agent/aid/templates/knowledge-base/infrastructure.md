@@ -12,7 +12,7 @@ owner: devops
 audience: [developer, devops, architect]
 intent: |
   Distribution model, environments, CI/CD setup, source-control conventions, and project management tooling. Read this for deploy/release context.
-contracts: []
+review-criteria: []
 ---
 
 # Infrastructure

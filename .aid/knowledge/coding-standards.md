@@ -17,10 +17,22 @@ tags: [C3, conventions, shell, powershell, python, javascript, security, exit-co
 see_also: [authoring-conventions.md, module-map.md, test-landscape.md]
 owner: architect
 audience: [developer, reviewer]
-contracts:
-  - "Shipped PowerShell is Windows-PowerShell-5.1 compatible and ASCII-only"
-  - "Install-core exit codes: 0 ok, 1 runtime, 2 usage, 3 fetch, 4 checksum, 6 uninstall-no-manifest"
-  - "Every script carries a header comment block (Purpose/Usage/Exit codes)"
+review-criteria:
+  - id: F-01
+    kind: validate
+    criterion: "Shipped PowerShell is Windows-PowerShell-5.1 compatible and ASCII-only"
+    severity: HIGH
+    why: "5.1 is the floor a Windows host provides with no install; a 7-only construct or a non-ASCII byte fails at the user's first command, not in CI"
+  - id: F-02
+    kind: validate
+    criterion: "The install-core exit codes are as documented: 0 ok, 1 runtime, 2 usage, 3 fetch, 4 checksum, 6 uninstall-no-manifest"
+    severity: HIGH
+    why: "Callers branch on these numbers, so a renumbering that is not reflected here makes every caller's error handling wrong"
+  - id: F-03
+    kind: validate
+    criterion: "Every script carries a header comment block stating Purpose, Usage and Exit codes"
+    severity: LOW
+    why: "It is the only place a reader learns a script's contract before running it"
 ---
 
 # Coding Standards
@@ -51,7 +63,6 @@ consistent and the shipped scripts portable.
 - [Security Conventions](#security-conventions)
 - [Observed Inconsistencies](#observed-inconsistencies)
 - [Conventions](#conventions)
-- [Change Log](#change-log)
 
 ---
 

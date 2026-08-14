@@ -11,7 +11,7 @@ owner: architect
 audience: [developer, architect]
 intent: |
   Repository layout, top-level directory purposes, and file-inventory shape. Read this to understand the on-disk organization of the project.
-contracts: []
+review-criteria: []
 ---
 
 # Project Structure

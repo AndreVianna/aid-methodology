@@ -125,8 +125,8 @@
 #   1. Edit this file only -- no script hardcodes any of the sets below.
 #   2. A new column moves the header and delimiter literals the emitter writes and
 #      breaks the ten-column contract. Treat it as a breaking change: update the
-#      validator tests and the emitted frontmatter's `contracts:` line in the same
-#      edit.
+#      validator tests and the emitted frontmatter's `review-criteria:` entry in the
+#      same edit.
 #   3. A new kind needs its permitted-prefix set here, a row in the artifact's
 #      coverage-notes kinds table, and a resolution protocol. The last is
 #      feature-003's contract, not this file's data.

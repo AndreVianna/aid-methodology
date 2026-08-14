@@ -1,8 +1,11 @@
 # KB Authoring — Review Rubric
 
-> Per-category review treatment for `/aid-discover` REVIEW state. The reviewer reads
-> each KB doc's frontmatter, picks the rubric below, and produces findings to the
-> temp ledger at `.aid/.temp/review-pending/discovery.md`.
+> Two things live here. **`§ Resolving review criteria` applies to every authored
+> artifact** -- a `SKILL.md`, an `AGENT.md`, a template, a KB doc -- and is what any
+> reviewer resolves before it starts. **The per-category rubrics below are KB-specific**:
+> they are the `/aid-discover` REVIEW treatment, where the reviewer reads each KB doc's
+> frontmatter, picks a rubric, and writes findings to the temp ledger at
+> `.aid/.temp/review-pending/discovery.md`.
 
 ## Routing — which rubric applies
 
@@ -20,6 +23,51 @@ The combination of `kb-category:` and `source:` determines which rubric to apply
 Files in `.aid/.temp/` and `.aid/generated/` (other than registered build outputs) are
 SKIPPED entirely — not reviewed, not graded.
 
+## Resolving review criteria
+
+**Not KB-only.** The routing table above picks a rubric for a KB doc, but the criteria
+resolution below applies to **every authored artifact a review touches** — a `SKILL.md`, an
+`AGENT.md`, a template, a KB doc. Each one declares, or inherits, the list it must be true
+against, so the reviewer checks a named list rather than improvising one.
+
+**Resolve, in this order, and validate against the union:**
+
+1. **Type** — read the file's path and frontmatter and resolve its **one** document type from
+   the type registry in the project's conventions KB doc
+   (`.aid/knowledge/authoring-conventions.md`). The registry's selectors are exhaustive, so
+   this always resolves; a file that resolves to no type, or to two, is itself a finding.
+2. **Global** — every criterion the registry's criteria table marks `Applies to: *`.
+3. **Type-level** — every criterion whose `Applies to` is the type resolved in step 1.
+4. **File-level** — the file's own `review-criteria:` frontmatter
+   ([frontmatter-schema.md](frontmatter-schema.md)).
+
+**On an `id` collision the most specific wins** — file over type over global. That is how an
+override applies, and how a `kind: exclude` entry cancels a `validate` criterion inherited
+from above.
+
+**A `kind: exclude` criterion is binding.** It names something a reviewer would reasonably
+check and must not, here. Reporting it anyway is a finding against the reviewer, not the file.
+
+### Citing the criterion
+
+**A finding names the criterion `id` as a prefix inside the ledger's existing `Description`
+cell.** No column is added: the ledger keeps its 7-column shape
+([reviewer-ledger-schema.md](../reviewer-ledger-schema.md)) and `grade.sh` its positional
+parse.
+
+```
+| 3 | [HIGH] | Pending | .codex/skills/aid-plan/SKILL.md | 42 | SK-01 — dispatch table names a non-existent agent | ls .codex/agents/ |
+```
+
+- A **scope-prefixed** id (`G-`, `KB-`, `SK-`, …) resolves in the criteria table.
+- An **`F-`** id resolves in the `review-criteria:` block of the file named in the `Doc` column.
+- **A finding citing no id, or an id that resolves nowhere, is itself a defect** — it means the
+  reviewer invented a criterion. Report the finding against the criterion, or do not report it.
+
+**When the criterion was overridden**, record the **resolved severity and the overriding file's
+`why`** in the finding's `Evidence` cell, so the reader sees which level won and why. The
+`Evidence` cell is already inert to `grade.sh`, so this adds no machinery.
+
 ## Rubric: Full Primary (hand-authored)
 
 The bulk of the review effort.
@@ -31,8 +79,11 @@ The bulk of the review effort.
 2. **Intent alignment** — does the doc's actual content match its declared `intent:`?
    Scope creep (content unrelated to intent) = MEDIUM finding. Coverage gap (intent
    declares something not actually covered) = MEDIUM finding.
-3. **Contracts hold against disk** — for each entry in `contracts:`, derive the
-   asserted fact from disk and compare. Mismatch = HIGH finding.
+3. **Declared review criteria hold against disk** — resolve the file's criteria through the
+   three levels (below), then check each one against disk. A violation is a finding at **that
+   criterion's own `severity`**, not at a severity this rubric fixes. See
+   [`§ Resolving review criteria`](#resolving-review-criteria) — that section applies to **any**
+   authored artifact, not only a KB doc, and item 3 is the KB-doc entry point into it.
 4. **T1 Concept claims correct** — for each pattern, definition, or architectural
    law, validate against the canonical source. Incorrect concept = HIGH or CRITICAL.
 5. **T2 Structure claims correct** — for each cardinality / schema / fixed-list
@@ -66,17 +117,16 @@ The bulk of the review effort.
 10. **Q-ID / H-ID references resolve** — every `Q##` / `H##` mentioned must exist in
     `STATE.md` (Q-IDs) or `tech-debt.md` (H-IDs). Dangling reference = MEDIUM.
 
-**Severity scale** (matches reviewer convention):
+**Severity scale.** The five levels are defined once, in
+`.codex/aid/templates/grading-rubric.md § Issue Severities`; classify against that document
+rather than against a copy here. Worst issue dominates the grade
+(`grading-rubric.md § Grade Calculation`).
 
-| Severity | Meaning | Typical examples |
-|----------|---------|------------------|
-| CRITICAL | False claim that could cause downstream wrong decision | Wrong pattern, wrong contract, missing key doc |
-| HIGH | Significant gap or inaccuracy | Contract mismatch, broken widespread citation, cross-doc contradiction |
-| MEDIUM | Noticeable inaccuracy, but agent could work around | Dangling Q-ID, single broken citation, scope creep |
-| LOW | Minor inaccuracy, low blast radius | Awkward phrasing of an otherwise-correct claim |
-| MINOR | Style / convention issue | Single inline T3 or T4 marker; trailing whitespace |
-
-Worst-issue dominates the grade (per `.codex/aid/templates/grading-rubric.md`).
+What this rubric adds is how the levels land **on a KB doc specifically** — the per-check
+severities named in the numbered checks above (a false T1 concept claim is HIGH or CRITICAL, an
+inline T3 count is MINOR per occurrence, and so on). Those are prices against the scale, not a
+redefinition of it. Where the doc's own resolved criteria carry a `severity:`, that value wins:
+it was set for that criterion.
 
 ## Altitude checks (folded into the M2 Anatomy mandate) — Full Primary only
 
@@ -188,36 +238,28 @@ Same as Full Primary, but:
 
 - The doc is FLAGGED in the review summary as "extension" (not part of the canonical
   16 contract).
-- T2 contracts may declare project-specific cardinality (not universal).
+- A T2 `review-criteria:` entry may declare project-specific cardinality (not universal).
 - Cross-doc consistency rules apply against other extensions of the same project,
   not against the canonical 16.
 
 ## Temp ledger format
 
-`/aid-discover` REVIEW state writes findings to
-`.aid/.temp/review-pending/discovery.md`:
+`/aid-discover` REVIEW state writes findings to `.aid/.temp/review-pending/discovery.md`.
 
-```markdown
-# Review Pending — discovery cycle N
+**The ledger's shape is defined once, in
+[`reviewer-ledger-schema.md`](../reviewer-ledger-schema.md), and this document does not
+restate it.** Read it there: the 7 columns and their order, the Severity and Status enums,
+the status lifecycle across cycles, and the rule that the table is the **entire file** — no
+title, no `## Findings` heading, no `## Notes` scratch space, no narrative.
 
-> Auto-generated by /aid-discover REVIEW. Edited by FIX as items are resolved.
-> Delete this file when empty.
+That rule matters more than it looks. `grade.sh` parses each row **positionally**, reading
+`cols[3]` as Severity and `cols[4]` as Status. A ledger written to any other column order
+therefore does not fail loudly — it hands the grader a `Doc` path where a bracketed severity
+tag should be, matches nothing, counts zero findings, and reports **`A+`**. A second copy of
+the schema in this file is exactly how that happens, so there is none.
 
-## Findings
-
-| # | Severity | Doc | Line | Tier | Status | Claim |
-|---|----------|-----|------|------|--------|-------|
-| 001 | HIGH | example-a.md | 42 | T2 | pending | Cardinality contract mismatch — declared count is N but disk count is M |
-| 002 | MINOR | example-b.md | 105 | T4 | pending | Inline date stamp in primary doc body (banned per tier-model.md T4) |
-| 003 | MEDIUM | example-c.md | 18 | T1 | deferred | Concept claim contradicts canonical source — defer to next cycle |
-
-## Notes
-
-(reviewer scratch space)
-```
-
-Status values: `pending` | `in-progress` | `fixed` | `deferred`.
-When all entries are `fixed` or `deferred`, FIX state completes. Delete the file.
+The Status lifecycle drives this state's own exit: FIX completes when no row is `Pending` or
+`Recurred` (the two statuses `grade.sh` counts). Delete the file at DONE.
 
 ## Grade computation
 
@@ -301,4 +343,4 @@ emission MUST prefix the appropriate severity tag — never emit a bare
 
 - [principles.md](principles.md) — the 9 principles, especially P3 (temp ledger), P4 (lint enforcement), P7 (read-only on repo), P9 (resolved items leave no trace)
 - [tier-model.md](tier-model.md) — T1-T4 stability tiers referenced throughout the rubric
-- [frontmatter-schema.md](frontmatter-schema.md) — `kb-category`, `source`, `contracts` fields the rubric reads
+- [frontmatter-schema.md](frontmatter-schema.md) — `kb-category`, `source`, `review-criteria` fields the rubric reads

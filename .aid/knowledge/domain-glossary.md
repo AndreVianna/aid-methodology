@@ -22,10 +22,15 @@ tags: [C4, glossary, vocabulary, terminology, concept-spine]
 see_also: [pipeline-contracts.md, integration-map.md, architecture.md]
 owner: architect
 audience: [developer, architect, pm]
-intent: |
-  Project-specific vocabulary with definitions. Disambiguates terms that mean something
-  particular in AID; the canonical reference for naming. Concept Spine + supporting lexicon.
-contracts: []
+review-criteria:
+  - id: F-01
+    kind: validate
+    criterion: >
+      No term is defined twice, in the Concept Spine or in any Lexicon section.
+    severity: MEDIUM
+    why: >
+      This doc is the single definition of the project's vocabulary; two definitions of one term
+      is the ambiguity it exists to remove.
 ---
 
 # Domain Glossary
@@ -56,7 +61,6 @@ accounting for every harvested candidate concept lives in
 - [Abbreviations and Acronyms](#abbreviations--acronyms)
 - [Terms with Specific Domain Meanings](#terms-with-specific-domain-meanings)
 - [Invariants](#invariants)
-- [Change Log](#change-log)
 
 ---
 
