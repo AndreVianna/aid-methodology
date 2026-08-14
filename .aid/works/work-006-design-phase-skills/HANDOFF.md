@@ -4,7 +4,7 @@ Written for a fresh session picking this work up mid-pipeline with no prior cont
 Read it end to end before acting. It is a work-folder artifact and is deleted when the
 work ships; nothing permanent depends on it.
 
-**Branch:** `work-006` · **Base commit:** `225c6fd8` · **Phase:** Execute
+**Branch:** `work-006` (start from its tip) · **Phase:** Execute
 
 ---
 
@@ -39,8 +39,10 @@ Run **delivery-001's quality gate**, per
 
 Two of its steps are already done and need not be repeated:
 
-- **AGGREGATE** — `delivery-001-issues.md` holds **13 rows, 12 open** (10 `[HIGH]`,
-  2 `[MEDIUM]`) plus 1 already `Fixed`.
+- **AGGREGATE** — `delivery-001-issues.md` holds **14 findings, 13 open** (11 `[HIGH]`,
+  2 `[MEDIUM]`) plus 1 `[MEDIUM]` already `Fixed`. Verify with
+  `bash .aid/.temp/count-ledger.sh` after recreating it, or count the file directly —
+  do not trust this number if the file has moved on.
 - **SCORE** — `tasks=25 depth=23 consults=0`, **tier = Large**. Note the caveat in §6.
 
 **The specific next action:** write `.aid/.temp/review-pending/execute-delivery-001.md`
