@@ -1,0 +1,1 @@
+- **Name:** TaskDetail Parity Fixture

@@ -64,6 +64,7 @@ desktop.ini
 # (work folders are transient per the tracking-discipline rule).
 .aid/works/work-023-ticket-integration/
 .aid/works/work-004-optimize-skill-library/
+.aid/works/work-009-refactor/
 
 # >>> AID managed -- do not edit (aid add/update maintains this block) >>>
 .aid/.temp/

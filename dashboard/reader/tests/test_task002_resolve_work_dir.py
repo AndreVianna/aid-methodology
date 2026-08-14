@@ -12,9 +12,9 @@ Validates:
   5. Tie-break: branch_label lexical sort, "main" sorting first.
   6. SD-3 degradation: git-absent / non-git served root -> main-root-only,
      matching the reader (uses the REAL enumerate_worktree_roots, not mocked).
-  7. A work directory with no STATE.md still counts as a candidate (presence of
-     the directory is the sole inclusion test -- not STATE.md presence/parseability).
-  8. Never throws on malformed STATE.md.
+  7. A work directory with no STATE.yml still counts as a candidate (presence of
+     the directory is the sole inclusion test -- not STATE.yml presence/parseability).
+  8. Never throws on malformed STATE.yml.
   9. Accepts either the repo root or a path ending in ".aid" (read_repo convention).
   10. Returns a pathlib.Path (or None), never a string / other type.
 
@@ -57,21 +57,16 @@ def _make_repo(tmp: Path) -> tuple[Path, Path]:
     return root, aid
 
 
+# work-009-refactor task-016: was a bullet-heading STATE.md with an empty
+# '## Tasks State' pipe-table -- retired, SPEC.md sec:D-4.
 _STATE_TEMPLATE = """\
-## Pipeline State
-
-- **Lifecycle:** {lifecycle}
-- **Phase:** Execute
-- **Active Skill:** aid-execute
-- **Updated:** {updated}
-- **Pause Reason:** --
-- **Block Reason:** --
-- **Block Artifact:** --
-
-## Tasks State
-
-| # | Task | Type | Wave | State | Review | Elapsed | Notes |
-|---|------|------|------|-------|--------|---------|-------|
+lifecycle: {lifecycle}
+phase: Execute
+active_skill: aid-execute
+updated: '{updated}'
+pause_reason: --
+block_reason: --
+block_artifact: --
 """
 
 
@@ -84,7 +79,7 @@ def _write_work(aid_dir: Path, work_id: str, updated: str = "2026-06-10T12:00:00
     work_dir = aid_dir / "works" / work_id
     work_dir.mkdir(parents=True, exist_ok=True)
     if with_state:
-        (work_dir / "STATE.md").write_text(_state_text(updated=updated), encoding="utf-8")
+        (work_dir / "STATE.yml").write_text(_state_text(updated=updated), encoding="utf-8")
     return work_dir
 
 
@@ -287,7 +282,7 @@ class TestWinnerRuleTieBreak(_TempCase):
     def test_both_none_updated_main_wins(self):
         root, aid = _make_repo(self.tmp)
         work_id = "work-003-nots"
-        main_dir = _write_work(aid, work_id, with_state=False)  # no STATE.md -> updated=None
+        main_dir = _write_work(aid, work_id, with_state=False)  # no STATE.yml -> updated=None
 
         wt_aid = self.tmp / "wt" / ".aid"
         _write_work(wt_aid, work_id, with_state=False)
@@ -326,7 +321,7 @@ class TestSD3Degradation(_TempCase):
 
 
 # ---------------------------------------------------------------------------
-# Test 7: presence-only inclusion -- missing/malformed STATE.md never excludes
+# Test 7: presence-only inclusion -- missing/malformed STATE.yml never excludes
 # a candidate and never throws.
 # ---------------------------------------------------------------------------
 
@@ -347,7 +342,7 @@ class TestNeverThrows(_TempCase):
         root, aid = _make_repo(self.tmp)
         work_dir = aid / "works" / "work-005-malformed"
         work_dir.mkdir(parents=True, exist_ok=True)
-        (work_dir / "STATE.md").write_text("## Pipeline Sta", encoding="utf-8")  # truncated
+        (work_dir / "STATE.yml").write_text("lifecycle: Runni", encoding="utf-8")  # truncated mid-value
 
         with mock.patch(
             "dashboard.reader.reader.enumerate_worktree_roots",

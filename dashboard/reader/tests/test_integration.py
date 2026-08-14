@@ -62,7 +62,7 @@ from dashboard.reader.models import SourceMode
 # ---------------------------------------------------------------------------
 
 _WRITEBACK_PATH = _REPO_ROOT / "canonical" / "aid" / "scripts" / "execute" / "writeback-state.sh"
-_WORK_STATE_TEMPLATE = _REPO_ROOT / "canonical" / "aid" / "templates" / "work-state-template.md"
+_WORK_STATE_TEMPLATE = _REPO_ROOT / "canonical" / "aid" / "templates" / "work-state-template.yml"
 
 _BASH = shutil.which("bash")
 _PRODUCER_AVAILABLE = _WRITEBACK_PATH.is_file() and _BASH is not None
@@ -171,7 +171,7 @@ class TestProducerConsumerRoundTrip(unittest.TestCase):
         # Work folder seeded from the real template
         self.work_dir = self.aid_dir / "works" / "work-001-integration-test"
         self.work_dir.mkdir(parents=True)
-        self.state_file = self.work_dir / "STATE.md"
+        self.state_file = self.work_dir / "STATE.yml"
 
         if _WORK_STATE_TEMPLATE.is_file():
             template_text = _WORK_STATE_TEMPLATE.read_text(encoding="utf-8")
@@ -181,7 +181,7 @@ class TestProducerConsumerRoundTrip(unittest.TestCase):
             )
             self.state_file.write_text(seeded_text, encoding="utf-8")
         else:
-            # Fallback: write a minimal STATE.md if template not found
+            # Fallback: write a minimal STATE.yml if template not found
             self.state_file.write_text(
                 "# Work State -- work-001-integration-test\n\n",
                 encoding="utf-8",

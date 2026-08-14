@@ -113,13 +113,34 @@ because it must validate Bash, PowerShell, Python, and Node code paths.
 | Generator `--self-test` harness | Self-test | `.claude/skills/generate-profile/scripts/*.py` | `render_lib`, `render`, `verify_deterministic`, `verify_advisory`, `test_manifest_safety`. |
 | Astro / TypeScript tests | Unit | `site/src/data/__tests__/`, `site/scripts/__tests__/` | Site data + docs-sync tests (separate build). |
 
+**The `STATE.yml`-specific pytest suites, named.** Three are load-bearing for the state-file
+parse path and are distinct from the general "reader/server parsers + fixtures" description
+above:
+
+- **The shared cross-runtime YAML-subset conformance corpus** —
+  `dashboard/reader/tests/state_yaml_conformance_corpus.py` defines one input per permitted
+  shape, per rejected construct, per quoting mode, and per implicit-typing literal; both
+  `test_state_yaml_conformance.py` (Python) and `test_state_yaml_conformance_node.py` (spawns
+  the Node twin) run every case identically, so the corpus is authored once and consumed by
+  both runtimes.
+- **The cross-format, cross-runtime characterization suite** —
+  `test_task011_golden_master.py` and `test_task011_reconcile.py` are the oracle proving the
+  conversion preserves every rendered field: a legacy-markdown fixture tree's committed
+  golden-baseline payload (captured from the
+  pre-refactor readers) is compared against the post-refactor readers' read of the *converted*
+  tree (must equal the baseline, no `parse_warning`) and of the still-*unconverted* tree (must
+  degrade identically in both runtimes, with a `parse_warning` naming the migration command).
+  `test_flattened_layout_parity.py` extends the same reader-twin-parity shape to the flat
+  layout; `test_task014_fixtures.py` covers the hierarchical (full-path) fixture.
+- **The state-file review-surface suite** — `tests/canonical/test-state-review-surface.sh`,
+  listed in [The Canonical Helper Suites](#the-canonical-helper-suites) above.
+
 Most live suites are the **long-standing suites** — the AC-2 must-pass set. The exceptions are
 named rather than counted, because the total moves whenever a suite is added: they are
 `test-coverage-parity.sh`, `test-doc-counts.sh` (the count guard over the public-facing docs),
 `test-shortcut-builder-invariants.sh`, and the `test-graph-*.sh` suites. Derive the totals from
 disk — `ls tests/canonical/test-*.sh` and `ls tests/canonical/test-graph-*.sh` — rather than
-reading them here; the previous phrasing stated 144 / 132 / 12 against a tree that had moved to
-148 suites and 13 graph suites, which is exactly the drift `G-01` exists to stop.
+reading them here.
 
 > **Read the count as of a date, not as a fact.** The live total and the must-pass subset are
 > different quantities; state which one a number refers to whenever you cite it.
@@ -157,6 +178,7 @@ Representative suite families (the full set covers far more than these):
 | Release / packaging | `test-release.sh`, `test-release-install-e2e.sh`, `test-release-migrate-smoke.sh`, `test-version-sync.sh`, `test-npm-installer.sh`, `test-pypi-installer.sh` | the 3 publish channels + version-sync |
 | KB / discovery engine | `test-kb-citation-lint.sh`, `test-frontmatter-lint.sh`, `test-build-kb-index.sh`, `test-closure-check.sh`, `test-harvest-coined-terms.sh`, `test-spine-depth-coverage.sh`, `test-dual-intent-self-eval.sh` | the discovery/KB tooling |
 | Pipeline / execute | `test-writeback-state.sh`, `test-complexity-score.sh`, `test-compute-block-radius.sh`, `test-delivery-gate-aggregate.sh`, `test-grade.sh` | state writeback + delivery gating |
+| State-file review exclusion | `test-state-review-surface.sh` (SR00-SR17) | asserts `filter_reviewable_artifacts` (extracted from `reviewer-dispatch.md`) drops every `STATE.md`/`STATE.yml` path shape at all three work-tree levels, both layouts, and keeps every authored-artifact path; the sibling of `test-kb-review-surface.sh` (which covers the KB's own `list_reviewable` exclusion) |
 | Shortcut / Lite path (+v2.1.0 follow-on) | `test-catalog-dirs-parity.sh`, `test-triage-routing.sh`, `test-describe-full-only.sh`, `test-cutover-no-dangling.sh`, `test-deploy-monitor-repurpose.sh`, `test-executor-graph-flat-plan.sh`, `test-shortcut-engine-contract.sh`, and the six `test-*-family-scaffold.sh` suites (`create`, `change-refactor`, `fix`, `document`, `prototype`, `test-experiment`) | the 34 verb-first shortcut skills, the shortcut engine's GATE/APPROVAL-HALT batching (`test-shortcut-engine-contract.sh` SEC00–SEC07), `/aid-triage` routing, the recipe-removal cutover (no dangling `recipes/`/`parse-recipe.sh`), `/aid-describe` full-only, and the flattened Lite work layout. The 5 families the v2.1.0 follow-on added (`remove`, `deprecate`, `migrate`, `review`, `research`) have no dedicated `test-*-family-scaffold.sh` of their own yet, and neither does the `analyze-report` scaffolding family — all six are covered by `test-catalog-dirs-parity.sh`'s count-agnostic catalog↔dirs parity check instead. |
 | Dashboard | `test-dashboard-reader.sh`, `test-dashboard-parity.sh`, `test-dashboard-parity-h.sh`, `test-aid-dashboard-cli.sh` | reader/server parity |
 | Connectors / reconcile | `test-connector-registry.sh`, `test-connectors-registry-integration.sh`, `test-build-connectors-index.sh`, `test-connector-secret.sh`, `test-connector-secret-ps1.sh`, `test-connector-secret-ac3-leak-sweep.sh` (security: no-leak sweep of AC-3), `test-connector-twins-ps1-parity.sh` (bash↔PowerShell twin parity), `test-reconcile-scenarios.sh` | the `.aid/connectors/` catalog + INDEX generation, registry accessor integration, no-echo/path-confined secret handling, and settings reconcile behavior |
@@ -301,7 +323,7 @@ lands, suite-presence + dogfooding is the floor, not the target.
 | Discovery / KB engine | Strong | ~20 `test-*` suites (closure, harvest, citation/frontmatter lint, dual-intent, spine-depth) |
 | Pipeline execute / state writeback | Strong | `test-writeback-state.sh`, `test-delivery-gate-aggregate.sh`, `test-complexity-score.sh` |
 | Shortcut engine / Lite path | Strong | catalog↔dirs parity, `/aid-triage` routing, the seven family-scaffold suites, `test-shortcut-engine-contract.sh` (`SEC00`–`SEC07`) engine/gate/halt contract, flat-plan execution graph, recipe-removal cutover, describe-full-only |
-| Dashboard reader/server | Strong | pytest suites + parity suites |
+| Dashboard reader/server | Strong | pytest suites + parity suites, incl. the `STATE.yml` conformance corpus and cross-format characterization suites (see [Test Framework Inventory](#test-framework-inventory)) |
 | Astro site | Moderate | `site/src/data/__tests__`, `site/scripts/__tests__`; build is the main gate |
 | Prompt-driven skill state machines | Not machine-tested (by design) | dogfooding + human/AI review only |
 
@@ -405,6 +427,15 @@ post-optimization wall-clock is not frozen here (it drifts) — the ≤3 min / ~
 | Shared helpers | pwsh detection, the HOME escape-canary, and free-port logic live once and are sourced by every suite that needs them — no machine-specific absolute path remains in `tests/`. | `tests/lib/pwsh.sh`, `tests/lib/sandbox.sh`, `tests/lib/net.sh` |
 | Hot-suite: byte-identity | Verifies the same three directions via a single manifest pass + batched hashing instead of repeated re-scans. | `test-dogfood-byte-identity.sh` |
 | Hot-suite: CLI parity | Batches its pwsh invocations through one long-lived responder session instead of one cold start per assertion. | `test-aid-cli-parity.sh` |
+
+**Corpus-wide change -> re-bootstrap, not a row edit.** `tests/coverage-baseline.tsv`/`.meta`
+record a captured assertion inventory; a *local* suite optimization earns an accepted-removal
+row (`--accept`), but a **corpus-wide** change to the assertion shapes themselves -- e.g. every
+suite that named the per-work-tree state file's old filename or a retired markdown-section
+heading now naming `STATE.yml` / a YAML key instead -- shifts assertion IDs across the whole
+corpus, not a local subset. The correct response is to **re-bootstrap** the baseline
+(`bash tests/coverage-parity.sh collect --out tests/coverage-baseline.tsv`, re-run to refresh
+`.meta`), never to hand-edit individual rows to paper over a wholesale ID shift.
 
 ### Why suites are slow on a Windows dev shell: process spawn cost
 

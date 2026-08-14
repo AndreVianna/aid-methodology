@@ -57,9 +57,10 @@ from dashboard.reader.parsers import (
     parse_spec_md,
     parse_state_md,
     parse_task_short_name,
+    parse_tasks_lifecycle_md,
     parse_tool_info,
 )
-from dashboard.reader.state_schema import parse_frontmatter_scalars
+from dashboard.reader.state_schema import parse_state_document
 
 
 # ---------------------------------------------------------------------------
@@ -108,8 +109,36 @@ def make_work_dir(aid: Path, work_id: str) -> Path:
     return wd
 
 
-def write_state_md(work_dir: Path, content: str) -> None:
-    (work_dir / "STATE.md").write_text(content, encoding="utf-8")
+def write_state_yml(work_dir: Path, content: str) -> None:
+    """Write the work-root STATE.yml (work-009-refactor task-016: was
+    write_state_md / STATE.md -- SPEC.md sec:D-1 retargets the state-file
+    read path to a single STATE.yml document per work)."""
+    (work_dir / "STATE.yml").write_text(content, encoding="utf-8")
+
+
+def make_flat_work(aid: Path, work_id: str, state_yaml: str, task_ids: "list[str]") -> Path:
+    """Build a full FLATTENED single-delivery layout work (feature-001):
+    work-root BLUEPRINT.md + STATE.yml + tasks/task-NNN/DETAIL.md for each
+    task_id -- the ONLY layout `read_repo()` populates a real, non-empty
+    tasks[] list for (`_read_work_flat`, reader.py). A bare work dir with
+    only a STATE.yml (no BLUEPRINT.md / tasks/ dir) routes to the legacy
+    monolithic parse instead, whose `parse_state_md()` never populates
+    tasks[] at all -- see test_derivation.py's
+    test_fallback_no_markdown_text_never_populates_tasks for that invariant."""
+    wd = make_work_dir(aid, work_id)
+    (wd / "BLUEPRINT.md").write_text(
+        "# Delivery BLUEPRINT -- delivery-001: Demo\n\n"
+        "## Objective\n\nDemo.\n\n## Gate Criteria\n\n- [ ] pass\n",
+        encoding="utf-8",
+    )
+    write_state_yml(wd, state_yaml)
+    for task_id in task_ids:
+        task_dir = wd / "tasks" / task_id
+        task_dir.mkdir(parents=True)
+        (task_dir / "DETAIL.md").write_text(
+            f"# {task_id}: Demo task\n\n**Type:** IMPLEMENT\n", encoding="utf-8"
+        )
+    return wd
 
 
 def make_kb_dir(aid: Path) -> Path:
@@ -119,86 +148,76 @@ def make_kb_dir(aid: Path) -> Path:
 
 
 # ---------------------------------------------------------------------------
-# Minimal STATE.md bodies
+# Minimal STATE.yml bodies (work-009-refactor task-016: were markdown STATE.md
+# bodies with a '## Pipeline Status' section, a '## Tasks Status' table and a
+# '## Cross-phase Q&A' section -- all three retired, SPEC.md sec:D-4). Each
+# below keeps the SAME model/payload values the markdown fixture asserted,
+# expressed as the flat layout's top-level scalar keys + `qa` sequence.
+# `pw.tasks` is never populated by parse_state_md() itself regardless of
+# input format (tasks live in `tasks_lifecycle` / per-task files, read one
+# level up by reader.py) -- see make_flat_work() above for the fixture shape
+# that DOES exercise a real, non-empty tasks[] through read_repo().
 # ---------------------------------------------------------------------------
 
 STATE_NORMALIZED = """\
-# Work State -- work-001-test
-
-## Pipeline Status
-
-- **Lifecycle:** Running
-- **Phase:** Execute
-- **Active Skill:** aid-execute
-- **Updated:** 2026-06-10T12:00:00Z
-- **Pause Reason:** --
-- **Block Reason:** --
-- **Block Artifact:** --
-
-## Tasks Status
-
-| # | Task | Type | Wave | Status | Review | Elapsed | Notes |
-|---|------|------|------|--------|--------|---------|-------|
-| 001 | task-001 | IMPLEMENT | delivery-001 | In Progress | -- | -- | first |
-| 002 | task-002 | TEST | delivery-001 | Done | A | 1h | second |
-
-## Cross-phase Q&A (Pending)
-
-### Q1
-
-- **Category:** Architecture
-- **Impact:** High
-- **Status:** Pending
-- **Context:** Some context
-- **Suggested:** --
-
-### Q2
-
-- **Category:** Security
-- **Impact:** Low
-- **Status:** Answered
-- **Context:** Already answered
-- **Suggested:** yes
+lifecycle: Running
+phase: Execute
+active_skill: aid-execute
+updated: '2026-06-10T12:00:00Z'
+pause_reason: --
+block_reason: --
+block_artifact: --
+qa:
+  - id: 1
+    category: Architecture
+    impact: High
+    state: Pending
+    context: Some context
+    suggested: --
+  - id: 2
+    category: Security
+    impact: Low
+    state: Answered
+    context: Already answered
+    suggested: 'yes'
 """
 
+# tasks_lifecycle mapping matching STATE_NORMALIZED's former '## Tasks Status'
+# table -- fed to make_flat_work() by the tests that need a real, non-empty
+# tasks[] through read_repo() (task-001 In Progress, task-002 Done/A/1h).
+STATE_NORMALIZED_WITH_TASKS = STATE_NORMALIZED + """\
+tasks_lifecycle:
+  task-001:
+    state: In Progress
+    review: --
+    elapsed: --
+    notes: first
+  task-002:
+    state: Done
+    review: A
+    elapsed: 1h
+    notes: second
+"""
+
+# No `lifecycle` key at all -- the LC-3 fallback branch (source_mode=Fallback).
 STATE_NO_PIPELINE_STATUS = """\
-# Work State -- work-001-test
-
-## Tasks Status
-
-| # | Task | Type | Wave | Status | Review | Elapsed | Notes |
-|---|------|------|------|--------|--------|---------|-------|
-| 001 | task-001 | IMPLEMENT | 1 | Pending | -- | -- | -- |
-
-## Cross-phase Q&A (Pending)
-
-### Q1
-
-- **Category:** Requirements
-- **Impact:** Medium
-- **Status:** Pending
-- **Context:** open question
-- **Suggested:** --
+qa:
+  - id: 1
+    category: Requirements
+    impact: Medium
+    state: Pending
+    context: open question
+    suggested: --
 """
 
 STATE_NONE_YET = """\
-# Work State -- work-empty
-
-## Pipeline Status
-
-- **Lifecycle:** Completed
-- **Phase:** Execute
-- **Active Skill:** none
-- **Updated:** 2026-06-01T00:00:00Z
-- **Pause Reason:** --
-- **Block Reason:** --
-- **Block Artifact:** --
-
-## Tasks Status
-
-| # | Task | Type | Wave | Status | Review | Elapsed | Notes |
-|---|------|------|------|--------|--------|---------|-------|
-| _none yet_ | | | | | | | |
+lifecycle: Completed
+phase: Execute
+active_skill: none
+updated: '2026-06-01T00:00:00Z'
+pause_reason: --
+block_reason: --
+block_artifact: --
 """
 
 KB_STATE_MD = """\
@@ -617,21 +636,29 @@ class TestParseStateMd(unittest.TestCase):
         self.assertIsNone(pw.block_reason)
         self.assertIsNone(pw.block_artifact)
 
-    def test_tasks_parsed(self):
-        pw = parse_state_md(STATE_NORMALIZED)
-        self.assertEqual(len(pw.tasks), 2)
-        t1 = pw.tasks[0]
-        self.assertEqual(t1.task_id, "task-001")
-        self.assertEqual(t1.type, "IMPLEMENT")
-        self.assertEqual(t1.status, TaskStatus.InProgress)
-        t2 = pw.tasks[1]
-        self.assertEqual(t2.task_id, "task-002")
-        self.assertEqual(t2.status, TaskStatus.Done)
-        self.assertEqual(t2.review_grade, "A")
+    def test_tasks_lifecycle_parsed(self):
+        """Task cells now come from parse_tasks_lifecycle_md's `tasks_lifecycle`
+        mapping (was: test_tasks_parsed via parse_state_md's '## Tasks Status'
+        table -- deleted, sec:L-3: parse_state_md() never populates pw.tasks
+        at all any more, see test_derivation.py's
+        test_fallback_no_markdown_text_never_populates_tasks). This is the
+        function reader.py's _read_work_flat actually calls for task cells."""
+        tasks_lifecycle, warnings = parse_tasks_lifecycle_md(STATE_NORMALIZED_WITH_TASKS)
+        self.assertEqual(warnings, [])
+        self.assertEqual(len(tasks_lifecycle), 2)
+        t1 = tasks_lifecycle["task-001"]
+        self.assertEqual(t1.state, TaskStatus.InProgress)
+        t2 = tasks_lifecycle["task-002"]
+        self.assertEqual(t2.state, TaskStatus.Done)
+        self.assertEqual(t2.review, "A")
 
-    def test_none_yet_row_skipped(self):
-        pw = parse_state_md(STATE_NONE_YET)
-        self.assertEqual(pw.tasks, [])
+    def test_no_tasks_lifecycle_key_yields_empty_mapping(self):
+        """was test_none_yet_row_skipped ('_none yet_' placeholder row). The
+        placeholder-row convention has no meaning once tasks are a mapping,
+        not a table -- absence of the whole `tasks_lifecycle` key is the
+        equivalent 'no tasks yet' shape, and yields an empty mapping."""
+        tasks_lifecycle, _warnings = parse_tasks_lifecycle_md(STATE_NONE_YET)
+        self.assertEqual(tasks_lifecycle, {})
 
     def test_pending_inputs_only_pending_status(self):
         pw = parse_state_md(STATE_NORMALIZED)
@@ -640,20 +667,21 @@ class TestParseStateMd(unittest.TestCase):
         self.assertEqual(pw.pending_inputs[0].question_id, "Q1")
         self.assertEqual(pw.pending_inputs[0].category, "Architecture")
 
-    def test_no_pipeline_status_uses_fallback_adapter(self):
-        """When ## Pipeline Status is absent, the LC-3 fallback adapter fires (task-011).
-
-        STATE_NO_PIPELINE_STATUS has a pending Q1, so derive_lifecycle produces
-        PausedAwaitingInput (SM-2 prio-4). source_mode=fallback is recorded.
-        """
+    def test_no_lifecycle_key_is_a_safe_noop_fallback(self):
+        """Content-level update (task-016), was 'no_pipeline_status_uses_
+        fallback_adapter': when the `lifecycle` key is absent, the LC-3
+        fallback adapter fires (source_mode=Fallback) -- but it can no
+        longer derive PausedAwaitingInput from THIS document's own `qa`
+        entries (parse_state_md() reads `qa` -> pending_inputs AFTER the
+        fallback branch has already returned; see test_derivation.py's
+        test_fallback_pending_qa_signal_is_a_noop_via_parse_state_md for the
+        exact ordering). It degrades to the safe no-op (Running), and
+        pw.pending_inputs is populated afterward regardless."""
         pw = parse_state_md(STATE_NO_PIPELINE_STATUS)
-        # Fallback adapter active: not Unknown (stub behavior), not normalized
         self.assertEqual(pw.source_mode, SourceMode.Fallback)
-        # The fixture has Q1 Status: Pending, no IMPEDIMENT, no failed task -> Paused
-        self.assertEqual(pw.lifecycle, Lifecycle.PausedAwaitingInput)
-        self.assertIsNotNone(pw.pause_reason)
-        # No extra parse warnings needed (fallback adapter succeeded)
-        # (no "fallback adapter not yet implemented" message now)
+        self.assertEqual(pw.lifecycle, Lifecycle.Running)
+        self.assertIsNone(pw.pause_reason)
+        self.assertEqual(len(pw.pending_inputs), 1, "qa is still read, just too late to inform lifecycle")
 
     def test_completed_lifecycle(self):
         pw = parse_state_md(STATE_NONE_YET)
@@ -661,76 +689,68 @@ class TestParseStateMd(unittest.TestCase):
         self.assertEqual(pw.source_mode, SourceMode.Normalized)
 
     def test_blocked_lifecycle_with_reason(self):
-        content = """\
-## Pipeline Status
-
-- **Lifecycle:** Blocked
-- **Phase:** Execute
-- **Active Skill:** aid-execute
-- **Updated:** 2026-06-10T00:00:00Z
-- **Pause Reason:** --
-- **Block Reason:** Gate fail
-- **Block Artifact:** IMPEDIMENT-task-005.md
-"""
+        content = (
+            "lifecycle: Blocked\n"
+            "phase: Execute\n"
+            "active_skill: aid-execute\n"
+            "updated: '2026-06-10T00:00:00Z'\n"
+            "pause_reason: --\n"
+            "block_reason: Gate fail\n"
+            "block_artifact: IMPEDIMENT-task-005.md\n"
+        )
         pw = parse_state_md(content)
         self.assertEqual(pw.lifecycle, Lifecycle.Blocked)
         self.assertEqual(pw.block_reason, "Gate fail")
         self.assertEqual(pw.block_artifact, "IMPEDIMENT-task-005.md")
 
     def test_paused_lifecycle_with_reason(self):
-        content = """\
-## Pipeline Status
-
-- **Lifecycle:** Paused-Awaiting-Input
-- **Phase:** Specify
-- **Active Skill:** aid-specify
-- **Updated:** 2026-06-10T00:00:00Z
-- **Pause Reason:** Awaiting user decision on architecture
-- **Block Reason:** --
-- **Block Artifact:** --
-"""
+        content = (
+            "lifecycle: Paused-Awaiting-Input\n"
+            "phase: Specify\n"
+            "active_skill: aid-specify\n"
+            "updated: '2026-06-10T00:00:00Z'\n"
+            "pause_reason: Awaiting user decision on architecture\n"
+            "block_reason: --\n"
+            "block_artifact: --\n"
+        )
         pw = parse_state_md(content)
         self.assertEqual(pw.lifecycle, Lifecycle.PausedAwaitingInput)
         self.assertEqual(pw.pause_reason, "Awaiting user decision on architecture")
 
     def test_unknown_lifecycle_sentinel(self):
         """Unrecognized Lifecycle literal returns Unknown (DM-6 NFR7 -- never throws)."""
-        content = """\
-## Pipeline Status
-
-- **Lifecycle:** SomeFutureState
-- **Phase:** Execute
-- **Active Skill:** none
-- **Updated:** 2026-06-10T00:00:00Z
-- **Pause Reason:** --
-- **Block Reason:** --
-- **Block Artifact:** --
-"""
+        content = (
+            "lifecycle: SomeFutureState\n"
+            "phase: Execute\n"
+            "active_skill: none\n"
+            "updated: '2026-06-10T00:00:00Z'\n"
+            "pause_reason: --\n"
+            "block_reason: --\n"
+            "block_artifact: --\n"
+        )
         pw = parse_state_md(content)
         self.assertEqual(pw.lifecycle, Lifecycle.Unknown)
 
     def test_unknown_task_status_sentinel(self):
-        """Unrecognized TaskStatus returns Unknown sentinel (DM-6 NFR7)."""
-        content = """\
-## Pipeline Status
-
-- **Lifecycle:** Running
-- **Phase:** Execute
-- **Active Skill:** aid-execute
-- **Updated:** 2026-06-10T00:00:00Z
-- **Pause Reason:** --
-- **Block Reason:** --
-- **Block Artifact:** --
-
-## Tasks Status
-
-| # | Task | Type | Wave | Status | Review | Elapsed | Notes |
-|---|------|------|------|--------|--------|---------|-------|
-| 001 | task-001 | IMPLEMENT | 1 | SomeFuture | -- | -- | -- |
-"""
-        pw = parse_state_md(content)
-        self.assertEqual(len(pw.tasks), 1)
-        self.assertEqual(pw.tasks[0].status, TaskStatus.Unknown)
+        """Unrecognized TaskStatus returns Unknown sentinel (DM-6 NFR7) --
+        was via parse_state_md's '## Tasks Status' table, now via
+        parse_tasks_lifecycle_md's `tasks_lifecycle` mapping (the function
+        that actually owns task-status parsing post-refactor)."""
+        content = (
+            "lifecycle: Running\n"
+            "phase: Execute\n"
+            "active_skill: aid-execute\n"
+            "updated: '2026-06-10T00:00:00Z'\n"
+            "pause_reason: --\n"
+            "block_reason: --\n"
+            "block_artifact: --\n"
+            "tasks_lifecycle:\n"
+            "  task-001:\n"
+            "    state: SomeFuture\n"
+        )
+        tasks_lifecycle, _warnings = parse_tasks_lifecycle_md(content)
+        self.assertEqual(len(tasks_lifecycle), 1)
+        self.assertEqual(tasks_lifecycle["task-001"].state, TaskStatus.Unknown)
 
 
 class TestEnumParsing(unittest.TestCase):
@@ -835,12 +855,12 @@ class TestReadRepo(unittest.TestCase):
         self.assertEqual(model.repo.project_name, "EmptyProject")
 
     def test_single_work_normalized(self):
-        """SPEC AC2/AC3: normalized path with ## Pipeline Status block."""
+        """SPEC AC2/AC3: normalized path with a `lifecycle:` key present."""
         aid = make_aid_dir(self.root)
         write_manifest(aid)
         write_settings(aid, "TestProject")
         wd = make_work_dir(aid, "work-001-alpha")
-        write_state_md(wd, STATE_NORMALIZED)
+        write_state_yml(wd, STATE_NORMALIZED)
 
         model = read_repo(self.root)
         self.assertEqual(len(model.works), 1)
@@ -858,7 +878,7 @@ class TestReadRepo(unittest.TestCase):
         write_settings(aid, "Multi")
         for wid in ["work-001-alpha", "work-002-beta", "work-003-gamma"]:
             wd = make_work_dir(aid, wid)
-            write_state_md(wd, STATE_NORMALIZED)
+            write_state_yml(wd, STATE_NORMALIZED)
 
         model = read_repo(self.root)
         self.assertEqual(model.read.work_count, 3)
@@ -867,13 +887,16 @@ class TestReadRepo(unittest.TestCase):
         self.assertIn("work-002-beta", names)
         self.assertIn("work-003-gamma", names)
 
-    def test_work_without_pipeline_status_in_fallback_works(self):
-        """SPEC AC4 / DM-7: works without ## Pipeline Status go into fallback_works."""
+    def test_work_without_lifecycle_key_in_fallback_works(self):
+        """SPEC AC4 / DM-7: was 'without ## Pipeline Status'. A document
+        carrying no `lifecycle` key at all (absent/truncated) is the ONLY
+        thing that still routes to fallback_works -- there is no more
+        markdown section to be absent (sec:D-1/D-4)."""
         aid = make_aid_dir(self.root)
         write_manifest(aid)
         write_settings(aid)
         wd = make_work_dir(aid, "work-001-no-status")
-        write_state_md(wd, STATE_NO_PIPELINE_STATUS)
+        write_state_yml(wd, STATE_NO_PIPELINE_STATUS)
 
         model = read_repo(self.root)
         self.assertEqual(len(model.read.fallback_works), 1)
@@ -901,38 +924,82 @@ class TestReadRepo(unittest.TestCase):
         write_manifest(aid)
         write_settings(aid)
         wd = make_work_dir(aid, "work-001-alpha")
-        write_state_md(wd, STATE_NORMALIZED)
+        write_state_yml(wd, STATE_NORMALIZED)
 
         model_via_root = read_repo(self.root)
         model_via_aid = read_repo(aid)
         self.assertEqual(model_via_root.read.work_count, model_via_aid.read.work_count)
         self.assertEqual(model_via_root.works[0].work_id, model_via_aid.works[0].work_id)
 
-    def test_malformed_state_md_yields_warning_not_exception(self):
-        """NFR7: malformed STATE.md -> parse_warning + best-effort model, never throws."""
+    def test_truncated_state_yml_yields_warning_not_exception(self):
+        """NFR7 / new degradation-path assertion (task-016): a STATE.yml torn
+        mid-write (e.g. by a power loss during the writer's atomic-mv window)
+        -- one clean key, one tab-indented line (a D-3 reject -> warning,
+        skipped), one line cut off mid-value with no trailing newline --
+        still parses to a best-effort model. Never raises; the torn/rejected
+        lines are reported as parse_warnings, the clean key before them is
+        still honored, and the read stops there rather than fabricating
+        data past the tear."""
         aid = make_aid_dir(self.root)
         write_manifest(aid)
         write_settings(aid)
         wd = make_work_dir(aid, "work-001-bad")
-        write_state_md(wd, "# Truncated\n\n## Pipeline Status\n\n- **Lifecycle")  # truncated
+        write_state_yml(
+            wd,
+            "lifecycle: Running\n"
+            "\tactive_skill: aid-execute\n"  # tab-indented -- D-3 reject
+            "phase: Ex"  # cut off mid-value, no trailing newline
+        )
 
         model = read_repo(self.root)
         self.assertEqual(len(model.works), 1)
-        # Should not raise; may have parse_warnings
-        # Truncated lifecycle line -> Unknown
-        self.assertIsInstance(model.works[0].lifecycle, Lifecycle)
+        w = model.works[0]
+        self.assertIsInstance(w.lifecycle, Lifecycle)
+        self.assertEqual(w.lifecycle, Lifecycle.Running, "the clean key before the tear still reads")
+        self.assertIsNone(w.active_skill, "the tab-indented reject never resolves a value")
+        self.assertEqual(w.phase, Phase.Unknown, "the torn value degrades to Unknown, never raises")
+        self.assertTrue(
+            any("work-001-bad" in warn and "tab" in warn for warn in model.read.parse_warnings),
+            "the tab-indentation reject must be reported as a parse_warning naming the file",
+        )
 
-    def test_missing_state_md_yields_warning(self):
-        """A work folder with no STATE.md yields parse_warning + minimal WorkModel."""
+    def test_unknown_key_degradation_path(self):
+        """New degradation-path assertion (task-016): an unrecognized
+        top-level key (forward-compat -- e.g. authored by a NEWER writer
+        version) is silently ignored. Parsing is otherwise unaffected: every
+        recognized sibling key still resolves, and no exception, no warning
+        and no corruption of neighboring keys results from the one this
+        reader does not know about."""
+        aid = make_aid_dir(self.root)
+        write_manifest(aid)
+        write_settings(aid)
+        wd = make_work_dir(aid, "work-001-future-key")
+        write_state_yml(
+            wd,
+            "lifecycle: Running\n"
+            "phase: Execute\n"
+            "some_future_field_this_reader_does_not_know_about: surprise\n"
+            "active_skill: aid-execute\n",
+        )
+
+        model = read_repo(self.root)
+        self.assertEqual(len(model.works), 1)
+        w = model.works[0]
+        self.assertEqual(w.lifecycle, Lifecycle.Running)
+        self.assertEqual(w.phase, Phase.Execute)
+        self.assertEqual(w.active_skill, "aid-execute")
+
+    def test_missing_state_yml_yields_warning(self):
+        """A work folder with no STATE.yml yields parse_warning + minimal WorkModel."""
         aid = make_aid_dir(self.root)
         write_manifest(aid)
         write_settings(aid)
         make_work_dir(aid, "work-001-nostate")
-        # Intentionally do NOT write STATE.md
+        # Intentionally do NOT write STATE.yml
 
         model = read_repo(self.root)
         self.assertEqual(model.read.work_count, 1)
-        self.assertTrue(any("STATE.md" in w for w in model.read.parse_warnings))
+        self.assertTrue(any("STATE.yml" in w for w in model.read.parse_warnings))
 
     def test_tool_info_in_model(self):
         """ToolInfo should be populated from the manifest."""
@@ -966,24 +1033,30 @@ class TestReadRepo(unittest.TestCase):
         self.assertIsNone(model.repo.kb_state)
 
     def test_tasks_in_work_model(self):
-        """Task list should be populated from ## Tasks Status."""
+        """Task list should be populated from `tasks_lifecycle` (flat layout;
+        was '## Tasks Status' -- sec:D-4. A bare monolithic work never
+        populates tasks[] any more regardless of format, so this needs the
+        full flat-layout fixture -- see make_flat_work())."""
         aid = make_aid_dir(self.root)
         write_manifest(aid)
         write_settings(aid)
-        wd = make_work_dir(aid, "work-001-tasks")
-        write_state_md(wd, STATE_NORMALIZED)
+        make_flat_work(aid, "work-001-tasks", STATE_NORMALIZED_WITH_TASKS,
+                        task_ids=["task-001", "task-002"])
 
         model = read_repo(self.root)
         tasks = model.works[0].tasks
         self.assertEqual(len(tasks), 2)
+        self.assertEqual(tasks[0].status, TaskStatus.InProgress)
+        self.assertEqual(tasks[1].status, TaskStatus.Done)
+        self.assertEqual(tasks[1].review_grade, "A")
 
     def test_pending_inputs_in_work_model(self):
-        """Only Q{N} items with Status: Pending appear in pending_inputs."""
+        """Only qa[] entries with state: Pending appear in pending_inputs."""
         aid = make_aid_dir(self.root)
         write_manifest(aid)
         write_settings(aid)
         wd = make_work_dir(aid, "work-001-qa")
-        write_state_md(wd, STATE_NORMALIZED)
+        write_state_yml(wd, STATE_NORMALIZED)
 
         model = read_repo(self.root)
         pending = model.works[0].pending_inputs
@@ -996,7 +1069,7 @@ class TestReadRepo(unittest.TestCase):
         write_manifest(aid)
         write_settings(aid)
         wd = make_work_dir(aid, "work-001-my-feature")
-        write_state_md(wd, STATE_NORMALIZED)
+        write_state_yml(wd, STATE_NORMALIZED)
 
         model = read_repo(self.root)
         self.assertEqual(model.works[0].name, "my-feature")
@@ -1168,43 +1241,47 @@ class TestPF3TaskShortName(unittest.TestCase):
 
 
 class TestPF4PhaseSingleSource(unittest.TestCase):
-    """PF-4: phase derived SOLELY from ## Pipeline Status block."""
+    """PF-4: phase derived SOLELY from the top-level `phase:` key (was: SOLELY
+    from the '## Pipeline Status' block -- sec:D-4 retires the block into
+    that one key; the single-source property itself is unchanged)."""
 
-    def test_phase_from_pipeline_status(self):
+    def test_phase_from_lifecycle_key_present(self):
         text = (
-            "## Pipeline Status\n\n"
-            "- **Lifecycle:** Running\n"
-            "- **Phase:** Execute\n"
-            "- **Active Skill:** aid-execute\n"
-            "- **Updated:** 2026-06-11T00:00:00+00:00\n"
+            "lifecycle: Running\n"
+            "phase: Execute\n"
+            "active_skill: aid-execute\n"
+            "updated: '2026-06-11T00:00:00+00:00'\n"
         )
         pw = parse_state_md(text)
         from dashboard.reader.models import Phase
         self.assertEqual(pw.phase, Phase.Execute)
         self.assertEqual(pw.source_mode.value, "normalized")
 
-    def test_phase_absent_when_no_pipeline_status_block(self):
-        # Bootstrap case: no ## Pipeline Status -> phase must be None (not "unknown")
+    def test_phase_absent_when_no_lifecycle_key(self):
+        # Bootstrap case: no `lifecycle` key at all -> phase must be None (not "unknown")
         text = (
-            "## Tasks Status\n\n"
-            "| # | Task | Type | Wave | Status | Review | Elapsed | Notes |\n"
-            "| --- | --- | --- | --- | --- | --- | --- | --- |\n"
-            "| 1 | task-001 | IMPLEMENT | delivery-001 | In Progress | - | - | - |\n"
+            "tasks_lifecycle:\n"
+            "  task-001:\n"
+            "    state: In Progress\n"
         )
         pw = parse_state_md(text)
         self.assertIsNone(pw.phase)
         self.assertEqual(pw.source_mode.value, "fallback")
 
-    def test_no_secondary_phase_from_blockquote(self):
-        # Legacy blockquote > **Phase:** Execute must NOT feed phase
+    def test_no_secondary_phase_from_legacy_prose(self):
+        """A stray legacy-shaped '> **Phase:** Execute' blockquote LINE inside
+        an otherwise `lifecycle`-absent document must not feed phase -- there
+        is no more prose scan to accidentally pick it up (was: the same
+        property against a legacy markdown blockquote)."""
         text = (
             "> **Phase:** Execute\n\n"
-            "## Tasks Status\n\n"
-            "| # | Task | Type | Wave | Status | Review | Elapsed | Notes |\n"
-            "| --- | --- | --- | --- | --- | --- | --- | --- |\n"
+            "tasks_lifecycle:\n"
+            "  task-001:\n"
+            "    state: In Progress\n"
         )
         pw = parse_state_md(text)
-        # Phase must be None (no ## Pipeline Status block); the blockquote is ignored
+        # Phase must be None (no `phase` key); the stray blockquote line is
+        # a malformed-line reject (D-3), never a value source.
         self.assertIsNone(pw.phase)
 
 
@@ -1293,8 +1370,25 @@ class TestPF5ExecutionGraph(unittest.TestCase):
         self.assertEqual(lane_map, {})
         self.assertEqual(br, 0)
 
-    def test_delivery_from_state_wave_column(self):
-        """PF-5c: delivery derived from STATE Wave 'delivery-NNN' (reader.py test)."""
+    def test_delivery_from_state_wave_column_is_now_unreachable(self):
+        """PF-5c, content-level update (work-009-refactor task-016): the
+        original PF-5c fixture used the pre-feature-001 monolithic layout --
+        a bare work dir (no BLUEPRINT.md, a flat 'tasks/task-NNN.md' file
+        rather than 'tasks/task-NNN/DETAIL.md') whose single state file
+        carried an embedded '## Tasks Status' table with a Wave column. That
+        table -- a DERIVED, non-authoritative view -- is exactly what
+        SPEC.md sec:L-3 deletes ('_parse_tasks_line ... nothing to
+        retarget', sec:D-2/SP-3): parse_state_md() never populates pw.tasks
+        for ANY input, markdown or YAML (see test_derivation.py's
+        test_fallback_no_markdown_text_never_populates_tasks). This specific
+        monolithic-plus-embedded-table shape therefore has no successor --
+        the flat layout's tasks_lifecycle mapping has no Wave/delivery
+        column at all (delivery is always the flat layout's single implicit
+        delivery-001, hardcoded in reader.py's _read_work_flat), and the
+        hierarchical layout gets its delivery number from the folder name,
+        never from a state-file column. This test now asserts the resulting
+        (accepted, spec-scoped) degradation directly: the monolithic path
+        yields zero tasks, not a delivery/lane-enriched one."""
         import tempfile as _tmp
         with _tmp.TemporaryDirectory() as d:
             root = Path(d)
@@ -1304,20 +1398,12 @@ class TestPF5ExecutionGraph(unittest.TestCase):
             tasks_dir = work / "tasks"
             tasks_dir.mkdir()
 
-            # Write STATE.md with Wave = delivery-002
-            (work / "STATE.md").write_text(
-                "## Pipeline Status\n\n"
-                "- **Lifecycle:** Running\n"
-                "- **Phase:** Execute\n"
-                "- **Active Skill:** -\n"
-                "- **Updated:** 2026-06-11\n\n"
-                "## Tasks Status\n\n"
-                "| # | Task | Type | Wave | Status | Review | Elapsed | Notes |\n"
-                "| --- | --- | --- | --- | --- | --- | --- | --- |\n"
-                "| 1 | task-001 | IMPLEMENT | delivery-002 | In Progress | - | - | - |\n",
+            (work / "STATE.yml").write_text(
+                "lifecycle: Running\n"
+                "phase: Execute\n"
+                "updated: '2026-06-11'\n",
                 encoding="utf-8",
             )
-            # Write a minimal PLAN.md with wave-map for delivery-002
             (work / "PLAN.md").write_text(
                 "### delivery-002 execution graph\n\n"
                 "```wave-map\n"
@@ -1326,18 +1412,19 @@ class TestPF5ExecutionGraph(unittest.TestCase):
                 "```\n",
                 encoding="utf-8",
             )
-            # Write task file
+            # Legacy flat task file (tasks/task-NNN.md, not tasks/task-NNN/DETAIL.md
+            # -- the pre-feature-001 shape this fixture always used).
             (tasks_dir / "task-001.md").write_text(
                 "# task-001: My task title\n\nBody.\n", encoding="utf-8"
             )
             from dashboard.reader import read_repo
             model = read_repo(root)
         work_model = model.works[0]
-        t = work_model.tasks[0]
-        self.assertEqual(t.delivery, 2)  # from STATE Wave delivery-002
-        self.assertEqual(t.lane, 3)      # from PLAN wave-map wave 3
-        self.assertEqual(t.short_name, "My task title")
-        self.assertNotEqual(t.delivery, 0)  # no task with delivery=0
+        self.assertEqual(work_model.tasks, [],
+                          "the monolithic path never populates tasks[] any more -- "
+                          "not a regression this task introduces, a pre-existing "
+                          "mechanism this refactor's YAML conversion made permanently "
+                          "unreachable (accepted by SPEC.md sec:L-3)")
 
 
 class TestPF6ProjectNameCommentStrip(unittest.TestCase):
@@ -1410,6 +1497,13 @@ class TestSchemaVersion3Serialization(unittest.TestCase):
     """Server serializes schema_version 3 with new task fields in deterministic order."""
 
     def test_python_server_emits_schema_3(self):
+        """Content-level update (task-016): the original fixture used the
+        monolithic layout's embedded '## Tasks Status' Wave column, now
+        permanently unreachable for tasks[] (see
+        test_delivery_from_state_wave_column_is_now_unreachable above). The
+        FLAT layout is the real mechanism that produces a non-empty tasks[]
+        with delivery=1 (flat's hardcoded single implicit delivery) and
+        lane=None (no PLAN.md) -- the exact pair this test always asserted."""
         import sys
         sys.path.insert(0, str(Path(__file__).resolve().parents[3]))
         from dashboard.server import server as srv
@@ -1417,19 +1511,15 @@ class TestSchemaVersion3Serialization(unittest.TestCase):
         with _tmp.TemporaryDirectory() as d:
             root = Path(d)
             aid = root / ".aid"
-            work = aid / "works" / "work-001-test"
-            work.mkdir(parents=True)
-            (work / "STATE.md").write_text(
-                "## Pipeline Status\n\n"
-                "- **Lifecycle:** Running\n"
-                "- **Phase:** Execute\n"
-                "- **Active Skill:** -\n"
-                "- **Updated:** 2026-06-11\n\n"
-                "## Tasks Status\n\n"
-                "| # | Task | Type | Wave | Status | Review | Elapsed | Notes |\n"
-                "| --- | --- | --- | --- | --- | --- | --- | --- |\n"
-                "| 1 | task-001 | IMPLEMENT | delivery-001 | In Progress | - | - | - |\n",
-                encoding="utf-8",
+            make_flat_work(
+                aid, "work-001-test",
+                "lifecycle: Running\n"
+                "phase: Execute\n"
+                "updated: '2026-06-11'\n"
+                "tasks_lifecycle:\n"
+                "  task-001:\n"
+                "    state: In Progress\n",
+                task_ids=["task-001"],
             )
             from dashboard.reader import read_repo
             model = read_repo(root)
@@ -1442,7 +1532,7 @@ class TestSchemaVersion3Serialization(unittest.TestCase):
         self.assertIn("short_name", task)
         self.assertIn("delivery", task)
         self.assertIn("lane", task)
-        # delivery=1 (from delivery-001 wave), lane=None (no PLAN.md)
+        # delivery=1 (flat layout's single implicit delivery), lane=None (no PLAN.md)
         self.assertEqual(task["delivery"], 1)
         self.assertIsNone(task["lane"])
 
@@ -1482,7 +1572,7 @@ class TestKbHelpers(unittest.TestCase):
             "## Knowledge Summary Status\n\n"
             "**User Approved:** no\n"  # legacy prose says no -- frontmatter must win
         )
-        fm = parse_frontmatter_scalars(text)
+        fm, _warnings = parse_state_document(text, allow_frontmatter_fence=True)
         approved, date, mode = _parse_kb_summary_approval(text, fm)
         self.assertTrue(approved, "frontmatter summary_approved must win over legacy prose")
         self.assertEqual(date, "2026-07-01")
@@ -1492,7 +1582,7 @@ class TestKbHelpers(unittest.TestCase):
         """yes/no/true/false (case-insensitive) all normalize to the same bool."""
         for token, expected in (("YES", True), ("true", True), ("No", False), ("FALSE", False)):
             text = f"---\nsummary_approved: {token}\n---\n"
-            fm = parse_frontmatter_scalars(text)
+            fm, _warnings = parse_state_document(text, allow_frontmatter_fence=True)
             approved, _date, mode = _parse_kb_summary_approval(text, fm)
             self.assertEqual(approved, expected, f"token {token!r} must normalize to {expected}")
             self.assertEqual(mode, SourceMode.Normalized)
@@ -1627,86 +1717,73 @@ class TestPF8ParseSpecMd(unittest.TestCase):
 # ---------------------------------------------------------------------------
 
 class TestCreatedField(unittest.TestCase):
-    """PF-CR: parse_state_md extracts pw.created from ## Lifecycle History table.
+    """PF-CR: parse_state_md extracts pw.created from the `lifecycle_history`
+    sequence (was: the '## Lifecycle History' markdown table -- sec:D-4
+    converts it to an authored YAML sequence; the extraction rule itself is
+    unchanged, see parsers.py parse_state_md's docstring "the first entry
+    ... whose event is 'Work created'").
 
-    A row whose second column is 'Work created' (case-insensitive) yields
-    created == the first-column date string.  Works without that row yield
-    created is None.
+    An entry whose `event` is 'Work created' (case-insensitive) yields
+    created == that entry's `date` string.  Works without such an entry
+    yield created is None.
     """
 
     _STATE_WITH_HISTORY = """\
-## Pipeline Status
-
-- **Lifecycle:** Running
-- **Phase:** Execute
-- **Active Skill:** aid-execute
-- **Updated:** 2026-06-10T12:00:00Z
-- **Pause Reason:** --
-- **Block Reason:** --
-- **Block Artifact:** --
-
-## Tasks Status
-
-| # | Task | Type | Wave | Status | Review | Elapsed | Notes |
-|---|------|------|------|--------|--------|---------|-------|
-| 001 | task-001 | IMPLEMENT | delivery-001 | Done | A | 1h | -- |
-
-## Lifecycle History
-
-| Date | Phase Transition / Gate | Grade | Notes |
-|------|--------------------------|-------|-------|
-| 2026-05-15 | Work created | -- | Initial creation |
-| 2026-05-20 | Define -> Specify | A | -- |
-| 2026-06-01 | Specify -> Plan | A | -- |
+lifecycle: Running
+phase: Execute
+active_skill: aid-execute
+updated: '2026-06-10T12:00:00Z'
+pause_reason: --
+block_reason: --
+block_artifact: --
+lifecycle_history:
+  - date: '2026-05-15'
+    event: Work created
+    grade: --
+    notes: Initial creation
+  - date: '2026-05-20'
+    event: Define -> Specify
+    grade: A
+  - date: '2026-06-01'
+    event: Specify -> Plan
+    grade: A
 """
 
     _STATE_WITHOUT_HISTORY = """\
-## Pipeline Status
-
-- **Lifecycle:** Completed
-- **Phase:** Execute
-- **Active Skill:** none
-- **Updated:** 2026-06-12T00:00:00Z
-- **Pause Reason:** --
-- **Block Reason:** --
-- **Block Artifact:** --
-
-## Tasks Status
-
-| # | Task | Type | Wave | Status | Review | Elapsed | Notes |
-|---|------|------|------|--------|--------|---------|-------|
-| 001 | task-001 | IMPLEMENT | delivery-001 | Done | A | 2h | -- |
+lifecycle: Completed
+phase: Execute
+active_skill: none
+updated: '2026-06-12T00:00:00Z'
+pause_reason: --
+block_reason: --
+block_artifact: --
 """
 
     _STATE_HISTORY_CASE_INSENSITIVE = """\
-## Pipeline Status
-
-- **Lifecycle:** Running
-- **Phase:** Plan
-- **Active Skill:** aid-plan
-- **Updated:** 2026-06-11T00:00:00Z
-- **Pause Reason:** --
-- **Block Reason:** --
-- **Block Artifact:** --
-
-## Lifecycle History
-
-| Date | Phase Transition / Gate | Grade | Notes |
-|------|--------------------------|-------|-------|
-| 2026-04-01 | WORK CREATED | -- | case-insensitive check |
+lifecycle: Running
+phase: Plan
+active_skill: aid-plan
+updated: '2026-06-11T00:00:00Z'
+pause_reason: --
+block_reason: --
+block_artifact: --
+lifecycle_history:
+  - date: '2026-04-01'
+    event: WORK CREATED
+    notes: case-insensitive check
 """
 
     def test_created_extracted_from_lifecycle_history(self):
-        """Work with 'Work created' row yields created == the date string."""
+        """Work with a 'Work created' entry yields created == its date string."""
         pw = parse_state_md(self._STATE_WITH_HISTORY)
         self.assertEqual(pw.created, "2026-05-15",
-                         "created must be the Date cell of the 'Work created' row")
+                         "created must be the date field of the 'Work created' entry")
 
     def test_created_is_none_without_history(self):
-        """Work without ## Lifecycle History section yields created is None."""
+        """Work without a `lifecycle_history` key yields created is None."""
         pw = parse_state_md(self._STATE_WITHOUT_HISTORY)
         self.assertIsNone(pw.created,
-                          "created must be None when no Lifecycle History table is present")
+                          "created must be None when lifecycle_history is absent")
 
     def test_created_case_insensitive_work_created(self):
         """'WORK CREATED' (all-caps) is still matched (case-insensitive)."""
@@ -1714,29 +1791,27 @@ class TestCreatedField(unittest.TestCase):
         self.assertEqual(pw.created, "2026-04-01",
                          "created extraction must be case-insensitive on 'Work created'")
 
-    def test_created_takes_first_row_only(self):
-        """If two rows match 'Work created', only the first date is taken."""
-        content = """\
-## Pipeline Status
-
-- **Lifecycle:** Running
-- **Phase:** Execute
-- **Active Skill:** aid-execute
-- **Updated:** 2026-06-10T00:00:00Z
-- **Pause Reason:** --
-- **Block Reason:** --
-- **Block Artifact:** --
-
-## Lifecycle History
-
-| Date | Phase Transition / Gate | Grade | Notes |
-|------|--------------------------|-------|-------|
-| 2026-03-01 | Work created | -- | first |
-| 2026-04-01 | Work created | -- | duplicate (should be ignored) |
-"""
+    def test_created_takes_first_entry_only(self):
+        """If two entries match 'Work created', only the first date is taken."""
+        content = (
+            "lifecycle: Running\n"
+            "phase: Execute\n"
+            "active_skill: aid-execute\n"
+            "updated: '2026-06-10T00:00:00Z'\n"
+            "pause_reason: --\n"
+            "block_reason: --\n"
+            "block_artifact: --\n"
+            "lifecycle_history:\n"
+            "  - date: '2026-03-01'\n"
+            "    event: Work created\n"
+            "    notes: first\n"
+            "  - date: '2026-04-01'\n"
+            "    event: Work created\n"
+            "    notes: duplicate (should be ignored)\n"
+        )
         pw = parse_state_md(content)
         self.assertEqual(pw.created, "2026-03-01",
-                         "created must be taken from the FIRST matching 'Work created' row")
+                         "created must be taken from the FIRST matching 'Work created' entry")
 
     def test_created_field_exposed_on_work_model(self):
         """read_repo propagates pw.created into WorkModel.created."""
@@ -1745,24 +1820,24 @@ class TestCreatedField(unittest.TestCase):
             aid = root / ".aid"
             work = aid / "works" / "work-001-cr"
             work.mkdir(parents=True)
-            (work / "STATE.md").write_text(self._STATE_WITH_HISTORY, encoding="utf-8")
+            (work / "STATE.yml").write_text(self._STATE_WITH_HISTORY, encoding="utf-8")
             model = read_repo(root)
         self.assertEqual(len(model.works), 1)
         self.assertEqual(model.works[0].created, "2026-05-15",
                          "WorkModel.created must be set from parsed pw.created")
 
     def test_created_none_propagated_when_absent(self):
-        """read_repo sets WorkModel.created = None when no Lifecycle History."""
+        """read_repo sets WorkModel.created = None when lifecycle_history is absent."""
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)
             aid = root / ".aid"
             work = aid / "works" / "work-001-nocr"
             work.mkdir(parents=True)
-            (work / "STATE.md").write_text(self._STATE_WITHOUT_HISTORY, encoding="utf-8")
+            (work / "STATE.yml").write_text(self._STATE_WITHOUT_HISTORY, encoding="utf-8")
             model = read_repo(root)
         self.assertEqual(len(model.works), 1)
         self.assertIsNone(model.works[0].created,
-                          "WorkModel.created must be None when Lifecycle History is absent")
+                          "WorkModel.created must be None when lifecycle_history is absent")
 
 
 if __name__ == "__main__":

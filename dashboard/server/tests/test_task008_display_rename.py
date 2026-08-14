@@ -71,9 +71,11 @@ class _TmpRepo:
 
 
 def _make_flat_work_legacy_table(root: Path, work_id: str) -> Path:
-    """A FLAT-layout work with a LEGACY 5-column ### Tasks lifecycle table (no
-    Name column authored yet) -- proves task.rename's flat write path (col
-    idx 7) works even against a pre-feature-005 authored table."""
+    """A FLAT-layout work with a LEGACY `tasks_lifecycle` entry (no
+    `display_name` key authored yet) -- proves task.rename's flat write path
+    works even against a pre-feature-005 authored entry.
+    (work-009-refactor task-016: was a fenced-frontmatter STATE.md with a
+    '### Tasks lifecycle' markdown pipe-table -- retired, SPEC.md sec:D-4.)"""
     work_dir = root / ".aid" / "works" / work_id
     (work_dir / "tasks" / "task-001").mkdir(parents=True, exist_ok=True)
     (work_dir / "BLUEPRINT.md").write_text("# Blueprint\n", encoding="utf-8")
@@ -81,38 +83,39 @@ def _make_flat_work_legacy_table(root: Path, work_id: str) -> Path:
     (work_dir / "REQUIREMENTS.md").write_text(
         "# Requirements\n\n- **Name:** Old Name\n", encoding="utf-8",
     )
-    (work_dir / "STATE.md").write_text(
-        "---\n"
+    (work_dir / "STATE.yml").write_text(
         "lifecycle: Running\n"
         "updated: '2026-01-01T00:00:00Z'\n"
-        "---\n\n"
-        "# Work State\n\n"
-        "### Tasks lifecycle\n\n"
-        "| Task | State | Review | Elapsed | Notes |\n"
-        "| --- | --- | --- | --- | --- |\n"
-        "| task-001 | Pending | -- | -- | -- |\n",
+        "tasks_lifecycle:\n"
+        "  task-001:\n"
+        "    state: Pending\n"
+        "    review: --\n"
+        "    elapsed: --\n"
+        "    notes: --\n",
         encoding="utf-8",
     )
     return work_dir
 
 
 def _make_hierarchical_work(root: Path, work_id: str) -> Path:
-    """A NESTED-layout work with a per-task STATE.md (task-004's ## Task State
-    section) -- proves task.rename's nested write path (fm_key indirection)."""
+    """A NESTED-layout work with a per-task STATE.yml -- proves task.rename's
+    nested write path (fm_key indirection). (work-009-refactor task-016: was
+    fenced-frontmatter/bullet-heading STATE.md files -- retired, SPEC.md
+    sec:D-4.)"""
     del_dir = root / ".aid" / "works" / work_id / "deliveries" / "delivery-001"
     task_dir = del_dir / "tasks" / "task-001"
     task_dir.mkdir(parents=True, exist_ok=True)
-    (root / ".aid" / "works" / work_id / "STATE.md").write_text(
-        "## Pipeline State\n\n- **Lifecycle:** Running\n", encoding="utf-8",
+    (root / ".aid" / "works" / work_id / "STATE.yml").write_text(
+        "lifecycle: Running\n", encoding="utf-8",
     )
-    (del_dir / "STATE.md").write_text(
-        "## Delivery Lifecycle\n\n- **State:** Executing\n", encoding="utf-8",
+    (del_dir / "STATE.yml").write_text(
+        "delivery_state: Executing\n", encoding="utf-8",
     )
     (task_dir / "DETAIL.md").write_text(
         "# task-001: Nested task\n\n**Type:** IMPLEMENT\n", encoding="utf-8",
     )
-    (task_dir / "STATE.md").write_text(
-        "---\nstate: Pending\n---\n\n## Task State\n", encoding="utf-8",
+    (task_dir / "STATE.yml").write_text(
+        "state: Pending\n", encoding="utf-8",
     )
     return root / ".aid" / "works" / work_id
 
@@ -226,7 +229,7 @@ class TestOpTaskRenameArgv(unittest.TestCase):
     def test_env_targets_resolved_work_dir(self):
         work_dir = Path("/resolved/work")
         _argv, env = srv._op_task_rename_argv(work_dir, "/repo", {"task_id": "001"}, {"value": "x"})
-        self.assertEqual(env["AID_STATE_FILE"], str(work_dir / "STATE.md"))
+        self.assertEqual(env["AID_STATE_FILE"], str(work_dir / "STATE.yml"))
         self.assertEqual(env["AID_WORK_DIR"], str(work_dir))
 
 
@@ -265,7 +268,7 @@ class TestTaskRenameDispatchRealWriterFlat(unittest.TestCase):
             )
             self.assertEqual(status, 200)
             self.assertEqual(json.loads(body), {"ok": True, "op": "task.rename"})
-            content = (work_dir / "STATE.md").read_text(encoding="utf-8")
+            content = (work_dir / "STATE.yml").read_text(encoding="utf-8")
             self.assertIn("Renamed flat task", content)
 
     def test_empty_rename_writes_null_sentinel(self):
@@ -282,8 +285,8 @@ class TestTaskRenameDispatchRealWriterFlat(unittest.TestCase):
             )
             self.assertEqual(status, 200)
             self.assertEqual(json.loads(body), {"ok": True, "op": "task.rename"})
-            content = (work_dir / "STATE.md").read_text(encoding="utf-8")
-            self.assertIn("| task-001 | Pending | -- | -- | -- | -- |", content)
+            content = (work_dir / "STATE.yml").read_text(encoding="utf-8")
+            self.assertIn("display_name: --", content)
 
 
 class TestTaskRenameDispatchRealWriterNested(unittest.TestCase):
@@ -305,7 +308,7 @@ class TestTaskRenameDispatchRealWriterNested(unittest.TestCase):
             self.assertEqual(status, 200)
             self.assertEqual(json.loads(body), {"ok": True, "op": "task.rename"})
             content = (
-                work_dir / "deliveries" / "delivery-001" / "tasks" / "task-001" / "STATE.md"
+                work_dir / "deliveries" / "delivery-001" / "tasks" / "task-001" / "STATE.yml"
             ).read_text(encoding="utf-8")
             # A value containing a space is not "bare-word-safe" (WB_SET_FRONTMATTER_AWK),
             # so it is emitted as a single-quoted YAML scalar -- see wb_set_frontmatter's

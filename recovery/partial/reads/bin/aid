@@ -1,0 +1,140 @@
+_aid_sc_guard_derived_table() {
+    local md="$1" heading="$2" start="$3" end="$4" h hend
+    h="$(_aid_sc_find_heading "$heading" "$start" "$end")"
+    [[ "$h" -ge 0 ]] || return 0
+    hend="$(_aid_sc_section_end "$h" "$end")"
+    _aid_sc_table_rows "$((h+1))" "$hend"
+    if [[ "${#_SC_ROWS[@]}" -gt 0 ]]; then
+        echo "WARN: aid migrate: ${md}: DERIVED section '${heading}' holds real data -- conversion refused for this file (nothing dropped). Remedy: run migrate-work-hierarchy on this work, then re-run 'aid update'." >&2
+        return 1
+    fi
+    return 0
+}
+
+_aid_sc_guard_derived_narrative() {
+    local md="$1" heading="$2" start="$3" end="$4" h hend i line trimmed in_comment=0
+    h="$(_aid_sc_find_heading "$heading" "$start" "$end")"
+    [[ "$h" -ge 0 ]] || return 0
+    hend="$(_aid_sc_section_end "$h" "$end")"
+    for ((i=h+1; i<hend; i++)); do
+        line="${_SC_LINES[$i]}"
+        trimmed="$(_aid_sc_trim "$line")"
+        [[ -z "$trimmed" ]] && continue
+        [[ "$trimmed" == "---" ]] && continue
+        if [[ "$in_comment" -eq 1 ]]; then
+            [[ "$trimmed" == *"-->"* ]] && in_comment=0
+            continue
+        fi
+        if [[ "$trimmed" == "<!--"* ]]; then
+            [[ "$trimmed" == *"-->"* ]] || in_comment=1
+            continue
+        fi
+        [[ "$trimmed" =~ ^_None\ yet ]] && continue
+        echo "WARN: aid migrate: ${md}: DERIVED section '${heading}' holds real data -- conversion refused for this file (nothing dropped). Remedy: run migrate-work-hierarchy on this work, then re-run 'aid update'." >&2
+        return 1
+    done
+    return 0
+}
+
+# _aid_sc_convert_work_body MD LAYOUT BSTART BEND -> populates the
+# caller-scope global _SC_OUT with the work-level AUTHORED-zone YAML lines
+# (SPEC.md SS D-2/D-4); returns 1 on a DERIVED-guard hard error (SP-3).
+_aid_sc_convert_work_body() {
+    local md="$1" layout="$2" bstart="$3" bend="$4"
+    _SC_OUT=()
+
+    local h_i h_i_end
+    h_i="$(_aid_sc_find_heading "## Interview State" "$bstart" "$bend")"
+    if [[ "$h_i" -ge 0 ]]; then
+        h_i_end="$(_aid_sc_section_end "$h_i" "$bend")"
+        _aid_sc_emit_interview "$((h_i+1))" "$h_i_end"
+    else
+        _SC_OUT+=("interview:")
+        _SC_OUT+=("  state: Pending")
+        _SC_OUT+=("  grade: Pending")
+        _SC_OUT+=("  sections: []")
+    fi
+
+    local h_l h_l_end
+    h_l="$(_aid_sc_find_heading "## Lifecycle History" "$bstart" "$bend")"
+    if [[ "$h_l" -ge 0 ]]; then
+        h_l_end="$(_aid_sc_section_end "$h_l" "$bend")"
+        _aid_sc_emit_lifecycle_history "$((h_l+1))" "$h_l_end"
+    else
+        _SC_OUT+=("lifecycle_history: []")
+    fi
+
+    local h_d h_d_end
+    h_d="$(_aid_sc_find_heading "## Deploy State" "$bstart" "$bend")"
+    if [[ "$h_d" -ge 0 ]]; then
+        h_d_end="$(_aid_sc_section_end "$h_d" "$bend")"
+        _aid_sc_emit_deploy "$((h_d+1))" "$h_d_end"
+    else
+        _SC_OUT+=("deploy: []")
+    fi
+
+    if [[ "$layout" == "flat" ]]; then
+        local h_dl h_dl_end
+        h_dl="$(_aid_sc_find_heading "## Delivery Lifecycle" "$bstart" "$bend")"
+        if [[ "$h_dl" -ge 0 ]]; then
+            h_dl_end="$(_aid_sc_section_end "$h_dl" "$bend")"
+            _aid_sc_emit_delivery_lifecycle "$((h_dl+1))" "$h_dl_end"
+
+            local h_tl h_tl_end
+            h_tl="$(_aid_sc_find_heading "### Tasks lifecycle" "$h_dl" "$h_dl_end")"
+            if [[ "$h_tl" -ge 0 ]]; then
+                h_tl_end="$(_aid_sc_section_end "$h_tl" "$h_dl_end")"
+                _aid_sc_emit_tasks_lifecycle "$((h_tl+1))" "$h_tl_end"
+            else
+                _SC_OUT+=("tasks_lifecycle: {}")
+            fi
+        else
+            _SC_OUT+=("delivery_lifecycle:")
+            _SC_OUT+=("  updated: --")
+            _SC_OUT+=("  block_reason: --")
+            _SC_OUT+=("  block_artifact: --")
+            _SC_OUT+=("tasks_lifecycle: {}")
+        fi
+
+        local h_g h_g_end
+        h_g="$(_aid_sc_find_heading "## Delivery Gate" "$bstart" "$bend")"
+        if [[ "$h_g" -ge 0 ]]; then
+            h_g_end="$(_aid_sc_section_end "$h_g" "$bend")"
+            _aid_sc_emit_delivery_gate "$((h_g+1))" "$h_g_end"
+        else
+            _SC_OUT+=("delivery_gate:")
+            _SC_OUT+=("  issue_list: []")
+        fi
+
+        local h_q h_q_end
+        h_q="$(_aid_sc_find_heading "## Cross-phase Q&A" "$bstart" "$bend")"
+        if [[ "$h_q" -ge 0 ]]; then
+            h_q_end="$(_aid_sc_section_end "$h_q" "$bend")"
+            _aid_sc_emit_qa "$((h_q+1))" "$h_q_end"
+        else
+            _SC_OUT+=("qa: []")
+        fi
+    fi
+
+    local -a derived_table_headings=("## Features State" "## Plan / Deliveries" "## Tasks State" "## Calibration Log")
+    local dh
+    for dh in "${derived_table_headings[@]}"; do
+        _aid_sc_guard_derived_table "$md" "$dh" "$bstart" "$bend" || return 1
+    done
+    local -a derived_narrative_headings=("## Delivery Gates" "## Dispatches")
+    for dh in "${derived_narrative_headings[@]}"; do
+        _aid_sc_guard_derived_narrative "$md" "$dh" "$bstart" "$bend" || return 1
+    done
+    if [[ "$layout" == "full" ]]; then
+        _aid_sc_guard_derived_narrative "$md" "## Cross-phase Q&A" "$bstart" "$bend" || return 1
+    fi
+
+    return 0
+}
+
+# _aid_sc_convert_delivery_body MD BSTART BEND -> populates _SC_OUT with the
+# delivery-level AUTHORED-zone YAML lines (full layout only); returns 1 on
+# a DERIVED-guard hard error.
+_aid_sc_convert_delivery_body() {
+    local md="$1" bstart="$2" bend="$3"
+    _SC_OUT=()

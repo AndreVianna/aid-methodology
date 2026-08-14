@@ -1,0 +1,3 @@
+control_before: ok_before
+alias_key: *myanchor
+control_after: ok_after

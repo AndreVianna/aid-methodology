@@ -109,46 +109,64 @@ class TestParseTaskStateMdDisplayName(unittest.TestCase):
 # ---------------------------------------------------------------------------
 
 class TestParseTasksLifecycleMdName(unittest.TestCase):
-    def test_six_column_row_reads_name(self):
+    """parse_tasks_lifecycle_md's real input contract (work-009-refactor
+    task-016) is the work-root STATE.yml `tasks_lifecycle` mapping (SPEC.md
+    sec:D-4), not a '### Tasks lifecycle' markdown pipe-table -- retired.
+    'Legacy' (pre-feature-005) now means "no `display_name` key in the
+    task's mapping entry", the mapping-level analogue of the old missing
+    Name column."""
+
+    def test_entry_with_display_name_key_reads_it(self):
         text = (
-            "### Tasks lifecycle\n\n"
-            "| Task | State | Review | Elapsed | Notes | Name |\n"
-            "| --- | --- | --- | --- | --- | --- |\n"
-            "| task-001 | Done | -- | -- | -- | Wire up the rename dispatch |\n"
+            "tasks_lifecycle:\n"
+            "  task-001:\n"
+            "    state: Done\n"
+            "    review: --\n"
+            "    elapsed: --\n"
+            "    notes: --\n"
+            "    display_name: Wire up the rename dispatch\n"
         )
         result, warnings = parse_tasks_lifecycle_md(text)
         self.assertEqual(warnings, [])
         self.assertEqual(result["task-001"].display_name, "Wire up the rename dispatch")
 
-    def test_legacy_five_column_row_yields_none(self):
-        """A pre-feature-005 table (no Name column at all) must not warn or
-        throw -- _col(5) is simply out of range -> None (AC backward-compat)."""
+    def test_legacy_entry_without_display_name_key_yields_none(self):
+        """A pre-feature-005 entry (no `display_name` key at all) must not
+        warn or throw -- absent key -> None (AC backward-compat)."""
         text = (
-            "### Tasks lifecycle\n\n"
-            "| Task | State | Review | Elapsed | Notes |\n"
-            "| --- | --- | --- | --- | --- |\n"
-            "| task-001 | Done | -- | -- | -- |\n"
+            "tasks_lifecycle:\n"
+            "  task-001:\n"
+            "    state: Done\n"
+            "    review: --\n"
+            "    elapsed: --\n"
+            "    notes: --\n"
         )
         result, warnings = parse_tasks_lifecycle_md(text)
         self.assertEqual(warnings, [])
         self.assertIsNone(result["task-001"].display_name)
 
-    def test_null_sentinel_cell_yields_none(self):
+    def test_null_sentinel_value_yields_none(self):
         text = (
-            "### Tasks lifecycle\n\n"
-            "| Task | State | Review | Elapsed | Notes | Name |\n"
-            "| --- | --- | --- | --- | --- | --- |\n"
-            "| task-001 | Done | -- | -- | -- | -- |\n"
+            "tasks_lifecycle:\n"
+            "  task-001:\n"
+            "    state: Done\n"
+            "    review: --\n"
+            "    elapsed: --\n"
+            "    notes: --\n"
+            "    display_name: --\n"
         )
         result, _ = parse_tasks_lifecycle_md(text)
         self.assertIsNone(result["task-001"].display_name)
 
-    def test_other_columns_unaffected(self):
+    def test_other_fields_unaffected(self):
         text = (
-            "### Tasks lifecycle\n\n"
-            "| Task | State | Review | Elapsed | Notes | Name |\n"
-            "| --- | --- | --- | --- | --- | --- |\n"
-            "| task-001 | In Progress | A+ | 01:15 | partial | Custom label |\n"
+            "tasks_lifecycle:\n"
+            "  task-001:\n"
+            "    state: In Progress\n"
+            "    review: A+\n"
+            "    elapsed: '01:15'\n"
+            "    notes: partial\n"
+            "    display_name: Custom label\n"
         )
         result, _ = parse_tasks_lifecycle_md(text)
         pts = result["task-001"]
@@ -179,10 +197,12 @@ def _make_repo(tmp: Path) -> "tuple[Path, Path]":
 
 
 def _build_flat_work(aid: Path, work_id: str, name_column: bool, name_value: str = "--") -> Path:
-    """Lite-flat layout (BLUEPRINT.md + tasks/task-NNN/DETAIL.md, no deliveries/).
-    name_column=False writes the LEGACY 5-column table (no Name column at all);
-    name_column=True writes the 6-column table with name_value in the Name cell.
-    """
+    """Lite-flat layout (BLUEPRINT.md + tasks/task-NNN/DETAIL.md, no deliveries/),
+    a work-root STATE.yml with a `tasks_lifecycle` mapping (SPEC.md sec:D-4).
+    name_column=False omits the `display_name` key entirely (the legacy,
+    pre-feature-005 shape); name_column=True writes it with name_value.
+    (work-009-refactor task-016: was a '### Tasks lifecycle' markdown
+    pipe-table with an optional trailing Name column -- retired.)"""
     work_dir = aid / "works" / work_id
     work_dir.mkdir(parents=True, exist_ok=True)
     (work_dir / "BLUEPRINT.md").write_text(
@@ -190,22 +210,19 @@ def _build_flat_work(aid: Path, work_id: str, name_column: bool, name_value: str
         "## Objective\n\nDeliver.\n\n## Gate Criteria\n\n- [ ] All tests pass\n",
         encoding="utf-8",
     )
+    entry = (
+        "tasks_lifecycle:\n"
+        "  task-001:\n"
+        "    state: Done\n"
+        "    review: --\n"
+        "    elapsed: --\n"
+        "    notes: --\n"
+    )
     if name_column:
-        table = (
-            "| Task | State | Review | Elapsed | Notes | Name |\n"
-            "|------|-------|--------|---------|-------|------|\n"
-            f"| task-001 | Done | -- | -- | -- | {name_value} |\n"
-        )
-    else:
-        table = (
-            "| Task | State | Review | Elapsed | Notes |\n"
-            "|------|-------|--------|---------|-------|\n"
-            "| task-001 | Done | -- | -- | -- |\n"
-        )
-    (work_dir / "STATE.md").write_text(
-        "## Pipeline State\n\n- **Lifecycle:** Running\n\n"
-        "## Delivery Lifecycle\n\n- **State:** Executing\n\n"
-        "### Tasks lifecycle\n\n" + table,
+        entry += f"    display_name: {name_value}\n"
+    (work_dir / "STATE.yml").write_text(
+        "lifecycle: Running\n"
+        "delivery_state: Executing\n" + entry,
         encoding="utf-8",
     )
     task_dir = work_dir / "tasks" / "task-001"
@@ -218,13 +235,14 @@ def _build_flat_work(aid: Path, work_id: str, name_column: bool, name_value: str
 
 
 def _build_hierarchical_work(aid: Path, work_id: str, display_name: "str | None") -> Path:
-    """Full-nested layout (deliveries/delivery-NNN/tasks/task-NNN/{DETAIL,STATE}.md).
-    display_name=None omits the frontmatter key entirely (pre-feature-005 file);
-    otherwise writes it as a flat frontmatter scalar in the per-task STATE.md.
-    """
+    """Full-nested layout (deliveries/delivery-NNN/tasks/task-NNN/{DETAIL.md,
+    STATE.yml}). display_name=None omits the key entirely (pre-feature-005
+    file); otherwise writes it as a bare STATE.yml scalar in the per-task
+    file. (work-009-refactor task-016: was fenced-frontmatter/bullet-heading
+    STATE.md files -- retired, SPEC.md sec:D-4.)"""
     work_dir = aid / "works" / work_id
     work_dir.mkdir(parents=True, exist_ok=True)
-    (work_dir / "STATE.md").write_text("## Pipeline State\n\n- **Lifecycle:** Running\n", encoding="utf-8")
+    (work_dir / "STATE.yml").write_text("lifecycle: Running\n", encoding="utf-8")
 
     del_dir = work_dir / "deliveries" / "delivery-001"
     del_dir.mkdir(parents=True, exist_ok=True)
@@ -233,10 +251,13 @@ def _build_hierarchical_work(aid: Path, work_id: str, display_name: "str | None"
         "## Objective\n\nDeliver.\n\n## Gate Criteria\n\n- [ ] All tests pass\n",
         encoding="utf-8",
     )
-    (del_dir / "STATE.md").write_text(
-        "## Delivery Lifecycle\n\n- **State:** Executing\n\n"
-        "## Delivery Gate\n\n- **Reviewer Tier:** Small\n- **Grade:** A+\n"
-        "- **Issue List:** none\n- **Timestamp:** 2026-07-08T12:00:00Z\n",
+    (del_dir / "STATE.yml").write_text(
+        "delivery_state: Executing\n"
+        "gate_tier: Small\n"
+        "gate_grade: A+\n"
+        "gate_timestamp: '2026-07-08T12:00:00Z'\n"
+        "delivery_gate:\n"
+        "  issue_list: []\n",
         encoding="utf-8",
     )
     task_dir = del_dir / "tasks" / "task-001"
@@ -245,11 +266,10 @@ def _build_hierarchical_work(aid: Path, work_id: str, display_name: "str | None"
         "# task-001: Nested task short name\n\n**Type:** IMPLEMENT\n\nBody.\n",
         encoding="utf-8",
     )
-    fm = "---\nstate: Done\n"
+    fm = "state: Done\n"
     if display_name is not None:
         fm += f"display_name: {display_name}\n"
-    fm += "---\n\n## Task State\n"
-    (task_dir / "STATE.md").write_text(fm, encoding="utf-8")
+    (task_dir / "STATE.yml").write_text(fm, encoding="utf-8")
     return work_dir
 
 

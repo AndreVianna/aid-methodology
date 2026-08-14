@@ -138,9 +138,10 @@ Apply these failure-tolerance rules unconditionally:
   e.g., `STALE (REVIEW)`. Continue rendering.
 - **Render exception** (any unexpected error during snapshot construction):
   swallow the error silently. Print nothing for this snapshot event. Execution
-  continues unaffected. Log the error to `STATE.md ## Calibration Log` as
-  `| YYYY-MM-DD | snapshot-render | <error-one-line> | — | — | swallowed |`
-  only if that log section already exists (do not create it solely for this).
+  continues unaffected. There is no persisted log to append this to any more --
+  the work-level Calibration Log is now DERIVED solely from per-task `dispatch_log`
+  entries (`work-state-template.yml`), and a snapshot-render event has no `task-NNN`
+  of its own to attach one to; swallow it fully rather than attempting a write.
 - **Empty in-flight set:** summary-only view; skip the per-task drill-down rows.
 
 ### Snapshot Rendering — Decision Tree

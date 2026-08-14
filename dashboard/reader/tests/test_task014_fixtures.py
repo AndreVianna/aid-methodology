@@ -97,57 +97,67 @@ def _make_repo(tmp: Path) -> tuple[Path, Path]:
 
 def _write_work_state(work_dir: Path, lifecycle: str = "Running",
                       updated: str = "2026-06-10T12:00:00Z") -> None:
-    """Write a minimal work-level STATE.md."""
+    """Write a minimal work-level STATE.yml (hierarchical/full layout,
+    SPEC.md sec:D-4). (work-009-refactor task-016: was a bullet-heading
+    '## Pipeline State' STATE.md -- retired.)"""
     text = (
-        f"## Pipeline State\n\n"
-        f"- **Lifecycle:** {lifecycle}\n"
-        f"- **Phase:** Execute\n"
-        f"- **Active Skill:** aid-execute\n"
-        f"- **Updated:** {updated}\n"
-        f"- **Pause Reason:** --\n"
-        f"- **Block Reason:** --\n"
-        f"- **Block Artifact:** --\n"
+        f"lifecycle: {lifecycle}\n"
+        "phase: Execute\n"
+        "active_skill: aid-execute\n"
+        f"updated: '{updated}'\n"
+        "pause_reason: --\n"
+        "block_reason: --\n"
+        "block_artifact: --\n"
     )
-    (work_dir / "STATE.md").write_text(text, encoding="utf-8")
+    (work_dir / "STATE.yml").write_text(text, encoding="utf-8")
 
 
 def _write_delivery_state(delivery_dir: Path, state: str = "Executing",
                           qa_entries: Optional[list[tuple[str, str, str]]] = None) -> None:
-    """Write a delivery-level STATE.md.
+    """Write a delivery-level STATE.yml (SPEC.md sec:D-4).
 
-    qa_entries: list of (question_id, status, context) tuples for Cross-phase Q&A.
+    qa_entries: list of (question_id, status, context) tuples for the
+    delivery-scoped `qa` sequence -- question_id may be given either as a
+    bare number or a 'Q'-prefixed string (either round-trips to the same
+    'Q{N}' PendingInput.question_id on read, parsers.py's _qa_question_id).
+    (work-009-refactor task-016: was a '## Delivery Lifecycle' / '## Cross-
+    phase Q&A' bullet-heading STATE.md -- retired.)
     """
     lines = [
-        "## Delivery Lifecycle\n",
-        "\n",
-        f"- **State:** {state}\n",
-        "- **Updated:** 2026-06-10T12:00:00Z\n",
-        "- **Block Reason:** --\n",
-        "- **Block Artifact:** --\n",
-        "\n",
+        f"delivery_state: {state}\n",
+        "delivery_lifecycle:\n",
+        "  updated: '2026-06-10T12:00:00Z'\n",
+        "  block_reason: --\n",
+        "  block_artifact: --\n",
     ]
     if qa_entries:
-        lines.append("## Cross-phase Q&A\n\n")
+        lines.append("qa:\n")
         for qid, status, context in qa_entries:
-            lines.append(f"### {qid}\n\n")
-            lines.append(f"- **Status:** {status}\n")
-            lines.append(f"- **Category:** Architecture\n")
-            lines.append(f"- **Context:** {context}\n")
-            lines.append("\n")
-    (delivery_dir / "STATE.md").write_text("".join(lines), encoding="utf-8")
+            bare_id = qid[1:] if qid[:1].lower() == "q" else qid
+            lines.append(f"  - id: {bare_id}\n")
+            lines.append("    category: Architecture\n")
+            lines.append("    impact: --\n")
+            lines.append(f"    state: {status}\n")
+            lines.append(f"    context: {context}\n")
+            lines.append("    suggested: --\n")
+            lines.append("    answer: --\n")
+            lines.append("    applied_to: --\n")
+    else:
+        lines.append("qa: []\n")
+    (delivery_dir / "STATE.yml").write_text("".join(lines), encoding="utf-8")
 
 
 def _write_task_state(task_dir: Path, state: str = "Pending",
                       review: str = "--", elapsed: str = "--", notes: str = "--") -> None:
-    """Write a task-level STATE.md."""
+    """Write a task-level STATE.yml (SPEC.md sec:D-4). (work-009-refactor
+    task-016: was a '## Task State' bullet-heading STATE.md -- retired.)"""
     text = (
-        "## Task State\n\n"
-        f"- **State:** {state}\n"
-        f"- **Review:** {review}\n"
-        f"- **Elapsed:** {elapsed}\n"
-        f"- **Notes:** {notes}\n"
+        f"state: {state}\n"
+        f"review: {review}\n"
+        f"elapsed: {elapsed}\n"
+        f"notes: {notes}\n"
     )
-    (task_dir / "STATE.md").write_text(text, encoding="utf-8")
+    (task_dir / "STATE.yml").write_text(text, encoding="utf-8")
 
 
 def _write_task_spec(task_dir: Path, task_id: str, task_type: str = "IMPLEMENT",
@@ -535,13 +545,13 @@ class TestSD9SpikeScenario(unittest.TestCase):
                          "delivery-002 with zero tasks must have task_count=0")
 
     def test_sd9_no_shared_file_write(self):
-        """Disjoint STATE.md files: delivery-001 and delivery-002 each have their own STATE.md."""
+        """Disjoint STATE.yml files: delivery-001 and delivery-002 each have their own STATE.yml."""
         work_dir = self._build_spike_fixture()
-        # Verify the fixture itself has separate STATE.md files per delivery
-        del1_state = work_dir / "deliveries" / "delivery-001" / "STATE.md"
-        del2_state = work_dir / "deliveries" / "delivery-002" / "STATE.md"
-        self.assertTrue(del1_state.is_file(), "delivery-001/STATE.md must exist")
-        self.assertTrue(del2_state.is_file(), "delivery-002/STATE.md must exist")
+        # Verify the fixture itself has separate STATE.yml files per delivery
+        del1_state = work_dir / "deliveries" / "delivery-001" / "STATE.yml"
+        del2_state = work_dir / "deliveries" / "delivery-002" / "STATE.yml"
+        self.assertTrue(del1_state.is_file(), "delivery-001/STATE.yml must exist")
+        self.assertTrue(del2_state.is_file(), "delivery-002/STATE.yml must exist")
         # Files are disjoint by path (no shared state file)
         self.assertNotEqual(str(del1_state), str(del2_state))
 
@@ -777,14 +787,24 @@ class TestPerDeliveryQAUnion(unittest.TestCase):
 # ---------------------------------------------------------------------------
 
 class TestLegacyMonolithicWork(unittest.TestCase):
-    """Legacy monolithic work: inline ## Tasks State / ## Tasks Status table.
+    """Legacy monolithic work: a bare work-root STATE.yml, no BLUEPRINT.md/
+    deliveries/ wrapper (SPEC.md sec:D-4/L-3). (work-009-refactor task-016:
+    was an inline '## Tasks State'/'## Tasks Status' markdown pipe-table --
+    retired; the two constants below keep the class's original old-naming-
+    vs-new-naming split for continuity, but that split is now moot since
+    both are plain `lifecycle: Running` YAML -- there is no more heading-
+    name variance to distinguish.)
 
-    Validates that the legacy fallback path still works:
-    - Tasks are parsed from the inline ## Tasks State table (new naming) or
-      ## Tasks Status table (old naming)
-    - _detect_hierarchy returns False
-    - Work-level Pipeline State parsed correctly
-    - source_mode is determined by presence of typed block
+    Validates:
+    - _detect_hierarchy returns False for a bare monolithic STATE.yml
+    - Work-level lifecycle/source_mode parsed correctly from real YAML
+    - `parse_state_md()` NEVER populates `pw.tasks` regardless of input
+      format (SPEC.md L-3: the per-section task-table line-parsers are
+      deleted with nothing to retarget) -- tasks are ALWAYS [] via this
+      monolithic path now; task-status-table coverage lives instead in
+      TestReconcilePerTaskState / TestParseTasksLifecycleMdName (the flat
+      layout's `tasks_lifecycle` mapping) and the per-unit STATE.yml tests
+      in TestHierarchicalWork above.
     """
 
     def setUp(self):
@@ -796,60 +816,41 @@ class TestLegacyMonolithicWork(unittest.TestCase):
         shutil.rmtree(self._tmpdir, ignore_errors=True)
 
     _LEGACY_STATE_STATUS = """\
-## Pipeline Status
-
-- **Lifecycle:** Running
-- **Phase:** Execute
-- **Active Skill:** aid-execute
-- **Updated:** 2026-06-01T10:00:00Z
-- **Pause Reason:** --
-- **Block Reason:** --
-- **Block Artifact:** --
-
-## Tasks Status
-
-| # | Task | Type | Wave | Status | Review | Elapsed | Notes |
-|---|------|------|------|--------|--------|---------|-------|
-| 001 | task-001 | IMPLEMENT | delivery-001 | Done | A | 2h | first |
-| 002 | task-002 | TEST | delivery-001 | In Progress | -- | -- | second |
-| 003 | task-003 | DOCUMENT | delivery-002 | Pending | -- | -- | third |
+lifecycle: Running
+phase: Execute
+active_skill: aid-execute
+updated: '2026-06-01T10:00:00Z'
+pause_reason: --
+block_reason: --
+block_artifact: --
 """
 
     _MODERN_STATE = """\
-## Pipeline State
-
-- **Lifecycle:** Running
-- **Phase:** Execute
-- **Active Skill:** aid-execute
-- **Updated:** 2026-06-02T10:00:00Z
-- **Pause Reason:** --
-- **Block Reason:** --
-- **Block Artifact:** --
-
-## Tasks State
-
-| # | Task | Type | Wave | State | Review | Elapsed | Notes |
-|---|------|------|------|-------|--------|---------|-------|
-| 001 | task-001 | IMPLEMENT | delivery-001 | Done | A | 2h | first |
-| 002 | task-002 | TEST | delivery-001 | In Review | B | 4h | second |
-| 003 | task-003 | DOCUMENT | delivery-002 | In Progress | -- | -- | third |
+lifecycle: Running
+phase: Execute
+active_skill: aid-execute
+updated: '2026-06-02T10:00:00Z'
+pause_reason: --
+block_reason: --
+block_artifact: --
 """
 
     def _write_legacy_repo(self, work_id: str, state_text: str) -> Path:
         work_dir = self.aid / "works" / work_id
         work_dir.mkdir(parents=True, exist_ok=True)
-        (work_dir / "STATE.md").write_text(state_text, encoding="utf-8")
+        (work_dir / "STATE.yml").write_text(state_text, encoding="utf-8")
         return work_dir
 
     def test_legacy_status_section_parses(self):
-        """## Tasks Status (old naming) still parses as legacy monolithic."""
+        """A bare monolithic STATE.yml (old-naming constant) is not hierarchical."""
         from dashboard.reader.reader import _detect_hierarchy
         work_dir = self._write_legacy_repo("work-001-legacy-status", self._LEGACY_STATE_STATUS)
         self.assertFalse(_detect_hierarchy(work_dir),
                          "_detect_hierarchy must return False for monolithic work")
 
-    def test_legacy_tasks_parsed_correctly(self):
-        """Tasks from ## Tasks Status are read correctly via the fallback path."""
+    def test_legacy_monolithic_tasks_now_always_empty(self):
+        """parse_state_md() never populates pw.tasks -- the monolithic path's
+        tasks are ALWAYS [] regardless of what the file contains (SPEC.md L-3)."""
         self._write_legacy_repo("work-001-legacy-status", self._LEGACY_STATE_STATUS)
         with mock.patch(
             "dashboard.reader.reader.enumerate_worktree_roots",
@@ -858,22 +859,17 @@ class TestLegacyMonolithicWork(unittest.TestCase):
             model = read_repo(self.root)
 
         w = model.works[0]
-        task_map = {t.task_id: t for t in w.tasks}
-        self.assertIn("task-001", task_map)
-        self.assertIn("task-002", task_map)
-        self.assertIn("task-003", task_map)
-        self.assertEqual(task_map["task-001"].status, TaskStatus.Done)
-        self.assertEqual(task_map["task-002"].status, TaskStatus.InProgress)
-        self.assertEqual(task_map["task-003"].status, TaskStatus.Pending)
+        self.assertEqual(w.tasks, [])
 
     def test_modern_state_section_parses(self):
-        """## Tasks State (new naming) parses correctly as legacy monolithic."""
+        """A bare monolithic STATE.yml (new-naming constant) is not hierarchical."""
         from dashboard.reader.reader import _detect_hierarchy
         work_dir = self._write_legacy_repo("work-001-modern-state", self._MODERN_STATE)
         self.assertFalse(_detect_hierarchy(work_dir))
 
-    def test_modern_state_tasks_parsed_correctly(self):
-        """Tasks from ## Tasks State (new naming) are read correctly."""
+    def test_modern_monolithic_tasks_now_always_empty(self):
+        """Same categorical dead-end as test_legacy_monolithic_tasks_now_always_empty,
+        via the 'new-naming' constant -- confirms the naming distinction is moot."""
         self._write_legacy_repo("work-001-modern-state", self._MODERN_STATE)
         with mock.patch(
             "dashboard.reader.reader.enumerate_worktree_roots",
@@ -882,13 +878,12 @@ class TestLegacyMonolithicWork(unittest.TestCase):
             model = read_repo(self.root)
 
         w = model.works[0]
-        task_map = {t.task_id: t for t in w.tasks}
-        self.assertEqual(task_map["task-001"].status, TaskStatus.Done)
-        self.assertEqual(task_map["task-002"].status, TaskStatus.InReview)
-        self.assertEqual(task_map["task-003"].status, TaskStatus.InProgress)
+        self.assertEqual(w.tasks, [])
 
     def test_legacy_lifecycle_from_pipeline_status(self):
-        """## Pipeline Status block (old naming) parsed -> lifecycle=Running."""
+        """A real `lifecycle: Running` scalar parses -> lifecycle=Running,
+        source_mode=Normalized (work-009-refactor task-016: was a '##
+        Pipeline Status' bullet-heading block -- retired)."""
         self._write_legacy_repo("work-001-legacy-status", self._LEGACY_STATE_STATUS)
         with mock.patch(
             "dashboard.reader.reader.enumerate_worktree_roots",
@@ -936,8 +931,9 @@ class TestLegacyMonolithicWork(unittest.TestCase):
             self.skipTest(f"Node script error: {result.stderr[:300]}")
         node_data = json.loads(result.stdout.strip())
 
-        self.assertEqual(node_data["task_count"], 3,
-                         "Node: legacy work must have 3 tasks")
+        self.assertEqual(node_data["task_count"], 0,
+                         "Node: legacy monolithic work has no tasks, mirroring Python "
+                         "(task-016: tasks[] never populated from the monolithic path; SPEC.md L-3)")
         self.assertEqual(node_data["lifecycle"], "Running",
                          "Node: lifecycle must be Running for legacy monolithic work")
 
@@ -981,22 +977,20 @@ class TestMixedVintageRepo(unittest.TestCase):
             ],
         )
 
-        # Legacy monolithic work
+        # Legacy monolithic work (work-009-refactor task-016: was a bullet-
+        # heading STATE.md with an embedded '## Tasks State' table -- retired,
+        # SPEC.md sec:D-4; a bare monolithic STATE.yml carries no task table
+        # at all now, parse_state_md() never populates pw.tasks, SPEC.md L-3)
         legacy_dir = self.aid / "works" / "work-002-legacy"
         legacy_dir.mkdir(parents=True, exist_ok=True)
-        (legacy_dir / "STATE.md").write_text(
-            "## Pipeline State\n\n"
-            "- **Lifecycle:** Running\n"
-            "- **Phase:** Execute\n"
-            "- **Active Skill:** aid-execute\n"
-            "- **Updated:** 2026-06-05T10:00:00Z\n"
-            "- **Pause Reason:** --\n"
-            "- **Block Reason:** --\n"
-            "- **Block Artifact:** --\n\n"
-            "## Tasks State\n\n"
-            "| # | Task | Type | Wave | State | Review | Elapsed | Notes |\n"
-            "|---|------|------|------|-------|--------|---------|-------|\n"
-            "| 001 | task-001 | TEST | delivery-001 | In Progress | -- | -- | -- |\n",
+        (legacy_dir / "STATE.yml").write_text(
+            "lifecycle: Running\n"
+            "phase: Execute\n"
+            "active_skill: aid-execute\n"
+            "updated: '2026-06-05T10:00:00Z'\n"
+            "pause_reason: --\n"
+            "block_reason: --\n"
+            "block_artifact: --\n",
             encoding="utf-8",
         )
 
@@ -1042,7 +1036,11 @@ class TestMixedVintageRepo(unittest.TestCase):
         self.assertEqual(task_map["task-001"].status, TaskStatus.Done)
 
     def test_mixed_legacy_task_state_correct(self):
-        """Legacy work tasks have the correct state from inline table."""
+        """Legacy (bare monolithic STATE.yml) work's tasks are ALWAYS []
+        (parse_state_md() never populates pw.tasks, SPEC.md L-3) -- while the
+        SIBLING hierarchical work in the SAME read_repo() call still gets its
+        real per-unit task states (test_mixed_hierarchical_task_state_correct
+        above), proving per-work routing stays independent."""
         self._build_mixed_fixture()
         with mock.patch(
             "dashboard.reader.reader.enumerate_worktree_roots",
@@ -1051,8 +1049,7 @@ class TestMixedVintageRepo(unittest.TestCase):
             model = read_repo(self.root)
 
         w = next(w for w in model.works if w.work_id == "work-002-legacy")
-        task_map = {t.task_id: t for t in w.tasks}
-        self.assertEqual(task_map["task-001"].status, TaskStatus.InProgress)
+        self.assertEqual(w.tasks, [])
 
     def test_mixed_node_mirrors_python(self):
         """Node reader mirrors Python for mixed-vintage repo (both works present)."""
@@ -1546,48 +1543,77 @@ class TestSameWorkReconcileAllBoundaries(unittest.TestCase):
     # -----------------------------------------------------------------------
 
     def test_integration_reconcile_filesystem(self):
-        """Full integration: same work_id on 2 filesystem roots -> reconciled model."""
+        """Full integration: same work_id on 2 filesystem roots -> reconciled model.
+        (work-009-refactor task-016: was two bullet-heading STATE.md files with
+        an embedded '## Tasks State' pipe-table -- retired, SPEC.md sec:D-4;
+        parse_state_md() never populates pw.tasks via the bare monolithic
+        path anymore (SPEC.md L-3), so both roots are now FLAT-layout works
+        -- BLUEPRINT.md + tasks/task-NNN/DETAIL.md + a work-root STATE.yml
+        `tasks_lifecycle` mapping -- the one shape where task union/most-
+        advanced-state reconcile is still observable end-to-end.)"""
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)
             root_, aid = _make_repo(root)
             work_id = "work-001-reconcile"
 
+            def _make_flat_task_dirs(work_dir: Path, task_ids: list[str]) -> None:
+                work_dir.mkdir(parents=True, exist_ok=True)
+                (work_dir / "BLUEPRINT.md").write_text("# Blueprint\n", encoding="utf-8")
+                for tid in task_ids:
+                    task_dir = work_dir / "tasks" / tid
+                    task_dir.mkdir(parents=True, exist_ok=True)
+                    (task_dir / "DETAIL.md").write_text(
+                        f"# {tid}\n\n**Type:** IMPLEMENT\n", encoding="utf-8",
+                    )
+
             # Main root: task-001 Pending, task-002 In Progress
-            (aid / "works" / work_id).mkdir(parents=True, exist_ok=True)
-            (aid / "works" / work_id / "STATE.md").write_text(
-                "## Pipeline State\n\n"
-                "- **Lifecycle:** Running\n"
-                "- **Phase:** Execute\n"
-                "- **Active Skill:** aid-execute\n"
-                "- **Updated:** 2026-06-10T09:00:00Z\n"
-                "- **Pause Reason:** --\n"
-                "- **Block Reason:** --\n"
-                "- **Block Artifact:** --\n\n"
-                "## Tasks State\n\n"
-                "| # | Task | Type | Wave | State | Review | Elapsed | Notes |\n"
-                "|---|------|------|------|-------|--------|---------|-------|\n"
-                "| 001 | task-001 | IMPLEMENT | delivery-001 | Pending | -- | -- | -- |\n"
-                "| 002 | task-002 | TEST | delivery-001 | In Progress | -- | -- | -- |\n",
+            work_main = aid / "works" / work_id
+            _make_flat_task_dirs(work_main, ["task-001", "task-002"])
+            (work_main / "STATE.yml").write_text(
+                "lifecycle: Running\n"
+                "phase: Execute\n"
+                "active_skill: aid-execute\n"
+                "updated: '2026-06-10T09:00:00Z'\n"
+                "pause_reason: --\n"
+                "block_reason: --\n"
+                "block_artifact: --\n"
+                "tasks_lifecycle:\n"
+                "  task-001:\n"
+                "    state: Pending\n"
+                "    review: --\n"
+                "    elapsed: --\n"
+                "    notes: --\n"
+                "  task-002:\n"
+                "    state: In Progress\n"
+                "    review: --\n"
+                "    elapsed: --\n"
+                "    notes: --\n",
                 encoding="utf-8",
             )
 
             # Second root (feat): task-001 Done, task-003 Blocked
             wt_aid = root / "wt" / ".aid"
-            (wt_aid / "works" / work_id).mkdir(parents=True, exist_ok=True)
-            (wt_aid / "works" / work_id / "STATE.md").write_text(
-                "## Pipeline State\n\n"
-                "- **Lifecycle:** Running\n"
-                "- **Phase:** Execute\n"
-                "- **Active Skill:** aid-execute\n"
-                "- **Updated:** 2026-06-10T12:00:00Z\n"
-                "- **Pause Reason:** --\n"
-                "- **Block Reason:** --\n"
-                "- **Block Artifact:** --\n\n"
-                "## Tasks State\n\n"
-                "| # | Task | Type | Wave | State | Review | Elapsed | Notes |\n"
-                "|---|------|------|------|-------|--------|---------|-------|\n"
-                "| 001 | task-001 | IMPLEMENT | delivery-001 | Done | A | 2h | done |\n"
-                "| 003 | task-003 | DOCUMENT | delivery-001 | Blocked | -- | -- | -- |\n",
+            wt_work = wt_aid / "works" / work_id
+            _make_flat_task_dirs(wt_work, ["task-001", "task-003"])
+            (wt_work / "STATE.yml").write_text(
+                "lifecycle: Running\n"
+                "phase: Execute\n"
+                "active_skill: aid-execute\n"
+                "updated: '2026-06-10T12:00:00Z'\n"
+                "pause_reason: --\n"
+                "block_reason: --\n"
+                "block_artifact: --\n"
+                "tasks_lifecycle:\n"
+                "  task-001:\n"
+                "    state: Done\n"
+                "    review: A\n"
+                "    elapsed: 2h\n"
+                "    notes: done\n"
+                "  task-003:\n"
+                "    state: Blocked\n"
+                "    review: --\n"
+                "    elapsed: --\n"
+                "    notes: --\n",
                 encoding="utf-8",
             )
 
