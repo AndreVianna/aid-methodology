@@ -4910,6 +4910,7 @@ function _buildRepoModel({ tool, repo, works, read }) {
 // Section header regexes for forensic sections (twin of parsers.py)
 const RE_QUICK_CHECK_FINDINGS = /^##\s+Quick Check Findings\s*$/i;
 const RE_DELIVERY_GATES_SECTION = /^##\s+Delivery Gates\s*$/i;
+const RE_DELIVERY_GATE_SECTION = /^##\s+Delivery Gate\s*$/i;
 const RE_TASK_BLOCK_HEADER = /^###\s+(task-\S+)\s*$/i;
 const RE_DELIVERY_BLOCK_HEADER = /^###\s+(delivery-\d+[^\s]*)\s*$/i;
 
