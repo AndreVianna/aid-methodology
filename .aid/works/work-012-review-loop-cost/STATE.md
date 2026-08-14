@@ -8,7 +8,7 @@ user_approved: no
 lifecycle: Paused-Awaiting-Input
 phase: Describe
 active_skill: aid-describe
-updated: "2026-08-14T19:16:00Z"
+updated: "2026-08-14T19:22:00Z"
 pause_reason: "Requirements drafted and complete -- awaiting owner approval and the four Q&A answers below"
 block_reason: --
 block_artifact: --
@@ -25,8 +25,11 @@ lifecycle and gate will live in its `delivery-NNN/STATE.md`.
 
 Base branch is `work-004` (pending merge), not `master` -- this work extends the
 declared-review-criteria mechanism that work introduced, and that mechanism does not
-exist on `master`. `work-011` is a separate in-flight work and is NOT a dependency;
-see REQUIREMENTS.md C-2.
+exist on `master`.
+
+**`work-004` is the only dependency** (owner decision, REQUIREMENTS.md C-1). Every other
+live work, `work-011` included, is a read-only reference. Adding a second dependency
+requires an owner decision that amends C-1 -- it is not something a later phase may assume.
 
 ## Pipeline State
 
@@ -109,6 +112,7 @@ sufficient:
 | 2026-08-14 | Work created | -- | Scaffolded by /aid-describe FIRST-RUN on branch `cursor/work-012-review-loop-cost-8a59`, based on `work-004` |
 | 2026-08-14 | Describe: FIRST-RUN -> CONTINUE -> COMPLETION | -- | All ten sections filled from the L5 brief and re-derived against disk |
 | 2026-08-14 | Describe: COMPLETION -- paused | -- | PAUSE-FOR-USER-DECISION. Awaiting approval + Q-01..Q-04 |
+| 2026-08-14 | Describe: constraint amendment (owner) | -- | Dependency set closed at one: `work-004` only. C-1 rewritten, C-2 generalised, the conditional meter reuse in §8 withdrawn. Still paused |
 
 ---
 

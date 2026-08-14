@@ -10,7 +10,8 @@
 | 2026-08-14 | Initial interview started | /aid-describe |
 | 2026-08-14 | Requirements captured from `tech-debt.md` § L5 (the merged proposal) plus the requester's brief; every §2 figure and every edit site re-derived against this branch's disk | /aid-describe |
 | 2026-08-14 | Identity fields confirmed: Scoped Review Cycles and Criterion Oracles | /aid-describe |
-| 2026-08-14 | `work-011` reclassified from dependency to in-flight sibling (requester correction): it is still being processed, so nothing here may depend on its artifacts. AC-1's measurement made instrument-neutral, C-2 added, and the `tests/cost-meter.py` reuse moved to §8 as a conditional | /aid-describe |
+| 2026-08-14 | `work-011` reclassified from dependency to in-flight sibling (requester correction): it is still being processed, so nothing here may depend on its artifacts. AC-1's measurement made instrument-neutral, and C-2 added | /aid-describe |
+| 2026-08-14 | **Dependency set closed at one (owner decision).** `work-004` is the sole dependency; C-1 now says so and forbids another without an amendment. §4's out-of-scope bullet generalised from `work-011` to any in-flight work, and §8's conditional meter reuse withdrawn — FR-15 measures with its own local count | /aid-describe |
 
 ## 1. Objective
 
@@ -99,9 +100,9 @@ guarding around it.
 - The criteria cascade itself. Resolution stays scope-free and needs no change.
 - A migration across criteria already declared: `oracle:` is a pure addition, so an
   existing entry without it is untouched and correct.
-- `work-011`'s artifact folding and its `tests/cost-meter.py`. That work is still being
-  processed and is not merged; this work coordinates with it and depends on none of it
-  (see C-2, and §8 for the conditional reuse).
+- Anything from another in-flight work. `work-004` is the only dependency (C-1); every
+  other live work, `work-011` included, is a read-only reference this work coordinates
+  with and depends on in no part (C-2).
 - Runtime token accounting that needs host cooperation. This work measures what it can
   measure deterministically on disk plus whatever the host already reports.
 - Any change that buys cost by removing a review guarantee (see NFR-4).
@@ -179,13 +180,15 @@ guarding around it.
 
 ## 7. Constraints
 
-- **C-1** This work is based on `work-004`, which is pending merge. Its declared-criteria
-  mechanism — the type registry, the criteria-by-level table, and the `review-criteria:`
-  frontmatter field — is the substrate both remedies extend.
-- **C-2** `work-011` is in flight and NOT merged. No artifact of this work may depend on
-  it: not the folded `REQUIREMENTS.md § 11` shape, not `PLAN.md` absorbing `BLUEPRINT.md`,
-  not `AC-N` traceability, and not `tests/cost-meter.py`. One file overlaps —
-  `.aid/knowledge/authoring-conventions.md` — in different sections (that work removes the
+- **C-1** **`work-004` is this work's only dependency.** It is pending merge, and its
+  declared-criteria mechanism — the type registry, the criteria-by-level table, and the
+  `review-criteria:` frontmatter field — is the substrate both remedies extend. Nothing
+  else is depended on, and no other in-flight work may become a dependency without an
+  explicit owner decision that amends this constraint.
+- **C-2** Every other live work is a read-only reference. `work-011` in particular is in
+  flight and unmerged, and nothing here depends on it — not its folded artifact shape, not
+  its traceability ids, not its cost meter. One file overlaps,
+  `.aid/knowledge/authoring-conventions.md`, in different sections (that work removes the
   Change Log section; this work touches the criteria tables), so the overlap is a merge
   reconcile, not a design coupling.
 - **C-3** The ledger keeps its 7 columns and `grade.sh` keeps its positional parse. Both
@@ -208,10 +211,10 @@ guarding around it.
   and a later cycle re-finds has a correct status without any enum change.
 - Token figures are estimates unless the host reports them; byte counts measured from disk
   are authoritative in any gate.
-- **Conditional, not a dependency:** if `work-011` lands before this work's measurement
-  step, reuse its `tests/cost-meter.py` rather than building a second meter. If it has not
-  landed, FR-15's measurement is taken with a local, deterministic byte-and-cycle count.
-  Either way AC-1 is satisfiable without `work-011`.
+- **FR-15 stands on its own instrument.** The before-and-after figures are taken with a
+  local, deterministic byte-and-cycle count, so AC-1 is satisfiable with `work-004` alone.
+  Adopting another work's meter instead would be an owner decision amending C-1, not a
+  fallback this work plans around.
 
 ## 9. Acceptance Criteria
 
