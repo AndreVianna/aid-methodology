@@ -118,7 +118,7 @@ skill-names-instr	aid-create-ui	51143
 skill-names-instr	aid-define	45671
 skill-names-instr	aid-deploy	77291
 skill-names-instr	aid-deprecate	51143
-skill-names-instr	aid-describe	115365
+skill-names-instr	aid-describe	115371
 skill-names-instr	aid-design	12795
 skill-names-instr	aid-detail	51864
 skill-names-instr	aid-discover	143168
@@ -166,7 +166,7 @@ skill-names-instr	aid-update-document	19322
 skill-names-instr	aid-update-infra	51143
 skill-names-instr	aid-update-integration	51143
 skill-names-instr	aid-update-job	51143
-skill-names-instr	aid-update-kb	88219
+skill-names-instr	aid-update-kb	88225
 skill-names-instr	aid-update-messaging	51143
 skill-names-instr	aid-update-test	51143
 skill-names-instr	aid-update-theme	51143
@@ -270,10 +270,10 @@ skill-refs	aid-create-ui	0
 skill-refs	aid-define	15225
 skill-refs	aid-deploy	10598
 skill-refs	aid-deprecate	0
-skill-refs	aid-describe	127702
+skill-refs	aid-describe	124847
 skill-refs	aid-design	0
 skill-refs	aid-detail	26536
-skill-refs	aid-discover	284055
+skill-refs	aid-discover	284061
 skill-refs	aid-document	0
 skill-refs	aid-document-architecture	0
 skill-refs	aid-document-changelog	0

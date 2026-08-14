@@ -35,7 +35,6 @@ works, and the feature implementations that invoke or extend the engine.
 - [Step 5 -- ENVELOPE + EMIT](#step-5----envelope--emit)
 - [Consumption Contract](#consumption-contract)
 - [Invariants](#invariants)
-- [Change Log](#change-log)
 
 ---
 
@@ -350,11 +349,3 @@ These invariants hold for every turn the engine runs, including the D1 opener.
 | 7 | Every decision defers to the user; the engine recommends and guides but never decides silently | NFR-1; advisor-stance.md "Expert-Advisor Stance" |
 | 8 | Before the host's approval gate, the assembled intent gathered across all turns is reflected back to the user for confirmation and correction (whole-picture read-back). Per-turn confirmations (Move 10 scribe) do not substitute for this -- the whole must be confirmed, not just individual decisions. In the full-path interview, state-completion.md Step 4 fulfils this invariant. Feature-003 consumers must define an equivalent confirmation step. | web-bestpractice-validation.md G2 (Mircea et al.: "validation loop"); state-completion.md Step 4 |
 
----
-
-## Change Log
-
-| Rev | Date | Source | Description |
-|-----|------|--------|-------------|
-| 1.0 | 2026-06-27 | work-001-aid-describe-improvements delivery-003 task-013 | Initial authoring: D1 fixed opener + five-step next-move selector + three-parameter consumption contract, grounded in feature-002/SPEC.md and owner decisions D1/D2/D3 in STATE.md ## Cross-phase Q&A. |
-| 1.1 | 2026-06-27 | work-001-aid-describe-improvements delivery-003 task-041 | G2 whole-picture read-back: Invariant 8 added (assembled-intent confirmation before approval gate; fulfilled by state-completion.md Step 4 for full-path interview) |

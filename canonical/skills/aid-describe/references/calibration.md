@@ -172,11 +172,3 @@ unknowns; see `move-playbook.md` Move 5) are still shaped by calibration state e
 described above -- they now size the backbone for the full-path interview itself, not a
 full-vs-lite decision.
 
----
-
-## Change Log
-
-| Rev | Date | Source | Description |
-|-----|------|--------|-------------|
-| 1.0 | 2026-06-27 | work-001-aid-describe-improvements delivery-003 task-013 | Initial authoring: AC-4/D1 reconciliation, continuous READ + explicit ASK, four-state calibration, depth-shaping table, feature-004 inheritance |
-| 1.1 | 2026-06-27 | work-001-aid-describe-improvements delivery-003 task-041 | G1 anti-anchoring implication: open-first order for Novice/deferential on genuinely-open/high-stakes gaps (cross-reference to advisor-stance.md Rule G1a) |
