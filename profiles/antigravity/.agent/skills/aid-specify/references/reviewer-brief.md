@@ -54,8 +54,8 @@ DELIVERABLES:
 - `{{CONTEXT}}` — short, descriptive-only background:
   ```
     SPEC.md for feature-NNN-{name} in work-NNN-{name}. All sections marked Complete
-    in the work STATE.md `## Features State` row. This is the final review pass
-    before the feature is marked Ready.
+    in the work STATE.yml's Features State view (row for this feature). This is the
+    final review pass before the feature is marked Ready.
   ```
   Do NOT include the aid-architect's working notes, prior REVIEW cycle grades, or
   references to downstream skills.

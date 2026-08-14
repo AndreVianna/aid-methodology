@@ -67,7 +67,7 @@ concerns. They deliberately exclude the **governance** layer: project-management
 such as a project charter, schedule/plan, risk and stakeholder registers, or a sprint
 backlog (PMBOK / PRINCE2 / Scrum). Those frameworks are real and necessary, but they
 describe *how the work is run*, not *what the deliverable is*, and they map to AID's own
-**pipeline artifacts** (`REQUIREMENTS.md`, `SPEC.md`, `PLAN.md`, the per-work `STATE.md`
+**pipeline artifacts** (`REQUIREMENTS.md`, `SPEC.md`, `PLAN.md`, the per-work `STATE.yml`
 tracking), which already exist. The KB is the product layer; the pipeline is the governance
 layer. A doc proposed for the KB that is really a governance artifact (a plan, a backlog, a
 register) is a scope smell -- route it to the pipeline, not the doc-set.

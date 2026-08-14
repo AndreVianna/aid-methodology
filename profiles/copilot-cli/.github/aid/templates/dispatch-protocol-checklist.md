@@ -30,8 +30,15 @@ protocol lives in two reference docs; this section is a checklist citing them.
 
 **On completion / failure:**
 
-- **Success:** emit `✓ <agent> done in <actual>` with measured time. Log to
-  `STATE.md ## Calibration Log` for L1 calibration. Delete heartbeat file.
+- **Success:** emit `✓ <agent> done in <actual>` with measured time for L1
+  calibration. When the dispatch is for a real `task-NNN`, append a
+  `dispatch_log` entry to that task's own state (full path: its `STATE.yml`;
+  flat path: `tasks_lifecycle.task-NNN.dispatch_log`) -- this is what the
+  work-level Calibration Log / Dispatches views are now DERIVED from at read
+  time (`work-state-template.yml`); there is no longer an independent
+  work-root section to log to directly. When the dispatch is NOT task-scoped,
+  there is no persisted target at all -- the console line above is the sole
+  record. Delete heartbeat file.
 - **Failure:** emit `✗ <agent> FAILED after <elapsed> (reason: <one-line>)`.
   Decide whether to re-dispatch, fall back, or surface to user. Delete
   heartbeat file.

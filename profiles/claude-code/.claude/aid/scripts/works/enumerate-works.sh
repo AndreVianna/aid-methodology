@@ -122,16 +122,14 @@ _main_branch_label() {
 }
 
 # _frontmatter_value <state-file> <key> -> the value of a top-level frontmatter
-# scalar (e.g. phase / lifecycle). Reads only the YAML block delimited by the
-# leading `---` fences; strips surrounding quotes + inline `#` comments. Empty
-# output if absent (caller substitutes "--").
+# scalar (e.g. phase / lifecycle). Scans the whole document for a column-0
+# key (no leading `---` fence required); strips surrounding quotes + inline
+# `#` comments. Empty output if absent (caller substitutes "--").
 _frontmatter_value() {
     local file="$1" key="$2"
     [[ -f "$file" ]] || return 0
     awk -v key="$key" '
-        NR==1 && $0=="---" { infm=1; next }
-        infm && $0=="---" { exit }
-        infm && $0 ~ "^"key":" {
+        $0 ~ "^"key":" {
             sub("^"key":[[:space:]]*", "")
             sub("[[:space:]]+#.*$", "")
             gsub("^[\"\047]|[\"\047]$", "")
@@ -227,7 +225,7 @@ for entry in "${ROOTS[@]}"; do
         [[ -d "$work_path" ]] || continue
         work_path="${work_path%/}"
         work_id="$(basename "$work_path")"
-        state_file="$work_path/STATE.md"
+        state_file="$work_path/STATE.yml"
         phase="$(_frontmatter_value "$state_file" phase)"
         lifecycle="$(_frontmatter_value "$state_file" lifecycle)"
         title="$(_work_title "$work_path")"

@@ -95,7 +95,9 @@ worse than no guard, because a noisy check trains readers to ignore it.
 ## Step 4: FIX
 
 Dispatch agent with:
-- Issues from STATE.md where Source = CODE and Status = Pending
+- Issues from the quick-check findings (this task's `quick_check` key -- full path:
+  `quick_check.findings`; flat path: the escaped scalar at
+  `tasks_lifecycle.task-NNN.quick_check`) where Source = CODE and Status = Pending
 - Original task context
 - **The FIX contract above (F1-F6), in full.** It binds a dispatched agent exactly as it
   binds the orchestrator fixing directly.
@@ -104,7 +106,7 @@ Dispatch agent with:
 
 When done:
 1. Confirm each fix against the artifact on disk (**F5**), then mark those issues `Fixed`
-   in STATE.md. Rows not addressed stay `Pending`, with the reason.
+   in `quick_check` (STATE.yml). Rows not addressed stay `Pending`, with the reason.
 2. → **Back to Step 2 (REVIEW)** — fresh reviewer, clean context
 
 **Loop continues until grade ≥ minimum.**

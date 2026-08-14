@@ -2,7 +2,8 @@
 
 [!NOTE]
 This is the TASK-LEVEL DETAIL.md template. It is the IMMUTABLE DEFINITION for this task.
-Written once by aid-detail; not a state file. State lives in task-NNN/STATE.md.
+Written once by aid-detail; not a state file. State lives in task-NNN/STATE.yml (full path)
+or, on a flattened Lite work, the work-root STATE.yml's `tasks_lifecycle` mapping.
 Shape: 6 sections matching .cursor/aid/templates/delivery-plans/task-template.md.
 
 > **Execution protocol (binding on whoever executes this task -- no

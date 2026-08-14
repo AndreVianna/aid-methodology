@@ -48,10 +48,10 @@ DELIVERABLES:
   - Severity scale: CRITICAL | HIGH | MEDIUM | LOW | MINOR (per grading-rubric.md)
   - Grade: per .agent/aid/scripts/grade.sh; minimum resolved via
     `bash .agent/aid/scripts/config/read-setting.sh --skill interview --key minimum_grade --default A`
-  - Pending Q&A: write user-facing questions to `.aid/works/{work}/STATE.md ## Pending Q&A`
-    (the consolidated work STATE.md per FR2 area-STATE consolidation; the
-    legacy `INTERVIEW-STATE.md` is RETIRED) so the next `/aid-define` run
-    picks them up in Q&A mode
+  - Pending Q&A: write user-facing questions to the `qa` sequence in
+    `.aid/works/{work}/STATE.yml` (entries with `state: Pending`) -- the consolidated
+    work STATE.yml per FR2 area-STATE consolidation; the legacy `INTERVIEW-STATE.md`
+    is RETIRED -- so the next `/aid-define` run picks them up in Q&A mode
   - The aid-reviewer NEVER edits REQUIREMENTS.md or SPEC scaffolds — only grades and lists issues
 ```
 

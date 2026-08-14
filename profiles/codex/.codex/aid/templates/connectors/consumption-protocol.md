@@ -81,10 +81,10 @@ conventions — these are the same frontmatter blocks that work touches):
 
 | Level | Carrier | Field |
 |---|---|---|
-| Work | `STATE.md` frontmatter (`work-state-template.md`) | `ticket_ref` |
+| Work | `STATE.yml` frontmatter (`work-state-template.yml`) | `ticket_ref` |
 | Feature | `SPEC.md` body (`specs/spec-template.md`) — SPEC.md carries no frontmatter block | `**Ticket:**` line |
-| Delivery | `STATE.md` frontmatter (`delivery-state-template.md`) — full path only (a flattened work's single delivery uses the work-root `STATE.md`'s own `ticket_ref`, per the flattened `## Delivery Lifecycle` promotion `work-state-template.md` already documents) | `ticket_ref` |
-| Task | `STATE.md` frontmatter (`task-state-template.md`) — **full path only**. The flattened layout (no per-task `STATE.md`, the `### Tasks lifecycle` table instead) carries no separate task-level `ticket_ref` of its own; resolution for a flattened task passes straight through to its delivery/work levels, which do carry the scalar. | `ticket_ref` |
+| Delivery | `STATE.yml` frontmatter (`delivery-state-template.yml`) — full path only (a flattened work's single delivery uses the work-root `STATE.yml`'s own `ticket_ref`, per the flattened `delivery_lifecycle` promotion `work-state-template.yml` already documents) | `ticket_ref` |
+| Task | `STATE.yml` frontmatter (`task-state-template.yml`) — **full path only**. The flattened layout (no per-task `STATE.yml`, the `tasks_lifecycle` mapping instead) carries no separate task-level `ticket_ref` of its own; resolution for a flattened task passes straight through to its delivery/work levels, which do carry the scalar. | `ticket_ref` |
 
 ## Nearest-ancestor resolution
 
@@ -132,7 +132,7 @@ identically to before this protocol existed.
 |---|---|---|
 | `aid-describe` | Ingest | When the interview's originating context names a source ticket (e.g. a Monitor-routed finding, or the human names one), read it **via `/aid-read-ticket`** and record `ticket_ref` at the **work** level it just created. |
 | `aid-specify` | Ingest | When specifying a feature whose requirements trace to a source ticket, read it **via `/aid-read-ticket`** and record `ticket_ref` at the **feature** level (the `SPEC.md` it is authoring). |
-| `aid-plan` | Ingest | When a deliverable being written corresponds to (or the user names) an external tracker item, record its `ticket_ref` at the **delivery** level (the `delivery-NNN/STATE.md`, or the work-root `STATE.md` for a flattened work, it is creating). |
+| `aid-plan` | Ingest | When a deliverable being written corresponds to (or the user names) an external tracker item, record its `ticket_ref` at the **delivery** level (the `delivery-NNN/STATE.yml`, or the work-root `STATE.yml` for a flattened work, it is creating). |
 | `aid-fix` (and the shared shortcut engine every other shortcut delegates to) | Ingest | When the description this run captures names, or clearly originates from, a filed ticket, record its `ticket_ref` at the **work** level `INTAKE` just allocated. |
 | `aid-ask` | Enrich | May enrich an answer by reading a linked ticket's status/fields **via `/aid-read-ticket`** when the question concerns a linked tracker item; purely additive to its existing KB/codebase/in-flight-work context sources. |
 | `aid-researcher` (agent) | Enrich | May consult `.aid/connectors/INDEX.md` and, for a relevant `mcp` connector, gather additional evidence for a RESEARCH task or a broad `aid-ask` dispatch by reading the linked ticket **via `/aid-read-ticket`** — the same read-heavy, evidence-cited discipline it already applies to KB/codebase sources. |

@@ -133,12 +133,13 @@ protocol lives in two reference docs; this section is a checklist citing them.
 
 **On completion / failure:**
 
-- **Success:** emit `✓ <agent> done in <actual>` with measured time. Append a row to
-  the work `STATE.md ## Calibration Log` section (create section if missing) with
-  format `| YYYY-MM-DD | <agent> | <task-id/cycle> | <ETA-band> | <actual> | <notes> |`.
-  Also update the task's `## Dispatches` sub-column with the dispatch record.
-  Both are mandatory per work-003 traceability (never optional, never "if tracked").
-  Delete heartbeat file.
+- **Success:** emit `✓ <agent> done in <actual>` with measured time. This skill's own
+  dispatches are not task-scoped, so there is no persisted target for them any more --
+  the work-level Calibration Log / Dispatches views are now DERIVED solely from per-task
+  `dispatch_log` entries (`work-state-template.yml`), which discovery's own dispatches
+  never populate; the console line above is the sole record. Mandatory per work-003
+  traceability wherever a target exists (never optional, never "if tracked"). Delete
+  heartbeat file.
 - **Failure:** emit `✗ <agent> FAILED after <elapsed> (reason: <one-line>)`.
   Decide whether to re-dispatch, fall back, or surface to user. Delete
   heartbeat file.

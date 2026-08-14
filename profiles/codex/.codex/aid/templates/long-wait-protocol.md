@@ -77,8 +77,15 @@ Emit the closing bracket with ACTUAL elapsed time and log it for L1 calibration:
 ✓ <agent-name> done in <actual>m <actual>s (estimated <low>–<high>; observed +<delta> over LOW)
 ```
 
-Add a row to `STATE.md ## Calibration Log` (or equivalent) so the next refresh
-of `rough-time-hints.md` has a data point.
+When the dispatch is for a real `task-NNN`, append a `dispatch_log` entry to
+that task's own state (full path: its `STATE.yml`; flat path:
+`tasks_lifecycle.task-NNN.dispatch_log`) so the next refresh of
+`rough-time-hints.md` has a data point -- this is what the work-level
+Calibration Log / Dispatches views are now DERIVED from at read time
+(`work-state-template.yml`); there is no longer an independent work-root
+section to add a row to directly. When the dispatch is NOT task-scoped,
+there is no persisted target at all -- the actual-elapsed line above is the
+sole record.
 
 ### Step 6 — On crash / abnormal completion
 

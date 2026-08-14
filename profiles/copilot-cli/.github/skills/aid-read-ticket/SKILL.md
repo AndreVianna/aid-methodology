@@ -22,7 +22,7 @@ specific tracker, and instead resolves which one to use through AID's connector 
 
 **Not a numbered pipeline phase.** Optional, on-demand utility skill, a peer of `aid-ask` /
 `aid-set-connector` — no phase gate references it, no `shortcut-catalog.yml` entry, no
-`work-NNN` scaffold, no `STATE.md` of its own.
+`work-NNN` scaffold, no `STATE.yml` of its own.
 
 **Single-shot, no confirm.** One pass: parse → resolve → fetch → display → exit. Reading is
 non-destructive (feature-001 AC-1) — it never prompts for a write, regardless of how many
@@ -160,7 +160,7 @@ the whole run is State 3's single read.
   `[<connector>:]<ticket-id>`, or the write-preview/confirm convention is owned by
   `ticket-resolution.md`; this file only points to it and names which outcome applies where.
 - **No work folder.** `/aid-read-ticket` does not create `.aid/works/work-*/` directories or a
-  `STATE.md` of its own.
+  `STATE.yml` of its own.
 - **Content isolation.** `aid-` prefix (satisfied by the skill name); the shared reference this
   skill points to lives under the `aid/` template subtree.
 

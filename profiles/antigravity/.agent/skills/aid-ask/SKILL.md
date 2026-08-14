@@ -166,8 +166,12 @@ When Step 3 emits a gap reply, immediately capture the gap into the Q&A backlog.
 **Target-file resolution:**
 
 - If the query was about an **in-flight work** (the question concerns a specific
-  `.aid/works/work-NNN-*/` effort whose STATE.md exists), write to that work's
-  `.aid/works/work-NNN-*/STATE.md` `## Q&A (Pending)` section.
+  `.aid/works/work-NNN-*/` effort whose STATE.yml exists), write to that work's
+  `.aid/works/work-NNN-*/STATE.yml` `qa` sequence -- on the flattened Lite layout,
+  the work-root `STATE.yml` carries this key directly; on a full multi-delivery
+  work, the work-root file carries no `qa` key at all (full-layout omission rule),
+  so the actual target there is the relevant delivery's own
+  `deliveries/delivery-NNN/STATE.yml` `qa` sequence instead.
 - Otherwise write to the **knowledge backlog** at
   `.aid/knowledge/STATE.md` `## Q&A (Pending)`.
 - **When ambiguous** (the query touches both a work and the KB), default to
@@ -175,9 +179,11 @@ When Step 3 emits a gap reply, immediately capture the gap into the Q&A backlog.
   Context field. (A Q&A append is non-destructive, so default-and-name is the
   proportionate choice over asking the user.)
 
-**Determine `N`:** read the target backlog file, grep for all `### Q[0-9]+`
-headers, find the highest number, and set `N = highest + 1`. If no Q entries
-exist yet, set `N = 1`. Never renumber existing entries.
+**Determine `N`:** read the target backlog's `qa` sequence, find the highest
+existing `id`, and set `N = highest + 1`. If the sequence is empty, set `N = 1`.
+Never renumber existing entries. (The knowledge backlog target above is
+unaffected -- it stays the markdown `### Q[0-9]+` scheme, since
+`discovery-state-template.md` is out of this task's scope.)
 
 **Classify the gap flavor:**
 
@@ -185,28 +191,30 @@ exist yet, set `N = 1`. Never renumber existing entries.
   the live code says. Impact = `High`.
 - `KB-cannot-answer`: the KB simply lacks coverage for the question. Impact = `Medium`.
 
-**Append the following entry** (no trailing blank lines needed beyond the
-standard one-blank-line separator between entries):
+**Append the following entry** to the `qa` sequence (work-level target; the
+knowledge-backlog target keeps its own markdown `### Q{N}` shape, unchanged
+by this task):
 
 ```
-### Q{N}
-- **Category:** Query-Gap / <KB-cannot-answer | KB-contradicts-code>
-- **Impact:** <High | Medium>
-- **Status:** Pending
-- **Context:** /aid-ask was asked "<question verbatim>". The available
-  context could not answer it: <the specific gap -- which KB doc lacks the
-  data, OR the exact KB claim that contradicts the code with both citations>.
-  Sources checked: <docs/paths>.
-- **Suggested:** Run /aid-update-kb "<the gap as an update prompt>" (or fold
-  into the next /aid-housekeep KB-DELTA) to close the gap, then
-  REVIEW -> APPROVAL.
+- id: {N}
+  category: 'Query-Gap / <KB-cannot-answer | KB-contradicts-code>'
+  impact: <High | Medium>
+  state: Pending
+  context: '/aid-ask was asked "<question verbatim>". The available
+    context could not answer it: <the specific gap -- which KB doc lacks the
+    data, OR the exact KB claim that contradicts the code with both citations>.
+    Sources checked: <docs/paths>.'
+  suggested: 'Run /aid-update-kb "<the gap as an update prompt>" (or fold
+    into the next /aid-housekeep KB-DELTA) to close the gap, then
+    REVIEW -> APPROVAL.'
 ```
 
 Write-scope constraint (hard): **writes are restricted to appending a
-Query-Gap entry to a `STATE.md ## Q&A (Pending)` section; no KB doc,
-settings, or code file is ever written.** If the resolved target file does not
-have a `## Q&A (Pending)` section, append the section heading before the
-entry. Do not modify any other part of the file.
+Query-Gap entry to a `qa` sequence (work-level target) or the knowledge
+backlog's `## Q&A (Pending)` section; no KB doc, settings, or code file is
+ever written.** If the resolved work-level target file's `qa` key does not
+yet exist, create it (create-parent-if-absent, matching `writeback-state.sh`'s
+own convention). Do not modify any other part of the file.
 
 ---
 
@@ -216,7 +224,7 @@ entry. Do not modify any other part of the file.
 |-----------|--------|--------|
 | Trivial question | inline (Read / Glob / Grep) | Answer in conversation |
 | Broad/expensive question | `aid-researcher` (read-only) | Answer in conversation |
-| Insufficient context | inline + gap-capture write | Gap reply + Q{N} entry appended to STATE.md |
+| Insufficient context | inline + gap-capture write | Gap reply + Q{N} entry appended to the `qa` sequence (STATE.yml) |
 
 The dispatched `aid-researcher` MUST be instructed to operate strictly
 read-only (return analysis as its message; write nothing). See Step 2b for the
@@ -227,13 +235,14 @@ required prompt.
 ## Constraints
 
 - **Write scope (gap-capture only).** Writes are restricted to appending a
-  Query-Gap `### Q{N}` entry to a `STATE.md ## Q&A (Pending)` section. No KB
-  doc, settings, or code file is ever written. The answer path stays read-only;
-  only the gap-append branch writes.
+  Query-Gap entry (id/category/impact/state/context/suggested) to a `qa`
+  sequence (work-level target) or the knowledge backlog's `## Q&A (Pending)`
+  section. No KB doc, settings, or code file is ever written. The answer path
+  stays read-only; only the gap-append branch writes.
 - **No work folder.** `/aid-ask` does not create `.aid/works/work-*/` directories or
-  STATE.md files for its own use.
+  STATE.yml files for its own use.
 - **Cite sources.** Every factual claim in the answer must be traceable to a KB
-  doc, a file path, or a work STATE.md reference.
+  doc, a file path, or a work STATE.yml reference.
 - **State gaps explicitly.** When the context cannot answer, say so clearly.
   Never invent data.
 - **Read-only dispatch.** When `aid-researcher` is dispatched, its prompt MUST
