@@ -475,12 +475,19 @@ def gate_shape(name: str, F: int, D: int, T: int, c: int, art: dict[str, int]
     if name == "today":
         # A gate per feature after specify, a gate per delivery after detail.
         # Each task grounds on REQUIREMENTS plus its own feature SPEC.
+        #
+        # The per-task exec check is in this shape too, not only in `batched`:
+        # aid-execute already runs a 1-cycle, ungraded quick-check per task
+        # ("No grade is computed, no loop" -- state-review.md), and the delivery
+        # gate already reviews the full branch diff. Omitting it here understated
+        # `today` and therefore understated every alternative's saving.
         return [
             ("gate REQUIREMENTS", 1, art["REQ"], c, "architect", "gate"),
             ("gate define", 1, art["REQ"], c, "architect", "gate"),
             ("gate SPEC (per feature)", F, art["REQ"] + art["SPEC"], c, "architect", "gate"),
             ("gate PLAN", 1, art["PLAN"] + F * art["SPEC"], c, "architect", "gate"),
             ("gate DETAIL (per delivery)", D, art["BP"] + dt * art["DET"], c, "architect", "gate"),
+            exec_gate,
             ("delivery gate", D, art["BP"] + dt * art["DET"], c, "developer", "gate"),
             ("task grounding", T, art["REQ"] + art["SPEC"], 1, "developer", "read"),
         ]
