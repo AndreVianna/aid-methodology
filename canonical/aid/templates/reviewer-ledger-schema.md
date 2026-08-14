@@ -8,13 +8,37 @@ intent: |
   ad-hoc user-prompted reviews. Defines the table shape, severity + status
   enums, file lifecycle, and grade.sh integration. Single source of truth so
   grade.sh, agents, skills, and humans all read findings identically.
-contracts:
-  - "7-column table is the entire ledger file (no headers, no narrative, no sections)"
-  - "Severity enum: [CRITICAL] | [HIGH] | [MEDIUM] | [LOW] | [MINOR]"
-  - "Status enum: Pending | Fixed | Recurred | Accepted | OOS | Invalid"
-  - "Grade is computed over rows where Status ∈ {Pending, Recurred}, by Severity column"
-  - "File path: .aid/.temp/review-pending/<scope>.md (scope = skill or skill-task)"
-  - "Persists across REVIEW→FIX cycles within one skill invocation; deleted at skill DONE"
+review-criteria:
+  - id: F-01
+    kind: validate
+    criterion: "The 7-column table is the entire ledger file -- no title, no section headings, no narrative, no scratch space"
+    severity: HIGH
+    why: "grade.sh parses the file as a table; anything else in it is either ignored or misparsed as a row"
+  - id: F-02
+    kind: validate
+    criterion: "Severity enum, bracketed all-caps: CRITICAL, HIGH, MEDIUM, LOW, MINOR"
+    severity: HIGH
+    why: "grade.sh counts the bracketed tag and nothing else, so a sentence-case severity counts as zero findings and silently yields A+"
+  - id: F-03
+    kind: validate
+    criterion: "Status enum: Pending, Fixed, Recurred, Accepted, OOS, Invalid"
+    severity: HIGH
+    why: "Status decides whether a row counts toward the grade; a value outside the enum is not counted and the finding disappears"
+  - id: F-04
+    kind: validate
+    criterion: "The grade is computed over rows whose Status is Pending or Recurred, read from the Severity column"
+    severity: MEDIUM
+    why: "This is the contract grade.sh implements; a doc that describes it differently teaches a reviewer to write an ungradeable ledger"
+  - id: F-05
+    kind: validate
+    criterion: "The ledger lives at .aid/.temp/review-pending/<scope>.md, where scope names the skill or the skill and task"
+    severity: MEDIUM
+    why: "Two skills writing one path collide; a scope-less name is what makes that happen"
+  - id: F-06
+    kind: validate
+    criterion: "The file persists across REVIEW and FIX cycles within one skill invocation and is deleted when the skill reaches DONE"
+    severity: LOW
+    why: "A ledger left behind is read as a live finding list by the next run"
 changelog:
   - 2026-05-28: Initial schema spec
 ---

@@ -17,10 +17,22 @@ tags: [C3, authoring, kb-authoring, reviewer-ledger, frontmatter, content-isolat
 see_also: [coding-standards.md, artifact-schemas.md]
 owner: architect
 audience: [developer, architect, tech-writer, reviewer]
-contracts:
-  - "Every KB doc layout: frontmatter -> title -> index -> content; no Change Log section"
-  - "Reviewer ledger is a 7-column table; Severity + Status are closed enums"
-  - "Required frontmatter fields: objective, summary, sources (lint-graded)"
+review-criteria:
+  - id: F-01
+    kind: validate
+    criterion: "Every KB doc layout stated here holds: frontmatter, title, index, content sections, and no history section"
+    severity: MEDIUM
+    why: "This doc IS the layout contract, so a layout claim that is false here is false everywhere it is enforced -- and it was: it asserted a Change Log last section that the rule forbids and this file does not have"
+  - id: F-02
+    kind: validate
+    criterion: "The reviewer ledger is described as a 7-column table with closed Severity and Status enums, consistent with reviewer-ledger-schema.md"
+    severity: HIGH
+    why: "A second, divergent description of the ledger teaches a reviewer to write rows grade.sh cannot parse"
+  - id: F-03
+    kind: validate
+    criterion: "The required frontmatter fields named here are objective, summary and sources, matching what lint-frontmatter.sh grades"
+    severity: MEDIUM
+    why: "The lint is the oracle; a field list that disagrees with it either blocks a valid doc or lets an invalid one through"
 ---
 
 # Authoring Conventions

@@ -10,7 +10,7 @@ intent: |
   which becomes red tape on happy-path runs (e.g., 5+ `/aid-summarize` invocations
   to take a fresh KB through PREFLIGHT → DONE). This doc is the single source the
   per-skill SKILL.md files cite.
-contracts: []
+review-criteria: []
 changelog:
   - 2026-05-28: Initial — codifies the chain-when-possible rule across all skills
 ---

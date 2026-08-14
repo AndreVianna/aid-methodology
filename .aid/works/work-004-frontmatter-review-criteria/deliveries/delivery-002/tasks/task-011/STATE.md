@@ -1,5 +1,5 @@
 ---
-state: Pending
+state: Done
 review: "--"
 elapsed: "--"
 notes: "--"
@@ -24,8 +24,8 @@ ticket_ref: "--"
 ## Quick Check Findings
 
 - **Reviewer Tier:** Small
-- **Findings:** _none yet_
-
+- **Findings:**
+  - [HIGH] 133 copies under profiles/ and the repo's own dogfood tool roots still carry contracts: after the canonical rename -- **Invalid**: every one of the 133 is a RENDER, excluded from content review by G-06 and refreshed by delivery-003's single render (C-2/NFR-4, PLAN.md risk 1). Verified both limbs of G-06 rather than asserted: 95 sit under profiles/<tool>/ and each has a canonical counterpart (limb b), and the 38 under the dogfood roots appear as dst entries in an emission manifest (limb a). None is authored content. The finding is real about disk and correct to leave; the reviewer raised it because this task's brief omitted the render scope boundary that the delivery-gate briefs carry -- an omission in the dispatch, not a defect in the work.
 ---
 
 ## Dispatch Log

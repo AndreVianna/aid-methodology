@@ -26,13 +26,37 @@ intent: |
   The automated test landscape: frameworks, the canonical helper suites, installer
   tests, CI lanes (test/docs/installer-tests/release), the WinPS 5.1 compat lane,
   render-drift, and where heavy gates run. Read before writing or modifying tests.
-contracts:
-  - "tests/run-all.sh discovers suites by glob tests/canonical/test-*.sh — adding a suite needs no runner edit"
-  - "Every canonical suite runs under `timeout 300` in an isolated bash process"
-  - "node and pwsh must be present in CI or environment-dependent suites silently skip (CI fails loudly if absent)"
-  - "A suite with no `# COVERS:` header is treated by select-suites.sh as covering EVERYTHING and is always selected — forgetting the header costs time, never coverage"
-  - "select-suites.sh is not itself a counted suite: its name falls outside the tests/canonical/test-*.sh glob, so run-all.sh never runs it"
-  - "A suite never mutates the source tree: mutation runs operate on a copy in mktemp -d and assert the subject is byte-identical to HEAD afterwards (S5)"
+review-criteria:
+  - id: F-01
+    kind: validate
+    criterion: "tests/run-all.sh discovers suites by the glob tests/canonical/test-*.sh, so adding a suite needs no runner edit"
+    severity: MEDIUM
+    why: "It is why a new suite runs without being registered, and why a file named outside the glob silently never runs"
+  - id: F-02
+    kind: validate
+    criterion: "Every canonical suite runs under a timeout in an isolated bash process"
+    severity: MEDIUM
+    why: "A suite that hangs would otherwise stall the whole run rather than failing one line of it"
+  - id: F-03
+    kind: validate
+    criterion: "node and pwsh must be present in CI, or the suites that depend on them skip"
+    severity: HIGH
+    why: "A silent skip reads as a pass; this is the difference between a green run and an unrun one"
+  - id: F-04
+    kind: validate
+    criterion: "A suite with no COVERS header is treated by select-suites.sh as covering everything and is always selected"
+    severity: LOW
+    why: "Forgetting the header costs run time, never coverage -- stated so nobody adds one to make a suite skip"
+  - id: F-05
+    kind: validate
+    criterion: "select-suites.sh is not itself a counted suite; its name falls outside the discovery glob"
+    severity: LOW
+    why: "Otherwise the selector would select itself and the suite count would be off by one"
+  - id: F-06
+    kind: validate
+    criterion: "A suite never mutates the source tree -- mutation runs operate on a copy and assert the subject is byte-identical afterwards"
+    severity: HIGH
+    why: "A suite that writes into the tree corrupts the thing under test, and the next suite grades the corruption"
 ---
 
 # Test Landscape

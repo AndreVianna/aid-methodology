@@ -26,14 +26,17 @@ tags: [C5, artifact-schemas, state-files, manifests, settings, enums, contracts]
 see_also: [authoring-conventions.md, module-map.md, pipeline-contracts.md]
 owner: architect
 audience: [developer, architect]
-contracts:
-  - "Task State enum (closed): Pending | In Progress | In Review | Blocked | Done | Failed | Canceled"
-  - "Task Type enum (closed, 8): RESEARCH | DESIGN | IMPLEMENT | TEST | DOCUMENT | MIGRATE | REFACTOR | CONFIGURE"
-  - "Delivery Lifecycle enum (closed): Pending-Spec | Specified | Executing | Gated | Done | Blocked"
-  - "KB frontmatter source enum (closed, 3): hand-authored | forward-authored | generated"
-  - "emission-manifest.jsonl record keys: profile, src, dst, sha256 (+ _manifest_version sentinel)"
-  - "Connector descriptor connection_type enum (closed, 5): mcp | api | ssh | url | cli"
-  - "Connector descriptor auth_method enum (closed, 5): none | token | pat | oauth | ssh-key"
+review-criteria:
+  - id: F-01
+    kind: validate
+    criterion: "Every enum this doc calls closed matches its implementation byte for byte -- Task State, Task Type, Delivery Lifecycle, KB frontmatter source, connector connection_type and auth_method"
+    severity: HIGH
+    why: "A closed enum is what a writer validates against; a value documented here but rejected by the writer, or accepted but undocumented, breaks a run at the write rather than here"
+  - id: F-02
+    kind: validate
+    criterion: "The emission-manifest record keys are exactly profile, src, dst, sha256, plus the _manifest_version sentinel"
+    severity: HIGH
+    why: "The installer and the prune logic both read these keys positionally by name; an undocumented key change orphans files at uninstall"
 ---
 
 # Artifact Schemas

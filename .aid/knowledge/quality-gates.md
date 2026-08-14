@@ -22,11 +22,27 @@ intent: |
   review->fix->re-review loop, the discover review panel, the delivery gate, and
   the shortcut/Lite-path GATE + APPROVAL-HALT. Distinct from the automated tests
   in test-landscape.md.
-contracts:
-  - "Grade is computed ONLY from reviewer-ledger rows where Status in {Pending, Recurred}, by Severity column"
-  - "Worst severity dominates; count within it sets the modifier (1 -> +, 2-5 -> none, 6+ -> -)"
-  - "A skill exits REVIEW only when grade >= the resolved minimum_grade (per-skill override -> review.minimum_grade -> hardcoded default; the shortcut/Lite path's built-in default is A+)"
-  - "Every reviewer ledger is exactly one 7-column markdown table at .aid/.temp/review-pending/<scope>.md — no narrative"
+review-criteria:
+  - id: F-01
+    kind: validate
+    criterion: "The grade is computed only from reviewer-ledger rows whose Status is Pending or Recurred, read from the Severity column"
+    severity: HIGH
+    why: "This doc is where a phase learns what its gate measures; if it disagrees with grade.sh, the gate a skill thinks it passed is not the one that ran"
+  - id: F-02
+    kind: validate
+    criterion: "Worst severity dominates, and the count within it sets the modifier -- one is plus, two to five is none, six or more is minus"
+    severity: MEDIUM
+    why: "Stated as the rule rather than a table of outcomes, because a table drifts from grade.sh's modifier_for_count"
+  - id: F-03
+    kind: validate
+    criterion: "A skill leaves REVIEW only when the grade reaches the resolved minimum, resolved per-skill override then review.minimum_grade then the built-in default"
+    severity: HIGH
+    why: "The resolution order decides which threshold applies; getting it wrong lets a skill exit below its own gate"
+  - id: F-04
+    kind: validate
+    criterion: "Every reviewer ledger is exactly one 7-column markdown table at .aid/.temp/review-pending/<scope>.md, with no narrative"
+    severity: MEDIUM
+    why: "Duplicated from nowhere -- it is the one ledger fact a phase needs before it can grade, and reviewer-ledger-schema.md owns the full shape"
 ---
 
 # Quality Gates

@@ -20,11 +20,22 @@ tags: [C2, modules, dependencies, components, wiring, test-coverage]
 see_also: [project-structure.md, architecture.md, artifact-schemas.md, integration-map.md]
 owner: architect
 audience: [developer, architect]
-contracts:
-  - "canonical/ is the single source of truth; profiles/ and packages/_vendor are rendered/vendored copies"
-  - "76 skill directories under canonical/skills/; 9 agent directories under canonical/agents/"
-  - "5 render profiles (profiles/*.toml)"
-  - "site/ derives its skill content from canonical/ at build time; gen-skills.mjs and gen-reference.mjs throw on corpus drift"
+review-criteria:
+  - id: F-01
+    kind: validate
+    criterion: "canonical/ is named as the single source of truth, with profiles/ and the vendored package copies identified as rendered output"
+    severity: HIGH
+    why: "An agent that reads this doc and edits a render loses the edit at the next generator run -- the most common defect this map exists to prevent"
+  - id: F-02
+    kind: validate
+    criterion: "The skill, agent and profile counts stated here are measured from canonical/skills/, canonical/agents/ and profiles/"
+    severity: MEDIUM
+    why: "These three counts are load-bearing: the generator, the catalog parity suites and the site build all derive from the same directories, so a stale count here contradicts a test"
+  - id: F-03
+    kind: validate
+    criterion: "site/ is described as deriving its skill content from canonical/ at build time, with the generators failing on corpus drift"
+    severity: MEDIUM
+    why: "It is why a canonical change can break the site build, which is otherwise a surprising failure"
 ---
 
 # Module Map
