@@ -1,5 +1,5 @@
 ---
-state: Pending
+state: Done
 review: "--"
 elapsed: "--"
 notes: "--"
@@ -64,15 +64,10 @@ in-flight `work-003-state-schema` frontmatter conventions.
 
 ## Quick Check Findings
 
-<!-- AUTHORED -- written by `writeback-state.sh --task-id NNN --findings ...` during the
-     per-task quick-check step of aid-execute. Records the reviewer tier used and all [HIGH]
-     and [CRITICAL] findings for this task. [CRITICAL] findings trigger an immediate fix-on-spot;
-     [HIGH] findings are deferred to the delivery gate via delivery-NNN-issues.md.
-     No grade is recorded here -- grading is per-delivery, not per-task. -->
-
-- **Reviewer Tier:** --
-- **Findings:** --
-
+- **Reviewer Tier:** Small
+- **Findings:**
+  - [HIGH] `aid-update-roadmap` description names `/aid-create-roadmap`, a confusable neighbour SPEC 6d does not assign it -- canonical/skills/aid-update-roadmap/SKILL.md description -- Deferred-to-gate
+  - [HIGH] `aid-update-mvp` description names `/aid-create-roadmap`, a confusable neighbour SPEC 6d does not assign it -- canonical/skills/aid-update-mvp/SKILL.md description -- Deferred-to-gate
 ---
 
 ## Dispatch Log

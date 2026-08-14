@@ -258,6 +258,30 @@ shortcuts:
   # -- 15 canonical aid-update* rows (12 in this section; aid-update-test in G7,
   # -- aid-update-document in G8, aid-update-dashboard in G11) + aid-refactor.
   # -- aid-refactor is bare with no artifact suffixes.
+  - name: aid-update-roadmap
+    verb: update
+    artifact: roadmap
+    alias_of: null
+    default_type: DOCUMENT
+    group: G5
+    intent: "Revise roadmap.md's direction entries outside the MVP section, plus any previously created outputs."
+    repurpose: true
+  - name: aid-update-mvp
+    verb: update
+    artifact: mvp
+    alias_of: null
+    default_type: DOCUMENT
+    group: G5
+    intent: "Revise roadmap.md's MVP section only, plus any previously created outputs."
+    repurpose: true
+  - name: aid-update-backlog
+    verb: update
+    artifact: backlog
+    alias_of: null
+    default_type: DOCUMENT
+    group: G5
+    intent: "Revise backlog.md -- re-prioritize, add items, and promote accepted tech-debt.md rows -- plus any previously created outputs."
+    repurpose: true
   - name: aid-update
     verb: update
     artifact: ""
