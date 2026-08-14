@@ -233,6 +233,13 @@ proposed on a project-specific condition rather than by default:
 None of the three is added to `synth_default_seed`; the byte-stable software seed above
 remains exactly 15 docs.
 
+**`quality-gates.md` is a fourth conditional extension, under C6** (Quality & testing) --
+the same dimension as `test-landscape.md`, but owned by `aid-researcher-quality` rather
+than `skill-self`: it records which gates block a merge and who may waive one. It is
+proposed only when a project enforces merge-blocking quality gates. Like the three above it
+is **not** a seed doc and has no template under `canonical/aid/templates/knowledge-base/`,
+so it too leaves `synth_default_seed` unchanged.
+
 ---
 
 ## Document boundaries -- the three-force rule

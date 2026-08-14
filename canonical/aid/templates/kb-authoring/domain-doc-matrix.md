@@ -150,10 +150,11 @@ the seed at 14.
 | `roadmap.md` | D | `skill-self` | conditional:project maintains a forward plan |
 | `backlog.md` | C7 | `skill-self` | conditional:project maintains a defined-and-prioritized backlog |
 | `release-tracking.md` | C8 | `skill-self` | conditional:project cuts versioned releases and records what shipped in each |
+| `quality-gates.md` | C6 | `aid-researcher-quality` | conditional:project enforces merge-blocking quality gates |
 
-14 required docs (the seed) + 4 conditional (`decisions.md`, `roadmap.md`, `backlog.md`,
-`release-tracking.md`). `INDEX.md` is generated meta (by `build-kb-index.sh`), never a
-matrix row.
+14 required docs (the seed) + 5 conditional (`decisions.md`, `roadmap.md`, `backlog.md`,
+`release-tracking.md`, `quality-gates.md`). `INDEX.md` is generated meta (by
+`build-kb-index.sh`), never a matrix row.
 
 ### Domain: `software-web`
 
@@ -184,6 +185,7 @@ user-facing presentation (C9) and deployment (C8).
 | `roadmap.md` | D | `skill-self` | conditional:project maintains a forward plan |
 | `backlog.md` | C7 | `skill-self` | conditional:project maintains a defined-and-prioritized backlog |
 | `release-tracking.md` | C8 | `skill-self` | conditional:project cuts versioned releases and records what shipped in each |
+| `quality-gates.md` | C6 | `aid-researcher-quality` | conditional:project enforces merge-blocking quality gates |
 
 > **Note.** `software-cli` and `software-web` share the same 14 required docs. They are kept
 > as separate rows (not folded into one `software` row) because their *conditional* sets
