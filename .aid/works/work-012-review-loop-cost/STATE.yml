@@ -34,9 +34,9 @@ phase: Describe
 # [W] aid-{skill} | none
 active_skill: aid-describe
 # [W]
-updated: '2026-08-14T20:16:00Z'
+updated: '2026-08-14T20:20:00Z'
 # [W] set only when lifecycle = Paused-Awaiting-Input
-pause_reason: 'Awaiting owner approval; Q-01 and Q-02 answered, Q-03 and Q-04 open (Specify-time, not Define-blocking)'
+pause_reason: 'Awaiting owner approval; Q-01..Q-03 answered, Q-04 open (Specify-time)'
 # [W] set only when lifecycle = Blocked
 block_reason: --
 # [W] e.g. IMPEDIMENT-task-NNN.md, or the failed gate
@@ -171,6 +171,14 @@ lifecycle_history:
       placed under "## Interview State" is absorbed into interview.sections
       as extra rows. Reported for a tech-debt row; NOT fixed here, since
       bin/aid is outside this work's scope.
+  - date: '2026-08-14'
+    event: 'Describe: Q-03 answered (owner)'
+    grade: --
+    notes: >-
+      Measurement subject deferred to Define, with an owner -- Define must
+      name it before Specify begins, so the choice rests on the gate
+      inventory Define produces rather than on a guess made now. AC-1 and
+      section 10 step 1 updated. Only Q-04 remains, and it is Specify-time.
 
 # [A] aid-deploy only; one entry per delivery.
 deploy: []
@@ -259,7 +267,7 @@ qa:
   - id: 'Q-03'
     category: 'Requirements / measurement'
     impact: High
-    state: Pending
+    state: Answered
     context: >-
       AC-1 requires a before-and-after measurement on a real artifact, and
       FR-15 requires the before figure to be captured first. Which artifact
@@ -271,8 +279,20 @@ qa:
       gate this work itself will run most often -- this work's own specify
       gate is the obvious candidate, since it makes the work its own
       experiment.
-    answer: --
-    applied_to: --
+    answer: >-
+      OWNER DECISION 2026-08-14 -- option C. The measurement subject is named
+      at Define, not now, because the gate inventory that makes the choice
+      evidence-based is exactly what Define produces; naming it today would
+      be a guess dressed as a requirement, and AC-1 is the criterion that has
+      to survive scrutiny. This is a deferral WITH AN OWNER, not an open
+      question: Define owes the named subject before Specify begins, and the
+      expected landing is this work's own gates (option A), since a work
+      about review cost that measures itself needs no replay assumptions to
+      defend. Replaying a past work's gate against the old and new rules
+      (option B) stays available as a SUPPLEMENT if the live sample proves
+      too small, but never as the primary -- a replay models rather than
+      observes.
+    applied_to: 'REQUIREMENTS.md AC-1 (the subject is named at Define) and section 10 Priority step 1'
   - id: 'Q-04'
     category: Process
     impact: Medium

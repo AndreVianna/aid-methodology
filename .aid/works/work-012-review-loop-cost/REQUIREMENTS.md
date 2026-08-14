@@ -16,6 +16,7 @@
 | 2026-08-14 | **Q-01 answered (owner).** NFR-1's exit criterion ratified as drafted: an oracle ships only where it replaces recurring human re-derivation, and the trade is measured. Two rejected alternatives recorded with their reasons | owner |
 | 2026-08-14 | **Q-02 answered (owner).** An `oracle:` value is a repo-root-relative path and oracles live outside `canonical/` — one resolution rule for AID and adopters alike, and no oracle in the render chain. FR-8 and NFR-5 updated | owner |
 | 2026-08-14 | **`work-009` merged; state format 3 → 4.** This work's `STATE.md` converted to `STATE.yml`; the two cross-references above re-pointed. No requirement changed — the merge touches none of the four L5 edit sites | /aid-describe |
+| 2026-08-14 | **Q-03 answered (owner).** The measurement subject is named at Define rather than now, so the choice rests on the gate inventory Define produces. AC-1 and §10 step 1 record it as a Define deliverable owed before Specify | owner |
 
 ## 1. Objective
 
@@ -236,7 +237,9 @@ guarding around it.
   gate — read bytes, and tokens where the host reports them, and cycles — is measured
   before any remedy lands and again after. The after figure is lower, and both figures are
   recorded with the command that produced them. A criterion satisfied merely by the change
-  existing is not accepted.
+  existing is not accepted. **The measurement subject is named at Define** (owner decision,
+  STATE.yml Q-03), once the feature decomposition shows which gate this work runs most
+  often; Define owes that name before Specify begins.
 - **AC-2** A defect seeded in a section that REFERENCES a changed section is found by a
   scoped cycle. This is FR-4's guard, tested rather than trusted.
 - **AC-3** A defect seeded OUTSIDE the scoped surface, and consequently missed by a scoped
@@ -265,7 +268,8 @@ guarding around it.
 ## 10. Priority
 
 1. **FR-15 first.** The baseline must be captured before any remedy lands, or AC-1 is
-   unprovable for the rest of the work.
+   unprovable for the rest of the work. Define names the measurement subject (Q-03) as its
+   own deliverable, so the baseline can be taken the moment Specify opens.
 2. **Remedy 2 next (FR-8 to FR-13).** Sequencing it before or alongside remedy 1 removes
    remedy 1's correctness objection rather than guarding around it, and `G-07` — the worst
    case for scoping — becomes the worked example that proves the point.
