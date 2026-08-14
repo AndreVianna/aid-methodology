@@ -58,6 +58,7 @@ knowledge:
     - decisions.md|aid-researcher-architecture|required
     - README.md|skill-self|required
     - roadmap.md|skill-self|required
+    - backlog.md|skill-self|required
   term_exclusions:
     - In Progress
     - User Approved
