@@ -75,6 +75,22 @@ Read `.aid/connectors/INDEX.md`.
 - Produce verifiable artifacts at each phase.
 - Quality gates must pass before proceeding.
 
+## Review criteria (before you write)
+
+Criteria are the writer's contract, not the reviewer's checklist. **Before authoring or
+editing any file, resolve its review criteria and comply** -- the reviewer is the backstop,
+not the enforcer:
+
+- Resolve three levels and satisfy the union: the **global** criteria and the criteria for
+  the file's **document type**, both in the type registry and criteria tables of
+  `.aid/knowledge/authoring-conventions.md`, plus anything the **file itself** declares in
+  its `review-criteria:` frontmatter. On a collision the most specific wins -- file over
+  type over global. A `kind: exclude` entry is as binding as a `validate` one: it names
+  what you must NOT add.
+- **Introducing or retiring a document type owes the KB a registry row.** Adding the first
+  file of a new type adds its row and its criteria in the same change; removing the last
+  file of a type removes the row. Every in-scope file must resolve to exactly one type.
+
 ## Review output format (global)
 
 Any review output you produce — dispatched sub-agent, script validator, or

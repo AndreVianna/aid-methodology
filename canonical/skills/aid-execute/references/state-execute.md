@@ -163,7 +163,8 @@ Each task type dispatches a specific executor agent. The reviewer is always the 
 
 **Model override per task type.** Each executor has a default tier from its agent definition (Developer is Medium tier, etc.). For genuinely complex work — REFACTOR over a tangled module, MIGRATE with edge cases, IMPLEMENT touching critical security paths — the orchestrator may dispatch with an explicit higher-tier model in the Task tool's `model` parameter. This is a runtime decision per dispatch, not a skill configuration.
 
-**Mechanical sub-tasks.** Executors may delegate mechanical work (extraction, file enumeration, template filling) to `aid-clerk` (with `operation: extract`, `operation: glob`, or `operation: format` respectively) — Small-tier utility sub-agents. See `agents/aid-clerk/README.md` for the caller contract.
+**Mechanical sub-tasks.** Executors may delegate mechanical work (extraction, file enumeration, template filling) to `aid-clerk` (with `operation: extract`, `operation: glob`, or `operation: format` respectively) — Small-tier utility sub-agents. See `agents/aid-clerk/AGENT.md § Caller Contract` for what each
+operation requires.
 
 ## EXECUTE-WAVE: Pool Dispatch (delivery-level, FR6)
 

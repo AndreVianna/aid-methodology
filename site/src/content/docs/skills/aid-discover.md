@@ -83,7 +83,7 @@ Every node in the chart above, in chart order, with the exact `canonical/` text 
 | REVIEW | `references/state-review.md` | `aid-architect` | → Q-AND-A |
 ~~~~
 
-[Source: `canonical/skills/aid-discover/SKILL.md#L263`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-discover/SKILL.md#L263) · [full step: `canonical/skills/aid-discover/references/state-review.md#L1-L647`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-discover/references/state-review.md#L1-L647)
+[Source: `canonical/skills/aid-discover/SKILL.md#L263`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-discover/SKILL.md#L263) · [full step: `canonical/skills/aid-discover/references/state-review.md#L1-L648`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-discover/references/state-review.md#L1-L648)
 
 <a id="fragment-n4"></a>**4 · `Q-AND-A`** — Q-AND-A drives EVERY pending question to a terminal answer. · _decision_
 

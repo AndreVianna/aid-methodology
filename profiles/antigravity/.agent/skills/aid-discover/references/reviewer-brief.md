@@ -27,6 +27,19 @@ RUBRIC: kb-authoring/review-rubric.md (route by each doc's kb-category + source)
   - extension + hand-authored      → Extension-Scope (flagged outside the declared doc-set)
   - extension + generated          → Extension Build-Verify
 
+DECLARED REVIEW CRITERIA (resolve; do not invent):
+  Each artifact declares, or inherits, the criteria it must be true against. Resolve them
+  and verify against the union -- global, then the artifact's document type, then the
+  artifact's own `review-criteria:` frontmatter; most specific wins on an id collision.
+  Resolution is defined in .agent/aid/templates/kb-authoring/review-rubric.md
+  (section: Resolving review criteria); the type registry and the criteria table live in
+  .aid/knowledge/authoring-conventions.md. This brief deliberately does NOT restate them.
+  - Cite the criterion `id` as a prefix in the ledger's Description cell (7 columns, no
+    new column). A finding citing no id, or an id resolving nowhere, is itself a defect.
+  - A `kind: exclude` criterion binds you: reporting it is a defect in the review.
+  - If the severity came from a file-level override, record the resolved severity and the
+    overriding file's `why` in the Evidence cell.
+
 OUT OF SCOPE (do NOT grade against):
   - Code in the target repository (review the KB docs, not the code they describe)
   - Adopter-project specifics not in the ARTIFACTS list

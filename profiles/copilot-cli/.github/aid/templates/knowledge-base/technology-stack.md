@@ -12,7 +12,7 @@ owner: architect
 audience: [developer, architect, devops]
 intent: |
   Languages, runtimes, frameworks, build tools, and test infrastructure the project uses. Read this for language-version or tool-version questions.
-contracts: []
+review-criteria: []
 ---
 
 # Technology Stack

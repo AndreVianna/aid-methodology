@@ -165,7 +165,7 @@ fi
 
 # ---------------------------------------------------------------------------
 # Compose the file. Frontmatter carries no dated/timestamped field (KI-010):
-# source: generated / generator: / intent: / contracts: only (feature-001's
+# source: generated / generator: / intent: / review-criteria: only (feature-001's
 # frozen "own frontmatter" contract) -- no kb-category:, no changelog:. The
 # body is title + single flat table only: feature-005 explicitly does not add
 # a consumption-contract preamble here (that documentation lives in the
@@ -183,8 +183,12 @@ intent: |
   reconcile trigger this builder; feature-005 owns it). An agent reaches this
   file via the "## Connectors" context-file pointer, then opens the specific
   descriptor.
-contracts:
-  - "One row per connector descriptor under .aid/connectors/"
+review-criteria:
+  - id: F-01
+    kind: validate
+    criterion: "One row per connector descriptor under .aid/connectors/"
+    severity: HIGH
+    why: "An agent reaches a descriptor through this table; a missing row hides a catalogued connector"
 ---
 
 # Connectors Index

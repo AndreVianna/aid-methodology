@@ -136,7 +136,7 @@ run_test_2() {
     AID_STATE_FILE="$ws/.aid/work/STATE.md" \
     AID_DELIVERY_ISSUES_DIR="$ws/.aid/work" \
     AID_LOCK_DIR="$ws/.aid/work" \
-    "$WRITEBACK" --delivery-id 003 --append-issue \
+    bash "$WRITEBACK" --delivery-id 003 --append-issue \
         "| (none) | — | No deferred [HIGH] issues from quick checks | Resolved |" \
         > /dev/null 2>&1
 
@@ -280,7 +280,7 @@ EOF
 run_test_4() {
     # Clean issue list → A+
     local grade_clean
-    grade_clean=$(echo "No issues found." | "$GRADE")
+    grade_clean=$(echo "No issues found." | bash "$GRADE")
     if [[ "$grade_clean" == "A+" ]]; then
         pass "Test 4a: grade.sh on empty issue list → A+"
     else
@@ -289,7 +289,7 @@ run_test_4() {
 
     # One [HIGH] → D+ (schema-table format)
     local grade_high
-    grade_high=$(printf '| # | Severity | Status | Doc | Line | Description | Evidence |\n|---|---|---|---|---|---|---|\n| 1 | [HIGH] | Pending | foo.md | 1 | some issue | evidence |\n' | "$GRADE")
+    grade_high=$(printf '| # | Severity | Status | Doc | Line | Description | Evidence |\n|---|---|---|---|---|---|---|\n| 1 | [HIGH] | Pending | foo.md | 1 | some issue | evidence |\n' | bash "$GRADE")
     if [[ "$grade_high" == "D+" ]]; then
         pass "Test 4b: grade.sh with 1 [HIGH] → D+"
     else
@@ -298,7 +298,7 @@ run_test_4() {
 
     # One [CRITICAL] → E+ (schema-table format)
     local grade_crit
-    grade_crit=$(printf '| # | Severity | Status | Doc | Line | Description | Evidence |\n|---|---|---|---|---|---|---|\n| 1 | [CRITICAL] | Pending | foo.md | 1 | fatal issue | evidence |\n' | "$GRADE")
+    grade_crit=$(printf '| # | Severity | Status | Doc | Line | Description | Evidence |\n|---|---|---|---|---|---|---|\n| 1 | [CRITICAL] | Pending | foo.md | 1 | fatal issue | evidence |\n' | bash "$GRADE")
     if [[ "$grade_crit" == "E+" ]]; then
         pass "Test 4c: grade.sh with 1 [CRITICAL] → E+"
     else
@@ -307,7 +307,7 @@ run_test_4() {
 
     # Three [MEDIUM] → C (schema-table format; not C+ since count > 1; not C- since count <= 5)
     local grade_medium
-    grade_medium=$(printf '| # | Severity | Status | Doc | Line | Description | Evidence |\n|---|---|---|---|---|---|---|\n| 1 | [MEDIUM] | Pending | foo.md | 1 | issue 1 | evidence |\n| 2 | [MEDIUM] | Pending | foo.md | 2 | issue 2 | evidence |\n| 3 | [MEDIUM] | Pending | foo.md | 3 | issue 3 | evidence |\n' | "$GRADE")
+    grade_medium=$(printf '| # | Severity | Status | Doc | Line | Description | Evidence |\n|---|---|---|---|---|---|---|\n| 1 | [MEDIUM] | Pending | foo.md | 1 | issue 1 | evidence |\n| 2 | [MEDIUM] | Pending | foo.md | 2 | issue 2 | evidence |\n| 3 | [MEDIUM] | Pending | foo.md | 3 | issue 3 | evidence |\n' | bash "$GRADE")
     if [[ "$grade_medium" == "C" ]]; then
         pass "Test 4d: grade.sh with 3 [MEDIUM] → C"
     else
@@ -317,7 +317,7 @@ run_test_4() {
     # Tags in Description column are ignored -- schema-table mode reads only col3 (Severity)
     # This is the cycle-7 regression test: summary prose with tag strings must NOT inflate grade
     local grade_backtick
-    grade_backtick=$(printf '| # | Severity | Status | Doc | Line | Description | Evidence |\n|---|---|---|---|---|---|---|\n| 1 | [MINOR] | Pending | foo.md | 1 | 0 [CRITICAL] / 0 [HIGH] found in summary | prose leaked tags |\n' | "$GRADE")
+    grade_backtick=$(printf '| # | Severity | Status | Doc | Line | Description | Evidence |\n|---|---|---|---|---|---|---|\n| 1 | [MINOR] | Pending | foo.md | 1 | 0 [CRITICAL] / 0 [HIGH] found in summary | prose leaked tags |\n' | bash "$GRADE")
     if [[ "$grade_backtick" == "A" ]]; then
         pass "Test 4e: grade.sh ignores tags in Description column (cycle-7 regression)"
     else
@@ -550,7 +550,7 @@ EOF
     AID_STATE_FILE="$ws/.aid/work/STATE.md" \
     AID_DELIVERY_ISSUES_DIR="$ws/.aid/work" \
     AID_LOCK_DIR="$ws/.aid/work/deliveries/delivery-003" \
-    "$WRITEBACK" --delivery-id 003 --block "$gate_block" \
+    bash "$WRITEBACK" --delivery-id 003 --block "$gate_block" \
         > /dev/null 2>&1
     local rc=$?
 
@@ -623,16 +623,20 @@ run_test_8() {
 # Main
 # ---------------------------------------------------------------------------
 
-# Verify required scripts exist
-if [[ ! -x "$WRITEBACK" ]]; then
-    echo "ERROR: writeback-state.sh not found or not executable at: $WRITEBACK" >&2
-    echo "       Ensure it exists and is executable (chmod +x)." >&2
+# Verify required scripts exist.
+#
+# Checked with -f (present and readable), NOT -x. The executable bit is not part of
+# either script's contract: every one of the ~90 invocations across canonical/ calls
+# them as `bash <path>`, none as `./<path>`, and both are committed 100644. An -x
+# preflight here made this the only suite in the repo that required the bit, so it
+# failed on any clean checkout while the scripts themselves worked fine.
+if [[ ! -f "$WRITEBACK" ]]; then
+    echo "ERROR: writeback-state.sh not found at: $WRITEBACK" >&2
     exit 1
 fi
 
-if [[ ! -x "$GRADE" ]]; then
-    echo "ERROR: grade.sh not found or not executable at: $GRADE" >&2
-    echo "       Ensure it exists and is executable (chmod +x)." >&2
+if [[ ! -f "$GRADE" ]]; then
+    echo "ERROR: grade.sh not found at: $GRADE" >&2
     exit 1
 fi
 

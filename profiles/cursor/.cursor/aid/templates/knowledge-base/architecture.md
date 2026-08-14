@@ -12,7 +12,7 @@ owner: architect
 audience: [architect, developer]
 intent: |
   Architectural patterns, levels, data flow, and module boundaries. Read this to understand HOW the system hangs together -- not WHAT each module does.
-contracts: []
+review-criteria: []
 ---
 
 # Architecture
