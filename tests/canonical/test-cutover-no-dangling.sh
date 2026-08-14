@@ -119,15 +119,23 @@ else
 fi
 
 # CND-12: the actual `## Triage` / `## Escalation Carry` H2 headings no longer exist as
-# real sections of work-state-template.md (positive confirmation the deletion landed, not
+# real sections of work-state-template.yml (positive confirmation the deletion landed, not
 # just that nothing cites it).
-TEMPLATE="${CANONICAL}/aid/templates/work-state-template.md"
-assert_file_exists "$TEMPLATE" "CND12a work-state-template.md exists"
+# task-015 addendum (SP-16/AC-8): retargeted from work-state-template.md to the
+# one-zone work-state-template.yml (work-009 task-002). A one-zone YAML document
+# has no markdown headings AT ALL, so a literal `grep -qE '^## Triage$'` check
+# would pass VACUOUSLY on any .yml file regardless of whether the Triage/
+# Escalation-Carry CONCEPT still exists in some other form -- restated as a
+# key-absence check (no top-level `triage:` / `escalation_carry:` key), the
+# YAML-shape equivalent of "no real section," per DETAIL.md's own warning that
+# a half-retargeted guard must not become a silent no-op.
+TEMPLATE="${CANONICAL}/aid/templates/work-state-template.yml"
+assert_file_exists "$TEMPLATE" "CND12a work-state-template.yml exists"
 if [[ -f "$TEMPLATE" ]]; then
-    if grep -qE '^## Triage$|^## Escalation Carry$' "$TEMPLATE"; then
-        fail "CND12b work-state-template.md carries no literal ## Triage / ## Escalation Carry heading"
+    if grep -qE '^triage:|^escalation_carry:' "$TEMPLATE"; then
+        fail "CND12b work-state-template.yml carries no top-level triage:/escalation_carry: key"
     else
-        pass "CND12b work-state-template.md carries no literal ## Triage / ## Escalation Carry heading"
+        pass "CND12b work-state-template.yml carries no top-level triage:/escalation_carry: key"
     fi
 fi
 

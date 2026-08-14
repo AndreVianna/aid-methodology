@@ -1,0 +1,15 @@
+# Work State -- work-002-paused (work-009-refactor task-016: was STATE.md)
+lifecycle: Paused-Awaiting-Input
+phase: Specify
+active_skill: aid-specify
+updated: '2026-06-09T10:00:00Z'
+pause_reason: Awaiting user decision on database technology
+block_reason: --
+block_artifact: --
+qa:
+  - id: 1
+    category: Architecture
+    impact: High
+    state: Pending
+    context: Need to decide between PostgreSQL and SQLite
+    suggested: PostgreSQL

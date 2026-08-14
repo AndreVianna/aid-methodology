@@ -46,7 +46,7 @@ Step 0):
   knowledge/
     STATE.md                   ← Q&A, Review History (settings → .aid/settings.yml), Q&A (Pending)
 .aid/works/{work}/
-  STATE.md                     ← § Deploy State (current operation status, history)
+  STATE.yml                     ← Deploy State (current operation status, history)
   packages/                    ← product (one file per release)
     package-001-{name}.md
     package-002-{name}.md
@@ -55,6 +55,17 @@ Step 0):
   tasks/task-NNN/                          ← lite path: task files with statuses (no delivery-NNN/ nesting)
   features/                    ← feature SPECs
 ```
+
+> **Accuracy note (schema shape mismatch, not resolved by this task).** `work-state-template.yml`
+> does carry a `deploy` key, but its shape is a sequence of **per-delivery** records
+> (`delivery` / `state` / `pr` / `kb_updated` / `tag` / `notes`, "aid-deploy only... never
+> derived from child files"), not the single Status/Active-Package/History state machine
+> this skill's Deploy State below describes (Idle -> Selecting -> Verifying -> Packaging ->
+> Done, with an active-package pointer). The two shapes do not line up key-for-key; this is
+> a schema gap surfaced by the refactor, flagged here rather than papered over. The `deploy`
+> key is the closest real target and the sole legal AUTHORED write point for this skill's
+> state, but a literal "Status:"/"Active Package:" read/write against it does not map
+> one-to-one onto its declared fields.
 
 ## ⚠️ Pre-flight Checks
 
@@ -79,21 +90,22 @@ Step 0):
    each record's field-1 `work_id` — single record → auto-select; multiple records →
    list them, ask user to choose; zero records on any worktree → **STOP.** "No works
    found. Run `/aid-describe` first." **Then locate + enter the work's
-   worktree**, before item 3 below reads work `STATE.md`: follow
+   worktree**, before item 3 below reads work `STATE.yml`: follow
    `.agent/aid/templates/downstream-worktree-entry.md` to normalize the work id to its bare
    `work-NNN` branch name, `locate` the worktree (which **always exits 0** and returns
    `<path>\t<status>`), and enter the returned path. Keep the defensive empty-path/non-zero
    backstop that stops rather than operate blindly — it should not fire against the real helper.
    Never create a new worktree — creation belongs to the work-starting skills only. (Applies only
    to this `work-NNN` pipeline path — the free-form shortcut mode in Step 0 does not reach here.)
-3. Read work `STATE.md` `## Deploy State` section (or create it if absent).
+3. Read work `STATE.yml`'s Deploy State (`deploy` key -- see the Workspace accuracy note
+   above) (or create it if absent).
 4. Read `PLAN.md` — identify deliveries and their statuses.
-5. Check work `STATE.md` `## Tasks State` — check statuses and grades.
+5. Check work `STATE.yml`'s Tasks State (derived view) — check statuses and grades.
 6. If Deploy State shows an active package → resume from that step (see State Detection).
 
 ## State Detection
 
-Read work `STATE.md` `## Deploy State`:
+Read work `STATE.yml`'s Deploy State (`deploy` key):
 - **Status: Idle** → IDLE state (start new package; see `references/state-idle.md`)
 - **Status: Selecting** → SELECTING state (resume delivery selection; see `references/state-selecting.md`)
 - **Status: Verifying** → VERIFYING state (resume verification; see `references/state-verifying.md`)

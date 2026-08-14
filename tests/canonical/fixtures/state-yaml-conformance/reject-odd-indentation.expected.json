@@ -1,0 +1,11 @@
+{
+  "file_label": "STATE.yml",
+  "values": {
+    "control_after": "ok_after",
+    "control_before": "ok_before",
+    "parent_key": {}
+  },
+  "warnings": [
+    "STATE.yml:3: indentation not a multiple of two; line skipped"
+  ]
+}

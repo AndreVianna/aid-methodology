@@ -83,9 +83,11 @@ def _make_settings_repo(root: Path) -> Path:
 
 def _make_flat_work(root: Path, work_id: str) -> Path:
     """A minimal FLAT-layout work (BLUEPRINT.md + tasks/task-NNN/DETAIL.md, no
-    deliveries/ wrapper) with a ### Tasks lifecycle row for task-001, plus a
+    deliveries/ wrapper) with a `tasks_lifecycle` entry for task-001, plus a
     REQUIREMENTS.md Name bullet -- enough for task.set-notes / pipeline.finish /
-    pipeline.rename to all round-trip against the same fixture."""
+    pipeline.rename to all round-trip against the same fixture.
+    (work-009-refactor task-016: was a fenced-frontmatter STATE.md with a
+    '### Tasks lifecycle' markdown table -- retired, SPEC.md sec:D-4.)"""
     work_dir = root / ".aid" / "works" / work_id
     (work_dir / "tasks" / "task-001").mkdir(parents=True, exist_ok=True)
     (work_dir / "BLUEPRINT.md").write_text("# Blueprint\n", encoding="utf-8")
@@ -93,16 +95,18 @@ def _make_flat_work(root: Path, work_id: str) -> Path:
     (work_dir / "REQUIREMENTS.md").write_text(
         "# Requirements\n\n- **Name:** Old Name\n", encoding="utf-8",
     )
-    (work_dir / "STATE.md").write_text(
-        "---\n"
+    (work_dir / "STATE.yml").write_text(
         "lifecycle: Running\n"
         "updated: '2026-01-01T00:00:00Z'\n"
-        "---\n\n"
-        "# Work State\n\n"
-        "### Tasks lifecycle\n\n"
-        "| Task | State | Review | Elapsed | Notes |\n"
-        "| --- | --- | --- | --- | --- |\n"
-        "| task-001 | Pending | -- | -- | -- |\n",
+        "pause_reason: --\n"
+        "block_reason: --\n"
+        "block_artifact: --\n"
+        "tasks_lifecycle:\n"
+        "  task-001:\n"
+        "    state: Pending\n"
+        "    review: --\n"
+        "    elapsed: --\n"
+        "    notes: --\n",
         encoding="utf-8",
     )
     return work_dir
@@ -318,7 +322,7 @@ class TestOpWriterRoundTrips(unittest.TestCase):
             )
             self.assertEqual(status, 200)
             self.assertEqual(json.loads(body), {"ok": True, "op": "task.set-notes"})
-            self.assertIn("hello", (work_dir / "STATE.md").read_text(encoding="utf-8"))
+            self.assertIn("hello", (work_dir / "STATE.yml").read_text(encoding="utf-8"))
 
     def test_pipeline_finish_fixes_value_to_completed_ignoring_client_args(self):
         """The op takes no lifecycle argument -- args (even if supplied) are ignored."""
@@ -331,7 +335,7 @@ class TestOpWriterRoundTrips(unittest.TestCase):
             )
             self.assertEqual(status, 200)
             self.assertEqual(json.loads(body), {"ok": True, "op": "pipeline.finish"})
-            content = (work_dir / "STATE.md").read_text(encoding="utf-8")
+            content = (work_dir / "STATE.yml").read_text(encoding="utf-8")
             self.assertIn("lifecycle: Completed", content)
             self.assertNotIn("lifecycle: Blocked", content)
 

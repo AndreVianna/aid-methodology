@@ -27,7 +27,7 @@ explicit confirmation. It is the third of the three peer ticket-tracker skills a
 
 **Absent from the mandatory pipeline flow.** Like `aid-ask` and `aid-set-connector`, this is
 an optional, on-demand utility skill — no phase gate references it, no `shortcut-catalog.yml`
-entry, no `work-NNN` scaffold, no per-skill `STATE.md`; it is invoked directly by name
+entry, no `work-NNN` scaffold, no per-skill `STATE.yml`; it is invoked directly by name
 (`features/feature-001-dedicated-ticket-skills/SPEC.md` § Layers & Components, decision 2).
 
 **Shared reference — implemented here, not restated.** The connector-resolution ladder, this
@@ -208,7 +208,7 @@ stopped the run before CONFIRM was ever asked.
 This skill makes exactly **one** external write per invocation — the single host-MCP mutation call
 at WRITE, and only after an explicit CONFIRM. It writes **nothing** to the repo: no `Write`/`Edit`
 tool is declared; `.aid/connectors/` is only ever read (`Read`/`Glob`/`Grep`, to resolve the
-connector via `INDEX.md` and the matched descriptor's `tags:`); no local file, cache, or `STATE.md`
+connector via `INDEX.md` and the matched descriptor's `tags:`); no local file, cache, or `STATE.yml`
 is ever touched.
 
 ---

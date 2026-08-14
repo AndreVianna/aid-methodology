@@ -1,0 +1,4 @@
+tasks_lifecycle:
+  task-001:
+    state: Pending
+    review: --

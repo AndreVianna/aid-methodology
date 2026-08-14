@@ -8,10 +8,10 @@ Covers the reader-twin half of task-029 (TaskModel.stop_requested):
     dir -> False; missing `.control/` directory entirely -> False; a
     different task_id's signal in the SAME control dir does not leak; never
     throws (even on a pathological same-named DIRECTORY at the signal path).
-  - `read_repo()` end-to-end for BOTH the flat (work-root `### Tasks
-    lifecycle`) and hierarchical (per-task STATE.md) layouts: the derived
-    field flows onto TaskModel with no STATE.md parser change (the control
-    file is never read as STATE.md, and STATE.md is never touched by this
+  - `read_repo()` end-to-end for BOTH the flat (work-root `tasks_lifecycle`
+    mapping) and hierarchical (per-task STATE.yml) layouts: the derived
+    field flows onto TaskModel with no STATE.yml parser change (the control
+    file is never read as STATE.yml, and STATE.yml is never touched by this
     field).
   - Serialized DM shape (`_ser_task`) carries `stop_requested`.
   - WT-1: the control dir is derived relative to the WALKED work_dir (the
@@ -142,7 +142,9 @@ def _make_repo(tmp: Path) -> "tuple[Path, Path]":
 
 
 def _build_flat_work(aid: Path, work_id: str) -> Path:
-    """Lite-flat layout (BLUEPRINT.md + tasks/task-NNN/DETAIL.md, no deliveries/)."""
+    """Lite-flat layout (BLUEPRINT.md + tasks/task-NNN/DETAIL.md, no
+    deliveries/). (work-009-refactor task-016: was a bullet-heading STATE.md
+    with a '### Tasks lifecycle' markdown table -- retired, SPEC.md sec:D-4.)"""
     work_dir = aid / "works" / work_id
     work_dir.mkdir(parents=True, exist_ok=True)
     (work_dir / "BLUEPRINT.md").write_text(
@@ -150,13 +152,15 @@ def _build_flat_work(aid: Path, work_id: str) -> Path:
         "## Objective\n\nDeliver.\n\n## Gate Criteria\n\n- [ ] All tests pass\n",
         encoding="utf-8",
     )
-    (work_dir / "STATE.md").write_text(
-        "## Pipeline State\n\n- **Lifecycle:** Running\n\n"
-        "## Delivery Lifecycle\n\n- **State:** Executing\n\n"
-        "### Tasks lifecycle\n\n"
-        "| Task | State | Review | Elapsed | Notes |\n"
-        "|------|-------|--------|---------|-------|\n"
-        "| task-001 | In Progress | -- | -- | -- |\n",
+    (work_dir / "STATE.yml").write_text(
+        "lifecycle: Running\n"
+        "delivery_state: Executing\n"
+        "tasks_lifecycle:\n"
+        "  task-001:\n"
+        "    state: In Progress\n"
+        "    review: --\n"
+        "    elapsed: --\n"
+        "    notes: --\n",
         encoding="utf-8",
     )
     task_dir = work_dir / "tasks" / "task-001"
@@ -169,10 +173,12 @@ def _build_flat_work(aid: Path, work_id: str) -> Path:
 
 
 def _build_hierarchical_work(aid: Path, work_id: str) -> Path:
-    """Full-nested layout (deliveries/delivery-NNN/tasks/task-NNN/{DETAIL,STATE}.md)."""
+    """Full-nested layout (deliveries/delivery-NNN/tasks/task-NNN/{DETAIL.md,
+    STATE.yml}). (work-009-refactor task-016: was fenced-frontmatter/bullet-
+    heading STATE.md files -- retired, SPEC.md sec:D-4.)"""
     work_dir = aid / "works" / work_id
     work_dir.mkdir(parents=True, exist_ok=True)
-    (work_dir / "STATE.md").write_text("## Pipeline State\n\n- **Lifecycle:** Running\n", encoding="utf-8")
+    (work_dir / "STATE.yml").write_text("lifecycle: Running\n", encoding="utf-8")
 
     del_dir = work_dir / "deliveries" / "delivery-001"
     del_dir.mkdir(parents=True, exist_ok=True)
@@ -181,10 +187,13 @@ def _build_hierarchical_work(aid: Path, work_id: str) -> Path:
         "## Objective\n\nDeliver.\n\n## Gate Criteria\n\n- [ ] All tests pass\n",
         encoding="utf-8",
     )
-    (del_dir / "STATE.md").write_text(
-        "## Delivery Lifecycle\n\n- **State:** Executing\n\n"
-        "## Delivery Gate\n\n- **Reviewer Tier:** Small\n- **Grade:** A+\n"
-        "- **Issue List:** none\n- **Timestamp:** 2026-07-08T12:00:00Z\n",
+    (del_dir / "STATE.yml").write_text(
+        "delivery_state: Executing\n"
+        "gate_tier: Small\n"
+        "gate_grade: A+\n"
+        "gate_timestamp: '2026-07-08T12:00:00Z'\n"
+        "delivery_gate:\n"
+        "  issue_list: []\n",
         encoding="utf-8",
     )
     task_dir = del_dir / "tasks" / "task-001"
@@ -193,8 +202,8 @@ def _build_hierarchical_work(aid: Path, work_id: str) -> Path:
         "# task-001: Nested task short name\n\n**Type:** IMPLEMENT\n\nBody.\n",
         encoding="utf-8",
     )
-    (task_dir / "STATE.md").write_text(
-        "---\nstate: In Progress\n---\n\n## Task State\n", encoding="utf-8",
+    (task_dir / "STATE.yml").write_text(
+        "state: In Progress\n", encoding="utf-8",
     )
     return work_dir
 
@@ -243,15 +252,15 @@ class TestReadRepoFlatLayoutStopRequested(unittest.TestCase):
 
     def test_never_parsed_from_state_md(self):
         """STATE.md carries no stop-signal syntax at all -- the field is
-        derived purely from the control-file stat, never from STATE.md text."""
+        derived purely from the control-file stat, never from STATE.yml text."""
         work_dir = _build_flat_work(self.aid, "work-982-flat-purederived")
         _seed_stop_signal(self.aid, "work-982-flat-purederived", "task-001")
-        state_text_before = (work_dir / "STATE.md").read_text(encoding="utf-8")
+        state_text_before = (work_dir / "STATE.yml").read_text(encoding="utf-8")
         model = _read_repo_single_work(self.root, self.aid)
         task = model.works[0].tasks[0]
         self.assertTrue(task.stop_requested)
-        state_text_after = (work_dir / "STATE.md").read_text(encoding="utf-8")
-        self.assertEqual(state_text_before, state_text_after, "STATE.md must be untouched")
+        state_text_after = (work_dir / "STATE.yml").read_text(encoding="utf-8")
+        self.assertEqual(state_text_before, state_text_after, "STATE.yml must be untouched")
 
 
 class TestReadRepoHierarchicalLayoutStopRequested(unittest.TestCase):

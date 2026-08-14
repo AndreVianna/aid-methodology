@@ -1,6 +1,6 @@
 # State: CONTINUE
 
-Resume the conversational interview; STATE.md shows In Progress with at least one section still Pending or Partial. This is the **only** entry point into the full-path interview -- `FIRST-RUN` and `Q-AND-A` both advance directly here (there is no TRIAGE state to route through first).
+Resume the conversational interview; STATE.yml's `interview.state` shows In Progress with at least one section still Pending or Partial. This is the **only** entry point into the full-path interview -- `FIRST-RUN` and `Q-AND-A` both advance directly here (there is no TRIAGE state to route through first).
 
 ## Entry: opener fire-once check
 
@@ -32,7 +32,7 @@ emit the next question, update files. Do NOT re-emit the D1 opener; "all section
 is itself the fire-once signal, so no separate opener-captured field needs to be tracked.
 The Interview Loop below applies.
 
-Read STATE.md `## Interview State` section status table to know where to continue.
+Read `interview.sections[].state` (STATE.yml) to know where to continue.
 Read REQUIREMENTS.md to know what's already captured.
 
 ---

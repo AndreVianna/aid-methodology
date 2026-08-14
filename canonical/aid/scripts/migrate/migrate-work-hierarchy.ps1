@@ -42,6 +42,20 @@
 .NOTES
     ASCII-only output. PowerShell twin of migrate-work-hierarchy.sh.
     Exit codes: 0=ok, 1=bad dir, 2=no STATE.md, 3=no tasks, 4=verify failure.
+
+    ORDERING RULE (work-009-refactor task-008 / SPEC.md SS L-6 step 2):
+    hierarchy migration runs FIRST, state-format (STATE.md -> STATE.yml)
+    conversion runs SECOND. This script stays markdown-in / markdown-out --
+    it is an ERA migration (monolithic single-STATE.md -> the per-unit
+    hierarchy), never a format conversion -- and its output is exactly what
+    the format-4 converter (bin/aid.ps1's Invoke-AidMigrateRepo STEP 5,
+    script:Sc-ConvertRepo) expects as ITS input: a current-shape (post-
+    hierarchy) work tree, still in markdown. Running the format converter
+    against a work that still needs this script first is exactly the case
+    that converter's own DERIVED-section guard refuses (a real, non-
+    placeholder row under a DERIVED heading), naming this script by name in
+    its remedy. Neither script's conversion logic changes for this rule --
+    it is sequencing only.
 #>
 [CmdletBinding()]
 param(

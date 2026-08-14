@@ -1576,7 +1576,7 @@ EOF
 #
 # Enum-validated fields (closed enums from work-state-template.md):
 #   Lifecycle:      Running | Paused-Awaiting-Input | Blocked | Completed | Canceled
-#   Phase:          Describe | Define | Specify | Plan | Detail | Execute | Deploy
+#   Phase:          Describe | Define | Specify | Plan | Detail | Execute | Deploy | Deploy | Deploy | Deploy
 #   Active Skill:   any string matching "aid-{skill}" pattern, or "none"
 #   Minimum Grade:  matches ^[A-F][+-]?$
 #   User Approved:  yes | no

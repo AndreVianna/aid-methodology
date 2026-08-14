@@ -60,7 +60,7 @@ Step 0):
   known-issues.md              ← known problems
 ```
 
-<!-- NOTE: The Monitor area STATE is deferred until the area matures. When authored, MONITOR-STATE.md follows the area-STATE pattern documented at .github/aid/templates/work-state-template.md (per-work) and .aid/knowledge/schemas.md §1A. -->
+<!-- NOTE: The Monitor area STATE is deferred until the area matures. When authored, MONITOR-STATE.md follows the area-STATE pattern documented at .github/aid/templates/work-state-template.yml (per-work) and .aid/knowledge/schemas.md §1A. -->
 
 ## ⚠️ Pre-flight Checks
 
@@ -186,11 +186,15 @@ protocol lives in two reference docs; this section is a checklist citing them.
 
 **On completion / failure:**
 
-- **Success:** emit `✓ <agent> done in <actual>` with measured time. Append a row to
-  the work `STATE.md ## Calibration Log` section (create section if missing) with
-  format `| YYYY-MM-DD | <agent> | <task-id/cycle> | <ETA-band> | <actual> | <notes> |`.
-  Also update the task's `## Dispatches` sub-column with the dispatch record.
-  Both are mandatory per work-003 traceability (never optional, never "if tracked").
+- **Success:** emit `✓ <agent> done in <actual>` with measured time. When the dispatch is
+  for a real `task-NNN`, append a `dispatch_log` entry to that task's own state (full
+  path: its `STATE.yml`; flat path: `tasks_lifecycle.task-NNN.dispatch_log`) with
+  fields `date`/`agent`/`eta_band`/`actual`/`outcome` -- this is what the work-level
+  Calibration Log / Dispatches views are now DERIVED from at read time
+  (`work-state-template.yml`); there is no longer an independent work-root section to
+  append to directly. When the dispatch is NOT task-scoped, there is no persisted
+  target at all -- the console narration above is the sole record. Mandatory per
+  work-003 traceability wherever a target exists (never optional, never "if tracked").
   Delete heartbeat file.
 - **Failure:** emit `✗ <agent> FAILED after <elapsed> (reason: <one-line>)`.
   Decide whether to re-dispatch, fall back, or surface to user. Delete

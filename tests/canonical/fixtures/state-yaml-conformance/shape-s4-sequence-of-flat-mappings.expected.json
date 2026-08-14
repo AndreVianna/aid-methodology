@@ -1,0 +1,16 @@
+{
+  "file_label": "STATE.yml",
+  "values": {
+    "lifecycle_history": [
+      {
+        "date": "2026-08-01",
+        "event": "Work created"
+      },
+      {
+        "date": "2026-08-02",
+        "event": "Delivery specified"
+      }
+    ]
+  },
+  "warnings": []
+}

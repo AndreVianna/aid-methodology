@@ -1,0 +1,3 @@
+control_before: ok_before
+flow_key: {a: b}
+control_after: ok_after

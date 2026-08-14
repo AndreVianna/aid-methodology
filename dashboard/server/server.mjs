@@ -764,7 +764,7 @@ const AID_CLI_PATH_PS1 = join(_CODE_HOME, "bin", "aid.ps1");
 // DEFAULT_MAP: writer exit code -> [http_status, error_class]. Derived from
 // writeback-state.sh's exit alphabet (0 ok / 1 missing-artifact / 2 lock-contention /
 // 3 empty-or-unverifiable-write / 4 invalid-value / 5 missing-arg / 6 malformed
-// STATE.md); write-setting.sh / write-requirement.sh reuse the SAME alphabet and
+// STATE.yml); write-setting.sh / write-requirement.sh reuse the SAME alphabet and
 // never emit 2 (reserved for lock contention). An OP_TABLE row's OPTIONAL
 // `statusMap` field overrides this per-op (OP-SM foundation contract for features
 // 003/004's `aid`-CLI-backed ops).
@@ -1239,7 +1239,7 @@ function opTaskSetNotesArgv(workDir, servedRoot, target, args) {
     argv.push("--delivery-id", String(deliveryId));
   }
   argv.push("--task-id", String(target.task_id), "--field", "Notes", "--value", value);
-  const env = { AID_STATE_FILE: join(workDir, "STATE.md"), AID_WORK_DIR: workDir };
+  const env = { AID_STATE_FILE: join(workDir, "STATE.yml"), AID_WORK_DIR: workDir };
   return [argv, env];
 }
 
@@ -1277,7 +1277,7 @@ function opPipelineFinishArgv(workDir, servedRoot, target, args) {
   // no other of writeback-state.sh's Lifecycle enum values (general pipeline-lifecycle
   // editing stays closed per REQUIREMENTS Sec 5.2). args is accepted but ignored.
   const argv = ["--pipeline", "--field", "Lifecycle", "--value", "Completed"];
-  const env = { AID_STATE_FILE: join(workDir, "STATE.md"), AID_WORK_DIR: workDir };
+  const env = { AID_STATE_FILE: join(workDir, "STATE.yml"), AID_WORK_DIR: workDir };
   return [argv, env];
 }
 
@@ -1552,7 +1552,7 @@ function opTaskRenameArgv(workDir, servedRoot, target, args) {
     argv.push("--delivery-id", String(deliveryId));
   }
   argv.push("--task-id", String(target.task_id), "--field", "Name", "--value", value);
-  const env = { AID_STATE_FILE: join(workDir, "STATE.md"), AID_WORK_DIR: workDir };
+  const env = { AID_STATE_FILE: join(workDir, "STATE.yml"), AID_WORK_DIR: workDir };
   return [argv, env];
 }
 
