@@ -1,5 +1,5 @@
 ---
-state: 'In Review'
+state: Done
 review: "--"
 elapsed: "--"
 notes: "5 invocations, all allocating and none carrying a `phase:` value (V23 evidence for task-023): (1) /aid-design-roadmap -> work-001-design-roadmap, phase absent; (2) /aid-design-mvp -> work-002-design-mvp, phase absent; (3) /aid-design-backlog -> work-003-design-backlog, phase absent; (4) /aid-create-roadmap [V6 refusal, non-realizing] -> work-002-create-roadmap, phase absent; (5) /aid-create-mvp [V16 routing exit, non-realizing] -> work-004-create-mvp, phase absent. Each also left a git worktree (W5-20, already filed). Authored runs 3, non-realizing 2. Full oracles and observed output: EVIDENCE.md in this folder."
@@ -64,15 +64,10 @@ in-flight `work-003-state-schema` frontmatter conventions.
 
 ## Quick Check Findings
 
-<!-- AUTHORED -- written by `writeback-state.sh --task-id NNN --findings ...` during the
-     per-task quick-check step of aid-execute. Records the reviewer tier used and all [HIGH]
-     and [CRITICAL] findings for this task. [CRITICAL] findings trigger an immediate fix-on-spot;
-     [HIGH] findings are deferred to the delivery gate via delivery-NNN-issues.md.
-     No grade is recorded here -- grading is per-delivery, not per-task. -->
-
-- **Reviewer Tier:** --
-- **Findings:** --
-
+- **Reviewer Tier:** Small
+- **Findings:**
+  - [HIGH] `EVIDENCE.md` 4.7 records the V6/V16 determinism replay with no command, and it cannot be reconciled with the five-invocation tally -- either two further non-realizing invocations are unrecorded, or determinism is unestablished for those two rows -- EVIDENCE.md:400-409 vs :118-139 -- Deferred-to-gate
+  - [HIGH] The override flag six shipped skills tell the refusal to name has no literal token anywhere in `canonical/`, so the documented bypass is unreachable -- canonical/skills/aid-{create,update}-{roadmap,mvp,backlog}/SKILL.md -- Deferred-to-gate (not task-016 to fix)
 ---
 
 ## Dispatch Log
