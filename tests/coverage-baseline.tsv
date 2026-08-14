@@ -1,7 +1,9 @@
 # NOTE: hand-edited when the aid-graph skill was removed, because no runtime-complete
 # environment (pwsh) was available to re-collect the whole corpus: rows for the 13 deleted
-# test-graph-*.sh suites were pruned, and test-validator-profiles.sh's rows were replaced by
-# a fresh single-suite collection under its new name, test-validator-behavior.sh.
+# test-graph-*.sh suites were pruned, test-validator-profiles.sh's rows were replaced by a
+# fresh single-suite collection under its new name, test-validator-behavior.sh, and the four
+# per-file DBI-*FWD/REV counts fell from 373 to 315 because each install tree now holds 58
+# fewer emitted files.
 # Re-bootstrap this file on master per the runbook in .github/workflows/coverage-parity.yml.
 test-actback-fixtures.sh	ISO-CANARY-01 real HOME (<PATH> gained no .aid dirs (no scan escaped throwaway HOME)	1
 test-actback-fixtures.sh	T01 V-E1a kb-actback-task.sh output matches recorded golden (expected<PATH>	1
@@ -3827,20 +3829,20 @@ test-document-family-scaffold.sh	DFS45	2
 test-document-family-scaffold.sh	DFS46	2
 test-document-family-scaffold.sh	DFS47	2
 test-document-family-scaffold.sh	DFS48	2
-test-dogfood-byte-identity.sh	DBI-CUR-FWD .cursor<PATH>	373
+test-dogfood-byte-identity.sh	DBI-CUR-FWD .cursor<PATH>	315
 test-dogfood-byte-identity.sh	DBI-CUR-MUT-ALLOW the worktrees<PATH> allowlist arm excuses a scratch .cursor<PATH> file (arm is live, not dead)	1
 test-dogfood-byte-identity.sh	DBI-CUR-MUT-BYTE a one-byte mutation under the scratch .cursor<PATH> copy makes DBI-CUR-FWD fail with a sha256 mismatch naming .cursor<PATH>	1
 test-dogfood-byte-identity.sh	DBI-CUR-MUT-CTRL unmutated scratch copy of the dogfood .cursor<PATH> tree probes clean	1
 test-dogfood-byte-identity.sh	DBI-CUR-MUT-ORPHAN an unlisted generator-shaped file under the scratch .cursor<PATH> copy makes DBI-CUR-ORPHAN fail naming .cursor<PATH>	1
 test-dogfood-byte-identity.sh	DBI-CUR-ORPHAN repo .cursor<PATH> has no undocumented generator-shaped orphans	1
-test-dogfood-byte-identity.sh	DBI-CUR-REV .cursor<PATH>	373
+test-dogfood-byte-identity.sh	DBI-CUR-REV .cursor<PATH>	315
 test-dogfood-byte-identity.sh	DBI-CUR00 emission-manifest.jsonl exists	1
 test-dogfood-byte-identity.sh	DBI-CUR00b profiles<PATH> exists	1
 test-dogfood-byte-identity.sh	DBI-CUR00c repo-root .cursor<PATH> exists	1
 test-dogfood-byte-identity.sh	DBI-CUR01 manifest loaded -- generator-owned .cursor<PATH> entries	1
-test-dogfood-byte-identity.sh	DBI-FWD .claude<PATH>	373
+test-dogfood-byte-identity.sh	DBI-FWD .claude<PATH>	315
 test-dogfood-byte-identity.sh	DBI-ORPHAN repo .claude<PATH> has no undocumented generator-shaped orphans	1
-test-dogfood-byte-identity.sh	DBI-REV .claude<PATH>	373
+test-dogfood-byte-identity.sh	DBI-REV .claude<PATH>	315
 test-dogfood-byte-identity.sh	DBI00	1
 test-dogfood-byte-identity.sh	DBI00b	1
 test-dogfood-byte-identity.sh	DBI00c	1
