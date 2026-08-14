@@ -277,6 +277,14 @@ shortcuts:
     group: G4
     intent: "Realize a testing-strategy seed into the project's quality (C6) documents -- the test landscape and the gate policy -- creating the gate document on first use."
     repurpose: true
+  - name: aid-create-cicd
+    verb: create
+    artifact: cicd
+    alias_of: null
+    default_type: DOCUMENT
+    group: G4
+    intent: "Realize a CI/CD seed into the project's shipping (C8) Knowledge Base document: stages, triggers, environments, promotion, and the release flow."
+    repurpose: true
 
   # --- G5: Change + Refactor family (feature-007, task-017) --
   # -- 15 canonical aid-update* rows (12 in this section; aid-update-test in G7,
