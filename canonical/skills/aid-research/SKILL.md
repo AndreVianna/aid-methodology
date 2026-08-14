@@ -62,8 +62,8 @@ on each state.
    (`worktree-lifecycle.sh create <work-id> <name>`, STOP on a non-zero exit or empty path,
    else enter the resolved path); **only then** allocate: `.aid/works/<work-id>-<slug>/`
    under `.aid/works/`; slug from the question. Copy
-   `canonical/aid/templates/work-state-template.md` to
-   `.aid/works/work-NNN-<slug>/STATE.md`; write opening frontmatter (`pipeline.path: lite`,
+   `canonical/aid/templates/work-state-template.yml` to
+   `.aid/works/work-NNN-<slug>/STATE.yml`; write opening frontmatter (`pipeline.path: lite`,
    `initiator: aid-research`, `lifecycle: Running`, `active_skill: aid-research`,
    `started`/`updated`). Do NOT drive the 7-phase `phase` scalar. Associate a git worktree
    only if a spike is later authorized (INVESTIGATE).

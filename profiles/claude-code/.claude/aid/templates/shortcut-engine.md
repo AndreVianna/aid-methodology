@@ -23,7 +23,7 @@ four bound values before the state machine below starts:
 
 | Value | Source | Notes |
 |---|---|---|
-| `{name}` | the invoking doorway's own directory/skill name (e.g. `aid-create-api`) | used for the catalog lookup, `STATE.md` Active Skill, and every Change Log `Source` field (`/{name}`) |
+| `{name}` | the invoking doorway's own directory/skill name (e.g. `aid-create-api`) | used for the catalog lookup, `STATE.yml` Active Skill, and every Change Log `Source` field (`/{name}`) |
 | `{verb}` | the doorway body's binding | dispatch key; drives the family scaffolding lookup |
 | `{artifact}` | the doorway body's binding (may be `""` for a bare verb) | narrows the family scaffolding lookup |
 | `{description}` | the user's free-text argument (`argument-hint`) | may be absent/empty -- see CAPTURE Step 1 |
@@ -55,7 +55,7 @@ four bound values before the state machine below starts:
   This engine has no re-entry point of its own: an interrupted run (a crashed session,
   not a normal CAPTURE question) is never resumed *by re-running the shortcut*. Instead,
   continuing a partial work is the Work Initiation Gate's job -- on "continuation" it
-  reads the chosen work's `STATE.md` and routes the user to the correct existing resume
+  reads the chosen work's `STATE.yml` and routes the user to the correct existing resume
   door (`/aid-execute` for a halted shortcut work; the `phase`-matched skill for a
   partial full-path work), rather than re-entering this engine's own INTAKE->DETAIL
   states. This keeps the engine a one-shot producer (INTAKE through DETAIL only, task-008
@@ -75,12 +75,15 @@ Every `aid-architect` dispatch in CAPTURE/SPEC/PLAN/DETAIL follows the standard
 checklist at `.claude/aid/templates/dispatch-protocol-checklist.md` (ETA lookup,
 heartbeat file, 3 L2 timers, `[?] done` / `[x] FAILED` bracket pairs -- see that file
 for the exact `▶`/`✓`/`✗` presentation). Look up the ETA band for `aid-architect` in
-`.claude/aid/templates/rough-time-hints.md`. On completion, append the dispatch row
-directly to this work's own `STATE.md § ## Calibration Log` (this work has no per-task
-`STATE.md` to derive the log from at this phase -- these are per-document, not
-per-task, dispatches; the work-root `## Calibration Log` table is the single home for
-them, the same generic instruction the checklist already gives every non-task-scoped
-skill, e.g. `aid-discover`).
+`.claude/aid/templates/rough-time-hints.md`. On completion, emit the closing `✓ ...
+done in <actual>` bracket (the checklist's own completion step) -- this narration is
+the only persisted record of a CAPTURE/SPEC/PLAN/DETAIL dispatch: the work-level
+Calibration Log / Dispatches views are now DERIVED at read time solely from per-task
+`dispatch_log` entries (`work-state-template.yml`), which do not exist until
+`/aid-execute` dispatches an actual `task-NNN`; there is no work-root key left for a
+document-level (non-task) dispatch to append to, unlike the retired `## Calibration
+Log` markdown section which any dispatch -- task-scoped or not -- could append a row
+to directly.
 
 ## State Machine
 
@@ -216,7 +219,7 @@ independent of its family reference's landing order.
 
 Purpose: parse the bound invocation values; resolve the catalog row; consult the Work
 Initiation Gate (new-vs-continuation) and, on NEW, allocate a new `work-NNN`; scaffold
-`STATE.md` (Pipeline State only). FR-2.
+`STATE.yml` (its top-level frontmatter-zone keys only). FR-2.
 
 ### Step 1: Resolve the catalog row
 
@@ -295,13 +298,13 @@ file operations and surface it to the user -- FR4 fallback).
 the `<work-id>` resolved above -- do **not** re-derive it from the fresh worktree's own,
 still-empty `.aid/works/`).
 
-### Step 4: Scaffold STATE.md (frontmatter only)
+### Step 4: Scaffold STATE.yml (frontmatter keys only)
 
-Copy `.claude/aid/templates/work-state-template.md` to
-`.aid/works/work-NNN-<slug>/STATE.md` (the same template the full path uses -- the flattened
+Copy `.claude/aid/templates/work-state-template.yml` to
+`.aid/works/work-NNN-<slug>/STATE.yml` (the same template the full path uses -- the flattened
 engine needs no template of its own; it fills a different subset of the same file's
-sections over time). Then, in the same step, directly replace the YAML frontmatter
-block's placeholder lines at the top of the file with the real opening values (direct
+keys over time). Then, in the same step, directly replace the frontmatter-zone
+top-level keys' placeholder values at the top of the file with the real opening values (direct
 field write -- the same convention `aid-describe` FIRST-RUN uses for its own opening
 frontmatter seed -- see `.claude/skills/aid-describe/references/state-first-run.md §
 1b-ii`; this is a scaffold-time direct edit, distinct from the runtime
@@ -313,8 +316,8 @@ different times by different means). Resolve this shortcut's own minimum grade f
 bash .claude/aid/scripts/config/read-setting.sh --skill {name} --key minimum_grade --default A+
 ```
 
-then write the frontmatter block (replacing every placeholder line shown in
-`work-state-template.md`, all in the one block):
+then write the frontmatter-zone keys (replacing every placeholder value shown in
+`work-state-template.yml`, all in the one pass):
 
 ```yaml
 pipeline:
@@ -339,12 +342,13 @@ invoking doorway's own skill name, e.g. `aid-create-api`.) The flattened-only
 placeholder text until PLAN/DETAIL (`delivery_state`) and the GATE state
 (`gate_tier`/`gate_grade`/`gate_timestamp`) fill it for real.
 
-Leave every other section of the copied template untouched at this point (the body's
-`## Pipeline State` enum-reference blockquote is static and never rewritten; `##
-Interview State` is an `aid-describe`-only block and stays absent/unused for
-shortcut-generated works; `## Delivery Lifecycle` / `### Tasks lifecycle` / `## Delivery
-Gate` keep their template placeholder body text until PLAN/DETAIL fill them for real;
-the DERIVED sections at the bottom of the template are never written by this engine).
+Leave every other key of the copied template untouched at this point (the template's
+own STATE ADVANCEMENT ORDERING `#` comment block is static and never rewritten; the
+`interview` key is an `aid-describe`-only structure and stays at its scaffolded
+Pending defaults, unused, for shortcut-generated works; `delivery_lifecycle` /
+`tasks_lifecycle` / `delivery_gate` keep their template placeholder values until
+PLAN/DETAIL fill them for real; the DERIVED views that carry no key at all are, by
+construction, never written by this engine).
 
 **Idempotency:** this state never re-runs within an invocation -- an invocation that
 reaches allocation (the gate's NEW branch, Step 3) allocates exactly one brand-new work
@@ -425,19 +429,25 @@ If `{description}` (or a Step 1/Step 3 answer) names, or clearly traces to, an a
 ticket in a catalogued issue-tracker connector, fetch it by invoking `/aid-read-ticket
 [<connector>:]<ticket-id>` -- the connector resolution and host-MCP fetch live there
 (feature-001); no direct-fetch recipe is re-implemented here -- and record `ticket_ref:
-<stem>:<external-id>` in the work's `STATE.md` frontmatter (seeded at INTAKE Step 4). Applies to
+<stem>:<external-id>` in the work's `STATE.yml` frontmatter (seeded at INTAKE Step 4). Applies to
 every shortcut this engine serves (`aid-fix` and its siblings), not `aid-fix` alone. Skip silently
 when no such ticket applies or no matching connector is catalogued; the delegated read is
 non-destructive, so no extra confirm is added.
 
-### Step 5: Update STATE.md
+### Step 5: Update STATE.yml
 
 ```
 bash .claude/aid/scripts/execute/writeback-state.sh --pipeline --field Updated --value "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
 ```
 
-Append to `## Lifecycle History`:
-`| {today} | CAPTURE complete -- REQUIREMENTS.md written | /{name} CAPTURE |`.
+Append an entry to the `lifecycle_history` sequence (direct edit -- same append-only,
+single-writer convention as every other entry below):
+```
+- date: '{today}'
+  event: 'CAPTURE complete -- REQUIREMENTS.md written'
+  grade: --
+  notes: '/{name} CAPTURE'
+```
 
 **Advance:** CHAIN -> SPEC.
 
@@ -484,10 +494,15 @@ seeded from `.claude/aid/templates/specs/spec-template.md`:
   `module-map.md`, `coding-standards.md`, etc. as relevant) and the family scaffolding
   guidance.
 
-### Step 3: Update STATE.md
+### Step 3: Update STATE.yml
 
-Append to `## Lifecycle History`:
-`| {today} | SPEC complete -- SPEC.md written | /{name} SPEC |`.
+Append an entry to the `lifecycle_history` sequence:
+```
+- date: '{today}'
+  event: 'SPEC complete -- SPEC.md written'
+  grade: --
+  notes: '/{name} SPEC'
+```
 
 **Advance:** CHAIN -> PLAN.
 
@@ -539,7 +554,7 @@ wrapper):
   independently-testable delivery gate criterion, plus the two standing criteria
   every delivery carries: `- [ ] All tasks in delivery-001 are Done or Canceled.` and
   `- [ ] All section-6 quality gates pass.` This is where the flat layout's gate
-  criteria live (feature-001, not `STATE.md`).
+  criteria live (feature-001, not `STATE.yml`).
 - `## Tasks`: a placeholder row (`| task-NNN | {TYPE} | {Title} |`) -- the same
   convention `aid-plan`'s own BLUEPRINT authorship uses for a delivery whose tasks
   are not decided yet. DETAIL replaces this with the real list.
@@ -547,34 +562,37 @@ wrapper):
 - `## Notes`: `Shortcut-generated flattened Lite work. Source: /{name} ({verb},
   artifact '{artifact}').`
 
-### Step 3: Initialize `## Delivery Lifecycle` (direct edit)
+### Step 3: Initialize `delivery_lifecycle` (direct edit)
 
-Directly replace the work-root `STATE.md` frontmatter block's placeholder
-`delivery_state` line with `delivery_state: Pending-Spec` (the scalar was
-relocated there by task-001/004 -- the body's own `- **State:**` bullet no
-longer exists); also directly edit the `## Delivery Lifecycle` body block's
-`- **Updated:**` line to `{now}` (Updated stays markdown body -- not
-relocated). Direct field edit, not `writeback-state.sh` -- this is the first
-population of these fields the INTAKE-time template copy only scaffolded as
-placeholders, the same "first write = direct edit" convention
-`state-first-run.md § 1b-ii` uses for the opening frontmatter values; see the
+Directly confirm the work-root `STATE.yml`'s top-level `delivery_state` key reads
+`Pending-Spec` (the template already scaffolds this default at INTAKE Step 4, so this
+write is an idempotent confirmation, not a new value); also directly edit the
+`delivery_lifecycle.updated` child key to `{now}`. Direct field edit, not
+`writeback-state.sh` -- this is the first real population of these keys beyond the
+INTAKE-time template copy's placeholders, the same "first write = direct edit"
+convention `state-first-run.md § 1b-ii` uses for the opening frontmatter values; see the
 design note below.
 
 > **Design choice (writeback-state.sh vs. direct edit).** Later, during actual task
-> execution, `/aid-execute` mutates `## Delivery Lifecycle` / `## Delivery Gate` /
-> `### Tasks lifecycle` through `writeback-state.sh`'s locking/disjoint-write
+> execution, `/aid-execute` mutates `delivery_state` / `delivery_lifecycle` /
+> `delivery_gate` / `tasks_lifecycle` through `writeback-state.sh`'s locking/disjoint-write
 > machinery (feature-001 teaches it the flat-layout target). That machinery exists to
 > arbitrate concurrent writers across parallel delivery/task branches during Execute.
 > Nothing is concurrent during INTAKE-DETAIL -- this is a single engine run authoring
 > its own work, exactly like CAPTURE/SPEC directly writing REQUIREMENTS.md/SPEC.md.
-> PLAN and DETAIL therefore populate `## Delivery Lifecycle` and
-> `### Tasks lifecycle` for the first time via direct edit, and leave the runtime
+> PLAN and DETAIL therefore populate `delivery_lifecycle` and
+> `tasks_lifecycle` for the first time via direct edit, and leave the runtime
 > mutation path to `/aid-execute` untouched.
 
-### Step 4: Update STATE.md
+### Step 4: Update STATE.yml
 
-Append to `## Lifecycle History`:
-`| {today} | PLAN complete -- PLAN.md + BLUEPRINT.md written | /{name} PLAN |`.
+Append an entry to the `lifecycle_history` sequence:
+```
+- date: '{today}'
+  event: 'PLAN complete -- PLAN.md + BLUEPRINT.md written'
+  grade: --
+  notes: '/{name} PLAN'
+```
 
 **Advance:** CHAIN -> DETAIL.
 
@@ -583,9 +601,9 @@ Append to `## Lifecycle History`:
 ## State: DETAIL
 
 Collapses **Detail**. Decides the task breakdown, emits `tasks/task-NNN/DETAIL.md` per
-task (bold `**Type:**` shape; no per-task `STATE.md`), fills PLAN.md's real
+task (bold `**Type:**` shape; no per-task `STATE.yml`), fills PLAN.md's real
 `## Execution Graph`, completes BLUEPRINT.md's real `## Tasks` table, and promotes each
-task into the work-root `STATE.md § ### Tasks lifecycle`. FR-4, FR-17.
+task into the work-root `STATE.yml`'s `tasks_lifecycle` mapping. FR-4, FR-17.
 
 ### Step 1: Emit pipeline phase
 
@@ -615,8 +633,8 @@ description, scoped to the full SPEC.md Acceptance Criteria set. Multi-task shor
 - `**Depends on:**` per the decided ordering.
 - `**Scope:**` / `**Acceptance Criteria:**` -- concrete, testable; the last criterion
   always `All section-6 quality gates pass.`.
-- No sibling `STATE.md` is created -- the flat layout has none; each task's mutable
-  cells live only in the work-root `STATE.md § ### Tasks lifecycle` (Step 3 below).
+- No sibling `STATE.yml` is created -- the flat layout has none; each task's mutable
+  cells live only in the work-root `STATE.yml`'s `tasks_lifecycle` mapping (Step 3 below).
 - The template's own `**Execution protocol**` blockquote note (the per-transition
   State-write mandate, binding whoever later executes the task) carries through
   automatically -- it is seeded from `task-detail-template.md` verbatim, not
@@ -634,30 +652,41 @@ headings.
 **d. Completes BLUEPRINT.md's real `## Tasks` table** (replacing the PLAN-state
 placeholder row) with the final `| task-NNN | {Type} | {Title} |` list.
 
-### Step 3: Promote task cells into `### Tasks lifecycle` (direct edit)
+### Step 3: Promote task cells into `tasks_lifecycle` (direct edit)
 
-For each task just written, replace the `### Tasks lifecycle` placeholder row
-(`| _none yet_ | | | | |`) with one real row per task:
+For each task just written, add a `task-NNN` entry to the `tasks_lifecycle` mapping
+(which the INTAKE-time template copy scaffolds empty, `{}`):
 
 ```
-| task-NNN | Pending | -- | -- | -- |
+tasks_lifecycle:
+  task-NNN:
+    state: Pending
+    review: --
+    elapsed: --
+    notes: --
+    display_name: --
 ```
 
 (direct edit -- see the Design choice note in State: PLAN § Step 3; this is the
-initial population of the table, not a runtime mutation).
+initial population of the mapping, not a runtime mutation).
 
-### Step 4: Advance `## Delivery Lifecycle` to Specified
+### Step 4: Advance `delivery_state` to Specified
 
-Directly edit the frontmatter block's `delivery_state` line from `Pending-Spec`
-to `Specified` and refresh the `## Delivery Lifecycle` body block's
-`- **Updated:**` line -- all tasks now have a `DETAIL.md` and a
-`### Tasks lifecycle` row (matches the precondition task-011's APPROVAL-HALT
+Directly edit the top-level `delivery_state` key from `Pending-Spec`
+to `Specified` and refresh the `delivery_lifecycle.updated` child key --
+all tasks now have a `DETAIL.md` and a
+`tasks_lifecycle` entry (matches the precondition task-011's APPROVAL-HALT
 checks for: `delivery_state` = `Specified`).
 
-### Step 5: Update STATE.md
+### Step 5: Update STATE.yml
 
-Append to `## Lifecycle History`:
-`| {today} | DETAIL complete -- {N} task(s) written | /{name} DETAIL |`.
+Append an entry to the `lifecycle_history` sequence:
+```
+- date: '{today}'
+  event: 'DETAIL complete -- {N} task(s) written'
+  grade: --
+  notes: '/{name} DETAIL'
+```
 
 **Advance:** CHAIN -> GATE.
 
@@ -721,7 +750,9 @@ content:
   below, not yet reviewed); full-path-only concerns (feature decomposition,
   cross-reference, multi-delivery planning -- this is a single-feature,
   single-delivery flattened work by construction); hypothetical future
-  shortcuts or catalog rows.
+  shortcuts or catalog rows; the work-root state file (`STATE.md`/`STATE.yml`)
+  -- a state file is never an artifact, in any layout, and its churn is not
+  even an OOS row (`reviewer-dispatch.md § ARTIFACTS UNDER REVIEW`).
 - **OUT-OF-SCOPE FINDINGS POLICY:** the standard policy
   (`reviewer-dispatch.md` -- log as `Status: OOS` rows in the same ledger,
   routing destination named in Description/Evidence, never counted toward
@@ -750,8 +781,11 @@ content:
   none by design).
 - **OUT OF SCOPE:** `REQUIREMENTS.md`/`SPEC.md`/`PLAN.md`/`BLUEPRINT.md`
   (Pass 1's own scope, already cleared -- re-litigating them here is scope
-  leak the reviewer must not re-grade); full-path per-task `STATE.md`
-  conventions (not applicable to this flat layout).
+  leak the reviewer must not re-grade); every state file, at any of the
+  three levels and either `STATE.md`/`STATE.yml` extension -- a state file
+  is never an artifact, in any layout (`reviewer-dispatch.md § ARTIFACTS
+  UNDER REVIEW`); this flat layout in particular has no per-task state file
+  to begin with.
 - **OUT-OF-SCOPE FINDINGS POLICY:** identical to Pass 1's.
 
 ### Step 4: The Generic REVIEW -> GRADE -> FIX loop (shared by both passes)
@@ -818,18 +852,24 @@ content:
 
 ### Step 5: Record the cleared grades
 
-Once both passes clear, append **two** rows to the work-root `STATE.md`
-`## Lifecycle History` (append-only; the same table CAPTURE/SPEC/PLAN/DETAIL
+Once both passes clear, append **two** entries to the work-root `STATE.yml`'s
+`lifecycle_history` sequence (append-only; the same sequence CAPTURE/SPEC/PLAN/DETAIL
 already append to above) -- **distinct from** the post-execution
-`## Delivery Gate` block, which `/aid-execute` fills later from
+`delivery_gate` key, which `/aid-execute` fills later from
 `BLUEPRINT.md § Gate Criteria` (feature-004 § "Where grades are recorded" --
 in the flattened layout there is no `features/{feature}/SPEC.md`, so the
-DERIVED `## Features State` Spec-Grade column does not apply; `## Lifecycle
-History` is the authoritative record of these definition-phase gates):
+DERIVED Features State Spec-Grade column does not apply; `lifecycle_history` is the
+authoritative record of these definition-phase gates):
 
 ```
-| {today} | GATE Pass 1 (definition docs) cleared | {pass-1-grade} | /{name} GATE defn |
-| {today} | GATE Pass 2 (task set) cleared | {pass-2-grade} | /{name} GATE tasks |
+- date: '{today}'
+  event: 'GATE Pass 1 (definition docs) cleared'
+  grade: '{pass-1-grade}'
+  notes: '/{name} GATE defn'
+- date: '{today}'
+  event: 'GATE Pass 2 (task set) cleared'
+  grade: '{pass-2-grade}'
+  notes: '/{name} GATE tasks'
 ```
 
 Then delete both ledgers (`reviewer-ledger-schema.md § Lifecycle` -- DONE
@@ -884,13 +924,13 @@ bash .claude/aid/scripts/execute/writeback-state.sh --pipeline --field "Pause Re
 bash .claude/aid/scripts/execute/writeback-state.sh --pipeline --field Updated --value "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
 ```
 
-`## Delivery Lifecycle`'s `- **State:**` is already `Specified` (set at
-DETAIL Step 4 -- every task has a `DETAIL.md` and a `### Tasks lifecycle`
-row, but none has executed); APPROVAL-HALT does not touch it -- `Specified`
+The top-level `delivery_state` key is already `Specified` (set at
+DETAIL Step 4 -- every task has a `DETAIL.md` and a `tasks_lifecycle`
+entry, but none has executed); APPROVAL-HALT does not touch it -- `Specified`
 is exactly the value FR-10/AC-3 requires at halt (tasks defined, not yet
 `Executing`).
 
-**Advance:** HALT. No branch is created; no `### Tasks lifecycle` row
+**Advance:** HALT. No branch is created; no `tasks_lifecycle` entry
 advances past `Pending` (the halt-proof fixture in feature-004's testing
 strategy asserts both).
 
@@ -901,7 +941,7 @@ strategy asserts both).
 - Invocation binds `{name}=aid-create-api`, `{verb}=create`, `{artifact}=api`,
   `{description}="a /orders read endpoint with pagination"`.
 - INTAKE: catalog row resolves `default_type=IMPLEMENT`, `group=G4`; allocates
-  `work-014-orders-read-api`; scaffolds `STATE.md` (Pipeline State only).
+  `work-014-orders-read-api`; scaffolds `STATE.yml` (frontmatter-zone keys only).
 - CAPTURE: description is non-empty (no bootstrapping question); no load-bearing gap
   (the pagination + endpoint shape already answer §5/§9); writes `REQUIREMENTS.md`.
 - SPEC: `shortcut-scaffolding/create.md`'s `api` guidance (once landed) activates
@@ -921,4 +961,4 @@ strategy asserts both).
 | `aid-fix` with a full bug description | Zero inline questions; `REQUIREMENTS.md` fully terse-filled; a single IMPLEMENT task (no `fix.md` landed yet) or the `fix.md` IMPLEMENT -> TEST pair (once task-013 lands) |
 | `aid-create-data-model` with a full description | `SPEC.md` activates `### Migration Plan`; DETAIL proposes MIGRATE + IMPLEMENT (+ TEST) tasks, one type each |
 | Catalog row missing for the invoking `{name}` | INTAKE STOPs with the build-defect error; no work folder allocated |
-| Any shortcut, any family state landed or not | `tasks/task-NNN/DETAIL.md` never has a sibling `STATE.md`; the flat `### Tasks lifecycle` table is the only mutable-state home |
+| Any shortcut, any family state landed or not | `tasks/task-NNN/DETAIL.md` never has a sibling `STATE.yml`; the flat `tasks_lifecycle` mapping is the only mutable-state home |

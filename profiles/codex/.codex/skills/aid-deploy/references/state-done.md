@@ -12,9 +12,9 @@ bash .codex/aid/scripts/execute/writeback-state.sh --pipeline --field "Active Sk
 bash .codex/aid/scripts/execute/writeback-state.sh --pipeline --field Updated --value "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
 ```
 
-This is the **M6 normalized-Completed emit**: it writes the authoritative `Lifecycle: Completed`
-literal to `## Pipeline State` so the dashboard reader can derive Completed from the normalized
-block (not from legacy fallback signals). It mirrors the same silent-state-write pattern that
+This is the **M6 normalized-Completed emit**: it writes the authoritative `lifecycle: Completed`
+frontmatter scalar so the dashboard reader can derive Completed from the normalized
+value (not from legacy fallback signals). It mirrors the same silent-state-write pattern that
 M4/M5 use for Running/Paused/Blocked — existing transition, no new prompt, no new gate,
 no observable behavior change.
 

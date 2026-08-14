@@ -116,17 +116,16 @@ def _make_repo(base: Path, *, with_kb: bool = False) -> Path:
 
 
 def _make_aid_with_works(repo: Path, work_ids: list[str]) -> None:
-    """Add work folders to an existing .aid/ dir so /r/<id>/api/model returns works."""
+    """Add work folders to an existing .aid/ dir so /r/<id>/api/model returns works.
+    (work-009-refactor task-016: was a bullet-heading STATE.md with an
+    embedded '## Tasks Status' pipe-table -- retired, SPEC.md sec:D-4.)"""
     aid = repo / ".aid"
     aid.mkdir(parents=True, exist_ok=True)
     for wid in work_ids:
         wdir = aid / "works" / wid
         wdir.mkdir(parents=True, exist_ok=True)
-        (wdir / "STATE.md").write_text(
-            "# Work State\n\n## Pipeline Status\n\nLifecycle: Running\n\n"
-            "## Tasks Status\n\n"
-            "| # | Task | Type | Wave | Status | Review | Elapsed | Notes |\n"
-            "| --- | --- | --- | --- | --- | --- | --- | --- |\n",
+        (wdir / "STATE.yml").write_text(
+            "lifecycle: Running\n",
             encoding="utf-8",
         )
 

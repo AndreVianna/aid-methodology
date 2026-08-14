@@ -24,7 +24,10 @@ runs — this is a fast filter only.
 
 **Before dispatching, print:** `[Step 1.5] Dispatching aid-reviewer (quick-check, Small tier) for quick-check → subagent_type=aid-reviewer`.
 
-Dispatch metadata is logged via the Calibration Log appendix in STATE.md (per work-003 traceability rule).
+Dispatch metadata is narrated via the closing `✓ ... done` bracket below (per work-003
+traceability rule); this task's own `dispatch_log` entry (full path: this task's
+`STATE.yml`; flat path: `tasks_lifecycle.task-NNN.dispatch_log`) is what the work-level
+Calibration Log / Dispatches views derive from at read time.
 
 ### Quick-Check Dispatch
 
@@ -93,7 +96,7 @@ For each `[CRITICAL]` finding:
    bash .github/aid/scripts/execute/writeback-state.sh --pipeline --field Updated --value "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
    ```
 4. Mark the finding as `Fixed-on-spot` in the quick-check findings block (see §
-   Write Findings to STATE.md below).
+   Write Findings to STATE.yml below).
 
 Only one fix attempt per critical finding. There is no loop here.
 
@@ -117,10 +120,10 @@ For each `[HIGH]` finding:
 3. Continue to Step 2 — `[HIGH]` findings do **not** block the full reviewer
    dispatch. They are deferred to the per-delivery gate.
 
-### Write Findings to STATE.md
+### Write Findings to STATE.yml
 
-After triage, write the quick-check findings block to the work `STATE.md`
-`## Quick Check Findings` section via the helper:
+After triage, write the quick-check findings block to this task's `quick_check` key
+via the helper:
 
 ```bash
 writeback-state.sh --task-id NNN --findings "BLOCK"
@@ -142,9 +145,14 @@ If there are no `[CRITICAL]` or `[HIGH]` findings, write:
 - **Findings:** none
 ```
 
-The helper writes/replaces the `### task-NNN` block under `## Quick Check
-Findings` in the work `STATE.md` (keyed by task-id, single-writer per task
-by construction — safe under FR6 parallel execution).
+The helper writes this task's `quick_check` key -- full path: the structured
+`quick_check.reviewer_tier` scalar + `quick_check.findings` sequence in this task's own
+`deliveries/delivery-NNN/tasks/task-NNN/STATE.yml`; flat path: BLOCK stored verbatim as
+one escaped scalar at `tasks_lifecycle.task-NNN.quick_check` in the work-root
+`STATE.yml` (there is no per-task file and no top-level `quick_check` key to nest a
+sequence under on this layout — known-issues.md § KI-005). Either way it is
+keyed by task-id, single-writer per task by construction — safe under FR6 parallel
+execution.
 
 ### MANDATORY Terminal Write: Task State → Done
 

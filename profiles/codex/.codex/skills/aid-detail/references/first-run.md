@@ -74,14 +74,14 @@ Once approved:
    - `.aid/works/{work}/deliveries/delivery-NNN/tasks/task-NNN/DETAIL.md` -- the 6-section task
      definition, seeded from `.codex/aid/templates/task-detail-template.md` (the former flat
      `tasks/task-NNN.md`; same schema, now lives in the task folder).
-   - `.aid/works/{work}/deliveries/delivery-NNN/tasks/task-NNN/STATE.md` -- seeded from
-     `.codex/aid/templates/task-state-template.md`, replacing the frontmatter
-     block's placeholder lines with the real opening values (`state: Pending`,
-     `review: --`, `elapsed: --`, `notes: --` -- task-001/004; direct field edit,
-     the leading YAML block is the sole home for these 4 scalars), and the
-     correct Task/Delivery/Work header fields.
-   Do NOT write task rows into the work `STATE.md` `## Tasks State` -- that is a
-   DERIVED read-only view assembled at read time from the per-task STATE.md files.
+   - `.aid/works/{work}/deliveries/delivery-NNN/tasks/task-NNN/STATE.yml` -- seeded from
+     `.codex/aid/templates/task-state-template.yml`, replacing the placeholder
+     top-level scalars with the real opening values (`state: Pending`,
+     `review: --`, `elapsed: --`, `notes: --` -- task-001/004; direct field edit;
+     every key in this file is top-level, no separate frontmatter/body split), and the
+     correct Task/Delivery/Work header fields (INFERRED from the folder path, not authored).
+   Do NOT write task rows into the work `STATE.yml`'s Tasks State view -- that is a
+   DERIVED read-only view assembled at read time from the per-task STATE.yml files.
 2. **Review immediately:** Do the tasks hold up?
    - Does each task have what it needs from the previous?
    - Any gap where something is used before it's created?

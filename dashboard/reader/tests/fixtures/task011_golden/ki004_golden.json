@@ -1,0 +1,17 @@
+{
+  "active_skill": null,
+  "counts": {
+    "by_status": {},
+    "done_pct": 0.0,
+    "total": 0
+  },
+  "created": "2026-04-01",
+  "deliverables": [],
+  "gate": null,
+  "lifecycle": "Running",
+  "pending_inputs": [],
+  "phase": null,
+  "source_mode": "fallback",
+  "tasks": [],
+  "updated": "2026-04-20"
+}

@@ -39,12 +39,25 @@ Every section follows the same cycle:
 .aid/
   knowledge/               ← shared KB
   work-NNN-{name}/
-    STATE.md               ← process (§ Features State table, § Cross-phase Q&A)
+    STATE.yml               ← process (Features State view, qa sequence)
     REQUIREMENTS.md
     features/
       feature-NNN-{name}/
         SPEC.md            ← product (requirements + technical specification)
 ```
+
+> **Accuracy note (both DERIVED views, pre-existing -- not introduced by the
+> STATE.md->STATE.yml rename):** Features State carries no key in any of the three
+> state templates, in either the old markdown design or the current YAML one --
+> it is documented as a read-only view in both. Cross-phase Q&A's `qa` key is
+> AUTHORED only at the delivery level (`delivery-state-template.yml`) or, on the
+> flattened Lite path, at the work level (`work-state-template.yml`) -- a
+> full-path work has no `qa` key at the work level at all (full-layout omission
+> rule), and `/aid-specify` runs before any delivery exists (Specify precedes
+> Plan), so a full-path work has no delivery yet to hold one either. The steps
+> below describe the pre-existing, aspirational behavior; where an actual
+> writable target does not yet exist, that gap is a candidate follow-up, not a
+> defect this task introduced.
 
 ---
 
@@ -77,7 +90,7 @@ entered — the feature glob below runs only after that.
      feature-002-password      [In Discussion — 2/5 sections]
    ```
    Scan `.aid/works/{work}/features/feature-*/` inside the entered worktree. For each,
-   check the work STATE.md `## Features State` row for this feature and show status.
+   check the work STATE.yml's Features State view (row for this feature) and show status.
    Exit.
 4. **Multiple works** → present the work list:
    ```
@@ -130,7 +143,7 @@ Resolve the feature path using **prefix matching** (glob):
 |----------|--------|
 | `work-NNN/feature-NNN` | **Required.** Path to the feature to specify. |
 | `feature-NNN` | Shortcut when only one work exists. |
-| `--reset` | Clear `## Technical Specification` from SPEC.md and delete STATE.md. |
+| `--reset` | Clear `## Technical Specification` from SPEC.md and delete STATE.yml. |
 
 ---
 
@@ -139,7 +152,7 @@ Resolve the feature path using **prefix matching** (glob):
 All paths relative to `.aid/works/{work}/features/{feature}/`.
 
 ```
-State 1: No Feature State row in work STATE.md               → INITIALIZE
+State 1: No Feature State row in work STATE.yml               → INITIALIZE
 State 2: Feature State: In Discussion                         → CONTINUE
 State 3: Feature State: Spike Needed                          → SPIKE
 State 4: Feature State: Blocked (loopback pending)            → BLOCKED

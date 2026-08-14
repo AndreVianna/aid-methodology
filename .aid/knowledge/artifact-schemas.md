@@ -2,11 +2,11 @@
 kb-category: primary
 source: hand-authored
 objective: The structural schema of every artifact the AID methodology produces -- STATE files, REQUIREMENTS/feature-SPEC/delivery-BLUEPRINT/task-DETAIL files, settings, and the three manifest formats -- with required fields, closed enums, producers, consumers, and validation points.
-summary: Read this to learn the required shape of any AID artifact (work/delivery/task/discovery STATE.md, REQUIREMENTS.md, feature SPEC.md, delivery BLUEPRINT.md, task DETAIL.md, settings.yml, install + emission + generated-files manifests) before producing or parsing one.
+summary: Read this to learn the required shape of any AID artifact (work/delivery/task STATE.yml, discovery STATE.md, REQUIREMENTS.md, feature SPEC.md, delivery BLUEPRINT.md, task DETAIL.md, settings.yml, install + emission + generated-files manifests) before producing or parsing one.
 sources:
-  - .claude/aid/templates/work-state-template.md
-  - .claude/aid/templates/delivery-state-template.md
-  - .claude/aid/templates/task-state-template.md
+  - canonical/aid/templates/work-state-template.yml
+  - canonical/aid/templates/delivery-state-template.yml
+  - canonical/aid/templates/task-state-template.yml
   - .claude/aid/templates/discovery-state-template.md
   - .claude/aid/templates/requirements/requirements-template.md
   - .claude/aid/templates/feature.md
@@ -23,7 +23,7 @@ sources:
   - canonical/skills/aid-discover/references/state-elicit.md
   - .aid/connectors/INDEX.md
 tags: [C5, artifact-schemas, state-files, manifests, settings, enums, contracts]
-see_also: [authoring-conventions.md, module-map.md, pipeline-contracts.md]
+see_also: [authoring-conventions.md, module-map.md, pipeline-contracts.md, tech-debt.md]
 owner: architect
 audience: [developer, architect]
 review-criteria:
@@ -58,9 +58,9 @@ and act from this doc without reaching into the templates.
 ## Contents
 
 - [State-File Hierarchy](#state-file-hierarchy)
-- [Work STATE.md](#work-statemd)
-- [Delivery STATE.md](#delivery-statemd)
-- [Task STATE.md](#task-statemd)
+- [Work STATE.yml](#work-stateyml)
+- [Delivery STATE.yml](#delivery-stateyml)
+- [Task STATE.yml](#task-stateyml)
 - [Discovery STATE.md](#discovery-statemd)
 - [REQUIREMENTS.md](#requirementsmd)
 - [Feature SPEC.md](#feature-specmd)
@@ -82,35 +82,48 @@ and act from this doc without reaching into the templates.
 
 ## State-File Hierarchy
 
-AID tracks a work as a **tree of STATE.md files**, each with a single writer. Parent
-views are DERIVED (assembled at read time), never written directly.
+AID tracks a work as a **tree of STATE.yml files**, each with a single writer. Parent
+views are DERIVED (assembled at read time, never represented as an on-disk key), never written
+directly. The discovery-area ledger (`.aid/knowledge/STATE.md`) is the one exception -- it
+stays markdown (`kb-category: meta`; see [Discovery STATE.md](#discovery-statemd)).
+
+Each `STATE.yml` file is divided into three zones (stated in full-line `#` comments at the top
+of every template): **FRONTMATTER** (single-writer, top-level machine-parsed scalars, written
+surgically key-by-key by `writeback-state.sh`), **AUTHORED** (single-writer YAML structures
+under a key, one key per former markdown section -- `interview`, `lifecycle_history`, `deploy`,
+`delivery_lifecycle` [incl. its `tasks_lifecycle` child], `delivery_gate`, `qa`, `quick_check`,
+`dispatch_log`), and **DERIVED** (read-only, assembled at read time -- Features State,
+Plan/Deliveries, Tasks State, Delivery Gates, Calibration Log, Dispatches -- **NOT represented
+on disk at all**, no key of any kind; a reader seeing no key derives the same union it derives
+today).
 
 **Full path** (nests deliveries under a `deliveries/` parent, mirroring `features/`):
 
 ```
-.aid/works/work-NNN-{name}/STATE.md                              (work level)
-  -> deliveries/delivery-NNN/STATE.md                            (delivery level)
-       -> tasks/task-NNN/STATE.md                                (task level -- sole write target for task cells)
-.aid/knowledge/STATE.md                                          (discovery area -- KB + summary state)
+.aid/works/work-NNN-{name}/STATE.yml                             (work level)
+  -> deliveries/delivery-NNN/STATE.yml                           (delivery level)
+       -> tasks/task-NNN/STATE.yml                               (task level -- sole write target for task cells)
+.aid/knowledge/STATE.md                                          (discovery area -- KB + summary state; stays markdown)
 ```
 
-**Flattened Lite path** (exactly one delivery, no `deliveries/` folder, no per-task STATE.md -- the work IS the delivery):
+**Flattened Lite path** (exactly one delivery, no `deliveries/` folder, no per-task STATE.yml -- the work IS the delivery):
 
 ```
-.aid/works/work-NNN-{name}/STATE.md                   (work level -- ALSO carries the sole delivery's
-                                                        ## Delivery Lifecycle [with its ### Tasks lifecycle
-                                                        table] / ## Delivery Gate / ## Cross-phase Q&A,
-                                                        AUTHORED directly; see Work STATE.md below)
-  -> tasks/task-NNN/DETAIL.md                          (task DEFINITION only -- IMMUTABLE, no sibling STATE.md;
-                                                        mutable cells live in the work-root STATE.md
-                                                        ### Tasks lifecycle table)
-.aid/knowledge/STATE.md                                          (discovery area -- KB + summary state)
+.aid/works/work-NNN-{name}/STATE.yml                  (work level -- ALSO carries the sole delivery's
+                                                        `delivery_lifecycle` key [with its `tasks_lifecycle`
+                                                        mapping] / `delivery_gate` key / `qa` key,
+                                                        AUTHORED directly; see Work STATE.yml below)
+  -> tasks/task-NNN/DETAIL.md                          (task DEFINITION only -- IMMUTABLE, no sibling STATE.yml;
+                                                        mutable cells live in the work-root STATE.yml's
+                                                        `tasks_lifecycle` mapping)
+.aid/knowledge/STATE.md                                          (discovery area -- KB + summary state; stays markdown)
 ```
 
-Cardinality: one work STATE.md per work; one delivery STATE.md per delivery on the full path
-(zero on the flattened Lite path -- its single delivery's state lives in the work STATE.md
-instead); one task STATE.md per task on the full path (zero on the flattened Lite path -- task
-cells live in the work STATE.md `### Tasks lifecycle`); one discovery STATE.md per project.
+Cardinality: one work STATE.yml per work; one delivery STATE.yml per delivery on the full path
+(zero on the flattened Lite path -- its single delivery's state lives in the work STATE.yml
+instead); one task STATE.yml per task on the full path (zero on the flattened Lite path -- task
+cells live in the work STATE.yml's `tasks_lifecycle` mapping); one discovery STATE.md per
+project (unchanged, out of this conversion).
 
 The **closed task State enum** and its reconcile ordering (SD-2) are shared by all
 three work-tree levels:
@@ -122,78 +135,86 @@ Most-advanced-wins order on multi-branch reconcile:
 
 ---
 
-## Work STATE.md
+## Work STATE.yml
 
-Source: `work-state-template.md`. Two zones -- **AUTHORED** (single-writer) and
-**DERIVED** (read-time union over child files; never written here).
+Source: `work-state-template.yml`. Three zones -- **FRONTMATTER** (single-writer top-level
+scalars, written surgically by `writeback-state.sh`), **AUTHORED** (single-writer YAML
+structures under a key), and **DERIVED** (read-time union over child files; never written,
+and **not represented on disk at all** -- no key of any kind).
 
-| Section | Zone | Key fields / enums |
-|---------|------|--------------------|
-| Pipeline State | AUTHORED | `Lifecycle`: `Running \| Paused-Awaiting-Input \| Blocked \| Completed \| Canceled`; `Phase`: `Describe \| Define \| Specify \| Plan \| Detail \| Execute`; `Active Skill`: `aid-{skill} \| none`; `Updated` (ISO-8601); conditional `Pause/Block Reason`, `Block Artifact`. |
-| Interview State | AUTHORED | 10-row section table (Objective..Priority), each `Pending \| ...`; State + Grade. |
-| Seed Authoring | AUTHORED (greenfield only, by `aid-describe` DESCRIBE-SEED) | `Status`: `In Progress \| Complete`; 5-element checklist (domain-glossary/architecture mandatory, coding-standards/technology-stack deferrable, decisions conditional); `Coherence check`; `Review grade`. |
-| Lifecycle History | AUTHORED | append-only audit table (Date, Phase Transition/Gate, Grade, Notes), newest last. |
-| Deploy State | AUTHORED (by `aid-deploy` only) | one row per delivery (Delivery, State, PR, KB Updated, Tag, Notes). |
-| Delivery Lifecycle, Tasks lifecycle, Delivery Gate | AUTHORED -- **single-delivery FLATTENED (Lite) works only** (absent entirely for full multi-delivery works) | same shape as the full-path Delivery STATE.md sections below, authored directly here because a flattened work has exactly one delivery and no `deliveries/` folder. `## Delivery Lifecycle` (`Pending-Spec`→`Specified` by the shortcut engine PLAN step, `Executing`→`Gated`→`Done`/`Blocked` by `aid-execute`); `### Tasks lifecycle` (per-task `State`/`Review`/`Elapsed`/`Notes` rows -- the single-writer home for task cells, replacing the now-absent per-task `STATE.md`; written by the engine DETAIL step and `writeback-state.sh --task-id NNN` flat-layout branch); `## Delivery Gate` (`aid-execute` delivery-gate result). |
-| Features State, Plan/Deliveries, Tasks State, Delivery Gates, Calibration Log, Dispatches | **DERIVED** (full path); on the flattened Lite path Plan/Deliveries, Delivery Gates, and the plural `## Tasks State` view stay `_none yet_` (no per-delivery/per-task STATE.md to union -- the authoritative task cells are the AUTHORED `### Tasks lifecycle` above) | read-only unions over per-delivery / per-task STATE.md; never written here. |
-| Cross-phase Q&A | **DERIVED** for full-path works (union of each delivery's Q&A + work-owner entries); **AUTHORED** for flattened Lite works (no delivery STATE.md to derive from -- the single delivery's Q&A is written directly into this section) | per-Q block: `Category`, `Impact`, `State`/`Status`, Context, Suggested, Answer, Applied-to. |
+| Former section | Zone | YAML key(s) | Key fields / enums |
+|---------|------|-------------|--------------------|
+| Pipeline State | FRONTMATTER | `pipeline.path`, `pipeline.initiator`, `started`, `minimum_grade`, `user_approved`, `lifecycle`, `phase`, `active_skill`, `updated`, `pause_reason`, `block_reason`, `block_artifact`, `ticket_ref` | `lifecycle`: `Running \| Paused-Awaiting-Input \| Blocked \| Completed \| Canceled`; `phase`: `Describe \| Define \| Specify \| Plan \| Detail \| Execute`; `active_skill`: `aid-{skill} \| none`; `updated` (ISO-8601); `pause_reason`/`block_reason`/`block_artifact` conditional (`--` when not applicable). |
+| Interview State | AUTHORED | `interview` (`state`, `grade`, `sections[]`) | 10-entry `sections[]` (Objective..Priority), each `state: Pending \| ...`, `updated`; `interview.state` + `interview.grade`. |
+| Seed Authoring | **schema gap, not a template key** (tracked as tech-debt **SY-4**) | none declared | `aid-describe` DESCRIBE-SEED tracks `Status`/a 5-element checklist/`Coherence check`/`Review grade` for a greenfield work, but its own reference doc documents this as an ad hoc markdown block appended into the pre-conversion `STATE.md` -- never one of the three templates' declared keys, and now un-appendable into a pure-YAML `STATE.yml` without corrupting it. Carried as an open schema gap, not fixed by this conversion. |
+| Lifecycle History | AUTHORED | `lifecycle_history[]` | append-only sequence (`date`, `event`, `grade`, `notes`), newest last. |
+| Deploy State | AUTHORED (by `aid-deploy` only) | `deploy[]` | one entry per delivery (`delivery`, `state`, `pr`, `kb_updated`, `tag`, `notes`). |
+| Delivery Lifecycle, Tasks lifecycle, Delivery Gate | AUTHORED -- **single-delivery FLATTENED (Lite) works only** (keys omitted entirely for full multi-delivery works) | `delivery_lifecycle` (+ nested `tasks_lifecycle`), `delivery_gate` | same shape as the full-path Delivery STATE.yml keys below, authored directly here because a flattened work has exactly one delivery and no `deliveries/` folder. `delivery_lifecycle` (`Pending-Spec`→`Specified` by the shortcut engine PLAN step, `Executing`→`Gated`→`Done`/`Blocked` by `aid-execute`); `tasks_lifecycle` (one entry per `task-NNN`, each with `state`/`review`/`elapsed`/`notes`/`display_name` -- the single-writer home for task cells, replacing the now-absent per-task `STATE.yml`; written by the engine DETAIL step and `writeback-state.sh --task-id NNN` flat-layout branch, targeting `tasks_lifecycle.task-NNN.<field>`); `delivery_gate.issue_list` (`aid-execute` delivery-gate result). |
+| Features State, Plan/Deliveries, Tasks State, Delivery Gates, Calibration Log, Dispatches | **DERIVED** (full path); on the flattened Lite path Plan/Deliveries, Delivery Gates, and the plural Tasks State view stay `_none yet_` (no per-delivery/per-task `STATE.yml` to union -- the authoritative task cells are the AUTHORED `tasks_lifecycle` mapping above) | none -- **no key at all**, on either layout | read-only unions over per-delivery / per-task `STATE.yml`; never written here, and never represented on disk (a reader seeing no key derives the same union it derives today). |
+| Cross-phase Q&A | **DERIVED** for full-path works (union of each delivery's Q&A + work-owner entries); **AUTHORED** for flattened Lite works (no delivery `STATE.yml` to derive from -- the single delivery's Q&A is written directly into this key) | `qa[]` -- **AUTHORED only on the flattened Lite path**; no key at all on the full path (DERIVED) | per-entry: `category`, `impact`, `state`, `context`, `suggested`, `answer`, `applied_to`. |
 
 Producer: `execute/writeback-state.sh --pipeline ...` + the orchestrator (single
-writer on the work's active branch). The `## Interview State` and greenfield
-`## Seed Authoring` blocks are authored by `aid-describe`; the flattened-work
-`## Delivery Lifecycle` / `### Tasks lifecycle` / `## Delivery Gate` blocks are authored by the
-shortcut engine and `aid-execute`. Consumer: the dashboard reader, `aid-execute`.
+writer on the work's active branch). The `interview` key and greenfield Seed Authoring
+tracking are authored by `aid-describe`; the flattened-work `delivery_lifecycle` /
+`tasks_lifecycle` / `delivery_gate` keys are authored by the shortcut engine and `aid-execute`.
+Consumer: the dashboard reader, `aid-execute`.
 
 ---
 
-## Delivery STATE.md
+## Delivery STATE.yml
 
-Source: `delivery-state-template.md` -- **FULL PATH ONLY**. Lives at
-`deliveries/delivery-NNN/STATE.md`; AUTHORED by this delivery's branch only. A flattened Lite
-work has no delivery-level STATE.md at all -- its single delivery's `## Delivery Lifecycle` /
-`## Delivery Gate` / `## Cross-phase Q&A` are AUTHORED directly in the work-root `STATE.md`
-instead (see the Work STATE.md table above); its task cells live in the work-root
-`STATE.md § ### Tasks lifecycle` (no delivery layer, and no per-task STATE.md to nest under).
+Source: `delivery-state-template.yml` -- **FULL PATH ONLY**. Lives at
+`deliveries/delivery-NNN/STATE.yml`; AUTHORED by this delivery's branch only. A flattened Lite
+work has no delivery-level `STATE.yml` at all -- its single delivery's `delivery_lifecycle` /
+`delivery_gate` / `qa` keys are AUTHORED directly in the work-root `STATE.yml`
+instead (see the Work STATE.yml table above); its task cells live in the work-root
+`STATE.yml`'s `tasks_lifecycle` mapping (no delivery layer, and no per-task `STATE.yml` to nest
+under).
 
-| Section | Key fields / enums |
-|---------|--------------------|
-| Delivery Lifecycle | `State`: `Pending-Spec \| Specified \| Executing \| Gated \| Done \| Blocked` (independently authored -- NOT a task rollup, per SD-9); `Updated`; conditional Block Reason/Artifact. |
-| Delivery Gate | `Reviewer Tier`: `Small \| Medium \| Large`; `Grade`; `Issue List` (inline severity-tagged or `none`); `Timestamp`. |
-| Cross-phase Q&A | per-Q block: `Category`, `Impact` (`High \| Medium \| Low \| Required`), `State` (`Pending \| Answered \| Skipped`), Context, Suggested, Answer, Applied-to. |
-| Tasks State | **DERIVED** rollup from `tasks/task-NNN/STATE.md` (relative to this delivery folder); never written here. |
+| Former section | Zone | YAML key(s) | Key fields / enums |
+|---------|------|-------------|--------------------|
+| Delivery Lifecycle | FRONTMATTER + AUTHORED | `delivery_state`, `gate_tier`, `gate_grade`, `gate_timestamp`, `ticket_ref` (FRONTMATTER); `delivery_lifecycle.{updated,block_reason,block_artifact}` (AUTHORED) | `delivery_state`: `Pending-Spec \| Specified \| Executing \| Gated \| Done \| Blocked` (independently authored -- NOT a task rollup, per SD-9); conditional `block_reason`/`block_artifact`. |
+| Delivery Gate | FRONTMATTER + AUTHORED | `gate_tier`, `gate_grade`, `gate_timestamp` (FRONTMATTER); `delivery_gate.issue_list` (AUTHORED) | `gate_tier`: `Small \| Medium \| Large`; `gate_grade`; `issue_list` (severity-tagged strings, or `[]` when clean); `gate_timestamp`. |
+| Cross-phase Q&A | AUTHORED | `qa[]` | per-entry: `category`, `impact` (`High \| Medium \| Low \| Required`), `state` (`Pending \| Answered \| Skipped`), `context`, `suggested`, `answer`, `applied_to`. |
+| Tasks State | **DERIVED** -- no key at all | none | rollup from `tasks/task-NNN/STATE.yml` (relative to this delivery folder); never written here, never represented on disk. |
 
-Producer: `aid-plan` (creates, `Pending-Spec`, at `deliveries/delivery-NNN/STATE.md`),
+Producer: `aid-plan` (creates, `Pending-Spec`, at `deliveries/delivery-NNN/STATE.yml`),
 `aid-specify` (`Specified`), `aid-execute` (`Executing`->`Gated`->`Done` / `Blocked`), via
 `writeback-state.sh --delivery-id NNN`. On the flattened Lite path, the **shortcut engine**
-writes the `## Delivery Lifecycle` (initial `Pending-Spec`) + `## Delivery Gate` sections directly
-into the work-root `STATE.md` during its PLAN/DETAIL steps (and `aid-execute` later advances the
-lifecycle) -- no `delivery-001/STATE.md` file is created; `writeback-state.sh --delivery-id 001`
+writes the `delivery_lifecycle` (initial `Pending-Spec`) + `delivery_gate` keys directly
+into the work-root `STATE.yml` during its PLAN/DETAIL steps (and `aid-execute` later advances the
+lifecycle) -- no `delivery-001/STATE.yml` file is created; `writeback-state.sh --delivery-id 001`
 auto-detects the flattened layout (a work-root `BLUEPRINT.md` present AND no `deliveries/` folder)
-and targets the work-root STATE.md instead.
+and targets the work-root `STATE.yml` instead.
 
 ---
 
-## Task STATE.md
+## Task STATE.yml
 
-Source: `task-state-template.md` -- **FULL PATH** (lives at
-`deliveries/delivery-NNN/tasks/task-NNN/STATE.md`). The **sole write target** for all per-task
-mutable state on the full path; all sections AUTHORED by the owning delivery branch. A flattened
-Lite work has **no per-task STATE.md** -- each task is a `tasks/task-NNN/DETAIL.md` definition
-only, and its mutable cells (State/Review/Elapsed/Notes) live in the work-root
-`STATE.md § ### Tasks lifecycle` table instead.
+Source: `task-state-template.yml` -- **FULL PATH** (lives at
+`deliveries/delivery-NNN/tasks/task-NNN/STATE.yml`). Every key is a top-level scalar (no
+separate frontmatter/body split at this level) -- the **sole write target** for all per-task
+mutable state on the full path; all keys written by the owning delivery branch. A flattened
+Lite work has **no per-task `STATE.yml`** -- each task is a `tasks/task-NNN/DETAIL.md`
+definition only, and its mutable cells (`state`/`review`/`elapsed`/`notes`/`display_name`) live
+in the work-root `STATE.yml`'s `tasks_lifecycle` mapping instead.
 
-| Section | Key fields |
-|---------|-----------|
-| Task State | `State` (the closed 7-value enum above); `Review` (tier + outcome, or `Pending`); `Elapsed` (`HH:MM \| --`); `Notes`. Written only by `writeback-state.sh --task-id NNN --field State --value V`. |
-| Quick Check Findings | `Reviewer Tier`: `Small` (quick check is always Small); `Findings`: `[CRITICAL]` (Fixed-on-spot) / `[HIGH]` (Deferred-to-gate) items. No grade (grading is per-delivery). |
-| Dispatch Log | append-only rows (Date, Agent, ETA Band, Actual, Outcome); the work-level Calibration Log/Dispatches are derived unions of these. |
+| Former section | YAML key(s) | Key fields |
+|---------|-------------|-----------|
+| Task State | `state`, `review`, `elapsed`, `notes`, `display_name`, `ticket_ref` | `state` (the closed 7-value enum above); `review` (tier + outcome, or `--`); `elapsed` (`HH:MM \| --`); `notes`; `display_name` (mutable override; documented as a documentation fix, not a schema change -- the writer already wrote it, it was simply never declared in the pre-conversion template). Written only by `writeback-state.sh --task-id NNN --field State --value V`. |
+| Quick Check Findings | `quick_check.{reviewer_tier,findings[]}` | `reviewer_tier`: `Small` (quick check is always Small); `findings[]`: `severity: CRITICAL \| HIGH` / `description` / `source` / `disposition: Fixed-on-spot \| Deferred-to-gate`. No grade (grading is per-delivery). |
+| Dispatch Log | `dispatch_log[]` | append-only sequence (`date`, `agent`, `eta_band`, `actual`, `outcome`); the work-level Calibration Log/Dispatches are derived unions of these. |
 
 ---
 
 ## Discovery STATE.md
 
 Source: `discovery-state-template.md`. Lives at `.aid/knowledge/STATE.md`; tracks the
-KB + the visual summary (absorbs the former DISCOVERY-STATE + SUMMARY-STATE).
+KB + the visual summary (absorbs the former DISCOVERY-STATE + SUMMARY-STATE). Unlike the three
+work-tree levels above, this file is **not** part of the `STATE.yml` conversion -- it stays
+markdown, with `---`-fenced YAML frontmatter, and stays a KB document in its own right
+(`kb-category: meta`). The dashboard reader's KB-ledger parse path (`parsers.parse_kb_state`)
+deliberately keeps the original, looser fenced-frontmatter scan for exactly this one caller.
 
 | Section | Key fields |
 |---------|-----------|
@@ -263,8 +284,8 @@ Source: `delivery-blueprint-template.md`. The **immutable** delivery definition 
 by `aid-plan` (creates the stub) and refined by `aid-specify` on the full path (at
 `deliveries/delivery-NNN/BLUEPRINT.md`), or authored by the shortcut engine's PLAN step on the
 flattened Lite path (at the work root, `.aid/works/{work}/BLUEPRINT.md`). Not a state file -- the
-delivery's mutable lifecycle/gate lives in the delivery `STATE.md` (full path) or the work-root
-`STATE.md` (flattened).
+delivery's mutable lifecycle/gate lives in the delivery `STATE.yml` (full path) or the work-root
+`STATE.yml` (flattened).
 
 Required structure: `# Delivery BLUEPRINT -- delivery-NNN: {Title}`, then:
 
@@ -278,7 +299,7 @@ Required structure: `# Delivery BLUEPRINT -- delivery-NNN: {Title}`, then:
 - `## Notes` -- design notes/constraints not captured in the gate criteria.
 
 The delivery gate reads its criteria from `BLUEPRINT.md § Gate Criteria`, NOT from the delivery
-`STATE.md` (the STATE.md `## Delivery Gate` records the *result*).
+`STATE.yml` (the `delivery_gate` key records the *result*).
 
 ---
 
@@ -287,8 +308,8 @@ The delivery gate reads its criteria from `BLUEPRINT.md § Gate Criteria`, NOT f
 Source: `task-detail-template.md`. The **immutable** task definition -- written once by
 `aid-detail` (full path, at `deliveries/delivery-NNN/tasks/task-NNN/DETAIL.md`) or by the shortcut
 engine's DETAIL step (flattened Lite path, at `tasks/task-NNN/DETAIL.md`). Mutable state lives in
-the sibling `task-NNN/STATE.md` on the full path, or in the work-root `STATE.md § ### Tasks
-lifecycle` on the flattened path (no sibling STATE.md there).
+the sibling `task-NNN/STATE.yml` on the full path, or in the work-root `STATE.yml`'s
+`tasks_lifecycle` mapping on the flattened path (no sibling `STATE.yml` there).
 
 Required fields:
 
@@ -543,13 +564,13 @@ forward-authored docs to `current`.
 Full path:
 REQUIREMENTS.md    -> feature SPEC.md (define/decomposition half) -> SPEC.md (specify half)
 SPEC.md            -> PLAN.md -> deliveries/delivery-NNN/BLUEPRINT.md -> tasks/task-NNN/DETAIL.md (immutable)
-task-NNN DETAIL.md  ~ task-NNN/STATE.md (mutable state for the same task)
-task STATE.md      -> delivery STATE.md (derived) -> work STATE.md (derived)
+task-NNN DETAIL.md  ~ task-NNN/STATE.yml (mutable state for the same task)
+task STATE.yml     -> delivery STATE.yml (derived) -> work STATE.yml (derived)
 
-Flattened Lite path (no deliveries/, no delivery-NNN/ folder, no per-task STATE.md -- the work IS the sole delivery):
+Flattened Lite path (no deliveries/, no delivery-NNN/ folder, no per-task STATE.yml -- the work IS the sole delivery):
 REQUIREMENTS.md    -> SPEC.md -> PLAN.md + BLUEPRINT.md -> tasks/task-NNN/DETAIL.md (immutable, directly under the work folder)
-task-NNN DETAIL.md cells -> work STATE.md ### Tasks lifecycle (AUTHORED; no sibling STATE.md)
-delivery lifecycle/gate  -> work STATE.md ## Delivery Lifecycle / ## Delivery Gate (AUTHORED directly)
+task-NNN DETAIL.md cells -> work STATE.yml `tasks_lifecycle` mapping (AUTHORED; no sibling STATE.yml)
+delivery lifecycle/gate  -> work STATE.yml `delivery_lifecycle` / `delivery_gate` keys (AUTHORED directly)
 
 settings.yml       -> read by every skill via read-setting.sh
 candidate-concepts.md -> domain-glossary.md (ground) OR spine-todo.md (dismiss)
@@ -565,7 +586,7 @@ Cardinality summary:
 | work | delivery | one-to-many |
 | delivery | BLUEPRINT.md | one-to-one |
 | delivery | task | one-to-many |
-| task DETAIL.md | task STATE.md | one-to-one, full path only (flattened Lite has no per-task STATE.md) |
+| task DETAIL.md | task STATE.yml | one-to-one, full path only (flattened Lite has no per-task STATE.yml) |
 | REQUIREMENTS.md | feature SPEC.md | one-to-many |
 | profile | emission-manifest record | one-to-many |
 | install manifest | tool entry | one-to-many |
@@ -588,14 +609,16 @@ Cardinality summary:
   change across both. `forward-authored` is design-authoritative -- it gets the full
   hand-authored review rubric, but freshness treats it as never-stale-from-source, and
   code->design conformance is a SEPARATE check (feature-005), never the f007 freshness check.
-- **DERIVED sections are read-only.** A producer MUST write the per-unit STATE.md,
-  never a parent's derived view (work/delivery `## Tasks State`, `## Delivery Gates`,
-  `## Cross-phase Q&A`, `## Calibration Log`). The disjoint-write property (two
-  delivery branches never collide on a shared file) depends on this. (The flattened
-  Lite work is the single-writer exception: with exactly one delivery and one branch,
-  its `## Delivery Lifecycle` / `### Tasks lifecycle` / `## Delivery Gate` are AUTHORED
-  directly in the work-root STATE.md.)
-- **One writer per file.** Each STATE.md level has a single writer (the owning
+- **DERIVED sections are read-only.** A producer MUST write the per-unit `STATE.yml`,
+  never a parent's derived view (work/delivery Tasks State, Delivery Gates,
+  Cross-phase Q&A, Calibration Log -- the pre-conversion markdown carried these as `## Tasks
+  State` / `## Delivery Gates` / `## Cross-phase Q&A` / `## Calibration Log` headings; the
+  current `STATE.yml` templates omit them entirely, no key of any kind). The disjoint-write
+  property (two delivery branches never collide on a shared file) depends on this. (The
+  flattened Lite work is the single-writer exception: with exactly one delivery and one
+  branch, its `delivery_lifecycle` / `tasks_lifecycle` / `delivery_gate` keys are AUTHORED
+  directly in the work-root `STATE.yml`.)
+- **One writer per file.** Each `STATE.yml` level has a single writer (the owning
   branch); cross-writes break the merge model.
 - **Emission record = exactly 4 keys + sentinel.** Adding a key bumps
   `_manifest_version`; a consumer reading a higher version uses a different parser.
@@ -632,7 +655,9 @@ Cardinality summary:
 | Artifact | Validated by | On malformed/missing |
 |----------|-------------|----------------------|
 | `settings.yml` | `read-setting.sh` | exit 2 (unreadable/malformed YAML); a missing key with no `--default` -> exit 1. |
-| STATE.md | dashboard reader (Python/Node twins) | reader degrades gracefully; an unknown enum value is not in the closed set and mis-reconciles -- caught by the reader test suites and parity tests. |
+| `STATE.yml` (write time) | `writeback-state.sh`'s own closed-enum validation (`Lifecycle`, `Phase`, `Active Skill`, `Minimum Grade`, `User Approved`, `Pipeline Path`, `Pipeline Initiator`, task `State`, etc.) | an out-of-enum value dies with exit 4 before any byte is written -- the write never lands. |
+| `STATE.yml` (parse time, permitted YAML subset) | the shared cross-runtime conformance corpus (`state_yaml_conformance_corpus.py`, run identically by both the Python and Node twins) | every permitted shape (S1-S5), every rejected construct, every quoting mode and every implicit-typing literal is asserted against both readers; a rejected construct yields a `parse_warning` naming the file/line/construct and skips exactly that key -- it never raises. |
+| `STATE.yml` (read time, semantic) | dashboard reader (Python/Node twins) | reader degrades gracefully; an unknown enum value is not in the closed set and mis-reconciles -- caught by the reader test suites and parity tests. A `STATE.md` with no sibling `STATE.yml` is diagnosed (a `parse_warning` naming the migration command), never parsed. |
 | Frontmatter (on KB docs) | `lint-frontmatter.sh` | `[FM-MISSING]`/`[FM-INVALID]` HIGH findings; parse failure -> doc treated as primary/hand-authored + HIGH warning. |
 | Reviewer ledger | `grade.sh` | only `[SEVERITY]`-tagged rows with Status `Pending`/`Recurred` count; a stray `## Summary` line would over-count (banned). |
 | emission-manifest.jsonl | renderer determinism checks (`verify_deterministic.py`, `test_manifest_safety.py`) | a non-byte-stable or mis-keyed manifest fails the render-drift CI gate. |
@@ -641,7 +666,13 @@ Cardinality summary:
 | KB-doc citations | `kb-citation-lint.sh` | bare `file:LINE` -> exit 1, GENERATE blocked until fixed. |
 
 There is **no central schema validator**; validation is distributed -- a lint, a
-reader, or a skill gate owns each artifact class. The freshness baseline
+reader, or a skill gate owns each artifact class. **No JSON Schema artifact and no CI
+schema-validation gate exists for `STATE.yml`, and none is planned** -- the writer's enum
+validation (write time) plus the shared conformance corpus (parse time) are the only two
+machine checks, and that is a considered decision, not a gap awaiting one: a schema tool
+was offered and declined, because the closed enums + the two checks above already catch
+every failure mode a schema would (revisit only if a defect shows the enum validation is
+insufficient). The freshness baseline
 (`kb_baseline`, `approved_at_commit`) degrades gracefully when absent (treated as
 "baseline unknown", never a hard failure); a `source: forward-authored` doc is folded
 to `current` by `kb-freshness-check.sh` regardless of baseline.

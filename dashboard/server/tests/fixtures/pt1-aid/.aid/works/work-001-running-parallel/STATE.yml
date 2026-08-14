@@ -1,0 +1,15 @@
+# Work State -- work-001-running-parallel
+# (work-009-refactor task-016: was STATE.md; the '## Tasks Status' table's
+# task cells are DROPPED, not retargeted -- parse_state_md() never
+# populates tasks[] from ANY input through the monolithic reader path any
+# more, see test_derivation.py's
+# test_fallback_no_markdown_text_never_populates_tasks. Every consumer of
+# this fixture that depended on w.tasks already guards with
+# `if len(w.tasks) > 0` or loops over it, so this is a no-op for them.)
+lifecycle: Running
+phase: Execute
+active_skill: aid-execute
+updated: '2026-06-10T12:00:00Z'
+pause_reason: --
+block_reason: --
+block_artifact: --

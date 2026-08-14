@@ -56,6 +56,7 @@ deliverables*.
 - [How the Grade Is Computed](#how-the-grade-is-computed)
 - [Minimum-Grade Thresholds](#minimum-grade-thresholds)
 - [The Per-Phase REVIEW to FIX Loop](#the-per-phase-review-to-fix-loop)
+- [State Files Are Never Reviewable Artifacts](#state-files-are-never-reviewable-artifacts)
 - [The Discover Review Panel](#the-discover-review-panel)
 - [The Delivery Gate (aid-execute)](#the-delivery-gate-aid-execute)
 - [The Shortcut / Lite-Path Gate (shortcut engine)](#the-shortcut--lite-path-gate-shortcut-engine)
@@ -210,6 +211,35 @@ inflating findings. CONFIRMED in `.claude/aid/templates/reviewer-dispatch.md`.
 
 ---
 
+## State Files Are Never Reviewable Artifacts
+
+A per-work/delivery/task state file (`STATE.yml`, or the discovery-area `STATE.md`) is
+**never listed in `{{ARTIFACTS}}`** — the single upstream rule in
+`canonical/aid/templates/reviewer-dispatch.md § ARTIFACTS UNDER REVIEW` (`filter_reviewable_artifacts`,
+applied where `{{ARTIFACTS}}` is derived from `git diff --name-only <base>..HEAD`) drops every
+state-file path, at any of the three work-tree levels and in both the flattened and full
+layout, before it ever reaches a brief. State churn appearing in a reviewed diff is therefore
+**not a finding**, and it is **not an OOS row either** — an OOS row observes an artifact, and a
+state file is pipeline-written data, not authored content. The reviewer still *writes* its
+outcome (grade, findings, Status) into state as a downstream effect of the review — excluding
+state from being read as an artifact does not exclude it from being written to.
+
+**No grading change.** No new ledger column, severity, or grade mechanism was introduced for
+this rule, and `grade.sh` is **unmodified** — it grades a 7-column ledger and reads no state
+file, so a completed cycle whose diff includes state churn grades identically with or without
+that churn.
+
+**Test coverage.** `tests/canonical/test-state-review-surface.sh` extracts
+`filter_reviewable_artifacts` from `reviewer-dispatch.md` and asserts it drops every state-file
+path shape (all three levels, both layouts, `STATE.md` legacy and `STATE.yml`) while passing
+every authored-artifact path through unchanged, plus a static check that no brief template
+names a state file inside an `ARTIFACTS` block. It is the sibling suite to
+`tests/canonical/test-kb-review-surface.sh` (which covers the KB's own `list_reviewable`
+exclusion, untouched by this one) and is auto-discovered by `tests/run-all.sh` — like that
+suite, it is not one of the orchestrator-run mechanical gates below.
+
+---
+
 ## The Discover Review Panel
 
 `/aid-discover` (which produced this KB) does not run a single reviewer — it dispatches a
@@ -253,10 +283,10 @@ status `Failed` or `Blocked` — the pool-dispatch guard (PD-5) ensures all task
 before the gate is entered.
 
 **Flattened Lite layout.** In a shortcut/Lite work there is a single delivery and **no**
-`deliveries/delivery-NNN/` folder, so there is no per-delivery `STATE.md` to write.
+`deliveries/delivery-NNN/` folder, so there is no per-delivery `STATE.yml` to write.
 `writeback-state.sh` auto-detects the flat layout (`is_flat_layout`) and records the delivery
-lifecycle + gate directly into the **work-root** `STATE.md` (`## Delivery Lifecycle` /
-`## Delivery Gate`, promoted from the per-delivery file). CONFIRMED in
+lifecycle + gate directly into the **work-root** `STATE.yml` (the `delivery_lifecycle` /
+`delivery_gate` keys, promoted from the per-delivery file's shape). CONFIRMED in
 `canonical/aid/scripts/execute/writeback-state.sh`.
 
 ---
@@ -290,11 +320,12 @@ order but its **built-in hardcoded default is `A+`** (feature-004), not the `A` 
 skill falls back to. A project may still lower it with an explicit `{name}.minimum_grade`
 override in `.aid/settings.yml`.
 
-**Where the grades are recorded.** On clearing, GATE appends two rows to the **work-root**
-`STATE.md § ## Lifecycle History` (Pass 1 / Pass 2), then deletes both ledgers. In the
-flattened Lite layout there is no `features/{feature}/SPEC.md`, so the full-path
-`## Features State` Spec-Grade column does not apply — `## Lifecycle History` is the
-authoritative record of these definition-phase gates.
+**Where the grades are recorded.** On clearing, GATE appends two entries to the **work-root**
+`STATE.yml`'s `lifecycle_history` sequence (Pass 1 / Pass 2), then deletes both ledgers. In the
+flattened Lite layout there is no `features/{feature}/SPEC.md`, so the full-path Features State
+view (a DERIVED, read-time dashboard rollup — not a key in any `STATE.yml`) has no Spec-Grade
+column to populate — `lifecycle_history` is the authoritative record of these definition-phase
+gates.
 
 **APPROVAL-HALT — the human gate.** A cleared grade is **necessary but not sufficient**: the
 engine never executes. APPROVAL-HALT presents the GATE-cleared work, sets Lifecycle
