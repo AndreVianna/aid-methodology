@@ -1,0 +1,18 @@
+{
+  "file_label": "STATE.yml",
+  "values": {
+    "parent": {
+      "child": [
+        {
+          "first": "v1",
+          "next": "v2"
+        }
+      ],
+      "scalar_list": [
+        "itemA",
+        "itemB"
+      ]
+    }
+  },
+  "warnings": []
+}
