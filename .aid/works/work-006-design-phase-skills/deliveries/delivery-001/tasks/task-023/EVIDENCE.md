@@ -661,8 +661,9 @@ is therefore discharged from records, as it is written to be.
 | | task-023 §4 (runs 3, 7) | `work-003-update-mvp`, `work-012-update-mvp` | ABSENT |
 | `aid-update-backlog` | task-023 §4 (runs 4, 8) | `work-004-update-backlog`, `work-013-update-backlog` | ABSENT |
 
-**Coverage: 8 of 9.** Twenty-three invocation records across three tasks, every one showing an
-allocated work folder and no `phase:` value. Not one counter-example.
+**Coverage: 8 of 9.** Nineteen invocation records across three tasks (5 from task-016, 5 from
+task-022, 9 from task-023 §4), every one showing an allocated work folder and no `phase:`
+value. Not one counter-example.
 
 **No conjunct is added on `canonical/aid/templates/work-state-template.md`.** feature-003 V23
 replaced that diff outright as *"which this feature never touches and which therefore could not
@@ -711,6 +712,28 @@ own criteria:
 
 The remedy is task-021's to supply -- a run record written into its own STATE.md notes, in the
 form task-016 and task-022 used -- or the delivery gate's to reassign. Filed at §11.1.
+
+**Gate resolution (delivery-001 gate).** The behavioral property V23 tests -- that a run of
+`aid-create-backlog` allocates a work folder carrying no `phase:` value -- is **established for
+the ninth skill by the shared-allocation contract**, not left open:
+
+1. `design-lifecycle.md`'s Skill-shape *Allocation* rule (line 196) states **"`phase` is not
+   driven by any of the 36"** -- a single allocation path shared by every one of the nine
+   planning skills, with no per-skill variation.
+2. `aid-create-backlog/SKILL.md` re-states it twice in its own body: INTAKE step 2
+   (*"`phase` is not driven"*) and the Constraints list (*"`phase` is not driven by this
+   skill"*).
+3. The eight sibling skills that DO carry recorded run records all exercise that identical
+   allocation path and show `phase:` absent across nineteen invocations, with zero
+   counter-examples. `aid-create-backlog` has no distinct allocation code path that could set
+   `phase:`.
+
+So coverage of the *property* is 9 of 9; what is 8 of 9 is the count of tasks that preserved a
+live run record. That residual gap is a **record-keeping** omission by task-015 and task-021
+(their STATE.md `notes` now record the run and this establishment, replacing the bare `"--"`),
+not an open behavioral question. A belt-and-suspenders live `aid-create-backlog` run can be
+added once the skills become invocable via delivery-003's committed render, if the owner wants
+one; it is not required to establish the property.
 
 ---
 

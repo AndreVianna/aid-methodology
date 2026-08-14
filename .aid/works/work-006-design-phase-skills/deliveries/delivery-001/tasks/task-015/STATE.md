@@ -2,7 +2,7 @@
 state: Done
 review: "--"
 elapsed: "--"
-notes: "--"
+notes: 'Ran /aid-create-roadmap for this repo''s roadmap.md and its MVP section; the original scratch run-folder record was not captured (W5-5 class omission). aid-create-roadmap phase-absence is independently confirmed by task-016 (V6 refusal) and task-022 (run 3); see task-023 EVIDENCE 8.1.'
 ticket_ref: "--"
 ---
 

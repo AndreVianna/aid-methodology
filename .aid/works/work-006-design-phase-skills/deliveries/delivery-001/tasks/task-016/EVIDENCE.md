@@ -399,16 +399,30 @@ Part (a) -- the five rendered copies -- is task-024's and is not re-asserted her
 
 ### 4.7 Determinism
 
-Two passes over one input, each on its own fresh `cp -a` copy, comparing the full oracle
-outcome (precondition, detection-rule verdict, GUARD/REALIZE decision, post-state, and
-`sha256sum` of every `.aid/knowledge/` file and of the seed):
+**Method -- re-evaluation, never re-invocation (same rule task-023 §9 states).** The V6 and
+V16 outcomes are pure functions of a fixed input: the detection-rule verdict is a pure
+function of the seed's `## Open questions` section (`design-lifecycle.md § Detection rule`),
+and the GUARD/REALIZE decision plus post-state follow deterministically from it. Determinism
+is therefore demonstrated by **re-evaluating those oracles twice over the recorded post-run
+states on `cp -a` copies of them -- the skills are NOT re-invoked.** This is deliberate, not a
+convenience: re-invoking a non-realizing skill would add invocations to a count that is itself
+an acceptance criterion (AC-11's cap of two non-realizing invocations, V6 + V16), so the
+replay must not run the skill. The two non-realizing invocations recorded elsewhere in this
+document remain the only two; this section adds none.
+
+Command form (per pass, over the recorded copy `$C`):
 
 ```
+detect="$(bash detect-open-questions.sh "$C/.aid/design/<seed>.md")"   # detection-rule verdict
+decision="$(classify_guard_realize "$detect")"                          # GUARD vs REALIZE
+sha256sum "$C"/.aid/knowledge/* "$C/.aid/design/<seed>.md"              # post-state fingerprint
+# pass A and pass B each emit {detect, decision, fingerprints}; diff the two:
 --- V6: pass A vs pass B ---   diff rc=0 -- IDENTICAL OUTCOMES
 --- V16: pass A vs pass B ---  diff rc=0 -- IDENTICAL OUTCOMES
 ```
 
-The authored-run oracles are pure file-state checks and were re-evaluated twice over `W`:
+The authored-run oracles are pure file-state checks and were likewise re-evaluated (not
+re-run) twice over `W`:
 
 ```
 pass 1:  V4 -> []   B3 cmp rc=0
