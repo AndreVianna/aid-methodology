@@ -69,6 +69,11 @@ The reviewer MUST NOT open any file not listed here, except to:
 - Resolve a citation reference (e.g., a docfile cites `path/to/foo.sh:42` — the
   reviewer may open `foo.sh` to verify the citation but does not grade `foo.sh`)
 - Look up a named rubric definition
+- **Resolve a listed artifact's review criteria** — read the artifact's own
+  frontmatter (`review-criteria:`) and the project's criteria tables
+  (`.aid/knowledge/authoring-conventions.md`). The brief does **not** restate the
+  criteria: the artifact declares them, and the reviewer reads the declaration.
+  Copying them into the brief would put a stale second copy in every dispatch.
 
 ### CONTEXT
 
@@ -133,6 +138,13 @@ RUBRIC:
 When no pre-defined rubric exists (one-off reviews like Phase A foundation),
 the brief enumerates the checks inline.
 
+**A named rubric does not replace the artifact's declared criteria — the two compose.**
+The rubric says how to review a *class* of artifact; the criteria say what *this* file
+must be true against, resolved global → type → file per
+`kb-authoring/review-rubric.md § Resolving review criteria`. Every finding cites the
+criterion `id` it violates as a prefix in the ledger's `Description` cell, so the brief
+never needs a `Rule` column and the ledger keeps its 7-column shape.
+
 ### OUT OF SCOPE
 
 An **explicit exclusion list**. Things the reviewer must NOT consider when
@@ -176,7 +188,7 @@ The expected output. Always:
 Each skill that dispatches a reviewer ships a brief template at
 `.codex/skills/<skill>/references/reviewer-brief.md`. Six per-skill briefs
 are shipped: `aid-discover`, `aid-execute`, `aid-specify`, `aid-plan`,
-`aid-detail`, `aid-describe`, `aid-define`. Each renders this protocol's 5-section structure
+`aid-detail`, `aid-define`. Each renders this protocol's 5-section structure
 with skill-specific RUBRIC + OUT OF SCOPE; the consumer state file fills the
 dynamic slots and dispatches.
 

@@ -41,7 +41,7 @@ output the caller cannot use and cannot tell is wrong.
 | `format` | the template path or name, and a placeholder-to-value mapping |
 | `glob` | the glob pattern, plus any filters (mtime, size, extension) |
 
-`operation` itself is always required, and is one of `extract` \| `format` \| `glob`. One
+`operation` itself is always required, and is one of `extract`, `format` or `glob`. One
 operation per dispatch — never chain or combine them in a single call.
 
 ## What You Don't Do
