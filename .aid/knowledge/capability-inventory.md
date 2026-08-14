@@ -200,7 +200,6 @@ Optional jobs run outside the linear pipeline, when the user needs them.
 | Ask the KB a question | `/aid-ask` | Answers a free-form question grounded in the KB, the live code, and in-flight work; cites sources or names the gap. |
 | Targeted KB update | `/aid-update-kb` | Applies a described change to the KB through the same review/approval gate as discovery. |
 | Housekeeping | `/aid-housekeep` | Re-discovers changed KB docs, runs the conformance check over forward-authored docs, regenerates the visual summary, and sweeps stale work artifacts. |
-| Map the KB's relationships | `/aid-graph` | Builds `relationships.md` (the machine-readable relationship table over the approved KB plus the project source) and `graph.html` (the interactive view over it); reports Knowledge Base gaps in a separate ledger and routes them onward instead of fixing or gating on them. Requires an approved KB, which stays read-only for the whole run; idempotent and content-addressed. |
 | Visual KB summary | `/aid-summarize` | Generates a single-file `kb.html` — a visually rich, newcomer-friendly view of the Knowledge Base. |
 
 ## CLI installer capabilities

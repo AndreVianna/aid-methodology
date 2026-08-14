@@ -30,7 +30,6 @@ Skills for discovering, querying, summarising, mapping, and maintaining the proj
 
 - [`aid-discover`](/skills/aid-discover/) — Brownfield project discovery with built-in quality gate.
 - [`aid-summarize`](/skills/aid-summarize/) — Generate a single-file kb.html from .aid/knowledge/.
-- [`aid-graph`](/skills/aid-graph/) — Build .aid/knowledge/relationships.md and .aid/knowledge/graph.html from an approved Knowledge Base and the project source.
 - [`aid-housekeep`](/skills/aid-housekeep/) — Optional on-demand housekeeping skill.
 - [`aid-update-kb`](/skills/aid-update-kb/) — Optional on-demand targeted KB update skill.
 - [`aid-ask`](/skills/aid-ask/) — Optional on-demand Q&amp;A skill.

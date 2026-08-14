@@ -154,7 +154,6 @@ Open your AI coding tool in your project and run the skills as slash commands:
 /aid-deploy           # optional — package and ship a delivery
 /aid-monitor          # optional — classify production findings and route fixes back (bug → /aid-fix, change request → /aid-triage)
 /aid-summarize        # optional — generate an offline HTML viewer of the KB
-/aid-graph            # optional — build the KB relationship table + interactive graph (needs an approved KB)
 /aid-housekeep        # on-demand — keep the Knowledge Base current (off-pipeline)
 /aid-update-kb        # on-demand — apply a targeted delta to KB docs through the review gate
 /aid-set-connector    # on-demand — create or update a connector descriptor for an external tool

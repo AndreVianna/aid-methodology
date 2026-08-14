@@ -47,7 +47,6 @@ flowchart TB
     subgraph G1[" Knowledge Base Maintenance "]
         Disc["1 · aid-discover<br/>brownfield"]:::prep
         Sum["aid-summarize<br/>optional"]:::aux
-        Graph["aid-graph<br/>optional"]:::aux
         HK["aid-housekeep<br/>on-demand · KB refresh"]:::offpipe
     end
     subgraph G2[" Definition "]
@@ -107,7 +106,6 @@ The shortcut path is not a fallback — it is the default entry for the majority
 | `aid-config` | Support | — (bootstrap) | Run once before pipeline; not a numbered phase |
 | `aid-discover` | Knowledge Base Maintenance | 1 | Mandatory for brownfield; skipped for greenfield |
 | `aid-summarize` | Knowledge Base Maintenance | — (optional viewer) | On demand; not a numbered phase |
-| `aid-graph` | Knowledge Base Maintenance | — (optional graph) | On demand; not a numbered phase |
 | `aid-describe` | Definition | 2a | Yes — full path only; no longer triages or produces lite work |
 | `aid-define` | Definition | 2b | Full path only — decompose approved requirements into features |
 | `aid-specify` | Definition | 3 | Full path only |
@@ -393,7 +391,6 @@ This is the third conviction underlying AID: the Knowledge Base is the gravitati
 | `aid-config` | Support | — (bootstrap) | `.aid/` scaffold · KB placeholders (14 templates + meta) · context file · `STATE.md` seeds |
 | `aid-discover` | Knowledge Base Maintenance | 1 | 14-document Knowledge Base · `project-index.md` pre-pass · `STATE.md` discovery grade/Q&A |
 | `aid-summarize` | Knowledge Base Maintenance | — (optional viewer) | `knowledge-summary.html` — offline KB viewer |
-| `aid-graph` | Knowledge Base Maintenance | — (optional graph) | `relationships.md` — the machine-readable relationship table · `graph.html` — the interactive view over it |
 | `aid-describe` | Definition | 2a | `REQUIREMENTS.md` — full path only |
 | `aid-define` | Definition | 2b | Per-feature `SPEC.md` stubs + feature decomposition (full path only) |
 | `aid-specify` | Definition | 3 | Technical spec added to each feature's `SPEC.md` |
@@ -408,7 +405,7 @@ This is the third conviction underlying AID: the Knowledge Base is the gravitati
 
 AID organizes its skills into four groups — **Support**, **Knowledge Base Maintenance**, **Definition**, and **Execution**. Groups are a non-sequential way to organize the skills, not a running order. The six numbered development phases (Discover through Execute) still form the mandatory sequential pipeline: Discover sits in Knowledge Base Maintenance, Describe through Detail sit in Definition, and Execute is the sole Execution skill. `aid-deploy` and `aid-monitor` are **optional** shortcut paths in the Definition group, invoked on demand rather than as required phases. The pipeline is linear with feedback loops.
 
-`aid-config` (bootstrap, run once) is the sole **Support** skill. **Knowledge Base Maintenance** additionally holds the on-demand KB skills: `aid-summarize` (optional KB viewer), `aid-graph` (optional knowledge-relationship graph over the approved KB), `aid-housekeep` (KB drift maintenance between discovery cycles), `aid-update-kb` (targeted KB updates through the review gate), and `aid-ask` (Q&A). None of these are numbered phases; they do not participate in phase gates. `/aid-triage` — a stateless suggest-only router that also recognizes a plain question and points it at `/aid-ask` — and the 34 direct-entry shortcuts belong to the **Definition** group; each shortcut is a thin doorway into the shared shortcut engine that collapses Describe through Detail into one autonomous run. See below, *The Lite Path: Direct-Entry Shortcuts*, for the deep dive.
+`aid-config` (bootstrap, run once) is the sole **Support** skill. **Knowledge Base Maintenance** additionally holds the on-demand KB skills: `aid-summarize` (optional KB viewer), `aid-housekeep` (KB drift maintenance between discovery cycles), `aid-update-kb` (targeted KB updates through the review gate), and `aid-ask` (Q&A). None of these are numbered phases; they do not participate in phase gates. `/aid-triage` — a stateless suggest-only router that also recognizes a plain question and points it at `/aid-ask` — and the 34 direct-entry shortcuts belong to the **Definition** group; each shortcut is a thin doorway into the shared shortcut engine that collapses Describe through Detail into one autonomous run. See below, *The Lite Path: Direct-Entry Shortcuts*, for the deep dive.
 
 ---
 
@@ -432,7 +429,7 @@ The scaffold is the blank canvas. After `aid-config`, the KB directory exists wi
 
 *Build and keep current the team's understanding of the existing system.*
 
-This group's deep-dives below cover Discover (Phase 1), `aid-summarize`, and `aid-graph`. `aid-housekeep` (deep-dive further down, under *Off-Pipeline*), `aid-update-kb`, and `aid-ask` also belong to this group — see §1, *Skill Inventory*, table A, for their group membership and table C for `aid-ask` detail.
+This group's deep-dives below cover Discover (Phase 1), and `aid-summarize`. `aid-housekeep` (deep-dive further down, under *Off-Pipeline*), `aid-update-kb`, and `aid-ask` also belong to this group — see §1, *Skill Inventory*, table A, for their group membership and table C for `aid-ask` detail.
 
 ---
 
@@ -486,14 +483,6 @@ Across the run, discovery covers:
 **Purpose:** Generate a single self-contained `knowledge-summary.html` from the approved Knowledge Base.
 
 `aid-summarize` is an optional, read-only skill that produces an offline HTML viewer of the KB — light/dark theme, WCAG-AA accessible, with Mermaid diagrams rendered inline. It is idempotent: re-running it on an unchanged KB is a no-op. Run it after Discovery approval when you want a portable, shareable view of the project's understanding.
-
----
-
-#### `aid-graph` — Optional Knowledge Graph (not a numbered phase)
-
-**Purpose:** Build `relationships.md` — the machine-readable relationship table — and `graph.html`, the interactive view over it, from the approved Knowledge Base plus the project's own source.
-
-`aid-graph` is an optional, on-demand skill and a **sibling** of `aid-summarize`, not a phase of it and never fired by discovery: it occupies the same post-Knowledge-Base slot, and pre-flight refuses to run unless the KB is finished and approved (a graph built from a half-written KB reports gaps that are merely work in progress). It reads widely and writes narrowly — the Knowledge Base is read-only for the whole run, enforced by a write fence rather than promised — and it is idempotent and content-addressed: re-running it on an unchanged project is a true no-op, and when it does regenerate it names which input changed. It grades its own two artifacts and only those; Knowledge Base gaps are **reported** in a separate ledger and routed to the skills that own KB repair, never gated on and never fixed here. State machine: PREFLIGHT → ENUMERATE → STALE-CHECK → EXTRACT → EMIT → GAP-REPORT → RENDER → VALIDATE → VISUAL-GATE → FIX → DONE.
 
 ---
 

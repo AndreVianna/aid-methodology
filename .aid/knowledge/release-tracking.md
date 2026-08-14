@@ -23,8 +23,6 @@ audience: [developer, devops, product]
 
 ## Unreleased
 
-- [NEW] **Knowledge relationship graph** — a new on-demand skill `/aid-graph` builds `.aid/knowledge/relationships.md` (the machine-readable relationship table over the approved Knowledge Base plus the project's own source) and `.aid/knowledge/graph.html` (the interactive view over it, with a table fallback). It is a sibling of `/aid-summarize` in the same post-Knowledge-Base slot — on demand, never fired by discovery, and refused by pre-flight unless the Knowledge Base is finished and approved. The Knowledge Base is read-only for the whole run, enforced by a write fence rather than promised; the run is idempotent and content-addressed, so a re-run on an unchanged project is a true no-op and a regeneration names the input that changed. It grades its own two artifacts only: Knowledge Base gaps are reported in a separate ledger and routed to the skills that own KB repair, never gated on and never fixed here. Ships the `canonical/aid/scripts/graph/` helper set, the `canonical/aid/templates/graph/` schema + relation-vocabulary contracts, and the `canonical/aid/templates/knowledge-graph/` view templates, rendered into all five profiles.
-
 ## v2.3.0 - 2026-07-23
 
 > **Minor release.** The first stable release since v2.2.2, promoting the `2.2.3` beta line to

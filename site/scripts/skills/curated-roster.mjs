@@ -42,7 +42,6 @@ export const SKILL_GROUPS = [
     skills: [
       { name: 'aid-discover' },
       { name: 'aid-summarize' },
-      { name: 'aid-graph' },
       { name: 'aid-housekeep' },
       { name: 'aid-update-kb' },
       { name: 'aid-ask' },

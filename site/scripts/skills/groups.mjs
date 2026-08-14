@@ -80,7 +80,6 @@ export const CURATED_GROUPS = [
     members: [
       'aid-discover',
       'aid-summarize',
-      'aid-graph',
       'aid-housekeep',
       'aid-update-kb',
       'aid-ask',
