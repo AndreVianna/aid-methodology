@@ -1,6 +1,6 @@
 # coverage-parity baseline provenance (auto-generated -- do not edit)
-captured_utc: 2026-08-14T18:46:22Z
-commit_sha: 586c4899d4d7459808796e3540f4c3d7db402f3f
+captured_utc: 2026-08-14T19:57:54Z
+commit_sha: a9513c715100dbdbff8b060f1dc59ade67d31674
 runner_os: Linux 6.17.0-1022-azure x86_64 GNU/Linux
 pwsh_version: 7.6.4
 node_version: v24.19.0

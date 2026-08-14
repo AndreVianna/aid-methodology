@@ -1732,7 +1732,7 @@ test-assemble-determinism.sh	AD08b	1
 test-assemble-determinism.sh	AD08c	1
 test-build-connectors-index.sh	BCI01	9
 test-build-connectors-index.sh	BCI02	1
-test-build-connectors-index.sh	BCI03	5
+test-build-connectors-index.sh	BCI03	6
 test-build-connectors-index.sh	BCI04	5
 test-build-connectors-index.sh	BCI05	4
 test-build-connectors-index.sh	BCI06	1
@@ -3662,7 +3662,6 @@ test-delivery-gate-aggregate.sh	Test 8a: state-delivery-gate.md resolves Full-pa
 test-delivery-gate-aggregate.sh	Test 8b: state-delivery-gate.md no longer reads delivery criteria from PLAN.md (mis-wire fixed)	1
 test-deploy-monitor-repurpose.sh	DMR00a	1
 test-deploy-monitor-repurpose.sh	DMR00b	1
-test-deploy-monitor-repurpose.sh	DMR00c	1
 test-deploy-monitor-repurpose.sh	DMR00d	1
 test-deploy-monitor-repurpose.sh	DMR00e	1
 test-deploy-monitor-repurpose.sh	DMR00f	1
@@ -3672,8 +3671,6 @@ test-deploy-monitor-repurpose.sh	DMR02a	1
 test-deploy-monitor-repurpose.sh	DMR02b	1
 test-deploy-monitor-repurpose.sh	DMR03a	1
 test-deploy-monitor-repurpose.sh	DMR03b	1
-test-deploy-monitor-repurpose.sh	DMR03c	1
-test-deploy-monitor-repurpose.sh	DMR03d	1
 test-deploy-monitor-repurpose.sh	DMR04	4
 test-deploy-monitor-repurpose.sh	DMR05a	1
 test-deploy-monitor-repurpose.sh	DMR05b	1
