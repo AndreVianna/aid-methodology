@@ -29,6 +29,21 @@ You perform one of three operations, chosen by the caller's dispatch instruction
 - Apply optional filters the caller specifies
 - Return a sorted markdown table of the matches
 
+## Caller Contract
+
+What a dispatching agent MUST specify, per operation. A dispatch missing any of it is
+under-specified: say so and stop rather than guessing, because a guessed schema produces
+output the caller cannot use and cannot tell is wrong.
+
+| `operation` | The caller must also supply |
+|---|---|
+| `extract` | the target files or glob, a schema description, and the item type to match |
+| `format` | the template path or name, and a placeholder-to-value mapping |
+| `glob` | the glob pattern, plus any filters (mtime, size, extension) |
+
+`operation` itself is always required, and is one of `extract` \| `format` \| `glob`. One
+operation per dispatch — never chain or combine them in a single call.
+
 ## What You Don't Do
 - Interpret what extracted items mean
 - Synthesize across categories

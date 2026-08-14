@@ -1,5 +1,5 @@
 ---
-state: Pending
+state: Done
 review: "--"
 elapsed: "--"
 notes: "--"
@@ -24,8 +24,7 @@ ticket_ref: "--"
 ## Quick Check Findings
 
 - **Reviewer Tier:** Small
-- **Findings:** _none yet_
-
+- **Findings:** none
 ---
 
 ## Dispatch Log

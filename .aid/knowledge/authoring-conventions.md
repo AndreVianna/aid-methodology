@@ -112,7 +112,6 @@ to `state` because that row comes first.
 | `skill-authored` | a `canonical/skills/<name>/SKILL.md` whose `<name>` is not a `shortcut-catalog.yml` row | hand-authored; may carry a file-level block |
 | `skill-reference` | a `.md` under `canonical/skills/*/references/` | the procedure bodies an agent executes |
 | `agent` | a `canonical/agents/*/AGENT.md` | may carry a file-level block; `render.py` carries it through |
-| `doc-internal` | a `README.md` beside a skill or an agent, under `canonical/skills/*/` or `canonical/agents/*/` | internal notes; installed into no tree and resolved by no instruction (see `DI-01`) |
 | `template-payload` | a file under `canonical/aid/templates/` whose frontmatter is the emitted artifact's (placeholders, or opens with a payload key such as `pipeline:` / `state:`) | no file-level block (see `TP-01`) |
 | `template-own` | any other file under `canonical/aid/templates/` — its frontmatter describes itself, or it has none | the catch-all that closes the template tree (e.g. `reviewer-ledger-schema.md`); may carry a file-level block. Ordered after `template-payload`, so a payload template never falls here |
 
@@ -153,7 +152,6 @@ in the ledger's `Doc` column. A finding citing no id, or an id resolving nowhere
 | SK-02 | `skill-generated` | exclude | Carries no file-level `review-criteria:` block; type-level criteria only | — | rebuilt from `shortcut-catalog.yml`; anything hand-written is erased on the next run |
 | SR-01 | `skill-reference` | validate | Every instruction-content pointer resolves to a path that exists in an installed tree | HIGH | a broken pointer in a procedure body is followed at run time |
 | AG-01 | `agent` | validate | The `name:` matches the folder, and any agent it references resolves under `canonical/agents/` | MEDIUM | a name/folder mismatch mis-dispatches |
-| DI-01 | `doc-internal` | exclude | Not content-reviewed | — | it is installed into no tree and no instruction resolves to it, so a drift here reaches no agent at run time; the shipping file beside it is the reviewed surface |
 | TP-01 | `template-payload` | exclude | Carries no file-level `review-criteria:` block; its frontmatter is the emitted artifact's | — | a block here would be stamped onto every generated artifact |
 
 **Severity** on a `validate` criterion is what a violation of that criterion costs, resolved through the
