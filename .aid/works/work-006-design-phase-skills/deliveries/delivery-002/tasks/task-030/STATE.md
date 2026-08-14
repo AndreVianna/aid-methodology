@@ -1,6 +1,6 @@
 ---
-state: Pending
-review: "--"
+state: Done
+review: 'Quick check: 1 HIGH (row placement) adjudicated presentational and deferred to gate; rest clean'
 elapsed: "--"
 notes: "--"
 ticket_ref: "--"
