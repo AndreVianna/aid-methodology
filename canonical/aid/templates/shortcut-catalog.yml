@@ -269,6 +269,14 @@ shortcuts:
     group: G4
     intent: "Realize a stack seed into the project's technology (C0) Knowledge Base document, versions included; rejected alternatives go to the decisions document."
     repurpose: true
+  - name: aid-create-testing-strategy
+    verb: create
+    artifact: testing-strategy
+    alias_of: null
+    default_type: DOCUMENT
+    group: G4
+    intent: "Realize a testing-strategy seed into the project's quality (C6) documents -- the test landscape and the gate policy -- creating the gate document on first use."
+    repurpose: true
 
   # --- G5: Change + Refactor family (feature-007, task-017) --
   # -- 15 canonical aid-update* rows (12 in this section; aid-update-test in G7,
