@@ -98,7 +98,7 @@ it produces. The modules fall into four planes:
 | `site/scripts/lib/flow-graph/*` (14) | Observation | **Flow extractor**. Reads a skill's own instructions and derives its control flow — ordered states, loops, decision branches, exit points — then renders Mermaid. Extractors are per body shape (dispatch table, inline `## State:` sections, engine doorway, sibling, residual), over a shared compose/advance/validate core. | `canonical/skills/*/SKILL.md` + `references/*.md` | large | tested (`flow-*.test.mjs`, the largest suite group) | The four skill *structural shapes* in § Skill Structural Shapes are what these extractors dispatch on. |
 | `site/scripts/gen-reference.mjs` | Observation | Generates the four reference pages (`skills`, `agents`, `kb`, `settings`) from `canonical/` + `.aid/settings.yml`. Since delivery-006 its skills page carries only the **shortcut-engine narrative** — the roster moved to `/skills/`. | `canonical/`, `.aid/settings.yml` | medium | tested (`gen-reference.test.mjs`) | Not frozen. |
 | `site/scripts/skills/skill-counts.mjs` | Observation | **The** derivation of the skill-count triple (`directories`, `curatedOnly`, `shortcuts`, `catalogRows`, …). The public-facing docs are checked against it; counts elsewhere are a declared review criterion rather than a guarded assertion. | `canonical/skills/`, `shortcut-catalog.yml` | small | tested (`skill-counts.test.mjs`) + `tests/canonical/test-doc-counts.sh` | Pure, no import-time side effect — deliberately does not import `gen-reference.mjs`, which runs `main()` at module scope. |
-| `site/public/skill-node-panel.mjs` (runtime, ~642 lines) + `site/src/lib/skill-node-panel.ts` (build-time projection, ~149) | Observation | **Interactive node panel**. Decorates each rendered flow-chart node with `role=button` / `tabindex` / ARIA and reveals a panel carrying that node's verbatim prompt fragment and a source deep link. | the generated per-page projection island | medium | tested (jsdom suites + manual browser gate) | Reads the JSON projection, never feature-005's DOM. Survives mermaid's theme re-render. |
+| `site/public/skill-node-panel.mjs` (runtime) + `site/src/lib/skill-node-panel.ts` (build-time projection, ~149) | Observation | **Interactive node panel**. Decorates each rendered flow-chart node with `role=button` / `tabindex` / ARIA and reveals a panel carrying that node's verbatim prompt fragment and a source deep link. | the generated per-page projection island | medium | tested (jsdom suites + manual browser gate) | Reads the JSON projection, never feature-005's DOM. Survives mermaid's theme re-render. |
 | `tests/canonical/*` | Cross-cutting | Cross-platform shell test suites + `fixtures/`, run via `tests/run-all.sh`. | the modules under test | large | self | Heavy gates run on master CI only. |
 | `tests/windows/*` | Cross-cutting | Windows-only PowerShell installer tests (`Test-AidInstaller.ps1`). | installers + install-core | large | windows CI lane | NOT in `run-all.sh`; needs a Windows runner. |
 
@@ -225,8 +225,8 @@ the shape, not the ownership flag.
 
 | Shape | Body structure | Typical size | Exemplars |
 |-------|----------------|--------------|-----------|
-| Fat pipeline skill | `## Dispatch` table mapping states to `references/state-*.md` workers + `Advance` targets; no inline `## State:` sections | 300+ lines | `aid-describe` (308) |
-| Hand-authored collapse skill | Six inline `## State:` sections in `SKILL.md` itself; self-contained, no delegation | 120--220 lines | Eight skills: `aid-review` (221), `aid-research` (181), `aid-test` (131), `aid-prototype` (129), `aid-design` (120), plus `aid-update-document`, `aid-create-document`, `aid-report` |
+| Fat pipeline skill | `## Dispatch` table mapping states to `references/state-*.md` workers + `Advance` targets; no inline `## State:` sections | the largest of the skills | `aid-describe` |
+| Hand-authored collapse skill | Six inline `## State:` sections in `SKILL.md` itself; self-contained, no delegation | low hundreds of lines -- run `wc -l` on the members rather than trusting a range here | Eight skills: `aid-review`, `aid-research`, `aid-test`, `aid-prototype`, `aid-design`, `aid-update-document`, `aid-create-document`, `aid-report` |
 | Generated shortcut doorway | Binds `{verb, artifact}` and delegates to `canonical/aid/templates/shortcut-engine.md` | ~18 lines | `aid-create-api`, `aid-fix` |
 | Kind-sibling doorway | Delegates to a **sibling skill**, not to the engine | ~24 lines | `aid-test-security` -> `aid-test`; the `test-*` and `create-diagram`/`create-document` clusters |
 
@@ -237,10 +237,12 @@ the shape, not the ownership flag.
 - **The two doorway shapes carry no control flow of their own.** Their real flow is the shared
   engine's `INTAKE -> CAPTURE -> SPEC -> PLAN -> DETAIL -> GATE -> APPROVAL-HALT`, so any
   per-skill flow extraction must resolve the delegation before it has anything to show.
-  **Measured 2026-07-30 (post alias-removal recount): 47 of the 75** (34 engine doorways plus 13
-  kind-siblings; re-derived directly against `canonical/skills/*/SKILL.md` after the alias
-  removal cut the generated-doorway population from 64 to 34). Re-verify against a fresh scan
-  before trusting this split in tooling.
+  **The delegating majority** is the engine doorways plus the kind-siblings. Derive both from
+  disk rather than from a figure here -- the doorway population is the non-`repurpose` rows of
+  `shortcut-catalog.yml`, and the kind-siblings are the skills whose body delegates to a sibling
+  skill instead of to the engine. A stated total for this split has drifted twice: it read 64
+  doorways before the alias removal, and a later recount left a skill total here that disagreed
+  with this document's own module inventory.
 - **There is no single reliable parse marker for a skill's state machine.** Skills variously use
   frontmatter `State machine:`, `## Dispatch` tables, inline `## State:` sections, a literal
   `## State Machine` heading, or ASCII state maps. Branch conditions are prose in parentheses
@@ -252,9 +254,11 @@ the shape, not the ownership flag.
   `aid-config`, the three ticket skills, and the two connector skills (membership varies with
   the classifier's discriminators).
 
-CONFIRMED: line counts and inline-`## State:` counts measured directly against
-`canonical/skills/*/SKILL.md`; delegation confirmed by `shortcut-engine` references in the
-body; ownership counts per this document's own contracts and `project-structure.md`.
+CONFIRMED: the inline-`## State:` counts and the delegation shapes are measured directly
+against `canonical/skills/*/SKILL.md`, and delegation is confirmed by `shortcut-engine`
+references in the body. **Line counts are deliberately not asserted here** -- every one that was
+had drifted by the next reading, which is what `G-01` exists to prevent; measure them when you
+need them. Ownership counts follow this document's own criteria and `project-structure.md`.
 
 ---
 

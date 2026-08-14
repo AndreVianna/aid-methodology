@@ -1,5 +1,5 @@
 ---
-state: Pending
+state: Done
 review: "--"
 elapsed: "--"
 notes: "--"
@@ -24,8 +24,7 @@ ticket_ref: "--"
 ## Quick Check Findings
 
 - **Reviewer Tier:** Small
-- **Findings:** _none yet_
-
+- **Findings:** none. AC-2 PASS on the removed check's defect class: the planted stale count came back [CRITICAL], cited via module-map.md's own F-02 with the true value derived from disk, and nothing referenced the deleted script because it no longer exists. Evidence in ac-2-proof-removed-check.md. The probe also found FOUR real count drifts on the tracked tree that the deleted guard never covered -- fixed as a class per F1.
 ---
 
 ## Dispatch Log
