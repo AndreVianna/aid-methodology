@@ -1,192 +1,192 @@
 ---
 pipeline:
-  path: lite | full                 # lite = flattened (no deliveries/ wrapper); full = deliveries/delivery-NNN/ wrapper
-  initiator: aid-describe | aid-{shortcut-skill}  # the pipeline-starting skill: aid-describe, or a shortcut-catalog.yml skill (e.g. aid-fix, aid-refactor, aid-create-api)
-started: "{YYYY-MM-DD}"
-minimum_grade: "{resolved at runtime by `bash .claude/aid/scripts/config/read-setting.sh --skill {phase} --key minimum_grade --default A`; source is `.aid/settings.yml`}"
-user_approved: yes | no
-lifecycle: Running | Paused-Awaiting-Input | Blocked | Completed | Canceled
-phase: Describe | Define | Specify | Plan | Detail | Execute
-active_skill: aid-{skill} | none
-updated: "{YYYY-MM-DDTHH:MM:SSZ}"
-pause_reason: "{short text} | --"        # present only when lifecycle = Paused-Awaiting-Input
-block_reason: "{short text} | --"        # present only when lifecycle = Blocked
-block_artifact: "{relative path} | --"   # e.g. IMPEDIMENT-task-NNN.md, or the failed gate
-ticket_ref: "{connector-stem}:{external-id} | --"   # OPTIONAL; e.g. jira:PROJ-123 -- see ticket_ref contract note below
+  path: lite
+  initiator: aid-refactor
+started: "2026-08-12"
+minimum_grade: "A"
+user_approved: yes
+lifecycle: Running
+phase: Execute
+active_skill: aid-refactor
+updated: '2026-08-12T20:25:00Z'
+pause_reason: --
+block_reason: --
+block_artifact: --
 # --- Flattened single-delivery works only (see `## Delivery Lifecycle` below);
 #     omit these 4 keys entirely for full multi-delivery works. ---
-delivery_state: Pending-Spec | Specified | Executing | Gated | Done | Blocked
-gate_tier: Small | Medium | Large
-gate_grade: "{grade or Pending}"
-gate_timestamp: "{YYYY-MM-DDTHH:MM:SSZ}"
+delivery_state: Executing
+gate_tier: Large
+gate_grade: "A+"
+gate_timestamp: "2026-08-12T20:22:00Z"
 ---
-<<< LINE 23 NOT CAPTURED >>>
-<<< LINE 24 NOT CAPTURED >>>
-<<< LINE 25 NOT CAPTURED >>>
-<<< LINE 26 NOT CAPTURED >>>
-<<< LINE 27 NOT CAPTURED >>>
-<<< LINE 28 NOT CAPTURED >>>
-<<< LINE 29 NOT CAPTURED >>>
-<<< LINE 30 NOT CAPTURED >>>
-<<< LINE 31 NOT CAPTURED >>>
-<<< LINE 32 NOT CAPTURED >>>
-<<< LINE 33 NOT CAPTURED >>>
-<<< LINE 34 NOT CAPTURED >>>
-<<< LINE 35 NOT CAPTURED >>>
-<<< LINE 36 NOT CAPTURED >>>
-<<< LINE 37 NOT CAPTURED >>>
-<<< LINE 38 NOT CAPTURED >>>
-<<< LINE 39 NOT CAPTURED >>>
-<<< LINE 40 NOT CAPTURED >>>
-<<< LINE 41 NOT CAPTURED >>>
-<<< LINE 42 NOT CAPTURED >>>
-<<< LINE 43 NOT CAPTURED >>>
-<<< LINE 44 NOT CAPTURED >>>
-<<< LINE 45 NOT CAPTURED >>>
-<<< LINE 46 NOT CAPTURED >>>
-<<< LINE 47 NOT CAPTURED >>>
-<<< LINE 48 NOT CAPTURED >>>
-<<< LINE 49 NOT CAPTURED >>>
-<<< LINE 50 NOT CAPTURED >>>
-<<< LINE 51 NOT CAPTURED >>>
-<<< LINE 52 NOT CAPTURED >>>
-<<< LINE 53 NOT CAPTURED >>>
-<<< LINE 54 NOT CAPTURED >>>
-<<< LINE 55 NOT CAPTURED >>>
-<<< LINE 56 NOT CAPTURED >>>
-<<< LINE 57 NOT CAPTURED >>>
-<<< LINE 58 NOT CAPTURED >>>
-<<< LINE 59 NOT CAPTURED >>>
-<<< LINE 60 NOT CAPTURED >>>
-<<< LINE 61 NOT CAPTURED >>>
-<<< LINE 62 NOT CAPTURED >>>
-<<< LINE 63 NOT CAPTURED >>>
-<<< LINE 64 NOT CAPTURED >>>
-<<< LINE 65 NOT CAPTURED >>>
-<<< LINE 66 NOT CAPTURED >>>
-<<< LINE 67 NOT CAPTURED >>>
-<<< LINE 68 NOT CAPTURED >>>
-<<< LINE 69 NOT CAPTURED >>>
-<<< LINE 70 NOT CAPTURED >>>
-<<< LINE 71 NOT CAPTURED >>>
-<<< LINE 72 NOT CAPTURED >>>
-<<< LINE 73 NOT CAPTURED >>>
-<<< LINE 74 NOT CAPTURED >>>
-<<< LINE 75 NOT CAPTURED >>>
-<<< LINE 76 NOT CAPTURED >>>
-<<< LINE 77 NOT CAPTURED >>>
-<<< LINE 78 NOT CAPTURED >>>
-<<< LINE 79 NOT CAPTURED >>>
-<<< LINE 80 NOT CAPTURED >>>
-<<< LINE 81 NOT CAPTURED >>>
-<<< LINE 82 NOT CAPTURED >>>
-<<< LINE 83 NOT CAPTURED >>>
-<<< LINE 84 NOT CAPTURED >>>
-<<< LINE 85 NOT CAPTURED >>>
-<<< LINE 86 NOT CAPTURED >>>
-<<< LINE 87 NOT CAPTURED >>>
-<<< LINE 88 NOT CAPTURED >>>
-<<< LINE 89 NOT CAPTURED >>>
-<<< LINE 90 NOT CAPTURED >>>
-<<< LINE 91 NOT CAPTURED >>>
-<<< LINE 92 NOT CAPTURED >>>
-<<< LINE 93 NOT CAPTURED >>>
-<<< LINE 94 NOT CAPTURED >>>
-<<< LINE 95 NOT CAPTURED >>>
-<<< LINE 96 NOT CAPTURED >>>
-<<< LINE 97 NOT CAPTURED >>>
-<<< LINE 98 NOT CAPTURED >>>
-<<< LINE 99 NOT CAPTURED >>>
-<<< LINE 100 NOT CAPTURED >>>
-<<< LINE 101 NOT CAPTURED >>>
-<<< LINE 102 NOT CAPTURED >>>
-<<< LINE 103 NOT CAPTURED >>>
-<<< LINE 104 NOT CAPTURED >>>
-<<< LINE 105 NOT CAPTURED >>>
-<<< LINE 106 NOT CAPTURED >>>
-<<< LINE 107 NOT CAPTURED >>>
-<<< LINE 108 NOT CAPTURED >>>
-<<< LINE 109 NOT CAPTURED >>>
-<<< LINE 110 NOT CAPTURED >>>
-<<< LINE 111 NOT CAPTURED >>>
-<<< LINE 112 NOT CAPTURED >>>
-<<< LINE 113 NOT CAPTURED >>>
-<<< LINE 114 NOT CAPTURED >>>
-<<< LINE 115 NOT CAPTURED >>>
-<<< LINE 116 NOT CAPTURED >>>
-<<< LINE 117 NOT CAPTURED >>>
-<<< LINE 118 NOT CAPTURED >>>
-<<< LINE 119 NOT CAPTURED >>>
-<<< LINE 120 NOT CAPTURED >>>
-<<< LINE 121 NOT CAPTURED >>>
-<<< LINE 122 NOT CAPTURED >>>
-<<< LINE 123 NOT CAPTURED >>>
-<<< LINE 124 NOT CAPTURED >>>
-<<< LINE 125 NOT CAPTURED >>>
-<<< LINE 126 NOT CAPTURED >>>
-<<< LINE 127 NOT CAPTURED >>>
-<<< LINE 128 NOT CAPTURED >>>
-<<< LINE 129 NOT CAPTURED >>>
-<<< LINE 130 NOT CAPTURED >>>
-<<< LINE 131 NOT CAPTURED >>>
-<<< LINE 132 NOT CAPTURED >>>
-<<< LINE 133 NOT CAPTURED >>>
-<<< LINE 134 NOT CAPTURED >>>
-<<< LINE 135 NOT CAPTURED >>>
-<<< LINE 136 NOT CAPTURED >>>
-<<< LINE 137 NOT CAPTURED >>>
-<<< LINE 138 NOT CAPTURED >>>
-<<< LINE 139 NOT CAPTURED >>>
-<<< LINE 140 NOT CAPTURED >>>
-<<< LINE 141 NOT CAPTURED >>>
-<<< LINE 142 NOT CAPTURED >>>
-<<< LINE 143 NOT CAPTURED >>>
-<<< LINE 144 NOT CAPTURED >>>
-<<< LINE 145 NOT CAPTURED >>>
-<<< LINE 146 NOT CAPTURED >>>
-<<< LINE 147 NOT CAPTURED >>>
-<<< LINE 148 NOT CAPTURED >>>
-<<< LINE 149 NOT CAPTURED >>>
-<<< LINE 150 NOT CAPTURED >>>
-<<< LINE 151 NOT CAPTURED >>>
-<<< LINE 152 NOT CAPTURED >>>
-<<< LINE 153 NOT CAPTURED >>>
-<<< LINE 154 NOT CAPTURED >>>
-<<< LINE 155 NOT CAPTURED >>>
-<<< LINE 156 NOT CAPTURED >>>
-<<< LINE 157 NOT CAPTURED >>>
-<<< LINE 158 NOT CAPTURED >>>
-<<< LINE 159 NOT CAPTURED >>>
-<<< LINE 160 NOT CAPTURED >>>
-<<< LINE 161 NOT CAPTURED >>>
-<<< LINE 162 NOT CAPTURED >>>
-<<< LINE 163 NOT CAPTURED >>>
-<<< LINE 164 NOT CAPTURED >>>
-<<< LINE 165 NOT CAPTURED >>>
-<<< LINE 166 NOT CAPTURED >>>
-<<< LINE 167 NOT CAPTURED >>>
-<<< LINE 168 NOT CAPTURED >>>
-<<< LINE 169 NOT CAPTURED >>>
-<<< LINE 170 NOT CAPTURED >>>
-<<< LINE 171 NOT CAPTURED >>>
-<<< LINE 172 NOT CAPTURED >>>
-<<< LINE 173 NOT CAPTURED >>>
-<<< LINE 174 NOT CAPTURED >>>
-<<< LINE 175 NOT CAPTURED >>>
-<<< LINE 176 NOT CAPTURED >>>
-<<< LINE 177 NOT CAPTURED >>>
-<<< LINE 178 NOT CAPTURED >>>
-<<< LINE 179 NOT CAPTURED >>>
-<<< LINE 180 NOT CAPTURED >>>
-<<< LINE 181 NOT CAPTURED >>>
+
+# Work State -- work-NNN-{name}
+
+[!NOTE]
+This is the WORK-LEVEL STATE.md template. It is divided into three zones:
+  FRONTMATTER (single-writer, machine-parsed scalars) -- the YAML block above: pipeline
+    identity, work-level lifecycle/phase/approval scalars, and (for flattened single-delivery
+    works only) the delivery lifecycle/gate scalars. Written ONLY by `writeback-state.sh`
+    (surgical YAML-block rewrite; the markdown body is never touched by that write).
+  AUTHORED (single-writer, markdown body) -- Interview State, Lifecycle History,
+    Deploy State, the narrative remainder of Delivery Lifecycle (incl. its Tasks lifecycle
+    subsection) and Delivery Gate (Updated/Block Reason/Block Artifact/Issue List -- the
+    values that don't fit a flat frontmatter scalar).
+  DERIVED (read-only, assembled at read time) -- Features State, Plan/Deliveries, Tasks State,
+    Delivery Gates, Cross-phase Q&A, Calibration Log, Dispatches.
+The DERIVED sections are NEVER written directly; they are union views over the per-delivery and
+per-task STATE.md files. Agents that write state must target the per-unit STATE.md files instead.
+Inferred values (`number` from the folder name, `branch` from the git worktree,
+`title`/`description`/`objective` from REQUIREMENTS/SPEC content files) and derived values
+(counts, readiness/execution %, `source_mode`) are NEVER authored here -- computed at read time.
+
+The AUTHORED `## Delivery Lifecycle` / `### Tasks lifecycle` / `## Delivery Gate` sections
+(singular) apply ONLY to single-delivery flattened works (no `deliveries/`/`delivery-NNN/`
+wrapper -- see each section's own note). They are promoted verbatim from
+`delivery-state-template.md` / `task-state-template.md` and are distinct from the plural DERIVED
+`## Delivery Gates` / `## Plan / Deliveries` / `## Tasks State` union views below -- no heading
+collision (singular vs. plural, and `### Tasks lifecycle` differs in both text and heading level
+from `## Tasks State`). Left unused for full multi-delivery works, where each delivery's own
+lifecycle/gate lives in its `delivery-NNN/STATE.md` and each task's own state lives in its
+`delivery-NNN/tasks/task-NNN/STATE.md` instead.
+
+Optional `ticket_ref` scalar (frontmatter, top-level, both layouts): links this work to an
+external tracker item (`<connector-stem>:<external-id>`, e.g. `jira:PROJ-123`). Left `--` when
+this work is not linked; readers/dashboard ignore it. Nearest-ancestor resolution + MCP-first
+consumption contract: `.claude/aid/templates/connectors/consumption-protocol.md`. Coordinate
+with the in-flight `work-003-state-schema` frontmatter conventions when both touch this file's
+frontmatter block. `ticket_ref` is a lifecycle-unit field only -- the connector descriptor schema
+is unchanged.
+
+<!-- STATE ADVANCEMENT ORDERING (authoritative source; schemas.md inline copy is downstream)
+
+Ordered from most-advanced to least-advanced:
+  1. Done           -- task completed and accepted; all subtasks resolved
+  2. Canceled       -- resolved terminal (explicitly abandoned); ranks just below Done
+  3. In Review      -- work submitted; awaiting reviewer decision
+  4. In Progress    -- actively being executed on its delivery branch
+  5. Blocked        -- attempted but impeded; recoverable-in-place; more actionable than Failed
+  6. Failed         -- completed attempt rejected; a parallel branch may have superseded
+  7. Pending        -- not yet started
+
+Rationale: the dashboard "most-advanced wins" reconcile answers "how far has this work
+gotten across all worktree branches." Done/Canceled are terminal-resolved and rank highest.
+In Review outranks In Progress (review is a later pipeline stage). Blocked outranks Failed
+because a blocked task is recoverable-in-place and signals "needs attention now," whereas a
+failed task represents a completed-but-rejected attempt that a parallel branch may have already
+superseded -- surfacing "blocked" is the more actionable signal. Both Blocked and Failed rank
+above Pending because they represent work that was attempted and surfaced information (more
+informative than "not started").
+
+Closed enum VALUES (unchanged): Pending | In Progress | In Review | Blocked | Done | Failed | Canceled
+
+This ordering is encoded ONCE here. Both reader twins (Python + Node) reference schemas.md for
+the ordered list at runtime; schemas.md carries an inline copy derived from this source.
+-->
+
+> **State:** Describing | Defining | Specifying | Planning | Detailing | Executing
+> **Phase:** Describe | Define | Specify | Plan | Detail | Execute
+
+This is the single state file for **this work** -- the full dev lifecycle from req to spec to plan
+to impl to deploy. One STATE.md per `.aid/works/work-NNN-{name}/` directory. See also: per-delivery
+`delivery-NNN/STATE.md` (delivery lifecycle + gate + delivery-scoped Q&A + derived task rollup)
+and per-task `delivery-NNN/tasks/task-NNN/STATE.md` (mutable task cells).
+
+Artifact files (REQUIREMENTS.md, per-feature SPEC.md, PLAN.md, per-task DETAIL.md) keep their
+inline `## Change Log` sections -- that is content history (what changed in the document),
+distinct from process state (where are we in the workflow). Both are useful; they live in
+different places.
+
+---
+
+## Pipeline State
+
+<!-- AUTHORED -- values live in the YAML frontmatter block at the top of this file
+     (`lifecycle`, `phase`, `active_skill`, `updated`, `pause_reason`, `block_reason`,
+     `block_artifact`), written ONLY by `writeback-state.sh --pipeline ...` at every
+     phase/state transition the pipeline performs (surgical frontmatter rewrite; never
+     hand-edited). All values are closed enums so a deterministic reader needs no
+     inference. This section retains the enum reference below for human readability. -->
+>
+> Lifecycle enum:    Running | Paused-Awaiting-Input | Blocked | Completed | Canceled
+> Phase enum:        Describe | Define | Specify | Plan | Detail | Execute
+> Active Skill enum: aid-{skill} | none
+
+---
+
+## Interview State
+
+<!-- AUTHORED -- updated by `aid-describe` as each section is completed. -->
+
+**State:** In Progress | Complete | Approved  **Grade:** {grade or Pending}
+
+| # | Section | State | Last Updated |
+|---|---------|-------|--------------|
+| 1 | Objective | Pending | -- |
+| 2 | Problem Statement | Pending | -- |
+| 3 | Users & Stakeholders | Pending | -- |
+| 4 | Scope | Pending | -- |
+| 5 | Functional Requirements | Pending | -- |
+| 6 | Non-Functional Requirements | Pending | -- |
+| 7 | Constraints | Pending | -- |
+| 8 | Assumptions & Dependencies | Pending | -- |
+| 9 | Acceptance Criteria | Pending | -- |
+| 10 | Priority | Pending | -- |
+
+---
+
+## Lifecycle History
+
+<!-- AUTHORED -- written by the orchestrator on the work's active branch (single writer).
+     Append-only audit trail of phase transitions and gate approvals.
+     Newest entry last (append to bottom). -->
+
+| Date | Phase Transition / Gate | Grade | Notes |
+|------|------------------------|-------|-------|
+| 2026-08-12 | Work created | -- | INTAKE scaffold by /aid-refactor (direct-entry shortcut engine) |
+| 2026-08-12 | CAPTURE complete -- REQUIREMENTS.md written | -- | /aid-refactor CAPTURE |
+| 2026-08-12 | SPEC complete -- SPEC.md written | -- | /aid-refactor SPEC |
+| 2026-08-12 | PLAN complete -- PLAN.md + BLUEPRINT.md written | -- | /aid-refactor PLAN |
+| 2026-08-12 | DETAIL complete -- 19 task(s) written | -- | /aid-refactor DETAIL |
+| 2026-08-12 | GATE Pass 1 FIX cycle 1 -- 4 definition docs corrected | -- | /aid-refactor GATE defn |
+| 2026-08-12 | Task set corrected for the L-10/L-11 component additions -- task-020 added, 20 task(s) | -- | /aid-refactor GATE defn |
+| 2026-08-12 | GATE Pass 1 (definition docs) cleared -- 6 REVIEW/FIX cycles, E to A+ | A+ | /aid-refactor GATE defn |
+| 2026-08-12 | GATE Pass 2 (task set) cleared -- 2 REVIEW/FIX cycles, D to A+ | A+ | /aid-refactor GATE tasks |
+| 2026-08-12 | Both GATE ledgers RETAINED (not deleted at DONE cleanup) -- they carry 4 unresolved OOS routings: writeback-state.sh:4 banner -> task-007; bin/aid:109 comment -> task-009; module-map.md:184 -> task-018; task-template.md:5,15 -> task-014. Delete only once those land. | -- | /aid-refactor GATE |
+
+---
+
+## Deploy State
+
+<!-- AUTHORED -- written ONLY by `aid-deploy` at each delivery deploy (single writer; one row
+     per delivery). Never derived from child files; aid-deploy is the sole author. Future work
+     may migrate this to a per-delivery hierarchy view, but until then it is AUTHORED here.
+     One row per delivery from /aid-deploy. -->
+
+| Delivery | State | PR | KB Updated | Tag | Notes |
+|----------|-------|----|-----------|-----|-------|
+| _none yet_ | | | | | |
+
+---
+
+## Delivery Lifecycle
+
+<!-- AUTHORED -- single-delivery FLATTENED works only (no `deliveries/`/`delivery-NNN/` wrapper;
+     `tasks/task-NNN/DETAIL.md` directly under the work root). Promoted VERBATIM from
+     `delivery-state-template.md ## Delivery Lifecycle` (A-8): with exactly one delivery there is
+     exactly one writer, so the disjoint-write rule that forces a separate `delivery-NNN/STATE.md`
+     no longer applies and this section is authored directly here instead. Single writer: this
+     work's active branch only. Written by aid-plan, aid-specify, aid-execute across the delivery
+     pipeline for the synthesized `delivery-001`. Never derived from task rollup. Left absent
+     (section omitted) for full multi-delivery works, where each delivery's own lifecycle lives in
+     its `delivery-NNN/STATE.md` instead (unioned by the DERIVED `## Plan / Deliveries` view
+     below). The enum below is byte-identical to `delivery-state-template.md` -- both reader twins
+     and `writeback-state.sh` bind to the exact strings (no byte-stability break).
+
+     The **State** scalar lives in the YAML frontmatter block at the top of this file
+     (`delivery_state`) -- see the frontmatter's "Flattened single-delivery works only" group.
+     Updated/Block Reason/Block Artifact stay here as markdown body (not relocated by
      work-003-state-schema task-001; see the task's schema note). -->
-
-- **Updated:** 2026-08-12T15:40:00Z
-- **Block Reason:** --
-
-- **Block Artifact:** {relative path} | --
-
-### Tasks lifecycle
 
 - **Updated:** 2026-08-12T15:58:00Z
 - **Block Reason:** --
@@ -230,7 +230,7 @@ gate_timestamp: "{YYYY-MM-DDTHH:MM:SSZ}"
 | task-007 | Done | -- | -- | verified: 1-line diff, flat --findings survives, exit codes match old script; quick-check DEFERRED to gate; see KI-005 | Collapse writeback-state.sh onto one YAML single-key write path |
 | task-008 | Done | -- | -- | both runtimes; fail-safe+idempotent+DERIVED-guard proven, guard refused own STATE.md live; quick-check DEFERRED to gate | Add the format-4 state conversion step to the repo migration engine |
 | task-009 | Done | -- | -- | all 4 carriers+2 fallbacks read 4; gate behavior verified 3/4/5; packages/ vendored copies stale (gate item); quick-check DEFERRED | Bump AID_SUPPORTED_FORMAT to 4 across the four lockstep carriers |
-| task-010 | Pending | -- | -- | NOT safely runnable in recovery: repo-wide converter is bin/aid (1 imperfect recovered edit) and would hit work-009's OWN STATE.md which is a gappy recovery artifact (177 NOT-CAPTURED lines) -> would corrupt it. Needs converter verified + work-009 tracker rebuilt clean first. work-005 STATE.md IS clean (0 gaps). | Convert every live work tree in this repository to STATE.yml |
+| task-010 | Pending | -- | -- | Converter VERIFIED (extracted _aid_sc_* from bin/aid, ran fail-safe in an isolated sandbox on the rebuilt-100% STATE.md): it correctly REFUSED work-009's own tracker -- "DERIVED section holds real data" (KI-006: this flattened lite work wrote real calibration/dispatch rows into DERIVED sections, which have no schema home). Nothing dropped, STATE.md intact. Scope=this-work-only per owner => no clean STATE.yml deliverable here (work-009's tracker is transient+gitignored anyway). Real target (tracked live works e.g. work-005) is out of owner-set scope. | Convert every live work tree in this repository to STATE.yml |
 | task-011 | Done | -- | -- | recovered from transcript (3 suites, 2519 lines present); quick-check DEFERRED to delivery gate | Cross-format, cross-runtime characterization suite |
 | task-012 | Done | -- | -- | quick-check (Small): clean on artifacts; the 1 CRITICAL was orchestrator commit hygiene, repaired | Exclude state files from the reviewable-artifact surface |
 | task-013 | Done | -- | -- | quick-check (Small): no CRITICAL/HIGH; anti-drift proven by 3 mutation tests | Test the state-file review exclusion, in the RS03 shape |
@@ -238,8 +238,8 @@ gate_timestamp: "{YYYY-MM-DDTHH:MM:SSZ}"
 | task-015 | Done | -- | -- | recovered from transcript (suites updated: 261 STATE.yml refs in writeback test); quick-check DEFERRED to delivery gate | Update the in-scope canonical shell suites to the YAML state format |
 | task-016 | Done | -- | -- | 2069 passed / 24 env-only fails; SP-19b oracle 5/5; readers + KB-ledger untouched; quick-check DEFERRED. [direct edit -- writer YAML-only, see KI-008] | Update the in-scope dashboard reader/server suites to the YAML state format |
 | task-017 | Done | -- | -- | byte-identity 1506/1506, 5 self-tests pass, idempotent, canonical clean; vendored packages/ NOT covered (KI-007); quick-check DEFERRED. [State written by DIRECT EDIT: the resync installed the YAML-only writer, which now rejects this still-markdown STATE.md -- the 017-before-010 sequencing gap. writeback-state.sh unusable for this work until task-010 converts it.] | Render fan-out -- regenerate the five profiles and resync the dogfood trees |
-| task-018 | Done | -- | -- | quick-check DEFERRED to delivery gate. 7 KB docs updated (6 scoped + tech-debt.md SY-1..SY-5); INDEX.md regenerated; citation-lint/frontmatter-lint clean (0 new violations); grep STATE.md enumerated -- discovery ledger + explicitly-labelled legacy only within scope; 7 out-of-scope docs (domain-glossary.md primary) flagged as SY-5, not edited. [State written by DIRECT EDIT: writeback-state.sh is YAML-only (task-007) and this STATE.md is still markdown -- the same task-010-not-yet-run gap task-017/020 hit.] | Update the Knowledge Base to the YAML state format |
-| task-019 | Pending | -- | -- | CI-only: runs the full behavior-preservation suite + coverage re-bootstrap, which hangs on this Windows box. Depends on task-010. Defer to CI after task-010 lands. | Post-refactor behavior-preservation verification and coverage re-bootstrap |
+| task-018 | Done | -- | -- | quick-check DEFERRED to delivery gate. 7 KB docs updated (6 scoped + tech-debt.md SY-1..SY-5); INDEX.md regenerated; re-executed (prior dispatch produced nothing) | Update the Knowledge Base to the YAML state format |
+| task-019 | Pending | -- | -- | CI-only: full suite hangs on Windows; depends on task-010; defer to CI | Post-refactor behavior-preservation verification and coverage re-bootstrap |
 | task-020 | Done | -- | -- | behavioral proof both runtimes (200/200) + exit-1 vs exit-0 contrast; quick-check DEFERRED to gate | Retarget the dashboard server write path and raw-state labels to STATE.yml |
 | task-021 | Done | -- | -- | KI-004 closed, both twins agree; quick-check DEFERRED to delivery gate per owner leanness directive | Restore the coarse-updated fallback on the Python twin and close the KI-004 divergence |
 
@@ -247,6 +247,16 @@ gate_timestamp: "{YYYY-MM-DDTHH:MM:SSZ}"
 
 ## Quick Check Findings
 
+### task-004
+
+- **Reviewer Tier:** Small
+- **Findings:** none
+
+---
+
+## Delivery Gate
+
+<!-- AUTHORED -- single-delivery FLATTENED works only (see ## Delivery Lifecycle note above).
      Promoted VERBATIM from `delivery-state-template.md ## Delivery Gate` (A-8). Single writer:
      the delivery-gate closing step of `aid-execute` on this work's active branch, written via
      `writeback-state.sh --delivery-id 001 --block ...`. Distinct from per-task quick-check
@@ -257,24 +267,14 @@ gate_timestamp: "{YYYY-MM-DDTHH:MM:SSZ}"
      works, where each delivery-NNN/STATE.md carries its own gate block (unioned by the DERIVED
      ## Delivery Gates view below). The enum below is byte-identical to
      `delivery-state-template.md` -- no byte-stability break.
-<<< LINE 260 NOT CAPTURED >>>
-<<< LINE 261 NOT CAPTURED >>>
-<<< LINE 262 NOT CAPTURED >>>
-<<< LINE 263 NOT CAPTURED >>>
-<<< LINE 264 NOT CAPTURED >>>
-<<< LINE 265 NOT CAPTURED >>>
-<<< LINE 266 NOT CAPTURED >>>
-<<< LINE 267 NOT CAPTURED >>>
-<<< LINE 268 NOT CAPTURED >>>
-<<< LINE 269 NOT CAPTURED >>>
-<<< LINE 270 NOT CAPTURED >>>
-<<< LINE 271 NOT CAPTURED >>>
-<<< LINE 272 NOT CAPTURED >>>
-<<< LINE 273 NOT CAPTURED >>>
-<<< LINE 274 NOT CAPTURED >>>
-<<< LINE 275 NOT CAPTURED >>>
-<<< LINE 276 NOT CAPTURED >>>
-<<< LINE 277 NOT CAPTURED >>>
+
+     Reviewer Tier / Grade / Timestamp live in the YAML frontmatter block at the top of this
+     file (`gate_tier`, `gate_grade`, `gate_timestamp`) -- see the frontmatter's "Flattened
+     single-delivery works only" group. Issue List stays here as markdown body (a
+     variable-length inline list doesn't fit a flat frontmatter scalar). -->
+
+- **Issue List:** {inline severity-tagged list, or "none" if gate passed clean}
+
 ---
 
 <!-- ============================================================
