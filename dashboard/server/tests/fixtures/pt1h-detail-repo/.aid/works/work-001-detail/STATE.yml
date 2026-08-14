@@ -1,7 +1,8 @@
 # Work State -- work-001-detail
-# TaskDetail parity fixture (PT-1-H task-072). The rationale line below embeds
-# a U+2028 line separator and a U+2029 paragraph separator so raw_state.text
-# exercises the DM-3 R7 escaping post-process (detail-6d).
+# TaskDetail parity fixture (PT-1-H task-072). The two comment lines below end
+# with a U+2028 line separator 
+# and a U+2029 paragraph separator 
+# so raw_state.text exercises the DM-3 R7 escaping post-process (detail-6d).
 lifecycle: Running
 phase: Execute
 active_skill: aid-execute
