@@ -34,7 +34,12 @@ Each criterion must name an observable — the rule and its worked examples live
 Acceptance Criteria`. Given/When/Then is the preferred shape because it forces the
 observable into the `then`.
 
-- [ ] Given {precondition}, when {action}, then {observable result}
+Each criterion carries a stable `AC-N` id, numbered within this feature and never
+reused or renumbered — downstream tasks cite these ids, so renumbering silently
+breaks their traceability.
+
+- [ ] **AC-1** — Given {precondition}, when {action}, then {observable result}
+- [ ] **AC-2** — Given {precondition}, when {action}, then {observable result}
 
 ---
 

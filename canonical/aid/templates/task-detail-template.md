@@ -20,7 +20,12 @@ Shape: 6 sections matching canonical/aid/templates/delivery-plans/task-template.
 
 **Type:** RESEARCH | DESIGN | IMPLEMENT | TEST | DOCUMENT | MIGRATE | REFACTOR | CONFIGURE
 
-**Source:** work-NNN-{name} -> delivery-NNN
+**Source:** feature-NNN-{name} -> delivery-NNN -> AC-N[, AC-N]
+<!-- The AC-N ids are the acceptance criteria in that feature SPEC which this task
+     implements. At least one is required: a task implementing no stated criterion
+     is undeclared scope or unnecessary work. On the flattened Lite layout there is
+     no features/ folder, so cite the work instead:
+     work-NNN-{slug} -> delivery-001 -> AC-N. -->
 
 **Depends on:** task-NNN [, task-NNN] | -- (none)
 

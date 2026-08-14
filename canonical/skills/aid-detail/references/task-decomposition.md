@@ -129,7 +129,7 @@ Each task is a **folder** containing two files:
 
 **Type:** RESEARCH | DESIGN | IMPLEMENT | TEST | DOCUMENT | MIGRATE | REFACTOR | CONFIGURE
 
-**Source:** work-NNN-{name} -> delivery-NNN
+**Source:** feature-NNN-{name} -> delivery-NNN -> AC-N[, AC-N]
 
 **Depends on:** task-NNN [, task-NNN] | -- (none)
 
@@ -144,6 +144,17 @@ Each task is a **folder** containing two files:
 Six sections (Title, Type, Source, Depends on, Scope, Acceptance Criteria) plus
 the fixed Execution protocol note carried automatically from the template.
 Nothing else.
+
+**`Source` must name the feature SPEC criteria this task implements**, by their
+`AC-N` ids, and at least one is required. A task implementing no stated criterion
+is either undeclared scope or unnecessary work — both worth catching before it
+runs. Two things follow from having the ids on disk: the trace is mechanically
+checkable (each id either resolves in that SPEC or it does not), and a reviewer or
+executor can load just the criteria a task answers to instead of the whole
+upstream document.
+
+On the flattened Lite layout there is no `features/` folder, so cite the work:
+`work-NNN-{slug} -> delivery-001 -> AC-N`.
 
 - **`deliveries/delivery-NNN/tasks/task-NNN/STATE.md`** — seeded from `canonical/aid/templates/task-state-template.md`,
   replacing the frontmatter block's placeholder lines with the real opening values

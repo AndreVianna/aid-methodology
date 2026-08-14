@@ -480,7 +480,9 @@ seeded from `canonical/aid/templates/specs/spec-template.md`:
 - `## Source`: cite the REQUIREMENTS.md sections this SPEC draws from (e.g.
   `REQUIREMENTS.md §5 Functional Requirements`, `§9 Acceptance Criteria`).
 - `## Description` / `## User Stories` / `## Priority` / `## Acceptance Criteria`:
-  synthesized from REQUIREMENTS.md (requirements-half; not re-elicited).
+  synthesized from REQUIREMENTS.md (requirements-half; not re-elicited). Each
+  criterion carries a stable `AC-N` id -- DETAIL's `**Source:**` cites these, so
+  they must exist before Step DETAIL runs and must never be renumbered afterwards.
 - `## Technical Specification`: the mandatory three sections plus whichever
   conditional sections Step 2 activated, filled from KB context (`architecture.md`,
   `module-map.md`, `coding-standards.md`, etc. as relevant) and the family scaffolding
@@ -613,7 +615,10 @@ description, scoped to the full SPEC.md Acceptance Criteria set. Multi-task shor
 `canonical/aid/templates/task-detail-template.md`:
 
 - `**Type:**` bold shape (one of the 8).
-- `**Source:** work-NNN-{slug} -> delivery-001`.
+- `**Source:** work-NNN-{slug} -> delivery-001 -> AC-N[, AC-N]` -- the work-root
+  SPEC.md criteria this task implements, by their `AC-N` ids; at least one is
+  required. The flat layout has no `features/`, so the work is cited where the full
+  path cites a feature.
 - `**Depends on:**` per the decided ordering.
 - `**Scope:**` / `**Acceptance Criteria:**` -- each criterion names an observable
   (`requirements-template.md § Verifiable Acceptance Criteria`); the last criterion
@@ -746,10 +751,10 @@ content:
 - **RUBRIC:** (one-off, as Pass 1) each `DETAIL.md` carries exactly one bold
   `**Type:**` (never mixed across tasks of the same shortcut unless the
   family scaffolding calls for it -- `artifact-schemas.md § Task DETAIL.md`),
-  a correct `**Source:** work-NNN-{slug} -> delivery-001` and
-  `**Depends on:**` shape matching the natural ordering, and concrete,
-  testable `**Acceptance Criteria:**` ending in `All section-6 quality gates
-  pass.`; no sibling `STATE.md` exists for any task (the flat layout has
+  a correct `**Source:** work-NNN-{slug} -> delivery-001 -> AC-N[, AC-N]`
+  (every `AC-N` resolving in the work-root SPEC.md) and `**Depends on:**` shape
+  matching the natural ordering, and `**Acceptance Criteria:**` each naming an
+  observable and ending in `All section-6 quality gates pass.`; no sibling `STATE.md` exists for any task (the flat layout has
   none by design).
 - **OUT OF SCOPE:** `REQUIREMENTS.md`/`SPEC.md`/`PLAN.md`/`BLUEPRINT.md`
   (Pass 1's own scope, already cleared -- re-litigating them here is scope

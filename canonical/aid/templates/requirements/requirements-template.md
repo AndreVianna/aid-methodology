@@ -100,9 +100,13 @@ a judgment, not when stating the observable is merely more work.
 
 ## 9. Acceptance Criteria
 
-{How do we know it's done? One criterion per line, each naming an observable --
-see Verifiable Acceptance Criteria above. A criterion nothing could falsify is
-not one.}
+{How do we know it's done? One criterion per line, each carrying a stable `AC-N`
+id and naming an observable -- see Verifiable Acceptance Criteria above. A
+criterion nothing could falsify is not one. Ids are never reused or renumbered:
+feature SPECs and task DETAILs cite them.}
+
+- **AC-1** — {criterion}
+- **AC-2** — {criterion}
 
 ## 10. Priority
 
