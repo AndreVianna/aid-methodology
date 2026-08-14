@@ -1,8 +1,8 @@
 ---
-state: Pending
-review: "--"
+state: Done
+review: 'Gate-deferred per delivery-002 Q1 (no per-task reviewer); ACs self-verified mechanically'
 elapsed: "--"
-notes: "--"
+notes: 'Throwaway render live (NOT committed): profiles 600 / .claude 119 / .cursor 119 uncommitted paths. Pre-render state recorded as content in PRE-RENDER-MANIFEST.md beside this file -- porcelain was empty and 2644 files hashed at HEAD 574f3d3a (provenance only, never a restoration target). RESTORATION TARGET for task-048, in words: tracked content equal to current HEAD with render-generated untracked files removed -- NOT the manifest bytes, because .claude/skills/release-aid/SKILL.md is a committed deliverable inside these trees and restoring bytes literally would revert it. Render verified: build-shortcut-skills.py skipped all 60 repurpose rows leaving the 36 hand-authored bodies byte-identical; full run_generator.py emitted 2060 files with deterministic VERIFY PASS; dogfood resync additive so the 17 repo-local .claude and 1 .cursor files survive; idempotent (2922-file sha256 capture identical across a second full render).'
 ticket_ref: "--"
 ---
 
