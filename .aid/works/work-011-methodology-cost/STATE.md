@@ -43,7 +43,7 @@ to prevent, so it is recorded here rather than quietly corrected.
 | 001 | Cost measurement | Done | meter + gate model; 33 assertions |
 | 002 | Artifact discipline | Done | Change Log removed repo-wide; AC verifiability rule |
 | 003 | Traceability | Done | `AC-N` ids; task `Source` cites them |
-| 004 | Artifact folding | In Progress | features->§11 landed; BLUEPRINT->PLAN and the Lite reduction outstanding |
+| 004 | Artifact folding | Blocked | features->§11 landed; BLUEPRINT->PLAN and the Lite reduction need the Q4 sentinel decision first |
 | 005 | Derivation over authoring | In Progress | wave-map derived; Lite graph-from-DETAILs outstanding |
 | 006 | Render and close-out | In Progress | rendered once mid-work to clear CI; owed again after feature 004 |
 
@@ -62,8 +62,8 @@ to prevent, so it is recorded here rather than quietly corrected.
 | AC-9 | Met | 10 broken citations fixed; sweep reports 0 |
 | AC-10 | Met | 19 dangling anchors fixed; sweep reports 0 |
 | AC-11 | Met | phase 5a |
-| AC-12 | Not met | `delivery-blueprint-template.md` still exists; 46 files mention BLUEPRINT |
-| AC-13 | Not met | shortcut engine still writes SPEC.md, PLAN.md, BLUEPRINT.md |
+| AC-12 | Not met — BLOCKED | See Q4: BLUEPRINT presence is the flat-layout sentinel in 3 lockstep implementations |
+| AC-13 | Not met — BLOCKED on AC-12 | The Lite layout is identified BY the file AC-12 deletes |
 | AC-14 | Partially met | rendered once; goes stale again with the remaining work |
 
 ## Lifecycle History
@@ -95,7 +95,40 @@ checkable that the judgment happened against the stated bar. A strict rule would
 either reject legitimate criteria or push authors into dishonest proxies. One
 paragraph to delete if the owner prefers strict.
 
-### Q4 — Contended files (`work-004`)
+### Q4 — BLUEPRINT.md is the flat-layout SENTINEL, not just a document
+
+**Open — needs an owner decision before AC-12 or AC-13 can be built.**
+
+Deleting `BLUEPRINT.md` (AC-12) removes the file whose PRESENCE identifies the
+Lite layout. The detection rule is 3-part and, by explicit design, identical
+across three implementations that must agree:
+
+| Consumer | Site |
+|---|---|
+| `dashboard/reader/reader.py` | `_detect_flat()` |
+| `dashboard/server/reader.mjs` | `is_flat_layout()` — "lockstep Python twin" |
+| `canonical/aid/scripts/execute/writeback-state.sh` | `[[ -f "${WORK_DIR}/BLUEPRINT.md" ]] \|\| return 1` |
+
+So AC-12 and AC-13 collide: the Lite path's identity currently depends on the
+artifact both criteria delete. This is unlike `SPEC.md`, which had zero code and
+zero test dependencies — `BLUEPRINT.md` has 4 scripts, both parity-guaranteed
+reader twins, and 10 asserting test suites.
+
+**The fix is available and clean, but it is a three-implementation change.**
+`STATE.md` frontmatter already carries `pipeline.path: lite | full`, so layout can
+be read from DECLARED state instead of inferred from a sentinel file's presence —
+which is the better design independently of this work, since a declared field
+cannot be ambiguous and an inferred one can. Two of the rule's three parts
+(`tasks/` present, `deliveries/` absent) survive as a consistency check.
+
+Scope, measured rather than estimated: 3 implementations under a stated parity
+guarantee, plus 10 test suites, plus the migrate scripts. This is the most
+invasive remaining change in the work and the only one touching the twins.
+
+Recommended sequencing: do it as its own delivery, after an independent review of
+the branch (see `## Dispatches`), not folded into the prose sweep.
+
+### Q5 — Contended files (`work-004`)
 
 **Open.** 14 canonical files and 4 KB docs are modified on `origin/work-004`,
 including `agents/aid-reviewer/AGENT.md`, five READMEs and four reviewer-briefs.
