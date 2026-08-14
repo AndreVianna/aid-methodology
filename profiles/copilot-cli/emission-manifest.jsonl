@@ -1,7 +1,7 @@
 {"_manifest_version": 1}
-{"dst": ".github/agents/aid-architect.md", "profile": "copilot-cli", "sha256": "0ab10cc77dfa991a8bfecdf42ad9bc72b826d1c31a992efea7bce81e04ab7bd4", "src": "canonical/agents/aid-architect/AGENT.md"}
+{"dst": ".github/agents/aid-architect.md", "profile": "copilot-cli", "sha256": "532b3c8706855390de57b67e347f218dad04b650831ec795494815e4cf323360", "src": "canonical/agents/aid-architect/AGENT.md"}
 {"dst": ".github/agents/aid-clerk.md", "profile": "copilot-cli", "sha256": "e60947592d42764ba39dfe92e06f10a9c5cf4b91ee808dc5dde3be7a5c12ac68", "src": "canonical/agents/aid-clerk/AGENT.md"}
-{"dst": ".github/agents/aid-developer.md", "profile": "copilot-cli", "sha256": "4c0050ca7d1df07abd9a9de098ae04a0f233805f2e41da7e113a29df80557a64", "src": "canonical/agents/aid-developer/AGENT.md"}
+{"dst": ".github/agents/aid-developer.md", "profile": "copilot-cli", "sha256": "cb5e3d6e0340302a9f391498148f370a9fcc81f1e5e0f5299988aeaa9b2c4367", "src": "canonical/agents/aid-developer/AGENT.md"}
 {"dst": ".github/agents/aid-interviewer.md", "profile": "copilot-cli", "sha256": "1cd1d76823c2bfc88d4c47413647afcd77ac7f7f91aa802d4080b01b942cdc18", "src": "canonical/agents/aid-interviewer/AGENT.md"}
 {"dst": ".github/agents/aid-operator.md", "profile": "copilot-cli", "sha256": "0ab71c13549650cd70fb46f9123ac4bd6e910610d33188c06308df7dcc7b995f", "src": "canonical/agents/aid-operator/AGENT.md"}
 {"dst": ".github/agents/aid-orchestrator.md", "profile": "copilot-cli", "sha256": "4709f07ba0270b062bee3d51f5957125822aa0573abfc774d890f64e5d20fa03", "src": "canonical/agents/aid-orchestrator/AGENT.md"}

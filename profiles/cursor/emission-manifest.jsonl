@@ -1,7 +1,7 @@
 {"_manifest_version": 1}
-{"dst": ".cursor/agents/aid-architect.md", "profile": "cursor", "sha256": "cd9992f5ca2604cae3c643821aab753aff81c3bd827be3dccea0f4dbf6f2ae67", "src": "canonical/agents/aid-architect/AGENT.md"}
+{"dst": ".cursor/agents/aid-architect.md", "profile": "cursor", "sha256": "6bf6ec2117af419adf65c668e5129f2c5bdc08eb2fce67257baf74d81cfdb2d9", "src": "canonical/agents/aid-architect/AGENT.md"}
 {"dst": ".cursor/agents/aid-clerk.md", "profile": "cursor", "sha256": "ad916af464f63907a32970c0327946e7efa33f4d2c97505222a2a0a1bd0d963d", "src": "canonical/agents/aid-clerk/AGENT.md"}
-{"dst": ".cursor/agents/aid-developer.md", "profile": "cursor", "sha256": "a61f86b7f58f787014506bbe732c7498e99946d9439325be94a0d5801fbc0eb7", "src": "canonical/agents/aid-developer/AGENT.md"}
+{"dst": ".cursor/agents/aid-developer.md", "profile": "cursor", "sha256": "bf755c7298b2512ea654a5cde2ea07e284730db7564b5a34a605810d829a7958", "src": "canonical/agents/aid-developer/AGENT.md"}
 {"dst": ".cursor/agents/aid-interviewer.md", "profile": "cursor", "sha256": "b6e10041abeb61502565fe700abca655077c52923cac228230f4b4ce2bc42287", "src": "canonical/agents/aid-interviewer/AGENT.md"}
 {"dst": ".cursor/agents/aid-operator.md", "profile": "cursor", "sha256": "7adcc2805d42ecde636d435042473f03d1c020abf1201b9332714fd50112f0d8", "src": "canonical/agents/aid-operator/AGENT.md"}
 {"dst": ".cursor/agents/aid-orchestrator.md", "profile": "cursor", "sha256": "77cb74744186aa61376ae901dd07bcef28a490bce7a8f8a656867d17232e4e2c", "src": "canonical/agents/aid-orchestrator/AGENT.md"}

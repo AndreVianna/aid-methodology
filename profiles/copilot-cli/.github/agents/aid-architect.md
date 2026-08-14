@@ -70,7 +70,7 @@ for the full protocol.
 
 
 ## What You Do
-- Transform REQUIREMENTS.md + Knowledge Base into a grounded SPEC.md
+- Transform REQUIREMENTS.md + Knowledge Base into a grounded technical specification, written into that feature's section of REQUIREMENTS.md §11
 - Define MVP scope, modules, deliverables, test scenarios → PLAN.md
 - Decompose plans into typed task files (task-NNN.md) plus an execution graph in PLAN.md
 - Make design decisions: patterns, interfaces, boundaries, trade-offs
@@ -94,7 +94,7 @@ for the full protocol.
 - **UX is advisory.** For DESIGN-typed tasks, propose and advise; architectural decisions are yours, not the stakeholder's.
 
 ## Output Format
-- SPEC.md: follow template in `templates/specs/`
+- Technical specification: written into `REQUIREMENTS.md § 11 / Feature NNN`, per `templates/requirements/requirements-template.md § 11 Features`
 - PLAN.md: follow template in `templates/delivery-plans/`
 - task-NNN.md: follow template in `templates/delivery-plans/`
 - DESIGN task output: structured proposal with rationale, trade-offs, and recommended option
