@@ -1,5 +1,5 @@
 ---
-state: 'In Progress'
+state: Done
 review: "--"
 elapsed: "--"
 notes: "--"
@@ -64,15 +64,10 @@ in-flight `work-003-state-schema` frontmatter conventions.
 
 ## Quick Check Findings
 
-<!-- AUTHORED -- written by `writeback-state.sh --task-id NNN --findings ...` during the
-     per-task quick-check step of aid-execute. Records the reviewer tier used and all [HIGH]
-     and [CRITICAL] findings for this task. [CRITICAL] findings trigger an immediate fix-on-spot;
-     [HIGH] findings are deferred to the delivery gate via delivery-NNN-issues.md.
-     No grade is recorded here -- grading is per-delivery, not per-task. -->
-
-- **Reviewer Tier:** --
-- **Findings:** --
-
+- **Reviewer Tier:** Small
+- **Findings:**
+  - [HIGH] `.aid/knowledge/roadmap.md:90` states a falsehood after this migration -- it points at the `## Unreleased` entry the task retired. A fifth carrier feature-001 AC-6 never enumerated, and no task in the plan owns clearing it. Not task-018 to fix: its Reversible criterion forbids touching another file -- Deferred-to-gate
+  - [MEDIUM, recorded not deferred] `canonical/skills/aid-create-backlog/SKILL.md:118` names a work task id in shipped content -- task-012's output, pre-existing class
 ---
 
 ## Dispatch Log
