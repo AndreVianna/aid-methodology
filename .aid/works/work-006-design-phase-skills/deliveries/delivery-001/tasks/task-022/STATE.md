@@ -1,8 +1,8 @@
 ---
-state: 'In Progress'
-review: "--"
+state: 'In Review'
+review: --
 elapsed: "--"
-notes: "--"
+notes: 'Five authored runs, all realizing (no routing exit, no refusal): /aid-update-roadmap in F-full (work-010), /aid-update-mvp in F-full (work-011), /aid-create-roadmap in F-horizons-empty (work-012), /aid-create-mvp in F-no-MVP (work-013), /aid-update-mvp in a re-established F-no-MVP (work-014). Each allocated a work folder carrying NO phase: key; each graded A+; every folder, worktree and branch removed. V7 PASS, V8 = feature-002 E3 PASS, extent rule PASS on both halves. roadmap.md restored byte for byte (sha256 c389fad6...). Render untouched at 113 entries. Full oracle log in EVIDENCE.md.'
 ticket_ref: "--"
 ---
 
@@ -64,15 +64,7 @@ in-flight `work-003-state-schema` frontmatter conventions.
 
 ## Quick Check Findings
 
-<!-- AUTHORED -- written by `writeback-state.sh --task-id NNN --findings ...` during the
-     per-task quick-check step of aid-execute. Records the reviewer tier used and all [HIGH]
-     and [CRITICAL] findings for this task. [CRITICAL] findings trigger an immediate fix-on-spot;
-     [HIGH] findings are deferred to the delivery gate via delivery-NNN-issues.md.
-     No grade is recorded here -- grading is per-delivery, not per-task. -->
-
-- **Reviewer Tier:** --
-- **Findings:** --
-
+Reviewer Tier: aid-reviewer clean-context dispatch, one per authored run (5 total), each graded with grade.sh --explain; final grade A+ on all five. [HIGH] carried to the delivery gate: the COMMITTED .aid/knowledge/roadmap.md line 155 cites decisions.md for a claim decisions.md does not make (Status of "Richer connector consumption" reads "anticipated by the architecture (see decisions.md)"; grep for richer|anticipat|consumption in decisions.md returns no match, and its D19 records the opposite -- "Accepted (delivery-002 withdrawn)"). That is a feature-003 section 3a durable-citation defect in a shipped artifact owned by task-015; this task restores roadmap.md byte for byte by acceptance criterion and therefore did not fix it. See EVIDENCE.md section 11 observation 1. No [CRITICAL].
 ---
 
 ## Dispatch Log
