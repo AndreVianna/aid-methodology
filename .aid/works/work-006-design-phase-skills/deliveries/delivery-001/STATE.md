@@ -75,9 +75,9 @@ so the delivery lifecycle MUST be independently authored.
 
 ## Delivery Gate
 
-- **Complexity Score:** 56 (tasks=25, depth=23, risk=8, consults=0; note: complexity-score.sh under-reports risk=0 for hierarchical deliveries — ledger row 11/OOS — so its raw output was 48; tier is Large either way)
+- **Complexity Score:** 56 (tasks=25, depth=23, risk=8, consults=0). Recorded as 56 at gate time against a raw script output of 48, because `complexity-score.sh` then under-reported `risk=0` for hierarchical deliveries (ledger row 11, accepted OOS). That tooling bug has since been **fixed upstream on master** (`801caf34`, `--tasks-dir` scan widened to `-maxdepth 2`); the script now reports `risk=8 score=56 tier=Large`, confirming the recorded value. The OOS finding is therefore closed upstream, not outstanding.
 - **Cycles:** 2
-- **Issue List:** 12 findings adjudicated (13 aggregated, 1 pre-Fixed). Cycle 1 grade D-. After fixes: 11 Fixed (rows 1-10, 12), 1 OOS (row 11 — complexity-score.sh risk=0 tooling limitation, tier unaffected, fix owned by delivery-003 render). Independently re-verified by a clean-context aid-reviewer. Final grade A+ (0 Pending/Recurred).
+- **Issue List:** 12 findings adjudicated (13 aggregated, 1 pre-Fixed). Cycle 1 grade D-. After fixes: 11 Fixed (rows 1-10, 12), 1 OOS (row 11 -- the complexity-score.sh tooling limitation now fixed upstream, above). Independently re-verified by a clean-context aid-reviewer. Final grade A+ (0 Pending/Recurred).
 ---
 
 ## Cross-phase Q&A
