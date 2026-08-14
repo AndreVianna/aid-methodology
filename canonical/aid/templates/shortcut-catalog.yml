@@ -638,6 +638,38 @@ shortcuts:
     group: G3
     intent: "Diverge on an unformed problem, then converge to a .aid/design/ seed; resolves nothing."
     repurpose: true
+  - name: aid-design-architecture
+    verb: design
+    artifact: architecture
+    alias_of: null
+    default_type: DESIGN
+    group: G3
+    intent: "Develop the system's shape as a design seed (components, boundaries, interactions, invariants); writes no KB document -- /aid-create-architecture realizes it."
+    repurpose: true
+  - name: aid-design-stack
+    verb: design
+    artifact: stack
+    alias_of: null
+    default_type: DESIGN
+    group: G3
+    intent: "Develop the technology choice as a design seed (languages, runtimes, frameworks, build and test tooling with versions) plus the alternatives rejected and why."
+    repurpose: true
+  - name: aid-design-testing-strategy
+    verb: design
+    artifact: testing-strategy
+    alias_of: null
+    default_type: DESIGN
+    group: G3
+    intent: "Develop the testing policy as a design seed (levels, coverage expectations, which gates block a merge, who may waive one); not test code."
+    repurpose: true
+  - name: aid-design-cicd
+    verb: design
+    artifact: cicd
+    alias_of: null
+    default_type: DESIGN
+    group: G3
+    intent: "Develop the delivery pipeline as a design seed (stages, triggers, environments, promotion); touches no workflow file."
+    repurpose: true
 
   # --- G8: Document family -- work-005 reframe of feature-010 --
   # `document` is a create/update ARTIFACT, not a verb. HAND-AUTHORED collapse skills.
