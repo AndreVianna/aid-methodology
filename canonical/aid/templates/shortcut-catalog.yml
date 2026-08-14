@@ -432,6 +432,38 @@ shortcuts:
     default_type: MIGRATE
     group: G5
     intent: "Migrate data, a dependency, framework, or platform, with a rollback plan (non-schema; schema migrations use create/update-data-model)."
+  - name: aid-update-architecture
+    verb: update
+    artifact: architecture
+    alias_of: null
+    default_type: DOCUMENT
+    group: G5
+    intent: "Revise the project's build-and-shape (C1) Knowledge Base document, plus any previously created outputs."
+    repurpose: true
+  - name: aid-update-stack
+    verb: update
+    artifact: stack
+    alias_of: null
+    default_type: DOCUMENT
+    group: G5
+    intent: "Revise the project's technology (C0) Knowledge Base document -- versions, dependencies, constraints -- plus any previously created outputs."
+    repurpose: true
+  - name: aid-update-testing-strategy
+    verb: update
+    artifact: testing-strategy
+    alias_of: null
+    default_type: DOCUMENT
+    group: G5
+    intent: "Revise the project's quality (C6) documents -- test landscape and gate policy -- plus any previously created outputs."
+    repurpose: true
+  - name: aid-update-cicd
+    verb: update
+    artifact: cicd
+    alias_of: null
+    default_type: DOCUMENT
+    group: G5
+    intent: "Revise the project's shipping (C8) Knowledge Base document -- pipeline stages, environments, release flow -- plus any previously created outputs."
+    repurpose: true
 
   # --- G7: Test + Experiment family -- work-005 restructure of feature-009 --
   # Test AUTHORING is a create/update ARTIFACT: aid-create-test / aid-update-test --
