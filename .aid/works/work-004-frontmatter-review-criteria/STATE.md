@@ -8,7 +8,7 @@ user_approved: yes
 lifecycle: Running
 phase: Execute
 active_skill: aid-execute
-updated: '2026-08-13T21:07:02Z'
+updated: '2026-08-14T02:24:21Z'
 pause_reason: --
 block_reason: --
 block_artifact: --
@@ -17,7 +17,7 @@ ticket_ref: "--"
 
 # Work State -- work-004-frontmatter-review-criteria
 
-> **State:** Executing -- delivery-001 Done (gate PASS at A+); delivery-002 next
+> **State:** Executing -- delivery-001 and delivery-002 Done (both gate PASS at A+); delivery-003 next
 > **Phase:** Execute
 
 This is the single state file for **this work** -- the full dev lifecycle from req to spec to plan
@@ -105,6 +105,7 @@ gitignored -- the evidence for a closed pass has to survive the pass.
 | 2026-08-13 | Detail → DONE | A | **17 tasks** across 3 deliveries (001: 7, 002: 5, 003: 5), DETAIL + STATE (`Pending`) each; execution graphs + wave-maps in PLAN.md. Per-delivery grade gates (aid-reviewer, sonnet): **12 findings total** (2 CRITICAL, 4 HIGH, 5 MEDIUM, 1 LOW), all Fixed except the one LOW **Accepted** with justification. Notable catch: a CRITICAL cross-feature gap (18 canonical carry-as-data files dropped from the rename) + the `test-skill-counts.sh` wrapper + 5 KB citations to the deleted checker. Ledgers `review-archive/detail-delivery-00N.md`. Ready for `/aid-execute` |
 | 2026-08-13 | Execute → delivery-001 started | -- | `delivery_state` Pending-Spec → Executing. task-001 executed, quick-checked and closed `Done`: 3 `[CRITICAL]` findings, all fixed-on-spot (registry exhaustiveness + two mutual-exclusivity collisions). The registry now resolves all 315 in-scope markdown files to exactly one type, confirmed by walking the selectors against the trees |
 | 2026-08-13 | Execute → delivery-001 gate PASS | A+ | All 7 tasks `Done`; `delivery_state` → Done. Gate tier **Large** (complexity 21: tasks=7, depth=4, risk=7, consults=3), **3 cycles**, E+ → C+ → A+. 9 findings, all Fixed. Cycle 1's 8 included a CRITICAL (a stale ledger shape in `review-rubric.md` that would have made `grade.sh` report A+ for any ledger written to it) and the false `## Change Log`-last contract that `KB-02` itself asserted. Cycle 2 caught a regression in cycle 1's own fix. One deferred quick-check row is **Accepted** rather than resolved — a pre-existing three-way self-contradiction in `reviewer-ledger-schema.md` genuinely outside this delivery's scope. Three execution decisions recorded in `deliveries/delivery-001/STATE.md § Cross-phase Q&A` (Q1–Q3), including one in-scope schema addition. AC-2 proved in both directions — evidence in `ac-2-proof.md`. Ready for delivery-002 |
+| 2026-08-13 | Execute → delivery-002 gate PASS | A+ | All 5 tasks `Done`; `delivery_state` → Done. Gate tier **Medium** (complexity 13), **4 cycles**, C → D+ → C+ → A+. 14 findings, all Fixed. The 20 internal READMEs deleted and their `doc-internal` type retired by FR-10; the canonical trees typed (295 files → 290 in-scope population); 8 KB docs at bare `contracts: []` dispositioned; the `contracts:` → `review-criteria:` data rename completed **with shape conversion**, since string entries have no `id` and could never be cited; AC-2 re-proved on a file this delivery populated. Cycle 1's through-line was legacy debt left in files opened to add a declaration; `G-08` was added to close the one gap the mechanism reported about itself. One class defect took three sweeps to close because the first two greps were filtered. Ready for delivery-003 |
 
 ---
 
