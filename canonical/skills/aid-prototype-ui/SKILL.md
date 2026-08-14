@@ -4,8 +4,10 @@ description: >
   A ui kind-sibling of /aid-prototype -- build a THROWAWAY low-fidelity UI
   wireframe/mock + interaction flow NOW to validate a UX direction, then present
   what it shows and hand the real build off. Resolves nothing; isolated and
-  throwaway. This file carries no logic of its own -- its full behavior is defined
-  by canonical/skills/aid-prototype/SKILL.md, with "ui" as the prototype target.
+  throwaway. For a KEPT UI design meant to inform the real build rather than a
+  throwaway to validate a direction, use /aid-design-ui instead. This file carries
+  no logic of its own -- its full behavior is defined by
+  canonical/skills/aid-prototype/SKILL.md, with "ui" as the prototype target.
 allowed-tools: Read, Glob, Grep, Bash, Write, Edit, Agent
 argument-hint: "<screen/flow> -- the UI screen(s)/flow whose direction to validate"
 ---

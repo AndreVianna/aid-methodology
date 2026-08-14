@@ -1,9 +1,11 @@
 ---
 name: aid-design
 description: >
-  Produce a KEPT design artifact NOW -- a UX/interaction flow, a component or
-  interface design, an architecture sketch, with accessibility notes -- meant to
-  inform the real build. Single-shot; grounded in the Knowledge Base
+  Produce a KEPT design artifact NOW for a subject with no dedicated `design`
+  row -- a UX/interaction flow, a component or interface design, with
+  accessibility notes -- meant to inform the real build. This is the catch-all:
+  when a dedicated `/aid-design-<artifact>` row exists for the subject, use that
+  row instead. Single-shot; grounded in the Knowledge Base
   (.aid/knowledge/) and the project source (patterns, conventions, architecture).
   It RESOLVES NOTHING: it presents the design; you decide, and the build is a
   separate /aid-create* step. Produced by the aid-architect agent and
@@ -11,7 +13,7 @@ description: >
   build, so its correctness matters). For a THROWAWAY model to merely validate a
   direction, use /aid-prototype instead. Allocates a work-NNN folder.
 allowed-tools: Read, Glob, Grep, Bash, Write, Edit, Agent
-argument-hint: "<subject> -- what to design (a flow, a component/interface, a UI, an architecture sketch)"
+argument-hint: "<subject> -- what to design (a flow, a component/interface, a UI; use a dedicated /aid-design-<artifact> row when one exists)"
 ---
 
 # Design (produce a kept design, resolve nothing)

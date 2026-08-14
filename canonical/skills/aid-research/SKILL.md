@@ -11,7 +11,8 @@ description: >
   sources are allowed and encouraged but supplementary, cited with URL + access
   date. A KB<->web contradiction is surfaced to you with its reason, never
   silently resolved. Produced by the aid-researcher agent and independently
-  verified by aid-reviewer before you see it. Allocates a work-NNN folder.
+  verified by aid-reviewer before you see it. For a problem not yet formed into
+  an answerable question, use /aid-brainstorm instead. Allocates a work-NNN folder.
 allowed-tools: Read, Glob, Grep, Bash, Write, Edit, Agent
 argument-hint: "<question> -- an open technical question to investigate"
 ---
