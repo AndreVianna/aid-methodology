@@ -9,10 +9,9 @@ This template defines the structure for `.aid/works/{work}/REQUIREMENTS.md` — 
 
 ## Conventions
 
-- **Change Log is mandatory.** Every modification — initial creation, cross-reference updates, targeted re-interviews — gets an entry.
+- **No Change Log section.** Git records this document's history — author, date, and full diff — at higher fidelity than a hand-maintained table, and without drift. This is the same reason `.aid/knowledge/` docs carry no Change Log (see the tracking-discipline rule in `CLAUDE.md` / `AGENTS.md`); it applies identically here. Use `git log --follow` on this file.
 - **Sections can be marked N/A** if not applicable to the project.
 - **`*(pending)*`** marks sections not yet addressed during the interview.
-- **Cross-reference runs** add Change Log entries with source `/aid-describe (cross-reference)`.
 - **File is uppercase** (`REQUIREMENTS.md`) — it's a first-class artifact at the work root, `.aid/works/{work}/REQUIREMENTS.md`.
 
 ---
@@ -24,12 +23,6 @@ This template defines the structure for `.aid/works/{work}/REQUIREMENTS.md` — 
 
 - **Name:** *(pending)*
 - **Description:** *(pending)*
-
-## Change Log
-
-| Date | Change | Source |
-|------|--------|--------|
-| {date} | Initial interview started | /aid-describe |
 
 ## 1. Objective
 
@@ -87,12 +80,8 @@ This template defines the structure for `.aid/works/{work}/REQUIREMENTS.md` — 
 ## Notes
 
 - Sections not yet discussed during the interview should contain `*(pending)*` as a placeholder.
-- The Change Log tracks the full history of the document. Example entries after cross-reference:
-
-  ```
-  | 2026-03-15 | Updated NFRs: added latency target from load-test results | /aid-describe (cross-reference) |
-  | 2026-03-20 | Revised scope: moved mobile app to Out of Scope per stakeholder | /aid-describe |
-  ```
+- Document history is git's job, not this file's. `git log --follow -p` on this path gives every
+  change with author, date, and diff.
 
 - The stakeholder's own language is preferred in Objective and Problem Statement. Don't rewrite their words into technical jargon.
 - Acceptance Criteria should be testable — "the system is fast" is not a criterion; "API response < 200ms p95" is.

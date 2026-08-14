@@ -62,7 +62,7 @@ Validates REQUIREMENTS.md against the full KB and codebase:
 
 The grade is a snapshot at run start — does NOT change after answering questions. Run again for updated grade.
 
-Questions are presented one at a time. Answers update REQUIREMENTS.md immediately with Change Log entries.
+Questions are presented one at a time. Answers update REQUIREMENTS.md immediately.
 
 ### State 7: DONE
 

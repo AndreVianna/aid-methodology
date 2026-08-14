@@ -42,7 +42,7 @@ After requirements are approved, run `/aid-define {work}` to decompose into feat
 
 ## REQUIREMENTS.md Structure
 
-10 sections plus a mandatory Change Log:
+10 sections:
 
 1. **Objective** — What are we building and why? In the stakeholder's words.
 2. **Problem Statement** — What problem does this solve? What's the current pain?
@@ -123,7 +123,7 @@ Downstream phases (Specify, Plan, Detail) can inject Q&A entries into work `STAT
 
 ## Output
 
-- `.aid/works/{work}/REQUIREMENTS.md` — structured requirements with Change Log, 10 sections.
+- `.aid/works/{work}/REQUIREMENTS.md` — structured requirements, 10 sections.
 - `.aid/works/{work}/work `STATE.md` `## Interview State`` — process tracking (section status, Q&A, grade, review history).
 
 Hand-off: run `/aid-define {work}` after requirements are approved.
@@ -141,7 +141,6 @@ Downstream phases find requirements are wrong, incomplete, or contradictory. The
 ## Quality Checklist
 
 - [ ] All 10 sections addressed (or explicitly N/A).
-- [ ] Change Log has an entry for every modification.
 - [ ] Objective and Problem Statement use stakeholder language, not jargon.
 - [ ] Scope has both In Scope and Out of Scope.
 - [ ] Assumptions are explicit — nothing silently inferred.

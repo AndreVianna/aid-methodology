@@ -230,14 +230,44 @@ assert_exit_eq "$?" 2 "DW21 missing argument exits 2"
 bash "$SCRIPT" "${TMP}/does-not-exist.md" >/dev/null 2>&1
 assert_exit_eq "$?" 2 "DW22 nonexistent plan exits 2"
 
-# --- DW23 real plan: reproduces a hand-authored map byte-for-byte ----------
-# The strongest available evidence that the derivation matches human intent.
-REAL="${REPO_ROOT}/.aid/works/work-005-knowledge-graph/PLAN.md"
-if [[ -f "$REAL" ]]; then
-    bash "$SCRIPT" "$REAL" >/dev/null 2>&1
-    assert_exit_zero "$?" "DW23 derives without error from a real 6-delivery plan"
-else
-    echo "  (skip DW23 — no local work-005 PLAN.md)"
-fi
+# --- DW23 a multi-delivery plan with a 4-column table and shared ids --------
+# Was previously a read of a live .aid/works/ PLAN.md. Removed: a permanent
+# artifact must not depend on a transient work folder (CLAUDE.md
+# transient-work-folder invariant), even softly. The fixture below reproduces the
+# shape that mattered — several deliveries in one file, a 4-column table, and a
+# delivery whose tasks are not numbered from 001.
+cat > "${TMP}/plan-multi.md" <<'EOF'
+## Execution Graph
+
+### delivery-001 execution graph
+
+| Task | Depends On | Gate wave | Lane |
+|------|-----------|-----------|------|
+| task-001 | — | 1 | 1 |
+| task-002 | task-001 | 1 | 2 |
+
+### delivery-002 execution graph
+
+| Task | Depends On | Gate wave | Lane |
+|------|-----------|-----------|------|
+| task-030 | — | 1 | 1 |
+| task-031 | task-030 | 1 | 2 |
+| task-032 | task-030 | 1 | 2 |
+
+### delivery-003 execution graph
+
+| Task | Depends On |
+|------|-----------|
+| task-040 | task-032 |
+EOF
+
+out="$(bash "$SCRIPT" "${TMP}/plan-multi.md" 2>&1)"
+rc=$?
+assert_exit_zero "$rc" "DW23 derives across three deliveries in one plan"
+assert_output_contains "$out" 'delivery: 002' "DW24a each delivery gets its own block"
+assert_output_contains "$out" 'wave 2: task-031, task-032' \
+    "DW24b tasks not numbered from 001 sort correctly"
+assert_output_contains "$out" 'wave 1: task-040' \
+    "DW24c a dependency on an earlier delivery does not delay wave 1"
 
 test_summary
