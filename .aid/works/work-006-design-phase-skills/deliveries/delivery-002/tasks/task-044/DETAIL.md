@@ -65,12 +65,23 @@ Shape: 6 sections matching .claude/aid/templates/delivery-plans/task-template.md
     lifecycle previously committed"* (§6b) rather than as-built content, which is the distinction
     §6a exists to preserve. V26 runs here.
 - **Two authored runs and four non-realizing invocations, and the two words carry the delivery's two
-  senses.** An **authored run** realizes -- it allocates a `work-NNN` folder inside the scratch
-  project and executes the full-verify loop -- while a **non-realizing invocation** (a refusal or a
-  routing exit) writes nothing and allocates nothing. The authored runs are V26's two
-  `/aid-create-architecture` runs; the non-realizing invocations are V6's `create`, V7's `create`,
-  and V18's `create` **and** `update`. V6, V7 and V18 refuse **by construction** -- that is what each
-  row tests -- so none produces a work folder, and none owes a `phase:` record.
+  senses.** An **authored run** realizes -- it writes its destination, consumes its seed and executes
+  the full-verify loop -- while a **non-realizing invocation** (a refusal or a routing exit) writes
+  nothing to the destination, leaves the seed in place and runs no verify loop. The authored runs are
+  V26's two `/aid-create-architecture` runs; the non-realizing invocations are V6's `create`, V7's
+  `create`, and V18's `create` **and** `update`. V6, V7 and V18 refuse **by construction** -- that is
+  what each row tests.
+
+  **Allocation is not part of that distinction: every one of the six invocations allocates.**
+  Allocation is unconditional skill shape -- `design-lifecycle.md § Skill shape -- Allocation` and its
+  binding table bind all 36 skills with no refusal or routing carve-out, feature-002 §3e records
+  REQUIREMENTS FR-3 as the tiebreaker, and the skills allocate at **INTAKE**, ahead of the GUARD that
+  refuses and the REALIZE that routes. What the contract scopes to the realizing path is seed
+  deletion, which is why seed survival rather than a folder's absence is the evidence these rows turn
+  on. An earlier revision of this task said a non-realizing invocation "allocates nothing"; that
+  premise was false against both the contract and the shipped skills -- it made the same criterion
+  unsatisfiable in task-016, where it was found -- and it is corrected here in the same pass rather
+  than left to fail this task later.
 - **V27 is static and is aggregated here**, over all four `create` bodies rather than one: for each,
   the CREATE state enumerates exactly three refusal conditions and the grep set returns nothing.
   task-035, task-036 and task-037 each asserted their own share at authoring time; this is the row
@@ -120,13 +131,15 @@ Shape: 6 sections matching .claude/aid/templates/delivery-plans/task-template.md
       its own precondition fails this criterion
 - [ ] F-pop is a git work tree (`git init` plus a baseline commit) **before** any row runs, so an empty
       `git status --porcelain` inside any copy is a real result rather than an exit-128 misread
-- [ ] **The three refusals are recorded as non-realizing**, each with the evidence that it allocated
-      no `work-NNN` folder inside its scratch project. V6, V7 and V18's two invocations fail their own
-      rows if they realize; this criterion makes the counting consequence explicit
-- [ ] Each **authored run** has its allocated work folder and the confirmed absence of a `phase:`
-      value recorded into this task's STATE.md notes **before** its scratch project is torn down. The
-      obligation is scoped to authored runs, because a non-realizing invocation allocates no work
-      folder and requiring a record from one would be unsatisfiable
+- [ ] **The three refusals are recorded as non-realizing**, each with the evidence the contract
+      scopes to the realizing path: the destination is unwritten, the seed is still present, and no
+      verify loop ran. The presence of an allocated `work-NNN` folder is **not** evidence either way
+      and must not be asserted against. V6, V7 and V18's two invocations fail their own rows if they
+      realize; this criterion makes the counting consequence explicit
+- [ ] Each **invocation** -- both authored runs and all four non-realizing ones -- has its allocated
+      work folder and the confirmed absence of a `phase:` value recorded into this task's STATE.md
+      notes **before** its scratch project is torn down. The obligation covers all six because
+      allocation precedes both the refusal and the routing exit
 - [ ] **This task mutates no shared tree:** `git status --porcelain` over `.aid/knowledge/`,
       `.aid/design/`, `.aid/settings.yml`, `.aid/works/`, `profiles/`, `.claude/` and `.cursor/` is
       **identical before and after** the task, and nothing is committed in this repository --

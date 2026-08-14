@@ -83,13 +83,26 @@ Shape: 6 sections matching .claude/aid/templates/delivery-plans/task-template.md
   | V16 (= E1) | a **fresh** `cp -a` copy of **F-designed** | one `/aid-create-mvp`, which **routes** | **non-realizing** |
 
   **Total authored runs: three**, plus **two non-realizing invocations**. The two words carry
-  the delivery's two senses: an **authored run** *realizes* -- it allocates a `work-NNN`
-  folder and executes feature-002 §3e's full-verify loop -- while a **non-realizing
-  invocation** (a readiness refusal or a routing exit) writes nothing and allocates nothing. V6 and V16 are refusal and routing **by
-  construction** -- that is what each row tests -- so neither produces a work folder, and
-  neither is counted in the run total or owes a `phase:` record. An earlier revision counted
-  them as `create` runs and then required a work-folder record from both, which was
-  unsatisfiable for exactly this reason and disagreed with task-023's use of the same words.
+  the delivery's two senses: an **authored run** *realizes* -- it writes its destination,
+  consumes its seed, and executes feature-002 §3e's full-verify loop -- while a
+  **non-realizing invocation** (a readiness refusal or a routing exit) writes nothing to the
+  destination, leaves the seed in place for the skill it routes to, and runs no verify loop.
+  V6 and V16 are refusal and routing **by construction** -- that is what each row tests -- so
+  neither is counted in the run total.
+
+  **Allocation is not part of that distinction, and a non-realizing invocation still
+  allocates.** Allocation is unconditional skill shape: `design-lifecycle.md § Skill shape --
+  Allocation` and its binding table (`Allocation via the Work Initiation Gate | Binds | Binds
+  | Binds`) bind all 36 skills without a refusal or routing carve-out, feature-002 §3e records
+  REQUIREMENTS FR-3 as the tiebreaker that settled it, and both `create` skills allocate at
+  **INTAKE step 2** -- before the GUARD that refuses and the REALIZE that routes. What the
+  contract *does* scope to the realizing path is seed deletion ("a routing exit leaves it for
+  the skill it routes to"), which is why the seed's survival, not a folder's absence, is the
+  evidence these two rows turn on. An earlier revision of this task asserted that a
+  non-realizing invocation "allocates nothing" and made an absent `work-NNN` folder the
+  acceptance evidence; that premise was false against both the contract and the shipped
+  skills, no correct implementation could satisfy it, and it was corrected here (and in
+  task-023, which used the same words) rather than by changing shipped allocation behaviour.
   Copies are not runs either, which is what keeps this task inside one agent session while
   still giving every mutating row an unmutated precondition.
 - **feature-003 rows to run**: V4 in `W` (each of the three `design` skills leaves
@@ -101,11 +114,11 @@ Shape: 6 sections matching .claude/aid/templates/delivery-plans/task-template.md
   (`/aid-create-mvp` with no `roadmap.md` routes to `/aid-create-roadmap`, naming it;
   `roadmap.md` still absent; `.aid/design/mvp.md` still present -- which F-designed supplies,
   since run 2 of the sequence wrote it).
-- **Record, for each of the three authored runs, the allocated work folder and the confirmed
+- **Record, for each of the five invocations, the allocated work folder and the confirmed
   absence of a `phase:` value in its `STATE.md`, into this task's STATE.md notes -- before the
-  scratch project is torn down.** The two non-realizing invocations (V6's refusal, V16's
-  routing exit) allocate no work folder, so there is nothing to record for them and none is
-  required; the acceptance criterion below is scoped the same way. V23 is a nine-skill sweep aggregated in task-023, and the evidence
+  scratch project is torn down.** All five allocate, including V6's refusal and V16's routing
+  exit, because allocation precedes both exits (see the allocation paragraph above); the
+  acceptance criterion below is scoped the same way. V23 is a nine-skill sweep aggregated in task-023, and the evidence
   lives inside scratch projects this task's own teardown destroys; capturing it is therefore
   this task's obligation, not the aggregator's.
 - **feature-002 rows to run**: B2 **part (b)** -- for each of the five rendered contracts
@@ -183,16 +196,21 @@ Shape: 6 sections matching .claude/aid/templates/delivery-plans/task-template.md
 - [ ] B3, asserted on **run 1 in `W`** -- a project with no `.aid/design/` before that run --
       which afterwards holds `.aid/design/README.md`, present and byte-identical to the
       installed template. It is asserted on a run V4 already authors, not on one of its own
-- [ ] Every **authored run** here has its allocated work folder and the confirmed absence of a
-      `phase:` value recorded **before** its scratch project is torn down -- the V23 evidence
-      task-023 aggregates. A teardown that destroys the record before it is written fails this
-      criterion. The obligation is scoped to authored runs because a **non-realizing
-      invocation allocates no work folder**, so requiring a record from V6's refusal or V16's
-      routing exit would be unsatisfiable by a correct implementation
+- [ ] Every **invocation** here -- all five, the three authored runs and the two non-realizing
+      ones alike -- has its allocated work folder and the confirmed absence of a `phase:` value
+      recorded **before** its scratch project is torn down -- the V23 evidence task-023
+      aggregates. A teardown that destroys the record before it is written fails this
+      criterion. The obligation covers all five because allocation happens at INTAKE, ahead of
+      both the GUARD refusal and the REALIZE routing exit, so a non-realizing invocation has a
+      work folder to record like any other
 - [ ] **V6 refuses and V16 routes -- and each is recorded as non-realizing**, with the
-      evidence that it allocated no `work-NNN` folder. A V6 that realizes, or a V16 that
-      writes `roadmap.md`, fails its own row anyway; this criterion makes the *counting*
-      consequence explicit so the run total and task-023's tally cannot drift apart
+      evidence being what the contract scopes to the realizing path: the destination is
+      unwritten (byte-identical, or still absent), the seed is still present, and no verify
+      loop ran. The presence of an allocated `work-NNN` folder is **not** evidence either way
+      and must not be asserted against -- see the allocation paragraph in § Scope. A V6 that
+      realizes, or a V16 that writes `roadmap.md`, fails its own row anyway; this criterion
+      makes the *counting* consequence explicit so the run total and task-023's tally cannot
+      drift apart
 - [ ] Tests are deterministic and setup/teardown is clean: F-base, `W`, both snapshots and
       every per-row copy live under `mktemp -d` and are removed on exit including on failure;
       two runs over one input produce identical outcomes. **The authored-run count is three**

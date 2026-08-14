@@ -105,11 +105,16 @@ Shape: 6 sections matching .claude/aid/templates/delivery-plans/task-template.md
   task -- but most of the work folders live inside scratch projects their own tasks tear down.
   So every task that runs one of the nine skills **records the allocated work folder and the
   confirmed absence of a `phase:` value into its own STATE.md notes before teardown**, and this
-  task aggregates those records. **Only
-  authored runs contribute**: a non-realizing invocation allocates no work folder and supplies
-  no record, which is why nine-of-nine coverage rests on the `create` verbs exercised by
-  task-015 and task-021 rather than on task-016's refusal and routing exit. Reading the live
-  state here is not possible and is not attempted.
+  task aggregates those records. Every invocation contributes a record, non-realizing ones
+  included: allocation happens at INTAKE, ahead of the GUARD refusal and the REALIZE routing
+  exit, so a refusal or a routing exit has an allocated work folder like any other run
+  (`design-lifecycle.md § Skill shape -- Allocation` and its binding table; feature-002 §3e,
+  with REQUIREMENTS FR-3 as the recorded tiebreaker). Nine-of-nine coverage still rests on the
+  `create` verbs exercised by task-015 and task-021, because those are the runs that reach the
+  verbs at all -- not because task-016's refusal and routing exit allocate nothing. An earlier
+  revision said they did; that premise was false against both the contract and the shipped
+  skills, and it was corrected here and in task-016 rather than by changing allocation
+  behaviour. Reading the live state here is not possible and is not attempted.
 - **feature-003 V19's deferred runtime half, with a named evaluator.** The drain's behavior
   at tag time cannot be exercised inside this work -- it needs a real release cut. Its
   evaluator is **`release-aid`'s own Step 9 close-out check**, rewritten in task-009 to
@@ -186,8 +191,10 @@ Shape: 6 sections matching .claude/aid/templates/delivery-plans/task-template.md
       repeat, F-bare's `design` run and the working tree's `design` run. **A seventh means a
       row built its own state instead of using the fixture the § Scope table assigns it; a
       fifth means a row was dropped.** The three routing exits are **non-realizing
-      invocations** -- they write nothing and allocate no `work-NNN` folder, so they are
-      counted separately and no `phase:` record is required of them
+      invocations** -- they write nothing to their destination, leave their seed in place and
+      run no verify loop, so they are counted separately. They do still allocate (allocation
+      precedes the routing exit), so each owes a work-folder + no-`phase:` record like any
+      other invocation
 - [ ] `git status --porcelain profiles/ .claude/ .cursor/` reports **exactly** what task-024
       left -- this task neither renders nor reverts -- and
       `git diff --exit-code -- tests/canonical/ site/scripts/__tests__/` is clean
