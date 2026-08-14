@@ -630,6 +630,14 @@ shortcuts:
     group: G3
     intent: "Develop a dashboard design in .aid/design/ before building it; writes a seed, builds nothing."
     repurpose: true
+  - name: aid-brainstorm
+    verb: brainstorm
+    artifact: ""
+    alias_of: null
+    default_type: DESIGN
+    group: G3
+    intent: "Diverge on an unformed problem, then converge to a .aid/design/ seed; resolves nothing."
+    repurpose: true
 
   # --- G8: Document family -- work-005 reframe of feature-010 --
   # `document` is a create/update ARTIFACT, not a verb. HAND-AUTHORED collapse skills.
