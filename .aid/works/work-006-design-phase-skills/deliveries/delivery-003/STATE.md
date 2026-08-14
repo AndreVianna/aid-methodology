@@ -97,6 +97,32 @@ so the delivery lifecycle MUST be independently authored.
      The work-level ## Cross-phase Q&A is a DERIVED union of all delivery Q&A sections plus any
      work-owner-authored work-level entries. KB Q&A targets .aid/knowledge/STATE.md (separate file). -->
 
+### Q1
+
+- **Category:** Requirements / Plan validity
+- **Impact:** Required
+- **State:** Pending
+- **Context:** `origin/master` (the work-004 merge) **retired the repo-wide count guard** --
+  `tests/canonical/check-skill-counts.mjs` is deleted (a ~462-line full delete). Its
+  replacements are `tests/canonical/test-doc-counts.sh`, scoped to the public-facing docs
+  only, plus criterion `G-01` in `authoring-conventions.md`, which is a criterion a reviewer
+  applies rather than a guard that runs. delivery-003 was planned against the retired guard
+  and still names it in **12 of its 25 task DETAILs** (task-050, 059, 062, 063, 065, 066,
+  067, 068, 069, 070, 071, 072), in its own BLUEPRINT, and in four feature SPECs
+  (feature-002 x5, feature-003 x3, feature-005 x2, feature-006 x5). **task-069 is the sharp
+  case: its entire subject is "The count guard extended, its two ratchets raised, and the
+  replay driven to zero" -- it is unexecutable as written, because the artifact it extends
+  no longer exists.** Several other tasks use the guard as their verification oracle, so
+  those oracles are now dangling rather than merely stale.
+- **Suggested:** Do not silently re-point the oracles. This is a re-planning decision, not a
+  gate fix: either (a) re-scope task-069 and the dependent oracles onto
+  `test-doc-counts.sh` + `G-01`, accepting that count-bearing statements inside `canonical/`
+  and `.aid/knowledge/` are now reviewer-enforced rather than guarded; or (b) reinstate a
+  count guard for the skill corpus, which reverses an owner decision another work just took;
+  or (c) drop the count-ratchet obligations from this delivery and route them to tech-debt.
+- **Answer:** {pending owner decision}
+- **Applied to:** {pending -- blocks delivery-003 Detail validity, not delivery-002}
+
 ### Q{N}
 
 - **Category:** {category, e.g., Architecture, Requirements, Security}
