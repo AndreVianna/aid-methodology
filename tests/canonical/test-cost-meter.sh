@@ -201,6 +201,61 @@ else
 fi
 rm -f "${FIX}/canonical/agents/aid-reviewer/AGENT.md"
 
+# --- CM28..CM33 the folded shapes -------------------------------------------
+# `folded` merges the per-feature technical design into REQUIREMENTS. The reason
+# the model needs a "task grounding" row at all is that merging MOVES cost
+# between stages: it removes per-feature gates (cheaper) while making the single
+# oracle every task reads bigger (dearer). A gate-only model would have scored
+# this decision wrong, and did -- an earlier hand calculation concluded folding
+# COSTS ~508k tokens because it grew the document without removing the gate.
+model_total() {
+    python3 "$METER" model --root "$FIX" --shape "$1" 2>/dev/null \
+        | awk '/^  TOTAL/{gsub(/,/,"",$2); print $2; exit}'
+}
+t_today="$(model_total today)"
+t_batch="$(model_total batched)"
+t_fold="$(model_total folded)"
+t_slice="$(model_total folded-sliced)"
+
+for pair in "batched:${t_batch}" "folded:${t_fold}" "folded-sliced:${t_slice}"; do
+    name="${pair%%:*}"; val="${pair##*:}"
+    if [[ -n "${val:-}" && -n "${t_today:-}" ]] && (( val < t_today )); then
+        pass "CM28+ '${name}' is cheaper than 'today' (${val} < ${t_today})"
+    else
+        fail "CM28+ '${name}' must be cheaper than 'today' — got '${val:-?}' vs '${t_today:-?}'"
+    fi
+done
+
+# Slicing only pays off if a task reads less than the whole oracle, so the sliced
+# variant must beat the unsliced one. If this ever inverts, the grounding model
+# is wrong.
+if [[ -n "${t_slice:-}" && -n "${t_fold:-}" ]] && (( t_slice < t_fold )); then
+    pass "CM31 folded-sliced beats folded (section reads beat whole-document reads)"
+else
+    fail "CM31 folded-sliced must beat folded — got '${t_slice:-?}' vs '${t_fold:-?}'"
+fi
+
+# The grounding row must actually respond to task count; if it does not, the row
+# is decorative and the folded comparison means nothing.
+grounding_bytes() {
+    # Row shape: "  task grounding   x16   809,856 B  ~202k tok" -> field 4.
+    python3 "$METER" model --root "$FIX" --shape folded --tasks "$1" 2>/dev/null \
+        | awk '/task grounding/{gsub(/,/,"",$4); print $4; exit}'
+}
+g1="$(grounding_bytes 1)"
+g20="$(grounding_bytes 20)"
+if [[ "${g1:-}" =~ ^[0-9]+$ && "${g20:-}" =~ ^[0-9]+$ ]] && (( g20 > g1 )); then
+    pass "CM32 task-grounding cost scales with --tasks (${g1} -> ${g20})"
+else
+    fail "CM32 task-grounding must scale with --tasks — got '${g1:-?}' -> '${g20:-?}'"
+fi
+
+# A "read" row carries no dispatch floor: grounding is extra bytes on a dispatch
+# that already happens, not a new agent boot. With one task and a tiny fixture
+# the grounding row must therefore be far smaller than any gate row.
+python3 "$METER" model --root "$FIX" --shape folded --tasks 1 >"${TMP}/rows.txt" 2>&1
+assert_file_contains "${TMP}/rows.txt" "task grounding" "CM33 the grounding row is reported"
+
 # --- CM26/CM27 --from-work must not present defaults as measurements --------
 # A flat/Lite work has no features/ and no BLUEPRINT, so SPEC/PLAN/BP fall back
 # to built-in defaults. Reporting those under the heading "artifact sizes from:

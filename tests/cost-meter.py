@@ -47,11 +47,24 @@
 #       Compare an after-inventory to the baseline. Exits 1 on any metric that
 #       grew by more than --tolerance percent (default 0 -- any growth fails).
 #
-#   cost-meter.py model [--root DIR] [--from-work DIR] [--shape today|batched]
+#   cost-meter.py model [--root DIR] [--from-work DIR] [--shape SHAPE]...
 #                       [--features N] [--deliveries N] [--tasks N] [--cycles N]
-#       Price one or more GATE SHAPES over identical inputs. Gates are 60-65% of
-#       a full-path work's cost, and `collect` cannot see them -- a gate's cost
+#       Price one or more PIPELINE SHAPES over identical inputs. Gates are 60-65%
+#       of a full-path work's cost, and `collect` cannot see them -- a gate's cost
 #       is a multiplication (features x deliveries x cycles), not a file size.
+#
+#       Shapes:
+#         today          a gate per feature after specify, a gate per delivery
+#                        after detail; each task grounds on REQUIREMENTS + its
+#                        own feature SPEC
+#         batched        same documents, gates batched into one per stage
+#         folded         the per-feature technical design becomes SECTIONS of
+#                        REQUIREMENTS: one oracle document, one gate over it
+#         folded-sliced  as folded, but a task reads only the section it traces
+#                        to (needs a task -> AC/section traceability field, which
+#                        does not exist yet -- a DETAIL currently cites its
+#                        delivery, not an acceptance criterion)
+#
 #       Prefer --from-work so artifact sizes are measured rather than assumed.
 #       Indicative in absolute terms; the RATIO between shapes is the signal.
 #
@@ -440,43 +453,87 @@ def artifacts_from_work(work: Path) -> tuple[dict[str, int], set[str]]:
     return out, measured
 
 
-def gate_shape(name: str, F: int, D: int, T: int, c: int, art: dict[str, int]
-               ) -> list[tuple[str, int, int, int, str]]:
-    """A gate shape as data: (label, points, artifact_bytes, cycles, fixer_role).
+SHAPES = ("today", "batched", "folded", "folded-sliced")
 
-    Cost per gate cycle = reviewer_floor + fixer_floor + 2 * artifact_bytes
-    (the reviewer reads the artifact, then the fixer reads it again).
+
+def gate_shape(name: str, F: int, D: int, T: int, c: int, art: dict[str, int]
+               ) -> list[tuple[str, int, int, int, str, str]]:
+    """A shape as data: (label, points, artifact_bytes, cycles, role, kind).
+
+    kind="gate"   a review cycle: reviewer floor + fixer floor + 2 x artifact
+                  (the reviewer reads it, then the fixer reads it again).
+    kind="read"   an artifact read folded into a dispatch that already happens,
+                  so no floor and one pass. This is how the ORACLE cost is
+                  counted: every task execution reads the statement of intent to
+                  know what it is building. Gate rows alone cannot answer whether
+                  merging documents helps, because merging moves cost between the
+                  gate stage and the grounding stage.
     """
-    per_delivery_tasks = max(1, T // max(1, D))
+    dt = max(1, T // max(1, D))          # tasks per delivery
+    exec_gate = ("per-task exec check", T, art["DET"] + CODE_PER_TASK, 1, "developer", "gate")
+
     if name == "today":
+        # A gate per feature after specify, a gate per delivery after detail.
+        # Each task grounds on REQUIREMENTS plus its own feature SPEC.
         return [
-            ("gate REQUIREMENTS",  1, art["REQ"],                              c, "architect"),
-            ("gate define",        1, art["REQ"],                              c, "architect"),
-            ("gate SPEC",          F, art["REQ"] + art["SPEC"],                c, "architect"),
-            ("gate PLAN",          1, art["PLAN"] + F * art["SPEC"],           c, "architect"),
-            ("gate DETAIL",        D, art["BP"] + per_delivery_tasks * art["DET"], c, "architect"),
-            ("delivery gate",      D, art["BP"] + per_delivery_tasks * art["DET"], c, "developer"),
+            ("gate REQUIREMENTS", 1, art["REQ"], c, "architect", "gate"),
+            ("gate define", 1, art["REQ"], c, "architect", "gate"),
+            ("gate SPEC (per feature)", F, art["REQ"] + art["SPEC"], c, "architect", "gate"),
+            ("gate PLAN", 1, art["PLAN"] + F * art["SPEC"], c, "architect", "gate"),
+            ("gate DETAIL (per delivery)", D, art["BP"] + dt * art["DET"], c, "architect", "gate"),
+            ("delivery gate", D, art["BP"] + dt * art["DET"], c, "developer", "gate"),
+            ("task grounding", T, art["REQ"] + art["SPEC"], 1, "developer", "read"),
         ]
+
     if name == "batched":
+        # Same documents, fewer gate points. Grounding is unchanged -- batching
+        # gates does not move where the oracle lives.
         return [
-            ("gate REQUIREMENTS",  1, art["REQ"],                              c, "architect"),
-            ("gate PLAN",          1, art["PLAN"],                             c, "architect"),
-            ("gate DETAIL (all)",  1, T * art["DET"],                          c, "architect"),
-            ("per-task exec check", T, art["DET"] + CODE_PER_TASK,             1, "developer"),
-            ("delivery gate (diff)", 1, T * art["DET"] + CODE_PER_TASK,        3, "developer"),
+            ("gate REQUIREMENTS", 1, art["REQ"], c, "architect", "gate"),
+            ("gate SPEC (batched)", 1, art["REQ"] + F * art["SPEC"], c, "architect", "gate"),
+            ("gate PLAN", 1, art["PLAN"], c, "architect", "gate"),
+            ("gate DETAIL (all)", 1, T * art["DET"], c, "architect", "gate"),
+            exec_gate,
+            ("delivery gate (diff)", 1, T * art["DET"] + CODE_PER_TASK, 3, "developer", "gate"),
+            ("task grounding", T, art["REQ"] + art["SPEC"], 1, "developer", "read"),
         ]
+
+    # folded: the per-feature technical design becomes sections of REQUIREMENTS,
+    # so there is ONE oracle document and one gate over it. Two consequences the
+    # numbers do not show: the cross-document contradiction class disappears
+    # (there is no second document to contradict), and the oracle stays prior to
+    # and independent of the implementation, which folding into task DETAILs
+    # would not.
+    if name in ("folded", "folded-sliced"):
+        oracle = art["REQ"] + F * art["SPEC"]
+        # sliced: a task reads only the section it traces to. Requires the task to
+        # cite an AC or section -- today a DETAIL cites its delivery, not an AC,
+        # so this variant is gated on that traceability field existing.
+        grounding = (art["REQ"] // max(1, F) + art["SPEC"]) if name.endswith("sliced") else oracle
+        return [
+            ("gate REQUIREMENTS+design", 1, oracle, c, "architect", "gate"),
+            ("gate PLAN", 1, art["PLAN"], c, "architect", "gate"),
+            ("gate DETAIL (all)", 1, T * art["DET"], c, "architect", "gate"),
+            exec_gate,
+            ("delivery gate (diff)", 1, T * art["DET"] + CODE_PER_TASK, 3, "developer", "gate"),
+            ("task grounding", T, grounding, 1, "developer", "read"),
+        ]
+
     raise ValueError(f"unknown shape: {name}")
 
 
 def price_shape(rows, floors: dict[str, int]) -> tuple[int, int, list[tuple[str, int, int]]]:
     """Return (total_bytes, gate_points, [(label, points, bytes), ...])."""
     out, total, points = [], 0, 0
-    for label, n, artifact, cycles, fixer in rows:
-        per_cycle = floors["reviewer"] + floors[fixer] + 2 * artifact
+    for label, n, artifact, cycles, role, kind in rows:
+        if kind == "gate":
+            per_cycle = floors["reviewer"] + floors[role] + 2 * artifact
+            points += n
+        else:
+            per_cycle = artifact
         cost = n * cycles * per_cycle
         out.append((label, n, cost))
         total += cost
-        points += n
     return total, points, out
 
 
@@ -613,8 +670,8 @@ def main(argv: list[str]) -> int:
     m.add_argument("--deliveries", type=int, default=4)
     m.add_argument("--tasks", type=int, default=16)
     m.add_argument("--cycles", type=int, default=5)
-    m.add_argument("--shape", action="append", choices=["today", "batched"],
-                   help="gate shape to price (repeatable; first is the comparison base)")
+    m.add_argument("--shape", action="append", choices=list(SHAPES),
+                   help="shape to price (repeatable; first is the comparison base)")
     m.set_defaults(fn=cmd_model)
 
     r = sub.add_parser("report", help="human-readable summary (never a gate)")
@@ -626,7 +683,7 @@ def main(argv: list[str]) -> int:
 
     args = ap.parse_args(argv)
     if getattr(args, "cmd", None) == "model" and not args.shape:
-        args.shape = ["today", "batched"]
+        args.shape = list(SHAPES)
     return int(args.fn(args))
 
 
