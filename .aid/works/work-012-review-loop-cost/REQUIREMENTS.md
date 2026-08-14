@@ -12,6 +12,7 @@
 | 2026-08-14 | Identity fields confirmed: Scoped Review Cycles and Criterion Oracles | /aid-describe |
 | 2026-08-14 | `work-011` reclassified from dependency to in-flight sibling (requester correction): it is still being processed, so nothing here may depend on its artifacts. AC-1's measurement made instrument-neutral, and C-2 added | /aid-describe |
 | 2026-08-14 | **Dependency set closed at one (owner decision).** `work-004` is the sole dependency; C-1 now says so and forbids another without an amendment. §4's out-of-scope bullet generalised from `work-011` to any in-flight work, and §8's conditional meter reuse withdrawn — FR-15 measures with its own local count | /aid-describe |
+| 2026-08-14 | **`work-004` merged to `master`.** C-1 restated from "pending merge" to landed; the work's one dependency is now on the mainline, so nothing it needs is in flight | /aid-describe |
 
 ## 1. Objective
 
@@ -180,11 +181,12 @@ guarding around it.
 
 ## 7. Constraints
 
-- **C-1** **`work-004` is this work's only dependency.** It is pending merge, and its
-  declared-criteria mechanism — the type registry, the criteria-by-level table, and the
-  `review-criteria:` frontmatter field — is the substrate both remedies extend. Nothing
-  else is depended on, and no other in-flight work may become a dependency without an
-  explicit owner decision that amends this constraint.
+- **C-1** **`work-004` is this work's only dependency, and it has landed.** It merged to
+  `master` on 2026-08-14, so its declared-criteria mechanism — the type registry, the
+  criteria-by-level table, and the `review-criteria:` frontmatter field — is now on the
+  mainline and is the substrate both remedies extend. This work is therefore unblocked:
+  nothing it needs is in flight. Nothing else is depended on, and no other in-flight work
+  may become a dependency without an explicit owner decision that amends this constraint.
 - **C-2** Every other live work is a read-only reference. `work-011` in particular is in
   flight and unmerged, and nothing here depends on it — not its folded artifact shape, not
   its traceability ids, not its cost meter. One file overlaps,

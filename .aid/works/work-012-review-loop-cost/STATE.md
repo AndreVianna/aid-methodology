@@ -8,7 +8,7 @@ user_approved: no
 lifecycle: Paused-Awaiting-Input
 phase: Describe
 active_skill: aid-describe
-updated: "2026-08-14T19:22:00Z"
+updated: "2026-08-14T19:42:00Z"
 pause_reason: "Requirements drafted and complete -- awaiting owner approval and the four Q&A answers below"
 block_reason: --
 block_artifact: --
@@ -23,13 +23,15 @@ Lifecycle`, `### Tasks lifecycle`, `## Delivery Gate`) and their four frontmatte
 scalars are deliberately absent per the work-state template: each delivery's own
 lifecycle and gate will live in its `delivery-NNN/STATE.md`.
 
-Base branch is `work-004` (pending merge), not `master` -- this work extends the
-declared-review-criteria mechanism that work introduced, and that mechanism does not
-exist on `master`.
+This work was opened on a branch based on `work-004`, because it extends the
+declared-review-criteria mechanism that work introduced. **`work-004` merged to `master`
+on 2026-08-14**, so that mechanism is now on the mainline and this branch tracks `master`
+directly.
 
-**`work-004` is the only dependency** (owner decision, REQUIREMENTS.md C-1). Every other
-live work, `work-011` included, is a read-only reference. Adding a second dependency
-requires an owner decision that amends C-1 -- it is not something a later phase may assume.
+**`work-004` is the only dependency, and it has landed** (owner decision,
+REQUIREMENTS.md C-1). Nothing this work needs is in flight. Every other live work,
+`work-011` included, is a read-only reference. Adding a second dependency requires an
+owner decision that amends C-1 -- it is not something a later phase may assume.
 
 ## Pipeline State
 
@@ -113,6 +115,7 @@ sufficient:
 | 2026-08-14 | Describe: FIRST-RUN -> CONTINUE -> COMPLETION | -- | All ten sections filled from the L5 brief and re-derived against disk |
 | 2026-08-14 | Describe: COMPLETION -- paused | -- | PAUSE-FOR-USER-DECISION. Awaiting approval + Q-01..Q-04 |
 | 2026-08-14 | Describe: constraint amendment (owner) | -- | Dependency set closed at one: `work-004` only. C-1 rewritten, C-2 generalised, the conditional meter reuse in §8 withdrawn. Still paused |
+| 2026-08-14 | Describe: dependency discharged | -- | `work-004` merged to `master` (PR #190); branch merged `master` and now tracks it. C-1 restated as landed. Still paused on approval + Q-01..Q-04 |
 
 ---
 
