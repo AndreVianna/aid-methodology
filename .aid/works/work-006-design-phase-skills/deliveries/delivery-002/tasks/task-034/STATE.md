@@ -1,6 +1,6 @@
 ---
-state: Pending
-review: "--"
+state: Done
+review: 'Quick check clean; note mawk-vs-gawk pre-existing env failures in domain-doc-matrix/doc-set-mapping suites (not caused by this task)'
 elapsed: "--"
 notes: "--"
 ticket_ref: "--"
