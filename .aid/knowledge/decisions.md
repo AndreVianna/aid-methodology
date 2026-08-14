@@ -17,7 +17,16 @@ intent: |
   The significant decisions that shaped AID and why they were made — the rationale a
   newcomer cannot reconstruct from the artifacts alone. Records decisions and reasoning
   (what / why / rejected alternatives / status / evidence), not a restatement of state.
-contracts: []
+review-criteria:
+  - id: F-01
+    kind: validate
+    criterion: >
+      Every `## Dn` decision section has a matching row in the Summary Table, and no id is used
+      twice.
+    severity: MEDIUM
+    why: >
+      The table is how a reader finds a decision; a section missing from it is unreachable, and
+      a duplicated id makes a cite ambiguous.
 ---
 
 # Decisions

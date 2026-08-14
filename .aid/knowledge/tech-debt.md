@@ -24,7 +24,9 @@ intent: |
   Severity-tagged open technical and methodology debt with locations, risk, and
   remediation. Includes security observations (as debt items) and the non-obvious
   gotchas a change will trip. Diagnosis, not a sprint plan.
-contracts: []
+review-criteria: []  # nothing is true of this doc alone. Its one distinctive risk -- a
+                     # resolved item left visible -- is G-03 at the global level, and
+                     # restating it here would be a finding under FR-5.
 ---
 
 # Tech Debt

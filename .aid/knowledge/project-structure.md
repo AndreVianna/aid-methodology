@@ -15,7 +15,15 @@ owner: architect
 audience: [developer, architect]
 intent: |
   Repository layout, top-level directory purposes, and file-inventory shape. Read this to understand the on-disk organization of the project before navigating any subtree.
-contracts: []
+review-criteria:
+  - id: F-01
+    kind: validate
+    criterion: >
+      Every top-level directory present in the repository appears in the directory tree here.
+    severity: MEDIUM
+    why: >
+      This tree is how an agent orients before it edits; a directory missing from it reads as
+      one that does not exist.
 ---
 
 # Project Structure

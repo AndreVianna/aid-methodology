@@ -149,6 +149,7 @@ in the ledger's `Doc` column. A finding citing no id, or an id resolving nowhere
 | G-07 | `*` | validate | Every in-scope markdown file resolves to exactly one type in the registry above | HIGH | FR-10 backstop; an untyped file has no resolved criteria and drifts unchecked |
 | KB-01 | `kb-doc` | validate | Required frontmatter is present and single-line: `objective`, `summary`, `sources` | HIGH | lint-graded; a missing or malformed field misroutes the doc |
 | KB-02 | `kb-doc` | validate | Exactly one concern per doc, and the layout holds: frontmatter, title, index, content sections, and no history section | MEDIUM | mixing concerns is a boundary smell; layout is a fixed contract, and a history section drifts from git |
+| KB-04 | `kb-meta` | validate | Only the top-level fields are checked -- that they are present and current; the body is not content-graded | LOW | a meta doc orients a reader to the KB rather than asserting project facts, so there is little in its body that can be wrong about the project |
 | KB-03 | `kb-generated` | exclude | Content is not graded; only that the generator ran (build-verify) | — | the generator is the oracle (C-5) |
 | SK-01 | `skill-authored` | validate | Every agent named in a Dispatch table resolves to `canonical/agents/<name>/` | HIGH | a skill dispatching a non-existent agent fails at run time |
 | SK-02 | `skill-generated` | exclude | Carries no file-level `review-criteria:` block; type-level criteria only | — | rebuilt from `shortcut-catalog.yml`; anything hand-written is erased on the next run |

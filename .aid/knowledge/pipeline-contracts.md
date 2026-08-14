@@ -21,7 +21,15 @@ intent: |
   The typed data contracts between AID pipeline phases — artifact hand-offs, state-machine
   transitions, the grading gate, and the feedback loops. Read this when modifying a skill,
   an artifact template, or any phase boundary.
-contracts: []
+review-criteria:
+  - id: F-01
+    kind: validate
+    criterion: >
+      Every loopback row names a skill that exists as a directory under `canonical/skills/`.
+    severity: HIGH
+    why: >
+      These rows are the routing table an agent follows at a phase boundary, so a row naming a
+      skill that does not exist dead-ends the run rather than failing visibly here.
 ---
 
 # Pipeline Contracts
