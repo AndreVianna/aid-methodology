@@ -9,7 +9,8 @@ description: >
   it is placed. Produced by the aid-tech-writer agent and verified by
   aid-reviewer. NEVER writes into .aid/knowledge/ (that is /aid-update-kb's
   territory). Allocates a work-NNN folder. The genre skills
-  (/aid-document-decision, ...) and /aid-create-diagram delegate here.
+  (/aid-document-decision, ...) and /aid-create-diagram delegate here. To develop a
+  document's direction as a reusable design seed first, use /aid-design-document.
 allowed-tools: Read, Glob, Grep, Bash, Write, Edit, Agent
 argument-hint: "<subject> -- what to document (optionally a kind: adr, runbook, tutorial, changelog, diagram, ...)"
 ---
@@ -58,6 +59,9 @@ approval) -> DONE**. Print the `[State: NAME] -- {purpose}` entry line on each s
    else enter the resolved path), **then** allocate (`pipeline.path: lite`, `initiator:
    aid-create-document`, `lifecycle: Running`, `active_skill: aid-create-document`;
    `phase` not driven).
+6. **Read the design seed, if present.** If `.aid/design/document.md` exists, read it as
+   prior context before drafting; it is an input, never a substitute, and is not modified
+   by this run.
 
 **Advance:** AUTHOR.
 

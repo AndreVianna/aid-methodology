@@ -47,6 +47,9 @@ State machine: **INTAKE -> AUTHOR -> VERIFY (loop) -> PRESENT [human gate, diff]
    (`worktree-lifecycle.sh create <work-id> <name>`, STOP on a non-zero exit or empty path,
    else enter the resolved path), **then** allocate (`initiator: aid-update-document`;
    `phase` not driven).
+5. **Read the design seed, if present.** If `.aid/design/document.md` exists, read it as
+   prior context before drafting; it is an input, never a substitute, and is not modified
+   by this run.
 
 **Advance:** AUTHOR.
 
