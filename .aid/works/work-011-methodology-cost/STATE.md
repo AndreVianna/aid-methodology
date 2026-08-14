@@ -8,7 +8,7 @@ user_approved: yes
 lifecycle: Running
 phase: Execute
 active_skill: none
-updated: "2026-08-14T15:45:00Z"
+updated: "2026-08-14T17:25:00Z"
 pause_reason: --
 block_reason: --
 block_artifact: --
@@ -44,8 +44,8 @@ to prevent, so it is recorded here rather than quietly corrected.
 | 002 | Artifact discipline | Done | Change Log removed repo-wide; AC verifiability rule |
 | 003 | Traceability | Done | `AC-N` ids; task `Source` cites them |
 | 004 | Artifact folding | Blocked | features->§11 landed; BLUEPRINT->PLAN and the Lite reduction need the Q4 sentinel decision first |
-| 005 | Derivation over authoring | In Progress | wave-map derived; Lite graph-from-DETAILs outstanding |
-| 006 | Render and close-out | In Progress | rendered once mid-work to clear CI; owed again after feature 004 |
+| 005 | Derivation over authoring | Blocked | wave-map derived (AC-7/AC-8 met); the Lite graph-from-DETAILs half is blocked behind AC-13, itself blocked on Q4 |
+| 006 | Render and close-out | Done (re-open on any canonical edit) | rendered + resynced; all 10 CI checks green at 92f6406b. sync_dogfood.py now scripts the previously-undocumented half |
 
 ## Acceptance Criteria State
 
@@ -64,7 +64,7 @@ to prevent, so it is recorded here rather than quietly corrected.
 | AC-11 | Met | phase 5a |
 | AC-12 | Not met — BLOCKED | See Q4: BLUEPRINT presence is the flat-layout sentinel in 3 lockstep implementations |
 | AC-13 | Not met — BLOCKED on AC-12 | The Lite layout is identified BY the file AC-12 deletes |
-| AC-14 | Partially met | rendered once; goes stale again with the remaining work |
+| AC-14 | Met at 92f6406b | render-drift, canonical helper suites, both installer jobs and coverage-parity all green. Re-opens on any further canonical edit |
 
 ## Lifecycle History
 
