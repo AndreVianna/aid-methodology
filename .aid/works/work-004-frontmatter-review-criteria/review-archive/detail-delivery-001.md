@@ -1,7 +1,0 @@
-| # | Severity | Status | Doc | Line | Description | Evidence |
-|---|---|---|---|---|---|---|
-| 1 | [CRITICAL] | Fixed | task-004/DETAIL.md | 15-26 | FR-6 override-surfacing (reviewer records resolved severity + overriding file's `why` in the finding's `Evidence` cell) absent from every task. | Added to task-004 scope (c) + AC; SPEC mandates it at lines 28/142. task-004 now names override + Evidence recording. |
-| 2 | [HIGH] | Fixed | task-003, task-004 | task-004 depends | task-003 and task-004 both edit `aid-reviewer/AGENT.md` + `reviewer-ledger-schema.md` with no edge → parallel-wave clobber risk. | task-004 `Depends on` now includes task-003, serializing the shared-file edits; a note explains why. |
-| 3 | [HIGH] | Fixed | task-001/DETAIL.md | 14-27 | FR-10 backstop criterion (every in-scope file resolves to one registry row) had no authoring task. | Added to task-001 scope + AC; SPEC lines 139-140/299. task-001 (which authors the tables) now owns it. |
-| 4 | [MEDIUM] | Fixed | task-001/DETAIL.md | 14-27 | The two-limb `rendered` exclusion (+ `agent-context`) not named in task-001's criteria-authoring scope. | Added both global exclusions with the two-limb provenance keying to task-001 scope + AC (SPEC lines 123-129 / §2). |
-| 5 | [MEDIUM] | Fixed | task-002, task-004 | task-004 | The "a finding citing no id / an unresolvable id is itself a defect" corollary stated in no task. | Added to task-004 scope (d) + AC; SPEC lines 154-155. |
