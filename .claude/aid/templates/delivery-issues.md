@@ -8,7 +8,9 @@
 > **Status:** Open | Resolved | Accepted
 
 This file aggregates all `[HIGH]` findings that were deferred from per-task quick-checks (written
-to `work-NNN/STATE.md ## Quick Check Findings`). It is the input to the delivery gate reviewer
+to each task's `quick_check` key -- full path: `quick_check.findings` in its `STATE.yml`; flat
+path: the escaped scalar at `tasks_lifecycle.task-NNN.quick_check`, known-issues.md § KI-005). It
+is the input to the delivery gate reviewer
 (step 2 REVIEW of `aid-execute`'s DELIVERY-GATE flow). After the gate passes, every row is updated
 to `Resolved` or `Accepted`.
 
@@ -31,7 +33,8 @@ Instances live at `.aid/works/work-NNN/delivery-NNN-issues.md`. Template source:
   - `Open` — not yet reviewed by the delivery gate.
   - `Resolved` — gate reviewer confirmed the issue was fixed during the gate FIX cycle.
   - `Accepted` — gate reviewer accepted the issue as a known risk / non-blocking; rationale
-    recorded in the delivery gate block of `STATE.md ## Delivery Gates`.
+    recorded in the owning delivery's `delivery_gate.issue_list` (STATE.yml); the work-level
+    Delivery Gates view is DERIVED at read time from these per-delivery entries.
 
 > **Schema note (IQ11 — Resolved 2026-05-24):** Task-020 scope originally proposed a richer
 > 6-column schema (adding `Source File:Line` and `Deferred At` columns). Reverted to the
@@ -39,5 +42,5 @@ Instances live at `.aid/works/work-NNN/delivery-NNN-issues.md`. Template source:
 > written by per-task quick-checks via `writeback-state.sh --append-issue`
 > (concurrent-writer-safe via sentinel-file lock) and **read** by the per-delivery gate as
 > input context. Richer per-finding metadata (file:line refs, timestamps) lives in the
-> per-task `## Quick Check Findings` blocks in work `STATE.md`. See feature-004 SPEC
+> per-task `quick_check` key (STATE.yml). See feature-004 SPEC
 > Alignment Update (IQ11 bullet) for the full rationale.

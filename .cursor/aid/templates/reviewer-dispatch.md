@@ -70,6 +70,67 @@ The reviewer MUST NOT open any file not listed here, except to:
   reviewer may open `foo.sh` to verify the citation but does not grade `foo.sh`)
 - Look up a named rubric definition
 
+#### State files are never artifacts (the rule)
+
+A state file — `STATE.md` (legacy) or `STATE.yml`, at any of the three levels
+(work-root, `deliveries/delivery-NNN/`, or
+`deliveries/delivery-NNN/tasks/task-NNN/`), in either the flattened or the full
+layout — is **NEVER listed in `{{ARTIFACTS}}`**. State churn appearing in a
+reviewed diff is not a finding, and — this is the half reviewers get wrong —
+**it is not an OOS row either**: an OOS row is an observation *about an
+artifact*, and a state file is not one; it is pipeline-written data, not
+authored content, so there is nothing for an OOS row to observe.
+
+Excluding state from being *read as an artifact* is not the same as excluding
+it from being *written to*. The reviewer still writes its outcome (grade,
+findings, Status) into state (A-3) — that write is a downstream effect of the
+review, not a subject of it, and nothing here changes it.
+
+#### `filter_reviewable_artifacts` — the filter
+
+Modeled on the KB's own exclusion function, `list_reviewable` in
+[`aid-discover/references/doc-set-resolve.md`](../../skills/aid-discover/references/doc-set-resolve.md)
+(which keeps M3/M4 keystone-gate ingestion off `kb-category: meta` KB docs) —
+same intent, applied to the work-tree instead of the KB, and defined here
+rather than there because this exclusion is about the reviewable-artifact
+surface a dispatch builds, not the KB's own doc-set. Reads candidate artifact
+paths, one per line, on stdin; drops every state-file path and passes every
+other path through unchanged.
+
+```bash
+# filter_reviewable_artifacts — reads candidate artifact paths (one per line)
+# on stdin, drops every state-file path and echoes the rest, one per line.
+# A state file is always named STATE.md (legacy) or STATE.yml, whether it
+# sits at the work root, at deliveries/delivery-NNN/, or at
+# deliveries/delivery-NNN/tasks/task-NNN/ — the basename alone identifies it
+# at every level, in both the flattened and the full layout, so no directory
+# pattern is needed. Authored artifacts (REQUIREMENTS.md, SPEC.md, PLAN.md,
+# BLUEPRINT.md, tasks/task-NNN/DETAIL.md) never share that basename and pass
+# through untouched.
+#
+# The `|| true` is load-bearing, not defensive habit: `grep -v` exits 1 when it
+# emits no lines, so a change set consisting ONLY of state files -- the most
+# common commit shape in this pipeline, since every `writeback-state.sh` write
+# produces one -- would otherwise abort a caller running under `set -e`. The
+# correct answer for that input is an empty artifact list and exit 0, not a
+# failed dispatch.
+filter_reviewable_artifacts() {
+  grep -Ev '(^|/)STATE\.(md|yml)$' || true
+}
+```
+
+Applied at the derivation point that `## Brief generation` (below) already
+mandates; defined once, here, and referenced from there rather than restated.
+
+The match is on basename, so it is repo-wide rather than work-tree-scoped. That
+is deliberate: no authored artifact anywhere is named `STATE.md`/`STATE.yml`, so
+there is no path this can drop by mistake. It does also match the discovery-area
+ledger `.aid/knowledge/STATE.md`, which is harmless — that path is never a
+member of a work-tree artifact list in the first place, and its exclusion
+remains **owned** by `list_reviewable` in `doc-set-resolve.md`. This filter does
+not take that ownership over, and a test for this filter must not assert
+anything about the KB ledger.
+
 ### CONTEXT
 
 **Descriptive background only.** Tells the reviewer what the artifact IS and what
@@ -197,11 +258,14 @@ Skill renders them at dispatch time (bash heredoc, small render helper, or
 inline string substitution).
 
 **Deriving `{{ARTIFACTS}}` — always from disk, never from memory.** For
-PR-level reviews, derive from `git diff --name-only <base>..HEAD` filtered
-by the OUT-OF-SCOPE list. For per-task/per-delivery reviews, derive from
-the executor's produced-file list. Building the list from memory of what
-was worked on tends to omit incidentally-touched files; the reviewer then
-can't grade what it doesn't know about.
+PR-level reviews, derive from
+`git diff --name-only <base>..HEAD | filter_reviewable_artifacts`, then
+filtered by the OUT-OF-SCOPE list. For per-task/per-delivery reviews, derive
+from the executor's produced-file list, piped through the same
+`filter_reviewable_artifacts` (`§ARTIFACTS UNDER REVIEW` above — defined
+once, applied here). Building the list from memory of what was worked on
+tends to omit incidentally-touched files; the reviewer then can't grade what
+it doesn't know about.
 
 **Inspectability requirement:** the rendered brief is logged with the dispatch
 record so it can be inspected after the fact (per work-003 traceability).

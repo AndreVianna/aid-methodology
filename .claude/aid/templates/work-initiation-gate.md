@@ -120,7 +120,7 @@ The gate hands back to the starter, which now performs, in this order:
 3. **Only now**, inside the entered worktree, allocate and scaffold: create
    `.aid/works/<work-id>-<name>/` (reusing the `<work-id>` resolved in step 1
    above -- do **not** re-derive it from the fresh worktree's own, still-empty
-   `.aid/works/`) and scaffold `STATE.md`, exactly as the starter did before
+   `.aid/works/`) and scaffold `STATE.yml`, exactly as the starter did before
    this worktree automation existed.
 
 The gate changed nothing about the allocation mechanics; it only gated the
@@ -128,7 +128,7 @@ decision to allocate, and now also gates *where* that allocation lands.
 
 ### 3b. CONTINUATION -> route to the chosen work's resume entry point, then STOP
 
-The gate allocates **nothing**. It reads the chosen work's `STATE.md`
+The gate allocates **nothing**. It reads the chosen work's `STATE.yml`
 frontmatter (`pipeline.path`, `phase`, `lifecycle`, and -- for flattened works --
 `delivery_state`) and routes the user to that work's correct existing resume
 door, per this decision (first match wins):
@@ -138,7 +138,7 @@ door, per this decision (first match wins):
 | Flattened Lite work halted at the shortcut engine's APPROVAL-HALT (`lifecycle: Paused-Awaiting-Input` **and** `delivery_state: Specified`) | `/aid-execute <work>` |
 | Deploy in progress (`active_skill: aid-deploy` -- an interrupted `/aid-deploy`; Deploy is a separate path, no longer a `phase:`) | `/aid-deploy <work>` |
 | Mid-Execute or beyond (`phase: Execute`, or `delivery_state` is `Executing`/`Gated`/`Done`) | `/aid-execute <work>` |
-| Partial full-path work still in a definition phase -- route to the skill matching `STATE.md` `phase` | `Describe` -> `/aid-describe <work>`; `Define` -> `/aid-define <work>`; `Specify` -> `/aid-specify <work>`; `Plan` -> `/aid-plan <work>`; `Detail` -> `/aid-detail <work>` |
+| Partial full-path work still in a definition phase -- route to the skill matching `STATE.yml` `phase` | `Describe` -> `/aid-describe <work>`; `Define` -> `/aid-define <work>`; `Specify` -> `/aid-specify <work>`; `Plan` -> `/aid-plan <work>`; `Detail` -> `/aid-detail <work>` |
 | Already `Completed` / `Canceled` | Tell the user the work is finished (nothing to resume) and stop; suggest a NEW work if they meant to start fresh |
 
 **If the resolved route resumes in THIS SAME invocation** (today this is only
