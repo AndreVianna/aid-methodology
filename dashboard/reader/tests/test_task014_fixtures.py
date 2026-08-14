@@ -931,8 +931,9 @@ block_artifact: --
             self.skipTest(f"Node script error: {result.stderr[:300]}")
         node_data = json.loads(result.stdout.strip())
 
-        self.assertEqual(node_data["task_count"], 3,
-                         "Node: legacy work must have 3 tasks")
+        self.assertEqual(node_data["task_count"], 0,
+                         "Node: legacy monolithic work has no tasks, mirroring Python "
+                         "(task-016: tasks[] never populated from the monolithic path; SPEC.md L-3)")
         self.assertEqual(node_data["lifecycle"], "Running",
                          "Node: lifecycle must be Running for legacy monolithic work")
 
