@@ -1,5 +1,43 @@
 # work-009 Crash Recovery Report
 
+> **UPDATE — execution phase fully recovered.** The initial report below was written
+> before I found the **48 sub-agent transcripts** under
+> `…/0a0f750a…/subagents/`. Those captured the entire execution phase. The
+> "unrecoverable code" section below is now **superseded** — see this update.
+
+## Execution-phase recovery (from sub-agent transcripts)
+The dispatched sub-agents recorded their own tool calls. Replaying every Write/Edit across
+all 48 transcripts + the orchestrator, in global timestamp order, onto the `master` base
+reconstructed **168 files** — **157 byte-for-byte clean**, 11 with a minor gap.
+
+**Recovered scripts (the ones you asked about):**
+- `canonical/aid/scripts/execute/writeback-state.sh` — the new YAML STATE.yml writer (1,718 lines)
+- `dashboard/reader/reader.py` (1,671), `parsers.py` (2,165), `derivation.py`, `state_schema.py`
+- `dashboard/server/reader.mjs` — Node reader twin (5,484 lines; 34 of 35 edits applied)
+- `bin/aid`, `bin/aid.ps1`, migration scripts, install libs
+
+**Recovered skills/templates:** 40+ `canonical/skills/**` retargeted to YAML, plus 3 new
+`.yml` templates (`work-state-template.yml`, `task-state-template.yml`, `delivery-state-template.yml`)
+and 6 new `STATE.yml` fixtures.
+
+**Recovered tests:** 18 `tests/canonical/*.sh` + ~30 dashboard test suites.
+
+**Recovered work docs (full now):** SPEC (107/111 edits), REQUIREMENTS, PLAN, BLUEPRINT, all 21 task DETAILs.
+
+### The 11 files with a minor gap (one or more edits didn't cleanly re-apply — spot-check these)
+`STATE.md` (tracking file — restored from stitched reads instead), `SPEC.md` (4/111),
+`BLUEPRINT.md` (1), `bin/aid` (1/10), `canonical/aid/templates/shortcut-engine.md` (1/23),
+`canonical/skills/aid-describe/references/elicitation-engine.md` (1), `dashboard/scripts/writeback-state.sh`
+(9/12 — this is a vendored twin; the canonical writer is clean), `dashboard/server/reader.mjs` (1/35),
+`tests/canonical/test-housekeep-workfolder-safety.sh` (1), task-006 & task-018 DETAILs (1 each).
+
+Cause: a few edits sat on top of a Bash/`sed`-produced intermediate state that isn't captured as a
+tool Write/Edit, so the base drifted by a few lines. Everything else is exact.
+
+---
+_Original (pre-sub-agent-discovery) report follows._
+
+
 **Recovered:** 2026-08-13 (after a disk-wipe erased the `work-009-refactor` worktree,
 including its `.git`; the branch was never pushed).
 **Source:** the Claude Code session transcript that survived the wipe at

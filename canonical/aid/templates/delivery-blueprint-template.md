@@ -2,7 +2,7 @@
 
 [!NOTE]
 This is the DELIVERY-LEVEL BLUEPRINT.md template. It is the IMMUTABLE DEFINITION for this delivery.
-Written once by aid-plan / aid-specify; not a state file. State lives in delivery-NNN/STATE.md.
+Written once by aid-plan / aid-specify; not a state file. State lives in delivery-NNN/STATE.yml.
 
 > **Delivery:** delivery-NNN
 > **Work:** work-NNN-{name}

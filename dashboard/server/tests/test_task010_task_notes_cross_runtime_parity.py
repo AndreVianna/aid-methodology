@@ -110,21 +110,27 @@ def _sliced_server_mjs_source() -> str:
 
 
 def _make_flat_work(root: Path, work_id: str, notes: str = "--") -> Path:
-    """A minimal FLAT-layout work with a '### Tasks lifecycle' row for task-001."""
+    """A minimal FLAT-layout work with a `tasks_lifecycle` entry for task-001
+    (work-009-refactor task-016: was a STATE.md with a fenced frontmatter
+    block + a '### Tasks lifecycle' markdown table -- both retired,
+    SPEC.md sec:D-4. `AID_STATE_FILE` is an explicit override to
+    `STATE.yml` for this op (task-020), so the fixture MUST use that
+    filename or the writer dies "$STATE_FILE does not exist" (exit 1) --
+    exactly the SP-19b half-retargeted-AID_STATE_FILE failure mode this
+    suite exists to catch)."""
     work_dir = root / ".aid" / "works" / work_id
     (work_dir / "tasks" / "task-001").mkdir(parents=True, exist_ok=True)
     (work_dir / "BLUEPRINT.md").write_text("# Blueprint\n", encoding="utf-8")
     (work_dir / "tasks" / "task-001" / "DETAIL.md").write_text("# task-001\n", encoding="utf-8")
-    (work_dir / "STATE.md").write_text(
-        "---\n"
+    (work_dir / "STATE.yml").write_text(
         "lifecycle: Running\n"
         "updated: '2026-01-01T00:00:00Z'\n"
-        "---\n\n"
-        "# Work State\n\n"
-        "### Tasks lifecycle\n\n"
-        "| Task | State | Review | Elapsed | Notes |\n"
-        "| --- | --- | --- | --- | --- |\n"
-        f"| task-001 | Pending | -- | -- | {notes} |\n",
+        "tasks_lifecycle:\n"
+        "  task-001:\n"
+        "    state: Pending\n"
+        "    review: --\n"
+        "    elapsed: --\n"
+        f"    notes: {notes}\n",
         encoding="utf-8",
     )
     return work_dir
@@ -189,8 +195,8 @@ class TestTaskSetNotesCrossRuntimeParity(unittest.TestCase):
         self.assertEqual(node_status, 200, node_body)
         self.assertEqual(py_status, node_status)
         self.assertEqual(json.loads(py_body), json.loads(node_body))
-        self.assertIn("hello from prefixed id", (py_work_dir / "STATE.md").read_text(encoding="utf-8"))
-        self.assertIn("hello from prefixed id", (node_work_dir / "STATE.md").read_text(encoding="utf-8"))
+        self.assertIn("hello from prefixed id", (py_work_dir / "STATE.yml").read_text(encoding="utf-8"))
+        self.assertIn("hello from prefixed id", (node_work_dir / "STATE.yml").read_text(encoding="utf-8"))
 
     def test_empty_value_clears_to_null_sentinel_both_runtimes(self):
         py_root = self._tmp / "py-repo"
@@ -209,10 +215,10 @@ class TestTaskSetNotesCrossRuntimeParity(unittest.TestCase):
         self.assertEqual(py_status, 200, py_body)
         self.assertEqual(node_status, 200, node_body)
         self.assertEqual(json.loads(py_body), json.loads(node_body))
-        py_content = (py_work_dir / "STATE.md").read_text(encoding="utf-8")
-        node_content = (node_work_dir / "STATE.md").read_text(encoding="utf-8")
-        self.assertIn("| task-001 | Pending | -- | -- | -- |", py_content)
-        self.assertIn("| task-001 | Pending | -- | -- | -- |", node_content)
+        py_content = (py_work_dir / "STATE.yml").read_text(encoding="utf-8")
+        node_content = (node_work_dir / "STATE.yml").read_text(encoding="utf-8")
+        self.assertIn("notes: --", py_content)
+        self.assertIn("notes: --", node_content)
         self.assertNotIn("had notes", py_content)
         self.assertNotIn("had notes", node_content)
 

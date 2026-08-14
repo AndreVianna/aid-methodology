@@ -92,5 +92,5 @@ Already covered by Specify:
 ## Feedback Loops
 
 - **→ Discovery:** KB insufficient → Q&A to `.aid/knowledge/STATE.md` `## Q&A (Pending)`
-- **→ Specify:** SPEC ambiguous → Q&A to `.aid/works/{work}/STATE.md` `## Cross-phase Q&A`
-- **→ Interview:** Priority unclear → Q&A to `.aid/works/{work}/STATE.md` `## Cross-phase Q&A`
+- **→ Specify:** SPEC ambiguous → append to the `qa` sequence in the relevant delivery's `STATE.yml`
+- **→ Interview:** Priority unclear → append to the `qa` sequence in the relevant delivery's `STATE.yml`

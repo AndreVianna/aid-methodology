@@ -1772,13 +1772,17 @@ fi
 # Asserts:
 #   C01: Bash __migrate-repo on a fully-valid settings.yml WITH inline comments
 #        + alignment on every required scalar exits 0.
-#   C02: Bash: format_version: 3 stamped at the top of the rewritten flat file.
+#   C02: Bash: format_version: 4 stamped at the top of the rewritten flat file.
 #   C03: Bash: type: is flattened to a top-level line with the comment dropped.
 #   C04: Bash: max_parallel_tasks: is dropped (execution: block removed).
 #   C05: Bash: heartbeat_interval: is flattened to top level, comment dropped.
 #   C06: Bash: name: value is flattened to top level, comment dropped.
 #   C07: Bash: bare name: with a trailing comment is still repaired (empty-detect).
-#   C08: PS1 parity: same fixture -> flat format-3 rewrite (comments dropped).
+#   C08: PS1 parity: same fixture -> flat format-3 rewrite, format_version: 4
+#        stamped (task-015 addendum, SP-16/AC-10 -- promoted from an
+#        unconditional pass()-stub to a real PWSH invocation now that bin/aid.ps1
+#        carries its own Sc-ConvertRepo / $AidSupportedFormat=4 twin; see
+#        known-issues.md KI-011).
 # ===========================================================================
 
 echo ""
@@ -1823,10 +1827,12 @@ _TC_RC=$?
 
 assert_exit_eq "$_TC_RC" 0 "PAR077-C01 Bash __migrate-repo valid+commented fixture -> exit 0"
 
-# format_version: 3 stamped at the top of the rewritten flat file.
+# format_version: 4 stamped at the top of the rewritten flat file.
+# task-015 addendum (SP-16/AC-10): was "3" -- stale since task-008 bumped
+# AID_SUPPORTED_FORMAT 3 -> 4 for the STATE.md -> STATE.yml conversion.
 _TC_FMT_LINE=$(grep '^format_version:' "${_TC_REPO_SH}/.aid/settings.yml" | head -1)
-assert_eq "$_TC_FMT_LINE" "format_version: 3" \
-    "PAR077-C02 Bash: format_version: 3 stamped on the rewritten flat file"
+assert_eq "$_TC_FMT_LINE" "format_version: 4" \
+    "PAR077-C02 Bash: format_version: 4 stamped on the rewritten flat file"
 
 # Spot-check individual lines: flattened to top level, comments dropped (full rewrite).
 _TC_TYPE_LINE=$(grep '^type:' "${_TC_REPO_SH}/.aid/settings.yml")
@@ -1879,11 +1885,38 @@ assert_eq "$_TC_BARE_NAME" "$_TC_BARE_EXPECTED_NAME" \
     "PAR077-C07 Bash: bare name: with trailing comment still detected as empty and repaired (top-level, flat schema)"
 
 # ---- PS1 half ----
-# PAR077-C08 NOTE: byte-identical check removed -- bin/aid.ps1 does the same full
-# read-then-rewrite as bin/aid, stamping format_version: 3 and dropping comments
-# (config-schema redesign). The idempotency contract (2nd run = byte-identical) is
-# in Gate 6 of test-aid-migrate.sh. OOS for this suite (stamp/flatten assertion only).
-pass "PAR077-C08 PS1: format_version: 3 stamped, flat schema written (comments dropped, full rewrite)"
+# PAR077-C08 NOTE: byte-identical check n/a -- bin/aid.ps1 does the same full
+# read-then-rewrite as bin/aid, dropping comments (config-schema redesign). The
+# idempotency contract (2nd run = byte-identical) is in Gate 6 of
+# test-aid-migrate.sh. This assertion is scoped to stamp + flatten parity only.
+# task-015 addendum (SP-16/AC-10): promoted from an unconditional pass()-stub --
+# bin/aid.ps1 now carries its own Sc-ConvertRepo / $AidSupportedFormat=4 twin
+# (see known-issues.md KI-011), so the real PWSH invocation is exercised here
+# rather than assumed.
+if [[ -n "$PWSH" ]]; then
+    _PS_HOME_C=$(newhome); setup_ps1_home "${_PS_HOME_C}"
+    _TC_REPO_PS="$(mktemp -d "${TMP}/t077cps.XXXXXX")"
+    mkdir -p "${_TC_REPO_PS}/.aid"
+    cp "${_TC_SETTINGS_FILE}" "${_TC_REPO_PS}/.aid/settings.yml"
+
+    AID_HOME="${_PS_HOME_C}" AID_LIB_PATH="${_PS_HOME_C}/lib/AidInstallCore.psm1" \
+        "$PWSH" -NoProfile -File "${_PS_HOME_C}/bin/aid.ps1" \
+        __migrate-repo "${_TC_REPO_PS}" >/dev/null 2>&1
+    _TC_PS_RC=$?
+
+    assert_exit_eq "$_TC_PS_RC" 0 "PAR077-C08a PS1 __migrate-repo valid+commented fixture -> exit 0"
+
+    _TC_PS_FMT_LINE=$(grep '^format_version:' "${_TC_REPO_PS}/.aid/settings.yml" | head -1)
+    assert_eq "$_TC_PS_FMT_LINE" "format_version: 4" \
+        "PAR077-C08 PS1: format_version: 4 stamped on the rewritten flat file"
+
+    assert_file_not_contains "${_TC_REPO_PS}/.aid/settings.yml" "max_parallel_tasks" \
+        "PAR077-C08b PS1: max_parallel_tasks dropped (execution: block removed)"
+else
+    pass "PAR077-C08a PS1 __migrate-repo valid+commented fixture -> exit 0 [SKIPPED: pwsh absent]"
+    pass "PAR077-C08 PS1: format_version: 4 stamped, flat schema written (comments dropped, full rewrite) [SKIPPED: pwsh absent]"
+    pass "PAR077-C08b PS1: max_parallel_tasks dropped (execution: block removed) [SKIPPED: pwsh absent]"
+fi
 
 # ===========================================================================
 # PAR078-U: aid update self parity (feature-001 / C3 migration: scan removed)
@@ -2021,8 +2054,8 @@ fi
 # a repo CWD:
 #   S01: stamp-less repo + AID_NO_MIGRATE=1 -> NO WARN in output (Bash).
 #   S02: stamp-less repo + AID_NO_MIGRATE=1 -> NO WARN in output (PS1).
-#   S03: format-current repo (format_version=3) -> no WARN (Bash).
-#   S04: format-current repo (format_version=3) -> no WARN (PS1).
+#   S03: format-current repo (format_version=4) -> no WARN (Bash).
+#   S04: format-current repo (format_version=4) -> no WARN (PS1).
 #   S05: stamp-less repo + no AID_NO_MIGRATE -> WARN printed (Bash).
 #   S06: stamp-less repo + no AID_NO_MIGRATE -> WARN printed (PS1).
 #   S07: stamp-less repo + AID_MIGRATE_YES=1 -> WARN printed (lazy); no scan
@@ -2039,7 +2072,12 @@ echo "=== PAR080-S: format-gate / lazy-stamp encounter parity ==="
 # CODE_HOME: a copy of bin/aid self-located for these tests.
 # STATE_HOME: throwaway AID_HOME (registry, no code).
 # S_REPO: a stamp-less repo (era-a settings.yml, no format_version line).
-# S_REPO_STAMPED: a format-current repo (settings.yml with format_version: 3).
+# S_REPO_STAMPED: a format-current repo (settings.yml with format_version: 4).
+# task-015 addendum (SP-16/AC-10): this fixture literally read "format_version: 3"
+# before -- since task-008 bumped AID_SUPPORTED_FORMAT 3 -> 4, that value no
+# longer means "format-current"; it means "one version stale," which would make
+# S03/S04 assert the OPPOSITE of what their names claim (a WARN would legitimately
+# fire). See known-issues.md KI-011.
 # ---------------------------------------------------------------------------
 _S_CODE_HOME=$(newhome); setup_sh_home "${_S_CODE_HOME}"
 _S_STATE_HOME="$(mktemp -d "${TMP}/s080state.XXXXXX")"
@@ -2072,7 +2110,7 @@ printf '%s\n' '{"manifest_version":1,"aid_version":"1.0.0","tools":{"claude-code
 _S_REPO_STAMPED="$(mktemp -d "${TMP}/s080repo_stamped.XXXXXX")"
 mkdir -p "${_S_REPO_STAMPED}/.aid"
 cat > "${_S_REPO_STAMPED}/.aid/settings.yml" << 'S080STAMPEOF'
-format_version: 3
+format_version: 4
 project:
   name: stamped-test
   description: format-current repo with format_version stamp
@@ -2123,7 +2161,7 @@ _S03_OUT=$(cd "${_S_REPO_STAMPED}" && \
     AID_HOME="${_S_STATE_HOME}" AID_NO_UPDATE_CHECK=1 \
     bash "${_S_CODE_HOME}/bin/aid" status 2>&1 || true)
 if grep -q "WARN: aid: this project uses an older format" <<<"${_S03_OUT}"; then
-    fail "PAR080-S03 Bash format-current repo: must NOT warn (format_version=3 == supported)"
+    fail "PAR080-S03 Bash format-current repo: must NOT warn (format_version=4 == supported)"
 else
     pass "PAR080-S03 Bash format-current repo: no WARN (steady-state, SEC-6 no-loop)"
 fi
@@ -2135,7 +2173,7 @@ if [[ -n "$PWSH" ]]; then
         "$PWSH" -NoLogo -NonInteractive -File "${_S_PS_CODE_HOME}/bin/aid.ps1" \
         status 2>&1 | sed 's/\x1b\[[0-9;]*m//g' || true)
     if grep -qi "older format\|aid update" <<<"${_S04_OUT}"; then
-        fail "PAR080-S04 PS1 format-current repo: must NOT warn (format_version=3 == supported)"
+        fail "PAR080-S04 PS1 format-current repo: must NOT warn (format_version=4 == supported)"
     else
         pass "PAR080-S04 PS1 format-current repo: no WARN (steady-state)"
     fi
@@ -2216,11 +2254,18 @@ fi
 #
 # AC1: Constant-parity drift check.
 #   V01: AID_SUPPORTED_FORMAT integer in bin/aid EQUALS $AidSupportedFormat
-#        in bin/aid.ps1 (grep both; compare). Both must equal 3.
+#        in bin/aid.ps1 (grep both; compare). Both must equal 4.
 #        CI fails if either constant drifts.
+#        task-015 addendum (SP-16/AC-10): was "3" -- stale since task-008
+#        bumped AID_SUPPORTED_FORMAT 3 -> 4 for the STATE.md -> STATE.yml
+#        conversion. See known-issues.md KI-011.
 #
-# AC2: Refuse-on-newer (format_version: 4) + byte/mtime identity of settings.yml.
-#   V02: Bash 'aid status' in a format_version: 4 repo -> non-zero exit.
+# AC2: Refuse-on-newer (format_version: 5) + byte/mtime identity of settings.yml.
+#   task-015 addendum: the "newer than supported" fixture value must stay ONE
+#   PAST whatever AID_SUPPORTED_FORMAT currently is -- it was 4 (newer than the
+#   old supported=3); now that supported=4, the same fixture value would be
+#   CURRENT (not newer), so it moves to 5 to keep testing the refuse path at all.
+#   V02: Bash 'aid status' in a format_version: 5 repo -> non-zero exit.
 #   V03: Bash refuse: settings.yml byte-identical after the call (no mutation).
 #   V04: Bash refuse: mtime of settings.yml unchanged after the call.
 #   V05: PS1 parity (skipped when pwsh absent): exit non-zero on newer-format repo.
@@ -2264,14 +2309,14 @@ if [[ -n "${_V01_BASH_CONST}" && -n "${_V01_PS1_CONST}" ]]; then
     assert_eq "${_V01_BASH_CONST}" "${_V01_PS1_CONST}" \
         "PAR009-V01 Bash<->PS1 format-constant parity: AID_SUPPORTED_FORMAT == AidSupportedFormat (both=${_V01_BASH_CONST})"
 fi
-# Both must equal 3 specifically (not just each other).
-assert_eq "${_V01_BASH_CONST}" "3" \
-    "PAR009-V01c bin/aid: AID_SUPPORTED_FORMAT == 3 (expected supported format)"
-assert_eq "${_V01_PS1_CONST}" "3" \
-    "PAR009-V01d bin/aid.ps1: AidSupportedFormat == 3 (expected supported format)"
+# Both must equal 4 specifically (not just each other).
+assert_eq "${_V01_BASH_CONST}" "4" \
+    "PAR009-V01c bin/aid: AID_SUPPORTED_FORMAT == 4 (expected supported format)"
+assert_eq "${_V01_PS1_CONST}" "4" \
+    "PAR009-V01d bin/aid.ps1: AidSupportedFormat == 4 (expected supported format)"
 
 # ---------------------------------------------------------------------------
-# V02-V04: Refuse-on-newer (format_version: 4) + byte/mtime identity (Bash).
+# V02-V04: Refuse-on-newer (format_version: 5) + byte/mtime identity (Bash).
 # ---------------------------------------------------------------------------
 _V_CODE_HOME=$(newhome); setup_sh_home "${_V_CODE_HOME}"
 _V_STATE_HOME="$(mktemp -d "${TMP}/v009state.XXXXXX")"
@@ -2279,7 +2324,7 @@ _V_STATE_HOME="$(mktemp -d "${TMP}/v009state.XXXXXX")"
 _V_REPO_NEWER="$(mktemp -d "${TMP}/v009newer.XXXXXX")"
 mkdir -p "${_V_REPO_NEWER}/.aid"
 cat > "${_V_REPO_NEWER}/.aid/settings.yml" << 'V009NEWEREOF'
-format_version: 4
+format_version: 5
 project:
   name: newer-format-test
   description: repo with format newer than CLI supports
@@ -2311,7 +2356,7 @@ rm -f "${_V02_TMP_OUT}"
 
 # V02: non-zero exit on newer-format repo.
 assert_exit_nonzero "${_V02_RC}" \
-    "PAR009-V02 Bash refuse-on-newer: aid status format_version:4 -> non-zero exit"
+    "PAR009-V02 Bash refuse-on-newer: aid status format_version:5 -> non-zero exit"
 
 # V03: byte-identical settings.yml after refuse (no mutation).
 _V02_SHA_AFTER=$(sha256sum "${_V_REPO_NEWER}/.aid/settings.yml" | cut -d' ' -f1)
@@ -2340,7 +2385,7 @@ if [[ -n "$PWSH" ]]; then
     _V_REPO_NEWER_PS="$(mktemp -d "${TMP}/v009newerps.XXXXXX")"
     mkdir -p "${_V_REPO_NEWER_PS}/.aid"
     cat > "${_V_REPO_NEWER_PS}/.aid/settings.yml" << 'V009NEWERPEOF'
-format_version: 4
+format_version: 5
 project:
   name: newer-format-ps1-test
   description: repo with format newer than CLI supports (PS1 fixture)
@@ -2366,7 +2411,7 @@ V009NEWERPEOF
     rm -f "${_V05_TMP_OUT}"
 
     assert_exit_nonzero "${_V05_RC}" \
-        "PAR009-V05 PS1 refuse-on-newer: aid.ps1 status format_version:4 -> non-zero exit"
+        "PAR009-V05 PS1 refuse-on-newer: aid.ps1 status format_version:5 -> non-zero exit"
 
     _V05_SHA_AFTER_PS=$(sha256sum "${_V_REPO_NEWER_PS}/.aid/settings.yml" | cut -d' ' -f1)
     assert_eq "${_V05_SHA_BEFORE_PS}" "${_V05_SHA_AFTER_PS}" \
@@ -2528,14 +2573,17 @@ assert_exit_eq "$RC_PS1" 0 "PAR029-W07 PS1 aid-update no-.aid/ dir -> exit 0 (CL
 assert_eq "$RC_SH" "$RC_PS1" "PAR029-W08 Bash/PS1 aid-update no-.aid/ exit code parity"
 
 # W11/W12: format-gate refuse message parity — refuse text identical across runtimes.
-# Run aid status in a repo with format_version: 4 (newer than supported).
+# Run aid status in a repo with format_version: 5 (newer than supported).
+# task-015 addendum (SP-16/AC-10): was format_version: 4 -- that WAS "newer than
+# supported" while AID_SUPPORTED_FORMAT was 3; now that it is 4, the fixture
+# moves to 5 to keep exercising the refuse path (see the PAR009-V02 note above).
 # The refuse error message text must be the same from both runtimes.
 SH_HOME_W2=$(newhome); setup_sh_home "${SH_HOME_W2}"
 PS_HOME_W2=$(newhome); setup_ps1_home "${PS_HOME_W2}"
 T_W2=$(newtarget)
 mkdir -p "${T_W2}/.aid"
 cat > "${T_W2}/.aid/settings.yml" << 'PAR029W2EOF'
-format_version: 4
+format_version: 5
 project:
   name: newer-format-par029w
   description: newer-than-supported format for refuse parity check
@@ -2559,7 +2607,7 @@ _W11_RC=$?
 _W11_OUT="$(cat "${_W11_TMP}")"; rm -f "${_W11_TMP}"
 
 assert_exit_nonzero "${_W11_RC}" \
-    "PAR029-W11 Bash aid-status format_version:4 -> non-zero exit (refuse)"
+    "PAR029-W11 Bash aid-status format_version:5 -> non-zero exit (refuse)"
 
 if [[ -n "$PWSH" ]]; then
     (cd "${T_W2}" && AID_HOME="${PS_HOME_W2}" AID_LIB_PATH="${PS_HOME_W2}/lib/AidInstallCore.psm1" \
@@ -2570,7 +2618,7 @@ if [[ -n "$PWSH" ]]; then
     _W12_OUT="$(cat "${_W12_TMP}" | sed 's/\x1b\[[0-9;]*m//g')"; rm -f "${_W12_TMP}"
 
     assert_exit_nonzero "${_W12_RC}" \
-        "PAR029-W12 PS1 aid-status format_version:4 -> non-zero exit (refuse)"
+        "PAR029-W12 PS1 aid-status format_version:5 -> non-zero exit (refuse)"
     # Refuse message text must appear in both runtimes (parity of the refuse surface).
     assert_output_contains "$_W11_OUT" "newer than this CLI supports" \
         "PAR029-W13 Bash refuse: 'newer than this CLI supports' in output"
@@ -2578,7 +2626,7 @@ if [[ -n "$PWSH" ]]; then
         "PAR029-W14 PS1 refuse: 'newer than this CLI supports' in output"
     # Parity: both refuse (non-zero) with same message pattern.
     assert_eq "${_W11_RC}" "${_W12_RC}" \
-        "PAR029-W15 Bash↔PS1 format-gate refuse exit code parity (format_version:4)"
+        "PAR029-W15 Bash↔PS1 format-gate refuse exit code parity (format_version:5)"
 else
     pass "PAR029-W12 PS1 format-gate refuse: exit non-zero [SKIPPED: pwsh absent]"
     pass "PAR029-W13 Bash format-gate refuse message check [SKIPPED: pwsh absent]"

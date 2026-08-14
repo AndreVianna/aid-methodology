@@ -1,3 +1,25 @@
+# task-009: Bump AID_SUPPORTED_FORMAT to 4 across the four lockstep carriers
+
+[!NOTE]
+This is the TASK-LEVEL DETAIL.md file. It is the IMMUTABLE DEFINITION for this task.
+Written once by the `/aid-refactor` shortcut engine's DETAIL state; not a state file. This is a
+flattened Lite work, so there is NO sibling `task-009/STATE.md` -- this task's mutable cells live
+only in the work-root state file's `### Tasks lifecycle` table.
+Shape: 6 sections matching .claude/aid/templates/delivery-plans/task-template.md.
+
+> **Execution protocol (binding on whoever executes this task -- no
+> exceptions):** the moment this task's `State` changes, write it --
+> `In Progress` before starting work, `In Review` before dispatching the
+> reviewer, and the terminal value (`Done` / `Failed`) at the end -- via
+> `writeback-state.sh --field State --value ...`. This applies equally
+> whether the main/orchestrator agent executes this task directly or
+> dispatches it to a sub-agent; neither may skip, batch, or defer these
+> writes. (`Blocked` is a distinct, orchestrator-assigned value for a
+> DIFFERENT, downstream task that depends on a failed one -- it is never
+> self-written by the task being executed.) Full mandate:
+> `aid-execute/references/state-execute.md § MANDATORY: State-Write
+> Protocol`.
+
 **Type:** CONFIGURE
 
 **Source:** work-009-refactor -> delivery-001
@@ -38,3 +60,13 @@
       fallback defaults (`lib/aid-install-core.sh:2124`, `bin/aid:2727`, `bin/aid:2813`) (SP-12).
 - [ ] The format-history comment block documents format 4 alongside 2 and 3, naming the breaking
       change and the migration step that performs it.
+- [ ] Against a repo stamped 3, `aid <cmd>` prints the existing `WARN: ... Run: aid update` and
+      `AID_NO_MIGRATE=1` still suppresses it; against a repo stamped 4 an older CLI still refuses
+      with its existing "newer than this CLI supports" error -- no new diagnostic is introduced
+      (NFR-8, SP-12).
+- [ ] After `aid update` on a legacy repo the stamp reads 4 (SP-12).
+- [ ] `_aid_format_gate`'s classify logic is otherwise byte-unchanged.
+- [ ] The Bash and PowerShell carriers stay in lockstep -- `tests/canonical/test-aid-cli-parity.sh`
+      is the oracle for that pairing and its expectations are updated in task-015, not here.
+- [ ] `VERSION` and the package manifests are unchanged by this task.
+- [ ] All section-6 quality gates pass.

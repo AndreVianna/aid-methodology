@@ -34,11 +34,14 @@ Each technical section follows the same cycle:
   knowledge/               ← shared KB
   works/
     work-NNN-{name}/
+      STATE.yml            ← process state (section status, Q&A, loopbacks) --
+                               there is no separate per-feature state file; every
+                               feature's process state lives in the work-root
+                               STATE.yml
       REQUIREMENTS.md
       features/
         feature-NNN-{name}/
           SPEC.md            ← product (requirements + technical specification)
-          STATE.md           ← process state (section status, Q&A, loopbacks)
 ```
 
 ## How It Works
@@ -47,7 +50,7 @@ Each technical section follows the same cycle:
 
 1. **Load context** — SPEC.md (requirements), REQUIREMENTS.md, KB docs, codebase
 2. **Determine sections** — 3 core (Data Model, Feature Flow, Layers & Components) + up to 20 conditional sections auto-activated or asked via default questions
-3. **Create STATE.md** — tracks section progress
+3. **Register in the work's STATE.yml** — tracks section progress
 4. **Run the loop** for each section:
    - **Propose:** concrete solution referencing specific files, classes, patterns
    - **Discuss:** free-form conversation until the user is satisfied
@@ -79,7 +82,7 @@ API Contracts · UI Specs · Events & Messaging · DDD Analysis · BDD Scenarios
 
 | State | Trigger | Action |
 |-------|---------|--------|
-| Initialize | No STATE.md | Load context, determine sections, start loop |
+| Initialize | No Feature State row in work STATE.yml | Load context, determine sections, start loop |
 | Continue | In Discussion | Resume loop at first pending section |
 | Spike Info | Spike Needed | Collect spike results, resume |
 | Blocked | Loopback pending | Check upstream, unblock or wait |
@@ -96,7 +99,8 @@ The agent is a **tech lead**, not an interviewer:
 ## Feedback Loops
 
 - **→ Discovery:** KB wrong → Q&A to `.aid/knowledge/STATE.md` `## Q&A (Pending)`
-- **→ Interview:** Requirements wrong → Q&A to `.aid/works/{work}/STATE.md` `## Cross-phase Q&A`
+- **→ Interview:** Requirements wrong → Q&A to the `qa` sequence (see the Workspace
+  accuracy note in `SKILL.md` for where this can actually be authored today)
 - **→ Spike:** Investigation needed → pause, record, resume later
 - **→ Split/Merge:** Feature scope → create/merge feature folders
 

@@ -7,18 +7,18 @@ detect both shapes). This module is the PERMANENT replacement for the ad hoc
 twin-diff inspection task-002 did during development.
 
 Fixture shapes follow work-001-lite-aid-skills's BLUEPRINT/DETAIL naming (the
-flat single-delivery layout + the nested per-unit-STATE.md hierarchy are the
+flat single-delivery layout + the nested per-unit-STATE.yml hierarchy are the
 two live shapes -- see test_flattened_layout_parity.py and
 test_task014_fixtures.py's TestHierarchicalWork for the canonical fixture
 shapes this module mirrors):
 
   - Lite-flat:   work-NNN/BLUEPRINT.md + work-NNN/tasks/task-NNN/DETAIL.md --
-                 no deliveries/, no delivery-NNN/ folder, no per-task STATE.md.
+                 no deliveries/, no delivery-NNN/ folder, no per-task STATE.yml.
                  The single implicit delivery's lifecycle, gate, Cross-phase
-                 Q&A, and per-task mutable cells (`### Tasks lifecycle` table)
-                 are AUTHORED directly in the work-root STATE.md.
+                 Q&A, and per-task mutable cells (the `tasks_lifecycle`
+                 mapping) are AUTHORED directly in the work-root STATE.yml.
   - Full-nested: work-NNN/deliveries/delivery-NNN/BLUEPRINT.md +
-                 deliveries/delivery-NNN/tasks/task-NNN/{DETAIL,STATE}.md --
+                 deliveries/delivery-NNN/tasks/task-NNN/{DETAIL.md,STATE.yml} --
                  mirrors features/feature-NNN/.
 
 Both reader twins (Python dashboard/reader/reader.py, Node
@@ -78,7 +78,7 @@ def _make_repo(tmp: Path) -> "tuple[Path, Path]":
 
 def _write_task(task_dir: Path, task_id: str, task_type: str, title: str,
                  state: "str | None" = None) -> None:
-    """Write a task-level DETAIL.md (+ optional STATE.md), same shape for both
+    """Write a task-level DETAIL.md (+ optional STATE.yml), same shape for both
     layouts -- only the parent directory differs: tasks/task-NNN/ directly under
     the work root for lite-flat, or deliveries/delivery-NNN/tasks/task-NNN/ for
     full-nested.
@@ -86,10 +86,12 @@ def _write_task(task_dir: Path, task_id: str, task_type: str, title: str,
     DETAIL.md is ALWAYS written -- both reader twins read short_name/type from
     it for every layout (reader.py _parse_task_spec_short_name/_parse_task_spec_type).
 
-    STATE.md is written ONLY when `state` is given (the full-nested layout's
-    per-task mutable cells). The lite-flat layout has NO per-task STATE.md --
-    its mutable cells (State/Review/Elapsed/Notes) live in the work-root
-    STATE.md's `### Tasks lifecycle` table instead (see _build_lite_flat_work).
+    STATE.yml is written ONLY when `state` is given (the full-nested layout's
+    per-task mutable cells). The lite-flat layout has NO per-task STATE.yml --
+    its mutable cells (state/review/elapsed/notes) live in the work-root
+    STATE.yml's `tasks_lifecycle` mapping instead (see _build_lite_flat_work).
+    (work-009-refactor task-016: was a '## Task State' bullet-heading STATE.md
+    -- retired, SPEC.md sec:D-4.)
     """
     task_dir.mkdir(parents=True, exist_ok=True)
     (task_dir / "DETAIL.md").write_text(
@@ -99,57 +101,58 @@ def _write_task(task_dir: Path, task_id: str, task_type: str, title: str,
         encoding="utf-8",
     )
     if state is not None:
-        (task_dir / "STATE.md").write_text(
-            "## Task State\n\n"
-            f"- **State:** {state}\n"
-            "- **Review:** --\n"
-            "- **Elapsed:** --\n"
-            "- **Notes:** --\n",
+        (task_dir / "STATE.yml").write_text(
+            f"state: {state}\n"
+            "review: --\n"
+            "elapsed: --\n"
+            "notes: --\n",
             encoding="utf-8",
         )
 
 
 _PIPELINE_STATE_BLOCK = (
-    "## Pipeline State\n\n"
-    "- **Lifecycle:** Running\n"
-    "- **Phase:** Execute\n"
-    "- **Active Skill:** aid-execute\n"
-    "- **Updated:** 2026-07-08T12:00:00Z\n"
-    "- **Pause Reason:** --\n"
-    "- **Block Reason:** --\n"
-    "- **Block Artifact:** --\n"
+    "lifecycle: Running\n"
+    "phase: Execute\n"
+    "active_skill: aid-execute\n"
+    "updated: '2026-07-08T12:00:00Z'\n"
+    "pause_reason: --\n"
+    "block_reason: --\n"
+    "block_artifact: --\n"
 )
 
 # Two Cross-phase Q&A entries (one Pending, one Answered) shared by both layout
 # fixtures -- the Answered entry proves pending_inputs excludes non-Pending rows;
 # a SECOND Pending entry (Q3) proves the union does not drop or duplicate entries.
+# (work-009-refactor task-016: was a '## Cross-phase Q&A' -> '### Q{N}' bullet-
+# heading block -- retired, SPEC.md sec:D-4's `qa` sequence shape.)
 _CROSSPHASE_QA_BLOCK = (
-    "## Cross-phase Q&A\n\n"
-    "### Q1\n\n"
-    "- **Status:** Pending\n"
-    "- **Category:** Architecture\n"
-    "- **Context:** Should we use a monorepo?\n\n"
-    "### Q2\n\n"
-    "- **Status:** Answered\n"
-    "- **Category:** Scope\n"
-    "- **Context:** Already resolved; kept for the historical record.\n\n"
-    "### Q3\n\n"
-    "- **Status:** Pending\n"
-    "- **Category:** Testing\n"
-    "- **Context:** Which fixture format should new tests use?\n"
+    "qa:\n"
+    "  - id: 1\n"
+    "    category: Architecture\n"
+    "    state: Pending\n"
+    "    context: Should we use a monorepo?\n"
+    "  - id: 2\n"
+    "    category: Scope\n"
+    "    state: Answered\n"
+    "    context: Already resolved; kept for the historical record.\n"
+    "  - id: 3\n"
+    "    category: Testing\n"
+    "    state: Pending\n"
+    "    context: Which fixture format should new tests use?\n"
 )
 
 
 def _build_lite_flat_work(aid: Path, work_id: str) -> Path:
     """work-NNN/BLUEPRINT.md + work-NNN/tasks/task-NNN/DETAIL.md -- no deliveries/,
-    no delivery-NNN/ folder, no per-task STATE.md (feature-001 flattened layout,
+    no delivery-NNN/ folder, no per-task STATE.yml (feature-001 flattened layout,
     per test_flattened_layout_parity.py's canonical fixture shape).
 
-    The single implicit delivery's ## Delivery Lifecycle / ## Delivery Gate /
-    ## Cross-phase Q&A sections, PLUS the per-task mutable cells (the
-    `### Tasks lifecycle` table nested under ## Delivery Lifecycle), are
-    AUTHORED directly in the work-root STATE.md (the work IS the delivery for a
+    The single implicit delivery's `delivery_state`/`delivery_gate`/`qa` keys,
+    PLUS the per-task mutable cells (the `tasks_lifecycle` mapping), are
+    AUTHORED directly in the work-root STATE.yml (the work IS the delivery for a
     lite work -- work-001-add-deliveries-folder task-001/task-003).
+    (work-009-refactor task-016: was a bullet-heading STATE.md with a
+    '### Tasks lifecycle' markdown table -- retired, SPEC.md sec:D-4.)
     """
     work_dir = aid / "works" / work_id
     work_dir.mkdir(parents=True, exist_ok=True)
@@ -159,43 +162,50 @@ def _build_lite_flat_work(aid: Path, work_id: str) -> Path:
         "## Gate Criteria\n\n- [ ] All tests pass\n",
         encoding="utf-8",
     )
-    (work_dir / "STATE.md").write_text(
-        _PIPELINE_STATE_BLOCK + "\n"
-        "## Delivery Lifecycle\n\n"
-        "- **State:** Executing\n"
-        "- **Updated:** 2026-07-08T12:00:00Z\n"
-        "- **Block Reason:** --\n"
-        "- **Block Artifact:** --\n\n"
-        "### Tasks lifecycle\n\n"
-        "| Task | State | Review | Elapsed | Notes |\n"
-        "|------|-------|--------|---------|-------|\n"
-        "| task-001 | Done | -- | -- | -- |\n"
-        "| task-002 | In Progress | -- | -- | -- |\n\n"
-        "## Delivery Gate\n\n"
-        "- **Reviewer Tier:** Small\n"
-        "- **Grade:** A+\n"
-        "- **Issue List:** none\n"
-        "- **Timestamp:** 2026-07-08T12:00:00Z\n\n"
+    (work_dir / "STATE.yml").write_text(
+        _PIPELINE_STATE_BLOCK +
+        "delivery_state: Executing\n"
+        "gate_tier: Small\n"
+        "gate_grade: A+\n"
+        "gate_timestamp: '2026-07-08T12:00:00Z'\n"
+        "delivery_lifecycle:\n"
+        "  updated: '2026-07-08T12:00:00Z'\n"
+        "  block_reason: --\n"
+        "  block_artifact: --\n"
+        "tasks_lifecycle:\n"
+        "  task-001:\n"
+        "    state: Done\n"
+        "    review: --\n"
+        "    elapsed: --\n"
+        "    notes: --\n"
+        "  task-002:\n"
+        "    state: In Progress\n"
+        "    review: --\n"
+        "    elapsed: --\n"
+        "    notes: --\n"
+        "delivery_gate:\n"
+        "  issue_list: []\n"
         + _CROSSPHASE_QA_BLOCK,
         encoding="utf-8",
     )
-    # No per-task STATE.md in the flat layout -- state/review/elapsed/notes come
-    # from the ### Tasks lifecycle table above (state=None omits the file).
+    # No per-task STATE.yml in the flat layout -- state/review/elapsed/notes
+    # come from the tasks_lifecycle mapping above (state=None omits the file).
     _write_task(work_dir / "tasks" / "task-001", "task-001", "REFACTOR", "First lite task")
     _write_task(work_dir / "tasks" / "task-002", "task-002", "TEST", "Second lite task")
     return work_dir
 
 
 def _build_full_nested_work(aid: Path, work_id: str) -> Path:
-    """work-NNN/deliveries/delivery-NNN/{BLUEPRINT,STATE}.md +
-    deliveries/delivery-NNN/tasks/task-NNN/{DETAIL,STATE}.md -- mirrors
+    """work-NNN/deliveries/delivery-NNN/{BLUEPRINT.md,STATE.yml} +
+    deliveries/delivery-NNN/tasks/task-NNN/{DETAIL.md,STATE.yml} -- mirrors
     features/feature-NNN/ (per test_task014_fixtures.py's TestHierarchicalWork
     fixture shape: BLUEPRINT.md at the delivery level, DETAIL.md at the task
     level -- reader.py's hierarchical path reads the delivery title from
-    BLUEPRINT.md, never SPEC.md)."""
+    BLUEPRINT.md, never SPEC.md). (work-009-refactor task-016: was fenced-
+    frontmatter/bullet-heading STATE.md files -- retired, SPEC.md sec:D-4.)"""
     work_dir = aid / "works" / work_id
     work_dir.mkdir(parents=True, exist_ok=True)
-    (work_dir / "STATE.md").write_text(_PIPELINE_STATE_BLOCK, encoding="utf-8")
+    (work_dir / "STATE.yml").write_text(_PIPELINE_STATE_BLOCK, encoding="utf-8")
 
     del_dir = work_dir / "deliveries" / "delivery-001"
     del_dir.mkdir(parents=True, exist_ok=True)
@@ -205,17 +215,17 @@ def _build_full_nested_work(aid: Path, work_id: str) -> Path:
         "## Gate Criteria\n\n- [ ] All tests pass\n",
         encoding="utf-8",
     )
-    (del_dir / "STATE.md").write_text(
-        "## Delivery Lifecycle\n\n"
-        "- **State:** Executing\n"
-        "- **Updated:** 2026-07-08T12:00:00Z\n"
-        "- **Block Reason:** --\n"
-        "- **Block Artifact:** --\n\n"
-        "## Delivery Gate\n\n"
-        "- **Reviewer Tier:** Small\n"
-        "- **Grade:** A+\n"
-        "- **Issue List:** none\n"
-        "- **Timestamp:** 2026-07-08T12:00:00Z\n\n"
+    (del_dir / "STATE.yml").write_text(
+        "delivery_state: Executing\n"
+        "gate_tier: Small\n"
+        "gate_grade: A+\n"
+        "gate_timestamp: '2026-07-08T12:00:00Z'\n"
+        "delivery_lifecycle:\n"
+        "  updated: '2026-07-08T12:00:00Z'\n"
+        "  block_reason: --\n"
+        "  block_artifact: --\n"
+        "delivery_gate:\n"
+        "  issue_list: []\n"
         + _CROSSPHASE_QA_BLOCK,
         encoding="utf-8",
     )
@@ -305,8 +315,8 @@ def _run_node_normalized_work(root: Path, pinned_home: Path) -> dict:
 
 class TestLiteFlatLayout(unittest.TestCase):
     """work-NNN/BLUEPRINT.md + work-NNN/tasks/task-NNN/DETAIL.md -- single
-    delivery, no per-task STATE.md; lifecycle/gate/Q&A/task-cells AUTHORED
-    in the work-root STATE.md (the 3-part flat-detection rule: BLUEPRINT.md
+    delivery, no per-task STATE.yml; lifecycle/gate/Q&A/task-cells AUTHORED
+    in the work-root STATE.yml (the 3-part flat-detection rule: BLUEPRINT.md
     present AND tasks/task-NNN/DETAIL.md present AND no deliveries/)."""
 
     def setUp(self):
@@ -320,7 +330,7 @@ class TestLiteFlatLayout(unittest.TestCase):
 
     def test_detect_flat_true(self):
         """_detect_flat returns True for the flat layout; _detect_hierarchy
-        (the nested per-task-STATE.md rule) must be False -- the two are
+        (the nested per-task-STATE.yml rule) must be False -- the two are
         mutually exclusive by construction (see reader.py _detect_flat's
         own docstring, and test_flattened_layout_parity.py's identical check)."""
         self.assertTrue(_detect_flat(self.work_dir))
@@ -333,8 +343,8 @@ class TestLiteFlatLayout(unittest.TestCase):
 
     def test_tasks_read_from_detail_and_tasks_lifecycle(self):
         """Tasks resolved from DETAIL.md (type/short_name) + the work-root
-        STATE.md's `### Tasks lifecycle` table (state) -- there is no per-task
-        STATE.md in this layout (reader.py _read_work_flat)."""
+        STATE.yml's `tasks_lifecycle` mapping (state) -- there is no per-task
+        STATE.yml in this layout (reader.py _read_work_flat)."""
         model = _read_repo_single_work(self.root, self.aid)
         w = model.works[0]
         task_map = {t.task_id: t for t in w.tasks}
@@ -356,9 +366,9 @@ class TestLiteFlatLayout(unittest.TestCase):
             self.assertEqual(t.delivery, 1, "all tasks belong to the single implicit delivery-001")
 
     def test_delivery_state_authored_from_work_root_state(self):
-        """delivery_state comes from the work-root STATE.md's own
-        ## Delivery Lifecycle section (AUTHORED, not derived) -- there is no
-        separate delivery-level STATE.md file for a lite work."""
+        """delivery_state comes from the work-root STATE.yml's own
+        `delivery_state` key (AUTHORED, not derived) -- there is no
+        separate delivery-level STATE.yml file for a lite work."""
         model = _read_repo_single_work(self.root, self.aid)
         w = model.works[0]
         self.assertEqual(w.deliverables[0].delivery_state, "Executing")
@@ -373,9 +383,9 @@ class TestLiteFlatLayout(unittest.TestCase):
         self.assertEqual(w.work_path, "lite")
 
     def test_work_lifecycle_distinct_from_delivery_state(self):
-        """Work-level Pipeline State (Running) and the delivery's own
-        ## Delivery Lifecycle (Executing) are two DIFFERENT sections in the
-        SAME work-root STATE.md file -- the reader must not confuse them."""
+        """Work-level `lifecycle` (Running) and the delivery's own
+        `delivery_state` (Executing) are two DIFFERENT keys in the
+        SAME work-root STATE.yml file -- the reader must not confuse them."""
         model = _read_repo_single_work(self.root, self.aid)
         w = model.works[0]
         self.assertEqual(w.lifecycle.value, "Running")
@@ -420,7 +430,7 @@ class TestFullNestedLayout(unittest.TestCase):
         shutil.rmtree(self._tmpdir, ignore_errors=True)
 
     def test_detect_hierarchy_true(self):
-        """_detect_hierarchy returns True (per-task STATE.md present under
+        """_detect_hierarchy returns True (per-task STATE.yml present under
         deliveries/); _detect_flat must be False -- mutually exclusive."""
         self.assertTrue(_detect_hierarchy(self.work_dir))
         self.assertFalse(_detect_flat(self.work_dir))
@@ -432,7 +442,7 @@ class TestFullNestedLayout(unittest.TestCase):
 
     def test_tasks_read_from_per_unit_state(self):
         """Tasks resolved from DETAIL.md (type/short_name) + the per-task
-        deliveries/delivery-001/tasks/task-NNN/STATE.md (state)."""
+        deliveries/delivery-001/tasks/task-NNN/STATE.yml (state)."""
         model = _read_repo_single_work(self.root, self.aid)
         w = model.works[0]
         task_map = {t.task_id: t for t in w.tasks}
@@ -454,8 +464,8 @@ class TestFullNestedLayout(unittest.TestCase):
         self.assertEqual(d.name, "Full-nested delivery")
 
     def test_delivery_state_from_delivery_state_md(self):
-        """delivery_state comes from deliveries/delivery-001/STATE.md's own
-        ## Delivery Lifecycle section (a real per-delivery file, unlike lite)."""
+        """delivery_state comes from deliveries/delivery-001/STATE.yml's own
+        `delivery_state` key (a real per-delivery file, unlike lite)."""
         model = _read_repo_single_work(self.root, self.aid)
         w = model.works[0]
         self.assertEqual(w.deliverables[0].delivery_state, "Executing")

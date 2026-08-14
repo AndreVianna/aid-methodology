@@ -47,6 +47,15 @@ Covers (per task-011 DETAIL, AC1):
     an array, byte-identical across runtimes -- exercised as a byproduct of
     the SAME fixture this file already drives for write_enabled, since both
     keys are serialized by the identical serialize_model/serializeModel call.
+  - SP-19b (work-009-refactor task-016): against a converted (STATE.yml)
+    work, each of the three write-enabled edit surfaces -- task.set-notes,
+    pipeline.finish (Lifecycle=Completed), task.rename -- writes
+    successfully to STATE.yml in BOTH runtimes (a REAL writeback-state.sh
+    spawn each side, never stubbed) with identical dispatch results, and
+    the raw-state viewer (read_repo_detail / readRepoDetail's
+    TaskDetail.raw_state.path) resolves the SAME source path in both --
+    the oracle that would catch a half-retargeted AID_STATE_FILE (see
+    TestSp19bWriteEnabledEditSurfacesBothRuntimes below).
 
 Deliberately NOT named test_task011_*.py: dashboard/server/tests/ already has
 test_task011_dispatch_round_trip.py (an UNRELATED task-011 leg -- OP dispatch,
@@ -110,6 +119,24 @@ process.stdout.write(JSON.stringify({ dm1_raw: dm1Raw, dm2_raw: dm2Raw }));
 """
 
 
+_NODE_DISPATCH_DRIVER = """
+import { pathToFileURL } from "node:url";
+const [, , slicePath, readerPath, servedRoot, opJson, workId, taskId] = process.argv;
+const sliceMod = await import(pathToFileURL(slicePath).href);
+const readerMod = await import(pathToFileURL(readerPath).href);
+
+const parsed = JSON.parse(opJson);
+const [status, bodyBuf] = sliceMod.dispatchOp(sliceMod.OP_TABLE, parsed, servedRoot, servedRoot);
+const body = Buffer.from(bodyBuf).toString("utf-8");
+
+const { details } = readerMod.readRepoDetail(servedRoot, [workId + "/" + taskId]);
+const detail = details[workId + "/" + taskId];
+const rawStatePath = detail ? detail.raw_state.path : null;
+
+process.stdout.write(JSON.stringify({ status, body, raw_state_path: rawStatePath }));
+"""
+
+
 def _node_available() -> bool:
     try:
         r = subprocess.run(["node", "--version"], capture_output=True, timeout=5)
@@ -138,7 +165,8 @@ def _sliced_server_mjs_source() -> str:
     )
     return (
         text[:idx]
-        + "\nexport { serializeModel, serializeModelWithDetails, buildHomeModel, serializeHome };\n"
+        + "\nexport { serializeModel, serializeModelWithDetails, buildHomeModel, serializeHome, "
+          "dispatchOp, OP_TABLE };\n"
     )
 
 
@@ -258,6 +286,178 @@ class TestWriteEnabledCrossRuntimeParity(unittest.TestCase):
 
     def test_write_enabled_false_parity(self):
         self._assert_write_enabled_parity(False)
+
+
+def _make_flat_work_sp19b(root: Path, work_id: str, notes: str = "--") -> Path:
+    """A flat-layout work (BLUEPRINT.md + tasks/task-001/DETAIL.md) with a
+    STATE.yml `tasks_lifecycle` entry -- the fixture the SP-19b write-path
+    assertions below dispatch task.set-notes / pipeline.finish / task.rename
+    against, in BOTH runtimes (work-009-refactor task-016). `AID_STATE_FILE`
+    is an explicit override to `STATE.yml` for all three ops (task-020), so
+    the fixture MUST use that filename or the writer dies "$STATE_FILE does
+    not exist" (exit 1) -- exactly the half-retargeted-AID_STATE_FILE
+    failure mode this suite exists to catch."""
+    work_dir = root / ".aid" / "works" / work_id
+    (work_dir / "tasks" / "task-001").mkdir(parents=True, exist_ok=True)
+    (work_dir / "BLUEPRINT.md").write_text("# Blueprint\n", encoding="utf-8")
+    (work_dir / "tasks" / "task-001" / "DETAIL.md").write_text(
+        "# task-001\n\n**Type:** IMPLEMENT\n", encoding="utf-8",
+    )
+    (work_dir / "REQUIREMENTS.md").write_text(
+        "# Requirements\n\n- **Name:** Old Title\n", encoding="utf-8",
+    )
+    (work_dir / "STATE.yml").write_text(
+        "lifecycle: Running\n"
+        "updated: '2026-01-01T00:00:00Z'\n"
+        "pause_reason: --\n"
+        "block_reason: --\n"
+        "block_artifact: --\n"
+        "tasks_lifecycle:\n"
+        "  task-001:\n"
+        "    state: Pending\n"
+        "    review: --\n"
+        "    elapsed: --\n"
+        f"    notes: {notes}\n",
+        encoding="utf-8",
+    )
+    return work_dir
+
+
+@unittest.skipUnless(_NODE_AVAILABLE, "node not available on PATH -- cross-runtime comparison skipped")
+class TestSp19bWriteEnabledEditSurfacesBothRuntimes(unittest.TestCase):
+    """SP-19b: against a converted (STATE.yml) work, each of the three
+    write-enabled edit surfaces -- task.set-notes, pipeline.finish
+    (Lifecycle=Completed), task.rename -- writes successfully to STATE.yml
+    in BOTH runtimes with identical dispatch results, and the raw-state
+    viewer (read_repo_detail / readRepoDetail's TaskDetail.raw_state.path)
+    resolves the SAME source path in both. This is the oracle that would
+    catch a half-retargeted AID_STATE_FILE: if either runtime's op
+    build_argv/buildArgv still pointed at the retired STATE.md filename, the
+    writer would die "does not exist" (exit 1 -> 404), a real writer-spawn
+    failure this test's real (non-stubbed) writeback-state.sh dispatch would
+    surface immediately -- not a false green."""
+
+    @classmethod
+    def setUpClass(cls) -> None:
+        cls._slice_path = _SERVER_DIR / f"_test_sp19b_slice_{uuid.uuid4().hex}.mjs"
+        cls._slice_path.write_text(_sliced_server_mjs_source(), encoding="utf-8")
+
+    @classmethod
+    def tearDownClass(cls) -> None:
+        cls._slice_path.unlink(missing_ok=True)
+
+    def setUp(self) -> None:
+        self._py_root = Path(tempfile.mkdtemp())
+        self._node_root = Path(tempfile.mkdtemp())
+
+    def tearDown(self) -> None:
+        shutil.rmtree(str(self._py_root), ignore_errors=True)
+        shutil.rmtree(str(self._node_root), ignore_errors=True)
+
+    def _py_dispatch_and_detail(self, root: Path, request: dict, work_id: str, task_id: str) -> dict:
+        import unittest.mock as mock
+        from dashboard.reader import read_repo_detail as _read_repo_detail
+
+        status, body = _server_module._dispatch_op(_server_module.OP_TABLE, request, str(root))
+        aid = root / ".aid"
+        with mock.patch(
+            "dashboard.reader.reader.enumerate_worktree_roots",
+            return_value=[("main", aid)],
+        ):
+            _model, details = _read_repo_detail(root, [f"{work_id}/{task_id}"])
+        detail = details.get(f"{work_id}/{task_id}")
+        raw_state_path = detail.raw_state.path if detail is not None else None
+        return {"status": status, "body": body.decode("utf-8"), "raw_state_path": raw_state_path}
+
+    def _node_dispatch_and_detail(self, root: Path, request: dict, work_id: str, task_id: str) -> dict:
+        driver = root / "_sp19b_driver.mjs"
+        driver.write_text(_NODE_DISPATCH_DRIVER, encoding="utf-8")
+        proc = subprocess.run(
+            [
+                "node", str(driver),
+                str(self._slice_path), str(_READER_MJS),
+                str(root), json.dumps(request), work_id, task_id,
+            ],
+            capture_output=True, text=True, timeout=15,
+        )
+        if proc.returncode != 0:
+            raise RuntimeError(f"node dispatch driver failed (exit {proc.returncode}): {proc.stderr}")
+        return json.loads(proc.stdout)
+
+    def test_task_set_notes_both_runtimes(self):
+        work_id = "work-810-sp19b-notes"
+        _make_flat_work_sp19b(self._py_root, work_id)
+        _make_flat_work_sp19b(self._node_root, work_id)
+        request = {
+            "op": "task.set-notes",
+            "target": {"work_id": work_id, "task_id": "001"},
+            "args": {"value": "sp19b cross-runtime note"},
+        }
+        py_result = self._py_dispatch_and_detail(self._py_root, request, work_id, "task-001")
+        node_result = self._node_dispatch_and_detail(self._node_root, request, work_id, "task-001")
+
+        self.assertEqual(py_result["status"], 200, py_result["body"])
+        self.assertEqual(node_result["status"], 200, node_result["body"])
+        self.assertEqual(py_result["status"], node_result["status"])
+        self.assertEqual(json.loads(py_result["body"]), json.loads(node_result["body"]))
+
+        py_content = (self._py_root / ".aid" / "works" / work_id / "STATE.yml").read_text(encoding="utf-8")
+        node_content = (self._node_root / ".aid" / "works" / work_id / "STATE.yml").read_text(encoding="utf-8")
+        self.assertIn("sp19b cross-runtime note", py_content)
+        self.assertIn("sp19b cross-runtime note", node_content)
+
+        # The raw-state viewer resolves the SAME source path in both runtimes
+        # (the oracle for a half-retargeted AID_STATE_FILE: a wrong path here
+        # would mean one runtime's viewer silently shows stale/empty content).
+        self.assertEqual(py_result["raw_state_path"], f".aid/works/{work_id}/STATE.yml")
+        self.assertEqual(node_result["raw_state_path"], f".aid/works/{work_id}/STATE.yml")
+        self.assertEqual(py_result["raw_state_path"], node_result["raw_state_path"])
+
+    def test_pipeline_finish_lifecycle_completed_both_runtimes(self):
+        work_id = "work-811-sp19b-finish"
+        _make_flat_work_sp19b(self._py_root, work_id)
+        _make_flat_work_sp19b(self._node_root, work_id)
+        request = {"op": "pipeline.finish", "target": {"work_id": work_id}}
+        py_result = self._py_dispatch_and_detail(self._py_root, request, work_id, "task-001")
+        node_result = self._node_dispatch_and_detail(self._node_root, request, work_id, "task-001")
+
+        self.assertEqual(py_result["status"], 200, py_result["body"])
+        self.assertEqual(node_result["status"], 200, node_result["body"])
+        self.assertEqual(json.loads(py_result["body"]), json.loads(node_result["body"]))
+
+        py_content = (self._py_root / ".aid" / "works" / work_id / "STATE.yml").read_text(encoding="utf-8")
+        node_content = (self._node_root / ".aid" / "works" / work_id / "STATE.yml").read_text(encoding="utf-8")
+        self.assertIn("lifecycle: Completed", py_content)
+        self.assertIn("lifecycle: Completed", node_content)
+
+        self.assertEqual(py_result["raw_state_path"], f".aid/works/{work_id}/STATE.yml")
+        self.assertEqual(node_result["raw_state_path"], f".aid/works/{work_id}/STATE.yml")
+        self.assertEqual(py_result["raw_state_path"], node_result["raw_state_path"])
+
+    def test_task_rename_both_runtimes(self):
+        work_id = "work-812-sp19b-rename"
+        _make_flat_work_sp19b(self._py_root, work_id)
+        _make_flat_work_sp19b(self._node_root, work_id)
+        request = {
+            "op": "task.rename",
+            "target": {"work_id": work_id, "task_id": "001"},
+            "args": {"value": "SP-19b renamed task"},
+        }
+        py_result = self._py_dispatch_and_detail(self._py_root, request, work_id, "task-001")
+        node_result = self._node_dispatch_and_detail(self._node_root, request, work_id, "task-001")
+
+        self.assertEqual(py_result["status"], 200, py_result["body"])
+        self.assertEqual(node_result["status"], 200, node_result["body"])
+        self.assertEqual(json.loads(py_result["body"]), json.loads(node_result["body"]))
+
+        py_content = (self._py_root / ".aid" / "works" / work_id / "STATE.yml").read_text(encoding="utf-8")
+        node_content = (self._node_root / ".aid" / "works" / work_id / "STATE.yml").read_text(encoding="utf-8")
+        self.assertIn("SP-19b renamed task", py_content)
+        self.assertIn("SP-19b renamed task", node_content)
+
+        self.assertEqual(py_result["raw_state_path"], f".aid/works/{work_id}/STATE.yml")
+        self.assertEqual(node_result["raw_state_path"], f".aid/works/{work_id}/STATE.yml")
+        self.assertEqual(py_result["raw_state_path"], node_result["raw_state_path"])
 
 
 if __name__ == "__main__":

@@ -9,17 +9,20 @@
 # did not EMPHATICALLY/UNMISSABLY require writing each transition the moment
 # it happens. This suite proves the writer + BOTH reader twins never regress
 # on reflecting a state the instant it is written, for the flattened
-# `### Tasks lifecycle` path (feature-001 layout).
+# `tasks_lifecycle` path (feature-001 layout, work-state-template.yml).
 #
-# Drives a scratch flattened work's task-001 row through the full lifecycle
-#   _none yet_ -> Pending -> In Progress -> In Review -> Done
+# Drives a scratch flattened work's task-001 entry through the full lifecycle
+#   (absent) -> Pending -> In Progress -> In Review -> Done
 # via the EXACT command the aid-execute "State-Write Protocol" mandate uses
 # (canonical/skills/aid-execute/references/state-execute.md):
 #   writeback-state.sh --delivery-id DDD --task-id NNN --field State --value V
 #
 # After EACH write, asserts BOTH:
-#   (a) the work-root STATE.md's `### Tasks lifecycle` table row shows the new
-#       state (direct read of what the flattened `--field` write path produced), and
+#   (a) the work-root STATE.yml's `tasks_lifecycle.task-001.state` key shows
+#       the new state (direct read of what the flattened `--field` write path
+#       produced -- retargeted from the pre-refactor `### Tasks lifecycle`
+#       markdown table row, which FR-2b retires; the property under test --
+#       one write, immediately visible -- is unchanged), and
 #   (b) both dashboard reader twins -- Python `read_repo()` and Node `readRepo()`,
 #       each run in-process (no server, no port, no *parity*.sh -- those hang on
 #       this host; see test-dashboard-parity.sh) -- surface that same state for
@@ -111,34 +114,29 @@ cat > "${WORK_DIR}/tasks/task-001/DETAIL.md" << 'EOF'
 - [ ] N/A -- fixture only.
 EOF
 
-cat > "${WORK_DIR}/STATE.md" << 'EOF'
----
+cat > "${WORK_DIR}/STATE.yml" << 'EOF'
+# Work State -- work-999-task009-demo
 pipeline:
   path: lite
   initiator: aid-refactor
-started: "2026-07-10"
+started: '2026-07-10'
 minimum_grade: A
-user_approved: yes
+user_approved: 'yes'
 lifecycle: Running
 phase: Execute
 active_skill: aid-execute
-updated: "2026-07-10T00:00:00Z"
+updated: '2026-07-10T00:00:00Z'
 delivery_state: Executing
----
-
-# Work STATE -- work-999-task009-demo
-
-## Delivery Lifecycle
-
-- **Updated:** 2026-07-10T00:00:00Z
-- **Block Reason:** --
-- **Block Artifact:** --
-
-### Tasks lifecycle
-
-| Task | State | Review | Elapsed | Notes |
-|------|-------|--------|---------|-------|
-| _none yet_ | | | | |
+gate_tier: --
+gate_grade: Pending
+gate_timestamp: --
+delivery_lifecycle:
+  updated: '2026-07-10T00:00:00Z'
+  block_reason: --
+  block_artifact: --
+tasks_lifecycle: {}
+delivery_gate:
+  issue_list: []
 EOF
 
 # ---------------------------------------------------------------------------
@@ -206,10 +204,15 @@ MJSEOF
 assert_transition() {
     local expected="$1"
 
-    # (a) writer: the ### Tasks lifecycle table row on disk.
-    local row
-    row=$(grep -i "| task-001 |" "${WORK_DIR}/STATE.md" || true)
-    assert_output_contains "$row" "| ${expected} |" "writer: ### Tasks lifecycle row -> ${expected}"
+    # (a) writer: the tasks_lifecycle.task-001.state key on disk (retargeted
+    # from the pre-refactor `### Tasks lifecycle` markdown table row, FR-2b).
+    # Strip one layer of surrounding quotes -- either style -- as the reader
+    # twins' scalar parsers do (D-5: bare iff no space/special char, else
+    # single-quoted).
+    local actual
+    actual=$(awk '/^  task-001:/{f=1; next} f && /^    state:/{sub(/^    state:[ \t]*/,""); print; exit} f && /^  [a-z]/{exit}' "${WORK_DIR}/STATE.yml" \
+        | sed "s/^\\(.\\)\\(.*\\)\\1\$/\\2/")
+    assert_eq "$actual" "$expected" "writer: tasks_lifecycle.task-001.state -> ${expected}"
 
     # (b1) Python read_repo() twin.
     #
@@ -258,7 +261,7 @@ assert_transition() {
 # ---------------------------------------------------------------------------
 
 for value in "Pending" "In Progress" "In Review" "Done"; do
-    out=$(AID_STATE_FILE="${WORK_DIR}/STATE.md" bash "${WRITEBACK}" \
+    out=$(AID_STATE_FILE="${WORK_DIR}/STATE.yml" bash "${WRITEBACK}" \
         --delivery-id 1 --task-id 1 --field State --value "${value}" 2>&1)
     rc=$?
     assert_exit_zero "$rc" "writeback-state.sh --field State --value \"${value}\""

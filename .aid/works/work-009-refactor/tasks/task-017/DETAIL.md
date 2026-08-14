@@ -1,3 +1,25 @@
+# task-017: Render fan-out -- regenerate the five profiles and resync the dogfood trees
+
+[!NOTE]
+This is the TASK-LEVEL DETAIL.md file. It is the IMMUTABLE DEFINITION for this task.
+Written once by the `/aid-refactor` shortcut engine's DETAIL state; not a state file. This is a
+flattened Lite work, so there is NO sibling `task-017/STATE.md` -- this task's mutable cells live
+only in the work-root state file's `### Tasks lifecycle` table.
+Shape: 6 sections matching .claude/aid/templates/delivery-plans/task-template.md.
+
+> **Execution protocol (binding on whoever executes this task -- no
+> exceptions):** the moment this task's `State` changes, write it --
+> `In Progress` before starting work, `In Review` before dispatching the
+> reviewer, and the terminal value (`Done` / `Failed`) at the end -- via
+> `writeback-state.sh --field State --value ...`. This applies equally
+> whether the main/orchestrator agent executes this task directly or
+> dispatches it to a sub-agent; neither may skip, batch, or defer these
+> writes. (`Blocked` is a distinct, orchestrator-assigned value for a
+> DIFFERENT, downstream task that depends on a failed one -- it is never
+> self-written by the task being executed.) Full mandate:
+> `aid-execute/references/state-execute.md § MANDATORY: State-Write
+> Protocol`.
+
 **Type:** CONFIGURE
 
 **Source:** work-009-refactor -> delivery-001
@@ -43,3 +65,11 @@
 - [ ] No render was hand-edited: every file under `profiles/`, `.claude/` and `.cursor/` in this
       task's diff is byte-identical to generator output, and re-running the generator produces no
       further diff (C-1, idempotence).
+- [ ] `dashboard/scripts/writeback-state.sh` still accepts `Deploy` as a `Phase` value and its
+      content is NOT the canonical render (C-2, FR-4d, SP-14).
+- [ ] No file under `canonical/` is modified by this task.
+- [ ] The generator self-tests still pass (`render_lib.py --self-test`,
+      `test_manifest_safety.py --self-test`, `render.py --self-test --canonical-root .`,
+      `verify_deterministic.py --self-test --canonical-root .`,
+      `verify_advisory.py --self-test --canonical-root .`).
+- [ ] All section-6 quality gates pass.
