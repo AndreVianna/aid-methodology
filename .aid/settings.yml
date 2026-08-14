@@ -57,6 +57,7 @@ knowledge:
     - capability-inventory.md|skill-self|required
     - decisions.md|aid-researcher-architecture|required
     - README.md|skill-self|required
+    - roadmap.md|skill-self|required
   term_exclusions:
     - In Progress
     - User Approved

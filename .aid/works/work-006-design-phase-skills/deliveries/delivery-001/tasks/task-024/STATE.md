@@ -2,7 +2,7 @@
 state: 'In Progress'
 review: "--"
 elapsed: "--"
-notes: "--"
+notes: 'Throwaway dogfood render live and UNCOMMITTED; pre-render state recorded as content in this file section Pre-Render State Record (restoration target = tracked content equal to CURRENT HEAD with render-generated untracked files removed, never the manifest bytes; do-not-revert path .claude/skills/release-aid/SKILL.md is tracked in HEAD since commit 95db5981 work-021, task-009 still Pending).'
 ticket_ref: "--"
 ---
 
@@ -84,3 +84,3026 @@ in-flight `work-003-state-schema` frontmatter conventions.
 
 | Date | Agent | ETA Band | Actual | Outcome |
 |------|-------|----------|--------|---------|
+
+---
+
+## Pre-Render State Record (task-024)
+
+<!-- AUTHORED by task-024 (CONFIGURE). This is the "record the pre-render state ... as
+     content rather than as a commit" deliverable of task-024 § Scope, and the subject of
+     its Acceptance Criteria 7 and 8. task-025 reads it; nothing else does. Removed when
+     task-025 reverts the render. -->
+
+### 1. Restoration target, in words
+
+task-025 must restore the three trees `profiles/`, `.claude/` and `.cursor/` to:
+
+> **tracked content equal to the `HEAD` that is current when task-025 runs, with the
+> render-generated untracked files removed.**
+
+It is **not** "these exact bytes". The `sha256sum` manifest in section 5 below is a record
+of the *working tree at this moment* (wave 13), not the restoration target. Tasks commit
+between task-024 and task-025, so `HEAD` advances by design; restoring the manifest bytes
+literally would revert whatever those commits landed inside these trees. The manifest's
+only job downstream is a **cross-check**: after task-025 restores, every path in it must
+match except those a commit landed in between legitimately changed.
+
+### 2. The one committed path that lies inside these trees
+
+`.claude/skills/release-aid/SKILL.md`
+
+This is the only committed artifact anywhere under `profiles/`, `.claude/` or `.cursor/`,
+so it is the only committed deliverable a wholesale restore of those trees could destroy.
+It must **not** be restored to this record's manifest bytes.
+
+**Observed provenance (recorded as observed, not as attributed):**
+
+| Fact | Observed value | Oracle |
+|---|---|---|
+| Tracked in `HEAD` | yes -- `100644 blob 175b2a040e309b6fbfaca75b18d3a8ab16f0e394` | `git ls-tree HEAD -- .claude/skills/release-aid/SKILL.md` |
+| Last commit touching it | `95db5981` 2026-07-22 `work-021: resolve OD-1 + OD-2 (with user)` | `git log -1 --format="%h %ad %s" --date=short -- <path>` |
+| `grep -c Unreleased <path>` at this record | `4` | `grep -c Unreleased .claude/skills/release-aid/SKILL.md` |
+| task-009 state at this record | `Pending` | `grep -m1 '^state:' .../tasks/task-009/STATE.md` |
+
+Read that table carefully, because it corrects a plausible misreading of task-024 § Scope
+and task-025 § Scope. Both name **task-009** as this path's committer (feature-001
+AC-7/AC-8). **task-009 has not run** -- it is `Pending`, and the `Unreleased` count is
+still `4`, which is exactly the count task-025's own criterion says a *post*-task-009 file
+must have driven to `0`. The file is therefore in `HEAD` **from earlier work that predates
+work-006 entirely** (commit `95db5981`, work-021), and its working-tree content equals
+`HEAD` right now.
+
+Two consequences for task-025, both load-bearing:
+
+1. **`git checkout -- .claude/` will not delete this file, and the reason is that it is
+   tracked in `HEAD`** -- `git checkout -- <tree>` restores tracked paths and never removes
+   a tracked file. The reason is *not* "a task committed it during this window"; no task in
+   this window has committed it.
+2. If task-009 **does** land before task-025, restoring to the *then*-current `HEAD`
+   preserves its commit by construction, with no enumeration to maintain. If it does not
+   land, a `HEAD`-based restore is simply a no-op for this path. Either way: restore to
+   current `HEAD`, never to the manifest bytes.
+
+### 3. Pre-render `git status --porcelain profiles/ .claude/ .cursor/`
+
+Captured before `build-shortcut-skills.py` was run:
+
+```
+```
+
+The output was **empty** -- 0 lines, 0 bytes (`wc -c` = `0`). The whole-tree
+`git status --porcelain` was likewise empty. The three trees were clean, exactly as
+task-024 § Scope says to expect.
+
+**`HEAD` at the moment of this record (provenance only, never a restoration target):**
+
+```
+9722db515623025ca293db3b598beb1565c10fd9  docs(work-006 task-014): three update planning-artifact skills, completing the nine-row set
+```
+
+### 4. What the render changed, and what task-025 must therefore revert
+
+Delta computed by comparing the section-5 pre-render manifest against a post-render
+manifest taken the same way (`find profiles .claude .cursor -type f -print0 | sort -z |
+xargs -0 sha256sum`): **2644 files before, 2721 after**.
+
+| Class | Count | Tree breakdown |
+|---|---|---|
+| Added | 77 | `profiles/` 60, `.claude/` 17, `.cursor/` 0 |
+| Modified | 41 | `profiles/` 35, `.claude/` 6, `.cursor/` 0 |
+| Deleted | 0 | -- |
+
+`.cursor/` is **untouched**: `git status --porcelain .cursor/` reports 0 lines. task-024
+§ Scope prescribes resyncing the dogfood `.claude/` only (`.cursor/` is delivery-003's,
+feature-006 § 6 step 3), so there is nothing to revert there -- but task-025's restore is
+still stated over all three trees, which remains correct and is a no-op for that one.
+
+**Of the 17 added under `.claude/`, only 12 are render-generated.** The other 5 are
+`__pycache__/*.cpython-313.pyc` byte-caches that Python wrote as a side effect of running
+the two generator scripts. They are gitignored, so no `git status` oracle sees them.
+
+**One untracked file inside the three trees PRE-DATES this render and must SURVIVE
+task-025:**
+
+```
+.claude/skills/generate-profile/scripts/__pycache__/build-shortcut-skills.cpython-312.pyc
+```
+
+It was the single on-disk-but-untracked file in the three trees before the render
+(`comm -23` of `find` against `git ls-files` over the three trees: 2644 found, 2643
+tracked, that one path the difference). A blanket "remove every untracked file under these
+trees" would delete it; it is a pre-existing local artifact, not render output.
+
+#### 4a. Exact revert list -- the 41 modified tracked paths (`git checkout -- <path>`)
+
+```
+.claude/aid/scripts/kb/kb-actback-task.sh
+.claude/aid/scripts/kb/kb-dual-intent-probes.sh
+.claude/aid/templates/kb-authoring/concern-model.md
+.claude/aid/templates/kb-authoring/domain-doc-matrix.md
+.claude/aid/templates/shortcut-catalog.yml
+.claude/skills/aid-config/SKILL.md
+profiles/antigravity/.agent/aid/scripts/kb/kb-actback-task.sh
+profiles/antigravity/.agent/aid/scripts/kb/kb-dual-intent-probes.sh
+profiles/antigravity/.agent/aid/templates/kb-authoring/concern-model.md
+profiles/antigravity/.agent/aid/templates/kb-authoring/domain-doc-matrix.md
+profiles/antigravity/.agent/aid/templates/shortcut-catalog.yml
+profiles/antigravity/.agent/skills/aid-config/SKILL.md
+profiles/antigravity/emission-manifest.jsonl
+profiles/claude-code/.claude/aid/scripts/kb/kb-actback-task.sh
+profiles/claude-code/.claude/aid/scripts/kb/kb-dual-intent-probes.sh
+profiles/claude-code/.claude/aid/templates/kb-authoring/concern-model.md
+profiles/claude-code/.claude/aid/templates/kb-authoring/domain-doc-matrix.md
+profiles/claude-code/.claude/aid/templates/shortcut-catalog.yml
+profiles/claude-code/.claude/skills/aid-config/SKILL.md
+profiles/claude-code/emission-manifest.jsonl
+profiles/codex/.codex/aid/scripts/kb/kb-actback-task.sh
+profiles/codex/.codex/aid/scripts/kb/kb-dual-intent-probes.sh
+profiles/codex/.codex/aid/templates/kb-authoring/concern-model.md
+profiles/codex/.codex/aid/templates/kb-authoring/domain-doc-matrix.md
+profiles/codex/.codex/aid/templates/shortcut-catalog.yml
+profiles/codex/.codex/skills/aid-config/SKILL.md
+profiles/codex/emission-manifest.jsonl
+profiles/copilot-cli/.github/aid/scripts/kb/kb-actback-task.sh
+profiles/copilot-cli/.github/aid/scripts/kb/kb-dual-intent-probes.sh
+profiles/copilot-cli/.github/aid/templates/kb-authoring/concern-model.md
+profiles/copilot-cli/.github/aid/templates/kb-authoring/domain-doc-matrix.md
+profiles/copilot-cli/.github/aid/templates/shortcut-catalog.yml
+profiles/copilot-cli/.github/skills/aid-config/SKILL.md
+profiles/copilot-cli/emission-manifest.jsonl
+profiles/cursor/.cursor/aid/scripts/kb/kb-actback-task.sh
+profiles/cursor/.cursor/aid/scripts/kb/kb-dual-intent-probes.sh
+profiles/cursor/.cursor/aid/templates/kb-authoring/concern-model.md
+profiles/cursor/.cursor/aid/templates/kb-authoring/domain-doc-matrix.md
+profiles/cursor/.cursor/aid/templates/shortcut-catalog.yml
+profiles/cursor/.cursor/skills/aid-config/SKILL.md
+profiles/cursor/emission-manifest.jsonl
+```
+
+#### 4b. Exact revert list -- the 77 added paths (`rm`; 72 of them untracked to git, 5 gitignored)
+
+```
+.claude/aid/templates/design-folder-readme.md
+.claude/aid/templates/design-lifecycle.md
+.claude/aid/templates/design-seed.md
+.claude/skills/aid-create-backlog/SKILL.md
+.claude/skills/aid-create-mvp/SKILL.md
+.claude/skills/aid-create-roadmap/SKILL.md
+.claude/skills/aid-design-backlog/SKILL.md
+.claude/skills/aid-design-mvp/SKILL.md
+.claude/skills/aid-design-roadmap/SKILL.md
+.claude/skills/aid-update-backlog/SKILL.md
+.claude/skills/aid-update-mvp/SKILL.md
+.claude/skills/aid-update-roadmap/SKILL.md
+.claude/skills/generate-profile/scripts/__pycache__/aid_profile.cpython-313.pyc
+.claude/skills/generate-profile/scripts/__pycache__/render.cpython-313.pyc
+.claude/skills/generate-profile/scripts/__pycache__/render_lib.cpython-313.pyc
+.claude/skills/generate-profile/scripts/__pycache__/verify_advisory.cpython-313.pyc
+.claude/skills/generate-profile/scripts/__pycache__/verify_deterministic.cpython-313.pyc
+profiles/antigravity/.agent/aid/templates/design-folder-readme.md
+profiles/antigravity/.agent/aid/templates/design-lifecycle.md
+profiles/antigravity/.agent/aid/templates/design-seed.md
+profiles/antigravity/.agent/skills/aid-create-backlog/SKILL.md
+profiles/antigravity/.agent/skills/aid-create-mvp/SKILL.md
+profiles/antigravity/.agent/skills/aid-create-roadmap/SKILL.md
+profiles/antigravity/.agent/skills/aid-design-backlog/SKILL.md
+profiles/antigravity/.agent/skills/aid-design-mvp/SKILL.md
+profiles/antigravity/.agent/skills/aid-design-roadmap/SKILL.md
+profiles/antigravity/.agent/skills/aid-update-backlog/SKILL.md
+profiles/antigravity/.agent/skills/aid-update-mvp/SKILL.md
+profiles/antigravity/.agent/skills/aid-update-roadmap/SKILL.md
+profiles/claude-code/.claude/aid/templates/design-folder-readme.md
+profiles/claude-code/.claude/aid/templates/design-lifecycle.md
+profiles/claude-code/.claude/aid/templates/design-seed.md
+profiles/claude-code/.claude/skills/aid-create-backlog/SKILL.md
+profiles/claude-code/.claude/skills/aid-create-mvp/SKILL.md
+profiles/claude-code/.claude/skills/aid-create-roadmap/SKILL.md
+profiles/claude-code/.claude/skills/aid-design-backlog/SKILL.md
+profiles/claude-code/.claude/skills/aid-design-mvp/SKILL.md
+profiles/claude-code/.claude/skills/aid-design-roadmap/SKILL.md
+profiles/claude-code/.claude/skills/aid-update-backlog/SKILL.md
+profiles/claude-code/.claude/skills/aid-update-mvp/SKILL.md
+profiles/claude-code/.claude/skills/aid-update-roadmap/SKILL.md
+profiles/codex/.codex/aid/templates/design-folder-readme.md
+profiles/codex/.codex/aid/templates/design-lifecycle.md
+profiles/codex/.codex/aid/templates/design-seed.md
+profiles/codex/.codex/skills/aid-create-backlog/SKILL.md
+profiles/codex/.codex/skills/aid-create-mvp/SKILL.md
+profiles/codex/.codex/skills/aid-create-roadmap/SKILL.md
+profiles/codex/.codex/skills/aid-design-backlog/SKILL.md
+profiles/codex/.codex/skills/aid-design-mvp/SKILL.md
+profiles/codex/.codex/skills/aid-design-roadmap/SKILL.md
+profiles/codex/.codex/skills/aid-update-backlog/SKILL.md
+profiles/codex/.codex/skills/aid-update-mvp/SKILL.md
+profiles/codex/.codex/skills/aid-update-roadmap/SKILL.md
+profiles/copilot-cli/.github/aid/templates/design-folder-readme.md
+profiles/copilot-cli/.github/aid/templates/design-lifecycle.md
+profiles/copilot-cli/.github/aid/templates/design-seed.md
+profiles/copilot-cli/.github/skills/aid-create-backlog/SKILL.md
+profiles/copilot-cli/.github/skills/aid-create-mvp/SKILL.md
+profiles/copilot-cli/.github/skills/aid-create-roadmap/SKILL.md
+profiles/copilot-cli/.github/skills/aid-design-backlog/SKILL.md
+profiles/copilot-cli/.github/skills/aid-design-mvp/SKILL.md
+profiles/copilot-cli/.github/skills/aid-design-roadmap/SKILL.md
+profiles/copilot-cli/.github/skills/aid-update-backlog/SKILL.md
+profiles/copilot-cli/.github/skills/aid-update-mvp/SKILL.md
+profiles/copilot-cli/.github/skills/aid-update-roadmap/SKILL.md
+profiles/cursor/.cursor/aid/templates/design-folder-readme.md
+profiles/cursor/.cursor/aid/templates/design-lifecycle.md
+profiles/cursor/.cursor/aid/templates/design-seed.md
+profiles/cursor/.cursor/skills/aid-create-backlog/SKILL.md
+profiles/cursor/.cursor/skills/aid-create-mvp/SKILL.md
+profiles/cursor/.cursor/skills/aid-create-roadmap/SKILL.md
+profiles/cursor/.cursor/skills/aid-design-backlog/SKILL.md
+profiles/cursor/.cursor/skills/aid-design-mvp/SKILL.md
+profiles/cursor/.cursor/skills/aid-design-roadmap/SKILL.md
+profiles/cursor/.cursor/skills/aid-update-backlog/SKILL.md
+profiles/cursor/.cursor/skills/aid-update-mvp/SKILL.md
+profiles/cursor/.cursor/skills/aid-update-roadmap/SKILL.md
+```
+
+#### 4c. `git status --porcelain profiles/ .claude/ .cursor/` as it reads with the render live
+
+Git collapses wholly-new directories to a single `??` entry, so this is 113 lines rather
+than 118. Recorded so task-025 can diff its own starting state against it.
+
+```
+ M .claude/aid/scripts/kb/kb-actback-task.sh
+ M .claude/aid/scripts/kb/kb-dual-intent-probes.sh
+ M .claude/aid/templates/kb-authoring/concern-model.md
+ M .claude/aid/templates/kb-authoring/domain-doc-matrix.md
+ M .claude/aid/templates/shortcut-catalog.yml
+ M .claude/skills/aid-config/SKILL.md
+ M profiles/antigravity/.agent/aid/scripts/kb/kb-actback-task.sh
+ M profiles/antigravity/.agent/aid/scripts/kb/kb-dual-intent-probes.sh
+ M profiles/antigravity/.agent/aid/templates/kb-authoring/concern-model.md
+ M profiles/antigravity/.agent/aid/templates/kb-authoring/domain-doc-matrix.md
+ M profiles/antigravity/.agent/aid/templates/shortcut-catalog.yml
+ M profiles/antigravity/.agent/skills/aid-config/SKILL.md
+ M profiles/antigravity/emission-manifest.jsonl
+ M profiles/claude-code/.claude/aid/scripts/kb/kb-actback-task.sh
+ M profiles/claude-code/.claude/aid/scripts/kb/kb-dual-intent-probes.sh
+ M profiles/claude-code/.claude/aid/templates/kb-authoring/concern-model.md
+ M profiles/claude-code/.claude/aid/templates/kb-authoring/domain-doc-matrix.md
+ M profiles/claude-code/.claude/aid/templates/shortcut-catalog.yml
+ M profiles/claude-code/.claude/skills/aid-config/SKILL.md
+ M profiles/claude-code/emission-manifest.jsonl
+ M profiles/codex/.codex/aid/scripts/kb/kb-actback-task.sh
+ M profiles/codex/.codex/aid/scripts/kb/kb-dual-intent-probes.sh
+ M profiles/codex/.codex/aid/templates/kb-authoring/concern-model.md
+ M profiles/codex/.codex/aid/templates/kb-authoring/domain-doc-matrix.md
+ M profiles/codex/.codex/aid/templates/shortcut-catalog.yml
+ M profiles/codex/.codex/skills/aid-config/SKILL.md
+ M profiles/codex/emission-manifest.jsonl
+ M profiles/copilot-cli/.github/aid/scripts/kb/kb-actback-task.sh
+ M profiles/copilot-cli/.github/aid/scripts/kb/kb-dual-intent-probes.sh
+ M profiles/copilot-cli/.github/aid/templates/kb-authoring/concern-model.md
+ M profiles/copilot-cli/.github/aid/templates/kb-authoring/domain-doc-matrix.md
+ M profiles/copilot-cli/.github/aid/templates/shortcut-catalog.yml
+ M profiles/copilot-cli/.github/skills/aid-config/SKILL.md
+ M profiles/copilot-cli/emission-manifest.jsonl
+ M profiles/cursor/.cursor/aid/scripts/kb/kb-actback-task.sh
+ M profiles/cursor/.cursor/aid/scripts/kb/kb-dual-intent-probes.sh
+ M profiles/cursor/.cursor/aid/templates/kb-authoring/concern-model.md
+ M profiles/cursor/.cursor/aid/templates/kb-authoring/domain-doc-matrix.md
+ M profiles/cursor/.cursor/aid/templates/shortcut-catalog.yml
+ M profiles/cursor/.cursor/skills/aid-config/SKILL.md
+ M profiles/cursor/emission-manifest.jsonl
+?? .claude/aid/templates/design-folder-readme.md
+?? .claude/aid/templates/design-lifecycle.md
+?? .claude/aid/templates/design-seed.md
+?? .claude/skills/aid-create-backlog/
+?? .claude/skills/aid-create-mvp/
+?? .claude/skills/aid-create-roadmap/
+?? .claude/skills/aid-design-backlog/
+?? .claude/skills/aid-design-mvp/
+?? .claude/skills/aid-design-roadmap/
+?? .claude/skills/aid-update-backlog/
+?? .claude/skills/aid-update-mvp/
+?? .claude/skills/aid-update-roadmap/
+?? profiles/antigravity/.agent/aid/templates/design-folder-readme.md
+?? profiles/antigravity/.agent/aid/templates/design-lifecycle.md
+?? profiles/antigravity/.agent/aid/templates/design-seed.md
+?? profiles/antigravity/.agent/skills/aid-create-backlog/
+?? profiles/antigravity/.agent/skills/aid-create-mvp/
+?? profiles/antigravity/.agent/skills/aid-create-roadmap/
+?? profiles/antigravity/.agent/skills/aid-design-backlog/
+?? profiles/antigravity/.agent/skills/aid-design-mvp/
+?? profiles/antigravity/.agent/skills/aid-design-roadmap/
+?? profiles/antigravity/.agent/skills/aid-update-backlog/
+?? profiles/antigravity/.agent/skills/aid-update-mvp/
+?? profiles/antigravity/.agent/skills/aid-update-roadmap/
+?? profiles/claude-code/.claude/aid/templates/design-folder-readme.md
+?? profiles/claude-code/.claude/aid/templates/design-lifecycle.md
+?? profiles/claude-code/.claude/aid/templates/design-seed.md
+?? profiles/claude-code/.claude/skills/aid-create-backlog/
+?? profiles/claude-code/.claude/skills/aid-create-mvp/
+?? profiles/claude-code/.claude/skills/aid-create-roadmap/
+?? profiles/claude-code/.claude/skills/aid-design-backlog/
+?? profiles/claude-code/.claude/skills/aid-design-mvp/
+?? profiles/claude-code/.claude/skills/aid-design-roadmap/
+?? profiles/claude-code/.claude/skills/aid-update-backlog/
+?? profiles/claude-code/.claude/skills/aid-update-mvp/
+?? profiles/claude-code/.claude/skills/aid-update-roadmap/
+?? profiles/codex/.codex/aid/templates/design-folder-readme.md
+?? profiles/codex/.codex/aid/templates/design-lifecycle.md
+?? profiles/codex/.codex/aid/templates/design-seed.md
+?? profiles/codex/.codex/skills/aid-create-backlog/
+?? profiles/codex/.codex/skills/aid-create-mvp/
+?? profiles/codex/.codex/skills/aid-create-roadmap/
+?? profiles/codex/.codex/skills/aid-design-backlog/
+?? profiles/codex/.codex/skills/aid-design-mvp/
+?? profiles/codex/.codex/skills/aid-design-roadmap/
+?? profiles/codex/.codex/skills/aid-update-backlog/
+?? profiles/codex/.codex/skills/aid-update-mvp/
+?? profiles/codex/.codex/skills/aid-update-roadmap/
+?? profiles/copilot-cli/.github/aid/templates/design-folder-readme.md
+?? profiles/copilot-cli/.github/aid/templates/design-lifecycle.md
+?? profiles/copilot-cli/.github/aid/templates/design-seed.md
+?? profiles/copilot-cli/.github/skills/aid-create-backlog/
+?? profiles/copilot-cli/.github/skills/aid-create-mvp/
+?? profiles/copilot-cli/.github/skills/aid-create-roadmap/
+?? profiles/copilot-cli/.github/skills/aid-design-backlog/
+?? profiles/copilot-cli/.github/skills/aid-design-mvp/
+?? profiles/copilot-cli/.github/skills/aid-design-roadmap/
+?? profiles/copilot-cli/.github/skills/aid-update-backlog/
+?? profiles/copilot-cli/.github/skills/aid-update-mvp/
+?? profiles/copilot-cli/.github/skills/aid-update-roadmap/
+?? profiles/cursor/.cursor/aid/templates/design-folder-readme.md
+?? profiles/cursor/.cursor/aid/templates/design-lifecycle.md
+?? profiles/cursor/.cursor/aid/templates/design-seed.md
+?? profiles/cursor/.cursor/skills/aid-create-backlog/
+?? profiles/cursor/.cursor/skills/aid-create-mvp/
+?? profiles/cursor/.cursor/skills/aid-create-roadmap/
+?? profiles/cursor/.cursor/skills/aid-design-backlog/
+?? profiles/cursor/.cursor/skills/aid-design-mvp/
+?? profiles/cursor/.cursor/skills/aid-design-roadmap/
+?? profiles/cursor/.cursor/skills/aid-update-backlog/
+?? profiles/cursor/.cursor/skills/aid-update-mvp/
+?? profiles/cursor/.cursor/skills/aid-update-roadmap/
+```
+
+### 5. Pre-render `sha256sum` manifest of the three trees
+
+Oracle, run from the repo root before anything was rendered:
+
+```
+find profiles .claude .cursor -type f -print0 | sort -z | xargs -0 sha256sum
+```
+
+**2644 records.** The manifest file's own digest, so a consumer can prove it read the
+record intact:
+
+```
+21927beead85a2948136beac3fb44a83cc08a653e17f98476aa5727a3eb07c26
+```
+
+Full content follows verbatim (`sha256sum` in Git-for-Windows binary mode emits
+`<64-hex><space>*<path>`; the `*` is the mode marker, not part of the path):
+
+```
+0c076a692335abc61e8a1d484075f203924053d2f67dbef09a101ed75cc79b39 *.claude/agents/aid-architect.md
+9e9170f1294066fe69740a2c0970a537bbd959052199ba6023b300660cc71b84 *.claude/agents/aid-clerk.md
+2cc441fc18a326c388fca2909f92def16e150be4111d925a351f0c156246f638 *.claude/agents/aid-developer.md
+587e59838231873c3b1b637be05a65ff2c140ccccf54237f3616c9097b7b0821 *.claude/agents/aid-interviewer.md
+8d0143194836200b5ee04f298799d211b7df4ea8bad5faf4c3a98d5017c6bdf6 *.claude/agents/aid-operator.md
+898c0fbc0b828b4aa3e1505eac34a513badae9cff0248bcf8ed4e959da0713d6 *.claude/agents/aid-orchestrator.md
+5dca7422b633d7a069756291b19bd1b19c7d8333dfbe700ad2b72e35db5a9fbe *.claude/agents/aid-researcher.md
+6765c78bd79ca830156c3b97b25581c18dd7749cc8bfe4fb6a7886da1fc207c1 *.claude/agents/aid-reviewer.md
+aef9fe799c6ce4c080f722e7a8a04b5daf125c30cf78cc862d6849084befb6c9 *.claude/agents/aid-tech-writer.md
+b8519db9d466949e7162584866a20818148af78205f1ce14d28c19178e011fba *.claude/aid/scripts/config/read-setting.sh
+5f1c2060c42217d7da1f7b1e52286e1f75732554866ce1a1191ec0177572a7e9 *.claude/aid/scripts/connectors/build-connectors-index.ps1
+297e2406c97c6d86bb6384c961899773cda97d5fab08c3485f63bbda9f5fce0c *.claude/aid/scripts/connectors/build-connectors-index.sh
+6a8feb93e1fc5bd2aac5dfc2e32c67966c962fc1874e8abb93acfdcf27bd95fe *.claude/aid/scripts/connectors/connector-registry.ps1
+ab83b69202d7c7686e0ab42aa965bdafdf679a286df9425424977d34c0c3135f *.claude/aid/scripts/connectors/connector-registry.sh
+e28788564730d3c6b5970e639debef112b3622034ba1c3499c9f801104ddb3ef *.claude/aid/scripts/connectors/connector-secret.ps1
+e9dda644f7d8ec238dd4b53492f1d6dd33154d4373537f4473988c178afca86a *.claude/aid/scripts/connectors/connector-secret.sh
+4387e45dc85935478466f24321c8c68f86e5cc7f19a4191cddc143f36a6f9fff *.claude/aid/scripts/connectors/write-connector.sh
+c906f9b512c6fecf6635254ea1f199479da2582d5b8a44c24101b1008da3583c *.claude/aid/scripts/execute/complexity-score.sh
+eea2a8d8dd12d5e118ea97664fb874343b738a650c984c866363e6adab5bde05 *.claude/aid/scripts/execute/compute-block-radius.sh
+4adc99a9d9aff96d5a3c418fb461af28167f48cfada8a1d2ed88b17454fb17fc *.claude/aid/scripts/execute/write-control-signal.sh
+eb451853f845ecb5f042bb42ae87748d5dc021047260783ae64c79e2eee9b03e *.claude/aid/scripts/execute/writeback-state.sh
+478103d69baa1eb0f080538923ebe4a583629cbce540d04c567f15b4c76350f3 *.claude/aid/scripts/grade.sh
+9cf3286222f78b5a6f3d7e24dba7b8acab9502bd6b3d166b26ae87465454572a *.claude/aid/scripts/graph/assemble-coverage-notes.sh
+7ace146489626ebf6b737b839af23e1c1d9f784987d4f32570fc0fa1c2a760b5 *.claude/aid/scripts/graph/build-graph-src.mjs
+c48ab165b8edf9c67b2d4df10127e75a3a4f3204a9522c039a14470ef6455f4d *.claude/aid/scripts/graph/build-relationships.sh
+fd57b6e1b39756aa65a552c6c868efa8fa97c866cdb096646634f2f90b8aaf69 *.claude/aid/scripts/graph/build-table-src.mjs
+48ab23ea28b619b894d5594ba8e1d4b329a2726e7d331db63f31f4227a41a3fd *.claude/aid/scripts/graph/coverage-predicate.mjs
+c2fb3e54849d2c01d7037ab4618d4731f47e6ef3c465d2083905960f6480df65 *.claude/aid/scripts/graph/derive-edges.sh
+aa0016f6f624d6f9f432af877789c28295eb7f6aa2d581169680879f5f28790d *.claude/aid/scripts/graph/detect-kb-gaps.mjs
+762945d41b28275ddb0230ba364adc18c8eb801b8ee48da869aefd25648dad2f *.claude/aid/scripts/graph/grade-graph.sh
+b8d24509bebe1cbb3e63b96457c2414591f93c3603be182f535543dc85e1f0fd *.claude/aid/scripts/graph/graph-preflight.sh
+289b9617ee372ab10e8f5d1dd77d441844e22d6656dd8b895dfd451c4906de47 *.claude/aid/scripts/graph/graph-stale-check.sh
+17291348f003db8cdae9c995240fac2fd46cbada0dd482c10a4861de33cc38b2 *.claude/aid/scripts/graph/harvest-declared.sh
+d4858921265ecb0b3c636cba5ba114df7aa64757e6d41a77d7d02e915a0c2156 *.claude/aid/scripts/graph/kb-write-fence.sh
+bf20e3528d3b295e416c9d3831f24b655eb10be4e1344873cafd1e24376378c5 *.claude/aid/scripts/graph/relationship-schema.sh
+0ec1d217cb7c7d96f7be04bddf1251e59baec813ccadc5a6662801baea194901 *.claude/aid/scripts/graph/render-graph-view.sh
+f3b5a71dd6b4cf9dea8d042aefce8159c1ad913b4a28767da69f422e4cbb31c6 *.claude/aid/scripts/graph/render-table-view.sh
+5eb503bfdd5472152b9d7389b3d5d2dcaad171c69e93d85f05133d3df57fbb56 *.claude/aid/scripts/graph/report-endpoint-satisfiability.sh
+20fb58a6e194bec9dfb7a6e8818dfb941e3eb47b4d69525681b26022f8e989a2 *.claude/aid/scripts/graph/scan-source.sh
+9dccb8b3bcd9dec19df75af235a319d863027badedb32b7032cc1a94a02d80b8 *.claude/aid/scripts/graph/significance-rules.sh
+9e825c83c1e7275c4596ffc85ba611afc7d1e7f7678793aba4539f847fbf64cf *.claude/aid/scripts/graph/validate-relationships.sh
+59b69c580a5c34e9dd2d93d8c633cc9bac709743db2768f45597db3c0fe4dc1c *.claude/aid/scripts/graph/vendor-provisioning.md
+4317500099dcff627c2ed2d4dd59ecaf78d1173a9536baa6a35330dd9d7b9a9f *.claude/aid/scripts/housekeep/branch-commit.sh
+d63c02d7dc23d5a66b54143358256f0a6d0315a51baf6036a3d8d4595c8e985b *.claude/aid/scripts/housekeep/cleanup-classify.sh
+34efca63b146b2025d864172c0880123eee18e0b6e9a5ba0b754b652c7fe6a98 *.claude/aid/scripts/housekeep/housekeep-state.sh
+be800782b10457f86202bc59561c2f718b49b5a0cc850a6892fbe398a41d4e3f *.claude/aid/scripts/kb/build-kb-index.sh
+8735a4d4cafaca516bf5c0cd8f0b0cb9a77234740d37fbc81be416cbc581d7fb *.claude/aid/scripts/kb/build-metrics.sh
+fc8baa661e857a5ec82b0fe575f7ebbdcf9e1cea5b8b5fbdae7734ec08017766 *.claude/aid/scripts/kb/build-project-index.sh
+0b6019ea044ccc61b3af6975d5b0a2c4f48bb1bcb2c4cf8d13de8fb70072a861 *.claude/aid/scripts/kb/closure-check.sh
+cde35cae105e2d195d107336314f344ffad01aa0cffc35633862101119f871ec *.claude/aid/scripts/kb/coined-term-denylist.txt
+ed1a1dce6fc24ae3f24a541936c7133efb88bfe19d125a38cb900cc1b4163340 *.claude/aid/scripts/kb/discover-preflight.sh
+7623593a557d6eaee5e75a3c1f7d06cff3790c32b445f1fd1e11c2009008ffcd *.claude/aid/scripts/kb/harvest-coined-terms.sh
+63a7534a1252982753cf2d698fc5e3af63e1f2c79f905200a97da3d377cd56d5 *.claude/aid/scripts/kb/kb-actback-task.sh
+98e427f0b769c374ec008c242167ba07a3bec61fae081de447062b48285efa4f *.claude/aid/scripts/kb/kb-citation-lint.sh
+546c21baf89cda6f84de44f6f727bcafd9cb6d438a36c6f0495e0f48697bc6c0 *.claude/aid/scripts/kb/kb-dual-intent-probes.sh
+f9adcc7c6dc14648df4a13c1b51a497896779f21aa7ce73929b1f6891f5331de *.claude/aid/scripts/kb/kb-freshness-check.sh
+3c23e5a272320b0f75a52667b4526f5166555ddd207c43b8fc4416e51537ad3e *.claude/aid/scripts/kb/kb-teachback-questions.sh
+defef4aa83dab1da773850358fce0340ef461db86511ad4230c1e1a19100341d *.claude/aid/scripts/kb/lint-frontmatter.sh
+73cf153c549fe7f7e56d199d408e002ef5929b87b0b181068608cb03b3c3090b *.claude/aid/scripts/kb/recon-classify.sh
+d371b67980d3e59577b6a757040aa0fbc46cf4cdc870945c2c653de059a5a9bd *.claude/aid/scripts/migrate/migrate-kb-frontmatter.sh
+f74d98d633602378e22f840da8ad9868ddcb1a64595afdf85ca46ccebd7c201b *.claude/aid/scripts/migrate/migrate-work-hierarchy.ps1
+258d2d97fa4f05c03c493dbe331799501b8bf707f8eec67e0b1f6f405a9b6bdb *.claude/aid/scripts/migrate/migrate-work-hierarchy.sh
+a3beb2692af72470624eae046afe941c5636e42344f27c71267732a7d082e199 *.claude/aid/scripts/release/check-version-sync.sh
+8e331e683afbb10e31f908095c1ded778167871b230e5345c0269cf98a79cc10 *.claude/aid/scripts/summarize/assemble-3part.ps1
+f1636405ad7f7419217b41924ab72e3e98a0140aa54d78b5e9d5f34c4f6406cc *.claude/aid/scripts/summarize/assemble-3part.sh
+ddcb0ec5a1cdb852770953bce3600f053af32602bc9d39da483985b204dcd9b9 *.claude/aid/scripts/summarize/assemble.sh
+2e3769f10a7b1f30a84836eb64ff06f50dd5bc28b71129bc3e91423bee6bcee1 *.claude/aid/scripts/summarize/build-md-export.sh
+7a4df020009b858ca0f8229ed0e79f00e2557b5e97f801ac82ba0169b62593ea *.claude/aid/scripts/summarize/contrast-check.mjs
+5cc73cd62bebc1e7e40c73d49b1627347874c457958a1362ed154e2226f1e0a6 *.claude/aid/scripts/summarize/grade-summary.sh
+6e4df9cafb9f3fc54032e8a21b55dcc5bee74d910b409f974d51372f84ae2d8d *.claude/aid/scripts/summarize/manual-checklist.sh
+7b4c08084575471e9e744c61d850ecd23f18bff3c1e1da76654aaab3ee0c3746 *.claude/aid/scripts/summarize/playwright-provisioning.md
+6c978b869ba3f264c6fbc9ae45e33e9148a5b02f00bf63cf23e954b81cf122e1 *.claude/aid/scripts/summarize/spot-check-facts.sh
+ae03cd8d77b6163e5d107c8eeadfc0eaf4c6cea2db43f2f576f3c9b8180e6e04 *.claude/aid/scripts/summarize/stale-check.sh
+a5d7327e33bc58c7f73fadde63e75de7a8857373e928c03d23990cba20106e28 *.claude/aid/scripts/summarize/summarize-preflight.sh
+a64f5a35ea85687495b32bcd612f2cb3706095e22a8842c37600b5171fd1442b *.claude/aid/scripts/summarize/validate-diagram-content.mjs
+cb9ceb065fd42d6c3f6de816844a42d402c211e7a9e39569057292cf8e67782d *.claude/aid/scripts/summarize/validate-html-output.sh
+4c244fad542ad37b90b974df44c523ddaf3d17875f8faa583ca29167fdb86579 *.claude/aid/scripts/summarize/validate-visuals.mjs
+f28a7741468f990effa3d1736426200c242ad2526c21d5d33d38c192d548ff0a *.claude/aid/scripts/summarize/writeback-state.sh
+256b18145d15003a840b1ba7e473c2b693748ac060416cefa16d998a0b77767b *.claude/aid/scripts/works/enumerate-works.sh
+2bbae5910e5d67145338dfa0e43cba7201900fe53ad6ff327faa1f94008e0f52 *.claude/aid/scripts/works/worktree-lifecycle.sh
+f7594893282deae4cb5c5b824a8eb47966bc155b96de1ddcd7f9e9823fe076ef *.claude/aid/templates/agent-boilerplate.md
+1d747e00693eff11233f79ec067a76c4d1eb19c5f00f8d995c7c808718b57442 *.claude/aid/templates/agent-dispatch-tiering.md
+06c31771901327ba0272fdc46cf1b0b5e5b444c9e1615ce7e8754e2e533caec5 *.claude/aid/templates/connectors/consumption-protocol.md
+b80bac04e86cc642e63e733c7ad338a93bdd4e61a9ffa346f9818ca54b72c038 *.claude/aid/templates/connectors/preset-catalog.md
+7903db9f03b35f0cc45af62664ad74b5985e4a5dffd06467115636aa4092f459 *.claude/aid/templates/connectors/reconcile.md
+d54a2202d49a5e458f554b30106344b5811a08fbdcdde3858aed381d2867a58a *.claude/aid/templates/connectors/ticket-resolution.md
+ab1776254484d2534cc667ad6dfa44a5abd349238a6455f425e4e23930fd7a5c *.claude/aid/templates/delivery-blueprint-template.md
+b83fb6d7c33a549c7e8cf8d95e67f2cf68b39e8fd78ba7942ff62db950d3b627 *.claude/aid/templates/delivery-issues.md
+f89f292c1ae7550cdd40d49cc1ff5677b6f48fc7eefb226bb5eda7ef8941c063 *.claude/aid/templates/delivery-plans/flattened-plan-template.md
+12c9e04352cd6df9e6e355ab412933af60ed006b1043707c93a7a34891ca86f1 *.claude/aid/templates/delivery-plans/task-template.md
+3373f30484d581251dd699c3e9687684bdade73fa2ddc140d833a3e68fb3f21c *.claude/aid/templates/delivery-state-template.md
+3498f433b269de3c30018a98715f61b89a0b79b62ae4998ea9e468c9321db2d4 *.claude/aid/templates/discovery-state-template.md
+062a0bf7cdb8f420f4ce67641c23e9bc9efc17c88636c94f3b2ccfc21b96f74c *.claude/aid/templates/dispatch-protocol-checklist.md
+5a4f4a0891d02152b782539b3ff25f7313ff16a47f2dd20279b36c3a8f5545af *.claude/aid/templates/downstream-worktree-entry.md
+ce60dfa9e5c6e9595ae289efb2128953f5d8bf34f8d53f3505fb77077e0bb8c3 *.claude/aid/templates/feature-inventory.md
+f2431502406233a2f9f083346f9a06fc2b5c5d289f6f61c951099af505f731c7 *.claude/aid/templates/feature.md
+79b88f114c2ad3e1b30cb84699049c1a4fdb968e14f52fec37ed721417a22b26 *.claude/aid/templates/feedback-artifacts/IMPEDIMENT.md
+17953d44eef05e4a4e3f4707ed29f7290cfb2dc3a2b66cfbe20fb21a1cdda78c *.claude/aid/templates/generated-files.txt
+d0cd2ed3066736190807a230c6021efc7edea5c2989f3696fef312b2f8d54b37 *.claude/aid/templates/grading-rubric.md
+46e12a44e9f2256b4996502e9efc72d8c2e94bf1409b75750823c530cdf34c2d *.claude/aid/templates/graph/coverage-bearing.yml
+911342cefc0a7ddd8f86257a2465842c030a0d41c294743b5526f63c5a50f39c *.claude/aid/templates/graph/edge-relation-map.yml
+370101aa17403830d5c365c542387b48f82fe1a8c87e68904bd748f3f94c78da *.claude/aid/templates/graph/relation-vocabulary.yml
+4d71bdf8305cf525683c9ecaeb436bb38aedfa952afefc52118b0e9ff96cce21 *.claude/aid/templates/graph/relationship-schema.yml
+702bcebfadddd395b2ef989c25329d73217ca255054fb035d7c8058f9653c64b *.claude/aid/templates/graph/scale-ceiling.yml
+372aae3130d63aed85569147d882c687c86ce9b85642b95312ebafc0568e15d2 *.claude/aid/templates/kb-authoring/concern-model.md
+7897dbb65c6ce6f2c8b175f39719c2ff8a12bcf0be3cb4db1958d2735f7a9852 *.claude/aid/templates/kb-authoring/domain-doc-matrix.md
+b01ff9017942ec4add39ab84f57b5b53d4ef09a665d9ee79b572a19c5598483a *.claude/aid/templates/kb-authoring/frontmatter-schema.md
+3c851bfa21f55fda24f61d9c12466bba0a3a52bd67cc615cf8c5e5dc2cfd161c *.claude/aid/templates/kb-authoring/principles.md
+7860aa328c3ffe7aa8be0503b63e146f596ec1308c07a468fe6c0ad6281e121f *.claude/aid/templates/kb-authoring/review-rubric.md
+b0479ea74b434490284bd308f7bcae1d373512e8ea617a6830fa9edbc388adc2 *.claude/aid/templates/kb-authoring/tier-model.md
+1d7bd1774c6da4cf46f85b331991b8d615a11b8a02937c80403c387640373db4 *.claude/aid/templates/knowledge-base/architecture.md
+1411bd12c88e6b840178e1d77f3eb5707c102987533b6291a4563f5be434b8ed *.claude/aid/templates/knowledge-base/coding-standards.md
+f7ee90bece63b57dc0b4b57c9d7a806f4a69fdadc65cc1be7b366ce60ebaaa14 *.claude/aid/templates/knowledge-base/domain-glossary.md
+a1ce46eef33b3547085eaad19a41057c060b6a3780f1c716dd4ea1f80b4e1df0 *.claude/aid/templates/knowledge-base/external-sources.md
+47c8ea78247e101643395ad5f6bb68affbe857c66f6fa56c02cd121d774488d7 *.claude/aid/templates/knowledge-base/feature-inventory.md
+3bf6acdedecea4973a897eb7b1fa4ddfb9b50cdb57a3c1a8fa36831f1dd8c366 *.claude/aid/templates/knowledge-base/infrastructure.md
+280fc99681a80475e8e4e350bda99289e89c02dd28c0334060814615c881eabb *.claude/aid/templates/knowledge-base/integration-map.md
+86d82acf2500a2f20b8228e9a1c76649cb0fef4396ae9a8d625923b1872488a3 *.claude/aid/templates/knowledge-base/module-map.md
+f4bc0f1e54615f8f0fc189dd6658c8827f96158ed6aa7efca8675dbfb6d91a23 *.claude/aid/templates/knowledge-base/pipeline-contracts.md
+02b1d55dbef31af30c518a1df343d200935c3ebe0dcd33dd3ee4b43cec2a5171 *.claude/aid/templates/knowledge-base/project-structure.md
+bfcb3f1764fa01dd5581cc5f0e2d11e3afafb0519eca289b4fec1dda43666934 *.claude/aid/templates/knowledge-base/schemas.md
+e970f9fd67fab44235e8da364803985c3b700f99367ecdf748f55d7b97ed3e58 *.claude/aid/templates/knowledge-base/tech-debt.md
+25469309bf7129a65477732a9dbdb3e6c26ab3099a46e49837fc88fe918cdc91 *.claude/aid/templates/knowledge-base/technology-stack.md
+d094d84e5475d3cf100e360a5fb9fd30bbd2e55ecee078c6bee55c31c470ae32 *.claude/aid/templates/knowledge-base/test-landscape.md
+8f2b7d5b579ba85d7fc7fa75ec7eced3d9c16ea0d65cb3bcf80bf4e2acae6b05 *.claude/aid/templates/knowledge-graph/accessibility-checklist.md
+e73e9f7eb371b6da45bbe1a66438918eeb6199dd5722bf3157625a554077815b *.claude/aid/templates/knowledge-graph/graph-canvas.js
+000542a135d27899930b81c90d9525d9865221890811dcb9344d2e061c440230 *.claude/aid/templates/knowledge-graph/graph-controls.js
+7b33db2f797628dc68b5506e76ee717d39f162c0d6cf2af1771bbfd9366b8858 *.claude/aid/templates/knowledge-graph/graph-css.css
+1cb9f1b53408256739833dbf020535a51de7949c14257ddedee5be46b91b1405 *.claude/aid/templates/knowledge-graph/graph-model.js
+3bbc7283a5ce08e4c0678a1306c79259edf9f9632c670a365874aa4f778ea9a8 *.claude/aid/templates/knowledge-graph/graph-skeleton.html
+d8adc08c01af106fa5e73bc4e462f47f458607498e13a25e86063b006373a7ea *.claude/aid/templates/knowledge-graph/graph-table.js
+640775c1b2e67daa8b7b05be42a290d386b4ddff5550077ed0da6c7affd71419 *.claude/aid/templates/knowledge-graph/lens-presets.md
+b3e75b23476acffd00481a5c71e7d24c37d5270a3d8a145b087cfdee3434debc *.claude/aid/templates/knowledge-graph/table-view-shell.js
+397c760ffbe6b58d4ffd7c1f559cfc81ebc97b3bdf5c9de513d83e57ed52be69 *.claude/aid/templates/knowledge-graph/table-view-skeleton.html
+e008c5e25a6be382593089c29bfabbc553c6378eee02895aec46ce396cc404ee *.claude/aid/templates/knowledge-graph/vendor/d3-dispatch/LICENSE
+94b3bbdb6b98dc1325a15762b051013e8253999b0e0436b27d1da17b952ba0af *.claude/aid/templates/knowledge-graph/vendor/d3-dispatch/d3-dispatch.min.js
+e008c5e25a6be382593089c29bfabbc553c6378eee02895aec46ce396cc404ee *.claude/aid/templates/knowledge-graph/vendor/d3-force/LICENSE
+1e07b473241328795d5ea9ad479a7bbabd765012fa2ef95633c83b69868dff6b *.claude/aid/templates/knowledge-graph/vendor/d3-force/d3-force.min.js
+e008c5e25a6be382593089c29bfabbc553c6378eee02895aec46ce396cc404ee *.claude/aid/templates/knowledge-graph/vendor/d3-quadtree/LICENSE
+57e2ad12824ed82893ba447523f2a2fb9beeb9222aafb2c778a9f5b313348b0e *.claude/aid/templates/knowledge-graph/vendor/d3-quadtree/d3-quadtree.min.js
+e008c5e25a6be382593089c29bfabbc553c6378eee02895aec46ce396cc404ee *.claude/aid/templates/knowledge-graph/vendor/d3-timer/LICENSE
+911ceda305f014b6b53ca68d5c896a9a387da120cfd56a421a2c60cca2fc9b36 *.claude/aid/templates/knowledge-graph/vendor/d3-timer/d3-timer.min.js
+5ce7447bc57f7349ffc48338782fbcabe613696e00712b20d66bc58e780f9473 *.claude/aid/templates/knowledge-graph/vendor/pixi.js/LICENSE
+83b2d7edf27bb77460f5f5f5e25cd73c91b77a53f44c80ac63096d6c0b5cfda7 *.claude/aid/templates/knowledge-graph/vendor/pixi.js/pixi.min.js
+e05d497a4608e2aae8b21ae444cca474314b2ba44cc77eb3f2e078ba6bbf1196 *.claude/aid/templates/knowledge-summary/accessibility-checklist.md
+3423b7e9760c234e4301d56b86fec65fbc6bb9d3acae7d37a228fe3827436ff6 *.claude/aid/templates/knowledge-summary/authored-visual-catalog.md
+3cf652f600d0ddbe4e1e202230462cf1cb072dbed7914cd4f80704be7b9faf32 *.claude/aid/templates/knowledge-summary/component-css.css
+b5c9542d0b59e355cf2e102f10b8edf8599f5cef3086565cc0fb2f4d1d8d1b49 *.claude/aid/templates/knowledge-summary/design-tokens.md
+5622d2f9a8181a1ec9a88c964b5eaa10b2118a14b65979f01e6d22644eb83916 *.claude/aid/templates/knowledge-summary/grading-rubric.md
+c6d9f73297b2ee3192d37c94c0e7a0125659fc3ca357cfb71c72ee7f2100d205 *.claude/aid/templates/knowledge-summary/html-skeleton.html
+118528f25b356c2521973c21d25504c8611148c29adeffa37fb5d7b90f2007aa *.claude/aid/templates/knowledge-summary/lightbox.js
+2d686c3e7e87c4ea11bedb2987859cc391f4819d12d9c1c4bfe3568ebaa8cfaa *.claude/aid/templates/knowledge-summary/prompt.md
+db2c7cc1dffa0fa6a41bb8dec6a107ba02cf600846341e66db9c9f1ff8976fbb *.claude/aid/templates/knowledge-summary/section-templates/agentic-pipeline.md
+82507f55f8e7f182b83fcbc118ea2ed2e04ddd08373e645b8e365fcd851ab8a3 *.claude/aid/templates/knowledge-summary/section-templates/auto-detect.md
+9a3026c915d3b1276a45522edcb694b83b432b8dfba1bfd13c7e729c86f157b4 *.claude/aid/templates/knowledge-summary/section-templates/bespoke-components.md
+2c66a2374c19287103abee055824fb14f1dfa6339a9ac315cc4033a265c92d32 *.claude/aid/templates/knowledge-summary/section-templates/cli.md
+e3b7772d3526b243a6f18ffcb360824d50d659603a6e0fccf89c5b69c93d97cd *.claude/aid/templates/knowledge-summary/section-templates/data-pipeline.md
+98ba377a481cdbc0c3050f7e4f817dd2fd8296242cd42b7c02003a9b88059f7c *.claude/aid/templates/knowledge-summary/section-templates/library.md
+277199e1d6d4097729792e80ff9c89a7a0f132115e185aa7b03259e927a11ef2 *.claude/aid/templates/knowledge-summary/section-templates/microservices.md
+d510be318d32e40307d31b0f06c75dc56835d915ef2cd985d45cf52cc9eb3bb6 *.claude/aid/templates/knowledge-summary/section-templates/web-app.md
+25e4e508e41508cb825126c2c2e73dc90d886c52abacacf55932bbafc13c520f *.claude/aid/templates/known-issues.md
+0f727b1273f307baa02ae8f93f75472c666afabf97b5d1c9c41bf40ce6f4b7f2 *.claude/aid/templates/long-wait-protocol.md
+d8bbbe4e1daa2cc548d3c0c544525ad3a7f827e568b94a3f815798973ce63044 *.claude/aid/templates/package.md
+cf78c05319ac958ade4cb707971bcae72168d37f2d30cd9a181215b65b63ab68 *.claude/aid/templates/requirements.md
+d2a8bc3ff89d929f0bb3b21485d7fac51143e7fd452f2ff7604d9928f79be959 *.claude/aid/templates/requirements/requirements-template.md
+572ac9e6e324923a5b4a988a76a0e0ef5eba4f1542cd2d05ac86824d2609fda1 *.claude/aid/templates/reviewer-dispatch.md
+2b4ef914d6a53ef9867b97ca4b028a0b2b309e2292020af20297947ed29e0005 *.claude/aid/templates/reviewer-ledger-schema.md
+d9ee322e4a269a5b904026cfa1a66ad734b0c97e44c77f5268e3bb87cc24fe0d *.claude/aid/templates/rough-time-hints.md
+3784a426cb0daa7edecfe0c493c84aac566a7e2376ddcbfa3e1c7f7f338a07b7 *.claude/aid/templates/self-review-protocol.md
+969d6229ef135a7432f82dde1fa3cad5a1f45cc13d021209734bc20e4e7dc396 *.claude/aid/templates/settings.yml
+d1de6ae5fb7be7b8dbd911714014dc0d049e9559a62c539da633a4b8cbf30c09 *.claude/aid/templates/shortcut-catalog.yml
+99cf534541643aed8f86e3f4286fb16d6dc452c6fe36b4e7bbe2424d29e6d9a5 *.claude/aid/templates/shortcut-engine.md
+a00346c8c0c36df772885c337e8babc31a60f6d2a4bc7acdc88d4c445711f4ee *.claude/aid/templates/shortcut-scaffolding/analyze-report.md
+bbf7d380849e1d129ba286530330f3aa77f257b97087ab35a220a9750b94e8f4 *.claude/aid/templates/shortcut-scaffolding/change-refactor.md
+1613fea70cc74d8ec4ce59607622ef0ea870f92ad685c2138df27150fedfa59e *.claude/aid/templates/shortcut-scaffolding/create.md
+f9dc0d9e848b8bc4007d1f497792955fffd5642815b050432840191807c80ceb *.claude/aid/templates/shortcut-scaffolding/document.md
+13213a469936b2e93981af30c1aaa28073a9eb5c139c928e7399b725cc3ebfcd *.claude/aid/templates/shortcut-scaffolding/fix.md
+ded093047dd0bc070678eaa36e51b1ab2c92e91d15c8fb30fb1caf633f59e294 *.claude/aid/templates/shortcut-scaffolding/prototype.md
+b8fbeb9524031afac448997fc69bea10db5414b6247465e6c4a97d4984609706 *.claude/aid/templates/shortcut-scaffolding/test-experiment.md
+e21f86da3b21ab35d86a172c2d4aea3a154e475d983aa10884fe3cf27198de87 *.claude/aid/templates/specs/spec-template.md
+857e44a913b8a1480b0fd8d86717cd6301e3547b829d0f75291ff1705cf6b11d *.claude/aid/templates/state-machine-chaining.md
+826a3957630e2c9ba7985f85b667369cefb01b16317cdeae4ec97109af876be1 *.claude/aid/templates/subagent-heartbeat-protocol.md
+05bdae3a5253aa93715176c3df294f9809a2f5dcac566f512543917838f9d229 *.claude/aid/templates/task-detail-template.md
+c6196cc294b450f9dca651978a2fdf992c9a49038aa497ea60bce09eb52dc2e4 *.claude/aid/templates/task-state-template.md
+c5d5a115ea2388c7ea0aae06c6951a994e2dba3c6b4ac41caa93df4c69f1c3e8 *.claude/aid/templates/work-initiation-gate.md
+5554e5f0db5c54c730c5e00f1119e64eb64bbaf126bc1aba54b3cd17e5378d64 *.claude/aid/templates/work-state-template.md
+ab4ae2fc2dfe9a1ac324bd3ce266d84753437058fde9db5955a7b0ffea087d5f *.claude/aid/templates/worktree-lifecycle.md
+dad2cd62bce0a377ef8fd6ee8a80b71661c6b7a8ab4a01d919d80494b0a99654 *.claude/output-styles/short.md
+81464322e5c1410c073ce097c508454d5feef5001065eef29f0df66e9c74d30f *.claude/settings.json
+46f6c0a1e8e2c11d6888cc76661d6701f3ed13083411ea0c534ab9a82a7b1ae3 *.claude/skills/aid-ask/SKILL.md
+71dcbc4a8d92c9e6b5c50e2c558183e8693fe7a93170e0a68c33946e03b53a41 *.claude/skills/aid-config/SKILL.md
+9b402b3718355a7e3e0237ec69fff3ba3e708887ba92a262ffaa87d793465eaa *.claude/skills/aid-create-api/SKILL.md
+692a9de43b4d9e8928e70210e4d2c86235607869ffb26faa5e4c21877156d291 *.claude/skills/aid-create-cli/SKILL.md
+baf747cc7b52c8fa33d5950b4f1d292813640c3635bfebe2fd7acbbe3a57be89 *.claude/skills/aid-create-config/SKILL.md
+fbee9acccf1b200c99fc8183046ce0d6f4e0ed4b7445b4ddaa3dcaa65cf73100 *.claude/skills/aid-create-dashboard/SKILL.md
+d189bca71a685fdb365532d6a7dbda56ab0813050903c432e9ad9173869c05ee *.claude/skills/aid-create-data-model/SKILL.md
+ca6795bd47c2dd9445095d53d99a7c270c6ae7940081756ad97712f79086fa1e *.claude/skills/aid-create-data-pipeline/SKILL.md
+1156c309e5f149aae7943eb4c26258ccd2633a4dd81a7be9b975f43f68cb6c7a *.claude/skills/aid-create-diagram/SKILL.md
+22bd84d75a648bd5103b344a237a2d0d83494ca40024d6a4124b005bed0ef1ed *.claude/skills/aid-create-document/SKILL.md
+ef92d798bdd2ba9e401a4687e8395ff32733e5bf84b15a668858a387600c29c3 *.claude/skills/aid-create-infra/SKILL.md
+0735ce2e5ec3e71b956ff236bfa3ff6d0b5e539c943f623cc3f1522f0fa9d607 *.claude/skills/aid-create-integration/SKILL.md
+e671bb20145c7ecc7e02f1e330a0c0a054c08726da02954c9db9b23539dcf84b *.claude/skills/aid-create-job/SKILL.md
+7d37806393a7ce634cc3b7d606df50474d3704e3cd58ce7751b0f380499168a5 *.claude/skills/aid-create-messaging/SKILL.md
+2fe614211844212c12d3705c2f218e2957a49844e84c6e4181766188083db1b0 *.claude/skills/aid-create-test/SKILL.md
+90669a113cfac1326e649883ecf8d98570b443060c7c218131ad12152b052e4d *.claude/skills/aid-create-theme/SKILL.md
+dd2b68e75e597921371534404d356351d63e75c9ade750b407dcca32a613d151 *.claude/skills/aid-create-ticket/SKILL.md
+3150f7cbabc0849a934c3f40f23a1f2ffe0add2d2c727f678b59a6ccf6df6a52 *.claude/skills/aid-create-ui/SKILL.md
+80221947091efbadab986cdf4974d77dc6684ff2799b2f4c4839c0e5cbdaa871 *.claude/skills/aid-create/SKILL.md
+e9a2c0cedc6180d776fc8480a81c5181792b76af9a5f11b7d9351e681c8ed0d7 *.claude/skills/aid-define/SKILL.md
+7b7b5fff3dab3e7260db7fafeb4919f521ca88a14f11114432294fb277c629de *.claude/skills/aid-define/references/cross-reference.md
+bd195cfa54094429f576247f8ca22889dc5a668026d9f9cab1ea3aff2a3ddea4 *.claude/skills/aid-define/references/feature-decomposition.md
+18d53fbda969f792d5f70b7fe8391360f10caeb17ae1cc20c4a076b9b047c75f *.claude/skills/aid-define/references/reviewer-brief.md
+b3dd51fe5e775f2d95df8bdc0d134f2316609ddd8685bfa7bd455d7f354b2ec3 *.claude/skills/aid-define/references/state-cross-reference.md
+a112e57f832bbd571f1153b926b0c8e9109b29ec981a44eb5a8be6359bf0cfee *.claude/skills/aid-define/references/state-done.md
+87cb5ac87f25dad3181f30288f47a1cae8c38ae115429fa6c048d872acfc1777 *.claude/skills/aid-define/references/state-feature-decomposition.md
+3524091f8af1a7a70648f70d52134abadad90061ec9915da1a1470b30d93d395 *.claude/skills/aid-deploy/SKILL.md
+419b29f5c07e7e1882bd75b77c00c0a40783d8d7c50f2a2bb7e00c1d5f1493f7 *.claude/skills/aid-deploy/references/state-done.md
+d347be1c4c8fea072216214d36136e4bb33c9644b09e4d6e0a029c409a1ee64d *.claude/skills/aid-deploy/references/state-idle.md
+81328a5856e9a6d1a584ba3c2a0f7109e358c7405193a33d5839856c16411dae *.claude/skills/aid-deploy/references/state-packaging.md
+b91e34e8f93c64227c66c28b52997bb94178abfe48b581d62ede9d52e765b3b0 *.claude/skills/aid-deploy/references/state-re-run.md
+2716f610b6a3a900152953b32a16798d51c52a4446c5cbe11e0280a6f3239a1e *.claude/skills/aid-deploy/references/state-selecting.md
+8d6fea3bad170d3590283b21ee651c76bd4dfbefb62d7ae31aef8885fe08eb0a *.claude/skills/aid-deploy/references/state-verifying.md
+85c9b8bf10fccc6041f0f0ac39a8e64f398cc7742e96eeb706bd9622a57704cc *.claude/skills/aid-deprecate/SKILL.md
+d0eba7d7aca27dd4ba2587c564550d92805673675b63ead593f75a508c8e6b13 *.claude/skills/aid-describe/SKILL.md
+aca9c2b5cd196a3b5063ac31793874ecb35c32e26bfa25a42481d8e10a0eab0b *.claude/skills/aid-describe/references/advisor-stance.md
+168748c7627a67e786bf9ca831ba46e06638ddb9207ccd6aa2f121325b2bfe7d *.claude/skills/aid-describe/references/calibration.md
+790ee7f2020c61d4cbd54c0c32478e1253a09287d0de3fab19709cca6fa07d41 *.claude/skills/aid-describe/references/coherence-check.md
+0b2bfc98bad714ac7acb35b2dfaaec5461c4d6ccde9e4bc12d4dfd1eacf84eca *.claude/skills/aid-describe/references/elicitation-engine.md
+d1c6e3d8c501d0f81ddc9d89d6cf4e5be67377c33a22de5dc7ccefc5ba920a92 *.claude/skills/aid-describe/references/interview-loop.md
+599de7b672a69a1f74f25da1aefa7f973a8c861f6bba1af8bc402949fa9698fe *.claude/skills/aid-describe/references/interview-strategies.md
+181909489299b720ec4f4d6c2883b39f04b8d6bd1902efd7968bf1415a29abbb *.claude/skills/aid-describe/references/kb-hydration.md
+be59c15e21f24c4d8e7218e205c563a53bce9d0eda7462464eb890bb50fba644 *.claude/skills/aid-describe/references/move-playbook.md
+62e1cc067f9fd1aed67792f1096457265c9bb8b9c7710bae509174265fa12f3a *.claude/skills/aid-describe/references/state-completion.md
+beb01664d66f1b5710213effb8ad80047598c5a1d17edfd416856027d9aae863 *.claude/skills/aid-describe/references/state-continue.md
+03dcd89251d70c0a1b02882da71e3b51660837326a94953eb9ab639676cdc116 *.claude/skills/aid-describe/references/state-describe-seed.md
+56cb993be54a4b8c07ca6b5f0a448d5e845008287b7ac4a6182f7756c30f6e49 *.claude/skills/aid-describe/references/state-first-run.md
+d6fbf9bab6af2d88ae9369243544a12bd69fdfdd6c5cc013635c860974bb6751 *.claude/skills/aid-describe/references/state-q-and-a.md
+8a10f3839cd3b6b7997c7e9e3fbf6e442d537ada231cbf71fb4f0a9e1afbbdc2 *.claude/skills/aid-design/SKILL.md
+d491dacfd7551c445b38c116974b0a7e40a901623dc1e9ce81c207d767f63cac *.claude/skills/aid-detail/SKILL.md
+a14c3031e4c6f97833fdd58cce02325e1b1e579e639e5ef7def94ac47d71bc03 *.claude/skills/aid-detail/references/execution-graph-generation.md
+127a334d2d39b2af157d0f0a0725a6f76be90f65963892213c5128427fff363a *.claude/skills/aid-detail/references/first-run.md
+b3c9f5d7f3e415dad472ccfe8f95a71b175909a6dca9270df91e06db6d028fb2 *.claude/skills/aid-detail/references/review.md
+d42251c559f5d3885c255c16318c475de3ddc8746cbf75f434d90791f580e61e *.claude/skills/aid-detail/references/reviewer-brief.md
+6fda06e73e1f6a12369381001fb3073d8c90b843d2afea11452549c17ac49a88 *.claude/skills/aid-detail/references/task-decomposition.md
+52b69a187ec09659fdf350ceb5e8fbda5defc2f8fd0a25c69dc42b14a0ae0cd1 *.claude/skills/aid-discover/SKILL.md
+c47e920e46f091705dcac59c4411004497a7c5642fa6b7a5429f3125f3c52610 *.claude/skills/aid-discover/references/agent-prompts.md
+0ef662858bc2f6ba39bc71c71b6b82590949754e7ca0b8b2e94e3177b908ba67 *.claude/skills/aid-discover/references/doc-set-resolve.md
+4165937466fbd454b0962e14b5d74044b20f7b867559834cfc664e6a67075cb8 *.claude/skills/aid-discover/references/document-expectations.md
+e88099f0422cefb394fd0c8f11305e661d630be5fd7ba8841f4a82d4ae9ea687 *.claude/skills/aid-discover/references/path-config.md
+aeb1e0f20955110720737cd6b4465b8a72b298228496cb9fad268a7b3d9f44cb *.claude/skills/aid-discover/references/reviewer-brief.md
+b43a6ee2cf73dafed2b773de221436316acc340e60de3d45e2f4735aef501f37 *.claude/skills/aid-discover/references/reviewer-prompt-actback.md
+e01d846de93be3a04057f4f9fca53f805fc005a362d4bf540f688750c959ddc0 *.claude/skills/aid-discover/references/reviewer-prompt-anatomy.md
+b7b30a8d3a7a280a8f6a96cb7240303d2a86db87c72d5dae42cf3df52184489f *.claude/skills/aid-discover/references/reviewer-prompt-correctness.md
+361cdd7ff8b70a49d2f4f5885e9a5bf3410388c12a3f3beecc956a248c8defb7 *.claude/skills/aid-discover/references/reviewer-prompt-teachback.md
+9fdac29d6928cec9d7217b89e1c1d088a07668bb56daaa5dff4b84e6e92d3649 *.claude/skills/aid-discover/references/reviewer-prompt.md
+235d70d941c60d95618d2247979490cb18b2d8b24c99cd7334afbb512c41c282 *.claude/skills/aid-discover/references/state-approval.md
+b853d3ce679c79c8bde2db821fe974900973a4ad3b6779e5456119ddecc7672d *.claude/skills/aid-discover/references/state-closure.md
+fe50618f4add927f8287e80b7de92a3bd97d3f8ddd338ee81bc2e5bdcc8ed0a9 *.claude/skills/aid-discover/references/state-done.md
+63c493d646012dc6ccec7519ebcc5c1d57da37b246634a720a26ae738fbe8538 *.claude/skills/aid-discover/references/state-elicit.md
+6bfdd1470b893e9b428a9bec35722a3d074d0428c5744d91ae4bfa7900ffb001 *.claude/skills/aid-discover/references/state-fix.md
+3a536f5d8a585409280cd1976f70d1f0a136c11294f24e177eb19d989d4315ab *.claude/skills/aid-discover/references/state-generate.md
+58ed65a218539355c26b4f3950f62f871b274212bb570cefb03f215a99d1d42e *.claude/skills/aid-discover/references/state-q-and-a.md
+98d739283b119f370b13b5d583ffc5769233f4a9c532fe30f4da8daaa87a6050 *.claude/skills/aid-discover/references/state-review.md
+d32dda6c58039cd5702fc4fe7cad38f74b79b4f74f8ae67259e31960a5e7d1ea *.claude/skills/aid-document-architecture/SKILL.md
+8d238180e29e8af378c353efb153dabe7de89077b963a7baba8a21498a08bb15 *.claude/skills/aid-document-changelog/SKILL.md
+0a3aaad43eca298c625c65f1805740a05ba3d8d3f4f0595ffadcb46cb8fbf6e6 *.claude/skills/aid-document-decision/SKILL.md
+9d0811ca6892a8f8407e780a4aaa6867e28fa64491683354825c62c98d4ef0df *.claude/skills/aid-document-guideline/SKILL.md
+efde6e5c6c4d631d6094fc821248dbac43d3928cbcba672ca50875511efb64c3 *.claude/skills/aid-document-runbook/SKILL.md
+c7509030fa33d26a35bee7f63c38d8481703ab6dbe9db9fd76b2b0d41fd8add1 *.claude/skills/aid-document-standard/SKILL.md
+122ca3063d3c2865bee579e322c23f4074a9176b293ee8cd12f960334329f10d *.claude/skills/aid-document-tutorial/SKILL.md
+577fb4a4173ac83232502108ab657d235c019c45380e9e907ab044100adbbe56 *.claude/skills/aid-document/SKILL.md
+1f9c2736f42fce5e3dc6fffa69dfd44bee1288dff8cea6c14c032f5e4a66dfc3 *.claude/skills/aid-execute/SKILL.md
+00e065cb4fc2639be9e053be3003f5bc11e3cbee7ba03c7d94500bb5171d473c *.claude/skills/aid-execute/references/reviewer-brief.md
+7827b5132ccf3a33d78a372e9a224773d7440cd6a176e6862abb77359a85510f *.claude/skills/aid-execute/references/reviewer-guide.md
+27a90df32d09871ddd7f72544c9a6078129183b3403f080095e3897bc1208818 *.claude/skills/aid-execute/references/state-delivery-gate.md
+f226f3d6d0a57c640919301278d96fb7862f5f3ed22a6784adff19b680a3bd94 *.claude/skills/aid-execute/references/state-execute-drilldown.md
+c032f01a3748bf8092472d4db614b2641402936b0678ea5d7cb7272b193408c7 *.claude/skills/aid-execute/references/state-execute.md
+5ffa907686879677b16945f6ad9498372bbbc03966cab587ddf39040dca651c7 *.claude/skills/aid-execute/references/state-fix.md
+df3b77084446b3fadfc935dc4185b69949e690033566c0355691ffdedf931eda *.claude/skills/aid-execute/references/state-re-run.md
+99e1743013bfe7bbae0836a34738328e1a4b1c9636ece3364092fa0e864b0fc8 *.claude/skills/aid-execute/references/state-review.md
+03de3b3b2c9c36d6e28732af4cddbf071bd83d973d78700617340bf768c0e033 *.claude/skills/aid-execute/references/task-type-rules.md
+702f7616775100005a3dac1cb5d08a61423af5ec3569644c7785b075974ab9cc *.claude/skills/aid-experiment/SKILL.md
+fc9e3b685d3a05b24904dd9160aae2024af4f620ffbcc4187ce225aae0c2ccc0 *.claude/skills/aid-fix/SKILL.md
+5f98d23fbb1482e8e5d9e626a6ba2b71048e7f894a09ab0e61de6993df42b954 *.claude/skills/aid-graph/SKILL.md
+c9237df19d0b4744137f3418f24773669ebbdc10944c6e8efd2a2d682f32ef95 *.claude/skills/aid-graph/references/agent-pass.md
+a2e3916e95da39a3c8cb42fd374de81a012253c91bd1682fe33aca86089f01a9 *.claude/skills/aid-graph/references/state-done.md
+d58e0acbfd31f3ab9835d645d121dbb5778c7d67d4a193928617434ed481b18c *.claude/skills/aid-graph/references/state-emit.md
+cd08da5b91dabec05da0ba46481142e4d6ad8ba5eeec98d321e4d861f1460690 *.claude/skills/aid-graph/references/state-enumerate.md
+bebacfd2096c11e335d20dcd53bdc95c3c31d4b0a07c13771da29f15e5a35548 *.claude/skills/aid-graph/references/state-extract.md
+1f1edbdec556f2c33fdef5c5767f5d51d6db081a0a2bac1318844c7c2da5f31c *.claude/skills/aid-graph/references/state-fix.md
+f5f3d9837a330ff4a403540e5bb131906bfc2eb8ce8f2d2cb5176c915d46eae3 *.claude/skills/aid-graph/references/state-gap-report.md
+068b96e33865e15b8c80fdc4edfcd56f7ffbd7d17fe2bcb00aef3d3b3815e4da *.claude/skills/aid-graph/references/state-preflight.md
+d9734eb3fcc1cb7e6935850abe570a22c7aa19e605bf87d978994bb3c8025e37 *.claude/skills/aid-graph/references/state-render.md
+27c609e8547ad064d0ef6cac29ef95ddde9fd4467e9b769d3454f4f675976a81 *.claude/skills/aid-graph/references/state-stale-check.md
+4550e9307c90a7399a8b738adad132a1ab6e777238bb748c5ab37bc6aa354084 *.claude/skills/aid-graph/references/state-validate.md
+286420f588f0716adc622edfa0612fcc6bd92ebd77f034f8e1a34d4950faa2cf *.claude/skills/aid-graph/references/state-visual-gate.md
+69fbcbccaf7496f343f46878c08d4049f55f6e7e51627e4957e55e05524597f7 *.claude/skills/aid-housekeep/SKILL.md
+b962a17abcb0b1236d410e9a828064221f158b45f7f2e97b59b4b265a9f35b72 *.claude/skills/aid-housekeep/references/state-cleanup.md
+dbaccb9289d08ed8837f752ccede5e8e3964db554519803047b2aee550d9e11c *.claude/skills/aid-housekeep/references/state-done.md
+8eafcdd1fd17dd2d433e312a1ba64a796ea713e4ccaaec126f53a85931f3297b *.claude/skills/aid-housekeep/references/state-kb-delta.md
+dac8ac8d2dad07431027f8d1f4cf814401c893cdfeda9ca8c47ef1402b66421a *.claude/skills/aid-housekeep/references/state-preflight.md
+5b5add798294bc0797892de18835c2ad6f07b5e25b02a931bfbce0f0dab61767 *.claude/skills/aid-housekeep/references/state-summary-delta.md
+4aaf20ddeb39a1b428168f7749882f45197598a2929693965773dde1c4e7532b *.claude/skills/aid-migrate/SKILL.md
+140780132357fd845a6f29a08e8ed9ee4d6cfd74e526bd124da3058aaee0b884 *.claude/skills/aid-monitor/SKILL.md
+22a10b50700e35d95f9fcfb460732cc671c9a797ca651f34be75babb73e74798 *.claude/skills/aid-monitor/references/state-classify.md
+40ffe2ab11dcdf52184ff397f25fe4898844fd55936ac0f5bc1fd4b9d8976ce0 *.claude/skills/aid-monitor/references/state-observe.md
+a5f7f0afc32a41ad25a295eae333f47dcce3af507dea4c7545847b39ecb1c7d3 *.claude/skills/aid-monitor/references/state-route.md
+0fe2e7dc87559672a8c91d06cd37ae2eef1960fc551790f46dd1c04871e9a2d2 *.claude/skills/aid-plan/SKILL.md
+ef258d2a7915cb17ff6c7c01b0812274b3b2d02a9d82e4be2c64f66aeca946f7 *.claude/skills/aid-plan/references/first-run-loop.md
+a74cafa5146364983077907f8e3f7f496cc69b73bc5bd57195d10261051a24b5 *.claude/skills/aid-plan/references/review-deliverables.md
+f4a2419121457b993a7470ee05c2afea9ee99c21604eb12439fd8df64720829d *.claude/skills/aid-plan/references/reviewer-brief.md
+52dc356e46aae74fe1f033585be81743d7904a0b398b2e5f625caa549bce70ad *.claude/skills/aid-prototype-ui/SKILL.md
+87e89a5a99af7508106ad8c960b17748e7b0cf003c08782881a45b40df1048af *.claude/skills/aid-prototype/SKILL.md
+0288fc3ed2efd2f7f4af661af70a784547274789d83ae868c94e4b6e9cf41ce2 *.claude/skills/aid-read-ticket/SKILL.md
+1b1a8ae1156674c399f88cfeb155f1369e05fde3557e99f58fdc46e33f1c4ffc *.claude/skills/aid-refactor/SKILL.md
+9ff89c14895d90141d14c2a32ae5f7ce1d87bc761ca4999ec5f4e59e497f18c3 *.claude/skills/aid-remove/SKILL.md
+8e1aaf4135526b4ff58e444245b80fcd846488db302bcf6b803375e4e668c49a *.claude/skills/aid-report/SKILL.md
+014e08e2ef174ad992477c11405f6c2561ef609eab0f1b5906ad55ab283cf683 *.claude/skills/aid-research/SKILL.md
+5c64b9b024891065191e00d0a9fbc307bbe9d7bf8fff5f0ef01cd85f5ccdcaeb *.claude/skills/aid-review/SKILL.md
+c2b34e7658020170c42b58408f9a91cd4f2001e1df3a76315281c802de3d3938 *.claude/skills/aid-set-connector/SKILL.md
+b512d31eb977ecc1fb179f60e01ea37eca87d8bfa8aafe2b8175c196ff03eed8 *.claude/skills/aid-set-connector/references/question-sets.md
+2fbf135a06bb2dbf6cf680c1e0ddaab13d4b8f23371c46623a369aca8e28a80b *.claude/skills/aid-set-connector/references/secret-reconcile.md
+a2151bc45d1418d51b69b023ea7ffc6a902014e0da295739e732a7f17102c6bd *.claude/skills/aid-specify/SKILL.md
+c8b1c116b82478be03869290f7860e0d5c2eaa1106e1d108264371dab877ad7e *.claude/skills/aid-specify/references/handling-outcomes.md
+551844a49ba6aa836c94886f8c36efcf4304e456fe5aa3bfc689f309cbb26831 *.claude/skills/aid-specify/references/known-issues-scope.md
+38b051ecb7397ff1de1c084d994ecd83fd87db479998308380836b37846d6f84 *.claude/skills/aid-specify/references/reviewer-brief.md
+8b12a2551581172f762cf2bab0007e619698fe8ba4f8912b89e35c98e4aeec1f *.claude/skills/aid-specify/references/state-blocked.md
+e784713d3976db1c6e3e09b6a5a9b80ab7fe975f9faa1d5c2c3bc43e42e526c0 *.claude/skills/aid-specify/references/state-continue.md
+3f6f837c6037c713f4b4ba617e07116dceb14c306b9c7f143ea13a605295f2f4 *.claude/skills/aid-specify/references/state-done.md
+0f91f781e34e70a3d08bc8f56e33fbf821f36b83e0862e94daff59f9490c8bad *.claude/skills/aid-specify/references/state-initialize.md
+358bff0965a99ad8186f624be8882e1ec11d61715e0e37857c67de3b2e7190c6 *.claude/skills/aid-specify/references/state-review.md
+62dfe77914f03bba41656da9b3a964c51a8aae9953226b987d8cd7526375c6ba *.claude/skills/aid-specify/references/state-spike.md
+f30f34eadb764a3b12bcfa609b078782ce6432d164d2c2856bbb730c3fe5a3f7 *.claude/skills/aid-summarize/SKILL.md
+df577d8eaa8c4068d160e2e6f86fcb67558435a07f72949ba9a0304ea1f44bbc *.claude/skills/aid-summarize/references/state-approval.md
+61bc4adcb8a40df805c8e494c02030ccf23326eac9c4ca9d5b303686289bfa0a *.claude/skills/aid-summarize/references/state-done.md
+3085c555a1b35dd1eb47536b55b9a0935ed49911fef9bf08fa303c2e1150ece8 *.claude/skills/aid-summarize/references/state-fix.md
+6a457bd3f688f3c75a6ca173b84dbe6e1b3e05aac9303f22b5863c25a28917de *.claude/skills/aid-summarize/references/state-generate.md
+3e28ef635cc24d8517bcb2f4427cf7df9ea6b19ff061a0cb5a2d8c3b3be0da39 *.claude/skills/aid-summarize/references/state-manual-checklist.md
+0561dd0a5d23ef7561f732c4a16d73e025abeda8c2f701e7b867bf061f62758f *.claude/skills/aid-summarize/references/state-preflight.md
+17abe7779176f35cb2532a2eaaceaeeb5be7dd38e1fce32d4db402998404b767 *.claude/skills/aid-summarize/references/state-profile.md
+89d2db8c3a89ae2b8087763c18356988b1c7595bc9ecd8d76b6adac1a9bf893a *.claude/skills/aid-summarize/references/state-stale-check.md
+d64551611cea18c54ab80fdaa871a6bf7fea5823e25f61e1d541f134bed50d68 *.claude/skills/aid-summarize/references/state-validate.md
+d2f7ade90db9a09efcbe77c0968bfc575392c4b0d6b569bb665bc32ab184c439 *.claude/skills/aid-summarize/references/state-writeback.md
+379beb0320c69a19afea62e2f5d4ec3484f9b81465ffb64fd2fd5ba81dc17bc5 *.claude/skills/aid-test-data-quality/SKILL.md
+87bbd6d37ce5ee8ccc3d2d2e2afb098334b1d77543e8637900b8b2fe350b9979 *.claude/skills/aid-test-performance/SKILL.md
+782f28509cb652435f45df30931c52cb47ec1bb90425d109e95f94c7b579de3e *.claude/skills/aid-test-security/SKILL.md
+1e5cd62ce18a5724208f54c2f0ff7da423151ed96c938e1ceddffb45bb8b757f *.claude/skills/aid-test/SKILL.md
+5995a0551cd855d94bef4f513b74ce54eba31ca30a0e5d5188db32d08cf66a38 *.claude/skills/aid-triage/SKILL.md
+41826206f6d98897ca158f593c5a42d477ae10f712084483c2a45ae8c6c7ce00 *.claude/skills/aid-triage/references/state-classify.md
+c10c5dd011574e6317eb9ce9934d1b25ad98f74f3ba87d8237ae9b22b17f0869 *.claude/skills/aid-triage/references/state-suggest.md
+306cc937136bd698b3aa5898adc632ee3e39c3978a72807af38fb5e7536b2502 *.claude/skills/aid-unset-connector/SKILL.md
+9cefd847885a67144d563982985bb2c6d71d2c5a85192ca978f77a87bc14bdb4 *.claude/skills/aid-update-api/SKILL.md
+201bb16279472d473b6749e87ed50b9b85aaa9fd5c9169f8bfe754bc622056aa *.claude/skills/aid-update-cli/SKILL.md
+4b61e60091abab4d7743ec857c8174fd6dbb5cb55190672345354b37c57c43a2 *.claude/skills/aid-update-config/SKILL.md
+5580ecc5ee9c036465ad4ed3ea457f6d9dfe73330aa5a6a9473d40d0066b0ab2 *.claude/skills/aid-update-dashboard/SKILL.md
+14998365a731aba31c2db0761bf35e56952d18ba1f08a816ecf31707c22126c7 *.claude/skills/aid-update-data-model/SKILL.md
+aaa277831a2bdcd43ad0ad27e81e59f058452b43c8949e99fc678e15d5fbdef3 *.claude/skills/aid-update-data-pipeline/SKILL.md
+3061f06b44e8fd735bfdeed53605b200f78431383d886c0a32fd6ea6a4b4e880 *.claude/skills/aid-update-document/SKILL.md
+64826170884d8b40349f978b94b87b46e21d9b3a0c3d04de05133b153354a5a1 *.claude/skills/aid-update-infra/SKILL.md
+6719dbedb9d102207294b8fddc1b7b067caff02a88af3ce0cc06445bb7833eed *.claude/skills/aid-update-integration/SKILL.md
+39e14b5952c0ab03a5064232ef1f68c8a20dc821b777f7dd05135a0bfae06b55 *.claude/skills/aid-update-job/SKILL.md
+da0c0057eb113242371a39209cf1657941f0fbdbb10b1301a783b583545dda85 *.claude/skills/aid-update-kb/SKILL.md
+ef3c574b610a367e1c2b105ac82d29decf707e90ba5c7467e3d4de4fb2a07a8c *.claude/skills/aid-update-kb/references/state-analyze.md
+01478db53dfba6aa97979fd2118eaa99dcad60479eba0266c4c75f13276921e4 *.claude/skills/aid-update-kb/references/state-apply.md
+5f3da53e53aa30bbcb4fd789dfac430066f17aa0ecb6311675ff24b8a9b1fd7d *.claude/skills/aid-update-kb/references/state-approval.md
+78219d9687b4b16093f4d5dd4206a6af63b2241c219369de4dd23d331baf5aeb *.claude/skills/aid-update-kb/references/state-confirm.md
+8fbaa3b83c74964f0ad2ec033cfa7a0428fba322a83deb9e859deea6fe244a2e *.claude/skills/aid-update-kb/references/state-done.md
+e81df8e9b79795720fda10495a93719fbbf53ce66536538f70d94eafeb2de807 *.claude/skills/aid-update-kb/references/state-review.md
+c25d63169f4c5573a45de4f5c2fd0f00f4c74db183f27863b522787ba34357c8 *.claude/skills/aid-update-kb/references/state-scope.md
+3e92e3455020bf0de41317553511745f174935f33e1973e327b94d23d4f998a0 *.claude/skills/aid-update-messaging/SKILL.md
+9dc6b3b8a138c4cd1f420a2bb60831504dbb27cd29cd24698bfd71717d4bff31 *.claude/skills/aid-update-test/SKILL.md
+cf8b0e4150ee2be77d360fc05d83189b4604c0d90d9d3d62ef17722c41b2d6ff *.claude/skills/aid-update-theme/SKILL.md
+a1f926a1bf87320a8adf096d6b00f5fe8ff245626137623a83b00a7eadac9e0c *.claude/skills/aid-update-ticket/SKILL.md
+6eefa5b3f410c50a8bb0a10b3dd4ab680cdc9fecd628a9b6926a0e75ffc1fcae *.claude/skills/aid-update-ui/SKILL.md
+53ba2ae9fb3c024ba96dbe54672a89e8a6ae8de04144f22d801bbe1373d5204a *.claude/skills/aid-update/SKILL.md
+9ef472b6e8d7750f6f6dbf3ef22aae9afe311b4c1ba17bdaf15bd5e10cbf5b90 *.claude/skills/generate-profile/SKILL.md
+f61a44eb01ece83e82ce32b334b8521a66ed14a345df28b2626906cdcc0e39cd *.claude/skills/generate-profile/scripts/__pycache__/build-shortcut-skills.cpython-312.pyc
+0b3d8c9667b1157ad17af667a213b71543771dcb59d02d947ebd790b118d53be *.claude/skills/generate-profile/scripts/aid_profile.py
+3bc8325e8790d8eb84d2dd7655c8ac8f3e3ceeafbed7e596e71c08a58a48261b *.claude/skills/generate-profile/scripts/build-shortcut-skills.py
+64e663b1d49840336f5328ca662d80e86cf1d385b136292b36ee4c8257c5982c *.claude/skills/generate-profile/scripts/render.py
+24adce95d9cde0246848c47b2282c0fa0e2e99488af81520c1f2e0c555868ff2 *.claude/skills/generate-profile/scripts/render_lib.py
+7650c68929e0b23387f1ebf22abb0e660533739793cfb4ca32142ec31d3ecf99 *.claude/skills/generate-profile/scripts/run_generator.py
+10c6dc5e178eb5b18a9e734861b851f2bcc98d511ed99db4ebbed118ac0006a0 *.claude/skills/generate-profile/scripts/test_manifest_safety.py
+b4c7ce7a8ddf019d0064401cc95e3fea80411a9aeb4a3bcec7c1b644b57357ee *.claude/skills/generate-profile/scripts/verify_advisory.py
+76d7edabe370fd3c2b56c51f2f38ecf9b1f6832a873a36b4f13d2499ece8c685 *.claude/skills/generate-profile/scripts/verify_deterministic.py
+0aac20e33d97370e813bb98fd5468306af69a0ec1b406523bbca612cf712605b *.claude/skills/release-aid/SKILL.md
+cd9992f5ca2604cae3c643821aab753aff81c3bd827be3dccea0f4dbf6f2ae67 *.cursor/agents/aid-architect.md
+ad916af464f63907a32970c0327946e7efa33f4d2c97505222a2a0a1bd0d963d *.cursor/agents/aid-clerk.md
+a61f86b7f58f787014506bbe732c7498e99946d9439325be94a0d5801fbc0eb7 *.cursor/agents/aid-developer.md
+b6e10041abeb61502565fe700abca655077c52923cac228230f4b4ce2bc42287 *.cursor/agents/aid-interviewer.md
+7adcc2805d42ecde636d435042473f03d1c020abf1201b9332714fd50112f0d8 *.cursor/agents/aid-operator.md
+77cb74744186aa61376ae901dd07bcef28a490bce7a8f8a656867d17232e4e2c *.cursor/agents/aid-orchestrator.md
+d18fe14a3f24fbeccb52f8b200c45eadcd78ae860b1adfe71e9e993929035a20 *.cursor/agents/aid-researcher.md
+8e33463371afe97ee41b170fc264faa2c637ba977adc2a7125f619491b6573ef *.cursor/agents/aid-reviewer.md
+b37384f9bd9fd533db024be00dabaaa7db15edf1b313330518e719c6e4447ff7 *.cursor/agents/aid-tech-writer.md
+b8519db9d466949e7162584866a20818148af78205f1ce14d28c19178e011fba *.cursor/aid/scripts/config/read-setting.sh
+5f1c2060c42217d7da1f7b1e52286e1f75732554866ce1a1191ec0177572a7e9 *.cursor/aid/scripts/connectors/build-connectors-index.ps1
+297e2406c97c6d86bb6384c961899773cda97d5fab08c3485f63bbda9f5fce0c *.cursor/aid/scripts/connectors/build-connectors-index.sh
+6a8feb93e1fc5bd2aac5dfc2e32c67966c962fc1874e8abb93acfdcf27bd95fe *.cursor/aid/scripts/connectors/connector-registry.ps1
+ab83b69202d7c7686e0ab42aa965bdafdf679a286df9425424977d34c0c3135f *.cursor/aid/scripts/connectors/connector-registry.sh
+e28788564730d3c6b5970e639debef112b3622034ba1c3499c9f801104ddb3ef *.cursor/aid/scripts/connectors/connector-secret.ps1
+e9dda644f7d8ec238dd4b53492f1d6dd33154d4373537f4473988c178afca86a *.cursor/aid/scripts/connectors/connector-secret.sh
+4387e45dc85935478466f24321c8c68f86e5cc7f19a4191cddc143f36a6f9fff *.cursor/aid/scripts/connectors/write-connector.sh
+c906f9b512c6fecf6635254ea1f199479da2582d5b8a44c24101b1008da3583c *.cursor/aid/scripts/execute/complexity-score.sh
+eea2a8d8dd12d5e118ea97664fb874343b738a650c984c866363e6adab5bde05 *.cursor/aid/scripts/execute/compute-block-radius.sh
+4adc99a9d9aff96d5a3c418fb461af28167f48cfada8a1d2ed88b17454fb17fc *.cursor/aid/scripts/execute/write-control-signal.sh
+eb451853f845ecb5f042bb42ae87748d5dc021047260783ae64c79e2eee9b03e *.cursor/aid/scripts/execute/writeback-state.sh
+478103d69baa1eb0f080538923ebe4a583629cbce540d04c567f15b4c76350f3 *.cursor/aid/scripts/grade.sh
+9cf3286222f78b5a6f3d7e24dba7b8acab9502bd6b3d166b26ae87465454572a *.cursor/aid/scripts/graph/assemble-coverage-notes.sh
+8078c17e52233502c0b4fe88e1ae7604c270dc9467235a2177a4cb439a987aa7 *.cursor/aid/scripts/graph/build-graph-src.mjs
+c48ab165b8edf9c67b2d4df10127e75a3a4f3204a9522c039a14470ef6455f4d *.cursor/aid/scripts/graph/build-relationships.sh
+c6954c1659a69e35c7323c0d1719630ffaaeb4fe9bb027e95dc9a78433b9d685 *.cursor/aid/scripts/graph/build-table-src.mjs
+48ab23ea28b619b894d5594ba8e1d4b329a2726e7d331db63f31f4227a41a3fd *.cursor/aid/scripts/graph/coverage-predicate.mjs
+c2fb3e54849d2c01d7037ab4618d4731f47e6ef3c465d2083905960f6480df65 *.cursor/aid/scripts/graph/derive-edges.sh
+aa0016f6f624d6f9f432af877789c28295eb7f6aa2d581169680879f5f28790d *.cursor/aid/scripts/graph/detect-kb-gaps.mjs
+762945d41b28275ddb0230ba364adc18c8eb801b8ee48da869aefd25648dad2f *.cursor/aid/scripts/graph/grade-graph.sh
+b8d24509bebe1cbb3e63b96457c2414591f93c3603be182f535543dc85e1f0fd *.cursor/aid/scripts/graph/graph-preflight.sh
+289b9617ee372ab10e8f5d1dd77d441844e22d6656dd8b895dfd451c4906de47 *.cursor/aid/scripts/graph/graph-stale-check.sh
+17291348f003db8cdae9c995240fac2fd46cbada0dd482c10a4861de33cc38b2 *.cursor/aid/scripts/graph/harvest-declared.sh
+d4858921265ecb0b3c636cba5ba114df7aa64757e6d41a77d7d02e915a0c2156 *.cursor/aid/scripts/graph/kb-write-fence.sh
+bf20e3528d3b295e416c9d3831f24b655eb10be4e1344873cafd1e24376378c5 *.cursor/aid/scripts/graph/relationship-schema.sh
+fe9ce4b226c7ba40831e652c3a10be99e7585d2f2cca1aec4dfc0ee605ceac61 *.cursor/aid/scripts/graph/render-graph-view.sh
+480b854282eba4127383af61ca22355d4e8e79b35591093c243184eff5c4a0c8 *.cursor/aid/scripts/graph/render-table-view.sh
+5eb503bfdd5472152b9d7389b3d5d2dcaad171c69e93d85f05133d3df57fbb56 *.cursor/aid/scripts/graph/report-endpoint-satisfiability.sh
+392c4bd199c92f156ef1de5d88bbf954d24c84551058af516d0888b59663460c *.cursor/aid/scripts/graph/scan-source.sh
+40613f18282bf5b714e791d63247980d84d61d90d24fdb9a0c1ff889003de867 *.cursor/aid/scripts/graph/significance-rules.sh
+9e825c83c1e7275c4596ffc85ba611afc7d1e7f7678793aba4539f847fbf64cf *.cursor/aid/scripts/graph/validate-relationships.sh
+cd1e1ddb7a37d1dfa069b892d5f3eae94dcca48f2302269a58008eed76f0934d *.cursor/aid/scripts/graph/vendor-provisioning.md
+4317500099dcff627c2ed2d4dd59ecaf78d1173a9536baa6a35330dd9d7b9a9f *.cursor/aid/scripts/housekeep/branch-commit.sh
+76d9c8fae2b76d0f28af49d00ca2d4305921c12a76fda862db011cb8f6051261 *.cursor/aid/scripts/housekeep/cleanup-classify.sh
+34efca63b146b2025d864172c0880123eee18e0b6e9a5ba0b754b652c7fe6a98 *.cursor/aid/scripts/housekeep/housekeep-state.sh
+359f83a4061118d64a079a08d47d74c5d52a1d51f978aee36c56eaf547316456 *.cursor/aid/scripts/kb/build-kb-index.sh
+f0b750e67ac6faa05119c903801f8e51aace182937c6d8757e7ad5f448aa902a *.cursor/aid/scripts/kb/build-metrics.sh
+daec38dd5ac1edebb4c0c855c445dea4911be5191e9be0949c14fbb19f603630 *.cursor/aid/scripts/kb/build-project-index.sh
+f5eb8fd9b5f8797d6ca06bcec56795cd4eabf71dfb1f748aaeabd66d54ad9250 *.cursor/aid/scripts/kb/closure-check.sh
+cde35cae105e2d195d107336314f344ffad01aa0cffc35633862101119f871ec *.cursor/aid/scripts/kb/coined-term-denylist.txt
+ed1a1dce6fc24ae3f24a541936c7133efb88bfe19d125a38cb900cc1b4163340 *.cursor/aid/scripts/kb/discover-preflight.sh
+d5ea7c587886439fcb7fded2ec461ff0546ca664122725dfd81f5f13b8aa8e1b *.cursor/aid/scripts/kb/harvest-coined-terms.sh
+63a7534a1252982753cf2d698fc5e3af63e1f2c79f905200a97da3d377cd56d5 *.cursor/aid/scripts/kb/kb-actback-task.sh
+98e427f0b769c374ec008c242167ba07a3bec61fae081de447062b48285efa4f *.cursor/aid/scripts/kb/kb-citation-lint.sh
+546c21baf89cda6f84de44f6f727bcafd9cb6d438a36c6f0495e0f48697bc6c0 *.cursor/aid/scripts/kb/kb-dual-intent-probes.sh
+f9adcc7c6dc14648df4a13c1b51a497896779f21aa7ce73929b1f6891f5331de *.cursor/aid/scripts/kb/kb-freshness-check.sh
+3c23e5a272320b0f75a52667b4526f5166555ddd207c43b8fc4416e51537ad3e *.cursor/aid/scripts/kb/kb-teachback-questions.sh
+defef4aa83dab1da773850358fce0340ef461db86511ad4230c1e1a19100341d *.cursor/aid/scripts/kb/lint-frontmatter.sh
+73cf153c549fe7f7e56d199d408e002ef5929b87b0b181068608cb03b3c3090b *.cursor/aid/scripts/kb/recon-classify.sh
+d371b67980d3e59577b6a757040aa0fbc46cf4cdc870945c2c653de059a5a9bd *.cursor/aid/scripts/migrate/migrate-kb-frontmatter.sh
+f74d98d633602378e22f840da8ad9868ddcb1a64595afdf85ca46ccebd7c201b *.cursor/aid/scripts/migrate/migrate-work-hierarchy.ps1
+258d2d97fa4f05c03c493dbe331799501b8bf707f8eec67e0b1f6f405a9b6bdb *.cursor/aid/scripts/migrate/migrate-work-hierarchy.sh
+a3beb2692af72470624eae046afe941c5636e42344f27c71267732a7d082e199 *.cursor/aid/scripts/release/check-version-sync.sh
+8e331e683afbb10e31f908095c1ded778167871b230e5345c0269cf98a79cc10 *.cursor/aid/scripts/summarize/assemble-3part.ps1
+f1636405ad7f7419217b41924ab72e3e98a0140aa54d78b5e9d5f34c4f6406cc *.cursor/aid/scripts/summarize/assemble-3part.sh
+ddcb0ec5a1cdb852770953bce3600f053af32602bc9d39da483985b204dcd9b9 *.cursor/aid/scripts/summarize/assemble.sh
+2e3769f10a7b1f30a84836eb64ff06f50dd5bc28b71129bc3e91423bee6bcee1 *.cursor/aid/scripts/summarize/build-md-export.sh
+7a4df020009b858ca0f8229ed0e79f00e2557b5e97f801ac82ba0169b62593ea *.cursor/aid/scripts/summarize/contrast-check.mjs
+cedbf97bd2b749d1bd2ef5748cc5c05ce8234585b72ff6ef65e7709c5e2a97b2 *.cursor/aid/scripts/summarize/grade-summary.sh
+6e4df9cafb9f3fc54032e8a21b55dcc5bee74d910b409f974d51372f84ae2d8d *.cursor/aid/scripts/summarize/manual-checklist.sh
+122d1e47ab1eade2ee4167a64b8e3503dbb322fc100297aa5a846b3e97a7fe7a *.cursor/aid/scripts/summarize/playwright-provisioning.md
+6c978b869ba3f264c6fbc9ae45e33e9148a5b02f00bf63cf23e954b81cf122e1 *.cursor/aid/scripts/summarize/spot-check-facts.sh
+ae03cd8d77b6163e5d107c8eeadfc0eaf4c6cea2db43f2f576f3c9b8180e6e04 *.cursor/aid/scripts/summarize/stale-check.sh
+a5d7327e33bc58c7f73fadde63e75de7a8857373e928c03d23990cba20106e28 *.cursor/aid/scripts/summarize/summarize-preflight.sh
+a64f5a35ea85687495b32bcd612f2cb3706095e22a8842c37600b5171fd1442b *.cursor/aid/scripts/summarize/validate-diagram-content.mjs
+cb9ceb065fd42d6c3f6de816844a42d402c211e7a9e39569057292cf8e67782d *.cursor/aid/scripts/summarize/validate-html-output.sh
+593292c8ed4d5b6f2664c1a4b154035a42fdf5dc87e9b00854801111bb478769 *.cursor/aid/scripts/summarize/validate-visuals.mjs
+f28a7741468f990effa3d1736426200c242ad2526c21d5d33d38c192d548ff0a *.cursor/aid/scripts/summarize/writeback-state.sh
+256b18145d15003a840b1ba7e473c2b693748ac060416cefa16d998a0b77767b *.cursor/aid/scripts/works/enumerate-works.sh
+1d65c114c74ea73aa4d5b6fcf7ac853168994590467576ab55480c9d4e767a1e *.cursor/aid/scripts/works/worktree-lifecycle.sh
+2c02cf94f7a52ad397ade7ab01ff448316731ee68d3577f22d4f21eec0aa31d5 *.cursor/aid/templates/agent-boilerplate.md
+af60bee6347d7983a87ff985a607edef24aaf2cd55374524be4d182a11ccaca0 *.cursor/aid/templates/agent-dispatch-tiering.md
+06c31771901327ba0272fdc46cf1b0b5e5b444c9e1615ce7e8754e2e533caec5 *.cursor/aid/templates/connectors/consumption-protocol.md
+b80bac04e86cc642e63e733c7ad338a93bdd4e61a9ffa346f9818ca54b72c038 *.cursor/aid/templates/connectors/preset-catalog.md
+2cc814b620e73ee339bb19efba81ffb8a2332e2f5ae16ebd698562537299c120 *.cursor/aid/templates/connectors/reconcile.md
+a5be2770d3f79ff56120d179397806d2f3fe61e02c4cdf9e5d68064c83e8b659 *.cursor/aid/templates/connectors/ticket-resolution.md
+ab1776254484d2534cc667ad6dfa44a5abd349238a6455f425e4e23930fd7a5c *.cursor/aid/templates/delivery-blueprint-template.md
+6924dccf6c5a8c8f0caaa9e54b92745a18220904c07b846b457a506e7a0058dd *.cursor/aid/templates/delivery-issues.md
+f89f292c1ae7550cdd40d49cc1ff5677b6f48fc7eefb226bb5eda7ef8941c063 *.cursor/aid/templates/delivery-plans/flattened-plan-template.md
+12c9e04352cd6df9e6e355ab412933af60ed006b1043707c93a7a34891ca86f1 *.cursor/aid/templates/delivery-plans/task-template.md
+9fa47fce6d4a639c0a88416dd55587f3dd05a998ddcdc1315bf3ff19e865e5ee *.cursor/aid/templates/delivery-state-template.md
+eb4420b89e73d9ef31f0806393393e3cf52b042a99d4287248ec96daf1cf9586 *.cursor/aid/templates/discovery-state-template.md
+901bee904b169329796a5ae3cf5fa5dc968f789a247c541b942287b2ccb41ceb *.cursor/aid/templates/dispatch-protocol-checklist.md
+76685381614c7375ae6142dc798d98514c04f78b5d62d814d85289b1863af1eb *.cursor/aid/templates/downstream-worktree-entry.md
+ce60dfa9e5c6e9595ae289efb2128953f5d8bf34f8d53f3505fb77077e0bb8c3 *.cursor/aid/templates/feature-inventory.md
+f2431502406233a2f9f083346f9a06fc2b5c5d289f6f61c951099af505f731c7 *.cursor/aid/templates/feature.md
+79b88f114c2ad3e1b30cb84699049c1a4fdb968e14f52fec37ed721417a22b26 *.cursor/aid/templates/feedback-artifacts/IMPEDIMENT.md
+5376d6cc7398d4d2c9b27f5dfb598e9f8a03c9995cdbe2d75e77b77d469448fd *.cursor/aid/templates/generated-files.txt
+cab1d1d3715f903a3deac9bca5751e5d6d03df66e9682b6e58ab6233ae34742d *.cursor/aid/templates/grading-rubric.md
+46e12a44e9f2256b4996502e9efc72d8c2e94bf1409b75750823c530cdf34c2d *.cursor/aid/templates/graph/coverage-bearing.yml
+911342cefc0a7ddd8f86257a2465842c030a0d41c294743b5526f63c5a50f39c *.cursor/aid/templates/graph/edge-relation-map.yml
+370101aa17403830d5c365c542387b48f82fe1a8c87e68904bd748f3f94c78da *.cursor/aid/templates/graph/relation-vocabulary.yml
+4d71bdf8305cf525683c9ecaeb436bb38aedfa952afefc52118b0e9ff96cce21 *.cursor/aid/templates/graph/relationship-schema.yml
+702bcebfadddd395b2ef989c25329d73217ca255054fb035d7c8058f9653c64b *.cursor/aid/templates/graph/scale-ceiling.yml
+52028b65ba0620ff22f943cbfad1c42c6ea80475e76f4d570025a9dd715db21e *.cursor/aid/templates/kb-authoring/concern-model.md
+4cc3430e29bbea9140c942df3e4e4661677d00467e8356bf27b50bb2a218bfc7 *.cursor/aid/templates/kb-authoring/domain-doc-matrix.md
+966096bc7f5464f16997f4bc5234561fe217f2a8c7aab052bf12530ff4f6c87e *.cursor/aid/templates/kb-authoring/frontmatter-schema.md
+70b2b484898758d7b023756fce07420fab6101f7c3943999554cc4a923d889e6 *.cursor/aid/templates/kb-authoring/principles.md
+5d4887bdca750e2b8ed8d835681e7fece4ec9e93eb1db57d1c4e6c5c662efbe2 *.cursor/aid/templates/kb-authoring/review-rubric.md
+a636a706f4e431471a5b8d1fb45ca582c4a47cfe543dbef99111eaa57d9c300a *.cursor/aid/templates/kb-authoring/tier-model.md
+1d7bd1774c6da4cf46f85b331991b8d615a11b8a02937c80403c387640373db4 *.cursor/aid/templates/knowledge-base/architecture.md
+1411bd12c88e6b840178e1d77f3eb5707c102987533b6291a4563f5be434b8ed *.cursor/aid/templates/knowledge-base/coding-standards.md
+f7ee90bece63b57dc0b4b57c9d7a806f4a69fdadc65cc1be7b366ce60ebaaa14 *.cursor/aid/templates/knowledge-base/domain-glossary.md
+a1ce46eef33b3547085eaad19a41057c060b6a3780f1c716dd4ea1f80b4e1df0 *.cursor/aid/templates/knowledge-base/external-sources.md
+47c8ea78247e101643395ad5f6bb68affbe857c66f6fa56c02cd121d774488d7 *.cursor/aid/templates/knowledge-base/feature-inventory.md
+3bf6acdedecea4973a897eb7b1fa4ddfb9b50cdb57a3c1a8fa36831f1dd8c366 *.cursor/aid/templates/knowledge-base/infrastructure.md
+280fc99681a80475e8e4e350bda99289e89c02dd28c0334060814615c881eabb *.cursor/aid/templates/knowledge-base/integration-map.md
+86d82acf2500a2f20b8228e9a1c76649cb0fef4396ae9a8d625923b1872488a3 *.cursor/aid/templates/knowledge-base/module-map.md
+f4bc0f1e54615f8f0fc189dd6658c8827f96158ed6aa7efca8675dbfb6d91a23 *.cursor/aid/templates/knowledge-base/pipeline-contracts.md
+02b1d55dbef31af30c518a1df343d200935c3ebe0dcd33dd3ee4b43cec2a5171 *.cursor/aid/templates/knowledge-base/project-structure.md
+bfcb3f1764fa01dd5581cc5f0e2d11e3afafb0519eca289b4fec1dda43666934 *.cursor/aid/templates/knowledge-base/schemas.md
+e970f9fd67fab44235e8da364803985c3b700f99367ecdf748f55d7b97ed3e58 *.cursor/aid/templates/knowledge-base/tech-debt.md
+25469309bf7129a65477732a9dbdb3e6c26ab3099a46e49837fc88fe918cdc91 *.cursor/aid/templates/knowledge-base/technology-stack.md
+d094d84e5475d3cf100e360a5fb9fd30bbd2e55ecee078c6bee55c31c470ae32 *.cursor/aid/templates/knowledge-base/test-landscape.md
+8f2b7d5b579ba85d7fc7fa75ec7eced3d9c16ea0d65cb3bcf80bf4e2acae6b05 *.cursor/aid/templates/knowledge-graph/accessibility-checklist.md
+e73e9f7eb371b6da45bbe1a66438918eeb6199dd5722bf3157625a554077815b *.cursor/aid/templates/knowledge-graph/graph-canvas.js
+000542a135d27899930b81c90d9525d9865221890811dcb9344d2e061c440230 *.cursor/aid/templates/knowledge-graph/graph-controls.js
+7b33db2f797628dc68b5506e76ee717d39f162c0d6cf2af1771bbfd9366b8858 *.cursor/aid/templates/knowledge-graph/graph-css.css
+1cb9f1b53408256739833dbf020535a51de7949c14257ddedee5be46b91b1405 *.cursor/aid/templates/knowledge-graph/graph-model.js
+3bbc7283a5ce08e4c0678a1306c79259edf9f9632c670a365874aa4f778ea9a8 *.cursor/aid/templates/knowledge-graph/graph-skeleton.html
+d8adc08c01af106fa5e73bc4e462f47f458607498e13a25e86063b006373a7ea *.cursor/aid/templates/knowledge-graph/graph-table.js
+640775c1b2e67daa8b7b05be42a290d386b4ddff5550077ed0da6c7affd71419 *.cursor/aid/templates/knowledge-graph/lens-presets.md
+b3e75b23476acffd00481a5c71e7d24c37d5270a3d8a145b087cfdee3434debc *.cursor/aid/templates/knowledge-graph/table-view-shell.js
+397c760ffbe6b58d4ffd7c1f559cfc81ebc97b3bdf5c9de513d83e57ed52be69 *.cursor/aid/templates/knowledge-graph/table-view-skeleton.html
+e008c5e25a6be382593089c29bfabbc553c6378eee02895aec46ce396cc404ee *.cursor/aid/templates/knowledge-graph/vendor/d3-dispatch/LICENSE
+94b3bbdb6b98dc1325a15762b051013e8253999b0e0436b27d1da17b952ba0af *.cursor/aid/templates/knowledge-graph/vendor/d3-dispatch/d3-dispatch.min.js
+e008c5e25a6be382593089c29bfabbc553c6378eee02895aec46ce396cc404ee *.cursor/aid/templates/knowledge-graph/vendor/d3-force/LICENSE
+1e07b473241328795d5ea9ad479a7bbabd765012fa2ef95633c83b69868dff6b *.cursor/aid/templates/knowledge-graph/vendor/d3-force/d3-force.min.js
+e008c5e25a6be382593089c29bfabbc553c6378eee02895aec46ce396cc404ee *.cursor/aid/templates/knowledge-graph/vendor/d3-quadtree/LICENSE
+57e2ad12824ed82893ba447523f2a2fb9beeb9222aafb2c778a9f5b313348b0e *.cursor/aid/templates/knowledge-graph/vendor/d3-quadtree/d3-quadtree.min.js
+e008c5e25a6be382593089c29bfabbc553c6378eee02895aec46ce396cc404ee *.cursor/aid/templates/knowledge-graph/vendor/d3-timer/LICENSE
+911ceda305f014b6b53ca68d5c896a9a387da120cfd56a421a2c60cca2fc9b36 *.cursor/aid/templates/knowledge-graph/vendor/d3-timer/d3-timer.min.js
+5ce7447bc57f7349ffc48338782fbcabe613696e00712b20d66bc58e780f9473 *.cursor/aid/templates/knowledge-graph/vendor/pixi.js/LICENSE
+83b2d7edf27bb77460f5f5f5e25cd73c91b77a53f44c80ac63096d6c0b5cfda7 *.cursor/aid/templates/knowledge-graph/vendor/pixi.js/pixi.min.js
+50a058edae174703495545dc63f034be32cd89d5f8d4aea370303c6a8ae841d4 *.cursor/aid/templates/knowledge-summary/accessibility-checklist.md
+3423b7e9760c234e4301d56b86fec65fbc6bb9d3acae7d37a228fe3827436ff6 *.cursor/aid/templates/knowledge-summary/authored-visual-catalog.md
+3cf652f600d0ddbe4e1e202230462cf1cb072dbed7914cd4f80704be7b9faf32 *.cursor/aid/templates/knowledge-summary/component-css.css
+b5c9542d0b59e355cf2e102f10b8edf8599f5cef3086565cc0fb2f4d1d8d1b49 *.cursor/aid/templates/knowledge-summary/design-tokens.md
+8de6e61c5ded32dfac18ea1d0684d891446b7edc615b6af3109bfe09c9ff1ae9 *.cursor/aid/templates/knowledge-summary/grading-rubric.md
+c6d9f73297b2ee3192d37c94c0e7a0125659fc3ca357cfb71c72ee7f2100d205 *.cursor/aid/templates/knowledge-summary/html-skeleton.html
+118528f25b356c2521973c21d25504c8611148c29adeffa37fb5d7b90f2007aa *.cursor/aid/templates/knowledge-summary/lightbox.js
+ba637123066eb1519e436bc95400877e942fa1429432e86eca395b5d3bda8f1a *.cursor/aid/templates/knowledge-summary/prompt.md
+db2c7cc1dffa0fa6a41bb8dec6a107ba02cf600846341e66db9c9f1ff8976fbb *.cursor/aid/templates/knowledge-summary/section-templates/agentic-pipeline.md
+82507f55f8e7f182b83fcbc118ea2ed2e04ddd08373e645b8e365fcd851ab8a3 *.cursor/aid/templates/knowledge-summary/section-templates/auto-detect.md
+9a3026c915d3b1276a45522edcb694b83b432b8dfba1bfd13c7e729c86f157b4 *.cursor/aid/templates/knowledge-summary/section-templates/bespoke-components.md
+2c66a2374c19287103abee055824fb14f1dfa6339a9ac315cc4033a265c92d32 *.cursor/aid/templates/knowledge-summary/section-templates/cli.md
+ed800042da72416340cfaf3f15fba0cfb4d249b5aa97e03ee7a60fcb473cb953 *.cursor/aid/templates/knowledge-summary/section-templates/data-pipeline.md
+98ba377a481cdbc0c3050f7e4f817dd2fd8296242cd42b7c02003a9b88059f7c *.cursor/aid/templates/knowledge-summary/section-templates/library.md
+277199e1d6d4097729792e80ff9c89a7a0f132115e185aa7b03259e927a11ef2 *.cursor/aid/templates/knowledge-summary/section-templates/microservices.md
+d510be318d32e40307d31b0f06c75dc56835d915ef2cd985d45cf52cc9eb3bb6 *.cursor/aid/templates/knowledge-summary/section-templates/web-app.md
+25e4e508e41508cb825126c2c2e73dc90d886c52abacacf55932bbafc13c520f *.cursor/aid/templates/known-issues.md
+0f727b1273f307baa02ae8f93f75472c666afabf97b5d1c9c41bf40ce6f4b7f2 *.cursor/aid/templates/long-wait-protocol.md
+d8bbbe4e1daa2cc548d3c0c544525ad3a7f827e568b94a3f815798973ce63044 *.cursor/aid/templates/package.md
+cf78c05319ac958ade4cb707971bcae72168d37f2d30cd9a181215b65b63ab68 *.cursor/aid/templates/requirements.md
+d2a8bc3ff89d929f0bb3b21485d7fac51143e7fd452f2ff7604d9928f79be959 *.cursor/aid/templates/requirements/requirements-template.md
+c7742745f29f4c666c757ac0aa8e20fcea10e3e3e1022aec730ccbcc92c67ba7 *.cursor/aid/templates/reviewer-dispatch.md
+369420b8ace758fc440eabcf795267be5732b778be81de6bb37d621a81643053 *.cursor/aid/templates/reviewer-ledger-schema.md
+ed9439c875b2ac558031333fe3372b7ba6edd8539ff065a73698efed0291ea9b *.cursor/aid/templates/rough-time-hints.md
+c8f42a5da3d5771112bd1ef2bc12d1e26127b1a11f173b7c5b7791d9d8e3e7d0 *.cursor/aid/templates/self-review-protocol.md
+969d6229ef135a7432f82dde1fa3cad5a1f45cc13d021209734bc20e4e7dc396 *.cursor/aid/templates/settings.yml
+d1de6ae5fb7be7b8dbd911714014dc0d049e9559a62c539da633a4b8cbf30c09 *.cursor/aid/templates/shortcut-catalog.yml
+f9adf47d8e1bd501b215ffee378c1c9e44ea22c8b797c252fea9124799d94367 *.cursor/aid/templates/shortcut-engine.md
+6f3de1fddb799755b02a873ecbd3a4a9c7bd1b16183fd908dcf2a708f011689b *.cursor/aid/templates/shortcut-scaffolding/analyze-report.md
+b9f48d576e24b6ad8468e4cef3bd9e463a1e2c3e2dee10e312ab1e83e51802e7 *.cursor/aid/templates/shortcut-scaffolding/change-refactor.md
+c3ff2d59d03613808b463830f990eb6ef4592ff5eeef8869f88a5ae03e882b3e *.cursor/aid/templates/shortcut-scaffolding/create.md
+6600aadea67520b976a2bb418d96517c5cc7e92aa821a9504c317562ad1879ee *.cursor/aid/templates/shortcut-scaffolding/document.md
+80cd6dadea50837af1083f7b6e1f834097212a5e1f5f6c0007d60006d85d4822 *.cursor/aid/templates/shortcut-scaffolding/fix.md
+81902aaa2506f60167db6706dc52745464a13053d65ca1951abcf4ab9506aeae *.cursor/aid/templates/shortcut-scaffolding/prototype.md
+4eb14408ace1aeef4041459714112a3fe4e5542c73085b17ab151df585f74e2b *.cursor/aid/templates/shortcut-scaffolding/test-experiment.md
+cc34211dcd7747d2d94afb00df775479b1613c82104438cf3b4508835d08c071 *.cursor/aid/templates/specs/spec-template.md
+d43990343a80aaef6bac1da564a436978b857f7a8ea664b85e8d9592c04ea8df *.cursor/aid/templates/state-machine-chaining.md
+c4e91750ac3a7bd2c4ff10e625fa1f00cb7ea6a4e1f506f09550491b4803f928 *.cursor/aid/templates/subagent-heartbeat-protocol.md
+27eea30883783e391762b405019e39f173f0d18d8c9a49b67aaae09ff98639e6 *.cursor/aid/templates/task-detail-template.md
+e547113b2c20a5f55b018d3b0228661eb8178f804d277f313336dcc0a09fcca9 *.cursor/aid/templates/task-state-template.md
+d6bd13e5e63cf77683efef973c6ec16175c4009b5f79ee68964489bf507aff2a *.cursor/aid/templates/work-initiation-gate.md
+4240e144eadb1f8efbfa5c5e5b2fe8e7a10d3a6547cc0156e5387bd7838301bf *.cursor/aid/templates/work-state-template.md
+dcb20fb03449b82d3e5eb27d1c6cf04f72543a970c6ffd39a9d3e94acaf95752 *.cursor/aid/templates/worktree-lifecycle.md
+e69f6bcd81fe17f279104688c271b4d4c3b55b5f007c6b23e6875564eea9584d *.cursor/skills/aid-ask/SKILL.md
+8b90538dcc30d05e0c14688145fb7fc77b7f61a1d0b121fccdad37935f2feb1e *.cursor/skills/aid-config/SKILL.md
+9c11b8c7be7a114a2095a577e431a06014726c44262e277195b94ca14203de30 *.cursor/skills/aid-create-api/SKILL.md
+a1ee9f9168bb323988d27f451d22e272798af1ea2d6afbaefa55bac355a4d0cf *.cursor/skills/aid-create-cli/SKILL.md
+fae42fbe0886732997eecb3a6ff9f4a621c2c0a721e46f5522650d1643e9b05d *.cursor/skills/aid-create-config/SKILL.md
+0956683bf79d7f2a46c46e2dcca1294080ebb4e10fc9cf8d2af8527f4aeffaf1 *.cursor/skills/aid-create-dashboard/SKILL.md
+6f45355a9209ccfe34d1969eb09873acd2425053e0456a2b616f57032541543c *.cursor/skills/aid-create-data-model/SKILL.md
+37e71e4c68fd11317c4cc87c1d7ce3e748290d6250bc5cfa0f456a0ef2afc7f3 *.cursor/skills/aid-create-data-pipeline/SKILL.md
+44b18bf8e212136e29633233aa794678c8277fc2a7aa43861ff1249193b65355 *.cursor/skills/aid-create-diagram/SKILL.md
+62416899d9b70797ad838e0631ea0d5b351a5c72ca3ca6ad6e3d352f1f1ce248 *.cursor/skills/aid-create-document/SKILL.md
+2eca5961126f4139f9fafe264cdd95f6106fa6cf5687736f04cb362b6cf91975 *.cursor/skills/aid-create-infra/SKILL.md
+2f2e202f3c1325d852fbc2c73ee8b2302a4eb6490c92449cbaf4587391bb36d4 *.cursor/skills/aid-create-integration/SKILL.md
+a0fce7e8a42dd8b0dfd8c378fdbd1d160ffc97f098a0565b8830c7e3f9b1c3fa *.cursor/skills/aid-create-job/SKILL.md
+de4751ed212f8785b902ea77319cf523012df17a832895beeedd072970e500a1 *.cursor/skills/aid-create-messaging/SKILL.md
+2e4beb5cc56c38e66429c1f0651cf31cd226b2641a65c5a457754c625ae2474c *.cursor/skills/aid-create-test/SKILL.md
+a32e46dab387908de3c940a256ec7290924469f32aea266760284923eaceebce *.cursor/skills/aid-create-theme/SKILL.md
+5d5913230c93313edb3cafd28a272e491ef55bf8eddc6f424d66eba878577dc8 *.cursor/skills/aid-create-ticket/SKILL.md
+36d2be46f8193cb5ef94c2a0baf1d245dc3194fd718b58a567e651b2a36db764 *.cursor/skills/aid-create-ui/SKILL.md
+6bbc09e4ed6dfa1121c83069e76a32d674ee9a6d0eaa06f988c6331bb18a2fa7 *.cursor/skills/aid-create/SKILL.md
+b17b451f47c775d85aae47d265ff72a3aaf55646de57f20c81d5c6b55b1e985c *.cursor/skills/aid-define/SKILL.md
+39f063bcbc787ba55f7dfacc824ea1fb5ff43e521a1f915a114a58e52315d84d *.cursor/skills/aid-define/references/cross-reference.md
+bd195cfa54094429f576247f8ca22889dc5a668026d9f9cab1ea3aff2a3ddea4 *.cursor/skills/aid-define/references/feature-decomposition.md
+ae4201e0dd3d61412db01749454e9a453677fb6b9b116783ba7556d640af1115 *.cursor/skills/aid-define/references/reviewer-brief.md
+288c9485f438c4a0312c785c7e64023de6fe09fc30c85857fff6b89a9f077b52 *.cursor/skills/aid-define/references/state-cross-reference.md
+a112e57f832bbd571f1153b926b0c8e9109b29ec981a44eb5a8be6359bf0cfee *.cursor/skills/aid-define/references/state-done.md
+db40ea8cbefe74ccb36b489fed1fd2d0a8efa32e2bc8efaa437e99412c7ee714 *.cursor/skills/aid-define/references/state-feature-decomposition.md
+1f405b22e6f1ca7414c65b2c7abd7226855f37ec497447bf4d49bc3d283e34f8 *.cursor/skills/aid-deploy/SKILL.md
+ba829afce652e9459563d0c636da2a9dd25a51a40f3a880f45dacdc5c7e8b3ac *.cursor/skills/aid-deploy/references/state-done.md
+b343d18e4c00b6ec40040c3461901b68a30ea1097a4a9d4008a0b1fa4d20d542 *.cursor/skills/aid-deploy/references/state-idle.md
+81328a5856e9a6d1a584ba3c2a0f7109e358c7405193a33d5839856c16411dae *.cursor/skills/aid-deploy/references/state-packaging.md
+b91e34e8f93c64227c66c28b52997bb94178abfe48b581d62ede9d52e765b3b0 *.cursor/skills/aid-deploy/references/state-re-run.md
+2716f610b6a3a900152953b32a16798d51c52a4446c5cbe11e0280a6f3239a1e *.cursor/skills/aid-deploy/references/state-selecting.md
+302f12d69ff392b4296b2bbde3c8e81459f179ccc665a4f035855ca35bd3a450 *.cursor/skills/aid-deploy/references/state-verifying.md
+db2c06b0602ae31ee7199fe6999f071ce0639f5da4f52c3462913c8b01f19f5f *.cursor/skills/aid-deprecate/SKILL.md
+1a282d480dc3fb9ac73f6f0718979cd9ec1f16cc42d6e54c355454c74be67988 *.cursor/skills/aid-describe/SKILL.md
+aca9c2b5cd196a3b5063ac31793874ecb35c32e26bfa25a42481d8e10a0eab0b *.cursor/skills/aid-describe/references/advisor-stance.md
+168748c7627a67e786bf9ca831ba46e06638ddb9207ccd6aa2f121325b2bfe7d *.cursor/skills/aid-describe/references/calibration.md
+22274c14be31cb01a7f7571147d4f4fd72d7b9d53d7e173f787bcb0f29871aa0 *.cursor/skills/aid-describe/references/coherence-check.md
+ee2fa88784ccf29826e65d0dfce3bed80a1ad8cd1012c4055851feebff209384 *.cursor/skills/aid-describe/references/elicitation-engine.md
+d1c6e3d8c501d0f81ddc9d89d6cf4e5be67377c33a22de5dc7ccefc5ba920a92 *.cursor/skills/aid-describe/references/interview-loop.md
+599de7b672a69a1f74f25da1aefa7f973a8c861f6bba1af8bc402949fa9698fe *.cursor/skills/aid-describe/references/interview-strategies.md
+181909489299b720ec4f4d6c2883b39f04b8d6bd1902efd7968bf1415a29abbb *.cursor/skills/aid-describe/references/kb-hydration.md
+6053f2664c31c05bfc5121d139b2dd44ca71c247e05d95704f1c48b6657994d2 *.cursor/skills/aid-describe/references/move-playbook.md
+5a20b6bf74cb6d4f4fec147f345eeaf926d66da433464d49bf745ab03e091118 *.cursor/skills/aid-describe/references/state-completion.md
+beb01664d66f1b5710213effb8ad80047598c5a1d17edfd416856027d9aae863 *.cursor/skills/aid-describe/references/state-continue.md
+ec11559323ddf51039d487d91b86e2bbf6d3c2dc64356e304a1daf3f7b9b2b19 *.cursor/skills/aid-describe/references/state-describe-seed.md
+1da4ba61b12b7b7d81f17f4f6b0097f5fe72058727e2d34536b87f7392bc65ef *.cursor/skills/aid-describe/references/state-first-run.md
+d6fbf9bab6af2d88ae9369243544a12bd69fdfdd6c5cc013635c860974bb6751 *.cursor/skills/aid-describe/references/state-q-and-a.md
+35467c49b82c4f0f2460adbed3135ca3df755804f7030edb2b11c11ff7720a4e *.cursor/skills/aid-design/SKILL.md
+67e3015357ca04b65958e6e1e37f45983817b0b0d5e3ec95a3b2326e176ba0d7 *.cursor/skills/aid-detail/SKILL.md
+a14c3031e4c6f97833fdd58cce02325e1b1e579e639e5ef7def94ac47d71bc03 *.cursor/skills/aid-detail/references/execution-graph-generation.md
+2f9213c649051418055bc322414abe483b2b8f92418afa01bf7392f497b7234a *.cursor/skills/aid-detail/references/first-run.md
+e38b75176f324dc13309bcaeca230b5bcad2bc0fe86f36bf9202bddb318d2dcd *.cursor/skills/aid-detail/references/review.md
+aa5e8bd50b95e6a640a7aca40afda5178552cc00b7fe44813b1cf2e55e5d3b3d *.cursor/skills/aid-detail/references/reviewer-brief.md
+f951b15e794256fca1338d625de6c2eec0c541be30aa289fd56ebe651a1e2d68 *.cursor/skills/aid-detail/references/task-decomposition.md
+28fc243b7250c8ec2784829f36d7ee35a5ef4451a2f67dd46c7703dbefcee6b9 *.cursor/skills/aid-discover/SKILL.md
+15f3135f117eb6b59920ef4cc2e4358fec95528cabf10d4271e3ff9e97bbdd1c *.cursor/skills/aid-discover/references/agent-prompts.md
+f8440b421e32a042d64e9bb1acb5aa9f952a9d05722794d31e910b39d2af40c4 *.cursor/skills/aid-discover/references/doc-set-resolve.md
+8156a417aa91de256cd3b9b9461c40279a2c9b0ccfd0fb5b0ebc4816b46d36fc *.cursor/skills/aid-discover/references/document-expectations.md
+e88099f0422cefb394fd0c8f11305e661d630be5fd7ba8841f4a82d4ae9ea687 *.cursor/skills/aid-discover/references/path-config.md
+0971e2921630cba7055ca05eef87d15b0310fd6223698907efdcc01eba6c4a0f *.cursor/skills/aid-discover/references/reviewer-brief.md
+42ec9bc1d6030feb3fa79bfea9618d9803bf96a4d07d790b0b70f317c6c39782 *.cursor/skills/aid-discover/references/reviewer-prompt-actback.md
+e01d846de93be3a04057f4f9fca53f805fc005a362d4bf540f688750c959ddc0 *.cursor/skills/aid-discover/references/reviewer-prompt-anatomy.md
+b7b30a8d3a7a280a8f6a96cb7240303d2a86db87c72d5dae42cf3df52184489f *.cursor/skills/aid-discover/references/reviewer-prompt-correctness.md
+fd6f12a81c2a69448f07decacecb1c32576b03ab665a1a53c3743b46452d5a3c *.cursor/skills/aid-discover/references/reviewer-prompt-teachback.md
+9fdac29d6928cec9d7217b89e1c1d088a07668bb56daaa5dff4b84e6e92d3649 *.cursor/skills/aid-discover/references/reviewer-prompt.md
+9d00186a3554c60808a53d0aeec7c9b11a26ed2b05022e71af49ee6114c1ac57 *.cursor/skills/aid-discover/references/state-approval.md
+d3232c91a3d4678e96736cc97cc30217f068f45582d6c2cc3a200f392c14f892 *.cursor/skills/aid-discover/references/state-closure.md
+fe50618f4add927f8287e80b7de92a3bd97d3f8ddd338ee81bc2e5bdcc8ed0a9 *.cursor/skills/aid-discover/references/state-done.md
+2ed7868a97f7d8d7ec8534b73e0505d882168a1c65358fa82d733452f7a1ebef *.cursor/skills/aid-discover/references/state-elicit.md
+9d356feeee66c5a97ddd584d5159232f913d6e3632e8b276329c6e15325eaf6e *.cursor/skills/aid-discover/references/state-fix.md
+e1334d028c6e8ddb3ccd7e2d0121d2a1b6a98ffa1e5e2ec47dc3d969e996edc9 *.cursor/skills/aid-discover/references/state-generate.md
+58ed65a218539355c26b4f3950f62f871b274212bb570cefb03f215a99d1d42e *.cursor/skills/aid-discover/references/state-q-and-a.md
+6fbd6f414b99c482476e6445efb40a80802324477c6d0fbf7ea52aaa942505fe *.cursor/skills/aid-discover/references/state-review.md
+b2a4eb8f91ffb700a6a8840f739fa69b0661e4141293d0857fb9f14ee6b42615 *.cursor/skills/aid-document-architecture/SKILL.md
+3b981628b44523966b98e8a3c4ab4430ecf2188a2968f6c3d860fbc2b605cacd *.cursor/skills/aid-document-changelog/SKILL.md
+358f2f2370e2b4f09e354c65d595bc5d56d63d306d30b78e2507526276ad7523 *.cursor/skills/aid-document-decision/SKILL.md
+5d1914c96a1e607a5818bbe628576352786df7bdb339204116da783b78018304 *.cursor/skills/aid-document-guideline/SKILL.md
+a24cc93b42e697b0873bc9b6b596b36ff66b9daeb1419e4ca04a74b329ed11a0 *.cursor/skills/aid-document-runbook/SKILL.md
+760395d1fec70547f2c6a5817a688d012431606af2cb808662bd1b21014a453b *.cursor/skills/aid-document-standard/SKILL.md
+8989e08d83394b1875a477e1994d6cd2572bafdf1e16207e7411c5377fc06ee5 *.cursor/skills/aid-document-tutorial/SKILL.md
+9878b4a72709f5ebaeb76736930bb6e923d836b25b11d43c834689845200eb2f *.cursor/skills/aid-document/SKILL.md
+98e4fa7b41e68ccfa94568969c38135ae97c6a835efab60211993ddeb79b41b9 *.cursor/skills/aid-execute/SKILL.md
+3ee7bfeaa64cdf275d24d73851701ce569b6d1c87c188333256730a7c8536845 *.cursor/skills/aid-execute/references/reviewer-brief.md
+7827b5132ccf3a33d78a372e9a224773d7440cd6a176e6862abb77359a85510f *.cursor/skills/aid-execute/references/reviewer-guide.md
+407baec1a5052b8e32cfc3df21c85f88117f97cf04fedf4577cd5dc0fabbb0b5 *.cursor/skills/aid-execute/references/state-delivery-gate.md
+230f4d9ee67636a9e1e1a7caa5aad9d695bb19604207f27fc045d2d4e40ff045 *.cursor/skills/aid-execute/references/state-execute-drilldown.md
+b149647e3ed8eeb6c7847197abed580c9899b9135c3fc88e142c62bfb5e9cfe1 *.cursor/skills/aid-execute/references/state-execute.md
+5ffa907686879677b16945f6ad9498372bbbc03966cab587ddf39040dca651c7 *.cursor/skills/aid-execute/references/state-fix.md
+df3b77084446b3fadfc935dc4185b69949e690033566c0355691ffdedf931eda *.cursor/skills/aid-execute/references/state-re-run.md
+00406706b31a8320a80f57fddac4200ee07416973bdbb2d99ead01f80a06ecd0 *.cursor/skills/aid-execute/references/state-review.md
+03de3b3b2c9c36d6e28732af4cddbf071bd83d973d78700617340bf768c0e033 *.cursor/skills/aid-execute/references/task-type-rules.md
+12eb817b8027ed19678efbc0aea96d64693e0e33f36477d956c7cf258fad2c71 *.cursor/skills/aid-experiment/SKILL.md
+867d43f066fe10113ac5def62c56216ac00c0fac9d659ff3bb75b28db3515c6e *.cursor/skills/aid-fix/SKILL.md
+c9e83814a234db25df29a14a62186604c77f208cf9c83a96736d8b1fab9ce32d *.cursor/skills/aid-graph/SKILL.md
+c9237df19d0b4744137f3418f24773669ebbdc10944c6e8efd2a2d682f32ef95 *.cursor/skills/aid-graph/references/agent-pass.md
+7da2d84a286d67053b07b69febaed01c0070c5228a0b29c866494ec5e63af20e *.cursor/skills/aid-graph/references/state-done.md
+61a5dcb5ac39873a857dcbabd7da3553e4a495afd1cfa5c6777179d66634feb8 *.cursor/skills/aid-graph/references/state-emit.md
+af47098ba65ab3e9aa5a91f4de9c8f96a3c1c2fa33220822afb48c69de7bf77b *.cursor/skills/aid-graph/references/state-enumerate.md
+7ef6a5da4b346020612cc60992f13c880783c1f1bcd3c8e10906547151dc13db *.cursor/skills/aid-graph/references/state-extract.md
+1f1edbdec556f2c33fdef5c5767f5d51d6db081a0a2bac1318844c7c2da5f31c *.cursor/skills/aid-graph/references/state-fix.md
+007472a4f2f31e1bd913c957e5813430fac07682dae4a48ef6c386234501bcc7 *.cursor/skills/aid-graph/references/state-gap-report.md
+e112899fa22ffbfc172761023d29a44a5d1d47b1f1c167daa6ca2545ce1e5ea6 *.cursor/skills/aid-graph/references/state-preflight.md
+d9734eb3fcc1cb7e6935850abe570a22c7aa19e605bf87d978994bb3c8025e37 *.cursor/skills/aid-graph/references/state-render.md
+0ec87b63ebf8f326b58d858bb7ef7c2c78cadf040df47319b06081fdb26ebb92 *.cursor/skills/aid-graph/references/state-stale-check.md
+d52747017c3177909ba95898e5f05eae756b6ec9226e5d16adb91bdc4726342c *.cursor/skills/aid-graph/references/state-validate.md
+3620ffed5b784ef0d6bea78b25f2a50197b01a66bba9d24b820290d6a6e73a70 *.cursor/skills/aid-graph/references/state-visual-gate.md
+ccce7eca537dbe8f2661aba7fa76e50a974ad602637ecf2ef9e7b49eb0cb23a1 *.cursor/skills/aid-housekeep/SKILL.md
+428fa049f1de1a5b818f2537df8c542c477b9c21c9aefeb076e021c1788993da *.cursor/skills/aid-housekeep/references/state-cleanup.md
+566c5a0293a6ef58c9dd860d781fbb28dcdc19330a864df6ee5d62ca80cad755 *.cursor/skills/aid-housekeep/references/state-done.md
+02e7351adf6d561390b540e03e5d8d8f0ab4197f2811f03e6d0e3ae1d41f6807 *.cursor/skills/aid-housekeep/references/state-kb-delta.md
+dac8ac8d2dad07431027f8d1f4cf814401c893cdfeda9ca8c47ef1402b66421a *.cursor/skills/aid-housekeep/references/state-preflight.md
+af6810283a90f00ccbe0d8770aeb49dae7ad71a77b3fcbfe198685d8158927fa *.cursor/skills/aid-housekeep/references/state-summary-delta.md
+acb9f905df8d7cfb3c4e45766fe70f1adef0e9cd0655de19e35c77cf53d050d2 *.cursor/skills/aid-migrate/SKILL.md
+ab1e37e300a2b4680139fa4e2144808cef41bd381c25ecd49e3cc561ed111f36 *.cursor/skills/aid-monitor/SKILL.md
+8446b0b30047299015aa77c2d9262912d6a4e912405ec68cb251bb5cf0e0ed33 *.cursor/skills/aid-monitor/references/state-classify.md
+c14e535c28d8a0f987931608908ed5f5679b907ece172e6adb5afd54fec97814 *.cursor/skills/aid-monitor/references/state-observe.md
+a5f7f0afc32a41ad25a295eae333f47dcce3af507dea4c7545847b39ecb1c7d3 *.cursor/skills/aid-monitor/references/state-route.md
+ca830e44fb73494a655acd50170be0dbcdbf6704234450c672da75ed475b0bc8 *.cursor/skills/aid-plan/SKILL.md
+f1ef6de2a20fcd4cb6798380013b5dee6d7698e81d210e16bece08e601b86196 *.cursor/skills/aid-plan/references/first-run-loop.md
+7ca4ab2c3b70fcd2491466630f71856d7f85fca8e93513574f3348f86491964e *.cursor/skills/aid-plan/references/review-deliverables.md
+de82ee7a61d602ff1c13884b74ff2aacbd220013b63696a83349b4aad0bb0d18 *.cursor/skills/aid-plan/references/reviewer-brief.md
+8ff8f960fd508c0ecc00a8553899bf3095d39381b2aa55d89ccdccae12e0275d *.cursor/skills/aid-prototype-ui/SKILL.md
+73d13b8abfb514a904a1ad5d0a6437ef809237572c705070058ddee4ec3dc25d *.cursor/skills/aid-prototype/SKILL.md
+f7ff4d065657feedb6621356b33776771259ed46a9526ae8e43ff9f5dbc4598e *.cursor/skills/aid-read-ticket/SKILL.md
+1d0f9c824b5839f7e64c7de14676114e29772c4aa970b4d4f52fa1e528a317f7 *.cursor/skills/aid-refactor/SKILL.md
+f1401e1f762dd9ba8eb317c87a5b421159bba1c6ca3f260bd3c5e6315607918d *.cursor/skills/aid-remove/SKILL.md
+5d4e00096b628d36498bf7bc338b8aed2e5e1de042cd7a62f3c4e73d87c14e00 *.cursor/skills/aid-report/SKILL.md
+7fffc38bce68795e338123bf80ecf826e5eb71f9d7c5a94b5843db608a950b36 *.cursor/skills/aid-research/SKILL.md
+1d6454935b0780f537d54c672b0735733e98f84c79781a14cd5b70bdebd9c568 *.cursor/skills/aid-review/SKILL.md
+02435b1555501b6b4d33286a2d2c7399e8b4082c345f41074bbba403ce772675 *.cursor/skills/aid-set-connector/SKILL.md
+b512d31eb977ecc1fb179f60e01ea37eca87d8bfa8aafe2b8175c196ff03eed8 *.cursor/skills/aid-set-connector/references/question-sets.md
+b9723e84f23c82720366c5516a929d8ddf03faf74d7d6d7d0da21788f4d2b81a *.cursor/skills/aid-set-connector/references/secret-reconcile.md
+0510cdbad3070f139a09f5954263e8343ca4f1ca466c59849a8cc5db04b38979 *.cursor/skills/aid-specify/SKILL.md
+c8b1c116b82478be03869290f7860e0d5c2eaa1106e1d108264371dab877ad7e *.cursor/skills/aid-specify/references/handling-outcomes.md
+551844a49ba6aa836c94886f8c36efcf4304e456fe5aa3bfc689f309cbb26831 *.cursor/skills/aid-specify/references/known-issues-scope.md
+50ac6b85ea283bf94a9adfb88d11dea1f543e1f7fcb3b1f158b12765842734ee *.cursor/skills/aid-specify/references/reviewer-brief.md
+dfc1b52485f32852b322bfdf71281d255df6bfb70b201cd2f76987ad4777deda *.cursor/skills/aid-specify/references/state-blocked.md
+93f2861ca69a0c704700436a43a13607f3c79e17893e3070bde0b3f3cfd35e7d *.cursor/skills/aid-specify/references/state-continue.md
+3f6f837c6037c713f4b4ba617e07116dceb14c306b9c7f143ea13a605295f2f4 *.cursor/skills/aid-specify/references/state-done.md
+3f1d67627205923e3b44df7019df5122a559364df566e64bd60af63caca8e557 *.cursor/skills/aid-specify/references/state-initialize.md
+16ab318a76100f1a3309c68ad74c68d5e72bf67bb4e405a7fb4d566d5219bf46 *.cursor/skills/aid-specify/references/state-review.md
+9e62613efeb0513e4f909f2155ba1e50ec5363b3ac62537615ed89d252521f01 *.cursor/skills/aid-specify/references/state-spike.md
+258a352cecbf10af07e9e3b9a4d2a97118726f6423835f81d6687d401e3ac43c *.cursor/skills/aid-summarize/SKILL.md
+36c51328f6000c9ea07402ee2fa615e864329e15badb9f2654c27fa877c62f70 *.cursor/skills/aid-summarize/references/state-approval.md
+61bc4adcb8a40df805c8e494c02030ccf23326eac9c4ca9d5b303686289bfa0a *.cursor/skills/aid-summarize/references/state-done.md
+4e0d840b4463eab2b42006db7480682401b865fba934f56adbcef05b4bdc6f6d *.cursor/skills/aid-summarize/references/state-fix.md
+dfdccfa808f00090be6879c7893993b3e532fe6857b88fc20fc976a9e08babc7 *.cursor/skills/aid-summarize/references/state-generate.md
+de6eeb4f9cf5b01b054ca6309df9f6bf4fdfa2d60dcd05d851e3482f6f2566c7 *.cursor/skills/aid-summarize/references/state-manual-checklist.md
+ce6977424924fbd031d379b712254bb8a06faf3ce6b3a21e251a06c494ac9b2b *.cursor/skills/aid-summarize/references/state-preflight.md
+17abe7779176f35cb2532a2eaaceaeeb5be7dd38e1fce32d4db402998404b767 *.cursor/skills/aid-summarize/references/state-profile.md
+11ad0247f150b2b14a7422965472b836bc49263b0e5dce9ea278bc13f5d9cf6d *.cursor/skills/aid-summarize/references/state-stale-check.md
+d90468317b8e49035bc5463f9ec5a88511f01b747f315c7919837b0bc7a25ffe *.cursor/skills/aid-summarize/references/state-validate.md
+11e4479a97eafa281f21740d02e097d20c68604f119c185138abcd56333343c9 *.cursor/skills/aid-summarize/references/state-writeback.md
+28d2960031d37ed3b7586f465216d60c120417fe32f174518ebe70a334d7f6a0 *.cursor/skills/aid-test-data-quality/SKILL.md
+7a962071e85826fe8817d0f9014d53c75def7b0e39ac62551c8f6f215f97c282 *.cursor/skills/aid-test-performance/SKILL.md
+dfc7fe1386a584abc1977ec8a4bd667507a8a1d54942b5f5e17e7c9c3a2e96dd *.cursor/skills/aid-test-security/SKILL.md
+f776c602670d54f3730b3fd77dc78aa1b5eb932cf5e34d15a7182f714c3817dd *.cursor/skills/aid-test/SKILL.md
+d5647e89ca32aa4aab67951dd591dd0297de82fb566f2f75cfc16bbbb00fdd0e *.cursor/skills/aid-triage/SKILL.md
+31c669df6f74cfbcb9e0711b05a650c4461829d7c9a510ba99df10e3d6a2772e *.cursor/skills/aid-triage/references/state-classify.md
+c10c5dd011574e6317eb9ce9934d1b25ad98f74f3ba87d8237ae9b22b17f0869 *.cursor/skills/aid-triage/references/state-suggest.md
+9475879f60f13986e3651145bd89f7fafaf8fc4478a10c3a82e6970fe2e30535 *.cursor/skills/aid-unset-connector/SKILL.md
+18666fd2c943e2ecb2dcd40c8fac3711dc402a2c898b96c1f5ff3c01bd37b9cb *.cursor/skills/aid-update-api/SKILL.md
+e1e2fb84d59001cc76f3bf336dc67a6b7bc3412d4f547da3071af8e8515f4920 *.cursor/skills/aid-update-cli/SKILL.md
+57e2a13f31b7864b9b83d05581fca007a32ca286eec61c4a306a947de81c3459 *.cursor/skills/aid-update-config/SKILL.md
+344a3c60998abcaa5617a00ae18e9a30483185c02c563796ea6edb01117d31b4 *.cursor/skills/aid-update-dashboard/SKILL.md
+b0a9cd02c9fd88c0d181a40310b2b3822a91d0ee0bb87e3eaf351a0de9b29d93 *.cursor/skills/aid-update-data-model/SKILL.md
+5a33f250dba44831434f3ec501d590903435b91574e3df6c4596ba5edd042e43 *.cursor/skills/aid-update-data-pipeline/SKILL.md
+a14326d31f0582f71d8766496bc72b93a8b4139ce4c7f789d4b60f564cb6eeef *.cursor/skills/aid-update-document/SKILL.md
+0a657cc574d0f0faaafca9491920c07f7a19a51010ff45c29ca0d1a822365a29 *.cursor/skills/aid-update-infra/SKILL.md
+53a8b76921fd945393c5ce54259d71fecd2fb7c09c5357a58c246a4d6711db77 *.cursor/skills/aid-update-integration/SKILL.md
+6566768a61a4cccb3c38aa184bbd1bdd28cc373bdd0a7c1c3ca9e375ce7cf5b7 *.cursor/skills/aid-update-job/SKILL.md
+31cb11de4341c59f02ba9c32a29cf2fd89b11453a3387d70aac2ffe700a7405d *.cursor/skills/aid-update-kb/SKILL.md
+afadcef6957455bc81fa75b35956f8dd13e8971a15f1f8791f506b4398675ea2 *.cursor/skills/aid-update-kb/references/state-analyze.md
+4eb8b1ed0ae0a982f6c9bcf49d2982238ace66b795c70226173504c60e488321 *.cursor/skills/aid-update-kb/references/state-apply.md
+4a3653822cc34aca550e5709b05cda05c411281034d4aeefa282f2837135d3af *.cursor/skills/aid-update-kb/references/state-approval.md
+78219d9687b4b16093f4d5dd4206a6af63b2241c219369de4dd23d331baf5aeb *.cursor/skills/aid-update-kb/references/state-confirm.md
+d4296816feaf00cf48ac532fa16409afd0a58b1d3a1d1193e36418db38f28856 *.cursor/skills/aid-update-kb/references/state-done.md
+31a3660bf7022abfc3e04cb3e0aacf0c4ce5dac6480100fb1cf3d9830cc8c764 *.cursor/skills/aid-update-kb/references/state-review.md
+ad1cbae11fcfb9f4dd1d77c67f45a32ff9d45cafd75d47e5adbab5fead047b28 *.cursor/skills/aid-update-kb/references/state-scope.md
+9fef6df8ecdee00c313db937906c565159b6a3796d275344cbaf07193e64fac6 *.cursor/skills/aid-update-messaging/SKILL.md
+9daca3d170280ff1b65848f415d86acc61dca777d7ebeb75c297398c4fce3ca0 *.cursor/skills/aid-update-test/SKILL.md
+f41e0b41bda0d6378699b4f796240c202ee44f3f9ef83201955bbb2edd676500 *.cursor/skills/aid-update-theme/SKILL.md
+3d330c5383bc2529d170cf6b37defff7b31863d5ec4de509a9e1880979326745 *.cursor/skills/aid-update-ticket/SKILL.md
+304a9cff6bd6a9c7bea694d19dc39d930d45b2c957e22847a983a14606108826 *.cursor/skills/aid-update-ui/SKILL.md
+4548b7ec2ac2604734554bf7aeca7cc2965792bfbdaac19daad04bd019b72a00 *.cursor/skills/aid-update/SKILL.md
+111f4bf098b532b9bfcc028b721f73c9176aee33b707be350d14dc107673b2df *profiles/antigravity.toml
+e22bf0334bceca021bc847f8243be383aca0680ddffa2027f40d269268d027dd *profiles/antigravity/.agent/agents/aid-architect.md
+98a73b79eed794e2247c250d119b62231d8c88b2069c0d3ae0e47354da0788c8 *profiles/antigravity/.agent/agents/aid-clerk.md
+0b9e38576c58c4c4578c4263abd66c952a072c64095d628d1b124853601dbc41 *profiles/antigravity/.agent/agents/aid-developer.md
+c8428db735905f3b8311c51c2c26a6ad0315dfd636b2dbf12584088560d5433f *profiles/antigravity/.agent/agents/aid-interviewer.md
+4832f6ff12a277acf242c6d51d1583bb9a167b7954035dc95f27de7fd41f4d9c *profiles/antigravity/.agent/agents/aid-operator.md
+0ee99f9a27b80f97590803eb6e3e8d382ddb8f9648033d08f2c9bdfddc3b185d *profiles/antigravity/.agent/agents/aid-orchestrator.md
+7e5c7548f5de42ee0cea063791921522bdc0d3a325604913c9c3c51a1f2c0b28 *profiles/antigravity/.agent/agents/aid-researcher.md
+9f9e3eb6ec3a25d2e1e840d68031f09500c6d97d144aa17ba0e53404476a6389 *profiles/antigravity/.agent/agents/aid-reviewer.md
+0a4d7dc303faa0d01bcabf11578247d26721eef52b0c0c0af431eda23e35e251 *profiles/antigravity/.agent/agents/aid-tech-writer.md
+b8519db9d466949e7162584866a20818148af78205f1ce14d28c19178e011fba *profiles/antigravity/.agent/aid/scripts/config/read-setting.sh
+5f1c2060c42217d7da1f7b1e52286e1f75732554866ce1a1191ec0177572a7e9 *profiles/antigravity/.agent/aid/scripts/connectors/build-connectors-index.ps1
+297e2406c97c6d86bb6384c961899773cda97d5fab08c3485f63bbda9f5fce0c *profiles/antigravity/.agent/aid/scripts/connectors/build-connectors-index.sh
+6a8feb93e1fc5bd2aac5dfc2e32c67966c962fc1874e8abb93acfdcf27bd95fe *profiles/antigravity/.agent/aid/scripts/connectors/connector-registry.ps1
+ab83b69202d7c7686e0ab42aa965bdafdf679a286df9425424977d34c0c3135f *profiles/antigravity/.agent/aid/scripts/connectors/connector-registry.sh
+e28788564730d3c6b5970e639debef112b3622034ba1c3499c9f801104ddb3ef *profiles/antigravity/.agent/aid/scripts/connectors/connector-secret.ps1
+e9dda644f7d8ec238dd4b53492f1d6dd33154d4373537f4473988c178afca86a *profiles/antigravity/.agent/aid/scripts/connectors/connector-secret.sh
+4387e45dc85935478466f24321c8c68f86e5cc7f19a4191cddc143f36a6f9fff *profiles/antigravity/.agent/aid/scripts/connectors/write-connector.sh
+c906f9b512c6fecf6635254ea1f199479da2582d5b8a44c24101b1008da3583c *profiles/antigravity/.agent/aid/scripts/execute/complexity-score.sh
+eea2a8d8dd12d5e118ea97664fb874343b738a650c984c866363e6adab5bde05 *profiles/antigravity/.agent/aid/scripts/execute/compute-block-radius.sh
+4adc99a9d9aff96d5a3c418fb461af28167f48cfada8a1d2ed88b17454fb17fc *profiles/antigravity/.agent/aid/scripts/execute/write-control-signal.sh
+eb451853f845ecb5f042bb42ae87748d5dc021047260783ae64c79e2eee9b03e *profiles/antigravity/.agent/aid/scripts/execute/writeback-state.sh
+478103d69baa1eb0f080538923ebe4a583629cbce540d04c567f15b4c76350f3 *profiles/antigravity/.agent/aid/scripts/grade.sh
+9cf3286222f78b5a6f3d7e24dba7b8acab9502bd6b3d166b26ae87465454572a *profiles/antigravity/.agent/aid/scripts/graph/assemble-coverage-notes.sh
+e959b63938e09eac9d0f8ce61f4ee5c80a70af3f244444e2e8ab015cd946825e *profiles/antigravity/.agent/aid/scripts/graph/build-graph-src.mjs
+c48ab165b8edf9c67b2d4df10127e75a3a4f3204a9522c039a14470ef6455f4d *profiles/antigravity/.agent/aid/scripts/graph/build-relationships.sh
+1648d1610b26deee96c89e5a6c50c10136d991e391f91cd0f9f40b67823e31c7 *profiles/antigravity/.agent/aid/scripts/graph/build-table-src.mjs
+48ab23ea28b619b894d5594ba8e1d4b329a2726e7d331db63f31f4227a41a3fd *profiles/antigravity/.agent/aid/scripts/graph/coverage-predicate.mjs
+c2fb3e54849d2c01d7037ab4618d4731f47e6ef3c465d2083905960f6480df65 *profiles/antigravity/.agent/aid/scripts/graph/derive-edges.sh
+aa0016f6f624d6f9f432af877789c28295eb7f6aa2d581169680879f5f28790d *profiles/antigravity/.agent/aid/scripts/graph/detect-kb-gaps.mjs
+762945d41b28275ddb0230ba364adc18c8eb801b8ee48da869aefd25648dad2f *profiles/antigravity/.agent/aid/scripts/graph/grade-graph.sh
+b8d24509bebe1cbb3e63b96457c2414591f93c3603be182f535543dc85e1f0fd *profiles/antigravity/.agent/aid/scripts/graph/graph-preflight.sh
+289b9617ee372ab10e8f5d1dd77d441844e22d6656dd8b895dfd451c4906de47 *profiles/antigravity/.agent/aid/scripts/graph/graph-stale-check.sh
+17291348f003db8cdae9c995240fac2fd46cbada0dd482c10a4861de33cc38b2 *profiles/antigravity/.agent/aid/scripts/graph/harvest-declared.sh
+d4858921265ecb0b3c636cba5ba114df7aa64757e6d41a77d7d02e915a0c2156 *profiles/antigravity/.agent/aid/scripts/graph/kb-write-fence.sh
+bf20e3528d3b295e416c9d3831f24b655eb10be4e1344873cafd1e24376378c5 *profiles/antigravity/.agent/aid/scripts/graph/relationship-schema.sh
+794a8bbdd530902ca3f7c409954ba36b6209c2776a597372d59fd71d4358844c *profiles/antigravity/.agent/aid/scripts/graph/render-graph-view.sh
+b22ad67dd521f81417c31f79a839ac3097fad219d7170272f9a7c26bdb0d2e13 *profiles/antigravity/.agent/aid/scripts/graph/render-table-view.sh
+5eb503bfdd5472152b9d7389b3d5d2dcaad171c69e93d85f05133d3df57fbb56 *profiles/antigravity/.agent/aid/scripts/graph/report-endpoint-satisfiability.sh
+ae1c868c0a8cdc85c1bd368f28fcbf70e4e0994a40eedb8837aba79ec5e86250 *profiles/antigravity/.agent/aid/scripts/graph/scan-source.sh
+a9a78b2e37f966ae3df3859e69145fe493c2d1a8c663cba0772ff4710ac562df *profiles/antigravity/.agent/aid/scripts/graph/significance-rules.sh
+9e825c83c1e7275c4596ffc85ba611afc7d1e7f7678793aba4539f847fbf64cf *profiles/antigravity/.agent/aid/scripts/graph/validate-relationships.sh
+cb774ab3a4369dcebb09dbb600533f28b4bd489a05a81606e443d1ee810a077b *profiles/antigravity/.agent/aid/scripts/graph/vendor-provisioning.md
+4317500099dcff627c2ed2d4dd59ecaf78d1173a9536baa6a35330dd9d7b9a9f *profiles/antigravity/.agent/aid/scripts/housekeep/branch-commit.sh
+d9f0abab4118f3ed97f3f54c67524a8e68f6dda763edf95e918d020f3c454d8c *profiles/antigravity/.agent/aid/scripts/housekeep/cleanup-classify.sh
+34efca63b146b2025d864172c0880123eee18e0b6e9a5ba0b754b652c7fe6a98 *profiles/antigravity/.agent/aid/scripts/housekeep/housekeep-state.sh
+39669832b102d1ce92434b940c08a37f79dd18470ae87bebb564fb7559031093 *profiles/antigravity/.agent/aid/scripts/kb/build-kb-index.sh
+3d63066f2cd54ccd0a5321faad95746b8dc27a20e16b8219df647dfa6f97c31e *profiles/antigravity/.agent/aid/scripts/kb/build-metrics.sh
+74489d122cc2138a525a6076261707999b13bc77d9a5e8801e73955fa366ab8b *profiles/antigravity/.agent/aid/scripts/kb/build-project-index.sh
+b5d17e87e0260537c280e391d5f3ef7f9aeaf9ebc1d625f6355f58811aed4e03 *profiles/antigravity/.agent/aid/scripts/kb/closure-check.sh
+cde35cae105e2d195d107336314f344ffad01aa0cffc35633862101119f871ec *profiles/antigravity/.agent/aid/scripts/kb/coined-term-denylist.txt
+ed1a1dce6fc24ae3f24a541936c7133efb88bfe19d125a38cb900cc1b4163340 *profiles/antigravity/.agent/aid/scripts/kb/discover-preflight.sh
+4312408efc618e0cd96197f5f5dde1e46b531fba15f93222ffacd2b5e8bf6d31 *profiles/antigravity/.agent/aid/scripts/kb/harvest-coined-terms.sh
+63a7534a1252982753cf2d698fc5e3af63e1f2c79f905200a97da3d377cd56d5 *profiles/antigravity/.agent/aid/scripts/kb/kb-actback-task.sh
+98e427f0b769c374ec008c242167ba07a3bec61fae081de447062b48285efa4f *profiles/antigravity/.agent/aid/scripts/kb/kb-citation-lint.sh
+546c21baf89cda6f84de44f6f727bcafd9cb6d438a36c6f0495e0f48697bc6c0 *profiles/antigravity/.agent/aid/scripts/kb/kb-dual-intent-probes.sh
+f9adcc7c6dc14648df4a13c1b51a497896779f21aa7ce73929b1f6891f5331de *profiles/antigravity/.agent/aid/scripts/kb/kb-freshness-check.sh
+3c23e5a272320b0f75a52667b4526f5166555ddd207c43b8fc4416e51537ad3e *profiles/antigravity/.agent/aid/scripts/kb/kb-teachback-questions.sh
+defef4aa83dab1da773850358fce0340ef461db86511ad4230c1e1a19100341d *profiles/antigravity/.agent/aid/scripts/kb/lint-frontmatter.sh
+73cf153c549fe7f7e56d199d408e002ef5929b87b0b181068608cb03b3c3090b *profiles/antigravity/.agent/aid/scripts/kb/recon-classify.sh
+d371b67980d3e59577b6a757040aa0fbc46cf4cdc870945c2c653de059a5a9bd *profiles/antigravity/.agent/aid/scripts/migrate/migrate-kb-frontmatter.sh
+f74d98d633602378e22f840da8ad9868ddcb1a64595afdf85ca46ccebd7c201b *profiles/antigravity/.agent/aid/scripts/migrate/migrate-work-hierarchy.ps1
+258d2d97fa4f05c03c493dbe331799501b8bf707f8eec67e0b1f6f405a9b6bdb *profiles/antigravity/.agent/aid/scripts/migrate/migrate-work-hierarchy.sh
+a3beb2692af72470624eae046afe941c5636e42344f27c71267732a7d082e199 *profiles/antigravity/.agent/aid/scripts/release/check-version-sync.sh
+8e331e683afbb10e31f908095c1ded778167871b230e5345c0269cf98a79cc10 *profiles/antigravity/.agent/aid/scripts/summarize/assemble-3part.ps1
+f1636405ad7f7419217b41924ab72e3e98a0140aa54d78b5e9d5f34c4f6406cc *profiles/antigravity/.agent/aid/scripts/summarize/assemble-3part.sh
+ddcb0ec5a1cdb852770953bce3600f053af32602bc9d39da483985b204dcd9b9 *profiles/antigravity/.agent/aid/scripts/summarize/assemble.sh
+2e3769f10a7b1f30a84836eb64ff06f50dd5bc28b71129bc3e91423bee6bcee1 *profiles/antigravity/.agent/aid/scripts/summarize/build-md-export.sh
+7a4df020009b858ca0f8229ed0e79f00e2557b5e97f801ac82ba0169b62593ea *profiles/antigravity/.agent/aid/scripts/summarize/contrast-check.mjs
+2e2c6b2e0246071c49e5738d05a310553a3c9e82f91e975654f8b5d7272e5cf4 *profiles/antigravity/.agent/aid/scripts/summarize/grade-summary.sh
+6e4df9cafb9f3fc54032e8a21b55dcc5bee74d910b409f974d51372f84ae2d8d *profiles/antigravity/.agent/aid/scripts/summarize/manual-checklist.sh
+0ef53df1023bf6927ad78b2d93fc90dffd44d9eee0f0d5a709b772a41bea1192 *profiles/antigravity/.agent/aid/scripts/summarize/playwright-provisioning.md
+6c978b869ba3f264c6fbc9ae45e33e9148a5b02f00bf63cf23e954b81cf122e1 *profiles/antigravity/.agent/aid/scripts/summarize/spot-check-facts.sh
+ae03cd8d77b6163e5d107c8eeadfc0eaf4c6cea2db43f2f576f3c9b8180e6e04 *profiles/antigravity/.agent/aid/scripts/summarize/stale-check.sh
+a5d7327e33bc58c7f73fadde63e75de7a8857373e928c03d23990cba20106e28 *profiles/antigravity/.agent/aid/scripts/summarize/summarize-preflight.sh
+a64f5a35ea85687495b32bcd612f2cb3706095e22a8842c37600b5171fd1442b *profiles/antigravity/.agent/aid/scripts/summarize/validate-diagram-content.mjs
+cb9ceb065fd42d6c3f6de816844a42d402c211e7a9e39569057292cf8e67782d *profiles/antigravity/.agent/aid/scripts/summarize/validate-html-output.sh
+69a20f760e75ee1ff31cbb50939404481b5f912a5802570bbc55a9e2b27b36ef *profiles/antigravity/.agent/aid/scripts/summarize/validate-visuals.mjs
+f28a7741468f990effa3d1736426200c242ad2526c21d5d33d38c192d548ff0a *profiles/antigravity/.agent/aid/scripts/summarize/writeback-state.sh
+256b18145d15003a840b1ba7e473c2b693748ac060416cefa16d998a0b77767b *profiles/antigravity/.agent/aid/scripts/works/enumerate-works.sh
+5288c950ed6e91a4544bef74d1f3163000c67880e785926994e60e504c80941d *profiles/antigravity/.agent/aid/scripts/works/worktree-lifecycle.sh
+1d7423eb62bb61958bf2080bc2059845ec4e8b82fb8676fab604366576f449d5 *profiles/antigravity/.agent/aid/templates/agent-boilerplate.md
+0124185b1885b472894f63ebc9a79fe09688b56d8ee25bb111694d146c3cc9d2 *profiles/antigravity/.agent/aid/templates/agent-dispatch-tiering.md
+06c31771901327ba0272fdc46cf1b0b5e5b444c9e1615ce7e8754e2e533caec5 *profiles/antigravity/.agent/aid/templates/connectors/consumption-protocol.md
+b80bac04e86cc642e63e733c7ad338a93bdd4e61a9ffa346f9818ca54b72c038 *profiles/antigravity/.agent/aid/templates/connectors/preset-catalog.md
+e156a3b66e20f6228b33cb2cbd8852c6f09d34c89c0f30d829df5f4fb8bba1d7 *profiles/antigravity/.agent/aid/templates/connectors/reconcile.md
+e3db32f5415d0e99a793a02c006e3d97e3c8b4ea69700985d71fca243f0d606a *profiles/antigravity/.agent/aid/templates/connectors/ticket-resolution.md
+ab1776254484d2534cc667ad6dfa44a5abd349238a6455f425e4e23930fd7a5c *profiles/antigravity/.agent/aid/templates/delivery-blueprint-template.md
+e6c328c648b6ac3aec779eda11809c9481e56206cf1367bb5403528747ebbc19 *profiles/antigravity/.agent/aid/templates/delivery-issues.md
+f89f292c1ae7550cdd40d49cc1ff5677b6f48fc7eefb226bb5eda7ef8941c063 *profiles/antigravity/.agent/aid/templates/delivery-plans/flattened-plan-template.md
+12c9e04352cd6df9e6e355ab412933af60ed006b1043707c93a7a34891ca86f1 *profiles/antigravity/.agent/aid/templates/delivery-plans/task-template.md
+448730000040c7a46a87a0707947d7390f7282c9078fcc006d2ea84ef4fb49af *profiles/antigravity/.agent/aid/templates/delivery-state-template.md
+e48295fe353998370284c5ebb88166135145df11531fb32048eb8ccd95159542 *profiles/antigravity/.agent/aid/templates/discovery-state-template.md
+4070e6cd1a9f970f798e51139503f45e1c8845efb2dcaab77eb44194e262abd0 *profiles/antigravity/.agent/aid/templates/dispatch-protocol-checklist.md
+56dd8fd1b7d9e1b9696b6c414ac638ee32a47174225615a0f57e5d37780a0a7f *profiles/antigravity/.agent/aid/templates/downstream-worktree-entry.md
+ce60dfa9e5c6e9595ae289efb2128953f5d8bf34f8d53f3505fb77077e0bb8c3 *profiles/antigravity/.agent/aid/templates/feature-inventory.md
+f2431502406233a2f9f083346f9a06fc2b5c5d289f6f61c951099af505f731c7 *profiles/antigravity/.agent/aid/templates/feature.md
+79b88f114c2ad3e1b30cb84699049c1a4fdb968e14f52fec37ed721417a22b26 *profiles/antigravity/.agent/aid/templates/feedback-artifacts/IMPEDIMENT.md
+161e2c4a57116b7f2665538d8096dead897ff79e9e1bfc1f993f6843e0163a75 *profiles/antigravity/.agent/aid/templates/generated-files.txt
+ea85a7f2f4e2db80ee2e261e9fc8f11772b7e3e6dbfcf27c632b9a917f824eaf *profiles/antigravity/.agent/aid/templates/grading-rubric.md
+46e12a44e9f2256b4996502e9efc72d8c2e94bf1409b75750823c530cdf34c2d *profiles/antigravity/.agent/aid/templates/graph/coverage-bearing.yml
+911342cefc0a7ddd8f86257a2465842c030a0d41c294743b5526f63c5a50f39c *profiles/antigravity/.agent/aid/templates/graph/edge-relation-map.yml
+370101aa17403830d5c365c542387b48f82fe1a8c87e68904bd748f3f94c78da *profiles/antigravity/.agent/aid/templates/graph/relation-vocabulary.yml
+4d71bdf8305cf525683c9ecaeb436bb38aedfa952afefc52118b0e9ff96cce21 *profiles/antigravity/.agent/aid/templates/graph/relationship-schema.yml
+702bcebfadddd395b2ef989c25329d73217ca255054fb035d7c8058f9653c64b *profiles/antigravity/.agent/aid/templates/graph/scale-ceiling.yml
+64cbb988df862e6142b12a63d2640f10044402369b043e65cd67ca758fe20044 *profiles/antigravity/.agent/aid/templates/kb-authoring/concern-model.md
+2877082883f44e7bdcf6125e10eb4f44bf3f051ebd73f6d365662778c5a23664 *profiles/antigravity/.agent/aid/templates/kb-authoring/domain-doc-matrix.md
+bcca71bb85fd93e19c454af668bcbdce9cf98ee5cf037937eaec80ea372935ac *profiles/antigravity/.agent/aid/templates/kb-authoring/frontmatter-schema.md
+0c7a2cc95d4ce12562a0c94fbc9e1b5cc7961a9ad84fe21d00cf52a9ec6d8f14 *profiles/antigravity/.agent/aid/templates/kb-authoring/principles.md
+1f94b3635384342f292e89448c138329ef99e6a851bced835c78dd1da982f782 *profiles/antigravity/.agent/aid/templates/kb-authoring/review-rubric.md
+c7b8fefdf8f1c8ac25c00347040a007e0508a38b264062797785f6962440f555 *profiles/antigravity/.agent/aid/templates/kb-authoring/tier-model.md
+1d7bd1774c6da4cf46f85b331991b8d615a11b8a02937c80403c387640373db4 *profiles/antigravity/.agent/aid/templates/knowledge-base/architecture.md
+1411bd12c88e6b840178e1d77f3eb5707c102987533b6291a4563f5be434b8ed *profiles/antigravity/.agent/aid/templates/knowledge-base/coding-standards.md
+f7ee90bece63b57dc0b4b57c9d7a806f4a69fdadc65cc1be7b366ce60ebaaa14 *profiles/antigravity/.agent/aid/templates/knowledge-base/domain-glossary.md
+a1ce46eef33b3547085eaad19a41057c060b6a3780f1c716dd4ea1f80b4e1df0 *profiles/antigravity/.agent/aid/templates/knowledge-base/external-sources.md
+47c8ea78247e101643395ad5f6bb68affbe857c66f6fa56c02cd121d774488d7 *profiles/antigravity/.agent/aid/templates/knowledge-base/feature-inventory.md
+3bf6acdedecea4973a897eb7b1fa4ddfb9b50cdb57a3c1a8fa36831f1dd8c366 *profiles/antigravity/.agent/aid/templates/knowledge-base/infrastructure.md
+280fc99681a80475e8e4e350bda99289e89c02dd28c0334060814615c881eabb *profiles/antigravity/.agent/aid/templates/knowledge-base/integration-map.md
+86d82acf2500a2f20b8228e9a1c76649cb0fef4396ae9a8d625923b1872488a3 *profiles/antigravity/.agent/aid/templates/knowledge-base/module-map.md
+f4bc0f1e54615f8f0fc189dd6658c8827f96158ed6aa7efca8675dbfb6d91a23 *profiles/antigravity/.agent/aid/templates/knowledge-base/pipeline-contracts.md
+02b1d55dbef31af30c518a1df343d200935c3ebe0dcd33dd3ee4b43cec2a5171 *profiles/antigravity/.agent/aid/templates/knowledge-base/project-structure.md
+bfcb3f1764fa01dd5581cc5f0e2d11e3afafb0519eca289b4fec1dda43666934 *profiles/antigravity/.agent/aid/templates/knowledge-base/schemas.md
+e970f9fd67fab44235e8da364803985c3b700f99367ecdf748f55d7b97ed3e58 *profiles/antigravity/.agent/aid/templates/knowledge-base/tech-debt.md
+25469309bf7129a65477732a9dbdb3e6c26ab3099a46e49837fc88fe918cdc91 *profiles/antigravity/.agent/aid/templates/knowledge-base/technology-stack.md
+d094d84e5475d3cf100e360a5fb9fd30bbd2e55ecee078c6bee55c31c470ae32 *profiles/antigravity/.agent/aid/templates/knowledge-base/test-landscape.md
+8f2b7d5b579ba85d7fc7fa75ec7eced3d9c16ea0d65cb3bcf80bf4e2acae6b05 *profiles/antigravity/.agent/aid/templates/knowledge-graph/accessibility-checklist.md
+e73e9f7eb371b6da45bbe1a66438918eeb6199dd5722bf3157625a554077815b *profiles/antigravity/.agent/aid/templates/knowledge-graph/graph-canvas.js
+000542a135d27899930b81c90d9525d9865221890811dcb9344d2e061c440230 *profiles/antigravity/.agent/aid/templates/knowledge-graph/graph-controls.js
+7b33db2f797628dc68b5506e76ee717d39f162c0d6cf2af1771bbfd9366b8858 *profiles/antigravity/.agent/aid/templates/knowledge-graph/graph-css.css
+1cb9f1b53408256739833dbf020535a51de7949c14257ddedee5be46b91b1405 *profiles/antigravity/.agent/aid/templates/knowledge-graph/graph-model.js
+3bbc7283a5ce08e4c0678a1306c79259edf9f9632c670a365874aa4f778ea9a8 *profiles/antigravity/.agent/aid/templates/knowledge-graph/graph-skeleton.html
+d8adc08c01af106fa5e73bc4e462f47f458607498e13a25e86063b006373a7ea *profiles/antigravity/.agent/aid/templates/knowledge-graph/graph-table.js
+640775c1b2e67daa8b7b05be42a290d386b4ddff5550077ed0da6c7affd71419 *profiles/antigravity/.agent/aid/templates/knowledge-graph/lens-presets.md
+b3e75b23476acffd00481a5c71e7d24c37d5270a3d8a145b087cfdee3434debc *profiles/antigravity/.agent/aid/templates/knowledge-graph/table-view-shell.js
+397c760ffbe6b58d4ffd7c1f559cfc81ebc97b3bdf5c9de513d83e57ed52be69 *profiles/antigravity/.agent/aid/templates/knowledge-graph/table-view-skeleton.html
+e008c5e25a6be382593089c29bfabbc553c6378eee02895aec46ce396cc404ee *profiles/antigravity/.agent/aid/templates/knowledge-graph/vendor/d3-dispatch/LICENSE
+94b3bbdb6b98dc1325a15762b051013e8253999b0e0436b27d1da17b952ba0af *profiles/antigravity/.agent/aid/templates/knowledge-graph/vendor/d3-dispatch/d3-dispatch.min.js
+e008c5e25a6be382593089c29bfabbc553c6378eee02895aec46ce396cc404ee *profiles/antigravity/.agent/aid/templates/knowledge-graph/vendor/d3-force/LICENSE
+1e07b473241328795d5ea9ad479a7bbabd765012fa2ef95633c83b69868dff6b *profiles/antigravity/.agent/aid/templates/knowledge-graph/vendor/d3-force/d3-force.min.js
+e008c5e25a6be382593089c29bfabbc553c6378eee02895aec46ce396cc404ee *profiles/antigravity/.agent/aid/templates/knowledge-graph/vendor/d3-quadtree/LICENSE
+57e2ad12824ed82893ba447523f2a2fb9beeb9222aafb2c778a9f5b313348b0e *profiles/antigravity/.agent/aid/templates/knowledge-graph/vendor/d3-quadtree/d3-quadtree.min.js
+e008c5e25a6be382593089c29bfabbc553c6378eee02895aec46ce396cc404ee *profiles/antigravity/.agent/aid/templates/knowledge-graph/vendor/d3-timer/LICENSE
+911ceda305f014b6b53ca68d5c896a9a387da120cfd56a421a2c60cca2fc9b36 *profiles/antigravity/.agent/aid/templates/knowledge-graph/vendor/d3-timer/d3-timer.min.js
+5ce7447bc57f7349ffc48338782fbcabe613696e00712b20d66bc58e780f9473 *profiles/antigravity/.agent/aid/templates/knowledge-graph/vendor/pixi.js/LICENSE
+83b2d7edf27bb77460f5f5f5e25cd73c91b77a53f44c80ac63096d6c0b5cfda7 *profiles/antigravity/.agent/aid/templates/knowledge-graph/vendor/pixi.js/pixi.min.js
+3b24f9d6d27bf59261cd1b3a15448d79ae433e25ef3f922cb18bc054315d7205 *profiles/antigravity/.agent/aid/templates/knowledge-summary/accessibility-checklist.md
+3423b7e9760c234e4301d56b86fec65fbc6bb9d3acae7d37a228fe3827436ff6 *profiles/antigravity/.agent/aid/templates/knowledge-summary/authored-visual-catalog.md
+3cf652f600d0ddbe4e1e202230462cf1cb072dbed7914cd4f80704be7b9faf32 *profiles/antigravity/.agent/aid/templates/knowledge-summary/component-css.css
+b5c9542d0b59e355cf2e102f10b8edf8599f5cef3086565cc0fb2f4d1d8d1b49 *profiles/antigravity/.agent/aid/templates/knowledge-summary/design-tokens.md
+fd207f74142d286e5f726b39f24d027c7eee83136d2797efb1005b8f9b4efa1c *profiles/antigravity/.agent/aid/templates/knowledge-summary/grading-rubric.md
+c6d9f73297b2ee3192d37c94c0e7a0125659fc3ca357cfb71c72ee7f2100d205 *profiles/antigravity/.agent/aid/templates/knowledge-summary/html-skeleton.html
+118528f25b356c2521973c21d25504c8611148c29adeffa37fb5d7b90f2007aa *profiles/antigravity/.agent/aid/templates/knowledge-summary/lightbox.js
+a665ebfb2cadd0e42957541027c6bbce9b9d6587ce8368b35df5a7b31dc8b288 *profiles/antigravity/.agent/aid/templates/knowledge-summary/prompt.md
+db2c7cc1dffa0fa6a41bb8dec6a107ba02cf600846341e66db9c9f1ff8976fbb *profiles/antigravity/.agent/aid/templates/knowledge-summary/section-templates/agentic-pipeline.md
+82507f55f8e7f182b83fcbc118ea2ed2e04ddd08373e645b8e365fcd851ab8a3 *profiles/antigravity/.agent/aid/templates/knowledge-summary/section-templates/auto-detect.md
+9a3026c915d3b1276a45522edcb694b83b432b8dfba1bfd13c7e729c86f157b4 *profiles/antigravity/.agent/aid/templates/knowledge-summary/section-templates/bespoke-components.md
+2c66a2374c19287103abee055824fb14f1dfa6339a9ac315cc4033a265c92d32 *profiles/antigravity/.agent/aid/templates/knowledge-summary/section-templates/cli.md
+c5fb6baba19e8aa8af39df6b24dc050fbad9a76c557ab19917652b6453a07ae8 *profiles/antigravity/.agent/aid/templates/knowledge-summary/section-templates/data-pipeline.md
+98ba377a481cdbc0c3050f7e4f817dd2fd8296242cd42b7c02003a9b88059f7c *profiles/antigravity/.agent/aid/templates/knowledge-summary/section-templates/library.md
+277199e1d6d4097729792e80ff9c89a7a0f132115e185aa7b03259e927a11ef2 *profiles/antigravity/.agent/aid/templates/knowledge-summary/section-templates/microservices.md
+d510be318d32e40307d31b0f06c75dc56835d915ef2cd985d45cf52cc9eb3bb6 *profiles/antigravity/.agent/aid/templates/knowledge-summary/section-templates/web-app.md
+25e4e508e41508cb825126c2c2e73dc90d886c52abacacf55932bbafc13c520f *profiles/antigravity/.agent/aid/templates/known-issues.md
+0f727b1273f307baa02ae8f93f75472c666afabf97b5d1c9c41bf40ce6f4b7f2 *profiles/antigravity/.agent/aid/templates/long-wait-protocol.md
+d8bbbe4e1daa2cc548d3c0c544525ad3a7f827e568b94a3f815798973ce63044 *profiles/antigravity/.agent/aid/templates/package.md
+cf78c05319ac958ade4cb707971bcae72168d37f2d30cd9a181215b65b63ab68 *profiles/antigravity/.agent/aid/templates/requirements.md
+d2a8bc3ff89d929f0bb3b21485d7fac51143e7fd452f2ff7604d9928f79be959 *profiles/antigravity/.agent/aid/templates/requirements/requirements-template.md
+b726e28b6ed0ae3083b111d5fe1cac73c0d6e8032ec37504afd63eccce7f7fab *profiles/antigravity/.agent/aid/templates/reviewer-dispatch.md
+b20484f9ffee22992765601bdb07889e7a7b84bf416315eca4863ee745510717 *profiles/antigravity/.agent/aid/templates/reviewer-ledger-schema.md
+c2ade084bc1923ab0fad44ec6ae3cdc149f5d3efea6abab20bf2d50f3847dac2 *profiles/antigravity/.agent/aid/templates/rough-time-hints.md
+10a9e6d79fec69e9f4865b37018813910a7c0d328ecb8431779c7c7dd8e55c00 *profiles/antigravity/.agent/aid/templates/self-review-protocol.md
+969d6229ef135a7432f82dde1fa3cad5a1f45cc13d021209734bc20e4e7dc396 *profiles/antigravity/.agent/aid/templates/settings.yml
+d1de6ae5fb7be7b8dbd911714014dc0d049e9559a62c539da633a4b8cbf30c09 *profiles/antigravity/.agent/aid/templates/shortcut-catalog.yml
+18f0568f6065c632607829ce9f24fbb0e4cacb8c7ad7cb8bf1da286eccdf116f *profiles/antigravity/.agent/aid/templates/shortcut-engine.md
+c92e6fc346c623b176d98d7255d816866455588e3d54dc517c65b2f112d834d4 *profiles/antigravity/.agent/aid/templates/shortcut-scaffolding/analyze-report.md
+d14a56bd5a963551cd56f1fcebb053bb96217f391373acedfbdbccd8b6dee890 *profiles/antigravity/.agent/aid/templates/shortcut-scaffolding/change-refactor.md
+a37693994f659be18c1e002fb2a3505030e576e028ba40743da7e11b491018dc *profiles/antigravity/.agent/aid/templates/shortcut-scaffolding/create.md
+286d83417f657e043204d19c7b0b069b880a52450b21070f790238b639411fb3 *profiles/antigravity/.agent/aid/templates/shortcut-scaffolding/document.md
+31c52e230c161e983bf690d89eb3f42ae4370a8c31c51b4f7d23d9968e884dfc *profiles/antigravity/.agent/aid/templates/shortcut-scaffolding/fix.md
+4b4377c5fab98c94589b157e76703173027c2fe372879bea96b4fb9fb94a37cf *profiles/antigravity/.agent/aid/templates/shortcut-scaffolding/prototype.md
+e72e6901d36ac0bd5b5354749e7cc02302e833084f2198900a24c03f69c22c94 *profiles/antigravity/.agent/aid/templates/shortcut-scaffolding/test-experiment.md
+dd5c7e1f5fe41718423120c31fd2364d166c1bb4a7f1164d671e0536f9727c72 *profiles/antigravity/.agent/aid/templates/specs/spec-template.md
+628a41921f890ab90fa90ef01cc9eb770cc9e82d20b01819f310e2e6fec77094 *profiles/antigravity/.agent/aid/templates/state-machine-chaining.md
+5f3ee193ee62e41b09071942de9639c56c928281223aa8cd2094be8de5d7d312 *profiles/antigravity/.agent/aid/templates/subagent-heartbeat-protocol.md
+230c07e928110de96d2c1f678e505c8ec870ca5efbbfd9714f35451a5abe9ae0 *profiles/antigravity/.agent/aid/templates/task-detail-template.md
+04a534014f781a3e40d2f503686ab28593d1a128c5ee86227c9b2547415ee6fd *profiles/antigravity/.agent/aid/templates/task-state-template.md
+b7ff88bdbe2f7320b15a39c290174911789e85a4384669d84e4ce687111c7903 *profiles/antigravity/.agent/aid/templates/work-initiation-gate.md
+73cfa3deb190693f949a605946364e1e0f29bb643cb8ccc38a1fbce3fed5ba60 *profiles/antigravity/.agent/aid/templates/work-state-template.md
+7da48f7e6240194a9329ea0e86e0bcfbca0951b27dde5742d16b54bff970b760 *profiles/antigravity/.agent/aid/templates/worktree-lifecycle.md
+b5b8695da62dd413f8f59a855c89ab199b4cb46f31700b4c61a63604daffad2c *profiles/antigravity/.agent/skills/aid-ask/SKILL.md
+f9958891900c5b673b47a39a50b54cd2166bb01e8fe1cbaece41ffdac39f15b7 *profiles/antigravity/.agent/skills/aid-config/SKILL.md
+a7ca4c81dbe548b0b4e6543b8782d642b4483768e0f060ec20166d36d37d4514 *profiles/antigravity/.agent/skills/aid-create-api/SKILL.md
+ed66106db3e4614c1453e1c3ac552c5ea8da88fa15645c969f3260b4c9c47a8c *profiles/antigravity/.agent/skills/aid-create-cli/SKILL.md
+a62183974c904978d65624b2c63d7da255e0ee61026467a2cbc64208a23f2d4a *profiles/antigravity/.agent/skills/aid-create-config/SKILL.md
+07936d2873ec0f1e9e8b3b0d9feab70964652ac0d8bc0a46e540e1b91db587e5 *profiles/antigravity/.agent/skills/aid-create-dashboard/SKILL.md
+1edcd9fe406bc7334f3470e88bfffe8479f5a39ed25f07645acfbc89219262eb *profiles/antigravity/.agent/skills/aid-create-data-model/SKILL.md
+1da2d68cf866fc99f2a7e2ed175a155ce0789011c912e8dbfcef5db5bfabd7fd *profiles/antigravity/.agent/skills/aid-create-data-pipeline/SKILL.md
+5a5a7883d64aa292a85ee7cb88a6a22a19ef9d2490cef1165cf73eebbaf83fc9 *profiles/antigravity/.agent/skills/aid-create-diagram/SKILL.md
+c85f399c817077e0d78b0ed1c773a5f299b50984ddc9321c479a13f0538b9a30 *profiles/antigravity/.agent/skills/aid-create-document/SKILL.md
+0cf816eb480de827038f1b953a229c6c72cdcb82085ccb95a07ff2c8c7b24af7 *profiles/antigravity/.agent/skills/aid-create-infra/SKILL.md
+c47b29dc7dfe98918c744dd0bd2e55665c398e91633b8295ba51732085c0017d *profiles/antigravity/.agent/skills/aid-create-integration/SKILL.md
+c0a31053991d7a731bb6c7176cdc244349364419d8dc88371c2de4faf268878b *profiles/antigravity/.agent/skills/aid-create-job/SKILL.md
+6dfa86854e0d43253ba3e9a0a02400cd4a7ffbe6ad0ffe342b9d60c5c672d559 *profiles/antigravity/.agent/skills/aid-create-messaging/SKILL.md
+1d6dfe811f4dc6c4cd7198572ff1319e58aefddbd0ae09a20dcd0faf6f94b4f4 *profiles/antigravity/.agent/skills/aid-create-test/SKILL.md
+15d0e392982c8210bd1cc9d6e24d4cc96686158a63efb3ca5f3dd140faec2d2e *profiles/antigravity/.agent/skills/aid-create-theme/SKILL.md
+baad63fce40a1ddcb0c1d5b3f6a17030d8db022311bc05a83e4908e82cd6e58d *profiles/antigravity/.agent/skills/aid-create-ticket/SKILL.md
+3964170b6bda62c6a3b411b68d0954c46c5a54d4e04b45516ea021ee40c57472 *profiles/antigravity/.agent/skills/aid-create-ui/SKILL.md
+73cb4917f6610b585a0eb0b9cd084be22782f05f52a43d50cc914f8374b2fc1b *profiles/antigravity/.agent/skills/aid-create/SKILL.md
+8412f9bf94ff80660ab3d6adf9c3a84e703c9436432f23c3f8f64e6be0c7a66b *profiles/antigravity/.agent/skills/aid-define/SKILL.md
+4818ec62c9224d3d8b9167a4cf8f1e517009d90a410e5ef44e5a99764d8185c1 *profiles/antigravity/.agent/skills/aid-define/references/cross-reference.md
+bd195cfa54094429f576247f8ca22889dc5a668026d9f9cab1ea3aff2a3ddea4 *profiles/antigravity/.agent/skills/aid-define/references/feature-decomposition.md
+a32b008cbfb18f884c607cf8d53afe09c3f2c47b0b9611b4ed74056eff08d0f2 *profiles/antigravity/.agent/skills/aid-define/references/reviewer-brief.md
+6aeba05db9b8715e2d1fab2a0303ed0f0e514d1a44859a03b18f0e06bd591c5c *profiles/antigravity/.agent/skills/aid-define/references/state-cross-reference.md
+a112e57f832bbd571f1153b926b0c8e9109b29ec981a44eb5a8be6359bf0cfee *profiles/antigravity/.agent/skills/aid-define/references/state-done.md
+17c7a0a4591e4cd5c51dd3f7f6f6adf4869935dc689b764a2202f2519fdf3078 *profiles/antigravity/.agent/skills/aid-define/references/state-feature-decomposition.md
+92c2112d8fd4abb86802d99574880897311b0203b686d1f55479cdaf57c007af *profiles/antigravity/.agent/skills/aid-deploy/SKILL.md
+9e6a0137ce09ce2535844f6318913a36e7ddc48c83c5217373d68708343010c3 *profiles/antigravity/.agent/skills/aid-deploy/references/state-done.md
+445de78319b14ed1ed2b475982fce2d30db808662728e20ea99cbc3e15184d92 *profiles/antigravity/.agent/skills/aid-deploy/references/state-idle.md
+81328a5856e9a6d1a584ba3c2a0f7109e358c7405193a33d5839856c16411dae *profiles/antigravity/.agent/skills/aid-deploy/references/state-packaging.md
+b91e34e8f93c64227c66c28b52997bb94178abfe48b581d62ede9d52e765b3b0 *profiles/antigravity/.agent/skills/aid-deploy/references/state-re-run.md
+2716f610b6a3a900152953b32a16798d51c52a4446c5cbe11e0280a6f3239a1e *profiles/antigravity/.agent/skills/aid-deploy/references/state-selecting.md
+66a8e1dffadd6cf0aec92e0df1fd062b7077ae5d3473ed90905464dd7734b652 *profiles/antigravity/.agent/skills/aid-deploy/references/state-verifying.md
+8827df1a1b574b1cfad2e19cabda679d5d75aed35b17e57ea52b6c9641141595 *profiles/antigravity/.agent/skills/aid-deprecate/SKILL.md
+d76f9414dde24a93908b2c64f8efa0c4dd9997ebcb5cd2153e969ec4b727b70d *profiles/antigravity/.agent/skills/aid-describe/SKILL.md
+aca9c2b5cd196a3b5063ac31793874ecb35c32e26bfa25a42481d8e10a0eab0b *profiles/antigravity/.agent/skills/aid-describe/references/advisor-stance.md
+168748c7627a67e786bf9ca831ba46e06638ddb9207ccd6aa2f121325b2bfe7d *profiles/antigravity/.agent/skills/aid-describe/references/calibration.md
+803274a226e5d85e740145bc5cff3c440e31e7cb0e7d37f5352a232d0b727835 *profiles/antigravity/.agent/skills/aid-describe/references/coherence-check.md
+790b334cccca2bfcb1377a84306cab2e198e5fe0db0725670f14a499e0b6b954 *profiles/antigravity/.agent/skills/aid-describe/references/elicitation-engine.md
+d1c6e3d8c501d0f81ddc9d89d6cf4e5be67377c33a22de5dc7ccefc5ba920a92 *profiles/antigravity/.agent/skills/aid-describe/references/interview-loop.md
+599de7b672a69a1f74f25da1aefa7f973a8c861f6bba1af8bc402949fa9698fe *profiles/antigravity/.agent/skills/aid-describe/references/interview-strategies.md
+181909489299b720ec4f4d6c2883b39f04b8d6bd1902efd7968bf1415a29abbb *profiles/antigravity/.agent/skills/aid-describe/references/kb-hydration.md
+514d7b9f7dfc14f20f155fd81216a473270d5e0bc1eb646a9de334ad159c3243 *profiles/antigravity/.agent/skills/aid-describe/references/move-playbook.md
+fbc2161027f9074ac95d8e8131bafeacc5e2412f0f112f551d095c5ba4d470e4 *profiles/antigravity/.agent/skills/aid-describe/references/state-completion.md
+beb01664d66f1b5710213effb8ad80047598c5a1d17edfd416856027d9aae863 *profiles/antigravity/.agent/skills/aid-describe/references/state-continue.md
+0c07842c9ec68ec4ec7fed44e87c39c56ee6016afddde5b555c8ded7bbefd39e *profiles/antigravity/.agent/skills/aid-describe/references/state-describe-seed.md
+cd24548490f37e53d9268f02e065b54c67a3346315d63519a98dc48acef46fea *profiles/antigravity/.agent/skills/aid-describe/references/state-first-run.md
+d6fbf9bab6af2d88ae9369243544a12bd69fdfdd6c5cc013635c860974bb6751 *profiles/antigravity/.agent/skills/aid-describe/references/state-q-and-a.md
+22d8825b8d1a5f9eab2aebc7f29821141a0588338617e95bfcd50a4ca9c0393f *profiles/antigravity/.agent/skills/aid-design/SKILL.md
+97628bd652c1057b4754589a9445ee20ba05086e805cca83751db670e39e5d35 *profiles/antigravity/.agent/skills/aid-detail/SKILL.md
+a14c3031e4c6f97833fdd58cce02325e1b1e579e639e5ef7def94ac47d71bc03 *profiles/antigravity/.agent/skills/aid-detail/references/execution-graph-generation.md
+142d2361a7e5d3ae53134fe5aad00bfc84907ac4666663e25d1ac6729bb0d57e *profiles/antigravity/.agent/skills/aid-detail/references/first-run.md
+fabf2262a412098aa64fec08bcaeff7ba03046a243e97bb762925347c308cbfd *profiles/antigravity/.agent/skills/aid-detail/references/review.md
+bf4912d07bbfd9022fe97047dbc1ddbc5923530f4bcc671fc93718a24c165c63 *profiles/antigravity/.agent/skills/aid-detail/references/reviewer-brief.md
+b5da1d870025a2f1957fe0dab184f2e8e24a66a3f3c5bff84c3b3b43833023aa *profiles/antigravity/.agent/skills/aid-detail/references/task-decomposition.md
+399b44b9da5f8e405b4a02f4637929fa8cb4f4e719dbc6bb87e006b4bb290ac8 *profiles/antigravity/.agent/skills/aid-discover/SKILL.md
+b2b00c91473c2c5c24095675f2720737abf891abdae5b22d104a56c0533c0754 *profiles/antigravity/.agent/skills/aid-discover/references/agent-prompts.md
+78faed145d7c96e848dc2874f049ffd292f2f709717827c94a5953d079a17cf9 *profiles/antigravity/.agent/skills/aid-discover/references/doc-set-resolve.md
+6dd1897f6f2f0b3fffb7a72302c3ed8a498b042529baaf31400f565c8905f5dc *profiles/antigravity/.agent/skills/aid-discover/references/document-expectations.md
+e88099f0422cefb394fd0c8f11305e661d630be5fd7ba8841f4a82d4ae9ea687 *profiles/antigravity/.agent/skills/aid-discover/references/path-config.md
+451c7c0913791c592a2c3f24f3d6fd317dbd86b3933983b8b7633ad79e72c9ea *profiles/antigravity/.agent/skills/aid-discover/references/reviewer-brief.md
+3b06a3e51726eacd003606236c38ab95773e859b88712eb98747442df3934710 *profiles/antigravity/.agent/skills/aid-discover/references/reviewer-prompt-actback.md
+e01d846de93be3a04057f4f9fca53f805fc005a362d4bf540f688750c959ddc0 *profiles/antigravity/.agent/skills/aid-discover/references/reviewer-prompt-anatomy.md
+b7b30a8d3a7a280a8f6a96cb7240303d2a86db87c72d5dae42cf3df52184489f *profiles/antigravity/.agent/skills/aid-discover/references/reviewer-prompt-correctness.md
+292d3bdcb5d0166a6896265ec3a47b96222810e3c0bc3d13011348b92e43cdf0 *profiles/antigravity/.agent/skills/aid-discover/references/reviewer-prompt-teachback.md
+9fdac29d6928cec9d7217b89e1c1d088a07668bb56daaa5dff4b84e6e92d3649 *profiles/antigravity/.agent/skills/aid-discover/references/reviewer-prompt.md
+b9402a6a52738691e0749e63d0226533f113c4b681398ea0395bd9cf0eb34d11 *profiles/antigravity/.agent/skills/aid-discover/references/state-approval.md
+f36ae518d3e0e92bbb124af6e56c825bb382bbc9684436f9c9d8eebcf753167a *profiles/antigravity/.agent/skills/aid-discover/references/state-closure.md
+fe50618f4add927f8287e80b7de92a3bd97d3f8ddd338ee81bc2e5bdcc8ed0a9 *profiles/antigravity/.agent/skills/aid-discover/references/state-done.md
+93bbc16e73e6e1f8855eb160a490e5d109af2486cd8808dbff7063e217b85f40 *profiles/antigravity/.agent/skills/aid-discover/references/state-elicit.md
+90d0f8cf10ed872874cc0b19a8358c6f3b92dedc8de545dc5c311132deb137e0 *profiles/antigravity/.agent/skills/aid-discover/references/state-fix.md
+007f9f0bc70a3ada7a5de7bf5b922d65308adfae984da1ed951ef0dca6d620a5 *profiles/antigravity/.agent/skills/aid-discover/references/state-generate.md
+58ed65a218539355c26b4f3950f62f871b274212bb570cefb03f215a99d1d42e *profiles/antigravity/.agent/skills/aid-discover/references/state-q-and-a.md
+a3a617d6bdb06085524aaa129b6327a22cdba5ebe9d8577f1f76bf27b5738601 *profiles/antigravity/.agent/skills/aid-discover/references/state-review.md
+1d9cc58ede095b9fe06323dae1f2156085a2112e5de244031534d538819842b6 *profiles/antigravity/.agent/skills/aid-document-architecture/SKILL.md
+8016e74f3e0f4e70045b52a03ace702fadf70616ba961853f5363a1c76e934c2 *profiles/antigravity/.agent/skills/aid-document-changelog/SKILL.md
+b65d367c85b3b10f62ddabc20c8e3e8218f7c2c7fd060c0c02e89f8ba5f2acf5 *profiles/antigravity/.agent/skills/aid-document-decision/SKILL.md
+50046d66d469eb4863caf73c2cc4332533e406d737c5c9f35b4fcf84d192708c *profiles/antigravity/.agent/skills/aid-document-guideline/SKILL.md
+b7d01f4c10df308dce0b299e78fa2c7e6180a326c33049253187d541971524c8 *profiles/antigravity/.agent/skills/aid-document-runbook/SKILL.md
+2850157096071924c18c8cedceb997860045a1c66496b007dab098b83588900a *profiles/antigravity/.agent/skills/aid-document-standard/SKILL.md
+11429be2895516756d188b69099c419006349e46322e9ea1fa78adab8ac04fef *profiles/antigravity/.agent/skills/aid-document-tutorial/SKILL.md
+852e38e10d09b2b5618af925bab0f03aef0d1aed934fe6faf975658c43336e2a *profiles/antigravity/.agent/skills/aid-document/SKILL.md
+86e337a2ac56477b4809fa635a6b3fe291ead1f5804b909a263f53eabdb792cb *profiles/antigravity/.agent/skills/aid-execute/SKILL.md
+9860ab302ac8f0c10650c002f9f0dd5e281594fc6b8b2053b4d6e1f21f47b62e *profiles/antigravity/.agent/skills/aid-execute/references/reviewer-brief.md
+7827b5132ccf3a33d78a372e9a224773d7440cd6a176e6862abb77359a85510f *profiles/antigravity/.agent/skills/aid-execute/references/reviewer-guide.md
+d8e3072ac829a0963147287ac3103efe2e57a8c80818aea78c3cfbaf499445c8 *profiles/antigravity/.agent/skills/aid-execute/references/state-delivery-gate.md
+89cecb2517c4d918aa19425f98c37355cf8953f838f224c4620839a5b5703569 *profiles/antigravity/.agent/skills/aid-execute/references/state-execute-drilldown.md
+20fd81f2191cc18795c3ffcab3d693242e6205f0c435be47e8e8b9122a1bc296 *profiles/antigravity/.agent/skills/aid-execute/references/state-execute.md
+5ffa907686879677b16945f6ad9498372bbbc03966cab587ddf39040dca651c7 *profiles/antigravity/.agent/skills/aid-execute/references/state-fix.md
+df3b77084446b3fadfc935dc4185b69949e690033566c0355691ffdedf931eda *profiles/antigravity/.agent/skills/aid-execute/references/state-re-run.md
+8b5e34c60fb7d2f00b80d9d2daab85cb08ac6520e1b8b1128c7ac3389cfcfbb9 *profiles/antigravity/.agent/skills/aid-execute/references/state-review.md
+03de3b3b2c9c36d6e28732af4cddbf071bd83d973d78700617340bf768c0e033 *profiles/antigravity/.agent/skills/aid-execute/references/task-type-rules.md
+1808a1dc0ad68119df434204f82e13279e521c41c08002426f172277420f4c7b *profiles/antigravity/.agent/skills/aid-experiment/SKILL.md
+7fc2d6023530638b0ff015f288cf8c8cc4a9bd6e20528841d5857da91b4b70bc *profiles/antigravity/.agent/skills/aid-fix/SKILL.md
+5157a762214c3360ef26be3637295a7e97a408a32bedcd3289548b2029736d59 *profiles/antigravity/.agent/skills/aid-graph/SKILL.md
+c9237df19d0b4744137f3418f24773669ebbdc10944c6e8efd2a2d682f32ef95 *profiles/antigravity/.agent/skills/aid-graph/references/agent-pass.md
+415dd796d3310eb80678af419d514359283de6aab2196c9bf54ea8637e72c388 *profiles/antigravity/.agent/skills/aid-graph/references/state-done.md
+fb5a34903f6be24083e842f765724d385f1e57557cefbcfb507984fd9ea04f6b *profiles/antigravity/.agent/skills/aid-graph/references/state-emit.md
+fb711eb83fa86d15e8321b401fa1a1527a20f5576a88cc1bfc905c0c8e3c909d *profiles/antigravity/.agent/skills/aid-graph/references/state-enumerate.md
+8a6c681b3a3e94f3b500be7a3b3a257795f71816689584d7704d3b1ab2d59dfc *profiles/antigravity/.agent/skills/aid-graph/references/state-extract.md
+1f1edbdec556f2c33fdef5c5767f5d51d6db081a0a2bac1318844c7c2da5f31c *profiles/antigravity/.agent/skills/aid-graph/references/state-fix.md
+3b571d62f5391146ed9c1f844faf583a8807dada902ccdf0b8fd098a6180414e *profiles/antigravity/.agent/skills/aid-graph/references/state-gap-report.md
+74185ae091274b5c3fa6796a1b01a37026ca3b2cb2758deb5ecfb27ac60c2373 *profiles/antigravity/.agent/skills/aid-graph/references/state-preflight.md
+d9734eb3fcc1cb7e6935850abe570a22c7aa19e605bf87d978994bb3c8025e37 *profiles/antigravity/.agent/skills/aid-graph/references/state-render.md
+595b0d571a5a6330d3b4cb358f18828e4ff94716f0a90fac34064a8f1d62d962 *profiles/antigravity/.agent/skills/aid-graph/references/state-stale-check.md
+d4419ad022ac8bcba20e2071ebe03c5e3ab443ec5dbfaedba032716be0a2ca5f *profiles/antigravity/.agent/skills/aid-graph/references/state-validate.md
+b959ca4899935c2f4c989fbeb49d6ba6b036a0d29923309764e8b07cbef9a521 *profiles/antigravity/.agent/skills/aid-graph/references/state-visual-gate.md
+a7171cdd0816a44adbb60a187214b27f405801153d2bdca6bafb81bdc7bb5cea *profiles/antigravity/.agent/skills/aid-housekeep/SKILL.md
+794c2f391942d74b5d1bb87d65ca2657974fa894106aacd31ac80e95b50fc062 *profiles/antigravity/.agent/skills/aid-housekeep/references/state-cleanup.md
+b0575ea1a054bd2b15559b210231e58d79432783c2b3bda543d81afe04dbb9f4 *profiles/antigravity/.agent/skills/aid-housekeep/references/state-done.md
+df56cccfefa4a66cce2ad7c8a3dd05d9f68e3006e9671209322a51cdf9600ffa *profiles/antigravity/.agent/skills/aid-housekeep/references/state-kb-delta.md
+dac8ac8d2dad07431027f8d1f4cf814401c893cdfeda9ca8c47ef1402b66421a *profiles/antigravity/.agent/skills/aid-housekeep/references/state-preflight.md
+9d3bb363317284adcc3e1e71f36cfd060c33c6f8aba3b6eda28ddc9058a573b2 *profiles/antigravity/.agent/skills/aid-housekeep/references/state-summary-delta.md
+f786f0d7e615ad0d5dce022c204ac6a3623220837703414ed945bab8a2f96319 *profiles/antigravity/.agent/skills/aid-migrate/SKILL.md
+9d52f4feb7ef85f527b02be01a35a89ececfdd771fdec08c61c53c16d34f3ee9 *profiles/antigravity/.agent/skills/aid-monitor/SKILL.md
+41b333f869faf6bb033cc56506f47ee78ed57d91ca1ce84a6589f953a0eb22ea *profiles/antigravity/.agent/skills/aid-monitor/references/state-classify.md
+ecfe244290faa3c3c0397085654e1fe52a0d956f2040f2e9349e266176ca9d18 *profiles/antigravity/.agent/skills/aid-monitor/references/state-observe.md
+a5f7f0afc32a41ad25a295eae333f47dcce3af507dea4c7545847b39ecb1c7d3 *profiles/antigravity/.agent/skills/aid-monitor/references/state-route.md
+41a01e92efdcf02198eedae4c6eb5d4eab48f4ebf04425b64084271dbf03e642 *profiles/antigravity/.agent/skills/aid-plan/SKILL.md
+c67da2f9d09546d7955c709b6c6b47cd6e67426656c69d60e125cce06eb6ec75 *profiles/antigravity/.agent/skills/aid-plan/references/first-run-loop.md
+301382dd88fdfa89849df057e17174de97241f27e5a4daaa38f2e308fb877655 *profiles/antigravity/.agent/skills/aid-plan/references/review-deliverables.md
+bf77716e045cdbed758d129c8ef9ca83661a3d54ea2515672b38d1e8aa926f00 *profiles/antigravity/.agent/skills/aid-plan/references/reviewer-brief.md
+80f374c38914f88ea5dafc610d370b5fbe120d3b5334bed76a139df683d1dfa4 *profiles/antigravity/.agent/skills/aid-prototype-ui/SKILL.md
+c9ece9a788505bffd9364a8ac076980cc1ce234b60c000d0f0c9a967a686d23e *profiles/antigravity/.agent/skills/aid-prototype/SKILL.md
+49819f75c85008feef6a44a4f6c5e56d102c44868caaa923258effcad9630c72 *profiles/antigravity/.agent/skills/aid-read-ticket/SKILL.md
+3fa9e669acf0ea2609447bbce47a33b4f3bf337165568490f4199b78a7a6ba05 *profiles/antigravity/.agent/skills/aid-refactor/SKILL.md
+4a3b3e6f23a213ac8dda3a89837ea5557c2c6f5ea5146f4af6dae7081a15a419 *profiles/antigravity/.agent/skills/aid-remove/SKILL.md
+c93a35bd003e95158a2973839f22fed156f31e2e88e58b9fad4ca1c45da8ffab *profiles/antigravity/.agent/skills/aid-report/SKILL.md
+f184f9cbfe4331e4a750c86fe15cea750b30e8af4a0e70971cf28672bdee274e *profiles/antigravity/.agent/skills/aid-research/SKILL.md
+80f2a2e83dd6884a3f1a4536ebe96abcf0269986c10a7f2e6b57ade2321ad5c5 *profiles/antigravity/.agent/skills/aid-review/SKILL.md
+8c26fe98d2cb3e5c270bfd318ae6e526511ce5acf300a06cef5f2a6540b99280 *profiles/antigravity/.agent/skills/aid-set-connector/SKILL.md
+b512d31eb977ecc1fb179f60e01ea37eca87d8bfa8aafe2b8175c196ff03eed8 *profiles/antigravity/.agent/skills/aid-set-connector/references/question-sets.md
+4b60f7f6289708bda50d8500e30a4528756ee77e91e6cd906467ad25f70f1a4c *profiles/antigravity/.agent/skills/aid-set-connector/references/secret-reconcile.md
+806bb4b5d1035a2d9e7bdd07ebd3d161d8d83ddc2a642b1c041eea4835faa9de *profiles/antigravity/.agent/skills/aid-specify/SKILL.md
+c8b1c116b82478be03869290f7860e0d5c2eaa1106e1d108264371dab877ad7e *profiles/antigravity/.agent/skills/aid-specify/references/handling-outcomes.md
+551844a49ba6aa836c94886f8c36efcf4304e456fe5aa3bfc689f309cbb26831 *profiles/antigravity/.agent/skills/aid-specify/references/known-issues-scope.md
+79a37b14a010148d1a072c7555e6cd6ab432ef1e1101d12c5e5633330b741b82 *profiles/antigravity/.agent/skills/aid-specify/references/reviewer-brief.md
+c52865f7c52709cd78157385eedbafbb1a53b6751ecb587554eb900355b0421a *profiles/antigravity/.agent/skills/aid-specify/references/state-blocked.md
+11fcca7ce17e63e18554bcea2d5a6e296a585ca650e304f5aaa850f001bcfe7d *profiles/antigravity/.agent/skills/aid-specify/references/state-continue.md
+3f6f837c6037c713f4b4ba617e07116dceb14c306b9c7f143ea13a605295f2f4 *profiles/antigravity/.agent/skills/aid-specify/references/state-done.md
+7fc73522a5e410acf1f249c3be6f0e0ed475edf99563fe33d15cb542b0d253ed *profiles/antigravity/.agent/skills/aid-specify/references/state-initialize.md
+1365b69a7e4e8836ed3b4bbbecdfe2e86f44a8e22da0ed1e4ccfb85c94c4738b *profiles/antigravity/.agent/skills/aid-specify/references/state-review.md
+13a325a0c259389c073d97455949df82ff9be43528535af8408a70964bb913cf *profiles/antigravity/.agent/skills/aid-specify/references/state-spike.md
+9fdca5cb240c55b1171a6745313d49aa106592f00d8d2b80c28470cf24a05df8 *profiles/antigravity/.agent/skills/aid-summarize/SKILL.md
+dd3a723a35830a2fc74b46fed304e8bd72ea07d1ed25f5fbf48205c95bd22de1 *profiles/antigravity/.agent/skills/aid-summarize/references/state-approval.md
+61bc4adcb8a40df805c8e494c02030ccf23326eac9c4ca9d5b303686289bfa0a *profiles/antigravity/.agent/skills/aid-summarize/references/state-done.md
+4b0167b62590f2c1c3c208241e8994e7c2c989e13aae4652155c33b01f2ebd1d *profiles/antigravity/.agent/skills/aid-summarize/references/state-fix.md
+f010fe1c23e616eee572c54dee6f456eafdac020f5adf1d9b5c0e083c015f9cf *profiles/antigravity/.agent/skills/aid-summarize/references/state-generate.md
+706c216b6dbffa610f8b286a937df21782552e9d5ec08240bf50d080bcbe7d7a *profiles/antigravity/.agent/skills/aid-summarize/references/state-manual-checklist.md
+a25485ad61616707f9211ac1f420280dc1cad575194858c15803ff05b0760cff *profiles/antigravity/.agent/skills/aid-summarize/references/state-preflight.md
+17abe7779176f35cb2532a2eaaceaeeb5be7dd38e1fce32d4db402998404b767 *profiles/antigravity/.agent/skills/aid-summarize/references/state-profile.md
+c7257589f369328c2dec19032b7f537bc33d3a4b1d0b8f44ed6bfa47df908307 *profiles/antigravity/.agent/skills/aid-summarize/references/state-stale-check.md
+a443fa866f3106b1a137ea39115730a65a0a97361af17abbfa130f7ef2b057c2 *profiles/antigravity/.agent/skills/aid-summarize/references/state-validate.md
+64cd6b529c916cdf122ce812c8a4cf35a1a57e290c01d34e112a35e4bf91bc22 *profiles/antigravity/.agent/skills/aid-summarize/references/state-writeback.md
+c3d21732ce221661c45b9dce42afac8a7330262be1ce523a89b9412d5281f341 *profiles/antigravity/.agent/skills/aid-test-data-quality/SKILL.md
+3d6e20fb07b959a50bc02c9638cde4e75495cb7840641ee164031db6b8256fd6 *profiles/antigravity/.agent/skills/aid-test-performance/SKILL.md
+ac2d4718f87d9467446439b4f0439d8d5cd9296c55d54709244cfbea9af6c964 *profiles/antigravity/.agent/skills/aid-test-security/SKILL.md
+23a00a31d0befedba1aca4da6773cda54865c8a36a801f50fbefc8c7734559f9 *profiles/antigravity/.agent/skills/aid-test/SKILL.md
+e13ee53d79d29aa6763a277ee3b64fd35e27b4915ce4e93a3f01cc5b9b5dc980 *profiles/antigravity/.agent/skills/aid-triage/SKILL.md
+8f496f7bbe905fa073d05faebc925f261821a9e930ff87b08c079bd804296283 *profiles/antigravity/.agent/skills/aid-triage/references/state-classify.md
+c10c5dd011574e6317eb9ce9934d1b25ad98f74f3ba87d8237ae9b22b17f0869 *profiles/antigravity/.agent/skills/aid-triage/references/state-suggest.md
+f40337446ff964b07e0cde3027996a9d842efd3d46c8bb3bd616e93c667f8aac *profiles/antigravity/.agent/skills/aid-unset-connector/SKILL.md
+51671fd5bc2cec9aebc079f85ee09c9e44f1123d387d3cc84b9670696bc3e610 *profiles/antigravity/.agent/skills/aid-update-api/SKILL.md
+312ffcac690aecf7ab1f734c8000ac9a8a85ec128a093ab11e5f63e17383c088 *profiles/antigravity/.agent/skills/aid-update-cli/SKILL.md
+09b5302ea74704ed1f725aacba6c65957940fc889af59b539cad441064fa2fa5 *profiles/antigravity/.agent/skills/aid-update-config/SKILL.md
+dee29e151c1a3a50860c4c49887f9483967651144d24f825a59b91842c2d53f0 *profiles/antigravity/.agent/skills/aid-update-dashboard/SKILL.md
+430c9cf62eaeec3bf7950732c6dcac705a6fc17197cc8ab9fbaccf8ec8241663 *profiles/antigravity/.agent/skills/aid-update-data-model/SKILL.md
+8e117fc9013781e670d1d731b47227a6d43558371f2459b7991b90a791b8fd71 *profiles/antigravity/.agent/skills/aid-update-data-pipeline/SKILL.md
+11d67287cdf7285bf069d4cc773d7e7b954a29b6ec1b53493d32027e17ca0b6f *profiles/antigravity/.agent/skills/aid-update-document/SKILL.md
+6797b7576c47e19f807571edb551c0dbbeccf7ba98c204e8d352a29c91344269 *profiles/antigravity/.agent/skills/aid-update-infra/SKILL.md
+31ceb19d46021c7cb6723b16b87b482b412fdb7d2d4b044a8d16d3d010fb6dbc *profiles/antigravity/.agent/skills/aid-update-integration/SKILL.md
+5f7545cfe997b4ec90d6d254e594f58092e31ad05e49209b6ca2fed47c51655e *profiles/antigravity/.agent/skills/aid-update-job/SKILL.md
+7ff9a98509eaf41d3d0b6f2e8570f722346e2fd754761123a0e222e871730e4b *profiles/antigravity/.agent/skills/aid-update-kb/SKILL.md
+335a80b3be52e781222957af157089748b45398b52a3d81f80c16086ef0e40a5 *profiles/antigravity/.agent/skills/aid-update-kb/references/state-analyze.md
+f3c452d1a849b0434ed9a5ebbc31ec2af739762a503fcc5506f2f5e67b25fcd2 *profiles/antigravity/.agent/skills/aid-update-kb/references/state-apply.md
+47ee3153a692ca46093369a96cc809166aa1b439de2f819e84212814b6664b81 *profiles/antigravity/.agent/skills/aid-update-kb/references/state-approval.md
+78219d9687b4b16093f4d5dd4206a6af63b2241c219369de4dd23d331baf5aeb *profiles/antigravity/.agent/skills/aid-update-kb/references/state-confirm.md
+8d492707f1b81dda3a456d1ce818246fee1a99a8b8ab18b42bf7d5f425b350be *profiles/antigravity/.agent/skills/aid-update-kb/references/state-done.md
+a92ffc51f53baf9d24e1369858ed6f1483bbc508406d804001bf6862f0fe695d *profiles/antigravity/.agent/skills/aid-update-kb/references/state-review.md
+3199d9a424ac7da7ad47ebb5e48fc51481329ed72d760caadcf443bbe0759146 *profiles/antigravity/.agent/skills/aid-update-kb/references/state-scope.md
+62900da46e55f00833ea99e5b709791620be4ae141be1474ba55c3b3c1aa218a *profiles/antigravity/.agent/skills/aid-update-messaging/SKILL.md
+0cd09ecfaf644323b265941cb5047a390307202efaf0eff181275e467d8b2078 *profiles/antigravity/.agent/skills/aid-update-test/SKILL.md
+f710bcceaa33a20186ba181b9f4630425889fe8100233853c21c04c415080c55 *profiles/antigravity/.agent/skills/aid-update-theme/SKILL.md
+ad12c70e66e74046877aa30faa71d2a50cc98e21a64583acbece7f59fb78e6a1 *profiles/antigravity/.agent/skills/aid-update-ticket/SKILL.md
+584887d01f8830ef898bda0547e93145fc0eff44abd7c38c3b1dc6076563937c *profiles/antigravity/.agent/skills/aid-update-ui/SKILL.md
+da752a6dc627c996bc00e36d90196080b90bcf5a5437335e84f82d7b23ac4319 *profiles/antigravity/.agent/skills/aid-update/SKILL.md
+de40d5bbdf99f972f53dee902aa8e97dfdb48166bbfa0e40119a42ed315965d2 *profiles/antigravity/AGENTS.md
+b53fb92da6e83bb4cb7d64bd9004eb15d4fadac039fbbf5721391027d73dc1a2 *profiles/antigravity/README.md
+24a5b0ce09ba19dae7ed9d1ba5fb7d36fef3413d18a2d3f601398e048d59e160 *profiles/antigravity/emission-manifest.jsonl
+22fde086b506e541d912f8f5103e56ff9c13022e52b133ba94c491ec57d5126d *profiles/claude-code.toml
+0c076a692335abc61e8a1d484075f203924053d2f67dbef09a101ed75cc79b39 *profiles/claude-code/.claude/agents/aid-architect.md
+9e9170f1294066fe69740a2c0970a537bbd959052199ba6023b300660cc71b84 *profiles/claude-code/.claude/agents/aid-clerk.md
+2cc441fc18a326c388fca2909f92def16e150be4111d925a351f0c156246f638 *profiles/claude-code/.claude/agents/aid-developer.md
+587e59838231873c3b1b637be05a65ff2c140ccccf54237f3616c9097b7b0821 *profiles/claude-code/.claude/agents/aid-interviewer.md
+8d0143194836200b5ee04f298799d211b7df4ea8bad5faf4c3a98d5017c6bdf6 *profiles/claude-code/.claude/agents/aid-operator.md
+898c0fbc0b828b4aa3e1505eac34a513badae9cff0248bcf8ed4e959da0713d6 *profiles/claude-code/.claude/agents/aid-orchestrator.md
+5dca7422b633d7a069756291b19bd1b19c7d8333dfbe700ad2b72e35db5a9fbe *profiles/claude-code/.claude/agents/aid-researcher.md
+6765c78bd79ca830156c3b97b25581c18dd7749cc8bfe4fb6a7886da1fc207c1 *profiles/claude-code/.claude/agents/aid-reviewer.md
+aef9fe799c6ce4c080f722e7a8a04b5daf125c30cf78cc862d6849084befb6c9 *profiles/claude-code/.claude/agents/aid-tech-writer.md
+b8519db9d466949e7162584866a20818148af78205f1ce14d28c19178e011fba *profiles/claude-code/.claude/aid/scripts/config/read-setting.sh
+5f1c2060c42217d7da1f7b1e52286e1f75732554866ce1a1191ec0177572a7e9 *profiles/claude-code/.claude/aid/scripts/connectors/build-connectors-index.ps1
+297e2406c97c6d86bb6384c961899773cda97d5fab08c3485f63bbda9f5fce0c *profiles/claude-code/.claude/aid/scripts/connectors/build-connectors-index.sh
+6a8feb93e1fc5bd2aac5dfc2e32c67966c962fc1874e8abb93acfdcf27bd95fe *profiles/claude-code/.claude/aid/scripts/connectors/connector-registry.ps1
+ab83b69202d7c7686e0ab42aa965bdafdf679a286df9425424977d34c0c3135f *profiles/claude-code/.claude/aid/scripts/connectors/connector-registry.sh
+e28788564730d3c6b5970e639debef112b3622034ba1c3499c9f801104ddb3ef *profiles/claude-code/.claude/aid/scripts/connectors/connector-secret.ps1
+e9dda644f7d8ec238dd4b53492f1d6dd33154d4373537f4473988c178afca86a *profiles/claude-code/.claude/aid/scripts/connectors/connector-secret.sh
+4387e45dc85935478466f24321c8c68f86e5cc7f19a4191cddc143f36a6f9fff *profiles/claude-code/.claude/aid/scripts/connectors/write-connector.sh
+c906f9b512c6fecf6635254ea1f199479da2582d5b8a44c24101b1008da3583c *profiles/claude-code/.claude/aid/scripts/execute/complexity-score.sh
+eea2a8d8dd12d5e118ea97664fb874343b738a650c984c866363e6adab5bde05 *profiles/claude-code/.claude/aid/scripts/execute/compute-block-radius.sh
+4adc99a9d9aff96d5a3c418fb461af28167f48cfada8a1d2ed88b17454fb17fc *profiles/claude-code/.claude/aid/scripts/execute/write-control-signal.sh
+eb451853f845ecb5f042bb42ae87748d5dc021047260783ae64c79e2eee9b03e *profiles/claude-code/.claude/aid/scripts/execute/writeback-state.sh
+478103d69baa1eb0f080538923ebe4a583629cbce540d04c567f15b4c76350f3 *profiles/claude-code/.claude/aid/scripts/grade.sh
+9cf3286222f78b5a6f3d7e24dba7b8acab9502bd6b3d166b26ae87465454572a *profiles/claude-code/.claude/aid/scripts/graph/assemble-coverage-notes.sh
+7ace146489626ebf6b737b839af23e1c1d9f784987d4f32570fc0fa1c2a760b5 *profiles/claude-code/.claude/aid/scripts/graph/build-graph-src.mjs
+c48ab165b8edf9c67b2d4df10127e75a3a4f3204a9522c039a14470ef6455f4d *profiles/claude-code/.claude/aid/scripts/graph/build-relationships.sh
+fd57b6e1b39756aa65a552c6c868efa8fa97c866cdb096646634f2f90b8aaf69 *profiles/claude-code/.claude/aid/scripts/graph/build-table-src.mjs
+48ab23ea28b619b894d5594ba8e1d4b329a2726e7d331db63f31f4227a41a3fd *profiles/claude-code/.claude/aid/scripts/graph/coverage-predicate.mjs
+c2fb3e54849d2c01d7037ab4618d4731f47e6ef3c465d2083905960f6480df65 *profiles/claude-code/.claude/aid/scripts/graph/derive-edges.sh
+aa0016f6f624d6f9f432af877789c28295eb7f6aa2d581169680879f5f28790d *profiles/claude-code/.claude/aid/scripts/graph/detect-kb-gaps.mjs
+762945d41b28275ddb0230ba364adc18c8eb801b8ee48da869aefd25648dad2f *profiles/claude-code/.claude/aid/scripts/graph/grade-graph.sh
+b8d24509bebe1cbb3e63b96457c2414591f93c3603be182f535543dc85e1f0fd *profiles/claude-code/.claude/aid/scripts/graph/graph-preflight.sh
+289b9617ee372ab10e8f5d1dd77d441844e22d6656dd8b895dfd451c4906de47 *profiles/claude-code/.claude/aid/scripts/graph/graph-stale-check.sh
+17291348f003db8cdae9c995240fac2fd46cbada0dd482c10a4861de33cc38b2 *profiles/claude-code/.claude/aid/scripts/graph/harvest-declared.sh
+d4858921265ecb0b3c636cba5ba114df7aa64757e6d41a77d7d02e915a0c2156 *profiles/claude-code/.claude/aid/scripts/graph/kb-write-fence.sh
+bf20e3528d3b295e416c9d3831f24b655eb10be4e1344873cafd1e24376378c5 *profiles/claude-code/.claude/aid/scripts/graph/relationship-schema.sh
+0ec1d217cb7c7d96f7be04bddf1251e59baec813ccadc5a6662801baea194901 *profiles/claude-code/.claude/aid/scripts/graph/render-graph-view.sh
+f3b5a71dd6b4cf9dea8d042aefce8159c1ad913b4a28767da69f422e4cbb31c6 *profiles/claude-code/.claude/aid/scripts/graph/render-table-view.sh
+5eb503bfdd5472152b9d7389b3d5d2dcaad171c69e93d85f05133d3df57fbb56 *profiles/claude-code/.claude/aid/scripts/graph/report-endpoint-satisfiability.sh
+20fb58a6e194bec9dfb7a6e8818dfb941e3eb47b4d69525681b26022f8e989a2 *profiles/claude-code/.claude/aid/scripts/graph/scan-source.sh
+9dccb8b3bcd9dec19df75af235a319d863027badedb32b7032cc1a94a02d80b8 *profiles/claude-code/.claude/aid/scripts/graph/significance-rules.sh
+9e825c83c1e7275c4596ffc85ba611afc7d1e7f7678793aba4539f847fbf64cf *profiles/claude-code/.claude/aid/scripts/graph/validate-relationships.sh
+59b69c580a5c34e9dd2d93d8c633cc9bac709743db2768f45597db3c0fe4dc1c *profiles/claude-code/.claude/aid/scripts/graph/vendor-provisioning.md
+4317500099dcff627c2ed2d4dd59ecaf78d1173a9536baa6a35330dd9d7b9a9f *profiles/claude-code/.claude/aid/scripts/housekeep/branch-commit.sh
+d63c02d7dc23d5a66b54143358256f0a6d0315a51baf6036a3d8d4595c8e985b *profiles/claude-code/.claude/aid/scripts/housekeep/cleanup-classify.sh
+34efca63b146b2025d864172c0880123eee18e0b6e9a5ba0b754b652c7fe6a98 *profiles/claude-code/.claude/aid/scripts/housekeep/housekeep-state.sh
+be800782b10457f86202bc59561c2f718b49b5a0cc850a6892fbe398a41d4e3f *profiles/claude-code/.claude/aid/scripts/kb/build-kb-index.sh
+8735a4d4cafaca516bf5c0cd8f0b0cb9a77234740d37fbc81be416cbc581d7fb *profiles/claude-code/.claude/aid/scripts/kb/build-metrics.sh
+fc8baa661e857a5ec82b0fe575f7ebbdcf9e1cea5b8b5fbdae7734ec08017766 *profiles/claude-code/.claude/aid/scripts/kb/build-project-index.sh
+0b6019ea044ccc61b3af6975d5b0a2c4f48bb1bcb2c4cf8d13de8fb70072a861 *profiles/claude-code/.claude/aid/scripts/kb/closure-check.sh
+cde35cae105e2d195d107336314f344ffad01aa0cffc35633862101119f871ec *profiles/claude-code/.claude/aid/scripts/kb/coined-term-denylist.txt
+ed1a1dce6fc24ae3f24a541936c7133efb88bfe19d125a38cb900cc1b4163340 *profiles/claude-code/.claude/aid/scripts/kb/discover-preflight.sh
+7623593a557d6eaee5e75a3c1f7d06cff3790c32b445f1fd1e11c2009008ffcd *profiles/claude-code/.claude/aid/scripts/kb/harvest-coined-terms.sh
+63a7534a1252982753cf2d698fc5e3af63e1f2c79f905200a97da3d377cd56d5 *profiles/claude-code/.claude/aid/scripts/kb/kb-actback-task.sh
+98e427f0b769c374ec008c242167ba07a3bec61fae081de447062b48285efa4f *profiles/claude-code/.claude/aid/scripts/kb/kb-citation-lint.sh
+546c21baf89cda6f84de44f6f727bcafd9cb6d438a36c6f0495e0f48697bc6c0 *profiles/claude-code/.claude/aid/scripts/kb/kb-dual-intent-probes.sh
+f9adcc7c6dc14648df4a13c1b51a497896779f21aa7ce73929b1f6891f5331de *profiles/claude-code/.claude/aid/scripts/kb/kb-freshness-check.sh
+3c23e5a272320b0f75a52667b4526f5166555ddd207c43b8fc4416e51537ad3e *profiles/claude-code/.claude/aid/scripts/kb/kb-teachback-questions.sh
+defef4aa83dab1da773850358fce0340ef461db86511ad4230c1e1a19100341d *profiles/claude-code/.claude/aid/scripts/kb/lint-frontmatter.sh
+73cf153c549fe7f7e56d199d408e002ef5929b87b0b181068608cb03b3c3090b *profiles/claude-code/.claude/aid/scripts/kb/recon-classify.sh
+d371b67980d3e59577b6a757040aa0fbc46cf4cdc870945c2c653de059a5a9bd *profiles/claude-code/.claude/aid/scripts/migrate/migrate-kb-frontmatter.sh
+f74d98d633602378e22f840da8ad9868ddcb1a64595afdf85ca46ccebd7c201b *profiles/claude-code/.claude/aid/scripts/migrate/migrate-work-hierarchy.ps1
+258d2d97fa4f05c03c493dbe331799501b8bf707f8eec67e0b1f6f405a9b6bdb *profiles/claude-code/.claude/aid/scripts/migrate/migrate-work-hierarchy.sh
+a3beb2692af72470624eae046afe941c5636e42344f27c71267732a7d082e199 *profiles/claude-code/.claude/aid/scripts/release/check-version-sync.sh
+8e331e683afbb10e31f908095c1ded778167871b230e5345c0269cf98a79cc10 *profiles/claude-code/.claude/aid/scripts/summarize/assemble-3part.ps1
+f1636405ad7f7419217b41924ab72e3e98a0140aa54d78b5e9d5f34c4f6406cc *profiles/claude-code/.claude/aid/scripts/summarize/assemble-3part.sh
+ddcb0ec5a1cdb852770953bce3600f053af32602bc9d39da483985b204dcd9b9 *profiles/claude-code/.claude/aid/scripts/summarize/assemble.sh
+2e3769f10a7b1f30a84836eb64ff06f50dd5bc28b71129bc3e91423bee6bcee1 *profiles/claude-code/.claude/aid/scripts/summarize/build-md-export.sh
+7a4df020009b858ca0f8229ed0e79f00e2557b5e97f801ac82ba0169b62593ea *profiles/claude-code/.claude/aid/scripts/summarize/contrast-check.mjs
+5cc73cd62bebc1e7e40c73d49b1627347874c457958a1362ed154e2226f1e0a6 *profiles/claude-code/.claude/aid/scripts/summarize/grade-summary.sh
+6e4df9cafb9f3fc54032e8a21b55dcc5bee74d910b409f974d51372f84ae2d8d *profiles/claude-code/.claude/aid/scripts/summarize/manual-checklist.sh
+7b4c08084575471e9e744c61d850ecd23f18bff3c1e1da76654aaab3ee0c3746 *profiles/claude-code/.claude/aid/scripts/summarize/playwright-provisioning.md
+6c978b869ba3f264c6fbc9ae45e33e9148a5b02f00bf63cf23e954b81cf122e1 *profiles/claude-code/.claude/aid/scripts/summarize/spot-check-facts.sh
+ae03cd8d77b6163e5d107c8eeadfc0eaf4c6cea2db43f2f576f3c9b8180e6e04 *profiles/claude-code/.claude/aid/scripts/summarize/stale-check.sh
+a5d7327e33bc58c7f73fadde63e75de7a8857373e928c03d23990cba20106e28 *profiles/claude-code/.claude/aid/scripts/summarize/summarize-preflight.sh
+a64f5a35ea85687495b32bcd612f2cb3706095e22a8842c37600b5171fd1442b *profiles/claude-code/.claude/aid/scripts/summarize/validate-diagram-content.mjs
+cb9ceb065fd42d6c3f6de816844a42d402c211e7a9e39569057292cf8e67782d *profiles/claude-code/.claude/aid/scripts/summarize/validate-html-output.sh
+4c244fad542ad37b90b974df44c523ddaf3d17875f8faa583ca29167fdb86579 *profiles/claude-code/.claude/aid/scripts/summarize/validate-visuals.mjs
+f28a7741468f990effa3d1736426200c242ad2526c21d5d33d38c192d548ff0a *profiles/claude-code/.claude/aid/scripts/summarize/writeback-state.sh
+256b18145d15003a840b1ba7e473c2b693748ac060416cefa16d998a0b77767b *profiles/claude-code/.claude/aid/scripts/works/enumerate-works.sh
+2bbae5910e5d67145338dfa0e43cba7201900fe53ad6ff327faa1f94008e0f52 *profiles/claude-code/.claude/aid/scripts/works/worktree-lifecycle.sh
+f7594893282deae4cb5c5b824a8eb47966bc155b96de1ddcd7f9e9823fe076ef *profiles/claude-code/.claude/aid/templates/agent-boilerplate.md
+1d747e00693eff11233f79ec067a76c4d1eb19c5f00f8d995c7c808718b57442 *profiles/claude-code/.claude/aid/templates/agent-dispatch-tiering.md
+06c31771901327ba0272fdc46cf1b0b5e5b444c9e1615ce7e8754e2e533caec5 *profiles/claude-code/.claude/aid/templates/connectors/consumption-protocol.md
+b80bac04e86cc642e63e733c7ad338a93bdd4e61a9ffa346f9818ca54b72c038 *profiles/claude-code/.claude/aid/templates/connectors/preset-catalog.md
+7903db9f03b35f0cc45af62664ad74b5985e4a5dffd06467115636aa4092f459 *profiles/claude-code/.claude/aid/templates/connectors/reconcile.md
+d54a2202d49a5e458f554b30106344b5811a08fbdcdde3858aed381d2867a58a *profiles/claude-code/.claude/aid/templates/connectors/ticket-resolution.md
+ab1776254484d2534cc667ad6dfa44a5abd349238a6455f425e4e23930fd7a5c *profiles/claude-code/.claude/aid/templates/delivery-blueprint-template.md
+b83fb6d7c33a549c7e8cf8d95e67f2cf68b39e8fd78ba7942ff62db950d3b627 *profiles/claude-code/.claude/aid/templates/delivery-issues.md
+f89f292c1ae7550cdd40d49cc1ff5677b6f48fc7eefb226bb5eda7ef8941c063 *profiles/claude-code/.claude/aid/templates/delivery-plans/flattened-plan-template.md
+12c9e04352cd6df9e6e355ab412933af60ed006b1043707c93a7a34891ca86f1 *profiles/claude-code/.claude/aid/templates/delivery-plans/task-template.md
+3373f30484d581251dd699c3e9687684bdade73fa2ddc140d833a3e68fb3f21c *profiles/claude-code/.claude/aid/templates/delivery-state-template.md
+3498f433b269de3c30018a98715f61b89a0b79b62ae4998ea9e468c9321db2d4 *profiles/claude-code/.claude/aid/templates/discovery-state-template.md
+062a0bf7cdb8f420f4ce67641c23e9bc9efc17c88636c94f3b2ccfc21b96f74c *profiles/claude-code/.claude/aid/templates/dispatch-protocol-checklist.md
+5a4f4a0891d02152b782539b3ff25f7313ff16a47f2dd20279b36c3a8f5545af *profiles/claude-code/.claude/aid/templates/downstream-worktree-entry.md
+ce60dfa9e5c6e9595ae289efb2128953f5d8bf34f8d53f3505fb77077e0bb8c3 *profiles/claude-code/.claude/aid/templates/feature-inventory.md
+f2431502406233a2f9f083346f9a06fc2b5c5d289f6f61c951099af505f731c7 *profiles/claude-code/.claude/aid/templates/feature.md
+79b88f114c2ad3e1b30cb84699049c1a4fdb968e14f52fec37ed721417a22b26 *profiles/claude-code/.claude/aid/templates/feedback-artifacts/IMPEDIMENT.md
+17953d44eef05e4a4e3f4707ed29f7290cfb2dc3a2b66cfbe20fb21a1cdda78c *profiles/claude-code/.claude/aid/templates/generated-files.txt
+d0cd2ed3066736190807a230c6021efc7edea5c2989f3696fef312b2f8d54b37 *profiles/claude-code/.claude/aid/templates/grading-rubric.md
+46e12a44e9f2256b4996502e9efc72d8c2e94bf1409b75750823c530cdf34c2d *profiles/claude-code/.claude/aid/templates/graph/coverage-bearing.yml
+911342cefc0a7ddd8f86257a2465842c030a0d41c294743b5526f63c5a50f39c *profiles/claude-code/.claude/aid/templates/graph/edge-relation-map.yml
+370101aa17403830d5c365c542387b48f82fe1a8c87e68904bd748f3f94c78da *profiles/claude-code/.claude/aid/templates/graph/relation-vocabulary.yml
+4d71bdf8305cf525683c9ecaeb436bb38aedfa952afefc52118b0e9ff96cce21 *profiles/claude-code/.claude/aid/templates/graph/relationship-schema.yml
+702bcebfadddd395b2ef989c25329d73217ca255054fb035d7c8058f9653c64b *profiles/claude-code/.claude/aid/templates/graph/scale-ceiling.yml
+372aae3130d63aed85569147d882c687c86ce9b85642b95312ebafc0568e15d2 *profiles/claude-code/.claude/aid/templates/kb-authoring/concern-model.md
+7897dbb65c6ce6f2c8b175f39719c2ff8a12bcf0be3cb4db1958d2735f7a9852 *profiles/claude-code/.claude/aid/templates/kb-authoring/domain-doc-matrix.md
+b01ff9017942ec4add39ab84f57b5b53d4ef09a665d9ee79b572a19c5598483a *profiles/claude-code/.claude/aid/templates/kb-authoring/frontmatter-schema.md
+3c851bfa21f55fda24f61d9c12466bba0a3a52bd67cc615cf8c5e5dc2cfd161c *profiles/claude-code/.claude/aid/templates/kb-authoring/principles.md
+7860aa328c3ffe7aa8be0503b63e146f596ec1308c07a468fe6c0ad6281e121f *profiles/claude-code/.claude/aid/templates/kb-authoring/review-rubric.md
+b0479ea74b434490284bd308f7bcae1d373512e8ea617a6830fa9edbc388adc2 *profiles/claude-code/.claude/aid/templates/kb-authoring/tier-model.md
+1d7bd1774c6da4cf46f85b331991b8d615a11b8a02937c80403c387640373db4 *profiles/claude-code/.claude/aid/templates/knowledge-base/architecture.md
+1411bd12c88e6b840178e1d77f3eb5707c102987533b6291a4563f5be434b8ed *profiles/claude-code/.claude/aid/templates/knowledge-base/coding-standards.md
+f7ee90bece63b57dc0b4b57c9d7a806f4a69fdadc65cc1be7b366ce60ebaaa14 *profiles/claude-code/.claude/aid/templates/knowledge-base/domain-glossary.md
+a1ce46eef33b3547085eaad19a41057c060b6a3780f1c716dd4ea1f80b4e1df0 *profiles/claude-code/.claude/aid/templates/knowledge-base/external-sources.md
+47c8ea78247e101643395ad5f6bb68affbe857c66f6fa56c02cd121d774488d7 *profiles/claude-code/.claude/aid/templates/knowledge-base/feature-inventory.md
+3bf6acdedecea4973a897eb7b1fa4ddfb9b50cdb57a3c1a8fa36831f1dd8c366 *profiles/claude-code/.claude/aid/templates/knowledge-base/infrastructure.md
+280fc99681a80475e8e4e350bda99289e89c02dd28c0334060814615c881eabb *profiles/claude-code/.claude/aid/templates/knowledge-base/integration-map.md
+86d82acf2500a2f20b8228e9a1c76649cb0fef4396ae9a8d625923b1872488a3 *profiles/claude-code/.claude/aid/templates/knowledge-base/module-map.md
+f4bc0f1e54615f8f0fc189dd6658c8827f96158ed6aa7efca8675dbfb6d91a23 *profiles/claude-code/.claude/aid/templates/knowledge-base/pipeline-contracts.md
+02b1d55dbef31af30c518a1df343d200935c3ebe0dcd33dd3ee4b43cec2a5171 *profiles/claude-code/.claude/aid/templates/knowledge-base/project-structure.md
+bfcb3f1764fa01dd5581cc5f0e2d11e3afafb0519eca289b4fec1dda43666934 *profiles/claude-code/.claude/aid/templates/knowledge-base/schemas.md
+e970f9fd67fab44235e8da364803985c3b700f99367ecdf748f55d7b97ed3e58 *profiles/claude-code/.claude/aid/templates/knowledge-base/tech-debt.md
+25469309bf7129a65477732a9dbdb3e6c26ab3099a46e49837fc88fe918cdc91 *profiles/claude-code/.claude/aid/templates/knowledge-base/technology-stack.md
+d094d84e5475d3cf100e360a5fb9fd30bbd2e55ecee078c6bee55c31c470ae32 *profiles/claude-code/.claude/aid/templates/knowledge-base/test-landscape.md
+8f2b7d5b579ba85d7fc7fa75ec7eced3d9c16ea0d65cb3bcf80bf4e2acae6b05 *profiles/claude-code/.claude/aid/templates/knowledge-graph/accessibility-checklist.md
+e73e9f7eb371b6da45bbe1a66438918eeb6199dd5722bf3157625a554077815b *profiles/claude-code/.claude/aid/templates/knowledge-graph/graph-canvas.js
+000542a135d27899930b81c90d9525d9865221890811dcb9344d2e061c440230 *profiles/claude-code/.claude/aid/templates/knowledge-graph/graph-controls.js
+7b33db2f797628dc68b5506e76ee717d39f162c0d6cf2af1771bbfd9366b8858 *profiles/claude-code/.claude/aid/templates/knowledge-graph/graph-css.css
+1cb9f1b53408256739833dbf020535a51de7949c14257ddedee5be46b91b1405 *profiles/claude-code/.claude/aid/templates/knowledge-graph/graph-model.js
+3bbc7283a5ce08e4c0678a1306c79259edf9f9632c670a365874aa4f778ea9a8 *profiles/claude-code/.claude/aid/templates/knowledge-graph/graph-skeleton.html
+d8adc08c01af106fa5e73bc4e462f47f458607498e13a25e86063b006373a7ea *profiles/claude-code/.claude/aid/templates/knowledge-graph/graph-table.js
+640775c1b2e67daa8b7b05be42a290d386b4ddff5550077ed0da6c7affd71419 *profiles/claude-code/.claude/aid/templates/knowledge-graph/lens-presets.md
+b3e75b23476acffd00481a5c71e7d24c37d5270a3d8a145b087cfdee3434debc *profiles/claude-code/.claude/aid/templates/knowledge-graph/table-view-shell.js
+397c760ffbe6b58d4ffd7c1f559cfc81ebc97b3bdf5c9de513d83e57ed52be69 *profiles/claude-code/.claude/aid/templates/knowledge-graph/table-view-skeleton.html
+e008c5e25a6be382593089c29bfabbc553c6378eee02895aec46ce396cc404ee *profiles/claude-code/.claude/aid/templates/knowledge-graph/vendor/d3-dispatch/LICENSE
+94b3bbdb6b98dc1325a15762b051013e8253999b0e0436b27d1da17b952ba0af *profiles/claude-code/.claude/aid/templates/knowledge-graph/vendor/d3-dispatch/d3-dispatch.min.js
+e008c5e25a6be382593089c29bfabbc553c6378eee02895aec46ce396cc404ee *profiles/claude-code/.claude/aid/templates/knowledge-graph/vendor/d3-force/LICENSE
+1e07b473241328795d5ea9ad479a7bbabd765012fa2ef95633c83b69868dff6b *profiles/claude-code/.claude/aid/templates/knowledge-graph/vendor/d3-force/d3-force.min.js
+e008c5e25a6be382593089c29bfabbc553c6378eee02895aec46ce396cc404ee *profiles/claude-code/.claude/aid/templates/knowledge-graph/vendor/d3-quadtree/LICENSE
+57e2ad12824ed82893ba447523f2a2fb9beeb9222aafb2c778a9f5b313348b0e *profiles/claude-code/.claude/aid/templates/knowledge-graph/vendor/d3-quadtree/d3-quadtree.min.js
+e008c5e25a6be382593089c29bfabbc553c6378eee02895aec46ce396cc404ee *profiles/claude-code/.claude/aid/templates/knowledge-graph/vendor/d3-timer/LICENSE
+911ceda305f014b6b53ca68d5c896a9a387da120cfd56a421a2c60cca2fc9b36 *profiles/claude-code/.claude/aid/templates/knowledge-graph/vendor/d3-timer/d3-timer.min.js
+5ce7447bc57f7349ffc48338782fbcabe613696e00712b20d66bc58e780f9473 *profiles/claude-code/.claude/aid/templates/knowledge-graph/vendor/pixi.js/LICENSE
+83b2d7edf27bb77460f5f5f5e25cd73c91b77a53f44c80ac63096d6c0b5cfda7 *profiles/claude-code/.claude/aid/templates/knowledge-graph/vendor/pixi.js/pixi.min.js
+e05d497a4608e2aae8b21ae444cca474314b2ba44cc77eb3f2e078ba6bbf1196 *profiles/claude-code/.claude/aid/templates/knowledge-summary/accessibility-checklist.md
+3423b7e9760c234e4301d56b86fec65fbc6bb9d3acae7d37a228fe3827436ff6 *profiles/claude-code/.claude/aid/templates/knowledge-summary/authored-visual-catalog.md
+3cf652f600d0ddbe4e1e202230462cf1cb072dbed7914cd4f80704be7b9faf32 *profiles/claude-code/.claude/aid/templates/knowledge-summary/component-css.css
+b5c9542d0b59e355cf2e102f10b8edf8599f5cef3086565cc0fb2f4d1d8d1b49 *profiles/claude-code/.claude/aid/templates/knowledge-summary/design-tokens.md
+5622d2f9a8181a1ec9a88c964b5eaa10b2118a14b65979f01e6d22644eb83916 *profiles/claude-code/.claude/aid/templates/knowledge-summary/grading-rubric.md
+c6d9f73297b2ee3192d37c94c0e7a0125659fc3ca357cfb71c72ee7f2100d205 *profiles/claude-code/.claude/aid/templates/knowledge-summary/html-skeleton.html
+118528f25b356c2521973c21d25504c8611148c29adeffa37fb5d7b90f2007aa *profiles/claude-code/.claude/aid/templates/knowledge-summary/lightbox.js
+2d686c3e7e87c4ea11bedb2987859cc391f4819d12d9c1c4bfe3568ebaa8cfaa *profiles/claude-code/.claude/aid/templates/knowledge-summary/prompt.md
+db2c7cc1dffa0fa6a41bb8dec6a107ba02cf600846341e66db9c9f1ff8976fbb *profiles/claude-code/.claude/aid/templates/knowledge-summary/section-templates/agentic-pipeline.md
+82507f55f8e7f182b83fcbc118ea2ed2e04ddd08373e645b8e365fcd851ab8a3 *profiles/claude-code/.claude/aid/templates/knowledge-summary/section-templates/auto-detect.md
+9a3026c915d3b1276a45522edcb694b83b432b8dfba1bfd13c7e729c86f157b4 *profiles/claude-code/.claude/aid/templates/knowledge-summary/section-templates/bespoke-components.md
+2c66a2374c19287103abee055824fb14f1dfa6339a9ac315cc4033a265c92d32 *profiles/claude-code/.claude/aid/templates/knowledge-summary/section-templates/cli.md
+e3b7772d3526b243a6f18ffcb360824d50d659603a6e0fccf89c5b69c93d97cd *profiles/claude-code/.claude/aid/templates/knowledge-summary/section-templates/data-pipeline.md
+98ba377a481cdbc0c3050f7e4f817dd2fd8296242cd42b7c02003a9b88059f7c *profiles/claude-code/.claude/aid/templates/knowledge-summary/section-templates/library.md
+277199e1d6d4097729792e80ff9c89a7a0f132115e185aa7b03259e927a11ef2 *profiles/claude-code/.claude/aid/templates/knowledge-summary/section-templates/microservices.md
+d510be318d32e40307d31b0f06c75dc56835d915ef2cd985d45cf52cc9eb3bb6 *profiles/claude-code/.claude/aid/templates/knowledge-summary/section-templates/web-app.md
+25e4e508e41508cb825126c2c2e73dc90d886c52abacacf55932bbafc13c520f *profiles/claude-code/.claude/aid/templates/known-issues.md
+0f727b1273f307baa02ae8f93f75472c666afabf97b5d1c9c41bf40ce6f4b7f2 *profiles/claude-code/.claude/aid/templates/long-wait-protocol.md
+d8bbbe4e1daa2cc548d3c0c544525ad3a7f827e568b94a3f815798973ce63044 *profiles/claude-code/.claude/aid/templates/package.md
+cf78c05319ac958ade4cb707971bcae72168d37f2d30cd9a181215b65b63ab68 *profiles/claude-code/.claude/aid/templates/requirements.md
+d2a8bc3ff89d929f0bb3b21485d7fac51143e7fd452f2ff7604d9928f79be959 *profiles/claude-code/.claude/aid/templates/requirements/requirements-template.md
+572ac9e6e324923a5b4a988a76a0e0ef5eba4f1542cd2d05ac86824d2609fda1 *profiles/claude-code/.claude/aid/templates/reviewer-dispatch.md
+2b4ef914d6a53ef9867b97ca4b028a0b2b309e2292020af20297947ed29e0005 *profiles/claude-code/.claude/aid/templates/reviewer-ledger-schema.md
+d9ee322e4a269a5b904026cfa1a66ad734b0c97e44c77f5268e3bb87cc24fe0d *profiles/claude-code/.claude/aid/templates/rough-time-hints.md
+3784a426cb0daa7edecfe0c493c84aac566a7e2376ddcbfa3e1c7f7f338a07b7 *profiles/claude-code/.claude/aid/templates/self-review-protocol.md
+969d6229ef135a7432f82dde1fa3cad5a1f45cc13d021209734bc20e4e7dc396 *profiles/claude-code/.claude/aid/templates/settings.yml
+d1de6ae5fb7be7b8dbd911714014dc0d049e9559a62c539da633a4b8cbf30c09 *profiles/claude-code/.claude/aid/templates/shortcut-catalog.yml
+99cf534541643aed8f86e3f4286fb16d6dc452c6fe36b4e7bbe2424d29e6d9a5 *profiles/claude-code/.claude/aid/templates/shortcut-engine.md
+a00346c8c0c36df772885c337e8babc31a60f6d2a4bc7acdc88d4c445711f4ee *profiles/claude-code/.claude/aid/templates/shortcut-scaffolding/analyze-report.md
+bbf7d380849e1d129ba286530330f3aa77f257b97087ab35a220a9750b94e8f4 *profiles/claude-code/.claude/aid/templates/shortcut-scaffolding/change-refactor.md
+1613fea70cc74d8ec4ce59607622ef0ea870f92ad685c2138df27150fedfa59e *profiles/claude-code/.claude/aid/templates/shortcut-scaffolding/create.md
+f9dc0d9e848b8bc4007d1f497792955fffd5642815b050432840191807c80ceb *profiles/claude-code/.claude/aid/templates/shortcut-scaffolding/document.md
+13213a469936b2e93981af30c1aaa28073a9eb5c139c928e7399b725cc3ebfcd *profiles/claude-code/.claude/aid/templates/shortcut-scaffolding/fix.md
+ded093047dd0bc070678eaa36e51b1ab2c92e91d15c8fb30fb1caf633f59e294 *profiles/claude-code/.claude/aid/templates/shortcut-scaffolding/prototype.md
+b8fbeb9524031afac448997fc69bea10db5414b6247465e6c4a97d4984609706 *profiles/claude-code/.claude/aid/templates/shortcut-scaffolding/test-experiment.md
+e21f86da3b21ab35d86a172c2d4aea3a154e475d983aa10884fe3cf27198de87 *profiles/claude-code/.claude/aid/templates/specs/spec-template.md
+857e44a913b8a1480b0fd8d86717cd6301e3547b829d0f75291ff1705cf6b11d *profiles/claude-code/.claude/aid/templates/state-machine-chaining.md
+826a3957630e2c9ba7985f85b667369cefb01b16317cdeae4ec97109af876be1 *profiles/claude-code/.claude/aid/templates/subagent-heartbeat-protocol.md
+05bdae3a5253aa93715176c3df294f9809a2f5dcac566f512543917838f9d229 *profiles/claude-code/.claude/aid/templates/task-detail-template.md
+c6196cc294b450f9dca651978a2fdf992c9a49038aa497ea60bce09eb52dc2e4 *profiles/claude-code/.claude/aid/templates/task-state-template.md
+c5d5a115ea2388c7ea0aae06c6951a994e2dba3c6b4ac41caa93df4c69f1c3e8 *profiles/claude-code/.claude/aid/templates/work-initiation-gate.md
+5554e5f0db5c54c730c5e00f1119e64eb64bbaf126bc1aba54b3cd17e5378d64 *profiles/claude-code/.claude/aid/templates/work-state-template.md
+ab4ae2fc2dfe9a1ac324bd3ce266d84753437058fde9db5955a7b0ffea087d5f *profiles/claude-code/.claude/aid/templates/worktree-lifecycle.md
+46f6c0a1e8e2c11d6888cc76661d6701f3ed13083411ea0c534ab9a82a7b1ae3 *profiles/claude-code/.claude/skills/aid-ask/SKILL.md
+71dcbc4a8d92c9e6b5c50e2c558183e8693fe7a93170e0a68c33946e03b53a41 *profiles/claude-code/.claude/skills/aid-config/SKILL.md
+9b402b3718355a7e3e0237ec69fff3ba3e708887ba92a262ffaa87d793465eaa *profiles/claude-code/.claude/skills/aid-create-api/SKILL.md
+692a9de43b4d9e8928e70210e4d2c86235607869ffb26faa5e4c21877156d291 *profiles/claude-code/.claude/skills/aid-create-cli/SKILL.md
+baf747cc7b52c8fa33d5950b4f1d292813640c3635bfebe2fd7acbbe3a57be89 *profiles/claude-code/.claude/skills/aid-create-config/SKILL.md
+fbee9acccf1b200c99fc8183046ce0d6f4e0ed4b7445b4ddaa3dcaa65cf73100 *profiles/claude-code/.claude/skills/aid-create-dashboard/SKILL.md
+d189bca71a685fdb365532d6a7dbda56ab0813050903c432e9ad9173869c05ee *profiles/claude-code/.claude/skills/aid-create-data-model/SKILL.md
+ca6795bd47c2dd9445095d53d99a7c270c6ae7940081756ad97712f79086fa1e *profiles/claude-code/.claude/skills/aid-create-data-pipeline/SKILL.md
+1156c309e5f149aae7943eb4c26258ccd2633a4dd81a7be9b975f43f68cb6c7a *profiles/claude-code/.claude/skills/aid-create-diagram/SKILL.md
+22bd84d75a648bd5103b344a237a2d0d83494ca40024d6a4124b005bed0ef1ed *profiles/claude-code/.claude/skills/aid-create-document/SKILL.md
+ef92d798bdd2ba9e401a4687e8395ff32733e5bf84b15a668858a387600c29c3 *profiles/claude-code/.claude/skills/aid-create-infra/SKILL.md
+0735ce2e5ec3e71b956ff236bfa3ff6d0b5e539c943f623cc3f1522f0fa9d607 *profiles/claude-code/.claude/skills/aid-create-integration/SKILL.md
+e671bb20145c7ecc7e02f1e330a0c0a054c08726da02954c9db9b23539dcf84b *profiles/claude-code/.claude/skills/aid-create-job/SKILL.md
+7d37806393a7ce634cc3b7d606df50474d3704e3cd58ce7751b0f380499168a5 *profiles/claude-code/.claude/skills/aid-create-messaging/SKILL.md
+2fe614211844212c12d3705c2f218e2957a49844e84c6e4181766188083db1b0 *profiles/claude-code/.claude/skills/aid-create-test/SKILL.md
+90669a113cfac1326e649883ecf8d98570b443060c7c218131ad12152b052e4d *profiles/claude-code/.claude/skills/aid-create-theme/SKILL.md
+dd2b68e75e597921371534404d356351d63e75c9ade750b407dcca32a613d151 *profiles/claude-code/.claude/skills/aid-create-ticket/SKILL.md
+3150f7cbabc0849a934c3f40f23a1f2ffe0add2d2c727f678b59a6ccf6df6a52 *profiles/claude-code/.claude/skills/aid-create-ui/SKILL.md
+80221947091efbadab986cdf4974d77dc6684ff2799b2f4c4839c0e5cbdaa871 *profiles/claude-code/.claude/skills/aid-create/SKILL.md
+e9a2c0cedc6180d776fc8480a81c5181792b76af9a5f11b7d9351e681c8ed0d7 *profiles/claude-code/.claude/skills/aid-define/SKILL.md
+7b7b5fff3dab3e7260db7fafeb4919f521ca88a14f11114432294fb277c629de *profiles/claude-code/.claude/skills/aid-define/references/cross-reference.md
+bd195cfa54094429f576247f8ca22889dc5a668026d9f9cab1ea3aff2a3ddea4 *profiles/claude-code/.claude/skills/aid-define/references/feature-decomposition.md
+18d53fbda969f792d5f70b7fe8391360f10caeb17ae1cc20c4a076b9b047c75f *profiles/claude-code/.claude/skills/aid-define/references/reviewer-brief.md
+b3dd51fe5e775f2d95df8bdc0d134f2316609ddd8685bfa7bd455d7f354b2ec3 *profiles/claude-code/.claude/skills/aid-define/references/state-cross-reference.md
+a112e57f832bbd571f1153b926b0c8e9109b29ec981a44eb5a8be6359bf0cfee *profiles/claude-code/.claude/skills/aid-define/references/state-done.md
+87cb5ac87f25dad3181f30288f47a1cae8c38ae115429fa6c048d872acfc1777 *profiles/claude-code/.claude/skills/aid-define/references/state-feature-decomposition.md
+3524091f8af1a7a70648f70d52134abadad90061ec9915da1a1470b30d93d395 *profiles/claude-code/.claude/skills/aid-deploy/SKILL.md
+419b29f5c07e7e1882bd75b77c00c0a40783d8d7c50f2a2bb7e00c1d5f1493f7 *profiles/claude-code/.claude/skills/aid-deploy/references/state-done.md
+d347be1c4c8fea072216214d36136e4bb33c9644b09e4d6e0a029c409a1ee64d *profiles/claude-code/.claude/skills/aid-deploy/references/state-idle.md
+81328a5856e9a6d1a584ba3c2a0f7109e358c7405193a33d5839856c16411dae *profiles/claude-code/.claude/skills/aid-deploy/references/state-packaging.md
+b91e34e8f93c64227c66c28b52997bb94178abfe48b581d62ede9d52e765b3b0 *profiles/claude-code/.claude/skills/aid-deploy/references/state-re-run.md
+2716f610b6a3a900152953b32a16798d51c52a4446c5cbe11e0280a6f3239a1e *profiles/claude-code/.claude/skills/aid-deploy/references/state-selecting.md
+8d6fea3bad170d3590283b21ee651c76bd4dfbefb62d7ae31aef8885fe08eb0a *profiles/claude-code/.claude/skills/aid-deploy/references/state-verifying.md
+85c9b8bf10fccc6041f0f0ac39a8e64f398cc7742e96eeb706bd9622a57704cc *profiles/claude-code/.claude/skills/aid-deprecate/SKILL.md
+d0eba7d7aca27dd4ba2587c564550d92805673675b63ead593f75a508c8e6b13 *profiles/claude-code/.claude/skills/aid-describe/SKILL.md
+aca9c2b5cd196a3b5063ac31793874ecb35c32e26bfa25a42481d8e10a0eab0b *profiles/claude-code/.claude/skills/aid-describe/references/advisor-stance.md
+168748c7627a67e786bf9ca831ba46e06638ddb9207ccd6aa2f121325b2bfe7d *profiles/claude-code/.claude/skills/aid-describe/references/calibration.md
+790ee7f2020c61d4cbd54c0c32478e1253a09287d0de3fab19709cca6fa07d41 *profiles/claude-code/.claude/skills/aid-describe/references/coherence-check.md
+0b2bfc98bad714ac7acb35b2dfaaec5461c4d6ccde9e4bc12d4dfd1eacf84eca *profiles/claude-code/.claude/skills/aid-describe/references/elicitation-engine.md
+d1c6e3d8c501d0f81ddc9d89d6cf4e5be67377c33a22de5dc7ccefc5ba920a92 *profiles/claude-code/.claude/skills/aid-describe/references/interview-loop.md
+599de7b672a69a1f74f25da1aefa7f973a8c861f6bba1af8bc402949fa9698fe *profiles/claude-code/.claude/skills/aid-describe/references/interview-strategies.md
+181909489299b720ec4f4d6c2883b39f04b8d6bd1902efd7968bf1415a29abbb *profiles/claude-code/.claude/skills/aid-describe/references/kb-hydration.md
+be59c15e21f24c4d8e7218e205c563a53bce9d0eda7462464eb890bb50fba644 *profiles/claude-code/.claude/skills/aid-describe/references/move-playbook.md
+62e1cc067f9fd1aed67792f1096457265c9bb8b9c7710bae509174265fa12f3a *profiles/claude-code/.claude/skills/aid-describe/references/state-completion.md
+beb01664d66f1b5710213effb8ad80047598c5a1d17edfd416856027d9aae863 *profiles/claude-code/.claude/skills/aid-describe/references/state-continue.md
+03dcd89251d70c0a1b02882da71e3b51660837326a94953eb9ab639676cdc116 *profiles/claude-code/.claude/skills/aid-describe/references/state-describe-seed.md
+56cb993be54a4b8c07ca6b5f0a448d5e845008287b7ac4a6182f7756c30f6e49 *profiles/claude-code/.claude/skills/aid-describe/references/state-first-run.md
+d6fbf9bab6af2d88ae9369243544a12bd69fdfdd6c5cc013635c860974bb6751 *profiles/claude-code/.claude/skills/aid-describe/references/state-q-and-a.md
+8a10f3839cd3b6b7997c7e9e3fbf6e442d537ada231cbf71fb4f0a9e1afbbdc2 *profiles/claude-code/.claude/skills/aid-design/SKILL.md
+d491dacfd7551c445b38c116974b0a7e40a901623dc1e9ce81c207d767f63cac *profiles/claude-code/.claude/skills/aid-detail/SKILL.md
+a14c3031e4c6f97833fdd58cce02325e1b1e579e639e5ef7def94ac47d71bc03 *profiles/claude-code/.claude/skills/aid-detail/references/execution-graph-generation.md
+127a334d2d39b2af157d0f0a0725a6f76be90f65963892213c5128427fff363a *profiles/claude-code/.claude/skills/aid-detail/references/first-run.md
+b3c9f5d7f3e415dad472ccfe8f95a71b175909a6dca9270df91e06db6d028fb2 *profiles/claude-code/.claude/skills/aid-detail/references/review.md
+d42251c559f5d3885c255c16318c475de3ddc8746cbf75f434d90791f580e61e *profiles/claude-code/.claude/skills/aid-detail/references/reviewer-brief.md
+6fda06e73e1f6a12369381001fb3073d8c90b843d2afea11452549c17ac49a88 *profiles/claude-code/.claude/skills/aid-detail/references/task-decomposition.md
+52b69a187ec09659fdf350ceb5e8fbda5defc2f8fd0a25c69dc42b14a0ae0cd1 *profiles/claude-code/.claude/skills/aid-discover/SKILL.md
+c47e920e46f091705dcac59c4411004497a7c5642fa6b7a5429f3125f3c52610 *profiles/claude-code/.claude/skills/aid-discover/references/agent-prompts.md
+0ef662858bc2f6ba39bc71c71b6b82590949754e7ca0b8b2e94e3177b908ba67 *profiles/claude-code/.claude/skills/aid-discover/references/doc-set-resolve.md
+4165937466fbd454b0962e14b5d74044b20f7b867559834cfc664e6a67075cb8 *profiles/claude-code/.claude/skills/aid-discover/references/document-expectations.md
+e88099f0422cefb394fd0c8f11305e661d630be5fd7ba8841f4a82d4ae9ea687 *profiles/claude-code/.claude/skills/aid-discover/references/path-config.md
+aeb1e0f20955110720737cd6b4465b8a72b298228496cb9fad268a7b3d9f44cb *profiles/claude-code/.claude/skills/aid-discover/references/reviewer-brief.md
+b43a6ee2cf73dafed2b773de221436316acc340e60de3d45e2f4735aef501f37 *profiles/claude-code/.claude/skills/aid-discover/references/reviewer-prompt-actback.md
+e01d846de93be3a04057f4f9fca53f805fc005a362d4bf540f688750c959ddc0 *profiles/claude-code/.claude/skills/aid-discover/references/reviewer-prompt-anatomy.md
+b7b30a8d3a7a280a8f6a96cb7240303d2a86db87c72d5dae42cf3df52184489f *profiles/claude-code/.claude/skills/aid-discover/references/reviewer-prompt-correctness.md
+361cdd7ff8b70a49d2f4f5885e9a5bf3410388c12a3f3beecc956a248c8defb7 *profiles/claude-code/.claude/skills/aid-discover/references/reviewer-prompt-teachback.md
+9fdac29d6928cec9d7217b89e1c1d088a07668bb56daaa5dff4b84e6e92d3649 *profiles/claude-code/.claude/skills/aid-discover/references/reviewer-prompt.md
+235d70d941c60d95618d2247979490cb18b2d8b24c99cd7334afbb512c41c282 *profiles/claude-code/.claude/skills/aid-discover/references/state-approval.md
+b853d3ce679c79c8bde2db821fe974900973a4ad3b6779e5456119ddecc7672d *profiles/claude-code/.claude/skills/aid-discover/references/state-closure.md
+fe50618f4add927f8287e80b7de92a3bd97d3f8ddd338ee81bc2e5bdcc8ed0a9 *profiles/claude-code/.claude/skills/aid-discover/references/state-done.md
+63c493d646012dc6ccec7519ebcc5c1d57da37b246634a720a26ae738fbe8538 *profiles/claude-code/.claude/skills/aid-discover/references/state-elicit.md
+6bfdd1470b893e9b428a9bec35722a3d074d0428c5744d91ae4bfa7900ffb001 *profiles/claude-code/.claude/skills/aid-discover/references/state-fix.md
+3a536f5d8a585409280cd1976f70d1f0a136c11294f24e177eb19d989d4315ab *profiles/claude-code/.claude/skills/aid-discover/references/state-generate.md
+58ed65a218539355c26b4f3950f62f871b274212bb570cefb03f215a99d1d42e *profiles/claude-code/.claude/skills/aid-discover/references/state-q-and-a.md
+98d739283b119f370b13b5d583ffc5769233f4a9c532fe30f4da8daaa87a6050 *profiles/claude-code/.claude/skills/aid-discover/references/state-review.md
+d32dda6c58039cd5702fc4fe7cad38f74b79b4f74f8ae67259e31960a5e7d1ea *profiles/claude-code/.claude/skills/aid-document-architecture/SKILL.md
+8d238180e29e8af378c353efb153dabe7de89077b963a7baba8a21498a08bb15 *profiles/claude-code/.claude/skills/aid-document-changelog/SKILL.md
+0a3aaad43eca298c625c65f1805740a05ba3d8d3f4f0595ffadcb46cb8fbf6e6 *profiles/claude-code/.claude/skills/aid-document-decision/SKILL.md
+9d0811ca6892a8f8407e780a4aaa6867e28fa64491683354825c62c98d4ef0df *profiles/claude-code/.claude/skills/aid-document-guideline/SKILL.md
+efde6e5c6c4d631d6094fc821248dbac43d3928cbcba672ca50875511efb64c3 *profiles/claude-code/.claude/skills/aid-document-runbook/SKILL.md
+c7509030fa33d26a35bee7f63c38d8481703ab6dbe9db9fd76b2b0d41fd8add1 *profiles/claude-code/.claude/skills/aid-document-standard/SKILL.md
+122ca3063d3c2865bee579e322c23f4074a9176b293ee8cd12f960334329f10d *profiles/claude-code/.claude/skills/aid-document-tutorial/SKILL.md
+577fb4a4173ac83232502108ab657d235c019c45380e9e907ab044100adbbe56 *profiles/claude-code/.claude/skills/aid-document/SKILL.md
+1f9c2736f42fce5e3dc6fffa69dfd44bee1288dff8cea6c14c032f5e4a66dfc3 *profiles/claude-code/.claude/skills/aid-execute/SKILL.md
+00e065cb4fc2639be9e053be3003f5bc11e3cbee7ba03c7d94500bb5171d473c *profiles/claude-code/.claude/skills/aid-execute/references/reviewer-brief.md
+7827b5132ccf3a33d78a372e9a224773d7440cd6a176e6862abb77359a85510f *profiles/claude-code/.claude/skills/aid-execute/references/reviewer-guide.md
+27a90df32d09871ddd7f72544c9a6078129183b3403f080095e3897bc1208818 *profiles/claude-code/.claude/skills/aid-execute/references/state-delivery-gate.md
+f226f3d6d0a57c640919301278d96fb7862f5f3ed22a6784adff19b680a3bd94 *profiles/claude-code/.claude/skills/aid-execute/references/state-execute-drilldown.md
+c032f01a3748bf8092472d4db614b2641402936b0678ea5d7cb7272b193408c7 *profiles/claude-code/.claude/skills/aid-execute/references/state-execute.md
+5ffa907686879677b16945f6ad9498372bbbc03966cab587ddf39040dca651c7 *profiles/claude-code/.claude/skills/aid-execute/references/state-fix.md
+df3b77084446b3fadfc935dc4185b69949e690033566c0355691ffdedf931eda *profiles/claude-code/.claude/skills/aid-execute/references/state-re-run.md
+99e1743013bfe7bbae0836a34738328e1a4b1c9636ece3364092fa0e864b0fc8 *profiles/claude-code/.claude/skills/aid-execute/references/state-review.md
+03de3b3b2c9c36d6e28732af4cddbf071bd83d973d78700617340bf768c0e033 *profiles/claude-code/.claude/skills/aid-execute/references/task-type-rules.md
+702f7616775100005a3dac1cb5d08a61423af5ec3569644c7785b075974ab9cc *profiles/claude-code/.claude/skills/aid-experiment/SKILL.md
+fc9e3b685d3a05b24904dd9160aae2024af4f620ffbcc4187ce225aae0c2ccc0 *profiles/claude-code/.claude/skills/aid-fix/SKILL.md
+5f98d23fbb1482e8e5d9e626a6ba2b71048e7f894a09ab0e61de6993df42b954 *profiles/claude-code/.claude/skills/aid-graph/SKILL.md
+c9237df19d0b4744137f3418f24773669ebbdc10944c6e8efd2a2d682f32ef95 *profiles/claude-code/.claude/skills/aid-graph/references/agent-pass.md
+a2e3916e95da39a3c8cb42fd374de81a012253c91bd1682fe33aca86089f01a9 *profiles/claude-code/.claude/skills/aid-graph/references/state-done.md
+d58e0acbfd31f3ab9835d645d121dbb5778c7d67d4a193928617434ed481b18c *profiles/claude-code/.claude/skills/aid-graph/references/state-emit.md
+cd08da5b91dabec05da0ba46481142e4d6ad8ba5eeec98d321e4d861f1460690 *profiles/claude-code/.claude/skills/aid-graph/references/state-enumerate.md
+bebacfd2096c11e335d20dcd53bdc95c3c31d4b0a07c13771da29f15e5a35548 *profiles/claude-code/.claude/skills/aid-graph/references/state-extract.md
+1f1edbdec556f2c33fdef5c5767f5d51d6db081a0a2bac1318844c7c2da5f31c *profiles/claude-code/.claude/skills/aid-graph/references/state-fix.md
+f5f3d9837a330ff4a403540e5bb131906bfc2eb8ce8f2d2cb5176c915d46eae3 *profiles/claude-code/.claude/skills/aid-graph/references/state-gap-report.md
+068b96e33865e15b8c80fdc4edfcd56f7ffbd7d17fe2bcb00aef3d3b3815e4da *profiles/claude-code/.claude/skills/aid-graph/references/state-preflight.md
+d9734eb3fcc1cb7e6935850abe570a22c7aa19e605bf87d978994bb3c8025e37 *profiles/claude-code/.claude/skills/aid-graph/references/state-render.md
+27c609e8547ad064d0ef6cac29ef95ddde9fd4467e9b769d3454f4f675976a81 *profiles/claude-code/.claude/skills/aid-graph/references/state-stale-check.md
+4550e9307c90a7399a8b738adad132a1ab6e777238bb748c5ab37bc6aa354084 *profiles/claude-code/.claude/skills/aid-graph/references/state-validate.md
+286420f588f0716adc622edfa0612fcc6bd92ebd77f034f8e1a34d4950faa2cf *profiles/claude-code/.claude/skills/aid-graph/references/state-visual-gate.md
+69fbcbccaf7496f343f46878c08d4049f55f6e7e51627e4957e55e05524597f7 *profiles/claude-code/.claude/skills/aid-housekeep/SKILL.md
+b962a17abcb0b1236d410e9a828064221f158b45f7f2e97b59b4b265a9f35b72 *profiles/claude-code/.claude/skills/aid-housekeep/references/state-cleanup.md
+dbaccb9289d08ed8837f752ccede5e8e3964db554519803047b2aee550d9e11c *profiles/claude-code/.claude/skills/aid-housekeep/references/state-done.md
+8eafcdd1fd17dd2d433e312a1ba64a796ea713e4ccaaec126f53a85931f3297b *profiles/claude-code/.claude/skills/aid-housekeep/references/state-kb-delta.md
+dac8ac8d2dad07431027f8d1f4cf814401c893cdfeda9ca8c47ef1402b66421a *profiles/claude-code/.claude/skills/aid-housekeep/references/state-preflight.md
+5b5add798294bc0797892de18835c2ad6f07b5e25b02a931bfbce0f0dab61767 *profiles/claude-code/.claude/skills/aid-housekeep/references/state-summary-delta.md
+4aaf20ddeb39a1b428168f7749882f45197598a2929693965773dde1c4e7532b *profiles/claude-code/.claude/skills/aid-migrate/SKILL.md
+140780132357fd845a6f29a08e8ed9ee4d6cfd74e526bd124da3058aaee0b884 *profiles/claude-code/.claude/skills/aid-monitor/SKILL.md
+22a10b50700e35d95f9fcfb460732cc671c9a797ca651f34be75babb73e74798 *profiles/claude-code/.claude/skills/aid-monitor/references/state-classify.md
+40ffe2ab11dcdf52184ff397f25fe4898844fd55936ac0f5bc1fd4b9d8976ce0 *profiles/claude-code/.claude/skills/aid-monitor/references/state-observe.md
+a5f7f0afc32a41ad25a295eae333f47dcce3af507dea4c7545847b39ecb1c7d3 *profiles/claude-code/.claude/skills/aid-monitor/references/state-route.md
+0fe2e7dc87559672a8c91d06cd37ae2eef1960fc551790f46dd1c04871e9a2d2 *profiles/claude-code/.claude/skills/aid-plan/SKILL.md
+ef258d2a7915cb17ff6c7c01b0812274b3b2d02a9d82e4be2c64f66aeca946f7 *profiles/claude-code/.claude/skills/aid-plan/references/first-run-loop.md
+a74cafa5146364983077907f8e3f7f496cc69b73bc5bd57195d10261051a24b5 *profiles/claude-code/.claude/skills/aid-plan/references/review-deliverables.md
+f4a2419121457b993a7470ee05c2afea9ee99c21604eb12439fd8df64720829d *profiles/claude-code/.claude/skills/aid-plan/references/reviewer-brief.md
+52dc356e46aae74fe1f033585be81743d7904a0b398b2e5f625caa549bce70ad *profiles/claude-code/.claude/skills/aid-prototype-ui/SKILL.md
+87e89a5a99af7508106ad8c960b17748e7b0cf003c08782881a45b40df1048af *profiles/claude-code/.claude/skills/aid-prototype/SKILL.md
+0288fc3ed2efd2f7f4af661af70a784547274789d83ae868c94e4b6e9cf41ce2 *profiles/claude-code/.claude/skills/aid-read-ticket/SKILL.md
+1b1a8ae1156674c399f88cfeb155f1369e05fde3557e99f58fdc46e33f1c4ffc *profiles/claude-code/.claude/skills/aid-refactor/SKILL.md
+9ff89c14895d90141d14c2a32ae5f7ce1d87bc761ca4999ec5f4e59e497f18c3 *profiles/claude-code/.claude/skills/aid-remove/SKILL.md
+8e1aaf4135526b4ff58e444245b80fcd846488db302bcf6b803375e4e668c49a *profiles/claude-code/.claude/skills/aid-report/SKILL.md
+014e08e2ef174ad992477c11405f6c2561ef609eab0f1b5906ad55ab283cf683 *profiles/claude-code/.claude/skills/aid-research/SKILL.md
+5c64b9b024891065191e00d0a9fbc307bbe9d7bf8fff5f0ef01cd85f5ccdcaeb *profiles/claude-code/.claude/skills/aid-review/SKILL.md
+c2b34e7658020170c42b58408f9a91cd4f2001e1df3a76315281c802de3d3938 *profiles/claude-code/.claude/skills/aid-set-connector/SKILL.md
+b512d31eb977ecc1fb179f60e01ea37eca87d8bfa8aafe2b8175c196ff03eed8 *profiles/claude-code/.claude/skills/aid-set-connector/references/question-sets.md
+2fbf135a06bb2dbf6cf680c1e0ddaab13d4b8f23371c46623a369aca8e28a80b *profiles/claude-code/.claude/skills/aid-set-connector/references/secret-reconcile.md
+a2151bc45d1418d51b69b023ea7ffc6a902014e0da295739e732a7f17102c6bd *profiles/claude-code/.claude/skills/aid-specify/SKILL.md
+c8b1c116b82478be03869290f7860e0d5c2eaa1106e1d108264371dab877ad7e *profiles/claude-code/.claude/skills/aid-specify/references/handling-outcomes.md
+551844a49ba6aa836c94886f8c36efcf4304e456fe5aa3bfc689f309cbb26831 *profiles/claude-code/.claude/skills/aid-specify/references/known-issues-scope.md
+38b051ecb7397ff1de1c084d994ecd83fd87db479998308380836b37846d6f84 *profiles/claude-code/.claude/skills/aid-specify/references/reviewer-brief.md
+8b12a2551581172f762cf2bab0007e619698fe8ba4f8912b89e35c98e4aeec1f *profiles/claude-code/.claude/skills/aid-specify/references/state-blocked.md
+e784713d3976db1c6e3e09b6a5a9b80ab7fe975f9faa1d5c2c3bc43e42e526c0 *profiles/claude-code/.claude/skills/aid-specify/references/state-continue.md
+3f6f837c6037c713f4b4ba617e07116dceb14c306b9c7f143ea13a605295f2f4 *profiles/claude-code/.claude/skills/aid-specify/references/state-done.md
+0f91f781e34e70a3d08bc8f56e33fbf821f36b83e0862e94daff59f9490c8bad *profiles/claude-code/.claude/skills/aid-specify/references/state-initialize.md
+358bff0965a99ad8186f624be8882e1ec11d61715e0e37857c67de3b2e7190c6 *profiles/claude-code/.claude/skills/aid-specify/references/state-review.md
+62dfe77914f03bba41656da9b3a964c51a8aae9953226b987d8cd7526375c6ba *profiles/claude-code/.claude/skills/aid-specify/references/state-spike.md
+f30f34eadb764a3b12bcfa609b078782ce6432d164d2c2856bbb730c3fe5a3f7 *profiles/claude-code/.claude/skills/aid-summarize/SKILL.md
+df577d8eaa8c4068d160e2e6f86fcb67558435a07f72949ba9a0304ea1f44bbc *profiles/claude-code/.claude/skills/aid-summarize/references/state-approval.md
+61bc4adcb8a40df805c8e494c02030ccf23326eac9c4ca9d5b303686289bfa0a *profiles/claude-code/.claude/skills/aid-summarize/references/state-done.md
+3085c555a1b35dd1eb47536b55b9a0935ed49911fef9bf08fa303c2e1150ece8 *profiles/claude-code/.claude/skills/aid-summarize/references/state-fix.md
+6a457bd3f688f3c75a6ca173b84dbe6e1b3e05aac9303f22b5863c25a28917de *profiles/claude-code/.claude/skills/aid-summarize/references/state-generate.md
+3e28ef635cc24d8517bcb2f4427cf7df9ea6b19ff061a0cb5a2d8c3b3be0da39 *profiles/claude-code/.claude/skills/aid-summarize/references/state-manual-checklist.md
+0561dd0a5d23ef7561f732c4a16d73e025abeda8c2f701e7b867bf061f62758f *profiles/claude-code/.claude/skills/aid-summarize/references/state-preflight.md
+17abe7779176f35cb2532a2eaaceaeeb5be7dd38e1fce32d4db402998404b767 *profiles/claude-code/.claude/skills/aid-summarize/references/state-profile.md
+89d2db8c3a89ae2b8087763c18356988b1c7595bc9ecd8d76b6adac1a9bf893a *profiles/claude-code/.claude/skills/aid-summarize/references/state-stale-check.md
+d64551611cea18c54ab80fdaa871a6bf7fea5823e25f61e1d541f134bed50d68 *profiles/claude-code/.claude/skills/aid-summarize/references/state-validate.md
+d2f7ade90db9a09efcbe77c0968bfc575392c4b0d6b569bb665bc32ab184c439 *profiles/claude-code/.claude/skills/aid-summarize/references/state-writeback.md
+379beb0320c69a19afea62e2f5d4ec3484f9b81465ffb64fd2fd5ba81dc17bc5 *profiles/claude-code/.claude/skills/aid-test-data-quality/SKILL.md
+87bbd6d37ce5ee8ccc3d2d2e2afb098334b1d77543e8637900b8b2fe350b9979 *profiles/claude-code/.claude/skills/aid-test-performance/SKILL.md
+782f28509cb652435f45df30931c52cb47ec1bb90425d109e95f94c7b579de3e *profiles/claude-code/.claude/skills/aid-test-security/SKILL.md
+1e5cd62ce18a5724208f54c2f0ff7da423151ed96c938e1ceddffb45bb8b757f *profiles/claude-code/.claude/skills/aid-test/SKILL.md
+5995a0551cd855d94bef4f513b74ce54eba31ca30a0e5d5188db32d08cf66a38 *profiles/claude-code/.claude/skills/aid-triage/SKILL.md
+41826206f6d98897ca158f593c5a42d477ae10f712084483c2a45ae8c6c7ce00 *profiles/claude-code/.claude/skills/aid-triage/references/state-classify.md
+c10c5dd011574e6317eb9ce9934d1b25ad98f74f3ba87d8237ae9b22b17f0869 *profiles/claude-code/.claude/skills/aid-triage/references/state-suggest.md
+306cc937136bd698b3aa5898adc632ee3e39c3978a72807af38fb5e7536b2502 *profiles/claude-code/.claude/skills/aid-unset-connector/SKILL.md
+9cefd847885a67144d563982985bb2c6d71d2c5a85192ca978f77a87bc14bdb4 *profiles/claude-code/.claude/skills/aid-update-api/SKILL.md
+201bb16279472d473b6749e87ed50b9b85aaa9fd5c9169f8bfe754bc622056aa *profiles/claude-code/.claude/skills/aid-update-cli/SKILL.md
+4b61e60091abab4d7743ec857c8174fd6dbb5cb55190672345354b37c57c43a2 *profiles/claude-code/.claude/skills/aid-update-config/SKILL.md
+5580ecc5ee9c036465ad4ed3ea457f6d9dfe73330aa5a6a9473d40d0066b0ab2 *profiles/claude-code/.claude/skills/aid-update-dashboard/SKILL.md
+14998365a731aba31c2db0761bf35e56952d18ba1f08a816ecf31707c22126c7 *profiles/claude-code/.claude/skills/aid-update-data-model/SKILL.md
+aaa277831a2bdcd43ad0ad27e81e59f058452b43c8949e99fc678e15d5fbdef3 *profiles/claude-code/.claude/skills/aid-update-data-pipeline/SKILL.md
+3061f06b44e8fd735bfdeed53605b200f78431383d886c0a32fd6ea6a4b4e880 *profiles/claude-code/.claude/skills/aid-update-document/SKILL.md
+64826170884d8b40349f978b94b87b46e21d9b3a0c3d04de05133b153354a5a1 *profiles/claude-code/.claude/skills/aid-update-infra/SKILL.md
+6719dbedb9d102207294b8fddc1b7b067caff02a88af3ce0cc06445bb7833eed *profiles/claude-code/.claude/skills/aid-update-integration/SKILL.md
+39e14b5952c0ab03a5064232ef1f68c8a20dc821b777f7dd05135a0bfae06b55 *profiles/claude-code/.claude/skills/aid-update-job/SKILL.md
+da0c0057eb113242371a39209cf1657941f0fbdbb10b1301a783b583545dda85 *profiles/claude-code/.claude/skills/aid-update-kb/SKILL.md
+ef3c574b610a367e1c2b105ac82d29decf707e90ba5c7467e3d4de4fb2a07a8c *profiles/claude-code/.claude/skills/aid-update-kb/references/state-analyze.md
+01478db53dfba6aa97979fd2118eaa99dcad60479eba0266c4c75f13276921e4 *profiles/claude-code/.claude/skills/aid-update-kb/references/state-apply.md
+5f3da53e53aa30bbcb4fd789dfac430066f17aa0ecb6311675ff24b8a9b1fd7d *profiles/claude-code/.claude/skills/aid-update-kb/references/state-approval.md
+78219d9687b4b16093f4d5dd4206a6af63b2241c219369de4dd23d331baf5aeb *profiles/claude-code/.claude/skills/aid-update-kb/references/state-confirm.md
+8fbaa3b83c74964f0ad2ec033cfa7a0428fba322a83deb9e859deea6fe244a2e *profiles/claude-code/.claude/skills/aid-update-kb/references/state-done.md
+e81df8e9b79795720fda10495a93719fbbf53ce66536538f70d94eafeb2de807 *profiles/claude-code/.claude/skills/aid-update-kb/references/state-review.md
+c25d63169f4c5573a45de4f5c2fd0f00f4c74db183f27863b522787ba34357c8 *profiles/claude-code/.claude/skills/aid-update-kb/references/state-scope.md
+3e92e3455020bf0de41317553511745f174935f33e1973e327b94d23d4f998a0 *profiles/claude-code/.claude/skills/aid-update-messaging/SKILL.md
+9dc6b3b8a138c4cd1f420a2bb60831504dbb27cd29cd24698bfd71717d4bff31 *profiles/claude-code/.claude/skills/aid-update-test/SKILL.md
+cf8b0e4150ee2be77d360fc05d83189b4604c0d90d9d3d62ef17722c41b2d6ff *profiles/claude-code/.claude/skills/aid-update-theme/SKILL.md
+a1f926a1bf87320a8adf096d6b00f5fe8ff245626137623a83b00a7eadac9e0c *profiles/claude-code/.claude/skills/aid-update-ticket/SKILL.md
+6eefa5b3f410c50a8bb0a10b3dd4ab680cdc9fecd628a9b6926a0e75ffc1fcae *profiles/claude-code/.claude/skills/aid-update-ui/SKILL.md
+53ba2ae9fb3c024ba96dbe54672a89e8a6ae8de04144f22d801bbe1373d5204a *profiles/claude-code/.claude/skills/aid-update/SKILL.md
+3e4bb0c1871597e6e87ac396a1b836c35c826b0ad15ea9f62a8d40d633a61941 *profiles/claude-code/CLAUDE.md
+cad675cb7f57b1086f1524e9fe58fbcd89bb11fb1ea75e61ebe3558749ddcd3f *profiles/claude-code/README.md
+97c3fcbe2fa38c807c30fa3f1fd50162978c945aaae3765d7ca13859517855a3 *profiles/claude-code/emission-manifest.jsonl
+8c5b315474d7e49b80facabecdee0cff8d466418c4547750327492db91428074 *profiles/codex.toml
+b21eb86e95ed5e72c19b347902fb4dac77b444c498b3fb22bbf9d5add082d007 *profiles/codex/.codex/agents/aid-architect.toml
+77efe197dfc1e1773a93a3f6438b28dcf9e7479254029dec921ab1f1d45700a8 *profiles/codex/.codex/agents/aid-clerk.toml
+a39c69f452b5bfbb4d7d01448079eb173088be8c0a501ac8e1da70322dd8d99a *profiles/codex/.codex/agents/aid-developer.toml
+516d92b1bf1711d67cf2c5b6eddee35180b3d69ecb56fcf13d73397c2317108c *profiles/codex/.codex/agents/aid-interviewer.toml
+2114eea3db1420df8601437f93b9d00ae02dec930fc20a8973338eab4b08152f *profiles/codex/.codex/agents/aid-operator.toml
+128a5b189240e1513a2fac42cbe2e0a471ccb2464033d48c9af087653d249dde *profiles/codex/.codex/agents/aid-orchestrator.toml
+a4f63f0349db3bb4fe76795eeb22bcca975389c6a64817035d698934cbc1b749 *profiles/codex/.codex/agents/aid-researcher.toml
+8ed0327a717b6c2ff81dd6f26ba8fc6163eeabfddcb349cfa9c8269a6ba7d29f *profiles/codex/.codex/agents/aid-reviewer.toml
+bb2afbb6da18359022b380e70aeff702a7c6346be4622eb272df9265ffa174c6 *profiles/codex/.codex/agents/aid-tech-writer.toml
+b8519db9d466949e7162584866a20818148af78205f1ce14d28c19178e011fba *profiles/codex/.codex/aid/scripts/config/read-setting.sh
+5f1c2060c42217d7da1f7b1e52286e1f75732554866ce1a1191ec0177572a7e9 *profiles/codex/.codex/aid/scripts/connectors/build-connectors-index.ps1
+297e2406c97c6d86bb6384c961899773cda97d5fab08c3485f63bbda9f5fce0c *profiles/codex/.codex/aid/scripts/connectors/build-connectors-index.sh
+6a8feb93e1fc5bd2aac5dfc2e32c67966c962fc1874e8abb93acfdcf27bd95fe *profiles/codex/.codex/aid/scripts/connectors/connector-registry.ps1
+ab83b69202d7c7686e0ab42aa965bdafdf679a286df9425424977d34c0c3135f *profiles/codex/.codex/aid/scripts/connectors/connector-registry.sh
+e28788564730d3c6b5970e639debef112b3622034ba1c3499c9f801104ddb3ef *profiles/codex/.codex/aid/scripts/connectors/connector-secret.ps1
+e9dda644f7d8ec238dd4b53492f1d6dd33154d4373537f4473988c178afca86a *profiles/codex/.codex/aid/scripts/connectors/connector-secret.sh
+4387e45dc85935478466f24321c8c68f86e5cc7f19a4191cddc143f36a6f9fff *profiles/codex/.codex/aid/scripts/connectors/write-connector.sh
+c906f9b512c6fecf6635254ea1f199479da2582d5b8a44c24101b1008da3583c *profiles/codex/.codex/aid/scripts/execute/complexity-score.sh
+eea2a8d8dd12d5e118ea97664fb874343b738a650c984c866363e6adab5bde05 *profiles/codex/.codex/aid/scripts/execute/compute-block-radius.sh
+4adc99a9d9aff96d5a3c418fb461af28167f48cfada8a1d2ed88b17454fb17fc *profiles/codex/.codex/aid/scripts/execute/write-control-signal.sh
+eb451853f845ecb5f042bb42ae87748d5dc021047260783ae64c79e2eee9b03e *profiles/codex/.codex/aid/scripts/execute/writeback-state.sh
+478103d69baa1eb0f080538923ebe4a583629cbce540d04c567f15b4c76350f3 *profiles/codex/.codex/aid/scripts/grade.sh
+9cf3286222f78b5a6f3d7e24dba7b8acab9502bd6b3d166b26ae87465454572a *profiles/codex/.codex/aid/scripts/graph/assemble-coverage-notes.sh
+4be6429a1098b91553828d11b699852d4cb5e34d083180362f02c29197fedcf0 *profiles/codex/.codex/aid/scripts/graph/build-graph-src.mjs
+c48ab165b8edf9c67b2d4df10127e75a3a4f3204a9522c039a14470ef6455f4d *profiles/codex/.codex/aid/scripts/graph/build-relationships.sh
+0cf2827d544f2e3eec1dbab88de66a3a3c15b18460bfe2727f04de128a853482 *profiles/codex/.codex/aid/scripts/graph/build-table-src.mjs
+48ab23ea28b619b894d5594ba8e1d4b329a2726e7d331db63f31f4227a41a3fd *profiles/codex/.codex/aid/scripts/graph/coverage-predicate.mjs
+c2fb3e54849d2c01d7037ab4618d4731f47e6ef3c465d2083905960f6480df65 *profiles/codex/.codex/aid/scripts/graph/derive-edges.sh
+aa0016f6f624d6f9f432af877789c28295eb7f6aa2d581169680879f5f28790d *profiles/codex/.codex/aid/scripts/graph/detect-kb-gaps.mjs
+762945d41b28275ddb0230ba364adc18c8eb801b8ee48da869aefd25648dad2f *profiles/codex/.codex/aid/scripts/graph/grade-graph.sh
+b8d24509bebe1cbb3e63b96457c2414591f93c3603be182f535543dc85e1f0fd *profiles/codex/.codex/aid/scripts/graph/graph-preflight.sh
+289b9617ee372ab10e8f5d1dd77d441844e22d6656dd8b895dfd451c4906de47 *profiles/codex/.codex/aid/scripts/graph/graph-stale-check.sh
+17291348f003db8cdae9c995240fac2fd46cbada0dd482c10a4861de33cc38b2 *profiles/codex/.codex/aid/scripts/graph/harvest-declared.sh
+d4858921265ecb0b3c636cba5ba114df7aa64757e6d41a77d7d02e915a0c2156 *profiles/codex/.codex/aid/scripts/graph/kb-write-fence.sh
+bf20e3528d3b295e416c9d3831f24b655eb10be4e1344873cafd1e24376378c5 *profiles/codex/.codex/aid/scripts/graph/relationship-schema.sh
+0b3b0bafd9bb9a03d7d5c243b7144cdf862e11db7f437d8bef95c8fe3a89dae7 *profiles/codex/.codex/aid/scripts/graph/render-graph-view.sh
+9a909775d9363a9842a6725a70e38931e297ad286eafc4622f6f501c0a7503b0 *profiles/codex/.codex/aid/scripts/graph/render-table-view.sh
+5eb503bfdd5472152b9d7389b3d5d2dcaad171c69e93d85f05133d3df57fbb56 *profiles/codex/.codex/aid/scripts/graph/report-endpoint-satisfiability.sh
+58590dfcb4da05a0f56d46b721b73f0dad406d4ef3d5fb57b48aa339642fe4ce *profiles/codex/.codex/aid/scripts/graph/scan-source.sh
+3bfb53cb0d2676331349ef3758df035edf23c4b89ea8cfb38117b79d3d92d557 *profiles/codex/.codex/aid/scripts/graph/significance-rules.sh
+9e825c83c1e7275c4596ffc85ba611afc7d1e7f7678793aba4539f847fbf64cf *profiles/codex/.codex/aid/scripts/graph/validate-relationships.sh
+55460dace0ea3fe6a7fdedb05eb79da6a2006ee3f96d4a90ab3791dd902a6c61 *profiles/codex/.codex/aid/scripts/graph/vendor-provisioning.md
+4317500099dcff627c2ed2d4dd59ecaf78d1173a9536baa6a35330dd9d7b9a9f *profiles/codex/.codex/aid/scripts/housekeep/branch-commit.sh
+126eadce795c1475bc200d585765b4bd17827ba94ba0a047d65e1267b974770c *profiles/codex/.codex/aid/scripts/housekeep/cleanup-classify.sh
+34efca63b146b2025d864172c0880123eee18e0b6e9a5ba0b754b652c7fe6a98 *profiles/codex/.codex/aid/scripts/housekeep/housekeep-state.sh
+63fbface676c81dc9cbfb6ca7e1afd218ee6361bf4563a5c7cdda6197b0aa9ef *profiles/codex/.codex/aid/scripts/kb/build-kb-index.sh
+fe24706c52b3f2350ba148f2720a9c44a8360e468b63b81f8b847bf8a6f6c7d3 *profiles/codex/.codex/aid/scripts/kb/build-metrics.sh
+96200669a6225d63f5ab17d3d62cc9e93b7819ec5b39cf3d66128eef4edb7186 *profiles/codex/.codex/aid/scripts/kb/build-project-index.sh
+7badf6cc83d925816b13ac38a74be443c1a133ef9e1cf1e61110e84656edf70d *profiles/codex/.codex/aid/scripts/kb/closure-check.sh
+cde35cae105e2d195d107336314f344ffad01aa0cffc35633862101119f871ec *profiles/codex/.codex/aid/scripts/kb/coined-term-denylist.txt
+ed1a1dce6fc24ae3f24a541936c7133efb88bfe19d125a38cb900cc1b4163340 *profiles/codex/.codex/aid/scripts/kb/discover-preflight.sh
+a9a055b01d4af05a5c7f8518bccbf408b89c39e5bb492eb88e13c5d6890327e5 *profiles/codex/.codex/aid/scripts/kb/harvest-coined-terms.sh
+63a7534a1252982753cf2d698fc5e3af63e1f2c79f905200a97da3d377cd56d5 *profiles/codex/.codex/aid/scripts/kb/kb-actback-task.sh
+98e427f0b769c374ec008c242167ba07a3bec61fae081de447062b48285efa4f *profiles/codex/.codex/aid/scripts/kb/kb-citation-lint.sh
+546c21baf89cda6f84de44f6f727bcafd9cb6d438a36c6f0495e0f48697bc6c0 *profiles/codex/.codex/aid/scripts/kb/kb-dual-intent-probes.sh
+f9adcc7c6dc14648df4a13c1b51a497896779f21aa7ce73929b1f6891f5331de *profiles/codex/.codex/aid/scripts/kb/kb-freshness-check.sh
+3c23e5a272320b0f75a52667b4526f5166555ddd207c43b8fc4416e51537ad3e *profiles/codex/.codex/aid/scripts/kb/kb-teachback-questions.sh
+defef4aa83dab1da773850358fce0340ef461db86511ad4230c1e1a19100341d *profiles/codex/.codex/aid/scripts/kb/lint-frontmatter.sh
+73cf153c549fe7f7e56d199d408e002ef5929b87b0b181068608cb03b3c3090b *profiles/codex/.codex/aid/scripts/kb/recon-classify.sh
+d371b67980d3e59577b6a757040aa0fbc46cf4cdc870945c2c653de059a5a9bd *profiles/codex/.codex/aid/scripts/migrate/migrate-kb-frontmatter.sh
+f74d98d633602378e22f840da8ad9868ddcb1a64595afdf85ca46ccebd7c201b *profiles/codex/.codex/aid/scripts/migrate/migrate-work-hierarchy.ps1
+258d2d97fa4f05c03c493dbe331799501b8bf707f8eec67e0b1f6f405a9b6bdb *profiles/codex/.codex/aid/scripts/migrate/migrate-work-hierarchy.sh
+a3beb2692af72470624eae046afe941c5636e42344f27c71267732a7d082e199 *profiles/codex/.codex/aid/scripts/release/check-version-sync.sh
+8e331e683afbb10e31f908095c1ded778167871b230e5345c0269cf98a79cc10 *profiles/codex/.codex/aid/scripts/summarize/assemble-3part.ps1
+f1636405ad7f7419217b41924ab72e3e98a0140aa54d78b5e9d5f34c4f6406cc *profiles/codex/.codex/aid/scripts/summarize/assemble-3part.sh
+ddcb0ec5a1cdb852770953bce3600f053af32602bc9d39da483985b204dcd9b9 *profiles/codex/.codex/aid/scripts/summarize/assemble.sh
+2e3769f10a7b1f30a84836eb64ff06f50dd5bc28b71129bc3e91423bee6bcee1 *profiles/codex/.codex/aid/scripts/summarize/build-md-export.sh
+7a4df020009b858ca0f8229ed0e79f00e2557b5e97f801ac82ba0169b62593ea *profiles/codex/.codex/aid/scripts/summarize/contrast-check.mjs
+140310c0ba3163147460e3f6bcd132c7dd74f27a32d8444869611627188da940 *profiles/codex/.codex/aid/scripts/summarize/grade-summary.sh
+6e4df9cafb9f3fc54032e8a21b55dcc5bee74d910b409f974d51372f84ae2d8d *profiles/codex/.codex/aid/scripts/summarize/manual-checklist.sh
+bf7decc5c0ef9a9afb9dd243ce5fff872864082b97992abc5acc7e3ee474d402 *profiles/codex/.codex/aid/scripts/summarize/playwright-provisioning.md
+6c978b869ba3f264c6fbc9ae45e33e9148a5b02f00bf63cf23e954b81cf122e1 *profiles/codex/.codex/aid/scripts/summarize/spot-check-facts.sh
+ae03cd8d77b6163e5d107c8eeadfc0eaf4c6cea2db43f2f576f3c9b8180e6e04 *profiles/codex/.codex/aid/scripts/summarize/stale-check.sh
+a5d7327e33bc58c7f73fadde63e75de7a8857373e928c03d23990cba20106e28 *profiles/codex/.codex/aid/scripts/summarize/summarize-preflight.sh
+a64f5a35ea85687495b32bcd612f2cb3706095e22a8842c37600b5171fd1442b *profiles/codex/.codex/aid/scripts/summarize/validate-diagram-content.mjs
+cb9ceb065fd42d6c3f6de816844a42d402c211e7a9e39569057292cf8e67782d *profiles/codex/.codex/aid/scripts/summarize/validate-html-output.sh
+aab80a6bb315db2fb09515985855acd69cf3e88080697d4768eb5ddcd7e75995 *profiles/codex/.codex/aid/scripts/summarize/validate-visuals.mjs
+f28a7741468f990effa3d1736426200c242ad2526c21d5d33d38c192d548ff0a *profiles/codex/.codex/aid/scripts/summarize/writeback-state.sh
+256b18145d15003a840b1ba7e473c2b693748ac060416cefa16d998a0b77767b *profiles/codex/.codex/aid/scripts/works/enumerate-works.sh
+23b323d81f28fea4afe626fa73041128ea489a8a20a20135eb96d2503cba0bd4 *profiles/codex/.codex/aid/scripts/works/worktree-lifecycle.sh
+fd6483452ec4325bb000c12a60feb56f319148e732dad98f1f8e6b3db3df2280 *profiles/codex/.codex/aid/templates/agent-boilerplate.md
+1f95327e46c5713d5bb5e484c435f458576c0f90bfcc3b4d2dd2f0d46e09404f *profiles/codex/.codex/aid/templates/agent-dispatch-tiering.md
+06c31771901327ba0272fdc46cf1b0b5e5b444c9e1615ce7e8754e2e533caec5 *profiles/codex/.codex/aid/templates/connectors/consumption-protocol.md
+b80bac04e86cc642e63e733c7ad338a93bdd4e61a9ffa346f9818ca54b72c038 *profiles/codex/.codex/aid/templates/connectors/preset-catalog.md
+07829e3a388a148d297583228e7d68c4712587332030f49889b8b11897d3b2ce *profiles/codex/.codex/aid/templates/connectors/reconcile.md
+74fdfe7274d8a6c83d39bdf0b7e420d344b8db74811823333b125595a92c06d2 *profiles/codex/.codex/aid/templates/connectors/ticket-resolution.md
+ab1776254484d2534cc667ad6dfa44a5abd349238a6455f425e4e23930fd7a5c *profiles/codex/.codex/aid/templates/delivery-blueprint-template.md
+6003431ff6a225da69e1f758c0d101c5ad4a1ac9313d35bdb47ef08158005e58 *profiles/codex/.codex/aid/templates/delivery-issues.md
+f89f292c1ae7550cdd40d49cc1ff5677b6f48fc7eefb226bb5eda7ef8941c063 *profiles/codex/.codex/aid/templates/delivery-plans/flattened-plan-template.md
+12c9e04352cd6df9e6e355ab412933af60ed006b1043707c93a7a34891ca86f1 *profiles/codex/.codex/aid/templates/delivery-plans/task-template.md
+ef0961dbd84a51cd12dc501ca3a10bc16a6b38898f8bb263ced63e7aa7a53426 *profiles/codex/.codex/aid/templates/delivery-state-template.md
+b6a8f5e279296db4fae0324612400f84d785df53639f03e6ba5069fb030bd4fb *profiles/codex/.codex/aid/templates/discovery-state-template.md
+06f29a40fb47a8777e11d9bdf4b2357310ba90420b16e227b91ff60d73199989 *profiles/codex/.codex/aid/templates/dispatch-protocol-checklist.md
+21df82b7ac96d0658b0dffd67f950552b4604745dd53dadf7c3f9a1e62d6daa5 *profiles/codex/.codex/aid/templates/downstream-worktree-entry.md
+ce60dfa9e5c6e9595ae289efb2128953f5d8bf34f8d53f3505fb77077e0bb8c3 *profiles/codex/.codex/aid/templates/feature-inventory.md
+f2431502406233a2f9f083346f9a06fc2b5c5d289f6f61c951099af505f731c7 *profiles/codex/.codex/aid/templates/feature.md
+79b88f114c2ad3e1b30cb84699049c1a4fdb968e14f52fec37ed721417a22b26 *profiles/codex/.codex/aid/templates/feedback-artifacts/IMPEDIMENT.md
+b48fd07392318a6cb4fb90009106da238be5eb895379d756b2cba757a234c918 *profiles/codex/.codex/aid/templates/generated-files.txt
+0fcacab62f960aabe32d60aa17d07983334840d1d6e150837766b98c1e5273cb *profiles/codex/.codex/aid/templates/grading-rubric.md
+46e12a44e9f2256b4996502e9efc72d8c2e94bf1409b75750823c530cdf34c2d *profiles/codex/.codex/aid/templates/graph/coverage-bearing.yml
+911342cefc0a7ddd8f86257a2465842c030a0d41c294743b5526f63c5a50f39c *profiles/codex/.codex/aid/templates/graph/edge-relation-map.yml
+370101aa17403830d5c365c542387b48f82fe1a8c87e68904bd748f3f94c78da *profiles/codex/.codex/aid/templates/graph/relation-vocabulary.yml
+4d71bdf8305cf525683c9ecaeb436bb38aedfa952afefc52118b0e9ff96cce21 *profiles/codex/.codex/aid/templates/graph/relationship-schema.yml
+702bcebfadddd395b2ef989c25329d73217ca255054fb035d7c8058f9653c64b *profiles/codex/.codex/aid/templates/graph/scale-ceiling.yml
+9fbb6eccd1e5b6553fc5d97c5b9bc177fdfd3c76892f8964a51a20d46f263038 *profiles/codex/.codex/aid/templates/kb-authoring/concern-model.md
+7e48d8f77910142778ba8497249f74d3c6d89fd3306caaedb090237b4907e3d5 *profiles/codex/.codex/aid/templates/kb-authoring/domain-doc-matrix.md
+c8ef2eb1c719044b75538acd7438d7f7032c6b1f0959938fd0cfc328ad02caea *profiles/codex/.codex/aid/templates/kb-authoring/frontmatter-schema.md
+2b328f20ec5c928f860d87fbf2cc54b1ba6fe4bad0381ff7a72ba95f87cf084b *profiles/codex/.codex/aid/templates/kb-authoring/principles.md
+a981d7698d17dacdd0cda38f3a739f2775a29a1c93b7a77bb654b733d228b50a *profiles/codex/.codex/aid/templates/kb-authoring/review-rubric.md
+b25b27c64ee32ccbf0602fae90b4d5d64e3700ae9c7a4004c92c373c6f46f405 *profiles/codex/.codex/aid/templates/kb-authoring/tier-model.md
+1d7bd1774c6da4cf46f85b331991b8d615a11b8a02937c80403c387640373db4 *profiles/codex/.codex/aid/templates/knowledge-base/architecture.md
+1411bd12c88e6b840178e1d77f3eb5707c102987533b6291a4563f5be434b8ed *profiles/codex/.codex/aid/templates/knowledge-base/coding-standards.md
+f7ee90bece63b57dc0b4b57c9d7a806f4a69fdadc65cc1be7b366ce60ebaaa14 *profiles/codex/.codex/aid/templates/knowledge-base/domain-glossary.md
+a1ce46eef33b3547085eaad19a41057c060b6a3780f1c716dd4ea1f80b4e1df0 *profiles/codex/.codex/aid/templates/knowledge-base/external-sources.md
+47c8ea78247e101643395ad5f6bb68affbe857c66f6fa56c02cd121d774488d7 *profiles/codex/.codex/aid/templates/knowledge-base/feature-inventory.md
+3bf6acdedecea4973a897eb7b1fa4ddfb9b50cdb57a3c1a8fa36831f1dd8c366 *profiles/codex/.codex/aid/templates/knowledge-base/infrastructure.md
+280fc99681a80475e8e4e350bda99289e89c02dd28c0334060814615c881eabb *profiles/codex/.codex/aid/templates/knowledge-base/integration-map.md
+86d82acf2500a2f20b8228e9a1c76649cb0fef4396ae9a8d625923b1872488a3 *profiles/codex/.codex/aid/templates/knowledge-base/module-map.md
+f4bc0f1e54615f8f0fc189dd6658c8827f96158ed6aa7efca8675dbfb6d91a23 *profiles/codex/.codex/aid/templates/knowledge-base/pipeline-contracts.md
+02b1d55dbef31af30c518a1df343d200935c3ebe0dcd33dd3ee4b43cec2a5171 *profiles/codex/.codex/aid/templates/knowledge-base/project-structure.md
+bfcb3f1764fa01dd5581cc5f0e2d11e3afafb0519eca289b4fec1dda43666934 *profiles/codex/.codex/aid/templates/knowledge-base/schemas.md
+e970f9fd67fab44235e8da364803985c3b700f99367ecdf748f55d7b97ed3e58 *profiles/codex/.codex/aid/templates/knowledge-base/tech-debt.md
+25469309bf7129a65477732a9dbdb3e6c26ab3099a46e49837fc88fe918cdc91 *profiles/codex/.codex/aid/templates/knowledge-base/technology-stack.md
+d094d84e5475d3cf100e360a5fb9fd30bbd2e55ecee078c6bee55c31c470ae32 *profiles/codex/.codex/aid/templates/knowledge-base/test-landscape.md
+8f2b7d5b579ba85d7fc7fa75ec7eced3d9c16ea0d65cb3bcf80bf4e2acae6b05 *profiles/codex/.codex/aid/templates/knowledge-graph/accessibility-checklist.md
+e73e9f7eb371b6da45bbe1a66438918eeb6199dd5722bf3157625a554077815b *profiles/codex/.codex/aid/templates/knowledge-graph/graph-canvas.js
+000542a135d27899930b81c90d9525d9865221890811dcb9344d2e061c440230 *profiles/codex/.codex/aid/templates/knowledge-graph/graph-controls.js
+7b33db2f797628dc68b5506e76ee717d39f162c0d6cf2af1771bbfd9366b8858 *profiles/codex/.codex/aid/templates/knowledge-graph/graph-css.css
+1cb9f1b53408256739833dbf020535a51de7949c14257ddedee5be46b91b1405 *profiles/codex/.codex/aid/templates/knowledge-graph/graph-model.js
+3bbc7283a5ce08e4c0678a1306c79259edf9f9632c670a365874aa4f778ea9a8 *profiles/codex/.codex/aid/templates/knowledge-graph/graph-skeleton.html
+d8adc08c01af106fa5e73bc4e462f47f458607498e13a25e86063b006373a7ea *profiles/codex/.codex/aid/templates/knowledge-graph/graph-table.js
+640775c1b2e67daa8b7b05be42a290d386b4ddff5550077ed0da6c7affd71419 *profiles/codex/.codex/aid/templates/knowledge-graph/lens-presets.md
+b3e75b23476acffd00481a5c71e7d24c37d5270a3d8a145b087cfdee3434debc *profiles/codex/.codex/aid/templates/knowledge-graph/table-view-shell.js
+397c760ffbe6b58d4ffd7c1f559cfc81ebc97b3bdf5c9de513d83e57ed52be69 *profiles/codex/.codex/aid/templates/knowledge-graph/table-view-skeleton.html
+e008c5e25a6be382593089c29bfabbc553c6378eee02895aec46ce396cc404ee *profiles/codex/.codex/aid/templates/knowledge-graph/vendor/d3-dispatch/LICENSE
+94b3bbdb6b98dc1325a15762b051013e8253999b0e0436b27d1da17b952ba0af *profiles/codex/.codex/aid/templates/knowledge-graph/vendor/d3-dispatch/d3-dispatch.min.js
+e008c5e25a6be382593089c29bfabbc553c6378eee02895aec46ce396cc404ee *profiles/codex/.codex/aid/templates/knowledge-graph/vendor/d3-force/LICENSE
+1e07b473241328795d5ea9ad479a7bbabd765012fa2ef95633c83b69868dff6b *profiles/codex/.codex/aid/templates/knowledge-graph/vendor/d3-force/d3-force.min.js
+e008c5e25a6be382593089c29bfabbc553c6378eee02895aec46ce396cc404ee *profiles/codex/.codex/aid/templates/knowledge-graph/vendor/d3-quadtree/LICENSE
+57e2ad12824ed82893ba447523f2a2fb9beeb9222aafb2c778a9f5b313348b0e *profiles/codex/.codex/aid/templates/knowledge-graph/vendor/d3-quadtree/d3-quadtree.min.js
+e008c5e25a6be382593089c29bfabbc553c6378eee02895aec46ce396cc404ee *profiles/codex/.codex/aid/templates/knowledge-graph/vendor/d3-timer/LICENSE
+911ceda305f014b6b53ca68d5c896a9a387da120cfd56a421a2c60cca2fc9b36 *profiles/codex/.codex/aid/templates/knowledge-graph/vendor/d3-timer/d3-timer.min.js
+5ce7447bc57f7349ffc48338782fbcabe613696e00712b20d66bc58e780f9473 *profiles/codex/.codex/aid/templates/knowledge-graph/vendor/pixi.js/LICENSE
+83b2d7edf27bb77460f5f5f5e25cd73c91b77a53f44c80ac63096d6c0b5cfda7 *profiles/codex/.codex/aid/templates/knowledge-graph/vendor/pixi.js/pixi.min.js
+7793164b63121281e66c1d0d12898c524281f3194455589f016b038cd3671698 *profiles/codex/.codex/aid/templates/knowledge-summary/accessibility-checklist.md
+3423b7e9760c234e4301d56b86fec65fbc6bb9d3acae7d37a228fe3827436ff6 *profiles/codex/.codex/aid/templates/knowledge-summary/authored-visual-catalog.md
+3cf652f600d0ddbe4e1e202230462cf1cb072dbed7914cd4f80704be7b9faf32 *profiles/codex/.codex/aid/templates/knowledge-summary/component-css.css
+b5c9542d0b59e355cf2e102f10b8edf8599f5cef3086565cc0fb2f4d1d8d1b49 *profiles/codex/.codex/aid/templates/knowledge-summary/design-tokens.md
+039eac9424de276d30a5c40c9f364a08065dc4075245568467dfd3ad464b02b6 *profiles/codex/.codex/aid/templates/knowledge-summary/grading-rubric.md
+c6d9f73297b2ee3192d37c94c0e7a0125659fc3ca357cfb71c72ee7f2100d205 *profiles/codex/.codex/aid/templates/knowledge-summary/html-skeleton.html
+118528f25b356c2521973c21d25504c8611148c29adeffa37fb5d7b90f2007aa *profiles/codex/.codex/aid/templates/knowledge-summary/lightbox.js
+459f7cf886884755508604e8a5f3ca3f8f4715867b24ece82492cbe66a9481b5 *profiles/codex/.codex/aid/templates/knowledge-summary/prompt.md
+db2c7cc1dffa0fa6a41bb8dec6a107ba02cf600846341e66db9c9f1ff8976fbb *profiles/codex/.codex/aid/templates/knowledge-summary/section-templates/agentic-pipeline.md
+82507f55f8e7f182b83fcbc118ea2ed2e04ddd08373e645b8e365fcd851ab8a3 *profiles/codex/.codex/aid/templates/knowledge-summary/section-templates/auto-detect.md
+9a3026c915d3b1276a45522edcb694b83b432b8dfba1bfd13c7e729c86f157b4 *profiles/codex/.codex/aid/templates/knowledge-summary/section-templates/bespoke-components.md
+2c66a2374c19287103abee055824fb14f1dfa6339a9ac315cc4033a265c92d32 *profiles/codex/.codex/aid/templates/knowledge-summary/section-templates/cli.md
+555773e387d1d80dfe4423b5657ba8bcf8ddf4581ffa4c386ddf7be75476acf7 *profiles/codex/.codex/aid/templates/knowledge-summary/section-templates/data-pipeline.md
+98ba377a481cdbc0c3050f7e4f817dd2fd8296242cd42b7c02003a9b88059f7c *profiles/codex/.codex/aid/templates/knowledge-summary/section-templates/library.md
+277199e1d6d4097729792e80ff9c89a7a0f132115e185aa7b03259e927a11ef2 *profiles/codex/.codex/aid/templates/knowledge-summary/section-templates/microservices.md
+d510be318d32e40307d31b0f06c75dc56835d915ef2cd985d45cf52cc9eb3bb6 *profiles/codex/.codex/aid/templates/knowledge-summary/section-templates/web-app.md
+25e4e508e41508cb825126c2c2e73dc90d886c52abacacf55932bbafc13c520f *profiles/codex/.codex/aid/templates/known-issues.md
+0f727b1273f307baa02ae8f93f75472c666afabf97b5d1c9c41bf40ce6f4b7f2 *profiles/codex/.codex/aid/templates/long-wait-protocol.md
+d8bbbe4e1daa2cc548d3c0c544525ad3a7f827e568b94a3f815798973ce63044 *profiles/codex/.codex/aid/templates/package.md
+cf78c05319ac958ade4cb707971bcae72168d37f2d30cd9a181215b65b63ab68 *profiles/codex/.codex/aid/templates/requirements.md
+d2a8bc3ff89d929f0bb3b21485d7fac51143e7fd452f2ff7604d9928f79be959 *profiles/codex/.codex/aid/templates/requirements/requirements-template.md
+c80a14b6e34d778177fbdc59b33b052b490f935f2cb40661ea03a59c02105a45 *profiles/codex/.codex/aid/templates/reviewer-dispatch.md
+f6c0f37378676420bc55a6a1a9588ace343104f7935f88a2f4fc42fe64fd6ac5 *profiles/codex/.codex/aid/templates/reviewer-ledger-schema.md
+e86ae0ad046dc94ee5f410554713c3a43bd84bd86be2ec3cfc0f76ab904fa2a6 *profiles/codex/.codex/aid/templates/rough-time-hints.md
+70eec7e2214c7d1d6bb83b352c65ff16460e588f638cc517e313dd632594c7eb *profiles/codex/.codex/aid/templates/self-review-protocol.md
+969d6229ef135a7432f82dde1fa3cad5a1f45cc13d021209734bc20e4e7dc396 *profiles/codex/.codex/aid/templates/settings.yml
+d1de6ae5fb7be7b8dbd911714014dc0d049e9559a62c539da633a4b8cbf30c09 *profiles/codex/.codex/aid/templates/shortcut-catalog.yml
+38d2551b38c1e74c3fa371937a4c13c23866ae6394a53974d5d6e80f26669c4f *profiles/codex/.codex/aid/templates/shortcut-engine.md
+5cdb180d97c9c15551b880186b1e65c69ed20623210c6451735df52a8e0adcf3 *profiles/codex/.codex/aid/templates/shortcut-scaffolding/analyze-report.md
+9dbcee64b71e52e1be6ce86428b172b431a07315c9f6d2909ce333c1c50f324a *profiles/codex/.codex/aid/templates/shortcut-scaffolding/change-refactor.md
+f14fa1827339ecce5ded60a95edaafe429768a5759908cfbc250f9da2f496099 *profiles/codex/.codex/aid/templates/shortcut-scaffolding/create.md
+969785a50a88239004d15b84a30348fda0fe13223122619655f0b71321764ce3 *profiles/codex/.codex/aid/templates/shortcut-scaffolding/document.md
+74df6ee9f1e54e9cefeb616d506dba0652dec4d7025dc443a0cc90f736882582 *profiles/codex/.codex/aid/templates/shortcut-scaffolding/fix.md
+3707b974bb31152d578f7cc376093b340f47a62d49245ee018334686629eaa9e *profiles/codex/.codex/aid/templates/shortcut-scaffolding/prototype.md
+95693294046c70b6152bb3fe0926b68488e0f7839acfba53145affeac8461c23 *profiles/codex/.codex/aid/templates/shortcut-scaffolding/test-experiment.md
+4b46624469623650f2e3efc1f271a308e760724221c32457d85edb68c411d312 *profiles/codex/.codex/aid/templates/specs/spec-template.md
+7c675a75e8172b0ca79f96c80bed2b684fd3494c535561586e37afd12f71073c *profiles/codex/.codex/aid/templates/state-machine-chaining.md
+9ce9b065f581bfcd703e2c3bd0e056aeba972a37ed008963bd5f838206de0394 *profiles/codex/.codex/aid/templates/subagent-heartbeat-protocol.md
+4308d96447c89fd37448f5f662d549c19012c6abde5548c440e69321acb7377b *profiles/codex/.codex/aid/templates/task-detail-template.md
+e41407527367c187f01f84406f6754d4b8204f9937ebb5169a02bdfff0b85687 *profiles/codex/.codex/aid/templates/task-state-template.md
+359c1dfa794945643b2526f861fa108aae9d635f40076bec2c6d5a6288b4052c *profiles/codex/.codex/aid/templates/work-initiation-gate.md
+ccb01295d171190a47916388a0fbe82403d1a5ba7eb986c35550da5281caabed *profiles/codex/.codex/aid/templates/work-state-template.md
+41b8a2d8bbcafdd1614071137f315fd3700048430ae1004460f557cf1857a311 *profiles/codex/.codex/aid/templates/worktree-lifecycle.md
+eb9547a4aadcc2ffafbdc379d6ccfa621041ebfe5802b5384cda406186f83e9e *profiles/codex/.codex/skills/aid-ask/SKILL.md
+bb23226337980af314a835e3f30fa3eb27f8c29e9397f3f1c65903c465556c41 *profiles/codex/.codex/skills/aid-config/SKILL.md
+4aaa973770145d6d2b466038e48cb234f1ef35b0a1a4e71894d06b854e9ac5f5 *profiles/codex/.codex/skills/aid-create-api/SKILL.md
+76d93044ea397e3ae01ce5724ee9a8ce40431844145b45aacd39c5fefa668bde *profiles/codex/.codex/skills/aid-create-cli/SKILL.md
+6818c53196c8ced2af84179b07c3d5497a8c0834f8848608c31292466cf46ce6 *profiles/codex/.codex/skills/aid-create-config/SKILL.md
+2fada1d3e1ac5e9406aa93e2da7f8c3e590a13b2b9c958e251fb59e69f0e3bb5 *profiles/codex/.codex/skills/aid-create-dashboard/SKILL.md
+3071fd92ebad1958df15a8cb236519ecaf24413f37e4e29387af6f044a482d97 *profiles/codex/.codex/skills/aid-create-data-model/SKILL.md
+a95267fcb359ca9b745703be8445de1be89ece932f4e360b7e91c0bbb4c1bc53 *profiles/codex/.codex/skills/aid-create-data-pipeline/SKILL.md
+bf57dbac51f73b21b4baa3425bad20d86c179749d86f0e841bf6de3a3e9989e2 *profiles/codex/.codex/skills/aid-create-diagram/SKILL.md
+f3c9929ee7a034c2eb627ab8e39426b0a4764a479e5325411bc28a19029a3c39 *profiles/codex/.codex/skills/aid-create-document/SKILL.md
+b5a9324f88d59582e737366eb11b55a596b5044a1c1daf5c9ca691ab7040005c *profiles/codex/.codex/skills/aid-create-infra/SKILL.md
+4832d7991e0ffc75ee99a439334e5bea9f543273c22a97989f17aff088dd4a57 *profiles/codex/.codex/skills/aid-create-integration/SKILL.md
+3ed693b3849e250b69c633bfb80f2fdaac5e631b7bea1aa70d89ea1b7b16680e *profiles/codex/.codex/skills/aid-create-job/SKILL.md
+5d60481f122d8392f150996ef4b9e5abfc0081e8fb75a742068397f8efa25f08 *profiles/codex/.codex/skills/aid-create-messaging/SKILL.md
+1982023f880c2058ccb98753dbbc0b525bf086635e18a671c71ad70000007637 *profiles/codex/.codex/skills/aid-create-test/SKILL.md
+32860427cc0fa54eb2609d25ac977ccc3a31d65fb7e9c98ae9fc9f56a97c19cf *profiles/codex/.codex/skills/aid-create-theme/SKILL.md
+f69c2040d0f4090084e4f7050b685e31bace5069e7f1a816ba082814e6b5d274 *profiles/codex/.codex/skills/aid-create-ticket/SKILL.md
+207e73268807812bd89c6040161e6218ffea77927ed4a0665cf2ce74a383a5e6 *profiles/codex/.codex/skills/aid-create-ui/SKILL.md
+4bf382c05e23121e62c56982da5f5b5db1c53f2af73ad75237f48b56ae9d901a *profiles/codex/.codex/skills/aid-create/SKILL.md
+1b16127ee7c02e8db28ed321b8f9cfe709b99db08cedcf4e08077e55b90aaa02 *profiles/codex/.codex/skills/aid-define/SKILL.md
+daaffd951376cc92265adbe1ccfe902b45c752f0b1280c2293b2c3b6530b1204 *profiles/codex/.codex/skills/aid-define/references/cross-reference.md
+bd195cfa54094429f576247f8ca22889dc5a668026d9f9cab1ea3aff2a3ddea4 *profiles/codex/.codex/skills/aid-define/references/feature-decomposition.md
+6a972b4b0b903847999113888f1ac2608eb0d81132f4ea3ee95db991ca1e67d7 *profiles/codex/.codex/skills/aid-define/references/reviewer-brief.md
+db102438135f81df2a4ea71dad7e129fb7a9533be6eba9b380ef6d08483ad2b1 *profiles/codex/.codex/skills/aid-define/references/state-cross-reference.md
+a112e57f832bbd571f1153b926b0c8e9109b29ec981a44eb5a8be6359bf0cfee *profiles/codex/.codex/skills/aid-define/references/state-done.md
+8acfb32c67537886be089bb260961fe2f578a88173aeb419b9e11e19d0643fe8 *profiles/codex/.codex/skills/aid-define/references/state-feature-decomposition.md
+b9548cb325394feb7206b6a4afc692d964affeee9696957f1ca7471a3d7cb45a *profiles/codex/.codex/skills/aid-deploy/SKILL.md
+d464d535693b7c2595ab3f8112298e64ade349e800c7b37be6357466fd93f4bb *profiles/codex/.codex/skills/aid-deploy/references/state-done.md
+9ed3b26b3743e73c80159ff07bb502fa478bed63ab1f5e2b22584d903ac5d19e *profiles/codex/.codex/skills/aid-deploy/references/state-idle.md
+81328a5856e9a6d1a584ba3c2a0f7109e358c7405193a33d5839856c16411dae *profiles/codex/.codex/skills/aid-deploy/references/state-packaging.md
+b91e34e8f93c64227c66c28b52997bb94178abfe48b581d62ede9d52e765b3b0 *profiles/codex/.codex/skills/aid-deploy/references/state-re-run.md
+2716f610b6a3a900152953b32a16798d51c52a4446c5cbe11e0280a6f3239a1e *profiles/codex/.codex/skills/aid-deploy/references/state-selecting.md
+2beaaf126b1e26785409c268d62498ce3a85c52e1eb0c89b0249343c01e9ecd5 *profiles/codex/.codex/skills/aid-deploy/references/state-verifying.md
+42b9e0b4b68b8d61a45296273f2a5d9875c9eda94f793f2e0feead6c1cdf7dbe *profiles/codex/.codex/skills/aid-deprecate/SKILL.md
+1a8646961071603ae7b9cb058c9e01749a392c40b0fb44e1052e020bb817c3fb *profiles/codex/.codex/skills/aid-describe/SKILL.md
+aca9c2b5cd196a3b5063ac31793874ecb35c32e26bfa25a42481d8e10a0eab0b *profiles/codex/.codex/skills/aid-describe/references/advisor-stance.md
+168748c7627a67e786bf9ca831ba46e06638ddb9207ccd6aa2f121325b2bfe7d *profiles/codex/.codex/skills/aid-describe/references/calibration.md
+1b82ea078350c8ad7d2e09fcc71bef558af50c1703fc6b4e39993401a5aa8d2c *profiles/codex/.codex/skills/aid-describe/references/coherence-check.md
+7ad35ed911369ef9edd72f1ab5ce4f857e4163e4cc15fadfc68020afbbc780ec *profiles/codex/.codex/skills/aid-describe/references/elicitation-engine.md
+d1c6e3d8c501d0f81ddc9d89d6cf4e5be67377c33a22de5dc7ccefc5ba920a92 *profiles/codex/.codex/skills/aid-describe/references/interview-loop.md
+599de7b672a69a1f74f25da1aefa7f973a8c861f6bba1af8bc402949fa9698fe *profiles/codex/.codex/skills/aid-describe/references/interview-strategies.md
+181909489299b720ec4f4d6c2883b39f04b8d6bd1902efd7968bf1415a29abbb *profiles/codex/.codex/skills/aid-describe/references/kb-hydration.md
+60ccc989c0ff2424db3753cd0149f0e4e7ff3041bc38cac8044b3dcd34082a57 *profiles/codex/.codex/skills/aid-describe/references/move-playbook.md
+bbee3f95efa72d2f4d8e1a8eaddfa5b4c230ee1dbbb2cfff4fc6025956e6dd9b *profiles/codex/.codex/skills/aid-describe/references/state-completion.md
+beb01664d66f1b5710213effb8ad80047598c5a1d17edfd416856027d9aae863 *profiles/codex/.codex/skills/aid-describe/references/state-continue.md
+33c2ba8d786d7ea4e4565cb398b6ec823a17bf720b67dd7e573f02f88cab9cde *profiles/codex/.codex/skills/aid-describe/references/state-describe-seed.md
+6c9fb45f6c62d96f5c2aa87613a34a789cc7988f2a4604a140ea043c1944e210 *profiles/codex/.codex/skills/aid-describe/references/state-first-run.md
+d6fbf9bab6af2d88ae9369243544a12bd69fdfdd6c5cc013635c860974bb6751 *profiles/codex/.codex/skills/aid-describe/references/state-q-and-a.md
+cd6b51a2d1681ee9b50454e7d9dfc3e460c2b859ba5a74fe1a3fe09aeabead1d *profiles/codex/.codex/skills/aid-design/SKILL.md
+4056029ccdf29c489911955d948c5c05f4c91ca2f328313efd636070e1543804 *profiles/codex/.codex/skills/aid-detail/SKILL.md
+a14c3031e4c6f97833fdd58cce02325e1b1e579e639e5ef7def94ac47d71bc03 *profiles/codex/.codex/skills/aid-detail/references/execution-graph-generation.md
+aac8a6545ad7db6f68a037920e205dbc73d8ba0389e5f4411841c3d541739edc *profiles/codex/.codex/skills/aid-detail/references/first-run.md
+df11648bd80dd394178ad2604089edc0b7249768510831d16f37017152201d57 *profiles/codex/.codex/skills/aid-detail/references/review.md
+5fff00b24ed50fee970843032f1744c3ac229579ae227b4554073a0fcc5a67b0 *profiles/codex/.codex/skills/aid-detail/references/reviewer-brief.md
+0089714d98cb424385ebc1ca117bdc67c3f3679e4ec6b9ba475545a2ab429dc0 *profiles/codex/.codex/skills/aid-detail/references/task-decomposition.md
+fdb279e8e276fe9ae1f5e8db250053b6e88014759ed0419b9314d4b09615bf49 *profiles/codex/.codex/skills/aid-discover/SKILL.md
+622bdcb0a1103028fd5f39cd5176efcec57b475bcf72c013ffefd7a0ef7c98eb *profiles/codex/.codex/skills/aid-discover/references/agent-prompts.md
+ac2c58c7a9e4c161598589f69de8d4cb32006268beff068f10a2444c633feabc *profiles/codex/.codex/skills/aid-discover/references/doc-set-resolve.md
+cd53d451aaf4ae8d4c44468afd581c0448c606acb30bb3194506f35372c0a083 *profiles/codex/.codex/skills/aid-discover/references/document-expectations.md
+e88099f0422cefb394fd0c8f11305e661d630be5fd7ba8841f4a82d4ae9ea687 *profiles/codex/.codex/skills/aid-discover/references/path-config.md
+af060978dbdc17d18a068c27b1388d512f1f6372ddb6691e1d2b0821df7fb74f *profiles/codex/.codex/skills/aid-discover/references/reviewer-brief.md
+3ffa395c53242d93744d776e38b651f4f5c884ffbd6d0113ef1147c4f47a04d6 *profiles/codex/.codex/skills/aid-discover/references/reviewer-prompt-actback.md
+e01d846de93be3a04057f4f9fca53f805fc005a362d4bf540f688750c959ddc0 *profiles/codex/.codex/skills/aid-discover/references/reviewer-prompt-anatomy.md
+b7b30a8d3a7a280a8f6a96cb7240303d2a86db87c72d5dae42cf3df52184489f *profiles/codex/.codex/skills/aid-discover/references/reviewer-prompt-correctness.md
+66b7494838d6de60288c039803488693a366114d7b3f3190a577bd31961c392d *profiles/codex/.codex/skills/aid-discover/references/reviewer-prompt-teachback.md
+9fdac29d6928cec9d7217b89e1c1d088a07668bb56daaa5dff4b84e6e92d3649 *profiles/codex/.codex/skills/aid-discover/references/reviewer-prompt.md
+414096f26a2e1936bd2f1db64f5bcce1bf8e1cd78ea7ffd96f7386018a49d9df *profiles/codex/.codex/skills/aid-discover/references/state-approval.md
+3acd63f1749b4a0073411d28fbb0bbb5c6dd34e41416bbb1ffbd4d846d648162 *profiles/codex/.codex/skills/aid-discover/references/state-closure.md
+fe50618f4add927f8287e80b7de92a3bd97d3f8ddd338ee81bc2e5bdcc8ed0a9 *profiles/codex/.codex/skills/aid-discover/references/state-done.md
+c6581d2ba9af036c6d5d1404ddb01fe108c3e671656fea74c4aa86fc3f6770a2 *profiles/codex/.codex/skills/aid-discover/references/state-elicit.md
+957084c0e9e7d950592cb3cc9ca9b728eb9e29c668422e371cd93da0f1b8f441 *profiles/codex/.codex/skills/aid-discover/references/state-fix.md
+07f40adad1a50d448350a039848b3fbc14379db0a8718913a5fcff7ae54f1602 *profiles/codex/.codex/skills/aid-discover/references/state-generate.md
+58ed65a218539355c26b4f3950f62f871b274212bb570cefb03f215a99d1d42e *profiles/codex/.codex/skills/aid-discover/references/state-q-and-a.md
+8e44ce896c75b668ffecf64b91a1e4974f2e5b3cf607135e5e46ffb2943e98d2 *profiles/codex/.codex/skills/aid-discover/references/state-review.md
+c0127d17c6c22b4c87646cfd00942c6bf77560b45fa4a07cb93ced8693263a0c *profiles/codex/.codex/skills/aid-document-architecture/SKILL.md
+1165f738860045e94ff1e94fefc81393cdf08ab31efbc0c641fc059d2c74c197 *profiles/codex/.codex/skills/aid-document-changelog/SKILL.md
+e692b5cf8c13688b2d8dc2bec9445629512eb3f1d6bd9d25c21478016d2667eb *profiles/codex/.codex/skills/aid-document-decision/SKILL.md
+3ae918c87119e9daa4720b3ab241062de5bf2f70a8089eca03e32bbbd3280261 *profiles/codex/.codex/skills/aid-document-guideline/SKILL.md
+ef7e0818d6e923f2d6f0ccdb54ec718c6b50e10a3b0c7e53de16d64f4a17c942 *profiles/codex/.codex/skills/aid-document-runbook/SKILL.md
+e2526d52a69e8ade7dd7ac03165349b5e000a1b4ab92ada27768ec014fe29d14 *profiles/codex/.codex/skills/aid-document-standard/SKILL.md
+3928a1c1b79b479971416ba74968ae2ec3e5b952f168f28049351b48bb3b36f8 *profiles/codex/.codex/skills/aid-document-tutorial/SKILL.md
+6fb36d7d018aca1e7046d616f42131ff56a492041cb0f9e968a3f6b75158a90d *profiles/codex/.codex/skills/aid-document/SKILL.md
+54bb477beae23fb1635ebaec0fa4ec68120e3194be4714ef13afae776d2e8a83 *profiles/codex/.codex/skills/aid-execute/SKILL.md
+1635040c00c687392ae7091344163fcc8adfcf88f89eff20904b227166cd3d0c *profiles/codex/.codex/skills/aid-execute/references/reviewer-brief.md
+7827b5132ccf3a33d78a372e9a224773d7440cd6a176e6862abb77359a85510f *profiles/codex/.codex/skills/aid-execute/references/reviewer-guide.md
+68c33bee197b9aae4c43f44615c4b86e794c444c59c5243537c1d5ca1e284c8f *profiles/codex/.codex/skills/aid-execute/references/state-delivery-gate.md
+0fca6671e94c23349a9a221beaf84733e6ea7e879417a4e2c557c508f0952851 *profiles/codex/.codex/skills/aid-execute/references/state-execute-drilldown.md
+1f35a7bd1a9fb74df2abf2098251d2e6ee60c5a78e781c80ef6352535103f8bf *profiles/codex/.codex/skills/aid-execute/references/state-execute.md
+5ffa907686879677b16945f6ad9498372bbbc03966cab587ddf39040dca651c7 *profiles/codex/.codex/skills/aid-execute/references/state-fix.md
+df3b77084446b3fadfc935dc4185b69949e690033566c0355691ffdedf931eda *profiles/codex/.codex/skills/aid-execute/references/state-re-run.md
+a42007f7c630f77e35bfa460be26f07e10b76e56b8ca4547f159b3de61791d29 *profiles/codex/.codex/skills/aid-execute/references/state-review.md
+03de3b3b2c9c36d6e28732af4cddbf071bd83d973d78700617340bf768c0e033 *profiles/codex/.codex/skills/aid-execute/references/task-type-rules.md
+e3355734f9fd0aecc77f9fc2411383a8663d4a831d72d3fd5a2e9f3b212c3015 *profiles/codex/.codex/skills/aid-experiment/SKILL.md
+c216b8433e86c0942b72d6a253b256adc1bda36bc4515641aa94e4c229526370 *profiles/codex/.codex/skills/aid-fix/SKILL.md
+bd0bd256159889e315dc64c4228df47660c80174fef2b719d0b1e6365f20e854 *profiles/codex/.codex/skills/aid-graph/SKILL.md
+c9237df19d0b4744137f3418f24773669ebbdc10944c6e8efd2a2d682f32ef95 *profiles/codex/.codex/skills/aid-graph/references/agent-pass.md
+f1ce0142464d0aa2f3b7e058c39caa84a58d4994d7e924d5ae5ff2619d457e4a *profiles/codex/.codex/skills/aid-graph/references/state-done.md
+dae9eed1d566b6bf0f1a622e4841c741932efa2d24d5a37396970e26d5dae2a0 *profiles/codex/.codex/skills/aid-graph/references/state-emit.md
+92db9c815135011d4b93cd9ea1b14c7a651a0f94fa75adf23249020623eaf3e6 *profiles/codex/.codex/skills/aid-graph/references/state-enumerate.md
+a73083c5a3cdac0d832839f867e9af26e55acd02dcf7b0839dd9aac69297d9a5 *profiles/codex/.codex/skills/aid-graph/references/state-extract.md
+1f1edbdec556f2c33fdef5c5767f5d51d6db081a0a2bac1318844c7c2da5f31c *profiles/codex/.codex/skills/aid-graph/references/state-fix.md
+12caff89a2e7cd0b72bf4277e08decf3c76ae4d7a709af5099ab76dcee60d9cf *profiles/codex/.codex/skills/aid-graph/references/state-gap-report.md
+36d513bf7742f3ee09761fc37328236f25712217e6f60d08795119c4b2d7eb79 *profiles/codex/.codex/skills/aid-graph/references/state-preflight.md
+d9734eb3fcc1cb7e6935850abe570a22c7aa19e605bf87d978994bb3c8025e37 *profiles/codex/.codex/skills/aid-graph/references/state-render.md
+f82b59debfdb360615d23c4acfdfe4445a1f42a290a3ab98aaf64426312ee0d3 *profiles/codex/.codex/skills/aid-graph/references/state-stale-check.md
+037468414299a2d8fff367ac5e96231c82fcba99d8c476ef8c33dee70f662260 *profiles/codex/.codex/skills/aid-graph/references/state-validate.md
+b665f4f0f065dec6028bd8110da004e6e0862062f2d65d8bd1245fb474013655 *profiles/codex/.codex/skills/aid-graph/references/state-visual-gate.md
+39726c2e3b84ee602b59d7f8426e44232b33a3878a4e405bc46090671d8a1556 *profiles/codex/.codex/skills/aid-housekeep/SKILL.md
+f878e58529cc5eb4613fa5cbe726c3e7d03c364f58ee27a948cbd52a2bb3303b *profiles/codex/.codex/skills/aid-housekeep/references/state-cleanup.md
+7870013c5ef82273157d59f323a4c037d30367e42e2910550e8c6c1736ab3446 *profiles/codex/.codex/skills/aid-housekeep/references/state-done.md
+82ae86daece3c0799120695dd93421f1895ea4c21807415d084555aa53266b41 *profiles/codex/.codex/skills/aid-housekeep/references/state-kb-delta.md
+dac8ac8d2dad07431027f8d1f4cf814401c893cdfeda9ca8c47ef1402b66421a *profiles/codex/.codex/skills/aid-housekeep/references/state-preflight.md
+b5c9000bf34ebac172715bedf4970972a190b2eb67c6db81637b6f2d0dc6d18d *profiles/codex/.codex/skills/aid-housekeep/references/state-summary-delta.md
+61678e6aa2b858f0834127bc7e057413969255f59f064a19a2f3c2185acd92ba *profiles/codex/.codex/skills/aid-migrate/SKILL.md
+1a5a0e1a2d45ac067fa7fd0fe5a60edae4cbc53330b120fb07348bda8c458e31 *profiles/codex/.codex/skills/aid-monitor/SKILL.md
+ea273b5d1f3197236a58a9508394af17ddfef1bab18ad6193a550bf2eb226adc *profiles/codex/.codex/skills/aid-monitor/references/state-classify.md
+c4bad0ee030388d29614dc5a2a0c1bca5612eefc250c00a0afe980cfde92a46d *profiles/codex/.codex/skills/aid-monitor/references/state-observe.md
+a5f7f0afc32a41ad25a295eae333f47dcce3af507dea4c7545847b39ecb1c7d3 *profiles/codex/.codex/skills/aid-monitor/references/state-route.md
+758edb617199a8009c5635d83b90818b62d3a4eb2ab04c90da32c84ff8c02521 *profiles/codex/.codex/skills/aid-plan/SKILL.md
+f01cb8e550d633bc24da0a51dfbf9999a8cedf13b6f891fc481a7fbea24770c1 *profiles/codex/.codex/skills/aid-plan/references/first-run-loop.md
+91d137f1bba380a971a3c7f358d8cbeb58da466b0368443ce636de702f8e08e2 *profiles/codex/.codex/skills/aid-plan/references/review-deliverables.md
+5b757f8441817e560d80bd1d779f31aae906eb3a54716c00b2455a8de9dc14fb *profiles/codex/.codex/skills/aid-plan/references/reviewer-brief.md
+bbb73c1e847cefcaa7ab829c18cf4b8f28b6326cc5228efb9fb607791b1714d7 *profiles/codex/.codex/skills/aid-prototype-ui/SKILL.md
+ccf5c6cf0e8a98df2fe0e136a54dac3167107d6fde1ae1313cf70eb783ed4358 *profiles/codex/.codex/skills/aid-prototype/SKILL.md
+854fa49d2879744030bc3d54c3d0de9e2b214e99e9a55bcab059affcf7640e46 *profiles/codex/.codex/skills/aid-read-ticket/SKILL.md
+6ba405a08f1bfe7494b57f02f26e039ccb2f193e246046a0133a409ceb14dadd *profiles/codex/.codex/skills/aid-refactor/SKILL.md
+d405260a70c954f53cd49536b01655a9e86079b393895c620ac4061651a94a5e *profiles/codex/.codex/skills/aid-remove/SKILL.md
+be152abea3a32c6e75dfd107435f180970107386f68f615a8df234f6818fde58 *profiles/codex/.codex/skills/aid-report/SKILL.md
+288fe4a329e8399edb824f2cfdfb5be244f868e782486e838772921f6a14a8b4 *profiles/codex/.codex/skills/aid-research/SKILL.md
+a0c71f917c30c5ee92d9715cac735936eea8924477ff286cb8b4c3248c964396 *profiles/codex/.codex/skills/aid-review/SKILL.md
+2255761bae40988a4a1b6037947f4dd8b48fdbe3917b323f2c9aab54ae190795 *profiles/codex/.codex/skills/aid-set-connector/SKILL.md
+b512d31eb977ecc1fb179f60e01ea37eca87d8bfa8aafe2b8175c196ff03eed8 *profiles/codex/.codex/skills/aid-set-connector/references/question-sets.md
+f98673d915f43a0abaaf2ca398b0115126b3c7d28e79d3a8b8eff1c25f150290 *profiles/codex/.codex/skills/aid-set-connector/references/secret-reconcile.md
+d1cf9cab123bc0ce5d868b9389a72cf01466034ef54430a86290c4f74731a187 *profiles/codex/.codex/skills/aid-specify/SKILL.md
+c8b1c116b82478be03869290f7860e0d5c2eaa1106e1d108264371dab877ad7e *profiles/codex/.codex/skills/aid-specify/references/handling-outcomes.md
+551844a49ba6aa836c94886f8c36efcf4304e456fe5aa3bfc689f309cbb26831 *profiles/codex/.codex/skills/aid-specify/references/known-issues-scope.md
+5d1ce9df9c3b8d944a196e412f918477f6584841e17c53c8a2899ad1aee97ae5 *profiles/codex/.codex/skills/aid-specify/references/reviewer-brief.md
+13f7e6a9800990a186db29c87580640debf1db4ec16ad677e2b1487fefe81d32 *profiles/codex/.codex/skills/aid-specify/references/state-blocked.md
+636a943b22ec8fc91084d910799a58082c3796eebf169534e57670865365c380 *profiles/codex/.codex/skills/aid-specify/references/state-continue.md
+3f6f837c6037c713f4b4ba617e07116dceb14c306b9c7f143ea13a605295f2f4 *profiles/codex/.codex/skills/aid-specify/references/state-done.md
+5f9c0cd0ce5a493fa6e5c8a1fe70c7013914f98e417b428c280e22ea9d180c00 *profiles/codex/.codex/skills/aid-specify/references/state-initialize.md
+71e8d2f9c6c25c7e3bffd4e3300b19fbb4741001ab8315c4d18e966bd123bd34 *profiles/codex/.codex/skills/aid-specify/references/state-review.md
+286dd39e97b16da307c3576f949c0ee5ef39c475cc0a7c86ee84ed5fe3c0779a *profiles/codex/.codex/skills/aid-specify/references/state-spike.md
+6dfc8d22dc853302f5e9dfb12efa92ea85182a99b48e26716cfb2cce67056303 *profiles/codex/.codex/skills/aid-summarize/SKILL.md
+f0f2169aa497df8f2c1e570e6d4f0b812c1f3de7c406eb15943d6c32b0e6179f *profiles/codex/.codex/skills/aid-summarize/references/state-approval.md
+61bc4adcb8a40df805c8e494c02030ccf23326eac9c4ca9d5b303686289bfa0a *profiles/codex/.codex/skills/aid-summarize/references/state-done.md
+6061cf64293bc63b4ca19d081ce8d3f0439892eaf7a42443143b0d2eb77a78a2 *profiles/codex/.codex/skills/aid-summarize/references/state-fix.md
+48be2032232ba609846324fd43896cc83b277c62c904bd0cfb8d53920aa5ce91 *profiles/codex/.codex/skills/aid-summarize/references/state-generate.md
+f8a2f528d9bc0979ead7e06999d774c4cb1404239463761f4e6518e8d349e5d4 *profiles/codex/.codex/skills/aid-summarize/references/state-manual-checklist.md
+8add12e82bcf61540a7128fa4d5a9fe0a4f4833e48a2c2dac9a9bf477d5f5f97 *profiles/codex/.codex/skills/aid-summarize/references/state-preflight.md
+17abe7779176f35cb2532a2eaaceaeeb5be7dd38e1fce32d4db402998404b767 *profiles/codex/.codex/skills/aid-summarize/references/state-profile.md
+79a81ccedd291b087972080565474e673137ca2a7ee8f77b4c8ae90a01954aec *profiles/codex/.codex/skills/aid-summarize/references/state-stale-check.md
+2e81207068df5fea60c4f86b25edec71df6ebbbaf1a7f677e4b12aebb5fb7f90 *profiles/codex/.codex/skills/aid-summarize/references/state-validate.md
+73a66710c032d811d6c980e381966b515fb09923758da4b1117d16569e9a863f *profiles/codex/.codex/skills/aid-summarize/references/state-writeback.md
+901ac8d14e6f41026b1acfa7a777a4d93f1e42759c46cf96ed837d6caea14924 *profiles/codex/.codex/skills/aid-test-data-quality/SKILL.md
+de377e0c15621650b3e23028ca19f0c8d3696782a5053e9bd1e2ba0bed6acb88 *profiles/codex/.codex/skills/aid-test-performance/SKILL.md
+7003fddcac6fe27d04d5d87a8a8d88518e357f1c853d90ccb6750234a184bcd1 *profiles/codex/.codex/skills/aid-test-security/SKILL.md
+8e3c1106e3aad8dbea4ad959b46502cecfa0522fc6831fb68ac629bd14b8ece0 *profiles/codex/.codex/skills/aid-test/SKILL.md
+7e553286e848fda1fbdab01dfed919968e3e2ce5f539e2a038543d7935bc434e *profiles/codex/.codex/skills/aid-triage/SKILL.md
+38fab67f533c6bb9c53d66a68c9b529a965b2aaa4a26eb4c6d7f8d1c741b263c *profiles/codex/.codex/skills/aid-triage/references/state-classify.md
+c10c5dd011574e6317eb9ce9934d1b25ad98f74f3ba87d8237ae9b22b17f0869 *profiles/codex/.codex/skills/aid-triage/references/state-suggest.md
+54578cf50d57bfd9b1429cb80c1cf24efa6307c4d1b779a37f2a531c204f6d3b *profiles/codex/.codex/skills/aid-unset-connector/SKILL.md
+288e41829bb1192db3e1c34c371e51af109fd1a848d5a10afc5786991c7c9b25 *profiles/codex/.codex/skills/aid-update-api/SKILL.md
+0890470fc22f599c1d1f6f79171ce9d21e0fe5adb079f8c928372231dacf2f6a *profiles/codex/.codex/skills/aid-update-cli/SKILL.md
+8d4988d36bcde7b4b082642b53c1d5b97ca6f95ea03735110024586c2cafefa5 *profiles/codex/.codex/skills/aid-update-config/SKILL.md
+133faab72b8d376ea0ab6e1633cdc1be60f14551e8eb32a118b68a38ff1b4548 *profiles/codex/.codex/skills/aid-update-dashboard/SKILL.md
+61cb8101435552fbae79ce2f777fe9c930b74aaa4d5c054cf4753a9b1be0b2e0 *profiles/codex/.codex/skills/aid-update-data-model/SKILL.md
+00b024b7b185f30f6cd3b80f0df799107cdbfcabc37a38e9bfb21a514137a812 *profiles/codex/.codex/skills/aid-update-data-pipeline/SKILL.md
+906d850782bf3cd6d0a88a070b889a96f5357205937f7477b541472d127cc6de *profiles/codex/.codex/skills/aid-update-document/SKILL.md
+5225cbc9d3a260af9bcb5fabc68085227ab3d87adcf341e4687de452f599434c *profiles/codex/.codex/skills/aid-update-infra/SKILL.md
+08ced01a8adaca49ca88d5ab08a7538c33e18cf921f4c600e888e4809943ecc8 *profiles/codex/.codex/skills/aid-update-integration/SKILL.md
+3ba6b3cfe527250b1136bdbbd520925c17cc9cc357f2c05af6efb61e112a1164 *profiles/codex/.codex/skills/aid-update-job/SKILL.md
+258786cd78931d12ca0db3003603b15a07fcd4f9f4f64fd292b5ce5a70d8f78f *profiles/codex/.codex/skills/aid-update-kb/SKILL.md
+263855ef032bb3b2ca02a4ed5f645fe63d8325e1275ff41b1337386f04c7c0e9 *profiles/codex/.codex/skills/aid-update-kb/references/state-analyze.md
+d04fd93e0fd82ed8443857580ff25e81bf3eb5122c5ffbb64c67982d89f0426d *profiles/codex/.codex/skills/aid-update-kb/references/state-apply.md
+a7ce3f770619c7efdc30f8b346dc6b39bf2d42b48c3f527696a4f5684553e15c *profiles/codex/.codex/skills/aid-update-kb/references/state-approval.md
+78219d9687b4b16093f4d5dd4206a6af63b2241c219369de4dd23d331baf5aeb *profiles/codex/.codex/skills/aid-update-kb/references/state-confirm.md
+df47ff9e96d4648b508fe16f769fffe2cf4aa459edbe9e399268572f9c6153ae *profiles/codex/.codex/skills/aid-update-kb/references/state-done.md
+1a0706734ec396c6f76b5366b0b216ba18bf0af309c2ef492fe76644b2702069 *profiles/codex/.codex/skills/aid-update-kb/references/state-review.md
+30952607aa9f09024eee5358d90b28317bc735f26d3e078059d7d63a402622ac *profiles/codex/.codex/skills/aid-update-kb/references/state-scope.md
+0a4f734ec4a52bd75201094c761284723e78174651f40d7738e80b0f71d09b75 *profiles/codex/.codex/skills/aid-update-messaging/SKILL.md
+13fe1d488b1b95d9561b03d7d85c07a19836a6a323eba4a1fd196660d34ccc6b *profiles/codex/.codex/skills/aid-update-test/SKILL.md
+a84f3eac31f873e493063d6a9e1070be1a6ef2f2e947da21de77112cd492bb0f *profiles/codex/.codex/skills/aid-update-theme/SKILL.md
+7b37c21b16bf219fc7383a6377d64dd4f59f510ef85eece0a7558ada942867fb *profiles/codex/.codex/skills/aid-update-ticket/SKILL.md
+f073cbe87ed540875a97c7fce52be874610966268b19e1f0adf7b16d2cda52b2 *profiles/codex/.codex/skills/aid-update-ui/SKILL.md
+23f3065ae1abcfc021ba7038b8fe2b445de000d47556463001781f8be06d6a4c *profiles/codex/.codex/skills/aid-update/SKILL.md
+de40d5bbdf99f972f53dee902aa8e97dfdb48166bbfa0e40119a42ed315965d2 *profiles/codex/AGENTS.md
+e9e7aef921b7a94194a53daadd21d76666903795374360139c0a17ac14291f1e *profiles/codex/README.md
+78caf35d2334ad1f108d69d44513d5b7a33983a9b2a1ef5214617d6b0d46c750 *profiles/codex/emission-manifest.jsonl
+e8afb1737b051f5ffdb77a7d13cdbd8ec7d279043119e4d31b6c2a4f41558724 *profiles/copilot-cli.toml
+0ab10cc77dfa991a8bfecdf42ad9bc72b826d1c31a992efea7bce81e04ab7bd4 *profiles/copilot-cli/.github/agents/aid-architect.md
+e60947592d42764ba39dfe92e06f10a9c5cf4b91ee808dc5dde3be7a5c12ac68 *profiles/copilot-cli/.github/agents/aid-clerk.md
+4c0050ca7d1df07abd9a9de098ae04a0f233805f2e41da7e113a29df80557a64 *profiles/copilot-cli/.github/agents/aid-developer.md
+1cd1d76823c2bfc88d4c47413647afcd77ac7f7f91aa802d4080b01b942cdc18 *profiles/copilot-cli/.github/agents/aid-interviewer.md
+0ab71c13549650cd70fb46f9123ac4bd6e910610d33188c06308df7dcc7b995f *profiles/copilot-cli/.github/agents/aid-operator.md
+4709f07ba0270b062bee3d51f5957125822aa0573abfc774d890f64e5d20fa03 *profiles/copilot-cli/.github/agents/aid-orchestrator.md
+cd06df6477d62007a84ce72f5e211f79ae182822aca26b5430b089347e885eab *profiles/copilot-cli/.github/agents/aid-researcher.md
+e824e1890a978d729dddc35fedf991f4857808944900f2201d9972c5c5e6413f *profiles/copilot-cli/.github/agents/aid-reviewer.md
+7eca7a7e36d373fe6748a39231eb2ddf72385c9152a2a16b85b0c811b8d9aea1 *profiles/copilot-cli/.github/agents/aid-tech-writer.md
+b8519db9d466949e7162584866a20818148af78205f1ce14d28c19178e011fba *profiles/copilot-cli/.github/aid/scripts/config/read-setting.sh
+5f1c2060c42217d7da1f7b1e52286e1f75732554866ce1a1191ec0177572a7e9 *profiles/copilot-cli/.github/aid/scripts/connectors/build-connectors-index.ps1
+297e2406c97c6d86bb6384c961899773cda97d5fab08c3485f63bbda9f5fce0c *profiles/copilot-cli/.github/aid/scripts/connectors/build-connectors-index.sh
+6a8feb93e1fc5bd2aac5dfc2e32c67966c962fc1874e8abb93acfdcf27bd95fe *profiles/copilot-cli/.github/aid/scripts/connectors/connector-registry.ps1
+ab83b69202d7c7686e0ab42aa965bdafdf679a286df9425424977d34c0c3135f *profiles/copilot-cli/.github/aid/scripts/connectors/connector-registry.sh
+e28788564730d3c6b5970e639debef112b3622034ba1c3499c9f801104ddb3ef *profiles/copilot-cli/.github/aid/scripts/connectors/connector-secret.ps1
+e9dda644f7d8ec238dd4b53492f1d6dd33154d4373537f4473988c178afca86a *profiles/copilot-cli/.github/aid/scripts/connectors/connector-secret.sh
+4387e45dc85935478466f24321c8c68f86e5cc7f19a4191cddc143f36a6f9fff *profiles/copilot-cli/.github/aid/scripts/connectors/write-connector.sh
+c906f9b512c6fecf6635254ea1f199479da2582d5b8a44c24101b1008da3583c *profiles/copilot-cli/.github/aid/scripts/execute/complexity-score.sh
+eea2a8d8dd12d5e118ea97664fb874343b738a650c984c866363e6adab5bde05 *profiles/copilot-cli/.github/aid/scripts/execute/compute-block-radius.sh
+4adc99a9d9aff96d5a3c418fb461af28167f48cfada8a1d2ed88b17454fb17fc *profiles/copilot-cli/.github/aid/scripts/execute/write-control-signal.sh
+eb451853f845ecb5f042bb42ae87748d5dc021047260783ae64c79e2eee9b03e *profiles/copilot-cli/.github/aid/scripts/execute/writeback-state.sh
+478103d69baa1eb0f080538923ebe4a583629cbce540d04c567f15b4c76350f3 *profiles/copilot-cli/.github/aid/scripts/grade.sh
+9cf3286222f78b5a6f3d7e24dba7b8acab9502bd6b3d166b26ae87465454572a *profiles/copilot-cli/.github/aid/scripts/graph/assemble-coverage-notes.sh
+b08485e8d6c0bd95e48e208dff3728486d19a1ce95ca0aaca6739f19c1bb65de *profiles/copilot-cli/.github/aid/scripts/graph/build-graph-src.mjs
+c48ab165b8edf9c67b2d4df10127e75a3a4f3204a9522c039a14470ef6455f4d *profiles/copilot-cli/.github/aid/scripts/graph/build-relationships.sh
+cba5139066844d849bed8e81066f76f3ce907ec521c5dd6520cd856f157e4744 *profiles/copilot-cli/.github/aid/scripts/graph/build-table-src.mjs
+48ab23ea28b619b894d5594ba8e1d4b329a2726e7d331db63f31f4227a41a3fd *profiles/copilot-cli/.github/aid/scripts/graph/coverage-predicate.mjs
+c2fb3e54849d2c01d7037ab4618d4731f47e6ef3c465d2083905960f6480df65 *profiles/copilot-cli/.github/aid/scripts/graph/derive-edges.sh
+aa0016f6f624d6f9f432af877789c28295eb7f6aa2d581169680879f5f28790d *profiles/copilot-cli/.github/aid/scripts/graph/detect-kb-gaps.mjs
+762945d41b28275ddb0230ba364adc18c8eb801b8ee48da869aefd25648dad2f *profiles/copilot-cli/.github/aid/scripts/graph/grade-graph.sh
+b8d24509bebe1cbb3e63b96457c2414591f93c3603be182f535543dc85e1f0fd *profiles/copilot-cli/.github/aid/scripts/graph/graph-preflight.sh
+289b9617ee372ab10e8f5d1dd77d441844e22d6656dd8b895dfd451c4906de47 *profiles/copilot-cli/.github/aid/scripts/graph/graph-stale-check.sh
+17291348f003db8cdae9c995240fac2fd46cbada0dd482c10a4861de33cc38b2 *profiles/copilot-cli/.github/aid/scripts/graph/harvest-declared.sh
+d4858921265ecb0b3c636cba5ba114df7aa64757e6d41a77d7d02e915a0c2156 *profiles/copilot-cli/.github/aid/scripts/graph/kb-write-fence.sh
+bf20e3528d3b295e416c9d3831f24b655eb10be4e1344873cafd1e24376378c5 *profiles/copilot-cli/.github/aid/scripts/graph/relationship-schema.sh
+700a80dd0904491a75295d794d68da58b73023d2922728c93d6020667a98acd7 *profiles/copilot-cli/.github/aid/scripts/graph/render-graph-view.sh
+67f623f9a085eb822f3c3712ddd0ae3dc58771d21d2dcfe352576476708a319d *profiles/copilot-cli/.github/aid/scripts/graph/render-table-view.sh
+5eb503bfdd5472152b9d7389b3d5d2dcaad171c69e93d85f05133d3df57fbb56 *profiles/copilot-cli/.github/aid/scripts/graph/report-endpoint-satisfiability.sh
+b78e45ec3d8affaf40a4bada0b52ac1400a8ab4d4b645e866e97409e099584de *profiles/copilot-cli/.github/aid/scripts/graph/scan-source.sh
+f59696ee6a4f80de675e791d0c5bfcd966255d35a45daa812dc78faec2ea59b7 *profiles/copilot-cli/.github/aid/scripts/graph/significance-rules.sh
+9e825c83c1e7275c4596ffc85ba611afc7d1e7f7678793aba4539f847fbf64cf *profiles/copilot-cli/.github/aid/scripts/graph/validate-relationships.sh
+c32beb3a1fa61669afa7ee17269ebf8e3645c701f5c62b14ddfa562102beee8c *profiles/copilot-cli/.github/aid/scripts/graph/vendor-provisioning.md
+4317500099dcff627c2ed2d4dd59ecaf78d1173a9536baa6a35330dd9d7b9a9f *profiles/copilot-cli/.github/aid/scripts/housekeep/branch-commit.sh
+de72b269db0ac7fd40113e0a4a736904b5475e2602b3922d425690cea09562af *profiles/copilot-cli/.github/aid/scripts/housekeep/cleanup-classify.sh
+34efca63b146b2025d864172c0880123eee18e0b6e9a5ba0b754b652c7fe6a98 *profiles/copilot-cli/.github/aid/scripts/housekeep/housekeep-state.sh
+f44f23bf2b364fd4e601bec21ce518cbfe71dd43d328d6469f6a3520d1b5addd *profiles/copilot-cli/.github/aid/scripts/kb/build-kb-index.sh
+2ded57247fc87a37294a9e6ecc291bc3fb19d523db33fca13f1dc05939f4e25e *profiles/copilot-cli/.github/aid/scripts/kb/build-metrics.sh
+1f8c5b6a1b6e31db4eb044eeb7d8c1247116eec02a7e23ced4e4313c722eba1d *profiles/copilot-cli/.github/aid/scripts/kb/build-project-index.sh
+f519298ae9df7a2d0d7131c1f70b30ef7b01011566cf03cc3b1975eee98e2eb2 *profiles/copilot-cli/.github/aid/scripts/kb/closure-check.sh
+cde35cae105e2d195d107336314f344ffad01aa0cffc35633862101119f871ec *profiles/copilot-cli/.github/aid/scripts/kb/coined-term-denylist.txt
+ed1a1dce6fc24ae3f24a541936c7133efb88bfe19d125a38cb900cc1b4163340 *profiles/copilot-cli/.github/aid/scripts/kb/discover-preflight.sh
+42bc5cdb775d0c31513bd79a27912caddcbcd309d5fd3fb9817702539fdeec60 *profiles/copilot-cli/.github/aid/scripts/kb/harvest-coined-terms.sh
+63a7534a1252982753cf2d698fc5e3af63e1f2c79f905200a97da3d377cd56d5 *profiles/copilot-cli/.github/aid/scripts/kb/kb-actback-task.sh
+98e427f0b769c374ec008c242167ba07a3bec61fae081de447062b48285efa4f *profiles/copilot-cli/.github/aid/scripts/kb/kb-citation-lint.sh
+546c21baf89cda6f84de44f6f727bcafd9cb6d438a36c6f0495e0f48697bc6c0 *profiles/copilot-cli/.github/aid/scripts/kb/kb-dual-intent-probes.sh
+f9adcc7c6dc14648df4a13c1b51a497896779f21aa7ce73929b1f6891f5331de *profiles/copilot-cli/.github/aid/scripts/kb/kb-freshness-check.sh
+3c23e5a272320b0f75a52667b4526f5166555ddd207c43b8fc4416e51537ad3e *profiles/copilot-cli/.github/aid/scripts/kb/kb-teachback-questions.sh
+defef4aa83dab1da773850358fce0340ef461db86511ad4230c1e1a19100341d *profiles/copilot-cli/.github/aid/scripts/kb/lint-frontmatter.sh
+73cf153c549fe7f7e56d199d408e002ef5929b87b0b181068608cb03b3c3090b *profiles/copilot-cli/.github/aid/scripts/kb/recon-classify.sh
+d371b67980d3e59577b6a757040aa0fbc46cf4cdc870945c2c653de059a5a9bd *profiles/copilot-cli/.github/aid/scripts/migrate/migrate-kb-frontmatter.sh
+f74d98d633602378e22f840da8ad9868ddcb1a64595afdf85ca46ccebd7c201b *profiles/copilot-cli/.github/aid/scripts/migrate/migrate-work-hierarchy.ps1
+258d2d97fa4f05c03c493dbe331799501b8bf707f8eec67e0b1f6f405a9b6bdb *profiles/copilot-cli/.github/aid/scripts/migrate/migrate-work-hierarchy.sh
+a3beb2692af72470624eae046afe941c5636e42344f27c71267732a7d082e199 *profiles/copilot-cli/.github/aid/scripts/release/check-version-sync.sh
+8e331e683afbb10e31f908095c1ded778167871b230e5345c0269cf98a79cc10 *profiles/copilot-cli/.github/aid/scripts/summarize/assemble-3part.ps1
+f1636405ad7f7419217b41924ab72e3e98a0140aa54d78b5e9d5f34c4f6406cc *profiles/copilot-cli/.github/aid/scripts/summarize/assemble-3part.sh
+ddcb0ec5a1cdb852770953bce3600f053af32602bc9d39da483985b204dcd9b9 *profiles/copilot-cli/.github/aid/scripts/summarize/assemble.sh
+2e3769f10a7b1f30a84836eb64ff06f50dd5bc28b71129bc3e91423bee6bcee1 *profiles/copilot-cli/.github/aid/scripts/summarize/build-md-export.sh
+7a4df020009b858ca0f8229ed0e79f00e2557b5e97f801ac82ba0169b62593ea *profiles/copilot-cli/.github/aid/scripts/summarize/contrast-check.mjs
+8ccdda947d2fb701c495aecc0bc99f13544e9c2ed231461636db0d9509098d99 *profiles/copilot-cli/.github/aid/scripts/summarize/grade-summary.sh
+6e4df9cafb9f3fc54032e8a21b55dcc5bee74d910b409f974d51372f84ae2d8d *profiles/copilot-cli/.github/aid/scripts/summarize/manual-checklist.sh
+8186ccc1254a64013d9cab7687ef01014f38690650cf15edeb22e76aa7659bc7 *profiles/copilot-cli/.github/aid/scripts/summarize/playwright-provisioning.md
+6c978b869ba3f264c6fbc9ae45e33e9148a5b02f00bf63cf23e954b81cf122e1 *profiles/copilot-cli/.github/aid/scripts/summarize/spot-check-facts.sh
+ae03cd8d77b6163e5d107c8eeadfc0eaf4c6cea2db43f2f576f3c9b8180e6e04 *profiles/copilot-cli/.github/aid/scripts/summarize/stale-check.sh
+a5d7327e33bc58c7f73fadde63e75de7a8857373e928c03d23990cba20106e28 *profiles/copilot-cli/.github/aid/scripts/summarize/summarize-preflight.sh
+a64f5a35ea85687495b32bcd612f2cb3706095e22a8842c37600b5171fd1442b *profiles/copilot-cli/.github/aid/scripts/summarize/validate-diagram-content.mjs
+cb9ceb065fd42d6c3f6de816844a42d402c211e7a9e39569057292cf8e67782d *profiles/copilot-cli/.github/aid/scripts/summarize/validate-html-output.sh
+c4e6d87e6d60fdc82300f953f602d30188230ebffee45c0152b4bbabb2fa464c *profiles/copilot-cli/.github/aid/scripts/summarize/validate-visuals.mjs
+f28a7741468f990effa3d1736426200c242ad2526c21d5d33d38c192d548ff0a *profiles/copilot-cli/.github/aid/scripts/summarize/writeback-state.sh
+256b18145d15003a840b1ba7e473c2b693748ac060416cefa16d998a0b77767b *profiles/copilot-cli/.github/aid/scripts/works/enumerate-works.sh
+7a1d7c4018d4e4770424a0bd2d348a84a991cc3b0b072aeddd2991deaf255644 *profiles/copilot-cli/.github/aid/scripts/works/worktree-lifecycle.sh
+46778b137957b4b8c2cf77aa544a25f29be529141f8adc669889a67a8fadc9f1 *profiles/copilot-cli/.github/aid/templates/agent-boilerplate.md
+9b70a5dd616c4ead142343f1e01db788889b7223d352b51afc26115ff010a77e *profiles/copilot-cli/.github/aid/templates/agent-dispatch-tiering.md
+06c31771901327ba0272fdc46cf1b0b5e5b444c9e1615ce7e8754e2e533caec5 *profiles/copilot-cli/.github/aid/templates/connectors/consumption-protocol.md
+b80bac04e86cc642e63e733c7ad338a93bdd4e61a9ffa346f9818ca54b72c038 *profiles/copilot-cli/.github/aid/templates/connectors/preset-catalog.md
+fd2d729bfa2135552f4545960847e0eaf11bdc35783fa037f754f2af7f48cd7b *profiles/copilot-cli/.github/aid/templates/connectors/reconcile.md
+491fa3b52c06fb332545fb92e27e042eddc5748b8d249884c6e2b9704879932a *profiles/copilot-cli/.github/aid/templates/connectors/ticket-resolution.md
+ab1776254484d2534cc667ad6dfa44a5abd349238a6455f425e4e23930fd7a5c *profiles/copilot-cli/.github/aid/templates/delivery-blueprint-template.md
+a6bbbd06ecfee954f2855ae7d88f53371720c19983a03cea11c88f2db6657762 *profiles/copilot-cli/.github/aid/templates/delivery-issues.md
+f89f292c1ae7550cdd40d49cc1ff5677b6f48fc7eefb226bb5eda7ef8941c063 *profiles/copilot-cli/.github/aid/templates/delivery-plans/flattened-plan-template.md
+12c9e04352cd6df9e6e355ab412933af60ed006b1043707c93a7a34891ca86f1 *profiles/copilot-cli/.github/aid/templates/delivery-plans/task-template.md
+1eee8bf3a943a1d63c1a3bbe9c2d3818241de46aaea7e031c0d6344e35de4406 *profiles/copilot-cli/.github/aid/templates/delivery-state-template.md
+bc4c3b1bf96e2a91d21a9612d38dc726ab3f4a744830621beb148f62a013c40e *profiles/copilot-cli/.github/aid/templates/discovery-state-template.md
+00d41e656caf552cdca99dca3c4cc45e74e4bb876e84a2c6ac0bbb543dff72ca *profiles/copilot-cli/.github/aid/templates/dispatch-protocol-checklist.md
+a1575f8a962a7e5886f7d38001479555c8ea88e431098c92e54ff6357c1bdcee *profiles/copilot-cli/.github/aid/templates/downstream-worktree-entry.md
+ce60dfa9e5c6e9595ae289efb2128953f5d8bf34f8d53f3505fb77077e0bb8c3 *profiles/copilot-cli/.github/aid/templates/feature-inventory.md
+f2431502406233a2f9f083346f9a06fc2b5c5d289f6f61c951099af505f731c7 *profiles/copilot-cli/.github/aid/templates/feature.md
+79b88f114c2ad3e1b30cb84699049c1a4fdb968e14f52fec37ed721417a22b26 *profiles/copilot-cli/.github/aid/templates/feedback-artifacts/IMPEDIMENT.md
+7f9d6192c93f4c20cbef7f0e66ad61cbe13d5c96e9e528d4c5339541f103fb7a *profiles/copilot-cli/.github/aid/templates/generated-files.txt
+969bcdf7625dc7f898d2dea9759861f60b3ddec931f0efa5a499bb8f2d459569 *profiles/copilot-cli/.github/aid/templates/grading-rubric.md
+46e12a44e9f2256b4996502e9efc72d8c2e94bf1409b75750823c530cdf34c2d *profiles/copilot-cli/.github/aid/templates/graph/coverage-bearing.yml
+911342cefc0a7ddd8f86257a2465842c030a0d41c294743b5526f63c5a50f39c *profiles/copilot-cli/.github/aid/templates/graph/edge-relation-map.yml
+370101aa17403830d5c365c542387b48f82fe1a8c87e68904bd748f3f94c78da *profiles/copilot-cli/.github/aid/templates/graph/relation-vocabulary.yml
+4d71bdf8305cf525683c9ecaeb436bb38aedfa952afefc52118b0e9ff96cce21 *profiles/copilot-cli/.github/aid/templates/graph/relationship-schema.yml
+702bcebfadddd395b2ef989c25329d73217ca255054fb035d7c8058f9653c64b *profiles/copilot-cli/.github/aid/templates/graph/scale-ceiling.yml
+c1f33c7b6ff0571c0f685f067ce87398a2f780104ab8d909757dce8632534874 *profiles/copilot-cli/.github/aid/templates/kb-authoring/concern-model.md
+2e164c1083746ccbdad588887464ca9e7d661f1d2c47d6a9ef66ce75939ac894 *profiles/copilot-cli/.github/aid/templates/kb-authoring/domain-doc-matrix.md
+e289e4ed590af80ae2eba39a02399804a65dea6e4cfae412a0fe5ef84a1f9455 *profiles/copilot-cli/.github/aid/templates/kb-authoring/frontmatter-schema.md
+470684411f53909947eaf97953cac507231b1ff2d058e59f99244cce73d08574 *profiles/copilot-cli/.github/aid/templates/kb-authoring/principles.md
+391fee4d3975e8a44f8d71b8185e746cf2f5ae1061bcb04c3224dae65a6ec0a5 *profiles/copilot-cli/.github/aid/templates/kb-authoring/review-rubric.md
+b2b5d79b12cbde3d49e24bee4de5b0e380dc3a4b4a1154a5a91386d9a86a77bc *profiles/copilot-cli/.github/aid/templates/kb-authoring/tier-model.md
+1d7bd1774c6da4cf46f85b331991b8d615a11b8a02937c80403c387640373db4 *profiles/copilot-cli/.github/aid/templates/knowledge-base/architecture.md
+1411bd12c88e6b840178e1d77f3eb5707c102987533b6291a4563f5be434b8ed *profiles/copilot-cli/.github/aid/templates/knowledge-base/coding-standards.md
+f7ee90bece63b57dc0b4b57c9d7a806f4a69fdadc65cc1be7b366ce60ebaaa14 *profiles/copilot-cli/.github/aid/templates/knowledge-base/domain-glossary.md
+a1ce46eef33b3547085eaad19a41057c060b6a3780f1c716dd4ea1f80b4e1df0 *profiles/copilot-cli/.github/aid/templates/knowledge-base/external-sources.md
+47c8ea78247e101643395ad5f6bb68affbe857c66f6fa56c02cd121d774488d7 *profiles/copilot-cli/.github/aid/templates/knowledge-base/feature-inventory.md
+3bf6acdedecea4973a897eb7b1fa4ddfb9b50cdb57a3c1a8fa36831f1dd8c366 *profiles/copilot-cli/.github/aid/templates/knowledge-base/infrastructure.md
+280fc99681a80475e8e4e350bda99289e89c02dd28c0334060814615c881eabb *profiles/copilot-cli/.github/aid/templates/knowledge-base/integration-map.md
+86d82acf2500a2f20b8228e9a1c76649cb0fef4396ae9a8d625923b1872488a3 *profiles/copilot-cli/.github/aid/templates/knowledge-base/module-map.md
+f4bc0f1e54615f8f0fc189dd6658c8827f96158ed6aa7efca8675dbfb6d91a23 *profiles/copilot-cli/.github/aid/templates/knowledge-base/pipeline-contracts.md
+02b1d55dbef31af30c518a1df343d200935c3ebe0dcd33dd3ee4b43cec2a5171 *profiles/copilot-cli/.github/aid/templates/knowledge-base/project-structure.md
+bfcb3f1764fa01dd5581cc5f0e2d11e3afafb0519eca289b4fec1dda43666934 *profiles/copilot-cli/.github/aid/templates/knowledge-base/schemas.md
+e970f9fd67fab44235e8da364803985c3b700f99367ecdf748f55d7b97ed3e58 *profiles/copilot-cli/.github/aid/templates/knowledge-base/tech-debt.md
+25469309bf7129a65477732a9dbdb3e6c26ab3099a46e49837fc88fe918cdc91 *profiles/copilot-cli/.github/aid/templates/knowledge-base/technology-stack.md
+d094d84e5475d3cf100e360a5fb9fd30bbd2e55ecee078c6bee55c31c470ae32 *profiles/copilot-cli/.github/aid/templates/knowledge-base/test-landscape.md
+8f2b7d5b579ba85d7fc7fa75ec7eced3d9c16ea0d65cb3bcf80bf4e2acae6b05 *profiles/copilot-cli/.github/aid/templates/knowledge-graph/accessibility-checklist.md
+e73e9f7eb371b6da45bbe1a66438918eeb6199dd5722bf3157625a554077815b *profiles/copilot-cli/.github/aid/templates/knowledge-graph/graph-canvas.js
+000542a135d27899930b81c90d9525d9865221890811dcb9344d2e061c440230 *profiles/copilot-cli/.github/aid/templates/knowledge-graph/graph-controls.js
+7b33db2f797628dc68b5506e76ee717d39f162c0d6cf2af1771bbfd9366b8858 *profiles/copilot-cli/.github/aid/templates/knowledge-graph/graph-css.css
+1cb9f1b53408256739833dbf020535a51de7949c14257ddedee5be46b91b1405 *profiles/copilot-cli/.github/aid/templates/knowledge-graph/graph-model.js
+3bbc7283a5ce08e4c0678a1306c79259edf9f9632c670a365874aa4f778ea9a8 *profiles/copilot-cli/.github/aid/templates/knowledge-graph/graph-skeleton.html
+d8adc08c01af106fa5e73bc4e462f47f458607498e13a25e86063b006373a7ea *profiles/copilot-cli/.github/aid/templates/knowledge-graph/graph-table.js
+640775c1b2e67daa8b7b05be42a290d386b4ddff5550077ed0da6c7affd71419 *profiles/copilot-cli/.github/aid/templates/knowledge-graph/lens-presets.md
+b3e75b23476acffd00481a5c71e7d24c37d5270a3d8a145b087cfdee3434debc *profiles/copilot-cli/.github/aid/templates/knowledge-graph/table-view-shell.js
+397c760ffbe6b58d4ffd7c1f559cfc81ebc97b3bdf5c9de513d83e57ed52be69 *profiles/copilot-cli/.github/aid/templates/knowledge-graph/table-view-skeleton.html
+e008c5e25a6be382593089c29bfabbc553c6378eee02895aec46ce396cc404ee *profiles/copilot-cli/.github/aid/templates/knowledge-graph/vendor/d3-dispatch/LICENSE
+94b3bbdb6b98dc1325a15762b051013e8253999b0e0436b27d1da17b952ba0af *profiles/copilot-cli/.github/aid/templates/knowledge-graph/vendor/d3-dispatch/d3-dispatch.min.js
+e008c5e25a6be382593089c29bfabbc553c6378eee02895aec46ce396cc404ee *profiles/copilot-cli/.github/aid/templates/knowledge-graph/vendor/d3-force/LICENSE
+1e07b473241328795d5ea9ad479a7bbabd765012fa2ef95633c83b69868dff6b *profiles/copilot-cli/.github/aid/templates/knowledge-graph/vendor/d3-force/d3-force.min.js
+e008c5e25a6be382593089c29bfabbc553c6378eee02895aec46ce396cc404ee *profiles/copilot-cli/.github/aid/templates/knowledge-graph/vendor/d3-quadtree/LICENSE
+57e2ad12824ed82893ba447523f2a2fb9beeb9222aafb2c778a9f5b313348b0e *profiles/copilot-cli/.github/aid/templates/knowledge-graph/vendor/d3-quadtree/d3-quadtree.min.js
+e008c5e25a6be382593089c29bfabbc553c6378eee02895aec46ce396cc404ee *profiles/copilot-cli/.github/aid/templates/knowledge-graph/vendor/d3-timer/LICENSE
+911ceda305f014b6b53ca68d5c896a9a387da120cfd56a421a2c60cca2fc9b36 *profiles/copilot-cli/.github/aid/templates/knowledge-graph/vendor/d3-timer/d3-timer.min.js
+5ce7447bc57f7349ffc48338782fbcabe613696e00712b20d66bc58e780f9473 *profiles/copilot-cli/.github/aid/templates/knowledge-graph/vendor/pixi.js/LICENSE
+83b2d7edf27bb77460f5f5f5e25cd73c91b77a53f44c80ac63096d6c0b5cfda7 *profiles/copilot-cli/.github/aid/templates/knowledge-graph/vendor/pixi.js/pixi.min.js
+5e6b3519955c8f111ec9bf6eeb5d2155a925545f5b813201a0345ba938cd26f3 *profiles/copilot-cli/.github/aid/templates/knowledge-summary/accessibility-checklist.md
+3423b7e9760c234e4301d56b86fec65fbc6bb9d3acae7d37a228fe3827436ff6 *profiles/copilot-cli/.github/aid/templates/knowledge-summary/authored-visual-catalog.md
+3cf652f600d0ddbe4e1e202230462cf1cb072dbed7914cd4f80704be7b9faf32 *profiles/copilot-cli/.github/aid/templates/knowledge-summary/component-css.css
+b5c9542d0b59e355cf2e102f10b8edf8599f5cef3086565cc0fb2f4d1d8d1b49 *profiles/copilot-cli/.github/aid/templates/knowledge-summary/design-tokens.md
+066f892ae4c5b62cad5aca4744ebfc8efab5e4bace6153e8f57e626f54ad2137 *profiles/copilot-cli/.github/aid/templates/knowledge-summary/grading-rubric.md
+c6d9f73297b2ee3192d37c94c0e7a0125659fc3ca357cfb71c72ee7f2100d205 *profiles/copilot-cli/.github/aid/templates/knowledge-summary/html-skeleton.html
+118528f25b356c2521973c21d25504c8611148c29adeffa37fb5d7b90f2007aa *profiles/copilot-cli/.github/aid/templates/knowledge-summary/lightbox.js
+60e8f05ccf2d78d5ca032b0455ffae535917f796dec50b5642e208ff52c36212 *profiles/copilot-cli/.github/aid/templates/knowledge-summary/prompt.md
+db2c7cc1dffa0fa6a41bb8dec6a107ba02cf600846341e66db9c9f1ff8976fbb *profiles/copilot-cli/.github/aid/templates/knowledge-summary/section-templates/agentic-pipeline.md
+82507f55f8e7f182b83fcbc118ea2ed2e04ddd08373e645b8e365fcd851ab8a3 *profiles/copilot-cli/.github/aid/templates/knowledge-summary/section-templates/auto-detect.md
+9a3026c915d3b1276a45522edcb694b83b432b8dfba1bfd13c7e729c86f157b4 *profiles/copilot-cli/.github/aid/templates/knowledge-summary/section-templates/bespoke-components.md
+2c66a2374c19287103abee055824fb14f1dfa6339a9ac315cc4033a265c92d32 *profiles/copilot-cli/.github/aid/templates/knowledge-summary/section-templates/cli.md
+995648a39abee9f257aeec1649354cf35c7a9e3d713d5fac8398737335fdc96f *profiles/copilot-cli/.github/aid/templates/knowledge-summary/section-templates/data-pipeline.md
+98ba377a481cdbc0c3050f7e4f817dd2fd8296242cd42b7c02003a9b88059f7c *profiles/copilot-cli/.github/aid/templates/knowledge-summary/section-templates/library.md
+277199e1d6d4097729792e80ff9c89a7a0f132115e185aa7b03259e927a11ef2 *profiles/copilot-cli/.github/aid/templates/knowledge-summary/section-templates/microservices.md
+d510be318d32e40307d31b0f06c75dc56835d915ef2cd985d45cf52cc9eb3bb6 *profiles/copilot-cli/.github/aid/templates/knowledge-summary/section-templates/web-app.md
+25e4e508e41508cb825126c2c2e73dc90d886c52abacacf55932bbafc13c520f *profiles/copilot-cli/.github/aid/templates/known-issues.md
+0f727b1273f307baa02ae8f93f75472c666afabf97b5d1c9c41bf40ce6f4b7f2 *profiles/copilot-cli/.github/aid/templates/long-wait-protocol.md
+d8bbbe4e1daa2cc548d3c0c544525ad3a7f827e568b94a3f815798973ce63044 *profiles/copilot-cli/.github/aid/templates/package.md
+cf78c05319ac958ade4cb707971bcae72168d37f2d30cd9a181215b65b63ab68 *profiles/copilot-cli/.github/aid/templates/requirements.md
+d2a8bc3ff89d929f0bb3b21485d7fac51143e7fd452f2ff7604d9928f79be959 *profiles/copilot-cli/.github/aid/templates/requirements/requirements-template.md
+dfea1607099e0455401e7d54ab320311b089fee0b4af038765f356bd20c7913c *profiles/copilot-cli/.github/aid/templates/reviewer-dispatch.md
+55b2b870f60aaab8f5311166bbcaa68812911d7886038595e212150a8692e03d *profiles/copilot-cli/.github/aid/templates/reviewer-ledger-schema.md
+5bb11ab80c2facbfd390376816280db8e65abe895a29c4a28b14fb967a8fb629 *profiles/copilot-cli/.github/aid/templates/rough-time-hints.md
+84a4bed374301ba632de1621c5b19c9e0723a9f18194a4dc11c55b84aa398420 *profiles/copilot-cli/.github/aid/templates/self-review-protocol.md
+969d6229ef135a7432f82dde1fa3cad5a1f45cc13d021209734bc20e4e7dc396 *profiles/copilot-cli/.github/aid/templates/settings.yml
+d1de6ae5fb7be7b8dbd911714014dc0d049e9559a62c539da633a4b8cbf30c09 *profiles/copilot-cli/.github/aid/templates/shortcut-catalog.yml
+3b9de2a03812880d6027a716222579ce80a290d066e84cb91024c14762e8a286 *profiles/copilot-cli/.github/aid/templates/shortcut-engine.md
+f73ede45fb8bdb5b468758716c873baf55e5601e4e1e68015dd21a9bdd7bc31c *profiles/copilot-cli/.github/aid/templates/shortcut-scaffolding/analyze-report.md
+a407be792f522a2a178308465a55a616b9cd1ee202fa95cf86b1e1414492e73e *profiles/copilot-cli/.github/aid/templates/shortcut-scaffolding/change-refactor.md
+35295a58d94fb4980dd1152d256239fa94ec33ac9c1e7aba071ef20107b4d60c *profiles/copilot-cli/.github/aid/templates/shortcut-scaffolding/create.md
+5d5b28f0ac04efc91127038462e9c858c08235bb89cdd43332802f25153bf1cd *profiles/copilot-cli/.github/aid/templates/shortcut-scaffolding/document.md
+73efe86ad1b41855dd5704d3dc73aac65e533af8e80b0f5136bff664af46e9f1 *profiles/copilot-cli/.github/aid/templates/shortcut-scaffolding/fix.md
+2b88816e0c5771ca47ef9fe65a2fa7e4beb1d7777cc0a29ff80e666ffe87b0d5 *profiles/copilot-cli/.github/aid/templates/shortcut-scaffolding/prototype.md
+181ce8ec71bcdb86fbb72866d0cc6b0b2e8b332e4b4ff6b47da0cc36d63e63c0 *profiles/copilot-cli/.github/aid/templates/shortcut-scaffolding/test-experiment.md
+9ec4147ce689065ad89e008344ae85a8c9996ddd8e1ddd146fe1752a28e48e95 *profiles/copilot-cli/.github/aid/templates/specs/spec-template.md
+5be5402a681feb3aec61d9680323cb2ec60f9404cef30ed33af4d90fcbd8a5da *profiles/copilot-cli/.github/aid/templates/state-machine-chaining.md
+0eb0bf8e84cd8f12e24a4fddedee7a8f5b846420cd0de23ca4d0f42b5dca4e06 *profiles/copilot-cli/.github/aid/templates/subagent-heartbeat-protocol.md
+794e173cc7ef471afffaae0f6995496b53b3c5f4850789972fa4c79333a7839c *profiles/copilot-cli/.github/aid/templates/task-detail-template.md
+a230743d16f72a37a71151a789392acb73c48c912bbef6ed1d927a45032591d3 *profiles/copilot-cli/.github/aid/templates/task-state-template.md
+05620e96a5250238094df770bc2a5fad09ad125ab63c7ecebf74d57976ba24dd *profiles/copilot-cli/.github/aid/templates/work-initiation-gate.md
+13aef5d83aeefd1f20faa8becaf00fae51307f368d0d1814c2a46ea7a9721f45 *profiles/copilot-cli/.github/aid/templates/work-state-template.md
+ffc3d911691b85d54d1b90ade357eedce6092d1caa9806ccc91ff49bdb59d8e1 *profiles/copilot-cli/.github/aid/templates/worktree-lifecycle.md
+accbb03fbd5808332abb4aafc759d9df70a7b12b4defc48d750b3446a31d3834 *profiles/copilot-cli/.github/skills/aid-ask/SKILL.md
+8dc883b40ffdcb17602d7fa957adf3f9ecad391b5e1c2ec67d9a0d707de663e8 *profiles/copilot-cli/.github/skills/aid-config/SKILL.md
+8a70212c2afa6e5403dd31118c05d28ebb12f088392f8419c13809152672ffda *profiles/copilot-cli/.github/skills/aid-create-api/SKILL.md
+625a29ece13a91a3f2e6d433c2ce9e7fb3c9a22c7aba6b9bfecdd6a50bbd495a *profiles/copilot-cli/.github/skills/aid-create-cli/SKILL.md
+67ebb3ead188579daa679e6f5053ce988a4a109b0ec6d0fddc99b7ef96915e51 *profiles/copilot-cli/.github/skills/aid-create-config/SKILL.md
+1ac6cd24a739e46f26d31ac578ba6460481325e29b7ff5c0c996ba3ef26624a3 *profiles/copilot-cli/.github/skills/aid-create-dashboard/SKILL.md
+fc682371a8ca0a345ce052dd27dfbcf4e23629ee809237731613a69699edeefa *profiles/copilot-cli/.github/skills/aid-create-data-model/SKILL.md
+07b7415a668aee2001af6609ae69e3a439da1157ca9bde863047277a9d9d5e5f *profiles/copilot-cli/.github/skills/aid-create-data-pipeline/SKILL.md
+e12d8c5b24dd0b605c9e5cd22dd311004e27f5c5dd8bf1be378f9a5dd96fe0d5 *profiles/copilot-cli/.github/skills/aid-create-diagram/SKILL.md
+4340ff623b6c8bf8c6f0961fe4ff6f41326d65c21b72112b0220bcdb57a02c4a *profiles/copilot-cli/.github/skills/aid-create-document/SKILL.md
+671df978e3f94fb76f1f43307f5f29cdae2e330ef3ebb56d8333a9d43241e726 *profiles/copilot-cli/.github/skills/aid-create-infra/SKILL.md
+e6c393818d8a30875cceff52c9eeda860d9d8fd343518c253ac417e16b5511d9 *profiles/copilot-cli/.github/skills/aid-create-integration/SKILL.md
+a657094c9ad56cb396f467e85f6f452b96dceacad02dc74c416683496c2fd558 *profiles/copilot-cli/.github/skills/aid-create-job/SKILL.md
+1fe0bb8aa48f1a9eb54bd92af2859f4bd58892370b00440ab2d117ae1bd19083 *profiles/copilot-cli/.github/skills/aid-create-messaging/SKILL.md
+970cf26f691def66d729b57532ce8054a4ddb1d67cf39eaf92e5be3922a471dc *profiles/copilot-cli/.github/skills/aid-create-test/SKILL.md
+12ec114a5237a340de5dec1f41aaf83df090a970a23abf944b6dff327d24c4f2 *profiles/copilot-cli/.github/skills/aid-create-theme/SKILL.md
+5fd321ad2a1483af3ddee6082a74be01b8cfe6583cd7729c492e2534a2db39f1 *profiles/copilot-cli/.github/skills/aid-create-ticket/SKILL.md
+32c353ed15b5f59b3635a9be155053861a358b7a10b55e21d78f162acdcf9c18 *profiles/copilot-cli/.github/skills/aid-create-ui/SKILL.md
+c2ecd930d655bcebad70ab99a266b158ecb7870baee9f18f78198465e704f655 *profiles/copilot-cli/.github/skills/aid-create/SKILL.md
+2e04d7c907586e0d6c0df25e36e8266b1dabf0f7870df51b1ed0db4d79adfd76 *profiles/copilot-cli/.github/skills/aid-define/SKILL.md
+ade1df63cedede8bcc22e50b78351e22e70694c8f23f3b6d5ac5a562633e0d76 *profiles/copilot-cli/.github/skills/aid-define/references/cross-reference.md
+bd195cfa54094429f576247f8ca22889dc5a668026d9f9cab1ea3aff2a3ddea4 *profiles/copilot-cli/.github/skills/aid-define/references/feature-decomposition.md
+57987ccb2aa2da0cf3f34978d5d08a4f60a83d03819ddbf4aa75c78d374f1fc2 *profiles/copilot-cli/.github/skills/aid-define/references/reviewer-brief.md
+d8a1c9a3ac326dfd99abad1bea1fe7fc6326dcaaab1e5e85e75dc4fddcb37814 *profiles/copilot-cli/.github/skills/aid-define/references/state-cross-reference.md
+a112e57f832bbd571f1153b926b0c8e9109b29ec981a44eb5a8be6359bf0cfee *profiles/copilot-cli/.github/skills/aid-define/references/state-done.md
+ec65dbf88725fc27ddf1eabf74dc81406b4203aa24c444c65fbfd8b2dd183c29 *profiles/copilot-cli/.github/skills/aid-define/references/state-feature-decomposition.md
+6ab90005146c6676de2de430590d00cab3f31679f83d294dcd7785758677b3f7 *profiles/copilot-cli/.github/skills/aid-deploy/SKILL.md
+56344b0e31c4fd44d4b6bd4df3490542fda2d44131746f66698809facf9b6ce7 *profiles/copilot-cli/.github/skills/aid-deploy/references/state-done.md
+f28c3b338727a6afcd06237080f42c2ed81f09b876e34fd8291b613c9c4af853 *profiles/copilot-cli/.github/skills/aid-deploy/references/state-idle.md
+81328a5856e9a6d1a584ba3c2a0f7109e358c7405193a33d5839856c16411dae *profiles/copilot-cli/.github/skills/aid-deploy/references/state-packaging.md
+b91e34e8f93c64227c66c28b52997bb94178abfe48b581d62ede9d52e765b3b0 *profiles/copilot-cli/.github/skills/aid-deploy/references/state-re-run.md
+2716f610b6a3a900152953b32a16798d51c52a4446c5cbe11e0280a6f3239a1e *profiles/copilot-cli/.github/skills/aid-deploy/references/state-selecting.md
+5dc305f21a1043bc6afddf93b76195eba1fc230d09de137d7c2e954c377976a1 *profiles/copilot-cli/.github/skills/aid-deploy/references/state-verifying.md
+441415a508a4f7342b03c5822d90740f003c76af5e559e85320dfd25deaa6fbe *profiles/copilot-cli/.github/skills/aid-deprecate/SKILL.md
+3220927c6b530110b1bde93416bb52c1de9b15deb685098e7ff4dca5353dc3a5 *profiles/copilot-cli/.github/skills/aid-describe/SKILL.md
+aca9c2b5cd196a3b5063ac31793874ecb35c32e26bfa25a42481d8e10a0eab0b *profiles/copilot-cli/.github/skills/aid-describe/references/advisor-stance.md
+168748c7627a67e786bf9ca831ba46e06638ddb9207ccd6aa2f121325b2bfe7d *profiles/copilot-cli/.github/skills/aid-describe/references/calibration.md
+9e2df226112bea1c0acfa65bc9fb1152d64fa30f8058f0432c1ba35e4e5e888b *profiles/copilot-cli/.github/skills/aid-describe/references/coherence-check.md
+e55bda2564315a08bec5e279f5ca418a9346f8182cb6cd7b036014150f62704e *profiles/copilot-cli/.github/skills/aid-describe/references/elicitation-engine.md
+d1c6e3d8c501d0f81ddc9d89d6cf4e5be67377c33a22de5dc7ccefc5ba920a92 *profiles/copilot-cli/.github/skills/aid-describe/references/interview-loop.md
+599de7b672a69a1f74f25da1aefa7f973a8c861f6bba1af8bc402949fa9698fe *profiles/copilot-cli/.github/skills/aid-describe/references/interview-strategies.md
+181909489299b720ec4f4d6c2883b39f04b8d6bd1902efd7968bf1415a29abbb *profiles/copilot-cli/.github/skills/aid-describe/references/kb-hydration.md
+cf2a0c329b6d41183ab84d2e000ab512237970c015b3fbd12fe279c9af174b9e *profiles/copilot-cli/.github/skills/aid-describe/references/move-playbook.md
+f90942c2c00b681daac0dc6715e5406b0381f68d3cf303675f5e96ce303c0b13 *profiles/copilot-cli/.github/skills/aid-describe/references/state-completion.md
+beb01664d66f1b5710213effb8ad80047598c5a1d17edfd416856027d9aae863 *profiles/copilot-cli/.github/skills/aid-describe/references/state-continue.md
+76917fdf3c9fff49cb3a87c2e4b6fd775361e08f74456a44eab58e27f45c0767 *profiles/copilot-cli/.github/skills/aid-describe/references/state-describe-seed.md
+f50845261051462300a1d253979251b113ff2134c6f2d2fb51f8b644c21b6305 *profiles/copilot-cli/.github/skills/aid-describe/references/state-first-run.md
+d6fbf9bab6af2d88ae9369243544a12bd69fdfdd6c5cc013635c860974bb6751 *profiles/copilot-cli/.github/skills/aid-describe/references/state-q-and-a.md
+7909d611a31d0d01eafbeddee758171bbb19bdfa9679cb9c87c26313ac6d4135 *profiles/copilot-cli/.github/skills/aid-design/SKILL.md
+165857a8ae772e543e00cb4425692c549e9690fe50a0b14fd6a005e227e77bd3 *profiles/copilot-cli/.github/skills/aid-detail/SKILL.md
+a14c3031e4c6f97833fdd58cce02325e1b1e579e639e5ef7def94ac47d71bc03 *profiles/copilot-cli/.github/skills/aid-detail/references/execution-graph-generation.md
+c7820b8ca59c1c86b5c14d07763f4cb3e2932240d26030c37f05db6fe8640261 *profiles/copilot-cli/.github/skills/aid-detail/references/first-run.md
+86396ec84465ab671e0f5cd9a54ebc45626f6f3625b19e40cf8d8adeab8135d9 *profiles/copilot-cli/.github/skills/aid-detail/references/review.md
+61e83b4f2f6bc4ffbac5ddfa4691383175034f2bb567b0cb974883c36f4beb03 *profiles/copilot-cli/.github/skills/aid-detail/references/reviewer-brief.md
+c4fb5a887ff554b453420c203d4fda7f0056fe638c6d47b1f79031cd3912b49d *profiles/copilot-cli/.github/skills/aid-detail/references/task-decomposition.md
+b08dba2059d48281c886b2b7617370652d188965dffe53fe278e1b9f4da0bcf8 *profiles/copilot-cli/.github/skills/aid-discover/SKILL.md
+d7c65b59b72394754bd9f088e4885d53a6ebecc86511b91a90979284e54f5152 *profiles/copilot-cli/.github/skills/aid-discover/references/agent-prompts.md
+81210166d3f9421a526f350813dd069b086e44ee04a7c680c41fbcb8c1d0d153 *profiles/copilot-cli/.github/skills/aid-discover/references/doc-set-resolve.md
+734b970831b62adf82116eea105a2022fb6b128f957a630d7e277e4c708d6fa5 *profiles/copilot-cli/.github/skills/aid-discover/references/document-expectations.md
+e88099f0422cefb394fd0c8f11305e661d630be5fd7ba8841f4a82d4ae9ea687 *profiles/copilot-cli/.github/skills/aid-discover/references/path-config.md
+4091cb8873e0fe4956867faf3ff35566c02893a7060cad4ffbbb4759c06c9184 *profiles/copilot-cli/.github/skills/aid-discover/references/reviewer-brief.md
+4f327d2831cdf7e929a2ef684e99c405286f5d7f6045d663fd93e0e404037037 *profiles/copilot-cli/.github/skills/aid-discover/references/reviewer-prompt-actback.md
+e01d846de93be3a04057f4f9fca53f805fc005a362d4bf540f688750c959ddc0 *profiles/copilot-cli/.github/skills/aid-discover/references/reviewer-prompt-anatomy.md
+b7b30a8d3a7a280a8f6a96cb7240303d2a86db87c72d5dae42cf3df52184489f *profiles/copilot-cli/.github/skills/aid-discover/references/reviewer-prompt-correctness.md
+0974db59b6b023a95feb1ca6ae52470b11e15f6a618b1d51ab859f22d7cf668b *profiles/copilot-cli/.github/skills/aid-discover/references/reviewer-prompt-teachback.md
+9fdac29d6928cec9d7217b89e1c1d088a07668bb56daaa5dff4b84e6e92d3649 *profiles/copilot-cli/.github/skills/aid-discover/references/reviewer-prompt.md
+f778d98b5651994c604d5f213955318c66d9807a103c5f33de8642d074957758 *profiles/copilot-cli/.github/skills/aid-discover/references/state-approval.md
+06ec7d676d7ae488c8d94c6bab657983509a6e8f618b1e638bcc5db762132127 *profiles/copilot-cli/.github/skills/aid-discover/references/state-closure.md
+fe50618f4add927f8287e80b7de92a3bd97d3f8ddd338ee81bc2e5bdcc8ed0a9 *profiles/copilot-cli/.github/skills/aid-discover/references/state-done.md
+1fef614ffe33eaaee7e82881d57136876a1a9d5c44fb919adb55174699fa1911 *profiles/copilot-cli/.github/skills/aid-discover/references/state-elicit.md
+8d39821541aa06aa7d45f1aa4de57b532b989ab0aeb96b2a972d80e4e846086f *profiles/copilot-cli/.github/skills/aid-discover/references/state-fix.md
+50f5e16e4e59861aa3cbfcc9005081cc5c976e1596e368086fb8722d2504f047 *profiles/copilot-cli/.github/skills/aid-discover/references/state-generate.md
+58ed65a218539355c26b4f3950f62f871b274212bb570cefb03f215a99d1d42e *profiles/copilot-cli/.github/skills/aid-discover/references/state-q-and-a.md
+7cd6b4207ced422912f585dd81f1ad3bf35db8f43d807c7058101ca8c3f31ba3 *profiles/copilot-cli/.github/skills/aid-discover/references/state-review.md
+39d8672a2ba19d6b17603304718d25771c16708704865afd326abf7d63ec6205 *profiles/copilot-cli/.github/skills/aid-document-architecture/SKILL.md
+add8b3a6ca644d4f909bcb5ddb15fa07ccb295a1287ccc75d93c033a951f101f *profiles/copilot-cli/.github/skills/aid-document-changelog/SKILL.md
+a98a0f4dea7e7a38a5b080076fd2eb3a3159fc1e03e4e9fe46fc981443ff4f1f *profiles/copilot-cli/.github/skills/aid-document-decision/SKILL.md
+660d29627348571ac9fa6a54934ec2fb4ae4616fd80ad5764f749f0257e581bd *profiles/copilot-cli/.github/skills/aid-document-guideline/SKILL.md
+8565a8b3b9830f1c2638232ccb0bcb538cbe2082ed8d0453265f5c78cd8d60f0 *profiles/copilot-cli/.github/skills/aid-document-runbook/SKILL.md
+e3171cf9f5323979233572094348ba01f81dbee664878c1bfbe32fecd86f1c77 *profiles/copilot-cli/.github/skills/aid-document-standard/SKILL.md
+ff268894583f3d1a79ae4862dc775589ba47466f1c2bd60ecb20c980abf10c7f *profiles/copilot-cli/.github/skills/aid-document-tutorial/SKILL.md
+eb4a1d80df01b3dea7e547b548ffab83e3087dd048c2219c9ce4e717b485a94b *profiles/copilot-cli/.github/skills/aid-document/SKILL.md
+ca0650882dd9e780f26451107fdf3b659dd3783265afa390e90144520f8df900 *profiles/copilot-cli/.github/skills/aid-execute/SKILL.md
+9c6cc521a3082caf4f876a747611b083f8e2a49d4af6cedfdc3cec5b9ecf705d *profiles/copilot-cli/.github/skills/aid-execute/references/reviewer-brief.md
+7827b5132ccf3a33d78a372e9a224773d7440cd6a176e6862abb77359a85510f *profiles/copilot-cli/.github/skills/aid-execute/references/reviewer-guide.md
+604caa1a6f2501664a1e9a56fbf69bedc8cf2ba485be63a783e4c8f5e5ef5a0b *profiles/copilot-cli/.github/skills/aid-execute/references/state-delivery-gate.md
+06f7a6936f37dd0f62bf5ded296ef406ce1d2bcd83c093dbf0d52e55b52eb9a3 *profiles/copilot-cli/.github/skills/aid-execute/references/state-execute-drilldown.md
+0cb4bb4025176f159af840150d180dbb298b4344fefe617a50579404853a5392 *profiles/copilot-cli/.github/skills/aid-execute/references/state-execute.md
+5ffa907686879677b16945f6ad9498372bbbc03966cab587ddf39040dca651c7 *profiles/copilot-cli/.github/skills/aid-execute/references/state-fix.md
+df3b77084446b3fadfc935dc4185b69949e690033566c0355691ffdedf931eda *profiles/copilot-cli/.github/skills/aid-execute/references/state-re-run.md
+28da9d54045aa744ad456efdb0ab56c7b329e16b2b2725cf6db66877f6a28bf4 *profiles/copilot-cli/.github/skills/aid-execute/references/state-review.md
+03de3b3b2c9c36d6e28732af4cddbf071bd83d973d78700617340bf768c0e033 *profiles/copilot-cli/.github/skills/aid-execute/references/task-type-rules.md
+569a6a87605dd303c2581a0251956029dd950cfeb4ce2d027cc7f220e244efb7 *profiles/copilot-cli/.github/skills/aid-experiment/SKILL.md
+50ee84f727ccdeb1404078273cfcd855b727b31f8a77ecd7876bffe3def44bbb *profiles/copilot-cli/.github/skills/aid-fix/SKILL.md
+fa0e2a8072ab1a76312e5f4828b56410c124cdbc10f82153ccdc0dc52691a669 *profiles/copilot-cli/.github/skills/aid-graph/SKILL.md
+c9237df19d0b4744137f3418f24773669ebbdc10944c6e8efd2a2d682f32ef95 *profiles/copilot-cli/.github/skills/aid-graph/references/agent-pass.md
+577f2ea866bad9092b57e0802c4c840b95faf26f82268c0c39c757f7777b25c4 *profiles/copilot-cli/.github/skills/aid-graph/references/state-done.md
+e1611e68e85f212957eb97f8fed50f797f3f27f621abdf452c7eb9fd24837c86 *profiles/copilot-cli/.github/skills/aid-graph/references/state-emit.md
+d59b3d3969f5f1960d2eb575b7f4b7b7bc24452be8f4142d447e9692533b6406 *profiles/copilot-cli/.github/skills/aid-graph/references/state-enumerate.md
+5ff9796782cb5ddf51e9884e3bf59da656a18c1fc061de30633033cde2cea8c9 *profiles/copilot-cli/.github/skills/aid-graph/references/state-extract.md
+1f1edbdec556f2c33fdef5c5767f5d51d6db081a0a2bac1318844c7c2da5f31c *profiles/copilot-cli/.github/skills/aid-graph/references/state-fix.md
+a61636581c14bbddb1713059f145ac6361b02c05d9d4ceb5d4c7dda082f84b9d *profiles/copilot-cli/.github/skills/aid-graph/references/state-gap-report.md
+378c9917bbbfc99cc6947d1cad749cc9a2ddd6ca95bcb9cf193153c0d79914cd *profiles/copilot-cli/.github/skills/aid-graph/references/state-preflight.md
+d9734eb3fcc1cb7e6935850abe570a22c7aa19e605bf87d978994bb3c8025e37 *profiles/copilot-cli/.github/skills/aid-graph/references/state-render.md
+403d15d0c063eeb00d4d783a861dbd9522bfd3003c82e911cb67b78047e16ba7 *profiles/copilot-cli/.github/skills/aid-graph/references/state-stale-check.md
+2f4c8534bdbc25403baf1435507941a188f530aeed9690dee95ab07b3bca082b *profiles/copilot-cli/.github/skills/aid-graph/references/state-validate.md
+77edbdc9d905a5f064a5e17745ec202f3806208a51f00891118192af89ca1beb *profiles/copilot-cli/.github/skills/aid-graph/references/state-visual-gate.md
+abaa09f2ea114692d5c1cf2ca9f2ac3636fd600dcdc15df71434860c382b5f20 *profiles/copilot-cli/.github/skills/aid-housekeep/SKILL.md
+299f294c4ea58ac6283be7468c2b9c487360df1cb72858c1f9e6f25fcf8bf7cb *profiles/copilot-cli/.github/skills/aid-housekeep/references/state-cleanup.md
+c824e8ab0080ad7725638f0bdee40e909048a38debe6a7ec9fab6338c8e89083 *profiles/copilot-cli/.github/skills/aid-housekeep/references/state-done.md
+ea5340b737310286fbb8d3199d74cc0809e1975d6014b6a54bfe49794ea2f166 *profiles/copilot-cli/.github/skills/aid-housekeep/references/state-kb-delta.md
+dac8ac8d2dad07431027f8d1f4cf814401c893cdfeda9ca8c47ef1402b66421a *profiles/copilot-cli/.github/skills/aid-housekeep/references/state-preflight.md
+157538b7489cdd39ba56e347936940e6a183a8a3b41c5afde62e39d4a8d53fda *profiles/copilot-cli/.github/skills/aid-housekeep/references/state-summary-delta.md
+0de73ce0c1c7cf97fbea86587de52bc44715e14f870655a3478121606bb0eaee *profiles/copilot-cli/.github/skills/aid-migrate/SKILL.md
+cacd558137bcaac3c56e55b5d09b58b874eec033bcf984e05dfbb56a178df477 *profiles/copilot-cli/.github/skills/aid-monitor/SKILL.md
+24de20a5da024dcef569946f6988403a6aed7306297cc1ce4a37f45a99f84078 *profiles/copilot-cli/.github/skills/aid-monitor/references/state-classify.md
+b8a1ab44efb92a026aefd42e68f5d97dec59fb429dc5768582353d5394dead70 *profiles/copilot-cli/.github/skills/aid-monitor/references/state-observe.md
+a5f7f0afc32a41ad25a295eae333f47dcce3af507dea4c7545847b39ecb1c7d3 *profiles/copilot-cli/.github/skills/aid-monitor/references/state-route.md
+a9533ff347eee2d4b646370e15529a77ad323050c00824202587db1595c41ed4 *profiles/copilot-cli/.github/skills/aid-plan/SKILL.md
+b8c1557304c27a8c06398ea77dc36b3b0078c8e2aee90e15fc41cc47e87ab47f *profiles/copilot-cli/.github/skills/aid-plan/references/first-run-loop.md
+ddafc61dc174235a3f478c5798289fb5af30244af600f954879da219184c581a *profiles/copilot-cli/.github/skills/aid-plan/references/review-deliverables.md
+f4db88629352a8f679946a6f4a9692ba98dc6e27996ca9d7023f679173afdec2 *profiles/copilot-cli/.github/skills/aid-plan/references/reviewer-brief.md
+be10b82beeba28ee53924370a11ae1b3e88293152657c167b19fbcda33e24eec *profiles/copilot-cli/.github/skills/aid-prototype-ui/SKILL.md
+2d3a24f31443ee64e1cc27ba71d1695c0785090aa3164bf341c7b4d8462409b8 *profiles/copilot-cli/.github/skills/aid-prototype/SKILL.md
+a6b54d4e669ce2742b45941b1fcd506fa7cea73ec11f6765d8a0007e4690078c *profiles/copilot-cli/.github/skills/aid-read-ticket/SKILL.md
+be7ef6bd598ad9e7a6e8832fe96cd51e5731053ae16ade3dee9fa0ad3dd8fdf3 *profiles/copilot-cli/.github/skills/aid-refactor/SKILL.md
+71906819e9ec65ceba57f6def4e618f5df3e18db0844c5d99a4e8ca497345d01 *profiles/copilot-cli/.github/skills/aid-remove/SKILL.md
+532dab44865d1e7ef6ce34e8d6dabeb31d368bb04fc35e2639085969e1111cf5 *profiles/copilot-cli/.github/skills/aid-report/SKILL.md
+77a634bd4a9a4c8ff65e813fdd58bb7a5afb7adf3dc4dd37259dfb2c429ed170 *profiles/copilot-cli/.github/skills/aid-research/SKILL.md
+37488ac684eded47a913324014210ae6655647add4132d85801f3f1362933750 *profiles/copilot-cli/.github/skills/aid-review/SKILL.md
+fd17795a13393c209b4f197719ed62a6c5c04a56b37a8c8b8978f1c4a3eb2954 *profiles/copilot-cli/.github/skills/aid-set-connector/SKILL.md
+b512d31eb977ecc1fb179f60e01ea37eca87d8bfa8aafe2b8175c196ff03eed8 *profiles/copilot-cli/.github/skills/aid-set-connector/references/question-sets.md
+e95d77ad3cba9258c95a89e9efd65587e0505859775609fe4e82af5e5f3547d9 *profiles/copilot-cli/.github/skills/aid-set-connector/references/secret-reconcile.md
+34402968f5782bbaf94325360a04810ac0962826d16c68318c1389ec13ee6b07 *profiles/copilot-cli/.github/skills/aid-specify/SKILL.md
+c8b1c116b82478be03869290f7860e0d5c2eaa1106e1d108264371dab877ad7e *profiles/copilot-cli/.github/skills/aid-specify/references/handling-outcomes.md
+551844a49ba6aa836c94886f8c36efcf4304e456fe5aa3bfc689f309cbb26831 *profiles/copilot-cli/.github/skills/aid-specify/references/known-issues-scope.md
+395535705cf82b23ebbdb9bc172ce1873ac8efbf800040ea12ad1d205d942a57 *profiles/copilot-cli/.github/skills/aid-specify/references/reviewer-brief.md
+3d3fb0d1159388d056a51786d52489a24908e3a8b8d507e6a5cf12000ef0319f *profiles/copilot-cli/.github/skills/aid-specify/references/state-blocked.md
+a9215070d0f979a47937ac7525e8c48347a90e6162b8b348e903cf96cf3a5a16 *profiles/copilot-cli/.github/skills/aid-specify/references/state-continue.md
+3f6f837c6037c713f4b4ba617e07116dceb14c306b9c7f143ea13a605295f2f4 *profiles/copilot-cli/.github/skills/aid-specify/references/state-done.md
+c0f8d4e69145bb1b6288947dfb01c0baad548bbb8b8eb55b78976054bc98b5f7 *profiles/copilot-cli/.github/skills/aid-specify/references/state-initialize.md
+95288690d0dbd18a42a7ca3c38669eba33f75debe105d7ebd06ef5ca2c00f391 *profiles/copilot-cli/.github/skills/aid-specify/references/state-review.md
+c2fb85b064aa8d463deae209ed3952ea05b9ee869b8bf922d700024c4c5fc715 *profiles/copilot-cli/.github/skills/aid-specify/references/state-spike.md
+be161a498ed06553cd415ab80de03589bc8d481de276bed2c059703775c14491 *profiles/copilot-cli/.github/skills/aid-summarize/SKILL.md
+f48d864000a10bf893335b1799af6139a1f7c1579493b9493198dd48c343b501 *profiles/copilot-cli/.github/skills/aid-summarize/references/state-approval.md
+61bc4adcb8a40df805c8e494c02030ccf23326eac9c4ca9d5b303686289bfa0a *profiles/copilot-cli/.github/skills/aid-summarize/references/state-done.md
+977d7314dc72e00ac746037416c1dd52323cd81ce223ec5298325716c684773e *profiles/copilot-cli/.github/skills/aid-summarize/references/state-fix.md
+ccb15659e8dfb301a3406b21085b5ed13b07b92f6d4505922e972a594cd40319 *profiles/copilot-cli/.github/skills/aid-summarize/references/state-generate.md
+40fbc16909962d3a68f25a67ba7cf814a56efc1cf2601129955cc54c43d64a13 *profiles/copilot-cli/.github/skills/aid-summarize/references/state-manual-checklist.md
+d6840dc6ae93b75ac84c5086fa2c40f236d2ec6d7baed758c8cd0948b8f4bfac *profiles/copilot-cli/.github/skills/aid-summarize/references/state-preflight.md
+17abe7779176f35cb2532a2eaaceaeeb5be7dd38e1fce32d4db402998404b767 *profiles/copilot-cli/.github/skills/aid-summarize/references/state-profile.md
+5b2d16a71fc89b0cf51e13aa5c08396cd125918e6ce0ec5c1356936ff051e24d *profiles/copilot-cli/.github/skills/aid-summarize/references/state-stale-check.md
+e86829f34dbe46746fa47028e8be4ca8043ea981664b468692cd5504b1f23bd2 *profiles/copilot-cli/.github/skills/aid-summarize/references/state-validate.md
+c91d7f7f9484fce429e4ab783c0b7775f188337d7760c9248653aa9b760e483f *profiles/copilot-cli/.github/skills/aid-summarize/references/state-writeback.md
+a4007ed7f0d0adac3623ad194c12a3b3d2b3503ec3004e063e22e97fd3ef4f12 *profiles/copilot-cli/.github/skills/aid-test-data-quality/SKILL.md
+a1dfc80a084fcb8704b2cd100e70ef73245124a016bdb266be9399a08ffba241 *profiles/copilot-cli/.github/skills/aid-test-performance/SKILL.md
+7e24b6986a012b4532f86346cffad658361b479de921ea22dee1422fbfba6982 *profiles/copilot-cli/.github/skills/aid-test-security/SKILL.md
+d6dd13a3248e0739f2d4331a0f3e226fdf83b0d861717b23c9faaf9f341b7aa9 *profiles/copilot-cli/.github/skills/aid-test/SKILL.md
+1ebe7a6f59d03f36f651bc1c12cef59c6f6e8844cd0accf31988258646dff938 *profiles/copilot-cli/.github/skills/aid-triage/SKILL.md
+45ce200e2f3c80ef8a15d1347ab18482bec3e842f13f09119da45277c51f4363 *profiles/copilot-cli/.github/skills/aid-triage/references/state-classify.md
+c10c5dd011574e6317eb9ce9934d1b25ad98f74f3ba87d8237ae9b22b17f0869 *profiles/copilot-cli/.github/skills/aid-triage/references/state-suggest.md
+bb9d26deab73e388ca86f0d3291a9e118c6c99440c40213e29257cc023a010e6 *profiles/copilot-cli/.github/skills/aid-unset-connector/SKILL.md
+573a4f8b48c9c34e55d68974724f8cb2e1da8ef2503b806c581172b5bea9e12f *profiles/copilot-cli/.github/skills/aid-update-api/SKILL.md
+07a75dd7ea3b732ba62e1e468f08434be66d139d335b4e999fbe7d48cb385a48 *profiles/copilot-cli/.github/skills/aid-update-cli/SKILL.md
+c62cca2593f0b14b38c771fb941e1ac111388250a4f5bfead5b50c48081c79d9 *profiles/copilot-cli/.github/skills/aid-update-config/SKILL.md
+0e71f62b08a840d993f90ce78a41407173cf2f2584024b57cd01eac198602c76 *profiles/copilot-cli/.github/skills/aid-update-dashboard/SKILL.md
+8286dd57ff36590fcf2949b39466fbe07247d66253c394f0822638cecdf9d74d *profiles/copilot-cli/.github/skills/aid-update-data-model/SKILL.md
+4918fdff1efff252de9c12ad5bcebf3cd62ca3fcdde5088589c7c81b48741043 *profiles/copilot-cli/.github/skills/aid-update-data-pipeline/SKILL.md
+97958941c7072a9a97db59f26b5f60d63553746aa2be69b4503a772b79813b13 *profiles/copilot-cli/.github/skills/aid-update-document/SKILL.md
+c5b3ed49debded92566273737aba8fcb4752b426b307668177a2f07d848ea706 *profiles/copilot-cli/.github/skills/aid-update-infra/SKILL.md
+06ed4f583a10bae85fdbb0d10be63e4083b746d7e8b343546982b50d8bf6209d *profiles/copilot-cli/.github/skills/aid-update-integration/SKILL.md
+a2e0d0e19dece57d8b3dd88f9537b5754e91822dfdee3c4cce5baeb533383935 *profiles/copilot-cli/.github/skills/aid-update-job/SKILL.md
+c4cd5d831e07e213aad64e76c253729160ddb7dba6648a0da1323dfa8d723e62 *profiles/copilot-cli/.github/skills/aid-update-kb/SKILL.md
+b60d62c3533619f1d52cf508aa9d97a1d3693cc1916bc41993345fce46ba86e1 *profiles/copilot-cli/.github/skills/aid-update-kb/references/state-analyze.md
+0d6ebc32619e9f0ff7cb3169d2b6b2e8c313c0b68f5c5d5fc62a0eaf24c02531 *profiles/copilot-cli/.github/skills/aid-update-kb/references/state-apply.md
+eef510664ae2973f446b4b6b80270308a88249d173d0a021240dd4819257d449 *profiles/copilot-cli/.github/skills/aid-update-kb/references/state-approval.md
+78219d9687b4b16093f4d5dd4206a6af63b2241c219369de4dd23d331baf5aeb *profiles/copilot-cli/.github/skills/aid-update-kb/references/state-confirm.md
+4e225461edcdcc8492fef9e3f5572b1a38220f9cfd6ae78f7f96d63e94256ec5 *profiles/copilot-cli/.github/skills/aid-update-kb/references/state-done.md
+eaa5f6db88b8a2c36e237734149ef18d293878b03f4568593a4b24b849cff4b0 *profiles/copilot-cli/.github/skills/aid-update-kb/references/state-review.md
+77c78e4a0543b8bee06b5771d218dfec5979049dd2e4a5eb3e8d376280030fc5 *profiles/copilot-cli/.github/skills/aid-update-kb/references/state-scope.md
+959f61b29538841cf5b89128964dfbf90694dfe62f6e36a03e9550d49e398495 *profiles/copilot-cli/.github/skills/aid-update-messaging/SKILL.md
+c53828691ff829cd6b2375bea74b5c6fb7463fdd32a4964ee67c801460c80509 *profiles/copilot-cli/.github/skills/aid-update-test/SKILL.md
+abb65a8a52d7502be53216c4fd9b8f717e929b7934559a87941ba2a35c559ccc *profiles/copilot-cli/.github/skills/aid-update-theme/SKILL.md
+4cd3dd2fb9363e7ec3dc7d8f479b274cf67952fe6f69cd664344c28b6ef50248 *profiles/copilot-cli/.github/skills/aid-update-ticket/SKILL.md
+6ffb23c277e74bce9f99a7f5d53ea991ab52a3f002b5a01b492964b97b66be86 *profiles/copilot-cli/.github/skills/aid-update-ui/SKILL.md
+c28c61dfac1cca2d2902a872115cd99f26fd177dd3bb031cdcb2b2127d304216 *profiles/copilot-cli/.github/skills/aid-update/SKILL.md
+de40d5bbdf99f972f53dee902aa8e97dfdb48166bbfa0e40119a42ed315965d2 *profiles/copilot-cli/AGENTS.md
+679670607241d9c1a00f3c707ba5c340639750bfc3851cb0e51a4535b8b0aae8 *profiles/copilot-cli/README.md
+db574649b75ae566ec48ed3a389b309b49c170312ded050baafa92831dd15754 *profiles/copilot-cli/emission-manifest.jsonl
+c87b61e95ff1de7e05067d8f73163db47e4131232b148c66304e9138b87e1b6d *profiles/cursor.toml
+cd9992f5ca2604cae3c643821aab753aff81c3bd827be3dccea0f4dbf6f2ae67 *profiles/cursor/.cursor/agents/aid-architect.md
+ad916af464f63907a32970c0327946e7efa33f4d2c97505222a2a0a1bd0d963d *profiles/cursor/.cursor/agents/aid-clerk.md
+a61f86b7f58f787014506bbe732c7498e99946d9439325be94a0d5801fbc0eb7 *profiles/cursor/.cursor/agents/aid-developer.md
+b6e10041abeb61502565fe700abca655077c52923cac228230f4b4ce2bc42287 *profiles/cursor/.cursor/agents/aid-interviewer.md
+7adcc2805d42ecde636d435042473f03d1c020abf1201b9332714fd50112f0d8 *profiles/cursor/.cursor/agents/aid-operator.md
+77cb74744186aa61376ae901dd07bcef28a490bce7a8f8a656867d17232e4e2c *profiles/cursor/.cursor/agents/aid-orchestrator.md
+d18fe14a3f24fbeccb52f8b200c45eadcd78ae860b1adfe71e9e993929035a20 *profiles/cursor/.cursor/agents/aid-researcher.md
+8e33463371afe97ee41b170fc264faa2c637ba977adc2a7125f619491b6573ef *profiles/cursor/.cursor/agents/aid-reviewer.md
+b37384f9bd9fd533db024be00dabaaa7db15edf1b313330518e719c6e4447ff7 *profiles/cursor/.cursor/agents/aid-tech-writer.md
+b8519db9d466949e7162584866a20818148af78205f1ce14d28c19178e011fba *profiles/cursor/.cursor/aid/scripts/config/read-setting.sh
+5f1c2060c42217d7da1f7b1e52286e1f75732554866ce1a1191ec0177572a7e9 *profiles/cursor/.cursor/aid/scripts/connectors/build-connectors-index.ps1
+297e2406c97c6d86bb6384c961899773cda97d5fab08c3485f63bbda9f5fce0c *profiles/cursor/.cursor/aid/scripts/connectors/build-connectors-index.sh
+6a8feb93e1fc5bd2aac5dfc2e32c67966c962fc1874e8abb93acfdcf27bd95fe *profiles/cursor/.cursor/aid/scripts/connectors/connector-registry.ps1
+ab83b69202d7c7686e0ab42aa965bdafdf679a286df9425424977d34c0c3135f *profiles/cursor/.cursor/aid/scripts/connectors/connector-registry.sh
+e28788564730d3c6b5970e639debef112b3622034ba1c3499c9f801104ddb3ef *profiles/cursor/.cursor/aid/scripts/connectors/connector-secret.ps1
+e9dda644f7d8ec238dd4b53492f1d6dd33154d4373537f4473988c178afca86a *profiles/cursor/.cursor/aid/scripts/connectors/connector-secret.sh
+4387e45dc85935478466f24321c8c68f86e5cc7f19a4191cddc143f36a6f9fff *profiles/cursor/.cursor/aid/scripts/connectors/write-connector.sh
+c906f9b512c6fecf6635254ea1f199479da2582d5b8a44c24101b1008da3583c *profiles/cursor/.cursor/aid/scripts/execute/complexity-score.sh
+eea2a8d8dd12d5e118ea97664fb874343b738a650c984c866363e6adab5bde05 *profiles/cursor/.cursor/aid/scripts/execute/compute-block-radius.sh
+4adc99a9d9aff96d5a3c418fb461af28167f48cfada8a1d2ed88b17454fb17fc *profiles/cursor/.cursor/aid/scripts/execute/write-control-signal.sh
+eb451853f845ecb5f042bb42ae87748d5dc021047260783ae64c79e2eee9b03e *profiles/cursor/.cursor/aid/scripts/execute/writeback-state.sh
+478103d69baa1eb0f080538923ebe4a583629cbce540d04c567f15b4c76350f3 *profiles/cursor/.cursor/aid/scripts/grade.sh
+9cf3286222f78b5a6f3d7e24dba7b8acab9502bd6b3d166b26ae87465454572a *profiles/cursor/.cursor/aid/scripts/graph/assemble-coverage-notes.sh
+8078c17e52233502c0b4fe88e1ae7604c270dc9467235a2177a4cb439a987aa7 *profiles/cursor/.cursor/aid/scripts/graph/build-graph-src.mjs
+c48ab165b8edf9c67b2d4df10127e75a3a4f3204a9522c039a14470ef6455f4d *profiles/cursor/.cursor/aid/scripts/graph/build-relationships.sh
+c6954c1659a69e35c7323c0d1719630ffaaeb4fe9bb027e95dc9a78433b9d685 *profiles/cursor/.cursor/aid/scripts/graph/build-table-src.mjs
+48ab23ea28b619b894d5594ba8e1d4b329a2726e7d331db63f31f4227a41a3fd *profiles/cursor/.cursor/aid/scripts/graph/coverage-predicate.mjs
+c2fb3e54849d2c01d7037ab4618d4731f47e6ef3c465d2083905960f6480df65 *profiles/cursor/.cursor/aid/scripts/graph/derive-edges.sh
+aa0016f6f624d6f9f432af877789c28295eb7f6aa2d581169680879f5f28790d *profiles/cursor/.cursor/aid/scripts/graph/detect-kb-gaps.mjs
+762945d41b28275ddb0230ba364adc18c8eb801b8ee48da869aefd25648dad2f *profiles/cursor/.cursor/aid/scripts/graph/grade-graph.sh
+b8d24509bebe1cbb3e63b96457c2414591f93c3603be182f535543dc85e1f0fd *profiles/cursor/.cursor/aid/scripts/graph/graph-preflight.sh
+289b9617ee372ab10e8f5d1dd77d441844e22d6656dd8b895dfd451c4906de47 *profiles/cursor/.cursor/aid/scripts/graph/graph-stale-check.sh
+17291348f003db8cdae9c995240fac2fd46cbada0dd482c10a4861de33cc38b2 *profiles/cursor/.cursor/aid/scripts/graph/harvest-declared.sh
+d4858921265ecb0b3c636cba5ba114df7aa64757e6d41a77d7d02e915a0c2156 *profiles/cursor/.cursor/aid/scripts/graph/kb-write-fence.sh
+bf20e3528d3b295e416c9d3831f24b655eb10be4e1344873cafd1e24376378c5 *profiles/cursor/.cursor/aid/scripts/graph/relationship-schema.sh
+fe9ce4b226c7ba40831e652c3a10be99e7585d2f2cca1aec4dfc0ee605ceac61 *profiles/cursor/.cursor/aid/scripts/graph/render-graph-view.sh
+480b854282eba4127383af61ca22355d4e8e79b35591093c243184eff5c4a0c8 *profiles/cursor/.cursor/aid/scripts/graph/render-table-view.sh
+5eb503bfdd5472152b9d7389b3d5d2dcaad171c69e93d85f05133d3df57fbb56 *profiles/cursor/.cursor/aid/scripts/graph/report-endpoint-satisfiability.sh
+392c4bd199c92f156ef1de5d88bbf954d24c84551058af516d0888b59663460c *profiles/cursor/.cursor/aid/scripts/graph/scan-source.sh
+40613f18282bf5b714e791d63247980d84d61d90d24fdb9a0c1ff889003de867 *profiles/cursor/.cursor/aid/scripts/graph/significance-rules.sh
+9e825c83c1e7275c4596ffc85ba611afc7d1e7f7678793aba4539f847fbf64cf *profiles/cursor/.cursor/aid/scripts/graph/validate-relationships.sh
+cd1e1ddb7a37d1dfa069b892d5f3eae94dcca48f2302269a58008eed76f0934d *profiles/cursor/.cursor/aid/scripts/graph/vendor-provisioning.md
+4317500099dcff627c2ed2d4dd59ecaf78d1173a9536baa6a35330dd9d7b9a9f *profiles/cursor/.cursor/aid/scripts/housekeep/branch-commit.sh
+76d9c8fae2b76d0f28af49d00ca2d4305921c12a76fda862db011cb8f6051261 *profiles/cursor/.cursor/aid/scripts/housekeep/cleanup-classify.sh
+34efca63b146b2025d864172c0880123eee18e0b6e9a5ba0b754b652c7fe6a98 *profiles/cursor/.cursor/aid/scripts/housekeep/housekeep-state.sh
+359f83a4061118d64a079a08d47d74c5d52a1d51f978aee36c56eaf547316456 *profiles/cursor/.cursor/aid/scripts/kb/build-kb-index.sh
+f0b750e67ac6faa05119c903801f8e51aace182937c6d8757e7ad5f448aa902a *profiles/cursor/.cursor/aid/scripts/kb/build-metrics.sh
+daec38dd5ac1edebb4c0c855c445dea4911be5191e9be0949c14fbb19f603630 *profiles/cursor/.cursor/aid/scripts/kb/build-project-index.sh
+f5eb8fd9b5f8797d6ca06bcec56795cd4eabf71dfb1f748aaeabd66d54ad9250 *profiles/cursor/.cursor/aid/scripts/kb/closure-check.sh
+cde35cae105e2d195d107336314f344ffad01aa0cffc35633862101119f871ec *profiles/cursor/.cursor/aid/scripts/kb/coined-term-denylist.txt
+ed1a1dce6fc24ae3f24a541936c7133efb88bfe19d125a38cb900cc1b4163340 *profiles/cursor/.cursor/aid/scripts/kb/discover-preflight.sh
+d5ea7c587886439fcb7fded2ec461ff0546ca664122725dfd81f5f13b8aa8e1b *profiles/cursor/.cursor/aid/scripts/kb/harvest-coined-terms.sh
+63a7534a1252982753cf2d698fc5e3af63e1f2c79f905200a97da3d377cd56d5 *profiles/cursor/.cursor/aid/scripts/kb/kb-actback-task.sh
+98e427f0b769c374ec008c242167ba07a3bec61fae081de447062b48285efa4f *profiles/cursor/.cursor/aid/scripts/kb/kb-citation-lint.sh
+546c21baf89cda6f84de44f6f727bcafd9cb6d438a36c6f0495e0f48697bc6c0 *profiles/cursor/.cursor/aid/scripts/kb/kb-dual-intent-probes.sh
+f9adcc7c6dc14648df4a13c1b51a497896779f21aa7ce73929b1f6891f5331de *profiles/cursor/.cursor/aid/scripts/kb/kb-freshness-check.sh
+3c23e5a272320b0f75a52667b4526f5166555ddd207c43b8fc4416e51537ad3e *profiles/cursor/.cursor/aid/scripts/kb/kb-teachback-questions.sh
+defef4aa83dab1da773850358fce0340ef461db86511ad4230c1e1a19100341d *profiles/cursor/.cursor/aid/scripts/kb/lint-frontmatter.sh
+73cf153c549fe7f7e56d199d408e002ef5929b87b0b181068608cb03b3c3090b *profiles/cursor/.cursor/aid/scripts/kb/recon-classify.sh
+d371b67980d3e59577b6a757040aa0fbc46cf4cdc870945c2c653de059a5a9bd *profiles/cursor/.cursor/aid/scripts/migrate/migrate-kb-frontmatter.sh
+f74d98d633602378e22f840da8ad9868ddcb1a64595afdf85ca46ccebd7c201b *profiles/cursor/.cursor/aid/scripts/migrate/migrate-work-hierarchy.ps1
+258d2d97fa4f05c03c493dbe331799501b8bf707f8eec67e0b1f6f405a9b6bdb *profiles/cursor/.cursor/aid/scripts/migrate/migrate-work-hierarchy.sh
+a3beb2692af72470624eae046afe941c5636e42344f27c71267732a7d082e199 *profiles/cursor/.cursor/aid/scripts/release/check-version-sync.sh
+8e331e683afbb10e31f908095c1ded778167871b230e5345c0269cf98a79cc10 *profiles/cursor/.cursor/aid/scripts/summarize/assemble-3part.ps1
+f1636405ad7f7419217b41924ab72e3e98a0140aa54d78b5e9d5f34c4f6406cc *profiles/cursor/.cursor/aid/scripts/summarize/assemble-3part.sh
+ddcb0ec5a1cdb852770953bce3600f053af32602bc9d39da483985b204dcd9b9 *profiles/cursor/.cursor/aid/scripts/summarize/assemble.sh
+2e3769f10a7b1f30a84836eb64ff06f50dd5bc28b71129bc3e91423bee6bcee1 *profiles/cursor/.cursor/aid/scripts/summarize/build-md-export.sh
+7a4df020009b858ca0f8229ed0e79f00e2557b5e97f801ac82ba0169b62593ea *profiles/cursor/.cursor/aid/scripts/summarize/contrast-check.mjs
+cedbf97bd2b749d1bd2ef5748cc5c05ce8234585b72ff6ef65e7709c5e2a97b2 *profiles/cursor/.cursor/aid/scripts/summarize/grade-summary.sh
+6e4df9cafb9f3fc54032e8a21b55dcc5bee74d910b409f974d51372f84ae2d8d *profiles/cursor/.cursor/aid/scripts/summarize/manual-checklist.sh
+122d1e47ab1eade2ee4167a64b8e3503dbb322fc100297aa5a846b3e97a7fe7a *profiles/cursor/.cursor/aid/scripts/summarize/playwright-provisioning.md
+6c978b869ba3f264c6fbc9ae45e33e9148a5b02f00bf63cf23e954b81cf122e1 *profiles/cursor/.cursor/aid/scripts/summarize/spot-check-facts.sh
+ae03cd8d77b6163e5d107c8eeadfc0eaf4c6cea2db43f2f576f3c9b8180e6e04 *profiles/cursor/.cursor/aid/scripts/summarize/stale-check.sh
+a5d7327e33bc58c7f73fadde63e75de7a8857373e928c03d23990cba20106e28 *profiles/cursor/.cursor/aid/scripts/summarize/summarize-preflight.sh
+a64f5a35ea85687495b32bcd612f2cb3706095e22a8842c37600b5171fd1442b *profiles/cursor/.cursor/aid/scripts/summarize/validate-diagram-content.mjs
+cb9ceb065fd42d6c3f6de816844a42d402c211e7a9e39569057292cf8e67782d *profiles/cursor/.cursor/aid/scripts/summarize/validate-html-output.sh
+593292c8ed4d5b6f2664c1a4b154035a42fdf5dc87e9b00854801111bb478769 *profiles/cursor/.cursor/aid/scripts/summarize/validate-visuals.mjs
+f28a7741468f990effa3d1736426200c242ad2526c21d5d33d38c192d548ff0a *profiles/cursor/.cursor/aid/scripts/summarize/writeback-state.sh
+256b18145d15003a840b1ba7e473c2b693748ac060416cefa16d998a0b77767b *profiles/cursor/.cursor/aid/scripts/works/enumerate-works.sh
+1d65c114c74ea73aa4d5b6fcf7ac853168994590467576ab55480c9d4e767a1e *profiles/cursor/.cursor/aid/scripts/works/worktree-lifecycle.sh
+2c02cf94f7a52ad397ade7ab01ff448316731ee68d3577f22d4f21eec0aa31d5 *profiles/cursor/.cursor/aid/templates/agent-boilerplate.md
+af60bee6347d7983a87ff985a607edef24aaf2cd55374524be4d182a11ccaca0 *profiles/cursor/.cursor/aid/templates/agent-dispatch-tiering.md
+06c31771901327ba0272fdc46cf1b0b5e5b444c9e1615ce7e8754e2e533caec5 *profiles/cursor/.cursor/aid/templates/connectors/consumption-protocol.md
+b80bac04e86cc642e63e733c7ad338a93bdd4e61a9ffa346f9818ca54b72c038 *profiles/cursor/.cursor/aid/templates/connectors/preset-catalog.md
+2cc814b620e73ee339bb19efba81ffb8a2332e2f5ae16ebd698562537299c120 *profiles/cursor/.cursor/aid/templates/connectors/reconcile.md
+a5be2770d3f79ff56120d179397806d2f3fe61e02c4cdf9e5d68064c83e8b659 *profiles/cursor/.cursor/aid/templates/connectors/ticket-resolution.md
+ab1776254484d2534cc667ad6dfa44a5abd349238a6455f425e4e23930fd7a5c *profiles/cursor/.cursor/aid/templates/delivery-blueprint-template.md
+6924dccf6c5a8c8f0caaa9e54b92745a18220904c07b846b457a506e7a0058dd *profiles/cursor/.cursor/aid/templates/delivery-issues.md
+f89f292c1ae7550cdd40d49cc1ff5677b6f48fc7eefb226bb5eda7ef8941c063 *profiles/cursor/.cursor/aid/templates/delivery-plans/flattened-plan-template.md
+12c9e04352cd6df9e6e355ab412933af60ed006b1043707c93a7a34891ca86f1 *profiles/cursor/.cursor/aid/templates/delivery-plans/task-template.md
+9fa47fce6d4a639c0a88416dd55587f3dd05a998ddcdc1315bf3ff19e865e5ee *profiles/cursor/.cursor/aid/templates/delivery-state-template.md
+eb4420b89e73d9ef31f0806393393e3cf52b042a99d4287248ec96daf1cf9586 *profiles/cursor/.cursor/aid/templates/discovery-state-template.md
+901bee904b169329796a5ae3cf5fa5dc968f789a247c541b942287b2ccb41ceb *profiles/cursor/.cursor/aid/templates/dispatch-protocol-checklist.md
+76685381614c7375ae6142dc798d98514c04f78b5d62d814d85289b1863af1eb *profiles/cursor/.cursor/aid/templates/downstream-worktree-entry.md
+ce60dfa9e5c6e9595ae289efb2128953f5d8bf34f8d53f3505fb77077e0bb8c3 *profiles/cursor/.cursor/aid/templates/feature-inventory.md
+f2431502406233a2f9f083346f9a06fc2b5c5d289f6f61c951099af505f731c7 *profiles/cursor/.cursor/aid/templates/feature.md
+79b88f114c2ad3e1b30cb84699049c1a4fdb968e14f52fec37ed721417a22b26 *profiles/cursor/.cursor/aid/templates/feedback-artifacts/IMPEDIMENT.md
+5376d6cc7398d4d2c9b27f5dfb598e9f8a03c9995cdbe2d75e77b77d469448fd *profiles/cursor/.cursor/aid/templates/generated-files.txt
+cab1d1d3715f903a3deac9bca5751e5d6d03df66e9682b6e58ab6233ae34742d *profiles/cursor/.cursor/aid/templates/grading-rubric.md
+46e12a44e9f2256b4996502e9efc72d8c2e94bf1409b75750823c530cdf34c2d *profiles/cursor/.cursor/aid/templates/graph/coverage-bearing.yml
+911342cefc0a7ddd8f86257a2465842c030a0d41c294743b5526f63c5a50f39c *profiles/cursor/.cursor/aid/templates/graph/edge-relation-map.yml
+370101aa17403830d5c365c542387b48f82fe1a8c87e68904bd748f3f94c78da *profiles/cursor/.cursor/aid/templates/graph/relation-vocabulary.yml
+4d71bdf8305cf525683c9ecaeb436bb38aedfa952afefc52118b0e9ff96cce21 *profiles/cursor/.cursor/aid/templates/graph/relationship-schema.yml
+702bcebfadddd395b2ef989c25329d73217ca255054fb035d7c8058f9653c64b *profiles/cursor/.cursor/aid/templates/graph/scale-ceiling.yml
+52028b65ba0620ff22f943cbfad1c42c6ea80475e76f4d570025a9dd715db21e *profiles/cursor/.cursor/aid/templates/kb-authoring/concern-model.md
+4cc3430e29bbea9140c942df3e4e4661677d00467e8356bf27b50bb2a218bfc7 *profiles/cursor/.cursor/aid/templates/kb-authoring/domain-doc-matrix.md
+966096bc7f5464f16997f4bc5234561fe217f2a8c7aab052bf12530ff4f6c87e *profiles/cursor/.cursor/aid/templates/kb-authoring/frontmatter-schema.md
+70b2b484898758d7b023756fce07420fab6101f7c3943999554cc4a923d889e6 *profiles/cursor/.cursor/aid/templates/kb-authoring/principles.md
+5d4887bdca750e2b8ed8d835681e7fece4ec9e93eb1db57d1c4e6c5c662efbe2 *profiles/cursor/.cursor/aid/templates/kb-authoring/review-rubric.md
+a636a706f4e431471a5b8d1fb45ca582c4a47cfe543dbef99111eaa57d9c300a *profiles/cursor/.cursor/aid/templates/kb-authoring/tier-model.md
+1d7bd1774c6da4cf46f85b331991b8d615a11b8a02937c80403c387640373db4 *profiles/cursor/.cursor/aid/templates/knowledge-base/architecture.md
+1411bd12c88e6b840178e1d77f3eb5707c102987533b6291a4563f5be434b8ed *profiles/cursor/.cursor/aid/templates/knowledge-base/coding-standards.md
+f7ee90bece63b57dc0b4b57c9d7a806f4a69fdadc65cc1be7b366ce60ebaaa14 *profiles/cursor/.cursor/aid/templates/knowledge-base/domain-glossary.md
+a1ce46eef33b3547085eaad19a41057c060b6a3780f1c716dd4ea1f80b4e1df0 *profiles/cursor/.cursor/aid/templates/knowledge-base/external-sources.md
+47c8ea78247e101643395ad5f6bb68affbe857c66f6fa56c02cd121d774488d7 *profiles/cursor/.cursor/aid/templates/knowledge-base/feature-inventory.md
+3bf6acdedecea4973a897eb7b1fa4ddfb9b50cdb57a3c1a8fa36831f1dd8c366 *profiles/cursor/.cursor/aid/templates/knowledge-base/infrastructure.md
+280fc99681a80475e8e4e350bda99289e89c02dd28c0334060814615c881eabb *profiles/cursor/.cursor/aid/templates/knowledge-base/integration-map.md
+86d82acf2500a2f20b8228e9a1c76649cb0fef4396ae9a8d625923b1872488a3 *profiles/cursor/.cursor/aid/templates/knowledge-base/module-map.md
+f4bc0f1e54615f8f0fc189dd6658c8827f96158ed6aa7efca8675dbfb6d91a23 *profiles/cursor/.cursor/aid/templates/knowledge-base/pipeline-contracts.md
+02b1d55dbef31af30c518a1df343d200935c3ebe0dcd33dd3ee4b43cec2a5171 *profiles/cursor/.cursor/aid/templates/knowledge-base/project-structure.md
+bfcb3f1764fa01dd5581cc5f0e2d11e3afafb0519eca289b4fec1dda43666934 *profiles/cursor/.cursor/aid/templates/knowledge-base/schemas.md
+e970f9fd67fab44235e8da364803985c3b700f99367ecdf748f55d7b97ed3e58 *profiles/cursor/.cursor/aid/templates/knowledge-base/tech-debt.md
+25469309bf7129a65477732a9dbdb3e6c26ab3099a46e49837fc88fe918cdc91 *profiles/cursor/.cursor/aid/templates/knowledge-base/technology-stack.md
+d094d84e5475d3cf100e360a5fb9fd30bbd2e55ecee078c6bee55c31c470ae32 *profiles/cursor/.cursor/aid/templates/knowledge-base/test-landscape.md
+8f2b7d5b579ba85d7fc7fa75ec7eced3d9c16ea0d65cb3bcf80bf4e2acae6b05 *profiles/cursor/.cursor/aid/templates/knowledge-graph/accessibility-checklist.md
+e73e9f7eb371b6da45bbe1a66438918eeb6199dd5722bf3157625a554077815b *profiles/cursor/.cursor/aid/templates/knowledge-graph/graph-canvas.js
+000542a135d27899930b81c90d9525d9865221890811dcb9344d2e061c440230 *profiles/cursor/.cursor/aid/templates/knowledge-graph/graph-controls.js
+7b33db2f797628dc68b5506e76ee717d39f162c0d6cf2af1771bbfd9366b8858 *profiles/cursor/.cursor/aid/templates/knowledge-graph/graph-css.css
+1cb9f1b53408256739833dbf020535a51de7949c14257ddedee5be46b91b1405 *profiles/cursor/.cursor/aid/templates/knowledge-graph/graph-model.js
+3bbc7283a5ce08e4c0678a1306c79259edf9f9632c670a365874aa4f778ea9a8 *profiles/cursor/.cursor/aid/templates/knowledge-graph/graph-skeleton.html
+d8adc08c01af106fa5e73bc4e462f47f458607498e13a25e86063b006373a7ea *profiles/cursor/.cursor/aid/templates/knowledge-graph/graph-table.js
+640775c1b2e67daa8b7b05be42a290d386b4ddff5550077ed0da6c7affd71419 *profiles/cursor/.cursor/aid/templates/knowledge-graph/lens-presets.md
+b3e75b23476acffd00481a5c71e7d24c37d5270a3d8a145b087cfdee3434debc *profiles/cursor/.cursor/aid/templates/knowledge-graph/table-view-shell.js
+397c760ffbe6b58d4ffd7c1f559cfc81ebc97b3bdf5c9de513d83e57ed52be69 *profiles/cursor/.cursor/aid/templates/knowledge-graph/table-view-skeleton.html
+e008c5e25a6be382593089c29bfabbc553c6378eee02895aec46ce396cc404ee *profiles/cursor/.cursor/aid/templates/knowledge-graph/vendor/d3-dispatch/LICENSE
+94b3bbdb6b98dc1325a15762b051013e8253999b0e0436b27d1da17b952ba0af *profiles/cursor/.cursor/aid/templates/knowledge-graph/vendor/d3-dispatch/d3-dispatch.min.js
+e008c5e25a6be382593089c29bfabbc553c6378eee02895aec46ce396cc404ee *profiles/cursor/.cursor/aid/templates/knowledge-graph/vendor/d3-force/LICENSE
+1e07b473241328795d5ea9ad479a7bbabd765012fa2ef95633c83b69868dff6b *profiles/cursor/.cursor/aid/templates/knowledge-graph/vendor/d3-force/d3-force.min.js
+e008c5e25a6be382593089c29bfabbc553c6378eee02895aec46ce396cc404ee *profiles/cursor/.cursor/aid/templates/knowledge-graph/vendor/d3-quadtree/LICENSE
+57e2ad12824ed82893ba447523f2a2fb9beeb9222aafb2c778a9f5b313348b0e *profiles/cursor/.cursor/aid/templates/knowledge-graph/vendor/d3-quadtree/d3-quadtree.min.js
+e008c5e25a6be382593089c29bfabbc553c6378eee02895aec46ce396cc404ee *profiles/cursor/.cursor/aid/templates/knowledge-graph/vendor/d3-timer/LICENSE
+911ceda305f014b6b53ca68d5c896a9a387da120cfd56a421a2c60cca2fc9b36 *profiles/cursor/.cursor/aid/templates/knowledge-graph/vendor/d3-timer/d3-timer.min.js
+5ce7447bc57f7349ffc48338782fbcabe613696e00712b20d66bc58e780f9473 *profiles/cursor/.cursor/aid/templates/knowledge-graph/vendor/pixi.js/LICENSE
+83b2d7edf27bb77460f5f5f5e25cd73c91b77a53f44c80ac63096d6c0b5cfda7 *profiles/cursor/.cursor/aid/templates/knowledge-graph/vendor/pixi.js/pixi.min.js
+50a058edae174703495545dc63f034be32cd89d5f8d4aea370303c6a8ae841d4 *profiles/cursor/.cursor/aid/templates/knowledge-summary/accessibility-checklist.md
+3423b7e9760c234e4301d56b86fec65fbc6bb9d3acae7d37a228fe3827436ff6 *profiles/cursor/.cursor/aid/templates/knowledge-summary/authored-visual-catalog.md
+3cf652f600d0ddbe4e1e202230462cf1cb072dbed7914cd4f80704be7b9faf32 *profiles/cursor/.cursor/aid/templates/knowledge-summary/component-css.css
+b5c9542d0b59e355cf2e102f10b8edf8599f5cef3086565cc0fb2f4d1d8d1b49 *profiles/cursor/.cursor/aid/templates/knowledge-summary/design-tokens.md
+8de6e61c5ded32dfac18ea1d0684d891446b7edc615b6af3109bfe09c9ff1ae9 *profiles/cursor/.cursor/aid/templates/knowledge-summary/grading-rubric.md
+c6d9f73297b2ee3192d37c94c0e7a0125659fc3ca357cfb71c72ee7f2100d205 *profiles/cursor/.cursor/aid/templates/knowledge-summary/html-skeleton.html
+118528f25b356c2521973c21d25504c8611148c29adeffa37fb5d7b90f2007aa *profiles/cursor/.cursor/aid/templates/knowledge-summary/lightbox.js
+ba637123066eb1519e436bc95400877e942fa1429432e86eca395b5d3bda8f1a *profiles/cursor/.cursor/aid/templates/knowledge-summary/prompt.md
+db2c7cc1dffa0fa6a41bb8dec6a107ba02cf600846341e66db9c9f1ff8976fbb *profiles/cursor/.cursor/aid/templates/knowledge-summary/section-templates/agentic-pipeline.md
+82507f55f8e7f182b83fcbc118ea2ed2e04ddd08373e645b8e365fcd851ab8a3 *profiles/cursor/.cursor/aid/templates/knowledge-summary/section-templates/auto-detect.md
+9a3026c915d3b1276a45522edcb694b83b432b8dfba1bfd13c7e729c86f157b4 *profiles/cursor/.cursor/aid/templates/knowledge-summary/section-templates/bespoke-components.md
+2c66a2374c19287103abee055824fb14f1dfa6339a9ac315cc4033a265c92d32 *profiles/cursor/.cursor/aid/templates/knowledge-summary/section-templates/cli.md
+ed800042da72416340cfaf3f15fba0cfb4d249b5aa97e03ee7a60fcb473cb953 *profiles/cursor/.cursor/aid/templates/knowledge-summary/section-templates/data-pipeline.md
+98ba377a481cdbc0c3050f7e4f817dd2fd8296242cd42b7c02003a9b88059f7c *profiles/cursor/.cursor/aid/templates/knowledge-summary/section-templates/library.md
+277199e1d6d4097729792e80ff9c89a7a0f132115e185aa7b03259e927a11ef2 *profiles/cursor/.cursor/aid/templates/knowledge-summary/section-templates/microservices.md
+d510be318d32e40307d31b0f06c75dc56835d915ef2cd985d45cf52cc9eb3bb6 *profiles/cursor/.cursor/aid/templates/knowledge-summary/section-templates/web-app.md
+25e4e508e41508cb825126c2c2e73dc90d886c52abacacf55932bbafc13c520f *profiles/cursor/.cursor/aid/templates/known-issues.md
+0f727b1273f307baa02ae8f93f75472c666afabf97b5d1c9c41bf40ce6f4b7f2 *profiles/cursor/.cursor/aid/templates/long-wait-protocol.md
+d8bbbe4e1daa2cc548d3c0c544525ad3a7f827e568b94a3f815798973ce63044 *profiles/cursor/.cursor/aid/templates/package.md
+cf78c05319ac958ade4cb707971bcae72168d37f2d30cd9a181215b65b63ab68 *profiles/cursor/.cursor/aid/templates/requirements.md
+d2a8bc3ff89d929f0bb3b21485d7fac51143e7fd452f2ff7604d9928f79be959 *profiles/cursor/.cursor/aid/templates/requirements/requirements-template.md
+c7742745f29f4c666c757ac0aa8e20fcea10e3e3e1022aec730ccbcc92c67ba7 *profiles/cursor/.cursor/aid/templates/reviewer-dispatch.md
+369420b8ace758fc440eabcf795267be5732b778be81de6bb37d621a81643053 *profiles/cursor/.cursor/aid/templates/reviewer-ledger-schema.md
+ed9439c875b2ac558031333fe3372b7ba6edd8539ff065a73698efed0291ea9b *profiles/cursor/.cursor/aid/templates/rough-time-hints.md
+c8f42a5da3d5771112bd1ef2bc12d1e26127b1a11f173b7c5b7791d9d8e3e7d0 *profiles/cursor/.cursor/aid/templates/self-review-protocol.md
+969d6229ef135a7432f82dde1fa3cad5a1f45cc13d021209734bc20e4e7dc396 *profiles/cursor/.cursor/aid/templates/settings.yml
+d1de6ae5fb7be7b8dbd911714014dc0d049e9559a62c539da633a4b8cbf30c09 *profiles/cursor/.cursor/aid/templates/shortcut-catalog.yml
+f9adf47d8e1bd501b215ffee378c1c9e44ea22c8b797c252fea9124799d94367 *profiles/cursor/.cursor/aid/templates/shortcut-engine.md
+6f3de1fddb799755b02a873ecbd3a4a9c7bd1b16183fd908dcf2a708f011689b *profiles/cursor/.cursor/aid/templates/shortcut-scaffolding/analyze-report.md
+b9f48d576e24b6ad8468e4cef3bd9e463a1e2c3e2dee10e312ab1e83e51802e7 *profiles/cursor/.cursor/aid/templates/shortcut-scaffolding/change-refactor.md
+c3ff2d59d03613808b463830f990eb6ef4592ff5eeef8869f88a5ae03e882b3e *profiles/cursor/.cursor/aid/templates/shortcut-scaffolding/create.md
+6600aadea67520b976a2bb418d96517c5cc7e92aa821a9504c317562ad1879ee *profiles/cursor/.cursor/aid/templates/shortcut-scaffolding/document.md
+80cd6dadea50837af1083f7b6e1f834097212a5e1f5f6c0007d60006d85d4822 *profiles/cursor/.cursor/aid/templates/shortcut-scaffolding/fix.md
+81902aaa2506f60167db6706dc52745464a13053d65ca1951abcf4ab9506aeae *profiles/cursor/.cursor/aid/templates/shortcut-scaffolding/prototype.md
+4eb14408ace1aeef4041459714112a3fe4e5542c73085b17ab151df585f74e2b *profiles/cursor/.cursor/aid/templates/shortcut-scaffolding/test-experiment.md
+cc34211dcd7747d2d94afb00df775479b1613c82104438cf3b4508835d08c071 *profiles/cursor/.cursor/aid/templates/specs/spec-template.md
+d43990343a80aaef6bac1da564a436978b857f7a8ea664b85e8d9592c04ea8df *profiles/cursor/.cursor/aid/templates/state-machine-chaining.md
+c4e91750ac3a7bd2c4ff10e625fa1f00cb7ea6a4e1f506f09550491b4803f928 *profiles/cursor/.cursor/aid/templates/subagent-heartbeat-protocol.md
+27eea30883783e391762b405019e39f173f0d18d8c9a49b67aaae09ff98639e6 *profiles/cursor/.cursor/aid/templates/task-detail-template.md
+e547113b2c20a5f55b018d3b0228661eb8178f804d277f313336dcc0a09fcca9 *profiles/cursor/.cursor/aid/templates/task-state-template.md
+d6bd13e5e63cf77683efef973c6ec16175c4009b5f79ee68964489bf507aff2a *profiles/cursor/.cursor/aid/templates/work-initiation-gate.md
+4240e144eadb1f8efbfa5c5e5b2fe8e7a10d3a6547cc0156e5387bd7838301bf *profiles/cursor/.cursor/aid/templates/work-state-template.md
+dcb20fb03449b82d3e5eb27d1c6cf04f72543a970c6ffd39a9d3e94acaf95752 *profiles/cursor/.cursor/aid/templates/worktree-lifecycle.md
+e69f6bcd81fe17f279104688c271b4d4c3b55b5f007c6b23e6875564eea9584d *profiles/cursor/.cursor/skills/aid-ask/SKILL.md
+8b90538dcc30d05e0c14688145fb7fc77b7f61a1d0b121fccdad37935f2feb1e *profiles/cursor/.cursor/skills/aid-config/SKILL.md
+9c11b8c7be7a114a2095a577e431a06014726c44262e277195b94ca14203de30 *profiles/cursor/.cursor/skills/aid-create-api/SKILL.md
+a1ee9f9168bb323988d27f451d22e272798af1ea2d6afbaefa55bac355a4d0cf *profiles/cursor/.cursor/skills/aid-create-cli/SKILL.md
+fae42fbe0886732997eecb3a6ff9f4a621c2c0a721e46f5522650d1643e9b05d *profiles/cursor/.cursor/skills/aid-create-config/SKILL.md
+0956683bf79d7f2a46c46e2dcca1294080ebb4e10fc9cf8d2af8527f4aeffaf1 *profiles/cursor/.cursor/skills/aid-create-dashboard/SKILL.md
+6f45355a9209ccfe34d1969eb09873acd2425053e0456a2b616f57032541543c *profiles/cursor/.cursor/skills/aid-create-data-model/SKILL.md
+37e71e4c68fd11317c4cc87c1d7ce3e748290d6250bc5cfa0f456a0ef2afc7f3 *profiles/cursor/.cursor/skills/aid-create-data-pipeline/SKILL.md
+44b18bf8e212136e29633233aa794678c8277fc2a7aa43861ff1249193b65355 *profiles/cursor/.cursor/skills/aid-create-diagram/SKILL.md
+62416899d9b70797ad838e0631ea0d5b351a5c72ca3ca6ad6e3d352f1f1ce248 *profiles/cursor/.cursor/skills/aid-create-document/SKILL.md
+2eca5961126f4139f9fafe264cdd95f6106fa6cf5687736f04cb362b6cf91975 *profiles/cursor/.cursor/skills/aid-create-infra/SKILL.md
+2f2e202f3c1325d852fbc2c73ee8b2302a4eb6490c92449cbaf4587391bb36d4 *profiles/cursor/.cursor/skills/aid-create-integration/SKILL.md
+a0fce7e8a42dd8b0dfd8c378fdbd1d160ffc97f098a0565b8830c7e3f9b1c3fa *profiles/cursor/.cursor/skills/aid-create-job/SKILL.md
+de4751ed212f8785b902ea77319cf523012df17a832895beeedd072970e500a1 *profiles/cursor/.cursor/skills/aid-create-messaging/SKILL.md
+2e4beb5cc56c38e66429c1f0651cf31cd226b2641a65c5a457754c625ae2474c *profiles/cursor/.cursor/skills/aid-create-test/SKILL.md
+a32e46dab387908de3c940a256ec7290924469f32aea266760284923eaceebce *profiles/cursor/.cursor/skills/aid-create-theme/SKILL.md
+5d5913230c93313edb3cafd28a272e491ef55bf8eddc6f424d66eba878577dc8 *profiles/cursor/.cursor/skills/aid-create-ticket/SKILL.md
+36d2be46f8193cb5ef94c2a0baf1d245dc3194fd718b58a567e651b2a36db764 *profiles/cursor/.cursor/skills/aid-create-ui/SKILL.md
+6bbc09e4ed6dfa1121c83069e76a32d674ee9a6d0eaa06f988c6331bb18a2fa7 *profiles/cursor/.cursor/skills/aid-create/SKILL.md
+b17b451f47c775d85aae47d265ff72a3aaf55646de57f20c81d5c6b55b1e985c *profiles/cursor/.cursor/skills/aid-define/SKILL.md
+39f063bcbc787ba55f7dfacc824ea1fb5ff43e521a1f915a114a58e52315d84d *profiles/cursor/.cursor/skills/aid-define/references/cross-reference.md
+bd195cfa54094429f576247f8ca22889dc5a668026d9f9cab1ea3aff2a3ddea4 *profiles/cursor/.cursor/skills/aid-define/references/feature-decomposition.md
+ae4201e0dd3d61412db01749454e9a453677fb6b9b116783ba7556d640af1115 *profiles/cursor/.cursor/skills/aid-define/references/reviewer-brief.md
+288c9485f438c4a0312c785c7e64023de6fe09fc30c85857fff6b89a9f077b52 *profiles/cursor/.cursor/skills/aid-define/references/state-cross-reference.md
+a112e57f832bbd571f1153b926b0c8e9109b29ec981a44eb5a8be6359bf0cfee *profiles/cursor/.cursor/skills/aid-define/references/state-done.md
+db40ea8cbefe74ccb36b489fed1fd2d0a8efa32e2bc8efaa437e99412c7ee714 *profiles/cursor/.cursor/skills/aid-define/references/state-feature-decomposition.md
+1f405b22e6f1ca7414c65b2c7abd7226855f37ec497447bf4d49bc3d283e34f8 *profiles/cursor/.cursor/skills/aid-deploy/SKILL.md
+ba829afce652e9459563d0c636da2a9dd25a51a40f3a880f45dacdc5c7e8b3ac *profiles/cursor/.cursor/skills/aid-deploy/references/state-done.md
+b343d18e4c00b6ec40040c3461901b68a30ea1097a4a9d4008a0b1fa4d20d542 *profiles/cursor/.cursor/skills/aid-deploy/references/state-idle.md
+81328a5856e9a6d1a584ba3c2a0f7109e358c7405193a33d5839856c16411dae *profiles/cursor/.cursor/skills/aid-deploy/references/state-packaging.md
+b91e34e8f93c64227c66c28b52997bb94178abfe48b581d62ede9d52e765b3b0 *profiles/cursor/.cursor/skills/aid-deploy/references/state-re-run.md
+2716f610b6a3a900152953b32a16798d51c52a4446c5cbe11e0280a6f3239a1e *profiles/cursor/.cursor/skills/aid-deploy/references/state-selecting.md
+302f12d69ff392b4296b2bbde3c8e81459f179ccc665a4f035855ca35bd3a450 *profiles/cursor/.cursor/skills/aid-deploy/references/state-verifying.md
+db2c06b0602ae31ee7199fe6999f071ce0639f5da4f52c3462913c8b01f19f5f *profiles/cursor/.cursor/skills/aid-deprecate/SKILL.md
+1a282d480dc3fb9ac73f6f0718979cd9ec1f16cc42d6e54c355454c74be67988 *profiles/cursor/.cursor/skills/aid-describe/SKILL.md
+aca9c2b5cd196a3b5063ac31793874ecb35c32e26bfa25a42481d8e10a0eab0b *profiles/cursor/.cursor/skills/aid-describe/references/advisor-stance.md
+168748c7627a67e786bf9ca831ba46e06638ddb9207ccd6aa2f121325b2bfe7d *profiles/cursor/.cursor/skills/aid-describe/references/calibration.md
+22274c14be31cb01a7f7571147d4f4fd72d7b9d53d7e173f787bcb0f29871aa0 *profiles/cursor/.cursor/skills/aid-describe/references/coherence-check.md
+ee2fa88784ccf29826e65d0dfce3bed80a1ad8cd1012c4055851feebff209384 *profiles/cursor/.cursor/skills/aid-describe/references/elicitation-engine.md
+d1c6e3d8c501d0f81ddc9d89d6cf4e5be67377c33a22de5dc7ccefc5ba920a92 *profiles/cursor/.cursor/skills/aid-describe/references/interview-loop.md
+599de7b672a69a1f74f25da1aefa7f973a8c861f6bba1af8bc402949fa9698fe *profiles/cursor/.cursor/skills/aid-describe/references/interview-strategies.md
+181909489299b720ec4f4d6c2883b39f04b8d6bd1902efd7968bf1415a29abbb *profiles/cursor/.cursor/skills/aid-describe/references/kb-hydration.md
+6053f2664c31c05bfc5121d139b2dd44ca71c247e05d95704f1c48b6657994d2 *profiles/cursor/.cursor/skills/aid-describe/references/move-playbook.md
+5a20b6bf74cb6d4f4fec147f345eeaf926d66da433464d49bf745ab03e091118 *profiles/cursor/.cursor/skills/aid-describe/references/state-completion.md
+beb01664d66f1b5710213effb8ad80047598c5a1d17edfd416856027d9aae863 *profiles/cursor/.cursor/skills/aid-describe/references/state-continue.md
+ec11559323ddf51039d487d91b86e2bbf6d3c2dc64356e304a1daf3f7b9b2b19 *profiles/cursor/.cursor/skills/aid-describe/references/state-describe-seed.md
+1da4ba61b12b7b7d81f17f4f6b0097f5fe72058727e2d34536b87f7392bc65ef *profiles/cursor/.cursor/skills/aid-describe/references/state-first-run.md
+d6fbf9bab6af2d88ae9369243544a12bd69fdfdd6c5cc013635c860974bb6751 *profiles/cursor/.cursor/skills/aid-describe/references/state-q-and-a.md
+35467c49b82c4f0f2460adbed3135ca3df755804f7030edb2b11c11ff7720a4e *profiles/cursor/.cursor/skills/aid-design/SKILL.md
+67e3015357ca04b65958e6e1e37f45983817b0b0d5e3ec95a3b2326e176ba0d7 *profiles/cursor/.cursor/skills/aid-detail/SKILL.md
+a14c3031e4c6f97833fdd58cce02325e1b1e579e639e5ef7def94ac47d71bc03 *profiles/cursor/.cursor/skills/aid-detail/references/execution-graph-generation.md
+2f9213c649051418055bc322414abe483b2b8f92418afa01bf7392f497b7234a *profiles/cursor/.cursor/skills/aid-detail/references/first-run.md
+e38b75176f324dc13309bcaeca230b5bcad2bc0fe86f36bf9202bddb318d2dcd *profiles/cursor/.cursor/skills/aid-detail/references/review.md
+aa5e8bd50b95e6a640a7aca40afda5178552cc00b7fe44813b1cf2e55e5d3b3d *profiles/cursor/.cursor/skills/aid-detail/references/reviewer-brief.md
+f951b15e794256fca1338d625de6c2eec0c541be30aa289fd56ebe651a1e2d68 *profiles/cursor/.cursor/skills/aid-detail/references/task-decomposition.md
+28fc243b7250c8ec2784829f36d7ee35a5ef4451a2f67dd46c7703dbefcee6b9 *profiles/cursor/.cursor/skills/aid-discover/SKILL.md
+15f3135f117eb6b59920ef4cc2e4358fec95528cabf10d4271e3ff9e97bbdd1c *profiles/cursor/.cursor/skills/aid-discover/references/agent-prompts.md
+f8440b421e32a042d64e9bb1acb5aa9f952a9d05722794d31e910b39d2af40c4 *profiles/cursor/.cursor/skills/aid-discover/references/doc-set-resolve.md
+8156a417aa91de256cd3b9b9461c40279a2c9b0ccfd0fb5b0ebc4816b46d36fc *profiles/cursor/.cursor/skills/aid-discover/references/document-expectations.md
+e88099f0422cefb394fd0c8f11305e661d630be5fd7ba8841f4a82d4ae9ea687 *profiles/cursor/.cursor/skills/aid-discover/references/path-config.md
+0971e2921630cba7055ca05eef87d15b0310fd6223698907efdcc01eba6c4a0f *profiles/cursor/.cursor/skills/aid-discover/references/reviewer-brief.md
+42ec9bc1d6030feb3fa79bfea9618d9803bf96a4d07d790b0b70f317c6c39782 *profiles/cursor/.cursor/skills/aid-discover/references/reviewer-prompt-actback.md
+e01d846de93be3a04057f4f9fca53f805fc005a362d4bf540f688750c959ddc0 *profiles/cursor/.cursor/skills/aid-discover/references/reviewer-prompt-anatomy.md
+b7b30a8d3a7a280a8f6a96cb7240303d2a86db87c72d5dae42cf3df52184489f *profiles/cursor/.cursor/skills/aid-discover/references/reviewer-prompt-correctness.md
+fd6f12a81c2a69448f07decacecb1c32576b03ab665a1a53c3743b46452d5a3c *profiles/cursor/.cursor/skills/aid-discover/references/reviewer-prompt-teachback.md
+9fdac29d6928cec9d7217b89e1c1d088a07668bb56daaa5dff4b84e6e92d3649 *profiles/cursor/.cursor/skills/aid-discover/references/reviewer-prompt.md
+9d00186a3554c60808a53d0aeec7c9b11a26ed2b05022e71af49ee6114c1ac57 *profiles/cursor/.cursor/skills/aid-discover/references/state-approval.md
+d3232c91a3d4678e96736cc97cc30217f068f45582d6c2cc3a200f392c14f892 *profiles/cursor/.cursor/skills/aid-discover/references/state-closure.md
+fe50618f4add927f8287e80b7de92a3bd97d3f8ddd338ee81bc2e5bdcc8ed0a9 *profiles/cursor/.cursor/skills/aid-discover/references/state-done.md
+2ed7868a97f7d8d7ec8534b73e0505d882168a1c65358fa82d733452f7a1ebef *profiles/cursor/.cursor/skills/aid-discover/references/state-elicit.md
+9d356feeee66c5a97ddd584d5159232f913d6e3632e8b276329c6e15325eaf6e *profiles/cursor/.cursor/skills/aid-discover/references/state-fix.md
+e1334d028c6e8ddb3ccd7e2d0121d2a1b6a98ffa1e5e2ec47dc3d969e996edc9 *profiles/cursor/.cursor/skills/aid-discover/references/state-generate.md
+58ed65a218539355c26b4f3950f62f871b274212bb570cefb03f215a99d1d42e *profiles/cursor/.cursor/skills/aid-discover/references/state-q-and-a.md
+6fbd6f414b99c482476e6445efb40a80802324477c6d0fbf7ea52aaa942505fe *profiles/cursor/.cursor/skills/aid-discover/references/state-review.md
+b2a4eb8f91ffb700a6a8840f739fa69b0661e4141293d0857fb9f14ee6b42615 *profiles/cursor/.cursor/skills/aid-document-architecture/SKILL.md
+3b981628b44523966b98e8a3c4ab4430ecf2188a2968f6c3d860fbc2b605cacd *profiles/cursor/.cursor/skills/aid-document-changelog/SKILL.md
+358f2f2370e2b4f09e354c65d595bc5d56d63d306d30b78e2507526276ad7523 *profiles/cursor/.cursor/skills/aid-document-decision/SKILL.md
+5d1914c96a1e607a5818bbe628576352786df7bdb339204116da783b78018304 *profiles/cursor/.cursor/skills/aid-document-guideline/SKILL.md
+a24cc93b42e697b0873bc9b6b596b36ff66b9daeb1419e4ca04a74b329ed11a0 *profiles/cursor/.cursor/skills/aid-document-runbook/SKILL.md
+760395d1fec70547f2c6a5817a688d012431606af2cb808662bd1b21014a453b *profiles/cursor/.cursor/skills/aid-document-standard/SKILL.md
+8989e08d83394b1875a477e1994d6cd2572bafdf1e16207e7411c5377fc06ee5 *profiles/cursor/.cursor/skills/aid-document-tutorial/SKILL.md
+9878b4a72709f5ebaeb76736930bb6e923d836b25b11d43c834689845200eb2f *profiles/cursor/.cursor/skills/aid-document/SKILL.md
+98e4fa7b41e68ccfa94568969c38135ae97c6a835efab60211993ddeb79b41b9 *profiles/cursor/.cursor/skills/aid-execute/SKILL.md
+3ee7bfeaa64cdf275d24d73851701ce569b6d1c87c188333256730a7c8536845 *profiles/cursor/.cursor/skills/aid-execute/references/reviewer-brief.md
+7827b5132ccf3a33d78a372e9a224773d7440cd6a176e6862abb77359a85510f *profiles/cursor/.cursor/skills/aid-execute/references/reviewer-guide.md
+407baec1a5052b8e32cfc3df21c85f88117f97cf04fedf4577cd5dc0fabbb0b5 *profiles/cursor/.cursor/skills/aid-execute/references/state-delivery-gate.md
+230f4d9ee67636a9e1e1a7caa5aad9d695bb19604207f27fc045d2d4e40ff045 *profiles/cursor/.cursor/skills/aid-execute/references/state-execute-drilldown.md
+b149647e3ed8eeb6c7847197abed580c9899b9135c3fc88e142c62bfb5e9cfe1 *profiles/cursor/.cursor/skills/aid-execute/references/state-execute.md
+5ffa907686879677b16945f6ad9498372bbbc03966cab587ddf39040dca651c7 *profiles/cursor/.cursor/skills/aid-execute/references/state-fix.md
+df3b77084446b3fadfc935dc4185b69949e690033566c0355691ffdedf931eda *profiles/cursor/.cursor/skills/aid-execute/references/state-re-run.md
+00406706b31a8320a80f57fddac4200ee07416973bdbb2d99ead01f80a06ecd0 *profiles/cursor/.cursor/skills/aid-execute/references/state-review.md
+03de3b3b2c9c36d6e28732af4cddbf071bd83d973d78700617340bf768c0e033 *profiles/cursor/.cursor/skills/aid-execute/references/task-type-rules.md
+12eb817b8027ed19678efbc0aea96d64693e0e33f36477d956c7cf258fad2c71 *profiles/cursor/.cursor/skills/aid-experiment/SKILL.md
+867d43f066fe10113ac5def62c56216ac00c0fac9d659ff3bb75b28db3515c6e *profiles/cursor/.cursor/skills/aid-fix/SKILL.md
+c9e83814a234db25df29a14a62186604c77f208cf9c83a96736d8b1fab9ce32d *profiles/cursor/.cursor/skills/aid-graph/SKILL.md
+c9237df19d0b4744137f3418f24773669ebbdc10944c6e8efd2a2d682f32ef95 *profiles/cursor/.cursor/skills/aid-graph/references/agent-pass.md
+7da2d84a286d67053b07b69febaed01c0070c5228a0b29c866494ec5e63af20e *profiles/cursor/.cursor/skills/aid-graph/references/state-done.md
+61a5dcb5ac39873a857dcbabd7da3553e4a495afd1cfa5c6777179d66634feb8 *profiles/cursor/.cursor/skills/aid-graph/references/state-emit.md
+af47098ba65ab3e9aa5a91f4de9c8f96a3c1c2fa33220822afb48c69de7bf77b *profiles/cursor/.cursor/skills/aid-graph/references/state-enumerate.md
+7ef6a5da4b346020612cc60992f13c880783c1f1bcd3c8e10906547151dc13db *profiles/cursor/.cursor/skills/aid-graph/references/state-extract.md
+1f1edbdec556f2c33fdef5c5767f5d51d6db081a0a2bac1318844c7c2da5f31c *profiles/cursor/.cursor/skills/aid-graph/references/state-fix.md
+007472a4f2f31e1bd913c957e5813430fac07682dae4a48ef6c386234501bcc7 *profiles/cursor/.cursor/skills/aid-graph/references/state-gap-report.md
+e112899fa22ffbfc172761023d29a44a5d1d47b1f1c167daa6ca2545ce1e5ea6 *profiles/cursor/.cursor/skills/aid-graph/references/state-preflight.md
+d9734eb3fcc1cb7e6935850abe570a22c7aa19e605bf87d978994bb3c8025e37 *profiles/cursor/.cursor/skills/aid-graph/references/state-render.md
+0ec87b63ebf8f326b58d858bb7ef7c2c78cadf040df47319b06081fdb26ebb92 *profiles/cursor/.cursor/skills/aid-graph/references/state-stale-check.md
+d52747017c3177909ba95898e5f05eae756b6ec9226e5d16adb91bdc4726342c *profiles/cursor/.cursor/skills/aid-graph/references/state-validate.md
+3620ffed5b784ef0d6bea78b25f2a50197b01a66bba9d24b820290d6a6e73a70 *profiles/cursor/.cursor/skills/aid-graph/references/state-visual-gate.md
+ccce7eca537dbe8f2661aba7fa76e50a974ad602637ecf2ef9e7b49eb0cb23a1 *profiles/cursor/.cursor/skills/aid-housekeep/SKILL.md
+428fa049f1de1a5b818f2537df8c542c477b9c21c9aefeb076e021c1788993da *profiles/cursor/.cursor/skills/aid-housekeep/references/state-cleanup.md
+566c5a0293a6ef58c9dd860d781fbb28dcdc19330a864df6ee5d62ca80cad755 *profiles/cursor/.cursor/skills/aid-housekeep/references/state-done.md
+02e7351adf6d561390b540e03e5d8d8f0ab4197f2811f03e6d0e3ae1d41f6807 *profiles/cursor/.cursor/skills/aid-housekeep/references/state-kb-delta.md
+dac8ac8d2dad07431027f8d1f4cf814401c893cdfeda9ca8c47ef1402b66421a *profiles/cursor/.cursor/skills/aid-housekeep/references/state-preflight.md
+af6810283a90f00ccbe0d8770aeb49dae7ad71a77b3fcbfe198685d8158927fa *profiles/cursor/.cursor/skills/aid-housekeep/references/state-summary-delta.md
+acb9f905df8d7cfb3c4e45766fe70f1adef0e9cd0655de19e35c77cf53d050d2 *profiles/cursor/.cursor/skills/aid-migrate/SKILL.md
+ab1e37e300a2b4680139fa4e2144808cef41bd381c25ecd49e3cc561ed111f36 *profiles/cursor/.cursor/skills/aid-monitor/SKILL.md
+8446b0b30047299015aa77c2d9262912d6a4e912405ec68cb251bb5cf0e0ed33 *profiles/cursor/.cursor/skills/aid-monitor/references/state-classify.md
+c14e535c28d8a0f987931608908ed5f5679b907ece172e6adb5afd54fec97814 *profiles/cursor/.cursor/skills/aid-monitor/references/state-observe.md
+a5f7f0afc32a41ad25a295eae333f47dcce3af507dea4c7545847b39ecb1c7d3 *profiles/cursor/.cursor/skills/aid-monitor/references/state-route.md
+ca830e44fb73494a655acd50170be0dbcdbf6704234450c672da75ed475b0bc8 *profiles/cursor/.cursor/skills/aid-plan/SKILL.md
+f1ef6de2a20fcd4cb6798380013b5dee6d7698e81d210e16bece08e601b86196 *profiles/cursor/.cursor/skills/aid-plan/references/first-run-loop.md
+7ca4ab2c3b70fcd2491466630f71856d7f85fca8e93513574f3348f86491964e *profiles/cursor/.cursor/skills/aid-plan/references/review-deliverables.md
+de82ee7a61d602ff1c13884b74ff2aacbd220013b63696a83349b4aad0bb0d18 *profiles/cursor/.cursor/skills/aid-plan/references/reviewer-brief.md
+8ff8f960fd508c0ecc00a8553899bf3095d39381b2aa55d89ccdccae12e0275d *profiles/cursor/.cursor/skills/aid-prototype-ui/SKILL.md
+73d13b8abfb514a904a1ad5d0a6437ef809237572c705070058ddee4ec3dc25d *profiles/cursor/.cursor/skills/aid-prototype/SKILL.md
+f7ff4d065657feedb6621356b33776771259ed46a9526ae8e43ff9f5dbc4598e *profiles/cursor/.cursor/skills/aid-read-ticket/SKILL.md
+1d0f9c824b5839f7e64c7de14676114e29772c4aa970b4d4f52fa1e528a317f7 *profiles/cursor/.cursor/skills/aid-refactor/SKILL.md
+f1401e1f762dd9ba8eb317c87a5b421159bba1c6ca3f260bd3c5e6315607918d *profiles/cursor/.cursor/skills/aid-remove/SKILL.md
+5d4e00096b628d36498bf7bc338b8aed2e5e1de042cd7a62f3c4e73d87c14e00 *profiles/cursor/.cursor/skills/aid-report/SKILL.md
+7fffc38bce68795e338123bf80ecf826e5eb71f9d7c5a94b5843db608a950b36 *profiles/cursor/.cursor/skills/aid-research/SKILL.md
+1d6454935b0780f537d54c672b0735733e98f84c79781a14cd5b70bdebd9c568 *profiles/cursor/.cursor/skills/aid-review/SKILL.md
+02435b1555501b6b4d33286a2d2c7399e8b4082c345f41074bbba403ce772675 *profiles/cursor/.cursor/skills/aid-set-connector/SKILL.md
+b512d31eb977ecc1fb179f60e01ea37eca87d8bfa8aafe2b8175c196ff03eed8 *profiles/cursor/.cursor/skills/aid-set-connector/references/question-sets.md
+b9723e84f23c82720366c5516a929d8ddf03faf74d7d6d7d0da21788f4d2b81a *profiles/cursor/.cursor/skills/aid-set-connector/references/secret-reconcile.md
+0510cdbad3070f139a09f5954263e8343ca4f1ca466c59849a8cc5db04b38979 *profiles/cursor/.cursor/skills/aid-specify/SKILL.md
+c8b1c116b82478be03869290f7860e0d5c2eaa1106e1d108264371dab877ad7e *profiles/cursor/.cursor/skills/aid-specify/references/handling-outcomes.md
+551844a49ba6aa836c94886f8c36efcf4304e456fe5aa3bfc689f309cbb26831 *profiles/cursor/.cursor/skills/aid-specify/references/known-issues-scope.md
+50ac6b85ea283bf94a9adfb88d11dea1f543e1f7fcb3b1f158b12765842734ee *profiles/cursor/.cursor/skills/aid-specify/references/reviewer-brief.md
+dfc1b52485f32852b322bfdf71281d255df6bfb70b201cd2f76987ad4777deda *profiles/cursor/.cursor/skills/aid-specify/references/state-blocked.md
+93f2861ca69a0c704700436a43a13607f3c79e17893e3070bde0b3f3cfd35e7d *profiles/cursor/.cursor/skills/aid-specify/references/state-continue.md
+3f6f837c6037c713f4b4ba617e07116dceb14c306b9c7f143ea13a605295f2f4 *profiles/cursor/.cursor/skills/aid-specify/references/state-done.md
+3f1d67627205923e3b44df7019df5122a559364df566e64bd60af63caca8e557 *profiles/cursor/.cursor/skills/aid-specify/references/state-initialize.md
+16ab318a76100f1a3309c68ad74c68d5e72bf67bb4e405a7fb4d566d5219bf46 *profiles/cursor/.cursor/skills/aid-specify/references/state-review.md
+9e62613efeb0513e4f909f2155ba1e50ec5363b3ac62537615ed89d252521f01 *profiles/cursor/.cursor/skills/aid-specify/references/state-spike.md
+258a352cecbf10af07e9e3b9a4d2a97118726f6423835f81d6687d401e3ac43c *profiles/cursor/.cursor/skills/aid-summarize/SKILL.md
+36c51328f6000c9ea07402ee2fa615e864329e15badb9f2654c27fa877c62f70 *profiles/cursor/.cursor/skills/aid-summarize/references/state-approval.md
+61bc4adcb8a40df805c8e494c02030ccf23326eac9c4ca9d5b303686289bfa0a *profiles/cursor/.cursor/skills/aid-summarize/references/state-done.md
+4e0d840b4463eab2b42006db7480682401b865fba934f56adbcef05b4bdc6f6d *profiles/cursor/.cursor/skills/aid-summarize/references/state-fix.md
+dfdccfa808f00090be6879c7893993b3e532fe6857b88fc20fc976a9e08babc7 *profiles/cursor/.cursor/skills/aid-summarize/references/state-generate.md
+de6eeb4f9cf5b01b054ca6309df9f6bf4fdfa2d60dcd05d851e3482f6f2566c7 *profiles/cursor/.cursor/skills/aid-summarize/references/state-manual-checklist.md
+ce6977424924fbd031d379b712254bb8a06faf3ce6b3a21e251a06c494ac9b2b *profiles/cursor/.cursor/skills/aid-summarize/references/state-preflight.md
+17abe7779176f35cb2532a2eaaceaeeb5be7dd38e1fce32d4db402998404b767 *profiles/cursor/.cursor/skills/aid-summarize/references/state-profile.md
+11ad0247f150b2b14a7422965472b836bc49263b0e5dce9ea278bc13f5d9cf6d *profiles/cursor/.cursor/skills/aid-summarize/references/state-stale-check.md
+d90468317b8e49035bc5463f9ec5a88511f01b747f315c7919837b0bc7a25ffe *profiles/cursor/.cursor/skills/aid-summarize/references/state-validate.md
+11e4479a97eafa281f21740d02e097d20c68604f119c185138abcd56333343c9 *profiles/cursor/.cursor/skills/aid-summarize/references/state-writeback.md
+28d2960031d37ed3b7586f465216d60c120417fe32f174518ebe70a334d7f6a0 *profiles/cursor/.cursor/skills/aid-test-data-quality/SKILL.md
+7a962071e85826fe8817d0f9014d53c75def7b0e39ac62551c8f6f215f97c282 *profiles/cursor/.cursor/skills/aid-test-performance/SKILL.md
+dfc7fe1386a584abc1977ec8a4bd667507a8a1d54942b5f5e17e7c9c3a2e96dd *profiles/cursor/.cursor/skills/aid-test-security/SKILL.md
+f776c602670d54f3730b3fd77dc78aa1b5eb932cf5e34d15a7182f714c3817dd *profiles/cursor/.cursor/skills/aid-test/SKILL.md
+d5647e89ca32aa4aab67951dd591dd0297de82fb566f2f75cfc16bbbb00fdd0e *profiles/cursor/.cursor/skills/aid-triage/SKILL.md
+31c669df6f74cfbcb9e0711b05a650c4461829d7c9a510ba99df10e3d6a2772e *profiles/cursor/.cursor/skills/aid-triage/references/state-classify.md
+c10c5dd011574e6317eb9ce9934d1b25ad98f74f3ba87d8237ae9b22b17f0869 *profiles/cursor/.cursor/skills/aid-triage/references/state-suggest.md
+9475879f60f13986e3651145bd89f7fafaf8fc4478a10c3a82e6970fe2e30535 *profiles/cursor/.cursor/skills/aid-unset-connector/SKILL.md
+18666fd2c943e2ecb2dcd40c8fac3711dc402a2c898b96c1f5ff3c01bd37b9cb *profiles/cursor/.cursor/skills/aid-update-api/SKILL.md
+e1e2fb84d59001cc76f3bf336dc67a6b7bc3412d4f547da3071af8e8515f4920 *profiles/cursor/.cursor/skills/aid-update-cli/SKILL.md
+57e2a13f31b7864b9b83d05581fca007a32ca286eec61c4a306a947de81c3459 *profiles/cursor/.cursor/skills/aid-update-config/SKILL.md
+344a3c60998abcaa5617a00ae18e9a30483185c02c563796ea6edb01117d31b4 *profiles/cursor/.cursor/skills/aid-update-dashboard/SKILL.md
+b0a9cd02c9fd88c0d181a40310b2b3822a91d0ee0bb87e3eaf351a0de9b29d93 *profiles/cursor/.cursor/skills/aid-update-data-model/SKILL.md
+5a33f250dba44831434f3ec501d590903435b91574e3df6c4596ba5edd042e43 *profiles/cursor/.cursor/skills/aid-update-data-pipeline/SKILL.md
+a14326d31f0582f71d8766496bc72b93a8b4139ce4c7f789d4b60f564cb6eeef *profiles/cursor/.cursor/skills/aid-update-document/SKILL.md
+0a657cc574d0f0faaafca9491920c07f7a19a51010ff45c29ca0d1a822365a29 *profiles/cursor/.cursor/skills/aid-update-infra/SKILL.md
+53a8b76921fd945393c5ce54259d71fecd2fb7c09c5357a58c246a4d6711db77 *profiles/cursor/.cursor/skills/aid-update-integration/SKILL.md
+6566768a61a4cccb3c38aa184bbd1bdd28cc373bdd0a7c1c3ca9e375ce7cf5b7 *profiles/cursor/.cursor/skills/aid-update-job/SKILL.md
+31cb11de4341c59f02ba9c32a29cf2fd89b11453a3387d70aac2ffe700a7405d *profiles/cursor/.cursor/skills/aid-update-kb/SKILL.md
+afadcef6957455bc81fa75b35956f8dd13e8971a15f1f8791f506b4398675ea2 *profiles/cursor/.cursor/skills/aid-update-kb/references/state-analyze.md
+4eb8b1ed0ae0a982f6c9bcf49d2982238ace66b795c70226173504c60e488321 *profiles/cursor/.cursor/skills/aid-update-kb/references/state-apply.md
+4a3653822cc34aca550e5709b05cda05c411281034d4aeefa282f2837135d3af *profiles/cursor/.cursor/skills/aid-update-kb/references/state-approval.md
+78219d9687b4b16093f4d5dd4206a6af63b2241c219369de4dd23d331baf5aeb *profiles/cursor/.cursor/skills/aid-update-kb/references/state-confirm.md
+d4296816feaf00cf48ac532fa16409afd0a58b1d3a1d1193e36418db38f28856 *profiles/cursor/.cursor/skills/aid-update-kb/references/state-done.md
+31a3660bf7022abfc3e04cb3e0aacf0c4ce5dac6480100fb1cf3d9830cc8c764 *profiles/cursor/.cursor/skills/aid-update-kb/references/state-review.md
+ad1cbae11fcfb9f4dd1d77c67f45a32ff9d45cafd75d47e5adbab5fead047b28 *profiles/cursor/.cursor/skills/aid-update-kb/references/state-scope.md
+9fef6df8ecdee00c313db937906c565159b6a3796d275344cbaf07193e64fac6 *profiles/cursor/.cursor/skills/aid-update-messaging/SKILL.md
+9daca3d170280ff1b65848f415d86acc61dca777d7ebeb75c297398c4fce3ca0 *profiles/cursor/.cursor/skills/aid-update-test/SKILL.md
+f41e0b41bda0d6378699b4f796240c202ee44f3f9ef83201955bbb2edd676500 *profiles/cursor/.cursor/skills/aid-update-theme/SKILL.md
+3d330c5383bc2529d170cf6b37defff7b31863d5ec4de509a9e1880979326745 *profiles/cursor/.cursor/skills/aid-update-ticket/SKILL.md
+304a9cff6bd6a9c7bea694d19dc39d930d45b2c957e22847a983a14606108826 *profiles/cursor/.cursor/skills/aid-update-ui/SKILL.md
+4548b7ec2ac2604734554bf7aeca7cc2965792bfbdaac19daad04bd019b72a00 *profiles/cursor/.cursor/skills/aid-update/SKILL.md
+de40d5bbdf99f972f53dee902aa8e97dfdb48166bbfa0e40119a42ed315965d2 *profiles/cursor/AGENTS.md
+8fe2e0341438ad3a477421a088e64b392f78d367ae47824f22839cf3b23c4f04 *profiles/cursor/README.md
+d028d247f58cc2c75e3762af51afc7f7d3c3e2b471a67058394e0c1c80ca154f *profiles/cursor/emission-manifest.jsonl
+```
