@@ -106,9 +106,12 @@ Shape: 6 sections matching .claude/aid/templates/delivery-plans/task-template.md
       axes -- verb family (22, task-064's), catalog `group:` G3 (25) and this hand-curated table (25)
 - [ ] **The `/aid-brainstorm` row decision is recorded** as a decision, with the choice made and the
       two figures it affects named
-- [ ] **The Total row now carries a noun the guard can see (M1).** After the edit,
-      `node tests/canonical/check-skill-counts.mjs --list` prints a claim for the Total row of each of
-      the two tables -- which it does not today -- and the record shows the new claim lines
+- [ ] **The Total row now carries an explicit noun and its current value (was M1).** After the edit
+      each of the two tables' Total rows names what it counts rather than standing as a bare number,
+      and the recorded figure is re-derived from disk at authoring time. The old oracle -- that the
+      retired guard's `--list` print a claim for the row -- is superseded
+      (`../../RESCOPE-COUNT-GUARD.md`); for any surface `tests/canonical/test-doc-counts.sh` asserts,
+      that guard exiting **0** is the oracle, and for the rest it is a recorded `G-01` verdict
 - [ ] **Every decomposition tail's operands moved and its arithmetic re-checks.** For each of
       `docs/glossary.md:68`, `docs/install.md:411`, `site/src/content/docs/index.mdx:77` and
       `docs/diagram-content-reference.md:24` and `:104`, the sentence is quoted before and after and its

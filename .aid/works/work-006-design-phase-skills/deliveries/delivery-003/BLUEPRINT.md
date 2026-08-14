@@ -31,11 +31,12 @@ generated summary that presents them (`kb.html`, rebuilt by re-running `/aid-sum
   refresh; and the two closing sweeps.
 - **The three stale count comments inside `canonical/aid/templates/shortcut-catalog.yml`**,
   handed here by delivery-001 and delivery-002 so three features do not collide on one file
-  (feature-003 SPEC § *Verification*, V28). They are comments, so **no oracle this delivery
-  otherwise states can see them**: the count guard's `CLAIMS` array matches none of their
-  phrasings (verified by `check-skill-counts.mjs --list`, which prints no line of this file),
-  and the stage-2 replay scans only the moving quantities `58`/`76`/`24` — which reaches the
-  `repurpose` comment but not the other two. They get their own criterion below.
+  (feature-003 SPEC § *Verification*, V28). They are comments inside `canonical/`, so **no
+  guard this delivery states can see them**: the surviving `tests/canonical/test-doc-counts.sh`
+  scans only the public-facing docs and never `canonical/`, and the repo-wide count guard that
+  once might have reached them was retired upstream (see `RESCOPE-COUNT-GUARD.md`). They are
+  therefore reviewer-governed under criterion `G-01` and get their own criterion below — which
+  is now the only thing that catches them.
 - **The `kb.html` regeneration** — the final-state summary re-run, owned by feature-006
   § *KB and methodology refresh*.
 

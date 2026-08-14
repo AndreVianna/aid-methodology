@@ -109,8 +109,10 @@ Shape: 6 sections matching .claude/aid/templates/delivery-plans/task-template.md
       one before this work, so this is the criterion the whole sweep exists for
 - [ ] **AC-12 check 5 -- the gate is green and the count did not move.**
       `bash tests/canonical/test-dogfood-byte-identity.sh` is green with **both** key sets reported
-      (`DBI*` and `DBI-CUR*`); `node tests/canonical/check-skill-counts.mjs` exits 0 and reports **34**
-      for `emitting shortcuts`; and no count-bearing assertion moved as a result of a description change
+      (`DBI*` and `DBI-CUR*`); `bash tests/canonical/test-doc-counts.sh` exits **0** with its derived
+      `SHORTCUTS` still **34** (the retired repo-wide guard is superseded --
+      `../../RESCOPE-COUNT-GUARD.md`); and no count-bearing assertion moved as a result of a
+      description change
 - [ ] **The descriptions reached the profiles, which is what makes the sweep adopter-visible.**
       `grep -rc 'Direct-entry Lite-path shortcut' profiles/ .claude/ .cursor/` captured to a variable ->
       `0`, and a witness from each stratum is compared between `canonical/` and all five profile roots

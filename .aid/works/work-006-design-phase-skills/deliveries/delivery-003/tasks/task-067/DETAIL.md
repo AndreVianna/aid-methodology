@@ -24,6 +24,13 @@ Shape: 6 sections matching .claude/aid/templates/delivery-plans/task-template.md
 
 **Depends on:** task-066
 
+> **Count-guard re-scope (owner decision, 2026-08-14).** This DETAIL cites
+> `tests/canonical/check-skill-counts.mjs`, which was **retired upstream** (deleted by
+> work-004). Those citations are superseded by `../../RESCOPE-COUNT-GUARD.md`: public-facing
+> doc counts are guarded by `tests/canonical/test-doc-counts.sh`, and counts inside
+> `canonical/` / `.aid/knowledge/` are reviewer-governed under criterion `G-01`. Read that
+> document before executing this task.
+
 **Scope:**
 - Source: `features/feature-006-integration-and-close-out/SPEC.md` §7's Knowledge Base table, rows
   `test-landscape.md` and `tech-debt.md`. It closes two more of the documents named in BLUEPRINT

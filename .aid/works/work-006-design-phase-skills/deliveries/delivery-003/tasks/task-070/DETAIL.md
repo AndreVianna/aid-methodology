@@ -65,11 +65,12 @@ Shape: 6 sections matching .claude/aid/templates/delivery-plans/task-template.md
       `backlog.md` are both present, each registered `required` under CC-1
 - [ ] **Its own oracle is green.** `bash tests/canonical/test-build-kb-index.sh` passes, and
       `git diff master -- tests/canonical/test-build-kb-index.sh` is **empty**
-- [ ] **The count guard is still green after the regeneration.**
-      `node tests/canonical/check-skill-counts.mjs` exits **0** -- `INDEX.md` is inside the guard's
-      `.aid/knowledge/` scan, so a regenerated summary line stating a count could newly disagree, and
-      re-running the guard is cheap. If it does disagree, the fix is in the summarised **document**, not
-      in `INDEX.md`, which is generated
+- [ ] **A regenerated summary line that states a count is reconciled in its source document.**
+      `INDEX.md` is generated, so the generator is its oracle (`KB-03`) and it is never hand-fixed.
+      The retired repo-wide count guard is not the oracle here and is not run: the surviving
+      `tests/canonical/test-doc-counts.sh` **does not scan `.aid/knowledge/`** by design
+      (`../../RESCOPE-COUNT-GUARD.md`), so any count a regenerated row surfaces is a `G-01` matter in
+      the **summarised document**, and the record names the document and the verdict
 - [ ] **No registration surface moved.** `git status --porcelain .aid/settings.yml
       .aid/knowledge/README.md` is clean -- no `create` skill runs here, so CC-2's registration path
       cannot have fired

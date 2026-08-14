@@ -24,6 +24,13 @@ Shape: 6 sections matching .claude/aid/templates/delivery-plans/task-template.md
 
 **Depends on:** task-058
 
+> **Count-guard re-scope (owner decision, 2026-08-14).** This DETAIL cites
+> `tests/canonical/check-skill-counts.mjs`, which was **retired upstream** (deleted by
+> work-004). Those citations are superseded by `../../RESCOPE-COUNT-GUARD.md`: public-facing
+> doc counts are guarded by `tests/canonical/test-doc-counts.sh`, and counts inside
+> `canonical/` / `.aid/knowledge/` are reviewer-governed under criterion `G-01`. Read that
+> document before executing this task.
+
 **Scope:**
 - Source: BLUEPRINT § Scope, second bullet, and BLUEPRINT criterion **6** -- *"The catalog's own
   three stale count comments are corrected, each against a count taken from the file rather than from

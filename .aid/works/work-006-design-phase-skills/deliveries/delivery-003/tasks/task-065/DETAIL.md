@@ -85,15 +85,20 @@ Shape: 6 sections matching .claude/aid/templates/delivery-plans/task-template.md
       **0**. Asserted by diffing the set of lines matching `\b34\b`, `\b18\b`, `\b3 classic` and
       `\b0 alias` against `git show HEAD:` for each file, with every difference explained
 - [ ] **`architecture.md`'s prose and its own count table agree.** Both halves are checked, and the
-      record states them separately -- §7 names this a known drift pair where the guard catches the
-      table and only a human catches the prose
-- [ ] **`module-map.md:76` was re-worded, not exempted.** The line no longer relies on a phrasing the
-      guard's `*` lookbehind excludes, `check-skill-counts.mjs` is **not** edited by this task
-      (`git diff --exit-code -- tests/` is clean), and the record states which phrasing was chosen and
-      that the existing `CLAIMS` pattern can now see it
-- [ ] **The guard is run over these four and its report is recorded**, even though task-069 owns the
-      guard's own constants: `node tests/canonical/check-skill-counts.mjs` is run and every line it
-      reports for these four files is either fixed here or recorded with the task that owns it
+      record states them separately -- §7 names this a known drift pair. Under the re-scope
+      (`../../RESCOPE-COUNT-GUARD.md`) **both** halves are now human-checked: these are
+      `.aid/knowledge/` surfaces, which the surviving guard does not scan
+- [ ] **`module-map.md:76` was re-worded, not exempted.** The line states a count that is either
+      removed as cosmetic or re-measured from disk at authoring time, per criterion **`G-01`**, and
+      the record states which phrasing was chosen and the command behind any figure it keeps. The
+      old requirement -- that the phrasing be visible to the retired guard's `CLAIMS` pattern -- is
+      superseded; no count guard is edited by this task (`git diff --exit-code -- tests/` is clean)
+- [ ] **`G-01` is discharged over these four and the verdicts are recorded.** For each of the four
+      files, the record states whether its count line was **removed** as cosmetic or **re-measured**
+      at authoring time, with the command used for a re-measure. The retired repo-wide count guard
+      is not run and not re-created; `.aid/knowledge/` and `canonical/` counts are reviewer-governed
+      under `G-01` at severity `MINOR` (`../../RESCOPE-COUNT-GUARD.md`). A file reported only as
+      "checked" fails this criterion
 - [ ] **No history apparatus and no work reference was introduced.** For each of the four,
       `grep -cE 'work-[0-9]{3}'` captured to a variable -> `0`, `grep -c '^## Change Log'` -> `0`, and
       no `changelog:` frontmatter field exists. The named oracles `AS03`, `AS03b` and `AS03c` are green

@@ -101,7 +101,7 @@ so the delivery lifecycle MUST be independently authored.
 
 - **Category:** Requirements / Plan validity
 - **Impact:** Required
-- **State:** Pending
+- **State:** Answered
 - **Context:** `origin/master` (the work-004 merge) **retired the repo-wide count guard** --
   `tests/canonical/check-skill-counts.mjs` is deleted (a ~462-line full delete). Its
   replacements are `tests/canonical/test-doc-counts.sh`, scoped to the public-facing docs
@@ -120,8 +120,19 @@ so the delivery lifecycle MUST be independently authored.
   and `.aid/knowledge/` are now reviewer-enforced rather than guarded; or (b) reinstate a
   count guard for the skill corpus, which reverses an owner decision another work just took;
   or (c) drop the count-ratchet obligations from this delivery and route them to tech-debt.
-- **Answer:** {pending owner decision}
-- **Applied to:** {pending -- blocks delivery-003 Detail validity, not delivery-002}
+- **Answer:** **Owner decision (2026-08-14): option (a).** Re-scope task-069 and the dependent
+  oracles onto `tests/canonical/test-doc-counts.sh` (public-facing docs, a guard that runs and
+  **derives** its counts, so there are no ratchets to raise) plus criterion `G-01` in
+  `authoring-conventions.md` (count-bearing prose inside `canonical/` and `.aid/knowledge/`,
+  reviewer-applied at severity `MINOR`). The accepted trade is that KB/canonical count claims are
+  reviewer-governed rather than guarded. A count guard is **not** reinstated.
+- **Applied to:** `RESCOPE-COUNT-GUARD.md` (the authoritative record, incl. the 14-assertion /
+  10-file work list that replaces the ratchet obligations and the mapping for every stale
+  citation); task-069 re-scoped end to end (title, Type DOCUMENT, Scope, all criteria);
+  guard-running oracles re-pointed in task-065, task-068, task-070 and task-072; the
+  count-comment reasoning corrected in this delivery's `BLUEPRINT.md`. Dropped as having no
+  successor: the `CLAIMS` extension, `SUPERSEDED`, `MARKER_CAP`, `CLAIM_FLOOR` and the stage-2
+  replay. delivery-002 is unaffected.
 
 ### Q{N}
 
