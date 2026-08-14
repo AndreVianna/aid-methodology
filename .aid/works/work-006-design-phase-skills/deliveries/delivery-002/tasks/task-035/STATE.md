@@ -1,6 +1,6 @@
 ---
-state: Pending
-review: "--"
+state: Done
+review: 'Quick check: 1 HIGH (aid-config doc_set enumeration incomplete) deferred to gate -- no task owns it; rest clean'
 elapsed: "--"
 notes: "--"
 ticket_ref: "--"
