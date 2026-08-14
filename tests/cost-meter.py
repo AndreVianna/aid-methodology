@@ -412,24 +412,32 @@ def dispatch_floors(root: Path) -> dict[str, int]:
     }
 
 
-def artifacts_from_work(work: Path) -> dict[str, int]:
-    """Measure real artifact sizes from a work folder. Beats the defaults."""
+def artifacts_from_work(work: Path) -> tuple[dict[str, int], set[str]]:
+    """Measure real artifact sizes from a work folder.
+
+    Returns (sizes, measured_keys). Any key NOT in measured_keys fell back to a
+    built-in default because that artifact is absent -- a flat/Lite work has no
+    `features/` and no BLUEPRINT, for instance. The caller must mark those,
+    because a default presented as a measurement is how a wrong number survives
+    into a decision.
+    """
     def avg(paths: list[Path]) -> int:
         sizes = [len(read(p)) for p in paths]
         return sum(sizes) // len(sizes) if sizes else 0
 
     out = dict(DEFAULT_ARTIFACTS)
+    measured: set[str] = set()
     if (req := work / "REQUIREMENTS.md").is_file():
-        out["REQ"] = len(read(req))
+        out["REQ"] = len(read(req)); measured.add("REQ")
     if (plan := work / "PLAN.md").is_file():
-        out["PLAN"] = len(read(plan))
+        out["PLAN"] = len(read(plan)); measured.add("PLAN")
     if specs := sorted(work.glob("features/*/SPEC.md")):
-        out["SPEC"] = avg(specs)
+        out["SPEC"] = avg(specs); measured.add("SPEC")
     if bps := sorted(work.rglob("BLUEPRINT.md")):
-        out["BP"] = avg(bps)
+        out["BP"] = avg(bps); measured.add("BP")
     if dets := sorted(work.rglob("tasks/*/DETAIL.md")):
-        out["DET"] = avg(dets)
-    return out
+        out["DET"] = avg(dets); measured.add("DET")
+    return out, measured
 
 
 def gate_shape(name: str, F: int, D: int, T: int, c: int, art: dict[str, int]
@@ -475,7 +483,10 @@ def price_shape(rows, floors: dict[str, int]) -> tuple[int, int, list[tuple[str,
 def cmd_model(args: argparse.Namespace) -> int:
     root = Path(args.root).resolve()
     floors = dispatch_floors(root)
-    art = artifacts_from_work(Path(args.from_work).resolve()) if args.from_work else dict(DEFAULT_ARTIFACTS)
+    if args.from_work:
+        art, measured = artifacts_from_work(Path(args.from_work).resolve())
+    else:
+        art, measured = dict(DEFAULT_ARTIFACTS), set()
 
     print("Gate-cost MODEL -- real file sizes x an assumed dispatch shape.")
     print("Absolute numbers are indicative; the ratio between shapes is the signal.\n")
@@ -483,7 +494,12 @@ def cmd_model(args: argparse.Namespace) -> int:
           f"tasks={args.tasks} cycles={args.cycles}")
     src = args.from_work if args.from_work else "built-in defaults"
     print(f"  artifact sizes from: {src}")
-    print("    " + "  ".join(f"{k}={v:,}" for k, v in art.items()))
+    # A `*` marks a size that FELL BACK to a built-in default because the work
+    # has no such artifact. Unmarked values were measured on disk.
+    print("    " + "  ".join(f"{k}={v:,}" + ("" if k in measured or not args.from_work else "*")
+                             for k, v in art.items()))
+    if args.from_work and (fell_back := sorted(set(art) - measured)):
+        print(f"    * = not present in that work; built-in default used: {', '.join(fell_back)}")
     print("  dispatch floors (derived from tree):")
     print("    " + "  ".join(f"{k}={v:,}" for k, v in floors.items()))
 

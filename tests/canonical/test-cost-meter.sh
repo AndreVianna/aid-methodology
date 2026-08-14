@@ -201,6 +201,20 @@ else
 fi
 rm -f "${FIX}/canonical/agents/aid-reviewer/AGENT.md"
 
+# --- CM26/CM27 --from-work must not present defaults as measurements --------
+# A flat/Lite work has no features/ and no BLUEPRINT, so SPEC/PLAN/BP fall back
+# to built-in defaults. Reporting those under the heading "artifact sizes from:
+# <that work>" without marking them is how a fabricated number survives into a
+# decision.
+FW="${TMP}/flatwork"
+mkdir -p "${FW}/tasks/task-001"
+printf 'requirements body\n' > "${FW}/REQUIREMENTS.md"
+printf 'detail body\n' > "${FW}/tasks/task-001/DETAIL.md"
+python3 "$METER" model --root "$FIX" --from-work "$FW" --shape today >"${TMP}/fw.txt" 2>&1
+assert_file_contains "${TMP}/fw.txt" "built-in default used" \
+    "CM26 fallback artifact sizes are disclosed, not passed off as measured"
+assert_file_contains "${TMP}/fw.txt" "SPEC" "CM27 the fallback list names the absent artifact"
+
 # --- CM18 the committed baseline is present and current ---------------------
 # Advisory on drift by design: the meter exists to ENABLE cuts, so a shrunk tree
 # must never fail CI. Only growth is reported for review.

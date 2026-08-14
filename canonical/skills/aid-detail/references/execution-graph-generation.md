@@ -44,11 +44,16 @@ it by hand.** A wave-map is a topological sort of the `Depends On` table you jus
 carries no information that table does not — computing it by hand spends effort on arithmetic and
 can silently disagree with the table it came from.
 
-Append the derived blocks to `PLAN.md`:
+Write the derived blocks into `PLAN.md`:
 
 ```bash
-bash canonical/aid/scripts/execute/derive-waves.sh <path-to-PLAN.md> >> <path-to-PLAN.md>
+bash canonical/aid/scripts/execute/derive-waves.sh <path-to-PLAN.md> --write
 ```
+
+`--write` is **idempotent** and splices each block into its own delivery section:
+existing blocks are replaced, not appended, so re-running after correcting a dependency table is
+safe and running it twice changes nothing. On a plan that is already correct it is a byte-identical
+no-op. **Never redirect the output with `>>`** — that duplicates every block.
 
 Then confirm the file agrees with itself:
 

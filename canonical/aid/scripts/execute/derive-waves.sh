@@ -26,6 +26,13 @@
 #
 # Usage:
 #   derive-waves.sh <plan.md>            Print the derived wave-map blocks.
+#   derive-waves.sh <plan.md> --write    Replace the wave-map blocks in the file,
+#                                        in place. IDEMPOTENT: existing blocks are
+#                                        removed first, so re-running after fixing
+#                                        a dependency table is safe and running
+#                                        twice changes nothing. Use this, never
+#                                        shell append -- `>> plan.md` DUPLICATES
+#                                        blocks on any plan that already has them.
 #   derive-waves.sh <plan.md> --check    Compare derived blocks against the ones
 #                                        present in the file. Exit 0 if every
 #                                        delivery agrees, 1 on any mismatch
@@ -33,7 +40,7 @@
 #                                        malformed graph (cycle, or a task the
 #                                        table never defines).
 #
-# Read-only: never writes to <plan.md>.
+# Read-only unless --write is given.
 # Dependencies: bash + awk only (no node, no python -- this is a core-path
 # script, and core AID installs assume neither).
 
@@ -46,15 +53,18 @@ if [[ -z "$PLAN" || ! -f "$PLAN" ]]; then
     echo "derive-waves.sh: usage: derive-waves.sh <plan.md> [--check]" >&2
     exit 2
 fi
-if [[ "$MODE" != "emit" && "$MODE" != "--check" ]]; then
-    echo "derive-waves.sh: unknown mode '$MODE' (expected --check or nothing)" >&2
+if [[ "$MODE" != "emit" && "$MODE" != "--check" && "$MODE" != "--write" ]]; then
+    echo "derive-waves.sh: unknown mode '$MODE' (expected --write, --check, or nothing)" >&2
     exit 2
 fi
 
 # Emit the derived blocks. One awk pass: collect each delivery's dependency
 # table, then Kahn-sort it into waves.
 derive() {
-    awk '
+    awk "$AWK_DERIVE" "${1:-$PLAN}"
+}
+
+AWK_DERIVE='
     function norm(s) {
         gsub(/^[ \t]+|[ \t]+$/, "", s)
         return tolower(s)
@@ -62,6 +72,10 @@ derive() {
     # Flush the delivery currently being collected: Kahn-sort and print.
     function flush() {
         if (cur == "") return
+        # A delivery section with no dependency rows yields nothing. Emitting a
+        # bare `delivery: NNN` block with no wave lines would map no tasks and
+        # only confuse a reader comparing derived against authored output.
+        if (ntask == 0) { cur = ""; return }
         printf "```wave-map\ndelivery: %s\n", cur
 
         for (t in dep) seen[t] = 1
@@ -156,17 +170,23 @@ derive() {
         next
     }
     END { flush() }
-    ' "$PLAN"
-}
+'
 
-# Extract the wave-map blocks already present in the file, normalized the same
-# way derive() prints them, so a comparison is textual and exact.
+# Extract the wave-map blocks already present in a file, normalized the same way
+# derive() prints them, so a comparison is textual and exact.
 existing() {
     awk '
     /^```wave-map[ \t]*$/ { inb = 1; print; next }
     inb && /^```[ \t]*$/   { inb = 0; print; print ""; next }
     inb { gsub(/[ \t]+$/, ""); print; next }
-    ' "$PLAN"
+    ' "${1:-$PLAN}"
+}
+
+# The single comparison both --check and --write use. Command substitution
+# normalizes trailing newlines on BOTH sides identically, which a diff of two
+# process substitutions does not.
+agrees() {
+    [[ "$(derive "$1")" == "$(existing "$1")" ]]
 }
 
 if [[ "$MODE" == "emit" ]]; then
@@ -174,11 +194,91 @@ if [[ "$MODE" == "emit" ]]; then
     exit $?
 fi
 
+if [[ "$MODE" == "--write" ]]; then
+    # Derive BEFORE touching the file, so a malformed graph leaves the plan
+    # untouched rather than half-rewritten.
+    d_out="$(derive)" || exit 2
+
+    tmp="$(mktemp)" || exit 2
+    blocks="$(mktemp)" || exit 2
+    trap 'rm -f "$tmp" "$blocks"' EXIT
+    printf '%s\n' "$d_out" > "$blocks"
+
+    # Splice each derived block back into ITS OWN delivery section rather than
+    # appending all of them at the end. Position carries no meaning to the reader
+    # (it keys off the `delivery:` line), but a wave-map belongs next to the
+    # dependency table it was derived from, and moving them would be a gratuitous
+    # reorganization of a file a human reads.
+    #
+    # Existing blocks are dropped as they are encountered, which is what makes
+    # --write idempotent.
+    awk -v blockfile="$blocks" '
+    BEGIN {
+        # Load the derived blocks, keyed by delivery number.
+        d = ""
+        while ((getline line < blockfile) > 0) {
+            if (line ~ /^```wave-map[ \t]*$/) { pending = line; continue }
+            if (line ~ /^delivery:[ \t]*[0-9]+[ \t]*$/) {
+                d = line; sub(/^delivery:[ \t]*/, "", d); sub(/[ \t]*$/, "", d)
+                block[d] = pending "\n" line
+                continue
+            }
+            if (d != "" && line ~ /^```[ \t]*$/) { block[d] = block[d] "\n" line; d = ""; continue }
+            if (d != "" && line != "") { block[d] = block[d] "\n" line }
+        }
+        close(blockfile)
+    }
+    # Emit the current delivery block (once) before leaving its section.
+    # `spaced` adds the blank line that separates the block from whatever heading
+    # follows it -- restoring the blank that removing the old block consumed. At
+    # EOF there is nothing to separate from, so the caller passes 0 and no
+    # trailing blank is introduced.
+    function emit(spaced) {
+        if (cur != "" && !done[cur] && (cur in block)) {
+            print block[cur]
+            if (spaced) print ""
+            done[cur] = 1
+        }
+        cur = ""
+    }
+    # Suppress any wave-map block already in the file.
+    /^```wave-map[ \t]*$/ { inb = 1; next }
+    inb && /^```[ \t]*$/  { inb = 0; skipblank = 1; next }
+    inb { next }
+    # Swallow exactly one blank line left behind by a removed block.
+    skipblank && /^[ \t]*$/ { skipblank = 0; next }
+    { skipblank = 0 }
+
+    tolower($0) ~ /^###[ \t]+delivery-[0-9]+[ \t]+execution[ \t]+graph/ {
+        emit(1)
+        s = tolower($0); match(s, /delivery-[0-9]+/)
+        cur = substr(s, RSTART + 9, RLENGTH - 9)
+        print; next
+    }
+    /^###?[ \t]/ { emit(1); print; next }
+    { print }
+    END { emit(0) }
+    ' "$PLAN" > "$tmp"
+
+    # Verify before replacing the original: the file we are about to install must
+    # pass its own --check. A rewrite that would not is a bug in this script, and
+    # the plan is safer left alone.
+    if ! agrees "$tmp"; then
+        echo "derive-waves.sh: refusing to write -- the rewritten file would not pass its own --check" >&2
+        exit 2
+    fi
+
+    cat "$tmp" > "$PLAN"
+    n="$(grep -c '^```wave-map' "$PLAN" || true)"
+    echo "derive-waves.sh: wrote ${n} wave-map block(s) to $PLAN"
+    exit 0
+fi
+
 # --check
 d_out="$(derive)" || exit 2
 e_out="$(existing)"
 
-if [[ "$d_out" == "$e_out" ]]; then
+if agrees "$PLAN"; then
     echo "derive-waves.sh: OK -- every wave-map in $PLAN matches its dependency table"
     exit 0
 fi

@@ -163,6 +163,55 @@ out="$(bash "$SCRIPT" "${TMP}/plan-foreign.md" 2>&1)"
 assert_output_contains "$out" 'wave 1: task-020' \
     "DW18 a dependency outside this delivery does not block wave 1"
 
+# --- DW24..DW30 --write ------------------------------------------------------
+# The first draft of this script had no --write; the reference doc told the agent
+# to redirect with `>> PLAN.md`. On any plan that already carries wave-maps that
+# DUPLICATES every block and breaks --check. These assertions pin the properties
+# that make in-place writing safe.
+cp "${TMP}/plan-2col.md" "${TMP}/w.md"
+orig_sha="$(sha256sum "${TMP}/w.md" | cut -d' ' -f1)"
+
+bash "$SCRIPT" "${TMP}/w.md" --write >/dev/null 2>&1
+assert_exit_zero "$?" "DW24 --write succeeds on a plan that already has blocks"
+n="$(grep -c '^```wave-map' "${TMP}/w.md")"
+assert_eq "$n" "1" "DW25 --write REPLACES rather than appends (still 1 block, not 2)"
+
+# Byte-identical no-op on an already-correct plan is the strongest statement of
+# idempotency available, and it also proves the splice preserves position and
+# surrounding blank lines.
+new_sha="$(sha256sum "${TMP}/w.md" | cut -d' ' -f1)"
+assert_eq "$new_sha" "$orig_sha" "DW26 --write on a correct plan is a byte-identical no-op"
+
+bash "$SCRIPT" "${TMP}/w.md" --write >/dev/null 2>&1
+bash "$SCRIPT" "${TMP}/w.md" --write >/dev/null 2>&1
+assert_eq "$(sha256sum "${TMP}/w.md" | cut -d' ' -f1)" "$orig_sha" \
+    "DW27 three consecutive --writes leave the file unchanged"
+
+# First authoring: a plan with no blocks at all must gain them.
+awk '/^```wave-map/{s=1} s&&/^```$/{s=0;next} !s' "${TMP}/plan-2col.md" > "${TMP}/none.md"
+bash "$SCRIPT" "${TMP}/none.md" --write >/dev/null 2>&1
+bash "$SCRIPT" "${TMP}/none.md" --check >/dev/null 2>&1
+assert_exit_zero "$?" "DW28 --write then --check passes on a plan that had no blocks"
+
+# A drifted plan must be corrected by --write.
+bash "$SCRIPT" "${TMP}/plan-drift.md" --write >/dev/null 2>&1
+bash "$SCRIPT" "${TMP}/plan-drift.md" --check >/dev/null 2>&1
+assert_exit_zero "$?" "DW29 --write repairs a drifted wave-map"
+
+# A malformed graph must abort BEFORE touching the file: a plan is safer left
+# alone than half-rewritten.
+cyc_sha="$(sha256sum "${TMP}/plan-cycle.md" | cut -d' ' -f1)"
+bash "$SCRIPT" "${TMP}/plan-cycle.md" --write >/dev/null 2>&1
+assert_exit_eq "$?" 2 "DW30 --write on a cyclic graph exits 2"
+assert_eq "$(sha256sum "${TMP}/plan-cycle.md" | cut -d' ' -f1)" "$cyc_sha" \
+    "DW31 a refused --write leaves the file byte-identical"
+
+# --- DW32 an empty delivery section emits no bare block ---------------------
+printf '### delivery-009 execution graph\n\nNo tasks yet.\n' > "${TMP}/plan-empty.md"
+out="$(bash "$SCRIPT" "${TMP}/plan-empty.md" 2>&1)"
+assert_output_not_contains "$out" 'delivery: 009' \
+    "DW32 a delivery with no dependency rows emits no bare wave-map block"
+
 # --- DW19 read-only --------------------------------------------------------
 before="$(cd "$TMP" && sha256sum ./*.md | LC_ALL=C sort | sha256sum)"
 bash "$SCRIPT" "${TMP}/plan-2col.md" >/dev/null 2>&1
