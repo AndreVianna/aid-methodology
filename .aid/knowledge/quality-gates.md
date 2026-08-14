@@ -69,7 +69,6 @@ deliverables*.
 - [Mechanical Gates Run by the Orchestrator](#mechanical-gates-run-by-the-orchestrator)
 - [Blocking vs Advisory](#blocking-vs-advisory)
 - [Validation Commands](#validation-commands)
-- [Change Log](#change-log)
 
 ---
 

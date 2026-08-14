@@ -64,7 +64,6 @@ own machine.
 - [Project Management Tooling](#project-management-tooling)
 - [Hosting / Containers / Data — None](#hosting--containers--data--none)
 - [Release Commands](#release-commands)
-- [Change Log](#change-log)
 
 ---
 

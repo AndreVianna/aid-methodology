@@ -68,7 +68,6 @@ review-criteria:
 - [D24 — /aid-describe reduced to full-path-only](#d24--aid-describe-reduced-to-full-path-only)
 - [D25 — /aid-monitor re-point (BUG and Change-Request routing)](#d25--aid-monitor-re-point-bug-and-change-request-routing)
 - [Still Load-Bearing](#still-load-bearing)
-- [Change Log](#change-log)
 
 ---
 

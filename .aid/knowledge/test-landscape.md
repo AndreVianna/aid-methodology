@@ -81,7 +81,6 @@ live in `quality-gates.md`.
 - [Test Commands](#test-commands)
 - [Performance & Health](#performance--health)
 - [Suite Authoring (S1-S5) and Run Cadence (T1-T6)](#suite-authoring-s1-s5-and-run-cadence-t1-t6)
-- [Change Log](#change-log)
 
 ---
 

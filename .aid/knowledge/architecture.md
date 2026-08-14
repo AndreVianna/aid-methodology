@@ -46,7 +46,6 @@ review-criteria: []  # nothing is true of this doc alone -- the global level and
 - [Doc-vs-Code Discrepancies](#doc-vs-code-discrepancies)
 - [Invariants](#invariants)
 - [Gotchas](#gotchas)
-- [Change Log](#change-log)
 
 ---
 

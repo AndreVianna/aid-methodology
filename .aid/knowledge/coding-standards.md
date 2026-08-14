@@ -63,7 +63,6 @@ consistent and the shipped scripts portable.
 - [Security Conventions](#security-conventions)
 - [Observed Inconsistencies](#observed-inconsistencies)
 - [Conventions](#conventions)
-- [Change Log](#change-log)
 
 ---
 

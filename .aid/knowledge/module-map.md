@@ -67,7 +67,6 @@ it produces. The modules fall into four planes:
 - [Invariants](#invariants)
 - [Contracts](#contracts)
 - [Gotchas](#gotchas)
-- [Change Log](#change-log)
 
 ---
 

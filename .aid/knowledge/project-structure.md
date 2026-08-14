@@ -45,7 +45,6 @@ review-criteria:
 - [Documentation Found in Repository](#documentation-found-in-repository)
 - [Unusual Structure Notes](#unusual-structure-notes)
 - [Invariants](#invariants)
-- [Change Log](#change-log)
 
 ---
 

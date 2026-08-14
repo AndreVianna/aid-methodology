@@ -77,7 +77,6 @@ and act from this doc without reaching into the templates.
 - [Contracts](#contracts)
 - [Conventions](#conventions)
 - [Validation](#validation)
-- [Change Log](#change-log)
 
 ---
 

@@ -68,7 +68,6 @@ loopback only.
 - [Contracts](#contracts)
 - [Conventions](#conventions)
 - [Invariants](#invariants)
-- [Change Log](#change-log)
 
 ---
 

@@ -24,7 +24,6 @@ review-criteria: []
 ## Contents
 
 - [Sources](#sources)
-- [Change Log](#change-log)
 
 ---
 

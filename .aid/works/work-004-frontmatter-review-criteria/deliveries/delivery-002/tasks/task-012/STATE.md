@@ -1,5 +1,5 @@
 ---
-state: Pending
+state: Done
 review: "--"
 elapsed: "--"
 notes: "--"
@@ -24,8 +24,7 @@ ticket_ref: "--"
 ## Quick Check Findings
 
 - **Reviewer Tier:** Small
-- **Findings:** _none yet_
-
+- **Findings:** none. AC-2 PASS on a file THIS delivery populated -- the finding returned citing decisions.md's own F-01, authored by task-010, with no criterion named in the prompt. Evidence in ac-2-proof-populated.md. The probe also surfaced a CLASS defect (a dangling Change Log Contents anchor in 17 KB docs, the same defect delivery-001's gate caught in one doc) which is fixed here per the FIX contract's F1; two G-01 count drifts and one criteria-table gap are logged in delivery-002-issues.md.
 ---
 
 ## Dispatch Log

@@ -52,7 +52,6 @@ structural and methodological, not littered code.
 - [Dead Code](#dead-code)
 - [Security Observations](#security-observations)
 - [Gotchas](#gotchas)
-- [Change Log](#change-log)
 
 ---
 

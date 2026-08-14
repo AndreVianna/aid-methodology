@@ -58,7 +58,6 @@ server, is documented in [integration-map.md](integration-map.md).)
 - [Conventions](#conventions)
 - [Contracts](#contracts)
 - [Invariants](#invariants)
-- [Change Log](#change-log)
 
 ---
 

@@ -48,7 +48,6 @@ review-criteria:
 - [Test Commands](#test-commands)
 - [Key Dependencies](#key-dependencies)
 - [Version Concerns](#version-concerns)
-- [Change Log](#change-log)
 
 ---
 
