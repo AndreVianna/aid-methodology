@@ -8,7 +8,7 @@ user_approved: no
 lifecycle: Paused-Awaiting-Input
 phase: Describe
 active_skill: aid-describe
-updated: "2026-08-14T19:57:00Z"
+updated: "2026-08-14T20:02:00Z"
 pause_reason: "Awaiting owner approval; Q-01 answered, Q-02..Q-04 open (Specify-time, not Define-blocking)"
 block_reason: --
 block_artifact: --
@@ -117,6 +117,7 @@ sufficient:
 | 2026-08-14 | Describe: constraint amendment (owner) | -- | Dependency set closed at one: `work-004` only. C-1 rewritten, C-2 generalised, the conditional meter reuse in §8 withdrawn. Still paused |
 | 2026-08-14 | Describe: dependency discharged | -- | `work-004` merged to `master` (PR #190); branch merged `master` and now tracks it. C-1 restated as landed. Still paused on approval + Q-01..Q-04 |
 | 2026-08-14 | Describe: Q-01 answered (owner) | -- | NFR-1's exit criterion ratified as drafted. The Define blocker is cleared; Q-02..Q-04 remain and are Specify-time, not Define-time |
+| 2026-08-14 | Describe: Q-02 answered (owner) | -- | Oracles are repo-root-relative and live outside `canonical/`. FR-8 and NFR-5 updated; Q-03 and Q-04 remain |
 
 ---
 
@@ -210,7 +211,7 @@ _None yet. Each delivery-NNN/STATE.md carries its own gate block._
 
 - **Category:** Architecture
 - **Impact:** High
-- **Status:** Pending
+- **Status:** Answered
 - **Context:** Where does an oracle live on disk? L5's worked example writes
   `oracle: scripts/checks/g07-selector-partition.sh`, a project-relative path. But a
   criterion declared in a project's own `.aid/knowledge/authoring-conventions.md` is
@@ -221,6 +222,19 @@ _None yet. Each delivery-NNN/STATE.md carries its own gate block._
 - **Suggested:** A project-relative path resolved from the repo root, so an adopter's
   oracle and AID's own resolve identically; AID's own oracles then live outside
   `canonical/` and stay out of the render chain. Confirm before Specify.
+- **Answer:** OWNER DECISION 2026-08-14 -- **option A.** An `oracle:` value is a path
+  resolved from the repo root, and oracles live OUTSIDE `canonical/`. One resolution rule
+  serves AID's own criteria and an adopter's identically, which follows from the criteria
+  themselves being project-specific -- the reason `work-004` put the criteria tables in
+  `.aid/knowledge/` rather than in `canonical/`. An oracle is the executable half of a
+  project-specific criterion, so it belongs to the project rather than to the shipped
+  toolkit. Second consequence, deliberate: no oracle enters the `canonical/` render chain,
+  so no oracle is multiplied across the five `profiles/` trees and the two dogfood trees.
+  Rejected: shipping AID's oracles under `canonical/aid/scripts/` (it does not cover the
+  adopter case, so it needs this rule anyway and yields two rules instead of one), and
+  placing them beside the criteria in `.aid/knowledge/` (that tree is documents-only).
+- **Applied to:** REQUIREMENTS.md FR-8 (the key's value contract) and NFR-5 (the
+  render-chain exclusion).
 
 ### Q-03
 

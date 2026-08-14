@@ -14,6 +14,7 @@
 | 2026-08-14 | **Dependency set closed at one (owner decision).** `work-004` is the sole dependency; C-1 now says so and forbids another without an amendment. §4's out-of-scope bullet generalised from `work-011` to any in-flight work, and §8's conditional meter reuse withdrawn — FR-15 measures with its own local count | /aid-describe |
 | 2026-08-14 | **`work-004` merged to `master`.** C-1 restated from "pending merge" to landed; the work's one dependency is now on the mainline, so nothing it needs is in flight | /aid-describe |
 | 2026-08-14 | **Q-01 answered (owner).** NFR-1's exit criterion ratified as drafted: an oracle ships only where it replaces recurring human re-derivation, and the trade is measured. Two rejected alternatives recorded with their reasons | owner |
+| 2026-08-14 | **Q-02 answered (owner).** An `oracle:` value is a repo-root-relative path and oracles live outside `canonical/` — one resolution rule for AID and adopters alike, and no oracle in the render chain. FR-8 and NFR-5 updated | owner |
 
 ## 1. Objective
 
@@ -131,7 +132,11 @@ guarding around it.
 **Remedy 2 — an optional `oracle:` on a criterion**
 
 - **FR-8** A `review-criteria:` entry MAY carry one optional `oracle:` key naming an
-  executable check. Its absence is never a defect and never a finding.
+  executable check. Its absence is never a defect and never a finding. The value is a path
+  resolved from the repo root, and an oracle lives OUTSIDE `canonical/` — one resolution
+  rule for AID's own criteria and an adopter's alike, because a criterion is
+  project-specific and its oracle is the executable half of it (owner decision, STATE.md
+  Q-02).
 - **FR-9** A criterion carrying an oracle is decided by RUNNING the oracle rather than by
   a reviewer re-reading the criterion.
 - **FR-10** An oracle is generated once, in the project's own terms, and is then re-run
@@ -180,7 +185,8 @@ guarding around it.
   reduces cost by removing a guarantee is out of scope, not a trade-off to weigh.
 - **NFR-5** Every derived chain — the five `profiles/` trees and the two tracked dogfood
   trees — is refreshed exactly once, at the end. Mid-work staleness is expected and is not
-  a defect.
+  a defect. No oracle enters that chain: FR-8 places them outside `canonical/`, so an
+  oracle is never multiplied across the seven rendered trees.
 - **NFR-6** Edits stay additive and localized wherever a contended file is touched, so a
   later reconcile with an in-flight sibling work stays cheap.
 
