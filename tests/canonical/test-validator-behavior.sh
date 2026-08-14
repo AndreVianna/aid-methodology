@@ -128,29 +128,29 @@ printf '<style>:root{--text:#000000;--bg:#ffffff;}html[data-theme="dark"]{color-
 
 # --- validate-html-output.sh fixtures ---------------------------------------
 # A minimal but FULLY clean fixture (all structural/A1-A5/S2/NM checks pass)
-# carrying the footer + noscript link set: ./relationships.md,
+# carrying the footer + noscript link set: ./architecture.md,
 # ./external-sources.md (footer) + ./INDEX.md (noscript).
 mkdir -p "$TMP/gh"
-: > "$TMP/gh/relationships.md"
+: > "$TMP/gh/architecture.md"
 : > "$TMP/gh/external-sources.md"
 : > "$TMP/gh/INDEX.md"
-cat > "$TMP/gh/graph.html" <<'HTMLEOF'
+cat > "$TMP/gh/summary.html" <<'HTMLEOF'
 <!DOCTYPE html>
 <html lang="en" data-theme="light">
 <head>
 <meta charset="UTF-8">
-<title>Graph</title>
+<title>Summary</title>
 <!-- color-scheme: light dark -->
 <style>:focus-visible{outline:2px;} @media (prefers-reduced-motion: reduce){*{}}</style>
 </head>
 <body>
 <a class="skip-link" href="#top">Skip to content</a>
 <header role="banner"><nav aria-label="Breadcrumb"><a href="/">Home</a></nav></header>
-<main id="top"><h1 id="h1">Graph</h1></main>
+<main id="top"><h1 id="h1">Summary</h1></main>
 <div id="lightbox" role="dialog" aria-modal="true" aria-hidden="true" aria-labelledby="lb-cap">
   <div id="lb-cap"></div>
 </div>
-<footer><a href="./relationships.md">rel</a> <a href="./external-sources.md">ext</a></footer>
+<footer><a href="./architecture.md">rel</a> <a href="./external-sources.md">ext</a></footer>
 <noscript><a href="./INDEX.md">idx</a></noscript>
 <script>
 (function(){
@@ -167,14 +167,14 @@ HTMLEOF
 cat > "$TMP/gh/vacuous.html" <<'HTMLEOF'
 <!DOCTYPE html>
 <html lang="en" data-theme="light">
-<head><meta charset="UTF-8"><title>Graph</title>
+<head><meta charset="UTF-8"><title>Summary</title>
 <!-- color-scheme: light dark -->
 <style>:focus-visible{outline:2px;} @media (prefers-reduced-motion: reduce){*{}}</style>
 </head>
 <body>
 <a class="skip-link" href="/">Skip</a>
 <header role="banner"><nav aria-label="Breadcrumb"></nav></header>
-<main id="top"><h1>Graph</h1></main>
+<main id="top"><h1>Summary</h1></main>
 <div role="dialog" aria-modal="true" aria-hidden="true" aria-labelledby="x"></div>
 <footer>no links here</footer>
 <noscript>no md links here either</noscript>
@@ -220,13 +220,13 @@ run_node "$CONTRAST" "$TMP/diverge-identical.html"
 assert_output_contains "$OUT" "FAIL Theme divergence" "PV01d3 ... FAILS when the dark block reports the light theme's values -- three distinct verdicts over three inputs, so the check cannot be a rubber stamp"
 
 # --- validate-html-output.sh --------------------------------------------
-run_bash "$HTMLOUT" "$TMP/gh/graph.html"
+run_bash "$HTMLOUT" "$TMP/gh/summary.html"
 WORK_HTML_DEFAULT_OUT="$OUT"; WORK_HTML_DEFAULT_RC=$RC
 assert_output_not_contains "$WORK_HTML_DEFAULT_OUT" "Profile:" "PV01e validate-html-output.sh prints NO Profile: line on the default path"
 
 # --- validate-visuals.mjs (this host has no Playwright, so the run below takes
 # the real "Playwright unavailable" SKIP branch -- see the environment note) --
-run_node "$VISUALS" "$TMP/gh/graph.html"
+run_node "$VISUALS" "$TMP/gh/summary.html"
 WORK_VIS_DEFAULT_OUT="$OUT"; WORK_VIS_DEFAULT_RC=$RC
 assert_output_not_contains "$WORK_VIS_DEFAULT_OUT" "Profile:" "PV01g validate-visuals.mjs prints NO Profile: line on the default path"
 
@@ -311,12 +311,12 @@ assert_output_contains "$OUT" "L1. 0/0 anchor links resolve" "PV08a default prof
 assert_output_contains "$OUT" "L2. 0/0 relative md links resolve" "PV08b default profile: 0/0 md links is reported as a pass"
 assert_exit_eq "$RC" 0 "PV08c default profile: vacuous fixture exits 0 (structural checks are otherwise clean)"
 
-run_bash "$HTMLOUT" "$TMP/gh/graph.html"
+run_bash "$HTMLOUT" "$TMP/gh/summary.html"
 GH_DEFAULT_OUT="$OUT"; GH_DEFAULT_RC=$RC   # reused by KBDIR below -- 0-spawn reuse
-assert_output_contains "$OUT" "L2. 3/3 relative md links resolve" "PV05a populated fixture: L2's set is exactly relationships.md + external-sources.md (footer) + INDEX.md (noscript) = 3"
+assert_output_contains "$OUT" "L2. 3/3 relative md links resolve" "PV05a populated fixture: L2's set is exactly architecture.md + external-sources.md (footer) + INDEX.md (noscript) = 3"
 
 rm -f "$TMP/gh/external-sources.md"
-run_bash "$HTMLOUT" "$TMP/gh/graph.html"
+run_bash "$HTMLOUT" "$TMP/gh/summary.html"
 assert_output_contains "$OUT" "L2. 1 md link(s) broken (of 3)" "PV05d removing one companion file: L2 fails naming the missing target's count"
 assert_exit_eq "$RC" 1 "PV05e broken L2 target fails the run"
 : > "$TMP/gh/external-sources.md"   # restore for later groups
@@ -334,7 +334,7 @@ echo "=== KBDIR (PV09) ==="
 # PV09a: --kb-dir on the SAME passing fixture changes no verdict and no exit
 # status. NOFLAG reuses GH_DEFAULT_OUT/RC captured in VACUOUS above (0-spawn
 # reuse); only the WITH-flag run is a new spawn.
-run_bash "$HTMLOUT" "$TMP/gh/graph.html" --kb-dir "$TMP/nonexistent-basis-dir"
+run_bash "$HTMLOUT" "$TMP/gh/summary.html" --kb-dir "$TMP/nonexistent-basis-dir"
 assert_exit_eq "$RC" "$GH_DEFAULT_RC" "PV09a-rc --kb-dir changes no exit status on a passing fixture (even pointed at a directory that does not exist)"
 NOFLAG_BODY=$(echo "$GH_DEFAULT_OUT" | sed 's/(kb-dir=.*)/(kb-dir=X)/')
 WITHFLAG_BODY=$(echo "$OUT" | sed 's/(kb-dir=.*)/(kb-dir=X)/')
@@ -344,10 +344,10 @@ assert_eq "$WITHFLAG_BODY" "$NOFLAG_BODY" "PV09a-body every line other than L2's
 # names, but deliberately NOT beside the artifact. --kb-dir must not rescue it.
 mkdir -p "$TMP/decoy" "$TMP/gh2"
 : > "$TMP/decoy/external-sources.md"
-: > "$TMP/gh2/relationships.md"
+: > "$TMP/gh2/architecture.md"
 : > "$TMP/gh2/INDEX.md"
-cp "$TMP/gh/graph.html" "$TMP/gh2/graph.html"
-run_bash "$HTMLOUT" "$TMP/gh2/graph.html" --kb-dir "$TMP/decoy"
+cp "$TMP/gh/summary.html" "$TMP/gh2/summary.html"
+run_bash "$HTMLOUT" "$TMP/gh2/summary.html" --kb-dir "$TMP/decoy"
 assert_output_contains "$OUT" "L2. 1 md link(s) broken (of 3)" "PV09b --kb-dir pointed at a directory where the missing companion DOES exist does not rescue L2 -- resolution is against the artifact's own directory only, never --kb-dir"
 assert_exit_eq "$RC" 1 "PV09b-rc ...and the run still fails"
 
@@ -432,7 +432,7 @@ run_node "$VISUALS" "$TMP/does-not-exist.html"
 assert_output_contains "$OUT" "SKIP -- html file not found" "PV19a missing artifact: SKIP with remediation"
 assert_exit_eq "$RC" 0 "PV19a-rc ...and exits 0 (the run continues, per C-5)"
 
-run_node "$VISUALS" "$TMP/gh/graph.html"
+run_node "$VISUALS" "$TMP/gh/summary.html"
 assert_output_contains "$OUT" "SKIP -- Playwright is not installed" "PV19d Playwright genuinely unavailable: SKIP with install remediation (real code path, not simulated)"
 assert_exit_eq "$RC" 0 "PV19d-rc ...and exits 0"
 
