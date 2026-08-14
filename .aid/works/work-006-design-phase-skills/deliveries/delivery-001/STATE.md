@@ -1,8 +1,8 @@
 ---
-delivery_state: Gated
-gate_tier: "--"
-gate_grade: "Pending"
-gate_timestamp: "--"
+delivery_state: Done
+gate_tier: Large
+gate_grade: A+
+gate_timestamp: '2026-08-14T17:23:39Z'
 ticket_ref: "--"
 ---
 
@@ -75,18 +75,9 @@ so the delivery lifecycle MUST be independently authored.
 
 ## Delivery Gate
 
-<!-- AUTHORED -- single writer: the delivery-gate closing step of `aid-execute` on this
-     delivery's branch. Written via `writeback-state.sh --delivery-id NNN --block ...`.
-     Distinct from per-task quick-check findings -- the gate aggregates those deferred [HIGH]
-     rows (via delivery-NNN-issues.md) and runs a full grade.sh pass.
-     Instances of the deferred-[HIGH] log live at `.aid/works/work-NNN/delivery-NNN-issues.md`;
-     see `.claude/aid/templates/delivery-issues.md` for the template.
-     Reviewer Tier / Grade / Timestamp live in the YAML frontmatter block at the top of this
-     file (`gate_tier`, `gate_grade`, `gate_timestamp`). Issue List stays here as markdown
-     body (a variable-length inline list doesn't fit a flat frontmatter scalar). -->
-
-- **Issue List:** -- (the delivery gate has not run; `aid-execute` fills this at its closing step)
-
+- **Complexity Score:** 56 (tasks=25, depth=23, risk=8, consults=0; note: complexity-score.sh under-reports risk=0 for hierarchical deliveries — ledger row 11/OOS — so its raw output was 48; tier is Large either way)
+- **Cycles:** 2
+- **Issue List:** 12 findings adjudicated (13 aggregated, 1 pre-Fixed). Cycle 1 grade D-. After fixes: 11 Fixed (rows 1-10, 12), 1 OOS (row 11 — complexity-score.sh risk=0 tooling limitation, tier unaffected, fix owned by delivery-003 render). Independently re-verified by a clean-context aid-reviewer. Final grade A+ (0 Pending/Recurred).
 ---
 
 ## Cross-phase Q&A
