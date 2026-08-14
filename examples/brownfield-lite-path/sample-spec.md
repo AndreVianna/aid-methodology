@@ -70,9 +70,3 @@ omission in `order_repository.py`, not a missing feature.
 |------|-------|
 | 1 | task-001 |
 | 2 | task-002 |
-
-## Revision History
-
-| Date | Change | Source |
-|------|--------|--------|
-| 2026-06-03 | Initial lite-path SPEC created | /aid-describe LITE-BUG-FIX |

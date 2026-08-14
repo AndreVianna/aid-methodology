@@ -108,9 +108,3 @@
 - `task-NNN.md` rev {n} — {what changed, if applicable}
 
 ---
-
-## Revision History
-
-| Rev | Date | Source | Description |
-|-----|------|--------|-------------|
-| 1.0 | {date} | aid-execute | Impediment created |
