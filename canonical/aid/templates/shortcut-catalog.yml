@@ -518,6 +518,46 @@ shortcuts:
     group: G3
     intent: "Develop the defined-and-prioritized item set as a design seed, including which tech-debt.md rows to accept into the plan."
     repurpose: true
+  - name: aid-design-api
+    verb: design
+    artifact: api
+    alias_of: null
+    default_type: DESIGN
+    group: G3
+    intent: "Develop an API design in .aid/design/ before building it; writes a seed, builds nothing."
+    repurpose: true
+  - name: aid-design-ui
+    verb: design
+    artifact: ui
+    alias_of: null
+    default_type: DESIGN
+    group: G3
+    intent: "Develop a UI design in .aid/design/ before building it; writes a seed, builds nothing."
+    repurpose: true
+  - name: aid-design-theme
+    verb: design
+    artifact: theme
+    alias_of: null
+    default_type: DESIGN
+    group: G3
+    intent: "Develop a theme design in .aid/design/ before building it; writes a seed, builds nothing."
+    repurpose: true
+  - name: aid-design-cli
+    verb: design
+    artifact: cli
+    alias_of: null
+    default_type: DESIGN
+    group: G3
+    intent: "Develop a CLI design in .aid/design/ before building it; writes a seed, builds nothing."
+    repurpose: true
+  - name: aid-design-data-model
+    verb: design
+    artifact: data-model
+    alias_of: null
+    default_type: DESIGN
+    group: G3
+    intent: "Develop a data-model design in .aid/design/ before building it; writes a seed, builds nothing."
+    repurpose: true
 
   # --- G8: Document family -- work-005 reframe of feature-010 --
   # `document` is a create/update ARTIFACT, not a verb. HAND-AUTHORED collapse skills.
