@@ -245,6 +245,14 @@ shortcuts:
     group: G4
     intent: "Realize a backlog seed into backlog.md, creating the document on first use and moving accepted items out of tech-debt.md."
     repurpose: true
+  - name: aid-create-mvp
+    verb: create
+    artifact: mvp
+    alias_of: null
+    default_type: DOCUMENT
+    group: G4
+    intent: "Realize an MVP seed into roadmap.md's MVP section only; the roadmap document itself is /aid-create-roadmap's to create."
+    repurpose: true
 
   # --- G5: Change + Refactor family (feature-007, task-017) --
   # -- 15 canonical aid-update* rows (12 in this section; aid-update-test in G7,
