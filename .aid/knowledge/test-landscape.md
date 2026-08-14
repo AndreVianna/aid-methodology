@@ -113,9 +113,13 @@ because it must validate Bash, PowerShell, Python, and Node code paths.
 | Generator `--self-test` harness | Self-test | `.claude/skills/generate-profile/scripts/*.py` | `render_lib`, `render`, `verify_deterministic`, `verify_advisory`, `test_manifest_safety`. |
 | Astro / TypeScript tests | Unit | `site/src/data/__tests__/`, `site/scripts/__tests__/` | Site data + docs-sync tests (separate build). |
 
-Of the 144 live suites, **132 are the long-standing suites** — the AC-2 must-pass set. The
-other 12 are `test-coverage-parity.sh`, `test-skill-counts.sh` (the repo-wide count guard),
-`test-shortcut-builder-invariants.sh`, and the **nine** `test-graph-*.sh` suites.
+Most live suites are the **long-standing suites** — the AC-2 must-pass set. The exceptions are
+named rather than counted, because the total moves whenever a suite is added: they are
+`test-coverage-parity.sh`, `test-doc-counts.sh` (the count guard over the public-facing docs),
+`test-shortcut-builder-invariants.sh`, and the `test-graph-*.sh` suites. Derive the totals from
+disk — `ls tests/canonical/test-*.sh` and `ls tests/canonical/test-graph-*.sh` — rather than
+reading them here; the previous phrasing stated 144 / 132 / 12 against a tree that had moved to
+148 suites and 13 graph suites, which is exactly the drift `G-01` exists to stop.
 
 > **Read the count as of a date, not as a fact.** The live total and the must-pass subset are
 > different quantities; state which one a number refers to whenever you cite it.

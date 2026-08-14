@@ -1,5 +1,5 @@
 ---
-state: Pending
+state: Done
 review: "--"
 elapsed: "--"
 notes: "--"
@@ -24,8 +24,7 @@ ticket_ref: "--"
 ## Quick Check Findings
 
 - **Reviewer Tier:** Small
-- **Findings:** _none yet_
-
+- **Findings:** none. Disposition FULL DELETE, per the owner's authorisation of the SPEC default -- and the narrow fallback was found REDUNDANT (test-doc-counts.sh already derives and asserts the same counts over exactly that surface; the reviewer verified it independently, 31/31). 462 guard lines removed. Two genuine coverage drops recorded rather than papered over: the repo-local maintainer skills, and non-markdown files.
 ---
 
 ## Dispatch Log
