@@ -1,5 +1,5 @@
 ---
-state: 'In Review'
+state: Done
 review: --
 elapsed: "--"
 notes: 'Five authored runs, all realizing (no routing exit, no refusal): /aid-update-roadmap in F-full (work-010), /aid-update-mvp in F-full (work-011), /aid-create-roadmap in F-horizons-empty (work-012), /aid-create-mvp in F-no-MVP (work-013), /aid-update-mvp in a re-established F-no-MVP (work-014). Each allocated a work folder carrying NO phase: key; each graded A+; every folder, worktree and branch removed. V7 PASS, V8 = feature-002 E3 PASS, extent rule PASS on both halves. roadmap.md restored byte for byte (sha256 c389fad6...). Render untouched at 113 entries. Full oracle log in EVIDENCE.md.'
@@ -64,7 +64,9 @@ in-flight `work-003-state-schema` frontmatter conventions.
 
 ## Quick Check Findings
 
-Reviewer Tier: aid-reviewer clean-context dispatch, one per authored run (5 total), each graded with grade.sh --explain; final grade A+ on all five. [HIGH] carried to the delivery gate: the COMMITTED .aid/knowledge/roadmap.md line 155 cites decisions.md for a claim decisions.md does not make (Status of "Richer connector consumption" reads "anticipated by the architecture (see decisions.md)"; grep for richer|anticipat|consumption in decisions.md returns no match, and its D19 records the opposite -- "Accepted (delivery-002 withdrawn)"). That is a feature-003 section 3a durable-citation defect in a shipped artifact owned by task-015; this task restores roadmap.md byte for byte by acceptance criterion and therefore did not fix it. See EVIDENCE.md section 11 observation 1. No [CRITICAL].
+- **Reviewer Tier:** Small
+- **Findings:**
+  - [HIGH] `.aid/knowledge/roadmap.md:155` cites `decisions.md` for an unsupported claim -- the cited document contradicts it (D19). task-015's artifact, surfaced here; not fixable inside this task, whose criteria require restoring the file unchanged -- Deferred-to-gate
 ---
 
 ## Dispatch Log
