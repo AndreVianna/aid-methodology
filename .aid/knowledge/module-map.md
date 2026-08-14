@@ -81,8 +81,8 @@ it produces. The modules fall into four planes:
 | `profiles/<tool>/` (5) | Render | Rendered, per-tool copies of the toolkit (claude-code, codex, cursor, copilot-cli, antigravity) + `<tool>.toml` config. | output of the renderer | large | render-drift CI | Build output -- never hand-edit; regenerate. |
 | `packages/npm` | Distribution | npm `aid-installer` wrapper; vendors `bin/`, `lib/`, `dashboard/`. | `bin/`, `lib/`, `dashboard/` | medium | release smoke | Vendored copies regenerate; edit the wrapper, not the vendor. |
 | `packages/pypi` | Distribution | PyPI `aid-installer` wrapper (`aid_installer/` + `_vendor/`). | `bin/`, `lib/`, `dashboard/` | medium | release smoke | `__main__.py` puts `aid` on PATH. |
-| `dashboard/reader/*` (Python) | Observation | Parses `.aid/` state (STATE.md hierarchy, settings, KB) into typed models. | `.aid/` artifact schemas | large | tested (`dashboard/reader/tests/`) | `parsers.py` + `derivation.py` + `models.py` + `locator.py` + `reader.py`. |
-| `dashboard/server/*` | Observation | Serves the dashboard: a Node `reader.mjs`/`server.mjs` twin of the Python reader, plus `server.py`, index/home HTML. | `dashboard/reader` semantics | large | tested (`dashboard/server/tests/`) | `reader.mjs` is the Node twin of the **whole** `dashboard/reader/` Python reader (its own header: "port of dashboard/reader/"), not just `parsers.py` -- a change to ANY reader `.py` (`parsers`/`derivation`/`models`/`locator`/`reader`) must be mirrored in `reader.mjs`; behavior-equal, no import. |
+| `dashboard/reader/*` (Python) | Observation | Parses `.aid/` state (STATE.yml hierarchy -- work/delivery/task levels; the discovery-area `STATE.md` ledger stays markdown -- plus settings, KB) into typed models. | `.aid/` artifact schemas | large | tested (`dashboard/reader/tests/`) | `parsers.py` + `derivation.py` + `models.py` + `locator.py` + `reader.py` + `state_schema.py` (new: the single hand-rolled parser for the permitted YAML subset -- `parse_state_document` -- plus the KB ledger's original fenced-frontmatter scan, kept unchanged as an explicit opt-in for that one caller). |
+| `dashboard/server/*` | Observation | Serves the dashboard: a Node `reader.mjs`/`server.mjs` twin of the Python reader, plus `server.py`, index/home HTML. | `dashboard/reader` semantics | large | tested (`dashboard/server/tests/`) | `reader.mjs` is the Node twin of the **whole** `dashboard/reader/` Python reader (its own header: "port of dashboard/reader/"), not just `parsers.py` -- a change to ANY reader `.py` (`parsers`/`derivation`/`models`/`locator`/`reader`/`state_schema`) must be mirrored in `reader.mjs`; behavior-equal, no import. `reader.mjs` has no separate `state_schema.mjs` file -- its `parseStateDocument` function is the inline twin of `state_schema.py`, living in the same single file. |
 | `site/` | Observation | Astro marketing + docs website. **Derives its skill content from `canonical/` at build time** (see the Skill Explorer rows below). | own `package.json`; `canonical/skills/`, `canonical/agents/`, `canonical/aid/templates/` | large | tested (`site/**/__tests__`, ~2765 vitest) | Independent of the **CLI** (`bin/`, `lib/`), NOT of the toolkit. Separate `node_modules`/`dist`. |
 | `site/scripts/gen-skills.mjs` + `site/scripts/skills/*` (12) | Observation | **Skill Explorer generator**. Emits the `/skills/` section — one index page plus a detail page per skill directory — from `canonical/skills/` and the shortcut catalog. Modules: discovery, frontmatter parse, grouping (four groups; Definition subdivided by verb family), card/summary/value rendering, index + page render, path resolution, catalog read, and the shared curated roster. | `canonical/skills/`, `shortcut-catalog.yml` | large | tested (`skills-*.test.mjs`, `gen-skills*.test.mjs`) | **Throws** on corpus drift: an on-disk skill that is neither a catalog row nor a curated-roster member fails the build BY NAME. |
 | `site/scripts/lib/flow-graph/*` (14) | Observation | **Flow extractor**. Reads a skill's own instructions and derives its control flow — ordered states, loops, decision branches, exit points — then renders Mermaid. Extractors are per body shape (dispatch table, inline `## State:` sections, engine doorway, sibling, residual), over a shared compose/advance/validate core. | `canonical/skills/*/SKILL.md` + `references/*.md` | large | tested (`flow-*.test.mjs`, the largest suite group) | The four skill *structural shapes* in § Skill Structural Shapes are what these extractors dispatch on. |
@@ -130,7 +130,7 @@ canonical/skills/aid-discover/references/state-elicit.md -> .aid/knowledge/exter
 dashboard/server/server.mjs -> dashboard/server/reader.mjs
 dashboard/server/server.py  -> dashboard/reader/reader.py
 dashboard/reader/reader.py  -> parsers.py , derivation.py , models.py , locator.py
-dashboard/reader/*          -> .aid/ artifact schemas (STATE.md, settings.yml, KB)
+dashboard/reader/*          -> .aid/ artifact schemas (STATE.yml, settings.yml, KB)
 dashboard/server/reader.mjs <parity> dashboard/reader/*.py   (whole-reader twin -- no import; behavior-equal)
 site/                       -> canonical/skills/, canonical/agents/,
                                canonical/aid/templates/{shortcut-catalog.yml,knowledge-base/}
@@ -177,7 +177,7 @@ grader).
 | (root) | `grade.sh` | every skill REVIEW state | Reads the reviewer ledger, counts findings by severity, emits a grade. |
 | `config/` | `read-setting.sh` | every skill | Resolves a setting from `.aid/settings.yml` (skill-override -> category -> default). |
 | `connectors/` | `connector-registry.sh`/`.ps1`, `build-connectors-index.sh`/`.ps1`, `connector-secret.sh`/`.ps1` | `aid-discover` ELICIT (Step E2 author) + reconcile (Steps R0-R5) | Frontmatter accessor (list/read) for `.aid/connectors/*.md` descriptors, the deterministic `INDEX.md` builder, and the no-echo/path-confined secret write/purge handler for the git-ignored `.secrets/` store. Bash+PowerShell twins throughout. Test coverage: `tests/canonical/test-connector-registry.sh`, `test-connector-secret.sh`, `test-connector-secret-ps1.sh`, `test-connector-secret-ac3-leak-sweep.sh`, `test-connector-twins-ps1-parity.sh`, `test-connectors-registry-integration.sh`, `test-build-connectors-index.sh`, `test-reconcile-scenarios.sh`. |
-| `execute/` | `complexity-score.sh`, `compute-block-radius.sh`, `writeback-state.sh` | `aid-execute` | Delivery-complexity scoring, failure block-radius (tasks transitively depending on a failed task), and locked per-unit STATE.md writeback. |
+| `execute/` | `complexity-score.sh`, `compute-block-radius.sh`, `writeback-state.sh` | `aid-execute` | Delivery-complexity scoring, failure block-radius (tasks transitively depending on a failed task), and locked per-unit STATE.yml writeback (single-key surgical write; every other line reproduced byte-for-byte). |
 | `graph/` | `graph-preflight.sh`, `kb-write-fence.sh`, `graph-stale-check.sh`, `harvest-declared.sh`, `scan-source.sh`, `significance-rules.sh`, `derive-edges.sh`, `relationship-schema.sh`, `build-relationships.sh`, `validate-relationships.sh`, `report-endpoint-satisfiability.sh`, `assemble-coverage-notes.sh`, `grade-graph.sh`, `coverage-predicate.mjs`, `detect-kb-gaps.mjs` | `aid-graph` | The knowledge-relationship graph pipeline: pre-flight prerequisite gate; the write fence that keeps the Knowledge Base read-only for the whole run; content-addressed staleness check; declared-relationship harvest from KB frontmatter plus a source scan, filtered by the significance rules; edge derivation and the `relationships.md` build/validate pair against `templates/graph/relationship-schema.yml` + `relation-vocabulary.yml`; endpoint-satisfiability and coverage reporting; KB gap detection (reported onward, never gated on); and the graph's own two-grade gate. |
 | `housekeep/` | `branch-commit.sh`, `cleanup-classify.sh`, `housekeep-state.sh` | `aid-housekeep` | Branch/commit helpers, orphan/cleanup classification, housekeep run-state. |
 | `kb/` | `build-project-index.sh`, `build-metrics.sh`, `build-kb-index.sh`, `harvest-coined-terms.sh`, `closure-check.sh`, `discover-preflight.sh`, `kb-actback-task.sh`, `kb-citation-lint.sh`, `kb-dual-intent-probes.sh`, `kb-freshness-check.sh`, `kb-teachback-questions.sh`, `lint-frontmatter.sh`, `recon-classify.sh` | `aid-discover` (most), `aid-update-kb` (`kb-freshness-check.sh`) | The discovery/KB engine: index + metric generation, concept harvest, closure loop, frontmatter + citation lint, path classification, dual-intent self-eval. |
@@ -271,7 +271,7 @@ body; ownership counts per this document's own contracts and `project-structure.
 | `canonical/skills/aid-discover/` | The actively-developed discovery engine -- large reference set, frequent feature additions. | High |
 | `canonical/aid/scripts/kb/` | Backs aid-discover; new linters/checks land here often. | High |
 | `lib/aid-install-core.sh` + PS twin | Install/migration semantics evolve with each release; twin must stay in sync. | High |
-| `dashboard/reader` + `dashboard/server` | Reader/parser changes follow every STATE.md schema change; two twins to keep in parity. | Medium |
+| `dashboard/reader` + `dashboard/server` | Reader/parser changes follow every STATE.yml schema change; two twins to keep in parity. | Medium |
 
 ---
 
@@ -354,9 +354,11 @@ body; ownership counts per this document's own contracts and `project-structure.
   Conformance Lane may only FLAG code divergence for human reconciliation and MUST
   NOT overwrite the design with as-built reality (NFR-5 carve; see
   `state-kb-delta.md` "Conformance Lane").
-- **Derived STATE views are never written:** the work/delivery `## Tasks State`,
-  `## Delivery Gates`, etc. are read-time unions over per-unit STATE.md files; only
-  the per-unit files are write targets (see artifact-schemas.md).
+- **Derived STATE views are never written:** the work/delivery Tasks State, Delivery Gates,
+  etc. views are read-time unions over per-unit `STATE.yml` files, computed at read time with
+  no corresponding on-disk key at all -- the pre-conversion markdown carried these as retired
+  `## Tasks State` / `## Delivery Gates` headings; the current `STATE.yml` templates omit them
+  entirely (FR-2c). Only the per-unit files are write targets (see artifact-schemas.md).
 
 ---
 
