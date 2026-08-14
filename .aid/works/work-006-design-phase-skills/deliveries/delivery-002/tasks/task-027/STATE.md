@@ -1,6 +1,6 @@
 ---
-state: Pending
-review: "--"
+state: Done
+review: 'Quick check clean (no CRITICAL/HIGH)'
 elapsed: "--"
 notes: "--"
 ticket_ref: "--"
