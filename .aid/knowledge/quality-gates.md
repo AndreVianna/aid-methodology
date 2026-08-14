@@ -16,12 +16,6 @@ tags: [C6, quality-gates, review, grading, ledger, gates]
 see_also: [test-landscape.md, authoring-conventions.md, pipeline-contracts.md]
 owner: architect
 audience: [developer, architect, pm]
-intent: |
-  The methodology's quality gates: A-grade gating, the reviewer agent + 7-column
-  ledger, per-phase REVIEW loops, the A+..F scale, minimum-grade thresholds, the
-  review->fix->re-review loop, the discover review panel, the delivery gate, and
-  the shortcut/Lite-path GATE + APPROVAL-HALT. Distinct from the automated tests
-  in test-landscape.md.
 review-criteria:
   - id: F-01
     kind: validate
@@ -108,9 +102,10 @@ everything). CONFIRMED in `.claude/aid/templates/grading-rubric.md` (Grade Calcu
 - **Count sets the modifier within a severity:** exactly 1 → `+`; 2-5 → none; 6+ → `-`
   (CONFIRMED in `grade.sh` `modifier_for_count`).
 
-Severity meanings (from the rubric): Minor = cosmetic; Low = works-but-deviates; Medium =
-incorrect non-critical behavior / missing edge case; High = blocks functionality / security
-/ data integrity; Critical = system failure / data loss / fundamentally wrong approach.
+What each severity level MEANS is defined once, in
+`canonical/aid/templates/grading-rubric.md § Issue Severities` -- that file's own `F-01` claims
+the definition exclusively, so this doc cites it rather than paraphrasing it. What lives here is
+the scoring: which rows count, how the worst dominates, and the thresholds a phase must clear.
 
 ---
 

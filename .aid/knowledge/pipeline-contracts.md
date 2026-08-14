@@ -17,10 +17,6 @@ tags: [C2, pipeline, contracts, phases, artifacts, state-machines, feedback-loop
 see_also: [integration-map.md, architecture.md, domain-glossary.md, artifact-schemas.md]
 owner: architect
 audience: [developer, architect]
-intent: |
-  The typed data contracts between AID pipeline phases — artifact hand-offs, state-machine
-  transitions, the grading gate, and the feedback loops. Read this when modifying a skill,
-  an artifact template, or any phase boundary.
 review-criteria:
   - id: F-01
     kind: validate

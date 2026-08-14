@@ -15,10 +15,6 @@ tags: [C0, languages, runtimes, frameworks, build-tools, testing, polyglot]
 see_also: [architecture.md, infrastructure.md, test-landscape.md]
 owner: architect
 audience: [developer, architect, devops]
-intent: |
-  Languages, runtimes, frameworks, build tools, and test infrastructure AID uses, with
-  actual versions from config files plus the exact runnable build/lint/test commands. Read
-  this for language-version or tool-version questions.
 review-criteria:
   - id: F-01
     kind: validate

@@ -1,13 +1,8 @@
 ---
 kb-category: meta
 source: hand-authored
-intent: |
-  The canonical schema for every reviewer-output ledger in AID. Applies to all
-  REVIEW states across all skills (discover, execute, specify, plan, detail,
-  interview, summarize, deploy), to every script-based validator, and to
-  ad-hoc user-prompted reviews. Defines the table shape, severity + status
-  enums, file lifecycle, and grade.sh integration. Single source of truth so
-  grade.sh, agents, skills, and humans all read findings identically.
+objective: The canonical schema for every reviewer-output ledger in AID.
+summary: Defines the 7-column table shape, the Severity and Status enums, the file lifecycle, and how grade.sh reads it.
 review-criteria:
   - id: F-01
     kind: validate
@@ -39,8 +34,6 @@ review-criteria:
     criterion: "The file persists across REVIEW and FIX cycles within one skill invocation and is deleted when the skill reaches DONE"
     severity: LOW
     why: "A ledger left behind is read as a live finding list by the next run"
-changelog:
-  - 2026-05-28: Initial schema spec
 ---
 
 # Reviewer Ledger Schema

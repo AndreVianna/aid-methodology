@@ -19,10 +19,6 @@ tags: [C8, infrastructure, ci-cd, release, distribution, versioning, dashboard]
 see_also: [technology-stack.md, integration-map.md, tech-debt.md, test-landscape.md]
 owner: devops
 audience: [developer, devops, architect]
-intent: |
-  How AID ships and runs: source control, CI/CD, the multi-profile render, the
-  release pipeline (release.sh + 3 channels), install bootstrap + manifests,
-  versioning/version-sync, and the dashboard server runtime.
 review-criteria:
   - id: F-01
     kind: validate

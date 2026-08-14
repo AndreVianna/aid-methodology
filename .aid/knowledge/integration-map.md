@@ -22,10 +22,6 @@ tags: [C2, integrations, external-deps, git, github, npm, pypi, host-tools, dash
 see_also: [pipeline-contracts.md, external-sources.md, infrastructure.md, architecture.md]
 owner: architect
 audience: [developer, architect]
-intent: |
-  External integration topology — what AID consumes, what it exposes, and how. Read this for
-  integration-touching work (install channels, CI, distribution, host-tool profiles, dashboard,
-  connectors).
 review-criteria:
   - id: F-01
     kind: validate

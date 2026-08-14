@@ -22,9 +22,6 @@ tags: [C4, glossary, vocabulary, terminology, concept-spine]
 see_also: [pipeline-contracts.md, integration-map.md, architecture.md]
 owner: architect
 audience: [developer, architect, pm]
-intent: |
-  Project-specific vocabulary with definitions. Disambiguates terms that mean something
-  particular in AID; the canonical reference for naming. Concept Spine + supporting lexicon.
 review-criteria:
   - id: F-01
     kind: validate

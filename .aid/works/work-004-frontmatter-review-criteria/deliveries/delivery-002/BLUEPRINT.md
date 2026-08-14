@@ -36,7 +36,12 @@ resync, guard retirement, or front-face edit (delivery-003).
 - [ ] The 20 READMEs are deleted, with the `aid-clerk` contract relocated and all 3 `aid-monitor` test
       assertions removed; no dangling pointer to a deleted README remains in a shipping file.
 - [ ] Every one of the 290 files resolves to exactly one document type; none untyped; the three buckets
-      sum to 290 (159 + 123 + 8).
+      sum to 290, with the carve-outs netted out of the buckets rather than only off the total.
+      *(Corrected at the delivery-002 gate: this criterion previously pinned the split as
+      `159 + 123 + 8`. Those were the figures of the **starting survey**, and this delivery's whole
+      job is to move files between those buckets by populating them — so a correct delivery
+      necessarily falsifies the split while keeping the sum. Only the sum is binding. Measured at
+      the gate: 157 + 117 + 16 = 290.)*
 - [ ] No authored `review-criteria:` block restates a global or type-level criterion; every authored
       entry is derivable from the repo alone (NFR-5).
 - [ ] The 8 in-scope `contracts: []` docs declare real criteria or state why they have none; the 8 that

@@ -13,8 +13,6 @@ tags: [C1, structure, layout, directories, files]
 see_also: [module-map.md, architecture.md, technology-stack.md]
 owner: architect
 audience: [developer, architect]
-intent: |
-  Repository layout, top-level directory purposes, and file-inventory shape. Read this to understand the on-disk organization of the project before navigating any subtree.
 review-criteria:
   - id: F-01
     kind: validate
@@ -100,7 +98,7 @@ AID/
 ├── VERSION                   # single-line canonical version string
 ├── canonical/                # SOURCE OF TRUTH for the AID toolkit
 │   ├── skills/               # 76 skill definitions (18 curated + 58 catalog skills)
-│   ├── agents/               # agent role definitions (AGENT.md + README.md each)
+│   ├── agents/               # agent role definitions (one AGENT.md each)
 │   ├── aid/                  # toolkit payload installed under the tool's aid/ subtree
 │   │   ├── scripts/          # helper scripts grouped by phase (kb, execute, ...)
 │   │   └── templates/        # KB seeds, doc/state templates, schemas, shortcut catalog + engine + scaffolding

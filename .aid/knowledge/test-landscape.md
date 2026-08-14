@@ -22,10 +22,6 @@ tags: [C6, testing, coverage, frameworks, ci, gaps]
 see_also: [quality-gates.md, technology-stack.md, infrastructure.md, tech-debt.md]
 owner: developer
 audience: [developer, architect]
-intent: |
-  The automated test landscape: frameworks, the canonical helper suites, installer
-  tests, CI lanes (test/docs/installer-tests/release), the WinPS 5.1 compat lane,
-  render-drift, and where heavy gates run. Read before writing or modifying tests.
 review-criteria:
   - id: F-01
     kind: validate
