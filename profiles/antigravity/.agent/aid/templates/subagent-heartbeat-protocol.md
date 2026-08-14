@@ -148,7 +148,7 @@ includes `STOP_FILE=...` (see §Orchestrator-side responsibilities item 6):
    above), ALSO:
    a. **Stat your OWN `.stop` file** at the exact `STOP_FILE` path you were given (never derive
       or construct this path yourself).
-   b. **Re-read the work `lifecycle`** from `STATE.md` frontmatter — the same field
+   b. **Re-read the work `lifecycle`** from `STATE.yml` frontmatter — the same field
       `writeback-state.sh --pipeline --field Lifecycle` writes; enum `Running |
       Paused-Awaiting-Input | Blocked | Completed | Canceled`.
 2. **If the `.stop` file is present, OR `lifecycle` is anything other than `Running`**, halt at

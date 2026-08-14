@@ -28,7 +28,7 @@
 #              folder left in place (no partial/silent success)
 #   Unit 13 -- lock contention: a pre-existing sentinel is NEVER stolen/removed
 #              by the contending process (exit 2)
-#   Unit 14 -- reconcile-winner: newest STATE.md `updated` wins across two
+#   Unit 14 -- reconcile-winner: newest STATE.yml `updated` wins across two
 #              worktree copies of the SAME work_id; the shadow copy is left
 #              untouched (WT-1 symmetry -- no bulk delete)
 #   Unit 15 -- reconcile-winner tie-break: a literal "main" branch label wins
@@ -81,17 +81,17 @@ _mk_repo() {
 }
 
 # _mk_work <root> <work_id> <lifecycle> <updated>  -- create
-# <root>/.aid/works/<work_id>/STATE.md with the given frontmatter scalars.
+# <root>/.aid/works/<work_id>/STATE.yml with the given top-level scalars (one
+# whole-document YAML key space, no `---` fence -- D-1; _frontmatter_value
+# scans the whole document either way, so this fixture never needed the fence).
 _mk_work() {
     local root="$1" work_id="$2" lifecycle="$3" updated="$4"
     mkdir -p "$root/.aid/works/$work_id"
     {
-        echo "---"
+        echo "# Work State"
         echo "lifecycle: $lifecycle"
         echo "updated: '$updated'"
-        echo "---"
-        echo "# Work State"
-    } > "$root/.aid/works/$work_id/STATE.md"
+    } > "$root/.aid/works/$work_id/STATE.yml"
 }
 
 # _commit_all <dir> <msg>
@@ -393,11 +393,9 @@ assert_dir_exists "$D16/.aid/works/work-910-lex" "U16 trunk copy left untouched"
 # ---------------------------------------------------------------------------
 D17="${TMPDIR_BASE}/u17-plain"
 mkdir -p "$D17/.aid/works/work-990-nogit"
-cat > "$D17/.aid/works/work-990-nogit/STATE.md" <<'EOF'
----
+cat > "$D17/.aid/works/work-990-nogit/STATE.yml" <<'EOF'
 lifecycle: Pending
 updated: '2026-01-01T00:00:00Z'
----
 EOF
 
 out=$(cd "$TMPDIR_BASE" && AID_REPO_ROOT="$D17" bash "$SUT" --work-id work-990-nogit 2>&1); ec=$?

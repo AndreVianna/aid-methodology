@@ -20,7 +20,7 @@
 #       canonical source) and `state-continue.md` (the new invocation site, per feature-013
 #       "the D1 opener relocation").
 #     - the five-step selector's step headings are present, unchanged, in order.
-#     - fixture-shape: a hand-authored "all sections Pending" STATE.md proves the documented
+#     - fixture-shape: a hand-authored "all sections Pending" STATE.yml proves the documented
 #       fire-once condition that makes CONTINUE emit the D1 opener; a second fixture ("one
 #       section Partial") proves the same condition correctly does NOT re-fire it.
 #
@@ -230,7 +230,15 @@ TMP=$(mktemp -d)
 trap 'rm -rf "$TMP"' EXIT
 
 # build_interview_state_fixture <path> <mode: all-pending|one-partial>
-# Mirrors work-state-template.md's ## Interview State section shape.
+# Mirrors work-state-template.yml's interview: key shape (task-015 addendum,
+# SP-16/AC-8: retargeted from work-state-template.md's old frontmatter-fenced
+# "## Pipeline State" / "## Interview State" markdown shape -- work-009
+# task-002 collapsed the whole document into one flat/nested YAML key space,
+# no frontmatter fence, no markdown headings/tables. `phase: Describe` (not
+# the old fixture's "Interview") because Describe is the current phase enum
+# member for this skill -- Interview was never a member of the tightened
+# `Describe | Define | Specify | Plan | Detail | Execute` enum this template
+# now documents.
 build_interview_state_fixture() {
     local path="$1" mode="$2"
     local s1_state="Pending" s2_state="Pending"
@@ -238,42 +246,42 @@ build_interview_state_fixture() {
         s1_state="Partial"
     fi
     cat > "$path" <<EOF
-# Work State -- work-999-fixture
+lifecycle: Running
+phase: Describe
+active_skill: aid-describe
+updated: '2026-07-08T12:00:00Z'
+pause_reason: --
+block_reason: --
+block_artifact: --
 
-## Pipeline State
-
-- **Lifecycle:** Running
-- **Phase:** Interview
-- **Active Skill:** aid-describe
-- **Updated:** 2026-07-08T12:00:00Z
-- **Pause Reason:** --
-- **Block Reason:** --
-- **Block Artifact:** --
-
-## Interview State
-
-**State:** In Progress  **Grade:** Pending
-
-| # | Section | State | Last Updated |
-|---|---------|-------|--------------|
-| 1 | Objective | ${s1_state} | -- |
-| 2 | Problem Statement | ${s2_state} | -- |
+interview:
+  state: In Progress
+  grade: Pending
+  sections:
+    - id: 1
+      name: Objective
+      state: ${s1_state}
+      updated: --
+    - id: 2
+      name: 'Problem Statement'
+      state: ${s2_state}
+      updated: --
 EOF
 }
 
 # detect_opener_fires <interview-state-fixture> -- mechanical transcription of
 # state-continue.md's own documented rule: "If all REQUIREMENTS.md sections are Pending,
 # emit the D1 fixed opener ... Otherwise ... do NOT re-emit."
+# task-015 addendum: scans interview.sections[].state lines (6-space indent,
+# per work-state-template.yml SS D-2) instead of the old pipe-table's 4th column.
 detect_opener_fires() {
     local fixture="$1"
     local non_pending
-    # Row shape: | # | Section | State | Last Updated | -- split("|") yields an empty
-    # leading field, so column 4 (not 3) is the State cell.
     non_pending=$(awk '
-        /^\| [0-9]+ \|/ {
-            n = split($0, f, "|")
-            state = f[4]; gsub(/^[[:space:]]+|[[:space:]]+$/, "", state)
-            if (state != "Pending") print state
+        /^      state:/ {
+            v = $0
+            sub(/^      state:[[:space:]]*/, "", v)
+            if (v != "Pending") print v
         }
     ' "$fixture" | grep -c . || true)
     if [[ "$non_pending" -eq 0 ]]; then
@@ -283,8 +291,8 @@ detect_opener_fires() {
     fi
 }
 
-ALL_PENDING="${TMP}/state-all-pending.md"
-ONE_PARTIAL="${TMP}/state-one-partial.md"
+ALL_PENDING="${TMP}/state-all-pending.yml"
+ONE_PARTIAL="${TMP}/state-one-partial.yml"
 build_interview_state_fixture "$ALL_PENDING" "all-pending"
 build_interview_state_fixture "$ONE_PARTIAL" "one-partial"
 

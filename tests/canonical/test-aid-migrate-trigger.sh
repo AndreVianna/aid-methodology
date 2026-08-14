@@ -490,7 +490,10 @@ else
     fail "TRG-MO01 manifest-only: settings.yml NOT created (era-b manifest trigger missing)"
 fi
 _MO_FV="$(grep -m1 '^format_version:' "${_MO_REPO}/.aid/settings.yml" 2>/dev/null | tr -d ' ' | cut -d: -f2)"
-assert_eq "${_MO_FV}" "3" "TRG-MO02 manifest-only: format_version: 3 stamped"
+# task-015 addendum (SP-16 / AC-10): was "3" -- stale since task-008 bumped
+# AID_SUPPORTED_FORMAT 3 -> 4 for the STATE.md -> STATE.yml conversion (bin/aid
+# C1). See known-issues.md KI-011.
+assert_eq "${_MO_FV}" "4" "TRG-MO02 manifest-only: format_version: 4 stamped"
 
 # Idempotent: 'aid status' must NOT warn now (stamp current) -- the recurrence is gone.
 _MO_OUT2="$(cd "${_MO_REPO}" && env AID_HOME="${_MO_STATE}" AID_NO_UPDATE_CHECK=1 \
@@ -500,6 +503,82 @@ if grep -qE "older format" <<<"${_MO_OUT2}"; then
 else
     pass "TRG-MO03 manifest-only: gate silent after migrate (no recurring WARN)"
 fi
+
+# ---------------------------------------------------------------------------
+# TRG-WS: the lazy-stamp encounter model also fires STATE.md -> STATE.yml
+# conversion for a legacy work-state tree (task-015 addendum, additive per
+# test-baseline-pre-refactor.md SS 5.3: "the lazy-stamp encounter model must
+# also fire for a legacy work-state tree").
+#
+# STEP 5 (_aid_sc_convert_repo, bin/aid) runs on EVERY qualifying encounter,
+# unconditionally -- it is not itself gated behind the settings.yml
+# format_version check (that check only decides whether STEPS 1-4 warn/repair
+# settings; STEP 5 always walks .aid/works/*/STATE.md). This fixture proves
+# that property directly: settings.yml is ALREADY stamped format_version: 4
+# (so the format gate has nothing to warn about) yet a lingering pre-format-4
+# STATE.md work tree still gets converted on the very next encounter.
+# ---------------------------------------------------------------------------
+_WS_BASE="$(mktemp -d "${TMP}/ws.XXXXXX")"
+_WS_CODE="${_WS_BASE}/code"; _WS_STATE="${_WS_BASE}/state"; _WS_REPO="${_WS_BASE}/repo"
+_make_code_home "${_WS_CODE}"
+_make_state_home "${_WS_STATE}"
+mkdir -p "${_WS_REPO}/.aid/knowledge"
+touch "${_WS_REPO}/.aid/knowledge/STATE.md"
+printf '%s\n' '{"manifest_version":1,"aid_version":"1.0.0","installed_at":"2026-01-01T00:00:00Z","tools":{"claude-code":{"version":"1.0.0","installed_at":"2026-01-01T00:00:00Z","paths":[],"root_agent_files":[]}}}' \
+    > "${_WS_REPO}/.aid/.aid-manifest.json"
+cat > "${_WS_REPO}/.aid/settings.yml" << 'WSSETTEOF'
+format_version: 4
+name: ws-legacy-tree
+description: TRG-WS fixture -- already-current settings, legacy STATE.md work tree
+type: brownfield
+source_control: none
+minimum_grade: A
+heartbeat_interval: 1
+WSSETTEOF
+mkdir -p "${_WS_REPO}/.aid/works/work-104-legacy-tree"
+cat > "${_WS_REPO}/.aid/works/work-104-legacy-tree/STATE.md" << 'WS_MD_EOF'
+---
+lifecycle: Running
+phase: Execute
+---
+
+# Work State -- work-104-legacy-tree
+
+## Interview State
+
+**State:** Complete  **Grade:** A
+
+| # | Section | State | Last Updated |
+|---|---------|-------|--------------|
+| 1 | Objective | Done | 2026-01-01 |
+WS_MD_EOF
+
+# Precondition: 'aid status' does NOT warn about settings.yml being stale --
+# proves any conversion below is driven by the encounter model, not by a
+# stale-settings WARN forcing a repair pass that happens to also run STEP 5.
+_WS_STATUS_BEFORE="$(cd "${_WS_REPO}" && env AID_HOME="${_WS_STATE}" AID_NO_UPDATE_CHECK=1 \
+    bash "${_WS_CODE}/bin/aid" status 2>&1 </dev/null)" || true
+if grep -qE "older format|aid update" <<<"${_WS_STATUS_BEFORE}"; then
+    fail "TRG-WS00 precondition: 'aid status' unexpectedly warns on an already-current settings.yml"
+else
+    pass "TRG-WS00 precondition: 'aid status' is silent (settings.yml already format_version: 4)"
+fi
+
+_WS_MIGRATE_OUT="$(env AID_HOME="${_WS_STATE}" AID_NO_UPDATE_CHECK=1 \
+    bash "${_WS_CODE}/bin/aid" __migrate-repo "${_WS_REPO}" 2>&1)" || true
+
+if [[ -f "${_WS_REPO}/.aid/works/work-104-legacy-tree/STATE.yml" ]]; then
+    pass "TRG-WS01 legacy work-state tree: STATE.yml written on the encounter that follows (lazy model fires for work-state, not only settings)"
+else
+    fail "TRG-WS01 legacy work-state tree: STATE.yml NOT written (out: ${_WS_MIGRATE_OUT})"
+fi
+if [[ -f "${_WS_REPO}/.aid/works/work-104-legacy-tree/STATE.md" ]]; then
+    fail "TRG-WS02 legacy work-state tree: STATE.md still present after the encounter (conversion did not run)"
+else
+    pass "TRG-WS02 legacy work-state tree: STATE.md deleted after the verified encounter conversion"
+fi
+assert_file_contains "${_WS_REPO}/.aid/works/work-104-legacy-tree/STATE.yml" "lifecycle: Running" \
+    "TRG-WS03 converted STATE.yml carries the frontmatter scalars through"
 
 # ---------------------------------------------------------------------------
 # TRG-E: AID_HOME redirects STATE only; code still resolves from AID_CODE_HOME
@@ -546,7 +625,7 @@ fi
 # TRG-F  First-encounter bootstrap (AC9):
 #   A stamp-less repo (era-a settings.yml with no format_version) is visited
 #   via 'aid __migrate-repo'.  Asserts:
-#     (a) format_version: 3 written into .aid/settings.yml
+#     (a) format_version: 4 written into .aid/settings.yml
 #     (b) repo is registered in the (user-tier, collapsed) registry.yml
 #     (c) NO filesystem scan: a CANARY repo with .aid/ planted OUTSIDE the
 #         throwaway HOME is NOT touched / NOT registered (the real proof that
@@ -613,14 +692,17 @@ _F_MIGRATE_OUT="$(env \
     AID_NO_UPDATE_CHECK=1 \
     bash "${_F_CODE}/bin/aid" __migrate-repo "${_F_REPO}" 2>&1)" || true
 
-# (a) format_version: 3 must be written into the repo's settings.yml.
+# (a) format_version: 4 must be written into the repo's settings.yml.
+# task-015 addendum (SP-16 / AC-10): was "3" -- stale since task-008 bumped
+# AID_SUPPORTED_FORMAT 3 -> 4 for the STATE.md -> STATE.yml conversion (bin/aid
+# C1). See known-issues.md KI-011.
 _F_FV="$(grep '^format_version:' "${_F_REPO}/.aid/settings.yml" 2>/dev/null | head -1 || true)"
 _F_FV_VAL="${_F_FV#format_version:}"
 _F_FV_VAL="${_F_FV_VAL# }"
-if [[ "${_F_FV_VAL}" == "3" ]]; then
-    pass "TRG-F01 AC9 first-encounter: (a) format_version: 3 written into settings.yml"
+if [[ "${_F_FV_VAL}" == "4" ]]; then
+    pass "TRG-F01 AC9 first-encounter: (a) format_version: 4 written into settings.yml"
 else
-    fail "TRG-F01 AC9 first-encounter: (a) format_version: 3 NOT found (got: '${_F_FV}'; out: ${_F_MIGRATE_OUT})"
+    fail "TRG-F01 AC9 first-encounter: (a) format_version: 4 NOT found (got: '${_F_FV}'; out: ${_F_MIGRATE_OUT})"
 fi
 
 # (b) Repo is registered in the (user-tier, collapsed) registry.yml.
@@ -672,9 +754,9 @@ fi
 
 # ---------------------------------------------------------------------------
 # TRG-J: Carry-forward -- second encounter of already-stamped repo
-# Reuse the same fixture repo from TRG-F (it is now stamped with format_version: 3).
+# Reuse the same fixture repo from TRG-F (it is now stamped with format_version: 4).
 # Carry-forward requirements:
-#   - format_version remains at 3 (stamp value preserved)
+#   - format_version remains at 4 (stamp value preserved)
 #   - No re-prompt / no "older format" / no "aid update" on stdout
 #
 # Note: _aid_migrate_repair_settings_era_a always performs a temp+mv write even
@@ -698,12 +780,13 @@ else
     fail "TRG-J01 carry-forward: format_version changed (before='${_J_FV_BEFORE}' after='${_J_FV_AFTER}')"
 fi
 
-# format_version must still be 3.
+# format_version must still be 4.
+# task-015 addendum (SP-16 / AC-10): was "3" -- see the TRG-F01 note above.
 _J_FV_VAL="${_J_FV_AFTER#format_version:}"; _J_FV_VAL="${_J_FV_VAL# }"
-if [[ "${_J_FV_VAL}" == "3" ]]; then
-    pass "TRG-J02 carry-forward: format_version: 3 still present after second encounter"
+if [[ "${_J_FV_VAL}" == "4" ]]; then
+    pass "TRG-J02 carry-forward: format_version: 4 still present after second encounter"
 else
-    fail "TRG-J02 carry-forward: format_version not 3 after second encounter (got: '${_J_FV_AFTER}')"
+    fail "TRG-J02 carry-forward: format_version not 4 after second encounter (got: '${_J_FV_AFTER}')"
 fi
 
 # No re-prompt: 'aid status' on the stamped repo must not emit WARN / offer.

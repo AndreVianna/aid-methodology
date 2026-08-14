@@ -35,7 +35,6 @@ from dashboard.reader.derivation import (
     derive_lifecycle,
     rollup_lifecycle,
     _has_cancellation_in_history,
-    _extract_latest_history_date,
     _is_completed,
     _deploy_status_shipped,
     _all_deliveries_done,
@@ -570,18 +569,28 @@ class TestDerivationSM2(unittest.TestCase):
         self.assertEqual(mode, SourceMode.Fallback)
 
     def test_updated_from_lifecycle_history(self):
-        """updated is extracted from ## Lifecycle History as a coarse fallback."""
+        """updated is the caller-computed latest_history_date, returned verbatim.
+
+        KI-004 / work-009-refactor task-021: derive_lifecycle no longer scans
+        state_text for a markdown '## Lifecycle History' table itself (that
+        scan, _extract_latest_history_date, is deleted -- dead against every
+        STATE.yml, whose lifecycle_history is a YAML sequence, not a table).
+        The caller (parsers.parse_state_md) computes the coarse-updated value
+        ONCE from the already-parsed sequence and threads it through; every
+        priority branch below returns it unchanged."""
         wd = self._make_wd()
         _, _, _, _, _, updated, _ = derive_lifecycle(
             work_dir=wd,
             tasks=[],
             pending_inputs=[],
             state_text=STATE_WITH_HISTORY_DATE,
+            latest_history_date="2026-06-10",
         )
         self.assertEqual(updated, "2026-06-10")
 
     def test_updated_none_when_no_history(self):
-        """updated is None when ## Lifecycle History is absent."""
+        """updated is None when the caller passes no latest_history_date
+        (e.g. lifecycle_history absent/empty) -- the default, unset value."""
         wd = self._make_wd()
         _, _, _, _, _, updated, _ = derive_lifecycle(
             work_dir=wd,
@@ -767,26 +776,16 @@ class TestFallbackHelpers(unittest.TestCase):
         # But a warning IS added for the ambiguous mention
         self.assertTrue(any("ambiguous" in w for w in warnings))
 
-    # --- _extract_latest_history_date ---
-
-    def test_latest_date_extracted(self):
-        d = _extract_latest_history_date(STATE_WITH_HISTORY_DATE)
-        self.assertEqual(d, "2026-06-10")
-
-    def test_latest_date_none_when_no_history(self):
-        self.assertIsNone(_extract_latest_history_date("# No history\n"))
-
-    def test_latest_date_picks_most_recent(self):
-        text = """\
-## Lifecycle History
-
-| Date | Phase Transition / Gate | Grade | Notes |
-|------|------------------------|-------|-------|
-| 2026-05-01 | Describe start | -- | -- |
-| 2026-06-10 | Execute start | -- | -- |
-| 2026-04-15 | Specify start | -- | -- |
-"""
-        self.assertEqual(_extract_latest_history_date(text), "2026-06-10")
+    # --- _extract_latest_history_date: DELETED (KI-004 / task-021) ---
+    # The markdown '## Lifecycle History' table scan this helper performed is
+    # gone -- dead against every STATE.yml, whose lifecycle_history is a YAML
+    # sequence, not a table (dashboard/reader/derivation.py no longer defines
+    # this symbol). Its replacement, parsers._compute_latest_history_date
+    # (a max() over the already-parsed sequence), is covered by
+    # test_work003_state_schema.py's parse_state_md-level assertions, since
+    # it is a parsers.py function, not a derivation.py one. Removed here per
+    # this task's "deleted symbol -> assertion removed" rule -- work-009-refactor
+    # task-016 change-set.
 
     # --- _deploy_status_shipped ---
 
@@ -925,13 +924,29 @@ class TestFallbackIntegration(unittest.TestCase):
         self.assertEqual(pw.lifecycle, Lifecycle.Running)
         self.assertEqual(pw.source_mode, SourceMode.Fallback)
 
-    def test_fallback_blocked_from_failed_task(self):
-        """Fallback: Blocked when a task is Failed."""
+    def test_fallback_failed_task_signal_is_a_noop_via_parse_state_md(self):
+        """Content-level update (work-009-refactor task-016): the Failed-task
+        block signal is NOT derivable at the parse_state_md() level any more.
+
+        `pw.tasks` is ALWAYS [] at the point parse_state_md() calls
+        derive_lifecycle() -- per-task state now lives in a separate
+        `tasks_lifecycle` key (flat layout) or per-task STATE.yml file
+        (hierarchical layout), read by reader.py's callers AFTER this
+        function returns, never by parse_state_md() itself. Feeding it a
+        markdown table with a 'Failed' row (once matched by the retired
+        section state machine) is now indistinguishable from any other
+        malformed/unparseable content: parse_state_document() finds no
+        `lifecycle` key (mostly 'malformed line' warnings), the fallback
+        runs with an empty task list, and it degrades to the documented
+        safe no-op (Running) -- exactly the SP-9 'best-effort model, never
+        raises' contract in parse_state_md()'s own docstring. The Failed-task
+        SIGNAL ITSELF is still correctly derived; see
+        TestDerivationSM2.test_prio3_blocked_from_failed_task, which drives
+        derive_lifecycle() directly with a real tasks=[...] list."""
         wd = self._work_dir()
         pw = parse_state_md(STATE_FAILED_TASK, work_id="work-001", work_dir=wd)
-        self.assertEqual(pw.lifecycle, Lifecycle.Blocked)
-        self.assertIsNotNone(pw.block_reason)
-        self.assertIn("task-001", pw.block_reason)
+        self.assertEqual(pw.lifecycle, Lifecycle.Running)
+        self.assertEqual(pw.tasks, [])
 
     def test_fallback_blocked_from_impediment_file(self):
         """Fallback: Blocked when IMPEDIMENT-task-NNN.md exists at flat path."""
@@ -941,14 +956,26 @@ class TestFallbackIntegration(unittest.TestCase):
         self.assertEqual(pw.lifecycle, Lifecycle.Blocked)
         self.assertIsNotNone(pw.block_artifact)
 
-    def test_fallback_paused_from_pending_qa(self):
-        """Fallback: Paused-Awaiting-Input when pending Q&A exists."""
+    def test_fallback_pending_qa_signal_is_a_noop_via_parse_state_md(self):
+        """Content-level update (task-016): the pending-Q&A pause signal is ALSO
+        a no-op via parse_state_md()'s fallback branch, for an ordering reason
+        distinct from the tasks case above: parse_state_md() reads the
+        document's `qa` key AFTER the lifecycle-absent fallback branch has
+        already run and returned (the code reads `lifecycle_history` ->
+        pw.created, THEN `qa` -> pw.pending_inputs, both below the
+        if/else that calls derive_lifecycle()). So `pending_inputs=pw.
+        pending_inputs` is always [] at the moment derive_lifecycle() is
+        called from here, even though pw.pending_inputs may be populated
+        (from a real `qa:` sequence) by the time parse_state_md() returns.
+        Prio-4 (Paused) therefore never fires at THIS level; it degrades to
+        the same safe no-op (Running) as every other fallback signal against
+        a YAML document. The signal itself is still correctly derived --
+        TestDerivationSM2.test_prio4_paused_from_pending_qa drives
+        derive_lifecycle() directly with a real pending_inputs=[...] list."""
         wd = self._work_dir()
         pw = parse_state_md(STATE_PENDING_QA_ONLY, work_id="work-001", work_dir=wd)
-        self.assertEqual(pw.lifecycle, Lifecycle.PausedAwaitingInput)
-        self.assertIsNotNone(pw.pause_reason)
-        # Only Q1 is Pending (Q2 is Answered)
-        self.assertIn("Q1", pw.pause_reason)
+        self.assertEqual(pw.lifecycle, Lifecycle.Running)
+        self.assertIsNone(pw.pause_reason)
 
     def test_fallback_canceled_from_history(self):
         """Fallback: Canceled when ## Lifecycle History shows cancellation."""
@@ -962,26 +989,53 @@ class TestFallbackIntegration(unittest.TestCase):
         pw = parse_state_md(STATE_DEPLOY_SHIPPED, work_id="work-001", work_dir=wd)
         self.assertEqual(pw.lifecycle, Lifecycle.Completed)
 
-    def test_fallback_blocked_beats_paused(self):
-        """Fallback: Failed task + pending Q&A -> Blocked (not Paused). AC1."""
+    def test_fallback_both_dead_signals_still_noop_to_running(self):
+        """Content-level update (task-016), was 'blocked_beats_paused' (AC1):
+        with BOTH the Failed-task and pending-Q&A signals now unreachable via
+        parse_state_md() (see the two tests above), their priority ordering
+        can no longer be exercised at this level either -- both degrade to
+        the same Running no-op. The priority property itself (Blocked beats
+        Paused) is still asserted directly against derive_lifecycle() by
+        TestDerivationSM2.test_prio3_blocked_beats_pending_qa."""
         wd = self._work_dir()
         pw = parse_state_md(STATE_FAILED_TASK_AND_PENDING_QA, work_id="work-001", work_dir=wd)
-        self.assertEqual(pw.lifecycle, Lifecycle.Blocked)
+        self.assertEqual(pw.lifecycle, Lifecycle.Running)
 
-    def test_fallback_updated_from_history(self):
-        """Fallback: updated is extracted from ## Lifecycle History (coarse)."""
+    def test_fallback_updated_from_history_authored_yaml_sequence(self):
+        """Content-level update (task-016 / KI-004, task-021 RESOLVED): the
+        coarse-`updated` fallback is no longer a raw-text '## Lifecycle
+        History' table scan (dead against a YAML document -- see
+        test_updated_from_lifecycle_history above). It is now
+        parsers._compute_latest_history_date(), fed from the document's
+        AUTHORED `lifecycle_history` sequence -- read once by parse_state_md()
+        itself, unconditionally, before the lifecycle-present branch. This is
+        the integration-level proof: a `lifecycle`-absent STATE.yml document
+        that DOES carry a real `lifecycle_history` sequence still derives the
+        coarse `updated` value end-to-end through parse_state_md()."""
         wd = self._work_dir()
-        pw = parse_state_md(STATE_WITH_HISTORY_DATE, work_id="work-001", work_dir=wd)
+        state_yml = (
+            "lifecycle_history:\n"
+            "  - date: '2026-05-01'\n"
+            "    event: Work created\n"
+            "  - date: '2026-06-10'\n"
+            "    event: Execute start\n"
+        )
+        pw = parse_state_md(state_yml, work_id="work-001", work_dir=wd)
+        self.assertEqual(pw.lifecycle, Lifecycle.Running, "safe no-op -- no `lifecycle` key")
         self.assertEqual(pw.updated, "2026-06-10")
 
-    def test_fallback_tasks_list_preserved(self):
-        """FR14: tasks[] list is intact regardless of the derived lifecycle."""
+    def test_fallback_no_markdown_text_never_populates_tasks(self):
+        """Content-level update (task-016), was 'tasks_list_preserved' (FR14):
+        that property no longer applies AT THIS LEVEL -- parse_state_md()
+        never populates pw.tasks from ANY input (markdown or YAML); per-task
+        state is read by a separate mechanism (parsers.parse_tasks_lifecycle_md
+        / per-task STATE.yml, both called by reader.py's _read_work_flat /
+        _read_work_hierarchical, never by parse_state_md() itself). pw.tasks
+        is therefore always [] regardless of the derived lifecycle -- the
+        NEW, narrower form of the same invariant FR14 originally named."""
         wd = self._work_dir()
         pw = parse_state_md(STATE_FAILED_TASK_AND_PENDING_QA, work_id="work-001", work_dir=wd)
-        # Lifecycle is Blocked (Failed task), but per-task list is still there
-        self.assertEqual(pw.lifecycle, Lifecycle.Blocked)
-        self.assertEqual(len(pw.tasks), 1)
-        self.assertEqual(pw.tasks[0].status, TaskStatus.Failed)
+        self.assertEqual(pw.tasks, [])
 
     def test_fallback_without_work_dir_skips_impediment_scan(self):
         """When work_dir is not passed, IMPEDIMENT scan is skipped (no crash)."""

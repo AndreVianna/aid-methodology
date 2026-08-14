@@ -40,9 +40,9 @@ directory -- NEVER this repo's own pipelines/branches/worktrees):
 
   (A) pipeline.finish real round-trip (AC-EC1/AC2/AC3) -- dispatches the op
       through the REAL writeback-state.sh writer (no spawn stub), asserts
-      `lifecycle: Completed` is persisted via a surgical frontmatter rewrite
-      (the STATE.md BODY text -- everything after the closing `---` fence --
-      survives byte-for-byte untouched, i.e. no hand-written DERIVED section),
+      `lifecycle: Completed` is persisted via a surgical single-key rewrite
+      (every other line of STATE.yml -- comments, other keys -- survives
+      byte-for-byte untouched, i.e. no hand-written DERIVED section),
       and that a fresh read_repo()+serialize_model() pass (the EXACT function
       chain `/r/<id>/api/model` dispatches to, per server.py's own
       `_serve_repo_model`) reports `lifecycle: "Completed"`.
@@ -339,17 +339,34 @@ def _make_repo(tmp: Path) -> "tuple[Path, Path]":
 
 
 def _seed_pipeline_state(aid: Path, work_id: str, lifecycle: str = "Running") -> Path:
-    """<aid>/works/<work_id>/STATE.md with a realistic frontmatter + BODY (not
-    just a bare frontmatter block) -- so a round-trip test can prove the BODY
-    survives writeback-state.sh's surgical frontmatter rewrite byte-for-byte
-    (no hand-written DERIVED section, AC3)."""
+    """<aid>/works/<work_id>/STATE.yml with a realistic comment line plus a
+    second, unrelated key alongside `lifecycle` -- so a round-trip test can
+    prove every OTHER line survives writeback-state.sh's surgical single-key
+    rewrite byte-for-byte (no hand-written DERIVED section, AC3).
+    (work-009-refactor task-016: was a fenced-frontmatter STATE.md with a
+    markdown BODY below the closing `---` fence -- retired, SPEC.md sec:D-1/
+    D-3: STATE.yml is a single whole-file YAML document, no fence, no body;
+    the writer's WB_SET_KV_AWK rewrites ONLY the one matching key line,
+    leaving every other line -- comments and unrelated keys alike --
+    untouched, so this fixture's "survives byte-for-byte" proof-point moves
+    from "the body below the fence" to "every line except `lifecycle:`".)"""
     work_dir = aid / "works" / work_id
     work_dir.mkdir(parents=True, exist_ok=True)
-    (work_dir / "STATE.md").write_text(
-        f"---\nlifecycle: {lifecycle}\n---\n\n"
-        "# Work State\n\n"
-        "Pre-existing body content that must survive a Lifecycle frontmatter "
-        "rewrite untouched -- never a hand-authored DERIVED section.\n",
+    # pause_reason/block_reason/block_artifact are pre-seeded at their "--"
+    # rest value: writeback-state.sh's own `--field Lifecycle` handling
+    # ALWAYS resets these three to "--" as a side effect (writeback-state.sh
+    # :1646-1658) -- pre-seeding them here (rather than omitting them) means
+    # that side effect is a no-op rewrite, keeping the "everything else
+    # survives byte-for-byte" comparison meaningful instead of tripping over
+    # a real, documented, unrelated write.
+    (work_dir / "STATE.yml").write_text(
+        f"# Work State -- {work_id}\n"
+        f"lifecycle: {lifecycle}\n"
+        "updated: '2026-01-01T00:00:00Z'\n"
+        "ticket_ref: --\n"
+        "pause_reason: --\n"
+        "block_reason: --\n"
+        "block_artifact: --\n",
         encoding="utf-8",
     )
     return work_dir
@@ -357,12 +374,15 @@ def _seed_pipeline_state(aid: Path, work_id: str, lifecycle: str = "Running") ->
 
 def _seed_hierarchical_task(aid: Path, work_id: str, task_id: str, status: str,
                              lifecycle: str = "Running") -> Path:
-    """Full-nested layout (deliveries/delivery-001/tasks/<task_id>/{DETAIL,STATE}.md)
-    with ONE task at the given status -- mirrors test_task029_stop_requested.py's
-    own _build_hierarchical_work, parametrized by task_id/status."""
+    """Full-nested layout (deliveries/delivery-001/tasks/<task_id>/{DETAIL.md,
+    STATE.yml}) with ONE task at the given status -- mirrors
+    test_task029_stop_requested.py's own _build_hierarchical_work, parametrized
+    by task_id/status. (work-009-refactor task-016: was fenced-frontmatter /
+    bullet-heading STATE.md files -- retired, SPEC.md sec:D-4's per-work,
+    per-delivery, and per-task STATE.yml shapes.)"""
     work_dir = aid / "works" / work_id
     work_dir.mkdir(parents=True, exist_ok=True)
-    (work_dir / "STATE.md").write_text(f"---\nlifecycle: {lifecycle}\n---\n", encoding="utf-8")
+    (work_dir / "STATE.yml").write_text(f"lifecycle: {lifecycle}\n", encoding="utf-8")
 
     del_dir = work_dir / "deliveries" / "delivery-001"
     del_dir.mkdir(parents=True, exist_ok=True)
@@ -371,10 +391,13 @@ def _seed_hierarchical_task(aid: Path, work_id: str, task_id: str, status: str,
         "## Objective\n\nDeliver.\n\n## Gate Criteria\n\n- [ ] All tests pass\n",
         encoding="utf-8",
     )
-    (del_dir / "STATE.md").write_text(
-        "## Delivery Lifecycle\n\n- **State:** Executing\n\n"
-        "## Delivery Gate\n\n- **Reviewer Tier:** Small\n- **Grade:** A+\n"
-        "- **Issue List:** none\n- **Timestamp:** 2026-01-01T00:00:00Z\n",
+    (del_dir / "STATE.yml").write_text(
+        "delivery_state: Executing\n"
+        "gate_tier: Small\n"
+        "gate_grade: A+\n"
+        "gate_timestamp: '2026-01-01T00:00:00Z'\n"
+        "delivery_gate:\n"
+        "  issue_list: []\n",
         encoding="utf-8",
     )
     task_dir = del_dir / "tasks" / task_id
@@ -383,8 +406,8 @@ def _seed_hierarchical_task(aid: Path, work_id: str, task_id: str, status: str,
         f"# {task_id}: T033 sample task\n\n**Type:** IMPLEMENT\n\nBody.\n",
         encoding="utf-8",
     )
-    (task_dir / "STATE.md").write_text(
-        f"---\nstate: {status}\n---\n\n## Task State\n", encoding="utf-8",
+    (task_dir / "STATE.yml").write_text(
+        f"state: {status}\n", encoding="utf-8",
     )
     return work_dir
 
@@ -394,16 +417,14 @@ def _control_signal_path(aid: Path, work_id: str, task_id: str) -> Path:
 
 
 def _frontmatter_and_body(text: str) -> "tuple[str, str]":
-    """Split STATE.md text into (frontmatter_mapping_text, body_text), where
-    body_text is everything AFTER the closing '---' fence line. Used to prove
-    a writeback-state.sh rewrite touches ONLY the frontmatter block."""
-    lines = text.splitlines(keepends=True)
-    if not lines or lines[0].rstrip("\r\n") != "---":
-        return "", text
-    for i in range(1, len(lines)):
-        if lines[i].rstrip("\r\n") == "---":
-            return "".join(lines[1:i]), "".join(lines[i + 1:])
-    return "".join(lines[1:]), ""
+    """Split a whole-file STATE.yml document into (lifecycle_line, rest_text),
+    where rest_text is every OTHER line (comments + unrelated keys). Used to
+    prove a writeback-state.sh rewrite touches ONLY the one `lifecycle:` key
+    line (work-009-refactor task-016: was a `---`-fence-based frontmatter/body
+    split -- retired alongside the fence itself, SPEC.md sec:D-1/D-3)."""
+    lifecycle_lines = [l for l in text.splitlines(keepends=True) if l.startswith("lifecycle:")]
+    rest_lines = [l for l in text.splitlines(keepends=True) if not l.startswith("lifecycle:")]
+    return "".join(lifecycle_lines), "".join(rest_lines)
 
 
 def _read_model_json(root: Path, write_enabled: bool) -> dict:
@@ -441,7 +462,7 @@ class TestPipelineFinishRealRoundTrip(unittest.TestCase):
             root, aid = _make_repo(tmp)
             work_id = "work-700-finish"
             work_dir = _seed_pipeline_state(aid, work_id, lifecycle="Running")
-            state_path = work_dir / "STATE.md"
+            state_path = work_dir / "STATE.yml"
             fm_before, body_before = _frontmatter_and_body(state_path.read_text(encoding="utf-8"))
             self.assertIn("lifecycle: Running", fm_before)
 
@@ -451,14 +472,14 @@ class TestPipelineFinishRealRoundTrip(unittest.TestCase):
             self.assertEqual(status, 200)
             self.assertEqual(json.loads(body), {"ok": True, "op": "pipeline.finish"})
 
-            # AC-EC1/AC3: durable frontmatter persistence via the REAL writer --
-            # never a hand-written DERIVED section. Only the `lifecycle` scalar
-            # changes; the STATE.md BODY survives byte-for-byte.
+            # AC-EC1/AC3: durable persistence via the REAL writer -- never a
+            # hand-written DERIVED section. Only the `lifecycle` scalar
+            # changes; every other line of STATE.yml survives byte-for-byte.
             state_text_after = state_path.read_text(encoding="utf-8")
             fm_after, body_after = _frontmatter_and_body(state_text_after)
             self.assertIn("lifecycle: Completed", fm_after)
             self.assertNotIn("Running", fm_after)
-            self.assertEqual(body_before, body_after, "STATE.md body must survive untouched (no DERIVED hand-write)")
+            self.assertEqual(body_before, body_after, "STATE.yml's other lines must survive untouched (no DERIVED hand-write)")
 
     def test_post_op_model_read_shows_completed(self):
         """AC2: a post-op /r/<id>/api/model read shows Completed -- verified via

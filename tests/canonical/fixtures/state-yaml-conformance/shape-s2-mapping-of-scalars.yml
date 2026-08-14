@@ -1,0 +1,3 @@
+pipeline:
+  path: lite
+  initiator: aid-refactor

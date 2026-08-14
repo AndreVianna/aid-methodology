@@ -73,24 +73,17 @@ _READER_MJS = _DASHBOARD_DIR / "server" / "reader.mjs"
 # Fixture helpers
 # ---------------------------------------------------------------------------
 
-_STATE_MD = """\
-# Work State
-
-## Pipeline Status
-
-- **Lifecycle:** Running
-- **Phase:** Execute
-- **Active Skill:** aid-execute
-- **Updated:** 2026-07-17T00:00:00Z
-- **Pause Reason:** --
-- **Block Reason:** --
-- **Block Artifact:** --
-
-## Tasks Status
-
-| # | Task | Type | Wave | Status | Review | Elapsed | Notes |
-|---|------|------|------|--------|--------|---------|-------|
-| 001 | task-001 | IMPLEMENT | delivery-001 | In Progress | -- | -- | -- |
+# work-009-refactor task-016: was a '## Pipeline Status' bullet-heading
+# STATE.md with an embedded '## Tasks Status' pipe-table -- retired,
+# SPEC.md sec:D-4.
+_STATE_YML = """\
+lifecycle: Running
+phase: Execute
+active_skill: aid-execute
+updated: '2026-07-17T00:00:00Z'
+pause_reason: --
+block_reason: --
+block_artifact: --
 """
 
 
@@ -115,7 +108,7 @@ def _make_work(aid: Path, work_id: str, *, state: bool = True) -> Path:
     wd = aid / "works" / work_id
     wd.mkdir(parents=True, exist_ok=True)
     if state:
-        (wd / "STATE.md").write_text(_STATE_MD, encoding="utf-8")
+        (wd / "STATE.yml").write_text(_STATE_YML, encoding="utf-8")
     return wd
 
 
@@ -200,7 +193,7 @@ class TestNameIndependentDiscovery(unittest.TestCase):
         model = read_repo(self.root)
         w = next(w for w in model.works if w.work_id == "no-number-here")
         self.assertEqual(w.lifecycle, Lifecycle.Running,
-                         "the numberless work's STATE.md must parse like any other work")
+                         "the numberless work's STATE.yml must parse like any other work")
 
 
 # ---------------------------------------------------------------------------
@@ -223,7 +216,7 @@ class TestOnlyWorksContainerRead(unittest.TestCase):
         """Create a legacy work directly under .aid/ (the PRE-container location)."""
         legacy = self.aid / work_id
         legacy.mkdir(parents=True, exist_ok=True)
-        (legacy / "STATE.md").write_text(_STATE_MD, encoding="utf-8")
+        (legacy / "STATE.yml").write_text(_STATE_YML, encoding="utf-8")
 
     def test_legacy_toplevel_work_not_enumerated(self):
         # A perfectly-named legacy work at the OLD location...
@@ -320,8 +313,11 @@ class TestPresentationReferencesWorksContainer(unittest.TestCase):
     # -- home.html client-side per-work path fallback (browser twin of the reader
     #    per-work path re-derivation) --
     def test_home_html_client_fallback_path_uses_works(self):
-        self.assertIn("'.aid/works/' + workId + '/STATE.md'", self.home,
-                      "home.html fallback path must resolve to .aid/works/{workId}/STATE.md (AC-4)")
+        # work-009-refactor task-016: home.html itself (production code,
+        # out of this task's edit scope) was already retargeted to
+        # STATE.yml elsewhere -- only this test's expected string was stale.
+        self.assertIn("'.aid/works/' + workId + '/STATE.yml'", self.home,
+                      "home.html fallback path must resolve to .aid/works/{workId}/STATE.yml (AC-4)")
 
     def test_home_html_client_fallback_old_path_gone(self):
         # The pre-fix browser fallback was ('.aid/' + workId + '/STATE.md').

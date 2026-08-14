@@ -128,7 +128,7 @@ make_work_state() {
         deploy_row="| delivery-001 | ${row_state} | ${pr_col} | yes | ${sha_col} | — |"
     fi
 
-    cat > "${folder}/STATE.md" <<STATEEOF
+    cat > "${folder}/STATE.yml" <<STATEEOF
 # Work State — ${folder_name}
 
 > **Status:** ${status_val}
@@ -245,7 +245,7 @@ git -C "$REPO2" fetch -q origin 2>/dev/null || true
 # (empty deploy row means signal(ii) finds no non-empty PR + terminal state)
 # We create a STATE.md manually to have Deployed status but no terminal row.
 mkdir -p "${REPO2}/.aid/works/work-098-partial"
-cat > "${REPO2}/.aid/works/work-098-partial/STATE.md" <<STATEEOF2
+cat > "${REPO2}/.aid/works/work-098-partial/STATE.yml" <<STATEEOF2
 # Work State — work-098-partial
 
 > **Status:** Deployed
@@ -467,7 +467,7 @@ git -C "$REPO9" fetch -q origin 2>/dev/null || true
 mkdir -p "${REPO9}/.aid/works/work-091-housekeep"
 
 # STATE.md with Deployed + SHA + ## Housekeep Status block (rule a)
-cat > "${REPO9}/.aid/works/work-091-housekeep/STATE.md" <<HKEOF
+cat > "${REPO9}/.aid/works/work-091-housekeep/STATE.yml" <<HKEOF
 # Work State — work-091-housekeep
 
 > **Status:** Deployed

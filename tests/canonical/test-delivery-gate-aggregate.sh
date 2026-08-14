@@ -10,9 +10,15 @@
 #      layout both current work layouts use (3d-3e, tier selection included)
 #   4. Grade computation via grade.sh (deterministic output verification)
 #   5. Loopback guard (grade < min does NOT re-run quick-checks, only loops review)
-#   6. FR6 interlock (gate must not fire while any task has status Failed or Blocked)
-#   7. RECORD — --delivery-id --block writes ## Delivery Gate into deliveries/delivery-NNN/STATE.md (SD-5 / work-004)
-#              per-delivery model: work-level ## Delivery Gates is DERIVED (not written by helper)
+#   6. FR6 interlock (gate must not fire while any task has state Failed or Blocked) --
+#      retargeted to scan real per-task STATE.yml files (state: key), not a work-level
+#      "## Tasks Status" table that has no home in the new schema at any layer
+#   7. RECORD — --delivery-id --block writes delivery_gate.issue_list into
+#      deliveries/delivery-NNN/STATE.yml (SD-5 / work-004 / task-007), plus
+#      --gate-field for the tier/grade/timestamp scalars (a separate mode --
+#      parse_issue_list_block only ever parsed the Issue List bullet, never
+#      Reviewer Tier/Complexity Score/Grade/Cycles, KI-006). Per-delivery model:
+#      the work-level view is DERIVED (not written by the helper)
 #   8. GATE-CRITERIA-FIX — state-delivery-gate.md resolves the delivery's acceptance criteria
 #      from the delivery's BLUEPRINT.md § Gate Criteria (feature-015 mis-wire fix), not PLAN.md
 #
@@ -44,37 +50,30 @@ SCORE="${SCRIPT_DIR}/../../canonical/aid/scripts/execute/complexity-score.sh"
 
 source "$(dirname "${BASH_SOURCE[0]}")/../lib/assert.sh"
 
-# Create a temporary test workspace
+# Create a temporary test workspace. The work-level STATE.yml is the NESTED
+# (full) layout's whole-document key space: no `## Tasks Status` / `##
+# Delivery Gates` / `## Quick Check Findings` headings survive FR-2b (none of
+# the four has a work-level home in the nested layout at all -- tasks and
+# gates live per-delivery/per-task); `## Lifecycle History` retargets to the
+# real `lifecycle_history:` key work-state-template.yml declares.
 make_workspace() {
     local tmpdir
     tmpdir=$(mktemp -d)
-    # Minimal STATE.md with ## Tasks Status and ## Delivery Gates sections
     mkdir -p "$tmpdir/.aid/work/tasks"
-    cat > "$tmpdir/.aid/work/STATE.md" <<'EOF'
-# Work State — work-001-test
-
-> **Status:** Executing
-
-## Tasks Status
-
-| # | Task | Type | Wave | Status | Review | Elapsed | Notes |
-|---|------|------|------|--------|--------|---------|-------|
-| 001 | task-001-impl | IMPLEMENT | 1 | Done | — | 2m | — |
-| 002 | task-002-test | TEST | 1 | Done | — | 1m | — |
-
-## Delivery Gates
-
-> One block per delivery.
-
-## Quick Check Findings
-
-## Lifecycle History
-
-| Date | Phase Transition / Gate | Grade | Notes |
-|------|------------------------|-------|-------|
-| 2026-01-01 | Work created | — | — |
+    cat > "$tmpdir/.aid/work/STATE.yml" <<'EOF'
+# Work State -- work-001-test
+lifecycle: Running
+phase: Execute
+active_skill: aid-execute
+updated: '2026-01-01T00:00:00Z'
+lifecycle_history:
+  - date: '2026-01-01'
+    event: 'Work created'
+    grade: --
+    notes: --
 EOF
-    # Minimal discovery STATE.md for gate tier thresholds
+    # Minimal discovery STATE.md for gate tier thresholds -- KB ledger, out of
+    # scope for this refactor (SPEC.md SS L-9), unchanged.
     mkdir -p "$tmpdir/.aid/knowledge"
     cat > "$tmpdir/.aid/knowledge/STATE.md" <<'EOF'
 > **Minimum Grade:** A
@@ -86,6 +85,39 @@ EOF
 }
 
 cleanup() { rm -rf "$1"; }
+
+# make_task_state_file FILE STATE_VALUE -- a minimal per-task STATE.yml
+# matching task-state-template.yml's shape (used by Test 6's FR6 interlock).
+make_task_state_file() {
+    local file="$1" state_val="$2"
+    mkdir -p "$(dirname "$file")"
+    cat > "$file" <<EOF
+state: ${state_val}
+review: --
+elapsed: --
+notes: --
+display_name: --
+quick_check:
+  reviewer_tier: --
+  findings: []
+dispatch_log: []
+EOF
+}
+
+# fr6_not_done_count TASKS_DIR -- FR6 interlock: count per-task STATE.yml
+# files (tasks/task-NNN/STATE.yml under TASKS_DIR) whose `state:` key is not
+# Done. Retargeted from the pre-refactor work-level "## Tasks Status" table
+# grep to the real per-unit file layout the nested schema actually uses.
+fr6_not_done_count() {
+    local tasks_dir="$1"
+    local count=0 f state_val
+    for f in "${tasks_dir}"/task-*/STATE.yml; do
+        [[ -f "$f" ]] || continue
+        state_val=$(grep -m1 '^state:' "$f" | sed 's/^state:[ \t]*//' | tr -d "\"'")
+        [[ "$state_val" != "Done" ]] && count=$((count + 1))
+    done
+    echo "$count"
+}
 
 # ---------------------------------------------------------------------------
 # Test 1: AGGREGATE — existing delivery-NNN-issues.md is preserved
@@ -133,7 +165,7 @@ run_test_2() {
     [[ ! -f "$issues_file" ]] || { fail "Test 2 setup: issues file should not exist"; cleanup "$ws"; return; }
 
     # Simulate AGGREGATE creating the file by invoking writeback helper
-    AID_STATE_FILE="$ws/.aid/work/STATE.md" \
+    AID_STATE_FILE="$ws/.aid/work/STATE.yml" \
     AID_DELIVERY_ISSUES_DIR="$ws/.aid/work" \
     AID_LOCK_DIR="$ws/.aid/work" \
     bash "$WRITEBACK" --delivery-id 003 --append-issue \
@@ -333,7 +365,8 @@ run_test_4() {
 # gate loops to FIX then back to Step 2 (REVIEW gate reviewer), NOT to the
 # per-task quick-check (Step 1.5 in state-review.md). We verify this by
 # checking that delivery-NNN-issues.md is NOT modified during a fix cycle
-# (quick-checks would append new rows; the gate fix loop does not).
+# (quick-checks would append new rows; the gate fix loop does not). Unaffected
+# by the YAML migration -- delivery-NNN-issues.md stays a plain markdown log.
 # ---------------------------------------------------------------------------
 run_test_5() {
     local ws
@@ -374,52 +407,24 @@ EOF
 
 # ---------------------------------------------------------------------------
 # Test 6: FR6 INTERLOCK — gate must NOT fire when any task is Failed or Blocked
+#
+# Retargeted: pre-refactor this grepped a work-level "## Tasks Status" table
+# that has no home in the nested-layout schema at any layer (each task's
+# state lives in its own deliveries/delivery-NNN/tasks/task-NNN/STATE.yml).
+# The interlock now scans those real per-task files' `state:` keys directly
+# -- the same data source aid-execute's own FR6 check reads.
 # ---------------------------------------------------------------------------
 run_test_6() {
     local ws
     ws=$(make_workspace)
+    local tasks_dir="$ws/.aid/work/deliveries/delivery-003/tasks"
 
-    # Add a failed task to STATE.md
-    # (Simulate the pool having a Failed task — PD-5 Case B should prevent gate)
-    cat > "$ws/.aid/work/STATE.md" <<'EOF'
-# Work State — work-001-test
+    # One Done task, one Failed task (PD-5 Case B should prevent the gate).
+    make_task_state_file "${tasks_dir}/task-001/STATE.yml" "Done"
+    make_task_state_file "${tasks_dir}/task-002/STATE.yml" "Failed"
 
-## Tasks Status
-
-| # | Task | Type | Wave | Status | Review | Elapsed | Notes |
-|---|------|------|------|--------|--------|---------|-------|
-| 001 | task-001-impl | IMPLEMENT | 1 | Done | — | 2m | — |
-| 002 | task-002-test | TEST | 1 | Failed | — | — | impediment raised |
-
-## Delivery Gates
-
-## Quick Check Findings
-
-## Lifecycle History
-
-| Date | Phase Transition / Gate | Grade | Notes |
-|------|------------------------|-------|-------|
-| 2026-01-01 | Work created | — | — |
-EOF
-
-    # FR6 interlock check: count tasks NOT in Done status
     local not_done
-    not_done=$(awk '
-        /^## Tasks Status/{s=1; next}
-        s && /^## /{s=0}
-        s && /^\|/ {
-            n=split($0,f,"|")
-            if (n>=6) {
-                status=f[6]
-                gsub(/^[[:space:]]+|[[:space:]]+$/,"",status)
-                # Skip header row ("Status") and separator rows (contain only dashes)
-                if (status == "Status") next
-                if (status ~ /^-+$/) next
-                if (status != "Done") print status
-            }
-        }
-    ' "$ws/.aid/work/STATE.md" | grep -v '^$' | wc -l | tr -d ' ')
-
+    not_done=$(fr6_not_done_count "$tasks_dir")
     if [[ "$not_done" -gt 0 ]]; then
         pass "Test 6a: FR6 interlock detects $not_done task(s) not Done — gate should NOT fire"
     else
@@ -427,60 +432,17 @@ EOF
              "Expected at least 1 non-Done task, found 0"
     fi
 
-    # Verify the specific failed task is detected
-    local has_failed
-    has_failed=$(awk '
-        /^## Tasks Status/{s=1; next}
-        s && /^## /{s=0}
-        s && /Failed/{print "yes"; exit}
-    ' "$ws/.aid/work/STATE.md")
-
-    if [[ "$has_failed" == "yes" ]]; then
-        pass "Test 6b: FR6 interlock correctly identifies Failed task in Tasks Status"
+    if grep -q '^state: Failed' "${tasks_dir}/task-002/STATE.yml"; then
+        pass "Test 6b: FR6 interlock correctly identifies the Failed task's state: key"
     else
         fail "Test 6b: FR6 interlock identifies Failed task" \
-             "Failed status not found in Tasks Status"
+             "state: Failed not found in ${tasks_dir}/task-002/STATE.yml"
     fi
 
-    # Now set all to Done and verify interlock would pass
-    cat > "$ws/.aid/work/STATE.md" <<'EOF'
-# Work State — work-001-test
-
-## Tasks Status
-
-| # | Task | Type | Wave | Status | Review | Elapsed | Notes |
-|---|------|------|------|--------|--------|---------|-------|
-| 001 | task-001-impl | IMPLEMENT | 1 | Done | — | 2m | — |
-| 002 | task-002-test | TEST | 1 | Done | — | 1m | — |
-
-## Delivery Gates
-
-## Quick Check Findings
-
-## Lifecycle History
-
-| Date | Phase Transition / Gate | Grade | Notes |
-|------|------------------------|-------|-------|
-| 2026-01-01 | Work created | — | — |
-EOF
-
+    # Now set the second task to Done and verify the interlock would pass.
+    make_task_state_file "${tasks_dir}/task-002/STATE.yml" "Done"
     local not_done_after
-    not_done_after=$(awk '
-        /^## Tasks Status/{s=1; next}
-        s && /^## /{s=0}
-        s && /^\|/ {
-            n=split($0,f,"|")
-            if (n>=6) {
-                status=f[6]
-                gsub(/^[[:space:]]+|[[:space:]]+$/,"",status)
-                # Skip header row ("Status") and separator rows (contain only dashes)
-                if (status == "Status") next
-                if (status ~ /^-+$/) next
-                if (status != "Done") print status
-            }
-        }
-    ' "$ws/.aid/work/STATE.md" | grep -v '^$' | wc -l | tr -d ' ')
-
+    not_done_after=$(fr6_not_done_count "$tasks_dir")
     if [[ "$not_done_after" -eq 0 ]]; then
         pass "Test 6c: FR6 interlock passes (all tasks Done) — gate CAN fire"
     else
@@ -493,61 +455,41 @@ EOF
 
 # ---------------------------------------------------------------------------
 # Test 7: RECORD — writeback-state.sh --delivery-id --block writes
-#          the per-delivery ## Delivery Gate block correctly (SD-5 / work-004).
-#
-# work-004 (task-003/007) retargeted --delivery-id --block to write the gate
-# into delivery-NNN/STATE.md ## Delivery Gate (per-delivery, single-writer).
-# The work-level ## Delivery Gates section is now a DERIVED read-only view
-# assembled by the reader -- the helper no longer writes to it.
+#          delivery_gate.issue_list into deliveries/delivery-NNN/STATE.yml
+#          (SD-5 / work-004 / task-007). --gate-field is the separate mode
+#          for the tier/grade/timestamp scalars (parse_issue_list_block only
+#          ever parsed the Issue List bullet -- Reviewer Tier/Complexity
+#          Score/Cycles have no persisted target, KI-006).
 # ---------------------------------------------------------------------------
 run_test_7() {
     local ws
     ws=$(make_workspace)
 
-    # Create the per-delivery STATE.md that the helper now targets (SD-5).
-    # The file must exist; the helper writes ## Delivery Gate into it.
+    # Create the per-delivery STATE.yml that the helper now targets (SD-5).
     mkdir -p "$ws/.aid/work/deliveries/delivery-003"
-    cat > "$ws/.aid/work/deliveries/delivery-003/STATE.md" <<'EOF'
+    cat > "$ws/.aid/work/deliveries/delivery-003/STATE.yml" <<'EOF'
 # Delivery State -- delivery-003
-
-> **Delivery:** delivery-003
-> **Work:** work-001-test
-> **Branch:** aid/work-001-delivery-003
-
----
-
-## Delivery Lifecycle
-
-- **State:** Executing
-- **Updated:** 2026-05-24T11:00:00Z
-
----
-
-## Delivery Gate
-
-_None yet._
-
----
-
-## Tasks State
-
-| # | Task | Type | Wave | State | Review | Elapsed | Notes |
-|---|------|------|------|-------|--------|---------|-------|
-| _none yet_ | | | | | | | |
+delivery_state: Executing
+gate_tier: --
+gate_grade: Pending
+gate_timestamp: --
+delivery_lifecycle:
+  updated: '2026-05-24T11:00:00Z'
+  block_reason: --
+  block_artifact: --
+delivery_gate:
+  issue_list: []
+qa: []
 EOF
 
     local gate_block
     gate_block="$(cat <<'EOF'
-- **Reviewer Tier:** Small
-- **Complexity Score:** 3
-- **Grade:** A+
-- **Cycles:** 1
-- **Timestamp:** 2026-05-24T12:00:00Z
-- **Issue List:** none
+- **Issue List:**
+  - [LOW] a minor style issue found by the gate reviewer
 EOF
 )"
 
-    AID_STATE_FILE="$ws/.aid/work/STATE.md" \
+    AID_STATE_FILE="$ws/.aid/work/STATE.yml" \
     AID_DELIVERY_ISSUES_DIR="$ws/.aid/work" \
     AID_LOCK_DIR="$ws/.aid/work/deliveries/delivery-003" \
     bash "$WRITEBACK" --delivery-id 003 --block "$gate_block" \
@@ -562,30 +504,41 @@ EOF
              "Helper exited with code $rc"
     fi
 
-    # Per-delivery STATE.md ## Delivery Gate section should contain the block (SD-5).
-    local delivery_state_file="$ws/.aid/work/deliveries/delivery-003/STATE.md"
-    if grep -q "^## Delivery Gate" "$delivery_state_file" 2>/dev/null; then
-        pass "Test 7b: deliveries/delivery-003/STATE.md has ## Delivery Gate section"
+    # Per-delivery STATE.yml delivery_gate.issue_list should contain the item (SD-5).
+    local delivery_state_file="$ws/.aid/work/deliveries/delivery-003/STATE.yml"
+    if grep -q "^delivery_gate:" "$delivery_state_file" 2>/dev/null; then
+        pass "Test 7b: deliveries/delivery-003/STATE.yml has a delivery_gate: key"
     else
-        fail "Test 7b: deliveries/delivery-003/STATE.md has ## Delivery Gate section" \
-             "## Delivery Gate not found in $delivery_state_file"
+        fail "Test 7b: deliveries/delivery-003/STATE.yml has a delivery_gate: key" \
+             "delivery_gate: not found in $delivery_state_file"
     fi
 
-    if grep -q "Reviewer Tier" "$delivery_state_file" 2>/dev/null; then
-        pass "Test 7c: Gate block content written to deliveries/delivery-003/STATE.md (Reviewer Tier present)"
+    if grep -q "a minor style issue found by the gate reviewer" "$delivery_state_file" 2>/dev/null; then
+        pass "Test 7c: gate block content written to deliveries/delivery-003/STATE.yml (issue item present)"
     else
-        fail "Test 7c: Gate block content written to deliveries/delivery-003/STATE.md" \
-             "Reviewer Tier not found in $delivery_state_file"
+        fail "Test 7c: gate block content written to deliveries/delivery-003/STATE.yml" \
+             "Issue item not found in $delivery_state_file"
     fi
 
-    # work-level STATE.md ## Delivery Gates must NOT be modified by the helper
-    # (it is a DERIVED view assembled by the reader, not a write target).
-    local work_state_file="$ws/.aid/work/STATE.md"
-    if ! grep -q "### delivery-003" "$work_state_file" 2>/dev/null; then
-        pass "Test 7d: work STATE.md ## Delivery Gates NOT written by helper (DERIVED view preserved)"
+    # --gate-field is the separate mode for the tier/grade/timestamp scalars.
+    AID_STATE_FILE="$ws/.aid/work/STATE.yml" \
+    AID_LOCK_DIR="$ws/.aid/work/deliveries/delivery-003" \
+    "$WRITEBACK" --delivery-id 003 --gate-field Grade --gate-value "A+" > /dev/null 2>&1
+    if grep -q "^gate_grade: A+" "$delivery_state_file" 2>/dev/null; then
+        pass "Test 7d: --gate-field Grade writes gate_grade into deliveries/delivery-003/STATE.yml"
     else
-        fail "Test 7d: work STATE.md ## Delivery Gates NOT written by helper (DERIVED view preserved)" \
-             "### delivery-003 found in work STATE.md -- helper incorrectly wrote to work-level file"
+        fail "Test 7d: --gate-field Grade writes gate_grade" \
+             "gate_grade: A+ not found in $delivery_state_file"
+    fi
+
+    # work-level STATE.yml must NOT be modified by the helper (DERIVED view --
+    # the work-level gate/tasks views are assembled at read time, never written).
+    local work_state_file="$ws/.aid/work/STATE.yml"
+    if ! grep -q "delivery_gate" "$work_state_file" 2>/dev/null; then
+        pass "Test 7e: work STATE.yml NOT written by the helper (DERIVED view preserved)"
+    else
+        fail "Test 7e: work STATE.yml NOT written by the helper (DERIVED view preserved)" \
+             "delivery_gate found in work STATE.yml -- helper incorrectly wrote to work-level file"
     fi
 
     cleanup "$ws"

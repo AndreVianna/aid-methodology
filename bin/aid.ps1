@@ -154,7 +154,12 @@ function script:Test-AidIsProjectDir {
 # format 3 (was 2): settings.yml flattened -- top-level name/description/type/
 # source_control/minimum_grade/heartbeat_interval + a knowledge: block; the installed
 # tools + AID version now live only in the manifest (.aid/.aid-manifest.json).
-Set-Variable -Name AidSupportedFormat -Value 3 -Option Constant -Scope Script
+# format 4 (was 3): work-tree state files are YAML STATE.yml, not markdown
+# STATE.md -- every .aid/works/*/STATE.md (and, on the full layout, every
+# deliveries/*/STATE.md and deliveries/*/tasks/*/STATE.md) is rewritten in place
+# and the .md deleted. Performed by the STATE.md -> STATE.yml FORMAT-4
+# CONVERSION step in _aid_migrate_repo (task-008 / SPEC.md SS L-6 step 2).
+Set-Variable -Name AidSupportedFormat -Value 4 -Option Constant -Scope Script
 
 # ---------------------------------------------------------------------------
 # Import the shared install core from AID_CODE_HOME\lib\.
@@ -3302,7 +3307,924 @@ function script:Invoke-AidMigrateRepo {
         [Console]::Error.WriteLine("WARN: aid migrate: registry_register failed for ${Repo}: $_")
     }
 
+    # ------------------------------------------------------------------
+    # STEP 5 -- CONVERT-STATE (work-009-refactor task-008 / SPEC.md SS L-6
+    # step 2). See the runbook/rollback/ordering header comment on
+    # script:Sc-ConvertRepo below for the full contract. WARN-not-fail per
+    # this function's own always-return-0 rule.
+    # ------------------------------------------------------------------
+    try {
+        script:Sc-ConvertRepo -Repo $Repo
+    } catch {
+        [Console]::Error.WriteLine("WARN: aid migrate: state-format conversion step raised for ${Repo}: $_")
+    }
+
     return 0
+}
+
+# ===========================================================================
+# STATE.md -> STATE.yml FORMAT-4 CONVERSION  (task-008 / SPEC.md SS L-6 step 2)
+# PowerShell twin of the Bash block directly above Invoke-AidMigrateRepo in
+# bin/aid (search that file for the identical banner). Same runbook exactly:
+#
+# RUNBOOK -- ORDERING (binding, stated here AND in migrate-work-hierarchy.ps1's
+# own header): hierarchy migration runs FIRST, format conversion SECOND.
+# migrate-work-hierarchy.sh/.ps1 stay markdown-in / markdown-out (an ERA
+# migration: monolithic single-STATE.md -> the per-unit hierarchy) and their
+# output is exactly what this converter expects as its input -- a
+# CURRENT-SHAPE (post-hierarchy) work tree, whose STATE.md files still carry
+# the DERIVED placeholder sections but never a REAL DERIVED row. A work that
+# still needs the hierarchy migration is detected here as the "DERIVED
+# section holds real data" hard-error case below (SP-3): the remedy that
+# error names is "run migrate-work-hierarchy, then re-run aid update".
+#
+# RUNBOOK -- ROLLBACK. No reverse (yml -> md) converter exists, and none is
+# ever added -- that would reopen the dual-format window SPEC.md SS L-6
+# rejects (a hard cutover, not a dual-read compatibility window).
+#   - Per-FILE rollback (a conversion that fails verification mid-run): there
+#     is nothing to roll back. The .yml is built in a same-directory temp
+#     file, re-parsed and count-verified BEFORE the .md is ever touched; on
+#     any verification failure the temp is discarded and the .md is left
+#     exactly as it was (byte-unchanged) -- this fail-safe ordering IS the
+#     rollback story for a single file.
+#   - Per-REPO rollback (undoing an already-completed conversion): restore
+#     the .md files from version control and roll the repo's
+#     .aid/settings.yml format_version stamp back to its prior value. There
+#     is no in-place "unconvert" operation -- VCS is the only supported path
+#     back, which is why this is a hard cutover and not a compatibility
+#     window.
+#
+# IDEMPOTENT: a work whose STATE.yml already exists is a no-op for that file.
+# Re-running the whole step changes nothing for a fully converted repo. The
+# one legitimate exception: a file the DERIVED guard previously refused
+# converts on the NEXT run once its DERIVED row is resolved (by running the
+# hierarchy migration) -- the intended remedy path, not an idempotency
+# violation.
+#
+# SCOPE: every .aid/works/*/STATE.md, and -- on the full (non-flattened)
+# layout, detected per work by the presence of a deliveries/ subfolder --
+# every deliveries/*/STATE.md and deliveries/*/tasks/*/STATE.md.
+#
+# WARN-NOT-FAIL: every failure mode is reported via a "WARN: aid migrate: ..."
+# line naming the file (and, for the DERIVED guard, the section and the
+# remedy) and moves on to the next file; script:Sc-ConvertRepo never throws
+# past Invoke-AidMigrateRepo, which always returns 0.
+# ===========================================================================
+
+function script:Sc-Trim {
+    param([string]$S)
+    return $S.Trim()
+}
+
+function script:Sc-HeadingLevel {
+    param([string]$Line)
+    if ($Line.StartsWith('### ')) { return 3 }
+    if ($Line.StartsWith('## ')) { return 2 }
+    return 0
+}
+
+# script:Sc-FindHeading TEXT START END -> the absolute index (into the
+# script-scope $script:ScLines list) of the first line in [START,END) whose
+# trimmed text equals TEXT exactly; -1 if not found.
+function script:Sc-FindHeading {
+    param([string]$Text, [int]$Start, [int]$End)
+    for ($i = $Start; $i -lt $End; $i++) {
+        if ((script:Sc-Trim $script:ScLines[$i]) -eq $Text) { return $i }
+    }
+    return -1
+}
+
+# script:Sc-SectionEnd START END -> index of the next heading at a level <=
+# the heading level found AT index START (which must itself be a heading
+# line); END if none.
+function script:Sc-SectionEnd {
+    param([int]$Start, [int]$End)
+    $mlvl = script:Sc-HeadingLevel $script:ScLines[$Start]
+    for ($i = $Start + 1; $i -lt $End; $i++) {
+        $lvl = script:Sc-HeadingLevel $script:ScLines[$i]
+        if ($lvl -gt 0 -and $lvl -le $mlvl) { return $i }
+    }
+    return $End
+}
+
+# script:Sc-TableRows START END -> sets $script:ScRows, one element per DATA
+# row in [START,END); skips the header + separator row (the first two
+# "|...|" lines) and drops a single remaining "_none yet_" placeholder row.
+# Each row is a string with cells joined by ASCII 0x1F.
+function script:Sc-TableRows {
+    param([int]$Start, [int]$End)
+    $rows = [System.Collections.Generic.List[string]]::new()
+    $headerSeen = $false
+    $sepSeen = $false
+    for ($i = $Start; $i -lt $End; $i++) {
+        $line = $script:ScLines[$i]
+        if (-not ($line -match '^\s*\|.*\|\s*$')) { continue }
+        if (-not $headerSeen) { $headerSeen = $true; continue }
+        if (-not $sepSeen) { $sepSeen = $true; continue }
+        $body = (script:Sc-Trim $line)
+        if ($body.StartsWith('|')) { $body = $body.Substring(1) }
+        if ($body.EndsWith('|')) { $body = $body.Substring(0, $body.Length - 1) }
+        $cells = $body -split '\|'
+        $joined = ($cells | ForEach-Object { (script:Sc-Trim $_) }) -join "`u{1F}"
+        [void]$rows.Add($joined)
+    }
+    if ($rows.Count -eq 1) {
+        $first = ($rows[0] -split "`u{1F}")[0]
+        if ($first -eq '_none yet_') { $rows.Clear() }
+    }
+    $script:ScRows = $rows
+}
+
+# script:Sc-BulletValue START END LABEL -> the value of a
+# "- **LABEL:** value" bullet line in [START,END); '' if not found.
+function script:Sc-BulletValue {
+    param([int]$Start, [int]$End, [string]$Label)
+    $pattern = '^-\s*\*\*' + [regex]::Escape($Label) + ':\*\*\s*(.*)$'
+    for ($i = $Start; $i -lt $End; $i++) {
+        if ($script:ScLines[$i] -match $pattern) {
+            return (script:Sc-Trim $Matches[1])
+        }
+    }
+    return ''
+}
+
+# script:Sc-InterviewHeader START END -> sets $script:ScInterviewState /
+# $script:ScInterviewGrade from a "**State:** X  **Grade:** Y" bold line;
+# returns $false (both left '') if not found.
+function script:Sc-InterviewHeader {
+    param([int]$Start, [int]$End)
+    $script:ScInterviewState = ''
+    $script:ScInterviewGrade = ''
+    for ($i = $Start; $i -lt $End; $i++) {
+        if ($script:ScLines[$i] -match '^\*\*State:\*\*(.*)\*\*Grade:\*\*(.*)$') {
+            $script:ScInterviewState = (script:Sc-Trim $Matches[1])
+            $script:ScInterviewGrade = (script:Sc-Trim $Matches[2])
+            return $true
+        }
+    }
+    return $false
+}
+
+# script:Sc-IsPlaceholderItem ITEM -> $true iff ITEM is the TEMPLATE's own
+# un-instantiated example row still sitting in a never-touched section (a
+# literal '{...}' token) rather than real authored content -- the same
+# construct the readers' own placeholder-skip treats as unfilled, not data.
+function script:Sc-IsPlaceholderItem {
+    param([string]$Item)
+    return ($Item -match '\{[^}]*\}')
+}
+
+# script:Sc-IssueList START END -> sets $script:ScIssues, one severity-
+# tagged string per issue, mirroring writeback-state.sh's own (pre-existing)
+# parse_issue_list_block for the shape:
+#   - **Issue List:** none | {first item inline}
+#     {one further item per line, or nothing}
+function script:Sc-IssueList {
+    param([int]$Start, [int]$End)
+    $issues = [System.Collections.Generic.List[string]]::new()
+    $inList = $false
+    for ($i = $Start; $i -lt $End; $i++) {
+        $line = $script:ScLines[$i]
+        if (-not $inList) {
+            if ($line -match '^-\s*\*\*Issue\sList:\*\*\s*(.*)$') {
+                $inList = $true
+                $rest = $Matches[1]
+                if ($rest -and $rest -ne 'none') {
+                    $item = $rest
+                    if ($item.StartsWith('- ')) { $item = $item.Substring(2) }
+                    if ($item -and -not (script:Sc-IsPlaceholderItem $item)) { [void]$issues.Add($item) }
+                }
+            }
+            continue
+        }
+        $trimmed = script:Sc-Trim $line
+        if ([string]::IsNullOrEmpty($trimmed)) { continue }
+        if ($trimmed -eq '---') { continue }
+        $item = $trimmed
+        if ($item.StartsWith('- ')) { $item = $item.Substring(2) }
+        if ($item -eq 'none') { continue }
+        if (script:Sc-IsPlaceholderItem $item) { continue }
+        [void]$issues.Add($item)
+    }
+    $script:ScIssues = $issues
+}
+
+# script:Sc-Findings START END -> sets $script:ScTier (scalar) and
+# $script:ScFindings, mirroring writeback-state.sh's own (pre-existing)
+# parse_findings_block for the shape:
+#   - **Reviewer Tier:** Small
+#   - **Findings:**
+#     - [HIGH] description -- source:line -- Deferred-to-gate
+function script:Sc-Findings {
+    param([int]$Start, [int]$End)
+    $script:ScTier = ''
+    $findings = [System.Collections.Generic.List[string]]::new()
+    for ($i = $Start; $i -lt $End; $i++) {
+        $line = $script:ScLines[$i]
+        if ($line -match '^-\s*\*\*Reviewer\sTier:\*\*\s*(.*)$') {
+            # Strip a trailing "(...)" doc annotation -- the template's own
+            # never-touched default line is literally "Small (quick check
+            # always uses Small tier)"; the enum value is the bare token
+            # before the parenthetical, which the real writer emits alone.
+            $raw = $Matches[1]
+            $parenIdx = $raw.IndexOf('(')
+            if ($parenIdx -ge 0) { $raw = $raw.Substring(0, $parenIdx) }
+            $script:ScTier = (script:Sc-Trim $raw)
+            continue
+        }
+        if ($line -match '^-\s*\*\*Findings:\*\*\s*(.*)$') { continue }
+        $trimmed = script:Sc-Trim $line
+        if (-not $trimmed.StartsWith('- ')) { continue }
+        $item = $trimmed.Substring(2)
+        if ([string]::IsNullOrEmpty($item) -or $item -eq 'none') { continue }
+        if (script:Sc-IsPlaceholderItem $item) { continue }
+        [void]$findings.Add($item)
+    }
+    $script:ScFindings = $findings
+}
+
+# script:Sc-QaEntries START END -> sets $script:ScQa, one element per
+# "### Q{N}" block in [START,END), each a \x1F-joined tuple: id,category,
+# impact,state,context,suggested,answer,applied_to.
+function script:Sc-QaEntries {
+    param([int]$Start, [int]$End)
+    $qa = [System.Collections.Generic.List[string]]::new()
+    $qidx = [System.Collections.Generic.List[int[]]]::new()
+    for ($i = $Start; $i -lt $End; $i++) {
+        if ($script:ScLines[$i] -match '^###\s+Q(\d+)\s*$') {
+            [void]$qidx.Add(@($i, [int]$Matches[1]))
+        }
+    }
+    for ($k = 0; $k -lt $qidx.Count; $k++) {
+        $qs = $qidx[$k][0]
+        $qid = $qidx[$k][1]
+        if ($k + 1 -lt $qidx.Count) { $qe = $qidx[$k + 1][0] } else { $qe = $End }
+        $category  = script:Sc-BulletValue ($qs + 1) $qe 'Category'
+        $impact    = script:Sc-BulletValue ($qs + 1) $qe 'Impact'
+        $qstate    = script:Sc-BulletValue ($qs + 1) $qe 'State'
+        $context   = script:Sc-BulletValue ($qs + 1) $qe 'Context'
+        $suggested = script:Sc-BulletValue ($qs + 1) $qe 'Suggested'
+        $answer    = script:Sc-BulletValue ($qs + 1) $qe 'Answer'
+        $applied   = script:Sc-BulletValue ($qs + 1) $qe 'Applied to'
+        [void]$qa.Add(($qid, $category, $impact, $qstate, $context, $suggested, $answer, $applied) -join "`u{1F}")
+    }
+    $script:ScQa = $qa
+}
+
+# script:Sc-YamlScalar VALUE -> the SPEC.md SS D-5-compliant scalar token for
+# VALUE -- bare, single-quoted (embedded ' doubled), or double-quoted with
+# the five-escape subset (\" \\ \n \r \t) when VALUE carries a literal
+# newline/CR/tab.
+function script:Sc-YamlScalar {
+    param([string]$V)
+    if ($V -match "[\n\r\t]") {
+        $esc = $V
+        $esc = $esc.Replace('\', '\\')
+        $esc = $esc.Replace('"', '\"')
+        $esc = $esc.Replace("`r", '\r')
+        $esc = $esc.Replace("`n", '\n')
+        $esc = $esc.Replace("`t", '\t')
+        return '"' + $esc + '"'
+    }
+    if ([string]::IsNullOrEmpty($V)) { return "''" }
+    if ($V -match '^[A-Za-z0-9_.+/-]+$') {
+        $denyList = @('y','Y','yes','Yes','YES','n','N','no','No','NO','true','True','TRUE',
+            'false','False','FALSE','on','On','ON','off','Off','OFF','null','Null','NULL','~')
+        $isNumericLike = ($V -match '^[0-9]' -or $V -match '^[-+][0-9]')
+        if (($denyList -notcontains $V) -and (-not $isNumericLike)) {
+            return $V
+        }
+    }
+    $q = $V.Replace("'", "''")
+    return "'" + $q + "'"
+}
+
+# ---- AUTHORED-zone emitters. Each appends lines to $script:ScOut and, where
+# the source is a list/table, records its row count into a $script:ScCnt*
+# counter consumed by script:Sc-VerifyRoundtrip. ----
+
+function script:Sc-EmitInterview {
+    param([int]$Start, [int]$End)
+    $hstate = 'Pending'; $hgrade = 'Pending'
+    if (script:Sc-InterviewHeader $Start $End) {
+        if ($script:ScInterviewState) { $hstate = $script:ScInterviewState }
+        if ($script:ScInterviewGrade) { $hgrade = $script:ScInterviewGrade }
+    }
+    script:Sc-TableRows $Start $End
+    $script:ScCntInterview = $script:ScRows.Count
+    [void]$script:ScOut.Add('interview:')
+    [void]$script:ScOut.Add('  state: ' + (script:Sc-YamlScalar $hstate))
+    [void]$script:ScOut.Add('  grade: ' + (script:Sc-YamlScalar $hgrade))
+    if ($script:ScRows.Count -eq 0) {
+        [void]$script:ScOut.Add('  sections: []')
+        return
+    }
+    [void]$script:ScOut.Add('  sections:')
+    foreach ($row in $script:ScRows) {
+        $c = $row -split "`u{1F}"
+        [void]$script:ScOut.Add('    - id: ' + $c[0])
+        [void]$script:ScOut.Add('      name: ' + (script:Sc-YamlScalar $c[1]))
+        [void]$script:ScOut.Add('      state: ' + (script:Sc-YamlScalar $c[2]))
+        [void]$script:ScOut.Add('      updated: ' + (script:Sc-YamlScalar $c[3]))
+    }
+}
+
+function script:Sc-EmitLifecycleHistory {
+    param([int]$Start, [int]$End)
+    script:Sc-TableRows $Start $End
+    $script:ScCntLfh = $script:ScRows.Count
+    if ($script:ScRows.Count -eq 0) {
+        [void]$script:ScOut.Add('lifecycle_history: []')
+        return
+    }
+    [void]$script:ScOut.Add('lifecycle_history:')
+    foreach ($row in $script:ScRows) {
+        $c = $row -split "`u{1F}"
+        [void]$script:ScOut.Add('  - date: ' + (script:Sc-YamlScalar $c[0]))
+        [void]$script:ScOut.Add('    event: ' + (script:Sc-YamlScalar $c[1]))
+        [void]$script:ScOut.Add('    grade: ' + (script:Sc-YamlScalar $c[2]))
+        [void]$script:ScOut.Add('    notes: ' + (script:Sc-YamlScalar $c[3]))
+    }
+}
+
+function script:Sc-EmitDeploy {
+    param([int]$Start, [int]$End)
+    script:Sc-TableRows $Start $End
+    $script:ScCntDeploy = $script:ScRows.Count
+    if ($script:ScRows.Count -eq 0) {
+        [void]$script:ScOut.Add('deploy: []')
+        return
+    }
+    [void]$script:ScOut.Add('deploy:')
+    foreach ($row in $script:ScRows) {
+        $c = $row -split "`u{1F}"
+        [void]$script:ScOut.Add('  - delivery: ' + (script:Sc-YamlScalar $c[0]))
+        [void]$script:ScOut.Add('    state: ' + (script:Sc-YamlScalar $c[1]))
+        [void]$script:ScOut.Add('    pr: ' + (script:Sc-YamlScalar $c[2]))
+        [void]$script:ScOut.Add('    kb_updated: ' + (script:Sc-YamlScalar $c[3]))
+        [void]$script:ScOut.Add('    tag: ' + (script:Sc-YamlScalar $c[4]))
+        [void]$script:ScOut.Add('    notes: ' + (script:Sc-YamlScalar $c[5]))
+    }
+}
+
+function script:Sc-EmitDeliveryLifecycle {
+    param([int]$Start, [int]$End)
+    $updated = script:Sc-BulletValue $Start $End 'Updated'
+    $blockReason = script:Sc-BulletValue $Start $End 'Block Reason'
+    $blockArtifact = script:Sc-BulletValue $Start $End 'Block Artifact'
+    if ([string]::IsNullOrEmpty($updated)) { $updated = '--' }
+    if ([string]::IsNullOrEmpty($blockReason)) { $blockReason = '--' }
+    if ([string]::IsNullOrEmpty($blockArtifact)) { $blockArtifact = '--' }
+    [void]$script:ScOut.Add('delivery_lifecycle:')
+    [void]$script:ScOut.Add('  updated: ' + (script:Sc-YamlScalar $updated))
+    [void]$script:ScOut.Add('  block_reason: ' + (script:Sc-YamlScalar $blockReason))
+    [void]$script:ScOut.Add('  block_artifact: ' + (script:Sc-YamlScalar $blockArtifact))
+}
+
+function script:Sc-EmitTasksLifecycle {
+    param([int]$Start, [int]$End)
+    script:Sc-TableRows $Start $End
+    $script:ScCntTasksLc = $script:ScRows.Count
+    if ($script:ScRows.Count -eq 0) {
+        [void]$script:ScOut.Add('tasks_lifecycle: {}')
+        return
+    }
+    [void]$script:ScOut.Add('tasks_lifecycle:')
+    foreach ($row in $script:ScRows) {
+        $c = $row -split "`u{1F}"
+        [void]$script:ScOut.Add('  ' + $c[0] + ':')
+        [void]$script:ScOut.Add('    state: ' + (script:Sc-YamlScalar $c[1]))
+        [void]$script:ScOut.Add('    review: ' + (script:Sc-YamlScalar $c[2]))
+        [void]$script:ScOut.Add('    elapsed: ' + (script:Sc-YamlScalar $c[3]))
+        [void]$script:ScOut.Add('    notes: ' + (script:Sc-YamlScalar $c[4]))
+        [void]$script:ScOut.Add('    display_name: ' + (script:Sc-YamlScalar $c[5]))
+    }
+}
+
+function script:Sc-EmitDeliveryGate {
+    param([int]$Start, [int]$End)
+    script:Sc-IssueList $Start $End
+    $script:ScCntIssues = $script:ScIssues.Count
+    [void]$script:ScOut.Add('delivery_gate:')
+    if ($script:ScIssues.Count -eq 0) {
+        [void]$script:ScOut.Add('  issue_list: []')
+        return
+    }
+    [void]$script:ScOut.Add('  issue_list:')
+    foreach ($it in $script:ScIssues) {
+        [void]$script:ScOut.Add('    - ' + (script:Sc-YamlScalar $it))
+    }
+}
+
+function script:Sc-EmitQa {
+    param([int]$Start, [int]$End)
+    script:Sc-QaEntries $Start $End
+    $script:ScCntQa = $script:ScQa.Count
+    if ($script:ScQa.Count -eq 0) {
+        [void]$script:ScOut.Add('qa: []')
+        return
+    }
+    [void]$script:ScOut.Add('qa:')
+    foreach ($row in $script:ScQa) {
+        $c = $row -split "`u{1F}"
+        [void]$script:ScOut.Add('  - id: ' + $c[0])
+        [void]$script:ScOut.Add('    category: ' + (script:Sc-YamlScalar $c[1]))
+        [void]$script:ScOut.Add('    impact: ' + (script:Sc-YamlScalar $c[2]))
+        [void]$script:ScOut.Add('    state: ' + (script:Sc-YamlScalar $c[3]))
+        [void]$script:ScOut.Add('    context: ' + (script:Sc-YamlScalar $c[4]))
+        [void]$script:ScOut.Add('    suggested: ' + (script:Sc-YamlScalar $c[5]))
+        [void]$script:ScOut.Add('    answer: ' + (script:Sc-YamlScalar $c[6]))
+        [void]$script:ScOut.Add('    applied_to: ' + (script:Sc-YamlScalar $c[7]))
+    }
+}
+
+# ---- DERIVED-zone guards (SP-3). ----
+
+function script:Sc-GuardDerivedTable {
+    param([string]$Md, [string]$Heading, [int]$Start, [int]$End)
+    $h = script:Sc-FindHeading $Heading $Start $End
+    if ($h -lt 0) { return $true }
+    $hend = script:Sc-SectionEnd $h $End
+    script:Sc-TableRows ($h + 1) $hend
+    if ($script:ScRows.Count -gt 0) {
+        [Console]::Error.WriteLine("WARN: aid migrate: ${Md}: DERIVED section '$Heading' holds real data -- conversion refused for this file (nothing dropped). Remedy: run migrate-work-hierarchy on this work, then re-run 'aid update'.")
+        return $false
+    }
+    return $true
+}
+
+function script:Sc-GuardDerivedNarrative {
+    param([string]$Md, [string]$Heading, [int]$Start, [int]$End)
+    $h = script:Sc-FindHeading $Heading $Start $End
+    if ($h -lt 0) { return $true }
+    $hend = script:Sc-SectionEnd $h $End
+    $inComment = $false
+    for ($i = $h + 1; $i -lt $hend; $i++) {
+        $trimmed = script:Sc-Trim $script:ScLines[$i]
+        if ([string]::IsNullOrEmpty($trimmed)) { continue }
+        if ($trimmed -eq '---') { continue }
+        if ($inComment) {
+            if ($trimmed.Contains('-->')) { $inComment = $false }
+            continue
+        }
+        if ($trimmed.StartsWith('<!--')) {
+            if (-not $trimmed.Contains('-->')) { $inComment = $true }
+            continue
+        }
+        if ($trimmed -match '^_None yet') { continue }
+        [Console]::Error.WriteLine("WARN: aid migrate: ${Md}: DERIVED section '$Heading' holds real data -- conversion refused for this file (nothing dropped). Remedy: run migrate-work-hierarchy on this work, then re-run 'aid update'.")
+        return $false
+    }
+    return $true
+}
+
+# script:Sc-ConvertWorkBody MD LAYOUT BSTART BEND -> populates $script:ScOut
+# with the work-level AUTHORED-zone YAML lines; returns $false on a
+# DERIVED-guard hard error (SP-3).
+function script:Sc-ConvertWorkBody {
+    param([string]$Md, [string]$Layout, [int]$BStart, [int]$BEnd)
+    $script:ScOut = [System.Collections.Generic.List[string]]::new()
+
+    $hI = script:Sc-FindHeading '## Interview State' $BStart $BEnd
+    if ($hI -ge 0) {
+        $hIEnd = script:Sc-SectionEnd $hI $BEnd
+        script:Sc-EmitInterview ($hI + 1) $hIEnd
+    } else {
+        [void]$script:ScOut.Add('interview:')
+        [void]$script:ScOut.Add('  state: Pending')
+        [void]$script:ScOut.Add('  grade: Pending')
+        [void]$script:ScOut.Add('  sections: []')
+    }
+
+    $hL = script:Sc-FindHeading '## Lifecycle History' $BStart $BEnd
+    if ($hL -ge 0) {
+        $hLEnd = script:Sc-SectionEnd $hL $BEnd
+        script:Sc-EmitLifecycleHistory ($hL + 1) $hLEnd
+    } else {
+        [void]$script:ScOut.Add('lifecycle_history: []')
+    }
+
+    $hD = script:Sc-FindHeading '## Deploy State' $BStart $BEnd
+    if ($hD -ge 0) {
+        $hDEnd = script:Sc-SectionEnd $hD $BEnd
+        script:Sc-EmitDeploy ($hD + 1) $hDEnd
+    } else {
+        [void]$script:ScOut.Add('deploy: []')
+    }
+
+    if ($Layout -eq 'flat') {
+        $hDl = script:Sc-FindHeading '## Delivery Lifecycle' $BStart $BEnd
+        if ($hDl -ge 0) {
+            $hDlEnd = script:Sc-SectionEnd $hDl $BEnd
+            script:Sc-EmitDeliveryLifecycle ($hDl + 1) $hDlEnd
+
+            $hTl = script:Sc-FindHeading '### Tasks lifecycle' $hDl $hDlEnd
+            if ($hTl -ge 0) {
+                $hTlEnd = script:Sc-SectionEnd $hTl $hDlEnd
+                script:Sc-EmitTasksLifecycle ($hTl + 1) $hTlEnd
+            } else {
+                [void]$script:ScOut.Add('tasks_lifecycle: {}')
+            }
+        } else {
+            [void]$script:ScOut.Add('delivery_lifecycle:')
+            [void]$script:ScOut.Add('  updated: --')
+            [void]$script:ScOut.Add('  block_reason: --')
+            [void]$script:ScOut.Add('  block_artifact: --')
+            [void]$script:ScOut.Add('tasks_lifecycle: {}')
+        }
+
+        $hG = script:Sc-FindHeading '## Delivery Gate' $BStart $BEnd
+        if ($hG -ge 0) {
+            $hGEnd = script:Sc-SectionEnd $hG $BEnd
+            script:Sc-EmitDeliveryGate ($hG + 1) $hGEnd
+        } else {
+            [void]$script:ScOut.Add('delivery_gate:')
+            [void]$script:ScOut.Add('  issue_list: []')
+        }
+
+        $hQ = script:Sc-FindHeading '## Cross-phase Q&A' $BStart $BEnd
+        if ($hQ -ge 0) {
+            $hQEnd = script:Sc-SectionEnd $hQ $BEnd
+            script:Sc-EmitQa ($hQ + 1) $hQEnd
+        } else {
+            [void]$script:ScOut.Add('qa: []')
+        }
+    }
+
+    $derivedTableHeadings = @('## Features State', '## Plan / Deliveries', '## Tasks State', '## Calibration Log')
+    foreach ($dh in $derivedTableHeadings) {
+        if (-not (script:Sc-GuardDerivedTable $Md $dh $BStart $BEnd)) { return $false }
+    }
+    $derivedNarrativeHeadings = @('## Delivery Gates', '## Dispatches')
+    foreach ($dh in $derivedNarrativeHeadings) {
+        if (-not (script:Sc-GuardDerivedNarrative $Md $dh $BStart $BEnd)) { return $false }
+    }
+    if ($Layout -eq 'full') {
+        if (-not (script:Sc-GuardDerivedNarrative $Md '## Cross-phase Q&A' $BStart $BEnd)) { return $false }
+    }
+
+    return $true
+}
+
+# script:Sc-ConvertDeliveryBody MD BSTART BEND -> populates $script:ScOut
+# with the delivery-level AUTHORED-zone YAML lines (full layout only);
+# returns $false on a DERIVED-guard hard error.
+function script:Sc-ConvertDeliveryBody {
+    param([string]$Md, [int]$BStart, [int]$BEnd)
+    $script:ScOut = [System.Collections.Generic.List[string]]::new()
+
+    $hDl = script:Sc-FindHeading '## Delivery Lifecycle' $BStart $BEnd
+    if ($hDl -ge 0) {
+        $hDlEnd = script:Sc-SectionEnd $hDl $BEnd
+        script:Sc-EmitDeliveryLifecycle ($hDl + 1) $hDlEnd
+    } else {
+        [void]$script:ScOut.Add('delivery_lifecycle:')
+        [void]$script:ScOut.Add('  updated: --')
+        [void]$script:ScOut.Add('  block_reason: --')
+        [void]$script:ScOut.Add('  block_artifact: --')
+    }
+
+    $hG = script:Sc-FindHeading '## Delivery Gate' $BStart $BEnd
+    if ($hG -ge 0) {
+        $hGEnd = script:Sc-SectionEnd $hG $BEnd
+        script:Sc-EmitDeliveryGate ($hG + 1) $hGEnd
+    } else {
+        [void]$script:ScOut.Add('delivery_gate:')
+        [void]$script:ScOut.Add('  issue_list: []')
+    }
+
+    $hQ = script:Sc-FindHeading '## Cross-phase Q&A' $BStart $BEnd
+    if ($hQ -ge 0) {
+        $hQEnd = script:Sc-SectionEnd $hQ $BEnd
+        script:Sc-EmitQa ($hQ + 1) $hQEnd
+    } else {
+        [void]$script:ScOut.Add('qa: []')
+    }
+
+    if (-not (script:Sc-GuardDerivedTable $Md '## Tasks State' $BStart $BEnd)) { return $false }
+    return $true
+}
+
+# script:Sc-ConvertTaskBody MD BSTART BEND -> populates $script:ScOut with
+# the task-level AUTHORED-zone YAML lines (full layout only). No DERIVED
+# section exists at this level, so nothing is guarded.
+function script:Sc-ConvertTaskBody {
+    param([string]$Md, [int]$BStart, [int]$BEnd)
+    $script:ScOut = [System.Collections.Generic.List[string]]::new()
+
+    $hQc = script:Sc-FindHeading '## Quick Check Findings' $BStart $BEnd
+    $tier = 'Small'
+    if ($hQc -ge 0) {
+        $hQcEnd = script:Sc-SectionEnd $hQc $BEnd
+        script:Sc-Findings ($hQc + 1) $hQcEnd
+        if ($script:ScTier) { $tier = (script:Sc-Trim $script:ScTier) }
+    } else {
+        $script:ScFindings = [System.Collections.Generic.List[string]]::new()
+    }
+    $script:ScCntFindings = $script:ScFindings.Count
+    [void]$script:ScOut.Add('quick_check:')
+    [void]$script:ScOut.Add('  reviewer_tier: ' + (script:Sc-YamlScalar $tier))
+    if ($script:ScFindings.Count -eq 0) {
+        [void]$script:ScOut.Add('  findings: []')
+    } else {
+        [void]$script:ScOut.Add('  findings:')
+        foreach ($it in $script:ScFindings) {
+            [void]$script:ScOut.Add('    - ' + (script:Sc-YamlScalar $it))
+        }
+    }
+
+    $hDp = script:Sc-FindHeading '## Dispatch Log' $BStart $BEnd
+    if ($hDp -ge 0) {
+        $hDpEnd = script:Sc-SectionEnd $hDp $BEnd
+        script:Sc-TableRows ($hDp + 1) $hDpEnd
+    } else {
+        $script:ScRows = [System.Collections.Generic.List[string]]::new()
+    }
+    $script:ScCntDispatch = $script:ScRows.Count
+    if ($script:ScRows.Count -eq 0) {
+        [void]$script:ScOut.Add('dispatch_log: []')
+    } else {
+        [void]$script:ScOut.Add('dispatch_log:')
+        foreach ($row in $script:ScRows) {
+            $c = $row -split "`u{1F}"
+            [void]$script:ScOut.Add('  - date: ' + (script:Sc-YamlScalar $c[0]))
+            [void]$script:ScOut.Add('    agent: ' + (script:Sc-YamlScalar $c[1]))
+            [void]$script:ScOut.Add('    eta_band: ' + (script:Sc-YamlScalar $c[2]))
+            [void]$script:ScOut.Add('    actual: ' + (script:Sc-YamlScalar $c[3]))
+            [void]$script:ScOut.Add('    outcome: ' + (script:Sc-YamlScalar $c[4]))
+        }
+    }
+    return $true
+}
+
+# ---- Round-trip verification (SP-12). ----
+
+function script:Sc-YamlIndent {
+    param([string]$S)
+    $trimmed = $S.TrimStart()
+    return ($S.Length - $trimmed.Length)
+}
+
+# script:Sc-YamlBlockRange KEYTEXT -> @(start,end) (0-indexed, into the
+# script-scope $script:ScYLines list). KEYTEXT is matched right-trimmed
+# only (its OWN leading whitespace is significant -- pass it exactly as
+# written, e.g. "  issue_list:"). @(-1,-1) if not found.
+function script:Sc-YamlBlockRange {
+    param([string]$KeyText)
+    for ($i = 0; $i -lt $script:ScYLines.Count; $i++) {
+        $raw = $script:ScYLines[$i]
+        if ($raw.TrimEnd() -eq $KeyText) {
+            $keyIndent = script:Sc-YamlIndent $raw
+            for ($j = $i + 1; $j -lt $script:ScYLines.Count; $j++) {
+                $jl = $script:ScYLines[$j]
+                $jtrim = script:Sc-Trim $jl
+                if ([string]::IsNullOrEmpty($jtrim)) { continue }
+                if ($jtrim.StartsWith('#')) { continue }
+                $jindent = script:Sc-YamlIndent $jl
+                if ($jindent -le $keyIndent) { return @(($i + 1), $j) }
+            }
+            return @(($i + 1), $script:ScYLines.Count)
+        }
+    }
+    return @(-1, -1)
+}
+
+function script:Sc-YamlCountDashItems {
+    param([int]$Start, [int]$End)
+    $c = 0
+    for ($i = $Start; $i -lt $End; $i++) {
+        if ((script:Sc-Trim $script:ScYLines[$i]).StartsWith('- ')) { $c++ }
+    }
+    return $c
+}
+
+function script:Sc-YamlCountMapChildren {
+    param([int]$Start, [int]$End)
+    $minIndent = [int]::MaxValue
+    for ($i = $Start; $i -lt $End; $i++) {
+        $t = script:Sc-Trim $script:ScYLines[$i]
+        if ([string]::IsNullOrEmpty($t) -or $t.StartsWith('#')) { continue }
+        $ind = script:Sc-YamlIndent $script:ScYLines[$i]
+        if ($ind -lt $minIndent) { $minIndent = $ind }
+    }
+    $c = 0
+    for ($i = $Start; $i -lt $End; $i++) {
+        $raw = $script:ScYLines[$i]
+        $t = script:Sc-Trim $raw
+        if ([string]::IsNullOrEmpty($t)) { continue }
+        $ind = script:Sc-YamlIndent $raw
+        if ($ind -ne $minIndent) { continue }
+        if ($t.EndsWith(':')) { $c++ }
+    }
+    return $c
+}
+
+# script:Sc-YamlBlockCount KEYTEXT -> the sequence-item count (or, for
+# "tasks_lifecycle:", the mapping-child count) under KEYTEXT in
+# $script:ScYLines; 0 for an inline "KEYTEXT []"/"{}" or an absent key.
+function script:Sc-YamlBlockCount {
+    param([string]$KeyText)
+    foreach ($raw in $script:ScYLines) {
+        $rtrimmed = $raw.TrimEnd()
+        if ($rtrimmed -eq "$KeyText []" -or $rtrimmed -eq "$KeyText {}") { return 0 }
+    }
+    $range = script:Sc-YamlBlockRange $KeyText
+    $start = $range[0]; $bend = $range[1]
+    if ($start -lt 0) { return 0 }
+    $ktTrim = script:Sc-Trim $KeyText
+    if ($ktTrim -eq 'tasks_lifecycle:') {
+        return script:Sc-YamlCountMapChildren $start $bend
+    }
+    return script:Sc-YamlCountDashItems $start $bend
+}
+
+# script:Sc-VerifyRoundtrip MD CANDIDATE LEVEL LAYOUT -> $true iff CANDIDATE
+# (a) is entirely composed of recognized SS D-3 shapes and (b) reproduces,
+# for every list/table this converter targeted at LEVEL, the exact
+# row/entry count captured while reading MD (the $script:ScCnt* counters
+# set by the emitters above).
+function script:Sc-VerifyRoundtrip {
+    param([string]$Md, [string]$Candidate, [string]$Level, [string]$Layout)
+    $script:ScYLines = [System.Collections.Generic.List[string]](Get-Content -LiteralPath $Candidate -Encoding utf8 -ErrorAction Stop)
+
+    for ($i = 0; $i -lt $script:ScYLines.Count; $i++) {
+        $line = $script:ScYLines[$i]
+        $trimmed = script:Sc-Trim $line
+        if ([string]::IsNullOrEmpty($trimmed)) { continue }
+        if ($line.Contains("`t")) {
+            [Console]::Error.WriteLine("WARN: aid migrate: ${Md}: candidate STATE.yml line $($i+1) has a tab; round-trip verification failed")
+            return $false
+        }
+        $ind = script:Sc-YamlIndent $line
+        if (($ind % 2) -ne 0) {
+            [Console]::Error.WriteLine("WARN: aid migrate: ${Md}: candidate STATE.yml line $($i+1) has odd indentation; round-trip verification failed")
+            return $false
+        }
+        if ($trimmed.StartsWith('#')) { continue }
+        if ($trimmed.StartsWith('- ') -or $trimmed -eq '-') { continue }
+        if ($trimmed -match '^[A-Za-z0-9_.-]+:(\s.*)?$') { continue }
+        [Console]::Error.WriteLine("WARN: aid migrate: ${Md}: candidate STATE.yml line $($i+1) is not a recognized key/sequence line; round-trip verification failed")
+        return $false
+    }
+
+    $ok = $true
+    switch ($Level) {
+        'work' {
+            if ((script:Sc-YamlBlockCount '  sections:') -ne $script:ScCntInterview) {
+                $ok = $false; [Console]::Error.WriteLine("WARN: aid migrate: ${Md}: round-trip mismatch on interview.sections count")
+            }
+            if ((script:Sc-YamlBlockCount 'lifecycle_history:') -ne $script:ScCntLfh) {
+                $ok = $false; [Console]::Error.WriteLine("WARN: aid migrate: ${Md}: round-trip mismatch on lifecycle_history count")
+            }
+            if ((script:Sc-YamlBlockCount 'deploy:') -ne $script:ScCntDeploy) {
+                $ok = $false; [Console]::Error.WriteLine("WARN: aid migrate: ${Md}: round-trip mismatch on deploy count")
+            }
+            if ($Layout -eq 'flat') {
+                if ((script:Sc-YamlBlockCount 'tasks_lifecycle:') -ne $script:ScCntTasksLc) {
+                    $ok = $false; [Console]::Error.WriteLine("WARN: aid migrate: ${Md}: round-trip mismatch on tasks_lifecycle count")
+                }
+                if ((script:Sc-YamlBlockCount '  issue_list:') -ne $script:ScCntIssues) {
+                    $ok = $false; [Console]::Error.WriteLine("WARN: aid migrate: ${Md}: round-trip mismatch on delivery_gate.issue_list count")
+                }
+                if ((script:Sc-YamlBlockCount 'qa:') -ne $script:ScCntQa) {
+                    $ok = $false; [Console]::Error.WriteLine("WARN: aid migrate: ${Md}: round-trip mismatch on qa count")
+                }
+            }
+        }
+        'delivery' {
+            if ((script:Sc-YamlBlockCount '  issue_list:') -ne $script:ScCntIssues) {
+                $ok = $false; [Console]::Error.WriteLine("WARN: aid migrate: ${Md}: round-trip mismatch on delivery_gate.issue_list count")
+            }
+            if ((script:Sc-YamlBlockCount 'qa:') -ne $script:ScCntQa) {
+                $ok = $false; [Console]::Error.WriteLine("WARN: aid migrate: ${Md}: round-trip mismatch on qa count")
+            }
+        }
+        'task' {
+            if ((script:Sc-YamlBlockCount '  findings:') -ne $script:ScCntFindings) {
+                $ok = $false; [Console]::Error.WriteLine("WARN: aid migrate: ${Md}: round-trip mismatch on quick_check.findings count")
+            }
+            if ((script:Sc-YamlBlockCount 'dispatch_log:') -ne $script:ScCntDispatch) {
+                $ok = $false; [Console]::Error.WriteLine("WARN: aid migrate: ${Md}: round-trip mismatch on dispatch_log count")
+            }
+        }
+    }
+    return $ok
+}
+
+# script:Sc-ConvertFile MD YML LEVEL LAYOUT -> the per-file converter.
+# Idempotent (no-op if YML already exists); fail-safe (the .md is deleted
+# ONLY after the candidate .yml passes script:Sc-VerifyRoundtrip);
+# WARN-not-fail (every failure path emits a WARN line and returns $false --
+# the caller never propagates that past script:Sc-ConvertRepo, which
+# always returns $true).
+function script:Sc-ConvertFile {
+    param([string]$Md, [string]$Yml, [string]$Level, [string]$Layout)
+
+    if (-not (Test-Path -LiteralPath $Md -PathType Leaf)) { return $true }
+    if (Test-Path -LiteralPath $Yml -PathType Leaf) { return $true }
+
+    $script:ScLines = [System.Collections.Generic.List[string]](Get-Content -LiteralPath $Md -Encoding utf8 -ErrorAction Stop)
+
+    $script:ScCntInterview = 0; $script:ScCntLfh = 0; $script:ScCntDeploy = 0; $script:ScCntTasksLc = 0
+    $script:ScCntIssues = 0; $script:ScCntQa = 0; $script:ScCntFindings = 0; $script:ScCntDispatch = 0
+
+    $n = $script:ScLines.Count
+    if ($n -lt 2 -or $script:ScLines[0] -ne '---') {
+        [Console]::Error.WriteLine("WARN: aid migrate: ${Md}: no frontmatter fence found; skipped (STATE.md left in place)")
+        return $false
+    }
+    $fmEnd = -1
+    for ($i = 1; $i -lt $n; $i++) {
+        if ($script:ScLines[$i] -eq '---') { $fmEnd = $i; break }
+    }
+    if ($fmEnd -lt 0) {
+        [Console]::Error.WriteLine("WARN: aid migrate: ${Md}: frontmatter block never closes; skipped (STATE.md left in place)")
+        return $false
+    }
+
+    $fmLines = [System.Collections.Generic.List[string]]::new()
+    for ($i = 1; $i -lt $fmEnd; $i++) { [void]$fmLines.Add($script:ScLines[$i]) }
+    $bodyStart = $fmEnd + 1
+
+    $converted = $true
+    switch ($Level) {
+        'work'     { $converted = script:Sc-ConvertWorkBody $Md $Layout $bodyStart $n }
+        'delivery' { $converted = script:Sc-ConvertDeliveryBody $Md $bodyStart $n }
+        'task'     { $converted = script:Sc-ConvertTaskBody $Md $bodyStart $n }
+        default    {
+            [Console]::Error.WriteLine("WARN: aid migrate: ${Md}: unknown conversion level '$Level' (continuing)")
+            $converted = $false
+        }
+    }
+    if (-not $converted) { return $false }
+
+    $tmp = Join-Path (Split-Path -Parent $Md) ('.state-convert.' + [System.IO.Path]::GetRandomFileName())
+    $lines = [System.Collections.Generic.List[string]]::new()
+    foreach ($l in $fmLines) { [void]$lines.Add($l) }
+    [void]$lines.Add('')
+    foreach ($l in $script:ScOut) { [void]$lines.Add($l) }
+    try {
+        [System.IO.File]::WriteAllText($tmp, (($lines -join "`n") + "`n"), [System.Text.UTF8Encoding]::new($false))
+    } catch {
+        [Console]::Error.WriteLine("WARN: aid migrate: ${Md}: could not write candidate for ${Yml}: $_ (continuing)")
+        return $false
+    }
+
+    if (-not (script:Sc-VerifyRoundtrip $Md $tmp $Level $Layout)) {
+        Remove-Item -LiteralPath $tmp -Force -ErrorAction SilentlyContinue
+        [Console]::Error.WriteLine("WARN: aid migrate: ${Md}: failed round-trip verification; skipped (STATE.md left in place)")
+        return $false
+    }
+
+    try {
+        Move-Item -LiteralPath $tmp -Destination $Yml -Force -ErrorAction Stop
+    } catch {
+        Remove-Item -LiteralPath $tmp -Force -ErrorAction SilentlyContinue
+        [Console]::Error.WriteLine("WARN: aid migrate: ${Md}: could not write ${Yml}: $_ (continuing)")
+        return $false
+    }
+    Remove-Item -LiteralPath $Md -Force -ErrorAction SilentlyContinue
+    Write-Host "OK: aid migrate: ${Md} converted -> ${Yml}"
+    return $true
+}
+
+# script:Sc-ConvertOneWork WORKDIR -> converts a single work's STATE.md and,
+# on the full layout (a deliveries/ subfolder present), every
+# deliveries/*/STATE.md and deliveries/*/tasks/*/STATE.md.
+function script:Sc-ConvertOneWork {
+    param([string]$WorkDir)
+    $layout = 'flat'
+    $deliveriesDir = Join-Path $WorkDir 'deliveries'
+    if (Test-Path -LiteralPath $deliveriesDir -PathType Container) { $layout = 'full' }
+
+    [void](script:Sc-ConvertFile (Join-Path $WorkDir 'STATE.md') (Join-Path $WorkDir 'STATE.yml') 'work' $layout)
+
+    if ($layout -ne 'full') { return }
+
+    Get-ChildItem -LiteralPath $deliveriesDir -Directory -ErrorAction SilentlyContinue | ForEach-Object {
+        $dd = $_.FullName
+        [void](script:Sc-ConvertFile (Join-Path $dd 'STATE.md') (Join-Path $dd 'STATE.yml') 'delivery' $layout)
+
+        $tasksDir = Join-Path $dd 'tasks'
+        if (Test-Path -LiteralPath $tasksDir -PathType Container) {
+            Get-ChildItem -LiteralPath $tasksDir -Directory -ErrorAction SilentlyContinue | ForEach-Object {
+                $td = $_.FullName
+                [void](script:Sc-ConvertFile (Join-Path $td 'STATE.md') (Join-Path $td 'STATE.yml') 'task' $layout)
+            }
+        }
+    }
+}
+
+# script:Sc-ConvertRepo REPO -> the migration-engine STEP 5 entry point
+# (called from Invoke-AidMigrateRepo). Converts every in-scope STATE.md
+# under REPO/.aid/works/. Always succeeds (WARN-not-fail).
+function script:Sc-ConvertRepo {
+    param([string]$Repo)
+    $worksDir = Join-Path (Join-Path $Repo '.aid') 'works'
+    if (-not (Test-Path -LiteralPath $worksDir -PathType Container)) { return }
+    Get-ChildItem -LiteralPath $worksDir -Directory -ErrorAction SilentlyContinue | ForEach-Object {
+        script:Sc-ConvertOneWork $_.FullName
+    }
 }
 
 # script:Invoke-AidRepairSettingsEraA <SettingsFile> <RepoName>

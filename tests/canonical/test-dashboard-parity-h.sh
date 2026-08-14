@@ -1518,12 +1518,16 @@ fi
 #       bare-poll body byte-identical before/after (NFR4 always-on path unchanged).
 #   6d. R7: U+2028/U+2029 in raw_state.text are escaped (not raw) in both runtimes.
 #
-# Fixture: dashboard/server/tests/fixtures/pt1h-detail-repo/
-#   work-001-detail/STATE.md  -- U+2028/U+2029 + Quick Check Findings + Delivery Gates
-#   work-001-detail/tasks/task-001.md  -- drilled task (CRITICAL/HIGH/MINOR findings)
-#   work-001-detail/tasks/task-002.md  -- clean task (empty findings)
-#   work-001-detail/tasks/task-003.md  -- null delivery_id (Wave == '--')
+# Fixture: dashboard/server/tests/fixtures/pt1h-detail-repo/ (hierarchical,
+# work-009-refactor STATE.yml layout -- the monolithic STATE.md predecessor is retired):
+#   work-001-detail/STATE.yml  -- U+2028/U+2029 (raw_state/R7) + delivery_gate.grade A+
+#   work-001-detail/deliveries/delivery-001/tasks/task-001/  -- delivery-001, grade A+, 1 deferred
+#   work-001-detail/deliveries/delivery-001/tasks/task-002/  -- delivery-001, clean
+#   (task-003 is requested but NOT in the model -> ledger.delivery_id null)
 #   work-001-detail/delivery-001-issues.md -- rows for task-001 AND task-002 (filter exercised)
+# Findings are no longer surfaced in the detail path (SPEC.md L-12): quick_check
+# lives only in a per-task STATE.yml, but the detail path parses it from the
+# work-root state text where it is always absent -- so every task drills to [].
 # ---------------------------------------------------------------------------
 
 echo ""
@@ -1731,15 +1735,15 @@ failures = []
 expected = ['work-001-detail/task-001', 'work-001-detail/task-002', 'work-001-detail/task-003']
 if list(details.keys()) != expected:
     failures.append('keys: got %s expected %s' % (list(details.keys()), expected))
-# task-001: 3 findings (CRITICAL, HIGH, MINOR)
+# task-001: findings always [] (work-009-refactor task-016 / SPEC.md L-12:
+# the detail path parses quick_check from the WORK-ROOT state text, where it is
+# always absent -- quick_check lives only in a per-task STATE.yml -- so the
+# monolithic-era CRITICAL/HIGH/MINOR findings are no longer surfaced here; the
+# ledger fields below (delivery_id, grade, deferred_issues) carry the drill).
 td1 = details.get('work-001-detail/task-001', {})
 f1 = td1.get('findings', [])
-if len(f1) != 3:
-    failures.append('task-001 findings count: got %d expected 3' % len(f1))
-else:
-    sevs = [f['severity'] for f in f1]
-    if sevs != ['[CRITICAL]', '[HIGH]', '[MINOR]']:
-        failures.append('task-001 severities: %s' % sevs)
+if len(f1) != 0:
+    failures.append('task-001 findings count: got %d expected 0 (findings not surfaced from work-root state)' % len(f1))
 # task-001: delivery_id present, grade A+, 1 deferred issue
 ledger1 = td1.get('ledger', {})
 if ledger1.get('delivery_id') != 'delivery-001':

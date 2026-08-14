@@ -88,58 +88,69 @@ def _make_work_dir(aid: Path, work_id: str) -> Path:
     return work
 
 
-def _write_state_md(work_dir: Path, content: str) -> None:
-    (work_dir / "STATE.md").write_text(content, encoding="utf-8")
+def _write_state_yml(work_dir: Path, content: str) -> None:
+    (work_dir / "STATE.yml").write_text(content, encoding="utf-8")
 
 
-# STATE.md snippet with ## Quick Check Findings block
-FINDINGS_STATE_MD = """\
-## Pipeline Status
-
-- **Lifecycle:** Running
-- **Phase:** Execute
-- **Active Skill:** aid-execute
-- **Updated:** 2026-06-13T00:00:00Z
-
-## Tasks Status
-
-| # | Task | Type | Wave | Status | Review | Elapsed | Notes |
-|---|------|------|------|--------|--------|---------|-------|
-| 1 | task-001 | IMPLEMENT | delivery-009 | Done | A+ | 1h | -- |
-| 2 | task-002 | IMPLEMENT | delivery-009 | Done | -- | 2h | -- |
-
-## Delivery Gates
-
-### delivery-009
-
-- **Reviewer Tier:** Large (complexity score 14)
-- **Grade:** A+ (cycle 1)
-- **Timestamp:** 2026-06-13T10:00:00Z
-
-## Quick Check Findings
-
-> One block per task.
-
-### task-001
-
-- **Reviewer Tier:** Small (quick check always uses Small tier)
-- **Findings:**
-  - [CRITICAL] Missing null check — {reader.py:42} — Fixed-on-spot
-  - [HIGH] Stale comment in derivation — {derivation.py:88} — Deferred-to-gate
-
-### task-002
-
-- **Reviewer Tier:** Small (quick check always uses Small tier)
-- **Findings:**
-
-## Lifecycle History
-
-| Date | Phase Transition / Gate | Grade | Notes |
-|------|------------------------|-------|-------|
-| 2026-06-10 | Work created | -- | Initial scaffold |
+# Standalone per-task STATE.yml `quick_check` snippets (work-009-refactor
+# task-016: was a shared '## Quick Check Findings' -> '### task-NNN' ->
+# '**Findings:**' bullet block spanning MULTIPLE tasks in one document --
+# retired, SPEC.md sec:D-4. The retargeted parse_quick_check_findings reads
+# ONE top-level `quick_check` key per call -- there is no more per-task
+# section lookup inside a shared document, so each task now needs its OWN
+# document (exactly what a real per-task STATE.yml is).
+TASK_001_QUICK_CHECK_YML = """\
+quick_check:
+  reviewer_tier: Small (quick check always uses Small tier)
+  findings:
+    - severity: CRITICAL
+      description: Missing null check
+      source: reader.py:42
+      disposition: Fixed-on-spot
+    - severity: HIGH
+      description: Stale comment in derivation
+      source: derivation.py:88
+      disposition: Deferred-to-gate
 """
 
-# delivery-NNN-issues.md content
+TASK_002_CLEAN_QUICK_CHECK_YML = """\
+quick_check:
+  reviewer_tier: Small (quick check always uses Small tier)
+  findings: []
+"""
+
+# The work-root STATE.yml for the TestReadRepoDetail integration fixture: a
+# FLAT layout (BLUEPRINT.md + tasks/task-NNN/DETAIL.md, on disk -- see setUp)
+# with a `tasks_lifecycle` mapping for task-001/task-002. Deliberately has NO
+# `quick_check` / `delivery_gate.grade` sub-keys -- reader.py's DETAIL pass
+# reuses THIS SAME work-root cached text for parse_quick_check_findings /
+# parse_delivery_gate (DR-1/NFR4, no re-read), and those keys only ever exist
+# in a PER-TASK / PER-DELIVERY STATE.yml the DETAIL pass never re-reads --
+# the "pre-existing staleness preserved, not repaired" both retargeted
+# parsers' docstrings document (SPEC.md sec:L-12).
+FLAT_WORK_STATE_YML = """\
+lifecycle: Running
+phase: Execute
+active_skill: aid-execute
+updated: '2026-06-13T00:00:00Z'
+tasks_lifecycle:
+  task-001:
+    state: Done
+    review: A+
+    elapsed: 1h
+    notes: --
+  task-002:
+    state: Done
+    review: --
+    elapsed: 2h
+    notes: --
+"""
+
+# delivery-NNN-issues.md content -- UNCHANGED format (a plain markdown table
+# in its own dedicated file, never a STATE file; parse_deferred_issues is
+# out of this refactor's scope). Filename/delivery number matches the flat
+# layout's hardcoded wave="delivery-001" (reader.py _read_work_flat), not
+# the pre-refactor fixture's "delivery-009" (see TestReadRepoDetail.setUp).
 ISSUES_MD = """\
 # Deferred [HIGH] Issues
 
@@ -157,12 +168,16 @@ ISSUES_MD = """\
 # ---------------------------------------------------------------------------
 
 class TestParseQuickCheckFindings(unittest.TestCase):
-    """Tests for DR-2: ## Quick Check Findings -> ### task-NNN -> **Findings:** bullets."""
+    """Tests for DR-2: the per-task STATE.yml `quick_check` mapping (SPEC.md
+    sec:D-4). (work-009-refactor task-016: was a shared '## Quick Check
+    Findings' -> '### task-NNN' -> '**Findings:**' bullet block -- retired;
+    the retargeted parser reads ONE top-level `quick_check` key per call,
+    so `task_id` is decorative (warning text only), not a section selector.)"""
 
     def test_finds_critical_and_high_findings(self):
         """task-001 has [CRITICAL] and [HIGH] findings."""
         warnings = []
-        findings = parse_quick_check_findings(FINDINGS_STATE_MD, "task-001", warnings)
+        findings = parse_quick_check_findings(TASK_001_QUICK_CHECK_YML, "task-001", warnings)
         self.assertEqual(len(findings), 2)
 
         # First finding: [CRITICAL]
@@ -171,7 +186,7 @@ class TestParseQuickCheckFindings(unittest.TestCase):
         self.assertIn("null check", f0.description)
         self.assertEqual(f0.location, "reader.py:42")
         self.assertEqual(f0.disposition, "Fixed-on-spot")
-        # reviewer_tier is the verbatim value from **Reviewer Tier:** line
+        # reviewer_tier is the verbatim value from the `reviewer_tier` key
         self.assertIn("Small", f0.reviewer_tier)
 
         # Second finding: [HIGH]
@@ -183,36 +198,47 @@ class TestParseQuickCheckFindings(unittest.TestCase):
         self.assertIn("Small", f1.reviewer_tier)
 
     def test_clean_task_returns_empty_list(self):
-        """task-002 has an empty Findings list -- clean task is not an error."""
+        """A `quick_check` with an empty `findings` list -- clean task is not
+        an error. (work-009-refactor task-016: was task-002's own '### task-
+        002' block in a shared multi-task document -- retired; each task now
+        needs its OWN standalone per-task document, TASK_002_CLEAN_QUICK_CHECK_YML.)"""
         warnings = []
-        findings = parse_quick_check_findings(FINDINGS_STATE_MD, "task-002", warnings)
+        findings = parse_quick_check_findings(TASK_002_CLEAN_QUICK_CHECK_YML, "task-002", warnings)
         self.assertEqual(findings, [])
         self.assertEqual(warnings, [])
 
     def test_task_not_present_returns_empty_list(self):
-        """A task with no block under ## Quick Check Findings -> empty list."""
+        """No `quick_check` key at all -> empty list. (work-009-refactor
+        task-016: was 'a task with no block under a shared multi-task
+        section' -- retired; the retargeted parser reads ONE top-level
+        `quick_check` key unconditionally, so `task_id` no longer selects
+        among sections -- it is now identical in effect to
+        test_missing_section_returns_empty_list, kept as an explicit,
+        separately-named regression guard.)"""
         warnings = []
-        findings = parse_quick_check_findings(FINDINGS_STATE_MD, "task-999", warnings)
+        findings = parse_quick_check_findings("state: Pending\n", "task-999", warnings)
         self.assertEqual(findings, [])
 
     def test_missing_section_returns_empty_list(self):
-        """STATE.md with no ## Quick Check Findings -> empty list + no error."""
-        text = "## Pipeline Status\n\n- **Lifecycle:** Running\n"
+        """STATE.yml with no `quick_check` key -> empty list + no error."""
+        text = "lifecycle: Running\n"
         warnings = []
         findings = parse_quick_check_findings(text, "task-001", warnings)
         self.assertEqual(findings, [])
 
     def test_unknown_severity_tag_becomes_minor(self):
-        """[LOW] or unknown bracketed tag -> [MINOR] neutral, never throws."""
-        text = """\
-## Quick Check Findings
-
-### task-001
-
-- **Reviewer Tier:** Small
-- **Findings:**
-  - [LOW] Cosmetic issue -- {file.py:10} -- Fixed-on-spot
-"""
+        """A `severity: LOW` (or any unknown) value -> [MINOR] neutral, never
+        throws. (work-009-refactor task-016: was a bracketed '[LOW]' bullet
+        under a '## Quick Check Findings' block -- retired, SPEC.md sec:D-4.)"""
+        text = (
+            "quick_check:\n"
+            "  reviewer_tier: Small\n"
+            "  findings:\n"
+            "    - severity: LOW\n"
+            "      description: Cosmetic issue\n"
+            "      source: file.py:10\n"
+            "      disposition: Fixed-on-spot\n"
+        )
         warnings = []
         findings = parse_quick_check_findings(text, "task-001", warnings)
         self.assertEqual(len(findings), 1)
@@ -220,16 +246,15 @@ class TestParseQuickCheckFindings(unittest.TestCase):
         self.assertEqual(findings[0].location, "file.py:10")
 
     def test_location_absent_is_null(self):
-        """Bullet without {file:line} -> location is None."""
-        text = """\
-## Quick Check Findings
-
-### task-001
-
-- **Reviewer Tier:** Small
-- **Findings:**
-  - [HIGH] No location here -- Deferred-to-gate
-"""
+        """Entry without a `source` key -> location is None."""
+        text = (
+            "quick_check:\n"
+            "  reviewer_tier: Small\n"
+            "  findings:\n"
+            "    - severity: HIGH\n"
+            "      description: No location here\n"
+            "      disposition: Deferred-to-gate\n"
+        )
         warnings = []
         findings = parse_quick_check_findings(text, "task-001", warnings)
         self.assertEqual(len(findings), 1)
@@ -237,16 +262,15 @@ class TestParseQuickCheckFindings(unittest.TestCase):
         self.assertEqual(findings[0].disposition, "Deferred-to-gate")
 
     def test_disposition_absent_is_null(self):
-        """Bullet without disposition token -> disposition is None."""
-        text = """\
-## Quick Check Findings
-
-### task-001
-
-- **Reviewer Tier:** Small
-- **Findings:**
-  - [HIGH] No disposition -- {file.py:1}
-"""
+        """Entry without a `disposition` key -> disposition is None."""
+        text = (
+            "quick_check:\n"
+            "  reviewer_tier: Small\n"
+            "  findings:\n"
+            "    - severity: HIGH\n"
+            "      description: No disposition\n"
+            "      source: file.py:1\n"
+        )
         warnings = []
         findings = parse_quick_check_findings(text, "task-001", warnings)
         self.assertEqual(len(findings), 1)
@@ -254,26 +278,25 @@ class TestParseQuickCheckFindings(unittest.TestCase):
         self.assertEqual(findings[0].location, "file.py:1")
 
     def test_empty_state_text_returns_empty_list(self):
-        """Empty STATE.md text -> empty list, no exception."""
+        """Empty STATE.yml text -> empty list, no exception."""
         warnings = []
         findings = parse_quick_check_findings("", "task-001", warnings)
         self.assertEqual(findings, [])
 
     def test_reviewer_tier_on_finding(self):
-        """reviewer_tier is copied from the block's **Reviewer Tier:** onto each Finding."""
-        text = """\
-## Quick Check Findings
-
-### task-001
-
-- **Reviewer Tier:** Medium
-- **Findings:**
-  - [HIGH] Something bad
-"""
+        """reviewer_tier is copied from the `quick_check.reviewer_tier` key
+        onto each Finding."""
+        text = (
+            "quick_check:\n"
+            "  reviewer_tier: Medium\n"
+            "  findings:\n"
+            "    - severity: HIGH\n"
+            "      description: Something bad\n"
+        )
         warnings = []
         findings = parse_quick_check_findings(text, "task-001", warnings)
         self.assertEqual(len(findings), 1)
-        # reviewer_tier is the verbatim value from **Reviewer Tier:** (may include parens)
+        # reviewer_tier is the verbatim `reviewer_tier` value (may include parens)
         self.assertIn("Medium", findings[0].reviewer_tier)
 
 
@@ -285,10 +308,23 @@ class TestParseDeliveryGate(unittest.TestCase):
     """Tests for DR-3: ## Delivery Gates -> ### delivery-NNN grade/tier/timestamp."""
 
     def test_parses_grade_tier_timestamp(self):
-        """delivery-009 gate block has Grade, Reviewer Tier, Timestamp."""
+        """A per-delivery STATE.yml's `delivery_gate` mapping has grade/
+        reviewer_tier/gate_timestamp sub-keys (work-009-refactor task-016:
+        was a '## Delivery Gates' -> '### delivery-NNN' bullet block --
+        retired, SPEC.md sec:D-4). NOTE: real production `delivery_gate`
+        content only ever carries `issue_list` (D-4) -- these sub-keys are
+        never actually authored there; this test exercises the FUNCTION's
+        own read mechanics in isolation, per its docstring's "pre-existing
+        staleness preserved, not repaired" note (parsers.py parse_delivery_gate)."""
+        text = (
+            "delivery_gate:\n"
+            "  grade: A+ (cycle 1)\n"
+            "  reviewer_tier: Large (complexity score 14)\n"
+            "  gate_timestamp: '2026-06-13T10:00:00Z'\n"
+        )
         warnings = []
         grade, reviewer_tier, timestamp = parse_delivery_gate(
-            FINDINGS_STATE_MD, "delivery-009", warnings
+            text, "delivery-009", warnings
         )
         self.assertEqual(grade, "A+")
         self.assertEqual(reviewer_tier, "Large")
@@ -296,18 +332,21 @@ class TestParseDeliveryGate(unittest.TestCase):
         self.assertEqual(warnings, [])
 
     def test_missing_delivery_returns_all_none(self):
-        """delivery-999 not present -> grade/tier/ts all None."""
+        """No `delivery_gate` key at all -> grade/tier/ts all None (the
+        delivery_id parameter no longer selects among multiple sections --
+        the function reads ONE top-level `delivery_gate` key, delivery_id is
+        used only in warning text)."""
         warnings = []
         grade, reviewer_tier, timestamp = parse_delivery_gate(
-            FINDINGS_STATE_MD, "delivery-999", warnings
+            "lifecycle: Running\n", "delivery-999", warnings
         )
         self.assertIsNone(grade)
         self.assertIsNone(reviewer_tier)
         self.assertIsNone(timestamp)
 
     def test_missing_section_returns_all_none(self):
-        """STATE.md with no ## Delivery Gates -> all None."""
-        text = "## Pipeline Status\n\n- **Lifecycle:** Running\n"
+        """STATE.yml with no `delivery_gate` key -> all None."""
+        text = "lifecycle: Running\n"
         warnings = []
         grade, reviewer_tier, timestamp = parse_delivery_gate(
             text, "delivery-001", warnings
@@ -325,16 +364,15 @@ class TestParseDeliveryGate(unittest.TestCase):
         self.assertIsNone(timestamp)
 
     def test_grade_verbatim_first_word(self):
-        """Grade is the first word of the **Grade:** value (verbatim, never re-graded)."""
-        text = """\
-## Delivery Gates
-
-### delivery-001
-
-- **Grade:** B+ (cycle 3)
-- **Reviewer Tier:** Small (score 2)
-- **Timestamp:** 2026-01-01T00:00:00Z
-"""
+        """Grade is the first word of the `grade` value (verbatim, never
+        re-graded). (work-009-refactor task-016: was a '**Grade:**' bullet
+        line -- retired.)"""
+        text = (
+            "delivery_gate:\n"
+            "  grade: B+ (cycle 3)\n"
+            "  reviewer_tier: Small (score 2)\n"
+            "  gate_timestamp: '2026-01-01T00:00:00Z'\n"
+        )
         warnings = []
         grade, reviewer_tier, timestamp = parse_delivery_gate(
             text, "delivery-001", warnings
@@ -343,35 +381,28 @@ class TestParseDeliveryGate(unittest.TestCase):
         self.assertEqual(reviewer_tier, "Small")
 
     # -----------------------------------------------------------------------
-    # FIX 2: singular ## Delivery Gate fallback (flat/lite promoted layout)
+    # FIX 2 (pre-refactor): singular '## Delivery Gate' fallback for the
+    # flat/lite promoted layout. RETIRED (work-009-refactor task-016): the
+    # retargeted parse_delivery_gate reads ONE top-level `delivery_gate` key
+    # unconditionally -- there is no more "plural vs singular section" or
+    # "delivery_id-scoped fallback" distinction to test; delivery_id is
+    # accepted only for warning text. The three tests below are KEPT (their
+    # assertions still hold) but reinterpreted: they now prove the SIMPLER,
+    # single-key-read behavior rather than the retired fallback mechanism.
     # -----------------------------------------------------------------------
 
     def test_singular_delivery_gate_fallback_when_no_plural_section(self):
-        """A flat/lite work promotes a SINGULAR '## Delivery Gate' block into
-        the work-root STATE.md (no '## Delivery Gates' -> '### delivery-NNN'
-        rollup). When no plural section exists anywhere in the text, the
-        singular block is read as delivery-001's gate."""
-        text = """\
-## Delivery Lifecycle
-
-- **State:** Executing
-- **Updated:** 2026-07-08T12:00:00Z
-- **Block Reason:** --
-- **Block Artifact:** --
-
-### Tasks lifecycle
-
-| Task | State | Review | Elapsed | Notes |
-|------|-------|--------|---------|-------|
-| task-001 | Done | A+ | 1h | -- |
-
-## Delivery Gate
-
-- **Reviewer Tier:** Small
-- **Grade:** A+
-- **Issue List:** none
-- **Timestamp:** 2026-07-08T12:00:00Z
-"""
+        """A `delivery_gate` mapping with grade/reviewer_tier/gate_timestamp
+        parses regardless of the `delivery_id` argument passed (no more
+        per-delivery section lookup, SPEC.md sec:D-4)."""
+        text = (
+            "delivery_state: Executing\n"
+            "delivery_gate:\n"
+            "  reviewer_tier: Small\n"
+            "  grade: A+\n"
+            "  issue_list: []\n"
+            "  gate_timestamp: '2026-07-08T12:00:00Z'\n"
+        )
         warnings = []
         grade, reviewer_tier, timestamp = parse_delivery_gate(
             text, "delivery-001", warnings
@@ -382,53 +413,31 @@ class TestParseDeliveryGate(unittest.TestCase):
         self.assertEqual(warnings, [])
 
     def test_singular_fallback_only_applies_to_delivery_001(self):
-        """The singular fallback is scoped to delivery-001 (the sole implicit
-        delivery of a flat/lite work) -- it must not fire for any other id,
-        even when a singular '## Delivery Gate' block is present."""
-        text = """\
-## Delivery Gate
-
-- **Reviewer Tier:** Small
-- **Grade:** A+
-- **Timestamp:** 2026-07-08T12:00:00Z
-"""
+        """delivery_id is now decorative (warning text only) -- a
+        `delivery_gate` mapping parses the SAME regardless of which
+        delivery_id string is passed (the retired fallback's "only
+        delivery-001" scoping no longer exists to test)."""
+        text = (
+            "delivery_gate:\n"
+            "  reviewer_tier: Small\n"
+            "  grade: A+\n"
+            "  gate_timestamp: '2026-07-08T12:00:00Z'\n"
+        )
         warnings = []
         grade, reviewer_tier, timestamp = parse_delivery_gate(
             text, "delivery-002", warnings
         )
-        self.assertIsNone(grade)
-        self.assertIsNone(reviewer_tier)
-        self.assertIsNone(timestamp)
+        self.assertEqual(grade, "A+")
+        self.assertEqual(reviewer_tier, "Small")
+        self.assertEqual(timestamp, "2026-07-08T12:00:00Z")
 
-    def test_plural_section_present_suppresses_singular_fallback(self):
-        """If a plural '## Delivery Gates' section is present ANYWHERE in the
-        text, the singular-block fallback must never fire -- this locks in
-        that FIX 2 is additive and does not change plural (full/hierarchical
-        legacy monolithic) parsing behavior."""
-        text = """\
-## Delivery Gates
-
-### delivery-002
-
-- **Grade:** C
-- **Reviewer Tier:** Small
-- **Timestamp:** 2026-01-01T00:00:00Z
-
-## Delivery Gate
-
-- **Grade:** Z
-- **Reviewer Tier:** Large
-- **Timestamp:** 2099-01-01T00:00:00Z
-"""
-        warnings = []
-        grade, reviewer_tier, timestamp = parse_delivery_gate(
-            text, "delivery-001", warnings
-        )
-        self.assertIsNone(
-            grade, "plural section present -> singular fallback must not fire"
-        )
-        self.assertIsNone(reviewer_tier)
-        self.assertIsNone(timestamp)
+    # test_plural_section_present_suppresses_singular_fallback: REMOVED
+    # (work-009-refactor task-016). It proved FIX 2's plural-vs-singular
+    # '## Delivery Gates' / '## Delivery Gate' section-precedence rule --
+    # both markdown constructs, and the whole competing-sections mechanism,
+    # are retired by SPEC.md sec:D-4 (one `delivery_gate` key, no section
+    # lookup at all). Nothing to retarget: the two sibling tests immediately
+    # above already cover the retargeted single-key-read behavior.
 
 
 # ---------------------------------------------------------------------------
@@ -568,7 +577,13 @@ class TestParseLogAvailability(unittest.TestCase):
 # ---------------------------------------------------------------------------
 
 class TestReadRepoDetail(unittest.TestCase):
-    """Integration tests for read_repo_detail() LC-TR entry point."""
+    """Integration tests for read_repo_detail() LC-TR entry point.
+    (work-009-refactor task-016: the fixture is now a FLAT layout --
+    BLUEPRINT.md + tasks/task-NNN/DETAIL.md -- since a bare monolithic
+    STATE.yml's parse_state_md() never populates pw.tasks at all (SPEC.md
+    L-3); the flat layout's hardcoded wave="delivery-001" (reader.py
+    _read_work_flat) is why the issues file below is "delivery-001-issues.md",
+    not the pre-refactor fixture's "delivery-009".)"""
 
     def setUp(self):
         self.tmpdir = tempfile.TemporaryDirectory()
@@ -576,11 +591,18 @@ class TestReadRepoDetail(unittest.TestCase):
         self.aid = _make_aid_dir(self.root)
         _write_manifest(self.aid)
         _write_settings(self.aid, project_name="test-detail")
-        # Create a work folder with STATE.md
+        # Create a FLAT-layout work folder with a STATE.yml
         self.work_dir = _make_work_dir(self.aid, "work-001-test")
-        _write_state_md(self.work_dir, FINDINGS_STATE_MD)
-        # Write issues file
-        issues_path = self.work_dir / "delivery-009-issues.md"
+        (self.work_dir / "BLUEPRINT.md").write_text("# Blueprint\n", encoding="utf-8")
+        for tid in ("task-001", "task-002"):
+            task_dir = self.work_dir / "tasks" / tid
+            task_dir.mkdir(parents=True, exist_ok=True)
+            (task_dir / "DETAIL.md").write_text(
+                f"# {tid}\n\n**Type:** IMPLEMENT\n", encoding="utf-8",
+            )
+        _write_state_yml(self.work_dir, FLAT_WORK_STATE_YML)
+        # Write issues file (delivery-001: the flat layout's hardcoded wave)
+        issues_path = self.work_dir / "delivery-001-issues.md"
         issues_path.write_text(ISSUES_MD, encoding="utf-8")
 
     def tearDown(self):
@@ -620,15 +642,21 @@ class TestReadRepoDetail(unittest.TestCase):
         self.assertEqual(td.task_id, "task-001")
 
     def test_findings_populated(self):
-        """TaskDetail.findings parsed from ## Quick Check Findings."""
+        """TaskDetail.findings is ALWAYS [] via read_repo_detail's real call
+        chain: it reuses the work-ROOT cached state_text (DR-1/NFR4, no
+        re-read), which never carries a `quick_check` key (that lives only
+        in a per-task STATE.yml this pass never opens) -- the retargeted
+        parse_quick_check_findings' documented "pre-existing staleness
+        preserved, not repaired" (SPEC.md L-12). (work-009-refactor task-016:
+        was 'parsed from ## Quick Check Findings' -- retired; per-task
+        `quick_check` mechanics in isolation are covered by
+        TestParseQuickCheckFindings above.)"""
         _, details = read_repo_detail(
             self.root,
             detail_task_ids=["work-001-test/task-001"],
         )
         td = details["work-001-test/task-001"]
-        self.assertEqual(len(td.findings), 2)
-        self.assertEqual(td.findings[0].severity, "[CRITICAL]")
-        self.assertEqual(td.findings[1].severity, "[HIGH]")
+        self.assertEqual(td.findings, [])
 
     def test_clean_task_findings_empty(self):
         """task-002 has empty Findings -> findings=[] (not an error)."""
@@ -640,24 +668,38 @@ class TestReadRepoDetail(unittest.TestCase):
         self.assertEqual(td.findings, [])
 
     def test_ledger_delivery_id_resolved(self):
-        """TaskLedger.delivery_id resolved from task's wave (delivery-009)."""
+        """TaskLedger.delivery_id resolved from the task's `delivery` field --
+        for a FLAT-layout work that is ALWAYS 'delivery-001' (reader.py
+        _read_work_flat hardcodes delivery=1; there is no deliveries/
+        wrapper to enumerate a real delivery number from). (work-009-
+        refactor task-016: was 'delivery-009', the pre-refactor monolithic
+        fixture's authored Wave column -- retired, since a bare monolithic
+        STATE.yml's tasks are now always [], SPEC.md L-3.)"""
         _, details = read_repo_detail(
             self.root,
             detail_task_ids=["work-001-test/task-001"],
         )
         td = details["work-001-test/task-001"]
-        self.assertEqual(td.ledger.delivery_id, "delivery-009")
+        self.assertEqual(td.ledger.delivery_id, "delivery-001")
 
     def test_ledger_grade_verbatim(self):
-        """TaskLedger.grade is verbatim from ## Delivery Gates (never re-graded)."""
+        """TaskLedger.grade/reviewer_tier/gate_timestamp are ALWAYS None via
+        the real read_repo_detail call chain: `delivery_gate` in a flat
+        work's STATE.yml only ever carries `issue_list` (SPEC.md sec:D-4),
+        never grade/reviewer_tier/gate_timestamp sub-keys -- the retargeted
+        parse_delivery_gate's own "pre-existing staleness preserved, not
+        repaired" (SPEC.md L-12). (work-009-refactor task-016: was verbatim
+        from a '## Delivery Gates' bullet block -- retired; the function's
+        own read mechanics in isolation are covered by TestParseDeliveryGate
+        above.)"""
         _, details = read_repo_detail(
             self.root,
             detail_task_ids=["work-001-test/task-001"],
         )
         td = details["work-001-test/task-001"]
-        self.assertEqual(td.ledger.grade, "A+")
-        self.assertEqual(td.ledger.reviewer_tier, "Large")
-        self.assertEqual(td.ledger.gate_timestamp, "2026-06-13T10:00:00Z")
+        self.assertIsNone(td.ledger.grade)
+        self.assertIsNone(td.ledger.reviewer_tier)
+        self.assertIsNone(td.ledger.gate_timestamp)
 
     def test_ledger_deferred_issues_filtered(self):
         """TaskLedger.deferred_issues filtered to Source task == task_id."""
@@ -672,7 +714,8 @@ class TestReadRepoDetail(unittest.TestCase):
             self.assertEqual(issue.source_task, "task-001")
 
     def test_raw_state_populated(self):
-        """TaskDetail.raw_state has text/byte_len/path from already-read STATE.md."""
+        """TaskDetail.raw_state has text/byte_len/path from already-read
+        STATE.yml (work-009-refactor task-016: was 'STATE.md' -- retired)."""
         _, details = read_repo_detail(
             self.root,
             detail_task_ids=["work-001-test/task-001"],
@@ -680,9 +723,9 @@ class TestReadRepoDetail(unittest.TestCase):
         td = details["work-001-test/task-001"]
         self.assertIsNotNone(td.raw_state)
         self.assertIsInstance(td.raw_state, RawStateRef)
-        self.assertIn("## Pipeline Status", td.raw_state.text)
+        self.assertIn("lifecycle: Running", td.raw_state.text)
         self.assertGreater(td.raw_state.byte_len, 0)
-        self.assertIn("STATE.md", td.raw_state.path)
+        self.assertIn("STATE.yml", td.raw_state.path)
 
     def test_logs_task_logs_always_none(self):
         """LogAvailability.task_logs is always 'none'."""
@@ -730,46 +773,30 @@ class TestReadRepoDetail(unittest.TestCase):
         # Should still produce a TaskDetail with empty raw_state
         self.assertIsNotNone(td)
         self.assertEqual(td.raw_state.text, "")
-        # A warning about missing STATE.md
+        # A warning about missing STATE.yml (work-009-refactor task-016:
+        # was "STATE.md" -- retired, reader.py's STATE_FILENAME constant)
         self.assertTrue(
-            any("STATE.md" in w for w in model.read.parse_warnings),
-            f"Expected STATE.md warning; got: {model.read.parse_warnings}",
+            any("STATE.yml" in w for w in model.read.parse_warnings),
+            f"Expected STATE.yml warning; got: {model.read.parse_warnings}",
         )
 
     def test_unassociated_task_ledger_delivery_null(self):
-        """Task with no delivery wave -> delivery_id=None, grade=None."""
-        # Write STATE.md with a task that has no delivery wave
-        state_no_delivery = """\
-## Pipeline Status
-
-- **Lifecycle:** Running
-- **Phase:** Execute
-- **Active Skill:** --
-- **Updated:** 2026-06-13T00:00:00Z
-
-## Tasks Status
-
-| # | Task | Type | Wave | Status | Review | Elapsed | Notes |
-|---|------|------|------|--------|--------|---------|-------|
-| 1 | task-010 | IMPLEMENT | -- | In Progress | -- | -- | -- |
-
-## Delivery Gates
-
-## Quick Check Findings
-
-### task-010
-
-- **Reviewer Tier:** Small
-- **Findings:**
-
-## Lifecycle History
-
-| Date | Phase Transition / Gate | Grade | Notes |
-|------|------------------------|-------|-------|
-| 2026-06-10 | Work created | -- | Initial |
-"""
+        """Task with no delivery -> delivery_id=None, grade=None. A bare
+        monolithic STATE.yml (no BLUEPRINT.md/deliveries/ wrapper) always
+        yields tasks=[] now (parse_state_md never populates pw.tasks,
+        SPEC.md L-3), so task-010 is never found in work_model.tasks
+        regardless of content -- delivery_id stays None categorically, the
+        SAME outcome this test names ('no delivery wave') for a now-
+        different, simpler reason. (work-009-refactor task-016: was a
+        bullet-heading STATE.md with an embedded task table -- retired.)"""
+        state_no_delivery = (
+            "lifecycle: Running\n"
+            "phase: Execute\n"
+            "active_skill: --\n"
+            "updated: '2026-06-13T00:00:00Z'\n"
+        )
         work2 = _make_work_dir(self.aid, "work-002-nodelivery")
-        _write_state_md(work2, state_no_delivery)
+        _write_state_yml(work2, state_no_delivery)
 
         _, details = read_repo_detail(
             self.root,
@@ -783,7 +810,7 @@ class TestReadRepoDetail(unittest.TestCase):
     def test_absent_issues_file_deferred_issues_empty(self):
         """Absent delivery-NNN-issues.md -> deferred_issues=[] (not an error)."""
         # Use a task in work-001-test but without the issues file
-        issues_file = self.work_dir / "delivery-009-issues.md"
+        issues_file = self.work_dir / "delivery-001-issues.md"
         issues_file.unlink()
         _, details = read_repo_detail(
             self.root,
@@ -806,7 +833,11 @@ class TestReadRepoDetail(unittest.TestCase):
             self.assertFalse(hasattr(task, "logs"))
 
     def test_multiple_tasks_independent(self):
-        """Multiple task_ids in detail_task_ids -> each gets its own TaskDetail."""
+        """Multiple task_ids in detail_task_ids -> each gets its own
+        TaskDetail. (work-009-refactor task-016: findings are ALWAYS []
+        via the real call chain now -- see test_findings_populated's
+        docstring -- so both tasks' independence is proven via task_id
+        instead of a since-retired findings-count contrast.)"""
         _, details = read_repo_detail(
             self.root,
             detail_task_ids=[
@@ -816,9 +847,10 @@ class TestReadRepoDetail(unittest.TestCase):
         )
         self.assertIn("work-001-test/task-001", details)
         self.assertIn("work-001-test/task-002", details)
-        # task-001 has 2 findings; task-002 has 0
-        self.assertEqual(len(details["work-001-test/task-001"].findings), 2)
-        self.assertEqual(len(details["work-001-test/task-002"].findings), 0)
+        self.assertEqual(details["work-001-test/task-001"].task_id, "task-001")
+        self.assertEqual(details["work-001-test/task-002"].task_id, "task-002")
+        self.assertEqual(details["work-001-test/task-001"].findings, [])
+        self.assertEqual(details["work-001-test/task-002"].findings, [])
 
 
 # ---------------------------------------------------------------------------
@@ -829,30 +861,28 @@ class TestTornReadTolerance(unittest.TestCase):
     """Torn/missing blocks -> parse_warnings + best-effort; never throws (NFR7)."""
 
     def test_torn_findings_block_no_exception(self):
-        """Partial/incomplete findings block -> never throws."""
-        text = """\
-## Quick Check Findings
-
-### task-001
-
-- **Reviewer Tier:** Small
-- **Findings:**
-  - [HIGH] Truncated entry --
-"""
+        """Partial/incomplete `quick_check.findings` entry -> never throws.
+        (work-009-refactor task-016: was a truncated bullet -- retired,
+        SPEC.md sec:D-4.)"""
+        text = (
+            "quick_check:\n"
+            "  reviewer_tier: Small\n"
+            "  findings:\n"
+            "    - severity: HIGH\n"
+        )
         warnings = []
         # Should not raise
         findings = parse_quick_check_findings(text, "task-001", warnings)
         self.assertIsNotNone(findings)
 
     def test_torn_delivery_gate_no_exception(self):
-        """Partial delivery gate block -> best-effort, no exception."""
-        text = """\
-## Delivery Gates
-
-### delivery-001
-
-- **Grade:** A+
-"""
+        """Partial `delivery_gate` mapping (grade only) -> best-effort, no
+        exception. (work-009-refactor task-016: was a bullet-heading
+        '## Delivery Gates' block -- retired, SPEC.md sec:D-4.)"""
+        text = (
+            "delivery_gate:\n"
+            "  grade: A+\n"
+        )
         warnings = []
         grade, tier, ts = parse_delivery_gate(text, "delivery-001", warnings)
         self.assertEqual(grade, "A+")

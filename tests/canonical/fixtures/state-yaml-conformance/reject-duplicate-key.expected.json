@@ -1,0 +1,11 @@
+{
+  "file_label": "STATE.yml",
+  "values": {
+    "control_after": "ok_after",
+    "control_before": "ok_before",
+    "dup_key": "second_value"
+  },
+  "warnings": [
+    "STATE.yml:3: duplicate key 'dup_key'; last value wins"
+  ]
+}

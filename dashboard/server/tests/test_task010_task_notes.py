@@ -55,22 +55,26 @@ class _TmpRepo:
 
 
 def _make_flat_work(root: Path, work_id: str, notes: str = "--") -> Path:
-    """A minimal FLAT-layout work with a '### Tasks lifecycle' row for task-001,
-    seeded with the given Notes cell (defaults to the null sentinel)."""
+    """A minimal FLAT-layout work with a `tasks_lifecycle` entry for task-001,
+    seeded with the given notes value (defaults to the null sentinel).
+    (work-009-refactor task-016: was a STATE.md with a fenced frontmatter
+    block + a '### Tasks lifecycle' markdown table -- both retired,
+    SPEC.md sec:D-4. `AID_STATE_FILE` is an explicit override to
+    `STATE.yml` for this op (task-020), so the fixture MUST use that
+    filename.)"""
     work_dir = root / ".aid" / "works" / work_id
     (work_dir / "tasks" / "task-001").mkdir(parents=True, exist_ok=True)
     (work_dir / "BLUEPRINT.md").write_text("# Blueprint\n", encoding="utf-8")
     (work_dir / "tasks" / "task-001" / "DETAIL.md").write_text("# task-001\n", encoding="utf-8")
-    (work_dir / "STATE.md").write_text(
-        "---\n"
+    (work_dir / "STATE.yml").write_text(
         "lifecycle: Running\n"
         "updated: '2026-01-01T00:00:00Z'\n"
-        "---\n\n"
-        "# Work State\n\n"
-        "### Tasks lifecycle\n\n"
-        "| Task | State | Review | Elapsed | Notes |\n"
-        "| --- | --- | --- | --- | --- |\n"
-        f"| task-001 | Pending | -- | -- | {notes} |\n",
+        "tasks_lifecycle:\n"
+        "  task-001:\n"
+        "    state: Pending\n"
+        "    review: --\n"
+        "    elapsed: --\n"
+        f"    notes: {notes}\n",
         encoding="utf-8",
     )
     return work_dir
@@ -155,7 +159,7 @@ class TestOpTaskSetNotesArgv(unittest.TestCase):
     def test_env_targets_resolved_work_dir(self):
         work_dir = Path("/resolved/work-017")
         _argv, env = srv._op_task_set_notes_argv(work_dir, "/repo", {"task_id": "001"}, {"value": "x"})
-        self.assertEqual(env["AID_STATE_FILE"], str(work_dir / "STATE.md"))
+        self.assertEqual(env["AID_STATE_FILE"], str(work_dir / "STATE.yml"))
         self.assertEqual(env["AID_WORK_DIR"], str(work_dir))
 
 
@@ -176,7 +180,7 @@ class TestDispatchTaskIdNormalization(unittest.TestCase):
             )
             self.assertEqual(status, 200, body)
             self.assertEqual(json.loads(body), {"ok": True, "op": "task.set-notes"})
-            self.assertIn("hello from prefixed id", (work_dir / "STATE.md").read_text(encoding="utf-8"))
+            self.assertIn("hello from prefixed id", (work_dir / "STATE.yml").read_text(encoding="utf-8"))
 
     def test_bare_task_id_still_accepted(self):
         with _TmpRepo() as root:
@@ -189,7 +193,7 @@ class TestDispatchTaskIdNormalization(unittest.TestCase):
                 str(root),
             )
             self.assertEqual(status, 200, body)
-            self.assertIn("hello from bare id", (work_dir / "STATE.md").read_text(encoding="utf-8"))
+            self.assertIn("hello from bare id", (work_dir / "STATE.yml").read_text(encoding="utf-8"))
 
     def test_malformed_task_id_is_still_400(self):
         with _TmpRepo() as root:
@@ -233,8 +237,8 @@ class TestTaskSetNotesEmptyValueClearsToNull(unittest.TestCase):
             )
             self.assertEqual(status, 200, body)
             self.assertEqual(json.loads(body), {"ok": True, "op": "task.set-notes"})
-            content = (work_dir / "STATE.md").read_text(encoding="utf-8")
-            self.assertIn("| task-001 | Pending | -- | -- | -- |", content)
+            content = (work_dir / "STATE.yml").read_text(encoding="utf-8")
+            self.assertIn("notes: --", content)
             self.assertNotIn("had some notes", content)
 
 
@@ -247,17 +251,17 @@ def _make_nested_work_unresolvable_delivery(root: Path, work_id: str) -> Path:
     del_dir = root / ".aid" / "works" / work_id / "deliveries" / "delivery-001"
     task_dir = del_dir / "tasks" / "task-001"
     task_dir.mkdir(parents=True, exist_ok=True)
-    (root / ".aid" / "works" / work_id / "STATE.md").write_text(
-        "## Pipeline State\n\n- **Lifecycle:** Running\n", encoding="utf-8",
+    (root / ".aid" / "works" / work_id / "STATE.yml").write_text(
+        "lifecycle: Running\n", encoding="utf-8",
     )
-    (del_dir / "STATE.md").write_text(
-        "## Delivery Lifecycle\n\n- **State:** Executing\n", encoding="utf-8",
+    (del_dir / "STATE.yml").write_text(
+        "state: Executing\n", encoding="utf-8",
     )
     (task_dir / "DETAIL.md").write_text(
         "# task-001: Nested task (no Source line)\n\n**Type:** IMPLEMENT\n", encoding="utf-8",
     )
-    (task_dir / "STATE.md").write_text(
-        "---\nstate: Pending\n---\n\n## Task State\n", encoding="utf-8",
+    (task_dir / "STATE.yml").write_text(
+        "state: Pending\n", encoding="utf-8",
     )
     return root / ".aid" / "works" / work_id
 

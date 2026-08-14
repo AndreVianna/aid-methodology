@@ -65,7 +65,7 @@ else `0`.
   bash canonical/aid/scripts/connectors/connector-secret.sh write "$STEM" --root .aid/connectors
   ```
   (PowerShell twin: `connector-secret.ps1`.) Never construct this with the literal secret text
-  inlined anywhere (a bash command, `STATE.md`, the KB, the conversation transcript) — the script's
+  inlined anywhere (a bash command, `STATE.yml`, the KB, the conversation transcript) — the script's
   own no-echo stdin capture is the only sanctioned path. For `env:<VAR>` / `keychain:<key>` forms,
   do **not** invoke this script at all — no local value is stored by AID for those forms; only the
   reference literal is written into the descriptor (Step 5a).

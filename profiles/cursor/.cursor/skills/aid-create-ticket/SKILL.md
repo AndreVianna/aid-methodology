@@ -32,7 +32,7 @@ never restates any of that — each state below points to the relevant section i
 
 **Absent from the mandatory pipeline flow.** Like `/aid-ask` and `/aid-set-connector`, this is
 an optional, on-demand utility skill outside the Discover-Execute flow: no phase gate references
-it, no `shortcut-catalog.yml` entry, no `work-NNN` scaffold, no `STATE.md` of its own — invoked
+it, no `shortcut-catalog.yml` entry, no `work-NNN` scaffold, no `STATE.yml` of its own — invoked
 directly by name.
 
 **State-machine chaining:** each `/aid-create-ticket` invocation drives the state machine —

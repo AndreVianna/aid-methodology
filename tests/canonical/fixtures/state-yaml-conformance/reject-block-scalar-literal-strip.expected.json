@@ -1,0 +1,10 @@
+{
+  "file_label": "STATE.yml",
+  "values": {
+    "control_after": "ok_after",
+    "control_before": "ok_before"
+  },
+  "warnings": [
+    "STATE.yml:2: block scalar rejected"
+  ]
+}

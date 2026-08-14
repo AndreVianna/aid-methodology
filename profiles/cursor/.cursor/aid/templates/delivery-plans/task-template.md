@@ -2,7 +2,7 @@
 
 **Type:** RESEARCH | DESIGN | IMPLEMENT | TEST | DOCUMENT | MIGRATE | REFACTOR | CONFIGURE
 
-**Source:** feature-NNN-{name} → delivery-NNN
+**Source:** work-NNN-{name} → delivery-NNN
 
 **Depends on:** task-NNN [, task-NNN] | — (none)
 
@@ -12,7 +12,7 @@
 **Acceptance Criteria:**
 - [ ] {Criterion 1 — concrete and testable}
 - [ ] {Criterion 2 — concrete and testable}
-- [ ] All §6 quality gates pass
+- [ ] All section-6 quality gates pass
 
 ---
 

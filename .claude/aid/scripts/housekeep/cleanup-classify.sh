@@ -322,12 +322,12 @@ scan_s5() {
 compute_signal_i() {
     local folder_name="$1"
     # Container model (work-016): scan_s6 enumerates "${AID_DIR}"/works/*/, so a
-    # folder_name (basename) resolves to its STATE.md UNDER the works/ container.
-    local state_md="${AID_DIR}/works/${folder_name}/STATE.md"
+    # folder_name (basename) resolves to its STATE.yml UNDER the works/ container.
+    local state_md="${AID_DIR}/works/${folder_name}/STATE.yml"
 
-    # No STATE.md → unevaluable → fail
+    # No STATE.yml → unevaluable → fail
     if [[ ! -f "$state_md" ]]; then
-        echo "fail:no STATE.md found"
+        echo "fail:no STATE.yml found"
         return 0
     fi
 
@@ -391,7 +391,7 @@ compute_signal_i() {
     fi
 
     # ---------- Attempt 2: ancestry fallback ----------
-    # Read any recorded merge SHA or branch tip from STATE.md.
+    # Read any recorded merge SHA or branch tip from STATE.yml.
     # Look for a field that contains a commit SHA in ## Deploy Status or
     # a "**Branch:**" field in ## Housekeep Status.
     local recorded_sha=""
@@ -439,11 +439,11 @@ compute_signal_i() {
     fi
 
     # No PR recorded, no SHA recorded → conservative fail
-    echo "fail:no PR number and no merge SHA recorded in STATE.md"
+    echo "fail:no PR number and no merge SHA recorded in STATE.yml"
 }
 
 # ---------------------------------------------------------------------------
-# Signal (ii): STATE.md concluded
+# Signal (ii): STATE.yml concluded
 #
 # compute_signal_ii <folder_name>
 # Returns via stdout: "pass" or "fail:<reason>"
@@ -454,10 +454,10 @@ compute_signal_i() {
 # ---------------------------------------------------------------------------
 compute_signal_ii() {
     local folder_name="$1"
-    # Container model (work-016): STATE.md lives under the .aid/works/ container.
-    local state_md="${AID_DIR}/works/${folder_name}/STATE.md"
+    # Container model (work-016): STATE.yml lives under the .aid/works/ container.
+    local state_md="${AID_DIR}/works/${folder_name}/STATE.yml"
 
-    [[ ! -f "$state_md" ]] && { echo "fail:no STATE.md"; return 0; }
+    [[ ! -f "$state_md" ]] && { echo "fail:no STATE.yml"; return 0; }
 
     # Check top-level > **Status:** Deployed
     local status_line
@@ -534,9 +534,9 @@ compute_signal_ii() {
 # in the explicit-confirm prompt). Never gates; just informs the user.
 # ---------------------------------------------------------------------------
 compute_status_note() {
-    # Container model (work-016): STATE.md lives under the .aid/works/ container.
-    local state_md="${AID_DIR}/works/$1/STATE.md"
-    [[ -f "$state_md" ]] || { echo "no STATE.md"; return 0; }
+    # Container model (work-016): STATE.yml lives under the .aid/works/ container.
+    local state_md="${AID_DIR}/works/$1/STATE.yml"
+    [[ -f "$state_md" ]] || { echo "no STATE.yml"; return 0; }
     local s
     s=$(grep -m1 '^> \*\*Status:\*\*' "$state_md" 2>/dev/null) || s=""
     # Strip the literal '> **Status:**' prefix plus any leading spaces (bash-builtin

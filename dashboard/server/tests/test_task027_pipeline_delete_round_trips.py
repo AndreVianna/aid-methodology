@@ -23,7 +23,7 @@ to both twins").
 Covers (all against THROWAWAY git repos under a fresh mktemp scratch directory
 -- NEVER this repo's own pipelines/branches/worktrees):
   (A) 404 -- work_id resolves to no enumerated worktree root, no spawn.
-  (B) 409 guards -- (a) STATE.md lifecycle=Running; (b) the dispatch process's
+  (B) 409 guards -- (a) STATE.yml lifecycle=Running; (b) the dispatch process's
       OWN cwd is the non-main worktree being targeted (delete-pipeline.sh's
       "$PWD" current-worktree guard -- exercised via a real `os.chdir()` into
       the throwaway worktree before dispatching, mirroring
@@ -224,15 +224,18 @@ class _GitRepo:
 
 def _make_work(root: Path, work_id: str, lifecycle: str = "Pending",
                 updated: str = "2026-01-01T00:00:00Z") -> Path:
-    """<root>/.aid/works/<work_id>/STATE.md -- the SAME minimal
-    frontmatter-only shape tests/canonical/test-delete-pipeline.sh's own
-    _mk_work uses (read identically by delete-pipeline.sh's bash
-    _frontmatter_value AND dashboard/reader/parsers.py's
-    _apply_pipeline_frontmatter -- WT-1 consistency by construction)."""
+    """<root>/.aid/works/<work_id>/STATE.yml -- the SAME minimal shape
+    tests/canonical/test-delete-pipeline.sh's own _mk_work uses (read
+    identically by delete-pipeline.sh's bash _frontmatter_value AND
+    dashboard/reader/parsers.py's _apply_pipeline_frontmatter -- WT-1
+    consistency by construction). (work-009-refactor task-016: was a
+    fenced-frontmatter STATE.md -- retired, SPEC.md sec:D-4;
+    delete-pipeline.sh's own reconcile-winner selection ("newest STATE.yml")
+    and Running guard both key on the STATE.yml filename specifically.)"""
     work_dir = root / ".aid" / "works" / work_id
     work_dir.mkdir(parents=True, exist_ok=True)
-    (work_dir / "STATE.md").write_text(
-        f"---\nlifecycle: {lifecycle}\nupdated: '{updated}'\n---\n# Work State\n",
+    (work_dir / "STATE.yml").write_text(
+        f"lifecycle: {lifecycle}\nupdated: '{updated}'\n",
         encoding="utf-8",
     )
     return work_dir

@@ -1,0 +1,3 @@
+control_before: ok_before
+	tab_key: bad
+control_after: ok_after

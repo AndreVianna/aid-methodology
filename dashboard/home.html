@@ -3226,7 +3226,7 @@ footer {
     var codeEl = document.createElement('code');
     codeEl.textContent = '/aid-describe';
     li1.appendChild(codeEl);
-    li1.appendChild(document.createTextNode(' — begins a new work (creates .aid/works/work-NNN-<name>/ + its STATE.md).'));
+    li1.appendChild(document.createTextNode(' — begins a new work (creates .aid/works/work-NNN-<name>/ + its STATE.yml).'));
     ol.appendChild(li1);
 
     // Steps 2, 3
@@ -4967,7 +4967,7 @@ footer {
   }
 
   // ---------------------------------------------------------------------------
-  // escRawState: HTML-escape for raw STATE.md content (R15, AC4)
+  // escRawState: HTML-escape for raw STATE.yml content (R15, AC4)
   // Escapes <, >, &, U+2028 (LS), U+2029 (PS) so arbitrary .aid/ content
   // cannot inject into the page. Separate from escHtml so injections via
   // line-separator codepoints are always neutralised.
@@ -5571,7 +5571,7 @@ footer {
     forensicGrid.appendChild(_renderLedgerPanel(detail));
     container.appendChild(forensicGrid);
 
-    // Raw STATE.md viewer (UI-3) — full width, collapsed by default
+    // Raw STATE.yml viewer (UI-3) — full width, collapsed by default
     container.appendChild(_renderRawStatePanel(detail, taskId, workId));
 
     // Logs panel (UI-4) — full width
@@ -5788,7 +5788,7 @@ footer {
   }
 
   // ---------------------------------------------------------------------------
-  // UI-3: Raw STATE.md viewer — read-only, escaped, collapsed by default (R15)
+  // UI-3: Raw STATE.yml viewer — read-only, escaped, collapsed by default (R15)
   // ---------------------------------------------------------------------------
   function _renderRawStatePanel(detail, taskId, workId) {
     var card = document.createElement('div');
@@ -5797,7 +5797,7 @@ footer {
 
     var kicker = document.createElement('div');
     kicker.className = 'kicker';
-    kicker.textContent = 'RAW STATE.md VIEWER';
+    kicker.textContent = 'RAW STATE.yml VIEWER';
     card.appendChild(kicker);
 
     var rawState = detail.raw_state || null;
@@ -5805,7 +5805,7 @@ footer {
       var noRaw = document.createElement('p');
       noRaw.className = 'meta';
       noRaw.style.cssText = 'color:var(--text-dim);margin-top:0.5rem;';
-      noRaw.textContent = 'Raw STATE.md text not available.';
+      noRaw.textContent = 'Raw STATE.yml text not available.';
       card.appendChild(noRaw);
       return card;
     }
@@ -5813,7 +5813,7 @@ footer {
     var captionEl = document.createElement('p');
     captionEl.className = 'meta';
     captionEl.style.cssText = 'font-size:0.8rem;color:var(--text-dim);margin:0.3rem 0 0.5rem;';
-    var sourcePath = rawState.path ? rawState.path : ('.aid/works/' + workId + '/STATE.md');
+    var sourcePath = rawState.path ? rawState.path : ('.aid/works/' + workId + '/STATE.yml');
     captionEl.textContent = 'source: ' + sourcePath + ' · read-only';
     card.appendChild(captionEl);
 
@@ -5825,7 +5825,7 @@ footer {
     toggleBtn.type = 'button';
     toggleBtn.className = 'btn-ghost';
     toggleBtn.style.marginBottom = '0.5rem';
-    toggleBtn.textContent = 'show raw STATE.md (' + kbDisplay + ')';
+    toggleBtn.textContent = 'show raw STATE.yml (' + kbDisplay + ')';
 
     // Pre element — hidden initially (collapsed by default)
     var preEl = document.createElement('pre');
@@ -5857,12 +5857,12 @@ footer {
       isOpen = !isOpen;
       if (isOpen) {
         preEl.style.display = '';
-        toggleBtn.textContent = 'hide raw STATE.md';
+        toggleBtn.textContent = 'hide raw STATE.yml';
         // Deep-anchor (DD-3): scroll to task's section within the pre
         _anchorRawState(preEl, taskId);
       } else {
         preEl.style.display = 'none';
-        toggleBtn.textContent = 'show raw STATE.md (' + kbDisplay + ')';
+        toggleBtn.textContent = 'show raw STATE.yml (' + kbDisplay + ')';
       }
     });
 
@@ -5954,7 +5954,7 @@ footer {
       var steps = [
         'The dashboard server\'s own log is at .aid/.temp/dashboard.log (created by aid dashboard start; records server boot/errors, not task execution).',
         'For pipeline/task troubleshooting, re-run the relevant skill (e.g. /aid-execute) and watch its live terminal output.',
-        'AID writes task forensics to this work\'s STATE.md (see Quick Check Findings, Delivery Gates / Delivery Gate above) — shown on this page.',
+        'AID writes task forensics to this work\'s STATE.yml (see quick_check, delivery_gate above) — shown on this page.',
         'After a re-run, this page\'s Findings/Ledger sections update on the next refresh (within the poll interval).'
       ];
       for (var s = 0; s < steps.length; s++) {

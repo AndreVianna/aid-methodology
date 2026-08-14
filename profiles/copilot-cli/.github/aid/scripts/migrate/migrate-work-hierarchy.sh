@@ -39,6 +39,20 @@
 #   2  STATE.md not found in <work-dir>
 #   3  No task files found in <work-dir>/tasks/
 #   4  Verification failure (a per-unit file expected to be non-empty is empty)
+#
+# ORDERING RULE (work-009-refactor task-008 / SPEC.md SS L-6 step 2):
+# hierarchy migration runs FIRST, state-format (STATE.md -> STATE.yml)
+# conversion runs SECOND. This script stays markdown-in / markdown-out --
+# it is an ERA migration (monolithic single-STATE.md -> the per-unit
+# hierarchy), never a format conversion -- and its output is exactly what
+# the format-4 converter (bin/aid's _aid_migrate_repo STEP 5,
+# _aid_sc_convert_repo) expects as ITS input: a current-shape (post-
+# hierarchy) work tree, still in markdown. Running the format converter
+# against a work that still needs this script first is exactly the case
+# that converter's own DERIVED-section guard refuses (a real, non-
+# placeholder row under a DERIVED heading), naming this script by name in
+# its remedy. Neither script's conversion logic changes for this rule --
+# it is sequencing only.
 
 set -euo pipefail
 

@@ -64,7 +64,9 @@ OUT-OF-SCOPE FINDINGS POLICY:
 DELIVERABLES:
   - Findings format: severity-tagged + source-tagged list (CODE | TASK | SPEC | KB)
   - Output location:
-      per-task:     `.aid/works/{work}/STATE.md ## Tasks State` row for this task
+      per-task:     this task's `tasks_lifecycle` entry (flattened layout) or its
+                     own per-task state file (full layout) -- never the DERIVED
+                     `## Tasks State` view
       per-delivery: `.aid/.temp/review-pending/execute-delivery-{N}.md` then aggregated
   - Severity scale: CRITICAL | HIGH | MEDIUM | LOW | MINOR (per grading-rubric.md)
   - Grade: per .agent/aid/scripts/grade.sh; minimum resolved via
@@ -76,7 +78,10 @@ DELIVERABLES:
 
 - `{{ARTIFACTS}}` — at per-task scope: the files/artifacts the executor produced
   (diff list + new files). At per-delivery scope: the full delivery branch
-  diff + every task's STATE.md row + the PLAN.md delivery section.
+  diff + the PLAN.md delivery section. Never a task's state file/row -- a
+  state file is never listed in `{{ARTIFACTS}}`, at either scope
+  (`reviewer-dispatch.md § ARTIFACTS UNDER REVIEW`); the reviewer still
+  writes its own outcome there, per the Output location below.
 - `{{CONTEXT}}` — short, descriptive-only background:
   ```
     (per-task)     task-NNN of type {Type} produced these artifacts; AC list lives in task-NNN.md.
@@ -89,6 +94,7 @@ DELIVERABLES:
 **Derive from disk, not memory.** When populating `{{ARTIFACTS}}` at dispatch
 time, derive the list from a deterministic source (e.g., `git diff --name-only`
 for PR-level reviews, or the executor's produced-file list for per-task reviews),
-filtered by the OUT OF SCOPE list above. Lists built from memory of what was
-worked on tend to omit incidentally-touched files; the reviewer then can't grade
-what it doesn't know about.
+piped through `filter_reviewable_artifacts` and then filtered by the OUT OF
+SCOPE list above (`reviewer-dispatch.md § ARTIFACTS UNDER REVIEW`). Lists
+built from memory of what was worked on tend to omit incidentally-touched
+files; the reviewer then can't grade what it doesn't know about.

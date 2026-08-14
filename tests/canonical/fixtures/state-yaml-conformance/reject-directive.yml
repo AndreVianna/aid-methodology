@@ -1,0 +1,3 @@
+control_before: ok_before
+%YAML 1.2
+control_after: ok_after
