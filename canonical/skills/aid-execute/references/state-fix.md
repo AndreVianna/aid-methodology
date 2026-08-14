@@ -1,3 +1,16 @@
+---
+review-criteria:
+  - id: F-01
+    kind: validate
+    criterion: >
+      The prose rule count and the cited rule range both match the number of `### Fn.`
+      headings in this file.
+    severity: MEDIUM
+    why: >
+      Both are stated away from the rules they count, so adding a rule leaves them stale and
+      tells a dispatched fixer that fewer rules bind than actually do.
+---
+
 # State: FIX
 
 CODE-source issues from the most recent REVIEW cycle are dispatched to the executor agent for repair; the loop returns to REVIEW on completion.

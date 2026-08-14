@@ -112,7 +112,7 @@ to `state` because that row comes first.
 | `skill-authored` | a `canonical/skills/<name>/SKILL.md` whose `<name>` is not a `shortcut-catalog.yml` row | hand-authored; may carry a file-level block |
 | `skill-reference` | a `.md` under `canonical/skills/*/references/` | the procedure bodies an agent executes |
 | `agent` | a `canonical/agents/*/AGENT.md` | may carry a file-level block; `render.py` carries it through |
-| `template-payload` | a file under `canonical/aid/templates/` whose frontmatter is the emitted artifact's (placeholders, or opens with a payload key such as `pipeline:` / `state:`) | no file-level block (see `TP-01`) |
+| `template-payload` | a file under `canonical/aid/templates/` whose frontmatter belongs to the artifact the template EMITS rather than to the template. Three recognizers, any one sufficient: placeholder tokens (`{project}`, `{grade or Pending}`); an **unquoted** choice-list in a value position (`delivery_state: Pending-Spec | Specified | ...`) — a pipe inside a quoted string is prose, not a choice list; or an opening key drawn from the emitted artifact's own schema — `pipeline:`, `delivery_state:`, `state:`. **`kb-category:` is deliberately NOT a recognizer**: a template may carry it about itself (`reviewer-ledger-schema.md` does), and the `knowledge-base/` doc templates are already caught by their placeholders | no file-level block (see `TP-01`). Includes the `knowledge-base/` doc templates: their frontmatter is the emitted KB doc's, so a `review-criteria:` there is the EMITTED doc's declaration, not the template's |
 | `template-own` | any other file under `canonical/aid/templates/` — its frontmatter describes itself, or it has none | the catch-all that closes the template tree (e.g. `reviewer-ledger-schema.md`); may carry a file-level block. Ordered after `template-payload`, so a payload template never falls here |
 
 ---
@@ -120,8 +120,10 @@ to `state` because that row comes first.
 ## Review Criteria — Criteria by Level
 
 One row per criterion, carrying the same fields as the frontmatter object (`id`, `kind`, `criterion`,
-`severity`, `why`). **Applies to** takes one of three values: `*` means global (level 1); a **registry
-type name** means level 2; and a **file class named by the criterion itself** scopes a global
+`severity`, `why`). **Applies to** takes one of three values: `*` means global (level 1); one **or more
+comma-separated registry type names** mean level 2 — a criterion true of two types stays ONE row naming
+both, because two rows saying the same thing is the duplication this table exists to make visible; and a
+**file class named by the criterion itself** scopes a global
 exclusion to a set of files that is not a document type. Only two rows use the third form —
 `agent-context` (`G-05`) and `rendered` (`G-06`) — and each is deliberately not a registry type: the
 files they cover are not in-scope authored artifacts at all, so giving them a type would put them
@@ -150,8 +152,9 @@ in the ledger's `Doc` column. A finding citing no id, or an id resolving nowhere
 | KB-03 | `kb-generated` | exclude | Content is not graded; only that the generator ran (build-verify) | — | the generator is the oracle (C-5) |
 | SK-01 | `skill-authored` | validate | Every agent named in a Dispatch table resolves to `canonical/agents/<name>/` | HIGH | a skill dispatching a non-existent agent fails at run time |
 | SK-02 | `skill-generated` | exclude | Carries no file-level `review-criteria:` block; type-level criteria only | — | rebuilt from `shortcut-catalog.yml`; anything hand-written is erased on the next run |
-| SR-01 | `skill-reference` | validate | Every instruction-content pointer resolves to a path that exists in an installed tree | HIGH | a broken pointer in a procedure body is followed at run time |
+| SR-01 | `skill-reference`, `template-own` | validate | Every instruction-content pointer resolves to a path that exists in an installed tree | HIGH | both types are procedure bodies an agent follows at run time, so a broken pointer is followed rather than noticed |
 | AG-01 | `agent` | validate | The `name:` matches the folder, and any agent it references resolves under `canonical/agents/` | MEDIUM | a name/folder mismatch mis-dispatches |
+| TO-01 | `template-own` | exclude | A template inlined into another file by an `{{include:<name>}}` token carries no file-level `review-criteria:` block — currently `agent-boilerplate.md`, inlined by every `canonical/agents/*/AGENT.md` | — | the include copies the file verbatim, so frontmatter here is injected as a stray delimiter block into the middle of every including file |
 | TP-01 | `template-payload` | exclude | Carries no file-level `review-criteria:` block; its frontmatter is the emitted artifact's | — | a block here would be stamped onto every generated artifact |
 
 **Severity** on a `validate` criterion is what a violation of that criterion costs, resolved through the

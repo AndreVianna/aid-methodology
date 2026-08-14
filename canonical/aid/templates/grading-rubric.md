@@ -1,3 +1,16 @@
+---
+review-criteria:
+  - id: F-01
+    kind: validate
+    criterion: >
+      The five severity levels are defined in this file and nowhere else; every other surface
+      cites this one.
+    severity: MEDIUM
+    why: >
+      A second definition drifts from the one the grade is computed against, and the copy is
+      what a reviewer reads. Three had already diverged before they were reconciled here.
+---
+
 # Grading Rubric — Universal
 
 Applies to all AID phases. Grade is **deterministic** — calculated from issue count and severity. The reviewer classifies issues; the grade follows automatically.
