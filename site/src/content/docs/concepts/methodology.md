@@ -433,7 +433,7 @@ The scaffold is the blank canvas. After `aid-config`, the KB directory exists wi
 
 *Build and keep current the team's understanding of the existing system.*
 
-This group's deep-dives below cover Discover (Phase 1), `aid-summarize`. `aid-housekeep` (deep-dive further down, under *Off-Pipeline*), `aid-update-kb`, and `aid-ask` also belong to this group — see §1, *Skill Inventory*, table A, for their group membership and table C for `aid-ask` detail.
+This group's deep-dives below cover Discover (Phase 1), and `aid-summarize`. `aid-housekeep` (deep-dive further down, under *Off-Pipeline*), `aid-update-kb`, and `aid-ask` also belong to this group — see §1, *Skill Inventory*, table A, for their group membership and table C for `aid-ask` detail.
 
 ---
 
