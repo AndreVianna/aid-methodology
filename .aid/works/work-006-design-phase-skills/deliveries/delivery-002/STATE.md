@@ -97,6 +97,30 @@ so the delivery lifecycle MUST be independently authored.
      The work-level ## Cross-phase Q&A is a DERIVED union of all delivery Q&A sections plus any
      work-owner-authored work-level entries. KB Q&A targets .aid/knowledge/STATE.md (separate file). -->
 
+### Q1
+
+- **Category:** Process
+- **Impact:** Required
+- **State:** Answered
+- **Context:** The execution protocol dispatches a separate clean-context reviewer as a
+  per-task quick check after every task's EXECUTE. Over tasks 026-038 that cost six
+  dispatches and surfaced one genuine defect the executor had missed (the `aid-config`
+  `knowledge.doc_set` enumeration, logged in `delivery-002-issues.md`); the rest re-derived
+  what the executor's own mechanical AC checks had already established. The owner raised
+  token cost and asked whether the verification could be simplified.
+- **Suggested:** Batch the independent review at the delivery boundary rather than per task,
+  and trim executor self-checks to acceptance criteria with real failure modes.
+- **Answer:** **Owner decision (2026-08-14): adopt both.** From task-039 onward there is
+  **no per-task reviewer dispatch**; the independent pass is the **delivery gate's**
+  mandatory clean-context review, which covers the whole delivery and is required anyway.
+  Executor self-verification is trimmed to the criteria that can actually fail (diff shape,
+  forbidden-token constraints, neighbour floor/ceiling sets, placement ordering) and drops
+  re-checks that are structurally incapable of failing. The reviewer-not-executor invariant
+  is preserved at the gate, not abandoned.
+- **Applied to:** tasks 039-049 execution; the delivery-002 gate inherits the full review
+  burden for those tasks and should treat their per-task `Review` cells as
+  "gate-deferred, not independently checked".
+
 ### Q{N}
 
 - **Category:** {category, e.g., Architecture, Requirements, Security}
