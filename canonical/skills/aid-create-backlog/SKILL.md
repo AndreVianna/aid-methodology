@@ -59,7 +59,7 @@ Print the `[State: NAME] -- {purpose}` entry line on each state.
 `## Open questions` section per `design-lifecycle.md`'s detection rule.
 
 - **Unresolved questions present, no override** → refuse. Name each unresolved question
-  **and** the override flag the user must supply to bypass the gate. Write nothing; leave
+  **and** the override flag `--override-open-questions` the user must supply to bypass the gate. Write nothing; leave
   seed and destination byte-identical. Set `lifecycle: Paused-Awaiting-Input`.
 - **No unresolved questions, or override supplied** → advance.
 

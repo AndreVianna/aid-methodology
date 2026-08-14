@@ -70,7 +70,7 @@ Print the `[State: NAME] -- {purpose}` entry line on each state.
 found in INTAKE.
 
 - **Seed present, unresolved questions, no override** → refuse. Name each unresolved
-  question **and** the override flag the user must supply to bypass the gate. Write
+  question **and** the override flag `--override-open-questions` the user must supply to bypass the gate. Write
   nothing; leave seed and destination byte-identical. Set `lifecycle:
   Paused-Awaiting-Input`.
 - **No seed present** → advance (gate does not apply).

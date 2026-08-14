@@ -242,7 +242,10 @@ destination until the user promotes the seed into one of the
 
 **Readiness gate (class 1 only — Skill shape's own carve-out; class 2 has no refusal state
 to hang one on).** `create` refuses to consume the seed while `## Open questions` is
-non-empty, unless the user explicitly overrides. This is the *seed*-side gate; it is
+non-empty, unless the user explicitly overrides. The override the user must supply is the
+literal token `--override-open-questions`; a refusal names that exact token (this is what
+each skill's refusal contract means by "the override flag"), so the bypass is a fixed,
+reachable string rather than one invented per run. This is the *seed*-side gate; it is
 orthogonal to Region ownership's destination-side refusal above, and neither one lets
 `create` stop merely because the destination file is populated.
 
