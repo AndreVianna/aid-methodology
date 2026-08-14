@@ -313,8 +313,8 @@ body; ownership counts per this document's own contracts and `project-structure.
   `aid-config/SKILL.md`). This is for hand-authored pipeline / on-demand skills; the
   34 verb-first shortcut doorways are **generated**, not hand-authored -- see "How a
   new shortcut goes" below.
-- **Where a new agent goes:** create `canonical/agents/aid-<role>/AGENT.md` (+
-  `README.md`). The `AGENT.md` frontmatter carries `name:`, `description:`,
+- **Where a new agent goes:** create `canonical/agents/aid-<role>/AGENT.md` -- and only
+  that; the directory holds no README. The `AGENT.md` frontmatter carries `name:`, `description:`,
   `tier:` (large/medium/small), `tools:`. Include shared boilerplate with
   `{{include:agent-boilerplate}}` (see `canonical/agents/aid-architect/AGENT.md`).
 - **Where a new helper script goes:** place it under the phase area it serves
