@@ -17,11 +17,15 @@ tags: [C2, pipeline, contracts, phases, artifacts, state-machines, feedback-loop
 see_also: [integration-map.md, architecture.md, domain-glossary.md, artifact-schemas.md]
 owner: architect
 audience: [developer, architect]
-intent: |
-  The typed data contracts between AID pipeline phases — artifact hand-offs, state-machine
-  transitions, the grading gate, and the feedback loops. Read this when modifying a skill,
-  an artifact template, or any phase boundary.
-contracts: []
+review-criteria:
+  - id: F-01
+    kind: validate
+    criterion: >
+      Every loopback row names a skill that exists as a directory under `canonical/skills/`.
+    severity: HIGH
+    why: >
+      These rows are the routing table an agent follows at a phase boundary, so a row naming a
+      skill that does not exist dead-ends the run rather than failing visibly here.
 ---
 
 # Pipeline Contracts
@@ -50,7 +54,6 @@ server, is documented in [integration-map.md](integration-map.md).)
 - [Conventions](#conventions)
 - [Contracts](#contracts)
 - [Invariants](#invariants)
-- [Change Log](#change-log)
 
 ---
 

@@ -194,6 +194,23 @@ def _parse_frontmatter(text: str) -> tuple[dict[str, Any], str]:
                         break
                 fm[key] = " ".join(block_lines)
                 continue
+            elif key in _BLOCK_SEQUENCE_KEYS:
+                if val == "":
+                    # A block sequence: capture the indented lines verbatim (see _RawBlock).
+                    block_lines = []
+                    i += 1
+                    while i < len(fm_lines):
+                        cont = fm_lines[i]
+                        if cont.strip() and not cont[0].isspace():
+                            break
+                        block_lines.append(cont.rstrip("\n"))
+                        i += 1
+                    fm[key] = _RawBlock("\n".join(block_lines))
+                else:
+                    # An inline sequence -- in practice the empty `[]` (see _RawInline).
+                    fm[key] = _RawInline(val)
+                    i += 1
+                continue
             else:
                 if (val.startswith('"') and val.endswith('"')) or \
                    (val.startswith("'") and val.endswith("'")):
@@ -204,11 +221,45 @@ def _parse_frontmatter(text: str) -> tuple[dict[str, Any], str]:
     return fm, body
 
 
+#: Frontmatter keys whose value is a YAML block sequence, carried through verbatim.
+_BLOCK_SEQUENCE_KEYS = frozenset({"review-criteria"})
+
+
+class _RawBlock(str):
+    """
+    A frontmatter value captured as already-serialized YAML block lines.
+
+    `_parse_frontmatter` is a deliberately naive line parser: it understands
+    scalars and `>` folded blocks and nothing else. A block-sequence value such as
+    `review-criteria:` (a list of objects) has no scalar form, so it is carried
+    through verbatim rather than parsed into Python and re-serialized -- which
+    keeps the rendered block byte-identical to the canonical source and needs no
+    YAML engine.
+    """
+
+
+class _RawInline(str):
+    """
+    A frontmatter value emitted verbatim after the colon, never quoted.
+
+    The inline empty sequence `review-criteria: []` is the case this exists for:
+    it is a sequence, not a string, but the generic scalar path would quote it to
+    `"[]"` (because `[` and `]` are in that path's special-character set) and turn
+    an empty list into a two-character string.
+    """
+
+
 def _build_frontmatter_md(fields: dict[str, Any]) -> str:
     """Serialize a flat dict as YAML frontmatter block (--- delimited)."""
     lines = ["---"]
     for key, val in fields.items():
-        if isinstance(val, bool):
+        # _RawBlock and _RawInline are str subclasses, so they MUST be tested before str.
+        if isinstance(val, _RawBlock):
+            lines.append(f"{key}:")
+            lines.extend(val.rstrip("\n").split("\n"))
+        elif isinstance(val, _RawInline):
+            lines.append(f"{key}: {val}")
+        elif isinstance(val, bool):
             lines.append(f"{key}: {'true' if val else 'false'}")
         elif isinstance(val, str):
             if any(c in val for c in (':', '"', "'", '{', '}', '[', ']', '#', '&', '*', '!', '|', '>', '%')):
@@ -377,6 +428,12 @@ def _translate_agent(
         if isinstance(background, str):
             background = background.lower() == "true"
         new_fm["background"] = background
+    # The agent's declared review criteria, carried through unchanged so the `agent`
+    # document type behaves identically for a canonical and a rendered member.
+    # Without this the rebuild below would drop the block silently.
+    review_criteria = fm.get("review-criteria")
+    if review_criteria is not None:
+        new_fm["review-criteria"] = review_criteria
 
     fm_block = _build_frontmatter_md(new_fm)
     content = fm_block + body

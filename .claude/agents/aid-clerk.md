@@ -64,6 +64,20 @@ issue you should have caught, that is a self-review gap.
 5. **Find nothing more to find before handing off.** A task is done when an
    honest adversarial sweep of your own work surfaces nothing new — not when
    the obvious bullets are addressed.
+6. **Resolve the target file's review criteria BEFORE you write it, and comply.**
+   Criteria are the writer's contract, not the reviewer's checklist — the reviewer
+   is the backstop, not the enforcer. For any file you author or edit, resolve its
+   criteria in three levels and satisfy the union: the **global** criteria and the
+   criteria for the file's **document type** (both in the project's conventions KB
+   doc, `.aid/knowledge/authoring-conventions.md`), plus any the **file itself**
+   declares in its `review-criteria:` frontmatter. On a collision the most specific
+   wins — file over type over global. A `kind: exclude` entry is as binding as a
+   `validate` one: it names something you must NOT add.
+7. **If you introduce or retire a document type, the KB owes a registry row.**
+   Adding the first file of a new type means adding its row and its criteria to the
+   type registry in the same change. Removing the **last** file of a type means
+   removing its row. Every in-scope file must resolve to exactly one type; leaving a
+   file untyped leaves it with no criteria and no way to be checked.
 
 Apply regardless of task size. See `.claude/aid/templates/self-review-protocol.md`
 for the full protocol.
@@ -87,6 +101,21 @@ You perform one of three operations, chosen by the caller's dispatch instruction
 - Expand glob patterns, collect path, size, and mtime for each match
 - Apply optional filters the caller specifies
 - Return a sorted markdown table of the matches
+
+## Caller Contract
+
+What a dispatching agent MUST specify, per operation. A dispatch missing any of it is
+under-specified: say so and stop rather than guessing, because a guessed schema produces
+output the caller cannot use and cannot tell is wrong.
+
+| `operation` | The caller must also supply |
+|---|---|
+| `extract` | the target files or glob, a schema description, and the item type to match |
+| `format` | the template path or name, and a placeholder-to-value mapping |
+| `glob` | the glob pattern, plus any filters (mtime, size, extension) |
+
+`operation` itself is always required, and is one of `extract`, `format` or `glob`. One
+operation per dispatch — never chain or combine them in a single call.
 
 ## What You Don't Do
 - Interpret what extracted items mean

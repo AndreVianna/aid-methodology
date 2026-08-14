@@ -32,6 +32,19 @@ RUBRIC: .cursor/aid/templates/grading-rubric.md (universal severity → grade ta
     - Cross-cutting risks only if real
     - Known-issues from `.aid/works/{work}/known-issues.md` Critical/High addressed (fix-first delivery or sequenced)
 
+DECLARED REVIEW CRITERIA (resolve; do not invent):
+  Each artifact declares, or inherits, the criteria it must be true against. Resolve them
+  and verify against the union -- global, then the artifact's document type, then the
+  artifact's own `review-criteria:` frontmatter; most specific wins on an id collision.
+  Resolution is defined in .cursor/aid/templates/kb-authoring/review-rubric.md
+  (section: Resolving review criteria); the type registry and the criteria table live in
+  .aid/knowledge/authoring-conventions.md. This brief deliberately does NOT restate them.
+  - Cite the criterion `id` as a prefix in the ledger's Description cell (7 columns, no
+    new column). A finding citing no id, or an id resolving nowhere, is itself a defect.
+  - A `kind: exclude` criterion binds you: reporting it is a defect in the review.
+  - If the severity came from a file-level override, record the resolved severity and the
+    overriding file's `why` in the Evidence cell.
+
 OUT OF SCOPE (do NOT grade against):
   - Per-task breakdown — that's /aid-detail's domain (a delivery has no "tasks" yet at /aid-plan time)
   - SPEC.md internal content — that's /aid-specify's grade

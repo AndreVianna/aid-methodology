@@ -20,11 +20,9 @@ tags: [C7, tech-debt, risk, security, gotchas, remediation]
 see_also: [test-landscape.md, infrastructure.md, quality-gates.md, architecture.md]
 owner: architect
 audience: [developer, architect, pm]
-intent: |
-  Severity-tagged open technical and methodology debt with locations, risk, and
-  remediation. Includes security observations (as debt items) and the non-obvious
-  gotchas a change will trip. Diagnosis, not a sprint plan.
-contracts: []
+review-criteria: []  # nothing is true of this doc alone. Its one distinctive risk -- a
+                     # resolved item left visible -- is G-03 at the global level, and
+                     # restating it here would be a finding under FR-5.
 ---
 
 # Tech Debt
@@ -50,7 +48,6 @@ structural and methodological, not littered code.
 - [Dead Code](#dead-code)
 - [Security Observations](#security-observations)
 - [Gotchas](#gotchas)
-- [Change Log](#change-log)
 
 ---
 
@@ -58,6 +55,7 @@ structural and methodological, not littered code.
 
 | ID | Type | Description | Location | Risk | Effort | Priority |
 |----|------|-------------|----------|------|--------|----------|
+| **L5** | Review-loop cost and non-determinism | **A review re-reads the whole artifact on every cycle, and re-decides every criterion by reading it.** Two causes, one mechanism. (a) `reviewer-ledger-schema.md`'s cycle N≥2 workflow ends *"Append new rows as `Pending` for newly-found issues"* — finding NEW issues means re-scanning the whole surface, so every cycle pays a full read. `.aid/settings.yml` records the consequence: five consecutive Large-tier gate cycles each closed ~12 findings and opened ~12, the ledger growing 30 → 43 → 62 → 73 → 85 with no decline in the new-finding rate. (b) Every criterion in `authoring-conventions.md` is verified by a reviewer reading it, every cycle, forever — unavoidable for a semantic criterion, waste for a mechanically decidable one such as `G-07` (every in-scope file resolves to exactly one type), and unreliable: re-derivation varies between cycles. Two complementary remedies, and they interlock — see the detail below. | `canonical/aid/templates/reviewer-ledger-schema.md`; `canonical/aid/templates/reviewer-dispatch.md`; the six `canonical/skills/*/references/reviewer-brief.md`; `.aid/knowledge/authoring-conventions.md` | **Medium** | L | **P2** |
 | **L4** | Test-effectiveness gap | No systematic measure of test-suite **effectiveness**. Line-coverage `%` is (still) rejected as the wrong tool for a mostly-non-instrumentable product (see `decisions.md` D26), but the AID-appropriate measures — mutation testing, invariant-anchoring, behavioral-surface coverage, escaped-defect tracking (dogfooding is already in place) — are not yet implemented as a program. Nothing today tells us whether the ~144 suites actually *bite*. Partial, non-programmatic progress since: the graph suites carry mutation matrices behind `--self-mutate`, and mutation caught **three** suites that were green against a broken subject — in each case because the broken and the correct reading agreed on ordinary data, which review cannot see. That is evidence for the approach, not a substitute for the program. | whole test suite / CI | **High** | M (phased) | **P1 — next release** |
 
 
@@ -91,7 +89,7 @@ urgent.
 | **W1-8** | Missing re-entrancy guard | `initMermaid()` has no re-entrancy guard, so rapid theme toggling can interleave two render passes over the same container. | `astro-mermaid-integration.js` | Low | S | P3 |
 | **W1-9** | Contradictory templates | The two task templates disagree with each other, and one claims a conformance property it does not enforce. | `canonical/aid/templates/delivery-plans/` | Low | S | P3 |
 | **W1-10** | Environment trap (Windows) | Worktrees for this repo must be created with **Windows git**, never WSL git — a WSL-created worktree produces paths the Windows toolchain cannot resolve, and the failure is confusing rather than immediate. | process / dev environment | **Medium** | — (documented) | **P2** |
-| **W1-11** | Cross-work collision (residue) | The skill corpus shrank (111 → 75 directories) and skills were renamed skills, so the collision this row *predicted* has now happened and what remains is residue, not risk. The machine-derived half is **discharged**: `tests/canonical/check-skill-counts.mjs` derives every guarded count from the one derivation and exits 0 over the live corpus — today **76 skills**, stated here in a phrasing that guard reads, rather than in one it cannot see and that would drift the way this row's previous figure did. The hand-written half is **not** closed, and two survivors are known. `kb.html` still states the old corpus total in three places and **cannot be regenerated** — the assembler's `.aid/.temp/summarize/` input tree no longer exists — so it was left stale by explicit owner decision rather than oversight. And `W1-2`'s hand-measured per-shape populations are still prose. Neither survivor is machine-guarded: the count guard's file filter admits only markdown, shell, JS/TS, Python and YAML extensions, so it structurally cannot see an `.html` file. Re-derive the live figure (`ls -1d canonical/skills/*/`) before trusting any prose enumeration. | `.aid/knowledge/kb.html`; `.aid/knowledge/module-map.md` (see W1-2) | **Medium** | M | **P2** |
+| **W1-11** | Cross-work collision (residue) | The skill corpus shrank (111 → 75 directories) and skills were renamed skills, so the collision this row *predicted* has now happened and what remains is residue, not risk. The machine-derived half is **partly discharged**: the repo-wide count guard has been retired, so `tests/canonical/test-doc-counts.sh` now mechanically derives and asserts the counts stated in the public-facing docs, while counts stated in `canonical/` and `.aid/knowledge/` markdown are governed by criterion `G-01` in `authoring-conventions.md` — a declared criterion a reviewer applies, not a guard that runs. Derive the live figure before trusting any prose enumeration. The hand-written half is **not** closed, and two survivors are known. `kb.html` still states the old corpus total in three places and **cannot be regenerated** — the assembler's `.aid/.temp/summarize/` input tree no longer exists — so it was left stale by explicit owner decision rather than oversight. And `W1-2`'s hand-measured per-shape populations are still prose. Neither survivor is machine-guarded, and after the retirement neither is guarded at all: the remaining guard covers only the public-facing docs, and `G-01` reaches only in-scope markdown — so an `.html` file and the maintainer-skill trees are outside both. Re-derive the live figure (`ls -1d canonical/skills/*/`) before trusting any prose enumeration. | `.aid/knowledge/kb.html`; `.aid/knowledge/module-map.md` (see W1-2) | **Medium** | M | **P2** |
 | **W1-12** | Intermittent rendering defect | ELK layout is intermittently not applied — diagrams fall back to dagre routing, producing the curved, overlapping edges the owner explicitly rejected at the delivery-003 UI checkpoint. `layout: 'elk'` is present and the loader registers; two hypotheses remain live and untested. **Owner-deferred**, shipped open and disclosed. | `site/astro.config.mjs`:47 + `@mermaid-js/layout-elk` | **Medium** | M | **P2** |
 | **W1-13** | Accessibility gap | The node-detail panel is a `div[tabindex="-1"]` with **no `role` and no accessible name** — the accessibility tree shows it as `generic`. Activation moves focus into it, so what a screen reader announces on arrival is not deterministic across NVDA / JAWS / VoiceOver. It does carry an `<h3>` naming the step and a labelled close button, so the content is reachable; the framing is what is missing. Fix is `role="region"` (or `dialog`) plus `aria-labelledby` pointing at the existing `<h3>`. | `site/public/skill-node-panel.mjs` / `site/src/lib/skill-node-panel.ts` | Low | S | P3 |
 | **W1-14** | Invalid ARIA | Every decorated node carries `aria-controls="aid-node-panel"` from page load, but the panel is created **lazily on first activation** — so before any node is activated the attribute references an element that is not in the DOM. Confirmed on a fresh load: `document.getElementById('aid-node-panel')` is null while 5 nodes already advertise it. `aria-controls` is specified to reference an existing element. | `site/public/skill-node-panel.mjs` | Low | S | P3 |
@@ -178,6 +176,109 @@ into a folder that is allowed to disappear is not a record. The work folder keep
 investigation notes for as long as it exists; this inventory is what survives it.
 
 ## Detailed Debt Items
+
+### [MEDIUM] L5 -- The review loop re-reads everything, and re-judges what it could run
+
+**One problem, two causes, two remedies that only work well together.** Both remedies were
+proposed separately; they are recorded here as one item because each fixes the other's weakness.
+
+#### The cost, measured
+
+Modelled against this project's observed averages for a full-path work (3-4 features, 4-5
+deliveries, 16-25 tasks, 5-7 review cycles per gate), review gates account for roughly **61-65%
+of total work cost** — about **4.7-6.7x** the cost of authoring the documents being reviewed. The
+worst single line is the per-feature specify gate, because three multipliers stack: per feature x
+per cycle x whole documents. A requirements document of ~88 KB gets re-read 15 to 28 times inside
+the specify gates alone.
+
+Independently observed on a later work: re-reading the same feature specs across gate cycles cost
+roughly **1.9M input tokens**, against ~452k output tokens to author all thirteen specs once — the
+review loop costing about **4x the authoring**. Of 25 gate cycles recorded on that work, **four
+moved the grade zero**.
+
+#### Remedy 1 -- scope the cycle N≥2 hunt
+
+Cycle 1 keeps reading the whole artifact. **Cycles 2+ verify the existing ledger in full, but hunt
+for NEW findings only in what the previous FIX changed.** One final full pass runs before approval
+as the backstop.
+
+The mechanism is a single clause in `reviewer-ledger-schema.md`'s cycle N≥2 workflow. Everything
+before its last sentence is already targeted and cheap — verify each `Pending` row on disk, promote
+to `Fixed`, demote a regressed `Fixed` to `Recurred`. It is the last sentence, *"Append new rows as
+`Pending` for newly-found issues"*, that forces the full re-read, because finding new issues means
+re-scanning everything. Split that clause: ledger verification stays full, new-finding discovery
+becomes scoped.
+
+**Why this needs declared criteria to be safe.** Scoping the hunt invites one objection: what stops
+a scoped cycle missing something? Without declared criteria there is no principled answer — it is a
+judgment call. With them, a scoped cycle becomes a *bounded check*: "verify all resolved criteria
+against the changed sections", and the criterion `id`s make coverage provable rather than asserted.
+
+**Three guards it must carry:**
+
+1. **A fix in one section breaks another.** The scoped surface must include the sections that
+   *reference* the changed ones — mechanical cross-reference lookup, not model judgment.
+2. **Cross-document contradictions.** Real precedent exists (a vocabulary file/format contradiction
+   spanning three features, caught as `[CRITICAL]`). Keep that pass, but run it **once per phase**
+   rather than once per cycle per feature; it was never a per-cycle check.
+3. **A missed finding survives.** `Recurred` already exists in the Status enum for exactly this, and
+   the final full pass is the backstop.
+
+**Related, same edit sites:** stop passing a whole requirements document to a per-feature specify
+gate; pass the slice that feature traces to. On its own that saves an estimated 300-600k tokens per
+work.
+
+**Edit sites:** the cycle N≥2 clause in `reviewer-ledger-schema.md`; `reviewer-dispatch.md`'s
+`ARTIFACTS UNDER REVIEW` (carry the changed-section set on cycles 2+) and `RUBRIC` (resolve criteria
+against the scoped surface); the six `reviewer-brief.md` files.
+
+#### Remedy 2 -- an optional `oracle:` on a criterion
+
+Every criterion is verified by a reviewer *reading* it. For a genuinely semantic criterion that is
+unavoidable. For a mechanically decidable one it is both waste and a reliability problem: `G-07`
+("every in-scope markdown file resolves to exactly one type in the registry") is re-derived by hand
+each cycle — read the registry, read the corpus definition, enumerate files, apply each selector —
+which is expensive and inconsistent between cycles.
+
+Add **one optional key** to a criterion entry, carrying an executable check that an agent generates
+once, in the project's own terms:
+
+```yaml
+review-criteria:
+  - id: G-07
+    criterion: "Every in-scope markdown file resolves to exactly one type in the registry."
+    severity: HIGH
+    why: "A file matching two rows or none has no resolvable criteria set."
+    oracle: scripts/checks/g07-selector-partition.sh   # generated once, by an agent
+```
+
+A criterion with an oracle is re-decided by *running* it: cheap, deterministic, and identical on
+every cycle. A criterion without one behaves exactly as it does today, which is why the key is
+optional and its absence is not a defect.
+
+#### Why they are one item
+
+Remedy 2 removes remedy 1's sharpest objection. A scoped cycle is only sound for criteria that can
+be *evaluated* against a subset — and evaluation scope varies per criterion: `G-01` (cosmetic
+counts) fires on a local occurrence, `KB-02` (one concern per doc) needs the whole file, and `G-07`
+needs the whole corpus. A criterion with an oracle sidesteps that entirely: it is re-run at any
+scope for negligible cost, so its evaluation scope stops mattering. The worked example above is
+`G-07` — precisely the criterion that is the worst case for scoping.
+
+Sequencing remedy 2 before or alongside remedy 1 therefore *removes* the correctness objection
+instead of guarding around it.
+
+#### Prerequisites, already satisfied
+
+Both remedies extend the declared-criteria mechanism rather than revising it, because two
+compatibility properties were settled deliberately when that mechanism was built:
+
+- **Resolution is scope-free.** A file's resolved criteria list depends only on its path and
+  frontmatter, never on its content, so the list for a section *is* the list for the file. Remedy 1
+  needs no change to resolution.
+- **A criterion entry tolerates unknown keys** (`frontmatter-schema.md § Parsing rules`). Remedy 2's
+  `oracle:` is therefore a pure addition — a new key and a new reader — not a migration across every
+  criterion already declared.
 
 ### [HIGH] L4 -- No measure of test-suite effectiveness
 

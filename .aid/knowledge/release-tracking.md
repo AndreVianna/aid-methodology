@@ -10,6 +10,16 @@ tags: [C8, release, versioning, changelog, tracking]
 see_also: [infrastructure.md, technology-stack.md]
 owner: skill-self
 audience: [developer, devops, product]
+review-criteria:
+  - id: F-01
+    kind: exclude
+    criterion: >
+      A released entry's items are never validated against current state -- not its version, its
+      dates, its item wording, or the paths it names.
+    why: >
+      This is a ledger of what shipped, so every row is correct AS HISTORY the moment it is
+      written. A current-state check on a shipped release fires forever and can only be
+      "fixed" by falsifying the record.
 ---
 
 # Release Tracking
