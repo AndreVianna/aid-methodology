@@ -4907,160 +4907,62 @@ function _buildRepoModel({ tool, repo, works, read }) {
 // ASCII-only source (shipped script posture; coding-standards.md).
 // ---------------------------------------------------------------------------
 
-// Section header regexes for forensic sections (twin of parsers.py)
-const RE_QUICK_CHECK_FINDINGS = /^##\s+Quick Check Findings\s*$/i;
-const RE_DELIVERY_GATES_SECTION = /^##\s+Delivery Gates\s*$/i;
-const RE_DELIVERY_GATE_SECTION = /^##\s+Delivery Gate\s*$/i;
-const RE_TASK_BLOCK_HEADER = /^###\s+(task-\S+)\s*$/i;
-const RE_DELIVERY_BLOCK_HEADER = /^###\s+(delivery-\d+[^\s]*)\s*$/i;
-
-const RE_FINDINGS_REVIEWER_TIER = /^\s*-\s*\*\*Reviewer Tier:\*\*\s*(.+)/i;
-const RE_GATE_GRADE = /^\s*-\s*\*\*Grade:\*\*\s*(.+)/i;
-const RE_GATE_REVIEWER_TIER = /^\s*-\s*\*\*Reviewer Tier:\*\*\s*(.+)/i;
-const RE_GATE_TIMESTAMP = /^\s*-\s*\*\*Timestamp:\*\*\s*(.+)/i;
-const RE_LOCATION = /\{([^}]+:[^}]*)\}/;
-
-// Severity normalization (twin of _parse_severity in parsers.py)
+// Severity normalization (twin of _parse_severity in parsers.py). Accepts
+// EITHER the bracketed legacy-bullet form ('[HIGH]') or the bare D-4
+// structured-field form ('HIGH', the on-disk quick_check.findings[].severity
+// value -- no brackets, per the task-state-template.yml comment "severity:
+// CRITICAL | HIGH"). Mirrors feature-002 DM-6: lower/unknown -> [MINOR]
+// neutral, never throws (NFR7). This is the twin-parity fix task-003 made in
+// Python's _parse_severity (the pre-refactor Node version recognized only
+// the bracketed form).
 function parseSeverity(tag) {
-  const normalized = tag.toUpperCase().trim();
+  let normalized = tag.toUpperCase().trim();
+  if (!normalized.startsWith("[")) {
+    normalized = "[" + normalized + "]";
+  }
   if (normalized === "[CRITICAL]" || normalized === "[HIGH]") return normalized;
   return "[MINOR]";
 }
 
-// Disposition tokens
-const DISPOSITION_TOKENS = ["Fixed-on-spot", "Deferred-to-gate"];
-
-// Parse one **Findings:** bullet into a Finding object (twin of _parse_finding_bullet)
-function parseFindingBullet(bulletText, reviewerTier) {
-  const text = bulletText.trim();
-  if (!text) return null;
-
-  // Extract leading bracketed tag: [SEVERITY]
-  const tagM = text.match(/^(\[\S+?\])\s+(.*)/);
-  let tag, rest;
-  if (tagM) {
-    tag = tagM[1];
-    rest = tagM[2].trim();
-  } else {
-    // No bracketed tag -- whole text is description with MINOR severity
-    return {
-      severity: "[MINOR]",
-      description: text,
-      location: null,
-      disposition: null,
-      reviewer_tier: reviewerTier,
-    };
-  }
-
-  const severity = parseSeverity(tag);
-
-  // Split on em-dash (U+2014, canonical) or legacy ' -- ' (ASCII double-dash).
-  // The canonical findings template uses U+2014; accept both for back-compat.
-  // \u2014 escape used (not literal em-dash) to satisfy the ASCII-only CI gate.
-  const segments = rest.split(/ (?:\u2014|--) /);
-  const description = segments.length > 0 ? segments[0].trim() : rest;
-
-  // Extract location from any segment: {file:line}
-  let location = null;
-  for (let i = 1; i < segments.length; i++) {
-    const lm = segments[i].match(RE_LOCATION);
-    if (lm) {
-      location = lm[1].trim();
-      break;
-    }
-  }
-
-  // Extract disposition
-  let disposition = null;
-  for (const seg of segments) {
-    const stripped = seg.trim();
-    for (const token of DISPOSITION_TOKENS) {
-      if (stripped === token || stripped.startsWith(token)) {
-        disposition = token;
-        break;
-      }
-    }
-    if (disposition) break;
-  }
-
-  return {
-    severity: severity,
-    description: description,
-    location: location,
-    disposition: disposition,
-    reviewer_tier: reviewerTier,
-  };
-}
-
-// DR-2: parse ## Quick Check Findings -> ### task-NNN -> **Findings:** bullets
-// Twin of parse_quick_check_findings in parsers.py (byte-parity minded)
+// DR-2: read quick_check.findings for the given task_id. Twin of Python
+// parse_quick_check_findings() (work-009-refactor task-003, retargeted to
+// keys). `quick_check` exists ONLY in a per-task STATE.yml (deliveries/
+// delivery-NNN/tasks/task-NNN/STATE.yml), never in the work-root file
+// `stateText` is always called with here (via the always-on pass's
+// state-text cache -- DR-1/NFR4, no re-read). So `data.quick_check` is
+// always absent for a current-shape work and this still returns [] --
+// pre-existing staleness preserved, not repaired (SPEC.md L-12).
 function parseQuickCheckFindings(stateText, taskId, parseWarnings) {
   const findings = [];
-  let inFindingsSection = false;
-  let inTaskBlock = false;
-  let inFindingsList = false;
-  let reviewerTier = null;
-  const taskIdLower = taskId.toLowerCase();
 
   try {
-    const lines = stateText.split("\n");
-    for (const line of lines) {
-      if (RE_QUICK_CHECK_FINDINGS.test(line)) {
-        inFindingsSection = true;
-        inTaskBlock = false;
-        inFindingsList = false;
-        reviewerTier = null;
-        continue;
-      }
-      if (inFindingsSection) {
-        // A ## section (not ###) ends the quick-check findings section
-        if (/^##\s+\S/.test(line) && !/^###/.test(line)) {
-          inFindingsSection = false;
-          inTaskBlock = false;
-          inFindingsList = false;
-          continue;
-        }
-        // ### task-NNN sub-section header
-        const tm = line.match(RE_TASK_BLOCK_HEADER);
-        if (tm) {
-          const blockTaskId = tm[1].toLowerCase();
-          inTaskBlock = (blockTaskId === taskIdLower);
-          inFindingsList = false;
-          reviewerTier = null;
-          continue;
-        }
-        if (inTaskBlock) {
-          // **Reviewer Tier:** line
-          const rtm = line.match(RE_FINDINGS_REVIEWER_TIER);
-          if (rtm) {
-            reviewerTier = rtm[1].trim();
-            continue;
-          }
-          // **Findings:** heading line
-          if (/^\s*-\s*\*\*Findings:\*\*\s*$/i.test(line)) {
-            inFindingsList = true;
-            continue;
-          }
-          if (inFindingsList) {
-            const stripped = line.trim();
-            if (stripped.startsWith("- [") || stripped.startsWith("-[")) {
-              // Parse the bullet (strip the leading '- ')
-              const bulletBody = stripped.replace(/^-\s*/, "");
-              const f = parseFindingBullet(bulletBody, reviewerTier);
-              if (f !== null) findings.push(f);
-              continue;
-            }
-            // Blank line or non-bullet ends findings list
-            if (stripped && !stripped.startsWith("-")) {
-              inFindingsList = false;
-            }
-          }
+    const label = taskId ? taskId + "/STATE.yml" : "STATE.yml";
+    const [data, docWarnings] = parseStateDocument(stateText, { fileLabel: label });
+    parseWarnings.push(...docWarnings);
+
+    const quickCheck = data.quick_check;
+    if (quickCheck && typeof quickCheck === "object" && !Array.isArray(quickCheck)) {
+      const reviewerTierRaw = quickCheck.reviewer_tier;
+      const reviewerTier = typeof reviewerTierRaw === "string" ? reviewerTierRaw : null;
+      const rawFindings = quickCheck.findings;
+      if (Array.isArray(rawFindings)) {
+        for (const f of rawFindings) {
+          if (!f || typeof f !== "object" || Array.isArray(f)) continue;
+          const severityRaw = f.severity;
+          const descriptionRaw = f.description;
+          findings.push({
+            severity: parseSeverity(typeof severityRaw === "string" ? severityRaw : ""),
+            description: typeof descriptionRaw === "string" ? descriptionRaw.trim() : "",
+            location: noneIfNull(f.source),
+            disposition: noneIfNull(f.disposition),
+            reviewer_tier: reviewerTier,
+          });
         }
       }
     }
   } catch (exc) {
     parseWarnings.push(
-      taskId + ": error parsing ## Quick Check Findings (" + exc + "); " +
+      taskId + ": error parsing 'quick_check' (" + exc + "); " +
       "returning best-effort findings"
     );
   }
@@ -5068,111 +4970,46 @@ function parseQuickCheckFindings(stateText, taskId, parseWarnings) {
   return findings;
 }
 
-// DR-3: parse ## Delivery Gates -> ### delivery-NNN for grade/tier/timestamp
-// Twin of parse_delivery_gate in parsers.py (byte-parity minded)
-//
-// Fallback (flat/lite works): a shortcut-produced work promotes a SINGULAR
-// "## Delivery Gate" block into the work-root STATE.md instead of the derived
-// plural "## Delivery Gates" -> "### delivery-NNN" rollup. When no plural
-// section is present at all, the singular block -- if any -- is read as
-// delivery-001's gate. Additive: never fires when a plural section exists, so
-// full/hierarchical works are unaffected.
+// DR-3: read delivery_gate (+ top-level gate_grade/gate_tier/gate_timestamp)
+// for grade/tier/timestamp. Twin of Python parse_delivery_gate() (work-009-
+// refactor task-003, retargeted to keys). `stateText` here is always the
+// work-root document (via the state-text cache -- DR-1/NFR4, no re-read);
+// `delivery_gate` only ever carries `issue_list` (D-4), so `delivery_gate.
+// grade`/`.reviewer_tier`/`.gate_timestamp` are always absent, and this
+// still returns (null, null, null) for a current-shape work -- pre-existing
+// staleness preserved, not repaired (SPEC.md L-12). The pre-refactor
+// singular-vs-plural "## Delivery Gate" / "## Delivery Gates" markdown
+// fallback has no YAML counterpart: `delivery_gate` is always a single
+// top-level key regardless of full/flat layout, so that distinction is
+// gone, not ported.
 function parseDeliveryGate(stateText, deliveryId, parseWarnings) {
   let grade = null;
   let reviewerTier = null;
   let gateTimestamp = null;
 
-  let inGates = false;
-  let inDeliveryBlock = false;
-  let foundGatesSection = false;
-  const deliveryIdLower = deliveryId.toLowerCase();
-
   try {
-    for (const line of stateText.split("\n")) {
-      if (RE_DELIVERY_GATES_SECTION.test(line)) {
-        inGates = true;
-        inDeliveryBlock = false;
-        foundGatesSection = true;
-        continue;
-      }
-      if (inGates) {
-        // A ## section (not ###) ends the delivery gates section
-        if (/^##\s+\S/.test(line) && !/^###/.test(line)) {
-          inGates = false;
-          inDeliveryBlock = false;
-          continue;
-        }
-        // ### delivery-NNN sub-section header
-        const dm = line.match(RE_DELIVERY_BLOCK_HEADER);
-        if (dm) {
-          const blockDeliveryId = dm[1].toLowerCase();
-          inDeliveryBlock = (blockDeliveryId === deliveryIdLower);
-          continue;
-        }
-        if (inDeliveryBlock) {
-          const gm = line.match(RE_GATE_GRADE);
-          if (gm && grade === null) {
-            const raw = gm[1].trim();
-            grade = raw ? raw.split(/\s+/)[0] : null;
-            continue;
-          }
-          const rtm = line.match(RE_GATE_REVIEWER_TIER);
-          if (rtm && reviewerTier === null) {
-            const raw = rtm[1].trim();
-            reviewerTier = raw ? raw.split(/\s+/)[0] : null;
-            continue;
-          }
-          const tsm = line.match(RE_GATE_TIMESTAMP);
-          if (tsm && gateTimestamp === null) {
-            gateTimestamp = tsm[1].trim() || null;
-            continue;
-          }
-          // Once all three are found, stop scanning
-          if (grade && reviewerTier && gateTimestamp) break;
-        }
-      }
-    }
+    const label = deliveryId ? deliveryId + "/STATE.yml" : "STATE.yml";
+    const [data, docWarnings] = parseStateDocument(stateText, { fileLabel: label });
+    parseWarnings.push(...docWarnings);
 
-    // Fallback: no plural ## Delivery Gates section anywhere in the text --
-    // try the singular ## Delivery Gate block (flat/lite promoted layout),
-    // treated as delivery-001's gate.
-    if (!foundGatesSection && deliveryIdLower === "delivery-001") {
-      let inGate = false;
-      for (const line of stateText.split("\n")) {
-        if (RE_DELIVERY_GATE_SECTION.test(line)) {
-          inGate = true;
-          continue;
-        }
-        if (inGate) {
-          // Any ## section (not ###) ends the singular gate block
-          if (/^##\s+\S/.test(line) && !/^###/.test(line)) {
-            inGate = false;
-            continue;
-          }
-          const gm = line.match(RE_GATE_GRADE);
-          if (gm && grade === null) {
-            const raw = gm[1].trim();
-            grade = raw ? raw.split(/\s+/)[0] : null;
-            continue;
-          }
-          const rtm = line.match(RE_GATE_REVIEWER_TIER);
-          if (rtm && reviewerTier === null) {
-            const raw = rtm[1].trim();
-            reviewerTier = raw ? raw.split(/\s+/)[0] : null;
-            continue;
-          }
-          const tsm = line.match(RE_GATE_TIMESTAMP);
-          if (tsm && gateTimestamp === null) {
-            gateTimestamp = tsm[1].trim() || null;
-            continue;
-          }
-          if (grade && reviewerTier && gateTimestamp) break;
-        }
+    const gate = data.delivery_gate;
+    if (gate && typeof gate === "object" && !Array.isArray(gate)) {
+      let v = gate.grade;
+      if (typeof v === "string" && v.trim()) {
+        grade = v.trim().split(/\s+/)[0];
+      }
+      v = gate.reviewer_tier;
+      if (typeof v === "string" && v.trim()) {
+        reviewerTier = v.trim().split(/\s+/)[0];
+      }
+      v = gate.gate_timestamp;
+      if (typeof v === "string" && v.trim()) {
+        gateTimestamp = v.trim();
       }
     }
   } catch (exc) {
     parseWarnings.push(
-      deliveryId + ": error parsing ## Delivery Gates (" + exc + "); " +
+      deliveryId + ": error parsing 'delivery_gate' (" + exc + "); " +
       "returning best-effort gate fields"
     );
   }
