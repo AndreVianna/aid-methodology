@@ -13,7 +13,7 @@ owner: architect
 audience: [developer, architect]
 intent: |
   Data schemas, artifact shapes, dataflow across the pipeline, and cardinality relationships. Read this when modeling persistence, designing migrations, or tracing data lineage.
-contracts: []
+review-criteria: []
 ---
 
 # Data Model

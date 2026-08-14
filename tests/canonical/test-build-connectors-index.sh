@@ -10,7 +10,7 @@
 #          render with surrounding quotes stripped.
 #   BCI02  auth_method: none -> Secret Ref cell renders as an em dash.
 #   BCI03  Own generated frontmatter: source: generated / generator: /
-#          intent: / contracts: all present.
+#          intent: / review-criteria: all present, the criteria entry an object.
 #   BCI04  NOT a KB doc -- no kb-category:, no Primary/Meta/Extension grouping
 #          headers, no ../knowledge/ cross-links anywhere in the output.
 #   BCI05  No run timestamp / no dated field anywhere in the output (KI-010).
@@ -141,9 +141,12 @@ assert_output_contains "$data_row_02" "| none | "$'\xe2\x80\x94'" |" \
 assert_file_contains "$OUT01" "source: generated" "BCI03 frontmatter -- source: generated"
 assert_file_contains "$OUT01" "generator: build-connectors-index" "BCI03 frontmatter -- generator:"
 assert_file_contains "$OUT01" "intent: |" "BCI03 frontmatter -- intent: literal block"
-assert_file_contains "$OUT01" 'contracts:' "BCI03 frontmatter -- contracts: key present"
+assert_file_contains "$OUT01" 'review-criteria:' "BCI03 frontmatter -- review-criteria: key present"
 assert_file_contains "$OUT01" '"One row per connector descriptor under .aid/connectors/"' \
-    "BCI03 frontmatter -- contracts: entry text"
+    "BCI03 frontmatter -- review-criteria: entry text"
+# The field takes objects, not strings. Without this the suite would pass on a
+# bare string list under the new key, which is schema-invalid.
+assert_file_contains "$OUT01" 'kind: validate' "BCI03 frontmatter -- review-criteria: entry is an object"
 
 # ===========================================================================
 # BCI04  NOT a KB doc -- no kb-category:, no grouping headers, no KB links.

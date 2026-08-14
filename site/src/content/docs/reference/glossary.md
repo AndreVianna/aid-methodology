@@ -142,6 +142,14 @@ All five profiles contain byte-identical skill and agent bodies — only the wra
 
 ---
 
+## Declared Review Criteria
+
+**Declared review criteria:** What a reviewer validates a file against, declared rather than improvised. Criteria resolve through three levels and the reviewer checks the union: **global** criteria and **per-document-type** criteria live in the project's conventions KB doc (`.aid/knowledge/authoring-conventions.md`), and **per-file** exceptions live in the file's own `review-criteria:` frontmatter. On a conflict the most specific level wins — file over type over global. A criterion is written once, at the highest level where it is true, so most files declare nothing and are fully covered by their type.
+
+Two consequences matter in practice. Criteria are a **writer's** contract first: an agent resolves them before it edits a file and complies, so the reviewer is a backstop rather than the enforcer. And every finding **cites the criterion `id`** it violates — a finding that cites nothing, or an id that resolves nowhere, is itself a defect, which turns a review from an open hunt into a bounded check.
+
+---
+
 ## Related Terms
 
 **SDD (Spec-Driven Development):** A methodology where specifications drive code generation. AID contains SDD as a subset — the spec-and-build layer — and extends it with discovery, two-level planning, feedback loops, and post-deployment phases.

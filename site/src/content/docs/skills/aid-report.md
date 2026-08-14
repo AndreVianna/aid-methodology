@@ -57,7 +57,7 @@ Every node in the chart above, in chart order, with the exact `canonical/` text 
 
 <a id="fragment-n1"></a>**1 · `INTAKE`** · _entry_
 
-~~~~plaintext title="canonical/skills/aid-report/SKILL.md#L36-L56" wrap
+~~~~plaintext title="canonical/skills/aid-report/SKILL.md#L35-L55" wrap
 ## State: INTAKE
 
 1. **Require a subject.** Empty argument -> ask one bootstrapping question ("What data
@@ -81,22 +81,22 @@ Every node in the chart above, in chart order, with the exact `canonical/` text 
    as the other collapse skills.
 ~~~~
 
-[Source: `canonical/skills/aid-report/SKILL.md#L36-L56`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-report/SKILL.md#L36-L56) · [full step: `canonical/skills/aid-report/SKILL.md#L36-L58`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-report/SKILL.md#L36-L58)
+[Source: `canonical/skills/aid-report/SKILL.md#L35-L55`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-report/SKILL.md#L35-L55) · [full step: `canonical/skills/aid-report/SKILL.md#L35-L57`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-report/SKILL.md#L35-L57)
 
 <a id="fragment-n2"></a>**2 · `ANALYZE`** · _step_
 
-~~~~plaintext title="canonical/skills/aid-report/SKILL.md#L62-L65" wrap
+~~~~plaintext title="canonical/skills/aid-report/SKILL.md#L61-L64" wrap
 ## State: ANALYZE
 
 Access the data **read-only** and dispatch **`aid-researcher`** (clean context, tiered) to
 analyze + consolidate:
 ~~~~
 
-[Source: `canonical/skills/aid-report/SKILL.md#L62-L65`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-report/SKILL.md#L62-L65) · [full step: `canonical/skills/aid-report/SKILL.md#L62-L77`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-report/SKILL.md#L62-L77)
+[Source: `canonical/skills/aid-report/SKILL.md#L61-L64`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-report/SKILL.md#L61-L64) · [full step: `canonical/skills/aid-report/SKILL.md#L61-L76`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-report/SKILL.md#L61-L76)
 
 <a id="fragment-n3"></a>**3 · `VERIFY`** · _loop-back_
 
-~~~~plaintext title="canonical/skills/aid-report/SKILL.md#L81-L91" wrap
+~~~~plaintext title="canonical/skills/aid-report/SKILL.md#L80-L90" wrap
 ## State: VERIFY
 
 1. **Mechanical grounding check** (no dispatch): findings cite the data; external claims a
@@ -110,11 +110,11 @@ analyze + consolidate:
    to ANALYZE. Circuit-breaker: 3 cycles -> IMPEDIMENT + `lifecycle: Blocked`.
 ~~~~
 
-[Source: `canonical/skills/aid-report/SKILL.md#L81-L91`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-report/SKILL.md#L81-L91) · [full step: `canonical/skills/aid-report/SKILL.md#L81-L93`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-report/SKILL.md#L81-L93)
+[Source: `canonical/skills/aid-report/SKILL.md#L80-L90`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-report/SKILL.md#L80-L90) · [full step: `canonical/skills/aid-report/SKILL.md#L80-L92`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-report/SKILL.md#L80-L92)
 
 <a id="fragment-n4"></a>**4 · `PRESENT`** — hard stop -- the user resolves · _decision_
 
-~~~~plaintext title="canonical/skills/aid-report/SKILL.md#L97-L101" wrap
+~~~~plaintext title="canonical/skills/aid-report/SKILL.md#L96-L100" wrap
 ## State: PRESENT  (hard stop -- the user resolves)
 
 Set `lifecycle: Paused-Awaiting-Input`. Present `REPORT.md` clearly: findings
@@ -122,11 +122,11 @@ Set `lifecycle: Paused-Awaiting-Input`. Present `REPORT.md` clearly: findings
 conflicts with reasons, and gaps. Assert no resolution.
 ~~~~
 
-[Source: `canonical/skills/aid-report/SKILL.md#L97-L101`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-report/SKILL.md#L97-L101) · [full step: `canonical/skills/aid-report/SKILL.md#L97-L103`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-report/SKILL.md#L97-L103)
+[Source: `canonical/skills/aid-report/SKILL.md#L96-L100`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-report/SKILL.md#L96-L100) · [full step: `canonical/skills/aid-report/SKILL.md#L96-L102`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-report/SKILL.md#L96-L102)
 
 <a id="fragment-n5"></a>**5 · `HANDOFF`** — optional; printed suggestions only · _step_
 
-~~~~plaintext title="canonical/skills/aid-report/SKILL.md#L107-L112" wrap
+~~~~plaintext title="canonical/skills/aid-report/SKILL.md#L106-L111" wrap
 ## State: HANDOFF  (optional; printed suggestions only)
 
 Printed suggestions the user may act on: make it recurring (`/aid-create-dashboard`), record
@@ -135,15 +135,15 @@ or comment on a source ticket (`/aid-update-ticket comment [<connector>:]<ticket
 Never auto-invoked; never a resolution.
 ~~~~
 
-[Source: `canonical/skills/aid-report/SKILL.md#L107-L112`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-report/SKILL.md#L107-L112) · [full step: `canonical/skills/aid-report/SKILL.md#L107-L114`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-report/SKILL.md#L107-L114)
+[Source: `canonical/skills/aid-report/SKILL.md#L106-L111`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-report/SKILL.md#L106-L111) · [full step: `canonical/skills/aid-report/SKILL.md#L106-L113`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-report/SKILL.md#L106-L113)
 
 <a id="fragment-n6"></a>**6 · `DONE`** · _exit_ · UNSPECIFIED
 
-~~~~plaintext title="canonical/skills/aid-report/SKILL.md#L118-L121" wrap
+~~~~plaintext title="canonical/skills/aid-report/SKILL.md#L117-L120" wrap
 ## State: DONE
 
 Set `lifecycle: Completed`, `updated` now, append a `## Lifecycle History` row. Keep the
 work folder (`REPORT.md`, the verify ledger) as the audit record.
 ~~~~
 
-[Source: `canonical/skills/aid-report/SKILL.md#L118-L121`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-report/SKILL.md#L118-L121) · [full step: `canonical/skills/aid-report/SKILL.md#L118-L121`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-report/SKILL.md#L118-L121)
+[Source: `canonical/skills/aid-report/SKILL.md#L117-L120`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-report/SKILL.md#L117-L120) · [full step: `canonical/skills/aid-report/SKILL.md#L117-L120`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-report/SKILL.md#L117-L120)

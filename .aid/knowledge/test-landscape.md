@@ -22,17 +22,37 @@ tags: [C6, testing, coverage, frameworks, ci, gaps]
 see_also: [quality-gates.md, technology-stack.md, infrastructure.md, tech-debt.md]
 owner: developer
 audience: [developer, architect]
-intent: |
-  The automated test landscape: frameworks, the canonical helper suites, installer
-  tests, CI lanes (test/docs/installer-tests/release), the WinPS 5.1 compat lane,
-  render-drift, and where heavy gates run. Read before writing or modifying tests.
-contracts:
-  - "tests/run-all.sh discovers suites by glob tests/canonical/test-*.sh — adding a suite needs no runner edit"
-  - "Every canonical suite runs under `timeout 300` in an isolated bash process"
-  - "node and pwsh must be present in CI or environment-dependent suites silently skip (CI fails loudly if absent)"
-  - "A suite with no `# COVERS:` header is treated by select-suites.sh as covering EVERYTHING and is always selected — forgetting the header costs time, never coverage"
-  - "select-suites.sh is not itself a counted suite: its name falls outside the tests/canonical/test-*.sh glob, so run-all.sh never runs it"
-  - "A suite never mutates the source tree: mutation runs operate on a copy in mktemp -d and assert the subject is byte-identical to HEAD afterwards (S5)"
+review-criteria:
+  - id: F-01
+    kind: validate
+    criterion: "tests/run-all.sh discovers suites by the glob tests/canonical/test-*.sh, so adding a suite needs no runner edit"
+    severity: MEDIUM
+    why: "It is why a new suite runs without being registered, and why a file named outside the glob silently never runs"
+  - id: F-02
+    kind: validate
+    criterion: "Every canonical suite runs under a timeout in an isolated bash process"
+    severity: MEDIUM
+    why: "A suite that hangs would otherwise stall the whole run rather than failing one line of it"
+  - id: F-03
+    kind: validate
+    criterion: "node and pwsh must be present in CI, or the suites that depend on them skip"
+    severity: HIGH
+    why: "A silent skip reads as a pass; this is the difference between a green run and an unrun one"
+  - id: F-04
+    kind: validate
+    criterion: "A suite with no COVERS header is treated by select-suites.sh as covering everything and is always selected"
+    severity: LOW
+    why: "Forgetting the header costs run time, never coverage -- stated so nobody adds one to make a suite skip"
+  - id: F-05
+    kind: validate
+    criterion: "select-suites.sh is not itself a counted suite; its name falls outside the discovery glob"
+    severity: LOW
+    why: "Otherwise the selector would select itself and the suite count would be off by one"
+  - id: F-06
+    kind: validate
+    criterion: "A suite never mutates the source tree -- mutation runs operate on a copy and assert the subject is byte-identical afterwards"
+    severity: HIGH
+    why: "A suite that writes into the tree corrupts the thing under test, and the next suite grades the corruption"
 ---
 
 # Test Landscape
@@ -57,7 +77,6 @@ live in `quality-gates.md`.
 - [Test Commands](#test-commands)
 - [Performance & Health](#performance--health)
 - [Suite Authoring (S1-S5) and Run Cadence (T1-T6)](#suite-authoring-s1-s5-and-run-cadence-t1-t6)
-- [Change Log](#change-log)
 
 ---
 
@@ -86,17 +105,20 @@ because it must validate Bash, PowerShell, Python, and Node code paths.
 
 | Framework / harness | Type | Location | Notes |
 |---|---|---|---|
-| Bespoke Bash test harness | Unit + integration | `tests/canonical/test-*.sh` (136 suites) | The dominant suite; run via `tests/run-all.sh`. CONFIRMED 2026-08-14 via `ls tests/canonical/test-*.sh \| wc -l` = 136. Re-run that command rather than trusting this number: it has been stale in this document before. |
-| Bespoke PowerShell test (`T<NN>` IDs) | Installer integration | `tests/windows/Test-AidInstaller.ps1` (~2406 lines) | Windows-only; not in `run-all.sh`. |
+| Bespoke Bash test harness | Unit + integration | `tests/canonical/test-*.sh` | The dominant suite; run via `tests/run-all.sh`. **The count is deliberately not stated** -- `ls tests/canonical/test-*.sh \| wc -l` is the only reliable answer, and a figure here went stale three times before it was removed. |
+| Bespoke PowerShell test (`T<NN>` IDs) | Installer integration | `tests/windows/Test-AidInstaller.ps1` | Windows-only; not in `run-all.sh`. |
 | `pytest` | Unit | `dashboard/reader/tests/`, `dashboard/server/tests/` | Python reader/server parsers + fixtures. |
 | Node built-in test | Unit | `dashboard/server/tests/test_server_node.mjs` | Node `.mjs` server tests. |
 | Playwright (Chromium, headless) | Visual fidelity (E2E render) | `.claude/aid/scripts/summarize/validate-visuals.mjs` | Validates `kb.html` authored visuals; gated in CI. |
 | Generator `--self-test` harness | Self-test | `.claude/skills/generate-profile/scripts/*.py` | `render_lib`, `render`, `verify_deterministic`, `verify_advisory`, `test_manifest_safety`. |
 | Astro / TypeScript tests | Unit | `site/src/data/__tests__/`, `site/scripts/__tests__/` | Site data + docs-sync tests (separate build). |
 
-Of the 136 live suites, three are utility suites that were added after the core AC-2 set was
-established: `test-coverage-parity.sh`, `test-skill-counts.sh` (the repo-wide count guard),
-and `test-shortcut-builder-invariants.sh`.
+Most live suites are the **long-standing suites** — the AC-2 must-pass set. The exceptions are
+named rather than counted, because the total moves whenever a suite is added: they are
+`test-coverage-parity.sh`, `test-doc-counts.sh` (the count guard over the public-facing docs),
+and `test-shortcut-builder-invariants.sh`. Derive the total from
+disk — `ls tests/canonical/test-*.sh | wc -l` — rather than reading it here; prior phrasing
+stated stale counts against a tree that had moved, which is exactly the drift `G-01` exists to stop.
 
 > **Read the count as of a date, not as a fact.** The live total and the must-pass subset are
 > different quantities; state which one a number refers to whenever you cite it.
@@ -126,7 +148,7 @@ Key behaviors (CONFIRMED in `tests/run-all.sh`):
 - **Exit contract.** Exit 0 only if every suite passes; exit 1 if any suite fails (or if no
   suites are found). Under CI it emits `::group::` / `::error::` annotations.
 
-Representative suite families (the 136 cover far more than these):
+Representative suite families (the full set covers far more than these):
 
 | Family | Example suites | What they protect |
 |---|---|---|
@@ -400,8 +422,9 @@ work:
 | **bash parameter expansion** | **3.4** | | |
 
 The consequence: **suite wall time tracks the number of external processes started, not the
-size of the input.** A `bash -x` trace of a slow suite shows many command lines, but the
-cheap builtins are almost free — **count the spawns, not the traced lines**, when diagnosing this.
+size of the input.** A `bash -x` trace of a spawn-heavy script shows hundreds or thousands of
+command lines, but the majority are cheap builtins — so **count the spawns, not the traced
+lines**, when diagnosing slowness.
 
 **Two independent levers, and the larger one is not code:**
 
@@ -414,8 +437,8 @@ cheap builtins are almost free — **count the spawns, not the traced lines**, w
    Measure before and after rather than assuming a figure.
 2. **Fold pipelines (code).** Dedup-only sorts become `awk '!seen[$0]++'` (no spawn);
    consecutive `awk` stages fold into one program; `wc`/`cut`/`grep` fold into a
-   neighbouring pass; `dirname`/`realpath` become `${p%/*}`. Keep `xargs` — it *is* the
-   batching mechanism — and keep `mv` for atomic writes.
+   neighbouring pass; `dirname`/`realpath` become `${p%/*}`.
+   Keep `xargs` — it *is* the batching mechanism — and keep `mv` for atomic writes.
 
 ---
 
@@ -431,31 +454,34 @@ Linux CI and dominates the local loop.
 |---|---|---|
 | **S1** | Invoke each subject **once per distinct input**, never once per assertion group. Build the fixture once, run the pipeline once into a cached output dir, assert many times against those files. Declare the invocation count in the suite header. | Each subject invocation is a fixed ~10s toll before any assertion is evaluated. |
 | **S2** | Load subject output into memory in **one pass** (`while IFS= read -r`, or one `awk` pass emitting a digest) into bash arrays, then assert with `[[ ]]` and `${var}` string ops. **No command substitution per assertion**, no per-assertion `grep`/`awk`/`cut`/`wc`. | Measured: 300 command substitutions **20.7s**; 300 builtin calls **0.16s**. |
-| **S3** | Put the mutation matrix behind an explicit flag (`--self-mutate`). Default (no args) runs assertions only, so CI pays one pass. **Require a matrix only where an assertion CAN be vacuous** — absence claims, universals over a set, derived invariants — not for assertions reading a direct positive value that obviously varies with the subject. **Each mutant runs its target assertion group, not the whole suite.** | A mutation matrix is N suite runs — see [the multiplier note](#known-cost-the-mutation-matrix-multiplier) before building one. |
+| **S3** | Put the mutation matrix behind an explicit flag (`--self-mutate`). Default (no args) runs assertions only, so CI pays one pass. **Require a matrix only where an assertion CAN be vacuous** — absence claims, universals over a set, derived invariants — not for assertions reading a direct positive value that obviously varies with the subject. **Each mutant runs its target assertion group, not the whole suite.** | A mutation matrix is N suite runs. See [the multiplier note](#known-cost-the-mutation-matrix-multiplier) for the cost defect to avoid when implementing one. |
 | **S4** | **Never trade coverage for time.** If an assertion genuinely needs its own subject invocation, keep it and say so in the header. Report before/after wall time *and* before/after invocation count when optimizing. | The `tests/coverage-parity.sh` gate exists because optimization is exactly when coverage silently disappears. |
 | **S5** | Mutate a **copy** in a `mktemp -d`, never the source tree, and assert the subject is byte-identical to `HEAD` afterwards. | A live mutation in a production script with a normal exit code is indistinguishable from a passing run. |
 
 ### Known cost: the mutation matrix multiplier
 
-**Open problem, deliberately recorded rather than fixed.** The mutation harness as first built
-is an ~8x multiplier on an already-slow suite, and the cause is that it **breaks S1** — the
-rule sitting three rows above it.
+**Open problem, deliberately recorded rather than fixed.** A mutation harness built naively
+is an ~8x multiplier on an already-slow suite, because it **breaks S1** — the rule sitting
+three rows above it.
 
-The anti-pattern: a harness that runs each mutant as `bash "$SELF"` — **a full re-run of the
-entire suite** per mutant. With N mutants the total cost is `(N+1) × baseline_wall` plus
-fixture construction once per mutant, so the real cost is **~1.8x the arithmetic** prediction,
-because each mutant run pays the whole suite's fixture construction. The matrix is the only
-oracle that can catch a suite that is green against a broken subject (the broken and the correct
-implementation agree on ordinary data, which review cannot see), so the right fix is not to
-drop mutants but to **restructure the harness**:
+The defect: each mutant is run as `bash "$SELF"` — **a full re-run of the entire suite**
+(all assertions and all subject scans, per mutant). An N-mutant matrix therefore costs N+1
+full suite runs and N×(subject scan count) scans, plus fixture construction for every run.
+Measured cost was **~1.8x the arithmetic** prediction because a mutant run pays the whole
+suite's fixture construction as well as its scans; the honest planning range is
+arithmetic-prediction to ~1.8× that.
 
-**The three changes that should fix it, in expected-payoff order:**
+**The three changes that fix it, in expected-payoff order:**
 
 1. **A mutant runs only its target assertion group**, never the suite. This is precisely what
    T6's group filter exists for, so the mechanism is already a requirement.
 2. **Library-level mutants call the function directly, with no pipeline scan.** Pure shell
-   functions need zero scans — sourcing the library and calling it directly suffices.
+   functions need zero scans — source the library and call the function.
 3. **Mutants sharing a fixture share one scan.**
+
+**Do not resolve this by dropping mutants** — mutation is the only oracle that catches suites
+which are green against a broken subject because the broken and correct implementations agree
+on ordinary data, which review cannot see.
 
 ### T1-T6 — when a suite is run
 
@@ -469,8 +495,9 @@ drop mutants but to **restructure the harness**:
 | **T6** | Debug at the smallest granularity — re-run the **failing assertion group**, not the suite. This makes a group filter a design requirement on every suite, not a nicety. |
 
 > **T5 is auditable, not an honour system.** Per-suite invocation counts are recoverable from
-> an agent's own tool calls — a difference invisible in either final report without the ceiling
-> declared in the dispatch brief.
+> an agent's own tool calls. This is how a single graph-suite builder was found to have run one
+> suite **33 times** and five suites it did not own **19 times** between them, against a
+> sibling's 8 — a difference invisible in either final report.
 
 ### Running only the suites a change can affect
 
@@ -478,8 +505,8 @@ drop mutants but to **restructure the harness**:
 it. Suites opt in with a manifest block in their header:
 
 ```bash
-# COVERS: canonical/aid/scripts/kb/build-kb-index.sh
-# COVERS: canonical/aid/scripts/connectors/
+# COVERS: canonical/aid/scripts/kb/
+# COVERS: canonical/aid/scripts/config/read-setting.sh
 ```
 
 A trailing slash means the directory and everything under it. The matcher spawns no process:
@@ -505,14 +532,14 @@ bash tests/canonical/select-suites.sh --run
 # every suite, for a deliverable-end run (T4)
 bash tests/canonical/select-suites.sh --all --run
 
-# restrict the candidate set to a named family
-bash tests/canonical/select-suites.sh --glob 'test-connector-*.sh' --run
+# restrict the candidate set to a named family while the repo-wide rollout is incomplete
+bash tests/canonical/select-suites.sh --glob 'test-kb-*.sh' --run
 ```
 
 **Rollout status (the limit on the payoff).** No suite currently carries a `COVERS` header,
-so every suite is selected fail-safe on any change and `--glob` is currently needed to keep
-selection useful. Promoting `COVERS` across `tests/canonical/` is what makes this pay off
-repo-wide; until then the mechanism is correct but narrow. Tracked in `tech-debt.md`.
+so all 135 suites are selected fail-safe on any change and `--glob` is currently required to
+keep selection useful. Promoting `COVERS` across `tests/canonical/` is what makes this pay
+off repo-wide; until then the mechanism is correct but narrow. Tracked in `tech-debt.md`.
 
 ---
 

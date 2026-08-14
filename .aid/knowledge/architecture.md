@@ -14,12 +14,10 @@ tags: [C1, architecture, pipeline, render-pipeline, state-machine, agent-dispatc
 see_also: [project-structure.md, technology-stack.md, decisions.md, module-map.md]
 owner: architect
 audience: [architect, developer]
-intent: |
-  How this system is built and why it is shaped this way: the dual product/dogfood
-  repository, the canonical→profiles→packages render-and-distribute architecture, and
-  the gated process architecture (six-phase pipeline, skill state machines, agent dispatch).
-  Read this to understand HOW the system hangs together — not WHAT each module does.
-contracts: []
+review-criteria: []  # nothing is true of this doc alone -- the global level and the
+                     # kb-doc level cover it. Its version invariant is already stated as
+                     # VERSION lockstep rather than a literal, so it needs no criterion of
+                     # its own to keep it from drifting.
 ---
 
 # Architecture
@@ -43,7 +41,6 @@ contracts: []
 - [Doc-vs-Code Discrepancies](#doc-vs-code-discrepancies)
 - [Invariants](#invariants)
 - [Gotchas](#gotchas)
-- [Change Log](#change-log)
 
 ---
 

@@ -152,24 +152,30 @@ dbi_allowlisted() {
     esac
 }
 
-# .cursor/ : worktrees/* plus rules/*, and copying the .claude/ list above would
+# .cursor/ : EMPTY plus worktrees/*, and copying the .claude/ list above would
 # be the defect (feature-006 risk 8). Six of that list's seven patterns are
 # deliberately NOT carried over -- settings.json, settings.local.json,
 # projects/*, skills/README.md, skills/generate-profile/* and
 # skills/release-aid/* have no counterpart under .cursor/ at all, so importing
 # them would excuse files that do not exist and check strictly less.
 #
-# rules/* is the one arm that is not about worktree mechanics: Cursor reads
-# .cursor/rules/*.mdc as host-tool configuration, exactly the class .claude/'s
-# output-styles/* arm covers -- maintainer-local, hand-authored, never emitted
-# to profiles and never shipped. It is admitted for that reason and no other; a
-# generator-produced file would still have to appear in the manifest.
-#
-# Beyond those two arms the repo-root .cursor/ file set and the cursor
-# manifest's .cursor/ dst set coincide exactly, so there is nothing further for
-# an allowlist to excuse. (The .claude/-vs-.cursor/ skills-directory comparison
+# What makes the list SHORT is an ORPHAN count, not a directory count: the
+# repo-root .cursor/ file set and the cursor manifest's .cursor/ dst set very
+# nearly coincide. (The .claude/-vs-.cursor/ skills-directory comparison
 # explains only why .claude/ needs its two skills/* arms; it says nothing about
 # the other four patterns.)
+#
+# rules/* is the one exception, and it is a property of the directory rather
+# than of AID: .cursor/ is Cursor's OWN configuration home, shared with the
+# user, not a tree AID owns outright -- the same situation as the repo-root
+# CLAUDE.md/AGENTS.md, where AID owns only its marked region. A user's Cursor
+# rules legitimately live at .cursor/rules/*.mdc beside the AID-emitted
+# content. This arm cannot mask an AID orphan, because AID emits into exactly
+# three .cursor/ subtrees -- agents/, aid/ and skills/ -- and never into
+# rules/; verify with:
+#   rg -o '"dst": "\.cursor/[^/]+' profiles/cursor/emission-manifest.jsonl | sort -u
+# Before this arm existed, a single user-authored rule file turned the whole
+# suite red, which is what happened when .cursor/rules/output-style.mdc landed.
 #
 # worktrees/* is load-bearing only in the PRIMARY checkout, whose .cursor/
 # carries agents, aid, skills AND worktrees. A worktree checkout's .cursor/

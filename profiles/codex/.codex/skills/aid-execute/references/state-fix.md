@@ -1,3 +1,16 @@
+---
+review-criteria:
+  - id: F-01
+    kind: validate
+    criterion: >
+      The prose rule count and the cited rule range both match the number of `### Fn.`
+      headings in this file.
+    severity: MEDIUM
+    why: >
+      Both are stated away from the rules they count, so adding a rule leaves them stale and
+      tells a dispatched fixer that fewer rules bind than actually do.
+---
+
 # State: FIX
 
 CODE-source issues from the most recent REVIEW cycle are dispatched to the executor agent for repair; the loop returns to REVIEW on completion.
@@ -21,7 +34,7 @@ failure of THIS state, not a success of the reviewer.
 
 The ledger is **not a to-do list**. Treating it as one -- close the row, hand it back, let
 the next cycle find the rest -- is what makes a FIX loop run for cycles without
-converging, and it pushes the executor's own analysis onto the reviewer. Six rules, all
+converging, and it pushes the executor's own analysis onto the reviewer. Seven rules, all
 binding, each written because skipping it costs a full cycle:
 
 ### F1. A finding is a CLASS, not the line it was reported on
@@ -92,12 +105,32 @@ oracle -- the generator, the derivation, the parser. A guard that restates its s
 rules is a second implementation that will drift, and one whose assumptions are wrong is
 worse than no guard, because a noisy check trains readers to ignore it.
 
+### F7. Re-verify the edited file against its OWN declared criteria
+
+A fix is an edit, so it is bound by the same criteria as the authoring was. **After editing,
+resolve the edited file's review criteria and confirm the file still satisfies them** -- global,
+then its document type, then its own `review-criteria:` frontmatter, most specific winning
+(resolution: `.codex/aid/templates/kb-authoring/review-rubric.md § Resolving review criteria`).
+
+This is not the same check as F6. F6 asks whether the edit broke its immediate surroundings; F7
+asks whether the file still holds to what it declares about itself. A fix that closes the reported
+finding by violating a different criterion of the same file has traded one finding for another,
+and the next reviewer will raise it.
+
+Two cases to watch:
+
+- The fix changes something a criterion asserts -- a count, a column order, a fixed list. Then the
+  **declaration** is what is now stale, and updating it is part of the fix, not a follow-up.
+- The fix lands in a file whose type carries an `exclude` criterion. Do not "improve" what that
+  entry excludes while you are in there; the exclusion has a `why`, and re-adding the excluded
+  content is a fresh defect.
+
 ## Step 4: FIX
 
 Dispatch agent with:
 - Issues from STATE.md where Source = CODE and Status = Pending
 - Original task context
-- **The FIX contract above (F1-F6), in full.** It binds a dispatched agent exactly as it
+- **The FIX contract above (F1-F7), in full.** It binds a dispatched agent exactly as it
   binds the orchestrator fixing directly.
 
 **Agent fixes CODE issues only.** Verifies gates still pass.

@@ -28,7 +28,6 @@ run-state, grades, and open questions.
 
 - [Completeness](#completeness)
 - [Revision History](#revision-history)
-- [Change Log](#change-log)
 
 ## Completeness
 

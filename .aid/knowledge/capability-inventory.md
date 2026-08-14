@@ -43,7 +43,6 @@ multi-profile CLI installer**. Its capabilities fall into five groups:
 - [Where each capability lives (parts it touches)](#where-each-capability-lives-parts-it-touches)
 - [What AID does NOT do](#what-aid-does-not-do)
 - [Open items](#open-items)
-- [Change Log](#change-log)
 
 ## Pipeline skills (the lifecycle)
 

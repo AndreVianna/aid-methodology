@@ -13,9 +13,15 @@ tags: [C1, structure, layout, directories, files]
 see_also: [module-map.md, architecture.md, technology-stack.md]
 owner: architect
 audience: [developer, architect]
-intent: |
-  Repository layout, top-level directory purposes, and file-inventory shape. Read this to understand the on-disk organization of the project before navigating any subtree.
-contracts: []
+review-criteria:
+  - id: F-01
+    kind: validate
+    criterion: >
+      Every top-level directory present in the repository appears in the directory tree here.
+    severity: MEDIUM
+    why: >
+      This tree is how an agent orients before it edits; a directory missing from it reads as
+      one that does not exist.
 ---
 
 # Project Structure
@@ -37,7 +43,6 @@ contracts: []
 - [Documentation Found in Repository](#documentation-found-in-repository)
 - [Unusual Structure Notes](#unusual-structure-notes)
 - [Invariants](#invariants)
-- [Change Log](#change-log)
 
 ---
 
@@ -93,7 +98,7 @@ AID/
 ├── VERSION                   # single-line canonical version string
 ├── canonical/                # SOURCE OF TRUTH for the AID toolkit
 │   ├── skills/               # 75 skill definitions (17 curated + 58 catalog skills)
-│   ├── agents/               # agent role definitions (AGENT.md + README.md each)
+│   ├── agents/               # agent role definitions (one AGENT.md each)
 │   ├── aid/                  # toolkit payload installed under the tool's aid/ subtree
 │   │   ├── scripts/          # helper scripts grouped by phase (kb, execute, ...)
 │   │   └── templates/        # KB seeds, doc/state templates, schemas, shortcut catalog + engine + scaffolding
@@ -266,7 +271,7 @@ CONFIRMED. Run `find tests -name 'test-*.sh' | wc -l` for the live canonical-sui
 | `CONTRIBUTING.md` | How to contribute skills, templates, examples. |
 | `CLAUDE.md` | Repo agent instructions with an AID-managed region. |
 | `examples/` | Walkthrough samples (greenfield, brownfield full-path, brownfield lite-path). |
-| `dashboard/README.md`, `tests/README.md`, `canonical/.../README.md` | Subsystem-local READMEs. |
+| `dashboard/README.md`, `tests/README.md` | Subsystem-local READMEs. `canonical/` carries none: the per-skill and per-agent READMEs were removed, since nothing installed or ran resolved to them. |
 
 CONFIRMED by direct listing of `docs/`, root, and `examples/`.
 
