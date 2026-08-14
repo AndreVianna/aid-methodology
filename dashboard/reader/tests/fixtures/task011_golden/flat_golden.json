@@ -1,0 +1,64 @@
+{
+  "active_skill": "aid-execute",
+  "counts": {
+    "by_status": {
+      "Done": 1,
+      "In Progress": 1
+    },
+    "done_pct": 50.0,
+    "total": 2
+  },
+  "created": "2026-05-01",
+  "deliverables": [
+    {
+      "delivery_state": "Executing",
+      "name": "Flat Golden Delivery",
+      "number": 1,
+      "task_count": 2
+    }
+  ],
+  "gate": {
+    "gate_timestamp": null,
+    "grade": null,
+    "reviewer_tier": null
+  },
+  "lifecycle": "Running",
+  "pending_inputs": [
+    {
+      "category": "Architecture",
+      "context": "Monorepo or split?",
+      "impact": "Medium",
+      "question_id": "Q1",
+      "suggested": null
+    }
+  ],
+  "phase": "Execute",
+  "source_mode": "normalized",
+  "tasks": [
+    {
+      "delivery": 1,
+      "display_name": "Task One Display",
+      "elapsed": "45m",
+      "notes": null,
+      "review_grade": "A",
+      "short_name": "First flat task",
+      "status": "Done",
+      "task_id": "task-001",
+      "type": "IMPLEMENT",
+      "wave": "delivery-001"
+    },
+    {
+      "delivery": 1,
+      "display_name": null,
+      "elapsed": null,
+      "notes": null,
+      "review_grade": null,
+      "short_name": "Second flat task",
+      "status": "In Progress",
+      "task_id": "task-002",
+      "type": "TEST",
+      "wave": "delivery-001"
+    }
+  ],
+  "updated": "2026-06-01T09:00:00Z"
+}

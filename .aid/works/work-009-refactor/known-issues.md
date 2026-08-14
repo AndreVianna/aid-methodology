@@ -460,3 +460,11 @@
   scope for work-009's plain translation.
 - **See also:** [[KI-006]] (parent class -- writes with no YAML schema home); not catalogued in
   `tech-debt.md`
+
+## KI-012: on current master, the Python and Node reader twins diverge on `delivery_state` for flat/hierarchical work payloads
+
+- **Type:** Pre-existing product divergence (independent of this refactor); surfaced during crash-recovery re-authoring of the task-011 golden baseline.
+- **Source:** `dashboard/reader/` (Python) includes a `delivery_state` value on each deliverable in the extracted work payload; `dashboard/server/reader.mjs` (Node) omits it (undefined) for the flat and hierarchical golden fixture shapes (`work-101-flat-golden`, `work-102-hier-golden`). `ki004_golden` agrees. (Also seen: `done_pct` renders `50.0` in Python vs `50` in Node -- harmless, equal by value.)
+- **How it surfaced:** the crash lost the golden baseline JSON under `dashboard/reader/tests/fixtures/task011_golden/` (Bash-generated, not in the tool-recovery). Re-running the recovered `capture_golden.py` requires the PRE-refactor readers; the exact authoring commit (`21bf9636`) died with the unpushed crashed branch, so `origin/master` was used as the pre-refactor proxy. Against master, `old_python == old_node` holds for `ki004_golden` but NOT for `flat`/`hierarchical` -- so the golden's `test_legacy_read_no_parse_warning_recorded` meta-assertion (`old_python_equals_old_node`) fails. All 39 OTHER task-011 golden assertions pass; the recovered readers themselves are correct.
+- **Scope ruling:** OUT of work-009's plain translation. This is a master-level twin divergence in `delivery_state` population, not something this refactor introduced or is chartered to fix. Routed here as a standalone finding (owner: "do 1 then 2"); to be investigated separately and, if real, promoted to `tech-debt.md`.
+- **See also:** [[KI-004]] (a different, already-catalogued Python/Node `updated`-fallback divergence).
