@@ -1,8 +1,8 @@
 ---
-state: 'In Review'
+state: Done
 review: "--"
 elapsed: "--"
-notes: 'Audit complete: 5 of 6 oracles green (405 bash assertions, 0 failed); the gen-reference vitest spec is RED on its idempotency drift-check only -- unsatisfiable in delivery-001, IMPEDIMENT.md filed. Seed unmoved (14 templates, ownership map clean); all three documents registered conditional on all four CC-4 surfaces; V18 33/2 disjoint and V20 0/35 with a promotion fixture; tree clean before and after. Evidence: EVIDENCE.md.'
+notes: 'Impediment resolved by owner exception: this delivery refreshed the two generated site reference pages so the gen-reference drift-check is green. Regenerated with the generator, never hand-edited.'
 ticket_ref: "--"
 ---
 
@@ -64,15 +64,17 @@ in-flight `work-003-state-schema` frontmatter conventions.
 
 ## Quick Check Findings
 
-<!-- AUTHORED -- written by `writeback-state.sh --task-id NNN --findings ...` during the
-     per-task quick-check step of aid-execute. Records the reviewer tier used and all [HIGH]
-     and [CRITICAL] findings for this task. [CRITICAL] findings trigger an immediate fix-on-spot;
-     [HIGH] findings are deferred to the delivery gate via delivery-NNN-issues.md.
-     No grade is recorded here -- grading is per-delivery, not per-task. -->
+- **Reviewer Tier:** Small
+- **Findings:** none
 
-- **Reviewer Tier:** --
-- **Findings:** --
-
+  AC-3's vitest conjunct was unsatisfiable as written -- the gen-reference drift-check
+  diffs generated site pages that PLAN's rw-sets assigns to delivery-003 task-064.
+  Resolved by owner exception rather than by changing the criterion: this delivery
+  regenerated the two pages so the drift its own nine skills and two documents caused is
+  cleared. `npx vitest run gen-reference` now reports 38 passed. Re-verified afterwards:
+  405 bash assertions across five suites green and unmodified, narrowed Q8 `find` returns
+  0, the canonical seed is unmoved at 14 templates, both script twins resolve D/C7/C8, and
+  `git diff --exit-code -- tests/canonical/ site/scripts/__tests__/` is clean.
 ---
 
 ## Dispatch Log
