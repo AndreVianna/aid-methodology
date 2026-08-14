@@ -1,8 +1,8 @@
 ---
-state: 'In Progress'
+state: 'In Review'
 review: "--"
 elapsed: "--"
-notes: "--"
+notes: "5 invocations, all allocating and none carrying a `phase:` value (V23 evidence for task-023): (1) /aid-design-roadmap -> work-001-design-roadmap, phase absent; (2) /aid-design-mvp -> work-002-design-mvp, phase absent; (3) /aid-design-backlog -> work-003-design-backlog, phase absent; (4) /aid-create-roadmap [V6 refusal, non-realizing] -> work-002-create-roadmap, phase absent; (5) /aid-create-mvp [V16 routing exit, non-realizing] -> work-004-create-mvp, phase absent. Each also left a git worktree (W5-20, already filed). Authored runs 3, non-realizing 2. Full oracles and observed output: EVIDENCE.md in this folder."
 ticket_ref: "--"
 ---
 
