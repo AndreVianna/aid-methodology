@@ -137,8 +137,8 @@ Each task is a **folder** containing two files:
 - {what to produce or modify -- depends on type}
 
 **Acceptance Criteria:**
-- [ ] Criterion 1 -- concrete, testable
-- [ ] Criterion 2 -- concrete, testable
+- [ ] Criterion 1 -- names an observable
+- [ ] Criterion 2 -- names an observable
 ```
 
 Six sections (Title, Type, Source, Depends on, Scope, Acceptance Criteria) plus
@@ -170,6 +170,13 @@ Include these in Acceptance Criteria when writing tasks. Don't repeat the
 full baseline — reference it: "All §6 quality gates pass." Add feature-specific
 criteria explicitly when the SPEC calls for them (e.g., "explicit tests for
 all 5 auth edge cases per SPEC").
+
+Every criterion must name an observable — a command and its expected result, a
+file and its content, a count, a threshold, or a user-visible behaviour plus how
+to reproduce it. A judgment criterion must state what is judged and against what
+standard. A task whose criteria nothing could falsify cannot be reviewed, only
+believed. Rule and worked examples:
+`../../../aid/templates/requirements/requirements-template.md § Verifiable Acceptance Criteria`.
 
 **Type-specific default criteria:** The agent adds these unless the task explicitly overrides:
 - IMPLEMENT: "Unit tests for all new public methods/endpoints" + "All existing tests still pass" + "Build passes"

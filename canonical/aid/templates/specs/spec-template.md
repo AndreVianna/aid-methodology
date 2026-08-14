@@ -29,7 +29,12 @@ Write in plain language. This is what the feature does, not how.}
 
 ## Acceptance Criteria
 
-- [ ] Given {precondition}, when {action}, then {expected result}
+Each criterion must name an observable — the rule and its worked examples live in
+`canonical/aid/templates/requirements/requirements-template.md § Verifiable
+Acceptance Criteria`. Given/When/Then is the preferred shape because it forces the
+observable into the `then`.
+
+- [ ] Given {precondition}, when {action}, then {observable result}
 
 ---
 

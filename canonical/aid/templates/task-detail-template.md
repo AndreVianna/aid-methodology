@@ -28,6 +28,12 @@ Shape: 6 sections matching canonical/aid/templates/delivery-plans/task-template.
 - {What this task produces or modifies -- depends on Type. Specific and bounded. One type per task; never mix types.}
 
 **Acceptance Criteria:**
-- [ ] {Criterion 1 -- concrete and testable}
-- [ ] {Criterion 2 -- concrete and testable}
+<!-- Each criterion names an observable: a command and its expected result, a file
+     and its expected content, a count derived from disk, a measurable threshold,
+     or a user-visible behaviour plus how to reproduce it. Judgment criteria are
+     allowed but must state what is judged and against what standard. Full rule:
+     canonical/aid/templates/requirements/requirements-template.md
+     § Verifiable Acceptance Criteria. -->
+- [ ] {Criterion 1 -- names an observable}
+- [ ] {Criterion 2 -- names an observable}
 - [ ] All section-6 quality gates pass

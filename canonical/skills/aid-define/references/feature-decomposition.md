@@ -52,14 +52,17 @@ Does this decomposition look right?
 Create `features/` directory inside the work folder if it doesn't exist.
 
 For each approved feature, create `features/feature-{NNN}-{name}/SPEC.md` using the
-template from `../../../templates/feature.md`. Fill in:
+template from `../../../aid/templates/feature.md`. Fill in:
 
 - **Title:** feature name (human-readable)
 - **Source:** relevant REQUIREMENTS.md section references
 - **Description:** synthesized from §5 in stakeholder language
 - **User Stories:** extracted or synthesized from REQUIREMENTS.md, using user types from §3
 - **Priority:** from §10 or context (Must / Should / Could)
-- **Acceptance Criteria:** from §9 mapped to this feature, or synthesized from §5
+- **Acceptance Criteria:** from §9 mapped to this feature, or synthesized from §5.
+  Each one must name an observable; a §9 criterion that does not is a defect in
+  REQUIREMENTS.md -- raise it rather than copying it forward
+  (`../../../aid/templates/requirements/requirements-template.md § Verifiable Acceptance Criteria`)
 - **Technical Specification:** leave as template placeholder (added by /aid-specify)
 
 ## Step 5: Update Meta-Documents

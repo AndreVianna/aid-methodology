@@ -414,9 +414,13 @@ the family scaffolding pointer (or "none landed yet"). The agent writes
   (typically §6 Non-Functional Requirements, §7 Constraints for a small
   shortcut-scoped change) get `*(pending)*` or `N/A` per
   `requirements-template.md`'s own conventions -- never fabricate content to avoid a
-  placeholder. §9 Acceptance Criteria MUST be concrete and testable (Given/When/Then
-  where natural); §10 Priority defaults to `Must` unless the description says
-  otherwise.
+  placeholder. §9 Acceptance Criteria MUST each name an observable -- a command and
+  its expected result, a file and its content, a count, a threshold, or a
+  user-visible behaviour plus how to reproduce it (Given/When/Then where natural,
+  because it forces the observable into the `then`). A judgment criterion must state
+  what is judged and against what standard; a criterion nothing could falsify is not
+  one (`requirements-template.md § Verifiable Acceptance Criteria`). §10 Priority
+  defaults to `Must` unless the description says otherwise.
 
 ### Step 4b: Connector awareness — record a source ticket's `ticket_ref` (optional)
 
@@ -611,7 +615,8 @@ description, scoped to the full SPEC.md Acceptance Criteria set. Multi-task shor
 - `**Type:**` bold shape (one of the 8).
 - `**Source:** work-NNN-{slug} -> delivery-001`.
 - `**Depends on:**` per the decided ordering.
-- `**Scope:**` / `**Acceptance Criteria:**` -- concrete, testable; the last criterion
+- `**Scope:**` / `**Acceptance Criteria:**` -- each criterion names an observable
+  (`requirements-template.md § Verifiable Acceptance Criteria`); the last criterion
   always `All section-6 quality gates pass.`.
 - No sibling `STATE.md` is created -- the flat layout has none; each task's mutable
   cells live only in the work-root `STATE.md § ### Tasks lifecycle` (Step 3 below).

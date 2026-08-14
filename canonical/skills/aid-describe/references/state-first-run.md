@@ -12,7 +12,7 @@ If no KB exists, that's fine — this is a greenfield project.
 ### 1b. Create or update STATE.md
 
 Ensure `.aid/works/{work}/STATE.md` exists and has an `## Interview State` section and a
-`## Cross-phase Q&A` section. Copy from `../../templates/work-state-template.md` if
+`## Cross-phase Q&A` section. Copy from `../../../aid/templates/work-state-template.md` if
 the file does not yet exist.
 
 ### 1b-ii. Seed the frontmatter block
@@ -64,7 +64,7 @@ by a later phase.
 
 ### 1c. Create REQUIREMENTS.md scaffold
 
-Copy the template from `../../templates/requirements.md` to
+Copy the template from `../../../aid/templates/requirements.md` to
 `.aid/works/{work}/REQUIREMENTS.md`.
 
 **Identity header seeding:** the template already carries the identity block between

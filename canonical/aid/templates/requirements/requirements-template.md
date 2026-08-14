@@ -10,9 +10,41 @@ This template defines the structure for `.aid/works/{work}/REQUIREMENTS.md` — 
 ## Conventions
 
 - **No Change Log section.** Git records this document's history — author, date, and full diff — at higher fidelity than a hand-maintained table, and without drift. This is the same reason `.aid/knowledge/` docs carry no Change Log (see the tracking-discipline rule in `CLAUDE.md` / `AGENTS.md`); it applies identically here. Use `git log --follow` on this file.
+- **Every acceptance criterion must be verifiable** — see [Verifiable Acceptance Criteria](#verifiable-acceptance-criteria) below. This is the rule downstream SPEC and task DETAIL criteria inherit; both cite this section rather than restating it.
 - **Sections can be marked N/A** if not applicable to the project.
 - **`*(pending)*`** marks sections not yet addressed during the interview.
 - **File is uppercase** (`REQUIREMENTS.md`) — it's a first-class artifact at the work root, `.aid/works/{work}/REQUIREMENTS.md`.
+
+---
+
+## Verifiable Acceptance Criteria
+
+An acceptance criterion states what would prove the work done. If nobody can say
+what would prove it **false**, it is not a criterion — it is a hope, and it will
+survive every review unchallenged while the document grows around it.
+
+So every criterion must name an **observable**:
+
+| Form | Example |
+|------|---------|
+| A command and its expected result | `aid --version` prints the value in `VERSION` |
+| A file and its expected content | `.aid/settings.yml` contains `minimum_grade` |
+| A count derived from disk | every `canonical/skills/*/SKILL.md` has a `description` |
+| A measurable threshold | first paint under 200 ms on the reference fixture |
+| A user-visible behaviour + how to reproduce it | submitting an empty form shows an inline error naming the empty field |
+
+**Judgment is allowed, but it must be pinned.** Some criteria genuinely need a
+person: clarity, tone, whether a design fits. Those are legitimate — but name
+*what* is judged and *against what*, so it can at least be verified that the
+judgment happened against the stated standard.
+
+- ✗ `The error message is clear.` — nothing would prove this false.
+- ✓ `A reviewer confirms the error message names the offending field and the accepted format.` — the standard is stated; a reviewer either confirms it or does not.
+
+**Prefer the form a script could check.** A criterion a script can evaluate costs
+nothing to re-verify on every later change; one that needs a reader costs a
+dispatch every time. Reach for judgment when the thing being checked is genuinely
+a judgment, not when stating the observable is merely more work.
 
 ---
 
@@ -68,7 +100,9 @@ This template defines the structure for `.aid/works/{work}/REQUIREMENTS.md` — 
 
 ## 9. Acceptance Criteria
 
-{How do we know it's done? Testable conditions for key features.}
+{How do we know it's done? One criterion per line, each naming an observable --
+see Verifiable Acceptance Criteria above. A criterion nothing could falsify is
+not one.}
 
 ## 10. Priority
 
