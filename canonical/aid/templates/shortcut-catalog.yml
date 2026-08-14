@@ -558,6 +558,46 @@ shortcuts:
     group: G3
     intent: "Develop a data-model design in .aid/design/ before building it; writes a seed, builds nothing."
     repurpose: true
+  - name: aid-design-data-pipeline
+    verb: design
+    artifact: data-pipeline
+    alias_of: null
+    default_type: DESIGN
+    group: G3
+    intent: "Develop a data-pipeline design in .aid/design/ before building it; writes a seed, builds nothing."
+    repurpose: true
+  - name: aid-design-messaging
+    verb: design
+    artifact: messaging
+    alias_of: null
+    default_type: DESIGN
+    group: G3
+    intent: "Develop a messaging design in .aid/design/ before building it; writes a seed, builds nothing."
+    repurpose: true
+  - name: aid-design-integration
+    verb: design
+    artifact: integration
+    alias_of: null
+    default_type: DESIGN
+    group: G3
+    intent: "Develop an integration design in .aid/design/ before building it; writes a seed, builds nothing."
+    repurpose: true
+  - name: aid-design-job
+    verb: design
+    artifact: job
+    alias_of: null
+    default_type: DESIGN
+    group: G3
+    intent: "Develop a job design in .aid/design/ before building it; writes a seed, builds nothing."
+    repurpose: true
+  - name: aid-design-config
+    verb: design
+    artifact: config
+    alias_of: null
+    default_type: DESIGN
+    group: G3
+    intent: "Develop a config design in .aid/design/ before building it; writes a seed, builds nothing."
+    repurpose: true
 
   # --- G8: Document family -- work-005 reframe of feature-010 --
   # `document` is a create/update ARTIFACT, not a verb. HAND-AUTHORED collapse skills.
