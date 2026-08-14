@@ -8,7 +8,7 @@ user_approved: yes
 lifecycle: Running
 phase: Execute
 active_skill: aid-execute
-updated: '2026-08-11T02:30:00Z'
+updated: ''
 pause_reason: --
 block_reason: --
 block_artifact: --
