@@ -1,6 +1,6 @@
 # State: CONTINUE
 
-Work STATE.md `## Features State` shows this feature `In Discussion`; find first `Pending` or `In Discussion` section in SPEC.md and resume **The Loop** for that section.
+Work STATE.md `## Features State` shows this feature `In Discussion`; find the first `Pending` or `In Discussion` technical section for this feature and resume **The Loop** for that section.
 
 Emit pipeline phase (silent state-write only — no output, no gate):
 ```
@@ -58,9 +58,8 @@ Continue until the user is satisfied.
 
 When agreed:
 
-1. Write section to SPEC.md under `## Technical Specification`
+1. Write the section into `REQUIREMENTS.md § 11 / Feature NNN` under `#### Technical Specification`
 2. Update work STATE.md `## Features State` section status → `Written`
-3. Add Change Log entry to SPEC.md
 4. **KB Seeding (greenfield):** If the decision fills a gap in an empty KB doc,
    update that KB doc + INDEX.md + README.md. Log which KB docs were seeded.
 
@@ -78,7 +77,7 @@ Immediately after writing, verify what was written:
 - Is it concrete enough for implementation (no vague "appropriate pattern" language)?
 ✓ aid-reviewer done (record actual time) — or ✗ aid-reviewer failed: {reason}
 
-**Grade the section** using the universal rubric (`../../../templates/grading-rubric.md`).
+**Grade the section** using the universal rubric (`../../../aid/templates/grading-rubric.md`).
 Classify each issue by severity (Minor/Low/Medium/High/Critical). The grade is
 calculated — worst issue dominates. Compare to minimum grade from `bash .cursor/aid/scripts/config/read-setting.sh --skill specify --key minimum_grade --default A`.
 

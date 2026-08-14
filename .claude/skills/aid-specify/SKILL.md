@@ -4,7 +4,7 @@ description: >
   Technical specification through conversational refinement, one feature at a time.
   The agent acts as a tech lead — reads KB, Requirements, and codebase, proposes
   technical solutions, and builds the spec collaboratively with the user.
-  Writes to SPEC.md in the feature folder.
+  Writes the Technical Specification into that feature's section of REQUIREMENTS.md §11.
   State machine: INITIALIZE → CONTINUE → REVIEW → DONE (SPIKE / BLOCKED are loopback states that return to CONTINUE).
 allowed-tools: Read, Glob, Grep, Bash, Write, Edit
 argument-hint: "work-001/feature-001 (required)  [--reset] clear technical spec for this feature"
@@ -27,7 +27,7 @@ Every section follows the same cycle:
 ```
 1. PROPOSE  → agent proposes (grounded in KB, codebase, SPEC)
 2. DISCUSS  → user and agent refine together
-3. WRITE    → save what was agreed to SPEC.md
+3. WRITE    → save what was agreed into REQUIREMENTS.md §11 / Feature NNN
 4. REVIEW   → grade what was written against KB/codebase reality
              → pass? next section. fail? back to 1.
 ```
@@ -40,10 +40,10 @@ Every section follows the same cycle:
   knowledge/               ← shared KB
   work-NNN-{name}/
     STATE.md               ← process (§ Features State table, § Cross-phase Q&A)
-    REQUIREMENTS.md
-    features/
-      feature-NNN-{name}/
-        SPEC.md            ← product (requirements + technical specification)
+    REQUIREMENTS.md        ← product: §11 Features holds one section per
+                              feature (decomposition from /aid-define +
+                              Technical Specification from here). Features have
+                              no folders and no files of their own.
 ```
 
 ---
@@ -76,8 +76,9 @@ entered — the feature glob below runs only after that.
      feature-001-login        [No STATE — not started]
      feature-002-password      [In Discussion — 2/5 sections]
    ```
-   Scan `.aid/works/{work}/features/feature-*/` inside the entered worktree. For each,
-   check the work STATE.md `## Features State` row for this feature and show status.
+   Read `REQUIREMENTS.md § 11 Features` inside the entered worktree. For each `###`
+   feature subsection, check the work STATE.md `## Features State` row for that
+   feature and show status.
    Exit.
 4. **Multiple works** → present the work list:
    ```
@@ -100,7 +101,7 @@ before the feature glob runs.
 ### Locate + Enter the Work's Worktree
 
 **As soon as the `work-NNN` prefix is parsed / auto-selected** (right after Check 1) and
-**before** Check 2 globs `.aid/works/{work}/features/…/SPEC.md`, follow
+**before** Check 2 resolves the feature in `REQUIREMENTS.md §11`, follow
 `.claude/aid/templates/downstream-worktree-entry.md` to normalize `<work-id>` to its bare
 `work-NNN` branch name, `locate` the worktree (which **always exits 0** and returns
 `<path>\t<status>`), and enter the returned path. Keep the defensive empty-path/non-zero backstop
@@ -109,13 +110,17 @@ a new worktree — creation belongs to the work-starting skills only.
 
 ### Check 2: Feature Exists
 
-Resolve the feature path using **prefix matching** (glob):
-- `feature-001` → match `.aid/works/{work}/features/feature-001-*/SPEC.md`
-- `work-001/feature-002` → match `.aid/works/work-001-*/features/feature-002-*/SPEC.md`
+Resolve the feature to a `###` subsection of `REQUIREMENTS.md § 11 Features` by its
+three-digit number:
+- `feature-001` → the `### Feature 001 — …` subsection of `.aid/works/{work}/REQUIREMENTS.md`
+- `work-001/feature-002` → the `### Feature 002 — …` subsection of `.aid/works/work-001-*/REQUIREMENTS.md`
 
-**If zero matches:** Exit with instruction to run `/aid-describe` first.
-**If multiple matches:** List them, ask user to be more specific. Exit.
-**If exactly one match:** Use that path. Print: `[Resolved: {full-path}]`
+**If §11 is absent or has no such subsection:** Exit with instruction to run
+`/aid-define` first (or `/aid-describe`, if REQUIREMENTS.md itself is missing).
+**If found:** Print: `[Resolved: REQUIREMENTS.md §11 / Feature 001 — {Title}]`
+
+The number is exact, not a prefix match: sections are numbered, so there is nothing
+to disambiguate and no glob to widen.
 
 ### Check 3: Plan Mode
 
@@ -130,13 +135,13 @@ Resolve the feature path using **prefix matching** (glob):
 |----------|--------|
 | `work-NNN/feature-NNN` | **Required.** Path to the feature to specify. |
 | `feature-NNN` | Shortcut when only one work exists. |
-| `--reset` | Clear `## Technical Specification` from SPEC.md and delete STATE.md. |
+| `--reset` | Clear the feature section's `#### Technical Specification` back to its placeholder and delete STATE.md. |
 
 ---
 
 ## State Detection
 
-All paths relative to `.aid/works/{work}/features/{feature}/`.
+The feature is a section of `.aid/works/{work}/REQUIREMENTS.md § 11`; its per-feature process state is the work STATE.md `## Features State` row.
 
 ```
 State 1: No Feature State row in work STATE.md               → INITIALIZE

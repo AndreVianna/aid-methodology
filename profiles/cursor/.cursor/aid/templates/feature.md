@@ -1,10 +1,5 @@
 # {Title}
 
-## Change Log
-
-| Date | Change | Source |
-|------|--------|--------|
-
 ## Source
 
 - REQUIREMENTS.md {section references}

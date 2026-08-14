@@ -2,7 +2,7 @@
 
 **Type:** RESEARCH | DESIGN | IMPLEMENT | TEST | DOCUMENT | MIGRATE | REFACTOR | CONFIGURE
 
-**Source:** feature-NNN-{name} → delivery-NNN
+**Source:** feature-NNN-{name} → delivery-NNN → AC-N[, AC-N]
 
 **Depends on:** task-NNN [, task-NNN] | — (none)
 
@@ -16,4 +16,6 @@
 
 ---
 
-Six sections — the `# task-NNN` title, Type, Source, Depends on, Scope, Acceptance Criteria. Nothing else. The Type drives both how the executor works and how the reviewer evaluates the task. Every task except the first declares at least one `Depends on` entry; the first uses `— (none)`.
+Six sections — the `# task-NNN` title, Type, Source, Depends on, Scope, Acceptance Criteria. Nothing else.
+
+`Source` names the acceptance criteria this task implements, by their `AC-N` ids in the cited feature SPEC. Every task traces to at least one; a task that implements no stated criterion is either undeclared scope or unnecessary work, and both are worth catching before it runs. This also makes the trace mechanically checkable — the ids either resolve in that SPEC or they do not. The Type drives both how the executor works and how the reviewer evaluates the task. Every task except the first declares at least one `Depends on` entry; the first uses `— (none)`.

@@ -193,7 +193,7 @@ Then append the gate-specific prompt below. The reviewer reads directly from sou
 - **`delivery-NNN-issues.md`** — the deferred `[HIGH]` prior context (from
   AGGREGATE). Read as context only; the reviewer produces its own fresh list.
 - **KB docs via INDEX.md** — load relevant docs per INDEX summaries
-- **Grading rubric** (`../../../templates/grading-rubric.md`)
+- **Grading rubric** (`../../../aid/templates/grading-rubric.md`)
 
 ### Gate Reviewer Prompt (gate mode)
 

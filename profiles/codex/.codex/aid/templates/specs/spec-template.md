@@ -9,12 +9,6 @@
      lifecycle-unit field only -- the connector descriptor schema is unchanged. Coordinate with
      the in-flight `work-003-state-schema` frontmatter conventions. -->
 
-## Change Log
-
-| Date | Change | Source |
-|------|--------|--------|
-| {date} | Feature created from REQUIREMENTS.md | /aid-describe |
-
 ## Source
 
 - REQUIREMENTS.md §5.{n} — {requirement reference}
@@ -35,7 +29,17 @@ Write in plain language. This is what the feature does, not how.}
 
 ## Acceptance Criteria
 
-- [ ] Given {precondition}, when {action}, then {expected result}
+Each criterion must name an observable — the rule and its worked examples live in
+`.codex/aid/templates/requirements/requirements-template.md § Verifiable
+Acceptance Criteria`. Given/When/Then is the preferred shape because it forces the
+observable into the `then`.
+
+Each criterion carries a stable `AC-N` id, numbered within this feature and never
+reused or renumbered — downstream tasks cite these ids, so renumbering silently
+breaks their traceability.
+
+- [ ] **AC-1** — Given {precondition}, when {action}, then {observable result}
+- [ ] **AC-2** — Given {precondition}, when {action}, then {observable result}
 
 ---
 

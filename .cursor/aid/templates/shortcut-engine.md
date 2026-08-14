@@ -23,7 +23,7 @@ four bound values before the state machine below starts:
 
 | Value | Source | Notes |
 |---|---|---|
-| `{name}` | the invoking doorway's own directory/skill name (e.g. `aid-create-api`) | used for the catalog lookup, `STATE.md` Active Skill, and every Change Log `Source` field (`/{name}`) |
+| `{name}` | the invoking doorway's own directory/skill name (e.g. `aid-create-api`) | used for the catalog lookup and the `STATE.md` Active Skill field |
 | `{verb}` | the doorway body's binding | dispatch key; drives the family scaffolding lookup |
 | `{artifact}` | the doorway body's binding (may be `""` for a bare verb) | narrows the family scaffolding lookup |
 | `{description}` | the user's free-text argument (`argument-hint`) | may be absent/empty -- see CAPTURE Step 1 |
@@ -409,15 +409,18 @@ the family scaffolding pointer (or "none landed yet"). The agent writes
   `**Name:**` a concise Title-Case title (no trailing period; derived from the
   description/verb+artifact, NOT the `work_id` slug); `**Description:**` exactly one
   sentence (no trailing period).
-- **`## Change Log`**: `| {today} | Initial capture (shortcut: {name}) | /{name} |`.
 - **All 10 numbered sections**, terse but complete: fill every section the captured
   information (Steps 1-3) actually answers; sections genuinely not addressed
   (typically §6 Non-Functional Requirements, §7 Constraints for a small
   shortcut-scoped change) get `*(pending)*` or `N/A` per
   `requirements-template.md`'s own conventions -- never fabricate content to avoid a
-  placeholder. §9 Acceptance Criteria MUST be concrete and testable (Given/When/Then
-  where natural); §10 Priority defaults to `Must` unless the description says
-  otherwise.
+  placeholder. §9 Acceptance Criteria MUST each name an observable -- a command and
+  its expected result, a file and its content, a count, a threshold, or a
+  user-visible behaviour plus how to reproduce it (Given/When/Then where natural,
+  because it forces the observable into the `then`). A judgment criterion must state
+  what is judged and against what standard; a criterion nothing could falsify is not
+  one (`requirements-template.md § Verifiable Acceptance Criteria`). §10 Priority
+  defaults to `Must` unless the description says otherwise.
 
 ### Step 4b: Connector awareness — record a source ticket's `ticket_ref` (optional)
 
@@ -474,11 +477,12 @@ sections when no family file has landed yet). The agent writes `.aid/works/{work
 seeded from `.cursor/aid/templates/specs/spec-template.md`:
 
 - `# {Feature Title}` (the same title as the REQUIREMENTS.md identity block).
-- `## Change Log`: `| {today} | SPEC authored from REQUIREMENTS.md | /{name} |`.
 - `## Source`: cite the REQUIREMENTS.md sections this SPEC draws from (e.g.
   `REQUIREMENTS.md §5 Functional Requirements`, `§9 Acceptance Criteria`).
 - `## Description` / `## User Stories` / `## Priority` / `## Acceptance Criteria`:
-  synthesized from REQUIREMENTS.md (requirements-half; not re-elicited).
+  synthesized from REQUIREMENTS.md (requirements-half; not re-elicited). Each
+  criterion carries a stable `AC-N` id -- DETAIL's `**Source:**` cites these, so
+  they must exist before Step DETAIL runs and must never be renumbered afterwards.
 - `## Technical Specification`: the mandatory three sections plus whichever
   conditional sections Step 2 activated, filled from KB context (`architecture.md`,
   `module-map.md`, `coding-standards.md`, etc. as relevant) and the family scaffolding
@@ -611,9 +615,13 @@ description, scoped to the full SPEC.md Acceptance Criteria set. Multi-task shor
 `.cursor/aid/templates/task-detail-template.md`:
 
 - `**Type:**` bold shape (one of the 8).
-- `**Source:** work-NNN-{slug} -> delivery-001`.
+- `**Source:** work-NNN-{slug} -> delivery-001 -> AC-N[, AC-N]` -- the work-root
+  SPEC.md criteria this task implements, by their `AC-N` ids; at least one is
+  required. The flat layout has no `features/`, so the work is cited where the full
+  path cites a feature.
 - `**Depends on:**` per the decided ordering.
-- `**Scope:**` / `**Acceptance Criteria:**` -- concrete, testable; the last criterion
+- `**Scope:**` / `**Acceptance Criteria:**` -- each criterion names an observable
+  (`requirements-template.md § Verifiable Acceptance Criteria`); the last criterion
   always `All section-6 quality gates pass.`.
 - No sibling `STATE.md` is created -- the flat layout has none; each task's mutable
   cells live only in the work-root `STATE.md § ### Tasks lifecycle` (Step 3 below).
@@ -743,10 +751,10 @@ content:
 - **RUBRIC:** (one-off, as Pass 1) each `DETAIL.md` carries exactly one bold
   `**Type:**` (never mixed across tasks of the same shortcut unless the
   family scaffolding calls for it -- `artifact-schemas.md § Task DETAIL.md`),
-  a correct `**Source:** work-NNN-{slug} -> delivery-001` and
-  `**Depends on:**` shape matching the natural ordering, and concrete,
-  testable `**Acceptance Criteria:**` ending in `All section-6 quality gates
-  pass.`; no sibling `STATE.md` exists for any task (the flat layout has
+  a correct `**Source:** work-NNN-{slug} -> delivery-001 -> AC-N[, AC-N]`
+  (every `AC-N` resolving in the work-root SPEC.md) and `**Depends on:**` shape
+  matching the natural ordering, and `**Acceptance Criteria:**` each naming an
+  observable and ending in `All section-6 quality gates pass.`; no sibling `STATE.md` exists for any task (the flat layout has
   none by design).
 - **OUT OF SCOPE:** `REQUIREMENTS.md`/`SPEC.md`/`PLAN.md`/`BLUEPRINT.md`
   (Pass 1's own scope, already cleared -- re-litigating them here is scope

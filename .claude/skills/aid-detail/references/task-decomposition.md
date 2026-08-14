@@ -129,7 +129,7 @@ Each task is a **folder** containing two files:
 
 **Type:** RESEARCH | DESIGN | IMPLEMENT | TEST | DOCUMENT | MIGRATE | REFACTOR | CONFIGURE
 
-**Source:** work-NNN-{name} -> delivery-NNN
+**Source:** feature-NNN-{name} -> delivery-NNN -> AC-N[, AC-N]
 
 **Depends on:** task-NNN [, task-NNN] | -- (none)
 
@@ -137,13 +137,24 @@ Each task is a **folder** containing two files:
 - {what to produce or modify -- depends on type}
 
 **Acceptance Criteria:**
-- [ ] Criterion 1 -- concrete, testable
-- [ ] Criterion 2 -- concrete, testable
+- [ ] Criterion 1 -- names an observable
+- [ ] Criterion 2 -- names an observable
 ```
 
 Six sections (Title, Type, Source, Depends on, Scope, Acceptance Criteria) plus
 the fixed Execution protocol note carried automatically from the template.
 Nothing else.
+
+**`Source` must name the feature SPEC criteria this task implements**, by their
+`AC-N` ids, and at least one is required. A task implementing no stated criterion
+is either undeclared scope or unnecessary work — both worth catching before it
+runs. Two things follow from having the ids on disk: the trace is mechanically
+checkable (each id either resolves in that SPEC or it does not), and a reviewer or
+executor can load just the criteria a task answers to instead of the whole
+upstream document.
+
+On the flattened Lite layout there is no `features/` folder, so cite the work:
+`work-NNN-{slug} -> delivery-001 -> AC-N`.
 
 - **`deliveries/delivery-NNN/tasks/task-NNN/STATE.md`** — seeded from `.claude/aid/templates/task-state-template.md`,
   replacing the frontmatter block's placeholder lines with the real opening values
@@ -170,6 +181,13 @@ Include these in Acceptance Criteria when writing tasks. Don't repeat the
 full baseline — reference it: "All §6 quality gates pass." Add feature-specific
 criteria explicitly when the SPEC calls for them (e.g., "explicit tests for
 all 5 auth edge cases per SPEC").
+
+Every criterion must name an observable — a command and its expected result, a
+file and its content, a count, a threshold, or a user-visible behaviour plus how
+to reproduce it. A judgment criterion must state what is judged and against what
+standard. A task whose criteria nothing could falsify cannot be reviewed, only
+believed. Rule and worked examples:
+`../../../aid/templates/requirements/requirements-template.md § Verifiable Acceptance Criteria`.
 
 **Type-specific default criteria:** The agent adds these unless the task explicitly overrides:
 - IMPLEMENT: "Unit tests for all new public methods/endpoints" + "All existing tests still pass" + "Build passes"
