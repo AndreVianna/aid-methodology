@@ -1,5 +1,7 @@
-# NOTE: rows for the 13 deleted test-graph-*.sh suites were pruned by hand when the
-# aid-graph skill was removed (no runtime-complete environment was available to re-collect).
+# NOTE: hand-edited when the aid-graph skill was removed, because no runtime-complete
+# environment (pwsh) was available to re-collect the whole corpus: rows for the 13 deleted
+# test-graph-*.sh suites were pruned, and test-validator-profiles.sh's rows were replaced by
+# a fresh single-suite collection under its new name, test-validator-behavior.sh.
 # Re-bootstrap this file on master per the runbook in .github/workflows/coverage-parity.yml.
 test-actback-fixtures.sh	ISO-CANARY-01 real HOME (<PATH> gained no .aid dirs (no scan escaped throwaway HOME)	1
 test-actback-fixtures.sh	T01 V-E1a kb-actback-task.sh output matches recorded golden (expected<PATH>	1
@@ -6183,156 +6185,72 @@ test-update-kb-scope-fidelity.sh	UK95	1
 test-update-kb-scope-fidelity.sh	UK96	1
 test-update-kb-scope-fidelity.sh	UK97	1
 test-update-kb-scope-fidelity.sh	UK98	1
-test-validator-profiles.sh	GT-CONTRAST_USAGE_OUT-L1\..*resolve grade-summary.sh's grep pattern 'L1\..*resolve' does not match the Usage<PATH> text	1
-test-validator-profiles.sh	GT-CONTRAST_USAGE_OUT-L2\..*resolve grade-summary.sh's grep pattern 'L2\..*resolve' does not match the Usage<PATH> text	1
-test-validator-profiles.sh	GT-CONTRAST_USAGE_OUT-NM\..*\[PASS\] grade-summary.sh's grep pattern 'NM\..*\[PASS\]' does not match the Usage<PATH> text	1
-test-validator-profiles.sh	GT-CONTRAST_USAGE_OUT-S2\..*\[PASS\] grade-summary.sh's grep pattern 'S2\..*\[PASS\]' does not match the Usage<PATH> text	1
-test-validator-profiles.sh	GT-EXTRACT-GT_L1_PAT pattern extracted from grade-summary.sh: 'L1\..*resolve'	1
-test-validator-profiles.sh	GT-EXTRACT-GT_L2_PAT pattern extracted from grade-summary.sh: 'L2\..*resolve'	1
-test-validator-profiles.sh	GT-EXTRACT-GT_NM_PAT pattern extracted from grade-summary.sh: 'NM\..*\[PASS\]'	1
-test-validator-profiles.sh	GT-EXTRACT-GT_S2_PAT pattern extracted from grade-summary.sh: 'S2\..*\[PASS\]'	1
-test-validator-profiles.sh	GT-EXTRACT-GT_SUMMARY_PAT pattern extracted from grade-summary.sh: 'All contrast checks passed'	1
-test-validator-profiles.sh	GT-HTMLOUT_USAGE_OUT-L1\..*resolve grade-summary.sh's grep pattern 'L1\..*resolve' does not match the Usage<PATH> text	1
-test-validator-profiles.sh	GT-HTMLOUT_USAGE_OUT-L2\..*resolve grade-summary.sh's grep pattern 'L2\..*resolve' does not match the Usage<PATH> text	1
-test-validator-profiles.sh	GT-HTMLOUT_USAGE_OUT-NM\..*\[PASS\] grade-summary.sh's grep pattern 'NM\..*\[PASS\]' does not match the Usage<PATH> text	1
-test-validator-profiles.sh	GT-HTMLOUT_USAGE_OUT-S2\..*\[PASS\] grade-summary.sh's grep pattern 'S2\..*\[PASS\]' does not match the Usage<PATH> text	1
-test-validator-profiles.sh	GT-SETUP grade-summary.sh found for pattern extraction	1
-test-validator-profiles.sh	GT-VISUALS_USAGE_OUT-S2\..*\[PASS\] grade-summary.sh's grep pattern 'S2\..*\[PASS\]' does not match the Usage<PATH> text	1
-test-validator-profiles.sh	GT-summary-line 'All contrast checks passed' does not appear on the Usage<PATH> path	1
-test-validator-profiles.sh	HELP01	1
-test-validator-profiles.sh	HELP01-rc	1
-test-validator-profiles.sh	HELP02	1
-test-validator-profiles.sh	HELP03	1
-test-validator-profiles.sh	PV01a	1
-test-validator-profiles.sh	PV01b	1
-test-validator-profiles.sh	PV01c	1
-test-validator-profiles.sh	PV01d	1
-test-validator-profiles.sh	PV01d1	1
-test-validator-profiles.sh	PV01d2	1
-test-validator-profiles.sh	PV01d3	1
-test-validator-profiles.sh	PV01e	1
-test-validator-profiles.sh	PV01f	1
-test-validator-profiles.sh	PV01g	1
-test-validator-profiles.sh	PV01h	1
-test-validator-profiles.sh	PV02a	1
-test-validator-profiles.sh	PV02a1	1
-test-validator-profiles.sh	PV02b	1
-test-validator-profiles.sh	PV02c	1
-test-validator-profiles.sh	PV02c1	1
-test-validator-profiles.sh	PV02d	1
-test-validator-profiles.sh	PV02e	1
-test-validator-profiles.sh	PV02e1	1
-test-validator-profiles.sh	PV02f	1
-test-validator-profiles.sh	PV02g	1
-test-validator-profiles.sh	PV02h	1
-test-validator-profiles.sh	PV02i	1
-test-validator-profiles.sh	PV03a	1
-test-validator-profiles.sh	PV03b	1
-test-validator-profiles.sh	PV03c	1
-test-validator-profiles.sh	PV05a	1
-test-validator-profiles.sh	PV05b	1
-test-validator-profiles.sh	PV05c	1
-test-validator-profiles.sh	PV05d	1
-test-validator-profiles.sh	PV05e	1
-test-validator-profiles.sh	PV06a	1
-test-validator-profiles.sh	PV06a-rc	1
-test-validator-profiles.sh	PV06b	1
-test-validator-profiles.sh	PV06b-rc	1
-test-validator-profiles.sh	PV07a-default	1
-test-validator-profiles.sh	PV07b-graph	1
-test-validator-profiles.sh	PV07c	1
-test-validator-profiles.sh	PV07d	1
-test-validator-profiles.sh	PV08a	1
-test-validator-profiles.sh	PV08b	1
-test-validator-profiles.sh	PV08c	1
-test-validator-profiles.sh	PV08d	1
-test-validator-profiles.sh	PV08e	1
-test-validator-profiles.sh	PV08f	1
-test-validator-profiles.sh	PV09a-body	1
-test-validator-profiles.sh	PV09a-rc	1
-test-validator-profiles.sh	PV09b	1
-test-validator-profiles.sh	PV09b-rc	1
-test-validator-profiles.sh	PV09c-header	1
-test-validator-profiles.sh	PV09c-help	1
-test-validator-profiles.sh	PV11-real	1
-test-validator-profiles.sh	PV11-real-rc	1
-test-validator-profiles.sh	PV11a	1
-test-validator-profiles.sh	PV11a-noFAIL	1
-test-validator-profiles.sh	PV11a-rc	1
-test-validator-profiles.sh	PV11b	1
-test-validator-profiles.sh	PV11b-rc	1
-test-validator-profiles.sh	PV12a	1
-test-validator-profiles.sh	PV12b	1
-test-validator-profiles.sh	PV12c	1
-test-validator-profiles.sh	PV13a	1
-test-validator-profiles.sh	PV13b	1
-test-validator-profiles.sh	PV13c-gc-dependency	1
-test-validator-profiles.sh	PV13c-gc-documentation	1
-test-validator-profiles.sh	PV13c-gc-evidence	1
-test-validator-profiles.sh	PV13c-gc-implementation	1
-test-validator-profiles.sh	PV13c-gc-lineage	1
-test-validator-profiles.sh	PV13c-gc-provenance	1
-test-validator-profiles.sh	PV13c-gc-structure	1
-test-validator-profiles.sh	PV13c-gc-taxonomy	1
-test-validator-profiles.sh	PV13c-gk-concept	1
-test-validator-profiles.sh	PV13c-gk-document	1
-test-validator-profiles.sh	PV13c-gk-fact	1
-test-validator-profiles.sh	PV13c-gk-image	1
-test-validator-profiles.sh	PV13c-gk-project	1
-test-validator-profiles.sh	PV13c-gk-section	1
-test-validator-profiles.sh	PV13c-gk-source-artifact	1
-test-validator-profiles.sh	PV13c-gk-web-page	1
-test-validator-profiles.sh	PV13d-gc-dependency	1
-test-validator-profiles.sh	PV13d-gc-documentation	1
-test-validator-profiles.sh	PV13d-gc-evidence	1
-test-validator-profiles.sh	PV13d-gc-implementation	1
-test-validator-profiles.sh	PV13d-gc-lineage	1
-test-validator-profiles.sh	PV13d-gc-provenance	1
-test-validator-profiles.sh	PV13d-gc-structure	1
-test-validator-profiles.sh	PV13d-gc-taxonomy	1
-test-validator-profiles.sh	PV13d-gk-concept	1
-test-validator-profiles.sh	PV13d-gk-document	1
-test-validator-profiles.sh	PV13d-gk-fact	1
-test-validator-profiles.sh	PV13d-gk-image	1
-test-validator-profiles.sh	PV13d-gk-project	1
-test-validator-profiles.sh	PV13d-gk-section	1
-test-validator-profiles.sh	PV13d-gk-source-artifact	1
-test-validator-profiles.sh	PV13d-gk-web-page	1
-test-validator-profiles.sh	PV13e	1
-test-validator-profiles.sh	PV13f	1
-test-validator-profiles.sh	PV13g	1
-test-validator-profiles.sh	PV13h	1
-test-validator-profiles.sh	PV14a-default	1
-test-validator-profiles.sh	PV14a-default-rc	1
-test-validator-profiles.sh	PV14a-graph	1
-test-validator-profiles.sh	PV14a-graph-rc	1
-test-validator-profiles.sh	PV14b	1
-test-validator-profiles.sh	PV14b-rc	1
-test-validator-profiles.sh	PV18-STATIC-a	1
-test-validator-profiles.sh	PV19a	1
-test-validator-profiles.sh	PV19a-rc	1
-test-validator-profiles.sh	PV19b	1
-test-validator-profiles.sh	PV19c	1
-test-validator-profiles.sh	PV19c-rc	1
-test-validator-profiles.sh	PV19d	1
-test-validator-profiles.sh	PV19d-rc	1
-test-validator-profiles.sh	PV19e	1
-test-validator-profiles.sh	PV19f	1
-test-validator-profiles.sh	PV19f-rc	1
-test-validator-profiles.sh	PV20a	1
-test-validator-profiles.sh	PV20b	1
-test-validator-profiles.sh	PV20c	1
-test-validator-profiles.sh	REDECL-D1 the dark chrome pair's ratio is NOT corrupted by the redeclaring graph block (<VER>:1, white-on-black)	1
-test-validator-profiles.sh	REDECL-D2 that ratio matches a no-graph-block dark control byte-for-byte	1
-test-validator-profiles.sh	REDECL-D3 the redeclaration still surfaces as a named FAIL (dark)	1
-test-validator-profiles.sh	REDECL-D4 the redeclaration bug does not corrupt the (separate) divergence check -- dark still genuinely differs from light	1
-test-validator-profiles.sh	REDECL-L1 the chrome pair's ratio is NOT corrupted by the redeclaring graph block (<VER>:1, black-on-white)	1
-test-validator-profiles.sh	REDECL-L2 that ratio matches a no-graph-block control byte-for-byte	1
-test-validator-profiles.sh	REDECL-L3 the redeclaration still surfaces as a named FAIL (light)	1
-test-validator-profiles.sh	REDECL-L4 control (no added block) has no redeclaration line at all	1
-test-validator-profiles.sh	REDECL-L5 a passing ratio does not save the run: redeclaration alone forces exit 1	1
-test-validator-profiles.sh	S5 the three canonical scripts are byte-unchanged after this entire run (every fixture and every mutant lived under $TMP)	1
-test-validator-profiles.sh	SELF01	1
+test-validator-behavior.sh	GT-CONTRAST_USAGE_OUT-L1\..*resolve grade-summary.sh's grep pattern 'L1\..*resolve' does not match the Usage<PATH> text	1
+test-validator-behavior.sh	GT-CONTRAST_USAGE_OUT-L2\..*resolve grade-summary.sh's grep pattern 'L2\..*resolve' does not match the Usage<PATH> text	1
+test-validator-behavior.sh	GT-CONTRAST_USAGE_OUT-NM\..*\[PASS\] grade-summary.sh's grep pattern 'NM\..*\[PASS\]' does not match the Usage<PATH> text	1
+test-validator-behavior.sh	GT-CONTRAST_USAGE_OUT-S2\..*\[PASS\] grade-summary.sh's grep pattern 'S2\..*\[PASS\]' does not match the Usage<PATH> text	1
+test-validator-behavior.sh	GT-ERR-contrast error path exits 2	1
+test-validator-behavior.sh	GT-ERR-htmlout error path exits 2	1
+test-validator-behavior.sh	GT-ERR-visuals error path exits 2	1
+test-validator-behavior.sh	GT-EXTRACT-GT_L1_PAT pattern extracted from grade-summary.sh: 'L1\..*resolve'	1
+test-validator-behavior.sh	GT-EXTRACT-GT_L2_PAT pattern extracted from grade-summary.sh: 'L2\..*resolve'	1
+test-validator-behavior.sh	GT-EXTRACT-GT_NM_PAT pattern extracted from grade-summary.sh: 'NM\..*\[PASS\]'	1
+test-validator-behavior.sh	GT-EXTRACT-GT_S2_PAT pattern extracted from grade-summary.sh: 'S2\..*\[PASS\]'	1
+test-validator-behavior.sh	GT-EXTRACT-GT_SUMMARY_PAT pattern extracted from grade-summary.sh: 'All contrast checks passed'	1
+test-validator-behavior.sh	GT-HTMLOUT_USAGE_OUT-L1\..*resolve grade-summary.sh's grep pattern 'L1\..*resolve' does not match the Usage<PATH> text	1
+test-validator-behavior.sh	GT-HTMLOUT_USAGE_OUT-L2\..*resolve grade-summary.sh's grep pattern 'L2\..*resolve' does not match the Usage<PATH> text	1
+test-validator-behavior.sh	GT-HTMLOUT_USAGE_OUT-NM\..*\[PASS\] grade-summary.sh's grep pattern 'NM\..*\[PASS\]' does not match the Usage<PATH> text	1
+test-validator-behavior.sh	GT-HTMLOUT_USAGE_OUT-S2\..*\[PASS\] grade-summary.sh's grep pattern 'S2\..*\[PASS\]' does not match the Usage<PATH> text	1
+test-validator-behavior.sh	GT-SETUP grade-summary.sh found for pattern extraction	1
+test-validator-behavior.sh	GT-VISUALS_USAGE_OUT-S2\..*\[PASS\] grade-summary.sh's grep pattern 'S2\..*\[PASS\]' does not match the Usage<PATH> text	1
+test-validator-behavior.sh	GT-summary-line 'All contrast checks passed' does not appear on the Usage<PATH> path	1
+test-validator-behavior.sh	HELP01	1
+test-validator-behavior.sh	HELP01-header	1
+test-validator-behavior.sh	PV01a	1
+test-validator-behavior.sh	PV01b	1
+test-validator-behavior.sh	PV01c	1
+test-validator-behavior.sh	PV01d	1
+test-validator-behavior.sh	PV01d1	1
+test-validator-behavior.sh	PV01d2	1
+test-validator-behavior.sh	PV01d3	1
+test-validator-behavior.sh	PV01e	1
+test-validator-behavior.sh	PV01g	1
+test-validator-behavior.sh	PV05a	1
+test-validator-behavior.sh	PV05d	1
+test-validator-behavior.sh	PV05e	1
+test-validator-behavior.sh	PV06a	1
+test-validator-behavior.sh	PV06a-rc	1
+test-validator-behavior.sh	PV07a-default	1
+test-validator-behavior.sh	PV08a	1
+test-validator-behavior.sh	PV08b	1
+test-validator-behavior.sh	PV08c	1
+test-validator-behavior.sh	PV09a-body	1
+test-validator-behavior.sh	PV09a-rc	1
+test-validator-behavior.sh	PV09b	1
+test-validator-behavior.sh	PV09b-rc	1
+test-validator-behavior.sh	PV09c-header	1
+test-validator-behavior.sh	PV09c-help	1
+test-validator-behavior.sh	PV09c-rc	1
+test-validator-behavior.sh	PV11-real	1
+test-validator-behavior.sh	PV11-real-rc	1
+test-validator-behavior.sh	PV11a	1
+test-validator-behavior.sh	PV11a-noFAIL	1
+test-validator-behavior.sh	PV11a-rc	1
+test-validator-behavior.sh	PV11b	1
+test-validator-behavior.sh	PV11b-rc	1
+test-validator-behavior.sh	PV12a	1
+test-validator-behavior.sh	PV12b	1
+test-validator-behavior.sh	PV12c	1
+test-validator-behavior.sh	PV18-STATIC-a	1
+test-validator-behavior.sh	PV19a	1
+test-validator-behavior.sh	PV19a-rc	1
+test-validator-behavior.sh	PV19d	1
+test-validator-behavior.sh	PV19d-rc	1
+test-validator-behavior.sh	PV20a	1
+test-validator-behavior.sh	PV20b	1
+test-validator-behavior.sh	PV20c	1
+test-validator-behavior.sh	S5 the three canonical scripts are byte-unchanged after this entire run (every fixture lived under $TMP)	1
+test-validator-behavior.sh	SELF01	1
 test-version-sync.sh	VS01	2
 test-version-sync.sh	VS02	4
 test-version-sync.sh	VS03	3
