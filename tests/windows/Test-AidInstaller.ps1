@@ -604,7 +604,7 @@ $env:AID_NO_UPDATE_CHECK = '1'
 Run-AidPs1 -AidHome $AidHomeT08 -AidArgs @('update', '-FromBundle', $FixClaudeCode, '-Target', $ProjT48)
 Assert-FileExists (Join-Path (Join-Path $ProjT48 '.aid') 'settings.yml') 'T48b settings.yml synthesized by update (era-b via manifest)'
 $s48 = Get-Content -LiteralPath (Join-Path (Join-Path $ProjT48 '.aid') 'settings.yml') -Raw
-Assert-Contains $s48 'format_version: 3' 'T48c format_version: 3 stamped'
+Assert-Contains $s48 'format_version: 4' 'T48c format_version: 4 stamped'
 # Second update: the gate must no longer warn (stamp current now).
 Run-AidPs1 -AidHome $AidHomeT08 -AidArgs @('update', '-FromBundle', $FixClaudeCode, '-Target', $ProjT48)
 Assert-NotContains $script:_LastOut 'older format' 'T48d no recurring older-format WARN after stamp'
