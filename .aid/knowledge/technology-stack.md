@@ -15,11 +15,16 @@ tags: [C0, languages, runtimes, frameworks, build-tools, testing, polyglot]
 see_also: [architecture.md, infrastructure.md, test-landscape.md]
 owner: architect
 audience: [developer, architect, devops]
-intent: |
-  Languages, runtimes, frameworks, build tools, and test infrastructure AID uses, with
-  actual versions from config files plus the exact runnable build/lint/test commands. Read
-  this for language-version or tool-version questions.
-contracts: []
+review-criteria:
+  - id: F-01
+    kind: validate
+    criterion: >
+      Every version this doc states for AID itself is asserted as lockstep with the `VERSION`
+      file, never written as a literal number.
+    severity: MEDIUM
+    why: >
+      A hard-coded version is stale at the next release and this doc is where a reader checks
+      it. The number moved 1.1.1 to 2.0.6 to 2.3.0 while three literals here stayed put.
 ---
 
 # Technology Stack
@@ -51,9 +56,12 @@ channels. CONFIRMED in `project-structure.md` (search: "AID is polyglot by desig
 install through Bash and PowerShell hosts and ship via both npm and PyPI") and the parity
 suite `tests/canonical/test-aid-cli-parity.sh`.
 
-Product version: **2.0.6** (`VERSION`; npm and PyPI wrappers both at `2.0.6`). CONFIRMED in
-`VERSION`, `packages/npm/package.json` (search: `"version": "2.0.6"`),
-`packages/pypi/pyproject.toml` (search: `version = "2.0.6"`).
+Product version: whatever `VERSION` holds — read it rather than trusting a number written here.
+The invariant is **lockstep**: the npm and PyPI wrappers carry the same value, so
+`packages/npm/package.json` (search: `"version"`) and `packages/pypi/pyproject.toml` (search:
+`version =`) must both match `VERSION`, and `canonical/aid/scripts/release/check-version-sync.sh`
+is what enforces it. A literal here was stale within three releases (1.1.1, then 2.0.6, then the
+current value), which is why this doc asserts the lockstep and not the number.
 
 ---
 

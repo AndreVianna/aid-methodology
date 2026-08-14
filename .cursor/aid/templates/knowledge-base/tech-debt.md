@@ -10,7 +10,7 @@ owner: architect
 audience: [developer, architect, pm]
 intent: |
   Severity-tagged technical debt items with remediation paths. Read this before starting work in any area; declared debt items may affect approach or scope.
-contracts: []
+review-criteria: []
 ---
 
 # Tech Debt

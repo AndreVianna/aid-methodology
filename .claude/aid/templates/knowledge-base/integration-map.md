@@ -12,7 +12,7 @@ owner: architect
 audience: [developer, architect]
 intent: |
   External integration topology — what the project consumes, what it exposes, and the communication patterns between components. Read this for integration-touching work.
-contracts: []
+review-criteria: []
 ---
 
 # Integration Map

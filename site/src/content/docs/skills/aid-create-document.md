@@ -57,7 +57,7 @@ Every node in the chart above, in chart order, with the exact `canonical/` text 
 
 <a id="fragment-n1"></a>**1 · `INTAKE`** · _entry_
 
-~~~~plaintext title="canonical/skills/aid-create-document/SKILL.md#L41-L61" wrap
+~~~~plaintext title="canonical/skills/aid-create-document/SKILL.md#L40-L60" wrap
 ## State: INTAKE
 
 1. **Require a subject.** Empty argument -> ask one bootstrapping question ("What do you
@@ -81,11 +81,11 @@ Every node in the chart above, in chart order, with the exact `canonical/` text 
    `phase` not driven).
 ~~~~
 
-[Source: `canonical/skills/aid-create-document/SKILL.md#L41-L61`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-create-document/SKILL.md#L41-L61) · [full step: `canonical/skills/aid-create-document/SKILL.md#L41-L63`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-create-document/SKILL.md#L41-L63)
+[Source: `canonical/skills/aid-create-document/SKILL.md#L40-L60`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-create-document/SKILL.md#L40-L60) · [full step: `canonical/skills/aid-create-document/SKILL.md#L40-L62`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-create-document/SKILL.md#L40-L62)
 
 <a id="fragment-n2"></a>**2 · `AUTHOR`** · _step_
 
-~~~~plaintext title="canonical/skills/aid-create-document/SKILL.md#L67-L74" wrap
+~~~~plaintext title="canonical/skills/aid-create-document/SKILL.md#L66-L73" wrap
 ## State: AUTHOR
 
 Dispatch **`aid-tech-writer`** (clean context, tiered) to write the document in the resolved
@@ -96,11 +96,11 @@ It drafts into the work folder (not yet placed). Text formats are produced nativ
 `.pptx`/`.xlsx`), it produces the best text form and notes the conversion handoff.
 ~~~~
 
-[Source: `canonical/skills/aid-create-document/SKILL.md#L67-L74`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-create-document/SKILL.md#L67-L74) · [full step: `canonical/skills/aid-create-document/SKILL.md#L67-L76`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-create-document/SKILL.md#L67-L76)
+[Source: `canonical/skills/aid-create-document/SKILL.md#L66-L73`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-create-document/SKILL.md#L66-L73) · [full step: `canonical/skills/aid-create-document/SKILL.md#L66-L75`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-create-document/SKILL.md#L66-L75)
 
 <a id="fragment-n3"></a>**3 · `VERIFY`** · _loop-back_
 
-~~~~plaintext title="canonical/skills/aid-create-document/SKILL.md#L80-L88" wrap
+~~~~plaintext title="canonical/skills/aid-create-document/SKILL.md#L79-L87" wrap
 ## State: VERIFY
 
 1. **Mechanical grounding check** (no dispatch): claims about the project cite a KB doc or
@@ -112,11 +112,11 @@ It drafts into the work folder (not yet placed). Text formats are produced nativ
    to AUTHOR. Circuit-breaker: 3 cycles -> IMPEDIMENT + `lifecycle: Blocked`.
 ~~~~
 
-[Source: `canonical/skills/aid-create-document/SKILL.md#L80-L88`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-create-document/SKILL.md#L80-L88) · [full step: `canonical/skills/aid-create-document/SKILL.md#L80-L90`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-create-document/SKILL.md#L80-L90)
+[Source: `canonical/skills/aid-create-document/SKILL.md#L79-L87`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-create-document/SKILL.md#L79-L87) · [full step: `canonical/skills/aid-create-document/SKILL.md#L79-L89`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-create-document/SKILL.md#L79-L89)
 
 <a id="fragment-n4"></a>**4 · `PRESENT`** — hard stop -- human final say before placing · _decision_
 
-~~~~plaintext title="canonical/skills/aid-create-document/SKILL.md#L94-L98" wrap
+~~~~plaintext title="canonical/skills/aid-create-document/SKILL.md#L93-L97" wrap
 ## State: PRESENT  (hard stop -- human final say before placing)
 
 Set `lifecycle: Paused-Awaiting-Input`. Present the drafted document **and the proposed
@@ -124,11 +124,11 @@ target location** (KB-informed: `docs/`, an ADR dir, `CHANGELOG.md`, a runbook p
 Await approval. **Never writes `.aid/knowledge/`.**
 ~~~~
 
-[Source: `canonical/skills/aid-create-document/SKILL.md#L94-L98`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-create-document/SKILL.md#L94-L98) · [full step: `canonical/skills/aid-create-document/SKILL.md#L94-L100`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-create-document/SKILL.md#L94-L100)
+[Source: `canonical/skills/aid-create-document/SKILL.md#L93-L97`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-create-document/SKILL.md#L93-L97) · [full step: `canonical/skills/aid-create-document/SKILL.md#L93-L99`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-create-document/SKILL.md#L93-L99)
 
 <a id="fragment-n5"></a>**5 · `PLACE`** — only on approval · _step_
 
-~~~~plaintext title="canonical/skills/aid-create-document/SKILL.md#L104-L110" wrap
+~~~~plaintext title="canonical/skills/aid-create-document/SKILL.md#L103-L109" wrap
 ## State: PLACE  (only on approval)
 
 Write the document to its approved target location. **Extra care on overwrite or on the
@@ -138,15 +138,15 @@ overwrite an existing doc. Then optionally print handoffs the user may act on: `
 `/aid-refactor` (an ADR mandating a refactor).
 ~~~~
 
-[Source: `canonical/skills/aid-create-document/SKILL.md#L104-L110`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-create-document/SKILL.md#L104-L110) · [full step: `canonical/skills/aid-create-document/SKILL.md#L104-L112`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-create-document/SKILL.md#L104-L112)
+[Source: `canonical/skills/aid-create-document/SKILL.md#L103-L109`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-create-document/SKILL.md#L103-L109) · [full step: `canonical/skills/aid-create-document/SKILL.md#L103-L111`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-create-document/SKILL.md#L103-L111)
 
 <a id="fragment-n6"></a>**6 · `DONE`** · _exit_ · UNSPECIFIED
 
-~~~~plaintext title="canonical/skills/aid-create-document/SKILL.md#L116-L119" wrap
+~~~~plaintext title="canonical/skills/aid-create-document/SKILL.md#L115-L118" wrap
 ## State: DONE
 
 Set `lifecycle: Completed`, `updated` now, append a `## Lifecycle History` row. Keep the
 work folder (draft + verify ledger) as the audit record.
 ~~~~
 
-[Source: `canonical/skills/aid-create-document/SKILL.md#L116-L119`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-create-document/SKILL.md#L116-L119) · [full step: `canonical/skills/aid-create-document/SKILL.md#L116-L119`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-create-document/SKILL.md#L116-L119)
+[Source: `canonical/skills/aid-create-document/SKILL.md#L115-L118`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-create-document/SKILL.md#L115-L118) · [full step: `canonical/skills/aid-create-document/SKILL.md#L115-L118`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-create-document/SKILL.md#L115-L118)

@@ -281,18 +281,20 @@ is_migrated() {
 }
 
 # ---------------------------------------------------------------------------
-# Candidate sources derivation: grep intent/contracts for path refs and URLs.
+# Candidate sources derivation: grep intent + the criteria field for path refs and URLs.
+# The criteria field is accepted under BOTH names during the coexistence window:
+# `review-criteria:` (current) and `contracts:` (the pre-rename name still on disk).
 # Output goes to stdout; one candidate per line.
 # ---------------------------------------------------------------------------
 
 propose_sources_candidates() {
     local f="$1"
-    local intent_text contracts_text combined
+    local intent_text criteria_text combined
 
     # Extract intent (literal block)
     intent_text="$(fm_literal "$f" "intent")"
-    # Extract contracts block
-    contracts_text="$(awk '
+    # Extract the criteria block (either key -- see the coexistence note above)
+    criteria_text="$(awk '
         BEGIN { in_fm=0; in_field=0; indent=-1 }
         /^---$/ { in_fm = !in_fm; if (!in_fm) exit; next }
         in_fm && in_field {
@@ -305,10 +307,10 @@ propose_sources_candidates() {
             print
             next
         }
-        in_fm && /^contracts:/ { in_field=1; next }
+        in_fm && /^(review-criteria|contracts):/ { in_field=1; next }
     ' "$f")"
 
-    combined="${intent_text}"$'\n'"${contracts_text}"
+    combined="${intent_text}"$'\n'"${criteria_text}"
 
     # (a) repo path refs: tokens with file extensions
     local path_refs
@@ -557,7 +559,8 @@ parse_worksheet() {
 # Frontmatter rewriter: write the new fields into a doc.
 # Uses a temp file + mv for atomicity.
 # Inserts objective/summary/sources/approved_at_commit in canonical order
-# above contracts:; retires intent: literal block and the changelog: field.
+# above the criteria field (review-criteria: or the legacy contracts:); retires the
+# intent: literal block and the changelog: field.
 # ---------------------------------------------------------------------------
 
 rewrite_doc() {
@@ -638,7 +641,7 @@ rewrite_doc() {
             }
         }
         # Before contracts: or changelog: write the new fields
-        if (!new_fields_written && /^(contracts:|changelog:)/) {
+        if (!new_fields_written && /^(review-criteria:|contracts:|changelog:)/) {
             emit_new_fields()
             new_fields_written = 1
         }

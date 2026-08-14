@@ -17,10 +17,22 @@ tags: [C3, authoring, kb-authoring, reviewer-ledger, frontmatter, content-isolat
 see_also: [coding-standards.md, artifact-schemas.md]
 owner: architect
 audience: [developer, architect, tech-writer, reviewer]
-contracts:
-  - "Every KB doc layout: frontmatter -> title -> index -> content; no Change Log section"
-  - "Reviewer ledger is a 7-column table; Severity + Status are closed enums"
-  - "Required frontmatter fields: objective, summary, sources (lint-graded)"
+review-criteria:
+  - id: F-01
+    kind: validate
+    criterion: "Every KB doc layout stated here holds: frontmatter, title, index, content sections, and no history section"
+    severity: MEDIUM
+    why: "This doc IS the layout contract, so a layout claim that is false here is false everywhere it is enforced -- and it was: it asserted a Change Log last section that the rule forbids and this file does not have"
+  - id: F-02
+    kind: validate
+    criterion: "The reviewer ledger is described as a 7-column table with closed Severity and Status enums, consistent with reviewer-ledger-schema.md"
+    severity: HIGH
+    why: "A second, divergent description of the ledger teaches a reviewer to write rows grade.sh cannot parse"
+  - id: F-03
+    kind: validate
+    criterion: "The required frontmatter fields named here are objective, summary and sources, matching what lint-frontmatter.sh grades"
+    severity: MEDIUM
+    why: "The lint is the oracle; a field list that disagrees with it either blocks a valid doc or lets an invalid one through"
 ---
 
 # Authoring Conventions
@@ -44,6 +56,8 @@ load-bearing core.
 ## Contents
 
 - [KB Document Layout](#kb-document-layout)
+- [Review Criteria — Type Registry](#review-criteria--type-registry)
+- [Review Criteria — Criteria by Level](#review-criteria--criteria-by-level)
 - [Frontmatter Rules](#frontmatter-rules)
 - [Dual-Audience Standard](#dual-audience-standard)
 - [Drift-Prone Content is Banned](#drift-prone-content-is-banned)
@@ -70,12 +84,105 @@ Every KB document MUST follow this top-to-bottom order (kb-authoring P10):
 | 1 | Frontmatter | YAML block between `---` markers; first content in the file (no BOM, no blank line before). |
 | 2 | Title | a single `# Doc Title`. |
 | 3 | Index / contents | required when the doc has more than 3 sections. |
-| 4 | Content sections | the concern's substance; the last one ends the document. |
+| 4 | Content sections | the concern's substance. |
 
-A KB doc carries **no** `## Change Log` / `## Revision History` section and no
-`changelog:` frontmatter field. Git records per-doc history with author, date and
-full diff, at higher fidelity and without drift -- use `git log --follow -p <doc>`.
-Enforced as a `[HIGH]` `[AUTHORING-LAYOUT]` finding during review.
+**There is no history section.** A KB doc carries no `## Change Log` / `## Revision History`
+and no `changelog:` frontmatter field: git records per-doc history with author, date and diff,
+at higher fidelity and without drift. Delete the section and the field where either still
+appears; never author a new one. Every doc in this KB, including this one, ends with its last
+content section.
+
+---
+
+## Review Criteria — Type Registry
+
+A reviewer validates an authored artifact against the **criteria declared for it**, resolved through
+three levels: **global** criteria (this document, `Applies to: *`), **per-document-type** criteria (this
+document, keyed by type), and **per-file** exceptions (the file's own `review-criteria:` frontmatter).
+The reviewer validates against the **union**; the most specific declaration wins on conflict. A criterion
+is written **once, at the highest level where it is true** — a rule true for two files belongs at the
+type level, one true for two types belongs at global — so most files declare few criteria or none.
+
+This registry answers "what document types exist, and which one is a given file?". It covers the
+in-scope corpus — the markdown under `canonical/skills/`, `canonical/agents/`,
+`canonical/aid/templates/` and `.aid/knowledge/` — so every in-scope markdown file resolves to exactly
+one type (criterion `G-07`).
+
+**Resolution is first match in table order.** Rows are ordered most-specific-first and a file takes the
+first row whose selector it satisfies; the two catch-all rows (`kb-doc`, `template-own`) close their
+trees. Ordering is what makes the selectors mutually exclusive in practice rather than by careful
+wording: `.aid/knowledge/STATE.md` satisfies `state`, `kb-generated` and `kb-meta` at once, and resolves
+to `state` because that row comes first.
+
+| Type | Selector | Notes |
+|------|----------|-------|
+| `state` | any `STATE.md`, at any depth in any folder | never reviewed (see `G-04`); first row, so a `STATE.md` inside another tree never resolves to that tree's type |
+| `kb-generated` | a `.md` under `.aid/knowledge/` with `source: generated` (e.g. `INDEX.md`, `relationships.md`) | build-verify only; content not graded (C-5). Ahead of `kb-meta`, so a generated meta doc is build-verified rather than field-checked |
+| `kb-meta` | a `.md` under `.aid/knowledge/` with `kb-category: meta` (e.g. `external-sources.md`) | spot-check of top-level fields only |
+| `kb-doc` | any other `.md` under `.aid/knowledge/` | the hand-authored knowledge docs — `kb-category: primary` or `extension` with `source: hand-authored`; the catch-all that closes the KB tree |
+| `skill-generated` | a `canonical/skills/<name>/SKILL.md` whose `<name>` is a row in `shortcut-catalog.yml` | rebuilt by the generator; no file-level block (see `SK-02`) |
+| `skill-authored` | a `canonical/skills/<name>/SKILL.md` whose `<name>` is not a `shortcut-catalog.yml` row | hand-authored; may carry a file-level block |
+| `skill-reference` | a `.md` under `canonical/skills/*/references/` | the procedure bodies an agent executes |
+| `agent` | a `canonical/agents/*/AGENT.md` | may carry a file-level block; `render.py` carries it through |
+| `template-payload` | a file under `canonical/aid/templates/` whose frontmatter belongs to the artifact the template EMITS rather than to the template. Three recognizers, any one sufficient: placeholder tokens (`{project}`, `{grade or Pending}`); an **unquoted** choice-list in a value position (`delivery_state: Pending-Spec | Specified | ...`) — a pipe inside a quoted string is prose, not a choice list; or an opening key drawn from the emitted artifact's own schema — `pipeline:`, `delivery_state:`, `state:`. **`kb-category:` is deliberately NOT a recognizer**: a template may carry it about itself (`reviewer-ledger-schema.md` does), and the `knowledge-base/` doc templates are already caught by their placeholders | no file-level block (see `TP-01`). Includes the `knowledge-base/` doc templates: their frontmatter is the emitted KB doc's, so a `review-criteria:` there is the EMITTED doc's declaration, not the template's |
+| `template-own` | any other file under `canonical/aid/templates/` — its frontmatter describes itself, or it has none | the catch-all that closes the template tree (e.g. `reviewer-ledger-schema.md`); may carry a file-level block. Ordered after `template-payload`, so a payload template never falls here |
+
+---
+
+## Review Criteria — Criteria by Level
+
+One row per criterion, carrying the same fields as the frontmatter object (`id`, `kind`, `criterion`,
+`severity`, `why`). **Applies to** takes one of three values: `*` means global (level 1); one **or more
+comma-separated registry type names** mean level 2 — a criterion true of two types stays ONE row naming
+both, because two rows saying the same thing is the duplication this table exists to make visible; and a
+**file class named by the criterion itself** scopes a global
+exclusion to a set of files that is not a document type. Only two rows use the third form —
+`agent-context` (`G-05`) and `rendered` (`G-06`) — and each is deliberately not a registry type: the
+files they cover are not in-scope authored artifacts at all, so giving them a type would put them
+inside `G-07`'s "every in-scope file resolves to exactly one type" and make the registry claim
+something false. Each such row's `criterion` cell states its own membership test. A `kind:
+exclude` row records what a reviewer must **not** validate (where it would otherwise reasonably check)
+and carries **no** severity — an exclusion is not a defect kind, and there is no severity of zero. **No
+cell may contain a pipe** — a criterion needing one is rephrased (this constrains the markdown table
+only; the YAML frontmatter has no such limit).
+
+A finding cites a criterion by its `id` as a prefix inside the ledger's existing `Description` cell — a
+scope-prefixed id (`G-`, `KB-`, `SK-`, …) resolves here; a file-local `F-` id resolves in the file named
+in the ledger's `Doc` column. A finding citing no id, or an id resolving nowhere, is itself a defect.
+
+| ID | Applies to | Kind | Criterion | Severity | Why |
+|----|-----------|------|-----------|----------|-----|
+| G-01 | `*` | validate | No cosmetic count unless it is load-bearing and measured from disk at authoring time | MINOR | counts drift every commit; the reader can run `wc -l` |
+| G-02 | `*` | validate | Every citation is a durable anchor (path plus a grep-recoverable symbol or heading), never a bare `file.ext:LINE` | LOW | line numbers move on the next edit above them |
+| G-03 | `*` | validate | A resolved or closed tracked item leaves no trace — its row, detail, and closure prose are removed | MEDIUM | a resolved item still visible reads as open; git is the audit trail |
+| G-04 | `state` | exclude | Never reviewed, at any level, in any folder | — | bookkeeping; a completed run's rows are correct as history, so any content check fires forever |
+| G-05 | `agent-context` | exclude | The root `CLAUDE.md` / `AGENTS.md` are never content-reviewed | — | shared host files; AID owns only the `AID:BEGIN`/`AID:END` region and points at truth rather than holding it; they carry no frontmatter to declare this on |
+| G-06 | `rendered` | exclude | A file that IS a render is not content-reviewed — it appears as a `dst` in an emission manifest, OR it sits under `profiles/<tool>/` and has a corresponding `canonical/` source | — | byte-identical output of `canonical/`; the byte-compare gate is its review. Keyed on provenance not path, so authored repo-local content under a dogfood tree stays reviewable |
+| G-07 | `*` | validate | Every in-scope markdown file resolves to exactly one type in the registry above | HIGH | FR-10 backstop; an untyped file has no resolved criteria and drifts unchecked |
+| G-08 | `*` | validate | No superseded frontmatter field survives in a file's OWN frontmatter -- `intent:` is replaced by `objective:` plus `summary:`, and `changelog:` is not a valid field at all. A KB-doc TEMPLATE is out of reach whatever type it resolves to: its frontmatter belongs to the artifact it emits, and `tests/canonical/test-kb-template-authoring-standard.sh` requires the emitted shape to keep `intent:` while the coexistence window is open -- that test is the contract, so it bounds this criterion rather than the reverse | LOW | the rule to delete them existed with no id, so a reviewer that found one could not cite it and had to report outside the ledger; a rule nobody can cite is not enforced |
+| KB-01 | `kb-doc` | validate | Required frontmatter is present and single-line: `objective`, `summary`, `sources` | HIGH | lint-graded; a missing or malformed field misroutes the doc |
+| KB-02 | `kb-doc` | validate | Exactly one concern per doc, and the layout holds: frontmatter, title, index, content sections, and no history section | MEDIUM | mixing concerns is a boundary smell; layout is a fixed contract, and a history section drifts from git |
+| KB-03 | `kb-generated` | exclude | Content is not graded; only that the generator ran (build-verify) | — | the generator is the oracle (C-5) |
+| KB-04 | `kb-meta` | validate | Only the top-level fields are checked -- that they are present and current; the body is not content-graded | LOW | a meta doc orients a reader to the KB rather than asserting project facts, so there is little in its body that can be wrong about the project |
+| SK-01 | `skill-authored` | validate | Every agent named in a Dispatch table resolves to `canonical/agents/<name>/` | HIGH | a skill dispatching a non-existent agent fails at run time |
+| SK-02 | `skill-generated` | exclude | Carries no file-level `review-criteria:` block; type-level criteria only | — | rebuilt from `shortcut-catalog.yml`; anything hand-written is erased on the next run |
+| SR-01 | `skill-reference`, `template-own` | validate | Every instruction-content pointer resolves to a path that exists in an installed tree | HIGH | both types are procedure bodies an agent follows at run time, so a broken pointer is followed rather than noticed |
+| AG-01 | `agent` | validate | The `name:` matches the folder, and any agent it references resolves under `canonical/agents/` | MEDIUM | a name/folder mismatch mis-dispatches |
+| TO-01 | `template-own` | exclude | A template inlined into another file by an `{{include:<name>}}` token carries no file-level `review-criteria:` block — currently `agent-boilerplate.md`, inlined by every `canonical/agents/*/AGENT.md` | — | the include copies the file verbatim, so frontmatter here is injected as a stray delimiter block into the middle of every including file |
+| TP-01 | `template-payload` | exclude | Carries no file-level `review-criteria:` block; its frontmatter is the emitted artifact's | — | a block here would be stamped onto every generated artifact |
+
+**Severity** on a `validate` criterion is what a violation of that criterion costs, resolved through the
+same three levels (a file may override a higher level's severity by restating the criterion's `id` with
+a mandatory `why`; the reviewer records the effective value in the finding's `Evidence` cell).
+
+**Where severity lives, and where it does not.** This table is the only home for **per-type severity** —
+what a defect kind costs in a given class of document — because that is a convention, and conventions
+live here. It is deliberately not duplicated into `quality-gates.md`. What that document and
+`canonical/aid/templates/grading-rubric.md` own instead is the **grading machinery**: the five-level
+scale itself (`grading-rubric.md § Issue Severities`), the severity-to-letter mapping and quantity
+modifiers (`§ Grade Calculation`), and the thresholds a phase must clear. This table **prices** each
+criterion against that scale and redefines nothing; the two cross-reference and never restate each
+other.
 
 ---
 
@@ -95,7 +202,9 @@ generator-written.
 | `tags:` | optional | concrete keywords; **MUST include the concern/dimension id** (e.g. `C2`) by convention -- that is how a doc anchors to the spine. |
 | `see_also:`, `owner:`, `audience:` | optional | negative-routing pointers, accountable role, target readers (all free strings, not enums). |
 | `approved_at_commit:` | generator-written | git SHA freshness baseline; **never hand-authored.** |
-| `intent:`, `contracts:`, `changelog:` | legacy/optional | `intent:` is superseded by objective+summary; `changelog:` newest-first. |
+| `review-criteria:` | optional | the criteria a reviewer validates this doc against -- declare only what is true of THIS doc; see [Review Criteria -- Criteria by Level](#review-criteria--criteria-by-level). |
+| `contracts:` | pre-rename name of `review-criteria:` | the same field under its old name, still on disk in docs whose data has not been migrated yet. Read it as `review-criteria:`; rename it on the next touch. Its entries were plain strings, so a rename is not enough -- each becomes an object, and a string entry has no `id`, which means no finding can cite it. |
+| `intent:`, `changelog:` | legacy | `intent:` is superseded by objective+summary; `changelog:` is **not a valid field** -- delete it where it survives. |
 
 - **Rule:** a new hand-authored primary/extension doc MUST carry `objective:`,
   `summary:`, and `sources:` -- these are lint-graded (`lint-frontmatter.sh`),
@@ -138,8 +247,7 @@ without adding knowledge (kb-authoring P1):
    The reader can run `wc -l`. Replace with a structural assertion only where the
    count is load-bearing.
 2. **Dates without semantic anchor** -- "as of 2026-05-22"; git carries this.
-   Allowed only in `STATE.md` history, the frontmatter `changelog:`, or as a
-   load-bearing inflection marker.
+   Allowed only in `STATE.md` history, or as a load-bearing inflection marker.
 3. **Other low-value clutter** -- judgment call; default to removal, ask the user
    when unclear.
 4. **Positional citations** -- see [Citation Rule](#citation-rule-durable-anchors).
@@ -186,7 +294,7 @@ contracts.
 A KB doc records **current state only** (kb-authoring P9). When a tracked item is
 resolved -- a `tech-debt.md` entry fixed, a Q&A answered, an open question closed --
 its record is removed **entirely** (the row, the detail, any "closed items"
-roll-call, any closure prose in `changelog:`). Do not keep a closure record "for
+roll-call). Do not keep a closure record "for
 history" -- git history is the only retained audit trail. A resolved item still
 visible anywhere (including in the generated `kb.html`) is a defect.
 
@@ -292,7 +400,7 @@ content.**
 
 - **Authoring a new KB doc:** start from the seed template or a custom layout;
   fill `objective:`/`summary:`/`sources:` + a concern id in `tags:`; one concern
-  only; tables over prose; no diagrams; durable citations; no Change Log section;
+  only; tables over prose; no diagrams; durable citations; no history section;
   run `lint-frontmatter.sh` + `kb-citation-lint.sh` before done.
 - **Writing a review:** emit the 7-column ledger as the whole file at
   `.aid/.temp/review-pending/<scope>.md`; closed Severity/Status enums; no narrative.
@@ -324,3 +432,6 @@ content.**
 **Read alongside:** the `minimum_grade` floor (`.aid/settings.yml`, default `A`)
 is the bar a review must clear before a phase advances; the reviewer applies the
 rubric in `kb-authoring/review-rubric.md`.
+
+---
+

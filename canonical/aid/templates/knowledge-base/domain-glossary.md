@@ -10,7 +10,7 @@ owner: architect
 audience: [developer, architect, pm]
 intent: |
   Project-specific vocabulary with definitions. Disambiguates terms that mean different things in different contexts; canonical reference for naming.
-contracts: []
+review-criteria: []
 ---
 
 # Domain Glossary

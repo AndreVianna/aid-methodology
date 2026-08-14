@@ -19,14 +19,22 @@ tags: [C8, infrastructure, ci-cd, release, distribution, versioning, dashboard]
 see_also: [technology-stack.md, integration-map.md, tech-debt.md, test-landscape.md]
 owner: devops
 audience: [developer, devops, architect]
-intent: |
-  How AID ships and runs: source control, CI/CD, the multi-profile render, the
-  release pipeline (release.sh + 3 channels), install bootstrap + manifests,
-  versioning/version-sync, and the dashboard server runtime.
-contracts:
-  - "The release tag v<VERSION> is the single trigger that gates + publishes all channels"
-  - "All four version carriers (VERSION, package.json, pyproject.toml, tag) must agree or the release gate fails"
-  - "github-release runs before npm/PyPI so the authoritative artifact channel exists first"
+review-criteria:
+  - id: F-01
+    kind: validate
+    criterion: "The release tag v<VERSION> is the single trigger that gates and publishes every channel"
+    severity: HIGH
+    why: "If a second trigger exists, a channel can publish without passing the gate, which is the failure this design exists to prevent"
+  - id: F-02
+    kind: validate
+    criterion: "All four version carriers -- VERSION, package.json, pyproject.toml, and the tag -- must agree or the release gate fails"
+    severity: HIGH
+    why: "A disagreement ships a package whose declared version is not the one that was gated"
+  - id: F-03
+    kind: validate
+    criterion: "github-release runs before the npm and PyPI publishes"
+    severity: MEDIUM
+    why: "The authoritative artifact channel has to exist before the wrappers point at it, or a published wrapper resolves to nothing"
 ---
 
 # Infrastructure

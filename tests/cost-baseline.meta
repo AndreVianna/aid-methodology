@@ -1,6 +1,6 @@
 # cost-meter baseline provenance (auto-generated -- do not edit)
-captured_utc: 2026-08-14T17:36:36Z
-commit_sha: 547c8f73616a0e576ea5592ac5b30da96d20412e
+captured_utc: 2026-08-14T19:57:51Z
+commit_sha: f8039126ff6cdd95e846d9506fbeb8f958264f53
 python3_version: 3.12.3
 chars_per_token: 4
-metric_rows: 480
+metric_rows: 471

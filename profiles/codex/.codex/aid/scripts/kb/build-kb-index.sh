@@ -444,8 +444,12 @@ intent: |
   which KB doc to read for what knowledge. Each row carries Document, Audience,
   Tags, See-instead, Objective, and Summary columns composed from frontmatter.
   Regenerated on every /aid-discover cycle.
-contracts:
-  - "One entry per non-dot, non-recursive KB document under .aid/knowledge/"
+review-criteria:
+  - id: F-01
+    kind: validate
+    criterion: "One entry per non-dot, non-recursive KB document under .aid/knowledge/"
+    severity: HIGH
+    why: "Every agent task prompt routes through this table; a missing or extra row misroutes the read"
 ---
 
 <!-- AUTO-GENERATED $TS by .codex/aid/scripts/kb/build-kb-index.sh -->

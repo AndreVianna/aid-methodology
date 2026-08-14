@@ -22,11 +22,18 @@ tags: [C2, integrations, external-deps, git, github, npm, pypi, host-tools, dash
 see_also: [pipeline-contracts.md, external-sources.md, infrastructure.md, architecture.md]
 owner: architect
 audience: [developer, architect]
-intent: |
-  External integration topology — what AID consumes, what it exposes, and how. Read this for
-  integration-touching work (install channels, CI, distribution, host-tool profiles, dashboard,
-  connectors).
-contracts: []
+review-criteria:
+  - id: F-01
+    kind: validate
+    criterion: >
+      Every integration named here is anchored to a concrete artifact on disk -- a workflow, a
+      config file, a package directory, or a connector descriptor -- never to prose alone.
+    severity: MEDIUM
+    why: >
+      An integration that exists only as a paragraph here cannot be told apart from one that was
+      removed, and this doc is where an agent looks to find out which external systems are real.
+      G-02 does not cover this: it governs the FORM of a citation (a durable anchor rather than a
+      line number), not whether the thing cited still exists.
 ---
 
 # Integration Map

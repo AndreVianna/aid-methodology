@@ -22,17 +22,37 @@ tags: [C6, testing, coverage, frameworks, ci, gaps]
 see_also: [quality-gates.md, technology-stack.md, infrastructure.md, tech-debt.md]
 owner: developer
 audience: [developer, architect]
-intent: |
-  The automated test landscape: frameworks, the canonical helper suites, installer
-  tests, CI lanes (test/docs/installer-tests/release), the WinPS 5.1 compat lane,
-  render-drift, and where heavy gates run. Read before writing or modifying tests.
-contracts:
-  - "tests/run-all.sh discovers suites by glob tests/canonical/test-*.sh — adding a suite needs no runner edit"
-  - "Every canonical suite runs under `timeout 300` in an isolated bash process"
-  - "node and pwsh must be present in CI or environment-dependent suites silently skip (CI fails loudly if absent)"
-  - "A suite with no `# COVERS:` header is treated by select-suites.sh as covering EVERYTHING and is always selected — forgetting the header costs time, never coverage"
-  - "select-suites.sh is not itself a counted suite: its name falls outside the tests/canonical/test-*.sh glob, so run-all.sh never runs it"
-  - "A suite never mutates the source tree: mutation runs operate on a copy in mktemp -d and assert the subject is byte-identical to HEAD afterwards (S5)"
+review-criteria:
+  - id: F-01
+    kind: validate
+    criterion: "tests/run-all.sh discovers suites by the glob tests/canonical/test-*.sh, so adding a suite needs no runner edit"
+    severity: MEDIUM
+    why: "It is why a new suite runs without being registered, and why a file named outside the glob silently never runs"
+  - id: F-02
+    kind: validate
+    criterion: "Every canonical suite runs under a timeout in an isolated bash process"
+    severity: MEDIUM
+    why: "A suite that hangs would otherwise stall the whole run rather than failing one line of it"
+  - id: F-03
+    kind: validate
+    criterion: "node and pwsh must be present in CI, or the suites that depend on them skip"
+    severity: HIGH
+    why: "A silent skip reads as a pass; this is the difference between a green run and an unrun one"
+  - id: F-04
+    kind: validate
+    criterion: "A suite with no COVERS header is treated by select-suites.sh as covering everything and is always selected"
+    severity: LOW
+    why: "Forgetting the header costs run time, never coverage -- stated so nobody adds one to make a suite skip"
+  - id: F-05
+    kind: validate
+    criterion: "select-suites.sh is not itself a counted suite; its name falls outside the discovery glob"
+    severity: LOW
+    why: "Otherwise the selector would select itself and the suite count would be off by one"
+  - id: F-06
+    kind: validate
+    criterion: "A suite never mutates the source tree -- mutation runs operate on a copy and assert the subject is byte-identical afterwards"
+    severity: HIGH
+    why: "A suite that writes into the tree corrupts the thing under test, and the next suite grades the corruption"
 ---
 
 # Test Landscape
@@ -85,17 +105,21 @@ because it must validate Bash, PowerShell, Python, and Node code paths.
 
 | Framework / harness | Type | Location | Notes |
 |---|---|---|---|
-| Bespoke Bash test harness | Unit + integration | `tests/canonical/test-*.sh` (144 suites) | The dominant suite; run via `tests/run-all.sh`. CONFIRMED 2026-08-05 via `ls tests/canonical/test-*.sh \| wc -l` = 144. Re-run that command rather than trusting this number: it has been stale in this document twice. |
-| Bespoke PowerShell test (`T<NN>` IDs) | Installer integration | `tests/windows/Test-AidInstaller.ps1` (~2406 lines) | Windows-only; not in `run-all.sh`. |
+| Bespoke Bash test harness | Unit + integration | `tests/canonical/test-*.sh` | The dominant suite; run via `tests/run-all.sh`. **The count is deliberately not stated** -- `ls tests/canonical/test-*.sh \| wc -l` is the only reliable answer, and a figure here went stale three times before it was removed. |
+| Bespoke PowerShell test (`T<NN>` IDs) | Installer integration | `tests/windows/Test-AidInstaller.ps1` | Windows-only; not in `run-all.sh`. |
 | `pytest` | Unit | `dashboard/reader/tests/`, `dashboard/server/tests/` | Python reader/server parsers + fixtures. |
 | Node built-in test | Unit | `dashboard/server/tests/test_server_node.mjs` | Node `.mjs` server tests. |
 | Playwright (Chromium, headless) | Visual fidelity (E2E render) | `.claude/aid/scripts/summarize/validate-visuals.mjs` | Validates `kb.html` authored visuals; gated in CI. |
 | Generator `--self-test` harness | Self-test | `.claude/skills/generate-profile/scripts/*.py` | `render_lib`, `render`, `verify_deterministic`, `verify_advisory`, `test_manifest_safety`. |
 | Astro / TypeScript tests | Unit | `site/src/data/__tests__/`, `site/scripts/__tests__/` | Site data + docs-sync tests (separate build). |
 
-Of the 144 live suites, **132 are the long-standing suites** — the AC-2 must-pass set. The
-other 12 are `test-coverage-parity.sh`, `test-skill-counts.sh` (the repo-wide count guard),
-`test-shortcut-builder-invariants.sh`, and the **nine** `test-graph-*.sh` suites.
+Most live suites are the **long-standing suites** — the AC-2 must-pass set. The exceptions are
+named rather than counted, because the total moves whenever a suite is added: they are
+`test-coverage-parity.sh`, `test-doc-counts.sh` (the count guard over the public-facing docs),
+`test-shortcut-builder-invariants.sh`, and the `test-graph-*.sh` suites. Derive the totals from
+disk — `ls tests/canonical/test-*.sh` and `ls tests/canonical/test-graph-*.sh` — rather than
+reading them here; the previous phrasing stated 144 / 132 / 12 against a tree that had moved to
+148 suites and 13 graph suites, which is exactly the drift `G-01` exists to stop.
 
 > **Read the count as of a date, not as a fact.** The live total and the must-pass subset are
 > different quantities; state which one a number refers to whenever you cite it.
@@ -125,7 +149,7 @@ Key behaviors (CONFIRMED in `tests/run-all.sh`):
 - **Exit contract.** Exit 0 only if every suite passes; exit 1 if any suite fails (or if no
   suites are found). Under CI it emits `::group::` / `::error::` annotations.
 
-Representative suite families (the 144 cover far more than these):
+Representative suite families (the full set covers far more than these):
 
 | Family | Example suites | What they protect |
 |---|---|---|

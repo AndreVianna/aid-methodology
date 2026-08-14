@@ -31,7 +31,7 @@ flowchart TB
   n4["EXTRACT<br/>EXTRACT harvests the Knowledge Base side of the graph…"]
   n5["EMIT<br/>EMIT assembles the coverage-notes section and then writes…"]
   n6["GAP-REPORT<br/>GAP-REPORT reports which structurally significant source…"]
-  n7["RENDER<br/>RENDER builds .aid/knowledge/graph.html from the artifact…"]
+  n7["RENDER<br/>RENDER builds .aid/knowledge/graph.html and…"]
   n8{"VALIDATE"}
   n9{"VISUAL-GATE"}
   n10["FIX<br/>FIX repairs what the gate found and re-enters the pipeline…"]
@@ -129,13 +129,13 @@ Every node in the chart above, in chart order, with the exact `canonical/` text 
 
 [Source: `canonical/skills/aid-graph/SKILL.md#L131`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-graph/SKILL.md#L131) · [full step: `canonical/skills/aid-graph/references/state-gap-report.md#L1-L92`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-graph/references/state-gap-report.md#L1-L92)
 
-<a id="fragment-n7"></a>**7 · `RENDER`** — RENDER builds .aid/knowledge/graph.html from the artifact… · _loop-back_
+<a id="fragment-n7"></a>**7 · `RENDER`** — RENDER builds .aid/knowledge/graph.html and… · _loop-back_
 
 ~~~~plaintext title="canonical/skills/aid-graph/SKILL.md#L132" wrap
 | RENDER | `references/state-render.md` | inline | → VALIDATE. **Skipped when `view_expected` is false** |
 ~~~~
 
-[Source: `canonical/skills/aid-graph/SKILL.md#L132`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-graph/SKILL.md#L132) · [full step: `canonical/skills/aid-graph/references/state-render.md#L1-L35`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-graph/references/state-render.md#L1-L35)
+[Source: `canonical/skills/aid-graph/SKILL.md#L132`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-graph/SKILL.md#L132) · [full step: `canonical/skills/aid-graph/references/state-render.md#L1-L54`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-graph/references/state-render.md#L1-L54)
 
 <a id="fragment-n8"></a>**8 · `VALIDATE`** — VALIDATE runs this skill's own quality rubric over its own… · _decision_
 
