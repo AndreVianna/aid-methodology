@@ -247,18 +247,62 @@ resolve_work_dir() {
     fi
 }
 
+# wb_get_pipeline_path: echo the work-root STATE.md frontmatter `pipeline.path`
+# value, lowercased, or nothing when there is no frontmatter block, no
+# `pipeline:` mapping, or no `path:` under it. Never throws.
+#
+# The key is NESTED (`pipeline:` then an indented `path:`), matching what the
+# reader twins flatten to `pipeline.path` (state_schema.py documents the
+# mapping: `pipeline:\n  path: lite` -> `{"pipeline.path": "lite"}`).
+wb_get_pipeline_path() {
+    resolve_work_dir
+    local state="${WORK_DIR}/STATE.md"
+    [[ -f "$state" ]] || return 0
+    awk '
+        NR == 1 && $0 !~ /^---[ \t]*$/ { exit }      # no frontmatter block at all
+        NR > 1 && /^---[ \t]*$/        { exit }      # end of the block
+        /^pipeline:[ \t]*$/            { inp = 1; next }
+        inp && /^[ \t]+path:[ \t]*/ {
+            sub(/^[ \t]+path:[ \t]*/, "")
+            gsub(/^["]|["]$/, "")
+            gsub(/[ \t]+$/, "")
+            print tolower($0)
+            exit
+        }
+        inp && /^[^ \t#]/              { inp = 0 }   # a dedented key ends the mapping
+    ' "$state"
+}
+
 # is_flat_layout: return 0 (true) when the work uses the FLATTENED
-# single-delivery layout (feature-001) -- a work-root BLUEPRINT.md is present
-# AND at least one `tasks/task-NNN/DETAIL.md` is present directly under the
-# work root AND no `deliveries/` wrapper exists. Mirrors the SAME 3-part
-# detection rule used by aid-execute's SKILL.md / state-execute.md /
-# state-delivery-gate.md and the dashboard reader twins (reader.py
-# `_detect_flat` / reader.mjs `_detectFlat`) -- all consumers assert all three
-# parts identically (BLUEPRINT.md presence, DETAIL.md presence, deliveries/
-# absence). Presence-based; never throws. Auto-detected per-call -- no new
-# CLI flag needed.
+# single-delivery layout (feature-001).
+#
+# DECLARED FIRST, inferred only as a fallback. The layout is a property of the
+# WHOLE WORK, so it is read from the work-root STATE.md frontmatter
+# (`pipeline.path: lite | full`) -- one declared value, written once by the
+# skill that started the work. A declared value cannot be ambiguous; an inferred
+# one can, and inferring it from a FILE'"'"'S PRESENCE made an ordinary artifact
+# load-bearing: `BLUEPRINT.md` could not be retired or relocated without
+# silently changing how three separate implementations classified the work.
+#
+# The 3-part presence rule survives ONLY as the fallback for un-migrated works
+# whose STATE.md predates the frontmatter block -- a work-root BLUEPRINT.md AND
+# at least one `tasks/task-NNN/DETAIL.md` AND no `deliveries/` wrapper. This is
+# the same declared-first-then-infer shape reader.mjs already documents for the
+# `workPath` field ("stop inferring via _detectFlat/_detectHierarchy when
+# present ... the fallback default for un-migrated works"); this change extends
+# it from the FIELD to the layout DISPATCH, which is what actually made the
+# artifact load-bearing.
+#
+# Mirrors reader.py `_detect_flat` and reader.mjs `_detectFlat` exactly -- all
+# three consumers must agree. Never throws. Auto-detected per-call.
 is_flat_layout() {
     resolve_work_dir
+    local declared
+    declared="$(wb_get_pipeline_path)"
+    if [[ -n "$declared" ]]; then
+        [[ "$declared" == "lite" ]]
+        return
+    fi
     [[ -f "${WORK_DIR}/BLUEPRINT.md" ]] || return 1
     [[ -d "${WORK_DIR}/deliveries" ]] && return 1
     local f

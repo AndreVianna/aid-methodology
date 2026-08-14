@@ -38,6 +38,7 @@ from typing import Optional, Union
 
 from .derivation import derive_doc_freshness, derive_kb_status
 from .io_bounds import read_bytes_bounded
+from .state_schema import parse_frontmatter_scalars
 from .locator import enumerate_worktree_roots, locate_aid_root
 from .models import (
     DeferredIssue,
@@ -999,6 +1000,26 @@ def _detect_hierarchy(work_dir: Path) -> bool:
     return False
 
 
+def _declared_work_path(work_dir: Path) -> Optional[str]:
+    """Return the work-root STATE.md frontmatter `pipeline.path`, or None.
+
+    None means "not declared" -- no STATE.md, no frontmatter block, or the key
+    absent (which includes an unfilled template placeholder, since
+    parse_frontmatter_scalars drops those). Callers fall back to inference.
+    Never throws (NFR7).
+    """
+    try:
+        state = work_dir / "STATE.md"
+        if not state.is_file():
+            return None
+        raw = read_bytes_bounded(state)
+        fm = parse_frontmatter_scalars(raw.decode("utf-8", errors="replace"))
+        value = (fm.get("pipeline.path") or "").strip().lower()
+        return value or None
+    except OSError:
+        return None
+
+
 def _detect_flat(work_dir: Path) -> bool:
     """Return True if this work has the FLATTENED single-delivery layout (feature-001).
 
@@ -1013,11 +1034,29 @@ def _detect_flat(work_dir: Path) -> bool:
     `canonical/aid/scripts/execute/writeback-state.sh` and reader.mjs's
     `_detectFlat` (lockstep Node twin).
 
-    Presence-based, per-work. Mutually exclusive with _detect_hierarchy by
-    construction (this function explicitly asserts `deliveries/` absence,
-    not just call-site ordering). Never throws.
+    DECLARED FIRST, inferred only as a fallback. The layout is a property of the
+    WHOLE WORK, so it is read from the work-root STATE.md frontmatter
+    (`pipeline.path: lite | full`) when that key is present. A declared value
+    cannot be ambiguous; an inferred one can -- and inferring it from a FILE'S
+    PRESENCE made an ordinary artifact load-bearing, so `BLUEPRINT.md` could not
+    be retired or relocated without silently changing how three separate
+    implementations classified the work.
+
+    The 3-part presence rule survives only for un-migrated works whose STATE.md
+    predates the frontmatter block. reader.mjs already documents exactly this
+    shape for the `workPath` FIELD ("stop inferring via
+    _detectFlat/_detectHierarchy when present ... the fallback default for
+    un-migrated works"); this extends it to the layout DISPATCH, which is what
+    actually made the artifact load-bearing.
+
+    Mutually exclusive with _detect_hierarchy by construction (the fallback
+    explicitly asserts `deliveries/` absence, not just call-site ordering).
+    Never throws.
     """
     try:
+        declared = _declared_work_path(work_dir)
+        if declared:
+            return declared == "lite"
         if not (work_dir / "BLUEPRINT.md").is_file():
             return False
         if (work_dir / "deliveries").is_dir():

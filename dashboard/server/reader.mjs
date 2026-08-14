@@ -3425,24 +3425,62 @@ function _detectHierarchy(workDir) {
   return false;
 }
 
+function _declaredWorkPath(workDir) {
+  // Return the work-root STATE.md frontmatter `pipeline.path`, or null.
+  // Mirror reader.py _declared_work_path.
+  //
+  // null means "not declared" -- no STATE.md, no frontmatter block, or the key
+  // absent (which includes an unfilled template placeholder, since
+  // parseFrontmatterScalars drops those). Callers fall back to inference.
+  // Never throws (NFR7).
+  try {
+    const statePath = join(workDir, "STATE.md");
+    let isFile = false;
+    try { isFile = statSync(statePath).isFile(); } catch (_) { isFile = false; }
+    if (!isFile) return null;
+    const fm = parseFrontmatterScalars(readFileBounded(statePath).toString("utf8"));
+    const v = fm["pipeline.path"];
+    if (v === undefined || v === null) return null;
+    const s = String(v).trim().toLowerCase();
+    return s === "" ? null : s;
+  } catch (_) {
+    return null;
+  }
+}
+
 function _detectFlat(workDir) {
   // Return true if this work has the FLATTENED single-delivery layout (feature-001).
   // Mirror reader.py _detect_flat.
   //
-  // Detection rule (3-part; identical across all consumers): a work-root
-  // BLUEPRINT.md exists AND at least one tasks/task-NNN/DETAIL.md exists
-  // directly under the work root AND no `deliveries/` wrapper exists under
-  // the work root. This layout has no per-task STATE.md; this check does not
-  // look for one.
+  // DECLARED FIRST, inferred only as a fallback. The layout is a property of
+  // the WHOLE WORK, so it is read from the work-root STATE.md frontmatter
+  // (`pipeline.path: lite | full`) when that key is present. A declared value
+  // cannot be ambiguous; an inferred one can -- and inferring it from a FILE'S
+  // PRESENCE made an ordinary artifact load-bearing, so `BLUEPRINT.md` could
+  // not be retired or relocated without silently changing how three separate
+  // implementations classified the work.
   //
-  // Mirrors the SAME 3-part detection rule as `is_flat_layout()` in
+  // This file already documented exactly this shape for the `workPath` FIELD
+  // ("stop inferring via _detectFlat/_detectHierarchy when present ... the
+  // fallback default for un-migrated works"); this extends it to the layout
+  // DISPATCH, which is what actually made the artifact load-bearing.
+  //
+  // The 3-part presence rule survives only for un-migrated works whose STATE.md
+  // predates the frontmatter block: a work-root BLUEPRINT.md exists AND at
+  // least one tasks/task-NNN/DETAIL.md exists directly under the work root AND
+  // no `deliveries/` wrapper exists.
+  //
+  // Mirrors the SAME rule as `is_flat_layout()` in
   // canonical/aid/scripts/execute/writeback-state.sh and reader.py's
   // `_detect_flat` (lockstep Python twin).
   //
-  // Presence-based, per-work. Mutually exclusive with _detectHierarchy by
-  // construction (this function explicitly asserts `deliveries/` absence,
-  // not just call-site ordering). Never throws.
+  // Mutually exclusive with _detectHierarchy by construction (the fallback
+  // explicitly asserts `deliveries/` absence, not just call-site ordering).
+  // Never throws.
   try {
+    const declared = _declaredWorkPath(workDir);
+    if (declared !== null) return declared === "lite";
+
     let blueprintIsFile = false;
     try { blueprintIsFile = statSync(join(workDir, "BLUEPRINT.md")).isFile(); } catch (_) { blueprintIsFile = false; }
     if (!blueprintIsFile) return false;
