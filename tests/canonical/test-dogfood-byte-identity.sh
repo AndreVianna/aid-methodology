@@ -152,29 +152,45 @@ dbi_allowlisted() {
     esac
 }
 
-# .cursor/ : EMPTY plus worktrees/*, and copying the .claude/ list above would
-# be the defect (feature-006 risk 8). Six of that list's seven patterns are
-# deliberately NOT carried over -- settings.json, settings.local.json,
+# .cursor/ : worktrees/* plus rules/*, and copying the .claude/ list above would
+# still be the defect (feature-006 risk 8). Five of that list's seven patterns
+# remain deliberately NOT carried over -- settings.json, settings.local.json,
 # projects/*, skills/README.md, skills/generate-profile/* and
 # skills/release-aid/* have no counterpart under .cursor/ at all, so importing
 # them would excuse files that do not exist and check strictly less.
 #
-# What makes EMPTY correct is an ORPHAN count, not a directory count: the
-# repo-root .cursor/ file set and the cursor manifest's .cursor/ dst set
-# coincide exactly, so there is nothing for an allowlist to excuse before
-# worktrees/* excludes anything. (The .claude/-vs-.cursor/ skills-directory
+# rules/* is the .cursor/ counterpart of .claude/'s output-styles/* arm, and for
+# the identical reason: Cursor rule files are maintainer-local HOST-TOOL config,
+# hand-authored in the repo root, never emitted to profiles and never shipped.
+# The arm cannot mask generator drift, which is the only thing an allowlist can
+# get wrong here: the cursor manifest carries ZERO dst entries under
+# .cursor/rules/, and profiles/cursor/.cursor/ has no rules/ directory at all,
+# so the generator never writes there and has nothing to drift from. If that
+# ever changes -- a manifest dst appears under .cursor/rules/ -- Direction 1 and
+# Direction 2 still cover it, because both are driven off the manifest and
+# neither consults this allowlist.
+#
+# This list was previously EMPTY-plus-worktrees, justified by an ORPHAN count:
+# the repo-root .cursor/ file set and the cursor manifest's .cursor/ dst set
+# coincided exactly, so there was nothing for an allowlist to excuse. That
+# premise no longer holds -- a hand-authored .cursor/rules/ file now lives in
+# the tree -- so the justification is recorded here rather than left to imply an
+# invariant that has since changed. (The .claude/-vs-.cursor/ skills-directory
 # comparison explains only why .claude/ needs its two skills/* arms; it says
-# nothing about the other four patterns.)
+# nothing about the other five patterns.)
 #
 # worktrees/* is load-bearing only in the PRIMARY checkout, whose .cursor/
 # carries agents, aid, skills AND worktrees. A worktree checkout's .cursor/
 # holds only agents, aid, skills, so a green run from a worktree never
 # exercises this arm through the live tree -- which is precisely why
-# DBI-CUR-MUT-ALLOW below exercises it against a scratch copy instead.
+# DBI-CUR-MUT-ALLOW below exercises it against a scratch copy instead. rules/*
+# needs no such control: it is exercised by the live tree in BOTH checkout
+# shapes, so a green run proves the arm is live.
 dbi_cursor_allowlisted() {
     local rel="$1"
     case "$rel" in
         worktrees/*) return 0 ;;
+        rules/*)     return 0 ;;
         *) return 1 ;;
     esac
 }
