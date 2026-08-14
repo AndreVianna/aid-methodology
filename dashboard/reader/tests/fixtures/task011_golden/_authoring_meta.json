@@ -1,12 +1,12 @@
 {
   "flat_golden": {
     "old_node_warnings": [],
-    "old_python_equals_old_node": false,
+    "old_python_equals_old_node": true,
     "old_python_warnings": []
   },
   "hierarchical_golden": {
     "old_node_warnings": [],
-    "old_python_equals_old_node": false,
+    "old_python_equals_old_node": true,
     "old_python_warnings": []
   },
   "ki004_golden": {
