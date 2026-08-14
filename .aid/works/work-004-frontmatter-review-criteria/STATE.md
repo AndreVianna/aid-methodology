@@ -5,11 +5,11 @@ pipeline:
 started: "2026-08-12"
 minimum_grade: "A"
 user_approved: yes
-lifecycle: Paused-Awaiting-Input
+lifecycle: Completed
 phase: Execute
 active_skill: aid-execute
-updated: '2026-08-14T04:29:30Z'
-pause_reason: 'AC-4 (exit arithmetic) does not pass on its stated 379-line basis -- owner decision required: accept the criterion as failed, re-base it on the 462 lines actually removed, or revise NFR-2 to count mechanism as executable surface only. Evidence in exit-arithmetic-and-c7-audit.md'
+updated: '2026-08-14T16:28:37Z'
+pause_reason: --
 block_reason: --
 block_artifact: --
 ticket_ref: "--"
@@ -17,7 +17,7 @@ ticket_ref: "--"
 
 # Work State -- work-004-frontmatter-review-criteria
 
-> **State:** Paused-Awaiting-Input -- all 3 deliveries Done (gates A+/A+/A+); AC-4 needs an owner decision
+> **State:** Completed -- all 3 deliveries Done (gates A+/A+/A+); every acceptance criterion met
 > **Phase:** Execute
 
 This is the single state file for **this work** -- the full dev lifecycle from req to spec to plan
@@ -107,6 +107,7 @@ gitignored -- the evidence for a closed pass has to survive the pass.
 | 2026-08-13 | Execute → delivery-001 gate PASS | A+ | All 7 tasks `Done`; `delivery_state` → Done. Gate tier **Large** (complexity 21: tasks=7, depth=4, risk=7, consults=3), **3 cycles**, E+ → C+ → A+. 9 findings, all Fixed. Cycle 1's 8 included a CRITICAL (a stale ledger shape in `review-rubric.md` that would have made `grade.sh` report A+ for any ledger written to it) and the false `## Change Log`-last contract that `KB-02` itself asserted. Cycle 2 caught a regression in cycle 1's own fix. One deferred quick-check row is **Accepted** rather than resolved — a pre-existing three-way self-contradiction in `reviewer-ledger-schema.md` genuinely outside this delivery's scope. Three execution decisions recorded in `deliveries/delivery-001/STATE.md § Cross-phase Q&A` (Q1–Q3), including one in-scope schema addition. AC-2 proved in both directions — evidence in `ac-2-proof.md`. Ready for delivery-002 |
 | 2026-08-13 | Execute → delivery-002 gate PASS | A+ | All 5 tasks `Done`; `delivery_state` → Done. Gate tier **Medium** (complexity 13), **4 cycles**, C → D+ → C+ → A+. 14 findings, all Fixed. The 20 internal READMEs deleted and their `doc-internal` type retired by FR-10; the canonical trees typed (295 files → 290 in-scope population); 8 KB docs at bare `contracts: []` dispositioned; the `contracts:` → `review-criteria:` data rename completed **with shape conversion**, since string entries have no `id` and could never be cited; AC-2 re-proved on a file this delivery populated. Cycle 1's through-line was legacy debt left in files opened to add a declaration; `G-08` was added to close the one gap the mechanism reported about itself. One class defect took three sweeps to close because the first two greps were filtered. Ready for delivery-003 |
 | 2026-08-14 | Execute → delivery-003 gate PASS | A+ | All 5 tasks `Done`; `delivery_state` → Done. Gate tier **Medium** (complexity 11), **2 cycles**, D+ → A+. 4 findings: 1 fixed, 3 **Accepted** after independent verification (an orphan file arriving from `master`; `relationships.md` needing `/aid-graph`, whose inputs task-015 never had; and the generator's three convergence runs not breaching C-2). The count guard is retired (462 lines), the front face describes the mechanism, **the single render ran and cleared every stale derived tree**, and both remaining AC-2 proofs pass. **AC-4 does NOT pass** on its stated 379-line basis — the enforcement surface moved rather than shrank — so the pipeline PAUSES for an owner decision instead of completing. AC-6 passes. All 17 tasks across 3 deliveries are `Done` |
+| 2026-08-14 | Execute → COMPLETE | A+ | AC-4 resolved by **owner decision**: NFR-2's "added" side now counts executable surface only, so the work adds **zero** mechanism lines and AC-4 passes. The owner tested the criterion rather than the number, on four grounds plus the deciding one — the retired guard **encouraged** the defect it caught, because `G-01` says not to state a drift-prone count at all, and stream 3 deleted those counts instead of guarding them. Both measurements are kept on the record, and the enforcement surface is documented as having MOVED rather than shrunk, with its two coverage losses named. All 17 tasks Done, 3 gates A+, every AC met. Deploy and Monitor are optional separate paths, not part of the numbered sequence |
 
 ---
 

@@ -24,6 +24,7 @@
 | 2026-08-13 | **Rule column closed without a column** — every criterion carries a greppable `id` and a finding names it as a prefix inside the existing `Description` cell, so the ledger keeps 7 columns and `grade.sh` its positional parse. Two global exclusions added (`agent-context`, `rendered`); the `rendered` one keyed on **provenance via the emission manifest, not a path glob**, after a path-based draft would have exempted `render.py` and `release-aid` from review. `render.py` to carry `review-criteria` through, so the `agent` type behaves identically for canonical and repo-local members. Ledger: 33 Fixed, 1 Invalid, 0 Pending | /aid-define |
 | 2026-08-13 | **Second cross-reference fix pass — 37 findings.** Every figure re-derived. AC-1's buckets now net the carve-outs out of the buckets, not only the total (159/123/8 = 290); the `Rule` column and the withdrawn `severity:` block removed from the places a prior pass missed; the rename surface enumerated at 52 files across five generator emitters, a migration parser, four `kb-authoring/` docs and the data carriers; the `rendered` exclusion given its **second limb** (`profiles/<tool>/` **with** a `canonical/` source) after the one-limb version was found to reach 0 of 1,376 files under `profiles/`; FR-9 re-targeted from install output to the **five hand-authored `profiles/<tool>/{CLAUDE,AGENTS}.md`**; the `skill` type split like `template` (**58** generator-refreshed of 76); severity overrides settled to the ledger's `Evidence` cell (owner decision) rather than a gate-output change; AC-4's merged 2,181 floor split back to a **379** guard floor; "CI invokes `kb-citation-lint.sh`" retracted as false; the import log given a path and scheduled. FR-8 moved into numeric order | /aid-define |
 | 2026-08-13 | **Correction to the correction pass.** FR-2's stated reason for not adding a ledger column was a **false mechanism** — `grade.sh` indexes `cols[3]`/`cols[4]` from the left and guards only `if (n < 5)`, so an appended column shifts nothing. Replaced with the real reason (edit cost across four documents and every existing ledger, for a citation the `Description` prefix already provides). Two defects introduced *within this pass* were caught before commit: a bare `profiles/**` limb that would have exempted FR-9's own five edit targets, and a "7 of the 290" primary-doc count that is **13** | /aid-define |
+| 2026-08-14 | **Owner revision of NFR-2 (post-execution).** The "added — mechanism lines" side now counts **executable surface only**; authored instruction — a `review-criteria:` block, the criteria tables, a rule written into an agent's instructions — is explicitly not mechanism. Under the original wording AC-4 failed (462 guard lines removed against 519 added); under the revision it passes with zero mechanism added. The reasoning is recorded in NFR-2: the retired guard's defect class is MINOR by this project's own criteria, its determinism was a function of its narrowness rather than something traded away, per-push was the wrong cadence for the class, the corpora the criteria are blind to are correctly out of scope — and decisively, the guard encouraged the very defect it caught, since `G-01` says not to state a drift-prone count at all. AC-4's outcome and the enforcement-surface trade are both recorded rather than glossed | owner |
 
 ### KB hydration assessment (COMPLETION step 2)
 
@@ -918,7 +919,43 @@ draft gave only a floor and never said what counts as "added".
 |---|---|---|
 | **removed — guard lines** | script logic whose job is checking a fact stated in prose | **379** (`check-skill-counts.mjs`) |
 | **removed — documentation lines** | prose deleted outright: the 20 internal READMEs | **1,802** |
-| **added — mechanism lines** | new scripts, checks, validators, or process rules an agent must follow | derived at close |
+| **added — mechanism lines** | **executable surface only**: new scripts, checks, validators, gates, or CI steps. **Authored instruction is NOT mechanism** — neither a `review-criteria:` block, nor the criteria tables, nor a rule written into an agent's instructions. See the owner revision below. | derived at close |
+
+**Owner revision, 2026-08-14 — the "added" side counts executable surface only.**
+
+The original definition ended with *"or process rules an agent must follow"*, which made every line
+of instruction this work wrote count as mechanism. Measured that way the work failed its own
+criterion (462 guard lines removed against 519 added). The revision is not a rescue of the number;
+it is a correction of what the criterion was measuring, on four grounds the owner tested one by one:
+
+1. **The retired guard's defect class is the least severe one in the table.** A cosmetic count is
+   `G-01` = MINOR — *"the reader can run `wc -l`"*. Nothing dispatches on a skill count. 379 lines of
+   CI automation stood against the lowest-stakes class there is.
+2. **Its determinism was a function of its narrowness, not a property lost in the trade.** The guard
+   was deterministic *because* it checked a hardcoded claim list. Determinism is not available over
+   "any claim any document makes about itself," so nothing deterministic was given up — the axis
+   does not exist at the new scope.
+3. **Per-push automation was the wrong cadence for the class.** A count that drifts between two
+   pushes harms nobody between them; the natural cadence for "is our prose still accurate" is a
+   review or a housekeep pass.
+4. **The corpora the criteria are blind to are correctly out of scope.** The criteria govern
+   artifacts an agent reads *as instructions*. A maintainer-only tool's comment and a script's prose
+   are not that, and a script that genuinely depends on a count derives it rather than stating it.
+
+**The deciding argument is that the guard encouraged the defect it caught.** Its existence made
+stating a drift-prone count feel safe. `G-01` says do not state it — and stream 3 duly *deleted* the
+counts from `module-map.md` and `test-landscape.md` rather than guarding them. No number, nothing to
+drift, nothing to guard. The guard treated the symptom; the declaration treats the cause. A criterion
+that counts the guard's removal as a debt to be repaid therefore penalises the correct engineering
+decision twice: once for deleting the guard, and again for writing what made the guard unnecessary.
+
+**Under the revised definition the work adds zero mechanism lines** — no script, check, validator,
+gate or CI step was added anywhere, `grade.sh` is untouched, and C-1 held throughout. Against 462
+guard lines removed (or the 379 floor), **AC-4 passes.**
+
+What is deliberately *not* claimed: that the enforcement surface shrank in total. It did not — it
+**moved**, from a narrow automatic check to broad reviewer-applied declarations. That trade is
+recorded in full in `exit-arithmetic-and-c7-audit.md`, including the two coverage drops it caused.
 
 **The two removal figures are never summed into one number.** Merging them lets deleted prose pay for
 added machinery, which is the exact loophole this NFR exists to close — so `379 + 1,802 = 2,181` is a
@@ -1177,14 +1214,23 @@ re-applying a competing reorganization is the failure that cost PR #12 63 commit
   Therefore AC-3 requires, **before** any removal: for each check being retired, either the criterion
   and registry row that covers it, or an explicit statement that the coverage is being dropped and
   why. **A removal whose replacement has no home is a coverage loss, and this criterion fails on it.**
-- **AC-4** **Net enforcement surface is down**, per NFR-2 — **removed guard lines exceed added
-  mechanism lines**, stated as a number.
+- **AC-4** **No executable enforcement surface was added**, per NFR-2 — **removed guard lines exceed
+  added mechanism lines**, stated as a number, where *mechanism* is executable surface only.
 
   **Guard-line floor: 379** (`check-skill-counts.mjs`), and that is the figure the criterion is tested
   against. The **1,802** documentation lines from the 20 READMEs are reported **separately** and do
   **not** count toward it. An earlier draft stated a merged floor of 2,181, which NFR-2's own
   definition forbids: merged, deleted prose pays for added machinery and the criterion stops measuring
   what it exists to measure.
+
+  **Outcome: PASSES.** 462 guard lines removed (379 + its 83-line wrapper) against **zero** added
+  mechanism lines — no script, check, validator, gate or CI step anywhere, `grade.sh` untouched.
+
+  *Measured under the ORIGINAL wording, which counted authored instruction as mechanism, it failed:
+  462 against 519. The owner revised NFR-2's "added" definition on 2026-08-14 rather than accept a
+  criterion that penalised deleting a guard AND writing what made the guard unnecessary — the full
+  four-part reasoning is in NFR-2, and the enforcement-surface trade it does not claim to have won is
+  in `exit-arithmetic-and-c7-audit.md`.*
 - **AC-5** The 20 internal READMEs are deleted, with the `aid-clerk` caller contract relocated to
   `AGENT.md` and the `aid-monitor` test assertion removed alongside its file (FR-7).
 - **AC-6** Nothing from `work-003` crossed into this work except through the six C-7 gates, each

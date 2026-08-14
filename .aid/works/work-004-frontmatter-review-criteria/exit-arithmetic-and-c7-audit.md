@@ -39,48 +39,71 @@ Measured on the non-rendered instruction sources (`canonical/**` plus the five h
 | − emitter payload blocks (a generated doc's own declaration, not a rule) | −45 |
 | **= added mechanism, strict count** | **519** |
 
-### The verdict
+### The verdict: PASSES under NFR-2 as revised by the owner on 2026-08-14
 
-**Against the 462 lines actually removed: 519 added — a fail on the strict count.**
-**Against the 379-line floor AC-4 names as "the figure the criterion is tested against": a fail
-under every reading below.**
+**Two answers, because the criterion changed after being measured. Both are recorded, because the
+first one is what forced the second.**
 
-Two reclassifications are arguable. Both are shown at **gross** additions, the same basis as the
-519, because mixing net and gross is how an arithmetic like this quietly misleads:
-
-| Reading | Added mechanism | vs 462 removed | vs the 379 floor |
+| Basis | Added mechanism | vs 462 removed | vs the 379 floor |
 |---|---|---|---|
-| Strict — everything above counts | 519 | **fail** by 57 | **fail** by 140 |
-| − `frontmatter-schema.md`'s field definition (gross 88) | 431 | **pass** by 31 | **fail** by 52 |
-| − also `aid-clerk`'s relocated Caller Contract (gross 15) | 416 | **pass** by 46 | **fail** by 37 |
+| **NFR-2 as revised** — executable surface only | **0** | **pass** | **pass** |
+| NFR-2 as originally worded — authored instruction counted too | 519 | fail by 57 | fail by 140 |
 
-The two candidates, so the owner can judge them rather than take my word:
+Under the revision the added side is **zero**: no script, check, validator, gate or CI step was added
+anywhere in the work, `grade.sh` is untouched, and every gate confirmed C-1 held. Against 462 guard
+lines removed, or against the 379 the criterion names, AC-4 passes.
 
-- **`frontmatter-schema.md`'s field definition (88).** It defines a data *format*. That is not a
-  script, a check, a validator, or a rule an agent must follow — and NFR-2 already excludes an
-  authored `review-criteria:` block, of which this is the schema one level up. The counter-argument
-  is that it does contain obligations (which keys are required), so a reader could call it a rule.
-- **`aid-clerk`'s Caller Contract (15).** Relocated verbatim out of a README whose lines are already
-  inside the 1,802 removed. Counting it as *added* counts one move twice.
+### Why the criterion was revised rather than the number massaged
 
-**So the verdict turns entirely on which number AC-4 is tested against**, and AC-4 answers that
-itself: *379*. On its own stated basis the criterion **fails**, by between 37 and 140 lines
-depending on classification. It passes only if the comparison is re-based on the 462 actually
-removed **and** the schema definition is granted as non-mechanism.
+The original wording ended *"or process rules an agent must follow"*, which counted every line of
+instruction this work wrote. Measured that way it failed, 462 against 519 — and that failure was
+reported first, before any revision was proposed, because a criterion that exists to prevent gaming
+should not be quietly re-read by the party it constrains.
 
-**What this means, plainly.** No script, gate, or validator was added — C-1 held, `grade.sh` is
-untouched, and the reviewer independently confirmed every changed script is a modification of an
-existing file. So the *machinery* did not grow. What grew is instruction: roughly the same volume of
-process rules as the guard lines removed. The enforcement surface **moved** rather than shrank —
-from one script checking a fixed claim list mechanically, to declarations a reviewer resolves across
-four trees. task-017's proof shows those declarations catch strictly more than the guard did, so the
-trade bought coverage; AC-4 measures lines, not coverage, and by its own stated basis it fails.
+The owner then tested the criterion itself, on four grounds:
 
-**This is an owner decision, not the gate's and not the executor's**: accept the criterion as failed
-and record why; re-base it on the 462 actually removed; or revise NFR-2 to count mechanism as
-executable surface only, which is the distinction the evidence actually supports. All three are
-defensible. Picking the one that passes, without saying so, is exactly what an anti-gaming criterion
-exists to prevent — which is why all three are on the table here instead of one.
+1. **The retired guard's defect class is the least severe in this project's own table.** A cosmetic
+   count is `G-01` = MINOR — *"the reader can run `wc -l`"*. Nothing dispatches on a skill count. 379
+   lines of CI automation stood against the lowest-stakes class there is.
+2. **Its determinism was a function of its narrowness, not something the trade gave up.** The guard
+   was deterministic *because* it checked a hardcoded claim list. Determinism is not available over
+   "any claim any document makes about itself", so that axis does not exist at the new scope — and
+   presenting it as a loss, which an earlier draft of this document did, was a false comparison.
+3. **Per-push automation was the wrong cadence.** A count that drifts between two pushes harms nobody
+   between them. "Is our prose still accurate" belongs to a review or a housekeep pass.
+4. **The corpora the criteria are blind to are correctly out of scope.** The criteria govern artifacts
+   an agent reads *as instructions*. A maintainer-only tool's comment and a script's prose are not
+   that, and a script that genuinely depends on a count derives it rather than stating it.
+
+**The deciding argument: the guard encouraged the defect it caught.** Its existence made stating a
+drift-prone count feel safe. `G-01` says do not state it — and stream 3 duly *deleted* the counts from
+`module-map.md` and `test-landscape.md` rather than guarding them. No number, nothing to drift,
+nothing to guard. The guard treated the symptom; the declaration treats the cause. Counting the
+guard's removal as a debt to repay penalises the correct decision twice — once for deleting it, again
+for writing what made it unnecessary.
+
+### What this document does NOT claim
+
+That the enforcement surface shrank in total. **It did not — it moved**, and the parts of that move
+that are losses are recorded here rather than buried:
+
+- **From automatic to on-demand.** The retired guard ran in CI on every push
+  (`.github/workflows/test.yml` → `tests/run-all.sh`). The declarations run when a review runs.
+- **From deterministic to judgment-applied,** with measured variance: one defect class in
+  delivery-002 took **three gate cycles** to close, because two sweeps missed instances a third
+  found. A script does not do that.
+- **Two corpora lost automatic coverage entirely** — the repo-local maintainer skills, and
+  non-markdown files. Judged correctly out of scope above, but the coverage is gone, not replaced.
+
+Against those, what the move bought is broader reach and a different class of catch. task-017 planted
+the retired guard's exact defect class and the declarations caught it — plus **four more real drifts
+on the same file** that the guard never covered. And the defects that actually mattered in this work
+were not countable facts at all: a ledger shape that would make `grade.sh` report `A+` regardless of
+findings, a criterion asserting a layout the project forbids, three divergent severity definitions,
+and one criterion that was simply false on disk. No count guard could express any of them.
+
+`test-doc-counts.sh` (109 lines) is deliberately **kept**: the public front face is where a wrong
+number costs a newcomer's trust, which is worth automating. The repo-wide guard is not.
 
 ---
 
