@@ -46,21 +46,23 @@ whole of the guarded half:
 
 | Surface | Assertion(s) that must hold |
 |---|---|
-| `README.md` | `112 skills` |
-| `docs/repository-structure.md` | `112 skill definitions`; `94-row catalog` |
-| `docs/aid-methodology.md` | `112 skill directories`; `94-row catalog` |
-| `docs/glossary.md` | `112 skills total`; `94-row catalog` |
-| `docs/diagram-content-reference.md` | `112 skills` |
-| `docs/install.md` | ``112 `aid-`-prefixed skill`` |
-| `profiles/claude-code/README.md` | `112 skills` |
-| `profiles/codex/README.md` | `112 skills` |
-| `profiles/cursor/README.md` | `112 skills` |
-| `profiles/copilot-cli/README.md` | `112 skills` |
-| `profiles/antigravity/README.md` | `112 skills` |
+| `README.md` | `111 skills` |
+| `docs/repository-structure.md` | `111 skill definitions`; `94-row catalog` |
+| `docs/aid-methodology.md` | `111 skill directories`; `94-row catalog` |
+| `docs/glossary.md` | `111 skills total`; `94-row catalog` |
+| `docs/diagram-content-reference.md` | `111 skills` |
+| `docs/install.md` | ``111 `aid-`-prefixed skill`` |
+| `profiles/claude-code/README.md` | `111 skills` |
+| `profiles/codex/README.md` | `111 skills` |
+| `profiles/cursor/README.md` | `111 skills` |
+| `profiles/copilot-cli/README.md` | `111 skills` |
+| `profiles/antigravity/README.md` | `111 skills` |
 
-Two notes on that list. The derived figures are `112` skills and `94` catalog rows **because
-this work's 36 skills and 36 rows have landed** — they are not hard-coded and will move again
-if the tree does. And the five `profiles/*/README.md` are **renders**: fix their `canonical/`
+Two notes on that list. The derived figures are `111` skills and `94` catalog rows because
+**this work's 36 skills and 36 rows have landed** and **`aid-graph` was removed upstream**
+(which is why the skill figure is 111 rather than the 112 this document first recorded) — they
+are not hard-coded and will move again if the tree does, so **re-derive at execution time**
+rather than trusting the numbers written here. And the five `profiles/*/README.md` are **renders**: fix their `canonical/`
 source and re-render rather than editing them in place (`G-06` excludes a render from content
 review for the same reason).
 

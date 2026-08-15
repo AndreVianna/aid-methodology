@@ -8,7 +8,7 @@ sidebar:
 
 <!-- generated — do not edit; source: canonical/skills/*/SKILL.md, canonical/aid/templates/shortcut-catalog.yml -->
 
-AID ships **76 skill directories** across four skill groups (Support, Knowledge Base Maintenance, Definition, Execution), with the Definition group subdivided into **17 verb families** derived from the shortcut catalog. Each card below links to that skill’s detail page.
+AID ships **75 skill directories** across four skill groups (Support, Knowledge Base Maintenance, Definition, Execution), with the Definition group subdivided into **17 verb families** derived from the shortcut catalog. Each card below links to that skill’s detail page.
 
 > **Note:** This page is the roster, and it files skills per FR-5’s Placement rules. `aid-triage` is **Support** here and **Definition** in the curated roster that [the methodology's skill inventory](/concepts/methodology/) publishes. Where they disagree about grouping, **this page is authoritative**. How the shortcut skills themselves work — the shared engine and its INTAKE → APPROVAL-HALT sequence — is at [Reference → Shortcut engine](/reference/skills/).
 
@@ -30,7 +30,6 @@ Skills for discovering, querying, summarising, mapping, and maintaining the proj
 
 - [`aid-discover`](/skills/aid-discover/) — Brownfield project discovery with built-in quality gate.
 - [`aid-summarize`](/skills/aid-summarize/) — Generate a single-file kb.html from .aid/knowledge/.
-- [`aid-graph`](/skills/aid-graph/) — Build .aid/knowledge/relationships.md and .aid/knowledge/graph.html from an approved Knowledge Base and the project source.
 - [`aid-housekeep`](/skills/aid-housekeep/) — Optional on-demand housekeeping skill.
 - [`aid-update-kb`](/skills/aid-update-kb/) — Optional on-demand targeted KB update skill.
 - [`aid-ask`](/skills/aid-ask/) — Optional on-demand Q&amp;A skill.

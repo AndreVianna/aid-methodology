@@ -72,39 +72,19 @@ work is in `release-tracking.md`; the rationale behind significant decisions is 
   `aid-update-roadmap`, `aid-update-mvp`, `aid-update-backlog` exist on the active branch;
   deliveries two and three are planned and detailed, not yet executing.
 
-### Knowledge relationship graph
-
-- **What:** `/aid-graph` adds `relationships.md` (a machine-readable link table over the
-  Knowledge Base) and `graph.html` (an interactive graph view with a table fallback), both
-  produced on-demand via a new canonical script set and a set of graph templates. It is a
-  sibling of `/aid-summarize` in the same post-KB slot: run once the KB is finished and
-  approved, never triggered by discovery, idempotent and content-addressed.
-- **Why:** RAG-by-convention gives the KB its navigability at read time; the graph adds an
-  explicit relationship layer that convention alone cannot express — which documents depend
-  on which, which share a domain concern, and which are entry points for a given audience.
-  The gap is most acute for new contributors who do not yet know the KB's shape.
-- **Rejected:** A live vector store (heavy operational cost for a per-project artifact that
-  changes infrequently); embedding Mermaid diagrams in each doc (the KB forbids diagrams,
-  and the graph view achieves the same goal without touching the sources).
-- **Status:** In progress — `canonical/skills/aid-graph/SKILL.md` exists and the feature is
-  executing on a dedicated branch; the planned release items are recorded in `backlog.md`.
-
 ## Next
 
 ### v2.4.0 release
 
-- **What:** After the two in-flight efforts merge to master, the next release packages them
-  as a stable minor version. Both are self-contained: neither gates on a third in-flight
-  effort, and either could ship first if the other is delayed, but they are expected to land
-  close enough together that batching them is the lower-overhead path.
+- **What:** After the in-flight design-phase skill family merges to master, the next release
+  packages it as a stable minor version. It is self-contained and gates on no other in-flight
+  effort.
 - **Why:** The release script and CI/CD pipeline are fully automated; there is no cost reason
-  to hold the features once they land. A single minor release for both avoids a second
-  update cycle for adopters.
-- **Rejected:** A patch release carrying only one of the two (would still require a second
-  release cycle); waiting for a third feature before cutting the release (no third feature is
-  committed at this point, so waiting is speculative delay).
-- **Status:** intent — no work has been opened for the release itself; it opens when the two
-  in-flight efforts close.
+  to hold the feature once it lands.
+- **Rejected:** Holding the release open for a second feature before cutting it (no other
+  feature is committed at this point, so waiting is speculative delay).
+- **Status:** intent — no work has been opened for the release itself; it opens when the
+  in-flight effort closes.
 
 ### Agent chat channel
 
