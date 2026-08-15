@@ -189,9 +189,44 @@ qa:
       out because the rule governs artifacts, so they are out of scope rather than clean.
     decided_by: agent
     updated: '2026-08-15'
+  - id: Q17
+    question: 'AC-12 part 2: the reader-side gap'
+    state: Resolved
+    answer: |
+      Closed. Both twins now resolve the delivery title from the delivery's stanza in
+      PLAN.md, falling back to the legacy BLUEPRINT.md H1 and then the delivery id. The
+      middle step is not vestigial: pre-fold works genuinely have the file and no stanza
+      title, and they must keep rendering.
+
+      Both stanza spellings are parsed because both are current -- nested writes
+      `### delivery-001: Title`, flattened writes `- **Delivery:** delivery-001 -- Title`
+      and emits no `### delivery-NNN` heading at all, since two execute-graph scripts key
+      off that heading's absence.
+
+      One detail worth recording because it is easy to get wrong: PLAN.md's bytes are
+      counted ONCE. parse_execution_graph already reads the same file for lane
+      assignments, so adding the title read's length again would overstate the budget
+      io_bounds enforces.
+
+      The parity test matters as much as the feature. Two regex implementations of one
+      grammar in two languages is the same hazard that produced three silent divergences
+      between the bash YAML reader and these twins earlier in this work. Fixtures target
+      where Python re and JavaScript RegExp could plausibly differ: all three dash forms
+      including the em dash smart punctuation produces, an unfilled {Name} placeholder,
+      a duplicate heading where first-wins must hold identically, a title containing its
+      own colon, and an H1 that must NOT match. 17 fixtures, full agreement; the Python
+      answers are pinned individually too, so parity cannot pass by both runtimes being
+      wrong identically. Verified by narrowing the Node pattern and watching it fail.
+
+      Regression check done by diffing FAILURE SETS against origin/master, not counts:
+      821 reader tests and 1306 server tests, identical sets on both sides (31
+      pre-existing, all git-subprocess timeouts and standing environment failures). Equal
+      totals alone would not have proven it -- that was the trap avoided.
+    decided_by: agent
+    updated: '2026-08-15'
   - id: Q16
     question: 'AC-12: is BLUEPRINT.md retired?'
-    state: Open
+    state: Resolved
     answer: |
       Authoring side yes, reader side not yet. Splitting it this way was not planned --
       the survey found the second half.
@@ -214,12 +249,7 @@ qa:
       bash+PowerShell twins needing lockstep, and pwsh cannot run here -- converting them
       blind is the setup that produced three silent divergences earlier in this work.
 
-      REMAINING (part 2). The dashboard readers use BLUEPRINT.md for more than layout:
-      reader.py and reader.mjs read the delivery TITLE from its H1, plus the task listing
-      for short_name/type. With authoring stopped, a new work degrades to `delivery_id`
-      as its title -- graceful, not broken, but real. Teaching both twins to read the
-      title from the PLAN.md stanza is a parity-guaranteed code change, not prose, and
-      belongs with item 7 rather than bolted onto this commit.
+      Part 2 (the dashboard readers' title source) is CLOSED -- see Q17.
 
       ALSO REMAINING: 35 BLUEPRINT mentions across 8 KB docs, 17 across docs/, and the
       dashboard's own prose. The KB ones state the project's current structure, so they
