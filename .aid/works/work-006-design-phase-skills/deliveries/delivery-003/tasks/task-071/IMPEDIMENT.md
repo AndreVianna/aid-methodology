@@ -4,24 +4,34 @@
 **authored** run rather than a command, which its own DETAIL says outright: *"it is a long authored
 run, not a command ... Size it accordingly."*
 
-## 1. The scale, re-measured -- it is ~3.9x what the task was sized against
+## 1. The scale -- corrected, because the first sizing here was wrong
 
-| | DETAIL's recorded figure | Actual, now |
-|---|---|---|
-| size | 178 KB | **671 KB** |
-| sections | 20 | **21** |
-| lines | -- | **4199** |
-| inline `<svg>` visual blocks | -- | 4 |
-| last recorded GENERATE duration | **24m20s** (at 178 KB) | -- |
+**An earlier revision of this file claimed the artifact is "~3.9x what the task was sized against",
+comparing the DETAIL's recorded 178 KB against the current 671 KB. That comparison is invalid: both
+are whole-file figures, and the file grew almost entirely in its *mechanical shell*, not in
+authored content.** Measured properly:
 
-The 24m20s figure was measured against a file a quarter of the current size. Regenerating means
-authoring 21 per-doc section files plus the skeleton and `section-manifest.txt` into
-`.aid/.temp/summarize/summary-src/`, which `assemble.sh` then concatenates -- a single authored
-artifact of roughly 671 KB, visually rich, WCAG AA, for a non-technical audience.
+| Component | Bytes | Share | Who produces it |
+|---|---|---|---|
+| inlined `<script>` (lightbox etc.) | 492 KB | **72%** | assembler / shell -- mechanical |
+| inlined `<style>` | 35 KB | 5% | assembler / shell -- mechanical |
+| **`<section>` content** | **157 KB** | **23%** | **the LLM authors this** |
+| -- of which inline `<svg>` | 20 KB | | |
 
-Attempting it inside the remaining budget of this run would produce a **degraded** 21-section file,
-and it would overwrite a curated artifact whose only defect is five stale strings. That trade is
-strictly worse than leaving the file stale and saying so.
+`state-generate.md` §5 is explicit about the split: *"The LLM authors the per-component content of
+each section file ... The LLM does NOT hand-write the page HTML shell, section ordering, or
+assembly logic -- those are mechanical and handled by the assembler from the manifest."*
+
+So the authoring load is **157 KB across 21 sections** -- median **4.6 KB** per section, largest
+25 KB -- which is comparable to, not four times, what the 24m20s run produced. The honest blocker
+is that this is a **multi-turn authoring job**, not that it is disproportionate to the task's own
+sizing.
+
+**And attempting it is inherently safe, which the earlier revision also failed to say.** GENERATE
+stages everything into `.aid/.temp/summarize/summary-src/`, which is **gitignored** scratch, and
+`assemble.sh` writes `.aid/knowledge/kb.html` only as its final step. An incomplete attempt
+therefore leaves `kb.html` byte-untouched -- there is **no** degraded-artifact risk, and the
+earlier claim that attempting it "would produce a degraded file" was wrong.
 
 ## 2. What is stale, measured rather than recalled
 
