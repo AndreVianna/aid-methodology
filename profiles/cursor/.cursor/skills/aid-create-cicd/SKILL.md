@@ -1,17 +1,17 @@
 ---
 name: aid-create-cicd
 description: >
-  Realize a ready CI/CD seed from .aid/design/cicd.md into the project's shipping (C8)
+  Realize a ready CI/CD seed from `.aid/design/cicd.md` into the project's shipping (C8)
   Knowledge Base document -- the pipeline stages and their order, the triggers, the
   environments and promotion between them, and the release flow. Use this skill when a CI/CD
   seed is ready and the project has no record of its delivery pipeline yet. It writes the KB
   record by default, and emits a workflow file only if you ask for one in that run. Creating
   the document also registers it, in the same run, which opts it into the Conformance Lane
   permanently -- a choice you make by running this skill. To revise C8 content already
-  committed use /aid-update-cicd; for a resource the pipeline ships to, /aid-create-infra or
-  /aid-update-infra; for a data pipeline rather than a delivery one,
-  /aid-create-data-pipeline or /aid-update-data-pipeline; to ship a built artifact now,
-  /aid-deploy.
+  committed use `/aid-update-cicd`; for a resource the pipeline ships to,
+  `/aid-create-infra` or `/aid-update-infra`; for a data pipeline rather than a delivery
+  one, `/aid-create-data-pipeline` or `/aid-update-data-pipeline`; to ship a built artifact
+  now, `/aid-deploy`.
 allowed-tools: Read, Glob, Grep, Terminal, Write, Edit, Agent
 argument-hint: "[<direction>] -- which parts of the CI/CD seed to realize"
 ---

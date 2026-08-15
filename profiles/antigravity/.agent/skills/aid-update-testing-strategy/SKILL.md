@@ -6,11 +6,11 @@ description: >
   thresholds, who may waive one) -- plus any previously created outputs you name. Use this
   skill when the testing-strategy record already exists and a lane or a gate has changed.
   Requires no design seed: the change you state in the run is a sufficient input. Reads and
-  consumes a testing-strategy seed when one is present in .aid/design/. When a C6 document
-  does not yet exist, routes to /aid-create-testing-strategy. To author or revise test CODE
-  rather than the strategy, use /aid-create-test or /aid-update-test. Produced by the
-  aid-architect agent and independently verified by aid-reviewer (full verify). Allocates a
-  work-NNN folder.
+  consumes a testing-strategy seed when one is present in `.aid/design/`. When a C6 document
+  does not yet exist, routes to `/aid-create-testing-strategy`. To author or revise test
+  CODE rather than the strategy, use `/aid-create-test` or `/aid-update-test`. Produced by
+  the aid-architect agent and independently verified by aid-reviewer (full verify).
+  Allocates a work-NNN folder.
 allowed-tools: Read, Glob, Grep, Bash, Write, Edit, Agent
 argument-hint: "<change> -- what to revise in the testing strategy or the gate policy"
 ---

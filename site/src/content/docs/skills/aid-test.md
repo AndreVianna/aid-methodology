@@ -9,7 +9,7 @@ generatedFrom: 'canonical/skills/aid-test/SKILL.md'
 ## Frontmatter
 
 - **`name`** — aid-test
-- **`description`** — Run a test suite or verification and consolidate the results into findings, in one pass. Use this skill when you need to know the current state of something measurable -- unit, integration or end-to-end tests, a security scan, a performance benchmark, a data-quality check, or a model evaluation. It runs whatever the request implies and reports. It is read-only on the source and resolves nothing: findings hand off to /aid-fix, and it never fixes. To author test code rather than run it, use /aid-create-test.
+- **`description`** — Run a test suite or verification and consolidate the results into findings, in one pass. Use this skill when you need to know the current state of something measurable -- unit, integration or end-to-end tests, a security scan, a performance benchmark, a data-quality check, or a model evaluation. It runs whatever the request implies and reports. It is read-only on the source and resolves nothing: findings hand off to `/aid-fix`, and it never fixes. To author test code rather than run it, use `/aid-create-test`.
 - **`allowed-tools`** — Read, Glob, Grep, Bash, Write, Edit, Agent
 - **`argument-hint`** — &lt;target> -- what to test/verify (a suite/module, or a kind: security, performance, data-quality, model-eval)
 

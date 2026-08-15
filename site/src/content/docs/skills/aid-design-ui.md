@@ -1,6 +1,6 @@
 ---
 title: 'aid-design-ui'
-description: 'Develop a UI design as a DESIGN SEED in .aid/design/ui.md -- the screen/flow structure, the interaction model, and accessibility notes.'
+description: 'Develop a UI design as a DESIGN SEED in `.aid/design/ui.md` -- the screen/flow structure, the interaction model, and accessibility notes.'
 generatedFrom: 'canonical/skills/aid-design-ui/SKILL.md'
 ---
 
@@ -9,7 +9,7 @@ generatedFrom: 'canonical/skills/aid-design-ui/SKILL.md'
 ## Frontmatter
 
 - **`name`** — aid-design-ui
-- **`description`** — Develop a UI design as a DESIGN SEED in .aid/design/ui.md -- the screen/flow structure, the interaction model, and accessibility notes. Use this skill when a screen's layout and behaviour are still being worked out and you want a design you intend to keep. Grounded in the Knowledge Base (.aid/knowledge/) and the project source. It WRITES NO production code and NO KB document -- realize the seed into the built component/page with /aid-create-ui once it is ready. For a THROWAWAY low-fidelity mock that merely validates a UX direction rather than a kept design, use /aid-prototype-ui instead. Produced by the aid-architect agent and independently verified by aid-reviewer (full verify). Allocates a work-NNN folder.
+- **`description`** — Develop a UI design as a DESIGN SEED in `.aid/design/ui.md` -- the screen/flow structure, the interaction model, and accessibility notes. Use this skill when a screen's layout and behaviour are still being worked out and you want a design you intend to keep. Grounded in the Knowledge Base (`.aid/knowledge/`) and the project source. It WRITES NO production code and NO KB document -- realize the seed into the built component/page with `/aid-create-ui` once it is ready. For a THROWAWAY low-fidelity mock that merely validates a UX direction rather than a kept design, use `/aid-prototype-ui` instead. Produced by the aid-architect agent and independently verified by aid-reviewer (full verify). Allocates a work-NNN folder.
 - **`allowed-tools`** — Read, Glob, Grep, Bash, Write, Edit, Agent
 - **`argument-hint`** — &lt;subject> -- the UI screen(s)/flow to design (structure, interaction, accessibility)
 

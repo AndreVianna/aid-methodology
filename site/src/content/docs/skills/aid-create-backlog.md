@@ -1,6 +1,6 @@
 ---
 title: 'aid-create-backlog'
-description: 'Realize a ready backlog seed into .aid/knowledge/backlog.md -- frontmatter, preamble, ## Contents index, ## Next Release, ## Prioritized, and ## Gotchas.'
+description: 'Realize a ready backlog seed into `.aid/knowledge/backlog.md` -- frontmatter, preamble, ## Contents index, ## Next Release, ## Prioritized, and ## Gotchas.'
 generatedFrom: 'canonical/skills/aid-create-backlog/SKILL.md'
 ---
 
@@ -9,7 +9,7 @@ generatedFrom: 'canonical/skills/aid-create-backlog/SKILL.md'
 ## Frontmatter
 
 - **`name`** — aid-create-backlog
-- **`description`** — Realize a ready backlog seed into .aid/knowledge/backlog.md -- frontmatter, preamble, ## Contents index, ## Next Release, ## Prioritized, and ## Gotchas. Use this skill when a backlog seed is ready and the project needs its backlog document written for the first time. Moves accepted tech-debt.md items into backlog.md in the same run (id unchanged; row deleted from tech-debt.md). Registers the document in .aid/settings.yml and .aid/knowledge/README.md on first creation. Routes to /aid-update-backlog when the item sections already carry committed content.
+- **`description`** — Realize a ready backlog seed into `.aid/knowledge/backlog.md` -- frontmatter, preamble, ## Contents index, ## Next Release, ## Prioritized, and ## Gotchas. Use this skill when a backlog seed is ready and the project needs its backlog document written for the first time. Moves accepted tech-debt.md items into backlog.md in the same run (id unchanged; row deleted from tech-debt.md). Registers the document in `.aid/settings.yml` and `.aid/knowledge/README.md` on first creation. Routes to `/aid-update-backlog` when the item sections already carry committed content.
 - **`allowed-tools`** — Read, Glob, Grep, Bash, Write, Edit, Agent
 - **`argument-hint`** — [&lt;direction>] -- which items to accept and how to prioritize them (fills item sections from the seed)
 

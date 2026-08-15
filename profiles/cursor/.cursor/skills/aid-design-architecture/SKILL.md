@@ -1,16 +1,16 @@
 ---
 name: aid-design-architecture
 description: >
-  Develop the system's shape as a DESIGN SEED in .aid/design/architecture.md -- components,
-  boundaries, interactions, invariants, and what is deliberately not a component. Use this
-  skill when how the system should be shaped is still being worked out, and you want that
-  thinking captured before it is written into the Knowledge Base. Grounded in the Knowledge
-  Base (.aid/knowledge/) and the project source. It WRITES NO KB document and NO production
-  code -- realize the seed into the project's C1 document with /aid-create-architecture once
-  it is ready. For a subject with no dedicated design row use bare /aid-design; to write
-  documentation about an existing architecture rather than design it, use
-  /aid-document-architecture. Produced by the aid-architect agent and independently verified
-  by aid-reviewer (full verify). Allocates a work-NNN folder.
+  Develop the system's shape as a DESIGN SEED in `.aid/design/architecture.md` --
+  components, boundaries, interactions, invariants, and what is deliberately not a
+  component. Use this skill when how the system should be shaped is still being worked out,
+  and you want that thinking captured before it is written into the Knowledge Base. Grounded
+  in the Knowledge Base (`.aid/knowledge/`) and the project source. It WRITES NO KB document
+  and NO production code -- realize the seed into the project's C1 document with
+  `/aid-create-architecture` once it is ready. For a subject with no dedicated design row
+  use bare `/aid-design`; to write documentation about an existing architecture rather than
+  design it, use `/aid-document-architecture`. Produced by the aid-architect agent and
+  independently verified by aid-reviewer (full verify). Allocates a work-NNN folder.
 allowed-tools: Read, Glob, Grep, Terminal, Write, Edit, Agent
 argument-hint: "<subject> -- the system/subsystem to design (components, boundaries, interactions, invariants)"
 ---

@@ -1,15 +1,15 @@
 ---
 name: aid-create-architecture
 description: >
-  Realize a ready architecture seed from .aid/design/architecture.md into the project's
+  Realize a ready architecture seed from `.aid/design/architecture.md` into the project's
   build-and-shape (C1) Knowledge Base document -- components and their responsibilities,
   boundaries, interactions, and the invariants a change must not break. Use this skill when
   an architecture seed is ready and the project has no architecture document yet. When it
-  creates the document it also registers it in .aid/settings.yml and
-  .aid/knowledge/README.md in the same run, which opts that document into the Conformance
+  creates the document it also registers it in `.aid/settings.yml` and
+  `.aid/knowledge/README.md` in the same run, which opts that document into the Conformance
   Lane permanently -- a choice you are making by running this skill. To revise C1 content
-  this lifecycle already committed, use /aid-update-architecture; to write documentation
-  ABOUT an architecture rather than realize a design seed, use /aid-document-architecture.
+  this lifecycle already committed, use `/aid-update-architecture`; to write documentation
+  ABOUT an architecture rather than realize a design seed, use `/aid-document-architecture`.
   Produced by the aid-architect agent and independently verified by aid-reviewer (full
   verify). Allocates a work-NNN folder.
 allowed-tools: Read, Glob, Grep, shell, Write, Edit, Agent

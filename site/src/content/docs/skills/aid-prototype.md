@@ -9,7 +9,7 @@ generatedFrom: 'canonical/skills/aid-prototype/SKILL.md'
 ## Frontmatter
 
 - **`name`** — aid-prototype
-- **`description`** — Build a throwaway, low-fidelity model to test whether a direction actually works, before anyone commits to building it properly. Use this skill when a decision hinges on something you can only learn by trying it. The model is isolated and disposable -- it lives in the work folder or an opt-in worktree and never touches production -- and it is deliberately rough, so it gets a light verification rather than a polish grade. It resolves nothing: it reports whether the direction holds and what was learned, and you decide. For a kept design meant to inform the build rather than a throwaway, use /aid-design instead; the real build is a separate /aid-create step.
+- **`description`** — Build a throwaway, low-fidelity model to test whether a direction actually works, before anyone commits to building it properly. Use this skill when a decision hinges on something you can only learn by trying it. The model is isolated and disposable -- it lives in the work folder or an opt-in worktree and never touches production -- and it is deliberately rough, so it gets a light verification rather than a polish grade. It resolves nothing: it reports whether the direction holds and what was learned, and you decide. For a kept design meant to inform the build rather than a throwaway, use `/aid-design` instead; the real build is a separate `/aid-create` step.
 - **`allowed-tools`** — Read, Glob, Grep, Bash, Write, Edit, Agent
 - **`argument-hint`** — &lt;direction> -- the direction/hypothesis to validate (optionally: fidelity paper|low-fi|runnable-spike)
 

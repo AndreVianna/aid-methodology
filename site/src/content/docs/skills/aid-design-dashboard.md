@@ -1,6 +1,6 @@
 ---
 title: 'aid-design-dashboard'
-description: 'Develop a dashboard / BI-view design as a DESIGN SEED in .aid/design/dashboard.md -- the data source, the visualizations, and the refresh cadence.'
+description: 'Develop a dashboard / BI-view design as a DESIGN SEED in `.aid/design/dashboard.md` -- the data source, the visualizations, and the refresh cadence.'
 generatedFrom: 'canonical/skills/aid-design-dashboard/SKILL.md'
 ---
 
@@ -9,7 +9,7 @@ generatedFrom: 'canonical/skills/aid-design-dashboard/SKILL.md'
 ## Frontmatter
 
 - **`name`** — aid-design-dashboard
-- **`description`** — Develop a dashboard / BI-view design as a DESIGN SEED in .aid/design/dashboard.md -- the data source, the visualizations, and the refresh cadence. Use this skill when what a dashboard should show, and to whom, is still being decided. Grounded in the Knowledge Base (.aid/knowledge/) and the project source. It WRITES NO production code and NO KB document -- realize the seed into the built dashboard with /aid-create-dashboard once it is ready. Produced by the aid-architect agent and independently verified by aid-reviewer (full verify). Allocates a work-NNN folder.
+- **`description`** — Develop a dashboard / BI-view design as a DESIGN SEED in `.aid/design/dashboard.md` -- the data source, the visualizations, and the refresh cadence. Use this skill when what a dashboard should show, and to whom, is still being decided. Grounded in the Knowledge Base (`.aid/knowledge/`) and the project source. It WRITES NO production code and NO KB document -- realize the seed into the built dashboard with `/aid-create-dashboard` once it is ready. Produced by the aid-architect agent and independently verified by aid-reviewer (full verify). Allocates a work-NNN folder.
 - **`allowed-tools`** — Read, Glob, Grep, Bash, Write, Edit, Agent
 - **`argument-hint`** — &lt;subject> -- the dashboard to design (source, visualizations, refresh cadence)
 

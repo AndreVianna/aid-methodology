@@ -9,7 +9,7 @@ generatedFrom: 'canonical/skills/aid-migrate/SKILL.md'
 ## Frontmatter
 
 - **`name`** — aid-migrate
-- **`description`** — Migrate data, a dependency, framework, or platform, with a rollback plan (non-schema; schema migrations use create/update-data-model). Use this skill when you already know what to migrate and want it scoped, specified, and broken into reviewable tasks in a single pass, with no requirements interview. You approve the resulting plan before anything is built: this skill plans and stops, so run /aid-execute to carry the plan out.
+- **`description`** — Migrate data, a dependency, framework, or platform, with a rollback plan (non-schema; schema migrations use create/update-data-model). Use this skill when you already know what to migrate and want it scoped, specified, and broken into reviewable tasks in a single pass, with no requirements interview. You approve the resulting plan before anything is built: this skill plans and stops, so run `/aid-execute` to carry the plan out.
 - **`allowed-tools`** — Read, Glob, Grep, Bash, Write, Edit, Agent
 - **`argument-hint`** — [description]  -- what to migrate; runs straight to a graded flattened Lite work
 

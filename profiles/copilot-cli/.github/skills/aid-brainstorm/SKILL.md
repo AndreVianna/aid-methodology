@@ -2,14 +2,14 @@
 name: aid-brainstorm
 description: >
   Diverge on a problem not yet formed into an answerable question, then converge it to a
-  DESIGN SEED in .aid/design/<slug>.md -- exploration, framings, and the candidate
+  DESIGN SEED in `.aid/design/<slug>.md` -- exploration, framings, and the candidate
   directions worth pursuing. Use this skill when a problem space is still open and you want
   to explore it, rather than answer one specific question. Grounded in the Knowledge Base
-  (.aid/knowledge/) and the project source. It WRITES NO production code and NO KB document,
-  and it RESOLVES NOTHING -- you decide what to do with the seed. For an already-answerable
-  technical question that wants a curated, verified answer, use /aid-research instead.
-  Produced by the aid-architect agent and independently verified by aid-reviewer. Allocates
-  a work-NNN folder.
+  (`.aid/knowledge/`) and the project source. It WRITES NO production code and NO KB
+  document, and it RESOLVES NOTHING -- you decide what to do with the seed. For an
+  already-answerable technical question that wants a curated, verified answer, use
+  `/aid-research` instead. Produced by the aid-architect agent and independently verified by
+  aid-reviewer. Allocates a work-NNN folder.
 allowed-tools: Read, Glob, Grep, shell, Write, Edit, Agent
 argument-hint: "<subject> -- a fuzzy problem or theme to explore (not yet a formed question)"
 ---

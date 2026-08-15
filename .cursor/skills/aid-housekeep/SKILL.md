@@ -9,7 +9,7 @@ description: >
   Lane, which flags design-versus-as-built divergence for you to reconcile and never
   overwrites the design itself. Each stage commits on its own branch and nothing is pushed;
   a stalled run resumes where it stopped. This is the source-driven global reconcile -- for
-  a targeted, prompt-named delta use /aid-update-kb.
+  a targeted, prompt-named delta use `/aid-update-kb`.
 allowed-tools: Read, Glob, Grep, Terminal, Write, Edit, Agent
 argument-hint: "[--cleanup-only] [--grade X] jump to cleanup stage, or set minimum summary grade"
 ---

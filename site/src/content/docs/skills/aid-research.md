@@ -9,7 +9,7 @@ generatedFrom: 'canonical/skills/aid-research/SKILL.md'
 ## Frontmatter
 
 - **`name`** — aid-research
-- **`description`** — Investigate an open technical question and return a verified answer in one pass -- evaluating options, or running an isolated feasibility spike if you explicitly authorise one. Use this skill when a decision is blocked on something nobody has established yet. It presents the answer, the conclusions both positive and negative, any contradictions with the reason for each, and the gaps; you decide. The Knowledge Base and the project source are the authoritative grounding; web sources are encouraged but supplementary, cited with a URL and access date, and a contradiction between them is surfaced rather than silently resolved. For open-ended exploration of a problem space rather than a specific question, use /aid-brainstorm.
+- **`description`** — Investigate an open technical question and return a verified answer in one pass -- evaluating options, or running an isolated feasibility spike if you explicitly authorise one. Use this skill when a decision is blocked on something nobody has established yet. It presents the answer, the conclusions both positive and negative, any contradictions with the reason for each, and the gaps; you decide. The Knowledge Base and the project source are the authoritative grounding; web sources are encouraged but supplementary, cited with a URL and access date, and a contradiction between them is surfaced rather than silently resolved. For open-ended exploration of a problem space rather than a specific question, use `/aid-brainstorm`.
 - **`allowed-tools`** — Read, Glob, Grep, Bash, Write, Edit, Agent
 - **`argument-hint`** — &lt;question> -- an open technical question to investigate
 

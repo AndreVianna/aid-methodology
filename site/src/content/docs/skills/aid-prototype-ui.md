@@ -9,7 +9,7 @@ generatedFrom: 'canonical/skills/aid-prototype-ui/SKILL.md'
 ## Frontmatter
 
 - **`name`** — aid-prototype-ui
-- **`description`** — Build a throwaway, low-fidelity UI wireframe and interaction flow to test whether a UX direction actually works. Use this skill when you want to see a screen before committing to building it. Isolated and disposable: it never touches production, and it reports what the mock shows rather than deciding anything for you. For a kept UI design meant to inform the real build rather than a throwaway that validates a direction, use /aid-design-ui instead. A thin kind-sibling of /aid-prototype, which defines its full behavior.
+- **`description`** — Build a throwaway, low-fidelity UI wireframe and interaction flow to test whether a UX direction actually works. Use this skill when you want to see a screen before committing to building it. Isolated and disposable: it never touches production, and it reports what the mock shows rather than deciding anything for you. For a kept UI design meant to inform the real build rather than a throwaway that validates a direction, use `/aid-design-ui` instead. A thin kind-sibling of `/aid-prototype`, which defines its full behavior.
 - **`allowed-tools`** — Read, Glob, Grep, Bash, Write, Edit, Agent
 - **`argument-hint`** — &lt;screen/flow> -- the UI screen(s)/flow whose direction to validate
 

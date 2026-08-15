@@ -1,6 +1,6 @@
 ---
 title: 'aid-design-api'
-description: 'Develop an API design as a DESIGN SEED in .aid/design/api.md -- the resource shape, the request/response contract, and the error model.'
+description: 'Develop an API design as a DESIGN SEED in `.aid/design/api.md` -- the resource shape, the request/response contract, and the error model.'
 generatedFrom: 'canonical/skills/aid-design-api/SKILL.md'
 ---
 
@@ -9,7 +9,7 @@ generatedFrom: 'canonical/skills/aid-design-api/SKILL.md'
 ## Frontmatter
 
 - **`name`** — aid-design-api
-- **`description`** — Develop an API design as a DESIGN SEED in .aid/design/api.md -- the resource shape, the request/response contract, and the error model. Use this skill when an endpoint's shape is still being worked out and you want the contract settled before anyone writes the handler. Grounded in the Knowledge Base (.aid/knowledge/) and the project source. It WRITES NO production code and NO KB document -- realize the seed into the built endpoint with /aid-create-api once it is ready. Produced by the aid-architect agent and independently verified by aid-reviewer (full verify). Allocates a work-NNN folder.
+- **`description`** — Develop an API design as a DESIGN SEED in `.aid/design/api.md` -- the resource shape, the request/response contract, and the error model. Use this skill when an endpoint's shape is still being worked out and you want the contract settled before anyone writes the handler. Grounded in the Knowledge Base (`.aid/knowledge/`) and the project source. It WRITES NO production code and NO KB document -- realize the seed into the built endpoint with `/aid-create-api` once it is ready. Produced by the aid-architect agent and independently verified by aid-reviewer (full verify). Allocates a work-NNN folder.
 - **`allowed-tools`** — Read, Glob, Grep, Bash, Write, Edit, Agent
 - **`argument-hint`** — &lt;subject> -- the API to design (resource shape, contract, error model)
 

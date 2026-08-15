@@ -5,9 +5,9 @@ description: >
   rows into backlog.md (deleted from tech-debt.md in the same run). Use this skill when the
   backlog already exists and items need adding, re-grouping, or retiring. Keeps ## Next
   Release in step with what is actually committed. Reads and consumes a backlog seed when
-  one is present in .aid/design/; never requires one. Asks every run which previously
+  one is present in `.aid/design/`; never requires one. Asks every run which previously
   created outputs to update alongside it -- no stored list, no tracking metadata written.
-  When backlog.md is absent, routes to /aid-create-backlog without writing anything.
+  When backlog.md is absent, routes to `/aid-create-backlog` without writing anything.
 allowed-tools: Read, Glob, Grep, Bash, Write, Edit, Agent
 argument-hint: "[<change>] -- what to revise (items to add, re-prioritize, promote, or move)"
 ---

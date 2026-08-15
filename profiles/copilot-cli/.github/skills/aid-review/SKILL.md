@@ -8,7 +8,7 @@ description: >
   Knowledge Base document or a file and line. The review is produced in a clean context and
   independently verified before you see it, and nothing is published to a pull request,
   ticket or document until you approve. It does not fix anything -- findings hand off to
-  /aid-fix.
+  `/aid-fix`.
 allowed-tools: Read, Glob, Grep, shell, Write, Edit, Agent
 argument-hint: "[target] -- what to review (a file/dir, PR link, ticket id, work-NNN, 'my changes', or a described target)"
 ---

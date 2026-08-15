@@ -6,12 +6,12 @@ description: >
   created outputs you name. Use this skill when the pipeline record already exists and a
   stage, trigger, environment or promotion rule has changed. Requires no design seed: the
   change you state in the run is a sufficient input. Reads and consumes a CI/CD seed when
-  one is present in .aid/design/. When the C8 document does not yet exist, routes to
-  /aid-create-cicd. To provision or change a resource the pipeline ships to, use
-  /aid-create-infra or /aid-update-infra; to change a DATA pipeline rather than a delivery
-  one, use /aid-create-data-pipeline or /aid-update-data-pipeline; to ship a built artifact
-  now, use /aid-deploy. Produced by the aid-architect agent and independently verified by
-  aid-reviewer (full verify). Allocates a work-NNN folder.
+  one is present in `.aid/design/`. When the C8 document does not yet exist, routes to
+  `/aid-create-cicd`. To provision or change a resource the pipeline ships to, use
+  `/aid-create-infra` or `/aid-update-infra`; to change a DATA pipeline rather than a
+  delivery one, use `/aid-create-data-pipeline` or `/aid-update-data-pipeline`; to ship a
+  built artifact now, use `/aid-deploy`. Produced by the aid-architect agent and
+  independently verified by aid-reviewer (full verify). Allocates a work-NNN folder.
 allowed-tools: Read, Glob, Grep, Terminal, Write, Edit, Agent
 argument-hint: "<change> -- what to revise in the delivery-pipeline record"
 ---

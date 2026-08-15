@@ -5,7 +5,7 @@ description: >
   framework inferred from the KB. Use this skill when you already know what to create and
   want it scoped, specified, and broken into reviewable tasks in a single pass, with no
   requirements interview. You approve the resulting plan before anything is built: this
-  skill plans and stops, so run /aid-execute to carry the plan out.
+  skill plans and stops, so run `/aid-execute` to carry the plan out.
 allowed-tools: Read, Glob, Grep, Terminal, Write, Edit, Agent
 argument-hint: "[description]  -- what to create; runs straight to a graded flattened Lite work"
 ---

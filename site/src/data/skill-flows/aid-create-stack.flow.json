@@ -14,15 +14,15 @@
       "terminal": null,
       "provenance": {
         "file": "canonical/skills/aid-create-stack/SKILL.md",
-        "startLine": 38,
-        "endLine": 52,
+        "startLine": 39,
+        "endLine": 53,
         "sourceKind": "skill",
         "excerpt": "## State: INTAKE\n\n1. **Allocate** through the Work Initiation Gate exactly as the contract's Allocation rule\n   requires (`canonical/skills/aid-design/SKILL.md` INTAKE step 4 is the shape), with\n   `initiator: aid-create-stack`. `phase` is not driven.\n2. **Read the seed** at `.aid/design/stack.md`.\n3. **Resolve the destination by concern, not filename.** This skill binds concern **C0**\n   (technology, `canonical/aid/templates/kb-authoring/concern-model.md`). The seed's\n   `## Destination` names the resolved path; where it does not, resolve C0 against\n   `.aid/settings.yml` `knowledge.doc_set`, falling back to the C0 row of\n   `canonical/aid/templates/kb-authoring/domain-doc-matrix.md`, and confirm with the user.\n   An ambiguous realization is **asked**, never picked silently. The seed also names a\n   **second** destination -- the project's D document, for the rejected alternatives.\n4. **Read the whole destination** if it exists, and note its `source:` field.\n5. **Classify complexity** for the `aid-architect` dispatch (verifier tier >= producer)."
       },
       "detail": {
         "file": "canonical/skills/aid-create-stack/SKILL.md",
-        "startLine": 38,
-        "endLine": 54,
+        "startLine": 39,
+        "endLine": 55,
         "sourceKind": "skill",
         "excerpt": "## State: INTAKE\n\n1. **Allocate** through the Work Initiation Gate exactly as the contract's Allocation rule\n   requires (`canonical/skills/aid-design/SKILL.md` INTAKE step 4 is the shape), with\n   `initiator: aid-create-stack`. `phase` is not driven.\n2. **Read the seed** at `.aid/design/stack.md`.\n3. **Resolve the destination by concern, not filename.** This skill binds concern **C0**\n   (technology, `canonical/aid/templates/kb-authoring/concern-model.md`). The seed's\n   `## Destination` names the resolved path; where it does not, resolve C0 against\n   `.aid/settings.yml` `knowledge.doc_set`, falling back to the C0 row of\n   `canonical/aid/templates/kb-authoring/domain-doc-matrix.md`, and confirm with the user.\n   An ambiguous realization is **asked**, never picked silently. The seed also names a\n   **second** destination -- the project's D document, for the rejected alternatives.\n4. **Read the whole destination** if it exists, and note its `source:` field.\n5. **Classify complexity** for the `aid-architect` dispatch (verifier tier >= producer).\n\n**Advance:** CREATE."
       }
@@ -36,15 +36,15 @@
       "terminal": null,
       "provenance": {
         "file": "canonical/skills/aid-create-stack/SKILL.md",
-        "startLine": 58,
-        "endLine": 60,
+        "startLine": 59,
+        "endLine": 61,
         "sourceKind": "skill",
         "excerpt": "## State: CREATE\n\n**Exactly three conditions refuse. There is no fourth.**"
       },
       "detail": {
         "file": "canonical/skills/aid-create-stack/SKILL.md",
-        "startLine": 58,
-        "endLine": 92,
+        "startLine": 59,
+        "endLine": 93,
         "sourceKind": "skill",
         "excerpt": "## State: CREATE\n\n**Exactly three conditions refuse. There is no fourth.**\n\n1. **No seed** at `.aid/design/stack.md` -> refuse, name `/aid-design-stack` as the skill\n   that produces one, and write nothing.\n2. **The seed's `## Open questions` still carries unresolved questions** by the detection\n   rule in `design-lifecycle.md`, and no `--override-open-questions` was supplied -> refuse,\n   naming each unresolved question and that override token. Leave the seed byte-identical.\n3. **The destination's frontmatter says `source: generated`** -> refuse: a registered build\n   script owns that content, so this skill must not write it.\n\nOtherwise it **realizes**. Whatever the destination already holds is never itself a reason\nto refuse -- an as-built C0 document is the normal case this skill is for.\n\n**The realization event.** Merge the settled seed content into the destination per the\ncontent rules below, offer any additional output the user asks for, then **delete the seed**.\nFour situations resolve as:\n\n- Destination absent, this skill owning the whole document -> create it, then register it\n  (see *Registration* below).\n- Destination present, the owned content absent -> add it. This is the dominant path.\n- Destination present, carrying content **an earlier `create` for this artifact committed**\n  -> that part routes to `/aid-update-stack` rather than being overwritten. \"Committed\n  content\" means content an earlier run of this lifecycle wrote, at the granularity of the\n  sections the seed's `## Destination` names -- **not** the as-built content\n  `/aid-discover` wrote.\n\n**A repeat `create` never halts with nothing done.** Every part of the seed that is new is\nwritten; each part that would overwrite previously committed content is **named and routed**\nto `/aid-update-stack`. The seed is deleted only when everything its `## Destination` named\nwas written; otherwise it stays in place carrying just the unrealized parts, which\n`/aid-update-stack` then consumes.\n\n**Advance:** VERIFY."
       }
@@ -58,15 +58,15 @@
       "terminal": null,
       "provenance": {
         "file": "canonical/skills/aid-create-stack/SKILL.md",
-        "startLine": 96,
-        "endLine": 99,
+        "startLine": 97,
+        "endLine": 100,
         "sourceKind": "skill",
         "excerpt": "## State: VERIFY\n\n**Full verify**, as `design-lifecycle.md` defines it. Not clean -> loop to CREATE; the\n3-cycle circuit breaker there escalates to IMPEDIMENT + `lifecycle: Blocked`."
       },
       "detail": {
         "file": "canonical/skills/aid-create-stack/SKILL.md",
-        "startLine": 96,
-        "endLine": 101,
+        "startLine": 97,
+        "endLine": 102,
         "sourceKind": "skill",
         "excerpt": "## State: VERIFY\n\n**Full verify**, as `design-lifecycle.md` defines it. Not clean -> loop to CREATE; the\n3-cycle circuit breaker there escalates to IMPEDIMENT + `lifecycle: Blocked`.\n\n**Advance:** PRESENT."
       }
@@ -80,15 +80,15 @@
       "terminal": null,
       "provenance": {
         "file": "canonical/skills/aid-create-stack/SKILL.md",
-        "startLine": 105,
-        "endLine": 110,
+        "startLine": 106,
+        "endLine": 111,
         "sourceKind": "skill",
         "excerpt": "## State: PRESENT (hard stop -- the user decides)\n\nSet `lifecycle: Paused-Awaiting-Input`. Present the realized document and assert: the seed\nwas consumed only for what was written; on the creation path both registration surfaces were\nwritten; the rejected alternatives went to the D document; and anything routed to\n`/aid-update-stack` is named."
       },
       "detail": {
         "file": "canonical/skills/aid-create-stack/SKILL.md",
-        "startLine": 105,
-        "endLine": 112,
+        "startLine": 106,
+        "endLine": 113,
         "sourceKind": "skill",
         "excerpt": "## State: PRESENT (hard stop -- the user decides)\n\nSet `lifecycle: Paused-Awaiting-Input`. Present the realized document and assert: the seed\nwas consumed only for what was written; on the creation path both registration surfaces were\nwritten; the rejected alternatives went to the D document; and anything routed to\n`/aid-update-stack` is named.\n\n**Advance:** DONE."
       }
@@ -105,15 +105,15 @@
       },
       "provenance": {
         "file": "canonical/skills/aid-create-stack/SKILL.md",
-        "startLine": 116,
-        "endLine": 118,
+        "startLine": 117,
+        "endLine": 119,
         "sourceKind": "skill",
         "excerpt": "## State: DONE\n\nSet `lifecycle: Completed`, `updated` now, append a `## Lifecycle History` row."
       },
       "detail": {
         "file": "canonical/skills/aid-create-stack/SKILL.md",
-        "startLine": 116,
-        "endLine": 118,
+        "startLine": 117,
+        "endLine": 119,
         "sourceKind": "skill",
         "excerpt": "## State: DONE\n\nSet `lifecycle: Completed`, `updated` now, append a `## Lifecycle History` row."
       }
@@ -128,8 +128,8 @@
       "advanceType": "UNSPECIFIED",
       "provenance": {
         "file": "canonical/skills/aid-create-stack/SKILL.md",
-        "startLine": 54,
-        "endLine": 54,
+        "startLine": 55,
+        "endLine": 55,
         "sourceKind": "skill",
         "excerpt": "**Advance:** CREATE."
       }
@@ -142,8 +142,8 @@
       "advanceType": "UNSPECIFIED",
       "provenance": {
         "file": "canonical/skills/aid-create-stack/SKILL.md",
-        "startLine": 92,
-        "endLine": 92,
+        "startLine": 93,
+        "endLine": 93,
         "sourceKind": "skill",
         "excerpt": "**Advance:** VERIFY."
       }
@@ -156,8 +156,8 @@
       "advanceType": "UNSPECIFIED",
       "provenance": {
         "file": "canonical/skills/aid-create-stack/SKILL.md",
-        "startLine": 98,
-        "endLine": 98,
+        "startLine": 99,
+        "endLine": 99,
         "sourceKind": "skill",
         "excerpt": "**Full verify**, as `design-lifecycle.md` defines it. Not clean -> loop to CREATE; the"
       }
@@ -170,8 +170,8 @@
       "advanceType": "UNSPECIFIED",
       "provenance": {
         "file": "canonical/skills/aid-create-stack/SKILL.md",
-        "startLine": 101,
-        "endLine": 101,
+        "startLine": 102,
+        "endLine": 102,
         "sourceKind": "skill",
         "excerpt": "**Advance:** PRESENT."
       }
@@ -184,8 +184,8 @@
       "advanceType": "UNSPECIFIED",
       "provenance": {
         "file": "canonical/skills/aid-create-stack/SKILL.md",
-        "startLine": 112,
-        "endLine": 112,
+        "startLine": 113,
+        "endLine": 113,
         "sourceKind": "skill",
         "excerpt": "**Advance:** DONE."
       }

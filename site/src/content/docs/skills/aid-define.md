@@ -9,7 +9,7 @@ generatedFrom: 'canonical/skills/aid-define/SKILL.md'
 ## Frontmatter
 
 - **`name`** — aid-define
-- **`description`** — Decompose approved requirements into discrete feature folders, each with its own SPEC.md stub. Use this skill once /aid-describe has produced an approved REQUIREMENTS.md and the work needs splitting into features before any one of them is specified. It turns each functional requirement into a feature, then validates the requirements and the feature boundaries against the Knowledge Base and the codebase, and halts ready for /aid-specify.
+- **`description`** — Decompose approved requirements into discrete feature folders, each with its own SPEC.md stub. Use this skill once `/aid-describe` has produced an approved REQUIREMENTS.md and the work needs splitting into features before any one of them is specified. It turns each functional requirement into a feature, then validates the requirements and the feature boundaries against the Knowledge Base and the codebase, and halts ready for `/aid-specify`.
 - **`allowed-tools`** — Read, Glob, Grep, Bash, Write, Edit
 - **`argument-hint`** — [work-001] decompose approved requirements  [--features work-001] re-run feature decomposition
 
@@ -45,24 +45,24 @@ Every node in the chart above, in chart order, with the exact `canonical/` text 
 
 <a id="fragment-n1"></a>**1 · `FEATURE-DECOMPOSITION`** — Requirements are approved and no feature folders exist yet… · _entry_
 
-~~~~plaintext title="canonical/skills/aid-define/SKILL.md#L237" wrap
+~~~~plaintext title="canonical/skills/aid-define/SKILL.md#L238" wrap
 | FEATURE-DECOMPOSITION | `references/state-feature-decomposition.md` | `aid-architect` | → CROSS-REFERENCE |
 ~~~~
 
-[Source: `canonical/skills/aid-define/SKILL.md#L237`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-define/SKILL.md#L237) · [full step: `canonical/skills/aid-define/references/state-feature-decomposition.md#L1-L21`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-define/references/state-feature-decomposition.md#L1-L21)
+[Source: `canonical/skills/aid-define/SKILL.md#L238`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-define/SKILL.md#L238) · [full step: `canonical/skills/aid-define/references/state-feature-decomposition.md#L1-L21`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-define/references/state-feature-decomposition.md#L1-L21)
 
 <a id="fragment-n2"></a>**2 · `CROSS-REFERENCE`** — Requirements are approved and features exist but… · _loop-back_
 
-~~~~plaintext title="canonical/skills/aid-define/SKILL.md#L238" wrap
+~~~~plaintext title="canonical/skills/aid-define/SKILL.md#L239" wrap
 | CROSS-REFERENCE | `references/state-cross-reference.md` | `aid-reviewer` | → DONE |
 ~~~~
 
-[Source: `canonical/skills/aid-define/SKILL.md#L238`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-define/SKILL.md#L238) · [full step: `canonical/skills/aid-define/references/state-cross-reference.md#L1-L36`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-define/references/state-cross-reference.md#L1-L36)
+[Source: `canonical/skills/aid-define/SKILL.md#L239`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-define/SKILL.md#L239) · [full step: `canonical/skills/aid-define/references/state-cross-reference.md#L1-L36`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-define/references/state-cross-reference.md#L1-L36)
 
 <a id="fragment-n3"></a>**3 · `DONE`** — Interview is complete, approved, features decomposed, and… · _exit_ · HALT
 
-~~~~plaintext title="canonical/skills/aid-define/SKILL.md#L239" wrap
+~~~~plaintext title="canonical/skills/aid-define/SKILL.md#L240" wrap
 | DONE | `references/state-done.md` | `inline` | → halt |
 ~~~~
 
-[Source: `canonical/skills/aid-define/SKILL.md#L239`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-define/SKILL.md#L239) · [full step: `canonical/skills/aid-define/references/state-done.md#L1-L38`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-define/references/state-done.md#L1-L38)
+[Source: `canonical/skills/aid-define/SKILL.md#L240`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-define/SKILL.md#L240) · [full step: `canonical/skills/aid-define/references/state-done.md#L1-L38`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-define/references/state-done.md#L1-L38)

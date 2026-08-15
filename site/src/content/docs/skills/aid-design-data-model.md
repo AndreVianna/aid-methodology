@@ -1,6 +1,6 @@
 ---
 title: 'aid-design-data-model'
-description: 'Develop a data-model design as a DESIGN SEED in .aid/design/data-model.md -- its entities, their relationships, and the migration impact of introducing them.'
+description: 'Develop a data-model design as a DESIGN SEED in `.aid/design/data-model.md` -- its entities, their relationships, and the migration impact of introducing…'
 generatedFrom: 'canonical/skills/aid-design-data-model/SKILL.md'
 ---
 
@@ -9,7 +9,7 @@ generatedFrom: 'canonical/skills/aid-design-data-model/SKILL.md'
 ## Frontmatter
 
 - **`name`** — aid-design-data-model
-- **`description`** — Develop a data-model design as a DESIGN SEED in .aid/design/data-model.md -- its entities, their relationships, and the migration impact of introducing them. Use this skill when an entity's shape and its relationships are still being worked out, before any migration is written. Grounded in the Knowledge Base (.aid/knowledge/) and the project source. It WRITES NO production code and NO KB document -- realize the seed into the built model and its migration with /aid-create-data-model once it is ready. Produced by the aid-architect agent and independently verified by aid-reviewer (full verify). Allocates a work-NNN folder.
+- **`description`** — Develop a data-model design as a DESIGN SEED in `.aid/design/data-model.md` -- its entities, their relationships, and the migration impact of introducing them. Use this skill when an entity's shape and its relationships are still being worked out, before any migration is written. Grounded in the Knowledge Base (`.aid/knowledge/`) and the project source. It WRITES NO production code and NO KB document -- realize the seed into the built model and its migration with `/aid-create-data-model` once it is ready. Produced by the aid-architect agent and independently verified by aid-reviewer (full verify). Allocates a work-NNN folder.
 - **`allowed-tools`** — Read, Glob, Grep, Bash, Write, Edit, Agent
 - **`argument-hint`** — &lt;subject> -- the data model to design (entities, relationships, migration impact)
 

@@ -1,6 +1,6 @@
 ---
 title: 'aid-design-theme'
-description: 'Develop a visual theme design as a DESIGN SEED in .aid/design/theme.md -- the style-token set (color, type, spacing), its light/dark variants, and how…'
+description: 'Develop a visual theme design as a DESIGN SEED in `.aid/design/theme.md` -- the style-token set (color, type, spacing), its light/dark variants, and how…'
 generatedFrom: 'canonical/skills/aid-design-theme/SKILL.md'
 ---
 
@@ -9,7 +9,7 @@ generatedFrom: 'canonical/skills/aid-design-theme/SKILL.md'
 ## Frontmatter
 
 - **`name`** — aid-design-theme
-- **`description`** — Develop a visual theme design as a DESIGN SEED in .aid/design/theme.md -- the style-token set (color, type, spacing), its light/dark variants, and how components apply it. Use this skill when the visual language is still being decided, rather than applied. Grounded in the Knowledge Base (.aid/knowledge/) and the project source. It WRITES NO production code and NO KB document -- realize the seed into the built theme with /aid-create-theme once it is ready. Produced by the aid-architect agent and independently verified by aid-reviewer (full verify). Allocates a work-NNN folder.
+- **`description`** — Develop a visual theme design as a DESIGN SEED in `.aid/design/theme.md` -- the style-token set (color, type, spacing), its light/dark variants, and how components apply it. Use this skill when the visual language is still being decided, rather than applied. Grounded in the Knowledge Base (`.aid/knowledge/`) and the project source. It WRITES NO production code and NO KB document -- realize the seed into the built theme with `/aid-create-theme` once it is ready. Produced by the aid-architect agent and independently verified by aid-reviewer (full verify). Allocates a work-NNN folder.
 - **`allowed-tools`** — Read, Glob, Grep, Bash, Write, Edit, Agent
 - **`argument-hint`** — &lt;subject> -- the theme/token set to design (color, type, spacing; light/dark)
 

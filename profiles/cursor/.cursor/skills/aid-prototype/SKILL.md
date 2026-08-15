@@ -7,8 +7,8 @@ description: >
   work folder or an opt-in worktree and never touches production -- and it is deliberately
   rough, so it gets a light verification rather than a polish grade. It resolves nothing: it
   reports whether the direction holds and what was learned, and you decide. For a kept
-  design meant to inform the build rather than a throwaway, use /aid-design instead; the
-  real build is a separate /aid-create step.
+  design meant to inform the build rather than a throwaway, use `/aid-design` instead; the
+  real build is a separate `/aid-create` step.
 allowed-tools: Read, Glob, Grep, Terminal, Write, Edit, Agent
 argument-hint: "<direction> -- the direction/hypothesis to validate (optionally: fidelity paper|low-fi|runnable-spike)"
 ---

@@ -3,9 +3,9 @@ name: aid-summarize
 description: >
   Generate kb.html, a single-file visual tour of the Knowledge Base. Use this skill when
   someone non-technical needs to read what the project knows about itself -- a newcomer, a
-  stakeholder, anyone who will not open .aid/knowledge/ directly. It builds one section per
-  resolved document from that document's own frontmatter, in a light/dark themed page with
-  click-to-expand images and WCAG AA accessibility. Two grades gate approval: script-
+  stakeholder, anyone who will not open `.aid/knowledge/` directly. It builds one section
+  per resolved document from that document's own frontmatter, in a light/dark themed page
+  with click-to-expand images and WCAG AA accessibility. Two grades gate approval: script-
   verifiable checks score the machine grade, and an interactive checklist scores the human
   grade, including a mandatory visual review. Idempotent -- re-running on an unchanged
   Knowledge Base does nothing.

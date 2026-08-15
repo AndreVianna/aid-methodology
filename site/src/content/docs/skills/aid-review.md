@@ -9,7 +9,7 @@ generatedFrom: 'canonical/skills/aid-review/SKILL.md'
 ## Frontmatter
 
 - **`name`** — aid-review
-- **`description`** — Review an existing artifact against criteria and return findings and recommendations in one pass -- code, a diff, a design, a pull request, a ticket, a document, a UI, whatever you name. Use this skill when you want a second opinion before something lands. It is read-only apart from its findings ledger: it never plans and halts. Every finding cites a Knowledge Base document or a file and line. The review is produced in a clean context and independently verified before you see it, and nothing is published to a pull request, ticket or document until you approve. It does not fix anything -- findings hand off to /aid-fix.
+- **`description`** — Review an existing artifact against criteria and return findings and recommendations in one pass -- code, a diff, a design, a pull request, a ticket, a document, a UI, whatever you name. Use this skill when you want a second opinion before something lands. It is read-only apart from its findings ledger: it never plans and halts. Every finding cites a Knowledge Base document or a file and line. The review is produced in a clean context and independently verified before you see it, and nothing is published to a pull request, ticket or document until you approve. It does not fix anything -- findings hand off to `/aid-fix`.
 - **`allowed-tools`** — Read, Glob, Grep, Bash, Write, Edit, Agent
 - **`argument-hint`** — [target] -- what to review (a file/dir, PR link, ticket id, work-NNN, 'my changes', or a described target)
 

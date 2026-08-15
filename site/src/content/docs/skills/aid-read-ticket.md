@@ -9,7 +9,7 @@ generatedFrom: 'canonical/skills/aid-read-ticket/SKILL.md'
 ## Frontmatter
 
 - **`name`** — aid-read-ticket
-- **`description`** — Read one ticket from the project's issue tracker and show its fields. Use this skill when you need a ticket's current contents -- during triage, before starting work, or while writing a change that references it. Give it a ticket id, optionally prefixed with a connector name when more than one tracker is catalogued. It resolves which tracker answers, fetches through your host tool's own MCP so AID never handles a credential, and displays the result. It never writes, locally or to the tracker, and never asks for confirmation; a failed, not-found, unauthorized or unavailable fetch surfaces the tracker's own error and exits without side effects.
+- **`description`** — Read one ticket from the project's issue tracker and show its fields. Use this skill when you need a ticket's current contents -- during triage, before starting work, or while writing a change that references it. Its grammar is `aid-read-ticket [<connector>:]<ticket-id>` -- the tracker's own id, optionally prefixed with a connector name when more than one tracker is catalogued. It resolves which tracker answers, fetches through your host tool's own MCP so AID never handles a credential, and displays the result. It never writes, locally or to the tracker, and never asks for confirmation; a failed, not-found, unauthorized or unavailable fetch surfaces the tracker's own error and exits without side effects.
 - **`allowed-tools`** — Read, Glob, Grep, AskUserQuestion
 - **`argument-hint`** — [&lt;connector>:]&lt;ticket-id>
 
@@ -49,32 +49,32 @@ Every node in the chart above, in chart order, with the exact `canonical/` text 
 
 <a id="fragment-n1"></a>**1 · `PARSE-ARGS`** · _entry_
 
-~~~~plaintext title="canonical/skills/aid-read-ticket/SKILL.md#L67" wrap
+~~~~plaintext title="canonical/skills/aid-read-ticket/SKILL.md#L68" wrap
 ### State 1 — PARSE-ARGS
 ~~~~
 
-[Source: `canonical/skills/aid-read-ticket/SKILL.md#L67`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-read-ticket/SKILL.md#L67)
+[Source: `canonical/skills/aid-read-ticket/SKILL.md#L68`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-read-ticket/SKILL.md#L68)
 
 <a id="fragment-n2"></a>**2 · `RESOLVE-CONNECTOR`** · _step_
 
-~~~~plaintext title="canonical/skills/aid-read-ticket/SKILL.md#L76" wrap
+~~~~plaintext title="canonical/skills/aid-read-ticket/SKILL.md#L77" wrap
 ### State 2 — RESOLVE-CONNECTOR
 ~~~~
 
-[Source: `canonical/skills/aid-read-ticket/SKILL.md#L76`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-read-ticket/SKILL.md#L76)
+[Source: `canonical/skills/aid-read-ticket/SKILL.md#L77`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-read-ticket/SKILL.md#L77)
 
 <a id="fragment-n3"></a>**3 · `FETCH`** · _step_
 
-~~~~plaintext title="canonical/skills/aid-read-ticket/SKILL.md#L102" wrap
+~~~~plaintext title="canonical/skills/aid-read-ticket/SKILL.md#L103" wrap
 ### State 3 — FETCH
 ~~~~
 
-[Source: `canonical/skills/aid-read-ticket/SKILL.md#L102`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-read-ticket/SKILL.md#L102)
+[Source: `canonical/skills/aid-read-ticket/SKILL.md#L103`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-read-ticket/SKILL.md#L103)
 
 <a id="fragment-n4"></a>**4 · `DISPLAY`** · _exit_ · UNSPECIFIED
 
-~~~~plaintext title="canonical/skills/aid-read-ticket/SKILL.md#L116" wrap
+~~~~plaintext title="canonical/skills/aid-read-ticket/SKILL.md#L117" wrap
 ### State 4 — DISPLAY
 ~~~~
 
-[Source: `canonical/skills/aid-read-ticket/SKILL.md#L116`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-read-ticket/SKILL.md#L116)
+[Source: `canonical/skills/aid-read-ticket/SKILL.md#L117`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-read-ticket/SKILL.md#L117)

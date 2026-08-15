@@ -4,12 +4,12 @@ description: >
   Produce a design artifact you intend to keep -- a UX or interaction flow, a component or
   interface design, with accessibility notes -- meant to inform the real build. Use this
   skill when the subject has no dedicated design row of its own; when a dedicated
-  /aid-design-<artifact> row exists, use that row instead. It is grounded in the Knowledge
-  Base (.aid/knowledge/) and the project source, produced by aid-architect and independently
-  verified by aid-reviewer, because a kept design drives a build and its correctness
-  matters. It resolves nothing: it presents the design, you decide, and building it is a
-  separate /aid-create step. For a throwaway model that only validates a direction, use
-  /aid-prototype instead.
+  `/aid-design-`<artifact> row exists, use that row instead. It is grounded in the Knowledge
+  Base (`.aid/knowledge/`) and the project source, produced by aid-architect and
+  independently verified by aid-reviewer, because a kept design drives a build and its
+  correctness matters. It resolves nothing: it presents the design, you decide, and building
+  it is a separate `/aid-create` step. For a throwaway model that only validates a
+  direction, use `/aid-prototype` instead.
 allowed-tools: Read, Glob, Grep, shell, Write, Edit, Agent
 argument-hint: "<subject> -- what to design (a flow, a component/interface, a UI; use a dedicated /aid-design-<artifact> row when one exists)"
 ---

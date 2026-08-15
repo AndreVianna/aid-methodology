@@ -9,7 +9,7 @@ generatedFrom: 'canonical/skills/aid-remove/SKILL.md'
 ## Frontmatter
 
 - **`name`** — aid-remove
-- **`description`** — Remove or delete a code artifact, endpoint, dependency, feature, or dead code; update dependents, tests, and docs. Use this skill when you already know what to remove and want it scoped, specified, and broken into reviewable tasks in a single pass, with no requirements interview. You approve the resulting plan before anything is built: this skill plans and stops, so run /aid-execute to carry the plan out.
+- **`description`** — Remove or delete a code artifact, endpoint, dependency, feature, or dead code; update dependents, tests, and docs. Use this skill when you already know what to remove and want it scoped, specified, and broken into reviewable tasks in a single pass, with no requirements interview. You approve the resulting plan before anything is built: this skill plans and stops, so run `/aid-execute` to carry the plan out.
 - **`allowed-tools`** — Read, Glob, Grep, Bash, Write, Edit, Agent
 - **`argument-hint`** — [description]  -- what to remove; runs straight to a graded flattened Lite work
 

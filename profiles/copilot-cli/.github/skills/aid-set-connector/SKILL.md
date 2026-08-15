@@ -8,7 +8,7 @@ description: >
   type. It asks the question set matching the type (mcp, api, ssh or cli), prefilled from
   the preset catalog when the tool is a known preset, and you confirm or edit. It reconciles
   that connector's secret and touches only that one stem: every other catalogued connector
-  is left byte-for-byte untouched. It never invokes /aid-discover.
+  is left byte-for-byte untouched. It never invokes `/aid-discover`.
 allowed-tools: Read, Glob, Grep, shell, Write, Edit, AskUserQuestion
 argument-hint: "<tool> <type> [--rotate-secret]  -- e.g. aid-set-connector Jira mcp   (type: mcp|api|ssh|cli)"
 ---

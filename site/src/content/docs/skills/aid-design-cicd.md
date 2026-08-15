@@ -1,6 +1,6 @@
 ---
 title: 'aid-design-cicd'
-description: 'Develop the delivery pipeline as a DESIGN SEED in .aid/design/cicd.md -- stages, triggers, environments, promotion, and release flow.'
+description: 'Develop the delivery pipeline as a DESIGN SEED in `.aid/design/cicd.md` -- stages, triggers, environments, promotion, and release flow.'
 generatedFrom: 'canonical/skills/aid-design-cicd/SKILL.md'
 ---
 
@@ -9,7 +9,7 @@ generatedFrom: 'canonical/skills/aid-design-cicd/SKILL.md'
 ## Frontmatter
 
 - **`name`** — aid-design-cicd
-- **`description`** — Develop the delivery pipeline as a DESIGN SEED in .aid/design/cicd.md -- stages, triggers, environments, promotion, and release flow. Use this skill when how the project should be built, gated and shipped is still being worked out. Grounded in the Knowledge Base (.aid/knowledge/) and the project source. It WRITES NO KB document, NO production code, and NO workflow file -- realize the seed into the project's C8 document with /aid-create-cicd once it is ready. To design a resource the pipeline ships to, use /aid-design-infra; to design a data pipeline rather than a delivery one, use /aid-design-data-pipeline; to ship a built artifact now, use /aid-deploy. Produced by the aid-architect agent and independently verified by aid-reviewer (full verify). Allocates a work-NNN folder.
+- **`description`** — Develop the delivery pipeline as a DESIGN SEED in `.aid/design/cicd.md` -- stages, triggers, environments, promotion, and release flow. Use this skill when how the project should be built, gated and shipped is still being worked out. Grounded in the Knowledge Base (`.aid/knowledge/`) and the project source. It WRITES NO KB document, NO production code, and NO workflow file -- realize the seed into the project's C8 document with `/aid-create-cicd` once it is ready. To design a resource the pipeline ships to, use `/aid-design-infra`; to design a data pipeline rather than a delivery one, use `/aid-design-data-pipeline`; to ship a built artifact now, use `/aid-deploy`. Produced by the aid-architect agent and independently verified by aid-reviewer (full verify). Allocates a work-NNN folder.
 - **`allowed-tools`** — Read, Glob, Grep, Bash, Write, Edit, Agent
 - **`argument-hint`** — &lt;subject> -- the delivery pipeline to design (stages, triggers, environments, promotion)
 

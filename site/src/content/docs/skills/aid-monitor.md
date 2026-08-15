@@ -9,7 +9,7 @@ generatedFrom: 'canonical/skills/aid-monitor/SKILL.md'
 ## Frontmatter
 
 - **`name`** — aid-monitor
-- **`description`** — Watch production, classify what you find, and route it to whoever should act. Use this skill after a deployment, on a schedule, or whenever something looks wrong in the field. It reads telemetry, detects anomalies, performs root-cause analysis on the ones that are bugs, and then routes: bugs to /aid-fix, change requests to /aid-triage. Scoped to one work at a time.
+- **`description`** — Watch production, classify what you find, and route it to whoever should act. Use this skill after a deployment, on a schedule, or whenever something looks wrong in the field. It reads telemetry, detects anomalies, performs root-cause analysis on the ones that are bugs, and then routes: bugs to `/aid-fix`, change requests to `/aid-triage`. Scoped to one work at a time.
 - **`allowed-tools`** — Read, Glob, Grep, Bash, Write
 
 [Definition: `canonical/skills/aid-monitor/SKILL.md`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-monitor/SKILL.md)

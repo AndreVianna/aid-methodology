@@ -1,6 +1,6 @@
 ---
 title: 'aid-design-testing-strategy'
-description: 'Develop the testing policy as a DESIGN SEED in .aid/design/testing-strategy.md -- test levels, coverage expectations, which gates block a merge, and who may…'
+description: 'Develop the testing policy as a DESIGN SEED in `.aid/design/testing-strategy.md` -- test levels, coverage expectations, which gates block a merge, and who…'
 generatedFrom: 'canonical/skills/aid-design-testing-strategy/SKILL.md'
 ---
 
@@ -9,7 +9,7 @@ generatedFrom: 'canonical/skills/aid-design-testing-strategy/SKILL.md'
 ## Frontmatter
 
 - **`name`** — aid-design-testing-strategy
-- **`description`** — Develop the testing policy as a DESIGN SEED in .aid/design/testing-strategy.md -- test levels, coverage expectations, which gates block a merge, and who may waive one. Use this skill when how the project should be tested is still being decided, rather than which tests to write. Grounded in the Knowledge Base (.aid/knowledge/) and the project source. It WRITES NO KB document and NO test code -- realize the seed into the project's C6 document(s) with /aid-create-testing-strategy once it is ready. To design a specific set of tests rather than the policy, use /aid-design-test; to RUN existing suites, use /aid-test. Produced by the aid-architect agent and independently verified by aid-reviewer (full verify). Allocates a work-NNN folder.
+- **`description`** — Develop the testing policy as a DESIGN SEED in `.aid/design/testing-strategy.md` -- test levels, coverage expectations, which gates block a merge, and who may waive one. Use this skill when how the project should be tested is still being decided, rather than which tests to write. Grounded in the Knowledge Base (`.aid/knowledge/`) and the project source. It WRITES NO KB document and NO test code -- realize the seed into the project's C6 document(s) with `/aid-create-testing-strategy` once it is ready. To design a specific set of tests rather than the policy, use `/aid-design-test`; to RUN existing suites, use `/aid-test`. Produced by the aid-architect agent and independently verified by aid-reviewer (full verify). Allocates a work-NNN folder.
 - **`allowed-tools`** — Read, Glob, Grep, Bash, Write, Edit, Agent
 - **`argument-hint`** — &lt;subject> -- the testing policy to design (levels, coverage, merge-blocking gates, waivers)
 

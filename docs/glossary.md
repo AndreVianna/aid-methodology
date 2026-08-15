@@ -51,7 +51,7 @@ Terms and concepts used throughout the AID methodology.
 
 ## Off-Pipeline Skills
 
-**aid-housekeep:** One of AID's off-pipeline, on-demand skills (alongside `aid-update-kb`, `aid-summarize`, `aid-set-connector`, `aid-unset-connector`, `aid-read-ticket`, `aid-create-ticket`, `aid-update-ticket`) within the 17 curated pipeline / on-demand / router skills — distinct from the 94-row shortcut catalog's skills (34 verb-first shortcut doorways + 24 `repurpose` skills). Run it whenever the Knowledge Base needs freshening. State machine: PREFLIGHT → KB-DELTA → SUMMARY-DELTA → CLEANUP → DONE, on an `aid/housekeep-*` branch. Not a numbered development phase.
+**aid-housekeep:** One of AID's off-pipeline, on-demand skills (alongside `aid-update-kb`, `aid-summarize`, `aid-set-connector`, `aid-unset-connector`, `aid-read-ticket`, `aid-create-ticket`, `aid-update-ticket`) within the 17 curated pipeline / on-demand / router skills — distinct from the 94-row shortcut catalog's skills (34 verb-first shortcut doorways + 60 `repurpose` skills). Run it whenever the Knowledge Base needs freshening. State machine: PREFLIGHT → KB-DELTA → SUMMARY-DELTA → CLEANUP → DONE, on an `aid/housekeep-*` branch. Not a numbered development phase.
 
 **aid-ask:** Off-pipeline, on-demand Q&A skill — answers free-form questions about the project from the Knowledge Base, codebase, and in-flight works, with source citations. When context is insufficient, captures the gap as a Query-Gap entry in the KB's Q&A backlog (STATE.md) to feed the KB-improvement loop. Write scope is restricted to the gap-capture path — no KB doc, settings file, or code file is ever written. Run from any directory at any phase.
 

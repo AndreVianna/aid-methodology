@@ -9,7 +9,7 @@ description: >
   are the authoritative grounding; web sources are encouraged but supplementary, cited with
   a URL and access date, and a contradiction between them is surfaced rather than silently
   resolved. For open-ended exploration of a problem space rather than a specific question,
-  use /aid-brainstorm.
+  use `/aid-brainstorm`.
 allowed-tools: Read, Glob, Grep, Terminal, Write, Edit, Agent
 argument-hint: "<question> -- an open technical question to investigate"
 ---

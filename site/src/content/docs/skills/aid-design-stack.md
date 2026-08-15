@@ -1,6 +1,6 @@
 ---
 title: 'aid-design-stack'
-description: 'Develop the technology choice as a DESIGN SEED in .aid/design/stack.md -- languages, runtimes, frameworks, and build and test tooling with versions, plus the…'
+description: 'Develop the technology choice as a DESIGN SEED in `.aid/design/stack.md` -- languages, runtimes, frameworks, and build and test tooling with versions, plus…'
 generatedFrom: 'canonical/skills/aid-design-stack/SKILL.md'
 ---
 
@@ -9,7 +9,7 @@ generatedFrom: 'canonical/skills/aid-design-stack/SKILL.md'
 ## Frontmatter
 
 - **`name`** — aid-design-stack
-- **`description`** — Develop the technology choice as a DESIGN SEED in .aid/design/stack.md -- languages, runtimes, frameworks, and build and test tooling with versions, plus the alternatives rejected and why. Use this skill when which technologies to build on is still an open choice. Grounded in the Knowledge Base (.aid/knowledge/) and the project source. It WRITES NO KB document and NO production code -- realize the seed into the project's C0 document with /aid-create-stack once it is ready. To design a configuration option within a stack rather than choose the stack, use /aid-design-config; for an open question with a researchable answer, use /aid-research. Produced by the aid-architect agent and independently verified by aid-reviewer (full verify). Allocates a work-NNN folder.
+- **`description`** — Develop the technology choice as a DESIGN SEED in `.aid/design/stack.md` -- languages, runtimes, frameworks, and build and test tooling with versions, plus the alternatives rejected and why. Use this skill when which technologies to build on is still an open choice. Grounded in the Knowledge Base (`.aid/knowledge/`) and the project source. It WRITES NO KB document and NO production code -- realize the seed into the project's C0 document with `/aid-create-stack` once it is ready. To design a configuration option within a stack rather than choose the stack, use `/aid-design-config`; for an open question with a researchable answer, use `/aid-research`. Produced by the aid-architect agent and independently verified by aid-reviewer (full verify). Allocates a work-NNN folder.
 - **`allowed-tools`** — Read, Glob, Grep, Bash, Write, Edit, Agent
 - **`argument-hint`** — &lt;subject> -- the technology stack to design (languages, runtimes, frameworks, tooling with versions)
 
@@ -52,7 +52,7 @@ Every node in the chart above, in chart order, with the exact `canonical/` text 
 
 <a id="fragment-n1"></a>**1 · `INTAKE`** · _entry_
 
-~~~~plaintext title="canonical/skills/aid-design-stack/SKILL.md#L38-L48" wrap
+~~~~plaintext title="canonical/skills/aid-design-stack/SKILL.md#L39-L49" wrap
 ## State: INTAKE
 
 1. **Require a subject.** Empty argument -> ask one bootstrapping question ("What technology
@@ -66,11 +66,11 @@ Every node in the chart above, in chart order, with the exact `canonical/` text 
 4. **Classify complexity** for the `aid-architect` dispatch (verifier tier >= producer).
 ~~~~
 
-[Source: `canonical/skills/aid-design-stack/SKILL.md#L38-L48`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-stack/SKILL.md#L38-L48) · [full step: `canonical/skills/aid-design-stack/SKILL.md#L38-L50`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-stack/SKILL.md#L38-L50)
+[Source: `canonical/skills/aid-design-stack/SKILL.md#L39-L49`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-stack/SKILL.md#L39-L49) · [full step: `canonical/skills/aid-design-stack/SKILL.md#L39-L51`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-stack/SKILL.md#L39-L51)
 
 <a id="fragment-n2"></a>**2 · `DESIGN`** · _step_
 
-~~~~plaintext title="canonical/skills/aid-design-stack/SKILL.md#L54-L60" wrap
+~~~~plaintext title="canonical/skills/aid-design-stack/SKILL.md#L55-L61" wrap
 ## State: DESIGN
 
 Dispatch **`aid-architect`** (clean context, tiered) to write or iterate
@@ -80,37 +80,37 @@ in INTAKE. What this artifact's seed must settle: **the languages, runtimes, fra
 build/test tooling WITH VERSIONS, plus the alternatives rejected and why**.
 ~~~~
 
-[Source: `canonical/skills/aid-design-stack/SKILL.md#L54-L60`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-stack/SKILL.md#L54-L60) · [full step: `canonical/skills/aid-design-stack/SKILL.md#L54-L74`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-stack/SKILL.md#L54-L74)
+[Source: `canonical/skills/aid-design-stack/SKILL.md#L55-L61`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-stack/SKILL.md#L55-L61) · [full step: `canonical/skills/aid-design-stack/SKILL.md#L55-L75`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-stack/SKILL.md#L55-L75)
 
 <a id="fragment-n3"></a>**3 · `VERIFY`** · _loop-back_
 
-~~~~plaintext title="canonical/skills/aid-design-stack/SKILL.md#L78-L81" wrap
+~~~~plaintext title="canonical/skills/aid-design-stack/SKILL.md#L79-L82" wrap
 ## State: VERIFY
 
 **Full verify**, as `design-lifecycle.md` defines it. Not clean -> loop to DESIGN; the
 3-cycle circuit breaker there escalates to IMPEDIMENT + `lifecycle: Blocked`.
 ~~~~
 
-[Source: `canonical/skills/aid-design-stack/SKILL.md#L78-L81`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-stack/SKILL.md#L78-L81) · [full step: `canonical/skills/aid-design-stack/SKILL.md#L78-L83`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-stack/SKILL.md#L78-L83)
+[Source: `canonical/skills/aid-design-stack/SKILL.md#L79-L82`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-stack/SKILL.md#L79-L82) · [full step: `canonical/skills/aid-design-stack/SKILL.md#L79-L84`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-stack/SKILL.md#L79-L84)
 
 <a id="fragment-n4"></a>**4 · `PRESENT`** — hard stop -- the user decides · _step_
 
-~~~~plaintext title="canonical/skills/aid-design-stack/SKILL.md#L87-L90" wrap
+~~~~plaintext title="canonical/skills/aid-design-stack/SKILL.md#L88-L91" wrap
 ## State: PRESENT (hard stop -- the user decides)
 
 Set `lifecycle: Paused-Awaiting-Input`. Present the seed clearly. Assert no resolution --
 the user iterates (re-invoke this skill) or realizes it now (`/aid-create-stack`).
 ~~~~
 
-[Source: `canonical/skills/aid-design-stack/SKILL.md#L87-L90`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-stack/SKILL.md#L87-L90) · [full step: `canonical/skills/aid-design-stack/SKILL.md#L87-L92`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-stack/SKILL.md#L87-L92)
+[Source: `canonical/skills/aid-design-stack/SKILL.md#L88-L91`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-stack/SKILL.md#L88-L91) · [full step: `canonical/skills/aid-design-stack/SKILL.md#L88-L93`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-stack/SKILL.md#L88-L93)
 
 <a id="fragment-n5"></a>**5 · `DONE`** · _exit_ · UNSPECIFIED
 
-~~~~plaintext title="canonical/skills/aid-design-stack/SKILL.md#L96-L99" wrap
+~~~~plaintext title="canonical/skills/aid-design-stack/SKILL.md#L97-L100" wrap
 ## State: DONE
 
 Set `lifecycle: Completed`, `updated` now, append a `## Lifecycle History` row. The seed
 persists at `.aid/design/stack.md`; consumption happens at `/aid-create-stack`.
 ~~~~
 
-[Source: `canonical/skills/aid-design-stack/SKILL.md#L96-L99`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-stack/SKILL.md#L96-L99) · [full step: `canonical/skills/aid-design-stack/SKILL.md#L96-L99`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-stack/SKILL.md#L96-L99)
+[Source: `canonical/skills/aid-design-stack/SKILL.md#L97-L100`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-stack/SKILL.md#L97-L100) · [full step: `canonical/skills/aid-design-stack/SKILL.md#L97-L100`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-design-stack/SKILL.md#L97-L100)

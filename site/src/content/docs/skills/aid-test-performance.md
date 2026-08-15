@@ -9,7 +9,7 @@ generatedFrom: 'canonical/skills/aid-test-performance/SKILL.md'
 ## Frontmatter
 
 - **`name`** — aid-test-performance
-- **`description`** — Run a performance verification against a threshold or SLO -- a benchmark, a load test, or a stress test -- and report measured against target. Use this skill when you need to know whether something is fast enough, and by how much. Read-only; it resolves nothing, and findings hand off to /aid-fix. A thin kind-sibling of /aid-test, which defines its full behavior.
+- **`description`** — Run a performance verification against a threshold or SLO -- a benchmark, a load test, or a stress test -- and report measured against target. Use this skill when you need to know whether something is fast enough, and by how much. Read-only; it resolves nothing, and findings hand off to `/aid-fix`. A thin kind-sibling of `/aid-test`, which defines its full behavior.
 - **`allowed-tools`** — Read, Glob, Grep, Bash, Write, Edit, Agent
 - **`argument-hint`** — &lt;target + threshold> -- the hot path/endpoint and the SLO to measure against
 

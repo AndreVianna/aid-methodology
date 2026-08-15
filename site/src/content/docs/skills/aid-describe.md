@@ -9,7 +9,7 @@ generatedFrom: 'canonical/skills/aid-describe/SKILL.md'
 ## Frontmatter
 
 - **`name`** — aid-describe
-- **`description`** — Gather requirements through an adaptive interview and write them to REQUIREMENTS.md. Use this skill when you know roughly what you want built but the scope, the users, and the acceptance criteria are not yet pinned down. It asks one question at a time, each chosen by a seasoned-analyst elicitation engine that picks its next move from the gaps in what you have said so far. The first run builds the document incrementally; a later run resumes wherever it is still incomplete. It ends by presenting the finished requirements for your approval and handing off to /aid-define.
+- **`description`** — Gather requirements through an adaptive interview and write them to REQUIREMENTS.md. Use this skill when you know roughly what you want built but the scope, the users, and the acceptance criteria are not yet pinned down. It asks one question at a time, each chosen by a seasoned-analyst elicitation engine that picks its next move from the gaps in what you have said so far. The first run builds the document incrementally; a later run resumes wherever it is still incomplete. It ends by presenting the finished requirements for your approval and handing off to `/aid-define`.
 - **`allowed-tools`** — Read, Glob, Grep, Bash, Write, Edit
 - **`argument-hint`** — [work-001] resume work  [--reset work-001] clear and restart
 

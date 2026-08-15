@@ -1,6 +1,6 @@
 ---
 title: 'aid-design-test'
-description: 'Develop a test design as a DESIGN SEED in .aid/design/test.md -- the units under test, the cases, and the framework and fixtures.'
+description: 'Develop a test design as a DESIGN SEED in `.aid/design/test.md` -- the units under test, the cases, and the framework and fixtures.'
 generatedFrom: 'canonical/skills/aid-design-test/SKILL.md'
 ---
 
@@ -9,7 +9,7 @@ generatedFrom: 'canonical/skills/aid-design-test/SKILL.md'
 ## Frontmatter
 
 - **`name`** — aid-design-test
-- **`description`** — Develop a test design as a DESIGN SEED in .aid/design/test.md -- the units under test, the cases, and the framework and fixtures. Use this skill when what a test should actually assert is still being worked out. Grounded in the Knowledge Base (.aid/knowledge/) and the project source. It WRITES NO production code and NO KB document -- realize the seed into authored tests with /aid-create-test once it is ready. To design the testing policy rather than specific tests, use /aid-design-testing-strategy; to RUN existing suites rather than design them, use /aid-test. Produced by the aid-architect agent and independently verified by aid-reviewer (full verify). Allocates a work-NNN folder.
+- **`description`** — Develop a test design as a DESIGN SEED in `.aid/design/test.md` -- the units under test, the cases, and the framework and fixtures. Use this skill when what a test should actually assert is still being worked out. Grounded in the Knowledge Base (`.aid/knowledge/`) and the project source. It WRITES NO production code and NO KB document -- realize the seed into authored tests with `/aid-create-test` once it is ready. To design the testing policy rather than specific tests, use `/aid-design-testing-strategy`; to RUN existing suites rather than design them, use `/aid-test`. Produced by the aid-architect agent and independently verified by aid-reviewer (full verify). Allocates a work-NNN folder.
 - **`allowed-tools`** — Read, Glob, Grep, Bash, Write, Edit, Agent
 - **`argument-hint`** — &lt;subject> -- the tests to design (units under test, cases, framework/fixtures)
 

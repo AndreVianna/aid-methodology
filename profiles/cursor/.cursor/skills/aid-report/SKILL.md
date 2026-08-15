@@ -9,7 +9,7 @@ description: >
   Knowledge Base and project source for what the data means, are the authoritative
   grounding; external baselines are supplementary and cited with a URL and access date. It
   reads data read-only. For a durable dashboard rather than a one-off report, use
-  /aid-create-dashboard.
+  `/aid-create-dashboard`.
 allowed-tools: Read, Glob, Grep, Terminal, Write, Edit, Agent
 argument-hint: "<subject> -- the data/usage to analyze (a dataset, logs, metrics, an A/B result)"
 ---

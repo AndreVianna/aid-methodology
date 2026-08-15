@@ -6,7 +6,7 @@ description: >
   deletes its descriptor, purges its secret, and rebuilds the catalog index from whatever
   remains on disk -- touching only that one stem, so every other catalogued connector is
   left byte-for-byte untouched. Idempotent: removing an already-absent tool is a clean no-
-  op. It never invokes /aid-discover.
+  op. It never invokes `/aid-discover`.
 allowed-tools: Read, Terminal
 argument-hint: "<tool>  -- e.g. aid-unset-connector Jira"
 ---

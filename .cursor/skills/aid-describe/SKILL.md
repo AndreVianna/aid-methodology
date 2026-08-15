@@ -7,7 +7,7 @@ description: >
   by a seasoned-analyst elicitation engine that picks its next move from the gaps in what
   you have said so far. The first run builds the document incrementally; a later run resumes
   wherever it is still incomplete. It ends by presenting the finished requirements for your
-  approval and handing off to /aid-define.
+  approval and handing off to `/aid-define`.
 allowed-tools: Read, Glob, Grep, Terminal, Write, Edit
 argument-hint: "[work-001] resume work  [--reset work-001] clear and restart"
 ---

@@ -1,16 +1,16 @@
 ---
 name: aid-create-testing-strategy
 description: >
-  Realize a ready testing-strategy seed from .aid/design/testing-strategy.md into the
+  Realize a ready testing-strategy seed from `.aid/design/testing-strategy.md` into the
   project's quality (C6) documents -- the test landscape (levels, coverage expectations, CI
   lane mapping, known gaps) and the gate policy (what blocks a merge, the thresholds, who
   may waive one). Use this skill when a testing-strategy seed is ready and the project has
   no record of its test lanes or merge gates yet. Creates the gate document on first use and
-  registers it in .aid/settings.yml and .aid/knowledge/README.md in the same run, which opts
-  that document into the Conformance Lane permanently -- a choice you are making by running
-  this skill. To revise C6 content this lifecycle already committed, use
-  /aid-update-testing-strategy; to author or revise test CODE rather than the strategy, use
-  /aid-create-test or /aid-update-test. Produced by the aid-architect agent and
+  registers it in `.aid/settings.yml` and `.aid/knowledge/README.md` in the same run, which
+  opts that document into the Conformance Lane permanently -- a choice you are making by
+  running this skill. To revise C6 content this lifecycle already committed, use
+  `/aid-update-testing-strategy`; to author or revise test CODE rather than the strategy,
+  use `/aid-create-test` or `/aid-update-test`. Produced by the aid-architect agent and
   independently verified by aid-reviewer (full verify). Allocates a work-NNN folder.
 allowed-tools: Read, Glob, Grep, Terminal, Write, Edit, Agent
 argument-hint: "[<direction>] -- which parts of the testing-strategy seed to realize"

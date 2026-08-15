@@ -1,16 +1,17 @@
 ---
 name: aid-create-stack
 description: >
-  Realize a ready stack seed from .aid/design/stack.md into the project's technology (C0)
+  Realize a ready stack seed from `.aid/design/stack.md` into the project's technology (C0)
   Knowledge Base document -- languages, runtimes, frameworks, package managers, and build
   and test tooling, each with its version. Use this skill when a stack seed is ready and the
   project has no technology-stack document yet. When it creates the document it also
-  registers it in .aid/settings.yml and .aid/knowledge/README.md in the same run, which opts
-  that document into the Conformance Lane permanently -- a choice you are making by running
-  this skill. To revise C0 content this lifecycle already committed, use /aid-update-stack;
-  to create or revise a configuration option within a chosen stack rather than the stack
-  itself, use /aid-create-config or /aid-update-config. Produced by the aid-architect agent
-  and independently verified by aid-reviewer (full verify). Allocates a work-NNN folder.
+  registers it in `.aid/settings.yml` and `.aid/knowledge/README.md` in the same run, which
+  opts that document into the Conformance Lane permanently -- a choice you are making by
+  running this skill. To revise C0 content this lifecycle already committed, use
+  `/aid-update-stack`; to create or revise a configuration option within a chosen stack
+  rather than the stack itself, use `/aid-create-config` or `/aid-update-config`. Produced
+  by the aid-architect agent and independently verified by aid-reviewer (full verify).
+  Allocates a work-NNN folder.
 allowed-tools: Read, Glob, Grep, shell, Write, Edit, Agent
 argument-hint: "[<direction>] -- which parts of the stack seed to realize"
 ---

@@ -9,7 +9,7 @@ generatedFrom: 'canonical/skills/aid-test-security/SKILL.md'
 ## Frontmatter
 
 - **`name`** — aid-test-security
-- **`description`** — Run a security verification and consolidate the findings -- SAST, DAST, fuzzing, or a dependency audit. Use this skill when you need to know what is currently exploitable or outdated. Read-only; it resolves nothing, and findings hand off to /aid-fix. A thin kind-sibling of /aid-test, which defines its full behavior.
+- **`description`** — Run a security verification and consolidate the findings -- SAST, DAST, fuzzing, or a dependency audit. Use this skill when you need to know what is currently exploitable or outdated. Read-only; it resolves nothing, and findings hand off to `/aid-fix`. A thin kind-sibling of `/aid-test`, which defines its full behavior.
 - **`allowed-tools`** — Read, Glob, Grep, Bash, Write, Edit, Agent
 - **`argument-hint`** — &lt;target> -- the endpoint/module/dependency set to verify
 

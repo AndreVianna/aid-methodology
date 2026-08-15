@@ -1,6 +1,6 @@
 ---
 title: 'aid-design-cli'
-description: 'Develop a CLI design as a DESIGN SEED in .aid/design/cli.md -- the command and subcommand shape, its arguments and flags, and its output and error…'
+description: 'Develop a CLI design as a DESIGN SEED in `.aid/design/cli.md` -- the command and subcommand shape, its arguments and flags, and its output and error…'
 generatedFrom: 'canonical/skills/aid-design-cli/SKILL.md'
 ---
 
@@ -9,7 +9,7 @@ generatedFrom: 'canonical/skills/aid-design-cli/SKILL.md'
 ## Frontmatter
 
 - **`name`** — aid-design-cli
-- **`description`** — Develop a CLI design as a DESIGN SEED in .aid/design/cli.md -- the command and subcommand shape, its arguments and flags, and its output and error conventions. Use this skill when a command's signature and output are still being worked out. Grounded in the Knowledge Base (.aid/knowledge/) and the project source. It WRITES NO production code and NO KB document -- realize the seed into the built command with /aid-create-cli once it is ready. Produced by the aid-architect agent and independently verified by aid-reviewer (full verify). Allocates a work-NNN folder.
+- **`description`** — Develop a CLI design as a DESIGN SEED in `.aid/design/cli.md` -- the command and subcommand shape, its arguments and flags, and its output and error conventions. Use this skill when a command's signature and output are still being worked out. Grounded in the Knowledge Base (`.aid/knowledge/`) and the project source. It WRITES NO production code and NO KB document -- realize the seed into the built command with `/aid-create-cli` once it is ready. Produced by the aid-architect agent and independently verified by aid-reviewer (full verify). Allocates a work-NNN folder.
 - **`allowed-tools`** — Read, Glob, Grep, Bash, Write, Edit, Agent
 - **`argument-hint`** — &lt;subject> -- the CLI command(s) to design (command shape, flags, output/errors)
 

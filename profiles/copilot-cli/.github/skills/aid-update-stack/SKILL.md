@@ -6,11 +6,11 @@ description: >
   and constraints -- plus any previously created outputs you name. Use this skill when the
   technology-stack document already exists and a choice in it has changed. Requires no
   design seed: the change you state in the run is a sufficient input. Reads and consumes a
-  stack seed when one is present in .aid/design/. When the C0 document does not yet exist,
-  routes to /aid-create-stack. To change a configuration option within a chosen stack rather
-  than the stack record, use /aid-create-config or /aid-update-config. Produced by the
-  aid-architect agent and independently verified by aid-reviewer (full verify). Allocates a
-  work-NNN folder.
+  stack seed when one is present in `.aid/design/`. When the C0 document does not yet exist,
+  routes to `/aid-create-stack`. To change a configuration option within a chosen stack
+  rather than the stack record, use `/aid-create-config` or `/aid-update-config`. Produced
+  by the aid-architect agent and independently verified by aid-reviewer (full verify).
+  Allocates a work-NNN folder.
 allowed-tools: Read, Glob, Grep, shell, Write, Edit, Agent
 argument-hint: "<change> -- what to revise in the technology-stack record"
 ---

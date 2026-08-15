@@ -1,14 +1,14 @@
 ---
 name: aid-create-roadmap
 description: >
-  Realize a ready roadmap seed into .aid/knowledge/roadmap.md -- frontmatter, preamble, ##
+  Realize a ready roadmap seed into `.aid/knowledge/roadmap.md` -- frontmatter, preamble, ##
   Contents index (including the forward ## MVP entry), and the three horizon sections ##
   Now, ## Next, ## Later. Use this skill when a roadmap seed is ready and the project needs
   its roadmap document written for the first time. Registers the document in
-  .aid/settings.yml and .aid/knowledge/README.md on first creation. Routes to
-  /aid-update-roadmap when the horizon sections already carry committed content. The ## MVP
-  section belongs entirely to /aid-create-mvp -- this skill writes only its ## Contents
-  index entry.
+  `.aid/settings.yml` and `.aid/knowledge/README.md` on first creation. Routes to
+  `/aid-update-roadmap` when the horizon sections already carry committed content. The ##
+  MVP section belongs entirely to `/aid-create-mvp` -- this skill writes only its ##
+  Contents index entry.
 allowed-tools: Read, Glob, Grep, Terminal, Write, Edit, Agent
 argument-hint: "[<direction>] -- what to realize (fills horizon sections from the seed)"
 ---

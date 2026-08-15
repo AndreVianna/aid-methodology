@@ -1,15 +1,15 @@
 ---
 name: aid-design-infra
 description: >
-  Develop an infrastructure-resource design as a DESIGN SEED in .aid/design/infra.md -- the
-  resource, its configuration, and its provisioning and teardown. Use this skill when a
+  Develop an infrastructure-resource design as a DESIGN SEED in `.aid/design/infra.md` --
+  the resource, its configuration, and its provisioning and teardown. Use this skill when a
   resource's shape and access policy are still being worked out, before anything is
-  provisioned. Grounded in the Knowledge Base (.aid/knowledge/) and the project source. It
+  provisioned. Grounded in the Knowledge Base (`.aid/knowledge/`) and the project source. It
   WRITES NO production code and NO KB document -- realize the seed into the provisioned
-  resource with /aid-create-infra once it is ready. To design the pipeline that ships to the
-  resource rather than the resource itself, use /aid-design-cicd instead. Produced by the
-  aid-architect agent and independently verified by aid-reviewer (full verify). Allocates a
-  work-NNN folder.
+  resource with `/aid-create-infra` once it is ready. To design the pipeline that ships to
+  the resource rather than the resource itself, use `/aid-design-cicd` instead. Produced by
+  the aid-architect agent and independently verified by aid-reviewer (full verify).
+  Allocates a work-NNN folder.
 allowed-tools: Read, Glob, Grep, Terminal, Write, Edit, Agent
 argument-hint: "<subject> -- the infrastructure resource to design (resource, config, provisioning)"
 ---

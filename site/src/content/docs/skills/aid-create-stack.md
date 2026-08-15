@@ -1,6 +1,6 @@
 ---
 title: 'aid-create-stack'
-description: 'Realize a ready stack seed from .aid/design/stack.md into the project''s technology (C0) Knowledge Base document -- languages, runtimes, frameworks, package…'
+description: 'Realize a ready stack seed from `.aid/design/stack.md` into the project''s technology (C0) Knowledge Base document -- languages, runtimes, frameworks, package…'
 generatedFrom: 'canonical/skills/aid-create-stack/SKILL.md'
 ---
 
@@ -9,7 +9,7 @@ generatedFrom: 'canonical/skills/aid-create-stack/SKILL.md'
 ## Frontmatter
 
 - **`name`** — aid-create-stack
-- **`description`** — Realize a ready stack seed from .aid/design/stack.md into the project's technology (C0) Knowledge Base document -- languages, runtimes, frameworks, package managers, and build and test tooling, each with its version. Use this skill when a stack seed is ready and the project has no technology-stack document yet. When it creates the document it also registers it in .aid/settings.yml and .aid/knowledge/README.md in the same run, which opts that document into the Conformance Lane permanently -- a choice you are making by running this skill. To revise C0 content this lifecycle already committed, use /aid-update-stack; to create or revise a configuration option within a chosen stack rather than the stack itself, use /aid-create-config or /aid-update-config. Produced by the aid-architect agent and independently verified by aid-reviewer (full verify). Allocates a work-NNN folder.
+- **`description`** — Realize a ready stack seed from `.aid/design/stack.md` into the project's technology (C0) Knowledge Base document -- languages, runtimes, frameworks, package managers, and build and test tooling, each with its version. Use this skill when a stack seed is ready and the project has no technology-stack document yet. When it creates the document it also registers it in `.aid/settings.yml` and `.aid/knowledge/README.md` in the same run, which opts that document into the Conformance Lane permanently -- a choice you are making by running this skill. To revise C0 content this lifecycle already committed, use `/aid-update-stack`; to create or revise a configuration option within a chosen stack rather than the stack itself, use `/aid-create-config` or `/aid-update-config`. Produced by the aid-architect agent and independently verified by aid-reviewer (full verify). Allocates a work-NNN folder.
 - **`allowed-tools`** — Read, Glob, Grep, Bash, Write, Edit, Agent
 - **`argument-hint`** — [&lt;direction>] -- which parts of the stack seed to realize
 
@@ -52,7 +52,7 @@ Every node in the chart above, in chart order, with the exact `canonical/` text 
 
 <a id="fragment-n1"></a>**1 · `INTAKE`** · _entry_
 
-~~~~plaintext title="canonical/skills/aid-create-stack/SKILL.md#L38-L52" wrap
+~~~~plaintext title="canonical/skills/aid-create-stack/SKILL.md#L39-L53" wrap
 ## State: INTAKE
 
 1. **Allocate** through the Work Initiation Gate exactly as the contract's Allocation rule
@@ -70,32 +70,32 @@ Every node in the chart above, in chart order, with the exact `canonical/` text 
 5. **Classify complexity** for the `aid-architect` dispatch (verifier tier >= producer).
 ~~~~
 
-[Source: `canonical/skills/aid-create-stack/SKILL.md#L38-L52`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-create-stack/SKILL.md#L38-L52) · [full step: `canonical/skills/aid-create-stack/SKILL.md#L38-L54`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-create-stack/SKILL.md#L38-L54)
+[Source: `canonical/skills/aid-create-stack/SKILL.md#L39-L53`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-create-stack/SKILL.md#L39-L53) · [full step: `canonical/skills/aid-create-stack/SKILL.md#L39-L55`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-create-stack/SKILL.md#L39-L55)
 
 <a id="fragment-n2"></a>**2 · `CREATE`** · _step_
 
-~~~~plaintext title="canonical/skills/aid-create-stack/SKILL.md#L58-L60" wrap
+~~~~plaintext title="canonical/skills/aid-create-stack/SKILL.md#L59-L61" wrap
 ## State: CREATE
 
 **Exactly three conditions refuse. There is no fourth.**
 ~~~~
 
-[Source: `canonical/skills/aid-create-stack/SKILL.md#L58-L60`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-create-stack/SKILL.md#L58-L60) · [full step: `canonical/skills/aid-create-stack/SKILL.md#L58-L92`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-create-stack/SKILL.md#L58-L92)
+[Source: `canonical/skills/aid-create-stack/SKILL.md#L59-L61`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-create-stack/SKILL.md#L59-L61) · [full step: `canonical/skills/aid-create-stack/SKILL.md#L59-L93`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-create-stack/SKILL.md#L59-L93)
 
 <a id="fragment-n3"></a>**3 · `VERIFY`** · _loop-back_
 
-~~~~plaintext title="canonical/skills/aid-create-stack/SKILL.md#L96-L99" wrap
+~~~~plaintext title="canonical/skills/aid-create-stack/SKILL.md#L97-L100" wrap
 ## State: VERIFY
 
 **Full verify**, as `design-lifecycle.md` defines it. Not clean -> loop to CREATE; the
 3-cycle circuit breaker there escalates to IMPEDIMENT + `lifecycle: Blocked`.
 ~~~~
 
-[Source: `canonical/skills/aid-create-stack/SKILL.md#L96-L99`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-create-stack/SKILL.md#L96-L99) · [full step: `canonical/skills/aid-create-stack/SKILL.md#L96-L101`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-create-stack/SKILL.md#L96-L101)
+[Source: `canonical/skills/aid-create-stack/SKILL.md#L97-L100`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-create-stack/SKILL.md#L97-L100) · [full step: `canonical/skills/aid-create-stack/SKILL.md#L97-L102`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-create-stack/SKILL.md#L97-L102)
 
 <a id="fragment-n4"></a>**4 · `PRESENT`** — hard stop -- the user decides · _step_
 
-~~~~plaintext title="canonical/skills/aid-create-stack/SKILL.md#L105-L110" wrap
+~~~~plaintext title="canonical/skills/aid-create-stack/SKILL.md#L106-L111" wrap
 ## State: PRESENT (hard stop -- the user decides)
 
 Set `lifecycle: Paused-Awaiting-Input`. Present the realized document and assert: the seed
@@ -104,14 +104,14 @@ written; the rejected alternatives went to the D document; and anything routed t
 `/aid-update-stack` is named.
 ~~~~
 
-[Source: `canonical/skills/aid-create-stack/SKILL.md#L105-L110`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-create-stack/SKILL.md#L105-L110) · [full step: `canonical/skills/aid-create-stack/SKILL.md#L105-L112`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-create-stack/SKILL.md#L105-L112)
+[Source: `canonical/skills/aid-create-stack/SKILL.md#L106-L111`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-create-stack/SKILL.md#L106-L111) · [full step: `canonical/skills/aid-create-stack/SKILL.md#L106-L113`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-create-stack/SKILL.md#L106-L113)
 
 <a id="fragment-n5"></a>**5 · `DONE`** · _exit_ · UNSPECIFIED
 
-~~~~plaintext title="canonical/skills/aid-create-stack/SKILL.md#L116-L118" wrap
+~~~~plaintext title="canonical/skills/aid-create-stack/SKILL.md#L117-L119" wrap
 ## State: DONE
 
 Set `lifecycle: Completed`, `updated` now, append a `## Lifecycle History` row.
 ~~~~
 
-[Source: `canonical/skills/aid-create-stack/SKILL.md#L116-L118`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-create-stack/SKILL.md#L116-L118) · [full step: `canonical/skills/aid-create-stack/SKILL.md#L116-L118`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-create-stack/SKILL.md#L116-L118)
+[Source: `canonical/skills/aid-create-stack/SKILL.md#L117-L119`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-create-stack/SKILL.md#L117-L119) · [full step: `canonical/skills/aid-create-stack/SKILL.md#L117-L119`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-create-stack/SKILL.md#L117-L119)

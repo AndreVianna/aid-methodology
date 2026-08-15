@@ -1,6 +1,6 @@
 ---
 title: 'aid-design-messaging'
-description: 'Develop a messaging design as a DESIGN SEED in .aid/design/messaging.md -- the message/event schema, its channel, and its emission points.'
+description: 'Develop a messaging design as a DESIGN SEED in `.aid/design/messaging.md` -- the message/event schema, its channel, and its emission points.'
 generatedFrom: 'canonical/skills/aid-design-messaging/SKILL.md'
 ---
 
@@ -9,7 +9,7 @@ generatedFrom: 'canonical/skills/aid-design-messaging/SKILL.md'
 ## Frontmatter
 
 - **`name`** — aid-design-messaging
-- **`description`** — Develop a messaging design as a DESIGN SEED in .aid/design/messaging.md -- the message/event schema, its channel, and its emission points. Use this skill when an event's schema and who consumes it are still being worked out. Grounded in the Knowledge Base (.aid/knowledge/) and the project source. It WRITES NO production code and NO KB document -- realize the seed into the built schema and emission with /aid-create-messaging once it is ready. Produced by the aid-architect agent and independently verified by aid-reviewer (full verify). Allocates a work-NNN folder.
+- **`description`** — Develop a messaging design as a DESIGN SEED in `.aid/design/messaging.md` -- the message/event schema, its channel, and its emission points. Use this skill when an event's schema and who consumes it are still being worked out. Grounded in the Knowledge Base (`.aid/knowledge/`) and the project source. It WRITES NO production code and NO KB document -- realize the seed into the built schema and emission with `/aid-create-messaging` once it is ready. Produced by the aid-architect agent and independently verified by aid-reviewer (full verify). Allocates a work-NNN folder.
 - **`allowed-tools`** — Read, Glob, Grep, Bash, Write, Edit, Agent
 - **`argument-hint`** — &lt;subject> -- the message/event to design (schema, channel, emission)
 

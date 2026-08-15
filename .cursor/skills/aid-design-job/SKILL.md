@@ -1,13 +1,13 @@
 ---
 name: aid-design-job
 description: >
-  Develop a scheduled or background job design as a DESIGN SEED in .aid/design/job.md -- the
-  trigger, the work it performs, and its idempotency and failure handling. Use this skill
-  when a job's schedule, its work, and its retry behaviour are still being decided. Grounded
-  in the Knowledge Base (.aid/knowledge/) and the project source. It WRITES NO production
-  code and NO KB document -- realize the seed into the built job with /aid-create-job once
-  it is ready. Produced by the aid-architect agent and independently verified by
-  aid-reviewer (full verify). Allocates a work-NNN folder.
+  Develop a scheduled or background job design as a DESIGN SEED in `.aid/design/job.md` --
+  the trigger, the work it performs, and its idempotency and failure handling. Use this
+  skill when a job's schedule, its work, and its retry behaviour are still being decided.
+  Grounded in the Knowledge Base (`.aid/knowledge/`) and the project source. It WRITES NO
+  production code and NO KB document -- realize the seed into the built job with
+  `/aid-create-job` once it is ready. Produced by the aid-architect agent and independently
+  verified by aid-reviewer (full verify). Allocates a work-NNN folder.
 allowed-tools: Read, Glob, Grep, Terminal, Write, Edit, Agent
 argument-hint: "<subject> -- the job to design (trigger, work, idempotency/failure)"
 ---

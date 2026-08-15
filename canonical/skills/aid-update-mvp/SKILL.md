@@ -5,10 +5,10 @@ description: >
   line reasoning, what was cut, and its Status field (including the transition to Shipped
   <version>). Use this skill when the MVP section already carries committed content and its
   scope has changed. May create the ## MVP section if roadmap.md exists without one. Reads
-  and consumes an MVP seed when one is present in .aid/design/; never requires one. Asks
+  and consumes an MVP seed when one is present in `.aid/design/`; never requires one. Asks
   every run which previously created outputs to update alongside it -- no stored list, no
-  tracking metadata written. Everything outside ## MVP belongs to /aid-update-roadmap. When
-  roadmap.md is absent, routes to /aid-create-roadmap without writing anything.
+  tracking metadata written. Everything outside ## MVP belongs to `/aid-update-roadmap`.
+  When roadmap.md is absent, routes to `/aid-create-roadmap` without writing anything.
 allowed-tools: Read, Glob, Grep, Bash, Write, Edit, Agent
 argument-hint: "[<slice>] -- what to revise in the MVP section (contents, line, cuts, status)"
 ---

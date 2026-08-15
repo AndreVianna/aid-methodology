@@ -9,7 +9,7 @@ generatedFrom: 'canonical/skills/aid-config/SKILL.md'
 ## Frontmatter
 
 - **`name`** — aid-config
-- **`description`** — View or update AID pipeline settings. Use this skill when you need to see how the pipeline is configured, or change one setting such as the project name, its type, or the minimum grade. A bare invocation prints every value in a table and, on the first run, creates .aid/settings.yml from the template. Passing a key -- /aid-config name -- views and updates that one setting interactively.
+- **`description`** — View or update AID pipeline settings. Use this skill when you need to see how the pipeline is configured, or change one setting such as the project name, its type, or the minimum grade. A bare invocation prints every value in a table and, on the first run, creates `.aid/settings.yml` from the template. Passing a key -- `/aid-config` name -- views and updates that one setting interactively.
 - **`allowed-tools`** — Read, Glob, Grep, Bash, Write, Edit, AskUserQuestion
 - **`argument-hint`** — (none) view all  |  &lt;key> view+update one (e.g., name, minimum_grade)
 

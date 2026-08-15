@@ -9,7 +9,7 @@ generatedFrom: 'canonical/skills/aid-unset-connector/SKILL.md'
 ## Frontmatter
 
 - **`name`** — aid-unset-connector
-- **`description`** — Remove one entry from the connector catalog. Use this skill when a project stops using an external tool and its descriptor and stored secret should go with it. Naming the tool deletes its descriptor, purges its secret, and rebuilds the catalog index from whatever remains on disk -- touching only that one stem, so every other catalogued connector is left byte-for-byte untouched. Idempotent: removing an already-absent tool is a clean no- op. It never invokes /aid-discover.
+- **`description`** — Remove one entry from the connector catalog. Use this skill when a project stops using an external tool and its descriptor and stored secret should go with it. Naming the tool deletes its descriptor, purges its secret, and rebuilds the catalog index from whatever remains on disk -- touching only that one stem, so every other catalogued connector is left byte-for-byte untouched. Idempotent: removing an already-absent tool is a clean no- op. It never invokes `/aid-discover`.
 - **`allowed-tools`** — Read, Bash
 - **`argument-hint`** — &lt;tool>  -- e.g. aid-unset-connector Jira
 

@@ -5,8 +5,8 @@ description: >
   Use this skill when you need to know the current state of something measurable -- unit,
   integration or end-to-end tests, a security scan, a performance benchmark, a data-quality
   check, or a model evaluation. It runs whatever the request implies and reports. It is
-  read-only on the source and resolves nothing: findings hand off to /aid-fix, and it never
-  fixes. To author test code rather than run it, use /aid-create-test.
+  read-only on the source and resolves nothing: findings hand off to `/aid-fix`, and it
+  never fixes. To author test code rather than run it, use `/aid-create-test`.
 allowed-tools: Read, Glob, Grep, Bash, Write, Edit, Agent
 argument-hint: "<target> -- what to test/verify (a suite/module, or a kind: security, performance, data-quality, model-eval)"
 ---

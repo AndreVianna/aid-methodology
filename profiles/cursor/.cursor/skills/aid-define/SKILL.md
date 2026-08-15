@@ -2,10 +2,11 @@
 name: aid-define
 description: >
   Decompose approved requirements into discrete feature folders, each with its own SPEC.md
-  stub. Use this skill once /aid-describe has produced an approved REQUIREMENTS.md and the
+  stub. Use this skill once `/aid-describe` has produced an approved REQUIREMENTS.md and the
   work needs splitting into features before any one of them is specified. It turns each
   functional requirement into a feature, then validates the requirements and the feature
-  boundaries against the Knowledge Base and the codebase, and halts ready for /aid-specify.
+  boundaries against the Knowledge Base and the codebase, and halts ready for
+  `/aid-specify`.
 allowed-tools: Read, Glob, Grep, Terminal, Write, Edit
 argument-hint: "[work-001] decompose approved requirements  [--features work-001] re-run feature decomposition"
 ---
