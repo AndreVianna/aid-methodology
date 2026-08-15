@@ -1,7 +1,7 @@
-state: Pending
-review: "--"
+state: Done
+review: Gate-deferred
 elapsed: "--"
-notes: "--"
+notes: 'Generator re-run leaves git diff --exit-code -- profiles/ clean and porcelain at 0 including untracked, so the committed render reproduces from canonical/. This is CI''s render-drift job run locally. No mode-change entries, so the result does not depend on core.fileMode'
 ticket_ref: "--"
 
 quick_check:
