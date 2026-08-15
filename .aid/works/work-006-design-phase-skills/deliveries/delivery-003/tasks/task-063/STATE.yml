@@ -1,7 +1,7 @@
-state: Pending
-review: "--"
+state: Blocked
+review: 'Gate must decide: carry the CI re-bootstrap as a release-blocking follow-up, or accept the lane red until it runs'
 elapsed: "--"
-notes: "--"
+notes: 'BLOCKED on an external capability, not a failure: the baseline must be captured by a CI workflow_dispatch run (gh is read-only here) and collect needs pwsh, which is ABSENT (node and python3 present) so it would exit 3. Hand-editing the .tsv is forbidden by the runbook and desynchronises .meta. Predicted delta verified locally against the live suite using the collector''s own PASS/FAIL rule: a/b/c 59->95, d 58->94, e/f/g 34 unchanged, total +144 -- exactly section 4c. IMPEDIMENT.md carries the runbook'
 ticket_ref: "--"
 
 quick_check:
