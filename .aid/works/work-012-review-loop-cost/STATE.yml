@@ -28,15 +28,15 @@ minimum_grade: A
 # [W] 'yes' | 'no' -- quoted
 user_approved: 'yes'
 # [W] Running | Paused-Awaiting-Input | Blocked | Completed | Canceled
-lifecycle: Paused-Awaiting-Input
+lifecycle: Running
 # [W] Describe | Define | Specify | Plan | Detail | Execute
-phase: Define
+phase: Specify
 # [W] aid-{skill} | none
-active_skill: none
+active_skill: aid-specify
 # [W]
-updated: '2026-08-15T02:38:45Z'
+updated: '2026-08-15T03:11:17Z'
 # [W] set only when lifecycle = Paused-Awaiting-Input
-pause_reason: 'Define complete at A+ -- run /aid-specify work-012 to specify feature-001'
+pause_reason: --
 # [W] set only when lifecycle = Blocked
 block_reason: --
 # [W] e.g. IMPEDIMENT-task-NNN.md, or the failed gate
@@ -371,6 +371,30 @@ lifecycle_history:
       recorded rather than left implicit: FR-3's task must land EARLY in
       delivery-002 (AC-1's "after" sample depends on it), and C-7 caps the
       work at 3 features and 2 deliveries.
+  - date: '2026-08-15'
+    event: 'Specify: feature-001-cost-measurement READY at A+'
+    grade: 'A+'
+    notes: >-
+      Gate cycles C -> B -> A+; 9 findings, all Fixed; ledger deleted. Cycle 1
+      changed the DESIGN rather than the wording: the draft extended
+      dispatch_log with three optional keys, and artifact-schemas.md section
+      Conventions prices a STATE field at template + writeback-state.sh + the
+      reader twins -- both triplicated -- plus a render, all for a number no
+      dashboard displays. The meter now owns one work-folder TSV, so
+      feature-001 makes NO canonical/ edit and triggers NO render. Cycle 2
+      removed the outcome column (unknowable at dispatch time, and consumed
+      by neither metric) and pinned down the run identifier for an
+      incremental appender, which needs a write-time check that
+      coverage-parity.sh does not, because it appends across many
+      invocations instead of writing both files in one. The core design: the
+      measured quantity is the DECLARED READ SURFACE taken from a dispatch
+      brief's ARTIFACTS list -- deterministic from disk, needing no host
+      token accounting, and precisely the thing FR-3 changes.
+      SCHEMA GAP, not a lapse: the skill's Step 3 says to set this feature's
+      row in the Features State view, but that view is DERIVED and has no key
+      in any state template -- the skill's own accuracy note says exactly
+      this. Feature status is recorded here, in the authored history, because
+      no writable target for it exists.
 
 # [A] aid-deploy only; one entry per delivery.
 deploy: []
