@@ -34,7 +34,7 @@ phase: Specify
 # [W] aid-{skill} | none
 active_skill: aid-specify
 # [W]
-updated: '2026-08-15T03:11:17Z'
+updated: '2026-08-15T04:13:37Z'
 # [W] set only when lifecycle = Paused-Awaiting-Input
 pause_reason: --
 # [W] set only when lifecycle = Blocked
@@ -395,6 +395,42 @@ lifecycle_history:
       in any state template -- the skill's own accuracy note says exactly
       this. Feature status is recorded here, in the authored history, because
       no writable target for it exists.
+  - date: '2026-08-15'
+    event: 'Specify: feature-002-criterion-oracles READY at A+'
+    grade: 'A+'
+    notes: >-
+      Six gate cycles, C+ -> C+ -> D+ -> C+ -> B+ -> A+; 15 findings, all
+      Fixed; ledger deleted. The long gate was earned rather than wasted --
+      cycle 1 caught a design error, not a wording one, and cycles 2 through
+      4 each caught a deeper underspecification the previous fix exposed.
+      What the review actually changed, in order. (1) Coverage was
+      whole-criterion, so ONE undecidable file would make the oracle
+      indeterminate overall; since template-payload files always exist,
+      G-07's oracle would always degrade, replace nothing, and be forbidden
+      by AC-11. Coverage is now PER FILE: VIOLATION/UNDECIDED per path, and
+      the reviewer reads only the undecided remainder. (2) The selector
+      grammar was asserted but never specified, so the C-5 request was not
+      evaluable; it is now three clauses plus one reserved token. (3) The
+      grammar could not express skill-generated's catalog lookup, which
+      would have stranded ~75 SKILL.md files; name-in decides them, and
+      skill-authored needs no negation because first-match-wins already
+      handles it. (4) The no-Match-cell algorithm was undefined, and the two
+      natural implementations disagree -- skip-and-continue would have
+      silently reported payload templates as template-own and no human would
+      ever have read them. Stop is specified, bounded by the row's
+      expressible path half so a genuine orphan elsewhere still reports
+      VIOLATION rather than being softened to UNDECIDED.
+      Measured, not asserted: 203 of 276 in-scope files decided, 74%. The
+      undecided 73 are all of canonical/aid/templates/, because
+      template-payload's recognizers test frontmatter SHAPE and template-own
+      sits behind it in the same path space. A content-pattern clause that
+      would rescue them is refused -- 74% at a grammar a human can check by
+      eye beats 100% at one nobody can verify.
+      Two invented rules were withdrawn under review rather than defended: a
+      "majority-undecided is not shipped" threshold (file count is a poor
+      proxy for re-derivation cost, and 50% was an unjustified line), and an
+      earlier citation of the frontmatter tolerance rule to license a change
+      it does not govern.
 
 # [A] aid-deploy only; one entry per delivery.
 deploy: []
