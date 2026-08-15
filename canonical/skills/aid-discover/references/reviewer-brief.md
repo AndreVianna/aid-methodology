@@ -74,6 +74,13 @@ OUT-OF-SCOPE FINDINGS POLICY:
   Do NOT count toward severity totals or the grade.
 
 DELIVERABLES:
+  - BEFORE dispatching: render this brief to
+    `.aid/works/{work}/briefs/<scope>-cycle-<N>.md` and, from that same step, run
+    `bash tests/review-cost-meter.sh record --task <scope> --cycle <N> --brief <that file>`.
+    The file is what you are given and what the meter measures, so they cannot disagree;
+    its absence is the signal that the step did not run. See
+    `reviewer-dispatch.md` -- "Render the brief TO A FILE".
+
   - Findings format: per canonical/aid/templates/kb-authoring/principles.md P3 temp-ledger
   - Ledger location: `.aid/.temp/review-pending/discovery.md`
   - Severity scale: per the routed rubric (CRITICAL / HIGH / MEDIUM / LOW / MINOR)

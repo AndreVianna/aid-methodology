@@ -28,7 +28,7 @@ minimum_grade: A
 # [W] 'yes' | 'no' -- quoted
 user_approved: 'yes'
 # [W] Running | Paused-Awaiting-Input | Blocked | Completed | Canceled
-lifecycle: Blocked
+lifecycle: Running
 # [W] Describe | Define | Specify | Plan | Detail | Execute
 phase: Execute
 # [W] aid-{skill} | none
@@ -38,9 +38,9 @@ updated: '2026-08-15T16:42:11Z'
 # [W] set only when lifecycle = Paused-Awaiting-Input
 pause_reason: --
 # [W] set only when lifecycle = Blocked
-block_reason: 'delivery-001 gate E+ vs floor A -- AC-1''s baseline moment has passed; owner decision needed'
+block_reason: --
 # [W] e.g. IMPEDIMENT-task-NNN.md, or the failed gate
-block_artifact: IMPEDIMENT-delivery-001.md
+block_artifact: --
 # [W] {connector-stem}:{external-id} | --
 ticket_ref: --
 

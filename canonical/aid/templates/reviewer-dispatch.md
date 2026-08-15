@@ -341,8 +341,31 @@ once, applied here). Building the list from memory of what was worked on
 tends to omit incidentally-touched files; the reviewer then can't grade what
 it doesn't know about.
 
+**Render the brief TO A FILE, then dispatch and record from that same file — one step.**
+
+```
+brief=.aid/works/{work}/briefs/<scope>-cycle-<N>.md
+<render the brief into $brief>
+bash tests/review-cost-meter.sh record --task <task-or-scope> --cycle <N> --brief "$brief"
+<dispatch the reviewer with the contents of $brief>
+```
+
+This is not bookkeeping bolted onto the dispatch; it is the dispatch. The file is what the
+reviewer is given AND what the meter measures, so the two cannot disagree, and the brief's
+absence is a visible signal that the step did not run.
+
+**Why it is written this way.** An earlier version mandated the `record` call separately
+from rendering. That mandate was satisfiable by doing nothing: with the brief composed
+inline there was no file to point at and no step that failed when `record` was skipped, so
+an entire delivery's measurements were silently never taken. That is the failure class
+`tech-debt.md` `W5-5` documents — fourteen mandated state-writes that every call site failed
+to make work, invisibly, for as long as nobody looked. A mandate an agent can satisfy by
+doing nothing will be satisfied by doing nothing; binding the write to the artifact the work
+already produces is what closes it.
+
 **Inspectability requirement:** the rendered brief is logged with the dispatch
-record so it can be inspected after the fact (per work-003 traceability).
+record so it can be inspected after the fact (per work-003 traceability) — satisfied by the
+same file, rather than by a second artifact that could drift from it.
 
 ## One-off reviews
 

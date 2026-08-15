@@ -81,6 +81,13 @@ OUT-OF-SCOPE FINDINGS POLICY:
   or grade. Note the routing destination (PLAN | SPEC | KB) in Description/Evidence.
 
 DELIVERABLES:
+  - BEFORE dispatching: render this brief to
+    `.aid/works/{work}/briefs/<scope>-cycle-<N>.md` and, from that same step, run
+    `bash tests/review-cost-meter.sh record --task <scope> --cycle <N> --brief <that file>`.
+    The file is what you are given and what the meter measures, so they cannot disagree;
+    its absence is the signal that the step did not run. See
+    `reviewer-dispatch.md` -- "Render the brief TO A FILE".
+
   - Findings format: severity-tagged + source-tagged (TASK | PLAN | SPEC | KB)
   - Output location: `.aid/.temp/review-pending/detail-{work}.md`
   - Severity scale: CRITICAL | HIGH | MEDIUM | LOW | MINOR (per grading-rubric.md)

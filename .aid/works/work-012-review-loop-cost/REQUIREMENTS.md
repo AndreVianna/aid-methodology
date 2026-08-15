@@ -25,6 +25,7 @@
 | 2026-08-15 | **Q-03 discharged.** AC-1's measurement subject named from the now-known gate inventory: this work's own per-task review cycles during Execute, split at FR-3's task. AC-1 updated, and the resulting sequencing constraint recorded for `/aid-plan` | /aid-define |
 | 2026-08-15 | **C-5 authorized (owner), enumerated to three edits** — the `oracle:` field, the `Match` selector column, and the scoped-cycle note in `authoring-conventions.md`. §4's In Scope list also gained the KB file, which L5 names as an edit site and two feature SPECs require but this list had omitted | owner |
 | 2026-08-15 | **Q-05 answered (owner):** add a `work-artifact` type to the registry with criteria, routed to `/aid-discover`. Not absorbed here — the C-5 authorization is enumerated, §4 keeps the cascade out of scope, and C-7 caps the feature count. Q&A backlog now fully answered | owner |
+| 2026-08-15 | **AC-1 re-designed as a PAIRED WITHIN-TASK CONTROL (owner decision), superseding Q-03's observational split.** The observational design depended on instrumenting before FR-3 landed; it was not, so its before-sample is unrecoverable and reverting to recreate it would re-run the same fragile design. The paired control holds task, artifact and reviewer fixed and varies only the rule — it removes the confound rather than arguing around it. Both metrics (ratio AND cycles-to-close) are now required, over at least three subjects | owner |
 | 2026-08-15 | **Cross-reference cycle 1 fixes (grade C+).** Four requirements were demanded by no criterion — **AC-13** added for FR-5, **AC-14/AC-15/AC-16** for FR-9/FR-10/FR-11. **AC-1 re-specified** around cycles-to-close plus a within-task re-read ratio, so task-size heterogeneity cancels instead of confounding the result; a raw cross-task byte comparison is now explicitly refused. FR-14's citation corrected to a durable anchor | /aid-define |
 | 2026-08-15 | **Cross-reference cycle 2 fixes (grade D+ — it went down).** The cycle-1 fix left `feature-001`'s SPEC restating the old AC-1, contradicting §9 — a requirement and a feature spec disagreeing about a shared fact, which is the exact failure class this work exists to address. Realigned, and both `feature-002` and `feature-003` had their `## Source` lists brought back in step with their criteria | /aid-define |
 | 2026-08-15 | **Cross-reference PASSED at A+ (cycle 3).** 9 findings Fixed, 1 routed OOS to `/aid-discover` as Q-05, 0 counting toward the grade against a minimum of A. Define complete; ready for `/aid-specify` | /aid-define |
@@ -299,34 +300,35 @@ guarding around it.
 
 ## 9. Acceptance Criteria
 
-- **AC-1** **The reduction is observed, not claimed.** Measured before any remedy lands and
-  again after, with both figures recorded together with the command that produced them. A
-  criterion satisfied merely by the change existing is not accepted.
+- **AC-1** **The reduction is observed, not claimed.** Measured with the command recorded
+  beside every figure. A criterion satisfied merely by the change existing is not accepted.
 
-  **The measurement subject was named at Define** (Q-03, now discharged): this work's own
-  **per-task review cycles during Execute**, split at the task that lands FR-3. The specify
-  gates were rejected as the subject — all three run before any code lands, so they yield no
-  "after".
+  **The measurement is a PAIRED WITHIN-TASK CONTROL** (owner decision, 2026-08-15,
+  superseding Q-03's observational design — see the amendment note below). For each subject
+  artifact: run cycle 1 as always, then run cycle 2 **twice** — once declaring the full
+  surface (the pre-FR-3 rule) and once declaring the scoped surface (FR-3). Same task, same
+  artifact, same reviewer, same rubric; the rule is the only variable.
 
-  **The sequencing constraint, restated in task terms at Plan.** Q-03 phrased it as "FR-3's
-  task lands early in delivery-002", which assumed two deliveries; the plan uses one, so the
-  constraint is restated against the thing that actually governs it: **FR-3's task is the
-  first task of feature-003**, i.e. as early as §10's feature ordering permits, and every
-  feature-003 task after it is an "after" sample. This is the same requirement, expressed
-  independently of how deliveries are packaged — a delivery boundary never moves a task
-  within §10's order. Q-03's secondary "delivery-002 gate" reading does not exist under a
-  one-delivery plan and is dropped; it was never the primary.
+  **Both metrics are required, and the gate is right to insist on both:**
+  1. **The within-task re-read ratio** — declared surface at cycle 2 as a fraction of that
+     same task's cycle 1, computed under each arm. The control arm is expected at ~1.000
+     because the old rule re-declares everything; the treatment arm must be materially lower.
+  2. **Cycles to close** — how many cycles a task takes to reach its grade, reported per arm
+     with the row count behind it.
 
-  **Two metrics, both chosen to survive the fact that no two tasks are the same size:**
-  1. **Cycles to close** — how many review cycles a task takes to reach its grade. A count,
-     unaffected by task size, and the mechanism this work acts on directly.
-  2. **The within-task re-read ratio** — bytes read on cycles 2+ as a fraction of the bytes
-     that same task's cycle 1 read. **Each task is its own control**, so task-size
-     heterogeneity cancels rather than being argued away. Under today's rule the ratio sits
-     near 1.0 because every cycle re-reads everything; under FR-3 it must fall.
+  **Sample:** at least three subject artifacts, so no single artifact carries the result.
+  A raw cross-task byte comparison remains refused as evidence.
 
-  A raw cross-task byte comparison is **not** an accepted form of this evidence: a smaller
-  later task reads fewer bytes whether or not the remedy works.
+  **Why the design changed, recorded rather than quietly swapped.** Q-03 specified an
+  observational split — tasks reviewed before FR-3 landed against tasks reviewed after. That
+  design has a fatal dependency: it only works if the instrument is running *before* the
+  change lands. It was not, so the before-sample is unrecoverable, and reverting FR-3 to
+  recreate it would re-run the same fragile design at high cost. The paired control is not a
+  workaround for the lost data — it is the **stronger** experiment. The observational split
+  compares different tasks at different times and attributes the difference to the rule; the
+  paired control holds the task, the artifact and the reviewer fixed and varies only the
+  rule, which removes the confound instead of arguing around it.
+
 - **AC-2** A defect seeded in a section that REFERENCES a changed section is found by a
   scoped cycle. This is FR-4's guard, tested rather than trusted.
 - **AC-3** A defect seeded OUTSIDE the scoped surface, and consequently missed by a scoped

@@ -84,6 +84,13 @@ OUT-OF-SCOPE FINDINGS POLICY:
   so the orchestrator can write the loopback Q&A.
 
 DELIVERABLES:
+  - BEFORE dispatching: render this brief to
+    `.aid/works/{work}/briefs/<scope>-cycle-<N>.md` and, from that same step, run
+    `bash tests/review-cost-meter.sh record --task <scope> --cycle <N> --brief <that file>`.
+    The file is what you are given and what the meter measures, so they cannot disagree;
+    its absence is the signal that the step did not run. See
+    `reviewer-dispatch.md` -- "Render the brief TO A FILE".
+
   - Findings format: severity-tagged + source-tagged list (CODE | TASK | SPEC | KB)
   - Output location:
       per-task:     this task's `tasks_lifecycle` entry (flattened layout) or its

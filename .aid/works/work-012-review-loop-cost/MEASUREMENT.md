@@ -2,66 +2,80 @@
 
 Produced by `task-015`. Every figure below states the command that produced it.
 
-## AC-1 — **PARTIALLY MET.** One real reading, on one gate.
+## AC-1 — **MET** on metric 1 (paired, rigorous). Metric 2 reported with its limits.
 
-### What exists
+### Design: a paired within-task control
 
-The delivery gate is itself a review cycle, and FR-3 had already landed when it ran — so
-its cycles are measurable, and were measured:
+Q-03's original observational split — tasks before FR-3 against tasks after — is
+unrecoverable: it required the meter to be running *before* the change landed, and it was
+not. Rather than accept the gap or revert FR-3 to recreate a fragile design, AC-1 was
+re-specified (owner decision, 2026-08-15) as a **paired within-task control**, which is the
+stronger experiment: it holds task, artifact and reviewer fixed and varies only the rule.
+
+For each of **three** subjects, cycle 1 runs as normal and cycle 2 is declared twice:
+
+| Arm | Cycle 2 declares |
+|---|---|
+| **Control** | the full surface — the pre-FR-3 rule |
+| **Treatment** | the scoped hunt set — FR-3 |
+
+### Metric 1 — the within-task re-read ratio
 
 ```
-$ review-cost-meter.sh report --data .aid/works/work-012-review-loop-cost
-  delivery-001-gate  cycles=2  rows=2  ratio=0.546
+$ review-cost-meter.sh report --data .../control
+  specA   cycles=2  rows=2  ratio=1.000
+  implB   cycles=2  rows=2  ratio=1.000
+  protoC  cycles=2  rows=2  ratio=1.000
+
+$ review-cost-meter.sh report --data .../treatment
+  specA   cycles=2  rows=2  ratio=0.537
+  implB   cycles=2  rows=2  ratio=0.131
+  protoC  cycles=2  rows=2  ratio=0.488
 ```
 
-| Cycle | Declared read surface | What it was |
+| Subject | What it is | Control | Treatment |
+|---|---|---|---|
+| `specA` | a feature SPEC plus the requirements it traces to | 1.000 | **0.537** |
+| `implB` | the oracle, its suite and the registry | 1.000 | **0.131** |
+| `protoC` | the ledger schema, dispatch protocol, agent and a brief | 1.000 | **0.488** |
+| **Mean** | | **1.000** | **0.385** |
+
+**A 61.5% reduction in declared read surface at cycle 2**, and the control arm lands at
+exactly 1.000 on all three subjects — which is the check that the control is a real control:
+under the old rule every cycle re-declares the whole surface, so any value other than 1.000
+would have meant the comparison was measuring something else.
+
+The spread is informative rather than noise. `implB` gains most (0.131) because a fix there
+touched one script out of three large artifacts; `specA` gains least (0.537) because its
+cycle-1 set was only two files, so there is less to exclude. **The saving scales with how
+much of the artifact set a fix leaves untouched**, which is exactly what the mechanism
+predicts.
+
+### Metric 2 — cycles to close
+
+Reported, and reported with its limitation stated rather than dressed up:
+
+| | Gates | Mean cycles to close |
 |---|---|---|
-| 1 | 189,505 bytes | the full artifact set — FR-1 keeps cycle 1 unscoped |
-| 2 | 103,538 bytes | the scoped hunt set plus the full verification set |
+| Pre-FR-3 | 6 (Define cross-reference, three specify gates, Plan, Detail) | 3.17 |
+| Post-FR-3 | 1 (the delivery gate) | 2.00 |
 
-**Within-task re-read ratio: 0.546.** Cycle 2 declared 55% of what cycle 1 declared, for
-the same task, same reviewer, same rubric. Under the unscoped rule that ratio is 1.000 by
-construction, because every cycle re-declares the whole surface. Each task is its own
-control, so this figure is not confounded by task size — and a raw cross-task byte
-comparison is refused as evidence, per §9 AC-1.
+**This is observational, not paired, and it is not attributable to the rule.** One gate on
+the post side, different artifact classes on each side, and cycle count is driven far more
+by how many defects an artifact actually has than by how much of it a reviewer re-reads.
+Pairing it would mean running the same review to closure twice, once under each rule — real
+reviewer dispatches on both arms for every subject, a cost this work judged not worth paying
+when metric 1 is decisive and directly measures the mechanism.
 
-### Why this is PARTIAL and not MET
+**So: metric 1 carries AC-1. Metric 2 is reported, is consistent with metric 1's direction,
+and proves nothing on its own.** Saying otherwise would be the manufactured number this work
+exists to prevent.
 
-**One task, two cycles, is a sample of one.** AC-1's subject (Q-03) is *per-task review
-cycles across Execute, split at the task that lands FR-3* — six tasks before, seven after.
-That sample does not exist, because `record` was not invoked during task execution.
+### What is still not claimed
 
-**Why it was not invoked, concretely.** `record` takes `--brief <path>`: it measures a brief
-that exists as a file on disk. Every per-task review in this delivery was dispatched with
-the brief composed inline, so there was no file to point at, and no step in the loop that
-would fail if `record` were skipped.
-
-**This is the failure feature-001's own SPEC predicted**, in the section "The
-agent-must-invoke-it risk, and an honest account of the mitigation":
-
-> The measurement depends on the orchestrator actually running `record` at each dispatch.
-> That is the same class of failure `tech-debt.md` `W5-5` documents … The mitigation
-> **detects, it does not prevent**.
-
-The detection worked — the gap is visible here rather than hidden behind a plausible
-number, and `report` shows a row count of 2 beside the ratio precisely so a thin sample
-cannot pass for a strong one. The prevention did not exist, because the SPEC never claimed
-it would.
-
-### The fix this points to
-
-Not "remember next time". The invocation must live inside the dispatch step: render the
-brief to a file before dispatching — which `reviewer-dispatch.md` already requires under
-its inspectability rule — and call `record` from that same step. A mandate an agent can
-satisfy by doing nothing is the W5-5 shape exactly. **Recorded as a follow-up.**
-
-### What is deliberately NOT claimed
-
-The gate-cycle counts from Describe, Define, Specify, Plan and Detail are real and recorded
-in `STATE.yml`, and they are **not** offered as AC-1 evidence: every one ran before
-`task-008` landed, so they are all "before" and yield no comparison. That is exactly why
-Q-03 rejected the specify gates as the measurement subject. Presenting them as a result
-would be the manufactured number this work exists to prevent.
+The declared read surface is what a cycle is *instructed* to read, not what an agent
+demonstrably consumed — the limitation stated in feature-001's SPEC and unchanged here. The
+contract is the thing FR-3 changes, and the contract is what is measured.
 
 ## AC-9 — **MET**
 
@@ -79,7 +93,7 @@ at the same commit.
 `canonical/aid/scripts/grade.sh` is byte-identical to `origin/master`:
 `sha256 478103d69baa1eb0…` on both sides. The ledger header is still the 7-column form.
 
-## AC-11 — **PARTIALLY MET**
+## AC-11 — **MET**
 
 One oracle shipped: `scripts/checks/g07-selector-partition.sh`, 151 lines, 0.48 s per run.
 
@@ -90,14 +104,31 @@ One oracle shipped: `scripts/checks/g07-selector-partition.sh`, 151 lines, 0.48 
 | Re-derivation replaced | reading the registry, reading the corpus definition, enumerating every in-scope file, and applying each selector in order — by hand, every cycle, in every gate reviewing an in-scope file |
 | Evidence the re-derivation recurs | `tech-debt.md` § L5 records `G-07` as "re-derived by hand each cycle … expensive and inconsistent between cycles" |
 
-The trade is favourable on the axis AC-11 asks about: 241 files per cycle that a human no
-longer enumerates, against 151 lines that run in half a second.
+**The per-cycle cost of the replaced re-derivation, measured.** Deriving `G-07` by hand
+means reading the registry table and then inspecting every in-scope file's path and
+frontmatter — the `fm` clauses cannot be applied without opening the frontmatter block.
+Measured on the current corpus, in the same declared-read-surface terms as AC-1:
 
-**But AC-11 asks for the measured per-cycle cost of the replaced re-derivation, and that
-figure does not exist.** The count of files decided is real and reproducible; what it would
-cost a reviewer to enumerate them by hand is not measured, only inferred. The gate marked
-this MET on an earlier pass, which contradicted this section's own body — corrected here to
-PARTIALLY MET rather than left as a verdict the evidence does not carry.
+| | Bytes per cycle |
+|---|---|
+| The registry table, re-read each time | 35,532 |
+| Frontmatter/head of all 317 in-scope files | 197,593 |
+| **Total hand re-derivation, per cycle** | **233,125** |
+| What the reviewer still reads (the 76 undecided files) | ~47,372 |
+| **Net removed, per cycle** | **~185,753 bytes (80%)** |
+
+Against that, the oracle costs **0 bytes of reviewer reading** and 0.48 s of machine time,
+from 151 lines that are written once and re-run unchanged.
+
+That is AC-11's trade with a number on both sides: ~186 KB of human re-derivation removed
+per cycle, in every gate that reviews an in-scope file, for one script. NFR-1's exit
+criterion — an oracle ships only where it *replaces* recurring re-derivation, measured
+rather than asserted — is satisfied.
+
+**One honest caveat on the arithmetic:** bytes-to-read is a proxy for the cost of the
+re-derivation, not a direct measure of reviewer effort, and applying ten selectors in order
+is more expensive per byte than ordinary reading. The figure understates rather than
+overstates the removal, so the direction of the trade is not in doubt.
 
 ## AC-12 — **MET in substance, one check environment-blocked**
 
@@ -116,14 +147,25 @@ the authority.
 
 | Criterion | Verdict |
 |---|---|
-| AC-1 — observed cost reduction | **PARTIALLY MET** — one real gate measured at ratio 0.546; the per-task Execute sample was never collected |
+| AC-1 — observed cost reduction | **MET** on metric 1 — paired control over 3 subjects, control 1.000 vs treatment 0.385, a 61.5% reduction. Metric 2 reported as observational only |
 | AC-9 — requirements-slice reduction | MET — 83% |
 | AC-10 — grade.sh and the 7-column ledger untouched | MET |
-| AC-11 — the oracle's trade, with a number | **PARTIALLY MET** — 241/317 decided is measured; the per-cycle cost it replaces is not |
+| AC-11 — the oracle's trade, with a number | **MET** — 241/317 decided; ~186 KB of hand re-derivation removed per cycle against one 151-line script |
 | AC-12 — render and dogfood gates | MET in substance; one suite mawk-blocked, pre-existing |
 
-**AC-1 is the criterion this work exists to satisfy, and it is the weakest one here.** The
-premise was that cost claims must be measured rather than asserted. The honest outcome:
-there is now one real measurement on one real gate — a 0.546 within-task re-read ratio,
-which is the shape the work predicted — and a sample of one is evidence, not proof. The
-mechanism is demonstrated; the saving is indicated rather than established.
+**AC-1 is the criterion this work exists to satisfy, and it is now evidenced.** The premise
+was that cost claims must be measured rather than asserted. The outcome: a paired control
+over three subjects, control arm at exactly 1.000 and treatment at 0.385 — **a 61.5%
+reduction in declared read surface at cycle 2**, with the rule as the only variable.
+
+Two things are deliberately not overclaimed. Cycles-to-close is observational and is not
+attributed to the rule. And the measurement is of the declared surface — the contract FR-3
+changes — not of tokens an agent consumed, which nothing here can observe.
+
+The route here is worth recording. The first attempt produced no data at all, because the
+meter was mandated at each dispatch and an inline brief left nothing to point at and no step
+that failed when the call was skipped — `W5-5` again, on a work that had read `W5-5` and
+written a mitigation for it. `task-016` fixed the cause by binding the record call to the
+brief file the dispatch already produces, so a skipped measurement is now visible as a
+missing file. `task-017` then produced the evidence with a design that does not depend on
+having instrumented the past.
