@@ -1,7 +1,7 @@
-state: Done
+state: Blocked
 review: 'Criterion 7 CLOSED pending CI confirmation'
 elapsed: "--"
-notes: 'Baseline re-bootstrapped locally: 7376 rows, CDP shape 95/95/95/94/34/34/34 and +144 CDP rows, matching section 4c to the digit. DMR is 43 not the estimated 46 -- 43 is what the suite emits, unchanged. My earlier ''pwsh unobtainable'' was WRONG: the tarball installs to ~/.local and gawk likewise from a .deb, which also retired the three environment-blocked suites. Committed .tsv + .meta alone; 136 mode-only churn excluded via core.fileMode=false'
+notes: 'Attempted locally and REVERTED. Installing pwsh+gawk was possible (my earlier ''no route'' was wrong, and it also retired the 3 environment-blocked suites), and the capture matched section 4c exactly (+144 CDP). But CI rejected it: 229 reductions, because collect records FAIL labels too and two suites fail on this box -- 144 FAIL-labelled rows vs the previous baseline''s 22. The real constraint is that the baseline must describe the environment the GATE runs in, not merely have the runtimes. Still needs the workflow_dispatch bootstrap'
 ticket_ref: "--"
 
 quick_check:

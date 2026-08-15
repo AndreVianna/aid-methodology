@@ -1,99 +1,77 @@
-# task-063 EVIDENCE -- the coverage baseline re-bootstrapped
+# task-063 EVIDENCE -- the coverage baseline: attempted locally, reverted, still CI's to run
 
-Closes BLUEPRINT criterion **7**.
+Criterion **7 remains OPEN.** This records an attempt that failed, and what it established.
 
-## 1. A correction: the blocker was unfixed, not unfixable
+## 1. Two of my earlier claims were wrong, and one was right for the wrong reason
 
-This task was recorded **Blocked** on the grounds that `pwsh` had "no route" here -- `apt` has no
-candidate, there is no root, no static binary was on the box and `dotnet` was absent. Every one of
-those observations was true, and the conclusion drawn from them was **wrong**: the upstream
-PowerShell tarball installs cleanly to `~/.local`, and `gawk` installs the same way from a `.deb`
-extracted with `dpkg-deb -x` (plus `libsigsegv2`, its one missing shared library).
+**Wrong: "`pwsh` has no route here."** True that `apt` has no candidate and there is no root --
+but the upstream PowerShell tarball installs cleanly to `~/.local`, and `gawk` installs the same
+way from a `.deb` via `dpkg-deb -x` (plus `libsigsegv2`). Both worked first try.
 
 ```
-pwsh    7.4.6            (tarball -> ~/.local/pwsh)
-gawk    5.2.1            (.deb -> ~/.local/gawk, awk symlinked to it)
-node    v22.14.0
-python3 3.12.3
+pwsh 7.4.6   gawk 5.2.1   node v22.14.0   python3 3.12.3
 ```
 
-**That also retired the long-standing "environment" findings.** With `gawk` present and
-`LC_ALL=C`, the three suites written off across two gates as environment-blocked all pass:
+**Wrong: three suites are "environment-blocked".** With `gawk` present and `LC_ALL=C`, all three
+pass -- `test-domain-doc-matrix`, `test-dogfood-byte-identity`, `test-doc-set-mapping`. That
+finding stood through two gates on the strength of a failed `apt`, and it should not have.
 
-```
-test-domain-doc-matrix      PASS      (was: gawk 3-arg match())
-test-dogfood-byte-identity  PASS      (was: same)
-test-doc-set-mapping        PASS      (was: locale collation)
-```
+**Right, but not for the stated reason: the capture belongs in CI.** The runbook's rationale is
+runtime completeness. That is not the binding constraint, as §3 shows.
 
-The honest reading is that "unfixable in this environment" had been asserted from a failed `apt`
-rather than established, and it stood unchallenged through two gates.
-
-## 2. The capture
+## 2. The capture succeeded and the artifact was still invalid
 
 ```
 $ bash tests/coverage-parity.sh collect --out tests/coverage-baseline.tsv
-collect -> tests/coverage-baseline.tsv (7376 rows); provenance -> tests/coverage-baseline.meta
-real 10m8s
+collect -> 7376 rows; provenance -> tests/coverage-baseline.meta        (10m8s)
 ```
 
-`.meta` records the provenance the contract asks for, and the capture commit resolves to this
-branch:
+The shape matched feature-006 §4c **exactly** -- `CDP a/b/c` 59 -> 95, `d` 58 -> 94, `e/f/g`
+unchanged at 34, **+144 CDP rows**, the figure predicted before any run and independently
+confirmed by the PR's earlier CI run (180 added, 36 removed).
+
+CI then rejected it: **`RESULT: FAIL -- 229 un-excused reduction(s)`**.
+
+## 3. Why -- and it is the real reason the capture belongs in CI
+
+`collect` records **both** `PASS:` and `FAIL:` lines, because either proves the assertion ran. But
+a `FAIL` label carries its failure detail -- `E2E01b ... expected '6' got '0'` -- so it is a
+*different key* from the `PASS` label for the same assertion.
+
+Two suites fail on this box for reasons unrelated to any runtime:
 
 ```
-captured_utc:    2026-08-15T07:22:17Z
-commit_sha:      54e2fc025342e0e6c72e1cf903082273eafe8d56   (= HEAD at capture)
-runner_os:       Linux 6.12.94+ x86_64 GNU/Linux
-pwsh_version:    7.4.6
-node_version:    v22.14.0
-python3_version: Python 3.12.3
+test-release-install-e2e.sh       FAIL   (needs a real release staging)
+test-delivery-gate-aggregate.sh   FAIL
 ```
 
-It was **not** hand-edited: the `.tsv` is the collector's own output, so `.meta` cannot
-desynchronise from it -- the failure mode the runbook warns about, and the one the previous
-baseline's header records happening.
+So the capture embedded their failure text as expected keys:
 
-## 3. The shape matches §4c exactly
+| | FAIL-labelled rows |
+|---|---|
+| previous baseline | **22** |
+| my capture | **144** |
 
-| key | before | after | §4c predicts |
-|---|---|---|---|
-| `CDP{i}a` | 59 | **95** | 95 |
-| `CDP{i}b` | 59 | **95** | 95 |
-| `CDP{i}c` | 59 | **95** | 95 |
-| `CDP{i}d` | 58 | **94** | 94 |
-| `CDP{i}e` | 34 | **34** | 34 |
-| `CDP{i}f` | 34 | **34** | 34 |
-| `CDP{i}g` | 34 | **34** | 34 |
-| **CDP rows** | **337** | **481** | **+144** |
+CI, where those suites pass, produces the PASS labels instead -- so all 122 extra keys read as
+removals. **A baseline captured where some suites fail is worse than a stale one**: it silently
+encodes those failures as the expected corpus, and every future run diffs against them.
 
-**+144, to the digit** -- the figure predicted before any run, and independently confirmed by the
-PR's own CI run beforehand (180 added, 36 removed on that suite).
+That is the binding constraint the runbook is really protecting, and it is stronger than the
+runtime-completeness reason it gives: the baseline must describe **the environment the gate runs
+in**. No amount of local tooling satisfies that.
 
-**One predicted figure was wrong, and the measurement wins.** §4c expects a `DMR` key count of
-**46**; the baseline holds **43**. That is not a shortfall: the suite emits exactly 43 unique `DMR`
-ids (`--verbose`, `sort -u`), the previous baseline also held 43, and the count did not move. 46
-was an estimate in the DETAIL; 43 is what the corpus does.
+## 4. Reverted
 
-Total data rows: 7241 -> **7376** (+135). The CDP delta is +144; the remainder nets down through
-other suites, chiefly the five `test-downstream-worktree-entry.sh` `G2` labels that embed line
-numbers and shifted when five descriptions were rewritten.
+The two files are restored to their previous state (7248 rows, 22 FAIL-labelled). Nothing else was
+touched; the 136 mode-only churn from the collect run was kept out via `core.fileMode=false`, which
+is how the repository is maintained.
 
-## 4. Committed as the criterion requires
+## 5. What is still required -- unchanged
 
-Both files in **one** commit and nothing else:
+Run the `coverage-parity` workflow via **`workflow_dispatch`** with **`bootstrap: true`**, download
+the `coverage-baseline` artifact, and commit `tests/coverage-baseline.tsv` and
+`tests/coverage-baseline.meta` together. The artifact upload is gated on exactly that trigger
+(`coverage-parity.yml:88-92`), so no PR run can produce it.
 
-```
-$ git show --name-only HEAD
-tests/coverage-baseline.meta
-tests/coverage-baseline.tsv
-```
-
-136 test scripts showed as modified after the collect -- **mode-only**, zero content changes, from
-the collector marking them executable exactly as CI's own step does. `core.fileMode` was set to
-`false`, which is how the repository is maintained and what CI sets explicitly, so those never
-entered the commit.
-
-## 5. No secrets touched
-
-`.aid/connectors/.secrets/` unchanged; `.meta` carries no credential -- only OS, runtime versions,
-a timestamp and a commit sha.
+**Check the result against §3's figures**: `CDP a/b/c` -> 95, `d` -> 94, `e/f/g` -> 34, **+144**
+CDP rows. Those are now confirmed twice -- once by prediction, once by CI's own diff.
