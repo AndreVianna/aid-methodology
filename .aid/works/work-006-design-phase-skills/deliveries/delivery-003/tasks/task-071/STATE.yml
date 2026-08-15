@@ -1,7 +1,7 @@
-state: Pending
-review: "--"
+state: Blocked
+review: 'Gate must record criterion 10 as open and W1-11''s kb.html survivor as still open'
 elapsed: "--"
-notes: "--"
+notes: 'BLOCKED on scope, not capability: a full authored GENERATE of a 671 KB / 21-section file, versus the 178 KB / 20-section artifact the task was sized against (last recorded run 24m20s at that smaller size). Hand-patching the 5 stale strings is explicitly forbidden and was not done -- kb.html is byte-untouched. Staleness measured: ''75 skills''=3, ''58-row''=2, ''34 verb-first''=2 (correct, must survive). The regeneration path is intact and the KB it reads is final; blocker is cost. BLUEPRINT criterion 10 stays OPEN'
 ticket_ref: "--"
 
 quick_check:
