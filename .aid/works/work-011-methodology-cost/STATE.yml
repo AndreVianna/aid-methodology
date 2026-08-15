@@ -27,9 +27,9 @@ lifecycle: Running
 
 phase: Execute
 
-active_skill: aid-review
+active_skill: none
 
-updated: '2026-08-15T01:36:00Z'
+updated: '2026-08-15T02:20:00Z'
 
 pause_reason: --
 
@@ -121,7 +121,7 @@ qa:
     updated: '2026-08-15'
   - id: Q7
     question: 'This branch has had no independent review'
-    state: 'In Review'
+    state: Resolved
     answer: |
       Every commit was written and self-verified by the same agent. Phase 1 shipped two
       real bugs under 48 passing tests, found only when the owner asked for an audit.
@@ -134,7 +134,79 @@ qa:
         R1 criteria conformance -- is each Met claim in STATE.yml actually true
         R2 code correctness     -- three lockstep layout impls, derive-waves, cost-meter
         R3 prose consistency    -- canonical skill docs + KB, citations and stale refs
-      Ledgers at .aid/.temp/review-pending/aid-review-work-011-r{1,2,3}.md.
+      Ledgers at .aid/.temp/review-pending/aid-review-work-011-r{1,2,3}.md -- gitignored
+      by design (schema F-06: transient, deleted at DONE), so the findings are recorded
+      here, in Q9 through Q12, as the durable record.
+
+      Outcome: 3 CRITICAL, and it was worth doing. The review found a class of defect
+      self-review structurally cannot: three implementations that must agree did not, in
+      code the author wrote and believed correct, under a 278-assertion suite that could
+      not see it. Every finding was independently reproduced before being accepted, and
+      one reviewer claim was rejected after checking (see Q11).
+
+      Also confirmed: 11 of 14 criteria genuinely met, so the picture was not wholesale
+      wrong -- but two of the criteria THEMSELVES fail this work's own verifiability
+      rule, which no amount of implementation care would have surfaced.
+    decided_by: agent
+    updated: '2026-08-15'
+  - id: Q11
+    question: 'R2 review: do the three layout implementations actually agree?'
+    state: Resolved
+    answer: |
+      They did not. Three scalar forms made bash disagree with Python and Node on the
+      SAME file -- all reproduced, all now fixed, all now regression-tested.
+
+        CRLF          awk's `$` anchors sat behind a stray \r, so `pipeline:` never
+                      matched and the value read empty
+        'lite'        only double quotes were stripped, so the value compared as
+                      "'lite'" and never equalled "lite"
+        lite # note   the inline comment was kept verbatim
+
+      Each made a work DECLARED lite fall through to the presence rule and be
+      classified full -- silently, since every branch returns a value.
+
+      Root cause is structural, and worth stating plainly: the twins delegate to the
+      shared D-3 subset engine, while this one hand-rolls YAML in awk. Every scalar
+      form the engine accepts has to be re-implemented by hand or the three drift.
+      Three of them were missed on the first pass. The fix closes these three; it does
+      not remove the structural hazard, which is inherent to parsing YAML three times
+      in three languages. Retiring the awk parser in favour of a shared helper is the
+      real remedy and is not attempted here.
+
+      Fixed alongside: bash fell back to STATE.md where both twins deliberately do not
+      (SP-9 diagnoses legacy works rather than parsing them), and two docstrings had
+      outlived their code.
+
+      Parity now verified on 12 fixtures across all three implementations, including a
+      quoted 'a # b' where the hash must stay literal. One apparent fourth divergence
+      was my own harness bypassing the twins' string type-guard, not a real defect --
+      checked before reporting it.
+    decided_by: agent
+    updated: '2026-08-15'
+  - id: Q12
+    question: 'Why did three parser bugs survive a 278-assertion suite?'
+    state: Resolved
+    answer: |
+      Because nothing tested the declared read as the SIGNAL. This is the most useful
+      thing the review produced, above any individual bug.
+
+      Units 20-25 all ship a BLUEPRINT.md, so every existing flat fixture satisfied the
+      PRESENCE rule. All of them pass with the declared read entirely broken. The one
+      test naming pipeline.path (test-writeback-state.sh:1658) asserts that --pipeline
+      WRITES the key -- never that reading it drives dispatch. So the change that is the
+      whole point of Q4, and the thing that unblocks AC-12 and AC-13, had 278 assertions
+      around it and zero on its actual purpose.
+
+      The general lesson, which generalizes past this work: a test that keeps the OLD
+      signal present cannot detect that the NEW signal is dead. Replacing a signal means
+      building fixtures that carry only the new one.
+
+      Closed by Unit 26: seven cases, every fixture carrying NO BLUEPRINT.md, so only the
+      declared read can produce a flat dispatch. Includes the inverse -- declared full
+      must beat a PRESENT BLUEPRINT.md -- which is what proves the others are not passing
+      by accident, plus an undeclared case pinning the fallback for un-migrated works.
+      Verified to fail exactly 6 assertions against the pre-fix parser and pass 389/389
+      with it, because a test that cannot fail is not evidence.
     decided_by: agent
     updated: '2026-08-15'
   - id: Q10
