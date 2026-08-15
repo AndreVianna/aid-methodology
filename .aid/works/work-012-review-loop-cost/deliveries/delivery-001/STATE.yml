@@ -52,9 +52,9 @@ delivery_state: Gated
 # [W] Small | Medium | Large
 gate_tier: Large
 # [W]
-gate_grade: E+
+gate_grade: B+
 # [W]
-gate_timestamp: '2026-08-15T16:42:11Z'
+gate_timestamp: '2026-08-15T17:06:59Z'
 # [W] {connector-stem}:{external-id} | -- -- OPTIONAL; e.g. jira:PROJ-123; see the ticket_ref note above
 ticket_ref: --
 # [A] single writer: this delivery's branch only. Written by aid-plan,

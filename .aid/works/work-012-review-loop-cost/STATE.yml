@@ -28,15 +28,15 @@ minimum_grade: A
 # [W] 'yes' | 'no' -- quoted
 user_approved: 'yes'
 # [W] Running | Paused-Awaiting-Input | Blocked | Completed | Canceled
-lifecycle: Running
+lifecycle: Paused-Awaiting-Input
 # [W] Describe | Define | Specify | Plan | Detail | Execute
 phase: Execute
 # [W] aid-{skill} | none
 active_skill: none
 # [W]
-updated: '2026-08-15T16:42:11Z'
+updated: '2026-08-15T17:06:59Z'
 # [W] set only when lifecycle = Paused-Awaiting-Input
-pause_reason: --
+pause_reason: 'Gate at B+ (CRITICAL cleared). One LOW row awaits an Accept/fix decision on the mawk-blocked dogfood suite'
 # [W] set only when lifecycle = Blocked
 block_reason: --
 # [W] e.g. IMPEDIMENT-task-NNN.md, or the failed gate
