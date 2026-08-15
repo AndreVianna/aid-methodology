@@ -4,13 +4,13 @@ pipeline:
 started: "2026-08-08"
 minimum_grade: "A"
 user_approved: yes
-lifecycle: Running
+lifecycle: Blocked
 phase: Execute
 active_skill: aid-execute
-updated: '2026-08-15T04:12:00Z'
+updated: '2026-08-15T05:32:00Z'
 pause_reason: --
-block_reason: --
-block_artifact: --
+block_reason: 'delivery-003 gate graded D against a floor of A: two BLUEPRINT criteria are not closed -- criterion 7 needs a coverage-parity workflow_dispatch run (gh read-only here, pwsh absent) and criterion 10 needs a full authored /aid-summarize GENERATE of a 671 KB artifact. Both carry runbooks in their task IMPEDIMENT.md files.'
+block_artifact: 'tests/coverage-baseline.tsv; .aid/knowledge/kb.html'
 
 interview:
   state: 'Complete  **Date:** 2026-08-09'

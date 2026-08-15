@@ -1,7 +1,7 @@
-delivery_state: Executing
-gate_tier: "--"
-gate_grade: "Pending"
-gate_timestamp: "--"
+delivery_state: Blocked
+gate_tier: "Large"
+gate_grade: "D"
+gate_timestamp: "2026-08-15T05:30:00Z"
 ticket_ref: "--"
 
 delivery_lifecycle:
@@ -9,7 +9,13 @@ delivery_lifecycle:
   block_reason: --
   block_artifact: --
 delivery_gate:
-  issue_list: []
+  issue_list:
+    - 'Complexity Score: 57 (tier Large). 25 tasks: 23 Done, 2 Blocked, 0 Failed.'
+    - 'Cycles: 1. Gate grade **D**, BELOW the configured floor of A -- recorded as-is rather than massaged. Two [HIGH] findings are Pending, and each corresponds to a BLUEPRINT criterion that is genuinely NOT closed: criterion 7 (the coverage-baseline re-bootstrap, task-063) and criterion 10 (the kb.html regeneration, task-071). The delivery does NOT pass its gate and the work cannot ship until both land.'
+    - '8 findings: 3 Fixed, 3 Accepted, 2 Pending. FIXED: (1) the delivery-wide directory off-by-one -- 112/18 in the plan versus 111/17 on disk, caused by the upstream aid-graph removal, confirmed by four independent derivations and stated correctly on every downstream surface; (2) the folded-versus-raw description oracle, fixed at source and by changing every later neighbour assertion to read the YAML-parsed value; (3) the last arrow sequence in the roster, fixed AT THE GATE because no task owned it -- task-059 was comments-only, task-069 count-only, task-072 writes nothing -- by rewriting aid-create-dashboard''s catalog intent as prose, then rebuilding, re-rendering, resyncing both dogfood trees and regenerating the site pages, after which the roster carries zero arrow sequences and all three count suites are green.'
+    - 'ACCEPTED with rationale: the deleted test-graph-skill-registration.sh oracle (its GR01.a3 role discharged by parsing each frontmatter as YAML; authoring a replacement suite is barred by feature-001 AC-3, so it is routed); the Use-when detector note (both phrasings stand as better English, and task-072 matched the directive rather than the conjunction -- 111/111 carry a trigger); and the duplicate G5 comment-block label (presentational -- the group: field is correct on all four rows, so the header was made to state the truth rather than the rows moved).'
+    - 'What the two Pending findings block, stated so nothing is quietly counted: criterion 7 needs a coverage-parity workflow_dispatch run with bootstrap: true -- impossible here because gh is read-only and pwsh is absent (collect would exit 3) -- with the predicted delta already verified locally (+144 rows; a/b/c 59->95, d 58->94, e/f/g unchanged at 34). Criterion 10 needs a full authored /aid-summarize GENERATE of a 671 KB / 21-section artifact, roughly 3.9x what the task was sized against; hand-patching its five stale strings is explicitly forbidden and was not done, so kb.html is byte-untouched. Both blockers are cost or capability, not correctness, and each carries a runbook in its task IMPEDIMENT.md.'
+    - 'Also carried forward: tech-debt.md W1-11 keeps its kb.html survivor (task-067 deliberately did not close that half), and task-074 reports its kb.html-verdict criterion as UNMET rather than papered over, because task-071 wrote no Summarization History row to cite. No automated visual pass is claimed anywhere -- Playwright is absent from the summarize package, so V1 is an orchestrator step.'
 qa:
   - id: 1
     category: 'Requirements / Plan validity'
