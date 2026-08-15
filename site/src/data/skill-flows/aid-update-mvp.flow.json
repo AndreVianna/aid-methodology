@@ -1,0 +1,240 @@
+{
+  "skill": "aid-update-mvp",
+  "shape": "inline-states",
+  "extractor": "inline",
+  "confidence": "derived",
+  "title": "aid-update-mvp — state flow",
+  "nodes": [
+    {
+      "id": "n1",
+      "order": 1,
+      "name": "INTAKE",
+      "label": "INTAKE",
+      "kind": "entry",
+      "terminal": null,
+      "provenance": {
+        "file": "canonical/skills/aid-update-mvp/SKILL.md",
+        "startLine": 43,
+        "endLine": 60,
+        "sourceKind": "skill",
+        "excerpt": "## State: INTAKE\n\n1. **Require a subject.** Empty argument -> ask one bootstrapping question (\"What would\n   you like to revise in the MVP section -- slice contents, the line reasoning, cuts, or\n   status?\") and wait.\n2. **Allocate, exactly per `design-lifecycle.md § Skill shape -- Allocation`** -- the Work\n   Initiation Gate, then `initiator: aid-update-mvp`, `active_skill: aid-update-mvp`,\n   `pipeline.path: lite`, `lifecycle: Running`. `phase` is not driven.\n3. **Read the destination** at `.aid/knowledge/roadmap.md`. If absent, **route** to\n   `/aid-create-roadmap` -- name it explicitly in the response -- and write nothing.\n   Set `lifecycle: Paused-Awaiting-Input`. Advance to DONE without proceeding further.\n4. **Read the seed** at `.aid/design/mvp.md` if one exists. Note its presence or absence;\n   do not require it.\n5. **Ask the derived-outputs question** -- every run, unconditionally: \"Which previously\n   created outputs should be updated alongside the MVP section?\" Wait for the user's\n   answer before proceeding. Write no stored list and no tracking metadata anywhere.\n6. **Classify complexity (model + effort)** for the `aid-architect` dispatch below;\n   verifier tier >= producer tier (`agent-dispatch-tiering.md`)."
+      },
+      "detail": {
+        "file": "canonical/skills/aid-update-mvp/SKILL.md",
+        "startLine": 43,
+        "endLine": 62,
+        "sourceKind": "skill",
+        "excerpt": "## State: INTAKE\n\n1. **Require a subject.** Empty argument -> ask one bootstrapping question (\"What would\n   you like to revise in the MVP section -- slice contents, the line reasoning, cuts, or\n   status?\") and wait.\n2. **Allocate, exactly per `design-lifecycle.md § Skill shape -- Allocation`** -- the Work\n   Initiation Gate, then `initiator: aid-update-mvp`, `active_skill: aid-update-mvp`,\n   `pipeline.path: lite`, `lifecycle: Running`. `phase` is not driven.\n3. **Read the destination** at `.aid/knowledge/roadmap.md`. If absent, **route** to\n   `/aid-create-roadmap` -- name it explicitly in the response -- and write nothing.\n   Set `lifecycle: Paused-Awaiting-Input`. Advance to DONE without proceeding further.\n4. **Read the seed** at `.aid/design/mvp.md` if one exists. Note its presence or absence;\n   do not require it.\n5. **Ask the derived-outputs question** -- every run, unconditionally: \"Which previously\n   created outputs should be updated alongside the MVP section?\" Wait for the user's\n   answer before proceeding. Write no stored list and no tracking metadata anywhere.\n6. **Classify complexity (model + effort)** for the `aid-architect` dispatch below;\n   verifier tier >= producer tier (`agent-dispatch-tiering.md`).\n\n**Advance:** GUARD."
+      }
+    },
+    {
+      "id": "n2",
+      "order": 2,
+      "name": "GUARD",
+      "label": "GUARD",
+      "kind": "step",
+      "terminal": null,
+      "provenance": {
+        "file": "canonical/skills/aid-update-mvp/SKILL.md",
+        "startLine": 66,
+        "endLine": 69,
+        "sourceKind": "skill",
+        "excerpt": "## State: GUARD\n\n**Readiness gate (class-1 contract, feature-002 §3b).** Only applies when a seed was\nfound in INTAKE."
+      },
+      "detail": {
+        "file": "canonical/skills/aid-update-mvp/SKILL.md",
+        "startLine": 66,
+        "endLine": 78,
+        "sourceKind": "skill",
+        "excerpt": "## State: GUARD\n\n**Readiness gate (class-1 contract, feature-002 §3b).** Only applies when a seed was\nfound in INTAKE.\n\n- **Seed present, unresolved questions, no override** → refuse. Name each unresolved\n  question **and** the override flag `--override-open-questions` the user must supply to bypass the gate. Write\n  nothing; leave seed and destination byte-identical. Set `lifecycle:\n  Paused-Awaiting-Input`.\n- **No seed present** → advance (gate does not apply).\n- **Seed present, no unresolved questions, or override supplied** → advance.\n\n**Advance:** UPDATE."
+      }
+    },
+    {
+      "id": "n3",
+      "order": 3,
+      "name": "UPDATE",
+      "label": "UPDATE",
+      "kind": "step",
+      "terminal": null,
+      "provenance": {
+        "file": "canonical/skills/aid-update-mvp/SKILL.md",
+        "startLine": 82,
+        "endLine": 90,
+        "sourceKind": "skill",
+        "excerpt": "## State: UPDATE\n\nDispatch **`aid-architect`** (clean context, tiered) to revise the `## MVP` section.\nApply the **byte-range write discipline** (`feature-003 §4`, feature-002 §3c *Mechanics*):\nread the whole `roadmap.md` file, identify the `## MVP` byte range (the literal heading\n`## MVP`, matched exactly, through to the next heading of level 2 or shallower, or EOF),\nreplace only that range with the new content, and write the file back with every byte\noutside that range **byte-identical** -- no reformatting, no whitespace change, no\nre-ordering of any other region."
+      },
+      "detail": {
+        "file": "canonical/skills/aid-update-mvp/SKILL.md",
+        "startLine": 82,
+        "endLine": 121,
+        "sourceKind": "skill",
+        "excerpt": "## State: UPDATE\n\nDispatch **`aid-architect`** (clean context, tiered) to revise the `## MVP` section.\nApply the **byte-range write discipline** (`feature-003 §4`, feature-002 §3c *Mechanics*):\nread the whole `roadmap.md` file, identify the `## MVP` byte range (the literal heading\n`## MVP`, matched exactly, through to the next heading of level 2 or shallower, or EOF),\nreplace only that range with the new content, and write the file back with every byte\noutside that range **byte-identical** -- no reformatting, no whitespace change, no\nre-ordering of any other region.\n\n**May create the section.** If `roadmap.md` exists without a `## MVP` section: insert the\nsection immediately after the `## Contents` block and before `## Now` (`feature-003 §3c`,\nfeature-002 §3c *Position when created*). This is a pure insertion -- zero deletions in\nthe diff (`git diff --numstat` shows 0 deletions).\n\n**`## MVP` section shape** (`feature-003 §3c`):\n\n    ## MVP\n\n    - **What:** the first shippable slice, itemized.\n    - **Why:** why the line falls there.\n    - **Rejected:** what was cut from the slice, each with the reason for the cut.\n    - **Status:** Not started | In progress | Shipped <version> -- with the evidence\n      anchor.\n\n**Artifact-specific duties:**\n- **Revise the slice** -- update `What`, `Why`, and `Rejected` fields.\n- **Update `Status`** -- including the transition to `Shipped <version>` with a durable\n  evidence anchor (path plus a grep-recoverable symbol or heading, never `path:LINE`).\n\n**Never edits `## Contents`** -- that block is outside the `## MVP` byte range and\nbelongs to `/aid-create-roadmap`. The byte-range discipline makes this structurally true.\n\n**Seed handling (CC-3).** If a seed was read in INTAKE: use it as input to the revision;\n**delete it** after the update is written. If no seed was present: no file to delete.\n\n**User-named outputs.** For each output the user named in INTAKE: update it alongside the\nMVP section in this same dispatch.\n\n**Advance:** VERIFY."
+      }
+    },
+    {
+      "id": "n4",
+      "order": 4,
+      "name": "VERIFY",
+      "label": "VERIFY",
+      "kind": "loop-back",
+      "terminal": null,
+      "provenance": {
+        "file": "canonical/skills/aid-update-mvp/SKILL.md",
+        "startLine": 125,
+        "endLine": 129,
+        "sourceKind": "skill",
+        "excerpt": "## State: VERIFY\n\n**Full verify** -- exactly as `design-lifecycle.md § Skill shape -- \"Full verify\"`\ndefines it. Not clean -> loop to UPDATE; the circuit-breaker there governs escalation\nto IMPEDIMENT + `lifecycle: Blocked`."
+      },
+      "detail": {
+        "file": "canonical/skills/aid-update-mvp/SKILL.md",
+        "startLine": 125,
+        "endLine": 131,
+        "sourceKind": "skill",
+        "excerpt": "## State: VERIFY\n\n**Full verify** -- exactly as `design-lifecycle.md § Skill shape -- \"Full verify\"`\ndefines it. Not clean -> loop to UPDATE; the circuit-breaker there governs escalation\nto IMPEDIMENT + `lifecycle: Blocked`.\n\n**Advance:** PRESENT."
+      }
+    },
+    {
+      "id": "n5",
+      "order": 5,
+      "name": "PRESENT",
+      "label": "hard stop -- the user decides",
+      "kind": "step",
+      "terminal": null,
+      "provenance": {
+        "file": "canonical/skills/aid-update-mvp/SKILL.md",
+        "startLine": 135,
+        "endLine": 138,
+        "sourceKind": "skill",
+        "excerpt": "## State: PRESENT (hard stop -- the user decides)\n\nSet `lifecycle: Paused-Awaiting-Input`. Present the revised `## MVP` section clearly.\nAssert:"
+      },
+      "detail": {
+        "file": "canonical/skills/aid-update-mvp/SKILL.md",
+        "startLine": 135,
+        "endLine": 151,
+        "sourceKind": "skill",
+        "excerpt": "## State: PRESENT (hard stop -- the user decides)\n\nSet `lifecycle: Paused-Awaiting-Input`. Present the revised `## MVP` section clearly.\nAssert:\n\n- `## Contents` is unchanged -- the `- [MVP](#mvp)` entry is present and no other entry\n  was added or removed.\n- Every byte outside the `## MVP` range is identical to what it was before this run.\n- If a section was created (it was absent before): the section now exists immediately\n  after `## Contents`.\n- If a seed was consumed: `.aid/design/mvp.md` no longer exists.\n- No `.aid/settings.yml` `knowledge.doc_set` entry and no `.aid/knowledge/README.md`\n  Completeness row was written.\n- No tracking metadata was written to any output.\n- To revise the direction entries outside MVP, use `/aid-update-roadmap`.\n\n**Advance:** DONE."
+      }
+    },
+    {
+      "id": "n6",
+      "order": 6,
+      "name": "DONE",
+      "label": "DONE",
+      "kind": "exit",
+      "terminal": {
+        "advanceType": "UNSPECIFIED",
+        "handoff": null
+      },
+      "provenance": {
+        "file": "canonical/skills/aid-update-mvp/SKILL.md",
+        "startLine": 155,
+        "endLine": 157,
+        "sourceKind": "skill",
+        "excerpt": "## State: DONE\n\nSet `lifecycle: Completed`, `updated` now, append a `## Lifecycle History` row."
+      },
+      "detail": {
+        "file": "canonical/skills/aid-update-mvp/SKILL.md",
+        "startLine": 155,
+        "endLine": 157,
+        "sourceKind": "skill",
+        "excerpt": "## State: DONE\n\nSet `lifecycle: Completed`, `updated` now, append a `## Lifecycle History` row."
+      }
+    }
+  ],
+  "edges": [
+    {
+      "from": "n1",
+      "to": "n2",
+      "kind": "sequence",
+      "condition": null,
+      "advanceType": "UNSPECIFIED",
+      "provenance": {
+        "file": "canonical/skills/aid-update-mvp/SKILL.md",
+        "startLine": 62,
+        "endLine": 62,
+        "sourceKind": "skill",
+        "excerpt": "**Advance:** GUARD."
+      }
+    },
+    {
+      "from": "n2",
+      "to": "n3",
+      "kind": "sequence",
+      "condition": null,
+      "advanceType": "UNSPECIFIED",
+      "provenance": {
+        "file": "canonical/skills/aid-update-mvp/SKILL.md",
+        "startLine": 78,
+        "endLine": 78,
+        "sourceKind": "skill",
+        "excerpt": "**Advance:** UPDATE."
+      }
+    },
+    {
+      "from": "n3",
+      "to": "n4",
+      "kind": "sequence",
+      "condition": null,
+      "advanceType": "UNSPECIFIED",
+      "provenance": {
+        "file": "canonical/skills/aid-update-mvp/SKILL.md",
+        "startLine": 121,
+        "endLine": 121,
+        "sourceKind": "skill",
+        "excerpt": "**Advance:** VERIFY."
+      }
+    },
+    {
+      "from": "n4",
+      "to": "n3",
+      "kind": "loop-back",
+      "condition": null,
+      "advanceType": "UNSPECIFIED",
+      "provenance": {
+        "file": "canonical/skills/aid-update-mvp/SKILL.md",
+        "startLine": 128,
+        "endLine": 128,
+        "sourceKind": "skill",
+        "excerpt": "defines it. Not clean -> loop to UPDATE; the circuit-breaker there governs escalation"
+      }
+    },
+    {
+      "from": "n4",
+      "to": "n5",
+      "kind": "sequence",
+      "condition": null,
+      "advanceType": "UNSPECIFIED",
+      "provenance": {
+        "file": "canonical/skills/aid-update-mvp/SKILL.md",
+        "startLine": 131,
+        "endLine": 131,
+        "sourceKind": "skill",
+        "excerpt": "**Advance:** PRESENT."
+      }
+    },
+    {
+      "from": "n5",
+      "to": "n6",
+      "kind": "sequence",
+      "condition": null,
+      "advanceType": "UNSPECIFIED",
+      "provenance": {
+        "file": "canonical/skills/aid-update-mvp/SKILL.md",
+        "startLine": 151,
+        "endLine": 151,
+        "sourceKind": "skill",
+        "excerpt": "**Advance:** DONE."
+      }
+    }
+  ],
+  "entries": [
+    "n1"
+  ],
+  "exits": [
+    "n6"
+  ],
+  "sources": [
+    "canonical/skills/aid-update-mvp/SKILL.md"
+  ],
+  "warnings": []
+}

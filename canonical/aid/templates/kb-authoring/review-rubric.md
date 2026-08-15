@@ -1,8 +1,11 @@
 # KB Authoring — Review Rubric
 
-> Per-category review treatment for `/aid-discover` REVIEW state. The reviewer reads
-> each KB doc's frontmatter, picks the rubric below, and produces findings to the
-> temp ledger at `.aid/.temp/review-pending/discovery.md`.
+> Two things live here. **`§ Resolving review criteria` applies to every authored
+> artifact** -- a `SKILL.md`, an `AGENT.md`, a template, a KB doc -- and is what any
+> reviewer resolves before it starts. **The per-category rubrics below are KB-specific**:
+> they are the `/aid-discover` REVIEW treatment, where the reviewer reads each KB doc's
+> frontmatter, picks a rubric, and writes findings to the temp ledger at
+> `.aid/.temp/review-pending/discovery.md`.
 
 ## Routing — which rubric applies
 
@@ -20,6 +23,51 @@ The combination of `kb-category:` and `source:` determines which rubric to apply
 Files in `.aid/.temp/` and `.aid/generated/` (other than registered build outputs) are
 SKIPPED entirely — not reviewed, not graded.
 
+## Resolving review criteria
+
+**Not KB-only.** The routing table above picks a rubric for a KB doc, but the criteria
+resolution below applies to **every authored artifact a review touches** — a `SKILL.md`, an
+`AGENT.md`, a template, a KB doc. Each one declares, or inherits, the list it must be true
+against, so the reviewer checks a named list rather than improvising one.
+
+**Resolve, in this order, and validate against the union:**
+
+1. **Type** — read the file's path and frontmatter and resolve its **one** document type from
+   the type registry in the project's conventions KB doc
+   (`.aid/knowledge/authoring-conventions.md`). The registry's selectors are exhaustive, so
+   this always resolves; a file that resolves to no type, or to two, is itself a finding.
+2. **Global** — every criterion the registry's criteria table marks `Applies to: *`.
+3. **Type-level** — every criterion whose `Applies to` is the type resolved in step 1.
+4. **File-level** — the file's own `review-criteria:` frontmatter
+   ([frontmatter-schema.md](frontmatter-schema.md)).
+
+**On an `id` collision the most specific wins** — file over type over global. That is how an
+override applies, and how a `kind: exclude` entry cancels a `validate` criterion inherited
+from above.
+
+**A `kind: exclude` criterion is binding.** It names something a reviewer would reasonably
+check and must not, here. Reporting it anyway is a finding against the reviewer, not the file.
+
+### Citing the criterion
+
+**A finding names the criterion `id` as a prefix inside the ledger's existing `Description`
+cell.** No column is added: the ledger keeps its 7-column shape
+([reviewer-ledger-schema.md](../reviewer-ledger-schema.md)) and `grade.sh` its positional
+parse.
+
+```
+| 3 | [HIGH] | Pending | canonical/skills/aid-plan/SKILL.md | 42 | SK-01 — dispatch table names a non-existent agent | ls canonical/agents/ |
+```
+
+- A **scope-prefixed** id (`G-`, `KB-`, `SK-`, …) resolves in the criteria table.
+- An **`F-`** id resolves in the `review-criteria:` block of the file named in the `Doc` column.
+- **A finding citing no id, or an id that resolves nowhere, is itself a defect** — it means the
+  reviewer invented a criterion. Report the finding against the criterion, or do not report it.
+
+**When the criterion was overridden**, record the **resolved severity and the overriding file's
+`why`** in the finding's `Evidence` cell, so the reader sees which level won and why. The
+`Evidence` cell is already inert to `grade.sh`, so this adds no machinery.
+
 ## Rubric: Full Primary (hand-authored)
 
 The bulk of the review effort.
@@ -31,8 +79,11 @@ The bulk of the review effort.
 2. **Intent alignment** — does the doc's actual content match its declared `intent:`?
    Scope creep (content unrelated to intent) = MEDIUM finding. Coverage gap (intent
    declares something not actually covered) = MEDIUM finding.
-3. **Contracts hold against disk** — for each entry in `contracts:`, derive the
-   asserted fact from disk and compare. Mismatch = HIGH finding.
+3. **Declared review criteria hold against disk** — resolve the file's criteria through the
+   three levels (below), then check each one against disk. A violation is a finding at **that
+   criterion's own `severity`**, not at a severity this rubric fixes. See
+   [`§ Resolving review criteria`](#resolving-review-criteria) — that section applies to **any**
+   authored artifact, not only a KB doc, and item 3 is the KB-doc entry point into it.
 4. **T1 Concept claims correct** — for each pattern, definition, or architectural
    law, validate against the canonical source. Incorrect concept = HIGH or CRITICAL.
 5. **T2 Structure claims correct** — for each cardinality / schema / fixed-list
@@ -66,11 +117,16 @@ The bulk of the review effort.
 10. **Q-ID / H-ID references resolve** — every `Q##` / `H##` mentioned must exist in
     `STATE.md` (Q-IDs) or `tech-debt.md` (H-IDs). Dangling reference = MEDIUM.
 
-**Severity scale:** the single canonical scale at
-[`canonical/aid/templates/grading-rubric.md#severity-scale`](canonical/aid/templates/grading-rubric.md#severity-scale). Modality sets the band; blast radius
-and reversibility select within the MUST band. Not restated here.
+**Severity scale.** The five levels are defined once, in
+`canonical/aid/templates/grading-rubric.md § Issue Severities`; classify against that document
+rather than against a copy here. Worst issue dominates the grade
+(`grading-rubric.md § Grade Calculation`).
 
-Worst-issue dominates the grade (per `canonical/aid/templates/grading-rubric.md`).
+What this rubric adds is how the levels land **on a KB doc specifically** — the per-check
+severities named in the numbered checks above (a false T1 concept claim is HIGH or CRITICAL, an
+inline T3 count is MINOR per occurrence, and so on). Those are prices against the scale, not a
+redefinition of it. Where the doc's own resolved criteria carry a `severity:`, that value wins:
+it was set for that criterion.
 
 ## Altitude checks (folded into the M2 Anatomy mandate) — Full Primary only
 
@@ -84,9 +140,9 @@ table.
 
 | Check | Definition | Evidence anchor | Severity |
 |-------|------------|-----------------|----------|
-| **CAL-1 Transcription (too fat)** | The doc faithfully duplicates volatile source detail (full signatures, exhaustive enumerations) instead of synthesising — a "rotting duplicate". | **Runtime LLM judgment from the doc text** (corroborated by **`closure-check.sh` output (b)**'s salient-token coverage signal): a doc whose body re-narrates a local source near-verbatim, with no added *why* / *how-it-relates*, is transcription. There is no mechanical overlap ratio — the reviewer judges from the prose. **URL `sources:` cannot be read offline → not a transcription finding.** | `[LOW]` (escaping to `[MEDIUM]` beyond one doc) `[CAL-TRANSCRIPTION]`, per `KB-08` |
-| **CAL-2 Hollowness (too thin)** | A "see file X" link-farm conveying no durable understanding. | The doc's `sources:` vs body ratio: a doc that is mostly pointers with no synthesised cross-cutting content (no *why*, no *how parts interact*) is hollow. **Runtime judgment — NOT a mechanical assertion.** | `[LOW]` (escaping to `[MEDIUM]` beyond one doc) `[CAL-HOLLOW]`, per `KB-08` |
-| **CAL-3 Coverage-vs-source** | A load-bearing fact present in the doc's `sources:` is absent from the doc — "the source has Y and the doc forgot it". | **`closure-check.sh` output (b)** — per-doc `sources:`-anchored coverage table `term | doc | anchoring-source | present|absent`: every `absent` row is a salient term anchored to this doc's local-file `sources:` that has no representation in the doc body. **URL `sources:` → N/A in (b)** — offline helper cannot fetch them. | `[LOW]` (escaping to `[MEDIUM]` beyond one doc) `[CAL-COVERAGE]`, per `KB-09` |
+| **CAL-1 Transcription (too fat)** | The doc faithfully duplicates volatile source detail (full signatures, exhaustive enumerations) instead of synthesising — a "rotting duplicate". | **Runtime LLM judgment from the doc text** (corroborated by **`closure-check.sh` output (b)**'s salient-token coverage signal): a doc whose body re-narrates a local source near-verbatim, with no added *why* / *how-it-relates*, is transcription. There is no mechanical overlap ratio — the reviewer judges from the prose. **URL `sources:` cannot be read offline → not a transcription finding.** | `[MEDIUM]` `[CAL-TRANSCRIPTION]` |
+| **CAL-2 Hollowness (too thin)** | A "see file X" link-farm conveying no durable understanding. | The doc's `sources:` vs body ratio: a doc that is mostly pointers with no synthesised cross-cutting content (no *why*, no *how parts interact*) is hollow. **Runtime judgment — NOT a mechanical assertion.** | `[MEDIUM]` `[CAL-HOLLOW]` |
+| **CAL-3 Coverage-vs-source** | A load-bearing fact present in the doc's `sources:` is absent from the doc — "the source has Y and the doc forgot it". | **`closure-check.sh` output (b)** — per-doc `sources:`-anchored coverage table `term | doc | anchoring-source | present|absent`: every `absent` row is a salient term anchored to this doc's local-file `sources:` that has no representation in the doc body. **URL `sources:` → N/A in (b)** — offline helper cannot fetch them. | `[HIGH]` `[CAL-COVERAGE]` |
 | **CAL-4 Deferral-must-point** | Where the doc defers depth ("see source"), it MUST point to a concrete `sources:` entry (durable, grep-recoverable anchor — the existing P1(d) anchor convention), not a vague "see the code". | The doc's `sources:` list: every deferral phrase must resolve to a declared source. | `[LOW]` `[CAL-DEFERRAL]` |
 
 **Mechanical vs judgment boundary.**
@@ -182,36 +238,28 @@ Same as Full Primary, but:
 
 - The doc is FLAGGED in the review summary as "extension" (not part of the canonical
   16 contract).
-- T2 contracts may declare project-specific cardinality (not universal).
+- A T2 `review-criteria:` entry may declare project-specific cardinality (not universal).
 - Cross-doc consistency rules apply against other extensions of the same project,
   not against the canonical 16.
 
 ## Temp ledger format
 
-`/aid-discover` REVIEW state writes findings to
-`.aid/.temp/review-pending/discovery.md`:
+`/aid-discover` REVIEW state writes findings to `.aid/.temp/review-pending/discovery.md`.
 
-```markdown
-# Review Pending — discovery cycle N
+**The ledger's shape is defined once, in
+[`reviewer-ledger-schema.md`](../reviewer-ledger-schema.md), and this document does not
+restate it.** Read it there: the 7 columns and their order, the Severity and Status enums,
+the status lifecycle across cycles, and the rule that the table is the **entire file** — no
+title, no `## Findings` heading, no `## Notes` scratch space, no narrative.
 
-> Auto-generated by /aid-discover REVIEW. Edited by FIX as items are resolved.
-> Delete this file when empty.
+That rule matters more than it looks. `grade.sh` parses each row **positionally**, reading
+`cols[3]` as Severity and `cols[4]` as Status. A ledger written to any other column order
+therefore does not fail loudly — it hands the grader a `Doc` path where a bracketed severity
+tag should be, matches nothing, counts zero findings, and reports **`A+`**. A second copy of
+the schema in this file is exactly how that happens, so there is none.
 
-## Findings
-
-| # | Severity | Doc | Line | Tier | Status | Claim |
-|---|----------|-----|------|------|--------|-------|
-| 001 | HIGH | example-a.md | 42 | T2 | pending | Cardinality contract mismatch — declared count is N but disk count is M |
-| 002 | MINOR | example-b.md | 105 | T4 | pending | Inline date stamp in primary doc body (banned per tier-model.md T4) |
-| 003 | MEDIUM | example-c.md | 18 | T1 | deferred | Concept claim contradicts canonical source — defer to next cycle |
-
-## Notes
-
-(reviewer scratch space)
-```
-
-Status values: `pending` | `in-progress` | `fixed` | `deferred`.
-When all entries are `fixed` or `deferred`, FIX state completes. Delete the file.
+The Status lifecycle drives this state's own exit: FIX completes when no row is `Pending` or
+`Recurred` (the two statuses `grade.sh` counts). Delete the file at DONE.
 
 ## Grade computation
 
@@ -257,12 +305,12 @@ tool can extract severity programmatically without a translation table.
 | `[KB-MISSING]` | HIGH | A standard primary KB document is not present on disk |
 | `[GEN-MISSING]` | HIGH | A registered generated file (per `generated-files.txt`) does not exist; the build command needs to be run |
 | `[CLOSURE-GAP]` | HIGH | A salient cross-source term (from `closure-check.sh` output (a)) is neither grounded in the KB nor explicitly dismissed — a coined or synthesis term with no KB definition. Enforced mechanically by the GENERATE closure loop's termination oracle (`state-closure.md` DETECT); not a panel mandate. |
-| `[CAL-TRANSCRIPTION]` | _the cited rule's anchor_ (`KB-08`) | Doc is a near-verbatim transcription of its `sources:` (too fat) rather than a synthesis — a runtime M2 Anatomy judgment from the doc text, corroborated by `closure-check.sh` output (b)'s salient-token coverage (no mechanical overlap ratio) |
-| `[CAL-HOLLOW]` | _the cited rule's anchor_ (`KB-08`) | Doc is a link-farm that conveys no durable understanding (too thin) — a `sources:` vs body ratio finding; runtime LLM judgment, not a mechanical assertion |
-| `[CAL-COVERAGE]` | _the cited rule's anchor_ (`KB-09`) | A salient term anchored to this doc's local-file `sources:` is absent from the doc body — an `absent` row in `closure-check.sh` output (b); URL sources are N/A |
+| `[CAL-TRANSCRIPTION]` | MEDIUM | Doc is a near-verbatim transcription of its `sources:` (too fat) rather than a synthesis — a runtime M2 Anatomy judgment from the doc text, corroborated by `closure-check.sh` output (b)'s salient-token coverage (no mechanical overlap ratio) |
+| `[CAL-HOLLOW]` | MEDIUM | Doc is a link-farm that conveys no durable understanding (too thin) — a `sources:` vs body ratio finding; runtime LLM judgment, not a mechanical assertion |
+| `[CAL-COVERAGE]` | HIGH | A salient term anchored to this doc's local-file `sources:` is absent from the doc body — an `absent` row in `closure-check.sh` output (b); URL sources are N/A |
 | `[CAL-DEFERRAL]` | LOW | Doc defers depth ("see source") without pointing to a concrete `sources:` entry — a deferral phrase that does not resolve to a declared source |
-| `[TEACHBACK]` | _the cited rule's anchor_ | A teach-back FAIL item — the KB does not support defining the cited concept from the KB alone (per-term limb), or the KB cannot support a coherent engine-narration (non-lexical limb). An open row takes the ESSENCE VERDICT to FAIL, which is what blocks Ready; its effect on the GRADE follows from the severity its cited rule anchors, and is not a floor |
-| `[ACTBACK]` | _the cited rule's anchor_ | An act-back FAIL item — using ONLY the KB, the agent cannot produce a correct plan for the representative change (plan-correctness limb), or it had to assume a convention, guess an invariant, hit an un-anticipated gotcha, or reach for source for a contract (sufficiency limb). An open row takes the ASSERTIVENESS VERDICT to FAIL, which is what blocks Ready; its effect on the GRADE follows from the severity its cited rule anchors, and is not a floor -- a lone `KB-26` row measures `B+` |
+| `[TEACHBACK]` | HIGH | A teach-back FAIL item — the KB does not support defining the cited concept from the KB alone (per-term limb), or the KB cannot support a coherent engine-narration (non-lexical limb); any open `[TEACHBACK]` row forces grade <= D |
+| `[ACTBACK]` | HIGH | An act-back FAIL item — using ONLY the KB, the agent cannot produce a correct plan for the representative change (plan-correctness limb), or it had to assume a convention, guess an invariant, hit an un-anticipated gotcha, or reach for source for a contract (sufficiency limb); any open `[ACTBACK]` row forces grade <= D |
 
 **`[FM-MISSING]` and `[FM-INVALID]` cover the new required fields (P6 carve-out) — no
 new lint tag is introduced.** The required new fields (`objective:`, `summary:`,
@@ -295,4 +343,4 @@ emission MUST prefix the appropriate severity tag — never emit a bare
 
 - [principles.md](principles.md) — the 9 principles, especially P3 (temp ledger), P4 (lint enforcement), P7 (read-only on repo), P9 (resolved items leave no trace)
 - [tier-model.md](tier-model.md) — T1-T4 stability tiers referenced throughout the rubric
-- [frontmatter-schema.md](frontmatter-schema.md) — `kb-category`, `source`, `contracts` fields the rubric reads
+- [frontmatter-schema.md](frontmatter-schema.md) — `kb-category`, `source`, `review-criteria` fields the rubric reads

@@ -17,3 +17,6 @@
 # This forward-going list starts EMPTY. The 7 work-024 delivery-002 rows were relative
 # to the pre-work-024 merge-base and are already absorbed into master, so they are NOT
 # seeded here. Append one reviewed row per future accepted removal.
+test-deploy-monitor-repurpose.sh	DMR00c	work-004 delivery-002 task-008	The 20 internal READMEs were deleted (FR-7), so canonical/skills/aid-monitor/README.md no longer exists and an existence assert on it cannot pass. Nothing is lost: the file was internal, installed into no tree, and resolved by no instruction.
+test-deploy-monitor-repurpose.sh	DMR03c	work-004 delivery-002 task-008	Asserted the BUG -> /aid-fix routing in the deleted README. The same routing is still asserted against SHIPPING files by DMR03a (aid-monitor/SKILL.md) and DMR01a/DMR02a (references/state-route.md), so this was a duplicate of live coverage, not coverage itself.
+test-deploy-monitor-repurpose.sh	DMR03d	work-004 delivery-002 task-008	Asserted the Change Request -> /aid-triage routing in the deleted README. Still asserted against shipping files by DMR03b (SKILL.md) and DMR01b/DMR02b (state-route.md), so the deletion de-duplicated rather than reduced.

@@ -50,13 +50,19 @@ fix_agent:     aid-architect
 
 | Condition | Action |
 |-----------|--------|
-| Grade >= minimum | Ensure all delivery folders exist (deliveries/delivery-NNN/BLUEPRINT.md + STATE.md for each delivery in PLAN.md; create any missing ones, seeding the frontmatter's `delivery_state` scalar as `Pending-Spec` -- task-001/004). Delete ledger: `rm -f .aid/.temp/review-pending/plan.md`. Print summary, done. |
+| Grade >= minimum | Ensure all delivery folders exist (deliveries/delivery-NNN/BLUEPRINT.md + STATE.yml for each delivery in PLAN.md; create any missing ones, seeding the top-level `delivery_state` scalar as `Pending-Spec` -- task-001/004). Delete ledger: `rm -f .aid/.temp/review-pending/plan.md`. Print summary, done. |
 | Grade < minimum, deliverables fixable | List findings, re-enter loop for affected deliverables. |
 | Grade < minimum, sequence invalidated | Recommend `--reset`. |
 
 For grades below minimum: re-enter the loop for affected deliverables.
 
-> NOTE: Do NOT write delivery rows into the work STATE.md `## Plan / Deliveries`. That section
-> is a DERIVED read-only view assembled at read time from `deliveries/delivery-NNN/STATE.md` files.
+> NOTE: Do NOT write delivery rows into the work STATE.yml's Plan/Deliveries view. That view
+> is a DERIVED read-only view assembled at read time from `deliveries/delivery-NNN/STATE.yml` files.
+
+**Cycle 1 also runs the cross-document contradiction pass (Guard 2).** This review receives
+every artifact of the phase at once, which is the only vantage point from which a
+contradiction between two of them is visible. Run it on cycle 1 only -- that makes it
+once per phase by construction. Definition:
+`reviewer-dispatch.md` section "The cross-document contradiction pass (Guard 2)".
 
 **Advance:** **CHAIN** -> [State: DONE] when the grade meets minimum and all delivery folders are created (continue inline).

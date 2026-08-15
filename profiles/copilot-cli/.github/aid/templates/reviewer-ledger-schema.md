@@ -1,29 +1,39 @@
 ---
 kb-category: meta
 source: hand-authored
-intent: |
-  The canonical schema for every reviewer-output ledger in AID. Applies to all
-  REVIEW states across all skills (discover, execute, specify, plan, detail,
-  interview, summarize, deploy), to every script-based validator, and to
-  ad-hoc user-prompted reviews. Defines the table shape, severity + status
-  enums, file lifecycle, and grade.sh integration. Single source of truth so
-  grade.sh, agents, skills, and humans all read findings identically.
-contracts:
-  - "8-column table is the entire ledger file (no headers, no narrative, no sections)"
-  - "Three row kinds by # prefix: findings, U-NNN coverage units, G-NNN gaps; only findings grade"
-  - "Rows are written by writeback-ledger.sh, never by an agent re-emitting the whole table"
-  - "Severity enum: [CRITICAL] | [HIGH] | [MEDIUM] | [LOW] | [MINOR]"
-  - "Status enum: Pending | Fixed | Recurred | Accepted | OOS | Invalid"
-  - "Rule: a finding row MUST carry a rule ID; non-finding rows carry the -- sentinel"
-  - "Grade is computed over rows where Status ∈ {Pending, Recurred}, by Severity column"
-  - "File path: .aid/.temp/review-pending/<scope>.md (scope = skill or skill-task)"
-  - "Persists across REVIEW→FIX cycles within one skill invocation; deleted at skill DONE"
-changelog:
-  - 2026-05-28: Initial schema spec
-  - 2026-07-29: Added the Rule column (8 columns). Position 4, after Status, because
-      grade.sh parses by position and reads cols[3]/cols[4] only.
-  - 2026-07-29: Added the three row kinds (findings, U-NNN coverage, G-NNN gaps) and
-      writeback-ledger.sh as the sole row writer, retiring the heredoc whole-table rewrite.
+objective: The canonical schema for every reviewer-output ledger in AID.
+summary: Defines the 7-column table shape, the Severity and Status enums, the file lifecycle, and how grade.sh reads it.
+review-criteria:
+  - id: F-01
+    kind: validate
+    criterion: "The 7-column table is the entire ledger file -- no title, no section headings, no narrative, no scratch space"
+    severity: HIGH
+    why: "grade.sh parses the file as a table; anything else in it is either ignored or misparsed as a row"
+  - id: F-02
+    kind: validate
+    criterion: "Severity enum, bracketed all-caps: CRITICAL, HIGH, MEDIUM, LOW, MINOR"
+    severity: HIGH
+    why: "grade.sh counts the bracketed tag and nothing else, so a sentence-case severity counts as zero findings and silently yields A+"
+  - id: F-03
+    kind: validate
+    criterion: "Status enum: Pending, Fixed, Recurred, Accepted, OOS, Invalid"
+    severity: HIGH
+    why: "Status decides whether a row counts toward the grade; a value outside the enum is not counted and the finding disappears"
+  - id: F-04
+    kind: validate
+    criterion: "The grade is computed over rows whose Status is Pending or Recurred, read from the Severity column"
+    severity: MEDIUM
+    why: "This is the contract grade.sh implements; a doc that describes it differently teaches a reviewer to write an ungradeable ledger"
+  - id: F-05
+    kind: validate
+    criterion: "The ledger lives at .aid/.temp/review-pending/<scope>.md, where scope names the skill or the skill and task"
+    severity: MEDIUM
+    why: "Two skills writing one path collide; a scope-less name is what makes that happen"
+  - id: F-06
+    kind: validate
+    criterion: "The file persists across REVIEW and FIX cycles within one skill invocation and is deleted when the skill reaches DONE"
+    severity: LOW
+    why: "A ledger left behind is read as a live finding list by the next run"
 ---
 
 # Reviewer Ledger Schema
@@ -32,19 +42,16 @@ This document is the **canonical schema for every reviewer-output ledger in AID.
 
 ## File: contents
 
-The ledger file contains **exactly one markdown table.** No frontmatter, no section headers, no narrative, no summary section, no out-of-scope section. Just the table.
-
-**The table carries three row kinds**, distinguished by the `#` column — findings, coverage units
-(`U-NNN`) and gaps (`G-NNN`). See **Row kinds** below. Only findings bear on the grade.
+The ledger file contains **exactly one markdown table.** No frontmatter, no section headers, no narrative, no summary section, no out-of-scope section. Just the table — every row is one finding (or one accepted exception).
 
 ```markdown
-| # | Severity | Status | Rule | Doc | Line | Description | Evidence |
-|---|---|---|---|---|---|---|---|
-| 1 | [HIGH] | Pending | NAR-04 | foo.md | 42 | claim Y is wrong | doc says Y, `wc -l target = N` shows actual Z |
-| 2 | [MEDIUM] | Fixed | NAR-03 | bar.md | 100 | stale path reference | path/to/foo deleted commit abc123; cycle-4 FIX removed cite |
-| 3 | [MINOR] | Accepted | NAR-11 | baz.md | -- | a 6-line script stands in for a one-paragraph explanation | prose alternative offered cycle-1 Q10; author accepted the script form |
-| 4 | [HIGH] | Recurred | NAR-04 | qux.md | 17 | count off by 1 | claim 16 vs disk 15; was Fixed cycle-3, returned cycle-5 |
-| 5 | [LOW] | OOS | NAR-07 | quux.md | 200 | section duplicates module-map.md's ownership table | accurate content, but it belongs in one doc; methodology-refactor pending |
+| # | Severity | Status | Doc | Line | Description | Evidence |
+|---|---|---|---|---|---|---|
+| 1 | [HIGH] | Pending | foo.md | 42 | claim Y is wrong | doc says Y, `wc -l target = N` shows actual Z |
+| 2 | [LOW] | Fixed | bar.md | 100 | stale path reference | path/to/foo deleted commit abc123; cycle-4 FIX removed cite |
+| 3 | [MINOR] | Accepted | baz.md | — | one-sentence body | no-docs variant accepted by user cycle-1 Q10 |
+| 4 | [HIGH] | Recurred | qux.md | 17 | count off by 1 | claim 16 vs disk 15; was Fixed cycle-3, returned cycle-5 |
+| 5 | [LOW] | OOS | quux.md | 200 | inline T3 line-count violation | accurate value but P1 policy violation; methodology-refactor pending |
 ```
 
 ## File: location
@@ -75,136 +82,62 @@ The `.aid/.temp/review-pending/` directory is gitignored (per `.gitignore` `.aid
 | 1 | `#` | yes | Row counter (1, 2, 3...) for cross-reference in commit messages and fix-agent dispatches. Sequential within the file; never renumbered. |
 | 2 | `Severity` | yes | Bracketed severity tag (`[CRITICAL]`, `[HIGH]`, `[MEDIUM]`, `[LOW]`, `[MINOR]`). Brackets ensure the tag doesn't collide with bare numbers anywhere else in markdown. Drives grade computation. |
 | 3 | `Status` | yes | Plain word (no brackets): `Pending`, `Fixed`, `Recurred`, `Accepted`, `OOS`, or `Invalid`. See **Status values** below. Drives grade computation. |
-| 4 | `Rule` | yes | The ID of the rule the finding violates, from the artifact's rule set in [`.github/aid/templates/review-rubrics/INDEX.md`](review-rubrics/INDEX.md). Format `<CLASS>-<NN>` (e.g. `CODE-03`, `NAR-04`). See **Rule values** below. |
-| 5 | `Doc` | yes | Affected file path (relative to repo root). Examples: `foo.md`, `.github/aid/scripts/bar.sh`, `tests/canonical/baz.sh`. For doc-wide issues with no specific file, use `--` (the same sentinel as `Rule` and `Line`; **not** the em dash `—` this schema's older examples used). |
-| 6 | `Line` | yes | Affected line number, a line range like `42-45`, a **locator** when the artifact has no meaningful line (see below), or `--` for doc-wide. |
-| 7 | `Description` | yes | ONE sentence stating what's wrong. Form: "claim X is wrong: doc says Y, actual Z." Avoid hedging or explanation; explanation goes in Evidence. |
-| 8 | `Evidence` | yes | The disk-truth that contradicts the doc's claim, AND/OR the source-of-truth command. Form: "`wc -l foo = 1070` (doc claims 1071)" or "`grep -c X bar = 5` (doc claims 6)". For Status=Fixed/Recurred/Accepted/OOS/Invalid, include enough context to justify the status (e.g., "Fixed in commit abc123" or "Accepted: user decision cycle-1 Q5"). |
+| 4 | `Doc` | yes | Affected file path (relative to repo root). Examples: `foo.md`, `.github/aid/scripts/bar.sh`, `tests/canonical/baz.sh`. For doc-wide issues with no specific file, use `—`. |
+| 5 | `Line` | yes | Affected line number, or a line range like `42-45`, or `—` for doc-wide. |
+| 6 | `Description` | yes | The criterion `id` violated, then ONE sentence stating what's wrong: `SK-01 — dispatch table names a non-existent agent`. Form: "claim X is wrong: doc says Y, actual Z." Avoid hedging or explanation; explanation goes in Evidence. See **Citing the criterion** below. |
+| 7 | `Evidence` | yes | The disk-truth that contradicts the doc's claim, AND/OR the source-of-truth command. Form: "`wc -l foo = 1070` (doc claims 1071)" or "`grep -c X bar = 5` (doc claims 6)". For Status=Fixed/Recurred/Accepted/OOS/Invalid, include enough context to justify the status (e.g., "Fixed in commit abc123" or "Accepted: user decision cycle-1 Q5"). When the severity came from a file-level **override** of a declared criterion, record the resolved severity and the overriding file's `why` here. |
 
 **Pipe-character escape:** if Description or Evidence contains a `|` (pipe), escape it as `\|` so the markdown table doesn't break.
 
-## Row kinds
+## Citing the criterion
 
-One table, three kinds of row, told apart by the `#` column alone. A reader needs no other signal, and
-`grade.sh` needs none at all — see **Grade inertness** below.
-
-| Column | Finding | Coverage unit | Gap |
-|---|---|---|---|
-| `#` | `NNN` or `<NS>-NNN` | `U-NNN` or `U-<NS>-NNN` | `G-NNN` or `G-<NS>-NNN` |
-| `Severity` | one of the five bracketed tokens | `--` | `--` |
-| `Status` | `Pending` \| `Fixed` \| `Recurred` \| `Accepted` \| `OOS` \| `Invalid` | `Unexamined` \| `In Progress` \| `Examined` \| `Skipped` | `Open` \| `Resolved` |
-| `Rule` | a catalog rule ID; **mandatory** (one exemption below) | `--` | `--` |
-| `Doc` | the artifact the finding is about | the unit's artifact | the artifact whose review stalled |
-| `Line` | line, range, locator, or `--` | `--` | `--` |
-| `Description` | one sentence: what is wrong | `rule-set: <name>`, plus a skip reason when `Skipped` | which criterion is missing |
-| `Evidence` | disk truth, or the command producing it | UTC stamp `; art=<digest>; rs=<rule-set>@<digest>` | the resolution command, `gap-key=<key>`, `resume=N` |
-
-**ID grammar — one regex for all three kinds:**
-
-```
-^(U-|G-)?([A-Z][A-Z0-9]{0,3}-)?[0-9]{1,4}$
-```
-
-The optional middle segment is the *writer namespace*, used only when one logical review has several
-writers (`aid-discover`'s parallel mandates: `U-M1-004`). Absent in the common single-writer case.
-
-**Worked rows:**
+**Every finding names the criterion it violates, as an `id` prefix inside the `Description`
+cell.** No eighth column: the shape stays 7 columns and `grade.sh` keeps its positional parse
+(it reads `cols[3]` and `cols[4]` from the left and ignores `cols[5..8]`).
 
 ```markdown
-| # | Severity | Status | Rule | Doc | Line | Description | Evidence |
-|---|---|---|---|---|---|---|---|
-| U-001 | -- | Examined | -- | foo.md | -- | rule-set: NAR | 2026-07-29T10:00:04Z; art=f75d45bea4ae; rs=NAR@d247034 |
-| 1 | [HIGH] | Pending | NAR-04 | foo.md | 42 | claim wrong: doc says 7, disk shows 9 | `ls \| wc -l = 9` |
-| G-001 | -- | Open | -- | baz.sh | -- | no shell coding standard declared for this class | /aid-update-kb coding-standards; gap-key=no-shell-std; resume=1 |
-| U-002 | -- | Skipped | -- | qux.md | -- | rule-set: SPEC; blocked by G-001 | 2026-07-29T10:09:02Z; art=a91c02; rs=SPEC@77b3e1 |
+| 3 | [HIGH] | Pending | .github/skills/aid-plan/SKILL.md | 42 | SK-01 — dispatch table names a non-existent agent | ls .github/agents/ |
 ```
 
-**Why coverage rows exist.** A review that is interrupted leaves no trace of *what it had already
-looked at*. A `U-` row per unit makes progress legible, so a resumed review need not re-examine
-everything — and the `art=`/`rs=` digests say whether the artifact or its rule set changed underneath,
-which is what makes skipping safe rather than merely cheap.
+- A **scope-prefixed** id (`G-`, `KB-`, `SK-`, ...) resolves in the project's criteria table
+  (`.aid/knowledge/authoring-conventions.md`).
+- An **`F-`** id resolves in the `review-criteria:` frontmatter of the file named in `Doc`.
+- **A finding citing no id, or an id that resolves nowhere, is itself a defect** — it means the
+  reviewer invented a criterion.
 
-**Why gap rows exist.** When the review's own preconditions are missing — no coding standard for the
-language in hand — that is not a defect in the artifact and must not be graded as one. A `G-` row
-records the missing criterion and the command that would supply it.
+How criteria resolve (global → type → file, most specific wins) is defined in
+`.github/aid/templates/kb-authoring/review-rubric.md § Resolving review criteria`; this schema
+does not restate it.
 
-### Grade inertness
+**Overrides are recorded in `Evidence`.** When the severity used came from a file-level override
+rather than the global or type level, the `Evidence` cell carries the resolved severity and the
+overriding file's `why`, so a reader can see which level won and on what grounds:
 
-Non-finding rows are ignored **by construction, not by convention.** `grade.sh` counts a row only when
-`Severity` is *exactly* one of the five bracketed tokens **and** `Status` is *exactly* `Pending` or
-`Recurred`. A `--` in `Severity` fails the severity match, so the status value is never even reached.
+```markdown
+| 7 | [LOW] | Pending | .github/aid/templates/foo.md | 12 | G-01 — inline count not measured at authoring time | resolved LOW via file-level override of G-01 (MINOR global); why: "this count gates a downstream parse" |
+```
 
-That is why the coverage vocabulary can safely contain words that look grade-bearing: a row reading
-`Status: In Progress` cannot be counted, because its `Severity` is `--`.
-
-Adding, removing or re-statusing any number of `U-` or `G-` rows therefore leaves both the grade and
-`--explain`'s breakdown unchanged. `writeback-ledger.sh` **verifies this at write time by default** —
-it grades the pre-image and the post-image and refuses the write if they differ.
-
-### The `--` sentinel
-
-Non-applicable cells carry `--`, matching the `Rule` sentinel and the STATE templates' null sentinel —
-not the em-dash `—` that this schema's older `Line` examples used. `grade.sh` ignores both, so existing
-`—` cells are **not** migrated; the rule binds new rows only.
-
-## Rule values
-
-**A finding row MUST carry a rule ID.** A finding is by definition the assertion that some declared
-rule is false here, so a finding with no rule has no criterion — which the catalog's admission rule
-(*no `Criterion`, no row*) makes inexpressible. If nothing in either authority ladder speaks to the
-concern, the correct output is a **criteria gap**, not a finding with an empty `Rule` cell.
-
-| Row kind | `Rule` cell |
-|---|---|
-| A finding (any Severity) | the rule ID, e.g. `CODE-03` |
-| A non-finding row | `--` (the sentinel) |
-
-**One rule per row.** A defect violating two rules produces two rows. No comma-separated lists — the
-cell stays single-valued, greppable, and countable.
-
-**The class prefix is the source.** `CODE-*`, `SPEC-*`, `KB-*` and the rest carry what the retired
-`[CODE]` / `[SPEC]` / `[ARCHITECTURE]` source tags used to assert, so the tag can no longer contradict
-the rule. Do not add source tags to any column.
-
-**Enforcement.** `grade.sh` does **not** enforce this: it reads `cols[3]` and `cols[4]` only and is
-byte-unchanged apart from comments (NFR-1), so it cannot see the `Rule` column at all. The writer that
-enforces a present, well-formed `Rule` cell is **`writeback-ledger.sh`** — and since it is the *only*
-writer of rows, the requirement is mechanical rather than merely stated. A finding whose `Rule` is
-empty, `--`, or malformed is refused with exit 4.
-
-**There is no exemption.** A finding row requires a rule ID at *every* status. An earlier revision let
-a `Status: OOS` row carry `--` as an interim carrier for "no rule set covers this artifact class";
-that carrier is **retired**, because the gap protocol now gives that outcome its own row kind. An
-unmatched class is a `[GAP:CRITERIA]` gap row — not a finding nobody can trace to a rule.
-
-See [`criteria-gap-protocol.md`](criteria-gap-protocol.md).
-
-### Mixed shapes: the header decides
-
-A ledger is read according to **its own header row** — 7-column ledgers written before this change
-remain readable, and are not rewritten. Two consequences:
-
-- **Never mix shapes inside one file.** Every data row must match that file's header.
-- **A 7-column ledger continues to grade correctly**, because `Severity` and `Status` sit at positions
-  2 and 3 in both shapes. That is the reason the `Rule` column was inserted *after* `Status` rather
-  than anywhere earlier.
+The `Evidence` cell is inert to grading, so an override is visible without any change to the
+grade machinery.
 
 ## Severity values
 
-The five tags are `[CRITICAL]`, `[HIGH]`, `[MEDIUM]`, `[LOW]`, `[MINOR]`. **What each one means
-is defined once**, at [`.github/aid/templates/grading-rubric.md#severity-scale`](.github/aid/templates/grading-rubric.md#severity-scale) --
-modality sets the band, then blast radius and reversibility select within the MUST band. This
-schema governs the ledger's *shape*, not the severity vocabulary's *meaning*.
+The enum is `[CRITICAL]` | `[HIGH]` | `[MEDIUM]` | `[LOW]` | `[MINOR]`, always in the bracketed
+all-caps form — that is the form `grade.sh` counts.
 
-Worst severity dominates; count within that severity determines the modifier (1 → `+`, 2-5 → none, 6+ → `-`).
+**What each level means, and the severity-to-letter-grade mapping, are defined once in
+`.github/aid/templates/grading-rubric.md`** (`§ Issue Severities` and `§ Grade Calculation`).
+This schema owns the ledger's *shape*, not the scale: a level restated here becomes a second
+definition that drifts from the one the grade is computed against, which is what happened to the
+per-level "grade impact" notes this section used to carry.
 
 ## Status values
 
 | Status | Meaning | Counts toward grade? | Set by |
 |---|---|---|---|
 | `Pending` | Issue exists; needs fixing | **Yes** | Reviewer at first discovery |
-| `Fixed` | Was Pending; the key is absent from a later attempt whose coverage shows the artifact WAS examined | No (kept for audit history) | **Reconciliation** — never the reviewer |
-| `Recurred` | Was Fixed in an earlier cycle but came back. Effectively pending again. | **Yes** (counts as Pending) | **Reconciliation**, when the key reappears in a later attempt's scratch |
+| `Fixed` | Was Pending; reviewer confirmed resolved this cycle | No (kept for audit history) | Reviewer in a subsequent cycle |
+| `Recurred` | Was Fixed in an earlier cycle but came back. Effectively pending again. | **Yes** (counts as Pending) | Reviewer in a subsequent cycle |
 | `Accepted` | Pending but decided not to fix (e.g., acceptable carryover, no-docs variant). Description and Evidence must include the rationale + who decided. | No | Orchestrator with user authorization |
 | `OOS` | Out of scope per the review rubric (e.g., inline-T3 violations with accurate values when methodology-refactor is tech-debt). | No | Reviewer or orchestrator |
 | `Invalid` | Reviewer was wrong; the original claim was actually correct on disk. Description must explain the misread. | No | Reviewer in a subsequent cycle, or orchestrator with evidence |
@@ -212,10 +145,69 @@ Worst severity dominates; count within that severity determines the modifier (1 
 **Workflow:**
 
 1. **REVIEW (cycle 1):** create file; append rows as `Status: Pending` for every finding. Existing-file case: NO (cycle 1 is the first).
-2. **REVIEW (cycle N≥2):** the reviewer writes to a **fresh per-attempt scratch ledger** and never sees the canonical one. It records what it finds, nothing more. **The orchestrator reconciles** scratch against canonical afterwards — see **Attempts and reconciliation** below.
+2. **REVIEW (cycle N≥2):** read existing file. **Verification is FULL; the hunt for new findings is SCOPED.** See *Two sets from cycle 2* below.
+   - *Verify — over the full verification set:* for each existing `Pending` row, check on disk → if resolved, change Status to `Fixed`; if still wrong, leave as `Pending`. For each existing `Fixed` row, check it is still resolved → if regressed, change Status to `Recurred`.
+   - *Hunt — over the scoped hunt set only:* append new rows as `Pending` for newly-found issues.
 3. **FIX:** read Pending + Recurred rows. Address each. Do NOT mark rows `Fixed` during FIX — that's the next reviewer's job (separation of concerns: fixer fixes, reviewer verifies).
 4. **Orchestrator (any phase):** may mark a row `Accepted` with user authorization (record rationale in Description). May mark `Invalid` if reviewer was wrong, with evidence.
 5. **Skill reaches DONE:** orchestrator deletes the ledger file. If `.aid/.temp/review-pending/` is then empty, the directory is also removed.
+
+### Two sets from cycle 2
+
+Cycle 1 reads the whole artifact and is unchanged. From cycle 2 a review does two
+different jobs, and only one of them is expensive:
+
+| Set | Contents | Scope |
+|---|---|---|
+| **Verification set** | every file named in an existing ledger row's `Doc` column, **plus the full cycle-1 artifact set whenever any row's `Doc` is `—`** | **FULL — never scoped** |
+| **Hunt set** | what the previous FIX changed, plus the sections that reference it | **SCOPED** |
+
+**Verification is never scoped, and that is what protects `Recurred`.** Checking a
+`Pending` row against disk is a targeted lookup that was always cheap; scoping it would
+break regression detection, which is the backstop the whole design leans on. The `Doc: —`
+widening exists because a doc-wide row names no file: a verification set built only by
+collecting `Doc` values would contain nothing for it, so the row could never be
+re-verified and would sit `Pending` forever or, worse, be treated as verified because
+nothing contradicted it.
+
+**Only the hunt is scoped**, because "find NEW issues" is the clause that forced a full
+re-scan every cycle. It is what made a five-cycle gate re-read the whole artifact five
+times to keep finding roughly as many new issues as it closed.
+
+The hunt set is derived, never judged:
+
+```
+changed   := git diff --name-only <previous-cycle-commit>..HEAD
+             | filter_reviewable_artifacts
+referrers := files containing a literal reference to any changed path,
+             or to a changed section's heading anchor
+hunt      := changed ∪ referrers
+```
+
+`referrers` is a **grep, not a judgment call**: a fix in one section can break another
+that references it, and the expansion that catches this must be reproducible rather than
+a model's guess about what "might be affected" — a guess that varies between cycles is
+the non-determinism this change exists to remove.
+
+**Where no previous-cycle commit is recorded, the cycle is UNSCOPED** — it reads
+everything, exactly as today. Degrading to current behaviour is always the safe direction,
+and it is chosen deliberately over inferring a base.
+
+**Two limits, stated rather than left to be discovered:**
+
+- A reference expressed in prose without naming the path ("the ledger schema says…") is
+  not found by grep. The mechanical expansion is the cheap catch; the final full pass is
+  the complete one. Widening the grep to prose synonyms would reintroduce exactly the
+  judgment the guard exists to eliminate.
+- **A scoped cycle never approves.** One full pass runs before approval as the backstop,
+  and `Recurred` already exists in the Status enum for anything a scoped cycle missed and
+  a later one re-finds.
+
+**The cross-document contradiction pass is kept, and moves to once per phase** — run on
+cycle 1 of any review whose artifact list spans more than one artifact, rather than once
+per cycle inside each single-artifact gate. It gets *better* rather than merely cheaper: a
+contradiction between two sibling documents is invisible to a gate that only ever reads
+one of them.
 
 ## grade.sh integration
 
@@ -239,206 +231,53 @@ else: grade = "A+"
 
 `grade.sh` never greps prose; the table is the only source of severity tags counted. This eliminates the cycle-7 bug where a summary line "0 [CRITICAL] / 0 [HIGH]" was over-counted.
 
-**Why the `Rule` column sits at position 4.** `grade.sh` parses by column *position*: after
-`split($0, cols, "|")` it reads `cols[3]` for Severity and `cols[4]` for Status, and looks at nothing
-beyond. Inserting a column at or before position 3 would shift Severity or Status and break the
-grader. Inserting after Status is invisible to it. So the position is **constrained, not chosen** —
-and it is also where a reader asking *"why is this HIGH?"* looks, right beside the severity it
-justifies.
-
-The shape groups into three readable bands: *classification* (`#`, Severity, Status, Rule),
-*location* (Doc, Line), *content* (Description, Evidence).
-
 **Empty ledger (no rows at all) = A+** (artifact has zero findings).
 
 **Empty file (zero bytes) = A+** (same as no ledger).
 
 **No file at all = A+ for the artifact being reviewed** (no review = no findings). However, the orchestrator should not advance past REVIEW state without a ledger — the reviewer must create it.
 
-## Attempts and reconciliation
-
-**Two files, and the distinction is the whole design.**
-
-| | Path | Written by | Lifetime |
-|---|---|---|---|
-| **Scratch** | `<scope>-cycle<N>.md` | the reviewer, and only the reviewer | one attempt |
-| **Canonical** | `<scope>.md` | the orchestrator, and only the orchestrator | the whole skill invocation |
-
-A reviewer is given its scratch path and **is never told the canonical path.** So contamination
-between cycles is **structural, not instructional** — there is no rule to remember, because the prior
-verdict is not reachable.
-
-**Mode selection is one `test -f`.** Scratch present at dispatch → this is a **resume** of attempt N.
-Absent → a **new cycle**, attempt N+1. The brief still declares which, so the agent knows its
-contract, but correctness does not depend on the declaration.
-
-### Why reconciliation moved off the reviewer
-
-The reviewer used to be told to read the prior ledger and update each row's Status. That instruction
-contradicted the clean-context rule in the same breath — you cannot both withhold the previous verdict
-and ask someone to update it.
-
-**Independence protects judgment, not bookkeeping.** Clean context exists so cycle N's *severity* is
-not anchored by cycle N−1's. Deciding that row 4 is now `Fixed` is not a judgment about the artifact at
-all; it is a set difference between two finding lists. Nothing is protected by making the judge do that
-arithmetic, and a great deal is lost — the judge has to be shown the prior verdict to do it.
-
-### The join key is `(Doc, Rule)`
-
-Not the row ID. A row ID is only stable across cycles if the scratch that minted it still exists, and
-scratches are deleted at merge — so an ID-keyed join has its input removed before it is read.
-
-`Line` is deliberately **excluded**: it drifts on every edit, so keying on it would report every
-fixed-then-shifted finding as new. Where one `(Doc, Rule)` pair legitimately appears twice, `Line` is
-the tiebreaker.
-
-#### `Line` as a locator
-
-Some artifacts have no line to cite. A generated `kb.html` is one file whose defects are *checks*, not
-positions: two accessibility checks (`A2` lightbox ARIA, `A3` focus trap) both map to `PRE-04`, so with
-`Line` left at `--` their rows share one `(Doc, Rule)` key and fixing the first would silently reconcile
-the second to `Fixed`. A human checklist is another: its answers have no file at all.
-
-So where a line number does not exist, `Line` carries a **locator** — a short, stable identifier of the
-thing checked, minted by the emitting component and documented by it:
-
-| Form | Emitted by | Example |
-|---|---|---|
-| a check id | `emit-summary-findings.sh` (the HTML validator's checks) | `A2`, `L1`, `NM` |
-| a check label | same, for validator checks printed without an id | `color-scheme: light dark` |
-| `<theme>/<pair>` | same, for the per-theme contrast check | `dark/body text on bg` |
-| `human/<check>` | the manual visual checklist | `human/K1`, `human/V1` |
-
-A locator is **not** free text. It must be stable across cycles (or the tiebreaker reintroduces the
-drift `Line`'s exclusion from the key exists to avoid), and the component that mints it must document
-its value set — `aid-summarize/references/state-validate.md § the row the script writes` does this for
-the first three forms and `state-manual-checklist.md` for the fourth. `human/` is load-bearing beyond
-tie-breaking: it is what keeps a machine row and a human row for the same rule from reconciling onto
-each other.
-
-This is a widening of the value set, recorded here because the emitter shipped these values while this
-section still declared "line, range, or `--`" in two places — the schema, not the emitter, is the
-authority, and it was the surface that had not been amended.
-
-This key only became possible when `Rule` became mandatory and single-valued.
-
-### The transition table — the orchestrator's whole job
-
-| Canonical row | Key present in scratch? | Result |
-|---|---|---|
-| `Pending` | yes | stays `Pending`. Severity and Description are authorial and never rewritten |
-| `Pending` | no, **and** the unit covering `Doc` is `Examined` | → `Fixed` |
-| `Pending` | no, and the unit is **not** `Examined` | stays `Pending` — **absence proves nothing** |
-| `Fixed` | yes | → `Recurred` |
-| `Fixed` | no | stays `Fixed` |
-| `Accepted` / `OOS` / `Invalid` | either | **never auto-changed.** These are authorization states; a re-find is narrated, not written |
-| — | key absent from canonical | append as a new finding, next free `#` |
-
-**The coverage guard on row 3 is the point.** Without it, a reviewer marks a finding `Fixed` because it
-did not see it — with no evidence it ever looked. The `U-` manifest is the first thing that makes *"I
-examined this and found nothing"* distinguishable from *"I never got there"*, so an interrupted cycle
-can no longer silently clear every finding it failed to reach.
-
-**Reconciliation runs on every reviewer return**, not only on new cycles. A resumed attempt that
-re-examines an invalidated unit re-emits findings the canonical ledger already holds, and the same join
-dedupes them. One code path, and the duplicate-row hazard needs no second mechanism.
-
 ## Lifecycle (per skill invocation)
 
 ```
 First REVIEW
-  └─ Orchestrator picks the scratch path (absent → new cycle)
-  └─ Reviewer writes findings + coverage rows to the SCRATCH only
-  └─ Orchestrator reconciles scratch → canonical on (Doc, Rule)
-  └─ Orchestrator runs check-gaps.sh, then grade.sh, on the CANONICAL ledger
+  └─ Reviewer reads existing ledger (none on first invocation → empty start)
+  └─ Reviewer appends new findings as Pending rows
+  └─ Reviewer commits the ledger file (via orchestrator)
+  └─ Orchestrator runs grade.sh on the ledger to compute the grade
   └─ State machine advances (Q-AND-A or FIX)
 
 FIX
-  └─ Fixer reads the canonical ledger; addresses all Pending and Recurred rows
-  └─ Fixer does NOT modify the Status column (that's reconciliation's job)
+  └─ Fixer reads ledger; addresses all Pending and Recurred rows
+  └─ Fixer does NOT modify the ledger Status column (that's the next reviewer's job)
   └─ State machine advances back to REVIEW
 
-INTERRUPTED (killed, stopped, or halted to ask)
-  └─ The scratch SURVIVES -- the merge step never ran
-  └─ plan-resume.sh recomputes art= and rs= per unit and emits keep/invalidate
-  └─ Orchestrator applies the plan with --set-status, then re-dispatches
-  └─ The reviewer receives the SAME scratch: its own coverage, its own findings
-
 Subsequent REVIEW (cycle N)
-  └─ Fresh scratch <scope>-cycle<N>.md; coverage starts empty, which is correct --
-     a new attempt re-examines everything
-  └─ Reviewer records what it finds; it never updates a prior Status
-  └─ Orchestrator reconciles and re-grades
+  └─ Reviewer reads existing ledger
+  └─ For each existing row: re-verify against disk, update Status:
+       - Pending and still wrong  → leave Pending
+       - Pending and now resolved → Fixed
+       - Fixed and still resolved → leave Fixed (audit history)
+       - Fixed and regressed       → Recurred
+  └─ Append new rows as Pending for newly-found issues
+  └─ Orchestrator re-runs grade.sh
 
-DONE (skill completion)
-  └─ G- keys promoted to the criteria-gap register FIRST -- they outlive the ledger
-  └─ Orchestrator deletes the canonical ledger and any scratch
-  └─ If .aid/.temp/review-pending/ is empty: rmdir it
+DONE (skill completion, e.g., /aid-discover APPROVAL granted)
+  └─ Orchestrator deletes the ledger file: rm .aid/.temp/review-pending/<scope>.md
+  └─ If .aid/.temp/review-pending/ is empty: rmdir .aid/.temp/review-pending/
 ```
-
-**Findings merge; coverage and gap rows live and die with their attempt.** Resume re-enters an attempt,
-so its coverage is intact. A new cycle opens a fresh attempt, so its coverage is empty.
-
-## How rows are written
-
-**Rows are written by `.github/aid/scripts/review/writeback-ledger.sh`, one call per row.** Do not
-re-emit the table.
-
-```bash
-writeback-ledger.sh --ledger .aid/.temp/review-pending/<scope>.md --append-finding \
-    --severity '[HIGH]' --rule NAR-04 --doc foo.md --line 42 \
-    --description 'claim wrong: doc says 7, disk shows 9' --evidence '`ls | wc -l` = 9'
-
-writeback-ledger.sh --ledger ... --append-unit --unit foo.md --rule-set NAR --status Examined
-writeback-ledger.sh --ledger ... --append-gap  --gap-key no-shell-std --doc baz.sh \
-    --description 'no shell coding standard declared' --resolution '/aid-update-kb coding-standards'
-writeback-ledger.sh --ledger ... --set-status --row-id U-002 --status Examined
-writeback-ledger.sh --ledger ... --row-id U-002 --get-status
-```
-
-**Why this replaced the heredoc.** The previous contract had the reviewer read the whole ledger and
-re-emit every row inside a `cat >`. A 30-row ledger is 3.3–10 KB of table, so each checkpoint cost
-roughly 0.9–2.5k output tokens plus a comparable read — and each one was an opportunity to silently
-truncate every prior finding. One helper call carries a single row's cells, needs no read, and cuts
-per-checkpoint output by 20–30×.
-
-The truncation surface is **zero**, because the model never emits a row it did not author in that
-call. The script still rewrites the file (awk to a temp file, then `mv`), exactly as
-`writeback-state.sh` does for a state field — what went to zero is *agent-authored whole-table
-re-emission*.
-
-**What the script guarantees, so you do not have to:**
-
-- **`#` is script-assigned.** Next free integer for findings, next free `U-NNN`/`G-NNN` within the kind
-  and namespace. Existing rows are never renumbered.
-- **`--set-status` rewrites exactly one cell.** Every other cell of that row, and every other row, is
-  byte-identical afterwards. Status is validated against the target row's *kind*, so
-  `--row-id U-002 --status Recurred` is refused.
-- **A finding with no rule ID is rejected** (exit 4). The one exemption: a `Status: OOS` row may carry
-  `--` in `Rule`, for an artifact class no rule set covers.
-- **`--append-gap` is idempotent on `--gap-key`** — a repeated key appends nothing and increments
-  `resume=N` on the existing row.
-- **Pipes are escaped** (`|` → `\|`) in `--description` and `--evidence`; raw newlines are rejected.
-- **CRLF and trailing-newline invariance** hold, so a ledger written on Windows stays byte-stable.
-- **Grade inertness is verified on every non-finding write** and the write is refused if the grade
-  moves.
 
 ## Authoring rules for the reviewer
 
 **Always:**
-- Write rows with `writeback-ledger.sh`, one call per row. Never re-emit the table by hand.
-- Let the script assign `#`; do NOT renumber existing rows.
-- **Carry a rule ID in `Rule` on every finding row.** If no rule speaks to the concern, raise a criteria gap instead of writing a finding.
+- Emit the table as the ENTIRE file content. No frontmatter, no headers, no narrative.
+- For new rows: assign the next sequential `#`; do NOT renumber existing rows.
 - Cite the disk-truth in Evidence with a runnable command or specific file:line reference.
-- Match the shape of the file's own header row; if it is a 7-column ledger, keep writing 7 columns.
-- Checkpoint coverage as you go: `--set-status <unit> --status "In Progress"` **before** the unit's work and `Examined` after. The leading write is what makes an interrupted unit distinguishable from one never reached.
+- Read the existing ledger BEFORE appending — use the existing Status patterns to identify Recurred regressions.
 
 **Never:**
-- Read or write the canonical ledger. You are given a scratch path; that is the only ledger you touch.
-- Update a prior row's Status. Reconciliation does that, and it is not a judgment about the artifact — it is a set difference between two finding lists.
 - Add a `## Summary` section with severity tag-strings (the cycle-7 bug — those tag strings get over-counted by simpler graders).
-- Modify existing rows' Severity, `Rule` or Description (they're append-only history); only Status may change across cycles.
-- Put more than one rule ID in a `Rule` cell, or add a retired source tag (`[CODE]`, `[SPEC]`, `[ARCHITECTURE]`) to any column.
+- Modify existing rows' Severity or Description (they're append-only history); only Status may change across cycles.
 - Include narrative analysis in the file — that goes in the agent's return-message to the orchestrator, not in the ledger.
 - Renumber rows when Fixed rows accumulate — they stay for the audit trail until DONE.
 
@@ -481,9 +320,7 @@ The `CLAUDE.md` / `AGENTS.md` short rule (always loaded) is the trigger for ad-h
 
 ## See also
 
-- `.github/aid/scripts/review/writeback-ledger.sh` — the sole writer of ledger rows
 - `.github/aid/scripts/grade.sh` — the grader that parses this ledger
-- `.github/aid/templates/review-rubrics/INDEX.md` — the rule sets the `Rule` column cites
 - `.github/agents/aid-reviewer/AGENT.md` — sub-agent output contract (references this schema)
 - `.github/aid/templates/reviewer-dispatch.md` — universal reviewer dispatch brief (references this schema)
 - `CLAUDE.md` / `AGENTS.md` — global short rule (points at this schema)

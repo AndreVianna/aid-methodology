@@ -20,11 +20,22 @@ tags: [C2, modules, dependencies, components, wiring, test-coverage]
 see_also: [project-structure.md, architecture.md, artifact-schemas.md, integration-map.md]
 owner: architect
 audience: [developer, architect]
-contracts:
-  - "canonical/ is the single source of truth; profiles/ and packages/_vendor are rendered/vendored copies"
-  - "78 skill directories under canonical/skills/; 10 agent directories under canonical/agents/"
-  - "5 render profiles (profiles/*.toml)"
-  - "site/ derives its skill content from canonical/ at build time; gen-skills.mjs and gen-reference.mjs throw on corpus drift"
+review-criteria:
+  - id: F-01
+    kind: validate
+    criterion: "canonical/ is named as the single source of truth, with profiles/ and the vendored package copies identified as rendered output"
+    severity: HIGH
+    why: "An agent that reads this doc and edits a render loses the edit at the next generator run -- the most common defect this map exists to prevent"
+  - id: F-02
+    kind: validate
+    criterion: "The skill, agent and profile counts stated here are measured from canonical/skills/, canonical/agents/ and profiles/"
+    severity: MEDIUM
+    why: "These three counts are load-bearing: the generator, the catalog parity suites and the site build all derive from the same directories, so a stale count here contradicts a test"
+  - id: F-03
+    kind: validate
+    criterion: "site/ is described as deriving its skill content from canonical/ at build time, with the generators failing on corpus drift"
+    severity: MEDIUM
+    why: "It is why a canonical change can break the site build, which is otherwise a surprising failure"
 ---
 
 # Module Map
@@ -56,7 +67,6 @@ it produces. The modules fall into four planes:
 - [Invariants](#invariants)
 - [Contracts](#contracts)
 - [Gotchas](#gotchas)
-- [Change Log](#change-log)
 
 ---
 
@@ -73,22 +83,22 @@ it produces. The modules fall into four planes:
 | `lib/AidInstallCore.psm1` | Distribution | PowerShell twin of the install-core library (`#Requires -Version 5.1`). | none | large | tested (`Test-AidInstaller.ps1`, `ps51-compat-check.ps1`) | Must stay WinPS-5.1 compatible (see coding-standards.md). |
 | `bin/aid`, `bin/aid.ps1`, `bin/aid.cmd` | Distribution | Persistent `aid` CLI dispatcher: parses subcommands (`update`, `remove`, `dashboard`, ...) and calls install-core. | install-core libs | medium | tested (cli-parity, registry) | `aid.cmd` is a thin cmd.exe shim over `aid.ps1`. |
 | `release.sh` | Distribution | Maintainer runbook: packages the five per-profile tarballs + checksums and cuts a GitHub Release. | `canonical/`, `profiles/`, `check-version-sync.sh` | medium | indirectly (release.yml CI) | Maintainer-only; rebuild bundle from clean HEAD. |
-| `canonical/skills/*` (78) | Toolkit | Slash-command definitions (`SKILL.md` + `references/*.md`) that drive the pipeline state machines. | `canonical/aid/scripts/*`, `templates/*` | large (collectively) | not machine-tested (by design) | The user-facing surface; one dir per skill (78 total: 20 curated pipeline / on-demand / router skills + the 58-row shortcut catalog's skills: 34 verb-first direct-entry shortcut doorways + 24 hand-authored `repurpose` skills). Phase 2 (Describe → Define) is two skills: `aid-describe` (2a) + `aid-define` (2b). Several `references/` clusters are tracked as modules -- see [Notable Skill Reference Modules](#notable-skill-reference-modules). Skill state machines are validated by dogfooding + AI/human review, NOT an automated harness (see test-landscape.md); only the helper scripts they call have suites. |
-| `canonical/agents/*` (9) | Toolkit | Sub-agent role definitions (`AGENT.md` + `README.md`); dispatched by skills. | `templates/agent-boilerplate.md` (include) | medium | n/a (prose) | Roles: architect, clerk, developer, interviewer, operator, orchestrator, researcher, reviewer, tech-writer. The `interviewer` agent is dispatched by `aid-describe`. |
-| `canonical/aid/scripts/*` | Toolkit | Helper scripts grouped by phase area (config, connectors, execute, graph, housekeep, kb, migrate, release, summarize) + top-level `grade.sh`. | `config/read-setting.sh`, `grade.sh` | large | partial (per-area suites + fixtures) | See [Script Modules by Area](#script-modules-by-area). |
+| `canonical/skills/*` (111) | Toolkit | Slash-command definitions (`SKILL.md` + `references/*.md`) that drive the pipeline state machines. | `canonical/aid/scripts/*`, `templates/*` | large (collectively) | not machine-tested (by design) | The user-facing surface; one dir per skill (75 total: 17 curated pipeline / on-demand / router skills + the 94-row shortcut catalog's skills: 34 verb-first direct-entry shortcut doorways + 60 hand-authored `repurpose` skills). Phase 2 (Describe → Define) is two skills: `aid-describe` (2a) + `aid-define` (2b). Several `references/` clusters are tracked as modules -- see [Notable Skill Reference Modules](#notable-skill-reference-modules). Skill state machines are validated by dogfooding + AI/human review, NOT an automated harness (see test-landscape.md); only the helper scripts they call have suites. |
+| `canonical/agents/*` (9) | Toolkit | Sub-agent role definitions (one `AGENT.md` each); dispatched by skills. | `templates/agent-boilerplate.md` (include) | medium | n/a (prose) | Roles: architect, clerk, developer, interviewer, operator, orchestrator, researcher, reviewer, tech-writer. The `interviewer` agent is dispatched by `aid-describe`. |
+| `canonical/aid/scripts/*` | Toolkit | Helper scripts grouped by phase area (config, connectors, execute, housekeep, kb, migrate, release, summarize) + top-level `grade.sh`. | `config/read-setting.sh`, `grade.sh` | large | partial (per-area suites + fixtures) | See [Script Modules by Area](#script-modules-by-area). |
 | `canonical/aid/templates/*` | Toolkit | KB doc seeds, state-file templates, schemas, kb-authoring rules, the shortcut catalog + engine + scaffolding. | none (consumed by skills) | large | n/a (data) | The artifact-schema source of truth (see artifact-schemas.md). |
 | `generate-profile` renderer | Render | Python renderer that mirrors `canonical/` into each `profiles/<tool>/` tree under an emission manifest. | `canonical/`, `profiles/*.toml` | large | tested (`test_manifest_safety.py`, `verify_deterministic.py`, `verify_advisory.py`) | Lives at `.claude/skills/generate-profile/scripts/`. Also carries `build-shortcut-skills.py`, the maintainer helper that emits the shortcut doorways from `shortcut-catalog.yml`. |
 | `profiles/<tool>/` (5) | Render | Rendered, per-tool copies of the toolkit (claude-code, codex, cursor, copilot-cli, antigravity) + `<tool>.toml` config. | output of the renderer | large | render-drift CI | Build output -- never hand-edit; regenerate. |
 | `packages/npm` | Distribution | npm `aid-installer` wrapper; vendors `bin/`, `lib/`, `dashboard/`. | `bin/`, `lib/`, `dashboard/` | medium | release smoke | Vendored copies regenerate; edit the wrapper, not the vendor. |
 | `packages/pypi` | Distribution | PyPI `aid-installer` wrapper (`aid_installer/` + `_vendor/`). | `bin/`, `lib/`, `dashboard/` | medium | release smoke | `__main__.py` puts `aid` on PATH. |
-| `dashboard/reader/*` (Python) | Observation | Parses `.aid/` state (STATE.md hierarchy, settings, KB) into typed models. | `.aid/` artifact schemas | large | tested (`dashboard/reader/tests/`) | `parsers.py` + `derivation.py` + `models.py` + `locator.py` + `reader.py`. |
-| `dashboard/server/*` | Observation | Serves the dashboard: a Node `reader.mjs`/`server.mjs` twin of the Python reader, plus `server.py`, index/home HTML. | `dashboard/reader` semantics | large | tested (`dashboard/server/tests/`) | `reader.mjs` is the Node twin of the **whole** `dashboard/reader/` Python reader (its own header: "port of dashboard/reader/"), not just `parsers.py` -- a change to ANY reader `.py` (`parsers`/`derivation`/`models`/`locator`/`reader`) must be mirrored in `reader.mjs`; behavior-equal, no import. |
+| `dashboard/reader/*` (Python) | Observation | Parses `.aid/` state (STATE.yml hierarchy -- work/delivery/task levels; the discovery-area `STATE.md` ledger stays markdown -- plus settings, KB) into typed models. | `.aid/` artifact schemas | large | tested (`dashboard/reader/tests/`) | `parsers.py` + `derivation.py` + `models.py` + `locator.py` + `reader.py` + `state_schema.py` (new: the single hand-rolled parser for the permitted YAML subset -- `parse_state_document` -- plus the KB ledger's original fenced-frontmatter scan, kept unchanged as an explicit opt-in for that one caller). |
+| `dashboard/server/*` | Observation | Serves the dashboard: a Node `reader.mjs`/`server.mjs` twin of the Python reader, plus `server.py`, index/home HTML. | `dashboard/reader` semantics | large | tested (`dashboard/server/tests/`) | `reader.mjs` is the Node twin of the **whole** `dashboard/reader/` Python reader (its own header: "port of dashboard/reader/"), not just `parsers.py` -- a change to ANY reader `.py` (`parsers`/`derivation`/`models`/`locator`/`reader`/`state_schema`) must be mirrored in `reader.mjs`; behavior-equal, no import. `reader.mjs` has no separate `state_schema.mjs` file -- its `parseStateDocument` function is the inline twin of `state_schema.py`, living in the same single file. |
 | `site/` | Observation | Astro marketing + docs website. **Derives its skill content from `canonical/` at build time** (see the Skill Explorer rows below). | own `package.json`; `canonical/skills/`, `canonical/agents/`, `canonical/aid/templates/` | large | tested (`site/**/__tests__`, ~2765 vitest) | Independent of the **CLI** (`bin/`, `lib/`), NOT of the toolkit. Separate `node_modules`/`dist`. |
 | `site/scripts/gen-skills.mjs` + `site/scripts/skills/*` (12) | Observation | **Skill Explorer generator**. Emits the `/skills/` section — one index page plus a detail page per skill directory — from `canonical/skills/` and the shortcut catalog. Modules: discovery, frontmatter parse, grouping (four groups; Definition subdivided by verb family), card/summary/value rendering, index + page render, path resolution, catalog read, and the shared curated roster. | `canonical/skills/`, `shortcut-catalog.yml` | large | tested (`skills-*.test.mjs`, `gen-skills*.test.mjs`) | **Throws** on corpus drift: an on-disk skill that is neither a catalog row nor a curated-roster member fails the build BY NAME. |
 | `site/scripts/lib/flow-graph/*` (14) | Observation | **Flow extractor**. Reads a skill's own instructions and derives its control flow — ordered states, loops, decision branches, exit points — then renders Mermaid. Extractors are per body shape (dispatch table, inline `## State:` sections, engine doorway, sibling, residual), over a shared compose/advance/validate core. | `canonical/skills/*/SKILL.md` + `references/*.md` | large | tested (`flow-*.test.mjs`, the largest suite group) | The four skill *structural shapes* in § Skill Structural Shapes are what these extractors dispatch on. |
 | `site/scripts/gen-reference.mjs` | Observation | Generates the four reference pages (`skills`, `agents`, `kb`, `settings`) from `canonical/` + `.aid/settings.yml`. Since delivery-006 its skills page carries only the **shortcut-engine narrative** — the roster moved to `/skills/`. | `canonical/`, `.aid/settings.yml` | medium | tested (`gen-reference.test.mjs`) | Not frozen. |
-| `site/scripts/skills/skill-counts.mjs` | Observation | **The** derivation of the skill-count triple (`directories`, `curatedOnly`, `shortcuts`, `catalogRows`, …). Every stated count in the repository is checked against it. | `canonical/skills/`, `shortcut-catalog.yml` | small | tested (`skill-counts.test.mjs`) + `tests/canonical/test-skill-counts.sh` | Pure, no import-time side effect — deliberately does not import `gen-reference.mjs`, which runs `main()` at module scope. |
-| `site/public/skill-node-panel.mjs` (runtime, ~642 lines) + `site/src/lib/skill-node-panel.ts` (build-time projection, ~149) | Observation | **Interactive node panel**. Decorates each rendered flow-chart node with `role=button` / `tabindex` / ARIA and reveals a panel carrying that node's verbatim prompt fragment and a source deep link. | the generated per-page projection island | medium | tested (jsdom suites + manual browser gate) | Reads the JSON projection, never feature-005's DOM. Survives mermaid's theme re-render. |
+| `site/scripts/skills/skill-counts.mjs` | Observation | **The** derivation of the skill-count triple (`directories`, `curatedOnly`, `shortcuts`, `catalogRows`, …). The public-facing docs are checked against it; counts elsewhere are a declared review criterion rather than a guarded assertion. | `canonical/skills/`, `shortcut-catalog.yml` | small | tested (`skill-counts.test.mjs`) + `tests/canonical/test-doc-counts.sh` | Pure, no import-time side effect — deliberately does not import `gen-reference.mjs`, which runs `main()` at module scope. |
+| `site/public/skill-node-panel.mjs` (runtime) + `site/src/lib/skill-node-panel.ts` (build-time projection, ~149) | Observation | **Interactive node panel**. Decorates each rendered flow-chart node with `role=button` / `tabindex` / ARIA and reveals a panel carrying that node's verbatim prompt fragment and a source deep link. | the generated per-page projection island | medium | tested (jsdom suites + manual browser gate) | Reads the JSON projection, never feature-005's DOM. Survives mermaid's theme re-render. |
 | `tests/canonical/*` | Cross-cutting | Cross-platform shell test suites + `fixtures/`, run via `tests/run-all.sh`. | the modules under test | large | self | Heavy gates run on master CI only. |
 | `tests/windows/*` | Cross-cutting | Windows-only PowerShell installer tests (`Test-AidInstaller.ps1`). | installers + install-core | large | windows CI lane | NOT in `run-all.sh`; needs a Windows runner. |
 
@@ -130,7 +140,7 @@ canonical/skills/aid-discover/references/state-elicit.md -> .aid/knowledge/exter
 dashboard/server/server.mjs -> dashboard/server/reader.mjs
 dashboard/server/server.py  -> dashboard/reader/reader.py
 dashboard/reader/reader.py  -> parsers.py , derivation.py , models.py , locator.py
-dashboard/reader/*          -> .aid/ artifact schemas (STATE.md, settings.yml, KB)
+dashboard/reader/*          -> .aid/ artifact schemas (STATE.yml, settings.yml, KB)
 dashboard/server/reader.mjs <parity> dashboard/reader/*.py   (whole-reader twin -- no import; behavior-equal)
 site/                       -> canonical/skills/, canonical/agents/,
                                canonical/aid/templates/{shortcut-catalog.yml,knowledge-base/}
@@ -156,8 +166,9 @@ justify reversing a non-dependency is the same defect as understating it.)
   fails the build rather than silently emitting a stale page.
 - `.github/workflows/docs.yml` lists `canonical/**` on both path filters — a canonical-only
   commit must still rebuild the site.
-- `tests/canonical/test-skill-counts.sh` compares every stated skill count in the repo against
-  a derivation rooted in `canonical/`.
+- `tests/canonical/test-doc-counts.sh` compares the counts stated in the public-facing docs
+  (root `README.md`, `docs/`, the profile READMEs) against a derivation rooted in `canonical/`.
+  Counts stated elsewhere are governed by criterion `G-01` instead of by a guard.
 
 **Consequence for any change:** a `canonical/skills/` addition or removal is now a `site/`
 change too. Adding a skill directory without a catalog row or curated-roster entry turns the
@@ -177,13 +188,12 @@ grader).
 | (root) | `grade.sh` | every skill REVIEW state | Reads the reviewer ledger, counts findings by severity, emits a grade. |
 | `config/` | `read-setting.sh` | every skill | Resolves a setting from `.aid/settings.yml` (skill-override -> category -> default). |
 | `connectors/` | `connector-registry.sh`/`.ps1`, `build-connectors-index.sh`/`.ps1`, `connector-secret.sh`/`.ps1` | `aid-discover` ELICIT (Step E2 author) + reconcile (Steps R0-R5) | Frontmatter accessor (list/read) for `.aid/connectors/*.md` descriptors, the deterministic `INDEX.md` builder, and the no-echo/path-confined secret write/purge handler for the git-ignored `.secrets/` store. Bash+PowerShell twins throughout. Test coverage: `tests/canonical/test-connector-registry.sh`, `test-connector-secret.sh`, `test-connector-secret-ps1.sh`, `test-connector-secret-ac3-leak-sweep.sh`, `test-connector-twins-ps1-parity.sh`, `test-connectors-registry-integration.sh`, `test-build-connectors-index.sh`, `test-reconcile-scenarios.sh`. |
-| `execute/` | `complexity-score.sh`, `compute-block-radius.sh`, `writeback-state.sh` | `aid-execute` | Delivery-complexity scoring, failure block-radius (tasks transitively depending on a failed task), and locked per-unit STATE.md writeback. |
-| `graph/` | `graph-preflight.sh`, `kb-write-fence.sh`, `graph-stale-check.sh`, `harvest-declared.sh`, `scan-source.sh`, `significance-rules.sh`, `derive-edges.sh`, `relationship-schema.sh`, `build-relationships.sh`, `validate-relationships.sh`, `report-endpoint-satisfiability.sh`, `assemble-coverage-notes.sh`, `grade-graph.sh`, `coverage-predicate.mjs`, `detect-kb-gaps.mjs` | `aid-graph` | The knowledge-relationship graph pipeline: pre-flight prerequisite gate; the write fence that keeps the Knowledge Base read-only for the whole run; content-addressed staleness check; declared-relationship harvest from KB frontmatter plus a source scan, filtered by the significance rules; edge derivation and the `relationships.md` build/validate pair against `templates/graph/relationship-schema.yml` + `relation-vocabulary.yml`; endpoint-satisfiability and coverage reporting; KB gap detection (reported onward, never gated on); and the graph's own two-grade gate. |
+| `execute/` | `complexity-score.sh`, `compute-block-radius.sh`, `writeback-state.sh` | `aid-execute` | Delivery-complexity scoring, failure block-radius (tasks transitively depending on a failed task), and locked per-unit STATE.yml writeback (single-key surgical write; every other line reproduced byte-for-byte). |
 | `housekeep/` | `branch-commit.sh`, `cleanup-classify.sh`, `housekeep-state.sh` | `aid-housekeep` | Branch/commit helpers, orphan/cleanup classification, housekeep run-state. |
 | `kb/` | `build-project-index.sh`, `build-metrics.sh`, `build-kb-index.sh`, `harvest-coined-terms.sh`, `closure-check.sh`, `discover-preflight.sh`, `kb-actback-task.sh`, `kb-citation-lint.sh`, `kb-dual-intent-probes.sh`, `kb-freshness-check.sh`, `kb-teachback-questions.sh`, `lint-frontmatter.sh`, `recon-classify.sh` | `aid-discover` (most), `aid-update-kb` (`kb-freshness-check.sh`) | The discovery/KB engine: index + metric generation, concept harvest, closure loop, frontmatter + citation lint, path classification, dual-intent self-eval. |
 | `migrate/` | `migrate-kb-frontmatter.sh`, `migrate-work-hierarchy.sh`, `migrate-work-hierarchy.ps1` | `aid` CLI update path | One-time migrations (KB frontmatter v2; work-hierarchy restructure). Shell + PowerShell twin. |
 | `release/` | `check-version-sync.sh` | `release.sh`, CI | Verifies the version string is in lockstep across all manifests. |
-| `summarize/` | `assemble.sh`, `assemble-3part.sh`/`.ps1`, `build-md-export.sh`, `emit-summary-findings.sh`, `manual-checklist.sh`, `spot-check-facts.sh`, `stale-check.sh`, `summarize-preflight.sh`, `validate-html-output.sh`, `validate-diagram-content.mjs`, `validate-visuals.mjs`, `contrast-check.mjs`, `writeback-state.sh` | `aid-summarize` | Builds + validates the `kb.html` visual summary (assembly, markdown export, fact/stale checks, HTML + diagram-content + visual + contrast validation via Playwright/Node). |
+| `summarize/` | `assemble.sh`, `assemble-3part.sh`/`.ps1`, `build-md-export.sh`, `grade-summary.sh`, `manual-checklist.sh`, `spot-check-facts.sh`, `stale-check.sh`, `summarize-preflight.sh`, `validate-html-output.sh`, `validate-diagram-content.mjs`, `validate-visuals.mjs`, `contrast-check.mjs`, `writeback-state.sh` | `aid-summarize` | Builds + validates the `kb.html` visual summary (assembly, markdown export, fact/stale checks, HTML + diagram-content + visual + contrast validation via Playwright/Node). |
 
 > The installed copies under each profile (and the dogfood `.claude/aid/scripts/` and
 > `.cursor/aid/scripts/`) are rendered from these canonical sources. Edit `canonical/`,
@@ -207,16 +217,18 @@ interview split — are substantial enough to track as modules in their own righ
 
 ## Skill Structural Shapes
 
-The 78 skill directories share one **ownership** taxonomy (20 curated + 34 generated doorways
-+ 24 hand-authored `repurpose`, per the contracts above) but four distinct **structural**
+The 111 skill directories share one **ownership** taxonomy (17 curated + 34 generated doorways
++ 60 hand-authored `repurpose`, per the contracts above) but four distinct **structural**
 shapes. The two taxonomies do not line up, and tooling that reads skill bodies must key off
 the shape, not the ownership flag.
 
 | Shape | Body structure | Typical size | Exemplars |
 |-------|----------------|--------------|-----------|
-| Fat pipeline skill | `## Dispatch` table mapping states to `references/state-*.md` workers + `Advance` targets; no inline `## State:` sections | 300+ lines | `aid-describe` (308) |
-| Hand-authored collapse skill | Six inline `## State:` sections in `SKILL.md` itself; self-contained, no delegation | 120--220 lines | Eight skills: `aid-review` (221), `aid-research` (181), `aid-test` (131), `aid-prototype` (129), `aid-design` (120), plus `aid-update-document`, `aid-create-document`, `aid-report` |
+| Fat pipeline skill | `## Dispatch` table mapping states to `references/state-*.md` workers + `Advance` targets; no inline `## State:` sections | the largest of the skills | `aid-describe` |
+| Hand-authored collapse skill | Six inline `## State:` sections in `SKILL.md` itself; self-contained, no delegation | low hundreds of lines -- run `wc -l` on the members rather than trusting a range here | Eight skills: `aid-review`, `aid-research`, `aid-test`, `aid-prototype`, `aid-design`, `aid-update-document`, `aid-create-document`, `aid-report` |
 | Generated shortcut doorway | Binds `{verb, artifact}` and delegates to `canonical/aid/templates/shortcut-engine.md` | ~18 lines | `aid-create-api`, `aid-fix` |
+| `design` seed-writer | Binds `canonical/aid/templates/design-lifecycle.md` and writes only `.aid/design/<artifact>.md` | ~90 lines | `aid-design-api`, `aid-design-architecture` |
+| Foundation `create`/`update` | Binds the same contract; realizes a seed into a KB document, or revises one | ~150 lines | `aid-create-cicd`, `aid-update-stack` |
 | Kind-sibling doorway | Delegates to a **sibling skill**, not to the engine | ~24 lines | `aid-test-security` -> `aid-test`; the `test-*` and `create-diagram`/`create-document` clusters |
 
 - **`repurpose: true` is a generator-ownership flag, not a structural signal.** It marks rows
@@ -226,10 +238,12 @@ the shape, not the ownership flag.
 - **The two doorway shapes carry no control flow of their own.** Their real flow is the shared
   engine's `INTAKE -> CAPTURE -> SPEC -> PLAN -> DETAIL -> GATE -> APPROVAL-HALT`, so any
   per-skill flow extraction must resolve the delegation before it has anything to show.
-  **Measured 2026-07-30 (post alias-removal recount): 47 of the 75** (34 engine doorways plus 13
-  kind-siblings; re-derived directly against `canonical/skills/*/SKILL.md` after the alias
-  removal cut the generated-doorway population from 64 to 34). Re-verify against a fresh scan
-  before trusting this split in tooling.
+  **The delegating majority** is the engine doorways plus the kind-siblings. Derive both from
+  disk rather than from a figure here -- the doorway population is the non-`repurpose` rows of
+  `shortcut-catalog.yml`, and the kind-siblings are the skills whose body delegates to a sibling
+  skill instead of to the engine. A stated total for this split has drifted twice: it read 64
+  doorways before the alias removal, and a later recount left a skill total here that disagreed
+  with this document's own module inventory.
 - **There is no single reliable parse marker for a skill's state machine.** Skills variously use
   frontmatter `State machine:`, `## Dispatch` tables, inline `## State:` sections, a literal
   `## State Machine` heading, or ASCII state maps. Branch conditions are prose in parentheses
@@ -241,9 +255,11 @@ the shape, not the ownership flag.
   `aid-config`, the three ticket skills, and the two connector skills (membership varies with
   the classifier's discriminators).
 
-CONFIRMED: line counts and inline-`## State:` counts measured directly against
-`canonical/skills/*/SKILL.md`; delegation confirmed by `shortcut-engine` references in the
-body; ownership counts per this document's own contracts and `project-structure.md`.
+CONFIRMED: the inline-`## State:` counts and the delegation shapes are measured directly
+against `canonical/skills/*/SKILL.md`, and delegation is confirmed by `shortcut-engine`
+references in the body. **Line counts are deliberately not asserted here** -- every one that was
+had drifted by the next reading, which is what `G-01` exists to prevent; measure them when you
+need them. Ownership counts follow this document's own criteria and `project-structure.md`.
 
 ---
 
@@ -271,7 +287,7 @@ body; ownership counts per this document's own contracts and `project-structure.
 | `canonical/skills/aid-discover/` | The actively-developed discovery engine -- large reference set, frequent feature additions. | High |
 | `canonical/aid/scripts/kb/` | Backs aid-discover; new linters/checks land here often. | High |
 | `lib/aid-install-core.sh` + PS twin | Install/migration semantics evolve with each release; twin must stay in sync. | High |
-| `dashboard/reader` + `dashboard/server` | Reader/parser changes follow every STATE.md schema change; two twins to keep in parity. | Medium |
+| `dashboard/reader` + `dashboard/server` | Reader/parser changes follow every STATE.yml schema change; two twins to keep in parity. | Medium |
 
 ---
 
@@ -303,8 +319,8 @@ body; ownership counts per this document's own contracts and `project-structure.
   `aid-config/SKILL.md`). This is for hand-authored pipeline / on-demand skills; the
   34 verb-first shortcut doorways are **generated**, not hand-authored -- see "How a
   new shortcut goes" below.
-- **Where a new agent goes:** create `canonical/agents/aid-<role>/AGENT.md` (+
-  `README.md`). The `AGENT.md` frontmatter carries `name:`, `description:`,
+- **Where a new agent goes:** create `canonical/agents/aid-<role>/AGENT.md` -- and only
+  that; the directory holds no README. The `AGENT.md` frontmatter carries `name:`, `description:`,
   `tier:` (large/medium/small), `tools:`. Include shared boilerplate with
   `{{include:agent-boilerplate}}` (see `canonical/agents/aid-architect/AGENT.md`).
 - **Where a new helper script goes:** place it under the phase area it serves
@@ -354,9 +370,11 @@ body; ownership counts per this document's own contracts and `project-structure.
   Conformance Lane may only FLAG code divergence for human reconciliation and MUST
   NOT overwrite the design with as-built reality (NFR-5 carve; see
   `state-kb-delta.md` "Conformance Lane").
-- **Derived STATE views are never written:** the work/delivery `## Tasks State`,
-  `## Delivery Gates`, etc. are read-time unions over per-unit STATE.md files; only
-  the per-unit files are write targets (see artifact-schemas.md).
+- **Derived STATE views are never written:** the work/delivery Tasks State, Delivery Gates,
+  etc. views are read-time unions over per-unit `STATE.yml` files, computed at read time with
+  no corresponding on-disk key at all -- the pre-conversion markdown carried these as retired
+  `## Tasks State` / `## Delivery Gates` headings; the current `STATE.yml` templates omit them
+  entirely (FR-2c). Only the per-unit files are write targets (see artifact-schemas.md).
 
 ---
 

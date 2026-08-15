@@ -7,7 +7,13 @@ First run for this feature; load context, determine sections, and begin The Loop
 Read ALL before making any proposal:
 
 1. **SPEC.md** — the feature's requirements (description, user stories, acceptance criteria)
-2. **REQUIREMENTS.md** — full requirements for cross-reference
+2. **REQUIREMENTS.md — the SLICE this feature traces to, not the whole document.**
+   Take the sections and criteria named in this feature's `SPEC.md` `## Source`, and load
+   those. A per-feature gate that loads the whole of a large requirements document
+   re-reads it once per feature per cycle, which is the single worst line in the review
+   budget. The slice is derived from `## Source` rather than a hand-maintained map, so a
+   feature whose `## Source` names no requirements section surfaces as a defect instead
+   of silently yielding an empty slice.
 3. **KB via INDEX.md** — Read `.aid/knowledge/INDEX.md` first. Use the summaries
    to decide which KB docs are relevant to this feature, then load them.
    At minimum you'll need architecture, coding-standards, and schemas for
@@ -76,9 +82,9 @@ Each has two paths: **Auto-activate** (obvious from context) or **Ask** (use def
 - Native APIs: camera, GPS, biometrics, storage, permissions required
 - App Store Impact: new permissions, review guideline considerations
 
-### Step 3: Register in work STATE.md
+### Step 3: Register in work STATE.yml
 
-In the work's `.aid/works/{work}/STATE.md`, update the `## Features State` table:
+In the work's `.aid/works/{work}/STATE.yml`, update the Features State view:
 - Find or add a row for this feature
 - Set State to `In Discussion`, Started date to today
 - Columns: Feature | State | Sections | Started | Last Updated | Notes
@@ -123,6 +129,6 @@ I've analyzed {feature} against the KB and codebase.
 Does this look right? Answer the questions, and tell me if I'm missing anything.
 ```
 
-Process response → update work STATE.md `## Features State` → begin **The Loop** for first Pending section.
+Process response → update work STATE.yml's Features State view → begin **The Loop** for first Pending section.
 
 **Advance:** **CHAIN** → [State: CONTINUE] (continue inline).

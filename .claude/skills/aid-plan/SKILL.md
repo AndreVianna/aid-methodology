@@ -1,10 +1,9 @@
 ---
 name: aid-plan
 description: >
-  Sequence feature SPECs into deliverables — each one a functional MVP that builds
-  on the previous. Strategy, not tactics. Use when feature SPECs are complete and
-  you need a delivery roadmap.
-  State machine: FIRST-RUN → REVIEW → DONE.
+  Sequence feature SPECs into deliverables -- each one a functional MVP that builds on the
+  previous. Strategy, not tactics. Use when feature SPECs are complete and you need a
+  delivery roadmap.
 allowed-tools: Read, Glob, Grep, Write, Edit, Bash
 argument-hint: "work-001 (required if multiple works)  [--reset] clear PLAN.md and restart"
 ---
@@ -41,22 +40,22 @@ Each deliverable follows the same cycle:
   knowledge/                <- shared KB (read)
     STATE.md                <- minimum grade
   work-NNN-{name}/
-    STATE.md                <- Pipeline State (authored); Plan/Deliveries is DERIVED (never written here)
+    STATE.yml                <- frontmatter-zone keys (authored); Plan/Deliveries is DERIVED (never written here)
     REQUIREMENTS.md         <- read
     PLAN.md                 <- OUTPUT: execution graph (delivery stanzas)
     deliveries/
       delivery-NNN/           <- CREATED by aid-plan per delivery approved in PLAN.md
         BLUEPRINT.md          <- OUTPUT: delivery definition (scope, gate criteria, tasks, dependencies)
-        STATE.md              <- OUTPUT: delivery lifecycle (initial State: Pending-Spec) + gate slot + Q&A slot
+        STATE.yml              <- OUTPUT: delivery lifecycle (initial delivery_state: Pending-Spec) + gate key + qa key
     features/
       feature-NNN-{name}/
-        SPEC.md             <- read (check Features State in work STATE.md)
+        SPEC.md             <- read (check Features State in work STATE.yml)
 ```
 
 > Note: `deliveries/delivery-NNN/` must exist before `aid-detail` nests `tasks/task-NNN/` under it.
-> The work `STATE.md` `## Plan / Deliveries` section is a DERIVED read-only view assembled
-> at read time from `deliveries/delivery-NNN/STATE.md` files. `aid-plan` does NOT write delivery
-> rows into the work `STATE.md`.
+> The work `STATE.yml`'s Plan/Deliveries view is a DERIVED read-only view assembled
+> at read time from `deliveries/delivery-NNN/STATE.yml` files. `aid-plan` does NOT write delivery
+> rows into the work `STATE.yml`.
 
 ## Arguments
 
@@ -92,7 +91,7 @@ a new worktree — creation belongs to the work-starting skills only.
 ### Check 2: Verify Feature SPECs
 
 1. Scan `.aid/works/{work}/features/*/SPEC.md`
-2. Check work STATE.md `## Features State` — each feature should be `Ready`
+2. Check work STATE.yml's Features State (derived view) — each feature should be `Ready`
 3. No features → **STOP.** "Run `/aid-describe` then `/aid-specify`."
 4. Some not Ready → warn, offer to plan with completed only or wait
 
@@ -108,7 +107,7 @@ Do NOT rely on memory from previous runs. ALWAYS read the actual files on disk.
 
 - No PLAN.md → **FIRST-RUN**
 - PLAN.md exists, grade below minimum or not yet graded → **REVIEW**
-- PLAN.md exists, graded >= minimum, delivery folders (`deliveries/delivery-NNN/BLUEPRINT.md` + `deliveries/delivery-NNN/STATE.md`) written for all deliverables -> **DONE**
+- PLAN.md exists, graded >= minimum, delivery folders (`deliveries/delivery-NNN/BLUEPRINT.md` + `deliveries/delivery-NNN/STATE.yml`) written for all deliverables -> **DONE**
 
 Print the state-entry line and "you are here" map:
 
@@ -174,8 +173,8 @@ Plan is approved and up to date. Run /aid-plan again with --reset to restart.
 ## Feedback Loops
 
 - **→ Discovery:** KB insufficient → Q&A to `.aid/knowledge/STATE.md` `## Q&A (Pending)`
-- **→ Specify:** SPEC ambiguous → Q&A to work STATE.md `## Cross-phase Q&A`
-- **→ Interview:** Priority unclear → Q&A to work STATE.md `## Cross-phase Q&A`
+- **→ Specify:** SPEC ambiguous → append to the `qa` sequence in the relevant delivery's `STATE.yml`
+- **→ Interview:** Priority unclear → append to the `qa` sequence in the relevant delivery's `STATE.yml`
 
 ## Output
 
@@ -225,19 +224,21 @@ the approved PLAN.md stanza. Written immediately after writing the delivery stan
 to PLAN.md (Step 4 of The Loop). A delivery with zero tasks (e.g. a SPIKE) gets an
 empty Tasks table -- the BLUEPRINT still records the delivery's objective and gate criteria.
 
-### 3. `.aid/works/{work}/deliveries/delivery-NNN/STATE.md` (delivery lifecycle)
+### 3. `.aid/works/{work}/deliveries/delivery-NNN/STATE.yml` (delivery lifecycle)
 
-Seeded from `.claude/aid/templates/delivery-state-template.md` with:
-- `State: Pending-Spec`  (SD-8: delivery's own independent lifecycle; NOT derived from tasks)
-- `Updated:` set to the current UTC timestamp
-- `Branch:` set to `aid/work-NNN-delivery-NNN`
-- Gate and Q&A sections left as placeholders (filled by `aid-execute`)
+Seeded from `.claude/aid/templates/delivery-state-template.yml` with:
+- `delivery_state: Pending-Spec`  (SD-8: delivery's own independent lifecycle; NOT derived from tasks)
+- `delivery_lifecycle.updated:` set to the current UTC timestamp
+- `Branch:` set to `aid/work-NNN-delivery-NNN` (inferred from the folder/worktree, not authored)
+- `delivery_gate` and `qa` keys left at their template defaults (filled by `aid-execute`)
 
 A delivery created with ZERO tasks still renders correctly at `Pending-Spec`. The
-task rollup table in STATE.md shows `_none yet_` -- that is correct and expected until
-`aid-specify` (-> Specified) and `aid-detail` (-> tasks created) run.
+DERIVED task rollup for this delivery (assembled at read time from
+`tasks/task-NNN/STATE.yml` files, which do not exist yet) is simply empty -- that is
+correct and expected until `aid-specify` (-> Specified) and `aid-detail` (-> tasks
+created) run.
 
-The work `STATE.md` `## Plan / Deliveries` section is DERIVED (read-only at read time);
+The work `STATE.yml`'s Plan/Deliveries view is DERIVED (read-only at read time);
 `aid-plan` does NOT write delivery rows there.
 
 ## Quality Checklist
@@ -250,5 +251,5 @@ The work `STATE.md` `## Plan / Deliveries` section is DERIVED (read-only at read
 - [ ] User approved the sequence
 - [ ] Each deliverable was reviewed after writing (step 4)
 - [ ] deliveries/delivery-NNN/BLUEPRINT.md written for every delivery (including zero-task SPIKE deliveries)
-- [ ] deliveries/delivery-NNN/STATE.md written for every delivery with State: Pending-Spec
-- [ ] No delivery rows written into the work STATE.md (Plan/Deliveries is DERIVED)
+- [ ] deliveries/delivery-NNN/STATE.yml written for every delivery with delivery_state: Pending-Spec
+- [ ] No delivery rows written into the work STATE.yml (Plan/Deliveries is DERIVED)

@@ -14,8 +14,8 @@
       "terminal": null,
       "provenance": {
         "file": "canonical/skills/aid-config/SKILL.md",
-        "startLine": 36,
-        "endLine": 36,
+        "startLine": 37,
+        "endLine": 37,
         "sourceKind": "skill",
         "excerpt": "## Mode 1 — Show all settings (`/aid-config`)"
       },
@@ -30,8 +30,8 @@
       "terminal": null,
       "provenance": {
         "file": "canonical/skills/aid-config/SKILL.md",
-        "startLine": 38,
-        "endLine": 38,
+        "startLine": 39,
+        "endLine": 39,
         "sourceKind": "skill",
         "excerpt": "### Step 1: Ensure `.aid/settings.yml` exists"
       },
@@ -46,8 +46,8 @@
       "terminal": null,
       "provenance": {
         "file": "canonical/skills/aid-config/SKILL.md",
-        "startLine": 45,
-        "endLine": 45,
+        "startLine": 46,
+        "endLine": 46,
         "sourceKind": "skill",
         "excerpt": "### Step 2: Render the table"
       },
@@ -65,8 +65,8 @@
       },
       "provenance": {
         "file": "canonical/skills/aid-config/SKILL.md",
-        "startLine": 54,
-        "endLine": 54,
+        "startLine": 55,
+        "endLine": 55,
         "sourceKind": "skill",
         "excerpt": "### Step 3: Suggest commands for unset values + the general update form"
       },
@@ -81,8 +81,8 @@
       "terminal": null,
       "provenance": {
         "file": "canonical/skills/aid-config/SKILL.md",
-        "startLine": 73,
-        "endLine": 73,
+        "startLine": 74,
+        "endLine": 74,
         "sourceKind": "skill",
         "excerpt": "## Mode 2 — View/update one key (`/aid-config <key>`)"
       },
@@ -97,8 +97,8 @@
       "terminal": null,
       "provenance": {
         "file": "canonical/skills/aid-config/SKILL.md",
-        "startLine": 75,
-        "endLine": 75,
+        "startLine": 76,
+        "endLine": 76,
         "sourceKind": "skill",
         "excerpt": "### Step 1: Validate the key argument"
       },
@@ -113,8 +113,8 @@
       "terminal": null,
       "provenance": {
         "file": "canonical/skills/aid-config/SKILL.md",
-        "startLine": 87,
-        "endLine": 87,
+        "startLine": 88,
+        "endLine": 88,
         "sourceKind": "skill",
         "excerpt": "### Step 2: Ensure `.aid/settings.yml` exists"
       },
@@ -129,8 +129,8 @@
       "terminal": null,
       "provenance": {
         "file": "canonical/skills/aid-config/SKILL.md",
-        "startLine": 91,
-        "endLine": 91,
+        "startLine": 92,
+        "endLine": 92,
         "sourceKind": "skill",
         "excerpt": "### Step 3: Read current value"
       },
@@ -145,8 +145,8 @@
       "terminal": null,
       "provenance": {
         "file": "canonical/skills/aid-config/SKILL.md",
-        "startLine": 100,
-        "endLine": 100,
+        "startLine": 101,
+        "endLine": 101,
         "sourceKind": "skill",
         "excerpt": "### Step 4: Prompt for new value"
       },
@@ -161,8 +161,8 @@
       "terminal": null,
       "provenance": {
         "file": "canonical/skills/aid-config/SKILL.md",
-        "startLine": 118,
-        "endLine": 118,
+        "startLine": 119,
+        "endLine": 119,
         "sourceKind": "skill",
         "excerpt": "### Step 5: Validate"
       },
@@ -177,8 +177,8 @@
       "terminal": null,
       "provenance": {
         "file": "canonical/skills/aid-config/SKILL.md",
-        "startLine": 122,
-        "endLine": 122,
+        "startLine": 123,
+        "endLine": 123,
         "sourceKind": "skill",
         "excerpt": "### Step 6: Save in place"
       },
@@ -196,8 +196,8 @@
       },
       "provenance": {
         "file": "canonical/skills/aid-config/SKILL.md",
-        "startLine": 131,
-        "endLine": 131,
+        "startLine": 132,
+        "endLine": 132,
         "sourceKind": "skill",
         "excerpt": "### Step 7: Verify the written file, then confirm"
       },
@@ -213,8 +213,8 @@
       "advanceType": "CHAIN",
       "provenance": {
         "file": "canonical/skills/aid-config/SKILL.md",
-        "startLine": 38,
-        "endLine": 38,
+        "startLine": 39,
+        "endLine": 39,
         "sourceKind": "skill",
         "excerpt": "### Step 1: Ensure `.aid/settings.yml` exists"
       }
@@ -227,8 +227,8 @@
       "advanceType": "CHAIN",
       "provenance": {
         "file": "canonical/skills/aid-config/SKILL.md",
-        "startLine": 45,
-        "endLine": 45,
+        "startLine": 46,
+        "endLine": 46,
         "sourceKind": "skill",
         "excerpt": "### Step 2: Render the table"
       }
@@ -241,8 +241,8 @@
       "advanceType": "CHAIN",
       "provenance": {
         "file": "canonical/skills/aid-config/SKILL.md",
-        "startLine": 54,
-        "endLine": 54,
+        "startLine": 55,
+        "endLine": 55,
         "sourceKind": "skill",
         "excerpt": "### Step 3: Suggest commands for unset values + the general update form"
       }
@@ -255,8 +255,8 @@
       "advanceType": "CHAIN",
       "provenance": {
         "file": "canonical/skills/aid-config/SKILL.md",
-        "startLine": 75,
-        "endLine": 75,
+        "startLine": 76,
+        "endLine": 76,
         "sourceKind": "skill",
         "excerpt": "### Step 1: Validate the key argument"
       }
@@ -269,8 +269,8 @@
       "advanceType": "CHAIN",
       "provenance": {
         "file": "canonical/skills/aid-config/SKILL.md",
-        "startLine": 87,
-        "endLine": 87,
+        "startLine": 88,
+        "endLine": 88,
         "sourceKind": "skill",
         "excerpt": "### Step 2: Ensure `.aid/settings.yml` exists"
       }
@@ -283,8 +283,8 @@
       "advanceType": "CHAIN",
       "provenance": {
         "file": "canonical/skills/aid-config/SKILL.md",
-        "startLine": 91,
-        "endLine": 91,
+        "startLine": 92,
+        "endLine": 92,
         "sourceKind": "skill",
         "excerpt": "### Step 3: Read current value"
       }
@@ -297,8 +297,8 @@
       "advanceType": "CHAIN",
       "provenance": {
         "file": "canonical/skills/aid-config/SKILL.md",
-        "startLine": 100,
-        "endLine": 100,
+        "startLine": 101,
+        "endLine": 101,
         "sourceKind": "skill",
         "excerpt": "### Step 4: Prompt for new value"
       }
@@ -311,8 +311,8 @@
       "advanceType": "CHAIN",
       "provenance": {
         "file": "canonical/skills/aid-config/SKILL.md",
-        "startLine": 118,
-        "endLine": 118,
+        "startLine": 119,
+        "endLine": 119,
         "sourceKind": "skill",
         "excerpt": "### Step 5: Validate"
       }
@@ -325,8 +325,8 @@
       "advanceType": "CHAIN",
       "provenance": {
         "file": "canonical/skills/aid-config/SKILL.md",
-        "startLine": 122,
-        "endLine": 122,
+        "startLine": 123,
+        "endLine": 123,
         "sourceKind": "skill",
         "excerpt": "### Step 6: Save in place"
       }
@@ -339,8 +339,8 @@
       "advanceType": "CHAIN",
       "provenance": {
         "file": "canonical/skills/aid-config/SKILL.md",
-        "startLine": 131,
-        "endLine": 131,
+        "startLine": 132,
+        "endLine": 132,
         "sourceKind": "skill",
         "excerpt": "### Step 7: Verify the written file, then confirm"
       }

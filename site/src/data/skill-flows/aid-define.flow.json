@@ -14,8 +14,8 @@
       "terminal": null,
       "provenance": {
         "file": "canonical/skills/aid-define/SKILL.md",
-        "startLine": 230,
-        "endLine": 230,
+        "startLine": 238,
+        "endLine": 238,
         "sourceKind": "skill",
         "excerpt": "| FEATURE-DECOMPOSITION | `references/state-feature-decomposition.md` | `aid-architect` | → CROSS-REFERENCE |"
       },
@@ -36,8 +36,8 @@
       "terminal": null,
       "provenance": {
         "file": "canonical/skills/aid-define/SKILL.md",
-        "startLine": 231,
-        "endLine": 231,
+        "startLine": 239,
+        "endLine": 239,
         "sourceKind": "skill",
         "excerpt": "| CROSS-REFERENCE | `references/state-cross-reference.md` | `aid-reviewer` | → DONE |"
       },
@@ -61,8 +61,8 @@
       },
       "provenance": {
         "file": "canonical/skills/aid-define/SKILL.md",
-        "startLine": 232,
-        "endLine": 232,
+        "startLine": 240,
+        "endLine": 240,
         "sourceKind": "skill",
         "excerpt": "| DONE | `references/state-done.md` | `inline` | → halt |"
       },
@@ -71,7 +71,7 @@
         "startLine": 1,
         "endLine": 38,
         "sourceKind": "worker",
-        "excerpt": "# State: DONE\n\nInterview is complete, approved, features decomposed, and cross-references validated; offer to add information, re-validate, or close.\n\nPrint:\n\n```\nInterview for {work} is complete and approved.\n\n[1] Add more information — reopen for additional input\n[2] Re-run cross-reference validation\n[3] Done — nothing to add\n```\n\n- **[1] Add more information:**\n  - Ask: _\"What would you like to add or change?\"_\n  - If the user wants to change **requirements-level content** (Objective, Problem Statement,\n    Functional Requirements, etc.) — print: `For requirements-level changes, run\n    /aid-describe {work} to reopen the requirements interview.` and exit.\n  - Otherwise, record the user's input into the relevant REQUIREMENTS.md section, update\n    STATE.md `## Interview State` section statuses if needed, update affected feature SPEC.md\n    files if the change impacts a feature, and update KB documents if the new info is KB-relevant.\n  - Print: `✅ Updated. Run /aid-define {work} again to re-validate.`\n\n- **[2] Re-run cross-reference:**\n  - Proceed to State 6 (CROSS-REFERENCE) for a fresh validation pass\n\n- **[3] Done:**\n  - Delete review ledgers:\n    ```bash\n    rm -f .aid/.temp/review-pending/interview-{work}-cross-ref.md\n    rm -f .aid/.temp/review-pending/interview-{work}-lite.md\n    rmdir --ignore-fail-on-non-empty .aid/.temp/review-pending/ 2>/dev/null || true\n    ```\n  - Print: `✅ Interview complete. Requirements approved. Ready for /aid-specify.`\n\n**Advance:** **HALT**. This is the terminal state. Run `/aid-define` again only to add information or re-validate.\n"
+        "excerpt": "# State: DONE\n\nInterview is complete, approved, features decomposed, and cross-references validated; offer to add information, re-validate, or close.\n\nPrint:\n\n```\nInterview for {work} is complete and approved.\n\n[1] Add more information — reopen for additional input\n[2] Re-run cross-reference validation\n[3] Done — nothing to add\n```\n\n- **[1] Add more information:**\n  - Ask: _\"What would you like to add or change?\"_\n  - If the user wants to change **requirements-level content** (Objective, Problem Statement,\n    Functional Requirements, etc.) — print: `For requirements-level changes, run\n    /aid-describe {work} to reopen the requirements interview.` and exit.\n  - Otherwise, record the user's input into the relevant REQUIREMENTS.md section, update\n    `interview.sections[].state` (STATE.yml) if needed, update affected feature SPEC.md\n    files if the change impacts a feature, and update KB documents if the new info is KB-relevant.\n  - Print: `✅ Updated. Run /aid-define {work} again to re-validate.`\n\n- **[2] Re-run cross-reference:**\n  - Proceed to State 6 (CROSS-REFERENCE) for a fresh validation pass\n\n- **[3] Done:**\n  - Delete review ledgers:\n    ```bash\n    rm -f .aid/.temp/review-pending/interview-{work}-cross-ref.md\n    rm -f .aid/.temp/review-pending/interview-{work}-lite.md\n    rmdir --ignore-fail-on-non-empty .aid/.temp/review-pending/ 2>/dev/null || true\n    ```\n  - Print: `✅ Interview complete. Requirements approved. Ready for /aid-specify.`\n\n**Advance:** **HALT**. This is the terminal state. Run `/aid-define` again only to add information or re-validate.\n"
       }
     }
   ],

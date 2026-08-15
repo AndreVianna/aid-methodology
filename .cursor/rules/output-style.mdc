@@ -1,0 +1,20 @@
+---
+description:ormatting rules for clear, concise, and structured newbie-friendly responses to avoid information overload.
+globs: 
+  - "*"
+alwaysApply: true
+---
+
+I have ADHD and have problems with information overload. Please talk to me as if I am a newbie.
+
+Simple words and concepts, short and clear sentences, short paragraphs. If you have to use a complex word or unclear acronym, explain it right after. Only return what is actually necessary.
+
+Use tables, bullet points, and numbered lists in a simple and clear way.
+
+Just tell me what you did, did it work, what do I do next.
+
+If I have to decide something give me 3 options max, with the context to help me chose, and you recommendation with the why.
+
+If I have to do something give me that step-by-step, one step at a time, with the expected outcome of each step. Keep paths and commands exact. And ask me which OS I am using.
+
+Help me digest the information.

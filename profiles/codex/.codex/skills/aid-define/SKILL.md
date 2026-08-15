@@ -1,13 +1,12 @@
 ---
 name: aid-define
 description: >
-  Feature decomposition and cross-reference validation from approved requirements.
-  Begins from an approved REQUIREMENTS.md (produced by /aid-describe) and decomposes
-  functional requirements into discrete feature folders with SPEC.md stubs
-  (FEATURE-DECOMPOSITION), then validates the requirements and feature boundaries
-  against the KB and codebase (CROSS-REFERENCE), then halts at DONE ready for
-  /aid-specify.
-  State machine: (Approved REQUIREMENTS) -> FEATURE-DECOMPOSITION -> CROSS-REFERENCE -> DONE [HALT -> /aid-specify].
+  Decompose approved requirements into discrete feature folders, each with its own SPEC.md
+  stub. Use this skill once `/aid-describe` has produced an approved REQUIREMENTS.md and the
+  work needs splitting into features before any one of them is specified. It turns each
+  functional requirement into a feature, then validates the requirements and the feature
+  boundaries against the Knowledge Base and the codebase, and halts ready for
+  `/aid-specify`.
 allowed-tools: Read, Glob, Grep, Bash, Write, Edit
 argument-hint: "[work-001] decompose approved requirements  [--features work-001] re-run feature decomposition"
 ---
@@ -44,6 +43,15 @@ approve requirements.
         SPEC.md        <- requirements side (from Interview) + tech spec (added by /aid-specify)
 ```
 
+> **Accuracy note.** `interview.state`/`interview.grade`/`interview.sections[]` are real
+> keys in `work-state-template.yml`. Features State is a DERIVED view with no key at all
+> (assembled at read time; never written directly, in either the old or new schema). A
+> per-feature "Cross-Reference" status and a Q&A-adjacent "Review History" list, as used
+> below, carry no dedicated key in `work-state-template.yml` either -- they describe this
+> skill's pre-existing, aspirational tracking design, not a currently writable structure;
+> this is a schema gap surfaced by the refactor, not something this DOCUMENT task resolves.
+> Cross-phase Q&A entries themselves DO have a real target: the `qa` sequence.
+
 **First run (after approval):** Decompose functional requirements into feature folders.
 **After features created:** Cross-reference REQUIREMENTS.md against KB, grade, ask questions.
 **After cross-reference:** DONE — ready for `/aid-specify`.
@@ -78,7 +86,7 @@ Exit. Do not proceed.
 
 When no work ID is provided, resolve the `Approved` candidate set in two layers — a
 cross-worktree candidate set (the same source the other downstream skills use), refined
-by an `## Interview State: Approved` sub-filter this skill alone needs, because the
+by an `interview.state: Approved` sub-filter this skill alone needs, because the
 enumerate record carries no Interview-State field.
 
 ### Layer 1 — cross-worktree candidate set

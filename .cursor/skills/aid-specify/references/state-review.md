@@ -15,7 +15,8 @@ reviewing all sections against current reality.
 
 ### Load Current Context
 
-Same as INITIALIZE Step 1: SPEC.md, REQUIREMENTS.md, KB docs, codebase.
+Same as INITIALIZE Step 1: SPEC.md, the REQUIREMENTS.md **slice** this feature traces to
+(from its `## Source`, never the whole document), KB docs, codebase.
 
 ### Review All Sections
 

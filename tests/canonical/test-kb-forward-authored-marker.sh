@@ -378,7 +378,7 @@ if [[ -f "$IOUT" ]]; then
     fi
 
     # FI03 -- 6-column table header present (schema unchanged)
-    if grep -qF "| Document | Objective | Summary | Tags | See-instead | Audience |" "$IOUT"; then
+    if grep -qF "| Document | Audience | Tags | See-instead | Objective | Summary |" "$IOUT"; then
         pass "FI03 6-column table header present in Primary section (schema unchanged)"
     else
         fail "FI03 6-column table header not found in INDEX output"

@@ -134,10 +134,15 @@ log "FAMILY_BASE = $FAMILY_BASE"
 log "CATALOG     = $CATALOG"
 assert_file_exists "$ENGINE" "SEC00 shortcut-engine.md exists"
 
-# SEC01: minimum_grade resolves via read-setting.sh, shortcut floor default A+.
+# SEC01: minimum_grade resolves via read-setting.sh, shortcut floor default A.
+# Retargeted for an owner-approved, pre-existing default-grade edit unrelated
+# to the STATE.yml migration (commit d149ddc1: "A+" -> "A", "not investigated
+# further by request") -- recorded in the task-001 change-set addendum since
+# it is not itself a state-format change but was needed to keep this
+# in-scope suite green.
 assert_file_contains "$ENGINE" \
-    "read-setting.sh --skill {name} --key minimum_grade --default A+" \
-    "SEC01 GATE resolves minimum_grade via read-setting.sh (shortcut floor default A+)"
+    "read-setting.sh --skill {name} --key minimum_grade --default A" \
+    "SEC01 GATE resolves minimum_grade via read-setting.sh (shortcut floor default A)"
 
 # SEC02: the two named ledger scopes.
 assert_file_contains "$ENGINE" '.aid/.temp/review-pending/shortcut-{work}-defn.md' \

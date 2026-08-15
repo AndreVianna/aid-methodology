@@ -154,14 +154,13 @@ Open your AI coding tool in your project and run the skills as slash commands:
 /aid-deploy           # optional — package and ship a delivery
 /aid-monitor          # optional — classify production findings and route fixes back (bug → /aid-fix, change request → /aid-triage)
 /aid-summarize        # optional — generate an offline HTML viewer of the KB
-/aid-graph            # optional — build the KB relationship table + interactive graph (needs an approved KB)
 /aid-housekeep        # on-demand — keep the Knowledge Base current (off-pipeline)
 /aid-update-kb        # on-demand — apply a targeted delta to KB docs through the review gate
 /aid-set-connector    # on-demand — create or update a connector descriptor for an external tool
 /aid-unset-connector  # on-demand — remove a connector descriptor and purge its secret
 ```
 
-**Brownfield** projects run `/aid-config` → `/aid-discover` → `/aid-describe` → `/aid-define`. **Greenfield** projects skip Discovery and start at `/aid-describe`. For a small, well-scoped change, skip straight to a shortcut instead — or run `/aid-triage` if you're not sure which one fits. Just have a question, not a change? Run `/aid-ask`. Every phase is gated — nothing advances without your approval. The block above is the pipeline and the on-demand skills; the rest of AID's 78 skills are the verb-first shortcut doorways and the hand-authored task skills behind them, all rendered from one canonical source into 5 tool profiles.
+**Brownfield** projects run `/aid-config` → `/aid-discover` → `/aid-describe` → `/aid-define`. **Greenfield** projects skip Discovery and start at `/aid-describe`. For a small, well-scoped change, skip straight to a shortcut instead — or run `/aid-triage` if you're not sure which one fits. Just have a question, not a change? Run `/aid-ask`. Every phase is gated — nothing advances without your approval. The block above is the pipeline and the on-demand skills; the rest of AID's 111 skills are the verb-first shortcut doorways and the hand-authored task skills behind them, all rendered from one canonical source into 5 tool profiles.
 
 [See it applied step by step →](examples/)
 
@@ -186,8 +185,8 @@ Hand a capable coding agent a vague task and a large repository and you get pred
 | **Knowledge gaps** | The agent invents how the existing system works. | Discovery builds the Knowledge Base first — a fixed-shape, evidence-backed picture of the codebase before any spec is written. |
 | **Hallucination** | The agent states things about the code that aren't true. | Every KB claim carries a `path:line` citation. Agents navigate to exact lines instead of guessing. |
 | **Drift** | Implementation quietly diverges from intent; the spec rots. | Spec-as-hypothesis + 11 formal feedback loops. When reality contradicts an artifact the agent files a Q&A entry or IMPEDIMENT and the upstream artifact is revised — traceably. |
-| **Overengineering** | The agent adds scope nobody asked for. | Typed, PR-sized tasks with explicit acceptance criteria. The Reviewer grades against the spec, not vibes. |
-| **Oversights** | Bugs and untested paths slip through review. | Separate adversarial review: the agent that writes never grades its own work — a higher-tier Reviewer with clean context loops until grade >= minimum. |
+| **Overengineering** | The agent adds scope nobody asked for. | Typed, PR-sized tasks with explicit acceptance criteria. The Reviewer grades against the spec and against the criteria declared for that file — global, per-document-type, and any the file adds itself — not vibes. |
+| **Oversights** | Bugs and untested paths slip through review. | Separate adversarial review: the agent that writes never grades its own work — a higher-tier Reviewer with clean context loops until grade >= minimum. Every finding cites the criterion it violates, so a review is a bounded check rather than an open hunt. |
 | **Context exhaustion** | Loading the whole repo — slow, expensive, lossy. | A 3-tier context economy: always-loaded index -> one KB doc on demand -> exact `path:line`. The agent pays only for what the task needs. |
 
 [Full philosophy and design rationale →](docs/aid-methodology.md)
@@ -220,7 +219,7 @@ The KB is the central artifact: a living 14-document picture of the project. Eve
 
 ### The Agent Model
 
-AID defines 10 agents across three tiers (Large / Medium / Small), mapped per tool to concrete models. The invariant enforced everywhere: the Reviewer's tier is always >= the Executor's. The agent that writes never grades its own work.
+AID defines 9 agents across three tiers (Large / Medium / Small), mapped per tool to concrete models. The invariant enforced everywhere: the Reviewer's tier is always >= the Executor's. The agent that writes never grades its own work.
 
 [Full agent roster and dispatch rules →](docs/aid-methodology.md#5-the-agent-model)
 

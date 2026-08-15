@@ -1,8 +1,8 @@
 ---
 kb-category: extension
 source: hand-authored
-objective: Cumulative release ledger for the AID repo — every release newest-first with its items tagged [NEW] / [CHANGE] / [FIX], plus an Unreleased section that accumulates items for the next version.
-summary: Read or update this to know what shipped in which version and what is pending release. Hand-maintained; at tag time the Unreleased section is renamed to the version + date and a fresh Unreleased block starts. Referenced by infrastructure.md as the home of release history (the root RELEASE_NOTES.md is retired).
+objective: Cumulative release ledger for the AID repo — every release newest-first with its items tagged [NEW] / [CHANGE] / [FIX].
+summary: Read or update this to know what shipped in which version; what is pending release lives in backlog.md § Next Release. Hand-maintained; at tag time a new version + date section is added from the items drained out of that section. Referenced by infrastructure.md as the home of release history (the root RELEASE_NOTES.md is retired).
 sources:
   - release.sh
   - .github/workflows/release.yml
@@ -10,20 +10,24 @@ tags: [C8, release, versioning, changelog, tracking]
 see_also: [infrastructure.md, technology-stack.md]
 owner: skill-self
 audience: [developer, devops, product]
+review-criteria:
+  - id: F-01
+    kind: exclude
+    criterion: >
+      A released entry's items are never validated against current state -- not its version, its
+      dates, its item wording, or the paths it names.
+    why: >
+      This is a ledger of what shipped, so every row is correct AS HISTORY the moment it is
+      written. A current-state check on a shipped release fires forever and can only be
+      "fixed" by falsifying the record.
 ---
 
 # Release Tracking
 
 > Cumulative log of all releases (newest first) and their items, tagged
-> `[NEW]` / `[CHANGE]` / `[FIX]`. The top `Unreleased` section accumulates items for
-> the next version; at tag time, rename it to the version + date and start a fresh
-> `Unreleased` block. `[NEW]` items lead with a feature name; `[CHANGE]` / `[FIX]`
-> are description-only. An optional trailing version on an Unreleased item is a
-> planned target.
-
-## Unreleased
-
-- [NEW] **Knowledge relationship graph** — a new on-demand skill `/aid-graph` builds `.aid/knowledge/relationships.md` (the machine-readable relationship table over the approved Knowledge Base plus the project's own source) and `.aid/knowledge/graph.html` (the interactive view over it, with a table fallback). It is a sibling of `/aid-summarize` in the same post-Knowledge-Base slot — on demand, never fired by discovery, and refused by pre-flight unless the Knowledge Base is finished and approved. The Knowledge Base is read-only for the whole run, enforced by a write fence rather than promised; the run is idempotent and content-addressed, so a re-run on an unchanged project is a true no-op and a regeneration names the input that changed. It grades its own two artifacts only: Knowledge Base gaps are reported in a separate ledger and routed to the skills that own KB repair, never gated on and never fixed here. Ships the `canonical/aid/scripts/graph/` helper set, the `canonical/aid/templates/graph/` schema + relation-vocabulary contracts, and the `canonical/aid/templates/knowledge-graph/` view templates, rendered into all five profiles.
+> `[NEW]` / `[CHANGE]` / `[FIX]`. At tag time, add a new version + date section from the
+> items drained out of `backlog.md` § `Next Release`. `[NEW]` items lead with a feature
+> name; `[CHANGE]` / `[FIX]` are description-only.
 
 ## v2.3.0 - 2026-07-23
 

@@ -1,10 +1,13 @@
 ---
 name: aid-discover
 description: >
-  Brownfield project discovery with built-in quality gate. Run `/aid-config` first to scaffold
-  the KB. Analyzes all repository content (code, configuration, and documentation) to populate
-  KB documents. Reviews, collects user input, fixes issues, and gets user approval — one step
-  per run. State-machine: ELICIT → GENERATE → REVIEW → Q-AND-A → FIX → APPROVAL → DONE.
+  Populate the Knowledge Base from a codebase that already exists. Use this skill when you
+  are starting AID on a project with existing code, and its architecture, conventions, and
+  patterns need to be written down before any later phase can rely on them. It reads all
+  repository content -- code, configuration, and documentation -- drafts the KB documents,
+  reviews them, asks you what it could not infer, fixes what it finds, and takes your
+  approval. It advances one step per run, so you can stop and resume. Run `/aid-config`
+  first to scaffold the KB.
 allowed-tools: Read, Glob, Grep, shell, Write, Edit, Agent
 argument-hint: "[--grade A] minimum acceptable grade (default: A)  [--reset] clear KB and restart"
 ---
@@ -133,12 +136,13 @@ protocol lives in two reference docs; this section is a checklist citing them.
 
 **On completion / failure:**
 
-- **Success:** emit `✓ <agent> done in <actual>` with measured time. Append a row to
-  the work `STATE.md ## Calibration Log` section (create section if missing) with
-  format `| YYYY-MM-DD | <agent> | <task-id/cycle> | <ETA-band> | <actual> | <notes> |`.
-  Also update the task's `## Dispatches` sub-column with the dispatch record.
-  Both are mandatory per work-003 traceability (never optional, never "if tracked").
-  Delete heartbeat file.
+- **Success:** emit `✓ <agent> done in <actual>` with measured time. This skill's own
+  dispatches are not task-scoped, so there is no persisted target for them any more --
+  the work-level Calibration Log / Dispatches views are now DERIVED solely from per-task
+  `dispatch_log` entries (`work-state-template.yml`), which discovery's own dispatches
+  never populate; the console line above is the sole record. Mandatory per work-003
+  traceability wherever a target exists (never optional, never "if tracked"). Delete
+  heartbeat file.
 - **Failure:** emit `✗ <agent> FAILED after <elapsed> (reason: <one-line>)`.
   Decide whether to re-dispatch, fall back, or surface to user. Delete
   heartbeat file.

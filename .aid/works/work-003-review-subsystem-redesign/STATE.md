@@ -6,9 +6,9 @@ started: "2026-07-27"
 minimum_grade: "A"
 user_approved: yes
 lifecycle: Running
-phase: Detail
-active_skill: aid-detail
-updated: '2026-08-11T19:08:53Z'
+phase: Execute
+active_skill: none
+updated: '2026-08-15T22:50:00Z'
 pause_reason: --
 block_reason: --
 block_artifact: --
@@ -21,13 +21,9 @@ Redesign of AID's review subsystem: extract review into chainable light/deep
 review skills, formalize artifact-typed review criteria over a single severity
 source of truth, and close the accumulated review-path defects.
 
-> **State:** Running -- delivery-015 gate, FIX cycle 12 complete and awaiting a fresh reviewer
-> **Phase:** Execute. Deliveries 001-012 gated `A+` with records; **013 and 014 were marked `Gated`
-> with no gate ever run** (Q22) and their late gates are open with 24 findings between them;
-> delivery-015's six tasks are all `Done` and its gate is at cycle 12. 016-018 are `Pending-Spec`.
-> **Next:** `/aid-execute work-003` from worktree `.claude/worktrees/work-003` (branch
-> `aid/work-003-delivery-015`) -- work the delivery-013 and delivery-014 ledgers, then re-gate all
-> three deliveries.
+> **State:** Running — master merged in; owner chose **master as base** (cascade + VERIFY/HUNT win).
+> **Phase:** Execute. Report: `MERGE-MASTER-2026-08-15.md`.
+> **Next:** Regenerate profiles; re-plan deliveries 013/017/019/022/028; fold or retire leftover work-003 review artifacts (rubrics catalog, deep/light, brief-template, extra scripts).
 
 ---
 

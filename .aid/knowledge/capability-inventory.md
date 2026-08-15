@@ -43,7 +43,6 @@ multi-profile CLI installer**. Its capabilities fall into five groups:
 - [Where each capability lives (parts it touches)](#where-each-capability-lives-parts-it-touches)
 - [What AID does NOT do](#what-aid-does-not-do)
 - [Open items](#open-items)
-- [Change Log](#change-log)
 
 ## Pipeline skills (the lifecycle)
 
@@ -150,35 +149,62 @@ invocable name, every row a canonical name) is
 
 ### Shortcut families
 
-The **58-row catalog** — every row a canonical invocation name — generates **34** verb-first
-thin-doorway shortcut directories via `build-shortcut-skills.py`; the other **24** rows are
+The **94-row catalog** — every row a canonical invocation name — generates **34** verb-first
+thin-doorway shortcut directories via `build-shortcut-skills.py`; the other **60** rows are
 `repurpose: true` — hand-authored skills the build helper never generates or overwrites
 (`aid-review`, `aid-research`, `aid-report`, `aid-design`,
 `aid-prototype`/`aid-prototype-ui`, the document family, the `aid-test`
 run-siblings, plus the re-registered `aid-deploy`, `aid-monitor`, and `aid-ask`).
-Every one of the 58 rows owns its own `canonical/skills/<name>/` directory. `create` and
+Every one of the 94 rows owns its own `canonical/skills/<name>/` directory. `create` and
 `update` are the two canonical grid verbs. Each verb family targets an artifact archetype:
 
 | Verb family | Engine-generated doorways | `repurpose` rows in the same family |
 |-------------|---------------------------|-------------------------------------|
-| create | `aid-create` + `-api`, `-cli`, `-config`, `-dashboard`, `-data-model`, `-data-pipeline`, `-infra`, `-integration`, `-job`, `-messaging`, `-test`, `-theme`, `-ui` (14) | `aid-create-diagram`, `aid-create-document` |
-| update | `aid-update` + the same 13 artifact suffixes (14) | `aid-update-document` |
+| create | `aid-create` + `-api`, `-cli`, `-config`, `-dashboard`, `-data-model`, `-data-pipeline`, `-infra`, `-integration`, `-job`, `-messaging`, `-test`, `-theme`, `-ui` (14) | `aid-create-diagram`, `aid-create-document`, `-roadmap`, `-backlog`, `-mvp`, `-architecture`, `-stack`, `-testing-strategy`, `-cicd` |
+| update | `aid-update` + the same 13 artifact suffixes (14) | `aid-update-document`, `-roadmap`, `-backlog`, `-mvp`, `-architecture`, `-stack`, `-testing-strategy`, `-cicd` |
 | fix | `aid-fix` | — |
 | refactor | `aid-refactor` | — |
 | remove / deprecate / migrate | `aid-remove`, `aid-deprecate`, `aid-migrate` | — |
 | test / experiment | `aid-experiment` | `aid-test`, `-security`, `-performance`, `-data-quality` |
 | prototype | — | `aid-prototype`, `aid-prototype-ui` |
 | document | — | `aid-document`, `-architecture`, `-changelog`, `-decision`, `-guideline`, `-runbook`, `-standard`, `-tutorial` |
-| design | — | `aid-design` |
+| design | — | `aid-design` (catch-all) + `-roadmap`, `-backlog`, `-mvp`, `-architecture`, `-stack`, `-testing-strategy`, `-cicd`, and the 14 grid artifacts `-api`, `-ui`, `-theme`, `-cli`, `-data-model`, `-data-pipeline`, `-messaging`, `-integration`, `-job`, `-config`, `-infra`, `-test`, `-document`, `-dashboard` (22) |
+| brainstorm | — | `aid-brainstorm` |
 | report | — | `aid-report` |
 | review / research | — | `aid-review`, `aid-research` |
 | deploy / monitor / query | — | `aid-deploy`, `aid-monitor`, `aid-ask` |
 
 Reading down the table: **34** engine-generated doorways (14 `create` + 14 `update` + `fix`,
-`refactor`, `remove`, `deprecate`, `migrate`, `experiment`) and **24** `repurpose` rows.
+`refactor`, `remove`, `deprecate`, `migrate`, `experiment`) and **60** `repurpose` rows.
 
 (`/aid-deploy`, `/aid-monitor`, and `/aid-ask` are `repurpose` catalog rows — counted among the
-58, each owning its own directory, though hand-authored rather than engine-generated doorways.)
+94, each owning its own directory, though hand-authored rather than engine-generated doorways.)
+
+### The `design` stage
+
+`design` is the third grid verb, and it sits **before** `create`: `design -> create -> update`.
+Where `create` realizes and `update` revises, `design` only develops the idea. It writes a **design
+seed** to `.aid/design/<artifact>.md` and writes nothing else -- no production code, no Knowledge
+Base document -- so the thinking can be settled and reviewed before anything is built.
+
+The three stages divide by the state the work is in, and that is what a caller chooses between:
+
+| Stage | Precondition | Writes | Consumed by |
+|-------|--------------|--------|-------------|
+| `design` | the shape is still open | the seed, and only the seed | `create` |
+| `create` | a ready seed exists, the destination does not | the artifact, plus its registration on first creation | -- |
+| `update` | the destination exists and has drifted | the revision only | -- |
+
+`create` **refuses** on exactly three conditions and no fourth: no seed, a seed whose
+`## Open questions` is still unresolved without an explicit override, and a destination marked
+`source: generated`. A repeat `create` never overwrites what an earlier run committed -- it writes
+whatever is new and routes the rest to `update`, leaving the seed in place carrying only the
+unrealized part. `update` needs no seed, but consumes one if it finds it.
+
+**22 `design` rows** cover every artifact that has a `create`/`update` pair, plus a bare
+`/aid-design` catch-all for subjects with no dedicated row. `/aid-brainstorm` sits beside them as
+an exploratory doorway for a problem space that is not yet a specific question, mutually routed
+with `/aid-research`.
 
 ### The `/aid-triage` router
 
@@ -200,7 +226,6 @@ Optional jobs run outside the linear pipeline, when the user needs them.
 | Ask the KB a question | `/aid-ask` | Answers a free-form question grounded in the KB, the live code, and in-flight work; cites sources or names the gap. |
 | Targeted KB update | `/aid-update-kb` | Applies a described change to the KB through the same review/approval gate as discovery. |
 | Housekeeping | `/aid-housekeep` | Re-discovers changed KB docs, runs the conformance check over forward-authored docs, regenerates the visual summary, and sweeps stale work artifacts. |
-| Map the KB's relationships | `/aid-graph` | Builds `relationships.md` (the machine-readable relationship table over the approved KB plus the project source) and `graph.html` (the interactive view over it); reports Knowledge Base gaps in a separate ledger and routes them onward instead of fixing or gating on them. Requires an approved KB, which stays read-only for the whole run; idempotent and content-addressed. |
 | Visual KB summary | `/aid-summarize` | Generates a single-file `kb.html` — a visually rich, newcomer-friendly view of the Knowledge Base. |
 
 ## CLI installer capabilities
@@ -262,7 +287,7 @@ Each capability maps to the parts that implement it (full anatomy in `module-map
 
 | Capability group | Parts / modules it touches |
 |------------------|----------------------------|
-| Pipeline + on-demand skills | `.claude/skills/<skill>/` (SKILL.md + references) backed by per-area helper scripts under `canonical/aid/scripts/` (`config/`, `connectors/`, `execute/`, `graph/`, `housekeep/`, `kb/`, `migrate/`, `release/`, `summarize/`); each skill dispatches `canonical/agents/*` sub-agents. See module-map.md "toolkit plane" + per-area script table. |
+| Pipeline + on-demand skills | `.claude/skills/<skill>/` (SKILL.md + references) backed by per-area helper scripts under `canonical/aid/scripts/` (`config/`, `connectors/`, `execute/`, `housekeep/`, `kb/`, `migrate/`, `release/`, `summarize/`); each skill dispatches `canonical/agents/*` sub-agents. See module-map.md "toolkit plane" + per-area script table. |
 | Requirements-gathering deep dive | `/aid-describe`'s `references/` engine corpus (`elicitation-engine.md`, `move-playbook.md`, `calibration.md`, `advisor-stance.md`, `coherence-check.md`, `state-describe-seed.md`) + the `aid-housekeep` Conformance Lane. See module-map.md "aid-describe elicitation engine" + "Conformance Lane". |
 | Direct-entry shortcuts & Lite path | 34 thin `canonical/skills/aid-<verb>[-<artifact>]/SKILL.md` doorways + the `/aid-triage` router, all delegating to `canonical/aid/templates/shortcut-engine.md`; family scaffolding in `canonical/aid/templates/shortcut-scaffolding/<family>.md`; invocation catalog `canonical/aid/templates/shortcut-catalog.yml` (built into skill dirs by `generate-profile/scripts/build-shortcut-skills.py`). |
 | External connections & tool integrations | `.aid/connectors/` (descriptors + generated `INDEX.md` + git-ignored `.secrets/`), populated by `/aid-discover` ELICIT; backed by `canonical/aid/scripts/connectors/` (`connector-registry`, `build-connectors-index`, `connector-secret` bash+PowerShell twins) and the `canonical/aid/templates/connectors/preset-catalog.md` presets. See module-map.md "connectors". |
@@ -278,12 +303,12 @@ Each capability maps to the parts that implement it (full anatomy in `module-map
 
 ## Open items
 
-- **Skill count.** AID ships **78 skill directories** under `canonical/skills/`: **20 curated
+- **Skill count.** AID ships **75 skill directories** under `canonical/skills/`: **17 curated
   skills** (the pipeline-phase, on-demand, and `/aid-triage` router skills that are *not* in the
   shortcut catalog — including the three ticket skills `aid-read-ticket`, `aid-create-ticket`,
-  `aid-update-ticket`) plus the **58-row shortcut catalog**'s skills, every row a canonical
-  name — **34** engine-generated verb-first direct-entry shortcut doorways plus **24**
-  hand-authored `repurpose` skills, each of the 58 owning its own directory. Re-derive from
+  `aid-update-ticket`) plus the **94-row shortcut catalog**'s skills, every row a canonical
+  name — **34** engine-generated verb-first direct-entry shortcut doorways plus **60**
+  hand-authored `repurpose` skills, each of the 94 owning its own directory. Re-derive from
   `canonical/skills/` and `canonical/aid/templates/shortcut-catalog.yml`; the prior
   12-/13-/14-skill drift is superseded.
 

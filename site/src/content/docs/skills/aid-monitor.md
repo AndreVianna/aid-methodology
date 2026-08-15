@@ -1,6 +1,6 @@
 ---
 title: 'aid-monitor'
-description: 'Observe production, classify findings, and route actions.'
+description: 'Watch production, classify what you find, and route it to whoever should act.'
 generatedFrom: 'canonical/skills/aid-monitor/SKILL.md'
 ---
 
@@ -9,7 +9,7 @@ generatedFrom: 'canonical/skills/aid-monitor/SKILL.md'
 ## Frontmatter
 
 - **`name`** — aid-monitor
-- **`description`** — Observe production, classify findings, and route actions. Combines telemetry interpretation with triage — detect anomalies, perform root cause analysis for bugs, and route findings — bugs to /aid-fix, change requests to /aid-triage. Per-work scope. Use post-deployment, on schedule, or on-demand. State machine: OBSERVE → CLASSIFY → ROUTE → DONE.
+- **`description`** — Watch production, classify what you find, and route it to whoever should act. Use this skill after a deployment, on a schedule, or whenever something looks wrong in the field. It reads telemetry, detects anomalies, performs root-cause analysis on the ones that are bugs, and then routes: bugs to `/aid-fix`, change requests to `/aid-triage`. Scoped to one work at a time.
 - **`allowed-tools`** — Read, Glob, Grep, Bash, Write
 
 [Definition: `canonical/skills/aid-monitor/SKILL.md`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-monitor/SKILL.md)
@@ -46,32 +46,32 @@ Every node in the chart above, in chart order, with the exact `canonical/` text 
 
 <a id="fragment-n1"></a>**1 · `OBSERVE`** — No prior run context; pull telemetry signals and correlate… · _entry_
 
-~~~~plaintext title="canonical/skills/aid-monitor/SKILL.md#L214" wrap
+~~~~plaintext title="canonical/skills/aid-monitor/SKILL.md#L219" wrap
 | OBSERVE | `references/state-observe.md` | `aid-researcher` | → CLASSIFY |
 ~~~~
 
-[Source: `canonical/skills/aid-monitor/SKILL.md#L214`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-monitor/SKILL.md#L214) · [full step: `canonical/skills/aid-monitor/references/state-observe.md#L1-L35`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-monitor/references/state-observe.md#L1-L35)
+[Source: `canonical/skills/aid-monitor/SKILL.md#L219`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-monitor/SKILL.md#L219) · [full step: `canonical/skills/aid-monitor/references/state-observe.md#L1-L35`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-monitor/references/state-observe.md#L1-L35)
 
 <a id="fragment-n2"></a>**2 · `CLASSIFY`** — Active findings are present; classify each anomaly and… · _step_
 
-~~~~plaintext title="canonical/skills/aid-monitor/SKILL.md#L215" wrap
+~~~~plaintext title="canonical/skills/aid-monitor/SKILL.md#L220" wrap
 | CLASSIFY | `references/state-classify.md` | `aid-researcher` | → ROUTE |
 ~~~~
 
-[Source: `canonical/skills/aid-monitor/SKILL.md#L215`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-monitor/SKILL.md#L215) · [full step: `canonical/skills/aid-monitor/references/state-classify.md#L1-L46`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-monitor/references/state-classify.md#L1-L46)
+[Source: `canonical/skills/aid-monitor/SKILL.md#L220`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-monitor/SKILL.md#L220) · [full step: `canonical/skills/aid-monitor/references/state-classify.md#L1-L46`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-monitor/references/state-classify.md#L1-L46)
 
 <a id="fragment-n3"></a>**3 · `ROUTE`** — All findings are classified; propose and execute routing… · _step_
 
-~~~~plaintext title="canonical/skills/aid-monitor/SKILL.md#L216" wrap
+~~~~plaintext title="canonical/skills/aid-monitor/SKILL.md#L221" wrap
 | ROUTE | `references/state-route.md` | `aid-orchestrator` | → DONE |
 ~~~~
 
-[Source: `canonical/skills/aid-monitor/SKILL.md#L216`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-monitor/SKILL.md#L216) · [full step: `canonical/skills/aid-monitor/references/state-route.md#L1-L60`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-monitor/references/state-route.md#L1-L60)
+[Source: `canonical/skills/aid-monitor/SKILL.md#L221`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-monitor/SKILL.md#L221) · [full step: `canonical/skills/aid-monitor/references/state-route.md#L1-L60`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-monitor/references/state-route.md#L1-L60)
 
 <a id="fragment-n4"></a>**4 · `DONE`** · _exit_ · HALT
 
-~~~~plaintext title="canonical/skills/aid-monitor/SKILL.md#L217" wrap
+~~~~plaintext title="canonical/skills/aid-monitor/SKILL.md#L222" wrap
 | DONE | _(inline — see Re-run below)_ | `inline` | → halt |
 ~~~~
 
-[Source: `canonical/skills/aid-monitor/SKILL.md#L217`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-monitor/SKILL.md#L217)
+[Source: `canonical/skills/aid-monitor/SKILL.md#L222`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-monitor/SKILL.md#L222)

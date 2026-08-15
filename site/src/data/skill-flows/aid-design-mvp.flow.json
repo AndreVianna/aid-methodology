@@ -1,0 +1,204 @@
+{
+  "skill": "aid-design-mvp",
+  "shape": "inline-states",
+  "extractor": "inline",
+  "confidence": "derived",
+  "title": "aid-design-mvp — state flow",
+  "nodes": [
+    {
+      "id": "n1",
+      "order": 1,
+      "name": "INTAKE",
+      "label": "INTAKE",
+      "kind": "entry",
+      "terminal": null,
+      "provenance": {
+        "file": "canonical/skills/aid-design-mvp/SKILL.md",
+        "startLine": 39,
+        "endLine": 51,
+        "sourceKind": "skill",
+        "excerpt": "## State: INTAKE\n\n1. **Require a subject.** Empty argument -> ask one bootstrapping question (\"What\n   belongs in the first shippable slice, and what should defer?\") and wait.\n2. **Allocate, exactly per `design-lifecycle.md § Skill shape -- Allocation`** -- the Work\n   Initiation Gate, then `initiator: aid-design-mvp`, `active_skill: aid-design-mvp`,\n   `pipeline.path: lite`, `lifecycle: Running`. `phase` is not driven.\n3. **Acquire `.aid/design/`.** Per `design-lifecycle.md § Before writing a seed` -- ensure\n   the folder exists and seed its `README.md` on first use, before writing anything.\n4. **Read the existing seed, if one is present.** `.aid/design/mvp.md` -- re-invocation\n   iterates the same seed rather than starting over.\n5. **Classify complexity (model + effort)** for the `aid-architect` dispatch below;\n   verifier tier >= producer tier (`agent-dispatch-tiering.md`)."
+      },
+      "detail": {
+        "file": "canonical/skills/aid-design-mvp/SKILL.md",
+        "startLine": 39,
+        "endLine": 53,
+        "sourceKind": "skill",
+        "excerpt": "## State: INTAKE\n\n1. **Require a subject.** Empty argument -> ask one bootstrapping question (\"What\n   belongs in the first shippable slice, and what should defer?\") and wait.\n2. **Allocate, exactly per `design-lifecycle.md § Skill shape -- Allocation`** -- the Work\n   Initiation Gate, then `initiator: aid-design-mvp`, `active_skill: aid-design-mvp`,\n   `pipeline.path: lite`, `lifecycle: Running`. `phase` is not driven.\n3. **Acquire `.aid/design/`.** Per `design-lifecycle.md § Before writing a seed` -- ensure\n   the folder exists and seed its `README.md` on first use, before writing anything.\n4. **Read the existing seed, if one is present.** `.aid/design/mvp.md` -- re-invocation\n   iterates the same seed rather than starting over.\n5. **Classify complexity (model + effort)** for the `aid-architect` dispatch below;\n   verifier tier >= producer tier (`agent-dispatch-tiering.md`).\n\n**Advance:** DESIGN."
+      }
+    },
+    {
+      "id": "n2",
+      "order": 2,
+      "name": "DESIGN",
+      "label": "DESIGN",
+      "kind": "step",
+      "terminal": null,
+      "provenance": {
+        "file": "canonical/skills/aid-design-mvp/SKILL.md",
+        "startLine": 57,
+        "endLine": 62,
+        "sourceKind": "skill",
+        "excerpt": "## State: DESIGN\n\nDispatch **`aid-architect`** (clean context, tiered) to develop or iterate the seed,\ngrounded in `.aid/knowledge/` and the project source, plus the seed read in INTAKE if one\nexists. Draws out: **the line -- what is in the first shippable slice, what defers, and\nthe reason for each cut.**"
+      },
+      "detail": {
+        "file": "canonical/skills/aid-design-mvp/SKILL.md",
+        "startLine": 57,
+        "endLine": 69,
+        "sourceKind": "skill",
+        "excerpt": "## State: DESIGN\n\nDispatch **`aid-architect`** (clean context, tiered) to develop or iterate the seed,\ngrounded in `.aid/knowledge/` and the project source, plus the seed read in INTAKE if one\nexists. Draws out: **the line -- what is in the first shippable slice, what defers, and\nthe reason for each cut.**\n\nWrites `.aid/design/mvp.md` **only**, in `design-seed.md`'s shape -- `## Current\ndirection` rewritten to the latest proposal, `## Options considered` accumulating rather\nthan being replaced. **Never writes `.aid/knowledge/`; never writes production code** --\nthe `design` invariant, binding without exception.\n\n**Advance:** VERIFY."
+      }
+    },
+    {
+      "id": "n3",
+      "order": 3,
+      "name": "VERIFY",
+      "label": "VERIFY",
+      "kind": "loop-back",
+      "terminal": null,
+      "provenance": {
+        "file": "canonical/skills/aid-design-mvp/SKILL.md",
+        "startLine": 73,
+        "endLine": 77,
+        "sourceKind": "skill",
+        "excerpt": "## State: VERIFY\n\n**Full verify** -- exactly as `design-lifecycle.md § Skill shape -- \"Full verify\"`\ndefines it. Not clean -> loop to DESIGN; the circuit-breaker there governs escalation to\nIMPEDIMENT + `lifecycle: Blocked`."
+      },
+      "detail": {
+        "file": "canonical/skills/aid-design-mvp/SKILL.md",
+        "startLine": 73,
+        "endLine": 79,
+        "sourceKind": "skill",
+        "excerpt": "## State: VERIFY\n\n**Full verify** -- exactly as `design-lifecycle.md § Skill shape -- \"Full verify\"`\ndefines it. Not clean -> loop to DESIGN; the circuit-breaker there governs escalation to\nIMPEDIMENT + `lifecycle: Blocked`.\n\n**Advance:** PRESENT."
+      }
+    },
+    {
+      "id": "n4",
+      "order": 4,
+      "name": "PRESENT",
+      "label": "hard stop -- the user decides",
+      "kind": "step",
+      "terminal": null,
+      "provenance": {
+        "file": "canonical/skills/aid-design-mvp/SKILL.md",
+        "startLine": 83,
+        "endLine": 87,
+        "sourceKind": "skill",
+        "excerpt": "## State: PRESENT (hard stop -- the user decides)\n\nSet `lifecycle: Paused-Awaiting-Input`. Present the seed clearly. Assert no resolution --\nthe user decides whether to iterate further (re-invoke this skill) or realize it now\n(`/aid-create-mvp`)."
+      },
+      "detail": {
+        "file": "canonical/skills/aid-design-mvp/SKILL.md",
+        "startLine": 83,
+        "endLine": 89,
+        "sourceKind": "skill",
+        "excerpt": "## State: PRESENT (hard stop -- the user decides)\n\nSet `lifecycle: Paused-Awaiting-Input`. Present the seed clearly. Assert no resolution --\nthe user decides whether to iterate further (re-invoke this skill) or realize it now\n(`/aid-create-mvp`).\n\n**Advance:** DONE."
+      }
+    },
+    {
+      "id": "n5",
+      "order": 5,
+      "name": "DONE",
+      "label": "DONE",
+      "kind": "exit",
+      "terminal": {
+        "advanceType": "UNSPECIFIED",
+        "handoff": null
+      },
+      "provenance": {
+        "file": "canonical/skills/aid-design-mvp/SKILL.md",
+        "startLine": 93,
+        "endLine": 96,
+        "sourceKind": "skill",
+        "excerpt": "## State: DONE\n\nSet `lifecycle: Completed`, `updated` now, append a `## Lifecycle History` row. The seed\nstays at `.aid/design/mvp.md` -- consumption happens at `/aid-create-mvp`, not here."
+      },
+      "detail": {
+        "file": "canonical/skills/aid-design-mvp/SKILL.md",
+        "startLine": 93,
+        "endLine": 96,
+        "sourceKind": "skill",
+        "excerpt": "## State: DONE\n\nSet `lifecycle: Completed`, `updated` now, append a `## Lifecycle History` row. The seed\nstays at `.aid/design/mvp.md` -- consumption happens at `/aid-create-mvp`, not here."
+      }
+    }
+  ],
+  "edges": [
+    {
+      "from": "n1",
+      "to": "n2",
+      "kind": "sequence",
+      "condition": null,
+      "advanceType": "UNSPECIFIED",
+      "provenance": {
+        "file": "canonical/skills/aid-design-mvp/SKILL.md",
+        "startLine": 53,
+        "endLine": 53,
+        "sourceKind": "skill",
+        "excerpt": "**Advance:** DESIGN."
+      }
+    },
+    {
+      "from": "n2",
+      "to": "n3",
+      "kind": "sequence",
+      "condition": null,
+      "advanceType": "UNSPECIFIED",
+      "provenance": {
+        "file": "canonical/skills/aid-design-mvp/SKILL.md",
+        "startLine": 69,
+        "endLine": 69,
+        "sourceKind": "skill",
+        "excerpt": "**Advance:** VERIFY."
+      }
+    },
+    {
+      "from": "n3",
+      "to": "n2",
+      "kind": "loop-back",
+      "condition": null,
+      "advanceType": "UNSPECIFIED",
+      "provenance": {
+        "file": "canonical/skills/aid-design-mvp/SKILL.md",
+        "startLine": 76,
+        "endLine": 76,
+        "sourceKind": "skill",
+        "excerpt": "defines it. Not clean -> loop to DESIGN; the circuit-breaker there governs escalation to"
+      }
+    },
+    {
+      "from": "n3",
+      "to": "n4",
+      "kind": "sequence",
+      "condition": null,
+      "advanceType": "UNSPECIFIED",
+      "provenance": {
+        "file": "canonical/skills/aid-design-mvp/SKILL.md",
+        "startLine": 79,
+        "endLine": 79,
+        "sourceKind": "skill",
+        "excerpt": "**Advance:** PRESENT."
+      }
+    },
+    {
+      "from": "n4",
+      "to": "n5",
+      "kind": "sequence",
+      "condition": null,
+      "advanceType": "UNSPECIFIED",
+      "provenance": {
+        "file": "canonical/skills/aid-design-mvp/SKILL.md",
+        "startLine": 89,
+        "endLine": 89,
+        "sourceKind": "skill",
+        "excerpt": "**Advance:** DONE."
+      }
+    }
+  ],
+  "entries": [
+    "n1"
+  ],
+  "exits": [
+    "n5"
+  ],
+  "sources": [
+    "canonical/skills/aid-design-mvp/SKILL.md"
+  ],
+  "warnings": []
+}

@@ -1,13 +1,14 @@
 ---
 name: aid-document
 description: >
-  Write a general document NOW -- a Diataxis how-to / reference / explanation, or a
-  status/progress report -- in one pass. A thin kind-sibling of /aid-create-document
-  with the document genre bound to general. Grounded in and accuracy-checked against the
-  Knowledge Base (.aid/knowledge/) and the project source; produced by aid-tech-writer,
-  verified by aid-reviewer. It RESOLVES NOTHING -- drafts, you approve, then it is placed.
-  NEVER writes into .aid/knowledge/. This file carries no logic of its own -- its full
-  behavior is defined by .claude/skills/aid-create-document/SKILL.md.
+  Write a general document in one pass -- a Diataxis how-to, reference page or explanation,
+  or a status or progress report. Use this skill when the document you need does not fall
+  into one of the named genres and you want it drafted now. It is grounded in, and accuracy-
+  checked against, the Knowledge Base (`.aid/knowledge/`) and the project source; aid-tech-
+  writer produces it and aid-reviewer verifies it. It resolves nothing: it drafts, you
+  approve, and only then is the document placed. It never writes into `.aid/knowledge/`. A
+  thin kind-sibling of `/aid-create-document`, which defines its full behavior. To settle a
+  document's direction as a reusable design seed first, use `/aid-design-document`.
 allowed-tools: Read, Glob, Grep, Bash, Write, Edit, Agent
 argument-hint: "<subject> -- what to document"
 ---

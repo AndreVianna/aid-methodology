@@ -1,18 +1,14 @@
 ---
 name: aid-update-ticket
 description: >
-  On-demand write skill that mutates exactly ONE named part of an existing ticket in whatever
-  issue-tracker connector resolves for it: `aid-update-ticket <part> [<connector>:]<ticket-id>
-  <content>` where `part` is the closed enum `description | comment | status`. `description`
-  REPLACES the field, `comment` APPENDS a new comment, `status` SETS the ticket's state.
-  Resolves the connector via the shared ticket-resolution ladder, loads whatever context the
-  named part needs (status: the ticket's available transitions; description: its current value
-  for a before/after preview; comment: nothing), composes the exact mutation, and shows it in an
-  in-invocation `AskUserQuestion` confirm before the single host-MCP write. A `status` target is
-  validated against the tracker's available transitions when the MCP can enumerate them (a
-  mismatch lists the valid options and stops before the confirm gate); when transitions cannot be
-  enumerated, the transition is attempted and the tracker's own error is surfaced verbatim on
-  rejection. Never writes silently, and an MCP failure never leaves a partial write.
+  Change exactly one part of an existing ticket in the project's issue tracker. Use this
+  skill when a ticket needs its description replaced, a comment added, or its status moved:
+  `part` is the closed enum `description | comment | status`, and one invocation touches one
+  of them. It resolves which tracker owns the ticket, loads whatever the named part needs,
+  composes the exact mutation, and shows it to you for confirmation before the single write.
+  A status target is checked against the tracker's available transitions when those can be
+  listed, and a mismatch stops before the confirmation gate. It never writes silently, and a
+  failed write never leaves a partial one.
 allowed-tools: Read, Glob, Grep, AskUserQuestion
 argument-hint: "<part> [<connector>:]<ticket-id> <content>"
 ---
@@ -27,7 +23,7 @@ explicit confirmation. It is the third of the three peer ticket-tracker skills a
 
 **Absent from the mandatory pipeline flow.** Like `aid-ask` and `aid-set-connector`, this is
 an optional, on-demand utility skill — no phase gate references it, no `shortcut-catalog.yml`
-entry, no `work-NNN` scaffold, no per-skill `STATE.md`; it is invoked directly by name
+entry, no `work-NNN` scaffold, no per-skill `STATE.yml`; it is invoked directly by name
 (`features/feature-001-dedicated-ticket-skills/SPEC.md` § Layers & Components, decision 2).
 
 **Shared reference — implemented here, not restated.** The connector-resolution ladder, this
@@ -208,7 +204,7 @@ stopped the run before CONFIRM was ever asked.
 This skill makes exactly **one** external write per invocation — the single host-MCP mutation call
 at WRITE, and only after an explicit CONFIRM. It writes **nothing** to the repo: no `Write`/`Edit`
 tool is declared; `.aid/connectors/` is only ever read (`Read`/`Glob`/`Grep`, to resolve the
-connector via `INDEX.md` and the matched descriptor's `tags:`); no local file, cache, or `STATE.md`
+connector via `INDEX.md` and the matched descriptor's `tags:`); no local file, cache, or `STATE.yml`
 is ever touched.
 
 ---

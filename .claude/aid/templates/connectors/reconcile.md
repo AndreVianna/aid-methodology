@@ -168,7 +168,7 @@ Step S2 below):
    exact-bytes, owner-only write to `.aid/connectors/.secrets/<stem>`; the caller never reads,
    holds, or echoes the value — it only supplies `<stem>` and lets the script prompt.
    **Never construct the invocation with the literal secret text inlined** in a bash command,
-   `STATE.md`, the KB, or the conversation transcript — the script's own stdin capture (or a
+   `STATE.yml`, the KB, or the conversation transcript — the script's own stdin capture (or a
    piped shell *variable*, per its header's automation example) is the only sanctioned path.
    For `env:` / `keychain:` reference forms, **do not** invoke `connector-secret.sh write` — no
    local value is stored by AID for those forms (resolved externally at use-time).

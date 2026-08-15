@@ -6,7 +6,7 @@ summary: Read this before changing any skill, artifact template, or phase hand-o
 sources:
   - docs/aid-methodology.md
   - canonical/skills/
-  - canonical/aid/templates/work-state-template.md
+  - canonical/aid/templates/work-state-template.yml
   - canonical/aid/templates/grading-rubric.md
   - canonical/aid/templates/requirements.md
   - canonical/aid/templates/delivery-blueprint-template.md
@@ -17,11 +17,15 @@ tags: [C2, pipeline, contracts, phases, artifacts, state-machines, feedback-loop
 see_also: [integration-map.md, architecture.md, domain-glossary.md, artifact-schemas.md]
 owner: architect
 audience: [developer, architect]
-intent: |
-  The typed data contracts between AID pipeline phases — artifact hand-offs, state-machine
-  transitions, the grading gate, and the feedback loops. Read this when modifying a skill,
-  an artifact template, or any phase boundary.
-contracts: []
+review-criteria:
+  - id: F-01
+    kind: validate
+    criterion: >
+      Every loopback row names a skill that exists as a directory under `canonical/skills/`.
+    severity: HIGH
+    why: >
+      These rows are the routing table an agent follows at a phase boundary, so a row naming a
+      skill that does not exist dead-ends the run rather than failing visibly here.
 ---
 
 # Pipeline Contracts
@@ -50,7 +54,6 @@ server, is documented in [integration-map.md](integration-map.md).)
 - [Conventions](#conventions)
 - [Contracts](#contracts)
 - [Invariants](#invariants)
-- [Change Log](#change-log)
 
 ---
 
@@ -92,14 +95,14 @@ Inventory" table, "§4 The Phases").
 
 | # | Phase (skill) | Consumes | Produces | Gate |
 |---|---------------|----------|----------|------|
-| — | `aid-config` (bootstrap) | user metadata (greenfield/brownfield, name, min grade) | `.aid/` scaffold · KB placeholders · context file (`CLAUDE.md`/`AGENTS.md`) · seeded `STATE.md` · `settings.yml` | none (setup) |
+| — | `aid-config` (bootstrap) | user metadata (greenfield/brownfield, name, min grade) | `.aid/` scaffold · KB placeholders · context file (`CLAUDE.md`/`AGENTS.md`) · seeded `STATE.yml` · `settings.yml` | none (setup) |
 | 1 | `aid-discover` (full path; brownfield) | repository source · `project-index.md` pre-pass · confirmed `discovery.doc_set` | the confirmed KB doc-set · `INDEX.md` · `README.md` · discovery-area `STATE.md` grade/Q&A · ELICIT E1: `## External Documentation` in `.aid/knowledge/STATE.md` (population signal into `external-sources.md`, written by Scout) · ELICIT E2: `.aid/connectors/` registry (descriptors + `INDEX.md`) | deterministic grade ≥ minimum + human approval |
 | 2a | `aid-describe` (full path only) | `.aid/knowledge/` · user answers | approved `REQUIREMENTS.md` (+ greenfield: a forward-authored KB seed in `.aid/knowledge/`) | grade ≥ minimum + human approval |
 | 2b | `aid-define` (full path only) | approved `REQUIREMENTS.md` · KB · codebase | per-feature `SPEC.md` stubs in `features/` + cross-reference Q&A | grade ≥ minimum + human approval |
 | 3 | `aid-specify` (full path only) | a feature `SPEC.md` (requirements side) · `REQUIREMENTS.md` · KB · codebase | `## Technical Specification` appended to the feature `SPEC.md` | per-section grade ≥ minimum |
-| 4 | `aid-plan` (full path only) | feature `SPEC.md` files marked `Ready` · `REQUIREMENTS.md` · KB | `PLAN.md` (ordered deliveries) + per-delivery `BLUEPRINT.md` stubs (objective/scope/gate criteria) + delivery `STATE.md` (`Pending-Spec`) | grade ≥ minimum |
+| 4 | `aid-plan` (full path only) | feature `SPEC.md` files marked `Ready` · `REQUIREMENTS.md` · KB | `PLAN.md` (ordered deliveries) + per-delivery `BLUEPRINT.md` stubs (objective/scope/gate criteria) + delivery `STATE.yml` (`Pending-Spec`) | grade ≥ minimum |
 | 5 | `aid-detail` (full path only) | `PLAN.md` · feature `SPEC.md` · `BLUEPRINT.md` · KB | per-task `DETAIL.md` files + execution graph appended to `PLAN.md` | grade ≥ minimum |
-| 6 | `aid-execute` | task `DETAIL.md` (with Type) · `PLAN.md` · feature `SPEC.md` · `BLUEPRINT.md` · `INDEX.md` · `known-issues.md` (if present) | reviewed/graded artifacts to grade ≥ minimum; results in delivery/task `STATE.md` | per-task quick-check + delivery-gate grade ≥ minimum |
+| 6 | `aid-execute` | task `DETAIL.md` (with Type) · `PLAN.md` · feature `SPEC.md` · `BLUEPRINT.md` · `INDEX.md` · `known-issues.md` (if present) | reviewed/graded artifacts to grade ≥ minimum; results in delivery/task `STATE.yml` | per-task quick-check + delivery-gate grade ≥ minimum |
 
 CONFIRMED by the per-phase deep-dives in `docs/aid-methodology.md` ("## 4. The Phases"),
 the artifact table ("Skill Inventory"), and the `aid-describe` / `aid-define`
@@ -136,64 +139,63 @@ cells are authored directly at the work root.
   knowledge/                                  # shared KB (from Discovery) — one per project
   works/
     work-NNN-{slug}/
-      STATE.md                                  # work-area run-state (DERIVED rollups + Q&A)
+      STATE.yml                                 # work-area run-state (DERIVED rollups + Q&A)
       REQUIREMENTS.md                           # full path only
       features/feature-NNN-{name}/
         SPEC.md                                 # feature definition (Define) + tech spec (Specify)
-        STATE.md                                # feature-level state
+        STATE.md                                # feature-level state (not part of this hierarchy's YAML conversion)
       PLAN.md                                   # full path only (Detail appends the execution graph)
       deliveries/delivery-NNN/
         BLUEPRINT.md                            # delivery definition (objective/scope/gate criteria/tasks)
-        STATE.md                                # delivery lifecycle + gate + delivery-scoped Q&A
+        STATE.yml                               # delivery lifecycle + gate + delivery-scoped Q&A
         tasks/task-NNN/
           DETAIL.md                             # the task definition (Type, Source, Depends on, Scope, AC)
-          STATE.md                              # mutable task cells (State, Review, Elapsed, Notes)
+          STATE.yml                             # mutable task cells (State, Review, Elapsed, Notes)
       IMPEDIMENT-task-NNN.md                     # written by Execute on an unresolved contradiction
       packages/package-NNN-{slug}.md             # written by Deploy
       DEPLOYMENT-STATE.md · MONITOR-STATE.md     # written by Deploy / Monitor
 ```
 
-**Flattened Lite path** (no `deliveries/`, no `delivery-NNN/` folder, and no per-task `STATE.md`):
+**Flattened Lite path** (no `deliveries/`, no `delivery-NNN/` folder, and no per-task `STATE.yml`):
 
 ```
 .aid/
   knowledge/                                  # shared KB (from Discovery) — one per project
   works/
     work-NNN-{slug}/
-      STATE.md                                  # work-area run-state; ALSO carries the sole
-                                                 # delivery's ## Delivery Lifecycle (with its
-                                                 # ### Tasks lifecycle table) / ## Delivery Gate /
-                                                 # ## Cross-phase Q&A (AUTHORED directly)
+      STATE.yml                                 # work-area run-state; ALSO carries the sole
+                                                 # delivery's `delivery_lifecycle` key (with its
+                                                 # `tasks_lifecycle` mapping) / `delivery_gate` key /
+                                                 # `qa` key (AUTHORED directly)
       REQUIREMENTS.md                           # shortcut engine CAPTURE
       SPEC.md                                   # single work-root feature spec (requirements + technical)
       PLAN.md                                   # single-delivery plan + execution graph
       BLUEPRINT.md                              # the sole delivery's definition, at the work root
       tasks/task-NNN/
-        DETAIL.md                               # the task definition — IMMUTABLE, no sibling STATE.md;
-                                                 # mutable cells live in STATE.md ### Tasks lifecycle
+        DETAIL.md                               # the task definition — IMMUTABLE, no sibling STATE.yml;
+                                                 # mutable cells live in STATE.yml's `tasks_lifecycle` mapping
       IMPEDIMENT-task-NNN.md                     # written by Execute on an unresolved contradiction
       packages/package-NNN-{slug}.md             # written by Deploy
       DEPLOYMENT-STATE.md · MONITOR-STATE.md     # written by Deploy / Monitor
 ```
 
-CONFIRMED: `canonical/aid/templates/work-state-template.md` (`deliveries/delivery-NNN/STATE.md`
-blocks for the full path; the AUTHORED `## Delivery Lifecycle` / `### Tasks lifecycle` /
-`## Delivery Gate` sections for the single-delivery flattened work) and
-`canonical/aid/templates/delivery-state-template.md` / `delivery-blueprint-template.md`
+CONFIRMED: `canonical/aid/templates/work-state-template.yml` (`deliveries/delivery-NNN/STATE.yml`
+blocks for the full path; the AUTHORED `delivery_lifecycle` / `tasks_lifecycle` /
+`delivery_gate` keys for the single-delivery flattened work) and
+`canonical/aid/templates/delivery-state-template.yml` / `delivery-blueprint-template.md`
 (full-path-only header notes; the flattened work authors these directly in the work-root
-STATE.md and a work-root `BLUEPRINT.md`). The `features/` folder is created by `aid-define` (2b)
+STATE.yml and a work-root `BLUEPRINT.md`). The `features/` folder is created by `aid-define` (2b)
 FEATURE-DECOMPOSITION, not by the interview half — CONFIRMED: `canonical/skills/aid-define/SKILL.md`
 ("Workspace structure", "created by FEATURE-DECOMPOSITION").
 
 The flattened Lite path omits `features/`, `deliveries/`, and `delivery-NNN/`, and creates **no
-per-task `STATE.md`**: the shortcut engine writes work-root `REQUIREMENTS.md` + `SPEC.md` +
+per-task `STATE.yml`**: the shortcut engine writes work-root `REQUIREMENTS.md` + `SPEC.md` +
 `PLAN.md` + `BLUEPRINT.md` plus one `tasks/task-NNN/DETAIL.md` per task, and each task's mutable
-cells are authored into the work-root `STATE.md § ### Tasks lifecycle` table (targeted by
+cells are authored into the work-root `STATE.yml`'s `tasks_lifecycle` mapping (targeted by
 `writeback-state.sh`'s auto-detected flat-layout branch). CONFIRMED:
 `canonical/aid/templates/shortcut-engine.md` ("emits `tasks/task-NNN/DETAIL.md` … no per-task
-`STATE.md`"); `canonical/aid/scripts/execute/writeback-state.sh` (flattened-layout `--task-id`
-targets `### Tasks lifecycle`); `docs/aid-methodology.md` ("Detail is skipped on the lite path …
-with no per-task `STATE.md`").
+`STATE.yml`"); `canonical/aid/scripts/execute/writeback-state.sh` (flattened-layout `--task-id`
+targets `tasks_lifecycle.task-NNN.<field>` in the work-root `STATE.yml`).
 
 ---
 
@@ -295,11 +297,8 @@ until the computed grade meets the project minimum. CONFIRMED: `docs/aid-methodo
 - **Grade scale:** A+ down to F, with an E band reserved for CRITICAL-severity findings.
   CONFIRMED: `.aid/settings.yml` (the `review.minimum_grade` comment listing
   `A+, A, … E+, E, E-, F`).
-- **Minimum:** `review.minimum_grade` (global default `A`), with per-skill overrides in the
-  resolver — though this project pins none and cannot: its settings are flat
-  `format_version: 3` and `lint-settings.sh` S8 rejects any top-level key the template does not
-  seed. The live global is `B-`. CONFIRMED: `.aid/settings.yml`;
-  [quality-gates.md](quality-gates.md) § Minimum-Grade Thresholds.
+- **Minimum:** `review.minimum_grade` (global default `A`), with per-skill overrides (this
+  project pins `summary.minimum_grade: A+`). CONFIRMED: `.aid/settings.yml`.
 - **Reviewer-tier invariant:** the reviewer's model tier is always ≥ the executor's; the agent
   that writes never grades its own work. CONFIRMED: `docs/aid-methodology.md` ("## 5. The Agent
   Model"). See the agent tiers in [architecture.md](architecture.md).
@@ -341,6 +340,51 @@ to Specify, `missing-dependency` to Detail, and `wrong-assumption` to a task/SPE
 CONFIRMED: `docs/aid-methodology.md` ("Loop 6"). The Monitor re-points (L9/L10) are CONFIRMED:
 `canonical/skills/aid-monitor/SKILL.md` ("bugs to /aid-fix, change requests to /aid-triage").
 
+### The `design -> create -> update` artifact lifecycle (on-demand, off the numbered pipeline)
+
+Thirty-six skills share one contract, `canonical/aid/templates/design-lifecycle.md`. They **bind**
+it rather than restating it, so the rules below live in one file and the bodies stay thin.
+
+**None of the thirty-six declares a `phase:`.** They are on-demand skills in the same shape
+`/aid-design` and `/aid-prototype` already have, so they carry no phase membership and none routes
+to `/aid-execute`. C-1's closed `phase:` enum is **not** extended by this family, and no contract
+below implies it was.
+
+| Stage | Precondition | Writes | Refuses when |
+|-------|--------------|--------|--------------|
+| `design` | none -- the shape is still open | `.aid/design/<artifact>.md`, and nothing else | -- |
+| `create` | a ready seed exists | the destination artifact; on first creation, its registration too | one of exactly three conditions, below |
+| `update` | the destination already carries committed content | the named revision only | the destination is `source: generated` |
+
+**`create` has exactly three refusal conditions and no fourth:** no seed at
+`.aid/design/<artifact>.md`; the seed's `## Open questions` still unresolved with no
+`--override-open-questions` supplied; or the destination's frontmatter reading
+`source: generated`, which means a registered build script owns that content. Whatever the
+destination already holds is **never itself** a reason to refuse -- an as-built document is the
+normal case these skills are for.
+
+**A repeat `create` never halts with nothing done.** Every part of the seed that is new is
+written; each part that would overwrite content an earlier run of the same lifecycle committed is
+named and **routed** to `update`. The seed is deleted only when everything its `## Destination`
+named was written -- otherwise it stays in place carrying just the unrealized parts, which
+`update` then consumes.
+
+**Registration happens in the creating run, never later and never by another skill.** When
+`create` creates a document it appends one `.aid/settings.yml` `knowledge.doc_set` entry
+`<file>|<owner>|required` -- the owner taken from the document's matrix row, never a blanket
+`skill-self` -- and one `.aid/knowledge/README.md` Completeness row, incrementing that file's
+doc-set count. Both use the append-block idiom and both must succeed in the same run.
+
+**Frontmatter invariants.** A document `create` creates gets `source: forward-authored` and
+`sources: []`; a document that already existed keeps its `source:` value unchanged, and `update`
+never rewrites a production mode. `approved_at_commit:` is never written and never restamped by
+either verb -- it is generator-written on approval, and these skills are not that generator.
+
+**`update` asks every run which derived outputs to update alongside the one it is writing, and
+stores the answer nowhere** -- no frontmatter backlink, no manifest, no registry, no state carried
+between runs. The question is asked afresh each time, and no tracking metadata is written into any
+output it touches.
+
 ### Greenfield forward-authoring + the conformance feedback
 
 Two design-first mechanisms extend the feedback model beyond the eleven loops:
@@ -379,12 +423,18 @@ Load-bearing keys: `project.{name,description,type}`, `tools.installed`,
 
 ## Known Issues
 
-- No open pipeline-contract drift. The former methodology-doc drift (the flat
-  `.aid/works/{work}/tasks/task-NNN.md` layout) is resolved: `docs/aid-methodology.md` now describes
-  the nested full-path `deliveries/delivery-NNN/tasks/task-NNN/DETAIL.md` shape and the flattened
-  Lite `tasks/task-NNN/DETAIL.md` (no per-task `STATE.md`) shape, matching the live skills and
-  templates.
-- The skill taxonomy is **78 skill directories** under `canonical/skills/`: 20 curated
+- The former layout-shape drift (the flat `.aid/works/{work}/tasks/task-NNN.md` layout) is
+  resolved: `docs/aid-methodology.md` describes the nested full-path
+  `deliveries/delivery-NNN/tasks/task-NNN/DETAIL.md` shape and the flattened Lite
+  `tasks/task-NNN/DETAIL.md` shape (no per-task state file on that path), matching the live
+  skills and templates. A separate, narrower drift is open: `docs/aid-methodology.md` was not
+  part of the state-file YAML conversion and still names the per-work-tree state file
+  `STATE.md` throughout; the live templates and scripts
+  (`canonical/aid/templates/work-state-template.yml` /
+  `delivery-state-template.yml` / `task-state-template.yml`,
+  `canonical/aid/scripts/execute/writeback-state.sh`) are the current source of truth and name it
+  `STATE.yml`.
+- The skill taxonomy is **75 skill directories** under `canonical/skills/`: 17 curated
   pipeline/on-demand/router skills (including `aid-read-ticket`, `aid-create-ticket`,
   `aid-update-ticket`) + the 58-row shortcut catalog's skills, every row a canonical
   name — 34 verb-first direct-entry shortcut doorways (generated from
@@ -425,12 +475,13 @@ Load-bearing keys: `project.{name,description,type}`, `tools.installed`,
   computes the letter. Any consumer of the grade depends on the deterministic mapping in
   `grading-rubric.md` — adding a severity tier or changing the dominance rule is a breaking
   change to every grading skill.
-- **State-file contract:** run-state (grades, Q&A, history, rollups) lives in the area's
-  `STATE.md`; the dashboard and `/aid-execute` read these files to track a pipeline. Artifact
-  files alone are not trackable. On the flattened Lite path there is no per-task `STATE.md` —
-  each task's cells live in the work-root `STATE.md § ### Tasks lifecycle`. Renaming or
-  restructuring `STATE.md` sections breaks the dashboard reader (see
-  [integration-map.md](integration-map.md)).
+- **State-file contract:** run-state (grades, Q&A, history, rollups) for a work/delivery/task
+  lives in that area's `STATE.yml` (the discovery/KB area's ledger is the one exception and
+  stays `STATE.md`, `kb-category: meta`); the dashboard and `/aid-execute` read these files to
+  track a pipeline. Artifact files alone are not trackable. On the flattened Lite path there is
+  no per-task `STATE.yml` — each task's cells live in the work-root `STATE.yml`'s
+  `tasks_lifecycle` mapping. Renaming or restructuring a `STATE.yml` key breaks the dashboard
+  reader (see [integration-map.md](integration-map.md)).
 - **Forward-authored marker contract:** a greenfield seed doc carries `source: forward-authored`
   in its frontmatter; this marker is what routes the doc into the `/aid-housekeep` Conformance
   Lane (code -> design, flag-not-overwrite) instead of the normal doc <- code update lane.

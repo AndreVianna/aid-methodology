@@ -1,78 +1,41 @@
+---
+review-criteria:
+  - id: F-01
+    kind: validate
+    criterion: >
+      The five severity levels are defined in this file and nowhere else; every other surface
+      cites this one.
+    severity: MEDIUM
+    why: >
+      A second definition drifts from the one the grade is computed against, and the copy is
+      what a reviewer reads. Three had already diverged before they were reconciled here.
+---
+
 # Grading Rubric — Universal
 
 Applies to all AID phases. Grade is **deterministic** — calculated from issue count and severity. The reviewer classifies issues; the grade follows automatically.
 
-<!-- AID:SEVERITY-SCALE:BEGIN -->
-## Severity Scale
+## Issue Severities
 
-**This is the single definition of severity in AID.** Every other document that needs one
-points here; none restates it. The five bracketed tokens are unchanged — only their meanings
-are, which is what keeps `grade.sh` and every existing ledger valid.
+**This table is the single definition of the five levels.** Every other surface — the
+`aid-reviewer` agent, the ledger schema, each skill's reviewer brief — **cites** it and
+must not restate it. Three independent definitions existed before and had already drifted
+apart; a second copy is a defect, not a convenience, because the copy is what a reviewer
+reads while the grade is computed from this one.
 
-Severity is **looked up, never felt.** It is a property of the rule that was violated and of
-where the artifact sits — not of the reviewer's confidence, effort, or opinion. Two reviewers
-with the same finding and the same rule must reach the same severity. If they do not, the rule
-is underspecified; raise that instead.
+| Severity | Meaning |
+|----------|---------|
+| **Minor** | Cosmetic, style, trivial improvement. Does not affect functionality. |
+| **Low** | Minor convention deviation, could be better but works correctly. |
+| **Medium** | Incorrect behavior (non-critical), missing edge case, incomplete coverage. |
+| **High** | Blocks functionality, security risk, data integrity concern. |
+| **Critical** | System failure, data loss, security breach, fundamentally wrong approach. |
 
-Assignment is two steps. Neither is a judgment call.
-
-**Step 1 — the violated rule's modality sets the band.**
-
-Every criterion comes from exactly one of two sources: the Knowledge Base, or the work's own
-specification documents (REQUIREMENTS, SPEC, BLUEPRINT, DETAIL). Each carries an explicit
-modality.
-
-| Modality of the violated rule | Severity |
-|---|---|
-| **MUST** | Continue to Step 2 — one of `[CRITICAL]`, `[HIGH]`, `[MEDIUM]` |
-| **SHOULD** | `[LOW]`, or `[MEDIUM]` when the blast radius has escaped |
-| **COULD** | `[MINOR]` |
-
-**Step 2 — blast radius and reversibility select within the MUST band.**
-
-| | Correction is **local** — editing this artifact restores correctness, and nothing that already consumed it must change | Correction is **non-local** — restoring correctness requires redoing, discarding, or migrating work that already consumed this artifact |
-|---|---|---|
-| **Blast radius confined** — nothing downstream depends on the defective element yet | `[MEDIUM]` | `[HIGH]` |
-| **Blast radius escaped** — at least one downstream artifact, execution, or stored state already depends on it | `[HIGH]` | `[CRITICAL]` |
-
-**The two axes, defined.**
-
-- **Blast radius** — the set of things whose correctness depends on the defective element.
-  *Confined* means only a reader of this artifact is affected. *Escaped* means at least one
-  downstream artifact, execution, release, or stored state already rests on it. This is a fact
-  about the dependency graph at review time, and it is checkable: **name the dependent, or the
-  radius is confined.**
-- **Reversibility** — what correcting the defect requires. *Local* means editing this artifact
-  restores correctness and nothing else must change. *Non-local* means correction requires
-  undoing work: re-running a consumer and discarding its output, migrating data, amending a
-  published artifact, or reversing an effect outside this repository. This is a fact about what
-  the correction requires, **not about how long it would take**.
-
-**The five bands in plain terms.**
-
-| Token | Meaning |
-|---|---|
-| `[CRITICAL]` | A MUST is violated, the defect has already escaped into things built on this artifact, and correcting it means undoing that downstream work. |
-| `[HIGH]` | A MUST is violated, and either it has escaped into a dependent (correctable locally) or it is still confined but correcting it forces downstream rework. |
-| `[MEDIUM]` | A MUST is violated, still confined, and a local edit fully corrects it. Also: a violated SHOULD whose effect has escaped into a dependent. |
-| `[LOW]` | A SHOULD is violated. A consumer still reaches the right outcome but pays a cost — looking elsewhere, inferring a detail, working around. |
-| `[MINOR]` | A COULD is violated. No consumer's outcome or cost changes. |
-
-**Three rules that hold in every band.**
-
-1. **No evidence, no finding.** A finding must cite the disk truth that contradicts the
-   artifact's claim, or the command that produces it. A finding that cannot be evidenced is
-   **inadmissible** — not recorded at a lower severity, not recorded at all.
-2. **Confidence never modifies severity.** Uncertainty about whether a rule applies is a
-   question for the user, not a reason to soften a band.
-3. **No criterion, no finding.** If no rule in the Knowledge Base or the work's specification
-   documents speaks to the concern, you have found a gap in the criteria, not a defect in the
-   artifact. Report the gap. Do not invent the rule, and do not substitute general practice for
-   it.
-
-`F` remains outside this scale. It is not a severity but a whole-artifact verdict — does not
-build, does not run, produces no usable output — set via `grade.sh --non-functional`.
-<!-- AID:SEVERITY-SCALE:END -->
+**What a specific criterion costs is declared elsewhere, and that is not a second
+definition.** A criterion in a project's criteria table (`.aid/knowledge/authoring-conventions.md`)
+carries the `severity:` a violation of *that* criterion is worth — it **prices** a criterion
+against this scale. This document owns the scale and the letter grade; the criteria table owns
+which level each criterion draws from it.
 
 ## Issue Tagging Convention
 

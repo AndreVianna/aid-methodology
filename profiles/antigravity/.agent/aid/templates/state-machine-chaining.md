@@ -1,18 +1,9 @@
 ---
 kb-category: meta
 source: hand-authored
-intent: |
-  Defines the auto-chain rule that all AID skills follow when their state machines
-  advance. Each AID skill (`/aid-discover`, `/aid-summarize`, etc.) is internally
-  organized as a state machine — states are useful conceptual phases — but a single
-  invocation of the skill drives through as many states as it can until it hits a
-  natural pause point. Without this rule, every state boundary forces a re-invocation,
-  which becomes red tape on happy-path runs (e.g., 5+ `/aid-summarize` invocations
-  to take a fresh KB through PREFLIGHT → DONE). This doc is the single source the
-  per-skill SKILL.md files cite.
-contracts: []
-changelog:
-  - 2026-05-28: Initial — codifies the chain-when-possible rule across all skills
+objective: Defines the auto-chain rule that all AID skills follow when their state machines advance.
+summary: One invocation drives through as many states as it can until a natural pause point, so a state boundary never forces a re-invocation on a happy-path run; the per-skill SKILL.md files cite this doc rather than restating the rule.
+review-criteria: []
 ---
 
 # State Machine Chaining Rule

@@ -1,23 +1,21 @@
 ---
 name: aid-summarize
 description: >
-  Generate a single-file kb.html from .aid/knowledge/. Domain-driven, doc-set-based:
-  one section per resolved doc derived from frontmatter (kb-category, objective, summary,
-  tags, see_also). Audience: non-technical newcomer (visually rich; no KB authoring-rules
-  leakage). Light/dark theme, click-to-expand lightbox, accessibility-first (WCAG AA).
-  One grading backend: script-verifiable checks and an interactive human checklist (KB
-  completeness, fact-grounding, V1 mandatory human visual check) both write findings to the
-  review ledger, and grade.sh derives the single letter from it. APPROVAL requires that grade
-  >= minimum AND the checklist to have been completed; an unanswered checklist produces no
-  grade at all and pauses for the human.
-  Idempotent: re-running on an unchanged KB does nothing. State-machine: PREFLIGHT ->
-  STALE-CHECK -> PROFILE -> GENERATE -> VALIDATE -> MANUAL-CHECKLIST -> FIX -> APPROVAL ->
-  WRITEBACK -> DONE.
+  Generate kb.html, a single-file visual tour of the Knowledge Base. Use this skill when
+  someone non-technical needs to read what the project knows about itself -- a newcomer, a
+  stakeholder, anyone who will not open `.aid/knowledge/` directly. It builds one section
+  per resolved document from that document's own frontmatter, in a light/dark themed page
+  with click-to-expand images and WCAG AA accessibility. Two grades gate approval: script-
+  verifiable checks score the machine grade, and an interactive checklist scores the human
+  grade, including a mandatory visual review. Idempotent -- re-running on an unchanged
+  Knowledge Base does nothing.
 allowed-tools: Read, Glob, Grep, Terminal, Write, Edit
 argument-hint: "[--grade X] override minimum  [--theme default|brand-X]  [--reset]"
 ---
 
 # Knowledge Base Visual Summary
+
+State machine: PREFLIGHT -> STALE-CHECK -> PROFILE -> GENERATE -> VALIDATE -> MANUAL-CHECKLIST -> FIX -> APPROVAL -> WRITEBACK -> DONE.
 
 Generates a single self-contained `kb.html` from a populated and approved
 `.aid/knowledge/` Knowledge Base. The output is a **newcomer-facing product** — visually
@@ -98,16 +96,13 @@ The state-detection logic determines which mode this run executes:
 
 5. After GENERATE → VALIDATE.
 
-6. After VALIDATE (script-only checks → findings → grade.sh):
-   - grade < minimum → FIX (loops back to VALIDATE).
-   - grade >= minimum → MANUAL-CHECKLIST.
+6. After VALIDATE (script-only checks → Machine Grade):
+   - Machine Grade < minimum → FIX (loops back to VALIDATE).
+   - Machine Grade >= minimum → MANUAL-CHECKLIST.
 
-7. After MANUAL-CHECKLIST (human-judgment answers → findings → grade.sh):
-   - checklist not completed → **PAUSE-FOR-USER-ACTION**: print the `manual-checklist.sh` command
-     and exit. No grade is produced. **Not HALT** — HALT is terminal, and this is the one outcome
-     designed to be resumed (`references/state-manual-checklist.md`).
-   - grade < minimum → FIX (loops back to VALIDATE).
-   - grade >= minimum → APPROVAL.
+7. After MANUAL-CHECKLIST (interactive K1/K2/V1 checks → Human Grade):
+   - Human Grade < minimum → FIX (loops back to VALIDATE).
+   - Human Grade >= minimum AND Machine Grade >= minimum → APPROVAL.
 
 8. After APPROVAL:
    - User says yes → WRITEBACK → DONE.
@@ -115,13 +110,7 @@ The state-detection logic determines which mode this run executes:
    - User says changes-needed → record + transition to FIX.
 ```
 
-**One grading backend.** Machine checks and human-judgment answers both produce **findings** in the review ledger, and `grade.sh` derives the single letter from it — the same path every other AID artifact takes. Neither half computes a grade of its own, and there is nothing to combine.
-
-The checks are unchanged in substance. Coverage emits one `SUMMARY-01` finding per KB document the summary does not represent, naming it, instead of scoring a coverage percentage against a 60% cliff. T1/T2/T3 are the S7 visual-fidelity checks (`validate-visuals.mjs`, Playwright-based) asserting readable text, minimal overlap and correct layout for every authored visual; `SUMMARY-07` asserts the retired Mermaid engine is absent (`validate-html-output.sh`).
-
-**The human visual check is mandatory and no agent may answer it.** When Playwright is unavailable, T1/T2/T3 skip and it carries the full visual-review responsibility — browser rendering, not source inspection. **If the checklist has not been completed, the outcome is no grade at all — pause and ask (PAUSE-FOR-USER-ACTION, not HALT).** Reporting a failing grade for a check nobody performed asserts a result that was never observed.
-
-See `review-rubrics/summary.md` for the rules and `knowledge-summary/grading-rubric.md` for the check definitions and why the two-grade model was retired.
+**Two-grade model:** the rubric is split into machine-verifiable checks (the AUTO_POOL — COV/T1/T2/T3/L1/L2/H1/A1/A2/A3/A4/A5/C1/C2/S2/NM = 68 pts) and human-judgment checks (the MANUAL_POOL — K1/K2/V1 = 30 pts). COV is the resolved-doc-set coverage check (doc-set completeness gate: < 60% coverage forces Machine Grade F). T1/T2/T3 are the S7 visual-fidelity checks (`validate-visuals.mjs`, Playwright-based) that replace the retired Mermaid D1/D2 checks; they assert readable text, minimal overlap, and correct layout for every authored visual. NM is the no-Mermaid-engine assertion (`validate-html-output.sh`). The script can NEVER auto-pass MANUAL_POOL; the user must run `manual-checklist.sh` and answer the prompts honestly. **V1 (human visual gate) is mandatory — a V1 fail forces Human Grade = F.** When Playwright is unavailable, T1/T2/T3 skip with a SKIP message and V1 carries the full visual-review responsibility (browser rendering required, not source inspection). Overall Grade = `min(Machine_letter, Human_letter)`. A+ requires both Machine and Human grades to be A+ on their respective subsets. See `grading-rubric.md` for the per-subset boundaries.
 
 Print the state-entry line and "you are here" map at the start of each mode:
 
@@ -155,14 +144,14 @@ aid-summarize  ▸ you are here
 
 **VALIDATE:**
 ```
-[State: VALIDATE] — Running machine-verifiable quality checks (coverage, links, HTML, accessibility, contrast).
+[State: VALIDATE] — Running machine-verifiable quality checks (visual fidelity, links, HTML, contrast).
 aid-summarize  ▸ you are here
   [✓ PREFLIGHT ] → [✓ STALE-CHECK ] → [✓ PROFILE ] → [✓ GENERATE ] → [● VALIDATE ] → [ APPROVAL ] → [ DONE ]
 ```
 
 **APPROVAL:**
 ```
-[State: APPROVAL] — Grade meets minimum and the checklist is recorded; awaiting user approval.
+[State: APPROVAL] — Both Machine and Human grades meet minimum; awaiting user approval.
 aid-summarize  ▸ you are here
   [✓ PREFLIGHT ] → [✓ STALE-CHECK ] → [✓ PROFILE ] → [✓ GENERATE ] → [✓ VALIDATE ] → [● APPROVAL ] → [ DONE ]
 ```
@@ -210,24 +199,21 @@ When a state completes, route by its `**Advance:**` type (per [`state-machine-ch
 
 ## Quality Gate
 
-The VALIDATE state runs the script-verifiable checks and emits findings before
+The VALIDATE state runs script-verifiable checks (the Machine Grade AUTO_POOL) before
 human review. This includes:
 
 - **S7 visual-fidelity gate** (`validate-visuals.mjs`) — Playwright-renders every authored
   visual (inline `<svg>`, `.diagram-box`, infographic containers) and asserts: text readable
-  (T1), minimal/zero element overlap (T2), correct basic layout (T3). A failing visual is a
-  `SUMMARY-06` finding at `[HIGH]` and blocks approval. **This validator is not invoked by
-  `emit-summary-findings.sh`** — it never has been, including by the `grade-summary.sh` it
-  replaced — so run it by hand until it is wired (`references/state-validate.md` carries the
-  detail). Either way the MANUAL-CHECKLIST human visual check is **mandatory** and is the live
-  safeguard: browser-rendered inspection is required, and HTML/CSS source inspection is not
-  sufficient.
+  (T1), minimal/zero element overlap (T2), correct basic layout (T3). Replaces the retired
+  Mermaid D1/D2 diagram check. A failing visual blocks DONE. When Playwright is unavailable,
+  the MANUAL-CHECKLIST V1 human visual gate is mandatory (browser-rendered inspection required;
+  HTML/CSS source inspection is not sufficient).
 - **HTML self-containment + no-Mermaid-engine assertion** (NM check in `validate-html-output.sh`)
   — confirms the Mermaid runtime engine is absent from the output (D-012 guardrail).
 - **Accessibility baseline** (A1/A2/A3/A4/A5), **link correctness** (L1/L2), **HTML validity** (H1),
   and **contrast** (C1/C2, via `contrast-check.mjs`).
 
-See `.cursor/aid/templates/knowledge-summary/grading-rubric.md` for the per-check definitions and pass criteria. It defines no grade and carries no ladder -- the letter comes from `grade.sh` over the ledger, per `.cursor/aid/templates/grading-rubric.md`, AID's single grading rubric.
+See `.cursor/aid/templates/knowledge-summary/grading-rubric.md` for the complete rubric and grade boundaries.
 
 ---
 
@@ -237,13 +223,13 @@ See `.cursor/aid/templates/knowledge-summary/grading-rubric.md` for the per-chec
 - `.cursor/aid/templates/knowledge-summary/design-tokens.md` — color palette, typography, spacing
 - `.cursor/aid/templates/knowledge-summary/component-css.css` — full reusable CSS (inlined)
 - `.cursor/aid/templates/knowledge-summary/lightbox.js` — full reusable JS (theme, lightbox, scrollspy, a11y)
-- `.cursor/aid/scripts/summarize/validate-visuals.mjs` — §7 visual-fidelity gate (Playwright-based): T1 readable text, T2 minimal overlap, T3 correct layout for every authored visual (inline `<svg>`, `.diagram-box`, infographic container). **Not invoked by `emit-summary-findings.sh`** — run it by hand; see `references/state-validate.md`
+- `.cursor/aid/scripts/summarize/validate-visuals.mjs` — §7 visual-fidelity gate (Playwright-based): T1 readable text, T2 minimal overlap, T3 correct layout for every authored visual (inline `<svg>`, `.diagram-box`, infographic container)
 - `.cursor/aid/templates/knowledge-summary/section-templates/` — `kb-category`-keyed rendering hints (retired as project-type profile selectors)
 - `.cursor/aid/templates/knowledge-summary/accessibility-checklist.md` — WCAG AA targets, focus trap pattern
-- `.cursor/aid/templates/knowledge-summary/grading-rubric.md` — the per-check definitions and pass criteria the `SUMMARY-*` rules cite. Defines no grade; `grade.sh` does that from the ledger
+- `.cursor/aid/templates/knowledge-summary/grading-rubric.md` — two-grade rubric (Machine + Human), completeness-based grading
 - `.cursor/aid/templates/knowledge-summary/html-skeleton.html` — doctype, head, semantic landmarks, noscript (with `{{NOSCRIPT_DOC_LIST}}` placeholder for derived doc list)
-- `.cursor/aid/scripts/summarize/emit-summary-findings.sh` — orchestrates the machine checks and writes a ledger row per failure, citing the rule it breaks. It computes no grade; `grade.sh` does, from the ledger
-- `.cursor/aid/scripts/summarize/manual-checklist.sh` — records the human-judgment answers (`--input PATH` headless mode; `--interactive` for raw-terminal use). It records; it does not score
+- `.cursor/aid/scripts/summarize/grade-summary.sh` — orchestrates AUTO_POOL checks, reads `.aid/.temp/summarize/manual-checklist.json` for MANUAL_POOL, prints Machine + Human + Overall grades
+- `.cursor/aid/scripts/summarize/manual-checklist.sh` — validates / scores the MANUAL_POOL result file (`--input PATH` headless mode; `--interactive` for raw-terminal use)
 - `.cursor/aid/scripts/summarize/spot-check-facts.sh` — extracts HTML claims, grep-matches against source KB, writes `.aid/.temp/summarize/spot-check-facts.txt` (aids the user's K2 judgment)
 
 ---

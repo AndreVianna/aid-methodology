@@ -1,6 +1,6 @@
 ---
 title: 'aid-set-connector'
-description: 'On-demand, off-pipeline upsert into the connector catalog.'
+description: 'Add or update one entry in the connector catalog.'
 generatedFrom: 'canonical/skills/aid-set-connector/SKILL.md'
 ---
 
@@ -9,7 +9,7 @@ generatedFrom: 'canonical/skills/aid-set-connector/SKILL.md'
 ## Frontmatter
 
 - **`name`** — aid-set-connector
-- **`description`** — On-demand, off-pipeline upsert into the connector catalog. `aid-set-connector <tool> <type>` creates `.aid/connectors/<stem>.md` when the stem is absent, or updates that SAME descriptor in place when present (including an in-place connection_type transition) -- never invokes /aid-discover. Branches on &lt;type> (mcp|api|ssh|cli) to ask the matching config question-set, prefilled from canonical/aid/templates/connectors/preset-catalog.md when &lt;tool> matches a preset; the user confirms or edits. Reconciles the secret (connector-secret write/purge) per set-skill logic and runs reconcile.md's single-stem mode, so every OTHER catalogued connector is left byte-for-byte untouched.
+- **`description`** — Add or update one entry in the connector catalog. Use this skill when a project gains a new external tool, or an existing connector's configuration changes, and you do not want to re-run discovery for it. Naming a tool and a type creates its descriptor when absent, or updates that same descriptor in place when present, including a change of connection type. It asks the question set matching the type (mcp, api, ssh or cli), prefilled from the preset catalog when the tool is a known preset, and you confirm or edit. It reconciles that connector's secret and touches only that one stem: every other catalogued connector is left byte-for-byte untouched. It never invokes `/aid-discover`.
 - **`allowed-tools`** — Read, Glob, Grep, Bash, Write, Edit, AskUserQuestion
 - **`argument-hint`** — &lt;tool> &lt;type> [--rotate-secret]  -- e.g. aid-set-connector Jira mcp   (type: mcp|api|ssh|cli)
 

@@ -30,3 +30,44 @@ or otherwise write to `STOP_FILE` yourself; only `write-control-signal.sh`
 does. If no `STOP_FILE` was passed, do nothing. See
 `.cursor/aid/templates/subagent-heartbeat-protocol.md` §Cooperative
 stop-poll for the full contract.
+
+## Self-review discipline
+
+Before declaring any work complete, adversarially review your own output. The
+downstream reviewer is verification, not discovery — if a reviewer surfaces an
+issue you should have caught, that is a self-review gap.
+
+1. **Read contracts end-to-end before editing.** Understand every transform
+   (schema, parser, renderer, build step, validator) that touches what you
+   produce. Do not edit by pattern-match.
+2. **Enumerate the class, not the instance.** Grep for every shape of the
+   change; address every instance. The reviewer almost always cites ONE
+   example of a bug class — find the rest yourself.
+3. **Read what you actually produced.** Read the artifact consumers will see
+   (not just the source you wrote). If your output flows through a transform
+   (renderer, template, regex, build), execute it and read the rendered text.
+   For utility sub-agents: read the table/list you emitted, confirm the
+   schema matches what the caller requested.
+4. **Confirm the contracts you participate in.** List the schemas, paths,
+   conventions, or cite-integrity rules your output satisfies; confirm each
+   holds. Inventories beat memory.
+5. **Find nothing more to find before handing off.** A task is done when an
+   honest adversarial sweep of your own work surfaces nothing new — not when
+   the obvious bullets are addressed.
+6. **Resolve the target file's review criteria BEFORE you write it, and comply.**
+   Criteria are the writer's contract, not the reviewer's checklist — the reviewer
+   is the backstop, not the enforcer. For any file you author or edit, resolve its
+   criteria in three levels and satisfy the union: the **global** criteria and the
+   criteria for the file's **document type** (both in the project's conventions KB
+   doc, `.aid/knowledge/authoring-conventions.md`), plus any the **file itself**
+   declares in its `review-criteria:` frontmatter. On a collision the most specific
+   wins — file over type over global. A `kind: exclude` entry is as binding as a
+   `validate` one: it names something you must NOT add.
+7. **If you introduce or retire a document type, the KB owes a registry row.**
+   Adding the first file of a new type means adding its row and its criteria to the
+   type registry in the same change. Removing the **last** file of a type means
+   removing its row. Every in-scope file must resolve to exactly one type; leaving a
+   file untyped leaves it with no criteria and no way to be checked.
+
+Apply regardless of task size. See `.cursor/aid/templates/self-review-protocol.md`
+for the full protocol.

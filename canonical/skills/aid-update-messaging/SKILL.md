@@ -1,12 +1,11 @@
 ---
 name: aid-update-messaging
 description: >
-  Direct-entry Lite-path shortcut (Update an existing message/event schema or its emission.) -- skips the aid-describe
-  interview/triage. Binds VERB=`update` ARTIFACT=`messaging` and runs the shared
-  shortcut engine, producing a fully-graded flattened Lite work that halts for
-  approval.
-  State machine: delegated to canonical/aid/templates/shortcut-engine.md
-  (INTAKE -> CAPTURE -> SPEC -> PLAN -> DETAIL -> GATE -> APPROVAL-HALT).
+  Update an existing message/event schema or its emission. Use this skill when you already
+  know what to update and want it scoped, specified, and broken into reviewable tasks in a
+  single pass, with no requirements interview. You approve the resulting plan before
+  anything is built: this skill plans and stops, so run `/aid-execute` to carry the plan
+  out.
 allowed-tools: Read, Glob, Grep, Bash, Write, Edit, Agent
 argument-hint: "[description]  -- what to update; runs straight to a graded flattened Lite work"
 ---

@@ -1,17 +1,14 @@
 ---
 name: aid-create-ticket
 description: >
-  On-demand utility skill that files one new ticket via whatever issue-tracker connector the
-  project has registered, or the host tool's own tracker MCP when none is catalogued. Parses
-  `--connector <stem>`, `--level epic|story|task`, and `--parent <ref>` flags in any order ahead
-  of a free-text `<description>` (create has no leading-token connector heuristic), resolves the
-  connector via the shared ladder, composes the new-ticket payload (fixing level and parent by
-  precedence, defaulting neither silently), resolves the canonical tier to the tracker's concrete
-  issue-type at runtime via a non-destructive read (graceful degradation when the tracker has no
-  matching type), previews the exact payload, and gates on one in-run AskUserQuestion confirm --
-  which also carries the epic|story|task pick when the level is neither explicit nor inferable --
-  before filing. Returns the new `<connector-stem>:<external-id>` only after the user confirms;
-  nothing is filed, and no local file is ever written, before that.
+  File one new ticket in the project's issue tracker. Use this skill when work needs
+  recording where the team tracks it, rather than only inside AID. Describe the ticket in
+  free text; flags let you name the connector, the level (epic, story or task) and a parent.
+  It resolves which tracker to use, composes the payload, maps the level to that tracker's
+  own issue type, and shows you the exact payload before anything is filed. One confirmation
+  gates the write, and carries the level choice when you did not give one. It returns the
+  new ticket's id only after you confirm; nothing is filed, and no local file is written,
+  before that.
 allowed-tools: Read, Glob, Grep, AskUserQuestion
 argument-hint: "[--connector <stem>] [--level epic|story|task] [--parent <ref>] <description>"
 ---
@@ -32,7 +29,7 @@ never restates any of that — each state below points to the relevant section i
 
 **Absent from the mandatory pipeline flow.** Like `/aid-ask` and `/aid-set-connector`, this is
 an optional, on-demand utility skill outside the Discover-Execute flow: no phase gate references
-it, no `shortcut-catalog.yml` entry, no `work-NNN` scaffold, no `STATE.md` of its own — invoked
+it, no `shortcut-catalog.yml` entry, no `work-NNN` scaffold, no `STATE.yml` of its own — invoked
 directly by name.
 
 **State-machine chaining:** each `/aid-create-ticket` invocation drives the state machine —

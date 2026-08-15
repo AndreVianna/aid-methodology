@@ -76,7 +76,7 @@ $script:_SeededSettings  = $false
 $script:_GitignoreAction = 'unchanged'
 # Settings format stamp. MUST equal bin/aid AID_SUPPORTED_FORMAT / bin/aid.ps1
 # AidSupportedFormat. Used to stamp a seeded settings.yml so the format gate is quiet.
-$script:_AidSupportedFormat = 3  # format 2: .aid/dashboard/ eliminated (home from CLI, kb.html in .aid/knowledge/)
+$script:_AidSupportedFormat = 4  # format 2: .aid/dashboard/ eliminated (home from CLI, kb.html in .aid/knowledge/)
 
 # ---------------------------------------------------------------------------
 # Constants

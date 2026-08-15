@@ -112,7 +112,7 @@ intent: |
   Aggregated numeric facts (T3 Metric tier per canonical/aid/templates/kb-authoring/tier-model.md):
   line counts, file counts, term counts, severity tallies. Other KB docs reference this
   file instead of inlining the numbers. Regenerated on every /aid-discover cycle.
-contracts: []
+review-criteria: []
 changelog:
   - $(date -u +%Y-%m-%d): Generated
 ---

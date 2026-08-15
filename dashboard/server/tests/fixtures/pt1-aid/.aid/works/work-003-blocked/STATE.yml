@@ -1,0 +1,8 @@
+# Work State -- work-003-blocked (work-009-refactor task-016: was STATE.md)
+lifecycle: Blocked
+phase: Execute
+active_skill: aid-execute
+updated: '2026-06-08T15:00:00Z'
+pause_reason: --
+block_reason: Task 005 reviewer found critical issue
+block_artifact: IMPEDIMENT-task-005.md

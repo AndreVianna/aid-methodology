@@ -1,6 +1,6 @@
 ---
 title: 'aid-detail'
-description: 'Break deliverables into small, dependency-driven, typed tasks — each one a reviewable unit.'
+description: 'Break deliverables into small, dependency-driven, typed tasks -- each one a reviewable unit.'
 generatedFrom: 'canonical/skills/aid-detail/SKILL.md'
 ---
 
@@ -9,7 +9,7 @@ generatedFrom: 'canonical/skills/aid-detail/SKILL.md'
 ## Frontmatter
 
 - **`name`** — aid-detail
-- **`description`** — Break deliverables into small, dependency-driven, typed tasks — each one a reviewable unit. The ultimate breakdown. Detects task types (RESEARCH, DESIGN, IMPLEMENT, TEST, DOCUMENT, MIGRATE, REFACTOR, CONFIGURE) from SPEC signals. One type per task. Builds execution graph per delivery with explicit dependencies and parallelism. State machine: FIRST-RUN → REVIEW → DONE.
+- **`description`** — Break deliverables into small, dependency-driven, typed tasks -- each one a reviewable unit. The ultimate breakdown. Use this skill when a delivery has been planned and the actual work items are needed before execution starts. It detects each task's type from the SPEC's own signals -- RESEARCH, DESIGN, IMPLEMENT, TEST, DOCUMENT, MIGRATE, REFACTOR, CONFIGURE -- gives every task exactly one type, and builds the delivery's execution graph with explicit dependencies and the parallelism they allow.
 - **`allowed-tools`** — Read, Glob, Grep, Write, Edit, Bash
 - **`argument-hint`** — work-001 (required if multiple works)  [--reset] clear deliveries/delivery-NNN/tasks/
 
@@ -43,24 +43,24 @@ Every node in the chart above, in chart order, with the exact `canonical/` text 
 
 <a id="fragment-n1"></a>**1 · `FIRST-RUN`** — No task files exist yet. · _entry_
 
-~~~~plaintext title="canonical/skills/aid-detail/SKILL.md#L85" wrap
+~~~~plaintext title="canonical/skills/aid-detail/SKILL.md#L86" wrap
 | FIRST-RUN | `references/first-run.md` | `aid-architect` | `→ REVIEW` |
 ~~~~
 
-[Source: `canonical/skills/aid-detail/SKILL.md#L85`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-detail/SKILL.md#L85) · [full step: `canonical/skills/aid-detail/references/first-run.md#L1-L144`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-detail/references/first-run.md#L1-L144)
+[Source: `canonical/skills/aid-detail/SKILL.md#L86`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-detail/SKILL.md#L86) · [full step: `canonical/skills/aid-detail/references/first-run.md#L1-L152`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-detail/references/first-run.md#L1-L152)
 
 <a id="fragment-n2"></a>**2 · `REVIEW`** — Existing task files found; re-review against current… · _step_
 
-~~~~plaintext title="canonical/skills/aid-detail/SKILL.md#L86" wrap
+~~~~plaintext title="canonical/skills/aid-detail/SKILL.md#L87" wrap
 | REVIEW | `references/review.md` | `aid-reviewer` | `→ DONE` |
 ~~~~
 
-[Source: `canonical/skills/aid-detail/SKILL.md#L86`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-detail/SKILL.md#L86) · [full step: `canonical/skills/aid-detail/references/review.md#L1-L66`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-detail/references/review.md#L1-L66)
+[Source: `canonical/skills/aid-detail/SKILL.md#L87`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-detail/SKILL.md#L87) · [full step: `canonical/skills/aid-detail/references/review.md#L1-L75`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-detail/references/review.md#L1-L75)
 
 <a id="fragment-n3"></a>**3 · `DONE`** · _exit_ · HALT
 
-~~~~plaintext title="canonical/skills/aid-detail/SKILL.md#L87" wrap
+~~~~plaintext title="canonical/skills/aid-detail/SKILL.md#L88" wrap
 | DONE | — | `inline` | `→ halt` |
 ~~~~
 
-[Source: `canonical/skills/aid-detail/SKILL.md#L87`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-detail/SKILL.md#L87)
+[Source: `canonical/skills/aid-detail/SKILL.md#L88`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-detail/SKILL.md#L88)

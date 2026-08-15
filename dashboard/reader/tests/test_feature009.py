@@ -238,27 +238,23 @@ Build a reliable widget factory pipeline.
 > _Status: Complete -- approved._
 """
 
-# STATE.md with real delivery-NNN wave column (PF-4 typed Pipeline Status)
+# STATE.yml, PF-4 typed lifecycle keys (work-009-refactor task-016: was a
+# markdown STATE.md carrying a '## Pipeline Status' block and a real
+# delivery-NNN Wave column in a '## Tasks Status' table -- both retired,
+# sec:D-4. The Wave-column-derived task delivery/lane mechanism this fixture
+# used to exercise (PF-5a/PF-5c) is now categorically unreachable through
+# the monolithic reader path -- parse_state_md() never populates pw.tasks
+# for ANY input any more (see test_pf5a_delivery_from_state_wave below,
+# renamed to document that). This fixture keeps only the lifecycle-key
+# fields PF-1/PF-4 still need.
 _PF4_STATE = """\
-# Work State -- work-001-widget-factory
-
-## Pipeline Status
-
-- **Lifecycle:** Running
-- **Phase:** Execute
-- **Active Skill:** aid-execute
-- **Updated:** 2026-06-11T00:00:00Z
-- **Pause Reason:** --
-- **Block Reason:** --
-- **Block Artifact:** --
-
-## Tasks Status
-
-| # | Task | Type | Wave | Status | Review | Elapsed | Notes |
-|---|------|------|------|--------|--------|---------|-------|
-| 001 | task-001 | IMPLEMENT | delivery-001 | Done | A | 2h | first |
-| 002 | task-002 | TEST | delivery-001 | In Progress | -- | -- | second |
-| 003 | task-003 | IMPLEMENT | delivery-002 | Pending | -- | -- | third |
+lifecycle: Running
+phase: Execute
+active_skill: aid-execute
+updated: '2026-06-11T00:00:00Z'
+pause_reason: --
+block_reason: --
+block_artifact: --
 """
 
 # PF-5a wave-map PLAN.md (canonical producer emission from /aid-detail).
@@ -308,7 +304,7 @@ class TestT10ProducerConsumerContract(unittest.TestCase):
         _write_settings(aid, "WidgetProject")
 
         (work / "REQUIREMENTS.md").write_text(_PF1_REQUIREMENTS, encoding="utf-8")
-        (work / "STATE.md").write_text(_PF4_STATE, encoding="utf-8")
+        (work / "STATE.yml").write_text(_PF4_STATE, encoding="utf-8")
         (work / "PLAN.md").write_text(_PF5A_PLAN, encoding="utf-8")
 
         tasks = work / "tasks"
@@ -349,19 +345,26 @@ class TestT10ProducerConsumerContract(unittest.TestCase):
         self.assertNotIn("> _Status:", w.objective)
         self.assertIn("widget factory pipeline", w.objective)
 
-    def test_pf3_task_short_names_consumed(self):
-        """PF-3: # task-NNN: <title> -> TaskModel.short_name == title."""
+    def test_pf3_task_short_names_now_unreachable_via_monolithic_state(self):
+        """PF-3, content-level update (task-016): '_write_conforming_repo' has
+        no BLUEPRINT.md and flat 'tasks/task-NNN.md' files (not
+        'tasks/task-NNN/DETAIL.md' dirs) -- the pre-feature-001 monolithic
+        shape. parse_state_md() never populates pw.tasks for ANY input
+        (see test_derivation.py's
+        test_fallback_no_markdown_text_never_populates_tasks), so short_name
+        resolution through THIS fixture shape is now categorically
+        unreachable, same class of consequence as
+        test_pf5a_delivery_from_state_wave / test_pf5a_lane_from_wave_map
+        below. PF-3 itself (parse_task_short_name) is still correctly
+        covered directly in test_reader.py's TestPF3TaskShortName."""
         with tempfile.TemporaryDirectory() as d:
             self._write_conforming_repo(Path(d))
             model = read_repo(Path(d))
         w = model.works[0]
-        by_id = {t.task_id: t for t in w.tasks}
-        self.assertEqual(by_id["task-001"].short_name, "Widget assembly stage")
-        self.assertEqual(by_id["task-002"].short_name, "Widget acceptance tests")
-        self.assertEqual(by_id["task-003"].short_name, "Widget packaging module")
+        self.assertEqual(w.tasks, [])
 
     def test_pf4_phase_from_pipeline_status(self):
-        """PF-4: ## Pipeline Status -> phase=Execute."""
+        """PF-4: `phase:` key present (was: ## Pipeline Status block) -> phase=Execute."""
         with tempfile.TemporaryDirectory() as d:
             self._write_conforming_repo(Path(d))
             model = read_repo(Path(d))
@@ -369,38 +372,44 @@ class TestT10ProducerConsumerContract(unittest.TestCase):
         self.assertEqual(w.phase, Phase.Execute)
         self.assertEqual(w.source_mode, SourceMode.Normalized)
 
-    def test_pf5a_delivery_from_state_wave(self):
-        """PF-5c: STATE Wave 'delivery-001' -> task.delivery == 1 (not 0)."""
+    def test_pf5a_delivery_from_state_wave_now_unreachable(self):
+        """PF-5c, content-level update (task-016): the STATE Wave-column ->
+        task.delivery mechanism is retired along with the '## Tasks Status'
+        table it read (sec:L-3, '_parse_tasks_line ... nothing to
+        retarget'). No task reaches this fixture's tasks[] at all any more
+        (see test_pf3_task_short_names_now_unreachable_via_monolithic_state
+        above) -- so there is no delivery=0 garbage sentinel either, since
+        there is no task to carry one."""
         with tempfile.TemporaryDirectory() as d:
             self._write_conforming_repo(Path(d))
             model = read_repo(Path(d))
         w = model.works[0]
-        by_id = {t.task_id: t for t in w.tasks}
-        self.assertEqual(by_id["task-001"].delivery, 1)
-        self.assertEqual(by_id["task-002"].delivery, 1)
-        self.assertEqual(by_id["task-003"].delivery, 2)
-        # No task has delivery=0 (the garbage sentinel)
-        for t in w.tasks:
-            self.assertNotEqual(t.delivery, 0)
+        self.assertEqual(w.tasks, [])
 
-    def test_pf5a_lane_from_wave_map(self):
-        """PF-5a: wave-map block -> task.lane derived from 'wave N:' line."""
+    def test_pf5a_lane_from_wave_map_now_unreachable(self):
+        """PF-5a, content-level update (task-016): lane derivation from the
+        PLAN.md wave-map still works (parse_execution_graph is untouched by
+        this refactor -- test_reader.py's TestPF5ExecutionGraph covers it
+        directly), but it has no task to attach to here -- see the sibling
+        tests above for why tasks[] is now always empty through this
+        monolithic fixture shape."""
         with tempfile.TemporaryDirectory() as d:
             self._write_conforming_repo(Path(d))
             model = read_repo(Path(d))
         w = model.works[0]
-        by_id = {t.task_id: t for t in w.tasks}
-        self.assertEqual(by_id["task-001"].lane, 1)  # wave 1 of delivery-001
-        self.assertEqual(by_id["task-002"].lane, 2)  # wave 2 of delivery-001
-        self.assertEqual(by_id["task-003"].lane, 1)  # wave 1 of delivery-002
+        self.assertEqual(w.tasks, [])
 
     def test_field_by_field_agreement(self):
-        """Full field-by-field agreement: producer emission -> reader model."""
+        """Full field-by-field agreement: producer emission -> reader model.
+
+        Content-level update (task-016): PF-1/PF-4 (title/description/phase/
+        lifecycle) still agree field-by-field; PF-5a's task-level fields do
+        not, because this fixture's tasks[] is now always empty through the
+        monolithic reader path (see the three tests above)."""
         with tempfile.TemporaryDirectory() as d:
             self._write_conforming_repo(Path(d))
             model = read_repo(Path(d))
         w = model.works[0]
-        by_id = {t.task_id: t for t in w.tasks}
 
         # PF-1
         self.assertEqual(w.title, "Widget Factory")
@@ -408,16 +417,8 @@ class TestT10ProducerConsumerContract(unittest.TestCase):
         # PF-4
         self.assertEqual(w.phase, Phase.Execute)
         self.assertEqual(w.lifecycle, Lifecycle.Running)
-        # PF-5a
-        self.assertEqual(by_id["task-001"].delivery, 1)
-        self.assertEqual(by_id["task-001"].lane, 1)
-        self.assertEqual(by_id["task-001"].short_name, "Widget assembly stage")
-        self.assertEqual(by_id["task-002"].delivery, 1)
-        self.assertEqual(by_id["task-002"].lane, 2)
-        self.assertEqual(by_id["task-002"].short_name, "Widget acceptance tests")
-        self.assertEqual(by_id["task-003"].delivery, 2)
-        self.assertEqual(by_id["task-003"].lane, 1)
-        self.assertEqual(by_id["task-003"].short_name, "Widget packaging module")
+        # PF-5a: no longer reachable through this fixture shape (see above)
+        self.assertEqual(w.tasks, [])
 
     # --- Drift-detection: mutated producer strings must cause failures ---
 
@@ -432,7 +433,7 @@ class TestT10ProducerConsumerContract(unittest.TestCase):
             _write_manifest(aid)
             _write_settings(aid)
             (work / "REQUIREMENTS.md").write_text(broken_requirements, encoding="utf-8")
-            (work / "STATE.md").write_text(_PF4_STATE, encoding="utf-8")
+            (work / "STATE.yml").write_text(_PF4_STATE, encoding="utf-8")
             model = read_repo(Path(d))
         w = model.works[0]
         # The mutated string must NOT parse as the correct title
@@ -443,7 +444,17 @@ class TestT10ProducerConsumerContract(unittest.TestCase):
         )
 
     def test_drift_mutated_wavemap_fence_breaks_lane(self):
-        """Mutation: broken wave-map fence -> lane resolution fails (drift caught)."""
+        """Mutation: broken wave-map fence -> lane resolution fails (drift caught).
+
+        Content-level update (task-016): this fixture shape (no BLUEPRINT.md,
+        flat 'tasks/task-NNN.md' files) never reaches a populated tasks[] any
+        more regardless of the PLAN.md fence (see
+        test_pf5a_lane_from_wave_map_now_unreachable) -- so `lanes` is always
+        `{}` and the drift property is vacuously, not meaningfully, true.
+        The REAL drift-detection oracle for a broken wave-map fence is
+        test_reader.py's TestPF5ExecutionGraph, which calls
+        parse_execution_graph() directly against a populated tasks_dir and
+        does resolve a real (non-empty) lane map."""
         # Replace the backtick fence with a different fence that won't be parsed as wave-map
         broken_plan = _PF5A_PLAN.replace("```wave-map", "```wavemap")  # typo in fence name
         with tempfile.TemporaryDirectory() as d:
@@ -451,7 +462,7 @@ class TestT10ProducerConsumerContract(unittest.TestCase):
             _write_manifest(aid)
             _write_settings(aid)
             (work / "REQUIREMENTS.md").write_text(_PF1_REQUIREMENTS, encoding="utf-8")
-            (work / "STATE.md").write_text(_PF4_STATE, encoding="utf-8")
+            (work / "STATE.yml").write_text(_PF4_STATE, encoding="utf-8")
             (work / "PLAN.md").write_text(broken_plan, encoding="utf-8")
             tasks = work / "tasks"
             tasks.mkdir()
@@ -460,21 +471,7 @@ class TestT10ProducerConsumerContract(unittest.TestCase):
             (tasks / "task-003.md").write_text(_PF3_TASK_003, encoding="utf-8")
             model = read_repo(Path(d))
         w = model.works[0]
-        by_id = {t.task_id: t for t in w.tasks}
-        # With a broken wave-map fence, lane should NOT resolve correctly for all tasks
-        # (the normalized parse path won't fire; tasks may get lane=None or wrong lane)
-        lanes = {t.task_id: t.lane for t in w.tasks}
-        # At least one task's lane should not be the expected value (drift is detected)
-        all_correct = (
-            lanes.get("task-001") == 1
-            and lanes.get("task-002") == 2
-            and lanes.get("task-003") == 1
-        )
-        self.assertFalse(
-            all_correct,
-            "Broken wave-map fence should NOT produce all correct lanes "
-            "(drift detection contract) -- got: " + str(lanes),
-        )
+        self.assertEqual(w.tasks, [])
 
     def test_drift_description_without_colon_breaks_parse(self):
         """Mutation: '- **Description**' (no colon) -> description becomes None."""
@@ -487,7 +484,7 @@ class TestT10ProducerConsumerContract(unittest.TestCase):
             _write_manifest(aid)
             _write_settings(aid)
             (work / "REQUIREMENTS.md").write_text(broken_requirements, encoding="utf-8")
-            (work / "STATE.md").write_text(_PF4_STATE, encoding="utf-8")
+            (work / "STATE.yml").write_text(_PF4_STATE, encoding="utf-8")
             model = read_repo(Path(d))
         w = model.works[0]
         self.assertNotEqual(
@@ -891,37 +888,35 @@ class TestT4PhaseSingleSourceExplicit(unittest.TestCase):
     """
 
     def test_with_pipeline_status_phase_is_execute(self):
-        """T-4: work WITH typed ## Pipeline Status -> phase=Execute."""
+        """T-4: work WITH a `phase:` key (was: typed ## Pipeline Status) -> phase=Execute."""
         state = (
-            "## Pipeline Status\n\n"
-            "- **Lifecycle:** Running\n"
-            "- **Phase:** Execute\n"
-            "- **Active Skill:** aid-execute\n"
-            "- **Updated:** 2026-06-11T00:00:00Z\n"
+            "lifecycle: Running\n"
+            "phase: Execute\n"
+            "active_skill: aid-execute\n"
+            "updated: '2026-06-11T00:00:00Z'\n"
         )
         with tempfile.TemporaryDirectory() as d:
             aid, work = _make_repo(Path(d), "work-001-with-phase")
             _write_manifest(aid)
             _write_settings(aid)
-            (work / "STATE.md").write_text(state, encoding="utf-8")
+            (work / "STATE.yml").write_text(state, encoding="utf-8")
             model = read_repo(Path(d))
         w = model.works[0]
         self.assertEqual(w.phase, Phase.Execute)
         self.assertEqual(w.source_mode, SourceMode.Normalized)
 
     def test_without_pipeline_status_phase_is_none(self):
-        """T-4: work WITHOUT ## Pipeline Status (bootstrap) -> phase=None (graceful)."""
+        """T-4: work WITHOUT a `lifecycle` key (bootstrap) -> phase=None (graceful)."""
         state = (
-            "## Tasks Status\n\n"
-            "| # | Task | Type | Wave | Status | Review | Elapsed | Notes |\n"
-            "| --- | --- | --- | --- | --- | --- | --- | --- |\n"
-            "| 1 | task-001 | IMPLEMENT | delivery-001 | In Progress | - | - | - |\n"
+            "tasks_lifecycle:\n"
+            "  task-001:\n"
+            "    state: In Progress\n"
         )
         with tempfile.TemporaryDirectory() as d:
             aid, work = _make_repo(Path(d), "work-001-no-phase")
             _write_manifest(aid)
             _write_settings(aid)
-            (work / "STATE.md").write_text(state, encoding="utf-8")
+            (work / "STATE.yml").write_text(state, encoding="utf-8")
             model = read_repo(Path(d))
         w = model.works[0]
         # Bootstrap case: phase must be None (never "unknown" or a garbage sentinel)
@@ -929,24 +924,28 @@ class TestT4PhaseSingleSourceExplicit(unittest.TestCase):
         self.assertEqual(w.source_mode, SourceMode.Fallback)
 
     def test_legacy_blockquote_phase_does_not_populate_phase(self):
-        """T-4: legacy > **Phase:** blockquote header DOES NOT populate phase."""
+        """T-4: a stray legacy > **Phase:** blockquote LINE inside an
+        otherwise `lifecycle`-absent document does NOT populate phase (was:
+        the legacy blockquote header against a markdown '## Tasks Status'
+        body; the property survives the format change unchanged -- there is
+        no more prose scan to pick it up at all)."""
         state = (
             "> **Phase:** Execute\n\n"
-            "## Tasks Status\n\n"
-            "| # | Task | Type | Wave | Status | Review | Elapsed | Notes |\n"
-            "| --- | --- | --- | --- | --- | --- | --- | --- |\n"
+            "tasks_lifecycle:\n"
+            "  task-001:\n"
+            "    state: In Progress\n"
         )
         with tempfile.TemporaryDirectory() as d:
             aid, work = _make_repo(Path(d), "work-001-blockquote-phase")
             _write_manifest(aid)
             _write_settings(aid)
-            (work / "STATE.md").write_text(state, encoding="utf-8")
+            (work / "STATE.yml").write_text(state, encoding="utf-8")
             model = read_repo(Path(d))
         w = model.works[0]
         # The blockquote is NOT a phase source -> phase must be None
         self.assertIsNone(
             w.phase,
-            "T-4: legacy > **Phase:** blockquote must NOT populate phase (single source is typed block)",
+            "T-4: legacy > **Phase:** blockquote must NOT populate phase (single source is the `phase:` key)",
         )
 
     def test_t4_cross_runtime_node_mirrors_python(self):
@@ -960,10 +959,9 @@ class TestT4PhaseSingleSourceExplicit(unittest.TestCase):
             self.skipTest("node not available")
 
         state = (
-            "## Tasks Status\n\n"
-            "| # | Task | Type | Wave | Status | Review | Elapsed | Notes |\n"
-            "| --- | --- | --- | --- | --- | --- | --- | --- |\n"
-            "| 1 | task-001 | IMPLEMENT | delivery-001 | In Progress | - | - | - |\n"
+            "tasks_lifecycle:\n"
+            "  task-001:\n"
+            "    state: In Progress\n"
         )
         tmpdir = tempfile.mkdtemp()
         try:
@@ -971,7 +969,7 @@ class TestT4PhaseSingleSourceExplicit(unittest.TestCase):
             aid, work = _make_repo(root, "work-001-no-phase")
             _write_manifest(aid)
             _write_settings(aid)
-            (work / "STATE.md").write_text(state, encoding="utf-8")
+            (work / "STATE.yml").write_text(state, encoding="utf-8")
 
             # Python result
             py_model = read_repo(root)
@@ -1008,8 +1006,18 @@ class TestT4PhaseSingleSourceExplicit(unittest.TestCase):
 # T-8: Fully-degraded legacy work -> no garbage sentinels
 # ---------------------------------------------------------------------------
 
-# The fully-degraded legacy STATE.md: no ## Pipeline Status, bare integer wave,
-# no Name/Description, legacy blockquote header (the real pre-migration shape).
+# The fully-degraded legacy STATE.md (work-009-refactor task-016: content-level
+# update -- the real pre-migration shape this fixture models IS the SP-9
+# legacy-detector trigger now, not a best-effort prose scan). This work
+# folder holds ONLY the retired STATE.md, no STATE.yml sibling -- exactly the
+# SP-9 condition (sec:D-1/D-4, NFR-8) that reader.py diagnoses BEFORE any
+# content is parsed at all. The class below is restated for that: "graceful
+# degradation" is now "a clean minimal WorkModel plus a parse_warning naming
+# the migration command", not "field-by-field best-effort prose scanning" --
+# the OLD mechanism (parse_header_bold_field / the legacy prose fallback for
+# state files) no longer exists (sec:L-3). Content is otherwise unchanged
+# (still a legacy-shaped document) since it is now irrelevant -- the SP-9
+# check fires on filename presence alone, never on content.
 _T8_STATE = """\
 # Work State -- work-legacy
 
@@ -1037,15 +1045,21 @@ _T8_STATE = """\
 class TestT8FullyDegradedLegacyWork(unittest.TestCase):
     """T-8: Fully-degraded legacy work renders with graceful -- placeholders.
 
-    No Name/Description (no REQUIREMENTS.md or no typed header),
-    no ## Pipeline Status, prose-only PLAN (no wave-map), bare delivery-NNN waves.
-    Asserts:
-    - phase = None (never "phase unknown" sentinel)
-    - title = None (front-end labels it as a fallback; reader emits null)
-    - description = None (never a leaked blockquote)
-    - No task has delivery=0 (never "Delivery #0" garbage)
+    Content-level update (task-016): "graceful" is now the SP-9 legacy
+    detector's minimal WorkModel + a parse_warning naming the file and the
+    migration command ('aid update') -- the class docstring's original list
+    of properties (no Name/Description, no ## Pipeline Status, prose-only
+    PLAN, bare delivery-NNN waves) described the OLD best-effort prose scan,
+    now retired (sec:L-3). Every property below still holds, for the NEW
+    reason (a minimal model that never looks at content), not the old one
+    (a scan that tried and safely gave up field-by-field):
+    - phase = None (minimal model default)
+    - title = None (minimal model default)
+    - description = None (minimal model default)
+    - No task has delivery=0 (trivially true -- tasks is always [])
     - source_mode = fallback
-    - lifecycle is a valid Lifecycle value (graceful derivation, not Unknown or crash)
+    - lifecycle = Unknown (a valid Lifecycle member, never a crash)
+    - NEW: a parse_warning names the file and 'aid update' (SP-9, NFR-8)
     """
 
     def _make_degraded_repo(self, root: Path) -> None:
@@ -1053,6 +1067,7 @@ class TestT8FullyDegradedLegacyWork(unittest.TestCase):
         _write_manifest(aid)
         _write_settings(aid)
         (work / "STATE.md").write_text(_T8_STATE, encoding="utf-8")
+        # NO STATE.yml sibling -- this IS the SP-9 legacy-detector trigger.
         # NO REQUIREMENTS.md (no Name/Description header)
         # NO PLAN.md (no wave-map)
 
@@ -1116,26 +1131,47 @@ class TestT8FullyDegradedLegacyWork(unittest.TestCase):
         self.assertEqual(w.source_mode, SourceMode.Fallback)
 
     def test_lifecycle_is_valid_enum_not_crash(self):
-        """T-8: lifecycle is a valid Lifecycle value (graceful fallback derivation)."""
+        """T-8, content-level update (task-016): lifecycle is a valid
+        Lifecycle value -- never a crash. The SP-9 legacy detector's minimal
+        model uses Lifecycle.Unknown (not a re-derived Running), which is
+        itself still "a valid Lifecycle value, not a crash" -- the property
+        this test's name states. The OLD content-driven derivation
+        (Running, from the In Progress tasks) required the now-deleted
+        prose-fallback scan reading this file's own content; SP-9 never
+        reaches that scan for a legacy STATE.md at all."""
         with tempfile.TemporaryDirectory() as d:
             self._make_degraded_repo(Path(d))
             model = read_repo(Path(d))
         w = model.works[0]
         self.assertIsInstance(w.lifecycle, Lifecycle)
-        # With In Progress tasks, fallback adapter should derive Running
-        self.assertEqual(w.lifecycle, Lifecycle.Running)
+        self.assertEqual(w.lifecycle, Lifecycle.Unknown)
 
     def test_tasks_have_graceful_delivery_not_zero(self):
-        """T-8: tasks with 'delivery-001' wave -> delivery=1 (never 0)."""
+        """T-8, content-level update (task-016): no task may have delivery=0
+        (the 'Delivery #0' garbage sentinel this test guards against).
+        Trivially, and still gracefully, true: the SP-9 minimal model's
+        tasks[] is always empty, so there is no task to carry a bad
+        delivery value in the first place."""
         with tempfile.TemporaryDirectory() as d:
             self._make_degraded_repo(Path(d))
             model = read_repo(Path(d))
         w = model.works[0]
-        self.assertGreater(len(w.tasks), 0)
+        self.assertEqual(w.tasks, [])
         for t in w.tasks:
-            # delivery-001 wave -> delivery should be 1 (or None if unparseable, but not 0)
-            if t.delivery is not None:
-                self.assertNotEqual(t.delivery, 0, f"T-8: {t.task_id}.delivery must not be 0")
+            self.assertNotEqual(t.delivery, 0, f"T-8: {t.task_id}.delivery must not be 0")
+
+    def test_parse_warning_names_migration_command(self):
+        """NEW (task-016, SP-9/NFR-8): the parse_warning for this legacy
+        STATE.md-only work names the file and the migration command."""
+        with tempfile.TemporaryDirectory() as d:
+            self._make_degraded_repo(Path(d))
+            model = read_repo(Path(d))
+        hit = next(
+            (warn for warn in model.read.parse_warnings if "work-001-legacy" in warn), None
+        )
+        self.assertIsNotNone(hit, "a parse_warning must name the legacy work by id")
+        self.assertIn("aid update", hit)
+        self.assertIn("STATE.md", hit)
 
     def test_t8_cross_runtime_node_mirrors_python(self):
         """T-8: Node reader mirrors Python: phase=null, no garbage for degraded work."""

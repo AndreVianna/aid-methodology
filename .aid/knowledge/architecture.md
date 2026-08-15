@@ -14,12 +14,10 @@ tags: [C1, architecture, pipeline, render-pipeline, state-machine, agent-dispatc
 see_also: [project-structure.md, technology-stack.md, decisions.md, module-map.md]
 owner: architect
 audience: [architect, developer]
-intent: |
-  How this system is built and why it is shaped this way: the dual product/dogfood
-  repository, the canonical→profiles→packages render-and-distribute architecture, and
-  the gated process architecture (six-phase pipeline, skill state machines, agent dispatch).
-  Read this to understand HOW the system hangs together — not WHAT each module does.
-contracts: []
+review-criteria: []  # nothing is true of this doc alone -- the global level and the
+                     # kb-doc level cover it. Its version invariant is already stated as
+                     # VERSION lockstep rather than a literal, so it needs no criterion of
+                     # its own to keep it from drifting.
 ---
 
 # Architecture
@@ -43,7 +41,6 @@ contracts: []
 - [Doc-vs-Code Discrepancies](#doc-vs-code-discrepancies)
 - [Invariants](#invariants)
 - [Gotchas](#gotchas)
-- [Change Log](#change-log)
 
 ---
 
@@ -120,7 +117,7 @@ This is the architecture that makes AID a *product*. It is a SYNTHESIS concept �
 
 **The flow:**
 
-1. `canonical/` holds the single source: `skills/` (78), `agents/` (10),
+1. `canonical/` holds the single source: `skills/` (111), `agents/` (9),
    `aid/{scripts,templates}`. CONFIRMED via directory listing.
 2. `python .claude/skills/generate-profile/scripts/run_generator.py` renders the source
    into the five `profiles/*` install trees, one per `profiles/*.toml`. CONFIRMED in
@@ -156,8 +153,8 @@ The five profile roots: `.claude/` (Claude Code), `.codex/` (Codex), `.cursor/` 
 (search: "The Five Profiles") and `profiles/*.toml`.
 
 **Note:** the generator/`generate-profile` skill is **maintainer-only** — it lives in
-`.claude/skills/generate-profile/` and is NOT one of the 78 shipped user-facing skills in
-`canonical/skills/`. CONFIRMED: `canonical/skills/` contains 78 dirs, none named
+`.claude/skills/generate-profile/` and is NOT one of the 111 shipped user-facing skills in
+`canonical/skills/`. CONFIRMED: `canonical/skills/` contains 111 dirs, none named
 `generate-profile`.
 
 ---
@@ -181,10 +178,10 @@ not a running order (the numbered phases carry the sequence). Phase 2 (Describe 
 Describe → Define Phase" below); every other numbered phase is one skill. Several lifecycle labels
 from everyday SDLC talk — Init, Implement, Review, Test, Track, Triage — are **not numbered
 phases**; the table below maps each label to what it really is (CONFIRMED in
-`docs/aid-methodology.md` "Skill Inventory" and the `canonical/skills/` listing — **78 skill
-directories**: 20 curated pipeline / on-demand / router skills (the standalone `/aid-triage`
-router among them) and the 58-row shortcut catalog's skills — 34 verb-first direct-entry
-shortcut doorways plus 24 hand-authored `repurpose` skills):
+`docs/aid-methodology.md` "Skill Inventory" and the `canonical/skills/` listing — **111 skill
+directories**: 17 curated pipeline / on-demand / router skills (the standalone `/aid-triage`
+router among them) and the 94-row shortcut catalog's skills — 34 verb-first direct-entry
+shortcut doorways plus 60 hand-authored `repurpose` skills):
 
 | Workflow label | Skill(s) | Numbered phase? | What it really is |
 |----------------|----------|-----------------|-------------------|
@@ -202,7 +199,19 @@ shortcut doorways plus 24 hand-authored `repurpose` skills):
 | Deploy | `aid-deploy` | No (Definition shortcut path) | On-demand optional shortcut path in the Definition group; not a numbered phase. |
 | Track / Monitor | `aid-monitor` | No (Definition shortcut path) | On-demand observe -> classify -> route; not a numbered phase. ("Track" has no separate referent.) Routes findings out: bug -> `/aid-fix`, change request -> `/aid-triage`. |
 | Triage | `aid-triage` (standalone skill); `aid-monitor` classify | No | `/aid-triage` is now its own **suggest-only router** skill (INTAKE -> CLASSIFY -> SUGGEST -> HALT) — the extraction of `aid-describe`'s former TRIAGE state; it writes nothing and creates no work. Monitor still classifies its own findings. |
+| Design | 22 `aid-design[-<artifact>]` skills + `aid-brainstorm` | No (pre-build stage) | Develops an idea into a **design seed** under `.aid/design/`; writes no code and no KB document. `create` realizes the seed, `update` revises what `create` committed. |
 | Shortcut (Lite path) | 34 `aid-<verb>[-<artifact>]` skills + the shared shortcut engine | No (collapses Describe→Detail) | Verb-first direct-entry doorways (`/aid-fix`, `/aid-create-api`, …) that delegate to `canonical/aid/templates/shortcut-engine.md` (INTAKE -> CAPTURE -> SPEC -> PLAN -> DETAIL -> GATE -> APPROVAL-HALT). The autonomous Lite path — enter by naming your change. |
+
+
+**The `design` stage and the shared lifecycle contract.** `design` is a pre-build grid verb
+ordered `design -> create -> update`. Its 22 rows cover every artifact carrying a `create`/`update`
+pair, plus a bare `/aid-design` catch-all, and all of them **bind one shared contract** rather than
+restating it -- `canonical/aid/templates/design-lifecycle.md`, which fixes the seed shape, the
+allocation step, the verify depth and the `design` invariant (a `design` skill writes its seed and
+nothing else). That single binding is what keeps 36 skills consistent without 36 copies of the
+rules, and it is why adding an artifact to the grid is a catalog row plus a thin body rather than a
+new state machine. `/aid-brainstorm` sits beside the grid as an exploratory doorway with no
+`create` counterpart.
 
 Knowledge Base Maintenance group (on-demand, off the numbered pipeline): `aid-housekeep`
 (KB drift reconciliation), `aid-ask` (Q&A + gap capture),
@@ -306,17 +315,15 @@ concept, "human-gated phase advancement"; see Invariants).
 ## Agent / Sub-Agent Dispatch Model
 
 A skill (driven by the host tool) dispatches **specialist sub-agents** to do the work. AID
-defines **10 agents across 3 model tiers**. CONFIRMED: `canonical/agents/` holds exactly 10
+defines **9 agents across 3 model tiers**. CONFIRMED: `canonical/agents/` holds exactly 9
 (aid-architect, aid-clerk, aid-developer, aid-interviewer, aid-operator, aid-orchestrator,
-aid-researcher, aid-reviewer, aid-screener, aid-tech-writer) and `docs/aid-methodology.md` §5.
-
-Tiers below are the `tier:` field of each `canonical/agents/*/AGENT.md`, not a separate list.
+aid-researcher, aid-reviewer, aid-tech-writer) and `docs/aid-methodology.md` §5.
 
 | Tier | Agents | Role |
 |------|--------|------|
 | Large (1) | aid-architect | Highest-stakes reasoning where depth pays off: architecture, design decomposition, task breakdown. |
 | Medium (7) | aid-developer, aid-operator, aid-orchestrator, aid-tech-writer, aid-interviewer, aid-researcher, aid-reviewer | Workhorses: implement, release, route, document, interview, research/KB authoring, adversarial review. |
-| Small (2) | aid-clerk, aid-screener | Mechanical extract/format/glob; cheap first-pass screening ahead of an adversarial review. |
+| Small (1) | aid-clerk | Mechanical extract/format/glob. |
 
 These are **default** tiers, not fixed ceilings. A dispatch site picks the
 model tier **and** reasoning effort from the task's difficulty via
@@ -431,9 +438,9 @@ CONFIRMED in `project-structure.md` "Entry Points" and file headers:
 
 Documented as reality + flagged; NOT silently reconciled (see `.scout-questions.tmp`):
 
-1. **Skill count (reconciled).** `canonical/skills/` has **76** directories — 20 curated
-   pipeline / on-demand / router skills plus the 58-row shortcut catalog's skills (34 verb-first
-   direct-entry shortcut doorways + 24 hand-authored `repurpose` skills). `README.md`,
+1. **Skill count (reconciled).** `canonical/skills/` has **111** directories — 17 curated
+   pipeline / on-demand / router skills plus the 94-row shortcut catalog's skills (34 verb-first
+   direct-entry shortcut doorways + 60 hand-authored `repurpose` skills). `README.md`,
    `docs/aid-methodology.md`, `docs/repository-structure.md` and `docs/glossary.md` all state this
    taxonomy, so the doc-vs-code gap this item tracked stays closed. It cannot silently reopen:
    `tests/canonical/test-doc-counts.sh` re-derives the figures from `canonical/skills/`,
@@ -482,7 +489,15 @@ What a change must never break (each stated as a hard rule + where enforced):
   `.claude/aid/scripts/release/check-version-sync.sh`.
 - **Polyglot parity:** behavior implemented in Bash (`lib/aid-install-core.sh`) MUST match
   the PowerShell equivalent (`lib/AidInstallCore.psm1`). Enforced by
-  `tests/canonical/test-aid-cli-parity.sh`.
+  `tests/canonical/test-aid-cli-parity.sh`. The same parity rule binds the dashboard's
+  Python/Node reader twins (`dashboard/reader/reader.py` / `dashboard/server/reader.mjs`): both
+  parse the `STATE.yml` subset through one structured parse and MUST return field-identical
+  payloads, and neither may raise a `parse_warning` a converted work does not warrant. Enforced
+  by the shared cross-runtime YAML-subset conformance corpus
+  (`dashboard/reader/tests/state_yaml_conformance_corpus.py`, run by both
+  `test_state_yaml_conformance.py` and `test_state_yaml_conformance_node.py`) and the
+  cross-format characterization suites (`test_task011_golden_master.py`,
+  `test_task011_reconcile.py`, `test_flattened_layout_parity.py`).
 - **LF + ASCII in shipped scripts:** committed `.sh` files MUST be LF-only; shipped
   PowerShell MUST be ASCII-only (Windows ANSI-codepage mis-parses non-ASCII no-BOM). Enforced
   by the `kb-hygiene` CI job and `tests/canonical/ps51-compat-check.ps1`.
@@ -508,7 +523,7 @@ Non-obvious traps a change will trip (cannot be inferred from the code alone):
 - **The 5 install manifests must move in lockstep on the dashboard file set** — npm, pypi,
   and the three vendored copies; dropping one file from one manifest ships a broken install.
 - **`generate-profile` is maintainer-only** and lives only in `.claude/skills/` — do not look
-  for it in `canonical/skills/` (the 78 shipped skills).
+  for it in `canonical/skills/` (the 111 shipped skills).
 - **Heavy CI gates run only on `master`** (tests/run-all.sh + the Astro site build); feature
   branches skip them. Run `tests/run-all.sh` (HOME-pinned) + the site build locally before
   claiming green. (Project memory: master-ci-only-on-master.)

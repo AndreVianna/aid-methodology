@@ -102,32 +102,31 @@ Fill in from the approved PLAN.md stanza:
 A delivery with ZERO tasks (e.g. a SPIKE delivery that defines a sibling delivery) is valid.
 Write the BLUEPRINT with the zero-task table (`_none yet_`) -- do not skip BLUEPRINT creation.
 
-**4b. Create `deliveries/delivery-NNN/STATE.md`** (seed from `.github/aid/templates/delivery-state-template.md`):
+**4b. Create `deliveries/delivery-NNN/STATE.yml`** (seed from `.github/aid/templates/delivery-state-template.yml`):
 
-Fill in:
-- `Delivery:` = delivery-NNN
-- `Work:` = work-NNN-{name}
-- `Branch:` = aid/work-NNN-delivery-NNN
-- `## Delivery Lifecycle` block:
-  - `State: Pending-Spec`     (SD-8: authored independent lifecycle, NOT derived from tasks)
-  - `Updated:` = current UTC timestamp ($(date -u +%Y-%m-%dT%H:%M:%SZ))
-  - `Block Reason:` = --
-  - `Block Artifact:` = --
-- `## Delivery Gate` section: leave all fields as template placeholders
-- `## Cross-phase Q&A` section: leave as template placeholder
-- `## Tasks State` table: `_none yet_` (correct and expected for a new delivery)
+`Delivery:` / `Work:` / `Branch:` are INFERRED from the folder path and git worktree --
+never authored here. Fill in the template's own keys:
+- `delivery_state: Pending-Spec`     (SD-8: authored independent lifecycle, NOT derived from tasks)
+- `delivery_lifecycle` key:
+  - `updated:` = current UTC timestamp ($(date -u +%Y-%m-%dT%H:%M:%SZ))
+  - `block_reason:` = --
+  - `block_artifact:` = --
+- `gate_tier` / `gate_grade` / `gate_timestamp` and `delivery_gate.issue_list`: leave at template placeholders
+- `qa` key: leave as template placeholder (`[]`)
+- Tasks State: nothing to write -- it is DERIVED at read time from `tasks/task-NNN/STATE.yml`
+  files, which do not exist yet for a new delivery
 
-> SD-9 NOTE: A delivery created with ZERO tasks renders correctly at `Pending-Spec` with
-> `_none yet_` in the Tasks State table. This is the canonical SPIKE-defines-sibling scenario.
+> SD-9 NOTE: A delivery created with ZERO tasks renders correctly at `Pending-Spec` with an
+> empty DERIVED Tasks State. This is the canonical SPIKE-defines-sibling scenario.
 > The delivery lifecycle is authored independently -- it does NOT derive from the task rollup.
-> The `## Plan / Deliveries` view in the WORK STATE.md is DERIVED at read time from these
-> deliveries/delivery-NNN/STATE.md files. `aid-plan` does NOT write any rows into the work STATE.md.
+> The Plan/Deliveries view in the WORK STATE.yml is DERIVED at read time from these
+> deliveries/delivery-NNN/STATE.yml files. `aid-plan` does NOT write any rows into the work STATE.yml.
 
 **4c. Connector awareness — record this delivery's `ticket_ref` (optional).** If this deliverable
 corresponds to (or the user names) an external tracker item, fetch it by invoking `/aid-read-ticket
 [<connector>:]<ticket-id>` — the connector resolution and host-MCP fetch live there (feature-001);
 no direct-fetch recipe is re-implemented here — and record `ticket_ref: <stem>:<external-id>` in
-the delivery's `STATE.md` frontmatter just written above (4b). Skip silently when no such ticket
+the delivery's `STATE.yml` frontmatter just written above (4b). Skip silently when no such ticket
 applies or no matching connector is catalogued; the delegated read is non-destructive, so no extra
 confirm is added. If instead the team wants a new tracker item filed for this deliverable, aid-plan
 does not file one itself. If a catalogued `issue-tracker` connector exists in `.aid/connectors/` →
@@ -183,10 +182,10 @@ After all deliverables are written, check for risks that span features:
 3. If any deliverable is missing → write it NOW
 4. If Cross-Cutting Risks or Deferred sections apply → append them NOW
 5. For each delivery-NNN in PLAN.md, confirm both `deliveries/delivery-NNN/BLUEPRINT.md` and
-   `deliveries/delivery-NNN/STATE.md` exist under `.aid/works/{work}/`. If either is missing -> create it NOW
-   (seed from the templates; replace the frontmatter's `delivery_state` placeholder with
-   `delivery_state: Pending-Spec` -- the scalar lives in the leading YAML block per
-   `delivery-state-template.md`, task-001/004; direct field edit, same scaffold-time
+   `deliveries/delivery-NNN/STATE.yml` exist under `.aid/works/{work}/`. If either is missing -> create it NOW
+   (seed from the templates; replace the top-level `delivery_state` placeholder with
+   `delivery_state: Pending-Spec` -- the scalar lives at the top of the file per
+   `delivery-state-template.yml`, task-001/004; direct field edit, same scaffold-time
    convention as `state-first-run.md § 1b-ii`).
 
 Then print:
@@ -205,8 +204,8 @@ Cross-cutting risks: {count} identified (see PLAN.md)
 
 PLAN.md written to: .aid/works/{work}/PLAN.md
 Delivery folders created:
-  .aid/works/{work}/deliveries/delivery-001/{BLUEPRINT.md, STATE.md} (State: Pending-Spec)
-  .aid/works/{work}/deliveries/delivery-002/{BLUEPRINT.md, STATE.md} (State: Pending-Spec)
+  .aid/works/{work}/deliveries/delivery-001/{BLUEPRINT.md, STATE.yml} (delivery_state: Pending-Spec)
+  .aid/works/{work}/deliveries/delivery-002/{BLUEPRINT.md, STATE.yml} (delivery_state: Pending-Spec)
   ...
 ```
 

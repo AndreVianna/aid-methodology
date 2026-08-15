@@ -14,15 +14,15 @@
       "terminal": null,
       "provenance": {
         "file": "canonical/skills/aid-design/SKILL.md",
-        "startLine": 36,
-        "endLine": 54,
+        "startLine": 35,
+        "endLine": 53,
         "sourceKind": "skill",
         "excerpt": "## State: INTAKE\n\n1. **Require a subject.** Empty argument -> ask one bootstrapping question (\"What do you\n   want designed, and what will it need to support?\") and wait.\n2. **Pick the path:** **Fast** -- a clear thing to design (\"design the checkout flow\",\n   \"design this service's interface\") -> design now. **Guided** -- open-ended (\"design our\n   onboarding\") -> scope the subject, constraints, and success criteria first.\n3. **Classify complexity (model + effort):** simple (one component/flow) -> `aid-architect`\n   at **sonnet / medium**; complex (a system architecture, a multi-screen flow) -> **opus /\n   high**. Verifier tier >= producer tier.\n4. **Consult the Work Initiation Gate, then allocate the work folder + STATE.** First run\n   the gate (`canonical/aid/templates/work-initiation-gate.md`):\n   `bash canonical/aid/scripts/works/enumerate-works.sh` (main tree + every git worktree).\n   Empty -> allocate, no prompt. Works exist -> ask new-vs-continuation; on **continuation**\n   route to the chosen work's resume door and STOP (allocate nothing); on **new work**:\n   create and enter the worktree per the gate's `§ 3a` step 2\n   (`worktree-lifecycle.sh create <work-id> <name>`, STOP on a non-zero exit or empty path,\n   else enter the resolved path), **then** allocate (`pipeline.path: lite`, `initiator:\n   aid-design`, `lifecycle: Running`, `active_skill: aid-design`; `phase` not driven)."
       },
       "detail": {
         "file": "canonical/skills/aid-design/SKILL.md",
-        "startLine": 36,
-        "endLine": 56,
+        "startLine": 35,
+        "endLine": 55,
         "sourceKind": "skill",
         "excerpt": "## State: INTAKE\n\n1. **Require a subject.** Empty argument -> ask one bootstrapping question (\"What do you\n   want designed, and what will it need to support?\") and wait.\n2. **Pick the path:** **Fast** -- a clear thing to design (\"design the checkout flow\",\n   \"design this service's interface\") -> design now. **Guided** -- open-ended (\"design our\n   onboarding\") -> scope the subject, constraints, and success criteria first.\n3. **Classify complexity (model + effort):** simple (one component/flow) -> `aid-architect`\n   at **sonnet / medium**; complex (a system architecture, a multi-screen flow) -> **opus /\n   high**. Verifier tier >= producer tier.\n4. **Consult the Work Initiation Gate, then allocate the work folder + STATE.** First run\n   the gate (`canonical/aid/templates/work-initiation-gate.md`):\n   `bash canonical/aid/scripts/works/enumerate-works.sh` (main tree + every git worktree).\n   Empty -> allocate, no prompt. Works exist -> ask new-vs-continuation; on **continuation**\n   route to the chosen work's resume door and STOP (allocate nothing); on **new work**:\n   create and enter the worktree per the gate's `§ 3a` step 2\n   (`worktree-lifecycle.sh create <work-id> <name>`, STOP on a non-zero exit or empty path,\n   else enter the resolved path), **then** allocate (`pipeline.path: lite`, `initiator:\n   aid-design`, `lifecycle: Running`, `active_skill: aid-design`; `phase` not driven).\n\n**Advance:** DESIGN."
       }
@@ -36,15 +36,15 @@
       "terminal": null,
       "provenance": {
         "file": "canonical/skills/aid-design/SKILL.md",
-        "startLine": 60,
-        "endLine": 66,
+        "startLine": 59,
+        "endLine": 65,
         "sourceKind": "skill",
         "excerpt": "## State: DESIGN\n\nDispatch **`aid-architect`** (clean context, tiered) to produce the design, **grounded in\nthe KB** (existing patterns, conventions, `architecture.md`) + the request: variables/flow,\ncontrol/interaction, component or interface shape, and **accessibility notes**\n(`task-type-rules.md ## DESIGN`). It writes `DESIGN.md` into the work folder (the design's\nkept record)."
       },
       "detail": {
         "file": "canonical/skills/aid-design/SKILL.md",
-        "startLine": 60,
-        "endLine": 68,
+        "startLine": 59,
+        "endLine": 67,
         "sourceKind": "skill",
         "excerpt": "## State: DESIGN\n\nDispatch **`aid-architect`** (clean context, tiered) to produce the design, **grounded in\nthe KB** (existing patterns, conventions, `architecture.md`) + the request: variables/flow,\ncontrol/interaction, component or interface shape, and **accessibility notes**\n(`task-type-rules.md ## DESIGN`). It writes `DESIGN.md` into the work folder (the design's\nkept record).\n\n**Advance:** VERIFY."
       }
@@ -58,15 +58,15 @@
       "terminal": null,
       "provenance": {
         "file": "canonical/skills/aid-design/SKILL.md",
-        "startLine": 72,
-        "endLine": 80,
+        "startLine": 71,
+        "endLine": 79,
         "sourceKind": "skill",
         "excerpt": "## State: VERIFY  (full -- a kept design drives a build)\n\n1. **Mechanical grounding check** (no dispatch): design decisions cite the KB/source they\n   build on; accessibility is addressed.\n2. **Adversarial verification** -- clean-context **`aid-reviewer`** checks `DESIGN.md`:\n   grounded, complete, internally consistent, consistent with KB conventions + a11y, and\n   buildable. Writes a review-quality ledger to `.aid/.temp/review-pending/<work>-verify.md`.\n3. **Gate, then grade:** `bash canonical/aid/scripts/review/check-gaps.sh --ledger <ledger>` (exit 1 = an open criteria gap; do not grade), then `bash canonical/aid/scripts/grade.sh --explain <ledger>`. Not clean -> loop\n   to DESIGN. Circuit-breaker: 3 cycles -> IMPEDIMENT + `lifecycle: Blocked`."
       },
       "detail": {
         "file": "canonical/skills/aid-design/SKILL.md",
-        "startLine": 72,
-        "endLine": 82,
+        "startLine": 71,
+        "endLine": 81,
         "sourceKind": "skill",
         "excerpt": "## State: VERIFY  (full -- a kept design drives a build)\n\n1. **Mechanical grounding check** (no dispatch): design decisions cite the KB/source they\n   build on; accessibility is addressed.\n2. **Adversarial verification** -- clean-context **`aid-reviewer`** checks `DESIGN.md`:\n   grounded, complete, internally consistent, consistent with KB conventions + a11y, and\n   buildable. Writes a review-quality ledger to `.aid/.temp/review-pending/<work>-verify.md`.\n3. **Gate, then grade:** `bash canonical/aid/scripts/review/check-gaps.sh --ledger <ledger>` (exit 1 = an open criteria gap; do not grade), then `bash canonical/aid/scripts/grade.sh --explain <ledger>`. Not clean -> loop\n   to DESIGN. Circuit-breaker: 3 cycles -> IMPEDIMENT + `lifecycle: Blocked`.\n\n**Advance:** PRESENT."
       }
@@ -80,15 +80,15 @@
       "terminal": null,
       "provenance": {
         "file": "canonical/skills/aid-design/SKILL.md",
-        "startLine": 86,
-        "endLine": 89,
+        "startLine": 85,
+        "endLine": 88,
         "sourceKind": "skill",
         "excerpt": "## State: PRESENT  (hard stop -- the user decides)\n\nSet `lifecycle: Paused-Awaiting-Input`. Present `DESIGN.md` clearly. Assert no resolution --\nthe user decides whether/when to build it."
       },
       "detail": {
         "file": "canonical/skills/aid-design/SKILL.md",
-        "startLine": 86,
-        "endLine": 91,
+        "startLine": 85,
+        "endLine": 90,
         "sourceKind": "skill",
         "excerpt": "## State: PRESENT  (hard stop -- the user decides)\n\nSet `lifecycle: Paused-Awaiting-Input`. Present `DESIGN.md` clearly. Assert no resolution --\nthe user decides whether/when to build it.\n\n**Advance:** HANDOFF (optional) then DONE."
       }
@@ -102,15 +102,15 @@
       "terminal": null,
       "provenance": {
         "file": "canonical/skills/aid-design/SKILL.md",
-        "startLine": 95,
-        "endLine": 98,
+        "startLine": 94,
+        "endLine": 97,
         "sourceKind": "skill",
         "excerpt": "## State: HANDOFF  (optional; printed suggestions only)\n\nPrinted suggestions: build it (`/aid-create*` / `/aid-update*`, referencing the design), or\ncapture it as a formal doc (`/aid-create-document`). Never auto-invoked; never a resolution."
       },
       "detail": {
         "file": "canonical/skills/aid-design/SKILL.md",
-        "startLine": 95,
-        "endLine": 100,
+        "startLine": 94,
+        "endLine": 99,
         "sourceKind": "skill",
         "excerpt": "## State: HANDOFF  (optional; printed suggestions only)\n\nPrinted suggestions: build it (`/aid-create*` / `/aid-update*`, referencing the design), or\ncapture it as a formal doc (`/aid-create-document`). Never auto-invoked; never a resolution.\n\n**Advance:** DONE."
       }
@@ -127,15 +127,15 @@
       },
       "provenance": {
         "file": "canonical/skills/aid-design/SKILL.md",
-        "startLine": 104,
-        "endLine": 107,
+        "startLine": 103,
+        "endLine": 106,
         "sourceKind": "skill",
         "excerpt": "## State: DONE\n\nSet `lifecycle: Completed`, `updated` now, append a `## Lifecycle History` row. Keep\n`DESIGN.md` in the work folder as the kept design record."
       },
       "detail": {
         "file": "canonical/skills/aid-design/SKILL.md",
-        "startLine": 104,
-        "endLine": 107,
+        "startLine": 103,
+        "endLine": 106,
         "sourceKind": "skill",
         "excerpt": "## State: DONE\n\nSet `lifecycle: Completed`, `updated` now, append a `## Lifecycle History` row. Keep\n`DESIGN.md` in the work folder as the kept design record."
       }
@@ -150,8 +150,8 @@
       "advanceType": "UNSPECIFIED",
       "provenance": {
         "file": "canonical/skills/aid-design/SKILL.md",
-        "startLine": 56,
-        "endLine": 56,
+        "startLine": 55,
+        "endLine": 55,
         "sourceKind": "skill",
         "excerpt": "**Advance:** DESIGN."
       }
@@ -164,8 +164,8 @@
       "advanceType": "UNSPECIFIED",
       "provenance": {
         "file": "canonical/skills/aid-design/SKILL.md",
-        "startLine": 68,
-        "endLine": 68,
+        "startLine": 67,
+        "endLine": 67,
         "sourceKind": "skill",
         "excerpt": "**Advance:** VERIFY."
       }
@@ -178,8 +178,8 @@
       "advanceType": "UNSPECIFIED",
       "provenance": {
         "file": "canonical/skills/aid-design/SKILL.md",
-        "startLine": 80,
-        "endLine": 80,
+        "startLine": 79,
+        "endLine": 79,
         "sourceKind": "skill",
         "excerpt": "   to DESIGN. Circuit-breaker: 3 cycles -> IMPEDIMENT + `lifecycle: Blocked`."
       }
@@ -192,8 +192,8 @@
       "advanceType": "UNSPECIFIED",
       "provenance": {
         "file": "canonical/skills/aid-design/SKILL.md",
-        "startLine": 82,
-        "endLine": 82,
+        "startLine": 81,
+        "endLine": 81,
         "sourceKind": "skill",
         "excerpt": "**Advance:** PRESENT."
       }
@@ -206,8 +206,8 @@
       "advanceType": "UNSPECIFIED",
       "provenance": {
         "file": "canonical/skills/aid-design/SKILL.md",
-        "startLine": 91,
-        "endLine": 91,
+        "startLine": 90,
+        "endLine": 90,
         "sourceKind": "skill",
         "excerpt": "**Advance:** HANDOFF (optional) then DONE."
       }
@@ -220,8 +220,8 @@
       "advanceType": "UNSPECIFIED",
       "provenance": {
         "file": "canonical/skills/aid-design/SKILL.md",
-        "startLine": 91,
-        "endLine": 91,
+        "startLine": 90,
+        "endLine": 90,
         "sourceKind": "skill",
         "excerpt": "**Advance:** HANDOFF (optional) then DONE."
       }
@@ -234,8 +234,8 @@
       "advanceType": "UNSPECIFIED",
       "provenance": {
         "file": "canonical/skills/aid-design/SKILL.md",
-        "startLine": 100,
-        "endLine": 100,
+        "startLine": 99,
+        "endLine": 99,
         "sourceKind": "skill",
         "excerpt": "**Advance:** DONE."
       }

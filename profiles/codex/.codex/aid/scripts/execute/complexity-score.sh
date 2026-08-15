@@ -5,6 +5,13 @@
 #   complexity-score.sh --plan-file PATH --delivery-id NNN [--tasks-dir PATH]
 #   complexity-score.sh --graph-file PATH --tasks-dir PATH
 #
+# --tasks-dir is the directory holding this delivery's task definitions --
+# `deliveries/delivery-NNN/tasks/` (full layout) or `tasks/` directly under the
+# work root (feature-001 flat layout). Each task's `**Type:**` is read from
+# `<tasks-dir>/task-NNN/DETAIL.md`; the legacy `<tasks-dir>/task-NNN.md` /
+# `task-NNN-{slug}.md` shapes are still honoured (and take precedence when both
+# are present). See the "Risk-weighted types" block below.
+#
 # --delivery-id is REQUIRED for a multi-delivery PLAN.md (### delivery-NNN
 # sections) and scopes extraction to that delivery. For a flattened single-delivery
 # SPEC with a top-level "## Execution Graph" (no delivery sections), --delivery-id
@@ -188,24 +195,48 @@ for t in "${TASKS[@]}"; do
     if [[ "$d" -gt "$MAX_DEPTH" ]]; then MAX_DEPTH=$d; fi
 done
 
-# Risk-weighted types (read task-NNN.md if --tasks-dir provided)
+# Risk-weighted types (read each task's definition file if --tasks-dir provided)
 RISK=0
 if [[ -n "$TASKS_DIR" && -d "$TASKS_DIR" ]]; then
-    # Enumerate the task-dir *.md files ONCE (single find) instead of one
+    # Enumerate the task-dir markdown files ONCE (single find) instead of one
     # `find ... | head` per task. find's readdir traversal order is preserved, so
-    # the per-task first-match below is byte-identical to the previous per-task
-    # `find -name "${t}.md" -o -name "${t}-*.md" | head -1`.
+    # the per-task first-match below is deterministic, exactly as the previous
+    # per-task `find -name "${t}.md" -o -name "${t}-*.md" | head -1` was.
+    #
+    # -maxdepth 2 (was 1): BOTH current layouts store the task DEFINITION one
+    # directory down, as `<tasks-dir>/task-NNN/DETAIL.md` --
+    #   full:  deliveries/delivery-NNN/tasks/task-NNN/DETAIL.md
+    #   flat:  tasks/task-NNN/DETAIL.md          (feature-001, work root)
+    # A depth-1 scan found no task file at all under either, so RISK stayed 0
+    # for every current work and the gate reviewer could be under-tiered. The
+    # depth-1 `task-NNN.md` / `task-NNN-*.md` shapes are LEGACY and still
+    # honoured -- they are matched FIRST below, so any tree that carries them
+    # resolves to byte-identically the same file as before the directory form
+    # was added. The two candidate sets are disjoint by basename (`DETAIL.md`
+    # can never equal `task-NNN.md`), so the two passes can never collide.
     declare -a TASK_MD_FILES=()
     while IFS= read -r mdf; do TASK_MD_FILES+=("$mdf"); done \
-        < <(find "$TASKS_DIR" -maxdepth 1 -name '*.md' 2>/dev/null)
+        < <(find "$TASKS_DIR" -maxdepth 2 -name '*.md' 2>/dev/null)
     for t in "${TASKS[@]}"; do
-        # First task file (in find order) matching task-NNN.md or task-NNN-*.md.
         f=""
+        # Pass 1 (LEGACY, depth 1): first file (in find order) named
+        # task-NNN.md or task-NNN-*.md directly under the tasks dir.
         for cand in "${TASK_MD_FILES[@]}"; do
             case "${cand##*/}" in
                 "${t}.md"|"${t}-"*.md) f="$cand"; break ;;
             esac
         done
+        # Pass 2 (CURRENT, depth 2): first DETAIL.md (in find order) whose
+        # parent directory is task-NNN (or task-NNN-{slug}).
+        if [[ -z "$f" ]]; then
+            for cand in "${TASK_MD_FILES[@]}"; do
+                [[ "${cand##*/}" == "DETAIL.md" ]] || continue
+                cand_parent="${cand%/*}"; cand_parent="${cand_parent##*/}"
+                case "$cand_parent" in
+                    "$t"|"${t}-"*) f="$cand"; break ;;
+                esac
+            done
+        fi
         [[ -z "$f" || ! -f "$f" ]] && continue
         # Match the bold task-template form (**Type:**) -- the flat recipe form
         # (- Type:) was retired with the recipe catalog (work-001-lite-aid-skills

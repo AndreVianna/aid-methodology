@@ -14,8 +14,8 @@
       "terminal": null,
       "provenance": {
         "file": "canonical/skills/aid-update-ticket/SKILL.md",
-        "startLine": 65,
-        "endLine": 65,
+        "startLine": 61,
+        "endLine": 61,
         "sourceKind": "skill",
         "excerpt": "### State 1 — PARSE-ARGS"
       },
@@ -30,8 +30,8 @@
       "terminal": null,
       "provenance": {
         "file": "canonical/skills/aid-update-ticket/SKILL.md",
-        "startLine": 77,
-        "endLine": 77,
+        "startLine": 73,
+        "endLine": 73,
         "sourceKind": "skill",
         "excerpt": "### State 2 — RESOLVE-CONNECTOR"
       },
@@ -46,8 +46,8 @@
       "terminal": null,
       "provenance": {
         "file": "canonical/skills/aid-update-ticket/SKILL.md",
-        "startLine": 87,
-        "endLine": 87,
+        "startLine": 83,
+        "endLine": 83,
         "sourceKind": "skill",
         "excerpt": "### State 3 — LOAD-CONTEXT"
       },
@@ -62,8 +62,8 @@
       "terminal": null,
       "provenance": {
         "file": "canonical/skills/aid-update-ticket/SKILL.md",
-        "startLine": 106,
-        "endLine": 106,
+        "startLine": 102,
+        "endLine": 102,
         "sourceKind": "skill",
         "excerpt": "### State 4 — COMPOSE"
       },
@@ -78,8 +78,8 @@
       "terminal": null,
       "provenance": {
         "file": "canonical/skills/aid-update-ticket/SKILL.md",
-        "startLine": 130,
-        "endLine": 130,
+        "startLine": 126,
+        "endLine": 126,
         "sourceKind": "skill",
         "excerpt": "### State 5 — CONFIRM"
       },
@@ -97,8 +97,8 @@
       },
       "provenance": {
         "file": "canonical/skills/aid-update-ticket/SKILL.md",
-        "startLine": 156,
-        "endLine": 156,
+        "startLine": 152,
+        "endLine": 152,
         "sourceKind": "skill",
         "excerpt": "### State 6 — WRITE"
       },
@@ -114,8 +114,8 @@
       "advanceType": "CHAIN",
       "provenance": {
         "file": "canonical/skills/aid-update-ticket/SKILL.md",
-        "startLine": 65,
-        "endLine": 65,
+        "startLine": 61,
+        "endLine": 61,
         "sourceKind": "skill",
         "excerpt": "### State 1 — PARSE-ARGS"
       }
@@ -128,8 +128,8 @@
       "advanceType": "CHAIN",
       "provenance": {
         "file": "canonical/skills/aid-update-ticket/SKILL.md",
-        "startLine": 77,
-        "endLine": 77,
+        "startLine": 73,
+        "endLine": 73,
         "sourceKind": "skill",
         "excerpt": "### State 2 — RESOLVE-CONNECTOR"
       }
@@ -142,8 +142,8 @@
       "advanceType": "CHAIN",
       "provenance": {
         "file": "canonical/skills/aid-update-ticket/SKILL.md",
-        "startLine": 87,
-        "endLine": 87,
+        "startLine": 83,
+        "endLine": 83,
         "sourceKind": "skill",
         "excerpt": "### State 3 — LOAD-CONTEXT"
       }
@@ -156,8 +156,8 @@
       "advanceType": "CHAIN",
       "provenance": {
         "file": "canonical/skills/aid-update-ticket/SKILL.md",
-        "startLine": 106,
-        "endLine": 106,
+        "startLine": 102,
+        "endLine": 102,
         "sourceKind": "skill",
         "excerpt": "### State 4 — COMPOSE"
       }
@@ -170,8 +170,8 @@
       "advanceType": "CHAIN",
       "provenance": {
         "file": "canonical/skills/aid-update-ticket/SKILL.md",
-        "startLine": 130,
-        "endLine": 130,
+        "startLine": 126,
+        "endLine": 126,
         "sourceKind": "skill",
         "excerpt": "### State 5 — CONFIRM"
       }
