@@ -28,19 +28,19 @@ minimum_grade: A
 # [W] 'yes' | 'no' -- quoted
 user_approved: 'yes'
 # [W] Running | Paused-Awaiting-Input | Blocked | Completed | Canceled
-lifecycle: Paused-Awaiting-Input
+lifecycle: Blocked
 # [W] Describe | Define | Specify | Plan | Detail | Execute
-phase: Detail
+phase: Execute
 # [W] aid-{skill} | none
 active_skill: none
 # [W]
-updated: '2026-08-15T15:35:08Z'
+updated: '2026-08-15T16:42:11Z'
 # [W] set only when lifecycle = Paused-Awaiting-Input
-pause_reason: 'Detail complete at A+ -- 15 tasks; Q-06 open (routed to /aid-discover, non-blocking); run /aid-execute work-012'
+pause_reason: --
 # [W] set only when lifecycle = Blocked
-block_reason: --
+block_reason: 'delivery-001 gate E+ vs floor A -- AC-1''s baseline moment has passed; owner decision needed'
 # [W] e.g. IMPEDIMENT-task-NNN.md, or the failed gate
-block_artifact: --
+block_artifact: IMPEDIMENT-delivery-001.md
 # [W] {connector-stem}:{external-id} | --
 ticket_ref: --
 
@@ -697,6 +697,49 @@ lifecycle_history:
       Worth noting for feature-002: the rule is mechanically decidable -- a
       grep for work-[0-9] under .aid/knowledge/ -- so it is a natural second
       oracle candidate once FR-10's lazy trigger fires.
+
+  - date: '2026-08-15'
+    event: 'Execute: all 15 tasks Done; delivery gate BLOCKED at E+ vs a floor of A'
+    grade: 'E+'
+    notes: >-
+      All 15 tasks executed and Done. Two gate cycles, E+ -> E+; 6 findings,
+      3 Fixed, 3 Pending of which one is CRITICAL. delivery_state Blocked,
+      IMPEDIMENT-delivery-001.md written, owner decision required.
+      WHAT SHIPPED AND WORKS: 15 of 16 acceptance criteria are met.
+      54 assertions across three new suites, several mutation-checked. The
+      G-07 oracle decides 241 of 317 files (76%) in 0.48s. The requirements
+      slice is 83% smaller than the whole document. grade.sh is
+      byte-identical to master and the ledger is still 7 columns. The single
+      render passes all three verify gates and both dogfood trees are
+      354/354 byte-identical.
+      THE BLOCKER IS AC-1, AND IT CANNOT BE FIXED BY MORE WORK. AC-1 needs a
+      before/after sample whose baseline had to be captured BEFORE any
+      feature-002 or feature-003 task landed. Those tasks have landed, so
+      that moment is gone. The gate is measured -- cycle 1 declared 189,505
+      bytes, cycle 2 declared 103,538, a within-task re-read ratio of 0.546
+      where the unscoped rule gives 1.000 by construction -- but that is one
+      task, and AC-1 asks for an observational sample across Execute.
+      WHY IT HAPPENED, AND IT IS THE MOST USEFUL THING THIS WORK PRODUCED:
+      record takes --brief <path> and every per-task review was dispatched
+      with its brief composed inline, so there was no file to point at and
+      NO STEP THAT WOULD FAIL IF record WERE SKIPPED. Nothing was bypassed
+      because there was nothing to bypass. This is exactly what feature-001's
+      SPEC predicted under "The agent-must-invoke-it risk": the same W5-5
+      class, and the SPEC said in terms that the mitigation DETECTS but does
+      not PREVENT. Both halves held. The gap is visible rather than hidden
+      behind a plausible number, and no saving is claimed that was not
+      measured. A measurement mandate an agent can satisfy by doing nothing
+      will be satisfied by doing nothing -- confirmed a second time, on a
+      work that had read W5-5 and written a mitigation for it.
+      THE GATE ALSO CAUGHT A CORRUPTION I INTRODUCED. task-004's edit split
+      the template-payload registry row on a literal pipe inside its own
+      Selector example, inserting the Match value into the prose and
+      truncating it. Repaired by escaping the inner pipes -- which then broke
+      the oracle, because awk -F'|' splits on an escaped pipe too and the
+      template tree silently went from 76 UNDECIDED to 0. The parser now
+      masks escaped pipes; classification is byte-identical to before the
+      repair, which is the proof task-004 required that representation
+      changed and meaning did not. OR20/OR21 added so it cannot regress.
 
 # [A] aid-deploy only; one entry per delivery.
 deploy: []
