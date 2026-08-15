@@ -45,9 +45,9 @@
 # one -- never self-written by the task being executed.)
 
 # [W] Pending | In Progress | In Review | Blocked | Done | Failed | Canceled
-state: Pending
+state: Done
 # [W]
-review: --
+review: '19/19 pass; AC-11 evidence 241/317 decided (76%); path-bound mutation confirms an orphan would be softened to UNDECIDED without it'
 # [W] HH:MM | --
 elapsed: --
 # [W]

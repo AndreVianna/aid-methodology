@@ -45,9 +45,9 @@
 # one -- never self-written by the task being executed.)
 
 # [W] Pending | In Progress | In Review | Blocked | Done | Failed | Canceled
-state: Pending
+state: Done
 # [W]
-review: --
+review: 'exit 0 on the real corpus; 241/317 decided (76%); orphan outside the bound -> VIOLATION exit 1; byte-identical across runs; classifications match the prose selectors incl. the STATE.md ordering case'
 # [W] HH:MM | --
 elapsed: --
 # [W]
