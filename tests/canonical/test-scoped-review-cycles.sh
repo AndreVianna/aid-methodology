@@ -167,11 +167,30 @@ assert_file_contains "$SCHEMA" "scoped cycle never approves" \
     "SC13 (FR-6) a scoped cycle cannot approve -- only a full pass can"
 assert_file_contains "$SCHEMA" "the cycle is UNSCOPED" \
     "SC14 no previous-cycle commit degrades to an unscoped cycle, the safe direction"
-if grep -q "shape stays 7 columns" "$SCHEMA" && \
-   ( cd "$REPO_ROOT" && git diff --quiet origin/master -- canonical/aid/scripts/grade.sh ); then
-    pass "SC15 (C-3, AC-10) the ledger is still 7 columns and grade.sh is byte-identical to master"
+# C-3 / AC-10 assert that the 7-column ledger and its grader still work together.
+# An earlier version proved that by diffing grade.sh against `origin/master`, which
+# passed locally and FAILED IN CI: a shallow clone has no such ref, so the diff errored
+# and took the assertion down with it. That is exactly the defect class `tech-debt.md`
+# W4-3 lists as "(H) dependence on local origin/master ancestry", committed by a suite
+# written in a repo that happened to have the ref.
+#
+# Behaviour is the better assertion anyway. What C-3 protects is not grade.sh's bytes but
+# that the grader still reads a 7-column ledger positionally and prices it correctly. A
+# byte-diff would also fail on a harmless comment change while passing a semantic break.
+GRADER="${REPO_ROOT}/canonical/aid/scripts/grade.sh"
+LED="${TMP}/grade-fixture.md"
+grade_of() { printf '%s\n' "$@" >"$LED"; ( cd "$REPO_ROOT" && bash "$GRADER" "$LED" ) 2>/dev/null; }
+HDR='| # | Severity | Status | Doc | Line | Description | Evidence |'
+SEP='|---|---|---|---|---|---|---|'
+G_EMPTY="$(grade_of "$HDR" "$SEP")"
+G_LOW="$(grade_of   "$HDR" "$SEP" '| 1 | [LOW] | Pending | a.md | 1 | G-01 — x | y |')"
+G_MIX="$(grade_of   "$HDR" "$SEP" '| 1 | [HIGH] | Pending | a.md | 1 | G-01 — x | y |' \
+                                   '| 2 | [LOW] | Fixed | b.md | 2 | G-02 — z | w |')"
+if grep -q "shape stays 7 columns" "$SCHEMA" \
+   && [[ "$G_EMPTY" == "A+" ]] && [[ "$G_LOW" == "B+" ]] && [[ "$G_MIX" == "D+" ]]; then
+    pass "SC15 (C-3, AC-10) the 7-column ledger and grade.sh still agree: empty=A+, one LOW=B+, HIGH+Fixed-LOW=D+ (a Fixed row correctly does not count)"
 else
-    fail "SC15 (C-3, AC-10) the ledger shape or grade.sh changed"
+    fail "SC15 (C-3, AC-10) grader/ledger contract broken -- empty='$G_EMPTY' (want A+), one-LOW='$G_LOW' (want B+), mixed='$G_MIX' (want D+)"
 fi
 
 echo
