@@ -340,6 +340,51 @@ to Specify, `missing-dependency` to Detail, and `wrong-assumption` to a task/SPE
 CONFIRMED: `docs/aid-methodology.md` ("Loop 6"). The Monitor re-points (L9/L10) are CONFIRMED:
 `canonical/skills/aid-monitor/SKILL.md` ("bugs to /aid-fix, change requests to /aid-triage").
 
+### The `design -> create -> update` artifact lifecycle (on-demand, off the numbered pipeline)
+
+Thirty-six skills share one contract, `canonical/aid/templates/design-lifecycle.md`. They **bind**
+it rather than restating it, so the rules below live in one file and the bodies stay thin.
+
+**None of the thirty-six declares a `phase:`.** They are on-demand skills in the same shape
+`/aid-design` and `/aid-prototype` already have, so they carry no phase membership and none routes
+to `/aid-execute`. C-1's closed `phase:` enum is **not** extended by this family, and no contract
+below implies it was.
+
+| Stage | Precondition | Writes | Refuses when |
+|-------|--------------|--------|--------------|
+| `design` | none -- the shape is still open | `.aid/design/<artifact>.md`, and nothing else | -- |
+| `create` | a ready seed exists | the destination artifact; on first creation, its registration too | one of exactly three conditions, below |
+| `update` | the destination already carries committed content | the named revision only | the destination is `source: generated` |
+
+**`create` has exactly three refusal conditions and no fourth:** no seed at
+`.aid/design/<artifact>.md`; the seed's `## Open questions` still unresolved with no
+`--override-open-questions` supplied; or the destination's frontmatter reading
+`source: generated`, which means a registered build script owns that content. Whatever the
+destination already holds is **never itself** a reason to refuse -- an as-built document is the
+normal case these skills are for.
+
+**A repeat `create` never halts with nothing done.** Every part of the seed that is new is
+written; each part that would overwrite content an earlier run of the same lifecycle committed is
+named and **routed** to `update`. The seed is deleted only when everything its `## Destination`
+named was written -- otherwise it stays in place carrying just the unrealized parts, which
+`update` then consumes.
+
+**Registration happens in the creating run, never later and never by another skill.** When
+`create` creates a document it appends one `.aid/settings.yml` `knowledge.doc_set` entry
+`<file>|<owner>|required` -- the owner taken from the document's matrix row, never a blanket
+`skill-self` -- and one `.aid/knowledge/README.md` Completeness row, incrementing that file's
+doc-set count. Both use the append-block idiom and both must succeed in the same run.
+
+**Frontmatter invariants.** A document `create` creates gets `source: forward-authored` and
+`sources: []`; a document that already existed keeps its `source:` value unchanged, and `update`
+never rewrites a production mode. `approved_at_commit:` is never written and never restamped by
+either verb -- it is generator-written on approval, and these skills are not that generator.
+
+**`update` asks every run which derived outputs to update alongside the one it is writing, and
+stores the answer nowhere** -- no frontmatter backlink, no manifest, no registry, no state carried
+between runs. The question is asked afresh each time, and no tracking metadata is written into any
+output it touches.
+
 ### Greenfield forward-authoring + the conformance feedback
 
 Two design-first mechanisms extend the feedback model beyond the eleven loops:

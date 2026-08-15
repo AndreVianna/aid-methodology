@@ -64,6 +64,8 @@ review-criteria:
 - [D24 — /aid-describe reduced to full-path-only](#d24--aid-describe-reduced-to-full-path-only)
 - [D25 — /aid-monitor re-point (BUG and Change-Request routing)](#d25--aid-monitor-re-point-bug-and-change-request-routing)
 - [D26 — No line-coverage metric (suite-presence coverage for a shell/markdown toolkit)](#d26--no-line-coverage-metric-suite-presence-coverage-for-a-shellmarkdown-toolkit)
+- [D27 — `design` / `create` / `update` as the verbs, not `export` or `document-`](#d27--design--create--update-as-the-verbs-not-export-or-document-)
+- [D28 — Forward-looking documents in a Knowledge Base that describes what *is*](#d28--forward-looking-documents-in-a-knowledge-base-that-describes-what-is)
 - [Still Load-Bearing](#still-load-bearing)
 
 ---
@@ -528,6 +530,44 @@ review-criteria:
   see `tech-debt.md` L4.
 
 ---
+
+## D27 — `design` / `create` / `update` as the verbs, not `export` or `document-`
+
+**Context.** The new stage needed a verb. Three candidates were on the table: extend the existing
+`document-` family, mint an `export` verb, or add `design` as a third grid verb beside `create`
+and `update`.
+
+**Decision.** `design`, as a peer of `create` and `update`, ordered `design -> create -> update`.
+
+**Alternatives, and why they were rejected.** `document-` was rejected because the family already
+means *write a document about something that exists*, whereas a seed records a direction for
+something that does **not** exist yet; overloading it would have made the existing eight genre
+siblings ambiguous. `export` was rejected because it names a **direction of data movement**, not a
+stage of work — it would have described where the file goes rather than what the step is for, and
+it implies a lossless transform of something already complete.
+
+**Consequences.** The grid gains a third verb, so every artifact with a `create`/`update` pair can
+take a `design` row uniformly — 22 of them do. The three verbs partition by the state the work is
+in, which is what makes the choice between them mechanical rather than a judgement call. The cost
+is one more verb family in the catalog and on the published site.
+
+## D28 — Forward-looking documents in a Knowledge Base that describes what *is*
+
+**Context.** The Knowledge Base states the **current state of the project's sources**. `roadmap.md`
+and `backlog.md` are forward-looking: they record where the project is heading and what is not yet
+scheduled. Admitting them looks like a contradiction of the KB's own rule.
+
+**Decision.** Admit them, and keep design **seeds** out.
+
+**Rationale.** A *committed* decision is a present fact about the project, even when its subject is
+the future: that the team has agreed to do X next is true **now**, and is exactly the kind of thing
+a newcomer needs the KB to tell them. A design **seed** is not yet such a fact — it is a proposal
+under consideration, and it may be discarded. So the line is drawn at commitment, not at tense.
+
+**Consequences.** `roadmap.md` and `backlog.md` are KB documents with the same authoring rules as
+any other. Seeds live in `.aid/design/`, outside the KB, and a `design` skill writes nothing into
+`.aid/knowledge/` — the invariant every one of the 22 `design` bodies states explicitly. `create`
+is the step that turns a seed into a KB fact, which is also the step that registers the document.
 
 ## Still Load-Bearing
 
