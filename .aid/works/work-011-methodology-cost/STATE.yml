@@ -189,6 +189,62 @@ qa:
       out because the rule governs artifacts, so they are out of scope rather than clean.
     decided_by: agent
     updated: '2026-08-15'
+  - id: Q23
+    question: 'work-006 (PR #184) lands first: what is the impact, and what must change in it?'
+    state: Open
+    answer: |
+      Rehearsed by trial-merging origin/work-006 into this branch in a throwaway worktree.
+      The mechanical collision is small; the semantic one is two files; and work-006
+      arrives with a break of its own in the two files this work has spent the day in.
+
+      CONFLICTS -- 21 files, only 2 needing judgment:
+        canonical/skills/aid-define/SKILL.md
+        canonical/skills/aid-specify/SKILL.md
+      The other 19 are generated (profiles/, both dogfood trees, 5 emission manifests).
+      Those are resolved by REGENERATION, never by picking a side -- and the order
+      matters: a conflicted emission-manifest.jsonl breaks run_generator.py outright
+      (JSONDecodeError on the conflict marker), so canonical/ must be resolved first,
+      then the generator re-run. Learned by doing it in the wrong order.
+
+      The doorway generator merges CLEANLY even though both branches edit it: work-006
+      rewrites the frontmatter DESCRIPTION builder, this work rewrote the BODY line, and
+      they are different regions. Verified both survive rather than assuming it.
+
+      SEMANTIC -- the two conflicts are the whole story, and work-006 is on the old model:
+        aid-define:  "decompose into discrete feature FOLDERS, each with its own SPEC.md
+                      stub"
+        aid-specify: "writing the result to that feature's SPEC.md"
+      Both describe the layout this work abolished. But work-006's STYLE is better than
+      what it replaces -- user-facing, leading with the outcome and saying when to reach
+      for the skill, with engine mechanics moved out of the description. So the resolution
+      is neither side wholesale: keep work-006's shape, state the current model (§ 11
+      sections, `#### Technical Specification`, `AC-N` citations). Drafted and verified
+      both; with them applied, all 11 discipline gates pass on the merged tree.
+
+      The gates caught exactly this and nothing spurious: AD03 (2 broken `../` citations
+      reappearing), AD04 (the SPEC.md stub sentence), AD05 (a `features/` tree diagram).
+      That is the first time these rules have been tested against code written by someone
+      unaware of them, which is the case they exist for.
+
+      work-006's 36 NEW skills are CLEAN against every rule here -- no abolished-layout
+      references, no change-log apparatus, no stale artifact advertising. They are
+      hand-authored (`repurpose: true`, 60 rows now), not engine-driven, so AC-13 does not
+      reach them.
+
+      WHAT WORK-006 WILL NEED FIXED, and it is in this work's own files: all 36 new
+      skills are absent from SHORTCUT_KIND_MAP in BOTH dashboard/reader/state_schema.py
+      and dashboard/server/reader.mjs. test-dashboard-reader.sh fails on work-006 ALONE
+      (verified against origin/work-006 in isolation, so it is not merge damage): leg 3
+      of its own parity suite asserts every catalog row has a key, and 36 have none. That
+      is 36 rows x 2 lockstep implementations -- the same pair whose divergence produced
+      three CRITICALs here, and the parity-harness pattern built for the title and lane
+      derivations applies directly.
+
+      Also worth checking once merged, though no gate flags it yet: the new design-family
+      skills produce design artifacts, and whether their acceptance criteria name
+      observables (AC-5) and cite `AC-N` (AC-6) has not been reviewed.
+    decided_by: agent
+    updated: '2026-08-15'
   - id: Q22
     question: 'AC-13: is the Lite path reduced?'
     state: Resolved
