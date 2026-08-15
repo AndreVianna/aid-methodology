@@ -34,6 +34,19 @@ DECLARED REVIEW CRITERIA (resolve; do not invent):
   - Cite the criterion `id` as a prefix in the ledger's Description cell (7 columns, no
     new column). A finding citing no id, or an id resolving nowhere, is itself a defect.
   - A `kind: exclude` criterion binds you: reporting it is a defect in the review.
+  - **If a criterion carries an `oracle:`, RUN it -- do not re-read the criterion to
+    reach the same verdict.** Invoke it from the repository root under a 60-second
+    timeout. It reports per FILE: exit 0 means no violation among the files it decided,
+    exit 1 means at least one `VIOLATION <path>` line, exit 2 (or any other exit, a
+    timeout, or exit 1 with no VIOLATION line) means it could not decide.
+  - **`UNDECIDED <path>` lines are normal, not a failure.** Take the decided files as
+    settled and judge only the undecided remainder by reading.
+  - **A missing, non-executable, crashing, timed-out or malformed oracle DEGRADES that
+    criterion to reading, and you record that the degradation happened.** Never let a
+    degraded oracle read as a pass, and never file it as a violation -- "I could not
+    tell" is neither.
+  - One finding per `VIOLATION` line: the criterion `id` as the Description prefix, the
+    invocation and that line in Evidence. Seven columns, unchanged.
   - If the severity came from a file-level override, record the resolved severity and the
     overriding file's `why` in the Evidence cell.
 

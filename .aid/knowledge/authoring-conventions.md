@@ -114,25 +114,64 @@ trees. Ordering is what makes the selectors mutually exclusive in practice rathe
 wording: `.aid/knowledge/STATE.md` satisfies `state`, `kb-generated` and `kb-meta` at once, and resolves
 to `state` because that row comes first.
 
-| Type | Selector | Notes |
-|------|----------|-------|
-| `state` | any `STATE.md`, at any depth in any folder | never reviewed (see `G-04`); first row, so a `STATE.md` inside another tree never resolves to that tree's type |
-| `kb-generated` | a `.md` under `.aid/knowledge/` with `source: generated` (e.g. `INDEX.md`) | build-verify only; content not graded (C-5). Ahead of `kb-meta`, so a generated meta doc is build-verified rather than field-checked |
-| `kb-meta` | a `.md` under `.aid/knowledge/` with `kb-category: meta` (e.g. `external-sources.md`) | spot-check of top-level fields only |
-| `kb-doc` | any other `.md` under `.aid/knowledge/` | the hand-authored knowledge docs — `kb-category: primary` or `extension` with `source: hand-authored`; the catch-all that closes the KB tree |
-| `skill-generated` | a `canonical/skills/<name>/SKILL.md` whose `<name>` is a row in `shortcut-catalog.yml` | rebuilt by the generator; no file-level block (see `SK-02`) |
-| `skill-authored` | a `canonical/skills/<name>/SKILL.md` whose `<name>` is not a `shortcut-catalog.yml` row | hand-authored; may carry a file-level block |
-| `skill-reference` | a `.md` under `canonical/skills/*/references/` | the procedure bodies an agent executes |
-| `agent` | a `canonical/agents/*/AGENT.md` | may carry a file-level block; `render.py` carries it through |
-| `template-payload` | a file under `canonical/aid/templates/` whose frontmatter belongs to the artifact the template EMITS rather than to the template. Three recognizers, any one sufficient: placeholder tokens (`{project}`, `{grade or Pending}`); an **unquoted** choice-list in a value position (`delivery_state: Pending-Spec | Specified | ...`) — a pipe inside a quoted string is prose, not a choice list; or an opening key drawn from the emitted artifact's own schema — `pipeline:`, `delivery_state:`, `state:`. **`kb-category:` is deliberately NOT a recognizer**: a template may carry it about itself (`reviewer-ledger-schema.md` does), and the `knowledge-base/` doc templates are already caught by their placeholders | no file-level block (see `TP-01`). Includes the `knowledge-base/` doc templates: their frontmatter is the emitted KB doc's, so a `review-criteria:` there is the EMITTED doc's declaration, not the template's |
-| `template-own` | any other file under `canonical/aid/templates/` — its frontmatter describes itself, or it has none | the catch-all that closes the template tree (e.g. `reviewer-ledger-schema.md`); may carry a file-level block. Ordered after `template-payload`, so a payload template never falls here |
+### The `Match` column
+
+`Selector` is the prose a human reads. `Match` is the same selector in a form a check can
+parse, so a tool never keeps its own second copy of the registry and cannot drift from it.
+
+| Clause | Form | Meaning |
+|--------|------|---------|
+| Path | `path <glob>` | the file's repo-relative path matches the glob |
+| Frontmatter | `fm <key> == <value>` | the file's frontmatter has that key with that scalar value |
+| Membership | `name-in <file>` | the file's **parent directory name** appears as a `name:` value in `<file>` |
+
+Clauses join with `AND`. There is deliberately no regex, no negation and no disjunction: a
+row needing more than this is a row a check must leave undecided, which is the honest
+outcome. `skill-authored`'s prose says "**not** a `shortcut-catalog.yml` row" and needs no
+negation, because `skill-generated` precedes it and resolution is first-match-wins —
+ordering does the work, exactly as stated above.
+
+One reserved token, which is not a clause and is never evaluated:
+
+| Token | Meaning |
+|-------|---------|
+| `<inexpressible>` | This row's selector cannot be fully expressed. A check reads the row's other clauses to get its **path bound**, then stops for any file inside that bound and reports it undecided. Such a row is never a match and never a non-match — it is a boundary. |
+
+`template-payload` carries it because its recognizers test frontmatter *shape* (placeholder
+tokens, an unquoted choice-list in a value position), which no `key == value` clause can
+express. Its path bound is mandatory rather than cosmetic: without it, a check would stop
+for *any* file that exhausted the expressible rows, including a genuine orphan elsewhere in
+the corpus — reporting as merely undecided the very defect `G-07` exists to catch.
+`template-own` is the catch-all over that same path space, so it is unreachable behind
+`template-payload` and is inexpressible as a consequence of its neighbour rather than of
+anything about itself. **Eight rows are fully expressible; those two are not.**
+
+> **`Selector` and `Match` are one unit.** Changing either without the other is a defect.
+> They state the same rule in two notations, so an edit to the prose that forgets the
+> `Match` cell leaves a check silently classifying by the old rule. Re-running a check that
+> prints its full classification, and diffing the output across the edit, shows exactly
+> which files changed type — an intended edit produces an expected diff; a forgotten cell
+> produces none where one was expected.
+
+| Type | Selector | Match | Notes |
+|------|----------|-------|-------|
+| `state` | any `STATE.md`, at any depth in any folder | `path **/STATE.md` | never reviewed (see `G-04`); first row, so a `STATE.md` inside another tree never resolves to that tree's type |
+| `kb-generated` | a `.md` under `.aid/knowledge/` with `source: generated` (e.g. `INDEX.md`) | `path .aid/knowledge/*.md AND fm source == generated` | build-verify only; content not graded (C-5). Ahead of `kb-meta`, so a generated meta doc is build-verified rather than field-checked |
+| `kb-meta` | a `.md` under `.aid/knowledge/` with `kb-category: meta` (e.g. `external-sources.md`) | `path .aid/knowledge/*.md AND fm kb-category == meta` | spot-check of top-level fields only |
+| `kb-doc` | any other `.md` under `.aid/knowledge/` | `path .aid/knowledge/*.md` | the hand-authored knowledge docs — `kb-category: primary` or `extension` with `source: hand-authored`; the catch-all that closes the KB tree |
+| `skill-generated` | a `canonical/skills/<name>/SKILL.md` whose `<name>` is a row in `shortcut-catalog.yml` | `path canonical/skills/*/SKILL.md AND name-in canonical/aid/templates/shortcut-catalog.yml` | rebuilt by the generator; no file-level block (see `SK-02`) |
+| `skill-authored` | a `canonical/skills/<name>/SKILL.md` whose `<name>` is not a `shortcut-catalog.yml` row | `path canonical/skills/*/SKILL.md` | hand-authored; may carry a file-level block |
+| `skill-reference` | a `.md` under `canonical/skills/*/references/` | `path canonical/skills/*/references/*.md` | the procedure bodies an agent executes |
+| `agent` | a `canonical/agents/*/AGENT.md` | `path canonical/agents/*/AGENT.md` | may carry a file-level block; `render.py` carries it through |
+| `template-payload` | a file under `canonical/aid/templates/` whose frontmatter belongs to the artifact the template EMITS rather than to the template. Three recognizers, any one sufficient: placeholder tokens (`{project}`, `{grade or Pending}`); an **unquoted** choice-list in a value position (`delivery_state: Pending-Spec | `path canonical/aid/templates/** AND <inexpressible>` | Specified | ...`) — a pipe inside a quoted string is prose, not a choice list; or an opening key drawn from the emitted artifact's own schema — `pipeline:`, `delivery_state:`, `state:`. **`kb-category:` is deliberately NOT a recognizer**: a template may carry it about itself (`reviewer-ledger-schema.md` does), and the `knowledge-base/` doc templates are already caught by their placeholders | no file-level block (see `TP-01`). Includes the `knowledge-base/` doc templates: their frontmatter is the emitted KB doc's, so a `review-criteria:` there is the EMITTED doc's declaration, not the template's |
+| `template-own` | any other file under `canonical/aid/templates/` — its frontmatter describes itself, or it has none | `path canonical/aid/templates/**` | the catch-all that closes the template tree (e.g. `reviewer-ledger-schema.md`); may carry a file-level block. Ordered after `template-payload`, so a payload template never falls here |
 
 ---
 
 ## Review Criteria — Criteria by Level
 
 One row per criterion, carrying the same fields as the frontmatter object (`id`, `kind`, `criterion`,
-`severity`, `why`). **Applies to** takes one of three values: `*` means global (level 1); one **or more
+`severity`, `why`, and the optional `oracle`). **Applies to** takes one of three values: `*` means global (level 1); one **or more
 comma-separated registry type names** mean level 2 — a criterion true of two types stays ONE row naming
 both, because two rows saying the same thing is the duplication this table exists to make visible; and a
 **file class named by the criterion itself** scopes a global
@@ -170,6 +209,15 @@ in the ledger's `Doc` column. A finding citing no id, or an id resolving nowhere
 | AG-01 | `agent` | validate | The `name:` matches the folder, and any agent it references resolves under `canonical/agents/` | MEDIUM | a name/folder mismatch mis-dispatches |
 | TO-01 | `template-own` | exclude | A template inlined into another file by an `{{include:<name>}}` token carries no file-level `review-criteria:` block — currently `agent-boilerplate.md`, inlined by every `canonical/agents/*/AGENT.md` | — | the include copies the file verbatim, so frontmatter here is injected as a stray delimiter block into the middle of every including file |
 | TP-01 | `template-payload` | exclude | Carries no file-level `review-criteria:` block; its frontmatter is the emitted artifact's | — | a block here would be stamped onto every generated artifact |
+
+**An optional `oracle:` decides a criterion by running it.** A `validate` criterion may name an
+executable check — a repo-root-relative path, living outside `canonical/` — so a mechanically
+decidable criterion is settled by *running* rather than by a reviewer re-deriving it every cycle.
+Absence of the key is never a defect, and most criteria will never carry one. The full contract —
+the per-file `VIOLATION`/`UNDECIDED` output, the exit codes, the 60-second bound, and what
+degradation means — is declared once in
+`kb-authoring/frontmatter-schema.md § oracle: — deciding a criterion by running it`, and is not
+restated here.
 
 **Severity** on a `validate` criterion is what a violation of that criterion costs, resolved through the
 same three levels (a file may override a higher level's severity by restating the criterion's `id` with

@@ -45,9 +45,9 @@
 # one -- never self-written by the task being executed.)
 
 # [W] Pending | In Progress | In Review | Blocked | Done | Failed | Canceled
-state: Pending
+state: Done
 # [W]
-review: --
+review: 'verified: 10 Match cells, 8 fully expressible, prose Selector retained, co-edit rule stated, no work id introduced'
 # [W] HH:MM | --
 elapsed: --
 # [W]
