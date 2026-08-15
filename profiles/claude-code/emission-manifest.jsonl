@@ -20,7 +20,7 @@
 {"dst": ".claude/aid/scripts/execute/compute-block-radius.sh", "profile": "claude-code", "sha256": "eea2a8d8dd12d5e118ea97664fb874343b738a650c984c866363e6adab5bde05", "src": "canonical/scripts/execute/compute-block-radius.sh"}
 {"dst": ".claude/aid/scripts/execute/derive-waves.sh", "profile": "claude-code", "sha256": "0ab4398c4904e9a6a70ddcda13dca0845ed0bb8c8665b272c346c37bfa3b5b0f", "src": "canonical/scripts/execute/derive-waves.sh"}
 {"dst": ".claude/aid/scripts/execute/write-control-signal.sh", "profile": "claude-code", "sha256": "4adc99a9d9aff96d5a3c418fb461af28167f48cfada8a1d2ed88b17454fb17fc", "src": "canonical/scripts/execute/write-control-signal.sh"}
-{"dst": ".claude/aid/scripts/execute/writeback-state.sh", "profile": "claude-code", "sha256": "b6f4998610b2da0fd894ace9e0e9fbed5a7915b5a9a6018e40d69d0199803960", "src": "canonical/scripts/execute/writeback-state.sh"}
+{"dst": ".claude/aid/scripts/execute/writeback-state.sh", "profile": "claude-code", "sha256": "378322d6e22ebcc2b3ac3a5523360bbe22d12258a90f30bdde4aa1a3f182fe76", "src": "canonical/scripts/execute/writeback-state.sh"}
 {"dst": ".claude/aid/scripts/grade.sh", "profile": "claude-code", "sha256": "478103d69baa1eb0f080538923ebe4a583629cbce540d04c567f15b4c76350f3", "src": "canonical/scripts/grade.sh"}
 {"dst": ".claude/aid/scripts/housekeep/branch-commit.sh", "profile": "claude-code", "sha256": "4317500099dcff627c2ed2d4dd59ecaf78d1173a9536baa6a35330dd9d7b9a9f", "src": "canonical/scripts/housekeep/branch-commit.sh"}
 {"dst": ".claude/aid/scripts/housekeep/cleanup-classify.sh", "profile": "claude-code", "sha256": "514d7bbbcf9dcca3875d78ec89441f794ba29e2eb1906c3bcdee4de0f2bacd20", "src": "canonical/scripts/housekeep/cleanup-classify.sh"}
