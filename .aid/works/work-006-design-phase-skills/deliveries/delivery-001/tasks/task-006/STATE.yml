@@ -1,0 +1,10 @@
+state: Done
+review: "--"
+elapsed: "--"
+notes: "--"
+ticket_ref: "--"
+
+quick_check:
+  reviewer_tier: sonnet
+  findings: []
+dispatch_log: []

@@ -1,6 +1,6 @@
 ---
 title: 'aid-prototype-ui'
-description: 'A ui kind-sibling of /aid-prototype -- build a THROWAWAY low-fidelity UI wireframe/mock + interaction flow NOW to validate a UX direction, then present what…'
+description: 'Build a throwaway, low-fidelity UI wireframe and interaction flow to test whether a UX direction actually works.'
 generatedFrom: 'canonical/skills/aid-prototype-ui/SKILL.md'
 ---
 
@@ -9,7 +9,7 @@ generatedFrom: 'canonical/skills/aid-prototype-ui/SKILL.md'
 ## Frontmatter
 
 - **`name`** — aid-prototype-ui
-- **`description`** — A ui kind-sibling of /aid-prototype -- build a THROWAWAY low-fidelity UI wireframe/mock + interaction flow NOW to validate a UX direction, then present what it shows and hand the real build off. Resolves nothing; isolated and throwaway. This file carries no logic of its own -- its full behavior is defined by canonical/skills/aid-prototype/SKILL.md, with "ui" as the prototype target.
+- **`description`** — Build a throwaway, low-fidelity UI wireframe and interaction flow to test whether a UX direction actually works. Use this skill when you want to see a screen before committing to building it. Isolated and disposable: it never touches production, and it reports what the mock shows rather than deciding anything for you. For a kept UI design meant to inform the real build rather than a throwaway that validates a direction, use `/aid-design-ui` instead. A thin kind-sibling of `/aid-prototype`, which defines its full behavior.
 - **`allowed-tools`** — Read, Glob, Grep, Bash, Write, Edit, Agent
 - **`argument-hint`** — &lt;screen/flow> -- the UI screen(s)/flow whose direction to validate
 
@@ -61,11 +61,11 @@ Every node in the chart above, in chart order, with the exact `canonical/` text 
 
 <a id="fragment-n1"></a>**1 · `aid-prototype-ui`** — {verb: prototype, artifact: ui} · _entry_
 
-~~~~plaintext title="canonical/skills/aid-prototype-ui/SKILL.md#L17" wrap
+~~~~plaintext title="canonical/skills/aid-prototype-ui/SKILL.md#L18" wrap
 (`alias_of: null`, its own `{verb: prototype, artifact: ui}`), `repurpose: true`
 ~~~~
 
-[Source: `canonical/skills/aid-prototype-ui/SKILL.md#L17`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-prototype-ui/SKILL.md#L17)
+[Source: `canonical/skills/aid-prototype-ui/SKILL.md#L18`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-prototype-ui/SKILL.md#L18)
 
 <a id="fragment-n2"></a>**2 · `INTAKE`** · _entry_
 

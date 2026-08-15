@@ -1,0 +1,10 @@
+state: Done
+review: 'Gate-deferred; corrects task-053''s R1 prediction'
+elapsed: "--"
+notes: 'Both generators run in prebuild order. Pages 76->112 (111 skills + index), flow sidecars 75->111, 220 files under site/. Published index carries exactly 22 design cards and 1 brainstorm card (CC-7), with assignGroups throwing none of its four guards. Correction: the relocated state-machine lines did NOT fire R1 -- extract-dispatch outranks it for all four skills'
+ticket_ref: "--"
+
+quick_check:
+  reviewer_tier: --
+  findings: []
+dispatch_log: []

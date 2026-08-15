@@ -1,0 +1,10 @@
+state: Done
+review: 'Gate-deferred; skill-flows JSON will change for 4 skills (3 here + aid-describe from slice 1) -- task-064 owns that regeneration'
+elapsed: "--"
+notes: 'Slice is 8 not 9 (aid-graph removed upstream). Both cap outliers fixed: aid-update-ticket 1098->668, aid-create-ticket 1008->630; max in slice now 758. T54''s literal kept in the description (only place it matches); ticket suite 88/88 green unmodified. 3 state-machine sequences relocated to bodies, label normalised hyphen->space so R1 fires as predicted -- docs quote the sequences, never the label'
+ticket_ref: "--"
+
+quick_check:
+  reviewer_tier: --
+  findings: []
+dispatch_log: []

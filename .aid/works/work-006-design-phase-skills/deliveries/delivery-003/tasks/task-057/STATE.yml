@@ -1,0 +1,10 @@
+state: Done
+review: Gate-deferred
+elapsed: "--"
+notes: '12/12 triggered, 0 neighbours lost. 11 by insert; aid-create-cicd needed compacting -- 6 neighbours plus the V22 Conformance Lane disclosure took it to 1105 on insert, now 870. feature-004 V22 re-verified on all four create bodies'
+ticket_ref: "--"
+
+quick_check:
+  reviewer_tier: --
+  findings: []
+dispatch_log: []

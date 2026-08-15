@@ -1,19 +1,20 @@
 ---
 name: aid-describe
 description: >
-  Conversational requirements gathering through adaptive interview, driven by the
-  seasoned-analyst elicitation engine (references/elicitation-engine.md): one fixed
-  D1 opener plus a deterministic five-step next-move selector (stop check, gap
-  selection, move selection, calibration shaping, NFR-7 envelope + emit). First run
-  builds REQUIREMENTS.md incrementally. Subsequent runs resume the interview for
-  incomplete sections. Final step presents approved requirements for handoff to
-  /aid-define.
-  State machine: FIRST-RUN -> Q-AND-A -> CONTINUE -> {greenfield: DESCRIBE-SEED ->} COMPLETION [PAUSE -> /aid-define].
+  Gather requirements through an adaptive interview and write them to REQUIREMENTS.md. Use
+  this skill when you know roughly what you want built but the scope, the users, and the
+  acceptance criteria are not yet pinned down. It asks one question at a time, each chosen
+  by a seasoned-analyst elicitation engine that picks its next move from the gaps in what
+  you have said so far. The first run builds the document incrementally; a later run resumes
+  wherever it is still incomplete. It ends by presenting the finished requirements for your
+  approval and handing off to `/aid-define`.
 allowed-tools: Read, Glob, Grep, shell, Write, Edit
 argument-hint: "[work-001] resume work  [--reset work-001] clear and restart"
 ---
 
 # Conversational Requirements Gathering
+
+State machine: FIRST-RUN -> Q-AND-A -> CONTINUE -> {greenfield: DESCRIBE-SEED ->} COMPLETION [PAUSE -> /aid-define].
 
 ## Agents Involved
 

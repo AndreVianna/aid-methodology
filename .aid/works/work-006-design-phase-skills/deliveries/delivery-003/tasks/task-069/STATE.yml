@@ -1,0 +1,10 @@
+state: Done
+review: Gate-deferred
+elapsed: "--"
+notes: 'test-doc-counts.sh 23/8 -> 31/0 exit 0; its own derivation reads SKILLS=111 ROWS=94 REPURPOSE=60 SHORTCUTS=34, a fourth confirmation of the 111. 13 sites across 7 files, work list read off the guard''s own failure output. The AC''s premise that the 5 profile READMEs have a canonical source is false (no canonical README, absent from all 5 manifests, byte-distinct, render leaves them alone) -- corrected in place as dd3d0367 did. G-01: state-classify count REMOVED as cosmetic; release-aid has no count; README re-measured by the guard'
+ticket_ref: "--"
+
+quick_check:
+  reviewer_tier: --
+  findings: []
+dispatch_log: []

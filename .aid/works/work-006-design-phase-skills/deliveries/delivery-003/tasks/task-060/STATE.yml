@@ -1,0 +1,10 @@
+state: Done
+review: 'Gate-deferred; feature-006 section 6 step 3 cites a setup.sh that does not exist -- corrected to the install path, conclusion unchanged'
+elapsed: "--"
+notes: 'Committed render: build helper then FULL run_generator (845 files, 169 x 5 profiles, internal 3-gate VERIFY PASS). Dogfood trees confirmed untouched by the render, then merge-resynced (no rsync in env; done directly) with each tuple''s own allowlist -- release-aid and generate-profile survived. Byte-identity green in all 3 directions for both tuples, verified independently because DBI01 is blocked by the mawk gawk gap (manifest genuinely holds 354 entries)'
+ticket_ref: "--"
+
+quick_check:
+  reviewer_tier: --
+  findings: []
+dispatch_log: []

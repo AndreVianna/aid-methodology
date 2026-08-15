@@ -1,0 +1,10 @@
+state: Done
+review: Gate-deferred
+elapsed: "--"
+notes: 'test-landscape gains a section on the four DMR keys at their new values, why DMR32''s expected value is a paired sentence rather than a free zero, which suite each count-agnostic note belongs to, and the 144-row coverage delta written as counts not key-set identities. tech-debt: sidecar figure 75->111; W1-11 deliberately NOT closed -- its kb.html half is task-071''s and W1-2''s prose survives regardless. Its machine half was already rewritten upstream for the retired guard'
+ticket_ref: "--"
+
+quick_check:
+  reviewer_tier: --
+  findings: []
+dispatch_log: []

@@ -1,18 +1,15 @@
 ---
 name: aid-ask
 description: >
-  Optional on-demand Q&A skill. Takes a free-form question and answers it in
-  one pass, grounded in three context sources: the Knowledge Base
-  (.aid/knowledge/), the live codebase, and in-flight AID works
-  (.aid/works/work-*/STATE.md + progress). Returns an answer with source citations
-  (KB doc names, file paths, or work-NNN STATE references). When the available
-  context cannot answer the question, states the gap explicitly rather than
-  fabricating an answer AND captures the gap as a Query-Gap entry in the
-  STATE.md Q&A (Pending) backlog so it feeds the KB-improvement loop.
-  Trivial questions are answered inline (Read/Glob/Grep only); broad or
-  expensive investigations dispatch aid-researcher in strictly read-only mode.
-  Writes are restricted to appending a Query-Gap entry to a STATE.md Q&A
-  (Pending) section; no KB doc, settings, or code file is ever written.
+  Answer a question about this project, with citations. Use this skill when you want to know
+  something -- how a part of the system works, what a document says, where a piece of work
+  stands -- and you want a grounded answer rather than a guess. It reads three sources: the
+  Knowledge Base, the live codebase, and any AID work currently in flight, and cites
+  whichever it used, by document name, file path, or work reference. When those sources
+  genuinely cannot answer, it says so instead of inventing an answer, and records the gap so
+  it feeds back into improving the Knowledge Base. Trivial questions are answered inline;
+  broad investigations are dispatched read-only. The only thing it ever writes is that
+  recorded gap.
 allowed-tools: Read, Glob, Grep, Agent, Write, Edit
 argument-hint: "<question>  — a free-form question about the project"
 ---

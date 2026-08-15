@@ -1,0 +1,10 @@
+state: Done
+review: "--"
+elapsed: "--"
+notes: 'Impediment resolved by owner exception: this delivery refreshed the two generated site reference pages so the gen-reference drift-check is green. Regenerated with the generator, never hand-edited.'
+ticket_ref: "--"
+
+quick_check:
+  reviewer_tier: Small
+  findings: []
+dispatch_log: []

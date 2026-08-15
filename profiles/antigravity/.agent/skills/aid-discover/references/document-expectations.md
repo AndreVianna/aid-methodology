@@ -680,3 +680,93 @@ superseded? Surface these as a `## Still Load-Bearing` section.
 **Red flags:** Restates current state without the "why" or the rejected alternatives. Invents
 rationale not grounded in evidence. Duplicates architecture.md / process-architecture.md (those
 describe what *is*; this describes *why* it was chosen over alternatives).
+
+---
+
+### roadmap.md
+
+**Where is this project going, and what has it deliberately chosen not to do?** For every
+direction it has committed to: what was decided, why — the constraint or trade-off that drove
+it — which alternatives were weighed and the reason each one lost, and where the direction
+stands today. Direction only: no work items, no task lists, no execution detail. The horizon
+sections separate what is in flight (`## Now`) from what is committed but not started
+(`## Next`) and what is wanted but not yet committed (`## Later`).
+*(Investigate: the directions the project has actually committed to, each as its own `###`
+entry under a horizon section, carrying `**What:**` — the direction at roadmap altitude —
+`**Why:**` — the constraint or trade-off behind it — `**Rejected:**` — each alternative
+weighed, with the reason it lost — and `**Status:**` — where the direction stands, followed by
+a durable evidence anchor (a path plus a grep-recoverable heading or search string), or the
+literal `intent` where nothing has been built yet; plus a `## Contents` index listing every
+section in heading order. Ground each entry in the artifacts that realize it, never in
+aspiration.)*
+**Operational open question:** Which slice ships first, and why does the line fall exactly
+there? Surface this as a `## MVP` section placed between `## Contents` and `## Now`, naming
+what the first shippable slice contains, why the line falls there, what was cut and why, and
+where the slice stands.
+**Red flags:** Duplicates backlog.md (defined and prioritized *items* belong there; this
+document holds *direction*). Entries carrying item ids — roadmap entries are keyed by title
+alone, which is what keeps the two documents at different granularities. An entry that restates
+the current state without the constraint that drove it or the alternatives it beat. Shipped
+work left here instead of recorded in release-tracking.md. The MVP line restated across the
+horizon sections rather than living once in `## MVP`.
+
+---
+
+### backlog.md
+
+**What work has this project accepted into the plan but not yet shipped, and in what order?**
+For every item: what is to be done and what makes it done, where the change lands, the
+consequence of leaving it undone, and how urgent it is. `## Next Release` holds the slice
+committed to the current tag; `## Prioritized` holds everything else that has been accepted,
+ordered by priority. Acceptance is the entry condition — an observation nobody has committed to
+stays in tech-debt.md.
+*(Investigate: one id-keyed table per item section, every row carrying all seven columns —
+`ID`, `Tag` (`[NEW]` / `[CHANGE]` / `[FIX]`), `Title`, `Definition & done-condition`,
+`Location`, `Risk if not done`, `Priority` (`P1` / `P2` / `P3`) — with each `Location` a
+durable anchor (a path plus a grep-recoverable symbol or heading, never a bare line number); a
+`## Contents` index listing every section in heading order; and which items are genuinely
+committed to the current tag rather than merely wanted.)*
+**How an item enters, and how it leaves.** It enters when a human accepts it into the plan: the
+row is *moved* out of tech-debt.md with its `ID` unchanged and deleted there in the same run,
+so no item is ever present in both documents. It leaves at tag time, when the committed slice
+is drained into release-tracking.md.
+**That release drain is a manual step.** At release time every item in `## Next Release` moves
+out of backlog.md into a new version section of release-tracking.md — each becoming a
+release-note bullet under its own `[NEW]` / `[CHANGE]` / `[FIX]` tag — and is deleted from
+backlog.md in the same pass. **AID ships no adopter-facing skill that performs this drain:** no
+skill under `.agent/skills/` reads backlog.md at tag time, so nothing a project installs
+will do it. It is therefore a **manual step**, performed by hand as part of cutting a release.
+**Operational open question:** What are the traps of working the backlog itself — the moves
+that quietly break the item audit? Surface these as a `## Gotchas` section, so an agent
+promoting, parking, or draining an item is warned before the mistake rather than after it.
+**Red flags:** Duplicates tech-debt.md (an observation nobody has committed to belongs there;
+this document holds only work accepted into the plan) — an item present in both is a checkable
+defect. An item re-minted with a new `ID` on promotion, which breaks the move audit. Items
+parked in `## Next Release` that the current tag will not include. Shipped items left here
+instead of moved into release-tracking.md. A row with a blank cell, with no done-condition, or
+with a `Location` given as a bare line number rather than a durable anchor. Direction or
+rationale written as an item instead of as a roadmap.md entry.
+
+---
+
+### release-tracking.md
+
+**What has actually shipped, in which version, and when?** For every release, newest first: its
+version, its date, and the items it carried, each tagged `[NEW]`, `[CHANGE]` or `[FIX]` —
+`[NEW]` items leading with a feature name, `[CHANGE]` and `[FIX]` items description-only. This
+is a cumulative ledger of the past; nothing pending belongs in it.
+*(Investigate: every published version with its date, in newest-first order; the items each
+release carried, with the tag each one takes; which releases are breaking and what they ask of
+an adopter; and the mechanism that produces a version section — the tag, the release workflow,
+and the publish channels. Ground each version section in the tag and the artifacts that
+actually shipped, never in what was planned.)*
+**Operational open question:** What must an adopter do by hand to move onto a release — the
+steps the upgrade path does not perform for them? Surface these as a `## Migration Notes`
+section, or as a `### Migration to <version>` subsection inside the version that requires them,
+so a breaking release always carries its own upgrade path.
+**Red flags:** Duplicates backlog.md (work that has not shipped belongs there; this document
+records only what has). A standing section for pending or unshipped work — a holding pen makes
+the ledger a plan and puts the same item in two documents. A version section with no date, or
+the file not ordered newest-first. An item with no `[NEW]` / `[CHANGE]` / `[FIX]` tag. A
+shipped version section rewritten or deleted after the fact — the ledger is history, and
+history is appended to, not edited.

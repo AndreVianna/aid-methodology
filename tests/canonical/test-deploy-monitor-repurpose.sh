@@ -28,10 +28,10 @@
 #     test-catalog-dirs-parity.sh's own CDP{i}e exemption logic).
 #
 #   Part 4 -- Full catalog-to-dirs parity:
-#     independently re-derived counts: exactly 58 rows total, all 58 of them canonical
-#     (`alias_of: null`) and 0 alias -- the alias layer is retired -- of which 24 carry
+#     independently re-derived counts: exactly 94 rows total, all 94 of them canonical
+#     (`alias_of: null`) and 0 alias -- the alias layer is retired -- of which 60 carry
 #     `repurpose: true` (hand-authored skills) and the other 34 are generated thin doorways
-#     (24 + 34 = 58); no orphan directory, no orphan row.
+#     (60 + 34 = 94); no orphan directory, no orphan row.
 #     (test-catalog-dirs-parity.sh itself stays COUNT-AGNOSTIC by design -- this is the
 #     dedicated count assertion its own header comment defers to task-035.)
 #
@@ -313,13 +313,16 @@ echo "--- Part 4: full ${TOTAL_ROWS}-row catalog-to-dirs parity ---"
 #   at 58, and repurpose:true went 30 -> 24 as six of those hand-authored rows ceased to exist.
 #   The retired names themselves are deliberately NOT spelled out here: this file is swept for
 #   them and must return zero hits. `git log -- <this catalog>` is the place to read them.
+#   work-006 then added the design stage: 36 hand-authored rows landed (58 -> 94 rows), all of
+#   them repurpose:true (24 -> 60), so the generated thin-doorway count did not move and stays
+#   at 34.
 # Only the last figures in that narration are asserted; the rest is the record of how we got here.
-assert_eq "$TOTAL_ROWS" "58" "DMR30 catalog carries exactly 58 total rows"
-assert_eq "$CANONICAL_ROWS" "58" "DMR31 catalog carries exactly 58 canonical (alias_of: null) rows -- i.e. every row, the alias layer having been retired"
+assert_eq "$TOTAL_ROWS" "94" "DMR30 catalog carries exactly 94 total rows"
+assert_eq "$CANONICAL_ROWS" "94" "DMR31 catalog carries exactly 94 canonical (alias_of: null) rows -- i.e. every row, the alias layer having been retired"
 assert_eq "${ALIAS_ROWS} alias of ${ALIAS_FIELD_LINES} rows carrying an alias_of field" \
-    "0 alias of 58 rows carrying an alias_of field" \
-    "DMR32 catalog carries zero alias rows, out of the 58 rows that DO carry an alias_of field (paired so a moved, emptied or re-keyed catalog cannot pass this as a free zero)"
-assert_eq "$REPURPOSE_ROWS" "24" "DMR33 catalog carries exactly 24 repurpose:true rows (the hand-authored skills; the other 34 rows are generated thin doorways -- 24 + 34 = 58)"
+    "0 alias of 94 rows carrying an alias_of field" \
+    "DMR32 catalog carries zero alias rows, out of the 94 rows that DO carry an alias_of field (paired so a moved, emptied or re-keyed catalog cannot pass this as a free zero)"
+assert_eq "$REPURPOSE_ROWS" "60" "DMR33 catalog carries exactly 60 repurpose:true rows (the hand-authored skills; the other 34 rows are generated thin doorways -- 60 + 34 = 94)"
 CANONICAL_PLUS_ALIAS=$((CANONICAL_ROWS + ALIAS_ROWS))
 assert_eq "$CANONICAL_PLUS_ALIAS" "$TOTAL_ROWS" "DMR34 canonical + alias == total (no row miscounted/double-counted)"
 

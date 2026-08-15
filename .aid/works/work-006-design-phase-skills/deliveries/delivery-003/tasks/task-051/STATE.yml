@@ -1,0 +1,10 @@
+state: Done
+review: 'Gate-deferred; artifact dropped from the trigger clause on purpose (intent already names it in natural English, avoiding a per-skill casing map)'
+elapsed: "--"
+notes: 'One f-string edit covers all 34 doorways. AC-12: leads with intent 34/34, zero banned forms, 429/315 chars against the 1024 cap. Body bindings survive (CDP e/f/g PASS x34, 485 assertions green unmodified). --check OK, re-run writes 0. :12 count comment 24 -> 60, re-derived and carrying its derivation'
+ticket_ref: "--"
+
+quick_check:
+  reviewer_tier: --
+  findings: []
+dispatch_log: []

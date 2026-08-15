@@ -11,7 +11,7 @@
 #   - `repurpose: true` rows -- pre-existing hand-authored skills registered AS catalog rows
 #     rather than generated from them -- are exempted to dir-exists + name-match + `aid-`
 #     prefix ONLY: no body-content assertion (feature-012 owns their bodies). Scope of the
-#     figure below is CATALOG ROWS, not skill directories: 24 `repurpose` rows. Among them,
+#     figure below is CATALOG ROWS, not skill directories: 60 `repurpose` rows. Among them,
 #     the 3 classic re-registered pipeline skills are aid-deploy, aid-monitor and aid-ask.
 #     Derived rather than recalled: `grep -c '^    repurpose: true' shortcut-catalog.yml`.
 #     The suite reads the flag per row, so it needs no edit when that figure moves.
@@ -20,10 +20,10 @@
 #
 # Count-AGNOSTIC BY DESIGN: this suite derives its row set from the catalog and holds NO
 # expected total, so it passes at any row count. Post-change composition, measured
-# 2026-07-31, each operand carrying the scope it was measured over:
-#   CATALOG ROWS      58-row catalog = 58 canonical names (`alias_of: null`) + 0 aliases
-#   within those rows 24 `repurpose` rows (body-exempt, above) + 34 shortcuts (the generated
-#                     doorways) -- 58 - 24 = 34, and an independent awk pass counting rows
+# 2026-08-15, each operand carrying the scope it was measured over:
+#   CATALOG ROWS      94-row catalog = 94 canonical names (`alias_of: null`) + 0 aliases
+#   within those rows 60 `repurpose` rows (body-exempt, above) + 34 shortcuts (the generated
+#                     doorways) -- 94 - 60 = 34, and an independent awk pass counting rows
 #                     that carry no `repurpose` key also reaches 34
 #   SKILL DIRECTORIES a DIFFERENT scope and not this suite's subject: the on-disk corpus is
 #                     larger than the catalog, because curated skills have no catalog row

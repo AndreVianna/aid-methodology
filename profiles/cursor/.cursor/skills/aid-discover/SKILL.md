@@ -1,10 +1,13 @@
 ---
 name: aid-discover
 description: >
-  Brownfield project discovery with built-in quality gate. Run `/aid-config` first to scaffold
-  the KB. Analyzes all repository content (code, configuration, and documentation) to populate
-  KB documents. Reviews, collects user input, fixes issues, and gets user approval — one step
-  per run. State-machine: ELICIT → GENERATE → REVIEW → Q-AND-A → FIX → APPROVAL → DONE.
+  Populate the Knowledge Base from a codebase that already exists. Use this skill when you
+  are starting AID on a project with existing code, and its architecture, conventions, and
+  patterns need to be written down before any later phase can rely on them. It reads all
+  repository content -- code, configuration, and documentation -- drafts the KB documents,
+  reviews them, asks you what it could not infer, fixes what it finds, and takes your
+  approval. It advances one step per run, so you can stop and resume. Run `/aid-config`
+  first to scaffold the KB.
 allowed-tools: Read, Glob, Grep, Terminal, Write, Edit, Agent
 argument-hint: "[--grade A] minimum acceptable grade (default: A)  [--reset] clear KB and restart"
 ---

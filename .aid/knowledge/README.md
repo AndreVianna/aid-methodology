@@ -18,7 +18,7 @@ This Knowledge Base describes **AID (AI Integrated Development)** — a full-lif
 methodology for building software with AI agents, delivered as a multi-profile CLI installer.
 
 - **Domain:** hybrid:methodology-tooling+software-cli
-- **Doc-set:** 19 documents (curated hybrid composition), confirmed at discovery Step 0d.
+- **Doc-set:** 21 documents (curated hybrid composition), confirmed at discovery Step 0d.
 - **Discovery path:** brownfield-large.
 
 Read **INDEX.md** for a 2–3 line summary of every document. Read **STATE.md** for discovery
@@ -55,6 +55,8 @@ run-state, grades, and open questions.
 | 17 | capability-inventory.md | C9 | skill-self | Generated |
 | 18 | decisions.md | D | architecture | Generated |
 | 19 | README.md | meta | skill-self | Generated |
+| 20 | roadmap.md | D | skill-self | Created (skill-self) |
+| 21 | backlog.md | C7 | skill-self | Created (skill-self) |
 | — | INDEX.md | meta | skill-self | Generated (build-kb-index.sh) |
 
 Spine coverage: all 11 dimensions (C0–C9 + D) covered; see STATE.md `## Discovery Domain`

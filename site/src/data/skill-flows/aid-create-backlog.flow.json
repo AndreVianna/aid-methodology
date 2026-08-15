@@ -1,0 +1,267 @@
+{
+  "skill": "aid-create-backlog",
+  "shape": "inline-states",
+  "extractor": "inline",
+  "confidence": "derived",
+  "title": "aid-create-backlog — state flow",
+  "nodes": [
+    {
+      "id": "n1",
+      "order": 1,
+      "name": "INTAKE",
+      "label": "INTAKE",
+      "kind": "entry",
+      "terminal": null,
+      "provenance": {
+        "file": "canonical/skills/aid-create-backlog/SKILL.md",
+        "startLine": 33,
+        "endLine": 49,
+        "sourceKind": "skill",
+        "excerpt": "## State: INTAKE\n\n1. **Require a subject.** Empty argument -> ask one bootstrapping question (\"What items do\n   you want to accept into the backlog -- or run `/aid-design-backlog` first?\") and wait.\n2. **Allocate, exactly per `design-lifecycle.md § Skill shape -- Allocation`** -- the Work\n   Initiation Gate, then `initiator: aid-create-backlog`, `active_skill:\n   aid-create-backlog`, `pipeline.path: lite`, `lifecycle: Running`. `phase` is not\n   driven.\n3. **Read the seed** at `.aid/design/backlog.md`. If no seed exists, inform the user and\n   ask whether to proceed without one (items entered interactively) or to run\n   `/aid-design-backlog` first; do not proceed silently.\n4. **Read the destination** at `.aid/knowledge/backlog.md` if it exists. Classify its\n   state: absent | present-sections-empty | present-sections-populated.\n5. **Read `tech-debt.md`** at `.aid/knowledge/tech-debt.md` if it exists. The seed may\n   name candidate rows to promote; know their current state before the confirm gate runs.\n6. **Classify complexity (model + effort)** for the `aid-architect` dispatch below;\n   verifier tier >= producer tier (`agent-dispatch-tiering.md`)."
+      },
+      "detail": {
+        "file": "canonical/skills/aid-create-backlog/SKILL.md",
+        "startLine": 33,
+        "endLine": 51,
+        "sourceKind": "skill",
+        "excerpt": "## State: INTAKE\n\n1. **Require a subject.** Empty argument -> ask one bootstrapping question (\"What items do\n   you want to accept into the backlog -- or run `/aid-design-backlog` first?\") and wait.\n2. **Allocate, exactly per `design-lifecycle.md § Skill shape -- Allocation`** -- the Work\n   Initiation Gate, then `initiator: aid-create-backlog`, `active_skill:\n   aid-create-backlog`, `pipeline.path: lite`, `lifecycle: Running`. `phase` is not\n   driven.\n3. **Read the seed** at `.aid/design/backlog.md`. If no seed exists, inform the user and\n   ask whether to proceed without one (items entered interactively) or to run\n   `/aid-design-backlog` first; do not proceed silently.\n4. **Read the destination** at `.aid/knowledge/backlog.md` if it exists. Classify its\n   state: absent | present-sections-empty | present-sections-populated.\n5. **Read `tech-debt.md`** at `.aid/knowledge/tech-debt.md` if it exists. The seed may\n   name candidate rows to promote; know their current state before the confirm gate runs.\n6. **Classify complexity (model + effort)** for the `aid-architect` dispatch below;\n   verifier tier >= producer tier (`agent-dispatch-tiering.md`).\n\n**Advance:** GUARD."
+      }
+    },
+    {
+      "id": "n2",
+      "order": 2,
+      "name": "GUARD",
+      "label": "GUARD",
+      "kind": "step",
+      "terminal": null,
+      "provenance": {
+        "file": "canonical/skills/aid-create-backlog/SKILL.md",
+        "startLine": 55,
+        "endLine": 58,
+        "sourceKind": "skill",
+        "excerpt": "## State: GUARD\n\n**Readiness gate (class-1 contract, feature-002 §3b).** Inspect the seed for a non-empty\n`## Open questions` section per `design-lifecycle.md`'s detection rule."
+      },
+      "detail": {
+        "file": "canonical/skills/aid-create-backlog/SKILL.md",
+        "startLine": 55,
+        "endLine": 65,
+        "sourceKind": "skill",
+        "excerpt": "## State: GUARD\n\n**Readiness gate (class-1 contract, feature-002 §3b).** Inspect the seed for a non-empty\n`## Open questions` section per `design-lifecycle.md`'s detection rule.\n\n- **Unresolved questions present, no override** → refuse. Name each unresolved question\n  **and** the override flag `--override-open-questions` the user must supply to bypass the gate. Write nothing; leave\n  seed and destination byte-identical. Set `lifecycle: Paused-Awaiting-Input`.\n- **No unresolved questions, or override supplied** → advance.\n\n**Advance:** REALIZE."
+      }
+    },
+    {
+      "id": "n3",
+      "order": 3,
+      "name": "REALIZE",
+      "label": "REALIZE",
+      "kind": "exit",
+      "terminal": {
+        "advanceType": "UNSPECIFIED",
+        "handoff": null
+      },
+      "provenance": {
+        "file": "canonical/skills/aid-create-backlog/SKILL.md",
+        "startLine": 69,
+        "endLine": 72,
+        "sourceKind": "skill",
+        "excerpt": "## State: REALIZE\n\nDispatch **`aid-architect`** (clean context, tiered) to realize the seed. Apply the case\ndetermined in INTAKE:"
+      },
+      "detail": {
+        "file": "canonical/skills/aid-create-backlog/SKILL.md",
+        "startLine": 69,
+        "endLine": 154,
+        "sourceKind": "skill",
+        "excerpt": "## State: REALIZE\n\nDispatch **`aid-architect`** (clean context, tiered) to realize the seed. Apply the case\ndetermined in INTAKE:\n\n| Destination state | Action |\n|---|---|\n| `backlog.md` absent | **Create** the document: write frontmatter (§3b values below, verbatim), `# Backlog` title, one-paragraph preamble (what this document holds and the promotion criterion -- an item moves here when it is **accepted into the plan**, an explicit human decision at a per-item confirm gate), `## Contents` with all three entries in heading order, then `## Next Release`, `## Prioritized`, `## Gotchas`. Then run the **promotion pass** below. **Delete the seed.** |\n| Present, item sections empty or absent | Fill `## Next Release`, `## Prioritized`, `## Gotchas` from the seed; leave every byte outside those sections identical. Then run the **promotion pass**. **Delete the seed.** |\n| Present, item sections already carry committed content | **Route** to `/aid-update-backlog`; write nothing; leave the seed in place for that run (CC-3). Set `lifecycle: Paused-Awaiting-Input`. Advance to DONE without calling REGISTER or VERIFY. |\n\n**`## Contents` index** -- the fixed three-entry form (`feature-003 §3b`), always written\nat creation and always left intact on the fill path:\n\n    - [Next Release](#next-release)\n    - [Prioritized](#prioritized)\n    - [Gotchas](#gotchas)\n\n**Promotion pass.** For each item the seed proposes as a candidate for promotion from\n`tech-debt.md`:\n\n1. Present a **per-item confirm gate** showing the source row and the proposed column\n   mapping (see the two arms below). Always propose a `Tag` default; never write an empty\n   `Tag`.\n2. If the user confirms: add the fully-populated row (all seven columns) to the appropriate\n   section in `backlog.md`. Delete the source row from `tech-debt.md` in the **same run**,\n   keyed on the `ID` column — a whole-row deletion, never a rewrite of any other row and\n   never a change to the file's prose.\n3. If the user declines: leave the row in `tech-debt.md` untouched.\n\n**There are two and only two column-mapping arms; both are binding; neither is exempt from\nany of the seven columns.**\n\n**Arm 1 — `tech-debt.md` promotion.** Applies when the source is an inventory row:\n\n| `tech-debt.md` column | `backlog.md` column | Rule |\n|---|---|---|\n| `ID` | `ID` | Carried **unchanged** -- never re-minted |\n| `Description` | `Definition & done-condition` | Full text |\n| `Location` | `Location` | Durable anchor -- path plus a grep-recoverable symbol or heading, **never `path:LINE`** |\n| `Risk` | `Risk if not done` | Full text |\n| `Priority` | `Priority` | `P1` / `P2` / `P3` unchanged |\n| `Type` | **consumed, not carried** | Read to seed `Tag`'s default; dropped as a column. A defect Type seeds `[FIX]`; a gap/absent-capability Type seeds `[NEW]`; an alteration Type seeds `[CHANGE]`. Where the project's `Type` vocabulary leaves the tag undetermined, **ask** at the same confirm gate |\n| `Effort` | **dropped** | Scheduling estimate; does not cross |\n| -- | `Tag` | Seeded from `Type` by the rule above; confirmed at the gate; **never left empty** |\n| -- | `Title` | One noun phrase; the key the release drain matches on |\n\n**Arm 2 — release-note bullet.** Applies when the source is an already-built item from\n`release-tracking.md`'s `## Unreleased` section (a one-off migration of a pre-existing\n`## Unreleased` section into the backlog):\n\n| Source | `backlog.md` column | Rule |\n|---|---|---|\n| -- | `ID` | **Minted** in whatever form the project's own `tech-debt.md` inventory already uses, taking the next unused ordinal; never reuses a retired id |\n| The bullet's `[NEW]` / `[CHANGE]` / `[FIX]` marker | `Tag` | Carried verbatim; the drain re-tags nothing |\n| The bullet's leading feature name, or its first clause | `Title` | One noun phrase |\n| The bullet's own text | `Definition & done-condition` | Done-condition read as **shipped, pending tag** |\n| The durable anchor the bullet already names | `Location` | Path plus a grep-recoverable symbol or heading, **never `path:LINE`** |\n| -- | `Risk if not done` | **ships untagged / absent from the next release notes** |\n| -- | `Priority` | **`P1`** -- the `## Next Release` slice is the committed slice by definition |\n\n**Item schema** -- one ID-keyed table per item section, modeled on `tech-debt.md`'s\ninventory (`feature-003 §3b`):\n\n    | ID | Tag | Title | Definition & done-condition | Location | Risk if not done | Priority |\n    |----|-----|-------|----------------------------|----------|-----------------|----------|\n\nAll seven columns are required on every row, from both arms. A row with a blank cell in\nany column is not complete and must not be written.\n\n**`## Gotchas`** -- required by C7 ownership; real operational-guidance content:\n\n- **ID is inherited on promotion, never re-minted.** The `comm -12` duplicate-item oracle\n  (V18) keys on the id; re-minting a promoted id makes the check compare unlike things and\n  breaks the move audit entirely.\n- **Parking an item in `## Next Release` is a commitment.** That section is drained at\n  tag time by `release-aid`; every row there becomes a tagged release-note bullet in\n  `release-tracking.md` and is deleted from `backlog.md` in the same run. Do not park\n  an item there unless the current tag will include it.\n- **An item is moved, never copied.** The promoted row is deleted from `tech-debt.md` in\n  the same run that adds it to `backlog.md`. An item present in both documents is a\n  checkable defect.\n\n**Frontmatter** (write verbatim on creation; `feature-003 §3b`):\n\n```yaml"
+      }
+    },
+    {
+      "id": "n4",
+      "order": 4,
+      "name": "REGISTER",
+      "label": "REGISTER",
+      "kind": "entry",
+      "terminal": null,
+      "provenance": {
+        "file": "canonical/skills/aid-create-backlog/SKILL.md",
+        "startLine": 172,
+        "endLine": 175,
+        "sourceKind": "skill",
+        "excerpt": "## State: REGISTER\n\n**On creation only** (destination was absent in INTAKE). Write two surfaces atomically\nin the same run, per `feature-003 §6b` (REQUIREMENTS CC-1, CC-2):"
+      },
+      "detail": {
+        "file": "canonical/skills/aid-create-backlog/SKILL.md",
+        "startLine": 172,
+        "endLine": 187,
+        "sourceKind": "skill",
+        "excerpt": "## State: REGISTER\n\n**On creation only** (destination was absent in INTAKE). Write two surfaces atomically\nin the same run, per `feature-003 §6b` (REQUIREMENTS CC-1, CC-2):\n\n1. **`.aid/settings.yml` `knowledge.doc_set`** -- append exactly one line:\n   `    - backlog.md|skill-self|required`\n   using the R13 append-block idiom (append to the existing `doc_set:` list; never rewrite\n   the block; never touch `term_exclusions`).\n2. **`.aid/knowledge/README.md` Completeness table** -- append exactly one row:\n   `Concern` = `C7`, `Owner` = `skill-self`, `Status` = `Created (skill-self)`;\n   and increment the `**Doc-set:** N documents` count line by 1.\n\nBoth writes must succeed in the same run. If either fails, report and halt.\n\n**Advance:** VERIFY."
+      }
+    },
+    {
+      "id": "n5",
+      "order": 5,
+      "name": "VERIFY",
+      "label": "VERIFY",
+      "kind": "loop-back",
+      "terminal": null,
+      "provenance": {
+        "file": "canonical/skills/aid-create-backlog/SKILL.md",
+        "startLine": 191,
+        "endLine": 195,
+        "sourceKind": "skill",
+        "excerpt": "## State: VERIFY\n\n**Full verify** -- exactly as `design-lifecycle.md § Skill shape -- \"Full verify\"`\ndefines it. Not clean -> loop to REALIZE; the circuit-breaker there governs escalation\nto IMPEDIMENT + `lifecycle: Blocked`."
+      },
+      "detail": {
+        "file": "canonical/skills/aid-create-backlog/SKILL.md",
+        "startLine": 191,
+        "endLine": 197,
+        "sourceKind": "skill",
+        "excerpt": "## State: VERIFY\n\n**Full verify** -- exactly as `design-lifecycle.md § Skill shape -- \"Full verify\"`\ndefines it. Not clean -> loop to REALIZE; the circuit-breaker there governs escalation\nto IMPEDIMENT + `lifecycle: Blocked`.\n\n**Advance:** PRESENT."
+      }
+    },
+    {
+      "id": "n6",
+      "order": 6,
+      "name": "PRESENT",
+      "label": "hard stop -- the user decides",
+      "kind": "step",
+      "terminal": null,
+      "provenance": {
+        "file": "canonical/skills/aid-create-backlog/SKILL.md",
+        "startLine": 201,
+        "endLine": 203,
+        "sourceKind": "skill",
+        "excerpt": "## State: PRESENT (hard stop -- the user decides)\n\nSet `lifecycle: Paused-Awaiting-Input`. Present the realized document clearly. Assert:"
+      },
+      "detail": {
+        "file": "canonical/skills/aid-create-backlog/SKILL.md",
+        "startLine": 201,
+        "endLine": 210,
+        "sourceKind": "skill",
+        "excerpt": "## State: PRESENT (hard stop -- the user decides)\n\nSet `lifecycle: Paused-Awaiting-Input`. Present the realized document clearly. Assert:\n\n- On the creation path: both registration surfaces were written.\n- `## Gotchas` is present and carries real content.\n- Every promoted row was deleted from `tech-debt.md` in this run.\n- To revise items later, use `/aid-update-backlog`.\n\n**Advance:** DONE."
+      }
+    },
+    {
+      "id": "n7",
+      "order": 7,
+      "name": "DONE",
+      "label": "DONE",
+      "kind": "exit",
+      "terminal": {
+        "advanceType": "UNSPECIFIED",
+        "handoff": null
+      },
+      "provenance": {
+        "file": "canonical/skills/aid-create-backlog/SKILL.md",
+        "startLine": 214,
+        "endLine": 216,
+        "sourceKind": "skill",
+        "excerpt": "## State: DONE\n\nSet `lifecycle: Completed`, `updated` now, append a `## Lifecycle History` row."
+      },
+      "detail": {
+        "file": "canonical/skills/aid-create-backlog/SKILL.md",
+        "startLine": 214,
+        "endLine": 216,
+        "sourceKind": "skill",
+        "excerpt": "## State: DONE\n\nSet `lifecycle: Completed`, `updated` now, append a `## Lifecycle History` row."
+      }
+    }
+  ],
+  "edges": [
+    {
+      "from": "n1",
+      "to": "n2",
+      "kind": "sequence",
+      "condition": null,
+      "advanceType": "UNSPECIFIED",
+      "provenance": {
+        "file": "canonical/skills/aid-create-backlog/SKILL.md",
+        "startLine": 51,
+        "endLine": 51,
+        "sourceKind": "skill",
+        "excerpt": "**Advance:** GUARD."
+      }
+    },
+    {
+      "from": "n2",
+      "to": "n3",
+      "kind": "sequence",
+      "condition": null,
+      "advanceType": "UNSPECIFIED",
+      "provenance": {
+        "file": "canonical/skills/aid-create-backlog/SKILL.md",
+        "startLine": 65,
+        "endLine": 65,
+        "sourceKind": "skill",
+        "excerpt": "**Advance:** REALIZE."
+      }
+    },
+    {
+      "from": "n4",
+      "to": "n5",
+      "kind": "sequence",
+      "condition": null,
+      "advanceType": "UNSPECIFIED",
+      "provenance": {
+        "file": "canonical/skills/aid-create-backlog/SKILL.md",
+        "startLine": 187,
+        "endLine": 187,
+        "sourceKind": "skill",
+        "excerpt": "**Advance:** VERIFY."
+      }
+    },
+    {
+      "from": "n5",
+      "to": "n3",
+      "kind": "loop-back",
+      "condition": null,
+      "advanceType": "UNSPECIFIED",
+      "provenance": {
+        "file": "canonical/skills/aid-create-backlog/SKILL.md",
+        "startLine": 194,
+        "endLine": 194,
+        "sourceKind": "skill",
+        "excerpt": "defines it. Not clean -> loop to REALIZE; the circuit-breaker there governs escalation"
+      }
+    },
+    {
+      "from": "n5",
+      "to": "n6",
+      "kind": "sequence",
+      "condition": null,
+      "advanceType": "UNSPECIFIED",
+      "provenance": {
+        "file": "canonical/skills/aid-create-backlog/SKILL.md",
+        "startLine": 197,
+        "endLine": 197,
+        "sourceKind": "skill",
+        "excerpt": "**Advance:** PRESENT."
+      }
+    },
+    {
+      "from": "n6",
+      "to": "n7",
+      "kind": "sequence",
+      "condition": null,
+      "advanceType": "UNSPECIFIED",
+      "provenance": {
+        "file": "canonical/skills/aid-create-backlog/SKILL.md",
+        "startLine": 210,
+        "endLine": 210,
+        "sourceKind": "skill",
+        "excerpt": "**Advance:** DONE."
+      }
+    }
+  ],
+  "entries": [
+    "n1",
+    "n4"
+  ],
+  "exits": [
+    "n3",
+    "n7"
+  ],
+  "sources": [
+    "canonical/skills/aid-create-backlog/SKILL.md"
+  ],
+  "warnings": []
+}

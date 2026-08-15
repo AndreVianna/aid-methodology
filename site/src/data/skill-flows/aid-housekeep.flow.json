@@ -14,8 +14,8 @@
       "terminal": null,
       "provenance": {
         "file": "canonical/skills/aid-housekeep/SKILL.md",
-        "startLine": 222,
-        "endLine": 222,
+        "startLine": 226,
+        "endLine": 226,
         "sourceKind": "skill",
         "excerpt": "| PREFLIGHT | `references/state-preflight.md` | inline | CHAIN → KB-DELTA (or CLEANUP if Mode=cleanup-only) |"
       },
@@ -39,8 +39,8 @@
       },
       "provenance": {
         "file": "canonical/skills/aid-housekeep/SKILL.md",
-        "startLine": 223,
-        "endLine": 223,
+        "startLine": 227,
+        "endLine": 227,
         "sourceKind": "skill",
         "excerpt": "| KB-DELTA | `references/state-kb-delta.md` | `aid-architect` (feat-002 dispatches sub-agents via `/aid-discover`) | CHAIN → SUMMARY-DELTA / PAUSE-FOR-USER-ACTION if stalled |"
       },
@@ -64,8 +64,8 @@
       },
       "provenance": {
         "file": "canonical/skills/aid-housekeep/SKILL.md",
-        "startLine": 224,
-        "endLine": 224,
+        "startLine": 228,
+        "endLine": 228,
         "sourceKind": "skill",
         "excerpt": "| SUMMARY-DELTA | `references/state-summary-delta.md` | inline (delegates to `/aid-summarize`) | CHAIN → CLEANUP / PAUSE-FOR-USER-ACTION if stalled |"
       },
@@ -86,8 +86,8 @@
       "terminal": null,
       "provenance": {
         "file": "canonical/skills/aid-housekeep/SKILL.md",
-        "startLine": 225,
-        "endLine": 225,
+        "startLine": 229,
+        "endLine": 229,
         "sourceKind": "skill",
         "excerpt": "| CLEANUP | `references/state-cleanup.md` | inline | CHAIN → DONE |"
       },
@@ -111,8 +111,8 @@
       },
       "provenance": {
         "file": "canonical/skills/aid-housekeep/SKILL.md",
-        "startLine": 226,
-        "endLine": 226,
+        "startLine": 230,
+        "endLine": 230,
         "sourceKind": "skill",
         "excerpt": "| DONE | `references/state-done.md` | inline | HALT |"
       },

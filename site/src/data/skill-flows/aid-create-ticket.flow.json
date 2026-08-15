@@ -14,8 +14,8 @@
       "terminal": null,
       "provenance": {
         "file": "canonical/skills/aid-create-ticket/SKILL.md",
-        "startLine": 73,
-        "endLine": 73,
+        "startLine": 70,
+        "endLine": 70,
         "sourceKind": "skill",
         "excerpt": "### State 1 — PARSE-ARGS"
       },
@@ -30,8 +30,8 @@
       "terminal": null,
       "provenance": {
         "file": "canonical/skills/aid-create-ticket/SKILL.md",
-        "startLine": 108,
-        "endLine": 108,
+        "startLine": 105,
+        "endLine": 105,
         "sourceKind": "skill",
         "excerpt": "### State 2 — RESOLVE-CONNECTOR"
       },
@@ -46,8 +46,8 @@
       "terminal": null,
       "provenance": {
         "file": "canonical/skills/aid-create-ticket/SKILL.md",
-        "startLine": 130,
-        "endLine": 130,
+        "startLine": 127,
+        "endLine": 127,
         "sourceKind": "skill",
         "excerpt": "### State 3 — COMPOSE"
       },
@@ -62,8 +62,8 @@
       "terminal": null,
       "provenance": {
         "file": "canonical/skills/aid-create-ticket/SKILL.md",
-        "startLine": 148,
-        "endLine": 148,
+        "startLine": 145,
+        "endLine": 145,
         "sourceKind": "skill",
         "excerpt": "### State 4 — LEVEL-RESOLVE"
       },
@@ -78,8 +78,8 @@
       "terminal": null,
       "provenance": {
         "file": "canonical/skills/aid-create-ticket/SKILL.md",
-        "startLine": 174,
-        "endLine": 174,
+        "startLine": 171,
+        "endLine": 171,
         "sourceKind": "skill",
         "excerpt": "### State 5 — CONFIRM"
       },
@@ -94,8 +94,8 @@
       "terminal": null,
       "provenance": {
         "file": "canonical/skills/aid-create-ticket/SKILL.md",
-        "startLine": 204,
-        "endLine": 204,
+        "startLine": 201,
+        "endLine": 201,
         "sourceKind": "skill",
         "excerpt": "### State 6 — FILE"
       },
@@ -113,8 +113,8 @@
       },
       "provenance": {
         "file": "canonical/skills/aid-create-ticket/SKILL.md",
-        "startLine": 222,
-        "endLine": 222,
+        "startLine": 219,
+        "endLine": 219,
         "sourceKind": "skill",
         "excerpt": "### State 7 — RETURN-REF"
       },
@@ -130,8 +130,8 @@
       "advanceType": "CHAIN",
       "provenance": {
         "file": "canonical/skills/aid-create-ticket/SKILL.md",
-        "startLine": 73,
-        "endLine": 73,
+        "startLine": 70,
+        "endLine": 70,
         "sourceKind": "skill",
         "excerpt": "### State 1 — PARSE-ARGS"
       }
@@ -144,8 +144,8 @@
       "advanceType": "CHAIN",
       "provenance": {
         "file": "canonical/skills/aid-create-ticket/SKILL.md",
-        "startLine": 108,
-        "endLine": 108,
+        "startLine": 105,
+        "endLine": 105,
         "sourceKind": "skill",
         "excerpt": "### State 2 — RESOLVE-CONNECTOR"
       }
@@ -158,8 +158,8 @@
       "advanceType": "CHAIN",
       "provenance": {
         "file": "canonical/skills/aid-create-ticket/SKILL.md",
-        "startLine": 130,
-        "endLine": 130,
+        "startLine": 127,
+        "endLine": 127,
         "sourceKind": "skill",
         "excerpt": "### State 3 — COMPOSE"
       }
@@ -172,8 +172,8 @@
       "advanceType": "CHAIN",
       "provenance": {
         "file": "canonical/skills/aid-create-ticket/SKILL.md",
-        "startLine": 148,
-        "endLine": 148,
+        "startLine": 145,
+        "endLine": 145,
         "sourceKind": "skill",
         "excerpt": "### State 4 — LEVEL-RESOLVE"
       }
@@ -186,8 +186,8 @@
       "advanceType": "CHAIN",
       "provenance": {
         "file": "canonical/skills/aid-create-ticket/SKILL.md",
-        "startLine": 174,
-        "endLine": 174,
+        "startLine": 171,
+        "endLine": 171,
         "sourceKind": "skill",
         "excerpt": "### State 5 — CONFIRM"
       }
@@ -200,8 +200,8 @@
       "advanceType": "CHAIN",
       "provenance": {
         "file": "canonical/skills/aid-create-ticket/SKILL.md",
-        "startLine": 204,
-        "endLine": 204,
+        "startLine": 201,
+        "endLine": 201,
         "sourceKind": "skill",
         "excerpt": "### State 6 — FILE"
       }

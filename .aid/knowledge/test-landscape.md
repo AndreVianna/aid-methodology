@@ -437,6 +437,53 @@ corpus, not a local subset. The correct response is to **re-bootstrap** the base
 (`bash tests/coverage-parity.sh collect --out tests/coverage-baseline.tsv`, re-run to refresh
 `.meta`), never to hand-edit individual rows to paper over a wholesale ID shift.
 
+### Catalog-count assertions, and the two suites that hold them differently
+
+Two suites read the same catalog and treat its size in opposite ways, and the difference is
+deliberate rather than an inconsistency to be tidied away.
+
+`tests/canonical/test-deploy-monitor-repurpose.sh` **asserts the totals**, so it is edited whenever
+the catalog grows. Four keys carry them:
+
+| Key | Asserts |
+|-----|---------|
+| `DMR30` | total rows == **94** |
+| `DMR31` | canonical (`alias_of: null`) rows == **94** -- i.e. every row, the alias layer having been retired |
+| `DMR32` | **zero alias rows, out of the 94 rows that carry an `alias_of` field** |
+| `DMR33` | `repurpose: true` rows == **60** (the other 34 are generated thin doorways: 60 + 34 = 94) |
+
+**`DMR32`'s expected value is a sentence, not a zero, and that is the point.** It pairs the alias
+count with `ALIAS_FIELD_LINES`, a same-anchor control counting every row that carries an
+`alias_of:` key at all. Were the expected value a bare `0`, a catalog that had moved, emptied or
+re-keyed the field would satisfy it for the wrong reason -- the zero would be free. Pairing it
+means the assertion still has to move when the row count moves, even though the alias count itself
+stays 0.
+
+`tests/canonical/test-catalog-dirs-parity.sh` is **count-agnostic by design**: it derives its row
+set from the catalog and holds no expected total, so it passes at any row count and extends by
+data with no edit. Its *header prose* still records the composition and is corrected by hand; its
+**assertions are never edited for a count**. The two "count-agnostic by design" notes belong to
+this suite, not to the asserting one.
+
+**The coverage baseline is re-bootstrapped, never hand-edited.** A catalog that grows shifts
+`CDP{i}` assertion IDs across the whole corpus, so the response is a re-capture via the
+`coverage-parity` lane, with `.tsv` and `.meta` committed together -- `.meta` being a provenance
+sidecar that a hand-edited `.tsv` would desynchronise. The re-bootstrapped shape is **95** each of
+`CDP{i}a`, `CDP{i}b` and `CDP{i}c`, **94** `CDP{i}d`, and **34** each of `CDP{i}e`, `CDP{i}f` and
+`CDP{i}g` -- **144 rows added**.
+
+**Those three 34s are counts, not key-set identities.** `CDP{i}` is indexed by a row's *position*
+in the catalog, so inserting rows mid-file shifts which indices carry `e`/`f`/`g` while leaving how
+many of them there are unchanged. A `comm` over the two key sets legitimately reports both
+additions and removals among them; a claim that the key sets are identical would be false. The
+count holding at 34 is a second, independent witness that the generated-doorway quantity did not
+move -- derived from the coverage inventory rather than from the catalog.
+
+A `repurpose: true` row contributes **no** `e`/`f`/`g` row at all: it logs `CDP{i}e` as an
+exemption and stops, and a `log` is neither a `PASS:` nor a `FAIL:` line, so the collector never
+indexes it. Counting raw suite output rather than collected output reads 94 `e` keys instead of 34
+and misreports the delta.
+
 ### Why suites are slow on a Windows dev shell: process spawn cost
 
 CI is not where this bites — it is the local edit/verify loop, and the cause is neither
