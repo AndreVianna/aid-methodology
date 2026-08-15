@@ -48,13 +48,13 @@
 # lifecycle MUST be independently authored.
 
 # [W] Pending-Spec | Specified | Executing | Gated | Done | Blocked
-delivery_state: Gated
+delivery_state: Done
 # [W] Small | Medium | Large
 gate_tier: Large
 # [W]
-gate_grade: B+
+gate_grade: A+
 # [W]
-gate_timestamp: '2026-08-15T17:06:59Z'
+gate_timestamp: '2026-08-15T17:09:46Z'
 # [W] {connector-stem}:{external-id} | -- -- OPTIONAL; e.g. jira:PROJ-123; see the ticket_ref note above
 ticket_ref: --
 # [A] single writer: this delivery's branch only. Written by aid-plan,
@@ -73,12 +73,7 @@ delivery_lifecycle:
 #   issue_list: severity-tagged strings, or [] when the gate passed clean
 delivery_gate:
   issue_list:
-    - "[CRITICAL] AC-1 NOT MET — no before/after cost measurement; review-cost.tsv never created"
-    - "[HIGH] AC-11 MET verdict internally inconsistent — measured per-cycle cost of replaced re-derivation absent"
-    - "[HIGH] template-payload registry row malformed — Match column content embedded in Selector cell, table broken"
-    - "[MEDIUM] BLUEPRINT ordering criterion NOT MET — baseline-before-remedy cannot be verified (no TSV)"
-    - "[MEDIUM] BLUEPRINT ordering criterion NOT MET — after-sample row count not reported alongside AC-1 figures"
-    - "[LOW] AC-12 byte-identity suite environment-blocked — mawk vs gawk, pre-existing W4-3 class"
+    - '1 Accepted (AC-12 dogfood suite mawk-blocked; pre-existing on master, CI is the authority) -- 5 Fixed, 0 counting'
 # [A] single writer: this delivery's branch (via the delivery-gate step of
 #     aid-execute). delivery-gate SPEC Q&A is written here, NOT into the
 #     shared work-level STATE.yml, to preserve the disjoint-write property

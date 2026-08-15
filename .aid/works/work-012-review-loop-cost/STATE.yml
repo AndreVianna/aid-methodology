@@ -28,15 +28,15 @@ minimum_grade: A
 # [W] 'yes' | 'no' -- quoted
 user_approved: 'yes'
 # [W] Running | Paused-Awaiting-Input | Blocked | Completed | Canceled
-lifecycle: Paused-Awaiting-Input
+lifecycle: Completed
 # [W] Describe | Define | Specify | Plan | Detail | Execute
 phase: Execute
 # [W] aid-{skill} | none
 active_skill: none
 # [W]
-updated: '2026-08-15T17:06:59Z'
+updated: '2026-08-15T17:09:46Z'
 # [W] set only when lifecycle = Paused-Awaiting-Input
-pause_reason: 'Gate at B+ (CRITICAL cleared). One LOW row awaits an Accept/fix decision on the mawk-blocked dogfood suite'
+pause_reason: 'Delivery-001 gate PASSED at A+; work complete and ready for owner review'
 # [W] set only when lifecycle = Blocked
 block_reason: --
 # [W] e.g. IMPEDIMENT-task-NNN.md, or the failed gate
@@ -740,6 +740,52 @@ lifecycle_history:
       masks escaped pipes; classification is byte-identical to before the
       repair, which is the proof task-004 required that representation
       changed and meaning did not. OR20/OR21 added so it cannot regress.
+
+  - date: '2026-08-15'
+    event: 'Execute: delivery-001 gate PASSES at A+ -- work COMPLETE'
+    grade: 'A+'
+    notes: >-
+      Three gate cycles, E+ -> E+ -> B+ -> A+. Six findings: five Fixed, one
+      Accepted by owner authorization. 17 tasks Done. delivery_state Done.
+      THE CRITICAL WAS FIXED, NOT WAIVED. The owner rejected "accept at E+
+      and fix later" as a band-aid, and was right to. The gap had two halves
+      and both were closed. task-016 fixed the CAUSE: record was mandated at
+      each dispatch, and an inline brief left nothing to point at and no step
+      that failed when the call was skipped -- so rendering the brief TO A
+      FILE and calling record from that SAME step is now the dispatch itself,
+      and a skipped measurement is visible as a missing file. task-017 fixed
+      the EVIDENCE, with a better experiment rather than a recovered one:
+      Q-03's observational split needed the meter running before FR-3 landed
+      and is unrecoverable, so AC-1 was re-specified as a PAIRED WITHIN-TASK
+      CONTROL that holds task, artifact and reviewer fixed and varies only
+      the rule.
+      RESULT: control arm 1.000/1.000/1.000, treatment 0.537/0.131/0.488 --
+      a 61.5% reduction in declared read surface at cycle 2, over three
+      subjects. The control landing at exactly 1.000 on all three is what
+      makes it a real control rather than a number. AC-11 was measured too:
+      hand re-derivation of G-07 costs 233,125 bytes per cycle and the
+      oracle removes ~185,753 of that (~80%) for one 151-line script.
+      THE GATE INTERROGATED THE AMENDMENT AND UPHELD IT. Asked directly
+      whether re-specifying AC-1 mid-flight was a work under pressure
+      rewriting a criterion it could not meet, the reviewer ruled it
+      legitimate on the grounds that matter: the paired control demands MORE
+      evidence (three subjects, both metrics, both arms) and measures the
+      mechanism directly where the old design measured it through a
+      confound. It re-derived every ratio from file sizes rather than
+      accepting them.
+      Two honest limits it held us to and that survive in MEASUREMENT.md:
+      task-016 delivers DETECTABILITY, not enforcement -- an agent can still
+      skip both the file and the call; and cycles-to-close is observational,
+      prominently caveated, and attributed to nothing.
+      THE ONE ACCEPTED ROW: test-dogfood-byte-identity.sh needs gawk's
+      3-argument match() and this host has mawk 1.3.4, with gawk not
+      installable. Pre-existing -- it fails identically on origin/master. A
+      2-line POSIX rewrite was written and deliberately NOT applied, because
+      tech-debt W4-3 states the portability work is a work of its own and
+      not a delivery bolted onto another change. Accepted by owner
+      authorization; CI has gawk and remains the authority; substance
+      verified here by direct comparison, both dogfood trees 354/354
+      byte-identical.
 
 # [A] aid-deploy only; one entry per delivery.
 deploy: []
