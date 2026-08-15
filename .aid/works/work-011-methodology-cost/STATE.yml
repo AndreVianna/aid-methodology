@@ -189,6 +189,56 @@ qa:
       out because the rule governs artifacts, so they are out of scope rather than clean.
     decided_by: agent
     updated: '2026-08-15'
+  - id: Q21
+    question: 'The in-process port: do three implementations of one sort agree?'
+    state: Resolved
+    answer: |
+      Yes, and the test proves it against the REFERENCE rather than only against itself.
+
+      reader.py and reader.mjs now derive lanes from the task DETAILs' `**Depends on:**`
+      fields. A work holding only STATE.yml and tasks/ -- no PLAN.md, no SPEC.md, no
+      BLUEPRINT.md -- reads with correct lanes (1, 2, 2) identically in both runtimes.
+      That is AC-13's target shape working end to end.
+
+      It FILLS A GAP rather than replacing a working path, which reading the code
+      revealed and the survey had not. Both readers carried the same comment: the flat
+      PLAN.md's `## Execution Graph` has no wave-map fence, so parse_execution_graph
+      "yields an empty map -- lane stays None for every task ... no lane derivation is
+      defined for the flat shape". Every flat task was laneless. So this ADDS information
+      the layout never had, and removing its PLAN.md now costs the readers nothing.
+
+      An AUTHORED map still wins where one exists; the derivation only fills an empty
+      one. An explicit statement should not be overridden by an inference.
+
+      There are now THREE implementations of one sort (awk, Python, Node) -- the exact
+      shape that produced three silent divergences earlier in this work. So the parity
+      test has two legs, because agreement between the two PORTS would prove only that
+      they match each other, not that either matches the reference: one leg compares the
+      twins, the other runs the real derive-waves.sh over a generated work. Both legs
+      were verified by breaking each side deliberately -- dropping the foreign-dependency
+      rule from Node is caught by the first, an off-by-one join in Python by the second.
+
+      18 fixtures target what a port is most likely to drop: a dependency outside the set
+      is already SATISFIED (deliveries run in series; treating it as unsatisfiable
+      reports a cycle that does not exist), a self-edge is discarded rather than
+      deadlocking, a cycle yields {} rather than a partial map that would read as a
+      problem with the TASKS, a diamond join lands one wave after BOTH parents, every
+      "no dependencies" spelling agrees, and declaration order does not change the answer.
+
+      One test INVERTED, not deleted: test_reader.py asserted lane=None for a flat task,
+      correct only because the derivation did not exist. lane=None would now mean the
+      derivation silently did nothing.
+
+      Regression check by diffing FAILURE SETS against origin/master, not counts: reader
+      824 tests, server 1306, no new failure on either side.
+
+      WHAT REMAINS for AC-13: the authoring side must stop writing a Lite PLAN.md
+      (shortcut engine PLAN state), and the two bash consumers -- complexity-score.sh and
+      compute-block-radius.sh -- need the same fallback. Those two are bash, so they can
+      CALL derive-waves.sh --from-tasks rather than gaining a fourth and fifth copy of
+      the sort.
+    decided_by: agent
+    updated: '2026-08-15'
   - id: Q20
     question: 'Is removing PLAN.md from the Lite path a saving or a transfer?'
     state: Resolved
