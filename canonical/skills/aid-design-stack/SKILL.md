@@ -1,16 +1,15 @@
 ---
 name: aid-design-stack
 description: >
-  Develop the technology choice as a DESIGN SEED in .aid/design/stack.md --
-  languages, runtimes, frameworks, and build and test tooling with versions, plus
-  the alternatives rejected and why. Grounded in the Knowledge Base
-  (.aid/knowledge/) and the project source. It WRITES NO KB document and NO
-  production code -- realize the seed into the project's C0 document with
-  /aid-create-stack once it is ready. To design a configuration option within a
-  stack rather than choose the stack, use /aid-design-config; for an open question
-  with a researchable answer, use /aid-research. Produced by the aid-architect
-  agent and independently verified by aid-reviewer (full verify). Allocates a
-  work-NNN folder.
+  Develop the technology choice as a DESIGN SEED in .aid/design/stack.md -- languages,
+  runtimes, frameworks, and build and test tooling with versions, plus the alternatives
+  rejected and why. Use this skill when which technologies to build on is still an open
+  choice. Grounded in the Knowledge Base (.aid/knowledge/) and the project source. It WRITES
+  NO KB document and NO production code -- realize the seed into the project's C0 document
+  with /aid-create-stack once it is ready. To design a configuration option within a stack
+  rather than choose the stack, use /aid-design-config; for an open question with a
+  researchable answer, use /aid-research. Produced by the aid-architect agent and
+  independently verified by aid-reviewer (full verify). Allocates a work-NNN folder.
 allowed-tools: Read, Glob, Grep, Bash, Write, Edit, Agent
 argument-hint: "<subject> -- the technology stack to design (languages, runtimes, frameworks, tooling with versions)"
 ---

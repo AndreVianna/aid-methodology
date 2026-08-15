@@ -1,15 +1,15 @@
 ---
 name: aid-update-architecture
 description: >
-  Revise the project's build-and-shape (C1) Knowledge Base document -- components
-  and their responsibilities, boundaries, interactions, and the invariants a change
-  must not break -- plus any previously created outputs you name. Requires no design
-  seed: the change you state in the run is a sufficient input. Reads and consumes an
-  architecture seed when one is present in .aid/design/. When the C1 document does
-  not yet exist, routes to /aid-create-architecture. To write documentation ABOUT an
-  architecture rather than revise the KB record, use /aid-document-architecture.
-  Produced by the aid-architect agent and independently verified by aid-reviewer
-  (full verify). Allocates a work-NNN folder.
+  Revise the project's build-and-shape (C1) Knowledge Base document -- components and their
+  responsibilities, boundaries, interactions, and the invariants a change must not break --
+  plus any previously created outputs you name. Use this skill when the architecture
+  document already exists and part of it needs revising. Requires no design seed: the change
+  you state in the run is a sufficient input. Reads and consumes an architecture seed when
+  one is present in .aid/design/. When the C1 document does not yet exist, routes to
+  /aid-create-architecture. To write documentation ABOUT an architecture rather than revise
+  the KB record, use /aid-document-architecture. Produced by the aid-architect agent and
+  independently verified by aid-reviewer (full verify). Allocates a work-NNN folder.
 allowed-tools: Read, Glob, Grep, Bash, Write, Edit, Agent
 argument-hint: "<change> -- what to revise in the architecture record"
 ---

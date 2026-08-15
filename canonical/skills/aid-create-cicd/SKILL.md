@@ -1,19 +1,17 @@
 ---
 name: aid-create-cicd
 description: >
-  Realize a ready CI/CD seed from .aid/design/cicd.md into the project's shipping
-  (C8) Knowledge Base document -- pipeline stages and their order, triggers,
-  environments and promotion between them, and the release flow. Writes the KB
-  record by default; it emits a workflow file only if you ask for one in that run.
-  When it creates the document it also registers it in .aid/settings.yml and
-  .aid/knowledge/README.md in the same run, which opts that document into the
-  Conformance Lane permanently -- a choice you are making by running this skill. To
-  revise C8 content this lifecycle already committed, use /aid-update-cicd; to
-  provision or change a resource the pipeline ships to, use /aid-create-infra or
-  /aid-update-infra; to build a DATA pipeline rather than a delivery one, use
-  /aid-create-data-pipeline or /aid-update-data-pipeline; to ship a built artifact
-  now, use /aid-deploy. Produced by the aid-architect agent and independently
-  verified by aid-reviewer (full verify). Allocates a work-NNN folder.
+  Realize a ready CI/CD seed from .aid/design/cicd.md into the project's shipping (C8)
+  Knowledge Base document -- the pipeline stages and their order, the triggers, the
+  environments and promotion between them, and the release flow. Use this skill when a CI/CD
+  seed is ready and the project has no record of its delivery pipeline yet. It writes the KB
+  record by default, and emits a workflow file only if you ask for one in that run. Creating
+  the document also registers it, in the same run, which opts it into the Conformance Lane
+  permanently -- a choice you make by running this skill. To revise C8 content already
+  committed use /aid-update-cicd; for a resource the pipeline ships to, /aid-create-infra or
+  /aid-update-infra; for a data pipeline rather than a delivery one,
+  /aid-create-data-pipeline or /aid-update-data-pipeline; to ship a built artifact now,
+  /aid-deploy.
 allowed-tools: Read, Glob, Grep, Bash, Write, Edit, Agent
 argument-hint: "[<direction>] -- which parts of the CI/CD seed to realize"
 ---
