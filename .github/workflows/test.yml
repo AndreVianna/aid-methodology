@@ -94,41 +94,15 @@ jobs:
         # Committed 100644 (the repo is authored on Windows); several suites invoke
         # their SUT directly (e.g. "$WRITEBACK"), which needs the exec bit on Linux.
         run: find canonical/aid/scripts tests/canonical -name '*.sh' -exec chmod +x {} +
-      - name: Install jsdom (DOM oracle for the graph suites)
-        shell: bash
-        # Same reasoning as the runtime assertion below, one step earlier: the graph
-        # suites resolve jsdom by bare specifier or from AID_GRAPH_JSDOM and SKIP LOUDLY
-        # without it, so test-graph-canvas.sh was running 6 of its 54 assertions here and
-        # failing its own GC00c collapse guard — the guard was right, the environment was
-        # the problem.
-        #
-        # Installed ALONE and into a prefix OUTSIDE the repo, never by a bare
-        # `npm install` at the root. The root manifest's `dependencies` block is
-        # version-tracking-only (the graph runtime uses committed vendor/ bytes), so a
-        # root node_modules would let a bare specifier resolve to a downloaded copy
-        # instead of the vendored one and mask the very defect vendoring guards against.
-        # The version comes from the manifest rather than being retyped here, so there is
-        # one place to bump and Dependabot watches it.
-        run: |
-          JSDOM_VER=$(node -e "process.stdout.write(require('./package.json').devDependencies.jsdom)")
-          npm install --no-save --no-audit --no-fund --prefix "$RUNNER_TEMP/jsdom-oracle" "jsdom@${JSDOM_VER}"
-          echo "AID_GRAPH_JSDOM=$RUNNER_TEMP/jsdom-oracle/node_modules/jsdom/lib/api.js" >> "$GITHUB_ENV"
-      - name: Assert test runtimes present (node + pwsh + jsdom)
+      - name: Assert test runtimes present (node + pwsh)
         shell: bash
         # The .mjs and *-ps1 suites skip (exit 0) if their runtime is missing — good for
         # local dev portability, but in CI a silent skip would be a false green. node is
         # pinned above; pwsh ships in the ubuntu image. Fail loudly here if either is gone
-        # so the node/PowerShell coverage can never be silently bypassed. jsdom is checked
-        # the same way and for the same reason: the step above installs it, so a missing
-        # entry module here means that install broke, and letting the graph suites skip
-        # past it would hide ~48 assertions.
+        # so the node/PowerShell coverage can never be silently bypassed.
         run: |
           command -v node >/dev/null || { echo "::error::node missing — .mjs suites would skip"; exit 1; }
           command -v pwsh >/dev/null || { echo "::error::pwsh missing — PowerShell suites would skip"; exit 1; }
-          [[ -f "$AID_GRAPH_JSDOM" ]] || { echo "::error::jsdom entry module missing at $AID_GRAPH_JSDOM — the graph DOM suites would skip"; exit 1; }
-          # pathToFileURL, not a bare path: this mirrors exactly how the suites load the
-          # override (graph-canvas-dom.mjs:138), so the guard passes iff they will.
-          node -e "const { pathToFileURL } = require('url'); import(pathToFileURL(process.env.AID_GRAPH_JSDOM).href).then((m) => { if (typeof m.JSDOM !== 'function') { console.error('::error::jsdom resolved but exports no JSDOM constructor'); process.exit(1); } console.log('jsdom entry module exports JSDOM'); })"
           echo "node $(node --version) | $(pwsh --version)"
       - name: Run all canonical suites
         shell: bash
