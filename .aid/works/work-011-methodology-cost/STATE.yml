@@ -29,7 +29,7 @@ phase: Execute
 
 active_skill: none
 
-updated: '2026-08-15T02:20:00Z'
+updated: '2026-08-15T16:10:00Z'
 
 pause_reason: --
 
@@ -187,6 +187,53 @@ qa:
       fixture heredocs. Nothing asserts on them so they cause no false pass, but they are
       stale fixture content rather than deliberate legacy simulation. AC-4 scopes tests/
       out because the rule governs artifacts, so they are out of scope rather than clean.
+    decided_by: agent
+    updated: '2026-08-15'
+  - id: Q24
+    question: 'The work-006 merge: what actually broke, and what did it teach?'
+    state: Resolved
+    answer: |
+      Merged (131 commits, 23 conflicts) and green on all 10 checks. The rehearsal predicted
+      the conflicts exactly; it predicted none of the four things that actually cost time.
+
+      CONFLICTS, as rehearsed: 4 needing judgment. aid-define and aid-specify still
+      described feature FOLDERS with SPEC.md stubs, resolved as neither side wholesale --
+      master's better user-facing shape, this work's model. The two reader files were
+      resolved PER HUNK toward master, whose 36 SHORTCUT_KIND_MAP entries turned out
+      content-identical to the ones seeded here; `checkout --theirs reader.mjs` would have
+      silently dropped _deriveLanesFromDetails and _parsePlanDeliveryTitles from
+      cleanly-merged regions.
+
+      FOUR THINGS THE REHEARSAL MISSED, each a variant of ONE pattern -- every derived
+      artifact here is maintained by a mechanism that only ever deletes what it previously
+      wrote, so anything arriving by merge or outliving its source is invisible to it and
+      survives every regeneration, which reports success either way:
+
+        site/src/content/docs/  is a generated mirror of docs/*.md. Editing the source left
+        it stale; the site's own vitest re-runs the sync and fails on any git diff, so the
+        transform's OUTPUT must be committed, not merely reproducible.
+
+        profiles/  had 100 orphans (19 aid-graph scripts + work-state-template.md, x5
+        trees) present in no manifest. Three green local renders never saw them.
+
+        .claude/ and .cursor/  had 6 more (the two templates this work retired, plus
+        work-state-template.md) -- sync_dogfood resyncs OWNED files and never deletes a
+        file that has left canonical.
+
+        coverage-parity  needed 3 re-homes and 5 accepted-removals. Master had
+        re-bootstrapped the baseline from CI, so 5 of the 6 pre-merge re-home rows pointed
+        at keys that no longer existed -- rows excusing removals that cannot happen.
+
+      The sharpest single lesson: the accepted-removal row was keyed T13 when the key that
+      actually vanished was T20. The labels are path-normalised, so array entries collapse
+      onto per-index keys and shortening the list drops the LAST one. That row excused a
+      removal that had not happened AND left the real one un-excused -- two errors that
+      cancelled to "still red", which is the only reason either was noticed.
+
+      Also worth keeping: `git rm profiles/*/*/aid/scripts/graph` matched almost nothing,
+      because the trees nest under dot-directories and bash globs skip those. It reported 5
+      deletions where 100 were needed -- indistinguishable from success unless the count is
+      checked against the expected total.
     decided_by: agent
     updated: '2026-08-15'
   - id: Q23
