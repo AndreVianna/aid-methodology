@@ -106,7 +106,7 @@ This is the single state file for the **Discovery area** — persistent project 
 **Domain:** hybrid:methodology-tooling+software-cli
 **Domain Source:** .aid/knowledge/STATE.md ## Discovery Domain
 **Overall Grade:** A+ (Machine A+ / Human A+)
-**Writeback Status:** ok (2026-08-15; /aid-summarize full regeneration, work-006 task-071)
+**Writeback Status:** ok (2026-08-15; /aid-summarize full regeneration)
 **Minimum Grade:** A+
 **Visual-Gate Note:** validate-visuals.mjs SKIPPED (Playwright not installed in the summarize package); V1 visual gate must be run by the orchestrator. 4 inline-SVG diagrams pre-rendered.
 
@@ -253,7 +253,7 @@ This is the single state file for the **Discovery area** — persistent project 
 | 6 | 2026-07-24 | A+ | hybrid:methodology-tooling+software-cli | none (retired) | kb.html (687715 bytes) | /aid-housekeep SUMMARY-DELTA targeted count-patch (STALE-CHECK would have been DONE-IDEMPOTENT — the KB-DELTA Q8 refresh did not advance the Review-History date, so no full GENERATE ran): synced kb.html to the Q8 KB refresh + accumulated staleness — canonical suite count 118->133 (4 spots incl. the "Total suites" stat card, staler at 105->133) and GitHub Actions workflows 4->5 (added coverage-parity.yml to the risk-table cell, the CI-workflows stat card + sub, and the workflow table row). Human V1 visual gate passed (user confirmed rendered kb.html: hero/glossary/pipeline-SVG + corrected 133-suite/5-workflow counts). |
 | 7 | 2026-07-30 | Pending | hybrid:methodology-tooling+software-cli | 6 of 21 docs | none (not regenerated) | Delivery-006 gate. Six primary docs revised OUTSIDE a discover cycle: architecture, module-map, decisions, pipeline-contracts, test-landscape, tech-debt. Corrected live stale skill counts (55 found repo-wide across 15 files); reversed module-map's `site/ X canonical/` "key non-dependency" to the enforced build-time dependency; added the five Skill Explorer module rows; migrated the 12 open known-issues into tech-debt as W1-1..W1-12 so they survive the work folder being pruned. Guarded going forward by `tests/canonical/check-skill-counts.mjs`. `kb_grade` reset to Pending: these edits have had NO KB review panel. |
 
-| 8 | 2026-08-15 | A+ | hybrid:methodology-tooling+software-cli | 21 of 21 | kb.html (990603) | /aid-summarize full regeneration (work-006 task-071). Doc-set 19 -> 21 (roadmap.md, backlog.md); sections 21 -> 23. Machine A+ 70/70, Human A+ 30/30 (K1 10/10, K2 15/15, V1 5/5 -- V1 performed by the repository owner in a real browser; Playwright absent so T1/T2/T3 skipped). Manifest written before authoring per FR-50; 7 sections carried over unchanged, 16 authored. '75 skills' -> 0, '58-row' -> 0, '34 verb-first' -> 2. |
+| 8 | 2026-08-15 | A+ | hybrid:methodology-tooling+software-cli | 21 of 21 | kb.html (990603) | /aid-summarize full regeneration. Doc-set 19 -> 21 (roadmap.md, backlog.md); sections 21 -> 23. Machine A+ 70/70, Human A+ 30/30 (K1 10/10, K2 15/15, V1 5/5 -- V1 performed by the repository owner in a real browser; Playwright absent so T1/T2/T3 skipped). Manifest written before authoring per FR-50; 7 sections carried over unchanged, 16 authored. '75 skills' -> 0, '58-row' -> 0, '34 verb-first' -> 2. |
 
 ## Calibration Log
 
