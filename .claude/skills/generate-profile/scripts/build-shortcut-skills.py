@@ -275,9 +275,12 @@ def render_doorway(row: dict) -> str:
     body_lines += [
         f"Bind **VERB=`{verb}`**, **{artifact_bind}**, then run the shared engine at "
         "`canonical/aid/templates/shortcut-engine.md`. The engine scaffolds the "
-        "flattened Lite work (feature-001 structure), authors REQUIREMENTS -> SPEC -> "
-        "PLAN -> DETAIL tasks with reduced capture, runs the per-document "
-        "Grading Gates (feature-004), and halts at the FR-10 approval gate. It never "
+        "flattened Lite work (feature-001 structure), authors `REQUIREMENTS.md` -- whose "
+        "`§ 11` feature section carries the technical specification -- then the task "
+        "`DETAIL.md` files, with reduced capture. It writes no SPEC.md and no PLAN.md: "
+        "one feature and one delivery means nothing to sequence, and the execution graph "
+        "is derived from each task's `**Depends on:**` field. It runs the per-document "
+        "Grading Gates (feature-004) and halts at the FR-10 approval gate. It never "
         "executes. This shortcut's `default_type`/`group` are its row in "
         "`canonical/aid/templates/shortcut-catalog.yml`.",
         "",

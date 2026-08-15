@@ -284,6 +284,25 @@ assert_eq "$ad07_count" "0" "AD07: the shortcut engine and its scaffolding write
 assert_eq "$([[ -e "${REPO}/canonical/aid/templates/delivery-plans/flattened-plan-template.md" ]] && echo present || echo absent)" \
     "absent" "AD08a the flattened PLAN.md template is deleted"
 
+# AD08c: the 34 generated doorways must not ADVERTISE an artifact set the engine no
+# longer produces. They each carry a one-line summary of the pipeline, and that line
+# said "REQUIREMENTS -> SPEC -> PLAN -> DETAIL" for the whole time AD07 and AD08b were
+# passing -- because both are scoped to the engine, and a doorway is neither the engine
+# nor its scaffolding. A skill whose description promises artifacts that are never
+# written misleads whoever chooses it, which is the whole job of a doorway.
+#
+# Found by comparing against another in-flight branch rather than by these gates, which
+# is why the rule is here now: the gap was invisible from inside this work.
+# The pattern targets the ARTIFACT phrasing only. SPEC and PLAN are still STATES in the
+# engine's state machine (`INTAKE -> CAPTURE -> SPEC -> PLAN -> DETAIL -> GATE ->
+# APPROVAL-HALT`) -- those phases still run, they just no longer write a document. A
+# first draft of this rule matched the bare arrow chain and flagged all 34 state-machine
+# lines, which would have pushed a correct description into being deleted.
+ad08c="$(scan_tree "canonical/skills" 'authors REQUIREMENTS -> SPEC|PLAN \+ BLUEPRINT|SPEC -> PLAN -> DETAIL tasks' include-fences)"
+ad08c_count="$(report_count "$ad08c")"
+assert_eq "$ad08c_count" "0" "AD08c no generated doorway advertises the retired SPEC/PLAN artifact set"
+[[ "$ad08c_count" != "0" ]] && report_body "$ad08c" | sed 's|^|    offender: |' >&2
+
 # Scoped to the engine, NOT its scaffolding: the family files legitimately discuss the
 # full path, where PLAN.md remains the right home for a real sequencing decision.
 ad08="$(scan_tree "canonical/aid/templates/shortcut-engine.md" 'PLAN\.md' include-fences)"
