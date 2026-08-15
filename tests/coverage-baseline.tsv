@@ -1,10 +1,3 @@
-# NOTE: hand-edited when the aid-graph skill was removed, because no runtime-complete
-# environment (pwsh) was available to re-collect the whole corpus: rows for the 13 deleted
-# test-graph-*.sh suites were pruned, test-validator-profiles.sh's rows were replaced by a
-# fresh single-suite collection under its new name, test-validator-behavior.sh, and the four
-# per-file DBI-*FWD/REV counts fell from 373 to 315 because each install tree now holds 58
-# fewer emitted files.
-# Re-bootstrap this file on master per the runbook in .github/workflows/coverage-parity.yml.
 test-actback-fixtures.sh	ISO-CANARY-01 real HOME (<PATH> gained no .aid dirs (no scan escaped throwaway HOME)	1
 test-actback-fixtures.sh	T01 V-E1a kb-actback-task.sh output matches recorded golden (expected<PATH>	1
 test-actback-fixtures.sh	T02 V-E1b task spec re-run is byte-identical (determinism satisfied)	1
@@ -1815,44 +1808,26 @@ test-catalog-dirs-parity.sh	CDP14a	1
 test-catalog-dirs-parity.sh	CDP14b	1
 test-catalog-dirs-parity.sh	CDP14c	1
 test-catalog-dirs-parity.sh	CDP14d	1
-test-catalog-dirs-parity.sh	CDP14e	1
-test-catalog-dirs-parity.sh	CDP14f	1
-test-catalog-dirs-parity.sh	CDP14g	1
 test-catalog-dirs-parity.sh	CDP15a	1
 test-catalog-dirs-parity.sh	CDP15b	1
 test-catalog-dirs-parity.sh	CDP15c	1
 test-catalog-dirs-parity.sh	CDP15d	1
-test-catalog-dirs-parity.sh	CDP15e	1
-test-catalog-dirs-parity.sh	CDP15f	1
-test-catalog-dirs-parity.sh	CDP15g	1
 test-catalog-dirs-parity.sh	CDP16a	1
 test-catalog-dirs-parity.sh	CDP16b	1
 test-catalog-dirs-parity.sh	CDP16c	1
 test-catalog-dirs-parity.sh	CDP16d	1
-test-catalog-dirs-parity.sh	CDP16e	1
-test-catalog-dirs-parity.sh	CDP16f	1
-test-catalog-dirs-parity.sh	CDP16g	1
 test-catalog-dirs-parity.sh	CDP17a	1
 test-catalog-dirs-parity.sh	CDP17b	1
 test-catalog-dirs-parity.sh	CDP17c	1
 test-catalog-dirs-parity.sh	CDP17d	1
-test-catalog-dirs-parity.sh	CDP17e	1
-test-catalog-dirs-parity.sh	CDP17f	1
-test-catalog-dirs-parity.sh	CDP17g	1
 test-catalog-dirs-parity.sh	CDP18a	1
 test-catalog-dirs-parity.sh	CDP18b	1
 test-catalog-dirs-parity.sh	CDP18c	1
 test-catalog-dirs-parity.sh	CDP18d	1
-test-catalog-dirs-parity.sh	CDP18e	1
-test-catalog-dirs-parity.sh	CDP18f	1
-test-catalog-dirs-parity.sh	CDP18g	1
 test-catalog-dirs-parity.sh	CDP19a	1
 test-catalog-dirs-parity.sh	CDP19b	1
 test-catalog-dirs-parity.sh	CDP19c	1
 test-catalog-dirs-parity.sh	CDP19d	1
-test-catalog-dirs-parity.sh	CDP19e	1
-test-catalog-dirs-parity.sh	CDP19f	1
-test-catalog-dirs-parity.sh	CDP19g	1
 test-catalog-dirs-parity.sh	CDP1a	1
 test-catalog-dirs-parity.sh	CDP1b	1
 test-catalog-dirs-parity.sh	CDP1c	1
@@ -1864,30 +1839,18 @@ test-catalog-dirs-parity.sh	CDP20a	1
 test-catalog-dirs-parity.sh	CDP20b	1
 test-catalog-dirs-parity.sh	CDP20c	1
 test-catalog-dirs-parity.sh	CDP20d	1
-test-catalog-dirs-parity.sh	CDP20e	1
-test-catalog-dirs-parity.sh	CDP20f	1
-test-catalog-dirs-parity.sh	CDP20g	1
 test-catalog-dirs-parity.sh	CDP21a	1
 test-catalog-dirs-parity.sh	CDP21b	1
 test-catalog-dirs-parity.sh	CDP21c	1
 test-catalog-dirs-parity.sh	CDP21d	1
-test-catalog-dirs-parity.sh	CDP21e	1
-test-catalog-dirs-parity.sh	CDP21f	1
-test-catalog-dirs-parity.sh	CDP21g	1
 test-catalog-dirs-parity.sh	CDP22a	1
 test-catalog-dirs-parity.sh	CDP22b	1
 test-catalog-dirs-parity.sh	CDP22c	1
 test-catalog-dirs-parity.sh	CDP22d	1
-test-catalog-dirs-parity.sh	CDP22e	1
-test-catalog-dirs-parity.sh	CDP22f	1
-test-catalog-dirs-parity.sh	CDP22g	1
 test-catalog-dirs-parity.sh	CDP23a	1
 test-catalog-dirs-parity.sh	CDP23b	1
 test-catalog-dirs-parity.sh	CDP23c	1
 test-catalog-dirs-parity.sh	CDP23d	1
-test-catalog-dirs-parity.sh	CDP23e	1
-test-catalog-dirs-parity.sh	CDP23f	1
-test-catalog-dirs-parity.sh	CDP23g	1
 test-catalog-dirs-parity.sh	CDP24a	1
 test-catalog-dirs-parity.sh	CDP24b	1
 test-catalog-dirs-parity.sh	CDP24c	1
@@ -1955,18 +1918,30 @@ test-catalog-dirs-parity.sh	CDP32a	1
 test-catalog-dirs-parity.sh	CDP32b	1
 test-catalog-dirs-parity.sh	CDP32c	1
 test-catalog-dirs-parity.sh	CDP32d	1
+test-catalog-dirs-parity.sh	CDP32e	1
+test-catalog-dirs-parity.sh	CDP32f	1
+test-catalog-dirs-parity.sh	CDP32g	1
 test-catalog-dirs-parity.sh	CDP33a	1
 test-catalog-dirs-parity.sh	CDP33b	1
 test-catalog-dirs-parity.sh	CDP33c	1
 test-catalog-dirs-parity.sh	CDP33d	1
+test-catalog-dirs-parity.sh	CDP33e	1
+test-catalog-dirs-parity.sh	CDP33f	1
+test-catalog-dirs-parity.sh	CDP33g	1
 test-catalog-dirs-parity.sh	CDP34a	1
 test-catalog-dirs-parity.sh	CDP34b	1
 test-catalog-dirs-parity.sh	CDP34c	1
 test-catalog-dirs-parity.sh	CDP34d	1
+test-catalog-dirs-parity.sh	CDP34e	1
+test-catalog-dirs-parity.sh	CDP34f	1
+test-catalog-dirs-parity.sh	CDP34g	1
 test-catalog-dirs-parity.sh	CDP35a	1
 test-catalog-dirs-parity.sh	CDP35b	1
 test-catalog-dirs-parity.sh	CDP35c	1
 test-catalog-dirs-parity.sh	CDP35d	1
+test-catalog-dirs-parity.sh	CDP35e	1
+test-catalog-dirs-parity.sh	CDP35f	1
+test-catalog-dirs-parity.sh	CDP35g	1
 test-catalog-dirs-parity.sh	CDP36a	1
 test-catalog-dirs-parity.sh	CDP36b	1
 test-catalog-dirs-parity.sh	CDP36c	1
@@ -1978,14 +1953,23 @@ test-catalog-dirs-parity.sh	CDP37a	1
 test-catalog-dirs-parity.sh	CDP37b	1
 test-catalog-dirs-parity.sh	CDP37c	1
 test-catalog-dirs-parity.sh	CDP37d	1
+test-catalog-dirs-parity.sh	CDP37e	1
+test-catalog-dirs-parity.sh	CDP37f	1
+test-catalog-dirs-parity.sh	CDP37g	1
 test-catalog-dirs-parity.sh	CDP38a	1
 test-catalog-dirs-parity.sh	CDP38b	1
 test-catalog-dirs-parity.sh	CDP38c	1
 test-catalog-dirs-parity.sh	CDP38d	1
+test-catalog-dirs-parity.sh	CDP38e	1
+test-catalog-dirs-parity.sh	CDP38f	1
+test-catalog-dirs-parity.sh	CDP38g	1
 test-catalog-dirs-parity.sh	CDP39a	1
 test-catalog-dirs-parity.sh	CDP39b	1
 test-catalog-dirs-parity.sh	CDP39c	1
 test-catalog-dirs-parity.sh	CDP39d	1
+test-catalog-dirs-parity.sh	CDP39e	1
+test-catalog-dirs-parity.sh	CDP39f	1
+test-catalog-dirs-parity.sh	CDP39g	1
 test-catalog-dirs-parity.sh	CDP3a	1
 test-catalog-dirs-parity.sh	CDP3b	1
 test-catalog-dirs-parity.sh	CDP3c	1
@@ -2013,10 +1997,16 @@ test-catalog-dirs-parity.sh	CDP44a	1
 test-catalog-dirs-parity.sh	CDP44b	1
 test-catalog-dirs-parity.sh	CDP44c	1
 test-catalog-dirs-parity.sh	CDP44d	1
+test-catalog-dirs-parity.sh	CDP44e	1
+test-catalog-dirs-parity.sh	CDP44f	1
+test-catalog-dirs-parity.sh	CDP44g	1
 test-catalog-dirs-parity.sh	CDP45a	1
 test-catalog-dirs-parity.sh	CDP45b	1
 test-catalog-dirs-parity.sh	CDP45c	1
 test-catalog-dirs-parity.sh	CDP45d	1
+test-catalog-dirs-parity.sh	CDP45e	1
+test-catalog-dirs-parity.sh	CDP45f	1
+test-catalog-dirs-parity.sh	CDP45g	1
 test-catalog-dirs-parity.sh	CDP46a	1
 test-catalog-dirs-parity.sh	CDP46b	1
 test-catalog-dirs-parity.sh	CDP46c	1
@@ -2044,6 +2034,9 @@ test-catalog-dirs-parity.sh	CDP50a	1
 test-catalog-dirs-parity.sh	CDP50b	1
 test-catalog-dirs-parity.sh	CDP50c	1
 test-catalog-dirs-parity.sh	CDP50d	1
+test-catalog-dirs-parity.sh	CDP50e	1
+test-catalog-dirs-parity.sh	CDP50f	1
+test-catalog-dirs-parity.sh	CDP50g	1
 test-catalog-dirs-parity.sh	CDP51a	1
 test-catalog-dirs-parity.sh	CDP51b	1
 test-catalog-dirs-parity.sh	CDP51c	1
@@ -2052,16 +2045,10 @@ test-catalog-dirs-parity.sh	CDP52a	1
 test-catalog-dirs-parity.sh	CDP52b	1
 test-catalog-dirs-parity.sh	CDP52c	1
 test-catalog-dirs-parity.sh	CDP52d	1
-test-catalog-dirs-parity.sh	CDP52e	1
-test-catalog-dirs-parity.sh	CDP52f	1
-test-catalog-dirs-parity.sh	CDP52g	1
 test-catalog-dirs-parity.sh	CDP53a	1
 test-catalog-dirs-parity.sh	CDP53b	1
 test-catalog-dirs-parity.sh	CDP53c	1
 test-catalog-dirs-parity.sh	CDP53d	1
-test-catalog-dirs-parity.sh	CDP53e	1
-test-catalog-dirs-parity.sh	CDP53f	1
-test-catalog-dirs-parity.sh	CDP53g	1
 test-catalog-dirs-parity.sh	CDP54a	1
 test-catalog-dirs-parity.sh	CDP54b	1
 test-catalog-dirs-parity.sh	CDP54c	1
@@ -2082,6 +2069,10 @@ test-catalog-dirs-parity.sh	CDP58a	1
 test-catalog-dirs-parity.sh	CDP58b	1
 test-catalog-dirs-parity.sh	CDP58c	1
 test-catalog-dirs-parity.sh	CDP58d	1
+test-catalog-dirs-parity.sh	CDP59a	1
+test-catalog-dirs-parity.sh	CDP59b	1
+test-catalog-dirs-parity.sh	CDP59c	1
+test-catalog-dirs-parity.sh	CDP59d	1
 test-catalog-dirs-parity.sh	CDP5a	1
 test-catalog-dirs-parity.sh	CDP5b	1
 test-catalog-dirs-parity.sh	CDP5c	1
@@ -2089,6 +2080,46 @@ test-catalog-dirs-parity.sh	CDP5d	1
 test-catalog-dirs-parity.sh	CDP5e	1
 test-catalog-dirs-parity.sh	CDP5f	1
 test-catalog-dirs-parity.sh	CDP5g	1
+test-catalog-dirs-parity.sh	CDP60a	1
+test-catalog-dirs-parity.sh	CDP60b	1
+test-catalog-dirs-parity.sh	CDP60c	1
+test-catalog-dirs-parity.sh	CDP60d	1
+test-catalog-dirs-parity.sh	CDP61a	1
+test-catalog-dirs-parity.sh	CDP61b	1
+test-catalog-dirs-parity.sh	CDP61c	1
+test-catalog-dirs-parity.sh	CDP61d	1
+test-catalog-dirs-parity.sh	CDP62a	1
+test-catalog-dirs-parity.sh	CDP62b	1
+test-catalog-dirs-parity.sh	CDP62c	1
+test-catalog-dirs-parity.sh	CDP62d	1
+test-catalog-dirs-parity.sh	CDP63a	1
+test-catalog-dirs-parity.sh	CDP63b	1
+test-catalog-dirs-parity.sh	CDP63c	1
+test-catalog-dirs-parity.sh	CDP63d	1
+test-catalog-dirs-parity.sh	CDP64a	1
+test-catalog-dirs-parity.sh	CDP64b	1
+test-catalog-dirs-parity.sh	CDP64c	1
+test-catalog-dirs-parity.sh	CDP64d	1
+test-catalog-dirs-parity.sh	CDP65a	1
+test-catalog-dirs-parity.sh	CDP65b	1
+test-catalog-dirs-parity.sh	CDP65c	1
+test-catalog-dirs-parity.sh	CDP65d	1
+test-catalog-dirs-parity.sh	CDP66a	1
+test-catalog-dirs-parity.sh	CDP66b	1
+test-catalog-dirs-parity.sh	CDP66c	1
+test-catalog-dirs-parity.sh	CDP66d	1
+test-catalog-dirs-parity.sh	CDP67a	1
+test-catalog-dirs-parity.sh	CDP67b	1
+test-catalog-dirs-parity.sh	CDP67c	1
+test-catalog-dirs-parity.sh	CDP67d	1
+test-catalog-dirs-parity.sh	CDP68a	1
+test-catalog-dirs-parity.sh	CDP68b	1
+test-catalog-dirs-parity.sh	CDP68c	1
+test-catalog-dirs-parity.sh	CDP68d	1
+test-catalog-dirs-parity.sh	CDP69a	1
+test-catalog-dirs-parity.sh	CDP69b	1
+test-catalog-dirs-parity.sh	CDP69c	1
+test-catalog-dirs-parity.sh	CDP69d	1
 test-catalog-dirs-parity.sh	CDP6a	1
 test-catalog-dirs-parity.sh	CDP6b	1
 test-catalog-dirs-parity.sh	CDP6c	1
@@ -2096,6 +2127,46 @@ test-catalog-dirs-parity.sh	CDP6d	1
 test-catalog-dirs-parity.sh	CDP6e	1
 test-catalog-dirs-parity.sh	CDP6f	1
 test-catalog-dirs-parity.sh	CDP6g	1
+test-catalog-dirs-parity.sh	CDP70a	1
+test-catalog-dirs-parity.sh	CDP70b	1
+test-catalog-dirs-parity.sh	CDP70c	1
+test-catalog-dirs-parity.sh	CDP70d	1
+test-catalog-dirs-parity.sh	CDP71a	1
+test-catalog-dirs-parity.sh	CDP71b	1
+test-catalog-dirs-parity.sh	CDP71c	1
+test-catalog-dirs-parity.sh	CDP71d	1
+test-catalog-dirs-parity.sh	CDP72a	1
+test-catalog-dirs-parity.sh	CDP72b	1
+test-catalog-dirs-parity.sh	CDP72c	1
+test-catalog-dirs-parity.sh	CDP72d	1
+test-catalog-dirs-parity.sh	CDP73a	1
+test-catalog-dirs-parity.sh	CDP73b	1
+test-catalog-dirs-parity.sh	CDP73c	1
+test-catalog-dirs-parity.sh	CDP73d	1
+test-catalog-dirs-parity.sh	CDP74a	1
+test-catalog-dirs-parity.sh	CDP74b	1
+test-catalog-dirs-parity.sh	CDP74c	1
+test-catalog-dirs-parity.sh	CDP74d	1
+test-catalog-dirs-parity.sh	CDP75a	1
+test-catalog-dirs-parity.sh	CDP75b	1
+test-catalog-dirs-parity.sh	CDP75c	1
+test-catalog-dirs-parity.sh	CDP75d	1
+test-catalog-dirs-parity.sh	CDP76a	1
+test-catalog-dirs-parity.sh	CDP76b	1
+test-catalog-dirs-parity.sh	CDP76c	1
+test-catalog-dirs-parity.sh	CDP76d	1
+test-catalog-dirs-parity.sh	CDP77a	1
+test-catalog-dirs-parity.sh	CDP77b	1
+test-catalog-dirs-parity.sh	CDP77c	1
+test-catalog-dirs-parity.sh	CDP77d	1
+test-catalog-dirs-parity.sh	CDP78a	1
+test-catalog-dirs-parity.sh	CDP78b	1
+test-catalog-dirs-parity.sh	CDP78c	1
+test-catalog-dirs-parity.sh	CDP78d	1
+test-catalog-dirs-parity.sh	CDP79a	1
+test-catalog-dirs-parity.sh	CDP79b	1
+test-catalog-dirs-parity.sh	CDP79c	1
+test-catalog-dirs-parity.sh	CDP79d	1
 test-catalog-dirs-parity.sh	CDP7a	1
 test-catalog-dirs-parity.sh	CDP7b	1
 test-catalog-dirs-parity.sh	CDP7c	1
@@ -2103,6 +2174,52 @@ test-catalog-dirs-parity.sh	CDP7d	1
 test-catalog-dirs-parity.sh	CDP7e	1
 test-catalog-dirs-parity.sh	CDP7f	1
 test-catalog-dirs-parity.sh	CDP7g	1
+test-catalog-dirs-parity.sh	CDP80a	1
+test-catalog-dirs-parity.sh	CDP80b	1
+test-catalog-dirs-parity.sh	CDP80c	1
+test-catalog-dirs-parity.sh	CDP80d	1
+test-catalog-dirs-parity.sh	CDP81a	1
+test-catalog-dirs-parity.sh	CDP81b	1
+test-catalog-dirs-parity.sh	CDP81c	1
+test-catalog-dirs-parity.sh	CDP81d	1
+test-catalog-dirs-parity.sh	CDP82a	1
+test-catalog-dirs-parity.sh	CDP82b	1
+test-catalog-dirs-parity.sh	CDP82c	1
+test-catalog-dirs-parity.sh	CDP82d	1
+test-catalog-dirs-parity.sh	CDP83a	1
+test-catalog-dirs-parity.sh	CDP83b	1
+test-catalog-dirs-parity.sh	CDP83c	1
+test-catalog-dirs-parity.sh	CDP83d	1
+test-catalog-dirs-parity.sh	CDP84a	1
+test-catalog-dirs-parity.sh	CDP84b	1
+test-catalog-dirs-parity.sh	CDP84c	1
+test-catalog-dirs-parity.sh	CDP84d	1
+test-catalog-dirs-parity.sh	CDP85a	1
+test-catalog-dirs-parity.sh	CDP85b	1
+test-catalog-dirs-parity.sh	CDP85c	1
+test-catalog-dirs-parity.sh	CDP85d	1
+test-catalog-dirs-parity.sh	CDP86a	1
+test-catalog-dirs-parity.sh	CDP86b	1
+test-catalog-dirs-parity.sh	CDP86c	1
+test-catalog-dirs-parity.sh	CDP86d	1
+test-catalog-dirs-parity.sh	CDP87a	1
+test-catalog-dirs-parity.sh	CDP87b	1
+test-catalog-dirs-parity.sh	CDP87c	1
+test-catalog-dirs-parity.sh	CDP87d	1
+test-catalog-dirs-parity.sh	CDP88a	1
+test-catalog-dirs-parity.sh	CDP88b	1
+test-catalog-dirs-parity.sh	CDP88c	1
+test-catalog-dirs-parity.sh	CDP88d	1
+test-catalog-dirs-parity.sh	CDP88e	1
+test-catalog-dirs-parity.sh	CDP88f	1
+test-catalog-dirs-parity.sh	CDP88g	1
+test-catalog-dirs-parity.sh	CDP89a	1
+test-catalog-dirs-parity.sh	CDP89b	1
+test-catalog-dirs-parity.sh	CDP89c	1
+test-catalog-dirs-parity.sh	CDP89d	1
+test-catalog-dirs-parity.sh	CDP89e	1
+test-catalog-dirs-parity.sh	CDP89f	1
+test-catalog-dirs-parity.sh	CDP89g	1
 test-catalog-dirs-parity.sh	CDP8a	1
 test-catalog-dirs-parity.sh	CDP8b	1
 test-catalog-dirs-parity.sh	CDP8c	1
@@ -2110,6 +2227,26 @@ test-catalog-dirs-parity.sh	CDP8d	1
 test-catalog-dirs-parity.sh	CDP8e	1
 test-catalog-dirs-parity.sh	CDP8f	1
 test-catalog-dirs-parity.sh	CDP8g	1
+test-catalog-dirs-parity.sh	CDP90a	1
+test-catalog-dirs-parity.sh	CDP90b	1
+test-catalog-dirs-parity.sh	CDP90c	1
+test-catalog-dirs-parity.sh	CDP90d	1
+test-catalog-dirs-parity.sh	CDP91a	1
+test-catalog-dirs-parity.sh	CDP91b	1
+test-catalog-dirs-parity.sh	CDP91c	1
+test-catalog-dirs-parity.sh	CDP91d	1
+test-catalog-dirs-parity.sh	CDP92a	1
+test-catalog-dirs-parity.sh	CDP92b	1
+test-catalog-dirs-parity.sh	CDP92c	1
+test-catalog-dirs-parity.sh	CDP92d	1
+test-catalog-dirs-parity.sh	CDP93a	1
+test-catalog-dirs-parity.sh	CDP93b	1
+test-catalog-dirs-parity.sh	CDP93c	1
+test-catalog-dirs-parity.sh	CDP93d	1
+test-catalog-dirs-parity.sh	CDP94a	1
+test-catalog-dirs-parity.sh	CDP94b	1
+test-catalog-dirs-parity.sh	CDP94c	1
+test-catalog-dirs-parity.sh	CDP94d	1
 test-catalog-dirs-parity.sh	CDP9a	1
 test-catalog-dirs-parity.sh	CDP9b	1
 test-catalog-dirs-parity.sh	CDP9c	1
@@ -3917,20 +4054,20 @@ test-document-family-scaffold.sh	DFS45	2
 test-document-family-scaffold.sh	DFS46	2
 test-document-family-scaffold.sh	DFS47	2
 test-document-family-scaffold.sh	DFS48	2
-test-dogfood-byte-identity.sh	DBI-CUR-FWD .cursor<PATH>	315
+test-dogfood-byte-identity.sh	DBI-CUR-FWD .cursor<PATH>	354
 test-dogfood-byte-identity.sh	DBI-CUR-MUT-ALLOW the worktrees<PATH> allowlist arm excuses a scratch .cursor<PATH> file (arm is live, not dead)	1
 test-dogfood-byte-identity.sh	DBI-CUR-MUT-BYTE a one-byte mutation under the scratch .cursor<PATH> copy makes DBI-CUR-FWD fail with a sha256 mismatch naming .cursor<PATH>	1
 test-dogfood-byte-identity.sh	DBI-CUR-MUT-CTRL unmutated scratch copy of the dogfood .cursor<PATH> tree probes clean	1
 test-dogfood-byte-identity.sh	DBI-CUR-MUT-ORPHAN an unlisted generator-shaped file under the scratch .cursor<PATH> copy makes DBI-CUR-ORPHAN fail naming .cursor<PATH>	1
 test-dogfood-byte-identity.sh	DBI-CUR-ORPHAN repo .cursor<PATH> has no undocumented generator-shaped orphans	1
-test-dogfood-byte-identity.sh	DBI-CUR-REV .cursor<PATH>	315
+test-dogfood-byte-identity.sh	DBI-CUR-REV .cursor<PATH>	354
 test-dogfood-byte-identity.sh	DBI-CUR00 emission-manifest.jsonl exists	1
 test-dogfood-byte-identity.sh	DBI-CUR00b profiles<PATH> exists	1
 test-dogfood-byte-identity.sh	DBI-CUR00c repo-root .cursor<PATH> exists	1
 test-dogfood-byte-identity.sh	DBI-CUR01 manifest loaded -- generator-owned .cursor<PATH> entries	1
-test-dogfood-byte-identity.sh	DBI-FWD .claude<PATH>	315
+test-dogfood-byte-identity.sh	DBI-FWD .claude<PATH>	354
 test-dogfood-byte-identity.sh	DBI-ORPHAN repo .claude<PATH> has no undocumented generator-shaped orphans	1
-test-dogfood-byte-identity.sh	DBI-REV .claude<PATH>	315
+test-dogfood-byte-identity.sh	DBI-REV .claude<PATH>	354
 test-dogfood-byte-identity.sh	DBI00	1
 test-dogfood-byte-identity.sh	DBI00b	1
 test-dogfood-byte-identity.sh	DBI00c	1
@@ -3966,11 +4103,11 @@ test-downstream-worktree-entry.sh	G1 aid-detail references the shared doc	1
 test-downstream-worktree-entry.sh	G1 aid-execute references the shared doc	1
 test-downstream-worktree-entry.sh	G1 aid-plan references the shared doc	1
 test-downstream-worktree-entry.sh	G1 aid-specify references the shared doc	1
-test-downstream-worktree-entry.sh	G2 aid-define -- pointer precedes '## State Detection' (STATE.md read) (pointer line 168 < anchor line 176)	1
-test-downstream-worktree-entry.sh	G2 aid-deploy -- pointer sits between item 2 and item 3 (item2 < pointer < item3) (before=86 < mid=94 < after=100)	1
-test-downstream-worktree-entry.sh	G2 aid-detail -- pointer precedes '### Check 2: Verify PLAN.md Exists' (pointer line 34 < anchor line 40)	1
-test-downstream-worktree-entry.sh	G2 aid-execute -- pointer sits strictly between Check-1 step 3 and step 4 (step3 < pointer < step4) (before=41 < mid=45 < after=50)	1
-test-downstream-worktree-entry.sh	G2 aid-plan -- pointer precedes '### Check 2: Verify Feature SPECs' (pointer line 86 < anchor line 92)	1
+test-downstream-worktree-entry.sh	G2 aid-define -- pointer precedes '## State Detection' (STATE.md read) (pointer line 167 < anchor line 175)	1
+test-downstream-worktree-entry.sh	G2 aid-deploy -- pointer sits between item 2 and item 3 (item2 < pointer < item3) (before=87 < mid=95 < after=101)	1
+test-downstream-worktree-entry.sh	G2 aid-detail -- pointer precedes '### Check 2: Verify PLAN.md Exists' (pointer line 35 < anchor line 41)	1
+test-downstream-worktree-entry.sh	G2 aid-execute -- pointer sits strictly between Check-1 step 3 and step 4 (step3 < pointer < step4) (before=42 < mid=46 < after=51)	1
+test-downstream-worktree-entry.sh	G2 aid-plan -- pointer precedes '### Check 2: Verify Feature SPECs' (pointer line 85 < anchor line 91)	1
 test-downstream-worktree-entry.sh	G2 aid-specify -- pointer precedes '### Check 2: Feature Exists' (SPEC.md glob) (pointer line 113 < anchor line 123)	1
 test-downstream-worktree-entry.sh	G3 aid-define -- ## State Detection step 2 named as the authoritative post-enter Approved gate	1
 test-downstream-worktree-entry.sh	G3 aid-define -- detached-HEAD branch_label case named explicitly	1
@@ -5825,8 +5962,8 @@ test-shortcut-engine-contract.sh	SEC08c	1
 test-spine-depth-coverage.sh	SD01	1
 test-spine-depth-coverage.sh	SD02	11
 test-spine-depth-coverage.sh	SD03	11
-test-spine-depth-coverage.sh	SD04	58
-test-spine-depth-coverage.sh	SD05	58
+test-spine-depth-coverage.sh	SD04	61
+test-spine-depth-coverage.sh	SD05	61
 test-spine-depth-coverage.sh	SD06	2
 test-spine-depth-coverage.sh	SD07	1
 test-spine-depth-coverage.sh	SD08	1
