@@ -34,7 +34,7 @@ phase: Describe
 # [W] aid-{skill} | none
 active_skill: aid-describe
 # [W]
-updated: '2026-08-14T20:20:00Z'
+updated: '2026-08-15T01:14:00Z'
 # [W] set only when lifecycle = Paused-Awaiting-Input
 pause_reason: 'Awaiting owner approval; Q-01..Q-03 answered, Q-04 open (Specify-time)'
 # [W] set only when lifecycle = Blocked
@@ -179,6 +179,23 @@ lifecycle_history:
       name it before Specify begins, so the choice rests on the gate
       inventory Define produces rather than on a guess made now. AC-1 and
       section 10 step 1 updated. Only Q-04 remains, and it is Specify-time.
+  - date: '2026-08-15'
+    event: 'Merged master (aid-graph removal, PR #193)'
+    grade: --
+    notes: >-
+      The aid-graph skill was removed in full, along with its suites,
+      vendored dependencies and CI setup. No git conflict and, unlike the
+      work-009 merge, no semantic one either. Re-verified all ten grounding
+      claims in REQUIREMENTS.md against the new tree rather than assuming a
+      deletion elsewhere is harmless: the cycle N>=2 clause, grade.sh, the
+      SIX reviewer-brief.md files (aid-graph never had one, so the count is
+      unchanged), G-07's wording, both aid-specify slice sites, the
+      frontmatter unknown-key tolerance, the dispatch template, L5 itself,
+      and the settings.yml ledger-growth figures section 2 quotes. All
+      present and unchanged. tech-debt.md was edited by the merge, but only
+      to drop graph rows and refresh corpus counts (76->75 skills,
+      133->135 suites) -- L5 is not in that diff, and this work cites no
+      skill or suite count. No requirement changed.
 
 # [A] aid-deploy only; one entry per delivery.
 deploy: []
