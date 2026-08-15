@@ -117,7 +117,7 @@ to `state` because that row comes first.
 | Type | Selector | Notes |
 |------|----------|-------|
 | `state` | any `STATE.md`, at any depth in any folder | never reviewed (see `G-04`); first row, so a `STATE.md` inside another tree never resolves to that tree's type |
-| `kb-generated` | a `.md` under `.aid/knowledge/` with `source: generated` (e.g. `INDEX.md`, `relationships.md`) | build-verify only; content not graded (C-5). Ahead of `kb-meta`, so a generated meta doc is build-verified rather than field-checked |
+| `kb-generated` | a `.md` under `.aid/knowledge/` with `source: generated` (e.g. `INDEX.md`) | build-verify only; content not graded (C-5). Ahead of `kb-meta`, so a generated meta doc is build-verified rather than field-checked |
 | `kb-meta` | a `.md` under `.aid/knowledge/` with `kb-category: meta` (e.g. `external-sources.md`) | spot-check of top-level fields only |
 | `kb-doc` | any other `.md` under `.aid/knowledge/` | the hand-authored knowledge docs — `kb-category: primary` or `extension` with `source: hand-authored`; the catch-all that closes the KB tree |
 | `skill-generated` | a `canonical/skills/<name>/SKILL.md` whose `<name>` is a row in `shortcut-catalog.yml` | rebuilt by the generator; no file-level block (see `SK-02`) |

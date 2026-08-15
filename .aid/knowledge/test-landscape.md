@@ -138,9 +138,9 @@ above:
 Most live suites are the **long-standing suites** — the AC-2 must-pass set. The exceptions are
 named rather than counted, because the total moves whenever a suite is added: they are
 `test-coverage-parity.sh`, `test-doc-counts.sh` (the count guard over the public-facing docs),
-`test-shortcut-builder-invariants.sh`, and the `test-graph-*.sh` suites. Derive the totals from
-disk — `ls tests/canonical/test-*.sh` and `ls tests/canonical/test-graph-*.sh` — rather than
-reading them here.
+and `test-shortcut-builder-invariants.sh`. Derive the total from
+disk — `ls tests/canonical/test-*.sh | wc -l` — rather than reading it here; prior phrasing
+stated stale counts against a tree that had moved, which is exactly the drift `G-01` exists to stop.
 
 > **Read the count as of a date, not as a fact.** The live total and the must-pass subset are
 > different quantities; state which one a number refers to whenever you cite it.
@@ -454,10 +454,9 @@ work:
 | **bash parameter expansion** | **3.4** | | |
 
 The consequence: **suite wall time tracks the number of external processes started, not the
-size of the input.** `canonical/aid/scripts/graph/scan-source.sh` scanning a *two-file*
-repository takes ~9.8s, flat across runs, of which ~8.4s is ~100 external spawns. A
-`bash -x` trace of that run shows 1,734 command lines, but ~1,634 are cheap builtins — so
-**count the spawns, not the traced lines**, when diagnosing this.
+size of the input.** A `bash -x` trace of a spawn-heavy script shows hundreds or thousands of
+command lines, but the majority are cheap builtins — so **count the spawns, not the traced
+lines**, when diagnosing slowness.
 
 **Two independent levers, and the larger one is not code:**
 
@@ -468,23 +467,10 @@ repository takes ~9.8s, flat across runs, of which ~8.4s is ~100 external spawns
    holds 249 executables that every pipeline stage relaunches. Excluding the repo root and
    the Git/node toolchain is the highest-leverage change available and needs no test edit.
    Measure before and after rather than assuming a figure.
-2. **Fold pipelines (code).** In `scan-source.sh` the spawn budget was `sort` 23,
-   `awk` 14, `tr` 10, `wc` 6, `cut` 5, `grep` 5. Dedup-only sorts become
-   `awk '!seen[$0]++'` (no spawn); consecutive `awk` stages fold into one program;
-   `wc`/`cut`/`grep` fold into a neighbouring pass; `dirname`/`realpath` become `${p%/*}`.
+2. **Fold pipelines (code).** Dedup-only sorts become `awk '!seen[$0]++'` (no spawn);
+   consecutive `awk` stages fold into one program; `wc`/`cut`/`grep` fold into a
+   neighbouring pass; `dirname`/`realpath` become `${p%/*}`.
    Keep `xargs` — it *is* the batching mechanism — and keep `mv` for atomic writes.
-
-**Measured full-set baseline for the graph suites** (2026-08-05, all passing;
-1,150 assertions, ~460s total). Useful as the reference for what "slow" means here:
-
-| Suite | Wall | Assertions | s / assertion |
-|---|---|---|---|
-| `test-graph-relationship-validator.sh` | 196s | 121 | 1.62 |
-| `test-graph-gap-ledger.sh` | 79s | 303 | 0.26 |
-| `test-graph-source-enumeration.sh` | 73s | 189 | 0.39 |
-| `test-graph-schema-loader.sh` | 58s | 211 | 0.27 |
-| `test-graph-view-shell.sh` (renamed from `test-graph-view.sh`, task-014) | 47s | 152 | 0.31 |
-| `test-graph-skill-registration.sh` | 25s | 207 | 0.12 |
 
 ---
 
@@ -500,51 +486,34 @@ Linux CI and dominates the local loop.
 |---|---|---|
 | **S1** | Invoke each subject **once per distinct input**, never once per assertion group. Build the fixture once, run the pipeline once into a cached output dir, assert many times against those files. Declare the invocation count in the suite header. | Each subject invocation is a fixed ~10s toll before any assertion is evaluated. |
 | **S2** | Load subject output into memory in **one pass** (`while IFS= read -r`, or one `awk` pass emitting a digest) into bash arrays, then assert with `[[ ]]` and `${var}` string ops. **No command substitution per assertion**, no per-assertion `grep`/`awk`/`cut`/`wc`. | Measured: 300 command substitutions **20.7s**; 300 builtin calls **0.16s**. |
-| **S3** | Put the mutation matrix behind an explicit flag (`--self-mutate`). Default (no args) runs assertions only, so CI pays one pass. **Require a matrix only where an assertion CAN be vacuous** — absence claims, universals over a set, derived invariants — not for assertions reading a direct positive value that obviously varies with the subject. **Each mutant runs its target assertion group, not the whole suite.** | A mutation matrix is N suite runs. The current harness in `test-graph-source-enumeration.sh` shows both the pattern and its cost defect — see [the multiplier note](#known-cost-the-mutation-matrix-multiplier) before copying it. |
+| **S3** | Put the mutation matrix behind an explicit flag (`--self-mutate`). Default (no args) runs assertions only, so CI pays one pass. **Require a matrix only where an assertion CAN be vacuous** — absence claims, universals over a set, derived invariants — not for assertions reading a direct positive value that obviously varies with the subject. **Each mutant runs its target assertion group, not the whole suite.** | A mutation matrix is N suite runs. See [the multiplier note](#known-cost-the-mutation-matrix-multiplier) for the cost defect to avoid when implementing one. |
 | **S4** | **Never trade coverage for time.** If an assertion genuinely needs its own subject invocation, keep it and say so in the header. Report before/after wall time *and* before/after invocation count when optimizing. | The `tests/coverage-parity.sh` gate exists because optimization is exactly when coverage silently disappears. |
 | **S5** | Mutate a **copy** in a `mktemp -d`, never the source tree, and assert the subject is byte-identical to `HEAD` afterwards. | A live mutation in a production script with a normal exit code is indistinguishable from a passing run. |
 
 ### Known cost: the mutation matrix multiplier
 
-**Open problem, deliberately recorded rather than fixed.** The mutation harness as first built
-is an ~8x multiplier on an already-slow suite, and the cause is that it **breaks S1** — the
-rule sitting three rows above it.
+**Open problem, deliberately recorded rather than fixed.** A mutation harness built naively
+is an ~8x multiplier on an already-slow suite, because it **breaks S1** — the rule sitting
+three rows above it.
 
-`test-graph-source-enumeration.sh:1112` runs each mutant as `bash "$SELF"`, i.e. **a full
-re-run of the entire suite**: all 189 assertions and all 5 subject scans, per mutant.
+The defect: each mutant is run as `bash "$SELF"` — **a full re-run of the entire suite**
+(all assertions and all subject scans, per mutant). An N-mutant matrix therefore costs N+1
+full suite runs and N×(subject scan count) scans, plus fixture construction for every run.
+Measured cost was **~1.8x the arithmetic** prediction because a mutant run pays the whole
+suite's fixture construction as well as its scans; the honest planning range is
+arithmetic-prediction to ~1.8× that.
 
-| | suite runs | subject scans | wall |
-|---|---|---|---|
-| baseline | 1 | 5 | 73s |
-| 7 mutants | 7 | 35 | (derived) ~511s |
-| arithmetic total | 8 | 40 | ~584s |
-| **MEASURED total** | **8** | **40** | **1,040s (17.3 min)** |
-
-The measured figure is the one to plan against, and it is **~1.8x the arithmetic**. Measured with
-`--self-mutate` end to end (7 mutants, 7 killed, 0 survived, 0 aborted) while a second suite job held
-CPU, so it is an upper bound under contention rather than a clean-machine number; the honest range is
-~584-1,040s. The arithmetic under-predicts because a mutant run pays the whole suite's fixture
-construction as well as its scans.
-
-Forty scans at ~10s each is ~400s of pure scanning to test seven one-line defects.
-Extrapolated across the six committed suites at their measured times,
-`(196+79+73+58+29+25) x 8 ~= 3,680s ~= 61 minutes` for one deliverable — and since the measured
-single-suite figure came in at ~1.8x its own arithmetic, treat 61 minutes as the FLOOR of that
-extrapolation, not the estimate. Observed
-consequence: two builders spent the bulk of a 2.5-hour run inside mutation loops.
-
-**The three changes that should fix it, in expected-payoff order:**
+**The three changes that fix it, in expected-payoff order:**
 
 1. **A mutant runs only its target assertion group**, never the suite. This is precisely what
    T6's group filter exists for, so the mechanism is already a requirement.
-2. **Library-level mutants call the function directly, with no pipeline scan.** M3 and M4
-   mutate ranking logic in `significance-rules.sh` (`SIG_RANK`, the evidence selector) which
-   is a pure shell function — sourcing the library and calling it needs zero scans.
+2. **Library-level mutants call the function directly, with no pipeline scan.** Pure shell
+   functions need zero scans — source the library and call the function.
 3. **Mutants sharing a fixture share one scan.**
 
-Expected: ~511s -> ~60-90s per suite. **Do not resolve this by dropping mutants** — the
-matrix is the only oracle that caught three suites which were green against a broken subject
-(see W5-4 in `tech-debt.md` for the full sizing and the evidence).
+**Do not resolve this by dropping mutants** — mutation is the only oracle that catches suites
+which are green against a broken subject because the broken and correct implementations agree
+on ordinary data, which review cannot see.
 
 ### T1-T6 — when a suite is run
 
@@ -568,8 +537,8 @@ matrix is the only oracle that caught three suites which were green against a br
 it. Suites opt in with a manifest block in their header:
 
 ```bash
-# COVERS: canonical/aid/scripts/graph/scan-source.sh
-# COVERS: canonical/aid/templates/graph/
+# COVERS: canonical/aid/scripts/kb/
+# COVERS: canonical/aid/scripts/config/read-setting.sh
 ```
 
 A trailing slash means the directory and everything under it. The matcher spawns no process:
@@ -595,12 +564,11 @@ bash tests/canonical/select-suites.sh --run
 # every suite, for a deliverable-end run (T4)
 bash tests/canonical/select-suites.sh --all --run
 
-# restrict the candidate set while the repo-wide rollout is incomplete
-bash tests/canonical/select-suites.sh --glob 'test-graph-*.sh' --run
+# restrict the candidate set to a named family while the repo-wide rollout is incomplete
+bash tests/canonical/select-suites.sh --glob 'test-kb-*.sh' --run
 ```
 
-**Rollout status (the limit on the payoff).** Only the committed graph suites carry a
-`COVERS` header today. The remaining ~135 suites have none, so they are all selected
-fail-safe on any change and `--glob` is currently needed to keep selection useful. Promoting
-`COVERS` across `tests/canonical/` is what makes this pay off repo-wide; until then the
-mechanism is correct but narrow. Tracked in `tech-debt.md`.
+**Rollout status (the limit on the payoff).** No suite currently carries a `COVERS` header,
+so all 135 suites are selected fail-safe on any change and `--glob` is currently required to
+keep selection useful. Promoting `COVERS` across `tests/canonical/` is what makes this pay
+off repo-wide; until then the mechanism is correct but narrow. Tracked in `tech-debt.md`.

@@ -3,21 +3,9 @@
 # on the generated HTML.
 #
 # Usage:
-#   validate-html-output.sh <html-file> [--profile kb-summary|graph] [--kb-dir DIR]
+#   validate-html-output.sh <html-file> [--kb-dir DIR]
 #
 # Flags:
-#   --profile kb-summary|graph
-#                 Select the validation profile (default: kb-summary; closed
-#                 set: kb-summary|graph). An unrecognised value, or the flag
-#                 with no value, exits 2. With the flag absent, output is
-#                 byte-identical to today's behaviour. Passing the flag
-#                 explicitly (either value) prints the active profile; with
-#                 it absent, nothing is printed.
-#                 --profile graph additionally: an empty L1 (anchor) or L2
-#                 (relative .md link) input set is reported [VACUOUS] and is
-#                 a FAILURE, rather than the default profile's "0/0 …
-#                 resolve" pass. All other checks, including all three NM
-#                 sub-checks, are enforced identically under both profiles.
 #   --kb-dir DIR  Accepted for backward compatibility and echoed in L2's
 #                 progress line; it sets NO resolution basis. Relative .md
 #                 links always resolve against the artifact's own directory
@@ -29,19 +17,7 @@
 # Exit codes:
 #   0  All checks pass.
 #   1  One or more checks failed.
-#   2  Invocation error (missing file, bad arguments, bad/missing --profile).
-#
-# Second named default-path exception: every Usage/synopsis string in this
-# script -- the header line above, the --help output, and every
-# invocation-error echo (missing/invalid <html-file>, bad or missing
-# --profile value) -- now documents "[--profile kb-summary|graph]" inline,
-# so a mistyped invocation never gets a synopsis that hides a flag the
-# script actually accepts. This is a default-path text delta, but only on
-# an exit-2 invocation-error path; every successful or failing
-# validation-run path is byte-identical to before. None of
-# grade-summary.sh's grep tokens for this script (S2/NM/L1/L2's
-# "\[PASS\]"/"resolve" patterns) match Usage/error text, so no grade can
-# move.
+#   2  Invocation error (missing file, bad arguments).
 #
 # Checks performed:
 #   H1  HTML validity — tidy (preferred) → npx html-validate → regex fallback.
@@ -52,7 +28,7 @@
 #   A5  Visible focus — :focus-visible rule.
 #   S2  Offline render — no external CDN script or link src (self-contained).
 #   NM  No-Mermaid-engine assertion — output contains no Mermaid runtime engine or
-#       mermaid.initialize() init call. Enforced unconditionally under both profiles.
+#       mermaid.initialize() init call. Enforced unconditionally.
 #   L1  Anchor links resolve — every href="#X" matches an id="X".
 #   L2  Relative md links resolve — every href="./X.md" exists relative to
 #       the artifact's own directory (dirname of <html-file>); --kb-dir sets
@@ -64,8 +40,6 @@ set -euo pipefail
 # --- Argument parsing ---
 HTML=""
 KB_DIR=".aid/knowledge"
-PROFILE="kb-summary"
-PROFILE_EXPLICIT=0
 while [ $# -gt 0 ]; do
     case "$1" in
         -h|--help)
@@ -74,15 +48,6 @@ while [ $# -gt 0 ]; do
             ;;
         --kb-dir)
             KB_DIR="$2"
-            shift 2
-            ;;
-        --profile)
-            if [ $# -lt 2 ]; then
-                echo "❌ Usage: --profile requires a value: kb-summary|graph" >&2
-                exit 2
-            fi
-            PROFILE_EXPLICIT=1
-            PROFILE="$2"
             shift 2
             ;;
         -*)
@@ -96,16 +61,8 @@ while [ $# -gt 0 ]; do
     esac
 done
 
-case "$PROFILE" in
-    kb-summary|graph) ;;
-    *)
-        echo "❌ Usage: --profile must be one of: kb-summary|graph (got: '$PROFILE')" >&2
-        exit 2
-        ;;
-esac
-
 if [ -z "$HTML" ] || [ ! -f "$HTML" ]; then
-    echo "❌ Usage: validate-html-output.sh <html-file> [--profile kb-summary|graph] [--kb-dir DIR]" >&2
+    echo "❌ Usage: validate-html-output.sh <html-file> [--kb-dir DIR]" >&2
     exit 2
 fi
 
@@ -140,10 +97,6 @@ check_count() {
         FAIL=1
     fi
 }
-
-if [ "$PROFILE_EXPLICIT" -eq 1 ]; then
-    echo "Profile: $PROFILE"
-fi
 
 echo "Validating HTML structure & accessibility..."
 
@@ -426,9 +379,6 @@ TOTAL=$((TOTAL + 1))
 if [ "$ANCHOR_FAIL" -ne 0 ]; then
     echo "  ❌ L1. $ANCHOR_FAIL anchor link(s) broken (of $ANCHOR_TOTAL)"
     FAIL=1
-elif [ "$PROFILE" = "graph" ] && [ "$ANCHOR_TOTAL" -eq 0 ]; then
-    echo "  ❌ L1. [VACUOUS] 0 anchor hrefs in the input set -- an empty input set is not a pass"
-    FAIL=1
 else
     echo "  ✅ L1. $ANCHOR_TOTAL/$ANCHOR_TOTAL anchor links resolve"
     PASS=$((PASS + 1))
@@ -454,9 +404,6 @@ done
 TOTAL=$((TOTAL + 1))
 if [ "$MD_FAIL" -ne 0 ]; then
     echo "  ❌ L2. $MD_FAIL md link(s) broken (of $MD_TOTAL)"
-    FAIL=1
-elif [ "$PROFILE" = "graph" ] && [ "$MD_TOTAL" -eq 0 ]; then
-    echo "  ❌ L2. [VACUOUS] 0 relative md hrefs in the input set -- an empty input set is not a pass"
     FAIL=1
 else
     echo "  ✅ L2. $MD_TOTAL/$MD_TOTAL relative md links resolve"

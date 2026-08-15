@@ -4,8 +4,7 @@
 # Why this exists: on a Windows/MSYS shell a process spawn costs ~85-135 ms against
 # ~3 ms for a bash builtin, so a suite's wall time is set almost entirely by how many
 # external processes it starts. Running a suite that cannot be affected by the change in
-# hand is therefore not a small waste, it is tens of seconds each time. Measured on this
-# tree: gap-ledger 79 s, schema-loader 58 s, skill-registration 25 s.
+# hand is therefore not a small waste, it is tens of seconds each time.
 #
 # Usage:
 #   select-suites.sh                 # changed vs HEAD, including untracked
@@ -15,8 +14,8 @@
 #   select-suites.sh --run [...]     # select, then run the selection sequentially
 #
 # The contract a suite opts into, as a comment block anywhere in its header:
-#   # COVERS: canonical/aid/scripts/graph/scan-source.sh
-#   # COVERS: canonical/aid/templates/graph/
+#   # COVERS: canonical/aid/scripts/summarize/contrast-check.mjs
+#   # COVERS: canonical/aid/templates/knowledge-summary/
 # A trailing slash means "this directory and everything under it".
 #
 # FAIL-SAFE, and the reason this is safe to put in front of an agent: a suite that

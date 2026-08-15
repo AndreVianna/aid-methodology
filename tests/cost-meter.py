@@ -169,9 +169,15 @@ def reachable(seeds: list[Path], root: Path, max_depth: int = MAX_DEPTH) -> set[
 def split_reach(paths: set[Path], root: Path) -> tuple[int, int]:
     """Partition reachable bytes into (instruction, project-data).
 
-    `.aid/knowledge/` content varies per project and includes generated files
-    (relationships.md is ~1MB here), so folding it into the instruction metric
-    would make the baseline project-specific and drown real instruction growth.
+    `.aid/knowledge/` content varies per project and can include large GENERATED
+    files, so folding it into the instruction metric would make the baseline
+    project-specific and drown real instruction growth in project churn.
+
+    The example that motivated the split has since been deleted: a ~1MB
+    `relationships.md`, emitted by the now-removed aid-graph skill. Its removal
+    is the argument for the split rather than against it -- retiring one skill
+    moved ~300k tokens of measured surface, and the instruction metric stayed
+    readable through that only because KB bytes were never mixed into it.
     """
     instr = kb = 0
     for p in paths:
