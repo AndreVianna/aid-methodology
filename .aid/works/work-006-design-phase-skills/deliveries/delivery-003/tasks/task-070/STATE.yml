@@ -1,7 +1,7 @@
-state: Pending
-review: "--"
+state: Done
+review: Gate-deferred
 elapsed: "--"
-notes: "--"
+notes: 'Regenerated via build-kb-index.sh --root --output (both flags required; the DETAIL cites the script without them). Bytes changed, so a real regeneration. 21/21 doc-set members summarised, roadmap and backlog indexed, test-build-kb-index PASS, second run byte-identical'
 ticket_ref: "--"
 
 quick_check:
