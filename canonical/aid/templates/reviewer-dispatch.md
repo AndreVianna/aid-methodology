@@ -235,6 +235,39 @@ must be true against, resolved global → type → file per
 criterion `id` it violates as a prefix in the ledger's `Description` cell, so the brief
 never needs a `Rule` column and the ledger keeps its 7-column shape.
 
+### The cross-document contradiction pass (Guard 2)
+
+**Run on CYCLE 1 of any review whose `ARTIFACTS` span more than one artifact.** A review of
+a single artifact does not run it and does not need to.
+
+Pinning it to cycle 1 makes it once-per-phase **by construction**: cycle 1 is the full-read
+cycle that happens anyway, and a multi-artifact review happens once per phase. No
+"is this the last one?" detection is needed, and none should be invented.
+
+Three reviews already receive every artifact of a phase at once, and they are its
+invocation sites:
+
+| Review | Already receives | Covers |
+|---|---|---|
+| `aid-define` CROSS-REFERENCE | `REQUIREMENTS.md` + every feature `SPEC.md` | Define's own output |
+| `aid-plan` | full `PLAN.md` + **every** `feature-*/SPEC.md` | Specify's per-feature specs |
+| `aid-detail` | every `task-NNN/DETAIL.md` + `PLAN.md` | Detail's task set |
+
+**`aid-specify` deliberately gets no invocation.** It dispatches a reviewer PER artifact, so
+no single specify review could see a contradiction spanning two features; its specs are
+cross-checked at `aid-plan`'s review, the first review after Specify that sees them
+together. Adding one there would run the pass once per feature, which is the opposite of
+once per phase.
+
+What the pass looks for is unchanged — two artifacts asserting different values for one
+shared fact. Only its cadence moves. It gets *better* rather than merely cheaper: a
+contradiction between siblings is invisible to a gate that only ever reads one of them.
+
+**The residual window, stated:** a contradiction introduced by the pass's own fix is not
+re-checked by that pass, because the pass is pinned to cycle 1 and the fix lands after it.
+The final full pass before approval is the backstop. Re-running the pass every cycle until
+fixpoint would rebuild the per-cycle loop this change exists to remove.
+
 ### OUT OF SCOPE
 
 An **explicit exclusion list**. Things the reviewer must NOT consider when

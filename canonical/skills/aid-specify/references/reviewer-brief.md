@@ -9,6 +9,15 @@ Loaded by `/aid-specify` REVIEW state. Renders the brief passed to the
 ARTIFACTS UNDER REVIEW:
 {{ARTIFACTS}}
 
+  On cycle 1 and on the final full pass this is ONE unlabelled list, as before.
+  From cycle 2 it carries TWO labelled lists and they mean different things:
+    VERIFY (full)  -- re-check EVERY existing ledger row against these. Never
+                      scoped: skipping one breaks Recurred detection.
+    HUNT (scoped)  -- look for NEW findings ONLY here. This is what the
+                      previous FIX changed, plus the files that reference it.
+  Do not hunt outside HUNT, and do not skip anything in VERIFY. Definitions:
+  `reviewer-ledger-schema.md` section "Two sets from cycle 2".
+
 CONTEXT:
 {{CONTEXT}}
 
@@ -57,6 +66,10 @@ OUT OF SCOPE (do NOT grade against):
   - KB document accuracy (route KB-source findings to /aid-discover Q&A — they
     are observations for the upstream skill, not penalties here)
   - REQUIREMENTS.md content (route findings to /aid-describe Q&A)
+  - Any part of REQUIREMENTS.md OUTSIDE the slice this feature traces to. The brief
+    carries only that slice, taken from the feature SPEC's `## Source`; the rest of the
+    document is not under review here and re-reading it once per feature per cycle is
+    the cost this bound exists to remove.
 
 OUT-OF-SCOPE FINDINGS POLICY:
   Log OOS findings as Status: OOS rows in the same ledger table at

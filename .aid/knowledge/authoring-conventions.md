@@ -372,6 +372,28 @@ headers, no narrative, no summary section.
 
 ---
 
+## Scoped Review Cycles
+
+**Cycle 1 reads everything. From cycle 2 a review verifies the existing ledger in full but
+hunts for new findings only in what the previous fix changed.** The two halves are separate
+because only one of them was ever expensive: re-checking a `Pending` row is a targeted disk
+lookup, while "find NEW issues" is what forced a whole-artifact re-scan on every cycle.
+
+Three properties keep it safe, and none is optional:
+
+- The scoped surface includes the sections that **reference** the changed ones, found by
+  mechanical cross-reference lookup rather than by a judgment about what might be affected.
+- The cross-document contradiction pass is kept, and runs **once per phase** — on cycle 1 of
+  any review that sees more than one artifact — instead of once per cycle per artifact.
+- **A scoped cycle never approves.** One full pass runs before approval, and `Recurred`
+  already exists in the Status enum for anything a scoped cycle missed.
+
+The mechanism is defined once in `kb-authoring/../reviewer-ledger-schema.md § Two sets from
+cycle 2` and carried by `reviewer-dispatch.md § ARTIFACTS UNDER REVIEW`. It is not restated
+here — a second definition is the drift this convention section exists to prevent.
+
+---
+
 ## Plan-First (Review then Fix)
 
 Review and fix are **separate phases**, never blended (kb-authoring P3). The ledger

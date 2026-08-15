@@ -9,6 +9,15 @@ passed to the `aid-reviewer` sub-agent. Follows `canonical/aid/templates/reviewe
 ARTIFACTS UNDER REVIEW:
 {{ARTIFACTS}}
 
+  On cycle 1 and on the final full pass this is ONE unlabelled list, as before.
+  From cycle 2 it carries TWO labelled lists and they mean different things:
+    VERIFY (full)  -- re-check EVERY existing ledger row against these. Never
+                      scoped: skipping one breaks Recurred detection.
+    HUNT (scoped)  -- look for NEW findings ONLY here. This is what the
+                      previous FIX changed, plus the files that reference it.
+  Do not hunt outside HUNT, and do not skip anything in VERIFY. Definitions:
+  `reviewer-ledger-schema.md` section "Two sets from cycle 2".
+
 CONTEXT:
 {{CONTEXT}}
 
