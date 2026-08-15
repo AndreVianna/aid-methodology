@@ -189,6 +189,32 @@ qa:
       out because the rule governs artifacts, so they are out of scope rather than clean.
     decided_by: agent
     updated: '2026-08-15'
+  - id: Q15
+    question: 'Why was the branch carrying 247 file-mode changes nobody asked for?'
+    state: Resolved
+    answer: |
+      Because run_generator.py chmods every emitted .sh to 755, and this container had
+      core.fileMode=true while the origin repo sets it FALSE. Upstream therefore never
+      sees the churn -- test-release.sh documents the setting and mirrors it into its
+      clones for precisely this reason -- but here every render staged a 644 -> 755 mode
+      change, and `git add -A profiles/` committed them. 245 under profiles/, one on a
+      test suite, three renders in a row, entirely unnoticed.
+
+      Normalized to 644 via update-index --chmod=-x, matching origin/master exactly:
+      247 files, 0 insertions, 0 deletions. test-artifact-discipline.sh went to 644 too,
+      since all 140 existing suites are 644 in the index and it was the outlier at 755;
+      the exec bit was never load-bearing, as every suite is invoked as `bash <path>`.
+      core.fileMode is now false locally, and a re-run of the generator plus dogfood sync
+      reports 0 changed files where it previously dirtied 177.
+
+      Two things this is worth recording for: a PR carrying hundreds of mode-only entries
+      does not merely add noise, it HIDES the reviewable change among them. And the local
+      environment differed from the project's assumed setup in a way no test could catch,
+      because the setting that masks it is configuration, not code -- the reason it
+      surfaced at all is that a push check listed the working tree instead of assuming it
+      was clean.
+    decided_by: agent
+    updated: '2026-08-15'
   - id: Q14
     question: 'Did the prose sweep break anything, and how would we know?'
     state: Resolved
