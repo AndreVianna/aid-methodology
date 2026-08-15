@@ -366,4 +366,47 @@ assert_exit_zero "$?" "DW42 --from-tasks accepts every 'no dependencies' spellin
 assert_output_contains "$out" 'wave 1: task-001, task-002, task-003' \
     "DW43 '--', 'None' and an empty value all mean no dependency, so all three are wave 1"
 
+# A single-delivery work must emit the FLATTENED heading, not the delivery-tagged one.
+# This is a compatibility contract, not a formatting preference: complexity-score.sh
+# and compute-block-radius.sh both accept this output as --plan-file, and both REQUIRE
+# --delivery-id the moment they see a `### delivery-` heading. Emitting the tagged form
+# would make a Lite caller pass a delivery id for the one delivery that is implicit by
+# definition -- and compute-block-radius returns an EMPTY radius rather than failing
+# when it cannot find the task, so the mistake would be silent.
+out="$(bash "$SCRIPT" --from-tasks "$FT" 2>&1)"
+assert_output_contains "$out" '## Execution Graph' \
+    "DW44 a single-delivery work emits the flattened '## Execution Graph' heading"
+if grep -q '^### delivery-' <<<"$out"; then
+    fail "DW45 a single-delivery work must NOT emit a '### delivery-NNN' heading (it would force --delivery-id on consumers)"
+else
+    pass "DW45 a single-delivery work emits no '### delivery-NNN' heading"
+fi
+# Multi-delivery keeps the tagged form -- there the delivery id is real information.
+out_multi="$(bash "$SCRIPT" --from-tasks "$FT_NEST" 2>&1)"
+assert_output_contains "$out_multi" '### delivery-001 Execution Graph' \
+    "DW46 a multi-delivery work keeps the per-delivery heading"
+
+# The output is consumable BY THOSE SCRIPTS, asserted by running them. Proving the
+# heading text is not the same as proving the consumer accepts it.
+CBR="${REPO_ROOT}/canonical/aid/scripts/execute/compute-block-radius.sh"
+CSC="${REPO_ROOT}/canonical/aid/scripts/execute/complexity-score.sh"
+if [[ -f "$CBR" && -f "$CSC" ]]; then
+    printf '%s\n' "$out" > "${TMP}/derived-graph.md"
+
+    radius="$(bash "$CBR" --failed-task 1 --plan-file "${TMP}/derived-graph.md" 2>/dev/null)"
+    if [[ "$radius" == *"task-002"* && "$radius" == *"task-003"* ]]; then
+        pass "DW47 compute-block-radius.sh reads the derived graph with no --delivery-id and finds both dependents"
+    else
+        fail "DW47 compute-block-radius.sh must find task-002 and task-003 as task-001's radius — got '${radius:-<empty>}'"
+    fi
+
+    score_out="$(bash "$CSC" --plan-file "${TMP}/derived-graph.md" --tasks-dir "${FT}/tasks" 2>/dev/null)"
+    assert_output_contains "$score_out" 'tasks=3' \
+        "DW48 complexity-score.sh reads the derived graph and counts all three tasks"
+    assert_output_contains "$score_out" 'depth=2' \
+        "DW49 complexity-score.sh derives the correct graph depth from it"
+else
+    pass "DW47-49 SKIPPED: consumer scripts not present"
+fi
+
 test_summary

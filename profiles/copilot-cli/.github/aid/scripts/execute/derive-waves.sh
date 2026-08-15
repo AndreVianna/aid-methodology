@@ -316,7 +316,28 @@ if [[ -n "$FROM_TASKS" ]]; then
 
     # The table is printed as well as the waves: with no authored table on disk, this
     # is the only way to see what the sort was computed FROM.
-    printf '%s\n' "$table"
+    #
+    # A SINGLE-delivery work prints the FLATTENED heading (`## Execution Graph`, no
+    # delivery wrapper) rather than the `### delivery-NNN Execution Graph` form used
+    # internally. That is not cosmetic. complexity-score.sh and
+    # compute-block-radius.sh both accept this output as `--plan-file`, and both
+    # REQUIRE `--delivery-id` the moment they see a `### delivery-` heading -- so the
+    # delivery-tagged form makes a Lite caller pass a delivery id for the one delivery
+    # that is implicit by definition, and silently returns an empty result if it does
+    # not. Emitting the shape those scripts already expect for a flattened work means
+    # neither needs a fourth and fifth copy of this sort.
+    #
+    # The awk pass still consumes the delivery-tagged form, because that is how it
+    # attributes rows to a delivery. Internal representation and emitted
+    # representation differ on purpose.
+    if [[ "$(printf '%s\n' "$table" | grep -c '^### delivery-')" -eq 1 ]]; then
+        printf '%s\n' "$table" | awk '
+            /^### delivery-[0-9]+ Execution Graph$/ { print "## Execution Graph"; next }
+            { print }
+        '
+    else
+        printf '%s\n' "$table"
+    fi
     derive "$tmp_table"
     exit $?
 fi
