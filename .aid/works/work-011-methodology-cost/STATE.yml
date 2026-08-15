@@ -189,6 +189,54 @@ qa:
       out because the rule governs artifacts, so they are out of scope rather than clean.
     decided_by: agent
     updated: '2026-08-15'
+  - id: Q16
+    question: 'AC-12: is BLUEPRINT.md retired?'
+    state: Open
+    answer: |
+      Authoring side yes, reader side not yet. Splitting it this way was not planned --
+      the survey found the second half.
+
+      DONE. The delivery definition (objective, scope, gate criteria) now lives in the
+      delivery's own `### delivery-NNN` stanza in PLAN.md. delivery-blueprint-template.md
+      deleted; nothing under canonical/skills/ or canonical/aid/templates/ writes or reads
+      a BLUEPRINT any more; 34 shortcut doorways regenerated from the fixed generator
+      line; six places that described layout detection as presence-based now say
+      declared-first with presence as the un-migrated fallback. Gated by AD06.
+
+      What the stanza deliberately did NOT absorb: the task listing and the Blocks edges.
+      Both are DERIVED -- the listing from each task's `**Source:** ... -> delivery-NNN`,
+      the reverse edges from the `**Depends on:**` fields. Copying a derived view into the
+      stored one is precisely how the wave-map came to disagree with the table above it.
+
+      KEPT on purpose, with AD06's scope saying so instead of quietly excluding them:
+      writeback-state.sh's presence fallback (pre-declared-field works really do have the
+      file), and migrate-work-hierarchy.{sh,ps1}, which still write one. Those two are
+      bash+PowerShell twins needing lockstep, and pwsh cannot run here -- converting them
+      blind is the setup that produced three silent divergences earlier in this work.
+
+      REMAINING (part 2). The dashboard readers use BLUEPRINT.md for more than layout:
+      reader.py and reader.mjs read the delivery TITLE from its H1, plus the task listing
+      for short_name/type. With authoring stopped, a new work degrades to `delivery_id`
+      as its title -- graceful, not broken, but real. Teaching both twins to read the
+      title from the PLAN.md stanza is a parity-guaranteed code change, not prose, and
+      belongs with item 7 rather than bolted onto this commit.
+
+      ALSO REMAINING: 35 BLUEPRINT mentions across 8 KB docs, 17 across docs/, and the
+      dashboard's own prose. The KB ones state the project's current structure, so they
+      are genuinely wrong now -- but .aid/knowledge/ is /aid-update-kb's territory under
+      its own confirm gates, not something to sweep inside a code commit.
+
+      Two things the tests taught here. test-delivery-gate-aggregate.sh 8a/8b guarded
+      against reading gate criteria FROM PLAN.md -- a real mis-wire when BLUEPRINT defined
+      the delivery, and the correct source now. Both were INVERTED rather than deleted,
+      because the invariant (criteria come from exactly ONE named place, and the doc says
+      which) never changed. And AD05 exists because AD04 is per-line: a tree diagram
+      splits `features/` from `SPEC.md` across lines, so three diagrams sat inside fences
+      that AD04 both skipped AND could not have matched. Fence policy is now per-rule:
+      skip for AD01/AD02 where a fence may legitimately exhibit the banned shape, include
+      for AD04/AD05/AD06 where the pattern is a path that no longer exists.
+    decided_by: agent
+    updated: '2026-08-15'
   - id: Q15
     question: 'Why was the branch carrying 247 file-mode changes nobody asked for?'
     state: Resolved
