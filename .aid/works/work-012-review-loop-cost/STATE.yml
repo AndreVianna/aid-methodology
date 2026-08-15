@@ -34,7 +34,7 @@ phase: Detail
 # [W] aid-{skill} | none
 active_skill: none
 # [W]
-updated: '2026-08-15T06:57:25Z'
+updated: '2026-08-15T15:18:54Z'
 # [W] set only when lifecycle = Paused-Awaiting-Input
 pause_reason: 'Detail complete at A+ -- 15 tasks in 10 waves; run /aid-execute work-012'
 # [W] set only when lifecycle = Blocked
@@ -637,6 +637,38 @@ lifecycle_history:
       a reviewer brief, the dispatch protocol or the ledger schema. The
       forecast stands, but it is a forecast about an unfinished branch, and
       task-007 re-measures at execution regardless.
+  - date: '2026-08-15'
+    event: 'work-006 MERGED (PR #184) -- every claim re-verified against the real tree'
+    grade: --
+    notes: >-
+      Merged master. No git conflict and no semantic one. The forecast made
+      before the merge was checked against the merged tree rather than
+      assumed to have held, and it was EXACT: 241 of 317 in-scope markdown
+      files decided, 76%, against a forecast of 241/317 and 76%. The corpus
+      is skills 209, agents 9, templates 76, KB 23.
+      Edit sites all intact: the reviewer-brief glob still returns six, the
+      cycle-N>=2 clause is present, filter_reviewable_artifacts is still a
+      defined function, G-07's wording is unchanged, both aid-specify FR-14
+      sites are unchanged, grade.sh is present, and all three Guard 2
+      invocation sites exist.
+      The type registry still has exactly ten rows and no new file kind
+      appeared under canonical/skills (SKILL.md and references/ only), so no
+      new registry row is owed and work-004's FR-10 obligation stays
+      untriggered.
+      TWO NEW KB DOCS arrived that the pre-merge assessment did not
+      anticipate: backlog.md and roadmap.md, both kb-category primary and
+      source hand-authored. They are the artifacts behind work-006's
+      Concern Model change, which now admits a PROJECT-LEVEL governance
+      document as conditional while keeping per-work ones out. Both resolve
+      as kb-doc through the registry's `path .aid/knowledge/*.md` catch-all,
+      so the grammar covers them with no change -- but they are the reason
+      to keep re-deriving rather than trusting a forecast: the file COUNT
+      was predicted correctly while the composition was not.
+      The only overlap with this work's C-5 edits remains the Concern Model
+      paragraph, which is a different section from the type registry and the
+      criteria-by-level table. Both of those are byte-unchanged by the
+      merge; the criteria table still carries its 18 rows and G-07 is still
+      HIGH.
 
 # [A] aid-deploy only; one entry per delivery.
 deploy: []

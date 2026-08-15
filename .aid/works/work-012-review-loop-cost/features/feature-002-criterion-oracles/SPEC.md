@@ -330,17 +330,30 @@ Measured over the current corpus (`LC_ALL=C find … -name '*.md'`):
 | `canonical/aid/templates/` | 73 | **UNDECIDED** |
 | **Total in scope** | **276** | **74% decided, 26% undecided** |
 
-**Forecast against `work-006`, which is in flight and will land first.** That work
-(PR #184) adds **36 skills**, taking the in-scope corpus from 276 to **317** files and the
-template tree from 73 to 76. Every new skill is a `canonical/skills/<name>/SKILL.md` whose
-`<name>` is a `shortcut-catalog.yml` row, so all 36 resolve as `skill-generated` through the
-`name-in` clause — **no grammar change, no new registry type, no new file kind.** The
-measured figure therefore moves to roughly **241 of 317, 76%**: the oracle gets slightly
-*better*, because the growth is entirely in the decidable region while the undecidable
-template tree grows by three.
+**Re-measured after `work-006` merged (PR #184).** That work added 36 skills, and the table
+above is the pre-merge figure. The post-merge figure, measured the same way:
 
-This is a forecast, not a substitute for the measurement. `task-007` re-measures against
-whatever corpus exists at execution, exactly as the row above requires.
+| Region | Files | Oracle |
+|---|---|---|
+| `canonical/skills/` | 209 | decided |
+| `.aid/knowledge/` | 23 | decided |
+| `canonical/agents/` | 9 | decided |
+| `canonical/aid/templates/` | 76 | **UNDECIDED** |
+| **Total in scope** | **317** | **76% decided** |
+
+The oracle got slightly *better*, because the growth was almost entirely in the decidable
+region. Every new skill is a `canonical/skills/<name>/SKILL.md` whose `<name>` is a
+`shortcut-catalog.yml` row, so all 36 resolve as `skill-generated` through the `name-in`
+clause — **no grammar change, no new registry row, no new file kind.**
+
+**One thing the forecast got right for the wrong reason, and it is the argument for
+re-measuring.** The predicted total (317) and percentage (76%) were exact. The
+*composition* was not: two new KB documents arrived that the forecast did not anticipate —
+`backlog.md` and `roadmap.md`, admitted by `work-006`'s revision of the Concern Model to
+allow a project-level governance document. Both resolve as `kb-doc` through the registry's
+catch-all, so nothing breaks. But a correct total hid an incorrect breakdown, which is
+precisely why `task-007` re-measures against whatever corpus exists at execution rather
+than trusting any figure written here.
 
 That is the honest scope of the C-5 request. The registry has **ten** type rows: **eight
 gain a `Match` cell** (`state`, `kb-generated`, `kb-meta`, `kb-doc`, `skill-generated`,
