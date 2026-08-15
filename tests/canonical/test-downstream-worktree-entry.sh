@@ -112,7 +112,15 @@ assert_pointer_before() {
     elif [[ -z "$anchor_line" ]]; then
         fail "$label -- anchor not found: '$anchor' in $(basename "$file")"
     elif [[ "$pointer_line" -lt "$anchor_line" ]]; then
-        pass "$label (pointer line $pointer_line < anchor line $anchor_line)"
+        # The label carries NO line numbers, deliberately. coverage-parity keys on the
+        # whole pass label, so a label ending in "(pointer line 86 < anchor line 92)"
+        # gets a NEW key every time an unrelated edit shifts either line -- the gate
+        # reads that as coverage removed and demands an allowlist row for a test that
+        # never changed. One such row was already stale on arrival. Line numbers are
+        # evidence, not identity: they go to the verbose stream.
+        pass "$label"
+        [[ "${VERBOSE:-0}" -eq 1 ]] && \
+            echo "        (pointer line $pointer_line < anchor line $anchor_line)"
     else
         fail "$label -- pointer (line $pointer_line) does NOT precede anchor (line $anchor_line)"
     fi
@@ -129,7 +137,10 @@ assert_strict_between() {
     if [[ -z "$line_before" || -z "$line_mid" || -z "$line_after" ]]; then
         fail "$label -- anchor(s) not found (before='$line_before' mid='$line_mid' after='$line_after')"
     elif [[ "$line_before" -lt "$line_mid" && "$line_mid" -lt "$line_after" ]]; then
-        pass "$label (before=$line_before < mid=$line_mid < after=$line_after)"
+        # No line numbers in the label -- same reason as assert_pointer_before above.
+        pass "$label"
+        [[ "${VERBOSE:-0}" -eq 1 ]] && \
+            echo "        (before=$line_before < mid=$line_mid < after=$line_after)"
     else
         fail "$label -- ordering violated (before=$line_before mid=$line_mid after=$line_after)"
     fi
@@ -181,8 +192,8 @@ assert_pointer_before "$DEFINE_MD"  "## State Detection" \
 assert_pointer_before "$SPECIFY_MD" "### Check 2: Feature Exists" \
     "G2 aid-specify -- pointer precedes '### Check 2: Feature Exists' (section resolution)" \
     "any" "### Locate + Enter the Work's Worktree" "heading"
-assert_pointer_before "$PLAN_MD"    "### Check 2: Verify Feature SPECs" \
-    "G2 aid-plan -- pointer precedes '### Check 2: Verify Feature SPECs'"
+assert_pointer_before "$PLAN_MD"    "### Check 2: Verify Features" \
+    "G2 aid-plan -- pointer precedes '### Check 2: Verify Features'"
 assert_pointer_before "$DETAIL_MD"  "### Check 2: Verify PLAN.md Exists" \
     "G2 aid-detail -- pointer precedes '### Check 2: Verify PLAN.md Exists'"
 
