@@ -162,7 +162,7 @@ later" as equivalent to recorded.
 > fourth -- KI-018, RESOLVED 2026-07-28 with a shipped fix -- which survived the first
 > correction because I recounted the split without re-checking each row against it) — including one whose text
 > ("`CHARTABLE_SHAPES` was never widened") is false on disk: `gen-skills.mjs` uses
-> `new Set(SHAPE_ORDER)` and all 75 sidecars emit. The classification had been read off the
+> `new Set(SHAPE_ORDER)` and all 111 sidecars emit. The classification had been read off the
 > presence of a `Status:` line. Closures are recorded four different ways across the file --
 > a `Status:` line, a heading (KI-020), a body bullet (KI-018) and a `Type:` line (KI-021) --
 > so that heuristic mis-read four entries, and correcting the totals without re-checking each
