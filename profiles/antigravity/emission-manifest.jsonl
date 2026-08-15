@@ -18,7 +18,7 @@
 {"dst": ".agent/aid/scripts/connectors/write-connector.sh", "profile": "antigravity", "sha256": "4387e45dc85935478466f24321c8c68f86e5cc7f19a4191cddc143f36a6f9fff", "src": "canonical/scripts/connectors/write-connector.sh"}
 {"dst": ".agent/aid/scripts/execute/complexity-score.sh", "profile": "antigravity", "sha256": "79424229ae44916659be6d05de6cb80db3e32d02d931b66d903e84749574135a", "src": "canonical/scripts/execute/complexity-score.sh"}
 {"dst": ".agent/aid/scripts/execute/compute-block-radius.sh", "profile": "antigravity", "sha256": "eea2a8d8dd12d5e118ea97664fb874343b738a650c984c866363e6adab5bde05", "src": "canonical/scripts/execute/compute-block-radius.sh"}
-{"dst": ".agent/aid/scripts/execute/derive-waves.sh", "profile": "antigravity", "sha256": "0ab4398c4904e9a6a70ddcda13dca0845ed0bb8c8665b272c346c37bfa3b5b0f", "src": "canonical/scripts/execute/derive-waves.sh"}
+{"dst": ".agent/aid/scripts/execute/derive-waves.sh", "profile": "antigravity", "sha256": "484d21ad57bca58b9137ed29b831028b3879687588c41a79611086b483515d73", "src": "canonical/scripts/execute/derive-waves.sh"}
 {"dst": ".agent/aid/scripts/execute/write-control-signal.sh", "profile": "antigravity", "sha256": "4adc99a9d9aff96d5a3c418fb461af28167f48cfada8a1d2ed88b17454fb17fc", "src": "canonical/scripts/execute/write-control-signal.sh"}
 {"dst": ".agent/aid/scripts/execute/writeback-state.sh", "profile": "antigravity", "sha256": "610875270a539ab2ecfe45a655796f87b26d80a9162a575b98a561cd4b33ec73", "src": "canonical/scripts/execute/writeback-state.sh"}
 {"dst": ".agent/aid/scripts/grade.sh", "profile": "antigravity", "sha256": "478103d69baa1eb0f080538923ebe4a583629cbce540d04c567f15b4c76350f3", "src": "canonical/scripts/grade.sh"}

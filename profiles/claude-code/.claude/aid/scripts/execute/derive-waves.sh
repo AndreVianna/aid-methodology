@@ -24,6 +24,21 @@
 #   also removes a judgment call ("do these represent distinct execution
 #   tracks?") that never had an observable consequence.
 #
+# Two dependency SOURCES, one algorithm:
+#
+#   a dependency TABLE in PLAN.md            -- the full path, where sequencing is
+#                                               an authored decision
+#   the task DETAIL.md files themselves      -- `--from-tasks`, for a work with no
+#                                               PLAN.md at all
+#
+#   `--from-tasks` exists because the Lite path has one feature and one delivery, so
+#   there is no sequencing decision to record and a PLAN.md would hold nothing but a
+#   view derived from data already on disk: every task's `**Depends on:**` field is
+#   the graph. Rather than a second topological sort, that mode renders the DETAILs
+#   into the same `| Task | Depends On |` shape and feeds it through the SAME awk
+#   pass below. One sort, one set of cycle semantics, one test surface -- because two
+#   implementations of one algorithm in one repo is how they come to disagree.
+#
 # Usage:
 #   derive-waves.sh <plan.md>            Print the derived wave-map blocks.
 #   derive-waves.sh <plan.md> --write    Replace the wave-map blocks in the file,
@@ -40,22 +55,45 @@
 #                                        malformed graph (cycle, or a task the
 #                                        table never defines).
 #
+#   derive-waves.sh --from-tasks <work-dir>
+#                                        Derive the graph from the work's task
+#                                        DETAIL.md files instead of from a PLAN.md
+#                                        table. Prints the dependency table AND the
+#                                        wave-map blocks -- the table because a reader
+#                                        (human or agent) needs to see what the sort
+#                                        was computed FROM, given there is no authored
+#                                        table to compare against.
+#                                        Handles both layouts: `tasks/task-NNN/` under
+#                                        the work root, and
+#                                        `deliveries/delivery-NNN/tasks/task-NNN/`.
+#                                        Exits 2 on a cycle, same as the table source.
+#
 # Read-only unless --write is given.
 # Dependencies: bash + awk only (no node, no python -- this is a core-path
 # script, and core AID installs assume neither).
 
 set -uo pipefail
 
-PLAN="${1:-}"
-MODE="${2:-emit}"
+FROM_TASKS=""
+if [[ "${1:-}" == "--from-tasks" ]]; then
+    FROM_TASKS="${2:-}"
+    if [[ -z "$FROM_TASKS" || ! -d "$FROM_TASKS" ]]; then
+        echo "derive-waves.sh: --from-tasks needs an existing work directory" >&2
+        exit 2
+    fi
+else
+    PLAN="${1:-}"
+    MODE="${2:-emit}"
 
-if [[ -z "$PLAN" || ! -f "$PLAN" ]]; then
-    echo "derive-waves.sh: usage: derive-waves.sh <plan.md> [--check]" >&2
-    exit 2
-fi
-if [[ "$MODE" != "emit" && "$MODE" != "--check" && "$MODE" != "--write" ]]; then
-    echo "derive-waves.sh: unknown mode '$MODE' (expected --write, --check, or nothing)" >&2
-    exit 2
+    if [[ -z "$PLAN" || ! -f "$PLAN" ]]; then
+        echo "derive-waves.sh: usage: derive-waves.sh <plan.md> [--check|--write]" >&2
+        echo "                   or: derive-waves.sh --from-tasks <work-dir>" >&2
+        exit 2
+    fi
+    if [[ "$MODE" != "emit" && "$MODE" != "--check" && "$MODE" != "--write" ]]; then
+        echo "derive-waves.sh: unknown mode '$MODE' (expected --write, --check, or nothing)" >&2
+        exit 2
+    fi
 fi
 
 # Emit the derived blocks. One awk pass: collect each delivery's dependency
@@ -188,6 +226,100 @@ existing() {
 agrees() {
     [[ "$(derive "$1")" == "$(existing "$1")" ]]
 }
+
+# --from-tasks: render the work's task DETAIL.md files into the same dependency-table
+# shape derive() already parses, then hand it to the SAME awk pass.
+#
+# Each DETAIL contributes three things: its task id (from the directory name, which is
+# authoritative -- a heading can disagree with its own path), its `**Depends on:**`
+# field, and its delivery (from `**Source:** ... -> delivery-NNN`). Tasks with no
+# resolvable delivery fall to delivery-001, which is the Lite path's synthesized single
+# delivery and the only case where Source can legitimately be terse.
+tasks_as_table() {
+    local work_dir="$1"
+    local detail task_id delivery deps
+    # Both layouts. -print0 would be safer against odd names, but task directories are
+    # `task-NNN` by construction and the glob is anchored, so word-splitting cannot bite.
+    local -a details=()
+    while IFS= read -r detail; do
+        [[ -n "$detail" ]] && details+=("$detail")
+    done < <(
+        { find "$work_dir/tasks" -mindepth 2 -maxdepth 2 -name DETAIL.md 2>/dev/null
+          find "$work_dir/deliveries" -mindepth 4 -maxdepth 4 -name DETAIL.md 2>/dev/null
+        } | LC_ALL=C sort
+    )
+
+    [[ ${#details[@]} -eq 0 ]] && return 0
+
+    # Group rows by delivery so each gets its own execution-graph section, exactly as a
+    # multi-delivery PLAN.md would present them.
+    local -a seen_deliveries=()
+    local d
+    for detail in "${details[@]}"; do
+        delivery="$(awk '
+            /^\*\*Source:\*\*/ {
+                s = tolower($0)
+                if (match(s, /delivery-[0-9]+/)) {
+                    print substr(s, RSTART + 9, RLENGTH - 9)
+                    exit
+                }
+            }' "$detail")"
+        [[ -z "$delivery" ]] && delivery="001"
+        local known=0
+        for d in "${seen_deliveries[@]:-}"; do [[ "$d" == "$delivery" ]] && known=1; done
+        [[ $known -eq 0 ]] && seen_deliveries+=("$delivery")
+    done
+
+    for d in "${seen_deliveries[@]}"; do
+        printf '### delivery-%s Execution Graph\n\n' "$d"
+        printf '| Task | Depends On |\n|------|------------|\n'
+        for detail in "${details[@]}"; do
+            delivery="$(awk '
+                /^\*\*Source:\*\*/ {
+                    s = tolower($0)
+                    if (match(s, /delivery-[0-9]+/)) { print substr(s, RSTART + 9, RLENGTH - 9); exit }
+                }' "$detail")"
+            [[ -z "$delivery" ]] && delivery="001"
+            [[ "$delivery" != "$d" ]] && continue
+
+            task_id="$(basename "$(dirname "$detail")")"
+            # Extract ids rather than clean the field, for the same reason derive()
+            # does: "none" is spelled a dozen ways and every one of them yields no ids.
+            deps="$(awk '
+                /^\*\*Depends on:\*\*/ {
+                    rest = tolower($0)
+                    sub(/^\*\*depends on:\*\*/, "", rest)
+                    out = ""
+                    while (match(rest, /task-[0-9]+/)) {
+                        out = (out == "" ? substr(rest, RSTART, RLENGTH) : out ", " substr(rest, RSTART, RLENGTH))
+                        rest = substr(rest, RSTART + RLENGTH)
+                    }
+                    print out
+                    exit
+                }' "$detail")"
+            [[ -z "$deps" ]] && deps="-- (none)"
+            printf '| %s | %s |\n' "$task_id" "$deps"
+        done
+        printf '\n'
+    done
+}
+
+if [[ -n "$FROM_TASKS" ]]; then
+    table="$(tasks_as_table "$FROM_TASKS")"
+    if [[ -z "$table" ]]; then
+        echo "derive-waves.sh: no task DETAIL.md files found under $FROM_TASKS" >&2
+        exit 2
+    fi
+    tmp_table="$(mktemp)"
+    trap 'rm -f "$tmp_table"' EXIT
+    printf '%s\n' "$table" > "$tmp_table"
+
+    # The table is printed as well as the waves: with no authored table on disk, this
+    # is the only way to see what the sort was computed FROM.
+    printf '%s\n' "$table"
+    derive "$tmp_table"
+    exit $?
+fi
 
 if [[ "$MODE" == "emit" ]]; then
     derive

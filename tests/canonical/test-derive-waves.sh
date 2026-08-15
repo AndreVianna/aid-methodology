@@ -270,4 +270,100 @@ assert_output_contains "$out" 'wave 2: task-031, task-032' \
 assert_output_contains "$out" 'wave 1: task-040' \
     "DW24c a dependency on an earlier delivery does not delay wave 1"
 
+# ---------------------------------------------------------------------------
+# DW33+: --from-tasks -- deriving the graph from the task DETAIL.md files.
+#
+# The Lite path has one feature and one delivery, so there is no sequencing decision
+# to record and a PLAN.md would hold nothing but a view of data already on disk: each
+# task's `**Depends on:**` field IS the graph. This mode renders those DETAILs into
+# the same `| Task | Depends On |` shape the table source produces and feeds it
+# through the SAME awk pass -- so these cases also prove the reuse, not a second
+# topological sort with its own bugs.
+# ---------------------------------------------------------------------------
+
+# make_task <work-dir> <task-num> <delivery-or-empty> <depends-value>
+make_task() {
+    local work="$1" num="$2" delivery="$3" deps="$4"
+    local dir="${work}/tasks/task-${num}"
+    mkdir -p "$dir"
+    {
+        printf '# task-%s: Fixture\n\n**Type:** IMPLEMENT\n\n' "$num"
+        if [[ -n "$delivery" ]]; then
+            printf '**Source:** work-900-fixture -> delivery-%s -> AC-1\n\n' "$delivery"
+        fi
+        printf '**Depends on:** %s\n' "$deps"
+    } > "${dir}/DETAIL.md"
+}
+
+FT="${TMP}/ft-flat"
+make_task "$FT" 001 001 "-- (none)"
+make_task "$FT" 002 001 "task-001"
+make_task "$FT" 003 001 "task-001"
+
+out="$(bash "$SCRIPT" --from-tasks "$FT" 2>&1)"
+rc=$?
+assert_exit_zero "$rc" "DW33 --from-tasks derives from DETAIL.md files with no PLAN.md present"
+assert_output_contains "$out" 'wave 1: task-001' "DW34a the root task lands in wave 1"
+assert_output_contains "$out" 'wave 2: task-002, task-003' \
+    "DW34b two tasks sharing one dependency share a wave"
+# The table is printed as well as the waves: with no authored table on disk, it is the
+# only way to see what the sort was computed FROM.
+assert_output_contains "$out" '| task-002 | task-001 |' \
+    "DW34c the derived dependency table is printed alongside the wave-map"
+
+# A cycle must fail the same way it does from a table source -- same sort, same
+# semantics, same exit code.
+FT_CYC="${TMP}/ft-cycle"
+make_task "$FT_CYC" 001 001 "task-002"
+make_task "$FT_CYC" 002 001 "task-001"
+bash "$SCRIPT" --from-tasks "$FT_CYC" >/dev/null 2>&1
+assert_exit_eq "$?" 2 "DW35 --from-tasks exits 2 on a dependency cycle"
+
+# The nested layout: DETAILs live under deliveries/delivery-NNN/tasks/, and each
+# delivery must get its own section and its own wave-map.
+FT_NEST="${TMP}/ft-nested"
+for spec in "001 001 -- (none)" "002 002 -- (none)" "003 002 task-002"; do
+    set -- $spec
+    num="$1" del="$2"; shift 2; deps="$*"
+    dir="${FT_NEST}/deliveries/delivery-${del}/tasks/task-${num}"
+    mkdir -p "$dir"
+    printf '# task-%s\n\n**Source:** w -> delivery-%s\n\n**Depends on:** %s\n' \
+        "$num" "$del" "$deps" > "${dir}/DETAIL.md"
+done
+out="$(bash "$SCRIPT" --from-tasks "$FT_NEST" 2>&1)"
+rc=$?
+assert_exit_zero "$rc" "DW36 --from-tasks handles the nested deliveries/ layout"
+assert_output_contains "$out" 'delivery: 001' "DW37a nested: delivery-001 gets a wave-map"
+assert_output_contains "$out" 'delivery: 002' "DW37b nested: delivery-002 gets its own wave-map"
+assert_output_contains "$out" 'wave 2: task-003' \
+    "DW37c nested: dependencies within a delivery still sort"
+
+# A DETAIL with no **Source:** line falls to delivery-001 -- the Lite path's
+# synthesized single delivery, and the only case where Source can be terse.
+FT_NOSRC="${TMP}/ft-nosource"
+make_task "$FT_NOSRC" 001 "" "-- (none)"
+out="$(bash "$SCRIPT" --from-tasks "$FT_NOSRC" 2>&1)"
+assert_exit_zero "$?" "DW38 --from-tasks tolerates a DETAIL with no Source line"
+assert_output_contains "$out" 'delivery: 001' \
+    "DW39 a task with no resolvable delivery falls to delivery-001"
+
+# An empty work is an error, not an empty success: silently emitting nothing would
+# look identical to a work whose tasks all sorted into no waves.
+bash "$SCRIPT" --from-tasks "${TMP}/ft-empty-work" >/dev/null 2>&1
+assert_exit_eq "$?" 2 "DW40 --from-tasks exits 2 when the work directory does not exist"
+mkdir -p "${TMP}/ft-empty-work"
+bash "$SCRIPT" --from-tasks "${TMP}/ft-empty-work" >/dev/null 2>&1
+assert_exit_eq "$?" 2 "DW41 --from-tasks exits 2 when the work has no task DETAIL.md files"
+
+# "No dependencies" is spelled many ways. Every spelling must yield no dependency,
+# which is the same extraction-not-cleaning argument the table source relies on.
+FT_DASH="${TMP}/ft-dashes"
+make_task "$FT_DASH" 001 001 "--"
+make_task "$FT_DASH" 002 001 "None"
+make_task "$FT_DASH" 003 001 ""
+out="$(bash "$SCRIPT" --from-tasks "$FT_DASH" 2>&1)"
+assert_exit_zero "$?" "DW42 --from-tasks accepts every 'no dependencies' spelling"
+assert_output_contains "$out" 'wave 1: task-001, task-002, task-003' \
+    "DW43 '--', 'None' and an empty value all mean no dependency, so all three are wave 1"
+
 test_summary
