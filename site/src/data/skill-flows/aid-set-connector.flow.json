@@ -30,8 +30,8 @@
       "terminal": null,
       "provenance": {
         "file": "canonical/skills/aid-set-connector/SKILL.md",
-        "startLine": 69,
-        "endLine": 69,
+        "startLine": 68,
+        "endLine": 68,
         "sourceKind": "skill",
         "excerpt": "## Step 1: Resolve `<tool>` → descriptor stem; read the preset catalog"
       },
@@ -46,8 +46,8 @@
       "terminal": null,
       "provenance": {
         "file": "canonical/skills/aid-set-connector/SKILL.md",
-        "startLine": 94,
-        "endLine": 94,
+        "startLine": 93,
+        "endLine": 93,
         "sourceKind": "skill",
         "excerpt": "## Step 2: Branch on `<type>` — ask the config question-set"
       },
@@ -62,8 +62,8 @@
       "terminal": null,
       "provenance": {
         "file": "canonical/skills/aid-set-connector/SKILL.md",
-        "startLine": 115,
-        "endLine": 115,
+        "startLine": 114,
+        "endLine": 114,
         "sourceKind": "skill",
         "excerpt": "## Step 3: Classify — ADD vs UPDATE (single stem only)"
       },
@@ -78,8 +78,8 @@
       "terminal": null,
       "provenance": {
         "file": "canonical/skills/aid-set-connector/SKILL.md",
-        "startLine": 137,
-        "endLine": 137,
+        "startLine": 136,
+        "endLine": 136,
         "sourceKind": "skill",
         "excerpt": "## Step 4: Ensure the `.secrets/` gitignore precondition — BEFORE any write under `.aid/connectors/`"
       },
@@ -94,8 +94,8 @@
       "terminal": null,
       "provenance": {
         "file": "canonical/skills/aid-set-connector/SKILL.md",
-        "startLine": 159,
-        "endLine": 159,
+        "startLine": 158,
+        "endLine": 158,
         "sourceKind": "skill",
         "excerpt": "## Step 5: Author the descriptor + reconcile the secret (set-skill logic)"
       },
@@ -113,8 +113,8 @@
       },
       "provenance": {
         "file": "canonical/skills/aid-set-connector/SKILL.md",
-        "startLine": 203,
-        "endLine": 203,
+        "startLine": 202,
+        "endLine": 202,
         "sourceKind": "skill",
         "excerpt": "## Step 6: Single-stem reconcile → rebuild `INDEX.md`"
       },
@@ -130,8 +130,8 @@
       "advanceType": "CHAIN",
       "provenance": {
         "file": "canonical/skills/aid-set-connector/SKILL.md",
-        "startLine": 69,
-        "endLine": 69,
+        "startLine": 68,
+        "endLine": 68,
         "sourceKind": "skill",
         "excerpt": "## Step 1: Resolve `<tool>` → descriptor stem; read the preset catalog"
       }
@@ -144,8 +144,8 @@
       "advanceType": "CHAIN",
       "provenance": {
         "file": "canonical/skills/aid-set-connector/SKILL.md",
-        "startLine": 94,
-        "endLine": 94,
+        "startLine": 93,
+        "endLine": 93,
         "sourceKind": "skill",
         "excerpt": "## Step 2: Branch on `<type>` — ask the config question-set"
       }
@@ -158,8 +158,8 @@
       "advanceType": "CHAIN",
       "provenance": {
         "file": "canonical/skills/aid-set-connector/SKILL.md",
-        "startLine": 115,
-        "endLine": 115,
+        "startLine": 114,
+        "endLine": 114,
         "sourceKind": "skill",
         "excerpt": "## Step 3: Classify — ADD vs UPDATE (single stem only)"
       }
@@ -172,8 +172,8 @@
       "advanceType": "CHAIN",
       "provenance": {
         "file": "canonical/skills/aid-set-connector/SKILL.md",
-        "startLine": 137,
-        "endLine": 137,
+        "startLine": 136,
+        "endLine": 136,
         "sourceKind": "skill",
         "excerpt": "## Step 4: Ensure the `.secrets/` gitignore precondition — BEFORE any write under `.aid/connectors/`"
       }
@@ -186,8 +186,8 @@
       "advanceType": "CHAIN",
       "provenance": {
         "file": "canonical/skills/aid-set-connector/SKILL.md",
-        "startLine": 159,
-        "endLine": 159,
+        "startLine": 158,
+        "endLine": 158,
         "sourceKind": "skill",
         "excerpt": "## Step 5: Author the descriptor + reconcile the secret (set-skill logic)"
       }
@@ -200,8 +200,8 @@
       "advanceType": "CHAIN",
       "provenance": {
         "file": "canonical/skills/aid-set-connector/SKILL.md",
-        "startLine": 203,
-        "endLine": 203,
+        "startLine": 202,
+        "endLine": 202,
         "sourceKind": "skill",
         "excerpt": "## Step 6: Single-stem reconcile → rebuild `INDEX.md`"
       }
