@@ -125,12 +125,22 @@ verify_pair() {
 # ---------------------------------------------------------------------------
 
 # Extract the paths a brief names under ARTIFACTS UNDER REVIEW. The section
-# ends at the next all-caps heading (CONTEXT:, RUBRIC:, ...) -- the 5-section
-# shape reviewer-dispatch.md mandates.
+# ends at the next all-caps heading -- the 5-section shape reviewer-dispatch.md
+# mandates: CONTEXT:, RUBRIC:, OUT OF SCOPE (do not grade against):,
+# OUT-OF-SCOPE FINDINGS POLICY:, DELIVERABLES:.
+#
+# The block ends at the next UNINDENTED line, which is the structural rule of
+# the brief format: every section heading sits at column 0 and every artifact
+# entry is indented. Matching the heading TEXT was tried twice and failed
+# twice -- first a class of [A-Z -] and then one adding digits and brackets --
+# because "OUT OF SCOPE (do not grade against):" carries lowercase inside its
+# parenthetical, so that whole section leaked its path-like entries into the
+# surface total. Indentation is what actually distinguishes a heading from an
+# entry, so match on that rather than on a guess about heading spelling.
 brief_artifacts() {
     awk '
         /^[[:space:]]*ARTIFACTS UNDER REVIEW:/ { inblk=1; next }
-        inblk && /^[[:space:]]*[A-Z][A-Z -]+:/ { inblk=0 }
+        inblk && /^[^[:space:]]/ { inblk=0 }
         inblk {
             line=$0
             sub(/^[[:space:]]*-[[:space:]]*/, "", line)
@@ -142,9 +152,15 @@ brief_artifacts() {
     ' "$1"
 }
 
+# Takes the brief PATH and does its own extraction. An earlier version took the
+# path as $1 but read the list from stdin, so the caller had to supply both --
+# and dropping the process substitution silently produced a surface of 0 rather
+# than an error. A measurement tool must not have a call form that quietly
+# measures nothing.
 surface_bytes() {
-    local brief="$1" total=0 p sz
+    local brief="$1" total=0 p sz any=0
     while IFS= read -r p; do
+        any=1
         [[ -n "$p" ]] || continue
         if [[ -f "$p" ]]; then
             sz=$(wc -c <"$p"); total=$(( total + sz ))
@@ -158,7 +174,10 @@ surface_bytes() {
             done
             (( matched )) || printf '%s: note -- ARTIFACTS entry matched no file on disk: %s\n' "$PROG" "$p" >&2
         fi
-    done
+    done < <(brief_artifacts "$brief")
+    if (( ! any )); then
+        printf '%s: WARNING -- %s names no paths under ARTIFACTS UNDER REVIEW; recording a surface of 0. A zero here means the brief could not be parsed, not that the cycle read nothing.\n' "$PROG" "$brief" >&2
+    fi
     printf '%s' "$total"
 }
 
@@ -198,8 +217,14 @@ cmd_record() {
     verify_pair
 
     local commit; commit="$(git rev-parse HEAD 2>/dev/null || printf 'unknown')"
-    local bytes;  bytes="$(surface_bytes "$brief" < <(brief_artifacts "$brief"))"
-    printf '%s\t%s\t%s\t%s\n' "$task" "$cycle" "$commit" "$bytes" >>"$TSV"
+    local bytes;  bytes="$(surface_bytes "$brief")"
+    # The append is CHECKED. This tool exists partly to make W5-5's class of
+    # silent state-write failure visible, so it must not commit that failure
+    # itself: without `set -e` a failed redirect is swallowed and the success
+    # message prints over a row that was never written.
+    if ! printf '%s\t%s\t%s\t%s\n' "$task" "$cycle" "$commit" "$bytes" >>"$TSV"; then
+        refuse "could not append to $TSV -- the row was NOT recorded. A measurement that failed to write must never report success."
+    fi
     printf '%s: recorded %s cycle %s -- declared read surface %s bytes\n' \
         "$PROG" "$task" "$cycle" "$bytes"
 }
