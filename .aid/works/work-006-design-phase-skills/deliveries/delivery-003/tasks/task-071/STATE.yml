@@ -1,7 +1,7 @@
-state: Blocked
-review: 'Gate must record criterion 10 as open and W1-11''s kb.html survivor as still open'
+state: Done
+review: 'Criterion 10 CLOSED'
 elapsed: "--"
-notes: 'BLOCKED on scope, not capability: a full authored GENERATE of a 671 KB / 21-section file, versus the 178 KB / 20-section artifact the task was sized against (last recorded run 24m20s at that smaller size). Hand-patching the 5 stale strings is explicitly forbidden and was not done -- kb.html is byte-untouched. Staleness measured: ''75 skills''=3, ''58-row''=2, ''34 verb-first''=2 (correct, must survive). The regeneration path is intact and the KB it reads is final; blocker is cost. BLUEPRINT criterion 10 stays OPEN'
+notes: 'Ran /aid-summarize end to end. Overall A+ (Machine 70/70, Human 30/30). kb.html 21->23 sections over a 19->21 doc set, 990603 bytes; ''75 skills'' 3->0, ''58-row'' 2->0, ''34 verb-first'' still 2. V1 performed by the OWNER in a real browser (Playwright absent, T1/T2/T3 skipped) -- no automated visual pass claimed. Corrected my own earlier sizing error (72% of the file was mechanical shell) and caught a duplicated export payload plus one more 112->111 off-by-one in roadmap.md. W1-11''s kb.html half closed'
 ticket_ref: "--"
 
 quick_check:
