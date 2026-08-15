@@ -180,7 +180,14 @@ assert_eq "$ad03_count" "0" "AD03: every '../'-relative link under canonical/ re
 # just as effectively as an agent following a skill file.
 # ---------------------------------------------------------------------------
 ad04="$(scan_tree "canonical docs examples" \
-        'features/\*/SPEC\.md|features/feature-[0-9A-Za-z-]*/SPEC\.md|per-feature `?SPEC' include-fences)"
+        'features/[*a-zA-Z0-9_-]*/SPEC\.md|per-feature `?SPEC' include-fences)"
+# The character class includes `*` deliberately. The first version enumerated two
+# spellings -- `features/*/SPEC.md` and `features/feature-<name>/SPEC.md` -- and missed
+# the third, `features/feature-*/SPEC.md`, where the glob sits AFTER the prefix. Two
+# live instructions in this repo used exactly that form and passed the gate for days.
+# Found only when another branch's copy of the same sentence was reviewed, which is the
+# argument for matching the SHAPE (anything between `features/` and `/SPEC.md`) rather
+# than enumerating the spellings someone happened to think of.
 ad04_count="$(report_count "$ad04")"
 assert_eq "$ad04_count" "0" "AD04: nothing cites the retired per-feature 'features/*/SPEC.md' layout"
 [[ "$ad04_count" != "0" ]] && report_body "$ad04" | sed 's|^|    offender: |' >&2

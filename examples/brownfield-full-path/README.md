@@ -163,8 +163,8 @@ TRIAGE result: **full path**. The skill proceeds to the full Interview state mac
 
 - `REQUIREMENTS.md` at `.aid/works/work-NNN/REQUIREMENTS.md` — the scope boundary and
   business requirements for this work item
-- A feature stub at `.aid/works/work-NNN/features/refund-workflow/SPEC.md` — the feature's
-  shell, ready for technical specification
+- A `### Feature 001: Refund Workflow` section under `REQUIREMENTS.md § 11` — the
+  feature's shell, ready for technical specification
 
 **Sample REQUIREMENTS.md structure:**
 

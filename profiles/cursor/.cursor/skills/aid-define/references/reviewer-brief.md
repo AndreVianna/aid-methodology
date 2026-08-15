@@ -70,9 +70,9 @@ DELIVERABLES:
 
 ## Substitution at dispatch time
 
-- `{{ARTIFACTS}}` — `.aid/works/{work}/REQUIREMENTS.md` plus the scaffold SPEC.md
-  files in `.aid/works/{work}/features/feature-*/SPEC.md` (the auto-generated portion
-  written during Feature Decomposition — State 5).
+- `{{ARTIFACTS}}` — `.aid/works/{work}/REQUIREMENTS.md`, whose `§ 11 Features` holds
+  the `### Feature NNN` sections written during Feature Decomposition (State 5). One
+  document, not a requirements file plus N scaffolds.
 - `{{CONTEXT}}` — short, descriptive-only background:
   ```
     REQUIREMENTS.md was just approved and N features were decomposed from §5

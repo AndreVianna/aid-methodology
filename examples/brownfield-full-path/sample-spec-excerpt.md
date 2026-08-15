@@ -1,6 +1,7 @@
-> **SAMPLE OUTPUT** — This file illustrates what a feature SPEC looks like after
-> running `/aid-specify` on the Refund Workflow feature stub. It is a partial excerpt
-> of `.aid/works/work-003/features/refund-workflow/SPEC.md`. Actual AID output is tailored
+> **SAMPLE OUTPUT** — This file illustrates what a feature's technical specification
+> looks like after running `/aid-specify` on the Refund Workflow feature. It is a partial
+> excerpt of that feature's section under `.aid/works/work-003/REQUIREMENTS.md § 11`.
+> Actual AID output is tailored
 > to each codebase. The structure, frontmatter, and cross-references to KB documents
 > shown here are accurate to the current AID methodology.
 

@@ -34,8 +34,9 @@ For each deliverable in PLAN.md, run step 4:
 
 Render `references/reviewer-brief.md` with:
 - `{{SCOPE}}` = `whole-plan`
-- `{{ARTIFACTS}}` = full `PLAN.md` + every `.aid/works/{work}/features/feature-*/SPEC.md`
-- `{{CONTEXT}}` = `PLAN.md for work-NNN with N deliveries; re-review against current SPECs.`
+- `{{ARTIFACTS}}` = full `PLAN.md` + the `### Feature NNN` sections of
+  `.aid/works/{work}/REQUIREMENTS.md § 11`
+- `{{CONTEXT}}` = `PLAN.md for work-NNN with N deliveries; re-review against the current feature sections.`
 
 Include in the prompt:
 - **Ledger lifecycle:** "Read `.aid/.temp/review-pending/plan.md` if it exists.
