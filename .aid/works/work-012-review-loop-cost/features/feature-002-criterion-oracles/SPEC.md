@@ -76,19 +76,20 @@ Must
 - [ ] **AC-11** Given each oracle shipped, when the work closes, then that oracle names the
       recurring re-derivation it replaces and the measured per-cycle cost of it, and the
       work reports the net trade. An oracle with no recorded replacement is not shipped.
-- [ ] **FR-9** Given a criterion that carries an oracle, when it is decided, then it is
-      decided by RUNNING the oracle — a reviewer re-reading the criterion to reach the same
-      verdict is the waste this feature removes.
-- [ ] **FR-11** Given an oracle verdict, when it is recorded, then it lands in the existing
-      7-column ledger with the criterion `id` as a `Description` prefix and the oracle's
-      invocation and output in `Evidence` — no new column, and no change to the shape
-      `grade.sh` parses (C-3).
+- [ ] **AC-14 (FR-9)** Given a criterion that carries an oracle, when it is decided, then
+      the recorded verdict traces to the oracle's exit status rather than to a reviewer
+      re-reading the criterion — that re-reading is the waste this feature removes.
+- [ ] **AC-15 (FR-10)** Given a criterion a reviewer has re-derived only once, when
+      authoring is considered, then no oracle exists for it yet: the SECOND re-derivation is
+      the trigger (Q-04). `G-07` is the recorded exception — its recurrence predates the
+      rule (FR-13).
+- [ ] **AC-16 (FR-11)** Given an oracle verdict, when it is recorded, then it lands in the
+      existing 7-column ledger with the criterion `id` as a `Description` prefix and the
+      oracle's invocation and output in `Evidence` — no new column, and no change to the
+      shape `grade.sh` parses (C-3).
 - [ ] Given an `oracle:` value, when it is resolved, then it resolves from the repository
       root and the oracle lives outside `canonical/` — so no oracle enters the render chain
       (Q-02, NFR-5).
-- [ ] Given a criterion that a reviewer has re-derived only once, when authoring is
-      considered, then no oracle is written yet: the trigger is a SECOND re-derivation
-      (Q-04, FR-10). `G-07` is exempt — its recurrence is already on record in L5.
 
 ---
 

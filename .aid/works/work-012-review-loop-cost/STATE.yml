@@ -34,7 +34,7 @@ phase: Define
 # [W] aid-{skill} | none
 active_skill: aid-define
 # [W]
-updated: '2026-08-15T02:04:47Z'
+updated: '2026-08-15T02:23:57Z'
 # [W] set only when lifecycle = Paused-Awaiting-Input
 pause_reason: --
 # [W] set only when lifecycle = Blocked
@@ -107,7 +107,22 @@ interview:
   # [A] COMPLETION step 1.
   quality_check:
     - check: 'Every Must requirement in section 5 has an acceptance criterion in section 9'
-      result: 'Pass -- FR-1..FR-7 to AC-2/AC-3/AC-4; FR-8..FR-13 to AC-5/AC-6/AC-7/AC-8; FR-14 to AC-9; FR-15 to AC-1'
+      result: >-
+        Pass, but ONLY after correction at Define cross-reference cycle 1. The
+        original claim here was FALSE and was recorded as such rather than
+        quietly amended: it asserted "FR-1..FR-7 to AC-2/AC-3/AC-4" and
+        "FR-8..FR-13 to AC-5..AC-8", which reads a RANGE as coverage. Four
+        requirements inside those ranges were demanded by nothing -- FR-5
+        (MEDIUM, no criterion anywhere in the work), and FR-9, FR-10, FR-11
+        (LOW, carried only by feature-002's own SPEC criteria and by no
+        numbered AC). AC-13..AC-16 were added to close them. The lesson is
+        the check itself: asserting coverage over a RANGE of ids hides a hole
+        that a per-id sweep finds immediately. Current per-id map, verified
+        mechanically: FR-1 and FR-6 -> feature-003 SPEC criteria; FR-2 ->
+        AC-4; FR-3 -> AC-1 (the split point) and AC-2; FR-4 -> AC-2; FR-5 ->
+        AC-13; FR-7 -> AC-3; FR-8 -> AC-5; FR-9 -> AC-14; FR-10 -> AC-15;
+        FR-11 -> AC-16; FR-12 -> AC-8; FR-13 -> AC-6, AC-7; FR-14 -> AC-9;
+        FR-15 -> AC-1. All 16 ACs are owned by exactly one feature.
     - check: 'No contradictions between sections'
       result: 'Pass -- NFR-1 permits the executable surface section 4 requires, and states the exit criterion that bounds it'
     - check: 'Section 4 Scope consistent with section 5'
@@ -263,6 +278,36 @@ lifecycle_history:
       run before any code lands, so they are all "before". Carries a
       sequencing constraint into aid-plan -- FR-3's task lands EARLY in
       delivery-002 or the "after" sample is too small.
+  - date: '2026-08-15'
+    event: 'Define: CROSS-REFERENCE cycle 1 -- C+, below the A floor'
+    grade: 'C+'
+    notes: >-
+      aid-reviewer at Large tier, 6 findings plus 1 OOS. All six were
+      independently verified against disk before any fix -- none was taken on
+      the reviewer's word. One MEDIUM: FR-5 (contradiction pass once per
+      phase) was demanded by no criterion anywhere in the work. Three LOW of
+      the same shape: FR-9, FR-10, FR-11 had no numbered AC. One LOW: FR-14
+      cited "step 2" of state-initialize.md when the text is at Step 1 item 2
+      -- Step 2 is a different heading. One LOW: AC-1's raw byte metric was
+      confounded, since a smaller later task reads fewer bytes whether or not
+      the remedy works. The OOS row records that the type registry's in-scope
+      corpus excludes work-lifecycle artifacts, so no criterion id resolves
+      for the files under review.
+  - date: '2026-08-15'
+    event: 'Define: FIX cycle 1 -- all six addressed'
+    grade: --
+    notes: >-
+      AC-13 added for FR-5, and AC-14/AC-15/AC-16 for FR-9/FR-10/FR-11; each
+      is owned by exactly one feature. AC-1 re-specified around two metrics
+      that survive task-size heterogeneity -- cycles-to-close, and a
+      WITHIN-TASK re-read ratio where each task is its own control -- with a
+      raw cross-task byte comparison explicitly refused as evidence. FR-14's
+      citation corrected to a durable anchor. The interview quality_check
+      entry was rewritten rather than patched: its original "Pass" asserted
+      coverage over a RANGE of ids, which is precisely what hid four holes,
+      so it now carries the per-id map and says why the range form failed.
+      The OOS observation is routed as Q-05. Per the plan-first convention
+      the fixer does not mark rows Fixed; cycle 2 verifies.
 
 # [A] aid-deploy only; one entry per delivery.
 deploy: []
@@ -421,3 +466,31 @@ qa:
       cycle, so its evidence predates the rule and the worked example can be
       written immediately.
     applied_to: 'REQUIREMENTS.md FR-10 (the generation trigger) and FR-13 (G-07 exempt from the wait, evidence already on record)'
+  - id: 'Q-05'
+    category: 'Knowledge Base / criteria registry'
+    impact: Low
+    state: Pending
+    context: >-
+      Routed from the Define cross-reference ledger's one OOS row, per the
+      out-of-scope findings policy. The type registry in
+      .aid/knowledge/authoring-conventions.md declares its in-scope corpus as
+      the markdown under canonical/skills/, canonical/agents/,
+      canonical/aid/templates/ and .aid/knowledge/. Work-lifecycle artifacts
+      -- REQUIREMENTS.md and the feature SPEC.md files -- sit outside that
+      corpus, so NO criterion id from the registry resolves for them. The
+      consequence showed up immediately in this very review: every finding
+      against this work's own artifacts had to be grounded in the dispatch
+      brief's rubric rather than in a citable criterion id, which the ledger
+      schema otherwise calls a defect in the review. Note this does NOT
+      contradict G-07 -- G-07 is scoped to "every IN-SCOPE markdown file", and
+      these files are correctly out of scope -- so it is a coverage question,
+      not an inconsistency.
+    suggested: >-
+      Consider a work-artifact type in the registry, with criteria covering
+      the internal-completeness checks this review had to improvise (every FR
+      demanded by some AC; every AC owned by exactly one feature). Deliberately
+      NOT taken in this work: C-5 reserves .aid/knowledge/ edits for explicit
+      owner authorization, and section 4 puts the criteria cascade itself out
+      of scope. Route to /aid-discover.
+    answer: --
+    applied_to: --

@@ -81,6 +81,11 @@ Must
       to its state at the start of the work (C-3).
 - [ ] **AC-12** Given the work at close, when CI runs, then the render-drift gate and the
       dogfood byte-identity gate are both green (NFR-5).
+- [ ] **AC-13** Given a phase whose gate runs 2 or more cycles over more than one feature,
+      when the cross-document contradiction pass is counted, then it executed exactly once
+      for the phase — and a contradiction spanning two features is still caught by it. Both
+      halves are required: a pass that runs once but stops catching what it exists for is a
+      regression, not a saving.
 - [ ] Given cycle 1 of any review, when it runs, then it reads the whole artifact —
       unchanged behaviour (FR-1).
 - [ ] Given a scoped cycle, when it completes, then it has not approved the artifact; only

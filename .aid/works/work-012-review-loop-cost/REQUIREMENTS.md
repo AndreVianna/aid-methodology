@@ -23,6 +23,7 @@
 | 2026-08-15 | Interview complete — approved | /aid-describe |
 | 2026-08-15 | **Decomposed into 3 features (owner-approved), at the C-7 ceiling.** All 15 FRs and all 12 ACs map, none twice. FR-14 and the NFR-5 close-out folded into feature-003 rather than becoming a fourth feature | /aid-define |
 | 2026-08-15 | **Q-03 discharged.** AC-1's measurement subject named from the now-known gate inventory: this work's own per-task review cycles during Execute, split at FR-3's task. AC-1 updated, and the resulting sequencing constraint recorded for `/aid-plan` | /aid-define |
+| 2026-08-15 | **Cross-reference cycle 1 fixes (grade C+).** Four requirements were demanded by no criterion — **AC-13** added for FR-5, **AC-14/AC-15/AC-16** for FR-9/FR-10/FR-11. **AC-1 re-specified** around cycles-to-close plus a within-task re-read ratio, so task-size heterogeneity cancels instead of confounding the result; a raw cross-task byte comparison is now explicitly refused. FR-14's citation corrected to a durable anchor | /aid-define |
 
 ## 1. Objective
 
@@ -166,9 +167,11 @@ guarding around it.
 
 - **FR-14** A per-feature specify gate receives only the slice of `REQUIREMENTS.md` that
   the feature traces to, not the whole document. The current sites are
-  `canonical/skills/aid-specify/references/state-initialize.md` (step 2, "full requirements
-  for cross-reference") and `canonical/skills/aid-specify/references/state-review.md`
-  ("Same as INITIALIZE Step 1").
+  `canonical/skills/aid-specify/references/state-initialize.md` — under the heading
+  `### Step 1: Load Full Context`, the list item reading "**REQUIREMENTS.md** — full
+  requirements for cross-reference" — and
+  `canonical/skills/aid-specify/references/state-review.md`, the line "Same as INITIALIZE
+  Step 1".
 
 **Measurement**
 
@@ -259,16 +262,27 @@ guarding around it.
 
 ## 9. Acceptance Criteria
 
-- **AC-1** **The reduction is observed, not claimed.** On one real artifact, the cost of a
-  gate — read bytes, and tokens where the host reports them, and cycles — is measured
-  before any remedy lands and again after. The after figure is lower, and both figures are
-  recorded with the command that produced them. A criterion satisfied merely by the change
-  existing is not accepted. **The measurement subject was named at Define** (Q-03, now
-  discharged): this work's own **per-task review cycles during Execute**, split at the task
-  that lands FR-3, with the delivery-002 gate as a secondary reading. The specify gates were
-  rejected as the subject — all three run before any code lands, so they yield no "after".
-  This puts a sequencing constraint on `/aid-plan`: FR-3's task lands early in delivery-002,
-  or the "after" sample is too small to compare.
+- **AC-1** **The reduction is observed, not claimed.** Measured before any remedy lands and
+  again after, with both figures recorded together with the command that produced them. A
+  criterion satisfied merely by the change existing is not accepted.
+
+  **The measurement subject was named at Define** (Q-03, now discharged): this work's own
+  **per-task review cycles during Execute**, split at the task that lands FR-3, with the
+  delivery-002 gate as a secondary reading. The specify gates were rejected as the subject —
+  all three run before any code lands, so they yield no "after". This puts a sequencing
+  constraint on `/aid-plan`: FR-3's task lands early in delivery-002, or the "after" sample
+  is too small to compare.
+
+  **Two metrics, both chosen to survive the fact that no two tasks are the same size:**
+  1. **Cycles to close** — how many review cycles a task takes to reach its grade. A count,
+     unaffected by task size, and the mechanism this work acts on directly.
+  2. **The within-task re-read ratio** — bytes read on cycles 2+ as a fraction of the bytes
+     that same task's cycle 1 read. **Each task is its own control**, so task-size
+     heterogeneity cancels rather than being argued away. Under today's rule the ratio sits
+     near 1.0 because every cycle re-reads everything; under FR-3 it must fall.
+
+  A raw cross-task byte comparison is **not** an accepted form of this evidence: a smaller
+  later task reads fewer bytes whether or not the remedy works.
 - **AC-2** A defect seeded in a section that REFERENCES a changed section is found by a
   scoped cycle. This is FR-4's guard, tested rather than trusted.
 - **AC-3** A defect seeded OUTSIDE the scoped surface, and consequently missed by a scoped
@@ -293,6 +307,20 @@ guarding around it.
   (NFR-1). An oracle with no recorded replacement is not shipped.
 - **AC-12** The render-drift gate and the dogfood byte-identity gate are green at close
   (NFR-5).
+- **AC-13** **(FR-5)** The cross-document contradiction pass runs **once per phase**, not
+  once per cycle per feature: across a phase whose gate runs N ≥ 2 cycles over more than
+  one feature, the pass executes exactly once, and a contradiction spanning two features is
+  still caught by it. Both halves are required — a pass that runs once but stops catching
+  the thing it exists for is a regression, not a saving.
+- **AC-14** **(FR-9)** A criterion carrying an oracle is decided by **running** it: the
+  verdict recorded for that criterion traces to the oracle's exit status, not to a
+  reviewer's re-reading.
+- **AC-15** **(FR-10)** Oracle generation is lazy: given a criterion re-derived only once,
+  no oracle exists for it; the second re-derivation is what triggers authoring. `G-07` is
+  the recorded exception — its recurrence predates the rule (FR-13).
+- **AC-16** **(FR-11)** An oracle verdict is recorded in the existing ledger with the
+  criterion `id` as a `Description` prefix and the oracle's invocation and output in
+  `Evidence` — 7 columns, no new column, and `grade.sh`'s positional parse untouched (C-3).
 
 ## 10. Priority
 
