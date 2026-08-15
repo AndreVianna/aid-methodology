@@ -28,15 +28,15 @@ minimum_grade: A
 # [W] 'yes' | 'no' -- quoted
 user_approved: 'yes'
 # [W] Running | Paused-Awaiting-Input | Blocked | Completed | Canceled
-lifecycle: Paused-Awaiting-Input
+lifecycle: Running
 # [W] Describe | Define | Specify | Plan | Detail | Execute
-phase: Describe
+phase: Define
 # [W] aid-{skill} | none
-active_skill: none
+active_skill: aid-define
 # [W]
-updated: '2026-08-15T01:33:00Z'
+updated: '2026-08-15T02:04:47Z'
 # [W] set only when lifecycle = Paused-Awaiting-Input
-pause_reason: 'Requirements approved -- run /aid-define work-012 to decompose into features'
+pause_reason: --
 # [W] set only when lifecycle = Blocked
 block_reason: --
 # [W] e.g. IMPEDIMENT-task-NNN.md, or the failed gate
@@ -180,6 +180,8 @@ lifecycle_history:
       name it before Specify begins, so the choice rests on the gate
       inventory Define produces rather than on a guess made now. AC-1 and
       section 10 step 1 updated. Only Q-04 remains, and it is Specify-time.
+      DISCHARGED 2026-08-15 at Define -- see the answer field for the named
+      subject.
   - date: '2026-08-15'
     event: 'Merged master (aid-graph removal, PR #193)'
     grade: --
@@ -237,6 +239,30 @@ lifecycle_history:
       issue-tracker connector is catalogued (.aid/connectors/ holds only
       INDEX.md), so no epic-ticket suggestion applies. Describe is done;
       the work pauses for /aid-define.
+  - date: '2026-08-15'
+    event: 'Define: FEATURE-DECOMPOSITION -- 3 features, owner-approved'
+    grade: --
+    notes: >-
+      feature-001-cost-measurement (FR-15; AC-1),
+      feature-002-criterion-oracles (FR-8..FR-13; AC-5..AC-8, AC-11),
+      feature-003-scoped-review-cycles (FR-1..FR-7, FR-14; AC-2..AC-4, AC-9,
+      AC-10, AC-12). All 15 FRs and all 12 ACs map, with no FR or AC assigned
+      twice. AT the C-7 ceiling, not over it, and without straining: FR-14
+      folded into feature-003 because it edits the same sites, and the NFR-5
+      close-out folded there too rather than becoming a fourth feature --
+      both foldings anticipated by C-7 itself. Two deliveries planned
+      (measurement + oracles, then scoped cycles + close-out), which
+      aid-plan formalises.
+  - date: '2026-08-15'
+    event: 'Define: Q-03 discharged -- measurement subject named'
+    grade: --
+    notes: >-
+      This work's own per-task review cycles during Execute, split at the
+      task that lands FR-3; the delivery-002 gate is a secondary reading. The
+      specify gates were rejected on inspection of the inventory: all three
+      run before any code lands, so they are all "before". Carries a
+      sequencing constraint into aid-plan -- FR-3's task lands EARLY in
+      delivery-002 or the "after" sample is too small.
 
 # [A] aid-deploy only; one entry per delivery.
 deploy: []
@@ -350,7 +376,22 @@ qa:
       (option B) stays available as a SUPPLEMENT if the live sample proves
       too small, but never as the primary -- a replay models rather than
       observes.
-    applied_to: 'REQUIREMENTS.md AC-1 (the subject is named at Define) and section 10 Priority step 1'
+
+      DISCHARGED AT DEFINE, 2026-08-15. With the gate inventory now known (3
+      features, 2 deliveries), the subject is this work's OWN PER-TASK REVIEW
+      CYCLES DURING EXECUTE, split at the task that lands FR-3. Tasks
+      reviewed before that task lands are the "before" sample; tasks after it
+      are the "after" -- same reviewer, same task-review rubric, many
+      readings each side. The delivery-002 gate is a secondary reading. The
+      specify gates were considered and REJECTED as the subject: all three
+      run before any code lands, so they are all "before" and yield no
+      comparison -- the expectation in this entry's original answer that the
+      subject would be "this work's own gates" was right in spirit and wrong
+      about WHICH gates, which is exactly why naming it was deferred to the
+      phase that could see the inventory. Sequencing consequence for
+      aid-plan: FR-3's task must land EARLY in delivery-002 or the "after"
+      sample is too small.
+    applied_to: 'REQUIREMENTS.md AC-1 and section 10 Priority step 1; feature-001-cost-measurement/SPEC.md (Description + Change Log) carries the named subject'
   - id: 'Q-04'
     category: Process
     impact: Medium

@@ -21,6 +21,8 @@
 | 2026-08-15 | **Q-04 answered (owner).** Oracle generation is lazy — the trigger is a second re-derivation of the same criterion, so the payback evidence precedes the script. FR-10 carries the rule; FR-13 records why `G-07` is not delayed by it. **All four questions now answered** | owner |
 | 2026-08-15 | **Path confirmed full, with a hard size cap (owner decision).** `/aid-refactor` rejected — it is defined as behavior-preserving and this work changes behavior by design. The Lite path was rejected for a sharper reason: it yields one gate, and AC-1 needs more than one to produce a before-and-after. New **C-7** caps the work at 3 features and 2 deliveries, and forbids Define exceeding it silently | owner |
 | 2026-08-15 | Interview complete — approved | /aid-describe |
+| 2026-08-15 | **Decomposed into 3 features (owner-approved), at the C-7 ceiling.** All 15 FRs and all 12 ACs map, none twice. FR-14 and the NFR-5 close-out folded into feature-003 rather than becoming a fourth feature | /aid-define |
+| 2026-08-15 | **Q-03 discharged.** AC-1's measurement subject named from the now-known gate inventory: this work's own per-task review cycles during Execute, split at FR-3's task. AC-1 updated, and the resulting sequencing constraint recorded for `/aid-plan` | /aid-define |
 
 ## 1. Objective
 
@@ -261,9 +263,12 @@ guarding around it.
   gate — read bytes, and tokens where the host reports them, and cycles — is measured
   before any remedy lands and again after. The after figure is lower, and both figures are
   recorded with the command that produced them. A criterion satisfied merely by the change
-  existing is not accepted. **The measurement subject is named at Define** (owner decision,
-  STATE.yml Q-03), once the feature decomposition shows which gate this work runs most
-  often; Define owes that name before Specify begins.
+  existing is not accepted. **The measurement subject was named at Define** (Q-03, now
+  discharged): this work's own **per-task review cycles during Execute**, split at the task
+  that lands FR-3, with the delivery-002 gate as a secondary reading. The specify gates were
+  rejected as the subject — all three run before any code lands, so they yield no "after".
+  This puts a sequencing constraint on `/aid-plan`: FR-3's task lands early in delivery-002,
+  or the "after" sample is too small to compare.
 - **AC-2** A defect seeded in a section that REFERENCES a changed section is found by a
   scoped cycle. This is FR-4's guard, tested rather than trusted.
 - **AC-3** A defect seeded OUTSIDE the scoped surface, and consequently missed by a scoped
