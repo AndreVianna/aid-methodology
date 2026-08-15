@@ -121,6 +121,38 @@ so the delivery lifecycle MUST be independently authored.
   burden for those tasks and should treat their per-task `Review` cells as
   "gate-deferred, not independently checked".
 
+### Q2
+
+- **Category:** Tooling / Migration
+- **Impact:** Required
+- **State:** Pending
+- **Context:** Execution is **blocked**: `writeback-state.sh` (from master) now targets
+  `STATE.yml`, while this work's 78 state files are `STATE.md`, so every state write fails.
+  The migration path is the `_aid_sc_*` converter inside `bin/aid`. I ran it against a copy of
+  this work and it is **lossy in two specific ways**, both verified by diffing the converted
+  output against the originals:
+  **(1) Q&A prose is truncated to its first line.** `_aid_sc_qa_entries` keeps only the first
+  line of each field, so delivery-003 Q1's `Context` went 15 lines -> 1 and delivery-002 Q1's
+  `Answer` went 7 lines -> 1. Those two entries are the count-guard re-scope decision and the
+  review-batching decision -- the reasoning is the whole value, and it is silently dropped.
+  **(2) The delivery gate's `Complexity Score` and `Cycles` are dropped entirely**, because the
+  new `delivery_gate:` schema has only `issue_list`. delivery-001's recorded score
+  (`56 (tasks=25, depth=23, risk=8, consults=0)`) and `Cycles: 2` do not survive.
+  What DOES convert faithfully: every frontmatter scalar (task `state`/`review`/`notes`,
+  `delivery_state`, `gate_tier`/`gate_grade`/`gate_timestamp`), `delivery_lifecycle`, and the
+  gate's `issue_list` (continuation lines join correctly). 77 of 78 files convert; the work-root
+  file is refused by a DERIVED-data guard on `## Features State` and `## Cross-phase Q&A`, both
+  of which legitimately hold owner-authored data the old template permitted.
+  The conversion was run and **fully reverted**; the tree is back on `STATE.md` with nothing lost.
+- **Suggested:** (a) Convert, then hand-repair the two known losses -- restore the full Q&A prose
+  as YAML block scalars and re-record the gate's score/cycles inside `issue_list`; or (b) keep
+  `STATE.md` and pin a local `writeback-state.sh` shim for this work, accepting a fork from
+  master; or (c) treat the truncation as an upstream product defect, report it, and pause
+  execution until a non-lossy converter lands. Note (1) is a **product** bug that would hit any
+  adopter migrating a real work, not just this one.
+- **Answer:** {pending owner decision}
+- **Applied to:** {pending -- blocks all further task execution in this work}
+
 ### Q{N}
 
 - **Category:** {category, e.g., Architecture, Requirements, Security}
