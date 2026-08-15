@@ -1251,22 +1251,43 @@ def _read_work_flat(
         )
         task_dirs = []
 
+    # Read every DETAIL.md ONCE, up front. The per-task fields (short name, type) are
+    # taken from these texts below, and the same texts derive the lane map -- the graph
+    # is the set of `**Depends on:**` fields, so it cannot be known until all of them
+    # are in hand. Reading inside the task loop instead would either miss the graph or
+    # read each file twice.
+    detail_texts: dict[str, str] = {}
+    for task_dir in task_dirs:
+        task_detail_path = task_dir / "DETAIL.md"
+        if not task_detail_path.is_file():
+            continue
+        try:
+            raw = read_bytes_bounded(task_detail_path)
+            bytes_read += len(raw)
+            detail_texts[task_dir.name] = raw.decode("utf-8", errors="replace")
+        except OSError:
+            continue
+
+    # Lanes on this layout are DERIVED, not read. A flattened work has one delivery and
+    # so no sequencing decision to record; its PLAN.md, when it has one, carries a
+    # top-level `## Execution Graph` with no wave-map fence and no
+    # `### delivery-NNN Execution Graph` header, so parse_execution_graph above returns
+    # nothing for it. Deriving from the DETAILs both fills that gap -- this layout had
+    # no lanes at all before -- and removes the reason to keep a PLAN.md on the Lite
+    # path. An authored map, where one exists, still wins: it is an explicit statement,
+    # and this fallback must not override it.
+    if not task_lane_map:
+        task_lane_map = _derive_lanes_from_details(detail_texts)
+
     for task_dir in task_dirs:
         task_id_str = task_dir.name
 
-        # Read task DETAIL.md for short_name and type (no per-task STATE.md here)
-        task_detail_path = task_dir / "DETAIL.md"
+        detail_text = detail_texts.get(task_id_str)
         short_name: Optional[str] = None
         task_type: str = ""
-        if task_detail_path.is_file():
-            try:
-                raw = read_bytes_bounded(task_detail_path)
-                bytes_read += len(raw)
-                detail_text = raw.decode("utf-8", errors="replace")
-                short_name = _parse_task_spec_short_name(detail_text)
-                task_type = _parse_task_spec_type(detail_text)
-            except OSError:
-                pass
+        if detail_text is not None:
+            short_name = _parse_task_spec_short_name(detail_text)
+            task_type = _parse_task_spec_type(detail_text)
 
         # Mutable cells from the work-root STATE.md ### Tasks lifecycle table
         pts = tasks_lifecycle.get(task_id_str.lower())
@@ -1669,6 +1690,66 @@ def _parse_task_spec_type(spec_text: str) -> str:
     except Exception:  # noqa: BLE001
         pass
     return ""
+
+
+def _derive_lanes_from_details(details: dict[str, str]) -> dict[str, int]:
+    """Derive {task_id: wave} from task DETAIL bodies, by topological sort.
+
+    `details` maps a task id ('task-001') to that task's DETAIL.md text. Each task's
+    `**Depends on:**` field IS the graph, so a work needs no stored execution graph to
+    have one: the flattened/Lite layout has a single delivery and therefore no
+    sequencing decision to record, and a PLAN.md there would hold only this view of
+    data already on disk.
+
+    Mirrors canonical/aid/scripts/execute/derive-waves.sh, whose awk pass is the
+    reference implementation, INCLUDING its two non-obvious rules:
+
+      - A dependency naming a task that is not in `details` is treated as already
+        SATISFIED rather than as an error. Deliveries run in series, so a dependency on
+        an earlier delivery's task is met by the time this one starts.
+      - Wave numbers start at 1 and every task lands in exactly one wave.
+
+    A CYCLE yields {} rather than a partial map or an exception (NFR7). A partial map
+    would silently show some tasks laned and others not, which reads as a data problem
+    in the tasks rather than in the graph.
+
+    Dependencies are read by EXTRACTING task ids, not by cleaning the field, for the
+    same reason the awk does it: "no dependencies" is written as an em dash, an en
+    dash, '--', '-', 'none', or an empty value, and extraction treats every spelling
+    identically without enumerating them.
+    """
+    try:
+        import re
+
+        dep_re = re.compile(r"^\*\*Depends on:\*\*(.*)$", re.MULTILINE | re.IGNORECASE)
+        task_re = re.compile(r"task-\d+", re.IGNORECASE)
+
+        deps: dict[str, set[str]] = {}
+        for task_id, text in details.items():
+            found: set[str] = set()
+            match = dep_re.search(text or "")
+            if match:
+                found = {t.lower() for t in task_re.findall(match.group(1))}
+            # A task never depends on itself; a self-edge would deadlock the sort.
+            found.discard(task_id.lower())
+            deps[task_id.lower()] = found
+
+        lanes: dict[str, int] = {}
+        wave = 0
+        while len(lanes) < len(deps):
+            wave += 1
+            ready = [
+                t for t, d in deps.items()
+                if t not in lanes
+                and all(x in lanes or x not in deps for x in d)
+            ]
+            if not ready:
+                return {}          # cycle
+            for t in ready:
+                lanes[t] = wave
+        return lanes
+    except Exception:  # noqa: BLE001
+        return {}
 
 
 def _parse_plan_delivery_titles(plan_text: str) -> dict[str, str]:

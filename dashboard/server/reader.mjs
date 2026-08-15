@@ -3944,6 +3944,62 @@ function _parseTaskSpecType(specText) {
   return "";
 }
 
+export function _deriveLanesFromDetails(details) {
+  // Derive {taskId: wave} from task DETAIL bodies, by topological sort.
+  // Mirror reader.py _derive_lanes_from_details.
+  //
+  // `details` maps a task id ('task-001') to that task's DETAIL.md text. Each task's
+  // `**Depends on:**` field IS the graph, so a work needs no stored execution graph to
+  // have one: the flattened/Lite layout has a single delivery and therefore no
+  // sequencing decision to record.
+  //
+  // Mirrors canonical/aid/scripts/execute/derive-waves.sh, whose awk pass is the
+  // reference implementation, INCLUDING its two non-obvious rules:
+  //   - a dependency naming a task absent from `details` is treated as already
+  //     SATISFIED, since deliveries run in series
+  //   - waves start at 1 and every task lands in exactly one wave
+  //
+  // A CYCLE yields {} rather than a partial map or a throw (NFR7): a partial map would
+  // show some tasks laned and others not, reading as a problem with the tasks rather
+  // than with the graph.
+  try {
+    const depRe = /^\*\*Depends on:\*\*(.*)$/im;
+    const taskRe = /task-\d+/gi;
+
+    const deps = {};
+    for (const [taskId, text] of Object.entries(details)) {
+      const key = taskId.toLowerCase();
+      const found = new Set();
+      const m = (text || "").match(depRe);
+      if (m) {
+        for (const hit of m[1].match(taskRe) || []) found.add(hit.toLowerCase());
+      }
+      // A task never depends on itself; a self-edge would deadlock the sort.
+      found.delete(key);
+      deps[key] = found;
+    }
+
+    const lanes = {};
+    const total = Object.keys(deps).length;
+    let wave = 0;
+    while (Object.keys(lanes).length < total) {
+      wave++;
+      const ready = Object.keys(deps).filter((t) => {
+        if (t in lanes) return false;
+        for (const x of deps[t]) {
+          if (!(x in lanes) && x in deps) return false;
+        }
+        return true;
+      });
+      if (ready.length === 0) return {};   // cycle
+      for (const t of ready) lanes[t] = wave;
+    }
+    return lanes;
+  } catch (_) {
+    return {};
+  }
+}
+
 // Exported for the cross-runtime parity test only (its Python twin is importable as
 // a module-level function, so the Node side must be reachable too). Not part of the
 // reader's consumed surface -- readRepo/readRepoDetail call it internally.
@@ -4088,10 +4144,11 @@ function _readWorkFlat(workDir, workId) {
 
   // PF-5: parse PLAN.md execution graph for lane assignments. The flat PLAN.md's
   // top-level ## Execution Graph carries no wave-map fence / "### delivery-NNN
-  // Execution Graph" prose header, so this yields an empty map -- lane stays null
-  // for every task (harmless; no lane derivation is defined for the flat shape).
+  // Execution Graph" prose header, so this yields an empty map. It is no longer the
+  // last word: an empty map is filled by deriving lanes from the task DETAILs below,
+  // which is why this is `let` and not `const`.
   const planPath = join(workDir, "PLAN.md");
-  const [taskLaneMap, planBytes] = parseExecutionGraph(planPath);
+  let [taskLaneMap, planBytes] = parseExecutionGraph(planPath);
   bytesRead += planBytes;
 
   // Parse the promoted delivery_lifecycle / delivery_gate keys from the SAME
@@ -4132,24 +4189,37 @@ function _readWorkFlat(workDir, workId) {
     taskDirEntries = [];
   }
 
+  // Read every DETAIL.md ONCE, up front. Mirror reader.py: the per-task fields come
+  // from these texts, and the same texts derive the lane map -- the graph is the set of
+  // `**Depends on:**` fields, so it cannot be known until all of them are in hand.
+  const detailTexts = {};
   for (const [taskIdStr, taskDir] of taskDirEntries) {
-    // Read task DETAIL.md for short_name and type (no per-task STATE.yml here)
     const taskDetailPath = join(taskDir, "DETAIL.md");
+    let isFile = false;
+    try { isFile = statSync(taskDetailPath).isFile(); } catch (_) { isFile = false; }
+    if (!isFile) continue;
+    try {
+      const raw = readFileBounded(taskDetailPath);
+      bytesRead += raw.length;
+      detailTexts[taskIdStr] = raw.toString("utf-8");
+    } catch (_) {
+      // pass
+    }
+  }
+
+  // Lanes on this layout are DERIVED, not read -- see reader.py for the full rationale.
+  // An authored map, where one exists, still wins; this only fills an empty one.
+  if (Object.keys(taskLaneMap).length === 0) {
+    taskLaneMap = _deriveLanesFromDetails(detailTexts);
+  }
+
+  for (const [taskIdStr, taskDir] of taskDirEntries) {
+    const detailText = detailTexts[taskIdStr];
     let shortName = null;
     let taskType = "";
-    let taskDetailIsFile = false;
-    try { taskDetailIsFile = statSync(taskDetailPath).isFile(); } catch (_) { taskDetailIsFile = false; }
-
-    if (taskDetailIsFile) {
-      try {
-        const raw = readFileBounded(taskDetailPath);
-        bytesRead += raw.length;
-        const detailText = raw.toString("utf-8");
-        shortName = _parseTaskSpecShortName(detailText);
-        taskType = _parseTaskSpecType(detailText);
-      } catch (_) {
-        // pass
-      }
+    if (detailText !== undefined) {
+      shortName = _parseTaskSpecShortName(detailText);
+      taskType = _parseTaskSpecType(detailText);
     }
 
     // Mutable cells from the work-root STATE.yml tasks_lifecycle mapping
