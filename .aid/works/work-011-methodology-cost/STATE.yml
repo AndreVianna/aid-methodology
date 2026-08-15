@@ -189,6 +189,53 @@ qa:
       out because the rule governs artifacts, so they are out of scope rather than clean.
     decided_by: agent
     updated: '2026-08-15'
+  - id: Q25
+    question: 'PR #194 (work-012, scoped review cycles + criterion oracles): does it revert this work?'
+    state: Open
+    answer: |
+      No. Measured on DURABLE artifacts only -- work-012's own work folder is transient and
+      was excluded, since a pruned folder cannot affect anything.
+
+      Its durable surface is 21 files (skills, agents, templates, scripts, tests); 6 overlap
+      with this branch. Trial-merged: 21 conflicts, only 2 needing judgment. On the merged
+      tree all 12 discipline gates pass and the corpus is 142 suites with the same
+      pre-existing 15 failures -- work-012's 3 new suites pass.
+
+      It ADDS no old-model content: zero lines mentioning SPEC.md or BLUEPRINT are added by
+      it. Checked directly rather than inferred, because "their files mention SPEC.md" and
+      "they introduced it" are different claims and only the second would be a reversion.
+
+      Three compatibility claims from its PR verified rather than trusted: the ledger is
+      still the 7-column shape CLAUDE.md mandates, grade.sh is byte-identical, and the
+      `oracle:` key is optional frontmatter. The oracle key is COMPLEMENTARY here, not
+      competing: AC-5 requires every criterion to name an observable, and an oracle makes a
+      criterion executable -- the strongest possible form of the same rule. This work's own
+      14 criteria are mostly shell commands, so they are natural oracle candidates.
+
+      THE ONE REAL COLLISION, and it resolved in this work's favour. work-012's FR-14
+      slices REQUIREMENTS.md per feature-gate (measured 83% smaller) and keys the slice off
+      `SPEC.md`'s `## Source`. That key does not exist here. But the same information lives
+      in the § 11 feature section's `FR-N`/`AC-N` citations, so their idea works BETTER on
+      this structure than the one it was written for. Resolved as a synthesis: their
+      rationale, keyed off the § 11 citations. It also supplies the missing argument for
+      why § 11 sections CITE criteria rather than copying them -- a copy would have to be
+      re-read to be trusted, defeating the slice.
+
+      WHAT IT DID EXPOSE, which is this branch's own gap and now fixed: the review path
+      (5 reviewer briefs, review.md, review-deliverables.md, the dispatch template, the
+      aid-reviewer agent) still named the per-feature SPEC in 23 places -- instructions to
+      load a file no work produces. AD04 was blind to them because it matches the PATH
+      shape and these carry no path. AD09 now covers the dead ARTIFACT NAME on the
+      dispatching surfaces.
+
+      The cause is worth naming because it has now happened three times: the § 11 fold was
+      scoped to what AC-11 literally names, and never asked which OTHER surfaces consume
+      the artifact those two skills stopped producing. Same shape as the 34 doorway
+      descriptions, and as AD04's own missing spelling. All three were found by reading
+      another branch, never by a gate here -- a blind spot is, by construction, invisible
+      from inside the work that created it.
+    decided_by: agent
+    updated: '2026-08-15'
   - id: Q24
     question: 'The work-006 merge: what actually broke, and what did it teach?'
     state: Resolved
