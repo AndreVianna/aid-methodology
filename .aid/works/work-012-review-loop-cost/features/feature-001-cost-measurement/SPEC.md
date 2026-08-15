@@ -34,16 +34,26 @@ local, deterministic count, so it depends on nothing outside this repository.
 **The measurement subject, named here (Q-03).** This work's own **per-task review cycles
 during Execute**, split at the task that lands FR-3 (the scoped hunt). Tasks reviewed
 before that task lands are the "before" sample; tasks reviewed after it are the "after"
-sample — same reviewer, same task-review rubric, many readings on each side. The
-delivery-002 gate is a secondary reading.
+sample — same reviewer, same task-review rubric, many readings on each side.
 
 The specify gates were considered and rejected as the subject: all three run before any
 code lands, so they are all "before" and yield no comparison. A replay of a past work's
 gate was rejected as the primary because a replay models rather than observes; it stays
 available as a supplement if the live sample proves too small.
 
-**Consequence for `/aid-plan`:** FR-3's task must land EARLY in delivery-002, or there are
-too few "after" samples to compare. This is a sequencing constraint, not a preference.
+**The sequencing constraint, restated at Plan.** Q-03 originally wrote this as "FR-3's task
+must land EARLY in delivery-002", and named the delivery-002 gate as a secondary reading.
+Both assumed a two-delivery plan. `PLAN.md` uses **one** delivery, so:
+
+- The constraint is restated against what actually governs it: **FR-3's task is the first
+  task of feature-003** — as early as §10's feature ordering permits — and every feature-003
+  task after it is an "after" sample. A delivery boundary never moves a task within §10's
+  order, so this is the same requirement stated independently of packaging.
+- The secondary delivery-gate reading **does not exist** under a one-delivery plan and is
+  dropped. It was never the primary.
+
+This remains a sequencing constraint, not a preference: moving FR-3's task later is a
+reduction in the evidence AC-1 rests on.
 
 ## User Stories
 

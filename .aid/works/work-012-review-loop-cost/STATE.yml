@@ -30,13 +30,13 @@ user_approved: 'yes'
 # [W] Running | Paused-Awaiting-Input | Blocked | Completed | Canceled
 lifecycle: Paused-Awaiting-Input
 # [W] Describe | Define | Specify | Plan | Detail | Execute
-phase: Specify
+phase: Plan
 # [W] aid-{skill} | none
 active_skill: none
 # [W]
-updated: '2026-08-15T04:58:22Z'
+updated: '2026-08-15T05:20:30Z'
 # [W] set only when lifecycle = Paused-Awaiting-Input
-pause_reason: 'Specify complete -- 3 features Ready at A+; C-5 authorized, all Q&A answered; run /aid-plan work-012'
+pause_reason: 'Plan complete at A+ -- 1 delivery; run /aid-detail work-012'
 # [W] set only when lifecycle = Blocked
 block_reason: --
 # [W] e.g. IMPEDIMENT-task-NNN.md, or the failed gate
@@ -499,6 +499,42 @@ lifecycle_history:
       section 4 keeps the cascade out of scope, and C-7 caps the feature
       count. The Q&A backlog is now fully answered (Q-01..Q-05), with Q-05's
       action owned by a different skill.
+  - date: '2026-08-15'
+    event: 'Plan: ONE delivery, gate PASSES at A+'
+    grade: 'A+'
+    notes: >-
+      Two gate cycles, D+ -> A+; 4 findings, all Fixed; ledger deleted.
+      delivery-001 carries all three features, inside C-7's cap of two.
+      THE GATE CORRECTED THE JUSTIFICATION, WHICH MATTERS MORE THAN THE
+      OUTCOME. The first draft argued one delivery was BETTER for AC-1, on
+      the reasoning that a second would push FR-3's task later and shrink
+      the "after" sample. That was wrong, and the reviewer showed why:
+      section 10 fixes the feature order, so FR-3 is the first feature-003
+      task under either packaging and the after-sample is IDENTICAL; two
+      deliveries would merely have added delivery-001's gate cycles to the
+      BEFORE side. The claim inferred a measurement consequence from a
+      packaging decision that has none. It is recorded in PLAN.md rather
+      than deleted. The honest reasons for one delivery: AC-1's subject is
+      per-TASK cycles, so no second delivery is needed; nothing here is
+      independently shippable (the meter without the remedies measures
+      nothing, the remedies without the meter prove nothing); and one less
+      gate is one less gate in a work about review cost. The only material
+      cost is all-or-nothing shipping, accepted deliberately.
+      A HIGH was also caught: REQUIREMENTS.md AC-1 and feature-001's SPEC
+      each carried a LIVE instruction naming "delivery-002" -- a delivery
+      that no longer exists. Both now restate the constraint as "FR-3's task
+      is the first task of feature-003", independent of packaging, since a
+      delivery boundary never moves a task within section 10's order. Q-03's
+      secondary delivery-gate reading is dropped; it was never the primary.
+      The lifecycle_history entries and Q-03's answer body still say
+      delivery-002 and were deliberately NOT edited -- they are append-only
+      history of what was decided at Define, and an amendment belongs in
+      applied_to, which is where it went.
+      gate_tier stays at the template default Small: it is aid-execute's
+      field (writeback-state.sh --field Tier), so aid-plan setting it would
+      be writing another skill's key. The BLUEPRINT's Notes record "Expected
+      gate tier: Large" with the reasoning instead, since the BLUEPRINT is
+      what aid-execute reads for gate scope.
 
 # [A] aid-deploy only; one entry per delivery.
 deploy: []
@@ -627,7 +663,18 @@ qa:
       phase that could see the inventory. Sequencing consequence for
       aid-plan: FR-3's task must land EARLY in delivery-002 or the "after"
       sample is too small.
-    applied_to: 'REQUIREMENTS.md AC-1 and section 10 Priority step 1; feature-001-cost-measurement/SPEC.md (Description + Change Log) carries the named subject'
+    applied_to: >-
+      REQUIREMENTS.md AC-1 and section 10 Priority step 1;
+      feature-001-cost-measurement/SPEC.md carries the named subject.
+      RESTATED AT PLAN, 2026-08-15: this answer's phrasing -- "FR-3's task
+      must land EARLY in delivery-002", plus the delivery-002 gate as a
+      secondary reading -- assumed a two-delivery plan. PLAN.md uses ONE
+      delivery, so both were restated against what actually governs the
+      measurement: FR-3's task is the FIRST TASK OF FEATURE-003, and the
+      secondary delivery-gate reading is dropped. The requirement is
+      unchanged; only its expression was coupled to a packaging decision it
+      does not depend on. The plan gate raised this as a HIGH -- a live
+      instruction naming a delivery that does not exist.
   - id: 'Q-04'
     category: Process
     impact: Medium

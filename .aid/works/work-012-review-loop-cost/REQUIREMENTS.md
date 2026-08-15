@@ -287,11 +287,18 @@ guarding around it.
   criterion satisfied merely by the change existing is not accepted.
 
   **The measurement subject was named at Define** (Q-03, now discharged): this work's own
-  **per-task review cycles during Execute**, split at the task that lands FR-3, with the
-  delivery-002 gate as a secondary reading. The specify gates were rejected as the subject —
-  all three run before any code lands, so they yield no "after". This puts a sequencing
-  constraint on `/aid-plan`: FR-3's task lands early in delivery-002, or the "after" sample
-  is too small to compare.
+  **per-task review cycles during Execute**, split at the task that lands FR-3. The specify
+  gates were rejected as the subject — all three run before any code lands, so they yield no
+  "after".
+
+  **The sequencing constraint, restated in task terms at Plan.** Q-03 phrased it as "FR-3's
+  task lands early in delivery-002", which assumed two deliveries; the plan uses one, so the
+  constraint is restated against the thing that actually governs it: **FR-3's task is the
+  first task of feature-003**, i.e. as early as §10's feature ordering permits, and every
+  feature-003 task after it is an "after" sample. This is the same requirement, expressed
+  independently of how deliveries are packaged — a delivery boundary never moves a task
+  within §10's order. Q-03's secondary "delivery-002 gate" reading does not exist under a
+  one-delivery plan and is dropped; it was never the primary.
 
   **Two metrics, both chosen to survive the fact that no two tasks are the same size:**
   1. **Cycles to close** — how many review cycles a task takes to reach its grade. A count,
