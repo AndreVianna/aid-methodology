@@ -67,7 +67,6 @@
 {"dst": ".codex/aid/templates/connectors/reconcile.md", "profile": "codex", "sha256": "adb7d9e7a4e9e512dbd24e34e9df4553e885cb8fe68766776be17e07802bdf7c", "src": "canonical/templates/connectors/reconcile.md"}
 {"dst": ".codex/aid/templates/connectors/ticket-resolution.md", "profile": "codex", "sha256": "9a9c77f6a0902bcc64b060cf5eb826507491900622e23aa4fd2807378d1c2822", "src": "canonical/templates/connectors/ticket-resolution.md"}
 {"dst": ".codex/aid/templates/delivery-issues.md", "profile": "codex", "sha256": "f88b95b8c7cca355e8736420168274238a0ef12778c8412b83f85fd409cffed7", "src": "canonical/templates/delivery-issues.md"}
-{"dst": ".codex/aid/templates/delivery-plans/flattened-plan-template.md", "profile": "codex", "sha256": "03720b131820b73044ec85acd386a9ba07f9f4f7133f29503ae868df3e7cd2c5", "src": "canonical/templates/delivery-plans/flattened-plan-template.md"}
 {"dst": ".codex/aid/templates/delivery-plans/task-template.md", "profile": "codex", "sha256": "65f0db5c2954b8dea4e929c70f7af54c15b986aa9652b0dd52f9d6bf6eda4c08", "src": "canonical/templates/delivery-plans/task-template.md"}
 {"dst": ".codex/aid/templates/delivery-state-template.yml", "profile": "codex", "sha256": "2cab554aa6c90ce11d718ae4a747315737384ffb536524f421d75cf4735c31fe", "src": "canonical/templates/delivery-state-template.yml"}
 {"dst": ".codex/aid/templates/discovery-state-template.md", "profile": "codex", "sha256": "b6a8f5e279296db4fae0324612400f84d785df53639f03e6ba5069fb030bd4fb", "src": "canonical/templates/discovery-state-template.md"}
@@ -125,7 +124,7 @@
 {"dst": ".codex/aid/templates/self-review-protocol.md", "profile": "codex", "sha256": "70eec7e2214c7d1d6bb83b352c65ff16460e588f638cc517e313dd632594c7eb", "src": "canonical/templates/self-review-protocol.md"}
 {"dst": ".codex/aid/templates/settings.yml", "profile": "codex", "sha256": "51a3ec8a4d77383c7d063a609d0416c66d4fcd2219a6dd22dcd3d6ad785d284f", "src": "canonical/templates/settings.yml"}
 {"dst": ".codex/aid/templates/shortcut-catalog.yml", "profile": "codex", "sha256": "d1de6ae5fb7be7b8dbd911714014dc0d049e9559a62c539da633a4b8cbf30c09", "src": "canonical/templates/shortcut-catalog.yml"}
-{"dst": ".codex/aid/templates/shortcut-engine.md", "profile": "codex", "sha256": "56b7fd131dfbcbd7127f9fd8d2a34b988f2f98af32dbc7f87484ee5ce3eaa829", "src": "canonical/templates/shortcut-engine.md"}
+{"dst": ".codex/aid/templates/shortcut-engine.md", "profile": "codex", "sha256": "c410a96904b0a49570ca397ebc203e56619a86289c383fb144c9d9af5fc11e79", "src": "canonical/templates/shortcut-engine.md"}
 {"dst": ".codex/aid/templates/shortcut-scaffolding/analyze-report.md", "profile": "codex", "sha256": "8751827bab6f709257cb5e19b06e4733241bd23b7d775774d0de6e3b91baa717", "src": "canonical/templates/shortcut-scaffolding/analyze-report.md"}
 {"dst": ".codex/aid/templates/shortcut-scaffolding/change-refactor.md", "profile": "codex", "sha256": "501e6c02eeb10625267ade6a221aab78eb75bfb609ab9109b6df9944ddd154e5", "src": "canonical/templates/shortcut-scaffolding/change-refactor.md"}
 {"dst": ".codex/aid/templates/shortcut-scaffolding/create.md", "profile": "codex", "sha256": "3b763eb26f57a0389bc25d145d4d4154dc546cab1ab1406b13221ff7bcd08f34", "src": "canonical/templates/shortcut-scaffolding/create.md"}
@@ -226,7 +225,7 @@
 {"dst": ".codex/skills/aid-execute/SKILL.md", "profile": "codex", "sha256": "afe85b7ab796de6af965b5044cd5748f13180e413411a19b15b2e239932d3c73", "src": "canonical/skills/aid-execute/SKILL.md"}
 {"dst": ".codex/skills/aid-execute/references/reviewer-brief.md", "profile": "codex", "sha256": "0ecda9021493ca0175645239d90868cdcb611841c073764ba1a0ec5b6a954bc1", "src": "canonical/skills/aid-execute/references/reviewer-brief.md"}
 {"dst": ".codex/skills/aid-execute/references/reviewer-guide.md", "profile": "codex", "sha256": "7827b5132ccf3a33d78a372e9a224773d7440cd6a176e6862abb77359a85510f", "src": "canonical/skills/aid-execute/references/reviewer-guide.md"}
-{"dst": ".codex/skills/aid-execute/references/state-delivery-gate.md", "profile": "codex", "sha256": "193608aac17e46d60f74254462cd06a153a2c01fb3fc2b24b88ddd6f8797d2ac", "src": "canonical/skills/aid-execute/references/state-delivery-gate.md"}
+{"dst": ".codex/skills/aid-execute/references/state-delivery-gate.md", "profile": "codex", "sha256": "10c9f1bb6f012b9eb861c1b96aeb2180a93323ad387d516502946e53fe1ab604", "src": "canonical/skills/aid-execute/references/state-delivery-gate.md"}
 {"dst": ".codex/skills/aid-execute/references/state-execute-drilldown.md", "profile": "codex", "sha256": "86207ef265405eb5d9ac9e83ee462ba4007adf8d10d63f3ac5d1a319edf5fc3b", "src": "canonical/skills/aid-execute/references/state-execute-drilldown.md"}
 {"dst": ".codex/skills/aid-execute/references/state-execute.md", "profile": "codex", "sha256": "b5192f70d70951efa88c6c338421a461edec019c80241ab55838c0917a737ed6", "src": "canonical/skills/aid-execute/references/state-execute.md"}
 {"dst": ".codex/skills/aid-execute/references/state-fix.md", "profile": "codex", "sha256": "7cbc418c39db486b466a8bbc24fb6982f3fb6b0744335697ec3dc0b68c3440d6", "src": "canonical/skills/aid-execute/references/state-fix.md"}

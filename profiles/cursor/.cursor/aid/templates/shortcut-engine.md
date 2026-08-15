@@ -518,44 +518,40 @@ Append an entry to the `lifecycle_history` sequence:
 
 ## State: PLAN
 
-Collapses **Plan**. Authors the single work-root `PLAN.md`: one `## Deliverables` entry
-that IS the delivery definition (objective, scope, **Gate Criteria**), plus a scaffolded
-top-level `## Execution Graph`. No multi-delivery planning; the delivery is always the
-synthesized `delivery-001` (feature-001, the lite-path convention). FR-3.
+Collapses **Plan**. Writes NO artifact. FR-3.
+
+A plan records a SEQUENCING DECISION -- which delivery goes first, what each depends
+on. This path has exactly one feature and one delivery, so there is no sequencing
+decision to make, and every field a `PLAN.md` would carry is already stated or
+derivable elsewhere:
+
+| A plan would carry | On this path it is |
+|--------------------|--------------------|
+| the delivery's objective | `REQUIREMENTS.md § 1 Objective` -- the work IS the delivery |
+| its scope | `§ 5` Functional Requirements + the `§ 11` feature section |
+| its gate criteria | the `§ 9` `AC-N` set, which the delivery gate reads directly |
+| `**Depends on:**` | `-- (none)`; there is nothing to depend on |
+| the task listing | derived from each task's `**Source:** ... -> delivery-001` |
+| the execution graph | derived from each task's `**Depends on:**` field |
+
+Writing them into a second document would create exactly the duplication this path
+was flattened to avoid, and a stored graph can disagree with the DETAILs it came from.
+Both derivations are implemented once, in
+`.cursor/aid/scripts/execute/derive-waves.sh --from-tasks <work-dir>`, which the
+dashboard readers mirror in-process and which
+`complexity-score.sh` / `compute-block-radius.sh` consume via `--plan-file`.
+
+The PHASE is still emitted -- Plan happened, it just decided nothing that needed
+recording.
 
 ### Step 1: Emit pipeline phase
 
 Same three `writeback-state.sh --pipeline` calls as SPEC Step 1, with
 `--field Phase --value Plan`.
 
-### Step 2: Dispatch aid-architect to author PLAN.md
+### Step 2: none
 
-Dispatch `aid-architect` (Large) with: `REQUIREMENTS.md` (§ 11 feature section just
-written, plus §10 Priority). The agent writes `.aid/works/{work}/PLAN.md`, seeded from
-`.cursor/aid/templates/delivery-plans/flattened-plan-template.md`:
-
-- `## Deliverables`: one entry -- `**Delivery:** delivery-001 -- {Name}`;
-  `**What it delivers:**` (from REQUIREMENTS.md §1 Objective); `**Features:**
-  feature-001-{slug}` (the single implicit feature); `**Depends on:** -- (none)`;
-  `**Priority:**` (from REQUIREMENTS.md §10).
-- In that SAME entry, the delivery definition:
-  - `**Objective:**` / `**Scope:**` / `**Out of scope:**`: from REQUIREMENTS.md §1
-    Objective + §9 Acceptance Criteria.
-  - `**Gate Criteria**`: translate each §9 `AC-N` into a concrete,
-    independently-testable delivery gate criterion, plus the two standing criteria
-    every delivery carries: `- [ ] All tasks in delivery-001 are Done or Canceled.`
-    and `- [ ] All section-6 quality gates pass.` This is where the flat layout's
-    gate criteria live -- in `PLAN.md`, not `STATE.yml`.
-  - `**Notes:**` `Shortcut-generated flattened Lite work. Source: /{name} ({verb},
-    artifact '{artifact}').`
-  Do NOT write a task listing. It is derived from each task's `**Source:**` field.
-- `## Execution Graph`: copy the template's scaffold as-is for now (`task-001` /
-  `Wave 1: task-001` placeholder rows) -- DETAIL overwrites this with the real task
-  list once the task breakdown is decided (mirrors the full-path precedent:
-  `aid-plan` never touches the Execution Graph; `aid-detail` writes it --
-  `.cursor/skills/aid-detail/references/execution-graph-generation.md`). Do not
-  add any `### delivery-NNN` subsection heading (feature-001's parser-compatibility
-  constraint).
+No dispatch, no artifact. Proceed to Step 3.
 
 ### Step 3: Initialize `delivery_lifecycle` (direct edit)
 
@@ -584,7 +580,7 @@ design note below.
 Append an entry to the `lifecycle_history` sequence:
 ```
 - date: '{today}'
-  event: 'PLAN complete -- PLAN.md written'
+  event: 'PLAN complete -- one delivery, nothing to sequence; no artifact'
   grade: --
   notes: '/{name} PLAN'
 ```
@@ -596,9 +592,9 @@ Append an entry to the `lifecycle_history` sequence:
 ## State: DETAIL
 
 Collapses **Detail**. Decides the task breakdown, emits `tasks/task-NNN/DETAIL.md` per
-task (bold `**Type:**` shape; no per-task `STATE.yml`), fills PLAN.md's real
-`## Execution Graph`, and promotes each task into the work-root `STATE.yml`'s
-`tasks_lifecycle` mapping. FR-4, FR-17.
+task (bold `**Type:**` shape; no per-task `STATE.yml`) and promotes each task into the
+work-root `STATE.yml`'s `tasks_lifecycle` mapping. The execution graph is NOT written:
+it is derived from the `**Depends on:**` fields these DETAILs carry. FR-4, FR-17.
 
 ### Step 1: Emit pipeline phase
 
@@ -607,8 +603,8 @@ Same three `writeback-state.sh --pipeline` calls as SPEC/PLAN Step 1, with
 
 ### Step 2: Dispatch aid-architect to decide + write the task breakdown
 
-Dispatch `aid-architect` (Large) with: REQUIREMENTS.md §9 `## Acceptance Criteria`, PLAN.md's
-delivery stanza `**Gate Criteria**`, and the family scaffolding pointer's default task-breakdown
+Dispatch `aid-architect` (Large) with: REQUIREMENTS.md §9 `## Acceptance Criteria`
+and the family scaffolding pointer's default task-breakdown
 guidance (e.g. `shortcut-scaffolding/fix.md`'s "task-001 IMPLEMENT -> task-002 TEST,
 depends task-001"). The agent:
 
@@ -640,13 +636,15 @@ description, scoped to the full §9 Acceptance Criteria set. Multi-task shortcut
   re-authored here; no extra step is needed for a shortcut-scaffolded task to
   carry it (work-003-state-schema task-009).
 
-**c. Fills PLAN.md's real `## Execution Graph`** (replacing the PLAN-state
-placeholder): `### Task Dependencies` (`| Task | Depends On |`) and
-`### Can Be Done In Parallel` (`| Wave | Tasks |`) -- the flat layout's own
-2-column wave-table shape (`flattened-plan-template.md`; NOT the full path's
-1-column-group-plus-`wave-map`-fence shape from `execution-graph-generation.md` -- the
-two layouts intentionally differ here). Still zero `### delivery-NNN` subsection
-headings.
+**c. Writes NO execution graph.** Each DETAIL's `**Depends on:**` field IS the graph,
+so there is nothing left to author -- and a stored copy could disagree with the fields
+it was computed from, which is the failure this collapse exists to avoid.
+
+Anything needing the graph derives it from these DETAILs:
+`bash .cursor/aid/scripts/execute/derive-waves.sh --from-tasks .aid/works/{work}`
+prints the dependency table and the wave-map. The dashboard readers mirror the same
+derivation in-process; `complexity-score.sh` and `compute-block-radius.sh` accept the
+script's output via `--plan-file`.
 
 ### Step 3: Promote task cells into `tasks_lifecycle` (direct edit)
 
@@ -728,7 +726,7 @@ REVIEW -> GRADE -> FIX loop (Step 4 below) with this pass's own brief
 content:
 
 - **ARTIFACTS UNDER REVIEW:** `.aid/works/{work}/REQUIREMENTS.md`,
-  `.aid/works/{work}/PLAN.md`.
+  the `§ 11` feature section it wrote.
 - **CONTEXT:** these are the collapsed-lifecycle definition documents for a
   direct-entry shortcut work (`/{name}` binds `{verb}`/`{artifact}`); a
   single feature, a single delivery (feature-001's flattened shape); the
@@ -737,8 +735,8 @@ content:
   the shortcut engine; `reviewer-dispatch.md § One-off reviews`) internal
   consistency across the documents; every §9 Acceptance
   Criterion traces back to a `REQUIREMENTS.md` requirement and forward to a
-  `PLAN.md` delivery-stanza `**Gate Criteria**` line; no fabricated content standing
-  in for a genuine `*(pending)*`/`N/A` gap; `PLAN.md` carries no
+  `§ 9` `AC-N`; no fabricated content standing
+  in for a genuine `*(pending)*`/`N/A` gap; `REQUIREMENTS.md` carries no
   `### delivery-NNN` subsection heading (feature-001's parser-compatibility
   constraint).
 - **OUT OF SCOPE:** every `tasks/task-NNN/DETAIL.md` (Pass 2's own scope,
@@ -765,7 +763,7 @@ content:
   -- `reviewer-dispatch.md § Deriving {{ARTIFACTS}}`).
 - **CONTEXT:** the task breakdown for the same shortcut work, whose
   definition documents already cleared Pass 1; each task traces to a
-  §9 Acceptance Criterion and a `PLAN.md` delivery-stanza `**Gate Criteria**` line.
+  §9 Acceptance Criterion.
 - **RUBRIC:** (one-off, as Pass 1) each `DETAIL.md` carries exactly one bold
   `**Type:**` (never mixed across tasks of the same shortcut unless the
   family scaffolding calls for it -- `artifact-schemas.md § Task DETAIL.md`),
@@ -774,7 +772,7 @@ content:
   matching the natural ordering, and `**Acceptance Criteria:**` each naming an
   observable and ending in `All section-6 quality gates pass.`; no sibling `STATE.md` exists for any task (the flat layout has
   none by design).
-- **OUT OF SCOPE:** `REQUIREMENTS.md`/`PLAN.md`
+- **OUT OF SCOPE:** `REQUIREMENTS.md`
   (Pass 1's own scope, already cleared -- re-litigating them here is scope
   leak the reviewer must not re-grade); every state file, at any of the
   three levels and either `STATE.md`/`STATE.yml` extension -- a state file
@@ -849,7 +847,7 @@ Once both passes clear, append **two** entries to the work-root `STATE.yml`'s
 `lifecycle_history` sequence (append-only; the same sequence CAPTURE/SPEC/PLAN/DETAIL
 already append to above) -- **distinct from** the post-execution
 `delivery_gate` key, which `/aid-execute` fills later from
-`PLAN.md`'s delivery-stanza `**Gate Criteria**` (feature-004 § "Where grades are recorded" --
+`REQUIREMENTS.md § 9`'s `AC-N` set (feature-004 § "Where grades are recorded" --
 the flattened layout has one feature section rather than a per-feature file, so the
 DERIVED Features State Spec-Grade column does not apply; `lifecycle_history` is the
 authoritative record of these definition-phase gates):
@@ -896,7 +894,7 @@ Print a summary the user can approve or reject:
 [State: APPROVAL-HALT] -- flattened work ready for approval; nothing has executed.
 
 work-{NNN}-{slug}  (/{name})
-  REQUIREMENTS.md  PLAN.md
+  REQUIREMENTS.md
   tasks/
     task-001  {Type}  {Title}
     task-002  {Type}  {Title}
@@ -939,8 +937,7 @@ strategy asserts both).
   (the pagination + endpoint shape already answer §5/§9); writes `REQUIREMENTS.md`.
 - SPEC: `shortcut-scaffolding/create.md`'s `api` guidance (once landed) activates
   `##### API Contracts`; writes the § 11 feature section.
-- PLAN: writes `PLAN.md` -- the delivery-001 stanza carrying the delivery definition
-  (objective/scope/gate criteria) plus the scaffold graph.
+- PLAN: writes nothing -- one delivery, so no sequencing decision to record.
 - DETAIL: proposes `task-001 IMPLEMENT` (endpoint + handler + validation); writes
   `tasks/task-001/DETAIL.md`; fills the real Execution Graph (`task-001`, wave 1);
   promotes `| task-001 | Pending | -- | -- | -- |`.

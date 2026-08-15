@@ -570,12 +570,24 @@ run_test_8() {
     # assertions flip rather than being deleted: the invariant they protect (criteria
     # come from exactly ONE named place, and the doc says which) is unchanged.
 
-    # Matched WITHOUT a leading "the": the sentence wraps, and "the" ends the previous
-    # line. grep -F is line-scoped, so the pattern must not straddle the break.
-    if grep -qF 'delivery'"'"'s own stanza in `PLAN.md`' "$gate_doc"; then
-        pass "Test 8a INVERTED: state-delivery-gate.md resolves delivery acceptance criteria from the PLAN.md delivery stanza"
+    # Two sources now, one per layout, and BOTH must be named -- the criteria have to
+    # come from exactly one place per layout and the doc has to say which. The full path
+    # keeps its PLAN.md stanza, where sequencing across deliveries is a real authored
+    # decision. The flat/Lite path has one delivery, so the work IS the delivery and its
+    # § 9 criteria are the delivery's; there is no PLAN.md there to hold a restatement.
+    #
+    # Patterns are line-scoped (grep -F), so they must not straddle a wrap.
+    if grep -qF 'the `**Gate Criteria**` list in the delivery'"'"'s own stanza in' "$gate_doc"; then
+        pass "Test 8a INVERTED: the FULL path resolves delivery criteria from the PLAN.md delivery stanza"
     else
-        fail "Test 8a INVERTED: state-delivery-gate.md resolves delivery acceptance criteria from the PLAN.md delivery stanza" \
+        fail "Test 8a INVERTED: the FULL path must resolve delivery criteria from the PLAN.md delivery stanza" \
+             "Expected string not found in $gate_doc"
+    fi
+
+    if grep -qF 'the `AC-N` set in `REQUIREMENTS.md § 9`' "$gate_doc"; then
+        pass "Test 8a2: the FLAT/Lite path resolves delivery criteria from REQUIREMENTS.md § 9"
+    else
+        fail "Test 8a2: the FLAT/Lite path must resolve delivery criteria from REQUIREMENTS.md § 9" \
              "Expected string not found in $gate_doc"
     fi
 

@@ -471,10 +471,17 @@ def artifacts_from_work(work: Path) -> tuple[dict[str, int], set[str]]:
 SHAPES = ("today", "batched", "folded", "folded-sliced", "folded-no-plan")
 
 # Of a Lite PLAN.md's body, the share that is the DELIVERY DEFINITION (objective,
-# scope, gate criteria) as opposed to the execution graph. Measured from
-# flattened-plan-template.md, excluding its instructional [!NOTE] header so the
-# fraction describes a real PLAN.md rather than the template's own prose:
-# 943 B definition / 1325 B body.
+# scope, gate criteria) as opposed to the execution graph: 943 B of 1325 B.
+#
+# The numbers are stated inline BECAUSE their source is gone. They were measured from
+# `delivery-plans/flattened-plan-template.md` (excluding its instructional [!NOTE]
+# header, so the fraction described a real PLAN.md rather than the template's own
+# prose) -- and that template was retired by the very decision these numbers priced,
+# since the Lite path now writes no PLAN.md at all. A comment saying "measured from
+# <path>" would be a dangling citation, which is a mistake this work has already made
+# twice: DEFAULT_ARTIFACTS was measured from a pruned work folder, and split_reach
+# cited a file emitted by a since-removed skill. A derived constant outlives the
+# artifact it was derived from, so it has to carry its own evidence.
 #
 # It matters because the two halves behave differently when PLAN.md is removed: the
 # definition TRANSFERS into REQUIREMENTS (it is a decision, and still needs reviewing),

@@ -16,6 +16,7 @@
 #   AD05  no tree diagram lists a `features/` directory (the multi-line form AD04 misses)
 #   AD06  BLUEPRINT.md is retired: no template, and no skill/engine writes one
 #   AD07  the shortcut (Lite) engine writes no SPEC.md (folded into REQUIREMENTS § 11)
+#   AD08  the shortcut (Lite) engine writes no PLAN.md either -- AC-13 in full
 #
 # Two scope decisions, both load-bearing, both found by writing the naive version first
 # and reading what it flagged:
@@ -263,6 +264,40 @@ ad07="$(scan_tree "canonical/aid/templates/shortcut-engine.md canonical/aid/temp
 ad07_count="$(report_count "$ad07")"
 assert_eq "$ad07_count" "0" "AD07: the shortcut engine and its scaffolding write no SPEC.md"
 [[ "$ad07_count" != "0" ]] && report_body "$ad07" | sed 's|^|    offender: |' >&2
+
+# ---------------------------------------------------------------------------
+# AD08: the shortcut (Lite) engine writes no PLAN.md either -- AC-13 in full.
+#
+# The Lite path now produces exactly REQUIREMENTS.md, STATE.yml, and
+# tasks/task-NNN/DETAIL.md. A plan records a SEQUENCING decision; with one feature and
+# one delivery there is none to record, and every field a PLAN.md would carry is either
+# already stated (the objective is § 1, the criteria are § 9) or derivable (the task
+# listing from each `**Source:**`, the graph from each `**Depends on:**`).
+#
+# Priced before it was built, which is why the shape exists in the meter: at Lite
+# dimensions it saves ~11% of a run. Most of that is the removed gate POINT rather than
+# the removed bytes -- the file is ~2.6 KB against a ~3.3 MB run -- and the saving grows
+# with review cycles because a gate point is cycle-multiplied.
+#
+# `flattened-plan-template.md` is deleted with it: nothing seeded it but this state.
+# ---------------------------------------------------------------------------
+assert_eq "$([[ -e "${REPO}/canonical/aid/templates/delivery-plans/flattened-plan-template.md" ]] && echo present || echo absent)" \
+    "absent" "AD08a the flattened PLAN.md template is deleted"
+
+# Scoped to the engine, NOT its scaffolding: the family files legitimately discuss the
+# full path, where PLAN.md remains the right home for a real sequencing decision.
+ad08="$(scan_tree "canonical/aid/templates/shortcut-engine.md" 'PLAN\.md' include-fences)"
+ad08_count="$(report_count "$ad08")"
+# One mention survives on purpose -- the table explaining what a PLAN.md WOULD have
+# carried and where each field lives instead. Naming the retired artifact while
+# explaining its retirement is the opposite of instructing an agent to write one, so
+# the rule allows exactly that single reference and fails on a second.
+if [[ "$ad08_count" -le 1 ]]; then
+    pass "AD08b the shortcut engine instructs no PLAN.md write (${ad08_count} explanatory mention(s))"
+else
+    fail "AD08b the shortcut engine must not instruct a PLAN.md write — ${ad08_count} mentions"
+    report_body "$ad08" | sed 's|^|    offender: |' >&2
+fi
 
 # ---------------------------------------------------------------------------
 echo ""
