@@ -1,13 +1,13 @@
 ---
 name: aid-document-tutorial
 description: >
-  Write a tutorial NOW -- a learning-oriented walkthrough (prerequisites -> worked steps
-  -> outcome) -- in one pass. A thin kind-sibling of /aid-create-document with the
-  document genre bound to tutorial. Grounded in and accuracy-checked against the Knowledge
-  Base (.aid/knowledge/) and the project source; produced by aid-tech-writer, verified by
-  aid-reviewer. It RESOLVES NOTHING -- drafts, you approve, then it is placed. NEVER writes
-  into .aid/knowledge/. This file carries no logic of its own -- its full behavior is
-  defined by .claude/skills/aid-create-document/SKILL.md.
+  Write a tutorial in one pass -- a learning-oriented walkthrough, from prerequisites
+  through worked steps to the outcome. Use this skill when you already know the document you
+  need is tutorial, and want it drafted now rather than planned. It is grounded in, and
+  accuracy-checked against, the Knowledge Base (.aid/knowledge/) and the project source;
+  aid-tech-writer produces it and aid-reviewer verifies it. It resolves nothing: it drafts,
+  you approve, and only then is the document placed. It never writes into .aid/knowledge/. A
+  thin kind-sibling of /aid-create-document, which defines its full behavior.
 allowed-tools: Read, Glob, Grep, Bash, Write, Edit, Agent
 argument-hint: "<learning goal> -- the tutorial"
 ---

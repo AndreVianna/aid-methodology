@@ -105,7 +105,7 @@
 #   repurpose     (optional, boolean, default `false`) -- `true` for rows whose
 #                 `SKILL.md` is hand-authored rather than generated. The maintainer
 #                 build helper (`build-shortcut-skills.py`) SKIPS `repurpose: true`
-#                 rows -- it never generates or overwrites their `SKILL.md`. 24 rows
+#                 rows -- it never generates or overwrites their `SKILL.md`. 60 rows
 #                 carry `repurpose: true`.
 #
 # ---------------------------------------------------------------------------
@@ -142,7 +142,7 @@ shortcuts:
     group: G6
     intent: "Diagnose and correct a defect, regression, incident, or vulnerability."
 
-  # --- G4: Create family (feature-006, task-015) -- 16 canonical rows (12 in this
+  # --- G4: Create family (feature-006, task-015) -- 23 canonical rows (19 in this
   # section; aid-create-test in G7, aid-create-document and aid-create-diagram in G8,
   # aid-create-dashboard in G11) ---
   - name: aid-create
@@ -229,11 +229,94 @@ shortcuts:
     default_type: IMPLEMENT
     group: G4
     intent: "Provision a new infrastructure resource."
+  - name: aid-create-roadmap
+    verb: create
+    artifact: roadmap
+    alias_of: null
+    default_type: DOCUMENT
+    group: G4
+    intent: "Realize a roadmap seed into roadmap.md, creating the document on first use; leaves the MVP section to /aid-create-mvp."
+    repurpose: true
+  - name: aid-create-backlog
+    verb: create
+    artifact: backlog
+    alias_of: null
+    default_type: DOCUMENT
+    group: G4
+    intent: "Realize a backlog seed into backlog.md, creating the document on first use and moving accepted items out of tech-debt.md."
+    repurpose: true
+  - name: aid-create-mvp
+    verb: create
+    artifact: mvp
+    alias_of: null
+    default_type: DOCUMENT
+    group: G4
+    intent: "Realize an MVP seed into roadmap.md's MVP section only; the roadmap document itself is /aid-create-roadmap's to create."
+    repurpose: true
+  - name: aid-create-architecture
+    verb: create
+    artifact: architecture
+    alias_of: null
+    default_type: DOCUMENT
+    group: G4
+    intent: "Realize an architecture seed into the project's build-and-shape (C1) Knowledge Base document; rejected alternatives go to the decisions document."
+    repurpose: true
+  - name: aid-create-stack
+    verb: create
+    artifact: stack
+    alias_of: null
+    default_type: DOCUMENT
+    group: G4
+    intent: "Realize a stack seed into the project's technology (C0) Knowledge Base document, versions included; rejected alternatives go to the decisions document."
+    repurpose: true
+  - name: aid-create-testing-strategy
+    verb: create
+    artifact: testing-strategy
+    alias_of: null
+    default_type: DOCUMENT
+    group: G4
+    intent: "Realize a testing-strategy seed into the project's quality (C6) documents -- the test landscape and the gate policy -- creating the gate document on first use."
+    repurpose: true
+  - name: aid-create-cicd
+    verb: create
+    artifact: cicd
+    alias_of: null
+    default_type: DOCUMENT
+    group: G4
+    intent: "Realize a CI/CD seed into the project's shipping (C8) Knowledge Base document: stages, triggers, environments, promotion, and the release flow."
+    repurpose: true
 
   # --- G5: Change + Refactor family (feature-007, task-017) --
-  # -- 15 canonical aid-update* rows (12 in this section; aid-update-test in G7,
-  # -- aid-update-document in G8, aid-update-dashboard in G11) + aid-refactor.
+  # -- 22 canonical aid-update* rows (15 in this section; the four foundation rows
+  # -- aid-update-{architecture,stack,testing-strategy,cicd} sit under the
+  # -- Remove + Deprecate + Migrate header below, though their group: field is G5;
+  # -- aid-update-test in G7, aid-update-document in G8, aid-update-dashboard in G11)
+  # -- + aid-refactor.
   # -- aid-refactor is bare with no artifact suffixes.
+  - name: aid-update-roadmap
+    verb: update
+    artifact: roadmap
+    alias_of: null
+    default_type: DOCUMENT
+    group: G5
+    intent: "Revise roadmap.md's direction entries outside the MVP section, plus any previously created outputs."
+    repurpose: true
+  - name: aid-update-mvp
+    verb: update
+    artifact: mvp
+    alias_of: null
+    default_type: DOCUMENT
+    group: G5
+    intent: "Revise roadmap.md's MVP section only, plus any previously created outputs."
+    repurpose: true
+  - name: aid-update-backlog
+    verb: update
+    artifact: backlog
+    alias_of: null
+    default_type: DOCUMENT
+    group: G5
+    intent: "Revise backlog.md -- re-prioritize, add items, and promote accepted tech-debt.md rows -- plus any previously created outputs."
+    repurpose: true
   - name: aid-update
     verb: update
     artifact: ""
@@ -352,6 +435,38 @@ shortcuts:
     default_type: MIGRATE
     group: G5
     intent: "Migrate data, a dependency, framework, or platform, with a rollback plan (non-schema; schema migrations use create/update-data-model)."
+  - name: aid-update-architecture
+    verb: update
+    artifact: architecture
+    alias_of: null
+    default_type: DOCUMENT
+    group: G5
+    intent: "Revise the project's build-and-shape (C1) Knowledge Base document, plus any previously created outputs."
+    repurpose: true
+  - name: aid-update-stack
+    verb: update
+    artifact: stack
+    alias_of: null
+    default_type: DOCUMENT
+    group: G5
+    intent: "Revise the project's technology (C0) Knowledge Base document -- versions, dependencies, constraints -- plus any previously created outputs."
+    repurpose: true
+  - name: aid-update-testing-strategy
+    verb: update
+    artifact: testing-strategy
+    alias_of: null
+    default_type: DOCUMENT
+    group: G5
+    intent: "Revise the project's quality (C6) documents -- test landscape and gate policy -- plus any previously created outputs."
+    repurpose: true
+  - name: aid-update-cicd
+    verb: update
+    artifact: cicd
+    alias_of: null
+    default_type: DOCUMENT
+    group: G5
+    intent: "Revise the project's shipping (C8) Knowledge Base document -- pipeline stages, environments, release flow -- plus any previously created outputs."
+    repurpose: true
 
   # --- G7: Test + Experiment family -- work-005 restructure of feature-009 --
   # Test AUTHORING is a create/update ARTIFACT: aid-create-test / aid-update-test --
@@ -445,6 +560,182 @@ shortcuts:
     default_type: DESIGN
     group: G3
     intent: "Produce a kept design artifact (UX/flow/component/interface, with a11y notes) to inform the build; resolves nothing."
+    repurpose: true
+  - name: aid-design-roadmap
+    verb: design
+    artifact: roadmap
+    alias_of: null
+    default_type: DESIGN
+    group: G3
+    intent: "Develop the project's direction as a design seed -- committed vs. wanted, and the sequencing rationale; writes no KB document."
+    repurpose: true
+  - name: aid-design-mvp
+    verb: design
+    artifact: mvp
+    alias_of: null
+    default_type: DESIGN
+    group: G3
+    intent: "Draw the MVP line as a design seed -- what is in the first shippable slice, what defers, and why each cut was made."
+    repurpose: true
+  - name: aid-design-backlog
+    verb: design
+    artifact: backlog
+    alias_of: null
+    default_type: DESIGN
+    group: G3
+    intent: "Develop the defined-and-prioritized item set as a design seed, including which tech-debt.md rows to accept into the plan."
+    repurpose: true
+  - name: aid-design-api
+    verb: design
+    artifact: api
+    alias_of: null
+    default_type: DESIGN
+    group: G3
+    intent: "Develop an API design in .aid/design/ before building it; writes a seed, builds nothing."
+    repurpose: true
+  - name: aid-design-ui
+    verb: design
+    artifact: ui
+    alias_of: null
+    default_type: DESIGN
+    group: G3
+    intent: "Develop a UI design in .aid/design/ before building it; writes a seed, builds nothing."
+    repurpose: true
+  - name: aid-design-theme
+    verb: design
+    artifact: theme
+    alias_of: null
+    default_type: DESIGN
+    group: G3
+    intent: "Develop a theme design in .aid/design/ before building it; writes a seed, builds nothing."
+    repurpose: true
+  - name: aid-design-cli
+    verb: design
+    artifact: cli
+    alias_of: null
+    default_type: DESIGN
+    group: G3
+    intent: "Develop a CLI design in .aid/design/ before building it; writes a seed, builds nothing."
+    repurpose: true
+  - name: aid-design-data-model
+    verb: design
+    artifact: data-model
+    alias_of: null
+    default_type: DESIGN
+    group: G3
+    intent: "Develop a data-model design in .aid/design/ before building it; writes a seed, builds nothing."
+    repurpose: true
+  - name: aid-design-data-pipeline
+    verb: design
+    artifact: data-pipeline
+    alias_of: null
+    default_type: DESIGN
+    group: G3
+    intent: "Develop a data-pipeline design in .aid/design/ before building it; writes a seed, builds nothing."
+    repurpose: true
+  - name: aid-design-messaging
+    verb: design
+    artifact: messaging
+    alias_of: null
+    default_type: DESIGN
+    group: G3
+    intent: "Develop a messaging design in .aid/design/ before building it; writes a seed, builds nothing."
+    repurpose: true
+  - name: aid-design-integration
+    verb: design
+    artifact: integration
+    alias_of: null
+    default_type: DESIGN
+    group: G3
+    intent: "Develop an integration design in .aid/design/ before building it; writes a seed, builds nothing."
+    repurpose: true
+  - name: aid-design-job
+    verb: design
+    artifact: job
+    alias_of: null
+    default_type: DESIGN
+    group: G3
+    intent: "Develop a job design in .aid/design/ before building it; writes a seed, builds nothing."
+    repurpose: true
+  - name: aid-design-config
+    verb: design
+    artifact: config
+    alias_of: null
+    default_type: DESIGN
+    group: G3
+    intent: "Develop a config design in .aid/design/ before building it; writes a seed, builds nothing."
+    repurpose: true
+  - name: aid-design-infra
+    verb: design
+    artifact: infra
+    alias_of: null
+    default_type: DESIGN
+    group: G3
+    intent: "Develop an infrastructure design in .aid/design/ before building it; writes a seed, builds nothing."
+    repurpose: true
+  - name: aid-design-test
+    verb: design
+    artifact: test
+    alias_of: null
+    default_type: DESIGN
+    group: G3
+    intent: "Develop a test design in .aid/design/ before building it; writes a seed, builds nothing."
+    repurpose: true
+  - name: aid-design-document
+    verb: design
+    artifact: document
+    alias_of: null
+    default_type: DESIGN
+    group: G3
+    intent: "Develop a document design in .aid/design/ before building it; writes a seed, builds nothing."
+    repurpose: true
+  - name: aid-design-dashboard
+    verb: design
+    artifact: dashboard
+    alias_of: null
+    default_type: DESIGN
+    group: G3
+    intent: "Develop a dashboard design in .aid/design/ before building it; writes a seed, builds nothing."
+    repurpose: true
+  - name: aid-brainstorm
+    verb: brainstorm
+    artifact: ""
+    alias_of: null
+    default_type: DESIGN
+    group: G3
+    intent: "Diverge on an unformed problem, then converge to a .aid/design/ seed; resolves nothing."
+    repurpose: true
+  - name: aid-design-architecture
+    verb: design
+    artifact: architecture
+    alias_of: null
+    default_type: DESIGN
+    group: G3
+    intent: "Develop the system's shape as a design seed (components, boundaries, interactions, invariants); writes no KB document -- /aid-create-architecture realizes it."
+    repurpose: true
+  - name: aid-design-stack
+    verb: design
+    artifact: stack
+    alias_of: null
+    default_type: DESIGN
+    group: G3
+    intent: "Develop the technology choice as a design seed (languages, runtimes, frameworks, build and test tooling with versions) plus the alternatives rejected and why."
+    repurpose: true
+  - name: aid-design-testing-strategy
+    verb: design
+    artifact: testing-strategy
+    alias_of: null
+    default_type: DESIGN
+    group: G3
+    intent: "Develop the testing policy as a design seed (levels, coverage expectations, which gates block a merge, who may waive one); not test code."
+    repurpose: true
+  - name: aid-design-cicd
+    verb: design
+    artifact: cicd
+    alias_of: null
+    default_type: DESIGN
+    group: G3
+    intent: "Develop the delivery pipeline as a design seed (stages, triggers, environments, promotion); touches no workflow file."
     repurpose: true
 
   # --- G8: Document family -- work-005 reframe of feature-010 --

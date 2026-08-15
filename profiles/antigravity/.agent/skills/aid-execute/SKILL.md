@@ -1,10 +1,11 @@
 ---
 name: aid-execute
 description: >
-  Execute a task based on its type: RESEARCH, DESIGN, IMPLEMENT, TEST,
-  DOCUMENT, MIGRATE, REFACTOR, or CONFIGURE. Built-in review loop per type.
-  State machine: EXECUTE → REVIEW → FIX → back to REVIEW → DONE when grade ≥ minimum.
-  Branch per delivery for isolation.
+  Carry out one planned task and review the result. Use this skill when tasks have been
+  detailed and you are ready for the work to actually be done. It runs the task according to
+  its type -- RESEARCH, DESIGN, IMPLEMENT, TEST, DOCUMENT, MIGRATE, REFACTOR or CONFIGURE --
+  then loops through review and fixes until the result meets the configured minimum grade.
+  Each delivery runs on its own branch, so deliveries stay isolated from each other.
 allowed-tools: Read, Glob, Grep, Write, Edit, Bash
 argument-hint: "work-001 (required if multiple works)  task-001 (required)"
 ---

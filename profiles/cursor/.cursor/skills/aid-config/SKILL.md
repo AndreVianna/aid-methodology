@@ -1,10 +1,11 @@
 ---
 name: aid-config
 description: >
-  View or update AID pipeline settings. Bare invocation shows all values in a
-  table; first run auto-creates .aid/settings.yml from the template. Pass a
-  key (e.g., /aid-config name) to view + update one setting
-  interactively.
+  View or update AID pipeline settings. Use this skill when you need to see how the pipeline
+  is configured, or change one setting such as the project name, its type, or the minimum
+  grade. A bare invocation prints every value in a table and, on the first run, creates
+  .aid/settings.yml from the template. Passing a key -- /aid-config name -- views and
+  updates that one setting interactively.
 allowed-tools: Read, Glob, Grep, Terminal, Write, Edit, AskUserQuestion
 argument-hint: "(none) view all  |  <key> view+update one (e.g., name, minimum_grade)"
 ---
@@ -157,7 +158,7 @@ intended behavior, not a gap.
 
 | Key | Owner / contract |
 |---|---|
-| `knowledge` | Nested block `{source: <default-branch>, last_update: <ISO-8601 commit date>, doc_set: [...], term_exclusions: [...]}`. `knowledge.source` (the branch compared for KB freshness) and `knowledge.last_update` are written by `aid-discover` (on KB approval, FR35) and `aid-housekeep` (re-stamp on KB-DELTA refresh, FR36); read by the dashboard reader for outdated-detection (feature-007 FF-A2). `knowledge.doc_set` and `knowledge.term_exclusions` are runtime-written by `aid-discover`. Absence-tolerant — a missing `knowledge` block means "no baseline recorded" and the reader stays `approved`. Producer write-path (R13): the first write is a multi-line nested block (`source:` + `last_update:` + `doc_set:` + `term_exclusions:`) via the append-block idiom; a later `last_update` re-stamp is a single-line replace of that nested line. |
+| `knowledge` | Nested block `{source: <default-branch>, last_update: <ISO-8601 commit date>, doc_set: [...], term_exclusions: [...]}`. `knowledge.source` (the branch compared for KB freshness) and `knowledge.last_update` are written by `aid-discover` (on KB approval, FR35) and `aid-housekeep` (re-stamp on KB-DELTA refresh, FR36); read by the dashboard reader for outdated-detection (feature-007 FF-A2). `knowledge.doc_set` and `knowledge.term_exclusions` are runtime-written by `aid-discover`; `knowledge.doc_set` is also appended (one entry per document created) by document-creating `create` skills -- `/aid-create-roadmap`, `/aid-create-backlog`, `/aid-create-architecture`, `/aid-create-stack`, `/aid-create-testing-strategy`, `/aid-create-cicd` -- in the same run that creates their document, using the same R13 append-block idiom. `/aid-create-mvp` is the one planning sibling that is **not** on this list: it writes no KB document, so it appends no entry. Absence-tolerant — a missing `knowledge` block means "no baseline recorded" and the reader stays `approved`. Producer write-path (R13): the first write is a multi-line nested block (`source:` + `last_update:` + `doc_set:` + `term_exclusions:`) via the append-block idiom; a later `last_update` re-stamp is a single-line replace of that nested line. |
 
 ---
 

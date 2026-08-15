@@ -1,16 +1,17 @@
 ---
 name: aid-monitor
 description: >
-  Observe production, classify findings, and route actions. Combines telemetry
-  interpretation with triage — detect anomalies, perform root cause analysis
-  for bugs, and route findings — bugs to /aid-fix, change requests to
-  /aid-triage.
-  Per-work scope. Use post-deployment, on schedule, or on-demand.
-  State machine: OBSERVE → CLASSIFY → ROUTE → DONE.
+  Watch production, classify what you find, and route it to whoever should act. Use this
+  skill after a deployment, on a schedule, or whenever something looks wrong in the field.
+  It reads telemetry, detects anomalies, performs root-cause analysis on the ones that are
+  bugs, and then routes: bugs to /aid-fix, change requests to /aid-triage. Scoped to one
+  work at a time.
 allowed-tools: Read, Glob, Grep, Bash, Write
 ---
 
 # Observe, Classify, Act
+
+State machine: OBSERVE → CLASSIFY → ROUTE → DONE.
 
 Monitor production. Detect what's wrong. Route it to where it gets fixed.
 

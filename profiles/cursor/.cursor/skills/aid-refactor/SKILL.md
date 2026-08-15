@@ -1,12 +1,11 @@
 ---
 name: aid-refactor
 description: >
-  Direct-entry Lite-path shortcut (Restructure or optimize code without changing behavior (rename, restructure, or improve performance).) -- skips the aid-describe
-  interview/triage. Binds VERB=`refactor` ARTIFACT="" (bare verb) and runs the shared
-  shortcut engine, producing a fully-graded flattened Lite work that halts for
-  approval.
-  State machine: delegated to .cursor/aid/templates/shortcut-engine.md
-  (INTAKE -> CAPTURE -> SPEC -> PLAN -> DETAIL -> GATE -> APPROVAL-HALT).
+  Restructure or optimize code without changing behavior (rename, restructure, or improve
+  performance). Use this skill when you already know what to refactor and want it scoped,
+  specified, and broken into reviewable tasks in a single pass, with no requirements
+  interview. You approve the resulting plan before anything is built: this skill plans and
+  stops, so run /aid-execute to carry the plan out.
 allowed-tools: Read, Glob, Grep, Terminal, Write, Edit, Agent
 argument-hint: "[description]  -- what to refactor; runs straight to a graded flattened Lite work"
 ---

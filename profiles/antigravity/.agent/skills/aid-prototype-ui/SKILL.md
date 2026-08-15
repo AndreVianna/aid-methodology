@@ -1,11 +1,12 @@
 ---
 name: aid-prototype-ui
 description: >
-  A ui kind-sibling of /aid-prototype -- build a THROWAWAY low-fidelity UI
-  wireframe/mock + interaction flow NOW to validate a UX direction, then present
-  what it shows and hand the real build off. Resolves nothing; isolated and
-  throwaway. This file carries no logic of its own -- its full behavior is defined
-  by .agent/skills/aid-prototype/SKILL.md, with "ui" as the prototype target.
+  Build a throwaway, low-fidelity UI wireframe and interaction flow to test whether a UX
+  direction actually works. Use this skill when you want to see a screen before committing
+  to building it. Isolated and disposable: it never touches production, and it reports what
+  the mock shows rather than deciding anything for you. For a kept UI design meant to inform
+  the real build rather than a throwaway that validates a direction, use /aid-design-ui
+  instead. A thin kind-sibling of /aid-prototype, which defines its full behavior.
 allowed-tools: Read, Glob, Grep, Bash, Write, Edit, Agent
 argument-hint: "<screen/flow> -- the UI screen(s)/flow whose direction to validate"
 ---

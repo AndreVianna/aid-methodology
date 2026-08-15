@@ -1,15 +1,14 @@
 ---
 name: aid-read-ticket
 description: >
-  On-demand, non-destructive ticket read. `aid-read-ticket [<connector>:]<ticket-id>` parses the
-  ref (an optional `<stem>:` prefix plus the tracker's own id), resolves which issue-tracker
-  connector answers it via the shared connector-resolution ladder (explicit override; a single
-  catalogued issue-tracker connector used silently; a choice asked when two or more are
-  catalogued; the host tool's own tracker MCP as fallback; a "no issue-tracker connector found."
-  notice otherwise), fetches the ticket through the host tool's own MCP -- AID resolves no
-  credential and stores none -- and displays its fields. Never writes, locally or to the
-  tracker, and never shows a confirmation prompt; a failed, not-found, unauthorized, or
-  unavailable fetch surfaces the tracker's error verbatim and exits without side effects.
+  Read one ticket from the project's issue tracker and show its fields. Use this skill when
+  you need a ticket's current contents -- during triage, before starting work, or while
+  writing a change that references it. Give it a ticket id, optionally prefixed with a
+  connector name when more than one tracker is catalogued. It resolves which tracker
+  answers, fetches through your host tool's own MCP so AID never handles a credential, and
+  displays the result. It never writes, locally or to the tracker, and never asks for
+  confirmation; a failed, not-found, unauthorized or unavailable fetch surfaces the
+  tracker's own error and exits without side effects.
 allowed-tools: Read, Glob, Grep, AskUserQuestion
 argument-hint: "[<connector>:]<ticket-id>"
 ---

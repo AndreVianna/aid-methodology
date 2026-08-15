@@ -1,16 +1,12 @@
 ---
 name: aid-test
 description: >
-  Run a test suite / verification NOW and consolidate the results into findings,
-  in one pass. Generic: it runs whatever the request implies -- unit/integration/
-  e2e, a security scan (SAST/DAST/fuzz/dependency-audit), a performance
-  benchmark/load/stress test, a data-quality check (schema/freshness/completeness/
-  uniqueness), or a model evaluation -- and reports. It RESOLVES NOTHING and is
-  read-only on the source: findings hand off to /aid-fix; it never fixes. The
-  skill runs the tool itself (read-only); consolidation + verification are done by
-  the aid-reviewer agent (review-shaped).
-  Allocates a work-NNN folder. To AUTHOR test code, use /aid-create-test (a
-  keep-cycle create-family skill), not this.
+  Run a test suite or verification and consolidate the results into findings, in one pass.
+  Use this skill when you need to know the current state of something measurable -- unit,
+  integration or end-to-end tests, a security scan, a performance benchmark, a data-quality
+  check, or a model evaluation. It runs whatever the request implies and reports. It is
+  read-only on the source and resolves nothing: findings hand off to /aid-fix, and it never
+  fixes. To author test code rather than run it, use /aid-create-test.
 allowed-tools: Read, Glob, Grep, Terminal, Write, Edit, Agent
 argument-hint: "<target> -- what to test/verify (a suite/module, or a kind: security, performance, data-quality, model-eval)"
 ---

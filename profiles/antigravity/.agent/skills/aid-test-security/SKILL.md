@@ -1,11 +1,10 @@
 ---
 name: aid-test-security
 description: >
-  Run a security verification NOW -- SAST, DAST, fuzzing, or dependency audit --
-  and consolidate findings. A thin kind-sibling of /aid-test with the verification
-  kind bound to security. Read-only; resolves nothing; findings hand off to
-  /aid-fix. This file carries no logic of its own -- its full behavior is defined
-  by .agent/skills/aid-test/SKILL.md.
+  Run a security verification and consolidate the findings -- SAST, DAST, fuzzing, or a
+  dependency audit. Use this skill when you need to know what is currently exploitable or
+  outdated. Read-only; it resolves nothing, and findings hand off to /aid-fix. A thin
+  kind-sibling of /aid-test, which defines its full behavior.
 allowed-tools: Read, Glob, Grep, Bash, Write, Edit, Agent
 argument-hint: "<target> -- the endpoint/module/dependency set to verify"
 ---

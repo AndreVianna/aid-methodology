@@ -1,16 +1,15 @@
 ---
 name: aid-report
 description: >
-  Analyze data or usage NOW -- EDA, metrics, or an A/B result -- and return a
-  curated, verified insight report in one pass. It RESOLVES NOTHING: it presents
-  findings, conclusions (positive AND negative), data-quality caveats, conflicts
-  (each with its reason), and gaps, clearly and simply; you resolve. Grounded two
-  ways: the data being analyzed plus the KB/project source (for what the data
-  means) are the authoritative grounding truth; external baselines/benchmarks are
-  supplementary, cited with URL + access date. Produced by aid-researcher and
-  verified by aid-reviewer. Reads data read-only (files/logs directly; live
-  sources via an MCP connector); never a durable dashboard -- that is
-  /aid-create-dashboard. Allocates a work-NNN folder.
+  Analyse data or usage and return a verified insight report in one pass -- exploratory
+  analysis, metrics, or an A/B result. Use this skill when you have data and need to know
+  what it says, with the caveats stated rather than buried. It presents findings,
+  conclusions both positive and negative, data-quality caveats, any conflicts with the
+  reason for each, and the gaps; you decide what follows. The data itself, plus the
+  Knowledge Base and project source for what the data means, are the authoritative
+  grounding; external baselines are supplementary and cited with a URL and access date. It
+  reads data read-only. For a durable dashboard rather than a one-off report, use
+  /aid-create-dashboard.
 allowed-tools: Read, Glob, Grep, shell, Write, Edit, Agent
 argument-hint: "<subject> -- the data/usage to analyze (a dataset, logs, metrics, an A/B result)"
 ---

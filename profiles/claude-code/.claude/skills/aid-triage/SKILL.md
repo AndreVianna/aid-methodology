@@ -1,14 +1,13 @@
 ---
 name: aid-triage
 description: >
-  Suggest-only router for "I don't know which entry fits." Captures one short
-  free-form description, infers the work type and judges scope, then suggests
-  the single best entry: the matching aid-<verb>[-<artifact>] shortcut for a
-  known single change-type, or the full path via /aid-describe for broad or
-  ambiguous work. Reads .claude/aid/templates/shortcut-catalog.yml to
-  resolve the suggestion to a canonical (non-alias) name. Routes and suggests
-  only -- no interview, no scaffold, no work folder, no STATE.md.
-  State machine: INTAKE -> CLASSIFY -> SUGGEST -> HALT.
+  Suggest which AID entry point fits the work you are describing. Use this skill when you
+  know what you want to change but not which skill to reach for. Give it one short free-form
+  description; it infers the work type, judges the scope, and names the single best entry --
+  the matching verb-and-artifact shortcut for a known single change type, or the full path
+  via /aid-describe for broad or ambiguous work. It reads the shortcut catalog to resolve
+  its suggestion to a canonical, non-alias name. It suggests only: no interview, no
+  scaffold, no work folder, and nothing written.
 allowed-tools: Read, Glob, Grep
 argument-hint: "[description]  -- what you want to do; I'll point you at the right entry"
 ---

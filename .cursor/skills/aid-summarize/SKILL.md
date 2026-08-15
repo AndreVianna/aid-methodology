@@ -1,21 +1,21 @@
 ---
 name: aid-summarize
 description: >
-  Generate a single-file kb.html from .aid/knowledge/. Domain-driven, doc-set-based:
-  one section per resolved doc derived from frontmatter (kb-category, objective, summary,
-  tags, see_also). Audience: non-technical newcomer (visually rich; no KB authoring-rules
-  leakage). Light/dark theme, click-to-expand lightbox, accessibility-first (WCAG AA).
-  Two-grade quality gate (Machine + Human): script-verifiable checks score the Machine
-  Grade; an interactive checklist scores the Human Grade (K1 KB-completeness, K2
-  fact-grounding, V1 mandatory human visual gate). APPROVAL requires BOTH grades >= minimum.
-  Idempotent: re-running on an unchanged KB does nothing. State-machine: PREFLIGHT ->
-  STALE-CHECK -> PROFILE -> GENERATE -> VALIDATE -> MANUAL-CHECKLIST -> FIX -> APPROVAL ->
-  WRITEBACK -> DONE.
+  Generate kb.html, a single-file visual tour of the Knowledge Base. Use this skill when
+  someone non-technical needs to read what the project knows about itself -- a newcomer, a
+  stakeholder, anyone who will not open .aid/knowledge/ directly. It builds one section per
+  resolved document from that document's own frontmatter, in a light/dark themed page with
+  click-to-expand images and WCAG AA accessibility. Two grades gate approval: script-
+  verifiable checks score the machine grade, and an interactive checklist scores the human
+  grade, including a mandatory visual review. Idempotent -- re-running on an unchanged
+  Knowledge Base does nothing.
 allowed-tools: Read, Glob, Grep, Terminal, Write, Edit
 argument-hint: "[--grade X] override minimum  [--theme default|brand-X]  [--reset]"
 ---
 
 # Knowledge Base Visual Summary
+
+State machine: PREFLIGHT -> STALE-CHECK -> PROFILE -> GENERATE -> VALIDATE -> MANUAL-CHECKLIST -> FIX -> APPROVAL -> WRITEBACK -> DONE.
 
 Generates a single self-contained `kb.html` from a populated and approved
 `.aid/knowledge/` Knowledge Base. The output is a **newcomer-facing product** — visually
