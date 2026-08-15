@@ -830,22 +830,8 @@ SHORTCUT_KIND_MAP: dict[str, tuple[str, str]] = {
     "aid-monitor": ("monitor", ""),
     "aid-query-kb": ("query", ""),
     "aid-ask": ("query", ""),
-
-    # --- design-phase skill family ------------------------------------------
-    # Added AHEAD of the catalog rows that name them, which leg 3 of
-    # test_shortcut_kind_map_cross_runtime_parity explicitly permits: the map is a
-    # documented strict SUPERSET of the catalog, so a key with no row is legal while a
-    # row with no key is not. Seeding the keys first means the rows land green instead
-    # of landing red and being fixed afterwards.
-    #
-    # Verb and artifact are taken from the catalog rows themselves, not inferred from
-    # the skill names -- `aid-brainstorm` carries verb `brainstorm` with no artifact,
-    # which a name-splitting guess would have rendered as artifact "brainstorm".
-    #
-    # No enum to extend for the new `design` and `brainstorm` verbs: resolve_work_kind
-    # is pure string formatting, so ("design", "roadmap") renders "Design roadmap".
-    "aid-brainstorm": ("brainstorm", ""),
-
+    # --- work-006: the design stage (design/create/update over nine artifact
+    # types) plus brainstorm. Catalogue order; keep in lockstep with reader.mjs.
     "aid-create-roadmap": ("create", "roadmap"),
     "aid-create-backlog": ("create", "backlog"),
     "aid-create-mvp": ("create", "mvp"),
@@ -853,7 +839,6 @@ SHORTCUT_KIND_MAP: dict[str, tuple[str, str]] = {
     "aid-create-stack": ("create", "stack"),
     "aid-create-testing-strategy": ("create", "testing-strategy"),
     "aid-create-cicd": ("create", "cicd"),
-
     "aid-update-roadmap": ("update", "roadmap"),
     "aid-update-mvp": ("update", "mvp"),
     "aid-update-backlog": ("update", "backlog"),
@@ -861,7 +846,6 @@ SHORTCUT_KIND_MAP: dict[str, tuple[str, str]] = {
     "aid-update-stack": ("update", "stack"),
     "aid-update-testing-strategy": ("update", "testing-strategy"),
     "aid-update-cicd": ("update", "cicd"),
-
     "aid-design-roadmap": ("design", "roadmap"),
     "aid-design-mvp": ("design", "mvp"),
     "aid-design-backlog": ("design", "backlog"),
@@ -879,6 +863,7 @@ SHORTCUT_KIND_MAP: dict[str, tuple[str, str]] = {
     "aid-design-test": ("design", "test"),
     "aid-design-document": ("design", "document"),
     "aid-design-dashboard": ("design", "dashboard"),
+    "aid-brainstorm": ("brainstorm", ""),
     "aid-design-architecture": ("design", "architecture"),
     "aid-design-stack": ("design", "stack"),
     "aid-design-testing-strategy": ("design", "testing-strategy"),

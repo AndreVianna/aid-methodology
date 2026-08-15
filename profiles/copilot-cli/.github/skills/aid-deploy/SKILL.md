@@ -1,15 +1,16 @@
 ---
 name: aid-deploy
 description: >
-  Package completed deliveries into a release. Selects eligible deliveries,
-  verifies the combined build, packages according to project infrastructure,
-  generates release notes, and updates artifact statuses. Use when deliveries
-  are complete and ready to ship.
-  State machine: IDLE → SELECTING → VERIFYING → PACKAGING → DONE.
+  Package completed deliveries into a release. Use when deliveries are complete and ready to
+  ship. It selects the eligible deliveries, verifies the combined build, packages according
+  to the project's own infrastructure, generates the release notes, and updates each
+  artifact's status.
 allowed-tools: Read, Glob, Grep, shell, Write
 ---
 
 # Package & Ship
+
+State machine: IDLE → SELECTING → VERIFYING → PACKAGING → DONE.
 
 Package completed deliveries into a release.
 

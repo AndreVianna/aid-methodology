@@ -1,12 +1,10 @@
 ---
 name: aid-update-infra
 description: >
-  Direct-entry Lite-path shortcut (Update an existing infrastructure resource.) -- skips the aid-describe
-  interview/triage. Binds VERB=`update` ARTIFACT=`infra` and runs the shared
-  shortcut engine, producing a fully-graded flattened Lite work that halts for
-  approval.
-  State machine: delegated to .cursor/aid/templates/shortcut-engine.md
-  (INTAKE -> CAPTURE -> SPEC -> PLAN -> DETAIL -> GATE -> APPROVAL-HALT).
+  Update an existing infrastructure resource. Use this skill when you already know what to
+  update and want it scoped, specified, and broken into reviewable tasks in a single pass,
+  with no requirements interview. You approve the resulting plan before anything is built:
+  this skill plans and stops, so run `/aid-execute` to carry the plan out.
 allowed-tools: Read, Glob, Grep, Terminal, Write, Edit, Agent
 argument-hint: "[description]  -- what to update; runs straight to a graded flattened Lite work"
 ---

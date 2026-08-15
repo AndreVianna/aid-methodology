@@ -14,15 +14,15 @@
       "terminal": null,
       "provenance": {
         "file": "canonical/skills/aid-triage/SKILL.md",
-        "startLine": 77,
-        "endLine": 77,
+        "startLine": 76,
+        "endLine": 76,
         "sourceKind": "skill",
         "excerpt": "| INTAKE | inline (below) | inline | CHAIN -> CLASSIFY |"
       },
       "detail": {
         "file": "canonical/skills/aid-triage/SKILL.md",
-        "startLine": 84,
-        "endLine": 105,
+        "startLine": 83,
+        "endLine": 104,
         "sourceKind": "skill",
         "excerpt": "## State: INTAKE\n\nCapture one short free-form description in a single turn -- no adaptive\nloop, no scaffold. If the invocation already carried a `[description]`\nargument, use it directly and skip the prompt below.\n\n```\nIn a sentence or two -- what do you want to build, change, or fix?\n\nSuggested: For example: \"fix the login crash on special characters\" or\n           \"add a /orders REST endpoint.\"\nWhy: A short description is enough to tell whether this is a single,\n     well-scoped change (I can point you straight at a shortcut) or\n     something broader (better handled by the full /aid-describe interview).\n\n[1] Use the form above and share yours\n[2] Your answer: ___\n```\n\nWait for the answer. Record it internally as `{description}`.\n\n**Advance:** **CHAIN** -> [State: CLASSIFY] (continue inline)."
       }
@@ -36,8 +36,8 @@
       "terminal": null,
       "provenance": {
         "file": "canonical/skills/aid-triage/SKILL.md",
-        "startLine": 78,
-        "endLine": 78,
+        "startLine": 77,
+        "endLine": 77,
         "sourceKind": "skill",
         "excerpt": "| CLASSIFY | `references/state-classify.md` | inline | CHAIN -> SUGGEST |"
       },
@@ -46,7 +46,7 @@
         "startLine": 1,
         "endLine": 143,
         "sourceKind": "worker",
-        "excerpt": "# State: CLASSIFY\n\nFrom `{description}` (captured at INTAKE), infer **three things** in prose --\nagent inference, no script.\n\nExtracted from `aid-describe`'s former TRIAGE state (its workType heuristic, unchanged,\nand its recipe-match step, **rewritten**: the now-deleted recipe catalog's `summary:`\nfield is replaced by `shortcut-catalog.yml`'s `intent:` field as the semantic-match\ntarget).\n\n---\n\n## Step 0: QUESTION short-circuit (v2.1.0 coverage-gap follow-on)\n\nBefore inferring `workType` (Step 1), check whether `{description}` is itself\n**a question about the project** rather than a request to change something --\ninterrogative phrasing (\"why\", \"where\", \"how\", \"what\", \"does\", \"is\", \"can\",\n\"should\", \"which\", ...; typically ending in `?`) asking for information,\nexplanation, or a status check, and naming no target artifact to\nbuild/change/fix/remove/test/document/etc.\n\nWhen it is: skip Steps 1-3 entirely -- a question is not itself a unit of work\nthe shortcut catalog routes, so there is no `workType` to infer, no scope to\njudge, and no catalog row to match. Hand off directly to\n`references/state-suggest.md`'s **Case D** with `{description}` carried\nforward verbatim as the question text.\n\nOtherwise, continue to Step 1 as normal -- this is the common case, and every\nstep below is unchanged from before this branch existed.\n\n**Advance (QUESTION branch only):** **CHAIN** -> [State: SUGGEST] Case D.\n\n---\n\n## Step 1: Infer workType\n\nAssign one of the three internal work-type labels (never shown as a menu to\nthe user):\n\n| Heuristic | `workType` |\n|-----------|-----------|\n| Broken / observed-wrong behaviour; something worked before | `bug-fix` |\n| Net-new capability or net-new artifact (incl. new docs, reports, ADRs) | `new-feature` |\n| Change / rename / improve an existing working artifact (incl. editing existing docs) | `refactor` |\n\n`workType` is a coarse first-pass signal only -- it narrows which catalog\ngroups are worth checking first (Step 3) and feeds the reflect-back turn's\n\"Looks like a {workType}\" framing (`references/state-suggest.md`). It is not\nitself a routing target (there is no `LITE-BUG-FIX`/`LITE-REFACTOR`/\n`LITE-FEATURE` sub-path here -- that lite-path machinery was retired with the\nrecipe catalog).\n\n---\n\n## Step 2: Judge scope\n\nDecide whether `{description}` names a **single, well-scoped change** or is\n**broad / multi-activity / sprawling**:\n\n| Signal | Judgment |\n|--------|----------|\n| One concrete target artifact (an endpoint, entity, class, rule, doc, page, dataset...) and one clear action on it | Single well-scoped change |\n| Multiple unrelated targets, a whole subsystem, \"and\" chains of distinct activities, or no concrete target named at all | Broad / multi-activity / ambiguous |\n\nThis is the same full-vs-lite scope judgment aid-describe's former TRIAGE state's\nSignal #1 used to make (Move 5: Backbone-first + walking-skeleton) -- here it decides\nfull-path-vs-shortcut instead of full-vs-lite. **Broad or ambiguous always\nrecommends the full path** (`/aid-describe`) regardless of what Step 3 finds\nbelow -- this conservative rule short-circuits Step 3 when it fires.\n\n---\n\n## Step 3: Match against the shortcut catalog\n\nSkip this step entirely if Step 2 judged the work **broad / multi-activity /\nambiguous** -- go straight to SUGGEST with no candidate (full-path\nrecommendation).\n\nOtherwise, read `canonical/aid/templates/shortcut-catalog.yml` (relative to\nthe AID installation root -- the same directory that contains\n`canonical/skills/`). This is a plain read of a shipped, static file -- no\nscript is invoked.\n\n**Candidate set** -- every row whose `alias_of` field is `null` (canonical\nrows only; today all 58 rows read `alias_of: null`, so this filter selects\nthe full catalog, but it is kept as a **defensive guard**: STATE Q4 retains\nthe `alias_of` field pinned `null` with its removal scheduled as a follow-on,\nand if a future alias row were added before that removal its `intent` would\ncarry no semantic content -- just `\"Alias of <name>.\"` -- and would never win\na semantic match anyway). This canonical-only restriction is scoped to *this*\nstep's semantic match (feeding Cases A/B/C) -- it has no bearing on Case D,\nwhich never runs Step 3 at all (Step 0 short-circuits past it); see\n`state-suggest.md` Case D.\n\n**Narrow by `workType` first** (a light filter, not an exclusion -- if\nnothing in the narrowed set fits, widen to the full candidate set before\nconcluding \"no match\"):\n\n| `workType` | Groups to check first |\n|------------|------------------------|\n| `bug-fix` | G6 (`aid-fix`) |\n| `refactor` | G5 (`aid-update[-artifact]`, `aid-refactor`), plus (v2.1.0 coverage-gap follow-on) G5's `aid-remove`, `aid-deprecate`, `aid-migrate`; G11 (`aid-review`, `aid-research`) |\n| `new-feature` | G4 (`aid-create[-artifact]`), G3 (`aid-prototype[-ui]`), G7 (`aid-test*`, `aid-experiment`), G8 (`aid-document[-artifact]`), G11 (`aid-report`, `aid-review`, `aid-research`) |\n\n(`aid-remove`/`aid-deprecate`/`aid-migrate` and `aid-review`/`aid-research` are\nthe v2.1.0 coverage-gap follow-on rows -- G5 and G11 per\n`shortcut-catalog.yml`; widening these two narrow-first hints is the only\nchange this follow-on makes here. The intent-match itself already reads every\ncanonical catalog row regardless of this table -- narrowing only decides which\nrows get checked *first*, per Step 3's own \"narrow, then widen if empty\" rule\nabove.)\n\nWithin the (narrowed, then widened-if-empty) candidate set, read each row's\n`intent:` field and pick the row whose intent text best matches\n`{description}` (semantic match on the intent string -- agent inference, no\nscript; this is the direct successor of the former TRIAGE state's recipe-`summary:`\nmatch). Use the row's `{verb, artifact}` identity -- the concrete target\nnamed in `{description}` (an endpoint, entity, class, rule, doc...) --\nexactly as the former TRIAGE state's gap-inventory signal #3 (\"Target\nartifact identity\") did, to break ties between rows sharing a `verb`.\n\nProduce:\n\n- **best row** (the clearest single match), AND\n- **confidence judgment:** `single clear winner` | `several plausible` | `none`.\n\nIf the candidate set (narrowed or widened) is empty, or no row's intent\nplausibly fits, confidence = `none`.\n\n---\n\n## Step 4: Hand off to SUGGEST\n\nPass forward to `references/state-suggest.md`:\n\n- `{workType}` (Step 1)\n- scope judgment (Step 2): single-well-scoped | broad-ambiguous\n- `{best-row}` (`name`, `verb`, `artifact`, `intent`) and `{confidence}`\n  (Step 3), when scope is single-well-scoped\n- up to 2 runner-up rows, when `{confidence}` is `several plausible`\n\n**Advance:** **CHAIN** -> [State: SUGGEST] (continue inline).\n"
+        "excerpt": "# State: CLASSIFY\n\nFrom `{description}` (captured at INTAKE), infer **three things** in prose --\nagent inference, no script.\n\nExtracted from `aid-describe`'s former TRIAGE state (its workType heuristic, unchanged,\nand its recipe-match step, **rewritten**: the now-deleted recipe catalog's `summary:`\nfield is replaced by `shortcut-catalog.yml`'s `intent:` field as the semantic-match\ntarget).\n\n---\n\n## Step 0: QUESTION short-circuit (v2.1.0 coverage-gap follow-on)\n\nBefore inferring `workType` (Step 1), check whether `{description}` is itself\n**a question about the project** rather than a request to change something --\ninterrogative phrasing (\"why\", \"where\", \"how\", \"what\", \"does\", \"is\", \"can\",\n\"should\", \"which\", ...; typically ending in `?`) asking for information,\nexplanation, or a status check, and naming no target artifact to\nbuild/change/fix/remove/test/document/etc.\n\nWhen it is: skip Steps 1-3 entirely -- a question is not itself a unit of work\nthe shortcut catalog routes, so there is no `workType` to infer, no scope to\njudge, and no catalog row to match. Hand off directly to\n`references/state-suggest.md`'s **Case D** with `{description}` carried\nforward verbatim as the question text.\n\nOtherwise, continue to Step 1 as normal -- this is the common case, and every\nstep below is unchanged from before this branch existed.\n\n**Advance (QUESTION branch only):** **CHAIN** -> [State: SUGGEST] Case D.\n\n---\n\n## Step 1: Infer workType\n\nAssign one of the three internal work-type labels (never shown as a menu to\nthe user):\n\n| Heuristic | `workType` |\n|-----------|-----------|\n| Broken / observed-wrong behaviour; something worked before | `bug-fix` |\n| Net-new capability or net-new artifact (incl. new docs, reports, ADRs) | `new-feature` |\n| Change / rename / improve an existing working artifact (incl. editing existing docs) | `refactor` |\n\n`workType` is a coarse first-pass signal only -- it narrows which catalog\ngroups are worth checking first (Step 3) and feeds the reflect-back turn's\n\"Looks like a {workType}\" framing (`references/state-suggest.md`). It is not\nitself a routing target (there is no `LITE-BUG-FIX`/`LITE-REFACTOR`/\n`LITE-FEATURE` sub-path here -- that lite-path machinery was retired with the\nrecipe catalog).\n\n---\n\n## Step 2: Judge scope\n\nDecide whether `{description}` names a **single, well-scoped change** or is\n**broad / multi-activity / sprawling**:\n\n| Signal | Judgment |\n|--------|----------|\n| One concrete target artifact (an endpoint, entity, class, rule, doc, page, dataset...) and one clear action on it | Single well-scoped change |\n| Multiple unrelated targets, a whole subsystem, \"and\" chains of distinct activities, or no concrete target named at all | Broad / multi-activity / ambiguous |\n\nThis is the same full-vs-lite scope judgment aid-describe's former TRIAGE state's\nSignal #1 used to make (Move 5: Backbone-first + walking-skeleton) -- here it decides\nfull-path-vs-shortcut instead of full-vs-lite. **Broad or ambiguous always\nrecommends the full path** (`/aid-describe`) regardless of what Step 3 finds\nbelow -- this conservative rule short-circuits Step 3 when it fires.\n\n---\n\n## Step 3: Match against the shortcut catalog\n\nSkip this step entirely if Step 2 judged the work **broad / multi-activity /\nambiguous** -- go straight to SUGGEST with no candidate (full-path\nrecommendation).\n\nOtherwise, read `canonical/aid/templates/shortcut-catalog.yml` (relative to\nthe AID installation root -- the same directory that contains\n`canonical/skills/`). This is a plain read of a shipped, static file -- no\nscript is invoked.\n\n**Candidate set** -- every row whose `alias_of` field is `null` (canonical\nrows only; today every row reads `alias_of: null`, so this filter selects\nthe full catalog, but it is kept as a **defensive guard**: STATE Q4 retains\nthe `alias_of` field pinned `null` with its removal scheduled as a follow-on,\nand if a future alias row were added before that removal its `intent` would\ncarry no semantic content -- just `\"Alias of <name>.\"` -- and would never win\na semantic match anyway). This canonical-only restriction is scoped to *this*\nstep's semantic match (feeding Cases A/B/C) -- it has no bearing on Case D,\nwhich never runs Step 3 at all (Step 0 short-circuits past it); see\n`state-suggest.md` Case D.\n\n**Narrow by `workType` first** (a light filter, not an exclusion -- if\nnothing in the narrowed set fits, widen to the full candidate set before\nconcluding \"no match\"):\n\n| `workType` | Groups to check first |\n|------------|------------------------|\n| `bug-fix` | G6 (`aid-fix`) |\n| `refactor` | G5 (`aid-update[-artifact]`, `aid-refactor`), plus (v2.1.0 coverage-gap follow-on) G5's `aid-remove`, `aid-deprecate`, `aid-migrate`; G11 (`aid-review`, `aid-research`) |\n| `new-feature` | G4 (`aid-create[-artifact]`), G3 (`aid-prototype[-ui]`), G7 (`aid-test*`, `aid-experiment`), G8 (`aid-document[-artifact]`), G11 (`aid-report`, `aid-review`, `aid-research`) |\n\n(`aid-remove`/`aid-deprecate`/`aid-migrate` and `aid-review`/`aid-research` are\nthe v2.1.0 coverage-gap follow-on rows -- G5 and G11 per\n`shortcut-catalog.yml`; widening these two narrow-first hints is the only\nchange this follow-on makes here. The intent-match itself already reads every\ncanonical catalog row regardless of this table -- narrowing only decides which\nrows get checked *first*, per Step 3's own \"narrow, then widen if empty\" rule\nabove.)\n\nWithin the (narrowed, then widened-if-empty) candidate set, read each row's\n`intent:` field and pick the row whose intent text best matches\n`{description}` (semantic match on the intent string -- agent inference, no\nscript; this is the direct successor of the former TRIAGE state's recipe-`summary:`\nmatch). Use the row's `{verb, artifact}` identity -- the concrete target\nnamed in `{description}` (an endpoint, entity, class, rule, doc...) --\nexactly as the former TRIAGE state's gap-inventory signal #3 (\"Target\nartifact identity\") did, to break ties between rows sharing a `verb`.\n\nProduce:\n\n- **best row** (the clearest single match), AND\n- **confidence judgment:** `single clear winner` | `several plausible` | `none`.\n\nIf the candidate set (narrowed or widened) is empty, or no row's intent\nplausibly fits, confidence = `none`.\n\n---\n\n## Step 4: Hand off to SUGGEST\n\nPass forward to `references/state-suggest.md`:\n\n- `{workType}` (Step 1)\n- scope judgment (Step 2): single-well-scoped | broad-ambiguous\n- `{best-row}` (`name`, `verb`, `artifact`, `intent`) and `{confidence}`\n  (Step 3), when scope is single-well-scoped\n- up to 2 runner-up rows, when `{confidence}` is `several plausible`\n\n**Advance:** **CHAIN** -> [State: SUGGEST] (continue inline).\n"
       }
     },
     {
@@ -58,8 +58,8 @@
       "terminal": null,
       "provenance": {
         "file": "canonical/skills/aid-triage/SKILL.md",
-        "startLine": 79,
-        "endLine": 79,
+        "startLine": 78,
+        "endLine": 78,
         "sourceKind": "skill",
         "excerpt": "| SUGGEST | `references/state-suggest.md` | inline | CHAIN -> HALT |"
       },
@@ -83,15 +83,15 @@
       },
       "provenance": {
         "file": "canonical/skills/aid-triage/SKILL.md",
-        "startLine": 80,
-        "endLine": 80,
+        "startLine": 79,
+        "endLine": 79,
         "sourceKind": "skill",
         "excerpt": "| HALT | inline (below) | inline | -> halt |"
       },
       "detail": {
         "file": "canonical/skills/aid-triage/SKILL.md",
-        "startLine": 109,
-        "endLine": 133,
+        "startLine": 108,
+        "endLine": 132,
         "sourceKind": "skill",
         "excerpt": "## State: HALT\n\nPrint the recommended invocation the user should type next, then **STOP**.\n`/aid-triage` never invokes another skill on the user's behalf -- it\nsuggests; the user runs the command. No file is written; no `.aid/works/work-*/`\nfolder is created; no `STATE.md` exists for this skill.\n\n**Shortcut suggested:**\n```\n-> Suggested next step:\n\n    /{name} \"{description}\"\n\nRun that command to start -- it goes straight to the flattened Lite work\nfor {intent}.\n```\n\n**Full path suggested:**\n```\n-> Suggested next step:\n\n    /aid-describe\n\nRun that command to start the full requirements interview.\n```"
       }
@@ -106,8 +106,8 @@
       "advanceType": "CHAIN",
       "provenance": {
         "file": "canonical/skills/aid-triage/SKILL.md",
-        "startLine": 105,
-        "endLine": 105,
+        "startLine": 104,
+        "endLine": 104,
         "sourceKind": "skill",
         "excerpt": "**Advance:** **CHAIN** -> [State: CLASSIFY] (continue inline)."
       }
@@ -134,8 +134,8 @@
       "advanceType": "CHAIN",
       "provenance": {
         "file": "canonical/skills/aid-triage/SKILL.md",
-        "startLine": 79,
-        "endLine": 79,
+        "startLine": 78,
+        "endLine": 78,
         "sourceKind": "skill",
         "excerpt": "| SUGGEST | `references/state-suggest.md` | inline | CHAIN -> HALT |"
       }

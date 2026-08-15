@@ -1,13 +1,13 @@
 ---
 name: aid-define
 description: >
-  Feature decomposition and cross-reference validation from approved requirements.
-  Begins from an approved REQUIREMENTS.md (produced by /aid-describe) and decomposes
-  functional requirements into feature sections of REQUIREMENTS.md §11
-  (FEATURE-DECOMPOSITION), then validates the requirements and feature boundaries
-  against the KB and codebase (CROSS-REFERENCE), then halts at DONE ready for
-  /aid-specify.
-  State machine: (Approved REQUIREMENTS) -> FEATURE-DECOMPOSITION -> CROSS-REFERENCE -> DONE [HALT -> /aid-specify].
+  Decompose approved requirements into discrete features, each recorded as a
+  `### Feature NNN` section of REQUIREMENTS.md § 11 that cites the `AC-N` criteria it
+  claims. Use this skill once `/aid-describe` has produced an approved REQUIREMENTS.md
+  and the work needs splitting into features before any one of them is specified. It
+  turns each functional requirement into a feature, then validates the requirements and
+  the feature boundaries against the Knowledge Base and the codebase, and halts ready
+  for `/aid-specify`.
 allowed-tools: Read, Glob, Grep, Bash, Write, Edit
 argument-hint: "[work-001] decompose approved requirements  [--features work-001] re-run feature decomposition"
 ---

@@ -192,6 +192,10 @@ the grouping in its own file header, the same incremental-growth precedent
 -- that row never enters this engine at all (its doorway is the hand-authored,
 single-shot `.agent/skills/aid-ask/SKILL.md`, not a generated thin doorway over
 INTAKE-DETAIL).
+The `design` family is deliberately absent for the same reason: like `query` it is not a
+generated engine verb, and its omission here is intentional, not an oversight -- do not
+"fix" the gap by minting a row for `design` as that family grows from one artifact toward
+CC-7's full set.
 
 These reference files are free-form prose (like any other `state-*.md` reference doc)
 -- the dispatched `aid-architect` reads them for judgment; they are not
@@ -385,6 +389,11 @@ scratch.
   Scaffolding Consult above). Read it for this shortcut's minimal-slot list and any
   KB-informed skip rules for this `{verb, artifact}`. If the file does not exist yet,
   fall back to the Capture-Minimization Rules above unmodified.
+- `.aid/design/{artifact}.md`, read **if it exists and `{artifact}` is non-empty** --
+  the design seed for this artifact, loaded as PRIOR CONTEXT for Step 3's slot set. It is
+  an input to the write-up, **never a substitute** for it, and is **never edited, moved
+  or deleted** by the run. If the file is absent or `{artifact}` is `""`, CAPTURE
+  proceeds exactly as before.
 
 ### Step 3: Determine the minimal slot set
 

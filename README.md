@@ -160,7 +160,7 @@ Open your AI coding tool in your project and run the skills as slash commands:
 /aid-unset-connector  # on-demand — remove a connector descriptor and purge its secret
 ```
 
-**Brownfield** projects run `/aid-config` → `/aid-discover` → `/aid-describe` → `/aid-define`. **Greenfield** projects skip Discovery and start at `/aid-describe`. For a small, well-scoped change, skip straight to a shortcut instead — or run `/aid-triage` if you're not sure which one fits. Just have a question, not a change? Run `/aid-ask`. Every phase is gated — nothing advances without your approval. The block above is the pipeline and the on-demand skills; the rest of AID's 75 skills are the verb-first shortcut doorways and the hand-authored task skills behind them, all rendered from one canonical source into 5 tool profiles.
+**Brownfield** projects run `/aid-config` → `/aid-discover` → `/aid-describe` → `/aid-define`. **Greenfield** projects skip Discovery and start at `/aid-describe`. For a small, well-scoped change, skip straight to a shortcut instead — or run `/aid-triage` if you're not sure which one fits. Just have a question, not a change? Run `/aid-ask`. Every phase is gated — nothing advances without your approval. The block above is the pipeline and the on-demand skills; the rest of AID's 111 skills are the verb-first shortcut doorways and the hand-authored task skills behind them, all rendered from one canonical source into 5 tool profiles.
 
 [See it applied step by step →](examples/)
 

@@ -1,0 +1,204 @@
+{
+  "skill": "aid-design-roadmap",
+  "shape": "inline-states",
+  "extractor": "inline",
+  "confidence": "derived",
+  "title": "aid-design-roadmap — state flow",
+  "nodes": [
+    {
+      "id": "n1",
+      "order": 1,
+      "name": "INTAKE",
+      "label": "INTAKE",
+      "kind": "entry",
+      "terminal": null,
+      "provenance": {
+        "file": "canonical/skills/aid-design-roadmap/SKILL.md",
+        "startLine": 39,
+        "endLine": 53,
+        "sourceKind": "skill",
+        "excerpt": "## State: INTAKE\n\n1. **Require a subject.** Empty argument -> ask one bootstrapping question (\"What\n   direction do you want to develop -- what's committed, what's merely wanted, and why?\")\n   and wait.\n2. **Allocate, exactly per `design-lifecycle.md § Skill shape -- Allocation`** -- the Work\n   Initiation Gate, then `initiator: aid-design-roadmap`, `active_skill:\n   aid-design-roadmap`, `pipeline.path: lite`, `lifecycle: Running`. `phase` is not\n   driven.\n3. **Acquire `.aid/design/`.** Per `design-lifecycle.md § Before writing a seed` -- ensure\n   the folder exists and seed its `README.md` on first use, before writing anything.\n4. **Read the existing seed, if one is present.** `.aid/design/roadmap.md` --\n   re-invocation iterates the same seed rather than starting over.\n5. **Classify complexity (model + effort)** for the `aid-architect` dispatch below;\n   verifier tier >= producer tier (`agent-dispatch-tiering.md`)."
+      },
+      "detail": {
+        "file": "canonical/skills/aid-design-roadmap/SKILL.md",
+        "startLine": 39,
+        "endLine": 55,
+        "sourceKind": "skill",
+        "excerpt": "## State: INTAKE\n\n1. **Require a subject.** Empty argument -> ask one bootstrapping question (\"What\n   direction do you want to develop -- what's committed, what's merely wanted, and why?\")\n   and wait.\n2. **Allocate, exactly per `design-lifecycle.md § Skill shape -- Allocation`** -- the Work\n   Initiation Gate, then `initiator: aid-design-roadmap`, `active_skill:\n   aid-design-roadmap`, `pipeline.path: lite`, `lifecycle: Running`. `phase` is not\n   driven.\n3. **Acquire `.aid/design/`.** Per `design-lifecycle.md § Before writing a seed` -- ensure\n   the folder exists and seed its `README.md` on first use, before writing anything.\n4. **Read the existing seed, if one is present.** `.aid/design/roadmap.md` --\n   re-invocation iterates the same seed rather than starting over.\n5. **Classify complexity (model + effort)** for the `aid-architect` dispatch below;\n   verifier tier >= producer tier (`agent-dispatch-tiering.md`).\n\n**Advance:** DESIGN."
+      }
+    },
+    {
+      "id": "n2",
+      "order": 2,
+      "name": "DESIGN",
+      "label": "DESIGN",
+      "kind": "step",
+      "terminal": null,
+      "provenance": {
+        "file": "canonical/skills/aid-design-roadmap/SKILL.md",
+        "startLine": 59,
+        "endLine": 64,
+        "sourceKind": "skill",
+        "excerpt": "## State: DESIGN\n\nDispatch **`aid-architect`** (clean context, tiered) to develop or iterate the seed,\ngrounded in `.aid/knowledge/` and the project source, plus the seed read in INTAKE if one\nexists. Draws out: **direction and its *why*; what is committed vs. merely wanted;\nsequencing rationale; the alternatives being rejected and why.**"
+      },
+      "detail": {
+        "file": "canonical/skills/aid-design-roadmap/SKILL.md",
+        "startLine": 59,
+        "endLine": 71,
+        "sourceKind": "skill",
+        "excerpt": "## State: DESIGN\n\nDispatch **`aid-architect`** (clean context, tiered) to develop or iterate the seed,\ngrounded in `.aid/knowledge/` and the project source, plus the seed read in INTAKE if one\nexists. Draws out: **direction and its *why*; what is committed vs. merely wanted;\nsequencing rationale; the alternatives being rejected and why.**\n\nWrites `.aid/design/roadmap.md` **only**, in `design-seed.md`'s shape --\n`## Current direction` rewritten to the latest proposal, `## Options considered`\naccumulating rather than being replaced. **Never writes `.aid/knowledge/`; never writes\nproduction code** -- the `design` invariant, binding without exception.\n\n**Advance:** VERIFY."
+      }
+    },
+    {
+      "id": "n3",
+      "order": 3,
+      "name": "VERIFY",
+      "label": "VERIFY",
+      "kind": "loop-back",
+      "terminal": null,
+      "provenance": {
+        "file": "canonical/skills/aid-design-roadmap/SKILL.md",
+        "startLine": 75,
+        "endLine": 79,
+        "sourceKind": "skill",
+        "excerpt": "## State: VERIFY\n\n**Full verify** -- exactly as `design-lifecycle.md § Skill shape -- \"Full verify\"`\ndefines it. Not clean -> loop to DESIGN; the circuit-breaker there governs escalation to\nIMPEDIMENT + `lifecycle: Blocked`."
+      },
+      "detail": {
+        "file": "canonical/skills/aid-design-roadmap/SKILL.md",
+        "startLine": 75,
+        "endLine": 81,
+        "sourceKind": "skill",
+        "excerpt": "## State: VERIFY\n\n**Full verify** -- exactly as `design-lifecycle.md § Skill shape -- \"Full verify\"`\ndefines it. Not clean -> loop to DESIGN; the circuit-breaker there governs escalation to\nIMPEDIMENT + `lifecycle: Blocked`.\n\n**Advance:** PRESENT."
+      }
+    },
+    {
+      "id": "n4",
+      "order": 4,
+      "name": "PRESENT",
+      "label": "hard stop -- the user decides",
+      "kind": "step",
+      "terminal": null,
+      "provenance": {
+        "file": "canonical/skills/aid-design-roadmap/SKILL.md",
+        "startLine": 85,
+        "endLine": 89,
+        "sourceKind": "skill",
+        "excerpt": "## State: PRESENT (hard stop -- the user decides)\n\nSet `lifecycle: Paused-Awaiting-Input`. Present the seed clearly. Assert no resolution --\nthe user decides whether to iterate further (re-invoke this skill) or realize it now\n(`/aid-create-roadmap`)."
+      },
+      "detail": {
+        "file": "canonical/skills/aid-design-roadmap/SKILL.md",
+        "startLine": 85,
+        "endLine": 91,
+        "sourceKind": "skill",
+        "excerpt": "## State: PRESENT (hard stop -- the user decides)\n\nSet `lifecycle: Paused-Awaiting-Input`. Present the seed clearly. Assert no resolution --\nthe user decides whether to iterate further (re-invoke this skill) or realize it now\n(`/aid-create-roadmap`).\n\n**Advance:** DONE."
+      }
+    },
+    {
+      "id": "n5",
+      "order": 5,
+      "name": "DONE",
+      "label": "DONE",
+      "kind": "exit",
+      "terminal": {
+        "advanceType": "UNSPECIFIED",
+        "handoff": null
+      },
+      "provenance": {
+        "file": "canonical/skills/aid-design-roadmap/SKILL.md",
+        "startLine": 95,
+        "endLine": 99,
+        "sourceKind": "skill",
+        "excerpt": "## State: DONE\n\nSet `lifecycle: Completed`, `updated` now, append a `## Lifecycle History` row. The seed\nstays at `.aid/design/roadmap.md` -- consumption happens at `/aid-create-roadmap`, not\nhere."
+      },
+      "detail": {
+        "file": "canonical/skills/aid-design-roadmap/SKILL.md",
+        "startLine": 95,
+        "endLine": 99,
+        "sourceKind": "skill",
+        "excerpt": "## State: DONE\n\nSet `lifecycle: Completed`, `updated` now, append a `## Lifecycle History` row. The seed\nstays at `.aid/design/roadmap.md` -- consumption happens at `/aid-create-roadmap`, not\nhere."
+      }
+    }
+  ],
+  "edges": [
+    {
+      "from": "n1",
+      "to": "n2",
+      "kind": "sequence",
+      "condition": null,
+      "advanceType": "UNSPECIFIED",
+      "provenance": {
+        "file": "canonical/skills/aid-design-roadmap/SKILL.md",
+        "startLine": 55,
+        "endLine": 55,
+        "sourceKind": "skill",
+        "excerpt": "**Advance:** DESIGN."
+      }
+    },
+    {
+      "from": "n2",
+      "to": "n3",
+      "kind": "sequence",
+      "condition": null,
+      "advanceType": "UNSPECIFIED",
+      "provenance": {
+        "file": "canonical/skills/aid-design-roadmap/SKILL.md",
+        "startLine": 71,
+        "endLine": 71,
+        "sourceKind": "skill",
+        "excerpt": "**Advance:** VERIFY."
+      }
+    },
+    {
+      "from": "n3",
+      "to": "n2",
+      "kind": "loop-back",
+      "condition": null,
+      "advanceType": "UNSPECIFIED",
+      "provenance": {
+        "file": "canonical/skills/aid-design-roadmap/SKILL.md",
+        "startLine": 78,
+        "endLine": 78,
+        "sourceKind": "skill",
+        "excerpt": "defines it. Not clean -> loop to DESIGN; the circuit-breaker there governs escalation to"
+      }
+    },
+    {
+      "from": "n3",
+      "to": "n4",
+      "kind": "sequence",
+      "condition": null,
+      "advanceType": "UNSPECIFIED",
+      "provenance": {
+        "file": "canonical/skills/aid-design-roadmap/SKILL.md",
+        "startLine": 81,
+        "endLine": 81,
+        "sourceKind": "skill",
+        "excerpt": "**Advance:** PRESENT."
+      }
+    },
+    {
+      "from": "n4",
+      "to": "n5",
+      "kind": "sequence",
+      "condition": null,
+      "advanceType": "UNSPECIFIED",
+      "provenance": {
+        "file": "canonical/skills/aid-design-roadmap/SKILL.md",
+        "startLine": 91,
+        "endLine": 91,
+        "sourceKind": "skill",
+        "excerpt": "**Advance:** DONE."
+      }
+    }
+  ],
+  "entries": [
+    "n1"
+  ],
+  "exits": [
+    "n5"
+  ],
+  "sources": [
+    "canonical/skills/aid-design-roadmap/SKILL.md"
+  ],
+  "warnings": []
+}

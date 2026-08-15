@@ -149,35 +149,62 @@ invocable name, every row a canonical name) is
 
 ### Shortcut families
 
-The **58-row catalog** — every row a canonical invocation name — generates **34** verb-first
-thin-doorway shortcut directories via `build-shortcut-skills.py`; the other **24** rows are
+The **94-row catalog** — every row a canonical invocation name — generates **34** verb-first
+thin-doorway shortcut directories via `build-shortcut-skills.py`; the other **60** rows are
 `repurpose: true` — hand-authored skills the build helper never generates or overwrites
 (`aid-review`, `aid-research`, `aid-report`, `aid-design`,
 `aid-prototype`/`aid-prototype-ui`, the document family, the `aid-test`
 run-siblings, plus the re-registered `aid-deploy`, `aid-monitor`, and `aid-ask`).
-Every one of the 58 rows owns its own `canonical/skills/<name>/` directory. `create` and
+Every one of the 94 rows owns its own `canonical/skills/<name>/` directory. `create` and
 `update` are the two canonical grid verbs. Each verb family targets an artifact archetype:
 
 | Verb family | Engine-generated doorways | `repurpose` rows in the same family |
 |-------------|---------------------------|-------------------------------------|
-| create | `aid-create` + `-api`, `-cli`, `-config`, `-dashboard`, `-data-model`, `-data-pipeline`, `-infra`, `-integration`, `-job`, `-messaging`, `-test`, `-theme`, `-ui` (14) | `aid-create-diagram`, `aid-create-document` |
-| update | `aid-update` + the same 13 artifact suffixes (14) | `aid-update-document` |
+| create | `aid-create` + `-api`, `-cli`, `-config`, `-dashboard`, `-data-model`, `-data-pipeline`, `-infra`, `-integration`, `-job`, `-messaging`, `-test`, `-theme`, `-ui` (14) | `aid-create-diagram`, `aid-create-document`, `-roadmap`, `-backlog`, `-mvp`, `-architecture`, `-stack`, `-testing-strategy`, `-cicd` |
+| update | `aid-update` + the same 13 artifact suffixes (14) | `aid-update-document`, `-roadmap`, `-backlog`, `-mvp`, `-architecture`, `-stack`, `-testing-strategy`, `-cicd` |
 | fix | `aid-fix` | — |
 | refactor | `aid-refactor` | — |
 | remove / deprecate / migrate | `aid-remove`, `aid-deprecate`, `aid-migrate` | — |
 | test / experiment | `aid-experiment` | `aid-test`, `-security`, `-performance`, `-data-quality` |
 | prototype | — | `aid-prototype`, `aid-prototype-ui` |
 | document | — | `aid-document`, `-architecture`, `-changelog`, `-decision`, `-guideline`, `-runbook`, `-standard`, `-tutorial` |
-| design | — | `aid-design` |
+| design | — | `aid-design` (catch-all) + `-roadmap`, `-backlog`, `-mvp`, `-architecture`, `-stack`, `-testing-strategy`, `-cicd`, and the 14 grid artifacts `-api`, `-ui`, `-theme`, `-cli`, `-data-model`, `-data-pipeline`, `-messaging`, `-integration`, `-job`, `-config`, `-infra`, `-test`, `-document`, `-dashboard` (22) |
+| brainstorm | — | `aid-brainstorm` |
 | report | — | `aid-report` |
 | review / research | — | `aid-review`, `aid-research` |
 | deploy / monitor / query | — | `aid-deploy`, `aid-monitor`, `aid-ask` |
 
 Reading down the table: **34** engine-generated doorways (14 `create` + 14 `update` + `fix`,
-`refactor`, `remove`, `deprecate`, `migrate`, `experiment`) and **24** `repurpose` rows.
+`refactor`, `remove`, `deprecate`, `migrate`, `experiment`) and **60** `repurpose` rows.
 
 (`/aid-deploy`, `/aid-monitor`, and `/aid-ask` are `repurpose` catalog rows — counted among the
-58, each owning its own directory, though hand-authored rather than engine-generated doorways.)
+94, each owning its own directory, though hand-authored rather than engine-generated doorways.)
+
+### The `design` stage
+
+`design` is the third grid verb, and it sits **before** `create`: `design -> create -> update`.
+Where `create` realizes and `update` revises, `design` only develops the idea. It writes a **design
+seed** to `.aid/design/<artifact>.md` and writes nothing else -- no production code, no Knowledge
+Base document -- so the thinking can be settled and reviewed before anything is built.
+
+The three stages divide by the state the work is in, and that is what a caller chooses between:
+
+| Stage | Precondition | Writes | Consumed by |
+|-------|--------------|--------|-------------|
+| `design` | the shape is still open | the seed, and only the seed | `create` |
+| `create` | a ready seed exists, the destination does not | the artifact, plus its registration on first creation | -- |
+| `update` | the destination exists and has drifted | the revision only | -- |
+
+`create` **refuses** on exactly three conditions and no fourth: no seed, a seed whose
+`## Open questions` is still unresolved without an explicit override, and a destination marked
+`source: generated`. A repeat `create` never overwrites what an earlier run committed -- it writes
+whatever is new and routes the rest to `update`, leaving the seed in place carrying only the
+unrealized part. `update` needs no seed, but consumes one if it finds it.
+
+**22 `design` rows** cover every artifact that has a `create`/`update` pair, plus a bare
+`/aid-design` catch-all for subjects with no dedicated row. `/aid-brainstorm` sits beside them as
+an exploratory doorway for a problem space that is not yet a specific question, mutually routed
+with `/aid-research`.
 
 ### The `/aid-triage` router
 
@@ -279,8 +306,8 @@ Each capability maps to the parts that implement it (full anatomy in `module-map
 - **Skill count.** AID ships **75 skill directories** under `canonical/skills/`: **17 curated
   skills** (the pipeline-phase, on-demand, and `/aid-triage` router skills that are *not* in the
   shortcut catalog — including the three ticket skills `aid-read-ticket`, `aid-create-ticket`,
-  `aid-update-ticket`) plus the **58-row shortcut catalog**'s skills, every row a canonical
-  name — **34** engine-generated verb-first direct-entry shortcut doorways plus **24**
-  hand-authored `repurpose` skills, each of the 58 owning its own directory. Re-derive from
+  `aid-update-ticket`) plus the **94-row shortcut catalog**'s skills, every row a canonical
+  name — **34** engine-generated verb-first direct-entry shortcut doorways plus **60**
+  hand-authored `repurpose` skills, each of the 94 owning its own directory. Re-derive from
   `canonical/skills/` and `canonical/aid/templates/shortcut-catalog.yml`; the prior
   12-/13-/14-skill drift is superseded.

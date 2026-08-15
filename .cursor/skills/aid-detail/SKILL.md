@@ -1,11 +1,12 @@
 ---
 name: aid-detail
 description: >
-  Break deliverables into small, dependency-driven, typed tasks — each one a reviewable unit.
-  The ultimate breakdown. Detects task types (RESEARCH, DESIGN, IMPLEMENT, TEST,
-  DOCUMENT, MIGRATE, REFACTOR, CONFIGURE) from SPEC signals. One type per task.
-  Builds execution graph per delivery with explicit dependencies and parallelism.
-  State machine: FIRST-RUN → REVIEW → DONE.
+  Break deliverables into small, dependency-driven, typed tasks -- each one a reviewable
+  unit. The ultimate breakdown. Use this skill when a delivery has been planned and the
+  actual work items are needed before execution starts. It detects each task's type from the
+  SPEC's own signals -- RESEARCH, DESIGN, IMPLEMENT, TEST, DOCUMENT, MIGRATE, REFACTOR,
+  CONFIGURE -- gives every task exactly one type, and builds the delivery's execution graph
+  with explicit dependencies and the parallelism they allow.
 allowed-tools: Read, Glob, Grep, Write, Edit, Terminal
 argument-hint: "work-001 (required if multiple works)  [--reset] clear deliveries/delivery-NNN/tasks/"
 ---

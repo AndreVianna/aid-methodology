@@ -744,13 +744,8 @@ export const SHORTCUT_KIND_MAP = {
   "aid-monitor": ["monitor", ""],
   "aid-query-kb": ["query", ""],
   "aid-ask": ["query", ""],
-
-  // --- design-phase skill family ------------------------------------------
-  // Mirror state_schema.py SHORTCUT_KIND_MAP; see there for why these are seeded
-  // ahead of the catalog rows that name them (leg 3 permits a superset, so a key with
-  // no row is legal while a row with no key is not).
-  "aid-brainstorm": ["brainstorm", ""],
-
+  // --- work-006: the design stage (design/create/update over nine artifact
+  // types) plus brainstorm. Catalogue order; keep in lockstep with the Python twin.
   "aid-create-roadmap": ["create", "roadmap"],
   "aid-create-backlog": ["create", "backlog"],
   "aid-create-mvp": ["create", "mvp"],
@@ -758,7 +753,6 @@ export const SHORTCUT_KIND_MAP = {
   "aid-create-stack": ["create", "stack"],
   "aid-create-testing-strategy": ["create", "testing-strategy"],
   "aid-create-cicd": ["create", "cicd"],
-
   "aid-update-roadmap": ["update", "roadmap"],
   "aid-update-mvp": ["update", "mvp"],
   "aid-update-backlog": ["update", "backlog"],
@@ -766,7 +760,6 @@ export const SHORTCUT_KIND_MAP = {
   "aid-update-stack": ["update", "stack"],
   "aid-update-testing-strategy": ["update", "testing-strategy"],
   "aid-update-cicd": ["update", "cicd"],
-
   "aid-design-roadmap": ["design", "roadmap"],
   "aid-design-mvp": ["design", "mvp"],
   "aid-design-backlog": ["design", "backlog"],
@@ -784,6 +777,7 @@ export const SHORTCUT_KIND_MAP = {
   "aid-design-test": ["design", "test"],
   "aid-design-document": ["design", "document"],
   "aid-design-dashboard": ["design", "dashboard"],
+  "aid-brainstorm": ["brainstorm", ""],
   "aid-design-architecture": ["design", "architecture"],
   "aid-design-stack": ["design", "stack"],
   "aid-design-testing-strategy": ["design", "testing-strategy"],

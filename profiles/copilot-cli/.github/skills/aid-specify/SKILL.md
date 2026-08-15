@@ -1,11 +1,12 @@
 ---
 name: aid-specify
 description: >
-  Technical specification through conversational refinement, one feature at a time.
-  The agent acts as a tech lead — reads KB, Requirements, and codebase, proposes
-  technical solutions, and builds the spec collaboratively with the user.
-  Writes the Technical Specification into that feature's section of REQUIREMENTS.md §11.
-  State machine: INITIALIZE → CONTINUE → REVIEW → DONE (SPIKE / BLOCKED are loopback states that return to CONTINUE).
+  Turn one feature into a technical specification, collaboratively. Use this skill when a
+  feature has been defined and how it will actually be built needs settling before any task
+  is planned. The agent works as a tech lead: it reads the Knowledge Base, the requirements,
+  and the codebase, proposes a technical approach, and refines it with you, writing the
+  result into that feature's `#### Technical Specification` subsection in REQUIREMENTS.md
+  § 11. One feature at a time.
 allowed-tools: Read, Glob, Grep, shell, Write, Edit
 argument-hint: "work-001/feature-001 (required)  [--reset] clear technical spec for this feature"
 ---

@@ -1,0 +1,204 @@
+{
+  "skill": "aid-design-integration",
+  "shape": "inline-states",
+  "extractor": "inline",
+  "confidence": "derived",
+  "title": "aid-design-integration — state flow",
+  "nodes": [
+    {
+      "id": "n1",
+      "order": 1,
+      "name": "INTAKE",
+      "label": "INTAKE",
+      "kind": "entry",
+      "terminal": null,
+      "provenance": {
+        "file": "canonical/skills/aid-design-integration/SKILL.md",
+        "startLine": 35,
+        "endLine": 45,
+        "sourceKind": "skill",
+        "excerpt": "## State: INTAKE\n\n1. **Require a subject.** Empty argument -> ask one bootstrapping question (\"What\n   integration do you want to design -- the service, its client surface, and its auth and\n   failure modes?\") and wait.\n2. **Allocate** through the Work Initiation Gate exactly as the contract's Allocation rule\n   requires (`canonical/skills/aid-design/SKILL.md` INTAKE step 4 is the shape), with\n   `initiator: aid-design-integration`. `phase` is not driven.\n3. **Acquire `.aid/design/`** per the contract, then read `.aid/design/integration.md` if a\n   prior seed exists -- re-invocation iterates it rather than starting over.\n4. **Classify complexity** for the `aid-architect` dispatch (verifier tier >= producer)."
+      },
+      "detail": {
+        "file": "canonical/skills/aid-design-integration/SKILL.md",
+        "startLine": 35,
+        "endLine": 47,
+        "sourceKind": "skill",
+        "excerpt": "## State: INTAKE\n\n1. **Require a subject.** Empty argument -> ask one bootstrapping question (\"What\n   integration do you want to design -- the service, its client surface, and its auth and\n   failure modes?\") and wait.\n2. **Allocate** through the Work Initiation Gate exactly as the contract's Allocation rule\n   requires (`canonical/skills/aid-design/SKILL.md` INTAKE step 4 is the shape), with\n   `initiator: aid-design-integration`. `phase` is not driven.\n3. **Acquire `.aid/design/`** per the contract, then read `.aid/design/integration.md` if a\n   prior seed exists -- re-invocation iterates it rather than starting over.\n4. **Classify complexity** for the `aid-architect` dispatch (verifier tier >= producer).\n\n**Advance:** DESIGN."
+      }
+    },
+    {
+      "id": "n2",
+      "order": 2,
+      "name": "DESIGN",
+      "label": "DESIGN",
+      "kind": "step",
+      "terminal": null,
+      "provenance": {
+        "file": "canonical/skills/aid-design-integration/SKILL.md",
+        "startLine": 51,
+        "endLine": 59,
+        "sourceKind": "skill",
+        "excerpt": "## State: DESIGN\n\nDispatch **`aid-architect`** (clean context, tiered) to write or iterate\n`.aid/design/integration.md` in the seed shape the contract fixes (`design-seed.md`;\nfeature-002 §4), grounded in `.aid/knowledge/` and the project source plus any seed read\nin INTAKE. What this artifact's seed must settle: **the external service, the\nclient/adapter surface, and the auth and failure modes**; its `## Destination` names where\nthe built client/adapter lands. **Never writes `.aid/knowledge/` and never writes\nproduction code** -- the `design` invariant (`design-lifecycle.md`)."
+      },
+      "detail": {
+        "file": "canonical/skills/aid-design-integration/SKILL.md",
+        "startLine": 51,
+        "endLine": 61,
+        "sourceKind": "skill",
+        "excerpt": "## State: DESIGN\n\nDispatch **`aid-architect`** (clean context, tiered) to write or iterate\n`.aid/design/integration.md` in the seed shape the contract fixes (`design-seed.md`;\nfeature-002 §4), grounded in `.aid/knowledge/` and the project source plus any seed read\nin INTAKE. What this artifact's seed must settle: **the external service, the\nclient/adapter surface, and the auth and failure modes**; its `## Destination` names where\nthe built client/adapter lands. **Never writes `.aid/knowledge/` and never writes\nproduction code** -- the `design` invariant (`design-lifecycle.md`).\n\n**Advance:** VERIFY."
+      }
+    },
+    {
+      "id": "n3",
+      "order": 3,
+      "name": "VERIFY",
+      "label": "VERIFY",
+      "kind": "loop-back",
+      "terminal": null,
+      "provenance": {
+        "file": "canonical/skills/aid-design-integration/SKILL.md",
+        "startLine": 65,
+        "endLine": 68,
+        "sourceKind": "skill",
+        "excerpt": "## State: VERIFY\n\n**Full verify**, as `design-lifecycle.md` defines it. Not clean -> loop to DESIGN; the\n3-cycle circuit breaker there escalates to IMPEDIMENT + `lifecycle: Blocked`."
+      },
+      "detail": {
+        "file": "canonical/skills/aid-design-integration/SKILL.md",
+        "startLine": 65,
+        "endLine": 70,
+        "sourceKind": "skill",
+        "excerpt": "## State: VERIFY\n\n**Full verify**, as `design-lifecycle.md` defines it. Not clean -> loop to DESIGN; the\n3-cycle circuit breaker there escalates to IMPEDIMENT + `lifecycle: Blocked`.\n\n**Advance:** PRESENT."
+      }
+    },
+    {
+      "id": "n4",
+      "order": 4,
+      "name": "PRESENT",
+      "label": "hard stop -- the user decides",
+      "kind": "step",
+      "terminal": null,
+      "provenance": {
+        "file": "canonical/skills/aid-design-integration/SKILL.md",
+        "startLine": 74,
+        "endLine": 77,
+        "sourceKind": "skill",
+        "excerpt": "## State: PRESENT (hard stop -- the user decides)\n\nSet `lifecycle: Paused-Awaiting-Input`. Present the seed clearly. Assert no resolution --\nthe user iterates (re-invoke this skill) or realizes it now (`/aid-create-integration`)."
+      },
+      "detail": {
+        "file": "canonical/skills/aid-design-integration/SKILL.md",
+        "startLine": 74,
+        "endLine": 79,
+        "sourceKind": "skill",
+        "excerpt": "## State: PRESENT (hard stop -- the user decides)\n\nSet `lifecycle: Paused-Awaiting-Input`. Present the seed clearly. Assert no resolution --\nthe user iterates (re-invoke this skill) or realizes it now (`/aid-create-integration`).\n\n**Advance:** DONE."
+      }
+    },
+    {
+      "id": "n5",
+      "order": 5,
+      "name": "DONE",
+      "label": "DONE",
+      "kind": "exit",
+      "terminal": {
+        "advanceType": "UNSPECIFIED",
+        "handoff": null
+      },
+      "provenance": {
+        "file": "canonical/skills/aid-design-integration/SKILL.md",
+        "startLine": 83,
+        "endLine": 86,
+        "sourceKind": "skill",
+        "excerpt": "## State: DONE\n\nSet `lifecycle: Completed`, `updated` now, append a `## Lifecycle History` row. The seed\npersists at `.aid/design/integration.md`; consumption happens at `/aid-create-integration`."
+      },
+      "detail": {
+        "file": "canonical/skills/aid-design-integration/SKILL.md",
+        "startLine": 83,
+        "endLine": 86,
+        "sourceKind": "skill",
+        "excerpt": "## State: DONE\n\nSet `lifecycle: Completed`, `updated` now, append a `## Lifecycle History` row. The seed\npersists at `.aid/design/integration.md`; consumption happens at `/aid-create-integration`."
+      }
+    }
+  ],
+  "edges": [
+    {
+      "from": "n1",
+      "to": "n2",
+      "kind": "sequence",
+      "condition": null,
+      "advanceType": "UNSPECIFIED",
+      "provenance": {
+        "file": "canonical/skills/aid-design-integration/SKILL.md",
+        "startLine": 47,
+        "endLine": 47,
+        "sourceKind": "skill",
+        "excerpt": "**Advance:** DESIGN."
+      }
+    },
+    {
+      "from": "n2",
+      "to": "n3",
+      "kind": "sequence",
+      "condition": null,
+      "advanceType": "UNSPECIFIED",
+      "provenance": {
+        "file": "canonical/skills/aid-design-integration/SKILL.md",
+        "startLine": 61,
+        "endLine": 61,
+        "sourceKind": "skill",
+        "excerpt": "**Advance:** VERIFY."
+      }
+    },
+    {
+      "from": "n3",
+      "to": "n2",
+      "kind": "loop-back",
+      "condition": null,
+      "advanceType": "UNSPECIFIED",
+      "provenance": {
+        "file": "canonical/skills/aid-design-integration/SKILL.md",
+        "startLine": 67,
+        "endLine": 67,
+        "sourceKind": "skill",
+        "excerpt": "**Full verify**, as `design-lifecycle.md` defines it. Not clean -> loop to DESIGN; the"
+      }
+    },
+    {
+      "from": "n3",
+      "to": "n4",
+      "kind": "sequence",
+      "condition": null,
+      "advanceType": "UNSPECIFIED",
+      "provenance": {
+        "file": "canonical/skills/aid-design-integration/SKILL.md",
+        "startLine": 70,
+        "endLine": 70,
+        "sourceKind": "skill",
+        "excerpt": "**Advance:** PRESENT."
+      }
+    },
+    {
+      "from": "n4",
+      "to": "n5",
+      "kind": "sequence",
+      "condition": null,
+      "advanceType": "UNSPECIFIED",
+      "provenance": {
+        "file": "canonical/skills/aid-design-integration/SKILL.md",
+        "startLine": 79,
+        "endLine": 79,
+        "sourceKind": "skill",
+        "excerpt": "**Advance:** DONE."
+      }
+    }
+  ],
+  "entries": [
+    "n1"
+  ],
+  "exits": [
+    "n5"
+  ],
+  "sources": [
+    "canonical/skills/aid-design-integration/SKILL.md"
+  ],
+  "warnings": []
+}
