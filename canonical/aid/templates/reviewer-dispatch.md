@@ -65,6 +65,28 @@ An **explicit file list**. The reviewer reads + grades exactly these files. No
 wildcards beyond the artifact set (e.g., `canonical/aid/templates/kb-authoring/*.md` is
 fine if the entire directory is in scope; `canonical/**` is too broad).
 
+**From cycle 2 this section carries TWO labelled lists, not one.** Cycle 1 and the final
+full pass carry a single unlabelled list, unchanged.
+
+```
+ARTIFACTS UNDER REVIEW:
+  VERIFY (full -- every existing ledger row is re-checked against these):
+    - (every file named in a ledger row's Doc column; plus the whole cycle-1
+       set if any row's Doc is `—`)
+  HUNT (scoped -- look for NEW findings only here):
+    - (what the previous FIX changed, plus the files that reference it)
+```
+
+The two exist because a cycle does two jobs and only one is expensive. Verifying a
+`Pending` row is a targeted disk check and stays FULL — scoping it would break `Recurred`
+detection. Hunting for new findings is what forced a full re-scan every cycle, and that is
+the half that becomes scoped. The split, the derivation of each set, and the guards are
+defined once in `reviewer-ledger-schema.md § Two sets from cycle 2`; this section carries
+them, it does not redefine them.
+
+A reviewer given two labelled lists must not hunt outside the HUNT list, and must not skip
+any file in the VERIFY list.
+
 The reviewer MUST NOT open any file not listed here, except to:
 - Resolve a citation reference (e.g., a docfile cites `path/to/foo.sh:42` — the
   reviewer may open `foo.sh` to verify the citation but does not grade `foo.sh`)
@@ -198,6 +220,13 @@ RUBRIC:
 
 When no pre-defined rubric exists (one-off reviews like Phase A foundation),
 the brief enumerates the checks inline.
+
+**On a scoped cycle the criteria resolve against the scoped surface.** Criteria resolution
+is scope-free by construction — a file's resolved list depends only on its path and
+frontmatter, never on its content — so the list for a section IS the list for its file, and
+scoping the hunt needs no change to resolution. What changes is only WHICH files the
+reviewer resolves criteria for on that cycle: the VERIFY set in full, and the HUNT set for
+new findings.
 
 **A named rubric does not replace the artifact's declared criteria — the two compose.**
 The rubric says how to review a *class* of artifact; the criteria say what *this* file

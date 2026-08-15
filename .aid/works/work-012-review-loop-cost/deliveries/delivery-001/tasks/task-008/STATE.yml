@@ -45,9 +45,9 @@
 # one -- never self-written by the task being executed.)
 
 # [W] Pending | In Progress | In Review | Blocked | Done | Failed | Canceled
-state: Pending
+state: Done
 # [W]
-review: --
+review: 'FR-3 landed -- THE AC-1 MEASUREMENT SPLIT POINT. Cycle 1 unchanged; verification FULL incl. the Doc dash widening; hunt scoped; grade.sh byte-identical'
 # [W] HH:MM | --
 elapsed: --
 # [W]
