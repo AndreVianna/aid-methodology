@@ -189,6 +189,51 @@ qa:
       out because the rule governs artifacts, so they are out of scope rather than clean.
     decided_by: agent
     updated: '2026-08-15'
+  - id: Q20
+    question: 'Is removing PLAN.md from the Lite path a saving or a transfer?'
+    state: Resolved
+    answer: |
+      Mostly a saving, and worth doing -- but the measurement changed the reasoning, so
+      the recommendation now rests on numbers rather than instinct.
+
+      At Lite dimensions (1 feature, 1 delivery, 3 tasks, 5 cycles): ~94k tokens, ~11%.
+      The transfer is real but small -- the delivery definition is a DECISION and still
+      needs reviewing, so it moves into REQUIREMENTS (+9k on that gate, +2k on grounding).
+      Only the execution graph is a true removal, since derive-waves.sh --from-tasks
+      reconstructs it from each task's `**Depends on:**`.
+
+      The split is measured, not assumed: 943 B of a 1325 B PLAN.md body is definition
+      (flattened-plan-template.md, instructional header excluded). CONSERVATIVE against
+      removal -- the one-task baseline, where the graph is smallest.
+
+      Two things measurement showed that instinct had wrong:
+
+        The saving is a roughly FIXED quantity -- one cycle-multiplied gate point -- not
+        a proportion. It grows with cycles (5% at 1, 13% at 7) and SHRINKS as a share as
+        tasks rise (14% at 1 task, 6% at 12). It pays best exactly where Lite lives:
+        small works that still get properly reviewed.
+
+        At ONE review cycle it barely pays, and on the test fixture it is NEGATIVE
+        (-7910 B). With no cycles to multiply, the removed gate point saves nothing while
+        the transfer still costs. A shortcut run with review disabled would be made worse
+        by this change.
+
+      A correction worth recording, because it nearly became a false justification. The
+      first draft of CM38 asserted the change is a NET LOSS at full-path dimensions --
+      true on the fixture, whose agent briefs are deliberately tiny, and NOT true at repo
+      scale, where the real dispatch floors make the removed gate point dominate. Sign
+      depends on the floor-to-artifact ratio. The assertion now compares SHARES, which
+      holds at both scales. Had it shipped as drafted, the Lite-only scope would have
+      been defended with a reason that does not survive contact with the real repo.
+
+      RECOMMENDATION: proceed, via the in-process port (option b), NOT materialization.
+      A materialized derived view drifts from its source unless regenerated on every
+      read, which is the failure this work exists to remove. Both reader twins already
+      open every task DETAIL.md for short_name and type, so the port is one more field
+      plus a sort -- and the title parity harness from AC-12 part 2 extends to cover it.
+      Five new assertions (33 -> 38) guard the shape of the answer.
+    decided_by: agent
+    updated: '2026-08-15'
   - id: Q19
     question: 'Item 8: can the Lite execution graph be derived from task DETAILs?'
     state: Resolved
