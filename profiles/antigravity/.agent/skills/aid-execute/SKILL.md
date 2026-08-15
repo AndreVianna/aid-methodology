@@ -47,9 +47,9 @@ Read the type. Do the work. Review it. Fix it. Ship it.
    `<path>\t<status>`), and enter the returned path. Keep the defensive empty-path/non-zero
    backstop that stops rather than operate blindly — it should not fire against the real helper.
    Never create a new worktree — creation belongs to the work-starting skills only.
-4. **Detect the layout** (per-work, presence-based; additive — does not change the full-path resolution below):
+4. **Detect the layout** (per-work, DECLARED first; additive — does not change the full-path resolution below). Read `pipeline.path` from the work-root `STATE.yml`: `lite` → flat, `full` → nested. Infer from file presence ONLY when no value is declared, which means an un-migrated work:
    - **Full path (nested):** `.aid/works/{work}/deliveries/` exists → tasks live at `deliveries/delivery-NNN/tasks/task-NNN/DETAIL.md`.
-   - **Flat path (feature-001, single-delivery):** a work-root `BLUEPRINT.md` present AND `.aid/works/{work}/tasks/task-NNN/DETAIL.md` exists directly under the work root AND no `deliveries/` wrapper under it → the delivery is always the synthesized `delivery-001` (no per-task `STATE.yml`; task mutable cells live in the work-root `STATE.yml`'s `tasks_lifecycle` mapping instead — see `## Workspace` below).
+   - **Flat path (feature-001, single-delivery):** `.aid/works/{work}/tasks/task-NNN/DETAIL.md` exists directly under the work root AND no `deliveries/` wrapper under it → the delivery is always the synthesized `delivery-001` (no per-task `STATE.yml`; task mutable cells live in the work-root `STATE.yml`'s `tasks_lifecycle` mapping instead — see `## Workspace` below).
 5. Find the task definition at the layout-appropriate path from step 4.
 6. Task not found → **STOP.** List available tasks.
 
@@ -233,15 +233,15 @@ dispatch in this skill.
             task-NNN/
               DETAIL.md         ← PRIMARY INPUT (task definition: Type, Scope, AC)
               STATE.yml          ← task mutable state: state, review, elapsed, notes
-      features/
-        feature-NNN-{name}/
-          SPEC.md             ← architectural constraints (full path only)
+      REQUIREMENTS.md        ← § 11 `### Feature NNN` sections: architectural
+                             #  constraints (full path only)
 ```
 
-**Flat (single-delivery) layout — feature-001.** Detected by: a work-root
-`BLUEPRINT.md` present AND `tasks/task-NNN/DETAIL.md` present directly under
-the work root AND no `deliveries/` wrapper under it. Additive alongside the
-full path above (AC-9 — no regression):
+**Flat (single-delivery) layout — feature-001.** Detected by `pipeline.path: lite`
+in the work-root `STATE.yml`; for an un-migrated work that declares nothing, inferred
+from `tasks/task-NNN/DETAIL.md` present directly under the work root AND no
+`deliveries/` wrapper under it. Additive alongside the full path above (AC-9 — no
+regression):
 
 ```
 .aid/
@@ -251,12 +251,12 @@ full path above (AC-9 — no regression):
                                  delivery_lifecycle (tasks_lifecycle) /
                                  delivery_gate AUTHORED keys (single writer;
                                  replaces delivery-NNN/STATE.yml + per-task STATE.yml)
-      REQUIREMENTS.md          ← requirements
-      SPEC.md                  ← the single feature spec (no features/ folder)
-      PLAN.md                  ← the single delivery's Deliverables + top-level
-                                 ## Execution Graph (no ### delivery-NNN heading)
-      BLUEPRINT.md              ← the single delivery definition: objective, scope,
-                                 Gate Criteria, task listing, dependencies
+      REQUIREMENTS.md          ← requirements; § 11 carries the single feature section
+      SPEC.md                  ← the single feature spec
+      PLAN.md                  ← the single delivery: its Deliverables stanza, which IS
+                                 the delivery definition (objective, scope, Gate
+                                 Criteria), plus the top-level ## Execution Graph
+                                 (no ### delivery-NNN heading)
       tasks/
         task-NNN/
           DETAIL.md            ← PRIMARY INPUT (task definition: Type, Scope, AC);
@@ -265,7 +265,7 @@ full path above (AC-9 — no regression):
 ```
 
 Branch is synthesized `aid/{work}-delivery-001` (Check 5); delivery gate criteria
-come from work-root `BLUEPRINT.md § Gate Criteria` (see
+come from the delivery's stanza in `PLAN.md` (see
 `references/state-delivery-gate.md`).
 
 **Ephemeral worktrees (pool dispatch PD-2):** `.aid/.worktrees/task-NNN/` are

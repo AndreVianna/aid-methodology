@@ -97,9 +97,10 @@ the same tier reviewer).
 ### Complexity Score Computation
 
 Read the delivery's Execution Graph from:
-- **Flat path (feature-001, single-delivery)** — detected by: a work-root
-  `BLUEPRINT.md` present AND `tasks/task-NNN/DETAIL.md` present directly
-  under the work root AND no `deliveries/` wrapper under it → the top-level
+- **Flat path (feature-001, single-delivery)** — detected by `pipeline.path: lite`
+  in the work-root `STATE.yml`, or for an un-migrated work by
+  `tasks/task-NNN/DETAIL.md` present directly under the work root AND no
+  `deliveries/` wrapper under it → the top-level
   `## Execution Graph` in the work-root `PLAN.md` (no
   `### delivery-NNN` heading; the single delivery is implicit).
 - **Full path** — otherwise, `PLAN.md` in the work directory (`#### Execution
@@ -188,10 +189,10 @@ Then append the gate-specific prompt below. The reviewer reads directly from sou
 - **Feature specification(s)** — the `### Feature NNN` subsections of
   `.aid/works/{work}/REQUIREMENTS.md § 11`, each carrying its own technical
   specification. Read only the sections claimed by this delivery, not all of § 11.
-- **Delivery-level acceptance criteria:**
-  - Full path: from the delivery's `BLUEPRINT.md § Gate Criteria`
-  - Flat path: from the work-root `BLUEPRINT.md § Gate Criteria`
-  - Lite path: from work-root `SPEC.md`
+- **Delivery-level acceptance criteria** — the `**Gate Criteria**` list in the
+  delivery's own stanza in `PLAN.md`. Same location on every layout: on the full path
+  under that delivery's `### delivery-NNN` heading, on the flat path in the single
+  `## Deliverables` entry (which carries no such heading by design).
 - **`delivery-NNN-issues.md`** — the deferred `[HIGH]` prior context (from
   AGGREGATE). Read as context only; the reviewer produces its own fresh list.
 - **KB docs via INDEX.md** — load relevant docs per INDEX summaries
@@ -402,8 +403,8 @@ bash .codex/aid/scripts/execute/writeback-state.sh --delivery-id NNN --block "BL
 > STATE.yml). The work-level Delivery Gates view is DERIVED at read time
 > as the union of all delivery `delivery_gate.issue_list` sequences + `gate_*` scalars.
 >
-> **Flat path (feature-001, single-delivery):** with a work-root `BLUEPRINT.md`
-> present and no `deliveries/` wrapper (`--delivery-id 001`), the SAME helper
+> **Flat path (feature-001, single-delivery):** on a work declaring
+> `pipeline.path: lite` with no `deliveries/` wrapper (`--delivery-id 001`), the SAME helper
 > calls instead target the work-root `STATE.yml`'s own frontmatter scalars + the
 > singular AUTHORED `delivery_gate.issue_list` key directly (there is exactly
 > one delivery, so the disjoint-write concern above does not apply — see

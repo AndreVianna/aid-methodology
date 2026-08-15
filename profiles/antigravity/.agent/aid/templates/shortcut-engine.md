@@ -511,30 +511,37 @@ Append an entry to the `lifecycle_history` sequence:
 
 ## State: PLAN
 
-Collapses **Plan**. Authors the single work-root `PLAN.md` (one delivery;
-`## Deliverables` + a scaffolded top-level `## Execution Graph`) and the single
-work-root `BLUEPRINT.md` (the delivery definition: objective, scope, **Gate
-Criteria**, a placeholder task listing, dependencies). No multi-delivery planning; the
-delivery is always the synthesized `delivery-001` (feature-001, the lite-path
-convention). FR-3.
+Collapses **Plan**. Authors the single work-root `PLAN.md`: one `## Deliverables` entry
+that IS the delivery definition (objective, scope, **Gate Criteria**), plus a scaffolded
+top-level `## Execution Graph`. No multi-delivery planning; the delivery is always the
+synthesized `delivery-001` (feature-001, the lite-path convention). FR-3.
 
 ### Step 1: Emit pipeline phase
 
 Same three `writeback-state.sh --pipeline` calls as SPEC Step 1, with
 `--field Phase --value Plan`.
 
-### Step 2: Dispatch aid-architect to author PLAN.md + BLUEPRINT.md
+### Step 2: Dispatch aid-architect to author PLAN.md
 
 Dispatch `aid-architect` (Large) with: `SPEC.md` (just written), REQUIREMENTS.md §10
-Priority. The agent writes, in this order:
-
-**a. `.aid/works/{work}/PLAN.md`**, seeded from
+Priority. The agent writes `.aid/works/{work}/PLAN.md`, seeded from
 `.agent/aid/templates/delivery-plans/flattened-plan-template.md`:
 
 - `## Deliverables`: one entry -- `**Delivery:** delivery-001 -- {Name}`;
   `**What it delivers:**` (from SPEC.md `## Description`); `**Features:**
-  feature-001-{slug}` (the single implicit feature; no `features/` folder exists on
-  disk); `**Depends on:** -- (none)`; `**Priority:**` (from REQUIREMENTS.md §10).
+  feature-001-{slug}` (the single implicit feature); `**Depends on:** -- (none)`;
+  `**Priority:**` (from REQUIREMENTS.md §10).
+- In that SAME entry, the delivery definition:
+  - `**Objective:**` / `**Scope:**` / `**Out of scope:**`: from SPEC.md
+    `## Description` + `## Acceptance Criteria`.
+  - `**Gate Criteria**`: translate each SPEC.md Acceptance Criterion into a concrete,
+    independently-testable delivery gate criterion, plus the two standing criteria
+    every delivery carries: `- [ ] All tasks in delivery-001 are Done or Canceled.`
+    and `- [ ] All section-6 quality gates pass.` This is where the flat layout's
+    gate criteria live -- in `PLAN.md`, not `STATE.yml`.
+  - `**Notes:**` `Shortcut-generated flattened Lite work. Source: /{name} ({verb},
+    artifact '{artifact}').`
+  Do NOT write a task listing. It is derived from each task's `**Source:**` field.
 - `## Execution Graph`: copy the template's scaffold as-is for now (`task-001` /
   `Wave 1: task-001` placeholder rows) -- DETAIL overwrites this with the real task
   list once the task breakdown is decided (mirrors the full-path precedent:
@@ -542,26 +549,6 @@ Priority. The agent writes, in this order:
   `.agent/skills/aid-detail/references/execution-graph-generation.md`). Do not
   add any `### delivery-NNN` subsection heading (feature-001's parser-compatibility
   constraint).
-
-**b. `.aid/works/{work}/BLUEPRINT.md`**, seeded from
-`.agent/aid/templates/delivery-blueprint-template.md`, placed at the work root
-(not under a `deliveries/delivery-NNN/` folder -- the flattened layout has no such
-wrapper):
-
-- `**Delivery:** delivery-001`; `**Work:** work-NNN-{slug}`; `**Created:** {today}`.
-- `## Objective` / `## Scope` / `## Out of scope`: from SPEC.md `## Description` +
-  `## Acceptance Criteria`.
-- `## Gate Criteria`: translate each SPEC.md Acceptance Criterion into a concrete,
-  independently-testable delivery gate criterion, plus the two standing criteria
-  every delivery carries: `- [ ] All tasks in delivery-001 are Done or Canceled.` and
-  `- [ ] All section-6 quality gates pass.` This is where the flat layout's gate
-  criteria live (feature-001, not `STATE.yml`).
-- `## Tasks`: a placeholder row (`| task-NNN | {TYPE} | {Title} |`) -- the same
-  convention `aid-plan`'s own BLUEPRINT authorship uses for a delivery whose tasks
-  are not decided yet. DETAIL replaces this with the real list.
-- `## Dependencies`: `-- (none)` / `-- (none)` (single delivery).
-- `## Notes`: `Shortcut-generated flattened Lite work. Source: /{name} ({verb},
-  artifact '{artifact}').`
 
 ### Step 3: Initialize `delivery_lifecycle` (direct edit)
 
@@ -590,7 +577,7 @@ design note below.
 Append an entry to the `lifecycle_history` sequence:
 ```
 - date: '{today}'
-  event: 'PLAN complete -- PLAN.md + BLUEPRINT.md written'
+  event: 'PLAN complete -- PLAN.md written'
   grade: --
   notes: '/{name} PLAN'
 ```
@@ -603,8 +590,8 @@ Append an entry to the `lifecycle_history` sequence:
 
 Collapses **Detail**. Decides the task breakdown, emits `tasks/task-NNN/DETAIL.md` per
 task (bold `**Type:**` shape; no per-task `STATE.yml`), fills PLAN.md's real
-`## Execution Graph`, completes BLUEPRINT.md's real `## Tasks` table, and promotes each
-task into the work-root `STATE.yml`'s `tasks_lifecycle` mapping. FR-4, FR-17.
+`## Execution Graph`, and promotes each task into the work-root `STATE.yml`'s
+`tasks_lifecycle` mapping. FR-4, FR-17.
 
 ### Step 1: Emit pipeline phase
 
@@ -613,8 +600,8 @@ Same three `writeback-state.sh --pipeline` calls as SPEC/PLAN Step 1, with
 
 ### Step 2: Dispatch aid-architect to decide + write the task breakdown
 
-Dispatch `aid-architect` (Large) with: SPEC.md `## Acceptance Criteria`, BLUEPRINT.md
-`## Gate Criteria`, and the family scaffolding pointer's default task-breakdown
+Dispatch `aid-architect` (Large) with: SPEC.md `## Acceptance Criteria`, PLAN.md's
+delivery stanza `**Gate Criteria**`, and the family scaffolding pointer's default task-breakdown
 guidance (e.g. `shortcut-scaffolding/fix.md`'s "task-001 IMPLEMENT -> task-002 TEST,
 depends task-001"). The agent:
 
@@ -653,9 +640,6 @@ placeholder): `### Task Dependencies` (`| Task | Depends On |`) and
 1-column-group-plus-`wave-map`-fence shape from `execution-graph-generation.md` -- the
 two layouts intentionally differ here). Still zero `### delivery-NNN` subsection
 headings.
-
-**d. Completes BLUEPRINT.md's real `## Tasks` table** (replacing the PLAN-state
-placeholder row) with the final `| task-NNN | {Type} | {Title} |` list.
 
 ### Step 3: Promote task cells into `tasks_lifecycle` (direct edit)
 
@@ -737,7 +721,7 @@ REVIEW -> GRADE -> FIX loop (Step 4 below) with this pass's own brief
 content:
 
 - **ARTIFACTS UNDER REVIEW:** `.aid/works/{work}/REQUIREMENTS.md`,
-  `.aid/works/{work}/SPEC.md`, `.aid/works/{work}/PLAN.md`, `.aid/works/{work}/BLUEPRINT.md`.
+  `.aid/works/{work}/SPEC.md`, `.aid/works/{work}/PLAN.md`.
 - **CONTEXT:** these are the collapsed-lifecycle definition documents for a
   direct-entry shortcut work (`/{name}` binds `{verb}`/`{artifact}`); a
   single feature, a single delivery (feature-001's flattened shape); the
@@ -746,8 +730,8 @@ content:
   the shortcut engine; `reviewer-dispatch.md § One-off reviews`) internal
   consistency across the four documents; every `SPEC.md` Acceptance
   Criterion traces back to a `REQUIREMENTS.md` requirement and forward to a
-  `BLUEPRINT.md § Gate Criteria` line; no fabricated content standing in for
-  a genuine `*(pending)*`/`N/A` gap; `PLAN.md`/`BLUEPRINT.md` carry no
+  `PLAN.md` delivery-stanza `**Gate Criteria**` line; no fabricated content standing
+  in for a genuine `*(pending)*`/`N/A` gap; `PLAN.md` carries no
   `### delivery-NNN` subsection heading (feature-001's parser-compatibility
   constraint).
 - **OUT OF SCOPE:** every `tasks/task-NNN/DETAIL.md` (Pass 2's own scope,
@@ -774,7 +758,7 @@ content:
   -- `reviewer-dispatch.md § Deriving {{ARTIFACTS}}`).
 - **CONTEXT:** the task breakdown for the same shortcut work, whose
   definition documents already cleared Pass 1; each task traces to a
-  `SPEC.md` Acceptance Criterion and a `BLUEPRINT.md § Gate Criteria` line.
+  `SPEC.md` Acceptance Criterion and a `PLAN.md` delivery-stanza `**Gate Criteria**` line.
 - **RUBRIC:** (one-off, as Pass 1) each `DETAIL.md` carries exactly one bold
   `**Type:**` (never mixed across tasks of the same shortcut unless the
   family scaffolding calls for it -- `artifact-schemas.md § Task DETAIL.md`),
@@ -783,7 +767,7 @@ content:
   matching the natural ordering, and `**Acceptance Criteria:**` each naming an
   observable and ending in `All section-6 quality gates pass.`; no sibling `STATE.md` exists for any task (the flat layout has
   none by design).
-- **OUT OF SCOPE:** `REQUIREMENTS.md`/`SPEC.md`/`PLAN.md`/`BLUEPRINT.md`
+- **OUT OF SCOPE:** `REQUIREMENTS.md`/`SPEC.md`/`PLAN.md`
   (Pass 1's own scope, already cleared -- re-litigating them here is scope
   leak the reviewer must not re-grade); every state file, at any of the
   three levels and either `STATE.md`/`STATE.yml` extension -- a state file
@@ -858,7 +842,7 @@ Once both passes clear, append **two** entries to the work-root `STATE.yml`'s
 `lifecycle_history` sequence (append-only; the same sequence CAPTURE/SPEC/PLAN/DETAIL
 already append to above) -- **distinct from** the post-execution
 `delivery_gate` key, which `/aid-execute` fills later from
-`BLUEPRINT.md § Gate Criteria` (feature-004 § "Where grades are recorded" --
+`PLAN.md`'s delivery-stanza `**Gate Criteria**` (feature-004 § "Where grades are recorded" --
 in the flattened layout there is no `features/{feature}/SPEC.md`, so the
 DERIVED Features State Spec-Grade column does not apply; `lifecycle_history` is the
 authoritative record of these definition-phase gates):
@@ -905,7 +889,7 @@ Print a summary the user can approve or reject:
 [State: APPROVAL-HALT] -- flattened work ready for approval; nothing has executed.
 
 work-{NNN}-{slug}  (/{name})
-  REQUIREMENTS.md  SPEC.md  PLAN.md  BLUEPRINT.md
+  REQUIREMENTS.md  SPEC.md  PLAN.md
   tasks/
     task-001  {Type}  {Title}
     task-002  {Type}  {Title}
@@ -948,11 +932,11 @@ strategy asserts both).
   (the pagination + endpoint shape already answer §5/§9); writes `REQUIREMENTS.md`.
 - SPEC: `shortcut-scaffolding/create.md`'s `api` guidance (once landed) activates
   `### API Contracts`; writes `SPEC.md`.
-- PLAN: writes `PLAN.md` (delivery-001 stanza + scaffold graph) + `BLUEPRINT.md`
-  (objective/scope/gate criteria; placeholder tasks table).
+- PLAN: writes `PLAN.md` -- the delivery-001 stanza carrying the delivery definition
+  (objective/scope/gate criteria) plus the scaffold graph.
 - DETAIL: proposes `task-001 IMPLEMENT` (endpoint + handler + validation); writes
-  `tasks/task-001/DETAIL.md`; fills the real Execution Graph (`task-001`, wave 1) and
-  BLUEPRINT Tasks table; promotes `| task-001 | Pending | -- | -- | -- |`.
+  `tasks/task-001/DETAIL.md`; fills the real Execution Graph (`task-001`, wave 1);
+  promotes `| task-001 | Pending | -- | -- | -- |`.
 - Halts pre-Execute (GATE/APPROVAL-HALT, task-011) -- FR-3/FR-4/FR-6/FR-10.
 
 ## Unit-testable cases

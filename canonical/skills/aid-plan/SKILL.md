@@ -42,15 +42,13 @@ Each deliverable follows the same cycle:
     STATE.md                <- minimum grade
   work-NNN-{name}/
     STATE.yml                <- frontmatter-zone keys (authored); Plan/Deliveries is DERIVED (never written here)
-    REQUIREMENTS.md         <- read
-    PLAN.md                 <- OUTPUT: execution graph (delivery stanzas)
+    REQUIREMENTS.md         <- read; § 11 holds the `### Feature NNN` sections
+                            #  (check Features State in work STATE.yml)
+    PLAN.md                 <- OUTPUT: delivery stanzas (each one the delivery
+                            #  definition: objective, scope, gate criteria) + execution graph
     deliveries/
       delivery-NNN/           <- CREATED by aid-plan per delivery approved in PLAN.md
-        BLUEPRINT.md          <- OUTPUT: delivery definition (scope, gate criteria, tasks, dependencies)
         STATE.yml              <- OUTPUT: delivery lifecycle (initial delivery_state: Pending-Spec) + gate key + qa key
-    features/
-      feature-NNN-{name}/
-        SPEC.md             <- read (check Features State in work STATE.yml)
 ```
 
 > Note: `deliveries/delivery-NNN/` must exist before `aid-detail` nests `tasks/task-NNN/` under it.
@@ -108,7 +106,7 @@ Do NOT rely on memory from previous runs. ALWAYS read the actual files on disk.
 
 - No PLAN.md → **FIRST-RUN**
 - PLAN.md exists, grade below minimum or not yet graded → **REVIEW**
-- PLAN.md exists, graded >= minimum, delivery folders (`deliveries/delivery-NNN/BLUEPRINT.md` + `deliveries/delivery-NNN/STATE.yml`) written for all deliverables -> **DONE**
+- PLAN.md exists, graded >= minimum, `deliveries/delivery-NNN/STATE.yml` written for all deliverables -> **DONE**
 
 Print the state-entry line and "you are here" map:
 
@@ -179,9 +177,14 @@ Plan is approved and up to date. Run /aid-plan again with --reset to restart.
 
 ## Output
 
-`aid-plan` produces three artifact types when a delivery is approved:
+`aid-plan` produces two artifact types when a delivery is approved:
 
-### 1. `.aid/works/{work}/PLAN.md` (execution graph)
+### 1. `.aid/works/{work}/PLAN.md` (deliveries + execution graph)
+
+Each `### delivery-NNN` stanza IS the delivery definition -- objective, scope, and
+gate criteria live in the stanza, not in a sibling file. A delivery's task listing
+and its dependency edges are DERIVED (from each task's `**Source:**` field and from
+the `**Depends on:**` field below), so neither is restated here.
 
 ```markdown
 # Plan -- {Work Name}
@@ -194,11 +197,37 @@ Plan is approved and up to date. Run /aid-plan again with --reset to restart.
 - **Depends on:** --
 - **Priority:** Must
 
+**Objective:** {one paragraph: what this delivery achieves and why it is scoped as a distinct unit}
+
+**Scope:** {bounded list of what is IN scope, citing features or `AC-N` ids}
+**Out of scope:** {anything explicitly excluded, to avoid scope creep}
+
+**Gate Criteria** -- the ordered rubric the delivery gate evaluates; each concrete and
+independently testable, each naming an observable (see
+`canonical/aid/templates/requirements/requirements-template.md § Verifiable Acceptance Criteria`):
+
+- [ ] {Criterion 1 -- concrete and testable}
+- [ ] {Criterion 2 -- concrete and testable}
+- [ ] All section-6 quality gates pass
+
+**Notes:** {constraints or references not captured by the gate criteria; keep brief --
+detailed design belongs in the task DETAIL.md files. Omit when there are none.}
+
 ### delivery-002: {Name}
 - **What it delivers:** {user-facing value}
 - **Features:** feature-002-{name}
 - **Depends on:** delivery-001
 - **Priority:** Must
+
+**Objective:** {...}
+
+**Scope:** {...}
+**Out of scope:** {...}
+
+**Gate Criteria**
+
+- [ ] {Criterion 1}
+- [ ] All section-6 quality gates pass
 
 ## Cross-Cutting Risks
 
@@ -217,15 +246,10 @@ Plan is approved and up to date. Run /aid-plan again with --reset to restart.
 *(Omit if all features included.)*
 ```
 
-### 2. `.aid/works/{work}/deliveries/delivery-NNN/BLUEPRINT.md` (delivery definition)
+A delivery with zero tasks (e.g. a SPIKE) still carries a full stanza: the objective
+and gate criteria are what make it a delivery, and neither depends on tasks existing.
 
-Seeded from `canonical/aid/templates/delivery-blueprint-template.md` with the delivery's
-objective, scope, gate criteria, tasks placeholder, and dependencies filled in from
-the approved PLAN.md stanza. Written immediately after writing the delivery stanza
-to PLAN.md (Step 4 of The Loop). A delivery with zero tasks (e.g. a SPIKE) gets an
-empty Tasks table -- the BLUEPRINT still records the delivery's objective and gate criteria.
-
-### 3. `.aid/works/{work}/deliveries/delivery-NNN/STATE.yml` (delivery lifecycle)
+### 2. `.aid/works/{work}/deliveries/delivery-NNN/STATE.yml` (delivery lifecycle)
 
 Seeded from `canonical/aid/templates/delivery-state-template.yml` with:
 - `delivery_state: Pending-Spec`  (SD-8: delivery's own independent lifecycle; NOT derived from tasks)
@@ -251,6 +275,6 @@ The work `STATE.yml`'s Plan/Deliveries view is DERIVED (read-only at read time);
 - [ ] Cross-cutting risks only if real
 - [ ] User approved the sequence
 - [ ] Each deliverable was reviewed after writing (step 4)
-- [ ] deliveries/delivery-NNN/BLUEPRINT.md written for every delivery (including zero-task SPIKE deliveries)
+- [ ] Every delivery stanza carries an objective, scope, and gate criteria (including zero-task SPIKE deliveries)
 - [ ] deliveries/delivery-NNN/STATE.yml written for every delivery with delivery_state: Pending-Spec
 - [ ] No delivery rows written into the work STATE.yml (Plan/Deliveries is DERIVED)

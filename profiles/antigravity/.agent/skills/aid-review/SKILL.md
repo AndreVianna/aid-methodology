@@ -60,7 +60,7 @@ is unambiguous. Record the target, method, and tentative delivery; go straight t
 | file / dir path | static review vs KB + coding-standards | findings report |
 | "my changes" / working tree / staged | working-diff review | findings report |
 | commit SHA / range / branch | diff review | findings report or PR comment |
-| `work-NNN` or an AID artifact (SPEC/PLAN/DETAIL/BLUEPRINT) | review vs its acceptance criteria + KB | findings in the work folder |
+| `work-NNN` or an AID artifact (REQUIREMENTS/SPEC/PLAN/DETAIL) | review vs its acceptance criteria + KB | findings in the work folder |
 | a KB doc (`.aid/knowledge/*.md`) | review vs the KB-authoring rubric | findings report |
 
 **Guided path** -- target open-ended (a UI, a BDD-scenario set, "is my auth sound?"),

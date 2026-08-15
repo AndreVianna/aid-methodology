@@ -557,18 +557,33 @@ run_test_8() {
         return
     fi
 
-    if grep -qF "from the delivery's \`BLUEPRINT.md § Gate Criteria\`" "$gate_doc"; then
-        pass "Test 8a: state-delivery-gate.md resolves Full-path delivery acceptance criteria from BLUEPRINT.md § Gate Criteria"
+    # 8a/8b are INVERTED from their original sense, and the inversion is the point.
+    #
+    # They were written when the delivery definition lived in its own BLUEPRINT.md:
+    # reading gate criteria from PLAN.md was then a real mis-wire, because PLAN.md
+    # sequenced deliveries while BLUEPRINT.md defined them. 8b existed to catch a
+    # regression back to that bug.
+    #
+    # BLUEPRINT.md is now retired and the delivery definition -- objective, scope,
+    # Gate Criteria -- lives in the delivery's own stanza in PLAN.md. So PLAN.md is
+    # the correct source, and a surviving BLUEPRINT.md reference is the defect. Both
+    # assertions flip rather than being deleted: the invariant they protect (criteria
+    # come from exactly ONE named place, and the doc says which) is unchanged.
+
+    # Matched WITHOUT a leading "the": the sentence wraps, and "the" ends the previous
+    # line. grep -F is line-scoped, so the pattern must not straddle the break.
+    if grep -qF 'delivery'"'"'s own stanza in `PLAN.md`' "$gate_doc"; then
+        pass "Test 8a INVERTED: state-delivery-gate.md resolves delivery acceptance criteria from the PLAN.md delivery stanza"
     else
-        fail "Test 8a: state-delivery-gate.md resolves delivery acceptance criteria from BLUEPRINT.md" \
+        fail "Test 8a INVERTED: state-delivery-gate.md resolves delivery acceptance criteria from the PLAN.md delivery stanza" \
              "Expected string not found in $gate_doc"
     fi
 
-    if grep -qF "from \`PLAN.md\` (the delivery's acceptance criteria block)" "$gate_doc"; then
-        fail "Test 8b: mis-wire regression -- state-delivery-gate.md still reads criteria from PLAN.md" \
-             "Old PLAN.md criteria-block wording found in $gate_doc"
+    if grep -qF "BLUEPRINT" "$gate_doc"; then
+        fail "Test 8b INVERTED: state-delivery-gate.md still references the retired BLUEPRINT.md" \
+             "BLUEPRINT reference found in $gate_doc"
     else
-        pass "Test 8b: state-delivery-gate.md no longer reads delivery criteria from PLAN.md (mis-wire fixed)"
+        pass "Test 8b INVERTED: state-delivery-gate.md carries no reference to the retired BLUEPRINT.md"
     fi
 }
 

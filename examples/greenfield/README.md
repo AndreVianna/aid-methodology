@@ -311,16 +311,10 @@ After the full pipeline, the `tasktracker` project has:
 .aid/
   settings.yml
   work-001-tasktracker-api/
-    REQUIREMENTS.md
+    REQUIREMENTS.md        # § 11 holds one `### Feature NNN` section per feature:
+                           #   authentication, task-crud, list-filter
     PLAN.md
-    STATE.md
-    features/
-      f1-authentication/
-        SPEC.md
-      f2-task-crud/
-        SPEC.md
-      f3-list-filter/
-        SPEC.md
+    STATE.yml
     tasks/
       task-001.md  ...  task-018.md
 ```

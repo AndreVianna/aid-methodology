@@ -139,8 +139,8 @@ touches (the removal's real substance, mirroring `aid-refactor`'s own
 | `task-003` | TEST | full suite run confirms no residual reference and no regression; depends on `task-002` |
 
 Fold `task-002`/`task-003` into `task-001` only when the capture step found zero
-dependents (genuinely dead code) -- state that explicitly in `BLUEPRINT.md § Scope`
-when it applies. One type per task still holds
+dependents (genuinely dead code) -- state that explicitly in the delivery stanza's
+`**Scope:**` field in `PLAN.md` when it applies. One type per task still holds
 (`artifact-schemas.md § Task DETAIL.md`).
 
 ## `aid-deprecate` -- CAPTURE

@@ -232,9 +232,10 @@ operation requires.
    configured `MaxConcurrent` from step 1 as the effective value.
 
 3. **Locate the Execution Graph:**
-   - **Flat path (feature-001, single-delivery)** — detected by: a work-root
-     `BLUEPRINT.md` present AND `tasks/task-NNN/DETAIL.md` present directly
-     under the work root AND no `deliveries/` wrapper under it → read the
+   - **Flat path (feature-001, single-delivery)** — detected by `pipeline.path: lite`
+     in the work-root `STATE.yml`, or for an un-migrated work by
+     `tasks/task-NNN/DETAIL.md` present directly under the work root AND no
+     `deliveries/` wrapper under it → read the
      top-level `## Execution Graph` from the work-root `PLAN.md` (no
      `### delivery-NNN` heading; the single delivery is implicit).
    - **Full path** — otherwise, if `PLAN.md` exists in the work directory → read

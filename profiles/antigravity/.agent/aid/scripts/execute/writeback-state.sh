@@ -77,10 +77,11 @@
 #             STATE.yml                         -- task-level (--field / --findings target)
 #
 # Flattened single-delivery layout (feature-001, additive -- nested layout above
-# is unchanged): detected by a work-root BLUEPRINT.md present AND
-# `tasks/task-NNN/DETAIL.md` present directly under the work root AND no
-# `deliveries/` wrapper. The delivery lifecycle/gate AND the per-task mutable
-# cells are all promoted into the SAME work-root STATE.yml:
+# is unchanged): declared by `pipeline.path: lite` in the work-root STATE.yml,
+# or for an un-migrated work inferred from `tasks/task-NNN/DETAIL.md` present
+# directly under the work root AND no `deliveries/` wrapper. The delivery
+# lifecycle/gate AND the per-task mutable cells are all promoted into the SAME
+# work-root STATE.yml:
 #   work-NNN-{name}/
 #     STATE.yml         -- work-level (--pipeline target) AND, for this layout,
 #                           the --delivery-id 001 targets too:
@@ -178,11 +179,11 @@
 #
 #   writeback-state.sh -h | --help
 #
-# Flattened single-delivery layout (feature-001) detection: a work-root
-# BLUEPRINT.md present AND at least one `tasks/task-NNN/DETAIL.md` present
-# directly under it AND no `deliveries/` wrapper under the work root.
-# Auto-detected per-call; no new flag needed. The nested layout above is
-# unchanged (additive only).
+# Flattened single-delivery layout (feature-001) detection: `pipeline.path: lite`
+# in the work-root STATE.yml; for an un-migrated work declaring nothing, at least
+# one `tasks/task-NNN/DETAIL.md` present directly under it AND no `deliveries/`
+# wrapper under the work root. Auto-detected per-call; no new flag needed. The
+# nested layout above is unchanged (additive only). See is_flat_layout.
 #
 # Exit codes:
 #   0  success

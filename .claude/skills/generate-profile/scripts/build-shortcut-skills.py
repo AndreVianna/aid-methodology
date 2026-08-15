@@ -276,7 +276,7 @@ def render_doorway(row: dict) -> str:
         f"Bind **VERB=`{verb}`**, **{artifact_bind}**, then run the shared engine at "
         "`canonical/aid/templates/shortcut-engine.md`. The engine scaffolds the "
         "flattened Lite work (feature-001 structure), authors REQUIREMENTS -> SPEC -> "
-        "PLAN + BLUEPRINT -> DETAIL tasks with reduced capture, runs the per-document "
+        "PLAN -> DETAIL tasks with reduced capture, runs the per-document "
         "Grading Gates (feature-004), and halts at the FR-10 approval gate. It never "
         "executes. This shortcut's `default_type`/`group` are its row in "
         "`canonical/aid/templates/shortcut-catalog.yml`.",

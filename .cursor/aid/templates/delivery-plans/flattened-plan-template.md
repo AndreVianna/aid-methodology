@@ -2,11 +2,11 @@
 
 [!NOTE]
 This is the FLATTENED single-delivery `PLAN.md` template: `.aid/works/work-NNN-{name}/PLAN.md`, used
-when the work has exactly one feature and one delivery (no `features/` folder, no
-`deliveries/`/`delivery-NNN/` wrapper -- feature-001). It carries the plan's single
-`## Deliverables` entry plus a top-level `## Execution Graph`. The delivery's own objective,
-scope, GATE CRITERIA, and task listing live in the sibling `BLUEPRINT.md` (the delivery
-definition) instead -- NOT here.
+when the work has exactly one feature and one delivery (no `deliveries/`/`delivery-NNN/`
+wrapper -- feature-001). It carries the plan's single `## Deliverables` entry plus a
+top-level `## Execution Graph`. That single entry IS the delivery definition: its
+objective, scope, and GATE CRITERIA live in it. The task listing is NOT recorded --
+it is derived from each task's `**Source:**` field.
 
 This template emits ZERO `### delivery-NNN` subsection headings BY DESIGN -- do not add one.
 Both `compute-block-radius.sh` (requires `--delivery-id` once it sees `>= 2` such headings) and
@@ -26,14 +26,24 @@ delivery is carried only by each task's `**Source:** ... -> delivery-001` field 
 
 <!-- ONE entry -- the work's single, implicit delivery (synthesized delivery-001). No
      `### delivery-NNN` subsection heading (see note above); the delivery is identified by the
-     `**Delivery:**` field below instead. Full delivery definition (objective/scope/GATE
-     CRITERIA/tasks) lives in the sibling BLUEPRINT.md, not here. -->
+     `**Delivery:**` field below instead. This entry IS the delivery definition. -->
 
 - **Delivery:** delivery-001 -- {Name}
 - **What it delivers:** {user-facing value}
-- **Features:** feature-001-{name}   (the single feature; no `features/` folder)
+- **Features:** feature-001-{name}   (the single feature; its section is `REQUIREMENTS.md § 11`)
 - **Depends on:** -- (none -- single delivery)
 - **Priority:** Must | Should | Could
+
+**Objective:** {one paragraph: what this delivery achieves}
+
+**Scope:** {what is IN scope, citing the feature's `AC-N` ids}
+**Out of scope:** {anything explicitly excluded}
+
+**Gate Criteria** -- the rubric the delivery gate evaluates; each concrete, independently
+testable, and naming an observable:
+
+- [ ] {Criterion 1 -- concrete and testable}
+- [ ] All section-6 quality gates pass
 
 ---
 

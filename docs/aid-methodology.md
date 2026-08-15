@@ -505,17 +505,15 @@ Across the run, discovery covers:
   knowledge/                    ← shared KB (from Discovery)
   works/
     work-001-user-auth/           ← one work per interview
-      STATE.md                    ← work-area state — process tracking (section status, Q&A, grade)
-      REQUIREMENTS.md             ← product (stakeholder requirements)
-      features/
-        feature-001-login/
-          SPEC.md                 ← feature definition — requirements side (Describe) + tech spec (Specify)
-        feature-002-password-reset/
-          SPEC.md
+      STATE.yml                   ← work-area state — process tracking (section status, Q&A, grade)
+      REQUIREMENTS.md             ← product (stakeholder requirements); § 11 carries one
+                                  #  `### Feature NNN` section per feature — requirements
+                                  #  side (Describe) + tech spec (Specify)
+      PLAN.md                     ← delivery stanzas (each the delivery definition:
+                                  #  objective, scope, gate criteria) + execution graph
       deliveries/
         delivery-001/
-          BLUEPRINT.md             ← delivery definition (from Plan)
-          STATE.md                 ← delivery lifecycle
+          STATE.yml                ← delivery lifecycle
           tasks/
             task-001/
               DETAIL.md             ← task definition (from Detail)
