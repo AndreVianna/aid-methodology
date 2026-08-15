@@ -34,9 +34,9 @@ phase: Execute
 # [W] aid-{skill} | none
 active_skill: none
 # [W]
-updated: '2026-08-15T17:09:46Z'
+updated: '2026-08-15T17:34:18Z'
 # [W] set only when lifecycle = Paused-Awaiting-Input
-pause_reason: 'Delivery-001 gate PASSED at A+; work complete and ready for owner review'
+pause_reason: 'Work complete at A+; CI green on all 8 checks'
 # [W] set only when lifecycle = Blocked
 block_reason: --
 # [W] e.g. IMPEDIMENT-task-NNN.md, or the failed gate
@@ -786,6 +786,36 @@ lifecycle_history:
       authorization; CI has gawk and remains the authority; substance
       verified here by direct comparison, both dogfood trees 354/354
       byte-identical.
+
+  - date: '2026-08-15'
+    event: 'CI red on my own suite -- SC15 depended on origin/master; fixed, CI green'
+    grade: --
+    notes: >-
+      CI failed the required "canonical helper suites" job on ONE of 139
+      suites: test-scoped-review-cycles.sh, which I wrote. SC15 proved
+      C-3/AC-10 by diffing grade.sh against origin/master. That passes
+      locally and fails in CI, because a shallow clone has no such ref: the
+      diff errors and takes the assertion down with it.
+      This is precisely the defect class tech-debt W4-3 enumerates as "(H)
+      dependence on local origin/master ancestry" -- committed by a suite
+      written in a repo that happened to have the ref, in a work whose whole
+      subject is not trusting what happens to be true locally. The local
+      run was green and the claim "all suites pass" was true only of this
+      machine.
+      Fixed by asserting BEHAVIOUR rather than bytes, which is the better
+      assertion anyway: what C-3 protects is not grade.sh's bytes but that
+      the grader still reads a 7-column ledger positionally and prices it
+      correctly. SC15 now builds three fixture ledgers and checks the
+      contract end to end -- empty=A+, one LOW=B+, HIGH plus a Fixed LOW=D+,
+      which also proves a Fixed row does not count toward the grade. A
+      byte-diff would have failed on a harmless comment change while passing
+      a semantic break; this does the opposite, and needs no git ref so it
+      runs anywhere.
+      Verified before pushing, in a genuine `git clone --depth 1` with
+      origin/master confirmed ABSENT -- the exact CI condition -- rather
+      than by re-running locally and hoping. Swept the other two suites and
+      both scripts for the same dependency: none. CI is now green on all
+      eight checks, including the two installer jobs and coverage-parity.
 
 # [A] aid-deploy only; one entry per delivery.
 deploy: []
