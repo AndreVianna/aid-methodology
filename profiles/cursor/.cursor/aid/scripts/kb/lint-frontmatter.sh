@@ -471,7 +471,7 @@ total_findings=0
 #                 never be migrated, so a gate must never fail on them.
 #   PREMIGRATION -- a doc carrying none of the newer fields, absorbed by the day-one soft-skip. This is
 #                 real outstanding work and is what --fail-on-skip exists to surface.
-# Counting them together would make --fail-on-skip permanently red (this KB has 5 permanently-skipped docs: 3 meta + 4 generated, 2 of them both), and a gate
+# Counting them together would make --fail-on-skip permanently red (this KB has 6 permanently-skipped docs: 3 meta + 4 generated, 2 of them both), and a gate
 # that can never pass gets switched off.
 skipped_permanent=0
 skipped_premigration=0
