@@ -189,6 +189,43 @@ qa:
       out because the rule governs artifacts, so they are out of scope rather than clean.
     decided_by: agent
     updated: '2026-08-15'
+  - id: Q22
+    question: 'AC-13: is the Lite path reduced?'
+    state: Resolved
+    answer: |
+      Met. A Lite work now holds exactly REQUIREMENTS.md, STATE.yml, and
+      tasks/task-NNN/DETAIL.md -- verified end to end on a real work: lanes derive to
+      (1, 2, 2) identically in both reader twins, and compute-block-radius.sh reports
+      task-002 and task-003 blocked by task-001, with no PLAN.md anywhere.
+
+      A plan records a SEQUENCING decision. With one feature and one delivery there is
+      none, and every field a PLAN.md would carry is already stated (objective is § 1,
+      criteria are § 9) or derivable (task listing from each `**Source:**`, graph from
+      each `**Depends on:**`). The PHASE is still emitted: Plan happened, it just decided
+      nothing worth recording.
+
+      The delivery gate now names one criteria source PER LAYOUT instead of one for both:
+      full keeps its PLAN.md stanza where sequencing is genuinely authored; flat/Lite
+      reads § 9, because the work IS the delivery and a restatement would be a second
+      copy able to disagree with the first.
+
+      flattened-plan-template.md deleted -- nothing seeded it but the removed state.
+
+      The most useful thing here is what that deletion nearly caused. cost-meter.py's
+      PLAN_DEFINITION_FRACTION was justified by "measured from
+      flattened-plan-template.md" -- a citation the deletion would have broken. The
+      numbers (943 B of 1325 B) are now inline with the reasoning recorded. This work has
+      made that exact mistake TWICE (DEFAULT_ARTIFACTS from a pruned work folder,
+      split_reach citing a file from a removed skill); third time it was caught before
+      committing, which is the first time the pattern was recognised in advance rather
+      than in review.
+
+      AD08 gates it and deliberately allows ONE surviving PLAN.md mention in the engine:
+      the table explaining what a plan would have carried and where each field lives now.
+      Naming a retired artifact while explaining its retirement is the opposite of
+      instructing an agent to write one. A second mention fails.
+    decided_by: agent
+    updated: '2026-08-15'
   - id: Q21
     question: 'The in-process port: do three implementations of one sort agree?'
     state: Resolved
@@ -360,7 +397,8 @@ qa:
       carried a literal em dash. Both twins now write \u2014, spelled identically so the
       patterns can be diffed by eye.
 
-      REMAINING: PLAN.md on the Lite path, which is the harder half. The execution graph
+      RESOLVED (see Q22): PLAN.md is gone from the Lite path too. What follows was the
+      scoping at the time: The execution graph
       lives there and FOUR implementations parse it -- complexity-score.sh,
       compute-block-radius.sh, reader.py, reader.mjs. It cannot simply be deleted: the
       graph has to be derived from the task DETAILs' `**Depends on:**` fields first,
