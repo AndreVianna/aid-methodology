@@ -21,9 +21,9 @@ Redesign of AID's review subsystem: extract review into chainable light/deep
 review skills, formalize artifact-typed review criteria over a single severity
 source of truth, and close the accumulated review-path defects.
 
-> **State:** Running — master merged in; owner chose **master as base** (cascade + VERIFY/HUNT win).
-> **Phase:** Execute. Report: `MERGE-MASTER-2026-08-15.md`.
-> **Next:** Regenerate profiles; re-plan deliveries 013/017/019/022/028; fold or retire leftover work-003 review artifacts (rubrics catalog, deep/light, brief-template, extra scripts).
+> **State:** Running — whole-work audit complete (`AUDIT-2026-08-15.md`). Master stack is law; Done deliveries that shipped rival mechanisms are in scope to fold/drop.
+> **Phase:** Execute (replanning). Report: `MERGE-MASTER-2026-08-15.md` + `AUDIT-2026-08-15.md`.
+> **Next:** Owner confirms track order (T1 Align → T2 Gaps → T3 Measure) and two catalog/script questions; then rewrite PLAN around tracks.
 
 ---
 
