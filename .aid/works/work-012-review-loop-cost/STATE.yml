@@ -28,15 +28,15 @@ minimum_grade: A
 # [W] 'yes' | 'no' -- quoted
 user_approved: 'yes'
 # [W] Running | Paused-Awaiting-Input | Blocked | Completed | Canceled
-lifecycle: Running
+lifecycle: Paused-Awaiting-Input
 # [W] Describe | Define | Specify | Plan | Detail | Execute
 phase: Specify
 # [W] aid-{skill} | none
-active_skill: aid-specify
+active_skill: none
 # [W]
-updated: '2026-08-15T04:13:37Z'
+updated: '2026-08-15T04:45:45Z'
 # [W] set only when lifecycle = Paused-Awaiting-Input
-pause_reason: --
+pause_reason: 'Specify complete -- all 3 features Ready at A+; run /aid-plan work-012'
 # [W] set only when lifecycle = Blocked
 block_reason: --
 # [W] e.g. IMPEDIMENT-task-NNN.md, or the failed gate
@@ -431,6 +431,42 @@ lifecycle_history:
       proxy for re-derivation cost, and 50% was an unjustified line), and an
       earlier citation of the frontmatter tolerance rule to license a change
       it does not govern.
+  - date: '2026-08-15'
+    event: 'Specify: feature-003-scoped-review-cycles READY at A+'
+    grade: 'A+'
+    notes: >-
+      Three gate cycles, C+ -> C+ -> A+; 6 findings, all Fixed; ledger
+      deleted. The design turned out SMALLER than expected, which is the
+      headline: reviewer-dispatch.md already prescribes deriving ARTIFACTS
+      from `git diff --name-only <base>..HEAD | filter_reviewable_artifacts`,
+      and filter_reviewable_artifacts is a real defined function, not a
+      gesture. FR-3 therefore changes which base is used and splits one list
+      into two -- a VERIFICATION set that stays full (so Recurred detection
+      and AC-4 are untouched) and a scoped HUNT set. The feature adds ZERO
+      executable surface: five instruction files plus one KB table.
+      Two review findings changed the design rather than the prose. (1) A
+      ledger row with `Doc: —` names no file, so a verification set built by
+      collecting Doc values would never re-verify it; any such row now widens
+      verification to the full cycle-1 set, because AC-4's "provably
+      unscoped" has to hold for every row shape the schema permits, not the
+      common one. (2) Guard 2's invocation site was wrong twice over. The
+      first draft mapped it to no file at all, so an executor would have
+      built Guards 1 and 3 and silently omitted it; the fix then named
+      aid-specify/state-done.md, which fires PER FEATURE and HALTs and would
+      have run the pass three times -- the opposite of AC-13 -- and closing
+      that would have meant inventing last-feature detection.
+      The resolution needs no new state anywhere. Three reviews already
+      receive every artifact of a phase at once (aid-define cross-reference,
+      aid-plan, aid-detail), so the contradiction pass is a CYCLE-1 activity
+      of any multi-artifact review, which is once per phase by construction.
+      aid-specify correctly gets no invocation: it dispatches per artifact,
+      so no specify review could see a cross-feature contradiction, and its
+      specs are cross-checked at aid-plan's review -- which already receives
+      every feature SPEC. A cycle-2 claim that aid-specify and aid-define
+      were "the only two skills gating more than one artifact per phase" was
+      false (aid-plan and aid-detail do too) and is corrected in place; the
+      distinction that matters is not how many artifacts a phase has but
+      whether one review sees them all.
 
 # [A] aid-deploy only; one entry per delivery.
 deploy: []
