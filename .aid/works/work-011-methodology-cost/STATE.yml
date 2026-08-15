@@ -137,6 +137,34 @@ qa:
       Ledgers at .aid/.temp/review-pending/aid-review-work-011-r{1,2,3}.md.
     decided_by: agent
     updated: '2026-08-15'
+  - id: Q9
+    question: 'R3 review: how large is the folding change prose tail, really?'
+    state: Open
+    answer: |
+      Larger than this work estimated, and worse in kind. The earlier characterization
+      was "~38 work-folder provenance citations" -- dead cites, cosmetic. Measured:
+
+        45 files / 148 mentions   every surviving `SPEC.md` reference in canonical + docs
+        22 files /  30 mentions   the abolished layout named specifically
+                                  (`features/*/SPEC.md`, `features/feature-`, per-feature SPEC)
+
+      The kind matters more than the count. These are not dangling cites, they are LIVE
+      INSTRUCTIONS: state-delivery-gate.md:189 tells the executor to collect
+      `.aid/works/{work}/features/*/SPEC.md`; task-decomposition.md:58 makes those files
+      the detailer's primary input. An agent following either reads nothing and does not
+      fail -- the glob matches nothing, no error is raised, and it proceeds with missing
+      context. Silent context loss is the worst failure mode this methodology has.
+
+      Verified independently before accepting the finding; both lines are real.
+      task-decomposition.md is a file THIS work edited (for the AC-N Source change) and
+      left stale, so this is not inherited debt.
+
+      Bearing on AC-11, which this work marked Met: the structural half landed, the
+      instruction surface did not. Met is not defensible on the current evidence.
+      Deferring the fix until R1/R2 finish -- editing 45 files under three live reviewers
+      would race their reads.
+    decided_by: agent
+    updated: '2026-08-15'
   - id: Q8
     question: 'Comments and constants outliving the artifacts they were measured from'
     state: Open
