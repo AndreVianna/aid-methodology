@@ -14,15 +14,15 @@
       "terminal": null,
       "provenance": {
         "file": "canonical/skills/aid-triage/SKILL.md",
-        "startLine": 77,
-        "endLine": 77,
+        "startLine": 76,
+        "endLine": 76,
         "sourceKind": "skill",
         "excerpt": "| INTAKE | inline (below) | inline | CHAIN -> CLASSIFY |"
       },
       "detail": {
         "file": "canonical/skills/aid-triage/SKILL.md",
-        "startLine": 84,
-        "endLine": 105,
+        "startLine": 83,
+        "endLine": 104,
         "sourceKind": "skill",
         "excerpt": "## State: INTAKE\n\nCapture one short free-form description in a single turn -- no adaptive\nloop, no scaffold. If the invocation already carried a `[description]`\nargument, use it directly and skip the prompt below.\n\n```\nIn a sentence or two -- what do you want to build, change, or fix?\n\nSuggested: For example: \"fix the login crash on special characters\" or\n           \"add a /orders REST endpoint.\"\nWhy: A short description is enough to tell whether this is a single,\n     well-scoped change (I can point you straight at a shortcut) or\n     something broader (better handled by the full /aid-describe interview).\n\n[1] Use the form above and share yours\n[2] Your answer: ___\n```\n\nWait for the answer. Record it internally as `{description}`.\n\n**Advance:** **CHAIN** -> [State: CLASSIFY] (continue inline)."
       }
@@ -36,8 +36,8 @@
       "terminal": null,
       "provenance": {
         "file": "canonical/skills/aid-triage/SKILL.md",
-        "startLine": 78,
-        "endLine": 78,
+        "startLine": 77,
+        "endLine": 77,
         "sourceKind": "skill",
         "excerpt": "| CLASSIFY | `references/state-classify.md` | inline | CHAIN -> SUGGEST |"
       },
@@ -58,8 +58,8 @@
       "terminal": null,
       "provenance": {
         "file": "canonical/skills/aid-triage/SKILL.md",
-        "startLine": 79,
-        "endLine": 79,
+        "startLine": 78,
+        "endLine": 78,
         "sourceKind": "skill",
         "excerpt": "| SUGGEST | `references/state-suggest.md` | inline | CHAIN -> HALT |"
       },
@@ -83,15 +83,15 @@
       },
       "provenance": {
         "file": "canonical/skills/aid-triage/SKILL.md",
-        "startLine": 80,
-        "endLine": 80,
+        "startLine": 79,
+        "endLine": 79,
         "sourceKind": "skill",
         "excerpt": "| HALT | inline (below) | inline | -> halt |"
       },
       "detail": {
         "file": "canonical/skills/aid-triage/SKILL.md",
-        "startLine": 109,
-        "endLine": 133,
+        "startLine": 108,
+        "endLine": 132,
         "sourceKind": "skill",
         "excerpt": "## State: HALT\n\nPrint the recommended invocation the user should type next, then **STOP**.\n`/aid-triage` never invokes another skill on the user's behalf -- it\nsuggests; the user runs the command. No file is written; no `.aid/works/work-*/`\nfolder is created; no `STATE.md` exists for this skill.\n\n**Shortcut suggested:**\n```\n-> Suggested next step:\n\n    /{name} \"{description}\"\n\nRun that command to start -- it goes straight to the flattened Lite work\nfor {intent}.\n```\n\n**Full path suggested:**\n```\n-> Suggested next step:\n\n    /aid-describe\n\nRun that command to start the full requirements interview.\n```"
       }
@@ -106,8 +106,8 @@
       "advanceType": "CHAIN",
       "provenance": {
         "file": "canonical/skills/aid-triage/SKILL.md",
-        "startLine": 105,
-        "endLine": 105,
+        "startLine": 104,
+        "endLine": 104,
         "sourceKind": "skill",
         "excerpt": "**Advance:** **CHAIN** -> [State: CLASSIFY] (continue inline)."
       }
@@ -134,8 +134,8 @@
       "advanceType": "CHAIN",
       "provenance": {
         "file": "canonical/skills/aid-triage/SKILL.md",
-        "startLine": 79,
-        "endLine": 79,
+        "startLine": 78,
+        "endLine": 78,
         "sourceKind": "skill",
         "excerpt": "| SUGGEST | `references/state-suggest.md` | inline | CHAIN -> HALT |"
       }

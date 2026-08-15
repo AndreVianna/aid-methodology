@@ -14,17 +14,17 @@
       "terminal": null,
       "provenance": {
         "file": "canonical/skills/aid-research/SKILL.md",
-        "startLine": 38,
-        "endLine": 68,
+        "startLine": 36,
+        "endLine": 66,
         "sourceKind": "skill",
-        "excerpt": "## State: INTAKE\n\n1. **Require a question.** If the argument is empty, ask one bootstrapping question (\"What\n   do you want investigated?\") and wait.\n2. **Pick the path (question scope):**\n   - **Fast path** -- a concrete, well-scoped question with clear evaluation criteria\n     (\"Is lib X compatible with our Node 24 build?\", \"Postgres vs SQLite for use-case Y\n     against criteria A/B/C\") -> investigate immediately.\n   - **Guided path** -- vague / broad / underspecified (\"research our DB options\") -> ask\n     2-3 scoping questions first (narrow it), then investigate.\n3. **Classify complexity (sets model + effort):** simple (bounded question, a few docs,\n   <=1 web source) -> `aid-researcher` at **sonnet / medium**; standard/complex (broad\n   options analysis, deep traversal, many web sources, a spike) -> **opus / high**.\n   Verifier tier is always >= producer tier.\n4. **Consult the Work Initiation Gate, then allocate the work folder + STATE.** First run\n   the gate (`canonical/aid/templates/work-initiation-gate.md`):\n   `bash canonical/aid/scripts/works/enumerate-works.sh` (main tree + every git worktree).\n   Empty -> allocate below, no prompt. Works exist -> ask new-vs-continuation with the\n   enumerated list; on **continuation** route to the chosen work's resume door and STOP\n   (allocate nothing); on **new work**: resolve `<work-id>` as `work-{NNN+1}`, where `NNN`\n   is the maximum `work-NNN` numeric prefix across every record the enumeration above\n   already returned (cross-worktree by construction -- never a local `.aid/works/` glob;\n   gate `§ 3a` step 1); create and enter the worktree per the gate's `§ 3a` step 2\n   (`worktree-lifecycle.sh create <work-id> <name>`, STOP on a non-zero exit or empty path,\n   else enter the resolved path); **only then** allocate: `.aid/works/<work-id>-<slug>/`\n   under `.aid/works/`; slug from the question. Copy\n   `canonical/aid/templates/work-state-template.md` to\n   `.aid/works/work-NNN-<slug>/STATE.md`; write opening frontmatter (`pipeline.path: lite`,\n   `initiator: aid-research`, `lifecycle: Running`, `active_skill: aid-research`,\n   `started`/`updated`). Do NOT drive the 7-phase `phase` scalar. Associate a git worktree\n   only if a spike is later authorized (INVESTIGATE)."
+        "excerpt": "## State: INTAKE\n\n1. **Require a question.** If the argument is empty, ask one bootstrapping question (\"What\n   do you want investigated?\") and wait.\n2. **Pick the path (question scope):**\n   - **Fast path** -- a concrete, well-scoped question with clear evaluation criteria\n     (\"Is lib X compatible with our Node 24 build?\", \"Postgres vs SQLite for use-case Y\n     against criteria A/B/C\") -> investigate immediately.\n   - **Guided path** -- vague / broad / underspecified (\"research our DB options\") -> ask\n     2-3 scoping questions first (narrow it), then investigate.\n3. **Classify complexity (sets model + effort):** simple (bounded question, a few docs,\n   <=1 web source) -> `aid-researcher` at **sonnet / medium**; standard/complex (broad\n   options analysis, deep traversal, many web sources, a spike) -> **opus / high**.\n   Verifier tier is always >= producer tier.\n4. **Consult the Work Initiation Gate, then allocate the work folder + STATE.** First run\n   the gate (`canonical/aid/templates/work-initiation-gate.md`):\n   `bash canonical/aid/scripts/works/enumerate-works.sh` (main tree + every git worktree).\n   Empty -> allocate below, no prompt. Works exist -> ask new-vs-continuation with the\n   enumerated list; on **continuation** route to the chosen work's resume door and STOP\n   (allocate nothing); on **new work**: resolve `<work-id>` as `work-{NNN+1}`, where `NNN`\n   is the maximum `work-NNN` numeric prefix across every record the enumeration above\n   already returned (cross-worktree by construction -- never a local `.aid/works/` glob;\n   gate `§ 3a` step 1); create and enter the worktree per the gate's `§ 3a` step 2\n   (`worktree-lifecycle.sh create <work-id> <name>`, STOP on a non-zero exit or empty path,\n   else enter the resolved path); **only then** allocate: `.aid/works/<work-id>-<slug>/`\n   under `.aid/works/`; slug from the question. Copy\n   `canonical/aid/templates/work-state-template.yml` to\n   `.aid/works/work-NNN-<slug>/STATE.yml`; write opening frontmatter (`pipeline.path: lite`,\n   `initiator: aid-research`, `lifecycle: Running`, `active_skill: aid-research`,\n   `started`/`updated`). Do NOT drive the 7-phase `phase` scalar. Associate a git worktree\n   only if a spike is later authorized (INVESTIGATE)."
       },
       "detail": {
         "file": "canonical/skills/aid-research/SKILL.md",
-        "startLine": 38,
-        "endLine": 70,
+        "startLine": 36,
+        "endLine": 68,
         "sourceKind": "skill",
-        "excerpt": "## State: INTAKE\n\n1. **Require a question.** If the argument is empty, ask one bootstrapping question (\"What\n   do you want investigated?\") and wait.\n2. **Pick the path (question scope):**\n   - **Fast path** -- a concrete, well-scoped question with clear evaluation criteria\n     (\"Is lib X compatible with our Node 24 build?\", \"Postgres vs SQLite for use-case Y\n     against criteria A/B/C\") -> investigate immediately.\n   - **Guided path** -- vague / broad / underspecified (\"research our DB options\") -> ask\n     2-3 scoping questions first (narrow it), then investigate.\n3. **Classify complexity (sets model + effort):** simple (bounded question, a few docs,\n   <=1 web source) -> `aid-researcher` at **sonnet / medium**; standard/complex (broad\n   options analysis, deep traversal, many web sources, a spike) -> **opus / high**.\n   Verifier tier is always >= producer tier.\n4. **Consult the Work Initiation Gate, then allocate the work folder + STATE.** First run\n   the gate (`canonical/aid/templates/work-initiation-gate.md`):\n   `bash canonical/aid/scripts/works/enumerate-works.sh` (main tree + every git worktree).\n   Empty -> allocate below, no prompt. Works exist -> ask new-vs-continuation with the\n   enumerated list; on **continuation** route to the chosen work's resume door and STOP\n   (allocate nothing); on **new work**: resolve `<work-id>` as `work-{NNN+1}`, where `NNN`\n   is the maximum `work-NNN` numeric prefix across every record the enumeration above\n   already returned (cross-worktree by construction -- never a local `.aid/works/` glob;\n   gate `§ 3a` step 1); create and enter the worktree per the gate's `§ 3a` step 2\n   (`worktree-lifecycle.sh create <work-id> <name>`, STOP on a non-zero exit or empty path,\n   else enter the resolved path); **only then** allocate: `.aid/works/<work-id>-<slug>/`\n   under `.aid/works/`; slug from the question. Copy\n   `canonical/aid/templates/work-state-template.md` to\n   `.aid/works/work-NNN-<slug>/STATE.md`; write opening frontmatter (`pipeline.path: lite`,\n   `initiator: aid-research`, `lifecycle: Running`, `active_skill: aid-research`,\n   `started`/`updated`). Do NOT drive the 7-phase `phase` scalar. Associate a git worktree\n   only if a spike is later authorized (INVESTIGATE).\n\n**Advance:** INVESTIGATE."
+        "excerpt": "## State: INTAKE\n\n1. **Require a question.** If the argument is empty, ask one bootstrapping question (\"What\n   do you want investigated?\") and wait.\n2. **Pick the path (question scope):**\n   - **Fast path** -- a concrete, well-scoped question with clear evaluation criteria\n     (\"Is lib X compatible with our Node 24 build?\", \"Postgres vs SQLite for use-case Y\n     against criteria A/B/C\") -> investigate immediately.\n   - **Guided path** -- vague / broad / underspecified (\"research our DB options\") -> ask\n     2-3 scoping questions first (narrow it), then investigate.\n3. **Classify complexity (sets model + effort):** simple (bounded question, a few docs,\n   <=1 web source) -> `aid-researcher` at **sonnet / medium**; standard/complex (broad\n   options analysis, deep traversal, many web sources, a spike) -> **opus / high**.\n   Verifier tier is always >= producer tier.\n4. **Consult the Work Initiation Gate, then allocate the work folder + STATE.** First run\n   the gate (`canonical/aid/templates/work-initiation-gate.md`):\n   `bash canonical/aid/scripts/works/enumerate-works.sh` (main tree + every git worktree).\n   Empty -> allocate below, no prompt. Works exist -> ask new-vs-continuation with the\n   enumerated list; on **continuation** route to the chosen work's resume door and STOP\n   (allocate nothing); on **new work**: resolve `<work-id>` as `work-{NNN+1}`, where `NNN`\n   is the maximum `work-NNN` numeric prefix across every record the enumeration above\n   already returned (cross-worktree by construction -- never a local `.aid/works/` glob;\n   gate `§ 3a` step 1); create and enter the worktree per the gate's `§ 3a` step 2\n   (`worktree-lifecycle.sh create <work-id> <name>`, STOP on a non-zero exit or empty path,\n   else enter the resolved path); **only then** allocate: `.aid/works/<work-id>-<slug>/`\n   under `.aid/works/`; slug from the question. Copy\n   `canonical/aid/templates/work-state-template.yml` to\n   `.aid/works/work-NNN-<slug>/STATE.yml`; write opening frontmatter (`pipeline.path: lite`,\n   `initiator: aid-research`, `lifecycle: Running`, `active_skill: aid-research`,\n   `started`/`updated`). Do NOT drive the 7-phase `phase` scalar. Associate a git worktree\n   only if a spike is later authorized (INVESTIGATE).\n\n**Advance:** INVESTIGATE."
       }
     },
     {
@@ -36,15 +36,15 @@
       "terminal": null,
       "provenance": {
         "file": "canonical/skills/aid-research/SKILL.md",
-        "startLine": 74,
-        "endLine": 77,
+        "startLine": 72,
+        "endLine": 75,
         "sourceKind": "skill",
         "excerpt": "## State: INVESTIGATE\n\nDispatch **`aid-researcher`** (clean context, model+effort from INTAKE Step 3) to gather\nand curate the evidence:"
       },
       "detail": {
         "file": "canonical/skills/aid-research/SKILL.md",
-        "startLine": 74,
-        "endLine": 94,
+        "startLine": 72,
+        "endLine": 92,
         "sourceKind": "skill",
         "excerpt": "## State: INVESTIGATE\n\nDispatch **`aid-researcher`** (clean context, model+effort from INTAKE Step 3) to gather\nand curate the evidence:\n\n- **Two-tier grounding (enforced):** read the KB (`.aid/knowledge/`) + the project source\n  as the **authoritative** base; enrich with external/web sources as needed, **cited with\n  URL + access date**. Every project claim cites a KB doc or `file:line`; every external\n  claim cites a URL+date.\n- It writes a structured `RESEARCH.md` into the work folder (see [Response shape](#response-shape)).\n\n**Spike escalation (conditional, human-authorized).** Default is **analytical-with-\nhandoff** -- no code is written. If the researcher determines a gap genuinely cannot be\nclosed on paper, it returns a **spike proposal** instead of a final answer, and the skill\nenters **PROPOSE-SPIKE**: present *what* it would build, *where* (isolated in the work\nfolder / opt-in worktree, never touching production), and *what it would learn*, then STOP\nfor the user's decision. On **authorization** -> re-dispatch `aid-researcher` to write the\nthrowaway spike (isolated), fold the finding into `RESEARCH.md`, continue. On **decline**\n-> proceed analytically and state the resulting limit in the Gaps section.\n\n**Advance:** VERIFY."
       }
@@ -58,15 +58,15 @@
       "terminal": null,
       "provenance": {
         "file": "canonical/skills/aid-research/SKILL.md",
-        "startLine": 98,
-        "endLine": 112,
+        "startLine": 96,
+        "endLine": 110,
         "sourceKind": "skill",
         "excerpt": "## State: VERIFY  (who reviews the researcher)\n\n1. **Mechanical grounding check** (no dispatch): every project claim carries a KB/source\n   cite; every external claim a URL+date; the **Conflicts** and **Gaps** sections exist\n   (empty-but-present is allowed; silently-omitted is not).\n2. **Adversarial verification** -- dispatch a clean-context **`aid-reviewer`** to check\n   `RESEARCH.md`: claims grounded and correctly attributed; conclusions evidence-backed\n   and **not overstated into resolutions**; every KB<->web conflict surfaced with its\n   reason; no material angle of the question left silently unaddressed. It writes a\n   review-quality 7-column ledger (`reviewer-ledger-schema.md`) to\n   `.aid/.temp/review-pending/<work>-verify.md`.\n3. **Grade the response:** `bash canonical/aid/scripts/grade.sh --explain <ledger>`. Not\n   clean -> loop back to INVESTIGATE for the researcher to revise. **Circuit-breaker: 3\n   cycles** -> write `.aid/works/{work}/IMPEDIMENT-research.md`, set STATE `lifecycle: Blocked`,\n   surface it."
       },
       "detail": {
         "file": "canonical/skills/aid-research/SKILL.md",
-        "startLine": 98,
-        "endLine": 116,
+        "startLine": 96,
+        "endLine": 114,
         "sourceKind": "skill",
         "excerpt": "## State: VERIFY  (who reviews the researcher)\n\n1. **Mechanical grounding check** (no dispatch): every project claim carries a KB/source\n   cite; every external claim a URL+date; the **Conflicts** and **Gaps** sections exist\n   (empty-but-present is allowed; silently-omitted is not).\n2. **Adversarial verification** -- dispatch a clean-context **`aid-reviewer`** to check\n   `RESEARCH.md`: claims grounded and correctly attributed; conclusions evidence-backed\n   and **not overstated into resolutions**; every KB<->web conflict surfaced with its\n   reason; no material angle of the question left silently unaddressed. It writes a\n   review-quality 7-column ledger (`reviewer-ledger-schema.md`) to\n   `.aid/.temp/review-pending/<work>-verify.md`.\n3. **Grade the response:** `bash canonical/aid/scripts/grade.sh --explain <ledger>`. Not\n   clean -> loop back to INVESTIGATE for the researcher to revise. **Circuit-breaker: 3\n   cycles** -> write `.aid/works/{work}/IMPEDIMENT-research.md`, set STATE `lifecycle: Blocked`,\n   surface it.\n\n(Single grade -- the response *is* the deliverable; there is no separate target artifact.)\n\n**Advance:** PRESENT."
       }
@@ -80,15 +80,15 @@
       "terminal": null,
       "provenance": {
         "file": "canonical/skills/aid-research/SKILL.md",
-        "startLine": 120,
-        "endLine": 125,
+        "startLine": 118,
+        "endLine": 123,
         "sourceKind": "skill",
         "excerpt": "## State: PRESENT  (always a hard stop -- the user resolves)\n\nSet STATE `lifecycle: Paused-Awaiting-Input`. Present `RESEARCH.md` **clearly and simply**:\nthe in-depth answer, conclusions (positive **and** negative), conflicts/contradictions\n**with their reasons**, and gaps. Assert no resolution -- the user decides. Negatives and\ngaps are first-class, never buried under positives."
       },
       "detail": {
         "file": "canonical/skills/aid-research/SKILL.md",
-        "startLine": 120,
-        "endLine": 127,
+        "startLine": 118,
+        "endLine": 125,
         "sourceKind": "skill",
         "excerpt": "## State: PRESENT  (always a hard stop -- the user resolves)\n\nSet STATE `lifecycle: Paused-Awaiting-Input`. Present `RESEARCH.md` **clearly and simply**:\nthe in-depth answer, conclusions (positive **and** negative), conflicts/contradictions\n**with their reasons**, and gaps. Assert no resolution -- the user decides. Negatives and\ngaps are first-class, never buried under positives.\n\n**Advance:** HANDOFF (optional) then DONE."
       }
@@ -102,15 +102,15 @@
       "terminal": null,
       "provenance": {
         "file": "canonical/skills/aid-research/SKILL.md",
-        "startLine": 131,
-        "endLine": 137,
+        "startLine": 129,
+        "endLine": 135,
         "sourceKind": "skill",
         "excerpt": "## State: HANDOFF  (optional; printed suggestions only)\n\nOffer the natural next steps as **printed suggestions**, each requiring the user to act:\nrecord an ADR (`/aid-document-decision` -> once landed, `/aid-create-document`), update the\nKB (`/aid-update-kb`), act on a conclusion (`/aid-create*` / `/aid-update*`), or comment on\na source ticket (`/aid-update-ticket comment [<connector>:]<ticket-id> <text>`). Never\nauto-invoked; never a resolution."
       },
       "detail": {
         "file": "canonical/skills/aid-research/SKILL.md",
-        "startLine": 131,
-        "endLine": 139,
+        "startLine": 129,
+        "endLine": 137,
         "sourceKind": "skill",
         "excerpt": "## State: HANDOFF  (optional; printed suggestions only)\n\nOffer the natural next steps as **printed suggestions**, each requiring the user to act:\nrecord an ADR (`/aid-document-decision` -> once landed, `/aid-create-document`), update the\nKB (`/aid-update-kb`), act on a conclusion (`/aid-create*` / `/aid-update*`), or comment on\na source ticket (`/aid-update-ticket comment [<connector>:]<ticket-id> <text>`). Never\nauto-invoked; never a resolution.\n\n**Advance:** DONE."
       }
@@ -127,15 +127,15 @@
       },
       "provenance": {
         "file": "canonical/skills/aid-research/SKILL.md",
-        "startLine": 143,
-        "endLine": 146,
+        "startLine": 141,
+        "endLine": 144,
         "sourceKind": "skill",
         "excerpt": "## State: DONE\n\nSet STATE `lifecycle: Completed`, `updated` now, append a `## Lifecycle History` row. Keep\nthe work folder (`RESEARCH.md`, any spike scratch, the verify ledger) as the audit record."
       },
       "detail": {
         "file": "canonical/skills/aid-research/SKILL.md",
-        "startLine": 143,
-        "endLine": 146,
+        "startLine": 141,
+        "endLine": 144,
         "sourceKind": "skill",
         "excerpt": "## State: DONE\n\nSet STATE `lifecycle: Completed`, `updated` now, append a `## Lifecycle History` row. Keep\nthe work folder (`RESEARCH.md`, any spike scratch, the verify ledger) as the audit record."
       }
@@ -150,8 +150,8 @@
       "advanceType": "UNSPECIFIED",
       "provenance": {
         "file": "canonical/skills/aid-research/SKILL.md",
-        "startLine": 70,
-        "endLine": 70,
+        "startLine": 68,
+        "endLine": 68,
         "sourceKind": "skill",
         "excerpt": "**Advance:** INVESTIGATE."
       }
@@ -164,8 +164,8 @@
       "advanceType": "UNSPECIFIED",
       "provenance": {
         "file": "canonical/skills/aid-research/SKILL.md",
-        "startLine": 94,
-        "endLine": 94,
+        "startLine": 92,
+        "endLine": 92,
         "sourceKind": "skill",
         "excerpt": "**Advance:** VERIFY."
       }
@@ -178,8 +178,8 @@
       "advanceType": "UNSPECIFIED",
       "provenance": {
         "file": "canonical/skills/aid-research/SKILL.md",
-        "startLine": 110,
-        "endLine": 110,
+        "startLine": 108,
+        "endLine": 108,
         "sourceKind": "skill",
         "excerpt": "   clean -> loop back to INVESTIGATE for the researcher to revise. **Circuit-breaker: 3"
       }
@@ -192,8 +192,8 @@
       "advanceType": "UNSPECIFIED",
       "provenance": {
         "file": "canonical/skills/aid-research/SKILL.md",
-        "startLine": 116,
-        "endLine": 116,
+        "startLine": 114,
+        "endLine": 114,
         "sourceKind": "skill",
         "excerpt": "**Advance:** PRESENT."
       }
@@ -206,8 +206,8 @@
       "advanceType": "UNSPECIFIED",
       "provenance": {
         "file": "canonical/skills/aid-research/SKILL.md",
-        "startLine": 127,
-        "endLine": 127,
+        "startLine": 125,
+        "endLine": 125,
         "sourceKind": "skill",
         "excerpt": "**Advance:** HANDOFF (optional) then DONE."
       }
@@ -220,8 +220,8 @@
       "advanceType": "UNSPECIFIED",
       "provenance": {
         "file": "canonical/skills/aid-research/SKILL.md",
-        "startLine": 127,
-        "endLine": 127,
+        "startLine": 125,
+        "endLine": 125,
         "sourceKind": "skill",
         "excerpt": "**Advance:** HANDOFF (optional) then DONE."
       }
@@ -234,8 +234,8 @@
       "advanceType": "UNSPECIFIED",
       "provenance": {
         "file": "canonical/skills/aid-research/SKILL.md",
-        "startLine": 139,
-        "endLine": 139,
+        "startLine": 137,
+        "endLine": 137,
         "sourceKind": "skill",
         "excerpt": "**Advance:** DONE."
       }

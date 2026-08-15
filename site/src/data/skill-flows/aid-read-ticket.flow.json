@@ -14,8 +14,8 @@
       "terminal": null,
       "provenance": {
         "file": "canonical/skills/aid-read-ticket/SKILL.md",
-        "startLine": 68,
-        "endLine": 68,
+        "startLine": 67,
+        "endLine": 67,
         "sourceKind": "skill",
         "excerpt": "### State 1 — PARSE-ARGS"
       },
@@ -30,8 +30,8 @@
       "terminal": null,
       "provenance": {
         "file": "canonical/skills/aid-read-ticket/SKILL.md",
-        "startLine": 77,
-        "endLine": 77,
+        "startLine": 76,
+        "endLine": 76,
         "sourceKind": "skill",
         "excerpt": "### State 2 — RESOLVE-CONNECTOR"
       },
@@ -46,8 +46,8 @@
       "terminal": null,
       "provenance": {
         "file": "canonical/skills/aid-read-ticket/SKILL.md",
-        "startLine": 103,
-        "endLine": 103,
+        "startLine": 102,
+        "endLine": 102,
         "sourceKind": "skill",
         "excerpt": "### State 3 — FETCH"
       },
@@ -65,8 +65,8 @@
       },
       "provenance": {
         "file": "canonical/skills/aid-read-ticket/SKILL.md",
-        "startLine": 117,
-        "endLine": 117,
+        "startLine": 116,
+        "endLine": 116,
         "sourceKind": "skill",
         "excerpt": "### State 4 — DISPLAY"
       },
@@ -82,8 +82,8 @@
       "advanceType": "CHAIN",
       "provenance": {
         "file": "canonical/skills/aid-read-ticket/SKILL.md",
-        "startLine": 68,
-        "endLine": 68,
+        "startLine": 67,
+        "endLine": 67,
         "sourceKind": "skill",
         "excerpt": "### State 1 — PARSE-ARGS"
       }
@@ -96,8 +96,8 @@
       "advanceType": "CHAIN",
       "provenance": {
         "file": "canonical/skills/aid-read-ticket/SKILL.md",
-        "startLine": 77,
-        "endLine": 77,
+        "startLine": 76,
+        "endLine": 76,
         "sourceKind": "skill",
         "excerpt": "### State 2 — RESOLVE-CONNECTOR"
       }
@@ -110,8 +110,8 @@
       "advanceType": "CHAIN",
       "provenance": {
         "file": "canonical/skills/aid-read-ticket/SKILL.md",
-        "startLine": 103,
-        "endLine": 103,
+        "startLine": 102,
+        "endLine": 102,
         "sourceKind": "skill",
         "excerpt": "### State 3 — FETCH"
       }

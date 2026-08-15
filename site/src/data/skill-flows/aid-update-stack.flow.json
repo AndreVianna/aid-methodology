@@ -1,0 +1,204 @@
+{
+  "skill": "aid-update-stack",
+  "shape": "inline-states",
+  "extractor": "inline",
+  "confidence": "derived",
+  "title": "aid-update-stack — state flow",
+  "nodes": [
+    {
+      "id": "n1",
+      "order": 1,
+      "name": "INTAKE",
+      "label": "INTAKE",
+      "kind": "entry",
+      "terminal": null,
+      "provenance": {
+        "file": "canonical/skills/aid-update-stack/SKILL.md",
+        "startLine": 38,
+        "endLine": 56,
+        "sourceKind": "skill",
+        "excerpt": "## State: INTAKE\n\n1. **Require a stated change.** Empty argument -> ask one bootstrapping question (\"What\n   should change in the technology-stack record?\") and wait.\n2. **Allocate** through the Work Initiation Gate exactly as the contract's Allocation rule\n   requires (`canonical/skills/aid-design/SKILL.md` INTAKE step 4 is the shape), with\n   `initiator: aid-update-stack`. `phase` is not driven.\n3. **No seed is required.** The change stated in this run is a sufficient input, and this\n   skill completes without a seed. **Read and consume one when present** at\n   `.aid/design/stack.md`, carrying its `## Current direction` into the destination and\n   deleting it once realized.\n4. **Resolve the destination by concern.** This skill binds concern **C0** (technology). Where\n   a seed supplied a `## Destination`, use it; otherwise apply the concern rule here --\n   resolve C0 against `.aid/settings.yml` `knowledge.doc_set`, falling back to the C0 row of\n   `canonical/aid/templates/kb-authoring/domain-doc-matrix.md` -- and **confirm the resolution\n   with the user before writing**. Never resolve silently.\n5. **Read the whole destination**, and note its `source:` field. Absent destination -> route\n   to `/aid-create-stack` and write nothing.\n6. **Classify complexity** for the `aid-architect` dispatch (verifier tier >= producer)."
+      },
+      "detail": {
+        "file": "canonical/skills/aid-update-stack/SKILL.md",
+        "startLine": 38,
+        "endLine": 58,
+        "sourceKind": "skill",
+        "excerpt": "## State: INTAKE\n\n1. **Require a stated change.** Empty argument -> ask one bootstrapping question (\"What\n   should change in the technology-stack record?\") and wait.\n2. **Allocate** through the Work Initiation Gate exactly as the contract's Allocation rule\n   requires (`canonical/skills/aid-design/SKILL.md` INTAKE step 4 is the shape), with\n   `initiator: aid-update-stack`. `phase` is not driven.\n3. **No seed is required.** The change stated in this run is a sufficient input, and this\n   skill completes without a seed. **Read and consume one when present** at\n   `.aid/design/stack.md`, carrying its `## Current direction` into the destination and\n   deleting it once realized.\n4. **Resolve the destination by concern.** This skill binds concern **C0** (technology). Where\n   a seed supplied a `## Destination`, use it; otherwise apply the concern rule here --\n   resolve C0 against `.aid/settings.yml` `knowledge.doc_set`, falling back to the C0 row of\n   `canonical/aid/templates/kb-authoring/domain-doc-matrix.md` -- and **confirm the resolution\n   with the user before writing**. Never resolve silently.\n5. **Read the whole destination**, and note its `source:` field. Absent destination -> route\n   to `/aid-create-stack` and write nothing.\n6. **Classify complexity** for the `aid-architect` dispatch (verifier tier >= producer).\n\n**Advance:** UPDATE."
+      }
+    },
+    {
+      "id": "n2",
+      "order": 2,
+      "name": "UPDATE",
+      "label": "UPDATE",
+      "kind": "step",
+      "terminal": null,
+      "provenance": {
+        "file": "canonical/skills/aid-update-stack/SKILL.md",
+        "startLine": 62,
+        "endLine": 72,
+        "sourceKind": "skill",
+        "excerpt": "## State: UPDATE\n\n1. **Apply only the change the user named in this run**, to the owned C0 content, per the\n   content rules below.\n2. **Ask, every run, which derived outputs to update alongside this one.** This step is\n   unconditional -- it runs on every invocation, and the answer is **stored nowhere**: no\n   frontmatter backlink, no manifest, no registry, and no state carried between runs. The\n   question is asked afresh each time.\n3. **Write no tracking metadata** into any output this run touches -- no `derived-from`, no\n   `source-doc`, no `generated-by`, no `aid-tracked` field, and no skill-attribution line.\n4. **`source: generated` refuses.** A registered build script owns that content."
+      },
+      "detail": {
+        "file": "canonical/skills/aid-update-stack/SKILL.md",
+        "startLine": 62,
+        "endLine": 74,
+        "sourceKind": "skill",
+        "excerpt": "## State: UPDATE\n\n1. **Apply only the change the user named in this run**, to the owned C0 content, per the\n   content rules below.\n2. **Ask, every run, which derived outputs to update alongside this one.** This step is\n   unconditional -- it runs on every invocation, and the answer is **stored nowhere**: no\n   frontmatter backlink, no manifest, no registry, and no state carried between runs. The\n   question is asked afresh each time.\n3. **Write no tracking metadata** into any output this run touches -- no `derived-from`, no\n   `source-doc`, no `generated-by`, no `aid-tracked` field, and no skill-attribution line.\n4. **`source: generated` refuses.** A registered build script owns that content.\n\n**Advance:** VERIFY."
+      }
+    },
+    {
+      "id": "n3",
+      "order": 3,
+      "name": "VERIFY",
+      "label": "VERIFY",
+      "kind": "loop-back",
+      "terminal": null,
+      "provenance": {
+        "file": "canonical/skills/aid-update-stack/SKILL.md",
+        "startLine": 78,
+        "endLine": 81,
+        "sourceKind": "skill",
+        "excerpt": "## State: VERIFY\n\n**Full verify**, as `design-lifecycle.md` defines it. Not clean -> loop to UPDATE; the\n3-cycle circuit breaker there escalates to IMPEDIMENT + `lifecycle: Blocked`."
+      },
+      "detail": {
+        "file": "canonical/skills/aid-update-stack/SKILL.md",
+        "startLine": 78,
+        "endLine": 83,
+        "sourceKind": "skill",
+        "excerpt": "## State: VERIFY\n\n**Full verify**, as `design-lifecycle.md` defines it. Not clean -> loop to UPDATE; the\n3-cycle circuit breaker there escalates to IMPEDIMENT + `lifecycle: Blocked`.\n\n**Advance:** PRESENT."
+      }
+    },
+    {
+      "id": "n4",
+      "order": 4,
+      "name": "PRESENT",
+      "label": "hard stop -- the user decides",
+      "kind": "step",
+      "terminal": null,
+      "provenance": {
+        "file": "canonical/skills/aid-update-stack/SKILL.md",
+        "startLine": 87,
+        "endLine": 90,
+        "sourceKind": "skill",
+        "excerpt": "## State: PRESENT (hard stop -- the user decides)\n\nSet `lifecycle: Paused-Awaiting-Input`. Present the revision, name every output touched, state\nwhere any rejected alternative went, and assert that a consumed seed is gone."
+      },
+      "detail": {
+        "file": "canonical/skills/aid-update-stack/SKILL.md",
+        "startLine": 87,
+        "endLine": 92,
+        "sourceKind": "skill",
+        "excerpt": "## State: PRESENT (hard stop -- the user decides)\n\nSet `lifecycle: Paused-Awaiting-Input`. Present the revision, name every output touched, state\nwhere any rejected alternative went, and assert that a consumed seed is gone.\n\n**Advance:** DONE."
+      }
+    },
+    {
+      "id": "n5",
+      "order": 5,
+      "name": "DONE",
+      "label": "DONE",
+      "kind": "exit",
+      "terminal": {
+        "advanceType": "UNSPECIFIED",
+        "handoff": null
+      },
+      "provenance": {
+        "file": "canonical/skills/aid-update-stack/SKILL.md",
+        "startLine": 96,
+        "endLine": 98,
+        "sourceKind": "skill",
+        "excerpt": "## State: DONE\n\nSet `lifecycle: Completed`, `updated` now, append a `## Lifecycle History` row."
+      },
+      "detail": {
+        "file": "canonical/skills/aid-update-stack/SKILL.md",
+        "startLine": 96,
+        "endLine": 98,
+        "sourceKind": "skill",
+        "excerpt": "## State: DONE\n\nSet `lifecycle: Completed`, `updated` now, append a `## Lifecycle History` row."
+      }
+    }
+  ],
+  "edges": [
+    {
+      "from": "n1",
+      "to": "n2",
+      "kind": "sequence",
+      "condition": null,
+      "advanceType": "UNSPECIFIED",
+      "provenance": {
+        "file": "canonical/skills/aid-update-stack/SKILL.md",
+        "startLine": 58,
+        "endLine": 58,
+        "sourceKind": "skill",
+        "excerpt": "**Advance:** UPDATE."
+      }
+    },
+    {
+      "from": "n2",
+      "to": "n3",
+      "kind": "sequence",
+      "condition": null,
+      "advanceType": "UNSPECIFIED",
+      "provenance": {
+        "file": "canonical/skills/aid-update-stack/SKILL.md",
+        "startLine": 74,
+        "endLine": 74,
+        "sourceKind": "skill",
+        "excerpt": "**Advance:** VERIFY."
+      }
+    },
+    {
+      "from": "n3",
+      "to": "n2",
+      "kind": "loop-back",
+      "condition": null,
+      "advanceType": "UNSPECIFIED",
+      "provenance": {
+        "file": "canonical/skills/aid-update-stack/SKILL.md",
+        "startLine": 80,
+        "endLine": 80,
+        "sourceKind": "skill",
+        "excerpt": "**Full verify**, as `design-lifecycle.md` defines it. Not clean -> loop to UPDATE; the"
+      }
+    },
+    {
+      "from": "n3",
+      "to": "n4",
+      "kind": "sequence",
+      "condition": null,
+      "advanceType": "UNSPECIFIED",
+      "provenance": {
+        "file": "canonical/skills/aid-update-stack/SKILL.md",
+        "startLine": 83,
+        "endLine": 83,
+        "sourceKind": "skill",
+        "excerpt": "**Advance:** PRESENT."
+      }
+    },
+    {
+      "from": "n4",
+      "to": "n5",
+      "kind": "sequence",
+      "condition": null,
+      "advanceType": "UNSPECIFIED",
+      "provenance": {
+        "file": "canonical/skills/aid-update-stack/SKILL.md",
+        "startLine": 92,
+        "endLine": 92,
+        "sourceKind": "skill",
+        "excerpt": "**Advance:** DONE."
+      }
+    }
+  ],
+  "entries": [
+    "n1"
+  ],
+  "exits": [
+    "n5"
+  ],
+  "sources": [
+    "canonical/skills/aid-update-stack/SKILL.md"
+  ],
+  "warnings": []
+}

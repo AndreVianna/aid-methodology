@@ -17,8 +17,8 @@
       },
       "provenance": {
         "file": "canonical/skills/aid-discover/SKILL.md",
-        "startLine": 261,
-        "endLine": 261,
+        "startLine": 265,
+        "endLine": 265,
         "sourceKind": "skill",
         "excerpt": "| ELICIT | `references/state-elicit.md` | inline | → GENERATE |"
       },
@@ -42,8 +42,8 @@
       },
       "provenance": {
         "file": "canonical/skills/aid-discover/SKILL.md",
-        "startLine": 262,
-        "endLine": 262,
+        "startLine": 266,
+        "endLine": 266,
         "sourceKind": "skill",
         "excerpt": "| GENERATE | `references/state-generate.md` | `aid-architect` | → REVIEW |"
       },
@@ -64,8 +64,8 @@
       "terminal": null,
       "provenance": {
         "file": "canonical/skills/aid-discover/SKILL.md",
-        "startLine": 263,
-        "endLine": 263,
+        "startLine": 267,
+        "endLine": 267,
         "sourceKind": "skill",
         "excerpt": "| REVIEW | `references/state-review.md` | `aid-architect` | → Q-AND-A |"
       },
@@ -86,8 +86,8 @@
       "terminal": null,
       "provenance": {
         "file": "canonical/skills/aid-discover/SKILL.md",
-        "startLine": 264,
-        "endLine": 264,
+        "startLine": 268,
+        "endLine": 268,
         "sourceKind": "skill",
         "excerpt": "| Q-AND-A | `references/state-q-and-a.md` | inline | → FIX |"
       },
@@ -108,8 +108,8 @@
       "terminal": null,
       "provenance": {
         "file": "canonical/skills/aid-discover/SKILL.md",
-        "startLine": 265,
-        "endLine": 265,
+        "startLine": 269,
+        "endLine": 269,
         "sourceKind": "skill",
         "excerpt": "| FIX | `references/state-fix.md` | `aid-architect` | → APPROVAL |"
       },
@@ -133,8 +133,8 @@
       },
       "provenance": {
         "file": "canonical/skills/aid-discover/SKILL.md",
-        "startLine": 266,
-        "endLine": 266,
+        "startLine": 270,
+        "endLine": 270,
         "sourceKind": "skill",
         "excerpt": "| APPROVAL | `references/state-approval.md` | inline | → halt |"
       },
@@ -158,8 +158,8 @@
       },
       "provenance": {
         "file": "canonical/skills/aid-discover/SKILL.md",
-        "startLine": 267,
-        "endLine": 267,
+        "startLine": 271,
+        "endLine": 271,
         "sourceKind": "skill",
         "excerpt": "| DONE | `references/state-done.md` | inline | → halt |"
       },
@@ -181,8 +181,8 @@
       "advanceType": "UNSPECIFIED",
       "provenance": {
         "file": "canonical/skills/aid-discover/SKILL.md",
-        "startLine": 261,
-        "endLine": 261,
+        "startLine": 265,
+        "endLine": 265,
         "sourceKind": "skill",
         "excerpt": "**Advance:** → GENERATE"
       }
@@ -195,8 +195,8 @@
       "advanceType": "UNSPECIFIED",
       "provenance": {
         "file": "canonical/skills/aid-discover/SKILL.md",
-        "startLine": 262,
-        "endLine": 262,
+        "startLine": 266,
+        "endLine": 266,
         "sourceKind": "skill",
         "excerpt": "**Advance:** → REVIEW"
       }

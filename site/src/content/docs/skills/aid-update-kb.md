@@ -1,6 +1,6 @@
 ---
 title: 'aid-update-kb'
-description: 'Optional on-demand targeted KB update skill.'
+description: 'Apply one targeted, human-confirmed change to the Knowledge Base.'
 generatedFrom: 'canonical/skills/aid-update-kb/SKILL.md'
 ---
 
@@ -9,7 +9,7 @@ generatedFrom: 'canonical/skills/aid-update-kb/SKILL.md'
 ## Frontmatter
 
 - **`name`** — aid-update-kb
-- **`description`** — Optional on-demand targeted KB update skill. Isolates itself in its own worktree, analyzes how a free-form instruction lands in the Knowledge Base (an aid-researcher Impact Map), turns that into a minimal aid-architect Scope Plan traced to the instruction (+ an explicit Not-Changing list), and pauses for an explicit human CONFIRM before any edit. Applies only the confirmed scope, reviews it through f005's four-mandate panel (scoped to the changed docs), and commits only after a second explicit human approval. State-machine: ANALYZE -> SCOPE -> CONFIRM -> APPLY -> REVIEW -> APPROVAL -> DONE (FIX loop inside REVIEW).
+- **`description`** — Apply one targeted, human-confirmed change to the Knowledge Base. Use this skill when you know what changed and which part of the KB should reflect it, and you want that edit and nothing more. It works in its own worktree: it analyses how your instruction lands across the KB, turns that into a minimal scope plan with an explicit list of what it will not change, and pauses for your confirmation before any edit. Only the confirmed scope is applied, it is reviewed against the four-mandate panel, and it commits only after you approve a second time.
 - **`allowed-tools`** — Read, Glob, Grep, Bash, Write, Edit, Agent
 - **`argument-hint`** — &lt;what changed / what to update in the KB>
 

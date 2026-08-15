@@ -12,7 +12,7 @@ The full roster — all **111** skills, one card each, grouped by skill group an
 
 ## Direct-entry shortcuts
 
-**34 engine-driven verb-first shortcut skills** — a fast, mostly-autonomous alternative to the full Describe→Detail path for a single, well-scoped change. Each is a thin doorway generated from one non-`repurpose` row of [`canonical/aid/templates/shortcut-catalog.yml`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/aid/templates/shortcut-catalog.yml) (67 rows total; the other 33 are `repurpose: true` — the 3 classic re-registered skills (`aid-deploy`/`aid-monitor`/`aid-ask`) plus the single-shot "collapse" skills, all hand-authored with their own directory).
+**34 engine-driven verb-first shortcut skills** — a fast, mostly-autonomous alternative to the full Describe→Detail path for a single, well-scoped change. Each is a thin doorway generated from one non-`repurpose` row of [`canonical/aid/templates/shortcut-catalog.yml`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/aid/templates/shortcut-catalog.yml) (94 rows total; the other 60 are `repurpose: true` — the 3 classic re-registered skills (`aid-deploy`/`aid-monitor`/`aid-ask`) plus the single-shot "collapse" skills, all hand-authored with their own directory).
 
 Every engine-driven shortcut delegates to the shared **shortcut engine** — [`canonical/aid/templates/shortcut-engine.md`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/aid/templates/shortcut-engine.md) — which collapses the five definition phases (Describe → Detail) into one mostly-autonomous run:
 

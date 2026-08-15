@@ -1,0 +1,267 @@
+{
+  "skill": "aid-create-roadmap",
+  "shape": "inline-states",
+  "extractor": "inline",
+  "confidence": "derived",
+  "title": "aid-create-roadmap — state flow",
+  "nodes": [
+    {
+      "id": "n1",
+      "order": 1,
+      "name": "INTAKE",
+      "label": "INTAKE",
+      "kind": "entry",
+      "terminal": null,
+      "provenance": {
+        "file": "canonical/skills/aid-create-roadmap/SKILL.md",
+        "startLine": 38,
+        "endLine": 52,
+        "sourceKind": "skill",
+        "excerpt": "## State: INTAKE\n\n1. **Require a subject.** Empty argument -> ask one bootstrapping question (\"What direction\n   do you want to realize into roadmap.md -- or run `/aid-design-roadmap` first?\") and wait.\n2. **Allocate, exactly per `design-lifecycle.md § Skill shape -- Allocation`** -- the Work\n   Initiation Gate, then `initiator: aid-create-roadmap`, `active_skill:\n   aid-create-roadmap`, `pipeline.path: lite`, `lifecycle: Running`. `phase` is not\n   driven.\n3. **Read the seed** at `.aid/design/roadmap.md`. If no seed exists, inform the user and\n   ask whether to proceed without one (direction entered interactively) or to run\n   `/aid-design-roadmap` first; do not proceed silently.\n4. **Read the destination** at `.aid/knowledge/roadmap.md` if it exists. Classify its state:\n   absent | present-horizon-empty | present-horizon-populated.\n5. **Classify complexity (model + effort)** for the `aid-architect` dispatch below;\n   verifier tier >= producer tier (`agent-dispatch-tiering.md`)."
+      },
+      "detail": {
+        "file": "canonical/skills/aid-create-roadmap/SKILL.md",
+        "startLine": 38,
+        "endLine": 54,
+        "sourceKind": "skill",
+        "excerpt": "## State: INTAKE\n\n1. **Require a subject.** Empty argument -> ask one bootstrapping question (\"What direction\n   do you want to realize into roadmap.md -- or run `/aid-design-roadmap` first?\") and wait.\n2. **Allocate, exactly per `design-lifecycle.md § Skill shape -- Allocation`** -- the Work\n   Initiation Gate, then `initiator: aid-create-roadmap`, `active_skill:\n   aid-create-roadmap`, `pipeline.path: lite`, `lifecycle: Running`. `phase` is not\n   driven.\n3. **Read the seed** at `.aid/design/roadmap.md`. If no seed exists, inform the user and\n   ask whether to proceed without one (direction entered interactively) or to run\n   `/aid-design-roadmap` first; do not proceed silently.\n4. **Read the destination** at `.aid/knowledge/roadmap.md` if it exists. Classify its state:\n   absent | present-horizon-empty | present-horizon-populated.\n5. **Classify complexity (model + effort)** for the `aid-architect` dispatch below;\n   verifier tier >= producer tier (`agent-dispatch-tiering.md`).\n\n**Advance:** GUARD."
+      }
+    },
+    {
+      "id": "n2",
+      "order": 2,
+      "name": "GUARD",
+      "label": "GUARD",
+      "kind": "step",
+      "terminal": null,
+      "provenance": {
+        "file": "canonical/skills/aid-create-roadmap/SKILL.md",
+        "startLine": 58,
+        "endLine": 61,
+        "sourceKind": "skill",
+        "excerpt": "## State: GUARD\n\n**Readiness gate (class-1 contract, feature-002 §3b).** Inspect the seed for a non-empty\n`## Open questions` section per `design-lifecycle.md`'s detection rule."
+      },
+      "detail": {
+        "file": "canonical/skills/aid-create-roadmap/SKILL.md",
+        "startLine": 58,
+        "endLine": 68,
+        "sourceKind": "skill",
+        "excerpt": "## State: GUARD\n\n**Readiness gate (class-1 contract, feature-002 §3b).** Inspect the seed for a non-empty\n`## Open questions` section per `design-lifecycle.md`'s detection rule.\n\n- **Unresolved questions present, no override** → refuse. Name each unresolved question\n  **and** the override flag `--override-open-questions` the user must supply to bypass the gate. Write nothing; leave\n  seed and destination byte-identical. Set `lifecycle: Paused-Awaiting-Input`.\n- **No unresolved questions, or override supplied** → advance.\n\n**Advance:** REALIZE."
+      }
+    },
+    {
+      "id": "n3",
+      "order": 3,
+      "name": "REALIZE",
+      "label": "REALIZE",
+      "kind": "exit",
+      "terminal": {
+        "advanceType": "UNSPECIFIED",
+        "handoff": null
+      },
+      "provenance": {
+        "file": "canonical/skills/aid-create-roadmap/SKILL.md",
+        "startLine": 72,
+        "endLine": 75,
+        "sourceKind": "skill",
+        "excerpt": "## State: REALIZE\n\nDispatch **`aid-architect`** (clean context, tiered) to realize the seed. Apply the case\ndetermined in INTAKE:"
+      },
+      "detail": {
+        "file": "canonical/skills/aid-create-roadmap/SKILL.md",
+        "startLine": 72,
+        "endLine": 109,
+        "sourceKind": "skill",
+        "excerpt": "## State: REALIZE\n\nDispatch **`aid-architect`** (clean context, tiered) to realize the seed. Apply the case\ndetermined in INTAKE:\n\n| Destination state | Action |\n|---|---|\n| `roadmap.md` absent | **Create** the document: write frontmatter (§3a values below, verbatim), `# Roadmap` title, one-paragraph preamble (what this document holds and what it does not -- no items live here), `## Contents` with all four entries in heading order, then `## Now`, `## Next`, `## Later`. **Delete the seed.** |\n| Present, horizon sections empty or absent | Fill `## Now`, `## Next`, `## Later` from the seed; leave every byte outside those sections identical, including `## MVP` if present. **Delete the seed.** |\n| Present, horizon sections already carry committed content | **Route** to `/aid-update-roadmap`; write nothing; leave the seed in place for that run (CC-3). Set `lifecycle: Paused-Awaiting-Input`. Advance to DONE without calling REGISTER or VERIFY. |\n\n**`## Contents` index** -- the fixed four-entry form (`feature-003 §3a`), always written\nat creation and always left intact on the fill path:\n\n    - [MVP](#mvp)\n    - [Now](#now)\n    - [Next](#next)\n    - [Later](#later)\n\n**Never creates `## MVP`.** The `- [MVP](#mvp)` entry is a forward reference: the dead\nin-document anchor is accepted and is what makes REQUIREMENTS AC-6a literally true.\n\n**Entry schema** for each direction in a horizon section:\n\n    ### <Direction, as a noun phrase>\n\n    - **What:** the direction committed to, at roadmap altitude.\n    - **Why:** the constraint or trade-off that drove it.\n    - **Rejected:** each alternative considered, with the reason it lost.\n    - **Status:** Accepted | Superseded by <entry> -- followed by a durable evidence\n      anchor (path plus a grep-recoverable heading or search string), or the literal\n      `intent` when nothing has been built yet.\n\n**No summary table. No item ids anywhere.** (`feature-003 §3a`)\n\n**Frontmatter** (write verbatim on creation; `feature-003 §3a`):\n\n```yaml"
+      }
+    },
+    {
+      "id": "n4",
+      "order": 4,
+      "name": "REGISTER",
+      "label": "REGISTER",
+      "kind": "entry",
+      "terminal": null,
+      "provenance": {
+        "file": "canonical/skills/aid-create-roadmap/SKILL.md",
+        "startLine": 131,
+        "endLine": 134,
+        "sourceKind": "skill",
+        "excerpt": "## State: REGISTER\n\n**On creation only** (destination was absent in INTAKE). Write two surfaces atomically\nin the same run, per `feature-003 §6b` (REQUIREMENTS CC-1, CC-2):"
+      },
+      "detail": {
+        "file": "canonical/skills/aid-create-roadmap/SKILL.md",
+        "startLine": 131,
+        "endLine": 146,
+        "sourceKind": "skill",
+        "excerpt": "## State: REGISTER\n\n**On creation only** (destination was absent in INTAKE). Write two surfaces atomically\nin the same run, per `feature-003 §6b` (REQUIREMENTS CC-1, CC-2):\n\n1. **`.aid/settings.yml` `knowledge.doc_set`** -- append exactly one line:\n   `    - roadmap.md|skill-self|required`\n   using the R13 append-block idiom (append to the existing `doc_set:` list; never rewrite\n   the block; never touch `term_exclusions`).\n2. **`.aid/knowledge/README.md` Completeness table** -- append exactly one row:\n   `Concern` = `D`, `Owner` = `skill-self`, `Status` = `Created (skill-self)`;\n   and increment the `**Doc-set:** N documents` count line by 1.\n\nBoth writes must succeed in the same run. If either fails, report and halt.\n\n**Advance:** VERIFY."
+      }
+    },
+    {
+      "id": "n5",
+      "order": 5,
+      "name": "VERIFY",
+      "label": "VERIFY",
+      "kind": "loop-back",
+      "terminal": null,
+      "provenance": {
+        "file": "canonical/skills/aid-create-roadmap/SKILL.md",
+        "startLine": 150,
+        "endLine": 154,
+        "sourceKind": "skill",
+        "excerpt": "## State: VERIFY\n\n**Full verify** -- exactly as `design-lifecycle.md § Skill shape -- \"Full verify\"`\ndefines it. Not clean -> loop to REALIZE; the circuit-breaker there governs escalation\nto IMPEDIMENT + `lifecycle: Blocked`."
+      },
+      "detail": {
+        "file": "canonical/skills/aid-create-roadmap/SKILL.md",
+        "startLine": 150,
+        "endLine": 156,
+        "sourceKind": "skill",
+        "excerpt": "## State: VERIFY\n\n**Full verify** -- exactly as `design-lifecycle.md § Skill shape -- \"Full verify\"`\ndefines it. Not clean -> loop to REALIZE; the circuit-breaker there governs escalation\nto IMPEDIMENT + `lifecycle: Blocked`.\n\n**Advance:** PRESENT."
+      }
+    },
+    {
+      "id": "n6",
+      "order": 6,
+      "name": "PRESENT",
+      "label": "hard stop -- the user decides",
+      "kind": "step",
+      "terminal": null,
+      "provenance": {
+        "file": "canonical/skills/aid-create-roadmap/SKILL.md",
+        "startLine": 160,
+        "endLine": 162,
+        "sourceKind": "skill",
+        "excerpt": "## State: PRESENT (hard stop -- the user decides)\n\nSet `lifecycle: Paused-Awaiting-Input`. Present the realized document clearly. Assert:"
+      },
+      "detail": {
+        "file": "canonical/skills/aid-create-roadmap/SKILL.md",
+        "startLine": 160,
+        "endLine": 169,
+        "sourceKind": "skill",
+        "excerpt": "## State: PRESENT (hard stop -- the user decides)\n\nSet `lifecycle: Paused-Awaiting-Input`. Present the realized document clearly. Assert:\n\n- `## MVP` heading is absent (the `- [MVP](#mvp)` index entry is present).\n- On the creation path: both registration surfaces were written.\n- To revise horizon entries later, use `/aid-update-roadmap`.\n- To draw the MVP line, use `/aid-create-mvp`.\n\n**Advance:** DONE."
+      }
+    },
+    {
+      "id": "n7",
+      "order": 7,
+      "name": "DONE",
+      "label": "DONE",
+      "kind": "exit",
+      "terminal": {
+        "advanceType": "UNSPECIFIED",
+        "handoff": null
+      },
+      "provenance": {
+        "file": "canonical/skills/aid-create-roadmap/SKILL.md",
+        "startLine": 173,
+        "endLine": 175,
+        "sourceKind": "skill",
+        "excerpt": "## State: DONE\n\nSet `lifecycle: Completed`, `updated` now, append a `## Lifecycle History` row."
+      },
+      "detail": {
+        "file": "canonical/skills/aid-create-roadmap/SKILL.md",
+        "startLine": 173,
+        "endLine": 175,
+        "sourceKind": "skill",
+        "excerpt": "## State: DONE\n\nSet `lifecycle: Completed`, `updated` now, append a `## Lifecycle History` row."
+      }
+    }
+  ],
+  "edges": [
+    {
+      "from": "n1",
+      "to": "n2",
+      "kind": "sequence",
+      "condition": null,
+      "advanceType": "UNSPECIFIED",
+      "provenance": {
+        "file": "canonical/skills/aid-create-roadmap/SKILL.md",
+        "startLine": 54,
+        "endLine": 54,
+        "sourceKind": "skill",
+        "excerpt": "**Advance:** GUARD."
+      }
+    },
+    {
+      "from": "n2",
+      "to": "n3",
+      "kind": "sequence",
+      "condition": null,
+      "advanceType": "UNSPECIFIED",
+      "provenance": {
+        "file": "canonical/skills/aid-create-roadmap/SKILL.md",
+        "startLine": 68,
+        "endLine": 68,
+        "sourceKind": "skill",
+        "excerpt": "**Advance:** REALIZE."
+      }
+    },
+    {
+      "from": "n4",
+      "to": "n5",
+      "kind": "sequence",
+      "condition": null,
+      "advanceType": "UNSPECIFIED",
+      "provenance": {
+        "file": "canonical/skills/aid-create-roadmap/SKILL.md",
+        "startLine": 146,
+        "endLine": 146,
+        "sourceKind": "skill",
+        "excerpt": "**Advance:** VERIFY."
+      }
+    },
+    {
+      "from": "n5",
+      "to": "n3",
+      "kind": "loop-back",
+      "condition": null,
+      "advanceType": "UNSPECIFIED",
+      "provenance": {
+        "file": "canonical/skills/aid-create-roadmap/SKILL.md",
+        "startLine": 153,
+        "endLine": 153,
+        "sourceKind": "skill",
+        "excerpt": "defines it. Not clean -> loop to REALIZE; the circuit-breaker there governs escalation"
+      }
+    },
+    {
+      "from": "n5",
+      "to": "n6",
+      "kind": "sequence",
+      "condition": null,
+      "advanceType": "UNSPECIFIED",
+      "provenance": {
+        "file": "canonical/skills/aid-create-roadmap/SKILL.md",
+        "startLine": 156,
+        "endLine": 156,
+        "sourceKind": "skill",
+        "excerpt": "**Advance:** PRESENT."
+      }
+    },
+    {
+      "from": "n6",
+      "to": "n7",
+      "kind": "sequence",
+      "condition": null,
+      "advanceType": "UNSPECIFIED",
+      "provenance": {
+        "file": "canonical/skills/aid-create-roadmap/SKILL.md",
+        "startLine": 169,
+        "endLine": 169,
+        "sourceKind": "skill",
+        "excerpt": "**Advance:** DONE."
+      }
+    }
+  ],
+  "entries": [
+    "n1",
+    "n4"
+  ],
+  "exits": [
+    "n3",
+    "n7"
+  ],
+  "sources": [
+    "canonical/skills/aid-create-roadmap/SKILL.md"
+  ],
+  "warnings": []
+}
