@@ -1,5 +1,5 @@
-state: Pending
-review: "--"
+state: Done
+review: 'Gate-deferred per delivery-002 Q1; V4/V5/V8/V9/V11/V19/V21/V25 + §4 rows 1&3 from the C8 side recorded with commands; V8 now closed for all four artifacts'
 elapsed: "--"
 notes: "--"
 ticket_ref: "--"
