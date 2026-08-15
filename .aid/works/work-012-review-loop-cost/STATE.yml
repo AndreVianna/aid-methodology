@@ -34,9 +34,9 @@ phase: Specify
 # [W] aid-{skill} | none
 active_skill: none
 # [W]
-updated: '2026-08-15T04:45:45Z'
+updated: '2026-08-15T04:58:00Z'
 # [W] set only when lifecycle = Paused-Awaiting-Input
-pause_reason: 'Specify complete -- all 3 features Ready at A+; run /aid-plan work-012'
+pause_reason: 'Specify complete -- 3 features Ready at A+; C-5 authorized, all Q&A answered; run /aid-plan work-012'
 # [W] set only when lifecycle = Blocked
 block_reason: --
 # [W] e.g. IMPEDIMENT-task-NNN.md, or the failed gate
@@ -467,6 +467,38 @@ lifecycle_history:
       false (aid-plan and aid-detail do too) and is corrected in place; the
       distinction that matters is not how many artifacts a phase has but
       whether one review sees them all.
+  - date: '2026-08-15'
+    event: 'C-5 AUTHORIZED (owner) -- scoped to three named edits'
+    grade: --
+    notes: >-
+      The owner authorized this work's .aid/knowledge/authoring-conventions.md
+      edits: the optional oracle: field, the machine-readable Match column on
+      the type registry, and the scoped-cycle note. Recorded as an ENUMERATED
+      authorization rather than a blanket one -- any other KB edit, including
+      any change to what an existing selector MEANS as opposed to how it is
+      written, needs a fresh ask, and section 4 still keeps the criteria
+      cascade out of scope.
+      A real gap was closed at the same time: section 4's In Scope list named
+      the two canonical/ templates and the six briefs but NOT the KB file,
+      even though L5 names it as the fourth edit site and two feature SPECs
+      require it. A later phase could have read the omission as "out of
+      scope" and skipped an edit the work depends on. It is now listed.
+  - date: '2026-08-15'
+    event: 'Q-05 answered (owner) -- add a work-artifact registry type'
+    grade: --
+    notes: >-
+      Option A, routed to /aid-discover. A reviewer of a REQUIREMENTS.md or a
+      feature SPEC.md should cite a real criterion id rather than improvise.
+      The argument is evidence, not neatness: the checks improvised during
+      this work's gates caught four holes at Define and one at Specify, and
+      they recur on every full-path work. Declared criteria are authored
+      instruction, so NFR-1 does not penalise them, and a named list is
+      cheaper to review against than an improvised one.
+      Explicitly NOT absorbed into work-012: the C-5 authorization above is
+      enumerated to three edits and does not cover adding a registry type,
+      section 4 keeps the cascade out of scope, and C-7 caps the feature
+      count. The Q&A backlog is now fully answered (Q-01..Q-05), with Q-05's
+      action owned by a different skill.
 
 # [A] aid-deploy only; one entry per delivery.
 deploy: []
@@ -651,5 +683,26 @@ qa:
       NOT taken in this work: C-5 reserves .aid/knowledge/ edits for explicit
       owner authorization, and section 4 puts the criteria cascade itself out
       of scope. Route to /aid-discover.
-    answer: --
-    applied_to: --
+    answer: >-
+      OWNER DECISION 2026-08-15 -- option A. ADD a work-artifact type to the
+      registry, with criteria, so a reviewer of a REQUIREMENTS.md or a feature
+      SPEC.md cites a real id instead of improvising. The case is empirical
+      rather than tidiness: the checks improvised during this work's own gates
+      -- every FR demanded by some AC, every AC owned by exactly one feature
+      -- caught FOUR real holes at Define (FR-5 had no acceptance criterion
+      anywhere, and FR-9/FR-10/FR-11 had no numbered AC) and one more at
+      Specify. They recur on every full-path work and are currently
+      reinvented by each reviewer. It also fits this work's thesis rather
+      than fighting it: declared criteria are authored instruction, not
+      executable surface, so NFR-1 does not penalise them, and a named list
+      is CHEAPER to review against than an improvised one. Rejected: leaving
+      the gap (four gates already paid the friction), and documenting the
+      exclusion alone (stops the rediscovery but reviewers still improvise
+      the criteria).
+      NOT DONE IN THIS WORK, and that is not a deferral to be quietly
+      dropped. This work's C-5 authorization is enumerated to three specific
+      edits and does not cover adding a registry type; section 4 keeps the
+      criteria cascade out of scope; and C-7 caps the work at three features.
+      Authoring criteria for work-lifecycle artifacts is its own piece of
+      work, and the routing destination is /aid-discover.
+    applied_to: 'Routed to /aid-discover. No artifact of work-012 changes -- recorded here so the decision travels with the finding rather than being re-derived.'

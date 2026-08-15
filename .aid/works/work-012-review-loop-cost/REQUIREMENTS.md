@@ -23,6 +23,8 @@
 | 2026-08-15 | Interview complete — approved | /aid-describe |
 | 2026-08-15 | **Decomposed into 3 features (owner-approved), at the C-7 ceiling.** All 15 FRs and all 12 ACs map, none twice. FR-14 and the NFR-5 close-out folded into feature-003 rather than becoming a fourth feature | /aid-define |
 | 2026-08-15 | **Q-03 discharged.** AC-1's measurement subject named from the now-known gate inventory: this work's own per-task review cycles during Execute, split at FR-3's task. AC-1 updated, and the resulting sequencing constraint recorded for `/aid-plan` | /aid-define |
+| 2026-08-15 | **C-5 authorized (owner), enumerated to three edits** — the `oracle:` field, the `Match` selector column, and the scoped-cycle note in `authoring-conventions.md`. §4's In Scope list also gained the KB file, which L5 names as an edit site and two feature SPECs require but this list had omitted | owner |
+| 2026-08-15 | **Q-05 answered (owner):** add a `work-artifact` type to the registry with criteria, routed to `/aid-discover`. Not absorbed here — the C-5 authorization is enumerated, §4 keeps the cascade out of scope, and C-7 caps the feature count. Q&A backlog now fully answered | owner |
 | 2026-08-15 | **Cross-reference cycle 1 fixes (grade C+).** Four requirements were demanded by no criterion — **AC-13** added for FR-5, **AC-14/AC-15/AC-16** for FR-9/FR-10/FR-11. **AC-1 re-specified** around cycles-to-close plus a within-task re-read ratio, so task-size heterogeneity cancels instead of confounding the result; a raw cross-task byte comparison is now explicitly refused. FR-14's citation corrected to a durable anchor | /aid-define |
 | 2026-08-15 | **Cross-reference cycle 2 fixes (grade D+ — it went down).** The cycle-1 fix left `feature-001`'s SPEC restating the old AC-1, contradicting §9 — a requirement and a feature spec disagreeing about a shared fact, which is the exact failure class this work exists to address. Realigned, and both `feature-002` and `feature-003` had their `## Source` lists brought back in step with their criteria | /aid-define |
 | 2026-08-15 | **Cross-reference PASSED at A+ (cycle 3).** 9 findings Fixed, 1 routed OOS to `/aid-discover` as Q-05, 0 counting toward the grade against a minimum of A. Define complete; ready for `/aid-specify` | /aid-define |
@@ -105,6 +107,10 @@ guarding around it.
   (`aid-define`, `aid-detail`, `aid-discover`, `aid-execute`, `aid-plan`, `aid-specify`).
 - Passing a per-feature specify gate only the requirements slice that feature traces to,
   instead of the whole `REQUIREMENTS.md`.
+- **The criteria-table edits in `.aid/knowledge/authoring-conventions.md`** — the `oracle:`
+  field, the `Match` selector column, and the scoped-cycle note. This is the fourth edit
+  site L5 names, and it was missing from this list while being required by two feature
+  SPECs; a later phase could have read the omission as "out of scope". Authorized under C-5.
 - Measuring the reduction before and after, on a real artifact.
 
 ### Out of Scope
@@ -227,6 +233,18 @@ guarding around it.
 - **C-4** Criteria resolution stays scope-free: a file's resolved list depends only on its
   path and frontmatter, never on its content. Remedy 1 needs no change to resolution.
 - **C-5** `.aid/knowledge/` edits happen only with explicit owner authorization.
+  **AUTHORIZED 2026-08-15, for this work, scoped to `.aid/knowledge/authoring-conventions.md`
+  and to these three edits only:**
+  1. the optional `oracle:` field on a declared criterion (FR-8);
+  2. the machine-readable `Match` column on the type registry, alongside the retained prose
+     `Selector` — eight rows gain a cell, `template-payload` and `template-own` do not
+     (feature-002 SPEC);
+  3. the scoped-cycle note on the criteria table (feature-003 SPEC).
+
+  The authorization is deliberately enumerated rather than blanket. Any other
+  `.aid/knowledge/` edit — including any change to what an existing selector *means*, as
+  opposed to how it is written — is not covered and needs a fresh ask. §4 keeps the criteria
+  cascade itself out of scope, and this authorization does not widen that.
 - **C-6** Nothing merges without explicit owner authorization.
 - **C-7** **Hard cap on the pipeline's own size: at most 3 features and at most 2
   deliveries** (owner decision, 2026-08-15). The full path is kept only because AC-1 needs
