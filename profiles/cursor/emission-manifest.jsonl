@@ -319,7 +319,7 @@
 {"dst": ".cursor/skills/aid-test-security/SKILL.md", "profile": "cursor", "sha256": "46d8a9f6e64140e40295c21f79583ec82e18790e7d797deaf3a032112d3c3595", "src": "canonical/skills/aid-test-security/SKILL.md"}
 {"dst": ".cursor/skills/aid-test/SKILL.md", "profile": "cursor", "sha256": "4a2b87c20f4324202389a062ddcf68de92fd16507eddad09b86685bb47318293", "src": "canonical/skills/aid-test/SKILL.md"}
 {"dst": ".cursor/skills/aid-triage/SKILL.md", "profile": "cursor", "sha256": "f876f6d306170d43ad2b2bf7d0d7250a103e83c3cf8b63fac3f561cde000c776", "src": "canonical/skills/aid-triage/SKILL.md"}
-{"dst": ".cursor/skills/aid-triage/references/state-classify.md", "profile": "cursor", "sha256": "31c669df6f74cfbcb9e0711b05a650c4461829d7c9a510ba99df10e3d6a2772e", "src": "canonical/skills/aid-triage/references/state-classify.md"}
+{"dst": ".cursor/skills/aid-triage/references/state-classify.md", "profile": "cursor", "sha256": "dc6176c25ddfcc45a8d5337496fe22f89246a2fd4c35fd4651a3df78f86950cf", "src": "canonical/skills/aid-triage/references/state-classify.md"}
 {"dst": ".cursor/skills/aid-triage/references/state-suggest.md", "profile": "cursor", "sha256": "c10c5dd011574e6317eb9ce9934d1b25ad98f74f3ba87d8237ae9b22b17f0869", "src": "canonical/skills/aid-triage/references/state-suggest.md"}
 {"dst": ".cursor/skills/aid-unset-connector/SKILL.md", "profile": "cursor", "sha256": "f927384c4ad0fca3cf3b356e423740dc24eeca7124be91922b4c3d5343f75054", "src": "canonical/skills/aid-unset-connector/SKILL.md"}
 {"dst": ".cursor/skills/aid-update-api/SKILL.md", "profile": "cursor", "sha256": "0c4c0d26eef9babc47ef264530bb25489ec62e25cf85f140b1eec657bd5f2876", "src": "canonical/skills/aid-update-api/SKILL.md"}

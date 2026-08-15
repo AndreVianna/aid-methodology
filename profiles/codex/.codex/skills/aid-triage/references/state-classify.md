@@ -82,7 +82,7 @@ the AID installation root -- the same directory that contains
 script is invoked.
 
 **Candidate set** -- every row whose `alias_of` field is `null` (canonical
-rows only; today all 58 rows read `alias_of: null`, so this filter selects
+rows only; today every row reads `alias_of: null`, so this filter selects
 the full catalog, but it is kept as a **defensive guard**: STATE Q4 retains
 the `alias_of` field pinned `null` with its removal scheduled as a follow-on,
 and if a future alias row were added before that removal its `intent` would

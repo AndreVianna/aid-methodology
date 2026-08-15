@@ -319,7 +319,7 @@
 {"dst": ".github/skills/aid-test-security/SKILL.md", "profile": "copilot-cli", "sha256": "6a374af83225c2d22012c1456ae353b95a44e8d159c3724f2a23c88f56c1d3eb", "src": "canonical/skills/aid-test-security/SKILL.md"}
 {"dst": ".github/skills/aid-test/SKILL.md", "profile": "copilot-cli", "sha256": "586bf09cabb14ecca6417a4284a9247785393f1c081115c1c519182bda12e81a", "src": "canonical/skills/aid-test/SKILL.md"}
 {"dst": ".github/skills/aid-triage/SKILL.md", "profile": "copilot-cli", "sha256": "dd262af31f07283b6115c2445e6ba67cd40d3c306a1b51a982656f2d7445d29b", "src": "canonical/skills/aid-triage/SKILL.md"}
-{"dst": ".github/skills/aid-triage/references/state-classify.md", "profile": "copilot-cli", "sha256": "45ce200e2f3c80ef8a15d1347ab18482bec3e842f13f09119da45277c51f4363", "src": "canonical/skills/aid-triage/references/state-classify.md"}
+{"dst": ".github/skills/aid-triage/references/state-classify.md", "profile": "copilot-cli", "sha256": "193994476a5c89eb360b8a86bf3bb1f35390702f73213dace2d23686282154ec", "src": "canonical/skills/aid-triage/references/state-classify.md"}
 {"dst": ".github/skills/aid-triage/references/state-suggest.md", "profile": "copilot-cli", "sha256": "c10c5dd011574e6317eb9ce9934d1b25ad98f74f3ba87d8237ae9b22b17f0869", "src": "canonical/skills/aid-triage/references/state-suggest.md"}
 {"dst": ".github/skills/aid-unset-connector/SKILL.md", "profile": "copilot-cli", "sha256": "54159680866f1441cf2a329e5433e99865c8084b2c235115674e82a1b3302186", "src": "canonical/skills/aid-unset-connector/SKILL.md"}
 {"dst": ".github/skills/aid-update-api/SKILL.md", "profile": "copilot-cli", "sha256": "25efe93ee37ce9abd09776defc087d5d1300ce80009dc7bfbe195fd5552164c1", "src": "canonical/skills/aid-update-api/SKILL.md"}

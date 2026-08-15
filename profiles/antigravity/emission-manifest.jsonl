@@ -319,7 +319,7 @@
 {"dst": ".agent/skills/aid-test-security/SKILL.md", "profile": "antigravity", "sha256": "91b2510f3117f532b0c8d709caf5f9794e057799e5f1916039816d1c9f0e217e", "src": "canonical/skills/aid-test-security/SKILL.md"}
 {"dst": ".agent/skills/aid-test/SKILL.md", "profile": "antigravity", "sha256": "9291f9c01f4de5e981a3b001cb0e10d2db0019d99ceb8976946765e825fada87", "src": "canonical/skills/aid-test/SKILL.md"}
 {"dst": ".agent/skills/aid-triage/SKILL.md", "profile": "antigravity", "sha256": "acf16868326764b65e2b439e537b0c73318e70a3f746d90f1da39270b5aaf4c0", "src": "canonical/skills/aid-triage/SKILL.md"}
-{"dst": ".agent/skills/aid-triage/references/state-classify.md", "profile": "antigravity", "sha256": "8f496f7bbe905fa073d05faebc925f261821a9e930ff87b08c079bd804296283", "src": "canonical/skills/aid-triage/references/state-classify.md"}
+{"dst": ".agent/skills/aid-triage/references/state-classify.md", "profile": "antigravity", "sha256": "58725669f323dba9d4ca0ed395fca5ffe8cee4d0c6bc7b4433722d3604009508", "src": "canonical/skills/aid-triage/references/state-classify.md"}
 {"dst": ".agent/skills/aid-triage/references/state-suggest.md", "profile": "antigravity", "sha256": "c10c5dd011574e6317eb9ce9934d1b25ad98f74f3ba87d8237ae9b22b17f0869", "src": "canonical/skills/aid-triage/references/state-suggest.md"}
 {"dst": ".agent/skills/aid-unset-connector/SKILL.md", "profile": "antigravity", "sha256": "e0cf646521fc3148b88a98c7fbe5b26aa196df2b4e3f89b17aa438225b2428c8", "src": "canonical/skills/aid-unset-connector/SKILL.md"}
 {"dst": ".agent/skills/aid-update-api/SKILL.md", "profile": "antigravity", "sha256": "4388bf108e01b59daefc7e7167829a2f68e61f5b0e147e1135a91dac88801a79", "src": "canonical/skills/aid-update-api/SKILL.md"}
