@@ -9,7 +9,8 @@ line delegating to the engine; allowed-tools; argument-hint) plus a short body t
 binds the row's {verb, artifact} and delegates to
 canonical/aid/templates/shortcut-engine.md.
 
-`repurpose: true` rows (24 total after work-004) are SKIPPED -- they are hand-authored
+`repurpose: true` rows (60 total; re-derive with grep -c '^    repurpose: true$' on
+the catalog rather than trusting this figure) are SKIPPED -- they are hand-authored
 skills (e.g. aid-deploy, aid-monitor), never generated or overwritten here.
 
 Maintainer-only, like run_generator.py: lives beside it under
@@ -40,6 +41,7 @@ from __future__ import annotations
 import argparse
 import shutil
 import sys
+import textwrap
 from pathlib import Path
 
 REPO_ROOT = Path(".")
@@ -250,16 +252,26 @@ def render_doorway(row: dict) -> str:
     title = f"{verb} {artifact}".strip()
     artifact_bind = f"ARTIFACT=`{artifact}`" if artifact else 'ARTIFACT="" (bare verb)'
 
+    # The description leads with the row's own `intent` -- the user-facing outcome --
+    # then states WHEN to reach for the skill, which is the only thing an agent has to
+    # decide whether to load it at all. Engine mechanics (the {verb, artifact} bindings
+    # and the state sequence) live in the body below, never here.
+    # The trigger clause deliberately does NOT repeat the artifact: `intent` already names
+    # it in natural English ("an API endpoint / middleware"), whereas the raw catalog value
+    # would read as "which api to create". One template, no per-skill wording.
+    description = (
+        f"{intent} Use this skill when you already know what to {verb} and want it scoped, "
+        "specified, and broken into reviewable tasks in a single pass, with no requirements "
+        "interview. You approve the resulting plan before anything is built: this skill "
+        "plans and stops, so run /aid-execute to carry the plan out."
+    )
+
     frontmatter = (
         "---\n"
         f"name: {name}\n"
         "description: >\n"
-        f"  Direct-entry Lite-path shortcut ({intent}) -- skips the aid-describe\n"
-        f"  interview/triage. Binds VERB=`{verb}` {artifact_bind} and runs the shared\n"
-        "  shortcut engine, producing a fully-graded flattened Lite work that halts for\n"
-        "  approval.\n"
-        "  State machine: delegated to canonical/aid/templates/shortcut-engine.md\n"
-        "  (INTAKE -> CAPTURE -> SPEC -> PLAN -> DETAIL -> GATE -> APPROVAL-HALT).\n"
+        + textwrap.fill(description, width=90, initial_indent="  ", subsequent_indent="  ")
+        + "\n"
         f"allowed-tools: {_ALLOWED_TOOLS}\n"
         f'argument-hint: "{_argument_hint(row)}"\n'
         "---\n"
