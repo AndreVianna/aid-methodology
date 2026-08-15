@@ -189,6 +189,46 @@ qa:
       out because the rule governs artifacts, so they are out of scope rather than clean.
     decided_by: agent
     updated: '2026-08-15'
+  - id: Q19
+    question: 'Item 8: can the Lite execution graph be derived from task DETAILs?'
+    state: Resolved
+    answer: |
+      Yes, and the answer reshapes AC-13's remaining half.
+
+      `derive-waves.sh --from-tasks <work-dir>` derives the dependency table AND the
+      wave-map from the task DETAIL.md files with no PLAN.md present. Each task's
+      `**Depends on:**` field IS the graph, so on a one-feature one-delivery work there
+      is nothing left for a PLAN.md to hold but a view of data already on disk.
+
+      Built as a SOURCE, not a second sort: the mode renders the DETAILs into the same
+      `| Task | Depends On |` shape the table source produces and feeds it through the
+      SAME awk pass. One sort, one set of cycle semantics, one test surface. This branch
+      has paid three times for two implementations of one algorithm.
+
+      15 new assertions (35 -> 50): the sort, a cycle exiting 2 exactly as the table
+      source does, the nested layout getting one wave-map per delivery, a DETAIL with no
+      Source line, an absent work, an empty work, and all three "no dependencies"
+      spellings landing in wave 1 together. An empty work exits 2 rather than succeeding
+      silently, because emitting nothing is indistinguishable from a work whose tasks
+      sorted into no waves.
+
+      THE FINDING. The derived output round-trips through the EXISTING consumer
+      unchanged: parse_execution_graph reads it and returns
+      {task-001: 1, task-002: 2, task-003: 2} with no parser change. So AC-13's tail is
+      NOT the four-parser rewrite the survey suggested -- all four consumers already
+      parse this exact format. What they need is for the graph to EXIST at read time.
+
+      That leaves a genuine DESIGN choice, and it should be made deliberately rather
+      than guessed at:
+        (a) materialize the derived graph somewhere the consumers already read, or
+        (b) port this one tested algorithm into the two reader twins in-process.
+      (a) risks a stored view drifting from its source -- the exact failure this work
+      exists to remove -- unless it is regenerated on every read. (b) costs two more
+      implementations of a sort, which is the hazard just argued against, though the
+      title parity harness built for AC-12 part 2 would extend to cover it.
+      Not bundled into a commit while the choice is open.
+    decided_by: agent
+    updated: '2026-08-15'
   - id: Q18
     question: 'AC-13: how far did the Lite reduction get?'
     state: Open
