@@ -1,22 +1,22 @@
 ---
 name: aid-housekeep
 description: >
-  Optional on-demand housekeeping skill. Runs three gated jobs in strict order:
-  KB-DELTA (re-discover changed docs since last KB approval; brownfield docs take the
-  doc<-code drift path, while source: forward-authored greenfield docs take the
-  Conformance Lane -- a code->design shadow-extract that FLAGS design vs as-built
-  divergence for human reconciliation and never auto-overwrites the design) → SUMMARY-DELTA
-  (regenerate the visual summary if the KB changed) → CLEANUP (sweep stale
-  work-area artifacts). Each stage commits its own changes on an aid/housekeep-*
-  branch; the skill never pushes. Re-entrant: a stalled run resumes at the stalled
-  stage on re-invocation. State-machine: PREFLIGHT → KB-DELTA → SUMMARY-DELTA →
-  CLEANUP → DONE. Source-driven global reconcile; for a targeted prompt-named delta
-  use /aid-update-kb.
+  Sweep the project back into a consistent state after work has landed. Use this skill when
+  the Knowledge Base has drifted from the code, the generated summary is stale, or work-area
+  artifacts have piled up. It runs three gated jobs in order: re-discovering KB docs that
+  changed since the last approval, regenerating the visual summary if the KB moved, and
+  clearing stale work-area artifacts. Forward-authored greenfield docs take the Conformance
+  Lane, which flags design-versus-as-built divergence for you to reconcile and never
+  overwrites the design itself. Each stage commits on its own branch and nothing is pushed;
+  a stalled run resumes where it stopped. This is the source-driven global reconcile -- for
+  a targeted, prompt-named delta use /aid-update-kb.
 allowed-tools: Read, Glob, Grep, Bash, Write, Edit, Agent
 argument-hint: "[--cleanup-only] [--grade X] jump to cleanup stage, or set minimum summary grade"
 ---
 
 # Knowledge Base Housekeeping
+
+State machine: PREFLIGHT → KB-DELTA → SUMMARY-DELTA → CLEANUP → DONE.
 
 Runs the three standard housekeeping jobs in a safe, fixed order, on a dedicated
 `aid/housekeep-*` branch, with one commit per stage. Re-running after a stalled
