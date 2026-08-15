@@ -57,7 +57,7 @@ work is in `release-tracking.md`; the rationale behind significant decisions is 
   and brainstorm — plus the shared design-lifecycle contract and the `.aid/design/` seed
   layer that backs them. Three deliveries run in sequence: planning skills and lifecycle
   machinery first, foundation and grid skills next, then profile rendering and close-out
-  including a description quality sweep across all 112 skill descriptions.
+  including a description quality sweep across all 111 skill descriptions.
 - **Why:** The `design` stage has never had a first-class entry point for planning or
   Knowledge Base artifacts. The shortcut path covers create and update but has no analogous
   design verb for artifacts that are most decision-sensitive. Without it, direction design
