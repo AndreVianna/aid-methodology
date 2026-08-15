@@ -1,10 +1,3 @@
-# NOTE: hand-edited when the aid-graph skill was removed, because no runtime-complete
-# environment (pwsh) was available to re-collect the whole corpus: rows for the 13 deleted
-# test-graph-*.sh suites were pruned, test-validator-profiles.sh's rows were replaced by a
-# fresh single-suite collection under its new name, test-validator-behavior.sh, and the four
-# per-file DBI-*FWD/REV counts fell from 373 to 315 because each install tree now holds 58
-# fewer emitted files.
-# Re-bootstrap this file on master per the runbook in .github/workflows/coverage-parity.yml.
 test-actback-fixtures.sh	ISO-CANARY-01 real HOME (<PATH> gained no .aid dirs (no scan escaped throwaway HOME)	1
 test-actback-fixtures.sh	T01 V-E1a kb-actback-task.sh output matches recorded golden (expected<PATH>	1
 test-actback-fixtures.sh	T02 V-E1b task spec re-run is byte-identical (determinism satisfied)	1
@@ -1815,44 +1808,26 @@ test-catalog-dirs-parity.sh	CDP14a	1
 test-catalog-dirs-parity.sh	CDP14b	1
 test-catalog-dirs-parity.sh	CDP14c	1
 test-catalog-dirs-parity.sh	CDP14d	1
-test-catalog-dirs-parity.sh	CDP14e	1
-test-catalog-dirs-parity.sh	CDP14f	1
-test-catalog-dirs-parity.sh	CDP14g	1
 test-catalog-dirs-parity.sh	CDP15a	1
 test-catalog-dirs-parity.sh	CDP15b	1
 test-catalog-dirs-parity.sh	CDP15c	1
 test-catalog-dirs-parity.sh	CDP15d	1
-test-catalog-dirs-parity.sh	CDP15e	1
-test-catalog-dirs-parity.sh	CDP15f	1
-test-catalog-dirs-parity.sh	CDP15g	1
 test-catalog-dirs-parity.sh	CDP16a	1
 test-catalog-dirs-parity.sh	CDP16b	1
 test-catalog-dirs-parity.sh	CDP16c	1
 test-catalog-dirs-parity.sh	CDP16d	1
-test-catalog-dirs-parity.sh	CDP16e	1
-test-catalog-dirs-parity.sh	CDP16f	1
-test-catalog-dirs-parity.sh	CDP16g	1
 test-catalog-dirs-parity.sh	CDP17a	1
 test-catalog-dirs-parity.sh	CDP17b	1
 test-catalog-dirs-parity.sh	CDP17c	1
 test-catalog-dirs-parity.sh	CDP17d	1
-test-catalog-dirs-parity.sh	CDP17e	1
-test-catalog-dirs-parity.sh	CDP17f	1
-test-catalog-dirs-parity.sh	CDP17g	1
 test-catalog-dirs-parity.sh	CDP18a	1
 test-catalog-dirs-parity.sh	CDP18b	1
 test-catalog-dirs-parity.sh	CDP18c	1
 test-catalog-dirs-parity.sh	CDP18d	1
-test-catalog-dirs-parity.sh	CDP18e	1
-test-catalog-dirs-parity.sh	CDP18f	1
-test-catalog-dirs-parity.sh	CDP18g	1
 test-catalog-dirs-parity.sh	CDP19a	1
 test-catalog-dirs-parity.sh	CDP19b	1
 test-catalog-dirs-parity.sh	CDP19c	1
 test-catalog-dirs-parity.sh	CDP19d	1
-test-catalog-dirs-parity.sh	CDP19e	1
-test-catalog-dirs-parity.sh	CDP19f	1
-test-catalog-dirs-parity.sh	CDP19g	1
 test-catalog-dirs-parity.sh	CDP1a	1
 test-catalog-dirs-parity.sh	CDP1b	1
 test-catalog-dirs-parity.sh	CDP1c	1
@@ -1864,30 +1839,18 @@ test-catalog-dirs-parity.sh	CDP20a	1
 test-catalog-dirs-parity.sh	CDP20b	1
 test-catalog-dirs-parity.sh	CDP20c	1
 test-catalog-dirs-parity.sh	CDP20d	1
-test-catalog-dirs-parity.sh	CDP20e	1
-test-catalog-dirs-parity.sh	CDP20f	1
-test-catalog-dirs-parity.sh	CDP20g	1
 test-catalog-dirs-parity.sh	CDP21a	1
 test-catalog-dirs-parity.sh	CDP21b	1
 test-catalog-dirs-parity.sh	CDP21c	1
 test-catalog-dirs-parity.sh	CDP21d	1
-test-catalog-dirs-parity.sh	CDP21e	1
-test-catalog-dirs-parity.sh	CDP21f	1
-test-catalog-dirs-parity.sh	CDP21g	1
 test-catalog-dirs-parity.sh	CDP22a	1
 test-catalog-dirs-parity.sh	CDP22b	1
 test-catalog-dirs-parity.sh	CDP22c	1
 test-catalog-dirs-parity.sh	CDP22d	1
-test-catalog-dirs-parity.sh	CDP22e	1
-test-catalog-dirs-parity.sh	CDP22f	1
-test-catalog-dirs-parity.sh	CDP22g	1
 test-catalog-dirs-parity.sh	CDP23a	1
 test-catalog-dirs-parity.sh	CDP23b	1
 test-catalog-dirs-parity.sh	CDP23c	1
 test-catalog-dirs-parity.sh	CDP23d	1
-test-catalog-dirs-parity.sh	CDP23e	1
-test-catalog-dirs-parity.sh	CDP23f	1
-test-catalog-dirs-parity.sh	CDP23g	1
 test-catalog-dirs-parity.sh	CDP24a	1
 test-catalog-dirs-parity.sh	CDP24b	1
 test-catalog-dirs-parity.sh	CDP24c	1
@@ -1955,18 +1918,30 @@ test-catalog-dirs-parity.sh	CDP32a	1
 test-catalog-dirs-parity.sh	CDP32b	1
 test-catalog-dirs-parity.sh	CDP32c	1
 test-catalog-dirs-parity.sh	CDP32d	1
+test-catalog-dirs-parity.sh	CDP32e	1
+test-catalog-dirs-parity.sh	CDP32f	1
+test-catalog-dirs-parity.sh	CDP32g	1
 test-catalog-dirs-parity.sh	CDP33a	1
 test-catalog-dirs-parity.sh	CDP33b	1
 test-catalog-dirs-parity.sh	CDP33c	1
 test-catalog-dirs-parity.sh	CDP33d	1
+test-catalog-dirs-parity.sh	CDP33e	1
+test-catalog-dirs-parity.sh	CDP33f	1
+test-catalog-dirs-parity.sh	CDP33g	1
 test-catalog-dirs-parity.sh	CDP34a	1
 test-catalog-dirs-parity.sh	CDP34b	1
 test-catalog-dirs-parity.sh	CDP34c	1
 test-catalog-dirs-parity.sh	CDP34d	1
+test-catalog-dirs-parity.sh	CDP34e	1
+test-catalog-dirs-parity.sh	CDP34f	1
+test-catalog-dirs-parity.sh	CDP34g	1
 test-catalog-dirs-parity.sh	CDP35a	1
 test-catalog-dirs-parity.sh	CDP35b	1
 test-catalog-dirs-parity.sh	CDP35c	1
 test-catalog-dirs-parity.sh	CDP35d	1
+test-catalog-dirs-parity.sh	CDP35e	1
+test-catalog-dirs-parity.sh	CDP35f	1
+test-catalog-dirs-parity.sh	CDP35g	1
 test-catalog-dirs-parity.sh	CDP36a	1
 test-catalog-dirs-parity.sh	CDP36b	1
 test-catalog-dirs-parity.sh	CDP36c	1
@@ -1978,14 +1953,23 @@ test-catalog-dirs-parity.sh	CDP37a	1
 test-catalog-dirs-parity.sh	CDP37b	1
 test-catalog-dirs-parity.sh	CDP37c	1
 test-catalog-dirs-parity.sh	CDP37d	1
+test-catalog-dirs-parity.sh	CDP37e	1
+test-catalog-dirs-parity.sh	CDP37f	1
+test-catalog-dirs-parity.sh	CDP37g	1
 test-catalog-dirs-parity.sh	CDP38a	1
 test-catalog-dirs-parity.sh	CDP38b	1
 test-catalog-dirs-parity.sh	CDP38c	1
 test-catalog-dirs-parity.sh	CDP38d	1
+test-catalog-dirs-parity.sh	CDP38e	1
+test-catalog-dirs-parity.sh	CDP38f	1
+test-catalog-dirs-parity.sh	CDP38g	1
 test-catalog-dirs-parity.sh	CDP39a	1
 test-catalog-dirs-parity.sh	CDP39b	1
 test-catalog-dirs-parity.sh	CDP39c	1
 test-catalog-dirs-parity.sh	CDP39d	1
+test-catalog-dirs-parity.sh	CDP39e	1
+test-catalog-dirs-parity.sh	CDP39f	1
+test-catalog-dirs-parity.sh	CDP39g	1
 test-catalog-dirs-parity.sh	CDP3a	1
 test-catalog-dirs-parity.sh	CDP3b	1
 test-catalog-dirs-parity.sh	CDP3c	1
@@ -2013,10 +1997,16 @@ test-catalog-dirs-parity.sh	CDP44a	1
 test-catalog-dirs-parity.sh	CDP44b	1
 test-catalog-dirs-parity.sh	CDP44c	1
 test-catalog-dirs-parity.sh	CDP44d	1
+test-catalog-dirs-parity.sh	CDP44e	1
+test-catalog-dirs-parity.sh	CDP44f	1
+test-catalog-dirs-parity.sh	CDP44g	1
 test-catalog-dirs-parity.sh	CDP45a	1
 test-catalog-dirs-parity.sh	CDP45b	1
 test-catalog-dirs-parity.sh	CDP45c	1
 test-catalog-dirs-parity.sh	CDP45d	1
+test-catalog-dirs-parity.sh	CDP45e	1
+test-catalog-dirs-parity.sh	CDP45f	1
+test-catalog-dirs-parity.sh	CDP45g	1
 test-catalog-dirs-parity.sh	CDP46a	1
 test-catalog-dirs-parity.sh	CDP46b	1
 test-catalog-dirs-parity.sh	CDP46c	1
@@ -2044,6 +2034,9 @@ test-catalog-dirs-parity.sh	CDP50a	1
 test-catalog-dirs-parity.sh	CDP50b	1
 test-catalog-dirs-parity.sh	CDP50c	1
 test-catalog-dirs-parity.sh	CDP50d	1
+test-catalog-dirs-parity.sh	CDP50e	1
+test-catalog-dirs-parity.sh	CDP50f	1
+test-catalog-dirs-parity.sh	CDP50g	1
 test-catalog-dirs-parity.sh	CDP51a	1
 test-catalog-dirs-parity.sh	CDP51b	1
 test-catalog-dirs-parity.sh	CDP51c	1
@@ -2052,16 +2045,10 @@ test-catalog-dirs-parity.sh	CDP52a	1
 test-catalog-dirs-parity.sh	CDP52b	1
 test-catalog-dirs-parity.sh	CDP52c	1
 test-catalog-dirs-parity.sh	CDP52d	1
-test-catalog-dirs-parity.sh	CDP52e	1
-test-catalog-dirs-parity.sh	CDP52f	1
-test-catalog-dirs-parity.sh	CDP52g	1
 test-catalog-dirs-parity.sh	CDP53a	1
 test-catalog-dirs-parity.sh	CDP53b	1
 test-catalog-dirs-parity.sh	CDP53c	1
 test-catalog-dirs-parity.sh	CDP53d	1
-test-catalog-dirs-parity.sh	CDP53e	1
-test-catalog-dirs-parity.sh	CDP53f	1
-test-catalog-dirs-parity.sh	CDP53g	1
 test-catalog-dirs-parity.sh	CDP54a	1
 test-catalog-dirs-parity.sh	CDP54b	1
 test-catalog-dirs-parity.sh	CDP54c	1
@@ -2082,6 +2069,10 @@ test-catalog-dirs-parity.sh	CDP58a	1
 test-catalog-dirs-parity.sh	CDP58b	1
 test-catalog-dirs-parity.sh	CDP58c	1
 test-catalog-dirs-parity.sh	CDP58d	1
+test-catalog-dirs-parity.sh	CDP59a	1
+test-catalog-dirs-parity.sh	CDP59b	1
+test-catalog-dirs-parity.sh	CDP59c	1
+test-catalog-dirs-parity.sh	CDP59d	1
 test-catalog-dirs-parity.sh	CDP5a	1
 test-catalog-dirs-parity.sh	CDP5b	1
 test-catalog-dirs-parity.sh	CDP5c	1
@@ -2089,6 +2080,46 @@ test-catalog-dirs-parity.sh	CDP5d	1
 test-catalog-dirs-parity.sh	CDP5e	1
 test-catalog-dirs-parity.sh	CDP5f	1
 test-catalog-dirs-parity.sh	CDP5g	1
+test-catalog-dirs-parity.sh	CDP60a	1
+test-catalog-dirs-parity.sh	CDP60b	1
+test-catalog-dirs-parity.sh	CDP60c	1
+test-catalog-dirs-parity.sh	CDP60d	1
+test-catalog-dirs-parity.sh	CDP61a	1
+test-catalog-dirs-parity.sh	CDP61b	1
+test-catalog-dirs-parity.sh	CDP61c	1
+test-catalog-dirs-parity.sh	CDP61d	1
+test-catalog-dirs-parity.sh	CDP62a	1
+test-catalog-dirs-parity.sh	CDP62b	1
+test-catalog-dirs-parity.sh	CDP62c	1
+test-catalog-dirs-parity.sh	CDP62d	1
+test-catalog-dirs-parity.sh	CDP63a	1
+test-catalog-dirs-parity.sh	CDP63b	1
+test-catalog-dirs-parity.sh	CDP63c	1
+test-catalog-dirs-parity.sh	CDP63d	1
+test-catalog-dirs-parity.sh	CDP64a	1
+test-catalog-dirs-parity.sh	CDP64b	1
+test-catalog-dirs-parity.sh	CDP64c	1
+test-catalog-dirs-parity.sh	CDP64d	1
+test-catalog-dirs-parity.sh	CDP65a	1
+test-catalog-dirs-parity.sh	CDP65b	1
+test-catalog-dirs-parity.sh	CDP65c	1
+test-catalog-dirs-parity.sh	CDP65d	1
+test-catalog-dirs-parity.sh	CDP66a	1
+test-catalog-dirs-parity.sh	CDP66b	1
+test-catalog-dirs-parity.sh	CDP66c	1
+test-catalog-dirs-parity.sh	CDP66d	1
+test-catalog-dirs-parity.sh	CDP67a	1
+test-catalog-dirs-parity.sh	CDP67b	1
+test-catalog-dirs-parity.sh	CDP67c	1
+test-catalog-dirs-parity.sh	CDP67d	1
+test-catalog-dirs-parity.sh	CDP68a	1
+test-catalog-dirs-parity.sh	CDP68b	1
+test-catalog-dirs-parity.sh	CDP68c	1
+test-catalog-dirs-parity.sh	CDP68d	1
+test-catalog-dirs-parity.sh	CDP69a	1
+test-catalog-dirs-parity.sh	CDP69b	1
+test-catalog-dirs-parity.sh	CDP69c	1
+test-catalog-dirs-parity.sh	CDP69d	1
 test-catalog-dirs-parity.sh	CDP6a	1
 test-catalog-dirs-parity.sh	CDP6b	1
 test-catalog-dirs-parity.sh	CDP6c	1
@@ -2096,6 +2127,46 @@ test-catalog-dirs-parity.sh	CDP6d	1
 test-catalog-dirs-parity.sh	CDP6e	1
 test-catalog-dirs-parity.sh	CDP6f	1
 test-catalog-dirs-parity.sh	CDP6g	1
+test-catalog-dirs-parity.sh	CDP70a	1
+test-catalog-dirs-parity.sh	CDP70b	1
+test-catalog-dirs-parity.sh	CDP70c	1
+test-catalog-dirs-parity.sh	CDP70d	1
+test-catalog-dirs-parity.sh	CDP71a	1
+test-catalog-dirs-parity.sh	CDP71b	1
+test-catalog-dirs-parity.sh	CDP71c	1
+test-catalog-dirs-parity.sh	CDP71d	1
+test-catalog-dirs-parity.sh	CDP72a	1
+test-catalog-dirs-parity.sh	CDP72b	1
+test-catalog-dirs-parity.sh	CDP72c	1
+test-catalog-dirs-parity.sh	CDP72d	1
+test-catalog-dirs-parity.sh	CDP73a	1
+test-catalog-dirs-parity.sh	CDP73b	1
+test-catalog-dirs-parity.sh	CDP73c	1
+test-catalog-dirs-parity.sh	CDP73d	1
+test-catalog-dirs-parity.sh	CDP74a	1
+test-catalog-dirs-parity.sh	CDP74b	1
+test-catalog-dirs-parity.sh	CDP74c	1
+test-catalog-dirs-parity.sh	CDP74d	1
+test-catalog-dirs-parity.sh	CDP75a	1
+test-catalog-dirs-parity.sh	CDP75b	1
+test-catalog-dirs-parity.sh	CDP75c	1
+test-catalog-dirs-parity.sh	CDP75d	1
+test-catalog-dirs-parity.sh	CDP76a	1
+test-catalog-dirs-parity.sh	CDP76b	1
+test-catalog-dirs-parity.sh	CDP76c	1
+test-catalog-dirs-parity.sh	CDP76d	1
+test-catalog-dirs-parity.sh	CDP77a	1
+test-catalog-dirs-parity.sh	CDP77b	1
+test-catalog-dirs-parity.sh	CDP77c	1
+test-catalog-dirs-parity.sh	CDP77d	1
+test-catalog-dirs-parity.sh	CDP78a	1
+test-catalog-dirs-parity.sh	CDP78b	1
+test-catalog-dirs-parity.sh	CDP78c	1
+test-catalog-dirs-parity.sh	CDP78d	1
+test-catalog-dirs-parity.sh	CDP79a	1
+test-catalog-dirs-parity.sh	CDP79b	1
+test-catalog-dirs-parity.sh	CDP79c	1
+test-catalog-dirs-parity.sh	CDP79d	1
 test-catalog-dirs-parity.sh	CDP7a	1
 test-catalog-dirs-parity.sh	CDP7b	1
 test-catalog-dirs-parity.sh	CDP7c	1
@@ -2103,6 +2174,52 @@ test-catalog-dirs-parity.sh	CDP7d	1
 test-catalog-dirs-parity.sh	CDP7e	1
 test-catalog-dirs-parity.sh	CDP7f	1
 test-catalog-dirs-parity.sh	CDP7g	1
+test-catalog-dirs-parity.sh	CDP80a	1
+test-catalog-dirs-parity.sh	CDP80b	1
+test-catalog-dirs-parity.sh	CDP80c	1
+test-catalog-dirs-parity.sh	CDP80d	1
+test-catalog-dirs-parity.sh	CDP81a	1
+test-catalog-dirs-parity.sh	CDP81b	1
+test-catalog-dirs-parity.sh	CDP81c	1
+test-catalog-dirs-parity.sh	CDP81d	1
+test-catalog-dirs-parity.sh	CDP82a	1
+test-catalog-dirs-parity.sh	CDP82b	1
+test-catalog-dirs-parity.sh	CDP82c	1
+test-catalog-dirs-parity.sh	CDP82d	1
+test-catalog-dirs-parity.sh	CDP83a	1
+test-catalog-dirs-parity.sh	CDP83b	1
+test-catalog-dirs-parity.sh	CDP83c	1
+test-catalog-dirs-parity.sh	CDP83d	1
+test-catalog-dirs-parity.sh	CDP84a	1
+test-catalog-dirs-parity.sh	CDP84b	1
+test-catalog-dirs-parity.sh	CDP84c	1
+test-catalog-dirs-parity.sh	CDP84d	1
+test-catalog-dirs-parity.sh	CDP85a	1
+test-catalog-dirs-parity.sh	CDP85b	1
+test-catalog-dirs-parity.sh	CDP85c	1
+test-catalog-dirs-parity.sh	CDP85d	1
+test-catalog-dirs-parity.sh	CDP86a	1
+test-catalog-dirs-parity.sh	CDP86b	1
+test-catalog-dirs-parity.sh	CDP86c	1
+test-catalog-dirs-parity.sh	CDP86d	1
+test-catalog-dirs-parity.sh	CDP87a	1
+test-catalog-dirs-parity.sh	CDP87b	1
+test-catalog-dirs-parity.sh	CDP87c	1
+test-catalog-dirs-parity.sh	CDP87d	1
+test-catalog-dirs-parity.sh	CDP88a	1
+test-catalog-dirs-parity.sh	CDP88b	1
+test-catalog-dirs-parity.sh	CDP88c	1
+test-catalog-dirs-parity.sh	CDP88d	1
+test-catalog-dirs-parity.sh	CDP88e	1
+test-catalog-dirs-parity.sh	CDP88f	1
+test-catalog-dirs-parity.sh	CDP88g	1
+test-catalog-dirs-parity.sh	CDP89a	1
+test-catalog-dirs-parity.sh	CDP89b	1
+test-catalog-dirs-parity.sh	CDP89c	1
+test-catalog-dirs-parity.sh	CDP89d	1
+test-catalog-dirs-parity.sh	CDP89e	1
+test-catalog-dirs-parity.sh	CDP89f	1
+test-catalog-dirs-parity.sh	CDP89g	1
 test-catalog-dirs-parity.sh	CDP8a	1
 test-catalog-dirs-parity.sh	CDP8b	1
 test-catalog-dirs-parity.sh	CDP8c	1
@@ -2110,6 +2227,26 @@ test-catalog-dirs-parity.sh	CDP8d	1
 test-catalog-dirs-parity.sh	CDP8e	1
 test-catalog-dirs-parity.sh	CDP8f	1
 test-catalog-dirs-parity.sh	CDP8g	1
+test-catalog-dirs-parity.sh	CDP90a	1
+test-catalog-dirs-parity.sh	CDP90b	1
+test-catalog-dirs-parity.sh	CDP90c	1
+test-catalog-dirs-parity.sh	CDP90d	1
+test-catalog-dirs-parity.sh	CDP91a	1
+test-catalog-dirs-parity.sh	CDP91b	1
+test-catalog-dirs-parity.sh	CDP91c	1
+test-catalog-dirs-parity.sh	CDP91d	1
+test-catalog-dirs-parity.sh	CDP92a	1
+test-catalog-dirs-parity.sh	CDP92b	1
+test-catalog-dirs-parity.sh	CDP92c	1
+test-catalog-dirs-parity.sh	CDP92d	1
+test-catalog-dirs-parity.sh	CDP93a	1
+test-catalog-dirs-parity.sh	CDP93b	1
+test-catalog-dirs-parity.sh	CDP93c	1
+test-catalog-dirs-parity.sh	CDP93d	1
+test-catalog-dirs-parity.sh	CDP94a	1
+test-catalog-dirs-parity.sh	CDP94b	1
+test-catalog-dirs-parity.sh	CDP94c	1
+test-catalog-dirs-parity.sh	CDP94d	1
 test-catalog-dirs-parity.sh	CDP9a	1
 test-catalog-dirs-parity.sh	CDP9b	1
 test-catalog-dirs-parity.sh	CDP9c	1
@@ -3660,10 +3797,10 @@ test-delivery-gate-aggregate.sh	Test 5: Fix cycle does NOT append to delivery-NN
 test-delivery-gate-aggregate.sh	Test 6a: FR6 interlock detects 1 task(s) not Done — gate should NOT fire	1
 test-delivery-gate-aggregate.sh	Test 6b: FR6 interlock correctly identifies the Failed task's state: key	1
 test-delivery-gate-aggregate.sh	Test 6c: FR6 interlock passes (all tasks Done) — gate CAN fire	1
-test-delivery-gate-aggregate.sh	Test 7a: writeback-state.sh --delivery-id --block exits 0	1
+test-delivery-gate-aggregate.sh	Test 7a: writeback-state.sh --delivery-id --block exits 0 Helper exited with code 1	1
 test-delivery-gate-aggregate.sh	Test 7b: deliveries<PATH> has a delivery_gate: key	1
-test-delivery-gate-aggregate.sh	Test 7c: gate block content written to deliveries<PATH> (issue item present)	1
-test-delivery-gate-aggregate.sh	Test 7d: --gate-field Grade writes gate_grade into deliveries<PATH>	1
+test-delivery-gate-aggregate.sh	Test 7c: gate block content written to deliveries<PATH> Issue item not found in <PATH>	1
+test-delivery-gate-aggregate.sh	Test 7d: --gate-field Grade writes gate_grade gate_grade: A+ not found in <PATH>	1
 test-delivery-gate-aggregate.sh	Test 7e: work STATE.yml NOT written by the helper (DERIVED view preserved)	1
 test-delivery-gate-aggregate.sh	Test 8a: state-delivery-gate.md resolves Full-path delivery acceptance criteria from BLUEPRINT.md § Gate Criteria	1
 test-delivery-gate-aggregate.sh	Test 8b: state-delivery-gate.md no longer reads delivery criteria from PLAN.md (mis-wire fixed)	1
@@ -3917,20 +4054,20 @@ test-document-family-scaffold.sh	DFS45	2
 test-document-family-scaffold.sh	DFS46	2
 test-document-family-scaffold.sh	DFS47	2
 test-document-family-scaffold.sh	DFS48	2
-test-dogfood-byte-identity.sh	DBI-CUR-FWD .cursor<PATH>	315
+test-dogfood-byte-identity.sh	DBI-CUR-FWD .cursor<PATH>	354
 test-dogfood-byte-identity.sh	DBI-CUR-MUT-ALLOW the worktrees<PATH> allowlist arm excuses a scratch .cursor<PATH> file (arm is live, not dead)	1
 test-dogfood-byte-identity.sh	DBI-CUR-MUT-BYTE a one-byte mutation under the scratch .cursor<PATH> copy makes DBI-CUR-FWD fail with a sha256 mismatch naming .cursor<PATH>	1
 test-dogfood-byte-identity.sh	DBI-CUR-MUT-CTRL unmutated scratch copy of the dogfood .cursor<PATH> tree probes clean	1
 test-dogfood-byte-identity.sh	DBI-CUR-MUT-ORPHAN an unlisted generator-shaped file under the scratch .cursor<PATH> copy makes DBI-CUR-ORPHAN fail naming .cursor<PATH>	1
 test-dogfood-byte-identity.sh	DBI-CUR-ORPHAN repo .cursor<PATH> has no undocumented generator-shaped orphans	1
-test-dogfood-byte-identity.sh	DBI-CUR-REV .cursor<PATH>	315
+test-dogfood-byte-identity.sh	DBI-CUR-REV .cursor<PATH>	354
 test-dogfood-byte-identity.sh	DBI-CUR00 emission-manifest.jsonl exists	1
 test-dogfood-byte-identity.sh	DBI-CUR00b profiles<PATH> exists	1
 test-dogfood-byte-identity.sh	DBI-CUR00c repo-root .cursor<PATH> exists	1
 test-dogfood-byte-identity.sh	DBI-CUR01 manifest loaded -- generator-owned .cursor<PATH> entries	1
-test-dogfood-byte-identity.sh	DBI-FWD .claude<PATH>	315
+test-dogfood-byte-identity.sh	DBI-FWD .claude<PATH>	354
 test-dogfood-byte-identity.sh	DBI-ORPHAN repo .claude<PATH> has no undocumented generator-shaped orphans	1
-test-dogfood-byte-identity.sh	DBI-REV .claude<PATH>	315
+test-dogfood-byte-identity.sh	DBI-REV .claude<PATH>	354
 test-dogfood-byte-identity.sh	DBI00	1
 test-dogfood-byte-identity.sh	DBI00b	1
 test-dogfood-byte-identity.sh	DBI00c	1
@@ -3966,11 +4103,11 @@ test-downstream-worktree-entry.sh	G1 aid-detail references the shared doc	1
 test-downstream-worktree-entry.sh	G1 aid-execute references the shared doc	1
 test-downstream-worktree-entry.sh	G1 aid-plan references the shared doc	1
 test-downstream-worktree-entry.sh	G1 aid-specify references the shared doc	1
-test-downstream-worktree-entry.sh	G2 aid-define -- pointer precedes '## State Detection' (STATE.md read) (pointer line 168 < anchor line 176)	1
-test-downstream-worktree-entry.sh	G2 aid-deploy -- pointer sits between item 2 and item 3 (item2 < pointer < item3) (before=86 < mid=94 < after=100)	1
-test-downstream-worktree-entry.sh	G2 aid-detail -- pointer precedes '### Check 2: Verify PLAN.md Exists' (pointer line 34 < anchor line 40)	1
-test-downstream-worktree-entry.sh	G2 aid-execute -- pointer sits strictly between Check-1 step 3 and step 4 (step3 < pointer < step4) (before=41 < mid=45 < after=50)	1
-test-downstream-worktree-entry.sh	G2 aid-plan -- pointer precedes '### Check 2: Verify Feature SPECs' (pointer line 86 < anchor line 92)	1
+test-downstream-worktree-entry.sh	G2 aid-define -- pointer precedes '## State Detection' (STATE.md read) (pointer line 167 < anchor line 175)	1
+test-downstream-worktree-entry.sh	G2 aid-deploy -- pointer sits between item 2 and item 3 (item2 < pointer < item3) (before=87 < mid=95 < after=101)	1
+test-downstream-worktree-entry.sh	G2 aid-detail -- pointer precedes '### Check 2: Verify PLAN.md Exists' (pointer line 35 < anchor line 41)	1
+test-downstream-worktree-entry.sh	G2 aid-execute -- pointer sits strictly between Check-1 step 3 and step 4 (step3 < pointer < step4) (before=42 < mid=46 < after=51)	1
+test-downstream-worktree-entry.sh	G2 aid-plan -- pointer precedes '### Check 2: Verify Feature SPECs' (pointer line 85 < anchor line 91)	1
 test-downstream-worktree-entry.sh	G2 aid-specify -- pointer precedes '### Check 2: Feature Exists' (SPEC.md glob) (pointer line 113 < anchor line 123)	1
 test-downstream-worktree-entry.sh	G3 aid-define -- ## State Detection step 2 named as the authoritative post-enter Approved gate	1
 test-downstream-worktree-entry.sh	G3 aid-define -- detached-HEAD branch_label case named explicitly	1
@@ -4270,7 +4407,7 @@ test-guardrails-d012.sh	NM-d validate-html-output.sh NM.3 checks for CDN Mermaid
 test-guardrails-d012.sh	NM-e assemble.sh explicitly says no Mermaid engine in assembled output	1
 test-guardrails-d012.sh	NM-g state-validate.md references validate-diagrams.mjs only historically	1
 test-guardrails-d012.sh	NM-g state-validate.md references validate-visuals.mjs	1
-test-harvest-batching.sh	T01 fallback self-consistent (rg absent -- both runs use grep)	1
+test-harvest-batching.sh	T01 rg path == grep fallback (byte-identical; cross-OS determinism)	1
 test-harvest-batching.sh	T01b equivalence fixture produced harvest rows (comparison is non-vacuous)	1
 test-harvest-batching.sh	T02 harvest completes on pathological long-line input (no hang)	1
 test-harvest-batching.sh	T02b pathological run still emits the documented table header	1
@@ -5199,15 +5336,6 @@ test-pypi-installer.sh	PW03	8
 test-pypi-installer.sh	PW04-01	1
 test-pypi-installer.sh	PW04-02	1
 test-pypi-installer.sh	PW05	30
-test-pypi-installer.sh	PW06-01	1
-test-pypi-installer.sh	PW06-02	1
-test-pypi-installer.sh	PW06-03	1
-test-pypi-installer.sh	PW06-04	1
-test-pypi-installer.sh	PW06-05	1
-test-pypi-installer.sh	PW06-06	1
-test-pypi-installer.sh	PW06-07	1
-test-pypi-installer.sh	PW06-08	1
-test-pypi-installer.sh	PW06-09	1
 test-pypi-installer.sh	PW07-01	1
 test-pypi-installer.sh	PW07-02	1
 test-pypi-installer.sh	PW07-03	1
@@ -5574,49 +5702,49 @@ test-registry.sh	REG-V08b-05 pretend-global union: shared-tier repo visible	1
 test-registry.sh	REG-V08b-06 pretend-global union: user-tier entry appears exactly once	1
 test-registry.sh	REG-V08b-07 pretend-global union: shared-tier entry appears exactly once	1
 test-registry.sh	REG-V08b-08 pretend-global: shared-tier register did not add entry to user-tier registry	1
-test-release-install-e2e.sh	E2E01 release.sh --dry-run exits 0	1
-test-release-install-e2e.sh	E2E01b staging dir contains exactly 6 tarballs (5 profile + 1 CLI bundle)	1
-test-release-install-e2e.sh	E2E01c aid-antigravity-<VER> staged	1
-test-release-install-e2e.sh	E2E01c aid-claude-code-<VER> staged	1
-test-release-install-e2e.sh	E2E01c aid-codex-<VER> staged	1
-test-release-install-e2e.sh	E2E01c aid-copilot-cli-<VER> staged	1
-test-release-install-e2e.sh	E2E01c aid-cursor-<VER> staged	1
-test-release-install-e2e.sh	E2E01c-cli aid-cli-<VER> staged	1
-test-release-install-e2e.sh	E2E01d aid-install-core.sh staged	1
-test-release-install-e2e.sh	E2E01e AidInstallCore.psm1 staged	1
-test-release-install-e2e.sh	E2E01f SHA256SUMS staged	1
-test-release-install-e2e.sh	E2E01g SHA256SUMS has 8 entries (5 profile tarballs + 1 CLI bundle + 2 libs)	1
-test-release-install-e2e.sh	E2E02 sha256sum -c SHA256SUMS passes	1
-test-release-install-e2e.sh	E2E02b aid-antigravity-<VER>: independent hex matches SHA256SUMS record	1
-test-release-install-e2e.sh	E2E02b aid-claude-code-<VER>: independent hex matches SHA256SUMS record	1
-test-release-install-e2e.sh	E2E02b aid-codex-<VER>: independent hex matches SHA256SUMS record	1
-test-release-install-e2e.sh	E2E02b aid-copilot-cli-<VER>: independent hex matches SHA256SUMS record	1
-test-release-install-e2e.sh	E2E02b aid-cursor-<VER>: independent hex matches SHA256SUMS record	1
-test-release-install-e2e.sh	E2E03 install.sh add <tool> (CONVENIENCE) staged tarball exits 0	1
-test-release-install-e2e.sh	E2E03b install --verbose reports Copied:	1
-test-release-install-e2e.sh	E2E03c install reports Done.	1
-test-release-install-e2e.sh	E2E03d .claude<PATH> created	1
-test-release-install-e2e.sh	E2E03e CLAUDE.md created	1
-test-release-install-e2e.sh	E2E03f installed CLAUDE.md byte-identical to clone profile	1
-test-release-install-e2e.sh	E2E03g manifest created	1
-test-release-install-e2e.sh	E2E03h manifest lists claude-code	1
-test-release-install-e2e.sh	E2E03i manifest has aid_version	1
-test-release-install-e2e.sh	E2E03j manifest has format_version	1
-test-release-install-e2e.sh	E2E03k manifest lists CLAUDE.md path	1
-test-release-install-e2e.sh	E2E03l manifest records root_agent sha256	1
-test-release-install-e2e.sh	E2E03m root_agent status is owned	1
+test-release-install-e2e.sh	E2E01 release.sh --dry-run exits 0 — expected exit 0, got 1	1
+test-release-install-e2e.sh	E2E01b staging dir contains exactly 6 tarballs (5 profile + 1 CLI bundle) — expected '6' got '0'	1
+test-release-install-e2e.sh	E2E01c aid-antigravity-v.tar.gz staged — file does not exist: <PATH>	1
+test-release-install-e2e.sh	E2E01c aid-claude-code-v.tar.gz staged — file does not exist: <PATH>	1
+test-release-install-e2e.sh	E2E01c aid-codex-v.tar.gz staged — file does not exist: <PATH>	1
+test-release-install-e2e.sh	E2E01c aid-copilot-cli-v.tar.gz staged — file does not exist: <PATH>	1
+test-release-install-e2e.sh	E2E01c aid-cursor-v.tar.gz staged — file does not exist: <PATH>	1
+test-release-install-e2e.sh	E2E01c-cli aid-cli-v.tar.gz staged — file does not exist: <PATH>	1
+test-release-install-e2e.sh	E2E01d aid-install-core.sh staged — file does not exist: <PATH>	1
+test-release-install-e2e.sh	E2E01e AidInstallCore.psm1 staged — file does not exist: <PATH>	1
+test-release-install-e2e.sh	E2E01f SHA256SUMS staged — file does not exist: <PATH>	1
+test-release-install-e2e.sh	E2E01g SHA256SUMS has 8 entries (5 profile tarballs + 1 CLI bundle + 2 libs) — expected '8' got ''	1
+test-release-install-e2e.sh	E2E02 sha256sum -c SHA256SUMS passes — expected exit 0, got 1	1
+test-release-install-e2e.sh	E2E02b aid-antigravity-v.tar.gz: independent hex matches SHA256SUMS record	1
+test-release-install-e2e.sh	E2E02b aid-claude-code-v.tar.gz: independent hex matches SHA256SUMS record	1
+test-release-install-e2e.sh	E2E02b aid-codex-v.tar.gz: independent hex matches SHA256SUMS record	1
+test-release-install-e2e.sh	E2E02b aid-copilot-cli-v.tar.gz: independent hex matches SHA256SUMS record	1
+test-release-install-e2e.sh	E2E02b aid-cursor-v.tar.gz: independent hex matches SHA256SUMS record	1
+test-release-install-e2e.sh	E2E03 install.sh add <tool> (CONVENIENCE) staged tarball exits 0 — expected exit 0, got 1	1
+test-release-install-e2e.sh	E2E03b install --verbose reports Copied: — pattern not found: 'Copied:'	1
+test-release-install-e2e.sh	E2E03c install reports Done. — pattern not found: 'Done.'	1
+test-release-install-e2e.sh	E2E03d .claude<PATH> created — directory does not exist: <PATH>	1
+test-release-install-e2e.sh	E2E03e CLAUDE.md created — file does not exist: <PATH>	1
+test-release-install-e2e.sh	E2E03f installed CLAUDE.md byte-identical to clone profile — expected 'same' got 'diff'	1
+test-release-install-e2e.sh	E2E03g manifest created — file does not exist: <PATH>	1
+test-release-install-e2e.sh	E2E03h manifest lists claude-code — pattern not found: '"claude-code"' in <PATH>	1
+test-release-install-e2e.sh	E2E03i manifest has aid_version — pattern not found: '"aid_version"' in <PATH>	1
+test-release-install-e2e.sh	E2E03j manifest has format_version — pattern not found: '"format_version"' in <PATH>	1
+test-release-install-e2e.sh	E2E03k manifest lists CLAUDE.md path — pattern not found: '"CLAUDE.md"' in <PATH>	1
+test-release-install-e2e.sh	E2E03l manifest records root_agent sha256 — pattern not found: '"sha256"' in <PATH>	1
+test-release-install-e2e.sh	E2E03m root_agent status is owned — pattern not found: '"status": "owned"' in <PATH>	1
 test-release-install-e2e.sh	E2E03n .aid-version marker NOT written (retired)	1
 test-release-install-e2e.sh	E2E03o manifest aid_version contains correct version	1
 test-release-install-e2e.sh	E2E03p manifest has no absolute paths	1
-test-release-install-e2e.sh	E2E04 tampered tarball → exit 4	1
-test-release-install-e2e.sh	E2E04b error message mentions checksum	1
+test-release-install-e2e.sh	E2E04 tampered tarball → exit 4 — expected exit 4, got 2	1
+test-release-install-e2e.sh	E2E04b error message mentions checksum — pattern not found: 'checksum'	1
 test-release-install-e2e.sh	E2E05 update re-run exits 0	1
-test-release-install-e2e.sh	E2E05b --verbose update same version reports 'Up to date:'	1
+test-release-install-e2e.sh	E2E05b --verbose update same version reports 'Up to date:' — pattern not found: 'Up to date:'	1
 test-release-install-e2e.sh	E2E05c --verbose update does not re-copy identical files	1
-test-release-install-e2e.sh	E2E05d CLAUDE.md unchanged after update	1
-test-release-install-e2e.sh	E2E06 uninstall exits 0	1
-test-release-install-e2e.sh	E2E06b --verbose uninstall reports Removed:	1
-test-release-install-e2e.sh	E2E06c uninstall complete banner	1
+test-release-install-e2e.sh	E2E05d CLAUDE.md unchanged after update — expected 'same' got 'diff'	1
+test-release-install-e2e.sh	E2E06 uninstall exits 0 — expected exit 0, got 6	1
+test-release-install-e2e.sh	E2E06b --verbose uninstall reports Removed: — pattern not found: 'Removed:'	1
+test-release-install-e2e.sh	E2E06c uninstall complete banner — pattern not found: 'Uninstall complete.'	1
 test-release-install-e2e.sh	E2E06d .claude<PATH> removed after uninstall	1
 test-release-install-e2e.sh	E2E06e CLAUDE.md removed after uninstall	1
 test-release-install-e2e.sh	E2E06f .aid<PATH> dir removed after full uninstall	1
@@ -5639,64 +5767,61 @@ test-release-install-e2e.sh	E2E07o AidInstallCore.psm1 references releases<PATH>
 test-release-install-e2e.sh	E2E07p AidInstallCore.psm1 references releases<PATH> API path	1
 test-release-install-e2e.sh	E2E07q Fetch-Tarball fail-closed error text present in AidInstallCore.psm1	1
 test-release-install-e2e.sh	E2E07r AidInstallCore.psm1 no longer contains the warn-and-proceed checksum path	1
-test-release-install-e2e.sh	E2E08a install.ps1 add <tool> (CONVENIENCE) staged tarball exits 0	1
-test-release-install-e2e.sh	E2E08b install.ps1 -Verbose reports Copied:	1
-test-release-install-e2e.sh	E2E08c install.ps1 reports Done.	1
-test-release-install-e2e.sh	E2E08d .claude<PATH> created by install.ps1	1
-test-release-install-e2e.sh	E2E08e CLAUDE.md created by install.ps1	1
-test-release-install-e2e.sh	E2E08f ps1-installed CLAUDE.md byte-identical to clone profile	1
-test-release-install-e2e.sh	E2E08g ps1 manifest created	1
+test-release-install-e2e.sh	E2E08a install.ps1 add <tool> (CONVENIENCE) staged tarball exits 0 — expected exit 0, got 1	1
+test-release-install-e2e.sh	E2E08b install.ps1 -Verbose reports Copied: — pattern not found: 'Copied:'	1
+test-release-install-e2e.sh	E2E08c install.ps1 reports Done. — pattern not found: 'Done.'	1
+test-release-install-e2e.sh	E2E08d .claude<PATH> created by install.ps1 — directory does not exist: <PATH>	1
+test-release-install-e2e.sh	E2E08e CLAUDE.md created by install.ps1 — file does not exist: <PATH>	1
+test-release-install-e2e.sh	E2E08f ps1-installed CLAUDE.md byte-identical to clone profile — expected 'same' got 'diff'	1
+test-release-install-e2e.sh	E2E08g ps1 manifest created — file does not exist: <PATH>	1
 test-release-install-e2e.sh	E2E08h ps1 .aid-version NOT written (retired)	1
 test-release-install-e2e.sh	E2E08i ps1 manifest aid_version contains correct version	1
 test-release-install-e2e.sh	E2E08j install.ps1 update exits 0	1
-test-release-install-e2e.sh	E2E08k install.ps1 -Verbose update identical files → Up to date	1
+test-release-install-e2e.sh	E2E08k install.ps1 -Verbose update identical files → Up to date — pattern not found: 'Up to date:'	1
 test-release-install-e2e.sh	E2E08l install.ps1 -Verbose update does not re-copy	1
-test-release-install-e2e.sh	E2E08m install.ps1 remove exits 0	1
-test-release-install-e2e.sh	E2E08n install.ps1 -Verbose uninstall reports Removed:	1
-test-release-install-e2e.sh	E2E08o install.ps1 uninstall complete banner	1
+test-release-install-e2e.sh	E2E08m install.ps1 remove exits 0 — expected exit 0, got 6	1
+test-release-install-e2e.sh	E2E08n install.ps1 -Verbose uninstall reports Removed: — pattern not found: 'Removed:'	1
+test-release-install-e2e.sh	E2E08o install.ps1 uninstall complete banner — pattern not found: 'Uninstall complete.'	1
 test-release-install-e2e.sh	E2E08p ps1 .claude<PATH> removed after uninstall	1
 test-release-install-e2e.sh	E2E08q ps1 CLAUDE.md removed after uninstall	1
 test-release-install-e2e.sh	E2E08r ps1 .aid<PATH> removed after full uninstall	1
 test-release-install-e2e.sh	E2E08s ps1 second uninstall → exit 6 (no manifest)	1
-test-release-install-e2e.sh	E2E09a piped CLI-bundle install exits 0	1
-test-release-install-e2e.sh	E2E09b piped CLI-bundle install verifies checksum	1
-test-release-install-e2e.sh	E2E09c aid dispatcher installed to AID_HOME<PATH>	1
-test-release-install-e2e.sh	E2E09d install core installed to AID_HOME<PATH>	1
-test-release-install-e2e.sh	E2E09e VERSION file written to AID_HOME	1
-test-release-install-e2e.sh	E2E09f aid binary is present after piped install	1
-test-release-install-e2e.sh	E2E09g tampered CLI bundle → exit 4	1
-test-release-install-e2e.sh	E2E09h tampered CLI bundle error mentions checksum mismatch	1
+test-release-install-e2e.sh	E2E09a piped CLI-bundle install exits 0 — expected exit 0, got 3	1
+test-release-install-e2e.sh	E2E09b piped CLI-bundle install verifies checksum — pattern not found: 'Checksum OK'	1
+test-release-install-e2e.sh	E2E09c aid dispatcher installed to AID_HOME<PATH> — file does not exist: <PATH>	1
+test-release-install-e2e.sh	E2E09d install core installed to AID_HOME<PATH> — file does not exist: <PATH>	1
+test-release-install-e2e.sh	E2E09e VERSION file written to AID_HOME — file does not exist: <PATH>	1
+test-release-install-e2e.sh	E2E09f aid binary is present after piped install — file does not exist: <PATH>	1
+test-release-install-e2e.sh	E2E09g tampered CLI bundle → exit 4 — expected exit 4, got 3	1
+test-release-install-e2e.sh	E2E09h tampered CLI bundle error mentions checksum mismatch — pattern not found: 'checksum mismatch'	1
 test-release-install-e2e.sh	E2E09i tampered bundle: aid NOT installed to AID_HOME	1
 test-release-install-e2e.sh	E2E09j missing SHA256SUMS → fail-closed (exit 3)	1
 test-release-install-e2e.sh	E2E09k missing SHA256SUMS: aid NOT installed	1
-test-release-install-e2e.sh	E2E09k tampered lib (aid-install-core.sh) -> exit 4 (checksum mismatch)	1
-test-release-install-e2e.sh	E2E09l tampered lib error mentions checksum mismatch	1
+test-release-install-e2e.sh	E2E09k tampered lib (aid-install-core.sh) -> exit 4 (checksum mismatch) — expected exit 4, got 3	1
+test-release-install-e2e.sh	E2E09l tampered lib error mentions checksum mismatch — pattern not found: 'checksum mismatch'	1
 test-release-install-e2e.sh	E2E09m PWNED-prevention: tampered lib verified BEFORE sourcing (injected code never runs)	1
 test-release-install-e2e.sh	E2E09n tampered lib: aid NOT installed to AID_HOME	1
 test-release-install-e2e.sh	E2E10a piped PS1 CLI-bundle install exits 0	1
-test-release-install-e2e.sh	E2E10b piped PS1 install verifies checksum	1
-test-release-install-e2e.sh	E2E10c aid.ps1 dispatcher installed to AID_HOME<PATH>	1
-test-release-install-e2e.sh	E2E10d AidInstallCore.psm1 installed to AID_HOME<PATH>	1
-test-release-install-e2e.sh	E2E10e VERSION file written to AID_HOME	1
+test-release-install-e2e.sh	E2E10b piped PS1 install verifies checksum — pattern not found: 'Checksum OK'	1
+test-release-install-e2e.sh	E2E10c aid.ps1 dispatcher installed to AID_HOME<PATH> — file does not exist: <PATH>	1
+test-release-install-e2e.sh	E2E10d AidInstallCore.psm1 installed to AID_HOME<PATH> — file does not exist: <PATH>	1
+test-release-install-e2e.sh	E2E10e VERSION file written to AID_HOME — file does not exist: <PATH>	1
 test-release-install-e2e.sh	E2E10f tampered PS1 CLI bundle error mentions checksum mismatch	1
 test-release-install-e2e.sh	E2E10g tampered PS1 bundle: aid.ps1 NOT installed	1
-test-release-install-e2e.sh	E2E11a aid add <tool> (valid SHA256SUMS, flagged override) exits 0	1
-test-release-install-e2e.sh	E2E11b aid add verifies checksum via fetch_tarball	1
-test-release-install-e2e.sh	E2E11c tool tree installed	1
+test-release-install-e2e.sh	E2E11a aid add <tool> (valid SHA256SUMS, flagged override) exits 0 — expected exit 0, got 3	1
+test-release-install-e2e.sh	E2E11b aid add verifies checksum via fetch_tarball — pattern not found: 'Checksum OK'	1
+test-release-install-e2e.sh	E2E11c tool tree installed — directory does not exist: <PATH>	1
 test-release-install-e2e.sh	E2E11d missing SHA256SUMS -> fail-closed non-zero exit (was WARN + proceed)	1
-test-release-install-e2e.sh	E2E11e missing-SHA256SUMS error mentions fail-closed	1
+test-release-install-e2e.sh	E2E11e missing-SHA256SUMS error mentions fail-closed — pattern not found: 'fail-closed'	1
 test-release-install-e2e.sh	E2E11f missing SHA256SUMS: tool NOT installed	1
-test-release-install-e2e.sh	E2E11g tampered tarball -> exit 4 (checksum mismatch still enforced)	1
+test-release-install-e2e.sh	E2E11g tampered tarball -> exit 4 (checksum mismatch still enforced) — expected exit 4, got 3	1
 test-release-install-e2e.sh	E2E11h tampered tarball: tool NOT installed	1
 test-release-migrate-smoke.sh	RMS-CURL-01 install.sh produced a working $AID_HOME<PATH>	1
 test-release-migrate-smoke.sh	RMS-CURL-02-A -- stamp-less repo encounter: WARN 'older format' printed (lazy-stamp model)	1
 test-release-migrate-smoke.sh	RMS-CURL-02-B -- after __migrate-repo: settings.yml stamped format_version: 4	1
 test-release-migrate-smoke.sh	RMS-CURL-02-C -- after __migrate-repo: legacy work-state STATE.md converted to STATE.yml	1
 test-release-migrate-smoke.sh	RMS-CURL-02-D -- after __migrate-repo: legacy STATE.md deleted (verified conversion)	1
-test-release-migrate-smoke.sh	RMS-NPM-01 npm pack + global install su<HEX>	1
-test-release-migrate-smoke.sh	RMS-NPM-02 npm install: aid binary location not found -- SKIPPED (integration path)	1
-test-release-migrate-smoke.sh	RMS-PYPI-01 wheel build + pip install su<HEX>	1
-test-release-migrate-smoke.sh	RMS-PYPI-02 pypi install: aid binary location not found -- SKIPPED (integration path)	1
+test-release-migrate-smoke.sh	RMS-NPM-01 npm global install failed	1
 test-release-migrate-smoke.sh	RMS-SAFETY-01 real repo git status unchanged (scan stayed in throwaway HOME)	1
 test-release.sh	RL01	8
 test-release.sh	RL02	21
@@ -5713,6 +5838,7 @@ test-release.sh	RL06	3
 test-release.sh	RL07	3
 test-release.sh	RL08a	4
 test-release.sh	RL08b	2
+test-release.sh	clone sanity — clone has unexpected uncommitted changes	1
 test-self-commands.sh	SELF001-SH01	1
 test-self-commands.sh	SELF001-SH02	1
 test-self-commands.sh	SELF001-SH03	1
@@ -5825,8 +5951,8 @@ test-shortcut-engine-contract.sh	SEC08c	1
 test-spine-depth-coverage.sh	SD01	1
 test-spine-depth-coverage.sh	SD02	11
 test-spine-depth-coverage.sh	SD03	11
-test-spine-depth-coverage.sh	SD04	58
-test-spine-depth-coverage.sh	SD05	58
+test-spine-depth-coverage.sh	SD04	61
+test-spine-depth-coverage.sh	SD05	61
 test-spine-depth-coverage.sh	SD06	2
 test-spine-depth-coverage.sh	SD07	1
 test-spine-depth-coverage.sh	SD08	1
@@ -5873,22 +5999,22 @@ test-summarize-preflight.sh	T1e: second run exits 0	1
 test-summarize-preflight.sh	T1e: second run is a no-op (content unchanged)	1
 test-summarize-preflight.sh	T2: migration produced kb.html at new path	1
 test-summarize-preflight.sh	T2: stale-check returns CURRENT_APPROVED after migration	1
-test-task-state-transitions.sh	node readRepo() surfaces -> Done	1
-test-task-state-transitions.sh	node readRepo() surfaces -> In Progress	1
-test-task-state-transitions.sh	node readRepo() surfaces -> In Review	1
-test-task-state-transitions.sh	node readRepo() surfaces -> Pending	1
-test-task-state-transitions.sh	python read_repo() surfaces -> Done	1
-test-task-state-transitions.sh	python read_repo() surfaces -> In Progress	1
-test-task-state-transitions.sh	python read_repo() surfaces -> In Review	1
-test-task-state-transitions.sh	python read_repo() surfaces -> Pending	1
-test-task-state-transitions.sh	writeback-state.sh --field State --value "Done"	1
-test-task-state-transitions.sh	writeback-state.sh --field State --value "In Progress"	1
-test-task-state-transitions.sh	writeback-state.sh --field State --value "In Review"	1
-test-task-state-transitions.sh	writeback-state.sh --field State --value "Pending"	1
-test-task-state-transitions.sh	writer: tasks_lifecycle.task-001.state -> Done	1
-test-task-state-transitions.sh	writer: tasks_lifecycle.task-001.state -> In Progress	1
-test-task-state-transitions.sh	writer: tasks_lifecycle.task-001.state -> In Review	1
-test-task-state-transitions.sh	writer: tasks_lifecycle.task-001.state -> Pending	1
+test-task-state-transitions.sh	node readRepo() surfaces -> Done — expected 'Done' got 'Unknown'	1
+test-task-state-transitions.sh	node readRepo() surfaces -> In Progress — expected 'In Progress' got 'Unknown'	1
+test-task-state-transitions.sh	node readRepo() surfaces -> In Review — expected 'In Review' got 'Unknown'	1
+test-task-state-transitions.sh	node readRepo() surfaces -> Pending — expected 'Pending' got 'Unknown'	1
+test-task-state-transitions.sh	python read_repo() surfaces -> Done — expected 'Done' got 'Unknown'	1
+test-task-state-transitions.sh	python read_repo() surfaces -> In Progress — expected 'In Progress' got 'Unknown'	1
+test-task-state-transitions.sh	python read_repo() surfaces -> In Review — expected 'In Review' got 'Unknown'	1
+test-task-state-transitions.sh	python read_repo() surfaces -> Pending — expected 'Pending' got 'Unknown'	1
+test-task-state-transitions.sh	writeback-state.sh --field State --value "Done" — expected exit 0, got 1	1
+test-task-state-transitions.sh	writeback-state.sh --field State --value "In Progress" — expected exit 0, got 1	1
+test-task-state-transitions.sh	writeback-state.sh --field State --value "In Review" — expected exit 0, got 1	1
+test-task-state-transitions.sh	writeback-state.sh --field State --value "Pending" — expected exit 0, got 1	1
+test-task-state-transitions.sh	writer: tasks_lifecycle.task-001.state -> Done — expected 'Done' got ''	1
+test-task-state-transitions.sh	writer: tasks_lifecycle.task-001.state -> In Progress — expected 'In Progress' got ''	1
+test-task-state-transitions.sh	writer: tasks_lifecycle.task-001.state -> In Review — expected 'In Review' got ''	1
+test-task-state-transitions.sh	writer: tasks_lifecycle.task-001.state -> Pending — expected 'Pending' got ''	1
 test-teachback-fixtures.sh	ISO-CANARY-01 real HOME (<PATH> gained no .aid dirs (no scan escaped throwaway HOME)	1
 test-teachback-fixtures.sh	T01a V-C1a spread=2 term TokenRouter generates question	1
 test-teachback-fixtures.sh	T01b V-C1a spread=2 term DispatchQueue generates question	1
@@ -6377,6 +6503,7 @@ test-version-sync.sh	VS09	1
 test-version-sync.sh	VS10	3
 test-version-sync.sh	VS11	2
 test-version-sync.sh	VS12	2
+test-version-sync.sh	WF01	2
 test-version-sync.sh	WF02	1
 test-version-sync.sh	WF03a	1
 test-version-sync.sh	WF03b	1
@@ -6871,13 +6998,13 @@ test-write-setting.sh	U8 embedded backslash in --value exits 4	1
 test-write-setting.sh	U9 flat top-level key written ('name: Fresh' at column 0)	1
 test-write-setting.sh	U9 no project: header created (flat write matches flat schema, no nesting)	1
 test-write-setting.sh	U9 write-setting exits 0	1
-test-writeback-state.sh	--lifecycle Blocked accepted (exit 0)	1
-test-writeback-state.sh	--lifecycle Done accepted (exit 0)	1
-test-writeback-state.sh	--lifecycle Executing accepted (exit 0)	1
-test-writeback-state.sh	--lifecycle Gated accepted (exit 0)	1
-test-writeback-state.sh	--lifecycle Pending-Spec accepted (exit 0)	1
+test-writeback-state.sh	--lifecycle Blocked accepted (exit 0) — expected exit 0, got 1	1
+test-writeback-state.sh	--lifecycle Done accepted (exit 0) — expected exit 0, got 1	1
+test-writeback-state.sh	--lifecycle Executing accepted (exit 0) — expected exit 0, got 1	1
+test-writeback-state.sh	--lifecycle Gated accepted (exit 0) — expected exit 0, got 1	1
+test-writeback-state.sh	--lifecycle Pending-Spec accepted (exit 0) — expected exit 0, got 1	1
 test-writeback-state.sh	--lifecycle Running (invalid; that is pipeline enum) -> exit 4	1
-test-writeback-state.sh	--lifecycle Specified accepted (exit 0)	1
+test-writeback-state.sh	--lifecycle Specified accepted (exit 0) — expected exit 0, got 1	1
 test-writeback-state.sh	--lifecycle active (invalid lowercase) -> exit 4	1
 test-writeback-state.sh	--lifecycle against a non-mapping STATE.yml -> exit 6 (malformed)	1
 test-writeback-state.sh	10a: Lifecycle=Blocked accepted (exit 0)	1
@@ -6927,7 +7054,7 @@ test-writeback-state.sh	12c: work STATE.yml unchanged after --block write	1
 test-writeback-state.sh	12d: work STATE.yml unchanged after --lifecycle write	1
 test-writeback-state.sh	13n: corrupted output discarded, original file preserved on exit 3	1
 test-writeback-state.sh	13n: original notes value untouched after the exit-3 fault	1
-test-writeback-state.sh	13n: verify-mismatch (fault-injected) -> exit 3	1
+test-writeback-state.sh	13n: verify-mismatch (fault-injected) -> exit 3 — expected exit 3, got 1	1
 test-writeback-state.sh	17a: field 'active_skill' appears exactly once after concurrent writes (no duplication)	1
 test-writeback-state.sh	17a: field 'lifecycle' appears exactly once after concurrent writes (no duplication)	1
 test-writeback-state.sh	17a: field 'phase' appears exactly once after concurrent writes (no duplication)	1
@@ -6978,47 +7105,47 @@ test-writeback-state.sh	19e: Lifecycle Blocked on circuit-breaker stop	1
 test-writeback-state.sh	19f: Delivery gate non-CODE pause emit -> exit 0	1
 test-writeback-state.sh	19f: Lifecycle Paused on non-CODE-only gate stop	1
 test-writeback-state.sh	19f: Pause Reason explains upstream fix needed	1
-test-writeback-state.sh	20a: flat --field write -> exit 0	1
+test-writeback-state.sh	20a: flat --field write -> exit 0 — expected exit 0, got 1	1
 test-writeback-state.sh	20a: no per-task STATE.yml created for the flat layout	1
-test-writeback-state.sh	20a: task-001 state key written under tasks_lifecycle	1
-test-writeback-state.sh	20b: tasks_lifecycle.task-001 entry present	1
-test-writeback-state.sh	20b: tasks_lifecycle: {} placeholder replaced by a real mapping	1
+test-writeback-state.sh	20a: task-001 state key written under tasks_lifecycle — pattern not found: 'state: 'In Progress'' in <PATH>	1
+test-writeback-state.sh	20b: tasks_lifecycle.task-001 entry present — pattern not found: 'task-001:' in <PATH>	1
+test-writeback-state.sh	20b: tasks_lifecycle: {} placeholder replaced by a real mapping — unexpected pattern found: 'tasks_lifecycle: {}' in <PATH>	1
 test-writeback-state.sh	20c: exactly one tasks_lifecycle: parent header (no duplication)	1
-test-writeback-state.sh	20c: second flat task --field write -> exit 0	1
+test-writeback-state.sh	20c: second flat task --field write -> exit 0 — expected exit 0, got 1	1
 test-writeback-state.sh	20c: task-001's mapping entry survived the task-002 write byte-identical	1
-test-writeback-state.sh	20c: tasks_lifecycle.task-002 entry appended	1
-test-writeback-state.sh	20d: flat --field Review write on existing task entry -> exit 0	1
-test-writeback-state.sh	20d: task-001 review set to A	1
-test-writeback-state.sh	20d: task-001 state preserved (not clobbered by the Review write)	1
-test-writeback-state.sh	20e: flat --lifecycle write -> exit 0	1
+test-writeback-state.sh	20c: tasks_lifecycle.task-002 entry appended — pattern not found: 'task-002:' in <PATH>	1
+test-writeback-state.sh	20d: flat --field Review write on existing task entry -> exit 0 — expected exit 0, got 1	1
+test-writeback-state.sh	20d: task-001 review set to A — pattern not found: 'review: A' in <PATH>	1
+test-writeback-state.sh	20d: task-001 state preserved (not clobbered by the Review write) — pattern not found: 'state: 'In Progress'' in <PATH>	1
+test-writeback-state.sh	20e: flat --lifecycle write -> exit 0 — expected exit 0, got 1	1
 test-writeback-state.sh	20e: no deliveries<PATH> directory created for the flat layout	1
-test-writeback-state.sh	20e: work-root delivery_state set to Executing	1
-test-writeback-state.sh	20f: delivery_state key survives the --block rewrite	1
-test-writeback-state.sh	20f: flat --block write -> exit 0	1
-test-writeback-state.sh	20f: work-root delivery_gate.issue_list item written	1
+test-writeback-state.sh	20e: work-root delivery_state set to Executing — pattern not found: 'delivery_state: Executing' in <PATH>	1
+test-writeback-state.sh	20f: delivery_state key survives the --block rewrite — pattern not found: 'delivery_state: Executing' in <PATH>	1
+test-writeback-state.sh	20f: flat --block write -> exit 0 — expected exit 0, got 1	1
+test-writeback-state.sh	20f: work-root delivery_gate.issue_list item written — pattern not found: '[LOW] flat gate finding' in <PATH>	1
 test-writeback-state.sh	20g: flat --field write is idempotent -- no size change on same value	1
-test-writeback-state.sh	20h: flat work with a non-mapping STATE.yml -> exit 6 (malformed)	1
-test-writeback-state.sh	20i: flat fixture's own task-001 entry still appears exactly once (no cross-contamination)	1
-test-writeback-state.sh	20i: nested-path --field write still succeeds after flat-layout changes	1
-test-writeback-state.sh	20i: nested-path task-001 STATE.yml still the write target	1
-test-writeback-state.sh	21a: --delivery-id 008 --task-id 008 --field -> exit 0 (no octal parse error)	1
+test-writeback-state.sh	20h: flat work with a non-mapping STATE.yml -> exit 6 (malformed) — expected exit 6, got 1	1
+test-writeback-state.sh	20i: flat fixture's task-001 entry count is 0, expected 1	1
+test-writeback-state.sh	20i: nested-path --field write still succeeds after flat-layout changes — expected exit 0, got 1	1
+test-writeback-state.sh	20i: nested-path task-001 STATE.yml still the write target — pattern not found: 'state: Done' in <PATH>	1
+test-writeback-state.sh	21a: --delivery-id 008 --task-id 008 --field -> exit 0 (no octal parse error) — expected exit 0, got 1	1
 test-writeback-state.sh	21a: no delivery-000 directory was ever consulted (octal misparse would have targeted it)	1
-test-writeback-state.sh	21a: write landed in delivery-008<PATH>	1
-test-writeback-state.sh	21b: --delivery-id 090 --task-id 009 --field -> exit 0 (no octal parse error)	1
-test-writeback-state.sh	21b: write landed in delivery-090<PATH>	1
-test-writeback-state.sh	21c: --delivery-id 090 --lifecycle -> exit 0 (no octal parse error)	1
-test-writeback-state.sh	21c: lifecycle written to delivery-090<PATH>	1
-test-writeback-state.sh	21d: --delivery-id 008 --block -> exit 0 (no octal parse error)	1
-test-writeback-state.sh	21d: gate block written to delivery-008<PATH>	1
+test-writeback-state.sh	21a: write landed in delivery-008<PATH> — pattern not found: 'state: Done' in <PATH>	1
+test-writeback-state.sh	21b: --delivery-id 090 --task-id 009 --field -> exit 0 (no octal parse error) — expected exit 0, got 1	1
+test-writeback-state.sh	21b: write landed in delivery-090<PATH> — pattern not found: 'octal-ok' in <PATH>	1
+test-writeback-state.sh	21c: --delivery-id 090 --lifecycle -> exit 0 (no octal parse error) — expected exit 0, got 1	1
+test-writeback-state.sh	21c: lifecycle written to delivery-090<PATH> — pattern not found: 'delivery_state: Gated' in <PATH>	1
+test-writeback-state.sh	21d: --delivery-id 008 --block -> exit 0 (no octal parse error) — expected exit 0, got 1	1
+test-writeback-state.sh	21d: gate block written to delivery-008<PATH> — pattern not found: 'octal footgun regression' in <PATH>	1
 test-writeback-state.sh	21e: --delivery-id 009 --append-issue -> exit 0 (no octal parse error)	1
 test-writeback-state.sh	21e: issue row appended to delivery-009-issues.md	1
-test-writeback-state.sh	21f: Source-line resolution with task-id 008 -> exit 0 (no octal parse error)	1
-test-writeback-state.sh	21f: Source-line-resolved write landed in delivery-008<PATH>	1
-test-writeback-state.sh	21g: flat layout --task-id 008 --field -> exit 0 (no octal parse error)	1
-test-writeback-state.sh	21g: flat layout tasks_lifecycle entry written for task-008 (not task-000)	1
-test-writeback-state.sh	21h: --delivery-id 008 --task-id 008 --findings -> exit 0 (no octal parse error)	1
+test-writeback-state.sh	21f: Source-line resolution with task-id 008 -> exit 0 (no octal parse error) — expected exit 0, got 5	1
+test-writeback-state.sh	21f: Source-line-resolved write landed in delivery-008<PATH> — pattern not found: 'review: B' in <PATH>	1
+test-writeback-state.sh	21g: flat layout --task-id 008 --field -> exit 0 (no octal parse error) — expected exit 0, got 1	1
+test-writeback-state.sh	21g: flat layout tasks_lifecycle entry written for task-008 (not task-000) — pattern not found: 'task-008:' in <PATH>	1
+test-writeback-state.sh	21h: --delivery-id 008 --task-id 008 --findings -> exit 0 (no octal parse error) — expected exit 0, got 1	1
 test-writeback-state.sh	21h: confirmation message reports 'task-008' (padded_id resolved correctly, not 'task-000')	1
-test-writeback-state.sh	21h: findings block written to delivery-008<PATH>	1
+test-writeback-state.sh	21h: findings block written to delivery-008<PATH> — pattern not found: 'octal footgun regression finding' in <PATH>	1
 test-writeback-state.sh	22a: Minimum Grade write -> exit 0	1
 test-writeback-state.sh	22a: Minimum Grade='Z' (invalid grade) rejected (exit 4)	1
 test-writeback-state.sh	22a: Pipeline Initiator='refactor' (no aid- prefix) rejected (exit 4)	1
@@ -7035,19 +7162,19 @@ test-writeback-state.sh	22a: pipeline.path nested key written	1
 test-writeback-state.sh	22a: started key written (single-quoted -- date-like value, D-5<PATH>	1
 test-writeback-state.sh	22a: user_approved key written (single-quoted -- yes<PATH> deny-list value, D-5<PATH>	1
 test-writeback-state.sh	22b: gate-field Grade='Z' (invalid) rejected (exit 4)	1
-test-writeback-state.sh	22b: gate-field Grade=A- accepted (exit 0)	1
+test-writeback-state.sh	22b: gate-field Grade=A- accepted (exit 0) — expected exit 0, got 1	1
 test-writeback-state.sh	22b: gate-field Tier='Huge' (invalid) rejected (exit 4)	1
-test-writeback-state.sh	22b: gate-field Tier=Medium accepted (exit 0)	1
-test-writeback-state.sh	22b: gate-field Timestamp accepted (exit 0)	1
+test-writeback-state.sh	22b: gate-field Tier=Medium accepted (exit 0) — expected exit 0, got 1	1
+test-writeback-state.sh	22b: gate-field Timestamp accepted (exit 0) — expected exit 0, got 1	1
 test-writeback-state.sh	22b: gate-value containing a newline rejected (exit 4; the ONE surviving control-char guard)	1
-test-writeback-state.sh	22b: gate_grade key written	1
-test-writeback-state.sh	22b: gate_tier key written	1
-test-writeback-state.sh	22b: gate_timestamp key written	1
+test-writeback-state.sh	22b: gate_grade key written — pattern not found: 'gate_grade: A-' in <PATH>	1
+test-writeback-state.sh	22b: gate_tier key written — pattern not found: 'gate_tier: Medium' in <PATH>	1
+test-writeback-state.sh	22b: gate_timestamp key written — pattern not found: 'gate_timestamp: '2026-07-10T12:00:00Z'' in <PATH>	1
 test-writeback-state.sh	22b: unknown gate-field name rejected (exit 4)	1
-test-writeback-state.sh	22c: delivery_gate.issue_list untouched by a subsequent --gate-field write	1
-test-writeback-state.sh	22d: flat-layout gate-field write -> exit 0	1
+test-writeback-state.sh	22c: delivery_gate.issue_list untouched by a subsequent --gate-field write — pattern not found: '[LOW] pre-existing issue' in <PATH>	1
+test-writeback-state.sh	22d: flat-layout gate-field write -> exit 0 — expected exit 0, got 1	1
 test-writeback-state.sh	22d: no deliveries<PATH> directory created for the flat layout gate-field write	1
-test-writeback-state.sh	22d: work-root gate_tier set (flat layout)	1
+test-writeback-state.sh	22d: work-root gate_tier set (flat layout) — pattern not found: 'gate_tier: Small' in <PATH>	1
 test-writeback-state.sh	22e: every OTHER pre-existing line byte-identical (cmp, redacting only the 5 touched keys) after a sequence of scalar writes (critical AC)	1
 test-writeback-state.sh	22e: line count unchanged (overwrite-in-place, no insertion<PATH>	1
 test-writeback-state.sh	22f: CRLF STATE.yml scalar write -> exit 0	1
@@ -7055,46 +7182,47 @@ test-writeback-state.sh	22f: CRLF trailing content byte-identical (cmp) after th
 test-writeback-state.sh	22f: phase key updated	1
 test-writeback-state.sh	22f: the untouched lines still carry \r (CRLF preserved)	1
 test-writeback-state.sh	22g: quoted (nasty, pipe-bearing) value write -> exit 0	1
-test-writeback-state.sh	23a: display_name key written (quoted -- value contains spaces)	1
-test-writeback-state.sh	23a: nested --field Name write -> exit 0	1
+test-writeback-state.sh	22g: quoted-value document is valid YAML and round-trips through PyYAML safe_load<PATH>	1
+test-writeback-state.sh	23a: display_name key written (quoted -- value contains spaces) — pattern not found: 'display_name: 'Custom Task Title'' in <PATH>	1
+test-writeback-state.sh	23a: nested --field Name write -> exit 0 — expected exit 0, got 1	1
 test-writeback-state.sh	23a: no literal 'name:' key present (fm_key indirection correct)	1
 test-writeback-state.sh	23a: other fields (state) untouched by the Name write	1
 test-writeback-state.sh	23a: unrelated sibling key survives the Name write	1
 test-writeback-state.sh	23b: nested Name write idempotent -- no size change on same value	1
 test-writeback-state.sh	23c: unknown field still rejected (exit 4)	1
 test-writeback-state.sh	23c: unknown-field error message lists Name in the allowed set	1
-test-writeback-state.sh	23d INVERTED: Name value containing '|' now accepted (exit 0)	1
-test-writeback-state.sh	23d INVERTED: the pipe-bearing Name value round-trips intact	1
-test-writeback-state.sh	23e INVERTED: Name value containing a newline now accepted (exit 0)	1
-test-writeback-state.sh	23e INVERTED: the newline-bearing Name value round-trips (double-quoted, escaped)	1
-test-writeback-state.sh	23f: display_name written under tasks_lifecycle.task-001	1
-test-writeback-state.sh	23f: flat --field Name write -> exit 0	1
-test-writeback-state.sh	23f: task-001's existing review cell (from Unit 20d) survives the Name write	1
+test-writeback-state.sh	23d INVERTED: Name value containing '|' now accepted (exit 0) — expected exit 0, got 1	1
+test-writeback-state.sh	23d INVERTED: the pipe-bearing Name value round-trips intact — pattern not found: 'bad|value' in <PATH>	1
+test-writeback-state.sh	23e INVERTED: Name value containing a newline now accepted (exit 0) — expected exit 0, got 1	1
+test-writeback-state.sh	23e INVERTED: the newline-bearing Name value round-trips (double-quoted, escaped) — pattern not found: 'display_name: "line1\nline2"' in <PATH>	1
+test-writeback-state.sh	23f: display_name written under tasks_lifecycle.task-001 — pattern not found: 'display_name: 'Custom Flat Title'' in <PATH>	1
+test-writeback-state.sh	23f: flat --field Name write -> exit 0 — expected exit 0, got 1	1
+test-writeback-state.sh	23f: task-001's existing review cell (from Unit 20d) survives the Name write — pattern not found: 'review: A' in <PATH>	1
 test-writeback-state.sh	24a: AID_WORK_DIR-only --append-issue -> exit 0 (no unbound-variable abort, no missing lock dir)	1
 test-writeback-state.sh	24b: issues file resolved to AID_WORK_DIR<PATH>	1
 test-writeback-state.sh	24b: the row was actually written	1
 test-writeback-state.sh	24c: no literal .aid<PATH> path created	1
 test-writeback-state.sh	24d: idempotent on the AID_WORK_DIR path -- duplicate row not added	1
-test-writeback-state.sh	25a: caller block content present verbatim (escaped scalar)	1
-test-writeback-state.sh	25a: flat --findings write -> exit 0 (no per-task STATE.yml required)	1
-test-writeback-state.sh	25a: quick_check scalar key written under task-001	1
-test-writeback-state.sh	25a: tasks_lifecycle.task-001 entry created	1
+test-writeback-state.sh	25a: caller block content present verbatim (escaped scalar) — pattern not found: 'Reviewer Tier' in <PATH>	1
+test-writeback-state.sh	25a: flat --findings write -> exit 0 (no per-task STATE.yml required) — expected exit 0, got 1	1
+test-writeback-state.sh	25a: quick_check scalar key written under task-001 — pattern not found: 'quick_check:' in <PATH>	1
+test-writeback-state.sh	25a: tasks_lifecycle.task-001 entry created — pattern not found: 'task-001:' in <PATH>	1
 test-writeback-state.sh	25b: no deliveries<PATH> directory created for the flat layout	1
 test-writeback-state.sh	25b: no per-task STATE.yml created for the flat layout	1
-test-writeback-state.sh	25c: second task's flat --findings write -> exit 0	1
+test-writeback-state.sh	25c: second task's flat --findings write -> exit 0 — expected exit 0, got 1	1
 test-writeback-state.sh	25c: task-001's entry survived the task-002 write byte-identical (SIBLING PRESERVATION)	1
-test-writeback-state.sh	25c: tasks_lifecycle.task-002 entry created	1
-test-writeback-state.sh	25d: rewriting task-001's findings -> exit 0	1
-test-writeback-state.sh	25d: task-001's new block written	1
+test-writeback-state.sh	25c: tasks_lifecycle.task-002 entry created — pattern not found: 'task-002:' in <PATH>	1
+test-writeback-state.sh	25d: rewriting task-001's findings -> exit 0 — expected exit 0, got 1	1
+test-writeback-state.sh	25d: task-001's new block written — pattern not found: 'replaced block' in <PATH>	1
 test-writeback-state.sh	25d: task-001's stale block content removed (replaced, not appended)	1
 test-writeback-state.sh	25d: task-002's entry survived the task-001 rewrite byte-identical (SIBLING PRESERVATION)	1
-test-writeback-state.sh	25e: flat --findings without --delivery-id -> exit 0	1
-test-writeback-state.sh	25f: entry keyed task-008 (not task-000)	1
-test-writeback-state.sh	25f: flat --findings --task-id 008 -> exit 0 (no octal parse error)	1
-test-writeback-state.sh	25g: nested-layout --findings write still succeeds	1
-test-writeback-state.sh	25g: nested-layout findings body written to the per-task STATE.yml	1
+test-writeback-state.sh	25e: flat --findings without --delivery-id -> exit 0 — expected exit 0, got 5	1
+test-writeback-state.sh	25f: entry keyed task-008 (not task-000) — pattern not found: 'task-008:' in <PATH>	1
+test-writeback-state.sh	25f: flat --findings --task-id 008 -> exit 0 (no octal parse error) — expected exit 0, got 1	1
+test-writeback-state.sh	25g: nested-layout --findings write still succeeds — expected exit 0, got 1	1
+test-writeback-state.sh	25g: nested-layout findings body written to the per-task STATE.yml — pattern not found: 'nested-layout regression finding' in <PATH>	1
 test-writeback-state.sh	25g: nested-layout findings did NOT land in the work-root STATE.yml	1
-test-writeback-state.sh	25g: nested-layout findings still target the per-task STATE.yml, structured	1
+test-writeback-state.sh	25g: nested-layout findings still target the per-task STATE.yml, structured — pattern not found: 'reviewer_tier: Small' in <PATH>	1
 test-writeback-state.sh	25g: nested-layout write left the flat fixture byte-identical (no cross-layout leak)	1
 test-writeback-state.sh	9a: Lifecycle write with no prior base keys -> exit 0	1
 test-writeback-state.sh	9a: lifecycle key written	1
@@ -7117,44 +7245,44 @@ test-writeback-state.sh	9h: Lifecycle key overwritten to Completed	1
 test-writeback-state.sh	9h: old Lifecycle value Running removed	1
 test-writeback-state.sh	9i: Active Skill none written	1
 test-writeback-state.sh	9i: Active Skill=none is valid -> exit 0	1
-test-writeback-state.sh	<VER>: 'In Review' written as a quoted state: scalar	1
-test-writeback-state.sh	<VER>: C4 legacy State='Blocked' accepted (exit 0)	1
-test-writeback-state.sh	<VER>: C4 legacy State='Done' accepted (exit 0)	1
-test-writeback-state.sh	<VER>: C4 legacy State='Failed' accepted (exit 0)	1
-test-writeback-state.sh	<VER>: C4 legacy State='In Progress' accepted (exit 0)	1
-test-writeback-state.sh	<VER>: C4 legacy State='In Review' accepted (exit 0)	1
-test-writeback-state.sh	<VER>: C4 legacy State='Pending' accepted (exit 0)	1
-test-writeback-state.sh	<VER>: Elapsed='running' accepted (enum does not apply to Elapsed)	1
-test-writeback-state.sh	<VER>: Notes value written successfully	1
-test-writeback-state.sh	<VER>: Notes='anything weird !@#' accepted (enum does not leak to Notes)	1
-test-writeback-state.sh	<VER>: Review='done' accepted (enum does not apply to Review)	1
-test-writeback-state.sh	<VER>: State 'Canceled' grep-recoverable from task STATE.yml	1
-test-writeback-state.sh	<VER>: State 'Done' grep-recoverable after overwrite	1
-test-writeback-state.sh	<VER>: State value grep-recoverable from task STATE.yml	1
-test-writeback-state.sh	<VER>: State='Blocked' accepted (exit 0)	1
-test-writeback-state.sh	<VER>: State='Blocked' written to task STATE.yml	1
-test-writeback-state.sh	<VER>: State='Canceled' accepted (exit 0)	1
-test-writeback-state.sh	<VER>: State='Canceled' written to task STATE.yml	1
+test-writeback-state.sh	<VER>: 'In Review' written as a quoted state: scalar — pattern not found: 'state: 'In Review'' in <PATH>	1
+test-writeback-state.sh	<VER>: C4 legacy State='Blocked' accepted (exit 0) — expected exit 0, got 1	1
+test-writeback-state.sh	<VER>: C4 legacy State='Done' accepted (exit 0) — expected exit 0, got 1	1
+test-writeback-state.sh	<VER>: C4 legacy State='Failed' accepted (exit 0) — expected exit 0, got 1	1
+test-writeback-state.sh	<VER>: C4 legacy State='In Progress' accepted (exit 0) — expected exit 0, got 1	1
+test-writeback-state.sh	<VER>: C4 legacy State='In Review' accepted (exit 0) — expected exit 0, got 1	1
+test-writeback-state.sh	<VER>: C4 legacy State='Pending' accepted (exit 0) — expected exit 0, got 1	1
+test-writeback-state.sh	<VER>: Elapsed='running' accepted (enum does not apply to Elapsed) — expected exit 0, got 1	1
+test-writeback-state.sh	<VER>: Notes value written successfully — pattern not found: 'anything weird !@#' in <PATH>	1
+test-writeback-state.sh	<VER>: Notes='anything weird !@#' accepted (enum does not leak to Notes) — expected exit 0, got 1	1
+test-writeback-state.sh	<VER>: Review='done' accepted (enum does not apply to Review) — expected exit 0, got 1	1
+test-writeback-state.sh	<VER>: State 'Canceled' grep-recoverable from task STATE.yml — expected 'Canceled' got 'Pending'	1
+test-writeback-state.sh	<VER>: State 'Done' grep-recoverable after overwrite — expected 'Done' got 'Pending'	1
+test-writeback-state.sh	<VER>: State value grep-recoverable from task STATE.yml — expected 'In Review' got 'Pending'	1
+test-writeback-state.sh	<VER>: State='Blocked' accepted (exit 0) — expected exit 0, got 1	1
+test-writeback-state.sh	<VER>: State='Blocked' written to task STATE.yml — pattern not found: 'state: Blocked' in <PATH>	1
+test-writeback-state.sh	<VER>: State='Canceled' accepted (exit 0) — expected exit 0, got 1	1
+test-writeback-state.sh	<VER>: State='Canceled' written to task STATE.yml — pattern not found: 'state: Canceled' in <PATH>	1
 test-writeback-state.sh	<VER>: State='DONE' rejected (exit 4)	1
-test-writeback-state.sh	<VER>: State='Done' accepted (exit 0)	1
-test-writeback-state.sh	<VER>: State='Done' written to task STATE.yml	1
-test-writeback-state.sh	<VER>: State='Failed' accepted (exit 0)	1
-test-writeback-state.sh	<VER>: State='Failed' written to task STATE.yml	1
+test-writeback-state.sh	<VER>: State='Done' accepted (exit 0) — expected exit 0, got 1	1
+test-writeback-state.sh	<VER>: State='Done' written to task STATE.yml — pattern not found: 'state: Done' in <PATH>	1
+test-writeback-state.sh	<VER>: State='Failed' accepted (exit 0) — expected exit 0, got 1	1
+test-writeback-state.sh	<VER>: State='Failed' written to task STATE.yml — pattern not found: 'state: Failed' in <PATH>	1
 test-writeback-state.sh	<VER>: State='Finished' rejected (exit 4)	1
-test-writeback-state.sh	<VER>: State='In Progress' accepted (exit 0)	1
-test-writeback-state.sh	<VER>: State='In Progress' written to task STATE.yml	1
-test-writeback-state.sh	<VER>: State='In Review' accepted (exit 0)	1
-test-writeback-state.sh	<VER>: State='In Review' written to task STATE.yml	1
+test-writeback-state.sh	<VER>: State='In Progress' accepted (exit 0) — expected exit 0, got 1	1
+test-writeback-state.sh	<VER>: State='In Progress' written to task STATE.yml — pattern not found: 'state: 'In Progress'' in <PATH>	1
+test-writeback-state.sh	<VER>: State='In Review' accepted (exit 0) — expected exit 0, got 1	1
+test-writeback-state.sh	<VER>: State='In Review' written to task STATE.yml — pattern not found: 'state: 'In Review'' in <PATH>	1
 test-writeback-state.sh	<VER>: State='InProgress' rejected (exit 4)	1
 test-writeback-state.sh	<VER>: State='PENDING' rejected (exit 4)	1
-test-writeback-state.sh	<VER>: State='Pending' accepted (exit 0)	1
+test-writeback-state.sh	<VER>: State='Pending' accepted (exit 0) — expected exit 0, got 1	1
 test-writeback-state.sh	<VER>: State='Pending' written to task STATE.yml	1
 test-writeback-state.sh	<VER>: State='Status' rejected (exit 4)	1
-test-writeback-state.sh	<VER>: State='_none yet_' placeholder accepted (exit 0)	1
+test-writeback-state.sh	<VER>: State='_none yet_' placeholder accepted (exit 0) — expected exit 0, got 1	1
 test-writeback-state.sh	<VER>: State='in progress' rejected (exit 4)	1
 test-writeback-state.sh	<VER>: State='running' rejected (exit 4)	1
 test-writeback-state.sh	<VER>: State='todo' rejected (exit 4)	1
-test-writeback-state.sh	<VER>: _none yet_ placeholder written to task STATE.yml	1
+test-writeback-state.sh	<VER>: _none yet_ placeholder written to task STATE.yml — pattern not found: '_none yet_' in <PATH>	1
 test-writeback-state.sh	<VER>: task STATE.yml unchanged after rejection of 'DONE'	1
 test-writeback-state.sh	<VER>: task STATE.yml unchanged after rejection of 'Finished'	1
 test-writeback-state.sh	<VER>: task STATE.yml unchanged after rejection of 'InProgress'	1
@@ -7163,81 +7291,81 @@ test-writeback-state.sh	<VER>: task STATE.yml unchanged after rejection of 'Stat
 test-writeback-state.sh	<VER>: task STATE.yml unchanged after rejection of 'in progress'	1
 test-writeback-state.sh	<VER>: task STATE.yml unchanged after rejection of 'running'	1
 test-writeback-state.sh	<VER>: task STATE.yml unchanged after rejection of 'todo'	1
-test-writeback-state.sh	H2 INVERTED: pipe in --value now accepted -> exit 0	1
-test-writeback-state.sh	H2 INVERTED: the '|' round-trips intact through single-quote escaping	1
-test-writeback-state.sh	H2b INVERTED: newline in --value now accepted -> exit 0	1
-test-writeback-state.sh	H2b INVERTED: the double-quoted escaped form is on disk	1
+test-writeback-state.sh	H2 INVERTED: pipe in --value now accepted -> exit 0 — expected exit 0, got 1	1
+test-writeback-state.sh	H2 INVERTED: the '|' round-trips intact through single-quote escaping — expected 'a|b' got ''	1
+test-writeback-state.sh	H2b INVERTED: newline in --value now accepted -> exit 0 — expected exit 0, got 1	1
+test-writeback-state.sh	H2b INVERTED: the double-quoted escaped form is on disk — pattern not found: 'notes: "line1\nline2"' in <PATH>	1
 test-writeback-state.sh	M2 missing lock dir -> exit non-zero	1
-test-writeback-state.sh	M2 missing lock dir: error message mentions 'lock directory does not exist'	1
-test-writeback-state.sh	Source-line resolution: task-3 -> delivery-001, exit 0	1
-test-writeback-state.sh	Source-line resolution: task-6 -> delivery-002, exit 0	1
+test-writeback-state.sh	M2 missing lock dir: expected 'lock directory does not exist' in error output, got: ERROR: writeback-state.sh: .aid<PATH> does not exist 1	1
+test-writeback-state.sh	Source-line resolution: task-3 -> delivery-001, exit 0 — expected exit 0, got 5	1
+test-writeback-state.sh	Source-line resolution: task-6 -> delivery-002, exit 0 — expected exit 0, got 5	1
 test-writeback-state.sh	append-issue: idempotent -- duplicate row not added	1
 test-writeback-state.sh	clean gate (no issues) round-trips to an empty sequence	1
-test-writeback-state.sh	concurrent P1 write landed in task-001<PATH> (Done)	1
-test-writeback-state.sh	concurrent P2 write landed in task-002<PATH> (In Progress)	1
-test-writeback-state.sh	concurrent P3 write landed in task-003<PATH> (Failed)	1
-test-writeback-state.sh	concurrent P4 write landed in task-004<PATH> (Blocked)	1
-test-writeback-state.sh	concurrent P5 write landed in task-005<PATH> (In Review)	1
-test-writeback-state.sh	critical finding in task-002 STATE.yml	1
-test-writeback-state.sh	deferred status in task-001 findings	1
+test-writeback-state.sh	concurrent P1 write landed in task-001<PATH> (Done) — pattern not found: 'Done' in <PATH>	1
+test-writeback-state.sh	concurrent P2 write landed in task-002<PATH> (In Progress) — pattern not found: 'In Progress' in <PATH>	1
+test-writeback-state.sh	concurrent P3 write landed in task-003<PATH> (Failed) — pattern not found: 'Failed' in <PATH>	1
+test-writeback-state.sh	concurrent P4 write landed in task-004<PATH> (Blocked) — pattern not found: 'Blocked' in <PATH>	1
+test-writeback-state.sh	concurrent P5 write landed in task-005<PATH> (In Review) — pattern not found: 'In Review' in <PATH>	1
+test-writeback-state.sh	critical finding in task-002 STATE.yml — pattern not found: '[CRITICAL] null deref' in <PATH>	1
+test-writeback-state.sh	deferred status in task-001 findings — pattern not found: 'Deferred-to-gate' in <PATH>	1
 test-writeback-state.sh	delivery STATE.yml missing -> exit 1 (--block mode)	1
 test-writeback-state.sh	delivery STATE.yml missing -> exit 1 (--lifecycle mode)	1
-test-writeback-state.sh	delivery-001 delivery_state set to Gated	1
-test-writeback-state.sh	delivery-001 gate block unaffected after delivery-002 write	1
+test-writeback-state.sh	delivery-001 delivery_state set to Gated — pattern not found: 'delivery_state: Gated' in <PATH>	1
+test-writeback-state.sh	delivery-001 gate block unaffected after delivery-002 write — pattern not found: '[HIGH] a more severe issue' in <PATH>	1
 test-writeback-state.sh	delivery-001-issues.md created with row1	1
 test-writeback-state.sh	delivery-001<PATH> has a delivery_gate mapping	1
-test-writeback-state.sh	delivery-002 delivery_state advanced to Blocked	1
-test-writeback-state.sh	delivery-002<PATH> gets its own gate block	1
+test-writeback-state.sh	delivery-002 delivery_state advanced to Blocked — pattern not found: 'delivery_state: Blocked' in <PATH>	1
+test-writeback-state.sh	delivery-002<PATH> gets its own gate block — pattern not found: '[HIGH] major issue found' in <PATH>	1
 test-writeback-state.sh	delivery-block mode: idempotent -- same block, delivery STATE.yml size unchanged	1
 test-writeback-state.sh	field mode: idempotent -- same value, no size change	1
-test-writeback-state.sh	findings item written to task-001 STATE.yml	1
+test-writeback-state.sh	findings item written to task-001 STATE.yml — pattern not found: '[HIGH] missing error path' in <PATH>	1
 test-writeback-state.sh	findings mode: idempotent -- same block, no task STATE.yml size change	1
-test-writeback-state.sh	fixed-on-spot in task-002 STATE.yml	1
-test-writeback-state.sh	gate block replaced -- new issue present in delivery-001	1
+test-writeback-state.sh	fixed-on-spot in task-002 STATE.yml — pattern not found: 'Fixed-on-spot' in <PATH>	1
+test-writeback-state.sh	gate block replaced -- new issue present in delivery-001 — pattern not found: '[HIGH] a more severe issue' in <PATH>	1
 test-writeback-state.sh	header present	1
 test-writeback-state.sh	invalid issue row format -> exit 4	1
-test-writeback-state.sh	issue item written to delivery-001 gate block	1
+test-writeback-state.sh	issue item written to delivery-001 gate block — pattern not found: '[LOW] minor style issue' in <PATH>	1
 test-writeback-state.sh	lock timeout -> exit 2	1
-test-writeback-state.sh	malformed flat-layout STATE.yml (a sequence, not a mapping) -> exit 6	1
+test-writeback-state.sh	malformed flat-layout STATE.yml (a sequence, not a mapping) -> exit 6 — expected exit 6, got 1	1
 test-writeback-state.sh	malformed task STATE.yml (not a mapping) -> exit 6	1
 test-writeback-state.sh	missing --value -> exit 5	1
-test-writeback-state.sh	multi-item findings: item 1 written	1
-test-writeback-state.sh	multi-item findings: item 2 written	1
-test-writeback-state.sh	multi-item findings: item 3 written	1
+test-writeback-state.sh	multi-item findings: item 1 written — pattern not found: '[HIGH] first finding' in <PATH>	1
+test-writeback-state.sh	multi-item findings: item 2 written — pattern not found: '[LOW] second finding' in <PATH>	1
+test-writeback-state.sh	multi-item findings: item 3 written — pattern not found: '[MEDIUM] third finding' in <PATH>	1
 test-writeback-state.sh	no --delivery-id + no DETAIL.md -> exit 5 (cannot resolve delivery)	1
 test-writeback-state.sh	no args -> non-zero exit	1
 test-writeback-state.sh	non-numeric delivery-id -> exit 4	1
 test-writeback-state.sh	non-numeric task-id -> exit 4	1
 test-writeback-state.sh	old issue removed from delivery-001 (replace, not append)	1
-test-writeback-state.sh	reviewer_tier written to task-001 STATE.yml	1
+test-writeback-state.sh	reviewer_tier written to task-001 STATE.yml — pattern not found: 'reviewer_tier: Small' in <PATH>	1
 test-writeback-state.sh	row1	1
 test-writeback-state.sh	row2	1
 test-writeback-state.sh	second row appended	1
 test-writeback-state.sh	shrink-on-overwrite: stale item 1 fully swallowed	1
 test-writeback-state.sh	shrink-on-overwrite: stale item 3 fully swallowed	1
-test-writeback-state.sh	shrink-on-overwrite: the new single item is present	1
-test-writeback-state.sh	single-line-diff: overwriting an existing scalar changes exactly one line (1 removed + 1 added)	1
+test-writeback-state.sh	shrink-on-overwrite: the new single item is present — pattern not found: '[LOW] only one now' in <PATH>	1
+test-writeback-state.sh	single-line-diff: expected a 2-line diff (1 old + 1 new), got 0 diff lines	1
 test-writeback-state.sh	table header present	1
 test-writeback-state.sh	task STATE.yml missing -> exit 1	1
 test-writeback-state.sh	task-001 STATE.yml dispatch_log key survives the --findings rewrite	1
 test-writeback-state.sh	task-001 STATE.yml has a quick_check mapping	1
 test-writeback-state.sh	task-001 STATE.yml unrelated sibling key (notes) survives the --findings rewrite	1
-test-writeback-state.sh	task-001 State updated in task STATE.yml	1
-test-writeback-state.sh	task-001 findings still present after task-002 write	1
+test-writeback-state.sh	task-001 State updated in task STATE.yml — pattern not found: 'state: 'In Progress'' in <PATH>	1
+test-writeback-state.sh	task-001 findings still present after task-002 write — pattern not found: 'Deferred-to-gate' in <PATH>	1
 test-writeback-state.sh	task-001: no stale lock file after concurrent write	1
 test-writeback-state.sh	task-002 STATE.yml has a quick_check mapping	1
-test-writeback-state.sh	task-002 State updated to Done	1
+test-writeback-state.sh	task-002 State updated to Done — pattern not found: 'state: Done' in <PATH>	1
 test-writeback-state.sh	task-002 still Pending (not disturbed)	1
 test-writeback-state.sh	task-002: no stale lock file after concurrent write	1
-test-writeback-state.sh	task-003 Review field updated	1
-test-writeback-state.sh	task-003 State written via source-line resolution	1
+test-writeback-state.sh	task-003 Review field updated — pattern not found: 'review: A' in <PATH>	1
+test-writeback-state.sh	task-003 State written via source-line resolution — pattern not found: 'state: 'In Review'' in <PATH>	1
 test-writeback-state.sh	task-003: no stale lock file after concurrent write	1
-test-writeback-state.sh	task-004 Notes updated	1
+test-writeback-state.sh	task-004 Notes updated — pattern not found: 'notes: 'first note'' in <PATH>	1
 test-writeback-state.sh	task-004: no stale lock file after concurrent write	1
-test-writeback-state.sh	task-005 Elapsed updated	1
+test-writeback-state.sh	task-005 Elapsed updated — pattern not found: 'elapsed: '12m'' in <PATH>	1
 test-writeback-state.sh	task-005 STATE.yml NOT modified by --block	1
 test-writeback-state.sh	task-005: no stale lock file after concurrent write	1
-test-writeback-state.sh	task-006 Notes written via source-line resolution	1
+test-writeback-state.sh	task-006 Notes written via source-line resolution — pattern not found: 'notes: auto-resolved' in <PATH>	1
 test-writeback-state.sh	unknown field name -> exit 4	1
 test-writeback-state.sh	work STATE.yml NOT modified by --block (isolation)	1
 test-writeback-state.sh	work STATE.yml NOT modified by --findings (isolation)	1
