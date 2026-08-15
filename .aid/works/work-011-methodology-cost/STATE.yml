@@ -137,6 +137,42 @@ qa:
       Ledgers at .aid/.temp/review-pending/aid-review-work-011-r{1,2,3}.md.
     decided_by: agent
     updated: '2026-08-15'
+  - id: Q10
+    question: 'R1 review: do this work''s own criteria pass the verifiability rule it imposes on everyone else?'
+    state: Open
+    answer: |
+      No. Two of the fourteen fail AC-5, the rule this work wrote. That is the most
+      valuable thing the review produced -- the rule caught its own author, which is
+      the whole argument for reviewing in a clean context.
+
+      AC-4  the criterion's literal command scopes `tests`, where 31 matches live in
+            fixture heredocs. Same command over canonical+docs+examples returns 0, so
+            the INTENT holds and one test does enforce absence
+            (test-kb-template-authoring-standard.sh:151 asserts count == 0). The
+            criterion is over-broad, not the implementation.
+            Verified independently, and found something R1 stopped short of: THREE
+            assertions use `## Change Log` as their don't-clobber canary
+            (test-write-requirement.sh:110 and :190, test-write-external-source.sh:382).
+            Not a false pass -- the behavior tested is real and worth testing -- but
+            they encode the retired shape, and :190's label reads "Change Log row
+            untouched", which states the opposite of the project's rule.
+
+      AC-13 names `STATE.md`. work-009 renamed it to STATE.yml DURING this work, so
+            the criterion now names a file that cannot exist. Running its implied
+            check fails for the wrong reason. Also asserts 3 artifacts where the
+            engine emits 6.
+
+      AC-9 is a genuine miss, not a wording defect: 14 broken `../`-relative citations
+      under canonical/. Reproduced exactly. 13 are ONE systematic error repeated --
+      `../../templates/state-machine-chaining.md` from canonical/skills/aid-*/SKILL.md,
+      missing the `aid/` segment. All pre-existing on origin/master, which does not
+      excuse them: the criterion says "no file under canonical/", not "no file this
+      work touched". Fix is 14 single-token edits.
+
+      AC-14 is unverifiable in this container (needs gawk, has mawk). Standing limit,
+      not a branch defect. It is verifiable in CI, where it passed.
+    decided_by: agent
+    updated: '2026-08-15'
   - id: Q9
     question: 'R3 review: how large is the folding change prose tail, really?'
     state: Open
