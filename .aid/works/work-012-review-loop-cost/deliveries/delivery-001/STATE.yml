@@ -1,0 +1,89 @@
+# Delivery State -- delivery-001   (single writer: this delivery's branch)
+#
+# This is the DELIVERY-LEVEL STATE.yml template -- FULL PATH ONLY. It lives at
+# .aid/works/work-NNN-{name}/deliveries/delivery-NNN/STATE.yml. (A lite work
+# has exactly one delivery and no deliveries/ folder at all -- its Delivery
+# Lifecycle / Delivery Gate / Cross-phase Q&A are AUTHORED directly in the
+# work-root STATE.yml instead; see work-state-template.yml.) It is divided
+# into three zones:
+#   FRONTMATTER (single writer = this delivery's branch, machine-parsed
+#     scalars) -- delivery_state, gate_tier, gate_grade, gate_timestamp,
+#     ticket_ref (top-level keys, verbatim).
+#   AUTHORED (single writer = this delivery's branch, YAML structures under a
+#     key) -- delivery_lifecycle (Updated/Block Reason/Block Artifact),
+#     delivery_gate (Issue List), qa (delivery-scoped Cross-phase Q&A).
+#   DERIVED (read-only, assembled at read time) -- Tasks State (rollup from
+#     per-task STATE.yml files in tasks/task-NNN/STATE.yml). NOT represented
+#     here -- no key at all.
+# Identifiers (Delivery / Work in the header blockquote, Branch) are INFERRED
+# from the folder name and git worktree -- never authored here.
+#
+# Optional `ticket_ref` (top-level): links this delivery to an external
+# tracker item ({connector-stem}:{external-id}, e.g. jira:PROJ-123). Left
+# `--` when this delivery is not independently linked; resolution then falls
+# back to the work's own `ticket_ref` (nearest-ancestor contract:
+# canonical/aid/templates/connectors/consumption-protocol.md).
+#
+# DELIVERY LIFECYCLE ENUM (authored, not derived)
+#
+# The delivery's lifecycle state is INDEPENDENTLY AUTHORED across the
+# pipeline:
+#   aid-plan       creates this file with State = Pending-Spec
+#   aid-specify    advances to Specified
+#   aid-execute    advances Specified -> Executing -> Gated (gate running) -> Done
+#                  or to Blocked on an impediment
+#
+# Enum members:
+#   Pending-Spec   -- delivery folder created; awaiting aid-specify
+#   Specified      -- aid-specify complete; tasks defined
+#   Executing      -- aid-execute in progress (at least one task dispatched)
+#   Gated          -- delivery gate running
+#   Done           -- gate passed; delivery complete
+#   Blocked        -- impediment raised; awaiting resolution
+#
+# NOTE: This authored state is NOT a derivation of child task states. A
+# delivery may be Pending-Spec with ZERO tasks (e.g. a SPIKE delivery that
+# defines a sibling delivery which then waits for aid-specify). A pure
+# task-rollup cannot express a task-less in-flight delivery, so the delivery
+# lifecycle MUST be independently authored.
+
+# [W] Pending-Spec | Specified | Executing | Gated | Done | Blocked
+delivery_state: Done
+# [W] Small | Medium | Large
+gate_tier: Large
+# [W]
+gate_grade: A+
+# [W]
+gate_timestamp: '2026-08-15T17:09:46Z'
+# [W] {connector-stem}:{external-id} | -- -- OPTIONAL; e.g. jira:PROJ-123; see the ticket_ref note above
+ticket_ref: --
+# [A] single writer: this delivery's branch only. Written by aid-plan,
+#     aid-specify, aid-execute across the delivery pipeline. Never derived
+#     from task rollup. `updated` is a writer-targeted child key (L-2).
+delivery_lifecycle:
+  updated: '2026-08-15T05:02:31Z'
+  block_reason: --
+  block_artifact: --
+# [A] single writer: the delivery-gate closing step of aid-execute on this
+#     delivery's branch. Written via `writeback-state.sh --delivery-id NNN
+#     --block ...`. Distinct from per-task quick-check findings -- the gate
+#     aggregates those deferred [HIGH] rows (via delivery-NNN-issues.md; see
+#     canonical/aid/templates/delivery-issues.md) and runs a full grade.sh
+#     pass. `issue_list` is a writer-targeted child key (--append-issue, L-2).
+#   issue_list: severity-tagged strings, or [] when the gate passed clean
+delivery_gate:
+  issue_list:
+    - '1 Accepted (AC-12 dogfood suite mawk-blocked; pre-existing on master, CI is the authority) -- 5 Fixed, 0 counting'
+# [A] single writer: this delivery's branch (via the delivery-gate step of
+#     aid-execute). delivery-gate SPEC Q&A is written here, NOT into the
+#     shared work-level STATE.yml, to preserve the disjoint-write property
+#     (two delivery branches cannot collide on this file). The work-level
+#     Cross-phase Q&A is a DERIVED union of all delivery Q&A plus any
+#     work-owner-authored work-level entries. KB Q&A targets
+#     .aid/knowledge/STATE.md (separate file). One entry per question:
+#   - id / category (e.g. Architecture, Requirements, Security) /
+#     impact: High | Medium | Low | Required /
+#     state: Pending | Answered | Skipped /
+#     context / suggested / answer / applied_to
+qa: []
+# DERIVED: tasks rollup is a read-time union over tasks/task-NNN/STATE.yml. Not represented.

@@ -145,10 +145,69 @@ per-level "grade impact" notes this section used to carry.
 **Workflow:**
 
 1. **REVIEW (cycle 1):** create file; append rows as `Status: Pending` for every finding. Existing-file case: NO (cycle 1 is the first).
-2. **REVIEW (cycle N≥2):** read existing file. For each existing `Pending` row: verify on disk → if resolved, change Status to `Fixed`; if still wrong, leave as `Pending`. For each existing `Fixed` row: verify still resolved → if regressed, change Status to `Recurred`. Append new rows as `Pending` for newly-found issues.
+2. **REVIEW (cycle N≥2):** read existing file. **Verification is FULL; the hunt for new findings is SCOPED.** See *Two sets from cycle 2* below.
+   - *Verify — over the full verification set:* for each existing `Pending` row, check on disk → if resolved, change Status to `Fixed`; if still wrong, leave as `Pending`. For each existing `Fixed` row, check it is still resolved → if regressed, change Status to `Recurred`.
+   - *Hunt — over the scoped hunt set only:* append new rows as `Pending` for newly-found issues.
 3. **FIX:** read Pending + Recurred rows. Address each. Do NOT mark rows `Fixed` during FIX — that's the next reviewer's job (separation of concerns: fixer fixes, reviewer verifies).
 4. **Orchestrator (any phase):** may mark a row `Accepted` with user authorization (record rationale in Description). May mark `Invalid` if reviewer was wrong, with evidence.
 5. **Skill reaches DONE:** orchestrator deletes the ledger file. If `.aid/.temp/review-pending/` is then empty, the directory is also removed.
+
+### Two sets from cycle 2
+
+Cycle 1 reads the whole artifact and is unchanged. From cycle 2 a review does two
+different jobs, and only one of them is expensive:
+
+| Set | Contents | Scope |
+|---|---|---|
+| **Verification set** | every file named in an existing ledger row's `Doc` column, **plus the full cycle-1 artifact set whenever any row's `Doc` is `—`** | **FULL — never scoped** |
+| **Hunt set** | what the previous FIX changed, plus the sections that reference it | **SCOPED** |
+
+**Verification is never scoped, and that is what protects `Recurred`.** Checking a
+`Pending` row against disk is a targeted lookup that was always cheap; scoping it would
+break regression detection, which is the backstop the whole design leans on. The `Doc: —`
+widening exists because a doc-wide row names no file: a verification set built only by
+collecting `Doc` values would contain nothing for it, so the row could never be
+re-verified and would sit `Pending` forever or, worse, be treated as verified because
+nothing contradicted it.
+
+**Only the hunt is scoped**, because "find NEW issues" is the clause that forced a full
+re-scan every cycle. It is what made a five-cycle gate re-read the whole artifact five
+times to keep finding roughly as many new issues as it closed.
+
+The hunt set is derived, never judged:
+
+```
+changed   := git diff --name-only <previous-cycle-commit>..HEAD
+             | filter_reviewable_artifacts
+referrers := files containing a literal reference to any changed path,
+             or to a changed section's heading anchor
+hunt      := changed ∪ referrers
+```
+
+`referrers` is a **grep, not a judgment call**: a fix in one section can break another
+that references it, and the expansion that catches this must be reproducible rather than
+a model's guess about what "might be affected" — a guess that varies between cycles is
+the non-determinism this change exists to remove.
+
+**Where no previous-cycle commit is recorded, the cycle is UNSCOPED** — it reads
+everything, exactly as today. Degrading to current behaviour is always the safe direction,
+and it is chosen deliberately over inferring a base.
+
+**Two limits, stated rather than left to be discovered:**
+
+- A reference expressed in prose without naming the path ("the ledger schema says…") is
+  not found by grep. The mechanical expansion is the cheap catch; the final full pass is
+  the complete one. Widening the grep to prose synonyms would reintroduce exactly the
+  judgment the guard exists to eliminate.
+- **A scoped cycle never approves.** One full pass runs before approval as the backstop,
+  and `Recurred` already exists in the Status enum for anything a scoped cycle missed and
+  a later one re-finds.
+
+**The cross-document contradiction pass is kept, and moves to once per phase** — run on
+cycle 1 of any review whose artifact list spans more than one artifact, rather than once
+per cycle inside each single-artifact gate. It gets *better* rather than merely cheaper: a
+contradiction between two sibling documents is invisible to a gate that only ever reads
+one of them.
 
 ## grade.sh integration
 

@@ -147,6 +147,23 @@ bound by the same list. Resolution is defined once, in
 not, here — reporting it anyway is a defect in the review, not in the file. Read the entry's `why`
 before deciding it does not apply.
 
+**A criterion carrying an `oracle:` is decided by RUNNING it, not by re-reading the criterion.**
+That is the point of the key: a mechanically decidable criterion should be settled the same way
+every cycle, cheaply, instead of being re-derived by hand and not always to the same answer. Invoke
+it from the repository root under a **60-second timeout**. Absence of the key is never a defect —
+most criteria will never carry one, and those you judge by reading exactly as before.
+
+| Result | What you do |
+|---|---|
+| exit `0` | No violation among the files it decided. |
+| exit `1` | One finding per `VIOLATION <path>` line — criterion `id` as the `Description` prefix, the invocation and that line in `Evidence`. |
+| `UNDECIDED <path>` lines | **Normal, not a failure.** Take the decided files as settled and judge only the undecided remainder by reading. |
+| exit `2`, any other exit, a timeout, a missing or non-executable oracle, or exit `1` with no `VIOLATION` line | **Degraded.** Judge the whole criterion by reading, and record in the ledger that the degradation happened. |
+
+Never let a degraded oracle read as a pass, and never file it as a violation — *"I could not tell"*
+is neither of those, and recording it as either is worse than the manual reading it replaced. The
+full contract lives in `.agent/aid/templates/kb-authoring/frontmatter-schema.md § oracle:`.
+
 **Cite the criterion `id` as a prefix inside the `Description` cell.** No column is added; the
 ledger keeps its 7-column shape.
 
