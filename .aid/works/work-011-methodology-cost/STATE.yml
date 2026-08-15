@@ -149,6 +149,46 @@ qa:
       rule, which no amount of implementation care would have surfaced.
     decided_by: agent
     updated: '2026-08-15'
+  - id: Q13
+    question: 'Post-review remediation: items 1-5 of the ordered plan'
+    state: Resolved
+    answer: |
+      Done, in the order set so that nothing was judged against a broken ruler.
+
+      1. The two defective criteria. AC-4 no longer scopes tests/ (with the exclusion
+         stated, not implied); AC-13 names STATE.yml and now also names the three
+         artifacts it REMOVES, not only the three it keeps.
+      2. The prose tail: 24 sites under canonical/ plus 6 in docs/ and examples/.
+         SIX were live instructions -- aid-plan scanning the glob to verify features,
+         aid-detail naming it the detailer's primary input, aid-execute's delivery gate
+         collecting it, aid-deploy and aid-monitor listing it as an input. The other 18
+         were provenance cites into pruned work folders; the substance was already in
+         the surrounding prose, so only the dangling pointer went.
+      3. The 14 broken citations, 13 of them one missing path segment repeated.
+      4. The three don't-clobber canaries. Only assertions mentioning a change log now
+         are the two asserting its ABSENCE.
+      5. Rendered, verified, resynced. 27 owned files per dogfood tree.
+
+      The durable part is not the fixes, it is that four of these rules are now GATES.
+      test-artifact-discipline.sh re-runs them: AD01 change-log sections, AD02 the KB's
+      absolute form, AD03 every relative citation under canonical/ resolving, AD04 the
+      retired feature layout across canonical + docs + examples. Each was previously
+      "verified" by someone running a grep once, which holds only until the next edit and
+      only for the trees they happened to type -- two had already drifted by the time the
+      review looked.
+
+      Two things worth keeping from how this went. Writing the naive gate FIRST paid for
+      itself: it flagged fenced `changelog:` examples in the kb-authoring templates that
+      are explicitly labelled superseded -- specimens, not instances -- so the checker now
+      tracks fences. And AD04 was verified by REINTRODUCING an offender and watching it
+      fail, because a gate that has only ever seen a clean tree has not been tested.
+
+      Not resolved, deliberately: 26 inert `## Change Log` occurrences remain in other
+      fixture heredocs. Nothing asserts on them so they cause no false pass, but they are
+      stale fixture content rather than deliberate legacy simulation. AC-4 scopes tests/
+      out because the rule governs artifacts, so they are out of scope rather than clean.
+    decided_by: agent
+    updated: '2026-08-15'
   - id: Q11
     question: 'R2 review: do the three layout implementations actually agree?'
     state: Resolved
