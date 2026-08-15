@@ -34,7 +34,7 @@ phase: Detail
 # [W] aid-{skill} | none
 active_skill: none
 # [W]
-updated: '2026-08-15T06:24:31Z'
+updated: '2026-08-15T06:51:15Z'
 # [W] set only when lifecycle = Paused-Awaiting-Input
 pause_reason: 'Detail complete at A+ -- 15 tasks in 10 waves; run /aid-execute work-012'
 # [W] set only when lifecycle = Blocked
@@ -565,6 +565,42 @@ lifecycle_history:
       The same Match-cell imprecision was then found in C-5's own wording in
       REQUIREMENTS.md and corrected there too -- a precision fix that leaves
       the authorized edit unchanged.
+  - date: '2026-08-15'
+    event: 'Impact assessment: work-006 / PR #184 -- NO edit site moves'
+    grade: --
+    notes: >-
+      Owner asked for an impact review of work-006 before Execute. It adds
+      36 skills (the design/create/update design-phase family), taking the
+      in-scope corpus from 276 to 317 files and the template tree from 73 to
+      76. Assessed against every edit site and every measured claim this
+      work makes.
+      NOTHING MOVES. Still exactly six reviewer-brief.md files, so the edit
+      inventory is unchanged. reviewer-ledger-schema.md and
+      reviewer-dispatch.md are untouched by work-006. Guard 2's three
+      invocation sites (aid-define cross-reference, aid-plan
+      review-deliverables, aid-detail review) are untouched. FR-14's two
+      aid-specify reference files are untouched -- work-006 edits only that
+      skill's SKILL.md frontmatter description. No new skill dispatches a
+      multi-artifact review, so Guard 2 gains no fourth site.
+      THE GRAMMAR HOLDS WITHOUT CHANGE, which is the result that matters
+      most. All 36 new skills are canonical/skills/<name>/SKILL.md whose
+      <name> is a shortcut-catalog.yml row, so every one resolves as
+      skill-generated through the name-in clause added at feature-002's
+      gate cycle 2. No new document type and no new file kind appears under
+      the in-scope roots, so the registry needs no new row and work-004's
+      FR-10 obligation is not triggered. Had the grammar stopped at path
+      and fm, these 36 would all have been UNDECIDED.
+      ONE NUMBER CHANGES: the AC-11 coverage figure moves from 203/276 (74%)
+      to roughly 241/317 (76%) -- the oracle gets slightly BETTER, since the
+      growth is entirely in the decidable region while the template tree
+      grows by three. Recorded as a forecast in feature-002's SPEC; task-007
+      re-measures at execution rather than trusting it, which that SPEC
+      already required.
+      ONE MERGE RECONCILE: work-006 also edits
+      .aid/knowledge/authoring-conventions.md, but in the Concern Model
+      paragraph -- not the type registry or the criteria tables this work
+      touches. Same shape as work-011's overlap with the same file. C-2
+      updated to name both.
 
 # [A] aid-deploy only; one entry per delivery.
 deploy: []

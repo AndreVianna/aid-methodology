@@ -222,12 +222,22 @@ guarding around it.
   mainline and is the substrate both remedies extend. This work is therefore unblocked:
   nothing it needs is in flight. Nothing else is depended on, and no other in-flight work
   may become a dependency without an explicit owner decision that amends this constraint.
-- **C-2** Every other live work is a read-only reference. `work-011` in particular is in
-  flight and unmerged, and nothing here depends on it — not its folded artifact shape, not
-  its traceability ids, not its cost meter. One file overlaps,
-  `.aid/knowledge/authoring-conventions.md`, in different sections (that work removes the
-  Change Log section; this work touches the criteria tables), so the overlap is a merge
-  reconcile, not a design coupling.
+- **C-2** Every other live work is a read-only reference. Two are in flight, and neither is
+  depended on:
+  - **`work-011`** — nothing here uses its folded artifact shape, its traceability ids, or
+    its cost meter.
+  - **`work-006`** (PR #184, merging soon) — assessed 2026-08-15. It adds **36 skills**,
+    taking the in-scope corpus from 276 to 317 files. **No edit site of this work moves:**
+    there are still exactly six `reviewer-brief.md` files, `reviewer-ledger-schema.md` and
+    `reviewer-dispatch.md` are untouched, Guard 2's three invocation sites are untouched,
+    FR-14's two `aid-specify` reference files are untouched, and no new document type or
+    file kind appears — so the type registry needs no new row. Every new skill resolves as
+    `skill-generated` through the `name-in` clause with no grammar change.
+
+  Both overlap this work in exactly one file, `.aid/knowledge/authoring-conventions.md`, and
+  in **different sections** each time — `work-011` removes the Change Log section,
+  `work-006` revises the Concern Model paragraph, and this work touches the type registry
+  and the criteria tables. Each overlap is a merge reconcile, not a design coupling.
 - **C-3** The ledger keeps its 7 columns and `grade.sh` keeps its positional parse. Both
   stay byte-identical.
 - **C-4** Criteria resolution stays scope-free: a file's resolved list depends only on its

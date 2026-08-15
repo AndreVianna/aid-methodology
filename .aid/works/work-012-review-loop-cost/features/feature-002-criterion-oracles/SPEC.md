@@ -330,6 +330,18 @@ Measured over the current corpus (`LC_ALL=C find … -name '*.md'`):
 | `canonical/aid/templates/` | 73 | **UNDECIDED** |
 | **Total in scope** | **276** | **74% decided, 26% undecided** |
 
+**Forecast against `work-006`, which is in flight and will land first.** That work
+(PR #184) adds **36 skills**, taking the in-scope corpus from 276 to **317** files and the
+template tree from 73 to 76. Every new skill is a `canonical/skills/<name>/SKILL.md` whose
+`<name>` is a `shortcut-catalog.yml` row, so all 36 resolve as `skill-generated` through the
+`name-in` clause — **no grammar change, no new registry type, no new file kind.** The
+measured figure therefore moves to roughly **241 of 317, 76%**: the oracle gets slightly
+*better*, because the growth is entirely in the decidable region while the undecidable
+template tree grows by three.
+
+This is a forecast, not a substitute for the measurement. `task-007` re-measures against
+whatever corpus exists at execution, exactly as the row above requires.
+
 That is the honest scope of the C-5 request. The registry has **ten** type rows: **eight
 gain a `Match` cell** (`state`, `kb-generated`, `kb-meta`, `kb-doc`, `skill-generated`,
 `skill-authored`, `skill-reference`, `agent`) and **two do not** (`template-payload`,
