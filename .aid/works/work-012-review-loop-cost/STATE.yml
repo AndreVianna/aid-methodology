@@ -26,17 +26,17 @@ started: '2026-08-14'
 # [W] resolved at runtime by `read-setting.sh --skill describe --key minimum_grade --default A`
 minimum_grade: A
 # [W] 'yes' | 'no' -- quoted
-user_approved: 'no'
+user_approved: 'yes'
 # [W] Running | Paused-Awaiting-Input | Blocked | Completed | Canceled
 lifecycle: Paused-Awaiting-Input
 # [W] Describe | Define | Specify | Plan | Detail | Execute
 phase: Describe
 # [W] aid-{skill} | none
-active_skill: aid-describe
+active_skill: none
 # [W]
-updated: '2026-08-15T01:30:00Z'
+updated: '2026-08-15T01:33:00Z'
 # [W] set only when lifecycle = Paused-Awaiting-Input
-pause_reason: 'All four Q&A answered; awaiting owner approval of REQUIREMENTS.md to advance to /aid-define'
+pause_reason: 'Requirements approved -- run /aid-define work-012 to decompose into features'
 # [W] set only when lifecycle = Blocked
 block_reason: --
 # [W] e.g. IMPEDIMENT-task-NNN.md, or the failed gate
@@ -48,7 +48,7 @@ ticket_ref: --
 #   state: In Progress | Complete | Approved
 #   grade: {grade} | Pending
 interview:
-  state: 'In Progress'
+  state: Approved
   grade: Pending
   sections:
     - id: 1
@@ -91,9 +91,10 @@ interview:
       name: Priority
       state: Complete
       updated: '2026-08-14'
-  # [A] Why interview.state is 'In Progress' rather than 'Approved' even
-  #     though every section is Complete: COMPLETION step 5 requires an
-  #     explicit human approval that has not been given.
+  # [A] Approved by the owner on 2026-08-15 at COMPLETION step 5, after all
+  #     ten sections reached Complete and all four qa entries were Answered.
+  #     grade stays Pending: /aid-describe runs no reviewer gate, so no
+  #     grade has been computed for this artifact.
   provenance: >-
     This interview was conducted against a written brief rather than a live
     turn-by-turn dialogue: the requester supplied the full proposal
@@ -224,6 +225,18 @@ lifecycle_history:
       deliveries and forbids Define exceeding the cap silently -- the full
       path is kept for the instrument, not for ceremony, so its cost is
       bounded where it is created.
+  - date: '2026-08-15'
+    event: 'Describe: APPROVED -- interview complete'
+    grade: --
+    notes: >-
+      Owner approved REQUIREMENTS.md at COMPLETION step 5. Ten sections
+      Complete, four qa entries Answered, path and size cap settled. No KB
+      write was made: the hydration assessment found nothing to hydrate, and
+      C-5 reserves .aid/knowledge/ edits for explicit owner authorization, so
+      INDEX.md and README.md need no refresh either -- no KB doc changed. No
+      issue-tracker connector is catalogued (.aid/connectors/ holds only
+      INDEX.md), so no epic-ticket suggestion applies. Describe is done;
+      the work pauses for /aid-define.
 
 # [A] aid-deploy only; one entry per delivery.
 deploy: []

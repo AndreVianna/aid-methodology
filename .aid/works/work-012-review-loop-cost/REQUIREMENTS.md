@@ -20,6 +20,7 @@
 | 2026-08-15 | **`work-009` and the `aid-graph` removal merged.** All ten grounding claims re-verified; no requirement changed by either merge | /aid-describe |
 | 2026-08-15 | **Q-04 answered (owner).** Oracle generation is lazy — the trigger is a second re-derivation of the same criterion, so the payback evidence precedes the script. FR-10 carries the rule; FR-13 records why `G-07` is not delayed by it. **All four questions now answered** | owner |
 | 2026-08-15 | **Path confirmed full, with a hard size cap (owner decision).** `/aid-refactor` rejected — it is defined as behavior-preserving and this work changes behavior by design. The Lite path was rejected for a sharper reason: it yields one gate, and AC-1 needs more than one to produce a before-and-after. New **C-7** caps the work at 3 features and 2 deliveries, and forbids Define exceeding it silently | owner |
+| 2026-08-15 | Interview complete — approved | /aid-describe |
 
 ## 1. Objective
 
