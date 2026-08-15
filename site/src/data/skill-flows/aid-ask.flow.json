@@ -14,8 +14,8 @@
       "terminal": null,
       "provenance": {
         "file": "canonical/skills/aid-ask/SKILL.md",
-        "startLine": 54,
-        "endLine": 54,
+        "startLine": 51,
+        "endLine": 51,
         "sourceKind": "skill",
         "excerpt": "### Step 1 — Classify the question"
       },
@@ -30,8 +30,8 @@
       "terminal": null,
       "provenance": {
         "file": "canonical/skills/aid-ask/SKILL.md",
-        "startLine": 66,
-        "endLine": 66,
+        "startLine": 63,
+        "endLine": 63,
         "sourceKind": "skill",
         "excerpt": "### Step 2a — Trivial question: answer inline"
       },
@@ -46,8 +46,8 @@
       "terminal": null,
       "provenance": {
         "file": "canonical/skills/aid-ask/SKILL.md",
-        "startLine": 80,
-        "endLine": 80,
+        "startLine": 77,
+        "endLine": 77,
         "sourceKind": "skill",
         "excerpt": "### Step 2b — Broad/expensive question: dispatch aid-researcher"
       },
@@ -62,8 +62,8 @@
       "terminal": null,
       "provenance": {
         "file": "canonical/skills/aid-ask/SKILL.md",
-        "startLine": 105,
-        "endLine": 105,
+        "startLine": 102,
+        "endLine": 102,
         "sourceKind": "skill",
         "excerpt": "### Step 2c — Connector enrichment (optional)"
       },
@@ -78,8 +78,8 @@
       "terminal": null,
       "provenance": {
         "file": "canonical/skills/aid-ask/SKILL.md",
-        "startLine": 115,
-        "endLine": 115,
+        "startLine": 112,
+        "endLine": 112,
         "sourceKind": "skill",
         "excerpt": "### Step 3 — Compose and emit the reply"
       },
@@ -97,8 +97,8 @@
       },
       "provenance": {
         "file": "canonical/skills/aid-ask/SKILL.md",
-        "startLine": 162,
-        "endLine": 162,
+        "startLine": 159,
+        "endLine": 159,
         "sourceKind": "skill",
         "excerpt": "### Step 4 -- Gap capture"
       },
@@ -114,8 +114,8 @@
       "advanceType": "CHAIN",
       "provenance": {
         "file": "canonical/skills/aid-ask/SKILL.md",
-        "startLine": 66,
-        "endLine": 66,
+        "startLine": 63,
+        "endLine": 63,
         "sourceKind": "skill",
         "excerpt": "### Step 2a — Trivial question: answer inline"
       }
@@ -128,8 +128,8 @@
       "advanceType": "CHAIN",
       "provenance": {
         "file": "canonical/skills/aid-ask/SKILL.md",
-        "startLine": 80,
-        "endLine": 80,
+        "startLine": 77,
+        "endLine": 77,
         "sourceKind": "skill",
         "excerpt": "### Step 2b — Broad/expensive question: dispatch aid-researcher"
       }
@@ -142,8 +142,8 @@
       "advanceType": "CHAIN",
       "provenance": {
         "file": "canonical/skills/aid-ask/SKILL.md",
-        "startLine": 105,
-        "endLine": 105,
+        "startLine": 102,
+        "endLine": 102,
         "sourceKind": "skill",
         "excerpt": "### Step 2c — Connector enrichment (optional)"
       }
@@ -156,8 +156,8 @@
       "advanceType": "CHAIN",
       "provenance": {
         "file": "canonical/skills/aid-ask/SKILL.md",
-        "startLine": 115,
-        "endLine": 115,
+        "startLine": 112,
+        "endLine": 112,
         "sourceKind": "skill",
         "excerpt": "### Step 3 — Compose and emit the reply"
       }
@@ -170,8 +170,8 @@
       "advanceType": "CHAIN",
       "provenance": {
         "file": "canonical/skills/aid-ask/SKILL.md",
-        "startLine": 162,
-        "endLine": 162,
+        "startLine": 159,
+        "endLine": 159,
         "sourceKind": "skill",
         "excerpt": "### Step 4 -- Gap capture"
       }

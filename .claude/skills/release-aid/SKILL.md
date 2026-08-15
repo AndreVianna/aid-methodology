@@ -100,13 +100,20 @@ documentation surface reflects the released state. Two parts, both landing in th
 
 ### 3.1 — Release notes / changelog ledger
 
-- **`.aid/knowledge/release-tracking.md`** — rename `## Unreleased` -> `## v<target> - <YYYY-MM-DD>`
-  (today, UTC) and open a fresh empty `## Unreleased` above it; the items under Unreleased become
-  this version's notes. Add a row to the file's trailing `## Change Log` table.
-  - Sanity-check first: only items that genuinely ship in THIS version belong. If the ledger has
-    fallen behind (Unreleased holds already-shipped items, or intermediate versions have no
-    section), reconcile against the published GitHub Releases + `git log <last-tag>..HEAD` before
-    renaming — never stamp a version with the wrong items.
+- **Drain `.aid/knowledge/backlog.md` § `## Next Release` into
+  `.aid/knowledge/release-tracking.md`** — that section is the committed slice for this tag and is
+  the drain's only source. Open a NEW `## v<target> - <YYYY-MM-DD>` section (today, UTC) at the top
+  of `release-tracking.md` and write one bullet per row of `## Next Release`: the row's `Tag`
+  (`[NEW]` / `[CHANGE]` / `[FIX]`) verbatim — the drain re-tags nothing — led by its `Title`, with
+  its `Definition & done-condition` as the bullet's text. **`Title` is the key the drain matches
+  on**, since a release-note bullet carries no id.
+  - **It is a move, not a copy.** Delete each drained row from `backlog.md` § `## Next Release` in
+    the SAME run that adds it to the new version section; an item left in both documents is a
+    checkable defect. `## Next Release` is empty when the drain is done.
+  - Sanity-check first: only items that genuinely ship in THIS version belong. If the committed
+    slice has fallen behind (`## Next Release` holds already-shipped items, or intermediate
+    versions have no section), reconcile against the published GitHub Releases +
+    `git log <last-tag>..HEAD` before draining — never stamp a version with the wrong items.
 
 ### 3.2 — Documentation sync (audit EVERY affected surface)
 
@@ -139,13 +146,13 @@ never add an unreleased/newer feature to a historical, version-frozen section (a
 block describes vX; cumulative history lives in the changelog / GitHub Releases).
 
 > Related: the `aid-document-changelog` skill authors *adopter-project* changelogs; the AID-repo
-> ledger rename (3.1) and this documentation sweep (3.2) are this skill's own responsibility.
+> ledger drain (3.1) and this documentation sweep (3.2) are this skill's own responsibility.
 
 ---
 
 ## Step 4 — PR the bump + notes  ⏸ (human-gated merge)
 
-Branch off master, commit **all of Steps 2-3** — the version carriers, the ledger rename, and
+Branch off master, commit **all of Steps 2-3** — the version carriers, the ledger drain, and
 every documentation file touched by the 3.2 sweep (do NOT include `.aid/.aid-manifest.json`,
 which is never a release carrier) — push, open a PR.
 
@@ -154,7 +161,7 @@ gh auth switch --user AndreVianna     # pushes/PRs to AndreVianna/aid-methodolog
 git checkout -b release-<target>
 git add VERSION packages/pypi/pyproject.toml            # carriers (Step 2)
 [ stable ] git add packages/npm/package.json            # npm carrier (stable only)
-git add .aid/knowledge/release-tracking.md              # ledger rename (Step 3.1)
+git add .aid/knowledge/release-tracking.md .aid/knowledge/backlog.md   # ledger drain (Step 3.1)
 git add README.md docs/ site/ .aid/knowledge/ canonical/ profiles/   # doc sweep (Step 3.2) — stage ONLY the files you actually changed
 git status   # confirm ONLY intended files are staged; .aid/.aid-manifest.json must NOT be
 git commit -m "chore(release): <target>"
@@ -247,8 +254,18 @@ channel failed to publish, surface it here rather than closing out.
 gh auth switch --user AndreVianna-Ross    # restore the default account
 ```
 
+Verify the Step 3.1 drain landed, before reporting — for every `Title` drained:
+
+```bash
+grep -F "<title>" .aid/knowledge/backlog.md          # must print NOTHING (row deleted)
+grep -F "<title>" .aid/knowledge/release-tracking.md # must match, inside the new ## v<target> section
+```
+
+A title still present in `.aid/knowledge/backlog.md`, or missing from the new version section,
+means the drain half-ran — finish it before closing out.
+
 Report: the version shipped, the channels it went to, the release URL, and a one-line note that
-`release-tracking.md` + README were updated (so the next run starts from a clean Unreleased).
+`release-tracking.md`, `.aid/knowledge/backlog.md` and README were updated.
 
 ---
 

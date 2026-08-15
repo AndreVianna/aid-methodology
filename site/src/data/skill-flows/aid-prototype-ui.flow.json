@@ -14,8 +14,8 @@
       "terminal": null,
       "provenance": {
         "file": "canonical/skills/aid-prototype-ui/SKILL.md",
-        "startLine": 17,
-        "endLine": 17,
+        "startLine": 18,
+        "endLine": 18,
         "sourceKind": "skill",
         "excerpt": "(`alias_of: null`, its own `{verb: prototype, artifact: ui}`), `repurpose: true`"
       },
@@ -166,8 +166,8 @@
       "advanceType": "CHAIN",
       "provenance": {
         "file": "canonical/skills/aid-prototype-ui/SKILL.md",
-        "startLine": 17,
-        "endLine": 17,
+        "startLine": 18,
+        "endLine": 18,
         "sourceKind": "sibling",
         "excerpt": "(`alias_of: null`, its own `{verb: prototype, artifact: ui}`), `repurpose: true`"
       }

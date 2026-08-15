@@ -1,0 +1,204 @@
+{
+  "skill": "aid-design-backlog",
+  "shape": "inline-states",
+  "extractor": "inline",
+  "confidence": "derived",
+  "title": "aid-design-backlog — state flow",
+  "nodes": [
+    {
+      "id": "n1",
+      "order": 1,
+      "name": "INTAKE",
+      "label": "INTAKE",
+      "kind": "entry",
+      "terminal": null,
+      "provenance": {
+        "file": "canonical/skills/aid-design-backlog/SKILL.md",
+        "startLine": 41,
+        "endLine": 55,
+        "sourceKind": "skill",
+        "excerpt": "## State: INTAKE\n\n1. **Require a subject.** Empty argument -> ask one bootstrapping question (\"What items do\n   you want to define and prioritize, and are there `tech-debt.md` rows you're ready to\n   accept into the plan?\") and wait.\n2. **Allocate, exactly per `design-lifecycle.md § Skill shape -- Allocation`** -- the Work\n   Initiation Gate, then `initiator: aid-design-backlog`, `active_skill:\n   aid-design-backlog`, `pipeline.path: lite`, `lifecycle: Running`. `phase` is not\n   driven.\n3. **Acquire `.aid/design/`.** Per `design-lifecycle.md § Before writing a seed` -- ensure\n   the folder exists and seed its `README.md` on first use, before writing anything.\n4. **Read the existing seed, if one is present.** `.aid/design/backlog.md` --\n   re-invocation iterates the same seed rather than starting over.\n5. **Classify complexity (model + effort)** for the `aid-architect` dispatch below;\n   verifier tier >= producer tier (`agent-dispatch-tiering.md`)."
+      },
+      "detail": {
+        "file": "canonical/skills/aid-design-backlog/SKILL.md",
+        "startLine": 41,
+        "endLine": 57,
+        "sourceKind": "skill",
+        "excerpt": "## State: INTAKE\n\n1. **Require a subject.** Empty argument -> ask one bootstrapping question (\"What items do\n   you want to define and prioritize, and are there `tech-debt.md` rows you're ready to\n   accept into the plan?\") and wait.\n2. **Allocate, exactly per `design-lifecycle.md § Skill shape -- Allocation`** -- the Work\n   Initiation Gate, then `initiator: aid-design-backlog`, `active_skill:\n   aid-design-backlog`, `pipeline.path: lite`, `lifecycle: Running`. `phase` is not\n   driven.\n3. **Acquire `.aid/design/`.** Per `design-lifecycle.md § Before writing a seed` -- ensure\n   the folder exists and seed its `README.md` on first use, before writing anything.\n4. **Read the existing seed, if one is present.** `.aid/design/backlog.md` --\n   re-invocation iterates the same seed rather than starting over.\n5. **Classify complexity (model + effort)** for the `aid-architect` dispatch below;\n   verifier tier >= producer tier (`agent-dispatch-tiering.md`).\n\n**Advance:** DESIGN."
+      }
+    },
+    {
+      "id": "n2",
+      "order": 2,
+      "name": "DESIGN",
+      "label": "DESIGN",
+      "kind": "step",
+      "terminal": null,
+      "provenance": {
+        "file": "canonical/skills/aid-design-backlog/SKILL.md",
+        "startLine": 61,
+        "endLine": 67,
+        "sourceKind": "skill",
+        "excerpt": "## State: DESIGN\n\nDispatch **`aid-architect`** (clean context, tiered) to develop or iterate the seed,\ngrounded in `.aid/knowledge/` (including `tech-debt.md`'s open inventory) and the project\nsource, plus the seed read in INTAKE if one exists. Draws out: **item definitions,\ndone-conditions and priorities; which `tech-debt.md` rows the user is accepting into the\nplan.**"
+      },
+      "detail": {
+        "file": "canonical/skills/aid-design-backlog/SKILL.md",
+        "startLine": 61,
+        "endLine": 76,
+        "sourceKind": "skill",
+        "excerpt": "## State: DESIGN\n\nDispatch **`aid-architect`** (clean context, tiered) to develop or iterate the seed,\ngrounded in `.aid/knowledge/` (including `tech-debt.md`'s open inventory) and the project\nsource, plus the seed read in INTAKE if one exists. Draws out: **item definitions,\ndone-conditions and priorities; which `tech-debt.md` rows the user is accepting into the\nplan.**\n\nWrites `.aid/design/backlog.md` **only**, in `design-seed.md`'s shape -- `## Current\ndirection` rewritten to the latest proposal, `## Options considered` accumulating rather\nthan being replaced. **Never writes `.aid/knowledge/`; never writes production code** --\nthe `design` invariant, binding without exception. Proposing a `tech-debt.md` row for\nacceptance is not a write to it -- the seed only names candidates; the move itself, and\nits per-item confirmation, happen at `/aid-create-backlog` or `/aid-update-backlog`.\n\n**Advance:** VERIFY."
+      }
+    },
+    {
+      "id": "n3",
+      "order": 3,
+      "name": "VERIFY",
+      "label": "VERIFY",
+      "kind": "loop-back",
+      "terminal": null,
+      "provenance": {
+        "file": "canonical/skills/aid-design-backlog/SKILL.md",
+        "startLine": 80,
+        "endLine": 84,
+        "sourceKind": "skill",
+        "excerpt": "## State: VERIFY\n\n**Full verify** -- exactly as `design-lifecycle.md § Skill shape -- \"Full verify\"`\ndefines it. Not clean -> loop to DESIGN; the circuit-breaker there governs escalation to\nIMPEDIMENT + `lifecycle: Blocked`."
+      },
+      "detail": {
+        "file": "canonical/skills/aid-design-backlog/SKILL.md",
+        "startLine": 80,
+        "endLine": 86,
+        "sourceKind": "skill",
+        "excerpt": "## State: VERIFY\n\n**Full verify** -- exactly as `design-lifecycle.md § Skill shape -- \"Full verify\"`\ndefines it. Not clean -> loop to DESIGN; the circuit-breaker there governs escalation to\nIMPEDIMENT + `lifecycle: Blocked`.\n\n**Advance:** PRESENT."
+      }
+    },
+    {
+      "id": "n4",
+      "order": 4,
+      "name": "PRESENT",
+      "label": "hard stop -- the user decides",
+      "kind": "step",
+      "terminal": null,
+      "provenance": {
+        "file": "canonical/skills/aid-design-backlog/SKILL.md",
+        "startLine": 90,
+        "endLine": 94,
+        "sourceKind": "skill",
+        "excerpt": "## State: PRESENT (hard stop -- the user decides)\n\nSet `lifecycle: Paused-Awaiting-Input`. Present the seed clearly. Assert no resolution --\nthe user decides whether to iterate further (re-invoke this skill) or realize it now\n(`/aid-create-backlog`)."
+      },
+      "detail": {
+        "file": "canonical/skills/aid-design-backlog/SKILL.md",
+        "startLine": 90,
+        "endLine": 96,
+        "sourceKind": "skill",
+        "excerpt": "## State: PRESENT (hard stop -- the user decides)\n\nSet `lifecycle: Paused-Awaiting-Input`. Present the seed clearly. Assert no resolution --\nthe user decides whether to iterate further (re-invoke this skill) or realize it now\n(`/aid-create-backlog`).\n\n**Advance:** DONE."
+      }
+    },
+    {
+      "id": "n5",
+      "order": 5,
+      "name": "DONE",
+      "label": "DONE",
+      "kind": "exit",
+      "terminal": {
+        "advanceType": "UNSPECIFIED",
+        "handoff": null
+      },
+      "provenance": {
+        "file": "canonical/skills/aid-design-backlog/SKILL.md",
+        "startLine": 100,
+        "endLine": 104,
+        "sourceKind": "skill",
+        "excerpt": "## State: DONE\n\nSet `lifecycle: Completed`, `updated` now, append a `## Lifecycle History` row. The seed\nstays at `.aid/design/backlog.md` -- consumption happens at `/aid-create-backlog`, not\nhere."
+      },
+      "detail": {
+        "file": "canonical/skills/aid-design-backlog/SKILL.md",
+        "startLine": 100,
+        "endLine": 104,
+        "sourceKind": "skill",
+        "excerpt": "## State: DONE\n\nSet `lifecycle: Completed`, `updated` now, append a `## Lifecycle History` row. The seed\nstays at `.aid/design/backlog.md` -- consumption happens at `/aid-create-backlog`, not\nhere."
+      }
+    }
+  ],
+  "edges": [
+    {
+      "from": "n1",
+      "to": "n2",
+      "kind": "sequence",
+      "condition": null,
+      "advanceType": "UNSPECIFIED",
+      "provenance": {
+        "file": "canonical/skills/aid-design-backlog/SKILL.md",
+        "startLine": 57,
+        "endLine": 57,
+        "sourceKind": "skill",
+        "excerpt": "**Advance:** DESIGN."
+      }
+    },
+    {
+      "from": "n2",
+      "to": "n3",
+      "kind": "sequence",
+      "condition": null,
+      "advanceType": "UNSPECIFIED",
+      "provenance": {
+        "file": "canonical/skills/aid-design-backlog/SKILL.md",
+        "startLine": 76,
+        "endLine": 76,
+        "sourceKind": "skill",
+        "excerpt": "**Advance:** VERIFY."
+      }
+    },
+    {
+      "from": "n3",
+      "to": "n2",
+      "kind": "loop-back",
+      "condition": null,
+      "advanceType": "UNSPECIFIED",
+      "provenance": {
+        "file": "canonical/skills/aid-design-backlog/SKILL.md",
+        "startLine": 83,
+        "endLine": 83,
+        "sourceKind": "skill",
+        "excerpt": "defines it. Not clean -> loop to DESIGN; the circuit-breaker there governs escalation to"
+      }
+    },
+    {
+      "from": "n3",
+      "to": "n4",
+      "kind": "sequence",
+      "condition": null,
+      "advanceType": "UNSPECIFIED",
+      "provenance": {
+        "file": "canonical/skills/aid-design-backlog/SKILL.md",
+        "startLine": 86,
+        "endLine": 86,
+        "sourceKind": "skill",
+        "excerpt": "**Advance:** PRESENT."
+      }
+    },
+    {
+      "from": "n4",
+      "to": "n5",
+      "kind": "sequence",
+      "condition": null,
+      "advanceType": "UNSPECIFIED",
+      "provenance": {
+        "file": "canonical/skills/aid-design-backlog/SKILL.md",
+        "startLine": 96,
+        "endLine": 96,
+        "sourceKind": "skill",
+        "excerpt": "**Advance:** DONE."
+      }
+    }
+  ],
+  "entries": [
+    "n1"
+  ],
+  "exits": [
+    "n5"
+  ],
+  "sources": [
+    "canonical/skills/aid-design-backlog/SKILL.md"
+  ],
+  "warnings": []
+}

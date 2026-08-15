@@ -1,14 +1,14 @@
 ---
 name: aid-prototype
 description: >
-  Build a THROWAWAY low-fidelity model NOW to validate a direction before
-  committing to a full build -- then present what it shows and hand the real
-  build off to /aid-create*. It RESOLVES NOTHING (states whether the direction
-  holds + what was learned; you decide). Isolated and throwaway: artifacts live
-  in the work folder / an opt-in worktree and never touch production. Produced by
-  the aid-architect agent; the validation assessment gets a LIGHT verify (the
-  model is deliberately rough -- it is not polish-graded). For a KEPT design
-  meant to inform the build, use /aid-design instead. Allocates a work-NNN folder.
+  Build a throwaway, low-fidelity model to test whether a direction actually works, before
+  anyone commits to building it properly. Use this skill when a decision hinges on something
+  you can only learn by trying it. The model is isolated and disposable -- it lives in the
+  work folder or an opt-in worktree and never touches production -- and it is deliberately
+  rough, so it gets a light verification rather than a polish grade. It resolves nothing: it
+  reports whether the direction holds and what was learned, and you decide. For a kept
+  design meant to inform the build rather than a throwaway, use `/aid-design` instead; the
+  real build is a separate `/aid-create` step.
 allowed-tools: Read, Glob, Grep, shell, Write, Edit, Agent
 argument-hint: "<direction> -- the direction/hypothesis to validate (optionally: fidelity paper|low-fi|runnable-spike)"
 ---

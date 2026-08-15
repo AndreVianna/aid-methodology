@@ -9,7 +9,7 @@ generatedFrom: 'canonical/skills/aid-deploy/SKILL.md'
 ## Frontmatter
 
 - **`name`** — aid-deploy
-- **`description`** — Package completed deliveries into a release. Selects eligible deliveries, verifies the combined build, packages according to project infrastructure, generates release notes, and updates artifact statuses. Use when deliveries are complete and ready to ship. State machine: IDLE → SELECTING → VERIFYING → PACKAGING → DONE.
+- **`description`** — Package completed deliveries into a release. Use when deliveries are complete and ready to ship. It selects the eligible deliveries, verifies the combined build, packages according to the project's own infrastructure, generates the release notes, and updates each artifact's status.
 - **`allowed-tools`** — Read, Glob, Grep, Bash, Write
 
 [Definition: `canonical/skills/aid-deploy/SKILL.md`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-deploy/SKILL.md)
@@ -53,48 +53,48 @@ Every node in the chart above, in chart order, with the exact `canonical/` text 
 
 <a id="fragment-n1"></a>**1 · `IDLE`** — No active release; assess eligible deliveries and… · _entry_
 
-~~~~plaintext title="canonical/skills/aid-deploy/SKILL.md#L164" wrap
+~~~~plaintext title="canonical/skills/aid-deploy/SKILL.md#L177" wrap
 | IDLE | `references/state-idle.md` | `aid-operator` | → SELECTING |
 ~~~~
 
-[Source: `canonical/skills/aid-deploy/SKILL.md#L164`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-deploy/SKILL.md#L164) · [full step: `canonical/skills/aid-deploy/references/state-idle.md#L1-L35`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-deploy/references/state-idle.md#L1-L35)
+[Source: `canonical/skills/aid-deploy/SKILL.md#L177`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-deploy/SKILL.md#L177) · [full step: `canonical/skills/aid-deploy/references/state-idle.md#L1-L35`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-deploy/references/state-idle.md#L1-L35)
 
 <a id="fragment-n2"></a>**2 · `SELECTING`** — Eligible deliveries are presented to the user for inclusion… · _step_
 
-~~~~plaintext title="canonical/skills/aid-deploy/SKILL.md#L165" wrap
+~~~~plaintext title="canonical/skills/aid-deploy/SKILL.md#L178" wrap
 | SELECTING | `references/state-selecting.md` | `aid-operator` | → VERIFYING |
 ~~~~
 
-[Source: `canonical/skills/aid-deploy/SKILL.md#L165`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-deploy/SKILL.md#L165) · [full step: `canonical/skills/aid-deploy/references/state-selecting.md#L1-L39`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-deploy/references/state-selecting.md#L1-L39)
+[Source: `canonical/skills/aid-deploy/SKILL.md#L178`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-deploy/SKILL.md#L178) · [full step: `canonical/skills/aid-deploy/references/state-selecting.md#L1-L39`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-deploy/references/state-selecting.md#L1-L39)
 
 <a id="fragment-n3"></a>**3 · `VERIFYING`** — Full build, tests, and lint are run against the combined… · _step_
 
-~~~~plaintext title="canonical/skills/aid-deploy/SKILL.md#L166" wrap
+~~~~plaintext title="canonical/skills/aid-deploy/SKILL.md#L179" wrap
 | VERIFYING | `references/state-verifying.md` | `aid-operator` | → PACKAGING |
 ~~~~
 
-[Source: `canonical/skills/aid-deploy/SKILL.md#L166`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-deploy/SKILL.md#L166) · [full step: `canonical/skills/aid-deploy/references/state-verifying.md#L1-L53`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-deploy/references/state-verifying.md#L1-L53)
+[Source: `canonical/skills/aid-deploy/SKILL.md#L179`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-deploy/SKILL.md#L179) · [full step: `canonical/skills/aid-deploy/references/state-verifying.md#L1-L53`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-deploy/references/state-verifying.md#L1-L53)
 
 <a id="fragment-n4"></a>**4 · `PACKAGING`** — Release artifacts are produced, release notes generated, KB… · _step_
 
-~~~~plaintext title="canonical/skills/aid-deploy/SKILL.md#L167" wrap
+~~~~plaintext title="canonical/skills/aid-deploy/SKILL.md#L180" wrap
 | PACKAGING | `references/state-packaging.md` | `aid-operator` | → DONE |
 ~~~~
 
-[Source: `canonical/skills/aid-deploy/SKILL.md#L167`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-deploy/SKILL.md#L167) · [full step: `canonical/skills/aid-deploy/references/state-packaging.md#L1-L99`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-deploy/references/state-packaging.md#L1-L99)
+[Source: `canonical/skills/aid-deploy/SKILL.md#L180`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-deploy/SKILL.md#L180) · [full step: `canonical/skills/aid-deploy/references/state-packaging.md#L1-L99`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-deploy/references/state-packaging.md#L1-L99)
 
 <a id="fragment-n5"></a>**5 · `DONE`** — Release complete. · _exit_ · HALT
 
-~~~~plaintext title="canonical/skills/aid-deploy/SKILL.md#L168" wrap
+~~~~plaintext title="canonical/skills/aid-deploy/SKILL.md#L181" wrap
 | DONE | `references/state-done.md` | `inline` | → halt |
 ~~~~
 
-[Source: `canonical/skills/aid-deploy/SKILL.md#L168`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-deploy/SKILL.md#L168) · [full step: `canonical/skills/aid-deploy/references/state-done.md#L1-L33`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-deploy/references/state-done.md#L1-L33)
+[Source: `canonical/skills/aid-deploy/SKILL.md#L181`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-deploy/SKILL.md#L181) · [full step: `canonical/skills/aid-deploy/references/state-done.md#L1-L33`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-deploy/references/state-done.md#L1-L33)
 
 <a id="fragment-n6"></a>**6 · `RE-RUN`** — When work STATE.md ## Deploy State is Done and the user… · _exit_ · HALT
 
-~~~~plaintext title="canonical/skills/aid-deploy/SKILL.md#L169" wrap
+~~~~plaintext title="canonical/skills/aid-deploy/SKILL.md#L182" wrap
 | RE-RUN | `references/state-re-run.md` | `inline` | → halt |
 ~~~~
 
-[Source: `canonical/skills/aid-deploy/SKILL.md#L169`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-deploy/SKILL.md#L169) · [full step: `canonical/skills/aid-deploy/references/state-re-run.md#L1-L19`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-deploy/references/state-re-run.md#L1-L19)
+[Source: `canonical/skills/aid-deploy/SKILL.md#L182`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-deploy/SKILL.md#L182) · [full step: `canonical/skills/aid-deploy/references/state-re-run.md#L1-L19`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-deploy/references/state-re-run.md#L1-L19)

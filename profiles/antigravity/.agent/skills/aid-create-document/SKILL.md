@@ -1,15 +1,16 @@
 ---
 name: aid-create-document
 description: >
-  Create a document NOW -- markdown/reference/how-to, an ADR, an architecture
-  write-up, a runbook, a tutorial, a changelog, a mermaid diagram, a table --
-  determining the format AND structure from the request, in one pass. Grounded
-  in and accuracy-checked against the Knowledge Base (.aid/knowledge/) and the
-  project source. It RESOLVES NOTHING: it drafts the document, you approve, then
-  it is placed. Produced by the aid-tech-writer agent and verified by
-  aid-reviewer. NEVER writes into .aid/knowledge/ (that is /aid-update-kb's
-  territory). Allocates a work-NNN folder. The genre skills
-  (/aid-document-decision, ...) and /aid-create-diagram delegate here.
+  Create a document in one pass, working out both its format and its structure from what you
+  ask for -- a how-to, a reference page, an ADR, an architecture write-up, a runbook, a
+  tutorial, a changelog, a diagram, a table. Use this skill when you need a document written
+  now and do not want to decide its genre first. It is grounded in, and accuracy-checked
+  against, the Knowledge Base (`.aid/knowledge/`) and the project source; aid-tech-writer
+  produces it and aid-reviewer verifies it. It resolves nothing: it drafts, you approve, and
+  only then is the document placed. It never writes into `.aid/knowledge/` -- that is
+  `/aid-update-kb`'s territory. The genre skills such as `/aid-document-decision`, and
+  `/aid-create-diagram`, all delegate here. To settle a document's direction as a reusable
+  design seed first, use `/aid-design-document`.
 allowed-tools: Read, Glob, Grep, Bash, Write, Edit, Agent
 argument-hint: "<subject> -- what to document (optionally a kind: adr, runbook, tutorial, changelog, diagram, ...)"
 ---
@@ -58,6 +59,9 @@ approval) -> DONE**. Print the `[State: NAME] -- {purpose}` entry line on each s
    else enter the resolved path), **then** allocate (`pipeline.path: lite`, `initiator:
    aid-create-document`, `lifecycle: Running`, `active_skill: aid-create-document`;
    `phase` not driven).
+6. **Read the design seed, if present.** If `.aid/design/document.md` exists, read it as
+   prior context before drafting; it is an input, never a substitute, and is not modified
+   by this run.
 
 **Advance:** AUTHOR.
 

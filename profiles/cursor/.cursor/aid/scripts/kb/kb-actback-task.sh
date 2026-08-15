@@ -216,16 +216,16 @@ _dim_of_filename() {
     evaluation-landscape.md|quality-gates.md|runbook-landscape.md|\
     validation-landscape.md) _DIM="C6" ;;
     # C7 Risk & debt
-    tech-debt.md|limitations.md) _DIM="C7" ;;
+    tech-debt.md|limitations.md|backlog.md) _DIM="C7" ;;
     # C8 Shipping & operation
     infrastructure.md|delivery-pipeline.md|dissemination.md|\
-    publishing-pipeline.md) _DIM="C8" ;;
+    publishing-pipeline.md|release-tracking.md) _DIM="C8" ;;
     # C9 What it does for users
     feature-inventory.md|capability-inventory.md|content-inventory.md|\
     design-overview.md|model-cards.md|repo-presentation.md|\
     research-questions.md|service-inventory.md) _DIM="C9" ;;
     # D Decisions & rationale
-    decisions.md|experiment-log.md|findings-log.md) _DIM="D" ;;
+    decisions.md|experiment-log.md|findings-log.md|roadmap.md) _DIM="D" ;;
     # meta Orientation / cross-cutting
     external-sources.md|README.md) _DIM="meta" ;;
     # Unknown / custom filenames: safe degradation

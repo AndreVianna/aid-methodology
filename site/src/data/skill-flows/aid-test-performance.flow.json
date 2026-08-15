@@ -30,15 +30,15 @@
       "terminal": null,
       "provenance": {
         "file": "canonical/skills/aid-test/SKILL.md",
-        "startLine": 36,
-        "endLine": 58,
+        "startLine": 32,
+        "endLine": 54,
         "sourceKind": "skill",
         "excerpt": "## State: INTAKE\n\n1. **Require a target.** Empty argument -> ask one bootstrapping question (\"What should I\n   test or verify?\") and wait.\n2. **Determine the verification kind** from the request (or the kind a sibling bound):\n   functional (unit/integration/e2e), **security** (SAST/DAST/fuzz/dependency-audit),\n   **performance** (workload/threshold/environment), **data-quality** (schema/freshness/\n   completeness/uniqueness), or **model-eval** (run the eval harness, assert metric vs\n   threshold). The framework is inferred from the KB (`test-landscape.md`).\n3. **Pick the path:** **Fast** -- a clear target + kind (\"run the security scan on the auth\n   module\", \"benchmark the /orders endpoint vs the p99 SLO\") -> run now. **Guided** -- vague\n   -> scope target / kind / threshold first.\n4. **Classify complexity (model + effort):** simple run -> `aid-reviewer` at **sonnet /\n   medium**; deep security/perf analysis -> **opus / high**. Verifier tier >= producer.\n5. **Consult the Work Initiation Gate, then allocate the work folder + STATE.** First run\n   the gate (`canonical/aid/templates/work-initiation-gate.md`):\n   `bash canonical/aid/scripts/works/enumerate-works.sh` (main tree + every git worktree).\n   Empty -> allocate, no prompt. Works exist -> ask new-vs-continuation; on **continuation**\n   route to the chosen work's resume door and STOP (allocate nothing); on **new work**:\n   create and enter the worktree per the gate's `§ 3a` step 2\n   (`worktree-lifecycle.sh create <work-id> <name>`, STOP on a non-zero exit or empty path,\n   else enter the resolved path), **then** allocate (`pipeline.path: lite`, `initiator:\n   aid-test`, `lifecycle: Running`, `active_skill: aid-test`; `phase` not driven)."
       },
       "detail": {
         "file": "canonical/skills/aid-test/SKILL.md",
-        "startLine": 36,
-        "endLine": 60,
+        "startLine": 32,
+        "endLine": 56,
         "sourceKind": "skill",
         "excerpt": "## State: INTAKE\n\n1. **Require a target.** Empty argument -> ask one bootstrapping question (\"What should I\n   test or verify?\") and wait.\n2. **Determine the verification kind** from the request (or the kind a sibling bound):\n   functional (unit/integration/e2e), **security** (SAST/DAST/fuzz/dependency-audit),\n   **performance** (workload/threshold/environment), **data-quality** (schema/freshness/\n   completeness/uniqueness), or **model-eval** (run the eval harness, assert metric vs\n   threshold). The framework is inferred from the KB (`test-landscape.md`).\n3. **Pick the path:** **Fast** -- a clear target + kind (\"run the security scan on the auth\n   module\", \"benchmark the /orders endpoint vs the p99 SLO\") -> run now. **Guided** -- vague\n   -> scope target / kind / threshold first.\n4. **Classify complexity (model + effort):** simple run -> `aid-reviewer` at **sonnet /\n   medium**; deep security/perf analysis -> **opus / high**. Verifier tier >= producer.\n5. **Consult the Work Initiation Gate, then allocate the work folder + STATE.** First run\n   the gate (`canonical/aid/templates/work-initiation-gate.md`):\n   `bash canonical/aid/scripts/works/enumerate-works.sh` (main tree + every git worktree).\n   Empty -> allocate, no prompt. Works exist -> ask new-vs-continuation; on **continuation**\n   route to the chosen work's resume door and STOP (allocate nothing); on **new work**:\n   create and enter the worktree per the gate's `§ 3a` step 2\n   (`worktree-lifecycle.sh create <work-id> <name>`, STOP on a non-zero exit or empty path,\n   else enter the resolved path), **then** allocate (`pipeline.path: lite`, `initiator:\n   aid-test`, `lifecycle: Running`, `active_skill: aid-test`; `phase` not driven).\n\n**Advance:** RUN."
       }
@@ -52,15 +52,15 @@
       "terminal": null,
       "provenance": {
         "file": "canonical/skills/aid-test/SKILL.md",
-        "startLine": 64,
-        "endLine": 74,
+        "startLine": 60,
+        "endLine": 70,
         "sourceKind": "skill",
         "excerpt": "## State: RUN\n\nExecute the verification **read-only** (Bash: the test runner, scanner, benchmark, or\ndata-quality check per the kind; never mutate the source), capturing raw output. Then\ndispatch **`aid-reviewer`** (clean context, tiered) to **consolidate** the raw results into\nthe global 7-column findings ledger (`reviewer-ledger-schema.md`) at\n`.aid/.temp/review-pending/<work>-test.md`, applying the kind's guidance -- security:\nSAST/DAST/fuzz/audit findings + severity; performance: measured-vs-threshold with the\nworkload/environment noted; data-quality: per-check pass/fail with thresholds; functional:\npass/fail + failures; model-eval: metric vs threshold. Every finding cites its evidence\n(the run output + a `file:line` where applicable)."
       },
       "detail": {
         "file": "canonical/skills/aid-test/SKILL.md",
-        "startLine": 64,
-        "endLine": 76,
+        "startLine": 60,
+        "endLine": 72,
         "sourceKind": "skill",
         "excerpt": "## State: RUN\n\nExecute the verification **read-only** (Bash: the test runner, scanner, benchmark, or\ndata-quality check per the kind; never mutate the source), capturing raw output. Then\ndispatch **`aid-reviewer`** (clean context, tiered) to **consolidate** the raw results into\nthe global 7-column findings ledger (`reviewer-ledger-schema.md`) at\n`.aid/.temp/review-pending/<work>-test.md`, applying the kind's guidance -- security:\nSAST/DAST/fuzz/audit findings + severity; performance: measured-vs-threshold with the\nworkload/environment noted; data-quality: per-check pass/fail with thresholds; functional:\npass/fail + failures; model-eval: metric vs threshold. Every finding cites its evidence\n(the run output + a `file:line` where applicable).\n\n**Advance:** VERIFY."
       }
@@ -74,15 +74,15 @@
       "terminal": null,
       "provenance": {
         "file": "canonical/skills/aid-test/SKILL.md",
-        "startLine": 80,
-        "endLine": 89,
+        "startLine": 76,
+        "endLine": 85,
         "sourceKind": "skill",
         "excerpt": "## State: VERIFY\n\n1. **Mechanical grounding check** (no dispatch): every finding cites run output / a\n   `file:line`; a metric/threshold finding states its threshold + measured value.\n2. **Adversarial verification** -- a clean-context **`aid-reviewer`** checks the ledger:\n   findings real and grounded in the run output, correctly severity-tagged, no\n   over/under-statement, and the run actually exercised the stated scope. Writes a\n   review-quality ledger to `.aid/.temp/review-pending/<work>-verify.md`.\n3. **Grade:** `bash canonical/aid/scripts/grade.sh --explain <ledger>`. Not clean -> loop\n   to RUN/consolidate. Circuit-breaker: 3 cycles -> IMPEDIMENT + `lifecycle: Blocked`."
       },
       "detail": {
         "file": "canonical/skills/aid-test/SKILL.md",
-        "startLine": 80,
-        "endLine": 91,
+        "startLine": 76,
+        "endLine": 87,
         "sourceKind": "skill",
         "excerpt": "## State: VERIFY\n\n1. **Mechanical grounding check** (no dispatch): every finding cites run output / a\n   `file:line`; a metric/threshold finding states its threshold + measured value.\n2. **Adversarial verification** -- a clean-context **`aid-reviewer`** checks the ledger:\n   findings real and grounded in the run output, correctly severity-tagged, no\n   over/under-statement, and the run actually exercised the stated scope. Writes a\n   review-quality ledger to `.aid/.temp/review-pending/<work>-verify.md`.\n3. **Grade:** `bash canonical/aid/scripts/grade.sh --explain <ledger>`. Not clean -> loop\n   to RUN/consolidate. Circuit-breaker: 3 cycles -> IMPEDIMENT + `lifecycle: Blocked`.\n\n**Advance:** PRESENT."
       }
@@ -96,15 +96,15 @@
       "terminal": null,
       "provenance": {
         "file": "canonical/skills/aid-test/SKILL.md",
-        "startLine": 95,
-        "endLine": 99,
+        "startLine": 91,
+        "endLine": 95,
         "sourceKind": "skill",
         "excerpt": "## State: PRESENT  (hard stop -- human)\n\nSet `lifecycle: Paused-Awaiting-Input`. Present the consolidated findings, severity-ranked,\neach with its evidence; state pass/fail against any threshold; and a printed suggestion:\n\"N issues found -- run `/aid-fix` to address them.\" Assert no resolution."
       },
       "detail": {
         "file": "canonical/skills/aid-test/SKILL.md",
-        "startLine": 95,
-        "endLine": 101,
+        "startLine": 91,
+        "endLine": 97,
         "sourceKind": "skill",
         "excerpt": "## State: PRESENT  (hard stop -- human)\n\nSet `lifecycle: Paused-Awaiting-Input`. Present the consolidated findings, severity-ranked,\neach with its evidence; state pass/fail against any threshold; and a printed suggestion:\n\"N issues found -- run `/aid-fix` to address them.\" Assert no resolution.\n\n**Advance:** HANDOFF (optional) then DONE."
       }
@@ -118,15 +118,15 @@
       "terminal": null,
       "provenance": {
         "file": "canonical/skills/aid-test/SKILL.md",
-        "startLine": 105,
-        "endLine": 108,
+        "startLine": 101,
+        "endLine": 104,
         "sourceKind": "skill",
         "excerpt": "## State: HANDOFF  (optional; printed suggestions only)\n\nPrinted suggestions: `/aid-fix` (address findings), `/aid-create-test` (add regression tests\nfor a bug found), `/aid-update*` (if a fix is a real change). Never auto-invoked."
       },
       "detail": {
         "file": "canonical/skills/aid-test/SKILL.md",
-        "startLine": 105,
-        "endLine": 110,
+        "startLine": 101,
+        "endLine": 106,
         "sourceKind": "skill",
         "excerpt": "## State: HANDOFF  (optional; printed suggestions only)\n\nPrinted suggestions: `/aid-fix` (address findings), `/aid-create-test` (add regression tests\nfor a bug found), `/aid-update*` (if a fix is a real change). Never auto-invoked.\n\n**Advance:** DONE."
       }
@@ -143,15 +143,15 @@
       },
       "provenance": {
         "file": "canonical/skills/aid-test/SKILL.md",
-        "startLine": 114,
-        "endLine": 117,
+        "startLine": 110,
+        "endLine": 113,
         "sourceKind": "skill",
         "excerpt": "## State: DONE\n\nSet `lifecycle: Completed`, `updated` now, append a `## Lifecycle History` row. Leave the\nfindings ledger on disk for `/aid-fix`. Keep the work folder as the audit record."
       },
       "detail": {
         "file": "canonical/skills/aid-test/SKILL.md",
-        "startLine": 114,
-        "endLine": 117,
+        "startLine": 110,
+        "endLine": 113,
         "sourceKind": "skill",
         "excerpt": "## State: DONE\n\nSet `lifecycle: Completed`, `updated` now, append a `## Lifecycle History` row. Leave the\nfindings ledger on disk for `/aid-fix`. Keep the work folder as the audit record."
       }
@@ -180,8 +180,8 @@
       "advanceType": "UNSPECIFIED",
       "provenance": {
         "file": "canonical/skills/aid-test/SKILL.md",
-        "startLine": 60,
-        "endLine": 60,
+        "startLine": 56,
+        "endLine": 56,
         "sourceKind": "skill",
         "excerpt": "**Advance:** RUN."
       }
@@ -194,8 +194,8 @@
       "advanceType": "UNSPECIFIED",
       "provenance": {
         "file": "canonical/skills/aid-test/SKILL.md",
-        "startLine": 76,
-        "endLine": 76,
+        "startLine": 72,
+        "endLine": 72,
         "sourceKind": "skill",
         "excerpt": "**Advance:** VERIFY."
       }
@@ -208,8 +208,8 @@
       "advanceType": "UNSPECIFIED",
       "provenance": {
         "file": "canonical/skills/aid-test/SKILL.md",
-        "startLine": 89,
-        "endLine": 89,
+        "startLine": 85,
+        "endLine": 85,
         "sourceKind": "skill",
         "excerpt": "   to RUN/consolidate. Circuit-breaker: 3 cycles -> IMPEDIMENT + `lifecycle: Blocked`."
       }
@@ -222,8 +222,8 @@
       "advanceType": "UNSPECIFIED",
       "provenance": {
         "file": "canonical/skills/aid-test/SKILL.md",
-        "startLine": 91,
-        "endLine": 91,
+        "startLine": 87,
+        "endLine": 87,
         "sourceKind": "skill",
         "excerpt": "**Advance:** PRESENT."
       }
@@ -236,8 +236,8 @@
       "advanceType": "UNSPECIFIED",
       "provenance": {
         "file": "canonical/skills/aid-test/SKILL.md",
-        "startLine": 101,
-        "endLine": 101,
+        "startLine": 97,
+        "endLine": 97,
         "sourceKind": "skill",
         "excerpt": "**Advance:** HANDOFF (optional) then DONE."
       }
@@ -250,8 +250,8 @@
       "advanceType": "UNSPECIFIED",
       "provenance": {
         "file": "canonical/skills/aid-test/SKILL.md",
-        "startLine": 101,
-        "endLine": 101,
+        "startLine": 97,
+        "endLine": 97,
         "sourceKind": "skill",
         "excerpt": "**Advance:** HANDOFF (optional) then DONE."
       }
@@ -264,8 +264,8 @@
       "advanceType": "UNSPECIFIED",
       "provenance": {
         "file": "canonical/skills/aid-test/SKILL.md",
-        "startLine": 110,
-        "endLine": 110,
+        "startLine": 106,
+        "endLine": 106,
         "sourceKind": "skill",
         "excerpt": "**Advance:** DONE."
       }

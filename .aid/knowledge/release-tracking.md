@@ -1,8 +1,8 @@
 ---
 kb-category: extension
 source: hand-authored
-objective: Cumulative release ledger for the AID repo — every release newest-first with its items tagged [NEW] / [CHANGE] / [FIX], plus an Unreleased section that accumulates items for the next version.
-summary: Read or update this to know what shipped in which version and what is pending release. Hand-maintained; at tag time the Unreleased section is renamed to the version + date and a fresh Unreleased block starts. Referenced by infrastructure.md as the home of release history (the root RELEASE_NOTES.md is retired).
+objective: Cumulative release ledger for the AID repo — every release newest-first with its items tagged [NEW] / [CHANGE] / [FIX].
+summary: Read or update this to know what shipped in which version; what is pending release lives in backlog.md § Next Release. Hand-maintained; at tag time a new version + date section is added from the items drained out of that section. Referenced by infrastructure.md as the home of release history (the root RELEASE_NOTES.md is retired).
 sources:
   - release.sh
   - .github/workflows/release.yml
@@ -25,13 +25,9 @@ review-criteria:
 # Release Tracking
 
 > Cumulative log of all releases (newest first) and their items, tagged
-> `[NEW]` / `[CHANGE]` / `[FIX]`. The top `Unreleased` section accumulates items for
-> the next version; at tag time, rename it to the version + date and start a fresh
-> `Unreleased` block. `[NEW]` items lead with a feature name; `[CHANGE]` / `[FIX]`
-> are description-only. An optional trailing version on an Unreleased item is a
-> planned target.
-
-## Unreleased
+> `[NEW]` / `[CHANGE]` / `[FIX]`. At tag time, add a new version + date section from the
+> items drained out of `backlog.md` § `Next Release`. `[NEW]` items lead with a feature
+> name; `[CHANGE]` / `[FIX]` are description-only.
 
 ## v2.3.0 - 2026-07-23
 

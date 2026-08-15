@@ -121,9 +121,12 @@ required-first, then conditional. A `--` in the spine column for
 ### Domain: `software-cli`
 
 The reference row. Its **required** docs reproduce the 14-doc `synth_default_seed` **exactly**
-(see [Seed-consistency check](#seed-consistency-check)). `decisions.md` is an **additive
-conditional** entry -- the 11th dimension's conditional realization -- and is **not** part of
-the byte-stable seed.
+(see [Seed-consistency check](#seed-consistency-check)). Four docs are **additive conditional**
+entries and **none** is part of the byte-stable seed: `decisions.md` and `roadmap.md` are both
+conditional realizations of the 11th dimension (D), `backlog.md` realizes C7, and
+`release-tracking.md` realizes C8. Each is created on first use by its own skill, and none has
+a template under `.codex/aid/templates/knowledge-base/` -- which is the mechanism that keeps
+the seed at 14.
 
 `provenance: curated`
 
@@ -144,9 +147,14 @@ the byte-stable seed.
 | `infrastructure.md` | C8 | `aid-researcher-quality` | required |
 | `feature-inventory.md` | C9 | `skill-self` | required |
 | `decisions.md` | D | `aid-researcher-architecture` | conditional:project has recorded rationale-bearing decisions |
+| `roadmap.md` | D | `skill-self` | conditional:project maintains a forward plan |
+| `backlog.md` | C7 | `skill-self` | conditional:project maintains a defined-and-prioritized backlog |
+| `release-tracking.md` | C8 | `skill-self` | conditional:project cuts versioned releases and records what shipped in each |
+| `quality-gates.md` | C6 | `aid-researcher-quality` | conditional:project enforces merge-blocking quality gates |
 
-14 required docs (the seed) + 1 conditional (`decisions.md`). `INDEX.md` is generated meta
-(by `build-kb-index.sh`), never a matrix row.
+14 required docs (the seed) + 5 conditional (`decisions.md`, `roadmap.md`, `backlog.md`,
+`release-tracking.md`, `quality-gates.md`). `INDEX.md` is generated meta (by
+`build-kb-index.sh`), never a matrix row.
 
 ### Domain: `software-web`
 
@@ -174,6 +182,10 @@ user-facing presentation (C9) and deployment (C8).
 | `feature-inventory.md` | C9 | `skill-self` | required |
 | `repo-presentation.md` | C9 | `aid-researcher-architecture` | conditional:project has a user-facing UI; brand; or marketing surface |
 | `decisions.md` | D | `aid-researcher-architecture` | conditional:project has recorded rationale-bearing decisions |
+| `roadmap.md` | D | `skill-self` | conditional:project maintains a forward plan |
+| `backlog.md` | C7 | `skill-self` | conditional:project maintains a defined-and-prioritized backlog |
+| `release-tracking.md` | C8 | `skill-self` | conditional:project cuts versioned releases and records what shipped in each |
+| `quality-gates.md` | C6 | `aid-researcher-quality` | conditional:project enforces merge-blocking quality gates |
 
 > **Note.** `software-cli` and `software-web` share the same 14 required docs. They are kept
 > as separate rows (not folded into one `software` row) because their *conditional* sets
@@ -204,6 +216,9 @@ include data-handling rules.
 | `feature-inventory.md` | C9 | `skill-self` | required |
 | `architecture.md` | C1 | `aid-researcher-architecture` | conditional:project has a non-trivial system architecture beyond the pipeline |
 | `experiment-log.md` | D | `aid-researcher-architecture` | conditional:project records experiment results and the decisions drawn from them |
+| `roadmap.md` | D | `skill-self` | conditional:project maintains a forward plan |
+| `backlog.md` | C7 | `skill-self` | conditional:project maintains a defined-and-prioritized backlog |
+| `release-tracking.md` | C8 | `skill-self` | conditional:project cuts versioned releases and records what shipped in each |
 
 ### Domain: `content`
 
@@ -227,6 +242,9 @@ quality is editorial review.
 | `content-map.md` | C2 | `aid-researcher-integrator` | conditional:content is cross-linked or has a non-trivial navigation/dependency structure |
 | `tech-debt.md` | C7 | `aid-researcher-quality` | conditional:content has known gaps; stale sections; or migration debt |
 | `decisions.md` | D | `aid-researcher-architecture` | conditional:content strategy records rationale-bearing decisions |
+| `roadmap.md` | D | `skill-self` | conditional:project maintains a forward plan |
+| `backlog.md` | C7 | `skill-self` | conditional:project maintains a defined-and-prioritized backlog |
+| `release-tracking.md` | C8 | `skill-self` | conditional:project cuts versioned releases and records what shipped in each |
 
 ### Domain: `research`
 
@@ -250,6 +268,9 @@ are the central artifact (research is decision-and-rationale heavy), so `D` is r
 | `limitations.md` | C7 | `aid-researcher-quality` | conditional:study has documented threats-to-validity or open caveats |
 | `evidence-map.md` | C2 | `aid-researcher-integrator` | conditional:findings connect across multiple evidence sources or sub-studies |
 | `dissemination.md` | C8 | `aid-researcher-quality` | conditional:findings are published; released; or otherwise shipped to an audience |
+| `roadmap.md` | D | `skill-self` | conditional:project maintains a forward plan |
+| `backlog.md` | C7 | `skill-self` | conditional:project maintains a defined-and-prioritized backlog |
+| `release-tracking.md` | C8 | `skill-self` | conditional:project cuts versioned releases and records what shipped in each |
 
 > `research` is the one common domain where `D` (decisions/rationale) is **required** rather
 > than conditional: in research the rationale *is* the deliverable.
@@ -276,6 +297,9 @@ accessibility + design review.
 | `tech-debt.md` | C7 | `aid-researcher-quality` | conditional:design system has known inconsistencies or deprecation debt |
 | `delivery-pipeline.md` | C8 | `aid-researcher-quality` | conditional:design ships as a published artifact (a released token package or hosted design site) |
 | `decisions.md` | D | `aid-researcher-architecture` | conditional:design records rationale-bearing decisions (a design-decision log) |
+| `roadmap.md` | D | `skill-self` | conditional:project maintains a forward plan |
+| `backlog.md` | C7 | `skill-self` | conditional:project maintains a defined-and-prioritized backlog |
+| `release-tracking.md` | C8 | `skill-self` | conditional:project cuts versioned releases and records what shipped in each |
 
 ### Domain: `ops`
 
@@ -299,6 +323,9 @@ the platform topology.
 | `technology-stack.md` | C0 | `aid-researcher-architecture` | required |
 | `tech-debt.md` | C7 | `aid-researcher-quality` | required |
 | `decisions.md` | D | `aid-researcher-architecture` | conditional:platform records rationale-bearing decisions (a runbook/ADR log) |
+| `roadmap.md` | D | `skill-self` | conditional:project maintains a forward plan |
+| `backlog.md` | C7 | `skill-self` | conditional:project maintains a defined-and-prioritized backlog |
+| `release-tracking.md` | C8 | `skill-self` | conditional:project cuts versioned releases and records what shipped in each |
 
 ### Domain: `methodology-tooling`
 
@@ -323,6 +350,9 @@ of decisions), so `D` is required.
 | `tooling-stack.md` | C0 | `aid-researcher-architecture` | required |
 | `tech-debt.md` | C7 | `aid-researcher-quality` | conditional:methodology has known gaps or deprecated guidance |
 | `infrastructure.md` | C8 | `aid-researcher-quality` | conditional:the tooling ships/runs as a deployed artifact |
+| `roadmap.md` | D | `skill-self` | conditional:project maintains a forward plan |
+| `backlog.md` | C7 | `skill-self` | conditional:project maintains a defined-and-prioritized backlog |
+| `release-tracking.md` | C8 | `skill-self` | conditional:project cuts versioned releases and records what shipped in each |
 
 ---
 
@@ -408,14 +438,19 @@ same 14 owners**:
   `software-web` required rows are **byte-consistent** with `synth_default_seed`. A project
   classified as either software domain that accepts the defaults gets exactly today's 14 docs.
 - **`decisions.md` is NOT row 15 of the seed.** It is an **additive conditional** entry
-  (presence `conditional`, owner `aid-researcher-architecture`, spine-dimension `D`) -- the
-  11th spine dimension's conditional realization, mirroring `concern-model.md`'s
+  (presence `conditional`, owner `aid-researcher-architecture`, spine-dimension `D`) -- one of
+  the 11th spine dimension's two conditional realizations, mirroring `concern-model.md`'s
   seed-coverage check. It is proposed only when a project has rationale-bearing decisions; it
   is never added to `synth_default_seed`, so the byte-stable software seed remains exactly 14
   docs.
 - **`repo-presentation.md`** (in the `software-web` row) is likewise a **conditional**
   extension, NOT a seed doc -- consistent with `concern-model.md` and `doc-set-resolve.md`,
   where it appears as `repo-presentation.md|aid-researcher-architecture|conditional`.
+- **`roadmap.md`, `backlog.md`, `release-tracking.md` are the same kind of additive
+  conditional entry** as `decisions.md`, not seed docs: presence `conditional`, owner
+  `skill-self`, spine-dimensions `D` / `C7` / `C8` respectively. Each is domain-agnostic
+  (CC-6) and appears in all eight domain sections; none is ever added to
+  `synth_default_seed`, so the byte-stable software seed remains exactly 14 docs.
 - **`INDEX.md`** is generated meta (by `build-kb-index.sh`), excluded from the seed count and
   never a matrix row.
 

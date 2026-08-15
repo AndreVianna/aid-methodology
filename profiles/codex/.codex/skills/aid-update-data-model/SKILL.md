@@ -1,12 +1,11 @@
 ---
 name: aid-update-data-model
 description: >
-  Direct-entry Lite-path shortcut (Update an existing data model/entity's schema, with forward+rollback migration.) -- skips the aid-describe
-  interview/triage. Binds VERB=`update` ARTIFACT=`data-model` and runs the shared
-  shortcut engine, producing a fully-graded flattened Lite work that halts for
-  approval.
-  State machine: delegated to .codex/aid/templates/shortcut-engine.md
-  (INTAKE -> CAPTURE -> SPEC -> PLAN -> DETAIL -> GATE -> APPROVAL-HALT).
+  Update an existing data model/entity's schema, with forward+rollback migration. Use this
+  skill when you already know what to update and want it scoped, specified, and broken
+  into reviewable tasks in a single pass, with no requirements interview. You approve the
+  resulting plan before anything is built: this skill plans and stops, so run `/aid-
+  execute` to carry the plan out.
 allowed-tools: Read, Glob, Grep, Bash, Write, Edit, Agent
 argument-hint: "[description]  -- what to update; runs straight to a graded flattened Lite work"
 ---

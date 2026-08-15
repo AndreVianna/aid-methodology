@@ -1,6 +1,6 @@
 ---
 title: 'aid-ask'
-description: 'Optional on-demand Q&A skill.'
+description: 'Answer a question about this project, with citations.'
 generatedFrom: 'canonical/skills/aid-ask/SKILL.md'
 ---
 
@@ -9,7 +9,7 @@ generatedFrom: 'canonical/skills/aid-ask/SKILL.md'
 ## Frontmatter
 
 - **`name`** — aid-ask
-- **`description`** — Optional on-demand Q&amp;A skill. Takes a free-form question and answers it in one pass, grounded in three context sources: the Knowledge Base (.aid/knowledge/), the live codebase, and in-flight AID works (.aid/works/work-*/STATE.md + progress). Returns an answer with source citations (KB doc names, file paths, or work-NNN STATE references). When the available context cannot answer the question, states the gap explicitly rather than fabricating an answer AND captures the gap as a Query-Gap entry in the STATE.md Q&amp;A (Pending) backlog so it feeds the KB-improvement loop. Trivial questions are answered inline (Read/Glob/Grep only); broad or expensive investigations dispatch aid-researcher in strictly read-only mode. Writes are restricted to appending a Query-Gap entry to a STATE.md Q&amp;A (Pending) section; no KB doc, settings, or code file is ever written.
+- **`description`** — Answer a question about this project, with citations. Use this skill when you want to know something -- how a part of the system works, what a document says, where a piece of work stands -- and you want a grounded answer rather than a guess. It reads three sources: the Knowledge Base, the live codebase, and any AID work currently in flight, and cites whichever it used, by document name, file path, or work reference. When those sources genuinely cannot answer, it says so instead of inventing an answer, and records the gap so it feeds back into improving the Knowledge Base. Trivial questions are answered inline; broad investigations are dispatched read-only. The only thing it ever writes is that recorded gap.
 - **`allowed-tools`** — Read, Glob, Grep, Agent, Write, Edit
 - **`argument-hint`** — &lt;question>  — a free-form question about the project
 
@@ -57,48 +57,48 @@ Every node in the chart above, in chart order, with the exact `canonical/` text 
 
 <a id="fragment-n1"></a>**1 · `STEP-1`** — Classify the question · _entry_
 
-~~~~plaintext title="canonical/skills/aid-ask/SKILL.md#L54" wrap
+~~~~plaintext title="canonical/skills/aid-ask/SKILL.md#L51" wrap
 ### Step 1 — Classify the question
 ~~~~
 
-[Source: `canonical/skills/aid-ask/SKILL.md#L54`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-ask/SKILL.md#L54)
+[Source: `canonical/skills/aid-ask/SKILL.md#L51`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-ask/SKILL.md#L51)
 
 <a id="fragment-n2"></a>**2 · `STEP-2A`** — Trivial question: answer inline · _step_
 
-~~~~plaintext title="canonical/skills/aid-ask/SKILL.md#L66" wrap
+~~~~plaintext title="canonical/skills/aid-ask/SKILL.md#L63" wrap
 ### Step 2a — Trivial question: answer inline
 ~~~~
 
-[Source: `canonical/skills/aid-ask/SKILL.md#L66`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-ask/SKILL.md#L66)
+[Source: `canonical/skills/aid-ask/SKILL.md#L63`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-ask/SKILL.md#L63)
 
 <a id="fragment-n3"></a>**3 · `STEP-2B`** — Broad/expensive question: dispatch aid-researcher · _step_
 
-~~~~plaintext title="canonical/skills/aid-ask/SKILL.md#L80" wrap
+~~~~plaintext title="canonical/skills/aid-ask/SKILL.md#L77" wrap
 ### Step 2b — Broad/expensive question: dispatch aid-researcher
 ~~~~
 
-[Source: `canonical/skills/aid-ask/SKILL.md#L80`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-ask/SKILL.md#L80)
+[Source: `canonical/skills/aid-ask/SKILL.md#L77`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-ask/SKILL.md#L77)
 
 <a id="fragment-n4"></a>**4 · `STEP-2C`** — Connector enrichment (optional) · _step_
 
-~~~~plaintext title="canonical/skills/aid-ask/SKILL.md#L105" wrap
+~~~~plaintext title="canonical/skills/aid-ask/SKILL.md#L102" wrap
 ### Step 2c — Connector enrichment (optional)
 ~~~~
 
-[Source: `canonical/skills/aid-ask/SKILL.md#L105`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-ask/SKILL.md#L105)
+[Source: `canonical/skills/aid-ask/SKILL.md#L102`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-ask/SKILL.md#L102)
 
 <a id="fragment-n5"></a>**5 · `STEP-3`** — Compose and emit the reply · _step_
 
-~~~~plaintext title="canonical/skills/aid-ask/SKILL.md#L115" wrap
+~~~~plaintext title="canonical/skills/aid-ask/SKILL.md#L112" wrap
 ### Step 3 — Compose and emit the reply
 ~~~~
 
-[Source: `canonical/skills/aid-ask/SKILL.md#L115`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-ask/SKILL.md#L115)
+[Source: `canonical/skills/aid-ask/SKILL.md#L112`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-ask/SKILL.md#L112)
 
 <a id="fragment-n6"></a>**6 · `STEP-4`** — Gap capture · _exit_ · UNSPECIFIED
 
-~~~~plaintext title="canonical/skills/aid-ask/SKILL.md#L162" wrap
+~~~~plaintext title="canonical/skills/aid-ask/SKILL.md#L159" wrap
 ### Step 4 -- Gap capture
 ~~~~
 
-[Source: `canonical/skills/aid-ask/SKILL.md#L162`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-ask/SKILL.md#L162)
+[Source: `canonical/skills/aid-ask/SKILL.md#L159`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-ask/SKILL.md#L159)

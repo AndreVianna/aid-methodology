@@ -14,8 +14,8 @@
       "terminal": null,
       "provenance": {
         "file": "canonical/skills/aid-unset-connector/SKILL.md",
-        "startLine": 38,
-        "endLine": 38,
+        "startLine": 39,
+        "endLine": 39,
         "sourceKind": "skill",
         "excerpt": "### Step 0: Validate arguments"
       },
@@ -30,8 +30,8 @@
       "terminal": null,
       "provenance": {
         "file": "canonical/skills/aid-unset-connector/SKILL.md",
-        "startLine": 57,
-        "endLine": 57,
+        "startLine": 58,
+        "endLine": 58,
         "sourceKind": "skill",
         "excerpt": "## Step 1: Resolve `<tool>` → descriptor stem"
       },
@@ -46,8 +46,8 @@
       "terminal": null,
       "provenance": {
         "file": "canonical/skills/aid-unset-connector/SKILL.md",
-        "startLine": 71,
-        "endLine": 71,
+        "startLine": 72,
+        "endLine": 72,
         "sourceKind": "skill",
         "excerpt": "## Step 2: Single-stem REMOVE (`reconcile.md`)"
       },
@@ -65,8 +65,8 @@
       },
       "provenance": {
         "file": "canonical/skills/aid-unset-connector/SKILL.md",
-        "startLine": 101,
-        "endLine": 101,
+        "startLine": 102,
+        "endLine": 102,
         "sourceKind": "skill",
         "excerpt": "## Step 3: Rebuild `INDEX.md`"
       },
@@ -82,8 +82,8 @@
       "advanceType": "CHAIN",
       "provenance": {
         "file": "canonical/skills/aid-unset-connector/SKILL.md",
-        "startLine": 57,
-        "endLine": 57,
+        "startLine": 58,
+        "endLine": 58,
         "sourceKind": "skill",
         "excerpt": "## Step 1: Resolve `<tool>` → descriptor stem"
       }
@@ -96,8 +96,8 @@
       "advanceType": "CHAIN",
       "provenance": {
         "file": "canonical/skills/aid-unset-connector/SKILL.md",
-        "startLine": 71,
-        "endLine": 71,
+        "startLine": 72,
+        "endLine": 72,
         "sourceKind": "skill",
         "excerpt": "## Step 2: Single-stem REMOVE (`reconcile.md`)"
       }
@@ -110,8 +110,8 @@
       "advanceType": "CHAIN",
       "provenance": {
         "file": "canonical/skills/aid-unset-connector/SKILL.md",
-        "startLine": 101,
-        "endLine": 101,
+        "startLine": 102,
+        "endLine": 102,
         "sourceKind": "skill",
         "excerpt": "## Step 3: Rebuild `INDEX.md`"
       }

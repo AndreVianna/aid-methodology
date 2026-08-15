@@ -1,13 +1,13 @@
 ---
 name: aid-document-changelog
 description: >
-  Write a changelog NOW -- release notes grouped Added / Changed / Fixed / Removed /
-  Security -- in one pass. A thin kind-sibling of /aid-create-document with the document
-  genre bound to changelog. Grounded in and accuracy-checked against the Knowledge Base
-  (.aid/knowledge/) and the project source; produced by aid-tech-writer, verified by
-  aid-reviewer. It RESOLVES NOTHING -- drafts, you approve, then it is placed. NEVER writes
-  into .aid/knowledge/. This file carries no logic of its own -- its full behavior is
-  defined by .github/skills/aid-create-document/SKILL.md.
+  Write a changelog in one pass -- release notes grouped as Added, Changed, Fixed, Removed
+  and Security. Use this skill when you already know the document you need is changelog, and
+  want it drafted now rather than planned. It is grounded in, and accuracy-checked against,
+  the Knowledge Base (`.aid/knowledge/`) and the project source; aid-tech-writer produces it
+  and aid-reviewer verifies it. It resolves nothing: it drafts, you approve, and only then
+  is the document placed. It never writes into `.aid/knowledge/`. A thin kind-sibling of
+  `/aid-create-document`, which defines its full behavior.
 allowed-tools: Read, Glob, Grep, shell, Write, Edit, Agent
 argument-hint: "<version/changes> -- the changelog"
 ---
