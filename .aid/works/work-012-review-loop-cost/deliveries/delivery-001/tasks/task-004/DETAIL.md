@@ -37,4 +37,5 @@ Written once by aid-detail; not a state file. State lives in task-NNN/STATE.yml.
 - [ ] The `Selector`/`Match` co-edit rule is stated in the registry section itself, not left as folklore
 - [ ] No selector's MEANING changes -- verified by task-005's oracle classifying the current corpus identically before and after
 - [ ] No `.aid/knowledge/` file other than `authoring-conventions.md` is touched
+- [ ] **The edit introduces no work id and no work-folder path into `.aid/knowledge/`** -- not `work-012`, not `.aid/works/work-012-*/`, not "added by work-012", in prose, table cell, heading or frontmatter. `AGENTS.md` forbids it because a work folder is pruned when the work ships, making the cite a dangling pointer by design. This is stated as a task criterion because **no criterion id covers the rule** (see Q-06) -- a reviewer could not otherwise file a finding for it, and PR #195 had to clean exactly this by hand
 - [ ] All REQUIREMENTS.md §6 quality gates pass

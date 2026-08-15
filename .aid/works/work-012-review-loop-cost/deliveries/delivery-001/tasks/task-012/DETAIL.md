@@ -33,4 +33,5 @@ Written once by aid-detail; not a state file. State lives in task-NNN/STATE.yml.
 - [ ] It cross-references `reviewer-ledger-schema.md` rather than restating the clause, so there is no second definition to drift
 - [ ] No other `.aid/knowledge/` file is touched, and no other section of this file is modified
 - [ ] The criteria cascade itself is unchanged (C-4, §4)
+- [ ] **The edit introduces no work id and no work-folder path into `.aid/knowledge/`** -- not `work-012`, not `.aid/works/work-012-*/`, not "added by work-012", in prose, table cell, heading or frontmatter. `AGENTS.md` forbids it because a work folder is pruned when the work ships, making the cite a dangling pointer by design. This is stated as a task criterion because **no criterion id covers the rule** (see Q-06) -- a reviewer could not otherwise file a finding for it, and PR #195 had to clean exactly this by hand
 - [ ] All REQUIREMENTS.md §6 quality gates pass

@@ -34,9 +34,9 @@ phase: Detail
 # [W] aid-{skill} | none
 active_skill: none
 # [W]
-updated: '2026-08-15T15:18:54Z'
+updated: '2026-08-15T15:35:08Z'
 # [W] set only when lifecycle = Paused-Awaiting-Input
-pause_reason: 'Detail complete at A+ -- 15 tasks in 10 waves; run /aid-execute work-012'
+pause_reason: 'Detail complete at A+ -- 15 tasks; Q-06 open (routed to /aid-discover, non-blocking); run /aid-execute work-012'
 # [W] set only when lifecycle = Blocked
 block_reason: --
 # [W] e.g. IMPEDIMENT-task-NNN.md, or the failed gate
@@ -670,6 +670,34 @@ lifecycle_history:
       merge; the criteria table still carries its 18 rows and G-07 is still
       HIGH.
 
+  - date: '2026-08-15'
+    event: 'Merged master (PR #195 KB cleanup) -- and it exposed a gate gap'
+    grade: --
+    notes: >-
+      Two commits, one file: PR #195 removed a work id ("work-006 task-071")
+      from two lines of .aid/knowledge/STATE.md, enforcing AGENTS.md's
+      "never name a work in the Knowledge Base" rule. Clean merge, touching
+      nothing this work depends on.
+      Checked this work against the same rule rather than assuming it
+      complies. Tasks 004 and 012 are the only two that touch
+      .aid/knowledge/, and they name work-012 solely in their own Source
+      field -- a task DETAIL field, not KB content. Compliant.
+      THE USEFUL FINDING IS WHY #195 WAS NEEDED AT ALL. The rule lives only
+      in AGENTS.md and CLAUDE.md; NO criterion id covers it. Since
+      reviewer-ledger-schema.md treats a finding citing no resolvable id as
+      itself a defect, a reviewer who spots a work-named KB doc cannot file
+      it properly -- which is precisely why this was a hand cleanup rather
+      than a gate catch. Same class as Q-05: a real rule with no citable
+      home. Recorded as Q-06 and routed to /aid-discover; NOT absorbed here,
+      since the C-5 grant is enumerated to three edits, a new criterion row
+      would be a fourth, and section 4 keeps the cascade out of scope.
+      Handled defensively meanwhile: tasks 004 and 012 each gained an
+      acceptance criterion forbidding a work id in their own KB edit, so
+      this work cannot reintroduce the defect #195 just cleaned up.
+      Worth noting for feature-002: the rule is mechanically decidable -- a
+      grep for work-[0-9] under .aid/knowledge/ -- so it is a natural second
+      oracle candidate once FR-10's lazy trigger fires.
+
 # [A] aid-deploy only; one entry per delivery.
 deploy: []
 
@@ -887,3 +915,37 @@ qa:
       Authoring criteria for work-lifecycle artifacts is its own piece of
       work, and the routing destination is /aid-discover.
     applied_to: 'Routed to /aid-discover. No artifact of work-012 changes -- recorded here so the decision travels with the finding rather than being re-derived.'
+  - id: 'Q-06'
+    category: 'Knowledge Base / criteria registry'
+    impact: Low
+    state: Pending
+    context: >-
+      Surfaced by PR #195, a hand cleanup that removed a work id from
+      .aid/knowledge/STATE.md. AGENTS.md and CLAUDE.md both state the rule --
+      ".aid/knowledge/** must contain no work id and no work-folder path" --
+      with two independent reasons: a work folder is pruned when the work
+      ships, so the cite is a dangling pointer by design, and the KB states
+      the current state of the project's sources whereas which work produced
+      a change is history. But NO CRITERION ID COVERS IT; a grep of the
+      criteria-by-level table for a work-naming rule returns nothing.
+      The consequence is concrete rather than theoretical.
+      reviewer-ledger-schema.md says a finding citing no id, or an id
+      resolving nowhere, is ITSELF a defect -- so a reviewer who spots a
+      work-named KB doc has no way to file it properly. That is why #195 was
+      a hand cleanup and not a gate catch. Same class as Q-05: a real rule
+      with no citable home.
+    suggested: >-
+      Add a criterion (global, or scoped to the kb-doc and kb-meta types)
+      whose text is the AGENTS.md sentence, so a reviewer can cite it. It is
+      mechanically decidable -- a grep for `work-[0-9]` under
+      .aid/knowledge/ -- so it is also a natural candidate for an `oracle:`
+      once FR-10's lazy trigger fires, which would make it a second worked
+      example for feature-002's mechanism.
+      DELIBERATELY NOT TAKEN HERE: the C-5 authorization is enumerated to
+      three edits and a new criterion row would be a fourth; section 4 keeps
+      the criteria cascade out of scope; C-7 caps the feature count. Routed
+      to /aid-discover alongside Q-05. Handled defensively in the meantime --
+      tasks 004 and 012, the only two touching .aid/knowledge/, each carry an
+      acceptance criterion forbidding a work id in their own edit.
+    answer: --
+    applied_to: 'task-004 and task-012 acceptance criteria (defensive only); the registry change is routed to /aid-discover'
