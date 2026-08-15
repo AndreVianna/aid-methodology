@@ -45,9 +45,9 @@
 # one -- never self-written by the task being executed.)
 
 # [W] Pending | In Progress | In Review | Blocked | Done | Failed | Canceled
-state: 'In Progress'
+state: Done
 # [W]
-review: --
+review: 'MEASUREMENT.md written. AC-9/10/11/12 MET; AC-1 NOT MET -- record was never invoked, the predicted W5-5 failure mode realised'
 # [W] HH:MM | --
 elapsed: --
 # [W]
