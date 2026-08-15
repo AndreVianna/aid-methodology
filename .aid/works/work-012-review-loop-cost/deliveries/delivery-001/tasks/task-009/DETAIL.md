@@ -1,4 +1,4 @@
-# task-009: Two-set ARTIFACTS rendering across the six reviewer briefs
+# task-009: Two-set ARTIFACTS rendering across every reviewer brief
 
 [!NOTE]
 This is the TASK-LEVEL DETAIL.md template. It is the IMMUTABLE DEFINITION for this task.
@@ -24,13 +24,13 @@ Written once by aid-detail; not a state file. State lives in task-NNN/STATE.yml.
 **Depends on:** task-008
 
 **Scope:**
-- The six `canonical/skills/{aid-define,aid-detail,aid-discover,aid-execute,aid-plan,aid-specify}/references/reviewer-brief.md` files.
+- **Every** `canonical/skills/*/references/reviewer-brief.md`, enumerated from disk at execution time (`ls canonical/skills/*/references/reviewer-brief.md`) rather than from a list in this task. Six exist at authoring time; the glob is the contract and the count is not.
 - Each renders the verification set and the hunt set as two labelled lists on cycles >= 2, and the single unlabelled list on cycle 1 and the final pass.
 - Authored instruction only.
 
 **Acceptance Criteria:**
-- [ ] All six briefs render both sets, with the cycle-1 and final-pass shapes unchanged
+- [ ] **Every** brief the glob returns renders both sets, with the cycle-1 and final-pass shapes unchanged -- and the count edited is reported, so a brief added since authoring is visibly covered rather than silently missed
 - [ ] Each brief's existing 5-section structure is preserved; no section is added or removed
-- [ ] The OUT-OF-SCOPE FINDINGS POLICY text stays identical across all six, as the dispatch protocol requires
+- [ ] The OUT-OF-SCOPE FINDINGS POLICY text stays identical across every brief edited, as the dispatch protocol requires
 - [ ] No script, validator, gate or CI step is added
 - [ ] All REQUIREMENTS.md §6 quality gates pass

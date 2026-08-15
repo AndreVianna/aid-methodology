@@ -242,7 +242,7 @@ hand-maintained map.
 | Ledger schema | `canonical/aid/templates/reviewer-ledger-schema.md` | Split the cycle-N≥2 clause: ledger verification full, new-finding discovery scoped. The single sentence L5 identifies. |
 | Dispatch protocol | `canonical/aid/templates/reviewer-dispatch.md` | `ARTIFACTS UNDER REVIEW` carries the two labelled sets on cycles ≥ 2; `RUBRIC` resolves criteria against the scoped surface. **Also declares the contradiction pass as a phase-level activity** (Guard 2) — the normative home, since the cadence binds every skill that dispatches a reviewer. |
 | **Guard 2's invocation sites** | `canonical/skills/aid-define/references/state-cross-reference.md`, `canonical/skills/aid-plan/references/review-deliverables.md`, `canonical/skills/aid-detail/references/review.md` | The three reviews that already receive **every artifact of a phase at once**. Each runs the contradiction pass on **cycle 1 only**. `aid-plan`'s is the one that covers Specify's per-feature specs. **`aid-specify` gets no invocation** — it dispatches per artifact, so no single review of its could see a cross-feature contradiction; that is why the coverage sits downstream. Without this row an executor reading only this table would build Guards 1 and 3 and silently omit Guard 2. |
-| The six briefs | `canonical/skills/{aid-define,aid-detail,aid-discover,aid-execute,aid-plan,aid-specify}/references/reviewer-brief.md` | Render the two sets; `aid-specify`'s additionally renders the requirements slice (FR-14). |
+| Every reviewer brief | `canonical/skills/*/references/reviewer-brief.md` — **enumerated from disk**, six at authoring time | Render the two sets; `aid-specify`'s additionally renders the requirements slice (FR-14). |
 | Specify's context load | `canonical/skills/aid-specify/references/state-initialize.md`, `state-review.md` | The two FR-14 sites. `aid-specify` is touched **only** here — it takes no Guard 2 change. |
 | Criteria table | `.aid/knowledge/authoring-conventions.md` | The scoped-cycle note. **Owner-authorized (C-5).** |
 
@@ -250,6 +250,23 @@ hand-maintained map.
 edit. Under NFR-1's definition it adds **zero mechanism lines** — which is worth stating,
 because remedy 1 was the half of L5 that sounded riskier and is in fact the half that adds
 nothing executable.
+
+**The brief set is a glob, not a list, and the reason generalises.** An earlier version of
+this table named six brief files explicitly. `work-006` is the counter-example that
+prompted the change: it adds 36 skills in one work, without its author knowing this work
+existed. It happens to add no seventh brief — but a hand-written enumeration would have
+missed one silently if it had, and "it happened not to" is not a property a design should
+rely on.
+
+The count is also the wrong *kind* of thing to write down. `G-01` bans a stated count unless
+it is load-bearing and measured from disk at authoring time; here the count is
+load-bearing precisely because it defines an edit set, which is the case for deriving it
+rather than the case for stating it. A work whose whole subject is "stop re-deriving by hand
+what a command can answer" should not hard-code an enumeration a `ls` produces.
+
+So the contract is `canonical/skills/*/references/reviewer-brief.md`, resolved at execution.
+Six exist today; `task-009` reports how many it actually edited, so a brief added between
+now and Execute is visibly covered rather than quietly skipped.
 
 ### Close-out (folded in per C-7)
 

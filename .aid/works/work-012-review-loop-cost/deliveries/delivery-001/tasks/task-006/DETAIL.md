@@ -24,14 +24,14 @@ Written once by aid-detail; not a state file. State lives in task-NNN/STATE.yml.
 **Depends on:** task-003
 
 **Scope:**
-- `canonical/agents/aid-reviewer/AGENT.md` and the six `canonical/skills/*/references/reviewer-brief.md` files.
+- `canonical/agents/aid-reviewer/AGENT.md` and **every** `canonical/skills/*/references/reviewer-brief.md`, enumerated from disk at execution rather than from a list here. Six exist at authoring time.
 - During criteria resolution, a `validate` criterion carrying an `oracle:` is decided by RUNNING it under a 60-second timeout; one without is judged by reading, exactly as today.
 - One finding per `VIOLATION` line: criterion `id` as a `Description` prefix, invocation and output in `Evidence`.
 - `UNDECIDED` files are judged by reading; a degraded oracle degrades the whole criterion to reading and the degradation is reported.
 - Authored instruction only -- this task adds no executable surface.
 
 **Acceptance Criteria:**
-- [ ] The run-don't-read rule and the degradation rule are stated in `aid-reviewer/AGENT.md` and in all six briefs
+- [ ] The run-don't-read rule and the degradation rule are stated in `aid-reviewer/AGENT.md` and in **every** brief the glob returns, with the count edited reported
 - [ ] The ledger stays 7 columns; no new column is introduced anywhere (C-3, AC-16)
 - [ ] Absence of an `oracle:` key produces no finding and no behavioural change (AC-5)
 - [ ] `UNDECIDED` handling is distinguished from degradation -- partial coverage is normal, not a failure

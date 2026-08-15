@@ -119,7 +119,7 @@ the AC-1 measurement split point.
 | task-006 | IMPLEMENT | Reviewer instruction: run the oracle rather than re-read the criterion |
 | task-007 | TEST | Oracle behaviour and coverage measurement |
 | task-008 | IMPLEMENT | Cycle-2-and-later split: verification set and hunt set |
-| task-009 | IMPLEMENT | Two-set ARTIFACTS rendering across the six reviewer briefs |
+| task-009 | IMPLEMENT | Two-set ARTIFACTS rendering across every reviewer brief |
 | task-010 | IMPLEMENT | Guard 2: contradiction pass on cycle 1 of each multi-artifact review |
 | task-011 | IMPLEMENT | Requirements slice for the per-feature specify gate |
 | task-012 | IMPLEMENT | Scoped-cycle convention in the criteria tables |

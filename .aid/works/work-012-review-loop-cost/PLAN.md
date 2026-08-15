@@ -72,7 +72,7 @@ independence was verified by comparing the file sets each task's Scope names, no
 | 3 | `task-005` | `G-07`'s oracle |
 | 4 | `task-007` | oracle behaviour + the AC-11 coverage measurement |
 | **5** | **`task-008`** | **FR-3 — the scoped hunt. THE MEASUREMENT SPLIT POINT.** |
-| 6 | `task-009` · `task-010` · `task-012` | the six briefs; Guard 2; the scoped-cycle note (C-5) |
+| 6 | `task-009` · `task-010` · `task-012` | every reviewer brief (glob); Guard 2; the scoped-cycle note (C-5) |
 | 7 | `task-011` | FR-14's requirements slice |
 | 8 | `task-013` | the seeded-defect guard tests |
 | 9 | `task-014` | the single full render + dogfood resync |

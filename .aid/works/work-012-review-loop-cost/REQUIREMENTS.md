@@ -103,8 +103,10 @@ guarding around it.
 - `G-07`'s oracle as the worked example.
 - Carrying the changed-section set and the scoped surface through
   `canonical/aid/templates/reviewer-dispatch.md` (`ARTIFACTS UNDER REVIEW` and `RUBRIC`)
-  and the six `canonical/skills/*/references/reviewer-brief.md` files
-  (`aid-define`, `aid-detail`, `aid-discover`, `aid-execute`, `aid-plan`, `aid-specify`).
+  and **every** `canonical/skills/*/references/reviewer-brief.md` — the set is **enumerated
+  from disk at execution**, not from a list written here. Six exist at authoring time
+  (`aid-define`, `aid-detail`, `aid-discover`, `aid-execute`, `aid-plan`, `aid-specify`);
+  that figure is an observation, not the contract.
 - Passing a per-feature specify gate only the requirements slice that feature traces to,
   instead of the whole `REQUIREMENTS.md`.
 - **The criteria-table edits in `.aid/knowledge/authoring-conventions.md`** — the `oracle:`

@@ -34,7 +34,7 @@ phase: Detail
 # [W] aid-{skill} | none
 active_skill: none
 # [W]
-updated: '2026-08-15T06:51:15Z'
+updated: '2026-08-15T06:57:25Z'
 # [W] set only when lifecycle = Paused-Awaiting-Input
 pause_reason: 'Detail complete at A+ -- 15 tasks in 10 waves; run /aid-execute work-012'
 # [W] set only when lifecycle = Blocked
@@ -601,6 +601,42 @@ lifecycle_history:
       paragraph -- not the type registry or the criteria tables this work
       touches. Same shape as work-011's overlap with the same file. C-2
       updated to name both.
+  - date: '2026-08-15'
+    event: 'work-006 re-assessed as MUTABLE -- a fragility found in THIS work'
+    grade: --
+    notes: >-
+      Owner pushed back on the first assessment: work-006's skills are not
+      set in stone, and were authored by an agent with no knowledge of this
+      work. Re-examined on that basis, and the finding is about work-012,
+      not work-006.
+      The first assessment reported "still exactly six reviewer-brief.md
+      files" as reassurance. It is not reassurance -- it is luck. This work
+      had hard-coded the SIX briefs as an enumerated list in four LIVE
+      contracts: section 4's In Scope bullet, feature-003's Layers table,
+      task-009's Scope and task-006's Scope. work-006 adds 36 skills in a
+      single work without its author knowing this work exists; had it added
+      a seventh brief, every one of those four contracts would have missed
+      it SILENTLY. "It happened not to" is not a property to design on.
+      The count is also the wrong KIND of thing to write down, by this
+      project's own rule. G-01 bans a stated count unless it is
+      load-bearing and measured from disk at authoring time -- and here the
+      count is load-bearing precisely BECAUSE it defines an edit set, which
+      is the argument for deriving it, not for stating it. A work whose
+      entire subject is "stop re-deriving by hand what a command can answer"
+      had hard-coded an enumeration that `ls` produces.
+      Fixed: the contract is now the glob
+      canonical/skills/*/references/reviewer-brief.md, resolved at
+      execution. Six exist today, recorded as an observation rather than a
+      contract, and task-009 must REPORT how many briefs it actually edited
+      so one added between now and Execute is visibly covered rather than
+      quietly skipped.
+      Also checked on the mutability point: all 36 new skills are SKILL.md
+      only, with no references/ directory, so none carries its own review
+      loop -- they inherit whatever the shared machinery does. work-006 is
+      paused at 8 of 74 tasks, and none of its remaining task titles touches
+      a reviewer brief, the dispatch protocol or the ledger schema. The
+      forecast stands, but it is a forecast about an unfinished branch, and
+      task-007 re-measures at execution regardless.
 
 # [A] aid-deploy only; one entry per delivery.
 deploy: []

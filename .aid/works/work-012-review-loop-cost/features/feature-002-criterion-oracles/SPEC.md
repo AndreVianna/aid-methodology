@@ -420,7 +420,7 @@ modified (C-3).
 |---|---|---|
 | Schema | `canonical/aid/templates/kb-authoring/frontmatter-schema.md` | Declare `oracle:` as an optional key on a criterion entry, with the exit-code contract. |
 | Criteria table | `.aid/knowledge/authoring-conventions.md` | The `oracle:` column/field for a declared criterion, plus the machine-readable selector form. **Owner-authorized (C-5).** |
-| Reviewer instruction | `canonical/agents/aid-reviewer/AGENT.md` and the six `reviewer-brief.md` files | The run-it-rather-than-read-it step and the degradation rule. Authored instruction — not executable surface. |
+| Reviewer instruction | `canonical/agents/aid-reviewer/AGENT.md` and every `canonical/skills/*/references/reviewer-brief.md` (glob, not a count) | The run-it-rather-than-read-it step and the degradation rule. Authored instruction — not executable surface. |
 | `G-07`'s oracle | `scripts/checks/g07-selector-partition.sh` | The only executable artifact this feature ships. Outside `canonical/`, so it never enters the render chain (Q-02, NFR-5). |
 | New directory | `scripts/checks/` | **Does not exist yet** (`ls scripts` exits 1) — creating it is a deliverable of this feature, named here so no task discovers it mid-build. |
 
