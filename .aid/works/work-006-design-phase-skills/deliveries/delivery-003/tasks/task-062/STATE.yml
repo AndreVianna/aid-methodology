@@ -1,7 +1,7 @@
-state: Pending
-review: "--"
+state: Done
+review: Gate-deferred
 elapsed: "--"
-notes: "--"
+notes: '8 sites: file (a) 4 assertions + 2 comment blocks (DMR30/31 58->94, DMR32 paired sentence 58->94 with the zero staying 0, DMR33 24->60 with 60+34=94), file (b) 2 comment blocks and 0 assertions (18 assertion lines before and after). Both suites green: 55/0 and 485/0. By-version record appended to, not rewritten'
 ticket_ref: "--"
 
 quick_check:
