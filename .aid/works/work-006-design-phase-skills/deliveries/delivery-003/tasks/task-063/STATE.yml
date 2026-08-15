@@ -1,7 +1,7 @@
-state: Blocked
-review: 'Criterion 7 CLOSED pending CI confirmation'
+state: Done
+review: 'Criterion 7 CLOSED'
 elapsed: "--"
-notes: 'Attempted locally and REVERTED. Installing pwsh+gawk was possible (my earlier ''no route'' was wrong, and it also retired the 3 environment-blocked suites), and the capture matched section 4c exactly (+144 CDP). But CI rejected it: 229 reductions, because collect records FAIL labels too and two suites fail on this box -- 144 FAIL-labelled rows vs the previous baseline''s 22. The real constraint is that the baseline must describe the environment the GATE runs in, not merely have the runtimes. Still needs the workflow_dispatch bootstrap'
+notes: 'CLOSED. Owner dispatched coverage-parity with bootstrap: true (run 31890557325, success); artifact supplied directly because artifact downloads redirect to blob.core.windows.net which this environment blocks. Provenance is a GitHub Azure runner (pwsh 7.6.4 / node 24.19 / python 3.11.15), not this box. All figures hold: CDP 95/95/95/94/34/34/34, +144 CDP rows, +144 data rows, DMR 43 unchanged, and 22 FAIL-labelled rows versus my local attempt''s 144'
 ticket_ref: "--"
 
 quick_check:
