@@ -6,6 +6,7 @@
 |------|--------|--------|
 | 2026-08-15 | Feature identified from REQUIREMENTS.md §5 FR-1–FR-7 and FR-14, §9 AC-2–AC-4, AC-9, AC-10, AC-12 | /aid-define |
 | 2026-08-15 | FR-14 folded in here rather than made a fourth feature — it edits the same sites; NFR-5 close-out folded in likewise (C-7) | /aid-define |
+| 2026-08-15 | **AC-13 adopted** (for FR-5, the once-per-phase contradiction pass), promoted to a numbered criterion in REQUIREMENTS.md §9 after cross-reference cycle 1 found FR-5 demanded by nothing. `## Source` updated to list it — cycle 2 found it present in the criteria list but absent from Source | /aid-define |
 
 ## Source
 
@@ -13,7 +14,7 @@
 - REQUIREMENTS.md §5 FR-14 (the requirements slice for the per-feature specify gate)
 - REQUIREMENTS.md §6 NFR-4 (no guarantee traded for cost), NFR-5 (the single render)
 - REQUIREMENTS.md §7 C-3 (7 columns and `grade.sh` untouched), C-4 (resolution stays scope-free)
-- REQUIREMENTS.md §9 AC-2, AC-3, AC-4, AC-9, AC-10, AC-12
+- REQUIREMENTS.md §9 AC-2, AC-3, AC-4, AC-9, AC-10, AC-12, AC-13
 
 ## Description
 

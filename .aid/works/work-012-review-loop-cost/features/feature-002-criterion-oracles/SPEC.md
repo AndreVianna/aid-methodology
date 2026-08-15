@@ -6,13 +6,14 @@
 |------|--------|--------|
 | 2026-08-15 | Feature identified from REQUIREMENTS.md §5 FR-8–FR-13, §9 AC-5–AC-8 and AC-11, §6 NFR-1 | /aid-define |
 | 2026-08-15 | **FR-9 and FR-11 given explicit criteria.** A coverage sweep found both carried only by the range "FR-8 to FR-13" in `## Source` and demanded by nothing — FR-11's ledger mapping had no criterion anywhere in the work. This is the `tech-debt.md` W5-10 class (an obligation no artifact owns), caught here rather than by an executor mid-build | /aid-define |
+| 2026-08-15 | **AC-14, AC-15 and AC-16 adopted** (for FR-9, FR-10, FR-11), promoted to numbered criteria in REQUIREMENTS.md §9 after cross-reference cycle 1. `## Source` updated to list them — cycle 2 found them present in the criteria list but absent from Source, where a per-feature specify reviewer looks to see what is in scope | /aid-define |
 
 ## Source
 
 - REQUIREMENTS.md §5 FR-8 to FR-13 (the `oracle:` key, its runner, and the worked example)
 - REQUIREMENTS.md §6 NFR-1 (the exit criterion this feature is measured against),
   NFR-2 (bash + awk on the core path), NFR-3 (determinism)
-- REQUIREMENTS.md §9 AC-5, AC-6, AC-7, AC-8, AC-11
+- REQUIREMENTS.md §9 AC-5, AC-6, AC-7, AC-8, AC-11, AC-14, AC-15, AC-16
 - REQUIREMENTS.md §8 (a criterion entry tolerates unknown keys, so this is an addition
   rather than a migration)
 - STATE.yml Q-01 (what justifies an oracle), Q-02 (where one lives), Q-04 (when one is written)

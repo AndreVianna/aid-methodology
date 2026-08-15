@@ -34,7 +34,7 @@ phase: Define
 # [W] aid-{skill} | none
 active_skill: aid-define
 # [W]
-updated: '2026-08-15T02:23:57Z'
+updated: '2026-08-15T02:34:13Z'
 # [W] set only when lifecycle = Paused-Awaiting-Input
 pause_reason: --
 # [W] set only when lifecycle = Blocked
@@ -308,6 +308,42 @@ lifecycle_history:
       so it now carries the per-id map and says why the range form failed.
       The OOS observation is routed as Q-05. Per the plan-first convention
       the fixer does not mark rows Fixed; cycle 2 verifies.
+  - date: '2026-08-15'
+    event: 'Define: CROSS-REFERENCE cycle 2 -- D+, all 6 Fixed, 3 new'
+    grade: 'D+'
+    notes: >-
+      All six cycle-1 rows verified Fixed on disk. Three NEW findings, all
+      caused by the fix pass itself, and the HIGH one is the most instructive
+      thing this review has produced. Row 8 [HIGH]: REQUIREMENTS.md section 9
+      AC-1 was re-specified around two size-robust metrics and an explicit
+      refusal of raw cross-task byte comparison, but feature-001's SPEC was
+      left on the old single-figure wording -- so a reviewer grading
+      feature-001 against its OWN spec would have admitted exactly the
+      evidence section 9 now rejects. Rows 9 and 10 [LOW]: the new ACs were
+      added to feature-002's and feature-003's criteria lists but not to
+      their Source sections, which is where a per-feature specify reviewer
+      looks to see what is in scope. Note the grade went DOWN, C+ to D+,
+      because a fix pass introduced a worse defect than any it closed --
+      recorded rather than smoothed over.
+  - date: '2026-08-15'
+    event: 'Define: FIX cycle 2 -- the contradiction and both Source gaps'
+    grade: --
+    notes: >-
+      feature-001's AC-1 now states both metrics and carries the refusal as
+      its own criterion, so the feature that would most be tempted to accept
+      a raw byte comparison is the one that explicitly refuses it.
+      feature-002 Source gains AC-14/15/16, feature-003 Source gains AC-13,
+      and each SPEC records the change in its own Change Log. Verified
+      mechanically: for all three features the Source AC list and the owned
+      criteria list are now identical. Cycle 3 verifies.
+      WORTH KEEPING: row 8 is a cross-document contradiction between a
+      requirement and a feature spec restating it -- precisely the failure
+      class this work exists to address. L5 guard 2 keeps the
+      cross-document contradiction pass for exactly this, and the settings
+      floor-history records sibling specs asserting different values for one
+      shared fact as the source of both CRITICALs in this project's largest
+      work. The work reproduced its own subject matter, on itself, inside
+      Define. That is evidence for AC-13 rather than an embarrassment.
 
 # [A] aid-deploy only; one entry per delivery.
 deploy: []

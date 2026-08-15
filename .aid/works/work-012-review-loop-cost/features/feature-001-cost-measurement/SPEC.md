@@ -6,6 +6,7 @@
 |------|--------|--------|
 | 2026-08-15 | Feature identified from REQUIREMENTS.md §5 FR-15, §9 AC-1, §10 step 1 | /aid-define |
 | 2026-08-15 | Measurement subject named, discharging STATE.yml Q-03's obligation on Define | /aid-define |
+| 2026-08-15 | **AC-1 realigned with REQUIREMENTS.md §9 after cycle 2 found them contradicting.** §9's AC-1 had been re-specified around two size-robust metrics and this SPEC was left on the old single-figure wording, so a reviewer grading feature-001 against its own SPEC would have admitted evidence §9 explicitly refuses. Both metrics and the refusal are now stated here | /aid-define |
 
 ## Source
 
@@ -54,9 +55,17 @@ Must
 
 ## Acceptance Criteria
 
-- [ ] **AC-1** Given a real artifact and the named measurement subject, when a gate's cost
-      is measured before any remedy lands and again after, then the after figure is lower
-      and both figures are recorded together with the command that produced them.
+- [ ] **AC-1** Given the named measurement subject, when cost is measured before any remedy
+      lands and again after, then the after figure is lower on **both** of the two metrics
+      REQUIREMENTS.md §9 AC-1 defines, and both readings are recorded together with the
+      command that produced them:
+      1. **cycles to close** — a count, unaffected by task size;
+      2. the **within-task re-read ratio** — bytes read on cycles 2+ as a fraction of that
+         same task's cycle-1 bytes, so each task is its own control.
+- [ ] Given a raw cross-task byte comparison offered as the reduction, when it is assessed,
+      then it is **refused** as evidence: a smaller later task reads fewer bytes whether or
+      not the remedy works. This criterion is stated here because feature-001 is the feature
+      that would otherwise be tempted to accept it.
 - [ ] Given the same unchanged tree, when the meter runs twice, then it reports the same
       figures — the instrument is deterministic, or the comparison means nothing.
 - [ ] Given this repository alone, when the meter runs, then it needs no artifact from any
