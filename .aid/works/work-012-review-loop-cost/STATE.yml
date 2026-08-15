@@ -34,7 +34,7 @@ phase: Describe
 # [W] aid-{skill} | none
 active_skill: aid-describe
 # [W]
-updated: '2026-08-15T01:25:00Z'
+updated: '2026-08-15T01:30:00Z'
 # [W] set only when lifecycle = Paused-Awaiting-Input
 pause_reason: 'All four Q&A answered; awaiting owner approval of REQUIREMENTS.md to advance to /aid-define'
 # [W] set only when lifecycle = Blocked
@@ -205,6 +205,25 @@ lifecycle_history:
       script. FR-10 carries the rule and FR-13 records why G-07 is exempt
       from the wait. All four questions are now Answered; nothing but the
       approval itself stands between this work and /aid-define.
+  - date: '2026-08-15'
+    event: 'Describe: pipeline path re-examined (owner) -- full, hard-capped'
+    grade: --
+    notes: >-
+      The owner asked whether the Lite path, entered via /aid-refactor, would
+      do. Two findings. /aid-refactor is the wrong door on its own terms --
+      shortcut-catalog.yml defines it as "Restructure or optimize code
+      without changing behavior", and this work changes behavior by design;
+      /aid-update would have been the correct Lite door. The Lite path itself
+      was rejected for a sharper reason than tradition: on master it still
+      emits SPEC + PLAN + BLUEPRINT (work-011's reduction is unmerged), so
+      the real difference is GATE COUNT -- and it yields exactly one gate,
+      which cannot produce the before-and-after AC-1 requires. The full
+      path's several gates ARE the measuring instrument, so the work keeps
+      it. Task dependencies exist on the Lite path, so sequencing was never
+      the blocker. New constraint C-7 caps the work at 3 features and 2
+      deliveries and forbids Define exceeding the cap silently -- the full
+      path is kept for the instrument, not for ceremony, so its cost is
+      bounded where it is created.
 
 # [A] aid-deploy only; one entry per delivery.
 deploy: []

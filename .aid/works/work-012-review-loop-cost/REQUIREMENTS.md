@@ -19,6 +19,7 @@
 | 2026-08-14 | **Q-03 answered (owner).** The measurement subject is named at Define rather than now, so the choice rests on the gate inventory Define produces. AC-1 and §10 step 1 record it as a Define deliverable owed before Specify | owner |
 | 2026-08-15 | **`work-009` and the `aid-graph` removal merged.** All ten grounding claims re-verified; no requirement changed by either merge | /aid-describe |
 | 2026-08-15 | **Q-04 answered (owner).** Oracle generation is lazy — the trigger is a second re-derivation of the same criterion, so the payback evidence precedes the script. FR-10 carries the rule; FR-13 records why `G-07` is not delayed by it. **All four questions now answered** | owner |
+| 2026-08-15 | **Path confirmed full, with a hard size cap (owner decision).** `/aid-refactor` rejected — it is defined as behavior-preserving and this work changes behavior by design. The Lite path was rejected for a sharper reason: it yields one gate, and AC-1 needs more than one to produce a before-and-after. New **C-7** caps the work at 3 features and 2 deliveries, and forbids Define exceeding it silently | owner |
 
 ## 1. Objective
 
@@ -219,6 +220,21 @@ guarding around it.
   path and frontmatter, never on its content. Remedy 1 needs no change to resolution.
 - **C-5** `.aid/knowledge/` edits happen only with explicit owner authorization.
 - **C-6** Nothing merges without explicit owner authorization.
+- **C-7** **Hard cap on the pipeline's own size: at most 3 features and at most 2
+  deliveries** (owner decision, 2026-08-15). The full path is kept only because AC-1 needs
+  more than one gate to produce a before-and-after figure — a single-gate Lite work cannot
+  measure itself. It is NOT kept for ceremony, so the gate count is bounded at the point it
+  is created rather than left to grow.
+  - The natural decomposition fits inside the cap without straining: **measurement**
+    (FR-15), **the oracle mechanism** (FR-8 to FR-13), and **scoped cycles** (FR-1 to
+    FR-7). FR-14 folds into the scoping feature — it edits the same sites — and the NFR-5
+    close-out folds into the last delivery rather than becoming a feature of its own.
+  - The cap is a **ceiling, not a target**. Fewer is better if the work fits.
+  - **Define may not exceed it silently.** If the decomposition cannot fit, or if the cap
+    would leave too few gate cycles for AC-1 to show a reduction, Define stops and
+    escalates to the owner. Quietly adding a fourth feature to make the work comfortable is
+    the failure this constraint exists to prevent — this is a work about review cost, and
+    its own gate count is the first place that claim is tested.
 
 ## 8. Assumptions & Dependencies
 
@@ -273,6 +289,8 @@ guarding around it.
   (NFR-5).
 
 ## 10. Priority
+
+Sequenced inside C-7's cap of at most 3 features and at most 2 deliveries.
 
 1. **FR-15 first.** The baseline must be captured before any remedy lands, or AC-1 is
    unprovable for the rest of the work. Define names the measurement subject (Q-03) as its
