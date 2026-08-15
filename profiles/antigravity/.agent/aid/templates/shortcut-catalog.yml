@@ -860,7 +860,7 @@ shortcuts:
     alias_of: null
     default_type: IMPLEMENT
     group: G11
-    intent: "Build a durable dashboard / BI view (source -> visualization -> publish/refresh)."
+    intent: "Build a durable dashboard / BI view, from its source through the visualization to how it is published and refreshed."
   - name: aid-update-dashboard
     verb: update
     artifact: dashboard

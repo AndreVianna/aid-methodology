@@ -74,7 +74,7 @@ The full AID pipeline plus every shortcut skill, grouped by verb family.
 - [`aid-create-test`](/skills/aid-create-test/) — Author new tests (unit/integration/e2e); each test traces to an acceptance criterion; framework inferred from the KB.
 - [`aid-create-document`](/skills/aid-create-document/) — Create a document in one pass, working out both its format and its structure from what you ask for -- a how-to, a reference page, an ADR, an architecture…
 - [`aid-create-diagram`](/skills/aid-create-diagram/) — Create a diagram in one pass, choosing the diagram type that fits the subject -- flowchart, sequence, entity-relationship, C4, state, and so on, in Mermaid…
-- [`aid-create-dashboard`](/skills/aid-create-dashboard/) — Build a durable dashboard / BI view (source -> visualization -> publish/refresh).
+- [`aid-create-dashboard`](/skills/aid-create-dashboard/) — Build a durable dashboard / BI view, from its source through the visualization to how it is published and refreshed.
 
 ### `update`
 
