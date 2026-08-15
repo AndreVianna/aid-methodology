@@ -10,6 +10,15 @@ sub-agent. Follows `.agent/aid/templates/reviewer-dispatch.md`.
 ARTIFACTS UNDER REVIEW:
 {{ARTIFACTS}}
 
+  On cycle 1 and on the final full pass this is ONE unlabelled list, as before.
+  From cycle 2 it carries TWO labelled lists and they mean different things:
+    VERIFY (full)  -- re-check EVERY existing ledger row against these. Never
+                      scoped: skipping one breaks Recurred detection.
+    HUNT (scoped)  -- look for NEW findings ONLY here. This is what the
+                      previous FIX changed, plus the files that reference it.
+  Do not hunt outside HUNT, and do not skip anything in VERIFY. Definitions:
+  `reviewer-ledger-schema.md` section "Two sets from cycle 2".
+
 CONTEXT:
 {{CONTEXT}}
 
@@ -43,6 +52,19 @@ DECLARED REVIEW CRITERIA (resolve; do not invent):
   - Cite the criterion `id` as a prefix in the ledger's Description cell (7 columns, no
     new column). A finding citing no id, or an id resolving nowhere, is itself a defect.
   - A `kind: exclude` criterion binds you: reporting it is a defect in the review.
+  - **If a criterion carries an `oracle:`, RUN it -- do not re-read the criterion to
+    reach the same verdict.** Invoke it from the repository root under a 60-second
+    timeout. It reports per FILE: exit 0 means no violation among the files it decided,
+    exit 1 means at least one `VIOLATION <path>` line, exit 2 (or any other exit, a
+    timeout, or exit 1 with no VIOLATION line) means it could not decide.
+  - **`UNDECIDED <path>` lines are normal, not a failure.** Take the decided files as
+    settled and judge only the undecided remainder by reading.
+  - **A missing, non-executable, crashing, timed-out or malformed oracle DEGRADES that
+    criterion to reading, and you record that the degradation happened.** Never let a
+    degraded oracle read as a pass, and never file it as a violation -- "I could not
+    tell" is neither.
+  - One finding per `VIOLATION` line: the criterion `id` as the Description prefix, the
+    invocation and that line in Evidence. Seven columns, unchanged.
   - If the severity came from a file-level override, record the resolved severity and the
     overriding file's `why` in the Evidence cell.
 

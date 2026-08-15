@@ -68,4 +68,10 @@ For grades below minimum: re-enter the loop for affected deliverables.
 > NOTE: Do NOT write delivery rows into the work STATE.yml's Plan/Deliveries view. That view
 > is a DERIVED read-only view assembled at read time from `deliveries/delivery-NNN/STATE.yml` files.
 
+**Cycle 1 also runs the cross-document contradiction pass (Guard 2).** This review receives
+every artifact of the phase at once, which is the only vantage point from which a
+contradiction between two of them is visible. Run it on cycle 1 only -- that makes it
+once per phase by construction. Definition:
+`reviewer-dispatch.md` section "The cross-document contradiction pass (Guard 2)".
+
 **Advance:** **CHAIN** -> [State: DONE] when the grade meets minimum and all delivery folders are created (continue inline).

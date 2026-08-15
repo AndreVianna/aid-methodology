@@ -45,9 +45,9 @@
 # one -- never self-written by the task being executed.)
 
 # [W] Pending | In Progress | In Review | Blocked | Done | Failed | Canceled
-state: 'In Progress'
+state: Done
 # [W]
-review: --
+review: 'full generator: 1770 emitted, byte-identical re-render PASS; both dogfood trees 354/354 identical. test-dogfood-byte-identity.sh is mawk-blocked in this env and fails identically on master (W4-3)'
 # [W] HH:MM | --
 elapsed: --
 # [W]

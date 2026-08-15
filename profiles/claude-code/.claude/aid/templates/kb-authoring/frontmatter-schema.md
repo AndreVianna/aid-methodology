@@ -326,6 +326,59 @@ review-criteria:
 | `criterion` | always | The check itself, stated so two reviewers reach the same verdict. |
 | `severity` | `validate` only | What a violation costs, from the scale in `grading-rubric.md § Issue Severities`. Absent on an `exclude`: an exclusion is not a defect kind, and there is no severity of zero. |
 | `why` | always | The reason. On an `exclude` this is the load-bearing half — without it the next reviewer reinstates the check. |
+| `oracle` | never | **Optional.** A path to an executable check that decides this criterion by RUNNING rather than by a reviewer re-reading it. See below. |
+
+#### `oracle:` — deciding a criterion by running it
+
+Every criterion is otherwise verified by a reviewer *reading* it, on every cycle, forever.
+For a genuinely semantic criterion that is unavoidable. For a mechanically decidable one it
+is both waste and a reliability problem: the same criterion gets re-derived by hand each
+cycle, and not always to the same answer.
+
+```yaml
+review-criteria:
+  - id: G-07
+    kind: validate
+    criterion: "Every in-scope markdown file resolves to exactly one type in the registry."
+    severity: HIGH
+    why: "A file matching two rows or none has no resolvable criteria set."
+    oracle: scripts/checks/g07-selector-partition.sh
+```
+
+**Absence is never a defect.** Most criteria will never carry the key, and that is the
+correct outcome rather than an omission to be fixed. Only a `validate` criterion can carry
+one — a `kind: exclude` names something a reviewer must *not* check, so it has nothing to
+run.
+
+**The value** is a path resolved from the repository root, and the oracle lives **outside**
+`canonical/`, so it never enters the render chain.
+
+**Coverage is per FILE, not per criterion.** An oracle reports a verdict for each file it
+examined and, separately, the files it could not decide. It never collapses the whole
+criterion to one word — otherwise a single undecidable file would make the oracle
+indeterminate overall, and it would replace no re-derivation at all.
+
+| Aspect | Contract |
+|---|---|
+| Invocation | No required arguments, run from the repository root. |
+| `stdout` | One line per file worth reporting: `VIOLATION <path> <reason>` or `UNDECIDED <path> <reason>`. A file that passes produces no line. Sorted, so the output is diffable. |
+| Exit `0` | No violations **among the files it decided**. `UNDECIDED` lines may be present; they are not a failure. |
+| Exit `1` | At least one `VIOLATION` line. `UNDECIDED` lines may appear alongside and are handled as at exit 0. |
+| Exit `2` | The oracle could not run at all — its own inputs are missing or malformed. Whole-criterion degradation, and the rare case. |
+| Any other exit | Treated as exit 2. "I could not tell" is never recorded as "the criterion holds". |
+| Exit `1` with no `VIOLATION` line | **Malformed.** Treated as exit 2 and reported as degradation, never as a finding: a violation nobody can cite is not usable evidence. |
+| Runtime bound | Invoked under a **60-second timeout**. Exceeding it is treated as exit 2 and reported. Non-termination is the fourth way to fail, alongside missing, non-executable and crashing. |
+| Determinism | Same tree in, same stdout and exit out. No network, no clock, no `$RANDOM`, no unordered traversal — enumeration sorted under a fixed locale. |
+| Language | Bash + awk, so the core path needs neither node nor python. |
+
+**How a partial verdict is consumed.** The reviewer takes the decided files as settled and
+judges only the `UNDECIDED` remainder by reading. That is what makes a partial oracle worth
+having: the replacement it provides is proportional to the files it decides, and the counts
+are on stdout, so "what recurring work does this remove" has a number behind it.
+
+**A degraded oracle degrades the whole criterion to reading, and says so.** Missing,
+non-executable, crashing, timed out, or malformed — the reviewer judges by reading and
+records that the degradation happened. It never silently passes and never silently fails.
 
 **Three levels, resolved as a union; most specific wins.** Criteria are declared **global**
 (project-wide) and **per document type** in the project's own conventions KB doc
