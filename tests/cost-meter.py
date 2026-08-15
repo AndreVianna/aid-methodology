@@ -468,7 +468,25 @@ def artifacts_from_work(work: Path) -> tuple[dict[str, int], set[str]]:
     return out, measured
 
 
-SHAPES = ("today", "batched", "folded", "folded-sliced")
+SHAPES = ("today", "batched", "folded", "folded-sliced", "folded-no-plan")
+
+# Of a Lite PLAN.md's body, the share that is the DELIVERY DEFINITION (objective,
+# scope, gate criteria) as opposed to the execution graph. Measured from
+# flattened-plan-template.md, excluding its instructional [!NOTE] header so the
+# fraction describes a real PLAN.md rather than the template's own prose:
+# 943 B definition / 1325 B body.
+#
+# It matters because the two halves behave differently when PLAN.md is removed: the
+# definition TRANSFERS into REQUIREMENTS (it is a decision, and still needs reviewing),
+# while the graph VANISHES (it is derived from the task DETAILs by
+# `derive-waves.sh --from-tasks`).
+#
+# Deliberately CONSERVATIVE against removing PLAN.md: this is the split at the
+# template's one-task baseline, where the graph is smallest. A real graph grows with
+# task count while the definition stays roughly fixed, so at higher task counts more
+# of PLAN.md vanishes and less transfers. Using the 1-task split therefore understates
+# the saving rather than overstating it.
+PLAN_DEFINITION_FRACTION = 943 / 1325
 
 
 def gate_shape(name: str, F: int, D: int, T: int, c: int, art: dict[str, int]
@@ -539,6 +557,30 @@ def gate_shape(name: str, F: int, D: int, T: int, c: int, art: dict[str, int]
             exec_gate,
             ("delivery gate (diff)", 1, T * art["DET"] + CODE_PER_TASK, 3, "developer", "gate"),
             ("task grounding", T, grounding, 1, "developer", "read"),
+        ]
+
+    if name == "folded-no-plan":
+        # AC-13's tail: the Lite path drops PLAN.md entirely.
+        #
+        # This shape exists to answer one question honestly -- is that a SAVING or a
+        # TRANSFER? Removing the PLAN gate point looks like a clean win until you ask
+        # where its content went. The delivery definition is a DECISION and still has
+        # to be reviewed, so it moves into REQUIREMENTS: the PLAN gate disappears, but
+        # the REQUIREMENTS gate grows, AND -- the part that is easy to miss -- so does
+        # every task's grounding read, because tasks ground on the oracle and the
+        # oracle just got bigger. That last effect is multiplied by T.
+        #
+        # Only the execution graph is a true removal: `derive-waves.sh --from-tasks`
+        # reconstructs it from each task's `**Depends on:**` field, so it need not be
+        # stored or reviewed at all.
+        plan_definition = int(round(art["PLAN"] * PLAN_DEFINITION_FRACTION))
+        oracle = art["REQ"] + F * art["SPEC"] + plan_definition
+        return [
+            ("gate REQS+design+delivery", 1, oracle, c, "architect", "gate"),
+            ("gate DETAIL (all)", 1, T * art["DET"], c, "architect", "gate"),
+            exec_gate,
+            ("delivery gate (diff)", 1, T * art["DET"] + CODE_PER_TASK, 3, "developer", "gate"),
+            ("task grounding", T, oracle, 1, "developer", "read"),
         ]
 
     raise ValueError(f"unknown shape: {name}")

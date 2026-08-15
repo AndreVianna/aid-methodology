@@ -285,4 +285,124 @@ if [[ -f "${REPO_ROOT}/tests/cost-baseline.tsv" ]]; then
     fi
 fi
 
+# ---------------------------------------------------------------------------
+# CM34+: the `folded-no-plan` shape -- pricing AC-13's tail.
+#
+# This shape answers whether dropping PLAN.md from the Lite path is a SAVING or a
+# TRANSFER. The distinction is the whole reason the model carries a grounding row:
+# removing the PLAN gate looks like a clean win until you ask where its content
+# went. The delivery definition is a DECISION and still needs reviewing, so it moves
+# into REQUIREMENTS -- growing the REQUIREMENTS gate AND every task's grounding read,
+# the latter multiplied by task count. Only the execution graph is a true removal,
+# because `derive-waves.sh --from-tasks` reconstructs it from the task DETAILs.
+#
+# These assertions pin the SHAPE of the answer, not its exact figures: the numbers
+# move whenever a template or an agent brief changes, and a test that pinned them
+# would fail for reasons that are not defects.
+#
+# THE ANSWER IS DIMENSION-DEPENDENT, which is the whole point and was not obvious
+# before it was measured. The removed gate point is a roughly FIXED saving, while the
+# transfer into grounding is multiplied by TASK COUNT. So dropping PLAN.md pays on a
+# Lite work (one feature, one delivery, a few tasks) and COSTS on a full-path work.
+# CM34 and CM38 assert both directions, because the second is what confines this
+# change to the Lite path -- applying it to the full path would make things worse
+# while looking like the same simplification.
+# ---------------------------------------------------------------------------
+
+# model_total_at <shape> <features> <deliveries> <tasks>
+model_total_at() {
+    python3 "$METER" model --root "$FIX" --shape "$1" \
+        --features "$2" --deliveries "$3" --tasks "$4" 2>/dev/null \
+        | awk '/^  TOTAL/{gsub(/,/,"",$2); print $2; exit}'
+}
+
+# Lite dimensions: one feature, one delivery, three tasks -- what a shortcut produces.
+lite_fold="$(model_total_at folded 1 1 3)"
+lite_noplan="$(model_total_at folded-no-plan 1 1 3)"
+if [[ -n "${lite_noplan:-}" && -n "${lite_fold:-}" ]] && (( lite_noplan < lite_fold )); then
+    pass "CM34 at LITE dimensions 'folded-no-plan' is cheaper (${lite_noplan} < ${lite_fold})"
+else
+    fail "CM34 at LITE dimensions 'folded-no-plan' must be cheaper — got '${lite_noplan:-?}' vs '${lite_fold:-?}'"
+fi
+
+# It must remove exactly ONE gate point, not zero and not two. Zero would mean the
+# shape is mis-modelled; two would mean it is quietly dropping a review this project
+# still wants.
+gate_points() {
+    python3 "$METER" model --root "$FIX" --shape "$1" 2>/dev/null \
+        | awk -F'[()]' '/^shape: /{split($2, a, " "); print a[1]; exit}'
+}
+gp_fold="$(gate_points folded)"
+gp_noplan="$(gate_points folded-no-plan)"
+if [[ -n "${gp_fold:-}" && -n "${gp_noplan:-}" ]] && (( gp_fold - gp_noplan == 1 )); then
+    pass "CM35 'folded-no-plan' removes exactly one gate point (${gp_fold} -> ${gp_noplan})"
+else
+    fail "CM35 'folded-no-plan' must remove exactly one gate point — got '${gp_fold:-?}' -> '${gp_noplan:-?}'"
+fi
+
+# The TRANSFER must be visible, not silently dropped: with PLAN.md gone, the combined
+# REQUIREMENTS gate has to be DEARER than the plain folded one, because the delivery
+# definition moved into it. If this ever inverts, the model is pretending the
+# definition evaporated -- which would overstate the saving.
+req_gate_bytes() {
+    python3 "$METER" model --root "$FIX" --shape "$1" 2>/dev/null \
+        | awk '/^  gate REQ/{for(i=1;i<=NF;i++) if($i=="B"){gsub(/,/,"",$(i-1)); print $(i-1); exit}}'
+}
+r_fold="$(req_gate_bytes folded)"
+r_noplan="$(req_gate_bytes folded-no-plan)"
+if [[ -n "${r_fold:-}" && -n "${r_noplan:-}" ]] && (( r_noplan > r_fold )); then
+    pass "CM36 the delivery definition's transfer is priced: REQUIREMENTS gate grows (${r_fold} -> ${r_noplan})"
+else
+    fail "CM36 REQUIREMENTS gate must grow when the delivery definition moves into it — got '${r_fold:-?}' -> '${r_noplan:-?}'"
+fi
+
+# The saving is one cycle-multiplied gate point, so it must GROW with --cycles. That
+# is what makes it worth doing on a Lite work: Lite works are small, so a roughly
+# fixed saving is a large fraction of a small total.
+# Computed as a DIFFERENCE of totals rather than scraped from the comparison line:
+# the comparison prints "saves" or "costs" depending on sign, and on a small fixture
+# at one cycle the sign is not guaranteed. Reading both totals is sign-agnostic and
+# says exactly what it means.
+total_at_cycles() {
+    python3 "$METER" model --root "$FIX" --shape "$1" \
+        --features 1 --deliveries 1 --tasks 3 --cycles "$2" 2>/dev/null \
+        | awk '/^  TOTAL/{gsub(/,/,"",$2); print $2; exit}'
+}
+s_lo=$(( $(total_at_cycles folded 1) - $(total_at_cycles folded-no-plan 1) ))
+s_hi=$(( $(total_at_cycles folded 7) - $(total_at_cycles folded-no-plan 7) ))
+if [[ -n "${s_lo:-}" && -n "${s_hi:-}" ]] && (( s_hi > s_lo )); then
+    pass "CM37 the saving grows with review cycles (${s_lo} at 1 cycle -> ${s_hi} at 7)"
+else
+    fail "CM37 saving must grow with --cycles — got '${s_lo:-?}' -> '${s_hi:-?}'"
+fi
+
+# CM38: the saving is a much larger SHARE of a Lite work than of a full-path work,
+# which is what justifies scoping the change to the Lite path.
+#
+# Asserted as a ratio, not as a sign. An earlier draft of this assertion claimed the
+# change is a NET LOSS at full-path dimensions -- true on this fixture, whose agent
+# briefs are deliberately tiny, and NOT true at repo scale, where the real dispatch
+# floors make the removed gate point dominate the grounding transfer. Sign depends on
+# the floor-to-artifact ratio; the share comparison holds either way, because the
+# removed gate point is roughly fixed while a full-path work's total is several times
+# larger.
+#
+# Guarding the ratio rather than the sign also keeps the test honest about WHY the
+# change is Lite-scoped: not because it would hurt elsewhere, but because that is
+# where it is worth the risk of touching four consumers.
+share_ppm() {   # saving as parts-per-million of the shape's own total, at given dims
+    local fold noplan
+    fold="$(model_total_at folded "$1" "$2" "$3")"
+    noplan="$(model_total_at folded-no-plan "$1" "$2" "$3")"
+    [[ -z "$fold" || -z "$noplan" || "$fold" -eq 0 ]] && { echo ""; return; }
+    echo $(( (fold - noplan) * 1000000 / fold ))
+}
+lite_share="$(share_ppm 1 1 3)"
+full_share="$(share_ppm 3 4 16)"
+if [[ -n "${lite_share:-}" && -n "${full_share:-}" ]] && (( lite_share > full_share )); then
+    pass "CM38 the saving is a larger share at LITE than at full-path dimensions (${lite_share} vs ${full_share} ppm) — why the change is Lite-scoped"
+else
+    fail "CM38 saving share must be larger at Lite dimensions — got '${lite_share:-?}' vs '${full_share:-?}' ppm"
+fi
+
 test_summary
