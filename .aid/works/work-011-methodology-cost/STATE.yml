@@ -1,0 +1,133 @@
+# Work State -- work-011-methodology-cost
+#
+# Converted from the retired STATE.md after work-009 (PR #192) renamed the state
+# file. Until this existed, this work held STATE.md with no sibling STATE.yml --
+# the exact shape SP-9 routes to the legacy detector, so the dashboard DIAGNOSED
+# this work rather than reading it. A work about methodology cost being invisible
+# to the methodology's own dashboard is the kind of thing worth recording, not
+# quietly fixing.
+#
+# Derived views (Features State, Plan/Deliveries, Tasks State, Delivery Gates,
+# Calibration Log, Dispatches) carry no key here by design. The per-feature and
+# per-criterion status this work tracks has no writable key in the schema --
+# aid-define/SKILL.md's accuracy note calls that out as a gap the refactor
+# surfaced -- so it lives under `qa` below, which IS authored on this path.
+
+pipeline:
+  path: full
+  initiator: aid-describe
+
+started: '2026-08-13'
+
+minimum_grade: A
+
+user_approved: 'yes'
+
+lifecycle: Running
+
+phase: Execute
+
+active_skill: none
+
+updated: '2026-08-15T01:30:00Z'
+
+pause_reason: --
+
+block_reason: --
+
+block_artifact: --
+
+ticket_ref: --
+
+interview:
+  state: Approved
+  grade: A
+  sections:
+    - id: 1
+      name: Objective
+      state: Complete
+      updated: '2026-08-14'
+    - id: 5
+      name: 'Functional Requirements'
+      state: Complete
+      updated: '2026-08-14'
+    - id: 9
+      name: 'Acceptance Criteria'
+      state: Complete
+      updated: '2026-08-14'
+    - id: 11
+      name: Features
+      state: Complete
+      updated: '2026-08-14'
+
+lifecycle_history:
+  - date: '2026-08-14'
+    event: 'Requirements authored retroactively (oracle created mid-work)'
+    grade: --
+    notes: 'Phases 1-5a ran with no work folder; the target artifact shape lived only in conversation, and one shape restatement contradicted a settled decision as a result'
+  - date: '2026-08-14'
+    event: 'CI green, all 10 checks'
+    grade: --
+    notes: 'Render + dogfood resync; the .cursor/rules allowlist arm; one stale assertion label re-homed'
+  - date: '2026-08-15'
+    event: 'Merged work-004, work-009 and the aid-graph removal from master'
+    grade: --
+    notes: '11, 87 and 101 conflicts respectively; the STATE.yml rename broke and then re-fixed this work own declared-layout change'
+
+deploy: []
+
+qa:
+  - id: Q1
+    question: 'Does the Lite path keep a PLAN.md?'
+    state: Resolved
+    answer: 'No. One feature and one delivery means there is no sequencing decision to record, so PLAN would exist only to hold a derived table. Lite = REQUIREMENTS.md + tasks/task-NNN/DETAIL.md + STATE.yml.'
+    decided_by: owner
+    updated: '2026-08-14'
+  - id: Q2
+    question: 'Store the Lite execution graph in REQUIREMENTS, or derive it?'
+    state: Resolved
+    answer: 'Derive it. Each task DETAIL already carries Depends on, so the graph is fully specified by the task set; a stored table is a denormalised view that can disagree with its source. Establishes the general rule: STORE WHAT WAS DECIDED, DERIVE WHAT FOLLOWS FROM IT.'
+    decided_by: owner
+    updated: '2026-08-14'
+  - id: Q3
+    question: 'Do judgment-based acceptance criteria get an escape hatch?'
+    state: Resolved
+    answer: 'Yes, narrowly: a judgment criterion must name what is judged and against what standard, so it stays checkable that the judgment happened against the stated bar. AGENT JUDGMENT, flagged for override -- one paragraph to delete if the owner prefers strict.'
+    decided_by: agent
+    updated: '2026-08-14'
+  - id: Q4
+    question: 'BLUEPRINT.md presence is the flat-layout sentinel in three lockstep implementations. How is it retired?'
+    state: Resolved
+    answer: 'Read the layout from DECLARED state (pipeline.path) rather than inferring it from a file presence. Implemented in writeback-state.sh, reader.py and reader.mjs, with three-way parity verified on five fixtures and re-verified after the STATE.yml rename. BLUEPRINT.md is no longer load-bearing, so AC-12 and AC-13 are unblocked.'
+    decided_by: owner
+    updated: '2026-08-14'
+  - id: Q5
+    question: 'Contended files while work-004 was in flight'
+    state: Resolved
+    answer: 'work-004 merged, so constraint C-2 is satisfied and the prose sweep is unblocked. Its delivery-002 deleted 11 internal skill READMEs, which retired three files this work had edited.'
+    decided_by: owner
+    updated: '2026-08-15'
+  - id: Q6
+    question: 'Feature status against the 14 acceptance criteria'
+    state: Open
+    answer: |
+      001 Cost measurement          Done     AC-1, AC-2, AC-3 met (33 assertions)
+      002 Artifact discipline       Done     AC-4, AC-5, AC-9, AC-10 met
+      003 Traceability              Done     AC-6 met
+      004 Artifact folding          Open     AC-11 met; AC-12 and AC-13 now UNBLOCKED by Q4, not yet built
+      005 Derivation over authoring Open     AC-7, AC-8 met; the Lite graph-from-DETAILs half waits on AC-13
+      006 Render and close-out      Done     AC-14 met; re-opens on every canonical edit, and has three times
+    decided_by: agent
+    updated: '2026-08-15'
+  - id: Q7
+    question: 'This branch has had no independent review'
+    state: Open
+    answer: 'Every commit was written and self-verified by the same agent. Phase 1 shipped two real bugs under 48 passing tests, found only when the owner asked for an audit. REQUIREMENTS.md now carries 14 verifiable criteria, so there is finally something to review against. Owed before AC-12/AC-13, which touch three lockstep implementations in a container that can run neither gawk nor pwsh.'
+    decided_by: agent
+    updated: '2026-08-15'
+  - id: Q8
+    question: 'Comments and constants outliving the artifacts they were measured from'
+    state: Open
+    answer: 'Twice now. DEFAULT_ARTIFACTS in cost-meter.py was measured from work-005, since pruned. split_reach cited relationships.md, emitted by the since-removed aid-graph. Both corrected in place. The transient-work-folder rule generalizes beyond work folders to generated files and to derived constants -- worth stating in the KB, which is aid-update-kb territory.'
+    decided_by: agent
+    updated: '2026-08-15'
