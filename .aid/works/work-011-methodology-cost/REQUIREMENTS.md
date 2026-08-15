@@ -128,8 +128,11 @@ mandatory manual self-check that exists to prevent that did not catch it.
   and zero on a reduction, reporting the reduction.
 - **AC-3** `tests/cost-meter.py model` prices at least two pipeline shapes over
   identical inputs and its output scales with both `--cycles` and `--features`.
-- **AC-4** `grep -rE '^## (Change Log|Revision History)' canonical docs examples
-  tests` returns no matches.
+- **AC-4** `grep -rE '^## (Change Log|Revision History)' canonical docs examples`
+  returns no matches, and a test asserts that count is zero.
+  `tests/` is deliberately OUT of scope: the rule governs AID artifacts, and a
+  fixture that simulates a legacy document must be free to contain the section
+  it simulates — otherwise legacy input becomes untestable.
 - **AC-5** `requirements-template.md` contains a section defining verifiable
   acceptance criteria, and the AC sections of the spec and task templates cite it
   rather than restating it.
@@ -146,8 +149,9 @@ mandatory manual self-check that exists to prevent that did not catch it.
   `REQUIREMENTS.md § 11`; neither creates a `features/` directory or a `SPEC.md`.
 - **AC-12** No `delivery-blueprint-template.md` exists and no skill instructs an
   agent to create a `BLUEPRINT.md`.
-- **AC-13** The shortcut engine produces exactly `REQUIREMENTS.md`, `STATE.md`,
-  and `tasks/task-NNN/DETAIL.md`.
+- **AC-13** The shortcut engine produces exactly `REQUIREMENTS.md`, `STATE.yml`,
+  and `tasks/task-NNN/DETAIL.md` — and no `SPEC.md`, `PLAN.md`, or
+  `BLUEPRINT.md`, which are the three it writes today that this removes.
 - **AC-14** `profiles/` and the dogfood trees satisfy the render-drift and
   dogfood byte-identity gates at the end of the work.
 

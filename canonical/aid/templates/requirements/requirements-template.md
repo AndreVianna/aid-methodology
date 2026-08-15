@@ -1,6 +1,6 @@
 # REQUIREMENTS.md Template
 
-This template defines the structure for `.aid/works/{work}/REQUIREMENTS.md` — a first-class methodology artifact produced by [aid-describe](../../skills/aid-describe/) on the full path, or by the shortcut engine on the lite path.
+This template defines the structure for `.aid/works/{work}/REQUIREMENTS.md` — a first-class methodology artifact produced by [aid-describe](../../../skills/aid-describe/) on the full path, or by the shortcut engine on the lite path.
 
 ## Usage
 
