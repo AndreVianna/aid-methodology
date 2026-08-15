@@ -1,4 +1,4 @@
-# task-012: Record the scoped-cycle convention in the criteria tables
+# task-012: Scoped-cycle convention in the criteria tables
 
 [!NOTE]
 This is the TASK-LEVEL DETAIL.md template. It is the IMMUTABLE DEFINITION for this task.

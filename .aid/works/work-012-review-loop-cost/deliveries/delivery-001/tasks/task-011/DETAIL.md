@@ -1,4 +1,4 @@
-# task-011: Pass the specify gate a requirements slice, not the whole document
+# task-011: Requirements slice for the per-feature specify gate
 
 [!NOTE]
 This is the TASK-LEVEL DETAIL.md template. It is the IMMUTABLE DEFINITION for this task.

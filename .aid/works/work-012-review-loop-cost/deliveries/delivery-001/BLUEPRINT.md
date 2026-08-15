@@ -113,16 +113,16 @@ the AC-1 measurement split point.
 |------|------|-------|
 | task-001 | IMPLEMENT | Review-cost meter: record and report |
 | task-002 | TEST | Meter test suite |
-| task-003 | IMPLEMENT | Declare the optional oracle: key and its exit contract |
+| task-003 | IMPLEMENT | The optional `oracle:` key and its exit contract |
 | task-004 | IMPLEMENT | Match selector grammar and oracle field in the criteria tables |
 | task-005 | IMPLEMENT | G-07 selector-partition oracle |
 | task-006 | IMPLEMENT | Reviewer instruction: run the oracle rather than re-read the criterion |
 | task-007 | TEST | Oracle behaviour and coverage measurement |
-| task-008 | IMPLEMENT | Split the cycle-2-and-later clause into verification and hunt |
-| task-009 | IMPLEMENT | Render the two artifact sets in the six reviewer briefs |
+| task-008 | IMPLEMENT | Cycle-2-and-later split: verification set and hunt set |
+| task-009 | IMPLEMENT | Two-set ARTIFACTS rendering across the six reviewer briefs |
 | task-010 | IMPLEMENT | Guard 2: contradiction pass on cycle 1 of each multi-artifact review |
-| task-011 | IMPLEMENT | Pass the specify gate a requirements slice, not the whole document |
-| task-012 | IMPLEMENT | Record the scoped-cycle convention in the criteria tables |
+| task-011 | IMPLEMENT | Requirements slice for the per-feature specify gate |
+| task-012 | IMPLEMENT | Scoped-cycle convention in the criteria tables |
 | task-013 | TEST | Scoping guards: seeded-defect verification |
 | task-014 | IMPLEMENT | Close-out render and dogfood resync |
 | task-015 | TEST | Final measurement and reporting |

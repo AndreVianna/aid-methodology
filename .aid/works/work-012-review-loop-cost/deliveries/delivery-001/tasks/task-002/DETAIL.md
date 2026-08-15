@@ -33,5 +33,8 @@ Written once by aid-detail; not a state file. State lives in task-NNN/STATE.yml.
 - [ ] A task with one recorded cycle yields no ratio and is reported as such
 - [ ] A task with zero rows appears as missing, never as zero
 - [ ] An unreachable `--split-at` commit produces a loud failure naming the rows, not a silent misclassification
+- [ ] First-call behaviour: `record` on a clean work folder creates BOTH `review-cost.tsv` and `.meta` together, stamping one run id into each
+- [ ] The no-other-work guard: a `record` run creates or modifies nothing outside `tests/` and the work folder
+- [ ] Every acceptance criterion of task-001 has a corresponding case here (TEST default), including the ones above that an earlier draft of this task omitted
 - [ ] Tests are deterministic with clean setup/teardown
 - [ ] All REQUIREMENTS.md §6 quality gates pass

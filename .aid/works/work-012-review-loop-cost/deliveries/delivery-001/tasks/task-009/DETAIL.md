@@ -1,4 +1,4 @@
-# task-009: Render the two artifact sets in the six reviewer briefs
+# task-009: Two-set ARTIFACTS rendering across the six reviewer briefs
 
 [!NOTE]
 This is the TASK-LEVEL DETAIL.md template. It is the IMMUTABLE DEFINITION for this task.

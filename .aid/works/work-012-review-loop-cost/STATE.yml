@@ -28,15 +28,15 @@ minimum_grade: A
 # [W] 'yes' | 'no' -- quoted
 user_approved: 'yes'
 # [W] Running | Paused-Awaiting-Input | Blocked | Completed | Canceled
-lifecycle: Running
+lifecycle: Paused-Awaiting-Input
 # [W] Describe | Define | Specify | Plan | Detail | Execute
 phase: Detail
 # [W] aid-{skill} | none
-active_skill: aid-detail
+active_skill: none
 # [W]
-updated: '2026-08-15T05:58:29Z'
+updated: '2026-08-15T06:24:31Z'
 # [W] set only when lifecycle = Paused-Awaiting-Input
-pause_reason: --
+pause_reason: 'Detail complete at A+ -- 15 tasks in 10 waves; run /aid-execute work-012'
 # [W] set only when lifecycle = Blocked
 block_reason: --
 # [W] e.g. IMPEDIMENT-task-NNN.md, or the failed gate
@@ -535,6 +535,36 @@ lifecycle_history:
       be writing another skill's key. The BLUEPRINT's Notes record "Expected
       gate tier: Large" with the reasoning instead, since the BLUEPRINT is
       what aid-execute reads for gate scope.
+  - date: '2026-08-15'
+    event: 'Detail: 15 tasks in 10 waves, gate PASSES at A+'
+    grade: 'A+'
+    notes: >-
+      Two gate cycles, C+ -> A+; 9 findings, all Fixed; ledger deleted.
+      delivery-001 broken into 15 tasks (11 IMPLEMENT, 4 TEST), one type
+      each, at deliveries/delivery-001/tasks/task-NNN/{DETAIL.md,STATE.yml}.
+      Execution graph in PLAN.md; BLUEPRINT task table filled. All 15 FRs and
+      all 16 ACs are reachable from some task, verified by the reviewer
+      rather than asserted.
+      task-008 is FR-3 and the AC-1 measurement split point, in wave 5 -- the
+      FIRST feature-003 task, which is as early as section 10 permits since
+      FR-3 depends on the oracles and the oracles on the meter. Six tasks are
+      reviewed before it, seven after.
+      PARALLEL SAFETY WAS COMPUTED, NOT ASSUMED, and it caught a real
+      collision: comparing the file sets each task's Scope names showed
+      task-009 and task-011 both editing aid-specify's reviewer-brief.md.
+      They are logically independent and would have shared a wave; task-011
+      now depends on task-009, with the reason recorded in its DETAIL so a
+      later reader does not merge them back. task-008 and task-010 both touch
+      reviewer-dispatch.md but were already ordered.
+      The gate's own finds: task-004's acceptance criterion contradicted its
+      own Scope about whether the two template rows gain a Match cell (they
+      do -- a path bound plus <inexpressible>, and the bound is mandatory or
+      a genuine orphan is softened from VIOLATION to UNDECIDED); five titles
+      opened with an imperative verb against the PF-3 noun-phrase rule; and
+      three tasks had silently dropped type-default criteria. All fixed.
+      The same Match-cell imprecision was then found in C-5's own wording in
+      REQUIREMENTS.md and corrected there too -- a precision fix that leaves
+      the authorized edit unchanged.
 
 # [A] aid-deploy only; one entry per delivery.
 deploy: []

@@ -1,4 +1,4 @@
-# task-008: Split the cycle-2-and-later clause into verification and hunt
+# task-008: Cycle-2-and-later split: verification set and hunt set
 
 [!NOTE]
 This is the TASK-LEVEL DETAIL.md template. It is the IMMUTABLE DEFINITION for this task.

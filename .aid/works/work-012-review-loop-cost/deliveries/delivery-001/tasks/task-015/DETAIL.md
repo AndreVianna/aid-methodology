@@ -37,4 +37,6 @@ Written once by aid-detail; not a state file. State lives in task-NNN/STATE.yml.
 - [ ] AC-9: the slice-versus-whole-document byte reduction is stated as a measured figure on a named feature
 - [ ] AC-10: `git diff` shows `canonical/aid/scripts/grade.sh` unchanged since the work's first commit
 - [ ] AC-11: every oracle shipped names the recurring re-derivation it replaces and its measured per-cycle cost; the net is reported
+- [ ] The measurement is reproducible: re-running `report` over the same tree and the same `--split-at-task` yields the same figures (the TEST default "deterministic" applies here)
+- [ ] The TEST defaults "clean setup/teardown" and "all acceptance criteria from source feature covered" are **N/A for this task and recorded as such**: it authors no fixture and mutates nothing, and its job is to REPORT the criteria other tasks proved, not to re-prove them
 - [ ] All REQUIREMENTS.md §6 quality gates pass

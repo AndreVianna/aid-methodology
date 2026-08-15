@@ -237,8 +237,13 @@ guarding around it.
   and to these three edits only:**
   1. the optional `oracle:` field on a declared criterion (FR-8);
   2. the machine-readable `Match` column on the type registry, alongside the retained prose
-     `Selector` — eight rows gain a cell, `template-payload` and `template-own` do not
-     (feature-002 SPEC);
+     `Selector` — **all ten rows gain a cell; eight are fully expressible.**
+     `template-payload` carries `path canonical/aid/templates/** AND <inexpressible>` and
+     `template-own` its path bound alone (feature-002 SPEC). *An earlier wording of this
+     clause said those two rows gain no cell at all, which contradicted the SPEC it cites:
+     the path bound is mandatory, because without it the oracle's stop rule would soften a
+     genuine orphan from `VIOLATION` to `UNDECIDED`. Corrected as a precision fix — the
+     authorized edit is unchanged.*
   3. the scoped-cycle note on the criteria table (feature-003 SPEC).
 
   The authorization is deliberately enumerated rather than blanket. Any other

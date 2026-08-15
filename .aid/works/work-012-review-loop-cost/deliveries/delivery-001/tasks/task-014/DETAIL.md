@@ -33,4 +33,5 @@ Written once by aid-detail; not a state file. State lives in task-NNN/STATE.yml.
 - [ ] The full generator was used, not a per-script renderer
 - [ ] Exactly one render is performed for the whole work; mid-work staleness before this task is expected and not a defect
 - [ ] No hand-edit is made to any file under `profiles/` -- it is generated output
+- [ ] **All existing tests still pass** (IMPLEMENT default, and load-bearing here rather than boilerplate): the render rewrites every `profiles/` tree, so the render-drift and dogfood byte-identity gates prove the OUTPUT matches `canonical/` -- they do not prove the suite still passes against it. Both checks are required
 - [ ] All REQUIREMENTS.md §6 quality gates pass

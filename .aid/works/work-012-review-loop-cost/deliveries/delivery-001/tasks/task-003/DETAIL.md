@@ -1,4 +1,4 @@
-# task-003: Declare the optional oracle: key and its exit contract
+# task-003: The optional `oracle:` key and its exit contract
 
 [!NOTE]
 This is the TASK-LEVEL DETAIL.md template. It is the IMMUTABLE DEFINITION for this task.

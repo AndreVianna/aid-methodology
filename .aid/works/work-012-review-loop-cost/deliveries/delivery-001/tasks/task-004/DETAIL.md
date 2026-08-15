@@ -32,7 +32,7 @@ Written once by aid-detail; not a state file. State lives in task-NNN/STATE.yml.
 - NOT in scope: changing what any selector MEANS, or any other `.aid/knowledge/` edit.
 
 **Acceptance Criteria:**
-- [ ] Eight rows gain a `Match` cell; `template-payload` and `template-own` do not, exactly as feature-002's SPEC enumerates
+- [ ] Eight rows gain a **fully expressible** `Match` cell. `template-payload` carries `path canonical/aid/templates/** AND <inexpressible>` and `template-own` carries its path bound alone -- both have a cell, and neither is fully expressible. The path bound is mandatory, not optional: without it the stop rule would fire for any file exhausting the expressible rows, softening a genuine orphan from `VIOLATION` to `UNDECIDED`
 - [ ] The prose `Selector` column is retained unchanged for every row
 - [ ] The `Selector`/`Match` co-edit rule is stated in the registry section itself, not left as folklore
 - [ ] No selector's MEANING changes -- verified by task-005's oracle classifying the current corpus identically before and after
