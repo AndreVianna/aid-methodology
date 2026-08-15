@@ -189,6 +189,51 @@ qa:
       out because the rule governs artifacts, so they are out of scope rather than clean.
     decided_by: agent
     updated: '2026-08-15'
+  - id: Q18
+    question: 'AC-13: how far did the Lite reduction get?'
+    state: Open
+    answer: |
+      SPEC.md folded; PLAN.md not yet. The split is real, not a stopping point of
+      convenience -- one half is prose, the other is four parsers.
+
+      DONE. The Lite work-root SPEC.md is gone. It was a copy by the engine's own
+      description: Description, User Stories, Priority and Acceptance Criteria
+      "synthesized from REQUIREMENTS.md ... not re-elicited". What Specify actually
+      DECIDES -- the technical specification -- now sits in the `#### Technical
+      Specification` subsection of the single `### Feature 001` section in
+      REQUIREMENTS.md § 11, with criteria CITED by `AC-N` id rather than copied, so § 9
+      stays their single home. Gated by AD07.
+
+      Not obvious until measured: NO reader change was needed. Both twins already
+      resolved identity as REQUIREMENTS.md -> SPEC.md -> H1 -> de-slug, so folding just
+      stops the middle link being reached for new works and leaves it as the legacy path.
+
+      Found by the new gate: create.md cited `artifact-schemas.md § Task SPEC.md`, a
+      section that has never existed (the KB has `Task STATE.yml` and `Task DETAIL.md`).
+      A third broken citation this work has turned up while doing something else.
+
+      Two judgment calls worth recording. Four places said a family "emits no SPEC.md" --
+      true, but confusing once the artifact does not exist on the path at all, since it
+      implies the others do. I reworded them rather than adding carve-outs to AD07,
+      because a rule that must exempt prose merely MENTIONING the banned token can no
+      longer tell an instruction from a remark. And three test patterns were updated
+      while their LABELS were deliberately left alone: the invariant is unchanged, and
+      coverage-parity keys on the whole label, so renaming would mint keys and demand
+      allowlist rows for tests that did not change.
+
+      Also caught, by the ASCII-only gate rather than by me: my delivery-stanza regex
+      carried a literal em dash. Both twins now write \u2014, spelled identically so the
+      patterns can be diffed by eye.
+
+      REMAINING: PLAN.md on the Lite path, which is the harder half. The execution graph
+      lives there and FOUR implementations parse it -- complexity-score.sh,
+      compute-block-radius.sh, reader.py, reader.mjs. It cannot simply be deleted: the
+      graph has to be derived from the task DETAILs' `**Depends on:**` fields first,
+      which is item 8. So AC-13's tail and item 8 are one change, across two bash
+      scripts and both reader twins, and that is a four-way parity job rather than a
+      prose sweep.
+    decided_by: agent
+    updated: '2026-08-15'
   - id: Q17
     question: 'AC-12 part 2: the reader-side gap'
     state: Resolved
