@@ -81,17 +81,17 @@ Each deliverable follows the same cycle:
 
 ### Locate + Enter the Work's Worktree
 
-**As soon as Check 1 resolves the work id** and **before** Check 2 scans
-`.aid/works/{work}/features/*/SPEC.md`, follow
+**As soon as Check 1 resolves the work id** and **before** Check 2 reads
+`.aid/works/{work}/REQUIREMENTS.md § 11`, follow
 `canonical/aid/templates/downstream-worktree-entry.md` to normalize `<work-id>` to its bare
 `work-NNN` branch name, `locate` the worktree (which **always exits 0** and returns
 `<path>\t<status>`), and enter the returned path. Keep the defensive empty-path/non-zero backstop
 that stops rather than operate blindly — it should not fire against the real helper. Never create
 a new worktree — creation belongs to the work-starting skills only.
 
-### Check 2: Verify Feature SPECs
+### Check 2: Verify Features
 
-1. Scan `.aid/works/{work}/features/*/SPEC.md`
+1. Read the `### Feature NNN` subsections of `.aid/works/{work}/REQUIREMENTS.md § 11`
 2. Check work STATE.yml's Features State (derived view) — each feature should be `Ready`
 3. No features → **STOP.** "Run `/aid-describe` then `/aid-specify`."
 4. Some not Ready → warn, offer to plan with completed only or wait

@@ -147,7 +147,7 @@ Any combination of: error tracking (Sentry, AppInsights, CloudWatch), CI/CD resu
 APM/performance metrics, test trends, user feedback, support tickets, log files.
 
 **From AID artifacts (what's expected):**
-- Feature SPECs (`.aid/works/{work}/features/*/SPEC.md`) — expected behavior
+- Feature specifications (`.aid/works/{work}/REQUIREMENTS.md § 11`) — expected behavior
 - Per-task `DETAIL.md` — acceptance criteria; full path: `.aid/works/{work}/deliveries/delivery-NNN/tasks/task-NNN/DETAIL.md`; lite path: `.aid/works/{work}/tasks/task-NNN/DETAIL.md`
 - Package files — what was deployed and when
 - `known-issues.md` — exclude known problems

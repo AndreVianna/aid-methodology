@@ -92,7 +92,7 @@ Answer: **bug-fix.** workType: `bug-fix`. Routes to sub-path: **LITE-BUG-FIX**.
 All three signals pointed to "small." If any one of them had come back "large" —
 say, the bug turned out to touch five modules, or the fix required a new caching
 strategy — TRIAGE would have routed to the full path instead, and `aid-describe`
-would have proceeded to produce `REQUIREMENTS.md` + per-feature `SPEC.md` stubs.
+would have proceeded to produce `REQUIREMENTS.md` with a `### Feature NNN` section per feature under § 11.
 
 > The lite path is conservative by design. Any ambiguous answer routes full.
 > You can always escalate a lite work to full mid-flight; the STATE.md carries
@@ -255,8 +255,7 @@ phases; it does not relax the *execution quality* bar.
 | Artifact | Full Path | Lite Path (this example) |
 |----------|-----------|--------------------------|
 | `REQUIREMENTS.md` | Yes | No |
-| `features/` folder | Yes | No |
-| per-feature `SPEC.md` | Yes | No |
+| per-feature `### Feature NNN` section under `REQUIREMENTS.md § 11` | Yes | No |
 | `PLAN.md` | Yes | No |
 | work-root `SPEC.md` | No | **Yes** |
 | `tasks/task-NNN.md` | Yes (via aid-detail) | **Yes (via TASK-BREAKDOWN)** |

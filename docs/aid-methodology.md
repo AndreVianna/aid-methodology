@@ -538,7 +538,7 @@ When a KB exists (brownfield), suggested answers are additionally grounded in KB
 
 **State 6: Cross-Reference.** Validates REQUIREMENTS.md against the full KB. Checks for contradictions, gaps, missing evidence, and staleness. Grades the findings with AID's universal rubric.
 
-**State 7: Done.** REQUIREMENTS.md is approved and each per-feature SPEC.md exists with its requirements side filled in — the work is ready for Specify.
+**State 7: Done.** REQUIREMENTS.md is approved and each `### Feature NNN` section under § 11 exists with its requirements side filled in — the work is ready for Specify.
 
 **One grading rubric across the pipeline.** Every development phase that grades — Discover, Describe → Define, Specify, Plan, Detail, Execute — works the same way: the reviewer classifies each issue it finds by severity (`[CRITICAL]` / `[HIGH]` / `[MEDIUM]` / `[LOW]` / `[MINOR]`), and the letter grade is computed **deterministically** — the worst severity present dominates, and the count within that tier sets the modifier. A scale that runs A+ down to F, with an E band for critical-severity issues. The reviewer never hand-picks a grade. Each phase loops until its grade meets the project's minimum (set at `aid-config`). See §7 and `canonical/aid/templates/grading-rubric.md`.
 
@@ -633,7 +633,7 @@ The key distinction from generic spec generation: the agent does not ask "what t
 
 **Process:** One feature per run. Determines applicable sections: 3 core (Data Model, Feature Flow, Layers & Components) always present, plus up to 19 conditional sections activated by context (API Contracts, UI Specs, Events, Security, Migration, etc.).
 
-**Output:** `## Technical Specification` section added to `.aid/works/{work}/features/feature-NNN/SPEC.md` — Data Model, Feature Flow, Layers & Components, plus activated conditional sections.
+**Output:** `#### Technical Specification` subsection added to the feature's `### Feature NNN` section in `.aid/works/{work}/REQUIREMENTS.md § 11` — Data Model, Feature Flow, Layers & Components, plus activated conditional sections.
 
 **Full path only:** Specify is skipped on the lite path — the shortcut engine's SPEC state collapses Define + Specify into one authoring step.
 
@@ -694,7 +694,7 @@ The eight task types are:
 
 **Purpose:** Execute tasks based on their type. Not just coding — every task has a type that determines what the agent does and how the reviewer evaluates it.
 
-**Input:** `task-NNN/DETAIL.md` (with Type field) + `PLAN.md` (delivery context + execution graph) + the per-feature `SPEC.md` + `known-issues.md` (if present) + `.aid/knowledge/INDEX.md`.
+**Input:** `task-NNN/DETAIL.md` (with Type field) + `PLAN.md` (delivery context + execution graph) + the feature's section in `REQUIREMENTS.md § 11` + `known-issues.md` (if present) + `.aid/knowledge/INDEX.md`.
 
 **Process (universal loop, all types):**
 

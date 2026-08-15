@@ -29,8 +29,8 @@ Terms and concepts used throughout the AID methodology.
 | Phase | Group | Produces |
 |-------|-------|----------|
 | **Discover** | Knowledge Base Maintenance | Knowledge Base (14 standard documents) |
-| **Describe → Define** | Definition | Full path: `REQUIREMENTS.md` + per-feature `SPEC.md` stubs. Lite path (via a shortcut): work-root `SPEC.md` directly. |
-| **Specify** | Definition | Technical specification added to each feature's `SPEC.md` (full path only) |
+| **Describe → Define** | Definition | Full path: `REQUIREMENTS.md`, with a `### Feature NNN` section per feature under § 11. Lite path (via a shortcut): work-root `SPEC.md` directly. |
+| **Specify** | Definition | Technical specification added to each feature's section in `REQUIREMENTS.md § 11` (full path only) |
 | **Plan** | Definition | `PLAN.md` (execution graph) + `deliveries/delivery-NNN/BLUEPRINT.md` (delivery definition) — full path only |
 | **Detail** | Definition | `deliveries/delivery-NNN/tasks/task-NNN/DETAIL.md` (task definition) — full path only |
 | **Execute** | Execution | Reviewed, graded code (8 task types, built-in review loop) |

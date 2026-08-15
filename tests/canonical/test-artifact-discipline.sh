@@ -142,16 +142,19 @@ assert_eq "$ad03_count" "0" "AD03: every '../'-relative link under canonical/ re
 #
 # The pattern is deliberately narrow -- the abolished SHAPE, not the string
 # 'SPEC.md' -- because a work-root SPEC.md is still a live identity fallback in
-# the dashboard readers and is not what this rule governs.
+# the dashboard readers (reader.py / reader.mjs, PF-8) and is not what this rule
+# governs. It also catches the prose spelling 'per-feature SPEC', which is the
+# same instruction written without a path.
+#
+# docs/ and examples/ are in scope with canonical/: a reader who follows the
+# published methodology description to a layout that no longer exists is misled
+# just as effectively as an agent following a skill file.
 # ---------------------------------------------------------------------------
-ad04_hits=""
-while IFS= read -r line; do
-    [[ -n "$line" ]] && ad04_hits+="${line}"$'\n'
-done < <(grep -rnE 'features/\*/SPEC\.md|features/feature-[0-9A-Za-z-]*/SPEC\.md' \
-             "${REPO}/canonical" --include='*.md' 2>/dev/null || true)
-ad04_count="$(printf '%s' "$ad04_hits" | grep -c . || true)"
-assert_eq "$ad04_count" "0" "AD04: no canonical file cites the retired per-feature 'features/*/SPEC.md' path"
-[[ "$ad04_count" != "0" ]] && printf '%s' "$ad04_hits" | sed "s|^${REPO}/||; s|^|    offender: |" >&2
+ad04="$(scan_outside_fences "canonical docs examples" \
+        'features/\*/SPEC\.md|features/feature-[0-9A-Za-z-]*/SPEC\.md|per-feature `?SPEC')"
+ad04_count="$(report_count "$ad04")"
+assert_eq "$ad04_count" "0" "AD04: nothing cites the retired per-feature 'features/*/SPEC.md' layout"
+[[ "$ad04_count" != "0" ]] && report_body "$ad04" | sed 's|^|    offender: |' >&2
 
 # ---------------------------------------------------------------------------
 echo ""

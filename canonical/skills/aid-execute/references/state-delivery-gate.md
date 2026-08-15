@@ -185,10 +185,9 @@ Then append the gate-specific prompt below. The reviewer reads directly from sou
   Source, Scope, Acceptance Criteria):
   - Full path: `deliveries/delivery-NNN/tasks/task-NNN/DETAIL.md`
   - Flat path: `tasks/task-NNN/DETAIL.md` directly under the work root
-- **Feature SPEC(s):**
-  - Full path: per-feature `SPEC.md` files (`.aid/works/{work}/features/*/SPEC.md`)
-  - Flat path (feature-001, single-delivery): work-root `SPEC.md` (single feature)
-  - Lite path: work-root `SPEC.md` (`.aid/works/{work}/SPEC.md`)
+- **Feature specification(s)** — the `### Feature NNN` subsections of
+  `.aid/works/{work}/REQUIREMENTS.md § 11`, each carrying its own technical
+  specification. Read only the sections claimed by this delivery, not all of § 11.
 - **Delivery-level acceptance criteria:**
   - Full path: from the delivery's `BLUEPRINT.md § Gate Criteria`
   - Flat path: from the work-root `BLUEPRINT.md § Gate Criteria`
