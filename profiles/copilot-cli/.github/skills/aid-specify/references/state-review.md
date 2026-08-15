@@ -15,7 +15,9 @@ reviewing all sections against current reality.
 
 ### Load Current Context
 
-Same as INITIALIZE Step 1: this feature's section of REQUIREMENTS.md §11, the rest of REQUIREMENTS.md, KB docs, codebase.
+Same as INITIALIZE Step 1: this feature's section of REQUIREMENTS.md § 11, plus the
+REQUIREMENTS.md **slice** it traces to (the `§5`/`§9` entries its section cites by id,
+never the whole document), KB docs, codebase.
 
 ### Review All Sections
 

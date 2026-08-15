@@ -6,8 +6,18 @@ First run for this feature; load context, determine sections, and begin The Loop
 
 Read ALL before making any proposal:
 
-1. **The feature's section** — `REQUIREMENTS.md § 11 / Feature NNN`: its Description, User Stories, the `§5 FR-N` ids it implements and the `§9 AC-N` ids it owns. The criteria themselves are in §9; read them there rather than expecting a copy in the section
-2. **REQUIREMENTS.md** — full requirements for cross-reference
+1. **The feature's section** — `REQUIREMENTS.md § 11 / Feature NNN`: its Description,
+   User Stories, the `§5 FR-N` ids it implements and the `§9 AC-N` ids it owns.
+2. **The REQUIREMENTS.md SLICE this feature traces to, not the whole document.** Load
+   only the `§5` and `§9` entries the feature section cites by id. A per-feature gate
+   that loads the whole of a large requirements document re-reads it once per feature
+   per cycle, which is the single worst line in the review budget.
+
+   The slice is derived from those citations rather than a hand-maintained map, so a
+   feature citing no requirement surfaces as a defect instead of silently yielding an
+   empty slice. The citations ARE the slice key, which is why a § 11 section cites
+   `AC-N` ids rather than copying criterion text: a copy would have to be re-read to
+   be trusted, and could disagree with § 9 — defeating the point of slicing to it.
 3. **KB via INDEX.md** — Read `.aid/knowledge/INDEX.md` first. Use the summaries
    to decide which KB docs are relevant to this feature, then load them.
    At minimum you'll need architecture, coding-standards, and schemas for

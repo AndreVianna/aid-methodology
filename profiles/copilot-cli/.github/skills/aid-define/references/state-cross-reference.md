@@ -32,4 +32,10 @@ After aid-reviewer returns, run grade.sh on the ledger to confirm the grade:
 bash .github/aid/scripts/grade.sh --explain .aid/.temp/review-pending/interview-<work>-cross-ref.md
 ```
 
+**Cycle 1 also runs the cross-document contradiction pass (Guard 2).** This review receives
+every artifact of the phase at once, which is the only vantage point from which a
+contradiction between two of them is visible. Run it on cycle 1 only -- that makes it
+once per phase by construction. Definition:
+`reviewer-dispatch.md` section "The cross-document contradiction pass (Guard 2)".
+
 **Advance:** **CHAIN** → [State: DONE] when cross-reference completes (continue inline).

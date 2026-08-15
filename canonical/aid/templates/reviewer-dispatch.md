@@ -65,6 +65,28 @@ An **explicit file list**. The reviewer reads + grades exactly these files. No
 wildcards beyond the artifact set (e.g., `canonical/aid/templates/kb-authoring/*.md` is
 fine if the entire directory is in scope; `canonical/**` is too broad).
 
+**From cycle 2 this section carries TWO labelled lists, not one.** Cycle 1 and the final
+full pass carry a single unlabelled list, unchanged.
+
+```
+ARTIFACTS UNDER REVIEW:
+  VERIFY (full -- every existing ledger row is re-checked against these):
+    - (every file named in a ledger row's Doc column; plus the whole cycle-1
+       set if any row's Doc is `—`)
+  HUNT (scoped -- look for NEW findings only here):
+    - (what the previous FIX changed, plus the files that reference it)
+```
+
+The two exist because a cycle does two jobs and only one is expensive. Verifying a
+`Pending` row is a targeted disk check and stays FULL — scoping it would break `Recurred`
+detection. Hunting for new findings is what forced a full re-scan every cycle, and that is
+the half that becomes scoped. The split, the derivation of each set, and the guards are
+defined once in `reviewer-ledger-schema.md § Two sets from cycle 2`; this section carries
+them, it does not redefine them.
+
+A reviewer given two labelled lists must not hunt outside the HUNT list, and must not skip
+any file in the VERIFY list.
+
 The reviewer MUST NOT open any file not listed here, except to:
 - Resolve a citation reference (e.g., a docfile cites `path/to/foo.sh:42` — the
   reviewer may open `foo.sh` to verify the citation but does not grade `foo.sh`)
@@ -198,12 +220,52 @@ RUBRIC:
 When no pre-defined rubric exists (one-off reviews like Phase A foundation),
 the brief enumerates the checks inline.
 
+**On a scoped cycle the criteria resolve against the scoped surface.** Criteria resolution
+is scope-free by construction — a file's resolved list depends only on its path and
+frontmatter, never on its content — so the list for a section IS the list for its file, and
+scoping the hunt needs no change to resolution. What changes is only WHICH files the
+reviewer resolves criteria for on that cycle: the VERIFY set in full, and the HUNT set for
+new findings.
+
 **A named rubric does not replace the artifact's declared criteria — the two compose.**
 The rubric says how to review a *class* of artifact; the criteria say what *this* file
 must be true against, resolved global → type → file per
 `kb-authoring/review-rubric.md § Resolving review criteria`. Every finding cites the
 criterion `id` it violates as a prefix in the ledger's `Description` cell, so the brief
 never needs a `Rule` column and the ledger keeps its 7-column shape.
+
+### The cross-document contradiction pass (Guard 2)
+
+**Run on CYCLE 1 of any review whose `ARTIFACTS` span more than one artifact.** A review of
+a single artifact does not run it and does not need to.
+
+Pinning it to cycle 1 makes it once-per-phase **by construction**: cycle 1 is the full-read
+cycle that happens anyway, and a multi-artifact review happens once per phase. No
+"is this the last one?" detection is needed, and none should be invented.
+
+Three reviews already receive every artifact of a phase at once, and they are its
+invocation sites:
+
+| Review | Already receives | Covers |
+|---|---|---|
+| `aid-define` CROSS-REFERENCE | `REQUIREMENTS.md`, whose `§ 11` holds every feature section | Define's own output |
+| `aid-plan` | full `PLAN.md` + **every** `§ 11` feature section | Specify's per-feature specifications |
+| `aid-detail` | every `task-NNN/DETAIL.md` + `PLAN.md` | Detail's task set |
+
+**`aid-specify` deliberately gets no invocation.** It dispatches a reviewer PER feature, so
+no single specify review could see a contradiction spanning two features; the feature
+sections are cross-checked at `aid-plan`'s review, the first review after Specify that sees
+them together. Adding one there would run the pass once per feature, which is the opposite of
+once per phase.
+
+What the pass looks for is unchanged — two artifacts asserting different values for one
+shared fact. Only its cadence moves. It gets *better* rather than merely cheaper: a
+contradiction between siblings is invisible to a gate that only ever reads one of them.
+
+**The residual window, stated:** a contradiction introduced by the pass's own fix is not
+re-checked by that pass, because the pass is pinned to cycle 1 and the fix lands after it.
+The final full pass before approval is the backstop. Re-running the pass every cycle until
+fixpoint would rebuild the per-cycle loop this change exists to remove.
 
 ### OUT OF SCOPE
 
@@ -278,8 +340,31 @@ once, applied here). Building the list from memory of what was worked on
 tends to omit incidentally-touched files; the reviewer then can't grade what
 it doesn't know about.
 
+**Render the brief TO A FILE, then dispatch and record from that same file — one step.**
+
+```
+brief=.aid/works/{work}/briefs/<scope>-cycle-<N>.md
+<render the brief into $brief>
+bash tests/review-cost-meter.sh record --task <task-or-scope> --cycle <N> --brief "$brief"
+<dispatch the reviewer with the contents of $brief>
+```
+
+This is not bookkeeping bolted onto the dispatch; it is the dispatch. The file is what the
+reviewer is given AND what the meter measures, so the two cannot disagree, and the brief's
+absence is a visible signal that the step did not run.
+
+**Why it is written this way.** An earlier version mandated the `record` call separately
+from rendering. That mandate was satisfiable by doing nothing: with the brief composed
+inline there was no file to point at and no step that failed when `record` was skipped, so
+an entire delivery's measurements were silently never taken. That is the failure class
+`tech-debt.md` `W5-5` documents — fourteen mandated state-writes that every call site failed
+to make work, invisibly, for as long as nobody looked. A mandate an agent can satisfy by
+doing nothing will be satisfied by doing nothing; binding the write to the artifact the work
+already produces is what closes it.
+
 **Inspectability requirement:** the rendered brief is logged with the dispatch
-record so it can be inspected after the fact (per work-003 traceability).
+record so it can be inspected after the fact (per work-003 traceability) — satisfied by the
+same file, rather than by a second artifact that could drift from it.
 
 ## One-off reviews
 
