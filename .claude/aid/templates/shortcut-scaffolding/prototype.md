@@ -92,8 +92,6 @@ prototype with real users (usability testing, a controlled A/B test) is a G7 act
   direction's real build routes
 - `.claude/aid/templates/shortcut-scaffolding/test-experiment.md § aid-experiment` --
   where testing the prototype with users routes
-- `features/feature-005-prototype-family/SPEC.md` (work-001-lite-aid-skills) -- the
-  settled design this reference implements
 - `.claude/skills/aid-execute/references/task-type-rules.md ## DESIGN` -- the
   per-type execution rule this breakdown maps onto
 - `.aid/knowledge/artifact-schemas.md § Task DETAIL.md` -- the one-type-per-task

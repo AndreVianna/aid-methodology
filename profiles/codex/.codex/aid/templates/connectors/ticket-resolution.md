@@ -1,13 +1,11 @@
 # Ticket Resolution Reference (Connector Ladder, Grammar, Confirm Gate)
 
 > Shared reference for the three dedicated ticket-tracker skills — `aid-read-ticket`,
-> `aid-create-ticket`, and `aid-update-ticket` (each authored under
-> `.codex/skills/aid-<name>/SKILL.md` by a later delivery-001 task; see
-> `features/feature-001-dedicated-ticket-skills/SPEC.md`). Each skill's `SKILL.md`
+> `aid-create-ticket`, and `aid-update-ticket`, each at
+> `.codex/skills/aid-<name>/SKILL.md`. Each skill's `SKILL.md`
 > implements this reference by a **short, additive pointer** — none of the three
 > re-describe the connector-resolution ladder, the grammar-parse rules, or the write
-> preview/confirm-gate convention inline (SPEC.md § Layers & Components, "Shared
-> reference (DRY, decision 1)"). This is the single, DRY home for all three — the
+> preview/confirm-gate convention inline. This is the single, DRY home for all three — the
 > same pattern [`shortcut-engine.md`](../shortcut-engine.md) and
 > [`consumption-protocol.md`](consumption-protocol.md) already establish for their
 > own callers.

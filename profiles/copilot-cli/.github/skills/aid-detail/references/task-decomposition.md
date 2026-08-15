@@ -31,17 +31,16 @@ Each deliverable follows the same cycle:
   knowledge/                ← shared KB (read)
     STATE.md                ← minimum grade
   work-NNN-{name}/
-    STATE.md                # work-level state; ## Tasks State is a DERIVED view (not written here)
+    STATE.yml               # work-level state; ## Tasks State is a DERIVED view (not written here)
+    REQUIREMENTS.md         # § 11 holds the `### Feature NNN` sections, incl. each
+                            #   feature's tech spec (read)
     PLAN.md                 # roadmap with deliverables (read -- must exist)
-    features/
-      feature-NNN-{name}/
-        SPEC.md             # per-feature tech spec (read)
     deliveries/
       delivery-NNN/           # OUTPUT: per-delivery folder (one per deliverable in PLAN.md)
         tasks/
           task-NNN/           # OUTPUT: per-task folder
             DETAIL.md         # task definition (6-section schema; written by aid-detail)
-            STATE.md          # task state, seeded Pending (written by aid-detail; updated by aid-execute)
+            STATE.yml         # task state, seeded Pending (written by aid-detail; updated by aid-execute)
 ```
 
 ## Arguments
@@ -55,7 +54,8 @@ Each deliverable follows the same cycle:
 ## Inputs
 
 - **PLAN.md** — deliverables, ordering, dependencies
-- **Feature SPECs** — all `features/*/SPEC.md` within the work
+- **Features** — the `### Feature NNN` subsections of `REQUIREMENTS.md § 11`, each
+  carrying its own technical specification
 - **KB via INDEX.md** — Read `.aid/knowledge/INDEX.md`, use summaries to pull
   relevant docs (typically architecture, module-map, coding-standards — but let the INDEX guide you)
 

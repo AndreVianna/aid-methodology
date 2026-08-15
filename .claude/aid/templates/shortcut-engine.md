@@ -3,8 +3,7 @@
 The single shared engine every thin shortcut doorway (`.claude/skills/aid-<name>/
 SKILL.md`) delegates to. Implements the state machine **INTAKE -> CAPTURE -> SPEC ->
 PLAN -> DETAIL** -- the definition phases (Describe -> Define -> Specify -> Plan ->
-Detail) collapsed into one fast, mostly-autonomous run -- per
-`features/feature-003-direct-entry-shortcut-engine/SPEC.md § Feature Flow`. It produces
+Detail) collapsed into one fast, mostly-autonomous run. It produces
 the **full** flattened artifact set (feature-001 shape); it never skips a phase, it
 collapses the information capture within each phase. It never executes -- Execute is a
 separate, user-initiated `/aid-execute`.
@@ -146,10 +145,8 @@ SPEC-deciding ones, because the route (`{verb, artifact}`) is already fixed by t
 
 Code-settled; no enum change (extending the 8-type enum is a lockstep break across
 `grade.sh`, both dashboard reader twins, and every grading skill --
-`artifact-schemas.md § Contracts`). Reproduced from
-`features/feature-003-direct-entry-shortcut-engine/SPEC.md`; the authoritative value
-for any given shortcut is always its own catalog row's `default_type` field, not a
-re-derivation from this table:
+`artifact-schemas.md § Contracts`). The authoritative value for any given shortcut is
+always its own catalog row's `default_type` field, not a re-derivation from this table:
 
 | Verb (representative) | Default task Type | Note |
 |---|---|---|
@@ -724,9 +721,8 @@ Detail | Execute`) has no `Gate` value -- `Phase` stays `Detail`
 bash .claude/aid/scripts/config/read-setting.sh --skill {name} --key minimum_grade --default A+
 ```
 
-This is the shortcut path's own resolution call
-(`features/feature-004-approval-and-grading-gates/SPEC.md § minimum_grade
-resolution`) -- the standard 3-tier order (per-skill override ->
+This is the shortcut path's own resolution call -- the standard 3-tier order
+(per-skill override ->
 `review.minimum_grade` -> hardcoded default), except the **shortcut path's
 own built-in default is `A+`**, not the global `A` every other skill falls
 back to (`quality-gates.md § Minimum-Grade Thresholds`). A project may still
@@ -821,11 +817,9 @@ content:
    `grading-rubric.md` Grade Calculation), and a batched ledger's total
    finding count is the sum of every reviewed document's own finding count,
    the pooled grade equals `A+` **if and only if every individual document
-   in the pass also has zero findings**. This is exactly the property
-   feature-004's SPEC requires ("each document still clears `minimum_grade`
-   via its own REVIEW->FIX loop within the pass" --
-   `features/feature-004-approval-and-grading-gates/SPEC.md § Data Model`
-   item 2) -- the batched dispatch changes round-trip **granularity** only,
+   in the pass also has zero findings**. This preserves the required property:
+   each document still clears `minimum_grade` via its own REVIEW->FIX loop
+   within the pass -- the batched dispatch changes round-trip **granularity** only,
    never the per-document guarantee (AC-11), so no second, per-document
    `grade.sh` pass is needed at the shortcut path's `A+` floor. (A project
    override that lowers `minimum_grade` below `A+` would need the

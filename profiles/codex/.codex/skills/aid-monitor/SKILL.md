@@ -147,7 +147,7 @@ Any combination of: error tracking (Sentry, AppInsights, CloudWatch), CI/CD resu
 APM/performance metrics, test trends, user feedback, support tickets, log files.
 
 **From AID artifacts (what's expected):**
-- Feature SPECs (`.aid/works/{work}/features/*/SPEC.md`) — expected behavior
+- Feature specifications (`.aid/works/{work}/REQUIREMENTS.md § 11`) — expected behavior
 - Per-task `DETAIL.md` — acceptance criteria; full path: `.aid/works/{work}/deliveries/delivery-NNN/tasks/task-NNN/DETAIL.md`; lite path: `.aid/works/{work}/tasks/task-NNN/DETAIL.md`
 - Package files — what was deployed and when
 - `known-issues.md` — exclude known problems
@@ -221,7 +221,7 @@ them more informative by adding mid-wait check-ins + structured progress.
 | DONE | _(inline — see Re-run below)_ | `inline` | → halt |
 
 On state entry, print `[State: NAME]` + the "you are here" map from State Detection above.
-When a state completes, route by its `**Advance:**` type (per [`state-machine-chaining.md`](../../templates/state-machine-chaining.md)):
+When a state completes, route by its `**Advance:**` type (per [`state-machine-chaining.md`](../../aid/templates/state-machine-chaining.md)):
 - **CHAIN** → begin the next state's reference doc within the same invocation; no exit.
 - **PAUSE-FOR-USER-ACTION** / **PAUSE-FOR-USER-DECISION** → print the pause reason + resume command and exit.
 - **HALT** → print the closing summary and exit.

@@ -94,8 +94,6 @@ stays here, as the bare `aid-document` shape.
   (work-005; `document` is no longer engine-consulted)
 - `.agent/aid/templates/shortcut-scaffolding/analyze-report.md § Ownership
   boundary` -- where an analytical report routes instead
-- `features/feature-010-document-family/SPEC.md` (work-001-lite-aid-skills) -- the
-  settled design this reference implements
 - `.agent/skills/aid-execute/references/task-type-rules.md ## DOCUMENT` -- the
   per-type execution rule this breakdown maps onto
 - `.aid/knowledge/artifact-schemas.md § Task DETAIL.md` -- the one-type-per-task

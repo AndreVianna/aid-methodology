@@ -118,7 +118,5 @@ standalone test-authoring request). Modifying an **existing** artifact is
   how this file is looked up and what happens when it is absent
 - `.agent/aid/templates/shortcut-scaffolding/change-refactor.md` -- inherits
   this file's artifact matrix, modify-framed
-- `features/feature-006-create-family/SPEC.md` (work-001-lite-aid-skills) --
-  the settled design this reference implements
 - `.aid/knowledge/artifact-schemas.md § Task DETAIL.md` -- the one-type-per-task
   contract

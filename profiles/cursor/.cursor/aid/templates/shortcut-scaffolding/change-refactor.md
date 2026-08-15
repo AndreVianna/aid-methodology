@@ -234,8 +234,6 @@ assume the decision to act has already been made.
   assessed before this file's verbs act on it
 - `.cursor/aid/templates/shortcut-engine.md § Family Scaffolding Consult` --
   how this file is looked up and what happens when it is absent
-- `features/feature-007-change-and-refactor-family/SPEC.md`
-  (work-001-lite-aid-skills) -- the settled design this reference implements
 - `.cursor/skills/aid-execute/references/task-type-rules.md ## MIGRATE /
   ## REFACTOR / ## IMPLEMENT` -- the per-type execution rules
   `aid-remove`/`aid-deprecate`/`aid-migrate` map onto

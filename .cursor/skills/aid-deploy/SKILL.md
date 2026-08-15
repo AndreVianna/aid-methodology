@@ -153,8 +153,8 @@ aid-deploy  ▸ you are here
 
 - `.aid/works/{work}/PLAN.md` — deliveries, sequencing, success criteria
 - Per-task `DETAIL.md` — task scope; full path: `.aid/works/{work}/deliveries/delivery-NNN/tasks/task-NNN/DETAIL.md`; lite path: `.aid/works/{work}/tasks/task-NNN/DETAIL.md`
-- `.aid/works/{work}/features/*/SPEC.md` — what was specified
-- Work `STATE.md` `## Tasks State` table — task statuses and review grades per task (both paths derive into this same rollup)
+- `.aid/works/{work}/REQUIREMENTS.md § 11` — the `### Feature NNN` sections; what was specified
+- Work `STATE.yml` `## Tasks State` table — task statuses and review grades per task (both paths derive into this same rollup)
 - `known-issues.md` — if exists, check for Critical/High blockers
 - **KB via INDEX.md** — Read `.aid/knowledge/INDEX.md`, pull:
   - `infrastructure.md` § Deployment — how to package, where to publish
@@ -181,7 +181,7 @@ dispatch in this skill.
 | RE-RUN | `references/state-re-run.md` | `inline` | → halt |
 
 On state entry, print `[State: NAME]` + the "you are here" map from State Detection above.
-When a state completes, route by its `**Advance:**` type (per [`state-machine-chaining.md`](../../templates/state-machine-chaining.md)):
+When a state completes, route by its `**Advance:**` type (per [`state-machine-chaining.md`](../../aid/templates/state-machine-chaining.md)):
 - **CHAIN** → begin the next state's reference doc within the same invocation; no exit.
 - **PAUSE-FOR-USER-ACTION** / **PAUSE-FOR-USER-DECISION** → print the pause reason + resume command and exit.
 - **HALT** → print the closing summary and exit.
