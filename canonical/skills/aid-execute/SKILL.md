@@ -223,8 +223,9 @@ dispatch in this skill.
   works/
     work-NNN-{name}/
       STATE.yml                ← work-level pipeline header (AUTHORED); derived views (read-only)
-      PLAN.md                 ← delivery context (full path)
-      SPEC.md                 ← work definition + delivery/task graph (lite path)
+      REQUIREMENTS.md         ← work definition; § 11 holds the feature sections
+      PLAN.md                 ← delivery stanzas (each the delivery definition) +
+                              #  execution graph
       known-issues.md         ← issues to watch for
       deliveries/
         delivery-NNN/
@@ -251,8 +252,8 @@ regression):
                                  delivery_lifecycle (tasks_lifecycle) /
                                  delivery_gate AUTHORED keys (single writer;
                                  replaces delivery-NNN/STATE.yml + per-task STATE.yml)
-      REQUIREMENTS.md          ← requirements; § 11 carries the single feature section
-      SPEC.md                  ← the single feature spec
+      REQUIREMENTS.md          ← requirements AND, in § 11, the single feature section
+                                 with its own #### Technical Specification
       PLAN.md                  ← the single delivery: its Deliverables stanza, which IS
                                  the delivery definition (objective, scope, Gate
                                  Criteria), plus the top-level ## Execution Graph

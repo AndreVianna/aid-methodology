@@ -3966,7 +3966,9 @@ export function _parsePlanDeliveryTitles(planText) {
   const titles = {};
   try {
     const heading = /^#{2,}\s+(delivery-\d+)\s*:\s*(.+?)\s*$/i;
-    const bullet = /^[-*]\s+\*\*Delivery:\*\*\s*(delivery-\d+)\s*(?:--|—|-)\s*(.+?)\s*$/i;
+    // Em dash written as \u2014, not literally: this file is ASCII-only enforced
+    // (test-ascii-only.sh). The escape is the same character to the regex engine.
+    const bullet = /^[-*]\s+\*\*Delivery:\*\*\s*(delivery-\d+)\s*(?:--|\u2014|-)\s*(.+?)\s*$/i;
     for (const line of planText.split("\n")) {
       const stripped = line.trim();
       const m = stripped.match(heading) || stripped.match(bullet);

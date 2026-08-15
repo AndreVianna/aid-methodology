@@ -15,6 +15,7 @@
 #   AD04  nothing points an agent at the retired per-feature SPEC.md layout
 #   AD05  no tree diagram lists a `features/` directory (the multi-line form AD04 misses)
 #   AD06  BLUEPRINT.md is retired: no template, and no skill/engine writes one
+#   AD07  the shortcut (Lite) engine writes no SPEC.md (folded into REQUIREMENTS § 11)
 #
 # Two scope decisions, both load-bearing, both found by writing the naive version first
 # and reading what it flagged:
@@ -71,9 +72,16 @@ skip_fences = os.environ["FENCE_POLICY"] == "skip-fences"
 hits = []
 for tree in os.environ["TREES"].split():
     root = pathlib.Path(tree)
-    if not root.is_dir():
+    # A tree may be named as a single FILE, so a rule can scope itself to one document
+    # without pulling in its siblings (AD07 targets the engine, not every template
+    # beside it).
+    if root.is_file():
+        candidates = [root]
+    elif root.is_dir():
+        candidates = sorted(root.rglob("*.md"))
+    else:
         continue
-    for path in sorted(root.rglob("*.md")):
+    for path in candidates:
         in_fence = False
         for number, line in enumerate(
             path.read_text(encoding="utf-8", errors="replace").splitlines(), start=1
@@ -230,6 +238,31 @@ ad06="$(scan_tree "canonical/skills canonical/aid/templates" 'BLUEPRINT' include
 ad06_count="$(report_count "$ad06")"
 assert_eq "$ad06_count" "0" "AD06: no skill or engine template mentions BLUEPRINT"
 [[ "$ad06_count" != "0" ]] && report_body "$ad06" | sed 's|^|    offender: |' >&2
+
+# ---------------------------------------------------------------------------
+# AD07: the shortcut (Lite) engine writes no SPEC.md.
+#
+# The Lite SPEC.md restated REQUIREMENTS.md: its Description, User Stories, Priority
+# and Acceptance Criteria were, in the engine's own words, "synthesized from
+# REQUIREMENTS.md ... not re-elicited". That is the same content in two places inside
+# one work, which is the exact failure this work was opened to remove -- and the one
+# that already produced two CRITICAL findings elsewhere when sibling specs asserted
+# different values for one shared fact.
+#
+# What Specify actually decides -- the technical specification -- now lives in the
+# `#### Technical Specification` subsection of the feature's `### Feature NNN` section
+# in REQUIREMENTS.md § 11. The criteria are CITED there by `AC-N` id rather than
+# copied, so § 9 stays their single home and no second wording can drift from it.
+#
+# Scope is the engine and its scaffolding only. `spec-template.md` and the full path's
+# own SPEC handling are NOT covered here: the full path still has a Specify phase with
+# its own artifact, and AC-13 governs the Lite path.
+# ---------------------------------------------------------------------------
+ad07="$(scan_tree "canonical/aid/templates/shortcut-engine.md canonical/aid/templates/shortcut-scaffolding" \
+        'SPEC\.md' include-fences)"
+ad07_count="$(report_count "$ad07")"
+assert_eq "$ad07_count" "0" "AD07: the shortcut engine and its scaffolding write no SPEC.md"
+[[ "$ad07_count" != "0" ]] && report_body "$ad07" | sed 's|^|    offender: |' >&2
 
 # ---------------------------------------------------------------------------
 echo ""

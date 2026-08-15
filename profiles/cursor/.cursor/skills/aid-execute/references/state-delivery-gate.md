@@ -105,8 +105,8 @@ Read the delivery's Execution Graph from:
   `### delivery-NNN` heading; the single delivery is implicit).
 - **Full path** — otherwise, `PLAN.md` in the work directory (`#### Execution
   Graph` block for this delivery).
-- **Lite path** — the work-root `SPEC.md` (`.aid/works/{work}/SPEC.md`), which
-  contains the merged delivery + dependency graph information.
+- **Lite path** — the same top-level `## Execution Graph` in the work-root `PLAN.md`
+  as the flat path above; the Lite layout has no separate graph source.
 
 Parse the `| Task | Depends On |` table to build the dependency map.
 

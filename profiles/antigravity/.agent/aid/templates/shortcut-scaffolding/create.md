@@ -70,7 +70,7 @@ activate none beyond the mandatory three):
 ## DETAIL -- default task breakdown, per artifact
 
 Every task chain below is one type per task (`artifact-schemas.md § Task
-SPEC.md` -- never mixed), natural ordering
+DETAIL.md` -- never mixed), natural ordering
 MIGRATE first when present, then RESEARCH -> DESIGN -> IMPLEMENT -> TEST ->
 DOCUMENT. This table is the **canonical artifact matrix** the `aid-update`/
 `aid-refactor` family (`shortcut-scaffolding/change-refactor.md`) inherits by

@@ -38,7 +38,7 @@ needs resource/endpoint/schema/security-notes), then adds:
 |---|---|
 | Current shape/behavior | what the artifact does/looks like **today** -- the delta's starting point |
 | Target shape/behavior | what it should do/look like **after** the change |
-| New acceptance criteria | the criteria this change introduces (§5.1 "new acceptance criteria") -- these become `SPEC.md § Acceptance Criteria`, not a rewrite of the artifact's pre-existing ones |
+| New acceptance criteria | the criteria this change introduces (§5.1 "new acceptance criteria") -- these become new `AC-N` entries in `REQUIREMENTS.md § 9`, not a rewrite of the artifact's pre-existing ones |
 | Rationale | why the change is needed (bug report, new requirement, deprecation, etc.) |
 
 **Escalation.** Same rule as the generic engine and `create.md`: escalate to
@@ -83,7 +83,7 @@ description does not clearly name `rename` or `performance`.
 
 The mandatory three sections (`### Data Model`, `### Feature Flow`,
 `### Layers & Components`) always apply, per the engine's own contract
-(`shortcut-engine.md § State: SPEC` -- every generated SPEC.md carries the
+(`shortcut-engine.md § State: SPEC` -- every generated feature section carries the
 mandatory three, `create.md § SPEC` likewise) -- `aid-refactor` activates no
 additional conditional section for any `refactor-kind`. `### Data Model` and
 `### Feature Flow` both read "unchanged -- behavior-preserving refactor" by

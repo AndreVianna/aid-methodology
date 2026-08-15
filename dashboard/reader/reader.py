@@ -1696,7 +1696,10 @@ def _parse_plan_delivery_titles(plan_text: str) -> dict[str, str]:
 
         heading = re.compile(r"^#{2,}\s+(delivery-\d+)\s*:\s*(.+?)\s*$", re.IGNORECASE)
         bullet = re.compile(
-            r"^[-*]\s+\*\*Delivery:\*\*\s*(delivery-\d+)\s*(?:--|—|-)\s*(.+?)\s*$",
+            # Em dash as \u2014 rather than literal, matching the Node twin, which is
+            # ASCII-only enforced. Keeping both spellings identical means the two
+            # patterns can be diffed by eye.
+            "^[-*]\\s+\\*\\*Delivery:\\*\\*\\s*(delivery-\\d+)\\s*(?:--|\u2014|-)\\s*(.+?)\\s*$",
             re.IGNORECASE,
         )
         for line in plan_text.splitlines():

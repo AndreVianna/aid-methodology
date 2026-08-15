@@ -77,7 +77,7 @@ assert_output_contains "$PROTO_TXT" \
 # throwaway model directly and emits NO SPEC.md and NO tasks; a prototype is throwaway
 # (no schema change). (Was an engine family with a generated SPEC + task table; detached.)
 assert_output_contains "$PROTO_TXT" \
-    'emits no `SPEC.md`. A prototype is' \
+    'emits no spec document. A prototype' \
     "PFS03a aid-prototype collapse emits no SPEC.md"
 assert_output_contains "$PROTO_TXT" \
     'throwaway (no schema change)' \
@@ -89,7 +89,7 @@ assert_output_contains "$PROTO_TXT" \
 # PFS-04: aid-prototype-ui likewise emits no SPEC.md (its interaction flow / a11y notes are
 # part of the wireframe, not a ### UI Specs SPEC section).
 assert_output_contains "$PROTO_TXT" \
-    'A ui prototype likewise emits no `SPEC.md`' \
+    'A ui prototype likewise emits no spec document' \
     "PFS04 aid-prototype-ui emits no SPEC.md"
 
 # PFS-05: aid-prototype BUILD -- low-fidelity model + optional throwaway spike, never production.
