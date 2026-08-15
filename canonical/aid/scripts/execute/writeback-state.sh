@@ -246,29 +246,54 @@ resolve_work_dir() {
     fi
 }
 
-# wb_get_pipeline_path: echo the work-root STATE.md frontmatter `pipeline.path`
-# value, lowercased, or nothing when there is no frontmatter block, no
-# `pipeline:` mapping, or no `path:` under it. Never throws.
+# wb_get_pipeline_path: echo the work-root STATE.yml `pipeline.path` value,
+# lowercased, or nothing when there is no `pipeline:` mapping, no `path:` under
+# it, or no state file. Never throws.
 #
 # The key is NESTED (`pipeline:` then an indented `path:`), matching what the
 # reader twins flatten to `pipeline.path` (state_schema.py documents the
 # mapping: `pipeline:\n  path: lite` -> `{"pipeline.path": "lite"}`).
+#
+# STATE.yml only -- no STATE.md fallback, matching reader.py
+# _declared_work_path and reader.mjs _declaredWorkPath exactly. SP-9 routes a
+# work holding the retired markdown name to the legacy detector, which
+# diagnoses rather than parses, so a fallback here would contradict that policy
+# AND put this function out of step with its twins.
+#
+# The scalar handling below is not decoration. Those twins delegate to the
+# shared D-3 subset engine; this one hand-rolls YAML in awk, so every scalar
+# form the engine accepts has to be reproduced here by hand or the three
+# disagree on the same file. Three forms were found diverging and are covered
+# by cases WB-* in tests/canonical/test-writeback-state.sh: a CRLF file (awk's
+# `$` anchors sat behind a stray \r, so `pipeline:` never matched and the value
+# read empty), a single-quoted `'lite'` (only double quotes were stripped), and
+# a trailing `# comment` (kept verbatim, so the value compared equal to
+# nothing). Extending this parser means extending those cases too.
 wb_get_pipeline_path() {
     resolve_work_dir
-    local state=""
-    if   [[ -f "${WORK_DIR}/STATE.yml" ]]; then state="${WORK_DIR}/STATE.yml"
-    elif [[ -f "${WORK_DIR}/STATE.md"  ]]; then state="${WORK_DIR}/STATE.md"
-    else return 0
-    fi
+    local state="${WORK_DIR}/STATE.yml"
+    [[ -f "$state" ]] || return 0
     awk '
-        /^---[ \t]*$/                  { next }          # legacy STATE.md fences
-        /^[ \t]*#/                     { next }          # YAML comments
+        BEGIN { sq = sprintf("%c", 39); dq = "\"" }
+        { sub(/\r$/, "") }                               # CRLF -> LF, every line
+        /^[ \t]*#/                     { next }          # whole-line YAML comment
         /^pipeline:[ \t]*$/            { inp = 1; next }
         inp && /^[ \t]+path:[ \t]*/ {
             sub(/^[ \t]+path:[ \t]*/, "")
-            gsub(/^["]|["]$/, "")
-            gsub(/[ \t]+$/, "")
-            print tolower($0)
+            v = $0
+            c = substr(v, 1, 1)
+            if (c == dq || c == sq) {
+                # Quoted: the value is the quoted span. A # inside it is
+                # literal, so comment-stripping must not run.
+                v = substr(v, 2)
+                i = index(v, c)
+                if (i > 0) v = substr(v, 1, i - 1)
+            } else {
+                # Plain: a # begins a comment only after whitespace.
+                sub(/[ \t]+#.*$/, "", v)
+            }
+            gsub(/[ \t]+$/, "", v)
+            print tolower(v)
             exit
         }
         inp && /^[^ \t#]/              { inp = 0 }       # a dedented key ends the mapping
@@ -290,8 +315,10 @@ wb_get_pipeline_path() {
 # whose state file carries no `pipeline:` mapping -- a work-root BLUEPRINT.md AND
 # at least one `tasks/task-NNN/DETAIL.md` AND no `deliveries/` wrapper. That
 # fallback is filename-independent (SP-7) and so was unchanged by the
-# STATE.md -> STATE.yml rename; the DECLARED read is not, and reads STATE.yml
-# first with STATE.md as the legacy path.
+# STATE.md -> STATE.yml rename. The DECLARED read is filename-dependent and
+# reads STATE.yml ONLY -- no STATE.md fallback, matching both reader twins;
+# SP-9 sends a work still holding the retired name to the legacy detector,
+# which diagnoses instead of parsing.
 #
 # This is the same declared-first-then-infer shape reader.mjs already documents
 # for the `workPath` field ("stop inferring via _detectFlat/_detectHierarchy when
