@@ -21,7 +21,7 @@ SCOPE: {{SCOPE}}   # one of: per-deliverable | whole-plan
   per-deliverable: Grade ONE newly-written delivery against its dependencies +
                    the standalone-functional criterion. Re-grade preceding
                    deliveries only if this one introduces a sequencing conflict.
-  whole-plan:      Re-grade all deliveries against current SPECs + REQUIREMENTS.
+  whole-plan:      Re-grade all deliveries against the current REQUIREMENTS.md.
 
 RUBRIC: .claude/aid/templates/grading-rubric.md (universal severity → grade table)
   Grade PLAN.md deliverables for:
@@ -47,7 +47,7 @@ DECLARED REVIEW CRITERIA (resolve; do not invent):
 
 OUT OF SCOPE (do NOT grade against):
   - Per-task breakdown — that's /aid-detail's domain (a delivery has no "tasks" yet at /aid-plan time)
-  - SPEC.md internal content — that's /aid-specify's grade
+  - feature technical-specification content — that's /aid-specify's grade
   - REQUIREMENTS.md content — that's /aid-describe's grade
   - KB document accuracy — route KB-source findings to /aid-discover Q&A
   - Execution Graph for tasks (added later by /aid-detail)
@@ -70,14 +70,14 @@ DELIVERABLES:
 ## Substitution at dispatch time
 
 - `{{ARTIFACTS}}` — at per-deliverable scope: the `PLAN.md` deliverable section
-  just written + the feature SPECs assigned to it. At whole-plan scope:
-  full `PLAN.md` + all feature SPECs.
+  just written + the `§ 11` sections of the features assigned to it. At whole-plan
+  scope: full `PLAN.md` + all `§ 11` feature sections.
 - `{{CONTEXT}}` — short, descriptive-only background:
   ```
     (per-deliverable) delivery-NNN of work-NNN just written; preceding deliveries:
                       delivery-NNN..MMM (titles).
     (whole-plan)      PLAN.md for work-NNN with N deliveries; re-review against
-                      current SPECs.
+                      the current feature sections.
   ```
   Do NOT include the aid-architect's working notes, prior REVIEW cycle grades, or
   references to /aid-detail/aid-execute.

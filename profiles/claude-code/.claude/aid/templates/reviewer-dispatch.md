@@ -109,7 +109,7 @@ other path through unchanged.
 # sits at the work root, at deliveries/delivery-NNN/, or at
 # deliveries/delivery-NNN/tasks/task-NNN/ — the basename alone identifies it
 # at every level, in both the flattened and the full layout, so no directory
-# pattern is needed. Authored artifacts (REQUIREMENTS.md, SPEC.md, PLAN.md,
+# pattern is needed. Authored artifacts (REQUIREMENTS.md, PLAN.md,
 # tasks/task-NNN/DETAIL.md) never share that basename and pass through untouched.
 #
 # The `|| true` is load-bearing, not defensive habit: `grep -v` exits 1 when it

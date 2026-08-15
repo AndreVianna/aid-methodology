@@ -17,6 +17,7 @@
 #   AD06  BLUEPRINT.md is retired: no template, and no skill/engine writes one
 #   AD07  the shortcut (Lite) engine writes no SPEC.md (folded into REQUIREMENTS § 11)
 #   AD08  the shortcut (Lite) engine writes no PLAN.md either -- AC-13 in full
+#   AD09  the review path names no per-feature SPEC (a dead ARTIFACT, vs AD04 dead PATH)
 #
 # Two scope decisions, both load-bearing, both found by writing the naive version first
 # and reading what it flagged:
@@ -324,6 +325,40 @@ else
     fail "AD08b the shortcut engine must not instruct a PLAN.md write — ${ad08_count} mentions"
     report_body "$ad08" | sed 's|^|    offender: |' >&2
 fi
+
+# ---------------------------------------------------------------------------
+# AD09: the REVIEW path names no per-feature SPEC.
+#
+# The reviewer briefs, the dispatch template and the reviewer agent tell a review
+# agent WHAT TO LOAD. They were still naming "the feature's SPEC.md" and "all feature
+# SPECs" after both aid-define and aid-specify moved to REQUIREMENTS.md § 11 -- 23
+# mentions across 8 files, every one of them an instruction to load a file no work
+# produces any more.
+#
+# AD04 could not see them because it matches the PATH shape (`features/.../SPEC.md`),
+# and these say "SPEC.md" or "SPECs" with no path at all. Two different mistakes need
+# two different rules: one for a dead path, one for a dead artifact NAME on the
+# surface that consumes it.
+#
+# Scoped to the review path rather than all of canonical/, because a bare "SPEC.md"
+# is still legitimate elsewhere -- spec-template.md exists, and several skills discuss
+# specs generically. This rule governs the files that DISPATCH a reviewer, where the
+# name is an instruction rather than a description.
+# ---------------------------------------------------------------------------
+ad09_files=""
+for f in "${REPO}"/canonical/skills/*/references/reviewer-brief.md \
+         "${REPO}/canonical/skills/aid-detail/references/review.md" \
+         "${REPO}/canonical/skills/aid-plan/references/review-deliverables.md" \
+         "${REPO}/canonical/aid/templates/reviewer-dispatch.md" \
+         "${REPO}/canonical/agents/aid-reviewer/AGENT.md"; do
+    [[ -f "$f" ]] || continue
+    while IFS= read -r hit; do
+        [[ -n "$hit" ]] && ad09_files+="${f#${REPO}/}:${hit}"$'\n'
+    done < <(grep -nE 'SPEC\.md|\bSPECs\b' "$f" 2>/dev/null || true)
+done
+ad09_count="$(printf '%s' "$ad09_files" | grep -c . || true)"
+assert_eq "$ad09_count" "0" "AD09: no reviewer brief, dispatch template or reviewer agent names a per-feature SPEC"
+[[ "$ad09_count" != "0" ]] && printf '%s' "$ad09_files" | sed 's|^|    offender: |' >&2
 
 # ---------------------------------------------------------------------------
 echo ""

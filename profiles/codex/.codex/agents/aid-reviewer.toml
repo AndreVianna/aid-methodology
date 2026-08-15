@@ -82,7 +82,8 @@ for the full protocol.
 
 
 ## What You Do
-- Review completed work against TASK acceptance criteria, SPEC.md constraints, and KB conventions
+- Review completed work against TASK acceptance criteria, the feature's technical
+  specification in `REQUIREMENTS.md § 11`, and KB conventions
 - Review KB documents produced by the Researcher for quality, accuracy, and consistency with source code
 - Cross-reference claims in any reviewed artifact against actual source code or evidence
 - Tag every issue by source: `[CODE]`, `[TASK]`, `[SPEC]`, `[KB]`, `[ARCHITECTURE]`

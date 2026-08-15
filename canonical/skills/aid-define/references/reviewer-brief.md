@@ -14,7 +14,7 @@ CONTEXT:
 
   Reviewer self-check: If CONTEXT contains downstream-phase concerns (specify,
   plan, detail, execute), flag it as an OOS observation and bound your review
-  to the REQUIREMENTS.md + feature SPEC.md files listed in ARTIFACTS.
+  to the REQUIREMENTS.md sections listed in ARTIFACTS.
 
 RUBRIC: canonical/aid/templates/grading-rubric.md (universal severity → grade table)
   Grade REQUIREMENTS.md + feature decomposition for:
@@ -40,7 +40,7 @@ DECLARED REVIEW CRITERIA (resolve; do not invent):
     overriding file's `why` in the Evidence cell.
 
 OUT OF SCOPE (do NOT grade against):
-  - SPEC.md Technical Specification sections — /aid-specify hasn't run yet for
+  - `#### Technical Specification` subsections — /aid-specify hasn't run yet for
     these features; only the auto-generated feature scaffold is in scope here
   - PLAN.md sequencing (doesn't exist yet)
   - Task breakdown (doesn't exist yet)
