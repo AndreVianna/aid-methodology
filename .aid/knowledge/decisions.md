@@ -50,7 +50,7 @@ review-criteria:
 - [D10 — Polyglot, dual-channel, zero-dependency distribution](#d10--polyglot-dual-channel-zero-dependency-distribution)
 - [D11 — Content isolation + in-place root-file markers](#d11--content-isolation--in-place-root-file-markers)
 - [D12 — CLI install scope: cwd-driven, no scan, CODE/STATE split](#d12--cli-install-scope-cwd-driven-no-scan-codestate-split)
-- [D13 — Per-repo format_version stamp (git model)](#d13--per-repo-format_version-stamp-git-model)
+- [D13 — Per-repo `format_version` stamp (git model)](#d13--per-repo-format_version-stamp-git-model)
 - [D14 — Lite path + description-first TRIAGE](#d14--lite-path--description-first-triage)
 - [D15 — Nine agents in three tiers (role consolidation)](#d15--nine-agents-in-three-tiers-role-consolidation)
 - [D16 — PowerShell 5.1 compatibility floor](#d16--powershell-51-compatibility-floor)
@@ -63,6 +63,7 @@ review-criteria:
 - [D23 — Delivery and task definition rename (BLUEPRINT + DETAIL)](#d23--delivery-and-task-definition-rename-blueprint--detail)
 - [D24 — /aid-describe reduced to full-path-only](#d24--aid-describe-reduced-to-full-path-only)
 - [D25 — /aid-monitor re-point (BUG and Change-Request routing)](#d25--aid-monitor-re-point-bug-and-change-request-routing)
+- [D26 — No line-coverage metric (suite-presence coverage for a shell/markdown toolkit)](#d26--no-line-coverage-metric-suite-presence-coverage-for-a-shellmarkdown-toolkit)
 - [Still Load-Bearing](#still-load-bearing)
 
 ---

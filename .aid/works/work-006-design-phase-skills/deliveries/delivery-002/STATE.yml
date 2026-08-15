@@ -1,7 +1,7 @@
-delivery_state: Executing
-gate_tier: "--"
-gate_grade: "Pending"
-gate_timestamp: "--"
+delivery_state: Done
+gate_tier: "Large"
+gate_grade: "A+"
+gate_timestamp: "2026-08-15T04:10:00Z"
 ticket_ref: "--"
 
 delivery_lifecycle:
@@ -9,7 +9,13 @@ delivery_lifecycle:
   block_reason: --
   block_artifact: --
 delivery_gate:
-  issue_list: []
+  issue_list:
+    - 'Complexity Score: 54 (tasks=24, depth=21, risk=9, consults=0) -> tier Large. Computed with the upstream-fixed complexity-score.sh, whose --tasks-dir scan now reaches DETAIL.md under tasks/task-NNN/ (the maxdepth defect that forced delivery-001''s hand-correction was fixed on master at 801caf34).'
+    - 'Cycles: 1. All 24 tasks (026-049) reached Done before the gate, per the owner''s Q1 decision to batch reviews to the delivery level and trim per-task self-checks; the gate therefore carries the whole review burden for the delivery.'
+    - '13 findings adjudicated: 2 Fixed, 11 Accepted, 0 Pending/Recurred -> grade A+. FIXED: (1) aid-config:160''s doc_set enumeration, which no task owned -- completed from three create skills to all six, the set derived from the bodies rather than from the finding''s text, with aid-create-mvp named as the one planning sibling that registers nothing (CC-5); (2) decisions.md''s Contents gaps -- the reported D26 omission plus a second gap the finding missed, D13''s link text dropping the backticks its heading carries. Both documents now pass a comm -3 heading-vs-link-text comparison in both directions.'
+    - 'The gate produced two corrections of record rather than just confirmations. FIRST: the local master ref was 100 commits stale (75039593 vs origin/master a70316c6, with git rev-list HEAD..origin/master --count = 0), which made six of task-049''s diff oracles read as failures. Re-read against origin/master they pass exactly -- git diff -- tests/ is 0 lines rather than 33153, and the engine is +9/-0 across 2 hunks rather than +130/-81 across 22, which is precisely what feature-005 V13 demands. SECOND: the three suites failing in this VM had been logged under one gawk cause; they are two. test-domain-doc-matrix.sh and test-dogfood-byte-identity.sh fail on gawk''s 3-argument match($0,/re/,arr), reproduced in isolation and locale-independent; test-doc-set-mapping.sh T15 contains no such call and fails on locale collation, passing 21/21 under LC_ALL=C. Both content claims were then verified positively rather than assumed: MT01/MT02 recomputed in Python give software-cli=14 and software-web=14 required docs, byte-exact against the 14-doc synth_default_seed set.'
+    - 'Accepted with rationale, none of it fixable inside this delivery: the grid-row placement HIGH (presentational -- row order has no oracle, contiguity and the A<row<G8 bound hold, groups.mjs is unaffected because all 19 G3 rows are verb: design, and reordering would displace feature-003''s committed rows); the phase-not-driven oracle as ONE class defect across two independent wordings (work-state-template.yml:103 seeds a literal phase: Describe, so no conforming skill can make the grep return 0 -- the true property, that no run WRITES phase, was verified in every allocation across tasks 040-047); three stale-oracle LOWs (task-045''s F-noGate shape, task-047''s two-hunk premise, V25''s work-state-template.md path, the latter two both traceable to the stale-master root cause); and the two environment gaps above. tests/ is out of scope by feature-001 AC-3 and task-049''s own criterion requires git diff origin/master -- tests/ to be 0 lines, so the environment remedies are named for their owner rather than applied here.'
+    - 'One consequence recorded for delivery-003: the aid-config fix edits canonical/, so that file''s rendered copies are one line behind canonical until the next render. Not an unreverted render -- git status --porcelain profiles/ .claude/ .cursor/ is empty because the rendered copies are unmodified. delivery-003 owns the committed render and will carry this line.'
 qa:
   - id: 1
     category: 'Process'
