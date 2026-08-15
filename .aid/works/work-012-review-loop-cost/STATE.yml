@@ -28,15 +28,15 @@ minimum_grade: A
 # [W] 'yes' | 'no' -- quoted
 user_approved: 'yes'
 # [W] Running | Paused-Awaiting-Input | Blocked | Completed | Canceled
-lifecycle: Paused-Awaiting-Input
+lifecycle: Running
 # [W] Describe | Define | Specify | Plan | Detail | Execute
-phase: Plan
+phase: Detail
 # [W] aid-{skill} | none
-active_skill: none
+active_skill: aid-detail
 # [W]
-updated: '2026-08-15T05:20:30Z'
+updated: '2026-08-15T05:58:29Z'
 # [W] set only when lifecycle = Paused-Awaiting-Input
-pause_reason: 'Plan complete at A+ -- 1 delivery; run /aid-detail work-012'
+pause_reason: --
 # [W] set only when lifecycle = Blocked
 block_reason: --
 # [W] e.g. IMPEDIMENT-task-NNN.md, or the failed gate

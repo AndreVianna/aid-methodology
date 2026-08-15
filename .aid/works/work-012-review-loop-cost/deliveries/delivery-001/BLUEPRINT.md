@@ -105,12 +105,27 @@ three features land here. Grouped by what they prove:
 
 ## Tasks
 
-*(None yet — `/aid-detail` writes the breakdown. The three ordering constraints in
-PLAN.md § Internal sequence bind that breakdown.)*
+Written by `/aid-detail`: 15 tasks in 10 waves. The execution graph, the wave assignment
+and the parallel-safety check live in `PLAN.md § Execution Graph`. `task-008` is FR-3 and
+the AC-1 measurement split point.
 
 | Task | Type | Title |
 |------|------|-------|
-| _none yet_ | | |
+| task-001 | IMPLEMENT | Review-cost meter: record and report |
+| task-002 | TEST | Meter test suite |
+| task-003 | IMPLEMENT | Declare the optional oracle: key and its exit contract |
+| task-004 | IMPLEMENT | Match selector grammar and oracle field in the criteria tables |
+| task-005 | IMPLEMENT | G-07 selector-partition oracle |
+| task-006 | IMPLEMENT | Reviewer instruction: run the oracle rather than re-read the criterion |
+| task-007 | TEST | Oracle behaviour and coverage measurement |
+| task-008 | IMPLEMENT | Split the cycle-2-and-later clause into verification and hunt |
+| task-009 | IMPLEMENT | Render the two artifact sets in the six reviewer briefs |
+| task-010 | IMPLEMENT | Guard 2: contradiction pass on cycle 1 of each multi-artifact review |
+| task-011 | IMPLEMENT | Pass the specify gate a requirements slice, not the whole document |
+| task-012 | IMPLEMENT | Record the scoped-cycle convention in the criteria tables |
+| task-013 | TEST | Scoping guards: seeded-defect verification |
+| task-014 | IMPLEMENT | Close-out render and dogfood resync |
+| task-015 | TEST | Final measurement and reporting |
 
 ## Dependencies
 

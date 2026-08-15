@@ -60,6 +60,41 @@ sample.
 moving FR-3's task later is not a scheduling preference, it is a reduction in the evidence
 AC-1 rests on.
 
+## Execution Graph — delivery-001
+
+15 tasks in 10 waves. Tasks in the same wave are independent and may run in parallel;
+independence was verified by comparing the file sets each task's Scope names, not asserted.
+
+| Wave | Tasks | What lands |
+|------|-------|------------|
+| 1 | `task-001` · `task-003` | the meter; the `oracle:` key declaration |
+| 2 | `task-002` · `task-004` · `task-006` | meter tests; the `Match` grammar (C-5); the reviewer instruction |
+| 3 | `task-005` | `G-07`'s oracle |
+| 4 | `task-007` | oracle behaviour + the AC-11 coverage measurement |
+| **5** | **`task-008`** | **FR-3 — the scoped hunt. THE MEASUREMENT SPLIT POINT.** |
+| 6 | `task-009` · `task-010` · `task-012` | the six briefs; Guard 2; the scoped-cycle note (C-5) |
+| 7 | `task-011` | FR-14's requirements slice |
+| 8 | `task-013` | the seeded-defect guard tests |
+| 9 | `task-014` | the single full render + dogfood resync |
+| 10 | `task-015` | the final measurement and report |
+
+**The split point is wave 5, and its position is the constraint, not a preference.**
+`task-008` is the first `feature-003` task, satisfying the BLUEPRINT's gate criterion that
+no `feature-003` task precedes it. It cannot move earlier: FR-3 depends on the oracle work
+(§10 step 2), which depends on the meter (§10 step 1). Everything in waves 6–10 is reviewed
+under the scoped rule and forms AC-1's **after** sample; waves 2–4 form the **before**
+sample. Six tasks before, seven after.
+
+**One dependency is a file collision rather than a logical one.** `task-011` waits on
+`task-009` only because both edit
+`canonical/skills/aid-specify/references/reviewer-brief.md`. They are logically independent
+and would otherwise share wave 6; the serialisation is recorded in `task-011`'s DETAIL so a
+later reader does not merge them back.
+
+**Two tasks touch `.aid/knowledge/authoring-conventions.md`** — `task-004` (the `Match`
+grammar and `oracle:` field) and `task-012` (the scoped-cycle note). They sit in different
+waves, so they never contend, and each is one of the three edits C-5 enumerates.
+
 ## Cross-Cutting Risks
 
 | # | Risk | Impact | Mitigation |
