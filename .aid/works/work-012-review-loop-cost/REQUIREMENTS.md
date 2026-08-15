@@ -17,6 +17,8 @@
 | 2026-08-14 | **Q-02 answered (owner).** An `oracle:` value is a repo-root-relative path and oracles live outside `canonical/` — one resolution rule for AID and adopters alike, and no oracle in the render chain. FR-8 and NFR-5 updated | owner |
 | 2026-08-14 | **`work-009` merged; state format 3 → 4.** This work's `STATE.md` converted to `STATE.yml`; the two cross-references above re-pointed. No requirement changed — the merge touches none of the four L5 edit sites | /aid-describe |
 | 2026-08-14 | **Q-03 answered (owner).** The measurement subject is named at Define rather than now, so the choice rests on the gate inventory Define produces. AC-1 and §10 step 1 record it as a Define deliverable owed before Specify | owner |
+| 2026-08-15 | **`work-009` and the `aid-graph` removal merged.** All ten grounding claims re-verified; no requirement changed by either merge | /aid-describe |
+| 2026-08-15 | **Q-04 answered (owner).** Oracle generation is lazy — the trigger is a second re-derivation of the same criterion, so the payback evidence precedes the script. FR-10 carries the rule; FR-13 records why `G-07` is not delayed by it. **All four questions now answered** | owner |
 
 ## 1. Objective
 
@@ -142,14 +144,19 @@ guarding around it.
 - **FR-9** A criterion carrying an oracle is decided by RUNNING the oracle rather than by
   a reviewer re-reading the criterion.
 - **FR-10** An oracle is generated once, in the project's own terms, and is then re-run
-  unchanged on every cycle.
+  unchanged on every cycle. **Generation is LAZY** (owner decision, STATE.yml Q-04): the
+  trigger is a reviewer re-deriving the same criterion a second time, so the evidence that
+  the oracle pays for itself exists before the script does. This is what enforces NFR-1
+  rather than trusting it — an author is never asked to predict recurrence.
 - **FR-11** An oracle's verdict maps into the existing ledger without changing its shape:
   the criterion `id` stays a prefix in the `Description` cell, and the oracle's invocation
   and output go in `Evidence`.
 - **FR-12** An oracle that is missing, non-executable, or that crashes DEGRADES to the
   existing read-based judgment and reports the degradation. It never silently passes and
   never silently fails the criterion.
-- **FR-13** `G-07` ships an oracle as the worked example.
+- **FR-13** `G-07` ships an oracle as the worked example. It does not wait on FR-10's lazy
+  trigger: L5 already records `G-07` being re-derived by hand every cycle, so its
+  recurrence evidence predates the rule rather than needing to be gathered under it.
 
 **Related, at the same edit sites**
 

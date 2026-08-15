@@ -34,9 +34,9 @@ phase: Describe
 # [W] aid-{skill} | none
 active_skill: aid-describe
 # [W]
-updated: '2026-08-15T01:14:00Z'
+updated: '2026-08-15T01:25:00Z'
 # [W] set only when lifecycle = Paused-Awaiting-Input
-pause_reason: 'Awaiting owner approval; Q-01..Q-03 answered, Q-04 open (Specify-time)'
+pause_reason: 'All four Q&A answered; awaiting owner approval of REQUIREMENTS.md to advance to /aid-define'
 # [W] set only when lifecycle = Blocked
 block_reason: --
 # [W] e.g. IMPEDIMENT-task-NNN.md, or the failed gate
@@ -196,6 +196,15 @@ lifecycle_history:
       to drop graph rows and refresh corpus counts (76->75 skills,
       133->135 suites) -- L5 is not in that diff, and this work cites no
       skill or suite count. No requirement changed.
+  - date: '2026-08-15'
+    event: 'Describe: Q-04 answered (owner) -- Q&A backlog closed'
+    grade: --
+    notes: >-
+      Oracle generation is lazy: a reviewer re-deriving the same criterion a
+      second time is the trigger, so the payback evidence precedes the
+      script. FR-10 carries the rule and FR-13 records why G-07 is exempt
+      from the wait. All four questions are now Answered; nothing but the
+      approval itself stands between this work and /aid-define.
 
 # [A] aid-deploy only; one entry per delivery.
 deploy: []
@@ -313,7 +322,7 @@ qa:
   - id: 'Q-04'
     category: Process
     impact: Medium
-    state: Pending
+    state: Answered
     context: >-
       Who generates an oracle, and when? FR-10 says "generated once", but not
       whether that happens when the criterion is authored, or lazily the
@@ -324,5 +333,18 @@ qa:
       At criterion-authoring time when the author knows the check is
       mechanical; otherwise lazily, on the first cycle where a reviewer
       re-derives the same criterion twice.
-    answer: --
-    applied_to: --
+    answer: >-
+      OWNER DECISION 2026-08-14 -- option B, LAZY. An oracle is written the
+      first time a reviewer re-derives the same criterion a second time. The
+      recurrence is the trigger, so the evidence that the oracle pays for
+      itself exists BEFORE the script does -- which is what makes this the
+      only option that enforces NFR-1 rather than trusting it. Eager
+      authoring (option A) was rejected because it asks an author to PREDICT
+      recurrence, the same guess refused in Q-03; "eager when obvious, lazy
+      otherwise" (option C) was rejected because "plainly mechanical" is a
+      judgment that quietly becomes "always eager". The accepted cost is real
+      and small: two full-price cycles before any oracle appears. G-07 is not
+      delayed by this rule -- L5 already records it being re-derived every
+      cycle, so its evidence predates the rule and the worked example can be
+      written immediately.
+    applied_to: 'REQUIREMENTS.md FR-10 (the generation trigger) and FR-13 (G-07 exempt from the wait, evidence already on record)'
