@@ -3944,10 +3944,53 @@ function _parseTaskSpecType(specText) {
   return "";
 }
 
+// Exported for the cross-runtime parity test only (its Python twin is importable as
+// a module-level function, so the Node side must be reachable too). Not part of the
+// reader's consumed surface -- readRepo/readRepoDetail call it internally.
+export function _parsePlanDeliveryTitles(planText) {
+  // Map deliveryId -> title from PLAN.md's delivery stanzas.
+  // Mirror reader.py _parse_plan_delivery_titles.
+  //
+  // PLAN.md now carries the delivery DEFINITION, so its stanza is the title's home;
+  // the retired per-delivery BLUEPRINT.md H1 is only consulted for works created
+  // before the fold.
+  //
+  // Two spellings, because the two layouts spell the stanza differently and both are
+  // current:
+  //   - nested:    '### delivery-001: Some Title'
+  //   - flattened: '- **Delivery:** delivery-001 -- Some Title'
+  // The flattened PLAN.md emits NO '### delivery-NNN' heading by design, so the
+  // bullet form is the only one it has.
+  //
+  // Template placeholders ('{Name}') are rejected, matching _parseDeliverySpecTitle.
+  const titles = {};
+  try {
+    const heading = /^#{2,}\s+(delivery-\d+)\s*:\s*(.+?)\s*$/i;
+    const bullet = /^[-*]\s+\*\*Delivery:\*\*\s*(delivery-\d+)\s*(?:--|—|-)\s*(.+?)\s*$/i;
+    for (const line of planText.split("\n")) {
+      const stripped = line.trim();
+      const m = stripped.match(heading) || stripped.match(bullet);
+      if (!m) continue;
+      const deliveryId = m[1].toLowerCase();
+      const title = m[2].trim();
+      // First stanza wins, as in the Python twin.
+      if (title && !title.startsWith("{") && !(deliveryId in titles)) {
+        titles[deliveryId] = title;
+      }
+    }
+  } catch (_) {
+    return {};
+  }
+  return titles;
+}
+
 function _parseDeliverySpecTitle(specText) {
   // Extract the delivery title from a delivery-level BLUEPRINT.md.
   // Mirror parsers.py _parse_delivery_spec_title.
   // Returns the title portion after '# ... delivery-NNN: Title', or null.
+  //
+  // LEGACY source, kept for works created before the delivery definition folded
+  // into PLAN.md's stanza. Callers prefer the PLAN.md title and only fall back here.
   try {
     for (const line of specText.split("\n")) {
       const stripped = line.trim();
@@ -4252,6 +4295,22 @@ function _readWorkHierarchical(workDir, workId) {
   const [taskLaneMap, planBytes] = parseExecutionGraph(planPath);
   bytesRead += planBytes;
 
+  // Delivery titles come from the same file. Its bytes are NOT added again --
+  // parseExecutionGraph above already counted this exact read, and counting it twice
+  // would overstate the byte budget. Mirrors reader.py.
+  let planDeliveryTitles = {};
+  {
+    let planIsFile = false;
+    try { planIsFile = statSync(planPath).isFile(); } catch (_) { planIsFile = false; }
+    if (planIsFile) {
+      try {
+        planDeliveryTitles = _parsePlanDeliveryTitles(readFileBounded(planPath).toString("utf-8"));
+      } catch (_) {
+        planDeliveryTitles = {};
+      }
+    }
+  }
+
   // Enumerate deliveries and their tasks from the hierarchy
   const allTasks = [];
   const allDeliverables = [];
@@ -4387,21 +4446,29 @@ function _readWorkHierarchical(workDir, workId) {
       });
     }
 
-    // Build DeliverableRef for this delivery
-    const deliverySpecPath = join(deliveryDir, "BLUEPRINT.md");
+    // Build DeliverableRef for this delivery.
+    // Title resolution: PLAN.md stanza -> legacy BLUEPRINT.md H1 -> deliveryId.
+    // PLAN.md's stanza is the delivery definition now, so it is authoritative; the
+    // BLUEPRINT read survives only for works predating the fold.
     let deliveryName = deliveryId;
-    let deliverySpecIsFile = false;
-    try { deliverySpecIsFile = statSync(deliverySpecPath).isFile(); } catch (_) { deliverySpecIsFile = false; }
+    const planTitle = planDeliveryTitles[deliveryId.toLowerCase()];
+    if (planTitle) {
+      deliveryName = planTitle;
+    } else {
+      const deliverySpecPath = join(deliveryDir, "BLUEPRINT.md");
+      let deliverySpecIsFile = false;
+      try { deliverySpecIsFile = statSync(deliverySpecPath).isFile(); } catch (_) { deliverySpecIsFile = false; }
 
-    if (deliverySpecIsFile) {
-      try {
-        const raw = readFileBounded(deliverySpecPath);
-        bytesRead += raw.length;
-        const specText = raw.toString("utf-8");
-        const specName = _parseDeliverySpecTitle(specText);
-        if (specName) deliveryName = specName;
-      } catch (_) {
-        // pass
+      if (deliverySpecIsFile) {
+        try {
+          const raw = readFileBounded(deliverySpecPath);
+          bytesRead += raw.length;
+          const specText = raw.toString("utf-8");
+          const specName = _parseDeliverySpecTitle(specText);
+          if (specName) deliveryName = specName;
+        } catch (_) {
+          // pass
+        }
       }
     }
 

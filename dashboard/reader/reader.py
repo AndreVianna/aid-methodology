@@ -1424,6 +1424,18 @@ def _read_work_hierarchical(
     task_lane_map, plan_bytes = parse_execution_graph(plan_path)
     bytes_read += plan_bytes
 
+    # Delivery titles come from the same file. Its bytes are NOT added again --
+    # parse_execution_graph above already counted this exact read, and counting it
+    # twice would overstate the byte budget io_bounds enforces.
+    plan_delivery_titles: dict[str, str] = {}
+    if plan_path.is_file():
+        try:
+            plan_delivery_titles = _parse_plan_delivery_titles(
+                read_bytes_bounded(plan_path).decode("utf-8", errors="replace")
+            )
+        except OSError:
+            plan_delivery_titles = {}
+
     # -----------------------------------------------------------------------
     # Enumerate deliveries and their tasks from the hierarchy
     # -----------------------------------------------------------------------
@@ -1547,19 +1559,25 @@ def _read_work_hierarchical(
             ))
 
         # ---- Build DeliverableRef for this delivery ----
-        # Use the delivery BLUEPRINT.md title as the name, falling back to delivery_id
-        delivery_spec_path = delivery_dir / "BLUEPRINT.md"
+        # Title resolution: PLAN.md stanza -> legacy BLUEPRINT.md H1 -> delivery_id.
+        # PLAN.md's stanza is the delivery definition now, so it is the authoritative
+        # source; the BLUEPRINT read survives only for works predating the fold.
         delivery_name = delivery_id
-        if delivery_spec_path.is_file():
-            try:
-                raw = read_bytes_bounded(delivery_spec_path)
-                bytes_read += len(raw)
-                spec_text = raw.decode("utf-8", errors="replace")
-                spec_name = _parse_delivery_spec_title(spec_text)
-                if spec_name:
-                    delivery_name = spec_name
-            except OSError:
-                pass
+        plan_title = plan_delivery_titles.get(delivery_id.lower())
+        if plan_title:
+            delivery_name = plan_title
+        else:
+            delivery_spec_path = delivery_dir / "BLUEPRINT.md"
+            if delivery_spec_path.is_file():
+                try:
+                    raw = read_bytes_bounded(delivery_spec_path)
+                    bytes_read += len(raw)
+                    spec_text = raw.decode("utf-8", errors="replace")
+                    spec_name = _parse_delivery_spec_title(spec_text)
+                    if spec_name:
+                        delivery_name = spec_name
+                except OSError:
+                    pass
 
         all_deliverables.append(DeliverableRef(
             number=delivery_number,
@@ -1653,8 +1671,55 @@ def _parse_task_spec_type(spec_text: str) -> str:
     return ""
 
 
+def _parse_plan_delivery_titles(plan_text: str) -> dict[str, str]:
+    """Map delivery_id -> title from PLAN.md's delivery stanzas.
+
+    PLAN.md now carries the delivery DEFINITION, so its stanza is the title's home;
+    the retired per-delivery BLUEPRINT.md H1 is only consulted for works created
+    before the fold (see _delivery_title).
+
+    Two spellings, because the two layouts spell the stanza differently and both are
+    current:
+      - nested:    '### delivery-001: Some Title'
+      - flattened: '- **Delivery:** delivery-001 -- Some Title'
+    The flattened PLAN.md emits NO '### delivery-NNN' heading by design -- two
+    execute-graph scripts key off that heading's absence -- so the bullet form is the
+    only one it has.
+
+    Template placeholders ('{Name}') are rejected, matching _parse_delivery_spec_title:
+    an unfilled scaffold has no title, and showing the braces would be worse than
+    falling back to the delivery id. Returns {} on any parse trouble; never raises.
+    """
+    titles: dict[str, str] = {}
+    try:
+        import re
+
+        heading = re.compile(r"^#{2,}\s+(delivery-\d+)\s*:\s*(.+?)\s*$", re.IGNORECASE)
+        bullet = re.compile(
+            r"^[-*]\s+\*\*Delivery:\*\*\s*(delivery-\d+)\s*(?:--|—|-)\s*(.+?)\s*$",
+            re.IGNORECASE,
+        )
+        for line in plan_text.splitlines():
+            stripped = line.strip()
+            match = heading.match(stripped) or bullet.match(stripped)
+            if not match:
+                continue
+            delivery_id, title = match.group(1).lower(), match.group(2).strip()
+            # First stanza wins: a later duplicate heading is malformed input, and
+            # silently preferring the last one would hide it.
+            if title and not title.startswith("{") and delivery_id not in titles:
+                titles[delivery_id] = title
+    except Exception:  # noqa: BLE001
+        return {}
+    return titles
+
+
 def _parse_delivery_spec_title(spec_text: str) -> Optional[str]:
     """Extract the delivery title from a delivery-level BLUEPRINT.md.
+
+    LEGACY source, kept for works created before the delivery definition folded into
+    PLAN.md's stanza. _delivery_title prefers the PLAN.md title and only falls back
+    here, so this reads a file that new works do not have.
 
     Reads the H1 heading: '# Delivery BLUEPRINT -- delivery-NNN: {Title}'
     or a shorter form: '# delivery-NNN: {Title}'
