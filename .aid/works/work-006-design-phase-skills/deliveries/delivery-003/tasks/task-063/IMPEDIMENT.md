@@ -60,6 +60,42 @@ them. A report claiming the key *sets* are identical would be false; the claim i
 inventory rather than from `deriveSkillCounts`, that the `shortcuts` (emitting) quantity is still
 **34**.
 
+## 2a. Confirmed against a real CI run (2026-08-15)
+
+The PR's `coverage-parity` job ran the diff with `--collect` on this branch. Its verdict and the
+numbers behind it:
+
+```
+RESULT: FAIL -- 41 un-excused reduction(s), 0 claimed-but-not-landed re-home(s)
+  removed/reduced (41):  36 x test-catalog-dirs-parity.sh CDP{i}e/f/g  (indices 14-23, 52-53)
+                          5 x test-downstream-worktree-entry.sh  G2 ...
+  added (net-new, 191): 180 x test-catalog-dirs-parity.sh
+                          5 x test-downstream-worktree-entry.sh
+                          4 x test-dogfood-byte-identity.sh
+                          2 x test-spine-depth-coverage.sh
+```
+
+**The prediction in §2 is confirmed exactly.** For `test-catalog-dirs-parity.sh`, the suite §4c
+scopes the figure to: `180 added - 36 removed` = **+144**, the precise number predicted before the
+run.
+
+**No coverage was actually lost.** Every "reduction" has a matching addition, and both groups are
+label churn rather than a missing assertion:
+
+- The 36 `CDP{i}e/f/g` reductions are the **position shift** §2 describes -- `CDP{i}` is indexed by
+  a row's position in the catalog, and 36 rows were inserted mid-file, so the same assertions now
+  carry different indices. This is exactly why the row-set claim is a *count*, not a key-set
+  identity.
+- The 5 `test-downstream-worktree-entry.sh` `G2` reductions are subtler and worth recording: those
+  labels **embed line numbers** (e.g. *"pointer line 168 < anchor line 174"*), and `normalize_key`
+  cannot reduce `G2` to an ID token -- its pattern needs two or more leading letters -- so the whole
+  label, line numbers included, becomes the key. Rewriting the descriptions in `aid-define`,
+  `aid-deploy`, `aid-detail`, `aid-execute` and `aid-plan` moved those lines, so each key was
+  reported removed and re-added. The assertions still run and still pass.
+
+This is precisely the corpus-wide shift the runbook says must be answered by a **re-bootstrap**
+rather than by editing rows, and it is what `test-landscape.md` now records.
+
 ## 3. Preconditions this task owed its successors, all met
 
 - **task-062 landed first**, which is the ordering reason this task exists here: `coverage-parity`
