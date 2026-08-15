@@ -105,7 +105,7 @@
 #   repurpose     (optional, boolean, default `false`) -- `true` for rows whose
 #                 `SKILL.md` is hand-authored rather than generated. The maintainer
 #                 build helper (`build-shortcut-skills.py`) SKIPS `repurpose: true`
-#                 rows -- it never generates or overwrites their `SKILL.md`. 24 rows
+#                 rows -- it never generates or overwrites their `SKILL.md`. 60 rows
 #                 carry `repurpose: true`.
 #
 # ---------------------------------------------------------------------------
@@ -142,7 +142,7 @@ shortcuts:
     group: G6
     intent: "Diagnose and correct a defect, regression, incident, or vulnerability."
 
-  # --- G4: Create family (feature-006, task-015) -- 16 canonical rows (12 in this
+  # --- G4: Create family (feature-006, task-015) -- 23 canonical rows (19 in this
   # section; aid-create-test in G7, aid-create-document and aid-create-diagram in G8,
   # aid-create-dashboard in G11) ---
   - name: aid-create
@@ -287,8 +287,11 @@ shortcuts:
     repurpose: true
 
   # --- G5: Change + Refactor family (feature-007, task-017) --
-  # -- 15 canonical aid-update* rows (12 in this section; aid-update-test in G7,
-  # -- aid-update-document in G8, aid-update-dashboard in G11) + aid-refactor.
+  # -- 22 canonical aid-update* rows (15 in this section; the four foundation rows
+  # -- aid-update-{architecture,stack,testing-strategy,cicd} sit under the
+  # -- Remove + Deprecate + Migrate header below, though their group: field is G5;
+  # -- aid-update-test in G7, aid-update-document in G8, aid-update-dashboard in G11)
+  # -- + aid-refactor.
   # -- aid-refactor is bare with no artifact suffixes.
   - name: aid-update-roadmap
     verb: update
