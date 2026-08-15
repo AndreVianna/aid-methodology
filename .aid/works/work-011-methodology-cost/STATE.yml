@@ -27,9 +27,9 @@ lifecycle: Running
 
 phase: Execute
 
-active_skill: none
+active_skill: aid-review
 
-updated: '2026-08-15T01:30:00Z'
+updated: '2026-08-15T01:36:00Z'
 
 pause_reason: --
 
@@ -121,8 +121,20 @@ qa:
     updated: '2026-08-15'
   - id: Q7
     question: 'This branch has had no independent review'
-    state: Open
-    answer: 'Every commit was written and self-verified by the same agent. Phase 1 shipped two real bugs under 48 passing tests, found only when the owner asked for an audit. REQUIREMENTS.md now carries 14 verifiable criteria, so there is finally something to review against. Owed before AC-12/AC-13, which touch three lockstep implementations in a container that can run neither gawk nor pwsh.'
+    state: 'In Review'
+    answer: |
+      Every commit was written and self-verified by the same agent. Phase 1 shipped two
+      real bugs under 48 passing tests, found only when the owner asked for an audit.
+      REQUIREMENTS.md now carries 14 verifiable criteria, so there is finally something
+      to review against.
+
+      Dispatched 2026-08-15 as three parallel reviewers over the 75 hand-authored files
+      (the other 657 in the diff are rendered output), each in a clean context with no
+      access to the authoring rationale:
+        R1 criteria conformance -- is each Met claim in STATE.yml actually true
+        R2 code correctness     -- three lockstep layout impls, derive-waves, cost-meter
+        R3 prose consistency    -- canonical skill docs + KB, citations and stale refs
+      Ledgers at .aid/.temp/review-pending/aid-review-work-011-r{1,2,3}.md.
     decided_by: agent
     updated: '2026-08-15'
   - id: Q8
