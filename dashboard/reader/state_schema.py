@@ -830,6 +830,59 @@ SHORTCUT_KIND_MAP: dict[str, tuple[str, str]] = {
     "aid-monitor": ("monitor", ""),
     "aid-query-kb": ("query", ""),
     "aid-ask": ("query", ""),
+
+    # --- design-phase skill family ------------------------------------------
+    # Added AHEAD of the catalog rows that name them, which leg 3 of
+    # test_shortcut_kind_map_cross_runtime_parity explicitly permits: the map is a
+    # documented strict SUPERSET of the catalog, so a key with no row is legal while a
+    # row with no key is not. Seeding the keys first means the rows land green instead
+    # of landing red and being fixed afterwards.
+    #
+    # Verb and artifact are taken from the catalog rows themselves, not inferred from
+    # the skill names -- `aid-brainstorm` carries verb `brainstorm` with no artifact,
+    # which a name-splitting guess would have rendered as artifact "brainstorm".
+    #
+    # No enum to extend for the new `design` and `brainstorm` verbs: resolve_work_kind
+    # is pure string formatting, so ("design", "roadmap") renders "Design roadmap".
+    "aid-brainstorm": ("brainstorm", ""),
+
+    "aid-create-roadmap": ("create", "roadmap"),
+    "aid-create-backlog": ("create", "backlog"),
+    "aid-create-mvp": ("create", "mvp"),
+    "aid-create-architecture": ("create", "architecture"),
+    "aid-create-stack": ("create", "stack"),
+    "aid-create-testing-strategy": ("create", "testing-strategy"),
+    "aid-create-cicd": ("create", "cicd"),
+
+    "aid-update-roadmap": ("update", "roadmap"),
+    "aid-update-mvp": ("update", "mvp"),
+    "aid-update-backlog": ("update", "backlog"),
+    "aid-update-architecture": ("update", "architecture"),
+    "aid-update-stack": ("update", "stack"),
+    "aid-update-testing-strategy": ("update", "testing-strategy"),
+    "aid-update-cicd": ("update", "cicd"),
+
+    "aid-design-roadmap": ("design", "roadmap"),
+    "aid-design-mvp": ("design", "mvp"),
+    "aid-design-backlog": ("design", "backlog"),
+    "aid-design-api": ("design", "api"),
+    "aid-design-ui": ("design", "ui"),
+    "aid-design-theme": ("design", "theme"),
+    "aid-design-cli": ("design", "cli"),
+    "aid-design-data-model": ("design", "data-model"),
+    "aid-design-data-pipeline": ("design", "data-pipeline"),
+    "aid-design-messaging": ("design", "messaging"),
+    "aid-design-integration": ("design", "integration"),
+    "aid-design-job": ("design", "job"),
+    "aid-design-config": ("design", "config"),
+    "aid-design-infra": ("design", "infra"),
+    "aid-design-test": ("design", "test"),
+    "aid-design-document": ("design", "document"),
+    "aid-design-dashboard": ("design", "dashboard"),
+    "aid-design-architecture": ("design", "architecture"),
+    "aid-design-stack": ("design", "stack"),
+    "aid-design-testing-strategy": ("design", "testing-strategy"),
+    "aid-design-cicd": ("design", "cicd"),
 }
 
 # The FULL-pipeline starting skill -- never a shortcut-catalog.yml row (it
