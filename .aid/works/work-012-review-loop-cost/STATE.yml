@@ -28,15 +28,15 @@ minimum_grade: A
 # [W] 'yes' | 'no' -- quoted
 user_approved: 'yes'
 # [W] Running | Paused-Awaiting-Input | Blocked | Completed | Canceled
-lifecycle: Running
+lifecycle: Paused-Awaiting-Input
 # [W] Describe | Define | Specify | Plan | Detail | Execute
 phase: Define
 # [W] aid-{skill} | none
-active_skill: aid-define
+active_skill: none
 # [W]
-updated: '2026-08-15T02:34:13Z'
+updated: '2026-08-15T02:38:45Z'
 # [W] set only when lifecycle = Paused-Awaiting-Input
-pause_reason: --
+pause_reason: 'Define complete at A+ -- run /aid-specify work-012 to specify feature-001'
 # [W] set only when lifecycle = Blocked
 block_reason: --
 # [W] e.g. IMPEDIMENT-task-NNN.md, or the failed gate
@@ -49,7 +49,7 @@ ticket_ref: --
 #   grade: {grade} | Pending
 interview:
   state: Approved
-  grade: Pending
+  grade: 'A+'
   sections:
     - id: 1
       name: Objective
@@ -93,8 +93,9 @@ interview:
       updated: '2026-08-14'
   # [A] Approved by the owner on 2026-08-15 at COMPLETION step 5, after all
   #     ten sections reached Complete and all four qa entries were Answered.
-  #     grade stays Pending: /aid-describe runs no reviewer gate, so no
-  #     grade has been computed for this artifact.
+  #     grade was Pending through Describe (aid-describe runs no reviewer
+  #     gate) and is A+ from aid-define's CROSS-REFERENCE gate, cycle 3 --
+  #     9 rows Fixed, 1 OOS, 0 counting. Minimum was A.
   provenance: >-
     This interview was conducted against a written brief rather than a live
     turn-by-turn dialogue: the requester supplied the full proposal
@@ -344,6 +345,32 @@ lifecycle_history:
       shared fact as the source of both CRITICALs in this project's largest
       work. The work reproduced its own subject matter, on itself, inside
       Define. That is evidence for AC-13 rather than an embarrassment.
+  - date: '2026-08-15'
+    event: 'Define: CROSS-REFERENCE cycle 3 -- A+, gate PASSES'
+    grade: 'A+'
+    notes: >-
+      Rows 8, 9 and 10 verified Fixed. Rows 1-6 re-verified as still Fixed --
+      no regression to Recurred, which mattered because the cycle-2 fix pass
+      edited the same files a cycle-1 fix had touched. Row 7 stays OOS,
+      routed to Q-05. Final ledger: 9 Fixed, 1 OOS, 0 rows counting toward
+      the grade. Independently confirmed by the orchestrator with
+      `grade.sh --explain`, which reports A+ and 0 issues at every severity;
+      minimum was A. The cross-feature consistency sweep found the three
+      SPECs and REQUIREMENTS.md agreeing on every shared fact -- the metric
+      definitions, the measurement subject, the C-7 cap, and the FR-3
+      sequencing constraint. Grade arc across the gate: C+ -> D+ -> A+.
+  - date: '2026-08-15'
+    event: 'Define: DONE -- ledger deleted, work ready for /aid-specify'
+    grade: 'A+'
+    notes: >-
+      interview.grade set to A+. Per reviewer-ledger-schema.md step 5 the
+      ledger at .aid/.temp/review-pending/interview-work-012-cross-ref.md is
+      deleted at skill DONE, and the directory removed if empty -- a ledger
+      left behind is read as a live finding list by the next run. Three
+      features carry forward to Specify, along with two obligations already
+      recorded rather than left implicit: FR-3's task must land EARLY in
+      delivery-002 (AC-1's "after" sample depends on it), and C-7 caps the
+      work at 3 features and 2 deliveries.
 
 # [A] aid-deploy only; one entry per delivery.
 deploy: []

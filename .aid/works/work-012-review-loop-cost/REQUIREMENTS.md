@@ -24,6 +24,8 @@
 | 2026-08-15 | **Decomposed into 3 features (owner-approved), at the C-7 ceiling.** All 15 FRs and all 12 ACs map, none twice. FR-14 and the NFR-5 close-out folded into feature-003 rather than becoming a fourth feature | /aid-define |
 | 2026-08-15 | **Q-03 discharged.** AC-1's measurement subject named from the now-known gate inventory: this work's own per-task review cycles during Execute, split at FR-3's task. AC-1 updated, and the resulting sequencing constraint recorded for `/aid-plan` | /aid-define |
 | 2026-08-15 | **Cross-reference cycle 1 fixes (grade C+).** Four requirements were demanded by no criterion — **AC-13** added for FR-5, **AC-14/AC-15/AC-16** for FR-9/FR-10/FR-11. **AC-1 re-specified** around cycles-to-close plus a within-task re-read ratio, so task-size heterogeneity cancels instead of confounding the result; a raw cross-task byte comparison is now explicitly refused. FR-14's citation corrected to a durable anchor | /aid-define |
+| 2026-08-15 | **Cross-reference cycle 2 fixes (grade D+ — it went down).** The cycle-1 fix left `feature-001`'s SPEC restating the old AC-1, contradicting §9 — a requirement and a feature spec disagreeing about a shared fact, which is the exact failure class this work exists to address. Realigned, and both `feature-002` and `feature-003` had their `## Source` lists brought back in step with their criteria | /aid-define |
+| 2026-08-15 | **Cross-reference PASSED at A+ (cycle 3).** 9 findings Fixed, 1 routed OOS to `/aid-discover` as Q-05, 0 counting toward the grade against a minimum of A. Define complete; ready for `/aid-specify` | /aid-define |
 
 ## 1. Objective
 
