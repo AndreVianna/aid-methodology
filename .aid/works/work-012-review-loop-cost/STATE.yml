@@ -34,7 +34,7 @@ phase: Specify
 # [W] aid-{skill} | none
 active_skill: none
 # [W]
-updated: '2026-08-15T04:58:00Z'
+updated: '2026-08-15T04:58:22Z'
 # [W] set only when lifecycle = Paused-Awaiting-Input
 pause_reason: 'Specify complete -- 3 features Ready at A+; C-5 authorized, all Q&A answered; run /aid-plan work-012'
 # [W] set only when lifecycle = Blocked
@@ -660,7 +660,7 @@ qa:
   - id: 'Q-05'
     category: 'Knowledge Base / criteria registry'
     impact: Low
-    state: Pending
+    state: Answered
     context: >-
       Routed from the Define cross-reference ledger's one OOS row, per the
       out-of-scope findings policy. The type registry in
