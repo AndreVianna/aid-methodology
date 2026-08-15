@@ -189,6 +189,37 @@ qa:
       out because the rule governs artifacts, so they are out of scope rather than clean.
     decided_by: agent
     updated: '2026-08-15'
+  - id: Q14
+    question: 'Did the prose sweep break anything, and how would we know?'
+    state: Resolved
+    answer: |
+      It broke one thing, and the way it was caught is the point.
+
+      Renaming aid-plan's `### Check 2: Verify Feature SPECs` to `Verify Features` broke
+      the anchor test-downstream-worktree-entry.sh asserts against. Found by running the
+      WHOLE corpus against origin/master in a throwaway worktree and diffing the failure
+      sets: 16 suites fail on this branch, 15 of them fail on master too for want of gawk
+      and pwsh, and exactly one failed only here. Without the master baseline that one
+      regression would have been indistinguishable from the 15 standing environment
+      failures -- which is how a real break hides in a container that cannot run
+      everything.
+
+      Fixing the anchor exposed the underlying defect (item 10's first half, pulled
+      forward). assert_pointer_before and assert_strict_between appended matched LINE
+      NUMBERS to the pass message, and coverage-parity keys on the whole label, so any
+      unrelated edit that shifted a line minted a new key and read as coverage REMOVED.
+      The allowlist row already in the tree proved the cost: its target claimed
+      101 < 111 while the tree had drifted to 114 < 124, so the excuse it existed to
+      grant no longer matched anything. Stale on arrival.
+
+      Line numbers are evidence, not identity. Both helpers now send them to the verbose
+      stream. Six one-time re-home rows cover the re-key, each verified against the labels
+      the suite actually emits -- a rehome naming an absent target fails the gate as
+      "claimed but not landed", exactly as the stale row would have.
+
+      Corpus now: 15 failing, all 15 failing on master too. No branch-introduced failure.
+    decided_by: agent
+    updated: '2026-08-15'
   - id: Q11
     question: 'R2 review: do the three layout implementations actually agree?'
     state: Resolved
