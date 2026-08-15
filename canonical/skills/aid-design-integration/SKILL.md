@@ -2,12 +2,13 @@
 name: aid-design-integration
 description: >
   Develop an external-service integration design as a DESIGN SEED in
-  .aid/design/integration.md -- the external service, the client/adapter surface,
-  and the auth and failure modes. Grounded in the Knowledge Base (.aid/knowledge/)
-  and the project source. It WRITES NO production code and NO KB document --
-  realize the seed into the built client/adapter with /aid-create-integration once
-  it is ready. Produced by the aid-architect agent and independently verified by
-  aid-reviewer (full verify). Allocates a work-NNN folder.
+  .aid/design/integration.md -- the external service, the client/adapter surface, and the
+  auth and failure modes. Use this skill when how to talk to an external service is still
+  being worked out, including how failures should behave. Grounded in the Knowledge Base
+  (.aid/knowledge/) and the project source. It WRITES NO production code and NO KB document
+  -- realize the seed into the built client/adapter with /aid-create-integration once it is
+  ready. Produced by the aid-architect agent and independently verified by aid-reviewer
+  (full verify). Allocates a work-NNN folder.
 allowed-tools: Read, Glob, Grep, Bash, Write, Edit, Agent
 argument-hint: "<subject> -- the integration to design (service, client surface, auth/failure)"
 ---

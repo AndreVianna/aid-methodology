@@ -1,7 +1,7 @@
-state: Pending
-review: "--"
+state: Done
+review: 'Gate-deferred; 2 LOW logged for task-059/069 and task-072'
 elapsed: "--"
-notes: "--"
+notes: '15/15 triggered by insert, 0 neighbours lost, max 720. Sweep now closed over the whole roster: 111 skills (34 generated + 77 hand-authored; DETAILs say 112/78 -- the aid-graph off-by-one). Roster-wide: 0 over cap, 0 banned forms, 0 hyphen-broken names; 1 inherited arrow sequence and 2 detector false-negatives logged'
 ticket_ref: "--"
 
 quick_check:
