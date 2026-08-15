@@ -231,14 +231,25 @@ qa:
       hand-authored (`repurpose: true`, 60 rows now), not engine-driven, so AC-13 does not
       reach them.
 
-      WHAT WORK-006 WILL NEED FIXED, and it is in this work's own files: all 36 new
-      skills are absent from SHORTCUT_KIND_MAP in BOTH dashboard/reader/state_schema.py
-      and dashboard/server/reader.mjs. test-dashboard-reader.sh fails on work-006 ALONE
-      (verified against origin/work-006 in isolation, so it is not merge damage): leg 3
-      of its own parity suite asserts every catalog row has a key, and 36 have none. That
-      is 36 rows x 2 lockstep implementations -- the same pair whose divergence produced
-      three CRITICALs here, and the parity-harness pattern built for the title and lane
-      derivations applies directly.
+      WHAT WORK-006 NEEDED FIXED -- DONE, pre-emptively. All 36 new skills were absent
+      from SHORTCUT_KIND_MAP in BOTH dashboard/reader/state_schema.py and
+      dashboard/server/reader.mjs, so test-dashboard-reader.sh failed on work-006 ALONE
+      (verified against origin/work-006 in isolation, not inferred from a merge): leg 3
+      of its own parity suite asserts every catalog row has a key, and 36 had none.
+
+      Fixable from HERE, ahead of the merge, because leg 3 is deliberately
+      ONE-DIRECTIONAL -- the maps are a documented strict SUPERSET of the catalog, so a
+      key with no row is legal while a row with no key is not. All 11 parity tests pass on
+      this branch with the rows absent, and all 11 pass on a trial merge with them
+      present; both checked. On the merged tree: 94 catalog rows, 130 keys, zero
+      uncovered.
+
+      Two things worth having checked rather than assumed. Verb and artifact were taken
+      from work-006's catalog rows, not from splitting skill names -- which matters for
+      exactly one row, since `aid-brainstorm` carries verb `brainstorm` with NO artifact
+      and a name-split would have rendered "Brainstorm brainstorm". And the two new verbs
+      (`design`, `brainstorm`) needed no enum extended, because resolve_kind is pure
+      string formatting; a verb whitelist would have made this a far larger change.
 
       Also worth checking once merged, though no gate flags it yet: the new design-family
       skills produce design artifacts, and whether their acceptance criteria name
