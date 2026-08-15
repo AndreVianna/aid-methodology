@@ -117,7 +117,7 @@ This is the architecture that makes AID a *product*. It is a SYNTHESIS concept �
 
 **The flow:**
 
-1. `canonical/` holds the single source: `skills/` (76), `agents/` (9),
+1. `canonical/` holds the single source: `skills/` (75), `agents/` (9),
    `aid/{scripts,templates}`. CONFIRMED via directory listing.
 2. `python .claude/skills/generate-profile/scripts/run_generator.py` renders the source
    into the five `profiles/*` install trees, one per `profiles/*.toml`. CONFIRMED in
@@ -153,8 +153,8 @@ The five profile roots: `.claude/` (Claude Code), `.codex/` (Codex), `.cursor/` 
 (search: "The Five Profiles") and `profiles/*.toml`.
 
 **Note:** the generator/`generate-profile` skill is **maintainer-only** — it lives in
-`.claude/skills/generate-profile/` and is NOT one of the 76 shipped user-facing skills in
-`canonical/skills/`. CONFIRMED: `canonical/skills/` contains 76 dirs, none named
+`.claude/skills/generate-profile/` and is NOT one of the 75 shipped user-facing skills in
+`canonical/skills/`. CONFIRMED: `canonical/skills/` contains 75 dirs, none named
 `generate-profile`.
 
 ---
@@ -178,8 +178,8 @@ not a running order (the numbered phases carry the sequence). Phase 2 (Describe 
 Describe → Define Phase" below); every other numbered phase is one skill. Several lifecycle labels
 from everyday SDLC talk — Init, Implement, Review, Test, Track, Triage — are **not numbered
 phases**; the table below maps each label to what it really is (CONFIRMED in
-`docs/aid-methodology.md` "Skill Inventory" and the `canonical/skills/` listing — **76 skill
-directories**: 18 curated pipeline / on-demand / router skills (the standalone `/aid-triage`
+`docs/aid-methodology.md` "Skill Inventory" and the `canonical/skills/` listing — **75 skill
+directories**: 17 curated pipeline / on-demand / router skills (the standalone `/aid-triage`
 router among them) and the 58-row shortcut catalog's skills — 34 verb-first direct-entry
 shortcut doorways plus 24 hand-authored `repurpose` skills):
 
@@ -426,7 +426,7 @@ CONFIRMED in `project-structure.md` "Entry Points" and file headers:
 
 Documented as reality + flagged; NOT silently reconciled (see `.scout-questions.tmp`):
 
-1. **Skill count (reconciled).** `canonical/skills/` has **76** directories — 18 curated
+1. **Skill count (reconciled).** `canonical/skills/` has **75** directories — 17 curated
    pipeline / on-demand / router skills plus the 58-row shortcut catalog's skills (34 verb-first
    direct-entry shortcut doorways + 24 hand-authored `repurpose` skills). `README.md`,
    `docs/aid-methodology.md`, `docs/repository-structure.md` and `docs/glossary.md` all state this
@@ -511,7 +511,7 @@ Non-obvious traps a change will trip (cannot be inferred from the code alone):
 - **The 5 install manifests must move in lockstep on the dashboard file set** — npm, pypi,
   and the three vendored copies; dropping one file from one manifest ships a broken install.
 - **`generate-profile` is maintainer-only** and lives only in `.claude/skills/` — do not look
-  for it in `canonical/skills/` (the 76 shipped skills).
+  for it in `canonical/skills/` (the 75 shipped skills).
 - **Heavy CI gates run only on `master`** (tests/run-all.sh + the Astro site build); feature
   branches skip them. Run `tests/run-all.sh` (HOME-pinned) + the site build locally before
   claiming green. (Project memory: master-ci-only-on-master.)
