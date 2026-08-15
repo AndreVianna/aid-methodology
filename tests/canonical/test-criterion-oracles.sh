@@ -147,6 +147,28 @@ cp "$NOMATCH" "${STRIPPED}/.aid/knowledge/authoring-conventions.md"
 ( cd "$STRIPPED" && bash "$ORACLE" >/dev/null 2>&1 ); rc=$?
 assert_eq "$rc" "2" "OR16 a registry with no Match column exits 2 (could not run), never 0"
 
+# A markdown cell may carry an ESCAPED pipe as literal prose -- template-payload's
+# choice-list example does. Splitting on a bare `|` reads a fragment as the Match
+# value and silently mis-parses the row. This regressed once: making the table
+# well-formed shifted awk's fields and the template tree went from 76 UNDECIDED
+# to 0, changing the verdict without changing the registry's meaning.
+if grep -q 'gsub(/\\\\\\|/' "$ORACLE" || grep -q 'mask escaped pipes' "$ORACLE"; then
+    pass "OR20 the registry parser masks escaped pipes before splitting the row"
+else
+    fail "OR20 the parser splits on bare | -- a cell containing an escaped pipe shifts every later column"
+fi
+ESCAPED_ROWS="$(grep -c '\\|' "$REGISTRY" || true)"
+if (( ESCAPED_ROWS > 0 )); then
+    UND_NOW="$(grep -c '^UNDECIDED' <<<"$CLEAN_OUT")"
+    if (( UND_NOW > 0 )); then
+        pass "OR21 with an escaped-pipe row present, the template tree is still UNDECIDED (${UND_NOW} files)"
+    else
+        fail "OR21 an escaped-pipe row silently zeroed the UNDECIDED set -- the row is being mis-parsed"
+    fi
+else
+    pass "OR21 no escaped-pipe row in the registry to regress against (vacuously true)"
+fi
+
 # ---------------------------------------------------------------------------
 echo "=== OR17-19: AC-11 evidence, ledger shape, toolchain ==="
 # ---------------------------------------------------------------------------

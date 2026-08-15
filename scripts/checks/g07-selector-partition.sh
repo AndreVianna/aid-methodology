@@ -54,12 +54,23 @@ readonly ROOTS=("canonical/skills" "canonical/agents" "canonical/aid/templates" 
 # --- read the registry's Type + Match columns, in table order -----------------
 # One "type<TAB>match" line per row. Table order is significant: resolution is
 # first-match-wins, which is what makes the selectors mutually exclusive.
-ROWS="$(awk -F'|' '
+# A markdown cell may contain an ESCAPED pipe (`\|`) as literal prose -- the
+# template-payload row does, in its choice-list example. Splitting on a bare
+# `|` therefore breaks the row into the wrong fields and silently reads a
+# fragment as the Match value. Mask the escaped pipes before splitting and
+# restore them after, so a cell's own content can never shift the columns.
+ROWS="$(awk '
+    BEGIN { FS="|"; SUBSEP="\x1f" }
     /^\| Type \| Selector \| Match \| Notes \|/ { intbl=1; next }
     intbl && /^\|---/ { next }
     intbl && !/^\| `/ { intbl=0 }
     intbl {
-        ty=$2; m=$4
+        line=$0
+        gsub(/\\\|/, "\x1e", line)          # mask escaped pipes
+        n=split(line, cell, "|")
+        if (n < 5) next                      # a row that is not 4 cells is malformed
+        ty=cell[2]; m=cell[4]
+        gsub(/\x1e/, "|", ty); gsub(/\x1e/, "|", m)
         gsub(/^[ \t]+|[ \t]+$/, "", ty); gsub(/`/, "", ty)
         gsub(/^[ \t]+|[ \t]+$/, "", m);  gsub(/`/, "", m)
         if (ty != "" && m != "") print ty "\t" m

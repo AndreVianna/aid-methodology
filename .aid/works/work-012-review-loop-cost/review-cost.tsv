@@ -1,0 +1,4 @@
+#run	work-012-review-loop-cost-20260815T163301Z
+task	cycle	commit	surface_bytes
+delivery-001-gate	1	f4a17a855a53e88d5e19698cec50968f6c5f824e	189505
+delivery-001-gate	2	f4a17a855a53e88d5e19698cec50968f6c5f824e	103538
