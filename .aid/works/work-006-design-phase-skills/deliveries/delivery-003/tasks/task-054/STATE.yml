@@ -1,7 +1,7 @@
-state: Pending
-review: "--"
+state: Done
+review: 'Gate-deferred; 1 MEDIUM logged (folded-vs-raw oracle -- task-072 must use the folded value)'
 elapsed: "--"
-notes: "--"
+notes: '12/12 rewritten, max 826 vs the 1024 cap, zero neighbours lost (verified against the YAML-folded value, not the raw block). 7 genre siblings from one template; 4 arrow-outlines rendered as prose. Caught and fixed a textwrap hyphen-break defect that silently split 4 skill names across the YAML fold'
 ticket_ref: "--"
 
 quick_check:
