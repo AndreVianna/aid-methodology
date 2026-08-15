@@ -1,0 +1,10 @@
+state: Done
+review: 'Quick check clean (no CRITICAL/HIGH)'
+elapsed: "--"
+notes: "--"
+ticket_ref: "--"
+
+quick_check:
+  reviewer_tier: --
+  findings: []
+dispatch_log: []

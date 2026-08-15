@@ -1,0 +1,93 @@
+delivery_state: Executing
+gate_tier: "--"
+gate_grade: "Pending"
+gate_timestamp: "--"
+ticket_ref: "--"
+
+delivery_lifecycle:
+  updated: '2026-08-10T16:13:02Z'
+  block_reason: --
+  block_artifact: --
+delivery_gate:
+  issue_list: []
+qa:
+  - id: 1
+    category: 'Process'
+    impact: 'Required'
+    state: 'Answered'
+    context: |-
+      The execution protocol dispatches a separate clean-context reviewer as a
+      per-task quick check after every task's EXECUTE. Over tasks 026-038 that cost six
+      dispatches and surfaced one genuine defect the executor had missed (the `aid-config`
+      `knowledge.doc_set` enumeration, logged in `delivery-002-issues.md`); the rest re-derived
+      what the executor's own mechanical AC checks had already established. The owner raised
+      token cost and asked whether the verification could be simplified.
+    suggested: |-
+      Batch the independent review at the delivery boundary rather than per task,
+      and trim executor self-checks to acceptance criteria with real failure modes.
+    answer: |-
+      **Owner decision (2026-08-14): adopt both.** From task-039 onward there is
+      **no per-task reviewer dispatch**; the independent pass is the **delivery gate's**
+      mandatory clean-context review, which covers the whole delivery and is required anyway.
+      Executor self-verification is trimmed to the criteria that can actually fail (diff shape,
+      forbidden-token constraints, neighbour floor/ceiling sets, placement ordering) and drops
+      re-checks that are structurally incapable of failing. The reviewer-not-executor invariant
+      is preserved at the gate, not abandoned.
+    applied_to: |-
+      tasks 039-049 execution; the delivery-002 gate inherits the full review
+      burden for those tasks and should treat their per-task `Review` cells as
+      "gate-deferred, not independently checked".
+  - id: 2
+    category: 'Tooling / Migration'
+    impact: 'Required'
+    state: 'Answered'
+    context: |-
+      Execution is **blocked**: `writeback-state.sh` (from master) now targets
+      `STATE.yml`, while this work's 78 state files are `STATE.md`, so every state write fails.
+      The migration path is the `_aid_sc_*` converter inside `bin/aid`. I ran it against a copy of
+      this work and it is **lossy in two specific ways**, both verified by diffing the converted
+      output against the originals:
+      **(1) Q&A prose is truncated to its first line.** `_aid_sc_qa_entries` keeps only the first
+      line of each field, so delivery-003 Q1's `Context` went 15 lines -> 1 and delivery-002 Q1's
+      `Answer` went 7 lines -> 1. Those two entries are the count-guard re-scope decision and the
+      review-batching decision -- the reasoning is the whole value, and it is silently dropped.
+      **(2) The delivery gate's `Complexity Score` and `Cycles` are dropped entirely**, because the
+      new `delivery_gate:` schema has only `issue_list`. delivery-001's recorded score
+      (`56 (tasks=25, depth=23, risk=8, consults=0)`) and `Cycles: 2` do not survive.
+      What DOES convert faithfully: every frontmatter scalar (task `state`/`review`/`notes`,
+      `delivery_state`, `gate_tier`/`gate_grade`/`gate_timestamp`), `delivery_lifecycle`, and the
+      gate's `issue_list` (continuation lines join correctly). 77 of 78 files convert; the work-root
+      file is refused by a DERIVED-data guard on `## Features State` and `## Cross-phase Q&A`, both
+      of which legitimately hold owner-authored data the old template permitted.
+      The conversion was run and **fully reverted**; the tree is back on `STATE.md` with nothing lost.
+    suggested: |-
+      (a) Convert, then hand-repair the two known losses -- restore the full Q&A prose
+      as YAML block scalars and re-record the gate's score/cycles inside `issue_list`; or (b) keep
+      `STATE.md` and pin a local `writeback-state.sh` shim for this work, accepting a fork from
+      master; or (c) treat the truncation as an upstream product defect, report it, and pause
+      execution until a non-lossy converter lands. Note (1) is a **product** bug that would hit any
+      adopter migrating a real work, not just this one.
+    answer: |-
+      **Owner decision (2026-08-15): option (a)** -- convert, then hand-repair the losses. Done:
+      all 78 state files are now STATE.yml and every write level (task / delivery / pipeline)
+      works again. The two known losses were repaired rather than accepted: all 12 Q&A entries
+      (9 work-level, 2 here, 1 in delivery-003) were re-injected with their FULL prose as YAML
+      block scalars, and delivery-001's gate Complexity Score + Cycles were preserved as leading
+      issue_list entries because the new delivery_gate schema has only issue_list. A field-by-field
+      fidelity check over every preserved value reports 63/63 matching, 0 drifted, and all 78 files
+      parse as valid YAML.
+      Two things the conversion surfaced and that were fixed in passing: (1) the work-root
+      frontmatter's `updated:` scalar was CORRUPT -- it held a literal newline spanning two lines
+      instead of a timestamp, which broke the converter's own round-trip verifier; it is now a
+      proper ISO-8601 value. (2) delivery-002's lifecycle still read `Specified` while 14 tasks were
+      Done; it is now `Executing`.
+      The `## Features State` table had no home in the new schema (it has no `features` key) and its
+      grade history is not derivable from the SPECs, so its 6 rows were preserved verbatim in
+      FEATURES-STATE.md beside the work-root state file.
+      STILL OPEN as an upstream product defect: `_aid_sc_qa_entries` in `bin/aid` truncates
+      multi-line Q&A prose to its first line. That is not work-006's to fix, and it would hit any
+      adopter migrating a real work. Worth filing upstream.
+    applied_to: |-
+      All 78 STATE.md -> STATE.yml; qa: blocks in the work-root, delivery-002 and delivery-003;
+      delivery-001 delivery_gate.issue_list; FEATURES-STATE.md (new); the work-root `updated:`
+      scalar; delivery-002 delivery_state -> Executing; .aid/.temp/wb.sh retargeted to STATE.yml.

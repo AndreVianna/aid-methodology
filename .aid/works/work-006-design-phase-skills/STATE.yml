@@ -1,0 +1,234 @@
+pipeline:
+  path: full
+  initiator: aid-describe
+started: "2026-08-08"
+minimum_grade: "A"
+user_approved: yes
+lifecycle: Running
+phase: Execute
+active_skill: aid-execute
+updated: '2026-08-15T02:48:57Z'
+pause_reason: --
+block_reason: --
+block_artifact: --
+
+interview:
+  state: 'Complete  **Date:** 2026-08-09'
+  grade: 'A+ (initial pass D — 4 HIGH, 6 MEDIUM, 6 LOW, 1 MINOR; all resolved)'
+  sections:
+    - id: 2026-08-08
+      name: user
+      state: Approved
+      updated: 'Whole-picture read-back accepted; 4 re-confirmable assumptions surfaced and accepted'
+    - id: 2026-08-09
+      name: aid-architect
+      state: 'Feature Decomposition'
+      updated: '10 features proposed; simplified to 6 and approved by user'
+    - id: 2026-08-09
+      name: aid-reviewer
+      state: 'Cross-Reference: D → A+'
+      updated: '18 rows; 4 HIGH all confirmed against disk. Q1/Q2 answered by owner; FR-9, FR-10, AC-10, AC-11 added; FR-5''s uniformity claim corrected'
+    - id: #
+      name: Section
+      state: State
+      updated: 'Last Updated'
+    - id: ---
+      name: ---------
+      state: -------
+      updated: --------------
+    - id: 1
+      name: Objective
+      state: Complete
+      updated: '2026-08-08'
+    - id: 2
+      name: 'Problem Statement'
+      state: Complete
+      updated: '2026-08-08'
+    - id: 3
+      name: 'Users & Stakeholders'
+      state: Complete
+      updated: '2026-08-08'
+    - id: 4
+      name: Scope
+      state: Complete
+      updated: '2026-08-08'
+    - id: 5
+      name: 'Functional Requirements'
+      state: Complete
+      updated: '2026-08-08'
+    - id: 6
+      name: 'Non-Functional Requirements'
+      state: Complete
+      updated: '2026-08-08'
+    - id: 7
+      name: Constraints
+      state: Complete
+      updated: '2026-08-08'
+    - id: 8
+      name: 'Assumptions & Dependencies'
+      state: Complete
+      updated: '2026-08-08'
+    - id: 9
+      name: 'Acceptance Criteria'
+      state: Complete
+      updated: '2026-08-08'
+    - id: 10
+      name: Priority
+      state: Complete
+      updated: '2026-08-08'
+lifecycle_history:
+  - date: '2026-08-08'
+    event: 'Work created'
+    grade: --
+    notes: 'Initial scaffold by aid-describe (FIRST-RUN)'
+  - date: '2026-08-08'
+    event: 'Describe — requirements approved'
+    grade: --
+    notes: 'All 10 sections Complete; user approved at COMPLETION'
+  - date: '2026-08-09'
+    event: 'Define — feature decomposition'
+    grade: --
+    notes: '6 features created; simplified from a 10-feature proposal'
+  - date: '2026-08-09'
+    event: 'Define — cross-reference complete'
+    grade: A+
+    notes: '18 findings resolved; FR-9/FR-10/AC-10/AC-11 added. Ready for /aid-specify'
+  - date: '2026-08-09'
+    event: 'Specify — all 6 feature specs Ready'
+    grade: --
+    notes: '126 review findings closed across the gate round (18/17/21/26/21/23; 1 rejected Invalid on refuted evidence). Requirements corrected twice: 3 self-contradictions struck, then FR-11''s nine cross-feature contracts added after reviews showed the surviving CRITICAL/HIGH findings were cross-spec disagreement, not within-spec defects'
+  - date: '2026-08-09'
+    event: 'Plan — PLAN.md + 3 delivery folders written'
+    grade: --
+    notes: 'Grouped by skill family per owner decision; both mutual dependency pairs (001↔003, 004↔005) absorbed inside a delivery. FR-10''s engine-reach figure corrected 58 → 34 generated doorways (26 firing)'
+  - date: '2026-08-09'
+    event: 'Plan — review close-out'
+    grade: A+
+    notes: '14 findings closed (13 Fixed, 1 Accepted); ledger `.aid/.temp/review-pending/plan-work-006.md` grades A+. The CRITICAL resolved by owner decision Q6: `kb.html` **is** regenerated (`/aid-summarize` re-run, delivery-003), the "unregenerable" premise having been verified false; `.aid/knowledge/tech-debt.md` W1-11 corrected. Row 14 Accepted — the self-referential "section-6 quality gates" criterion is schema-mandated by `pipeline-contracts.md` and already recorded as tech-debt W5-6'
+  - date: '2026-08-09'
+    event: 'Plan → Detail'
+    grade: --
+    notes: '`/aid-detail` opened on delivery-001; deliveries 002 and 003 remain `Pending-Spec` and gain their task sets when detailed'
+  - date: '2026-08-10'
+    event: 'Detail — delivery-001 task set cut'
+    grade: --
+    notes: '25 tasks (2 CONFIGURE, 16 DOCUMENT, 1 IMPLEMENT, 1 MIGRATE, 5 TEST) with `DETAIL.md` + `STATE.md` each; `PLAN.md § Execution Graph` gained the dependency table, the `wave-map` (24 waves, one parallel point) and the `rw-sets` block; `deliveries/delivery-001/STATE.md` advanced to `Specified`'
+  - date: '2026-08-10'
+    event: 'Detail — review rounds 1–8'
+    grade: 'D → D+ → C → C+ → D+ → C+ → C → D+'
+    notes: 'Eight rounds, ledgers `.aid/.temp/review-pending/detail.md` and `detail-001-r2`..`r8`. Rounds 1–4 fixed the executable content: the interleave carried by edges rather than numbering, the shared-render hazard cut into one renderer and one reverter, and the read/write model corrected to mixed granularity under a path-prefix meet rule. Owner decisions Q7 (backlog column mapping, derive-from-shipped) and Q8 (SPEC `find` oracles narrowed) applied; Q9 raised (two canonical templates disagree on the task `Source:` field). Rounds 5–8 were bookkeeping, and each round''s enforcement apparatus became the next round''s findings — closed by owner decision at round 8: **strip the enforcement layer** (see `PLAN.md § Revision History`)'
+  - date: '2026-08-10'
+    event: 'Detail — review round 9'
+    grade: C
+    notes: 'Ledger `detail-001-r9.md`: 4 findings (0 CRITICAL, 0 HIGH, 2 MEDIUM, 1 LOW, 1 MINOR), down from 20 after the strip. All 4 Fixed. The load-bearing one: six under-declared read sets in the `rw-sets` block made the zero-conflict result true by luck rather than by declaration — the fix added **15** read entries across 9 tasks (003, 014, 015, 018, 019, 021, 022, 024, 025), found by a two-pass sweep (literal paths, then bare script basenames resolved against disk). No new unordered pair resulted'
+  - date: '2026-08-10'
+    event: 'Detail — delivery-001 close-out'
+    grade: A+
+    notes: 'Ledger `detail-work-006-delivery-001-r10.md` is empty (0 findings); `grade.sh --explain` returns A+. Narrowed final round under a pre-committed stopping rule. The reviewer re-implemented all three checkers from scratch and independently confirmed: 25 tasks, acyclic, 24 waves, root task-001, leaf task-020, `rw-sets` totality, **0** unordered write/write, **0** read/write, **0** same-wave across all 300 pairs, 8 forward edges partitioned 5/3 disjoint, all 11 derived shared-resource cells recomputing identically, and every `PLAN §`/`BLUEPRINT §`/`REQUIREMENTS §` pointer resolving. Two items considered and rejected under the filing test (a stale pointer count in historical ledger evidence; a pre-existing narrative sentence no checker consumes). Surface stayed frozen at three checkers, two fenced blocks, and the dependency table'
+  - date: '2026-08-10'
+    event: 'Detail — delivery-002 task set cut'
+    grade: --
+    notes: '24 tasks, `task-026`..`task-049` (13 DOCUMENT, 2 CONFIGURE, 9 TEST), continuing delivery-001''s numbering. `PLAN.md § Execution Graph` gained `### delivery-002 execution graph` (dependency table + parallel table + a second `wave-map` instance) and a second `rw-sets` block; delivery-001''s table, `wave-map` and `rw-sets` are byte-unchanged. Combined graph: **45 waves**, delivery-002 occupying 25–45, entering through the single edge `026 → 020`; combined leaf moves to `task-049` while `task-020` stays delivery-001''s own leaf. One parallel wave (43): tasks 044–047, all `W= --` (runs confined to `mktemp -d`). Across all 49 tasks: **0** unordered write/write, **0** read/write, **0** same-wave. Forward edges stay at 8 (delivery-002 contributes none — ids allocated in execution order); partition invariant restated over the combined table. `deliveries/delivery-002/STATE.md` advanced `Pending-Spec` → `Specified`. Authored in two passes after the first agent run was killed by a mid-stream API error at 10 of 24 `DETAIL.md` files; `PLAN.md` was untouched at that point, so recovery was purely additive and delivery-001''s A+ numbers were never at risk'
+  - date: '2026-08-10'
+    event: 'Detail — delivery-002 review'
+    grade: 'D+ → A+'
+    notes: 'Ledger `detail-work-006-delivery-002.md`: **one** [HIGH] and nothing else. `BLUEPRINT criterion N` citations were off by one from the BLUEPRINT''s positional checkbox order from criterion 9 onward — criteria 1–8 correct, then criterion 10 (bare `/aid-design`) cited as 9 and criterion 11 (shared contract) cited as 10, leaving criterion 9 (description negative routing) verified in substance but with no ordinal pointing at it. Fixed as a **class**: all citations across both deliveries were enumerated, six retargeted, and criterion 9 given its ordinal in two places. Textual only — no dependency, wave or read/write declaration changed, so the verified 49-task / 45-wave / 0-0-0 / 8-edge numbers stand untouched. Round 2 ledger `detail-work-006-delivery-002-r2.md` is empty; `grade.sh` returns **A+**. The verifier independently re-established the 11-checkbox order and confirmed all **28** citations resolve correctly, that delivery-001''s two citations are correct, and that criterion 6''s content — the one criterion with no dedicated ordinal citation — is covered in substance by 11 tasks, so its absence from the ordinal set is a citation-style gap, not a coverage gap'
+  - date: '2026-08-10'
+    event: 'Requirements amended — AC-12 added'
+    grade: --
+    notes: 'Owner-requested scope addition: a **triggering-quality sweep over all 112 skill descriptions** (34 generated + 78 hand-authored, old and new). Added as `AC-12` with five mechanical checks plus a recorded rationale, and as an In-Scope bullet stating why it is admitted here rather than deferred. Sourced from an audit of the roster against the Agent Skills standard (agentskills.io): AID passes every strictly-required rule, but only **2** of 76 descriptions carry a trigger clause, **34** open with `Direct-entry Lite-path shortcut` boilerplate, **54** leak state-machine text, and one (`aid-update-ticket`, 1096 chars) breaches the hard 1024 cap. The 34 generated descriptions come from a single f-string in `build-shortcut-skills.py`, so they are one edit. Explicitly excluded from the amendment: `SKILL.md` **body** size (3 skills, a `references/` restructuring job), `argument-hint` → `metadata:`, and skill self-containment. Owner separately ruled that third-party **skill vetting** is the adopter''s responsibility and not an AID gap'
+  - date: '2026-08-10'
+    event: 'Detail — delivery-003 task set cut'
+    grade: --
+    notes: '25 tasks, `task-050`..`task-074` (14 DOCUMENT, 6 TEST, 3 CONFIGURE, 2 IMPLEMENT). Work total **74**. Combined graph: 74 tasks, acyclic, root `task-001`, leaf `task-074`, **70 waves**, delivery-003 in 46–70, entering through the single edge `050 → 049`. Across all 74: **0** unordered write/write, **0** read/write, **0** same-wave — only 7 of 2,701 pairs are unordered at all, every one predating this delivery. Forward edges stay at 8; delivery-003 contributes none, so the 5/3 partition is byte-unchanged. Deliveries 001 and 002 verified verbatim. AC-12 structured as **one** sweep: authoring in 8 tasks (`task-051` = the single f-string covering all 34 generated doorways and sole writer of `build-shortcut-skills.py`; `task-052`–`058` = the 78 hand-authored in seven slices cut on real seams — 18 curated / 24 existing `repurpose` / 36 new), verification in `task-072` alongside criterion 11''s pair matrix. Eight findings surfaced against disk rather than relitigated, four of them corrections to feature-006''s SPEC: `setup.sh` does not exist (the installers are `install.sh`/`install.ps1`); two of §7''s "hand-maintained" site edit sites are generated by `sync-docs.mjs`; the site commits roster-derived generated content §5''s "nothing to build" did not cover; and three suites pin description literals (two using U+2192), so the sweep must **relocate** text into the body, never delete it'
+  - date: '2026-08-10'
+    event: 'Detail — delivery-003 review'
+    grade: 'D+ → fix applied'
+    notes: 'Ledger `detail-work-006-delivery-003.md`: 2 findings (1 HIGH, 1 MEDIUM). The HIGH inverted a diagnosis the authoring agent had filed as tech-debt against two shipped scripts. Root cause was **this PLAN''s own heading shape**: `compute-block-radius.sh` and `complexity-score.sh` both scope a multi-delivery PLAN by `### delivery-NNN` then an `Execution Graph` heading — the latter requiring level **four** — which is the shape both suites test (`test-complexity-score.sh:71-85`, `test-compute-block-radius.sh:361-368`) and which `state-delivery-gate.md:105-106` documents. PLAN.md carried `### delivery-NNN execution graph` at level three instead, so `compute-block-radius.sh` saw only delivery-001 and `complexity-score.sh` captured **zero** rows for every delivery, 001 included — the second failure being undisclosed and contradicting PLAN.md''s own claim that it was unaffected. Fixed by restructuring to `### delivery-NNN` + `#### Execution Graph`; verified by re-implementing both awk state machines against the file rather than running either script — 25/24/25 nodes with a 74-node union, and `parsed_rows` 25/24/25 under `complexity-score.sh`''s own two-column row regex (`:120`), which correctly ignores a parallel table''s one-column row. **No shipped-script defect survives and none is recorded.** Pointer cost was 4 references. The MEDIUM was a false factual premise — that the numbered phase sequence uses U+2192 in all three carriers; `pipeline-contracts.md:450-451` uses ASCII `->` and writes *"six numbered phases"* with `Describe/Define (Phase 2a/2b)` merged, while `CLAUDE.md:74`/`AGENTS.md:74` use `→` and name seven. Fixed as a class: the sweep found the same premise recurring in **task-066**, and confirmed task-055''s separate U+2192 claim about two `test-deploy-monitor-repurpose.sh` pins is true. Graph integrity re-verified after the edits: 74 dependency rows, 74 `rw-sets` lines, no trailing whitespace. Note for readers of the earlier *delivery-002 task set cut* row above: the `### delivery-NNN execution graph` heading it names was renamed by this fix and no longer exists under that text — that row is left as the dated record of what was written then'
+  - date: '2026-08-10'
+    event: 'Detail — delivery-003 fix verification'
+    grade: '2 further findings, fixed'
+    notes: 'Round 2 (`detail-work-006-delivery-003-r2.md`) confirmed rows 1–2 Fixed and independently reproduced both parser results (25/24/25, union 74; `parsed_rows` 25/24/25), including a replay against the **reconstructed pre-fix** heading shape that matched the corrected paragraph''s historical claims exactly. It then filed **two findings of my own making**, both incomplete-sweep errors rather than new defects: a [HIGH] stale present-tense claim in `PLAN.md § Revision History` still asserting the withdrawn `compute-block-radius.sh` defect, contradicting the paragraph I had just rewritten twelve lines above it; and a [LOW] two surviving references to the renamed heading at `PLAN.md:573` and `deliveries/delivery-003/BLUEPRINT.md:132`. Root cause of both: my pointer and claim sweeps were scoped to the 74 `DETAIL.md` files and did not include `PLAN.md` and the BLUEPRINT files themselves. Re-swept across the **whole** work folder and fixed all three sites; both classes now return clean'
+  - date: '2026-08-10'
+    event: 'Detail — delivery-003 fix verification round 2'
+    grade: '0 findings, closed'
+    notes: 'Round 3 (`detail-work-006-delivery-003-r3.md`, empty ledger of 4 total rows, all Fixed) confirmed both round-2 findings hold: `PLAN.md § Revision History`''s delivery-003 row (:673) now agrees sentence-by-sentence with the `§ Shared-state safety` paragraph (:629-654) — heading shape was the root cause, diagnosed at first as a script defect and was not one, fixed, no shipped-script defect survives or is recorded — and both fixed heading pointers (`PLAN.md:573`, `deliveries/delivery-003/BLUEPRINT.md:132`) now resolve to the real `### delivery-003` / `#### Execution Graph` pair. Whole-work-folder sweeps (not scoped to DETAIL.md) found: zero surviving present-tense defect claims against either script outside the two already-resolved historical narrative rows; exactly one surviving `delivery-00N execution graph` hit, `STATE.md:165`''s dated *delivery-002 task set cut* row, correctly retained as an append-only historical record given the forward note at this file''s own round-1 row above; and every `PLAN §`/`BLUEPRINT §`/`REQUIREMENTS §`/feature-`SPEC §` pointer across all 74 `DETAIL.md` files, `PLAN.md`, all three `BLUEPRINT.md` files and all four `STATE.md` files resolving to a real heading. Both parsers re-run directly against disk (not merely re-implemented): `complexity-score.sh --delivery-id {1,2,3}` → tasks=25/24/25; `compute-block-radius.sh --failed-task task-050 --delivery-id 3` → correctly reaches and blocks all 24 downstream delivery-003 tasks. Structural counts unchanged: 74 dependency rows, 3 `wave-map` blocks (74 lines), 3 `rw-sets` blocks (74 task lines), no trailing whitespace in `PLAN.md` or `deliveries/delivery-003/BLUEPRINT.md`. delivery-003 review closes A+'
+  - date: '2026-08-10'
+    event: '**Detail — phase complete**'
+    grade: 'A+ / A+ / A+'
+    notes: 'All three deliveries detailed, reviewed and closed at A+ against a minimum grade of A: delivery-001 25 tasks (ten rounds, D → A+), delivery-002 24 tasks (one [HIGH], D+ → A+), delivery-003 25 tasks (four findings across three cycles, D+ → A+). **74 tasks total**, one combined graph: acyclic, 70 waves, root `task-001`, leaf `task-074`, parallelism only at waves 6 and 43. Across all 2,701 pairs — **0** unordered write/write, **0** unordered read/write, **0** same-wave conflicts; 8 forward edges partitioned 5/3. All three `deliveries/delivery-NNN/STATE.md` are `Specified`; `gate_tier`/`gate_grade` remain untouched, as those belong to `aid-execute`''s delivery gate. `active_skill` set to `none`; `phase` stays `Detail` until `/aid-execute` advances it. Nothing is committed — the work folder and branch are unpushed pending owner approval'
+  - date: '2026-08-10'
+    event: 'Detail → Execute'
+    grade: --
+    notes: 'Owner ran `/aid-execute work-006` for all tasks with an **A+** gate at each delivery end (settings `minimum_grade` is A). Branch: staying on the single `work-006` branch rather than the skill''s `aid/work-NNN-delivery-NNN` default, per the owner''s one-branch-per-work convention and because PR #184 tracks `work-006`'
+  - date: '2026-08-11'
+    event: 'Execute — delivery-001 tasks 001–007, 010 Done'
+    grade: '2 fixed, 1 fixed'
+    notes: '**8 of 74 tasks Done.** Landed: `.aid/design/` + its README template (byte-identical, 2537/2537), `design-seed.md`, `design-lifecycle.md` (the class-scoped contract + its 19-row binding table), the KB doctrine amendment admitting project-level documents, conditional registration of `roadmap.md`/`backlog.md`/`release-tracking.md` on two CC-4 surfaces, and the **first three real skills** (`aid-design-{roadmap,mvp,backlog}`). Three findings across eight tasks, all fixed: a **[CRITICAL]** unowned rule (`no changelog:`, one of SPEC §3g''s 19, stated in no design template while task-004''s definition forbade inventing it — 36 skill bodies would have inherited the gap), a **[LOW]** dropped table row, and a **[HIGH]** uncorrected self-describing statement in `domain-doc-matrix.md`''s `software-cli` intro (two of AC-12''s three were fixed, the third was byte-identical to HEAD). Counts hold: rows 58→61, dirs 76→79, `repurpose` rows 24→27, emitting doorways **34** unchanged. task-005''s footprint audit correctly reported its commit-range oracle Blocked-on-premise and refused a working-tree substitute; resolved by committing tasks 001–004 as a clean feature-002-only block (`88764aec..6d0d9009`), after which G3 gave exactly 3 A / 0 M / 0 D. Four infrastructure failures (2 reviewers, 1 architect, 1 stall) all recovered with no lost work'
+  - date: '2026-08-11'
+    event: '**Execute — PAUSED at owner request**'
+    grade: --
+    notes: 'Owner asked to pause after task-007. Stopped cleanly: no task at `In Progress`, working tree clean, all work committed (`4ba6214d`), task-008 not opened. `lifecycle` set to `Paused-Awaiting-Input` with a `pause_reason`; `active_skill: none`; `phase` stays `Detail` until `/aid-execute` advances it. Deliveries 002 and 003 untouched at `Specified`. Resume with `/aid-execute work-006`'
+  - date: '2026-08-14'
+    event: '**Execute — delivery-001 complete; 25 of 25 tasks Done**'
+    grade: '9 [HIGH] + 2 [MEDIUM] deferred to the gate'
+    notes: '**25 of 74 tasks Done.** Landed across the delivery: the nine planning-artifact skills (`aid-{design,create,update}-{roadmap,mvp,backlog}`) with their nine `shortcut-catalog.yml` rows; the three spine-dimension arms in both KB script twins; this repository''s own `roadmap.md` (with its `## MVP` region) and `backlog.md`, both registered on all four CC-4 surfaces as **conditional**, leaving the canonical seed unmoved at 14 templates; the retirement of `release-tracking.md`''s `## Unreleased` with its single item migrated to `backlog.md` as `W5-21` under the Q7 derive-from-shipped arm; `release-aid`''s drain rewired onto `backlog.md`; the three `document-expectations.md` blocks with the adopter drain paragraph; and regenerated `INDEX.md` / `relationships.md`. The throwaway render (task-024) was reverted by task-025 with a 2,644-entry manifest cross-check returning exactly one expected mismatch. **Two acceptance criteria proved unsatisfiable and were resolved by correcting the oracle rather than the shipped code** — task-016''s allocates-nothing premise (corrected in three DETAILs, `1c6b20c4`) and task-020''s vitest conjunct (narrow owner exception, refreshing only the drift this delivery''s own work caused). Nothing was weakened to reach green'
+  - date: '2026-08-14'
+    event: '**Repository re-cloned mid-execution — nine unpushed commits lost and recovered**'
+    grade: --
+    notes: 'The working repository was re-cloned from origin, destroying the local object store: all nine of this session''s commits, the local `work-006` branch, and several local-only branches vanished, with `git reflog` showing only `clone:` and `git fsck` finding no dangling objects. `origin/work-006` still sat at `7b9a43d2`, the session''s starting point. **Recovery ran off the session transcripts rather than by re-running the work**: Cursor records each tool call with its payload, so the six `SKILL.md` bodies, both twin-script edits, four catalog rows, the `aid-config` amendment, `roadmap.md` with its `## MVP` insertion and every registration were replayed **byte-for-byte** from the recorded `Write`/`StrReplace` calls. A scan of all 36 transcripts (nested sub-subagents included) found 107 file-writing calls and confirmed one gap: `.aid/knowledge/backlog.md`, whose author wrote it through a shell command in a truncated transcript — reconstructed from a read of the file and validated against its reviewer''s independently recorded checks, down to `settings.yml` line 61 and README row 21. Two things came back better than the original: the UTF-8 BOM the first run introduced into the KB README is absent, and two recorded README edits that were the original executor''s own failed retries were skipped rather than replayed blindly. Every task has been pushed to `origin/work-006` since'
+  - date: '2026-08-14'
+    event: 'Execute — delivery-001 gate + deliveries 002/003 handed to a cloud agent'
+    grade: --
+    notes: 'Owner elected to continue in the cloud from `origin/work-006`. Handed over: the delivery-001 gate (Large tier, complexity score 48) with its 9 open deferred findings to work as the gate''s fix cycle, then deliveries 002 and 003. The brief carries the W5-5 workaround (`writeback-state.sh` fails silently unless `AID_STATE_FILE`/`AID_WORK_DIR` are exported — the local wrapper lives in gitignored `.aid/.temp/` and does not travel), the state-write protocol, the render/source discipline, the push-after-every-task rule the re-clone taught, and both unsatisfiable-criterion precedents so a third instance is escalated rather than forced green'
+deploy: []
+qa:
+  - id: 1
+    category: 'Scope / Distribution'
+    impact: 'Required'
+    state: 'Resolved 2026-08-09, then **partly superseded by Q5** — ship all three stages to adopters (this half stands). The seed-count half — "canonical seed 14 → 17" — is **superseded**: Q5 made `roadmap.md`, `backlog.md` and `release-tracking.md` conditional documents with no template, so the canonical seed stays at **14**. Recorded in REQUIREMENTS.md §5.1 / FR-9 / AC-3.'
+    context: 'Surfaced by /aid-define (cross-reference). §3 claims adopters benefit from `roadmap.md` and `backlog.md`, but the KB doc-set has 14 canonical templates under `canonical/aid/templates/knowledge-base/` and `release-tracking.md` is **not** among them — it is AID-dogfood-only, as are `quality-gates.md` and `decisions.md`. So §5.1''s four-stage lifecycle terminates in a document adopters do not have. Admitting the two new docs to the adopter seed also touches `synth_default_seed`''s ownership map (`doc-set-resolve.md:64-126`), `test-kb-template-authoring-standard.sh:53` (asserts exactly 14), and `concern-model.md`''s Seed-coverage check. Blocks ledger rows 3, 4, 16.'
+  - id: 5
+    category: 'Scope / Architecture'
+    impact: 'Required'
+    state: 'Resolved 2026-08-09 — accept the re-scope. (a) `roadmap.md`, `backlog.md`, `quality-gates.md`, `release-tracking.md` become **conditional** documents (the `decisions.md` precedent), **created on demand by their own `create` skill**; the canonical seed stays at 14. (b) The `## Change Log` doctrine conflict leaves this work (supersedes Q3). (c) The spec gate target drops from A+ to **A**, the configured minimum.'
+    context: 'Surfaced by /aid-specify after four spec-review rounds. feature-001 graded E twice with **zero recurrences** — every fix landed, and each round exposed a deeper layer, because the feature was carrying three independent feature-sized changes (the doctrine change, the seed migration, and the actual requirement). feature-002 graded E+ then E with **12 recurrences** — fixes applied at the cited line rather than to the finding''s full extent. Conditional membership dissolves seven of feature-001''s eleven CRITICAL/HIGH findings at once: the matrix byte-exact required-row conflict, the hollowness gate, the D-concern contradiction, and four count-migration surfaces. A+ is documented non-terminating in this repo, which is why the configured floor is A.'
+  - id: 4
+    category: 'Scope / Doc-set'
+    impact: 'Required'
+    state: 'Resolved 2026-08-09, then REVISED by Q5. Option A (join the seed, 17 → 18) is superseded: `quality-gates.md` is admitted as a **conditional** document created on demand by `/aid-create-testing-strategy`, like the other three. The seed count does not move at all. The intent of Option A — that adopters get the document rather than only AID — is preserved, because conditional means created-when-applicable, not withheld.'
+    context: 'Surfaced by /aid-specify (feature-004). REQUIREMENTS §5.3 gives `testing-strategy` two destinations: `test-landscape.md` and `quality-gates.md`. Verified: `test-landscape.md` is one of the 14 canonical templates, but `quality-gates.md` is **not** — no template under `canonical/aid/templates/knowledge-base/`, zero entries in `doc-set-resolve.md`''s ownership map, and `kb-category: extension` in this repo''s own KB. Same defect class feature-001 found for `release-tracking.md`: a destination that exists for AID but not for adopters. Blocks feature-004 §5, and Option A would move feature-001''s seed count 17 → 18 across ~10 already-specified surfaces.'
+  - id: 3
+    category: 'Scope / Conventions'
+    impact: 'Required'
+    state: 'SUPERSEDED 2026-08-09 by Q5. The original resolution (strip everywhere, invert AS03) proved far larger than represented when the decision was taken: nine carriers rather than two, two of them self-restoring (`build-kb-index.sh`, `agent-prompts.md`), one behavioral (`state-apply.md:186` uses the section as an idempotency probe). Deferred to its own work; the new documents carry a `## Change Log` like every other KB document, so this work is consistent with shipped doctrine.'
+    context: 'Surfaced by /aid-specify (feature-001). The project rule added during this work states a KB doc carries no `## Change Log` and no `changelog:` frontmatter. Disk contradicts it in three places: all 19 `.aid/knowledge/*.md` docs carry `## Change Log`; all 14 canonical templates under `canonical/aid/templates/knowledge-base/` carry it; and `tests/canonical/test-kb-template-authoring-standard.sh` assertion AS03 **requires** `## Change Log` to be the last top-level section of every template. The template standard therefore mandates exactly what the project rule forbids. feature-001 authors three new templates and cannot proceed without a decision. Blocks feature-001 §5.'
+  - id: 2
+    category: 'Scope / Authorization'
+    impact: 'Required'
+    state: 'Resolved 2026-08-09 — authorized; narrow amendment (project-level docs admissible, per-work sprint artifacts still banned). Recorded in REQUIREMENTS.md §4 In Scope and C-6.'
+    context: 'Surfaced by /aid-define (cross-reference). `canonical/aid/templates/kb-authoring/concern-model.md:63-73` bans governance artifacts from the KB, naming "a plan, a backlog, a register" explicitly; `authoring-conventions.md:239` restates it. Amending it is currently scope invented by feature-001, absent from §4 In Scope and from C-6''s release-impact analysis. `concern-model.md` is a canonical template rendering to all five profiles, so amending it changes adopter-facing doctrine. Blocks ledger row 2.'
+  - id: 6
+    category: 'Scope / Close-out'
+    impact: 'Required'
+    state: 'Resolved 2026-08-09 — **regenerate `kb.html` in this work** (the alternative, dropping it from scope, was rejected). It is regenerated by re-running `/aid-summarize`, once, in delivery-003''s final-state-summary step, and is never hand-patched. The run''s two costs are recorded rather than assumed: ~24 minutes, and an **orchestrator-run** V1 visual gate, because `validate-visuals.mjs` is SKIPPED for want of Playwright in the summarize package. Recorded in REQUIREMENTS.md §4 In Scope; feature-006 SPEC § *KB and methodology refresh* + § *Verification*; feature-001 SPEC § *Sequencing* step 6, § *Dependencies* and AC-6; delivery-003 BLUEPRINT Scope + Gate Criteria; PLAN.md cross-cutting risk 5. `.aid/knowledge/tech-debt.md` W1-11 corrected in the same pass.'
+    context: 'Surfaced by the plan review as its CRITICAL: delivery-001''s `## Unreleased` criterion required the section gone from every carrier that described it, and one carrier is `.aid/knowledge/kb.html`, which delivery-003 and feature-006 both declared unregenerable — so no delivery owned a path that could clear it. The premise was traced to `tech-debt.md` W1-11 ("cannot be regenerated — the assembler''s `.aid/.temp/summarize/` input tree no longer exists") and verified **false**: `canonical/skills/aid-summarize/references/state-generate.md` § 2 reads `.aid/knowledge/{doc}.md` directly, and § 5 / § 8 *write* `.aid/.temp/summarize/summary-src/` during the run; `.aid/.temp/` is gitignored, so its absence between runs is the expected end-state, not a missing input. The file was stale, not unregenerable.'
+  - id: 7
+    category: 'Scope / Migration'
+    impact: 'Required'
+    state: 'Resolved 2026-08-09 — **shape (a), derive-from-shipped.** One schema, no exemption arm: a row migrated from `## Unreleased` carries all seven columns, each derived from the item rather than invented. `Definition & done-condition` = the bullet''s own text with the done-condition read as *shipped, pending tag*; `Location` = the durable anchor the bullet already names; `Risk if not done` = *ships untagged / absent from the next release notes*; `Priority` = `P1`, the next-release slice being committed by definition. Rejected (b) exempt-migrated-rows because an exemption forks the row schema permanently and every later consumer would have to handle two shapes; rejected reversing AC-4 because that is a scope change, not a fill-in. **Applies to:** feature-003 §5''s column mapping gains a release-note-bullet arm, and task-018 is unblocked and carries the rule. Applied in the fix pass following delivery-001 review round 2.'
+    context: 'REQUIREMENTS AC-4 and feature-001 §4a require `release-tracking.md`''s `## Unreleased` content to **move into `backlog.md`**, and feature-003 §3b makes every `backlog.md` item section an ID-keyed table of **seven** columns (`ID`, `Tag`, `Title`, `Definition & done-condition`, `Location`, `Risk if not done`, `Priority`). The live source is a single `[NEW]` release-note bullet at `.aid/knowledge/release-tracking.md:26` (the shipped `/aid-graph` skill) and it supplies **two** of the seven — a tag and a title. feature-003 §3b''s derivation rules cover only a promotion from `tech-debt.md` (which supplies four more) and an item **born in the backlog** (which supplies the `ID` minting rule only); §5''s column mapping has no arm for a release-note bullet, and feature-001 §4a''s carrier table says only *"`## Unreleased` to `backlog.md`"*. So `Definition & done-condition`, `Location`, `Risk if not done` and `Priority` have no stated source for an item that is **already built and merely unreleased**. Detail cannot resolve this: authoring four of seven fields from nothing is a design decision, and Detail slices rather than designs. Blocks task-018''s data-integrity criterion.'
+    suggested: 'Two shapes are available without new doctrine. (a) **Derive-from-shipped:** `Definition & done-condition` = the bullet''s own text with the done-condition read as *shipped, pending tag*; `Location` = the durable anchor the bullet already names (for the live item, `canonical/skills/aid-graph/SKILL.md`); `Risk if not done` = *the item ships untagged / is absent from the next release notes*; `Priority` = `P1`, since `## Next Release` is by definition the committed slice. (b) **Exempt the migrated slice:** state in feature-003 §3b that `## Next Release` rows migrated from `## Unreleased` carry `ID`, `Tag` and `Title` only, since they record already-built work rather than work to be done. (a) keeps one schema; (b) keeps the schema honest about what it can know. Owner decision required either way.'
+  - id: 8
+    category: 'Requirements / Oracle integrity'
+    impact: 'Medium'
+    state: 'Resolved 2026-08-10 — **the SPECs are corrected at source, not only in the consuming tasks.** All four printed instances are narrowed to `find canonical/aid/templates -type f \( -iname … \)`: feature-001 AC-2 and §1a, feature-003 §3 lede and §9 *Depends on feature-001*. In **three** of the four, the surrounding criterion text was already scoped to `canonical/aid/templates/`, so the narrowed oracle asserts the same proposition and nothing less. The **fourth** — feature-003 §3''s lede — claimed *"no template anywhere under `canonical/`"*, which is **broader than any oracle can check** and would be falsified by this feature''s own six `canonical/skills/aid-*-{roadmap,backlog}` directories; there the **claim** was narrowed to the template tree to match, rather than the oracle broadened to match the claim. Each SPEC carries a Change Log row recording why. No owner decision was needed: the correction is forced by the criterion text the oracle was printed under, so this entry is an escalation record rather than an open question. **Applies to:** feature-001 SPEC AC-2 + §1a, feature-003 SPEC §3 + §9, task-007 and task-020 (which already ran the narrowed form and disclosed the divergence).'
+    context: 'Surfaced by /aid-detail while slicing delivery-001. feature-001 AC-2 states its criterion as *"None has a file anywhere under `canonical/aid/templates/`"* but printed `find canonical -iname ''*roadmap*'' -o -iname ''*backlog*'' -o -iname ''*release-tracking*''`. `-iname` matches **basenames**, so once feature-003 lands `canonical/skills/aid-{design,create,update}-roadmap` and the three `*-backlog` siblings, the printed oracle returns six directories while the criterion demands nothing — **unsatisfiable by a correct implementation**. All four instances return nothing today, which is why the defect survived spec review; only the narrowed form still returns nothing after feature-003 lands. task-007 and task-020 had narrowed it locally, but a task-local fix leaves the authoritative source printing a command that yields a false failure for the next reader, so the correction is made in the SPECs.'
+  - id: 9
+    category: 'Architecture / Schema conflict'
+    impact: 'Low'
+    state: 'Pending — flagged for human decision; **not blocking delivery-001**'
+    context: 'Surfaced by /aid-detail. **Two canonical templates for the same artifact disagree on the `Source:` field of a task `DETAIL.md`.** `canonical/aid/templates/task-detail-template.md:23` prints `**Source:** work-NNN-{name} -> delivery-NNN`; `canonical/aid/templates/delivery-plans/task-template.md:5` prints `**Source:** feature-NNN-{name} → delivery-NNN`. `.aid/knowledge/artifact-schemas.md:285` names `task-detail-template.md` as the DETAIL file''s source template and `:296` repeats the `work-NNN` form, so the KB sides with the first. All 25 DETAIL files in delivery-001 follow it, and reproduce that template''s `[!NOTE]` verbatim — including the note''s own cross-cite to the shape template, which is where the two forms sit side by side. The observable cost: this delivery spans three features, and the field schema''d for provenance names the work rather than the feature, so no *field* says which feature owns a task.'
+    suggested: 'Make `task-detail-template.md` and `delivery-plans/task-template.md` agree, and have `artifact-schemas.md` state the winning form once. If the `feature-NNN` form wins, the DETAIL files'' `Source:` values are a mechanical rewrite; if `work-NNN` wins, the shape template is the one that changes.'
+    answer: '— (open). Detail did not resolve it because picking a winner edits a shipped canonical template and its five profile renders (delivery-003 owns the render), and changes the schema for every AID adopter''s task files — a repo-wide decision, not a slicing decision. Detail follows the KB, which is the designated source of truth, and records the conflict rather than choosing silently.'
+    applied_to: 'nothing yet — the question is open. The gap it names is mitigated rather than closed: every one of the 25 DETAIL files names its source feature in the first bullet of its `Scope`, verified on disk (`grep -l ''feature-00[1-9]''` over the 25 files returns all 25), so a reader can always see which feature owns a task; it is the schema''d *field* that names the work instead.'

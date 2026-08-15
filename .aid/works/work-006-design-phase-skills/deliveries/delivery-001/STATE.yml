@@ -1,0 +1,16 @@
+delivery_state: Done
+gate_tier: Large
+gate_grade: A+
+gate_timestamp: '2026-08-14T17:23:39Z'
+ticket_ref: "--"
+
+delivery_lifecycle:
+  updated: '2026-08-10T05:40:00Z'
+  block_reason: --
+  block_artifact: --
+delivery_gate:
+  issue_list:
+    - 'Complexity Score: 56 (tasks=25, depth=23, risk=8, consults=0). Recorded as 56 at gate time against a raw script output of 48, because `complexity-score.sh` then under-reported `risk=0` for hierarchical deliveries (ledger row 11, accepted OOS). That tooling bug has since been **fixed upstream on master** (`801caf34`, `--tasks-dir` scan widened to `-maxdepth 2`); the script now reports `risk=8 score=56 tier=Large`, confirming the recorded value. The OOS finding is therefore closed upstream, not outstanding.'
+    - 'Cycles: 2'
+    - '12 findings adjudicated (13 aggregated, 1 pre-Fixed). Cycle 1 grade D-. After fixes: 11 Fixed (rows 1-10, 12), 1 OOS (row 11 -- the complexity-score.sh tooling limitation now fixed upstream, above). Independently re-verified by a clean-context aid-reviewer. Final grade A+ (0 Pending/Recurred).'
+qa: []

@@ -1,0 +1,13 @@
+state: Done
+review: "--"
+elapsed: "--"
+notes: '9 invocations: 6 authored runs + 3 non-realizing routing exits, every one allocating a work folder and none carrying a `phase:` value (V23 evidence). F-bare (mktemp -d, git init): (1) /aid-design-roadmap -> work-001-design-roadmap, A+ in 2 cycles; (2) /aid-update-roadmap [V17 routing exit] -> work-002-update-roadmap; (3) /aid-update-mvp [V17] -> work-003-update-mvp; (4) /aid-update-backlog [V17] -> work-004-update-backlog. Working tree: (5) /aid-design-roadmap -> work-010-design-roadmap, A in 3 cycles (2 typographic MINOR carried); (6) /aid-update-roadmap [V27 roadmap arm, seed consumed; V21 run 1] -> work-011-update-roadmap, A+; (7) /aid-update-mvp [V27 mvp arm] -> work-012-update-mvp, A+; (8) /aid-update-backlog [V27 backlog arm, W1-2 promoted out of tech-debt.md] -> work-013-update-backlog, A+; (9) /aid-update-roadmap [V21 run 2] -> work-014-update-roadmap, A+. V17 PASS (all three route to the absent document owner), V21 PASS, V22 PASS, V24 PASS, V27 PASS on all three arms with the seed half non-vacuous on the roadmap arm. V23 nine-skill aggregation FAILS at 8/9: aid-create-backlog has no run record in any task STATE.md or in git history (task-021 recorded none) -- filed to delivery-001-issues.md. All three documents restored byte for byte; .aid/design/ clean; five work folders, worktrees and branches removed; scratch root removed; render untouched at 113 entries. Full oracle log in EVIDENCE.md.'
+ticket_ref: "--"
+
+quick_check:
+  reviewer_tier: Small
+  findings:
+    - '[HIGH] `EVIDENCE.md:664` inflates the V23 corroboration count -- claims 23 records, its own table enumerates 19 -- Deferred-to-gate'
+    - '[HIGH] V23 coverage is 8 of 9: `aid-create-backlog` has no run record in any task STATE.md or in git history. Root cause is task-015 and task-021 closing Done with `notes: "--"`; confirmed pre-existing rather than an artifact of the reconstruction -- Deferred-to-gate (fix belongs to task-021, not here)'
+    - '[HIGH] The DETAIL''s V19 premise is false on disk -- `release-aid` Step 9 carries no drain close-out check and `grep -c backlog.md` returns 0, task-009 being still Pending -- Deferred-to-gate'
+dispatch_log: []

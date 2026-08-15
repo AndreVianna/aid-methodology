@@ -1,0 +1,52 @@
+delivery_state: Specified
+gate_tier: "--"
+gate_grade: "Pending"
+gate_timestamp: "--"
+ticket_ref: "--"
+
+delivery_lifecycle:
+  updated: '2026-08-10T17:52:49Z'
+  block_reason: --
+  block_artifact: --
+delivery_gate:
+  issue_list: []
+qa:
+  - id: 1
+    category: 'Requirements / Plan validity'
+    impact: 'Required'
+    state: 'Answered'
+    context: |-
+      `origin/master` (the work-004 merge) **retired the repo-wide count guard** --
+      `tests/canonical/check-skill-counts.mjs` is deleted (a ~462-line full delete). Its
+      replacements are `tests/canonical/test-doc-counts.sh`, scoped to the public-facing docs
+      only, plus criterion `G-01` in `authoring-conventions.md`, which is a criterion a reviewer
+      applies rather than a guard that runs. delivery-003 was planned against the retired guard
+      and still names it in **12 of its 25 task DETAILs** (task-050, 059, 062, 063, 065, 066,
+      067, 068, 069, 070, 071, 072), in its own BLUEPRINT, and in four feature SPECs
+      (feature-002 x5, feature-003 x3, feature-005 x2, feature-006 x5). **task-069 is the sharp
+      case: its entire subject is "The count guard extended, its two ratchets raised, and the
+      replay driven to zero" -- it is unexecutable as written, because the artifact it extends
+      no longer exists.** Several other tasks use the guard as their verification oracle, so
+      those oracles are now dangling rather than merely stale.
+    suggested: |-
+      Do not silently re-point the oracles. This is a re-planning decision, not a
+      gate fix: either (a) re-scope task-069 and the dependent oracles onto
+      `test-doc-counts.sh` + `G-01`, accepting that count-bearing statements inside `canonical/`
+      and `.aid/knowledge/` are now reviewer-enforced rather than guarded; or (b) reinstate a
+      count guard for the skill corpus, which reverses an owner decision another work just took;
+      or (c) drop the count-ratchet obligations from this delivery and route them to tech-debt.
+    answer: |-
+      **Owner decision (2026-08-14): option (a).** Re-scope task-069 and the dependent
+      oracles onto `tests/canonical/test-doc-counts.sh` (public-facing docs, a guard that runs and
+      **derives** its counts, so there are no ratchets to raise) plus criterion `G-01` in
+      `authoring-conventions.md` (count-bearing prose inside `canonical/` and `.aid/knowledge/`,
+      reviewer-applied at severity `MINOR`). The accepted trade is that KB/canonical count claims are
+      reviewer-governed rather than guarded. A count guard is **not** reinstated.
+    applied_to: |-
+      `RESCOPE-COUNT-GUARD.md` (the authoritative record, incl. the 14-assertion /
+      10-file work list that replaces the ratchet obligations and the mapping for every stale
+      citation); task-069 re-scoped end to end (title, Type DOCUMENT, Scope, all criteria);
+      guard-running oracles re-pointed in task-065, task-068, task-070 and task-072; the
+      count-comment reasoning corrected in this delivery's `BLUEPRINT.md`. Dropped as having no
+      successor: the `CLAIMS` extension, `SUPERSEDED`, `MARKER_CAP`, `CLAIM_FLOOR` and the stage-2
+      replay. delivery-002 is unaffected.
