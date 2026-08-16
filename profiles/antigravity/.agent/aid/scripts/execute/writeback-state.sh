@@ -270,40 +270,89 @@ resolve_work_dir() {
 # read empty), a single-quoted `'lite'` (only double quotes were stripped), and
 # a trailing `# comment` (kept verbatim, so the value compared equal to
 # nothing). Extending this parser means extending those cases too.
+#
+# Five MORE were then found by probing forms nobody had tried, rather than by
+# waiting for the next reviewer -- the corpus was covering the failures already
+# known, which is the one thing a corpus cannot get credit for. All five are in
+# the three-way parity corpus now:
+#
+#   BOM            a UTF-8 byte-order mark sat in front of `pipeline:`, so the
+#                  key never matched and the value read empty. Twins: `lite`.
+#   deeper nest    `pipeline:` -> `opts:` -> `path:` matched here, because any
+#                  indent was accepted; `pipeline.path` does not exist in that
+#                  file and both twins correctly said so.
+#   block/anchor   `|`, `>`, `&p lite` were returned VERBATIM. This is the worst
+#                  failure of the five and the reason for the guard below: the
+#                  harm is not the wrong value, it is that a non-empty answer
+#                  tells is_flat_layout the layout WAS declared, suppressing the
+#                  presence-rule fallback that would have classified correctly.
+#   escaped quote  `"li\"te"` truncated at the backslash.
+#   multi-document the first document won here and the last won in the twins.
+#
+# The indentation rule is EXACTLY two spaces, not "one or more". That is not a
+# tightening for its own sake: the engine models nesting as `level = indent // 2`,
+# so a four-space `path:` is level 2 -- a grandchild of `pipeline:`, not its
+# child -- and both twins answer "not declared" for it. A parser that accepted
+# any indent answered `lite` where they answered nothing. Note this makes all
+# three agree while all three differ from a full YAML parser, which reads
+# four-space nesting as an ordinary child: that is what being a documented
+# SUBSET means, and consistency across the three is the invariant that matters,
+# since a file all three misread the same way is classified consistently.
 wb_get_pipeline_path() {
     resolve_work_dir
     local state="${WORK_DIR}/STATE.yml"
     [[ -f "$state" ]] || return 0
     awk '
         BEGIN { sq = sprintf("%c", 39); dq = "\"" }
+        NR == 1 { sub(/^\xef\xbb\xbf/, "") }             # UTF-8 BOM, first line only
         { sub(/\r$/, "") }                               # CRLF -> LF, every line
         /^[ \t]*#/                     { next }          # whole-line YAML comment
         /^pipeline:[ \t]*$/            { inp = 1; next }
-        # SPACES only, not `[ \t]+`. YAML forbids a tab as indentation, and both
-        # reader twins reject a tab-indented file outright (their engine raises,
-        # yielding "not declared"). Accepting one here made this reader answer
-        # `lite` where they answered nothing -- the fourth divergence of exactly
-        # the kind this parser has already produced three times, and the first
-        # one caught by a test rather than by a reviewer.
-        inp && /^ +path:[ \t]*/ {
-            sub(/^ +path:[ \t]*/, "")
+        # EXACTLY two spaces, matching the engine level model (see the header note).
+        # SPACES only, not `[ \t]`: YAML forbids a tab as indentation and both twins
+        # reject a tab-indented file outright.
+        inp && /^  path:[ \t]*/ {
+            sub(/^  path:[ \t]*/, "")
             v = $0
             c = substr(v, 1, 1)
+            # Scalar forms outside the subset. Returning the marker verbatim is the
+            # worst option available: `|`, `>` and `&p lite` are all NON-EMPTY, and a
+            # non-empty answer tells is_flat_layout the layout was declared, which
+            # suppresses the presence-rule fallback that would have got it right.
+            # Declaring nothing is honest and lets the fallback run.
+            if (c == "|" || c == ">" || c == "&" || c == "*") { exit }
             if (c == dq || c == sq) {
                 # Quoted: the value is the quoted span. A # inside it is
                 # literal, so comment-stripping must not run.
                 v = substr(v, 2)
-                i = index(v, c)
-                if (i > 0) v = substr(v, 1, i - 1)
+                out = ""
+                while (length(v) > 0) {
+                    ch = substr(v, 1, 1)
+                    # Only the double-quoted form has escapes, per YAML.
+                    if (c == dq && ch == "\\" && length(v) > 1) {
+                        out = out substr(v, 2, 1)
+                        v = substr(v, 3)
+                        continue
+                    }
+                    if (ch == c) break
+                    out = out ch
+                    v = substr(v, 2)
+                }
+                v = out
             } else {
                 # Plain: a # begins a comment only after whitespace.
                 sub(/[ \t]+#.*$/, "", v)
             }
             gsub(/[ \t]+$/, "", v)
-            print tolower(v)
-            exit
+            # LAST occurrence wins, not the first. The engine skips a `---` document
+            # marker with a warning and keeps parsing, so a multi-document file leaves
+            # it holding the final document value; exiting here on the first match
+            # would answer with the first instead.
+            found = tolower(v)
+            next
         }
         inp && /^[^ \t#]/              { inp = 0 }       # a dedented key ends the mapping
+        END { if (found != "") print found }
     ' "$state"
 }
 

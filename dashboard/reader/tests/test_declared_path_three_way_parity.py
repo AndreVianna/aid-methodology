@@ -71,6 +71,30 @@ FIXTURES = {
     # A commented-out key must not win over the real one below it.
     "commented_decoy":       b"# path: full\npipeline:\n  path: lite\n",
     "dedent_ends_mapping":   b"pipeline:\n  initiator: x\nlifecycle: Running\n  path: full\n",
+
+    # ---- found by probing forms the corpus had never tried ----------------------
+    # The five below are not hypotheticals: each made the bash reader disagree with
+    # both twins on the same file, and each was found by generating scalar forms
+    # rather than by waiting for a reviewer. The corpus above had grown by recording
+    # failures already known, which is precisely the coverage a corpus cannot claim
+    # credit for.
+    "bom": b"\xef\xbb\xbfpipeline:\n  path: lite\n",
+    "nested_deeper": b"pipeline:\n  opts:\n    path: lite\n",
+    "block_literal": b"pipeline:\n  path: |\n    lite\n",
+    "block_folded": b"pipeline:\n  path: >\n    lite\n",
+    "anchor": b"pipeline:\n  path: &p lite\n",
+    "escaped_quote": b'pipeline:\n  path: "li\\"te"\n',
+    "multi_doc": b"pipeline:\n  path: lite\n---\npipeline:\n  path: full\n",
+
+    # Four-space indentation is VALID YAML that all three read as "not declared",
+    # because the engine models nesting as `level = indent // 2` and so sees a
+    # grandchild of `pipeline:`. Pinned deliberately: the three agreeing is the
+    # invariant, and a file all three misread identically is at least classified
+    # consistently. A future engine that learns relative indentation must change
+    # this fixture knowingly rather than discover it.
+    "four_space_indent": b"pipeline:\n    path: lite\n",
+    "flow_mapping": b"pipeline: {path: lite}\n",
+    "list_not_mapping": b"pipeline:\n  - path: lite\n"
 }
 
 _NODE_DRIVER = """
