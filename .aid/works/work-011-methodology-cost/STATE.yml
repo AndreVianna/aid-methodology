@@ -1048,3 +1048,42 @@ qa:
     answer: 'Twice now. DEFAULT_ARTIFACTS in cost-meter.py was measured from work-005, since pruned. split_reach cited relationships.md, emitted by the since-removed aid-graph. Both corrected in place. The transient-work-folder rule generalizes beyond work folders to generated files and to derived constants -- worth stating in the KB, which is aid-update-kb territory.'
     decided_by: agent
     updated: '2026-08-15'
+
+  - id: Q31
+    question: "The three remaining tail items -- tech-debt W5-3, examples/, spec-template.md -- what did each turn out to be?"
+    status: Resolved
+    answer: |
+      Each was smaller than billed in one way and larger in another.
+
+      W5-3 claimed "6 of the 21 KB documents have frontmatter that is not valid YAML".
+      Measured 0 of 23: the root cause was `changelog:` entries whose prose contained
+      ": ", and the change-log apparatus was dropped repo-wide, so the defect left with
+      it. But the row's own text called the GAP the more useful half, and the gap was
+      still real -- lint-frontmatter.sh checks field presence and list-vs-scalar shape
+      textually, never well-formedness, and FL19 soft-skips AID's own KB docs. A defect
+      vanishing because something unrelated removed its cause is not a defect prevented.
+      AD11 now parses every KB frontmatter block, verified by reintroducing the exact
+      ": "-in-a-changelog-entry shape and watching it fail.
+
+      examples/ was 25 mentions across 6 files, and rewriting beat patching because
+      swapping a filename inside a sentence that explains why the file exists yields
+      prose wrong in a new way. Three samples renamed; the two feature-section samples
+      now say in their own header that they are a SECTION shown alone. The Lite sample
+      gained what was missing rather than merely wrong: AC-N ids (what a task's Source
+      cites, and what makes its slice derivable), and its stored Tasks table and
+      Execution Graph replaced by the derive-waves.sh command -- a sample showing a
+      stored graph teaches the opposite of what the path does.
+
+      spec-template.md was billed as "no canonical consumer left", which read as a
+      deletion. It was not. aid-specify cites NO template, so this file was the only
+      definition of the shape it writes. Deleting it would have left the skill telling
+      an agent to write a subsection nobody describes. Split instead: the body became
+      specs/technical-specification-template.md (headings demoted for § 11, and
+      aid-specify now cites it); the `> **Ticket:**` line moved to
+      requirements-template.md's Feature 001 block, where the feature section is
+      actually defined, with CL08f and T090 repointed so coverage moved with its
+      subject. The feature skeleton needed nothing -- § 11 already had it.
+
+      Lesson worth keeping: "no consumer references it" and "nothing depends on it" are
+      different claims. A template is consumed by being FOLLOWED, which leaves no
+      grep-able edge. The reference count was zero and the dependency was total.
