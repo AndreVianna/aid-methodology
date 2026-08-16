@@ -9,15 +9,15 @@ minimum_grade: A
 # [W]
 user_approved: 'yes'
 # [W]
-lifecycle: Paused-Awaiting-Input
+lifecycle: Running
 # [W]
-phase: Describe
+phase: Define
 # [W]
-active_skill: none
+active_skill: aid-define
 # [W]
-updated: '2026-08-16T06:10:21Z'
+updated: '2026-08-16T19:00:00Z'
 # [W]
-pause_reason: 'Requirements approved -- run /aid-define work-013 to decompose into features'
+pause_reason: --
 # [W]
 block_reason: --
 # [W]
@@ -113,9 +113,150 @@ lifecycle_history:
     event: 'Requirements APPROVED'
     grade: --
     notes: 'Owner answered [1] at the Step 4 summary. interview.state -> Approved; user_approved -> yes; pipeline paused for the /aid-define hand-off. No issue-tracker connector is catalogued, so no ticket suggestion was printed.'
+  - date: '2026-08-16'
+    event: 'FEATURE-DECOMPOSITION -- 3 features created'
+    grade: --
+    notes: >-
+      Owner asked for the minimum, one if possible; aid-architect showed one is not
+      defensible (a feature is atomic to a delivery, so one feature erases the T1 close
+      that AC-2 and FR-A5 both require; §10 splits priority Must/Must/Should against a
+      single scalar; and the combined size exceeds a sprint). Three approved as-is with
+      nine requirements findings left open -- recorded as Q1-Q9. Step 4b skipped:
+      lint-modality.sh never reached master, so a substitute check was run instead --
+      22 of 22 acceptance criteria carry an explicit modality.
 
 # [A]
 deploy: []
 
 # [A]
-qa: []
+#   Raised by aid-architect during FEATURE-DECOMPOSITION. The owner approved the
+#   decomposition as-is with these open, so they are recorded here rather than
+#   fixed: each one lands on a task in the feature named under applied_to.
+qa:
+  - id: Q1
+    category: Requirements
+    impact: High
+    state: Pending
+    context: >-
+      AC-11 says "`git diff` on both is empty". With no ref, `git diff` reports the
+      WORKING-TREE diff, which is empty after any commit no matter what changed, so the
+      criterion passes even if both files were rewritten and committed. Measured on this
+      branch: `git diff --stat -- canonical/aid/scripts/grade.sh
+      canonical/aid/templates/reviewer-ledger-schema.md` returns 0 lines.
+    suggested: >-
+      Give it a base ref, e.g. `git diff master...HEAD -- canonical/aid/scripts/grade.sh
+      canonical/aid/templates/reviewer-ledger-schema.md`, and drop the "is empty, OR the
+      diff touches neither" disjunction — only the second half means anything.
+    answer: --
+    applied_to: 'all three features (AC-11 is carried by each)'
+  - id: Q2
+    category: Requirements
+    impact: High
+    state: Pending
+    context: >-
+      AC-7's command returns 97 lines today (canonical 16, tests 3, docs 1, site/src 74,
+      .aid/knowledge 3). The site/src bulk is generated skill-flow JSON, and 34 of those
+      files still embed an authoring instruction that no longer exists in canonical
+      (`grep -rn 'Initial capture (shortcut' canonical` returns 0) — a stale generated
+      mirror. AC-7 therefore puts a generated tree in scope while NFR-2 forbids editing
+      one, and it greps neither `## Revision History` nor `changelog:` though FR-B7
+      forbids both.
+    suggested: >-
+      Replace the command with one that tests what FR-B7 says and excludes generated
+      trees, and regenerate the site data rather than editing it.
+    answer: --
+    applied_to: 'feature-002-coverage-gate-completion'
+  - id: Q3
+    category: Requirements
+    impact: Medium
+    state: Pending
+    context: >-
+      FR-B3 calls the kb.html content review "a deliberate, named exception to KB-03".
+      KB-03 applies to registry type `kb-generated`, whose match is
+      `path .aid/knowledge/*.md AND fm source == generated`. `kb.html` is HTML, so it
+      resolves to no registry type at all — it is outside the cascade, not excluded by
+      it. Implementing FR-B3 means ADDING a document type plus criteria, which is a
+      different and larger change than an exception.
+    suggested: 'Restate FR-B3 as adding a registry type for the generated summary.'
+    answer: --
+    applied_to: 'feature-002-coverage-gate-completion'
+  - id: Q4
+    category: Requirements
+    impact: Medium
+    state: Pending
+    context: >-
+      FR-B7 says the rule is "stated once (artifact-schemas.md)". It is stated twice
+      inside that file alone (lines 252 and 629-630) and at ~20 sites overall, including
+      criterion KB-02, the kb-authoring principles and tier-model, design-lifecycle, the
+      requirements template, the work-state template, docs/aid-methodology.md, six skill
+      C-3 bullets and three test assertions. Reducing that to one is a deletion across
+      the cascade, the docs site and the test suite, and §4 In Scope does not mention it.
+    suggested: >-
+      Restate as "stated NORMATIVELY once, cross-referenced elsewhere", or add the
+      deletion to scope.
+    answer: --
+    applied_to: 'feature-002-coverage-gate-completion'
+  - id: Q5
+    category: Requirements
+    impact: Medium
+    state: Pending
+    context: >-
+      FR-B6 (one grading backend) and NFR-1 (do not change grade.sh counting logic) pull
+      against each other. `grade-summary.sh` is a points grader with its own
+      `letter_grade()` over two pools; making grade.sh the sole letter producer needs
+      either converting the summarize path to a 7-column ledger (not in §4) or teaching
+      grade.sh a points mode (NFR-1 forbids it). FR-B6 is SHOULD, so this is survivable,
+      but it needs deciding before planning rather than discovering mid-task.
+    suggested: 'Owner decides: convert the summarize path, or drop FR-B6.'
+    answer: --
+    applied_to: 'feature-002-coverage-gate-completion'
+  - id: Q6
+    category: Requirements
+    impact: Medium
+    state: Pending
+    context: >-
+      FR-B4 names a "specify per-section review" that does not exist — `grep -rn
+      'per-section' canonical` returns 4 hits, none a review mechanism. aid-specify
+      reviews PER FEATURE and that review is already on the required path
+      (`aid-specify/references/state-review.md` runs grade.sh on the ledger). So half of
+      FR-B4 is already satisfied and the other half names something unbuilt and unscoped.
+      BLUEPRINT.md is the genuine gap: its template declares no ledger path.
+    suggested: 'Narrow FR-B4 to BLUEPRINT.md, or define what a per-section review is.'
+    answer: --
+    applied_to: 'feature-002-coverage-gate-completion'
+  - id: Q7
+    category: Requirements
+    impact: Low
+    state: Pending
+    context: >-
+      AC-8's `*review*` glob can be evaded by naming: a second review system called
+      `aid-screener`, `aid-critique` or `aid-audit` satisfies the glob while being exactly
+      what FR-A1 forbids — and §4 Out of Scope names aid-screener specifically. Both
+      halves already pass on this branch, so AC-8 is a regression guard rather than a
+      change.
+    suggested: 'Make the FR-A5 audit command the real guard and have AC-8 say so.'
+    answer: --
+    applied_to: 'feature-001-single-review-path-alignment'
+  - id: Q8
+    category: Requirements
+    impact: Low
+    state: Pending
+    context: >-
+      AC-9 says "Measured by READING that cycle's ledger", while NFR-4 requires a count to
+      cite the command that produced it. A read is not a command.
+    suggested: >-
+      Give AC-9 a grep that yields the row count and the count of rows carrying a
+      why-line.
+    answer: --
+    applied_to: 'feature-003-severity-and-recall-measurement'
+  - id: Q9
+    category: Requirements
+    impact: Low
+    state: Pending
+    context: >-
+      FR-C3 and FR-C6 reach no criterion in §9, so both are unverifiable as written. Both
+      are SHOULD, so §9's "an uncovered MUST is visible" claim still holds literally.
+      Criteria were synthesized for both in feature-003, inheriting SHOULD.
+    suggested: 'Confirm the synthesized criteria, or drop the two requirements.'
+    answer: --
+    applied_to: 'feature-003-severity-and-recall-measurement'
