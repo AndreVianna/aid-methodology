@@ -474,4 +474,68 @@ else
     fail "CM42 grounding must not change under --scoped-cycles — got '${ground_scoped:-?}' vs '${ground_full:-?}'"
 fi
 
+# CM43: CODE_PER_TASK is ASSUMED, so no meter conclusion may rest on its value.
+#
+# Three things are asserted across a 0..200,000 sweep, and the split matters because an
+# earlier version of this test asserted the simpler claim -- that the term cancels
+# everywhere -- and the test failed, correctly. It does not cancel everywhere:
+#
+#   CM43a  the shape RANKING is invariant.
+#   CM43b  deltas AMONG the folded family are exactly invariant (they charge the term
+#          the same number of times).
+#   CM43c  the gap from `today` to the cheapest shape MOVES -- `today`'s delivery gate
+#          reviews whole artifacts and charges no code term, while the folded shapes'
+#          diff gate charges one -- but stays decisive across the whole sweep. Pinned at
+#          a floor well below the observed 8.5 MB so it fails on collapse, not on drift.
+cm43_totals() {
+    local val="$1" tmp
+    tmp="$(mktemp /tmp/cost-meter-XXXXXX.py)"
+    sed -E "s/^CODE_PER_TASK = [0-9]+/CODE_PER_TASK = ${val}/" "$METER" > "$tmp"
+    python3 "$tmp" model --features 3 --tasks 16 2>/dev/null | awk '
+        /^shape: / { s = $2 }
+        /^ *TOTAL/ { for (i = 1; i <= NF; i++) if ($i == "B") { v = $(i-1); gsub(/,/, "", v); print s "=" v } }
+    '
+    rm -f "$tmp"
+}
+cm43_rank()  { printf '%s\n' "$1" | sort -t= -k2 -n | cut -d= -f1 | tr '\n' ' '; }
+cm43_get()   { printf '%s\n' "$1" | awk -F= -v k="$2" '$1 == k { print $2 }'; }
+cm43_min()   { printf '%s\n' "$1" | cut -d= -f2 | sort -n | head -1; }
+
+cm43_base="$(cm43_totals 12000)"
+if [[ -z "$cm43_base" ]]; then
+    fail "CM43 produced no shape totals -- every check below would be vacuous"
+else
+    base_rank="$(cm43_rank "$cm43_base")"
+    base_min="$(cm43_min "$cm43_base")"
+    base_fold="$(( $(cm43_get "$cm43_base" folded) - base_min )),$(( $(cm43_get "$cm43_base" folded-no-plan) - base_min ))"
+
+    rank_ok=1; fold_ok=1; today_ok=1; worst_gap=""
+    for v in 0 3000 50000 200000; do
+        t="$(cm43_totals "$v")"
+        m="$(cm43_min "$t")"
+        [[ "$(cm43_rank "$t")" == "$base_rank" ]] || rank_ok=0
+        f="$(( $(cm43_get "$t" folded) - m )),$(( $(cm43_get "$t" folded-no-plan) - m ))"
+        [[ "$f" == "$base_fold" ]] || fold_ok=0
+        gap="$(( $(cm43_get "$t" today) - m ))"
+        (( gap < 5000000 )) && today_ok=0
+        [[ -z "$worst_gap" || "$gap" -lt "$worst_gap" ]] && worst_gap="$gap"
+    done
+
+    if [[ "$rank_ok" == "1" ]]; then
+        pass "CM43a shape ranking is invariant to CODE_PER_TASK (swept 0..200000)"
+    else
+        fail "CM43a shape ranking changed under a CODE_PER_TASK sweep"
+    fi
+    if [[ "$fold_ok" == "1" ]]; then
+        pass "CM43b folded-family deltas are exactly invariant to CODE_PER_TASK"
+    else
+        fail "CM43b a folded-family delta moved with CODE_PER_TASK -- the shapes no longer charge it alike"
+    fi
+    if [[ "$today_ok" == "1" ]]; then
+        pass "CM43c today stays decisively dearer across the sweep (worst gap ${worst_gap} B)"
+    else
+        fail "CM43c the saving over 'today' collapses at some CODE_PER_TASK -- worst gap ${worst_gap} B"
+    fi
+fi
+
 test_summary

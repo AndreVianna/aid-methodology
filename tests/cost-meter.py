@@ -418,6 +418,29 @@ def scan_work(work: Path) -> None:
 DEFAULT_ARTIFACTS = {"REQ": 88276, "SPEC": 21191, "PLAN": 5075, "BP": 3359, "DET": 2075}
 
 # Bytes of code/context a task's execution review reads beyond its DETAIL.
+#
+# ASSUMED, not measured -- and it is labelled so rather than given a fabricated
+# provenance, because a number that looks measured invites being trusted like one.
+# There is no honest way to measure it: it is however much source a reviewer opens to
+# judge one task, which varies by task more than any single figure could represent.
+#
+# It is nonetheless safe to leave assumed, and that is checkable rather than asserted.
+# Sweeping it 0 -> 200,000 (CM43):
+#
+#   - the shape RANKING never changes;
+#   - the deltas AMONG the folded family are bit-identical, because those shapes charge
+#     the term the same number of times;
+#   - the gap from `today` to the folded family DOES move -- `today`'s delivery gate
+#     reviews whole artifacts and charges no code term, while the folded shapes' diff
+#     gate charges one. So a larger constant narrows the gap: 9.70 MB at 0, 9.62 MB at
+#     12,000, 8.50 MB at 200,000.
+#
+# That last point is the honest caveat, and it was found by the test contradicting an
+# earlier version of this comment that claimed the term cancelled everywhere. It does
+# not. What holds is that the conclusion survives the whole sweep by a wide margin: even
+# at 200,000 -- sixteen times the assumption -- `today` is still ~8.5 MB dearer, so no
+# result here rests on the figure being right. CM43 pins both halves, so an edit that
+# makes a conclusion actually depend on it fails instead of quietly shipping.
 CODE_PER_TASK = 12000
 
 

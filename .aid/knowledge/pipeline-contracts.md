@@ -521,3 +521,18 @@ Load-bearing keys: `project.{name,description,type}`, `tools.installed`,
   that create, read, or update work folders as their live runtime state (Execute, Deploy,
   Monitor, the dashboard reader) are the intended operators of that state, not a dependency,
   and are exempt.
+- **A derived constant is a dependency even though it does not look like one.** The rule
+  above catches dependencies a reader can SEE -- a path, a citation, a fixture read from
+  disk. A number measured from a work folder and then hardcoded into a permanent artifact
+  is the same dependency with the link removed: a threshold tuned against one work's
+  artifacts, a ratio taken from one work's documents, a default sized from one work's task
+  count. It survives the pruning that would have exposed it, and what it loses is not
+  correctness but CHECKABILITY -- nobody can re-derive it, confirm it still holds, or tell
+  what would make it wrong. The same applies to a generated file whose inputs came from a
+  work folder: the output is durable, its provenance is not.
+  Two ways to discharge it, and one of them must hold. Either the derivation is
+  reproducible from durable inputs -- so re-running it is a real check -- or the
+  measurement is recorded INLINE beside the constant in enough detail to re-do by hand:
+  the raw quantities, what was counted, and when. A bare number with a work id in a comment
+  satisfies neither, because the work id is the dangling pointer this rule exists to
+  prevent.
