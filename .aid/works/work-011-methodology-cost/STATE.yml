@@ -571,7 +571,7 @@ qa:
     updated: '2026-08-15'
   - id: Q18
     question: 'AC-13: how far did the Lite reduction get?'
-    state: Open
+    state: Resolved
     answer: |
       SPEC.md folded; PLAN.md not yet. The split is real, not a stopping point of
       convenience -- one half is prose, the other is four parsers.
@@ -613,6 +613,8 @@ qa:
       which is item 8. So AC-13's tail and item 8 are one change, across two bash
       scripts and both reader twins, and that is a four-way parity job rather than a
       prose sweep.
+
+      CLOSED: superseded by Q22 -- AC-13 is met, PLAN.md included.
     decided_by: agent
     updated: '2026-08-15'
   - id: Q17
@@ -812,7 +814,7 @@ qa:
     updated: '2026-08-15'
   - id: Q10
     question: 'R1 review: do this work''s own criteria pass the verifiability rule it imposes on everyone else?'
-    state: Open
+    state: Resolved
     answer: |
       No. Two of the fourteen fail AC-5, the rule this work wrote. That is the most
       valuable thing the review produced -- the rule caught its own author, which is
@@ -844,6 +846,11 @@ qa:
 
       AC-14 is unverifiable in this container (needs gawk, has mawk). Standing limit,
       not a branch defect. It is verifiable in CI, where it passed.
+
+      CLOSED after re-measuring: AC-4's literal command now returns 0 over
+      canonical+docs+examples, and the AC-9 citation sweep returns 0 broken. Both
+      criteria were also corrected in REQUIREMENTS.md itself, which is what the
+      finding actually demanded.
     decided_by: agent
     updated: '2026-08-15'
   - id: Q9
