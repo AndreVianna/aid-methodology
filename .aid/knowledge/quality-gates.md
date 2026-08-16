@@ -303,7 +303,7 @@ stops at a human **APPROVAL-HALT**. CONFIRMED in `shortcut-engine.md`.
 **GATE — two batched grading passes.** GATE dispatches `aid-reviewer` (Large) and runs the
 same REVIEW → GRADE → FIX loop as every other phase, batched into two passes over the
 flattened work just produced:
-- **Pass 1 — definition documents:** `REQUIREMENTS.md`, `SPEC.md`, `PLAN.md`, `BLUEPRINT.md`
+- **Pass 1 — definition documents:** `REQUIREMENTS.md` (§ 11 sections included), `PLAN.md`
   (ledger `.aid/.temp/review-pending/shortcut-{work}-defn.md`).
 - **Pass 2 — task set:** every `tasks/task-NNN/DETAIL.md` (ledger `…-tasks.md`), entered only
   after Pass 1 clears.
@@ -322,7 +322,7 @@ override in `.aid/settings.yml`.
 
 **Where the grades are recorded.** On clearing, GATE appends two entries to the **work-root**
 `STATE.yml`'s `lifecycle_history` sequence (Pass 1 / Pass 2), then deletes both ledgers. In the
-flattened Lite layout there is no `features/{feature}/SPEC.md`, so the full-path Features State
+flattened Lite layout has one feature section rather than many, so the full-path Features State
 view (a DERIVED, read-time dashboard rollup — not a key in any `STATE.yml`) has no Spec-Grade
 column to populate — `lifecycle_history` is the authoritative record of these definition-phase
 gates.

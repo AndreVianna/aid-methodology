@@ -117,13 +117,14 @@ Shortcut Engine (which creates a flattened Lite work).
 ### Delivery
 
 **Definition-as-used-here:** An ordered, independently shippable MVP grouping of features
-within a work, numbered `delivery-NNN`, whose definition document is `BLUEPRINT.md`. Plan decides
+within a work, numbered `delivery-NNN`, whose definition is its `### delivery-NNN` stanza in
+`PLAN.md`. Plan decides
 what goes in each delivery and in what order; Execute runs one git branch per delivery and gates
 each with a delivery-gate review. A delivery is a strategy-level unit (the "what ships when"),
 distinct from a Task (the tactical unit). Not a deployment/shipment event.
 
 **Relates-to:** Work (deliveries belong to a work), Task (a delivery contains tasks),
-Delivery Gate (the per-delivery review gate), BLUEPRINT.md (the delivery definition), Execution
+Delivery Gate (the per-delivery review gate), the delivery stanza (the delivery definition), Execution
 Graph (sequences tasks within/across deliveries).
 
 **sources:**
@@ -366,7 +367,7 @@ work — routing moved to the standalone `/aid-triage` router, and lite work is 
 shortcut engine), and on greenfield authors the forward-authored KB seed (DESCRIBE-SEED). Its
 state machine is `FIRST-RUN → Q-AND-A → CONTINUE → {greenfield: DESCRIBE-SEED →} COMPLETION
 [PAUSE → /aid-define]`. **`aid-define`** (Phase 2b, full path only) begins from the approved
-`REQUIREMENTS.md` and decomposes it into per-feature `SPEC.md` stubs (FEATURE-DECOMPOSITION),
+`REQUIREMENTS.md` and decomposes it into `### Feature NNN` sections under § 11 (FEATURE-DECOMPOSITION),
 then cross-references them against the KB and codebase (CROSS-REFERENCE). This pair replaced the
 single former `aid-interview` skill — `aid-describe` is renamed-and-scoped to "describe the work,"
 `aid-define` to "define the features."
@@ -458,8 +459,8 @@ NFR-7 Suggested-Answer + Rationale (its SUGGEST reflect-back is an NFR-7 straw-m
 `/aid-create-api`, …) — rather than by any routing state inside `aid-describe` (which no longer
 exists). Every shortcut delegates to the shared **shortcut engine**, which collapses the five
 definition phases (Describe → Define → Specify → Plan → Detail) into one fast, mostly-autonomous
-run and produces the **full flattened artifact set** (work-root `REQUIREMENTS.md`, `SPEC.md`,
-`PLAN.md`, `BLUEPRINT.md`, and `tasks/task-NNN/DETAIL.md` — no `features/`, no `deliveries/`
+run and produces the **flattened artifact set** (work-root `REQUIREMENTS.md` and
+`tasks/task-NNN/DETAIL.md` — no `deliveries/`
 folder). It emits the same typed, reviewed artifacts as the full path with the phases collapsed,
 not skipped: a shortcut for known scope, not a quality bypass.
 
@@ -702,9 +703,9 @@ lives).
 | Term | Meaning here | Source |
 |------|--------------|--------|
 | REQUIREMENTS.md | The work's approved requirements — authored by `/aid-describe` (full path) or the shortcut engine's CAPTURE state (Lite) | `canonical/aid/templates/requirements/requirements-template.md` |
-| SPEC.md (feature) | The **feature** definition + Technical Specification; one per feature under `features/feature-NNN/` (full path), or a single work-root `SPEC.md` (Lite). The feature definition kept the name `SPEC.md` — only the delivery and task definitions were renamed | `canonical/aid/templates/feature.md` (full path, via `aid-define`); `canonical/aid/templates/specs/spec-template.md` (Lite path, via the shortcut engine's SPEC state) |
-| PLAN.md | The delivery plan (`## Deliverables` + `## Execution Graph`); one per work | `canonical/aid/templates/delivery-plans/flattened-plan-template.md` |
-| BLUEPRINT.md | The **delivery** definition — objective, scope, Gate Criteria, task listing, dependencies. Full path: `deliveries/delivery-NNN/BLUEPRINT.md`; Lite: a single work-root `BLUEPRINT.md`. Formerly the delivery-level `SPEC.md` | `canonical/aid/templates/delivery-blueprint-template.md` |
+| Feature section | The **feature** definition + `#### Technical Specification`; one `### Feature NNN` section per feature under `REQUIREMENTS.md § 11`, citing the `§ 9 AC-N` it owns rather than copying them | `canonical/aid/templates/feature.md` |
+| PLAN.md | The delivery plan: `## Deliverables` (each stanza a delivery definition) + `## Execution Graph`; one per work, full path only | `canonical/skills/aid-plan/SKILL.md` § Output |
+| Delivery stanza | The **delivery** definition — objective, scope, Gate Criteria, Notes — in that delivery's `### delivery-NNN` stanza in `PLAN.md`. The task listing and reverse edges are DERIVED, never stored. The Lite path has no plan | `canonical/skills/aid-plan/SKILL.md` § Output |
 | DETAIL.md | The **task** definition — bold `**Type:**`, scope, acceptance criteria, dependencies; one per task under `tasks/task-NNN/`. Formerly the task-level `SPEC.md` / flat `task-NNN.md` | `canonical/aid/templates/task-detail-template.md` |
 
 ---

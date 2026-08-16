@@ -1,8 +1,8 @@
 ---
 kb-category: primary
 source: hand-authored
-objective: The structural schema of every artifact the AID methodology produces -- STATE files, REQUIREMENTS/feature-SPEC/delivery-BLUEPRINT/task-DETAIL files, settings, and the three manifest formats -- with required fields, closed enums, producers, consumers, and validation points.
-summary: Read this to learn the required shape of any AID artifact (work/delivery/task STATE.yml, discovery STATE.md, REQUIREMENTS.md, feature SPEC.md, delivery BLUEPRINT.md, task DETAIL.md, settings.yml, install + emission + generated-files manifests) before producing or parsing one.
+objective: The structural schema of every artifact the AID methodology produces -- STATE files, REQUIREMENTS.md with its § 11 feature sections, PLAN.md with its delivery stanzas, task DETAIL files, settings, and the three manifest formats -- with required fields, closed enums, producers, consumers, and validation points.
+summary: Read this to learn the required shape of any AID artifact (work/delivery/task STATE.yml, discovery STATE.md, REQUIREMENTS.md and its § 11 feature sections, PLAN.md and its delivery stanzas, task DETAIL.md, settings.yml, install + emission + generated-files manifests) before producing or parsing one.
 sources:
   - canonical/aid/templates/work-state-template.yml
   - canonical/aid/templates/delivery-state-template.yml
@@ -63,8 +63,8 @@ and act from this doc without reaching into the templates.
 - [Task STATE.yml](#task-stateyml)
 - [Discovery STATE.md](#discovery-statemd)
 - [REQUIREMENTS.md](#requirementsmd)
-- [Feature SPEC.md](#feature-specmd)
-- [Delivery BLUEPRINT.md](#delivery-blueprintmd)
+- [Feature section (`REQUIREMENTS.md § 11`)](#feature-section-requirementsmd--11)
+- [Delivery stanza (`PLAN.md` `### delivery-NNN`)](#delivery-stanza-planmd--delivery-nnn)
 - [Task DETAIL.md](#task-detailmd)
 - [settings.yml](#settingsyml)
 - [Install Manifest (JSON)](#install-manifest-json)
@@ -184,7 +184,7 @@ Producer: `aid-plan` (creates, `Pending-Spec`, at `deliveries/delivery-NNN/STATE
 writes the `delivery_lifecycle` (initial `Pending-Spec`) + `delivery_gate` keys directly
 into the work-root `STATE.yml` during its PLAN/DETAIL steps (and `aid-execute` later advances the
 lifecycle) -- no `delivery-001/STATE.yml` file is created; `writeback-state.sh --delivery-id 001`
-auto-detects the flattened layout (a work-root `BLUEPRINT.md` present AND no `deliveries/` folder)
+auto-detects the flattened layout (declared `pipeline.path: lite`, or for an un-migrated work no `deliveries/` folder)
 and targets the work-root `STATE.yml` instead.
 
 ---
@@ -237,7 +237,7 @@ Source: `requirements/requirements-template.md`. A first-class pipeline artifact
 (Phase 2a, **full path**) as the approved requirements document. On the **flattened Lite path**
 it is produced instead by the **shortcut engine**'s CAPTURE step (written to the same work-root
 path, all 10 sections) ahead of the engine's SPEC/PLAN/DETAIL steps -- the Lite path produces the
-full artifact set (`REQUIREMENTS.md` → `SPEC.md` → `PLAN.md` + `BLUEPRINT.md` →
+artifact set (`REQUIREMENTS.md` →
 `tasks/task-NNN/DETAIL.md`), collapsed and mostly autonomous, not a reduced one. The greenfield
 full path additionally produces a forward-authored KB seed -- see
 [Greenfield KB Seed](#greenfield-kb-seed-forward-authored).
@@ -256,51 +256,62 @@ preferred in Objective/Problem Statement.
 
 ---
 
-## Feature SPEC.md
+## Feature section (`REQUIREMENTS.md § 11`)
 
-Source: `feature.md`. Per-feature artifact: the requirements-half stub is created by
-`aid-define` (Phase 2b, full path only) when its FEATURE-DECOMPOSITION state decomposes the
-approved `REQUIREMENTS.md` into `features/feature-NNN-name/` folders; the technical half is added
-later by `aid-specify`. (`aid-define` also runs CROSS-REFERENCE to validate the feature
-boundaries against the KB and codebase.) On the flattened Lite path there is no `features/`
-folder -- the shortcut engine writes a single consolidated work-root `SPEC.md` of the same shape
-instead (see [How Artifacts Relate](#how-artifacts-relate)).
+Source: `feature.md`. A feature is a SECTION, not a file. `aid-define` (Phase 2b, full path
+only) decomposes the approved `REQUIREMENTS.md` into one `### Feature NNN` section per feature
+under `§ 11 Features`, writing the requirements half; `aid-specify` adds the technical half
+later. (`aid-define` also runs CROSS-REFERENCE to validate the feature boundaries against the
+KB and codebase.) The flattened Lite path is the same shape with exactly one section, written
+by the shortcut engine's SPEC state.
 
-Requirements half (required, authored by `aid-define`): `# {Feature Title}`,
-`## Source` (REQUIREMENTS refs), `## Description`, `## User Stories`
-(As a/I want/so that), `## Priority` (`Must \| Should \| Could`), `## Acceptance Criteria`
-(Given/When/Then checkboxes).
+There is no per-feature file. A separate `SPEC.md` per feature meant each criterion existed in
+`§ 9` and again in every feature claiming it, and two sibling copies asserting different values
+for one fact produced both CRITICAL findings in this project's largest work (D29).
+
+Requirements half (required, authored by `aid-define`): `### Feature NNN — {Title}`,
+`**Priority:**` (`Must | Should | Could`), `**Requirements:**` (the `§ 5 FR-N` it implements),
+`**Criteria:**` (the `§ 9 AC-N` it owns -- CITED by id, never copied), `#### Description`,
+`#### User Stories` (As a/I want/so that).
 
 Specify half (added by `/aid-specify`, do not fill during define):
-`## Technical Specification` with `### Data Model`, `### Feature Flow`,
-`### Layers & Components`, plus conditional sections (API Contracts, UI Specs,
-Events & Messaging, BDD Scenarios, Migration Plan, Security Specs, ...) activated
-only when relevant.
+`#### Technical Specification` with `##### Data Model`, `##### Feature Flow`,
+`##### Layers & Components`, plus whichever conditional subsections the feature activates.
+
+The `AC-N` citation is load-bearing beyond traceability: it is the key
+`slice-requirements.sh` uses to give a task only the criteria it implements, so a copied
+criterion would have to be re-read to be trusted and could disagree with `§ 9`.
 
 ---
 
-## Delivery BLUEPRINT.md
+## Delivery stanza (`PLAN.md` `### delivery-NNN`)
 
-Source: `delivery-blueprint-template.md`. The **immutable** delivery definition -- written once
-by `aid-plan` (creates the stub) and refined by `aid-specify` on the full path (at
-`deliveries/delivery-NNN/BLUEPRINT.md`), or authored by the shortcut engine's PLAN step on the
-flattened Lite path (at the work root, `.aid/works/{work}/BLUEPRINT.md`). Not a state file -- the
-delivery's mutable lifecycle/gate lives in the delivery `STATE.yml` (full path) or the work-root
-`STATE.yml` (flattened).
+The **immutable** delivery definition, written by `aid-plan` into that delivery's stanza in
+`PLAN.md`. Not a state file -- the delivery's mutable lifecycle/gate lives in the delivery
+`STATE.yml` (full path) or the work-root `STATE.yml` (flattened).
 
-Required structure: `# Delivery BLUEPRINT -- delivery-NNN: {Title}`, then:
+There is no `BLUEPRINT.md`. Its PRESENCE was the flat-layout signal in three separate
+implementations, which made an ordinary document impossible to move or retire without silently
+changing how a work was classified; layout is now read from the declared `pipeline.path` (D29).
 
-- `## Objective` -- what this delivery achieves and why it is a distinct unit.
-- `## Scope` -- bounded in-scope deliverables + an explicit `**Out of scope:**` line.
-- `## Gate Criteria` -- ordered, concrete, independently testable checkboxes; the delivery gate
+Required within the stanza:
+
+- `**Objective:**` -- what this delivery achieves and why it is a distinct unit.
+- `**Scope:**` / `**Out of scope:**` -- bounded deliverables, and what is excluded.
+- `**Gate Criteria**` -- ordered, concrete, independently testable checkboxes; the delivery gate
   (`grade.sh`) uses these as its rubric. The last is always "All section-6 quality gates pass".
-- `## Tasks` -- a navigational table (`Task | Type | Title`); each task's full definition is its
-  `tasks/task-NNN/DETAIL.md`.
-- `## Dependencies` -- `**Depends on:**` / `**Blocks:**` (`delivery-NNN` or `-- (none)`).
-- `## Notes` -- design notes/constraints not captured in the gate criteria.
+- `**Notes:**` -- design notes/constraints not captured in the gate criteria. Omit when none.
 
-The delivery gate reads its criteria from `BLUEPRINT.md § Gate Criteria`, NOT from the delivery
-`STATE.yml` (the `delivery_gate` key records the *result*).
+NOT recorded in the stanza, because both are DERIVED and a stored copy can disagree with its
+source: the task listing (from each task's `**Source:** ... -> delivery-NNN`) and the reverse
+dependency edges (from the `**Depends on:**` fields across stanzas).
+
+On the flattened Lite path there is no `PLAN.md` at all: one feature and one delivery means no
+sequencing decision to record, and the work's `§ 9` criteria ARE the delivery's.
+
+The delivery gate reads its criteria from that stanza on the full path and from
+`REQUIREMENTS.md § 9` on the flat path, NOT from the delivery `STATE.yml` (whose `delivery_gate`
+key records the *result*).
 
 ---
 
@@ -563,13 +574,13 @@ forward-authored docs to `current`.
 
 ```
 Full path:
-REQUIREMENTS.md    -> feature SPEC.md (define/decomposition half) -> SPEC.md (specify half)
-SPEC.md            -> PLAN.md -> deliveries/delivery-NNN/BLUEPRINT.md -> tasks/task-NNN/DETAIL.md (immutable)
+REQUIREMENTS.md    -> § 11 feature section (define half) -> its #### Technical Specification (specify half)
+§ 11 sections    -> PLAN.md (a stanza per delivery) -> tasks/task-NNN/DETAIL.md (immutable)
 task-NNN DETAIL.md  ~ task-NNN/STATE.yml (mutable state for the same task)
 task STATE.yml     -> delivery STATE.yml (derived) -> work STATE.yml (derived)
 
 Flattened Lite path (no deliveries/, no delivery-NNN/ folder, no per-task STATE.yml -- the work IS the sole delivery):
-REQUIREMENTS.md    -> SPEC.md -> PLAN.md + BLUEPRINT.md -> tasks/task-NNN/DETAIL.md (immutable, directly under the work folder)
+REQUIREMENTS.md    -> its single § 11 section -> tasks/task-NNN/DETAIL.md (immutable, directly under the work folder)
 task-NNN DETAIL.md cells -> work STATE.yml `tasks_lifecycle` mapping (AUTHORED; no sibling STATE.yml)
 delivery lifecycle/gate  -> work STATE.yml `delivery_lifecycle` / `delivery_gate` keys (AUTHORED directly)
 
@@ -585,10 +596,10 @@ Cardinality summary:
 | Parent | Child | Cardinality |
 |--------|-------|-------------|
 | work | delivery | one-to-many |
-| delivery | BLUEPRINT.md | one-to-one |
+| delivery | PLAN.md `### delivery-NNN` stanza | one-to-one |
 | delivery | task | one-to-many |
 | task DETAIL.md | task STATE.yml | one-to-one, full path only (flattened Lite has no per-task STATE.yml) |
-| REQUIREMENTS.md | feature SPEC.md | one-to-many |
+| REQUIREMENTS.md | its own `§ 11` feature sections | one-to-many |
 | profile | emission-manifest record | one-to-many |
 | install manifest | tool entry | one-to-many |
 

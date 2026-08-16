@@ -61,10 +61,10 @@ standalone `/aid-triage` router skill.)
 | Configure the pipeline | `/aid-config` | View or set project settings; scaffolds `.aid/settings.yml` and the KB state file. |
 | Discover an existing project | `/aid-discover` | Analyzes a repository and builds the Knowledge Base, with a built-in review→Q&A→fix→approval gate. Its **ELICIT** state also captures external documentation sources and tool integrations (the connector catalog — see [External connections & tool integrations](#external-connections--tool-integrations-connector-catalog)). |
 | Gather requirements | `/aid-describe` (Phase 2a) | Adaptive one-question-at-a-time interview driven by the seasoned-analyst elicitation engine, producing `REQUIREMENTS.md` (the full-path entry only — routing moved to `/aid-triage`), and (greenfield) forward-authors a KB seed. See [Requirements-gathering capabilities](#requirements-gathering-capabilities-deep-dive) below. |
-| Decompose into features | `/aid-define` (Phase 2b) | Decomposes the approved `REQUIREMENTS.md` into discrete feature folders with `SPEC.md` stubs, then cross-references the requirements and feature boundaries against the KB and codebase. |
-| Specify a feature | `/aid-specify` | Collaboratively writes a technical `SPEC.md`, one feature at a time. |
+| Decompose into features | `/aid-define` (Phase 2b) | Decomposes the approved `REQUIREMENTS.md` into `### Feature NNN` sections under § 11, then cross-references the requirements and feature boundaries against the KB and codebase. |
+| Specify a feature | `/aid-specify` | Collaboratively writes the `#### Technical Specification` into that feature's `§ 11` section, one feature at a time. |
 | Plan deliveries | `/aid-plan` | Sequences feature specs into deliverables, each a functional MVP building on the last. |
-| Break down into tasks | `/aid-detail` | Decomposes deliverables into small, typed, dependency-ordered tasks with an execution graph, emitting a `DETAIL.md` per task (the delivery definition is `BLUEPRINT.md`). |
+| Break down into tasks | `/aid-detail` | Decomposes deliverables into small, typed, dependency-ordered tasks with an execution graph, emitting a `DETAIL.md` per task (the delivery definition is its `PLAN.md` stanza). |
 | Execute a task | `/aid-execute` | Runs a task by type (Implement/Test/Refactor/etc.) with a built-in review→fix loop; one git branch per delivery. |
 | Ship a release | `/aid-deploy` | Packages completed deliveries, verifies the combined build, generates release notes. |
 | Observe production | `/aid-monitor` | Interprets telemetry, classifies findings, and routes them back into the pipeline: bugs to `/aid-fix`, change requests to `/aid-triage`, infrastructure to ops. |

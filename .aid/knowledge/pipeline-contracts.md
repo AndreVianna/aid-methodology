@@ -98,19 +98,19 @@ Inventory" table, "§4 The Phases").
 | — | `aid-config` (bootstrap) | user metadata (greenfield/brownfield, name, min grade) | `.aid/` scaffold · KB placeholders · context file (`CLAUDE.md`/`AGENTS.md`) · seeded `STATE.yml` · `settings.yml` | none (setup) |
 | 1 | `aid-discover` (full path; brownfield) | repository source · `project-index.md` pre-pass · confirmed `discovery.doc_set` | the confirmed KB doc-set · `INDEX.md` · `README.md` · discovery-area `STATE.md` grade/Q&A · ELICIT E1: `## External Documentation` in `.aid/knowledge/STATE.md` (population signal into `external-sources.md`, written by Scout) · ELICIT E2: `.aid/connectors/` registry (descriptors + `INDEX.md`) | deterministic grade ≥ minimum + human approval |
 | 2a | `aid-describe` (full path only) | `.aid/knowledge/` · user answers | approved `REQUIREMENTS.md` (+ greenfield: a forward-authored KB seed in `.aid/knowledge/`) | grade ≥ minimum + human approval |
-| 2b | `aid-define` (full path only) | approved `REQUIREMENTS.md` · KB · codebase | per-feature `SPEC.md` stubs in `features/` + cross-reference Q&A | grade ≥ minimum + human approval |
-| 3 | `aid-specify` (full path only) | a feature `SPEC.md` (requirements side) · `REQUIREMENTS.md` · KB · codebase | `## Technical Specification` appended to the feature `SPEC.md` | per-section grade ≥ minimum |
-| 4 | `aid-plan` (full path only) | feature `SPEC.md` files marked `Ready` · `REQUIREMENTS.md` · KB | `PLAN.md` (ordered deliveries) + per-delivery `BLUEPRINT.md` stubs (objective/scope/gate criteria) + delivery `STATE.yml` (`Pending-Spec`) | grade ≥ minimum |
-| 5 | `aid-detail` (full path only) | `PLAN.md` · feature `SPEC.md` · `BLUEPRINT.md` · KB | per-task `DETAIL.md` files + execution graph appended to `PLAN.md` | grade ≥ minimum |
-| 6 | `aid-execute` | task `DETAIL.md` (with Type) · `PLAN.md` · feature `SPEC.md` · `BLUEPRINT.md` · `INDEX.md` · `known-issues.md` (if present) | reviewed/graded artifacts to grade ≥ minimum; results in delivery/task `STATE.yml` | per-task quick-check + delivery-gate grade ≥ minimum |
+| 2b | `aid-define` (full path only) | approved `REQUIREMENTS.md` · KB · codebase | one `### Feature NNN` section per feature under `REQUIREMENTS.md § 11` + cross-reference Q&A | grade ≥ minimum + human approval |
+| 3 | `aid-specify` (full path only) | a feature's `§ 11` section (requirements side) · the `§ 5`/`§ 9` slice it cites · KB · codebase | `#### Technical Specification` appended to that feature section | per-section grade ≥ minimum |
+| 4 | `aid-plan` (full path only) | `§ 11` feature sections marked `Ready` · `REQUIREMENTS.md` · KB | `PLAN.md` — ordered deliveries, each stanza carrying that delivery's definition (objective/scope/gate criteria) + delivery `STATE.yml` (`Pending-Spec`) | grade ≥ minimum |
+| 5 | `aid-detail` (full path only) | `PLAN.md` · the `§ 11` feature sections · KB | per-task `DETAIL.md` files + execution graph appended to `PLAN.md` | grade ≥ minimum |
+| 6 | `aid-execute` | task `DETAIL.md` (with Type) · `PLAN.md` · the requirements SLICE the task cites (`slice-requirements.sh`) · `INDEX.md` · `known-issues.md` (if present) | reviewed/graded artifacts to grade ≥ minimum; results in delivery/task `STATE.yml` | per-task quick-check + delivery-gate grade ≥ minimum |
 
 CONFIRMED by the per-phase deep-dives in `docs/aid-methodology.md` ("## 4. The Phases"),
 the artifact table ("Skill Inventory"), and the `aid-describe` / `aid-define`
 `SKILL.md` files (frontmatter `State machine:` + State Detection blocks). The **flattened Lite
-path** produces the same artifact *types* at the work root, collapsed: the shortcut engine
-authors `REQUIREMENTS.md` (CAPTURE), a single work-root feature `SPEC.md` (SPEC), `PLAN.md` +
-`BLUEPRINT.md` (PLAN), and `tasks/task-NNN/DETAIL.md` (DETAIL) — see the On-Disk Work Hierarchy
-below. CONFIRMED: `canonical/aid/templates/shortcut-engine.md` (CAPTURE/SPEC/PLAN/DETAIL steps);
+path** collapses further, to two artifact types at the work root: the shortcut engine authors
+`REQUIREMENTS.md` (CAPTURE, then SPEC writes its `§ 11` feature section) and
+`tasks/task-NNN/DETAIL.md` (DETAIL). Its PLAN state writes nothing — one feature and one
+delivery means no sequencing decision to record — see the On-Disk Work Hierarchy below. CONFIRMED: `canonical/aid/templates/shortcut-engine.md` (CAPTURE/SPEC/PLAN/DETAIL steps);
 `docs/aid-methodology.md` ("Skill Inventory" shortcut row, "The Lite Path").
 
 Greenfield projects skip phase 1 (no existing system) and enter at Describe (2a). Instead of
@@ -140,13 +140,14 @@ cells are authored directly at the work root.
   works/
     work-NNN-{slug}/
       STATE.yml                                 # work-area run-state (DERIVED rollups + Q&A)
-      REQUIREMENTS.md                           # full path only
-      features/feature-NNN-{name}/
-        SPEC.md                                 # feature definition (Define) + tech spec (Specify)
-        STATE.md                                # feature-level state (not part of this hierarchy's YAML conversion)
-      PLAN.md                                   # full path only (Detail appends the execution graph)
+      REQUIREMENTS.md                           # full path only; § 11 holds one
+                                                #   `### Feature NNN` section per feature:
+                                                #   definition (Define) + tech spec (Specify)
+      PLAN.md                                   # full path only; each `### delivery-NNN`
+                                                #   stanza IS that delivery's definition
+                                                #   (objective/scope/gate criteria).
+                                                #   Detail appends the execution graph
       deliveries/delivery-NNN/
-        BLUEPRINT.md                            # delivery definition (objective/scope/gate criteria/tasks)
         STATE.yml                               # delivery lifecycle + gate + delivery-scoped Q&A
         tasks/task-NNN/
           DETAIL.md                             # the task definition (Type, Source, Depends on, Scope, AC)
@@ -167,10 +168,12 @@ cells are authored directly at the work root.
                                                  # delivery's `delivery_lifecycle` key (with its
                                                  # `tasks_lifecycle` mapping) / `delivery_gate` key /
                                                  # `qa` key (AUTHORED directly)
-      REQUIREMENTS.md                           # shortcut engine CAPTURE
-      SPEC.md                                   # single work-root feature spec (requirements + technical)
-      PLAN.md                                   # single-delivery plan + execution graph
-      BLUEPRINT.md                              # the sole delivery's definition, at the work root
+      REQUIREMENTS.md                           # shortcut engine CAPTURE; § 11 gains the single
+                                                #   feature section at SPEC, § 9 carries the
+                                                #   delivery's gate criteria. No SPEC.md and no
+                                                #   PLAN.md: one feature and one delivery leaves
+                                                #   nothing to sequence, and the execution graph
+                                                #   derives from each **Depends on:** field
       tasks/task-NNN/
         DETAIL.md                               # the task definition — IMMUTABLE, no sibling STATE.yml;
                                                  # mutable cells live in STATE.yml's `tasks_lifecycle` mapping
@@ -182,15 +185,14 @@ cells are authored directly at the work root.
 CONFIRMED: `canonical/aid/templates/work-state-template.yml` (`deliveries/delivery-NNN/STATE.yml`
 blocks for the full path; the AUTHORED `delivery_lifecycle` / `tasks_lifecycle` /
 `delivery_gate` keys for the single-delivery flattened work) and
-`canonical/aid/templates/delivery-state-template.yml` / `delivery-blueprint-template.md`
-(full-path-only header notes; the flattened work authors these directly in the work-root
-STATE.yml and a work-root `BLUEPRINT.md`). The `features/` folder is created by `aid-define` (2b)
-FEATURE-DECOMPOSITION, not by the interview half — CONFIRMED: `canonical/skills/aid-define/SKILL.md`
-("Workspace structure", "created by FEATURE-DECOMPOSITION").
+`canonical/aid/templates/delivery-state-template.yml` (a full-path-only header note; the
+flattened work authors the same keys directly in its work-root STATE.yml). The `§ 11` feature
+sections are written by `aid-define` (2b) FEATURE-DECOMPOSITION, not by the interview half --
+CONFIRMED: `canonical/skills/aid-define/SKILL.md`.
 
-The flattened Lite path omits `features/`, `deliveries/`, and `delivery-NNN/`, and creates **no
-per-task `STATE.yml`**: the shortcut engine writes work-root `REQUIREMENTS.md` + `SPEC.md` +
-`PLAN.md` + `BLUEPRINT.md` plus one `tasks/task-NNN/DETAIL.md` per task, and each task's mutable
+The flattened Lite path omits `deliveries/` and `delivery-NNN/`, and creates **no per-task
+`STATE.yml`**: the shortcut engine writes work-root `REQUIREMENTS.md` plus one
+`tasks/task-NNN/DETAIL.md` per task, and each task's mutable
 cells are authored into the work-root `STATE.yml`'s `tasks_lifecycle` mapping (targeted by
 `writeback-state.sh`'s auto-detected flat-layout branch). CONFIRMED:
 `canonical/aid/templates/shortcut-engine.md` ("emits `tasks/task-NNN/DETAIL.md` … no per-task
@@ -211,18 +213,17 @@ is the contract a producing phase must satisfy and a consuming phase relies on.
 | `STATE.md` (discovery area) | config/Discover/Summarize | Discover (resume), all phases | grade, Q&A (Pending), review & summarization history, calibration log; ELICIT (State 0) additionally writes `## Discovery Elicitation` (Sources/Tools/Tools step/Skipped/Resolved) and `## External Documentation` (Path/Type/Accessible/Notes, one row per declared source — E1) | living |
 | `.aid/connectors/` registry | `aid-discover` ELICIT (State 0, Step E2) | all phases (agents requesting a declared integration) | one `<stem>.md` descriptor per connector (`name`, `connection_type`, `endpoint`, `auth_method`, `secret_reference` [aid-managed only], `preset`, `objective`, `summary`, `tags`, `audience`) + generated `INDEX.md` | living, reconciled (add/update/remove) each ELICIT cycle |
 | `REQUIREMENTS.md` | `aid-describe` (full) or shortcut engine CAPTURE (flattened Lite) | Define, Specify, Plan (full); SPEC/PLAN/DETAIL (engine) | 10 numbered sections (Objective … Priority) | frozen after approval; history in git |
-| feature `SPEC.md` | `aid-define` + Specify | Plan, Detail, Execute | Source · Description · User Stories · Priority · Acceptance Criteria · `## Technical Specification` (Specify) | living |
-| work-root `SPEC.md` (flattened Lite) | shortcut engine SPEC | engine PLAN/DETAIL, Execute | single consolidated feature spec (`# {Title}`, Source, Description, Acceptance Criteria, `## Technical Specification`), no `features/` | living |
+| feature section (`REQUIREMENTS.md § 11`) | `aid-define` + Specify | Plan, Detail, Execute | Description · User Stories · Priority · cited `§ 5 FR-N` / `§ 9 AC-N` · `#### Technical Specification` | one section per feature |
 | `PLAN.md` | Plan (full) or shortcut engine PLAN (flattened Lite) | Detail, Deploy | `## Deliverables` (ordered, each with What/Features/Depends on/Priority) + execution graph (Detail) | living; history in git |
-| `BLUEPRINT.md` (delivery definition) | `aid-plan` / `aid-specify` (full, at `deliveries/delivery-NNN/`) or shortcut engine PLAN (flattened Lite, at work root) | Detail, Execute (delivery gate reads `## Gate Criteria`) | `## Objective` · `## Scope` (+ Out of scope) · `## Gate Criteria` (testable checkboxes; last = "All section-6 quality gates pass") · `## Tasks` (nav table) · `## Dependencies` · `## Notes` | immutable definition |
+| delivery stanza (`PLAN.md` `### delivery-NNN`) | `aid-plan` (full path) | Detail, Execute, Deploy | Objective · Scope / Out of scope · **Gate Criteria** · Notes | one stanza per delivery; the Lite path has no plan |
 | task `DETAIL.md` | `aid-detail` (full) or shortcut engine DETAIL (flattened Lite) | Execute | `Type` ∈ {RESEARCH, DESIGN, IMPLEMENT, TEST, DOCUMENT, MIGRATE, REFACTOR, CONFIGURE} · Source · Depends on · Scope · Acceptance Criteria | immutable (rev-tracked if amended) |
 | `IMPEDIMENT-task-NNN.md` | Execute | Specify, Detail, Discover | Summary · Type ∈ {wrong-assumption, missing-dependency, architecture-conflict, kb-gap} · Options · Recommendation | closed when resolved |
 | `package-NNN-{slug}.md` | Deploy | Monitor, stakeholders | deliveries included · verification results · environment · release notes | one per shipped release |
 | `MONITOR-STATE.md` | Monitor | `/aid-fix` (bugs), `/aid-triage` (CRs) | Last Run · Active Findings (Classification/Severity/Evidence/Routing) · Resolved Findings | living |
 
 CONFIRMED by the template files under `canonical/aid/templates/` and the artifact reference
-in `docs/aid-methodology.md` ("Skill Inventory" and "§4 The Phases"). The delivery `BLUEPRINT.md`
-shape is CONFIRMED: `canonical/aid/templates/delivery-blueprint-template.md`; the task `DETAIL.md`
+in `docs/aid-methodology.md` ("Skill Inventory" and "§4 The Phases"). The delivery definition's
+shape is CONFIRMED by `aid-plan/SKILL.md` § Output; the task `DETAIL.md`
 shape: `canonical/aid/templates/task-detail-template.md`. The ELICIT-produced rows
 (`## Discovery Elicitation` / `## External Documentation` / `.aid/connectors/` registry) are
 CONFIRMED: `canonical/skills/aid-discover/references/state-elicit.md` ("Step E1: External
@@ -308,7 +309,7 @@ until the computed grade meets the project minimum. CONFIRMED: `docs/aid-methodo
   full review-fix-review loop at the end of each delivery; High quick-check findings accumulate
   for the gate. CONFIRMED: `docs/aid-methodology.md` ("The two-tier review design").
 - **Lite GATE:** the shortcut engine's GATE state grades every generated document
-  (`REQUIREMENTS.md` / `SPEC.md` / `PLAN.md` / `BLUEPRINT.md` + each `DETAIL.md`) mechanically
+  (`REQUIREMENTS.md` / `PLAN.md` + each `DETAIL.md`) mechanically
   against the project minimum before the APPROVAL-HALT; it is the sole quality checkpoint on the
   Lite path. CONFIRMED: `canonical/aid/templates/shortcut-engine.md` (GATE state).
 

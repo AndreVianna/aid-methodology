@@ -188,7 +188,6 @@ CONFIRMED. The "edit in canonical, not profiles" rule is stated in
 | `canonical/aid/templates/shortcut-catalog.yml` | Single-source 94-row manifest, every row a canonical invocation name, that generates the 34 verb-first shortcut doorway directories, alongside 60 hand-authored `repurpose` skills that own their own directories; read by the maintainer build helper (`build-shortcut-skills.py`) and by `/aid-triage`. |
 | `canonical/aid/templates/shortcut-engine.md` | The shared state machine every shortcut skill delegates to (INTAKE → CAPTURE → SPEC → PLAN → DETAIL → GATE → APPROVAL-HALT). |
 | `canonical/aid/templates/shortcut-scaffolding/` | Per-family SPEC/PLAN/DETAIL scaffolding the shortcut engine consults (one file per verb family: create, change-refactor, fix, document, prototype, test-experiment, analyze-report). |
-| `canonical/aid/templates/delivery-blueprint-template.md` | Template for a delivery definition (`BLUEPRINT.md`, formerly the delivery-level `SPEC.md`). |
 | `canonical/aid/templates/task-detail-template.md` | Template for a task definition (`DETAIL.md`, formerly the task-level `SPEC.md` / `task-NNN.md`). |
 | `.aid/settings.yml` | AID pipeline configuration — the authoritative settings other skills read. |
 | `tests/run-all.sh` | Aggregate runner for the canonical test suites. |
