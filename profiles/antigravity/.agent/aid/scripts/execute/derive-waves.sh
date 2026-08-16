@@ -338,13 +338,26 @@ if [[ -n "$FROM_TASKS" ]]; then
     else
         printf '%s\n' "$table"
     fi
-    derive "$tmp_table"
-    exit $?
+# Both emit paths BUFFER before printing, exactly as --write already did.
+#
+# awk emits each delivery's block header before it can know whether that delivery's
+# graph has a cycle -- the Kahn sort discovers that only once it runs out of
+# zero-indegree nodes. Streaming therefore left a partial, unclosed ```wave-map fence on
+# stdout and then exited 2. A caller that checks the exit code is fine; a caller that
+# pipes stdout onward gets syntactically invalid markdown that looks like output.
+#
+# Failing with NOTHING on stdout is the only honest option: a truncated block is
+# indistinguishable from a complete one to anything reading the text rather than the
+# status.
+    d_out="$(derive "$tmp_table")" || exit 2
+    printf '%s\n' "$d_out"
+    exit 0
 fi
 
 if [[ "$MODE" == "emit" ]]; then
-    derive
-    exit $?
+    d_out="$(derive)" || exit 2
+    printf '%s\n' "$d_out"
+    exit 0
 fi
 
 if [[ "$MODE" == "--write" ]]; then

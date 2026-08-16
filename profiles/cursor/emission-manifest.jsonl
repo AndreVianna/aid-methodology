@@ -18,7 +18,7 @@
 {"dst": ".cursor/aid/scripts/connectors/write-connector.sh", "profile": "cursor", "sha256": "4387e45dc85935478466f24321c8c68f86e5cc7f19a4191cddc143f36a6f9fff", "src": "canonical/scripts/connectors/write-connector.sh"}
 {"dst": ".cursor/aid/scripts/execute/complexity-score.sh", "profile": "cursor", "sha256": "79424229ae44916659be6d05de6cb80db3e32d02d931b66d903e84749574135a", "src": "canonical/scripts/execute/complexity-score.sh"}
 {"dst": ".cursor/aid/scripts/execute/compute-block-radius.sh", "profile": "cursor", "sha256": "eea2a8d8dd12d5e118ea97664fb874343b738a650c984c866363e6adab5bde05", "src": "canonical/scripts/execute/compute-block-radius.sh"}
-{"dst": ".cursor/aid/scripts/execute/derive-waves.sh", "profile": "cursor", "sha256": "57af25d3789e56eb4ac410ca66d8569157c1b766c4d87ac5e99991109bb56538", "src": "canonical/scripts/execute/derive-waves.sh"}
+{"dst": ".cursor/aid/scripts/execute/derive-waves.sh", "profile": "cursor", "sha256": "92900f4adbb4c52cbe69b7d571c54f8df0177400578bbbe83d972ff552ccd6f8", "src": "canonical/scripts/execute/derive-waves.sh"}
 {"dst": ".cursor/aid/scripts/execute/slice-requirements.sh", "profile": "cursor", "sha256": "e2601e4f741cc92793a9302f922f6b62dfc67c222d168b14fe25852f002c6aeb", "src": "canonical/scripts/execute/slice-requirements.sh"}
 {"dst": ".cursor/aid/scripts/execute/write-control-signal.sh", "profile": "cursor", "sha256": "4adc99a9d9aff96d5a3c418fb461af28167f48cfada8a1d2ed88b17454fb17fc", "src": "canonical/scripts/execute/write-control-signal.sh"}
 {"dst": ".cursor/aid/scripts/execute/writeback-state.sh", "profile": "cursor", "sha256": "6ef6abf10272fcc7bbe9d4410a5a2789cc85764f0bc15361545f7e8b954eaaa0", "src": "canonical/scripts/execute/writeback-state.sh"}
@@ -68,7 +68,7 @@
 {"dst": ".cursor/aid/templates/connectors/reconcile.md", "profile": "cursor", "sha256": "bebd545da609678d36197069b3d831a22a785a2dbc78c8732e8c0a4a1d0a4423", "src": "canonical/templates/connectors/reconcile.md"}
 {"dst": ".cursor/aid/templates/connectors/ticket-resolution.md", "profile": "cursor", "sha256": "cff7d837fd0d0058c9bfe64641e41629ae25f3efcf1cee1f11163d3c15adec7f", "src": "canonical/templates/connectors/ticket-resolution.md"}
 {"dst": ".cursor/aid/templates/delivery-issues.md", "profile": "cursor", "sha256": "5d6e3e204475af37543e5152b15c6a9ce4f6dc97bc23d6be38f7886c1fb7a8e5", "src": "canonical/templates/delivery-issues.md"}
-{"dst": ".cursor/aid/templates/delivery-plans/task-template.md", "profile": "cursor", "sha256": "65f0db5c2954b8dea4e929c70f7af54c15b986aa9652b0dd52f9d6bf6eda4c08", "src": "canonical/templates/delivery-plans/task-template.md"}
+{"dst": ".cursor/aid/templates/delivery-plans/task-template.md", "profile": "cursor", "sha256": "48d8f4912d2d524eeb981bd7188d34ebe113a8efcfce65569a1b203b3c73a74a", "src": "canonical/templates/delivery-plans/task-template.md"}
 {"dst": ".cursor/aid/templates/delivery-state-template.yml", "profile": "cursor", "sha256": "2cab554aa6c90ce11d718ae4a747315737384ffb536524f421d75cf4735c31fe", "src": "canonical/templates/delivery-state-template.yml"}
 {"dst": ".cursor/aid/templates/design-folder-readme.md", "profile": "cursor", "sha256": "7b9e7b28a1ee702335530d26e9e888496437517c21344c55233804c83540c01e", "src": "canonical/templates/design-folder-readme.md"}
 {"dst": ".cursor/aid/templates/design-lifecycle.md", "profile": "cursor", "sha256": "4dfb7f2a3da8fda60c3618632a264e4cf8eeb42494a5aaf189b9786da75dd8ab", "src": "canonical/templates/design-lifecycle.md"}
@@ -77,7 +77,6 @@
 {"dst": ".cursor/aid/templates/dispatch-protocol-checklist.md", "profile": "cursor", "sha256": "96cfbb57faa304ce94e8ad98ce4b44618b47665b14cd5ba6a7b352dcb96ad63e", "src": "canonical/templates/dispatch-protocol-checklist.md"}
 {"dst": ".cursor/aid/templates/downstream-worktree-entry.md", "profile": "cursor", "sha256": "a2fb2abe655c3505e27b1234b92d8ba9ae7dc5b4a0820e4f54d43bc847727806", "src": "canonical/templates/downstream-worktree-entry.md"}
 {"dst": ".cursor/aid/templates/feature-inventory.md", "profile": "cursor", "sha256": "949263269d652dfb1da777a8377c675963467b994cee64089b45058400b9fad3", "src": "canonical/templates/feature-inventory.md"}
-{"dst": ".cursor/aid/templates/feature.md", "profile": "cursor", "sha256": "fdf8c89edba62009168ada54ca791907e035fdd527cd582910da9c82c9d6efa4", "src": "canonical/templates/feature.md"}
 {"dst": ".cursor/aid/templates/feedback-artifacts/IMPEDIMENT.md", "profile": "cursor", "sha256": "dc36ba246b20f796aee9925107dfd9d1008fdc251a0b7a60d41ff97f70917313", "src": "canonical/templates/feedback-artifacts/IMPEDIMENT.md"}
 {"dst": ".cursor/aid/templates/generated-files.txt", "profile": "cursor", "sha256": "99dbf80c94ed14870f67e6b27ddc449710351cb02ce223d7cccc534bb580e272", "src": "canonical/templates/generated-files.txt"}
 {"dst": ".cursor/aid/templates/grading-rubric.md", "profile": "cursor", "sha256": "7d08682db9588339b9cc867af8700c444b770f8a73fe22ec337f8f75e19a66fb", "src": "canonical/templates/grading-rubric.md"}
@@ -171,7 +170,7 @@
 {"dst": ".cursor/skills/aid-create-ticket/SKILL.md", "profile": "cursor", "sha256": "402743e191b06e86f7e6ba34c664b80361729a9b298232ebc6c5f2c5af803b76", "src": "canonical/skills/aid-create-ticket/SKILL.md"}
 {"dst": ".cursor/skills/aid-create-ui/SKILL.md", "profile": "cursor", "sha256": "5ccac1cd00560f1319e6115b5980443c63c31e46abe13292bde0885d6e88dbd2", "src": "canonical/skills/aid-create-ui/SKILL.md"}
 {"dst": ".cursor/skills/aid-create/SKILL.md", "profile": "cursor", "sha256": "037453daaff703263f72dff8ccb44bc9c83100fede6d6e8d1a24cde1dab8dfce", "src": "canonical/skills/aid-create/SKILL.md"}
-{"dst": ".cursor/skills/aid-define/SKILL.md", "profile": "cursor", "sha256": "95fffb33f7dd9d04c0131ec4ac8cab19444b3b6473a7a006ff8cde6923ec6194", "src": "canonical/skills/aid-define/SKILL.md"}
+{"dst": ".cursor/skills/aid-define/SKILL.md", "profile": "cursor", "sha256": "a9081e3a1aee279f8ffcd8adc762189e776aa5098c76b1db13ce474a11fcb033", "src": "canonical/skills/aid-define/SKILL.md"}
 {"dst": ".cursor/skills/aid-define/references/cross-reference.md", "profile": "cursor", "sha256": "72202dc42d379d302b47a8a92f583da1fc1df9e7cc657e129fbf8cab87363f14", "src": "canonical/skills/aid-define/references/cross-reference.md"}
 {"dst": ".cursor/skills/aid-define/references/feature-decomposition.md", "profile": "cursor", "sha256": "415b00c1e77dc28ccd4d7626b3a6a0cacc786eb8b6b46a4d205c48a41a1f1612", "src": "canonical/skills/aid-define/references/feature-decomposition.md"}
 {"dst": ".cursor/skills/aid-define/references/reviewer-brief.md", "profile": "cursor", "sha256": "545515c4adabc20ed2331356cb2a34f9a0a29b913afdc2d11ff3507a506ea8c1", "src": "canonical/skills/aid-define/references/reviewer-brief.md"}
@@ -193,7 +192,7 @@
 {"dst": ".cursor/skills/aid-describe/references/elicitation-engine.md", "profile": "cursor", "sha256": "249078e5b6a53a2b146f34ce82e303bbbd497c5ad80962d09ee138170c8306bb", "src": "canonical/skills/aid-describe/references/elicitation-engine.md"}
 {"dst": ".cursor/skills/aid-describe/references/interview-loop.md", "profile": "cursor", "sha256": "afe941a2a28a90eb854098377d3bf96508c0b5ec57c62cb6282e9fca8c4b1080", "src": "canonical/skills/aid-describe/references/interview-loop.md"}
 {"dst": ".cursor/skills/aid-describe/references/interview-strategies.md", "profile": "cursor", "sha256": "599de7b672a69a1f74f25da1aefa7f973a8c861f6bba1af8bc402949fa9698fe", "src": "canonical/skills/aid-describe/references/interview-strategies.md"}
-{"dst": ".cursor/skills/aid-describe/references/kb-hydration.md", "profile": "cursor", "sha256": "70b7069ab943bc6c83280576f449a7998d82c6d6270c7277e73d645e899e5586", "src": "canonical/skills/aid-describe/references/kb-hydration.md"}
+{"dst": ".cursor/skills/aid-describe/references/kb-hydration.md", "profile": "cursor", "sha256": "b0694819e0e4dd7de820c69bb66794cc3d809a11d1b7f691e9fabbe0c16dd233", "src": "canonical/skills/aid-describe/references/kb-hydration.md"}
 {"dst": ".cursor/skills/aid-describe/references/move-playbook.md", "profile": "cursor", "sha256": "32286016df05a717f3f5a9792fa0093d11327c6437aaad5c12603b6716117c48", "src": "canonical/skills/aid-describe/references/move-playbook.md"}
 {"dst": ".cursor/skills/aid-describe/references/state-completion.md", "profile": "cursor", "sha256": "1347f43041210bacef767fa7f7efb7ff9b0d2c391b9340278d8f555a98c82f61", "src": "canonical/skills/aid-describe/references/state-completion.md"}
 {"dst": ".cursor/skills/aid-describe/references/state-continue.md", "profile": "cursor", "sha256": "4e1313f06651dce9e7a9c235fce319039224a1390110b4287fa3eaf1e53e80f0", "src": "canonical/skills/aid-describe/references/state-continue.md"}
@@ -244,7 +243,7 @@
 {"dst": ".cursor/skills/aid-discover/references/state-done.md", "profile": "cursor", "sha256": "fe50618f4add927f8287e80b7de92a3bd97d3f8ddd338ee81bc2e5bdcc8ed0a9", "src": "canonical/skills/aid-discover/references/state-done.md"}
 {"dst": ".cursor/skills/aid-discover/references/state-elicit.md", "profile": "cursor", "sha256": "48c653816324d3a7250ae92d9070aab09d263b1eeba25732ed6985b4ce84a330", "src": "canonical/skills/aid-discover/references/state-elicit.md"}
 {"dst": ".cursor/skills/aid-discover/references/state-fix.md", "profile": "cursor", "sha256": "9d356feeee66c5a97ddd584d5159232f913d6e3632e8b276329c6e15325eaf6e", "src": "canonical/skills/aid-discover/references/state-fix.md"}
-{"dst": ".cursor/skills/aid-discover/references/state-generate.md", "profile": "cursor", "sha256": "73cac57b3c66fca4439d365bc8ec121764306c4e8f2a3281276dc382a0da6492", "src": "canonical/skills/aid-discover/references/state-generate.md"}
+{"dst": ".cursor/skills/aid-discover/references/state-generate.md", "profile": "cursor", "sha256": "e6150111f062eb29bb49d33140df15913ff882aec3004b553a461fc3a0304263", "src": "canonical/skills/aid-discover/references/state-generate.md"}
 {"dst": ".cursor/skills/aid-discover/references/state-q-and-a.md", "profile": "cursor", "sha256": "58ed65a218539355c26b4f3950f62f871b274212bb570cefb03f215a99d1d42e", "src": "canonical/skills/aid-discover/references/state-q-and-a.md"}
 {"dst": ".cursor/skills/aid-discover/references/state-review.md", "profile": "cursor", "sha256": "8e37bab26ab8fc0c5bc9ff995b930d8f5715ceeae9bb3450bf37f96f4535d1d2", "src": "canonical/skills/aid-discover/references/state-review.md"}
 {"dst": ".cursor/skills/aid-document-architecture/SKILL.md", "profile": "cursor", "sha256": "daf941d2388dfd53e2f335822b9167b35b20b40aa8e456a8c0d64ec31df7c25a", "src": "canonical/skills/aid-document-architecture/SKILL.md"}

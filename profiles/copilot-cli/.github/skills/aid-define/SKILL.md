@@ -24,7 +24,8 @@ aid-define is **multi-agent** — different states use different agents.
 | 6 CROSS-REFERENCE | Cross-Reference & Refine | `aid-reviewer` | Adversarial validation against KB and codebase |
 | 7 DONE | DONE | (no dispatch) | Terminal state, user choice prompt |
 
-Decompose approved `REQUIREMENTS.md` into feature folders, then cross-reference the
+Decompose approved `REQUIREMENTS.md` into `### Feature NNN` sections under § 11, then
+cross-reference the
 result against the Knowledge Base and codebase. Produces `REQUIREMENTS.md §11` feature sections
 ready for `/aid-specify`.
 
@@ -183,7 +184,7 @@ All paths below are relative to `.aid/works/{work}/`.
 ```plaintext
 Precondition: Interview State: Approved in STATE.md -- HALT if not met (see below)
 State 5:  **Path:** full, Interview State: Approved,
-          no feature folders                                        -> FEATURE-DECOMPOSITION
+          no § 11 feature sections                                 -> FEATURE-DECOMPOSITION
 State 6:  **Path:** full, Interview State: Approved, features exist,
           cross-reference not yet done                             -> CROSS-REFERENCE
 State 7:  **Path:** full, Interview State: Approved, features +
@@ -210,7 +211,7 @@ Print the state-entry line and "you are here" map. Examples for each state:
 
 **FEATURE-DECOMPOSITION:**
 ```
-[State: FEATURE-DECOMPOSITION] — Decompose approved requirements into discrete feature folders.
+[State: FEATURE-DECOMPOSITION] — Decompose approved requirements into § 11 feature sections.
 aid-define  ▸ you are here
   (from /aid-describe: COMPLETION -> approved REQUIREMENTS)
   [● FEATURE-DECOMPOSITION ] → [ CROSS-REFERENCE ] → [ DONE ] → [ /aid-specify ]

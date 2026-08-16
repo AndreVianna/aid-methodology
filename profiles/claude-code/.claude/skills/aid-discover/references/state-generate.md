@@ -977,9 +977,10 @@ Then **CHAIN -> Step 6.**
 
 The orchestrator generates these directly — they require reading across all KB documents.
 
-**.aid/knowledge/README.md** — completeness tracking table and revision history:
+**.aid/knowledge/README.md** — completeness tracking table:
 - Table with all declared documents, status, and notes
-- Revision history table with dates and update descriptions
+- NO revision-history table. KB docs carry no change-log apparatus; git records
+  per-doc history with author, date and diff.
 
 **.aid/knowledge/INDEX.md** — 2-3 line summary of every declared KB document for agent self-service.
 Regenerate on every discovery run.

@@ -2,7 +2,7 @@
 
 **Type:** RESEARCH | DESIGN | IMPLEMENT | TEST | DOCUMENT | MIGRATE | REFACTOR | CONFIGURE
 
-**Source:** feature-NNN-{name} → delivery-NNN → AC-N[, AC-N]
+**Source:** feature-NNN-{name} -> delivery-NNN -> AC-N[, AC-N]
 
 **Depends on:** task-NNN [, task-NNN] | — (none)
 
