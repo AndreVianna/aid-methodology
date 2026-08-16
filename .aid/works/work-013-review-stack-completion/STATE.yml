@@ -15,9 +15,9 @@ phase: Describe
 # [W]
 active_skill: aid-describe
 # [W]
-updated: '2026-08-16T00:35:00Z'
+updated: '2026-08-16T05:00:00Z'
 # [W]
-pause_reason: 'Draft REQUIREMENTS ready for owner approval (locked choices from work-003 close). Approve to continue to /aid-define, or request edits.'
+pause_reason: 'REQUIREMENTS revised after self-review (T1/AC-1/FR-C1/screener). Awaiting owner approval.'
 # [W]
 block_reason: --
 # [W]
@@ -76,11 +76,15 @@ lifecycle_history:
   - date: '2026-08-16'
     event: 'Work created'
     grade: --
-    notes: 'Successor to canceled work-003. Scaffolded from owner decisions A + T1→T2→T3 + migrate rows + default-delete scripts.'
+    notes: 'Successor to canceled prior redesign. Scaffolded from owner decisions A + T1→T2→T3 + migrate rows + default-delete scripts.'
   - date: '2026-08-16'
     event: 'Draft REQUIREMENTS authored'
     grade: --
-    notes: 'Awaiting owner approval before aid-define.'
+    notes: 'First draft.'
+  - date: '2026-08-16'
+    event: 'REQUIREMENTS revised after self-review'
+    grade: --
+    notes: 'T1 retargeted to master tip; screener out of scope; FR-C1 clarifies cascade severity default; AC-1/AC-6 retargeted.'
 
 # [A]
 deploy: []
