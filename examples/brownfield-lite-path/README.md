@@ -106,7 +106,7 @@ Having confirmed the lite path, `aid-describe` invokes the `interviewer` agent
 in **CONDENSED-INTAKE** state. Instead of the full multi-session requirements
 gathering that the full path uses, CONDENSED-INTAKE is a focused slot-fill:
 a short conversation that gathers only what is needed to write the work-root
-`SPEC.md`.
+`REQUIREMENTS.md`.
 
 The `interviewer` asks targeted questions:
 
@@ -130,17 +130,17 @@ The `interviewer` asks targeted questions:
    > omission, not a missing feature."
 
 CONDENSED-INTAKE ends when the `interviewer` has enough to write the spec. The
-`interviewer` then drafts the **work-root SPEC.md** and presents it for approval.
+`interviewer` then drafts the **work-root REQUIREMENTS.md** and presents it for approval.
 
 ---
 
-## Step 5 — Work-Root SPEC.md (Sample Output)
+## Step 5 — Work-Root REQUIREMENTS.md (Sample Output)
 
-The `interviewer` produces a single `SPEC.md` at the work root. Notice what is
+The `interviewer` produces a single `REQUIREMENTS.md` at the work root. Notice what is
 absent: there is no `REQUIREMENTS.md`, no `features/` folder, and no `PLAN.md`.
 The lite path collapses all of that into one document.
 
-See [sample-spec.md](sample-spec.md) for the exact file produced at this step.
+See [sample-requirements.md](sample-requirements.md) for the exact file produced at this step.
 
 The Director reviews it: the problem statement matches the reported bug; the
 acceptance criteria are testable; there are no open questions. **Approved.**
@@ -150,7 +150,7 @@ acceptance criteria are testable; there are no open questions. **Approved.**
 ## Step 6 — TASK-BREAKDOWN: The Architect Proposes Tasks
 
 With the SPEC approved, `aid-describe` invokes the `architect` agent in
-**TASK-BREAKDOWN** state. The architect reads the work-root SPEC.md and proposes
+**TASK-BREAKDOWN** state. The architect reads the work-root REQUIREMENTS.md and proposes
 a typed task breakdown directly — no PLAN.md sequencing step, no per-feature
 decomposition. For a LITE-BUG-FIX, the architect typically produces one to two
 tasks.
@@ -178,7 +178,7 @@ like.
 ## Step 7 — LITE-REVIEW: The Reviewer Validates the Task Set
 
 Before handing off to execute, `aid-describe` runs the **LITE-REVIEW** gate.
-The `reviewer` agent reads the work-root SPEC.md and the proposed tasks and
+The `reviewer` agent reads the work-root REQUIREMENTS.md and the proposed tasks and
 checks:
 
 - Do the tasks cover all acceptance criteria in the SPEC?
@@ -257,7 +257,7 @@ phases; it does not relax the *execution quality* bar.
 | `REQUIREMENTS.md` | Yes | No |
 | per-feature `### Feature NNN` section under `REQUIREMENTS.md § 11` | Yes | No |
 | `PLAN.md` | Yes | No |
-| work-root `SPEC.md` | No | **Yes** |
+| work-root `REQUIREMENTS.md` | Yes | **Yes** |
 | `tasks/task-NNN.md` | Yes (via aid-detail) | **Yes (via TASK-BREAKDOWN)** |
 | `STATE.md` | Yes | **Yes** |
 | LITE-REVIEW gate | No | **Yes** |
@@ -301,7 +301,7 @@ where `slots.json` contains:
 }
 ```
 
-The script writes a rendered `SPEC.md` and `tasks/task-001.md` directly into the
+The script writes a rendered `REQUIREMENTS.md` and `tasks/task-001.md` directly into the
 work directory, skipping CONDENSED-INTAKE entirely. The recipe output feeds
 directly into TASK-BREAKDOWN.
 
@@ -329,8 +329,8 @@ two-tier review.
       │
       ▼
 [CONDENSED-INTAKE]  (interviewer agent)
-  Slot-fill conversation → work-root SPEC.md
-  Director approves SPEC.md
+  Slot-fill conversation → work-root REQUIREMENTS.md
+  Director approves REQUIREMENTS.md
       │
       ▼
 [TASK-BREAKDOWN]  (architect agent)
@@ -365,7 +365,7 @@ and execute. The lite path skips all three, replacing them with CONDENSED-INTAKE
 | File | What it is |
 |------|-----------|
 | `README.md` | This tutorial |
-| `sample-spec.md` | Sample work-root SPEC.md produced at Step 5 |
+| `sample-requirements.md` | Sample work-root REQUIREMENTS.md produced at Step 5 |
 | `sample-task-001.md` | Sample task file produced at Step 6 |
 
 The sample files are illustrative outputs, not real project files. They show the

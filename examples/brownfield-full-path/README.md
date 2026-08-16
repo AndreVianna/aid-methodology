@@ -200,12 +200,13 @@ specification for each feature SPEC stub created by Interview.
 
 **What `aid-specify` does:**
 
-For each feature stub in `.aid/works/work-NNN/features/`, the `aid-architect` agent reads:
-- The feature's `SPEC.md` stub (business requirements from Interview)
+For each feature section under `.aid/works/work-NNN/REQUIREMENTS.md § 11`, the
+`aid-architect` agent reads:
+- The feature's section as `aid-define` left it (business requirements from Interview)
 - The relevant KB documents (especially `architecture.md`, `module-map.md`,
   `domain-glossary.md`, `schemas.md`, and `pipeline-contracts.md`)
 
-It then writes the technical specification directly into the feature's `SPEC.md`:
+It then appends a `#### Technical Specification` subsection to that feature section:
 data model changes, API contract additions, integration approach, and acceptance
 criteria at the code level.
 
@@ -221,8 +222,8 @@ criteria at the code level.
   webhook verification)
 - A migration script requirement to add the `refunds` table cleanly
 
-See [`sample-spec-excerpt.md`](sample-spec-excerpt.md) for an illustrative excerpt
-of the completed `SPEC.md` for the Refund feature.
+See [`sample-feature-section-excerpt.md`](sample-feature-section-excerpt.md) for an
+illustrative excerpt of the completed feature section for Refund.
 
 **Why specifying from the KB matters:** The spec references the existing
 `payments/StripeService.js` module (found in `module-map.md`), follows the
@@ -396,7 +397,7 @@ After completing all six steps for the Refund workflow, OrderFlow has:
 |----------|----------|-------------|
 | Knowledge Base (14 docs) | `.aid/knowledge/` | Permanent asset — reused for every future work item |
 | REQUIREMENTS.md | `.aid/works/work-003/` | Scope boundary and business requirements |
-| SPEC.md (Refund feature) | `.aid/works/work-003/features/refund-workflow/` | Full technical specification |
+| Refund feature section | `.aid/works/work-003/REQUIREMENTS.md` § 11 | Full technical specification |
 | PLAN.md | `.aid/works/work-003/` | Delivery sequence with dependency mapping |
 | task-001 through task-010 | `.aid/works/work-003/tasks/` | Typed, PR-sized task files |
 | Migration file | Committed to the repo | PostgreSQL migration for `refunds` table |
@@ -432,8 +433,8 @@ practice — not exact outputs (AID produces tailored content for each codebase)
 
 - [`sample-kb-excerpt.md`](sample-kb-excerpt.md) — excerpt from `domain-glossary.md`
   and `tech-debt.md` after Discovery
-- [`sample-spec-excerpt.md`](sample-spec-excerpt.md) — excerpt from the Refund
-  feature `SPEC.md` after `aid-specify`
+- [`sample-feature-section-excerpt.md`](sample-feature-section-excerpt.md) — excerpt
+  from the Refund feature section after `aid-specify`
 - [`sample-plan-excerpt.md`](sample-plan-excerpt.md) — excerpt from `PLAN.md` after
   `aid-plan`
 

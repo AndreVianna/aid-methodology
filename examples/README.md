@@ -26,7 +26,7 @@ Three tutorial-style worked examples showing AID applied step by step to realist
 
 ## Brownfield Project — lite path
 
-**Scenario:** An existing codebase with a small, well-scoped change. Shows the condensed flow: `aid-describe` → TRIAGE routes to a LITE sub-path → work-root `SPEC.md` + `tasks/` → `aid-execute`. Optionally shows a recipe shortcut for a recurring pattern.
+**Scenario:** An existing codebase with a small, well-scoped change. Shows the condensed flow: `aid-describe` → TRIAGE routes to a LITE sub-path → work-root `REQUIREMENTS.md` + `tasks/` → `aid-execute`. Optionally shows a recipe shortcut for a recurring pattern.
 
 → [examples/brownfield-lite-path/](brownfield-lite-path/)
 

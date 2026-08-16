@@ -1,5 +1,11 @@
-# SPEC — F2: Task CRUD
-<!-- Sample output from /aid-specify for feature F2. Illustrative only. -->
+# Feature section — F2: Task CRUD
+<!-- Sample output from /aid-specify for feature F2. Illustrative only.
+
+     This is a SECTION of the work's REQUIREMENTS.md, under `## 11. Features`, not a
+     file of its own. It is shown alone here so one feature can be read without the
+     surrounding document; on disk it sits beside its siblings under the same heading.
+     aid-specify appends the `#### Technical Specification` subsection to the section
+     that aid-define already created. -->
 
 **Work:** work-001-tasktracker-api
 **Feature:** F2 — Task CRUD

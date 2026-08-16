@@ -143,7 +143,7 @@ endpoint. (See the brownfield lite-path example for that scenario.)
 `aid-describe` produces:
 - `REQUIREMENTS.md` — the canonical requirements document
 - `.aid/works/work-001-tasktracker-api/features/` — one directory per feature with an
-  empty `SPEC.md` stub
+  empty `### Feature` section under `REQUIREMENTS.md § 11`
 
 > Sample `REQUIREMENTS.md` excerpt: [samples/REQUIREMENTS.md](samples/REQUIREMENTS.md)
 
@@ -152,7 +152,7 @@ endpoint. (See the brownfield lite-path example for that scenario.)
 ## 5. Step 4 — Specify Each Feature
 
 **Skill:** `aid-specify`
-**Why:** Specification adds the technical layer to each feature's `SPEC.md` stub.
+**Why:** Specification adds the technical layer to each feature's section under `§ 11`.
 Where the requirements describe _what_ and _why_, the spec describes _how_: data
 models, API contracts, component boundaries, error handling, and acceptance criteria
 precise enough for a coding agent to implement without ambiguity.
@@ -164,7 +164,7 @@ precise enough for a coding agent to implement without ambiguity.
 ```
 
 AID reads `REQUIREMENTS.md` and each feature stub, then dispatches specialist agents
-to write the technical spec per feature. You review each `SPEC.md` and confirm before
+to write the technical spec per feature. You review each feature section and confirm before
 moving on.
 
 **Features specified for this project:**
@@ -175,7 +175,7 @@ moving on.
 | F2 — Task CRUD | `tasks` table schema, REST endpoints (POST/GET/PATCH/DELETE), request/response shapes, validation rules, ownership enforcement |
 | F3 — List & Filter | Query parameter schema, filter logic (status, due date range), sort options, pagination (cursor-based), response envelope |
 
-> Sample `SPEC.md` for F2 (Task CRUD): [samples/feature-f2-spec.md](samples/feature-f2-spec.md)
+> Sample feature section for F2 (Task CRUD): [samples/feature-f2-section.md](samples/feature-f2-section.md)
 
 ---
 
@@ -192,7 +192,7 @@ order do we build, and what does each delivery gate check?
 /aid-plan
 ```
 
-AID reads all `SPEC.md` files, identifies dependencies between features, and proposes
+AID reads every feature section under `§ 11`, identifies dependencies between them, and proposes
 a delivery sequence. You confirm (or adjust) before it is finalized.
 
 **Delivery plan produced:**
@@ -221,7 +221,7 @@ is what the coding agent reads during execution.
 /aid-detail
 ```
 
-AID reads `PLAN.md` and each `SPEC.md`, then produces `task-NNN.md` files in
+AID reads `PLAN.md` and each feature section, then produces `task-NNN.md` files in
 `.aid/works/work-001-tasktracker-api/tasks/`. It also writes an execution graph showing
 which tasks can run in parallel vs. must be sequential.
 
