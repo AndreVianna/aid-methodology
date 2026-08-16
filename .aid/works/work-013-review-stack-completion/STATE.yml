@@ -15,9 +15,9 @@ phase: Describe
 # [W]
 active_skill: aid-describe
 # [W]
-updated: '2026-08-16T05:50:00Z'
+updated: '2026-08-16T06:10:00Z'
 # [W]
-pause_reason: 'COMPLETION Steps 1-2 done (quality check passes: all 20 MUSTs discharged; KB review lexicon hydrated). Awaiting the owner at Step 3, the identity-header confirmation, before the Step 4 summary and the approval gate.'
+pause_reason: 'COMPLETION Steps 1-3 done; identity header confirmed by the owner and written. Awaiting the Step 4/5 approval decision.'
 # [W]
 block_reason: --
 # [W]
@@ -100,7 +100,15 @@ lifecycle_history:
   - date: '2026-08-16'
     event: 'COMPLETION Step 2 -- KB hydration'
     grade: --
-    notes: 'Added the Review lexicon to domain-glossary.md (criteria cascade, type registry, criterion oracle, VERIFY/HUNT sets, declared read surface, cost meter) and regenerated INDEX.md. Frontmatter lint PASS. Noted for the owner: build-kb-index.sh reorders rows on a no-op regen against pristine master too -- pre-existing tooling instability, not filed yet.'
+    notes: 'Added the Review lexicon to domain-glossary.md (criteria cascade, type registry, criterion oracle, VERIFY/HUNT sets, declared read surface, cost meter) and regenerated INDEX.md. Frontmatter lint PASS.'
+  - date: '2026-08-16'
+    event: 'Fixed the locale-dependent sort in the KB generators'
+    grade: --
+    notes: 'Owner asked for a fix rather than a tech-debt row. build-kb-index.sh, build-metrics.sh, closure-check.sh and harvest-coined-terms.sh now sort with LC_ALL=C, so generated order no longer depends on the caller''s locale (and harvest no longer feeds comm two differently-collated lists). Guarded by BI19/BI19b, mutation-verified. Suite matches the master baseline: same 15 pre-existing failures.'
+  - date: '2026-08-16'
+    event: 'COMPLETION Step 3 -- identity header confirmed'
+    grade: --
+    notes: 'Owner answered [1]. Name and Description written to REQUIREMENTS.md.'
 
 # [A]
 deploy: []

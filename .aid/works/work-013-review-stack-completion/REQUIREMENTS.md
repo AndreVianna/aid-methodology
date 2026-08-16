@@ -1,7 +1,7 @@
 # Requirements
 
 - **Name:** Review Stack Completion
-- **Description:** Finish what master’s review stack still lacks — keep that stack clean, close remaining coverage gaps, and add judgment/measurement that make the grade mean something — without rebuilding a rival review system.
+- **Description:** Finish the parts of AID's review stack that master still lacks — one review path, the remaining coverage gates, and honest severity and recall measurement — without building a rival review system.
 
 > **Modality.** Every FR/NFR carries MUST / SHOULD / COULD.
 
