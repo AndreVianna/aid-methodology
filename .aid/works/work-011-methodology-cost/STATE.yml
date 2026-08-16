@@ -189,6 +189,53 @@ qa:
       out because the rule governs artifacts, so they are out of scope rather than clean.
     decided_by: agent
     updated: '2026-08-15'
+  - id: Q26
+    question: 'After four merges, do this work''s founding numbers still hold?'
+    state: Resolved
+    answer: |
+      Two were wrong when written, the rest have moved, and the intent survives all of it.
+      Re-ran the same model at the same parameters, including running the meter AT THE
+      COMMIT that wrote the objective so the original claims could be checked against the
+      tool that produced them rather than against memory.
+
+      WRONG WHEN WRITTEN:
+        "60-65% gates / 10-13% authoring / 5-7x"  ->  88.9% / 11.1% / 8.0x. Understated,
+        and internally contradictory: 12% at 5-7x implies 60-84% gates, so the text quoted
+        the bottom of its own range. "Authoring" was the wrong word too -- that line is the
+        per-task GROUNDING READ; the cost of writing a document was never modelled.
+
+        "size discipline alone worth ~60%, with no structural change"  ->  ~38%, stable at
+        38-40% across every parameter set in the stated range. 60% is only reachable by
+        comparing undisciplined `today` against a disciplined RESTRUCTURED shape -- the
+        exact conflation that clause denies. Real mechanism, oversold by ~20 points.
+
+      MOVED SINCE:
+        15.79MB -> 7.04MB for the modelled work (-55%). Gate share 88.9% -> 65.5%.
+        Gate:grounding 8.0x -> 1.9x.
+
+      THE FINDING THAT MATTERS more than the total: the problem has INVERTED. The dearest
+      line is no longer `gate SPEC (per feature)` at 4.49MB but `task grounding` at
+      2.43MB -- and grounding is paid PER TASK, so it scales with task count where a gate
+      does not. Anything further aimed at gates is aimed at the smaller half. The unbuilt
+      `folded-sliced` grounding slice models the next 10 points (7.04 -> 5.42MB).
+
+      MOVED THE WRONG WAY: always-on surface 12,712 -> 18,428 tokens (+45%), skills
+      76 -> 111. work-006's design family, not a regression here, and AC-2's diff gate does
+      flag it. But ~5.7k tokens on EVERY session outweighs a one-off per-work saving over
+      any realistic number of sessions, and no criterion here covers it.
+
+      CREDIT WHERE DUE: work-012 scoped the cycle-2+ hunt and sliced the per-feature
+      requirements load. Its slice keys off the `AC-N` citations this work put in § 11, and
+      this work's fold is what makes the slice addressable; neither would have reached the
+      combined figure alone. The meter now carries `--scoped-cycles` so the model prices
+      the loop that EXISTS rather than the one this work started against -- without it
+      every gate line is overstated and the "which half to attack next" conclusion inverts.
+
+      One assertion earned its keep instantly: CM40's first draft compared whole-run totals
+      at 2 cycles expecting a no-op and failed, because `delivery gate (diff)` hard-codes 3
+      cycles regardless of --cycles. It was measuring something other than what it claimed.
+    decided_by: agent
+    updated: '2026-08-16'
   - id: Q25
     question: 'PR #194 (work-012, scoped review cycles + criterion oracles): does it revert this work?'
     state: Open
