@@ -52,7 +52,15 @@ Must
 > Each criterion carries the modality of the requirement it discharges. FR-B6 is SHOULD
 > in §5 and its criterion stays SHOULD here.
 
-- [ ] **MUST** — Given each of the five gates this feature adds or wires (the mechanical settings gate, the wired frontmatter lint, the `kb.html` content review, BLUEPRINT and specify review on the 7-column + `grade.sh` path, and citation/quote checks covering work artifacts), when the gate is exercised, then a fixture fails before the change and passes after, or a before/after measurement shows the gate firing. *(discharges FR-B1, FR-B2, FR-B3, FR-B4, FR-B5; §9 AC-3)*
+- [ ] **MUST** — Given each of the five gates this feature adds or wires (the mechanical settings gate, the wired frontmatter lint, the `kb.html` content review, BLUEPRINT and specify **per-section** review on the 7-column + `grade.sh` path, and citation/quote checks covering work artifacts), when the gate is exercised, then a fixture fails before the change and passes after, or a before/after measurement shows the gate firing. *(discharges FR-B1, FR-B2, FR-B3, FR-B4, FR-B5; §9 AC-3)*
+
+  > **Q6 is open and this criterion does not pre-empt it.** FR-B4 says "specify
+  > per-section review", and nothing named `per-section` exists in `canonical/` today,
+  > while the specify per-FEATURE review is already on the `grade.sh` path
+  > (`canonical/skills/aid-specify/references/state-review.md`). The wording above is
+  > FR-B4's, unchanged. Whether "per-section" is narrowed away or defined is the owner's
+  > answer to Q6, not this SPEC's to assume; the criterion is re-worded to match that
+  > answer before the feature is specified.
 - [ ] **SHOULD** — Given the summary grading path, when the single-backend change is made, then `grade.sh` is the sole letter producer and the change carries the same fixture or before/after proof as the gates above. *(discharges FR-B6; §9 AC-3 conditional tail)*
 - [ ] **MUST** — Given the repository, when the history-section sweep is run over the authored trees, then no artifact-authoring instruction, template section, or fixture authors a `## Change Log`, a `## Revision History`, or a `changelog:` field — only the rule text that forbids one. *(discharges FR-B7; §9 AC-7)*
 - [ ] **MUST** — Given a script proposed by this feature — the settings gate in particular — when it is merged, then it cites a measurement of the re-derivation it removes. *(discharges NFR-3; §9 AC-5)*

@@ -9,15 +9,15 @@ minimum_grade: A
 # [W]
 user_approved: 'yes'
 # [W]
-lifecycle: Running
+lifecycle: Paused-Awaiting-Input
 # [W]
 phase: Define
 # [W]
-active_skill: aid-define
+active_skill: none
 # [W]
-updated: '2026-08-16T19:00:00Z'
+updated: '2026-08-16T20:13:15Z'
 # [W]
-pause_reason: --
+pause_reason: 'Define complete at A+ -- run /aid-specify work-013 feature-001 to begin technical specification'
 # [W]
 block_reason: --
 # [W]
@@ -28,7 +28,7 @@ ticket_ref: --
 # [A]
 interview:
   state: Approved
-  grade: Pending
+  grade: A+
   sections:
     - id: 1
       name: Objective
@@ -124,6 +124,25 @@ lifecycle_history:
       nine requirements findings left open -- recorded as Q1-Q9. Step 4b skipped:
       lint-modality.sh never reached master, so a substitute check was run instead --
       22 of 22 acceptance criteria carry an explicit modality.
+  - date: '2026-08-16'
+    event: 'CROSS-REFERENCE cycle 1 -- C+'
+    grade: 'C+'
+    notes: >-
+      aid-reviewer at Large tier, brief rendered to disk and metered (29515 bytes
+      declared read surface). Two findings, both about verifiability rather than content:
+      NFR-5 part 1 carried by no criterion (LOW), and feature-002's SPEC pre-deciding the
+      open Q6 by dropping FR-B4's "per-section" (MEDIUM, the Guard 2 cross-document
+      finding). Reviewer independently confirmed the three-feature decomposition against
+      disk and found Q1-Q9 all correct.
+  - date: '2026-08-16'
+    event: 'CROSS-REFERENCE cycle 2 -- A+ (gate PASSES, minimum A)'
+    grade: 'A+'
+    notes: >-
+      Both rows fixed in place rather than deferred to the owner, then verified by a
+      fresh reviewer on a scoped cycle (VERIFY full over the two rows, HUNT scoped to the
+      two changed SPECs; 30168 bytes). Both Fixed, no new findings. Recorded as Q10 and
+      Q11, Answered. Q1-Q9 remain Pending and are the owner''s to settle -- they land on
+      tasks, not on this gate.
 
 # [A]
 deploy: []
@@ -260,3 +279,39 @@ qa:
     suggested: 'Confirm the synthesized criteria, or drop the two requirements.'
     answer: --
     applied_to: 'feature-003-severity-and-recall-measurement'
+  - id: Q10
+    category: Requirements
+    impact: Low
+    state: Answered
+    context: >-
+      Raised by aid-reviewer at cross-reference cycle 1. NFR-5 has three components --
+      VERIFY/HUNT remains mandatory, brief rendered to disk, cost meter recorded -- and
+      §9 AC-2 verified only the second and third, so the first was carried by no
+      acceptance criterion in any feature.
+    suggested: >-
+      Add a criterion showing VERIFY/HUNT is actually invoked on a real dispatch, or
+      document why AC-1 and AC-8 jointly imply it.
+    answer: >-
+      Fixed in place at cycle 1 rather than deferred: feature-001 gained a criterion
+      requiring a cycle-2+ brief to carry the two labelled VERIFY/HUNT lists, and AC-2's
+      criterion is now scoped to "NFR-5 parts 2-3". Confirmed Fixed by the reviewer at
+      cycle 2.
+    applied_to: 'feature-001-single-review-path-alignment'
+  - id: Q11
+    category: Requirements
+    impact: Medium
+    state: Answered
+    context: >-
+      Raised by aid-reviewer at cross-reference cycle 1 as the Guard 2 cross-document
+      finding. Feature-002's SPEC criterion said "BLUEPRINT and specify review" where
+      FR-B4 says "specify PER-SECTION review", so the SPEC had quietly answered the open
+      Q6 in one direction before the owner did.
+    suggested: >-
+      Restore FR-B4's wording and leave Q6 to the owner; re-word the criterion once Q6 is
+      answered.
+    answer: >-
+      Fixed in place at cycle 1: the "per-section" qualifier is restored verbatim from
+      FR-B4 and the criterion carries a note that Q6 is the owner's to answer and the
+      wording follows that answer. Confirmed Fixed by the reviewer at cycle 2. Q6 itself
+      remains Pending.
+    applied_to: 'feature-002-coverage-gate-completion'
