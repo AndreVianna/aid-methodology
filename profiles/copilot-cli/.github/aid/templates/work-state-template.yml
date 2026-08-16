@@ -30,9 +30,10 @@
 # (mutable task cells).
 #
 # Artifact files (REQUIREMENTS.md, per-feature SPEC.md, PLAN.md, per-task
-# DETAIL.md) keep their inline "## Change Log" sections -- that is content
-# history (what changed in the document), distinct from process state (where
-# are we in the workflow). Both are useful; they live in different places.
+# DETAIL.md) carry NO in-document history section: git records what changed in
+# a document, with author, date and diff. This file carries process state
+# (where are we in the workflow), which git cannot answer -- that is why it
+# exists and a "## Change Log" section does not.
 #
 # The AUTHORED delivery_lifecycle / tasks_lifecycle / delivery_gate keys
 # (singular) apply ONLY to single-delivery flattened works (no

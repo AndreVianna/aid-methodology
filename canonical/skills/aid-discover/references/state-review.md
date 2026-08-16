@@ -211,7 +211,7 @@ scope above).
 These checks use the same ledger row format as other M2 findings:
 ```
 | M2-NNN | [MEDIUM] | Pending | module-map.md | — | [M2] [AUTHORING-DIAGRAM] Mermaid block found in KB .md doc | grep -n "mermaid" .aid/knowledge/module-map.md |
-| M2-NNN | [HIGH]   | Pending | schemas.md    | — | [M2] [AUTHORING-LAYOUT] Change Log section is not the last section -- content follows it | Line 147: "## Contracts" appears after "## Change Log" |
+| M2-NNN | [HIGH]   | Pending | schemas.md    | — | [M2] [AUTHORING-LAYOUT] history section present -- the layout forbids one | grep -n "^## \(Change Log\|Revision History\)" .aid/knowledge/schemas.md |
 ```
 
 **M3 — Essence Gate (keystone; Blind Reconstruction + Source Confrontation):**

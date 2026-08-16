@@ -55,7 +55,6 @@ For each approved feature, create `features/feature-{NNN}-{name}/SPEC.md` using 
 template from `../../../templates/feature.md`. Fill in:
 
 - **Title:** feature name (human-readable)
-- **Change Log:** `| {today} | Feature identified from REQUIREMENTS.md {source sections} | /aid-define |`
 - **Source:** relevant REQUIREMENTS.md section references
 - **Description:** synthesized from §5 in stakeholder language
 - **User Stories:** extracted or synthesized from REQUIREMENTS.md, using user types from §3

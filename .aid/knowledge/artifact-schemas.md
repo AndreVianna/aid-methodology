@@ -242,15 +242,16 @@ full artifact set (`REQUIREMENTS.md` → `SPEC.md` → `PLAN.md` + `BLUEPRINT.md
 full path additionally produces a forward-authored KB seed -- see
 [Greenfield KB Seed](#greenfield-kb-seed-forward-authored).
 
-Required structure: `# Requirements` with `Name` + `Description`, a mandatory
-`## Change Log` table, then 10 numbered sections:
+Required structure: `# Requirements` with `Name` + `Description`, then 10 numbered
+sections:
 
 1. Objective · 2. Problem Statement · 3. Users & Stakeholders (table) · 4. Scope
 (In/Out) · 5. Functional Requirements · 6. Non-Functional Requirements · 7.
 Constraints · 8. Assumptions & Dependencies · 9. Acceptance Criteria · 10. Priority.
 
-Rules: the **Change Log is mandatory** (every edit gets a row); unaddressed sections
-carry `*(pending)*`; sections may be `N/A`; acceptance criteria must be testable; the
+Rules: **no history section** (no `## Change Log`, no `## Revision History` -- git
+records each edit with author, date and diff); unaddressed sections carry
+`*(pending)*`; sections may be `N/A`; acceptance criteria must be testable; the
 stakeholder's own words are preferred in Objective/Problem Statement.
 
 ---
@@ -266,9 +267,9 @@ folder -- the shortcut engine writes a single consolidated work-root `SPEC.md` o
 instead (see [How Artifacts Relate](#how-artifacts-relate)).
 
 Requirements half (required, authored by `aid-define`): `# {Feature Title}`,
-`## Change Log`, `## Source` (REQUIREMENTS refs), `## Description`, `## User Stories`
+`## Source` (REQUIREMENTS refs), `## Description`, `## User Stories`
 (As a/I want/so that), `## Priority` (`Must \| Should \| Could`), `## Acceptance Criteria`
-(Given/When/Then checkboxes).
+(Given/When/Then checkboxes). No history section.
 
 Specify half (added by `/aid-specify`, do not fill during define):
 `## Technical Specification` with `### Data Model`, `### Feature Flow`,
@@ -625,6 +626,10 @@ Cardinality summary:
 - **Required-section contract.** REQUIREMENTS.md keeps all 10 numbered sections
   (pending ones marked `*(pending)*`, not deleted); a task DETAIL.md carries exactly
   one `Type`.
+- **No in-document history, anywhere.** No artifact carries a `## Change Log` or
+  `## Revision History` section, and no frontmatter carries `changelog:` -- git is the
+  per-document history, with author, date and diff. This binds every artifact the
+  methodology produces, not only KB docs.
 
 ---
 

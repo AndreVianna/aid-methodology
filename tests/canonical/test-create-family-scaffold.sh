@@ -201,12 +201,6 @@ build_create_api_fixture() {
 - **Name:** orders resource
 - **Description:** Create an API endpoint for the orders resource.
 
-## Change Log
-
-| Date | Change | Source |
-|------|--------|--------|
-| 2026-07-09 | Initial capture (shortcut: ${shortcut}) | /${shortcut} |
-
 ## 1. Objective
 
 Build a new orders resource API endpoint.
@@ -254,12 +248,6 @@ EOF
 
     cat > "${work_dir}/SPEC.md" <<EOF
 # orders resource
-
-## Change Log
-
-| Date | Change | Source |
-|------|--------|--------|
-| 2026-07-09 | SPEC authored from REQUIREMENTS.md | /${shortcut} |
 
 ## Source
 
@@ -484,12 +472,6 @@ build_create_data_model_fixture() {
 - **Name:** customer profile data model
 - **Description:** Create the customer profile entity/schema.
 
-## Change Log
-
-| Date | Change | Source |
-|------|--------|--------|
-| 2026-07-09 | Initial capture (shortcut: aid-create-data-model) | /aid-create-data-model |
-
 ## 1. Objective
 
 Build the customer profile entity/schema.
@@ -535,12 +517,6 @@ EOF
 
     cat > "${work_dir}/SPEC.md" <<'EOF'
 # customer profile data model
-
-## Change Log
-
-| Date | Change | Source |
-|------|--------|--------|
-| 2026-07-09 | SPEC authored from REQUIREMENTS.md | /aid-create-data-model |
 
 ## Source
 

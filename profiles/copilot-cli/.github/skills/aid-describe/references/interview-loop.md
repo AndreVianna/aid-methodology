@@ -49,6 +49,5 @@ context warrants.
 
 1. Update the relevant section(s) in REQUIREMENTS.md
 2. Update Section State in STATE.md `## Interview State`
-3. If the change is significant, add a Change Log entry in REQUIREMENTS.md
-4. If applicable, update `.aid/knowledge/INDEX.md` and
+3. If applicable, update `.aid/knowledge/INDEX.md` and
    `.aid/knowledge/README.md`

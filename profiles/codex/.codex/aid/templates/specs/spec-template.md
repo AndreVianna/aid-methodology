@@ -9,12 +9,6 @@
      lifecycle-unit field only -- the connector descriptor schema is unchanged. Coordinate with
      the in-flight `work-003-state-schema` frontmatter conventions. -->
 
-## Change Log
-
-| Date | Change | Source |
-|------|--------|--------|
-| {date} | Feature created from REQUIREMENTS.md | /aid-describe |
-
 ## Source
 
 - REQUIREMENTS.md §5.{n} — {requirement reference}

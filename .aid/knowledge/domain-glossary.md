@@ -691,7 +691,7 @@ lives).
 | State Detection | A skill re-entrancy mechanism: detect the stalled state and resume there | `canonical/skills/aid-deploy/SKILL.md` |
 | Seed Authoring | The `## Seed Authoring` STATE.md block tracking DESCRIBE-SEED progress (elements authored, coherence check, review grade) | `canonical/skills/aid-describe/references/state-describe-seed.md` ("## Seed Authoring") |
 | Summary Stage | The SUMMARY-DELTA stage of `aid-housekeep` (regenerate the visual summary) | `canonical/aid/scripts/housekeep/housekeep-state.sh` |
-| Change Log | The mandatory last section of every KB/artifact doc recording revisions | `canonical/aid/templates/feature-inventory.md` |
+| Change Log | A retired in-document revision table. No AID artifact carries one: git records per-document history with author, date and diff | `.aid/knowledge/artifact-schemas.md` ("No in-document history, anywhere") |
 
 ---
 

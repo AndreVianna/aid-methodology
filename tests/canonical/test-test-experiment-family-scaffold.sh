@@ -197,12 +197,6 @@ build_test_security_fixture() {
 - **Name:** security verification -- orders search endpoint
 - **Description:** SAST/DAST verification of the orders search endpoint.
 
-## Change Log
-
-| Date | Change | Source |
-|------|--------|--------|
-| 2026-07-09 | Initial capture (shortcut: aid-test-security) | /aid-test-security |
-
 ## 1. Objective
 
 Verify the security posture of the orders search endpoint.
@@ -251,12 +245,6 @@ EOF
 
     cat > "${work_dir}/SPEC.md" <<'EOF'
 # security verification -- orders search endpoint
-
-## Change Log
-
-| Date | Change | Source |
-|------|--------|--------|
-| 2026-07-09 | SPEC authored from REQUIREMENTS.md | /aid-test-security |
 
 ## Source
 
@@ -445,12 +433,6 @@ build_experiment_fixture() {
 - **Name:** checkout button color A/B test
 - **Description:** Test whether a green checkout button improves conversion vs. blue.
 
-## Change Log
-
-| Date | Change | Source |
-|------|--------|--------|
-| 2026-07-09 | Initial capture (shortcut: aid-experiment) | /aid-experiment |
-
 ## 1. Objective
 
 Determine whether a green checkout button improves conversion vs. the current blue.
@@ -501,12 +483,6 @@ EOF
 
     cat > "${work_dir}/SPEC.md" <<'EOF'
 # checkout button color A/B test
-
-## Change Log
-
-| Date | Change | Source |
-|------|--------|--------|
-| 2026-07-09 | SPEC authored from REQUIREMENTS.md | /aid-experiment |
 
 ## Source
 
@@ -737,12 +713,6 @@ build_test_model_eval_fixture() {
 - **Description:** Eval the fraud-classifier model's accuracy against the holdout
   dataset; threshold 0.95.
 
-## Change Log
-
-| Date | Change | Source |
-|------|--------|--------|
-| 2026-07-09 | Initial capture (shortcut: aid-test) | /aid-test |
-
 ## 1. Objective
 
 Evaluate the fraud-classifier model's accuracy against the holdout dataset.
@@ -790,12 +760,6 @@ EOF
 
     cat > "${work_dir}/SPEC.md" <<'EOF'
 # fraud-classifier model evaluation
-
-## Change Log
-
-| Date | Change | Source |
-|------|--------|--------|
-| 2026-07-09 | SPEC authored from REQUIREMENTS.md | /aid-test |
 
 ## Source
 

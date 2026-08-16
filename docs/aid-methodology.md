@@ -991,19 +991,15 @@ These loops apply only when Monitor is run.
 
 ### The Revision Trail
 
-Every change to an upstream artifact is tracked inside the artifact itself — a `## Revision History` table (or, for REQUIREMENTS.md and feature SPEC.md, a `## Change Log` at the top):
+No artifact carries an in-document history section. There is no `## Change Log` and no `## Revision History` table: git already records every edit with author, date and diff, and a hand-maintained table drifts from it the moment someone forgets a row.
 
-```markdown
-## Revision History
+To understand *why* an artifact changed, read its history where that history is authoritative:
 
-| Rev | Date | Source | Description |
-|-----|------|--------|-------------|
-| 1.0 | Mar 1 | aid-specify | Initial spec |
-| 1.1 | Mar 5 | Q&A (aid-plan) | Added latency requirements |
-| 1.2 | Mar 8 | IMPEDIMENT task-F3a (aid-execute) | Changed sync model |
+```bash
+git log --follow -p .aid/works/work-001-example/REQUIREMENTS.md
 ```
 
-The revision trail is not a formality — it is the audit record that lets any phase understand *why* an artifact changed, not just *what* changed. When a spec contradicts the KB, the revision trail identifies which loop revision introduced the divergence.
+What git cannot answer — where the work stands in the pipeline — lives in the area's `STATE` file, which is why that file exists and an in-document history table does not.
 
 ### Feedback Loop Artifacts
 
@@ -1075,10 +1071,6 @@ Within Execute, the reviewer produces a structured issue list that `canonical/ai
 ```markdown
 # Requirements
 
-## Change Log
-| Date | Change | Source |
-|------|--------|--------|
-
 ## 1. Objective
 ## 2. Problem Statement
 ## 3. Users & Stakeholders
@@ -1099,10 +1091,6 @@ Each feature gets its own SPEC.md on the full path. Describe writes the top half
 
 ```markdown
 # {Feature Title}
-
-## Change Log
-| Date | Change | Source |
-|------|--------|--------|
 
 ## Source
 - REQUIREMENTS.md §5.{n}

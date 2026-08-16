@@ -86,7 +86,6 @@ Then present them one at a time using State 2 (Q&A mode) logic.
 After each answer:
 1. Update REQUIREMENTS.md
 2. Update affected feature SPEC.md if the answer changes a feature
-3. Add Change Log entries where content changed
 
 ## 6f. Wrap Up
 
@@ -94,5 +93,4 @@ After all questions answered:
 
 1. Record the cross-reference event (aspirational Review History tracking -- no dedicated
    key in `work-state-template.yml`; see `SKILL.md`'s accuracy note)
-2. Add Change Log entry in REQUIREMENTS.md
-3. Print: `✅ Cross-reference complete. Run /aid-define again to verify.`
+2. Print: `✅ Cross-reference complete. Run /aid-define again to verify.`
