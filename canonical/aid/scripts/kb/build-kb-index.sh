@@ -471,7 +471,11 @@ EOF
 
     while IFS= read -r f; do
         all_docs+=("$f")
-    done < <(find "$ROOT" -maxdepth 1 -type f -name '*.md' ! -name '.*' | sort)
+    # LC_ALL=C: byte collation, so the emitted row order is the same on every
+    # machine. A locale-aware sort orders `INDEX.md` against `architecture.md`
+    # differently under en_US.UTF-8 than under C, which made a no-op regenerate
+    # produce a diff depending only on who ran it.
+    done < <(find "$ROOT" -maxdepth 1 -type f -name '*.md' ! -name '.*' | LC_ALL=C sort)
 
     if [[ ${#all_docs[@]} -eq 0 ]]; then
         echo "*(no KB docs found at \`$ROOT\`)*"
