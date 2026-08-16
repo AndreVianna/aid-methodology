@@ -19,6 +19,7 @@
 {"dst": ".github/aid/scripts/execute/complexity-score.sh", "profile": "copilot-cli", "sha256": "79424229ae44916659be6d05de6cb80db3e32d02d931b66d903e84749574135a", "src": "canonical/scripts/execute/complexity-score.sh"}
 {"dst": ".github/aid/scripts/execute/compute-block-radius.sh", "profile": "copilot-cli", "sha256": "eea2a8d8dd12d5e118ea97664fb874343b738a650c984c866363e6adab5bde05", "src": "canonical/scripts/execute/compute-block-radius.sh"}
 {"dst": ".github/aid/scripts/execute/derive-waves.sh", "profile": "copilot-cli", "sha256": "57af25d3789e56eb4ac410ca66d8569157c1b766c4d87ac5e99991109bb56538", "src": "canonical/scripts/execute/derive-waves.sh"}
+{"dst": ".github/aid/scripts/execute/slice-requirements.sh", "profile": "copilot-cli", "sha256": "e2601e4f741cc92793a9302f922f6b62dfc67c222d168b14fe25852f002c6aeb", "src": "canonical/scripts/execute/slice-requirements.sh"}
 {"dst": ".github/aid/scripts/execute/write-control-signal.sh", "profile": "copilot-cli", "sha256": "4adc99a9d9aff96d5a3c418fb461af28167f48cfada8a1d2ed88b17454fb17fc", "src": "canonical/scripts/execute/write-control-signal.sh"}
 {"dst": ".github/aid/scripts/execute/writeback-state.sh", "profile": "copilot-cli", "sha256": "610875270a539ab2ecfe45a655796f87b26d80a9162a575b98a561cd4b33ec73", "src": "canonical/scripts/execute/writeback-state.sh"}
 {"dst": ".github/aid/scripts/grade.sh", "profile": "copilot-cli", "sha256": "478103d69baa1eb0f080538923ebe4a583629cbce540d04c567f15b4c76350f3", "src": "canonical/scripts/grade.sh"}
@@ -254,7 +255,7 @@
 {"dst": ".github/skills/aid-document-standard/SKILL.md", "profile": "copilot-cli", "sha256": "7363b678c356d67b20a6e714cae5005bb118f22a0cc3f801c6fa12c8d884b37d", "src": "canonical/skills/aid-document-standard/SKILL.md"}
 {"dst": ".github/skills/aid-document-tutorial/SKILL.md", "profile": "copilot-cli", "sha256": "bb2ff3aca0181d30be459b147561bc46d32dc9b606334475ea2c414464a33081", "src": "canonical/skills/aid-document-tutorial/SKILL.md"}
 {"dst": ".github/skills/aid-document/SKILL.md", "profile": "copilot-cli", "sha256": "8119273e5c951683d70c83bd897d5cfe75d61b379407a27e47d3cada4bf247e4", "src": "canonical/skills/aid-document/SKILL.md"}
-{"dst": ".github/skills/aid-execute/SKILL.md", "profile": "copilot-cli", "sha256": "25d4ebc67afd7b837d56d1a4b1c42761a827ac812a8e7e3f4d760914bce6ea4b", "src": "canonical/skills/aid-execute/SKILL.md"}
+{"dst": ".github/skills/aid-execute/SKILL.md", "profile": "copilot-cli", "sha256": "8c90e4a717b6013a05459c705d710bed8d607bd11e678e4ddddb4ffa8b6fd193", "src": "canonical/skills/aid-execute/SKILL.md"}
 {"dst": ".github/skills/aid-execute/references/reviewer-brief.md", "profile": "copilot-cli", "sha256": "cb591cab6301549bdb6a91215da2e8b2248ba2c9d3eb5b881ece6f2e73b2db9e", "src": "canonical/skills/aid-execute/references/reviewer-brief.md"}
 {"dst": ".github/skills/aid-execute/references/reviewer-guide.md", "profile": "copilot-cli", "sha256": "7827b5132ccf3a33d78a372e9a224773d7440cd6a176e6862abb77359a85510f", "src": "canonical/skills/aid-execute/references/reviewer-guide.md"}
 {"dst": ".github/skills/aid-execute/references/state-delivery-gate.md", "profile": "copilot-cli", "sha256": "52fa619c644550350aa5a6af80d2e322be084db71a7bc6282e74b5aeaddaebc9", "src": "canonical/skills/aid-execute/references/state-delivery-gate.md"}

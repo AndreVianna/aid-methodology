@@ -19,6 +19,7 @@
 {"dst": ".claude/aid/scripts/execute/complexity-score.sh", "profile": "claude-code", "sha256": "79424229ae44916659be6d05de6cb80db3e32d02d931b66d903e84749574135a", "src": "canonical/scripts/execute/complexity-score.sh"}
 {"dst": ".claude/aid/scripts/execute/compute-block-radius.sh", "profile": "claude-code", "sha256": "eea2a8d8dd12d5e118ea97664fb874343b738a650c984c866363e6adab5bde05", "src": "canonical/scripts/execute/compute-block-radius.sh"}
 {"dst": ".claude/aid/scripts/execute/derive-waves.sh", "profile": "claude-code", "sha256": "57af25d3789e56eb4ac410ca66d8569157c1b766c4d87ac5e99991109bb56538", "src": "canonical/scripts/execute/derive-waves.sh"}
+{"dst": ".claude/aid/scripts/execute/slice-requirements.sh", "profile": "claude-code", "sha256": "e2601e4f741cc92793a9302f922f6b62dfc67c222d168b14fe25852f002c6aeb", "src": "canonical/scripts/execute/slice-requirements.sh"}
 {"dst": ".claude/aid/scripts/execute/write-control-signal.sh", "profile": "claude-code", "sha256": "4adc99a9d9aff96d5a3c418fb461af28167f48cfada8a1d2ed88b17454fb17fc", "src": "canonical/scripts/execute/write-control-signal.sh"}
 {"dst": ".claude/aid/scripts/execute/writeback-state.sh", "profile": "claude-code", "sha256": "610875270a539ab2ecfe45a655796f87b26d80a9162a575b98a561cd4b33ec73", "src": "canonical/scripts/execute/writeback-state.sh"}
 {"dst": ".claude/aid/scripts/grade.sh", "profile": "claude-code", "sha256": "478103d69baa1eb0f080538923ebe4a583629cbce540d04c567f15b4c76350f3", "src": "canonical/scripts/grade.sh"}
@@ -254,7 +255,7 @@
 {"dst": ".claude/skills/aid-document-standard/SKILL.md", "profile": "claude-code", "sha256": "ae4643526224f667062856610807d16dd9ca63ae61ca4849f8b9da8e5b4c7dd5", "src": "canonical/skills/aid-document-standard/SKILL.md"}
 {"dst": ".claude/skills/aid-document-tutorial/SKILL.md", "profile": "claude-code", "sha256": "c71029e260e2defab257fffe9477fb8bdcffcd8a2bed191d923b7923886de6a5", "src": "canonical/skills/aid-document-tutorial/SKILL.md"}
 {"dst": ".claude/skills/aid-document/SKILL.md", "profile": "claude-code", "sha256": "1d52f847829badbcd03840fb00f060501a7658790b105238f9268f2780cca319", "src": "canonical/skills/aid-document/SKILL.md"}
-{"dst": ".claude/skills/aid-execute/SKILL.md", "profile": "claude-code", "sha256": "9fede3ce22774621f1807b6b1760f5ea2f796f807990cf21623569f71681394e", "src": "canonical/skills/aid-execute/SKILL.md"}
+{"dst": ".claude/skills/aid-execute/SKILL.md", "profile": "claude-code", "sha256": "62ee774793e6d7e10c588eb209a1956585ca72f9987eb3f11d3c7ce51237fccd", "src": "canonical/skills/aid-execute/SKILL.md"}
 {"dst": ".claude/skills/aid-execute/references/reviewer-brief.md", "profile": "claude-code", "sha256": "c04c732eaf82000435700a66c253b7e2d381a9908d9e732ce7d3680edb48d841", "src": "canonical/skills/aid-execute/references/reviewer-brief.md"}
 {"dst": ".claude/skills/aid-execute/references/reviewer-guide.md", "profile": "claude-code", "sha256": "7827b5132ccf3a33d78a372e9a224773d7440cd6a176e6862abb77359a85510f", "src": "canonical/skills/aid-execute/references/reviewer-guide.md"}
 {"dst": ".claude/skills/aid-execute/references/state-delivery-gate.md", "profile": "claude-code", "sha256": "bd8b722b9a479e8cc2072d4896f154cc524d8fefbbbcf68d2d5d92899e5751d0", "src": "canonical/skills/aid-execute/references/state-delivery-gate.md"}

@@ -182,10 +182,28 @@ KB docs are relevant to this task, then load them. Let the INDEX guide you.
 - Task mutable state (State, Review, Elapsed, Notes):
   - Full path: `.aid/works/{work}/deliveries/delivery-NNN/tasks/task-NNN/STATE.yml`
   - Flat path: work-root `.aid/works/{work}/STATE.yml`'s `tasks_lifecycle` entry for `task-NNN`
-- Feature / architectural spec:
-  - Both paths: the feature's `#### Technical Specification` in
-    `.aid/works/{work}/REQUIREMENTS.md § 11` (one section per feature on the full path,
-    a single section on the flat path)
+  - **The requirements SLICE this task traces to — not the whole document:**
+
+    ```
+    bash .claude/aid/scripts/execute/slice-requirements.sh .aid/works/{work} task-NNN
+    ```
+
+    Prints the task's own `§ 11` feature section (the technical specification it builds
+    against), the `§ 9` `AC-N` entries its `**Source:**` line cites, and the identity
+    block. Nothing else.
+
+    Every task execution loads a statement of intent; when that statement is the whole
+    of `REQUIREMENTS.md`, a 16-task work reads the whole document 16 times, and the cost
+    scales with task count where a gate's does not. On this repo's own requirements the
+    slice is ~93% smaller than the document.
+
+    The slice is derivable because the task already declares what it traces to — no new
+    field, no map to maintain, no judgment at read time. A task whose `**Source:**` cites
+    no criterion exits 3 rather than returning a near-empty slice: it has nothing to be
+    judged against, which is a defect in the DETAIL, not a small slice.
+
+    Read the whole document only when the task genuinely spans the work — rare, and
+    visible as a `**Source:**` citing many criteria rather than as a judgment call here.
 - `.aid/works/{work}/PLAN.md` — delivery context and **Execution Graph** (dependencies and parallelism;
   flat path: the top-level `## Execution Graph`, single delivery)
 
