@@ -19,6 +19,7 @@
 #   AD08  the shortcut (Lite) engine writes no PLAN.md either -- AC-13 in full
 #   AD09  the review path names no per-feature SPEC (a dead ARTIFACT, vs AD04 dead PATH)
 #   AD10  SPEC.md is retired across canonical/, not just on the surfaces AD07/AD09 name
+#   AD11  every KB frontmatter block parses as YAML (closes tech-debt W5-3 gate gap)
 #
 # Two scope decisions, both load-bearing, both found by writing the naive version first
 # and reading what it flagged:
@@ -400,6 +401,59 @@ if [[ "$ad10_count" -le 2 ]]; then
 else
     fail "AD10: SPEC.md must not be referenced in canonical/ beyond the 2 self-explaining mentions — got ${ad10_count}"
     report_body "$ad10" | sed 's|^|    offender: |' >&2
+fi
+
+# ---------------------------------------------------------------------------
+# AD11: every KB doc's frontmatter is well-formed YAML.
+#
+# This closes tech-debt W5-3's second half -- the half that row itself called "the more
+# useful" one. Six of 21 KB docs once had frontmatter that would not parse, and nothing
+# noticed: `lint-frontmatter.sh` validates field PRESENCE and list-versus-scalar SHAPE
+# textually, never well-formedness, and its FL19 class soft-skips AID's own KB docs
+# entirely. The one gate named after frontmatter was structurally blind to frontmatter
+# that will not parse.
+#
+# The original defect is gone -- its root cause was `changelog:` entries whose prose
+# contained `": "`, and the change-log apparatus was removed repo-wide. But a defect
+# disappearing because something unrelated removed its cause is not the same as a defect
+# being prevented: nothing stopped it recurring. This is what stops it.
+#
+# Asserted with a real parser rather than a regex, because the failure mode is precisely
+# "looks fine to a textual check, rejected by a parser". Python is used directly: it is
+# already a hard dependency of the test corpus, and the alternative is another
+# hand-rolled YAML reader, which this work has spent enough time on.
+# ---------------------------------------------------------------------------
+ad11="$( cd "$REPO" && python3 - <<'PY'
+import pathlib, re
+try:
+    import yaml
+except ImportError:
+    print("SKIP")
+    raise SystemExit(0)
+
+bad = []
+for path in sorted(pathlib.Path(".aid/knowledge").glob("*.md")):
+    text = path.read_text(encoding="utf-8", errors="replace")
+    m = re.match(r"^---\n(.*?)\n---", text, re.S)
+    if not m:
+        continue                      # a doc with no frontmatter block is AD02's business
+    try:
+        yaml.safe_load(m.group(1))
+    except Exception as exc:          # noqa: BLE001
+        first = str(exc).splitlines()[0]
+        bad.append(f"{path}: {first}")
+
+print(len(bad))
+for entry in bad:
+    print(entry)
+PY
+)"
+if [[ "$(printf '%s\n' "$ad11" | head -1)" == "SKIP" ]]; then
+    pass "AD11 SKIPPED: PyYAML not installed"
+else
+    ad11_count="$(report_count "$ad11")"
+    assert_eq "$ad11_count" "0" "AD11: every .aid/knowledge/ frontmatter block parses as YAML"
+    [[ "$ad11_count" != "0" ]] && report_body "$ad11" | sed 's|^|    invalid: |' >&2
 fi
 
 # ---------------------------------------------------------------------------
