@@ -853,6 +853,49 @@ qa:
       finding actually demanded.
     decided_by: agent
     updated: '2026-08-15'
+  - id: Q27
+    question: 'Items 1 and 2: is SPEC.md retired, and is it gated?'
+    state: Open
+    answer: |
+      Retired across canonical/ and docs/; examples/ remains. All 10 CI checks green.
+
+      84 real references removed. canonical/ is down to two that must stay -- the template
+      describing itself, and the sentence explaining that no separate spec file is written.
+      docs/ is down to one, the glossary entry defining the retirement. AD10 gates the
+      canonical count at <= 2 rather than 0, because a rule demanding zero would force
+      deleting the explanation of the change it enforces.
+
+      THE RULE NOW KNOWS AN ABSENCE FROM A REFERENCE. My own new glossary sentence --
+      "there is no per-feature SPEC.md" -- failed AD04. Third false positive of that kind
+      (prototype.md and document.md were the first two), which is where it stops being a
+      coincidence and becomes a rule that cannot tell "use X" from "X is gone". The
+      scanner exempts absence statements now, verified BOTH ways: an instruction to read a
+      dead path is still caught, an explanation that it is dead is not.
+
+      TWO SELF-INFLICTED DEFECTS, both from one careless bulk regex:
+        It matched across line boundaries in aid-update-kb/SKILL.md and deleted ten lines
+        -- all of HL-1's enforcement clause and half of HL-2. A test caught it.
+        It also removed two parentheticals carrying substantive CONTENT rather than a
+        citation: the policy quote "no new silent behavior and no new write", twice. NO
+        test would have caught those -- prose that quietly loses a policy still parses.
+        Found only by reading every deletion the sweep made instead of trusting the diff
+        stat.
+
+      The general lesson, at a cost of two near-misses: a bulk regex over prose needs its
+      deletions READ, not counted. The stat said "-9 +6" for a file where six of those
+      nine lines were fine and one carried a policy.
+
+      REMAINING: examples/ (roughly 25 mentions across four walkthroughs, including a
+      whole sample-spec.md). Those are narratives with sample artifacts, so they need
+      rewriting rather than patching, and they are illustrative rather than agent
+      instructions -- lower harm, higher effort. Deliberately out of AD10's scope so the
+      gate does not sit red on work nobody is doing in the same commit.
+
+      Also still open from the audit: spec-template.md itself. It has no canonical
+      consumer left, but four test suites reference it, so deleting it is a test change
+      rather than a file deletion.
+    decided_by: agent
+    updated: '2026-08-16'
   - id: Q9
     question: 'R3 review: how large is the folding change prose tail, really?'
     state: Open
