@@ -26,7 +26,7 @@
 {"dst": ".cursor/aid/scripts/housekeep/branch-commit.sh", "profile": "cursor", "sha256": "4317500099dcff627c2ed2d4dd59ecaf78d1173a9536baa6a35330dd9d7b9a9f", "src": "canonical/scripts/housekeep/branch-commit.sh"}
 {"dst": ".cursor/aid/scripts/housekeep/cleanup-classify.sh", "profile": "cursor", "sha256": "d444c3374b7aa8b436e1d9b129a5026e2cc8aaf54ff868895bc5620f1d55d61c", "src": "canonical/scripts/housekeep/cleanup-classify.sh"}
 {"dst": ".cursor/aid/scripts/housekeep/housekeep-state.sh", "profile": "cursor", "sha256": "34efca63b146b2025d864172c0880123eee18e0b6e9a5ba0b754b652c7fe6a98", "src": "canonical/scripts/housekeep/housekeep-state.sh"}
-{"dst": ".cursor/aid/scripts/kb/build-kb-index.sh", "profile": "cursor", "sha256": "b2dfc362a2c606b94048b5494bb3c9c579f7e11878769d921e3a1d7180430c21", "src": "canonical/scripts/kb/build-kb-index.sh"}
+{"dst": ".cursor/aid/scripts/kb/build-kb-index.sh", "profile": "cursor", "sha256": "6d43dde467b34848b8710661bc1420228bfdeb78de2f04e367d70f0124852e3f", "src": "canonical/scripts/kb/build-kb-index.sh"}
 {"dst": ".cursor/aid/scripts/kb/build-metrics.sh", "profile": "cursor", "sha256": "85cd49153434dd083a2ebfddf91927ae04916bce5aabacb6a04c7722edc923b5", "src": "canonical/scripts/kb/build-metrics.sh"}
 {"dst": ".cursor/aid/scripts/kb/build-project-index.sh", "profile": "cursor", "sha256": "daec38dd5ac1edebb4c0c855c445dea4911be5191e9be0949c14fbb19f603630", "src": "canonical/scripts/kb/build-project-index.sh"}
 {"dst": ".cursor/aid/scripts/kb/closure-check.sh", "profile": "cursor", "sha256": "f5eb8fd9b5f8797d6ca06bcec56795cd4eabf71dfb1f748aaeabd66d54ad9250", "src": "canonical/scripts/kb/closure-check.sh"}

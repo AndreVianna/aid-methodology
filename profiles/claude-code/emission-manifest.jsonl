@@ -26,7 +26,7 @@
 {"dst": ".claude/aid/scripts/housekeep/branch-commit.sh", "profile": "claude-code", "sha256": "4317500099dcff627c2ed2d4dd59ecaf78d1173a9536baa6a35330dd9d7b9a9f", "src": "canonical/scripts/housekeep/branch-commit.sh"}
 {"dst": ".claude/aid/scripts/housekeep/cleanup-classify.sh", "profile": "claude-code", "sha256": "514d7bbbcf9dcca3875d78ec89441f794ba29e2eb1906c3bcdee4de0f2bacd20", "src": "canonical/scripts/housekeep/cleanup-classify.sh"}
 {"dst": ".claude/aid/scripts/housekeep/housekeep-state.sh", "profile": "claude-code", "sha256": "34efca63b146b2025d864172c0880123eee18e0b6e9a5ba0b754b652c7fe6a98", "src": "canonical/scripts/housekeep/housekeep-state.sh"}
-{"dst": ".claude/aid/scripts/kb/build-kb-index.sh", "profile": "claude-code", "sha256": "a49e96c3098c2cf5b853b433072a87856157df61ce8051c496b977e2999956ae", "src": "canonical/scripts/kb/build-kb-index.sh"}
+{"dst": ".claude/aid/scripts/kb/build-kb-index.sh", "profile": "claude-code", "sha256": "1bc54dd19ebc30dd3531c040bc161fb44b47e2ed565d71dd65f1c31e37a67ac8", "src": "canonical/scripts/kb/build-kb-index.sh"}
 {"dst": ".claude/aid/scripts/kb/build-metrics.sh", "profile": "claude-code", "sha256": "1e3b328cececc784af02d9e3ac4a8b24ffe6b25d8ca29172b6d276159bf1a9b9", "src": "canonical/scripts/kb/build-metrics.sh"}
 {"dst": ".claude/aid/scripts/kb/build-project-index.sh", "profile": "claude-code", "sha256": "fc8baa661e857a5ec82b0fe575f7ebbdcf9e1cea5b8b5fbdae7734ec08017766", "src": "canonical/scripts/kb/build-project-index.sh"}
 {"dst": ".claude/aid/scripts/kb/closure-check.sh", "profile": "claude-code", "sha256": "0b6019ea044ccc61b3af6975d5b0a2c4f48bb1bcb2c4cf8d13de8fb70072a861", "src": "canonical/scripts/kb/closure-check.sh"}
