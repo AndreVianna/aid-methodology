@@ -36,7 +36,6 @@ analyst running it to surface conflicts before the work proceeds.
 - [Re-Run Protocol](#re-run-protocol)
 - [Sufficiency-Bar Output](#sufficiency-bar-output)
 - [Invariants](#invariants)
-- [Change Log](#change-log)
 
 ---
 
@@ -263,11 +262,3 @@ criterion AND the Requirement orphan set is empty.
 | 5 | After any seed or REQUIREMENTS amendment, both layers re-run in full. | Re-Run Protocol |
 | 6 | Each resolved conflict is recorded by the analyst (Move 10 scribe) before the session moves to the next conflict. | move-playbook.md Move 10; NFR-1 process discipline |
 | 7 | Zero Requirement orphans is a NECESSARY condition of the sufficiency bar; the seed-authoring step's stopping check reads this output and MUST NOT fire while any Requirement orphan remains. | RQ-A5; feature-003 SPEC Sufficiency bar |
-
----
-
-## Change Log
-
-| Rev | Date | Source | Description |
-|-----|------|--------|-------------|
-| 1.0 | 2026-06-27 | work-001-aid-describe-improvements delivery-004 task-024 | Initial authoring: layered seed<->requirements coherence check -- Layer A concrete-example probe (conversational, three-pass walk-through against terms/architecture/stack) + Layer B structural cross-check (Requirement orphan set + Seed orphan set, deterministic mapping), conflict surfacing with NFR-7 envelope and [HUMAN GATE], re-run protocol, and zero-Requirement-orphan sufficiency-bar output. (FR-3 / AC-5) |
