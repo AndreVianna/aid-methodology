@@ -1131,3 +1131,45 @@ qa:
       confirm the work contradicted the description of it. A corpus that grows only by
       recording failures already found is the coverage that cannot be credited.
 
+  - id: Q33
+    question: "Asked directly what is missing and what the problem is. What did the audit find?"
+    status: Resolved
+    answer: |
+      Two problems, both found by checking rather than recalling. All 14 acceptance
+      criteria verify clean, so neither was a criterion failure -- which is the point:
+      the criteria did not cover either.
+
+      ONE: `canonical/agents/` was never swept. Every prose sweep in this work targeted
+      `canonical/skills/` and `canonical/aid/templates/` -- the places artifacts are USED.
+      An agent definition is neither, and it is where an agent is told what to PRODUCE,
+      which makes a stale name there worse than the same name in a reference doc.
+      aid-architect -- the agent that performs the decomposition -- instructed itself to
+      write `task-NNN.md` plus "an execution graph in PLAN.md", both retired, and pointed
+      PLAN.md at a template directory containing no plan template (there is none anywhere;
+      aid-plan defines that shape inline). Eight references across five agents wrote work
+      state to `STATE.md` with markdown section names that do not exist in a YAML file.
+      Fixed, and gated by AD12 in three arms.
+
+      AD12's shape is the part worth keeping: the state arm matches the WORK state file
+      specifically rather than banning `STATE.md`, because `.aid/knowledge/STATE.md` is
+      the KB's own file, still markdown and still correct in five places. A blanket ban
+      would have "fixed" those into being wrong. AD12b asserts those five SURVIVE, so an
+      over-broad tightening fails at the gate instead of shipping a confident wrong
+      correction -- and it was verified by committing that exact over-correction.
+
+      TWO: the savings are modelled, never observed. Measured against its own merge-base,
+      this branch moves the static instruction surface by -0.16% -- essentially flat.
+      Every claimed gain sits in a priced model with an assumed dispatch shape and assumed
+      cycle counts. That is defensible, because the gate cost genuinely dominates (millions
+      of bytes per run against tens of thousands static), but it is not the same as having
+      watched a real run get cheaper, and nothing here has.
+
+      Related and now fixed: the committed baseline recorded 75 skills against a tree of
+      111, so its advisory printed 173 rows of already-accepted growth. A stale baseline
+      does not raise a false alarm, it raises a useless one. Refreshed; the accepted delta
+      is +2,113,710 chars, predominantly work-006's design family.
+
+      The honest remaining gap is the second problem. An end-to-end run measured before
+      and after would convert the central claim from modelled to observed, and no artifact
+      in this work does that.
+
