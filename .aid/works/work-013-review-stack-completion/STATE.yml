@@ -15,9 +15,9 @@ phase: Describe
 # [W]
 active_skill: aid-describe
 # [W]
-updated: '2026-08-16T05:00:00Z'
+updated: '2026-08-16T05:35:00Z'
 # [W]
-pause_reason: 'REQUIREMENTS revised after self-review (T1/AC-1/FR-C1/screener). Awaiting owner approval.'
+pause_reason: 'COMPLETION Step 1 quality check failed: two MUST requirements (FR-C1, FR-C5) have no acceptance criterion, FR-A1/FR-A5 are only partly covered, and FR-B1/FR-B3 use retired rubric-catalog "kind" vocabulary. Awaiting owner clarification before KB hydration and the approval gate.'
 # [W]
 block_reason: --
 # [W]
@@ -85,6 +85,14 @@ lifecycle_history:
     event: 'REQUIREMENTS revised after self-review'
     grade: --
     notes: 'T1 retargeted to master tip; screener out of scope; FR-C1 clarifies cascade severity default; AC-1/AC-6 retargeted.'
+  - date: '2026-08-16'
+    event: 'Change-log removal folded into scope and landed'
+    grade: --
+    notes: 'FR-B7 + AC-7 added. 151 files: templates, aid-describe/define/specify authoring steps, KB contract, docs, fixtures; install trees regenerated and dogfood trees resynced. Test suite matches the master baseline (same 15 pre-existing failures).'
+  - date: '2026-08-16'
+    event: 'aid-describe State Detection -> State 4 COMPLETION'
+    grade: --
+    notes: 'No pending Q&A; all 10 sections Complete; brownfield KB (19 hand-authored + 4 generated). Step 1 quality check found gaps -- halted for clarification per state-completion.md.'
 
 # [A]
 deploy: []
