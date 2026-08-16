@@ -853,6 +853,45 @@ qa:
       finding actually demanded.
     decided_by: agent
     updated: '2026-08-15'
+  - id: Q28
+    question: 'Item 3: the grounding slice -- built, and does it deliver?'
+    state: Resolved
+    answer: |
+      Built and wired. 1.62MB modelled saving on a 3-feature/16-task work -- 23% of the
+      run, and the largest line left once work-012 scoped the review loop. All 10 CI
+      checks green.
+
+      `slice-requirements.sh <work-dir> <task-id>` prints only what a task traces to: its
+      `§ 11` feature section, the `§ 9` `AC-N` entries its `**Source:**` cites, and the
+      identity block. Measured on this repo's own REQUIREMENTS.md, a one-criterion slice
+      is 1,160 bytes against 17,662 -- 93% smaller, multiplied by task count.
+
+      It needed NO new field. The task already declares what it traces to because AC-6 put
+      `AC-N` ids in `**Source:**`; before that a slice could only have been guessed at.
+      The meter's own `folded-sliced` shape carried the note "gated on that traceability
+      field existing" -- the gate opened, and this is the payoff of a criterion whose
+      value was not obvious when it was written.
+
+      DESIGN CALL worth recording: a task citing no criterion EXITS 3 rather than
+      returning a near-empty slice. Handing back the identity block alone is
+      indistinguishable from correctly returning a small slice, and would ground the task
+      on nothing while appearing to work.
+
+      The 28 assertions deliberately check INCLUSION harder than exclusion, because the
+      dangerous direction for a slice is too SMALL: dropping a cited criterion makes a
+      task look satisfied against something it never read, while reading too much merely
+      costs. Hence wrapped criteria keeping their continuation lines, multi-citation tasks
+      resolving every id, and the identity block always travelling.
+
+      SR05 is the one that earned its place: `AC-1` must not drag in `AC-10` by prefix. A
+      naive substring match silently WIDENS the slice -- the failure mode that looks like
+      everything working. Verified by swapping in the naive matcher and watching it fail.
+
+      Cumulative position: 15.79MB -> 5.42MB against the objective's starting point, a
+      66% reduction, with grounding no longer the dominant line (the per-task exec check
+      now is, at 1.74MB).
+    decided_by: agent
+    updated: '2026-08-16'
   - id: Q27
     question: 'Items 1 and 2: is SPEC.md retired, and is it gated?'
     state: Open
