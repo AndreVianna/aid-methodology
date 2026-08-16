@@ -15,9 +15,9 @@ phase: Define
 # [W]
 active_skill: none
 # [W]
-updated: '2026-08-16T20:13:15Z'
+updated: '2026-08-16T20:46:56Z'
 # [W]
-pause_reason: 'Define complete at A+ -- run /aid-specify work-013 feature-001 to begin technical specification'
+pause_reason: 'Define complete at A+; features decomposed and cross-referenced -- run /aid-specify work-013 feature-001'
 # [W]
 block_reason: --
 # [W]
@@ -143,6 +143,13 @@ lifecycle_history:
       two changed SPECs; 30168 bytes). Both Fixed, no new findings. Recorded as Q10 and
       Q11, Answered. Q1-Q9 remain Pending and are the owner''s to settle -- they land on
       tasks, not on this gate.
+  - date: '2026-08-16'
+    event: 'Define phase DONE'
+    grade: 'A+'
+    notes: >-
+      Owner chose [3] at the terminal state. Cross-reference ledger deleted per
+      state-done.md; the two dispatch briefs and review-cost.tsv are kept as the gate''s
+      evidence. Ready for /aid-specify work-013 feature-001.
 
 # [A]
 deploy: []
