@@ -2,7 +2,7 @@
 kb-category: primary
 source: hand-authored
 objective: AID's project-specific vocabulary — the load-bearing native concepts (Concept Spine) and the supporting lexicon, defined as THIS project uses them.
-summary: Read this to use AID's own words correctly. The spine holds the concepts the methodology is built on (Canonical, Profile, Work, Delivery, Task, Execution Graph, Knowledge Base, Connector Registry, Shortcut, Shortcut Engine, Emission Manifest, AID_HOME, …); the lexicon disambiguates run-state, work-artifact, dashboard, install, connectors, and authoring terms. Definitions are project-specific, not generic.
+summary: Read this to use AID's own words correctly. The spine holds the concepts the methodology is built on (Canonical, Profile, Work, Delivery, Task, Execution Graph, Knowledge Base, Connector Registry, Shortcut, Shortcut Engine, Emission Manifest, AID_HOME, …); the lexicon disambiguates run-state, work-artifact, dashboard, install, connectors, authoring, and review terms. Definitions are project-specific, not generic.
 sources:
   - docs/aid-methodology.md
   - docs/glossary.md
@@ -56,6 +56,7 @@ accounting for every harvested candidate concept lives in
 - [Lexicon — Install and CLI](#lexicon--install-and-cli)
 - [Lexicon — Build, Render and Install Mechanics](#lexicon--build-render-and-install-mechanics)
 - [Lexicon — KB Authoring](#lexicon--kb-authoring)
+- [Lexicon — Review](#lexicon--review)
 - [Lexicon — Connectors](#lexicon--connectors)
 - [Lexicon — UI Components and Identity](#lexicon--ui-components-and-identity)
 - [Abbreviations and Acronyms](#abbreviations--acronyms)
@@ -769,6 +770,22 @@ lives).
 | design artifact | The durable output a `design` stage informs — a KB document, a built component, an endpoint. The seed is not the artifact: the seed says what to build, the artifact is the thing built, and `create` is the step between them | `canonical/aid/templates/design-lifecycle.md` |
 | roadmap.md | The KB document recording where the project is heading, in three horizon sections (`## Now`, `## Next`, `## Later`) plus a forward `## MVP` entry that `/aid-create-mvp` owns | `.aid/knowledge/roadmap.md` |
 | backlog.md | The KB document recording work identified but not yet scheduled. Distinct from `roadmap.md`, which records direction rather than inventory | `.aid/knowledge/backlog.md` |
+
+---
+
+## Lexicon — Review
+
+> How a reviewer learns what to judge by, and how a review cycle is scoped and measured.
+
+| Term | Meaning here | Source |
+|------|--------------|--------|
+| review-criteria cascade | The three-level resolution a reviewer performs before judging a file: global criteria, then criteria for the file's registry type, then the file's own `review-criteria:` frontmatter block. The reviewer checks the union, and on an `id` collision the most specific level wins | `.aid/knowledge/authoring-conventions.md` ("Review Criteria") |
+| type registry | The ordered table that maps a file to exactly one document type (`state`, `kb-doc`, `agent`, …) by first match, so every in-scope file resolves to one set of type-level criteria | `.aid/knowledge/authoring-conventions.md` ("Type Registry") |
+| criterion oracle | The optional `oracle:` key on a criterion, naming an executable check that decides that criterion by being RUN rather than re-read. Its verdict is per file (`VIOLATION` / `UNDECIDED`), so a file it cannot decide is reported as undecided instead of guessed | `canonical/aid/templates/kb-authoring/frontmatter-schema.md` ("`oracle:`") |
+| VERIFY set | From cycle 2, the artifacts a review re-checks **in full** — every file named in an existing ledger row — so a fix that regressed is caught and marked `Recurred` | `canonical/aid/templates/reviewer-dispatch.md` |
+| HUNT set | From cycle 2, the scoped artifacts a review looks for **new** findings in — what the previous fix changed, plus what mechanically cross-references it. Widened by lookup, never by judgment | `canonical/aid/templates/reviewer-dispatch.md` |
+| declared read surface | What a review cycle was **instructed** to read: the byte size of every path a dispatch brief names under `ARTIFACTS UNDER REVIEW`. It is the enforceable quantity, and deliberately not "tokens consumed" | `tests/review-cost-meter.sh` |
+| review cost meter | The tool that records a cycle's declared read surface at dispatch time and reports cycles-to-close and the re-read ratio across cycles | `tests/review-cost-meter.sh` |
 
 ---
 
