@@ -3,3 +3,5 @@ task	cycle	commit	surface_bytes
 work-013-requirements	1	938364887eb6b9f5dad22df825ce8c331e56d8a4	10101
 work-013-cross-ref	1	93ab1c822583998101522b4fab1c84479a549bd8	29515
 work-013-cross-ref	2	93ab1c822583998101522b4fab1c84479a549bd8	30168
+specify-feature-001-single-review-path-alignment	1	2dd1eb0e6909106a797cbdc65bf27fd423f51000	42034
+specify-feature-001-single-review-path-alignment	2	2dd1eb0e6909106a797cbdc65bf27fd423f51000	84934

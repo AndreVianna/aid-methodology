@@ -9,15 +9,15 @@ minimum_grade: A
 # [W]
 user_approved: 'yes'
 # [W]
-lifecycle: Paused-Awaiting-Input
+lifecycle: Running
 # [W]
-phase: Define
+phase: Specify
 # [W]
-active_skill: none
+active_skill: aid-specify
 # [W]
-updated: '2026-08-16T20:46:56Z'
+updated: '2026-08-16T20:51:09Z'
 # [W]
-pause_reason: 'Define complete at A+; features decomposed and cross-referenced -- run /aid-specify work-013 feature-001'
+pause_reason: --
 # [W]
 block_reason: --
 # [W]
