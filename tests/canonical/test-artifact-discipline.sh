@@ -20,6 +20,7 @@
 #   AD09  the review path names no per-feature SPEC (a dead ARTIFACT, vs AD04 dead PATH)
 #   AD10  SPEC.md is retired across canonical/ ENTIRELY -- zero, not a tolerated few
 #   AD11  every KB frontmatter block parses as YAML (closes tech-debt W5-3 gate gap)
+#   AD12  canonical/agents/ names no retired artifact and no retired work-state file
 #
 # Two scope decisions, both load-bearing, both found by writing the naive version first
 # and reading what it flagged:
@@ -398,6 +399,45 @@ ad10="$(scan_tree "canonical" 'SPEC\.md' include-fences)"
 ad10_count="$(report_count "$ad10")"
 assert_eq "$ad10_count" "0" "AD10: nothing in canonical/ names SPEC.md outside an absence statement"
 [[ "$ad10_count" != "0" ]] && report_body "$ad10" | sed 's|^|    offender: |' >&2
+
+# ---------------------------------------------------------------------------
+# AD12: the AGENT definitions name no retired artifact.
+#
+# `canonical/agents/` is the surface every prose sweep in this work missed, because each
+# one targeted `canonical/skills/` and `canonical/aid/templates/` -- the places artifacts
+# are USED -- and an agent definition is neither. It is, however, where an agent is told
+# what to PRODUCE, which makes a stale name there more directly harmful than the same
+# name in a reference doc.
+#
+# What was actually found sitting there: aid-architect -- the agent that performs the
+# decomposition -- instructing itself to write `task-NNN.md` plus "an execution graph in
+# PLAN.md", when the task definition is `tasks/task-NNN/DETAIL.md` and the graph is
+# derived and never authored; and eight references across five agents telling agents to
+# write state into the work's `STATE.md`, renamed to `STATE.yml`.
+#
+# The STATE.md check is deliberately NOT a blanket ban: `.aid/knowledge/STATE.md` is the
+# KB's own state file, still markdown, still correct, and five references to it are
+# right. A rule that banned the string outright would have "fixed" those into being
+# wrong, so it matches the WORK state file specifically.
+# ---------------------------------------------------------------------------
+ad12_state="$(scan_tree "canonical/agents" 'work.{0,4}[`'\'']?STATE\.md|work.s [`'\'']?STATE\.md' include-fences)"
+ad12_state_count="$(report_count "$ad12_state")"
+assert_eq "$ad12_state_count" "0" "AD12a no agent writes work state to the retired STATE.md (STATE.yml)"
+[[ "$ad12_state_count" != "0" ]] && report_body "$ad12_state" | sed 's|^|    offender: |' >&2
+
+# The KB's own STATE.md must SURVIVE -- asserted positively, so a future over-broad
+# tightening of the rule above is caught here rather than shipping a wrong correction.
+ad12_kb="$(cd "$REPO" && grep -rl 'knowledge/STATE\.md' canonical/agents/ 2>/dev/null | wc -l | tr -d ' ')"
+if [[ "${ad12_kb:-0}" -ge 1 ]]; then
+    pass "AD12b the KB's own STATE.md is still cited by agents (${ad12_kb} file(s)) -- not over-corrected"
+else
+    fail "AD12b agents no longer cite .aid/knowledge/STATE.md -- AD12a was applied too broadly"
+fi
+
+ad12_art="$(scan_tree "canonical/agents" 'task-NNN\.md|execution graph in PLAN|SPEC\.md|BLUEPRINT' include-fences)"
+ad12_art_count="$(report_count "$ad12_art")"
+assert_eq "$ad12_art_count" "0" "AD12c no agent is told to produce a retired artifact"
+[[ "$ad12_art_count" != "0" ]] && report_body "$ad12_art" | sed 's|^|    offender: |' >&2
 
 # ---------------------------------------------------------------------------
 # AD11: every KB doc's frontmatter is well-formed YAML.

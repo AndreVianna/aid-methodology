@@ -1,12 +1,12 @@
 {"_manifest_version": 1}
-{"dst": ".claude/agents/aid-architect.md", "profile": "claude-code", "sha256": "060dc819c2f6375aba86a64563e5d3b0c6495bd1e3391bbdcf8d79dc54fcdf8f", "src": "canonical/agents/aid-architect/AGENT.md"}
+{"dst": ".claude/agents/aid-architect.md", "profile": "claude-code", "sha256": "63a74fbe8f3f2abba6de4b951ece6ed4fc5a3404b465c704fb5cbdf6a03d3e86", "src": "canonical/agents/aid-architect/AGENT.md"}
 {"dst": ".claude/agents/aid-clerk.md", "profile": "claude-code", "sha256": "ef266804b4a920f9385d5a2b16041159e57f2d3579fe701a2792712849c7e4b7", "src": "canonical/agents/aid-clerk/AGENT.md"}
 {"dst": ".claude/agents/aid-developer.md", "profile": "claude-code", "sha256": "52e217d15df400493193f040f5e1b4890528e77609c06fd607c4d46b1e691061", "src": "canonical/agents/aid-developer/AGENT.md"}
-{"dst": ".claude/agents/aid-interviewer.md", "profile": "claude-code", "sha256": "30942a5fcfe00ae2dd7ff97150d1d4ea4d2cf7a8e8e858d0c63c2c98c0e17492", "src": "canonical/agents/aid-interviewer/AGENT.md"}
+{"dst": ".claude/agents/aid-interviewer.md", "profile": "claude-code", "sha256": "c43fb8f6d00f7ada7777185f26920d8c5214e3857800798d16e6847750755f35", "src": "canonical/agents/aid-interviewer/AGENT.md"}
 {"dst": ".claude/agents/aid-operator.md", "profile": "claude-code", "sha256": "799c877f660990dbb49f94c61fc9a7517b5cfa313cb44cc82494beea6025adb1", "src": "canonical/agents/aid-operator/AGENT.md"}
-{"dst": ".claude/agents/aid-orchestrator.md", "profile": "claude-code", "sha256": "b0c1d4e1f8a204114f3d6cff74d8e5c36f213e77c76269d6527fc28d9cf4cae4", "src": "canonical/agents/aid-orchestrator/AGENT.md"}
-{"dst": ".claude/agents/aid-researcher.md", "profile": "claude-code", "sha256": "e592c1d27ef512d0a6b1b57dd8b0ce140d74b13d4874efe2b1afabc008632a0e", "src": "canonical/agents/aid-researcher/AGENT.md"}
-{"dst": ".claude/agents/aid-reviewer.md", "profile": "claude-code", "sha256": "6db4fcd986646556c8d808a30bf86fefd643d38c6a8695ab0e9e2b3c35159d84", "src": "canonical/agents/aid-reviewer/AGENT.md"}
+{"dst": ".claude/agents/aid-orchestrator.md", "profile": "claude-code", "sha256": "666ff3c24dbb2f5f86db9794fe11dab28be851312a20e41f9f5549bedd4126be", "src": "canonical/agents/aid-orchestrator/AGENT.md"}
+{"dst": ".claude/agents/aid-researcher.md", "profile": "claude-code", "sha256": "7aeb23b77a7a762abe1f8a42a8347af972b6f1d02b0fdd2c1f1355a6179843f9", "src": "canonical/agents/aid-researcher/AGENT.md"}
+{"dst": ".claude/agents/aid-reviewer.md", "profile": "claude-code", "sha256": "e4172aace25f41cfeb855f125ec12ff91b42100cb03044523b195cb0ac6c9c14", "src": "canonical/agents/aid-reviewer/AGENT.md"}
 {"dst": ".claude/agents/aid-tech-writer.md", "profile": "claude-code", "sha256": "6b853ea64982ca4231876144c4c10dc3c2df287a3b3bdd6c1728706decc32021", "src": "canonical/agents/aid-tech-writer/AGENT.md"}
 {"dst": ".claude/aid/scripts/config/read-setting.sh", "profile": "claude-code", "sha256": "b8519db9d466949e7162584866a20818148af78205f1ce14d28c19178e011fba", "src": "canonical/scripts/config/read-setting.sh"}
 {"dst": ".claude/aid/scripts/connectors/build-connectors-index.ps1", "profile": "claude-code", "sha256": "08754cab7943657a7dc8a3e6362574637a5bf3274ffaa6f5b07c918528c575a0", "src": "canonical/scripts/connectors/build-connectors-index.ps1"}

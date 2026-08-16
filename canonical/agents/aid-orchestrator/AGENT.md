@@ -34,9 +34,9 @@ You are the Orchestrator — the pipeline coordinator in the AID pipeline. You n
 ## Feedback Routing
 | Feedback signal | Routes To |
 |-----------------|-----------|
-| Q&A entry in work `STATE.md` `## Cross-phase Q&A` (requirements-tagged) | aid-interviewer |
+| Q&A entry in work `STATE.yml` `qa:` (requirements-tagged) | aid-interviewer |
 | Q&A entry in `.aid/knowledge/STATE.md` `## Q&A (Pending)` | aid-researcher |
-| Q&A entry in work `STATE.md` `## Cross-phase Q&A` (spec-tagged) | aid-architect |
+| Q&A entry in work `STATE.yml` `qa:` (spec-tagged) | aid-architect |
 | IMPEDIMENT.md | aid-architect |
 | Monitor area STATE `BUG` | aid-developer (short bug path — Triage includes root cause analysis) |
 | Monitor area STATE `CR` | aid-discover (new cycle) |
