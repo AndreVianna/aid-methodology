@@ -15,9 +15,9 @@ phase: Describe
 # [W]
 active_skill: aid-describe
 # [W]
-updated: '2026-08-16T05:35:00Z'
+updated: '2026-08-16T05:50:00Z'
 # [W]
-pause_reason: 'COMPLETION Step 1 quality check failed: two MUST requirements (FR-C1, FR-C5) have no acceptance criterion, FR-A1/FR-A5 are only partly covered, and FR-B1/FR-B3 use retired rubric-catalog "kind" vocabulary. Awaiting owner clarification before KB hydration and the approval gate.'
+pause_reason: 'COMPLETION Steps 1-2 done (quality check passes: all 20 MUSTs discharged; KB review lexicon hydrated). Awaiting the owner at Step 3, the identity-header confirmation, before the Step 4 summary and the approval gate.'
 # [W]
 block_reason: --
 # [W]
@@ -93,6 +93,14 @@ lifecycle_history:
     event: 'aid-describe State Detection -> State 4 COMPLETION'
     grade: --
     notes: 'No pending Q&A; all 10 sections Complete; brownfield KB (19 hand-authored + 4 generated). Step 1 quality check found gaps -- halted for clarification per state-completion.md.'
+  - date: '2026-08-16'
+    event: 'COMPLETION Step 1 re-run -- PASS'
+    grade: --
+    notes: 'Owner chose option A. Every MUST now names a discharging acceptance criterion (AC-8..AC-12 added); retired "kind A/D" wording replaced; stakeholder table, scope subheadings and priority conformed to requirements-template.md.'
+  - date: '2026-08-16'
+    event: 'COMPLETION Step 2 -- KB hydration'
+    grade: --
+    notes: 'Added the Review lexicon to domain-glossary.md (criteria cascade, type registry, criterion oracle, VERIFY/HUNT sets, declared read surface, cost meter) and regenerated INDEX.md. Frontmatter lint PASS. Noted for the owner: build-kb-index.sh reorders rows on a no-op regen against pristine master too -- pre-existing tooling instability, not filed yet.'
 
 # [A]
 deploy: []
