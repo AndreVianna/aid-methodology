@@ -18,7 +18,7 @@
 #   AD07  the shortcut (Lite) engine writes no SPEC.md (folded into REQUIREMENTS § 11)
 #   AD08  the shortcut (Lite) engine writes no PLAN.md either -- AC-13 in full
 #   AD09  the review path names no per-feature SPEC (a dead ARTIFACT, vs AD04 dead PATH)
-#   AD10  SPEC.md is retired across canonical/, not just on the surfaces AD07/AD09 name
+#   AD10  SPEC.md is retired across canonical/ ENTIRELY -- zero, not a tolerated few
 #   AD11  every KB frontmatter block parses as YAML (closes tech-debt W5-3 gate gap)
 #
 # Two scope decisions, both load-bearing, both found by writing the naive version first
@@ -396,12 +396,8 @@ assert_eq "$ad09_count" "0" "AD09: no reviewer brief, dispatch template or revie
 # ---------------------------------------------------------------------------
 ad10="$(scan_tree "canonical" 'SPEC\.md' include-fences)"
 ad10_count="$(report_count "$ad10")"
-if [[ "$ad10_count" -le 2 ]]; then
-    pass "AD10: SPEC.md survives in canonical/ only where it explains its own retirement (${ad10_count} mention(s))"
-else
-    fail "AD10: SPEC.md must not be referenced in canonical/ beyond the 2 self-explaining mentions — got ${ad10_count}"
-    report_body "$ad10" | sed 's|^|    offender: |' >&2
-fi
+assert_eq "$ad10_count" "0" "AD10: nothing in canonical/ names SPEC.md outside an absence statement"
+[[ "$ad10_count" != "0" ]] && report_body "$ad10" | sed 's|^|    offender: |' >&2
 
 # ---------------------------------------------------------------------------
 # AD11: every KB doc's frontmatter is well-formed YAML.

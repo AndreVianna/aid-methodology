@@ -58,9 +58,12 @@ Continue until the user is satisfied.
 
 When agreed:
 
-1. Write the section into `REQUIREMENTS.md § 11 / Feature NNN` under `#### Technical Specification`
-2. Update work STATE.md `## Features State` section status → `Written`
-4. **KB Seeding (greenfield):** If the decision fills a gap in an empty KB doc,
+1. Write the section into `REQUIREMENTS.md § 11 / Feature NNN` under `#### Technical
+   Specification`, following `.claude/aid/templates/specs/technical-specification-template.md`
+   — which defines the body's shape (Data Model, Feature Flow, Layers & Components, and
+   the conditional sections) and its heading levels, already nested for § 11.
+2. Update work `STATE.yml` `features` entry status → `Written`
+3. **KB Seeding (greenfield):** If the decision fills a gap in an empty KB doc,
    update that KB doc + INDEX.md + README.md. Log which KB docs were seeded.
 
 ### 4. Review

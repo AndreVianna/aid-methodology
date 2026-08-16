@@ -223,7 +223,7 @@ Use for: project phases, delivery sequence, lifecycle stages.
                     font-size:0.82rem; font-weight:600; white-space:nowrap">
           Specify
         </div>
-        <p style="margin:0.25rem 0 0; font-size:0.78rem; color:var(--text-muted)">SPEC.md done</p>
+        <p style="margin:0.25rem 0 0; font-size:0.78rem; color:var(--text-muted)">Specs written</p>
       </div>
       <div style="flex:0 0 2rem; height:2px; background:var(--border-strong)"></div>
       <div style="text-align:center; flex:1">

@@ -122,6 +122,15 @@ and every §9 criterion is owned by exactly one feature, so both are checkable.}
 
 ### Feature 001 — {Title}
 
+> **Ticket:** {connector-stem}:{external-id}
+<!-- OPTIONAL `ticket_ref` -- e.g. `jira:PROJ-123`; links this feature to an external
+     tracker item. Omit the line entirely when the feature has no linked tracker item
+     (readers and the dashboard ignore its absence). Nearest-ancestor resolution and the
+     MCP-first consumption contract:
+     `canonical/aid/templates/connectors/consumption-protocol.md`. This is a body line,
+     not frontmatter. `ticket_ref` is a lifecycle-unit field only -- the connector
+     descriptor schema is unchanged. -->
+
 - **Priority:** Must | Should | Could
 - **Requirements:** §5 FR-{n}[, FR-{n}]
 - **Criteria:** AC-{n}[, AC-{n}]  ← ids from §9; never restated here
