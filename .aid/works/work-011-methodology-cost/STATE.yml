@@ -853,6 +853,49 @@ qa:
       finding actually demanded.
     decided_by: agent
     updated: '2026-08-15'
+  - id: Q29
+    question: 'The Knowledge Base: is it describing the artifacts that actually exist?'
+    state: Resolved
+    answer: |
+      Yes now. 90 mentions of BLUEPRINT / SPEC.md across 10 docs, down to 27 -- of which 19
+      are the ADR log and the rest are absence statements or deliberate history. All 10 CI
+      checks green.
+
+      AN ADR IS SUPERSEDED, NOT SWEPT. D23 records the decision to rename the delivery
+      definition to BLUEPRINT.md and keep SPEC.md for features. Rewriting it would destroy
+      the record of a decision that was correct when taken; the house style marks status
+      instead. D23 now reads "Superseded by D29", naming what survives (the
+      disambiguation was real, DETAIL.md remains) and what did not (rather than give each
+      level a distinct FILE, D29 removed two of the three levels' files).
+
+      D29 states its three reasons in descending order of importance, and the ORDER is the
+      argument: correctness first (one criterion, one home, cited by id -- the duplication
+      produced both CRITICALs in this project's largest work), then the load-bearing
+      artifact, then cost. Cost was this work's motivation but is the weakest of the three
+      reasons the change is RIGHT, so it is listed last.
+
+      A DETERMINISM BUG, found by a misleading symptom. CI rejected the committed INDEX.md
+      as stale with a diff showing rows merely reordered, while it regenerated cleanly
+      here every time. The cause: the generator sorted filenames with a bare `sort`, and
+      collation is locale-dependent -- en_US folds case so `INDEX.md` lands among the i's,
+      C/POSIX order by byte and put capitals first. The file is COMMITTED and CI
+      regenerates it to check freshness, so the same repo produced two different "correct"
+      files depending on whose shell ran the script. Now `LC_ALL=C sort`, verified
+      byte-identical across four locales.
+
+      The rule that generalises: any generator whose output is COMMITTED must be
+      byte-deterministic across environments, not merely reproducible on the author's
+      machine. The render pipeline already asserts this for profiles/ with a hard gate;
+      this script was the one that did not.
+
+      Two process notes. The aligned tree diagrams defeated string replacement twice --
+      their whitespace does not survive retyping -- so they were replaced by line index,
+      and the first attempt left a duplicated line, caught only by re-reading. And
+      regenerating the index with `--root .` instead of `--root .aid/knowledge` silently
+      produced a 2KB file with every routing row deleted, reporting "OK: Wrote" both
+      times; the file's own DO-NOT-EDIT header carries the correct invocation.
+    decided_by: agent
+    updated: '2026-08-16'
   - id: Q28
     question: 'Item 3: the grounding slice -- built, and does it deliver?'
     state: Resolved
