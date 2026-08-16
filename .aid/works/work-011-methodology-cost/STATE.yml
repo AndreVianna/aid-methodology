@@ -23,7 +23,7 @@ minimum_grade: A
 
 user_approved: 'yes'
 
-lifecycle: Running
+lifecycle: Paused-Awaiting-Input
 
 phase: Execute
 
@@ -31,7 +31,7 @@ active_skill: none
 
 updated: '2026-08-15T16:10:00Z'
 
-pause_reason: --
+pause_reason: awaiting human review and merge of PR #191; all 14 acceptance criteria verify, CI green, review ledgers closed
 
 block_reason: --
 
@@ -1172,4 +1172,42 @@ qa:
       The honest remaining gap is the second problem. An end-to-end run measured before
       and after would convert the central claim from modelled to observed, and no artifact
       in this work does that.
+
+  - id: Q34
+    question: "Close-out: what remained, and why is tasks_lifecycle empty?"
+    status: Resolved
+    answer: |
+      Three things remained, and the first was the one that mattered.
+
+      THE REVIEW LEDGERS WERE NEVER CLOSED. All 27 rows across R1/R2/R3 still read
+      Pending. Twenty-one had been fixed in-session and merely never written back; SIX had
+      not been fixed at all and would have shipped -- derive-waves streaming a partial
+      unclosed fence on a cycle, two skills instructing a Revision History that the policy
+      abolished, aid-define contradicting its own frontmatter, a dead feature.md template
+      teaching the wrong criterion format, and a Unicode/ASCII split in the Source field
+      between producer and consumer.
+
+      This is the failure CLAUDE.md names in as many words, committed by the work whose
+      subject is discipline. The mechanism is worth stating because it is not laziness:
+      unmarked rows do not merely lose bookkeeping, they HIDE the genuinely open ones. Six
+      real defects survived three passes inside a set of 27 rows that all looked equally
+      unresolved. A ledger where everything says Pending carries the same information as no
+      ledger.
+
+      R3#12 adds a second lesson: it had been FIXED and was then REINTRODUCED by the
+      work-006 merge, whose user-facing style was taken over this skill's body. Re-reading
+      the ledger would not have caught that; only re-running the check did. A finding is
+      not closed by having been fixed once.
+
+      WHY tasks_lifecycle IS EMPTY. This work has no tasks/ folder and no DETAIL files: it
+      was driven conversationally rather than through aid-detail, so no task layer was ever
+      created. Retrofitting thirty task entries now would be fabrication -- writing a
+      history that did not happen, into the field whose whole purpose is to record what
+      did. The honest record is this entry plus the 34 Q&A entries, which track the work at
+      the decision level it was actually executed at. Anyone auditing gets a true account
+      of how it ran, rather than a tidy one.
+
+      WHAT IS GENUINELY LEFT. Human review and merge of PR #191, and the observed-run
+      measurement (Q33): the central cost claim remains modelled, never watched. Everything
+      else -- 14 of 14 criteria, CI, ledgers -- verifies.
 
