@@ -3,13 +3,6 @@
 - **Name:** Review Stack Completion
 - **Description:** Finish what master’s review stack still lacks — keep that stack clean, close remaining coverage gaps, and add judgment/measurement that make the grade mean something — without rebuilding a rival review system.
 
-## Change Log
-
-| Date | Change | Source |
-|------|--------|--------|
-| 2026-08-16 | Draft from owner decisions (successor to canceled prior review redesign; T1→T2→T3; migrate catalog rows; default-delete scripts) | owner + agent scaffold |
-| 2026-08-16 | Fix review findings: T1 retargeted to master tip (no rivals on this branch); drop screener; clarify FR-C1; retarget AC-1; tighten T2 evidence notes | requirements self-review |
-
 > **Modality.** Every FR/NFR carries MUST / SHOULD / COULD.
 
 ---
@@ -33,6 +26,7 @@ Do **not** invent a second loader, second ledger shape, or second review skill f
 2. **This branch starts from master.** Rival redesign artifacts (deep/light skills, rubric-catalog loader, 8-column Rule path) are **not** on master. The live risks are: (a) those rivals landing via an old open PR, (b) drift in `/aid-review` docs vs the 7-column law, (c) useful catalog *checks* never folded into the cascade.
 3. **Judgment and measurement gaps remain:** severity needs an explicit why-line practice; clean context for new cycles is not structural; recall of seeded defects is unmeasured; several artifact classes still lack gates.
 4. **Coverage gaps on master today:** no settings kind-D gate; frontmatter lint exists but is not proven wired; `kb.html` lacks an adversarial content pass; BLUEPRINT/specify grading path and work-artifact citation/quote checks are incomplete; `grade-summary.sh` still coexists with letter-grade `grade.sh`.
+5. **Some findings are manufactured by the process itself.** A hand-maintained `## Change Log` drifts from git as soon as one edit skips a row, and reviewers then spend cycles on the drift rather than on the artifact. Removing a whole finding class is worth more than reviewing it faster.
 
 ---
 
@@ -90,6 +84,7 @@ Do **not** invent a second loader, second ledger shape, or second review skill f
 | FR-B4 | MUST | `BLUEPRINT.md` and specify per-section review use the standard 7-column ledger + `grade.sh` path. |
 | FR-B5 | MUST | Citation/quote accuracy checks run via the `/aid-review` / cascade path and cover work artifacts, not only KB. |
 | FR-B6 | SHOULD | One grading backend for letter grade: retire or demote parallel points/`grade-summary.sh` paths so `grade.sh` is the sole letter producer. *Baseline: `grade-summary.sh` still present on master.* |
+| FR-B7 | MUST | **No artifact carries an in-document history section.** No `## Change Log`, no `## Revision History`, no `changelog:` frontmatter — for every artifact the methodology produces, not only KB docs. Git is the per-document history. The rule is stated once (`artifact-schemas.md`), and no template, skill, or fixture authors one. *Rationale: a hand-maintained history table drifts from git the moment a row is missed, and that drift was a recurring source of review findings — removing it removes the finding class.* |
 
 ### T3 — Measure & judge
 
@@ -144,6 +139,7 @@ Do **not** invent a second loader, second ledger shape, or second review skill f
 | AC-4 | T3: seeded corpus + recall report command; one documented clean-context proof that prior ledger is unreachable. |
 | AC-5 | No new script merges without a cited measurement of what re-derivation it removes. |
 | AC-6 | Migrated catalog checks: each kept check has a cascade/`oracle:` home; no live `review-rubrics/` loader on master after T1. |
+| AC-7 | `grep -rn '## Change Log' canonical tests docs site/src .aid/knowledge` returns no artifact-authoring instruction, template section, or fixture — only the rule text that forbids one. |
 
 ---
 
