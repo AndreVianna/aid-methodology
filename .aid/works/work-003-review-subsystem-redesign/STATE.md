@@ -5,10 +5,10 @@ pipeline:
 started: "2026-07-27"
 minimum_grade: "A"
 user_approved: yes
-lifecycle: Running
+lifecycle: Canceled
 phase: Execute
 active_skill: none
-updated: '2026-08-15T22:50:00Z'
+updated: '2026-08-16T00:30:00Z'
 pause_reason: --
 block_reason: --
 block_artifact: --
@@ -21,9 +21,11 @@ Redesign of AID's review subsystem: extract review into chainable light/deep
 review skills, formalize artifact-typed review criteria over a single severity
 source of truth, and close the accumulated review-path defects.
 
-> **State:** Running — strategic pause. Audit done; owner chose T1→T2→T3 + migrate rows + default-delete scripts. **Open question:** continue work-003 as vehicle vs successor work (see `CONTINUE-OR-SCRATCH-2026-08-16.md`).
-> **Phase:** Execute (replanning). Reports: `MERGE-MASTER-2026-08-15.md`, `AUDIT-2026-08-15.md`, `CONTINUE-OR-SCRATCH-2026-08-16.md`.
-> **Next:** Owner picks A (successor work), B (same id, rewrite PLAN), or C (fold old SPECs).
+> **State:** **Canceled** — owner chose option A (2026-08-16). This work is **not** the execution vehicle anymore.
+> **Superseded by:** `work-013-review-stack-completion` (thin successor: Align → Gaps → Measure on master’s cascade + VERIFY/HUNT stack).
+> **Keep as history:** `MERGE-MASTER-2026-08-15.md`, `AUDIT-2026-08-15.md`, `CONTINUE-OR-SCRATCH-2026-08-16.md`, STATE Q&A, gated/Done evidence.
+> **Do not:** Detail or execute from old BLUEPRINTs/SPECs. **Do not** merge rival mechanisms (catalog loader, deep/light, 8-col Rule path) to master as the redesign.
+> **PR #185:** close or replace; do not land the rival review system.
 
 ---
 
