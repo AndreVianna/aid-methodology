@@ -853,6 +853,42 @@ qa:
       finding actually demanded.
     decided_by: agent
     updated: '2026-08-15'
+  - id: Q30
+    question: 'The awk YAML parser: is the hazard retired?'
+    state: Resolved
+    answer: |
+      Yes, though not the way the item was phrased -- and the reframing is the useful part.
+
+      The hazard was never "bash parses YAML". 14 scripts do, and they read different
+      things with no counterpart to disagree with. Checked rather than assumed:
+      writeback-state.sh is the ONLY bash reader of `pipeline.path`; every other match for
+      "pipeline" is the English word. So the hazard was one VALUE read by three
+      implementations with nothing binding them together.
+
+      Bound now: one shared corpus of 19 STATE.yml files, written as BYTES so line endings
+      are explicit, run through all three readers -- awk, reader.py, reader.mjs. It carries
+      the three historical failures plus the forms most likely to separate a hand-rolled
+      parser from a real one: quoting, comments, whitespace, tab indentation, key scoping,
+      a commented-out decoy, and the empty/absent cases. Python's answers are pinned
+      individually too, so three-way agreement cannot be satisfied by all three being
+      wrong together.
+
+      IT FOUND A FOURTH DIVERGENCE IMMEDIATELY. A tab-indented `\tpath: lite` read as
+      `lite` in awk and as nothing in both twins -- YAML forbids tabs as indentation, so
+      their engine raises and yields "not declared". The awk matched `[ \t]+`; it now
+      requires spaces. First of the four caught by a test rather than by a person reading
+      code.
+
+      Why the test rather than a rewrite: a behavioural test already covered the bash side
+      (Unit 26), and rewriting the awk into a shared helper would still leave three
+      implementations -- it would just make them tidier. Each being individually
+      reasonable is precisely the state that produced four divergences. What was missing
+      was the assertion that they AGREE, and that is now standing.
+
+      writeback-state.sh's own 389 assertions still pass, so requiring space indentation
+      broke nothing that depended on tabs.
+    decided_by: agent
+    updated: '2026-08-16'
   - id: Q29
     question: 'The Knowledge Base: is it describing the artifacts that actually exist?'
     state: Resolved
