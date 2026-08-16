@@ -3593,7 +3593,9 @@ function _detectHierarchy(workDir) {
   return false;
 }
 
-function _declaredWorkPath(workDir) {
+// Exported for the three-way parity test (bash + Python + Node on one corpus). Not
+// part of the consumed surface -- _detectFlat calls it internally.
+export function _declaredWorkPath(workDir) {
   // Return the work-root STATE.yml `pipeline.path`, or null.
   // Mirror reader.py _declared_work_path.
   //

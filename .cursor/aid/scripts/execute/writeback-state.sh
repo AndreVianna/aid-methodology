@@ -279,8 +279,14 @@ wb_get_pipeline_path() {
         { sub(/\r$/, "") }                               # CRLF -> LF, every line
         /^[ \t]*#/                     { next }          # whole-line YAML comment
         /^pipeline:[ \t]*$/            { inp = 1; next }
-        inp && /^[ \t]+path:[ \t]*/ {
-            sub(/^[ \t]+path:[ \t]*/, "")
+        # SPACES only, not `[ \t]+`. YAML forbids a tab as indentation, and both
+        # reader twins reject a tab-indented file outright (their engine raises,
+        # yielding "not declared"). Accepting one here made this reader answer
+        # `lite` where they answered nothing -- the fourth divergence of exactly
+        # the kind this parser has already produced three times, and the first
+        # one caught by a test rather than by a reviewer.
+        inp && /^ +path:[ \t]*/ {
+            sub(/^ +path:[ \t]*/, "")
             v = $0
             c = substr(v, 1, 1)
             if (c == dq || c == sq) {
