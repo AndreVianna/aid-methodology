@@ -8,22 +8,44 @@
 AID's cost per work is dominated by review gates and by artifact size, not by the
 work itself. A modelled full-path work at this project's observed averages
 (3-4 features, 4-5 deliveries, 16-25 tasks, 5-7 review cycles per gate) spends
-roughly 60-65% of its budget on review gates and 10-13% on authoring the
-documents those gates review — gates cost about five to seven times the authoring.
+the large majority of its budget on review gates and roughly an eighth on the
+grounding reads those gates exist to check.
 
 Reduce that, while keeping the three things the harness is for: the Knowledge
 Base as grounding, clear instructions for what to build, and adversarial review
 of what was built.
 
+**That last paragraph is the intent, and it does not change.** The figures below do,
+because the ground moved: four works merged into this branch while it was open, one of
+them (`work-012`) attacking the same review loop from the other side. §2 records what
+was measured at the outset and §2a re-measures the same model today, so the objective
+can be judged against the pipeline that now exists rather than the one that motivated it.
+
+**Correction to the original wording.** This section first said "roughly 60-65% of its
+budget on review gates and 10-13% on authoring — gates cost about five to seven times
+the authoring". Re-running the meter at the commit where that sentence was written gives
+**88.9% gates / 11.1% grounding, a ratio of 8.0x**. The share was understated and the
+ratio slightly so; the two halves also contradicted each other, since 12% authoring at
+5-7x implies 60-84% gates, and the text quoted the bottom of its own range. "Authoring"
+was also the wrong word: the 11.1% line is the per-task GROUNDING READ of the oracle,
+not the cost of writing it, which this model never priced.
+
 ## 2. Problem Statement
 
 Four mechanisms, measured rather than assumed:
 
-**Artifact size is the multiplier on everything.** The same gate structure costs
-~24.9MB of reads with 138KB feature specs and ~10.1MB with disciplined ones. Size
-discipline alone is worth ~60%, with no structural change; the gate restructuring
-is worth ~40%. Both regimes came from the same skills, so size is currently
-unconstrained rather than wrong.
+**Artifact size is the multiplier on everything.** Holding the gate structure fixed and
+varying only feature-spec size, a modelled work costs **23.4MB** of reads with 138KB
+specs and **14.5MB** with disciplined ones — size discipline alone is worth **~38%**,
+and that figure is stable at 38-40% across every parameter set in the range above. Both
+regimes came from the same skills, so size is unconstrained rather than wrong.
+
+> **Corrected.** This first read "~24.9MB ... and ~10.1MB ... size discipline alone is
+> worth ~60%, with no structural change". The first number is close; the second is not
+> reproducible on the same shape, and ~60% is only reachable by comparing an
+> undisciplined `today` against a disciplined RESTRUCTURED shape — which is precisely
+> the conflation the phrase "with no structural change" denies. The mechanism is real
+> and still the largest single multiplier; it was oversold by about 20 points.
 
 **Gates multiply where documents do.** A gate per feature after Specify and a gate
 per delivery after Detail means features x cycles and deliveries x cycles gate
@@ -38,6 +60,40 @@ values for one shared fact.
 **Stored views drift from what they derive from.** A hand-maintained wave-map
 disagreed with the dependency table directly above it in the same file, and the
 mandatory manual self-check that exists to prevent that did not catch it.
+
+## 2a. Re-measured, after four merges
+
+Same model, same parameters (3 features, 4 deliveries, 16 tasks, 5 cycles), same
+default artifact sizes — only the pipeline underneath has changed:
+
+| Regime | Total | Gates | Grounding | Gate share | Ratio |
+|--------|-------|-------|-----------|-----------|-------|
+| `today`, full cycles — where §1 started | 15.79MB | 14.04MB | 1.75MB | 88.9% | 8.0x |
+| `folded`, full cycles — this work, before work-012 | 7.79MB | 5.36MB | 2.43MB | 68.8% | 2.2x |
+| `folded` + scoped cycles — **the pipeline that now exists** | **7.04MB** | 4.61MB | 2.43MB | **65.5%** | **1.9x** |
+
+**A 55% reduction against the starting point**, and the objective's own target range
+(60-65% gates) is now met — though partly by accident, since the original figure was a
+misstatement of an 88.9% reality rather than a goal.
+
+**The shape of the problem has inverted, and that is the finding that matters.** Gates
+were 8x the grounding reads; they are now 1.9x. The single most expensive line has moved
+from `gate SPEC (per feature)` at 4.49MB to `task grounding` at 2.43MB — and grounding is
+paid PER TASK, so it scales with task count where a gate does not. Any further work aimed
+at gates is now aimed at the smaller half.
+
+Two mechanisms outside this work drove much of the change and should be credited as such:
+`work-012` scoped the cycle-2+ hunt (verification stays full, protecting `Recurred`) and
+sliced the per-feature requirements load. Its slice keys off the `AC-N` citations this
+work put in § 11, and this work's fold makes its slice possible; neither would have
+delivered the full figure alone.
+
+**One number moved the wrong way.** The always-on surface — paid by every session before
+the user types — grew from **12,712 to 18,428 tokens (+45%)** as the skill count went
+76 → 111. That is `work-006`'s design family, not a regression in this work, and AC-2's
+diff gate does flag it (it currently reports FAIL on instruction-surface growth). But it
+is real, it is unaddressed by any criterion here, and at ~5.7k tokens per session it
+repays attention in a way a one-off per-work saving does not.
 
 ## 3. Users & Stakeholders
 

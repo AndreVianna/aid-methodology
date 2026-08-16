@@ -405,4 +405,73 @@ else
     fail "CM38 saving share must be larger at Lite dimensions — got '${lite_share:-?}' vs '${full_share:-?}' ppm"
 fi
 
+# ---------------------------------------------------------------------------
+# CM39+: `--scoped-cycles` -- pricing the review loop as work-012 restructured it.
+#
+# The default model charges every review cycle a full re-read. That is what the loop
+# DID cost when this work's objective was measured, and is no longer what it costs:
+# from cycle 2 the HUNT is scoped to what the previous fix touched, while VERIFY stays
+# full so `Recurred` detection still works. Without this flag every gate line is
+# overstated -- and the conclusion drawn from it, which half of the budget to attack
+# next, can be wrong in the direction that matters.
+# ---------------------------------------------------------------------------
+scoped_total() {
+    python3 "$METER" model --root "$FIX" --shape "$1" --cycles "$2" ${3:-} 2>/dev/null \
+        | awk '/^  TOTAL/{gsub(/,/,"",$2); print $2; exit}'
+}
+
+full5="$(scoped_total folded 5)"
+scoped5="$(scoped_total folded 5 --scoped-cycles)"
+if [[ -n "${full5:-}" && -n "${scoped5:-}" ]] && (( scoped5 < full5 )); then
+    pass "CM39 --scoped-cycles is cheaper than full cycles at 5 cycles (${scoped5} < ${full5})"
+else
+    fail "CM39 --scoped-cycles must be cheaper at 5 cycles — got '${scoped5:-?}' vs '${full5:-?}'"
+fi
+
+# At 2 cycles there is nothing to scope: cycle 1 and the final pass are BOTH full by
+# design, so a 2-cycle gate must cost the same either way. If this ever differs, the
+# model is scoping a cycle the rule says stays full -- overstating the saving exactly
+# where a barely-run review loop would be misrepresented as cheap.
+#
+# Asserted on ONE ROW, not the total, and the reason is worth recording: the
+# `delivery gate (diff)` row hard-codes 3 cycles regardless of --cycles, so the TOTAL
+# does move at --cycles 2 and a whole-run comparison here fails for a reason that has
+# nothing to do with the rule under test. The first draft of this assertion compared
+# totals and was wrong about the shape it was measuring.
+req_row_at() {
+    python3 "$METER" model --root "$FIX" --shape folded --cycles "$1" ${2:-} 2>/dev/null \
+        | awk '/^  gate REQ/{for(i=1;i<=NF;i++) if($i=="B"){gsub(/,/,"",$(i-1)); print $(i-1); exit}}'
+}
+req2_full="$(req_row_at 2)"
+req2_scoped="$(req_row_at 2 --scoped-cycles)"
+if [[ -n "${req2_full:-}" && "${req2_full}" == "${req2_scoped}" ]]; then
+    pass "CM40 a 2-cycle gate is unchanged by --scoped-cycles (both cycles full by design: ${req2_full})"
+else
+    fail "CM40 a 2-cycle gate must not change under --scoped-cycles — got '${req2_scoped:-?}' vs '${req2_full:-?}'"
+fi
+
+# The saving must GROW with cycle count, because only cycles 2..n-1 are scoped.
+full9="$(scoped_total folded 9)"
+scoped9="$(scoped_total folded 9 --scoped-cycles)"
+if [[ -n "${full9:-}" && -n "${scoped9:-}" ]] && (( full9 - scoped9 > full5 - scoped5 )); then
+    pass "CM41 the scoped saving grows with cycle count ($((full5-scoped5)) at 5 -> $((full9-scoped9)) at 9)"
+else
+    fail "CM41 scoped saving must grow with cycles — got $((full5-scoped5)) then $((full9-scoped9))"
+fi
+
+# Grounding is NOT a gate, so scoping the review loop must leave it untouched. This
+# keeps the flag honest about WHERE the saving comes from: if a read row ever moves,
+# the model is crediting the review loop with someone else's win.
+ground_of() {
+    python3 "$METER" model --root "$FIX" --shape folded --cycles 5 ${1:-} 2>/dev/null \
+        | awk '/task grounding/{for(i=1;i<=NF;i++) if($i=="B"){gsub(/,/,"",$(i-1)); print $(i-1); exit}}'
+}
+ground_full="$(ground_of)"
+ground_scoped="$(ground_of --scoped-cycles)"
+if [[ -n "${ground_full:-}" && "${ground_full}" == "${ground_scoped}" ]]; then
+    pass "CM42 scoping the review loop leaves the grounding read untouched (${ground_full})"
+else
+    fail "CM42 grounding must not change under --scoped-cycles — got '${ground_scoped:-?}' vs '${ground_full:-?}'"
+fi
+
 test_summary

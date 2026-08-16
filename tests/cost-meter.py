@@ -593,16 +593,43 @@ def gate_shape(name: str, F: int, D: int, T: int, c: int, art: dict[str, int]
     raise ValueError(f"unknown shape: {name}")
 
 
-def price_shape(rows, floors: dict[str, int]) -> tuple[int, int, list[tuple[str, int, int]]]:
-    """Return (total_bytes, gate_points, [(label, points, bytes), ...])."""
+# Share of a gate's artifact surface a cycle-2+ HUNT still reads once the review is
+# scoped. Measured by work-012 as a paired within-task control over three subjects --
+# task, artifact and reviewer held fixed, only the rule varied -- giving 0.537 / 0.131 /
+# 0.488, mean 0.385. The control arm landed at exactly 1.000 on all three, which is what
+# makes it a control rather than a number.
+#
+# It applies to the HUNT only. Verification of existing ledger rows stays FULL, because
+# scoping it would break `Recurred` detection -- a row cannot be confirmed still-open
+# against files the reviewer was not allowed to open. Cycle 1 and the final pass are
+# also full, so a c-cycle gate pays 2 full cycles and c-2 scoped ones.
+SCOPED_HUNT_FRACTION = 0.385
+
+
+def price_shape(rows, floors: dict[str, int], scoped_cycles: bool = False
+                ) -> tuple[int, int, list[tuple[str, int, int]]]:
+    """Return (total_bytes, gate_points, [(label, points, bytes), ...]).
+
+    `scoped_cycles` prices the review loop as work-012 restructured it. Without it the
+    model charges every cycle a full re-read, which is what the loop DID cost when this
+    work's objective was written and no longer does -- leaving the flag off overstates
+    every gate line.
+    """
     out, total, points = [], 0, 0
     for label, n, artifact, cycles, role, kind in rows:
         if kind == "gate":
-            per_cycle = floors["reviewer"] + floors[role] + 2 * artifact
+            floor = floors["reviewer"] + floors[role]
+            if scoped_cycles and cycles > 2:
+                # 2 full cycles (first + final), the rest hunting a scoped surface.
+                # Floors are unchanged: the agent brief is dispatched either way.
+                full = 2 * (floor + 2 * artifact)
+                scoped = (cycles - 2) * (floor + 2 * int(artifact * SCOPED_HUNT_FRACTION))
+                cost = n * (full + scoped)
+            else:
+                cost = n * cycles * (floor + 2 * artifact)
             points += n
         else:
-            per_cycle = artifact
-        cost = n * cycles * per_cycle
+            cost = n * cycles * artifact
         out.append((label, n, cost))
         total += cost
     return total, points, out
@@ -634,7 +661,7 @@ def cmd_model(args: argparse.Namespace) -> int:
     results = {}
     for shape in args.shape:
         rows = gate_shape(shape, args.features, args.deliveries, args.tasks, args.cycles, art)
-        total, points, detail = price_shape(rows, floors)
+        total, points, detail = price_shape(rows, floors, args.scoped_cycles)
         results[shape] = total
         print(f"\n{'='*70}\nshape: {shape}   ({points} gate points)\n{'='*70}")
         for label, n, cost in detail:
@@ -741,6 +768,10 @@ def main(argv: list[str]) -> int:
     m.add_argument("--deliveries", type=int, default=4)
     m.add_argument("--tasks", type=int, default=16)
     m.add_argument("--cycles", type=int, default=5)
+    m.add_argument("--scoped-cycles", action="store_true",
+                   help="price cycle 2..n-1 as a SCOPED hunt (work-012's review loop) "
+                        "instead of a full re-read; the default models the loop as it "
+                        "was when this work's objective was measured")
     m.add_argument("--shape", action="append", choices=list(SHAPES),
                    help="shape to price (repeatable; first is the comparison base)")
     m.set_defaults(fn=cmd_model)
