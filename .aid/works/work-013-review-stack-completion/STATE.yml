@@ -1,0 +1,89 @@
+# [W]
+pipeline:
+  path: full
+  initiator: aid-describe
+# [W]
+started: '2026-08-16'
+# [W]
+minimum_grade: A
+# [W]
+user_approved: 'no'
+# [W]
+lifecycle: Paused-Awaiting-Input
+# [W]
+phase: Describe
+# [W]
+active_skill: aid-describe
+# [W]
+updated: '2026-08-16T00:35:00Z'
+# [W]
+pause_reason: 'Draft REQUIREMENTS ready for owner approval (locked choices from work-003 close). Approve to continue to /aid-define, or request edits.'
+# [W]
+block_reason: --
+# [W]
+block_artifact: --
+# [W]
+ticket_ref: --
+
+# [A]
+interview:
+  state: 'In Progress'
+  grade: Pending
+  sections:
+    - id: 1
+      name: Objective
+      state: Complete
+      updated: '2026-08-16'
+    - id: 2
+      name: 'Problem Statement'
+      state: Complete
+      updated: '2026-08-16'
+    - id: 3
+      name: 'Users & Stakeholders'
+      state: Complete
+      updated: '2026-08-16'
+    - id: 4
+      name: Scope
+      state: Complete
+      updated: '2026-08-16'
+    - id: 5
+      name: 'Functional Requirements'
+      state: Complete
+      updated: '2026-08-16'
+    - id: 6
+      name: 'Non-Functional Requirements'
+      state: Complete
+      updated: '2026-08-16'
+    - id: 7
+      name: Constraints
+      state: Complete
+      updated: '2026-08-16'
+    - id: 8
+      name: 'Assumptions & Dependencies'
+      state: Complete
+      updated: '2026-08-16'
+    - id: 9
+      name: 'Acceptance Criteria'
+      state: Complete
+      updated: '2026-08-16'
+    - id: 10
+      name: Priority
+      state: Complete
+      updated: '2026-08-16'
+
+# [A]
+lifecycle_history:
+  - date: '2026-08-16'
+    event: 'Work created'
+    grade: --
+    notes: 'Successor to canceled work-003. Scaffolded from owner decisions A + T1→T2→T3 + migrate rows + default-delete scripts.'
+  - date: '2026-08-16'
+    event: 'Draft REQUIREMENTS authored'
+    grade: --
+    notes: 'Awaiting owner approval before aid-define.'
+
+# [A]
+deploy: []
+
+# [A]
+qa: []
