@@ -145,7 +145,7 @@ in both:
 | Generated region | Producer | Size |
 |---|---|---|
 | `profiles/{claude-code,codex,cursor,copilot-cli,antigravity}/`, dogfood `.claude/` + `.cursor/` | `run_generator.py` | 5 profiles + 2 dogfood trees |
-| `site/src/data/skill-flows/*.flow.json` | `site/scripts/gen-skills.mjs` | 40 files rewritten on a run |
+| `site/src/data/skill-flows/*.flow.json` | `site/scripts/gen-skills.mjs` | 111 files rewritten on a run (`ls site/src/data/skill-flows/*.flow.json \| wc -l` → `111`) |
 | `site/src/content/docs/skills/*.md` + `index.md` | `site/scripts/gen-skills.mjs` | 111 pages + 1 index |
 | `site/src/content/docs/{concepts,reference}/*.md` (4 synced docs) | `site/scripts/sync-docs.mjs` | 4, each carrying `sourceDoc:` frontmatter naming its source under `docs/` |
 | `.aid/knowledge/INDEX.md` | `build-kb-index.sh` | 1 |
@@ -361,8 +361,13 @@ ledger route, which is what `Q3` gates.
 #### FR-B4 — BLUEPRINT and specify review on the 7-column + `grade.sh` path
 
 Two halves with opposite statuses. Measured, **there is no blueprint ledger scope anywhere in
-the pipeline**: `grep -rn 'review-pending/blueprint' canonical tests scripts` → `0`. The four
-scopes that exist are `plan.md`, `detail.md`, `specify-<feature>.md`, `shortcut-{work}-defn.md`.
+the pipeline**: `grep -rn 'review-pending/blueprint' canonical tests scripts` → `0`. Every scope
+that does exist is something else —
+`grep -rhoE 'review-pending/[a-z<>{}-]+\.md' canonical --include='*.md' | sed 's|review-pending/||' | sort -u`
+lists `deploy.md`, `detail.md`, `discovery.md`, `plan.md`, `specify-<feature>.md`, `summarize.md`,
+`shortcut-{work}-defn.md`, `shortcut-{work}-tasks.md`, `<work>-review.md`, `<work>-test.md`,
+`<work>-verify.md`, the `update-kb-*` set, and the placeholder forms (`<scope>.md`,
+`<skill-name>.md`, `adhoc-<slug>.md`). None is a blueprint scope.
 
 > The search is scoped to `canonical tests scripts` deliberately. Adding `.aid` returns `2` —
 > **both hits are this SPEC quoting the command**. A verification grep whose corpus includes the
@@ -394,7 +399,9 @@ documentation conflict either way.
 `.aid/.temp/review-pending/specify-<feature>.md` and then
 `bash canonical/aid/scripts/grade.sh --explain` on it — per **feature**. Nothing named
 `per-section` is a review mechanism: `grep -rniE 'per-section|per section' canonical --include=*.md`
-→ `5`, all about `aid-summarize` HTML sections and theme palettes. **But the specify review is
+→ `5`. Four are `aid-summarize` HTML sections and theme palettes; the fifth is
+`aid-specify/references/state-continue.md:15`, the heading "## The Loop — Per Section", which is
+the specify loop's own working unit and still not a grading unit. **But the specify review is
 already section-scoped in its brief**: `:23` says "For each section in SPEC.md, run step 4 of
 the loop", and `:34` sets `{{ARTIFACTS}}` = "`SPEC.md` path + the section list under review (or
 'full SPEC')". So "per-section" names something that half-exists — as *brief scope*, not as a
@@ -410,11 +417,15 @@ Run against this work:
 W=.aid/works/work-013-review-stack-completion
 bash canonical/aid/scripts/kb/kb-citation-lint.sh --root "$W"   # "clean", exit 0
 find "$W" -maxdepth 1 -type f -name '*.md' | wc -l              # 2  <- what it looked at
-find "$W" -mindepth 2 -type f -name '*.md' | wc -l              # 8  <- what it skipped
+find "$W" -mindepth 2 -type f -name '*.md' | wc -l              #     <- what it skipped
 ```
 
-It reports clean over **2 of 10** files, and every feature `SPEC.md` — including this one — is
-in the 8 it never opened. So FR-B5 is not merely "point it at works"; pointing it there without
+The skipped count grows as the work runs — it was `8` at `6090fe9e0` and rises with every brief
+this work renders — so the criterion is the **ratio, not the constant**: the lint opens the
+depth-1 files only, which is `2`, and skips everything below, which is every feature `SPEC.md`
+including this one. Pin the number to a commit when quoting it, or state it as "2 opened, all
+nested skipped"; a bare constant here is stale by the next cycle, which is exactly the drift
+`FR-B7` exists to remove. So FR-B5 is not merely "point it at works"; pointing it there without
 fixing the depth would *manufacture* the silent pass AC-3 exists to forbid. The change is a
 `--recursive` (or depth) option, defaulting to today's behaviour so the KB invocation is
 unaffected, plus the work-artifact invocation that uses it.
@@ -464,7 +475,49 @@ prints them (`:559`, `:594`).
 machine checks and starts emitting **findings with severities** into the existing 7-column
 ledger, and stops computing or printing any letter. `grade.sh` then produces the single letter
 from that ledger, which is what `state-validate.md` already does. No counting-logic change, no
-column change, no points mode. `Q5`'s two options were "convert the summarize path (not in §4)"
+column change, no points mode.
+
+**Each machine check already has a declared severity, and this SPEC allocates none.** The mapping
+exists at `canonical/skills/aid-summarize/references/state-validate.md` § Translate Script Output
+to Schema Rows, which the orchestrator already applies today when it writes failed checks into
+`.aid/.temp/review-pending/summarize.md`. FR-B6 changes **who emits the row** — the script instead
+of the orchestrator — and changes nothing about the band. Reproduced here for the fixture to assert
+against, with each check's real name from `CHECK_NAMES` in `grade-summary.sh:227-243`:
+
+| Check | Name in `grade-summary.sh` | Declared severity |
+|---|---|---|
+| `COV` | Resolved-doc-set coverage | `[CRITICAL]` — automatic F on the machine grade |
+| `L1` | Anchor links | `[HIGH]`, one row per broken link |
+| `L2` | Relative md links | `[HIGH]`, one row per broken path |
+| `H1` | HTML validity | `[HIGH]`, one row per reported error |
+| `S2` | Offline render | `[HIGH]`, one row per CDN reference |
+| `NM` | No-Mermaid-engine (D-012) | `[HIGH]`, one row |
+| `A1` | Semantic landmarks | `[MEDIUM]`, one row per check |
+| `A2` | ARIA on lightbox | `[MEDIUM]`, one row per check |
+| `A3` | Focus trap | `[MEDIUM]`, one row |
+| `A4` | Reduced motion | `[MEDIUM]`, one row per check |
+| `A5` | Visible focus | `[MEDIUM]`, one row per check |
+| `C1` | Light theme contrast | `[MEDIUM]`, one row per failing colour pair |
+| `C2` | Dark theme contrast | `[MEDIUM]`, one row per failing colour pair |
+| `D1` | Mermaid parse (if present) | **not in the mapping** — see below |
+| `D2` | Mermaid render (if present) | **not in the mapping** — see below |
+
+`AUTO_POOL` is `COV D1 D2 L1 L2 H1 A1 A2 A3 A4 A5 C1 C2 S2 NM` (`grade-summary.sh:201`), 15 checks;
+the mapping in `state-validate.md` covers 13 of them plus `T1`/`T2`/`T3`, which are visual checks
+that live outside `AUTO_POOL`. **`D1` and `D2` have no declared severity**, and that is not an
+oversight to paper over here: both are "trivially passed — Mermaid engine retired"
+(`grade-summary.sh:31`, `:248`), so no failing row can be produced today. A task that makes them
+capable of failing must declare their band first, in `state-validate.md` where the others live —
+not in a second table beside it.
+
+> **A defect this SPEC made and is recording rather than deleting.** The first draft of this
+> section invented its own severity table without checking that `state-validate.md` already
+> declared one, and got four bands wrong: `H1` as "heading order" at `[LOW]` when it is HTML
+> validity at `[HIGH]`, `S2` as "size budget" at `[LOW]` when it is the CDN-free assertion at
+> `[HIGH]`, `COV` at `[HIGH]` when it is `[CRITICAL]`, and `C1`/`C2` at `[LOW]` when WCAG contrast
+> is `[MEDIUM]`. The lesson generalises past this table: **when a mapping already exists, cite it;
+> a second copy is drift with extra steps** — which is the same argument `FR-B7` makes about
+> history sections. `Q5`'s two options were "convert the summarize path (not in §4)"
 or "teach `grade.sh` a points mode (NFR-1 forbids it)" — the measurement shows a **third**: the
 conversion is largely already in place, so what is left is deleting a duplicate letter path.
 
@@ -480,7 +533,7 @@ summary grade means historically. That choice is the owner's.
 | Statement | Measured |
 |---|---|
 | `state-manual-checklist.md:31` — "Re-run `grade.sh` — it reads `manual-checklist.json`" | `grep -c manual-checklist canonical/aid/scripts/grade.sh` → `0`; `grade-summary.sh` → `6` |
-| `state-generate.md:354` — "**Machine Grade Source:** `grade.sh` AUTO_POOL (68 pts)" | `grep -c AUTO_POOL canonical/aid/scripts/grade.sh` → `0`; `grade-summary.sh` → `8` |
+| `state-generate.md:354` — "**Machine Grade Source:** `grade.sh` AUTO_POOL (68 pts)" | `grep -c AUTO_POOL canonical/aid/scripts/grade.sh` → `0`; `grep -c AUTO_POOL canonical/aid/scripts/summarize/grade-summary.sh` → `3` (lines 18, 206, 401) |
 
 #### FR-B7 — no artifact authors its own history section
 
@@ -581,7 +634,7 @@ measurement. Which of the two each gate gets, and why:
 | **FR-B3** `kb.html` content | **Fixture, and one live finding already in hand** | The live defect is the before-measurement: `grep -c 'STATE\.md' .aid/knowledge/kb.html` → `15`, `STATE\.yml` → `0`. A review that does not report it is not reading. Fixture: a `kb.html` whose stated project facts contradict the KB must produce a finding; one that agrees must not. **Blocked on `Q3`** for where the criterion attaches — the *proof shape* is fixed here, its id is not. |
 | **FR-B4** blueprint | **Measurement** | `grep -rn 'review-pending/blueprint' canonical tests scripts \| wc -l` → `0` before, ≥1 after (the corpus excludes `.aid/works/` — see § FR-B4). After: a real full-path dispatch also leaves a brief on disk plus a `review-cost.tsv` row — feature-001's criterion-4 commands, reused unchanged. |
 | **FR-B5** citations on work artifacts | **Measurement, and it must be the *depth* that is measured** | Before: lint over `.aid/works/work-013-*` reports clean having opened **2** of **10** `.md` files. After: it opens 10. The assertion is on the **opened count**, not on the verdict — a clean verdict is exactly what the false green already produces. |
-| **FR-B6** single backend | **Measurement** | `grep -cE '"[A-F][+-]?"' canonical/aid/scripts/summarize/grade-summary.sh` → 11 distinct letters before, 0 after; `grep -c 'Machine Grade:' grade-summary.sh` → 1 before, 0 after; and `state-validate.md` still runs `grade.sh --explain` on the 7-column ledger, unchanged. `git diff <base> HEAD -- canonical/aid/scripts/grade.sh` stays empty (NFR-1). |
+| **FR-B6** single backend | **Measurement** | `grep -oE '"[A-F][+-]?"' canonical/aid/scripts/summarize/grade-summary.sh \| sort -u \| wc -l` → **11** distinct letter values before (`A+ A A- B+ B B- C+ C C- D F`), 0 after. Note the `-o … sort -u` form: the plain `grep -cE` counts *matching lines* and returns **27**, which is a different quantity and not the one this criterion is about. `grep -c 'Machine Grade:' grade-summary.sh` → 1 before, 0 after; and `state-validate.md` still runs `grade.sh --explain` on the 7-column ledger, unchanged. `git diff <base> HEAD -- canonical/aid/scripts/grade.sh` stays empty (NFR-1). |
 | **FR-B7** history sections | **Measurement, both corpora** | Gate: `AS03`/`AS03b` over 14 files → **0**, over 76 → **3**. Sweep: the 29-hit command re-run after the fixes returns only the classified **Keep** rows, and `site/src/data` drops 73 → 2 by regeneration. |
 
 **The common guard.** Every gate above prints what it examined next to what it expected, and

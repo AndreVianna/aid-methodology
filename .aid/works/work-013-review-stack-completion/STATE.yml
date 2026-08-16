@@ -9,15 +9,15 @@ minimum_grade: A
 # [W]
 user_approved: 'yes'
 # [W]
-lifecycle: Running
+lifecycle: Paused-Awaiting-Input
 # [W]
 phase: Specify
 # [W]
-active_skill: aid-specify
+active_skill: none
 # [W]
-updated: '2026-08-16T20:51:09Z'
+updated: '2026-08-16T23:25:58Z'
 # [W]
-pause_reason: --
+pause_reason: 'All three feature specs Ready at A+ -- run /aid-plan work-013 to sequence deliveries'
 # [W]
 block_reason: --
 # [W]
@@ -150,6 +150,38 @@ lifecycle_history:
       Owner chose [3] at the terminal state. Cross-reference ledger deleted per
       state-done.md; the two dispatch briefs and review-cost.tsv are kept as the gate''s
       evidence. Ready for /aid-specify work-013 feature-001.
+  - date: '2026-08-16'
+    event: 'SPECIFY feature-001 -- A+ (2 cycles)'
+    grade: 'A+'
+    notes: >-
+      Core Data Model / Feature Flow / Layers sections marked N/A with reasons -- this repo
+      persists no data and has no runtime layering -- and the work carried by sections that
+      fit. Cycle 1 graded B+ on a file count that reproduced only against a local master ref
+      six commits stale, and on prose implying a script that does not exist yet. The stale
+      ref also produced a false "cost meter is absent from master" conflict; the ref was
+      fast-forwarded and the trap recorded in the SPEC. Cycle 2: both Fixed, A+.
+  - date: '2026-08-16'
+    event: 'SPECIFY feature-003 -- A+ (1 cycle)'
+    grade: 'A+'
+    notes: >-
+      Clean first pass. The why-line is specified inside the existing 7 columns, so NFR-1
+      holds: `grade.sh` reads only the severity and status cells and is not edited. Found a
+      real selector defect while checking that -- two suites assert against files absent
+      from their COVERS headers, so a change to those files does not select the suite
+      guarding them -- and swept the class rather than the instance.
+  - date: '2026-08-16'
+    event: 'SPECIFY feature-002 -- A+ (6 cycles, 1 reconciliation)'
+    grade: 'A+'
+    notes: >-
+      The expensive one, and the reason is worth keeping. Cycle 1 (B) and cycle 2 (D) were
+      both my own doing: three counts whose commands did not reproduce, then a severity
+      table I invented without checking that `state-validate.md` already declared one -- four
+      bands wrong. Cycles 3-6 closed it by citing the declared mapping instead of restating
+      it, and by splitting grouped rows until every row carried one check id with its
+      verbatim name; the "class is closed" claim was asserted twice and wrong once before it
+      held. A seventh pass reconciled row 15, which the cycle-6 reviewer reported Fixed while
+      leaving Pending in the file. Same lesson as FR-B7: when a mapping already exists, cite
+      it -- a second copy is drift with extra steps.
 
 # [A]
 deploy: []
