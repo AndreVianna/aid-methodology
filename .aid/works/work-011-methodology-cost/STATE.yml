@@ -1087,3 +1087,47 @@ qa:
       Lesson worth keeping: "no consumer references it" and "nothing depends on it" are
       different claims. A template is consumed by being FOLLOWED, which leaves no
       grep-able edge. The reference count was zero and the dependency was total.
+
+  - id: Q32
+    question: "Items 9 and 11 -- the awk YAML parser and the transient-artifact rule. What did they turn out to be?"
+    status: Resolved
+    answer: |
+      Item 9 was framed as "retire the hand-rolled awk parser for the shared engine".
+      That is not available: there IS no shared bash engine -- nineteen scripts each
+      hand-roll their own -- and the twins' engine is Python/Node, which a core-path
+      script cannot assume. So the goal was reframed to the thing retirement was FOR:
+      make a divergence impossible to ship.
+
+      Probing scalar forms nobody had tried found eight disagreements out of twenty on
+      the first attempt. Judged against a real YAML parser as oracle, five were bash
+      bugs: a BOM in front of `pipeline:`, a `path:` nested two levels deep matching, the
+      block/anchor markers `|` `>` `&p lite` being returned VERBATIM, an escaped quote
+      truncating, and multi-document files taking the first document instead of the last.
+
+      The block/anchor case is the instructive one. The harm is not the wrong value: a
+      NON-EMPTY answer tells is_flat_layout the layout was declared, which suppresses the
+      presence-rule fallback that would have classified correctly. Junk is worse than
+      silence precisely because it looks like an answer.
+
+      The indent rule is now exactly two spaces, matching the engine's `level = indent //
+      2`. Worth being explicit that this makes all three agree while all three differ
+      from a full YAML parser, which reads four-space nesting as an ordinary child. That
+      is what a documented SUBSET is, and cross-reader consistency is the invariant that
+      matters -- a file all three misread identically is classified identically.
+
+      Item 11 named the form of work-folder dependency the rule cannot see: a constant
+      measured from a work folder and hardcoded. It survives pruning and loses not
+      correctness but checkability. Applying it here found four of five cost-meter
+      constants already compliant and one, CODE_PER_TASK, with no provenance at all.
+
+      That one is not honestly measurable, so it is labelled ASSUMED and discharged by
+      showing no conclusion rests on it. Writing that test corrected the comment: the
+      first version claimed the term cancels everywhere and CM43 failed, correctly. It
+      does not -- `today` charges no code term at its delivery gate while the other four
+      shapes do. The surviving claim is weaker and true.
+
+      Both items share a shape worth keeping: the stated goal ("retire the parser",
+      "state the rule") was not the achievable one, and in both cases the test written to
+      confirm the work contradicted the description of it. A corpus that grows only by
+      recording failures already found is the coverage that cannot be credited.
+
