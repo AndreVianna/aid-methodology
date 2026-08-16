@@ -20,7 +20,7 @@
 > discovery/audit (an agent may read it,
 > cite it, or point a human at it), but no seam in this protocol resolves its secret or calls out to
 > it. A `connector-secret resolve` primitive + the security pass that would need to accompany
-> aid-managed consumption is a follow-up (`SPEC.md § Out of Scope / Deferred`).
+> aid-managed consumption is deferred.
 >
 > This is a `canonical/` artifact: it ships and installs byte-identically into every profile's
 > `.claude/aid/templates/connectors/` (or equivalent per-tool) install tree, alongside
@@ -82,7 +82,7 @@ conventions — these are the same frontmatter blocks that work touches):
 | Level | Carrier | Field |
 |---|---|---|
 | Work | `STATE.yml` frontmatter (`work-state-template.yml`) | `ticket_ref` |
-| Feature | `SPEC.md` body (`specs/spec-template.md`) — SPEC.md carries no frontmatter block | `**Ticket:**` line |
+| Feature | the feature's `### Feature NNN` section in `REQUIREMENTS.md § 11` — a section, so it carries no frontmatter block of its own | `**Ticket:**` line |
 | Delivery | `STATE.yml` frontmatter (`delivery-state-template.yml`) — full path only (a flattened work's single delivery uses the work-root `STATE.yml`'s own `ticket_ref`, per the flattened `delivery_lifecycle` promotion `work-state-template.yml` already documents) | `ticket_ref` |
 | Task | `STATE.yml` frontmatter (`task-state-template.yml`) — **full path only**. The flattened layout (no per-task `STATE.yml`, the `tasks_lifecycle` mapping instead) carries no separate task-level `ticket_ref` of its own; resolution for a flattened task passes straight through to its delivery/work levels, which do carry the scalar. | `ticket_ref` |
 
@@ -108,11 +108,10 @@ consulted first; the delivery, the broader one, only if the feature has none.
 
 **"Owning feature" — SPEC-traced, not just co-located.** A task's owning feature is the one its
 `DETAIL.md` traces to (via its `Source`/`Depends on` lineage back through `PLAN.md`'s deliverable
-entry to a specific `feature-NNN-{name}/SPEC.md`) — never merely "some feature in the same delivery."
+entry to a specific `### Feature NNN` section) — never merely "some feature in the same delivery."
 **A task tracing to no single feature skips the feature level entirely**: a flattened Lite work has
-no `features/` folder at all (a single implicit feature — feature-level `ticket_ref` for a Lite work
-lives nowhere, since there is no `SPEC.md` other than the work-root one, which is inherited via the
-work level instead), and even in a full-path work a task that legitimately spans multiple features
+one implicit feature and so one `§ 11` section — a Lite work's feature-level `ticket_ref` is
+inherited via the work level instead), and even in a full-path work a task that legitimately spans multiple features
 (rare — most tasks trace to exactly one) has no single feature to consult, so resolution for that
 task is `task → its delivery → work` instead — the delivery is used because it is still a genuine
 ancestor of the task, unlike an ambiguous choice among several sibling features.
@@ -131,7 +130,7 @@ identically to before this protocol existed.
 | Seam | Role | What it does |
 |---|---|---|
 | `aid-describe` | Ingest | When the interview's originating context names a source ticket (e.g. a Monitor-routed finding, or the human names one), read it **via `/aid-read-ticket`** and record `ticket_ref` at the **work** level it just created. |
-| `aid-specify` | Ingest | When specifying a feature whose requirements trace to a source ticket, read it **via `/aid-read-ticket`** and record `ticket_ref` at the **feature** level (the `SPEC.md` it is authoring). |
+| `aid-specify` | Ingest | When specifying a feature whose requirements trace to a source ticket, read it **via `/aid-read-ticket`** and record `ticket_ref` at the **feature** level (the `§ 11` section it is authoring). |
 | `aid-plan` | Ingest | When a deliverable being written corresponds to (or the user names) an external tracker item, record its `ticket_ref` at the **delivery** level (the `delivery-NNN/STATE.yml`, or the work-root `STATE.yml` for a flattened work, it is creating). |
 | `aid-fix` (and the shared shortcut engine every other shortcut delegates to) | Ingest | When the description this run captures names, or clearly originates from, a filed ticket, record its `ticket_ref` at the **work** level `INTAKE` just allocated. |
 | `aid-ask` | Enrich | May enrich an answer by reading a linked ticket's status/fields **via `/aid-read-ticket`** when the question concerns a linked tracker item; purely additive to its existing KB/codebase/in-flight-work context sources. |

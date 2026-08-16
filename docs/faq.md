@@ -102,7 +102,7 @@ Once you're on the full path:
 Each skill is a state-machine instruction document that your host AI tool executes. No plugins required.
 
 ### Can I use AID with a team, not just solo?
-Yes. The Knowledge Base and formal artifacts (SPEC.md, the STATE files, IMPEDIMENT files) are designed for team collaboration. Multiple people can work on different phases simultaneously. The artifacts are the coordination mechanism.
+Yes. The Knowledge Base and formal artifacts (REQUIREMENTS.md, the STATE files, IMPEDIMENT files) are designed for team collaboration. Multiple people can work on different phases simultaneously. The artifacts are the coordination mechanism.
 
 ### How long does adoption take?
 Start with one delivery. Use the templates. See if the structure helps. Most teams report that Discovery alone (building the KB) pays for itself within the first week — every subsequent task is faster because the context is documented.
@@ -112,7 +112,7 @@ Start with one delivery. Use the templates. See if the structure helps. Most tea
 ## The Lite Path
 
 ### What is the lite path?
-The lite path is a condensed, flattened workflow for small, well-scoped work. You enter it by naming your change with a verb-first **shortcut** skill — `/aid-fix`, `/aid-create-api`, `/aid-update-ui`, and 31 others — rather than by running `/aid-describe`. Every shortcut is a thin doorway into the shared **shortcut engine** (`INTAKE → CAPTURE → SPEC → PLAN → DETAIL → GATE → APPROVAL-HALT`), which collapses Describe→Define→Specify→Plan→Detail into one fast, mostly-autonomous run. It produces a flattened artifact set at the work root (`SPEC.md`, `PLAN.md`, `BLUEPRINT.md`, `tasks/task-NNN/DETAIL.md`) — no `features/`, no `deliveries/` — then halts for your approval before `/aid-execute`.
+The lite path is a condensed, flattened workflow for small, well-scoped work. You enter it by naming your change with a verb-first **shortcut** skill — `/aid-fix`, `/aid-create-api`, `/aid-update-ui`, and 31 others — rather than by running `/aid-describe`. Every shortcut is a thin doorway into the shared **shortcut engine** (`INTAKE → CAPTURE → SPEC → PLAN → DETAIL → GATE → APPROVAL-HALT`), which collapses Describe→Define→Specify→Plan→Detail into one fast, mostly-autonomous run. It produces a flattened artifact set at the work root (`REQUIREMENTS.md`, `tasks/task-NNN/DETAIL.md`) — no `features/`, no `deliveries/` — then halts for your approval before `/aid-execute`.
 
 ### When should I use the lite path vs. the full path?
 Pick the entry yourself: if you know exactly what you want (one focused change, no new requirements gathering needed), run the matching shortcut directly. If you're not sure which shortcut fits, run `/aid-triage` — it's a stateless, suggest-only router: describe the work in a sentence, it infers scope, and suggests either a specific shortcut or the full path via `/aid-describe`. Broad, multi-target, or ambiguous work (multiple features, design decisions to make, formal requirements and a delivery plan needed) belongs on the full path either way.
@@ -133,7 +133,7 @@ The count is configurable per project via `discovery.doc_set` in `.aid/settings.
 Formal pathways for a downstream phase to revise upstream artifacts. When implementation reveals the spec was wrong, you don't silently work around it — you create an IMPEDIMENT.md that triggers a spec revision. There are 11 loops total. See the [methodology document](aid-methodology.md#6-feedback-loops).
 
 ### What's the Grade A gate?
-AID's review phase grades code on a scale from A+ (exemplary) to F (doesn't build). The grading evaluates specification compliance, architecture adherence, and convention conformance — not a fixed checklist. Define your project's specific quality gates in SPEC.md and the review criteria.
+AID's review phase grades code on a scale from A+ (exemplary) to F (doesn't build). The grading evaluates specification compliance, architecture adherence, and convention conformance — not a fixed checklist. Define your project's specific quality gates in `REQUIREMENTS.md § 9` and the review criteria.
 
 ### How do I handle the "spec was wrong" problem?
 That's what feedback loops are for. When implementation discovers a spec error:
@@ -152,7 +152,7 @@ All AID runtime state lives under `.aid/` in your project. Key locations:
 - `.aid/knowledge/` — the Knowledge Base (14 standard docs + meta)
 - `.aid/knowledge/STATE.md` — discovery-area state (Q&A, review history)
 - `.aid/works/{work}/STATE.md` — work-area state for each work item
-- `.aid/works/{work}/SPEC.md` — work-root spec (lite path, via a shortcut) or per-feature `features/{feature}/SPEC.md` (full path, via `/aid-describe`)
+- `.aid/works/{work}/REQUIREMENTS.md` — the requirements, with one `### Feature NNN` section per feature under § 11
 - `.aid/works/{work}/BLUEPRINT.md` (lite path) or `.aid/works/{work}/deliveries/{delivery}/BLUEPRINT.md` (full path) — delivery definition
 - `.aid/works/{work}/tasks/{task}/DETAIL.md` (lite path) or `.aid/works/{work}/deliveries/{delivery}/tasks/{task}/DETAIL.md` (full path) — task definition, ready for execution
 - `.aid/settings.yml` — project configuration (including `discovery.doc_set`)

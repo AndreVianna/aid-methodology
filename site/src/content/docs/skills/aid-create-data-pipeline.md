@@ -73,7 +73,7 @@ Every node in the chart above, in chart order, with the exact `canonical/` text 
 <a id="fragment-n1"></a>**1 · `aid-create-data-pipeline`** — Bind VERB=create, ARTIFACT=data-pipeline · _entry_
 
 ~~~~plaintext title="canonical/skills/aid-create-data-pipeline/SKILL.md#L17" wrap
-Bind **VERB=`create`**, **ARTIFACT=`data-pipeline`**, then run the shared engine at `canonical/aid/templates/shortcut-engine.md`. The engine scaffolds the flattened Lite work (feature-001 structure), authors `REQUIREMENTS.md` -- whose `§ 11` feature section carries the technical specification -- then the task `DETAIL.md` files, with reduced capture. It writes no SPEC.md and no PLAN.md: one feature and one delivery means nothing to sequence, and the execution graph is derived from each task's `**Depends on:**` field. It runs the per-document Grading Gates (feature-004) and halts at the FR-10 approval gate. It never executes. This shortcut's `default_type`/`group` are its row in `canonical/aid/templates/shortcut-catalog.yml`.
+Bind **VERB=`create`**, **ARTIFACT=`data-pipeline`**, then run the shared engine at `canonical/aid/templates/shortcut-engine.md`. The engine scaffolds the flattened Lite work (feature-001 structure) and authors exactly two documents: `REQUIREMENTS.md`, whose `§ 11` feature section carries the technical specification and whose `§ 9` carries the gate criteria, and the task `DETAIL.md` files -- with reduced capture. One feature and one delivery means there is nothing to sequence, so no plan is written and the execution graph is derived from each task's `**Depends on:**` field. It runs the per-document Grading Gates (feature-004) and halts at the FR-10 approval gate. It never executes. This shortcut's `default_type`/`group` are its row in `canonical/aid/templates/shortcut-catalog.yml`.
 ~~~~
 
 [Source: `canonical/skills/aid-create-data-pipeline/SKILL.md#L17`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-create-data-pipeline/SKILL.md#L17)
@@ -88,11 +88,11 @@ Bind **VERB=`create`**, **ARTIFACT=`data-pipeline`**, then run the shared engine
 
 <a id="fragment-n3"></a>**3 · `CONTINUATION`** · _exit_ · HALT
 
-~~~~plaintext title="canonical/aid/templates/work-initiation-gate.md#L129" wrap
+~~~~plaintext title="canonical/aid/templates/work-initiation-gate.md#L127" wrap
 ### 3b. CONTINUATION -> route to the chosen work's resume entry point, then STOP
 ~~~~
 
-[Source: `canonical/aid/templates/work-initiation-gate.md#L129`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/aid/templates/work-initiation-gate.md#L129)
+[Source: `canonical/aid/templates/work-initiation-gate.md#L127`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/aid/templates/work-initiation-gate.md#L127)
 
 <a id="fragment-n4"></a>**4 · `CAPTURE`** — Collapses Describe. · _step_
 

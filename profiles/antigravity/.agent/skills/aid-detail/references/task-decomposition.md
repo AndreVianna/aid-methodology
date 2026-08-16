@@ -73,8 +73,8 @@ Every task has exactly ONE type. Never mix types in a single task.
 | Type | What it produces | When Detail creates it |
 |------|-----------------|----------------------|
 | **RESEARCH** | Findings document, comparison, recommendation | Feature has `Spike Needed` in STATE.md, or unknowns need investigation |
-| **DESIGN** | Mockups, wireframes, interaction flows | Feature has UI Specs in SPEC.md |
-| **IMPLEMENT** | Code + unit tests | Feature has Data Model / Feature Flow / Layers in SPEC.md |
+| **DESIGN** | Mockups, wireframes, interaction flows | Feature section has UI Specs |
+| **IMPLEMENT** | Code + unit tests | Feature section has Data Model / Feature Flow / Layers |
 | **TEST** | Integration/E2E/UI/load tests + results | Feature has integration points or testable acceptance criteria |
 | **DOCUMENT** | ADRs, API docs, runbooks, diagrams | Significant architectural decision or complex setup |
 | **MIGRATE** | Migration scripts + rollback + runbook | Feature has data model changes affecting existing data |
@@ -86,7 +86,7 @@ Every task has exactly ONE type. Never mix types in a single task.
 When proposing tasks, the agent reads the feature SPEC and automatically detects types:
 
 1. **Spike Needed** in work STATE.md `## Features State` → RESEARCH task first
-2. **UI Specs** section in SPEC.md → DESIGN task before IMPLEMENT
+2. **UI Specs** subsection in the feature section → DESIGN task before IMPLEMENT
 3. **Data Model / Feature Flow / Layers & Components** → IMPLEMENT task(s)
 4. **Integration points / acceptance criteria** → TEST task(s) after IMPLEMENT
 5. **Major architectural decision** → DOCUMENT task (ADR)
@@ -175,7 +175,7 @@ update — it does not overwrite it.
 
 **Quality gate cascade:** Every task inherits:
 1. **Project baseline** from REQUIREMENTS.md §6 (unit test minimum, linting standard)
-2. **Feature-specific requirements** from the SPEC.md quality sections (if any)
+2. **Feature-specific requirements** from the feature section's quality subsections (if any)
 
 Include these in Acceptance Criteria when writing tasks. Don't repeat the
 full baseline — reference it: "All §6 quality gates pass." Add feature-specific

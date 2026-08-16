@@ -282,8 +282,7 @@ different purposes:
 | Domain (Step 0cx) | languages, dir shape, notable files, concepts | `## Discovery Domain` | doc-set matrix lookup (Step 0d) |
 | Path (Step 0f) | source-file count, LOC, dirs, concept count | `## Discovery Triage` | fan-out depth (Steps 1-5) |
 
-Step 0f path-triage **stays in discovery** (resolved; delivery-010 STATE Q1 — see §7 of
-feature-014/SPEC.md). Do not re-decide this boundary.
+Step 0f path-triage **stays in discovery** (a resolved boundary). Do not re-decide it.
 
 ### Step 0d: Propose & Confirm Doc-Set (matrix-or-research)
 

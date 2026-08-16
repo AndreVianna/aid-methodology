@@ -240,8 +240,8 @@ operation requires.
      `### delivery-NNN` heading; the single delivery is implicit).
    - **Full path** — otherwise, if `PLAN.md` exists in the work directory → read
      the `#### Execution Graph` block from the delivery's section.
-   - Otherwise (lite path) → read the equivalent block from the work-root
-     `SPEC.md`.
+   - Otherwise (lite path) → there is no stored graph; derive it with
+     `derive-waves.sh --from-tasks .aid/works/{work}`.
    - Parse the `| Task | Depends On |` table into an in-memory dependency map.
 
 ### PD-1: Initialize State

@@ -44,7 +44,8 @@ immediately.
     REQUIREMENTS.md    <- product (clean document, only project information)
     features/          <- product (one folder per feature, created by /aid-define)
       feature-001-name/
-        SPEC.md        <- product (technical specification, added by /aid-specify)
+                       #  § 11 feature sections gain their technical specification
+                       #  when /aid-specify runs
 ```
 
 **First run:** Conversational interview from scratch.
@@ -294,7 +295,7 @@ When a downstream phase (e.g., `/aid-specify`) needs clarification on requiremen
 2. Next `/aid-describe {work}` run detects Pending Q&A → enters State 2 (Q-AND-A)
 3. Questions are presented to the user one at a time
 4. Answers are recorded in STATE.md `## Cross-phase Q&A` and REQUIREMENTS.md
-5. Feature SPEC.md files are updated if the answer affects a specific feature
+5. The affected `§ 11` feature section is updated if the answer bears on one feature
 
 **Q&A entry format for downstream phases to write:**
 

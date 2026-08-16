@@ -61,7 +61,7 @@ Every node in the chart above, in chart order, with the exact `canonical/` text 
 | INITIALIZE | `references/state-initialize.md` | `aid-architect` | → CONTINUE |
 ~~~~
 
-[Source: `canonical/skills/aid-specify/SKILL.md#L217`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-specify/SKILL.md#L217) · [full step: `canonical/skills/aid-specify/references/state-initialize.md#L1-L129`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-specify/references/state-initialize.md#L1-L129)
+[Source: `canonical/skills/aid-specify/SKILL.md#L217`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-specify/SKILL.md#L217) · [full step: `canonical/skills/aid-specify/references/state-initialize.md#L1-L139`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-specify/references/state-initialize.md#L1-L139)
 
 <a id="fragment-n2"></a>**2 · `CONTINUE`** — Work STATE.md ## Features State shows this feature In… · _loop-back_
 
@@ -93,7 +93,7 @@ Every node in the chart above, in chart order, with the exact `canonical/` text 
 | REVIEW | `references/state-review.md` | `aid-reviewer` | → DONE |
 ~~~~
 
-[Source: `canonical/skills/aid-specify/SKILL.md#L221`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-specify/SKILL.md#L221) · [full step: `canonical/skills/aid-specify/references/state-review.md#L1-L74`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-specify/references/state-review.md#L1-L74)
+[Source: `canonical/skills/aid-specify/SKILL.md#L221`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-specify/SKILL.md#L221) · [full step: `canonical/skills/aid-specify/references/state-review.md#L1-L76`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-specify/references/state-review.md#L1-L76)
 
 <a id="fragment-n6"></a>**6 · `DONE`** — Spec is Ready and has met the minimum grade; this feature's… · _exit_ · HALT
 

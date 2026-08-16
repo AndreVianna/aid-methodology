@@ -14,8 +14,8 @@
       "terminal": null,
       "provenance": {
         "file": "canonical/skills/aid-describe/SKILL.md",
-        "startLine": 274,
-        "endLine": 274,
+        "startLine": 275,
+        "endLine": 275,
         "sourceKind": "skill",
         "excerpt": "| FIRST-RUN | `references/state-first-run.md` | `aid-interviewer` | → CONTINUE |"
       },
@@ -36,8 +36,8 @@
       "terminal": null,
       "provenance": {
         "file": "canonical/skills/aid-describe/SKILL.md",
-        "startLine": 275,
-        "endLine": 275,
+        "startLine": 276,
+        "endLine": 276,
         "sourceKind": "skill",
         "excerpt": "| Q-AND-A | `references/state-q-and-a.md` | `aid-interviewer` | → CONTINUE |"
       },
@@ -46,7 +46,7 @@
         "startLine": 1,
         "endLine": 65,
         "sourceKind": "worker",
-        "excerpt": "# State: Q-AND-A\n\nSTATE.md `## Cross-phase Q&A` has entries with `**Status:** Pending`; resolve them one at a time before continuing.\n\nThese may come from:\n- Cross-reference analysis (State 6)\n- Loopback from downstream phases (e.g., `/aid-specify` injected a question)\n- Review findings\n\n### Step 1: Load and Filter\n\nRead `## Cross-phase Q&A` section of STATE.md. Collect all entries with `**Status:** Pending`.\n\n**Before presenting each question, filter:**\n\n1. **Already answered in REQUIREMENTS.md?** → Set status to `Answered`, fill answer,\n   cite the section. Skip to next.\n2. **Answered in KB?** → Set status to `Answered`, fill answer, cite KB document. Skip.\n3. **Inferrable from context?** → Keep but ensure `**Suggested:**` answer exists.\n\nAfter filtering, sort remaining Pending by impact: **High → Medium → Low**.\n\nIf zero remain: `[Q&A] All questions resolved from existing material.` and exit.\n\nPrint: `[Q&A] {N} questions for user input.`\n\n### Step 2: Ask One at a Time\n\nFor each Pending question:\n\n```\nIQ{N}: [{Category}: {Impact}] {question text}\n\nContext: {why this matters}\nSource: {who injected this — /aid-specify feature-001, cross-reference, etc.}\n\nSuggested: {suggestion if present}\n\n[1] Skip / Not applicable\n[2] Accept suggestion (only if Suggested exists)\n[3] Your answer: ___\n```\n\n**Wait for the user's response before asking the next.**\n\n### Step 3: Record\n\nBased on the user's response, update the entry in STATE.md `## Cross-phase Q&A`:\n\n- **[1] Skip:** Set `**Status:** Skipped`\n- **[2] Accept suggestion:** Set `**Status:** Answered`, copy suggestion to `**Answer:**`\n- **[3] Answer:** Set `**Status:** Answered`, record text in `**Answer:**`\n\n**Write immediately.** Also update REQUIREMENTS.md with the answer content where relevant.\n\nIf the answer affects a feature that already exists, update that feature's SPEC.md too\nas the answer requires.\n\n### Step 4: Continue Until Done\n\nWhen all questions addressed:\n`[Q&A] Complete. {answered} answered, {skipped} skipped.`\n\n**Advance:** **CHAIN** → [State: CONTINUE] (continue inline).\n"
+        "excerpt": "# State: Q-AND-A\n\nSTATE.md `## Cross-phase Q&A` has entries with `**Status:** Pending`; resolve them one at a time before continuing.\n\nThese may come from:\n- Cross-reference analysis (State 6)\n- Loopback from downstream phases (e.g., `/aid-specify` injected a question)\n- Review findings\n\n### Step 1: Load and Filter\n\nRead `## Cross-phase Q&A` section of STATE.md. Collect all entries with `**Status:** Pending`.\n\n**Before presenting each question, filter:**\n\n1. **Already answered in REQUIREMENTS.md?** → Set status to `Answered`, fill answer,\n   cite the section. Skip to next.\n2. **Answered in KB?** → Set status to `Answered`, fill answer, cite KB document. Skip.\n3. **Inferrable from context?** → Keep but ensure `**Suggested:**` answer exists.\n\nAfter filtering, sort remaining Pending by impact: **High → Medium → Low**.\n\nIf zero remain: `[Q&A] All questions resolved from existing material.` and exit.\n\nPrint: `[Q&A] {N} questions for user input.`\n\n### Step 2: Ask One at a Time\n\nFor each Pending question:\n\n```\nIQ{N}: [{Category}: {Impact}] {question text}\n\nContext: {why this matters}\nSource: {who injected this — /aid-specify feature-001, cross-reference, etc.}\n\nSuggested: {suggestion if present}\n\n[1] Skip / Not applicable\n[2] Accept suggestion (only if Suggested exists)\n[3] Your answer: ___\n```\n\n**Wait for the user's response before asking the next.**\n\n### Step 3: Record\n\nBased on the user's response, update the entry in STATE.md `## Cross-phase Q&A`:\n\n- **[1] Skip:** Set `**Status:** Skipped`\n- **[2] Accept suggestion:** Set `**Status:** Answered`, copy suggestion to `**Answer:**`\n- **[3] Answer:** Set `**Status:** Answered`, record text in `**Answer:**`\n\n**Write immediately.** Also update REQUIREMENTS.md with the answer content where relevant.\n\nIf the answer affects a feature that already exists, update that feature's `§ 11` section too\nas the answer requires.\n\n### Step 4: Continue Until Done\n\nWhen all questions addressed:\n`[Q&A] Complete. {answered} answered, {skipped} skipped.`\n\n**Advance:** **CHAIN** → [State: CONTINUE] (continue inline).\n"
       }
     },
     {
@@ -58,8 +58,8 @@
       "terminal": null,
       "provenance": {
         "file": "canonical/skills/aid-describe/SKILL.md",
-        "startLine": 276,
-        "endLine": 276,
+        "startLine": 277,
+        "endLine": 277,
         "sourceKind": "skill",
         "excerpt": "| CONTINUE | `references/state-continue.md` | `aid-interviewer` | → DESCRIBE-SEED (greenfield: no brownfield KB on disk and seed not yet complete) / → COMPLETION (brownfield or seed already complete) |"
       },
@@ -80,8 +80,8 @@
       "terminal": null,
       "provenance": {
         "file": "canonical/skills/aid-describe/SKILL.md",
-        "startLine": 277,
-        "endLine": 277,
+        "startLine": 278,
+        "endLine": 278,
         "sourceKind": "skill",
         "excerpt": "| DESCRIBE-SEED | `references/state-describe-seed.md` | `aid-interviewer` | → COMPLETION |"
       },
@@ -105,8 +105,8 @@
       },
       "provenance": {
         "file": "canonical/skills/aid-describe/SKILL.md",
-        "startLine": 278,
-        "endLine": 278,
+        "startLine": 279,
+        "endLine": 279,
         "sourceKind": "skill",
         "excerpt": "| COMPLETION | `references/state-completion.md` | `aid-interviewer` | PAUSE-FOR-USER-DECISION → Run /aid-define {work} |"
       },
@@ -184,8 +184,8 @@
       "advanceType": "UNSPECIFIED",
       "provenance": {
         "file": "canonical/skills/aid-describe/SKILL.md",
-        "startLine": 276,
-        "endLine": 276,
+        "startLine": 277,
+        "endLine": 277,
         "sourceKind": "skill",
         "excerpt": "**Advance:** → DESCRIBE-SEED (greenfield: no brownfield KB on disk and seed not yet complete) / → COMPLETION (brownfield or seed already complete)"
       }
@@ -226,8 +226,8 @@
       "advanceType": "UNSPECIFIED",
       "provenance": {
         "file": "canonical/skills/aid-describe/SKILL.md",
-        "startLine": 288,
-        "endLine": 288,
+        "startLine": 289,
+        "endLine": 289,
         "sourceKind": "skill",
         "excerpt": "## Targeted Interview (Loopback Re-entry)"
       }

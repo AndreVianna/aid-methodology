@@ -18,6 +18,7 @@
 #   AD07  the shortcut (Lite) engine writes no SPEC.md (folded into REQUIREMENTS § 11)
 #   AD08  the shortcut (Lite) engine writes no PLAN.md either -- AC-13 in full
 #   AD09  the review path names no per-feature SPEC (a dead ARTIFACT, vs AD04 dead PATH)
+#   AD10  SPEC.md is retired across canonical/, not just on the surfaces AD07/AD09 name
 #
 # Two scope decisions, both load-bearing, both found by writing the naive version first
 # and reading what it flagged:
@@ -64,12 +65,25 @@ echo "== test-artifact-discipline.sh =="
 #   was not hypothetical -- aid-plan/SKILL.md's directory diagram carried both a
 #   BLUEPRINT.md line and a `features/ feature-NNN/ SPEC.md` block, and AD04 skipped
 #   the whole thing because it sat in a fence.
+# A line that STATES THE ABSENCE of the banned thing is never an offence -- "there is no
+# per-feature SPEC.md", "writes no BLUEPRINT", "no features/ directory is created". These
+# rules exist to stop agents being sent to dead artifacts, and a sentence explaining that
+# an artifact is dead does the opposite.
+#
+# Added after the third false positive of exactly this kind (prototype.md, document.md,
+# and the glossary entry defining the retirement). Twice was a coincidence; the third
+# time meant the rule could not tell "use X" from "X is gone", and would keep pushing
+# correct explanations into being deleted to satisfy it.
+ABSENCE_RE='(there is |carries )?no( separate| longer| per-feature| such)?[ `]*(SPEC\.md|BLUEPRINT|PLAN\.md|features/)|writes? no |emits? no |never (writes|emits|creates)|is (retired|deleted|gone)|no .{0,24} is (written|created)'
+
 scan_tree() {
     local trees="$1" pattern="$2" fence_policy="${3:-skip-fences}"
-    ( cd "$REPO" && TREES="$trees" PATTERN="$pattern" FENCE_POLICY="$fence_policy" python3 - <<'PY'
+    ( cd "$REPO" && TREES="$trees" PATTERN="$pattern" FENCE_POLICY="$fence_policy" \
+      ABSENCE="$ABSENCE_RE" python3 - <<'PY'
 import os, pathlib, re
 
 pattern = re.compile(os.environ["PATTERN"])
+absence = re.compile(os.environ.get("ABSENCE", r"(?!x)x"), re.I)
 skip_fences = os.environ["FENCE_POLICY"] == "skip-fences"
 hits = []
 for tree in os.environ["TREES"].split():
@@ -93,7 +107,7 @@ for tree in os.environ["TREES"].split():
                 continue
             if skip_fences and in_fence:
                 continue
-            if pattern.search(line):
+            if pattern.search(line) and not absence.search(line):
                 hits.append(f"{path}:{number}: {line.strip()}")
 
 print(len(hits))
@@ -359,6 +373,34 @@ done
 ad09_count="$(printf '%s' "$ad09_files" | grep -c . || true)"
 assert_eq "$ad09_count" "0" "AD09: no reviewer brief, dispatch template or reviewer agent names a per-feature SPEC"
 [[ "$ad09_count" != "0" ]] && printf '%s' "$ad09_files" | sed 's|^|    offender: |' >&2
+
+# ---------------------------------------------------------------------------
+# AD10: SPEC.md is retired everywhere, not just on the surfaces earlier rules named.
+#
+# AD07 covered the shortcut engine, AD09 the review path. Both were scoped because a
+# SPEC.md was still live elsewhere at the time. It is not any more: neither aid-define
+# nor aid-specify writes one, the Lite engine writes one, nor does any full-path skill --
+# the artifact is gone from both paths. What survived was 84 REFERENCES to it, describing
+# a document no work produces.
+#
+# The count is asserted rather than zero because two mentions are legitimate and must
+# stay: `specs/spec-template.md` describing itself, and one sentence in
+# feature-decomposition.md explaining that no separate spec file is written. A rule that
+# demanded zero would force deleting the explanation of the very change it enforces.
+#
+# docs/ and examples/ are NOT in scope. docs/ is swept; examples/ still narrates the old
+# flow with a sample artifact, which needs rewriting rather than patching and is tracked
+# as remaining work. Including it here would fail the gate for something nobody is about
+# to fix in the same commit -- a red check that teaches people to ignore red checks.
+# ---------------------------------------------------------------------------
+ad10="$(scan_tree "canonical" 'SPEC\.md' include-fences)"
+ad10_count="$(report_count "$ad10")"
+if [[ "$ad10_count" -le 2 ]]; then
+    pass "AD10: SPEC.md survives in canonical/ only where it explains its own retirement (${ad10_count} mention(s))"
+else
+    fail "AD10: SPEC.md must not be referenced in canonical/ beyond the 2 self-explaining mentions — got ${ad10_count}"
+    report_body "$ad10" | sed 's|^|    offender: |' >&2
+fi
 
 # ---------------------------------------------------------------------------
 echo ""

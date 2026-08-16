@@ -183,8 +183,9 @@ KB docs are relevant to this task, then load them. Let the INDEX guide you.
   - Full path: `.aid/works/{work}/deliveries/delivery-NNN/tasks/task-NNN/STATE.yml`
   - Flat path: work-root `.aid/works/{work}/STATE.yml`'s `tasks_lifecycle` entry for `task-NNN`
 - Feature / architectural spec:
-  - Full path: `.aid/works/{work}/features/{feature}/SPEC.md` — Technical Specification
-  - Flat path: work-root `.aid/works/{work}/SPEC.md` — the single feature's Technical Specification
+  - Both paths: the feature's `#### Technical Specification` in
+    `.aid/works/{work}/REQUIREMENTS.md § 11` (one section per feature on the full path,
+    a single section on the flat path)
 - `.aid/works/{work}/PLAN.md` — delivery context and **Execution Graph** (dependencies and parallelism;
   flat path: the top-level `## Execution Graph`, single delivery)
 

@@ -75,7 +75,7 @@ Every node in the chart above, in chart order, with the exact `canonical/` text 
 | GENERATE | `references/state-generate.md` | `aid-architect` | → REVIEW |
 ~~~~
 
-[Source: `canonical/skills/aid-discover/SKILL.md#L266`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-discover/SKILL.md#L266) · [full step: `canonical/skills/aid-discover/references/state-generate.md#L1-L1072`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-discover/references/state-generate.md#L1-L1072)
+[Source: `canonical/skills/aid-discover/SKILL.md#L266`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-discover/SKILL.md#L266) · [full step: `canonical/skills/aid-discover/references/state-generate.md#L1-L1071`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-discover/references/state-generate.md#L1-L1071)
 
 <a id="fragment-n3"></a>**3 · `REVIEW`** — REVIEW grades all declared KB documents for accuracy… · _decision_
 

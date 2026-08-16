@@ -57,7 +57,7 @@ Every node in the chart above, in chart order, with the exact `canonical/` text 
 | CROSS-REFERENCE | `references/state-cross-reference.md` | `aid-reviewer` | → DONE |
 ~~~~
 
-[Source: `canonical/skills/aid-define/SKILL.md#L240`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-define/SKILL.md#L240) · [full step: `canonical/skills/aid-define/references/state-cross-reference.md#L1-L36`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-define/references/state-cross-reference.md#L1-L36)
+[Source: `canonical/skills/aid-define/SKILL.md#L240`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-define/SKILL.md#L240) · [full step: `canonical/skills/aid-define/references/state-cross-reference.md#L1-L42`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-define/references/state-cross-reference.md#L1-L42)
 
 <a id="fragment-n3"></a>**3 · `DONE`** — Interview is complete, approved, features decomposed, and… · _exit_ · HALT
 

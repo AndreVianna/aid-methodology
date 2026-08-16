@@ -398,8 +398,8 @@ This is the third conviction underlying AID: the Knowledge Base is the gravitati
 | `aid-discover` | Knowledge Base Maintenance | 1 | 14-document Knowledge Base · `project-index.md` pre-pass · `STATE.md` discovery grade/Q&A |
 | `aid-summarize` | Knowledge Base Maintenance | — (optional viewer) | `knowledge-summary.html` — offline KB viewer |
 | `aid-describe` | Definition | 2a | `REQUIREMENTS.md` — full path only |
-| `aid-define` | Definition | 2b | Per-feature `SPEC.md` stubs + feature decomposition (full path only) |
-| `aid-specify` | Definition | 3 | Technical spec added to each feature's `SPEC.md` |
+| `aid-define` | Definition | 2b | Feature decomposition into `REQUIREMENTS.md § 11` sections (full path only) |
+| `aid-specify` | Definition | 3 | Technical spec added to each feature's `§ 11` section |
 | `aid-plan` | Definition | 4 | `PLAN.md` + per-delivery `deliveries/delivery-NNN/BLUEPRINT.md` + `STATE.md` |
 | `aid-detail` | Definition | 5 | Typed, PR-sized `deliveries/delivery-NNN/tasks/task-NNN/DETAIL.md` files + execution graph |
 | `aid-execute` | Execution | 6 | Implemented + reviewed code to grade ≥ minimum; 8 task types |
@@ -407,7 +407,7 @@ This is the third conviction underlying AID: the Knowledge Base is the gravitati
 | `aid-monitor` | Definition (shortcut path) | — (optional) | classified findings → `/aid-fix` (bugs) or `/aid-triage` (change requests); observation log kept in-memory (persistent `MONITOR-STATE.md` deferred) |
 | `aid-housekeep` | Knowledge Base Maintenance | — | KB-DELTA refresh · SUMMARY-DELTA · workspace CLEANUP |
 | `aid-triage` | Definition | — | A suggested next command (shortcut, `/aid-describe`, or `/aid-ask` for a plain question); writes nothing |
-| `aid-<verb>[-<artifact>]` (34 shortcuts) | Definition | — | Full flattened artifact set (`REQUIREMENTS.md`, `SPEC.md`, `PLAN.md`, `BLUEPRINT.md`, `tasks/task-NNN/DETAIL.md`) via the shared shortcut engine |
+| `aid-<verb>[-<artifact>]` (34 shortcuts) | Definition | — | The flattened artifact set (`REQUIREMENTS.md`, `tasks/task-NNN/DETAIL.md`) via the shared shortcut engine |
 
 AID organizes its skills into four groups — **Support**, **Knowledge Base Maintenance**, **Definition**, and **Execution**. Groups are a non-sequential way to organize the skills, not a running order. The six numbered development phases (Discover through Execute) still form the mandatory sequential pipeline: Discover sits in Knowledge Base Maintenance, Describe through Detail sit in Definition, and Execute is the sole Execution skill. `aid-deploy` and `aid-monitor` are **optional** shortcut paths in the Definition group, invoked on demand rather than as required phases. The pipeline is linear with feedback loops.
 
@@ -538,7 +538,7 @@ When a KB exists (brownfield), suggested answers are additionally grounded in KB
 
 **On greenfield (DESCRIBE-SEED).** When no KB exists, `aid-describe` runs its DESCRIBE-SEED state immediately after the elicitation loop completes — before REQUIREMENTS.md is approved. The engine forward-authors a five-element KB seed from intent: concept-spine and ubiquitous language (`domain-glossary.md`), intended architecture (`architecture.md`), conventions (`coding-standards.md`), technology stack (`technology-stack.md`), and key decisions (`decisions.md`, when rationale-bearing choices emerge). Each document is stamped `source: forward-authored`. A layered coherence check validates internal consistency and ensures every load-bearing REQUIREMENTS term maps to a seed concept. A greenfield-mode review gate then grades the seed using the same universal rubric as Discovery, with intent-evidence substituted for code-evidence. On brownfield, the KB is extracted from existing code. On greenfield, the design documents are the source of truth, and code is built to conform — the inversion.
 
-**State 5: Feature Decomposition.** After REQUIREMENTS.md is approved, the agent proposes a feature breakdown from §5 Functional Requirements. Each approved feature gets its own folder with a SPEC.md containing the requirements side (description, user stories, priority, acceptance criteria). The technical specification section is left empty — that is Specify's job.
+**State 5: Feature Decomposition.** After REQUIREMENTS.md is approved, the agent proposes a feature breakdown from §5 Functional Requirements. Each approved feature gets a `### Feature NNN` section under `REQUIREMENTS.md § 11`, citing the `§5 FR-N` it implements and the `§9 AC-N` it owns. The `#### Technical Specification` subsection is left empty — that is Specify's job.
 
 **State 6: Cross-Reference.** Validates REQUIREMENTS.md against the full KB. Checks for contradictions, gaps, missing evidence, and staleness. Grades the findings with AID's universal rubric.
 
@@ -546,7 +546,7 @@ When a KB exists (brownfield), suggested answers are additionally grounded in KB
 
 **One grading rubric across the pipeline.** Every development phase that grades — Discover, Describe → Define, Specify, Plan, Detail, Execute — works the same way: the reviewer classifies each issue it finds by severity (`[CRITICAL]` / `[HIGH]` / `[MEDIUM]` / `[LOW]` / `[MINOR]`), and the letter grade is computed **deterministically** — the worst severity present dominates, and the count within that tier sets the modifier. A scale that runs A+ down to F, with an E band for critical-severity issues. The reviewer never hand-picks a grade. Each phase loops until its grade meets the project's minimum (set at `aid-config`). See §7 and `canonical/aid/templates/grading-rubric.md`.
 
-**Output (full path):** `.aid/works/{work}/REQUIREMENTS.md` + `.aid/works/{work}/features/feature-NNN-{name}/SPEC.md` (requirements side only).
+**Output (full path):** `.aid/works/{work}/REQUIREMENTS.md`, with one `### Feature NNN` section per feature under § 11 (requirements side only).
 
 ##### The Lite Path: Direct-Entry Shortcuts
 
@@ -601,26 +601,25 @@ The engine **collapses** the five definition phases (Describe → Define → Spe
 .aid/
   works/
     work-NNN-name/
-      STATE.md                          ← work lifecycle; the sole delivery's gate + Q&A are
-                                           promoted into it (## Delivery Lifecycle / ## Delivery Gate)
-      REQUIREMENTS.md
-      SPEC.md
-      PLAN.md
-      BLUEPRINT.md                      ← the single delivery's definition, at the work root
+      STATE.yml                         ← work lifecycle; the sole delivery's gate + Q&A are
+                                           promoted into it (delivery_lifecycle / delivery_gate)
+      REQUIREMENTS.md                   ← § 11 carries the single feature section, technical
+                                           specification included; § 9 carries the gate criteria
       tasks/
         task-NNN/
-          DETAIL.md                     ← task definition (no per-task STATE.md on this path)
+          DETAIL.md                     ← task definition (no per-task STATE.yml here); its
+                                           **Depends on:** field IS the execution graph
 ```
 
-The engine produces the **full** flattened artifact set — the same document shapes the full path produces, just nested one level shallower and authored without a per-phase checkpoint. One structural difference from the full path: the flattened Lite work has **no per-task `STATE.md`** — each task's mutable cells live in the work-root `STATE.md` under `### Tasks lifecycle`.
+The engine produces the flattened artifact set — `REQUIREMENTS.md` and the task `DETAIL.md` files, authored without a per-phase checkpoint. Two structural differences from the full path: there is **no per-task `STATE.yml`** (each task's mutable cells live in the work-root `STATE.yml` under `tasks_lifecycle`), and there is **no `PLAN.md`** — one feature and one delivery means no sequencing decision to record, and the execution graph is derived from each task's `**Depends on:**` field.
 
 ---
 
 #### Phase 3: Specify (`aid-specify`)
 
-**Purpose:** Technical refinement of a single feature through conversational collaboration with the developer. The agent acts as a tech lead — proposes concrete solutions grounded in the KB and codebase, discusses trade-offs, and writes the technical specification into the feature's SPEC.md.
+**Purpose:** Technical refinement of a single feature through conversational collaboration with the developer. The agent acts as a tech lead — proposes concrete solutions grounded in the KB and codebase, discusses trade-offs, and writes the technical specification into the feature's `§ 11` section.
 
-**Input:** A feature's SPEC.md (requirements side, from Describe, Phase 2a) + REQUIREMENTS.md + `.aid/knowledge/` + the codebase.
+**Input:** A feature's `§ 11` section (requirements side, from Describe, Phase 2a) + the `§5`/`§9` slice it cites + `.aid/knowledge/` + the codebase.
 
 **What this is:** Agile refinement for AI-augmented teams. Describe captured *what* the stakeholder wants. Specify determines *how* to build it — one feature at a time, through discussion with the developer.
 
@@ -630,7 +629,7 @@ The key distinction from generic spec generation: the agent does not ask "what t
 
 1. **Propose** — the agent proposes a concrete solution referencing specific files, classes, patterns, and conventions from the codebase.
 2. **Discuss** — the developer validates, adjusts, or redirects. The agent pushes back on contradictions, presents trade-offs, adapts.
-3. **Write** — the agreed section is written to SPEC.md.
+3. **Write** — the agreed section is written into the feature's `#### Technical Specification`.
 4. **Review** — the agent verifies what was written against KB reality and other completed sections. Pass → next section. Fail → back to Propose with findings.
 
 **Re-run = enter at step 4 with existing content.** Running `/aid-specify` on a completed feature reviews all sections against current reality (KB, codebase, requirements), grading each section with the universal rubric. The same loop handles both creation and maintenance.
@@ -1049,9 +1048,8 @@ wrong-assumption | missing-dependency | architecture-conflict | kb-gap
 | STATE.md (discovery area) | `.aid/knowledge/` | Init, Discover, Summarize | Discover (resume), all phases | Living — grade, review & summarization history; any phase appends Q&A entries |
 | project-index.md | `.aid/generated/` | Discover (pre-pass) | Discovery sub-agents | Regenerated each discovery run |
 | REQUIREMENTS.md | `.aid/works/{work}/` | Describe (full path) or the shortcut engine's CAPTURE state (lite path) | Specify, Plan / the engine's own SPEC state | Frozen after approval (rev-tracked) |
-| SPEC.md (work-root) | `.aid/works/{work}/` | The shortcut engine's SPEC state (lite path only) | Execute | Single consolidated spec for lite works |
 | STATE.md (work area) | `.aid/works/{work}/` | Describe (full path) or the shortcut engine's INTAKE state (lite path) | All phases for this work | Process tracking |
-| Feature SPEC.md | `.aid/works/{work}/features/{feature}/` | Describe + Specify (full path) | Plan, Detail, Execute | Living — Describe writes requirements side, Specify adds technical spec |
+| Feature section | `REQUIREMENTS.md § 11` | Describe + Specify (full path) | Plan, Detail, Execute | Living — Describe writes the requirements side, Specify adds the technical spec |
 | known-issues.md | `.aid/works/{work}/` | Specify (Monitor updates) | Plan, Execute, Deploy, Monitor | Living — created when the first issue is registered |
 | PLAN.md | `.aid/works/{work}/` | Plan (full path) or the shortcut engine's PLAN state (lite path) | Detail, Deploy | Living — rev-tracked; Detail appends the execution graph |
 | BLUEPRINT.md (delivery definition) | Full path: `deliveries/delivery-NNN/`; lite path: work root | Plan (full path) or the shortcut engine's PLAN state (lite path) | Detail, Execute | Immutable — objective, scope, gate criteria, task listing, dependencies |
@@ -1087,9 +1085,9 @@ Within Execute, the reviewer produces a structured issue list that `canonical/ai
 ## 10. Priority
 ```
 
-**Feature SPEC.md template:**
+**Feature section template:**
 
-Each feature gets its own SPEC.md on the full path. Describe writes the top half (requirements side). Specify adds the bottom half (technical specification).
+Each feature gets a `### Feature NNN` section under `REQUIREMENTS.md § 11` on the full path. Describe writes the top half (requirements side). Specify adds the bottom half (technical specification).
 
 ```markdown
 # {Feature Title}
@@ -1454,7 +1452,7 @@ network required after the initial download. All channels deliver the same persi
 For small, well-scoped changes — bug fixes, doc updates, refactors, small new features:
 
 1. Run the matching shortcut directly (`/aid-fix "login crash on special characters"`, `/aid-create-api "an /orders endpoint"`, …) — or run `/aid-triage` first if you're not sure which one fits; it suggests the canonical shortcut (or the full path) from a one-sentence description and stops.
-2. The shortcut engine runs INTAKE → CAPTURE → SPEC → PLAN → DETAIL autonomously (a rare CAPTURE question aside), producing the full flattened artifact set (`REQUIREMENTS.md`, `SPEC.md`, `PLAN.md`, `BLUEPRINT.md`, `tasks/task-NNN/DETAIL.md`).
+2. The shortcut engine runs INTAKE → CAPTURE → SPEC → PLAN → DETAIL autonomously (a rare CAPTURE question aside), producing the flattened artifact set (`REQUIREMENTS.md`, `tasks/task-NNN/DETAIL.md`).
 3. GATE grades every document mechanically, then APPROVAL-HALT presents the flattened work for your approval. Nothing has executed yet.
 4. Run `/aid-execute`.
 

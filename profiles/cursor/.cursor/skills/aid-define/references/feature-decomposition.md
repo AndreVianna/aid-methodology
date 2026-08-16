@@ -10,7 +10,7 @@ requirement, §9 states the criteria, §3 states the user types. The feature sec
 cites those and adds only what decomposition itself decides — the boundary, the
 priority, and (later, from `/aid-specify`) the technical approach.
 
-That is why there is one document. When each feature had its own `SPEC.md`, the
+That is why there is one document. When each feature had its own spec file, the
 same criterion was written twice — once in §9 and again in every SPEC that claimed
 it — and the two could disagree without anything noticing. Both CRITICAL findings
 in this project's largest work to date were exactly that: sibling specs asserting
@@ -87,7 +87,7 @@ For each feature fill:
 - **Technical Specification:** leave as the template placeholder — `/aid-specify`
   fills it
 
-No `features/` directory is created, and no `SPEC.md` is written. A feature has no
+No `features/` directory is created, and no separate spec file is written. A feature has no
 files of its own.
 
 ## Step 5: Update Meta-Documents
