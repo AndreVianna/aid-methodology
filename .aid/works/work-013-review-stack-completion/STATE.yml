@@ -7,17 +7,17 @@ started: '2026-08-16'
 # [W]
 minimum_grade: A
 # [W]
-user_approved: 'no'
+user_approved: 'yes'
 # [W]
 lifecycle: Paused-Awaiting-Input
 # [W]
 phase: Describe
 # [W]
-active_skill: aid-describe
+active_skill: none
 # [W]
-updated: '2026-08-16T06:10:00Z'
+updated: '2026-08-16T06:10:21Z'
 # [W]
-pause_reason: 'COMPLETION Steps 1-3 done; identity header confirmed by the owner and written. Awaiting the Step 4/5 approval decision.'
+pause_reason: 'Requirements approved -- run /aid-define work-013 to decompose into features'
 # [W]
 block_reason: --
 # [W]
@@ -27,7 +27,7 @@ ticket_ref: --
 
 # [A]
 interview:
-  state: 'In Progress'
+  state: Approved
   grade: Pending
   sections:
     - id: 1
@@ -109,6 +109,10 @@ lifecycle_history:
     event: 'COMPLETION Step 3 -- identity header confirmed'
     grade: --
     notes: 'Owner answered [1]. Name and Description written to REQUIREMENTS.md.'
+  - date: '2026-08-16'
+    event: 'Requirements APPROVED'
+    grade: --
+    notes: 'Owner answered [1] at the Step 4 summary. interview.state -> Approved; user_approved -> yes; pipeline paused for the /aid-define hand-off. No issue-tracker connector is catalogued, so no ticket suggestion was printed.'
 
 # [A]
 deploy: []
