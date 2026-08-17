@@ -21,6 +21,8 @@
 #   AD10  SPEC.md is retired across canonical/ ENTIRELY -- zero, not a tolerated few
 #   AD11  every KB frontmatter block parses as YAML (closes tech-debt W5-3 gate gap)
 #   AD12  canonical/agents/ names no retired artifact and no retired work-state file
+#   AD13  tree-wide RATCHET on the retired-artifact vocabulary (five classes)
+#   AD14  every KB `sources:` citation resolves to a file that exists
 #
 # Two scope decisions, both load-bearing, both found by writing the naive version first
 # and reading what it flagged:
@@ -612,6 +614,74 @@ else
 fi
 
 # ---------------------------------------------------------------------------
+
+# ---------------------------------------------------------------------------
+# AD14: every KB `sources:` citation resolves to a file that exists.
+#
+# The KB's whole claim is that a reader can VERIFY it: each doc lists the sources it was
+# derived from so a fact can be traced back. A citation to a file that no longer exists
+# breaks exactly that, and it breaks silently -- the doc still reads as authoritative.
+#
+# Nothing checked it. `kb-citation-lint.sh` is the gate whose name suggests it would, but
+# it flags VOLATILE line-number anchors (`file.md:39`), a different problem entirely; it
+# never opens the cited path. So retiring a template left three KB docs citing deleted
+# files -- feature.md and delivery-blueprint-template.md -- and no suite noticed.
+#
+# Two path forms are both legitimate and both resolved here: `canonical/...` (this repo's
+# source of truth) and `.claude/aid/...` (the rendered install tree a KB doc may cite
+# because that is where an adopter sees the file). A `path:anchor` suffix is stripped
+# before resolution -- the anchor is kb-citation-lint's business, not this rule's.
+# ---------------------------------------------------------------------------
+ad14_report="$( cd "$REPO" && python3 - <<'AD14PY'
+import pathlib, re
+try:
+    import yaml
+except ImportError:
+    print("SKIP")
+    raise SystemExit(0)
+
+def resolves(raw):
+    s = raw.strip().strip("`")
+    if not s or s.startswith(("http://", "https://", "(")) or s in {"none", "N/A", "-"}:
+        return True                       # URLs and placeholders are out of scope
+    if s.startswith(".aid/generated/"):
+        return True                       # build output; absent in a clean checkout
+    s = s.split(":", 1)[0]                # drop a durable anchor suffix
+    if pathlib.Path(s).exists():
+        return True
+    # A KB doc may cite the RENDERED install tree; map it back to canonical/.
+    for prefix, repl in ((".claude/aid/", "canonical/aid/"), (".claude/", "canonical/"),
+                         (".cursor/aid/", "canonical/aid/"), (".cursor/", "canonical/")):
+        if s.startswith(prefix) and pathlib.Path(repl + s[len(prefix):]).exists():
+            return True
+    return False
+
+bad = []
+for path in sorted(pathlib.Path(".aid/knowledge").glob("*.md")):
+    m = re.match(r"^---\n(.*?)\n---", path.read_text(encoding="utf-8", errors="replace"), re.S)
+    if not m:
+        continue
+    try:
+        fm = yaml.safe_load(m.group(1)) or {}
+    except Exception:
+        continue                          # AD11 owns unparseable frontmatter
+    for src in (fm.get("sources") or []):
+        if not resolves(str(src)):
+            bad.append(f"{path}: {src}")
+
+print(len(bad))
+for entry in bad:
+    print(entry)
+AD14PY
+)"
+if [[ "$(printf '%s\n' "$ad14_report" | head -1)" == "SKIP" ]]; then
+    pass "AD14 SKIPPED: PyYAML not installed"
+else
+    ad14_count="$(report_count "$ad14_report")"
+    assert_eq "$ad14_count" "0" "AD14: every .aid/knowledge/ sources: citation resolves to an existing file"
+    [[ "$ad14_count" != "0" ]] && report_body "$ad14_report" | sed 's|^|    dangling: |' >&2
+fi
+
 echo ""
 test_summary
 exit $?

@@ -9,7 +9,6 @@ sources:
   - canonical/aid/templates/work-state-template.yml
   - canonical/aid/templates/grading-rubric.md
   - canonical/aid/templates/requirements.md
-  - canonical/aid/templates/delivery-blueprint-template.md
   - canonical/aid/templates/task-detail-template.md
   - canonical/aid/templates/shortcut-engine.md
   - .aid/settings.yml

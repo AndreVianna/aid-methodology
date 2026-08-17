@@ -9,8 +9,6 @@ sources:
   - canonical/aid/templates/task-state-template.yml
   - .claude/aid/templates/discovery-state-template.md
   - .claude/aid/templates/requirements/requirements-template.md
-  - .claude/aid/templates/feature.md
-  - .claude/aid/templates/delivery-blueprint-template.md
   - .claude/aid/templates/task-detail-template.md
   - .claude/aid/templates/settings.yml
   - canonical/EMISSION-MANIFEST.md
