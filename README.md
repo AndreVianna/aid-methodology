@@ -23,32 +23,62 @@ pipeline underneath, one approval at the end.
 **Choosing your entry:** know your change → run the matching shortcut. Know it's big or new → `/aid-describe`. Not sure which? → `/aid-triage`. Just have a question? → `/aid-ask`.
 
 ```mermaid
+---
+config:
+  flowchart:
+    defaultRenderer: "elk"
+---
 flowchart TD
-    subgraph Entry["Choose your entry"]
-        SC["/aid-&lt;verb&gt;[-&lt;artifact&gt;]<br/>shortcut — I know my change"]
-        TR["/aid-triage<br/>— not sure? (suggest-only)"]
-        DS["/aid-describe<br/>— broad / new project"]
-        ASK["/aid-ask<br/>— just asking a question"]
+    subgraph Start["Start Here"]
+        direction LR
+        IDK{"I Know What<br/>I need to do"}
+        TR["/aid-triage <br/>Get a Suggestion"]
+        GTG["I am Good to Start"]
+        IDK -.YES.-> GTG
+        IDK -.NO.-> TR --> GTG
     end
-    TR -. suggests .-> SC
-    TR -. suggests .-> DS
-    TR -. "question" .-> ASK
+    GTG --> CFG
+    GTG --> DS
+    GTG --> SC
+    GTG --> ASK
+    GTG --> UKB
 
-    CFG["/aid-config (bootstrap · once)"] --> DISC["/aid-discover (brownfield)"]
-    DISC --> DS
+    subgraph STU["Initialize"]
+        CFG["/aid-config"] --> DISC["Already have some code? (brownfield project)<br/><br/>/aid-discover"]
+        DISC --> SUM(["/aid-summary"])
+    end
+    DISC --> LKG
 
-    SC --> ENG["Shortcut engine<br/>INTAKE→CAPTURE→SPEC→PLAN→DETAIL→GATE→APPROVAL-HALT<br/>(Describe→Detail, collapsed &amp; autonomous)"]
-    ENG --> HALT{{"Approval halt"}}
+    subgraph Ask["Just Ask"]
+        ASK["/aid-ask<br/>"]
+    end
+    subgraph Upd["Something Needs To Change"]
+        UKB["/aid-update-kb"]
+    end
+    UKB --> LKG
 
-    DS --> DEF["/aid-define"] --> SPC["/aid-specify"] --> PLN["/aid-plan"] --> DTL["/aid-detail"]
+    subgraph Lite["Small Changes (Lite Path)"]
+        SC["/aid-&lt;verb&gt;[-&lt;artifact&gt;]<br/><br/>DESCRIBE<br/>↓<br/>DEFINE<br/>↓<br/>SPECIFY<br/>↓<br/>PLAN<br/>↓<br/>DETAIL"]
+    end
+    SC --> HALT{{"Human Approval Gate"}}
+
+    subgraph Full["Big Changes (Full Path)"]
+        DS["/aid-describe<br/>"]
+        DS -->  HALT0{{"Human Approval Gate"}} --> DEF["/aid-define"] --> HALT1{{"Human Approval Gate"}} --> SPC["/aid-specify"] --> HALT2{{"Human Approval Gate"}} --> PLN["/aid-plan"] --> HALT3{{"Human Approval Gate"}} --> DTL["/aid-detail"]
+    end
     DTL --> HALT
 
-    HALT --> EXE["/aid-execute (graded loop · 8 task types)"]
-    EXE -. "optional separate path" .-> DEP["/aid-deploy"]
-    DEP -. optional .-> MON["/aid-monitor"]
-    MON -. "bug → /aid-fix" .-> SC
-    MON -. "change request → /aid-triage" .-> TR
-```
+    HALT --> EXE["Let's do it<br/>/aid-execute"]
+    EXE --> FHALT{{"Final Human Approval Gate"}}
+
+    subgraph CHG["Something Has Changed"]
+        HK["/aid-housekeep"]
+    end
+    FHALT --> HK
+    HK --> LKG
+    
+    LKG{{"Looks Good"}} --> KB[("Knowledge Base")]
+    ```
 
 *3 entry points (shortcut, `/aid-triage`, `/aid-describe`) plus `/aid-ask` for a plain question. Full methodology: [docs/aid-methodology.md](docs/aid-methodology.md).*
 
