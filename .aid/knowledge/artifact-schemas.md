@@ -391,13 +391,33 @@ key on the right. Do not write these into a new settings file.
 The alias list is closed: `banana.name` does not resolve, and neither does any other section
 prefix outside this table.
 
-**`kb_baseline.{branch,tip_date}` is a stale spelling, not an alias.** It names the same producer
-write as `knowledge.{source,last_update}` — the same FR35 (`aid-discover`, on KB approval) and FR36
-(`aid-housekeep`, re-stamp on KB-DELTA refresh) — so the baseline **is** stored, under the
-`knowledge:` block. But `read-setting.sh` has no `kb_baseline` entry, so unlike the rows above,
-the old spelling does not resolve to the new key; it resolves to nothing. Two `aid-discover` and
-`aid-housekeep` reference documents still instruct writing `kb_baseline:`. Prefer
-`knowledge.source` and `knowledge.last_update`.
+**`kb_baseline.{branch,tip_date}` is a legacy block, not an alias.** The KB freshness baseline is
+stored — the current keys are `knowledge.source` and `knowledge.last_update`. The dashboard reader
+settles which is current, because it is the only consumer that has to cope with both:
+
+```
+$ sed -n '377,383p' dashboard/reader/parsers.py
+      - Scan for the 'knowledge:' top-level key
+      - Within that block, extract 'source:' (-> branch) and 'last_update:'
+        (-> tip_date) scalar values
+      - When 'knowledge:' is absent, fall back to the legacy 'kb_baseline:'
+        block ('branch:' / 'tip_date:' scalars) for pre-migration settings.yml
+```
+
+`knowledge:` first, `kb_baseline:` only as a pre-migration fallback, and the code calls it legacy
+in as many words. Note the function is still *named* `parse_kb_baseline` after the block it no
+longer prefers.
+
+It is not an alias in the sense of the table above: `read-setting.sh` has no `kb_baseline` case, so
+`--path kb_baseline.branch` resolves to nothing rather than to the new key. Only the reader
+understands the fallback.
+
+**Two producer documents have not followed.** `aid-discover`'s `state-done.md` (FR35) instructs
+writing `kb_baseline: {branch, tip_date}`, and `aid-housekeep`'s `state-summary-delta.md` (FR36)
+re-stamps `kb_baseline.tip_date`; neither mentions `knowledge:`. `aid-config`'s own settings table
+attaches those same two FR numbers to `knowledge.{source,last_update}`. The producers and the
+config schema therefore disagree about which key FR35/FR36 write. Both spellings are readable, so
+nothing is broken today; the drift is real and belongs in tech debt, not silently resolved here.
 
 ### Read but never stored — the consumer's `--default` is the real value
 
