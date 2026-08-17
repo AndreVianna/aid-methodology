@@ -1394,3 +1394,47 @@ qa:
       -- one is about copies, the other about composition, and both are invisible to a suite
       that examines parts.
 
+  - id: Q39
+    question: "Review loop: iterate until only minor issues are found. Where did it stop, and on what evidence?"
+    status: Resolved
+    answer: |
+      It stopped after three iterations, on the third returning nothing. The loop rule was
+      that each iteration must ask a NEW KIND of question, because the five rounds before it
+      established that repeating a kind of check only re-finds its class.
+
+      ITERATION 1 -- two questions.
+        "Do any tests assert on paths that do not exist?" One did: test-aid-remote.sh pointed
+        at `dashboard/reader.py`, which moved into `dashboard/reader/`. Both uses were guarded
+        with `[[ -f ]]`, so nothing broke and nothing warned; lines 96-102 already did the job
+        correctly. Four dead lines. MINOR.
+        "Do the other forks share the writeback fork's generational lag?" No. The connectors
+        fork differs from canonical in one non-comment hunk -- an older `contracts:` metadata
+        block -- out of the oracle's scope, no functional divergence. MINOR.
+
+      ITERATION 2 -- "does the NESTED path compose?", having only ever composed Lite.
+        It does. Different write target and different lane source, both correct. The one real
+        finding was documentation in the reader I changed: its nested docstring named
+        `deliveries/*/BLUEPRINT.md` as the task listing when discovery is directory-based, and
+        both readers' flat docstrings still named BLUEPRINT.md as the delivery-title source.
+        MINOR -- but the exact class this work exists to remove, sitting in its own output.
+        The durable result is that the end-to-end suite now runs BOTH compositions.
+
+      ITERATION 3 -- "does anything still PARSE what nothing WRITES?"
+        Three leads, all resolved as correct: the delivery-gate parser's staleness is
+        tracked as SY-3; `delivery_state` is read by Python and omitted by Node's serializer
+        DELIBERATELY, for parity with server.py's serializer, so the SERVED payloads match.
+
+      WHAT THE LOOP ALSO MEASURED, and the part worth keeping. Across iterations 2 and 3 I
+      built four probes and three of them were wrong while the code was right: tasks live in
+      the work-level union rather than on the DeliverableRef; nested lanes legitimately need
+      the wave-map aid-detail writes; `delivery_state: In Progress` is outside the SD-8 enum
+      and was correctly rejected. Earlier rounds had the opposite ratio -- the probe was right
+      and the code was wrong. That inversion is the actual stopping signal: when the checks
+      start failing against correct code more often than the code fails, the remaining yield
+      is in the checks, not the system.
+
+      STOPPING POSITION, stated honestly: three iterations of new-kind questions produced
+      three minor issues, all fixed, and zero severe ones. That is not proof of correctness.
+      It is the evidence the loop was asked for -- only minor issues are being found -- plus
+      an admission that a fourth kind of question I have not thought of may still exist.
+
