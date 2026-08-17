@@ -436,7 +436,7 @@ assert_eq "$ad10_count" "0" "AD10: nothing in canonical/ names SPEC.md outside a
 # ---------------------------------------------------------------------------
 ad13_count_class() {
     ( cd "$REPO" && PATTERN="$1" python3 - <<'PY'
-import os, pathlib, re
+import os, pathlib, re, subprocess
 
 pattern = re.compile(os.environ["PATTERN"])
 # Absence statements, retirement notes, and the deliberate legacy-fallback prose are not
@@ -448,19 +448,27 @@ skip = re.compile(
     r"was |rejected|deprecated",
     re.I,
 )
-EXCLUDE_DIRS = {".git", "node_modules", "__pycache__", ".aid/works", "profiles",
-                ".claude", ".cursor", ".codex", ".agent", ".github/copilot",
-                # A rule that quotes the string it governs is not an offence against
-                # itself; counting this file would make the ceiling track its own prose.
-                "tests/canonical/test-artifact-discipline.sh"}
-SUFFIXES = {".md", ".mdx", ".py", ".mjs", ".sh", ".ps1", ".yml", ".yaml", ".astro"}
+EXCLUDE = (
+    "profiles/", ".claude/", ".cursor/", ".codex/", ".agent/",   # generated renders
+    ".aid/works/",                                              # transient work state
+    # A rule that quotes the string it governs is not an offence against itself;
+    # counting this file would make the ceiling track its own prose.
+    "tests/canonical/test-artifact-discipline.sh",
+)
+SUFFIXES = {".md", ".mdx", ".py", ".mjs", ".sh", ".ps1", ".yml", ".yaml", ".astro", ".ts", ".js"}
 
+# TRACKED files only. Counting the working tree made the ceiling depend on whatever build
+# output a developer happened to have on disk: a local package build drops ~180 copies of
+# the repo under packages/, which would trip the ratchet for reasons that have nothing to
+# do with the change under test. A ceiling that a stray directory can breach is a ceiling
+# people learn to raise.
+listed = subprocess.run(["git", "ls-files", "-z"], capture_output=True, text=True).stdout
 total = 0
-for path in pathlib.Path(".").rglob("*"):
-    if not path.is_file() or path.suffix not in SUFFIXES:
+for name in listed.split("\0"):
+    if not name or any(x in name for x in EXCLUDE):
         continue
-    text = str(path)
-    if any(part in text for part in EXCLUDE_DIRS):
+    path = pathlib.Path(name)
+    if path.suffix not in SUFFIXES or not path.is_file():
         continue
     for line in path.read_text(encoding="utf-8", errors="replace").splitlines():
         if pattern.search(line) and not skip.search(line):
@@ -470,8 +478,13 @@ PY
     )
 }
 
-# Ceilings are the counts measured when this rule was written. Lower them when a class
-# shrinks; never raise them.
+# Ceilings are the counts THIS COUNTER reports, not a number measured some other way.
+# That distinction is not pedantry: the first version of this rule took its ceilings from
+# a working-tree scan with a different file set, and shipped with up to 48 units of slack
+# -- enough that a deliberately-introduced offender passed. A ratchet with slack is not a
+# ratchet. To re-baseline, run the counter and paste what it says.
+#
+# Lower them when a class shrinks; never raise them.
 ad13_check() {
     local label="$1" ceiling="$2" pattern="$3" got
     got="$(ad13_count_class "$pattern")"
@@ -484,14 +497,27 @@ ad13_check() {
     fi
 }
 
-ad13_check "work STATE.md (retired; use STATE.yml)" 77 \
+ad13_check "work STATE.md (retired; use STATE.yml)" 69 \
     'works?[ `]{0,4}['"'"'\`]?STATE\.md|works/\{work\}/STATE\.md'
-ad13_check "BLUEPRINT.md (retired as an authored artifact)" 203 \
+ad13_check "BLUEPRINT.md (retired as an authored artifact)" 155 \
     'BLUEPRINT\.md'
-ad13_check "bare task-NNN.md (now tasks/task-NNN/DETAIL.md)" 26 \
+ad13_check "bare task-NNN.md (now tasks/task-NNN/DETAIL.md)" 16 \
     '(?<!IMPEDIMENT-)(?<!execute-)\btask-NNN\.md'
 ad13_check "per-feature SPEC.md (folded into REQUIREMENTS.md section 11)" 3 \
     'features/[*a-zA-Z0-9_-]*/SPEC\.md|per-feature[ `]+SPEC'
+
+# The FIFTH class, and the one that shows why a ratchet has to be revisited rather than
+# declared done. Every count above matches a FILENAME. A line can name a retired STATE.md
+# section -- `## Deploy State`, `## Features State` -- without naming any file, so all
+# four were blind to it. It was found by asking what a filename-shaped rule could not see,
+# which is a question worth asking of any rule, not just this one.
+#
+# The residue here is the largest of the five and the most mixed: the dashboard readers and
+# the format converter must know the old headings to READ them, and test fixtures must
+# contain them to simulate legacy works. Only the live-instruction slice is a defect, and
+# that slice is SY-6.
+ad13_check "retired STATE.md section headings (STATE.yml has keys, not headings)" 262 \
+    '## (Cross-phase Q&A|Tasks Status|Tasks State|Features State|Deploy State|Pipeline State|Delivery Gate|Seed Authoring|Interview State)'
 
 # ---------------------------------------------------------------------------
 # AD12: the AGENT definitions name no retired artifact.
