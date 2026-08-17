@@ -16,8 +16,6 @@ status: Planned
 planned-by: aid-plan
 features:
   - refund-workflow
-changelog:
-  - 2026-06-03: Initial plan produced by aid-plan
 ---
 
 # Plan: work-003 — Refund Workflow

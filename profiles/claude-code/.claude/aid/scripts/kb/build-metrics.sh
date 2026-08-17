@@ -114,8 +114,6 @@ intent: |
   line counts, file counts, term counts, severity tallies. Other KB docs reference this
   file instead of inlining the numbers. Regenerated on every /aid-discover cycle.
 review-criteria: []
-changelog:
-  - $(date -u +%Y-%m-%d): Generated
 ---
 
 <!-- AUTO-GENERATED $TS by .claude/aid/scripts/kb/build-metrics.sh -->

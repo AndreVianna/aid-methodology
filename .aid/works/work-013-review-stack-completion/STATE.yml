@@ -9,15 +9,15 @@ minimum_grade: A
 # [W]
 user_approved: 'yes'
 # [W]
-lifecycle: Paused-Awaiting-Input
+lifecycle: Running
 # [W]
-phase: Plan
+phase: Detail
 # [W]
-active_skill: none
+active_skill: aid-detail
 # [W]
-updated: '2026-08-17T01:04:58Z'
+updated: '2026-08-17T01:21:34Z'
 # [W]
-pause_reason: 'Plan complete at A+ (2 deliveries) -- answer Q5 and Q6, then run /aid-detail work-013 delivery-001'
+pause_reason: --
 # [W]
 block_reason: --
 # [W]
@@ -214,7 +214,7 @@ qa:
   - id: Q1
     category: Requirements
     impact: High
-    state: Pending
+    state: Answered
     context: >-
       AC-11 says "`git diff` on both is empty". With no ref, `git diff` reports the
       WORKING-TREE diff, which is empty after any commit no matter what changed, so the
@@ -225,12 +225,18 @@ qa:
       Give it a base ref, e.g. `git diff master...HEAD -- canonical/aid/scripts/grade.sh
       canonical/aid/templates/reviewer-ledger-schema.md`, and drop the "is empty, OR the
       diff touches neither" disjunction — only the second half means anything.
-    answer: --
+    answer: >-
+      Accepted 2026-08-17 (owner, option 2). AC-11's base is the WORK'S OWN BASE COMMIT -- the
+      branch tip recorded before the first edit -- not `master`, which moves and would silently
+      re-scope the criterion whenever someone else merges. The "diff is empty" disjunct is
+      dropped; the only reading is that the diff touches neither counting logic nor column
+      shape. All three feature SPECs and both delivery BLUEPRINTs already state it this way, so
+      what this answer settles is the requirement text.
     applied_to: 'all three features (AC-11 is carried by each)'
   - id: Q2
     category: Requirements
     impact: High
-    state: Pending
+    state: Answered
     context: >-
       AC-7's command returns 97 lines today (canonical 16, tests 3, docs 1, site/src 74,
       .aid/knowledge 3). The site/src bulk is generated skill-flow JSON, and 34 of those
@@ -242,7 +248,12 @@ qa:
     suggested: >-
       Replace the command with one that tests what FR-B7 says and excludes generated
       trees, and regenerate the site data rather than editing it.
-    answer: --
+    answer: >-
+      Answered 2026-08-17 (owner, option 3), and it is STRONGER than the suggestion. A change log
+      is a section that must be excluded and not considered anymore: remove every `## Change Log`
+      section from EVERY file, fixtures included. Test fixtures are not carved out -- a fixture
+      that models a retired artifact shape teaches the shape. Generated trees are still
+      regenerated rather than hand-edited (NFR-2), so the source is fixed and the render follows.
     applied_to: 'feature-002-coverage-gate-completion'
   - id: Q3
     category: Requirements

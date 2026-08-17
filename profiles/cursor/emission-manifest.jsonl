@@ -25,7 +25,7 @@
 {"dst": ".cursor/aid/scripts/housekeep/cleanup-classify.sh", "profile": "cursor", "sha256": "d444c3374b7aa8b436e1d9b129a5026e2cc8aaf54ff868895bc5620f1d55d61c", "src": "canonical/scripts/housekeep/cleanup-classify.sh"}
 {"dst": ".cursor/aid/scripts/housekeep/housekeep-state.sh", "profile": "cursor", "sha256": "34efca63b146b2025d864172c0880123eee18e0b6e9a5ba0b754b652c7fe6a98", "src": "canonical/scripts/housekeep/housekeep-state.sh"}
 {"dst": ".cursor/aid/scripts/kb/build-kb-index.sh", "profile": "cursor", "sha256": "b46baec47a39d856509cf78d361dbeab896c5f98a06027b883fd8ccab77487c2", "src": "canonical/scripts/kb/build-kb-index.sh"}
-{"dst": ".cursor/aid/scripts/kb/build-metrics.sh", "profile": "cursor", "sha256": "4767242a4b743a6308a0c02e58a915da4bffbb41f9436bba5acc263e1a19a26c", "src": "canonical/scripts/kb/build-metrics.sh"}
+{"dst": ".cursor/aid/scripts/kb/build-metrics.sh", "profile": "cursor", "sha256": "449017682c1832544f48453edf44c33abae03c02215ab7e7f8a29c7eae4fc249", "src": "canonical/scripts/kb/build-metrics.sh"}
 {"dst": ".cursor/aid/scripts/kb/build-project-index.sh", "profile": "cursor", "sha256": "daec38dd5ac1edebb4c0c855c445dea4911be5191e9be0949c14fbb19f603630", "src": "canonical/scripts/kb/build-project-index.sh"}
 {"dst": ".cursor/aid/scripts/kb/closure-check.sh", "profile": "cursor", "sha256": "172b2577717fec7620c1a10daa3603072be26d981d97ff6c3faa8f24651506bd", "src": "canonical/scripts/kb/closure-check.sh"}
 {"dst": ".cursor/aid/scripts/kb/coined-term-denylist.txt", "profile": "cursor", "sha256": "cde35cae105e2d195d107336314f344ffad01aa0cffc35633862101119f871ec", "src": "canonical/scripts/kb/coined-term-denylist.txt"}
@@ -78,13 +78,13 @@
 {"dst": ".cursor/aid/templates/downstream-worktree-entry.md", "profile": "cursor", "sha256": "a2fb2abe655c3505e27b1234b92d8ba9ae7dc5b4a0820e4f54d43bc847727806", "src": "canonical/templates/downstream-worktree-entry.md"}
 {"dst": ".cursor/aid/templates/feature-inventory.md", "profile": "cursor", "sha256": "949263269d652dfb1da777a8377c675963467b994cee64089b45058400b9fad3", "src": "canonical/templates/feature-inventory.md"}
 {"dst": ".cursor/aid/templates/feature.md", "profile": "cursor", "sha256": "fdf8c89edba62009168ada54ca791907e035fdd527cd582910da9c82c9d6efa4", "src": "canonical/templates/feature.md"}
-{"dst": ".cursor/aid/templates/feedback-artifacts/IMPEDIMENT.md", "profile": "cursor", "sha256": "79b88f114c2ad3e1b30cb84699049c1a4fdb968e14f52fec37ed721417a22b26", "src": "canonical/templates/feedback-artifacts/IMPEDIMENT.md"}
+{"dst": ".cursor/aid/templates/feedback-artifacts/IMPEDIMENT.md", "profile": "cursor", "sha256": "b54ab4a78d43c79c95a17d0dd2a3a8161d8509ab8b68da3fcb5cecd867499832", "src": "canonical/templates/feedback-artifacts/IMPEDIMENT.md"}
 {"dst": ".cursor/aid/templates/generated-files.txt", "profile": "cursor", "sha256": "99dbf80c94ed14870f67e6b27ddc449710351cb02ce223d7cccc534bb580e272", "src": "canonical/templates/generated-files.txt"}
 {"dst": ".cursor/aid/templates/grading-rubric.md", "profile": "cursor", "sha256": "7d08682db9588339b9cc867af8700c444b770f8a73fe22ec337f8f75e19a66fb", "src": "canonical/templates/grading-rubric.md"}
 {"dst": ".cursor/aid/templates/kb-authoring/concern-model.md", "profile": "cursor", "sha256": "47dc3b8c3badf4facb3b0661aac064e7eb56b3a52433be15330228790532f46c", "src": "canonical/templates/kb-authoring/concern-model.md"}
 {"dst": ".cursor/aid/templates/kb-authoring/domain-doc-matrix.md", "profile": "cursor", "sha256": "2f2b098a7d934d2d702ce93d3899bb6f55b08959dbd46513426c0d659dbccf06", "src": "canonical/templates/kb-authoring/domain-doc-matrix.md"}
-{"dst": ".cursor/aid/templates/kb-authoring/frontmatter-schema.md", "profile": "cursor", "sha256": "382f658bd63cad3af281b6059c3a45c77581693b5a286ece555cb5f64f32998b", "src": "canonical/templates/kb-authoring/frontmatter-schema.md"}
-{"dst": ".cursor/aid/templates/kb-authoring/principles.md", "profile": "cursor", "sha256": "46a05e743602c7df7fa93b25c35944c82c5f707070d05263e5df47bdd84109b3", "src": "canonical/templates/kb-authoring/principles.md"}
+{"dst": ".cursor/aid/templates/kb-authoring/frontmatter-schema.md", "profile": "cursor", "sha256": "735fdf724e2cce9df2fd30faf5c305eddf79b33172815fc61a6622e95479ddc3", "src": "canonical/templates/kb-authoring/frontmatter-schema.md"}
+{"dst": ".cursor/aid/templates/kb-authoring/principles.md", "profile": "cursor", "sha256": "768c5dbf04f617b7009a7cd80e7dcdffa69756b320f4d418486c50f1a38a41d2", "src": "canonical/templates/kb-authoring/principles.md"}
 {"dst": ".cursor/aid/templates/kb-authoring/review-rubric.md", "profile": "cursor", "sha256": "6185b50876a37f2a717f03343d2d19832b926d2350ad55e9951ff80411aa6005", "src": "canonical/templates/kb-authoring/review-rubric.md"}
 {"dst": ".cursor/aid/templates/kb-authoring/tier-model.md", "profile": "cursor", "sha256": "3aee248175f44bcd06e320fbe1aef717c0ada90452ed37e73f787cadbc521d8a", "src": "canonical/templates/kb-authoring/tier-model.md"}
 {"dst": ".cursor/aid/templates/knowledge-base/architecture.md", "profile": "cursor", "sha256": "5c375951109a6f46fcd35ff26752b77f18883a3690574dfe1e36d76645d853c9", "src": "canonical/templates/knowledge-base/architecture.md"}

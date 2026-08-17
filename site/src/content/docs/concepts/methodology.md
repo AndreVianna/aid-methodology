@@ -1154,9 +1154,6 @@ Each feature gets its own SPEC.md on the full path. Describe writes the top half
 ## Execution Graph
 *(Appended by Detail — per-delivery dependency and parallel-wave tables.)*
 
-## Revision History
-| Rev | Date | Source | Description |
-|-----|------|--------|-------------|
 ```
 
 **Delivery BLUEPRINT.md template:**
