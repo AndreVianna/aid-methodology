@@ -72,7 +72,7 @@
 {"dst": ".claude/aid/templates/delivery-plans/task-template.md", "profile": "claude-code", "sha256": "242ca1fb375461fd701382188bc7ed44d8e6c800ee547d9e6497f074f977cc1f", "src": "canonical/templates/delivery-plans/task-template.md"}
 {"dst": ".claude/aid/templates/delivery-state-template.yml", "profile": "claude-code", "sha256": "2cab554aa6c90ce11d718ae4a747315737384ffb536524f421d75cf4735c31fe", "src": "canonical/templates/delivery-state-template.yml"}
 {"dst": ".claude/aid/templates/design-folder-readme.md", "profile": "claude-code", "sha256": "7b9e7b28a1ee702335530d26e9e888496437517c21344c55233804c83540c01e", "src": "canonical/templates/design-folder-readme.md"}
-{"dst": ".claude/aid/templates/design-lifecycle.md", "profile": "claude-code", "sha256": "d01c95b09c22d4b0c127b5f284b0f8e53b3409d7872a2a8f48d887924150a4c2", "src": "canonical/templates/design-lifecycle.md"}
+{"dst": ".claude/aid/templates/design-lifecycle.md", "profile": "claude-code", "sha256": "52357adad9ff58937fc54e8317936948c596ec2cefe580bf56b30170767a0f52", "src": "canonical/templates/design-lifecycle.md"}
 {"dst": ".claude/aid/templates/design-seed.md", "profile": "claude-code", "sha256": "32740aa79f035e7c7ff334f39ddfe9a61faeda451d653167e59bc714c13b0ee0", "src": "canonical/templates/design-seed.md"}
 {"dst": ".claude/aid/templates/discovery-state-template.md", "profile": "claude-code", "sha256": "3498f433b269de3c30018a98715f61b89a0b79b62ae4998ea9e468c9321db2d4", "src": "canonical/templates/discovery-state-template.md"}
 {"dst": ".claude/aid/templates/dispatch-protocol-checklist.md", "profile": "claude-code", "sha256": "c21fd7033f5859be931ddcc5c971310d6cc853da637438a881e591a04ac0a777", "src": "canonical/templates/dispatch-protocol-checklist.md"}

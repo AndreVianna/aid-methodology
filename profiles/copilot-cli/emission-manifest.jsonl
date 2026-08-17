@@ -72,7 +72,7 @@
 {"dst": ".github/aid/templates/delivery-plans/task-template.md", "profile": "copilot-cli", "sha256": "242ca1fb375461fd701382188bc7ed44d8e6c800ee547d9e6497f074f977cc1f", "src": "canonical/templates/delivery-plans/task-template.md"}
 {"dst": ".github/aid/templates/delivery-state-template.yml", "profile": "copilot-cli", "sha256": "2cab554aa6c90ce11d718ae4a747315737384ffb536524f421d75cf4735c31fe", "src": "canonical/templates/delivery-state-template.yml"}
 {"dst": ".github/aid/templates/design-folder-readme.md", "profile": "copilot-cli", "sha256": "7b9e7b28a1ee702335530d26e9e888496437517c21344c55233804c83540c01e", "src": "canonical/templates/design-folder-readme.md"}
-{"dst": ".github/aid/templates/design-lifecycle.md", "profile": "copilot-cli", "sha256": "4997314615d234445128f1346281bd3253d323201ac530290dab4ef956858ca4", "src": "canonical/templates/design-lifecycle.md"}
+{"dst": ".github/aid/templates/design-lifecycle.md", "profile": "copilot-cli", "sha256": "c23ef9edb0113c8e56c4b944f04b4e8b6cdaac6fd31acd7b7ce30a15f6d66937", "src": "canonical/templates/design-lifecycle.md"}
 {"dst": ".github/aid/templates/design-seed.md", "profile": "copilot-cli", "sha256": "32740aa79f035e7c7ff334f39ddfe9a61faeda451d653167e59bc714c13b0ee0", "src": "canonical/templates/design-seed.md"}
 {"dst": ".github/aid/templates/discovery-state-template.md", "profile": "copilot-cli", "sha256": "bc4c3b1bf96e2a91d21a9612d38dc726ab3f4a744830621beb148f62a013c40e", "src": "canonical/templates/discovery-state-template.md"}
 {"dst": ".github/aid/templates/dispatch-protocol-checklist.md", "profile": "copilot-cli", "sha256": "f962af4df5a5ed956f288e48bca68492eac6de497611e9b6391a8646c8d60c08", "src": "canonical/templates/dispatch-protocol-checklist.md"}

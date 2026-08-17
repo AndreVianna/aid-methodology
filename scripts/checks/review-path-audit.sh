@@ -33,14 +33,16 @@
 #   (canonical/agents/aid-architect/ read as /aid-architect) and a template
 #   placeholder ({/aid-command} in bespoke-components.md).
 #
-#   NAIVE form -- reports 7 dangling:
-#     aid-architect aid-clerk aid-command aid-create- aid-design- aid-graph aid-reviewer
+#   NAIVE form -- reports 6 dangling, every one of them a false positive:
+#     aid-architect aid-clerk aid-command aid-create- aid-design- aid-reviewer
 #
 #     grep -rhoE '/aid-[a-z0-9-]+' canonical --include=*.md \
 #       | sed 's|^/||' | sort -u \
 #       | while read -r s; do [ -d "canonical/skills/$s" ] || echo "$s"; done
 #
-#   GUARDED form (the form this script uses) -- reports 1 dangling: aid-graph
+#   GUARDED form (the form this script uses) -- reports 0 dangling. It reported
+#   one, `aid-graph`, until that leftover reference was removed from
+#   design-lifecycle.md; the two forms differing by six is still the point.
 #
 #     grep -rhoE '(^|[^A-Za-z0-9/._{-])/aid-[a-z0-9]+(-[a-z0-9]+)*' canonical \
 #       --include=*.md \

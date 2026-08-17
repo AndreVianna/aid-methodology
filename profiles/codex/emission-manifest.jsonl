@@ -72,7 +72,7 @@
 {"dst": ".codex/aid/templates/delivery-plans/task-template.md", "profile": "codex", "sha256": "242ca1fb375461fd701382188bc7ed44d8e6c800ee547d9e6497f074f977cc1f", "src": "canonical/templates/delivery-plans/task-template.md"}
 {"dst": ".codex/aid/templates/delivery-state-template.yml", "profile": "codex", "sha256": "2cab554aa6c90ce11d718ae4a747315737384ffb536524f421d75cf4735c31fe", "src": "canonical/templates/delivery-state-template.yml"}
 {"dst": ".codex/aid/templates/design-folder-readme.md", "profile": "codex", "sha256": "7b9e7b28a1ee702335530d26e9e888496437517c21344c55233804c83540c01e", "src": "canonical/templates/design-folder-readme.md"}
-{"dst": ".codex/aid/templates/design-lifecycle.md", "profile": "codex", "sha256": "52a94579c074f4c7fc4ffc16e71c0d8511c7a28fc1757734811368eff8fb738f", "src": "canonical/templates/design-lifecycle.md"}
+{"dst": ".codex/aid/templates/design-lifecycle.md", "profile": "codex", "sha256": "8ceb78b6f6c06b10995b7dfdfedfbe47fc0fcce8ec7c02bf4b7ca5a6b39b90ee", "src": "canonical/templates/design-lifecycle.md"}
 {"dst": ".codex/aid/templates/design-seed.md", "profile": "codex", "sha256": "32740aa79f035e7c7ff334f39ddfe9a61faeda451d653167e59bc714c13b0ee0", "src": "canonical/templates/design-seed.md"}
 {"dst": ".codex/aid/templates/discovery-state-template.md", "profile": "codex", "sha256": "b6a8f5e279296db4fae0324612400f84d785df53639f03e6ba5069fb030bd4fb", "src": "canonical/templates/discovery-state-template.md"}
 {"dst": ".codex/aid/templates/dispatch-protocol-checklist.md", "profile": "codex", "sha256": "f98bfd3a30a75bdd5da5fa2c5d74f3235faab40254590bf7ba39dae421807c76", "src": "canonical/templates/dispatch-protocol-checklist.md"}

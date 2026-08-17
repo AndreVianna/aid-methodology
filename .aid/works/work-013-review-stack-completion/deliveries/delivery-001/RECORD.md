@@ -140,17 +140,21 @@ the failure mode this record exists to prevent.
 $ bash scripts/checks/review-path-audit.sh
 L1 SINGLETON   review-skill-dirs=1 (expect 1)  reviewer-agent-dirs=1 (expect 1)
 L2 LEXICON     review-family names outside {aid-review, aid-reviewer}=0 (expect 0)
-L3 SLASH-REFS  distinct=91  review-family=1  dangling(review-family)=0 (expect 0)  dangling(other)=1
+L3 SLASH-REFS  distinct=90  review-family=1  dangling(review-family)=0 (expect 0)  dangling(other)=0
 L4 AGENT-REFS  named-and-resolving=9  reviewer-agent-present=yes
-NOTE /aid-graph names no skill under canonical/skills/ (not review-family)
 RESULT PASS
 $ echo $?
 0
 ```
 
-Every layer prints its measurement beside its expectation. The one `NOTE` is a dangling
-`/aid-graph` reference that is not review-family, so it is reported and does not fail the audit —
-it is routed to tech debt rather than fixed here.
+Every layer prints its measurement beside its expectation.
+
+This originally carried one `NOTE`: a dangling `/aid-graph` reference in
+`design-lifecycle.md`, not review-family, so the audit reported it without failing. The owner
+confirmed it was a leftover — neither the skill nor the `relationships.md` it claimed to
+regenerate exists, and nothing else referenced either — so the clause was removed and
+`dangling(other)` is now `0`. The `/aid-graph` skill itself is deferred, and its design seed at
+`.aid/design/knowledge-graph-redesign.md` stands untouched.
 
 The two globs, kept as a cheap regression check and **not** as the test (Q7):
 
