@@ -43,6 +43,12 @@ if str(_REPO_ROOT) not in sys.path:
 from dashboard.reader.reader import _declared_work_path
 
 _WRITEBACK = _REPO_ROOT / "canonical" / "aid" / "scripts" / "execute" / "writeback-state.sh"
+# The dashboard server's WRITER_DIR is dashboard/scripts, so THIS is the copy that
+# actually performs every state write the UI triggers. It is a deliberate fork whose
+# own banner records that no parity suite compared it to its source -- and in that gap
+# it kept a presence-only is_flat_layout long after the declared read replaced it,
+# so the dashboard read a work as flat and wrote to it as nested. This is that suite.
+_WRITEBACK_FORK = _REPO_ROOT / "dashboard" / "scripts" / "writeback-state.sh"
 _READER_MJS = _REPO_ROOT / "dashboard" / "server" / "reader.mjs"
 
 # name -> exact STATE.yml bytes. Written as bytes so line endings are explicit rather
@@ -142,14 +148,14 @@ class TestDeclaredPathThreeWayParity(unittest.TestCase):
     def _python(self, name):
         return _declared_work_path(Path(self.dirs[name]))
 
-    def _bash(self, name):
+    def _bash(self, name, script=None):
         """Invoke wb_get_pipeline_path exactly as writeback-state.sh defines it.
 
         The script self-executes on load, so the function is extracted rather than
         sourced -- slicing it out keeps this honest about which code is under test
         instead of reimplementing it here.
         """
-        src = _WRITEBACK.read_text(encoding="utf-8")
+        src = (script or _WRITEBACK).read_text(encoding="utf-8")
         start = src.index("wb_get_pipeline_path() {")
         depth, i = 0, start
         while True:
@@ -219,6 +225,28 @@ class TestDeclaredPathThreeWayParity(unittest.TestCase):
         self.assertEqual(
             mismatches, [],
             "writeback-state.sh disagrees with reader.py on the declared layout:\n  "
+            + "\n  ".join(mismatches),
+        )
+
+    @unittest.skipUnless(_BASH, "bash not available")
+    def test_dashboard_fork_agrees_with_canonical_on_every_fixture(self):
+        """The dashboard's forked writer must read pipeline.path identically.
+
+        The fork diverges from canonical DELIBERATELY on one axis (it accepts `Deploy` as a
+        Phase value). Reading the declared layout is not that axis. Asserting the whole
+        corpus rather than the parser's text lets the fork stay a fork while pinning the one
+        behaviour that must not differ.
+        """
+        mismatches = []
+        for name in FIXTURES:
+            canonical = self._bash(name)
+            fork = self._bash(name, _WRITEBACK_FORK)
+            if (canonical or None) != (fork or None):
+                mismatches.append(f"{name}: canonical={canonical!r} fork={fork!r}")
+        self.assertEqual(
+            mismatches, [],
+            "dashboard/scripts/writeback-state.sh disagrees with canonical on the declared "
+            "layout -- the dashboard would write to a different layout than it reads:\n  "
             + "\n  ".join(mismatches),
         )
 

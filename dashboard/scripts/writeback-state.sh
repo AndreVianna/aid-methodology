@@ -227,18 +227,98 @@ resolve_work_dir() {
     fi
 }
 
-# is_flat_layout: return 0 (true) when the work uses the FLATTENED
-# single-delivery layout (feature-001) -- a work-root BLUEPRINT.md is present
-# AND at least one `tasks/task-NNN/DETAIL.md` is present directly under the
-# work root AND no `deliveries/` wrapper exists. Mirrors the SAME 3-part
-# detection rule used by aid-execute's SKILL.md / state-execute.md /
-# state-delivery-gate.md and the dashboard reader twins (reader.py
-# `_detect_flat` / reader.mjs `_detectFlat`) -- all consumers assert all three
-# parts identically (BLUEPRINT.md presence, DETAIL.md presence, deliveries/
-# absence). Presence-based; never throws. Auto-detected per-call -- no new
-# CLI flag needed.
+# wb_get_pipeline_path: echo the work-root STATE.yml `pipeline.path` value, lowercased,
+# or nothing when it is absent or unreadable. Never throws.
+#
+# LIFTED VERBATIM from canonical/aid/scripts/execute/writeback-state.sh rather than
+# re-typed. Re-typing it is how a fifth YAML dialect gets born: that parser has already
+# produced EIGHT divergences from its Python/Node twins (CRLF, single quotes, inline
+# comments, tab indentation, a BOM, a two-level-deep `path:`, block/anchor markers
+# returned verbatim, and multi-document precedence), each found separately and each fixed
+# only in the canonical copy. Every one of them would have had to be rediscovered here.
+# Keep it byte-identical; FWP01 in test-writeback-state.sh asserts that it is.
+wb_get_pipeline_path() {
+    resolve_work_dir
+    local state="${WORK_DIR}/STATE.yml"
+    [[ -f "$state" ]] || return 0
+    awk '
+        BEGIN { sq = sprintf("%c", 39); dq = "\"" }
+        NR == 1 { sub(/^\xef\xbb\xbf/, "") }             # UTF-8 BOM, first line only
+        { sub(/\r$/, "") }                               # CRLF -> LF, every line
+        /^[ \t]*#/                     { next }          # whole-line YAML comment
+        /^pipeline:[ \t]*$/            { inp = 1; next }
+        # EXACTLY two spaces, matching the engine level model (see the header note).
+        # SPACES only, not `[ \t]`: YAML forbids a tab as indentation and both twins
+        # reject a tab-indented file outright.
+        inp && /^  path:[ \t]*/ {
+            sub(/^  path:[ \t]*/, "")
+            v = $0
+            c = substr(v, 1, 1)
+            # Scalar forms outside the subset. Returning the marker verbatim is the
+            # worst option available: `|`, `>` and `&p lite` are all NON-EMPTY, and a
+            # non-empty answer tells is_flat_layout the layout was declared, which
+            # suppresses the presence-rule fallback that would have got it right.
+            # Declaring nothing is honest and lets the fallback run.
+            if (c == "|" || c == ">" || c == "&" || c == "*") { exit }
+            if (c == dq || c == sq) {
+                # Quoted: the value is the quoted span. A # inside it is
+                # literal, so comment-stripping must not run.
+                v = substr(v, 2)
+                out = ""
+                while (length(v) > 0) {
+                    ch = substr(v, 1, 1)
+                    # Only the double-quoted form has escapes, per YAML.
+                    if (c == dq && ch == "\\" && length(v) > 1) {
+                        out = out substr(v, 2, 1)
+                        v = substr(v, 3)
+                        continue
+                    }
+                    if (ch == c) break
+                    out = out ch
+                    v = substr(v, 2)
+                }
+                v = out
+            } else {
+                # Plain: a # begins a comment only after whitespace.
+                sub(/[ \t]+#.*$/, "", v)
+            }
+            gsub(/[ \t]+$/, "", v)
+            # LAST occurrence wins, not the first. The engine skips a `---` document
+            # marker with a warning and keeps parsing, so a multi-document file leaves
+            # it holding the final document value; exiting here on the first match
+            # would answer with the first instead.
+            found = tolower(v)
+            next
+        }
+        inp && /^[^ \t#]/              { inp = 0 }       # a dedented key ends the mapping
+        END { if (found != "") print found }
+    ' "$state"
+}
+
+# is_flat_layout: return 0 (true) when the work uses the FLATTENED single-delivery layout.
+#
+# DECLARED FIRST, inferred only as a fallback -- brought into line with the canonical
+# script and both reader twins. This copy read `BLUEPRINT.md` presence ALONE, which was
+# the bug the declared read exists to remove: BLUEPRINT.md is retired as an authored
+# artifact, so a current work declaring `pipeline.path: lite` has none, and this writer
+# classified it as NESTED while every reader classified it FLAT. The dashboard would
+# therefore READ a work as flat and WRITE to it as nested -- through this very script,
+# since the server's WRITER_DIR is `dashboard/scripts`.
+#
+# It survived because this file is a deliberate fork (see the banner) and no parity suite
+# compared it to its source. That banner named the missing test as the real risk; the
+# four-way corpus in test_declared_path_three_way_parity.py is now that test.
+#
+# The 3-part presence rule remains, as the fallback for un-migrated works whose state
+# file declares nothing.
 is_flat_layout() {
     resolve_work_dir
+    local declared
+    declared="$(wb_get_pipeline_path)"
+    if [[ -n "$declared" ]]; then
+        [[ "$declared" == "lite" ]]
+        return
+    fi
     [[ -f "${WORK_DIR}/BLUEPRINT.md" ]] || return 1
     [[ -d "${WORK_DIR}/deliveries" ]] && return 1
     local f
