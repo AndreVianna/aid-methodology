@@ -1,0 +1,1440 @@
+# Work State -- work-011-methodology-cost
+#
+# Converted from the retired STATE.md after work-009 (PR #192) renamed the state
+# file. Until this existed, this work held STATE.md with no sibling STATE.yml --
+# the exact shape SP-9 routes to the legacy detector, so the dashboard DIAGNOSED
+# this work rather than reading it. A work about methodology cost being invisible
+# to the methodology's own dashboard is the kind of thing worth recording, not
+# quietly fixing.
+#
+# Derived views (Features State, Plan/Deliveries, Tasks State, Delivery Gates,
+# Calibration Log, Dispatches) carry no key here by design. The per-feature and
+# per-criterion status this work tracks has no writable key in the schema --
+# aid-define/SKILL.md's accuracy note calls that out as a gap the refactor
+# surfaced -- so it lives under `qa` below, which IS authored on this path.
+
+pipeline:
+  path: full
+  initiator: aid-describe
+
+started: '2026-08-13'
+
+minimum_grade: A
+
+user_approved: 'yes'
+
+lifecycle: Paused-Awaiting-Input
+
+phase: Execute
+
+active_skill: none
+
+updated: '2026-08-15T16:10:00Z'
+
+pause_reason: awaiting human review and merge of PR #191; all 14 acceptance criteria verify, CI green, review ledgers closed
+
+block_reason: --
+
+block_artifact: --
+
+ticket_ref: --
+
+interview:
+  state: Approved
+  grade: A
+  sections:
+    - id: 1
+      name: Objective
+      state: Complete
+      updated: '2026-08-14'
+    - id: 5
+      name: 'Functional Requirements'
+      state: Complete
+      updated: '2026-08-14'
+    - id: 9
+      name: 'Acceptance Criteria'
+      state: Complete
+      updated: '2026-08-14'
+    - id: 11
+      name: Features
+      state: Complete
+      updated: '2026-08-14'
+
+lifecycle_history:
+  - date: '2026-08-14'
+    event: 'Requirements authored retroactively (oracle created mid-work)'
+    grade: --
+    notes: 'Phases 1-5a ran with no work folder; the target artifact shape lived only in conversation, and one shape restatement contradicted a settled decision as a result'
+  - date: '2026-08-14'
+    event: 'CI green, all 10 checks'
+    grade: --
+    notes: 'Render + dogfood resync; the .cursor/rules allowlist arm; one stale assertion label re-homed'
+  - date: '2026-08-15'
+    event: 'Merged work-004, work-009 and the aid-graph removal from master'
+    grade: --
+    notes: '11, 87 and 101 conflicts respectively; the STATE.yml rename broke and then re-fixed this work own declared-layout change'
+
+deploy: []
+
+qa:
+  - id: Q1
+    question: 'Does the Lite path keep a PLAN.md?'
+    state: Resolved
+    answer: 'No. One feature and one delivery means there is no sequencing decision to record, so PLAN would exist only to hold a derived table. Lite = REQUIREMENTS.md + tasks/task-NNN/DETAIL.md + STATE.yml.'
+    decided_by: owner
+    updated: '2026-08-14'
+  - id: Q2
+    question: 'Store the Lite execution graph in REQUIREMENTS, or derive it?'
+    state: Resolved
+    answer: 'Derive it. Each task DETAIL already carries Depends on, so the graph is fully specified by the task set; a stored table is a denormalised view that can disagree with its source. Establishes the general rule: STORE WHAT WAS DECIDED, DERIVE WHAT FOLLOWS FROM IT.'
+    decided_by: owner
+    updated: '2026-08-14'
+  - id: Q3
+    question: 'Do judgment-based acceptance criteria get an escape hatch?'
+    state: Resolved
+    answer: 'Yes, narrowly: a judgment criterion must name what is judged and against what standard, so it stays checkable that the judgment happened against the stated bar. AGENT JUDGMENT, flagged for override -- one paragraph to delete if the owner prefers strict.'
+    decided_by: agent
+    updated: '2026-08-14'
+  - id: Q4
+    question: 'BLUEPRINT.md presence is the flat-layout sentinel in three lockstep implementations. How is it retired?'
+    state: Resolved
+    answer: 'Read the layout from DECLARED state (pipeline.path) rather than inferring it from a file presence. Implemented in writeback-state.sh, reader.py and reader.mjs, with three-way parity verified on five fixtures and re-verified after the STATE.yml rename. BLUEPRINT.md is no longer load-bearing, so AC-12 and AC-13 are unblocked.'
+    decided_by: owner
+    updated: '2026-08-14'
+  - id: Q5
+    question: 'Contended files while work-004 was in flight'
+    state: Resolved
+    answer: 'work-004 merged, so constraint C-2 is satisfied and the prose sweep is unblocked. Its delivery-002 deleted 11 internal skill READMEs, which retired three files this work had edited.'
+    decided_by: owner
+    updated: '2026-08-15'
+  - id: Q6
+    question: 'Feature status against the 14 acceptance criteria'
+    state: Open
+    answer: |
+      001 Cost measurement          Done     AC-1, AC-2, AC-3 met (33 assertions)
+      002 Artifact discipline       Done     AC-4, AC-5, AC-9, AC-10 met
+      003 Traceability              Done     AC-6 met
+      004 Artifact folding          Open     AC-11 met; AC-12 and AC-13 now UNBLOCKED by Q4, not yet built
+      005 Derivation over authoring Open     AC-7, AC-8 met; the Lite graph-from-DETAILs half waits on AC-13
+      006 Render and close-out      Done     AC-14 met; re-opens on every canonical edit, and has three times
+    decided_by: agent
+    updated: '2026-08-15'
+  - id: Q7
+    question: 'This branch has had no independent review'
+    state: Resolved
+    answer: |
+      Every commit was written and self-verified by the same agent. Phase 1 shipped two
+      real bugs under 48 passing tests, found only when the owner asked for an audit.
+      REQUIREMENTS.md now carries 14 verifiable criteria, so there is finally something
+      to review against.
+
+      Dispatched 2026-08-15 as three parallel reviewers over the 75 hand-authored files
+      (the other 657 in the diff are rendered output), each in a clean context with no
+      access to the authoring rationale:
+        R1 criteria conformance -- is each Met claim in STATE.yml actually true
+        R2 code correctness     -- three lockstep layout impls, derive-waves, cost-meter
+        R3 prose consistency    -- canonical skill docs + KB, citations and stale refs
+      Ledgers at .aid/.temp/review-pending/aid-review-work-011-r{1,2,3}.md -- gitignored
+      by design (schema F-06: transient, deleted at DONE), so the findings are recorded
+      here, in Q9 through Q12, as the durable record.
+
+      Outcome: 3 CRITICAL, and it was worth doing. The review found a class of defect
+      self-review structurally cannot: three implementations that must agree did not, in
+      code the author wrote and believed correct, under a 278-assertion suite that could
+      not see it. Every finding was independently reproduced before being accepted, and
+      one reviewer claim was rejected after checking (see Q11).
+
+      Also confirmed: 11 of 14 criteria genuinely met, so the picture was not wholesale
+      wrong -- but two of the criteria THEMSELVES fail this work's own verifiability
+      rule, which no amount of implementation care would have surfaced.
+    decided_by: agent
+    updated: '2026-08-15'
+  - id: Q13
+    question: 'Post-review remediation: items 1-5 of the ordered plan'
+    state: Resolved
+    answer: |
+      Done, in the order set so that nothing was judged against a broken ruler.
+
+      1. The two defective criteria. AC-4 no longer scopes tests/ (with the exclusion
+         stated, not implied); AC-13 names STATE.yml and now also names the three
+         artifacts it REMOVES, not only the three it keeps.
+      2. The prose tail: 24 sites under canonical/ plus 6 in docs/ and examples/.
+         SIX were live instructions -- aid-plan scanning the glob to verify features,
+         aid-detail naming it the detailer's primary input, aid-execute's delivery gate
+         collecting it, aid-deploy and aid-monitor listing it as an input. The other 18
+         were provenance cites into pruned work folders; the substance was already in
+         the surrounding prose, so only the dangling pointer went.
+      3. The 14 broken citations, 13 of them one missing path segment repeated.
+      4. The three don't-clobber canaries. Only assertions mentioning a change log now
+         are the two asserting its ABSENCE.
+      5. Rendered, verified, resynced. 27 owned files per dogfood tree.
+
+      The durable part is not the fixes, it is that four of these rules are now GATES.
+      test-artifact-discipline.sh re-runs them: AD01 change-log sections, AD02 the KB's
+      absolute form, AD03 every relative citation under canonical/ resolving, AD04 the
+      retired feature layout across canonical + docs + examples. Each was previously
+      "verified" by someone running a grep once, which holds only until the next edit and
+      only for the trees they happened to type -- two had already drifted by the time the
+      review looked.
+
+      Two things worth keeping from how this went. Writing the naive gate FIRST paid for
+      itself: it flagged fenced `changelog:` examples in the kb-authoring templates that
+      are explicitly labelled superseded -- specimens, not instances -- so the checker now
+      tracks fences. And AD04 was verified by REINTRODUCING an offender and watching it
+      fail, because a gate that has only ever seen a clean tree has not been tested.
+
+      Not resolved, deliberately: 26 inert `## Change Log` occurrences remain in other
+      fixture heredocs. Nothing asserts on them so they cause no false pass, but they are
+      stale fixture content rather than deliberate legacy simulation. AC-4 scopes tests/
+      out because the rule governs artifacts, so they are out of scope rather than clean.
+    decided_by: agent
+    updated: '2026-08-15'
+  - id: Q26
+    question: 'After four merges, do this work''s founding numbers still hold?'
+    state: Resolved
+    answer: |
+      Two were wrong when written, the rest have moved, and the intent survives all of it.
+      Re-ran the same model at the same parameters, including running the meter AT THE
+      COMMIT that wrote the objective so the original claims could be checked against the
+      tool that produced them rather than against memory.
+
+      WRONG WHEN WRITTEN:
+        "60-65% gates / 10-13% authoring / 5-7x"  ->  88.9% / 11.1% / 8.0x. Understated,
+        and internally contradictory: 12% at 5-7x implies 60-84% gates, so the text quoted
+        the bottom of its own range. "Authoring" was the wrong word too -- that line is the
+        per-task GROUNDING READ; the cost of writing a document was never modelled.
+
+        "size discipline alone worth ~60%, with no structural change"  ->  ~38%, stable at
+        38-40% across every parameter set in the stated range. 60% is only reachable by
+        comparing undisciplined `today` against a disciplined RESTRUCTURED shape -- the
+        exact conflation that clause denies. Real mechanism, oversold by ~20 points.
+
+      MOVED SINCE:
+        15.79MB -> 7.04MB for the modelled work (-55%). Gate share 88.9% -> 65.5%.
+        Gate:grounding 8.0x -> 1.9x.
+
+      THE FINDING THAT MATTERS more than the total: the problem has INVERTED. The dearest
+      line is no longer `gate SPEC (per feature)` at 4.49MB but `task grounding` at
+      2.43MB -- and grounding is paid PER TASK, so it scales with task count where a gate
+      does not. Anything further aimed at gates is aimed at the smaller half. The unbuilt
+      `folded-sliced` grounding slice models the next 10 points (7.04 -> 5.42MB).
+
+      MOVED THE WRONG WAY: always-on surface 12,712 -> 18,428 tokens (+45%), skills
+      76 -> 111. work-006's design family, not a regression here, and AC-2's diff gate does
+      flag it. But ~5.7k tokens on EVERY session outweighs a one-off per-work saving over
+      any realistic number of sessions, and no criterion here covers it.
+
+      CREDIT WHERE DUE: work-012 scoped the cycle-2+ hunt and sliced the per-feature
+      requirements load. Its slice keys off the `AC-N` citations this work put in § 11, and
+      this work's fold is what makes the slice addressable; neither would have reached the
+      combined figure alone. The meter now carries `--scoped-cycles` so the model prices
+      the loop that EXISTS rather than the one this work started against -- without it
+      every gate line is overstated and the "which half to attack next" conclusion inverts.
+
+      One assertion earned its keep instantly: CM40's first draft compared whole-run totals
+      at 2 cycles expecting a no-op and failed, because `delivery gate (diff)` hard-codes 3
+      cycles regardless of --cycles. It was measuring something other than what it claimed.
+    decided_by: agent
+    updated: '2026-08-16'
+  - id: Q25
+    question: 'PR #194 (work-012, scoped review cycles + criterion oracles): does it revert this work?'
+    state: Open
+    answer: |
+      No. Measured on DURABLE artifacts only -- work-012's own work folder is transient and
+      was excluded, since a pruned folder cannot affect anything.
+
+      Its durable surface is 21 files (skills, agents, templates, scripts, tests); 6 overlap
+      with this branch. Trial-merged: 21 conflicts, only 2 needing judgment. On the merged
+      tree all 12 discipline gates pass and the corpus is 142 suites with the same
+      pre-existing 15 failures -- work-012's 3 new suites pass.
+
+      It ADDS no old-model content: zero lines mentioning SPEC.md or BLUEPRINT are added by
+      it. Checked directly rather than inferred, because "their files mention SPEC.md" and
+      "they introduced it" are different claims and only the second would be a reversion.
+
+      Three compatibility claims from its PR verified rather than trusted: the ledger is
+      still the 7-column shape CLAUDE.md mandates, grade.sh is byte-identical, and the
+      `oracle:` key is optional frontmatter. The oracle key is COMPLEMENTARY here, not
+      competing: AC-5 requires every criterion to name an observable, and an oracle makes a
+      criterion executable -- the strongest possible form of the same rule. This work's own
+      14 criteria are mostly shell commands, so they are natural oracle candidates.
+
+      THE ONE REAL COLLISION, and it resolved in this work's favour. work-012's FR-14
+      slices REQUIREMENTS.md per feature-gate (measured 83% smaller) and keys the slice off
+      `SPEC.md`'s `## Source`. That key does not exist here. But the same information lives
+      in the § 11 feature section's `FR-N`/`AC-N` citations, so their idea works BETTER on
+      this structure than the one it was written for. Resolved as a synthesis: their
+      rationale, keyed off the § 11 citations. It also supplies the missing argument for
+      why § 11 sections CITE criteria rather than copying them -- a copy would have to be
+      re-read to be trusted, defeating the slice.
+
+      WHAT IT DID EXPOSE, which is this branch's own gap and now fixed: the review path
+      (5 reviewer briefs, review.md, review-deliverables.md, the dispatch template, the
+      aid-reviewer agent) still named the per-feature SPEC in 23 places -- instructions to
+      load a file no work produces. AD04 was blind to them because it matches the PATH
+      shape and these carry no path. AD09 now covers the dead ARTIFACT NAME on the
+      dispatching surfaces.
+
+      The cause is worth naming because it has now happened three times: the § 11 fold was
+      scoped to what AC-11 literally names, and never asked which OTHER surfaces consume
+      the artifact those two skills stopped producing. Same shape as the 34 doorway
+      descriptions, and as AD04's own missing spelling. All three were found by reading
+      another branch, never by a gate here -- a blind spot is, by construction, invisible
+      from inside the work that created it.
+    decided_by: agent
+    updated: '2026-08-15'
+  - id: Q24
+    question: 'The work-006 merge: what actually broke, and what did it teach?'
+    state: Resolved
+    answer: |
+      Merged (131 commits, 23 conflicts) and green on all 10 checks. The rehearsal predicted
+      the conflicts exactly; it predicted none of the four things that actually cost time.
+
+      CONFLICTS, as rehearsed: 4 needing judgment. aid-define and aid-specify still
+      described feature FOLDERS with SPEC.md stubs, resolved as neither side wholesale --
+      master's better user-facing shape, this work's model. The two reader files were
+      resolved PER HUNK toward master, whose 36 SHORTCUT_KIND_MAP entries turned out
+      content-identical to the ones seeded here; `checkout --theirs reader.mjs` would have
+      silently dropped _deriveLanesFromDetails and _parsePlanDeliveryTitles from
+      cleanly-merged regions.
+
+      FOUR THINGS THE REHEARSAL MISSED, each a variant of ONE pattern -- every derived
+      artifact here is maintained by a mechanism that only ever deletes what it previously
+      wrote, so anything arriving by merge or outliving its source is invisible to it and
+      survives every regeneration, which reports success either way:
+
+        site/src/content/docs/  is a generated mirror of docs/*.md. Editing the source left
+        it stale; the site's own vitest re-runs the sync and fails on any git diff, so the
+        transform's OUTPUT must be committed, not merely reproducible.
+
+        profiles/  had 100 orphans (19 aid-graph scripts + work-state-template.md, x5
+        trees) present in no manifest. Three green local renders never saw them.
+
+        .claude/ and .cursor/  had 6 more (the two templates this work retired, plus
+        work-state-template.md) -- sync_dogfood resyncs OWNED files and never deletes a
+        file that has left canonical.
+
+        coverage-parity  needed 3 re-homes and 5 accepted-removals. Master had
+        re-bootstrapped the baseline from CI, so 5 of the 6 pre-merge re-home rows pointed
+        at keys that no longer existed -- rows excusing removals that cannot happen.
+
+      The sharpest single lesson: the accepted-removal row was keyed T13 when the key that
+      actually vanished was T20. The labels are path-normalised, so array entries collapse
+      onto per-index keys and shortening the list drops the LAST one. That row excused a
+      removal that had not happened AND left the real one un-excused -- two errors that
+      cancelled to "still red", which is the only reason either was noticed.
+
+      Also worth keeping: `git rm profiles/*/*/aid/scripts/graph` matched almost nothing,
+      because the trees nest under dot-directories and bash globs skip those. It reported 5
+      deletions where 100 were needed -- indistinguishable from success unless the count is
+      checked against the expected total.
+    decided_by: agent
+    updated: '2026-08-15'
+  - id: Q23
+    question: 'work-006 (PR #184) lands first: what is the impact, and what must change in it?'
+    state: Open
+    answer: |
+      Rehearsed by trial-merging origin/work-006 into this branch in a throwaway worktree.
+      The mechanical collision is small; the semantic one is two files; and work-006
+      arrives with a break of its own in the two files this work has spent the day in.
+
+      CONFLICTS -- 21 files, only 2 needing judgment:
+        canonical/skills/aid-define/SKILL.md
+        canonical/skills/aid-specify/SKILL.md
+      The other 19 are generated (profiles/, both dogfood trees, 5 emission manifests).
+      Those are resolved by REGENERATION, never by picking a side -- and the order
+      matters: a conflicted emission-manifest.jsonl breaks run_generator.py outright
+      (JSONDecodeError on the conflict marker), so canonical/ must be resolved first,
+      then the generator re-run. Learned by doing it in the wrong order.
+
+      The doorway generator merges CLEANLY even though both branches edit it: work-006
+      rewrites the frontmatter DESCRIPTION builder, this work rewrote the BODY line, and
+      they are different regions. Verified both survive rather than assuming it.
+
+      SEMANTIC -- the two conflicts are the whole story, and work-006 is on the old model:
+        aid-define:  "decompose into discrete feature FOLDERS, each with its own SPEC.md
+                      stub"
+        aid-specify: "writing the result to that feature's SPEC.md"
+      Both describe the layout this work abolished. But work-006's STYLE is better than
+      what it replaces -- user-facing, leading with the outcome and saying when to reach
+      for the skill, with engine mechanics moved out of the description. So the resolution
+      is neither side wholesale: keep work-006's shape, state the current model (§ 11
+      sections, `#### Technical Specification`, `AC-N` citations). Drafted and verified
+      both; with them applied, all 11 discipline gates pass on the merged tree.
+
+      The gates caught exactly this and nothing spurious: AD03 (2 broken `../` citations
+      reappearing), AD04 (the SPEC.md stub sentence), AD05 (a `features/` tree diagram).
+      That is the first time these rules have been tested against code written by someone
+      unaware of them, which is the case they exist for.
+
+      work-006's 36 NEW skills are CLEAN against every rule here -- no abolished-layout
+      references, no change-log apparatus, no stale artifact advertising. They are
+      hand-authored (`repurpose: true`, 60 rows now), not engine-driven, so AC-13 does not
+      reach them.
+
+      WHAT WORK-006 NEEDED FIXED -- DONE, pre-emptively. All 36 new skills were absent
+      from SHORTCUT_KIND_MAP in BOTH dashboard/reader/state_schema.py and
+      dashboard/server/reader.mjs, so test-dashboard-reader.sh failed on work-006 ALONE
+      (verified against origin/work-006 in isolation, not inferred from a merge): leg 3
+      of its own parity suite asserts every catalog row has a key, and 36 had none.
+
+      Fixable from HERE, ahead of the merge, because leg 3 is deliberately
+      ONE-DIRECTIONAL -- the maps are a documented strict SUPERSET of the catalog, so a
+      key with no row is legal while a row with no key is not. All 11 parity tests pass on
+      this branch with the rows absent, and all 11 pass on a trial merge with them
+      present; both checked. On the merged tree: 94 catalog rows, 130 keys, zero
+      uncovered.
+
+      Two things worth having checked rather than assumed. Verb and artifact were taken
+      from work-006's catalog rows, not from splitting skill names -- which matters for
+      exactly one row, since `aid-brainstorm` carries verb `brainstorm` with NO artifact
+      and a name-split would have rendered "Brainstorm brainstorm". And the two new verbs
+      (`design`, `brainstorm`) needed no enum extended, because resolve_kind is pure
+      string formatting; a verb whitelist would have made this a far larger change.
+
+      Also worth checking once merged, though no gate flags it yet: the new design-family
+      skills produce design artifacts, and whether their acceptance criteria name
+      observables (AC-5) and cite `AC-N` (AC-6) has not been reviewed.
+    decided_by: agent
+    updated: '2026-08-15'
+  - id: Q22
+    question: 'AC-13: is the Lite path reduced?'
+    state: Resolved
+    answer: |
+      Met. A Lite work now holds exactly REQUIREMENTS.md, STATE.yml, and
+      tasks/task-NNN/DETAIL.md -- verified end to end on a real work: lanes derive to
+      (1, 2, 2) identically in both reader twins, and compute-block-radius.sh reports
+      task-002 and task-003 blocked by task-001, with no PLAN.md anywhere.
+
+      A plan records a SEQUENCING decision. With one feature and one delivery there is
+      none, and every field a PLAN.md would carry is already stated (objective is § 1,
+      criteria are § 9) or derivable (task listing from each `**Source:**`, graph from
+      each `**Depends on:**`). The PHASE is still emitted: Plan happened, it just decided
+      nothing worth recording.
+
+      The delivery gate now names one criteria source PER LAYOUT instead of one for both:
+      full keeps its PLAN.md stanza where sequencing is genuinely authored; flat/Lite
+      reads § 9, because the work IS the delivery and a restatement would be a second
+      copy able to disagree with the first.
+
+      flattened-plan-template.md deleted -- nothing seeded it but the removed state.
+
+      The most useful thing here is what that deletion nearly caused. cost-meter.py's
+      PLAN_DEFINITION_FRACTION was justified by "measured from
+      flattened-plan-template.md" -- a citation the deletion would have broken. The
+      numbers (943 B of 1325 B) are now inline with the reasoning recorded. This work has
+      made that exact mistake TWICE (DEFAULT_ARTIFACTS from a pruned work folder,
+      split_reach citing a file from a removed skill); third time it was caught before
+      committing, which is the first time the pattern was recognised in advance rather
+      than in review.
+
+      AD08 gates it and deliberately allows ONE surviving PLAN.md mention in the engine:
+      the table explaining what a plan would have carried and where each field lives now.
+      Naming a retired artifact while explaining its retirement is the opposite of
+      instructing an agent to write one. A second mention fails.
+    decided_by: agent
+    updated: '2026-08-15'
+  - id: Q21
+    question: 'The in-process port: do three implementations of one sort agree?'
+    state: Resolved
+    answer: |
+      Yes, and the test proves it against the REFERENCE rather than only against itself.
+
+      reader.py and reader.mjs now derive lanes from the task DETAILs' `**Depends on:**`
+      fields. A work holding only STATE.yml and tasks/ -- no PLAN.md, no SPEC.md, no
+      BLUEPRINT.md -- reads with correct lanes (1, 2, 2) identically in both runtimes.
+      That is AC-13's target shape working end to end.
+
+      It FILLS A GAP rather than replacing a working path, which reading the code
+      revealed and the survey had not. Both readers carried the same comment: the flat
+      PLAN.md's `## Execution Graph` has no wave-map fence, so parse_execution_graph
+      "yields an empty map -- lane stays None for every task ... no lane derivation is
+      defined for the flat shape". Every flat task was laneless. So this ADDS information
+      the layout never had, and removing its PLAN.md now costs the readers nothing.
+
+      An AUTHORED map still wins where one exists; the derivation only fills an empty
+      one. An explicit statement should not be overridden by an inference.
+
+      There are now THREE implementations of one sort (awk, Python, Node) -- the exact
+      shape that produced three silent divergences earlier in this work. So the parity
+      test has two legs, because agreement between the two PORTS would prove only that
+      they match each other, not that either matches the reference: one leg compares the
+      twins, the other runs the real derive-waves.sh over a generated work. Both legs
+      were verified by breaking each side deliberately -- dropping the foreign-dependency
+      rule from Node is caught by the first, an off-by-one join in Python by the second.
+
+      18 fixtures target what a port is most likely to drop: a dependency outside the set
+      is already SATISFIED (deliveries run in series; treating it as unsatisfiable
+      reports a cycle that does not exist), a self-edge is discarded rather than
+      deadlocking, a cycle yields {} rather than a partial map that would read as a
+      problem with the TASKS, a diamond join lands one wave after BOTH parents, every
+      "no dependencies" spelling agrees, and declaration order does not change the answer.
+
+      One test INVERTED, not deleted: test_reader.py asserted lane=None for a flat task,
+      correct only because the derivation did not exist. lane=None would now mean the
+      derivation silently did nothing.
+
+      Regression check by diffing FAILURE SETS against origin/master, not counts: reader
+      824 tests, server 1306, no new failure on either side.
+
+      WHAT REMAINS for AC-13: the authoring side must stop writing a Lite PLAN.md
+      (shortcut engine PLAN state), and the two bash consumers -- complexity-score.sh and
+      compute-block-radius.sh -- need the same fallback. Those two are bash, so they can
+      CALL derive-waves.sh --from-tasks rather than gaining a fourth and fifth copy of
+      the sort.
+    decided_by: agent
+    updated: '2026-08-15'
+  - id: Q20
+    question: 'Is removing PLAN.md from the Lite path a saving or a transfer?'
+    state: Resolved
+    answer: |
+      Mostly a saving, and worth doing -- but the measurement changed the reasoning, so
+      the recommendation now rests on numbers rather than instinct.
+
+      At Lite dimensions (1 feature, 1 delivery, 3 tasks, 5 cycles): ~94k tokens, ~11%.
+      The transfer is real but small -- the delivery definition is a DECISION and still
+      needs reviewing, so it moves into REQUIREMENTS (+9k on that gate, +2k on grounding).
+      Only the execution graph is a true removal, since derive-waves.sh --from-tasks
+      reconstructs it from each task's `**Depends on:**`.
+
+      The split is measured, not assumed: 943 B of a 1325 B PLAN.md body is definition
+      (flattened-plan-template.md, instructional header excluded). CONSERVATIVE against
+      removal -- the one-task baseline, where the graph is smallest.
+
+      Two things measurement showed that instinct had wrong:
+
+        The saving is a roughly FIXED quantity -- one cycle-multiplied gate point -- not
+        a proportion. It grows with cycles (5% at 1, 13% at 7) and SHRINKS as a share as
+        tasks rise (14% at 1 task, 6% at 12). It pays best exactly where Lite lives:
+        small works that still get properly reviewed.
+
+        At ONE review cycle it barely pays, and on the test fixture it is NEGATIVE
+        (-7910 B). With no cycles to multiply, the removed gate point saves nothing while
+        the transfer still costs. A shortcut run with review disabled would be made worse
+        by this change.
+
+      A correction worth recording, because it nearly became a false justification. The
+      first draft of CM38 asserted the change is a NET LOSS at full-path dimensions --
+      true on the fixture, whose agent briefs are deliberately tiny, and NOT true at repo
+      scale, where the real dispatch floors make the removed gate point dominate. Sign
+      depends on the floor-to-artifact ratio. The assertion now compares SHARES, which
+      holds at both scales. Had it shipped as drafted, the Lite-only scope would have
+      been defended with a reason that does not survive contact with the real repo.
+
+      RECOMMENDATION: proceed, via the in-process port (option b), NOT materialization.
+      A materialized derived view drifts from its source unless regenerated on every
+      read, which is the failure this work exists to remove. Both reader twins already
+      open every task DETAIL.md for short_name and type, so the port is one more field
+      plus a sort -- and the title parity harness from AC-12 part 2 extends to cover it.
+      Five new assertions (33 -> 38) guard the shape of the answer.
+    decided_by: agent
+    updated: '2026-08-15'
+  - id: Q19
+    question: 'Item 8: can the Lite execution graph be derived from task DETAILs?'
+    state: Resolved
+    answer: |
+      Yes, and the answer reshapes AC-13's remaining half.
+
+      `derive-waves.sh --from-tasks <work-dir>` derives the dependency table AND the
+      wave-map from the task DETAIL.md files with no PLAN.md present. Each task's
+      `**Depends on:**` field IS the graph, so on a one-feature one-delivery work there
+      is nothing left for a PLAN.md to hold but a view of data already on disk.
+
+      Built as a SOURCE, not a second sort: the mode renders the DETAILs into the same
+      `| Task | Depends On |` shape the table source produces and feeds it through the
+      SAME awk pass. One sort, one set of cycle semantics, one test surface. This branch
+      has paid three times for two implementations of one algorithm.
+
+      15 new assertions (35 -> 50): the sort, a cycle exiting 2 exactly as the table
+      source does, the nested layout getting one wave-map per delivery, a DETAIL with no
+      Source line, an absent work, an empty work, and all three "no dependencies"
+      spellings landing in wave 1 together. An empty work exits 2 rather than succeeding
+      silently, because emitting nothing is indistinguishable from a work whose tasks
+      sorted into no waves.
+
+      THE FINDING. The derived output round-trips through the EXISTING consumer
+      unchanged: parse_execution_graph reads it and returns
+      {task-001: 1, task-002: 2, task-003: 2} with no parser change. So AC-13's tail is
+      NOT the four-parser rewrite the survey suggested -- all four consumers already
+      parse this exact format. What they need is for the graph to EXIST at read time.
+
+      That leaves a genuine DESIGN choice, and it should be made deliberately rather
+      than guessed at:
+        (a) materialize the derived graph somewhere the consumers already read, or
+        (b) port this one tested algorithm into the two reader twins in-process.
+      (a) risks a stored view drifting from its source -- the exact failure this work
+      exists to remove -- unless it is regenerated on every read. (b) costs two more
+      implementations of a sort, which is the hazard just argued against, though the
+      title parity harness built for AC-12 part 2 would extend to cover it.
+      Not bundled into a commit while the choice is open.
+    decided_by: agent
+    updated: '2026-08-15'
+  - id: Q18
+    question: 'AC-13: how far did the Lite reduction get?'
+    state: Resolved
+    answer: |
+      SPEC.md folded; PLAN.md not yet. The split is real, not a stopping point of
+      convenience -- one half is prose, the other is four parsers.
+
+      DONE. The Lite work-root SPEC.md is gone. It was a copy by the engine's own
+      description: Description, User Stories, Priority and Acceptance Criteria
+      "synthesized from REQUIREMENTS.md ... not re-elicited". What Specify actually
+      DECIDES -- the technical specification -- now sits in the `#### Technical
+      Specification` subsection of the single `### Feature 001` section in
+      REQUIREMENTS.md § 11, with criteria CITED by `AC-N` id rather than copied, so § 9
+      stays their single home. Gated by AD07.
+
+      Not obvious until measured: NO reader change was needed. Both twins already
+      resolved identity as REQUIREMENTS.md -> SPEC.md -> H1 -> de-slug, so folding just
+      stops the middle link being reached for new works and leaves it as the legacy path.
+
+      Found by the new gate: create.md cited `artifact-schemas.md § Task SPEC.md`, a
+      section that has never existed (the KB has `Task STATE.yml` and `Task DETAIL.md`).
+      A third broken citation this work has turned up while doing something else.
+
+      Two judgment calls worth recording. Four places said a family "emits no SPEC.md" --
+      true, but confusing once the artifact does not exist on the path at all, since it
+      implies the others do. I reworded them rather than adding carve-outs to AD07,
+      because a rule that must exempt prose merely MENTIONING the banned token can no
+      longer tell an instruction from a remark. And three test patterns were updated
+      while their LABELS were deliberately left alone: the invariant is unchanged, and
+      coverage-parity keys on the whole label, so renaming would mint keys and demand
+      allowlist rows for tests that did not change.
+
+      Also caught, by the ASCII-only gate rather than by me: my delivery-stanza regex
+      carried a literal em dash. Both twins now write \u2014, spelled identically so the
+      patterns can be diffed by eye.
+
+      RESOLVED (see Q22): PLAN.md is gone from the Lite path too. What follows was the
+      scoping at the time: The execution graph
+      lives there and FOUR implementations parse it -- complexity-score.sh,
+      compute-block-radius.sh, reader.py, reader.mjs. It cannot simply be deleted: the
+      graph has to be derived from the task DETAILs' `**Depends on:**` fields first,
+      which is item 8. So AC-13's tail and item 8 are one change, across two bash
+      scripts and both reader twins, and that is a four-way parity job rather than a
+      prose sweep.
+
+      CLOSED: superseded by Q22 -- AC-13 is met, PLAN.md included.
+    decided_by: agent
+    updated: '2026-08-15'
+  - id: Q17
+    question: 'AC-12 part 2: the reader-side gap'
+    state: Resolved
+    answer: |
+      Closed. Both twins now resolve the delivery title from the delivery's stanza in
+      PLAN.md, falling back to the legacy BLUEPRINT.md H1 and then the delivery id. The
+      middle step is not vestigial: pre-fold works genuinely have the file and no stanza
+      title, and they must keep rendering.
+
+      Both stanza spellings are parsed because both are current -- nested writes
+      `### delivery-001: Title`, flattened writes `- **Delivery:** delivery-001 -- Title`
+      and emits no `### delivery-NNN` heading at all, since two execute-graph scripts key
+      off that heading's absence.
+
+      One detail worth recording because it is easy to get wrong: PLAN.md's bytes are
+      counted ONCE. parse_execution_graph already reads the same file for lane
+      assignments, so adding the title read's length again would overstate the budget
+      io_bounds enforces.
+
+      The parity test matters as much as the feature. Two regex implementations of one
+      grammar in two languages is the same hazard that produced three silent divergences
+      between the bash YAML reader and these twins earlier in this work. Fixtures target
+      where Python re and JavaScript RegExp could plausibly differ: all three dash forms
+      including the em dash smart punctuation produces, an unfilled {Name} placeholder,
+      a duplicate heading where first-wins must hold identically, a title containing its
+      own colon, and an H1 that must NOT match. 17 fixtures, full agreement; the Python
+      answers are pinned individually too, so parity cannot pass by both runtimes being
+      wrong identically. Verified by narrowing the Node pattern and watching it fail.
+
+      Regression check done by diffing FAILURE SETS against origin/master, not counts:
+      821 reader tests and 1306 server tests, identical sets on both sides (31
+      pre-existing, all git-subprocess timeouts and standing environment failures). Equal
+      totals alone would not have proven it -- that was the trap avoided.
+    decided_by: agent
+    updated: '2026-08-15'
+  - id: Q16
+    question: 'AC-12: is BLUEPRINT.md retired?'
+    state: Resolved
+    answer: |
+      Authoring side yes, reader side not yet. Splitting it this way was not planned --
+      the survey found the second half.
+
+      DONE. The delivery definition (objective, scope, gate criteria) now lives in the
+      delivery's own `### delivery-NNN` stanza in PLAN.md. delivery-blueprint-template.md
+      deleted; nothing under canonical/skills/ or canonical/aid/templates/ writes or reads
+      a BLUEPRINT any more; 34 shortcut doorways regenerated from the fixed generator
+      line; six places that described layout detection as presence-based now say
+      declared-first with presence as the un-migrated fallback. Gated by AD06.
+
+      What the stanza deliberately did NOT absorb: the task listing and the Blocks edges.
+      Both are DERIVED -- the listing from each task's `**Source:** ... -> delivery-NNN`,
+      the reverse edges from the `**Depends on:**` fields. Copying a derived view into the
+      stored one is precisely how the wave-map came to disagree with the table above it.
+
+      KEPT on purpose, with AD06's scope saying so instead of quietly excluding them:
+      writeback-state.sh's presence fallback (pre-declared-field works really do have the
+      file), and migrate-work-hierarchy.{sh,ps1}, which still write one. Those two are
+      bash+PowerShell twins needing lockstep, and pwsh cannot run here -- converting them
+      blind is the setup that produced three silent divergences earlier in this work.
+
+      Part 2 (the dashboard readers' title source) is CLOSED -- see Q17.
+
+      ALSO REMAINING: 35 BLUEPRINT mentions across 8 KB docs, 17 across docs/, and the
+      dashboard's own prose. The KB ones state the project's current structure, so they
+      are genuinely wrong now -- but .aid/knowledge/ is /aid-update-kb's territory under
+      its own confirm gates, not something to sweep inside a code commit.
+
+      Two things the tests taught here. test-delivery-gate-aggregate.sh 8a/8b guarded
+      against reading gate criteria FROM PLAN.md -- a real mis-wire when BLUEPRINT defined
+      the delivery, and the correct source now. Both were INVERTED rather than deleted,
+      because the invariant (criteria come from exactly ONE named place, and the doc says
+      which) never changed. And AD05 exists because AD04 is per-line: a tree diagram
+      splits `features/` from `SPEC.md` across lines, so three diagrams sat inside fences
+      that AD04 both skipped AND could not have matched. Fence policy is now per-rule:
+      skip for AD01/AD02 where a fence may legitimately exhibit the banned shape, include
+      for AD04/AD05/AD06 where the pattern is a path that no longer exists.
+    decided_by: agent
+    updated: '2026-08-15'
+  - id: Q15
+    question: 'Why was the branch carrying 247 file-mode changes nobody asked for?'
+    state: Resolved
+    answer: |
+      Because run_generator.py chmods every emitted .sh to 755, and this container had
+      core.fileMode=true while the origin repo sets it FALSE. Upstream therefore never
+      sees the churn -- test-release.sh documents the setting and mirrors it into its
+      clones for precisely this reason -- but here every render staged a 644 -> 755 mode
+      change, and `git add -A profiles/` committed them. 245 under profiles/, one on a
+      test suite, three renders in a row, entirely unnoticed.
+
+      Normalized to 644 via update-index --chmod=-x, matching origin/master exactly:
+      247 files, 0 insertions, 0 deletions. test-artifact-discipline.sh went to 644 too,
+      since all 140 existing suites are 644 in the index and it was the outlier at 755;
+      the exec bit was never load-bearing, as every suite is invoked as `bash <path>`.
+      core.fileMode is now false locally, and a re-run of the generator plus dogfood sync
+      reports 0 changed files where it previously dirtied 177.
+
+      Two things this is worth recording for: a PR carrying hundreds of mode-only entries
+      does not merely add noise, it HIDES the reviewable change among them. And the local
+      environment differed from the project's assumed setup in a way no test could catch,
+      because the setting that masks it is configuration, not code -- the reason it
+      surfaced at all is that a push check listed the working tree instead of assuming it
+      was clean.
+    decided_by: agent
+    updated: '2026-08-15'
+  - id: Q14
+    question: 'Did the prose sweep break anything, and how would we know?'
+    state: Resolved
+    answer: |
+      It broke one thing, and the way it was caught is the point.
+
+      Renaming aid-plan's `### Check 2: Verify Feature SPECs` to `Verify Features` broke
+      the anchor test-downstream-worktree-entry.sh asserts against. Found by running the
+      WHOLE corpus against origin/master in a throwaway worktree and diffing the failure
+      sets: 16 suites fail on this branch, 15 of them fail on master too for want of gawk
+      and pwsh, and exactly one failed only here. Without the master baseline that one
+      regression would have been indistinguishable from the 15 standing environment
+      failures -- which is how a real break hides in a container that cannot run
+      everything.
+
+      Fixing the anchor exposed the underlying defect (item 10's first half, pulled
+      forward). assert_pointer_before and assert_strict_between appended matched LINE
+      NUMBERS to the pass message, and coverage-parity keys on the whole label, so any
+      unrelated edit that shifted a line minted a new key and read as coverage REMOVED.
+      The allowlist row already in the tree proved the cost: its target claimed
+      101 < 111 while the tree had drifted to 114 < 124, so the excuse it existed to
+      grant no longer matched anything. Stale on arrival.
+
+      Line numbers are evidence, not identity. Both helpers now send them to the verbose
+      stream. Six one-time re-home rows cover the re-key, each verified against the labels
+      the suite actually emits -- a rehome naming an absent target fails the gate as
+      "claimed but not landed", exactly as the stale row would have.
+
+      Corpus now: 15 failing, all 15 failing on master too. No branch-introduced failure.
+    decided_by: agent
+    updated: '2026-08-15'
+  - id: Q11
+    question: 'R2 review: do the three layout implementations actually agree?'
+    state: Resolved
+    answer: |
+      They did not. Three scalar forms made bash disagree with Python and Node on the
+      SAME file -- all reproduced, all now fixed, all now regression-tested.
+
+        CRLF          awk's `$` anchors sat behind a stray \r, so `pipeline:` never
+                      matched and the value read empty
+        'lite'        only double quotes were stripped, so the value compared as
+                      "'lite'" and never equalled "lite"
+        lite # note   the inline comment was kept verbatim
+
+      Each made a work DECLARED lite fall through to the presence rule and be
+      classified full -- silently, since every branch returns a value.
+
+      Root cause is structural, and worth stating plainly: the twins delegate to the
+      shared D-3 subset engine, while this one hand-rolls YAML in awk. Every scalar
+      form the engine accepts has to be re-implemented by hand or the three drift.
+      Three of them were missed on the first pass. The fix closes these three; it does
+      not remove the structural hazard, which is inherent to parsing YAML three times
+      in three languages. Retiring the awk parser in favour of a shared helper is the
+      real remedy and is not attempted here.
+
+      Fixed alongside: bash fell back to STATE.md where both twins deliberately do not
+      (SP-9 diagnoses legacy works rather than parsing them), and two docstrings had
+      outlived their code.
+
+      Parity now verified on 12 fixtures across all three implementations, including a
+      quoted 'a # b' where the hash must stay literal. One apparent fourth divergence
+      was my own harness bypassing the twins' string type-guard, not a real defect --
+      checked before reporting it.
+    decided_by: agent
+    updated: '2026-08-15'
+  - id: Q12
+    question: 'Why did three parser bugs survive a 278-assertion suite?'
+    state: Resolved
+    answer: |
+      Because nothing tested the declared read as the SIGNAL. This is the most useful
+      thing the review produced, above any individual bug.
+
+      Units 20-25 all ship a BLUEPRINT.md, so every existing flat fixture satisfied the
+      PRESENCE rule. All of them pass with the declared read entirely broken. The one
+      test naming pipeline.path (test-writeback-state.sh:1658) asserts that --pipeline
+      WRITES the key -- never that reading it drives dispatch. So the change that is the
+      whole point of Q4, and the thing that unblocks AC-12 and AC-13, had 278 assertions
+      around it and zero on its actual purpose.
+
+      The general lesson, which generalizes past this work: a test that keeps the OLD
+      signal present cannot detect that the NEW signal is dead. Replacing a signal means
+      building fixtures that carry only the new one.
+
+      Closed by Unit 26: seven cases, every fixture carrying NO BLUEPRINT.md, so only the
+      declared read can produce a flat dispatch. Includes the inverse -- declared full
+      must beat a PRESENT BLUEPRINT.md -- which is what proves the others are not passing
+      by accident, plus an undeclared case pinning the fallback for un-migrated works.
+      Verified to fail exactly 6 assertions against the pre-fix parser and pass 389/389
+      with it, because a test that cannot fail is not evidence.
+    decided_by: agent
+    updated: '2026-08-15'
+  - id: Q10
+    question: 'R1 review: do this work''s own criteria pass the verifiability rule it imposes on everyone else?'
+    state: Resolved
+    answer: |
+      No. Two of the fourteen fail AC-5, the rule this work wrote. That is the most
+      valuable thing the review produced -- the rule caught its own author, which is
+      the whole argument for reviewing in a clean context.
+
+      AC-4  the criterion's literal command scopes `tests`, where 31 matches live in
+            fixture heredocs. Same command over canonical+docs+examples returns 0, so
+            the INTENT holds and one test does enforce absence
+            (test-kb-template-authoring-standard.sh:151 asserts count == 0). The
+            criterion is over-broad, not the implementation.
+            Verified independently, and found something R1 stopped short of: THREE
+            assertions use `## Change Log` as their don't-clobber canary
+            (test-write-requirement.sh:110 and :190, test-write-external-source.sh:382).
+            Not a false pass -- the behavior tested is real and worth testing -- but
+            they encode the retired shape, and :190's label reads "Change Log row
+            untouched", which states the opposite of the project's rule.
+
+      AC-13 names `STATE.md`. work-009 renamed it to STATE.yml DURING this work, so
+            the criterion now names a file that cannot exist. Running its implied
+            check fails for the wrong reason. Also asserts 3 artifacts where the
+            engine emits 6.
+
+      AC-9 is a genuine miss, not a wording defect: 14 broken `../`-relative citations
+      under canonical/. Reproduced exactly. 13 are ONE systematic error repeated --
+      `../../templates/state-machine-chaining.md` from canonical/skills/aid-*/SKILL.md,
+      missing the `aid/` segment. All pre-existing on origin/master, which does not
+      excuse them: the criterion says "no file under canonical/", not "no file this
+      work touched". Fix is 14 single-token edits.
+
+      AC-14 is unverifiable in this container (needs gawk, has mawk). Standing limit,
+      not a branch defect. It is verifiable in CI, where it passed.
+
+      CLOSED after re-measuring: AC-4's literal command now returns 0 over
+      canonical+docs+examples, and the AC-9 citation sweep returns 0 broken. Both
+      criteria were also corrected in REQUIREMENTS.md itself, which is what the
+      finding actually demanded.
+    decided_by: agent
+    updated: '2026-08-15'
+  - id: Q30
+    question: 'The awk YAML parser: is the hazard retired?'
+    state: Resolved
+    answer: |
+      Yes, though not the way the item was phrased -- and the reframing is the useful part.
+
+      The hazard was never "bash parses YAML". 14 scripts do, and they read different
+      things with no counterpart to disagree with. Checked rather than assumed:
+      writeback-state.sh is the ONLY bash reader of `pipeline.path`; every other match for
+      "pipeline" is the English word. So the hazard was one VALUE read by three
+      implementations with nothing binding them together.
+
+      Bound now: one shared corpus of 19 STATE.yml files, written as BYTES so line endings
+      are explicit, run through all three readers -- awk, reader.py, reader.mjs. It carries
+      the three historical failures plus the forms most likely to separate a hand-rolled
+      parser from a real one: quoting, comments, whitespace, tab indentation, key scoping,
+      a commented-out decoy, and the empty/absent cases. Python's answers are pinned
+      individually too, so three-way agreement cannot be satisfied by all three being
+      wrong together.
+
+      IT FOUND A FOURTH DIVERGENCE IMMEDIATELY. A tab-indented `\tpath: lite` read as
+      `lite` in awk and as nothing in both twins -- YAML forbids tabs as indentation, so
+      their engine raises and yields "not declared". The awk matched `[ \t]+`; it now
+      requires spaces. First of the four caught by a test rather than by a person reading
+      code.
+
+      Why the test rather than a rewrite: a behavioural test already covered the bash side
+      (Unit 26), and rewriting the awk into a shared helper would still leave three
+      implementations -- it would just make them tidier. Each being individually
+      reasonable is precisely the state that produced four divergences. What was missing
+      was the assertion that they AGREE, and that is now standing.
+
+      writeback-state.sh's own 389 assertions still pass, so requiring space indentation
+      broke nothing that depended on tabs.
+    decided_by: agent
+    updated: '2026-08-16'
+  - id: Q29
+    question: 'The Knowledge Base: is it describing the artifacts that actually exist?'
+    state: Resolved
+    answer: |
+      Yes now. 90 mentions of BLUEPRINT / SPEC.md across 10 docs, down to 27 -- of which 19
+      are the ADR log and the rest are absence statements or deliberate history. All 10 CI
+      checks green.
+
+      AN ADR IS SUPERSEDED, NOT SWEPT. D23 records the decision to rename the delivery
+      definition to BLUEPRINT.md and keep SPEC.md for features. Rewriting it would destroy
+      the record of a decision that was correct when taken; the house style marks status
+      instead. D23 now reads "Superseded by D29", naming what survives (the
+      disambiguation was real, DETAIL.md remains) and what did not (rather than give each
+      level a distinct FILE, D29 removed two of the three levels' files).
+
+      D29 states its three reasons in descending order of importance, and the ORDER is the
+      argument: correctness first (one criterion, one home, cited by id -- the duplication
+      produced both CRITICALs in this project's largest work), then the load-bearing
+      artifact, then cost. Cost was this work's motivation but is the weakest of the three
+      reasons the change is RIGHT, so it is listed last.
+
+      A DETERMINISM BUG, found by a misleading symptom. CI rejected the committed INDEX.md
+      as stale with a diff showing rows merely reordered, while it regenerated cleanly
+      here every time. The cause: the generator sorted filenames with a bare `sort`, and
+      collation is locale-dependent -- en_US folds case so `INDEX.md` lands among the i's,
+      C/POSIX order by byte and put capitals first. The file is COMMITTED and CI
+      regenerates it to check freshness, so the same repo produced two different "correct"
+      files depending on whose shell ran the script. Now `LC_ALL=C sort`, verified
+      byte-identical across four locales.
+
+      The rule that generalises: any generator whose output is COMMITTED must be
+      byte-deterministic across environments, not merely reproducible on the author's
+      machine. The render pipeline already asserts this for profiles/ with a hard gate;
+      this script was the one that did not.
+
+      Two process notes. The aligned tree diagrams defeated string replacement twice --
+      their whitespace does not survive retyping -- so they were replaced by line index,
+      and the first attempt left a duplicated line, caught only by re-reading. And
+      regenerating the index with `--root .` instead of `--root .aid/knowledge` silently
+      produced a 2KB file with every routing row deleted, reporting "OK: Wrote" both
+      times; the file's own DO-NOT-EDIT header carries the correct invocation.
+    decided_by: agent
+    updated: '2026-08-16'
+  - id: Q28
+    question: 'Item 3: the grounding slice -- built, and does it deliver?'
+    state: Resolved
+    answer: |
+      Built and wired. 1.62MB modelled saving on a 3-feature/16-task work -- 23% of the
+      run, and the largest line left once work-012 scoped the review loop. All 10 CI
+      checks green.
+
+      `slice-requirements.sh <work-dir> <task-id>` prints only what a task traces to: its
+      `§ 11` feature section, the `§ 9` `AC-N` entries its `**Source:**` cites, and the
+      identity block. Measured on this repo's own REQUIREMENTS.md, a one-criterion slice
+      is 1,160 bytes against 17,662 -- 93% smaller, multiplied by task count.
+
+      It needed NO new field. The task already declares what it traces to because AC-6 put
+      `AC-N` ids in `**Source:**`; before that a slice could only have been guessed at.
+      The meter's own `folded-sliced` shape carried the note "gated on that traceability
+      field existing" -- the gate opened, and this is the payoff of a criterion whose
+      value was not obvious when it was written.
+
+      DESIGN CALL worth recording: a task citing no criterion EXITS 3 rather than
+      returning a near-empty slice. Handing back the identity block alone is
+      indistinguishable from correctly returning a small slice, and would ground the task
+      on nothing while appearing to work.
+
+      The 28 assertions deliberately check INCLUSION harder than exclusion, because the
+      dangerous direction for a slice is too SMALL: dropping a cited criterion makes a
+      task look satisfied against something it never read, while reading too much merely
+      costs. Hence wrapped criteria keeping their continuation lines, multi-citation tasks
+      resolving every id, and the identity block always travelling.
+
+      SR05 is the one that earned its place: `AC-1` must not drag in `AC-10` by prefix. A
+      naive substring match silently WIDENS the slice -- the failure mode that looks like
+      everything working. Verified by swapping in the naive matcher and watching it fail.
+
+      Cumulative position: 15.79MB -> 5.42MB against the objective's starting point, a
+      66% reduction, with grounding no longer the dominant line (the per-task exec check
+      now is, at 1.74MB).
+    decided_by: agent
+    updated: '2026-08-16'
+  - id: Q27
+    question: 'Items 1 and 2: is SPEC.md retired, and is it gated?'
+    state: Open
+    answer: |
+      Retired across canonical/ and docs/; examples/ remains. All 10 CI checks green.
+
+      84 real references removed. canonical/ is down to two that must stay -- the template
+      describing itself, and the sentence explaining that no separate spec file is written.
+      docs/ is down to one, the glossary entry defining the retirement. AD10 gates the
+      canonical count at <= 2 rather than 0, because a rule demanding zero would force
+      deleting the explanation of the change it enforces.
+
+      THE RULE NOW KNOWS AN ABSENCE FROM A REFERENCE. My own new glossary sentence --
+      "there is no per-feature SPEC.md" -- failed AD04. Third false positive of that kind
+      (prototype.md and document.md were the first two), which is where it stops being a
+      coincidence and becomes a rule that cannot tell "use X" from "X is gone". The
+      scanner exempts absence statements now, verified BOTH ways: an instruction to read a
+      dead path is still caught, an explanation that it is dead is not.
+
+      TWO SELF-INFLICTED DEFECTS, both from one careless bulk regex:
+        It matched across line boundaries in aid-update-kb/SKILL.md and deleted ten lines
+        -- all of HL-1's enforcement clause and half of HL-2. A test caught it.
+        It also removed two parentheticals carrying substantive CONTENT rather than a
+        citation: the policy quote "no new silent behavior and no new write", twice. NO
+        test would have caught those -- prose that quietly loses a policy still parses.
+        Found only by reading every deletion the sweep made instead of trusting the diff
+        stat.
+
+      The general lesson, at a cost of two near-misses: a bulk regex over prose needs its
+      deletions READ, not counted. The stat said "-9 +6" for a file where six of those
+      nine lines were fine and one carried a policy.
+
+      REMAINING: examples/ (roughly 25 mentions across four walkthroughs, including a
+      whole sample-spec.md). Those are narratives with sample artifacts, so they need
+      rewriting rather than patching, and they are illustrative rather than agent
+      instructions -- lower harm, higher effort. Deliberately out of AD10's scope so the
+      gate does not sit red on work nobody is doing in the same commit.
+
+      Also still open from the audit: spec-template.md itself. It has no canonical
+      consumer left, but four test suites reference it, so deleting it is a test change
+      rather than a file deletion.
+    decided_by: agent
+    updated: '2026-08-16'
+  - id: Q9
+    question: 'R3 review: how large is the folding change prose tail, really?'
+    state: Open
+    answer: |
+      Larger than this work estimated, and worse in kind. The earlier characterization
+      was "~38 work-folder provenance citations" -- dead cites, cosmetic. Measured:
+
+        45 files / 148 mentions   every surviving `SPEC.md` reference in canonical + docs
+        22 files /  30 mentions   the abolished layout named specifically
+                                  (`features/*/SPEC.md`, `features/feature-`, per-feature SPEC)
+
+      The kind matters more than the count. These are not dangling cites, they are LIVE
+      INSTRUCTIONS: state-delivery-gate.md:189 tells the executor to collect
+      `.aid/works/{work}/features/*/SPEC.md`; task-decomposition.md:58 makes those files
+      the detailer's primary input. An agent following either reads nothing and does not
+      fail -- the glob matches nothing, no error is raised, and it proceeds with missing
+      context. Silent context loss is the worst failure mode this methodology has.
+
+      Verified independently before accepting the finding; both lines are real.
+      task-decomposition.md is a file THIS work edited (for the AC-N Source change) and
+      left stale, so this is not inherited debt.
+
+      Bearing on AC-11, which this work marked Met: the structural half landed, the
+      instruction surface did not. Met is not defensible on the current evidence.
+      Deferring the fix until R1/R2 finish -- editing 45 files under three live reviewers
+      would race their reads.
+    decided_by: agent
+    updated: '2026-08-15'
+  - id: Q8
+    question: 'Comments and constants outliving the artifacts they were measured from'
+    state: Open
+    answer: 'Twice now. DEFAULT_ARTIFACTS in cost-meter.py was measured from work-005, since pruned. split_reach cited relationships.md, emitted by the since-removed aid-graph. Both corrected in place. The transient-work-folder rule generalizes beyond work folders to generated files and to derived constants -- worth stating in the KB, which is aid-update-kb territory.'
+    decided_by: agent
+    updated: '2026-08-15'
+
+  - id: Q31
+    question: "The three remaining tail items -- tech-debt W5-3, examples/, spec-template.md -- what did each turn out to be?"
+    status: Resolved
+    answer: |
+      Each was smaller than billed in one way and larger in another.
+
+      W5-3 claimed "6 of the 21 KB documents have frontmatter that is not valid YAML".
+      Measured 0 of 23: the root cause was `changelog:` entries whose prose contained
+      ": ", and the change-log apparatus was dropped repo-wide, so the defect left with
+      it. But the row's own text called the GAP the more useful half, and the gap was
+      still real -- lint-frontmatter.sh checks field presence and list-vs-scalar shape
+      textually, never well-formedness, and FL19 soft-skips AID's own KB docs. A defect
+      vanishing because something unrelated removed its cause is not a defect prevented.
+      AD11 now parses every KB frontmatter block, verified by reintroducing the exact
+      ": "-in-a-changelog-entry shape and watching it fail.
+
+      examples/ was 25 mentions across 6 files, and rewriting beat patching because
+      swapping a filename inside a sentence that explains why the file exists yields
+      prose wrong in a new way. Three samples renamed; the two feature-section samples
+      now say in their own header that they are a SECTION shown alone. The Lite sample
+      gained what was missing rather than merely wrong: AC-N ids (what a task's Source
+      cites, and what makes its slice derivable), and its stored Tasks table and
+      Execution Graph replaced by the derive-waves.sh command -- a sample showing a
+      stored graph teaches the opposite of what the path does.
+
+      spec-template.md was billed as "no canonical consumer left", which read as a
+      deletion. It was not. aid-specify cites NO template, so this file was the only
+      definition of the shape it writes. Deleting it would have left the skill telling
+      an agent to write a subsection nobody describes. Split instead: the body became
+      specs/technical-specification-template.md (headings demoted for § 11, and
+      aid-specify now cites it); the `> **Ticket:**` line moved to
+      requirements-template.md's Feature 001 block, where the feature section is
+      actually defined, with CL08f and T090 repointed so coverage moved with its
+      subject. The feature skeleton needed nothing -- § 11 already had it.
+
+      Lesson worth keeping: "no consumer references it" and "nothing depends on it" are
+      different claims. A template is consumed by being FOLLOWED, which leaves no
+      grep-able edge. The reference count was zero and the dependency was total.
+
+  - id: Q32
+    question: "Items 9 and 11 -- the awk YAML parser and the transient-artifact rule. What did they turn out to be?"
+    status: Resolved
+    answer: |
+      Item 9 was framed as "retire the hand-rolled awk parser for the shared engine".
+      That is not available: there IS no shared bash engine -- nineteen scripts each
+      hand-roll their own -- and the twins' engine is Python/Node, which a core-path
+      script cannot assume. So the goal was reframed to the thing retirement was FOR:
+      make a divergence impossible to ship.
+
+      Probing scalar forms nobody had tried found eight disagreements out of twenty on
+      the first attempt. Judged against a real YAML parser as oracle, five were bash
+      bugs: a BOM in front of `pipeline:`, a `path:` nested two levels deep matching, the
+      block/anchor markers `|` `>` `&p lite` being returned VERBATIM, an escaped quote
+      truncating, and multi-document files taking the first document instead of the last.
+
+      The block/anchor case is the instructive one. The harm is not the wrong value: a
+      NON-EMPTY answer tells is_flat_layout the layout was declared, which suppresses the
+      presence-rule fallback that would have classified correctly. Junk is worse than
+      silence precisely because it looks like an answer.
+
+      The indent rule is now exactly two spaces, matching the engine's `level = indent //
+      2`. Worth being explicit that this makes all three agree while all three differ
+      from a full YAML parser, which reads four-space nesting as an ordinary child. That
+      is what a documented SUBSET is, and cross-reader consistency is the invariant that
+      matters -- a file all three misread identically is classified identically.
+
+      Item 11 named the form of work-folder dependency the rule cannot see: a constant
+      measured from a work folder and hardcoded. It survives pruning and loses not
+      correctness but checkability. Applying it here found four of five cost-meter
+      constants already compliant and one, CODE_PER_TASK, with no provenance at all.
+
+      That one is not honestly measurable, so it is labelled ASSUMED and discharged by
+      showing no conclusion rests on it. Writing that test corrected the comment: the
+      first version claimed the term cancels everywhere and CM43 failed, correctly. It
+      does not -- `today` charges no code term at its delivery gate while the other four
+      shapes do. The surviving claim is weaker and true.
+
+      Both items share a shape worth keeping: the stated goal ("retire the parser",
+      "state the rule") was not the achievable one, and in both cases the test written to
+      confirm the work contradicted the description of it. A corpus that grows only by
+      recording failures already found is the coverage that cannot be credited.
+
+  - id: Q33
+    question: "Asked directly what is missing and what the problem is. What did the audit find?"
+    status: Resolved
+    answer: |
+      Two problems, both found by checking rather than recalling. All 14 acceptance
+      criteria verify clean, so neither was a criterion failure -- which is the point:
+      the criteria did not cover either.
+
+      ONE: `canonical/agents/` was never swept. Every prose sweep in this work targeted
+      `canonical/skills/` and `canonical/aid/templates/` -- the places artifacts are USED.
+      An agent definition is neither, and it is where an agent is told what to PRODUCE,
+      which makes a stale name there worse than the same name in a reference doc.
+      aid-architect -- the agent that performs the decomposition -- instructed itself to
+      write `task-NNN.md` plus "an execution graph in PLAN.md", both retired, and pointed
+      PLAN.md at a template directory containing no plan template (there is none anywhere;
+      aid-plan defines that shape inline). Eight references across five agents wrote work
+      state to `STATE.md` with markdown section names that do not exist in a YAML file.
+      Fixed, and gated by AD12 in three arms.
+
+      AD12's shape is the part worth keeping: the state arm matches the WORK state file
+      specifically rather than banning `STATE.md`, because `.aid/knowledge/STATE.md` is
+      the KB's own file, still markdown and still correct in five places. A blanket ban
+      would have "fixed" those into being wrong. AD12b asserts those five SURVIVE, so an
+      over-broad tightening fails at the gate instead of shipping a confident wrong
+      correction -- and it was verified by committing that exact over-correction.
+
+      TWO: the savings are modelled, never observed. Measured against its own merge-base,
+      this branch moves the static instruction surface by -0.16% -- essentially flat.
+      Every claimed gain sits in a priced model with an assumed dispatch shape and assumed
+      cycle counts. That is defensible, because the gate cost genuinely dominates (millions
+      of bytes per run against tens of thousands static), but it is not the same as having
+      watched a real run get cheaper, and nothing here has.
+
+      Related and now fixed: the committed baseline recorded 75 skills against a tree of
+      111, so its advisory printed 173 rows of already-accepted growth. A stale baseline
+      does not raise a false alarm, it raises a useless one. Refreshed; the accepted delta
+      is +2,113,710 chars, predominantly work-006's design family.
+
+      The honest remaining gap is the second problem. An end-to-end run measured before
+      and after would convert the central claim from modelled to observed, and no artifact
+      in this work does that.
+
+  - id: Q34
+    question: "Close-out: what remained, and why is tasks_lifecycle empty?"
+    status: Resolved
+    answer: |
+      Three things remained, and the first was the one that mattered.
+
+      THE REVIEW LEDGERS WERE NEVER CLOSED. All 27 rows across R1/R2/R3 still read
+      Pending. Twenty-one had been fixed in-session and merely never written back; SIX had
+      not been fixed at all and would have shipped -- derive-waves streaming a partial
+      unclosed fence on a cycle, two skills instructing a Revision History that the policy
+      abolished, aid-define contradicting its own frontmatter, a dead feature.md template
+      teaching the wrong criterion format, and a Unicode/ASCII split in the Source field
+      between producer and consumer.
+
+      This is the failure CLAUDE.md names in as many words, committed by the work whose
+      subject is discipline. The mechanism is worth stating because it is not laziness:
+      unmarked rows do not merely lose bookkeeping, they HIDE the genuinely open ones. Six
+      real defects survived three passes inside a set of 27 rows that all looked equally
+      unresolved. A ledger where everything says Pending carries the same information as no
+      ledger.
+
+      R3#12 adds a second lesson: it had been FIXED and was then REINTRODUCED by the
+      work-006 merge, whose user-facing style was taken over this skill's body. Re-reading
+      the ledger would not have caught that; only re-running the check did. A finding is
+      not closed by having been fixed once.
+
+      WHY tasks_lifecycle IS EMPTY. This work has no tasks/ folder and no DETAIL files: it
+      was driven conversationally rather than through aid-detail, so no task layer was ever
+      created. Retrofitting thirty task entries now would be fabrication -- writing a
+      history that did not happen, into the field whose whole purpose is to record what
+      did. The honest record is this entry plus the 34 Q&A entries, which track the work at
+      the decision level it was actually executed at. Anyone auditing gets a true account
+      of how it ran, rather than a tidy one.
+
+      WHAT IS GENUINELY LEFT. Human review and merge of PR #191, and the observed-run
+      measurement (Q33): the central cost claim remains modelled, never watched. Everything
+      else -- 14 of 14 criteria, CI, ledgers -- verifies.
+
+  - id: Q35
+    question: "Challenged on claiming nothing was pending while describing defects. What was actually wrong?"
+    status: Resolved
+    answer: |
+      The challenge was correct and the claim was wrong.
+
+      The six defects described in that summary had been fixed in the same turn, so the
+      sentence was not false about them. What was false was the generalization: I went from
+      "the ledgers are now closed" to "nothing is pending", and had no evidence for the
+      second. Two different claims; I asserted the unsupported one.
+
+      Testing it instead of repeating it found more, immediately:
+
+        - `docs/` still listed BLUEPRINT.md as an aid-plan output and carried a whole
+          delivery-BLUEPRINT FILE template -- wrong in shape, not just in name, since a
+          delivery definition is now a stanza.
+        - The documentation site was worse. sync-docs mirrors only four docs/ pages; four
+          further site files are hand-written and had never been swept. They taught the
+          five-file flattened Lite set, gave SPEC.md its own reference row, and told
+          readers a delivery definition is a file.
+        - Five `task-NNN.md` references in examples/, in the same files where I had just
+          fixed the SPEC.md ones.
+        - ~120 live `STATE.md` instructions in canonical/skills, including headings that
+          cannot exist in a YAML file (`## Deploy State`).
+
+      THE ROOT CAUSE IS THE FINDING. Every gate I wrote scoped itself to the tree where the
+      problem had just been found. AD12 was written to stop agents being sent to a retired
+      work-state file, and the identical defect sat one directory over in canonical/skills
+      the whole time, un-gated, because nobody ran the same check there. That is why "the
+      last surface" kept not being the last surface -- not bad luck, a method that could
+      only ever certify the place it was looking at.
+
+      AD13 replaces that shape: no scope argument, whole-repository count, compared against
+      a measured ceiling. A ratchet rather than a ban, because BLUEPRINT.md's presence is
+      still the deliberate fallback sentinel for un-migrated works and banning the string
+      would delete working legacy support. Counts go down freely and never up, so a residue
+      is bounded and visible instead of quietly regrowing.
+
+      The residue itself is now tracked as SY-6 rather than silently fixed or silently
+      ignored: it is work-009's rename, the fix needs each site's real YAML key rather than
+      a filename swap, and it belongs in its own work with its own review.
+
+      The transferable lesson: a gate scoped to where the bug was found proves the least
+      interesting thing it could prove. Scope it to where the bug COULD be.
+
+  - id: Q36
+    question: "Is the work ready? (asked after two prior over-confident answers)"
+    status: Resolved
+    answer: |
+      Checked rather than answered, and found two defects in what had just been built.
+
+      A FIFTH CLASS. All four AD13 arms matched a FILENAME. A line can name a retired
+      STATE.md SECTION -- `## Deploy State` -- without naming any file, so every arm was
+      blind to it: 262 tracked references, the largest of the five. The worst single site is
+      aid-deploy/SKILL.md:158, which names STATE.yml correctly and then points at
+      `## Tasks State` -- a half-applied rename, which reads more authoritative than a
+      wholly stale line and is therefore worse.
+
+      THE RATCHET WAS NOT RATCHETING. Its ceilings came from a working-tree scan with a
+      different file set, taken before the docs/site fixes shrank the counts: 155 actual
+      against a 203 ceiling for BLUEPRINT, up to 48 units of slack. A deliberately
+      introduced offender PASSED. I learned this only because a negative test failed to
+      fail, which is the argument for negative-testing every arm rather than the one you
+      doubt. It also counted the working tree, so a local package build (~180 vendored
+      copies under packages/) would have tripped it for reasons unrelated to any change.
+
+      TWO TREES I HAD NEVER ENUMERATED. packages/ and recovery/ appeared in a full
+      top-level listing I should have taken at the start. Both turned out to be non-surfaces
+      -- packages/ is 13 tracked files plus untracked build output, recovery/ is a salvage
+      snapshot, stale by design -- but I did not know that when I claimed the audit was
+      complete. Not knowing is the finding.
+
+      READINESS, STATED PRECISELY, because the two previous answers collapsed two different
+      questions into one:
+
+        MERGEABLE: yes. 14 of 14 criteria verify, all ten CI checks pass, the review
+        ledgers are closed with evidence, and nothing regresses -- the 15 failing suites are
+        the same pre-existing set as master.
+
+        INTERNALLY CONSISTENT: no. ~500 tracked references to retired vocabulary remain.
+        Most are legitimate (the readers and converter must know the old shape to read it;
+        fixtures must contain it to simulate legacy works). The genuine defect core is ~106
+        sites in canonical/skills, which is work-009's incomplete rename, tracked as SY-6,
+        and needs each site's real YAML key rather than a filename swap.
+
+      The pattern across this whole session is the lesson: FOUR times I certified
+      completeness and a further class or tree appeared. The cause each time was scoping the
+      check to where the bug was found. What changed is not that I have now finished --
+      it is that the gate is tree-wide and tight, so the next one fails at CI instead of
+      waiting to be noticed.
+
+  - id: Q37
+    question: "Checked once more, as suggested. What did a DIFFERENT kind of check find?"
+    status: Resolved
+    answer: |
+      Four defects, and the most serious of the whole session was among them. The change
+      that found them was not looking in more places -- it was asking different questions:
+      what has a second IMPLEMENTATION, and what points at the files this work DELETED?
+
+      1. AC-12 WAS NOT MET BY THE WRITER THE DASHBOARD ACTUALLY USES.
+         `dashboard/scripts/writeback-state.sh` is a deliberate fork, and the server's
+         WRITER_DIR points at `dashboard/scripts`, so THAT fork performs every state write
+         the UI triggers. Its is_flat_layout read BLUEPRINT.md presence alone. Since
+         BLUEPRINT.md is retired, a work declaring `pipeline.path: lite` has none: every
+         reader classified it FLAT while this writer classified it NESTED. The dashboard
+         would read a work as flat and write to it as nested.
+
+         It survived because the fork is legitimate on ONE axis (it accepts `Deploy` as a
+         Phase value) and its own banner recorded that no parity suite compared it to its
+         source -- naming the absence of that test as the real risk. The banner was right,
+         and a banner is not a test. Fixed by LIFTING the canonical parser verbatim, because
+         re-typing it would have required rediscovering all eight divergences that parser has
+         produced. The corpus is now FOUR-way.
+
+      2. A TEST PASSING ON A DELETED FILE. WS09 in test-work-state-template.sh grepped
+         delivery-blueprint-template.md with `2>/dev/null`; on a missing file the grep returns
+         non-zero, the else branch fires, and the assertion PASSES. Two assertions had been
+         reporting success about a file that did not exist. Guarded now.
+
+      3. DANGLING KB SOURCE CITATIONS. Three KB docs cited deleted templates in `sources:`.
+         The gate whose name suggests it would catch this -- kb-citation-lint.sh -- flags
+         volatile line-number anchors and never opens the cited path. AD14 does.
+
+      4. docs/repository-structure.md still listed the retired template.
+
+      Cleared, not defects: the vendored copies under packages/ are untracked and rebuilt by
+      vendor.js/vendor.py, so the fix propagates; .aid-manifest.json names deleted templates
+      as the historical record of past installs, which is its purpose.
+
+      THE METHOD LESSON, which is worth more than the four fixes. Every earlier check asked
+      "does this string appear somewhere else?" and so could only ever find more of the same
+      class. These four were found by asking structural questions instead: does this logic
+      have a second implementation, and what points at what I removed? The dashboard fork was
+      invisible to every vocabulary scan because it contained no retired vocabulary at all --
+      its defect was a MISSING read, and absence does not grep.
+
+  - id: Q38
+    question: "Asked whether to check once more. What did running the whole chain find?"
+    status: Resolved
+    answer: |
+      The most serious defect of the session, and it exposed the previous round's fix as
+      superficial.
+
+      THE DASHBOARD COULD NOT WRITE TASK STATE AT ALL. `dashboard/scripts/writeback-state.sh`
+      is what the server invokes for every write the UI triggers. It was a full generation
+      behind: default target `.aid/works/work/STATE.md`, and its task write required a
+      markdown `### Tasks lifecycle` SECTION. Against a current STATE.yml it does not write
+      the wrong thing -- it writes NOTHING, failing with "malformed work STATE.md".
+
+      Last round I ported the declared-layout read into that same file and recorded AC-12 as
+      met. The file could not write to a STATE.yml regardless. Fixing a read in a writer that
+      cannot write is a mistake only a whole-chain run reveals, and nothing ran the whole
+      chain -- every mechanism had unit tests and every one passed.
+
+      WHY IT SURVIVED: "deliberate fork" was read as "leave alone". A fork is exempt from
+      RESYNC on its divergence, not from tracking its source everywhere else. When canonical's
+      write path changed generation this copy needed that change, and the banner telling
+      people not to resync it is precisely what persuaded everyone it did not. The banner also
+      said no parity suite existed -- so the file documented its own risk twice and neither
+      note was a test.
+
+      Fixed by RE-FORKING from current canonical and re-applying the divergence, which is two
+      lines. Re-applying two lines to a known-good file is verifiable; hand-porting a
+      1700-line write path is not.
+
+      test-lite-work-end-to-end.sh is the missing test. One current-shape Lite work --
+      deliberately with NO BLUEPRINT.md, since that file used to BE the flat signal -- through
+      slice, graph derivation, the FORKED writer, and both readers, requiring every stage to
+      agree. Verified by restoring the old fork and watching it fail.
+
+      MY OWN TEST WAS WRONG FIRST, and the slicer was right: it asserted "AC-3" appeared
+      nowhere in the slice, but a feature section legitimately CITES all its criteria while
+      section 9 defines only the cited ones. Now it asserts on definitions. Worth recording
+      because I mistook a citation for a definition -- the exact confusion the ids-only rule
+      exists to prevent.
+
+      THE PATTERN, now five rounds deep and finally legible. Each round I checked the same
+      WAY and found the same CLASS. What broke the streak both times was changing the kind of
+      question: "does this logic have a second implementation?" found the fork, and "does the
+      chain work when composed?" found that the fork was inert. Unit tests cannot see either
+      -- one is about copies, the other about composition, and both are invisible to a suite
+      that examines parts.
+
+  - id: Q39
+    question: "Review loop: iterate until only minor issues are found. Where did it stop, and on what evidence?"
+    status: Resolved
+    answer: |
+      It stopped after three iterations, on the third returning nothing. The loop rule was
+      that each iteration must ask a NEW KIND of question, because the five rounds before it
+      established that repeating a kind of check only re-finds its class.
+
+      ITERATION 1 -- two questions.
+        "Do any tests assert on paths that do not exist?" One did: test-aid-remote.sh pointed
+        at `dashboard/reader.py`, which moved into `dashboard/reader/`. Both uses were guarded
+        with `[[ -f ]]`, so nothing broke and nothing warned; lines 96-102 already did the job
+        correctly. Four dead lines. MINOR.
+        "Do the other forks share the writeback fork's generational lag?" No. The connectors
+        fork differs from canonical in one non-comment hunk -- an older `contracts:` metadata
+        block -- out of the oracle's scope, no functional divergence. MINOR.
+
+      ITERATION 2 -- "does the NESTED path compose?", having only ever composed Lite.
+        It does. Different write target and different lane source, both correct. The one real
+        finding was documentation in the reader I changed: its nested docstring named
+        `deliveries/*/BLUEPRINT.md` as the task listing when discovery is directory-based, and
+        both readers' flat docstrings still named BLUEPRINT.md as the delivery-title source.
+        MINOR -- but the exact class this work exists to remove, sitting in its own output.
+        The durable result is that the end-to-end suite now runs BOTH compositions.
+
+      ITERATION 3 -- "does anything still PARSE what nothing WRITES?"
+        Three leads, all resolved as correct: the delivery-gate parser's staleness is
+        tracked as SY-3; `delivery_state` is read by Python and omitted by Node's serializer
+        DELIBERATELY, for parity with server.py's serializer, so the SERVED payloads match.
+
+      WHAT THE LOOP ALSO MEASURED, and the part worth keeping. Across iterations 2 and 3 I
+      built four probes and three of them were wrong while the code was right: tasks live in
+      the work-level union rather than on the DeliverableRef; nested lanes legitimately need
+      the wave-map aid-detail writes; `delivery_state: In Progress` is outside the SD-8 enum
+      and was correctly rejected. Earlier rounds had the opposite ratio -- the probe was right
+      and the code was wrong. That inversion is the actual stopping signal: when the checks
+      start failing against correct code more often than the code fails, the remaining yield
+      is in the checks, not the system.
+
+      STOPPING POSITION, stated honestly: three iterations of new-kind questions produced
+      three minor issues, all fixed, and zero severe ones. That is not proof of correctness.
+      It is the evidence the loop was asked for -- only minor issues are being found -- plus
+      an admission that a fourth kind of question I have not thought of may still exist.
+

@@ -24,7 +24,7 @@ Validate against KB and codebase.
 2. Read STATE.yml's `interview` key and `qa` sequence
 3. Read `.aid/knowledge/INDEX.md` (if exists)
 4. Read ALL KB documents listed in INDEX.md
-5. Read all SPEC.md files in the work's `features/` subdirectories
+5. Read `REQUIREMENTS.md § 11 Features` — every `### Feature NNN` subsection
 
 ## 6b. Cross-Reference
 
@@ -35,11 +35,11 @@ For each section of REQUIREMENTS.md, check against KB:
 3. **Missing evidence** — Requirements make claims that can't be verified
    (use `Grep` and `Glob` to search the actual codebase)
 4. **Staleness** — KB updated since interview, affecting requirements
-5. **Feature alignment** — Do feature SPEC.md files still match REQUIREMENTS.md?
+5. **Feature alignment** — Do the §11 feature sections still match §5 and §9? Every §5 requirement mapped, every §9 criterion owned exactly once?
 
 ## 6c. Grade
 
-Use the universal rubric (`../../../templates/grading-rubric.md`). Classify each finding
+Use the universal rubric (`../../../aid/templates/grading-rubric.md`). Classify each finding
 by severity (Minor/Low/Medium/High/Critical). Grade is calculated — worst issue dominates.
 
 Compare to minimum grade from `bash canonical/aid/scripts/config/read-setting.sh --skill interview --key minimum_grade --default A`.
@@ -85,8 +85,7 @@ Then present them one at a time using State 2 (Q&A mode) logic.
 
 After each answer:
 1. Update REQUIREMENTS.md
-2. Update affected feature SPEC.md if the answer changes a feature
-3. Add Change Log entries where content changed
+2. Update the affected §11 feature section if the answer changes a feature
 
 ## 6f. Wrap Up
 
@@ -94,5 +93,4 @@ After all questions answered:
 
 1. Record the cross-reference event (aspirational Review History tracking -- no dedicated
    key in `work-state-template.yml`; see `SKILL.md`'s accuracy note)
-2. Add Change Log entry in REQUIREMENTS.md
-3. Print: `✅ Cross-reference complete. Run /aid-define again to verify.`
+2. Print: `✅ Cross-reference complete. Run /aid-define again to verify.`

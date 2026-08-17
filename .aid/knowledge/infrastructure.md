@@ -317,6 +317,3 @@ bash release.sh --version "$(tr -d '[:space:]' < VERSION)"
 aid dashboard start node --port 8799
 aid dashboard stop
 ```
-
----
-

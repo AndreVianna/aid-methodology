@@ -46,9 +46,8 @@ never a remove-then-add pair.
    Usage: aid-set-connector <tool> <type>   (type: mcp | api | ssh | cli)
    Example: aid-set-connector Jira mcp
    ```
-2. `<type>` MUST be one of the closed enum `mcp | api | ssh | cli` (feature-001 Data Model,
-   `.aid/work-002-external_sources/features/feature-001-integration-store-placement/SPEC.md`
-   "Data Model"). An unrecognized value is **refused, not coerced** — e.g. `db` is not a value:
+2. `<type>` MUST be one of the closed enum `mcp | api | ssh | cli`.
+   An unrecognized value is **refused, not coerced** — e.g. `db` is not a value:
    ```
    Unknown type: <type>   (expected one of: mcp, api, ssh, cli)
    ```

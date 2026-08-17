@@ -6,6 +6,13 @@ All sections are Complete or N/A in STATE.md `## Interview State`; run quality c
 
 Before presenting for approval, verify:
 - [ ] All "Must" requirements in §5 have acceptance criteria in §9
+- [ ] **Every criterion in §9 names an observable** — a command and its expected
+      result, a file and its content, a count, a threshold, or a user-visible
+      behaviour plus how to reproduce it. A judgment criterion must state what is
+      judged and against what standard. Anything nothing could falsify is not a
+      criterion; send it back rather than approving it
+      (`.codex/aid/templates/requirements/requirements-template.md
+      § Verifiable Acceptance Criteria`)
 - [ ] No contradictions between sections
 - [ ] Scope (§4) is consistent with Functional Requirements (§5)
 - [ ] Constraints (§7) don't conflict with requirements
@@ -39,7 +46,7 @@ After hydration is complete, proceed to the summary.
 Before presenting the approval summary, compose the work's **Name** and **Description**
 and present them to the user for confirmation. These values will be written into the
 `- **Name:**` / `- **Description:**` block in `REQUIREMENTS.md` (placed immediately after
-the `# Requirements` H1, before `## Change Log`).
+the `# Requirements` H1, before `## 1. Objective`).
 
 **How to compose:**
 
@@ -114,7 +121,6 @@ Is there anything else we should consider, or are the requirements ready?
 
 - **[1] Approved:**
   - Set `**Interview State:** Approved` in STATE.md `## Interview State`
-  - Add Change Log entry in REQUIREMENTS.md: `| {today} | Interview complete — approved | /aid-describe |`
   - Add Review History entry in STATE.md `## Interview State`
   - Update `.aid/knowledge/INDEX.md` and `.aid/knowledge/README.md`
     if they exist

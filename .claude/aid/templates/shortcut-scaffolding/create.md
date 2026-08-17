@@ -70,7 +70,7 @@ activate none beyond the mandatory three):
 ## DETAIL -- default task breakdown, per artifact
 
 Every task chain below is one type per task (`artifact-schemas.md § Task
-SPEC.md` -- never mixed), natural ordering
+DETAIL.md` -- never mixed), natural ordering
 MIGRATE first when present, then RESEARCH -> DESIGN -> IMPLEMENT -> TEST ->
 DOCUMENT. This table is the **canonical artifact matrix** the `aid-update`/
 `aid-refactor` family (`shortcut-scaffolding/change-refactor.md`) inherits by
@@ -118,7 +118,5 @@ standalone test-authoring request). Modifying an **existing** artifact is
   how this file is looked up and what happens when it is absent
 - `.claude/aid/templates/shortcut-scaffolding/change-refactor.md` -- inherits
   this file's artifact matrix, modify-framed
-- `features/feature-006-create-family/SPEC.md` (work-001-lite-aid-skills) --
-  the settled design this reference implements
 - `.aid/knowledge/artifact-schemas.md § Task DETAIL.md` -- the one-type-per-task
   contract

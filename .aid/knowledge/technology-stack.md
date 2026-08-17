@@ -257,6 +257,3 @@ imports needed at runtime) — CONFIRMED by the empty PyPI dependency set and
 
 No EOL or known-CVE runtime dependency was observed (the CLI ships none). See
 `tech-debt.md` for risk items beyond versioning.
-
----
-

@@ -232,15 +232,16 @@ operation requires.
    configured `MaxConcurrent` from step 1 as the effective value.
 
 3. **Locate the Execution Graph:**
-   - **Flat path (feature-001, single-delivery)** — detected by: a work-root
-     `BLUEPRINT.md` present AND `tasks/task-NNN/DETAIL.md` present directly
-     under the work root AND no `deliveries/` wrapper under it → read the
+   - **Flat path (feature-001, single-delivery)** — detected by `pipeline.path: lite`
+     in the work-root `STATE.yml`, or for an un-migrated work by
+     `tasks/task-NNN/DETAIL.md` present directly under the work root AND no
+     `deliveries/` wrapper under it → read the
      top-level `## Execution Graph` from the work-root `PLAN.md` (no
      `### delivery-NNN` heading; the single delivery is implicit).
    - **Full path** — otherwise, if `PLAN.md` exists in the work directory → read
      the `#### Execution Graph` block from the delivery's section.
-   - Otherwise (lite path) → read the equivalent block from the work-root
-     `SPEC.md`.
+   - Otherwise (lite path) → there is no stored graph; derive it with
+     `derive-waves.sh --from-tasks .aid/works/{work}`.
    - Parse the `| Task | Depends On |` table into an in-memory dependency map.
 
 ### PD-1: Initialize State

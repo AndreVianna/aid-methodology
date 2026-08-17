@@ -60,9 +60,9 @@ PROTOCOL="${REPO_ROOT}/canonical/aid/templates/connectors/consumption-protocol.m
 WORK_TPL="${REPO_ROOT}/canonical/aid/templates/work-state-template.yml"
 DELIVERY_TPL="${REPO_ROOT}/canonical/aid/templates/delivery-state-template.yml"
 TASK_TPL="${REPO_ROOT}/canonical/aid/templates/task-state-template.yml"
-SPEC_TPL="${REPO_ROOT}/canonical/aid/templates/specs/spec-template.md"
+FEATURE_TPL="${REPO_ROOT}/canonical/aid/templates/requirements/requirements-template.md"
 
-for f in "$PROTOCOL" "$WORK_TPL" "$DELIVERY_TPL" "$TASK_TPL" "$SPEC_TPL"; do
+for f in "$PROTOCOL" "$WORK_TPL" "$DELIVERY_TPL" "$TASK_TPL" "$FEATURE_TPL"; do
     if [[ ! -f "$f" ]]; then
         fail "CL00 setup -- required file not found: $f"
         test_summary
@@ -121,8 +121,8 @@ assert_file_contains "$TASK_TPL" "ticket_ref: --" \
     "CL08e task-state-template.yml carries the optional ticket_ref key"
 assert_file_contains "$TASK_TPL" "{connector-stem}:{external-id}" \
     "CL08e2 task-state-template.yml documents the ticket_ref value format"
-assert_file_contains "$SPEC_TPL" '**Ticket:** {connector-stem}:{external-id}' \
-    "CL08f spec-template.md carries the optional Ticket line (SPEC.md has no frontmatter block)"
+assert_file_contains "$FEATURE_TPL" '**Ticket:** {connector-stem}:{external-id}' \
+    "CL08f the feature section carries the optional Ticket line (a body line, not frontmatter)"
 
 # ===========================================================================
 # resolve_ticket_ref UNIT_TYPE OWN FEATURE DELIVERY WORK HAS_OWNING_FEATURE

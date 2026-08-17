@@ -282,8 +282,7 @@ different purposes:
 | Domain (Step 0cx) | languages, dir shape, notable files, concepts | `## Discovery Domain` | doc-set matrix lookup (Step 0d) |
 | Path (Step 0f) | source-file count, LOC, dirs, concept count | `## Discovery Triage` | fan-out depth (Steps 1-5) |
 
-Step 0f path-triage **stays in discovery** (resolved; delivery-010 STATE Q1 — see §7 of
-feature-014/SPEC.md). Do not re-decide this boundary.
+Step 0f path-triage **stays in discovery** (a resolved boundary). Do not re-decide it.
 
 ### Step 0d: Propose & Confirm Doc-Set (matrix-or-research)
 
@@ -978,14 +977,15 @@ Then **CHAIN -> Step 6.**
 
 The orchestrator generates these directly — they require reading across all KB documents.
 
-**.aid/knowledge/README.md** — completeness tracking table and revision history:
+**.aid/knowledge/README.md** — completeness tracking table:
 - Table with all declared documents, status, and notes
-- Revision history table with dates and update descriptions
+- NO revision-history table. KB docs carry no change-log apparatus; git records
+  per-doc history with author, date and diff.
 
 **.aid/knowledge/INDEX.md** — 2-3 line summary of every declared KB document for agent self-service.
 Regenerate on every discovery run.
 
-**.aid/knowledge/feature-inventory.md** — copy template from `../../templates/feature-inventory.md`.
+**.aid/knowledge/feature-inventory.md** — copy template from `../../../aid/templates/feature-inventory.md`.
 Populated during Q&A → FIX cycle, but must exist for state machine. (For a non-software domain
 the C9 doc may instead be `capability-inventory.md` / `content-inventory.md` etc. per the
 declared set — copy whichever C9 orchestrator-owned doc the doc-set declares; it must exist for

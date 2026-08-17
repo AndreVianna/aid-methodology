@@ -354,12 +354,3 @@ conversation, not a questionnaire.
 
 See `canonical/skills/aid-describe/references/elicitation-engine.md` for the full
 five-step next-move selector and the stop check.
-
----
-
-## Change Log
-
-| Rev | Date | Source | Description |
-|-----|------|--------|-------------|
-| 1.0 | 2026-06-27 | task-011 (IMPLEMENT) | Initial authoring: ten moves + gap-type firing table, grounded in findings.md RQ-B1 and feature-002 SPEC. |
-| 1.1 | 2026-06-27 | work-001-aid-describe-improvements delivery-003 task-041 | G3 verbatim-wording rule added to Move 2: canonical label must echo the user's term; explicit rename with rationale required; silent substitution not permitted |

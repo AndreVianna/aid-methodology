@@ -1,12 +1,13 @@
 ---
 name: aid-define
 description: >
-  Decompose approved requirements into discrete feature folders, each with its own SPEC.md
-  stub. Use this skill once `/aid-describe` has produced an approved REQUIREMENTS.md and the
-  work needs splitting into features before any one of them is specified. It turns each
-  functional requirement into a feature, then validates the requirements and the feature
-  boundaries against the Knowledge Base and the codebase, and halts ready for
-  `/aid-specify`.
+  Decompose approved requirements into discrete features, each recorded as a
+  `### Feature NNN` section of REQUIREMENTS.md § 11 that cites the `AC-N` criteria it
+  claims. Use this skill once `/aid-describe` has produced an approved REQUIREMENTS.md
+  and the work needs splitting into features before any one of them is specified. It
+  turns each functional requirement into a feature, then validates the requirements and
+  the feature boundaries against the Knowledge Base and the codebase, and halts ready
+  for `/aid-specify`.
 allowed-tools: Read, Glob, Grep, shell, Write, Edit
 argument-hint: "[work-001] decompose approved requirements  [--features work-001] re-run feature decomposition"
 ---
@@ -23,8 +24,9 @@ aid-define is **multi-agent** — different states use different agents.
 | 6 CROSS-REFERENCE | Cross-Reference & Refine | `aid-reviewer` | Adversarial validation against KB and codebase |
 | 7 DONE | DONE | (no dispatch) | Terminal state, user choice prompt |
 
-Decompose approved `REQUIREMENTS.md` into feature folders, then cross-reference the
-result against the Knowledge Base and codebase. Produces per-feature `SPEC.md` stubs
+Decompose approved `REQUIREMENTS.md` into `### Feature NNN` sections under § 11, then
+cross-reference the
+result against the Knowledge Base and codebase. Produces `REQUIREMENTS.md §11` feature sections
 ready for `/aid-specify`.
 
 **Precondition:** `## Interview State: Approved` must be present in `.aid/works/{work}/STATE.md`.
@@ -37,10 +39,10 @@ approve requirements.
   knowledge/           <- shared KB (populated by /aid-discover)
   work-001-name/
     STATE.md           <- process (Interview State: Approved, Cross-Reference, Features State)
-    REQUIREMENTS.md    <- approved requirements (produced by /aid-describe)
-    features/          <- created by FEATURE-DECOMPOSITION
-      feature-001-name/
-        SPEC.md        <- requirements side (from Interview) + tech spec (added by /aid-specify)
+    REQUIREMENTS.md    <- approved requirements (/aid-describe) + §11 Features
+                          (this skill) + each feature's Technical Specification
+                          (/aid-specify). Features are sections; they have no
+                          folders and no files of their own.
 ```
 
 > **Accuracy note.** `interview.state`/`interview.grade`/`interview.sections[]` are real
@@ -52,8 +54,8 @@ approve requirements.
 > this is a schema gap surfaced by the refactor, not something this DOCUMENT task resolves.
 > Cross-phase Q&A entries themselves DO have a real target: the `qa` sequence.
 
-**First run (after approval):** Decompose functional requirements into feature folders.
-**After features created:** Cross-reference REQUIREMENTS.md against KB, grade, ask questions.
+**First run (after approval):** Decompose functional requirements into `REQUIREMENTS.md`
+§11 feature sections.
 **After cross-reference:** DONE — ready for `/aid-specify`.
 **Re-run decomposition:** pass `--features {work}` to re-run even if features exist.
 
@@ -182,7 +184,7 @@ All paths below are relative to `.aid/works/{work}/`.
 ```plaintext
 Precondition: Interview State: Approved in STATE.md -- HALT if not met (see below)
 State 5:  **Path:** full, Interview State: Approved,
-          no feature folders                                        -> FEATURE-DECOMPOSITION
+          no § 11 feature sections                                 -> FEATURE-DECOMPOSITION
 State 6:  **Path:** full, Interview State: Approved, features exist,
           cross-reference not yet done                             -> CROSS-REFERENCE
 State 7:  **Path:** full, Interview State: Approved, features +
@@ -197,9 +199,9 @@ State 7:  **Path:** full, Interview State: Approved, features +
    - HALT
 3. If State is `Approved`:
    - If `--features` flag provided → **State 5: FEATURE-DECOMPOSITION**
-   - Check if `features/` directory exists and contains `feature-*` subdirectories
-   - If no feature folders → **State 5: FEATURE-DECOMPOSITION**
-   - If feature folders exist:
+   - Check if `REQUIREMENTS.md § 11 Features` exists and contains `### Feature NNN` subsections
+   - If no feature sections → **State 5: FEATURE-DECOMPOSITION**
+   - If feature sections exist:
      - Check STATE.md `## Interview State` `## Cross-Reference` sub-section for `**State:** Complete`
        (or check if cross-reference entries exist from a prior run)
      - If cross-reference not yet done → **State 6: CROSS-REFERENCE**
@@ -209,7 +211,7 @@ Print the state-entry line and "you are here" map. Examples for each state:
 
 **FEATURE-DECOMPOSITION:**
 ```
-[State: FEATURE-DECOMPOSITION] — Decompose approved requirements into discrete feature folders.
+[State: FEATURE-DECOMPOSITION] — Decompose approved requirements into § 11 feature sections.
 aid-define  ▸ you are here
   (from /aid-describe: COMPLETION -> approved REQUIREMENTS)
   [● FEATURE-DECOMPOSITION ] → [ CROSS-REFERENCE ] → [ DONE ] → [ /aid-specify ]
@@ -240,6 +242,6 @@ aid-define  ▸ you are here
 | DONE | `references/state-done.md` | `inline` | → halt |
 
 On state entry, print `[State: NAME]` + the "you are here" map from State Detection above.
-When a state completes, route by its `**Advance:**` type (per [`state-machine-chaining.md`](../../templates/state-machine-chaining.md)):
+When a state completes, route by its `**Advance:**` type (per [`state-machine-chaining.md`](../../aid/templates/state-machine-chaining.md)):
 - **CHAIN** → begin the next state's reference doc within the same invocation; no exit.
 - **HALT** → print the closing summary and exit.

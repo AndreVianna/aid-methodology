@@ -77,7 +77,7 @@ assert_output_contains "$DOC_TXT" \
     'The hand-authored collapse body produces the document **directly** and emits no separate' \
     "DFS02a collapse produces the document directly, emits no separate SPEC.md"
 assert_output_contains "$DOC_TXT" \
-    'there is no `## Technical Specification` to activate and no schema change' \
+    'there is no `#### Technical Specification` to activate and no schema change' \
     "DFS02b no ## Technical Specification to activate (no schema change)"
 
 # DFS-03: DETAIL -- the collapse emits no task or SPEC artifact (aid-create-document writes

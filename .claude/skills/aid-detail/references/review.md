@@ -1,6 +1,6 @@
 # REVIEW — Re-review Existing Tasks
 
-Existing task files found; re-review against current PLAN.md and SPECs.
+Existing task files found; re-review against current PLAN.md and feature sections.
 
 Load `references/task-decomposition.md` for task type rules, file format, and quality criteria.
 
@@ -17,18 +17,19 @@ If user confirms → continue below.
 If user has a specific concern → record it as context for the review.
 
 Enter **the same loop at step 4** — review tasks against
-current PLAN.md and SPECs.
+current PLAN.md and feature sections.
 
 ### Load Current State
 
-Re-read PLAN.md, all feature SPECs, all existing task files.
+Re-read PLAN.md, every `### Feature NNN` section of REQUIREMENTS.md § 11, and all
+existing task files.
 
 ### Review Each Deliverable's Tasks
 
 For each deliverable, check its corresponding tasks:
 
 1. **PLAN.md changed** — deliverables added, removed, resequenced?
-2. **SPECs changed** — feature content updated since tasks were written?
+2. **Feature sections changed** — feature content updated since tasks were written?
 3. **Orphan tasks** — tasks referencing deliverables/features that no longer exist?
 4. **Missing tasks** — new deliverables/features with no corresponding tasks?
 5. **Sequence broken** — task order invalid given changes?

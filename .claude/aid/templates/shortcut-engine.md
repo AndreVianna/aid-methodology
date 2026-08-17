@@ -3,8 +3,7 @@
 The single shared engine every thin shortcut doorway (`.claude/skills/aid-<name>/
 SKILL.md`) delegates to. Implements the state machine **INTAKE -> CAPTURE -> SPEC ->
 PLAN -> DETAIL** -- the definition phases (Describe -> Define -> Specify -> Plan ->
-Detail) collapsed into one fast, mostly-autonomous run -- per
-`features/feature-003-direct-entry-shortcut-engine/SPEC.md § Feature Flow`. It produces
+Detail) collapsed into one fast, mostly-autonomous run. It produces
 the **full** flattened artifact set (feature-001 shape); it never skips a phase, it
 collapses the information capture within each phase. It never executes -- Execute is a
 separate, user-initiated `/aid-execute`.
@@ -23,7 +22,7 @@ four bound values before the state machine below starts:
 
 | Value | Source | Notes |
 |---|---|---|
-| `{name}` | the invoking doorway's own directory/skill name (e.g. `aid-create-api`) | used for the catalog lookup, `STATE.yml` Active Skill, and every Change Log `Source` field (`/{name}`) |
+| `{name}` | the invoking doorway's own directory/skill name (e.g. `aid-create-api`) | used for the catalog lookup and the `STATE.yml` Active Skill field |
 | `{verb}` | the doorway body's binding | dispatch key; drives the family scaffolding lookup |
 | `{artifact}` | the doorway body's binding (may be `""` for a bare verb) | narrows the family scaffolding lookup |
 | `{description}` | the user's free-text argument (`argument-hint`) | may be absent/empty -- see CAPTURE Step 1 |
@@ -146,10 +145,8 @@ SPEC-deciding ones, because the route (`{verb, artifact}`) is already fixed by t
 
 Code-settled; no enum change (extending the 8-type enum is a lockstep break across
 `grade.sh`, both dashboard reader twins, and every grading skill --
-`artifact-schemas.md § Contracts`). Reproduced from
-`features/feature-003-direct-entry-shortcut-engine/SPEC.md`; the authoritative value
-for any given shortcut is always its own catalog row's `default_type` field, not a
-re-derivation from this table:
+`artifact-schemas.md § Contracts`). The authoritative value for any given shortcut is
+always its own catalog row's `default_type` field, not a re-derivation from this table:
 
 | Verb (representative) | Default task Type | Note |
 |---|---|---|
@@ -272,8 +269,8 @@ enumeration returned no records at all (the same allocation rule `aid-describe` 
 its `SKILL.md § Task Routing`). **Never** re-scan a local `.aid/works/` glob for this
 number: the worktree about to be created is freshly branched off `master`, which tracks no
 `.aid/works/` at all, so a fresh local glob inside it would find nothing and re-allocate a
-colliding `work-001` (`work-initiation-gate.md § 3a`; `feature-002/SPEC.md § Next-work-NNN
-derivation`). Derive a short kebab-case slug:
+colliding `work-001` (`work-initiation-gate.md § 3a`, "Next-work-NNN derivation").
+Derive a short kebab-case slug:
 
 - From `{description}` when it is non-empty (first few salient words, kebab-cased,
   the same style as any other AID work-folder name).
@@ -422,15 +419,18 @@ the family scaffolding pointer (or "none landed yet"). The agent writes
   `**Name:**` a concise Title-Case title (no trailing period; derived from the
   description/verb+artifact, NOT the `work_id` slug); `**Description:**` exactly one
   sentence (no trailing period).
-- **`## Change Log`**: `| {today} | Initial capture (shortcut: {name}) | /{name} |`.
 - **All 10 numbered sections**, terse but complete: fill every section the captured
   information (Steps 1-3) actually answers; sections genuinely not addressed
   (typically §6 Non-Functional Requirements, §7 Constraints for a small
   shortcut-scoped change) get `*(pending)*` or `N/A` per
   `requirements-template.md`'s own conventions -- never fabricate content to avoid a
-  placeholder. §9 Acceptance Criteria MUST be concrete and testable (Given/When/Then
-  where natural); §10 Priority defaults to `Must` unless the description says
-  otherwise.
+  placeholder. §9 Acceptance Criteria MUST each name an observable -- a command and
+  its expected result, a file and its content, a count, a threshold, or a
+  user-visible behaviour plus how to reproduce it (Given/When/Then where natural,
+  because it forces the observable into the `then`). A judgment criterion must state
+  what is judged and against what standard; a criterion nothing could falsify is not
+  one (`requirements-template.md § Verifiable Acceptance Criteria`). §10 Priority
+  defaults to `Must` unless the description says otherwise.
 
 ### Step 4b: Connector awareness — record a source ticket's `ticket_ref` (optional)
 
@@ -464,10 +464,17 @@ single-writer convention as every other entry below):
 
 ## State: SPEC
 
-Collapses **Define + Specify**. Authors the single work-root `SPEC.md` (feature-001
-shape: the requirements-half + `## Technical Specification`) -- no feature
-decomposition (no `features/` folder), no cross-reference state (single feature;
-`aid-define`'s CROSS-REFERENCE is a full-path-only concern). FR-3, FR-5, AC-4.
+Collapses **Define + Specify**. Writes the single `### Feature 001` section into
+`REQUIREMENTS.md § 11` -- no separate spec document, no feature decomposition, no
+cross-reference state (single feature; `aid-define`'s CROSS-REFERENCE is a
+full-path-only concern). FR-3, FR-5, AC-4.
+
+There is no requirements-half to synthesize here. The description, user stories,
+priority and acceptance criteria already exist in `REQUIREMENTS.md` §1 / §5 / §9 / §10,
+authored by CAPTURE; the feature section CITES them by `AC-N` id and adds only what
+Specify actually decides -- the technical specification. Restating them would create a
+second copy of the same facts inside the same file, which is the failure this fold
+exists to remove.
 
 ### Step 1: Emit pipeline phase
 
@@ -481,34 +488,35 @@ bash .claude/aid/scripts/execute/writeback-state.sh --pipeline --field Updated -
 uses for per-state phase emission, e.g. `aid-detail`'s
 `.claude/skills/aid-detail/references/first-run.md § Step 0`.)
 
-### Step 2: Dispatch aid-architect to author SPEC.md
+### Step 2: Dispatch aid-architect to author the feature section
 
 Dispatch `aid-architect` (Large) with: `REQUIREMENTS.md` (just written), the KB
-pointer, and the family scaffolding pointer's SPEC-section-activation guidance (which
-conditional `## Technical Specification` sections this `{verb, artifact}` activates --
-e.g. an `api` artifact activates `### API Contracts`, a `data-model` artifact
-activates `### Migration Plan`; fall back to the mandatory three
-(`### Data Model`, `### Feature Flow`, `### Layers & Components`) with no conditional
-sections when no family file has landed yet). The agent writes `.aid/works/{work}/SPEC.md`
-seeded from `.claude/aid/templates/specs/spec-template.md`:
+pointer, and the family scaffolding pointer's section-activation guidance (which
+conditional `#### Technical Specification` subsections this `{verb, artifact}`
+activates -- e.g. an `api` artifact activates `##### API Contracts`, a `data-model`
+artifact activates `##### Migration Plan`; fall back to the mandatory three
+(`##### Data Model`, `##### Feature Flow`, `##### Layers & Components`) with no
+conditional subsections when no family file has landed yet). The agent appends to
+`.aid/works/{work}/REQUIREMENTS.md § 11 Features`:
 
-- `# {Feature Title}` (the same title as the REQUIREMENTS.md identity block).
-- `## Change Log`: `| {today} | SPEC authored from REQUIREMENTS.md | /{name} |`.
-- `## Source`: cite the REQUIREMENTS.md sections this SPEC draws from (e.g.
-  `REQUIREMENTS.md §5 Functional Requirements`, `§9 Acceptance Criteria`).
-- `## Description` / `## User Stories` / `## Priority` / `## Acceptance Criteria`:
-  synthesized from REQUIREMENTS.md (requirements-half; not re-elicited).
-- `## Technical Specification`: the mandatory three sections plus whichever
-  conditional sections Step 2 activated, filled from KB context (`architecture.md`,
-  `module-map.md`, `coding-standards.md`, etc. as relevant) and the family scaffolding
-  guidance.
+- `### Feature 001: {Feature Title}` -- the same title as the REQUIREMENTS.md identity
+  block.
+- `**Criteria:**` the `AC-N` ids from §9 this feature claims. A citation, not a copy:
+  §9 stays the single home of the criterion text, so there is no second wording that
+  can drift from it. DETAIL's `**Source:**` cites the same ids, which is why they must
+  exist before DETAIL runs and must never be renumbered afterwards.
+- `#### Technical Specification`: the mandatory three subsections plus whichever
+  conditional subsections this step activated, filled from KB context
+  (`architecture.md`, `module-map.md`, `coding-standards.md`, etc. as relevant) and the
+  family scaffolding guidance. This is the only content SPEC adds that did not already
+  exist.
 
 ### Step 3: Update STATE.yml
 
 Append an entry to the `lifecycle_history` sequence:
 ```
 - date: '{today}'
-  event: 'SPEC complete -- SPEC.md written'
+  event: 'SPEC complete -- REQUIREMENTS.md § 11 feature section written'
   grade: --
   notes: '/{name} SPEC'
 ```
@@ -519,57 +527,40 @@ Append an entry to the `lifecycle_history` sequence:
 
 ## State: PLAN
 
-Collapses **Plan**. Authors the single work-root `PLAN.md` (one delivery;
-`## Deliverables` + a scaffolded top-level `## Execution Graph`) and the single
-work-root `BLUEPRINT.md` (the delivery definition: objective, scope, **Gate
-Criteria**, a placeholder task listing, dependencies). No multi-delivery planning; the
-delivery is always the synthesized `delivery-001` (feature-001, the lite-path
-convention). FR-3.
+Collapses **Plan**. Writes NO artifact. FR-3.
+
+A plan records a SEQUENCING DECISION -- which delivery goes first, what each depends
+on. This path has exactly one feature and one delivery, so there is no sequencing
+decision to make, and every field a `PLAN.md` would carry is already stated or
+derivable elsewhere:
+
+| A plan would carry | On this path it is |
+|--------------------|--------------------|
+| the delivery's objective | `REQUIREMENTS.md § 1 Objective` -- the work IS the delivery |
+| its scope | `§ 5` Functional Requirements + the `§ 11` feature section |
+| its gate criteria | the `§ 9` `AC-N` set, which the delivery gate reads directly |
+| `**Depends on:**` | `-- (none)`; there is nothing to depend on |
+| the task listing | derived from each task's `**Source:** ... -> delivery-001` |
+| the execution graph | derived from each task's `**Depends on:**` field |
+
+Writing them into a second document would create exactly the duplication this path
+was flattened to avoid, and a stored graph can disagree with the DETAILs it came from.
+Both derivations are implemented once, in
+`.claude/aid/scripts/execute/derive-waves.sh --from-tasks <work-dir>`, which the
+dashboard readers mirror in-process and which
+`complexity-score.sh` / `compute-block-radius.sh` consume via `--plan-file`.
+
+The PHASE is still emitted -- Plan happened, it just decided nothing that needed
+recording.
 
 ### Step 1: Emit pipeline phase
 
 Same three `writeback-state.sh --pipeline` calls as SPEC Step 1, with
 `--field Phase --value Plan`.
 
-### Step 2: Dispatch aid-architect to author PLAN.md + BLUEPRINT.md
+### Step 2: none
 
-Dispatch `aid-architect` (Large) with: `SPEC.md` (just written), REQUIREMENTS.md §10
-Priority. The agent writes, in this order:
-
-**a. `.aid/works/{work}/PLAN.md`**, seeded from
-`.claude/aid/templates/delivery-plans/flattened-plan-template.md`:
-
-- `## Deliverables`: one entry -- `**Delivery:** delivery-001 -- {Name}`;
-  `**What it delivers:**` (from SPEC.md `## Description`); `**Features:**
-  feature-001-{slug}` (the single implicit feature; no `features/` folder exists on
-  disk); `**Depends on:** -- (none)`; `**Priority:**` (from REQUIREMENTS.md §10).
-- `## Execution Graph`: copy the template's scaffold as-is for now (`task-001` /
-  `Wave 1: task-001` placeholder rows) -- DETAIL overwrites this with the real task
-  list once the task breakdown is decided (mirrors the full-path precedent:
-  `aid-plan` never touches the Execution Graph; `aid-detail` writes it --
-  `.claude/skills/aid-detail/references/execution-graph-generation.md`). Do not
-  add any `### delivery-NNN` subsection heading (feature-001's parser-compatibility
-  constraint).
-
-**b. `.aid/works/{work}/BLUEPRINT.md`**, seeded from
-`.claude/aid/templates/delivery-blueprint-template.md`, placed at the work root
-(not under a `deliveries/delivery-NNN/` folder -- the flattened layout has no such
-wrapper):
-
-- `**Delivery:** delivery-001`; `**Work:** work-NNN-{slug}`; `**Created:** {today}`.
-- `## Objective` / `## Scope` / `## Out of scope`: from SPEC.md `## Description` +
-  `## Acceptance Criteria`.
-- `## Gate Criteria`: translate each SPEC.md Acceptance Criterion into a concrete,
-  independently-testable delivery gate criterion, plus the two standing criteria
-  every delivery carries: `- [ ] All tasks in delivery-001 are Done or Canceled.` and
-  `- [ ] All section-6 quality gates pass.` This is where the flat layout's gate
-  criteria live (feature-001, not `STATE.yml`).
-- `## Tasks`: a placeholder row (`| task-NNN | {TYPE} | {Title} |`) -- the same
-  convention `aid-plan`'s own BLUEPRINT authorship uses for a delivery whose tasks
-  are not decided yet. DETAIL replaces this with the real list.
-- `## Dependencies`: `-- (none)` / `-- (none)` (single delivery).
-- `## Notes`: `Shortcut-generated flattened Lite work. Source: /{name} ({verb},
-  artifact '{artifact}').`
+No dispatch, no artifact. Proceed to Step 3.
 
 ### Step 3: Initialize `delivery_lifecycle` (direct edit)
 
@@ -588,7 +579,7 @@ design note below.
 > machinery (feature-001 teaches it the flat-layout target). That machinery exists to
 > arbitrate concurrent writers across parallel delivery/task branches during Execute.
 > Nothing is concurrent during INTAKE-DETAIL -- this is a single engine run authoring
-> its own work, exactly like CAPTURE/SPEC directly writing REQUIREMENTS.md/SPEC.md.
+> its own work, exactly like CAPTURE/SPEC directly writing REQUIREMENTS.md.
 > PLAN and DETAIL therefore populate `delivery_lifecycle` and
 > `tasks_lifecycle` for the first time via direct edit, and leave the runtime
 > mutation path to `/aid-execute` untouched.
@@ -598,7 +589,7 @@ design note below.
 Append an entry to the `lifecycle_history` sequence:
 ```
 - date: '{today}'
-  event: 'PLAN complete -- PLAN.md + BLUEPRINT.md written'
+  event: 'PLAN complete -- one delivery, nothing to sequence; no artifact'
   grade: --
   notes: '/{name} PLAN'
 ```
@@ -610,9 +601,9 @@ Append an entry to the `lifecycle_history` sequence:
 ## State: DETAIL
 
 Collapses **Detail**. Decides the task breakdown, emits `tasks/task-NNN/DETAIL.md` per
-task (bold `**Type:**` shape; no per-task `STATE.yml`), fills PLAN.md's real
-`## Execution Graph`, completes BLUEPRINT.md's real `## Tasks` table, and promotes each
-task into the work-root `STATE.yml`'s `tasks_lifecycle` mapping. FR-4, FR-17.
+task (bold `**Type:**` shape; no per-task `STATE.yml`) and promotes each task into the
+work-root `STATE.yml`'s `tasks_lifecycle` mapping. The execution graph is NOT written:
+it is derived from the `**Depends on:**` fields these DETAILs carry. FR-4, FR-17.
 
 ### Step 1: Emit pipeline phase
 
@@ -621,26 +612,30 @@ Same three `writeback-state.sh --pipeline` calls as SPEC/PLAN Step 1, with
 
 ### Step 2: Dispatch aid-architect to decide + write the task breakdown
 
-Dispatch `aid-architect` (Large) with: SPEC.md `## Acceptance Criteria`, BLUEPRINT.md
-`## Gate Criteria`, and the family scaffolding pointer's default task-breakdown
+Dispatch `aid-architect` (Large) with: REQUIREMENTS.md §9 `## Acceptance Criteria`
+and the family scaffolding pointer's default task-breakdown
 guidance (e.g. `shortcut-scaffolding/fix.md`'s "task-001 IMPLEMENT -> task-002 TEST,
 depends task-001"). The agent:
 
 **a. Proposes the task list** -- one type per task, never mixed
-(`artifact-schemas.md § Task DETAIL.md`); every task traceable to at least one SPEC.md
+(`artifact-schemas.md § Task DETAIL.md`); every task traceable to at least one §9
 Acceptance Criterion; natural ordering RESEARCH -> DESIGN -> IMPLEMENT -> TEST ->
 DOCUMENT. Use the family file's default breakdown when one exists; otherwise the
 fallback is exactly one task, typed the catalog row's `default_type`, titled from the
-description, scoped to the full SPEC.md Acceptance Criteria set. Multi-task shortcuts
+description, scoped to the full §9 Acceptance Criteria set. Multi-task shortcuts
 (MIGRATE + IMPLEMENT + TEST, or IMPLEMENT + TEST) still keep one type per task (A-6).
 
 **b. Writes each `.aid/works/{work}/tasks/task-NNN/DETAIL.md`**, seeded from
 `.claude/aid/templates/task-detail-template.md`:
 
 - `**Type:**` bold shape (one of the 8).
-- `**Source:** work-NNN-{slug} -> delivery-001`.
+- `**Source:** work-NNN-{slug} -> delivery-001 -> AC-N[, AC-N]` -- the work-root
+  §9 criteria this task implements, by their `AC-N` ids; at least one is
+  required. The flat layout has no `features/`, so the work is cited where the full
+  path cites a feature.
 - `**Depends on:**` per the decided ordering.
-- `**Scope:**` / `**Acceptance Criteria:**` -- concrete, testable; the last criterion
+- `**Scope:**` / `**Acceptance Criteria:**` -- each criterion names an observable
+  (`requirements-template.md § Verifiable Acceptance Criteria`); the last criterion
   always `All section-6 quality gates pass.`.
 - No sibling `STATE.yml` is created -- the flat layout has none; each task's mutable
   cells live only in the work-root `STATE.yml`'s `tasks_lifecycle` mapping (Step 3 below).
@@ -650,16 +645,15 @@ description, scoped to the full SPEC.md Acceptance Criteria set. Multi-task shor
   re-authored here; no extra step is needed for a shortcut-scaffolded task to
   carry it (work-003-state-schema task-009).
 
-**c. Fills PLAN.md's real `## Execution Graph`** (replacing the PLAN-state
-placeholder): `### Task Dependencies` (`| Task | Depends On |`) and
-`### Can Be Done In Parallel` (`| Wave | Tasks |`) -- the flat layout's own
-2-column wave-table shape (`flattened-plan-template.md`; NOT the full path's
-1-column-group-plus-`wave-map`-fence shape from `execution-graph-generation.md` -- the
-two layouts intentionally differ here). Still zero `### delivery-NNN` subsection
-headings.
+**c. Writes NO execution graph.** Each DETAIL's `**Depends on:**` field IS the graph,
+so there is nothing left to author -- and a stored copy could disagree with the fields
+it was computed from, which is the failure this collapse exists to avoid.
 
-**d. Completes BLUEPRINT.md's real `## Tasks` table** (replacing the PLAN-state
-placeholder row) with the final `| task-NNN | {Type} | {Title} |` list.
+Anything needing the graph derives it from these DETAILs:
+`bash .claude/aid/scripts/execute/derive-waves.sh --from-tasks .aid/works/{work}`
+prints the dependency table and the wave-map. The dashboard readers mirror the same
+derivation in-process; `complexity-score.sh` and `compute-block-radius.sh` accept the
+script's output via `--plan-file`.
 
 ### Step 3: Promote task cells into `tasks_lifecycle` (direct edit)
 
@@ -725,9 +719,8 @@ Detail | Execute`) has no `Gate` value -- `Phase` stays `Detail`
 bash .claude/aid/scripts/config/read-setting.sh --skill {name} --key minimum_grade --default A+
 ```
 
-This is the shortcut path's own resolution call
-(`features/feature-004-approval-and-grading-gates/SPEC.md § minimum_grade
-resolution`) -- the standard 3-tier order (per-skill override ->
+This is the shortcut path's own resolution call -- the standard 3-tier order
+(per-skill override ->
 `review.minimum_grade` -> hardcoded default), except the **shortcut path's
 own built-in default is `A+`**, not the global `A` every other skill falls
 back to (`quality-gates.md § Minimum-Grade Thresholds`). A project may still
@@ -742,17 +735,17 @@ REVIEW -> GRADE -> FIX loop (Step 4 below) with this pass's own brief
 content:
 
 - **ARTIFACTS UNDER REVIEW:** `.aid/works/{work}/REQUIREMENTS.md`,
-  `.aid/works/{work}/SPEC.md`, `.aid/works/{work}/PLAN.md`, `.aid/works/{work}/BLUEPRINT.md`.
+  the `§ 11` feature section it wrote.
 - **CONTEXT:** these are the collapsed-lifecycle definition documents for a
   direct-entry shortcut work (`/{name}` binds `{verb}`/`{artifact}`); a
   single feature, a single delivery (feature-001's flattened shape); the
   work has not yet been approved for execution.
 - **RUBRIC:** (one-off -- no shared per-skill `reviewer-brief.md` exists for
   the shortcut engine; `reviewer-dispatch.md § One-off reviews`) internal
-  consistency across the four documents; every `SPEC.md` Acceptance
+  consistency across the documents; every §9 Acceptance
   Criterion traces back to a `REQUIREMENTS.md` requirement and forward to a
-  `BLUEPRINT.md § Gate Criteria` line; no fabricated content standing in for
-  a genuine `*(pending)*`/`N/A` gap; `PLAN.md`/`BLUEPRINT.md` carry no
+  `§ 9` `AC-N`; no fabricated content standing
+  in for a genuine `*(pending)*`/`N/A` gap; `REQUIREMENTS.md` carries no
   `### delivery-NNN` subsection heading (feature-001's parser-compatibility
   constraint).
 - **OUT OF SCOPE:** every `tasks/task-NNN/DETAIL.md` (Pass 2's own scope,
@@ -779,16 +772,16 @@ content:
   -- `reviewer-dispatch.md § Deriving {{ARTIFACTS}}`).
 - **CONTEXT:** the task breakdown for the same shortcut work, whose
   definition documents already cleared Pass 1; each task traces to a
-  `SPEC.md` Acceptance Criterion and a `BLUEPRINT.md § Gate Criteria` line.
+  §9 Acceptance Criterion.
 - **RUBRIC:** (one-off, as Pass 1) each `DETAIL.md` carries exactly one bold
   `**Type:**` (never mixed across tasks of the same shortcut unless the
   family scaffolding calls for it -- `artifact-schemas.md § Task DETAIL.md`),
-  a correct `**Source:** work-NNN-{slug} -> delivery-001` and
-  `**Depends on:**` shape matching the natural ordering, and concrete,
-  testable `**Acceptance Criteria:**` ending in `All section-6 quality gates
-  pass.`; no sibling `STATE.md` exists for any task (the flat layout has
+  a correct `**Source:** work-NNN-{slug} -> delivery-001 -> AC-N[, AC-N]`
+  (every `AC-N` resolving in REQUIREMENTS.md §9) and `**Depends on:**` shape
+  matching the natural ordering, and `**Acceptance Criteria:**` each naming an
+  observable and ending in `All section-6 quality gates pass.`; no sibling `STATE.md` exists for any task (the flat layout has
   none by design).
-- **OUT OF SCOPE:** `REQUIREMENTS.md`/`SPEC.md`/`PLAN.md`/`BLUEPRINT.md`
+- **OUT OF SCOPE:** `REQUIREMENTS.md`
   (Pass 1's own scope, already cleared -- re-litigating them here is scope
   leak the reviewer must not re-grade); every state file, at any of the
   three levels and either `STATE.md`/`STATE.yml` extension -- a state file
@@ -822,11 +815,9 @@ content:
    `grading-rubric.md` Grade Calculation), and a batched ledger's total
    finding count is the sum of every reviewed document's own finding count,
    the pooled grade equals `A+` **if and only if every individual document
-   in the pass also has zero findings**. This is exactly the property
-   feature-004's SPEC requires ("each document still clears `minimum_grade`
-   via its own REVIEW->FIX loop within the pass" --
-   `features/feature-004-approval-and-grading-gates/SPEC.md § Data Model`
-   item 2) -- the batched dispatch changes round-trip **granularity** only,
+   in the pass also has zero findings**. This preserves the required property:
+   each document still clears `minimum_grade` via its own REVIEW->FIX loop
+   within the pass -- the batched dispatch changes round-trip **granularity** only,
    never the per-document guarantee (AC-11), so no second, per-document
    `grade.sh` pass is needed at the shortcut path's `A+` floor. (A project
    override that lowers `minimum_grade` below `A+` would need the
@@ -865,8 +856,8 @@ Once both passes clear, append **two** entries to the work-root `STATE.yml`'s
 `lifecycle_history` sequence (append-only; the same sequence CAPTURE/SPEC/PLAN/DETAIL
 already append to above) -- **distinct from** the post-execution
 `delivery_gate` key, which `/aid-execute` fills later from
-`BLUEPRINT.md § Gate Criteria` (feature-004 § "Where grades are recorded" --
-in the flattened layout there is no `features/{feature}/SPEC.md`, so the
+`REQUIREMENTS.md § 9`'s `AC-N` set (feature-004 § "Where grades are recorded" --
+the flattened layout has one feature section rather than a per-feature file, so the
 DERIVED Features State Spec-Grade column does not apply; `lifecycle_history` is the
 authoritative record of these definition-phase gates):
 
@@ -912,7 +903,7 @@ Print a summary the user can approve or reject:
 [State: APPROVAL-HALT] -- flattened work ready for approval; nothing has executed.
 
 work-{NNN}-{slug}  (/{name})
-  REQUIREMENTS.md  SPEC.md  PLAN.md  BLUEPRINT.md
+  REQUIREMENTS.md
   tasks/
     task-001  {Type}  {Title}
     task-002  {Type}  {Title}
@@ -954,12 +945,11 @@ strategy asserts both).
 - CAPTURE: description is non-empty (no bootstrapping question); no load-bearing gap
   (the pagination + endpoint shape already answer §5/§9); writes `REQUIREMENTS.md`.
 - SPEC: `shortcut-scaffolding/create.md`'s `api` guidance (once landed) activates
-  `### API Contracts`; writes `SPEC.md`.
-- PLAN: writes `PLAN.md` (delivery-001 stanza + scaffold graph) + `BLUEPRINT.md`
-  (objective/scope/gate criteria; placeholder tasks table).
+  `##### API Contracts`; writes the § 11 feature section.
+- PLAN: writes nothing -- one delivery, so no sequencing decision to record.
 - DETAIL: proposes `task-001 IMPLEMENT` (endpoint + handler + validation); writes
-  `tasks/task-001/DETAIL.md`; fills the real Execution Graph (`task-001`, wave 1) and
-  BLUEPRINT Tasks table; promotes `| task-001 | Pending | -- | -- | -- |`.
+  `tasks/task-001/DETAIL.md`; fills the real Execution Graph (`task-001`, wave 1);
+  promotes `| task-001 | Pending | -- | -- | -- |`.
 - Halts pre-Execute (GATE/APPROVAL-HALT, task-011) -- FR-3/FR-4/FR-6/FR-10.
 
 ## Unit-testable cases
@@ -968,6 +958,6 @@ strategy asserts both).
 |---|---|
 | `aid-fix` (no description) | CAPTURE Step 1 asks one bootstrapping question; `work-NNN-fix` slug is provisional until answered |
 | `aid-fix` with a full bug description | Zero inline questions; `REQUIREMENTS.md` fully terse-filled; a single IMPLEMENT task (no `fix.md` landed yet) or the `fix.md` IMPLEMENT -> TEST pair (once task-013 lands) |
-| `aid-create-data-model` with a full description | `SPEC.md` activates `### Migration Plan`; DETAIL proposes MIGRATE + IMPLEMENT (+ TEST) tasks, one type each |
+| `aid-create-data-model` with a full description | the feature section activates `##### Migration Plan`; DETAIL proposes MIGRATE + IMPLEMENT (+ TEST) tasks, one type each |
 | Catalog row missing for the invoking `{name}` | INTAKE STOPs with the build-defect error; no work folder allocated |
 | Any shortcut, any family state landed or not | `tasks/task-NNN/DETAIL.md` never has a sibling `STATE.yml`; the flat `tasks_lifecycle` mapping is the only mutable-state home |

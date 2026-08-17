@@ -66,6 +66,7 @@ review-criteria:
 - [D26 — No line-coverage metric (suite-presence coverage for a shell/markdown toolkit)](#d26--no-line-coverage-metric-suite-presence-coverage-for-a-shellmarkdown-toolkit)
 - [D27 — `design` / `create` / `update` as the verbs, not `export` or `document-`](#d27--design--create--update-as-the-verbs-not-export-or-document-)
 - [D28 — Forward-looking documents in a Knowledge Base that describes what *is*](#d28--forward-looking-documents-in-a-knowledge-base-that-describes-what-is)
+- [D29 — One requirements document per work: features, delivery definitions and the Lite path folded in](#d29--one-requirements-document-per-work-features-delivery-definitions-and-the-lite-path-folded-in)
 - [Still Load-Bearing](#still-load-bearing)
 
 ---
@@ -100,6 +101,7 @@ review-criteria:
 | D24 | `/aid-describe` reduced to full-path-only | Accepted | `canonical/skills/aid-describe/SKILL.md`; feature-013 |
 | D25 | `/aid-monitor` re-point (BUG -> `/aid-fix`, CR -> `/aid-triage`) | Accepted | `canonical/skills/aid-monitor/SKILL.md`; feature-012 |
 | D26 | No line-coverage metric; effectiveness measured via a dedicated program (tech-debt L4) | Accepted (line-coverage); L4 program open | `test-landscape.md` §Coverage Assessment; `tech-debt.md` L4 |
+| D29 | One requirements document per work (`SPEC.md` + `BLUEPRINT.md` retired) | Accepted (supersedes D23) | `canonical/skills/aid-define/SKILL.md`; `canonical/aid/templates/shortcut-engine.md` |
 
 ---
 
@@ -462,7 +464,11 @@ review-criteria:
 - **Rejected:** Keeping the three-way `SPEC.md` overload (rejected — ambiguous, mis-wired gate
   source); a migration path for old-nested layouts (rejected — clean switch, no adopters to
   migrate).
-- **Status:** Accepted (supersedes the delivery/task `SPEC.md` naming and the flat `task-NNN.md`).
+- **Status:** **Superseded by D29.** The *disambiguation* this decision established survives --
+  three levels sharing one filename was genuinely ambiguous, and `DETAIL.md` remains the task
+  definition. Its *mechanism* did not: rather than give each level a distinct FILE, D29 removed
+  two of the three levels' files entirely. A feature is now a section of `REQUIREMENTS.md § 11`
+  and a delivery definition is a stanza of `PLAN.md`, so there is nothing left to disambiguate.
   CONFIRMED `canonical/aid/templates/delivery-blueprint-template.md` and
   `canonical/aid/templates/task-detail-template.md`.
 
@@ -584,11 +590,40 @@ Decisions that are expensive to reverse and currently constrain most changes:
   rests on these; they were adopted specifically to make prior bug classes impossible.
 - **D10 (polyglot/dual-channel)** — reversing would orphan whole host populations.
 
+---
+
+## D29 — One requirements document per work: features, delivery definitions and the Lite path folded in
+
+- **What:** Retire the per-feature `SPEC.md` and the per-delivery `BLUEPRINT.md`. A feature
+  becomes a `### Feature NNN` section of `REQUIREMENTS.md § 11`, carrying its own
+  `#### Technical Specification` and citing the `§ 5 FR-N` / `§ 9 AC-N` it owns rather than
+  copying them. A delivery definition becomes the delivery's `### delivery-NNN` stanza in
+  `PLAN.md`. The Lite path drops `SPEC.md` and `PLAN.md` altogether, leaving
+  `REQUIREMENTS.md` + `STATE.yml` + `tasks/task-NNN/DETAIL.md`.
+- **Why:** Three reasons, in descending order of importance.
+
+  *Correctness.* The same criterion existed in `REQUIREMENTS.md § 9` and again in every
+  feature `SPEC.md` claiming it. Both CRITICAL findings in this project's largest work were
+  sibling specs asserting different values for one shared fact. One home, cited by id, cannot
+  disagree with itself.
+
+  *A load-bearing artifact.* `BLUEPRINT.md`'s PRESENCE was the flat-layout signal in three
+  separate implementations, so an ordinary document could not be moved or retired without
+  silently changing how a work was classified. Layout is now read from the declared
+  `pipeline.path`.
+
+  *Cost.* Fewer documents means fewer gate points and smaller grounding reads. Measured
+  against the pre-fold model on a 3-feature/16-task work, the folded shape plus the
+  per-task requirements slice it enables costs 5.42MB against 15.79MB.
+- **Rejected:** Keeping `SPEC.md` and de-duplicating by convention (rejected -- the duplication
+  was already forbidden by convention when it produced both CRITICALs; a rule that has failed
+  is not a control). Keeping a Lite `PLAN.md` for its execution graph (rejected -- the graph is
+  derivable from each task's `**Depends on:**` field, and a stored copy can disagree with the
+  fields it came from).
+- **Status:** Accepted (supersedes D23).
+
 **Superseded (not load-bearing):** the `.aid-new` sidecar (by D11), the machine `.migrated`
 marker + `$HOME`-scan (by D12/D13), the five discovery-* agents (by D15), the Mermaid engine
 in the summary (by D18), the recipe catalog + `parse-recipe.sh` (by D22), and the
 description-first TRIAGE-inside-`aid-describe` routing with its delivery/task `SPEC.md` naming
-(by D20/D21/D23/D24).
-
----
-
+(by D20/D21/D23/D24), and the per-feature `SPEC.md` + per-delivery `BLUEPRINT.md` (by D29).

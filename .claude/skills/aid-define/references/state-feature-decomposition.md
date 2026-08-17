@@ -1,6 +1,6 @@
 # State: FEATURE-DECOMPOSITION
 
-Requirements are approved and no feature folders exist yet; decompose Functional Requirements (§5) into discrete, independently implementable features with SPEC.md files.
+Requirements are approved and `REQUIREMENTS.md § 11 Features` has no feature sections yet; decompose Functional Requirements (§5) into discrete, independently implementable features, each a `### Feature NNN` subsection of §11.
 
 Emit pipeline phase (silent state-write only — no output, no gate):
 ```

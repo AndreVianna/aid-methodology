@@ -18,8 +18,7 @@ argument-hint: "[--connector <stem>] [--level epic|story|task] [--parent <ref>] 
 `/aid-create-ticket` files a new ticket in a catalogued (or host-owned) issue tracker after
 previewing the exact payload and gaining an explicit confirm. It is one of three peer, on-demand
 ticket skills — alongside `/aid-read-ticket` and `/aid-update-ticket` — that give AID users a
-tool-agnostic way to interact with whatever tracker their project has integrated
-(feature-001-dedicated-ticket-skills SPEC.md).
+tool-agnostic way to interact with whatever tracker their project has integrated.
 
 **Shared reference.** The connector-resolution ladder, the grammar-parse rules, the write
 preview/confirm-gate convention, Level Resolution, and Parent Resolution this skill uses are all
@@ -44,12 +43,11 @@ earlier stop/cancel) without exiting mid-run to collect an answer.
 the tracker's issue-type list is queried (a non-destructive read), never written. Nothing about
 the level, the parent, or the rest of the payload reaches the tracker until the user explicitly
 confirms at `CONFIRM`; `FILE` is the only state that writes, and it writes exactly once, right
-after that confirm (feature-001 SPEC.md § Security Specs).
+after that confirm.
 
 **Writes no local file.** This skill's only external effect is the host-MCP ticket file (`FILE`
 state, gated behind confirm) — there is no `Write`/`Edit` tool in `allowed-tools`, and no file
-under this repo is ever touched (the three ticket skills persist nothing locally — feature-001
-SPEC.md § Layers & Components).
+under this repo is ever touched: the three ticket skills persist nothing locally.
 
 ---
 
@@ -127,7 +125,7 @@ and proceeds.
 ### State 3 — COMPOSE
 
 Build the new-ticket payload from `<description>`. Fix two attributes by precedence, **defaulting
-neither silently** (feature-001 SPEC.md § Feature Flow):
+neither silently**:
 
 - **Level:** explicit `--level` › description-inferred (e.g. "this epic…", "bug:") › **unset**. A
   description-inferred level is only a *candidate* here — it is surfaced for explicit confirmation
@@ -145,7 +143,7 @@ quoted literal, or unset), and the parent ref (or none). Nothing is sent anywher
 ### State 4 — LEVEL-RESOLVE
 
 A **non-destructive** host-MCP issue-type query — it runs before the gate precisely because it
-only reads (feature-001 SPEC.md § Security Specs: "no new silent behavior and no new write"). Per
+only reads -- no new silent behaviour and no new write. Per
 [`ticket-resolution.md`](../../aid/templates/connectors/ticket-resolution.md) § "Level Resolution
 (create only)":
 
@@ -211,8 +209,7 @@ Reached **only** after an explicit `[1] File it` confirm. Writes via the host MC
    is noted.
 
 A failed / not-found / unauthorized / unavailable host-MCP call surfaces the tracker's error
-**verbatim** and exits **non-destructively** — never a partial write (feature-001 SPEC.md § Feature
-Flow, MCP-call failure policy).
+**verbatim** and exits **non-destructively** — never a partial write.
 
 **Advance:** → State: RETURN-REF (continue inline).
 

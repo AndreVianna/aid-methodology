@@ -21,7 +21,12 @@ Shape: 6 sections matching .agent/aid/templates/delivery-plans/task-template.md.
 
 **Type:** RESEARCH | DESIGN | IMPLEMENT | TEST | DOCUMENT | MIGRATE | REFACTOR | CONFIGURE
 
-**Source:** work-NNN-{name} -> delivery-NNN
+**Source:** feature-NNN-{name} -> delivery-NNN -> AC-N[, AC-N]
+<!-- The AC-N ids are the acceptance criteria in that feature SPEC which this task
+     implements. At least one is required: a task implementing no stated criterion
+     is undeclared scope or unnecessary work. On the flattened Lite layout there is
+     no features/ folder, so cite the work instead:
+     work-NNN-{slug} -> delivery-001 -> AC-N. -->
 
 **Depends on:** task-NNN [, task-NNN] | -- (none)
 
@@ -29,6 +34,12 @@ Shape: 6 sections matching .agent/aid/templates/delivery-plans/task-template.md.
 - {What this task produces or modifies -- depends on Type. Specific and bounded. One type per task; never mix types.}
 
 **Acceptance Criteria:**
-- [ ] {Criterion 1 -- concrete and testable}
-- [ ] {Criterion 2 -- concrete and testable}
+<!-- Each criterion names an observable: a command and its expected result, a file
+     and its expected content, a count derived from disk, a measurable threshold,
+     or a user-visible behaviour plus how to reproduce it. Judgment criteria are
+     allowed but must state what is judged and against what standard. Full rule:
+     .agent/aid/templates/requirements/requirements-template.md
+     § Verifiable Acceptance Criteria. -->
+- [ ] {Criterion 1 -- names an observable}
+- [ ] {Criterion 2 -- names an observable}
 - [ ] All section-6 quality gates pass

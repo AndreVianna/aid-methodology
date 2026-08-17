@@ -61,56 +61,56 @@ Every node in the chart above, in chart order, with the exact `canonical/` text 
 
 <a id="fragment-n1"></a>**1 · `PARSE-ARGS`** · _entry_
 
-~~~~plaintext title="canonical/skills/aid-create-ticket/SKILL.md#L70" wrap
+~~~~plaintext title="canonical/skills/aid-create-ticket/SKILL.md#L68" wrap
 ### State 1 — PARSE-ARGS
 ~~~~
 
-[Source: `canonical/skills/aid-create-ticket/SKILL.md#L70`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-create-ticket/SKILL.md#L70)
+[Source: `canonical/skills/aid-create-ticket/SKILL.md#L68`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-create-ticket/SKILL.md#L68)
 
 <a id="fragment-n2"></a>**2 · `RESOLVE-CONNECTOR`** · _step_
 
-~~~~plaintext title="canonical/skills/aid-create-ticket/SKILL.md#L105" wrap
+~~~~plaintext title="canonical/skills/aid-create-ticket/SKILL.md#L103" wrap
 ### State 2 — RESOLVE-CONNECTOR
 ~~~~
 
-[Source: `canonical/skills/aid-create-ticket/SKILL.md#L105`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-create-ticket/SKILL.md#L105)
+[Source: `canonical/skills/aid-create-ticket/SKILL.md#L103`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-create-ticket/SKILL.md#L103)
 
 <a id="fragment-n3"></a>**3 · `COMPOSE`** · _step_
 
-~~~~plaintext title="canonical/skills/aid-create-ticket/SKILL.md#L127" wrap
+~~~~plaintext title="canonical/skills/aid-create-ticket/SKILL.md#L125" wrap
 ### State 3 — COMPOSE
 ~~~~
 
-[Source: `canonical/skills/aid-create-ticket/SKILL.md#L127`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-create-ticket/SKILL.md#L127)
+[Source: `canonical/skills/aid-create-ticket/SKILL.md#L125`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-create-ticket/SKILL.md#L125)
 
 <a id="fragment-n4"></a>**4 · `LEVEL-RESOLVE`** · _step_
 
-~~~~plaintext title="canonical/skills/aid-create-ticket/SKILL.md#L145" wrap
+~~~~plaintext title="canonical/skills/aid-create-ticket/SKILL.md#L143" wrap
 ### State 4 — LEVEL-RESOLVE
 ~~~~
 
-[Source: `canonical/skills/aid-create-ticket/SKILL.md#L145`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-create-ticket/SKILL.md#L145)
+[Source: `canonical/skills/aid-create-ticket/SKILL.md#L143`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-create-ticket/SKILL.md#L143)
 
 <a id="fragment-n5"></a>**5 · `CONFIRM`** · _step_
 
-~~~~plaintext title="canonical/skills/aid-create-ticket/SKILL.md#L171" wrap
+~~~~plaintext title="canonical/skills/aid-create-ticket/SKILL.md#L169" wrap
 ### State 5 — CONFIRM
 ~~~~
 
-[Source: `canonical/skills/aid-create-ticket/SKILL.md#L171`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-create-ticket/SKILL.md#L171)
+[Source: `canonical/skills/aid-create-ticket/SKILL.md#L169`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-create-ticket/SKILL.md#L169)
 
 <a id="fragment-n6"></a>**6 · `FILE`** · _step_
 
-~~~~plaintext title="canonical/skills/aid-create-ticket/SKILL.md#L201" wrap
+~~~~plaintext title="canonical/skills/aid-create-ticket/SKILL.md#L199" wrap
 ### State 6 — FILE
 ~~~~
 
-[Source: `canonical/skills/aid-create-ticket/SKILL.md#L201`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-create-ticket/SKILL.md#L201)
+[Source: `canonical/skills/aid-create-ticket/SKILL.md#L199`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-create-ticket/SKILL.md#L199)
 
 <a id="fragment-n7"></a>**7 · `RETURN-REF`** · _exit_ · UNSPECIFIED
 
-~~~~plaintext title="canonical/skills/aid-create-ticket/SKILL.md#L219" wrap
+~~~~plaintext title="canonical/skills/aid-create-ticket/SKILL.md#L216" wrap
 ### State 7 — RETURN-REF
 ~~~~
 
-[Source: `canonical/skills/aid-create-ticket/SKILL.md#L219`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-create-ticket/SKILL.md#L219)
+[Source: `canonical/skills/aid-create-ticket/SKILL.md#L216`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-create-ticket/SKILL.md#L216)

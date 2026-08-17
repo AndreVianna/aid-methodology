@@ -43,8 +43,6 @@ BIN_AID="${REPO_ROOT}/bin/aid"
 BIN_AID_PS1="${REPO_ROOT}/bin/aid.ps1"
 LIB_SH="${REPO_ROOT}/lib/aid-install-core.sh"
 DASHBOARD_SERVER_DIR="${REPO_ROOT}/dashboard/server"
-DASHBOARD_READER_PY="${REPO_ROOT}/dashboard/reader.py"
-DASHBOARD_INIT_PY="${REPO_ROOT}/dashboard/__init__.py"
 
 [[ -f "$BIN_AID" ]]     || { echo "ERROR: bin/aid not found at $BIN_AID" >&2; exit 1; }
 [[ -f "$BIN_AID_PS1" ]] || { echo "ERROR: bin/aid.ps1 not found at $BIN_AID_PS1" >&2; exit 1; }
@@ -109,8 +107,6 @@ new_fixture_repo() {
     mkdir -p "${r}/.aid/.temp" "${r}/dashboard/server"
     ln -sf "${DASHBOARD_SERVER_DIR}/server.py"  "${r}/dashboard/server/server.py"
     ln -sf "${DASHBOARD_SERVER_DIR}/server.mjs" "${r}/dashboard/server/server.mjs"
-    [[ -f "$DASHBOARD_READER_PY" ]] && ln -sf "$DASHBOARD_READER_PY" "${r}/dashboard/reader.py"
-    [[ -f "$DASHBOARD_INIT_PY" ]]   && ln -sf "$DASHBOARD_INIT_PY"   "${r}/dashboard/__init__.py"
     echo "$r"
 }
 

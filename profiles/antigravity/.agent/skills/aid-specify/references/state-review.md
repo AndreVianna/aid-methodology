@@ -15,12 +15,13 @@ reviewing all sections against current reality.
 
 ### Load Current Context
 
-Same as INITIALIZE Step 1: SPEC.md, the REQUIREMENTS.md **slice** this feature traces to
-(from its `## Source`, never the whole document), KB docs, codebase.
+Same as INITIALIZE Step 1: this feature's section of REQUIREMENTS.md § 11, plus the
+REQUIREMENTS.md **slice** it traces to (the `§5`/`§9` entries its section cites by id,
+never the whole document), KB docs, codebase.
 
 ### Review All Sections
 
-For each section in SPEC.md, run step 4 of the loop against current state:
+For each technical section of this feature, run step 4 of the loop against current state:
 
 1. **KB drift** — SPEC references KB content that changed?
 2. **Requirements drift** — Requirements changed since spec was written?
@@ -31,8 +32,8 @@ For each section in SPEC.md, run step 4 of the loop against current state:
 ### Dispatch the Reviewer
 
 Render `references/reviewer-brief.md` with:
-- `{{ARTIFACTS}}` = `SPEC.md` path + the section list under review (or "full SPEC")
-- `{{CONTEXT}}` = `SPEC.md for feature-NNN-{name} in work-NNN-{name}. All sections marked Complete in the work STATE.md \`## Features State\` row. This is the final review pass before the feature is marked Ready.`
+- `{{ARTIFACTS}}` = `REQUIREMENTS.md` + the `§11 / Feature NNN` subsection under review, naming the technical sections in scope (or "the whole feature section")
+- `{{CONTEXT}}` = `REQUIREMENTS.md §11 / Feature NNN in work-NNN-{name}. All sections marked Complete in the work STATE.md \`## Features State\` row. This is the final review pass before the feature is marked Ready.`
 
 Include in the prompt:
 - **Ledger lifecycle:** "Read `.aid/.temp/review-pending/specify-<feature>.md` if it

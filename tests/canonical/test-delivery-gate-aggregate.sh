@@ -557,18 +557,45 @@ run_test_8() {
         return
     fi
 
-    if grep -qF "from the delivery's \`BLUEPRINT.md § Gate Criteria\`" "$gate_doc"; then
-        pass "Test 8a: state-delivery-gate.md resolves Full-path delivery acceptance criteria from BLUEPRINT.md § Gate Criteria"
+    # 8a/8b are INVERTED from their original sense, and the inversion is the point.
+    #
+    # They were written when the delivery definition lived in its own BLUEPRINT.md:
+    # reading gate criteria from PLAN.md was then a real mis-wire, because PLAN.md
+    # sequenced deliveries while BLUEPRINT.md defined them. 8b existed to catch a
+    # regression back to that bug.
+    #
+    # BLUEPRINT.md is now retired and the delivery definition -- objective, scope,
+    # Gate Criteria -- lives in the delivery's own stanza in PLAN.md. So PLAN.md is
+    # the correct source, and a surviving BLUEPRINT.md reference is the defect. Both
+    # assertions flip rather than being deleted: the invariant they protect (criteria
+    # come from exactly ONE named place, and the doc says which) is unchanged.
+
+    # Two sources now, one per layout, and BOTH must be named -- the criteria have to
+    # come from exactly one place per layout and the doc has to say which. The full path
+    # keeps its PLAN.md stanza, where sequencing across deliveries is a real authored
+    # decision. The flat/Lite path has one delivery, so the work IS the delivery and its
+    # § 9 criteria are the delivery's; there is no PLAN.md there to hold a restatement.
+    #
+    # Patterns are line-scoped (grep -F), so they must not straddle a wrap.
+    if grep -qF 'the `**Gate Criteria**` list in the delivery'"'"'s own stanza in' "$gate_doc"; then
+        pass "Test 8a INVERTED: the FULL path resolves delivery criteria from the PLAN.md delivery stanza"
     else
-        fail "Test 8a: state-delivery-gate.md resolves delivery acceptance criteria from BLUEPRINT.md" \
+        fail "Test 8a INVERTED: the FULL path must resolve delivery criteria from the PLAN.md delivery stanza" \
              "Expected string not found in $gate_doc"
     fi
 
-    if grep -qF "from \`PLAN.md\` (the delivery's acceptance criteria block)" "$gate_doc"; then
-        fail "Test 8b: mis-wire regression -- state-delivery-gate.md still reads criteria from PLAN.md" \
-             "Old PLAN.md criteria-block wording found in $gate_doc"
+    if grep -qF 'the `AC-N` set in `REQUIREMENTS.md § 9`' "$gate_doc"; then
+        pass "Test 8a2: the FLAT/Lite path resolves delivery criteria from REQUIREMENTS.md § 9"
     else
-        pass "Test 8b: state-delivery-gate.md no longer reads delivery criteria from PLAN.md (mis-wire fixed)"
+        fail "Test 8a2: the FLAT/Lite path must resolve delivery criteria from REQUIREMENTS.md § 9" \
+             "Expected string not found in $gate_doc"
+    fi
+
+    if grep -qF "BLUEPRINT" "$gate_doc"; then
+        fail "Test 8b INVERTED: state-delivery-gate.md still references the retired BLUEPRINT.md" \
+             "BLUEPRINT reference found in $gate_doc"
+    else
+        pass "Test 8b INVERTED: state-delivery-gate.md carries no reference to the retired BLUEPRINT.md"
     fi
 }
 

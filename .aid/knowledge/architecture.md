@@ -527,6 +527,3 @@ Non-obvious traps a change will trip (cannot be inferred from the code alone):
 - **Heavy CI gates run only on `master`** (tests/run-all.sh + the Astro site build); feature
   branches skip them. Run `tests/run-all.sh` (HOME-pinned) + the site build locally before
   claiming green. (Project memory: master-ci-only-on-master.)
-
----
-

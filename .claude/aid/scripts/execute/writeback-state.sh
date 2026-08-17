@@ -77,10 +77,11 @@
 #             STATE.yml                         -- task-level (--field / --findings target)
 #
 # Flattened single-delivery layout (feature-001, additive -- nested layout above
-# is unchanged): detected by a work-root BLUEPRINT.md present AND
-# `tasks/task-NNN/DETAIL.md` present directly under the work root AND no
-# `deliveries/` wrapper. The delivery lifecycle/gate AND the per-task mutable
-# cells are all promoted into the SAME work-root STATE.yml:
+# is unchanged): declared by `pipeline.path: lite` in the work-root STATE.yml,
+# or for an un-migrated work inferred from `tasks/task-NNN/DETAIL.md` present
+# directly under the work root AND no `deliveries/` wrapper. The delivery
+# lifecycle/gate AND the per-task mutable cells are all promoted into the SAME
+# work-root STATE.yml:
 #   work-NNN-{name}/
 #     STATE.yml         -- work-level (--pipeline target) AND, for this layout,
 #                           the --delivery-id 001 targets too:
@@ -178,11 +179,11 @@
 #
 #   writeback-state.sh -h | --help
 #
-# Flattened single-delivery layout (feature-001) detection: a work-root
-# BLUEPRINT.md present AND at least one `tasks/task-NNN/DETAIL.md` present
-# directly under it AND no `deliveries/` wrapper under the work root.
-# Auto-detected per-call; no new flag needed. The nested layout above is
-# unchanged (additive only).
+# Flattened single-delivery layout (feature-001) detection: `pipeline.path: lite`
+# in the work-root STATE.yml; for an un-migrated work declaring nothing, at least
+# one `tasks/task-NNN/DETAIL.md` present directly under it AND no `deliveries/`
+# wrapper under the work root. Auto-detected per-call; no new flag needed. The
+# nested layout above is unchanged (additive only). See is_flat_layout.
 #
 # Exit codes:
 #   0  success
@@ -246,19 +247,151 @@ resolve_work_dir() {
     fi
 }
 
+# wb_get_pipeline_path: echo the work-root STATE.yml `pipeline.path` value,
+# lowercased, or nothing when there is no `pipeline:` mapping, no `path:` under
+# it, or no state file. Never throws.
+#
+# The key is NESTED (`pipeline:` then an indented `path:`), matching what the
+# reader twins flatten to `pipeline.path` (state_schema.py documents the
+# mapping: `pipeline:\n  path: lite` -> `{"pipeline.path": "lite"}`).
+#
+# STATE.yml only -- no STATE.md fallback, matching reader.py
+# _declared_work_path and reader.mjs _declaredWorkPath exactly. SP-9 routes a
+# work holding the retired markdown name to the legacy detector, which
+# diagnoses rather than parses, so a fallback here would contradict that policy
+# AND put this function out of step with its twins.
+#
+# The scalar handling below is not decoration. Those twins delegate to the
+# shared D-3 subset engine; this one hand-rolls YAML in awk, so every scalar
+# form the engine accepts has to be reproduced here by hand or the three
+# disagree on the same file. Three forms were found diverging and are covered
+# by cases WB-* in tests/canonical/test-writeback-state.sh: a CRLF file (awk's
+# `$` anchors sat behind a stray \r, so `pipeline:` never matched and the value
+# read empty), a single-quoted `'lite'` (only double quotes were stripped), and
+# a trailing `# comment` (kept verbatim, so the value compared equal to
+# nothing). Extending this parser means extending those cases too.
+#
+# Five MORE were then found by probing forms nobody had tried, rather than by
+# waiting for the next reviewer -- the corpus was covering the failures already
+# known, which is the one thing a corpus cannot get credit for. All five are in
+# the three-way parity corpus now:
+#
+#   BOM            a UTF-8 byte-order mark sat in front of `pipeline:`, so the
+#                  key never matched and the value read empty. Twins: `lite`.
+#   deeper nest    `pipeline:` -> `opts:` -> `path:` matched here, because any
+#                  indent was accepted; `pipeline.path` does not exist in that
+#                  file and both twins correctly said so.
+#   block/anchor   `|`, `>`, `&p lite` were returned VERBATIM. This is the worst
+#                  failure of the five and the reason for the guard below: the
+#                  harm is not the wrong value, it is that a non-empty answer
+#                  tells is_flat_layout the layout WAS declared, suppressing the
+#                  presence-rule fallback that would have classified correctly.
+#   escaped quote  `"li\"te"` truncated at the backslash.
+#   multi-document the first document won here and the last won in the twins.
+#
+# The indentation rule is EXACTLY two spaces, not "one or more". That is not a
+# tightening for its own sake: the engine models nesting as `level = indent // 2`,
+# so a four-space `path:` is level 2 -- a grandchild of `pipeline:`, not its
+# child -- and both twins answer "not declared" for it. A parser that accepted
+# any indent answered `lite` where they answered nothing. Note this makes all
+# three agree while all three differ from a full YAML parser, which reads
+# four-space nesting as an ordinary child: that is what being a documented
+# SUBSET means, and consistency across the three is the invariant that matters,
+# since a file all three misread the same way is classified consistently.
+wb_get_pipeline_path() {
+    resolve_work_dir
+    local state="${WORK_DIR}/STATE.yml"
+    [[ -f "$state" ]] || return 0
+    awk '
+        BEGIN { sq = sprintf("%c", 39); dq = "\"" }
+        NR == 1 { sub(/^\xef\xbb\xbf/, "") }             # UTF-8 BOM, first line only
+        { sub(/\r$/, "") }                               # CRLF -> LF, every line
+        /^[ \t]*#/                     { next }          # whole-line YAML comment
+        /^pipeline:[ \t]*$/            { inp = 1; next }
+        # EXACTLY two spaces, matching the engine level model (see the header note).
+        # SPACES only, not `[ \t]`: YAML forbids a tab as indentation and both twins
+        # reject a tab-indented file outright.
+        inp && /^  path:[ \t]*/ {
+            sub(/^  path:[ \t]*/, "")
+            v = $0
+            c = substr(v, 1, 1)
+            # Scalar forms outside the subset. Returning the marker verbatim is the
+            # worst option available: `|`, `>` and `&p lite` are all NON-EMPTY, and a
+            # non-empty answer tells is_flat_layout the layout was declared, which
+            # suppresses the presence-rule fallback that would have got it right.
+            # Declaring nothing is honest and lets the fallback run.
+            if (c == "|" || c == ">" || c == "&" || c == "*") { exit }
+            if (c == dq || c == sq) {
+                # Quoted: the value is the quoted span. A # inside it is
+                # literal, so comment-stripping must not run.
+                v = substr(v, 2)
+                out = ""
+                while (length(v) > 0) {
+                    ch = substr(v, 1, 1)
+                    # Only the double-quoted form has escapes, per YAML.
+                    if (c == dq && ch == "\\" && length(v) > 1) {
+                        out = out substr(v, 2, 1)
+                        v = substr(v, 3)
+                        continue
+                    }
+                    if (ch == c) break
+                    out = out ch
+                    v = substr(v, 2)
+                }
+                v = out
+            } else {
+                # Plain: a # begins a comment only after whitespace.
+                sub(/[ \t]+#.*$/, "", v)
+            }
+            gsub(/[ \t]+$/, "", v)
+            # LAST occurrence wins, not the first. The engine skips a `---` document
+            # marker with a warning and keeps parsing, so a multi-document file leaves
+            # it holding the final document value; exiting here on the first match
+            # would answer with the first instead.
+            found = tolower(v)
+            next
+        }
+        inp && /^[^ \t#]/              { inp = 0 }       # a dedented key ends the mapping
+        END { if (found != "") print found }
+    ' "$state"
+}
+
 # is_flat_layout: return 0 (true) when the work uses the FLATTENED
-# single-delivery layout (feature-001) -- a work-root BLUEPRINT.md is present
-# AND at least one `tasks/task-NNN/DETAIL.md` is present directly under the
-# work root AND no `deliveries/` wrapper exists. Mirrors the SAME 3-part
-# detection rule used by aid-execute's SKILL.md / state-execute.md /
-# state-delivery-gate.md and the dashboard reader twins (reader.py
-# `_detect_flat` / reader.mjs `_detectFlat`) -- all consumers assert all three
-# parts identically (BLUEPRINT.md presence, DETAIL.md presence, deliveries/
-# absence). Presence-based; never throws. Auto-detected per-call -- no new
-# CLI flag needed. Filename-independent (SP-7): unchanged by the STATE.md ->
-# STATE.yml rename.
+# single-delivery layout (feature-001).
+#
+# DECLARED FIRST, inferred only as a fallback. The layout is a property of the
+# WHOLE WORK, so it is read from the work-root STATE.yml (`pipeline.path:
+# lite | full`) -- one declared value, written once by the skill that started
+# the work. A declared value cannot be ambiguous; an inferred one can, and
+# inferring it from a FILE PRESENCE made an ordinary artifact load-bearing:
+# `BLUEPRINT.md` could not be retired or relocated without silently changing how
+# three separate implementations classified the work.
+#
+# The 3-part presence rule survives ONLY as the fallback for un-migrated works
+# whose state file carries no `pipeline:` mapping -- a work-root BLUEPRINT.md AND
+# at least one `tasks/task-NNN/DETAIL.md` AND no `deliveries/` wrapper. That
+# fallback is filename-independent (SP-7) and so was unchanged by the
+# STATE.md -> STATE.yml rename. The DECLARED read is filename-dependent and
+# reads STATE.yml ONLY -- no STATE.md fallback, matching both reader twins;
+# SP-9 sends a work still holding the retired name to the legacy detector,
+# which diagnoses instead of parsing.
+#
+# This is the same declared-first-then-infer shape reader.mjs already documents
+# for the `workPath` field ("stop inferring via _detectFlat/_detectHierarchy when
+# present ... the fallback default for un-migrated works"); this extends it from
+# the FIELD to the layout DISPATCH, which is what actually made the artifact
+# load-bearing.
+#
+# Mirrors reader.py `_detect_flat` and reader.mjs `_detectFlat` exactly -- all
+# three consumers must agree. Never throws. Auto-detected per-call.
 is_flat_layout() {
     resolve_work_dir
+    local declared
+    declared="$(wb_get_pipeline_path)"
+    if [[ -n "$declared" ]]; then
+        [[ "$declared" == "lite" ]]
+        return
+    fi
     [[ -f "${WORK_DIR}/BLUEPRINT.md" ]] || return 1
     [[ -d "${WORK_DIR}/deliveries" ]] && return 1
     local f

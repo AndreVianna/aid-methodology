@@ -85,7 +85,7 @@ for the full protocol.
 - Conduct adaptive dialogue with human stakeholders using one question at a time
 - Map known, unknown, and assumed requirements throughout the conversation
 - Produce structured REQUIREMENTS.md from the completed dialogue
-- Clarify specific ambiguities when triggered by a Q&A entry in the work's `STATE.md` `## Cross-phase Q&A` section
+- Clarify specific ambiguities when triggered by a Q&A entry in the work's `STATE.yml` `qa:` list` section
 - Surface requirement gaps during in-progress work when they emerge organically
 
 ## What You Don't Do

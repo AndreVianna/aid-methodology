@@ -27,7 +27,6 @@ run-state, grades, and open questions.
 ## Index
 
 - [Completeness](#completeness)
-- [Revision History](#revision-history)
 
 ## Completeness
 

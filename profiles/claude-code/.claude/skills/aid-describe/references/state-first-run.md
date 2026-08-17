@@ -12,7 +12,7 @@ If no KB exists, that's fine — this is a greenfield project.
 ### 1b. Create or update STATE.yml
 
 Ensure `.aid/works/{work}/STATE.yml` exists and has its `interview` key and `qa` key.
-Copy from `../../templates/work-state-template.yml` if the file does not yet exist.
+Copy from `../../../aid/templates/work-state-template.yml` if the file does not yet exist.
 
 ### 1b-ii. Seed the frontmatter keys
 
@@ -63,12 +63,11 @@ by a later phase.
 
 ### 1c. Create REQUIREMENTS.md scaffold
 
-Copy the template from `../../templates/requirements.md` to
+Copy the template from `../../../aid/templates/requirements.md` to
 `.aid/works/{work}/REQUIREMENTS.md`.
-Add the first Change Log entry: `| {today} | Initial interview started | /aid-describe |`
 
 **Identity header seeding:** the template already carries the identity block between
-`# Requirements` and `## Change Log`:
+`# Requirements` and `## 1. Objective`:
 
 ```
 - **Name:** *(pending)*

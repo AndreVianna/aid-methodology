@@ -87,8 +87,9 @@ After each answer:
 After all KB docs are processed:
 1. Update `.aid/knowledge/README.md` completeness table — change status per document
 2. Update `.aid/knowledge/INDEX.md` summary column with one-line descriptions
-3. Add Change Log entry in REQUIREMENTS.md: `| {date} | KB hydrated from interview | /aid-describe |`
-4. Add Revision History entry in README.md: `| {date} | aid-describe | KB hydrated from work-{NNN} requirements |`
+3. Do NOT add a Revision History entry: KB docs carry no change-log apparatus, and
+   `.aid/knowledge/README.md` has no such section. Git records per-doc history with
+   author, date and diff, at higher fidelity and without drift.
 
 ---
 

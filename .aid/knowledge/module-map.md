@@ -418,6 +418,3 @@ need them. Ownership counts follow this document's own criteria and `project-str
 - **Scan tests must pin `$HOME`.** The migration scan defaults its root to `$HOME`;
   a test firing it without `export HOME=<throwaway>` will migrate the developer's
   real repos.
-
----
-

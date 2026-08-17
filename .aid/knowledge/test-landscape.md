@@ -619,6 +619,3 @@ bash tests/canonical/select-suites.sh --glob 'test-kb-*.sh' --run
 so all 135 suites are selected fail-safe on any change and `--glob` is currently required to
 keep selection useful. Promoting `COVERS` across `tests/canonical/` is what makes this pay
 off repo-wide; until then the mechanism is correct but narrow. Tracked in `tech-debt.md`.
-
----
-
