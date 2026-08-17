@@ -11,13 +11,13 @@ user_approved: 'yes'
 # [W]
 lifecycle: Paused-Awaiting-Input
 # [W]
-phase: Specify
+phase: Plan
 # [W]
 active_skill: none
 # [W]
-updated: '2026-08-16T23:25:58Z'
+updated: '2026-08-17T01:04:58Z'
 # [W]
-pause_reason: 'All three feature specs Ready at A+ -- run /aid-plan work-013 to sequence deliveries'
+pause_reason: 'Plan complete at A+ (2 deliveries) -- answer Q5 and Q6, then run /aid-detail work-013 delivery-001'
 # [W]
 block_reason: --
 # [W]
@@ -169,6 +169,26 @@ lifecycle_history:
       real selector defect while checking that -- two suites assert against files absent
       from their COVERS headers, so a change to those files does not select the suite
       guarding them -- and swept the class rather than the instance.
+  - date: '2026-08-17'
+    event: 'PLAN -- two deliveries, both gated A+'
+    grade: 'A+'
+    notes: >-
+      Owner asked for one delivery if possible. Tested rather than inherited: four of the five
+      arguments that made this work three FEATURES do not transfer to deliveries -- feature
+      atomicity does not bind a delivery, FR-A5''s "T1 closes" is a task not a gate, AC-2''s
+      "after T1" is satisfied because every aid-execute dispatch meters its own brief, and
+      nothing parses `Priority`. One argument survives: a single delivery is one branch, one
+      gate and one 3-cycle circuit breaker over all 23 criteria, against a demonstrated 6-cycle
+      need on one third of that surface -- and T3 is Should while holding four MUST criteria, so
+      Should work would block Must work from merging. Two: delivery-001 (features 001+002,
+      Must), delivery-002 (feature 003, Should). Not three, because 001 and 002 share only
+      `reviewer-dispatch.md` and share it in different sections, which task order resolves; the
+      boundary sits where feature-003 EDITS the schema feature-001 requires unchanged. Gate
+      cycle 1 was B+ on two of my own errors -- a false "share zero in-scope files" claim that
+      contradicted my own risk table, and a Dependencies section reading "(none)" while a gate
+      criterion required PR #185 closed. Both fixed, plus the same stale wording in the
+      BLUEPRINT objective that the reviewer flagged outside its hunt scope. delivery-002 passed
+      first pass, 9 of 9 acceptance criteria mapped 1:1.
   - date: '2026-08-16'
     event: 'SPECIFY feature-002 -- A+ (6 cycles, 1 reconciliation)'
     grade: 'A+'
