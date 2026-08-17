@@ -396,7 +396,7 @@ stored — the current keys are `knowledge.source` and `knowledge.last_update`. 
 settles which is current, because it is the only consumer that has to cope with both:
 
 ```
-$ sed -n '377,383p' dashboard/reader/parsers.py
+$ sed -n '378,382p' dashboard/reader/parsers.py
       - Scan for the 'knowledge:' top-level key
       - Within that block, extract 'source:' (-> branch) and 'last_update:'
         (-> tip_date) scalar values
