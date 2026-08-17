@@ -14,8 +14,8 @@
       "terminal": null,
       "provenance": {
         "file": "canonical/skills/aid-execute/SKILL.md",
-        "startLine": 199,
-        "endLine": 199,
+        "startLine": 217,
+        "endLine": 217,
         "sourceKind": "skill",
         "excerpt": "| EXECUTE | `references/state-execute.md` | _(type-specific — see state file; delivery-mode uses pool dispatch PD-0→PD-6)_ | → REVIEW |"
       },
@@ -36,8 +36,8 @@
       "terminal": null,
       "provenance": {
         "file": "canonical/skills/aid-execute/SKILL.md",
-        "startLine": 200,
-        "endLine": 200,
+        "startLine": 218,
+        "endLine": 218,
         "sourceKind": "skill",
         "excerpt": "| REVIEW | `references/state-review.md` | `aid-reviewer` (Small tier, quick-check only — no grade loop per FR2) | → DONE |"
       },
@@ -58,8 +58,8 @@
       "terminal": null,
       "provenance": {
         "file": "canonical/skills/aid-execute/SKILL.md",
-        "startLine": 201,
-        "endLine": 201,
+        "startLine": 219,
+        "endLine": 219,
         "sourceKind": "skill",
         "excerpt": "| FIX | `references/state-fix.md` | _(same type as EXECUTE)_ | → REVIEW |"
       },
@@ -83,8 +83,8 @@
       },
       "provenance": {
         "file": "canonical/skills/aid-execute/SKILL.md",
-        "startLine": 202,
-        "endLine": 202,
+        "startLine": 220,
+        "endLine": 220,
         "sourceKind": "skill",
         "excerpt": "| DONE | _(inline — task complete)_ | `inline` | → halt |"
       },
@@ -102,8 +102,8 @@
       },
       "provenance": {
         "file": "canonical/skills/aid-execute/SKILL.md",
-        "startLine": 203,
-        "endLine": 203,
+        "startLine": 221,
+        "endLine": 221,
         "sourceKind": "skill",
         "excerpt": "| RE-RUN | `references/state-re-run.md` | `inline` | → halt |"
       },
@@ -127,8 +127,8 @@
       },
       "provenance": {
         "file": "canonical/skills/aid-execute/SKILL.md",
-        "startLine": 204,
-        "endLine": 204,
+        "startLine": 222,
+        "endLine": 222,
         "sourceKind": "skill",
         "excerpt": "| DELIVERY-GATE | `references/state-delivery-gate.md` | `aid-reviewer` (tier = complexity score) | → halt (grade ≥ min) / → FIX (grade < min) |"
       },
@@ -234,8 +234,8 @@
       "advanceType": "UNSPECIFIED",
       "provenance": {
         "file": "canonical/skills/aid-execute/SKILL.md",
-        "startLine": 204,
-        "endLine": 204,
+        "startLine": 222,
+        "endLine": 222,
         "sourceKind": "skill",
         "excerpt": "**Advance:** → halt (grade ≥ min) / → FIX (grade < min)"
       }
@@ -248,8 +248,8 @@
       "advanceType": "UNSPECIFIED",
       "provenance": {
         "file": "canonical/skills/aid-execute/SKILL.md",
-        "startLine": 204,
-        "endLine": 204,
+        "startLine": 222,
+        "endLine": 222,
         "sourceKind": "skill",
         "excerpt": "**Advance:** → halt (grade ≥ min) / → FIX (grade < min)"
       }

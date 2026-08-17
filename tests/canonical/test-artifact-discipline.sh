@@ -401,6 +401,99 @@ assert_eq "$ad10_count" "0" "AD10: nothing in canonical/ names SPEC.md outside a
 [[ "$ad10_count" != "0" ]] && report_body "$ad10" | sed 's|^|    offender: |' >&2
 
 # ---------------------------------------------------------------------------
+# AD13: TREE-WIDE ratchet on the retired-artifact vocabulary.
+#
+# This rule exists because of how every rule above it was written. Each one scoped itself
+# to the tree where the problem had just been found -- AD04 to canonical/docs/examples,
+# AD12 to canonical/agents -- so each proved a point about one directory and left its
+# neighbours unexamined. The result was predictable in hindsight: AD12 was written to stop
+# agents being sent to a retired work-state file, and the identical defect was sitting one
+# directory over in canonical/skills the whole time, un-gated, because nobody ran the same
+# check there. "The last surface" kept not being the last surface.
+#
+# So this one takes no scope argument. It counts the whole repository and compares against
+# a recorded number.
+#
+# It is a RATCHET, not a ban, and that distinction is the only reason it can exist at all.
+# Two of these three classes have a large legitimate residue:
+#
+#   - `STATE.md` for a WORK is dead, but ~120 references survive in canonical/skills
+#     prose from the STATE.md -> STATE.yml rename. That is tracked debt (tech-debt SY-5
+#     covers the Knowledge Base slice; the skills slice is recorded by SY-6) and clearing
+#     it is a coordinated prose rewrite with its own review surface -- not something to
+#     smuggle into whichever work happens to notice.
+#   - `BLUEPRINT.md` is retired as an AUTHORED artifact, but its presence is still the
+#     documented fallback sentinel for un-migrated works, read deliberately by
+#     writeback-state.sh and both dashboard readers. Banning the string would delete
+#     working legacy support.
+#
+# A ban would therefore be un-adoptable and would get weakened until it meant nothing. A
+# frozen count cannot be argued with: the number goes down freely and never up, so the
+# residue is visible, bounded, and cannot quietly regrow while attention is elsewhere.
+#
+# Update the ceilings ONLY downward. A rise means a new reference was introduced; the
+# failure names the class so the offender is findable with the same pattern.
+# ---------------------------------------------------------------------------
+ad13_count_class() {
+    ( cd "$REPO" && PATTERN="$1" python3 - <<'PY'
+import os, pathlib, re
+
+pattern = re.compile(os.environ["PATTERN"])
+# Absence statements, retirement notes, and the deliberate legacy-fallback prose are not
+# offences -- the same argument AD04/AD10 already make. A sentence explaining that an
+# artifact is dead is the opposite of sending someone to it.
+skip = re.compile(
+    r"\bno\b|not\b|never|retired|gone|abolished|superseded|folded|formerly|legacy|"
+    r"un-migrated|fallback|presence rule|sentinel|renamed|migration|era|IMPEDIMENT|"
+    r"was |rejected|deprecated",
+    re.I,
+)
+EXCLUDE_DIRS = {".git", "node_modules", "__pycache__", ".aid/works", "profiles",
+                ".claude", ".cursor", ".codex", ".agent", ".github/copilot",
+                # A rule that quotes the string it governs is not an offence against
+                # itself; counting this file would make the ceiling track its own prose.
+                "tests/canonical/test-artifact-discipline.sh"}
+SUFFIXES = {".md", ".mdx", ".py", ".mjs", ".sh", ".ps1", ".yml", ".yaml", ".astro"}
+
+total = 0
+for path in pathlib.Path(".").rglob("*"):
+    if not path.is_file() or path.suffix not in SUFFIXES:
+        continue
+    text = str(path)
+    if any(part in text for part in EXCLUDE_DIRS):
+        continue
+    for line in path.read_text(encoding="utf-8", errors="replace").splitlines():
+        if pattern.search(line) and not skip.search(line):
+            total += 1
+print(total)
+PY
+    )
+}
+
+# Ceilings are the counts measured when this rule was written. Lower them when a class
+# shrinks; never raise them.
+ad13_check() {
+    local label="$1" ceiling="$2" pattern="$3" got
+    got="$(ad13_count_class "$pattern")"
+    if [[ -z "$got" ]]; then
+        fail "AD13 ${label}: counter produced no output"
+    elif [[ "$got" -le "$ceiling" ]]; then
+        pass "AD13 ${label}: ${got} reference(s), ceiling ${ceiling}"
+    else
+        fail "AD13 ${label}: ${got} references exceeds the ceiling of ${ceiling} -- a new one was introduced"
+    fi
+}
+
+ad13_check "work STATE.md (retired; use STATE.yml)" 77 \
+    'works?[ `]{0,4}['"'"'\`]?STATE\.md|works/\{work\}/STATE\.md'
+ad13_check "BLUEPRINT.md (retired as an authored artifact)" 203 \
+    'BLUEPRINT\.md'
+ad13_check "bare task-NNN.md (now tasks/task-NNN/DETAIL.md)" 26 \
+    '(?<!IMPEDIMENT-)(?<!execute-)\btask-NNN\.md'
+ad13_check "per-feature SPEC.md (folded into REQUIREMENTS.md section 11)" 3 \
+    'features/[*a-zA-Z0-9_-]*/SPEC\.md|per-feature[ `]+SPEC'
+
+# ---------------------------------------------------------------------------
 # AD12: the AGENT definitions name no retired artifact.
 #
 # `canonical/agents/` is the surface every prose sweep in this work missed, because each

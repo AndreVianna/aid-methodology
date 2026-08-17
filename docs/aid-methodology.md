@@ -396,7 +396,7 @@ This is the third conviction underlying AID: the Knowledge Base is the gravitati
 | `aid-describe` | Definition | 2a | `REQUIREMENTS.md` — full path only |
 | `aid-define` | Definition | 2b | Feature decomposition into `REQUIREMENTS.md § 11` sections (full path only) |
 | `aid-specify` | Definition | 3 | Technical spec added to each feature's `§ 11` section |
-| `aid-plan` | Definition | 4 | `PLAN.md` + per-delivery `deliveries/delivery-NNN/BLUEPRINT.md` + `STATE.md` |
+| `aid-plan` | Definition | 4 | `PLAN.md` (one `### delivery-NNN` stanza per delivery) + `STATE.yml` |
 | `aid-detail` | Definition | 5 | Typed, PR-sized `deliveries/delivery-NNN/tasks/task-NNN/DETAIL.md` files + execution graph |
 | `aid-execute` | Execution | 6 | Implemented + reviewed code to grade ≥ minimum; 8 task types |
 | `aid-deploy` | Definition (shortcut path) | — (optional) | Release package · `package-NNN.md` · `DEPLOYMENT-STATE.md` |
@@ -650,9 +650,9 @@ The key distinction from generic spec generation: the agent does not ask "what t
 
 **Why two-level planning matters:** In most methodologies there is one level of planning — a backlog, a sprint, a roadmap. AID separates strategy (Plan) from tactics (Detail). Plan answers "what goes in MVP vs. v2 vs. v3." Detail answers "how do we build MVP — what are the tasks, what are their dependencies." Mixing these levels is where planning sessions get bogged down in micro-decisions before the macro-structure is settled.
 
-**Output:** `.aid/works/{work}/PLAN.md` — ordered deliverables (each a shippable MVP), optional cross-cutting risks, optional deferred features list — plus, per approved deliverable, `deliveries/delivery-NNN/BLUEPRINT.md` (the delivery definition: objective, scope, gate criteria, task listing, dependencies) and `deliveries/delivery-NNN/STATE.md` (the delivery's own lifecycle, seeded `Pending-Spec`).
+**Output:** `.aid/works/{work}/PLAN.md` — ordered deliverables (each a shippable MVP), optional cross-cutting risks, optional deferred features list — with one `### delivery-NNN` stanza per approved deliverable carrying its definition (objective, scope, gate criteria, dependencies), plus `deliveries/delivery-NNN/STATE.yml` (the delivery's own lifecycle, seeded `Pending-Spec`).
 
-**Full path only:** Plan is skipped on the lite path — the shortcut engine's PLAN state collapses it into a single-delivery `PLAN.md` + work-root `BLUEPRINT.md`.
+**Full path only:** Plan is skipped on the lite path — with one feature and one delivery there is no sequencing decision to record, so the shortcut engine writes no `PLAN.md` at all.
 
 ---
 
@@ -1048,7 +1048,7 @@ wrong-assumption | missing-dependency | architecture-conflict | kb-gap
 | Feature section | `REQUIREMENTS.md § 11` | Describe + Specify (full path) | Plan, Detail, Execute | Living — Describe writes the requirements side, Specify adds the technical spec |
 | known-issues.md | `.aid/works/{work}/` | Specify (Monitor updates) | Plan, Execute, Deploy, Monitor | Living — created when the first issue is registered |
 | PLAN.md | `.aid/works/{work}/` | Plan (full path) or the shortcut engine's PLAN state (lite path) | Detail, Deploy | Living — rev-tracked; Detail appends the execution graph |
-| BLUEPRINT.md (delivery definition) | Full path: `deliveries/delivery-NNN/`; lite path: work root | Plan (full path) or the shortcut engine's PLAN state (lite path) | Detail, Execute | Immutable — objective, scope, gate criteria, task listing, dependencies |
+| Delivery stanza (delivery definition) | A `### delivery-NNN` section of `PLAN.md` | Plan (full path) or the shortcut engine's PLAN state (lite path) | Detail, Execute | Immutable — objective, scope, gate criteria, task listing, dependencies |
 | STATE.md (delivery area) | Full path: `deliveries/delivery-NNN/`; lite path: promoted into the work-root `STATE.md § Delivery Lifecycle` | Plan | Execute | Living — delivery lifecycle, `Pending-Spec` → … → `Done`/`Blocked` |
 | DETAIL.md (task definition) | Full path: `deliveries/delivery-NNN/tasks/task-NNN/`; lite path: `.aid/works/{work}/tasks/task-NNN/` | Detail (full path) or the shortcut engine's DETAIL state (lite path) | Execute | Immutable definition; rev-tracked if amended |
 | STATE.md (task area) | Full path: `deliveries/delivery-NNN/tasks/task-NNN/`; lite path: rolled into the work-root `STATE.md § Tasks lifecycle` | Detail (seeded); Execute (updated) | Execute (resume), Monitor | Living — full review history for the task |
@@ -1148,38 +1148,33 @@ Each feature gets a `### Feature NNN` section under `REQUIREMENTS.md § 11` on t
 
 ```
 
-**Delivery BLUEPRINT.md template:**
+**Delivery stanza (in `PLAN.md`):**
 
-Plan writes one `BLUEPRINT.md` per delivery immediately after approving that delivery's PLAN.md stanza — the delivery's immutable definition, distinct from its own `STATE.md` (lifecycle). Full path: `deliveries/delivery-NNN/BLUEPRINT.md`. Lite path: the sole delivery's `BLUEPRINT.md` sits at the work root.
+A delivery definition is a SECTION, not a file. Plan writes one `### delivery-NNN`
+stanza into `PLAN.md` as it approves that delivery — objective, scope and gate criteria
+together in the document that already orders the deliveries:
 
 ```markdown
-# Delivery BLUEPRINT — delivery-NNN: {Title}
+### delivery-NNN: {Title}
 
-## Objective
-{One paragraph: what this delivery achieves and why it is scoped as a distinct unit.}
+**Objective:** {One paragraph: what this delivery achieves and why it is a distinct unit.}
 
-## Scope
-{What is IN scope — bounded list of deliverables, referencing features/requirements.}
+**Scope:** {What is IN scope -- bounded list, referencing features/requirements.}
 
 **Out of scope:** {anything explicitly excluded, to avoid scope creep.}
 
-## Gate Criteria
-- [ ] {Criterion 1 — concrete and testable}
-- [ ] {Criterion 2 — concrete and testable}
+**Gate Criteria:**
+- [ ] {Criterion 1 -- concrete and testable}
+- [ ] {Criterion 2 -- concrete and testable}
 - [ ] All section-6 quality gates pass
 
-## Tasks
-| Task | Type | Title |
-|------|------|-------|
-| task-NNN | {TYPE} | {Title} |
-
-## Dependencies
-- **Depends on:** delivery-NNN | — (none)
-- **Blocks:** delivery-NNN | — (none)
-
-## Notes
-{Design notes, constraints, or references not captured in the gate criteria.}
+**Depends on:** delivery-NNN | -- (none)
 ```
+
+The task list and the execution graph are NOT written here. The task set is the
+`tasks/task-NNN/DETAIL.md` folders on disk, and the graph is derived from each task's
+`**Depends on:**` field by `derive-waves.sh`. A stored copy could disagree with the
+tasks it came from.
 
 **Task DETAIL.md template:**
 

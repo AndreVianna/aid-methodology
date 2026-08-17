@@ -69,7 +69,7 @@ Every node in the chart above, in chart order, with the exact `canonical/` text 
 | CONTINUE | `references/state-continue.md` | `aid-architect` | → REVIEW |
 ~~~~
 
-[Source: `canonical/skills/aid-specify/SKILL.md#L218`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-specify/SKILL.md#L218) · [full step: `canonical/skills/aid-specify/references/state-continue.md#L1-L111`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-specify/references/state-continue.md#L1-L111)
+[Source: `canonical/skills/aid-specify/SKILL.md#L218`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-specify/SKILL.md#L218) · [full step: `canonical/skills/aid-specify/references/state-continue.md#L1-L114`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-specify/references/state-continue.md#L1-L114)
 
 <a id="fragment-n3"></a>**3 · `SPIKE`** — > Source: references/handling-outcomes.md §"Spike Needed… · _exit_ · PAUSE-FOR-USER-ACTION
 

@@ -258,7 +258,7 @@ phases; it does not relax the *execution quality* bar.
 | per-feature `### Feature NNN` section under `REQUIREMENTS.md § 11` | Yes | No |
 | `PLAN.md` | Yes | No |
 | work-root `REQUIREMENTS.md` | Yes | **Yes** |
-| `tasks/task-NNN.md` | Yes (via aid-detail) | **Yes (via TASK-BREAKDOWN)** |
+| `tasks/task-NNN/DETAIL.md` | Yes (via aid-detail) | **Yes (via TASK-BREAKDOWN)** |
 | `STATE.md` | Yes | **Yes** |
 | LITE-REVIEW gate | No | **Yes** |
 | Delivery gate in execute | Yes | **Yes** |
@@ -335,7 +335,7 @@ two-tier review.
       ▼
 [TASK-BREAKDOWN]  (architect agent)
   Proposes 1–2 typed tasks directly from SPEC
-  Tasks written to tasks/task-NNN.md
+  Tasks written to tasks/task-NNN/DETAIL.md
       │
       ▼
 [LITE-REVIEW]  (reviewer agent)

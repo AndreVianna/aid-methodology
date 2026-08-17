@@ -269,7 +269,7 @@ PR that can be reviewed, tested, and merged without blocking the rest.
 
 ## Step 5 — Detail: break deliveries into typed tasks
 
-`aid-detail` reads the delivery plan and writes individual `task-NNN.md` files for
+`aid-detail` reads the delivery plan and writes one `tasks/task-NNN/DETAIL.md` per task for
 each delivery, creating the execution graph.
 
 ```
@@ -278,7 +278,7 @@ each delivery, creating the execution graph.
 
 **What `aid-detail` does:**
 
-For each delivery in `PLAN.md`, the `aid-architect` agent writes one `task-NNN.md` file
+For each delivery in `PLAN.md`, the `aid-architect` agent writes one `tasks/task-NNN/DETAIL.md`
 per unit of work under `.aid/works/work-NNN/tasks/`. Each task file has:
 
 - A **type** (RESEARCH, DESIGN, IMPLEMENT, TEST, DOCUMENT, MIGRATE, REFACTOR, CONFIGURE)

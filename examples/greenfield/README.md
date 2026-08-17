@@ -221,7 +221,7 @@ is what the coding agent reads during execution.
 /aid-detail
 ```
 
-AID reads `PLAN.md` and each feature section, then produces `task-NNN.md` files in
+AID reads `PLAN.md` and each feature section, then produces `tasks/task-NNN/DETAIL.md` files in
 `.aid/works/work-001-tasktracker-api/tasks/`. It also writes an execution graph showing
 which tasks can run in parallel vs. must be sequential.
 

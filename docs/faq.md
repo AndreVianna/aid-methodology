@@ -151,8 +151,8 @@ The impediment artifact creates an audit trail. You can always answer "why did t
 All AID runtime state lives under `.aid/` in your project. Key locations:
 - `.aid/knowledge/` — the Knowledge Base (14 standard docs + meta)
 - `.aid/knowledge/STATE.md` — discovery-area state (Q&A, review history)
-- `.aid/works/{work}/STATE.md` — work-area state for each work item
+- `.aid/works/{work}/STATE.yml` — work-area state for each work item
 - `.aid/works/{work}/REQUIREMENTS.md` — the requirements, with one `### Feature NNN` section per feature under § 11
-- `.aid/works/{work}/BLUEPRINT.md` (lite path) or `.aid/works/{work}/deliveries/{delivery}/BLUEPRINT.md` (full path) — delivery definition
+- `.aid/works/{work}/PLAN.md` `### delivery-NNN` stanzas (full path; the Lite path writes no `PLAN.md` at all) — delivery definition
 - `.aid/works/{work}/tasks/{task}/DETAIL.md` (lite path) or `.aid/works/{work}/deliveries/{delivery}/tasks/{task}/DETAIL.md` (full path) — task definition, ready for execution
 - `.aid/settings.yml` — project configuration (including `discovery.doc_set`)

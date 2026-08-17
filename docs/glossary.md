@@ -31,7 +31,7 @@ Terms and concepts used throughout the AID methodology.
 | **Discover** | Knowledge Base Maintenance | Knowledge Base (14 standard documents) |
 | **Describe → Define** | Definition | Full path: `REQUIREMENTS.md`, with a `### Feature NNN` section per feature under § 11. Lite path (via a shortcut): the single `§ 11` section, written directly. |
 | **Specify** | Definition | Technical specification added to each feature's section in `REQUIREMENTS.md § 11` (full path only) |
-| **Plan** | Definition | `PLAN.md` (execution graph) + `deliveries/delivery-NNN/BLUEPRINT.md` (delivery definition) — full path only |
+| **Plan** | Definition | `PLAN.md` (delivery order + one `### delivery-NNN` definition stanza each) — full path only |
 | **Detail** | Definition | `deliveries/delivery-NNN/tasks/task-NNN/DETAIL.md` (task definition) — full path only |
 | **Execute** | Execution | Reviewed, graded code (8 task types, built-in review loop) |
 
