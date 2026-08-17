@@ -1302,3 +1302,48 @@ qa:
       it is that the gate is tree-wide and tight, so the next one fails at CI instead of
       waiting to be noticed.
 
+  - id: Q37
+    question: "Checked once more, as suggested. What did a DIFFERENT kind of check find?"
+    status: Resolved
+    answer: |
+      Four defects, and the most serious of the whole session was among them. The change
+      that found them was not looking in more places -- it was asking different questions:
+      what has a second IMPLEMENTATION, and what points at the files this work DELETED?
+
+      1. AC-12 WAS NOT MET BY THE WRITER THE DASHBOARD ACTUALLY USES.
+         `dashboard/scripts/writeback-state.sh` is a deliberate fork, and the server's
+         WRITER_DIR points at `dashboard/scripts`, so THAT fork performs every state write
+         the UI triggers. Its is_flat_layout read BLUEPRINT.md presence alone. Since
+         BLUEPRINT.md is retired, a work declaring `pipeline.path: lite` has none: every
+         reader classified it FLAT while this writer classified it NESTED. The dashboard
+         would read a work as flat and write to it as nested.
+
+         It survived because the fork is legitimate on ONE axis (it accepts `Deploy` as a
+         Phase value) and its own banner recorded that no parity suite compared it to its
+         source -- naming the absence of that test as the real risk. The banner was right,
+         and a banner is not a test. Fixed by LIFTING the canonical parser verbatim, because
+         re-typing it would have required rediscovering all eight divergences that parser has
+         produced. The corpus is now FOUR-way.
+
+      2. A TEST PASSING ON A DELETED FILE. WS09 in test-work-state-template.sh grepped
+         delivery-blueprint-template.md with `2>/dev/null`; on a missing file the grep returns
+         non-zero, the else branch fires, and the assertion PASSES. Two assertions had been
+         reporting success about a file that did not exist. Guarded now.
+
+      3. DANGLING KB SOURCE CITATIONS. Three KB docs cited deleted templates in `sources:`.
+         The gate whose name suggests it would catch this -- kb-citation-lint.sh -- flags
+         volatile line-number anchors and never opens the cited path. AD14 does.
+
+      4. docs/repository-structure.md still listed the retired template.
+
+      Cleared, not defects: the vendored copies under packages/ are untracked and rebuilt by
+      vendor.js/vendor.py, so the fix propagates; .aid-manifest.json names deleted templates
+      as the historical record of past installs, which is its purpose.
+
+      THE METHOD LESSON, which is worth more than the four fixes. Every earlier check asked
+      "does this string appear somewhere else?" and so could only ever find more of the same
+      class. These four were found by asking structural questions instead: does this logic
+      have a second implementation, and what points at what I removed? The dashboard fork was
+      invisible to every vocabulary scan because it contained no retired vocabulary at all --
+      its defect was a MISSING read, and absence does not grep.
+
