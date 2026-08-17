@@ -1,187 +1,48 @@
 #!/usr/bin/env bash
 #
 # ============================================================================
-#  THIS IS A DELIBERATE FORK, NOT A RENDER. Do not "resync" it.
+#  THIS IS A DELIBERATE FORK, NOT A RENDER. Do not "resync" it blindly.
 #
-#  Source of the other eight copies: canonical/aid/scripts/execute/writeback-state.sh
-#  This copy diverges on purpose: it additionally accepts `Deploy` as a Phase value,
-#  which the canonical version rejects. Overwriting it from canonical/ silently removes
-#  that, and NO TEST WOULD CATCH IT -- there is no parity suite comparing the two
-#  (`grep -rn dashboard/scripts/writeback-state tests/` returns nothing). Recorded here
-#  because the absence of that test is the actual risk, and the banner is what stands in
-#  for it until one exists.
+#  Source: canonical/aid/scripts/execute/writeback-state.sh
+#  Divergence, and the ONLY one: it additionally accepts `Deploy` as a Phase value,
+#  which canonical rejects. That is two lines -- the `Phase)` case list and its error
+#  message. Everything else must track canonical exactly.
 #
-#  Fixes that are NOT about the Phase enum belong in canonical/ first, then here.
+#  RE-FORKED from canonical rather than patched, and the reason is the point of this
+#  banner. The previous fork was a full generation behind: it defaulted to
+#  `.aid/works/work/STATE.md`, and its task write required a markdown
+#  `### Tasks lifecycle` SECTION. After the STATE.md -> STATE.yml conversion it could not
+#  write to a current work at all -- it failed with
+#  "malformed work STATE.md: ### Tasks lifecycle section not found".
+#
+#  This file is what the dashboard server invokes for EVERY state write the UI triggers
+#  (its WRITER_DIR is `dashboard/scripts`). So the dashboard's entire write path was
+#  broken against every current work, silently, for as long as that conversion has been
+#  in place.
+#
+#  It stayed broken because "deliberate fork" was read as "leave alone". A fork is exempt
+#  from RESYNC on its divergence, not from tracking its source everywhere else. When
+#  canonical's write path changed generation, this copy needed that change, and the banner
+#  is what persuaded everyone it did not.
+#
+#  Re-forking beat porting: the divergence is two lines, and re-applying two lines to a
+#  known-good file is verifiable in a way that hand-porting a 1700-line write path is not.
+#
+#  Guarded now, so the next generational change cannot repeat this:
+#    - tests/canonical/test-lite-work-end-to-end.sh exercises THIS file (not canonical)
+#      against a current-shape Lite work, and fails if the write does not land.
+#    - test_declared_path_three_way_parity.py's fourth arm compares this file's declared
+#      layout read to canonical's across the whole corpus.
+#  Both of those existed as prose warnings in the old banner. Prose did not stop it.
 # ============================================================================
-# writeback-state.sh -- row-level write coordination for FR6 parallel pool
-# x per-unit STATE writes in AID aid-execute.
-#
-# Provides 8 safe write modes targeting PER-UNIT STATE.md files (Pillar 2).
-# Uses a sentinel-file lock (set -o noclobber + atomic create + sleep-poll retry)
-# to prevent races when multiple parallel tasks dispatch reviewers concurrently.
-#
-# Frontmatter-writer path (work-003-state-schema task-004): every machine-parsed
-# field (pipeline/task-state/delivery-lifecycle/delivery-gate scalars) is written
-# via a surgical YAML-frontmatter rewrite (`wb_set_frontmatter`, below) -- a single
-# flat top-level key (e.g. `lifecycle`) or one-level-nested key (e.g.
-# `pipeline.path`) is created-or-updated in the leading `---`...`---` block at the
-# top of the target STATE.md, and the markdown BODY (everything from the first
-# non-frontmatter line onward) is never touched -- byte-identical before/after.
-# This replaces the OLDER convention (pre-task-004) of rewriting a
-# `- **Field:** value` bullet inside a body section -- the 4 canonical templates
-# (task-001) moved every one of these scalars into frontmatter, so the body
-# sections they used to live in (`## Pipeline State`, `## Task State`,
-# `## Delivery Lifecycle`'s `- **State:**` line, `## Delivery Gate`'s
-# `- **Reviewer Tier:**`/`- **Grade:**`/`- **Timestamp:**` lines) are now static
-# enum-reference/comment-only prose, never rewritten by this script. Values are
-# single-quoted (`'...'`, doubling any embedded `'`) in the emitted YAML only
-# when the raw text needs it (contains a `:`/`#`/`"`/`\`/leading special char);
-# closed-enum/short tokens (`Running`, `yes`, `A+`, `aid-refactor`) are written
-# bare, matching the 4 templates' own placeholder style. See
-# WB_SET_FRONTMATTER_AWK's own doc comment for why single-quote style (not
-# double-quote + backslash-escaping) is used. `wb_set_frontmatter` creates the
-# frontmatter block from scratch (at the very top of the file) when the target
-# file has none yet, so a not-yet-migrated (task-005) STATE.md degrades
-# gracefully instead of failing.
-#
-# Unit layout (work-004 hierarchy):
-#   work-NNN-{name}/
-#     STATE.md                                  -- work-level (--pipeline target)
-#     deliveries/
-#       delivery-NNN/
-#         STATE.md                              -- delivery-level (--block / --lifecycle target)
-#         tasks/
-#           task-NNN/
-#             STATE.md                          -- task-level (--field / --findings target)
-#
-# Flattened single-delivery layout (feature-001, additive -- nested layout above
-# is unchanged): detected by a work-root BLUEPRINT.md present AND
-# `tasks/task-NNN/DETAIL.md` present directly under the work root AND no
-# `deliveries/` wrapper. The delivery lifecycle/gate AND the per-task mutable
-# cells are all promoted into the SAME work-root STATE.md:
-#   work-NNN-{name}/
-#     STATE.md          -- work-level (--pipeline target) AND, for this layout,
-#                           the --delivery-id 001 targets too:
-#                             ## Delivery Lifecycle  (--lifecycle target)
-#                             ## Delivery Gate        (--block target)
-#                             ### Tasks lifecycle     (--task-id/--field target;
-#                                                       a table row per task-NNN,
-#                                                       replacing the per-task
-#                                                       STATE.md ## Task State)
-#                             ## Quick Check Findings (--task-id/--findings target;
-#                                                       a ### task-NNN sub-block per
-#                                                       task, replacing the per-task
-#                                                       STATE.md section of the same
-#                                                       name; created on first write)
-#     tasks/
-#       task-NNN/
-#         DETAIL.md      -- task definition (no per-task STATE.md in this layout)
-#
-# Usage:
-#   writeback-state.sh [--delivery-id NNN] --task-id NNN --field FIELD --value VALUE
-#       Full-nested layout: surgical frontmatter write of a single scalar key
-#       (state | review | elapsed | notes) in the leading YAML block of
-#       deliveries/delivery-NNN/tasks/task-NNN/STATE.md (one-writer-per-branch file);
-#       the ## Task State body section is static comment-only prose and is never
-#       rewritten by this mode (task-004).
-#       Fields: State | Review | Elapsed | Notes
-#       --delivery-id is optional; if omitted the delivery is resolved from the
-#       task's Source line (e.g. "**Source:** work-NNN -> delivery-NNN").
-#       Override env: AID_TASK_STATE_FILE (absolute path) skips all path resolution.
-#       Flattened layout (feature-001, auto-detected): targets the matching
-#       task-NNN row of the work-root STATE.md's ### Tasks lifecycle table instead
-#       (creates the row on first write; replaces the placeholder "_none yet_" row).
-#       This table is NOT relocated to frontmatter (schema-note.md): it aggregates
-#       many tasks in one file, so it stays a markdown table; this branch is
-#       unchanged by task-004.
-#
-#   writeback-state.sh [--delivery-id NNN] --task-id NNN --findings BLOCK
-#       Write/replace the ## Quick Check Findings block in
-#       deliveries/delivery-NNN/tasks/task-NNN/STATE.md.
-#       Same delivery resolution as --field mode.
-#       Flattened layout (feature-001, auto-detected): there is no per-task
-#       STATE.md, so this targets a `### task-NNN` SUB-BLOCK under the
-#       work-root STATE.md's ## Quick Check Findings section instead (creating
-#       that section when absent). Only the addressed task's sub-block is
-#       replaced -- sibling tasks' sub-blocks survive byte-identical, which is
-#       what makes this safe under FR6 parallel execution (single-writer per
-#       task by construction). In the FULL layout each task owns its own file,
-#       so there the WHOLE section is replaced and no sub-heading is used.
-#
-#   writeback-state.sh --delivery-id NNN --block MARKDOWN_BLOCK
-#       Write/replace the ## Delivery Gate block in deliveries/delivery-NNN/STATE.md (SD-5).
-#       Override env: AID_DELIVERY_STATE_FILE (absolute path) skips path resolution.
-#       Flattened layout (feature-001, auto-detected; --delivery-id 001): writes
-#       the singular ## Delivery Gate block into the work-root STATE.md instead.
-#
-#   writeback-state.sh --delivery-id NNN --lifecycle VALUE
-#       Surgical frontmatter write of the `delivery_state` key (SD-8 authored
-#       delivery state) -- the ## Delivery Lifecycle body's `- **State:**` bullet
-#       was relocated to frontmatter by task-001 and is never rewritten here
-#       (task-004); the body's Updated/Block Reason/Block Artifact bullets are
-#       untouched (not relocated -- see schema-note.md).
-#       VALUE must be one of: Pending-Spec | Specified | Executing | Gated | Done | Blocked
-#       Override env: AID_DELIVERY_STATE_FILE (absolute path) skips path resolution.
-#       Emits no user-facing output (C4 behavior-preserving).
-#       Flattened layout (feature-001, auto-detected; --delivery-id 001): targets
-#       the work-root STATE.md's own frontmatter instead (same `delivery_state` key;
-#       see work-state-template.md's "Flattened single-delivery works only" group).
-#
-#   writeback-state.sh --delivery-id NNN --gate-field FIELD --gate-value VALUE
-#       Surgical frontmatter write of one Delivery Gate scalar (relocated by
-#       task-001; the ## Delivery Gate body block -- written via --block below --
-#       now carries only Complexity Score / Cycles / Issue List, never these three).
-#       FIELD must be one of: Tier | Grade | Timestamp -> gate_tier | gate_grade | gate_timestamp
-#       Tier is closed-enum validated (Small | Medium | Large); Grade must match
-#       ^[A-F][+-]?$ (grade.sh's own output alphabet). Timestamp is free ISO-8601 text.
-#       Override env: AID_DELIVERY_STATE_FILE (absolute path) skips path resolution.
-#       Emits no user-facing output (C4 behavior-preserving).
-#       Flattened layout (feature-001, auto-detected; --delivery-id 001): targets
-#       the work-root STATE.md's own frontmatter instead (same 3 keys).
-#
-#   writeback-state.sh --delivery-id NNN --append-issue ROW
-#       Append a single issue row to the delivery's delivery-NNN-issues.md.
-#       ROW must be a valid markdown table row (pipe-delimited).
-#
-#   writeback-state.sh --pipeline --field FIELD --value VALUE
-#       Surgical frontmatter write of a single scalar key in the leading YAML
-#       block of the work STATE.md (relocated by task-001; the ## Pipeline State
-#       body section is now a static enum-reference blockquote and is never
-#       rewritten by this mode). FIELD must be one of: Lifecycle | Phase |
-#         Active Skill | Updated | Pause Reason | Block Reason | Block Artifact |
-#         Started | Minimum Grade | User Approved | Pipeline Path | Pipeline Initiator
-#       Lifecycle, Phase, Active Skill, User Approved, and Pipeline Path are
-#       closed-enum validated; Minimum Grade must match ^[A-F][+-]?$.
-#       Conditional fields: Pause Reason written only when Lifecycle is
-#         Paused-Awaiting-Input; Block Reason + Block Artifact written only when
-#         Lifecycle is Blocked. On Lifecycle change, conditional fields that no
-#         longer apply are cleared (reset to the "--" null sentinel in frontmatter).
-#       Emits no user-facing output (C4 behavior-preserving).
-#
-#   writeback-state.sh -h | --help
-#
-# Flattened single-delivery layout (feature-001) detection: a work-root
-# BLUEPRINT.md present AND at least one `tasks/task-NNN/DETAIL.md` present
-# directly under it AND no `deliveries/` wrapper under the work root.
-# Auto-detected per-call; no new flag needed. The nested layout above is
-# unchanged (additive only).
-#
-# Exit codes:
-#   0  success
-#   1  STATE.md or required artifact missing
-#   2  lock contention (timeout)
-#   3  writeback produced empty / unverifiable output
-#   4  invalid argument value
-#   5  missing required argument
-#   6  malformed STATE.md (## Task State section absent in task file)
 
 set -u
 
 # ---------------------------------------------------------------------------
 # Defaults -- caller can override via environment for testing
 # ---------------------------------------------------------------------------
-# Work-level STATE.md (--pipeline target)
-STATE_FILE="${AID_STATE_FILE:-.aid/works/work/STATE.md}"
+# Work-level STATE.yml (--pipeline target)
+STATE_FILE="${AID_STATE_FILE:-.aid/works/work/STATE.yml}"
 
 # Work root (base for resolving delivery/task paths)
 # Derived from STATE_FILE parent when not overridden.
@@ -191,14 +52,15 @@ WORK_DIR="${AID_WORK_DIR:-}"
 # Set AID_DELIVERY_DIR to override the per-delivery STATE path base.
 DELIVERY_DIR_BASE="${AID_DELIVERY_DIR:-}"
 
-# Task-level STATE.md override (skips all path resolution for --field/--findings)
+# Task-level STATE.yml override (skips all path resolution for --field/--findings)
 TASK_STATE_FILE="${AID_TASK_STATE_FILE:-}"
 
-# Delivery-level STATE.md override (skips path resolution for --block)
+# Delivery-level STATE.yml override (skips path resolution for --block)
 DELIVERY_STATE_FILE="${AID_DELIVERY_STATE_FILE:-}"
 
 # Issues directory: directory containing delivery-NNN-issues.md files
-# Defaults to the work directory (same dir as work STATE.md).
+# Defaults to the work directory (same dir as work STATE.yml). Unaffected by
+# the YAML migration -- delivery-NNN-issues.md stays markdown.
 DELIVERY_ISSUES_DIR="${AID_DELIVERY_ISSUES_DIR:-.aid/works/work}"
 
 # Lock directory -- defaults to derived per-call below (see acquire_lock)
@@ -208,10 +70,10 @@ LOCK_TIMEOUT="${AID_LOCK_TIMEOUT:-10}"   # max retries (0.5s each -> 5s default)
 
 # ---------------------------------------------------------------------------
 usage() {
-    # Upper bound tracks the end of the --gate-field usage stanza. Bump it
-    # whenever lines are added to the header block above it, or --help silently
+    # Upper bound tracks the end of the Exit codes stanza. Bump it whenever
+    # lines are added to the header block above it, or --help silently
     # starts truncating (or over-printing) the usage text.
-    sed -n '2,160p' "$0" | sed 's/^# \{0,1\}//'
+    sed -n '2,194p' "$0" | sed 's/^# \{0,1\}//'
 }
 
 die() { echo "ERROR: writeback-state.sh: $*" >&2; exit "${2:-1}"; }
@@ -227,16 +89,57 @@ resolve_work_dir() {
     fi
 }
 
-# wb_get_pipeline_path: echo the work-root STATE.yml `pipeline.path` value, lowercased,
-# or nothing when it is absent or unreadable. Never throws.
+# wb_get_pipeline_path: echo the work-root STATE.yml `pipeline.path` value,
+# lowercased, or nothing when there is no `pipeline:` mapping, no `path:` under
+# it, or no state file. Never throws.
 #
-# LIFTED VERBATIM from canonical/aid/scripts/execute/writeback-state.sh rather than
-# re-typed. Re-typing it is how a fifth YAML dialect gets born: that parser has already
-# produced EIGHT divergences from its Python/Node twins (CRLF, single quotes, inline
-# comments, tab indentation, a BOM, a two-level-deep `path:`, block/anchor markers
-# returned verbatim, and multi-document precedence), each found separately and each fixed
-# only in the canonical copy. Every one of them would have had to be rediscovered here.
-# Keep it byte-identical; FWP01 in test-writeback-state.sh asserts that it is.
+# The key is NESTED (`pipeline:` then an indented `path:`), matching what the
+# reader twins flatten to `pipeline.path` (state_schema.py documents the
+# mapping: `pipeline:\n  path: lite` -> `{"pipeline.path": "lite"}`).
+#
+# STATE.yml only -- no STATE.md fallback, matching reader.py
+# _declared_work_path and reader.mjs _declaredWorkPath exactly. SP-9 routes a
+# work holding the retired markdown name to the legacy detector, which
+# diagnoses rather than parses, so a fallback here would contradict that policy
+# AND put this function out of step with its twins.
+#
+# The scalar handling below is not decoration. Those twins delegate to the
+# shared D-3 subset engine; this one hand-rolls YAML in awk, so every scalar
+# form the engine accepts has to be reproduced here by hand or the three
+# disagree on the same file. Three forms were found diverging and are covered
+# by cases WB-* in tests/canonical/test-writeback-state.sh: a CRLF file (awk's
+# `$` anchors sat behind a stray \r, so `pipeline:` never matched and the value
+# read empty), a single-quoted `'lite'` (only double quotes were stripped), and
+# a trailing `# comment` (kept verbatim, so the value compared equal to
+# nothing). Extending this parser means extending those cases too.
+#
+# Five MORE were then found by probing forms nobody had tried, rather than by
+# waiting for the next reviewer -- the corpus was covering the failures already
+# known, which is the one thing a corpus cannot get credit for. All five are in
+# the three-way parity corpus now:
+#
+#   BOM            a UTF-8 byte-order mark sat in front of `pipeline:`, so the
+#                  key never matched and the value read empty. Twins: `lite`.
+#   deeper nest    `pipeline:` -> `opts:` -> `path:` matched here, because any
+#                  indent was accepted; `pipeline.path` does not exist in that
+#                  file and both twins correctly said so.
+#   block/anchor   `|`, `>`, `&p lite` were returned VERBATIM. This is the worst
+#                  failure of the five and the reason for the guard below: the
+#                  harm is not the wrong value, it is that a non-empty answer
+#                  tells is_flat_layout the layout WAS declared, suppressing the
+#                  presence-rule fallback that would have classified correctly.
+#   escaped quote  `"li\"te"` truncated at the backslash.
+#   multi-document the first document won here and the last won in the twins.
+#
+# The indentation rule is EXACTLY two spaces, not "one or more". That is not a
+# tightening for its own sake: the engine models nesting as `level = indent // 2`,
+# so a four-space `path:` is level 2 -- a grandchild of `pipeline:`, not its
+# child -- and both twins answer "not declared" for it. A parser that accepted
+# any indent answered `lite` where they answered nothing. Note this makes all
+# three agree while all three differ from a full YAML parser, which reads
+# four-space nesting as an ordinary child: that is what being a documented
+# SUBSET means, and consistency across the three is the invariant that matters,
+# since a file all three misread the same way is classified consistently.
 wb_get_pipeline_path() {
     resolve_work_dir
     local state="${WORK_DIR}/STATE.yml"
@@ -295,22 +198,34 @@ wb_get_pipeline_path() {
     ' "$state"
 }
 
-# is_flat_layout: return 0 (true) when the work uses the FLATTENED single-delivery layout.
+# is_flat_layout: return 0 (true) when the work uses the FLATTENED
+# single-delivery layout (feature-001).
 #
-# DECLARED FIRST, inferred only as a fallback -- brought into line with the canonical
-# script and both reader twins. This copy read `BLUEPRINT.md` presence ALONE, which was
-# the bug the declared read exists to remove: BLUEPRINT.md is retired as an authored
-# artifact, so a current work declaring `pipeline.path: lite` has none, and this writer
-# classified it as NESTED while every reader classified it FLAT. The dashboard would
-# therefore READ a work as flat and WRITE to it as nested -- through this very script,
-# since the server's WRITER_DIR is `dashboard/scripts`.
+# DECLARED FIRST, inferred only as a fallback. The layout is a property of the
+# WHOLE WORK, so it is read from the work-root STATE.yml (`pipeline.path:
+# lite | full`) -- one declared value, written once by the skill that started
+# the work. A declared value cannot be ambiguous; an inferred one can, and
+# inferring it from a FILE PRESENCE made an ordinary artifact load-bearing:
+# `BLUEPRINT.md` could not be retired or relocated without silently changing how
+# three separate implementations classified the work.
 #
-# It survived because this file is a deliberate fork (see the banner) and no parity suite
-# compared it to its source. That banner named the missing test as the real risk; the
-# four-way corpus in test_declared_path_three_way_parity.py is now that test.
+# The 3-part presence rule survives ONLY as the fallback for un-migrated works
+# whose state file carries no `pipeline:` mapping -- a work-root BLUEPRINT.md AND
+# at least one `tasks/task-NNN/DETAIL.md` AND no `deliveries/` wrapper. That
+# fallback is filename-independent (SP-7) and so was unchanged by the
+# STATE.md -> STATE.yml rename. The DECLARED read is filename-dependent and
+# reads STATE.yml ONLY -- no STATE.md fallback, matching both reader twins;
+# SP-9 sends a work still holding the retired name to the legacy detector,
+# which diagnoses instead of parsing.
 #
-# The 3-part presence rule remains, as the fallback for un-migrated works whose state
-# file declares nothing.
+# This is the same declared-first-then-infer shape reader.mjs already documents
+# for the `workPath` field ("stop inferring via _detectFlat/_detectHierarchy when
+# present ... the fallback default for un-migrated works"); this extends it from
+# the FIELD to the layout DISPATCH, which is what actually made the artifact
+# load-bearing.
+#
+# Mirrors reader.py `_detect_flat` and reader.mjs `_detectFlat` exactly -- all
+# three consumers must agree. Never throws. Auto-detected per-call.
 is_flat_layout() {
     resolve_work_dir
     local declared
@@ -329,7 +244,7 @@ is_flat_layout() {
 }
 
 # resolve_task_state_file DELIVERY_ID TASK_ID
-# Sets TASK_STATE_FILE to deliveries/delivery-NNN/tasks/task-NNN/STATE.md under the work root.
+# Sets TASK_STATE_FILE to deliveries/delivery-NNN/tasks/task-NNN/STATE.yml under the work root.
 # If TASK_STATE_FILE is already set (env override), this is a no-op.
 resolve_task_state_file() {
     local delivery_id="$1" task_id="$2"
@@ -343,19 +258,19 @@ resolve_task_state_file() {
     padded_d=$(printf '%03d' "$((10#$delivery_id))")
     padded_t=$(printf '%03d' "$((10#$task_id))")
     if [[ -n "$DELIVERY_DIR_BASE" ]]; then
-        TASK_STATE_FILE="${DELIVERY_DIR_BASE}/tasks/task-${padded_t}/STATE.md"
+        TASK_STATE_FILE="${DELIVERY_DIR_BASE}/tasks/task-${padded_t}/STATE.yml"
     else
-        TASK_STATE_FILE="${WORK_DIR}/deliveries/delivery-${padded_d}/tasks/task-${padded_t}/STATE.md"
+        TASK_STATE_FILE="${WORK_DIR}/deliveries/delivery-${padded_d}/tasks/task-${padded_t}/STATE.yml"
     fi
 }
 
 # resolve_delivery_state_file DELIVERY_ID
-# Sets DELIVERY_STATE_FILE to deliveries/delivery-NNN/STATE.md under the work root.
+# Sets DELIVERY_STATE_FILE to deliveries/delivery-NNN/STATE.yml under the work root.
 # If DELIVERY_STATE_FILE is already set (env override), this is a no-op.
 # feature-001 flattened layout (auto-detected): with no `deliveries/` wrapper
 # there is exactly one delivery and its lifecycle/gate blocks are promoted
-# directly into the work-root STATE.md (the SAME file as --pipeline), so this
-# targets $STATE_FILE instead of a per-delivery STATE.md.
+# directly into the work-root STATE.yml (the SAME file as --pipeline), so this
+# targets $STATE_FILE instead of a per-delivery STATE.yml.
 resolve_delivery_state_file() {
     local delivery_id="$1"
     if [[ -n "$DELIVERY_STATE_FILE" ]]; then
@@ -370,9 +285,9 @@ resolve_delivery_state_file() {
     # Force base-10 arithmetic before padding (see resolve_task_state_file above).
     padded_d=$(printf '%03d' "$((10#$delivery_id))")
     if [[ -n "$DELIVERY_DIR_BASE" ]]; then
-        DELIVERY_STATE_FILE="${DELIVERY_DIR_BASE}/STATE.md"
+        DELIVERY_STATE_FILE="${DELIVERY_DIR_BASE}/STATE.yml"
     else
-        DELIVERY_STATE_FILE="${WORK_DIR}/deliveries/delivery-${padded_d}/STATE.md"
+        DELIVERY_STATE_FILE="${WORK_DIR}/deliveries/delivery-${padded_d}/STATE.yml"
     fi
 }
 
@@ -552,7 +467,7 @@ resolve_delivery_for_task_mode() {
 
 # ---------------------------------------------------------------------------
 # Lock helpers
-# The lock serializes concurrent writes to the same per-unit STATE.md.
+# The lock serializes concurrent writes to the same per-unit STATE.yml.
 # LOCK_FILE is derived from the write-target directory for clarity
 # (scoped to the per-unit file's parent directory when possible).
 # ---------------------------------------------------------------------------
@@ -611,174 +526,364 @@ release_lock() {
 trap 'release_lock' EXIT
 
 # ---------------------------------------------------------------------------
-# WB_SET_FRONTMATTER_AWK -- the awk program body used by wb_set_frontmatter,
-# below. Kept as a single shared string (rather than duplicated inline across
-# the CRLF and plain-LF invocation paths) so the two call sites can never drift.
+# WB_SET_KV_AWK -- THE single write path (work-009-refactor task-007). Collapses
+# the pre-refactor WB_SET_FRONTMATTER_AWK, write_task_field_flat and the two
+# section-replace awk programs (findings / delivery gate) onto one algorithm:
+# every write is a single dotted key path of 1-3 segments against a whole-file
+# YAML key space (no `---` fence; D-1). Same create-parent-if-absent /
+# insert-at-end-of-parent behavior the old 2-level `parent`/`child` code
+# already had, generalized one level deeper for `tasks_lifecycle.task-NNN.*`.
 #
-# Reads the RAW value from ENVIRON (not an awk `-v` assignment) because awk's
-# `-v var=value` re-processes C-style escape sequences in `value` -- a `\"`
-# assigned this way silently becomes `"`, corrupting any caller-side
-# backslash-escaping and producing invalid YAML for a value containing a
-# literal `"` or `\` (task-004 FIX review, finding 1). ENVIRON values are NOT
-# escape-reprocessed, so the value arrives byte-for-byte, and ALL YAML
-# quoting/escaping happens here in awk, working from those exact bytes:
-#   - a "bare-word-safe" value (letters/digits/`_.+/-` only) is emitted
-#     unquoted, matching the 4 canonical templates' own placeholder style
-#     (`lifecycle: Running`, not `lifecycle: "Running"`).
-#   - anything else is emitted as a SINGLE-quoted YAML scalar (`'...'`),
-#     doubling any embedded `'` -- the only escaping a single-quoted YAML
-#     scalar ever needs, so this is valid for ANY byte sequence (colons,
-#     hashes, double quotes, backslashes, a leading `-`/`{`) with no
-#     backslash-escaping at all (unlike double-quoted style, which would
-#     reintroduce the same backslash-escaping problem this fix exists to
-#     avoid). A `sprintf("%c", 39)`-produced single-quote character stands in
-#     for a literal `'` in this program's own source text, only to avoid the
-#     bash single-quote-escaping gymnastics of embedding a literal `'` inside
-#     the single-quoted string this whole program is written as.
+# Reads the RAW value from ENVIRON (WB_KV_RAW_VALUE for a scalar write,
+# WB_KV_RAW_ITEMS -- items joined by the ASCII Unit Separator 0x1F -- for a
+# sequence write), never via an awk `-v` assignment, because awk's `-v
+# var=value` re-processes C-style escape sequences in `value` and would
+# corrupt a literal backslash or `\n` the caller wrote (the same fix
+# WB_SET_FRONTMATTER_AWK and write_task_field_flat already carried; must not
+# regress). `-v` remains fine for t1/t2/t3/n/kind/SEP -- those are
+# program-controlled tokens this script itself constructs, never raw caller
+# text.
+#
+# Quoting (SPEC.md SS D-5, `quote_value`): bare iff the value matches
+# ^[A-Za-z0-9_.+/-]+$ and is not on the implicit-type deny list (y/n/yes/no/
+# true/false/on/off/null/~/empty/number-like/date-like, NFR-2); else
+# single-quoted (doubling an embedded '); else, only when the value carries a
+# newline or a control character, double-quoted with the 5-escape subset (\"
+# \\ \n \r \t) -- the one mode with no pre-refactor counterpart, and the
+# reason the `|` guard and the two newline guards (FR-4b) are simply deleted
+# rather than replaced: a `|`, colon, `#` or embedded quote is single-quoted
+# and round-trips; a literal newline is double-quoted and round-trips.
+#
+# Sequence writes (kind=seq) are used only at the 2-segment depth in this
+# script (delivery_gate.issue_list, quick_check.findings) -- a 3-segment
+# sequence would nest a sequence two mapping levels deep, past the "sequence
+# at the second level" cap SPEC.md SS D-3 declares, so this program does not
+# implement one. A sequence write that replaces an existing populated
+# sequence swallows the old `- ` continuation lines (the `swallowing` state)
+# so a shorter or empty replacement does not leave stale items behind.
 # ---------------------------------------------------------------------------
-WB_SET_FRONTMATTER_AWK='
+WB_SET_KV_AWK='
+    function is_bare(v,    lv) {
+        if (v !~ /^[A-Za-z0-9_.+\/-]+$/) return 0
+        lv = tolower(v)
+        if (lv=="y"||lv=="yes"||lv=="n"||lv=="no"||lv=="true"||lv=="false"||lv=="on"||lv=="off"||lv=="null") return 0
+        if (v=="~") return 0
+        if (v=="") return 0
+        if (v ~ /^[-+]?[0-9]/) return 0
+        if (v ~ /^[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]/) return 0
+        return 1
+    }
+    function has_ctrl(v) {
+        if (v ~ /\n/) return 1
+        if (v ~ /\r/) return 1
+        if (v ~ /\t/) return 1
+        return 0
+    }
+    function esc_dq(v,    out, i, n, c) {
+        out = ""
+        n = length(v)
+        for (i = 1; i <= n; i++) {
+            c = substr(v, i, 1)
+            if (c == bs)        out = out bs bs
+            else if (c == dq)   out = out bs dq
+            else if (c == "\n") out = out bs "n"
+            else if (c == "\r") out = out bs "r"
+            else if (c == "\t") out = out bs "t"
+            else out = out c
+        }
+        return out
+    }
+    function quote_value(v,    out) {
+        if (is_bare(v)) return v
+        if (!has_ctrl(v)) {
+            out = v
+            gsub(sq, sq sq, out)
+            return sq out sq
+        }
+        return dq esc_dq(v) dq
+    }
+    function build_seq_lines(key, ind,    i) {
+        gnl = 0
+        if (nitems == 0) {
+            gnl++; glines[gnl] = ind key ": []"
+            return
+        }
+        gnl++; glines[gnl] = ind key ":"
+        for (i = 1; i <= nitems; i++) {
+            gnl++; glines[gnl] = ind "  - " quote_value(items[i])
+        }
+    }
+    function build_scalar_line(key, ind) {
+        gnl = 1
+        glines[1] = ind key ": " quote_value(raw)
+    }
+    function print_glines(    gi) {
+        for (gi = 1; gi <= gnl; gi++) print glines[gi]
+    }
+    function emit_leaf() {
+        if (kind == "seq") build_seq_lines(leaf_key, indent)
+        else build_scalar_line(leaf_key, indent)
+        print_glines()
+        done = 1
+    }
+    # buffer_pending() / flush_pending(): a run of blank/full-line-comment
+    # lines seen while a nested scope is still searching for its target
+    # child is held back instead of printed immediately, because SPEC.md SS
+    # D-3/D-4 puts the documentation for a key on full-line comments directly
+    # ABOVE it -- a blank/comment run immediately before the line that closes
+    # the CURRENT scope typically documents the NEXT key, not this one.
+    # Printing it early would leave an inserted field sitting between a
+    # foreign comment and the key it explains. Only flushed once we know what
+    # follows: before the missing field when the scope is ending (insert,
+    # then flush, then print the boundary line), or simply before any other
+    # line once we know it does not close the scope.
+    function buffer_pending() { pending_n++; pending[pending_n] = $0 }
+    function flush_pending(    pi) {
+        for (pi = 1; pi <= pending_n; pi++) print pending[pi]
+        pending_n = 0
+    }
+    function is_blank_or_comment() {
+        return ($0 ~ /^[ \t]*$/) || ($0 ~ /^[ \t]*#/)
+    }
+
     BEGIN {
-        in_fm = 0; in_parent = 0; parent_seen = 0; done = 0
-        sq = sprintf("%c", 39)
-        raw = ENVIRON["WB_FM_RAW_VALUE"]
-        if (raw ~ /^[A-Za-z0-9_.+\/-]+$/) {
-            out_value = raw
+        sq = sprintf("%c", 39); dq = sprintf("%c", 34); bs = sprintf("%c", 92)
+        n = n + 0
+        if (kind == "seq") {
+            items_raw = ENVIRON["WB_KV_RAW_ITEMS"]
+            nitems = 0
+            if (items_raw != "") nitems = split(items_raw, items, SEP)
         } else {
-            gsub(sq, sq sq, raw)
-            out_value = sq raw sq
+            raw = ENVIRON["WB_KV_RAW_VALUE"]
         }
+        leaf_key = (n==1) ? t1 : (n==2) ? t2 : t3
+        indent = ""
+        for (_i = 1; _i < n; _i++) indent = indent "  "
+
+        done = 0
+        l0_matched = 0
+        l1_matched = 0
+        t2_found = 0
+        swallowing = 0
+        swallow_min_indent = 0
+        pending_n = 0
     }
 
-    NR == 1 && $0 ~ /^---[ \t]*\r?$/ {
-        in_fm = 1
+    # Swallow: consume old sequence-item continuation lines left over from the
+    # value we just replaced. Checked before every other rule; when a line does
+    # NOT continue the old sequence, swallowing is cleared and (no `next`
+    # called) execution falls through to the normal rules below for this same
+    # record -- that boundary line (blank, comment, or the next key) is still
+    # handled normally.
+    swallowing {
+        line_indent = 0
+        if (match($0, /^[ \t]*/)) line_indent = RLENGTH
+        rest = substr($0, line_indent + 1)
+        if (line_indent >= swallow_min_indent && rest ~ /^-( |$)/) next
+        swallowing = 0
+    }
+
+    # ---------------- n == 1 : flat top-level scalar ----------------
+    n==1 && !done && $0 ~ ("^" t1 ":") {
+        emit_leaf()
+        next
+    }
+
+    # ---------------- n == 2 : parent.child (scalar or sequence leaf) ----------------
+    n==2 && !l0_matched && $0 ~ ("^" t1 ":[ \t]*\\{\\}[ \t]*$") {
+        print t1 ":"
+        emit_leaf()
+        next
+    }
+    n==2 && !l0_matched && $0 ~ ("^" t1 ":") {
+        l0_matched = 1
         print
         next
     }
-    NR == 1 {
-        # No frontmatter block present -- synthesize one, then fall through
-        # to print this same first line as the first BODY line, unmodified.
-        print "---"
-        if (parent == "") {
-            print flat_key ": " out_value
-        } else {
-            print parent ":"
-            print "  " child ": " out_value
-        }
-        print "---"
-        print ""
+    n==2 && !l0_matched && $0 ~ /^[A-Za-z0-9_-]+:/ {
+        print
+        next
+    }
+    n==2 && l0_matched && !done && is_blank_or_comment() {
+        buffer_pending()
+        next
+    }
+    n==2 && l0_matched && !done && $0 ~ ("^  " t2 ":") {
+        flush_pending()
+        if (kind == "seq") { swallowing = 1; swallow_min_indent = length(indent) + 2 }
+        emit_leaf()
+        next
+    }
+    n==2 && l0_matched && $0 ~ /^[A-Za-z0-9_-]+:/ {
+        if (!done) emit_leaf()
+        flush_pending()
+        l0_matched = 0
+        print
+        next
+    }
+    n==2 && l0_matched {
+        flush_pending()
         print
         next
     }
 
-    in_fm && /^---[ \t]*\r?$/ {
-        # Closing fence -- flush an unwritten key here (append at block end).
-        # parent_seen distinguishes "parent mapping exists but child is
-        # missing" (print only the child line, under the existing parent)
-        # from "parent mapping never appeared at all in this frontmatter
-        # block" (print BOTH a fresh parent header and the child line --
-        # otherwise the child would be emitted with no parent, corrupting
-        # the YAML and never satisfying the nested `key.child` lookup).
-        if (parent == "" && !done) { print flat_key ": " out_value; done = 1 }
-        if (parent != "" && !done) {
-            if (!parent_seen) { print parent ":" }
-            print "  " child ": " out_value
+    # ---------------- n == 3 : parent.id.child (scalar leaf only) ----------------
+    n==3 && !l0_matched && $0 ~ ("^" t1 ":[ \t]*\\{\\}[ \t]*$") {
+        print t1 ":"
+        print "  " t2 ":"
+        build_scalar_line(t3, "    ")
+        print_glines()
+        done = 1
+        next
+    }
+    n==3 && !l0_matched && $0 ~ ("^" t1 ":") {
+        l0_matched = 1
+        t2_found = 0
+        print
+        next
+    }
+    n==3 && !l0_matched && $0 ~ /^[A-Za-z0-9_-]+:/ {
+        print
+        next
+    }
+    n==3 && l0_matched && !l1_matched && !t2_found && is_blank_or_comment() {
+        buffer_pending()
+        next
+    }
+    n==3 && l0_matched && !l1_matched && $0 ~ ("^  " t2 ":[ \t]*\\{\\}[ \t]*$") {
+        flush_pending()
+        print "  " t2 ":"
+        build_scalar_line(t3, "    ")
+        print_glines()
+        t2_found = 1
+        done = 1
+        next
+    }
+    n==3 && l0_matched && !l1_matched && $0 ~ ("^  " t2 ":[ \t]*$") {
+        flush_pending()
+        t2_found = 1
+        l1_matched = 1
+        print
+        next
+    }
+    n==3 && l1_matched && !done && is_blank_or_comment() {
+        buffer_pending()
+        next
+    }
+    n==3 && l1_matched && !done && $0 ~ ("^    " t3 ":") {
+        flush_pending()
+        build_scalar_line(t3, "    ")
+        print_glines()
+        done = 1
+        next
+    }
+    n==3 && l1_matched && $0 ~ /^    [A-Za-z0-9_-]+:/ {
+        flush_pending()
+        print
+        next
+    }
+    n==3 && l1_matched && $0 ~ /^  [A-Za-z0-9_-]+:/ {
+        if (!done) { build_scalar_line(t3, "    "); print_glines(); done = 1 }
+        flush_pending()
+        l1_matched = 0
+        print
+        next
+    }
+    n==3 && l0_matched && $0 ~ /^[A-Za-z0-9_-]+:/ {
+        if (l1_matched && !done) { build_scalar_line(t3, "    "); print_glines(); done = 1 }
+        else if (!l1_matched && !t2_found && !done) {
+            print "  " t2 ":"
+            build_scalar_line(t3, "    ")
+            print_glines()
+            t2_found = 1
             done = 1
         }
-        in_fm = 0
-        in_parent = 0
+        flush_pending()
+        l0_matched = 0
+        l1_matched = 0
         print
         next
     }
-
-    in_fm && parent == "" {
-        if ($0 ~ ("^" flat_key ":")) {
-            print flat_key ": " out_value
-            done = 1
-            next
-        }
-        print
-        next
-    }
-
-    in_fm && parent != "" {
-        if (!in_parent) {
-            if ($0 ~ ("^" parent ":")) {
-                in_parent = 1
-                parent_seen = 1
-                print
-                next
-            }
-            print
-            next
-        }
-        # Inside the parent mapping -- another top-level key (col 0) ends it
-        if ($0 ~ /^[A-Za-z0-9_-]+:/) {
-            if (!done) { print "  " child ": " out_value; done = 1 }
-            in_parent = 0
-            print
-            next
-        }
-        if ($0 ~ ("^[ \t]+" child ":")) {
-            print "  " child ": " out_value
-            done = 1
-            next
-        }
+    n==3 && (l0_matched || l1_matched) {
+        flush_pending()
         print
         next
     }
 
     { print }
+
+    END {
+        if (!done) {
+            if (n == 1) {
+                build_scalar_line(t1, "")
+                print_glines()
+            } else if (n == 2) {
+                if (l0_matched) {
+                    emit_leaf()
+                } else {
+                    print t1 ":"
+                    emit_leaf()
+                }
+            } else {
+                if (l1_matched) {
+                    build_scalar_line(t3, "    ")
+                    print_glines()
+                } else if (l0_matched) {
+                    print "  " t2 ":"
+                    build_scalar_line(t3, "    ")
+                    print_glines()
+                } else {
+                    print t1 ":"
+                    print "  " t2 ":"
+                    build_scalar_line(t3, "    ")
+                    print_glines()
+                }
+            }
+        }
+        # Flush any trailing blank/comment run that was held back while still
+        # searching for the target -- the file ended before a boundary key
+        # arrived to prove those lines belonged to something else, so they
+        # belong to this scope after all and are printed after whatever was
+        # just inserted above.
+        flush_pending()
+    }
 '
 
 # ---------------------------------------------------------------------------
-# wb_set_frontmatter SOURCE_FILE KEY VALUE
-# Surgical YAML-frontmatter scalar writer (work-003-state-schema task-004).
-# Prints the rewritten file content to stdout; caller redirects to a temp file
-# (`wb_set_frontmatter "$STATE_FILE" lifecycle Running > "$tmp"`) and is
-# responsible for the lock + sanity-check + atomic mv (same discipline as
-# every other mode in this script -- this helper only computes the bytes).
+# wb_set_kv SOURCE_FILE KEY_PATH KIND [VALUE | ITEM...]
+# The single write path. KEY_PATH is a dotted key of 1-3 segments
+# ("lifecycle", "pipeline.path", "tasks_lifecycle.task-004.state"). KIND is
+# "scalar" (exactly one VALUE follows) or "seq" (zero or more ITEMs follow --
+# zero means the sequence is written as `[]`). Prints the rewritten file
+# content to stdout; caller redirects to a temp file and is responsible for
+# the lock + sanity-check + atomic mv (same discipline as every other write
+# in this script -- this helper only computes the bytes).
 #
-# KEY is either a flat top-level scalar ("lifecycle") or a one-level-nested
-# dotted key ("pipeline.path" -> the `path` child of the `pipeline:` mapping).
-# Reads/updates ONLY the leading `---`...`---` frontmatter block; every line
-# from the closing fence onward (the markdown BODY) is reproduced byte-for-byte
-# unchanged -- this is what makes the write "surgical" (AC: body byte-invariance).
-#
-# Behavior:
-#   - Key already present (even holding the template's own un-instantiated
-#     placeholder text, e.g. "lifecycle: Running | Paused-Awaiting-Input | ...")
-#     -> its line is replaced with the real single value.
-#   - Key absent but its frontmatter block exists -> the key is appended at the
-#     end of the block (flat) or at the end of its parent mapping (nested).
-#   - No frontmatter block at all (a not-yet-migrated STATE.md, task-005) -> one
-#     is synthesized at the very top of the file holding just this one key; the
-#     entire original file becomes the BODY, unchanged.
-#
-# Value quoting: see WB_SET_FRONTMATTER_AWK's own doc comment above.
-#
-# Cross-platform byte-invariance guards (task-004 FIX review findings 2/4):
-#   - CRLF: some awk builds (notably on Windows) silently strip a `\r` that is
-#     part of $0 on read/print; a strict LF-only awk (Linux) never matches a
-#     `---\r` fence line at all (the fence regex above tolerates a trailing
-#     `\r` as defense-in-depth, but the real fix is architectural: a CRLF
-#     source file is normalized to LF before the awk pass and every line of
-#     the result has `\r` restored afterward, so the awk logic above only
-#     ever sees plain LF content on every platform).
+# Cross-platform byte-invariance guards (carried forward unchanged from the
+# pre-refactor wb_set_frontmatter):
+#   - CRLF: some awk builds (notably on Windows) silently strip a `\r` on
+#     read/print; a strict LF-only awk (Linux) never matches a CRLF line at
+#     all. A CRLF source is normalized to LF before the awk pass and every
+#     line of the result has `\r` restored afterward, so WB_SET_KV_AWK only
+#     ever sees plain LF content on every platform.
 #   - Trailing newline: awk's `print` unconditionally appends ORS ("\n")
 #     after every record including the last, so a source file with no final
-#     newline would otherwise gain one. The pipeline's FULL output is
+#     newline would otherwise gain one. The pipeline's full output is
 #     captured via an `X`-terminator (a character, not a newline, so `$(...)`
 #     itself strips nothing) and the single spurious line terminator awk
-#     added (`\n`, or `\r\n` for a CRLF source) is stripped back off only
-#     when the source genuinely lacked a final one.
+#     added is stripped back off only when the source genuinely lacked one.
 # ---------------------------------------------------------------------------
-wb_set_frontmatter() {
-    local source_file="$1" key="$2" value="$3"
-    local parent="" child="$key"
-    if [[ "$key" == *.* ]]; then
-        parent="${key%%.*}"
-        child="${key#*.}"
-    fi
+wb_set_kv() {
+    local source_file="$1" key_path="$2" kind="$3"
+    shift 3
+
+    local t1="" t2="" t3=""
+    IFS='.' read -r t1 t2 t3 <<< "$key_path"
+    local depth
+    depth=$(( $(grep -o '\.' <<< "$key_path" | wc -l) + 1 ))
+
+    local sep
+    sep=$(printf '\x1f')
 
     local has_crlf=0 had_trailing_nl=1
     if [[ -s "$source_file" ]]; then
@@ -788,17 +893,35 @@ wb_set_frontmatter() {
         [[ "$(tail -c1 "$source_file" | wc -l)" -eq 0 ]] && had_trailing_nl=0
     fi
 
+    local items_joined="" first=1 it
+    if [[ "$kind" == "seq" ]]; then
+        for it in "$@"; do
+            if [[ $first -eq 1 ]]; then items_joined="$it"; first=0
+            else items_joined="${items_joined}${sep}${it}"; fi
+        done
+    fi
+
     local raw_output
     if [[ "$has_crlf" -eq 1 ]]; then
         raw_output="$(
-            sed 's/\r$//' "$source_file" \
-                | WB_FM_RAW_VALUE="$value" awk -v parent="$parent" -v child="$child" -v flat_key="$key" "$WB_SET_FRONTMATTER_AWK" \
-                | sed 's/$/\r/'
+            if [[ "$kind" == "seq" ]]; then
+                sed 's/\r$//' "$source_file" \
+                    | WB_KV_RAW_ITEMS="$items_joined" awk -v t1="$t1" -v t2="$t2" -v t3="$t3" -v n="$depth" -v kind="$kind" -v SEP="$sep" "$WB_SET_KV_AWK" \
+                    | sed 's/$/\r/'
+            else
+                sed 's/\r$//' "$source_file" \
+                    | WB_KV_RAW_VALUE="$1" awk -v t1="$t1" -v t2="$t2" -v t3="$t3" -v n="$depth" -v kind="$kind" -v SEP="$sep" "$WB_SET_KV_AWK" \
+                    | sed 's/$/\r/'
+            fi
             printf 'X'
         )"
     else
         raw_output="$(
-            WB_FM_RAW_VALUE="$value" awk -v parent="$parent" -v child="$child" -v flat_key="$key" "$WB_SET_FRONTMATTER_AWK" "$source_file"
+            if [[ "$kind" == "seq" ]]; then
+                WB_KV_RAW_ITEMS="$items_joined" awk -v t1="$t1" -v t2="$t2" -v t3="$t3" -v n="$depth" -v kind="$kind" -v SEP="$sep" "$WB_SET_KV_AWK" "$source_file"
+            else
+                WB_KV_RAW_VALUE="$1" awk -v t1="$t1" -v t2="$t2" -v t3="$t3" -v n="$depth" -v kind="$kind" -v SEP="$sep" "$WB_SET_KV_AWK" "$source_file"
+            fi
             printf 'X'
         )"
     fi
@@ -815,41 +938,263 @@ wb_set_frontmatter() {
     printf '%s' "$raw_output"
 }
 
-# wb_frontmatter_verify TMP_FILE KEY
-# Sanity check after a wb_set_frontmatter write: the file is non-empty and the
-# target key (flat or the dotted-nested child) is present in the output.
-# Returns non-zero (caller must discard TMP_FILE and die) on failure.
-wb_frontmatter_verify() {
-    local tmp_file="$1" key="$2" child="$2"
+# ---------------------------------------------------------------------------
+# WB_GET_KV_AWK / wb_get_kv -- the read-back half of `wb_state_verify` below.
+# Deliberately NOT the dashboard reader twins (this is a sanity check inside
+# writeback-state.sh, not the read path a dashboard consumes) -- a small,
+# bounded, read-only walk of the SAME 1-3 segment key space WB_SET_KV_AWK
+# writes, reporting what it finds so the caller can compare it to what it
+# intended to write. Generalizes the pre-refactor `wb_frontmatter_verify`
+# (which only ever grepped `^key:` / `^  child:`) to a real nested-key
+# resolve-on-re-read, closing the blind spot noted in SPEC.md SS L-2: today's
+# `^  child:` grep matches ANY parent, not specifically the one just written.
+# ---------------------------------------------------------------------------
+WB_GET_KV_AWK='
+    function unesc_dq(v,    out, i, n, c, nx) {
+        out = ""; n = length(v); i = 1
+        while (i <= n) {
+            c = substr(v, i, 1)
+            if (c == bs && i < n) {
+                nx = substr(v, i+1, 1)
+                if (nx == "n") { out = out "\n"; i += 2; continue }
+                if (nx == "r") { out = out "\r"; i += 2; continue }
+                if (nx == "t") { out = out "\t"; i += 2; continue }
+                if (nx == dq) { out = out dq; i += 2; continue }
+                if (nx == bs) { out = out bs; i += 2; continue }
+                out = out c; i += 1; continue
+            }
+            out = out c; i += 1
+        }
+        return out
+    }
+    function unquote_value(v,    inner) {
+        if (length(v) >= 2 && substr(v,1,1) == sq && substr(v, length(v),1) == sq) {
+            inner = substr(v, 2, length(v)-2)
+            gsub(sq sq, sq, inner)
+            return inner
+        }
+        if (length(v) >= 2 && substr(v,1,1) == dq && substr(v, length(v),1) == dq) {
+            inner = substr(v, 2, length(v)-2)
+            return unesc_dq(inner)
+        }
+        return v
+    }
+    BEGIN {
+        sq = sprintf("%c", 39); dq = sprintf("%c", 34); bs = sprintf("%c", 92)
+        n = n + 0
+        l0 = 0; l1 = 0; status = "notfound"; collecting = 0; count = 0; firstitem = ""
+    }
+    # CRLF tolerance (read-back only): GNU awk keeps the trailing \r of a \r\n
+    # line in $0, so a value read from a CRLF STATE.yml would carry a stray \r
+    # and never equal the \r-free value wb_state_verify compares against (exit
+    # 3). Strip it here, on the read side ONLY -- the write path preserves \r on
+    # untouched lines byte-for-byte (test 22f asserts both).
+    { sub(/\r$/, "") }
+    n==1 && status=="notfound" && $0 ~ ("^" t1 ":") {
+        val = $0; sub("^" t1 ":", "", val); sub(/^[ \t]*/, "", val)
+        print "SCALAR|" unquote_value(val)
+        status = "found"; exit
+    }
+    n>=2 && !l0 && $0 ~ ("^" t1 ":") { l0 = 1; next }
+    n==2 && l0 && status=="notfound" && $0 ~ ("^  " t2 ":") {
+        val = $0; sub("^  " t2 ":", "", val); sub(/^[ \t]*/, "", val)
+        if (kind == "scalar") { print "SCALAR|" unquote_value(val); status = "found"; exit }
+        if (val == "[]") { print "SEQ|0|"; status = "found"; exit }
+        collecting = 1; next
+    }
+    # !collecting guards this rule (task-015 fix, wb_get_kv seq-verify bug):
+    # once t2 has matched and a "seq" read is walking that sequences "- "
+    # continuation lines (collecting=1), the FIRST following top-level (col-0)
+    # key is that sequences own boundary line, not evidence the queried key is
+    # absent -- the collecting rule below is what must see it and finalize
+    # the count. Without this guard this rule fired first (program order),
+    # printed a spurious "NOTFOUND" and exited before collecting ever got a
+    # chance, and the subsequent END block then ALSO printed the correct
+    # "SEQ|n|first" (status was never set to "found" by this rule) -- two
+    # lines out of one wb_get_kv call, so wb_state_verify saw a value that can
+    # never equal "SEQ|n|first" and every non-empty seq write (quick_check.
+    # findings, delivery_gate.issue_list -- the ordinary case, since both are
+    # followed by a real sibling key in the shipped templates) died at exit 3
+    # with the correctly-written temp file discarded. The write path
+    # (WB_SET_KV_AWK) was never wrong -- only this read-back sanity check was.
+    n==2 && l0 && $0 ~ /^[A-Za-z0-9_-]+:/ && status=="notfound" && !collecting { print "NOTFOUND"; exit }
+    n==3 && l0 && !l1 && $0 ~ ("^  " t2 ":") { l1 = 1; next }
+    n==3 && l0 && l1 && status=="notfound" && $0 ~ ("^    " t3 ":") {
+        val = $0; sub("^    " t3 ":", "", val); sub(/^[ \t]*/, "", val)
+        print "SCALAR|" unquote_value(val); status = "found"; exit
+    }
+    n==3 && l0 && l1 && $0 ~ /^  [A-Za-z0-9_-]+:/ && status=="notfound" { print "NOTFOUND"; exit }
+    n==3 && l0 && $0 ~ /^[A-Za-z0-9_-]+:/ && status=="notfound" { print "NOTFOUND"; exit }
+    collecting {
+        ind = 0; if (match($0, /^[ \t]*/)) ind = RLENGTH
+        rest = substr($0, ind + 1)
+        if (rest ~ /^-( |.+|$)/) {
+            item = rest; sub(/^-[ \t]*/, "", item)
+            count++
+            if (count == 1) firstitem = unquote_value(item)
+            next
+        }
+        print "SEQ|" count "|" firstitem
+        status = "found"; exit
+    }
+    END {
+        if (status == "notfound") {
+            if (collecting) print "SEQ|" count "|" firstitem
+            else print "NOTFOUND"
+        }
+    }
+'
+
+# wb_get_kv FILE KEY_PATH KIND
+# Prints "SCALAR|value" (unquoted), "SEQ|count|firstitem" (unquoted first
+# item, or empty when count is 0), or "NOTFOUND".
+wb_get_kv() {
+    local file="$1" key_path="$2" kind="$3"
+    local t1="" t2="" t3=""
+    IFS='.' read -r t1 t2 t3 <<< "$key_path"
+    local depth
+    depth=$(( $(grep -o '\.' <<< "$key_path" | wc -l) + 1 ))
+    awk -v t1="$t1" -v t2="$t2" -v t3="$t3" -v n="$depth" -v kind="$kind" "$WB_GET_KV_AWK" "$file"
+}
+
+# wb_state_verify TMP_FILE KEY_PATH KIND [VALUE | ITEM...]
+# Sanity check after a wb_set_kv write: re-reads TMP_FILE at KEY_PATH and
+# confirms it resolves to the value (scalar) or item count + first item
+# (seq) just written. Returns non-zero (caller must discard TMP_FILE and die)
+# on any mismatch, including "not found".
+wb_state_verify() {
+    local tmp_file="$1" key_path="$2" kind="$3"
+    shift 3
     [[ -s "$tmp_file" ]] || return 1
-    if [[ "$key" == *.* ]]; then
-        child="${key#*.}"
-        grep -q "^  ${child}:" "$tmp_file" || return 1
-    else
-        grep -q "^${key}:" "$tmp_file" || return 1
+    local result
+    result=$(wb_get_kv "$tmp_file" "$key_path" "$kind")
+    if [[ "$kind" == "scalar" ]]; then
+        [[ "$result" == "SCALAR|$1" ]] && return 0
+        return 1
     fi
-    return 0
+    local want_count=$#
+    if [[ "$want_count" -eq 0 ]]; then
+        [[ "$result" == "SEQ|0|" ]] && return 0
+        return 1
+    fi
+    [[ "$result" == "SEQ|${want_count}|$1" ]] && return 0
+    return 1
+}
+
+# wb_state_is_mapping FILE
+# The malformed-file check (exit 6): "the file parses and is a mapping"
+# (SPEC.md SS L-2), replacing the pre-refactor per-mode heading grep (e.g.
+# `## Task State`). Bounded, mechanical, and consistent with the declared
+# subset (SPEC.md SS D-3): the file is non-empty and its first non-blank,
+# non-comment line is a column-0 `key:` line.
+wb_state_is_mapping() {
+    local file="$1"
+    [[ -s "$file" ]] || return 1
+    local line
+    while IFS= read -r line; do
+        line="${line%$'\r'}"
+        [[ -z "${line//[[:space:]]/}" ]] && continue
+        [[ "$line" == \#* ]] && continue
+        [[ "$line" =~ ^[A-Za-z0-9_-]+: ]] && return 0
+        return 1
+    done < "$file"
+    return 1
+}
+
+# ---------------------------------------------------------------------------
+# ltrim STR -- print STR with leading whitespace stripped. Shared by the
+# --findings and --block caller-format parsers below.
+# ---------------------------------------------------------------------------
+ltrim() {
+    local s="$1"
+    s="${s#"${s%%[![:space:]]*}"}"
+    printf '%s' "$s"
+}
+
+# ---------------------------------------------------------------------------
+# parse_findings_block BLOCK -> sets REVIEWER_TIER (scalar) and the
+# FINDINGS_ITEMS array (one entry per finding bullet, "[SEVERITY] ..." text
+# verbatim). Parses the fixed, declared shape
+# aid-execute/references/state-review.md SS "Write Findings to STATE.md"
+# documents:
+#   - **Reviewer Tier:** Small
+#   - **Findings:**
+#     - [CRITICAL] {description} -- {source} -- Fixed-on-spot
+#     - [HIGH] {description} -- {source} -- Deferred-to-gate
+# or, with no findings: `- **Findings:** none`. This is a small, bounded
+# parse of ONE caller's own declared mini-format -- not a general markdown
+# parser (D-3's "hand-rolled, bounded" posture applies to the state file
+# subset; this is the caller-contract analogue, kept equally small).
+# ---------------------------------------------------------------------------
+parse_findings_block() {
+    local block="$1"
+    REVIEWER_TIER="--"
+    FINDINGS_ITEMS=()
+    local line trimmed item
+    while IFS= read -r line; do
+        line="${line%$'\r'}"
+        if [[ "$line" =~ ^-[[:space:]]*\*\*Reviewer[[:space:]]Tier:\*\*[[:space:]]*(.*)$ ]]; then
+            REVIEWER_TIER="${BASH_REMATCH[1]}"
+            continue
+        fi
+        if [[ "$line" =~ ^-[[:space:]]*\*\*Findings:\*\*[[:space:]]*(.*)$ ]]; then
+            continue
+        fi
+        trimmed="$(ltrim "$line")"
+        if [[ "$trimmed" == -\ * ]]; then
+            item="${trimmed#- }"
+            [[ -n "$item" && "$item" != "none" ]] && FINDINGS_ITEMS+=("$item")
+        fi
+    done <<< "$block"
+}
+
+# ---------------------------------------------------------------------------
+# parse_issue_list_block BLOCK -> sets the ISSUE_ITEMS array (one entry per
+# issue-list line, severity-tagged text verbatim). Parses the fixed shape
+# aid-execute/references/state-delivery-gate.md SS "6a: Build the Delivery
+# Gate Block" documents:
+#   - **Complexity Score:** {N}
+#   - **Cycles:** {N}
+#   - **Issue List:**
+#     {one line per issue, or "none"}
+# Complexity Score / Cycles are deliberately not persisted: the STATE.yml
+# `delivery_gate` key carries only `issue_list` (SPEC.md SS D-4) -- those two
+# fields have no target in the migrated schema (see this task's own report
+# for the scope note).
+# ---------------------------------------------------------------------------
+parse_issue_list_block() {
+    local block="$1"
+    ISSUE_ITEMS=()
+    local in_list=0 line trimmed item rest
+    while IFS= read -r line; do
+        line="${line%$'\r'}"
+        if [[ "$in_list" -eq 0 ]]; then
+            if [[ "$line" =~ ^-[[:space:]]*\*\*Issue[[:space:]]List:\*\*[[:space:]]*(.*)$ ]]; then
+                in_list=1
+                rest="${BASH_REMATCH[1]}"
+                if [[ -n "$rest" && "$rest" != "none" ]]; then
+                    item="${rest#- }"
+                    [[ -n "$item" ]] && ISSUE_ITEMS+=("$item")
+                fi
+            fi
+            continue
+        fi
+        trimmed="$(ltrim "$line")"
+        [[ -z "$trimmed" ]] && continue
+        item="$trimmed"
+        [[ "$item" == -\ * ]] && item="${item#- }"
+        [[ "$item" == "none" ]] && continue
+        ISSUE_ITEMS+=("$item")
+    done <<< "$block"
 }
 
 # ---------------------------------------------------------------------------
 # Mode: [--delivery-id NNN] --task-id NNN --field FIELD --value VALUE
-# Update a single named field in the task's ## Task State section of
-# delivery-NNN/tasks/task-NNN/STATE.md.
-# Fields: State | Review | Elapsed | Notes
+# Single-key write of FIELD (state | review | elapsed | notes | name).
 # State is enum-validated (closed enum).
 # ---------------------------------------------------------------------------
 mode_field() {
-    # Reject --value containing literal '|' to prevent row corruption.
-    if [[ "$FIELD_VALUE" == *"|"* ]]; then
-        die "--value cannot contain '|' (pipe is the column separator); escape with HTML entity or rephrase" 4
-    fi
-
-    # Also reject newline characters (same row-corruption class as the pipe check).
-    if [[ "$FIELD_VALUE" == *$'\n'* ]]; then
-        die "--value cannot contain newline characters (row separator); rephrase to single line" 4
-    fi
-
-    # Validate field name (per-unit task STATE.md fields)
+    # Validate field name (per-unit task STATE.yml fields)
     local field_lower
     field_lower="${FIELD,,}"   # bash 4+ lowercase
     case "$field_lower" in
@@ -865,12 +1210,44 @@ mode_field() {
         esac
     fi
 
-    # feature-001 flattened layout (auto-detected): task cells live in the
-    # work-root STATE.md ### Tasks lifecycle table -- no per-task STATE.md.
-    # AID_TASK_STATE_FILE override (if set) bypasses ALL path resolution,
-    # including this flat-layout check, per its documented contract above.
+    # `state`/`review`/`elapsed`/`notes` are top-level scalar keys verbatim in
+    # task-state-template.yml; the ONE exception is `name` (feature-005),
+    # whose reader key is `display_name` (models.py TaskModel.display_name).
+    local fm_key="$field_lower"
+    case "$field_lower" in
+        name) fm_key="display_name" ;;
+    esac
+
+    local padded_t
+    # Force base-10 arithmetic before padding (see resolve_task_state_file above).
+    padded_t=$(printf '%03d' "$((10#$TASK_ID))")
+
+    # feature-001 flattened layout (auto-detected): task cells live in
+    # tasks_lifecycle.task-NNN.<field> in the work-root STATE.yml -- no
+    # per-task STATE.yml. AID_TASK_STATE_FILE override (if set) bypasses ALL
+    # path resolution, including this flat-layout check, per its documented
+    # contract above.
     if [[ -z "$TASK_STATE_FILE" ]] && is_flat_layout; then
-        write_task_field_flat "$FIELD" "$field_lower" "$FIELD_VALUE" "$TASK_ID"
+        if [[ ! -f "$STATE_FILE" ]]; then
+            die "$STATE_FILE does not exist" 1
+        fi
+        wb_state_is_mapping "$STATE_FILE" || die "malformed STATE.yml: $STATE_FILE does not parse as a YAML mapping" 6
+
+        init_lock_file "$STATE_FILE"
+        acquire_lock
+
+        local key_path="tasks_lifecycle.task-${padded_t}.${fm_key}"
+        local tmp
+        tmp=$(mktemp)
+        wb_set_kv "$STATE_FILE" "$key_path" scalar "$FIELD_VALUE" > "$tmp"
+
+        if ! wb_state_verify "$tmp" "$key_path" scalar "$FIELD_VALUE"; then
+            rm -f "$tmp"
+            die "writeback sanity check failed: '$key_path' does not resolve to '$FIELD_VALUE' in output; $STATE_FILE preserved" 3
+        fi
+
+        mv "$tmp" "$STATE_FILE"
+        echo "OK: $STATE_FILE updated -- task $padded_t field '$FIELD' set to '$FIELD_VALUE' (tasks_lifecycle)"
         return 0
     fi
 
@@ -880,421 +1257,65 @@ mode_field() {
     if [[ ! -f "$TASK_STATE_FILE" ]]; then
         die "$TASK_STATE_FILE does not exist" 1
     fi
-
-    # Verify ## Task State section exists (the body header itself is still
-    # present -- only the "- **Field:** value" bullets under it were relocated
-    # to frontmatter by task-001; this presence check still guards against a
-    # malformed/foreign file).
-    if ! grep -q '^## Task State' "$TASK_STATE_FILE"; then
-        die "malformed task STATE.md: ## Task State section not found in $TASK_STATE_FILE" 6
-    fi
+    wb_state_is_mapping "$TASK_STATE_FILE" || die "malformed STATE.yml: $TASK_STATE_FILE does not parse as a YAML mapping" 6
 
     init_lock_file "$TASK_STATE_FILE"
     acquire_lock
 
-    # Surgical frontmatter write (task-004): `state`/`review`/`elapsed`/`notes`
-    # are flat top-level keys in task-state-template.md's frontmatter block --
-    # field_lower IS the frontmatter key verbatim for those four, no mapping
-    # needed. The ONE exception is `name` (feature-005): its reader key is
-    # `display_name` (models.py TaskModel.display_name), so it is routed
-    # through the same fm_key indirection mode_gate_field already uses for
-    # Tier/Grade/Timestamp -> gate_* -- writing a literal `name:` key would be
-    # silently unread by both dashboard reader twins.
-    local fm_key="$field_lower"
-    case "$field_lower" in
-        name) fm_key="display_name" ;;
-    esac
-
     local tmp
     tmp=$(mktemp)
-    wb_set_frontmatter "$TASK_STATE_FILE" "$fm_key" "$FIELD_VALUE" > "$tmp"
+    wb_set_kv "$TASK_STATE_FILE" "$fm_key" scalar "$FIELD_VALUE" > "$tmp"
 
-    if ! wb_frontmatter_verify "$tmp" "$fm_key"; then
+    if ! wb_state_verify "$tmp" "$fm_key" scalar "$FIELD_VALUE"; then
         rm -f "$tmp"
-        die "writeback sanity check failed: frontmatter key '$fm_key' not found in output; $TASK_STATE_FILE preserved" 3
-    fi
-
-    # Sanity: ## Task State section must still be present in output (body untouched)
-    if ! grep -q '^## Task State' "$tmp"; then
-        rm -f "$tmp"
-        die "writeback sanity check failed: ## Task State disappeared from output" 3
+        die "writeback sanity check failed: key '$fm_key' does not resolve to '$FIELD_VALUE' in output; $TASK_STATE_FILE preserved" 3
     fi
 
     mv "$tmp" "$TASK_STATE_FILE"
-    local padded_t
-    # Force base-10 arithmetic before padding (see resolve_task_state_file above).
-    padded_t=$(printf '%03d' "$((10#$TASK_ID))")
-    echo "OK: $TASK_STATE_FILE updated -- task $padded_t field '$FIELD' set to '$FIELD_VALUE' (frontmatter)"
-}
-
-# ---------------------------------------------------------------------------
-# write_task_field_flat FIELD_RAW FIELD_LOWER NEW_VAL TASK_ID
-# feature-001 flattened layout: rewrite (or create) the task's row in the
-# work-root STATE.md's ### Tasks lifecycle table -- the single-writer home
-# that REPLACES the now-absent per-task STATE.md ## Task State section.
-# Table shape (byte-identical closed State enum -- validated by the caller):
-#   | Task | State | Review | Elapsed | Notes | Name |
-# Name (feature-005) is a trailing 6th DATA column (col_idx=7 -- column 2 is
-# the task-id cell) holding the same mutable display-name override the nested
-# layout stores under `display_name`. This function touches DATA rows only:
-# the header and separator rows are printed byte-verbatim elsewhere in this
-# awk program, with NO column-count reconciliation -- a legacy 5-column
-# header/separator (pre-feature-005 work) is left exactly as-is; only
-# work-state-template.md's SEEDED header/separator gain the Name column for
-# newly-created works. A legacy DATA row missing column 7 reads as an empty
-# trailing cell (awk's split() naturally yields "" for an absent field), so
-# rewriting any field on such a row is backward-compatible by construction.
-# The placeholder "_none yet_" row is replaced by the first task row ever
-# written; subsequent tasks are appended just before the section ends.
-# Rewriting an existing row's field preserves its other columns unchanged.
-# Uses the SAME sentinel lock as --pipeline / --lifecycle / --block (all
-# target $STATE_FILE for this layout), so concurrent writers serialize.
-# ---------------------------------------------------------------------------
-write_task_field_flat() {
-    local field_raw="$1" field_lower="$2" new_val="$3" task_id="$4"
-    local padded_t task_row_id col_idx
-    # Force base-10 arithmetic before padding (see resolve_task_state_file above).
-    padded_t=$(printf '%03d' "$((10#$task_id))")
-    task_row_id="task-${padded_t}"
-
-    case "$field_lower" in
-        state)   col_idx=3 ;;
-        review)  col_idx=4 ;;
-        elapsed) col_idx=5 ;;
-        notes)   col_idx=6 ;;
-        name)    col_idx=7 ;;
-        *) die "internal error: unknown field_lower '$field_lower' in write_task_field_flat" 1 ;;
-    esac
-
-    if [[ ! -f "$STATE_FILE" ]]; then
-        die "$STATE_FILE does not exist" 1
-    fi
-
-    # Verify ### Tasks lifecycle section exists
-    if ! grep -q '^### Tasks lifecycle' "$STATE_FILE"; then
-        die "malformed work STATE.md: ### Tasks lifecycle section not found in $STATE_FILE (flat layout)" 6
-    fi
-
-    init_lock_file "$STATE_FILE"
-    acquire_lock
-
-    local tmp
-    tmp=$(mktemp)
-
-    # new_val is read from ENVIRON (not an awk `-v` assignment) because awk's
-    # `-v var=value` re-processes C-style escape sequences in `value` -- a
-    # `foo\tbar` assigned this way silently becomes "foo<TAB>bar", corrupting
-    # the row with a literal control character the caller never wrote
-    # (delivery-001 gate finding; same bug class wb_set_frontmatter above
-    # already fixed via WB_FM_RAW_VALUE). ENVIRON values are NOT
-    # escape-reprocessed, so the value arrives byte-for-byte.
-    AID_WB_RAW_VALUE="$new_val" awk -v task_row_id="$task_row_id" -v col_idx="$col_idx" '
-        function trim(s) { gsub(/^[ \t]+|[ \t]+$/, "", s); return s }
-        function new_row(    line, c, v) {
-            line = "| " task_row_id " |"
-            for (c = 3; c <= 7; c++) {
-                v = (c == col_idx) ? new_val : "--"
-                line = line " " v " |"
-            }
-            return line
-        }
-        # maybe_insert: append the new/updated row immediately after the LAST
-        # table row seen so far (tracked via last_was_row), instead of at the
-        # section boundary -- keeps the appended row contiguous with the
-        # existing table (no blank line splitting it into two tables).
-        function maybe_insert() {
-            if (!found && last_was_row) { print new_row(); found=1 }
-        }
-
-        BEGIN { in_tl=0; header_seen=0; found=0; last_was_row=0; new_val = ENVIRON["AID_WB_RAW_VALUE"] }
-
-        /^### Tasks lifecycle/ { in_tl=1; header_seen=0; last_was_row=0; print; next }
-
-        in_tl && (/^## / || /^### /) {
-            maybe_insert()
-            if (!found) { print new_row(); found=1 }   # table had no rows at all
-            in_tl=0
-            print
-            next
-        }
-
-        in_tl {
-            stripped = trim($0)
-
-            if (stripped !~ /^\|/) {
-                maybe_insert()
-                last_was_row=0
-                print
-                next
-            }
-
-            # separator row: only |, -, :, spaces
-            if (stripped ~ /^[-|: ]+$/) { print; last_was_row=1; next }
-
-            n = split(stripped, cols, "|")
-            for (i = 1; i <= n; i++) cols[i] = trim(cols[i])
-
-            if (!header_seen) { header_seen=1; print; next }   # header row (not a data row)
-
-            first_cell = cols[2]
-
-            if (index(first_cell, "_none yet_") > 0) {
-                if (!found) { print new_row(); found=1 }
-                last_was_row=1
-                next
-            }
-
-            if (tolower(first_cell) == tolower(task_row_id)) {
-                line = "| " first_cell " |"
-                for (c = 3; c <= 7; c++) {
-                    v = (c == col_idx) ? new_val : cols[c]
-                    line = line " " v " |"
-                }
-                print line
-                found=1
-                last_was_row=1
-                next
-            }
-
-            print
-            last_was_row=1
-            next
-        }
-
-        { print }
-
-        END {
-            # Defensive: Tasks lifecycle was the last section in the file (no
-            # trailing heading closed it above) -- append here instead.
-            if (in_tl) {
-                maybe_insert()
-                if (!found) print new_row()
-            }
-        }
-    ' "$STATE_FILE" > "$tmp"
-    local awk_exit=$?
-    if [[ "$awk_exit" -ne 0 ]]; then
-        rm -f "$tmp"
-        die "writeback awk failed (exit $awk_exit); $STATE_FILE preserved" "$awk_exit"
-    fi
-
-    if [[ ! -s "$tmp" ]]; then
-        rm -f "$tmp"
-        die "writeback produced empty output; $STATE_FILE preserved" 3
-    fi
-
-    # Sanity: ### Tasks lifecycle section and the task's row must both survive
-    if ! grep -q '^### Tasks lifecycle' "$tmp"; then
-        rm -f "$tmp"
-        die "writeback sanity check failed: ### Tasks lifecycle disappeared from output" 3
-    fi
-    if ! grep -qi "| ${task_row_id} |" "$tmp"; then
-        rm -f "$tmp"
-        die "writeback sanity check failed: row for ${task_row_id} not found in output" 3
-    fi
-
-    mv "$tmp" "$STATE_FILE"
-    echo "OK: $STATE_FILE updated -- task $padded_t field '$field_raw' set to '$new_val' (### Tasks lifecycle)"
-}
-
-# ---------------------------------------------------------------------------
-# write_task_findings_flat BLOCK TASK_ID
-# feature-001 flattened layout: write (or replace) this task's `### task-NNN`
-# sub-block under the work-root STATE.md's `## Quick Check Findings` section --
-# the single-writer home that REPLACES the now-absent per-task STATE.md section
-# of the same name.
-#
-# THE KEY DIFFERENCE FROM mode_findings' full-layout path: in the FULL layout
-# each task owns its own STATE.md, so replacing the WHOLE section is safe. Here
-# ALL tasks share ONE file, so the section is keyed by a `### task-NNN`
-# sub-heading and ONLY that sub-block is replaced -- every sibling task's
-# sub-block is reproduced byte-identically. That is what keeps this
-# single-writer-per-task under FR6 parallel execution (the shared sentinel lock
-# serializes the concurrent readers/writers of the file itself). Shape per
-# `aid-execute/references/state-review.md § Write Findings to STATE.md`, and
-# byte-compatible with the dashboard reader's own
-# `## Quick Check Findings` -> `### task-NNN` -> `**Findings:**` parse.
-#
-# Section creation (the work-state template seeds no `## Quick Check Findings`):
-# the section is opened immediately BEFORE `## Delivery Gate`, i.e. inside the
-# AUTHORED zone, after `### Tasks lifecycle` and its `---`, and well before the
-# `---` + `DERIVED / READ-ONLY VIEWS` banner. Nothing already in the file moves:
-# `### Tasks lifecycle` is untouched, `## Delivery Gate` keeps its own preceding
-# `---` (a fresh one is emitted), and the DERIVED sections are never reached. If
-# the file carries no `## Delivery Gate` at all the section is appended at EOF.
-#
-# Uses the SAME sentinel lock as --pipeline / --lifecycle / --block / --field
-# (all target $STATE_FILE for this layout), so concurrent writers serialize.
-# ---------------------------------------------------------------------------
-write_task_findings_flat() {
-    local block="$1" task_id="$2"
-    local padded_t task_block_id
-    # Force base-10 arithmetic before padding (see resolve_task_state_file above).
-    padded_t=$(printf '%03d' "$((10#$task_id))")
-    task_block_id="task-${padded_t}"
-
-    if [[ ! -f "$STATE_FILE" ]]; then
-        die "$STATE_FILE does not exist" 1
-    fi
-
-    local has_section=0
-    grep -q '^## Quick Check Findings' "$STATE_FILE" && has_section=1
-
-    local had_tasks_lifecycle=0
-    grep -q '^### Tasks lifecycle' "$STATE_FILE" && had_tasks_lifecycle=1
-
-    init_lock_file "$STATE_FILE"
-    acquire_lock
-
-    local tmp
-    tmp=$(mktemp)
-
-    # block is read from ENVIRON (not an awk `-v` assignment) because awk's
-    # `-v var=value` re-processes C-style escape sequences in `value` -- a
-    # `foo\tbar` assigned this way silently becomes "foo<TAB>bar", corrupting
-    # the findings text with a control character the caller never wrote (same
-    # bug class write_task_field_flat and wb_set_frontmatter already fix this
-    # way). ENVIRON values are NOT escape-reprocessed, so the block arrives
-    # byte-for-byte.
-    AID_WB_RAW_VALUE="$block" awk -v task_id="$task_block_id" -v has_section="$has_section" '
-        # p(): every emitted line goes through here so blank-line hygiene is
-        # tracked without re-reading the output.
-        function p(l) { print l; last_blank = (l ~ /^[ \t]*$/) }
-        function emit_task_block() {
-            if (!last_blank) p("")
-            p("### " task_id)
-            p("")
-            p(new_block)
-            p("")
-            written = 1
-        }
-
-        BEGIN {
-            new_block = ENVIRON["AID_WB_RAW_VALUE"]
-            task_id_lc = tolower(task_id)
-            in_qcf = 0; in_task = 0; written = 0; last_blank = 1
-        }
-
-        # Section absent -- open it immediately before ## Delivery Gate and
-        # re-emit that heading (with a fresh `---` separator) unchanged.
-        !has_section && /^## Delivery Gate/ {
-            p("## Quick Check Findings")
-            p("")
-            emit_task_block()
-            p("---")
-            p("")
-            p($0)
-            has_section = 1
-            next
-        }
-
-        has_section && !in_qcf && /^## Quick Check Findings/ {
-            in_qcf = 1; in_task = 0
-            p($0)
-            next
-        }
-
-        # End of the section (next `## ` heading or a bare `---` separator --
-        # the same two terminators the full-layout path and mode_delivery_block
-        # use). Flush the target block here when this task had none yet.
-        in_qcf && (/^## / || /^---[ \t]*$/) {
-            if (!written) emit_task_block()
-            in_qcf = 0; in_task = 0
-            p($0)
-            next
-        }
-
-        # A `### task-NNN` sub-heading: the ONLY thing that opens/closes a task
-        # sub-block. A non-task `### ` heading is body content of whatever
-        # sub-block it sits in (so a caller-supplied block may carry its own
-        # sub-headings without them being mistaken for a sibling boundary).
-        in_qcf && tolower($0) ~ /^###[ \t]+task-/ {
-            if (tolower($0) ~ ("^###[ \t]+" task_id_lc "[ \t]*$")) {
-                p($0)
-                p("")
-                p(new_block)
-                p("")
-                written = 1
-                in_task = 1
-            } else {
-                in_task = 0
-                p($0)
-            }
-            next
-        }
-
-        in_qcf && in_task { next }   # discard the stale block body of THIS task only
-        in_qcf { p($0); next }       # section preamble + every sibling block
-        { p($0) }
-
-        END {
-            # Section ran to EOF with no closing heading/separator.
-            if (in_qcf && !written) emit_task_block()
-            # No ## Quick Check Findings AND no ## Delivery Gate anywhere --
-            # append the section at EOF.
-            if (!has_section && !written) {
-                if (!last_blank) p("")
-                p("## Quick Check Findings")
-                p("")
-                emit_task_block()
-            }
-        }
-    ' "$STATE_FILE" > "$tmp"
-    local awk_exit=$?
-    if [[ "$awk_exit" -ne 0 ]]; then
-        rm -f "$tmp"
-        die "writeback awk failed (exit $awk_exit); $STATE_FILE preserved" "$awk_exit"
-    fi
-
-    if [[ ! -s "$tmp" ]]; then
-        rm -f "$tmp"
-        die "writeback produced empty output; $STATE_FILE preserved" 3
-    fi
-
-    # Sanity: the section, this task's sub-heading, and (if it was there before)
-    # the ### Tasks lifecycle section must all be present in the output.
-    if ! grep -q '^## Quick Check Findings' "$tmp"; then
-        rm -f "$tmp"
-        die "## Quick Check Findings section was not written to output" 3
-    fi
-    if ! grep -qiE "^###[[:space:]]+${task_block_id}[[:space:]]*\$" "$tmp"; then
-        rm -f "$tmp"
-        die "writeback sanity check failed: ### ${task_block_id} block not found in output; $STATE_FILE preserved" 3
-    fi
-    if [[ "$had_tasks_lifecycle" -eq 1 ]] && ! grep -q '^### Tasks lifecycle' "$tmp"; then
-        rm -f "$tmp"
-        die "writeback sanity check failed: ### Tasks lifecycle disappeared from output" 3
-    fi
-
-    mv "$tmp" "$STATE_FILE"
-    echo "OK: $STATE_FILE updated -- ## Quick Check Findings ### ${task_block_id} block written (flattened layout)"
+    echo "OK: $TASK_STATE_FILE updated -- task $padded_t field '$FIELD' set to '$FIELD_VALUE'"
 }
 
 # ---------------------------------------------------------------------------
 # Mode: [--delivery-id NNN] --task-id NNN --findings BLOCK
-# Write/replace the ## Quick Check Findings block in
-# delivery-NNN/tasks/task-NNN/STATE.md.
-# Creates the ## Quick Check Findings section if absent.
+# Full-nested layout: writes quick_check.reviewer_tier (scalar) and
+# quick_check.findings (sequence) in deliveries/delivery-NNN/tasks/task-NNN/STATE.yml,
+# parsed from BLOCK via parse_findings_block.
 #
-# Flattened layout (feature-001, auto-detected): routed to
-# write_task_findings_flat below -- there is no per-task STATE.md, so the
-# findings land as a `### task-NNN` sub-block in the SHARED work-root STATE.md
-# and only that sub-block may be replaced. See that function's own comment.
+# Flattened layout (feature-001, auto-detected): there is no per-task
+# STATE.yml and no top-level quick_check key to nest a sequence under without
+# exceeding the declared 3-level nesting cap (a sequence one level under
+# tasks_lifecycle.task-NNN would be a THIRD mapping level plus the sequence
+# itself -- past "a sequence at the second level", SPEC.md SS D-3). This
+# targets tasks_lifecycle.task-NNN.quick_check instead and stores BLOCK
+# verbatim as one scalar (double-quoted per D-5 mode 3, since it carries
+# newlines) -- the minimal model extension that keeps this write inside the
+# declared subset instead of abandoning it (see this task's own report).
 # ---------------------------------------------------------------------------
 mode_findings() {
     local padded_id
     # Force base-10 arithmetic before padding (see resolve_task_state_file above).
     padded_id=$(printf '%03d' "$((10#$TASK_ID))")
 
-    # feature-001 flattened layout (auto-detected): quick-check findings live in
-    # the work-root STATE.md's ## Quick Check Findings section, keyed by a
-    # `### task-NNN` sub-heading -- no per-task STATE.md exists to target, so
-    # resolving one below would always die with "... does not exist".
-    # AID_TASK_STATE_FILE override (if set) bypasses ALL path resolution,
-    # including this flat-layout check, per its documented contract above.
-    # (Same guard shape as mode_field's.)
     if [[ -z "$TASK_STATE_FILE" ]] && is_flat_layout; then
-        write_task_findings_flat "$FINDINGS_BLOCK" "$TASK_ID"
+        if [[ ! -f "$STATE_FILE" ]]; then
+            die "$STATE_FILE does not exist" 1
+        fi
+
+        init_lock_file "$STATE_FILE"
+        acquire_lock
+
+        local key_path="tasks_lifecycle.task-${padded_id}.quick_check"
+        local tmp
+        tmp=$(mktemp)
+        wb_set_kv "$STATE_FILE" "$key_path" scalar "$FINDINGS_BLOCK" > "$tmp"
+
+        if ! wb_state_verify "$tmp" "$key_path" scalar "$FINDINGS_BLOCK"; then
+            rm -f "$tmp"
+            die "writeback sanity check failed: '$key_path' does not resolve to the findings block in output; $STATE_FILE preserved" 3
+        fi
+
+        mv "$tmp" "$STATE_FILE"
+        echo "OK: $STATE_FILE updated -- quick-check findings written for task-${padded_id} (tasks_lifecycle, flattened layout)"
         return 0
     fi
 
@@ -1305,88 +1326,39 @@ mode_findings() {
         die "$TASK_STATE_FILE does not exist" 1
     fi
 
+    local REVIEWER_TIER FINDINGS_ITEMS
+    parse_findings_block "$FINDINGS_BLOCK"
+
     init_lock_file "$TASK_STATE_FILE"
     acquire_lock
 
-    local tmp
+    local tmp tmp2
     tmp=$(mktemp)
+    wb_set_kv "$TASK_STATE_FILE" "quick_check.reviewer_tier" scalar "$REVIEWER_TIER" > "$tmp"
+    tmp2=$(mktemp)
+    wb_set_kv "$tmp" "quick_check.findings" seq "${FINDINGS_ITEMS[@]}" > "$tmp2"
+    mv "$tmp2" "$tmp"
 
-    if grep -q '^## Quick Check Findings' "$TASK_STATE_FILE"; then
-        # Section exists -- replace entire block content (the task owns this file
-        # exclusively, so there is no per-task sub-heading needed; replace the whole section).
-        # Stop the replacement at the first bare `---` separator OR the next `## `
-        # heading, whichever comes first -- task-state-template.md places a `---`
-        # immediately after this section's field lines (before `## Dispatch Log`),
-        # and that separator (plus any inter-section content after it) must survive
-        # the rewrite untouched, not be swallowed as if it were old field content.
-        awk -v new_block="$FINDINGS_BLOCK" '
-            BEGIN { in_qcf=0; inserted=0 }
-            /^## Quick Check Findings/ {
-                in_qcf=1
-                print
-                print ""
-                print new_block
-                inserted=1
-                next
-            }
-            in_qcf && (/^## / || /^---[ \t]*$/) {
-                in_qcf=0
-                print
-                next
-            }
-            in_qcf { next }
-            { print }
-            END {
-                if (!inserted) {
-                    print ""
-                    print "## Quick Check Findings"
-                    print ""
-                    print new_block
-                }
-            }
-        ' "$TASK_STATE_FILE" > "$tmp"
-    else
-        # ## Quick Check Findings section absent -- append it at EOF.
-        {
-            cat "$TASK_STATE_FILE"
-            echo ""
-            echo "## Quick Check Findings"
-            echo ""
-            printf '%s\n' "$FINDINGS_BLOCK"
-        } > "$tmp"
-    fi
-
-    if [[ ! -s "$tmp" ]]; then
+    if ! wb_state_verify "$tmp" "quick_check.reviewer_tier" scalar "$REVIEWER_TIER"; then
         rm -f "$tmp"
-        die "writeback produced empty output; $TASK_STATE_FILE preserved" 3
+        die "writeback sanity check failed: 'quick_check.reviewer_tier' not found in output; $TASK_STATE_FILE preserved" 3
     fi
-
-    # Sanity: ## Quick Check Findings section must be present in output
-    if ! grep -q '^## Quick Check Findings' "$tmp"; then
+    if ! wb_state_verify "$tmp" "quick_check.findings" seq "${FINDINGS_ITEMS[@]}"; then
         rm -f "$tmp"
-        die "## Quick Check Findings section was not written to output" 3
+        die "writeback sanity check failed: 'quick_check.findings' does not resolve in output; $TASK_STATE_FILE preserved" 3
     fi
 
     mv "$tmp" "$TASK_STATE_FILE"
-    echo "OK: $TASK_STATE_FILE updated -- ## Quick Check Findings block written for task-${padded_id}"
+    echo "OK: $TASK_STATE_FILE updated -- quick_check written for task-${padded_id}"
 }
 
 # ---------------------------------------------------------------------------
 # Mode: --delivery-id NNN --lifecycle VALUE
-# Surgical frontmatter write of the `delivery_state` key (SD-8) in the leading
-# YAML block of delivery-NNN/STATE.md (or the work-root STATE.md for the
-# flattened layout -- resolve_delivery_state_file already targets the right
-# file either way). The ## Delivery Lifecycle body's `- **State:**` bullet was
-# relocated to frontmatter by task-001 and is never rewritten here; the body's
-# Updated/Block Reason/Block Artifact bullets are untouched (not relocated).
+# Single-key write of the `delivery_state` top-level scalar (SD-8).
 # VALUE must be one of: Pending-Spec | Specified | Executing | Gated | Done | Blocked
 # Emits no user-facing output.
 # ---------------------------------------------------------------------------
 mode_delivery_lifecycle() {
-    local padded_id
-    # Force base-10 arithmetic before padding (see resolve_task_state_file above).
-    padded_id=$(printf '%03d' "$((10#$DELIVERY_ID))")
-
     # Enum validation (closed enum)
     case "$LIFECYCLE_VALUE" in
         Pending-Spec|Specified|Executing|Gated|Done|Blocked) ;;
@@ -1398,29 +1370,18 @@ mode_delivery_lifecycle() {
     if [[ ! -f "$DELIVERY_STATE_FILE" ]]; then
         die "$DELIVERY_STATE_FILE does not exist" 1
     fi
-
-    # Verify ## Delivery Lifecycle section exists (the body header itself is
-    # still present -- only its `- **State:**` bullet was relocated).
-    if ! grep -q '^## Delivery Lifecycle' "$DELIVERY_STATE_FILE"; then
-        die "malformed delivery STATE.md: ## Delivery Lifecycle section not found in $DELIVERY_STATE_FILE" 6
-    fi
+    wb_state_is_mapping "$DELIVERY_STATE_FILE" || die "malformed STATE.yml: $DELIVERY_STATE_FILE does not parse as a YAML mapping" 6
 
     init_lock_file "$DELIVERY_STATE_FILE"
     acquire_lock
 
     local tmp
     tmp=$(mktemp)
-    wb_set_frontmatter "$DELIVERY_STATE_FILE" "delivery_state" "$LIFECYCLE_VALUE" > "$tmp"
+    wb_set_kv "$DELIVERY_STATE_FILE" "delivery_state" scalar "$LIFECYCLE_VALUE" > "$tmp"
 
-    if ! wb_frontmatter_verify "$tmp" "delivery_state"; then
+    if ! wb_state_verify "$tmp" "delivery_state" scalar "$LIFECYCLE_VALUE"; then
         rm -f "$tmp"
-        die "writeback sanity check failed: frontmatter key 'delivery_state' not found in output; $DELIVERY_STATE_FILE preserved" 3
-    fi
-
-    # Sanity: ## Delivery Lifecycle section must still be present (body untouched)
-    if ! grep -q '^## Delivery Lifecycle' "$tmp"; then
-        rm -f "$tmp"
-        die "writeback sanity check failed: ## Delivery Lifecycle disappeared from output" 3
+        die "writeback sanity check failed: key 'delivery_state' does not resolve to '$LIFECYCLE_VALUE' in output; $DELIVERY_STATE_FILE preserved" 3
     fi
 
     mv "$tmp" "$DELIVERY_STATE_FILE"
@@ -1429,18 +1390,15 @@ mode_delivery_lifecycle() {
 
 # ---------------------------------------------------------------------------
 # Mode: --delivery-id NNN --gate-field FIELD --gate-value VALUE
-# Surgical frontmatter write of one Delivery Gate scalar (relocated by task-001):
+# Single-key write of one top-level Delivery Gate scalar:
 #   Tier      -> gate_tier       (Small | Medium | Large)
 #   Grade     -> gate_grade      (matches ^[A-F][+-]?$)
 #   Timestamp -> gate_timestamp  (free ISO-8601 text)
-# Targets the same file --lifecycle/--block resolve to (delivery-NNN/STATE.md,
-# or the work-root STATE.md for the flattened layout).
+# Targets the same file --lifecycle/--block resolve to (delivery-NNN/STATE.yml,
+# or the work-root STATE.yml for the flattened layout).
 # Emits no user-facing output.
 # ---------------------------------------------------------------------------
 mode_gate_field() {
-    local padded_id
-    padded_id=$(printf '%03d' "$((10#$DELIVERY_ID))")
-
     local field_lower fm_key
     field_lower="${GATE_FIELD,,}"
     case "$field_lower" in
@@ -1477,11 +1435,11 @@ mode_gate_field() {
 
     local tmp
     tmp=$(mktemp)
-    wb_set_frontmatter "$DELIVERY_STATE_FILE" "$fm_key" "$GATE_VALUE" > "$tmp"
+    wb_set_kv "$DELIVERY_STATE_FILE" "$fm_key" scalar "$GATE_VALUE" > "$tmp"
 
-    if ! wb_frontmatter_verify "$tmp" "$fm_key"; then
+    if ! wb_state_verify "$tmp" "$fm_key" scalar "$GATE_VALUE"; then
         rm -f "$tmp"
-        die "writeback sanity check failed: frontmatter key '$fm_key' not found in output; $DELIVERY_STATE_FILE preserved" 3
+        die "writeback sanity check failed: key '$fm_key' does not resolve to '$GATE_VALUE' in output; $DELIVERY_STATE_FILE preserved" 3
     fi
 
     mv "$tmp" "$DELIVERY_STATE_FILE"
@@ -1490,10 +1448,10 @@ mode_gate_field() {
 
 # ---------------------------------------------------------------------------
 # Mode: --delivery-id NNN --block MARKDOWN_BLOCK
-# Write/replace the ## Delivery Gate block in delivery-NNN/STATE.md.
-# This is the per-delivery delivery gate block, targeting the delivery-level
-# STATE.md (one writer per delivery branch -- disjoint writes).
-# Creates the ## Delivery Gate section if absent.
+# Writes delivery_gate.issue_list (a sequence of severity-tagged strings),
+# parsed from BLOCK via parse_issue_list_block. Targets the per-delivery
+# STATE.yml (one writer per delivery branch -- disjoint writes), or the
+# work-root STATE.yml for the flattened layout.
 # ---------------------------------------------------------------------------
 mode_delivery_block() {
     local padded_id
@@ -1506,72 +1464,23 @@ mode_delivery_block() {
         die "$DELIVERY_STATE_FILE does not exist" 1
     fi
 
+    local ISSUE_ITEMS
+    parse_issue_list_block "$DELIVERY_BLOCK"
+
     init_lock_file "$DELIVERY_STATE_FILE"
     acquire_lock
 
     local tmp
     tmp=$(mktemp)
+    wb_set_kv "$DELIVERY_STATE_FILE" "delivery_gate.issue_list" seq "${ISSUE_ITEMS[@]}" > "$tmp"
 
-    if grep -q '^## Delivery Gate$' "$DELIVERY_STATE_FILE"; then
-        # Section exists -- replace entire block content.
-        # Stop the replacement at the first bare `---` separator OR the next `## `
-        # heading, whichever comes first. Both delivery-state-template.md (full
-        # path -- `---` before `## Cross-phase Q&A`) and work-state-template.md
-        # (flat path -- `---` + the `DERIVED / READ-ONLY VIEWS` comment banner
-        # before `## Features State`) place a `---` immediately after this
-        # section's field lines; that separator and everything after it must
-        # survive the rewrite untouched, not be swallowed as if it were old
-        # field content.
-        awk -v new_block="$DELIVERY_BLOCK" '
-            BEGIN { in_dg=0; inserted=0 }
-            /^## Delivery Gate$/ {
-                in_dg=1
-                print
-                print ""
-                print new_block
-                inserted=1
-                next
-            }
-            in_dg && (/^## / || /^---[ \t]*$/) {
-                in_dg=0
-                print
-                next
-            }
-            in_dg { next }
-            { print }
-            END {
-                if (!inserted) {
-                    print ""
-                    print "## Delivery Gate"
-                    print ""
-                    print new_block
-                }
-            }
-        ' "$DELIVERY_STATE_FILE" > "$tmp"
-    else
-        # ## Delivery Gate section absent -- append it at EOF.
-        {
-            cat "$DELIVERY_STATE_FILE"
-            echo ""
-            echo "## Delivery Gate"
-            echo ""
-            printf '%s\n' "$DELIVERY_BLOCK"
-        } > "$tmp"
-    fi
-
-    if [[ ! -s "$tmp" ]]; then
+    if ! wb_state_verify "$tmp" "delivery_gate.issue_list" seq "${ISSUE_ITEMS[@]}"; then
         rm -f "$tmp"
-        die "writeback produced empty output; $DELIVERY_STATE_FILE preserved" 3
-    fi
-
-    # Sanity: ## Delivery Gate section must be present in output
-    if ! grep -q '^## Delivery Gate$' "$tmp"; then
-        rm -f "$tmp"
-        die "## Delivery Gate section was not written to output" 3
+        die "writeback sanity check failed: 'delivery_gate.issue_list' does not resolve in output; $DELIVERY_STATE_FILE preserved" 3
     fi
 
     mv "$tmp" "$DELIVERY_STATE_FILE"
-    echo "OK: $DELIVERY_STATE_FILE updated -- ## Delivery Gate block written for delivery-${padded_id}"
+    echo "OK: $DELIVERY_STATE_FILE updated -- delivery_gate.issue_list written for delivery-${padded_id}"
 }
 
 # ---------------------------------------------------------------------------
@@ -1579,6 +1488,8 @@ mode_delivery_block() {
 # Append a single issue row to delivery-NNN-issues.md.
 # File is created with a header if it does not exist.
 # Idempotent: if an identical row already exists, no duplicate is written.
+# Unaffected by the YAML migration -- this is a separate markdown log file,
+# not STATE.yml.
 # ---------------------------------------------------------------------------
 mode_append_issue() {
     local padded_id
@@ -1591,10 +1502,10 @@ mode_append_issue() {
     #
     # This condition used to be gated on `-n "$AID_STATE_FILE"`, which was wrong twice over.
     # Bare, it aborted under `set -u` -- this is the only place the variable is dereferenced
-    # without a default (line 157 uses `${AID_STATE_FILE:-...}`). And guarding on it at all
-    # was the wrong test: a caller that exports AID_WORK_DIR rather than AID_STATE_FILE --
-    # which is exactly what aid-execute's delivery gate does -- skipped the branch and then
-    # failed on a `.aid/works/work` lock directory that does not exist.
+    # without a default (the STATE_FILE default line uses `${AID_STATE_FILE:-...}`). And
+    # guarding on it at all was the wrong test: a caller that exports AID_WORK_DIR rather than
+    # AID_STATE_FILE -- which is exactly what aid-execute's delivery gate does -- skipped the
+    # branch and then failed on a `.aid/works/work` lock directory that does not exist.
     #
     # `resolve_work_dir` already honours AID_WORK_DIR first and otherwise derives the root
     # from STATE_FILE, so the no-env default (`.aid/works/work/delivery-NNN-issues.md`) is
@@ -1641,12 +1552,10 @@ EOF
 
 # ---------------------------------------------------------------------------
 # Mode: --pipeline --field FIELD --value VALUE
-# Surgical frontmatter write of a single scalar key in the leading YAML block
-# of the work STATE.md (task-004; relocated by task-001). The ## Pipeline State
-# body section is now a static enum-reference blockquote and is never
-# rewritten by this mode -- the body is byte-unchanged by every call here.
+# Single-key write of a top-level (or one-level-nested `pipeline.*`) scalar
+# in the work STATE.yml.
 #
-# Fields (canonical casing) -> frontmatter key:
+# Fields (canonical casing) -> key:
 #   Lifecycle -> lifecycle | Phase -> phase | Active Skill -> active_skill |
 #   Updated -> updated | Pause Reason -> pause_reason |
 #   Block Reason -> block_reason | Block Artifact -> block_artifact |
@@ -1654,9 +1563,9 @@ EOF
 #   User Approved -> user_approved | Pipeline Path -> pipeline.path |
 #   Pipeline Initiator -> pipeline.initiator
 #
-# Enum-validated fields (closed enums from work-state-template.md):
+# Enum-validated fields (closed enums from work-state-template.yml):
 #   Lifecycle:      Running | Paused-Awaiting-Input | Blocked | Completed | Canceled
-#   Phase:          Describe | Define | Specify | Plan | Detail | Execute | Deploy | Deploy | Deploy | Deploy
+#   Phase:          Describe | Define | Specify | Plan | Detail | Execute | Deploy
 #   Active Skill:   any string matching "aid-{skill}" pattern, or "none"
 #   Minimum Grade:  matches ^[A-F][+-]?$
 #   User Approved:  yes | no
@@ -1668,23 +1577,14 @@ EOF
 #   Block Reason   -> present only when Lifecycle = Blocked
 #   Block Artifact -> present only when Lifecycle = Blocked
 #   On a Lifecycle change, a conditional field that no longer applies is reset
-#   to the "--" null sentinel in frontmatter (never physically removed -- the
-#   key stays present so the block's shape is stable across every write).
+#   to the "--" null sentinel (never physically removed -- the key stays
+#   present so the file's shape is stable across every write).
 #
-# Creates the frontmatter block from scratch if the target file has none yet
-# (wb_set_frontmatter). Emits no user-facing output. Acquires the existing
-# sentinel lock.
+# Emits no user-facing output. Acquires the existing sentinel lock.
 # ---------------------------------------------------------------------------
 mode_pipeline() {
     if [[ ! -f "$STATE_FILE" ]]; then
         die "$STATE_FILE does not exist" 1
-    fi
-
-    # Reject newline characters -- a raw newline in a YAML flow scalar would
-    # corrupt the frontmatter block (same defensive class as mode_field's
-    # pipe/newline checks).
-    if [[ "$FIELD_VALUE" == *$'\n'* ]]; then
-        die "--value cannot contain newline characters; rephrase to single line" 4
     fi
 
     # Validate field name (canonical casing stored; comparison is case-insensitive)
@@ -1752,32 +1652,32 @@ mode_pipeline() {
 
     local tmp
     tmp=$(mktemp)
-    wb_set_frontmatter "$STATE_FILE" "$fm_key" "$FIELD_VALUE" > "$tmp"
+    wb_set_kv "$STATE_FILE" "$fm_key" scalar "$FIELD_VALUE" > "$tmp"
 
     # Lifecycle change: clear conditional fields that no longer apply (chained
-    # writes over the same evolving temp file -- each wb_set_frontmatter call
-    # only ever touches the frontmatter block, so chaining preserves the
-    # untouched body across every step).
+    # writes over the same evolving temp file -- each wb_set_kv call only
+    # ever touches its one target key, so chaining preserves every other
+    # line across every step).
     if [[ "$canonical_field" == "Lifecycle" ]]; then
         local tmp2
         if [[ "$FIELD_VALUE" != "Paused-Awaiting-Input" ]]; then
             tmp2=$(mktemp)
-            wb_set_frontmatter "$tmp" "pause_reason" "--" > "$tmp2"
+            wb_set_kv "$tmp" "pause_reason" scalar "--" > "$tmp2"
             mv "$tmp2" "$tmp"
         fi
         if [[ "$FIELD_VALUE" != "Blocked" ]]; then
             tmp2=$(mktemp)
-            wb_set_frontmatter "$tmp" "block_reason" "--" > "$tmp2"
+            wb_set_kv "$tmp" "block_reason" scalar "--" > "$tmp2"
             mv "$tmp2" "$tmp"
             tmp2=$(mktemp)
-            wb_set_frontmatter "$tmp" "block_artifact" "--" > "$tmp2"
+            wb_set_kv "$tmp" "block_artifact" scalar "--" > "$tmp2"
             mv "$tmp2" "$tmp"
         fi
     fi
 
-    if ! wb_frontmatter_verify "$tmp" "$fm_key"; then
+    if ! wb_state_verify "$tmp" "$fm_key" scalar "$FIELD_VALUE"; then
         rm -f "$tmp"
-        die "writeback sanity check failed: frontmatter key '$fm_key' not found in output; $STATE_FILE preserved" 3
+        die "writeback sanity check failed: key '$fm_key' does not resolve to '$FIELD_VALUE' in output; $STATE_FILE preserved" 3
     fi
 
     mv "$tmp" "$STATE_FILE"
