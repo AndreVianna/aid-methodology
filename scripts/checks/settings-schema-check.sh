@@ -78,7 +78,13 @@ row() { printf '  %-22s examined %-28s expected %s\n' "$1" "$2" "$3"; }
 
 # --- top-level keys actually declared -----------------------------------------
 # LC_ALL=C so ordering is byte-stable and the output does not vary by locale.
-mapfile -t KEYS < <(grep -oE '^[a-z_]+:' "$SETTINGS" 2>/dev/null | tr -d ':' | LC_ALL=C sort -u)
+#
+# The character class is deliberately wider than the keys AID itself uses. An
+# earlier `^[a-z_]+:` could not see a CamelCase key at all, so `ForbiddenKey:`
+# was not reported as undocumented -- it was invisible, and the file passed with
+# the key counted as absent. An extractor that silently drops what it cannot
+# name is the worst kind, because the omission looks like a clean result.
+mapfile -t KEYS < <(grep -oE '^[A-Za-z_][A-Za-z0-9_-]*:' "$SETTINGS" 2>/dev/null | tr -d ':' | LC_ALL=C sort -u)
 KEY_COUNT="${#KEYS[@]}"
 
 say "== settings-schema-check: ${SETTINGS} =="
@@ -108,9 +114,17 @@ if [ -z "$FV_LINE" ]; then
 elif ! printf '%s' "$FV" | grep -qE '^[0-9]+$'; then
     violation "format_version is not an integer: '${FV}'" \
               "expected an integer, ${EXPECTED_FV}"
-elif [ "$FV" != "$EXPECTED_FV" ]; then
-    violation "format_version is ${FV}" \
-              "bin/aid's AID_SUPPORTED_FORMAT is ${EXPECTED_FV}; the file needs migrating"
+elif [ "$FV" -gt "$EXPECTED_FV" ]; then
+    violation "format_version is ${FV}, newer than this CLI supports" \
+              "bin/aid's AID_SUPPORTED_FORMAT is ${EXPECTED_FV}; it REFUSES to operate on this project"
+elif [ "$FV" -lt "$EXPECTED_FV" ]; then
+    # Not a violation. `bin/aid`'s own `_aid_format_gate` treats an older stamp
+    # as non-blocking -- it warns and offers `aid update` -- and refuses only a
+    # NEWER one. A check that failed here would be stricter than the tool whose
+    # schema it is checking, and would red-flag every project mid-upgrade.
+    row "format_version" "$FV" "${EXPECTED_FV}; older is non-blocking"
+    say "[NOTE]  format_version ${FV} is behind AID_SUPPORTED_FORMAT ${EXPECTED_FV}."
+    say "        bin/aid warns and offers 'aid update'; it refuses only a newer stamp."
 else
     row "format_version" "$FV" "$EXPECTED_FV (AID_SUPPORTED_FORMAT)"
 fi

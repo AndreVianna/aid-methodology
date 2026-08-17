@@ -120,6 +120,41 @@ assert_eq "$code" "2" "KH04 missing template dir -- exit 2"
 assert_output_contains "$out" "template dir not found" "KH04 missing template dir -- says so"
 
 # ===========================================================================
+# KH06  Claim class 3 -- cited KB document paths.
+#
+# Without this, class 3 is untested: none of KH01-KH04's fixtures contains a
+# `.aid/knowledge/*.md` path, so the class-3 extractor could be replaced with a
+# pattern that matches nothing and the suite would stay green. Both directions
+# are asserted, because a class that never fires and a class that always fires
+# are equally useless.
+# ===========================================================================
+cat > "${FIX}/dangling-doc.html" <<'HTML'
+<html><body>
+<p>Every work records its lifecycle in STATE.yml.</p>
+<p>See .aid/knowledge/architecture.md for the shape, and
+   .aid/knowledge/no-such-doc.md for the details.</p>
+</body></html>
+HTML
+
+out=$(run_check "${FIX}/dangling-doc.html"); code=$?
+assert_eq "$code" "1" "KH06 cited-but-absent KB doc -- exit 1"
+assert_output_contains "$out" "no-such-doc.md"  "KH06 -- names the document that does not exist"
+assert_output_contains "$out" "no such document" "KH06 -- says why it failed"
+assert_output_not_contains "$out" "[FAIL] kb.html cites .aid/knowledge/architecture.md" \
+    "KH06 -- does NOT flag the document that does exist"
+
+cat > "${FIX}/present-doc.html" <<'HTML'
+<html><body>
+<p>Every work records its lifecycle in STATE.yml.</p>
+<p>See .aid/knowledge/architecture.md for the shape.</p>
+</body></html>
+HTML
+
+out=$(run_check "${FIX}/present-doc.html"); code=$?
+assert_eq "$code" "0" "KH06 cited-and-present KB doc -- exit 0"
+assert_output_not_contains "$out" "[FAIL]" "KH06 cited-and-present KB doc -- no finding"
+
+# ===========================================================================
 # KH05  Determinism -- two consecutive runs are byte-identical.
 # ===========================================================================
 a=$(run_check "${FIX}/contradicts.html")
