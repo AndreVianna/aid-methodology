@@ -116,14 +116,61 @@ This leaves task-021 a narrower job than its title implies: not "give work artif
 home", but "declare the two criteria on the four artifact kinds, per file". That is a real change in
 scope and the owner should see it rather than have it absorbed silently.
 
+## A second grammar limit, found while reproducing this
+
+`**` may not be followed by a `*`. `glob_match` splits the glob at `**` and compares the tail with
+the pattern quoted:
+
+```
+$ sed -n '88,92p' scripts/checks/g07-selector-partition.sh
+        *'**'*)
+            local pre="${g%%\*\**}" post="${g#*\*\*}"
+            [[ "$p" == "$pre"* ]] || return 1
+            [[ -z "$post" || "$p" == *"$post" ]] || return 1
+            return 0 ;;
+```
+
+`"$post"` is quoted, so any `*` inside it is a literal asterisk rather than a wildcard. The natural
+spelling `path .aid/works/**/features/*/SPEC.md` therefore matches nothing, silently — the row
+simply never fires and its files fall through as unresolved. Use a single `*` per path segment
+(`path .aid/works/*/features/*/SPEC.md`), which takes the non-`**` branch and is matched by bash
+properly.
+
+This is worth recording beyond the recipe: it narrows what the registry can express even further
+than the missing `OR`, and it fails quietly rather than loudly.
+
 ## Reproducing this
 
-The scratch test is a copy, so nothing here was written to the registry:
+The scratch test is a copy, so nothing here was written to the registry. The four rows are given in
+full, because the syntax is the part that goes wrong:
 
 ```bash
 SC=$(mktemp -d); cp -r scripts .aid canonical "$SC/"; cd "$SC"
-# insert the four rows after the `state` row in authoring-conventions.md, then:
+
+python3 - <<'ROWS'
+import pathlib
+p = pathlib.Path(".aid/knowledge/authoring-conventions.md")
+lines = p.read_text(encoding="utf-8").splitlines(True)
+rows = "".join(
+    f"| `work-{n}` | a `{d}` under `.aid/works/` | `path {g}` | proposed by task-020 |\n"
+    for n, d, g in [
+        ("requirements", "REQUIREMENTS.md",           ".aid/works/*/REQUIREMENTS.md"),
+        ("plan",         "PLAN.md",                   ".aid/works/*/PLAN.md"),
+        ("spec",         "features/*/SPEC.md",        ".aid/works/*/features/*/SPEC.md"),
+        ("blueprint",    "deliveries/*/BLUEPRINT.md", ".aid/works/*/deliveries/*/BLUEPRINT.md"),
+    ])
+i = next(i for i, l in enumerate(lines) if l.startswith("| `state` |"))
+lines.insert(i + 1, rows)
+p.write_text("".join(lines), encoding="utf-8")
+ROWS
+
 sed -i 's#^readonly ROOTS=(.*#readonly ROOTS=("canonical/skills" "canonical/agents" "canonical/aid/templates" ".aid/knowledge" ".aid/works")#' \
   scripts/checks/g07-selector-partition.sh
-bash scripts/checks/g07-selector-partition.sh
+bash scripts/checks/g07-selector-partition.sh   # exit 1, every non-candidate work file unresolved
+
+# then add the catch-all and re-run to see the partition close at the cost of the whole tree:
+#   | `work-other` | any other `.md` under `.aid/works/` | `path .aid/works/**` | catch-all |
 ```
+
+Expect the violation count to exceed the figure quoted above: the work tree gains files as tasks
+execute, which is the drift this document opens with.
