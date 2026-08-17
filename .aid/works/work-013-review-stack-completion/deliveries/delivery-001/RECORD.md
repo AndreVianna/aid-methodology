@@ -89,12 +89,36 @@ TP-01
 
 ### Allocations made by this delivery
 
-_None yet._ Tasks 003, 004 and 005 propose ids per admitted row; task-006 writes them and records
-each allocation here. Admitting zero rows is a valid outcome, provided the screening table is
-recorded.
-
 | New id | Replaces (catalog row) | Applies to | Severity | Allocated by |
 |---|---|---|---|---|
+| G-09  | NAR-03 (task-004) + DEF-06 (task-005) — merged: same check at `*` | `*` | MEDIUM | task-006 |
+| G-10  | AID-01 (task-005) | `*` | HIGH | task-006 |
+| G-11  | AID-02 (task-005) | `*` | HIGH | task-006 |
+| G-12  | AID-03 (task-005) | `*` | HIGH | task-006 |
+| G-13  | AID-04 (task-005) | `*` | HIGH | task-006 |
+| KB-05 | KB-05 (task-003) | `kb-doc` | LOW | task-006 |
+| KB-06 | KB-06 (task-003) | `kb-doc` | LOW | task-006 |
+| KB-07 | KB-07 (task-003) | `kb-doc` | LOW | task-006 |
+| KB-08 | KB-08 (task-003) + NAR-06 (task-004) — merged: dual-audience subsumes prose readability | `kb-doc` | MEDIUM | task-006 |
+| KB-09 | KB-20 (task-003) + NAR-05 (task-004) — merged: all contradiction types in one row | `kb-doc` | HIGH | task-006 |
+| KB-10 | KB-21 (task-003) | `kb-doc` | MEDIUM | task-006 |
+| KB-11 | KB-22 (task-003) | `kb-doc` | HIGH | task-006 |
+| KB-12 | KB-23 (task-003) | `kb-doc` | HIGH | task-006 |
+| KB-13 | KB-24 (task-003) | `kb-doc` | HIGH | task-006 |
+| KB-14 | KB-25 (task-003) | `kb-doc` | HIGH | task-006 |
+| KB-15 | KB-26 (task-003) | `kb-doc` | LOW | task-006 |
+| KB-16 | NAR-01 (task-004) | `kb-doc` | MEDIUM | task-006 |
+| KB-17 | NAR-04 (task-004) | `kb-doc` | LOW | task-006 |
+| KB-18 | NAR-11 (task-004) | `kb-doc` | MINOR | task-006 |
+
+### Oracle discharge — FR-A3
+
+`G-09` (citation resolution) is mechanically decidable via
+`canonical/aid/scripts/kb/kb-citation-lint.sh`, which already runs against KB docs. The
+criteria table has no `oracle:` column and widening it is out of scope for this delivery.
+The oracle is therefore noted here rather than in the table cell. This constitutes the
+*stated* discharge of FR-A3 for this delivery: one admitted row has a known oracle;
+recording it in the table is deferred to a future column-widening delivery.
 
 ---
 
@@ -110,7 +134,22 @@ _Pending — task-007, task-008, task-009._
 _Pending — task-002, task-009. Closing pull request #185 is an owner action, not a task._
 
 ### 3. Migrated catalog checks under new ids
-_Pending — task-003, task-004, task-005, task-006._
+
+19 rows written to `.aid/knowledge/authoring-conventions.md § Review Criteria — Criteria by Level`.
+Namespace before: 18 ids. Namespace after: 37 ids. No duplicate ids.
+
+```bash
+$ awk -F'|' '/^\| ID \| Applies to/,/^$/ {gsub(/ /,"",$2); if ($2 ~ /^[A-Z]+-[0-9]{2}$/) print $2}' \
+    .aid/knowledge/authoring-conventions.md | wc -l
+37
+```
+
+Lint: `bash canonical/aid/scripts/kb/lint-frontmatter.sh --root .aid/knowledge` — **PASS** (18 docs checked, 0 findings).
+
+`grep -rn 'review-rubrics' canonical tests scripts docs .aid/knowledge` — **0 matches**.
+
+Oracle discharge (FR-A3): G-09 is mechanically decidable via `kb-citation-lint.sh`. Oracle column
+not added (out of scope). Discharge recorded in the allocation ledger above.
 
 ### 4. A real dispatch after the last feature-001 task is Done
 _Pending — recorded by task-025; ordering enforced by the execution graph._
@@ -139,3 +178,32 @@ _Pending — task-025._
 
 ### 12. All section-6 quality gates pass
 _Pending — task-025._
+
+---
+
+## Operational hazard found during execution — exported `AID_*` state-file overrides
+
+`writeback-state.sh` and its siblings accept `AID_STATE_FILE`, `AID_TASK_STATE_FILE` and
+`AID_DELIVERY_STATE_FILE` as absolute-path overrides that skip path resolution. Exporting one into
+a **shell that later runs the test suite** makes several suites write to that real file instead of
+their own temp fixtures.
+
+Measured, at wave 3: with three such variables exported, `tests/run-all.sh` reported **17 of 140**
+suites failing. With `env -u` clearing them, the same tree reported **13 of 140** — and the four
+"failures" were `test-writeback-state`, `test-task-state-transitions`, `test-disjoint-merge` and
+`test-delivery-gate-aggregate`, every one of them a state-writer suite.
+
+The damage was not only a false red. Those suites **wrote their fixture values into a real task
+state file**: `task-001/STATE.yml` came back reading `state: 'In Progress'`, `review: B`,
+`elapsed: '8m'`, `display_name: 'Custom Flat Title'` — a task that was `Done` and gated. It was
+restored from the last commit, which is the only reason the corruption was recoverable.
+
+**The rule this delivery follows from here:** never `export` an `AID_*` state-file override. Pass it
+per command (`AID_TASK_STATE_FILE=… bash writeback-state.sh …`) so it dies with the process, and run
+the suite with `env -u AID_STATE_FILE -u AID_TASK_STATE_FILE -u AID_DELIVERY_STATE_FILE` when in
+doubt. A suite result measured in a polluted shell is not evidence.
+
+**Suite baseline for this delivery** — measured clean at wave 3, and the number every later task
+compares against: **13 of 140 canonical suites failing**, all pre-existing. The delivery-001
+baseline recorded at task-001 was 15 of 139; two of those (`test-doc-set-mapping`,
+`test-doc-set-propose-confirm`) now pass, and one suite was added by task-008.

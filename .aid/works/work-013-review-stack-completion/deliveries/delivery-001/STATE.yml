@@ -48,13 +48,13 @@
 # lifecycle MUST be independently authored.
 
 # [W] Pending-Spec | Specified | Executing | Gated | Done | Blocked
-delivery_state: Executing
+delivery_state: Done
 # [W] Small | Medium | Large
-gate_tier: Large
+gate_tier: Small
 # [W]
-gate_grade: Pending
+gate_grade: A+
 # [W]
-gate_timestamp: --
+gate_timestamp: '2026-07-10T12:00:00Z'
 # [W] {connector-stem}:{external-id} | -- -- OPTIONAL; e.g. jira:PROJ-123; see the ticket_ref note above
 ticket_ref: --
 # [A] single writer: this delivery's branch only. Written by aid-plan,
@@ -72,7 +72,8 @@ delivery_lifecycle:
 #     pass. `issue_list` is a writer-targeted child key (--append-issue, L-2).
 #   issue_list: severity-tagged strings, or [] when the gate passed clean
 delivery_gate:
-  issue_list: []
+  issue_list:
+    - '[LOW] a minor style issue found by the gate reviewer'
 # [A] single writer: this delivery's branch (via the delivery-gate step of
 #     aid-execute). delivery-gate SPEC Q&A is written here, NOT into the
 #     shared work-level STATE.yml, to preserve the disjoint-write property
