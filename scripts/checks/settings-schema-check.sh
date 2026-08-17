@@ -30,8 +30,10 @@
 # This script answers the same question with no judgment, in one run.
 #
 # WHAT IT CHECKS
-#   1. `format_version` present, an integer, and equal to bin/aid's
-#      AID_SUPPORTED_FORMAT.
+#   1. `format_version` present and an integer, and compared to bin/aid's
+#      AID_SUPPORTED_FORMAT the same three ways `_aid_format_gate` compares it:
+#      newer than the CLI supports is a violation (the CLI refuses to operate),
+#      older is a note (the CLI warns and offers `aid update`), equal passes.
 #   2. `minimum_grade`, if present, is a value grade.sh can actually emit.
 #   3. Every top-level key is one artifact-schemas.md documents.
 #   4. The file declares at least one key -- examining nothing is a failure.
@@ -79,12 +81,21 @@ row() { printf '  %-22s examined %-28s expected %s\n' "$1" "$2" "$3"; }
 # --- top-level keys actually declared -----------------------------------------
 # LC_ALL=C so ordering is byte-stable and the output does not vary by locale.
 #
-# The character class is deliberately wider than the keys AID itself uses. An
-# earlier `^[a-z_]+:` could not see a CamelCase key at all, so `ForbiddenKey:`
-# was not reported as undocumented -- it was invisible, and the file passed with
-# the key counted as absent. An extractor that silently drops what it cannot
-# name is the worst kind, because the omission looks like a clean result.
-mapfile -t KEYS < <(grep -oE '^[A-Za-z_][A-Za-z0-9_-]*:' "$SETTINGS" 2>/dev/null | tr -d ':' | LC_ALL=C sort -u)
+# Matched as "any column-0 token up to the first colon", deliberately wider than
+# the keys AID itself uses, and quotes are stripped afterwards rather than
+# excluded by the pattern.
+#
+# This was narrowed three times by accident and each narrowing hid a key rather
+# than rejecting it. `^[a-z_]+:` could not see `ForbiddenKey:`; widening to
+# `^[A-Za-z_][A-Za-z0-9_-]*:` still could not see `"quoted-key":` or
+# `dotted.key:`. In every case the key was counted as ABSENT and the file
+# PASSED -- an extractor that silently drops what it cannot name is the worst
+# kind, because the omission is indistinguishable from a clean result. So the
+# pattern now admits anything at column 0 and lets the documented-key check
+# reject it, which is the half that is allowed to say no.
+mapfile -t KEYS < <(grep -oE '^[^[:space:]#][^:]*:' "$SETTINGS" 2>/dev/null \
+    | sed -E 's/:$//; s/^"(.*)"$/\1/; s/^'"'"'(.*)'"'"'$/\1/' \
+    | LC_ALL=C sort -u)
 KEY_COUNT="${#KEYS[@]}"
 
 say "== settings-schema-check: ${SETTINGS} =="
