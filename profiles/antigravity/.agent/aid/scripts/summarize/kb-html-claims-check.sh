@@ -21,7 +21,13 @@
 # not authored markdown, so it is not the criteria cascade's business.
 #
 # Usage:
-#   kb-html-claims-check.sh <html-file> [--kb-dir DIR] [--quiet]
+#   kb-html-claims-check.sh <html-file> [--kb-dir DIR] [--template-dir DIR] [--quiet]
+#
+# Flags:
+#   --kb-dir DIR        KB markdown directory (default: .aid/knowledge).
+#   --template-dir DIR  canonical templates, the direction oracle for claim class 1
+#                       (default: resolved from this script's own location, so the
+#                       check works from any working directory).
 #
 # Exit codes:
 #   0  every extracted claim is consistent with the KB
@@ -38,10 +44,18 @@ HTML=""
 KB_DIR=".aid/knowledge"
 QUIET=0
 
+# Resolved from the script's own location rather than the caller's cwd. Hardcoding
+# a relative "canonical/aid/templates" made claim class 1 skip in silence whenever
+# the check ran from anywhere but the repo root -- a false PASS, which is the one
+# outcome a gate must never produce by accident.
+_SELF_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+TEMPLATE_DIR="$(cd "${_SELF_DIR}/../../templates" 2>/dev/null && pwd || echo "")"
+
 while [ $# -gt 0 ]; do
     case "$1" in
         -h|--help) sed -n '2,/^[^#]/{ /^#/!d; s/^# \{0,1\}//; p }' "$0"; exit 0 ;;
-        --kb-dir)  KB_DIR="${2:-}"; shift 2 ;;
+        --kb-dir)       KB_DIR="${2:-}"; shift 2 ;;
+        --template-dir) TEMPLATE_DIR="${2:-}"; shift 2 ;;
         --quiet)   QUIET=1; shift ;;
         -*)        echo "kb-html-claims-check.sh: unknown flag: $1" >&2; exit 2 ;;
         *)         HTML="$1"; shift ;;
@@ -90,7 +104,6 @@ report() {
 # ==============================================================================
 say "== Claim class 1: artifact names =="
 
-TEMPLATE_DIR="canonical/aid/templates"
 ARTIFACT_EXTS="md yml yaml json"
 
 # stem -> the template basename that defines it
@@ -102,7 +115,14 @@ count_in() {
     printf '%s' "${n:-0}"
 }
 
-if [ -d "$TEMPLATE_DIR" ]; then
+if [ -z "$TEMPLATE_DIR" ] || [ ! -d "$TEMPLATE_DIR" ]; then
+    echo "kb-html-claims-check: FAIL — template dir not found: ${TEMPLATE_DIR:-<unresolved>}" >&2
+    echo "  Claim class 1 has no direction oracle without it, and skipping a class in" >&2
+    echo "  silence would report a false PASS. Pass --template-dir explicitly." >&2
+    exit 2
+fi
+
+if true; then
   for pair in $ARTIFACT_MAP; do
     stem="${pair%%:*}"
     tmpl_stem="${pair##*:}"

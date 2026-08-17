@@ -298,7 +298,31 @@ $ echo $?
 ```
 
 ### 10. Base diff, render parity
-_Pending — task-025, against the base recorded above._
+
+_Pending — task-025, against the base recorded above. One operational note recorded here while it
+is fresh._
+
+**The root install trees are not covered by the generator, and `rsync` is not on this box.**
+`run_generator.py` emits to `profiles/<tool>/…` only. The repo's own dogfooded trees, `.claude/`
+and `.cursor/`, are byte-copies of those renders plus a few repo-local extras
+(`.cursor/rules`, `.claude/output-styles`, `.claude/settings.json`, and the two maintainer-only
+skills). Nothing syncs them automatically, so a `canonical/` edit leaves them stale until they are
+copied by hand.
+
+In wave 5 that cost a task its "generator re-run in the same commit" criterion. The first sync
+attempt used `rsync … 2>/dev/null`, `rsync` is not installed here, and redirecting stderr turned a
+missing binary into a silent no-op that reported success. The four affected files were caught by a
+`diff -rq` a step later and landed in the following commit instead of their own. Final parity is
+correct and both commits sit in the same pull request, but the constraint was split.
+
+Two rules follow, and both are cheap:
+
+```bash
+# 1. Never redirect stderr on a sync. A missing tool must be loud.
+# 2. Verify parity by diff, not by the sync command's exit status:
+diff -rq .cursor profiles/cursor/.cursor | grep '^Files'          # must be empty
+diff -rq .claude profiles/claude-code/.claude | grep '^Files'     # must be empty
+```
 
 ### 11. Every count carries its command and reproduces
 _Pending — task-025._

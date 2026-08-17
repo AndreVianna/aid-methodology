@@ -358,8 +358,23 @@ A+  A  A-   B+  B  B-   C+  C  C-   D+  D  D-   E+  E  E-   F
 Two things a range like "`A+..F`" hides, and both bite. The ladder includes an **`E`** band
 (one or more CRITICAL findings) that sits between `D` and `F`. And **`F` is not reachable by
 counting findings at all** — it comes only from `grade.sh --non-functional`, the flag for an
-artifact that would not build or run, so a ledger alone can never produce it. Within a letter,
-`+` means exactly one finding at that severity, no modifier means 2-5, and `-` means 6 or more.
+artifact that would not build or run, so a ledger alone can never produce it.
+
+The letter is set by the worst severity present, and the modifier by how many findings sit at that
+severity: `+` for exactly one, none for 2-5, `-` for 6 or more.
+
+**The A band does not follow that rule**, and the exception is the one worth knowing:
+
+| ledger | grade |
+|---|---|
+| no findings at all | `A+` |
+| 1-5 MINOR | `A` |
+| 6 or more MINOR | `A-` |
+| 1 LOW | `B+` |
+
+`A+` means **zero findings**, not one MINOR — a single MINOR grades `A`. So `A+` is not "the best
+A", it is the absence of a ledger entry, and the `+` there means something different from the `+`
+in `B+`.
 
 ### Compatibility aliases
 
@@ -376,6 +391,14 @@ key on the right. Do not write these into a new settings file.
 The alias list is closed: `banana.name` does not resolve, and neither does any other section
 prefix outside this table.
 
+**`kb_baseline.{branch,tip_date}` is a stale spelling, not an alias.** It names the same producer
+write as `knowledge.{source,last_update}` — the same FR35 (`aid-discover`, on KB approval) and FR36
+(`aid-housekeep`, re-stamp on KB-DELTA refresh) — so the baseline **is** stored, under the
+`knowledge:` block. But `read-setting.sh` has no `kb_baseline` entry, so unlike the rows above,
+the old spelling does not resolve to the new key; it resolves to nothing. Two `aid-discover` and
+`aid-housekeep` reference documents still instruct writing `kb_baseline:`. Prefer
+`knowledge.source` and `knowledge.last_update`.
+
 ### Read but never stored — the consumer's `--default` is the real value
 
 These keys have live consumers, but nothing writes them to `settings.yml`, so every read falls
@@ -385,7 +408,6 @@ stored value that is not there. Setting one by hand does work.
 | Key | Consumer | Effective value |
 |---|---|---|
 | `execution.max_parallel_tasks` | `aid-execute` (`state-execute.md`) | always `5`; migration to the flat schema deletes the `execution:` block outright. |
-| `kb_baseline.{branch,tip_date}` | `aid-housekeep`, `aid-discover` | superseded by `knowledge.source` / `knowledge.last_update`; both consumers document an explicit absent-fallback. |
 | `triage.{greenfield_max_source_files,greenfield_max_source_loc,large_min_source_loc,large_min_dirs,large_min_concepts}` | `recon-classify.sh` | `5`, `500`, `20000`, `25`, `40` — the defaults in that script's own `read_threshold` calls. |
 | `discovery.closure.{max_clean_passes,max_rounds,token_budget}` | `aid-discover` closure loop | 3-level path, **not readable** via `read-setting.sh`; consumed through the Step 5b override interface instead. |
 
