@@ -1373,7 +1373,10 @@ def _read_work_hierarchical(
       - work_dir/STATE_FILENAME                                    -- work-level lifecycle/history
       - work_dir/deliveries/delivery-NNN/STATE_FILENAME             -- delivery lifecycle (SD-8) + gate + Q&A
       - work_dir/deliveries/delivery-NNN/tasks/task-NNN/STATE_FILENAME -- per-task mutable cells
-      - work_dir/deliveries/delivery-NNN/BLUEPRINT.md               -- task listing (for short_name / type)
+      (Task DISCOVERY is directory-based -- deliveries/*/tasks/task-NNN/ -- and
+       short_name/type come from each task's own DETAIL.md. An earlier version of
+       this docstring named a per-delivery BLUEPRINT.md as the task listing; that
+       artifact is retired, and the code never depended on it for discovery.)
       - work_dir/deliveries/delivery-NNN/tasks/task-NNN/DETAIL.md   -- task short name
 
     Union views assembled:

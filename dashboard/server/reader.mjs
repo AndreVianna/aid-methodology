@@ -4119,8 +4119,10 @@ function _readWorkFlat(workDir, workId) {
   //   - workDir/tasks/task-NNN/DETAIL.md  -- task type / short-name (no per-task STATE.yml --
   //                                           mutable cells come from the work STATE.yml
   //                                           tasks_lifecycle mapping)
-  //   - workDir/BLUEPRINT.md              -- the single delivery's title (synthesized
-  //                                           DeliverableRef name)
+  //   - workDir/PLAN.md                   -- the single delivery's title, from its
+  //                                           `### delivery-NNN` stanza (synthesized
+  //                                           DeliverableRef name). Was BLUEPRINT.md;
+  //                                           that artifact is retired.
   //
   // Synthesizes exactly ONE DeliverableRef for delivery-001 (every task gets
   // wave="delivery-001", delivery=1) -- there is no deliveries/ wrapper to enumerate.

@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
-# test-lite-work-end-to-end.sh -- run a CURRENT-SHAPE Lite work through the whole chain
+# test-lite-work-end-to-end.sh -- run CURRENT-SHAPE works (Lite AND nested) through the
+# whole chain
 # and require every stage to agree about it.
 #
 # WHY THIS EXISTS, and why the unit suites did not make it unnecessary.
@@ -174,6 +175,121 @@ process.stdout.write(`${w.workPath ?? w.work_path}|` + rows.join(","));
     assert_eq "$nd" "$py" "E2E05 reader.mjs agrees with reader.py field for field on the same work"
 else
     pass "E2E05 SKIPPED: node not available"
+fi
+
+
+# ===========================================================================
+# The NESTED (full-path) composition -- the other half of the product.
+#
+# Added because the first version of this suite covered only the Lite path, and "the
+# mechanisms work" was concluded from that. The nested path routes writes to a DIFFERENT
+# target (deliveries/*/tasks/*/STATE.yml rather than the work-root tasks_lifecycle
+# mapping) and takes lanes from a DIFFERENT source (PLAN.md's wave-map rather than
+# derivation from task DETAILs), so passing Lite implies nothing about it.
+#
+# The delivery TITLE assertion is the load-bearing one: it used to come from a
+# per-delivery BLUEPRINT.md and now comes from the delivery's `### delivery-NNN` stanza
+# in PLAN.md. A reader still looking for the retired file yields an unnamed delivery,
+# which is a silent degradation rather than an error.
+# ===========================================================================
+NW="${TMP}/nroot/.aid/works/work-002-nested"
+mkdir -p "${NW}/deliveries/delivery-001/tasks/task-001" "${NW}/deliveries/delivery-001/tasks/task-002"
+
+cat > "${NW}/STATE.yml" <<'EOF'
+pipeline:
+  path: full
+lifecycle: Running
+phase: Execute
+qa: []
+EOF
+
+cat > "${NW}/REQUIREMENTS.md" <<'EOF'
+# Nested work
+
+- **Name:** nested-demo
+
+## 9. Acceptance Criteria
+
+- **AC-1** Given X, when Y, then Z.
+- **AC-2** Another observable outcome.
+
+## 11. Features
+
+### Feature 001 -- Thing
+
+- **Criteria:** AC-1, AC-2
+EOF
+
+cat > "${NW}/PLAN.md" <<'EOF'
+# Delivery Plan
+
+## Deliveries
+
+### delivery-001: First delivery
+
+**Objective:** Ship the thing.
+
+**Gate Criteria:**
+- [ ] AC-1 verified
+
+```wave-map
+delivery: 001
+wave 1: task-001
+wave 2: task-002
+```
+EOF
+
+printf 'delivery_state: In Progress
+tasks_lifecycle: {}
+qa: []
+' > "${NW}/deliveries/delivery-001/STATE.yml"
+for n in 001 002; do
+    case "$n" in 001) dep="- (none)" ;; 002) dep="task-001" ;; esac
+    printf '# task-%s: Nested item %s\n\n**Type:** IMPLEMENT\n\n**Source:** feature-001-thing -> delivery-001 -> AC-1\n\n**Depends on:** %s\n' \
+        "$n" "$n" "$dep" > "${NW}/deliveries/delivery-001/tasks/task-${n}/DETAIL.md"
+    printf 'state: Pending\n' > "${NW}/deliveries/delivery-001/tasks/task-${n}/STATE.yml"
+done
+
+# --- E2E06: the forked writer routes a NESTED write to the per-task state file ------
+if [[ -f "$FORK" ]]; then
+    AID_STATE_FILE="${NW}/STATE.yml" bash "$FORK" \
+        --delivery-id 1 --task-id 1 --field State --value "In Progress" >/dev/null 2>&1
+    if grep -q "state: 'In Progress'" "${NW}/deliveries/delivery-001/tasks/task-001/STATE.yml"; then
+        pass "E2E06 the forked writer routed a nested write to deliveries/*/tasks/*/STATE.yml"
+    else
+        fail "E2E06 the forked writer did NOT write the nested per-task state file"
+    fi
+fi
+
+# --- E2E07 / E2E08: both readers on the nested work, and their agreement -----------
+npy="$( cd "$REPO_ROOT" && python3 - "$TMP" <<'PYEOF'
+import json, sys
+sys.path.insert(0, ".")
+from dashboard.reader.reader import read_repo
+d = json.loads(json.dumps(read_repo(sys.argv[1] + "/nroot/.aid"),
+                          default=lambda o: getattr(o, "__dict__", str(o))))
+w = (d.get("works") or [{}])[0]
+dv = (w.get("deliverables") or [{}])[0]
+rows = [f"{t.get('task_id')}:{t.get('status')}:{t.get('lane')}" for t in (w.get("tasks") or [])]
+print(f"{w.get('work_path')}|{dv.get('name')}|" + ",".join(rows))
+PYEOF
+)"
+assert_eq "$npy" "full|First delivery|task-001:In Progress:1,task-002:Pending:2" \
+    "E2E07 reader.py reads the nested path, the delivery title from the PLAN.md stanza, statuses and PLAN lanes"
+
+if command -v node >/dev/null 2>&1; then
+    nnd="$( cd "$REPO_ROOT" && node --input-type=module -e '
+import { pathToFileURL } from "node:url";
+const mod = await import(pathToFileURL("dashboard/server/reader.mjs").href);
+const fn = mod.readRepo || mod.read_repo || mod.default;
+const w = (fn(process.argv[1] + "/nroot/.aid").works || [])[0] || {};
+const dv = (w.deliverables || [])[0] || {};
+const rows = (w.tasks || []).map(t => `${t.taskId ?? t.task_id}:${t.status}:${t.lane}`);
+process.stdout.write(`${w.workPath ?? w.work_path}|${dv.name}|` + rows.join(","));
+' "$TMP" 2>/dev/null )"
+    assert_eq "$nnd" "$npy" "E2E08 reader.mjs agrees with reader.py on the nested work"
+else
+    pass "E2E08 SKIPPED: node not available"
 fi
 
 echo ""
