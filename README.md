@@ -78,7 +78,7 @@ flowchart TD
     HK --> LKG
     
     LKG{{"Looks Good"}} --> KB[("Knowledge Base")]
-    ```
+```
 
 *3 entry points (shortcut, `/aid-triage`, `/aid-describe`) plus `/aid-ask` for a plain question. Full methodology: [docs/aid-methodology.md](docs/aid-methodology.md).*
 
