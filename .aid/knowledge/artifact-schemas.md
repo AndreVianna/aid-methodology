@@ -288,6 +288,13 @@ flattened Lite path (at the work root, `.aid/works/{work}/BLUEPRINT.md`). Not a 
 delivery's mutable lifecycle/gate lives in the delivery `STATE.yml` (full path) or the work-root
 `STATE.yml` (flattened).
 
+**Reviewed where it is refined.** On the full path that is `aid-specify`'s REVIEW state, which
+grades a blueprint on its own ledger scope
+(`.aid/.temp/review-pending/blueprint-delivery-NNN.md`) against the same `--skill specify`
+minimum as the SPEC. Only a blueprint the pass actually refined is re-reviewed; an untouched
+stub is still the one `aid-plan` gated. On the Lite path the shortcut engine's PLAN step reviews
+its own blueprint.
+
 Required structure: `# Delivery BLUEPRINT -- delivery-NNN: {Title}`, then:
 
 - `## Objective` -- what this delivery achieves and why it is a distinct unit.
