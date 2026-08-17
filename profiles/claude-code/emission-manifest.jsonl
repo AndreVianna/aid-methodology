@@ -6,7 +6,7 @@
 {"dst": ".claude/agents/aid-operator.md", "profile": "claude-code", "sha256": "799c877f660990dbb49f94c61fc9a7517b5cfa313cb44cc82494beea6025adb1", "src": "canonical/agents/aid-operator/AGENT.md"}
 {"dst": ".claude/agents/aid-orchestrator.md", "profile": "claude-code", "sha256": "b0c1d4e1f8a204114f3d6cff74d8e5c36f213e77c76269d6527fc28d9cf4cae4", "src": "canonical/agents/aid-orchestrator/AGENT.md"}
 {"dst": ".claude/agents/aid-researcher.md", "profile": "claude-code", "sha256": "e592c1d27ef512d0a6b1b57dd8b0ce140d74b13d4874efe2b1afabc008632a0e", "src": "canonical/agents/aid-researcher/AGENT.md"}
-{"dst": ".claude/agents/aid-reviewer.md", "profile": "claude-code", "sha256": "51f8c51e6bf004272abdc5968b07c16559a758e045cb80ae73a13736a49af44f", "src": "canonical/agents/aid-reviewer/AGENT.md"}
+{"dst": ".claude/agents/aid-reviewer.md", "profile": "claude-code", "sha256": "84b12ad8c91fa8168de26adfbfb40588973c242173d4a6f828f92523c4f8cf98", "src": "canonical/agents/aid-reviewer/AGENT.md"}
 {"dst": ".claude/agents/aid-tech-writer.md", "profile": "claude-code", "sha256": "6b853ea64982ca4231876144c4c10dc3c2df287a3b3bdd6c1728706decc32021", "src": "canonical/agents/aid-tech-writer/AGENT.md"}
 {"dst": ".claude/aid/scripts/config/read-setting.sh", "profile": "claude-code", "sha256": "b8519db9d466949e7162584866a20818148af78205f1ce14d28c19178e011fba", "src": "canonical/scripts/config/read-setting.sh"}
 {"dst": ".claude/aid/scripts/connectors/build-connectors-index.ps1", "profile": "claude-code", "sha256": "08754cab7943657a7dc8a3e6362574637a5bf3274ffaa6f5b07c918528c575a0", "src": "canonical/scripts/connectors/build-connectors-index.ps1"}
@@ -122,7 +122,7 @@
 {"dst": ".claude/aid/templates/package.md", "profile": "claude-code", "sha256": "d8bbbe4e1daa2cc548d3c0c544525ad3a7f827e568b94a3f815798973ce63044", "src": "canonical/templates/package.md"}
 {"dst": ".claude/aid/templates/requirements.md", "profile": "claude-code", "sha256": "a197e10412c85b411e4930869040002e91e1f4e8ca88b3885dd011d998fd54a9", "src": "canonical/templates/requirements.md"}
 {"dst": ".claude/aid/templates/requirements/requirements-template.md", "profile": "claude-code", "sha256": "30175e698be5c1c36da2b9ae2c418948c837ee48269a4a839fa18abd417d8f0a", "src": "canonical/templates/requirements/requirements-template.md"}
-{"dst": ".claude/aid/templates/reviewer-dispatch.md", "profile": "claude-code", "sha256": "76ac96b0436e9bacd43930a7b3d851fc3b97dc6a7ee41b11f2ba80828732bb1e", "src": "canonical/templates/reviewer-dispatch.md"}
+{"dst": ".claude/aid/templates/reviewer-dispatch.md", "profile": "claude-code", "sha256": "e6eed713ac6e350b8818cb8623ca2082dd58fff7fc8dc2157e64d7b937aaa1ee", "src": "canonical/templates/reviewer-dispatch.md"}
 {"dst": ".claude/aid/templates/reviewer-ledger-schema.md", "profile": "claude-code", "sha256": "4278546a057202c330ec913fb0c5de01442bd7b969e006dc3da953349a70366f", "src": "canonical/templates/reviewer-ledger-schema.md"}
 {"dst": ".claude/aid/templates/rough-time-hints.md", "profile": "claude-code", "sha256": "d9ee322e4a269a5b904026cfa1a66ad734b0c97e44c77f5268e3bb87cc24fe0d", "src": "canonical/templates/rough-time-hints.md"}
 {"dst": ".claude/aid/templates/self-review-protocol.md", "profile": "claude-code", "sha256": "3784a426cb0daa7edecfe0c493c84aac566a7e2376ddcbfa3e1c7f7f338a07b7", "src": "canonical/templates/self-review-protocol.md"}

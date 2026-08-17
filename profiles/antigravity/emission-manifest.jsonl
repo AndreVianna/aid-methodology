@@ -6,7 +6,7 @@
 {"dst": ".agent/agents/aid-operator.md", "profile": "antigravity", "sha256": "8aa1d36003f5c214ea74361e71d1d28bc20e3a585d5ef42e1e887e198f675fe0", "src": "canonical/agents/aid-operator/AGENT.md"}
 {"dst": ".agent/agents/aid-orchestrator.md", "profile": "antigravity", "sha256": "6cf8d069bfbb1c7f67a972c3c83781107a0768a1bd314d2dc3450a5d319723e6", "src": "canonical/agents/aid-orchestrator/AGENT.md"}
 {"dst": ".agent/agents/aid-researcher.md", "profile": "antigravity", "sha256": "091ece90846ec2a8c09441aeadac2e623b2c69b7930190985d533d92b0069ae1", "src": "canonical/agents/aid-researcher/AGENT.md"}
-{"dst": ".agent/agents/aid-reviewer.md", "profile": "antigravity", "sha256": "ac96b554a9aecea43786b6fae2521237ef8ed8e7303f2521084894aef2a6b355", "src": "canonical/agents/aid-reviewer/AGENT.md"}
+{"dst": ".agent/agents/aid-reviewer.md", "profile": "antigravity", "sha256": "f35a7a0b26b53a2576c794157c43f1cbe52a474b82a4a2fb8e50add1bf2a6482", "src": "canonical/agents/aid-reviewer/AGENT.md"}
 {"dst": ".agent/agents/aid-tech-writer.md", "profile": "antigravity", "sha256": "9a78a616473916c5379999031e2c15b07d93372b4b2db7ac3d18903b6be1ed79", "src": "canonical/agents/aid-tech-writer/AGENT.md"}
 {"dst": ".agent/aid/scripts/config/read-setting.sh", "profile": "antigravity", "sha256": "b8519db9d466949e7162584866a20818148af78205f1ce14d28c19178e011fba", "src": "canonical/scripts/config/read-setting.sh"}
 {"dst": ".agent/aid/scripts/connectors/build-connectors-index.ps1", "profile": "antigravity", "sha256": "08754cab7943657a7dc8a3e6362574637a5bf3274ffaa6f5b07c918528c575a0", "src": "canonical/scripts/connectors/build-connectors-index.ps1"}
@@ -122,7 +122,7 @@
 {"dst": ".agent/aid/templates/package.md", "profile": "antigravity", "sha256": "d8bbbe4e1daa2cc548d3c0c544525ad3a7f827e568b94a3f815798973ce63044", "src": "canonical/templates/package.md"}
 {"dst": ".agent/aid/templates/requirements.md", "profile": "antigravity", "sha256": "a197e10412c85b411e4930869040002e91e1f4e8ca88b3885dd011d998fd54a9", "src": "canonical/templates/requirements.md"}
 {"dst": ".agent/aid/templates/requirements/requirements-template.md", "profile": "antigravity", "sha256": "30175e698be5c1c36da2b9ae2c418948c837ee48269a4a839fa18abd417d8f0a", "src": "canonical/templates/requirements/requirements-template.md"}
-{"dst": ".agent/aid/templates/reviewer-dispatch.md", "profile": "antigravity", "sha256": "f3e81cf8ac6a2c9e0f1e04d29bb01005fef3a07404ede507e1e3664f275562e8", "src": "canonical/templates/reviewer-dispatch.md"}
+{"dst": ".agent/aid/templates/reviewer-dispatch.md", "profile": "antigravity", "sha256": "05c133675f7b2eb6087aa5352bdc124584268f5d61c5e826b16d4b8adb7cb9f2", "src": "canonical/templates/reviewer-dispatch.md"}
 {"dst": ".agent/aid/templates/reviewer-ledger-schema.md", "profile": "antigravity", "sha256": "4187423394801461ee69bcb5f517b6fac7592e500a88c53aa382d619f1d4d10e", "src": "canonical/templates/reviewer-ledger-schema.md"}
 {"dst": ".agent/aid/templates/rough-time-hints.md", "profile": "antigravity", "sha256": "c2ade084bc1923ab0fad44ec6ae3cdc149f5d3efea6abab20bf2d50f3847dac2", "src": "canonical/templates/rough-time-hints.md"}
 {"dst": ".agent/aid/templates/self-review-protocol.md", "profile": "antigravity", "sha256": "10a9e6d79fec69e9f4865b37018813910a7c0d328ecb8431779c7c7dd8e55c00", "src": "canonical/templates/self-review-protocol.md"}

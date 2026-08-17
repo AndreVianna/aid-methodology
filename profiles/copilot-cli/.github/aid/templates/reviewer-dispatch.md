@@ -27,7 +27,7 @@ ARTIFACTS UNDER REVIEW:
 CONTEXT:
   - (descriptive-only background — see §CONTEXT discipline below)
 
-RUBRIC: <named rubric from a rubric catalog>
+RUBRIC: <named rubric>
   (which rubric applies to each artifact, by category if mixed)
 
 OUT OF SCOPE (do not grade against):
@@ -202,13 +202,11 @@ about the brief itself, then proceeds with the narrow ARTIFACTS-only scope.
 
 ### RUBRIC
 
-A **named rubric** drawn from a rubric catalog. Examples:
+A **named rubric**. Examples:
 
 - `kb-authoring/review-rubric.md#full-primary` — for hand-authored KB primary docs
 - `kb-authoring/review-rubric.md#spot-check-snapshot` — for KB meta docs
 - `kb-authoring/review-rubric.md#build-verify-only` — for generated docs
-- (future) `code-review-rubric.md#standard` — for code task review
-- (future) `spec-review-rubric.md#standard` — for spec review
 
 If multiple artifacts use different rubrics, the brief maps each to its rubric:
 

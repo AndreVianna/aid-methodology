@@ -1,0 +1,20 @@
+{
+  "overall_passed": true,
+  "checks": [
+    {
+      "name": "Byte-identical re-render",
+      "passed": true,
+      "offenders": []
+    },
+    {
+      "name": "File-presence audit against manifest",
+      "passed": true,
+      "offenders": []
+    },
+    {
+      "name": "Frontmatter / TOML parse validation",
+      "passed": true,
+      "offenders": []
+    }
+  ]
+}
