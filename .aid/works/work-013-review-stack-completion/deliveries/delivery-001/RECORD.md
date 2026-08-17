@@ -127,13 +127,103 @@ recording it in the table is deferred to a future column-widening delivery.
 Each section is filled by the task that discharges the criterion. A section left empty at gate
 time is an unmet criterion, not an oversight.
 
+**Every filled section opens with `**MET.**` or `**UNMET.**` on its own line**, before the
+evidence. The gate reads the label; the evidence is what makes the label checkable. A section
+carrying evidence but no label is neither — it forces the gate to infer, and an inferred pass is
+the failure mode this record exists to prevent.
+
 ### 1. Single review path — audit passes, both globs return one
-_Pending — task-007, task-008, task-009._
+
+**MET.** Recorded by task-009.
+
+```
+$ bash scripts/checks/review-path-audit.sh
+L1 SINGLETON   review-skill-dirs=1 (expect 1)  reviewer-agent-dirs=1 (expect 1)
+L2 LEXICON     review-family names outside {aid-review, aid-reviewer}=0 (expect 0)
+L3 SLASH-REFS  distinct=91  review-family=1  dangling(review-family)=0 (expect 0)  dangling(other)=1
+L4 AGENT-REFS  named-and-resolving=9  reviewer-agent-present=yes
+NOTE /aid-graph names no skill under canonical/skills/ (not review-family)
+RESULT PASS
+$ echo $?
+0
+```
+
+Every layer prints its measurement beside its expectation. The one `NOTE` is a dangling
+`/aid-graph` reference that is not review-family, so it is reported and does not fail the audit —
+it is routed to tech debt rather than fixed here.
+
+The two globs, kept as a cheap regression check and **not** as the test (Q7):
+
+```
+$ ls -d canonical/skills/*review*/
+canonical/skills/aid-review/
+$ ls -d canonical/agents/*review*/
+canonical/agents/aid-reviewer/
+```
+
+Why they are not the test: a rival named `aid-screener` satisfies both globs while being exactly
+what FR-A1 forbids. The audit's L2 lexicon layer is the real guard, and `test-review-path-audit.sh`
+case PA03 pins that — it fails on an `aid-screener` agent that the globs wave through.
 
 ### 2. Rival PR closed; doc law holds
-_Pending — task-002, task-009. Closing pull request #185 is an owner action, not a task._
+
+**UNMET.** The doc-law half is met; the pull-request half is not, and closing it is an owner
+action. This criterion fails the gate until that happens — recorded as failing, not as partial,
+because a summary label a reader skims must not soften what the body says.
+
+Doc law, all met:
+
+```
+$ grep -rn 'rubric catalog' canonical tests scripts docs .aid/knowledge | wc -l
+0
+$ grep -rn 'review-rubrics' canonical tests scripts docs .aid/knowledge | wc -l
+0
+$ grep -c "Resolve the artifact's review criteria first" canonical/agents/aid-reviewer/AGENT.md
+1
+```
+
+The three-spelling 7-column grep, `2` in each of the six per-skill briefs and `1` in `/aid-review`.
+Produced by:
+
+```bash
+for f in canonical/skills/aid-*/references/reviewer-brief.md; do
+  printf '%s %s\n' "$(basename "$(dirname "$(dirname "$f")")")" \
+                    "$(grep -ciE '7-column|7 columns|seven columns' "$f")"
+done
+grep -ciE '7-column|7 columns|seven columns' canonical/skills/aid-review/SKILL.md
+```
+
+
+| brief | count |
+|---|---|
+| aid-define, aid-detail, aid-discover, aid-execute, aid-plan, aid-specify | 2 each |
+| `canonical/skills/aid-review/SKILL.md` | 1 |
+
+> **Use all three spellings.** `grep -c '7-column'` alone returns `0` on those same briefs, because
+> they say "(7 columns, no new column)" and "Seven columns, unchanged". A single-spelling grep here
+> reports drift that does not exist.
+
+The migration source survives, so nothing this delivery migrated is orphaned:
+
+```
+$ git rev-parse work-003
+8b9e62021e0ed02d10ecfdcbbe4f07af72bba799
+```
+
+**The unmet half.** Pull request #185 is still open:
+
+```
+$ gh pr view 185 --json state,title --jq '.state + " -- " + .title'
+OPEN -- work-003: rebuild the review subsystem — severity becomes judgment, scripts become tooling
+```
+
+Closing or stripping it is an **owner action**, not a task in this delivery, and no task performs a
+pull-request write. **Gate criterion 2 is therefore unmet until the owner closes it.** The delivery
+gate fails on this, by design — a task cannot close it and must not pretend otherwise.
 
 ### 3. Migrated catalog checks under new ids
+
+**MET.** Recorded by task-006.
 
 19 rows written to `.aid/knowledge/authoring-conventions.md § Review Criteria — Criteria by Level`.
 Namespace before: 18 ids. Namespace after: 37 ids. No duplicate ids.
