@@ -32,7 +32,7 @@
 {"dst": ".cursor/aid/scripts/kb/discover-preflight.sh", "profile": "cursor", "sha256": "ed1a1dce6fc24ae3f24a541936c7133efb88bfe19d125a38cb900cc1b4163340", "src": "canonical/scripts/kb/discover-preflight.sh"}
 {"dst": ".cursor/aid/scripts/kb/harvest-coined-terms.sh", "profile": "cursor", "sha256": "1187e3f0f84442ce30f705dec59f1b6ee27864814aebc2b83d6ad8a50879d61f", "src": "canonical/scripts/kb/harvest-coined-terms.sh"}
 {"dst": ".cursor/aid/scripts/kb/kb-actback-task.sh", "profile": "cursor", "sha256": "54eb6b0d76bc9a7567ae5cc5bff6e9b8b5d728be994271675847ec4dff1dbbd6", "src": "canonical/scripts/kb/kb-actback-task.sh"}
-{"dst": ".cursor/aid/scripts/kb/kb-citation-lint.sh", "profile": "cursor", "sha256": "98e427f0b769c374ec008c242167ba07a3bec61fae081de447062b48285efa4f", "src": "canonical/scripts/kb/kb-citation-lint.sh"}
+{"dst": ".cursor/aid/scripts/kb/kb-citation-lint.sh", "profile": "cursor", "sha256": "01e268a98a0d9f51a407aaac29f6e913597a7317403f12d45a4c62f310add5c6", "src": "canonical/scripts/kb/kb-citation-lint.sh"}
 {"dst": ".cursor/aid/scripts/kb/kb-dual-intent-probes.sh", "profile": "cursor", "sha256": "3c91757224bfe9e8718c304425cb3eb3cd2ab5ec8274f437b57330320c44d56b", "src": "canonical/scripts/kb/kb-dual-intent-probes.sh"}
 {"dst": ".cursor/aid/scripts/kb/kb-freshness-check.sh", "profile": "cursor", "sha256": "f9adcc7c6dc14648df4a13c1b51a497896779f21aa7ce73929b1f6891f5331de", "src": "canonical/scripts/kb/kb-freshness-check.sh"}
 {"dst": ".cursor/aid/scripts/kb/kb-teachback-questions.sh", "profile": "cursor", "sha256": "3c23e5a272320b0f75a52667b4526f5166555ddd207c43b8fc4416e51537ad3e", "src": "canonical/scripts/kb/kb-teachback-questions.sh"}
