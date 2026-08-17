@@ -1256,3 +1256,49 @@ qa:
       The transferable lesson: a gate scoped to where the bug was found proves the least
       interesting thing it could prove. Scope it to where the bug COULD be.
 
+  - id: Q36
+    question: "Is the work ready? (asked after two prior over-confident answers)"
+    status: Resolved
+    answer: |
+      Checked rather than answered, and found two defects in what had just been built.
+
+      A FIFTH CLASS. All four AD13 arms matched a FILENAME. A line can name a retired
+      STATE.md SECTION -- `## Deploy State` -- without naming any file, so every arm was
+      blind to it: 262 tracked references, the largest of the five. The worst single site is
+      aid-deploy/SKILL.md:158, which names STATE.yml correctly and then points at
+      `## Tasks State` -- a half-applied rename, which reads more authoritative than a
+      wholly stale line and is therefore worse.
+
+      THE RATCHET WAS NOT RATCHETING. Its ceilings came from a working-tree scan with a
+      different file set, taken before the docs/site fixes shrank the counts: 155 actual
+      against a 203 ceiling for BLUEPRINT, up to 48 units of slack. A deliberately
+      introduced offender PASSED. I learned this only because a negative test failed to
+      fail, which is the argument for negative-testing every arm rather than the one you
+      doubt. It also counted the working tree, so a local package build (~180 vendored
+      copies under packages/) would have tripped it for reasons unrelated to any change.
+
+      TWO TREES I HAD NEVER ENUMERATED. packages/ and recovery/ appeared in a full
+      top-level listing I should have taken at the start. Both turned out to be non-surfaces
+      -- packages/ is 13 tracked files plus untracked build output, recovery/ is a salvage
+      snapshot, stale by design -- but I did not know that when I claimed the audit was
+      complete. Not knowing is the finding.
+
+      READINESS, STATED PRECISELY, because the two previous answers collapsed two different
+      questions into one:
+
+        MERGEABLE: yes. 14 of 14 criteria verify, all ten CI checks pass, the review
+        ledgers are closed with evidence, and nothing regresses -- the 15 failing suites are
+        the same pre-existing set as master.
+
+        INTERNALLY CONSISTENT: no. ~500 tracked references to retired vocabulary remain.
+        Most are legitimate (the readers and converter must know the old shape to read it;
+        fixtures must contain it to simulate legacy works). The genuine defect core is ~106
+        sites in canonical/skills, which is work-009's incomplete rename, tracked as SY-6,
+        and needs each site's real YAML key rather than a filename swap.
+
+      The pattern across this whole session is the lesson: FOUR times I certified
+      completeness and a further class or tree appeared. The cause each time was scoping the
+      check to where the bug was found. What changed is not that I have now finished --
+      it is that the gate is tree-wide and tight, so the next one fails at CI instead of
+      waiting to be noticed.
+
