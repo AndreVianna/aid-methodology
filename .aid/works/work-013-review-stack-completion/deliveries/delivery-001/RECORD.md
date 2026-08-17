@@ -258,7 +258,44 @@ _Pending — recorded by task-025 as **declined by owner decision** (Q5), with i
 reasons. task-024 corrects the two false capability claims that the decline does not excuse._
 
 ### 9. Each new script cites its measured re-derivation
-_Pending — task-007, task-011._
+
+_Partly recorded — task-011 still to come._
+
+**`kb-html-claims-check.sh` (task-016).** The candidate to extend was
+`canonical/aid/scripts/summarize/spot-check-facts.sh`, which also reads `kb.html` and cross-checks
+it against the KB. Measured against today's tour rather than assumed:
+
+```
+$ bash canonical/aid/scripts/summarize/spot-check-facts.sh .aid/knowledge/kb.html --limit 40
+Found 17 claim(s) to check (limit 40).
+[MISS] 1 files                             | not found in KB
+[MISS] 10 skills                           | not found in KB
+...
+# Summary: 11 OK, 6 MISS (of 17 claims checked)
+$ echo $?
+0
+```
+
+Three measured facts made extension the wrong call. It extracts only numeric and version claims
+(`N noun`, `vX.Y.Z`) — **none of the 17 is a file path**, so the renamed-artifact defect is outside
+what it can see at all. It **exits 0 while reporting 6 MISS**, by design: its own header says it
+"does NOT affect grading". And its MISS list is advisory-noisy — `1 files` and `10 skills` are not
+real defects — which is fine for a report a human reads and disqualifying for a gate. Turning it
+into a gate would also change its contract for its existing caller, the K2 manual-checklist step.
+
+So the new script is a gate placed beside that report, not a flag bolted onto it.
+
+Its own value, measured on the live tour:
+
+```
+$ bash canonical/aid/scripts/summarize/kb-html-claims-check.sh .aid/knowledge/kb.html
+== Claim class 1: artifact names ==
+[FAIL] kb.html names STATE.md (16x) and never STATE.yml
+       the current artifact is STATE.yml, per canonical/aid/templates/*state-template.yml — the tour did not follow the rename
+claims checked: 3   findings: 1
+$ echo $?
+1
+```
 
 ### 10. Base diff, render parity
 _Pending — task-025, against the base recorded above._

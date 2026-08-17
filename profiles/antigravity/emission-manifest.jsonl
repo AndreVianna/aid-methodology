@@ -48,6 +48,7 @@
 {"dst": ".agent/aid/scripts/summarize/build-md-export.sh", "profile": "antigravity", "sha256": "2e3769f10a7b1f30a84836eb64ff06f50dd5bc28b71129bc3e91423bee6bcee1", "src": "canonical/scripts/summarize/build-md-export.sh"}
 {"dst": ".agent/aid/scripts/summarize/contrast-check.mjs", "profile": "antigravity", "sha256": "d5daadd6c716e53feaaf631c8a46977ede9f8539a23d04e6fa6df2d6e6932381", "src": "canonical/scripts/summarize/contrast-check.mjs"}
 {"dst": ".agent/aid/scripts/summarize/grade-summary.sh", "profile": "antigravity", "sha256": "2e2c6b2e0246071c49e5738d05a310553a3c9e82f91e975654f8b5d7272e5cf4", "src": "canonical/scripts/summarize/grade-summary.sh"}
+{"dst": ".agent/aid/scripts/summarize/kb-html-claims-check.sh", "profile": "antigravity", "sha256": "e86d1f4b27f3d47a672eade7eb7d1b2668578416ff4612a49b754cd7db3e7d64", "src": "canonical/scripts/summarize/kb-html-claims-check.sh"}
 {"dst": ".agent/aid/scripts/summarize/manual-checklist.sh", "profile": "antigravity", "sha256": "6e4df9cafb9f3fc54032e8a21b55dcc5bee74d910b409f974d51372f84ae2d8d", "src": "canonical/scripts/summarize/manual-checklist.sh"}
 {"dst": ".agent/aid/scripts/summarize/playwright-provisioning.md", "profile": "antigravity", "sha256": "0ef53df1023bf6927ad78b2d93fc90dffd44d9eee0f0d5a709b772a41bea1192", "src": "canonical/scripts/summarize/playwright-provisioning.md"}
 {"dst": ".agent/aid/scripts/summarize/spot-check-facts.sh", "profile": "antigravity", "sha256": "6c978b869ba3f264c6fbc9ae45e33e9148a5b02f00bf63cf23e954b81cf122e1", "src": "canonical/scripts/summarize/spot-check-facts.sh"}
