@@ -1,3 +1,4 @@
 run	work-013-review-stack-completion-20260816T051322Z
 created	2026-08-16T05:13:22Z
 tool	review-cost-meter.sh
+corrected	2026-08-17T00:00:00Z	4 artifact rows removed by hand: 3 recorded surface 0 (the tool warns this means the brief could not be parsed, not that the cycle read nothing) and 1 was superseded by a re-record of the same cycle before dispatch. The tool is append-only and offers no dedup, so this was a hand edit; the run id in both files is unchanged.
