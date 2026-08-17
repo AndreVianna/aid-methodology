@@ -48,7 +48,7 @@
 # lifecycle MUST be independently authored.
 
 # [W] Pending-Spec | Specified | Executing | Gated | Done | Blocked
-delivery_state: Pending-Spec
+delivery_state: Executing
 # [W] Small | Medium | Large
 gate_tier: Large
 # [W]
@@ -61,7 +61,7 @@ ticket_ref: --
 #     aid-specify, aid-execute across the delivery pipeline. Never derived
 #     from task rollup. `updated` is a writer-targeted child key (L-2).
 delivery_lifecycle:
-  updated: '2026-08-17T00:23:23Z'
+  updated: '2026-08-17T03:54:16Z'
   block_reason: --
   block_artifact: --
 # [A] single writer: the delivery-gate closing step of aid-execute on this
