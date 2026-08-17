@@ -164,10 +164,12 @@ jobs:
         #
         # The KB run above is depth-1 because every KB doc sits directly under
         # .aid/knowledge. A work folder nests its feature SPECs two levels down, so
-        # the same depth-1 scan opens 3 of 106 files and reports "clean" -- a green
-        # that means "found nothing where it did not look". `--depth all` is what
-        # makes the difference visible, and the opened count on stderr is what
-        # distinguishes a real clean run from a vacuous one.
+        # the same depth-1 scan opens a handful of a work root's markdown and
+        # reports "clean" -- a green that means "found nothing where it did not
+        # look". `--depth all` is what makes the difference visible, and the
+        # opened count on stderr is what distinguishes a real clean run from a
+        # vacuous one. (Exact counts are deliberately not quoted here: they move
+        # with every task, and a stale number in a comment is worse than none.)
         #
         # It is not a gate because the work-artifact corpus is not bounded yet: a
         # reviewer ledger's Evidence cell cites file:line legitimately, and which

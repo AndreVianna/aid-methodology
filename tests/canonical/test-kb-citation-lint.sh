@@ -131,6 +131,58 @@ EOF
 bash "$LINT" --root "${LEDG}/root" --depth all >/dev/null 2>&1
 assert_eq "$?" "0" "CL10 a ledger Line cell is not treated as a bare citation"
 
+# ===========================================================================
+# CL11  A scan that opens NOTHING must not report clean.
+#
+#       "clean" and "looked at nothing" are the same exit code otherwise, which
+#       is the whole failure this lint's opened-count exists to expose. Exit 2,
+#       not 1: the caller pointed it somewhere wrong, which is an invocation
+#       error rather than a finding about content.
+# ===========================================================================
+EMPTY="$(mktemp -d)"
+mkdir -p "${EMPTY}/no-markdown-here"
+
+bash "$LINT" --root "${EMPTY}/no-markdown-here" --depth all >/dev/null 2>&1
+assert_eq "$?" "2" "CL11 a root with no markdown -- exit 2, not a clean bill"
+
+out_empty="$(bash "$LINT" --root "${EMPTY}/no-markdown-here" --depth all 2>&1)"
+assert_output_contains "$out_empty" "refusing to report clean" "CL11 -- says why"
+assert_output_not_contains "$out_empty" "clean (no bare" "CL11 -- does not print the clean verdict"
+
+# Reachable the sneaky way too: docs exist, but below the requested depth.
+mkdir -p "${EMPTY}/nested/a/b"
+cat > "${EMPTY}/nested/a/b/DEEP.md" <<'EOF'
+A doc well below depth 1, with a bare citation: handler.py:88
+EOF
+bash "$LINT" --root "${EMPTY}/nested" --depth 1 >/dev/null 2>&1
+assert_eq "$?" "2" "CL11 docs exist but below --depth -- exit 2, not a false clean"
+bash "$LINT" --root "${EMPTY}/nested" --depth all >/dev/null 2>&1
+assert_eq "$?" "1" "CL11 ...and --depth all finds them"
+
+# ===========================================================================
+# CL12  A symlinked --root is followed.
+#
+#       bash's `-d` guard follows a symlink but `find` without `-L` does not, so
+#       the script accepted the root, opened zero files and reported clean for a
+#       tree that did contain violations.
+# ===========================================================================
+SYM="$(mktemp -d)"
+mkdir -p "${SYM}/real"
+cat > "${SYM}/real/D.md" <<'EOF'
+A bare citation behind a symlink: foo.py:12
+EOF
+ln -s "${SYM}/real" "${SYM}/link"
+
+opened_real="$(bash "$LINT" --root "${SYM}/real" --depth all 2>&1 >/dev/null | grep -oE 'opened [0-9]+' | grep -oE '[0-9]+')"
+opened_link="$(bash "$LINT" --root "${SYM}/link" --depth all 2>&1 >/dev/null | grep -oE 'opened [0-9]+' | grep -oE '[0-9]+')"
+bash "$LINT" --root "${SYM}/link" --depth all >/dev/null 2>&1
+code_link=$?
+
+assert_eq "$opened_link" "$opened_real" "CL12 a symlinked root opens the same files as the real path"
+assert_eq "$code_link"   "1"            "CL12 ...and finds the same violation"
+
+rm -rf "$EMPTY" "$SYM"
+
 rm -rf "$NEST" "$LEDG"
 
 echo
