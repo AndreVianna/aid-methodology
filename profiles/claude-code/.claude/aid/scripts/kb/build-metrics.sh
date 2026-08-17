@@ -68,7 +68,8 @@ KB_DOCS=()
 if [[ -d "$KB_DIR" ]]; then
     while IFS= read -r f; do
         KB_DOCS+=("$f")
-    done < <(find "$KB_DIR" -maxdepth 1 -type f -name '*.md' ! -name '.*' | sort)
+    # LC_ALL=C: byte collation, so emitted order does not depend on the caller's locale
+    done < <(find "$KB_DIR" -maxdepth 1 -type f -name '*.md' ! -name '.*' | LC_ALL=C sort)
 fi
 
 # --- Canonical skill bodies (this dogfood repo only — guarded) --------------
@@ -78,7 +79,7 @@ if [[ -d "$ROOT/canonical/skills" ]]; then
     SKILL_FILES=()
     while IFS= read -r f; do
         SKILL_FILES+=("$f")
-    done < <(find "$ROOT/canonical/skills" -maxdepth 2 -name 'SKILL.md' | sort)
+    done < <(find "$ROOT/canonical/skills" -maxdepth 2 -name 'SKILL.md' | LC_ALL=C sort)
     if [[ ${#SKILL_FILES[@]} -gt 0 ]]; then
         # Batched line counts: a single `wc -l` over the whole file list instead of
         # one `wc` per SKILL.md. `wc -l file...` prints "count path" per file plus
@@ -113,8 +114,6 @@ intent: |
   line counts, file counts, term counts, severity tallies. Other KB docs reference this
   file instead of inlining the numbers. Regenerated on every /aid-discover cycle.
 review-criteria: []
-changelog:
-  - $(date -u +%Y-%m-%d): Generated
 ---
 
 <!-- AUTO-GENERATED $TS by .claude/aid/scripts/kb/build-metrics.sh -->

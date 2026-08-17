@@ -60,8 +60,7 @@ When agreed:
 
 1. Write section to SPEC.md under `## Technical Specification`
 2. Update work STATE.md `## Features State` section status → `Written`
-3. Add Change Log entry to SPEC.md
-4. **KB Seeding (greenfield):** If the decision fills a gap in an empty KB doc,
+3. **KB Seeding (greenfield):** If the decision fills a gap in an empty KB doc,
    update that KB doc + INDEX.md + README.md. Log which KB docs were seeded.
 
 ### 4. Review

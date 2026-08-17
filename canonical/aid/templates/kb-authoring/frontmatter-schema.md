@@ -63,8 +63,6 @@ review-criteria: []                   # optional -- criteria true of THIS file o
 # --- legacy, superseded by objective:/summary:, retained until f011 migration ---
 intent: |
   (superseded) One paragraph; kept only during the coexistence window.
-changelog:
-  - 2026-06-23: Added objective/summary/sources/tags/see_also/owner/audience
 ---
 ```
 
@@ -80,8 +78,6 @@ summary: One-sentence scope (generator-written for generated docs).
 intent: |
   ...
 review-criteria: []
-changelog:
-  - 2026-05-26: Generated for the first time
 ---
 ```
 

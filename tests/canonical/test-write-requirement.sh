@@ -14,7 +14,7 @@
 #   Unit 9  — missing required args exits 5
 #   Unit 10 — AID_REQUIREMENTS_FILE env var is honored
 #   Unit 11 — no env var set → defaults to <cwd>/REQUIREMENTS.md
-#   Unit 12 — every OTHER line (Change Log, etc.) is byte-preserved
+#   Unit 12 — every OTHER line (body sections, etc.) is byte-preserved
 #   Unit 13 — neither bullet nor "# Requirements" heading present → exit 5 (no valid write mode)
 #   Unit 14 — write is atomic: no stray temp file left behind on success
 #
@@ -47,11 +47,9 @@ fixture_full() {
 - **Name:** Interactive AID Dashboard
 - **Description:** Turn the read-only dashboard into an interactive control surface.
 
-## Change Log
+## 1. Objective
 
-| Date | Change | Source |
-|------|--------|--------|
-| 2026-07-16 | Initial | /aid-describe |
+Ship the interactive control surface.
 EOF
 }
 
@@ -59,19 +57,17 @@ fixture_no_bullets() {
     cat <<'EOF'
 # Requirements
 
-## Change Log
+## 1. Objective
 
-| Date | Change | Source |
-|------|--------|--------|
+Ship the interactive control surface.
 EOF
 }
 
 fixture_no_heading() {
     cat <<'EOF'
-## Change Log
+## 1. Objective
 
-| Date | Change | Source |
-|------|--------|--------|
+Ship the interactive control surface.
 EOF
 }
 
@@ -107,7 +103,7 @@ out=$(AID_REQUIREMENTS_FILE="$f" bash "$SUT" --field Name --value "Brand New" 2>
 ec=$?
 assert_exit_zero "$ec" "U3 write-requirement exits 0"
 assert_file_contains "$f" "- **Name:** Brand New" "U3 Name bullet inserted"
-assert_file_contains "$f" "## Change Log" "U3 rest of file survives"
+assert_file_contains "$f" "## 1. Objective" "U3 rest of file survives"
 
 # ---------------------------------------------------------------------------
 # Unit 4: inserts Description bullet under heading when absent
@@ -181,13 +177,13 @@ fixture_full > "${subdir}/REQUIREMENTS.md"
 assert_file_contains "${subdir}/REQUIREMENTS.md" "- **Name:** CwdDefault" "U11 cwd-default REQUIREMENTS.md written"
 
 # ---------------------------------------------------------------------------
-# Unit 12: byte-preservation — Change Log and other bullet untouched
+# Unit 12: byte-preservation — body content and other bullet untouched
 # ---------------------------------------------------------------------------
 f="${TMPDIR_BASE}/u12.md"
 fixture_full > "$f"
 AID_REQUIREMENTS_FILE="$f" bash "$SUT" --field Name --value "Only Name Changes" >/dev/null 2>&1
 assert_file_contains "$f" "Turn the read-only dashboard into an interactive control surface." "U12 Description bullet untouched"
-assert_file_contains "$f" "| 2026-07-16 | Initial | /aid-describe |" "U12 Change Log row untouched"
+assert_file_contains "$f" "Ship the interactive control surface." "U12 body content untouched"
 
 # ---------------------------------------------------------------------------
 # Unit 13: neither bullet nor heading present

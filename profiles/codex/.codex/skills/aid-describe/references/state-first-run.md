@@ -65,10 +65,9 @@ by a later phase.
 
 Copy the template from `../../templates/requirements.md` to
 `.aid/works/{work}/REQUIREMENTS.md`.
-Add the first Change Log entry: `| {today} | Initial interview started | /aid-describe |`
 
 **Identity header seeding:** the template already carries the identity block between
-`# Requirements` and `## Change Log`:
+`# Requirements` and `## 1. Objective`:
 
 ```
 - **Name:** *(pending)*

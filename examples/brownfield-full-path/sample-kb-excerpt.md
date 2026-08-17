@@ -17,8 +17,6 @@ intent: |
   Read before writing any code that touches order state, payment state, or
   inventory allocation. Order-state machine transitions are the most critical
   section — misunderstanding them is the primary source of historical bugs.
-changelog:
-  - 2026-06-03: Initial discovery (aid-discover work-003 cycle)
 ---
 
 # Domain Glossary
@@ -78,8 +76,6 @@ intent: |
   Known technical debt in OrderFlow discovered during the 2026-06-03 Discovery cycle.
   Read before planning any refactor work or estimating effort for new features —
   some items create hidden coupling that affects scope.
-changelog:
-  - 2026-06-03: Initial discovery (aid-discover work-003 cycle)
 ---
 
 # Technical Debt

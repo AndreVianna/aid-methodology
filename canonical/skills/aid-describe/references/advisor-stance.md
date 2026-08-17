@@ -21,7 +21,6 @@ by the engine driver at `references/elicitation-engine.md`.
   - [Rule G1a -- Calibration-Sensitive Open-First Order](#rule-g1a----calibration-sensitive-open-first-order)
   - [Rule G1b -- Re-Confirmable Assumptions](#rule-g1b----re-confirmable-assumptions)
   - [Rule G1c -- Restate-Not-Replace Distortion Check](#rule-g1c----restate-not-replace-distortion-check)
-- [Change Log](#change-log)
 
 ---
 
@@ -254,12 +253,3 @@ stakeholders' original intent." This check is the in-loop guard against that dri
 The check applies to both answer recording AND straw-man formulation: before emitting a
 `Suggested:`, confirm it reflects what the user actually said, not what the analyst would
 have proposed independently of the user's input.
-
----
-
-## Change Log
-
-| Rev | Date | Source | Description |
-|-----|------|--------|-------------|
-| 1.0 | 2026-06-27 | work-001-aid-describe-improvements delivery-003 task-010 | Initial authoring: NFR-7 question-envelope contract + expert-advisor stance |
-| 1.1 | 2026-06-27 | work-001-aid-describe-improvements delivery-003 task-041 | G1 anti-anchoring guard (calibration-sensitive open-first order, re-confirmable assumptions, restate-not-replace distortion check); G3 verbatim-wording bullet in Discipline section |

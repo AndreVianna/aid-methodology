@@ -172,8 +172,6 @@ review-criteria:               # optional -- criteria true of THIS doc only
     why: <what goes wrong when it drifts>
 intent: |
   (superseded) Kept during coexistence window; see frontmatter-schema.md.
-changelog:
-  - 2026-05-26: Migrated to v2 format (KB Authoring overhaul)
 ---
 ```
 

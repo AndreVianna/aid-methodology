@@ -26,7 +26,7 @@ In summary:
 3. **Ask** — for each gap the user would reasonably know, ask ONE question at a time
    (same interactive pattern as the interview). If the user says "skip", respect it.
 4. **Update meta** — refresh README.md completeness table, INDEX.md summaries,
-   `.aid/knowledge/STATE.md` (KB section), and REQUIREMENTS.md change log
+   and `.aid/knowledge/STATE.md` (KB section)
 
 **This step is mandatory.** Do not skip it even if the user seems eager to approve.
 The KB is consumed by all downstream phases — empty KB docs force specify/detail/execute
@@ -39,7 +39,7 @@ After hydration is complete, proceed to the summary.
 Before presenting the approval summary, compose the work's **Name** and **Description**
 and present them to the user for confirmation. These values will be written into the
 `- **Name:**` / `- **Description:**` block in `REQUIREMENTS.md` (placed immediately after
-the `# Requirements` H1, before `## Change Log`).
+the `# Requirements` H1, before `## 1. Objective`).
 
 **How to compose:**
 
@@ -114,7 +114,6 @@ Is there anything else we should consider, or are the requirements ready?
 
 - **[1] Approved:**
   - Set `**Interview State:** Approved` in STATE.md `## Interview State`
-  - Add Change Log entry in REQUIREMENTS.md: `| {today} | Interview complete — approved | /aid-describe |`
   - Add Review History entry in STATE.md `## Interview State`
   - Update `.aid/knowledge/INDEX.md` and `.aid/knowledge/README.md`
     if they exist

@@ -175,6 +175,80 @@ else
 fi
 
 # ---------------------------------------------------------------------------
+# AS09: the no-history rule over the WHOLE template tree, not just knowledge-base/.
+#
+# AS03 above checks 14 files -- the knowledge-base/ subdirectory at maxdepth 1.
+# The no-history rule binds every artifact, so a dated log in task-template.md or
+# reviewer-dispatch.md was equally forbidden and equally unchecked. The narrow
+# corpus is roughly a fifth of the tree, so four templates in five were exempt
+# from a rule that applies to all of them.
+#
+# Only the history checks widen. AS01/AS02/AS05/AS07 stay narrow on purpose:
+# they assert KB frontmatter and a '## Contents' section, which a general
+# template such as delivery-plans/task-template.md correctly does not have.
+# ---------------------------------------------------------------------------
+mapfile -t ALL_TEMPLATES < <(find "${REPO}/canonical/aid/templates" -name '*.md' | sort)
+WIDE_COUNT="${#ALL_TEMPLATES[@]}"
+
+if [[ "$WIDE_COUNT" -gt "$TEMPLATE_COUNT" ]]; then
+  pass "AS09 wide corpus (${WIDE_COUNT}) is larger than the narrow one (${TEMPLATE_COUNT})"
+else
+  fail "AS09 wide corpus (${WIDE_COUNT}) should exceed the narrow one (${TEMPLATE_COUNT})"
+fi
+
+wide_hist=0
+wide_cl=0
+for tmpl in "${ALL_TEMPLATES[@]}"; do
+  n="$(grep -c '^## \(Change Log\|Revision History\)' "$tmpl" || true)"
+  [[ "$n" -gt 0 ]] && { wide_hist=$((wide_hist + 1)); echo "    history section in: ${tmpl#"${REPO}/"}"; }
+  c="$(grep -c '^changelog:' "$tmpl" || true)"
+  [[ "$c" -gt 0 ]] && { wide_cl=$((wide_cl + 1)); echo "    changelog: field in: ${tmpl#"${REPO}/"}"; }
+done
+
+assert_eq "$wide_hist" "0" \
+  "AS09 no '## Change Log' / '## Revision History' in any of ${WIDE_COUNT} templates"
+assert_eq "$wide_cl" "0" \
+  "AS09b no 'changelog:' frontmatter field in any of ${WIDE_COUNT} templates"
+
+# ---------------------------------------------------------------------------
+# AS10: the widening is load-bearing.
+#
+# AS09 passing proves the tree is clean; it does NOT prove the widened check
+# would catch anything, because a check that never fires looks identical to a
+# clean tree. The history sections were removed before this test was written, so
+# there is no live before/after to point at. This fixture supplies one: a
+# template-shaped file placed OUTSIDE knowledge-base/, carrying a history
+# section. The wide corpus must catch it and the narrow corpus must miss it.
+# Missing it is the whole point -- that gap is what AS09 exists to close.
+# ---------------------------------------------------------------------------
+FIXTURE_DIR="$(mktemp -d)"
+trap 'rm -rf "$FIXTURE_DIR"' EXIT
+
+mkdir -p "${FIXTURE_DIR}/templates/knowledge-base" "${FIXTURE_DIR}/templates/delivery-plans"
+cat > "${FIXTURE_DIR}/templates/delivery-plans/rogue-template.md" <<'FIXTURE'
+# rogue-template.md
+
+A template-shaped file outside knowledge-base/, carrying the apparatus AS03 bans.
+
+## Change Log
+
+- 2026-01-01: initial authoring
+FIXTURE
+
+narrow_hits="$(find "${FIXTURE_DIR}/templates/knowledge-base" -maxdepth 1 -name '*.md' \
+  -exec grep -l '^## \(Change Log\|Revision History\)' {} \; 2>/dev/null | wc -l)"
+wide_hits="$(find "${FIXTURE_DIR}/templates" -name '*.md' \
+  -exec grep -l '^## \(Change Log\|Revision History\)' {} \; 2>/dev/null | wc -l)"
+
+assert_eq "$narrow_hits" "0" \
+  "AS10 narrow corpus MISSES the rogue template (this is the gap AS09 closes)"
+assert_eq "$wide_hits" "1" \
+  "AS10 wide corpus CATCHES the rogue template"
+
+rm -rf "$FIXTURE_DIR"
+trap - EXIT
+
+# ---------------------------------------------------------------------------
 echo
 test_summary
 exit $?
