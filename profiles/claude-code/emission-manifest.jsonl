@@ -32,7 +32,7 @@
 {"dst": ".claude/aid/scripts/kb/discover-preflight.sh", "profile": "claude-code", "sha256": "ed1a1dce6fc24ae3f24a541936c7133efb88bfe19d125a38cb900cc1b4163340", "src": "canonical/scripts/kb/discover-preflight.sh"}
 {"dst": ".claude/aid/scripts/kb/harvest-coined-terms.sh", "profile": "claude-code", "sha256": "f5e23bd936d0858c4f171b34957d4befffb6653b0986e8d25e4b363029bb2c6b", "src": "canonical/scripts/kb/harvest-coined-terms.sh"}
 {"dst": ".claude/aid/scripts/kb/kb-actback-task.sh", "profile": "claude-code", "sha256": "54eb6b0d76bc9a7567ae5cc5bff6e9b8b5d728be994271675847ec4dff1dbbd6", "src": "canonical/scripts/kb/kb-actback-task.sh"}
-{"dst": ".claude/aid/scripts/kb/kb-citation-lint.sh", "profile": "claude-code", "sha256": "c9b08af257a76f932f645fa0000eda6b9b44f443b17f61bbe409d64580e5a794", "src": "canonical/scripts/kb/kb-citation-lint.sh"}
+{"dst": ".claude/aid/scripts/kb/kb-citation-lint.sh", "profile": "claude-code", "sha256": "861036211c9108ef4cd97cd150baaeb9e38b980fe5569bb50fdc98058c405507", "src": "canonical/scripts/kb/kb-citation-lint.sh"}
 {"dst": ".claude/aid/scripts/kb/kb-dual-intent-probes.sh", "profile": "claude-code", "sha256": "3c91757224bfe9e8718c304425cb3eb3cd2ab5ec8274f437b57330320c44d56b", "src": "canonical/scripts/kb/kb-dual-intent-probes.sh"}
 {"dst": ".claude/aid/scripts/kb/kb-freshness-check.sh", "profile": "claude-code", "sha256": "f9adcc7c6dc14648df4a13c1b51a497896779f21aa7ce73929b1f6891f5331de", "src": "canonical/scripts/kb/kb-freshness-check.sh"}
 {"dst": ".claude/aid/scripts/kb/kb-teachback-questions.sh", "profile": "claude-code", "sha256": "3c23e5a272320b0f75a52667b4526f5166555ddd207c43b8fc4416e51537ad3e", "src": "canonical/scripts/kb/kb-teachback-questions.sh"}

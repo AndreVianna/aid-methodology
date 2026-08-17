@@ -20,10 +20,15 @@
 #   --depth all  scan every .md beneath --root, at any depth.
 #
 # Depth matters outside the KB. A work folder nests its feature SPECs two levels
-# down, so a depth-1 scan of a work root opens a small handful of its markdown
-# and reports "clean" -- a green that means "found nothing where it did not
-# look". Judge a run by the opened count printed on stderr, not by the verdict
-# alone, which is why opening ZERO files is an error rather than a clean bill.
+# down, so a depth-1 scan of a work root opens only the handful of files sitting
+# at its top and reports "clean" -- a green that means "found nothing where it
+# did not look". The gap is not marginal; it is most of the tree. Run it both
+# ways over a work root and compare the opened counts on stderr rather than
+# taking a figure from this comment, which would be stale the next time anyone
+# adds a document.
+#
+# Judge a run by that count, not by the verdict alone -- which is why opening
+# ZERO files is an error here rather than a clean bill.
 #
 # Exit:   0 = clean, 1 = violations found, 2 = usage/error.
 
