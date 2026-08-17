@@ -170,6 +170,22 @@ lifecycle_history:
       from their COVERS headers, so a change to those files does not select the suite
       guarding them -- and swept the class rather than the instance.
   - date: '2026-08-17'
+    event: 'Q&A -- all 9 Pending questions answered'
+    grade: --
+    notes: >-
+      Run one at a time under the Q&A protocol, sorted High -> Medium -> Low. Q1 fixed AC-11''s
+      unfalsifiable base ref. Q2 went FURTHER than proposed -- the owner ruled that a change log
+      is excluded everywhere with no fixture carve-out, which found build-metrics.sh still
+      EMITTING `changelog:` into the doc it generates (133 files; the field would have returned on
+      the next discover cycle). Q3 kept kb.html outside the registry so G-07 needs no rewording.
+      Q4 reworded FR-B7 to "normatively once, cross-referenced freely" -- repetition is
+      enforcement, not drift. Q5 DECLINED FR-B6 with the reason recorded: grade.sh cannot emit the
+      `F` the human visual gate can force. Q6 narrowed FR-B4 to BLUEPRINT.md, since no per-section
+      review mechanism exists and the specify half is already on the grade.sh path. Q7 made the
+      FR-A5 audit the guard, because a `*review*` glob is evadable by naming. Q8 gave AC-9 both a
+      command and a reading, with the limit stated. Q9 promoted the two synthesized criteria into
+      §9 as AC-13/AC-14. All 23 FRs and NFRs now name a discharging criterion; zero Pending.
+  - date: '2026-08-17'
     event: 'PLAN -- two deliveries, both gated A+'
     grade: 'A+'
     notes: >-
@@ -258,7 +274,7 @@ qa:
   - id: Q3
     category: Requirements
     impact: Medium
-    state: Pending
+    state: Answered
     context: >-
       FR-B3 calls the kb.html content review "a deliberate, named exception to KB-03".
       KB-03 applies to registry type `kb-generated`, whose match is
@@ -267,12 +283,18 @@ qa:
       it. Implementing FR-B3 means ADDING a document type plus criteria, which is a
       different and larger change than an exception.
     suggested: 'Restate FR-B3 as adding a registry type for the generated summary.'
-    answer: --
+    answer: >-
+      Accepted 2026-08-17 (owner, option 2): a STANDALONE check, outside the criteria registry.
+      The registry stays markdown-only, so `G-07`'s "every in-scope markdown file resolves to
+      exactly one type" needs no rewording and its partition claim is untouched. FR-B3 is
+      therefore not an exception to `KB-03` -- `KB-03` never reaches `kb.html`, which is HTML --
+      it is a check that lives beside the cascade. Same outcome, materially smaller blast radius:
+      no registry type, no `G-07` edit, no new criterion id.
     applied_to: 'feature-002-coverage-gate-completion'
   - id: Q4
     category: Requirements
     impact: Medium
-    state: Pending
+    state: Answered
     context: >-
       FR-B7 says the rule is "stated once (artifact-schemas.md)". It is stated twice
       inside that file alone (lines 252 and 629-630) and at ~20 sites overall, including
@@ -283,12 +305,19 @@ qa:
     suggested: >-
       Restate as "stated NORMATIVELY once, cross-referenced elsewhere", or add the
       deletion to scope.
-    answer: --
+    answer: >-
+      Accepted 2026-08-17 (owner, option 2), with the owner's own framing: "I don't care how many
+      times it is written as long as it is followed." FR-B7 is reworded to require the rule be
+      stated NORMATIVELY once -- artifact-schemas.md is the normative home -- and cross-referenced
+      freely everywhere else. Repetition is not the defect: most of the ~20 sites are ENFORCEMENT,
+      and a test that asserts the rule or a template that must not emit one has to mention it.
+      Deleting them would remove the teeth rather than the drift. What FR-B7 forbids is a second
+      site CONTRADICTING the normative one, which is a conformance check, not a deletion job.
     applied_to: 'feature-002-coverage-gate-completion'
   - id: Q5
     category: Requirements
     impact: Medium
-    state: Pending
+    state: Answered
     context: >-
       FR-B6 (one grading backend) and NFR-1 (do not change grade.sh counting logic) pull
       against each other. `grade-summary.sh` is a points grader with its own
@@ -297,12 +326,22 @@ qa:
       grade.sh a points mode (NFR-1 forbids it). FR-B6 is SHOULD, so this is survivable,
       but it needs deciding before planning rather than discovering mid-task.
     suggested: 'Owner decides: convert the summarize path, or drop FR-B6.'
-    answer: --
+    answer: >-
+      Accepted 2026-08-17 (owner, option 2): FR-B6 is DECLINED, and recorded as declined by owner
+      decision rather than silently skipped. It is a SHOULD, so declining is a legitimate
+      discharge. Two reasons, both measured: the V1 human visual gate can force `F`
+      (grade-summary.sh "mandatory gate") and `grade.sh` cannot emit `F` at all
+      (`grep -c 'GRADE="F"' canonical/aid/scripts/grade.sh` -> 0), so unifying the backends needs
+      a design decision about how that verdict is expressed -- a CRITICAL ledger row, which
+      grade.sh renders as `E+/-`, or a precondition that blocks before grading. And
+      `grade-summary.sh` has ten dependents including tests/coverage-baseline.tsv. Neither is in
+      this work's scope. delivery-001's SHOULD gate criterion is therefore discharged as
+      "declined, recorded", and the two-backend state is left as it is.
     applied_to: 'feature-002-coverage-gate-completion'
   - id: Q6
     category: Requirements
     impact: Medium
-    state: Pending
+    state: Answered
     context: >-
       FR-B4 names a "specify per-section review" that does not exist — `grep -rn
       'per-section' canonical` returns 4 hits, none a review mechanism. aid-specify
@@ -311,12 +350,20 @@ qa:
       FR-B4 is already satisfied and the other half names something unbuilt and unscoped.
       BLUEPRINT.md is the genuine gap: its template declares no ledger path.
     suggested: 'Narrow FR-B4 to BLUEPRINT.md, or define what a per-section review is.'
-    answer: --
+    answer: >-
+      Accepted 2026-08-17 (owner, option 2): FR-B4 is NARROWED to BLUEPRINT.md. Nothing named
+      "per-section" is a review mechanism -- `grep -rniE 'per-section|per section' canonical
+      --include=*.md` returns 5 hits, four about aid-summarize HTML sections and one a heading in
+      aid-specify's own loop -- and the specify review is already per FEATURE on the required
+      path (aid-specify/references/state-review.md runs grade.sh --explain on
+      review-pending/specify-<feature>.md). So the specify half of FR-B4 is already satisfied and
+      needs no work; the genuine gap is BLUEPRINT.md, whose template declares no ledger path at
+      all. Defining a per-section mechanism would mean inventing machinery to satisfy a phrase.
     applied_to: 'feature-002-coverage-gate-completion'
   - id: Q7
     category: Requirements
     impact: Low
-    state: Pending
+    state: Answered
     context: >-
       AC-8's `*review*` glob can be evaded by naming: a second review system called
       `aid-screener`, `aid-critique` or `aid-audit` satisfies the glob while being exactly
@@ -324,30 +371,53 @@ qa:
       halves already pass on this branch, so AC-8 is a regression guard rather than a
       change.
     suggested: 'Make the FR-A5 audit command the real guard and have AC-8 say so.'
-    answer: --
+    answer: >-
+      Accepted 2026-08-17 (owner, option 2): the FR-A5 audit is the real guard, and AC-8 says so
+      rather than resting on the glob. The glob is evadable by naming -- a second review system
+      called `aid-screener`, `aid-critique` or `aid-audit` satisfies `ls -d canonical/skills/*review*/`
+      while being exactly what FR-A1 forbids, and §4 Out of Scope names `aid-screener` by name.
+      Demonstrated on the canceled branch: the agents glob returns 1 and PASSES while
+      `aid-screener/AGENT.md` sits in the added-files list. The audit's lexicon layer covers the
+      review family (review, reviewer, screener, critique, audit, inspect, verif, grade, rubric)
+      outside the sanctioned pair, so it catches the rename the glob cannot. The two `ls` commands
+      stay as a cheap regression guard; they are no longer the whole test.
     applied_to: 'feature-001-single-review-path-alignment'
   - id: Q8
     category: Requirements
     impact: Low
-    state: Pending
+    state: Answered
     context: >-
       AC-9 says "Measured by READING that cycle's ledger", while NFR-4 requires a count to
       cite the command that produced it. A read is not a command.
     suggested: >-
       Give AC-9 a grep that yields the row count and the count of rows carrying a
       why-line.
-    answer: --
+    answer: >-
+      Accepted 2026-08-17 (owner, option 2): BOTH, with the limit stated. AC-9 gains a command
+      that reports the ledger's row count and how many rows carry a why-line, satisfying NFR-4;
+      and the rows the command flags are then READ, because a grep can prove a why-line's shape
+      and never whether its clause names a real consequence. The command is the coverage check,
+      the reading is the substance check, and AC-9 says which is which so neither is mistaken for
+      the other. A why-line is the clause on a finding that names what breaks -- without it a
+      severity cannot be argued with, and since the grade is computed from severities, an
+      unarguable severity makes an unarguable grade.
     applied_to: 'feature-003-severity-and-recall-measurement'
   - id: Q9
     category: Requirements
     impact: Low
-    state: Pending
+    state: Answered
     context: >-
       FR-C3 and FR-C6 reach no criterion in §9, so both are unverifiable as written. Both
       are SHOULD, so §9's "an uncovered MUST is visible" claim still holds literally.
       Criteria were synthesized for both in feature-003, inheriting SHOULD.
     suggested: 'Confirm the synthesized criteria, or drop the two requirements.'
-    answer: --
+    answer: >-
+      Answered 2026-08-17 (owner): ADD the acceptance criteria rather than dropping the
+      requirements. FR-C3 and FR-C6 reached no criterion in §9, so nothing verified them. The two
+      criteria feature-003 synthesized are confirmed and promoted into §9 as AC-13 and AC-14,
+      each inheriting its source requirement's SHOULD. §9's Discharges column now names every FR
+      and NFR, so the section's own claim -- that an uncovered requirement is visible -- holds
+      for SHOULD as well as MUST, not only literally.
     applied_to: 'feature-003-severity-and-recall-measurement'
   - id: Q10
     category: Requirements
