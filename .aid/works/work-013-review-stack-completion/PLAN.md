@@ -11,6 +11,58 @@
 - **Depends on:** --
 - **Priority:** Must
 
+#### Execution Graph
+
+| Task | Depends On |
+|------|-----------|
+| task-001 | — |
+| task-002 | task-001 |
+| task-003 | task-001 |
+| task-004 | task-001 |
+| task-005 | task-001 |
+| task-006 | task-003, task-004, task-005 |
+| task-007 | task-001 |
+| task-008 | task-007 |
+| task-009 | task-002, task-006, task-007, task-008 |
+| task-010 | task-009 |
+| task-011 | task-010 |
+| task-012 | task-011 |
+| task-013 | task-009 |
+| task-014 | task-013 |
+| task-015 | task-013 |
+| task-016 | task-009 |
+| task-017 | task-016 |
+| task-018 | task-010 |
+| task-019 | task-014 |
+| task-020 | task-019 |
+| task-021 | task-006, task-020 |
+| task-022 | task-002, task-009 |
+| task-023 | task-009 |
+| task-024 | task-009 |
+| task-025 | task-010, task-011, task-012, task-013, task-014, task-015, task-016, task-017, task-018, task-019, task-020, task-021, task-022, task-023, task-024 |
+
+| Can Be Done In Parallel |
+|------------------------|
+| task-002, task-003, task-004, task-005, task-007 |
+| task-006, task-008 |
+| task-010, task-013, task-016, task-022, task-023, task-024 |
+| task-011, task-014, task-015, task-017, task-018 |
+| task-012, task-019 |
+
+```wave-map
+delivery: 001
+wave 1: task-001
+wave 2: task-002, task-003, task-004, task-005, task-007
+wave 3: task-006, task-008
+wave 4: task-009
+wave 5: task-010, task-013, task-016, task-022, task-023, task-024
+wave 6: task-011, task-014, task-015, task-017, task-018
+wave 7: task-012, task-019
+wave 8: task-020
+wave 9: task-021
+wave 10: task-025
+```
+
 ### delivery-002: An Honest Grade
 - **What it delivers:** A grade that means distance from the ideal — every finding carries a
   why-line naming the consequence, a new review cycle is structurally unable to read the
@@ -19,6 +71,52 @@
 - **Features:** feature-003-severity-and-recall-measurement
 - **Depends on:** delivery-001
 - **Priority:** Should
+
+#### Execution Graph
+
+| Task | Depends On |
+|------|-----------|
+| task-026 | — |
+| task-027 | task-026 |
+| task-028 | task-027 |
+| task-029 | task-028 |
+| task-030 | task-028 |
+| task-031 | task-026 |
+| task-032 | task-031 |
+| task-033 | task-032 |
+| task-034 | task-033 |
+| task-035 | task-034 |
+| task-036 | task-026 |
+| task-037 | task-036 |
+| task-038 | task-036, task-037 |
+| task-039 | task-038 |
+| task-040 | task-038 |
+| task-041 | task-026 |
+| task-042 | task-027, task-037, task-041 |
+| task-043 | task-028 |
+| task-044 | task-027, task-043 |
+| task-045 | task-031 |
+| task-046 | task-045 |
+| task-047 | task-046 |
+| task-048 | task-029, task-030, task-035, task-040, task-042, task-044, task-047 |
+
+| Can Be Done In Parallel |
+|------------------------|
+| task-027, task-031, task-036, task-041 |
+| task-028, task-032, task-037, task-045 |
+| task-029, task-030, task-033, task-038, task-042, task-043, task-046 |
+| task-034, task-039, task-040, task-044, task-047 |
+
+```wave-map
+delivery: 002
+wave 1: task-026
+wave 2: task-027, task-031, task-036, task-041
+wave 3: task-028, task-032, task-037, task-045
+wave 4: task-029, task-030, task-033, task-038, task-042, task-043, task-046
+wave 5: task-034, task-039, task-040, task-044, task-047
+wave 6: task-035
+wave 7: task-048
+```
 
 ## Why two, and not one or three
 

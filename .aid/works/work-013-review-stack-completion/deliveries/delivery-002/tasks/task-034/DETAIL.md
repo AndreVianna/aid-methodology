@@ -1,4 +1,4 @@
-# task-017: Three fixtures proving the kb.html check fires
+# task-034: Literal ledger paths retired from the REVIEW and DONE sites
 
 > **Execution protocol (binding on whoever executes this task -- no
 > exceptions):** the moment this task's `State` changes, write it --
@@ -13,17 +13,17 @@
 > `aid-execute/references/state-execute.md § MANDATORY: State-Write
 > Protocol`.
 
-**Type:** TEST
+**Type:** IMPLEMENT
 
-**Source:** work-013-review-stack-completion -> delivery-001
+**Source:** work-013-review-stack-completion -> delivery-002
 
-**Depends on:** task-016
+**Depends on:** task-033
 
 **Scope:**
-- Three fixtures: a `kb.html` whose project claims contradict the KB, one that agrees, and one from which no claim can be extracted.
+- Convert the remaining literal ledger paths in the summarize, detail, plan and deploy sites, following the classification pattern task-033 established.
 
 **Acceptance Criteria:**
-- [ ] The contradicting fixture yields a finding; the agreeing fixture yields none.
-- [ ] The zero-claims fixture fails rather than passing quietly.
-- [ ] Deterministic, fixtures cleaned up, baseline unchanged.
+- [ ] The literal-path canary reaches **zero** fully literal ledger paths across the whole instruction surface, measured against the count recorded in task-026.
+- [ ] Each site in this group carries the same instruction-or-documentation classification, applied consistently with task-033's precedent.
+- [ ] Render diff contains only generator-written paths.
 - [ ] All section-6 quality gates pass

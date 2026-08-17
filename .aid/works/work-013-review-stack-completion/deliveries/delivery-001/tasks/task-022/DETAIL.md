@@ -17,11 +17,12 @@
 
 **Source:** work-013-review-stack-completion -> delivery-001
 
-**Depends on:** task-002
+**Depends on:** task-002, task-009
 
 **Scope:**
 - `canonical/aid/templates/reviewer-dispatch.md`: remove the instruction telling the next author to extend an in-document changelog, and the dated bootstrap-exemption history section beneath it.
 - Renumber the surrounding steps cleanly; touch no other section of the file.
+- This is a feature-002 task, so it waits on task-009 as well as task-002: the file dependency is on task-002, but the T1 boundary is what task-009 closes, and AC-2 requires the first feature-002 dispatch to happen after it.
 
 **Acceptance Criteria:**
 - [ ] The two greps for the changelog instruction and the bootstrap-exemption heading both return `0`, measured at one hit each before.

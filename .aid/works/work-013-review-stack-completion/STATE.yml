@@ -9,15 +9,15 @@ minimum_grade: A
 # [W]
 user_approved: 'yes'
 # [W]
-lifecycle: Running
+lifecycle: Paused-Awaiting-Input
 # [W]
 phase: Detail
 # [W]
-active_skill: aid-detail
+active_skill: none
 # [W]
-updated: '2026-08-17T01:21:34Z'
+updated: '2026-08-17T03:45:24Z'
 # [W]
-pause_reason: --
+pause_reason: 'Detail complete at A+ -- 48 tasks in 2 deliveries; run /aid-execute work-013 to begin delivery-001'
 # [W]
 block_reason: --
 # [W]
@@ -169,6 +169,24 @@ lifecycle_history:
       real selector defect while checking that -- two suites assert against files absent
       from their COVERS headers, so a change to those files does not select the suite
       guarding them -- and swept the class rather than the instance.
+  - date: '2026-08-17'
+    event: 'DETAIL -- 48 tasks across two deliveries, both gated A+'
+    grade: 'A+'
+    notes: >-
+      delivery-001: 25 tasks (A+ on cycle 2, two MINOR wording defects fixed). delivery-002: 23
+      tasks (A+ on cycle 2, after a B on three of my own: "not-applicable" is not a value in the
+      closed state enum, a task referred to "the suite that already owns the harness" which named
+      no existing suite, and one criterion asked for judgment where the rubric requires a command).
+      The cycle-1 reviewer also recorded an undecided scope gap rather than a row -- whether the
+      update-kb REVIEW sites fell inside the literal-path sweep -- and task-033 now names them, so
+      task-034''s zero-canary is reachable. Two decisions were adopted from the architect rather
+      than re-asked: splitting the 13-file literal-path task by skill family, and splitting the
+      recall script by subcommand so the half no gate criterion demands is visible as its own
+      conditional task rather than buried. **The execution graph caught a defect no reviewer had:**
+      derived mechanically from the Depends-on edges, it put task-022 in wave 3 -- before task-009
+      closes T1 -- which breaks AC-2''s "after T1". Both reviewers had asserted the boundary held.
+      task-022 now depends on task-009 as well, every one of the 16 feature-002 tasks is
+      transitively after it, and it sits in wave 5.
   - date: '2026-08-17'
     event: 'Q&A -- all 9 Pending questions answered'
     grade: --
