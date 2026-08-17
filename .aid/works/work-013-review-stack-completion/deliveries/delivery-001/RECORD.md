@@ -167,9 +167,8 @@ case PA03 pins that — it fails on an `aid-screener` agent that the globs wave 
 
 ### 2. Rival PR closed; doc law holds
 
-**UNMET.** The doc-law half is met; the pull-request half is not, and closing it is an owner
-action. This criterion fails the gate until that happens — recorded as failing, not as partial,
-because a summary label a reader skims must not soften what the body says.
+**MET.** Both halves. The doc law was met by task-002 and task-006; the pull request was closed by
+the owner on 2026-08-17, which was the only part no task could discharge.
 
 Doc law, all met:
 
@@ -210,16 +209,28 @@ $ git rev-parse work-003
 8b9e62021e0ed02d10ecfdcbbe4f07af72bba799
 ```
 
-**The unmet half.** Pull request #185 is still open:
+**The pull request, now closed:**
 
 ```
 $ gh pr view 185 --json state,title --jq '.state + " -- " + .title'
-OPEN -- work-003: rebuild the review subsystem — severity becomes judgment, scripts become tooling
+CLOSED -- work-003: rebuild the review subsystem — severity becomes judgment, scripts become tooling
 ```
 
-Closing or stripping it is an **owner action**, not a task in this delivery, and no task performs a
-pull-request write. **Gate criterion 2 is therefore unmet until the owner closes it.** The delivery
-gate fails on this, by design — a task cannot close it and must not pretend otherwise.
+This was the one part of the criterion no task could discharge — nothing in this delivery performs
+a pull-request write — so it stood recorded as failing until the owner acted, rather than being
+quietly rounded up.
+
+Closing it rather than merging it was the point. `work-003` still carries the rival mechanisms this
+delivery replaced, and merging it would have landed them alongside their own replacement:
+
+```
+$ git grep -l -i 'review-rubrics' origin/work-003 -- canonical .aid | wc -l
+38
+$ git grep -l -i 'aid-screener'   origin/work-003 -- canonical .aid | wc -l
+17
+```
+
+Both are `0` on `master`.
 
 ### 3. Migrated catalog checks under new ids
 
