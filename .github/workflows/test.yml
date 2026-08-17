@@ -148,6 +148,15 @@ jobs:
         shell: bash
         run: |
           bash canonical/aid/scripts/kb/lint-frontmatter.sh --root .aid/knowledge
+      - name: Citation lint -- no bare file:LINE citations in the KB
+        shell: bash
+        # Pairs with the frontmatter lint above. The two mechanical KB lints had
+        # opposite holes: the frontmatter lint ran in CI but not in GENERATE, and
+        # this one ran in GENERATE (aid-discover Step 5a) but not in CI -- so a bare
+        # citation could only ever be caught while a KB was being generated, never
+        # on a PR that hand-edited one. Both now run in both places.
+        run: |
+          bash canonical/aid/scripts/kb/kb-citation-lint.sh --root .aid/knowledge
       - name: AID-CI strict assertion -- every AID primary/extension KB doc carries required fields (f011 task-020; green after task-022 corpus migration)
         shell: bash
         # AID-repo-local strict guard (NOT a change to the shipped lint-frontmatter.sh).

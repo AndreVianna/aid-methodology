@@ -3,6 +3,10 @@
 # The AID version + installed tools are recorded in the manifest
 # (.aid/.aid-manifest.json), not here.
 
+format_version: 4                  # schema stamp — machine-written, do not hand-edit.
+                                   # `aid` reads it to decide whether this file
+                                   # needs migrating to a newer layout.
+
 name: <project-name>               # set during /aid-config INIT
 description: <project-description>  # sole source of truth (not in CLAUDE.md/AGENTS.md)
 type: brownfield                   # brownfield | greenfield

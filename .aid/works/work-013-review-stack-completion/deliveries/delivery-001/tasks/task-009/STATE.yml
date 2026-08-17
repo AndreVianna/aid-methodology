@@ -47,7 +47,7 @@
 # [W] Pending | In Progress | In Review | Blocked | Done | Failed | Canceled
 state: Done
 # [W]
-review: --
+review: A+
 # [W] HH:MM | --
 elapsed: --
 # [W]

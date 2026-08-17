@@ -438,25 +438,15 @@ DELIVERABLES:
 This doc is normative for all reviewer dispatches. Changes affect every skill.
 Revisions should:
 
-1. Update the changelog entry below (see §Bootstrap exemption for how this doc tracks history)
-2. Update per-skill `reviewer-brief.md` templates to reflect any new fixed sections
-3. Be announced via a single deliberate revision PR, not folded into other work
+1. Update per-skill `reviewer-brief.md` templates to reflect any new fixed sections
+2. Be announced via a single deliberate revision PR, not folded into other work
 
-## Bootstrap exemption
+## Why this doc carries no frontmatter
 
 This doc lives in `canonical/aid/templates/` and is a **skill-bundle artifact**, not a KB
 document. The frontmatter schema defined in `kb-authoring/frontmatter-schema.md` applies
 to `.aid/knowledge/*.md` (KB docs in adopter projects), NOT to canonical skill-bundle
 docs. Therefore this doc carries no `kb-category:`/`source:` frontmatter.
-
-For changes to this doc, append a dated line at the bottom of this section:
-
-- 2026-05-26: Initial authoring (Phase A KB Authoring overhaul)
-- 2026-05-27: Phase B landed 6 per-skill `reviewer-brief.md` templates
-  (aid-discover, aid-execute, aid-specify, aid-plan, aid-detail,
-  aid-describe, aid-define); removed the "not yet implemented" parenthetical;
-  documented the rendering convention; added "derive ARTIFACTS from
-  disk, not memory" rule (closes F10, F22, F26 from PR #15 review)
 
 ## See also
 
