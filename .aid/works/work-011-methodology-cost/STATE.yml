@@ -1347,3 +1347,50 @@ qa:
       invisible to every vocabulary scan because it contained no retired vocabulary at all --
       its defect was a MISSING read, and absence does not grep.
 
+  - id: Q38
+    question: "Asked whether to check once more. What did running the whole chain find?"
+    status: Resolved
+    answer: |
+      The most serious defect of the session, and it exposed the previous round's fix as
+      superficial.
+
+      THE DASHBOARD COULD NOT WRITE TASK STATE AT ALL. `dashboard/scripts/writeback-state.sh`
+      is what the server invokes for every write the UI triggers. It was a full generation
+      behind: default target `.aid/works/work/STATE.md`, and its task write required a
+      markdown `### Tasks lifecycle` SECTION. Against a current STATE.yml it does not write
+      the wrong thing -- it writes NOTHING, failing with "malformed work STATE.md".
+
+      Last round I ported the declared-layout read into that same file and recorded AC-12 as
+      met. The file could not write to a STATE.yml regardless. Fixing a read in a writer that
+      cannot write is a mistake only a whole-chain run reveals, and nothing ran the whole
+      chain -- every mechanism had unit tests and every one passed.
+
+      WHY IT SURVIVED: "deliberate fork" was read as "leave alone". A fork is exempt from
+      RESYNC on its divergence, not from tracking its source everywhere else. When canonical's
+      write path changed generation this copy needed that change, and the banner telling
+      people not to resync it is precisely what persuaded everyone it did not. The banner also
+      said no parity suite existed -- so the file documented its own risk twice and neither
+      note was a test.
+
+      Fixed by RE-FORKING from current canonical and re-applying the divergence, which is two
+      lines. Re-applying two lines to a known-good file is verifiable; hand-porting a
+      1700-line write path is not.
+
+      test-lite-work-end-to-end.sh is the missing test. One current-shape Lite work --
+      deliberately with NO BLUEPRINT.md, since that file used to BE the flat signal -- through
+      slice, graph derivation, the FORKED writer, and both readers, requiring every stage to
+      agree. Verified by restoring the old fork and watching it fail.
+
+      MY OWN TEST WAS WRONG FIRST, and the slicer was right: it asserted "AC-3" appeared
+      nowhere in the slice, but a feature section legitimately CITES all its criteria while
+      section 9 defines only the cited ones. Now it asserts on definitions. Worth recording
+      because I mistook a citation for a definition -- the exact confusion the ids-only rule
+      exists to prevent.
+
+      THE PATTERN, now five rounds deep and finally legible. Each round I checked the same
+      WAY and found the same CLASS. What broke the streak both times was changing the kind of
+      question: "does this logic have a second implementation?" found the fork, and "does the
+      chain work when composed?" found that the fork was inert. Unit tests cannot see either
+      -- one is about copies, the other about composition, and both are invisible to a suite
+      that examines parts.
+
