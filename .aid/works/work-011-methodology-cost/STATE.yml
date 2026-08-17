@@ -1211,3 +1211,48 @@ qa:
       measurement (Q33): the central cost claim remains modelled, never watched. Everything
       else -- 14 of 14 criteria, CI, ledgers -- verifies.
 
+  - id: Q35
+    question: "Challenged on claiming nothing was pending while describing defects. What was actually wrong?"
+    status: Resolved
+    answer: |
+      The challenge was correct and the claim was wrong.
+
+      The six defects described in that summary had been fixed in the same turn, so the
+      sentence was not false about them. What was false was the generalization: I went from
+      "the ledgers are now closed" to "nothing is pending", and had no evidence for the
+      second. Two different claims; I asserted the unsupported one.
+
+      Testing it instead of repeating it found more, immediately:
+
+        - `docs/` still listed BLUEPRINT.md as an aid-plan output and carried a whole
+          delivery-BLUEPRINT FILE template -- wrong in shape, not just in name, since a
+          delivery definition is now a stanza.
+        - The documentation site was worse. sync-docs mirrors only four docs/ pages; four
+          further site files are hand-written and had never been swept. They taught the
+          five-file flattened Lite set, gave SPEC.md its own reference row, and told
+          readers a delivery definition is a file.
+        - Five `task-NNN.md` references in examples/, in the same files where I had just
+          fixed the SPEC.md ones.
+        - ~120 live `STATE.md` instructions in canonical/skills, including headings that
+          cannot exist in a YAML file (`## Deploy State`).
+
+      THE ROOT CAUSE IS THE FINDING. Every gate I wrote scoped itself to the tree where the
+      problem had just been found. AD12 was written to stop agents being sent to a retired
+      work-state file, and the identical defect sat one directory over in canonical/skills
+      the whole time, un-gated, because nobody ran the same check there. That is why "the
+      last surface" kept not being the last surface -- not bad luck, a method that could
+      only ever certify the place it was looking at.
+
+      AD13 replaces that shape: no scope argument, whole-repository count, compared against
+      a measured ceiling. A ratchet rather than a ban, because BLUEPRINT.md's presence is
+      still the deliberate fallback sentinel for un-migrated works and banning the string
+      would delete working legacy support. Counts go down freely and never up, so a residue
+      is bounded and visible instead of quietly regrowing.
+
+      The residue itself is now tracked as SY-6 rather than silently fixed or silently
+      ignored: it is work-009's rename, the fix needs each site's real YAML key rather than
+      a filename swap, and it belongs in its own work with its own review.
+
+      The transferable lesson: a gate scoped to where the bug was found proves the least
+      interesting thing it could prove. Scope it to where the bug COULD be.
+
