@@ -153,6 +153,26 @@ not.
 
 ---
 
+## Gate tier
+
+Computed rather than left at the template default, which is the gap delivery-001 shipped with for
+its whole run:
+
+```
+$ # per state-delivery-gate.md § Tier Selection, over delivery-002's execution graph
+  tasks=23  depth=6  risk=21  consults=0   ->  complexity score 50
+  thresholds: Small <= 6, Large >= 14
+```
+
+Risk is 12 `IMPLEMENT` and 9 `TEST` at +1 each. **Tier: Large.**
+
+*The commit that first set this field quoted `depth 9, risk 15, score 47` — numbers written before
+the computation was run rather than after. The figures above are the computed ones. Recorded here
+because the wrong ones are in the git history and a reader comparing the two deserves to know which
+is which.*
+
+---
+
 ## Gate criteria
 
 ### 1. Why-line coverage on this delivery's own ledger
