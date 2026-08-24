@@ -45,12 +45,13 @@ moved between approval and execution, which is why the acceptance criterion forb
 The most recent real reviewer ledger at the time of measurement, delivery-001's closing gate:
 
 ```
-$ python3 - .aid/works/.../delivery-001/tasks/task-025/FINDINGS.md <<'EOF'
-  rows   = lines matching ^\|\s*\d+\s*\|
-  whyline = those also matching \b(so|because|which means|otherwise|leaving|leaves)\b
-EOF
+$ awk -F'|' '/^\|[[:space:]]*[0-9]+[[:space:]]*\|/{r++; if (tolower($0) ~ /(so|because|which means|otherwise|leaving|leaves)/) w++} END{print "rows=" r " why-line=" w+0}' .aid/works/work-013-review-stack-completion/deliveries/delivery-001/tasks/task-025/FINDINGS.md
 rows=5 why-line=2
 ```
+
+One line on purpose. The first version of this block was a `python3` heredoc carrying pseudocode and
+an elided `...` in the path — it did not run at all, and the gate reviewer caught it. A screen whose
+own command cannot be pasted is not evidence of anything, least of all of a coverage measurement.
 
 **2 of 5.** That is the gap feature-003 exists to close, and it is measured on a ledger written by
 this very work under the current rules — not on a synthetic sample. The screen's own wording is
@@ -104,6 +105,22 @@ tests/canonical/test-validator-behavior.sh
 ```
 
 Six files carry one; task-027 adds the two that are missing.
+
+### Cost-meter double count — the before-figure for gate criterion 5
+
+Gate criterion 5 asks for a coverage unit that is not a file, and its SHOULD names a double count
+to close. task-026's scope does not list this baseline, but criterion 5 will need a before-figure
+and it is cheaper to pin now than to reconstruct at the gate:
+
+```
+$ grep -E '^specify-feature-001' .aid/works/work-013-review-stack-completion/review-cost.tsv
+specify-feature-001-single-review-path-alignment	1	2dd1eb0e6909106a797cbdc65bf27fd423f51000	42034
+specify-feature-001-single-review-path-alignment	2	2dd1eb0e6909106a797cbdc65bf27fd423f51000	84934
+```
+
+Cycle 2 is exactly twice cycle 1: `84934 = 2 x 42467`, and `42467` is not `42034`, so the doubling
+is not a re-read of the same declared surface. It is one path counted twice within a single cycle.
+task-045 and task-047 own closing it; this row exists so they have a measured start.
 
 ### Selector partition
 
