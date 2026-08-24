@@ -19,8 +19,24 @@ documentation site gets tokenised because it looked like the others.
 | `aid-update-kb/state-review.md` | the passage explaining why Step 5 does not delegate to `aid-discover` | **documentation** | it explains a design decision to a reader; it executes nothing |
 | `aid-discover/state-review.md` | 50 sites | **already parameterised** | all use `{{SCOPE}}`; untouched by this task |
 
-Instruction sites in this group: **13, now all `{{LEDGER}}`**. Literal count in the instruction
-surface: **0**, measured at 13 before.
+Instruction sites in this group, counted rather than estimated:
+
+```
+$ grep -c '{{LEDGER}}' canonical/skills/aid-discover/references/state-fix.md \
+    canonical/skills/aid-discover/references/state-done.md \
+    canonical/skills/aid-update-kb/references/state-done.md \
+    canonical/skills/aid-update-kb/references/state-review.md
+1
+1
+1
+9
+```
+
+**12 sites, all now `{{LEDGER}}`.** Literal count in the instruction surface: **0**.
+
+*The first version of this record said 13. That figure was written from the site table above
+rather than measured, and the table's own row for `state-review.md` says "9 sites" while listing
+a category. Counted, it is 12.*
 
 ## The documentation site was falsified by the conversion, and that is the finding
 
@@ -38,6 +54,12 @@ since a reader would have trusted the explanation.
 So it was rewritten in the same pass. This is the same failure the wave-3 gate caught one wave
 earlier: changing a thing without asking who else describes it. Here it was found by classification
 rather than by a reviewer, which is the point of classifying before touching.
+
+**And then the same failure happened again, one level out.** Rewriting section 4(d) left a
+cross-reference to it, further down the same file, still saying "see 4(d) above for why that doc
+cannot be redirected to this ledger" — pointing at a section that now says the opposite. The gate
+reviewer found it. Classifying the *sites* was not enough; what the sweep should have enumerated is
+everything that **refers to** the claim, not everything that **states** it. Both are now fixed.
 
 ## Retiring the duplicated FIX loop — out of scope, named not carried
 

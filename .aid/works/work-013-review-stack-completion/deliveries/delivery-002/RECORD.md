@@ -122,6 +122,23 @@ Cycle 2 is exactly twice cycle 1: `84934 = 2 x 42467`, and `42467` is not `42034
 is not a re-read of the same declared surface. It is one path counted twice within a single cycle.
 task-045 and task-047 own closing it; this row exists so they have a measured start.
 
+### Cost-meter extractor — the before-output, in the form the AC asks for
+
+task-046's AC-1 asks for the extractor's before-output showing the same path emitted twice, not
+only the summed total. Captured before the change:
+
+```
+$ # brief naming README.md on both the VERIFY and HUNT lists
+$ brief_artifacts "$brief"
+README.md
+README.md
+$ # and the surface that produced
+29790          # README.md is 14895 bytes
+```
+
+After: the extractor still emits both lines — the brief does name the path twice, and hiding that
+would lose the signal — and `surface_bytes` counts the path once, recording 14895.
+
 ### Selector partition
 
 ```

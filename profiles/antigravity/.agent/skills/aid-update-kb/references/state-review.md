@@ -365,9 +365,10 @@ then re-enter REVIEW (Step 0) on return.
 ## Step 5: FIX (self-contained, bounded to Confirmed Scope, HL-7)
 
 Selected when `<STATE_FILE>` records `**State:** FIX`. This loop is specific
-to `aid-update-kb` -- it reads and fixes against `update-kb.md` directly,
-rather than delegating to `aid-discover`'s generic `state-fix.md` (see 4(d)
-above for why that doc cannot be redirected to this ledger).
+to `aid-update-kb` -- it reads and fixes against its own `{{LEDGER}}` directly,
+rather than delegating to `aid-discover`'s generic `state-fix.md`. That doc now
+takes `{{LEDGER}}` too, so delegation is possible and this duplication is a
+choice rather than a necessity (see 4(d) above, and the follow-up named there).
 
 ### 5a. Load the below-gate findings from the ledger
 

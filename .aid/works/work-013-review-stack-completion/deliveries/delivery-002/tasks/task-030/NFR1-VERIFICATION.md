@@ -29,6 +29,16 @@ $ grep -c '^| # | Severity | Status | Doc | Line | Description | Evidence |' can
 
 ## 3. The enums and the status table — compared, not assumed
 
+```bash
+S=canonical/aid/templates/reviewer-ledger-schema.md
+B=1412e63d1b8cf5d039778efe2f9c3ad23a9fdbd3
+for pat in 'CRITICAL.*HIGH.*MEDIUM.*LOW.*MINOR' \
+           'Pending.*Fixed.*Recurred.*Accepted.*OOS.*Invalid' \
+           '^| `(Pending|Fixed|Recurred|Accepted|OOS|Invalid)`'; do
+  echo "base=$(git show $B:$S | grep -cE "$pat")  now=$(grep -cE "$pat" $S)"
+done
+```
+
 | Check | At base | Now |
 |---|---|---|
 | severity enum occurrences | 4 | 4 |
