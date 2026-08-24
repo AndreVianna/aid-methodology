@@ -5,10 +5,16 @@ Twenty rows, the size task-036 settled on and for the reasons recorded in
 § Corpus size: twenty is the smallest size at which a per-rule-set breakdown has more than a couple
 of defects per scope, and forty is where fixtures stop being flat files.
 
-Each row's `signature` appears in its own fixture and **nowhere else in the repository**. That is
-what makes a recall match unambiguous: a signature that also matched real content would score a
+Each row's `signature` appears in its own fixture and **nowhere else in the reviewed tree**. That
+is what makes a recall match unambiguous: a signature that also matched real content would score a
 review as having found a seeded defect when it had found something else, and would make the class
 sweep chase a phantom.
+
+Two files inside this corpus necessarily also carry signatures, and neither is reviewed content:
+this catalogue, which indexes them, and `seed-ledger.md`, which must name `D01` for the sweep to
+have a second instance to find. Stated precisely because the earlier wording said "nowhere else in
+the repository", which is false of both — a corpus whose own index falsifies its uniqueness claim
+would fail the first assertion anyone ran.
 
 `--` is the absent marker throughout. No cell contains a pipe.
 

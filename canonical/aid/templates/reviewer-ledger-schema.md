@@ -85,11 +85,22 @@ The `.aid/.temp/review-pending/` directory is gitignored (per `.gitignore` `.aid
 | 4 | `Doc` | yes | Affected file path (relative to repo root). Examples: `foo.md`, `canonical/aid/scripts/bar.sh`, `tests/canonical/baz.sh`. For doc-wide issues with no specific file, use `—`. |
 | 5 | `Line` | yes | Affected line number, or a line range like `42-45`, or `—` for doc-wide. |
 | 6 | `Description` | yes | The criterion `id` violated, then ONE sentence stating what's wrong, then a **why-line**: a short clause naming the consequence. Form: "`SK-01` — dispatch table names a non-existent agent, so a dispatch resolves to nothing at run time." The consequence clause is the one explanation this column admits, and it is required: a severity asserted without one cannot be argued with, because there is nothing to disagree about except the reviewer's judgement. Everything else that would explain rather than state still goes in Evidence, and hedging goes nowhere. See **Citing the criterion** below. |
-| 7 | `Evidence` | yes | The disk-truth that contradicts the doc's claim, AND/OR the source-of-truth command. Form: "`wc -l foo = 1070` (doc claims 1071)" or "`grep -c X bar = 5` (doc claims 6)". For Status=Fixed/Recurred/Accepted/OOS/Invalid, include enough context to justify the status (e.g., "Fixed in commit abc123" or "Accepted: user decision cycle-1 Q5"). When the severity came from a file-level **override** of a declared criterion, record the resolved severity and the overriding file's `why` here. **Severity provenance** is recorded with one of three tokens, so a band can be traced without re-reading the cascade: `severity: declared` — taken unchanged from the cited criterion's `severity:`; `severity: override <level>` — the criterion declares one band and a more specific level declares another, with the winning level named; `severity: judged` — no criterion declares a severity for this, so the reviewer set it. A row whose band differs from its cited criterion's declared `severity:` and carries no token is a defect in the review: the divergence is the interesting part and it has been silently dropped. |
+| 7 | `Evidence` | yes | The disk-truth that contradicts the doc's claim, AND/OR the source-of-truth command. Form: "`wc -l foo = 1070` (doc claims 1071)" or "`grep -c X bar = 5` (doc claims 6)". For Status=Fixed/Recurred/Accepted/OOS/Invalid, include enough context to justify the status (e.g., "Fixed in commit abc123" or "Accepted: user decision cycle-1 Q5"). When the severity came from a file-level **override** of a declared criterion, record the resolved severity and the overriding file's `why` here. **Severity provenance** is recorded with one of three tokens, so a band can be traced without re-reading the cascade: `severity: declared` — taken unchanged from the cited criterion's `severity:`; `severity: override <level>` — the criterion declares one band and a more specific level declares another; `<level>` names **where the winning band came from** (`file`, `file-class`, or `type`), not the band itself, which is already in the Severity column; `severity: judged` — no criterion declares a severity for this, so the reviewer set it. A row whose band differs from its cited criterion's declared `severity:` and carries no token is a defect in the review: the divergence is the interesting part and it has been silently dropped. |
 
 **Pipe-character escape:** if Description or Evidence contains a `|` (pipe), escape it as `\|` so the markdown table doesn't break.
 
 ## Citing the criterion
+
+**A task acceptance criterion is cited as `task-NNN AC-N`.** A task's `DETAIL.md` carries its
+criteria as a checkbox list with no `id:` field, so neither of the two forms below reaches them: a
+scope-prefixed id resolves in the criteria table, an `F-` id resolves in a file's frontmatter, and
+a task AC lives in neither. Without this form a task-gate reviewer cannot cite a resolvable id for
+the thing it was actually asked to check, which makes every task-gate ledger defective by this
+schema's own rule.
+
+`task-037 AC-3` resolves by reading that task's `DETAIL.md` and counting the checkboxes under
+`**Acceptance Criteria:**`. The ordinal is the citation; the ACs are not renumbered once a task is
+executing.
 
 **Every finding names the criterion it violates, as an `id` prefix inside the `Description`
 cell.** No eighth column: the shape stays 7 columns and `grade.sh` keeps its positional parse

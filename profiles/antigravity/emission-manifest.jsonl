@@ -124,7 +124,7 @@
 {"dst": ".agent/aid/templates/requirements.md", "profile": "antigravity", "sha256": "a197e10412c85b411e4930869040002e91e1f4e8ca88b3885dd011d998fd54a9", "src": "canonical/templates/requirements.md"}
 {"dst": ".agent/aid/templates/requirements/requirements-template.md", "profile": "antigravity", "sha256": "30175e698be5c1c36da2b9ae2c418948c837ee48269a4a839fa18abd417d8f0a", "src": "canonical/templates/requirements/requirements-template.md"}
 {"dst": ".agent/aid/templates/reviewer-dispatch.md", "profile": "antigravity", "sha256": "f1593ed42da1b61416d5870e0aadfec20c79833a8f2edcd01ffd66899f8b1e1b", "src": "canonical/templates/reviewer-dispatch.md"}
-{"dst": ".agent/aid/templates/reviewer-ledger-schema.md", "profile": "antigravity", "sha256": "303e331a89c8a56036255d469fc7e414ce7554f9f33a4acd362ba19b4e026b53", "src": "canonical/templates/reviewer-ledger-schema.md"}
+{"dst": ".agent/aid/templates/reviewer-ledger-schema.md", "profile": "antigravity", "sha256": "0762fe387b5af25061ded7afbaa49c8c14164a42d408f6895b1b2c570d4a1572", "src": "canonical/templates/reviewer-ledger-schema.md"}
 {"dst": ".agent/aid/templates/rough-time-hints.md", "profile": "antigravity", "sha256": "c2ade084bc1923ab0fad44ec6ae3cdc149f5d3efea6abab20bf2d50f3847dac2", "src": "canonical/templates/rough-time-hints.md"}
 {"dst": ".agent/aid/templates/self-review-protocol.md", "profile": "antigravity", "sha256": "10a9e6d79fec69e9f4865b37018813910a7c0d328ecb8431779c7c7dd8e55c00", "src": "canonical/templates/self-review-protocol.md"}
 {"dst": ".agent/aid/templates/settings.yml", "profile": "antigravity", "sha256": "112992009a815f648f421ed086ffaab5b043dafe6cd915d471c1d5ac5dab7001", "src": "canonical/templates/settings.yml"}

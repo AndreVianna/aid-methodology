@@ -124,7 +124,7 @@
 {"dst": ".codex/aid/templates/requirements.md", "profile": "codex", "sha256": "a197e10412c85b411e4930869040002e91e1f4e8ca88b3885dd011d998fd54a9", "src": "canonical/templates/requirements.md"}
 {"dst": ".codex/aid/templates/requirements/requirements-template.md", "profile": "codex", "sha256": "30175e698be5c1c36da2b9ae2c418948c837ee48269a4a839fa18abd417d8f0a", "src": "canonical/templates/requirements/requirements-template.md"}
 {"dst": ".codex/aid/templates/reviewer-dispatch.md", "profile": "codex", "sha256": "d4ba95015945e69179913dac87decb2d6d70f5a41dba4c685318df7bf111bace", "src": "canonical/templates/reviewer-dispatch.md"}
-{"dst": ".codex/aid/templates/reviewer-ledger-schema.md", "profile": "codex", "sha256": "105ac1470cfdb38592e64da706de80fc011aeacbd959cdee649504756b59de8d", "src": "canonical/templates/reviewer-ledger-schema.md"}
+{"dst": ".codex/aid/templates/reviewer-ledger-schema.md", "profile": "codex", "sha256": "fae02c73acdc28098e51a361db474f3665f32c8eb0220ceb00b8984645746ad5", "src": "canonical/templates/reviewer-ledger-schema.md"}
 {"dst": ".codex/aid/templates/rough-time-hints.md", "profile": "codex", "sha256": "e86ae0ad046dc94ee5f410554713c3a43bd84bd86be2ec3cfc0f76ab904fa2a6", "src": "canonical/templates/rough-time-hints.md"}
 {"dst": ".codex/aid/templates/self-review-protocol.md", "profile": "codex", "sha256": "70eec7e2214c7d1d6bb83b352c65ff16460e588f638cc517e313dd632594c7eb", "src": "canonical/templates/self-review-protocol.md"}
 {"dst": ".codex/aid/templates/settings.yml", "profile": "codex", "sha256": "112992009a815f648f421ed086ffaab5b043dafe6cd915d471c1d5ac5dab7001", "src": "canonical/templates/settings.yml"}
