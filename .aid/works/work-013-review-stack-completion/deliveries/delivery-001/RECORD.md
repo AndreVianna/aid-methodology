@@ -242,14 +242,21 @@ Both are `0` on `master`.
 
 **MET.** Recorded by task-006.
 
-19 rows written to `.aid/knowledge/authoring-conventions.md § Review Criteria — Criteria by Level`.
-Namespace before: 18 ids. Namespace after: 37 ids. No duplicate ids.
+19 rows written to `.aid/knowledge/authoring-conventions.md § Review Criteria — Criteria by Level`,
+taking the namespace from 18 ids to 37.
+
+**That 37 is task-006's figure, not the delivery's.** task-021 later added `G-14` and `G-15`, so the
+live total is now 39. The number below is therefore the current namespace, not the one this
+criterion was discharged against — a criterion's evidence records a moment, and a later task in the
+same delivery can move it. Re-run rather than trusting either figure:
 
 ```bash
 $ awk -F'|' '/^\| ID \| Applies to/,/^$/ {gsub(/ /,"",$2); if ($2 ~ /^[A-Z]+-[0-9]{2}$/) print $2}' \
     .aid/knowledge/authoring-conventions.md | wc -l
-37
+39
 ```
+
+No duplicate ids: the same extraction piped through `sort | uniq -d` prints nothing.
 
 Lint: `bash canonical/aid/scripts/kb/lint-frontmatter.sh --root .aid/knowledge` — **PASS** (18 docs checked, 0 findings).
 
@@ -257,6 +264,11 @@ Lint: `bash canonical/aid/scripts/kb/lint-frontmatter.sh --root .aid/knowledge` 
 
 Oracle discharge (FR-A3): G-09 is mechanically decidable via `kb-citation-lint.sh`. Oracle column
 not added (out of scope). Discharge recorded in the allocation ledger above.
+
+> **Allocations after task-006.** The table above lists what task-006 migrated. task-021 later
+> allocated two more, `G-14` and `G-15`, as file-class rows scoped to `work-artifact` — recorded
+> in criterion 9's section and in that task's `SCOPE-CHANGE.md`, not here, because this table is
+> task-006's output rather than a running total.
 
 ### 4. A real dispatch after the last feature-001 task is Done
 
@@ -276,7 +288,9 @@ than by this record asserting it.
 ### 5. VERIFY/HUNT labelled lists from cycle 2
 
 **MET.** Every brief this delivery rendered follows the shape: cycle 1 carries one unlabelled
-list, cycle 2 and later carry two labelled ones. 37 briefs, no exception.
+list, cycle 2 and later carry two labelled ones. No exception. The corpus grows as the delivery
+runs — this gate's own brief is in it — so the check below is written to print nothing rather than
+to assert a count.
 
 ```bash
 for b in .aid/works/work-013-review-stack-completion/briefs/*.md; do
@@ -431,7 +445,9 @@ diff -rq .claude profiles/claude-code/.claude | grep '^Files'     # must be empt
 
 **MET, after two repairs.** Every `$ command` block in this record was re-run and compared.
 
-Ten reproduced unchanged. Two did not, and both were staleness rather than error:
+Most reproduced unchanged. Three did not, and all three were staleness rather than error — two
+found by re-running, and the third by the gate reviewer after a later task in this same delivery
+moved the number underneath it:
 
 - `git rev-parse HEAD` returns the delivery base, deliberately captured at task-001 and not current
   HEAD. Correct as a historical record, and the surrounding prose says so.
@@ -439,8 +455,14 @@ Ten reproduced unchanged. Two did not, and both were staleness rather than error
   not exist there — only `origin/work-003` does. Rewritten to the remote ref, which resolves to the
   same commit and survives a clone.
 
-The second is the one worth keeping. A command that ran on the machine that wrote it and nowhere
-else is not evidence, and only re-running it somewhere else exposed that.
+- the id-count in criterion 3 read `37`, task-006's figure, until task-021 added two more criteria
+  in the same delivery. Now stated as a current figure with the moment it was discharged called out.
+
+Two lessons, and the second is the sharper one. A command that ran on the machine that wrote it and
+nowhere else is not evidence — only re-running it elsewhere exposed that. And a count recorded as
+evidence is a claim about a moment: a later task in the same delivery can falsify it without
+touching the section, which is why this record now prefers a checkable command over a quoted
+total.
 
 ### 12. All section-6 quality gates pass
 
