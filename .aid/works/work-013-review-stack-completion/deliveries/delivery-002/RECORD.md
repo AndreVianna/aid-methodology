@@ -190,6 +190,27 @@ is which.*
 
 ---
 
+## An out-of-enum state value, and why the writer did not stop it
+
+`delivery_state` sat at `In Progress` for four waves. That is not one of the six values the
+template declares:
+
+```
+$ sed -n '50,51p' canonical/aid/templates/delivery-state-template.yml
+# [W] Pending-Spec | Specified | Executing | Gated | Done | Blocked
+delivery_state: Pending-Spec
+```
+
+Corrected to `Executing`. The cause is the part worth keeping: `writeback-state.sh` has **no mode
+for this field**, so it was written by editing the file directly — and a direct edit bypasses the
+enum validation the writer applies to every field it does own. The writer refuses an out-of-enum
+value with exit 4 before writing a byte; nothing refuses a `python` one-liner.
+
+Found by the wave-5 gate reviewer, logged as an out-of-scope observation rather than a finding,
+which was the right call — it belonged to no task in that wave. Recorded here because the delivery
+record is where a reader looks for the state of the delivery, and the field that names it was wrong
+the whole time.
+
 ## Gate criteria
 
 ### 1. Why-line coverage on this delivery's own ledger
