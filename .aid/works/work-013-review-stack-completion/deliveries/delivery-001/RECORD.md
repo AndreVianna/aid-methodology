@@ -515,3 +515,26 @@ doubt. A suite result measured in a polluted shell is not evidence.
 compares against: **13 of 140 canonical suites failing**, all pre-existing. The delivery-001
 baseline recorded at task-001 was 15 of 139; two of those (`test-doc-set-mapping`,
 `test-doc-set-propose-confirm`) now pass, and one suite was added by task-008.
+
+---
+
+## Gate tier
+
+`gate_tier` sat at `Small` for this entire delivery, which is the value
+`delivery-state-template.yml` ships. It was never computed — the field was created with the
+delivery folder and nothing overwrote it.
+
+Scored properly against `state-delivery-gate.md § Tier Selection`:
+
+```
+tasks=25  depth=9  risk=20  consults=0   ->  complexity score 54
+thresholds: Small <= 6, Large >= 14
+```
+
+Risk is 13 `IMPLEMENT` and 7 `TEST` at +1 each. The score clears the high threshold by a factor of
+nearly four, so the tier is **Large**, now recorded.
+
+Nothing about the reviews changes: every wave gate was dispatched to `aid-reviewer` regardless of
+this field, and each ran to A or better. What was wrong was the record of the tier, not the rigour
+applied — but a dashboard reading `Small` off a 25-task delivery would have been misled, and the
+field is meant to be computed rather than defaulted.
