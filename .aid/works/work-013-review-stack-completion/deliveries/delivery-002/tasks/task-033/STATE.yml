@@ -45,9 +45,9 @@
 # one -- never self-written by the task being executed.)
 
 # [W] Pending | In Progress | In Review | Blocked | Done | Failed | Canceled
-state: 'In Review'
+state: Done
 # [W]
-review: --
+review: A
 # [W] HH:MM | --
 elapsed: --
 # [W]

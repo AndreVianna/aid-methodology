@@ -98,4 +98,22 @@ qa:
       the owner, and this entry exists so the question is visible rather than settled by
       whoever happens to write the script.
     status: Open
+  - id: Q11
+    asked: '2026-08-24'
+    by: task-033 gate, wave 4
+    question: >
+      Should a criterion cover POINTER-TARGET CONSISTENCY ON SECTION REWRITE -- when an
+      explanatory section is rewritten, every intra-document cross-reference pointing at
+      it is checked for whether its stated purpose still matches the new content? It is
+      distinct from content accuracy, which is single-document, and from link rot, which
+      is a wrong path. This one is a live pointer to a section that now says the opposite.
+    evidence: >
+      Found twice in one delivery. task-033 rewrote state-review.md section 4(d) and left
+      Step 5 pointing at it "for why that doc cannot be redirected"; 4(d) by then said
+      delegation was possible. A sweep for the claim's own words finds every place that
+      STATES it and no place that POINTS AT it, which is why the first sweep missed it.
+    recommendation: >
+      The gate reviewer judges one warranted, at skill-reference type level or global. No
+      id allocated -- Q9 reserves that to the owner.
+    status: Open
 # DERIVED: tasks rollup is a read-time union over tasks/task-NNN/STATE.yml. Not represented.

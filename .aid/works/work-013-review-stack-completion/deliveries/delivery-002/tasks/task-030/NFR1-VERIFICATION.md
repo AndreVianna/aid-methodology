@@ -34,7 +34,7 @@ S=canonical/aid/templates/reviewer-ledger-schema.md
 B=1412e63d1b8cf5d039778efe2f9c3ad23a9fdbd3
 for pat in 'CRITICAL.*HIGH.*MEDIUM.*LOW.*MINOR' \
            'Pending.*Fixed.*Recurred.*Accepted.*OOS.*Invalid' \
-           '^| `(Pending|Fixed|Recurred|Accepted|OOS|Invalid)`'; do
+           '^\| `(Pending|Fixed|Recurred|Accepted|OOS|Invalid)`'; do
   echo "base=$(git show $B:$S | grep -cE "$pat")  now=$(grep -cE "$pat" $S)"
 done
 ```
@@ -44,6 +44,11 @@ done
 | severity enum occurrences | 4 | 4 |
 | status enum occurrences | 2 | 2 |
 | status-table rows | 6 | 6 |
+
+*The third pattern needs its leading pipe escaped. Unescaped, ERE reads `^|` as "start of line OR
+empty", which matches every line and reports 340 rather than 6 — and the fix that added these
+commands shipped them in exactly that broken form. A command printed beside a number it does not
+produce is worse than no command, because it looks checked.*
 
 ## 4. The pinned literals
 

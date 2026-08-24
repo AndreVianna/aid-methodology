@@ -19,24 +19,26 @@ documentation site gets tokenised because it looked like the others.
 | `aid-update-kb/state-review.md` | the passage explaining why Step 5 does not delegate to `aid-discover` | **documentation** | it explains a design decision to a reader; it executes nothing |
 | `aid-discover/state-review.md` | 50 sites | **already parameterised** | all use `{{SCOPE}}`; untouched by this task |
 
-Instruction sites in this group, counted rather than estimated:
+**Zero literal ledger paths remain in this group's instruction surface**, measured at 13 before:
 
 ```
-$ grep -c '{{LEDGER}}' canonical/skills/aid-discover/references/state-fix.md \
+$ grep -c 'review-pending/[a-z]' \
+    canonical/skills/aid-discover/references/state-fix.md \
     canonical/skills/aid-discover/references/state-done.md \
     canonical/skills/aid-update-kb/references/state-done.md \
     canonical/skills/aid-update-kb/references/state-review.md
-1
-1
-1
-9
+0
+0
+0
+0
 ```
 
-**12 sites, all now `{{LEDGER}}`.** Literal count in the instruction surface: **0**.
-
-*The first version of this record said 13. That figure was written from the site table above
-rather than measured, and the table's own row for `state-review.md` says "9 sites" while listing
-a category. Counted, it is 12.*
+*The count of `{{LEDGER}}` tokens is deliberately not the figure recorded here. Two earlier
+attempts got it wrong in two different ways: the first said 13, estimated from this record's own
+summary table rather than counted; the second said 12, correct when written and stale one commit
+later, because fixing the cross-reference below added two more tokens to a documentation section.
+A token count moves whenever anyone writes the word. What the task is actually about is that no
+literal path survives where something is executed, and zero is a number that does not drift.*
 
 ## The documentation site was falsified by the conversion, and that is the finding
 
