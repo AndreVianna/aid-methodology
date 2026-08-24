@@ -266,9 +266,10 @@ Oracle discharge (FR-A3): G-09 is mechanically decidable via `kb-citation-lint.s
 not added (out of scope). Discharge recorded in the allocation ledger above.
 
 > **Allocations after task-006.** The table above lists what task-006 migrated. task-021 later
-> allocated two more, `G-14` and `G-15`, as file-class rows scoped to `work-artifact` — recorded
-> in criterion 9's section and in that task's `SCOPE-CHANGE.md`, not here, because this table is
-> task-006's output rather than a running total.
+> allocated two more, `G-14` and `G-15`, as file-class rows scoped to `work-artifact`. They are not
+> in this table because it is task-006's output rather than a running total; the reasoning for them
+> is in `deliveries/delivery-001/tasks/task-021/SCOPE-CHANGE.md` § What was built instead, and a
+> correction to the research.
 
 ### 4. A real dispatch after the last feature-001 task is Done
 
