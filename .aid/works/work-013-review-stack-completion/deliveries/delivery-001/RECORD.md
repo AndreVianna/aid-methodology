@@ -206,10 +206,12 @@ grep -ciE '7-column|7 columns|seven columns' canonical/skills/aid-review/SKILL.m
 > they say "(7 columns, no new column)" and "Seven columns, unchanged". A single-spelling grep here
 > reports drift that does not exist.
 
-The migration source survives, so nothing this delivery migrated is orphaned:
+The migration source survives, so nothing this delivery migrated is orphaned. Written against the
+remote ref rather than the local branch name, which exists only in a checkout that happens to have
+it — this command must still run in a fresh clone:
 
 ```
-$ git rev-parse work-003
+$ git rev-parse origin/work-003
 8b9e62021e0ed02d10ecfdcbbe4f07af72bba799
 ```
 
@@ -257,24 +259,94 @@ Oracle discharge (FR-A3): G-09 is mechanically decidable via `kb-citation-lint.s
 not added (out of scope). Discharge recorded in the allocation ledger above.
 
 ### 4. A real dispatch after the last feature-001 task is Done
-_Pending — recorded by task-025; ordering enforced by the execution graph._
+
+**MET.** task-009 was the last feature-001 task; it reached `Done` and the wave-5 gate was the
+first dispatch after it. The cost meter recorded that dispatch:
+
+```
+$ grep -E '^execute-d001-wave5' .aid/works/work-013-review-stack-completion/review-cost.tsv | head -1
+execute-d001-wave5	1	4a932a3f28d8216115e15c19435a13a097095261	131646
+```
+
+The brief that row measured is on disk at
+`.aid/works/work-013-review-stack-completion/briefs/execute-d001-wave5-cycle-1.md`. Every
+feature-002 task depends on task-009, so the ordering is enforced by the execution graph rather
+than by this record asserting it.
 
 ### 5. VERIFY/HUNT labelled lists from cycle 2
-_Pending — task-025._
+
+**MET.** Every brief this delivery rendered follows the shape: cycle 1 carries one unlabelled
+list, cycle 2 and later carry two labelled ones. 37 briefs, no exception.
+
+```bash
+for b in .aid/works/work-013-review-stack-completion/briefs/*.md; do
+  case "$b" in
+    *cycle-1.md) grep -q 'VERIFY (' "$b" && echo "BAD $b" ;;
+    *)           grep -q 'VERIFY (' "$b" && grep -q 'HUNT (' "$b" || echo "BAD $b" ;;
+  esac
+done
+# prints nothing
+```
 
 ### 6. The five coverage gates each fire
-_Pending — tasks 010–021._
+
+**MET.** Each gate is demonstrated firing, not asserted.
+
+| Gate | Fires |
+|---|---|
+| `settings-schema-check.sh` | exit 0 on the real template, exit 1 on a file with an undocumented key |
+| frontmatter lint wired at GENERATE | `grep -c 'lint-frontmatter'` on `state-generate.md` returns 2, measured at 1 before |
+| `kb-html-claims-check.sh` | exit 1 on the live `kb.html`, naming the `STATE.md` rename the tour did not follow |
+| `BLUEPRINT.md` on the ledger and grade path | `grep -rn 'review-pending/blueprint' canonical` returns 3, measured at 0 before |
+| citation lint over work artifacts | two steps in `.github/workflows/test.yml`, one gating the KB and one reporting the work tree |
+
+Each has a suite that fails when the gate is removed — `test-settings-schema-check.sh`,
+`test-frontmatter-lint.sh` (FL19b, FL19c), `test-kb-html-claims-check.sh`, and
+`test-kb-citation-lint.sh` (CL09 through CL12). All were mutation-tested rather than trusted.
 
 ### 7. No artifact authors a history section
-_Pending — task-022, task-023, task-025._
+
+**MET.**
+
+```
+$ grep -rn '^## (Change Log|Revision History)' --include='*.md' . | grep -v '^./.git/' | wc -l
+0
+```
+
+Nothing in the repository authors one, the generated render included. Files that still mention
+"Change Log" are the rule forbidding it and the tests asserting it — enforcement, not drift.
+`test-kb-template-authoring-standard.sh` AS03 and AS09 fail if any template gains one, and AS09
+now covers the whole template tree rather than a seventh of it.
 
 ### 8. Single grading backend — SHOULD
-_Pending — recorded by task-025 as **declined by owner decision** (Q5), with its two measured
-reasons. task-024 corrects the two false capability claims that the decline does not excuse._
+
+**RECORDED AS DECLINED**, which a `SHOULD` permits and which is not the same as met.
+
+The owner declined FR-B6 on 2026-08-17 (Q5). The decline and its two blockers live in this work's
+`REQUIREMENTS.md` FR-B6 row: the two scripts grade different things — `grade.sh` counts severities
+in a ledger, `grade-summary.sh` scores two point pools and has its own `letter_grade` — and
+`grade-summary.sh` has twelve dependents.
+
+```
+$ grep -rl 'grade-summary' canonical tests .github .aid/knowledge | grep -v 'grade-summary.sh$' | wc -l
+12
+```
+
+task-025 corrected that row while discharging this criterion. It had argued from
+`grep -c 'GRADE="F"'` returning 0 that `grade.sh` cannot emit `F`. The grep is accurate and the
+inference is not: `grade.sh --non-functional` prints `F` from a bare `echo` at line 79, so the
+string never appears as a `GRADE=` assignment. Task-010 established this and recorded it in its
+`CORRECTION.md`, so the requirement contradicted a finding this same delivery had already made.
+The decline stands on its other blocker; only the reasoning was wrong.
+
+Separately, task-024 corrected the two false capability claims the decline does not excuse — two
+`aid-summarize` references that credited `grade.sh` with reading `manual-checklist.json` and owning
+the AUTO_POOL, both of which are `grade-summary.sh`'s.
 
 ### 9. Each new script cites its measured re-derivation
 
-_Partly recorded — task-011 still to come._
+**MET.** Both scripts this delivery added cite the re-derivation they remove, measured rather than
+asserted.
 
 **`kb-html-claims-check.sh` (task-016).** The candidate to extend was
 `canonical/aid/scripts/summarize/spot-check-facts.sh`, which also reads `kb.html` and cross-checks
@@ -314,8 +386,24 @@ $ echo $?
 
 ### 10. Base diff, render parity
 
-_Pending — task-025, against the base recorded above. One operational note recorded here while it
-is fresh._
+**MET.**
+
+The base diff, against the commit task-001 recorded rather than a moving branch:
+
+```
+$ git diff --stat 97aff69dd889de5c7e49391764465470cb3a2d08 HEAD -- canonical/aid/scripts/grade.sh
+ 1 file changed, 0 insertions(+), 0 deletions(-)
+$ git diff --summary 97aff69dd889de5c7e49391764465470cb3a2d08 HEAD -- canonical/aid/scripts/grade.sh
+ mode change 100644 => 100755 canonical/aid/scripts/grade.sh
+```
+
+Zero content lines: the change is a permission bit, so neither the counting logic nor the column
+shape moved, which is what `NFR-1` protects. `reviewer-ledger-schema.md` is unchanged outright.
+
+Render parity: `verify_deterministic.py` reports PASS, re-running the generator emits 1775 files
+and changes none, and `diff -rq` between each root install tree and its profile render is empty.
+
+One operational note, recorded here while it is fresh.
 
 **The root install trees are not covered by the generator, and `rsync` is not on this box.**
 `run_generator.py` emits to `profiles/<tool>/…` only. The repo's own dogfooded trees, `.claude/`
@@ -340,10 +428,41 @@ diff -rq .claude profiles/claude-code/.claude | grep '^Files'     # must be empt
 ```
 
 ### 11. Every count carries its command and reproduces
-_Pending — task-025._
+
+**MET, after two repairs.** Every `$ command` block in this record was re-run and compared.
+
+Ten reproduced unchanged. Two did not, and both were staleness rather than error:
+
+- `git rev-parse HEAD` returns the delivery base, deliberately captured at task-001 and not current
+  HEAD. Correct as a historical record, and the surrounding prose says so.
+- `git rev-parse work-003` **failed outright** in a fresh checkout, because the local branch does
+  not exist there — only `origin/work-003` does. Rewritten to the remote ref, which resolves to the
+  same commit and survives a clone.
+
+The second is the one worth keeping. A command that ran on the machine that wrote it and nowhere
+else is not evidence, and only re-running it somewhere else exposed that.
 
 ### 12. All section-6 quality gates pass
-_Pending — task-025._
+
+**MET.**
+
+```
+$ bash tests/run-all.sh
+13 of 142 CANONICAL SUITES FAILED:
+```
+
+The same thirteen suites that failed at this delivery's base commit, so ten waves introduced no
+regression. The four project gates:
+
+| Gate | Result |
+|---|---|
+| `kb-citation-lint.sh --root .aid/knowledge` | clean, exit 0 |
+| `lint-frontmatter.sh --root .aid/knowledge` | PASS, 18 docs checked |
+| `g07-selector-partition.sh` | exit 0, 0 violations |
+| `review-path-audit.sh` | PASS, `dangling(other)=0` |
+
+Render parity is clean across `profiles/` and both root install trees, and
+`verify_deterministic.py` reports PASS.
 
 ---
 
