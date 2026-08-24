@@ -45,9 +45,9 @@
 # one -- never self-written by the task being executed.)
 
 # [W] Pending | In Progress | In Review | Blocked | Done | Failed | Canceled
-state: 'In Review'
+state: Done
 # [W]
-review: 'cycle-2 grade A+ (0 Pending). Row 1 MEDIUM Fixed: awk command runs verbatim, rows=5 why-line=2 confirmed; independent read of 5 rows agrees (rows 4+5 carry "so"). 10 commands reproduce; git rev-parse HEAD historical. canonical/ untouched. Cost-meter double-count (84934=2x42467) verified correct and sound. Ledger: .aid/.temp/review-pending/execute-d002-wave1.md'
+review: A+
 # [W] HH:MM | --
 elapsed: --
 # [W]
