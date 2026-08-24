@@ -6,7 +6,7 @@
 {"dst": ".claude/agents/aid-operator.md", "profile": "claude-code", "sha256": "799c877f660990dbb49f94c61fc9a7517b5cfa313cb44cc82494beea6025adb1", "src": "canonical/agents/aid-operator/AGENT.md"}
 {"dst": ".claude/agents/aid-orchestrator.md", "profile": "claude-code", "sha256": "b0c1d4e1f8a204114f3d6cff74d8e5c36f213e77c76269d6527fc28d9cf4cae4", "src": "canonical/agents/aid-orchestrator/AGENT.md"}
 {"dst": ".claude/agents/aid-researcher.md", "profile": "claude-code", "sha256": "e592c1d27ef512d0a6b1b57dd8b0ce140d74b13d4874efe2b1afabc008632a0e", "src": "canonical/agents/aid-researcher/AGENT.md"}
-{"dst": ".claude/agents/aid-reviewer.md", "profile": "claude-code", "sha256": "f5a2676c7c0c6a979fca08a69e146fc0644efac107f1d900e10ad9a1f30955b2", "src": "canonical/agents/aid-reviewer/AGENT.md"}
+{"dst": ".claude/agents/aid-reviewer.md", "profile": "claude-code", "sha256": "706fba9d29f6df6669a1e9c2933ffddd2f7caa9739e36d1d3825036182c20625", "src": "canonical/agents/aid-reviewer/AGENT.md"}
 {"dst": ".claude/agents/aid-tech-writer.md", "profile": "claude-code", "sha256": "6b853ea64982ca4231876144c4c10dc3c2df287a3b3bdd6c1728706decc32021", "src": "canonical/agents/aid-tech-writer/AGENT.md"}
 {"dst": ".claude/aid/scripts/config/read-setting.sh", "profile": "claude-code", "sha256": "b8519db9d466949e7162584866a20818148af78205f1ce14d28c19178e011fba", "src": "canonical/scripts/config/read-setting.sh"}
 {"dst": ".claude/aid/scripts/connectors/build-connectors-index.ps1", "profile": "claude-code", "sha256": "08754cab7943657a7dc8a3e6362574637a5bf3274ffaa6f5b07c918528c575a0", "src": "canonical/scripts/connectors/build-connectors-index.ps1"}
@@ -124,7 +124,7 @@
 {"dst": ".claude/aid/templates/requirements.md", "profile": "claude-code", "sha256": "a197e10412c85b411e4930869040002e91e1f4e8ca88b3885dd011d998fd54a9", "src": "canonical/templates/requirements.md"}
 {"dst": ".claude/aid/templates/requirements/requirements-template.md", "profile": "claude-code", "sha256": "30175e698be5c1c36da2b9ae2c418948c837ee48269a4a839fa18abd417d8f0a", "src": "canonical/templates/requirements/requirements-template.md"}
 {"dst": ".claude/aid/templates/reviewer-dispatch.md", "profile": "claude-code", "sha256": "789bd19dc884abcf5228ee48d1ff5a329828aa2f848ac121948feb1a64f6cfe1", "src": "canonical/templates/reviewer-dispatch.md"}
-{"dst": ".claude/aid/templates/reviewer-ledger-schema.md", "profile": "claude-code", "sha256": "bd1894ac5b367eb1afb0348054383a839eba1b012b2492111e05deae33f912cf", "src": "canonical/templates/reviewer-ledger-schema.md"}
+{"dst": ".claude/aid/templates/reviewer-ledger-schema.md", "profile": "claude-code", "sha256": "06caa9fd1857a7255f06c3740b6aaee5922ef58d1567f42246ab46ec79c711fd", "src": "canonical/templates/reviewer-ledger-schema.md"}
 {"dst": ".claude/aid/templates/rough-time-hints.md", "profile": "claude-code", "sha256": "d9ee322e4a269a5b904026cfa1a66ad734b0c97e44c77f5268e3bb87cc24fe0d", "src": "canonical/templates/rough-time-hints.md"}
 {"dst": ".claude/aid/templates/self-review-protocol.md", "profile": "claude-code", "sha256": "3784a426cb0daa7edecfe0c493c84aac566a7e2376ddcbfa3e1c7f7f338a07b7", "src": "canonical/templates/self-review-protocol.md"}
 {"dst": ".claude/aid/templates/settings.yml", "profile": "claude-code", "sha256": "112992009a815f648f421ed086ffaab5b043dafe6cd915d471c1d5ac5dab7001", "src": "canonical/templates/settings.yml"}

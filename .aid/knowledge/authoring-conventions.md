@@ -399,7 +399,7 @@ headers, no narrative, no summary section.
   cannot be argued with: there is nothing on the row to disagree with except the
   reviewer's judgement.
 - **Evidence** carries one severity-provenance token: `severity: declared` (taken from the
-  cited criterion), `severity: override <level>` (a more specific level won, and which),
+  cited criterion), `severity: override <level>` (a more specific level won; `<level>` names where the winning band came from -- `file`, `file-class` or `type` -- not the band),
   or `severity: judged` (no criterion declares one). A band that differs from its cited
   criterion's declared `severity:` with no token recorded is a defect in the review — the
   divergence is the signal that the declared cost may be wrong.

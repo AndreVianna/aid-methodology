@@ -98,8 +98,10 @@ a task AC lives in neither. Without this form a task-gate reviewer cannot cite a
 the thing it was actually asked to check, which makes every task-gate ledger defective by this
 schema's own rule.
 
-`task-037 AC-3` resolves by reading that task's `DETAIL.md` and counting the checkboxes under
-`**Acceptance Criteria:**`. The ordinal is the citation; the ACs are not renumbered once a task is
+`task-037 AC-3` resolves by reading that task's `DETAIL.md` and counting the **top-level**
+checkboxes under `**Acceptance Criteria:**` — a nested `- [ ]` sub-item is part of its parent and is
+not counted, or the ordinal would shift and a citation would silently resolve to the wrong
+criterion. The ordinal is the citation; the ACs are not renumbered once a task is
 executing.
 
 **Every finding names the criterion it violates, as an `id` prefix inside the `Description`

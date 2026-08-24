@@ -6,7 +6,7 @@
 {"dst": ".github/agents/aid-operator.md", "profile": "copilot-cli", "sha256": "9bf4a9b6c7d374b00c8cea6efd167555aa5acf8ffef159bd7aa8b45cc0e8ccbf", "src": "canonical/agents/aid-operator/AGENT.md"}
 {"dst": ".github/agents/aid-orchestrator.md", "profile": "copilot-cli", "sha256": "ef58c00d22f5f8b597853dd9cca1bcd6885ccb13c7f717a586bc9cc43f838944", "src": "canonical/agents/aid-orchestrator/AGENT.md"}
 {"dst": ".github/agents/aid-researcher.md", "profile": "copilot-cli", "sha256": "f9a50dfd85405e68de9f23fa6562a28b0011760e8915dbd6551c4baeb241ca69", "src": "canonical/agents/aid-researcher/AGENT.md"}
-{"dst": ".github/agents/aid-reviewer.md", "profile": "copilot-cli", "sha256": "6662d40d02e43614cebfd4994412427a0e7f408dc8af2357d123a1b619274a0a", "src": "canonical/agents/aid-reviewer/AGENT.md"}
+{"dst": ".github/agents/aid-reviewer.md", "profile": "copilot-cli", "sha256": "5ee43967d46ef1cc8f223c2cc42df4df69055a48ba8ca8bd3f15f94556304259", "src": "canonical/agents/aid-reviewer/AGENT.md"}
 {"dst": ".github/agents/aid-tech-writer.md", "profile": "copilot-cli", "sha256": "c15db2a1cab1cad5f524c8c3cead42f6efdb0742ca338723327357cd37be8c77", "src": "canonical/agents/aid-tech-writer/AGENT.md"}
 {"dst": ".github/aid/scripts/config/read-setting.sh", "profile": "copilot-cli", "sha256": "b8519db9d466949e7162584866a20818148af78205f1ce14d28c19178e011fba", "src": "canonical/scripts/config/read-setting.sh"}
 {"dst": ".github/aid/scripts/connectors/build-connectors-index.ps1", "profile": "copilot-cli", "sha256": "08754cab7943657a7dc8a3e6362574637a5bf3274ffaa6f5b07c918528c575a0", "src": "canonical/scripts/connectors/build-connectors-index.ps1"}
@@ -124,7 +124,7 @@
 {"dst": ".github/aid/templates/requirements.md", "profile": "copilot-cli", "sha256": "a197e10412c85b411e4930869040002e91e1f4e8ca88b3885dd011d998fd54a9", "src": "canonical/templates/requirements.md"}
 {"dst": ".github/aid/templates/requirements/requirements-template.md", "profile": "copilot-cli", "sha256": "30175e698be5c1c36da2b9ae2c418948c837ee48269a4a839fa18abd417d8f0a", "src": "canonical/templates/requirements/requirements-template.md"}
 {"dst": ".github/aid/templates/reviewer-dispatch.md", "profile": "copilot-cli", "sha256": "352baee95b10f96f1b0bca959bc742b50473983932058f2fc40089c7b7dd4b59", "src": "canonical/templates/reviewer-dispatch.md"}
-{"dst": ".github/aid/templates/reviewer-ledger-schema.md", "profile": "copilot-cli", "sha256": "e2090aaa94e7617f5ed069313bfcfe35242550e50a160bd130fe1cbba706a5bc", "src": "canonical/templates/reviewer-ledger-schema.md"}
+{"dst": ".github/aid/templates/reviewer-ledger-schema.md", "profile": "copilot-cli", "sha256": "5f614bd209d04ffcec75ba06273ade20c10e760325a73001d9ec6dd02f561a61", "src": "canonical/templates/reviewer-ledger-schema.md"}
 {"dst": ".github/aid/templates/rough-time-hints.md", "profile": "copilot-cli", "sha256": "5bb11ab80c2facbfd390376816280db8e65abe895a29c4a28b14fb967a8fb629", "src": "canonical/templates/rough-time-hints.md"}
 {"dst": ".github/aid/templates/self-review-protocol.md", "profile": "copilot-cli", "sha256": "84a4bed374301ba632de1621c5b19c9e0723a9f18194a4dc11c55b84aa398420", "src": "canonical/templates/self-review-protocol.md"}
 {"dst": ".github/aid/templates/settings.yml", "profile": "copilot-cli", "sha256": "112992009a815f648f421ed086ffaab5b043dafe6cd915d471c1d5ac5dab7001", "src": "canonical/templates/settings.yml"}

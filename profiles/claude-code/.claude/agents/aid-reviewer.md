@@ -203,7 +203,7 @@ the row is either accepted or fought over. The why-line is what makes a severity
 | Token | Means |
 |---|---|
 | `severity: declared` | taken unchanged from the cited criterion's `severity:` |
-| `severity: override <level>` | criterion and a more specific level disagree; the winning level is named |
+| `severity: override <level>` | criterion and a more specific level disagree; `<level>` names **where the winning band came from** — `file`, `file-class` or `type` — not the band, which the Severity column already carries |
 | `severity: judged` | no criterion declares a severity for this, so you set it |
 
 If your band differs from the cited criterion's declared `severity:` and you record no token, that
