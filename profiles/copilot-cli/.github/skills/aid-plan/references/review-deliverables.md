@@ -38,7 +38,7 @@ Render `references/reviewer-brief.md` with:
 - `{{CONTEXT}}` = `PLAN.md for work-NNN with N deliveries; re-review against current SPECs.`
 
 Include in the prompt:
-- **Ledger lifecycle:** "Read `.aid/.temp/review-pending/plan.md` if it exists.
+- **Ledger lifecycle:** "Read `{{LEDGER}}` if it exists.
   For each existing row: verify on disk, update Status (Pending→Fixed if resolved;
   Fixed→Recurred if regressed). Append new findings with Status: Pending.
   Output per `.github/aid/templates/reviewer-ledger-schema.md` — ONE table, no narrative."
@@ -52,14 +52,14 @@ Dispatch the `aid-reviewer` subagent **at Large tier** (the executor is the Larg
 After aid-reviewer returns, run grade.sh:
 
 ```bash
-bash .github/aid/scripts/grade.sh --explain .aid/.temp/review-pending/plan.md
+bash .github/aid/scripts/grade.sh --explain {{LEDGER}}
 ```
 
 Compare to minimum grade from `bash .github/aid/scripts/config/read-setting.sh --skill plan --key minimum_grade --default A`.
 
 | Condition | Action |
 |-----------|--------|
-| Grade >= minimum | Ensure all delivery folders exist (deliveries/delivery-NNN/BLUEPRINT.md + STATE.yml for each delivery in PLAN.md; create any missing ones, seeding the top-level `delivery_state` scalar as `Pending-Spec` -- task-001/004). Delete ledger: `rm -f .aid/.temp/review-pending/plan.md`. Print summary, done. |
+| Grade >= minimum | Ensure all delivery folders exist (deliveries/delivery-NNN/BLUEPRINT.md + STATE.yml for each delivery in PLAN.md; create any missing ones, seeding the top-level `delivery_state` scalar as `Pending-Spec` -- task-001/004). Delete ledger: `rm -f {{LEDGER}}`. Print summary, done. |
 | Grade < minimum, deliverables fixable | List findings, re-enter loop for affected deliverables. |
 | Grade < minimum, sequence invalidated | Recommend `--reset`. |
 

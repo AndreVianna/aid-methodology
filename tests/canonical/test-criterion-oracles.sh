@@ -189,6 +189,53 @@ else
     pass "OR19 bash + awk only (NFR-2)"
 fi
 
+# ===========================================================================
+# OB01-OB04  The observe-only boundary (task-043).
+#
+# Three clauses were added to the oracle contract, and each is asserted here so
+# deleting one turns this suite red. A contract nothing checks is a preference.
+# ===========================================================================
+echo ""
+echo "=== OB01-OB04: the observe-only boundary ==="
+
+OB_SCHEMA="${REPO_ROOT}/canonical/aid/templates/kb-authoring/frontmatter-schema.md"
+
+for pair in \
+  "is not an oracle, and produces no ledger row|OB01 a check with no per-file verdict files nothing" \
+  "gradeable only as an open criteria gap|OB02 the absence of a rule is a criteria gap, not a finding" \
+  "consumed as an ordinary finding|OB03 an oracle VIOLATION is an ordinary finding"
+do
+    needle="${pair%%|*}"; label="${pair##*|}"
+    n=$(grep -c "$needle" "$OB_SCHEMA" || true)
+    assert_eq "$n" "1" "$label"
+done
+
+# The two referents, so the boundary is not abstract.
+assert_eq "$(grep -c 'review-cost-meter.sh' "$OB_SCHEMA" || true)" "1" \
+    "OB03 the cost meter is named as an observe-only example"
+assert_eq "$(grep -c 'review-recall.sh' "$OB_SCHEMA" || true)" "1" \
+    "OB03 the recall report is named as an observe-only example"
+
+# ===========================================================================
+# OB04  The oracle run itself: clean, and ZERO ledger rows produced.
+#
+# Recorded as zero rather than assumed. An oracle that emits UNDECIDED lines is
+# still producing no findings, and that is the distinction the boundary draws --
+# the run below reports 76 undecided files and files nothing.
+# ===========================================================================
+OB_ORACLE="${REPO_ROOT}/scripts/checks/g07-selector-partition.sh"
+OB_OUT="$(cd "$REPO_ROOT" && bash "$OB_ORACLE" 2>&1)"; OB_RC=$?
+OB_VIOL=$(printf '%s\n' "$OB_OUT" | grep -c '^VIOLATION' || true)
+OB_UNDEC=$(printf '%s\n' "$OB_OUT" | grep -c '^UNDECIDED' || true)
+
+assert_eq "$OB_RC"   "0" "OB04 the selector-partition oracle exits clean"
+assert_eq "$OB_VIOL" "0" "OB04 with zero VIOLATION lines -- so zero ledger rows from this run"
+if [ "$OB_UNDEC" -gt 0 ]; then
+    pass "OB04 and ${OB_UNDEC} UNDECIDED lines, which are not findings and produce no rows either"
+else
+    fail "OB04 expected some UNDECIDED lines; a run with none cannot demonstrate the distinction"
+fi
+
 echo
 test_summary
 exit $?

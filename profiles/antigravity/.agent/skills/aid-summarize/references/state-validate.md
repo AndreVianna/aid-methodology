@@ -21,7 +21,7 @@ Run `.agent/aid/scripts/summarize/grade-summary.sh .aid/knowledge/kb.html`. It o
 ### Translate Script Output to Schema Rows
 
 After each script exits, the orchestrator translates failed checks into schema rows in
-`.aid/.temp/review-pending/summarize.md` (per `.agent/aid/templates/reviewer-ledger-schema.md`):
+`{{LEDGER}}` (per `.agent/aid/templates/reviewer-ledger-schema.md`):
 
 | Script check | Severity mapping |
 |---|---|
@@ -52,7 +52,7 @@ Passed checks are NOT added to the ledger (no row = no finding).
 Persist Machine Grade + per-check table to `.aid/knowledge/STATE.md` `## Knowledge Summary Status` `### Findings (last validation — Machine)`. Grade is computed by running:
 
 ```bash
-bash .agent/aid/scripts/grade.sh --explain .aid/.temp/review-pending/summarize.md
+bash .agent/aid/scripts/grade.sh --explain {{LEDGER}}
 ```
 
 If Machine Grade >= minimum → MANUAL-CHECKLIST. Otherwise → FIX.

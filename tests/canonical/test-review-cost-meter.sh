@@ -217,6 +217,85 @@ AFTER_CANARY="$(find "$CANARY" -type f | sort)"
 assert_eq "$BEFORE_CANARY" "$AFTER_CANARY" "RCM18 nothing is written outside the --data directory"
 
 # ---------------------------------------------------------------------------
+# ===========================================================================
+# CM20-CM23  Dedupe and region attribution (task-046).
+#
+# The declared read surface is what the reviewer was TOLD it may open. A file it
+# may open twice is still one file, so a path named on both the VERIFY and HUNT
+# lists counts once. Measured before the fix: a brief naming one path twice
+# recorded exactly twice that file's size, which is how one real cycle came to
+# record 84934 against a 42467-byte surface.
+# ===========================================================================
+echo ""
+echo "=== CM20-CM23: dedupe and region attribution ==="
+
+CM_TMP="$(mktemp -d)"
+printf 'alpha alpha alpha\n' > "${CM_TMP}/a.md"
+CM_SZ=$(wc -c < "${CM_TMP}/a.md" | tr -d ' ')
+
+cm_surface() {  # cm_surface <brief>
+    bash "$SUT" record --task _cm_probe --cycle 1 --brief "$1" --data "$CM_TMP" 2>&1 \
+      | grep -oE 'surface [0-9]+' | grep -oE '[0-9]+'
+}
+
+# CM20: the same path on both lists counts ONCE
+cat > "${CM_TMP}/dup.md" <<EOF
+ARTIFACTS UNDER REVIEW:
+  VERIFY (full):
+    - ${CM_TMP}/a.md
+  HUNT (scoped):
+    - ${CM_TMP}/a.md
+
+CONTEXT:
+EOF
+got=$(cm_surface "${CM_TMP}/dup.md")
+assert_eq "$got" "$CM_SZ" "CM20 a path on both lists counts once, not twice"
+
+# The assertion must fail if the dedupe is reverted. Reverting it doubles the
+# figure, so asserting equality with the single size is exactly that guard.
+if [ "$got" != "$(( CM_SZ * 2 ))" ]; then
+    pass "CM20 the recorded surface is not the doubled figure a reverted dedupe would give"
+else
+    fail "CM20 the surface equals twice the file size -- the dedupe is not in effect"
+fi
+
+# CM21: a region entry contributes its FILE's bytes, not zero
+cat > "${CM_TMP}/region.md" <<EOF
+ARTIFACTS UNDER REVIEW:
+  - ${CM_TMP}/a.md § Some Heading
+
+CONTEXT:
+EOF
+got=$(cm_surface "${CM_TMP}/region.md")
+assert_eq "$got" "$CM_SZ" "CM21 a region entry contributes its file's bytes"
+
+# This is the assertion that separates a real fix from an accidental one. Before
+# task-046 the extractor DROPPED a region entry and recorded 0. A suite asserting
+# only "no longer twice the file size" would have passed against that -- zero is
+# also not twice. Asserting the file's own size is what makes the number mean
+# what it says.
+if [ "$got" != "0" ]; then
+    pass "CM21 the region entry is not silently dropped to zero"
+else
+    fail "CM21 the region entry recorded 0 -- it was dropped, not attributed"
+fi
+
+# CM22: a region entry for a path that does not exist is REPORTED
+cat > "${CM_TMP}/ghost.md" <<EOF
+ARTIFACTS UNDER REVIEW:
+  - ${CM_TMP}/no-such-file.md § Heading
+
+CONTEXT:
+EOF
+out=$(bash "$SUT" record --task _cm_probe --cycle 1 --brief "${CM_TMP}/ghost.md" --data "$CM_TMP" 2>&1)
+assert_output_contains "$out" "matched no file on disk" "CM22 a region on a missing path is reported, not silently dropped"
+
+# CM23: determinism
+a=$(cm_surface "${CM_TMP}/dup.md"); b=$(cm_surface "${CM_TMP}/dup.md")
+assert_eq "$a" "$b" "CM23 two consecutive records agree"
+
+rm -rf "$CM_TMP"
+
 echo
 test_summary
 exit $?

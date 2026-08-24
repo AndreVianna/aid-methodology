@@ -45,13 +45,13 @@
 # one -- never self-written by the task being executed.)
 
 # [W] Pending | In Progress | In Review | Blocked | Done | Failed | Canceled
-state: Pending
+state: Canceled
 # [W]
 review: --
 # [W] HH:MM | --
 elapsed: --
 # [W]
-notes: --
+notes: 'Canceled per its own AC-1. task-036''s measurement justifies the report subcommand -- the naive row count and the status-aware count disagree on 17 of 21 real ledgers -- and says nothing about record. No delivery-002 gate criterion mentions record; both name report. And Q10, where a recall DROP routes, is Open: a drop is only detectable by comparing stored runs, so record is storage for a consumer the owner has not yet defined. Build it when Q10 is answered.'
 # [W] mutable display-name override (writeback-state.sh:829). Documentation
 #     fix, not a schema change (SP-2's one documented exception): the writer
 #     already writes this key today; it was simply never declared here.

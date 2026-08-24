@@ -97,7 +97,7 @@ Once approved:
 
 Include in the prompt:
 - **Ledger lifecycle:** "Append new findings as rows with Status: Pending to
-  `.aid/.temp/review-pending/detail.md`. Read the existing file first if it exists.
+  `{{LEDGER}}`. Read the existing file first if it exists.
   Output per `.cursor/aid/templates/reviewer-ledger-schema.md` — ONE table, no narrative."
 
 Print before dispatch: `[Review] Dispatching aid-reviewer for task list validation (per-deliverable scope).`
@@ -109,7 +109,7 @@ After writing, **review immediately:** Do the tasks hold up?
 After aid-reviewer returns, run grade.sh:
 
 ```bash
-bash .cursor/aid/scripts/grade.sh --explain .aid/.temp/review-pending/detail.md
+bash .cursor/aid/scripts/grade.sh --explain {{LEDGER}}
 ```
 
 | Condition | Action |
