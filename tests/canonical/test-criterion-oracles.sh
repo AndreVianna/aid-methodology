@@ -4,6 +4,7 @@
 # COVERS: scripts/checks/g07-selector-partition.sh
 # COVERS: canonical/aid/templates/kb-authoring/frontmatter-schema.md
 # COVERS: .aid/knowledge/authoring-conventions.md
+# COVERS: canonical/agents/aid-reviewer/AGENT.md
 #
 # The mechanism's whole safety argument is that ABSENCE of an oracle changes
 # nothing and a DEGRADED oracle degrades to reading rather than to a silent

@@ -84,5 +84,18 @@ delivery_gate:
 #     impact: High | Medium | Low | Required /
 #     state: Pending | Answered | Skipped /
 #     context / suggested / answer / applied_to
-qa: []
+qa:
+  - id: Q10
+    asked: '2026-08-24'
+    by: task-036
+    question: >
+      When a recall report shows recall has DROPPED, where does that go -- a review
+      criterion with an id, or a tech-debt row? A criterion's `Applies to` names files,
+      and recall is a property of a review rather than of any artifact, so the cascade
+      may be the wrong home; but a tech-debt row blocks nothing.
+    recommendation: >
+      Tech debt. No criterion id is allocated by task-036; Q9 reserves that decision to
+      the owner, and this entry exists so the question is visible rather than settled by
+      whoever happens to write the script.
+    status: Open
 # DERIVED: tasks rollup is a read-time union over tasks/task-NNN/STATE.yml. Not represented.

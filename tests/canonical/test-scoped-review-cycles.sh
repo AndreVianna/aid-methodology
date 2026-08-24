@@ -3,6 +3,7 @@
 #
 # COVERS: canonical/aid/templates/reviewer-ledger-schema.md
 # COVERS: canonical/aid/templates/reviewer-dispatch.md
+# COVERS: canonical/aid/scripts/grade.sh
 #
 # Scoping a review cycle is only safe because of three guards. Asserting that
 # the guards are DOCUMENTED would prove nothing -- prose always says the right

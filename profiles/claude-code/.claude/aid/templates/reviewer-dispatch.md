@@ -342,11 +342,51 @@ it doesn't know about.
 **Render the brief TO A FILE, then dispatch and record from that same file — one step.**
 
 ```
+ledger=.aid/.temp/review-pending/<scope>.md
 brief=.aid/works/{work}/briefs/<scope>-cycle-<N>.md
+
+# PREFLIGHT -- resolve the ledger path for this scope and assert its state matches the cycle.
+if [ "<N>" = "1" ] && [ -e "$ledger" ]; then
+    echo "PREFLIGHT FAILED: cycle 1 but a ledger already exists at $ledger" >&2
+    echo "  A cycle-1 reviewer must start from a clean context. That file is a prior" >&2
+    echo "  cycle's findings; leaving it in place is how a 'fresh' cycle inherits them." >&2
+    echo "  Delete it, or dispatch as cycle 2." >&2
+    exit 1
+fi
+if [ "<N>" != "1" ] && [ ! -e "$ledger" ]; then
+    echo "PREFLIGHT FAILED: cycle <N> but no ledger exists at $ledger" >&2
+    echo "  A cycle-2-or-later brief tells the reviewer to update rows in place. There are" >&2
+    echo "  none. Either this is really cycle 1, or the ledger was deleted mid-scope." >&2
+    exit 1
+fi
+
 <render the brief into $brief>
 bash tests/review-cost-meter.sh record --task <task-or-scope> --cycle <N> --brief "$brief"
 <dispatch the reviewer with the contents of $brief>
 ```
+
+**The preflight is an addition, not a substitution.** It runs *ahead of* the render and the
+metering; it replaces neither. All three components of the mandate above — render to a file, record
+from that same file, dispatch from that same file — still stand exactly as written.
+
+**It fails, it does not warn.** A warning on the cycle-1 case would leave the leak open, because a
+warning is satisfiable by ignoring it and the leftover file is still there for the reviewer to
+read. The check names the offending path so the operator can see what it found rather than being
+told only that something is wrong.
+
+This closes by construction what the cycle-1 instruction previously asked for by request. A brief
+can tell a new cycle not to read the prior ledger, and being told is not the same as being unable —
+the intent was defeated the first time it was tested.
+
+**Which literal paths were parameterised, and which were deliberately left.** The test applied is
+whether a reader *executes* the line or *reads* it. An instruction is executed, so a literal path in
+one silently hardcodes a scope and is what this change removes. Documentation is read, so a literal
+path in it is the concrete example that makes the abstraction legible, and replacing it with
+`<scope>` would cost the reader the very thing the example is for.
+
+By that test the § Worked example keeps `phase-a-foundation-v2.md` throughout — it is a transcript
+of one real dispatch, and a transcript with placeholders in it is not a transcript. Everything on
+the instruction path already resolves the ledger from `<scope>`.
 
 This is not bookkeeping bolted onto the dispatch; it is the dispatch. The file is what the
 reviewer is given AND what the meter measures, so the two cannot disagree, and the brief's
