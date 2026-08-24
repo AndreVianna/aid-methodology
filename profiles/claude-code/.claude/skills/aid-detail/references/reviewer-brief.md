@@ -80,7 +80,7 @@ OUT OF SCOPE (do NOT grade against):
 
 OUT-OF-SCOPE FINDINGS POLICY:
   Log OOS findings as Status: OOS rows in the same ledger table at
-  `.aid/.temp/review-pending/detail-{work}.md`. Do NOT count toward severity totals
+  `{{LEDGER}}`. Do NOT count toward severity totals
   or grade. Note the routing destination (PLAN | SPEC | KB) in Description/Evidence.
 
 DELIVERABLES:
@@ -92,7 +92,7 @@ DELIVERABLES:
     `reviewer-dispatch.md` -- "Render the brief TO A FILE".
 
   - Findings format: severity-tagged + source-tagged (TASK | PLAN | SPEC | KB)
-  - Output location: `.aid/.temp/review-pending/detail-{work}.md`
+  - Output location: `{{LEDGER}}`
   - Severity scale: CRITICAL | HIGH | MEDIUM | LOW | MINOR (per grading-rubric.md)
   - Grade: per .claude/aid/scripts/grade.sh; minimum resolved via
     `bash .claude/aid/scripts/config/read-setting.sh --skill detail --key minimum_grade --default A`

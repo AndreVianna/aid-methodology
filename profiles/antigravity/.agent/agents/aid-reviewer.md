@@ -186,6 +186,31 @@ overriding file's `why`** in the finding's **`Evidence`** cell. The reader can t
 cost was set locally and on what grounds. The `Evidence` cell is inert to `grade.sh`, so this
 records the override without touching the grade machinery.
 
+**Every finding carries a why-line.** After the sentence naming what is wrong, add a short clause
+naming the **consequence** — what goes wrong downstream if this is left. Not a restatement of the
+defect in other words, and not a severity justification: the thing that happens.
+
+```
+| 3 | [HIGH] | Pending | .agent/skills/aid-plan/SKILL.md | 88 | SK-01 — the dispatch table names `aid-planner`, which does not exist, so a dispatch at this step resolves to nothing at run time | `ls -d .agent/agents/aid-planner` → no such directory; `severity: declared` |
+```
+
+A severity asserted without a consequence cannot be argued with. There is nothing on the row to
+disagree with except your judgement, so a reader who thinks the band is wrong has no purchase and
+the row is either accepted or fought over. The why-line is what makes a severity reviewable.
+
+**Record where the severity came from**, as one token in `Evidence`:
+
+| Token | Means |
+|---|---|
+| `severity: declared` | taken unchanged from the cited criterion's `severity:` |
+| `severity: override <level>` | criterion and a more specific level disagree; the winning level is named |
+| `severity: judged` | no criterion declares a severity for this, so you set it |
+
+If your band differs from the cited criterion's declared `severity:` and you record no token, that
+is a defect in the review. The divergence is the interesting part — you decided the declared cost
+was wrong here — and dropping it silently loses the only signal that the criterion may need
+changing.
+
 ## Standing KB-Convention Checks
 
 Apply these on every review that adds or moves files, regardless of task type.

@@ -85,7 +85,7 @@ DELIVERABLES:
     `reviewer-dispatch.md` -- "Render the brief TO A FILE".
 
   - Findings format: per .cursor/aid/templates/kb-authoring/principles.md P3 temp-ledger
-  - Ledger location: `.aid/.temp/review-pending/discovery.md`
+  - Ledger location: `{{LEDGER}}`
   - Severity scale: per the routed rubric (CRITICAL / HIGH / MEDIUM / LOW / MINOR)
   - Grade: computed per .cursor/aid/scripts/grade.sh from the ledger; minimum is
     resolved via `bash .cursor/aid/scripts/config/read-setting.sh --skill discover --key minimum_grade --default A`

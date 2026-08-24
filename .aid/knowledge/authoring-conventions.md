@@ -394,6 +394,18 @@ headers, no narrative, no summary section.
 - **Status** (closed, no brackets): `Pending` `Fixed` `Recurred` `Accepted` `OOS` `Invalid`.
 - The grade is computed by `grade.sh` over rows where Status is `Pending` or
   `Recurred`: worst severity dominates; count sets the modifier.
+- **Description** carries the criterion `id`, one sentence naming what is wrong, and a
+  **why-line** — a short clause naming the consequence. A severity asserted without one
+  cannot be argued with: there is nothing on the row to disagree with except the
+  reviewer's judgement.
+- **Evidence** carries one severity-provenance token: `severity: declared` (taken from the
+  cited criterion), `severity: override <level>` (a more specific level won, and which),
+  or `severity: judged` (no criterion declares one). A band that differs from its cited
+  criterion's declared `severity:` with no token recorded is a defect in the review — the
+  divergence is the signal that the declared cost may be wrong.
+
+Both live inside the existing seven columns. The shape does not change, and `grade.sh` reads
+neither: it counts severity and status, and is inert to everything else on the row.
 - **Never** add a `## Summary` section with severity tag-strings (they get
   over-counted). Rows are append-only history; only `Status` changes across cycles.
 

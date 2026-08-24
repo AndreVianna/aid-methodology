@@ -99,7 +99,7 @@ DELIVERABLES:
       per-task:     this task's `tasks_lifecycle` entry (flattened layout) or its
                      own per-task state file (full layout) -- never the DERIVED
                      `## Tasks State` view
-      per-delivery: `.aid/.temp/review-pending/execute-delivery-{N}.md` then aggregated
+      per-delivery: `{{LEDGER}}` then aggregated
   - Severity scale: CRITICAL | HIGH | MEDIUM | LOW | MINOR (per grading-rubric.md)
   - Grade: per .github/aid/scripts/grade.sh; minimum resolved via
     `bash .github/aid/scripts/config/read-setting.sh --skill execute --key minimum_grade --default A`

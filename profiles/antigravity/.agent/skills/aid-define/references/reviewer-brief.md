@@ -76,7 +76,7 @@ OUT OF SCOPE (do NOT grade against):
 
 OUT-OF-SCOPE FINDINGS POLICY:
   Log OOS findings as Status: OOS rows in the same ledger table at
-  `.aid/.temp/review-pending/interview-{work}.md`. Do NOT count toward severity
+  `{{LEDGER}}`. Do NOT count toward severity
   totals or grade. Note the routing destination (KB, SPEC) in Description/Evidence
   so the orchestrator can write the cross-phase Q&A entry.
 
@@ -89,7 +89,7 @@ DELIVERABLES:
     `reviewer-dispatch.md` -- "Render the brief TO A FILE".
 
   - Findings format: severity-tagged + source-tagged (REQUIREMENTS | FEATURE | KB)
-  - Output location: `.aid/.temp/review-pending/interview-{work}.md`
+  - Output location: `{{LEDGER}}`
   - Severity scale: CRITICAL | HIGH | MEDIUM | LOW | MINOR (per grading-rubric.md)
   - Grade: per .agent/aid/scripts/grade.sh; minimum resolved via
     `bash .agent/aid/scripts/config/read-setting.sh --skill interview --key minimum_grade --default A`

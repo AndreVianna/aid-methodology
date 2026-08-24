@@ -87,6 +87,38 @@ them, it does not redefine them.
 A reviewer given two labelled lists must not hunt outside the HUNT list, and must not skip
 any file in the VERIFY list.
 
+**A coverage unit may be a path, or a path with a heading anchor.** The anchor form is the durable
+anchor `.aid/knowledge/authoring-conventions.md § Citation Rule (Durable Anchors)` already
+mandates — a path plus a grep-recoverable heading. No new notation is introduced here, and the rule
+is cited rather than restated so the two cannot drift.
+
+**The trigger is when the two lists would name the same path.** At that point the HUNT list has
+scoped nothing: the reviewer is told to hunt in exactly what it must already verify in full, and
+the cycle costs a full read while claiming to be scoped. When that happens, the HUNT list names
+**regions** — `path § Heading` — rather than the path.
+
+The insufficiency is measured, not asserted. From `review-cost.tsv`:
+
+```
+$ grep -E '^specify-feature-001' .aid/works/{work}/review-cost.tsv
+specify-feature-001-single-review-path-alignment   1   2dd1eb0e...   42034
+specify-feature-001-single-review-path-alignment   2   2dd1eb0e...   84934
+```
+
+Cycle 2 declared **exactly twice** cycle 1: `84934 = 2 × 42467`. The re-read ratio is 2.02, against
+a mechanism whose whole purpose is a ratio below 1. And `42467` is not `42034`, so this is not the
+same surface read twice over — it is one path appearing on both lists within a single cycle and
+counted once for each. A path can only be deduplicated away; a region is what lets the hunt half
+actually shrink.
+
+**A worklist unit is written as the ledger row number or the criterion id** — `row 4`, `G-14` —
+never as a restatement of the finding. The row already says what is wrong; a worklist that
+paraphrases it creates a second copy to drift.
+
+The VERIFY set's derivation is untouched: it is still every file named in a ledger row's `Doc`
+column, in full. Only the HUNT half gains regions, because only the HUNT half was ever the
+expensive one.
+
 The reviewer MUST NOT open any file not listed here, except to:
 - Resolve a citation reference (e.g., a docfile cites `path/to/foo.sh:42` — the
   reviewer may open `foo.sh` to verify the citation but does not grade `foo.sh`)
@@ -324,10 +356,16 @@ The template is HYBRID — fixed structure with two dynamic slots:
 | OOS POLICY | **Static** — identical across all skills, this protocol |
 | DELIVERABLES | **Static per skill** — same expected outputs |
 
-Substitution mechanism: the brief template uses `{{ARTIFACTS}}` and
-`{{CONTEXT}}` placeholders (some briefs also use `{{MODE}}` or `{{SCOPE}}`).
+Substitution mechanism: the brief template uses `{{ARTIFACTS}}`, `{{CONTEXT}}` and
+`{{LEDGER}}` placeholders (some briefs also use `{{MODE}}` or `{{SCOPE}}`).
 Skill renders them at dispatch time (bash heredoc, small render helper, or
 inline string substitution).
+
+`{{LEDGER}}` is the ledger path for the scope, and it is the same value the preflight below
+resolves — one resolution, used by the check and by the brief, so the two cannot disagree about
+which file is under discussion. Every brief takes it as a parameter; none names a path. A brief
+that hardcodes one is naming a scope it cannot know at authoring time, which is how a review
+writes its findings where the next cycle will not look for them.
 
 **Deriving `{{ARTIFACTS}}` — always from disk, never from memory.** For
 PR-level reviews, derive from
