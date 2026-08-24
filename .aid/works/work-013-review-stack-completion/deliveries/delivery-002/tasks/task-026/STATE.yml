@@ -47,7 +47,7 @@
 # [W] Pending | In Progress | In Review | Blocked | Done | Failed | Canceled
 state: 'In Review'
 # [W]
-review: --
+review: 'cycle-1 grade C+ (1 MEDIUM, 0 HIGH/CRITICAL). Finding: G-09 — why-line command path uses literal `...` and pseudocode heredoc; command fails with IndentationError; count (rows=5 why-line=2) is correct but not reproducible from shown command. 8 of 9 other commands reproduce. Base SHA confirmed literal and ancestral. AC-4 confirmed clean. NFR-1 fingerprint pair correct. Ledger: .aid/.temp/review-pending/execute-d002-wave1.md'
 # [W] HH:MM | --
 elapsed: --
 # [W]
