@@ -376,6 +376,27 @@ are on stdout, so "what recurring work does this remove" has a number behind it.
 non-executable, crashing, timed out, or malformed — the reviewer judges by reading and
 records that the degradation happened. It never silently passes and never silently fails.
 
+**A check that emits no per-file verdict is not an oracle, and produces no ledger row.** The
+contract above is per FILE: `VIOLATION <path>` or `UNDECIDED <path>`. A check that reports a
+number, a ratio, or a whole-tree summary decides no file, so there is nothing for a finding to
+cite. It is **observe-only**: read it, act on it, do not file it. `tests/review-cost-meter.sh`
+and `tests/review-recall.sh` are the two examples in this repository — one reports declared bytes
+per cycle, the other recall per criterion scope, and neither can say which file is wrong because
+neither is asking about a file.
+
+**The absence of a rule is gradeable only as an open criteria gap.** If a check surfaces something
+no criterion covers, the finding to file is that **the criteria are incomplete** — not the thing
+itself. A finding must cite an `id` that resolves, so a row citing no rule cannot be verified,
+cannot be argued with, and cannot be closed by anything except opinion. Raise the gap, name what
+it would have to cover, and let the criterion be added; then the next cycle files an ordinary
+finding against it.
+
+**An oracle's `VIOLATION` is consumed as an ordinary finding.** Nothing about it is special: it
+carries the criterion's `id`, its declared `severity:`, a why-line, and `severity: declared` as its
+provenance token, exactly as a finding a reviewer reached by reading would. The oracle changes how
+the verdict was *reached*, never what a finding *is* — a ledger where oracle rows looked different
+from read rows would make the grade depend on how each was found.
+
 **Three levels, resolved as a union; most specific wins.** Criteria are declared **global**
 (project-wide) and **per document type** in the project's own conventions KB doc
 (`.aid/knowledge/authoring-conventions.md`), and **per file** in this frontmatter field. A

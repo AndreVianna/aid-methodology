@@ -406,6 +406,12 @@ headers, no narrative, no summary section.
 
 Both live inside the existing seven columns. The shape does not change, and `grade.sh` reads
 neither: it counts severity and status, and is inert to everything else on the row.
+
+**Observe-only checks file nothing.** A check that reports a number rather than a per-file verdict
+-- the cost meter, the recall report -- is not an oracle and produces no ledger row. And where a
+check surfaces something no criterion covers, the finding is that the **criteria are incomplete**,
+not the thing itself: a row must cite an `id` that resolves, or nobody can verify it, argue with
+it, or close it.
 - **Never** add a `## Summary` section with severity tag-strings (they get
   over-counted). Rows are append-only history; only `Status` changes across cycles.
 

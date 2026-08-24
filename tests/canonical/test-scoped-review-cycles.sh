@@ -194,6 +194,74 @@ else
     fail "SC15 (C-3, AC-10) grader/ledger contract broken -- empty='$G_EMPTY' (want A+), one-LOW='$G_LOW' (want B+), mixed='$G_MIX' (want D+)"
 fi
 
+# ===========================================================================
+# SW01-SW04  The class sweep, in four steps.
+#
+# state-fix.md F1 requires a fix to close the CLASS, and task-041 made that
+# recordable as Sweep-class / Sweep-command / Sweep-residue trailers. These
+# steps prove the record can be checked, which is the only thing that makes a
+# trailer worth writing.
+#
+# The corpus is the recall catalogue (task-037), NOT this suite's own seeded-
+# defect git harness -- a different fixture set with a different shape, so it
+# is set up here rather than assumed. D01 and D02 are the deliberate pair: same
+# class, same signature family, and only D01 is named by the seed ledger.
+#
+# Everything mutates a COPY. The source corpus is asserted byte-identical after.
+# ===========================================================================
+echo ""
+echo "=== SW01-SW04: the class sweep over the recall corpus ==="
+
+SW_SRC="${REPO_ROOT}/tests/canonical/fixtures/recall-corpus"
+if [[ ! -d "$SW_SRC" ]]; then
+    fail "SW00 setup -- recall corpus not found at $SW_SRC"
+else
+    SW_BEFORE="$(cd "$SW_SRC" && LC_ALL=C find . -type f -exec md5sum {} + | LC_ALL=C sort | md5sum)"
+    SW_TMP="$(mktemp -d)"
+    cp -r "$SW_SRC/." "$SW_TMP/"
+
+    # The recorded Sweep-command: enumerate the class by its shared signature stem.
+    sw_cmd() { grep -rl 'ZQ7-STALECOUNT' "$SW_TMP/defects" 2>/dev/null | LC_ALL=C sort; }
+
+    # --- SW01: the ledger names the first instance only ---
+    sw_named=$(grep -c 'D01' "$SW_TMP/seed-ledger.md" || true)
+    sw_named2=$(grep -c 'D02' "$SW_TMP/seed-ledger.md" || true)
+    assert_eq "$sw_named"  "1" "SW01 the ledger row names the first instance (D01)"
+    assert_eq "$sw_named2" "0" "SW01 and does NOT name the second (D02) -- the sweep must find it"
+
+    # --- SW02: the recorded command finds BOTH ---
+    sw_all=$(sw_cmd | wc -l | tr -d ' ')
+    assert_eq "$sw_all" "2" "SW02 the recorded Sweep-command finds both instances, not just the reported one"
+
+    # --- SW03: after fixing only the first, the residue is ONE ---
+    # A fix REMOVES the signature. Appending a suffix leaves the stem matching,
+    # which is a fix that looks applied and changes nothing -- the same shape as
+    # closing a ledger row on its Description while the class survives.
+    sed -i 's/ZQ7-STALECOUNT-ALPHA/REPAIRED-alpha/' "$SW_TMP/defects/D01.md"
+    sw_residue=$(sw_cmd | wc -l | tr -d ' ')
+    assert_eq "$sw_residue" "1" "SW03 fixing only the reported instance leaves a residue of ONE"
+
+    # This is the whole failure mode: a sweep that finds nothing looks exactly
+    # like a sweep that ran and had nothing to find. A residue of one is what
+    # distinguishes them, so it is asserted rather than inferred.
+    if [[ "$sw_residue" -gt 0 ]]; then
+        pass "SW03 a non-zero residue is reachable -- a vacuous sweep cannot pass as a real one"
+    else
+        fail "SW03 residue is zero after fixing one of two; the sweep found nothing to find"
+    fi
+
+    # --- SW04: after fixing both, ZERO ---
+    sed -i 's/ZQ7-STALECOUNT-BETA/REPAIRED-beta/' "$SW_TMP/defects/D02.md"
+    sw_zero=$(sw_cmd | wc -l | tr -d ' ')
+    assert_eq "$sw_zero" "0" "SW04 fixing both closes the class -- residue zero"
+
+    # --- the source was not touched ---
+    SW_AFTER="$(cd "$SW_SRC" && LC_ALL=C find . -type f -exec md5sum {} + | LC_ALL=C sort | md5sum)"
+    assert_eq "$SW_AFTER" "$SW_BEFORE" "SW04 the source corpus is byte-identical -- only the copy was mutated"
+
+    rm -rf "$SW_TMP"
+fi
+
 echo
 test_summary
 exit $?
