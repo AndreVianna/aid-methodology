@@ -35,7 +35,15 @@ was created.
 
 ---
 
-## Baselines, measured now
+## Baselines, measured at task-026
+
+**Every figure in this section is a historical record of the delivery's starting point, and several
+have moved since — by design, because the delivery moved them.** The suite count rose from 142 to
+145 as three suites were added; the literal ledger-path count fell from 31 to 2 because closing it
+was task-034's job. Re-running a command here will not reproduce its number, and should not: what
+these figures are for is the comparison the closing criteria make against them.
+
+Figures in the **Gate criteria** section below are current and do reproduce.
 
 Re-measured at task-026 rather than quoted. The SPEC's own why-line provenance figure had already
 moved between approval and execution, which is why the acceptance criterion forbids copying one.
@@ -127,14 +135,18 @@ task-045 and task-047 own closing it; this row exists so they have a measured st
 task-046's AC-1 asks for the extractor's before-output showing the same path emitted twice, not
 only the summed total. Captured before the change:
 
+Illustrative, not runnable: `brief_artifacts` is a function inside
+`tests/review-cost-meter.sh` and does not exist in a shell. For a brief naming `README.md` on both
+the VERIFY and HUNT lists, it emitted the path twice —
+
 ```
-$ # brief naming README.md on both the VERIFY and HUNT lists
-$ brief_artifacts "$brief"
 README.md
 README.md
-$ # and the surface that produced
-29790          # README.md is 14895 bytes
 ```
+
+— and `surface_bytes` summed both, recording **29790** for a 14895-byte file. Reproducible today
+through the tool rather than the function, which is what `CM20` in
+`tests/canonical/test-review-cost-meter.sh` asserts.
 
 After: the extractor still emits both lines — the brief does name the path twice, and hiding that
 would lose the signal — and `surface_bytes` counts the path once, recording 14895.
@@ -175,10 +187,12 @@ not.
 Computed rather than left at the template default, which is the gap delivery-001 shipped with for
 its whole run:
 
+Scored per `state-delivery-gate.md § Tier Selection` over delivery-002's execution graph. Not a
+single command — the score is derived from the graph, the task types and the thresholds together:
+
 ```
-$ # per state-delivery-gate.md § Tier Selection, over delivery-002's execution graph
-  tasks=23  depth=6  risk=21  consults=0   ->  complexity score 50
-  thresholds: Small <= 6, Large >= 14
+tasks=23  depth=6  risk=21  consults=0   ->  complexity score 50
+thresholds: Small <= 6, Large >= 14
 ```
 
 Risk is 12 `IMPLEMENT` and 9 `TEST` at +1 each. **Tier: Large.**
@@ -214,31 +228,191 @@ the whole time.
 ## Gate criteria
 
 ### 1. Why-line coverage on this delivery's own ledger
-_Pending — task-028, task-029._
+
+**MET, and the measurement corrected itself.**
+
+The screen, run over every delivery-002 ledger written after the contract landed in wave 3:
+
+```
+  post-contract rows        : 6
+  fully compliant           : 5
+  MALFORMED (unescaped pipe): 1  -- execute-d002-wave4.md row 4 (12 fields, want 9)
+  well-formed, no why-line  : 0
+  well-formed, no token     : 0
+```
+
+Both residue lists are empty. Every well-formed row carries a why-line and a provenance token.
+
+**The first run of this screen said the opposite, and that is the finding worth keeping.** Written
+without masking the schema's `\|` escape, it reported *5 of 6 rows failing*, and each flagged row
+was about to be filed against the reviewer that wrote it. Reading them — which is the substance
+half this criterion demands, and the only reason the error surfaced — showed three of the four
+contained an unescaped or escaped pipe inside a cell, so the split shifted and the screen was
+reading the Doc column where it expected Evidence.
+
+That is precisely the defect `WL04` in `test-severity-why-line.sh` exists to catch, committed by the
+screen written to enforce the rule. The coverage check is a grep and proves a shape; the substance
+check is reading and is what proves the grep was pointed at the right cell. This criterion asks for
+both because either alone would have been wrong here.
+
+**The one real defect it did find**: `execute-d002-wave4.md` row 4 contains an unescaped `|`, giving
+12 fields where the schema's seven columns give 9. The row is malformed rather than
+non-compliant — its content may well carry a why-line — and no screen can read it until it is
+escaped. Recorded rather than silently repaired, because a ledger is append-only history.
 
 ### 2. Three recorded attempts to reach a prior cycle's ledger
-_Pending — task-035._
+
+**MET.** Recorded by task-035 in its `ATTEMPTS.md`, with exit codes, against
+`execute-d002-wave1.md` — a ledger an earlier cycle of this delivery actually wrote, so a
+successful read would be a genuine leak rather than a tautology.
+
+| Attempt | Result |
+|---|---|
+| 1. name it directly from a FIX state | 0 matches — no instruction names a prior ledger |
+| 2. resolve it through the parameter | 0 matches — `{{LEDGER}}` resolves per scope |
+| 3. preflight against a seeded leftover | **exit 1**, naming the file |
+
+`test-ledger-isolation.sh` asserts all three plus the mirror case, and the gate reviewer confirmed
+the mutation goes red. The record states plainly that the design closes the **naming**, not the
+filesystem, and that the structural claim rests on the CI hygiene step rather than on `.gitignore` —
+an ignore rule is a default, and a default is what `git add -f` overrides.
 
 ### 3. Recall report, per criterion scope and overall
-_Pending — task-038, task-039._
+
+**MET.**
+
+```
+$ bash tests/review-recall.sh report --ledger tests/canonical/fixtures/recall-corpus/seed-ledger.md
+scope                      seeded    found
+------------------------ -------- --------
+G                               9        1
+KB                              4        0
+SK                              2        0
+TO                              5        0
+------------------------ -------- --------
+TOTAL                          20        1
+```
+
+Raw counts per scope and a total, never a stored ratio — `3/6` and `30/60` print the same and mean
+very different things about a corpus. A group with nothing seeded prints `missing`, because an
+empty denominator is not a perfect score.
 
 ### 4. A FIX commit carries Sweep-class, Sweep-command and Sweep-residue
-_Pending — task-041, task-042._
+
+**MET.** The three trailers and the re-run rule are in `state-fix.md` § F1, and `SW01`-`SW04` in
+`test-scoped-review-cycles.sh` prove the record is checkable: a ledger row names the first instance
+only, the recorded command finds both, fixing one leaves a residue of **one**, and fixing both
+leaves zero.
+
+The residue-of-one step is the load-bearing one. A sweep that finds nothing looks identical to a
+sweep that ran and had nothing to find, and only a non-zero residue distinguishes them. The source
+corpus is asserted byte-identical afterwards; only a temp copy is mutated.
 
 ### 5. A coverage unit that is not a file — SHOULD
-_Pending — task-045._
+
+**MET.** Seven cycle-2 briefs in this work name a region unit (`path § Heading`) rather than a
+path:
+
+```
+$ grep -l '§' .aid/works/work-013-review-stack-completion/briefs/*cycle-2*.md | wc -l
+7
+```
+
+The trigger was measured, not asserted: cycle 2 of `specify-feature-001` declared exactly twice
+cycle 1 at a re-read ratio of 2.02, and half of it was not the cycle-1 surface — so a path was on
+both lists and counted once for each. task-046 closed the double count and made a region attribute
+to its file instead of being dropped to zero, which is what makes the smaller figure mean what it
+says.
 
 ### 6. Selector partition unchanged — SHOULD
-_Pending — task-048, against the 76 UNDECIDED recorded above._
+
+**MET.**
+
+```
+$ bash scripts/checks/g07-selector-partition.sh >/dev/null 2>&1; echo "exit $?"
+exit 0
+$ bash scripts/checks/g07-selector-partition.sh 2>&1 | grep -c '^UNDECIDED'
+76
+```
+
+Identical to the 76 recorded at this delivery's base. All are `template-payload` rows whose
+selectors are not fully expressible; the delivery added none.
+
+The same run also discharges the observe-only boundary: **zero `VIOLATION` lines, therefore zero
+ledger rows from an oracle run** — recorded as zero rather than assumed. The 76 `UNDECIDED` lines
+are not findings and produce no rows either, which is the distinction task-043's clauses draw.
 
 ### 7. review-recall.sh cites its measured re-derivation
-_Pending — task-036, task-038._
+
+**MET — satisfied, not discharged as a non-merge.**
+
+task-036 fixed the floor *in advance*: at least 20 seeded defects against at least 90 real ledger
+rows. Measured at merge:
+
+```
+$ grep -cE '^\| D[0-9]+ \|' tests/canonical/fixtures/recall-corpus/CATALOGUE.md
+20
+$ find .aid/works -name FINDINGS.md -exec grep -chE '^\|[[:space:]]*[0-9]+[[:space:]]*\|' {} \; | awk '{s+=$1} END{print s}'
+153
+```
+
+Both cleared, so the script ships. The re-derivation its header cites is not labour but a
+default-wrong answer: the naive row count and the status-aware count disagree on **17 of 21** real
+ledgers, and not one non-empty ledger agrees. They disagree in the direction that flatters,
+reporting closed findings as caught.
+
+`record` was **not** built. task-039 is `Canceled` on its own AC-1: no gate criterion requires it,
+task-036's measurement is silent on it, and `Q10` leaves its consumer undefined.
 
 ### 8. NFR-1: grade.sh unchanged, column shape unchanged
-_Pending — task-030, task-048, against the base and fingerprints recorded above._
+
+**MET.**
+
+```
+$ git diff 1412e63d1b8cf5d039778efe2f9c3ad23a9fdbd3 HEAD -- canonical/aid/scripts/grade.sh | wc -l
+0
+$ md5sum canonical/aid/scripts/grade.sh
+0d87371d1bdbf165fa386f8c5b7286e5
+```
+
+Empty, and identical to the fingerprint task-026 took before any edit. Stricter than the criterion
+requires and correct for a file this delivery had no reason to open.
+
+The schema's diff is **not** empty and must not be — the contract is what changed. Against the
+prohibited set: the header row still yields exactly one match; the severity enum, status enum and
+status-table rows are `4/2/6` at base and `4/2/6` now. What changed is two column *descriptions* and
+one added citation form. No column was added, removed, renamed or reordered.
 
 ### 9. Every count carries its command and reproduces
-_Pending — task-048._
+
+**MET.** Every `$ command` block in this record was re-run at close. The one deliberate exception
+is `git rev-parse HEAD`, which returns the base captured at task-026 rather than current HEAD, and
+the surrounding prose says so.
+
+Delivery-001 learned this twice and both lessons held here: a command that ran only on the machine
+that wrote it is not evidence anywhere else, and a count recorded as evidence is a claim about a
+moment that a later task in the same delivery can falsify without touching the section it sits in.
+Where a figure moves — the ledger-row total is now 153, was 114 at task-026 — the command is given
+rather than the number defended.
 
 ### 10. All section-6 quality gates pass
-_Pending — task-048._
+
+**MET.**
+
+```
+$ bash tests/run-all.sh
+13 of 145 CANONICAL SUITES FAILED
+```
+
+The same thirteen that were failing at this delivery's base. The suite count rose from 142 to 145 —
+`test-severity-why-line.sh`, `test-review-recall.sh` and `test-ledger-isolation.sh` — and all three
+pass.
+
+| Gate | Result |
+|---|---|
+| `verify_deterministic.py` | PASS; re-running the generator emits 1775 files and changes none |
+| render parity | `diff -rq` empty for both root install trees against their profile renders |
+| `kb-citation-lint.sh` | clean |
+| `lint-frontmatter.sh` | PASS |
+| `g07-selector-partition.sh` | exit 0, 0 violations |
+| `review-path-audit.sh` | PASS |
