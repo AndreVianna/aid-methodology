@@ -174,12 +174,18 @@ One row per criterion, carrying the same fields as the frontmatter object (`id`,
 `severity`, `why`, and the optional `oracle`). **Applies to** takes one of three values: `*` means global (level 1); one **or more
 comma-separated registry type names** mean level 2 — a criterion true of two types stays ONE row naming
 both, because two rows saying the same thing is the duplication this table exists to make visible; and a
-**file class named by the criterion itself** scopes a global
-exclusion to a set of files that is not a document type. Only two rows use the third form —
-`agent-context` (`G-05`) and `rendered` (`G-06`) — and each is deliberately not a registry type: the
-files they cover are not in-scope authored artifacts at all, so giving them a type would put them
-inside `G-07`'s "every in-scope file resolves to exactly one type" and make the registry claim
-something false. Each such row's `criterion` cell states its own membership test. A `kind:
+**file class named by the criterion itself** scopes a criterion to a set of files that is not a
+document type. Each such row is deliberately not a registry type: the files it covers are not
+in-scope authored artifacts at all, so giving them a type would put them inside `G-07`'s "every
+in-scope file resolves to exactly one type" and make the registry claim something false. Each such
+row's `criterion` cell states its own membership test.
+
+The third form works in both directions. `agent-context` (`G-05`) and `rendered` (`G-06`) use it to
+**exclude** files that sit inside the corpus's reach; `work-artifact` (`G-14`, `G-15`) uses it to
+**include** files that sit outside it. The two directions share one reason, stated plainly in
+`G-05`'s own `why`: these files "carry no frontmatter to declare this on". A file that cannot
+declare a criterion on itself and must not become a registry type has exactly one place left to be
+named, and this is it. A `kind:
 exclude` row records what a reviewer must **not** validate (where it would otherwise reasonably check)
 and carries **no** severity — an exclusion is not a defect kind, and there is no severity of zero. **No
 cell may contain a pipe** — a criterion needing one is rephrased (this constrains the markdown table
@@ -204,6 +210,8 @@ in the ledger's `Doc` column. A finding citing no id, or an id resolving nowhere
 | G-11 | `*` | validate | Every AID file placed inside a tool-native directory (`agents/`, `skills/`, `rules/`) carries the `aid-` prefix | HIGH | an un-prefixed AID file inside a tool-native directory cannot be pruned safely on uninstall without risk of deleting user content |
 | G-12 | `*` | validate | No AID-delivered content is placed at the `.github` root level | HIGH | content at the `.github/` root must be user-owned; AID content there cannot be namespaced without overwriting user configurations |
 | G-13 | `*` | validate | No AID-own content is placed at the `.codex/` root level outside `.codex/aid/` | HIGH | content outside `.codex/aid/` violates the AID namespace convention and cannot be correctly pruned on uninstall |
+| G-14 | `work-artifact` | validate | Every citation in a work artifact's prose is a durable anchor (a path plus a grep-recoverable symbol or heading), never a bare `file.ext:LINE`. Membership: a `REQUIREMENTS.md`, `PLAN.md`, `features/*/SPEC.md` or `deliveries/*/BLUEPRINT.md` under `.aid/works/`. A reviewer ledger's `Line` cell is a column, not prose, and is never a citation | LOW | the same drift `G-02` names, in the artifacts a later phase reads most closely; `G-02` cannot reach them because it is scoped to the registry's corpus and a work folder is not in it |
+| G-15 | `work-artifact` | validate | A span presented as a quotation from a named source appears verbatim in that source. Membership: as `G-14` | MEDIUM | a misquoted requirement propagates into every artifact derived from it, and unlike a stale line number it reads as correct; the reader has no signal to re-check |
 | KB-01 | `kb-doc` | validate | Required frontmatter is present and single-line: `objective`, `summary`, `sources` | HIGH | lint-graded; a missing or malformed field misroutes the doc |
 | KB-02 | `kb-doc` | validate | Exactly one concern per doc, and the layout holds: frontmatter, title, index, content sections, and no history section | MEDIUM | mixing concerns is a boundary smell; layout is a fixed contract, and a history section drifts from git |
 | KB-03 | `kb-generated` | exclude | Content is not graded; only that the generator ran (build-verify) | — | the generator is the oracle (C-5) |

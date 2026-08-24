@@ -34,16 +34,36 @@ against, so the reviewer checks a named list rather than improvising one.
 
 1. **Type** — read the file's path and frontmatter and resolve its **one** document type from
    the type registry in the project's conventions KB doc
-   (`.aid/knowledge/authoring-conventions.md`). The registry's selectors are exhaustive, so
-   this always resolves; a file that resolves to no type, or to two, is itself a finding.
-2. **Global** — every criterion the registry's criteria table marks `Applies to: *`.
-3. **Type-level** — every criterion whose `Applies to` is the type resolved in step 1.
-4. **File-level** — the file's own `review-criteria:` frontmatter
-   ([frontmatter-schema.md](frontmatter-schema.md)).
+   (`.aid/knowledge/authoring-conventions.md`).
 
-**On an `id` collision the most specific wins** — file over type over global. That is how an
-override applies, and how a `kind: exclude` entry cancels a `validate` criterion inherited
-from above.
+   The registry's selectors are exhaustive **over the in-scope corpus** — the markdown under
+   `.cursor/skills/`, `.cursor/agents/`, `.cursor/aid/templates/` and `.aid/knowledge/`.
+   For a file in that corpus this always resolves, and one resolving to no type, or to two, is
+   itself a finding.
+
+   **A file outside that corpus resolves to no type, and that is correct, not a finding.** A
+   work artifact under `.aid/works/` is the case you will actually meet. Skip to step 2 with
+   the type level empty; do not report the absence.
+2. **Global** — every criterion the registry's criteria table marks `Applies to: *`.
+3. **Type-level** — every criterion whose `Applies to` is the type resolved in step 1. None, if
+   step 1 resolved none.
+4. **File-class** — every criterion whose `Applies to` names a **file class** rather than a
+   registry type, and whose membership test the file satisfies. The membership test is stated
+   in that row's own `criterion` cell, so read it and apply it; the row exists precisely
+   because these files cannot be given a type without breaking `G-07`, and cannot declare
+   criteria on themselves.
+
+   This is the level that reaches a work artifact. `G-14` and `G-15` bind the citation and
+   quote rules to `REQUIREMENTS.md`, `PLAN.md`, `features/*/SPEC.md` and
+   `deliveries/*/BLUEPRINT.md` under `.aid/works/`, none of which carries frontmatter or a
+   type. Skipping this step is how a work artifact ends up reviewed against nothing.
+5. **File-level** — the file's own `review-criteria:` frontmatter
+   ([frontmatter-schema.md](frontmatter-schema.md)). Many artifacts carry none; that is normal.
+
+**On an `id` collision the most specific wins** — file over file-class over type over global.
+That is how an override applies, and how a `kind: exclude` entry cancels a `validate` criterion
+inherited from above. File-class sits above type because a class is named by the criterion for
+files a type cannot describe, so a class row is the more deliberate statement of the two.
 
 **A `kind: exclude` criterion is binding.** It names something a reviewer would reasonably
 check and must not, here. Reporting it anyway is a finding against the reviewer, not the file.

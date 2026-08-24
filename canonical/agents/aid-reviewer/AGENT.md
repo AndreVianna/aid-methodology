@@ -65,10 +65,14 @@ bound by the same list. Resolution is defined once, in
 `canonical/aid/templates/kb-authoring/review-rubric.md § Resolving review criteria`; the short form:
 
 1. Resolve the file's **one** document type from the type registry in the project's conventions KB
-   doc (`.aid/knowledge/authoring-conventions.md`).
+   doc (`.aid/knowledge/authoring-conventions.md`). A file **outside** that registry's corpus — a
+   work artifact under `.aid/works/` is the case you will meet — resolves to no type, and that is
+   correct. Do not report it.
 2. Verify against the **union** of the **global** criteria (`Applies to: *`), that **type's**
-   criteria, and the file's own **`review-criteria:`** frontmatter.
-3. On an `id` collision the most specific wins — file over type over global.
+   criteria, any **file-class** row whose membership test the file satisfies (the row's own
+   `criterion` cell states that test), and the file's own **`review-criteria:`** frontmatter.
+   File-class is what reaches an artifact that has no type and carries no frontmatter.
+3. On an `id` collision the most specific wins — file over file-class over type over global.
 
 **A `kind: exclude` criterion binds you.** It names something you would reasonably check and must
 not, here — reporting it anyway is a defect in the review, not in the file. Read the entry's `why`

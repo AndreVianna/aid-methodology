@@ -46,8 +46,11 @@ RUBRIC: .cursor/aid/templates/grading-rubric.md (universal severity → grade ta
 
 DECLARED REVIEW CRITERIA (resolve; do not invent):
   Each artifact declares, or inherits, the criteria it must be true against. Resolve them
-  and verify against the union -- global, then the artifact's document type, then the
-  artifact's own `review-criteria:` frontmatter; most specific wins on an id collision.
+  and verify against the union -- global, then the artifact's document type, then any
+  file-class row whose membership test it satisfies, then the artifact's own
+  `review-criteria:` frontmatter; most specific wins on an id collision. An artifact outside
+  the registry's corpus (a work artifact under `.aid/works/`) resolves to NO type, which is
+  correct and not a finding -- the file-class rows are what reach it.
   Resolution is defined in .cursor/aid/templates/kb-authoring/review-rubric.md
   (section: Resolving review criteria); the type registry and the criteria table live in
   .aid/knowledge/authoring-conventions.md. This brief deliberately does NOT restate them.
