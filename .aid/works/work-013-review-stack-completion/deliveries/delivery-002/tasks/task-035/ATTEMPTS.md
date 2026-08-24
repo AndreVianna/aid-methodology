@@ -16,7 +16,8 @@ $ grep -c 'review-pending/execute-d002-wave1' canonical/skills/aid-discover/refe
 0
 ```
 
-**Exit: 0 matches.** No instruction anywhere names a prior cycle's ledger. Before task-033 this
+**0 matches** (`grep -c` prints `0`; grep's own shell exit is `1` on no-match, which the suite
+absorbs with `|| true`). No instruction anywhere names a prior cycle's ledger. Before task-033 this
 state read a hardcoded `discovery.md`; it now reads `{{LEDGER}}`.
 
 ## Attempt 2 — resolve it through the parameter
@@ -26,7 +27,7 @@ $ grep -rn '{{LEDGER}}' canonical/skills --include='*.md' | grep -c 'execute-d00
 0
 ```
 
-**Exit: 0 matches.** `{{LEDGER}}` is resolved per scope at dispatch. A wave-6 dispatch resolves it
+**0 matches**, same convention as above. `{{LEDGER}}` is resolved per scope at dispatch. A wave-6 dispatch resolves it
 to wave-6's path; there is no instruction by which it resolves to wave-1's. The naming is closed.
 
 ## Attempt 3 — the preflight, against a seeded leftover
