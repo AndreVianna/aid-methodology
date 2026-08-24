@@ -38,6 +38,17 @@ findings that were already closed. A hand-computed recall figure built on it ove
 review caught, which is the exact opposite of what a recall measurement is for. This is the
 re-derivation the script removes — not labour, but a default-wrong answer that looks right.
 
+**Across the whole corpus the claim is stronger than that sample.** The gate reviewer widened it
+from three ledgers to all of them, and the sample turned out to be conservative:
+
+```
+$ # for each FINDINGS.md: naive row count vs rows whose Status is Pending or Recurred
+  ledgers: 21   disagree: 17   agree: 0   empty: 4
+```
+
+Seventeen disagree, four are empty, and **not one non-empty ledger agrees**. The naive count is not
+sometimes wrong; on this corpus it is wrong every time it says anything at all.
+
 ## Corpus size
 
 The corpus is compared by what actually scales with it: pair-checks — each seeded defect against
