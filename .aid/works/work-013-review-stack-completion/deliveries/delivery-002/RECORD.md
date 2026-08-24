@@ -409,11 +409,25 @@ that no longer reproduce — not one, as an earlier draft of this paragraph said
 | `bash tests/run-all.sh` | 13 of 142 | 13 of 145 | three suites added |
 | `ls tests/canonical/*.sh \| wc -l` | 143 | 146 | the same three |
 | literal ledger paths | 31 | 2 | task-034 |
-| `COVERS` headers | 6 | 9 | task-027 |
+| `COVERS` headers | 6 | 9 | tasks 029, 040 and 035, each adding a new suite |
+
 
 Every one is a figure this delivery was *supposed* to move, which is why the section is labelled
 historical rather than corrected. Calling it "the one deliberate exception" understated it by four,
 and the gate reviewer counted them.
+
+*The `COVERS` row first named task-027, which is wrong in an instructive way. task-027 added a
+`COVERS` line to two files that already had one, so the count of files carrying a header did not
+move at all. What moved it was three new suites — `test-severity-why-line.sh` (task-029),
+`test-review-recall.sh` (task-040) and `test-ledger-isolation.sh` (task-035). The task that worked
+on `COVERS` headers was not the task that changed how many files have one, and attributing by
+subject rather than by effect is how a plausible wrong answer gets written down.*
+
+*A second precision, found while checking the first: `6 → 9` belongs to the baseline's own
+unanchored `grep -rln 'COVERS'`. An anchored `grep -rl '^# COVERS:'` gives `5 → 8`, because two
+files mention the word outside a header line. Both are true of different questions, and a figure
+without its pattern invites a reader to reproduce it with the other one and conclude the record is
+wrong. Verifying this nearly led to "correcting" a number that was right.*
 
 Delivery-001 learned this twice and both lessons held here: a command that ran only on the machine
 that wrote it is not evidence anywhere else, and a count recorded as evidence is a claim about a

@@ -48,11 +48,11 @@
 # lifecycle MUST be independently authored.
 
 # [W] Pending-Spec | Specified | Executing | Gated | Done | Blocked
-delivery_state: Executing
+delivery_state: Done
 # [W] Small | Medium | Large
 gate_tier: Large
 # [W]
-gate_grade: Pending
+gate_grade: A
 # [W]
 gate_timestamp: --
 # [W] {connector-stem}:{external-id} | -- -- OPTIONAL; e.g. jira:PROJ-123; see the ticket_ref note above
