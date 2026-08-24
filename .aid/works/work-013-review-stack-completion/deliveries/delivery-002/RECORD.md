@@ -379,15 +379,41 @@ Empty, and identical to the fingerprint task-026 took before any edit. Stricter 
 requires and correct for a file this delivery had no reason to open.
 
 The schema's diff is **not** empty and must not be — the contract is what changed. Against the
-prohibited set: the header row still yields exactly one match; the severity enum, status enum and
-status-table rows are `4/2/6` at base and `4/2/6` now. What changed is two column *descriptions* and
-one added citation form. No column was added, removed, renamed or reordered.
+prohibited set, with the commands rather than the assertions, since this record's own standard is
+that a count carries the command that produced it:
+
+```
+$ grep -c '^| # | Severity | Status | Doc | Line | Description | Evidence |' canonical/aid/templates/reviewer-ledger-schema.md
+1
+$ S=canonical/aid/templates/reviewer-ledger-schema.md; B=1412e63d1b8cf5d039778efe2f9c3ad23a9fdbd3
+$ for pat in 'CRITICAL.*HIGH.*MEDIUM.*LOW.*MINOR' 'Pending.*Fixed.*Recurred.*Accepted.*OOS.*Invalid' '^\| `(Pending|Fixed|Recurred|Accepted|OOS|Invalid)`'; do echo "base=$(git show $B:$S | grep -cE "$pat")  now=$(grep -cE "$pat" $S)"; done
+base=4  now=4
+base=2  now=2
+base=6  now=6
+```
+
+What changed is two column *descriptions* and one added citation form. No column was added,
+removed, renamed or reordered.
 
 ### 9. Every count carries its command and reproduces
 
-**MET.** Every `$ command` block in this record was re-run at close. The one deliberate exception
-is `git rev-parse HEAD`, which returns the base captured at task-026 rather than current HEAD, and
-the surrounding prose says so.
+**MET.** Every `$ command` block in the **gate-criteria section below** was re-run at close and all
+nine reproduce.
+
+The **historical baselines section** is deliberately different, and there are **five** figures there
+that no longer reproduce — not one, as an earlier draft of this paragraph said:
+
+| Command | Recorded at task-026 | Now | Moved by |
+|---|---|---|---|
+| `git rev-parse HEAD` | the base SHA | a later SHA | time |
+| `bash tests/run-all.sh` | 13 of 142 | 13 of 145 | three suites added |
+| `ls tests/canonical/*.sh \| wc -l` | 143 | 146 | the same three |
+| literal ledger paths | 31 | 2 | task-034 |
+| `COVERS` headers | 6 | 9 | task-027 |
+
+Every one is a figure this delivery was *supposed* to move, which is why the section is labelled
+historical rather than corrected. Calling it "the one deliberate exception" understated it by four,
+and the gate reviewer counted them.
 
 Delivery-001 learned this twice and both lessons held here: a command that ran only on the machine
 that wrote it is not evidence anywhere else, and a count recorded as evidence is a claim about a
