@@ -120,5 +120,11 @@ qa:
     recommendation: >
       The gate reviewer judges one warranted, at skill-reference type level or global. No
       id allocated -- Q9 reserves that to the owner.
-    status: Open
+    answer: >
+      Add the criterion. Allocated as G-16 at global scope, severity MEDIUM: any
+      document with labelled cross-referenced sections has the same exposure, and
+      the failure was found twice in one delivery.
+    answered: '2026-08-25'
+    by_owner: yes
+    status: Answered
 # DERIVED: tasks rollup is a read-time union over tasks/task-NNN/STATE.yml. Not represented.
