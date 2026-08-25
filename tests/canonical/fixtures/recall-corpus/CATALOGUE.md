@@ -1,8 +1,6 @@
 # Seeded-defect corpus
 
-Twenty rows, the size task-036 settled on and for the reasons recorded in
-`../../../.aid/works/work-013-review-stack-completion/deliveries/delivery-002/tasks/task-036/RESEARCH.md`
-§ Corpus size: twenty is the smallest size at which a per-rule-set breakdown has more than a couple
+Twenty rows. Twenty is the smallest size at which a per-rule-set breakdown has more than a couple
 of defects per scope, and forty is where fixtures stop being flat files.
 
 Each row's `signature` appears in its own fixture and **nowhere else in the reviewed tree**. That
