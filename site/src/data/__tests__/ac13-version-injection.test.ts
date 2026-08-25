@@ -29,21 +29,16 @@ function readDoc(relPath: string): string {
   return readFileSync(resolve(docsRoot, relPath), 'utf8');
 }
 
-// ── Mermaid topology helpers (AC5's pipeline guard) ──────────────────────────
+// ── Mermaid topology parser ──────────────────────────────────────────────────
 //
-// AC5's guard compares the home page's pipeline against README.md's canonical
-// diagram. What broke it before was pinning NODE IDS and EDGE LABELS: commit
-// ca4aad21 restructured the pipeline and left the guard asserting the old shape,
-// the third time it had gone stale. So these helpers model edges and reachability
-// instead, and node ids are never referenced — they differ between the two files
-// (`Eng` vs `ENG`) and are not topology.
+// `parseFlow` reads a Mermaid flowchart into nodes and edges. It was written for
+// AC5's cross-document pipeline guard, which is retired (see the note further
+// down, in `AC5 — Home pipeline diagram`); what remains is the parser and the
+// suite that pins its link grammar.
 //
-// SKILL NAMES and a few label phrases ARE pinned, deliberately: they are the
-// vocabulary AC5 is about, and they are what lets the two diagrams be compared to
-// each other at all. See the guard's own comment for how the two halves divide —
-// one absolute anchor per diagram, plus a comparison derived from README.
-
-const repoRoot = resolve(siteRoot, '..');
+// It is kept because a narrower AC5 guard is the stated replacement and would
+// parse the same diagrams. Nothing outside this file uses it today, so if that
+// replacement is abandoned, the parser and its suite go with it.
 
 interface Flow {
   labels: Map<string, string>;
@@ -57,13 +52,13 @@ const NODE_ID = /^[A-Za-z_]\w*$/;
  *  than being dropped.
  *
  *  This is the load-bearing design decision in this file, and it exists because
- *  the alternative was tried and failed four times. The guard below proves a
- *  NEGATIVE — that the lite path does not reach Specify/Plan/Detail — and a
- *  negative is satisfied by an absent edge. So a parser that silently ignores an
- *  unfamiliar construct does not merely lose coverage, it manufactures a PASS.
- *  Four separate Mermaid forms (`-->|x|`, `-- x -->`, the `<-->`/`o--o`/`x--x`
- *  family, `%%` comments, `;` separators, and the `{…}`/`>…]` shapes) each got
- *  past an earlier version of this parser exactly that way.
+ *  the alternative was tried and failed four times. A diagram guard proves a
+ *  NEGATIVE — that some path does not reach some node — and a negative is
+ *  satisfied by an absent edge. So a parser that silently ignores an unfamiliar
+ *  construct does not merely lose coverage, it manufactures a PASS. Four separate
+ *  Mermaid forms (`-->|x|`, `-- x -->`, the `<-->`/`o--o`/`x--x` family, `%%`
+ *  comments, `;` separators, and the `{…}`/`>…]` shapes) each got past an earlier
+ *  version of this parser exactly that way.
  *
  *  Failing closed converts an open-ended "did we enumerate every Mermaid form?"
  *  problem into a closed one: an unmodelled construct is a loud error naming the
@@ -76,30 +71,6 @@ function unparsed(text: string, context: string): never {
       `it -- an unmodelled construct silently drops an edge, and a dropped edge makes the ` +
       `lite-path exclusion assertions vacuously true.`
   );
-}
-
-function mermaidBlock(src: string): string {
-  const m = src.match(/```mermaid\n([\s\S]*?)\n```/);
-  if (!m) throw new Error('no mermaid block found');
-
-  // Strip Mermaid's own frontmatter directive, if present:
-  //
-  //     ---
-  //     config:
-  //       flowchart:
-  //         defaultRenderer: "elk"
-  //     ---
-  //     flowchart TD
-  //
-  // This is renderer configuration, not topology. Dropping it is safe in a way
-  // that dropping an unfamiliar STATEMENT would not be: it declares no node and
-  // no edge, so removing it cannot make a negative assertion vacuously true —
-  // which is the specific hazard `unparsed` exists to prevent. It is stripped
-  // here rather than taught to `parseFlow` for exactly that reason: the parser's
-  // job is to fail closed on anything that might carry an edge, and this cannot.
-  const body = m[1];
-  const fm = body.match(/^---\n[\s\S]*?\n---\n([\s\S]*)$/);
-  return fm ? fm[1] : body;
 }
 
 // Replace each shaped node declaration with a bare `ID`, recording the label.
@@ -157,10 +128,11 @@ function stripLabels(line: string, labels: Map<string, string>): string {
 }
 
 // Mermaid's link grammar. An edge this misses is dropped SILENTLY, which makes
-// `solidReach` under-approximate and the phase-exclusion assertions below
-// vacuously true — the guard would then pass while the diagram regressed. So the
-// roster covers the whole grammar, not just the forms the two diagrams use
-// today, and `parseFlow: link grammar` below pins each one with its own case.
+// any reachability computed from the parse under-approximate, and so makes a
+// path-exclusion assertion vacuously true — a guard built on it would pass while
+// the diagram regressed. So the roster covers the whole grammar, not just the
+// forms the diagrams use today, and `parseFlow: link grammar` below pins each
+// one with its own case.
 //
 // Shape: an optional LEFT arrowhead, a body, an optional RIGHT arrowhead. The
 // left head needs a whitespace/line-start lookbehind so the `o` and `x` heads
@@ -323,55 +295,6 @@ function parseFlow(block: string): Flow {
   return { labels, edges };
 }
 
-/** The `aid-…` skill a node's label names, or null. Node ids differ between the
- *  two diagrams (`Eng` vs `ENG`, `Exe` vs `EXE`); skill names do not, so they
- *  are what the two can be compared on. */
-function skillOf(label: string): string | null {
-  return /aid-(?:&lt;verb&gt;|[a-z-]+)/.exec(label)?.[0] ?? null;
-}
-
-function idOfSkill(flow: Flow, skill: string): string {
-  const hits = [...flow.labels].filter(([, label]) => skillOf(label) === skill).map(([id]) => id);
-  if (hits.length !== 1) {
-    throw new Error(`expected exactly one node for ${skill}, found ${hits.length}`);
-  }
-  return hits[0];
-}
-
-/** The skills a node points at, by edge style. */
-function targetSkills(flow: Flow, from: string, dotted: boolean): Set<string> {
-  return new Set(
-    flow.edges
-      .filter((e) => e.from === from && e.dotted === dotted)
-      .map((e) => skillOf(flow.labels.get(e.to) ?? ''))
-      .filter((s): s is string => s !== null)
-  );
-}
-
-/** The single node whose label mentions `phrase`. Throws if absent or ambiguous. */
-function nodeMentioning(flow: Flow, phrase: string): string {
-  const hits = [...flow.labels].filter(([, label]) => label.includes(phrase)).map(([id]) => id);
-  if (hits.length !== 1) {
-    throw new Error(`expected exactly one node mentioning ${phrase}, found ${hits.length}`);
-  }
-  return hits[0];
-}
-
-/** Nodes reachable from `start` over solid edges only. */
-function solidReach(flow: Flow, start: string): Set<string> {
-  const seen = new Set<string>();
-  const queue = [start];
-  while (queue.length) {
-    const id = queue.shift()!;
-    for (const e of flow.edges) {
-      if (e.from !== id || e.dotted || seen.has(e.to)) continue;
-      seen.add(e.to);
-      queue.push(e.to);
-    }
-  }
-  return seen;
-}
-
 
 const savedEnv: Record<string, string | undefined> = {};
 
@@ -528,99 +451,40 @@ describe('AC5 — Home pipeline diagram', () => {
     }
   });
 
-  // Regression guard (this has been wrong three times, most recently when commit
-  // ca4aad21 restructured the diagram and left the guard pinning the old shape).
-  // It has two halves, and it needs both:
+  // ── RETIRED 2026-08-25, by owner decision ─────────────────────────────────
   //
-  //   (1) an ABSOLUTE anchor, asserted of each diagram independently, so the two
-  //       cannot drift together into agreement on the wrong thing; and
-  //   (2) a DERIVED comparison, where what index.mdx must show is read out of
-  //       README.md at run time rather than written down here.
+  // This asserted that README.md's diagram and index.mdx's are topologically the
+  // same. That held while both had the same author and the same job. It no longer
+  // does: README.md's diagram was REPLACED, not edited, with a "Start Here"
+  // onboarding flow, while index.mdx keeps the technical pipeline view.
   //
-  // Node ids are never referenced — they differ between the two files and are
-  // not topology. Label phrases are: renaming a node's skill or the shortcut
-  // engine turns this red even if both diagrams are renamed together, which is
-  // the deliberate trade — the vocabulary is part of what AC5 pins.
-  it('index.mdx pipeline is topologically the README pipeline: suggest-only triage, lite path skipping Specify/Plan/Detail', () => {
-    const readme = parseFlow(mermaidBlock(readFileSync(resolve(repoRoot, 'README.md'), 'utf8')));
-    const home = parseFlow(mermaidBlock(readDoc('index.mdx')));
-
-    // ── (1) the absolute anchor, of each diagram on its own ──────────────────
-    for (const flow of [readme, home]) {
-      // Triage is an entry point that only ever suggests. It never has a solid
-      // edge, so it cannot be read as a routing step.
-      const triage = idOfSkill(flow, 'aid-triage');
-      expect(flow.edges.filter((e) => e.from === triage && e.dotted).length).toBeGreaterThan(0);
-      expect(flow.edges.filter((e) => e.from === triage && !e.dotted)).toEqual([]);
-      expect(flow.labels.get(triage)).toContain('suggest-only');
-
-      // The shortcut engine's own label declares the Describe→Detail collapse.
-      const engine = nodeMentioning(flow, 'Shortcut engine');
-      const engineLabel = flow.labels.get(engine)!;
-      expect(engineLabel).toContain('Describe');
-      expect(engineLabel).toContain('Detail');
-      expect(engineLabel).toMatch(/collapsed/i);
-
-      // The lite path, measured from the shortcut ENTRY rather than from the
-      // engine, runs through the engine to Execute and never touches Specify,
-      // Plan or Detail. Starting at the engine would leave a phase inserted
-      // upstream of it — `SC --> Spec --> Eng` — undetected.
-      const liteReach = solidReach(flow, idOfSkill(flow, 'aid-&lt;verb&gt;'));
-      expect(liteReach.has(engine)).toBe(true);
-      expect(liteReach.has(idOfSkill(flow, 'aid-execute'))).toBe(true);
-      for (const phase of ['aid-specify', 'aid-plan', 'aid-detail']) {
-        expect(liteReach.has(idOfSkill(flow, phase))).toBe(false);
-      }
-
-      // The full path is still there, and it is the one that does traverse them.
-      // `aid-define` is named here as well as the three excluded phases, so that
-      // no phase can be deleted from a diagram without failing: `idOfSkill`
-      // throws on a missing node, and the derived comparison below cannot catch
-      // a phase that has vanished from BOTH sides of its own containment test.
-      const fullReach = solidReach(flow, idOfSkill(flow, 'aid-describe'));
-      for (const phase of ['aid-define', 'aid-specify', 'aid-plan', 'aid-detail', 'aid-execute']) {
-        expect(fullReach.has(idOfSkill(flow, phase))).toBe(true);
-      }
-    }
-
-    // ── (2) the derived comparison: index.mdx against README, not a checklist ─
-    // The home page draws a subset of README's graph — it has no /aid-ask node —
-    // so this is containment-shaped rather than equality: for every skill README
-    // shows triage suggesting, IF index.mdx declares that skill anywhere, then
-    // index.mdx must show triage suggesting it too.
-    //
-    // Be precise about the escape hatch, because it is wider than the /aid-ask
-    // case that motivates it: `homeSkills` is every skill index.mdx declares, so
-    // ANY skill index.mdx stops declaring drops out of both sides here and goes
-    // unnoticed by this half. That is what the absolute anchor above is for — it
-    // names the pipeline phases explicitly, so a phase cannot disappear quietly.
-    // This half's job is edges, not node inventory.
-    const homeSkills = new Set([...home.labels.values()].map(skillOf).filter(Boolean));
-    const readmeSuggests = targetSkills(readme, idOfSkill(readme, 'aid-triage'), true);
-    const expected = [...readmeSuggests].filter((s) => homeSkills.has(s)).sort();
-    expect(expected.length).toBeGreaterThan(0); // the oracle is not vacuously true
-    expect([...targetSkills(home, idOfSkill(home, 'aid-triage'), true)].sort()).toEqual(expected);
-
-    // Same shape for the lite path: every skill README's shortcut entry reaches
-    // over solid edges and that index.mdx also declares must be reachable there.
-    const reachedSkills = (flow: Flow) =>
-      new Set(
-        [...solidReach(flow, idOfSkill(flow, 'aid-&lt;verb&gt;'))]
-          .map((id) => skillOf(flow.labels.get(id) ?? ''))
-          .filter(Boolean)
-      );
-    const readmeLite = [...reachedSkills(readme)].filter((s) => homeSkills.has(s)).sort();
-    expect(readmeLite.length).toBeGreaterThan(0);
-    expect([...reachedSkills(home)].sort()).toEqual(readmeLite);
-  });
+  // Measured at retirement: the two share ZERO node labels; README has 18 nodes
+  // and index.mdx 20; the `Shortcut engine` node this guard pinned by name is
+  // absent from README entirely. No partial repair exists — satisfying the guard
+  // means re-authoring one of the two diagrams wholesale, which is a decision
+  // about what the README is FOR, not a test fix.
+  //
+  // Retired rather than relaxed because the assumption underneath it is what
+  // changed. A relaxed version would go on asserting a relationship nobody
+  // intends the two documents to have.
+  //
+  // WHAT IS NOW UNGUARDED, stated so it is a known gap and not an oversight: the
+  // two diagrams can drift apart in phase names, skill names, or the lite-path
+  // shape with nothing to notice. If they should stay in step on any of those, a
+  // NARROWER guard — shared vocabulary, say, rather than shared topology — is the
+  // replacement, and it does not exist yet.
+  //
+  // Removed with the guard, having no other caller: `mermaidBlock`, `skillOf`,
+  // `idOfSkill`, `targetSkills`, `nodeMentioning`, `solidReach`, `repoRoot`.
+  // `parseFlow` and its link-grammar suite are kept for the narrower replacement.
 });
 
-// ── AC5 — the guard's own parser ─────────────────────────────────────────────
+// ── parseFlow's own suite ────────────────────────────────────────────────────
 //
-// The guard above proves a NEGATIVE — that the lite path does not reach
-// Specify/Plan/Detail. A parser that silently drops an edge makes that negative
-// vacuously true, so the guard would pass while the diagram regressed. These
-// cases pin every link form Mermaid can produce, asserting each edge is SEEN.
+// A diagram guard proves a NEGATIVE — that some path does not reach some node. A
+// parser that silently drops an edge makes that negative vacuously true, so the
+// guard would pass while the diagram regressed. These cases pin every link form
+// Mermaid can produce, asserting each edge is SEEN.
 
 describe('AC5 — parseFlow: link grammar', () => {
   const edgeOf = (line: string) => parseFlow(`flowchart TD\n    ${line}`).edges;
