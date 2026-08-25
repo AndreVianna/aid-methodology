@@ -239,7 +239,7 @@ skill-names-kb	aid-config	0
 skill-names-kb	aid-create	0
 skill-names-kb	aid-create-api	0
 skill-names-kb	aid-create-architecture	2721
-skill-names-kb	aid-create-backlog	80419
+skill-names-kb	aid-create-backlog	82087
 skill-names-kb	aid-create-cicd	2721
 skill-names-kb	aid-create-cli	0
 skill-names-kb	aid-create-config	0
@@ -323,7 +323,7 @@ skill-names-kb	aid-unset-connector	0
 skill-names-kb	aid-update	0
 skill-names-kb	aid-update-api	0
 skill-names-kb	aid-update-architecture	0
-skill-names-kb	aid-update-backlog	77698
+skill-names-kb	aid-update-backlog	79366
 skill-names-kb	aid-update-cicd	0
 skill-names-kb	aid-update-cli	0
 skill-names-kb	aid-update-config	0
