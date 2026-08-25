@@ -147,10 +147,10 @@ The four mandate sub-agents (or 3 dispatches, per `panel:` setting) run against 
 changed docs only, each writing to its own scratch ledger:
 
 ```
-.aid/.temp/review-pending/update-kb-correctness.md
-.aid/.temp/review-pending/update-kb-anatomy.md
-.aid/.temp/review-pending/update-kb-teachback.md
-.aid/.temp/review-pending/update-kb-actback.md
+{{LEDGER}}-correctness.md
+{{LEDGER}}-anatomy.md
+{{LEDGER}}-teachback.md
+{{LEDGER}}-actback.md
 ```
 
 **Teach-back scope (SPIKE-1 default -- FR-34 re-verification).** The M3
@@ -170,7 +170,7 @@ Follow f005's Step 2 verbatim with `{{SCOPE}} = update-kb`:
 Merge the scratch ledgers into the single canonical ledger:
 
 ```
-.aid/.temp/review-pending/update-kb.md
+{{LEDGER}}
 ```
 
 Then delete the scratch ledgers per f005's Step 2e (the `rm -f` block with
@@ -179,7 +179,7 @@ Then delete the scratch ledgers per f005's Step 2e (the `rm -f` block with
 Run the unchanged `grade.sh`:
 
 ```bash
-bash .cursor/aid/scripts/grade.sh --explain .aid/.temp/review-pending/update-kb.md
+bash .cursor/aid/scripts/grade.sh --explain {{LEDGER}}
 ```
 
 Derive `teach_back_verdict` and `act_back_verdict` per f005's Step 2c and 2d
@@ -336,14 +336,14 @@ The scope-diff guard already passed to reach the panel at all -- these
 findings are quality/traceability defects within already-in-scope docs, not
 a scope-expansion question. **This FIX loop is self-contained in Step 5
 below -- it does NOT delegate to `aid-discover`'s `state-fix.md`.**
-`state-fix.md` has no ledger-path parameter of any kind (its Step 0
-unconditionally hardcodes `Read .aid/.temp/review-pending/discovery.md`,
-with no `{{SCOPE}}`/`{{LEDGER}}` token anywhere in the file); invoking it
-here would either silently no-op (if no stray `discovery.md` happens to
-exist) or apply fixes against an unrelated aid-discover ledger (if one does)
--- neither reads `update-kb.md`. Step 5 is wired directly to
-`.aid/.temp/review-pending/update-kb.md` instead, so it can never drift onto
-the wrong ledger.
+`state-fix.md` now takes `{{LEDGER}}` like every other dispatch site, so the
+original reason for not delegating -- that it hardcoded `discovery.md` and
+would therefore either silently no-op or apply fixes against an unrelated
+aid-discover ledger -- no longer holds. Step 5 remains wired to its own
+`{{LEDGER}}` here, which is now a choice about duplication rather than a
+guard against drift. Retiring the duplicated loop in favour of delegation is
+a follow-up, named in task-033's classification record and deliberately not
+taken here.
 
 Update `<STATE_FILE>`:
 
@@ -365,13 +365,14 @@ then re-enter REVIEW (Step 0) on return.
 ## Step 5: FIX (self-contained, bounded to Confirmed Scope, HL-7)
 
 Selected when `<STATE_FILE>` records `**State:** FIX`. This loop is specific
-to `aid-update-kb` -- it reads and fixes against `update-kb.md` directly,
-rather than delegating to `aid-discover`'s generic `state-fix.md` (see 4(d)
-above for why that doc cannot be redirected to this ledger).
+to `aid-update-kb` -- it reads and fixes against its own `{{LEDGER}}` directly,
+rather than delegating to `aid-discover`'s generic `state-fix.md`. That doc now
+takes `{{LEDGER}}` too, so delegation is possible and this duplication is a
+choice rather than a necessity (see 4(d) above, and the follow-up named there).
 
 ### 5a. Load the below-gate findings from the ledger
 
-Read `.aid/.temp/review-pending/update-kb.md`. Filter rows where `Status` ∈
+Read `{{LEDGER}}`. Filter rows where `Status` ∈
 {`Pending`, `Recurred`} -- the `[TRACE-1]` traceability findings plus any
 Correctness / Anatomy / Teach-back / Act-back findings the Step 1/2 panel
 raised. **Do NOT modify the ledger during FIX** -- the fixer addresses

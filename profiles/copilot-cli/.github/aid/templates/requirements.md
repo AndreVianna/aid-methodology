@@ -3,11 +3,6 @@
 - **Name:** *(pending)*
 - **Description:** *(pending)*
 
-## Change Log
-
-| Date | Change | Source |
-|------|--------|--------|
-
 ## 1. Objective
 
 ## 2. Problem Statement

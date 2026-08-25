@@ -57,7 +57,7 @@ Every node in the chart above, in chart order, with the exact `canonical/` text 
 | REVIEW | `references/review-deliverables.md` | `aid-reviewer` | → DONE |
 ~~~~
 
-[Source: `canonical/skills/aid-plan/SKILL.md#L152`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-plan/SKILL.md#L152) · [full step: `canonical/skills/aid-plan/references/review-deliverables.md#L1-L72`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-plan/references/review-deliverables.md#L1-L72)
+[Source: `canonical/skills/aid-plan/SKILL.md#L152`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-plan/SKILL.md#L152) · [full step: `canonical/skills/aid-plan/references/review-deliverables.md#L1-L78`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-plan/references/review-deliverables.md#L1-L78)
 
 <a id="fragment-n3"></a>**3 · `DONE`** · _exit_ · HALT
 

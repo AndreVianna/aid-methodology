@@ -53,8 +53,7 @@ Based on the user's response, update the entry in STATE.md `## Cross-phase Q&A`:
 
 **Write immediately.** Also update REQUIREMENTS.md with the answer content where relevant.
 
-If the answer affects a feature that already exists, update that feature's SPEC.md too
-and add a Change Log entry.
+If the answer affects a feature that already exists, update that feature's SPEC.md too.
 
 ### Step 4: Continue Until Done
 

@@ -407,12 +407,6 @@ build_update_data_model_fixture() {
 - **Name:** customer profile -- add loyalty tier
 - **Description:** Change the customer profile schema to add a loyalty tier.
 
-## Change Log
-
-| Date | Change | Source |
-|------|--------|--------|
-| 2026-07-09 | Initial capture (shortcut: aid-update-data-model) | /aid-update-data-model |
-
 ## 1. Objective
 
 Add a loyalty tier column to the customer profile schema.
@@ -460,12 +454,6 @@ EOF
 
     cat > "${work_dir}/SPEC.md" <<'EOF'
 # customer profile -- add loyalty tier
-
-## Change Log
-
-| Date | Change | Source |
-|------|--------|--------|
-| 2026-07-09 | SPEC authored from REQUIREMENTS.md | /aid-update-data-model |
 
 ## Source
 
@@ -706,12 +694,6 @@ no new dependency.'
 - **Name:** refactor -- ${title}
 - **Description:** Restructure/optimize ${title} without changing behavior.
 
-## Change Log
-
-| Date | Change | Source |
-|------|--------|--------|
-| 2026-07-09 | Initial capture (shortcut: aid-refactor) | /aid-refactor |
-
 ## 1. Objective
 
 Refactor ${title}.
@@ -756,12 +738,6 @@ EOF
 
     cat > "${work_dir}/SPEC.md" <<EOF
 # refactor -- ${title}
-
-## Change Log
-
-| Date | Change | Source |
-|------|--------|--------|
-| 2026-07-09 | SPEC authored from REQUIREMENTS.md | /aid-refactor |
 
 ## Source
 

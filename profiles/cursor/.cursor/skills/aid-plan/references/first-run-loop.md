@@ -143,7 +143,7 @@ silent (no output) if no issue-tracker connector is catalogued.
 
 Include in the prompt:
 - **Ledger lifecycle:** "Append new findings as rows with Status: Pending to
-  `.aid/.temp/review-pending/plan.md`. Read the existing file first if it exists.
+  `{{LEDGER}}`. Read the existing file first if it exists.
   Output per `.cursor/aid/templates/reviewer-ledger-schema.md` — ONE table, no narrative."
 
 Print before dispatch: `[Review] Dispatching aid-reviewer for PLAN validation (per-deliverable scope).`
@@ -158,7 +158,7 @@ After writing, **review immediately:** Does it hold up?
 After aid-reviewer returns, run grade.sh:
 
 ```bash
-bash .cursor/aid/scripts/grade.sh --explain .aid/.temp/review-pending/plan.md
+bash .cursor/aid/scripts/grade.sh --explain {{LEDGER}}
 ```
 
 | Condition | Action |

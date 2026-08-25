@@ -6,7 +6,7 @@ DONE confirms the summarization is complete and the Summarization History has be
 
 Delete the review ledger:
 ```bash
-rm -f .aid/.temp/review-pending/summarize.md
+rm -f {{LEDGER}}
 rmdir --ignore-fail-on-non-empty .aid/.temp/review-pending/ 2>/dev/null || true
 ```
 

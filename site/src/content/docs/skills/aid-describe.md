@@ -59,7 +59,7 @@ Every node in the chart above, in chart order, with the exact `canonical/` text 
 | FIRST-RUN | `references/state-first-run.md` | `aid-interviewer` | → CONTINUE |
 ~~~~
 
-[Source: `canonical/skills/aid-describe/SKILL.md#L274`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-describe/SKILL.md#L274) · [full step: `canonical/skills/aid-describe/references/state-first-run.md#L1-L111`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-describe/references/state-first-run.md#L1-L111)
+[Source: `canonical/skills/aid-describe/SKILL.md#L274`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-describe/SKILL.md#L274) · [full step: `canonical/skills/aid-describe/references/state-first-run.md#L1-L110`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-describe/references/state-first-run.md#L1-L110)
 
 <a id="fragment-n2"></a>**2 · `Q-AND-A`** — STATE.md ## Cross-phase Q&amp;A has entries with Status… · _step_
 
@@ -67,7 +67,7 @@ Every node in the chart above, in chart order, with the exact `canonical/` text 
 | Q-AND-A | `references/state-q-and-a.md` | `aid-interviewer` | → CONTINUE |
 ~~~~
 
-[Source: `canonical/skills/aid-describe/SKILL.md#L275`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-describe/SKILL.md#L275) · [full step: `canonical/skills/aid-describe/references/state-q-and-a.md#L1-L65`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-describe/references/state-q-and-a.md#L1-L65)
+[Source: `canonical/skills/aid-describe/SKILL.md#L275`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-describe/SKILL.md#L275) · [full step: `canonical/skills/aid-describe/references/state-q-and-a.md#L1-L64`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-describe/references/state-q-and-a.md#L1-L64)
 
 <a id="fragment-n3"></a>**3 · `CONTINUE`** — Resume the conversational interview; STATE.yml's… · _decision_
 
@@ -91,4 +91,4 @@ Every node in the chart above, in chart order, with the exact `canonical/` text 
 | COMPLETION | `references/state-completion.md` | `aid-interviewer` | PAUSE-FOR-USER-DECISION → Run /aid-define {work} |
 ~~~~
 
-[Source: `canonical/skills/aid-describe/SKILL.md#L278`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-describe/SKILL.md#L278) · [full step: `canonical/skills/aid-describe/references/state-completion.md#L1-L140`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-describe/references/state-completion.md#L1-L140)
+[Source: `canonical/skills/aid-describe/SKILL.md#L278`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-describe/SKILL.md#L278) · [full step: `canonical/skills/aid-describe/references/state-completion.md#L1-L139`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-describe/references/state-completion.md#L1-L139)

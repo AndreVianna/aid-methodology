@@ -71,8 +71,6 @@ cat > "$TMP/lite.md" <<'EOF'
 |------|-------|
 | 1 | task-001 |
 
-## Revision History
-| 2026-06-02 | x | y |
 EOF
 
 # Full multi-delivery PLAN with colliding per-delivery task IDs.

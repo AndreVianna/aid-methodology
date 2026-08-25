@@ -160,12 +160,6 @@ route that to aid-test-security.'
 - **Name:** ${title}
 - **Description:** Diagnose and correct ${title}.
 
-## Change Log
-
-| Date | Change | Source |
-|------|--------|--------|
-| 2026-07-08 | Initial capture (shortcut: aid-fix) | /aid-fix |
-
 ## 1. Objective
 
 Correct ${title}.
@@ -210,12 +204,6 @@ EOF
 
     cat > "${work_dir}/SPEC.md" <<EOF
 # ${title}
-
-## Change Log
-
-| Date | Change | Source |
-|------|--------|--------|
-| 2026-07-08 | SPEC authored from REQUIREMENTS.md | /aid-fix |
 
 ## Source
 

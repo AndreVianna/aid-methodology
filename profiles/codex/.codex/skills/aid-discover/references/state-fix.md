@@ -4,7 +4,7 @@ FIX applies Q&A answers and reviewer feedback to bring KB documents up to minimu
 
 ### Step 0: Load Pending Findings from Ledger
 
-Read `.aid/.temp/review-pending/discovery.md`. Filter rows where Status ∈ {`Pending`, `Recurred`} — these are the findings to address. If the file does not exist, there is nothing to fix (advance to REVIEW).
+Read `{{LEDGER}}`. Filter rows where Status ∈ {`Pending`, `Recurred`} — these are the findings to address. If the file does not exist, there is nothing to fix (advance to REVIEW).
 
 **Do NOT modify the ledger during FIX.** The fixer addresses issues; the aid-reviewer agent confirms resolution and updates Status. This separation is the reviewer-ledger contract.
 

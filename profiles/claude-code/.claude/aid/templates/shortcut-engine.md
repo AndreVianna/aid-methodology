@@ -23,7 +23,7 @@ four bound values before the state machine below starts:
 
 | Value | Source | Notes |
 |---|---|---|
-| `{name}` | the invoking doorway's own directory/skill name (e.g. `aid-create-api`) | used for the catalog lookup, `STATE.yml` Active Skill, and every Change Log `Source` field (`/{name}`) |
+| `{name}` | the invoking doorway's own directory/skill name (e.g. `aid-create-api`) | used for the catalog lookup and the `STATE.yml` Active Skill |
 | `{verb}` | the doorway body's binding | dispatch key; drives the family scaffolding lookup |
 | `{artifact}` | the doorway body's binding (may be `""` for a bare verb) | narrows the family scaffolding lookup |
 | `{description}` | the user's free-text argument (`argument-hint`) | may be absent/empty -- see CAPTURE Step 1 |
@@ -422,7 +422,6 @@ the family scaffolding pointer (or "none landed yet"). The agent writes
   `**Name:**` a concise Title-Case title (no trailing period; derived from the
   description/verb+artifact, NOT the `work_id` slug); `**Description:**` exactly one
   sentence (no trailing period).
-- **`## Change Log`**: `| {today} | Initial capture (shortcut: {name}) | /{name} |`.
 - **All 10 numbered sections**, terse but complete: fill every section the captured
   information (Steps 1-3) actually answers; sections genuinely not addressed
   (typically §6 Non-Functional Requirements, §7 Constraints for a small
@@ -493,7 +492,6 @@ sections when no family file has landed yet). The agent writes `.aid/works/{work
 seeded from `.claude/aid/templates/specs/spec-template.md`:
 
 - `# {Feature Title}` (the same title as the REQUIREMENTS.md identity block).
-- `## Change Log`: `| {today} | SPEC authored from REQUIREMENTS.md | /{name} |`.
 - `## Source`: cite the REQUIREMENTS.md sections this SPEC draws from (e.g.
   `REQUIREMENTS.md §5 Functional Requirements`, `§9 Acceptance Criteria`).
 - `## Description` / `## User Stories` / `## Priority` / `## Acceptance Criteria`:

@@ -49,6 +49,33 @@ statement was superseded, every document reasoning from it was too.
 A row closed on its Description alone comes back marked `Recurred`, repeatedly, because
 nothing about the class changed.
 
+**Record the sweep in the FIX commit, as trailers.** The sweep above is already required; what
+was missing is any way for a later reader to tell a sweep that ran from one that was intended.
+Three lines, in the commit message trailer block:
+
+```
+Sweep-class: <the defect's signature -- what makes two sites the same defect>
+Sweep-command: <the exact command that enumerates the class, runnable from the repo root>
+Sweep-residue: <count> -- <where each remaining instance is, and which task owns it>
+```
+
+`Sweep-residue: 0` is allowed and is a claim like any other. It is also the one a verifier should
+distrust first: a sweep that finds nothing outside what it already fixed has usually been run
+against too narrow a corpus, so the `Sweep-command` had better name a wide one.
+
+**A verifying reviewer re-runs `Sweep-command`.** That is the whole point of recording it — the
+trailer is not documentation, it is a re-executable claim. If the command no longer reproduces the
+recorded residue, the row is **`Recurred`**, not a bookkeeping nit. Either the class was wider than
+the sweep found, or the sweep was narrowed to fit the fix; both are the failure F1 exists to
+prevent, and both mean the defect is still in the tree.
+
+Two limits, so this stays a record and not a new authority:
+
+- **Nothing is added to the per-task findings structure.** Its field set is closed. The sweep lives
+  in the commit trailer, where git already keeps it, and `artifact-schemas.md` is unchanged.
+- **The fixer still does not write the ledger.** Recording a sweep is not permission to mark a row
+  `Fixed`; that remains the reviewer's, per F5.
+
 ### F2. Trace the impact chain BEFORE editing
 
 Ask every time: *is this file a source, or something derived from one?* Editing a derived

@@ -242,15 +242,16 @@ full artifact set (`REQUIREMENTS.md` → `SPEC.md` → `PLAN.md` + `BLUEPRINT.md
 full path additionally produces a forward-authored KB seed -- see
 [Greenfield KB Seed](#greenfield-kb-seed-forward-authored).
 
-Required structure: `# Requirements` with `Name` + `Description`, a mandatory
-`## Change Log` table, then 10 numbered sections:
+Required structure: `# Requirements` with `Name` + `Description`, then 10 numbered
+sections:
 
 1. Objective · 2. Problem Statement · 3. Users & Stakeholders (table) · 4. Scope
 (In/Out) · 5. Functional Requirements · 6. Non-Functional Requirements · 7.
 Constraints · 8. Assumptions & Dependencies · 9. Acceptance Criteria · 10. Priority.
 
-Rules: the **Change Log is mandatory** (every edit gets a row); unaddressed sections
-carry `*(pending)*`; sections may be `N/A`; acceptance criteria must be testable; the
+Rules: **no history section** (no `## Change Log`, no `## Revision History` -- git
+records each edit with author, date and diff); unaddressed sections carry
+`*(pending)*`; sections may be `N/A`; acceptance criteria must be testable; the
 stakeholder's own words are preferred in Objective/Problem Statement.
 
 ---
@@ -266,9 +267,9 @@ folder -- the shortcut engine writes a single consolidated work-root `SPEC.md` o
 instead (see [How Artifacts Relate](#how-artifacts-relate)).
 
 Requirements half (required, authored by `aid-define`): `# {Feature Title}`,
-`## Change Log`, `## Source` (REQUIREMENTS refs), `## Description`, `## User Stories`
+`## Source` (REQUIREMENTS refs), `## Description`, `## User Stories`
 (As a/I want/so that), `## Priority` (`Must \| Should \| Could`), `## Acceptance Criteria`
-(Given/When/Then checkboxes).
+(Given/When/Then checkboxes). No history section.
 
 Specify half (added by `/aid-specify`, do not fill during define):
 `## Technical Specification` with `### Data Model`, `### Feature Flow`,
@@ -286,6 +287,13 @@ by `aid-plan` (creates the stub) and refined by `aid-specify` on the full path (
 flattened Lite path (at the work root, `.aid/works/{work}/BLUEPRINT.md`). Not a state file -- the
 delivery's mutable lifecycle/gate lives in the delivery `STATE.yml` (full path) or the work-root
 `STATE.yml` (flattened).
+
+**Reviewed where it is refined.** On the full path that is `aid-specify`'s REVIEW state, which
+grades a blueprint on its own ledger scope
+(`.aid/.temp/review-pending/blueprint-delivery-NNN.md`) against the same `--skill specify`
+minimum as the SPEC. Only a blueprint the pass actually refined is re-reviewed; an untouched
+stub is still the one `aid-plan` gated. On the Lite path the shortcut engine's PLAN step reviews
+its own blueprint.
 
 Required structure: `# Delivery BLUEPRINT -- delivery-NNN: {Title}`, then:
 
@@ -329,23 +337,112 @@ Required fields:
 Source: `templates/settings.yml`. YAML 1.2 at `.aid/settings.yml`; the single source
 of truth for pipeline settings. Managed by `/aid-config`; read via `read-setting.sh`.
 
+**The schema is flat.** Keys sit at the top level. An earlier schema nested them under
+`project:`, `review:`, `traceability:` and `discovery:`; those dotted paths still resolve, but as
+compatibility aliases, not as the schema. Write the flat key.
+
+### Stored keys
+
 | Key | Type | Default / values |
 |-----|------|------------------|
-| `project.name` / `project.description` | string | set at INIT; description is the sole source (not duplicated in CLAUDE.md). |
-| `project.type` | enum | `brownfield \| greenfield`. |
-| `tools.installed` | list | e.g. `[claude-code, codex, cursor]`. |
-| `review.minimum_grade` | grade | global REVIEW floor; default `A`. Valid: `A+..F`. |
-| `execution.max_parallel_tasks` | int | parallel dispatch capacity (default 5). |
-| `traceability.heartbeat_interval` | int (min) | sub-agent heartbeat cadence (default 1). |
-| `kb_baseline.{branch,tip_date}` | block | git baseline the KB reflects; producer-written; absent => freshness check skipped. |
-| `discovery.closure.{max_clean_passes,max_rounds,token_budget}` | ints | closure-loop caps (3-level path NOT readable via `read-setting.sh`; consumed via Step 5b override interface). |
-| `discovery.doc_set` | list | confirmed doc set; conditional sibling written by Step 0d only when it differs from the seed. |
-| `triage.{greenfield_max_source_files,greenfield_max_source_loc,large_min_source_loc,large_min_dirs,large_min_concepts}` | ints | recon-classify path thresholds. |
-| `{skill}.minimum_grade` | grade | optional per-skill override of `review.minimum_grade`. |
+| `format_version` | int | schema stamp; current value `4` (`AID_SUPPORTED_FORMAT` in `bin/aid`). Written by `bin/aid`; read to decide whether a settings file needs migrating. |
+| `name` / `description` | string | set at INIT; description is the sole source (not duplicated in CLAUDE.md/AGENTS.md). |
+| `type` | enum | `brownfield \| greenfield`. |
+| `source_control` | enum | `none \| git \| svn \| mercurial`; default `git`. Ties to `knowledge.source`. |
+| `minimum_grade` | grade | global REVIEW floor; default `A`. Domain below. |
+| `heartbeat_interval` | int (min) | sub-agent heartbeat cadence; default 1. |
+| `knowledge.source` | string | branch the KB is compared against for freshness; default `master`. |
+| `knowledge.last_update` | ISO-8601 | timestamp of the last KB build; producer-written, absent until the first build. |
+| `knowledge.{doc_set,term_exclusions}` | lists | written by `aid-discover` at runtime; not seeded by the template. |
+| `{skill}.minimum_grade` | grade | optional per-skill override of the global `minimum_grade`. |
 
-Resolution order (`read-setting.sh`): per-skill override -> category default
-(`review.*`) -> hardcoded `--default`. `read-setting.sh` resolves a **2-level**
-`section.key` path only; 3-level keys (`discovery.closure.*`) are not readable by it.
+**Grade domain.** `grade.sh` emits exactly sixteen values:
+
+```
+A+  A  A-   B+  B  B-   C+  C  C-   D+  D  D-   E+  E  E-   F
+```
+
+Two things a range like "`A+..F`" hides, and both bite. The ladder includes an **`E`** band
+(one or more CRITICAL findings) that sits between `D` and `F`. And **`F` is not reachable by
+counting findings at all** — it comes only from `grade.sh --non-functional`, the flag for an
+artifact that would not build or run, so a ledger alone can never produce it.
+
+The letter is set by the worst severity present, and the modifier by how many findings sit at that
+severity: `+` for exactly one, none for 2-5, `-` for 6 or more.
+
+**The A band does not follow that rule**, and the exception is the one worth knowing:
+
+| ledger | grade |
+|---|---|
+| no findings at all | `A+` |
+| 1-5 MINOR | `A` |
+| 6 or more MINOR | `A-` |
+| 1 LOW | `B+` |
+
+`A+` means **zero findings**, not one MINOR — a single MINOR grades `A`. So `A+` is not "the best
+A", it is the absence of a ledger entry, and the `+` there means something different from the `+`
+in `B+`.
+
+### Compatibility aliases
+
+Accepted by `read-setting.sh` so an un-migrated project keeps working. Each resolves to the flat
+key on the right. Do not write these into a new settings file.
+
+| Legacy dotted path | Resolves to |
+|---|---|
+| `project.name` / `project.description` / `project.type` | `name` / `description` / `type` |
+| `review.minimum_grade` | `minimum_grade` |
+| `traceability.heartbeat_interval` | `heartbeat_interval` |
+| `discovery.doc_set` / `discovery.term_exclusions` | `knowledge.doc_set` / `knowledge.term_exclusions` |
+
+The alias list is closed: `banana.name` does not resolve, and neither does any other section
+prefix outside this table.
+
+**`kb_baseline.{branch,tip_date}` is a legacy block, not an alias.** The KB freshness baseline is
+stored — the current keys are `knowledge.source` and `knowledge.last_update`. The dashboard reader
+settles which is current, because it is the only consumer that has to cope with both:
+
+```
+$ sed -n '378,382p' dashboard/reader/parsers.py
+      - Scan for the 'knowledge:' top-level key
+      - Within that block, extract 'source:' (-> branch) and 'last_update:'
+        (-> tip_date) scalar values
+      - When 'knowledge:' is absent, fall back to the legacy 'kb_baseline:'
+        block ('branch:' / 'tip_date:' scalars) for pre-migration settings.yml
+```
+
+`knowledge:` first, `kb_baseline:` only as a pre-migration fallback, and the code calls it legacy
+in as many words. Note the function is still *named* `parse_kb_baseline` after the block it no
+longer prefers.
+
+It is not an alias in the sense of the table above: `read-setting.sh` has no `kb_baseline` case, so
+`--path kb_baseline.branch` resolves to nothing rather than to the new key. Only the reader
+understands the fallback.
+
+**Two producer documents have not followed.** `aid-discover`'s `state-done.md` (FR35) instructs
+writing `kb_baseline: {branch, tip_date}`, and `aid-housekeep`'s `state-summary-delta.md` (FR36)
+re-stamps `kb_baseline.tip_date`; neither mentions `knowledge:`. `aid-config`'s own settings table
+attaches those same two FR numbers to `knowledge.{source,last_update}`. The producers and the
+config schema therefore disagree about which key FR35/FR36 write. Both spellings are readable, so
+nothing is broken today; the drift is real and belongs in tech debt, not silently resolved here.
+
+### Read but never stored — the consumer's `--default` is the real value
+
+These keys have live consumers, but nothing writes them to `settings.yml`, so every read falls
+through to the caller's default. They are documented here so a reader does not go looking for a
+stored value that is not there. Setting one by hand does work.
+
+| Key | Consumer | Effective value |
+|---|---|---|
+| `execution.max_parallel_tasks` | `aid-execute` (`state-execute.md`) | always `5`; migration to the flat schema deletes the `execution:` block outright. |
+| `triage.{greenfield_max_source_files,greenfield_max_source_loc,large_min_source_loc,large_min_dirs,large_min_concepts}` | `recon-classify.sh` | `5`, `500`, `20000`, `25`, `40` — the defaults in that script's own `read_threshold` calls. |
+| `discovery.closure.{max_clean_passes,max_rounds,token_budget}` | `aid-discover` closure loop | 3-level path, **not readable** via `read-setting.sh`; consumed through the Step 5b override interface instead. |
+
+### Resolution order
+
+`read-setting.sh --skill X --key Y`: per-skill override `X.Y`, then the flat top-level `Y`, then
+the legacy `review.Y`, then `--default`. Path mode (`--path A.B`) is a direct lookup with no
+override resolution. Path mode resolves a **2-level** path only.
 
 ---
 
@@ -625,6 +722,10 @@ Cardinality summary:
 - **Required-section contract.** REQUIREMENTS.md keeps all 10 numbered sections
   (pending ones marked `*(pending)*`, not deleted); a task DETAIL.md carries exactly
   one `Type`.
+- **No in-document history, anywhere.** No artifact carries a `## Change Log` or
+  `## Revision History` section, and no frontmatter carries `changelog:` -- git is the
+  per-document history, with author, date and diff. This binds every artifact the
+  methodology produces, not only KB docs.
 
 ---
 
@@ -658,12 +759,21 @@ Cardinality summary:
 | `STATE.yml` (write time) | `writeback-state.sh`'s own closed-enum validation (`Lifecycle`, `Phase`, `Active Skill`, `Minimum Grade`, `User Approved`, `Pipeline Path`, `Pipeline Initiator`, task `State`, etc.) | an out-of-enum value dies with exit 4 before any byte is written -- the write never lands. |
 | `STATE.yml` (parse time, permitted YAML subset) | the shared cross-runtime conformance corpus (`state_yaml_conformance_corpus.py`, run identically by both the Python and Node twins) | every permitted shape (S1-S5), every rejected construct, every quoting mode and every implicit-typing literal is asserted against both readers; a rejected construct yields a `parse_warning` naming the file/line/construct and skips exactly that key -- it never raises. |
 | `STATE.yml` (read time, semantic) | dashboard reader (Python/Node twins) | reader degrades gracefully; an unknown enum value is not in the closed set and mis-reconciles -- caught by the reader test suites and parity tests. A `STATE.md` with no sibling `STATE.yml` is diagnosed (a `parse_warning` naming the migration command), never parsed. |
-| Frontmatter (on KB docs) | `lint-frontmatter.sh` | `[FM-MISSING]`/`[FM-INVALID]` HIGH findings; parse failure -> doc treated as primary/hand-authored + HIGH warning. |
+| Frontmatter (on KB docs) | `lint-frontmatter.sh` | `[FM-MISSING]`/`[FM-INVALID]` HIGH findings; parse failure -> doc treated as primary/hand-authored + HIGH warning. Soft-skips a doc carrying none of the new fields, so an un-migrated doc passes. |
 | Reviewer ledger | `grade.sh` | only `[SEVERITY]`-tagged rows with Status `Pending`/`Recurred` count; a stray `## Summary` line would over-count (banned). |
 | emission-manifest.jsonl | renderer determinism checks (`verify_deterministic.py`, `test_manifest_safety.py`) | a non-byte-stable or mis-keyed manifest fails the render-drift CI gate. |
 | Install manifest | install-core (`manifest_exists`) | missing manifest on uninstall -> exit 6. |
 | task DETAIL.md `Type` | `aid-execute` task-type rules | a missing/mixed type blocks execution (one type per task). |
-| KB-doc citations | `kb-citation-lint.sh` | bare `file:LINE` -> exit 1, GENERATE blocked until fixed. |
+| KB-doc citations | `kb-citation-lint.sh` | bare `file:LINE` -> exit 1, GENERATE blocked until fixed. No soft-skip: every doc under `--root` is checked. |
+
+Both KB lints run in **both** places — `aid-discover` GENERATE Step 5a and CI (`.github/workflows/test.yml`)
+— under one exit contract, one re-dispatch rule and one 2-round cap. They did not always: the
+frontmatter lint ran only in CI and the citation lint only in GENERATE, which are opposite holes,
+not a symmetric pair. A bare citation in a hand-edited KB doc reached `master` because no CI step
+looked for one, while a missing frontmatter field survived generation because GENERATE did not
+check. Their *strictness* is still not symmetric, and that is deliberate: the frontmatter lint
+soft-skips un-migrated docs so adopters stay green mid-migration, whereas the citation lint has no
+such escape.
 
 There is **no central schema validator**; validation is distributed -- a lint, a
 reader, or a skill gate owns each artifact class. **No JSON Schema artifact and no CI

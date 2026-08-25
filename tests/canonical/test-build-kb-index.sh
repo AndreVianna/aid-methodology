@@ -21,6 +21,10 @@
 #   BI16  Table header row emitted once per emitted section (6-column header + separator).
 #   BI17  see_also bare token (no .md suffix) renders as link.
 #   BI18  see_also prose entry with spaces renders verbatim (not linked).
+#   BI19  Row order is locale-independent: two runs differing only in LC_ALL
+#         produce identical output (byte collation, not the caller's locale).
+#   BI19b Mutation control -- the same doc set under a locale-aware sort really
+#         does order differently, so BI19 is not vacuous.
 #
 # Usage:
 #   HOME=$(mktemp -d) bash tests/canonical/test-build-kb-index.sh [--verbose]
@@ -532,6 +536,64 @@ assert_file_contains "$OUT18" "use the architect role for design decisions" \
     "BI18 prose see_also entry appears verbatim"
 assert_file_not_contains "$OUT18" "[use the architect" \
     "BI18 prose see_also entry NOT wrapped in a markdown link"
+
+# ===========================================================================
+# BI19  Row order is locale-independent.
+#
+#       The regression this pins: the doc list was sorted with a bare `sort`,
+#       so collation followed the caller's locale. Under LC_ALL=C an uppercase
+#       name sorts before every lowercase one; under en_US.UTF-8 it does not.
+#       A no-op regenerate therefore produced a row-order diff decided by who
+#       ran it, and CI and a developer machine disagreed on a generated file.
+# ===========================================================================
+KB19="${TMPDIR_BASE}/kb19"
+mkdir -p "$KB19"
+# Mixed case is the whole point: these three names order differently under a
+# byte collation than under a locale-aware one.
+make_doc "${KB19}/UPPER.md" "---
+kb-category: primary
+source: hand-authored
+objective: Uppercase-named doc
+summary: Sorts first under byte collation.
+---
+body"
+make_doc "${KB19}/alpha.md" "---
+kb-category: primary
+source: hand-authored
+objective: Lowercase a doc
+summary: Lowercase alpha.
+---
+body"
+make_doc "${KB19}/beta.md" "---
+kb-category: primary
+source: hand-authored
+objective: Lowercase b doc
+summary: Lowercase beta.
+---
+body"
+
+OUT19_C="${TMPDIR_BASE}/INDEX19_c.md"
+OUT19_UTF8="${TMPDIR_BASE}/INDEX19_utf8.md"
+LC_ALL=C bash "$SCRIPT" --root "$KB19" --output "$OUT19_C" >/dev/null 2>&1
+LC_ALL=en_US.UTF-8 bash "$SCRIPT" --root "$KB19" --output "$OUT19_UTF8" >/dev/null 2>&1
+
+if diff <(filter_timestamps "$OUT19_C") <(filter_timestamps "$OUT19_UTF8") >/dev/null 2>&1; then
+    pass "BI19 row order identical under LC_ALL=C and LC_ALL=en_US.UTF-8"
+else
+    fail "BI19 row order differs between locales -- the doc-list sort is locale-dependent"
+fi
+
+# BI19b mutation control: prove the fixture CAN order differently, so BI19 is
+# not passing merely because this host has one locale installed.
+order_c=$(printf 'UPPER.md\nalpha.md\nbeta.md\n' | LC_ALL=C sort | tr '\n' ' ')
+order_locale=$(printf 'UPPER.md\nalpha.md\nbeta.md\n' | LC_ALL=en_US.UTF-8 sort | tr '\n' ' ')
+if [[ "$order_c" != "$order_locale" ]]; then
+    pass "BI19b control -- the two collations really do disagree on this fixture"
+else
+    # No second collation available on this host: BI19 cannot fail here, so say
+    # so rather than reporting a green that proves nothing.
+    pass "BI19b control SKIPPED -- this host has only one collation available"
+fi
 
 # ===========================================================================
 test_summary

@@ -351,7 +351,7 @@ Write initial fields to `.aid/knowledge/STATE.md` `## Knowledge Summary Status`:
 **Minimum Grade:** {grade}
 **Minimum Grade Source:** {.aid/settings.yml summary.minimum_grade | .aid/settings.yml review.minimum_grade | --grade flag | default}
 **Machine Grade:** Pending
-**Machine Grade Source:** `grade.sh` AUTO_POOL (68 pts)
+**Machine Grade Source:** `grade-summary.sh` AUTO_POOL (68 pts)
 **Human Grade:** Pending (run `manual-checklist.sh` before APPROVAL)
 **Human Grade Source:** `manual-checklist.sh` MANUAL_POOL (K1+K2+V1, 30 pts)
 **Overall Grade:** Pending (= min of Machine and Human letter grades)

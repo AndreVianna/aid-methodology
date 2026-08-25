@@ -203,7 +203,7 @@ git commit --amend --no-edit
 Remove the review ledger and any remaining transients:
 
 ```bash
-rm -f .aid/.temp/review-pending/update-kb.md
+rm -f {{LEDGER}}
 rmdir --ignore-fail-on-non-empty .aid/.temp/review-pending/ 2>/dev/null || true
 ```
 

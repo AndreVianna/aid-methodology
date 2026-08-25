@@ -38,8 +38,11 @@ RUBRIC: kb-authoring/review-rubric.md (route by each doc's kb-category + source)
 
 DECLARED REVIEW CRITERIA (resolve; do not invent):
   Each artifact declares, or inherits, the criteria it must be true against. Resolve them
-  and verify against the union -- global, then the artifact's document type, then the
-  artifact's own `review-criteria:` frontmatter; most specific wins on an id collision.
+  and verify against the union -- global, then the artifact's document type, then any
+  file-class row whose membership test it satisfies, then the artifact's own
+  `review-criteria:` frontmatter; most specific wins on an id collision. An artifact outside
+  the registry's corpus (a work artifact under `.aid/works/`) resolves to NO type, which is
+  correct and not a finding -- the file-class rows are what reach it.
   Resolution is defined in .github/aid/templates/kb-authoring/review-rubric.md
   (section: Resolving review criteria); the type registry and the criteria table live in
   .aid/knowledge/authoring-conventions.md. This brief deliberately does NOT restate them.
@@ -82,7 +85,7 @@ DELIVERABLES:
     `reviewer-dispatch.md` -- "Render the brief TO A FILE".
 
   - Findings format: per .github/aid/templates/kb-authoring/principles.md P3 temp-ledger
-  - Ledger location: `.aid/.temp/review-pending/discovery.md`
+  - Ledger location: `{{LEDGER}}`
   - Severity scale: per the routed rubric (CRITICAL / HIGH / MEDIUM / LOW / MINOR)
   - Grade: computed per .github/aid/scripts/grade.sh from the ledger; minimum is
     resolved via `bash .github/aid/scripts/config/read-setting.sh --skill discover --key minimum_grade --default A`

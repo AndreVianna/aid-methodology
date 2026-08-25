@@ -20,7 +20,9 @@
 #   FL16  approved_at_commit: uppercase hex rejected  -> [FM-INVALID] flagged
 #   FL17  sources: [] empty list is valid             -> passes (exit 0)
 #   FL18  sources: URL entry is valid                 -> passes (exit 0)
-#   FL19  AID's own KB docs all soft-skip (day-one)  -> passes (exit 0)
+#   FL19  AID's own KB docs lint clean               -> passes (exit 0)
+#   FL19b the clean result examined a non-zero count -> not vacuous
+#   FL19c an all-skipped root also exits 0           -> why FL19b exists
 #
 # Usage:
 #   bash test-frontmatter-lint.sh [--verbose]
@@ -334,16 +336,77 @@ assert_exit_zero "$code"           "FL18 URL sources -- exit 0"
 assert_output_not_contains "$out" "[FM-INVALID]" "FL18 URL sources -- no FM-INVALID"
 
 # ===========================================================================
-# FL19  AID's own KB docs all soft-skip on day one (no migration yet)
+# FL19  AID's own KB docs lint clean -- AND the lint actually examined them.
+#
+# "exit 0, no findings" is not the same claim as "clean". A root where every
+# document is skipped produces exactly that output while checking nothing, so
+# the assertions below would pass against a lint that had silently stopped
+# looking. FL19b closes that by asserting the printed checked-count, and FL19c
+# proves the vacuity is real rather than hypothetical.
 # ===========================================================================
 if [[ -d "$KB_ROOT" ]]; then
     out=$(run_lint "$KB_ROOT"); code=$?
-    assert_exit_zero "$code"           "FL19 AID KB day-one soft-skip -- exit 0"
-    assert_output_not_contains "$out" "[FM-MISSING]" "FL19 AID KB day-one soft-skip -- no FM-MISSING"
-    assert_output_not_contains "$out" "[FM-INVALID]" "FL19 AID KB day-one soft-skip -- no FM-INVALID"
+    assert_exit_zero "$code"           "FL19 AID KB -- exit 0"
+    assert_output_not_contains "$out" "[FM-MISSING]" "FL19 AID KB -- no FM-MISSING"
+    assert_output_not_contains "$out" "[FM-INVALID]" "FL19 AID KB -- no FM-INVALID"
+
+    # FL19b: a clean result must come from a non-empty examination.
+    checked="$(printf '%s\n' "$out" | sed -n 's/.*Checked: \([0-9]*\) docs.*/\1/p' | head -1)"
+    skipped="$(printf '%s\n' "$out" | sed -n 's/.*Skipped: \([0-9]*\) docs.*/\1/p' | head -1)"
+    findings="$(printf '%s\n' "$out" | sed -n 's/.*Findings: \([0-9]*\).*/\1/p' | head -1)"
+
+    if [[ -n "$checked" ]]; then
+        pass "FL19b AID KB -- the lint printed a checked-count (${checked} checked, ${skipped} skipped, ${findings} findings)"
+    else
+        fail "FL19b AID KB -- no 'Checked: N docs' line in the output; the count assertion cannot be made"
+    fi
+    if [[ "${checked:-0}" -gt 0 ]]; then
+        pass "FL19b AID KB -- checked-count is non-zero (${checked}); the clean result is not vacuous"
+    else
+        fail "FL19b AID KB -- checked 0 docs while reporting clean; a lint that examines nothing must not pass"
+    fi
+    assert_eq "$findings" "0" "FL19b AID KB -- zero findings across ${checked} checked docs"
 else
     fail "FL19 setup -- KB root not found: $KB_ROOT"
 fi
+
+# ===========================================================================
+# FL19c  The vacuity FL19b guards against is reachable.
+#
+# A root containing only skipped documents -- one meta, one source: generated --
+# exits 0 with zero findings, which is byte-for-byte the shape of a clean run.
+# Without FL19b's checked-count assertion, that is indistinguishable from
+# success. This fixture is what makes FL19b load-bearing rather than decorative.
+# ===========================================================================
+vac_root="$(mktemp -d)"
+mkdir -p "${vac_root}/kb"
+cat > "${vac_root}/kb/meta.md" <<'VAC'
+---
+kb-category: meta
+---
+# Meta doc -- always skipped
+VAC
+cat > "${vac_root}/kb/generated.md" <<'VAC'
+---
+kb-category: primary
+source: generated
+---
+# Generated doc -- always skipped
+VAC
+
+vac_out=$(run_lint "${vac_root}/kb"); vac_code=$?
+vac_checked="$(printf '%s\n' "$vac_out" | sed -n 's/.*Checked: \([0-9]*\) docs.*/\1/p' | head -1)"
+
+assert_exit_zero "$vac_code" "FL19c all-skipped root -- lint still exits 0 (this is the hazard)"
+assert_eq "$vac_checked" "0" "FL19c all-skipped root -- checked 0 docs, so exit 0 means nothing"
+
+if [[ "${vac_checked:-0}" -eq 0 && "$vac_code" -eq 0 ]]; then
+    pass "FL19c a checked-count of 0 with exit 0 is reachable -- FL19b is load-bearing"
+else
+    fail "FL19c the vacuous case did not reproduce; FL19b may be guarding nothing"
+fi
+
+rm -rf "$vac_root"
 
 # ===========================================================================
 # FL20  Promoted doc (source: != generated, != hand-authored) -- in scope

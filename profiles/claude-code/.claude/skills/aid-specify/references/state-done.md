@@ -10,6 +10,7 @@ No further action is required for this feature.
 Delete the review ledger:
 ```bash
 rm -f .aid/.temp/review-pending/specify-<feature>.md
+rm -f .aid/.temp/review-pending/blueprint-delivery-*.md
 rmdir --ignore-fail-on-non-empty .aid/.temp/review-pending/ 2>/dev/null || true
 ```
 

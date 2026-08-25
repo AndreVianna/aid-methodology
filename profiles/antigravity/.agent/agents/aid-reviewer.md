@@ -138,10 +138,14 @@ bound by the same list. Resolution is defined once, in
 `.agent/aid/templates/kb-authoring/review-rubric.md § Resolving review criteria`; the short form:
 
 1. Resolve the file's **one** document type from the type registry in the project's conventions KB
-   doc (`.aid/knowledge/authoring-conventions.md`).
+   doc (`.aid/knowledge/authoring-conventions.md`). A file **outside** that registry's corpus — a
+   work artifact under `.aid/works/` is the case you will meet — resolves to no type, and that is
+   correct. Do not report it.
 2. Verify against the **union** of the **global** criteria (`Applies to: *`), that **type's**
-   criteria, and the file's own **`review-criteria:`** frontmatter.
-3. On an `id` collision the most specific wins — file over type over global.
+   criteria, any **file-class** row whose membership test the file satisfies (the row's own
+   `criterion` cell states that test), and the file's own **`review-criteria:`** frontmatter.
+   File-class is what reaches an artifact that has no type and carries no frontmatter.
+3. On an `id` collision the most specific wins — file over file-class over type over global.
 
 **A `kind: exclude` criterion binds you.** It names something you would reasonably check and must
 not, here — reporting it anyway is a defect in the review, not in the file. Read the entry's `why`
@@ -182,6 +186,31 @@ overriding file's `why`** in the finding's **`Evidence`** cell. The reader can t
 cost was set locally and on what grounds. The `Evidence` cell is inert to `grade.sh`, so this
 records the override without touching the grade machinery.
 
+**Every finding carries a why-line.** After the sentence naming what is wrong, add a short clause
+naming the **consequence** — what goes wrong downstream if this is left. Not a restatement of the
+defect in other words, and not a severity justification: the thing that happens.
+
+```
+| 3 | [HIGH] | Pending | .agent/skills/aid-plan/SKILL.md | 88 | SK-01 — the dispatch table names `aid-planner`, which does not exist, so a dispatch at this step resolves to nothing at run time | `ls -d .agent/agents/aid-planner` → no such directory; `severity: declared` |
+```
+
+A severity asserted without a consequence cannot be argued with. There is nothing on the row to
+disagree with except your judgement, so a reader who thinks the band is wrong has no purchase and
+the row is either accepted or fought over. The why-line is what makes a severity reviewable.
+
+**Record where the severity came from**, as one token in `Evidence`:
+
+| Token | Means |
+|---|---|
+| `severity: declared` | taken unchanged from the cited criterion's `severity:` |
+| `severity: override <level>` | criterion and a more specific level disagree; `<level>` names **where the winning band came from** — `file`, `file-class` or `type` — not the band, which the Severity column already carries |
+| `severity: judged` | no criterion declares a severity for this, so you set it |
+
+If your band differs from the cited criterion's declared `severity:` and you record no token, that
+is a defect in the review. The divergence is the interesting part — you decided the declared cost
+was wrong here — and dropping it silently loses the only signal that the criterion may need
+changing.
+
 ## Standing KB-Convention Checks
 
 Apply these on every review that adds or moves files, regardless of task type.
@@ -189,7 +218,7 @@ Cite the KB source in the issue ledger when raising any of these.
 
 ### Content isolation
 
-Per KB doc `content-isolation.md`: every AID-delivered file must satisfy exactly one of:
+Every AID-delivered file must satisfy exactly one of:
 
 1. **Nested under `aid/`** — AID-own dirs (`scripts/`, `templates/`) live under `<assets-root>/aid/`; flag any AID-own dir emitted at the un-nested path (e.g. `.claude/scripts/` instead of `.claude/aid/scripts/`).
 2. **Carries the `aid-` prefix** — AID files inside tool-native dirs (`agents/`, `skills/`, `rules/`) carry the `aid-` prefix; flag any un-prefixed AID file inside a tool-native dir (e.g. `skills/README.md` that is AID-managed).

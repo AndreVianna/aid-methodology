@@ -37,8 +37,11 @@ RUBRIC: .claude/aid/templates/grading-rubric.md (universal severity → grade ta
 
 DECLARED REVIEW CRITERIA (resolve; do not invent):
   Each artifact declares, or inherits, the criteria it must be true against. Resolve them
-  and verify against the union -- global, then the artifact's document type, then the
-  artifact's own `review-criteria:` frontmatter; most specific wins on an id collision.
+  and verify against the union -- global, then the artifact's document type, then any
+  file-class row whose membership test it satisfies, then the artifact's own
+  `review-criteria:` frontmatter; most specific wins on an id collision. An artifact outside
+  the registry's corpus (a work artifact under `.aid/works/`) resolves to NO type, which is
+  correct and not a finding -- the file-class rows are what reach it.
   Resolution is defined in .claude/aid/templates/kb-authoring/review-rubric.md
   (section: Resolving review criteria); the type registry and the criteria table live in
   .aid/knowledge/authoring-conventions.md. This brief deliberately does NOT restate them.
@@ -73,7 +76,7 @@ OUT OF SCOPE (do NOT grade against):
 
 OUT-OF-SCOPE FINDINGS POLICY:
   Log OOS findings as Status: OOS rows in the same ledger table at
-  `.aid/.temp/review-pending/interview-{work}.md`. Do NOT count toward severity
+  `{{LEDGER}}`. Do NOT count toward severity
   totals or grade. Note the routing destination (KB, SPEC) in Description/Evidence
   so the orchestrator can write the cross-phase Q&A entry.
 
@@ -86,7 +89,7 @@ DELIVERABLES:
     `reviewer-dispatch.md` -- "Render the brief TO A FILE".
 
   - Findings format: severity-tagged + source-tagged (REQUIREMENTS | FEATURE | KB)
-  - Output location: `.aid/.temp/review-pending/interview-{work}.md`
+  - Output location: `{{LEDGER}}`
   - Severity scale: CRITICAL | HIGH | MEDIUM | LOW | MINOR (per grading-rubric.md)
   - Grade: per .claude/aid/scripts/grade.sh; minimum resolved via
     `bash .claude/aid/scripts/config/read-setting.sh --skill interview --key minimum_grade --default A`

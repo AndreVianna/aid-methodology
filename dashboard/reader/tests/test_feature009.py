@@ -225,12 +225,6 @@ _PF1_REQUIREMENTS = """\
 - **Name:** Widget Factory
 - **Description:** A modular widget assembly pipeline with configurable stages.
 
-## Change Log
-
-| Date | Change | Source |
-|------|--------|--------|
-| 2026-06-11 | Describe complete | /aid-describe |
-
 ## 1. Objective
 
 Build a reliable widget factory pipeline.

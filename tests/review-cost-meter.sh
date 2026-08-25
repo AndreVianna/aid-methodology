@@ -147,6 +147,15 @@ brief_artifacts() {
             sub(/[[:space:]]*$/, "", line)
             sub(/[[:space:]]+\(.*$/, "", line)      # drop a trailing "(note)"
             gsub(/`/, "", line)
+            # A coverage unit may be a REGION -- "path § Heading" -- per
+            # reviewer-dispatch.md. Attribute it to its file: the heading names
+            # which part of the file is in scope, not a different file, and the
+            # declared surface is still that file. Without this the entry fails
+            # the single-token test below and is dropped entirely, so writing a
+            # region into a brief would RECORD ZERO and make a "smaller surface"
+            # figure pass for the wrong reason.
+            sub(/[[:space:]]*§.*$/, "", line)
+            sub(/[[:space:]]*$/, "", line)
             if (line ~ /^[^[:space:]]+$/ && line != "") print line
         }
     ' "$1"
@@ -157,11 +166,28 @@ brief_artifacts() {
 # and dropping the process substitution silently produced a surface of 0 rather
 # than an error. A measurement tool must not have a call form that quietly
 # measures nothing.
+# Each PATH counts ONCE per cycle, however many lists name it.
+#
+# The VERIFY and HUNT lists routinely overlap -- a file whose findings are being
+# re-checked is often also where the last fix landed -- and summing both counted
+# it twice. Measured: a brief naming one path on both lists recorded exactly
+# twice that file's size, which is how `specify-feature-001` cycle 2 came to
+# record 84934 against a 42467-byte surface. The metric is the DECLARED READ
+# SURFACE: what the reviewer was told it may open. A file it may open twice is
+# still one file it may open.
+#
+# FORWARD-ONLY. Rows already in the .tsv were recorded under the old summing and
+# are not recomputed. A row's meaning is fixed at the moment it was written, so
+# comparing a pre-change row against a post-change one compares two definitions;
+# the .meta sidecar records when the definition changed.
 surface_bytes() {
     local brief="$1" total=0 p sz any=0
+    declare -A _seen=()
     while IFS= read -r p; do
         any=1
         [[ -n "$p" ]] || continue
+        [[ -n "${_seen[$p]:-}" ]] && continue
+        _seen[$p]=1
         if [[ -f "$p" ]]; then
             sz=$(wc -c <"$p"); total=$(( total + sz ))
         else

@@ -12,7 +12,7 @@ note the loopback in the Features State view (work STATE.yml), continue with non
 
 ## Requirements are Wrong or Incomplete
 
-**Simple fix:** Fix REQUIREMENTS.md and SPEC.md directly, add Change Log entries.
+**Simple fix:** Fix REQUIREMENTS.md and SPEC.md directly.
 
 **Needs re-interview:** Add Q&A entry to the `qa` sequence (`.aid/works/{work}/STATE.yml`),
 note the loopback in the Features State view (work STATE.yml).
@@ -30,7 +30,7 @@ Check each Pending loopback. If resolved → unblock, resume loop. If still bloc
 
 ## Feature Split
 
-Create new feature folder(s), redistribute SPEC.md content, add Change Log entries, continue.
+Create new feature folder(s), redistribute SPEC.md content, continue.
 
 ## Feature Merge
 
