@@ -1438,3 +1438,51 @@ qa:
       It is the evidence the loop was asked for -- only minor issues are being found -- plus
       an admission that a fourth kind of question I have not thought of may still exist.
 
+  - id: Q40
+    question: "The work-013 merge: what did it collide with, and what did it teach?"
+    status: Resolved
+    answer: |
+      97 commits, 812 files, 230 conflicts -- of which ~190 were generated output and fell
+      out by regenerating once the sources were settled. The 22 real ones split three ways,
+      and the split mattered more than the count.
+
+      MASTER REASSERTING THE RETIRED MODEL (12 files): work-013 predates the folding, so its
+      side describes per-feature SPEC.md, per-delivery BLUEPRINT.md, and work STATE.md with
+      markdown headings. Mine stands. The sharpest was aid-detail's per-delivery DETAIL gate:
+      this branch replaced a reviewer dispatch with a self-check and master still had the
+      dispatch, so a mechanical "take theirs" would have quietly restored a gate this work
+      removed on purpose.
+
+      MASTER ADDING REAL VALUE: the `{{LEDGER}}` parameterization is the one that matters.
+      Naming a ledger literally lets a cycle-1 reviewer read the previous cycle's findings,
+      which defeats the clean-context guarantee. My whole-file "ours" on
+      review-deliverables.md REVERTED it -- and work-013's own test-ledger-isolation.sh
+      caught that, finding three literal paths, one of them in a line of mine.
+
+      That is the lesson worth keeping. Resolving a conflict whole-file is a bet that one
+      side has nothing the other needs, and here the bet was wrong in the direction I was
+      least likely to notice: I was checking their side for MY retired vocabulary and not
+      checking my side for THEIR new mechanism. Their test caught what my review did not.
+
+      BOTH SIDES WROTE THE SAME THING TWICE: the locale-determinism fix in
+      build-kb-index.sh, the "history is git's job" passage in docs/aid-methodology.md, the
+      requirements-template history rule. Merged rather than picked, because each side had a
+      sentence the other lacked and picking a winner discards half the argument.
+
+      TWO OF THEIR ADDITIONS DROPPED ON THE MERITS: `**Source:**` as a feature field
+      (superseded by id citations), and a new aid-specify step to "review the delivery
+      BLUEPRINT.md this feature refines" -- retired artifact, AND aid-specify runs BEFORE any
+      delivery exists (its own SKILL.md says so), so the step could never have run. That
+      second reason held before this branch existed, which makes it their bug, not a
+      collision.
+
+      THE RATCHET EARNED ITS KEEP. AD13 flagged five reintroductions, four real. Then the
+      ceilings went DOWN (69->65, 155->154, 262->235), because work-013's own change-log
+      cleanup removed lines in those classes -- the first time the ratchet has ratcheted.
+
+      AND THEIR NEW CHECKER FOUND SOMETHING NEITHER WORK OWNED: kb-html-claims-check.sh
+      exits 1 on the committed kb.html (STATE.md 16 times, STATE.yml never), and nothing
+      invokes it. Filed as SY-7 rather than fixed, because kb.html is /aid-summarize output
+      with a mandatory human visual review, and hand-editing generated output to satisfy a
+      checker is the failure the render pipeline exists to prevent.
+
