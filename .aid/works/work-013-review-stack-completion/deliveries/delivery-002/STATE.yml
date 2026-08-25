@@ -97,7 +97,12 @@ qa:
       Tech debt. No criterion id is allocated by task-036; Q9 reserves that decision to
       the owner, and this entry exists so the question is visible rather than settled by
       whoever happens to write the script.
-    status: Open
+    answer: >
+      Tech debt. A recall drop is filed as a tech-debt row, not as a review
+      criterion. No criterion id is allocated for recall regression.
+    answered: '2026-08-25'
+    by_owner: yes
+    status: Answered
   - id: Q11
     asked: '2026-08-24'
     by: task-033 gate, wave 4
