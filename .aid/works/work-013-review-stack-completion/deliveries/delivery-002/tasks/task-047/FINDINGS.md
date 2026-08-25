@@ -1,3 +1,0 @@
-| # | Severity | Status | Doc | Line | Description | Evidence |
-|---|---|---|---|---|---|---|
-| 1 | [LOW] | OOS | .aid/works/work-013-review-stack-completion/deliveries/delivery-002/STATE.yml | 51 | task-039 AC-1 (OOS: delivery lifecycle enum) — `delivery_state` is `In Progress`, a value absent from the closed enum (`Pending-Spec \| Specified \| Executing \| Gated \| Done \| Blocked`), so any reader that validates the enum will reject this state or silently default. | `grep 'delivery_state' STATE.yml` → `delivery_state: In Progress`; declared enum in comment above line 51 lists no such value; route to delivery STATE.yml owner for correction to `Gated`; severity: judged |
