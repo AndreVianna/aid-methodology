@@ -27,7 +27,7 @@ ARTIFACTS UNDER REVIEW:
 CONTEXT:
   - (descriptive-only background — see §CONTEXT discipline below)
 
-RUBRIC: <named rubric from a rubric catalog>
+RUBRIC: <named rubric>
   (which rubric applies to each artifact, by category if mixed)
 
 OUT OF SCOPE (do not grade against):
@@ -86,6 +86,38 @@ them, it does not redefine them.
 
 A reviewer given two labelled lists must not hunt outside the HUNT list, and must not skip
 any file in the VERIFY list.
+
+**A coverage unit may be a path, or a path with a heading anchor.** The anchor form is the durable
+anchor `.aid/knowledge/authoring-conventions.md § Citation Rule (Durable Anchors)` already
+mandates — a path plus a grep-recoverable heading. No new notation is introduced here, and the rule
+is cited rather than restated so the two cannot drift.
+
+**The trigger is when the two lists would name the same path.** At that point the HUNT list has
+scoped nothing: the reviewer is told to hunt in exactly what it must already verify in full, and
+the cycle costs a full read while claiming to be scoped. When that happens, the HUNT list names
+**regions** — `path § Heading` — rather than the path.
+
+The insufficiency is measured, not asserted. From `review-cost.tsv`:
+
+```
+$ grep -E '^specify-feature-001' .aid/works/{work}/review-cost.tsv
+specify-feature-001-single-review-path-alignment   1   2dd1eb0e...   42034
+specify-feature-001-single-review-path-alignment   2   2dd1eb0e...   84934
+```
+
+Cycle 2 declared **exactly twice** cycle 1: `84934 = 2 × 42467`. The re-read ratio is 2.02, against
+a mechanism whose whole purpose is a ratio below 1. And `42467` is not `42034`, so this is not the
+same surface read twice over — it is one path appearing on both lists within a single cycle and
+counted once for each. A path can only be deduplicated away; a region is what lets the hunt half
+actually shrink.
+
+**A worklist unit is written as the ledger row number or the criterion id** — `row 4`, `G-14` —
+never as a restatement of the finding. The row already says what is wrong; a worklist that
+paraphrases it creates a second copy to drift.
+
+The VERIFY set's derivation is untouched: it is still every file named in a ledger row's `Doc`
+column, in full. Only the HUNT half gains regions, because only the HUNT half was ever the
+expensive one.
 
 The reviewer MUST NOT open any file not listed here, except to:
 - Resolve a citation reference (e.g., a docfile cites `path/to/foo.sh:42` — the
@@ -201,13 +233,11 @@ about the brief itself, then proceeds with the narrow ARTIFACTS-only scope.
 
 ### RUBRIC
 
-A **named rubric** drawn from a rubric catalog. Examples:
+A **named rubric**. Examples:
 
 - `kb-authoring/review-rubric.md#full-primary` — for hand-authored KB primary docs
 - `kb-authoring/review-rubric.md#spot-check-snapshot` — for KB meta docs
 - `kb-authoring/review-rubric.md#build-verify-only` — for generated docs
-- (future) `code-review-rubric.md#standard` — for code task review
-- (future) `spec-review-rubric.md#standard` — for spec review
 
 If multiple artifacts use different rubrics, the brief maps each to its rubric:
 
@@ -325,10 +355,16 @@ The template is HYBRID — fixed structure with two dynamic slots:
 | OOS POLICY | **Static** — identical across all skills, this protocol |
 | DELIVERABLES | **Static per skill** — same expected outputs |
 
-Substitution mechanism: the brief template uses `{{ARTIFACTS}}` and
-`{{CONTEXT}}` placeholders (some briefs also use `{{MODE}}` or `{{SCOPE}}`).
+Substitution mechanism: the brief template uses `{{ARTIFACTS}}`, `{{CONTEXT}}` and
+`{{LEDGER}}` placeholders (some briefs also use `{{MODE}}` or `{{SCOPE}}`).
 Skill renders them at dispatch time (bash heredoc, small render helper, or
 inline string substitution).
+
+`{{LEDGER}}` is the ledger path for the scope, and it is the same value the preflight below
+resolves — one resolution, used by the check and by the brief, so the two cannot disagree about
+which file is under discussion. Every brief takes it as a parameter; none names a path. A brief
+that hardcodes one is naming a scope it cannot know at authoring time, which is how a review
+writes its findings where the next cycle will not look for them.
 
 **Deriving `{{ARTIFACTS}}` — always from disk, never from memory.** For
 PR-level reviews, derive from
@@ -343,11 +379,51 @@ it doesn't know about.
 **Render the brief TO A FILE, then dispatch and record from that same file — one step.**
 
 ```
+ledger=.aid/.temp/review-pending/<scope>.md
 brief=.aid/works/{work}/briefs/<scope>-cycle-<N>.md
+
+# PREFLIGHT -- resolve the ledger path for this scope and assert its state matches the cycle.
+if [ "<N>" = "1" ] && [ -e "$ledger" ]; then
+    echo "PREFLIGHT FAILED: cycle 1 but a ledger already exists at $ledger" >&2
+    echo "  A cycle-1 reviewer must start from a clean context. That file is a prior" >&2
+    echo "  cycle's findings; leaving it in place is how a 'fresh' cycle inherits them." >&2
+    echo "  Delete it, or dispatch as cycle 2." >&2
+    exit 1
+fi
+if [ "<N>" != "1" ] && [ ! -e "$ledger" ]; then
+    echo "PREFLIGHT FAILED: cycle <N> but no ledger exists at $ledger" >&2
+    echo "  A cycle-2-or-later brief tells the reviewer to update rows in place. There are" >&2
+    echo "  none. Either this is really cycle 1, or the ledger was deleted mid-scope." >&2
+    exit 1
+fi
+
 <render the brief into $brief>
 bash tests/review-cost-meter.sh record --task <task-or-scope> --cycle <N> --brief "$brief"
 <dispatch the reviewer with the contents of $brief>
 ```
+
+**The preflight is an addition, not a substitution.** It runs *ahead of* the render and the
+metering; it replaces neither. All three components of the mandate above — render to a file, record
+from that same file, dispatch from that same file — still stand exactly as written.
+
+**It fails, it does not warn.** A warning on the cycle-1 case would leave the leak open, because a
+warning is satisfiable by ignoring it and the leftover file is still there for the reviewer to
+read. The check names the offending path so the operator can see what it found rather than being
+told only that something is wrong.
+
+This closes by construction what the cycle-1 instruction previously asked for by request. A brief
+can tell a new cycle not to read the prior ledger, and being told is not the same as being unable —
+the intent was defeated the first time it was tested.
+
+**Which literal paths were parameterised, and which were deliberately left.** The test applied is
+whether a reader *executes* the line or *reads* it. An instruction is executed, so a literal path in
+one silently hardcodes a scope and is what this change removes. Documentation is read, so a literal
+path in it is the concrete example that makes the abstraction legible, and replacing it with
+`<scope>` would cost the reader the very thing the example is for.
+
+By that test the § Worked example keeps `phase-a-foundation-v2.md` throughout — it is a transcript
+of one real dispatch, and a transcript with placeholders in it is not a transcript. Everything on
+the instruction path already resolves the ledger from `<scope>`.
 
 This is not bookkeeping bolted onto the dispatch; it is the dispatch. The file is what the
 reviewer is given AND what the meter measures, so the two cannot disagree, and the brief's
@@ -439,25 +515,15 @@ DELIVERABLES:
 This doc is normative for all reviewer dispatches. Changes affect every skill.
 Revisions should:
 
-1. Update the changelog entry below (see §Bootstrap exemption for how this doc tracks history)
-2. Update per-skill `reviewer-brief.md` templates to reflect any new fixed sections
-3. Be announced via a single deliberate revision PR, not folded into other work
+1. Update per-skill `reviewer-brief.md` templates to reflect any new fixed sections
+2. Be announced via a single deliberate revision PR, not folded into other work
 
-## Bootstrap exemption
+## Why this doc carries no frontmatter
 
 This doc lives in `.claude/aid/templates/` and is a **skill-bundle artifact**, not a KB
 document. The frontmatter schema defined in `kb-authoring/frontmatter-schema.md` applies
 to `.aid/knowledge/*.md` (KB docs in adopter projects), NOT to canonical skill-bundle
 docs. Therefore this doc carries no `kb-category:`/`source:` frontmatter.
-
-For changes to this doc, append a dated line at the bottom of this section:
-
-- 2026-05-26: Initial authoring (Phase A KB Authoring overhaul)
-- 2026-05-27: Phase B landed 6 per-skill `reviewer-brief.md` templates
-  (aid-discover, aid-execute, aid-specify, aid-plan, aid-detail,
-  aid-describe, aid-define); removed the "not yet implemented" parenthetical;
-  documented the rendering convention; added "derive ARTIFACTS from
-  disk, not memory" rule (closes F10, F22, F26 from PR #15 review)
 
 ## See also
 

@@ -23,9 +23,6 @@ kb-refs:
   - pipeline-contracts.md
   - coding-standards.md
   - tech-debt.md
-changelog:
-  - 2026-06-03: Stub created by aid-describe
-  - 2026-06-03: Technical spec added by aid-specify
 ---
 
 # Feature SPEC: Refund Workflow

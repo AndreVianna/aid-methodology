@@ -121,9 +121,9 @@ consume its seed. The seed persists until the user promotes it into one of the
 ## Region ownership
 
 **Scope.** This rule binds **the 36 new skills only**. It is not a claim about who may
-write the destination documents in general — `/aid-describe`'s greenfield authorship and
-`/aid-graph`'s regeneration of `relationships.md` are both legitimate wholesale KB writers
-outside this rule's reach. What binds these 36 is the same targeted-edit discipline
+write the destination documents in general — `/aid-describe`'s greenfield authorship is a
+legitimate wholesale KB writer outside this rule's reach. What binds these 36 is the same
+targeted-edit discipline
 `aid-update-kb` and `aid-housekeep` already hold themselves to for their own region: a
 targeted edit to the region owned, never a wholesale rewrite of the document.
 

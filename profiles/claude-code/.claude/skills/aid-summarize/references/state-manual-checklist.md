@@ -28,7 +28,7 @@ This writes `.aid/.temp/summarize/manual-checklist.json` with `K1_score`, `K2_sc
 
 ### Step 4 — score and route
 
-Re-run `grade.sh` — it reads `manual-checklist.json`, computes the Human Grade from MANUAL_POOL (K1+K2+V1, 30 pts), and the Overall Grade = `min(Machine_letter, Human_letter)`. Persist Machine + Human + Overall Grade to `.aid/knowledge/STATE.md` `## Knowledge Summary Status` `### Findings (last validation)`.
+Re-run `grade-summary.sh` — it reads `manual-checklist.json`, computes the Human Grade from MANUAL_POOL (K1+K2+V1, 30 pts), and the Overall Grade = `min(Machine_letter, Human_letter)`. (`grade.sh` does neither: it grades a reviewer ledger and never opens `manual-checklist.json`.) Persist Machine + Human + Overall Grade to `.aid/knowledge/STATE.md` `## Knowledge Summary Status` `### Findings (last validation)`.
 
 - Overall Grade ≥ minimum → APPROVAL.
 - **V1 failed → mandatory: Human Grade is forced to F.** Go to FIX; the visual defect must be fixed and V1 re-confirmed before APPROVAL.

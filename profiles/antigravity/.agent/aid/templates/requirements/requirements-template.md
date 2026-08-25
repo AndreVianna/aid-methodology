@@ -9,8 +9,9 @@ This template defines the structure for `.aid/works/{work}/REQUIREMENTS.md` — 
 
 ## Conventions
 
-- **No Change Log section.** Git records this document's history — author, date, and full diff — at higher fidelity than a hand-maintained table, and without drift. This is the same reason `.aid/knowledge/` docs carry no Change Log (see the tracking-discipline rule in `CLAUDE.md` / `AGENTS.md`); it applies identically here. Use `git log --follow` on this file.
+- **No history section.** This artifact carries no `## Change Log` and no `## Revision History`: git records every edit with author, date and diff, at higher fidelity and without drift. Never author one.
 - **Every acceptance criterion must be verifiable** — see [Verifiable Acceptance Criteria](#verifiable-acceptance-criteria) below. This is the rule downstream SPEC and task DETAIL criteria inherit; both cite this section rather than restating it.
+
 - **Sections can be marked N/A** if not applicable to the project.
 - **`*(pending)*`** marks sections not yet addressed during the interview.
 - **File is uppercase** (`REQUIREMENTS.md`) — it's a first-class artifact at the work root, `.aid/works/{work}/REQUIREMENTS.md`.
@@ -153,8 +154,8 @@ and every §9 criterion is owned by exactly one feature, so both are checkable.}
 ## Notes
 
 - Sections not yet discussed during the interview should contain `*(pending)*` as a placeholder.
-- Document history is git's job, not this file's. `git log --follow -p` on this path gives every
-  change with author, date, and diff.
+- Document history is git's job. A cross-reference or re-interview edits the affected sections in place and leaves no in-document audit row.
+  `git log --follow -p` on this path gives every change with author, date, and diff.
 
 - The stakeholder's own language is preferred in Objective and Problem Statement. Don't rewrite their words into technical jargon.
 - Acceptance Criteria must name an observable — see Verifiable Acceptance Criteria above.

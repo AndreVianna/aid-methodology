@@ -17,7 +17,7 @@ All three must pass. Record results in the package file (Verification section).
 
 ### Log failures to schema ledger
 
-For each failing check, append a row to `.aid/.temp/review-pending/deploy.md` per
+For each failing check, append a row to `{{LEDGER}}` per
 `canonical/aid/templates/reviewer-ledger-schema.md`:
 
 | Check type | Severity |
@@ -34,7 +34,7 @@ One row per distinct failing check/test/warning. Example row:
 After logging failures, run grade.sh on the ledger:
 
 ```bash
-bash canonical/aid/scripts/grade.sh --explain .aid/.temp/review-pending/deploy.md
+bash canonical/aid/scripts/grade.sh --explain {{LEDGER}}
 ```
 
 If any failures logged (grade below A+):
@@ -42,10 +42,10 @@ If any failures logged (grade below A+):
 - Ask user: fix here (minor) or loop back to aid-execute (non-trivial)?
 - If fixing here: fix → re-verify → re-run grade.sh (max 3 attempts, then must loop to execute)
 - If looping back: set work `STATE.yml`'s Deploy State (`deploy` key) → Idle, keep package file as Draft
-  Delete ledger: `rm -f .aid/.temp/review-pending/deploy.md`
+  Delete ledger: `rm -f {{LEDGER}}`
 
 If all pass (ledger is empty → grade A+): proceed to PACKAGING.
-Delete ledger on success: `rm -f .aid/.temp/review-pending/deploy.md`
+Delete ledger on success: `rm -f {{LEDGER}}`
 
 Update work `STATE.yml`'s Deploy State (`deploy` key): Status → Packaging.
 

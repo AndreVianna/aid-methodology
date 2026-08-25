@@ -214,12 +214,6 @@ EOF
 
 - **Name:** ${verb} sample
 - **Description:** Shortcut-generated flattened Lite work for ${verb}.
-
-## Change Log
-
-| Date | Change | Source |
-|------|--------|--------|
-| 2026-07-08 | Initial capture (shortcut: ${name}) | /${name} |
 EOF
     cat > "${work_dir}/PLAN.md" <<EOF
 # Plan -- work-NNN-${verb}-sample

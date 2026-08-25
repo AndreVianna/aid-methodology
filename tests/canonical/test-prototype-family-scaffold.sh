@@ -206,12 +206,6 @@ build_prototype_ui_fixture() {
 - **Description:** Wireframe/mock a simplified one-page checkout flow to validate whether
   collapsing cart -> shipping -> payment into a single screen reduces confusion.
 
-## Change Log
-
-| Date | Change | Source |
-|------|--------|--------|
-| 2026-07-09 | Initial capture (shortcut: aid-prototype-ui) | /aid-prototype-ui |
-
 ## 1. Objective
 
 Wireframe/mock the simplified one-page checkout flow and its interaction states to
@@ -264,12 +258,6 @@ EOF
 
     cat > "${work_dir}/SPEC.md" <<'EOF'
 # one-page checkout flow UI prototype
-
-## Change Log
-
-| Date | Change | Source |
-|------|--------|--------|
-| 2026-07-09 | SPEC authored from REQUIREMENTS.md | /aid-prototype-ui |
 
 ## Source
 
@@ -466,12 +454,6 @@ build_prototype_bare_fixture() {
 - **Description:** Validate whether showing other editors' live cursors in the shared
   doc editor reduces accidental overwrite conflicts.
 
-## Change Log
-
-| Date | Change | Source |
-|------|--------|--------|
-| 2026-07-09 | Initial capture (shortcut: aid-prototype) | /aid-prototype |
-
 ## 1. Objective
 
 Validate the live-cursor direction with a throwaway runnable spike before committing to
@@ -526,12 +508,6 @@ EOF
 
     cat > "${work_dir}/SPEC.md" <<'EOF'
 # shared-doc live-cursor direction prototype
-
-## Change Log
-
-| Date | Change | Source |
-|------|--------|--------|
-| 2026-07-09 | SPEC authored from REQUIREMENTS.md | /aid-prototype |
 
 ## Source
 

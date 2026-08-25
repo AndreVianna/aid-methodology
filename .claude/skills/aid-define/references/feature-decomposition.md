@@ -74,7 +74,11 @@ in the shape the template defines
 
 For each feature fill:
 
-- **Title:** human-readable feature name
+
+- **Title:** feature name (human-readable)
+- **Description:** synthesized from §5 in stakeholder language
+- **User Stories:** extracted or synthesized from REQUIREMENTS.md, using user types from §3
+
 - **Priority:** from §10 or context (Must / Should / Could)
 - **Requirements:** the `§5 FR-N` ids this feature implements
 - **Criteria:** the `§9 AC-N` ids this feature owns — **ids only, never the

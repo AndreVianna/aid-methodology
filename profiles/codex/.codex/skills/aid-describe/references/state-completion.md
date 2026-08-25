@@ -33,7 +33,7 @@ In summary:
 3. **Ask** — for each gap the user would reasonably know, ask ONE question at a time
    (same interactive pattern as the interview). If the user says "skip", respect it.
 4. **Update meta** — refresh README.md completeness table, INDEX.md summaries,
-   `.aid/knowledge/STATE.md` (KB section), and REQUIREMENTS.md change log
+   and `.aid/knowledge/STATE.md` (KB section)
 
 **This step is mandatory.** Do not skip it even if the user seems eager to approve.
 The KB is consumed by all downstream phases — empty KB docs force specify/detail/execute

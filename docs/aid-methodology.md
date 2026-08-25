@@ -988,15 +988,18 @@ These loops apply only when Monitor is run.
 
 ### The Revision Trail
 
-Every change to an upstream artifact is recorded in **git**, not in a table inside the artifact. No AID artifact carries a `## Revision History` or `## Change Log` section.
+No artifact carries an in-document history section. There is no `## Change Log` and no `## Revision History` table: git already records every edit with author, date and diff, and a hand-maintained table drifts from it the moment someone forgets a row.
+
+To understand *why* an artifact changed, read its history where that history is authoritative:
 
 ```bash
-git log --follow -p .aid/works/work-007-checkout/REQUIREMENTS.md
+git log --follow -p .aid/works/work-001-example/REQUIREMENTS.md
 ```
 
+What git cannot answer — where the work stands in the pipeline — lives in the area's `STATE` file, which is why that file exists and an in-document history table does not.
 Git gives author, timestamp, and the exact diff for every change, and it cannot drift from the file it describes — a hand-maintained table can, and does. The commit message carries the *why*: which loop fired, and what it corrected.
-
 The revision trail still matters for the same reason it always did — when a spec contradicts the Knowledge Base, you need to know which revision introduced the divergence. `git log -S'<the contradicting claim>'` answers that directly, and answers it for content a summary table would never have mentioned.
+
 
 ### Feedback Loop Artifacts
 

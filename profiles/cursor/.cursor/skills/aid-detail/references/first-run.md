@@ -94,7 +94,7 @@ delivery-001 tasks written. Moving to delivery-002.
 > **No graded gate here.** FIRST-RUN chains into `[State: REVIEW]`
 > (`references/review.md`), which already dispatches `aid-reviewer` at
 > `{{SCOPE}} = whole-list` over every delivery's `DETAIL.md` plus the full PLAN.md,
-> writing the same `.aid/.temp/review-pending/detail.md` ledger. A per-delivery gate
+> writing the same ledger scope. A per-delivery gate
 > here graded the same artifacts a second time, once per delivery, and could not see
 > what matters most anyway: a task in delivery-001 contradicting one in
 > delivery-003, or the execution graph, which does not exist until Step 5.

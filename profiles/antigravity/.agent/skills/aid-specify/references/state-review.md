@@ -62,6 +62,20 @@ Compare to minimum grade from `bash .agent/aid/scripts/config/read-setting.sh --
 | Grade < minimum, fixable sections | List findings, re-enter loop for affected sections. |
 | Grade < minimum, core assumptions wrong | Recommend `--reset`. |
 
+<!-- A delivery-definition review step once sat here and is retired, for two independent
+     reasons either of which is sufficient.
+
+     First, the artifact is gone: a delivery definition is now a `### delivery-NNN` stanza in
+     PLAN.md, and the per-delivery file it used to live in is retired.
+
+     Second, and this held even before that: `/aid-specify` runs BEFORE any delivery exists
+     (Specify precedes Plan -- SKILL.md states it in as many words). There is no delivery for a
+     feature to refine at this point in the pipeline, so the step could never have run. It
+     instructed a review of an artifact that cannot exist yet.
+
+     The ledger discipline it carried is not lost -- it is the same discipline the feature
+     review above already applies, on that review's own scope. -->
+
 ```
 Reviewing {work}/{feature} against current KB and codebase...
 

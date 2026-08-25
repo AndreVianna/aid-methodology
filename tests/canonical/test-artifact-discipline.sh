@@ -445,7 +445,7 @@ pattern = re.compile(os.environ["PATTERN"])
 # offences -- the same argument AD04/AD10 already make. A sentence explaining that an
 # artifact is dead is the opposite of sending someone to it.
 skip = re.compile(
-    r"\bno\b|not\b|never|retired|gone|abolished|superseded|folded|formerly|legacy|"
+    r"\bno\b|not\b|never|retire[sd]?|gone|abolished|superseded|folded|formerly|legacy|"
     r"un-migrated|fallback|presence rule|sentinel|renamed|migration|era|IMPEDIMENT|"
     r"was |rejected|deprecated",
     re.I,
@@ -499,9 +499,9 @@ ad13_check() {
     fi
 }
 
-ad13_check "work STATE.md (retired; use STATE.yml)" 69 \
+ad13_check "work STATE.md (retired; use STATE.yml)" 65 \
     'works?[ `]{0,4}['"'"'\`]?STATE\.md|works/\{work\}/STATE\.md'
-ad13_check "BLUEPRINT.md (retired as an authored artifact)" 155 \
+ad13_check "BLUEPRINT.md (retired as an authored artifact)" 154 \
     'BLUEPRINT\.md'
 ad13_check "bare task-NNN.md (now tasks/task-NNN/DETAIL.md)" 16 \
     '(?<!IMPEDIMENT-)(?<!execute-)\btask-NNN\.md'
@@ -518,7 +518,7 @@ ad13_check "per-feature SPEC.md (folded into REQUIREMENTS.md section 11)" 3 \
 # the format converter must know the old headings to READ them, and test fixtures must
 # contain them to simulate legacy works. Only the live-instruction slice is a defect, and
 # that slice is SY-6.
-ad13_check "retired STATE.md section headings (STATE.yml has keys, not headings)" 262 \
+ad13_check "retired STATE.md section headings (STATE.yml has keys, not headings)" 235 \
     '## (Cross-phase Q&A|Tasks Status|Tasks State|Features State|Deploy State|Pipeline State|Delivery Gate|Seed Authoring|Interview State)'
 
 # ---------------------------------------------------------------------------

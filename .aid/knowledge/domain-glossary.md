@@ -2,7 +2,7 @@
 kb-category: primary
 source: hand-authored
 objective: AID's project-specific vocabulary — the load-bearing native concepts (Concept Spine) and the supporting lexicon, defined as THIS project uses them.
-summary: Read this to use AID's own words correctly. The spine holds the concepts the methodology is built on (Canonical, Profile, Work, Delivery, Task, Execution Graph, Knowledge Base, Connector Registry, Shortcut, Shortcut Engine, Emission Manifest, AID_HOME, …); the lexicon disambiguates run-state, work-artifact, dashboard, install, connectors, and authoring terms. Definitions are project-specific, not generic.
+summary: Read this to use AID's own words correctly. The spine holds the concepts the methodology is built on (Canonical, Profile, Work, Delivery, Task, Execution Graph, Knowledge Base, Connector Registry, Shortcut, Shortcut Engine, Emission Manifest, AID_HOME, …); the lexicon disambiguates run-state, work-artifact, dashboard, install, connectors, authoring, and review terms. Definitions are project-specific, not generic.
 sources:
   - docs/aid-methodology.md
   - docs/glossary.md
@@ -56,6 +56,7 @@ accounting for every harvested candidate concept lives in
 - [Lexicon — Install and CLI](#lexicon--install-and-cli)
 - [Lexicon — Build, Render and Install Mechanics](#lexicon--build-render-and-install-mechanics)
 - [Lexicon — KB Authoring](#lexicon--kb-authoring)
+- [Lexicon — Review](#lexicon--review)
 - [Lexicon — Connectors](#lexicon--connectors)
 - [Lexicon — UI Components and Identity](#lexicon--ui-components-and-identity)
 - [Abbreviations and Acronyms](#abbreviations--acronyms)
@@ -117,14 +118,13 @@ Shortcut Engine (which creates a flattened Lite work).
 ### Delivery
 
 **Definition-as-used-here:** An ordered, independently shippable MVP grouping of features
-within a work, numbered `delivery-NNN`, whose definition is its `### delivery-NNN` stanza in
-`PLAN.md`. Plan decides
+within a work, numbered `delivery-NNN`, whose definition document is `BLUEPRINT.md`. Plan decides
 what goes in each delivery and in what order; Execute runs one git branch per delivery and gates
 each with a delivery-gate review. A delivery is a strategy-level unit (the "what ships when"),
 distinct from a Task (the tactical unit). Not a deployment/shipment event.
 
 **Relates-to:** Work (deliveries belong to a work), Task (a delivery contains tasks),
-Delivery Gate (the per-delivery review gate), the delivery stanza (the delivery definition), Execution
+Delivery Gate (the per-delivery review gate), BLUEPRINT.md (the delivery definition), Execution
 Graph (sequences tasks within/across deliveries).
 
 **sources:**
@@ -367,7 +367,7 @@ work — routing moved to the standalone `/aid-triage` router, and lite work is 
 shortcut engine), and on greenfield authors the forward-authored KB seed (DESCRIBE-SEED). Its
 state machine is `FIRST-RUN → Q-AND-A → CONTINUE → {greenfield: DESCRIBE-SEED →} COMPLETION
 [PAUSE → /aid-define]`. **`aid-define`** (Phase 2b, full path only) begins from the approved
-`REQUIREMENTS.md` and decomposes it into `### Feature NNN` sections under § 11 (FEATURE-DECOMPOSITION),
+`REQUIREMENTS.md` and decomposes it into `### Feature NNN` sections of its section 11 (FEATURE-DECOMPOSITION),
 then cross-references them against the KB and codebase (CROSS-REFERENCE). This pair replaced the
 single former `aid-interview` skill — `aid-describe` is renamed-and-scoped to "describe the work,"
 `aid-define` to "define the features."
@@ -459,8 +459,8 @@ NFR-7 Suggested-Answer + Rationale (its SUGGEST reflect-back is an NFR-7 straw-m
 `/aid-create-api`, …) — rather than by any routing state inside `aid-describe` (which no longer
 exists). Every shortcut delegates to the shared **shortcut engine**, which collapses the five
 definition phases (Describe → Define → Specify → Plan → Detail) into one fast, mostly-autonomous
-run and produces the **flattened artifact set** (work-root `REQUIREMENTS.md` and
-`tasks/task-NNN/DETAIL.md` — no `deliveries/`
+run and produces the **full flattened artifact set** (work-root `REQUIREMENTS.md`, `SPEC.md`,
+`PLAN.md`, `BLUEPRINT.md`, and `tasks/task-NNN/DETAIL.md` — no `features/`, no `deliveries/`
 folder). It emits the same typed, reviewed artifacts as the full path with the phases collapsed,
 not skipped: a shortcut for known scope, not a quality bypass.
 
@@ -692,6 +692,7 @@ lives).
 | State Detection | A skill re-entrancy mechanism: detect the stalled state and resume there | `canonical/skills/aid-deploy/SKILL.md` |
 | Seed Authoring | The `## Seed Authoring` STATE.md block tracking DESCRIBE-SEED progress (elements authored, coherence check, review grade) | `canonical/skills/aid-describe/references/state-describe-seed.md` ("## Seed Authoring") |
 | Summary Stage | The SUMMARY-DELTA stage of `aid-housekeep` (regenerate the visual summary) | `canonical/aid/scripts/housekeep/housekeep-state.sh` |
+| Change Log | A retired in-document revision table. No AID artifact carries one: git records per-document history with author, date and diff | `.aid/knowledge/artifact-schemas.md` ("No in-document history, anywhere") |
 
 ---
 
@@ -703,9 +704,9 @@ lives).
 | Term | Meaning here | Source |
 |------|--------------|--------|
 | REQUIREMENTS.md | The work's approved requirements — authored by `/aid-describe` (full path) or the shortcut engine's CAPTURE state (Lite) | `canonical/aid/templates/requirements/requirements-template.md` |
-| Feature section | The **feature** definition + `#### Technical Specification`; one `### Feature NNN` section per feature under `REQUIREMENTS.md § 11`, citing the `§ 9 AC-N` it owns rather than copying them | `canonical/aid/templates/feature.md` |
-| PLAN.md | The delivery plan: `## Deliverables` (each stanza a delivery definition) + `## Execution Graph`; one per work, full path only | `canonical/skills/aid-plan/SKILL.md` § Output |
-| Delivery stanza | The **delivery** definition — objective, scope, Gate Criteria, Notes — in that delivery's `### delivery-NNN` stanza in `PLAN.md`. The task listing and reverse edges are DERIVED, never stored. The Lite path has no plan | `canonical/skills/aid-plan/SKILL.md` § Output |
+| SPEC.md (feature) | The **feature** definition + Technical Specification; one per feature under `features/feature-NNN/` (full path), or a single work-root `SPEC.md` (Lite). The feature definition kept the name `SPEC.md` — only the delivery and task definitions were renamed | `canonical/aid/templates/feature.md` (full path, via `aid-define`); `canonical/aid/templates/specs/spec-template.md` (Lite path, via the shortcut engine's SPEC state) |
+| PLAN.md | The delivery plan (`## Deliverables` + `## Execution Graph`); one per work | `canonical/aid/templates/delivery-plans/flattened-plan-template.md` |
+| BLUEPRINT.md | The **delivery** definition — objective, scope, Gate Criteria, task listing, dependencies. Full path: `deliveries/delivery-NNN/BLUEPRINT.md`; Lite: a single work-root `BLUEPRINT.md`. Formerly the delivery-level `SPEC.md` | `canonical/aid/templates/delivery-blueprint-template.md` |
 | DETAIL.md | The **task** definition — bold `**Type:**`, scope, acceptance criteria, dependencies; one per task under `tasks/task-NNN/`. Formerly the task-level `SPEC.md` / flat `task-NNN.md` | `canonical/aid/templates/task-detail-template.md` |
 
 ---
@@ -769,6 +770,22 @@ lives).
 | design artifact | The durable output a `design` stage informs — a KB document, a built component, an endpoint. The seed is not the artifact: the seed says what to build, the artifact is the thing built, and `create` is the step between them | `canonical/aid/templates/design-lifecycle.md` |
 | roadmap.md | The KB document recording where the project is heading, in three horizon sections (`## Now`, `## Next`, `## Later`) plus a forward `## MVP` entry that `/aid-create-mvp` owns | `.aid/knowledge/roadmap.md` |
 | backlog.md | The KB document recording work identified but not yet scheduled. Distinct from `roadmap.md`, which records direction rather than inventory | `.aid/knowledge/backlog.md` |
+
+---
+
+## Lexicon — Review
+
+> How a reviewer learns what to judge by, and how a review cycle is scoped and measured.
+
+| Term | Meaning here | Source |
+|------|--------------|--------|
+| review-criteria cascade | The three-level resolution a reviewer performs before judging a file: global criteria, then criteria for the file's registry type, then the file's own `review-criteria:` frontmatter block. The reviewer checks the union, and on an `id` collision the most specific level wins | `.aid/knowledge/authoring-conventions.md` ("Review Criteria") |
+| type registry | The ordered table that maps a file to exactly one document type (`state`, `kb-doc`, `agent`, …) by first match, so every in-scope file resolves to one set of type-level criteria | `.aid/knowledge/authoring-conventions.md` ("Type Registry") |
+| criterion oracle | The optional `oracle:` key on a criterion, naming an executable check that decides that criterion by being RUN rather than re-read. Its verdict is per file (`VIOLATION` / `UNDECIDED`), so a file it cannot decide is reported as undecided instead of guessed | `canonical/aid/templates/kb-authoring/frontmatter-schema.md` ("`oracle:`") |
+| VERIFY set | From cycle 2, the artifacts a review re-checks **in full** — every file named in an existing ledger row — so a fix that regressed is caught and marked `Recurred` | `canonical/aid/templates/reviewer-dispatch.md` |
+| HUNT set | From cycle 2, the scoped artifacts a review looks for **new** findings in — what the previous fix changed, plus what mechanically cross-references it. Widened by lookup, never by judgment | `canonical/aid/templates/reviewer-dispatch.md` |
+| declared read surface | What a review cycle was **instructed** to read: the byte size of every path a dispatch brief names under `ARTIFACTS UNDER REVIEW`. It is the enforceable quantity, and deliberately not "tokens consumed" | `tests/review-cost-meter.sh` |
+| review cost meter | The tool that records a cycle's declared read surface at dispatch time and reports cycles-to-close and the re-read ratio across cycles | `tests/review-cost-meter.sh` |
 
 ---
 
@@ -859,3 +876,6 @@ lives).
   deliberately (the conformance check), never silently overwritten with as-built.
 - **No bare interview question.** Every seasoned-analyst-engine emission carries a concrete
   `Suggested:` and a grounded `Why:` (NFR-7); a suggestion-less question is malformed.
+
+---
+

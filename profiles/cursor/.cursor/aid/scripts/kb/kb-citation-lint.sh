@@ -13,32 +13,80 @@
 #   - concern-model.md:15-doc seed   (digits followed by letters)
 #   - server.mjs:127.0.0.1   (IP / version: digits followed by .digit)
 #
-# Usage:  kb-citation-lint.sh [--root .aid/knowledge]
+# Usage:  kb-citation-lint.sh [--root .aid/knowledge] [--depth N|all]
+#
+#   --depth N    scan N directory levels below --root. Default 1, which is the
+#                KB's own shape (every doc sits directly under .aid/knowledge).
+#   --depth all  scan every .md beneath --root, at any depth.
+#
+# Depth matters outside the KB. A work folder nests its feature SPECs two levels
+# down, so a depth-1 scan of a work root opens only the handful of files sitting
+# at its top and reports "clean" -- a green that means "found nothing where it
+# did not look". The gap is not marginal; it is most of the tree. Run it both
+# ways over a work root and compare the opened counts on stderr rather than
+# taking a figure from this comment, which would be stale the next time anyone
+# adds a document.
+#
+# Judge a run by that count, not by the verdict alone -- which is why opening
+# ZERO files is an error here rather than a clean bill.
+#
 # Exit:   0 = clean, 1 = violations found, 2 = usage/error.
 
 set -uo pipefail
 
 ROOT=".aid/knowledge"
+DEPTH="1"
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --root) ROOT="$2"; shift 2 ;;
-    -h|--help) sed -n '2,20p' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;;
+    --depth) DEPTH="${2:-}"; shift 2 ;;
+    --recursive) DEPTH="all"; shift ;;
+    -h|--help) sed -n '2,28p' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;;
     *) echo "kb-citation-lint.sh: unknown arg: $1" >&2; exit 2 ;;
   esac
 done
 
 [[ -d "$ROOT" ]] || { echo "kb-citation-lint.sh: not a directory: $ROOT" >&2; exit 2; }
 
+if [[ "$DEPTH" != "all" ]] && ! [[ "$DEPTH" =~ ^[1-9][0-9]*$ ]]; then
+  echo "kb-citation-lint.sh: --depth must be a positive integer or 'all', got: ${DEPTH}" >&2
+  exit 2
+fi
+
 # Collect the doc set ONCE (find | sort) and scan ALL docs in a SINGLE awk pass.
 # awk tracks per-file position itself (FILENAME / FNR reset per file), so batching
 # over "${docs[@]}" in the same sorted order emits byte-identical findings to the old
 # one-awk-per-doc loop -- while removing the per-doc subprocess spawn that was slow on
 # Windows Git Bash / MSYS (one fork per KB doc). The awk program is unchanged.
-mapfile -t docs < <(find "$ROOT" -maxdepth 1 -type f -name '*.md' ! -name '.*' 2>/dev/null | sort)
+# `-L` so a symlinked --root is followed. Without it, `find` returns nothing for
+# a symlink while bash's `-d` guard happily accepts it, and the run reported
+# "opened 0 file(s) ... clean" for a tree that in fact contained violations.
+if [[ "$DEPTH" == "all" ]]; then
+  mapfile -t docs < <(find -L "$ROOT" -type f -name '*.md' ! -name '.*' 2>/dev/null | LC_ALL=C sort)
+else
+  mapfile -t docs < <(find -L "$ROOT" -maxdepth "$DEPTH" -type f -name '*.md' ! -name '.*' 2>/dev/null | LC_ALL=C sort)
+fi
 
-violations=""
-if [[ ${#docs[@]} -gt 0 ]]; then
-  violations="$(
+# Printed on stderr for every run, clean or not, and deliberately not on stdout:
+# the KB invocation's stdout stays byte-identical to before this option existed.
+# It is here because "clean" and "looked at nothing" are the same verdict, and
+# only this number tells them apart.
+echo "kb-citation-lint: opened ${#docs[@]} file(s) under ${ROOT} (depth: ${DEPTH})." >&2
+
+# Opening nothing is an ERROR, not a clean bill of health. The two are
+# indistinguishable by exit code otherwise, and every way of reaching zero here
+# is a mistake worth surfacing: a mistyped root, a root whose docs are nested
+# below --depth, or a symlink that find refused to follow. Exit 2 rather than 1
+# because the caller pointed the lint somewhere wrong -- it is not a finding
+# about the content.
+if [[ ${#docs[@]} -eq 0 ]]; then
+  echo "kb-citation-lint: no markdown found under ${ROOT} at depth ${DEPTH} -- refusing to report clean." >&2
+  echo "  A scan that opened nothing cannot be distinguished from one that found nothing." >&2
+  echo "  Check the path, or widen with --depth all." >&2
+  exit 2
+fi
+
+violations="$(
     awk '
       {
         line = $0
@@ -56,7 +104,6 @@ if [[ ${#docs[@]} -gt 0 ]]; then
       }
     ' "${docs[@]}"
   )"
-fi
 
 if [[ -n "$violations" ]]; then
   echo "kb-citation-lint: VOLATILE bare line citations found -- use durable file:symbol anchors:" >&2

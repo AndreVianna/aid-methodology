@@ -42,7 +42,7 @@ Render `references/reviewer-brief.md` with:
 - `{{CONTEXT}}` = `Re-review of all tasks for work-NNN after PLAN/SPEC changes.`
 
 Include in the prompt:
-- **Ledger lifecycle:** "Read `.aid/.temp/review-pending/detail.md` if it exists.
+- **Ledger lifecycle:** "Read `{{LEDGER}}` if it exists.
   For each existing row: verify on disk, update Status (Pending→Fixed if resolved;
   Fixed→Recurred if regressed). Append new findings with Status: Pending.
   Output per `.github/aid/templates/reviewer-ledger-schema.md` — ONE table, no narrative."
@@ -56,14 +56,14 @@ Dispatch the `aid-reviewer` subagent **at Large tier** (the executor is the Larg
 After aid-reviewer returns, run grade.sh:
 
 ```bash
-bash .github/aid/scripts/grade.sh --explain .aid/.temp/review-pending/detail.md
+bash .github/aid/scripts/grade.sh --explain {{LEDGER}}
 ```
 
 Compare to minimum grade from `bash .github/aid/scripts/config/read-setting.sh --skill detail --key minimum_grade --default A`.
 
 | Condition | Action |
 |-----------|--------|
-| Grade ≥ minimum | Print summary, done. Delete ledger: `rm -f .aid/.temp/review-pending/detail.md` |
+| Grade ≥ minimum | Print summary, done. Delete ledger: `rm -f {{LEDGER}}` |
 | Grade < minimum, tasks fixable | List findings, re-enter loop for affected deliverables. |
 | Grade < minimum, most tasks orphaned | Recommend `--reset`. |
 
