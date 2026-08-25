@@ -23,7 +23,7 @@ minimum_grade: A
 
 user_approved: 'yes'
 
-lifecycle: Paused-Awaiting-Input
+lifecycle: Completed
 
 phase: Execute
 
@@ -31,7 +31,7 @@ active_skill: none
 
 updated: '2026-08-15T16:10:00Z'
 
-pause_reason: awaiting human review and merge of PR #191; all 14 acceptance criteria verify, CI green, review ledgers closed
+pause_reason: --
 
 block_reason: --
 
@@ -1485,4 +1485,41 @@ qa:
       invokes it. Filed as SY-7 rather than fixed, because kb.html is /aid-summarize output
       with a mandatory human visual review, and hand-editing generated output to satisfy a
       checker is the failure the render pipeline exists to prevent.
+
+  - id: Q41
+    question: "Close-out: the work shipped. What is the final state, and what happens to the folder?"
+    status: Resolved
+    answer: |
+      Merged to master as PR #191 (merge commit 7bf8616e2, 119 work-011 commits), and master
+      is green on all three checks at that commit. Lifecycle set to Completed; the work is
+      done at Execute, which is where the numbered sequence ends.
+
+      WHAT SHIPPED, in one line each:
+        - Feature and delivery definitions folded into REQUIREMENTS.md section 11 and
+          PLAN.md stanzas; per-feature SPEC.md and per-delivery BLUEPRINT.md retired.
+        - The Lite path reduced to REQUIREMENTS.md + STATE.yml + one DETAIL.md per task.
+        - The execution graph derived from task dependencies rather than stored, so a stored
+          copy can no longer disagree with the tasks it came from.
+        - Stable AC-N ids, cited by each task, which is what makes a per-task requirements
+          slice derivable at all.
+        - Layout read from the declared `pipeline.path` instead of inferred from a file's
+          presence, in all four implementations.
+        - Fourteen standing discipline gates (AD01-AD14), including a tree-wide ratchet, and
+          an end-to-end suite covering both the Lite and nested compositions.
+
+      WHAT IS LEFT, and it is deliberately left rather than forgotten:
+        - The central cost claim is MODELLED, never observed. No pipeline run has been
+          measured before and after. This is the one item that would change what is known
+          rather than what the tree says.
+        - SY-6: ~106 stale work-`STATE.md` sites in canonical/skills, from work-009's
+          rename. Bounded by AD13's ratchet.
+        - SY-7: kb.html names retired artifacts, and the checker that proves it is not wired
+          into CI. Those two must ship together or CI fails.
+
+      THE FOLDER IS PRUNED HERE, following the rule it is governed by: work folders are
+      transient and may be pruned once the work ships, and no permanent artifact may depend
+      on one. work-013's folder went the same way on its own close-out, and work-005 and
+      work-012 before it. Nothing is lost that can be retrieved: all 41 Q&A entries stay in
+      git history under this path, and `git log --follow` reaches them. The KB never cited
+      the folder, by the same rule, so nothing points at what is being removed.
 
