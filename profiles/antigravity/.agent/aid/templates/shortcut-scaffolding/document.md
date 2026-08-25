@@ -44,14 +44,14 @@ this family): escalate to the one combined CAPTURE question only when the subjec
 archetype-specific fields above cannot be made concrete from `{description}` + KB context -- for `aid-document` this most often
 means which shape (Diataxis type vs. status report) is genuinely ambiguous.
 
-## Document structure -- the genre shape, not a SPEC.md
+## Document structure -- the genre shape, not a technical specification
 
 The hand-authored collapse body produces the document **directly** and emits no separate
-`SPEC.md`. The document's own internal structure is the per-genre shape in the DETAIL table
+spec document. The document's own internal structure is the per-genre shape in the DETAIL table
 below (Diataxis shape, ADR sections, C4/arc42 views, runbook steps, changelog headings,
-etc.) -- there is no `## Technical Specification` to activate and no schema change. (Legacy
-note: when this family was engine-driven, a generated `SPEC.md` carried the mandatory three
-sections with `### Data Model` = "no schema changes"; the collapse drops that scaffolding.)
+etc.) -- there is no `#### Technical Specification` to activate and no schema change.
+(Legacy note: when this family was engine-driven, a generated spec carried the mandatory
+three sections with `Data Model` = "no schema changes"; the collapse drops that scaffolding.)
 
 ## Genre structure -- per archetype (what the collapse produces)
 
@@ -94,8 +94,6 @@ stays here, as the bare `aid-document` shape.
   (work-005; `document` is no longer engine-consulted)
 - `.agent/aid/templates/shortcut-scaffolding/analyze-report.md § Ownership
   boundary` -- where an analytical report routes instead
-- `features/feature-010-document-family/SPEC.md` (work-001-lite-aid-skills) -- the
-  settled design this reference implements
 - `.agent/skills/aid-execute/references/task-type-rules.md ## DOCUMENT` -- the
   per-type execution rule this breakdown maps onto
 - `.aid/knowledge/artifact-schemas.md § Task DETAIL.md` -- the one-type-per-task

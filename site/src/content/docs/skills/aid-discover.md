@@ -67,7 +67,7 @@ Every node in the chart above, in chart order, with the exact `canonical/` text 
 | ELICIT | `references/state-elicit.md` | inline | → GENERATE |
 ~~~~
 
-[Source: `canonical/skills/aid-discover/SKILL.md#L265`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-discover/SKILL.md#L265) · [full step: `canonical/skills/aid-discover/references/state-elicit.md#L1-L329`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-discover/references/state-elicit.md#L1-L329)
+[Source: `canonical/skills/aid-discover/SKILL.md#L265`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-discover/SKILL.md#L265) · [full step: `canonical/skills/aid-discover/references/state-elicit.md#L1-L328`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-discover/references/state-elicit.md#L1-L328)
 
 <a id="fragment-n2"></a>**2 · `GENERATE`** — GENERATE generates KB documents that are missing or still… · _exit_ · PAUSE-FOR-USER-ACTION
 
@@ -83,7 +83,7 @@ Every node in the chart above, in chart order, with the exact `canonical/` text 
 | REVIEW | `references/state-review.md` | `aid-architect` | → Q-AND-A |
 ~~~~
 
-[Source: `canonical/skills/aid-discover/SKILL.md#L267`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-discover/SKILL.md#L267) · [full step: `canonical/skills/aid-discover/references/state-review.md#L1-L648`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-discover/references/state-review.md#L1-L648)
+[Source: `canonical/skills/aid-discover/SKILL.md#L267`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-discover/SKILL.md#L267) · [full step: `canonical/skills/aid-discover/references/state-review.md#L1-L651`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-discover/references/state-review.md#L1-L651)
 
 <a id="fragment-n4"></a>**4 · `Q-AND-A`** — Q-AND-A drives EVERY pending question to a terminal answer. · _decision_
 

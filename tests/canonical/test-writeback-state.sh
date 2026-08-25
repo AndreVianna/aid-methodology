@@ -2113,6 +2113,106 @@ else
 fi
 
 # ---------------------------------------------------------------------------
+echo "=== Unit 26: declared pipeline.path drives layout dispatch ==="
+
+# Layout used to be INFERRED from BLUEPRINT.md's presence, which made an
+# ordinary artifact load-bearing. is_flat_layout now reads the DECLARED
+# `pipeline.path`, falling back to presence only when no value is declared.
+#
+# Every flat fixture above (Units 20-25) ships a BLUEPRINT.md, so all of them
+# satisfy the PRESENCE rule and would pass with the declared read entirely
+# broken. Nothing exercised the declared value as the SIGNAL -- which is how
+# three scalar-form bugs in wb_get_pipeline_path's awk parser survived: a CRLF
+# file, a single-quoted 'lite', and a trailing `# comment` each read as a value
+# that was empty or not equal to "lite".
+#
+# Every fixture below therefore ships NO BLUEPRINT.md. The presence fallback
+# would return "not flat" for all of them, so a write landing on the FLAT
+# target (work-root tasks_lifecycle.task-NNN) proves the declared read drove
+# the dispatch. Both reader twins are held to the same fixtures via
+# yaml.safe_load / parseStateDocument; all three must agree.
+
+# make_declared_work: flat work state + declared pipeline.path, NO BLUEPRINT.md.
+# $2 is spliced in as the raw `path:` value so quoting and comment forms can be
+# exercised verbatim; $3 = "crlf" rewrites the appended block with CRLF endings.
+make_declared_work() {
+    local work_dir="$1" raw_value="$2" line_ending="${3:-lf}"
+    make_flat_work_state "$work_dir"
+    make_flat_task_spec "$work_dir" 1
+    if [[ "$line_ending" == "crlf" ]]; then
+        printf 'pipeline:\r\n  path: %s\r\n' "$raw_value" >> "${work_dir}/STATE.yml"
+    else
+        printf 'pipeline:\n  path: %s\n' "$raw_value" >> "${work_dir}/STATE.yml"
+    fi
+    [[ -f "${work_dir}/BLUEPRINT.md" ]] && fail "make_declared_work: fixture must not carry a BLUEPRINT.md"
+    return 0
+}
+
+# assert_declared_flat: a --field write on the fixture lands on the flat target.
+assert_declared_flat() {
+    local work_dir="$1" label="$2"
+    local state="${work_dir}/STATE.yml" code=0
+    AID_STATE_FILE="$state" bash "$SCRIPT" --delivery-id 1 --task-id 1 \
+        --field Name --value "Declared Layout" 2>/dev/null || code=$?
+    assert_exit_zero "$code" "${label} -> exit 0"
+    assert_file_contains "$state" "display_name: 'Declared Layout'" \
+        "${label}: write landed on the FLAT target (tasks_lifecycle.task-001)"
+}
+
+# 26a: the plain baseline -- declared lite, no sentinel file anywhere.
+DECL_A="${TMPDIR_BASE}/work-declared-plain"
+make_declared_work "$DECL_A" "lite"
+assert_declared_flat "$DECL_A" "26a: declared 'path: lite' with no BLUEPRINT.md"
+
+# 26b: CRLF. The awk `$` anchors sat behind a stray \r, so `pipeline:` never
+# matched, the value read empty, and dispatch fell through to presence --
+# which, with no BLUEPRINT.md, meant "not flat". Python and Node both normalise
+# line endings, so bash alone disagreed on the same file.
+DECL_B="${TMPDIR_BASE}/work-declared-crlf"
+make_declared_work "$DECL_B" "lite" crlf
+assert_declared_flat "$DECL_B" "26b: declared 'path: lite' with CRLF line endings"
+
+# 26c: single-quoted. Only double quotes were stripped, so the value compared
+# as "'lite'" -- not equal to "lite", hence "not flat".
+DECL_C="${TMPDIR_BASE}/work-declared-squote"
+make_declared_work "$DECL_C" "'lite'"
+assert_declared_flat "$DECL_C" "26c: declared single-quoted 'lite'"
+
+# 26d: trailing inline comment, kept verbatim before the fix.
+DECL_D="${TMPDIR_BASE}/work-declared-comment"
+make_declared_work "$DECL_D" "lite # single-delivery"
+assert_declared_flat "$DECL_D" "26d: declared 'lite' with a trailing # comment"
+
+# 26e: uppercase -- the read lowercases, so LITE is accepted.
+DECL_E="${TMPDIR_BASE}/work-declared-upper"
+make_declared_work "$DECL_E" "LITE"
+assert_declared_flat "$DECL_E" "26e: declared 'LITE' is case-insensitive"
+
+# 26f: THE INVERSE, and the one that proves the others are not passing by
+# accident. A declared `full` must NOT take the flat path even though a
+# BLUEPRINT.md and a tasks/task-NNN/DETAIL.md are both present -- exactly the
+# combination the presence rule reads as flat. Declared beats inferred, so the
+# work-root file must NOT gain a flat task entry.
+DECL_F="${TMPDIR_BASE}/work-declared-full"
+make_flat_work_state "$DECL_F"
+make_flat_task_spec "$DECL_F" 1
+make_flat_blueprint "$DECL_F"
+printf 'pipeline:\n  path: full\n' >> "${DECL_F}/STATE.yml"
+code=0
+AID_STATE_FILE="${DECL_F}/STATE.yml" bash "$SCRIPT" --delivery-id 1 --task-id 1 \
+    --field Name --value "Should Not Be Flat" 2>/dev/null || code=$?
+assert_file_not_contains "${DECL_F}/STATE.yml" "Should Not Be Flat" \
+    "26f: declared 'full' overrides the BLUEPRINT.md presence rule (no flat write)"
+
+# 26g: no declaration at all -- the presence fallback must still work, so
+# un-migrated works keep behaving exactly as before.
+DECL_G="${TMPDIR_BASE}/work-declared-absent"
+make_flat_work_state "$DECL_G"
+make_flat_task_spec "$DECL_G" 1
+make_flat_blueprint "$DECL_G"
+assert_declared_flat "$DECL_G" "26g: undeclared work still falls back to the presence rule"
+
+# ---------------------------------------------------------------------------
 echo ""
 test_summary
 exit $?

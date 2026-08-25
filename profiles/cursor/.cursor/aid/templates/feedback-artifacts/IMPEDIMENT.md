@@ -73,7 +73,7 @@
 **Effort:** S | M | L | XL
 **Risk:** {what could go wrong}
 **Scope impact:** {does this require touching more than the defined task scope?}
-**Spec impact:** {does this require changing SPEC.md?}
+**Spec impact:** {does this require changing the feature's `§ 11` section?}
 
 ### Option B: {Name}
 **Approach:** {what to do}
@@ -104,5 +104,5 @@
 **Action taken:** {what was done}
 **Artifacts updated:**
 - `.aid/knowledge/{document}.md` rev {n} — {what changed}
-- `SPEC.md` rev {n} — {what changed, if applicable}
+- `REQUIREMENTS.md § 11` feature section — {what changed, if applicable}
 - `task-NNN.md` rev {n} — {what changed, if applicable}

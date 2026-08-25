@@ -29,11 +29,13 @@
 # derived task rollup) and per-task delivery-NNN/tasks/task-NNN/STATE.yml
 # (mutable task cells).
 #
-# Artifact files (REQUIREMENTS.md, per-feature SPEC.md, PLAN.md, per-task
-# DETAIL.md) carry NO in-document history section: git records what changed in
-# a document, with author, date and diff. This file carries process state
-# (where are we in the workflow), which git cannot answer -- that is why it
-# exists and a "## Change Log" section does not.
+# Artifact files (REQUIREMENTS.md, PLAN.md, per-task DETAIL.md) carry NO inline
+# "## Change Log" section. Content history -- what changed in the document -- is
+# exactly what git records, with author, date and full diff, and without drift;
+# a hand-maintained table duplicates it at lower fidelity. This is the same
+# reasoning the tracking-discipline rule already applies to .aid/knowledge/ docs,
+# extended to work artifacts. Process state (where are we in the workflow) is
+# what THIS file is for, and it stays here.
 #
 # The AUTHORED delivery_lifecycle / tasks_lifecycle / delivery_gate keys
 # (singular) apply ONLY to single-delivery flattened works (no

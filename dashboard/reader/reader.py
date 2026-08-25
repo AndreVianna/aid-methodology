@@ -49,6 +49,7 @@ _LEGACY_STATE_FILENAME = "STATE.md"
 
 from .derivation import derive_doc_freshness, derive_kb_status
 from .io_bounds import read_bytes_bounded
+from .state_schema import parse_state_document
 from .locator import enumerate_worktree_roots, locate_aid_root
 from .models import (
     DeferredIssue,
@@ -1040,6 +1041,41 @@ def _detect_hierarchy(work_dir: Path) -> bool:
     return False
 
 
+def _declared_work_path(work_dir: Path) -> Optional[str]:
+    """Return the work-root STATE_FILENAME's `pipeline.path`, or None.
+
+    STATE_FILENAME only -- no legacy fallback, deliberately. SP-9 routes a work
+    holding the retired markdown name with no sibling STATE.yml to the
+    legacy-work detector in _read_work, which runs BEFORE any layout routing and
+    diagnoses rather than parses. So a legacy work never reaches _detect_flat,
+    and a fallback here would be both unreachable and contrary to that policy.
+
+    Reads `pipeline.path` out of the nested tree exactly as
+    parsers._apply_pipeline_identity does, via the same § D-3 subset engine every
+    other state reader uses.
+
+    None means "not declared" -- no state file, an unparseable one, or the key
+    absent. Callers fall back to presence-inference. Never throws (NFR7): a parse
+    warning yields None here, never an exception.
+    """
+    try:
+        state = work_dir / STATE_FILENAME
+        if not state.is_file():
+            return None
+        text = read_bytes_bounded(state).decode("utf-8", errors="replace")
+        data, _warnings = parse_state_document(text, file_label=state.name)
+        pipeline = data.get("pipeline")
+        if not isinstance(pipeline, dict):
+            return None
+        value = pipeline.get("path")
+        if not isinstance(value, str):
+            return None
+        value = value.strip().lower()
+        return value or None
+    except (OSError, ValueError):
+        return None
+
+
 def _detect_flat(work_dir: Path) -> bool:
     """Return True if this work has the FLATTENED single-delivery layout (feature-001).
 
@@ -1054,11 +1090,29 @@ def _detect_flat(work_dir: Path) -> bool:
     `canonical/aid/scripts/execute/writeback-state.sh` and reader.mjs's
     `_detectFlat` (lockstep Node twin).
 
-    Presence-based, per-work. Mutually exclusive with _detect_hierarchy by
-    construction (this function explicitly asserts `deliveries/` absence,
-    not just call-site ordering). Never throws.
+    DECLARED FIRST, inferred only as a fallback. The layout is a property of the
+    WHOLE WORK, so it is read from the work-root STATE.md frontmatter
+    (`pipeline.path: lite | full`) when that key is present. A declared value
+    cannot be ambiguous; an inferred one can -- and inferring it from a FILE'S
+    PRESENCE made an ordinary artifact load-bearing, so `BLUEPRINT.md` could not
+    be retired or relocated without silently changing how three separate
+    implementations classified the work.
+
+    The 3-part presence rule survives only for un-migrated works whose STATE.md
+    predates the frontmatter block. reader.mjs already documents exactly this
+    shape for the `workPath` FIELD ("stop inferring via
+    _detectFlat/_detectHierarchy when present ... the fallback default for
+    un-migrated works"); this extends it to the layout DISPATCH, which is what
+    actually made the artifact load-bearing.
+
+    Mutually exclusive with _detect_hierarchy by construction (the fallback
+    explicitly asserts `deliveries/` absence, not just call-site ordering).
+    Never throws.
     """
     try:
+        declared = _declared_work_path(work_dir)
+        if declared:
+            return declared == "lite"
         if not (work_dir / "BLUEPRINT.md").is_file():
             return False
         if (work_dir / "deliveries").is_dir():
@@ -1197,22 +1251,43 @@ def _read_work_flat(
         )
         task_dirs = []
 
+    # Read every DETAIL.md ONCE, up front. The per-task fields (short name, type) are
+    # taken from these texts below, and the same texts derive the lane map -- the graph
+    # is the set of `**Depends on:**` fields, so it cannot be known until all of them
+    # are in hand. Reading inside the task loop instead would either miss the graph or
+    # read each file twice.
+    detail_texts: dict[str, str] = {}
+    for task_dir in task_dirs:
+        task_detail_path = task_dir / "DETAIL.md"
+        if not task_detail_path.is_file():
+            continue
+        try:
+            raw = read_bytes_bounded(task_detail_path)
+            bytes_read += len(raw)
+            detail_texts[task_dir.name] = raw.decode("utf-8", errors="replace")
+        except OSError:
+            continue
+
+    # Lanes on this layout are DERIVED, not read. A flattened work has one delivery and
+    # so no sequencing decision to record; its PLAN.md, when it has one, carries a
+    # top-level `## Execution Graph` with no wave-map fence and no
+    # `### delivery-NNN Execution Graph` header, so parse_execution_graph above returns
+    # nothing for it. Deriving from the DETAILs both fills that gap -- this layout had
+    # no lanes at all before -- and removes the reason to keep a PLAN.md on the Lite
+    # path. An authored map, where one exists, still wins: it is an explicit statement,
+    # and this fallback must not override it.
+    if not task_lane_map:
+        task_lane_map = _derive_lanes_from_details(detail_texts)
+
     for task_dir in task_dirs:
         task_id_str = task_dir.name
 
-        # Read task DETAIL.md for short_name and type (no per-task STATE.md here)
-        task_detail_path = task_dir / "DETAIL.md"
+        detail_text = detail_texts.get(task_id_str)
         short_name: Optional[str] = None
         task_type: str = ""
-        if task_detail_path.is_file():
-            try:
-                raw = read_bytes_bounded(task_detail_path)
-                bytes_read += len(raw)
-                detail_text = raw.decode("utf-8", errors="replace")
-                short_name = _parse_task_spec_short_name(detail_text)
-                task_type = _parse_task_spec_type(detail_text)
-            except OSError:
-                pass
+        if detail_text is not None:
+            short_name = _parse_task_spec_short_name(detail_text)
+            task_type = _parse_task_spec_type(detail_text)
 
         # Mutable cells from the work-root STATE.md ### Tasks lifecycle table
         pts = tasks_lifecycle.get(task_id_str.lower())
@@ -1298,7 +1373,10 @@ def _read_work_hierarchical(
       - work_dir/STATE_FILENAME                                    -- work-level lifecycle/history
       - work_dir/deliveries/delivery-NNN/STATE_FILENAME             -- delivery lifecycle (SD-8) + gate + Q&A
       - work_dir/deliveries/delivery-NNN/tasks/task-NNN/STATE_FILENAME -- per-task mutable cells
-      - work_dir/deliveries/delivery-NNN/BLUEPRINT.md               -- task listing (for short_name / type)
+      (Task DISCOVERY is directory-based -- deliveries/*/tasks/task-NNN/ -- and
+       short_name/type come from each task's own DETAIL.md. An earlier version of
+       this docstring named a per-delivery BLUEPRINT.md as the task listing; that
+       artifact is retired, and the code never depended on it for discovery.)
       - work_dir/deliveries/delivery-NNN/tasks/task-NNN/DETAIL.md   -- task short name
 
     Union views assembled:
@@ -1369,6 +1447,18 @@ def _read_work_hierarchical(
     plan_path = work_dir / "PLAN.md"
     task_lane_map, plan_bytes = parse_execution_graph(plan_path)
     bytes_read += plan_bytes
+
+    # Delivery titles come from the same file. Its bytes are NOT added again --
+    # parse_execution_graph above already counted this exact read, and counting it
+    # twice would overstate the byte budget io_bounds enforces.
+    plan_delivery_titles: dict[str, str] = {}
+    if plan_path.is_file():
+        try:
+            plan_delivery_titles = _parse_plan_delivery_titles(
+                read_bytes_bounded(plan_path).decode("utf-8", errors="replace")
+            )
+        except OSError:
+            plan_delivery_titles = {}
 
     # -----------------------------------------------------------------------
     # Enumerate deliveries and their tasks from the hierarchy
@@ -1493,19 +1583,25 @@ def _read_work_hierarchical(
             ))
 
         # ---- Build DeliverableRef for this delivery ----
-        # Use the delivery BLUEPRINT.md title as the name, falling back to delivery_id
-        delivery_spec_path = delivery_dir / "BLUEPRINT.md"
+        # Title resolution: PLAN.md stanza -> legacy BLUEPRINT.md H1 -> delivery_id.
+        # PLAN.md's stanza is the delivery definition now, so it is the authoritative
+        # source; the BLUEPRINT read survives only for works predating the fold.
         delivery_name = delivery_id
-        if delivery_spec_path.is_file():
-            try:
-                raw = read_bytes_bounded(delivery_spec_path)
-                bytes_read += len(raw)
-                spec_text = raw.decode("utf-8", errors="replace")
-                spec_name = _parse_delivery_spec_title(spec_text)
-                if spec_name:
-                    delivery_name = spec_name
-            except OSError:
-                pass
+        plan_title = plan_delivery_titles.get(delivery_id.lower())
+        if plan_title:
+            delivery_name = plan_title
+        else:
+            delivery_spec_path = delivery_dir / "BLUEPRINT.md"
+            if delivery_spec_path.is_file():
+                try:
+                    raw = read_bytes_bounded(delivery_spec_path)
+                    bytes_read += len(raw)
+                    spec_text = raw.decode("utf-8", errors="replace")
+                    spec_name = _parse_delivery_spec_title(spec_text)
+                    if spec_name:
+                        delivery_name = spec_name
+                except OSError:
+                    pass
 
         all_deliverables.append(DeliverableRef(
             number=delivery_number,
@@ -1599,8 +1695,118 @@ def _parse_task_spec_type(spec_text: str) -> str:
     return ""
 
 
+def _derive_lanes_from_details(details: dict[str, str]) -> dict[str, int]:
+    """Derive {task_id: wave} from task DETAIL bodies, by topological sort.
+
+    `details` maps a task id ('task-001') to that task's DETAIL.md text. Each task's
+    `**Depends on:**` field IS the graph, so a work needs no stored execution graph to
+    have one: the flattened/Lite layout has a single delivery and therefore no
+    sequencing decision to record, and a PLAN.md there would hold only this view of
+    data already on disk.
+
+    Mirrors canonical/aid/scripts/execute/derive-waves.sh, whose awk pass is the
+    reference implementation, INCLUDING its two non-obvious rules:
+
+      - A dependency naming a task that is not in `details` is treated as already
+        SATISFIED rather than as an error. Deliveries run in series, so a dependency on
+        an earlier delivery's task is met by the time this one starts.
+      - Wave numbers start at 1 and every task lands in exactly one wave.
+
+    A CYCLE yields {} rather than a partial map or an exception (NFR7). A partial map
+    would silently show some tasks laned and others not, which reads as a data problem
+    in the tasks rather than in the graph.
+
+    Dependencies are read by EXTRACTING task ids, not by cleaning the field, for the
+    same reason the awk does it: "no dependencies" is written as an em dash, an en
+    dash, '--', '-', 'none', or an empty value, and extraction treats every spelling
+    identically without enumerating them.
+    """
+    try:
+        import re
+
+        dep_re = re.compile(r"^\*\*Depends on:\*\*(.*)$", re.MULTILINE | re.IGNORECASE)
+        task_re = re.compile(r"task-\d+", re.IGNORECASE)
+
+        deps: dict[str, set[str]] = {}
+        for task_id, text in details.items():
+            found: set[str] = set()
+            match = dep_re.search(text or "")
+            if match:
+                found = {t.lower() for t in task_re.findall(match.group(1))}
+            # A task never depends on itself; a self-edge would deadlock the sort.
+            found.discard(task_id.lower())
+            deps[task_id.lower()] = found
+
+        lanes: dict[str, int] = {}
+        wave = 0
+        while len(lanes) < len(deps):
+            wave += 1
+            ready = [
+                t for t, d in deps.items()
+                if t not in lanes
+                and all(x in lanes or x not in deps for x in d)
+            ]
+            if not ready:
+                return {}          # cycle
+            for t in ready:
+                lanes[t] = wave
+        return lanes
+    except Exception:  # noqa: BLE001
+        return {}
+
+
+def _parse_plan_delivery_titles(plan_text: str) -> dict[str, str]:
+    """Map delivery_id -> title from PLAN.md's delivery stanzas.
+
+    PLAN.md now carries the delivery DEFINITION, so its stanza is the title's home;
+    the retired per-delivery BLUEPRINT.md H1 is only consulted for works created
+    before the fold (see _delivery_title).
+
+    Two spellings, because the two layouts spell the stanza differently and both are
+    current:
+      - nested:    '### delivery-001: Some Title'
+      - flattened: '- **Delivery:** delivery-001 -- Some Title'
+    The flattened PLAN.md emits NO '### delivery-NNN' heading by design -- two
+    execute-graph scripts key off that heading's absence -- so the bullet form is the
+    only one it has.
+
+    Template placeholders ('{Name}') are rejected, matching _parse_delivery_spec_title:
+    an unfilled scaffold has no title, and showing the braces would be worse than
+    falling back to the delivery id. Returns {} on any parse trouble; never raises.
+    """
+    titles: dict[str, str] = {}
+    try:
+        import re
+
+        heading = re.compile(r"^#{2,}\s+(delivery-\d+)\s*:\s*(.+?)\s*$", re.IGNORECASE)
+        bullet = re.compile(
+            # Em dash as \u2014 rather than literal, matching the Node twin, which is
+            # ASCII-only enforced. Keeping both spellings identical means the two
+            # patterns can be diffed by eye.
+            "^[-*]\\s+\\*\\*Delivery:\\*\\*\\s*(delivery-\\d+)\\s*(?:--|\u2014|-)\\s*(.+?)\\s*$",
+            re.IGNORECASE,
+        )
+        for line in plan_text.splitlines():
+            stripped = line.strip()
+            match = heading.match(stripped) or bullet.match(stripped)
+            if not match:
+                continue
+            delivery_id, title = match.group(1).lower(), match.group(2).strip()
+            # First stanza wins: a later duplicate heading is malformed input, and
+            # silently preferring the last one would hide it.
+            if title and not title.startswith("{") and delivery_id not in titles:
+                titles[delivery_id] = title
+    except Exception:  # noqa: BLE001
+        return {}
+    return titles
+
+
 def _parse_delivery_spec_title(spec_text: str) -> Optional[str]:
     """Extract the delivery title from a delivery-level BLUEPRINT.md.
+
+    LEGACY source, kept for works created before the delivery definition folded into
+    PLAN.md's stanza. _delivery_title prefers the PLAN.md title and only falls back
+    here, so this reads a file that new works do not have.
 
     Reads the H1 heading: '# Delivery BLUEPRINT -- delivery-NNN: {Title}'
     or a shorter form: '# delivery-NNN: {Title}'

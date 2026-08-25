@@ -361,6 +361,3 @@ CONFIRMED by the cited sources above and the project release/install memory note
 - **External tool versions are pinned where they gate shippable artifacts** (the PowerShell 5.1
   floor; the CI Node/Python pins); changing a pinned harness version is a lockstep change that
   the parity/compat suites guard.
-
----
-

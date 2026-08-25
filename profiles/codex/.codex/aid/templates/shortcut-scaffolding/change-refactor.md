@@ -38,7 +38,7 @@ needs resource/endpoint/schema/security-notes), then adds:
 |---|---|
 | Current shape/behavior | what the artifact does/looks like **today** -- the delta's starting point |
 | Target shape/behavior | what it should do/look like **after** the change |
-| New acceptance criteria | the criteria this change introduces (§5.1 "new acceptance criteria") -- these become `SPEC.md § Acceptance Criteria`, not a rewrite of the artifact's pre-existing ones |
+| New acceptance criteria | the criteria this change introduces (§5.1 "new acceptance criteria") -- these become new `AC-N` entries in `REQUIREMENTS.md § 9`, not a rewrite of the artifact's pre-existing ones |
 | Rationale | why the change is needed (bug report, new requirement, deprecation, etc.) |
 
 **Escalation.** Same rule as the generic engine and `create.md`: escalate to
@@ -83,7 +83,7 @@ description does not clearly name `rename` or `performance`.
 
 The mandatory three sections (`### Data Model`, `### Feature Flow`,
 `### Layers & Components`) always apply, per the engine's own contract
-(`shortcut-engine.md § State: SPEC` -- every generated SPEC.md carries the
+(`shortcut-engine.md § State: SPEC` -- every generated feature section carries the
 mandatory three, `create.md § SPEC` likewise) -- `aid-refactor` activates no
 additional conditional section for any `refactor-kind`. `### Data Model` and
 `### Feature Flow` both read "unchanged -- behavior-preserving refactor" by
@@ -139,8 +139,8 @@ touches (the removal's real substance, mirroring `aid-refactor`'s own
 | `task-003` | TEST | full suite run confirms no residual reference and no regression; depends on `task-002` |
 
 Fold `task-002`/`task-003` into `task-001` only when the capture step found zero
-dependents (genuinely dead code) -- state that explicitly in `BLUEPRINT.md § Scope`
-when it applies. One type per task still holds
+dependents (genuinely dead code) -- state that explicitly in the delivery stanza's
+`**Scope:**` field in `PLAN.md` when it applies. One type per task still holds
 (`artifact-schemas.md § Task DETAIL.md`).
 
 ## `aid-deprecate` -- CAPTURE
@@ -234,8 +234,6 @@ assume the decision to act has already been made.
   assessed before this file's verbs act on it
 - `.codex/aid/templates/shortcut-engine.md § Family Scaffolding Consult` --
   how this file is looked up and what happens when it is absent
-- `features/feature-007-change-and-refactor-family/SPEC.md`
-  (work-001-lite-aid-skills) -- the settled design this reference implements
 - `.codex/skills/aid-execute/references/task-type-rules.md ## MIGRATE /
   ## REFACTOR / ## IMPLEMENT` -- the per-type execution rules
   `aid-remove`/`aid-deprecate`/`aid-migrate` map onto

@@ -3593,24 +3593,78 @@ function _detectHierarchy(workDir) {
   return false;
 }
 
+// Exported for the three-way parity test (bash + Python + Node on one corpus). Not
+// part of the consumed surface -- _detectFlat calls it internally.
+export function _declaredWorkPath(workDir) {
+  // Return the work-root STATE.yml `pipeline.path`, or null.
+  // Mirror reader.py _declared_work_path.
+  //
+  // STATE.yml only -- no legacy fallback, deliberately. SP-9 routes a work
+  // holding the retired markdown name with no sibling STATE.yml to the
+  // legacy-work detector in readWork, which runs BEFORE any layout routing and
+  // diagnoses rather than parses. A legacy work therefore never reaches
+  // _detectFlat, so a fallback here would be unreachable and contrary to that
+  // policy.
+  //
+  // Reads `pipeline.path` out of the nested tree via parseStateDocument -- the
+  // same D-3 subset engine every other state reader uses -- exactly as
+  // _applyPipelineIdentity does. Never throws (NFR7).
+  try {
+    const statePath = join(workDir, "STATE.yml");
+    let isFile = false;
+    try { isFile = statSync(statePath).isFile(); } catch (_) { isFile = false; }
+    if (!isFile) return null;
+    const text = readFileBounded(statePath).toString("utf8");
+    const [data] = parseStateDocument(text, { fileLabel: "STATE.yml" });
+    const pipeline = data && data.pipeline;
+    if (!pipeline || typeof pipeline !== "object") return null;
+    const v = pipeline.path;
+    if (typeof v !== "string") return null;
+    const s = v.trim().toLowerCase();
+    return s === "" ? null : s;
+  } catch (_) {
+    return null;
+  }
+}
+
 function _detectFlat(workDir) {
   // Return true if this work has the FLATTENED single-delivery layout (feature-001).
   // Mirror reader.py _detect_flat.
   //
-  // Detection rule (3-part; identical across all consumers): a work-root
-  // BLUEPRINT.md exists AND at least one tasks/task-NNN/DETAIL.md exists
-  // directly under the work root AND no `deliveries/` wrapper exists under
-  // the work root. This layout has no per-task STATE.yml; this check does not
-  // look for one.
+  // DECLARED FIRST, inferred only as a fallback. The layout is a property of
+  // the WHOLE WORK, so it is read from the work-root STATE.yml
+  // (`pipeline.path: lite | full`) when that key is present. A declared value
+  // cannot be ambiguous; an inferred one can -- and inferring it from a FILE
+  // PRESENCE made an ordinary artifact load-bearing, so `BLUEPRINT.md` could
+  // not be retired or relocated without silently changing how three separate
+  // implementations classified the work.
   //
-  // Mirrors the SAME 3-part detection rule as `is_flat_layout()` in
+  // The surviving fallback is the original 3-part presence rule: a work-root
+  // BLUEPRINT.md exists AND at least one tasks/task-NNN/DETAIL.md exists
+  // directly under the work root AND no `deliveries/` wrapper exists. This
+  // layout has no per-task STATE.yml; the check does not look for one.
+  //
+  // This file already documented exactly this shape for the `workPath` FIELD
+  // ("stop inferring via _detectFlat/_detectHierarchy when present ... the
+  // fallback default for un-migrated works"); this extends it to the layout
+  // DISPATCH, which is what actually made the artifact load-bearing.
+  //
+  // The 3-part presence rule survives only for un-migrated works whose STATE.md
+  // predates the frontmatter block: a work-root BLUEPRINT.md exists AND at
+  // least one tasks/task-NNN/DETAIL.md exists directly under the work root AND
+  // no `deliveries/` wrapper exists.
+  //
+  // Mirrors the SAME rule as `is_flat_layout()` in
   // canonical/aid/scripts/execute/writeback-state.sh and reader.py's
   // `_detect_flat` (lockstep Python twin).
   //
-  // Presence-based, per-work. Mutually exclusive with _detectHierarchy by
-  // construction (this function explicitly asserts `deliveries/` absence,
-  // not just call-site ordering). Never throws.
+  // Mutually exclusive with _detectHierarchy by construction (the fallback
+  // explicitly asserts `deliveries/` absence, not just call-site ordering).
+  // Never throws.
   try {
+    const declared = _declaredWorkPath(workDir);
+    if (declared !== null) return declared === "lite";
+
     let blueprintIsFile = false;
     try { blueprintIsFile = statSync(join(workDir, "BLUEPRINT.md")).isFile(); } catch (_) { blueprintIsFile = false; }
     if (!blueprintIsFile) return false;
@@ -3930,10 +3984,111 @@ function _parseTaskSpecType(specText) {
   return "";
 }
 
+export function _deriveLanesFromDetails(details) {
+  // Derive {taskId: wave} from task DETAIL bodies, by topological sort.
+  // Mirror reader.py _derive_lanes_from_details.
+  //
+  // `details` maps a task id ('task-001') to that task's DETAIL.md text. Each task's
+  // `**Depends on:**` field IS the graph, so a work needs no stored execution graph to
+  // have one: the flattened/Lite layout has a single delivery and therefore no
+  // sequencing decision to record.
+  //
+  // Mirrors canonical/aid/scripts/execute/derive-waves.sh, whose awk pass is the
+  // reference implementation, INCLUDING its two non-obvious rules:
+  //   - a dependency naming a task absent from `details` is treated as already
+  //     SATISFIED, since deliveries run in series
+  //   - waves start at 1 and every task lands in exactly one wave
+  //
+  // A CYCLE yields {} rather than a partial map or a throw (NFR7): a partial map would
+  // show some tasks laned and others not, reading as a problem with the tasks rather
+  // than with the graph.
+  try {
+    const depRe = /^\*\*Depends on:\*\*(.*)$/im;
+    const taskRe = /task-\d+/gi;
+
+    const deps = {};
+    for (const [taskId, text] of Object.entries(details)) {
+      const key = taskId.toLowerCase();
+      const found = new Set();
+      const m = (text || "").match(depRe);
+      if (m) {
+        for (const hit of m[1].match(taskRe) || []) found.add(hit.toLowerCase());
+      }
+      // A task never depends on itself; a self-edge would deadlock the sort.
+      found.delete(key);
+      deps[key] = found;
+    }
+
+    const lanes = {};
+    const total = Object.keys(deps).length;
+    let wave = 0;
+    while (Object.keys(lanes).length < total) {
+      wave++;
+      const ready = Object.keys(deps).filter((t) => {
+        if (t in lanes) return false;
+        for (const x of deps[t]) {
+          if (!(x in lanes) && x in deps) return false;
+        }
+        return true;
+      });
+      if (ready.length === 0) return {};   // cycle
+      for (const t of ready) lanes[t] = wave;
+    }
+    return lanes;
+  } catch (_) {
+    return {};
+  }
+}
+
+// Exported for the cross-runtime parity test only (its Python twin is importable as
+// a module-level function, so the Node side must be reachable too). Not part of the
+// reader's consumed surface -- readRepo/readRepoDetail call it internally.
+export function _parsePlanDeliveryTitles(planText) {
+  // Map deliveryId -> title from PLAN.md's delivery stanzas.
+  // Mirror reader.py _parse_plan_delivery_titles.
+  //
+  // PLAN.md now carries the delivery DEFINITION, so its stanza is the title's home;
+  // the retired per-delivery BLUEPRINT.md H1 is only consulted for works created
+  // before the fold.
+  //
+  // Two spellings, because the two layouts spell the stanza differently and both are
+  // current:
+  //   - nested:    '### delivery-001: Some Title'
+  //   - flattened: '- **Delivery:** delivery-001 -- Some Title'
+  // The flattened PLAN.md emits NO '### delivery-NNN' heading by design, so the
+  // bullet form is the only one it has.
+  //
+  // Template placeholders ('{Name}') are rejected, matching _parseDeliverySpecTitle.
+  const titles = {};
+  try {
+    const heading = /^#{2,}\s+(delivery-\d+)\s*:\s*(.+?)\s*$/i;
+    // Em dash written as \u2014, not literally: this file is ASCII-only enforced
+    // (test-ascii-only.sh). The escape is the same character to the regex engine.
+    const bullet = /^[-*]\s+\*\*Delivery:\*\*\s*(delivery-\d+)\s*(?:--|\u2014|-)\s*(.+?)\s*$/i;
+    for (const line of planText.split("\n")) {
+      const stripped = line.trim();
+      const m = stripped.match(heading) || stripped.match(bullet);
+      if (!m) continue;
+      const deliveryId = m[1].toLowerCase();
+      const title = m[2].trim();
+      // First stanza wins, as in the Python twin.
+      if (title && !title.startsWith("{") && !(deliveryId in titles)) {
+        titles[deliveryId] = title;
+      }
+    }
+  } catch (_) {
+    return {};
+  }
+  return titles;
+}
+
 function _parseDeliverySpecTitle(specText) {
   // Extract the delivery title from a delivery-level BLUEPRINT.md.
   // Mirror parsers.py _parse_delivery_spec_title.
   // Returns the title portion after '# ... delivery-NNN: Title', or null.
+  //
+  // LEGACY source, kept for works created before the delivery definition folded
+  // into PLAN.md's stanza. Callers prefer the PLAN.md title and only fall back here.
   try {
     for (const line of specText.split("\n")) {
       const stripped = line.trim();
@@ -3964,8 +4119,10 @@ function _readWorkFlat(workDir, workId) {
   //   - workDir/tasks/task-NNN/DETAIL.md  -- task type / short-name (no per-task STATE.yml --
   //                                           mutable cells come from the work STATE.yml
   //                                           tasks_lifecycle mapping)
-  //   - workDir/BLUEPRINT.md              -- the single delivery's title (synthesized
-  //                                           DeliverableRef name)
+  //   - workDir/PLAN.md                   -- the single delivery's title, from its
+  //                                           `### delivery-NNN` stanza (synthesized
+  //                                           DeliverableRef name). Was BLUEPRINT.md;
+  //                                           that artifact is retired.
   //
   // Synthesizes exactly ONE DeliverableRef for delivery-001 (every task gets
   // wave="delivery-001", delivery=1) -- there is no deliveries/ wrapper to enumerate.
@@ -4029,10 +4186,11 @@ function _readWorkFlat(workDir, workId) {
 
   // PF-5: parse PLAN.md execution graph for lane assignments. The flat PLAN.md's
   // top-level ## Execution Graph carries no wave-map fence / "### delivery-NNN
-  // Execution Graph" prose header, so this yields an empty map -- lane stays null
-  // for every task (harmless; no lane derivation is defined for the flat shape).
+  // Execution Graph" prose header, so this yields an empty map. It is no longer the
+  // last word: an empty map is filled by deriving lanes from the task DETAILs below,
+  // which is why this is `let` and not `const`.
   const planPath = join(workDir, "PLAN.md");
-  const [taskLaneMap, planBytes] = parseExecutionGraph(planPath);
+  let [taskLaneMap, planBytes] = parseExecutionGraph(planPath);
   bytesRead += planBytes;
 
   // Parse the promoted delivery_lifecycle / delivery_gate keys from the SAME
@@ -4073,24 +4231,37 @@ function _readWorkFlat(workDir, workId) {
     taskDirEntries = [];
   }
 
+  // Read every DETAIL.md ONCE, up front. Mirror reader.py: the per-task fields come
+  // from these texts, and the same texts derive the lane map -- the graph is the set of
+  // `**Depends on:**` fields, so it cannot be known until all of them are in hand.
+  const detailTexts = {};
   for (const [taskIdStr, taskDir] of taskDirEntries) {
-    // Read task DETAIL.md for short_name and type (no per-task STATE.yml here)
     const taskDetailPath = join(taskDir, "DETAIL.md");
+    let isFile = false;
+    try { isFile = statSync(taskDetailPath).isFile(); } catch (_) { isFile = false; }
+    if (!isFile) continue;
+    try {
+      const raw = readFileBounded(taskDetailPath);
+      bytesRead += raw.length;
+      detailTexts[taskIdStr] = raw.toString("utf-8");
+    } catch (_) {
+      // pass
+    }
+  }
+
+  // Lanes on this layout are DERIVED, not read -- see reader.py for the full rationale.
+  // An authored map, where one exists, still wins; this only fills an empty one.
+  if (Object.keys(taskLaneMap).length === 0) {
+    taskLaneMap = _deriveLanesFromDetails(detailTexts);
+  }
+
+  for (const [taskIdStr, taskDir] of taskDirEntries) {
+    const detailText = detailTexts[taskIdStr];
     let shortName = null;
     let taskType = "";
-    let taskDetailIsFile = false;
-    try { taskDetailIsFile = statSync(taskDetailPath).isFile(); } catch (_) { taskDetailIsFile = false; }
-
-    if (taskDetailIsFile) {
-      try {
-        const raw = readFileBounded(taskDetailPath);
-        bytesRead += raw.length;
-        const detailText = raw.toString("utf-8");
-        shortName = _parseTaskSpecShortName(detailText);
-        taskType = _parseTaskSpecType(detailText);
-      } catch (_) {
-        // pass
-      }
+    if (detailText !== undefined) {
+      shortName = _parseTaskSpecShortName(detailText);
+      taskType = _parseTaskSpecType(detailText);
     }
 
     // Mutable cells from the work-root STATE.yml tasks_lifecycle mapping
@@ -4238,6 +4409,22 @@ function _readWorkHierarchical(workDir, workId) {
   const [taskLaneMap, planBytes] = parseExecutionGraph(planPath);
   bytesRead += planBytes;
 
+  // Delivery titles come from the same file. Its bytes are NOT added again --
+  // parseExecutionGraph above already counted this exact read, and counting it twice
+  // would overstate the byte budget. Mirrors reader.py.
+  let planDeliveryTitles = {};
+  {
+    let planIsFile = false;
+    try { planIsFile = statSync(planPath).isFile(); } catch (_) { planIsFile = false; }
+    if (planIsFile) {
+      try {
+        planDeliveryTitles = _parsePlanDeliveryTitles(readFileBounded(planPath).toString("utf-8"));
+      } catch (_) {
+        planDeliveryTitles = {};
+      }
+    }
+  }
+
   // Enumerate deliveries and their tasks from the hierarchy
   const allTasks = [];
   const allDeliverables = [];
@@ -4373,21 +4560,29 @@ function _readWorkHierarchical(workDir, workId) {
       });
     }
 
-    // Build DeliverableRef for this delivery
-    const deliverySpecPath = join(deliveryDir, "BLUEPRINT.md");
+    // Build DeliverableRef for this delivery.
+    // Title resolution: PLAN.md stanza -> legacy BLUEPRINT.md H1 -> deliveryId.
+    // PLAN.md's stanza is the delivery definition now, so it is authoritative; the
+    // BLUEPRINT read survives only for works predating the fold.
     let deliveryName = deliveryId;
-    let deliverySpecIsFile = false;
-    try { deliverySpecIsFile = statSync(deliverySpecPath).isFile(); } catch (_) { deliverySpecIsFile = false; }
+    const planTitle = planDeliveryTitles[deliveryId.toLowerCase()];
+    if (planTitle) {
+      deliveryName = planTitle;
+    } else {
+      const deliverySpecPath = join(deliveryDir, "BLUEPRINT.md");
+      let deliverySpecIsFile = false;
+      try { deliverySpecIsFile = statSync(deliverySpecPath).isFile(); } catch (_) { deliverySpecIsFile = false; }
 
-    if (deliverySpecIsFile) {
-      try {
-        const raw = readFileBounded(deliverySpecPath);
-        bytesRead += raw.length;
-        const specText = raw.toString("utf-8");
-        const specName = _parseDeliverySpecTitle(specText);
-        if (specName) deliveryName = specName;
-      } catch (_) {
-        // pass
+      if (deliverySpecIsFile) {
+        try {
+          const raw = readFileBounded(deliverySpecPath);
+          bytesRead += raw.length;
+          const specText = raw.toString("utf-8");
+          const specName = _parseDeliverySpecTitle(specText);
+          if (specName) deliveryName = specName;
+        } catch (_) {
+          // pass
+        }
       }
     }
 

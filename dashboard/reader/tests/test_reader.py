@@ -1502,8 +1502,19 @@ class TestSchemaVersion3Serialization(unittest.TestCase):
         permanently unreachable for tasks[] (see
         test_delivery_from_state_wave_column_is_now_unreachable above). The
         FLAT layout is the real mechanism that produces a non-empty tasks[]
-        with delivery=1 (flat's hardcoded single implicit delivery) and
-        lane=None (no PLAN.md) -- the exact pair this test always asserted."""
+        with delivery=1 (flat's hardcoded single implicit delivery).
+
+        lane INVERTED: this asserted lane=None, because the flat layout had no lane
+        derivation at all -- its PLAN.md carries a top-level `## Execution Graph` with
+        no wave-map fence, so parse_execution_graph returned nothing and every flat
+        task was laneless. Lanes are now DERIVED from the task DETAILs' `**Depends on:**`
+        fields, which is what lets the Lite path drop PLAN.md entirely. A single task
+        with no dependencies is wave 1, so lane=1 is the correct answer here and
+        lane=None would now mean the derivation silently did nothing.
+
+        The invariant this test actually guards -- that the serialized task carries the
+        schema-3 triple (short_name, delivery, lane) with the values the flat layout
+        implies -- is unchanged."""
         import sys
         sys.path.insert(0, str(Path(__file__).resolve().parents[3]))
         from dashboard.server import server as srv
@@ -1532,9 +1543,10 @@ class TestSchemaVersion3Serialization(unittest.TestCase):
         self.assertIn("short_name", task)
         self.assertIn("delivery", task)
         self.assertIn("lane", task)
-        # delivery=1 (flat layout's single implicit delivery), lane=None (no PLAN.md)
+        # delivery=1 (flat layout's single implicit delivery); lane=1 (DERIVED from the
+        # DETAIL's **Depends on:** field -- one task, no dependencies, so wave 1)
         self.assertEqual(task["delivery"], 1)
-        self.assertIsNone(task["lane"])
+        self.assertEqual(task["lane"], 1)
 
 
 class TestKbHelpers(unittest.TestCase):

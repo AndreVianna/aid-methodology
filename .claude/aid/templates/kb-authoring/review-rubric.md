@@ -54,9 +54,9 @@ against, so the reviewer checks a named list rather than improvising one.
    criteria on themselves.
 
    This is the level that reaches a work artifact. `G-14` and `G-15` bind the citation and
-   quote rules to `REQUIREMENTS.md`, `PLAN.md`, `features/*/SPEC.md` and
-   `deliveries/*/BLUEPRINT.md` under `.aid/works/`, none of which carries frontmatter or a
-   type. Skipping this step is how a work artifact ends up reviewed against nothing.
+   quote rules to `REQUIREMENTS.md` (feature sections live in its section 11), `PLAN.md`
+   (delivery definitions are its `### delivery-NNN` stanzas) and `tasks/*/DETAIL.md` under
+   `.aid/works/`, none of which carries frontmatter or a type. Skipping this step is how a work artifact ends up reviewed against nothing.
 5. **File-level** — the file's own `review-criteria:` frontmatter
    ([frontmatter-schema.md](frontmatter-schema.md)). Many artifacts carry none; that is normal.
 

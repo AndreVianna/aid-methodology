@@ -176,6 +176,9 @@ dbi_allowlisted() {
 #   rg -o '"dst": "\.cursor/[^/]+' profiles/cursor/emission-manifest.jsonl | sort -u
 # Before this arm existed, a single user-authored rule file turned the whole
 # suite red, which is what happened when .cursor/rules/output-style.mdc landed.
+# And if AID ever DOES emit into .cursor/rules/, this arm still cannot hide it:
+# Directions 1 and 2 are both driven off the manifest and neither consults an
+# allowlist, so a manifest dst that went missing or drifted would fail there.
 #
 # worktrees/* is load-bearing only in the PRIMARY checkout, whose .cursor/
 # carries agents, aid, skills AND worktrees. A worktree checkout's .cursor/

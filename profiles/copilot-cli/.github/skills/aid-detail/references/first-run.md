@@ -1,4 +1,4 @@
-# FIRST-RUN — Propose, Discuss, Write, Review
+# FIRST-RUN — Propose, Discuss, Write
 
 No task files exist yet. Begin proposing task breakdown per deliverable.
 
@@ -67,7 +67,7 @@ The user may:
 
 Respond to each concern, re-present affected tasks. Loop until approved.
 
-### Step 3: Write and Review
+### Step 3: Write
 
 Once approved:
 1. For each task in this delivery, create the nested task folder and seed both files:
@@ -82,45 +82,22 @@ Once approved:
      correct Task/Delivery/Work header fields (INFERRED from the folder path, not authored).
    Do NOT write task rows into the work `STATE.yml`'s Tasks State view -- that is a
    DERIVED read-only view assembled at read time from the per-task STATE.yml files.
-2. **Review immediately:** Do the tasks hold up?
-   - Does each task have what it needs from the previous?
-   - Any gap where something is used before it's created?
-   - Scope aligned with what the SPECs actually say?
-   - Criteria concrete enough to verify?
-
-**Agent:** Dispatch with `subagent_type: aid-reviewer` (overriding the default `aid-architect`) **at Large tier** — the executor is the Large `aid-architect`, so reviewer tier >= executor tier (`.github/aid/templates/agent-dispatch-tiering.md`). The aid-reviewer must run with clean context — it grades against KB/codebase reality without seeing the aid-architect's working notes.
-
-**Dispatch package:** render `references/reviewer-brief.md` with:
-- `{{SCOPE}}` = `per-deliverable`
-- `{{ARTIFACTS}}` = the task DETAIL.md files just written for delivery-NNN (`.aid/works/{work}/deliveries/delivery-NNN/tasks/task-NNN/DETAIL.md`) + the Execution Graph section just appended to PLAN.md (if present)
-- `{{CONTEXT}}` = `Tasks for delivery-NNN of work-NNN; feature SPECs: feature-NNN-{name}, ...`
-
-Include in the prompt:
-- **Ledger lifecycle:** "Append new findings as rows with Status: Pending to
-  `{{LEDGER}}`. Read the existing file first if it exists.
-  Output per `.github/aid/templates/reviewer-ledger-schema.md` — ONE table, no narrative."
-
-Print before dispatch: `[Review] Dispatching aid-reviewer for task list validation (per-deliverable scope).`
-
-▶ aid-reviewer starting (~1–2 min)
-After writing, **review immediately:** Do the tasks hold up?
-✓ aid-reviewer done (record actual time) — or ✗ aid-reviewer failed: {reason}
-
-After aid-reviewer returns, run grade.sh:
-
-```bash
-bash .github/aid/scripts/grade.sh --explain {{LEDGER}}
-```
-
-| Condition | Action |
-|-----------|--------|
-| Grade ≥ minimum (from `bash .github/aid/scripts/config/read-setting.sh --skill detail --key minimum_grade --default A`) | Move to next deliverable. |
-| Grade < minimum, fixable | Back to Propose with findings. |
+2. **Self-check before moving on** (the author reading its own output -- no dispatch,
+   no grade): does each task have what it needs from the previous one? Any gap where
+   something is used before it is created? Scope aligned with what the SPECs say?
+   Criteria concrete enough to verify?
 
 ```
-✅ delivery-001 tasks written and verified — sequence holds, criteria testable.
-Moving to delivery-002.
+delivery-001 tasks written. Moving to delivery-002.
 ```
+
+> **No graded gate here.** FIRST-RUN chains into `[State: REVIEW]`
+> (`references/review.md`), which already dispatches `aid-reviewer` at
+> `{{SCOPE}} = whole-list` over every delivery's `DETAIL.md` plus the full PLAN.md,
+> writing the same ledger scope. A per-delivery gate
+> here graded the same artifacts a second time, once per delivery, and could not see
+> what matters most anyway: a task in delivery-001 contradicting one in
+> delivery-003, or the execution graph, which does not exist until Step 5.
 
 ### Step 4: Next Deliverable
 

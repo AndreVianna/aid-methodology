@@ -15,12 +15,13 @@ reviewing all sections against current reality.
 
 ### Load Current Context
 
-Same as INITIALIZE Step 1: SPEC.md, the REQUIREMENTS.md **slice** this feature traces to
-(from its `## Source`, never the whole document), KB docs, codebase.
+Same as INITIALIZE Step 1: this feature's section of REQUIREMENTS.md § 11, plus the
+REQUIREMENTS.md **slice** it traces to (the `§5`/`§9` entries its section cites by id,
+never the whole document), KB docs, codebase.
 
 ### Review All Sections
 
-For each section in SPEC.md, run step 4 of the loop against current state:
+For each technical section of this feature, run step 4 of the loop against current state:
 
 1. **KB drift** — SPEC references KB content that changed?
 2. **Requirements drift** — Requirements changed since spec was written?
@@ -31,8 +32,8 @@ For each section in SPEC.md, run step 4 of the loop against current state:
 ### Dispatch the Reviewer
 
 Render `references/reviewer-brief.md` with:
-- `{{ARTIFACTS}}` = `SPEC.md` path + the section list under review (or "full SPEC")
-- `{{CONTEXT}}` = `SPEC.md for feature-NNN-{name} in work-NNN-{name}. All sections marked Complete in the work STATE.md \`## Features State\` row. This is the final review pass before the feature is marked Ready.`
+- `{{ARTIFACTS}}` = `REQUIREMENTS.md` + the `§11 / Feature NNN` subsection under review, naming the technical sections in scope (or "the whole feature section")
+- `{{CONTEXT}}` = `REQUIREMENTS.md §11 / Feature NNN in work-NNN-{name}. All sections marked Complete in the work STATE.md \`## Features State\` row. This is the final review pass before the feature is marked Ready.`
 
 Include in the prompt:
 - **Ledger lifecycle:** "Read `.aid/.temp/review-pending/specify-<feature>.md` if it
@@ -61,35 +62,19 @@ Compare to minimum grade from `bash canonical/aid/scripts/config/read-setting.sh
 | Grade < minimum, fixable sections | List findings, re-enter loop for affected sections. |
 | Grade < minimum, core assumptions wrong | Recommend `--reset`. |
 
-### Review the delivery BLUEPRINT.md this feature refines
+<!-- A delivery-definition review step once sat here and is retired, for two independent
+     reasons either of which is sufficient.
 
-**Full path only.** `aid-plan` writes each `deliveries/delivery-NNN/BLUEPRINT.md` as a stub; this
-state is where that stub is refined, so it is where the refinement is reviewed. On the Lite path
-the blueprint is authored by the shortcut engine's PLAN step and reviewed there — that review is
-untouched by this one.
+     First, the artifact is gone: a delivery definition is now a `### delivery-NNN` stanza in
+     PLAN.md, and the per-delivery file it used to live in is retired.
 
-Run this only for a blueprint this feature's SPEC actually changed. A blueprint no feature touched
-is still the stub `aid-plan` gated, and re-reviewing it buys nothing.
+     Second, and this held even before that: `/aid-specify` runs BEFORE any delivery exists
+     (Specify precedes Plan -- SKILL.md states it in as many words). There is no delivery for a
+     feature to refine at this point in the pipeline, so the step could never have run. It
+     instructed a review of an artifact that cannot exist yet.
 
-Render `references/reviewer-brief.md` with:
-- `{{ARTIFACTS}}` = the `deliveries/delivery-NNN/BLUEPRINT.md` path(s) refined in this pass
-- `{{CONTEXT}}` = `Delivery BLUEPRINT.md refined while specifying feature-NNN-{name}. The blueprint is the immutable delivery definition; check that its objective, scope and gate criteria still match the SPEC just approved, and that nothing in it contradicts a sibling delivery's blueprint.`
-
-Same ledger discipline as above, on its own scope:
-
-- **Ledger lifecycle:** "Read `.aid/.temp/review-pending/blueprint-delivery-NNN.md` if it exists.
-  For each existing row: verify on disk, update Status (Pending→Fixed if resolved; Fixed→Recurred
-  if regressed). Append new findings with Status: Pending."
-- **Schema reference:** "Output per `canonical/aid/templates/reviewer-ledger-schema.md`. The
-  ledger is the entire file — ONE markdown table, no headers, no narrative."
-
-```bash
-bash canonical/aid/scripts/grade.sh --explain .aid/.temp/review-pending/blueprint-delivery-NNN.md
-```
-
-Graded against the same `--skill specify` minimum. A blueprint below it blocks the feature from
-`Ready`, because a SPEC approved against a blueprint that no longer describes its delivery is
-approved against nothing.
+     The ledger discipline it carried is not lost -- it is the same discipline the feature
+     review above already applies, on that review's own scope. -->
 
 ```
 Reviewing {work}/{feature} against current KB and codebase...

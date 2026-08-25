@@ -32,8 +32,8 @@ fact, grep the **"Update triggers"** index below to find every diagram that must
 | An **agent tier** roster / model change | site **maintainer.mdx** tier Mermaid |
 
 **No diagram covers this yet — get it right the first time if you add one:** the delivery/task
-artifact rename (delivery definition = `BLUEPRINT.md`, task definition = `DETAIL.md`, both nested
-under `deliveries/delivery-NNN/tasks/task-NNN/`; feature definition stays `SPEC.md`). No D-series or
+artifact shape (delivery definition = a `PLAN.md` `### delivery-NNN` stanza, task definition = `DETAIL.md`, nested
+under `deliveries/delivery-NNN/tasks/task-NNN/`; feature definition is a `§ 11` section of `REQUIREMENTS.md`). No D-series or
 S-series diagram currently renders the `.aid/works/work-NNN/` tree at that depth.
 
 ---

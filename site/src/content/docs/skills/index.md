@@ -41,7 +41,7 @@ The full AID pipeline plus every shortcut skill, grouped by verb family.
 **The full path** — the five phases, in order:
 
 - [`aid-describe`](/skills/aid-describe/) — Gather requirements through an adaptive interview and write them to REQUIREMENTS.md.
-- [`aid-define`](/skills/aid-define/) — Decompose approved requirements into discrete feature folders, each with its own SPEC.md stub.
+- [`aid-define`](/skills/aid-define/) — Decompose approved requirements into discrete features, each recorded as a `### Feature NNN` section of REQUIREMENTS.md § 11 that cites the `AC-N` criteria…
 - [`aid-specify`](/skills/aid-specify/) — Turn one feature into a technical specification, collaboratively.
 - [`aid-plan`](/skills/aid-plan/) — Sequence feature SPECs into deliverables -- each one a functional MVP that builds on the previous.
 - [`aid-detail`](/skills/aid-detail/) — Break deliverables into small, dependency-driven, typed tasks -- each one a reviewable unit.

@@ -29,9 +29,9 @@ Terms and concepts used throughout the AID methodology.
 | Phase | Group | Produces |
 |-------|-------|----------|
 | **Discover** | Knowledge Base Maintenance | Knowledge Base (14 standard documents) |
-| **Describe → Define** | Definition | Full path: `REQUIREMENTS.md` + per-feature `SPEC.md` stubs. Lite path (via a shortcut): work-root `SPEC.md` directly. |
-| **Specify** | Definition | Technical specification added to each feature's `SPEC.md` (full path only) |
-| **Plan** | Definition | `PLAN.md` (execution graph) + `deliveries/delivery-NNN/BLUEPRINT.md` (delivery definition) — full path only |
+| **Describe → Define** | Definition | Full path: `REQUIREMENTS.md`, with a `### Feature NNN` section per feature under § 11. Lite path (via a shortcut): the single `§ 11` section, written directly. |
+| **Specify** | Definition | Technical specification added to each feature's section in `REQUIREMENTS.md § 11` (full path only) |
+| **Plan** | Definition | `PLAN.md` (delivery order + one `### delivery-NNN` definition stanza each) — full path only |
 | **Detail** | Definition | `deliveries/delivery-NNN/tasks/task-NNN/DETAIL.md` (task definition) — full path only |
 | **Execute** | Execution | Reviewed, graded code (8 task types, built-in review loop) |
 
@@ -41,9 +41,9 @@ Terms and concepts used throughout the AID methodology.
 
 ## The Lite Path
 
-**Lite Path:** A condensed, flattened workflow for small, well-scoped work. Entered directly by running a verb-first **shortcut** skill (e.g. `/aid-fix`, `/aid-create-api`) — not by TRIAGE routing inside `aid-describe`, which no longer exists. Every shortcut delegates to the shared **shortcut engine**, which collapses Describe→Define→Specify→Plan→Detail into one fast, mostly-autonomous run and produces the flattened artifact set (work-root `SPEC.md`, `PLAN.md`, `BLUEPRINT.md`, `tasks/task-NNN/DETAIL.md` — no `features/`, no `deliveries/`), then halts for approval before `/aid-execute`.
+**Lite Path:** A condensed, flattened workflow for small, well-scoped work. Entered directly by running a verb-first **shortcut** skill (e.g. `/aid-fix`, `/aid-create-api`) — not by TRIAGE routing inside `aid-describe`, which no longer exists. Every shortcut delegates to the shared **shortcut engine**, which collapses Describe→Define→Specify→Plan→Detail into one fast, mostly-autonomous run and produces the flattened artifact set (work-root `REQUIREMENTS.md`, `tasks/task-NNN/DETAIL.md` — no `features/`, no `deliveries/`), then halts for approval before `/aid-execute`.
 
-**TRIAGE:** Formerly the opening state of `aid-describe`; now extracted into the standalone `/aid-triage` skill (see [Off-Pipeline Skills](#off-pipeline-skills)). The routing judgment is unchanged in spirit — infer scope from a free-form description, then route — but `/aid-triage` is stateless and suggest-only: it never emits a work-root `SPEC.md` itself, it only names the next command to run.
+**TRIAGE:** Formerly the opening state of `aid-describe`; now extracted into the standalone `/aid-triage` skill (see [Off-Pipeline Skills](#off-pipeline-skills)). The routing judgment is unchanged in spirit — infer scope from a free-form description, then route — but `/aid-triage` is stateless and suggest-only: it never emits an artifact itself, it only names the next command to run.
 
 **workType:** The internal classification of work, inferred during `/aid-triage`'s CLASSIFY state (never picked from a menu). Three values: `bug-fix`, `new-feature`, `refactor`. There is no separate document type — adding a document is a `new-feature`, changing one is a `refactor`. A coarse first-pass signal only; it narrows which shortcut-catalog groups are checked first and is not itself a routing target (there is no `LITE-BUG-FIX`/`LITE-REFACTOR`/`LITE-FEATURE` sub-path — that machinery was retired with the recipe catalog).
 
@@ -75,11 +75,11 @@ Terms and concepts used throughout the AID methodology.
 
 ## Artifacts
 
-**SPEC.md:** Formal specification grounded in the Knowledge Base. Treated as a hypothesis — refined by evidence from implementation. In the full path, one SPEC.md lives under each feature (`.aid/works/{work}/features/{feature}/SPEC.md`, augmented with a Technical Specification by `aid-specify`). In the lite path, a single work-root SPEC.md covers the whole work item. Feature definition stays `SPEC.md` on both paths — only the delivery and task definitions were renamed (see `BLUEPRINT.md`, `DETAIL.md`).
+**Feature section (`REQUIREMENTS.md § 11`):** The formal specification of one feature, grounded in the Knowledge Base and treated as a hypothesis — refined by evidence from implementation. Each feature is a `### Feature NNN` section under § 11, citing the `§ 5 FR-N` it implements and the `§ 9 AC-N` it owns, and gaining a `#### Technical Specification` subsection when `aid-specify` runs. There is no per-feature `SPEC.md` on either path: a separate file meant the same criterion existed in two places that could disagree.
 
-**BLUEPRINT.md:** The delivery definition — scope, gate criteria, tasks, and dependencies for one delivery. Full path: `.aid/works/{work}/deliveries/delivery-NNN/BLUEPRINT.md`, one per delivery, written by `aid-plan`. Lite path: a single `BLUEPRINT.md` at the work root (no `deliveries/` nesting), written by the shortcut engine's SPEC/PLAN states. Formerly the delivery-level `SPEC.md` — renamed to disambiguate from the feature-level `SPEC.md`.
+**Delivery stanza (`PLAN.md`):** The delivery definition — objective, scope and gate criteria for one delivery, written by `aid-plan` into that delivery's `### delivery-NNN` stanza. There is no `BLUEPRINT.md`: its presence used to be the flat-layout signal, which made an ordinary artifact load-bearing, and the layout is now read from the declared `pipeline.path`. On the Lite path there is no plan at all — one delivery means nothing to sequence, and the work's `§ 9` criteria are the delivery's.
 
-**DETAIL.md:** The task definition. Full path: `.aid/works/{work}/deliveries/delivery-NNN/tasks/task-NNN/DETAIL.md`, written by `aid-detail`. Lite path: `.aid/works/{work}/tasks/task-NNN/DETAIL.md` at the work root, written by the shortcut engine's DETAIL state. Formerly `tasks/task-NNN.md` (a flat file, not a folder) — now a per-task folder. On the full path that folder also holds a sibling `STATE.md`; the lite path has no per-task `STATE.md` — task cells live in the work-root `STATE.md` § `### Tasks lifecycle` instead.
+**DETAIL.md:** The task definition. Full path: `.aid/works/{work}/deliveries/delivery-NNN/tasks/task-NNN/DETAIL.md`, written by `aid-detail`. Lite path: `.aid/works/{work}/tasks/task-NNN/DETAIL.md` at the work root, written by the shortcut engine's DETAIL state. Formerly `tasks/task-NNN.md` (a flat file, not a folder) — now a per-task folder. On the full path that folder also holds a sibling `STATE.md`; the lite path has no per-task `STATE.yml` — task cells live in the work-root `STATE.yml` under `tasks_lifecycle` instead.
 
 **Q&A entry:** Appended to a STATE file (`.aid/knowledge/STATE.md` for discovery-area, `.aid/works/{work}/STATE.md` for work-area, or `.aid/works/{work}/features/{feature}/STATE.md` for feature-level) when a phase finds the Knowledge Base or an upstream artifact deficient. The owning phase resolves it on its next run — targeted, not a full restart.
 
@@ -87,7 +87,7 @@ Terms and concepts used throughout the AID methodology.
 
 **IMPEDIMENT.md:** Filed when implementation discovers the plan or spec is wrong. Contains: what was assumed, what's true, proposed revision, and impact assessment.
 
-**Grading (A+ to F):** The review phase's quality scale. A+ (exemplary) through F (doesn't build). Evaluates spec compliance, architecture adherence, and convention conformance. Domain-specific quality checks are defined per project in SPEC.md.
+**Grading (A+ to F):** The review phase's quality scale. A+ (exemplary) through F (doesn't build). Evaluates spec compliance, architecture adherence, and convention conformance. Domain-specific quality checks are defined per project in `REQUIREMENTS.md § 9`.
 
 ---
 

@@ -517,9 +517,8 @@ Detection above. When a state completes, route by its `**Advance:**` type per
 
 ## Hard limits (HL-1..HL-8)
 
-Owner-confirmed limits every state above cites; SPEC.md § Governing hard
-limits is the source of truth. `/aid-update-kb` never ships a change that
-violates one of these.
+Owner-confirmed limits every state above cites. `/aid-update-kb` never ships a
+change that violates one of these.
 
 - **HL-1 No apply without confirmation.** No KB edit before the user
   confirms scope + understanding at CONFIRM. Enforced by: CONFIRM is a PAUSE

@@ -168,7 +168,5 @@ Analytical insight from usage data (as opposed to a controlled experiment) is
   how this file is looked up and what happens when it is absent
 - `.codex/aid/templates/shortcut-scaffolding/fix.md § Ownership boundary` --
   where a security finding's remediation routes
-- `features/feature-009-test-and-experiment-family/SPEC.md`
-  (work-001-lite-aid-skills) -- the settled design this reference implements
 - `.codex/skills/aid-execute/references/task-type-rules.md ## TEST / ## RESEARCH`
   -- the per-type execution rules this breakdown maps onto

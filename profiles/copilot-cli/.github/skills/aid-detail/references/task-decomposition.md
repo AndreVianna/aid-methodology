@@ -31,17 +31,16 @@ Each deliverable follows the same cycle:
   knowledge/                ← shared KB (read)
     STATE.md                ← minimum grade
   work-NNN-{name}/
-    STATE.md                # work-level state; ## Tasks State is a DERIVED view (not written here)
+    STATE.yml               # work-level state; ## Tasks State is a DERIVED view (not written here)
+    REQUIREMENTS.md         # § 11 holds the `### Feature NNN` sections, incl. each
+                            #   feature's tech spec (read)
     PLAN.md                 # roadmap with deliverables (read -- must exist)
-    features/
-      feature-NNN-{name}/
-        SPEC.md             # per-feature tech spec (read)
     deliveries/
       delivery-NNN/           # OUTPUT: per-delivery folder (one per deliverable in PLAN.md)
         tasks/
           task-NNN/           # OUTPUT: per-task folder
             DETAIL.md         # task definition (6-section schema; written by aid-detail)
-            STATE.md          # task state, seeded Pending (written by aid-detail; updated by aid-execute)
+            STATE.yml         # task state, seeded Pending (written by aid-detail; updated by aid-execute)
 ```
 
 ## Arguments
@@ -55,7 +54,8 @@ Each deliverable follows the same cycle:
 ## Inputs
 
 - **PLAN.md** — deliverables, ordering, dependencies
-- **Feature SPECs** — all `features/*/SPEC.md` within the work
+- **Features** — the `### Feature NNN` subsections of `REQUIREMENTS.md § 11`, each
+  carrying its own technical specification
 - **KB via INDEX.md** — Read `.aid/knowledge/INDEX.md`, use summaries to pull
   relevant docs (typically architecture, module-map, coding-standards — but let the INDEX guide you)
 
@@ -73,8 +73,8 @@ Every task has exactly ONE type. Never mix types in a single task.
 | Type | What it produces | When Detail creates it |
 |------|-----------------|----------------------|
 | **RESEARCH** | Findings document, comparison, recommendation | Feature has `Spike Needed` in STATE.md, or unknowns need investigation |
-| **DESIGN** | Mockups, wireframes, interaction flows | Feature has UI Specs in SPEC.md |
-| **IMPLEMENT** | Code + unit tests | Feature has Data Model / Feature Flow / Layers in SPEC.md |
+| **DESIGN** | Mockups, wireframes, interaction flows | Feature section has UI Specs |
+| **IMPLEMENT** | Code + unit tests | Feature section has Data Model / Feature Flow / Layers |
 | **TEST** | Integration/E2E/UI/load tests + results | Feature has integration points or testable acceptance criteria |
 | **DOCUMENT** | ADRs, API docs, runbooks, diagrams | Significant architectural decision or complex setup |
 | **MIGRATE** | Migration scripts + rollback + runbook | Feature has data model changes affecting existing data |
@@ -86,7 +86,7 @@ Every task has exactly ONE type. Never mix types in a single task.
 When proposing tasks, the agent reads the feature SPEC and automatically detects types:
 
 1. **Spike Needed** in work STATE.md `## Features State` → RESEARCH task first
-2. **UI Specs** section in SPEC.md → DESIGN task before IMPLEMENT
+2. **UI Specs** subsection in the feature section → DESIGN task before IMPLEMENT
 3. **Data Model / Feature Flow / Layers & Components** → IMPLEMENT task(s)
 4. **Integration points / acceptance criteria** → TEST task(s) after IMPLEMENT
 5. **Major architectural decision** → DOCUMENT task (ADR)
@@ -129,7 +129,7 @@ Each task is a **folder** containing two files:
 
 **Type:** RESEARCH | DESIGN | IMPLEMENT | TEST | DOCUMENT | MIGRATE | REFACTOR | CONFIGURE
 
-**Source:** work-NNN-{name} -> delivery-NNN
+**Source:** feature-NNN-{name} -> delivery-NNN -> AC-N[, AC-N]
 
 **Depends on:** task-NNN [, task-NNN] | -- (none)
 
@@ -137,13 +137,24 @@ Each task is a **folder** containing two files:
 - {what to produce or modify -- depends on type}
 
 **Acceptance Criteria:**
-- [ ] Criterion 1 -- concrete, testable
-- [ ] Criterion 2 -- concrete, testable
+- [ ] Criterion 1 -- names an observable
+- [ ] Criterion 2 -- names an observable
 ```
 
 Six sections (Title, Type, Source, Depends on, Scope, Acceptance Criteria) plus
 the fixed Execution protocol note carried automatically from the template.
 Nothing else.
+
+**`Source` must name the feature SPEC criteria this task implements**, by their
+`AC-N` ids, and at least one is required. A task implementing no stated criterion
+is either undeclared scope or unnecessary work — both worth catching before it
+runs. Two things follow from having the ids on disk: the trace is mechanically
+checkable (each id either resolves in that SPEC or it does not), and a reviewer or
+executor can load just the criteria a task answers to instead of the whole
+upstream document.
+
+On the flattened Lite layout there is no `features/` folder, so cite the work:
+`work-NNN-{slug} -> delivery-001 -> AC-N`.
 
 - **`deliveries/delivery-NNN/tasks/task-NNN/STATE.md`** — seeded from `.github/aid/templates/task-state-template.md`,
   replacing the frontmatter block's placeholder lines with the real opening values
@@ -164,12 +175,19 @@ update — it does not overwrite it.
 
 **Quality gate cascade:** Every task inherits:
 1. **Project baseline** from REQUIREMENTS.md §6 (unit test minimum, linting standard)
-2. **Feature-specific requirements** from the SPEC.md quality sections (if any)
+2. **Feature-specific requirements** from the feature section's quality subsections (if any)
 
 Include these in Acceptance Criteria when writing tasks. Don't repeat the
 full baseline — reference it: "All §6 quality gates pass." Add feature-specific
 criteria explicitly when the SPEC calls for them (e.g., "explicit tests for
 all 5 auth edge cases per SPEC").
+
+Every criterion must name an observable — a command and its expected result, a
+file and its content, a count, a threshold, or a user-visible behaviour plus how
+to reproduce it. A judgment criterion must state what is judged and against what
+standard. A task whose criteria nothing could falsify cannot be reviewed, only
+believed. Rule and worked examples:
+`../../../aid/templates/requirements/requirements-template.md § Verifiable Acceptance Criteria`.
 
 **Type-specific default criteria:** The agent adds these unless the task explicitly overrides:
 - IMPLEMENT: "Unit tests for all new public methods/endpoints" + "All existing tests still pass" + "Build passes"

@@ -97,15 +97,23 @@ the same tier reviewer).
 ### Complexity Score Computation
 
 Read the delivery's Execution Graph from:
-- **Flat path (feature-001, single-delivery)** — detected by: a work-root
-  `BLUEPRINT.md` present AND `tasks/task-NNN/DETAIL.md` present directly
-  under the work root AND no `deliveries/` wrapper under it → the top-level
-  `## Execution Graph` in the work-root `PLAN.md` (no
-  `### delivery-NNN` heading; the single delivery is implicit).
-- **Full path** — otherwise, `PLAN.md` in the work directory (`#### Execution
-  Graph` block for this delivery).
-- **Lite path** — the work-root `SPEC.md` (`.aid/works/{work}/SPEC.md`), which
-  contains the merged delivery + dependency graph information.
+- **Flat / Lite path (feature-001, single-delivery)** — detected by
+  `pipeline.path: lite` in the work-root `STATE.yml`, or for an un-migrated work by
+  `tasks/task-NNN/DETAIL.md` present directly under the work root AND no
+  `deliveries/` wrapper under it → there is NO stored graph. DERIVE it:
+
+  ```
+  bash .codex/aid/scripts/execute/derive-waves.sh --from-tasks .aid/works/{work}
+  ```
+
+  Each task's `**Depends on:**` field is the graph, so a single-delivery work has
+  nothing to sequence and nothing to store. The script prints the dependency table
+  and the wave-map, and its output is accepted directly as `--plan-file` by
+  `complexity-score.sh` and `compute-block-radius.sh` — with no `--delivery-id`,
+  because for one delivery it emits the flattened heading on purpose.
+- **Full path** — `PLAN.md` in the work directory (`#### Execution Graph` block for
+  this delivery), where the sequencing across several deliveries IS an authored
+  decision.
 
 Parse the `| Task | Depends On |` table to build the dependency map.
 
@@ -166,7 +174,7 @@ The gate reviewer receives a **fresh, clean-context package** — not a summary
 of per-task reviews. The package wrapper is the universal brief at
 `references/reviewer-brief.md` rendered with:
 - `{{MODE}}` = `per-delivery`
-- `{{ARTIFACTS}}` = the full delivery branch diff + every task's STATE.yml state + the PLAN.md delivery section
+- `{{ARTIFACTS}}` = the full delivery branch diff + every task's STATE.yml state + the delivery's criteria (its `PLAN.md` stanza on the full path; `REQUIREMENTS.md § 9` on the flat/Lite path)
 - `{{CONTEXT}}` = `delivery-NNN aggregates tasks {NNN..MMM}; this is the post-execution quality gate before merge to main.`
 
 Include in the prompt:
@@ -185,18 +193,21 @@ Then append the gate-specific prompt below. The reviewer reads directly from sou
   Source, Scope, Acceptance Criteria):
   - Full path: `deliveries/delivery-NNN/tasks/task-NNN/DETAIL.md`
   - Flat path: `tasks/task-NNN/DETAIL.md` directly under the work root
-- **Feature SPEC(s):**
-  - Full path: per-feature `SPEC.md` files (`.aid/works/{work}/features/*/SPEC.md`)
-  - Flat path (feature-001, single-delivery): work-root `SPEC.md` (single feature)
-  - Lite path: work-root `SPEC.md` (`.aid/works/{work}/SPEC.md`)
+- **Feature specification(s)** — the `### Feature NNN` subsections of
+  `.aid/works/{work}/REQUIREMENTS.md § 11`, each carrying its own technical
+  specification. Read only the sections claimed by this delivery, not all of § 11.
 - **Delivery-level acceptance criteria:**
-  - Full path: from the delivery's `BLUEPRINT.md § Gate Criteria`
-  - Flat path: from the work-root `BLUEPRINT.md § Gate Criteria`
-  - Lite path: from work-root `SPEC.md`
+  - **Full path** — the `**Gate Criteria**` list in the delivery's own stanza in
+    `PLAN.md`, under that delivery's `### delivery-NNN` heading.
+  - **Flat / Lite path** — the `AC-N` set in `REQUIREMENTS.md § 9`. With one delivery
+    the work IS the delivery, so its acceptance criteria are the delivery's; a
+    separate restatement would be a second copy able to disagree with the first.
+    Add the two standing criteria every delivery carries regardless of layout:
+    all its tasks are Done or Canceled, and all section-6 quality gates pass.
 - **`delivery-NNN-issues.md`** — the deferred `[HIGH]` prior context (from
   AGGREGATE). Read as context only; the reviewer produces its own fresh list.
 - **KB docs via INDEX.md** — load relevant docs per INDEX summaries
-- **Grading rubric** (`../../../templates/grading-rubric.md`)
+- **Grading rubric** (`../../../aid/templates/grading-rubric.md`)
 
 ### Gate Reviewer Prompt (gate mode)
 
@@ -403,8 +414,8 @@ bash .codex/aid/scripts/execute/writeback-state.sh --delivery-id NNN --block "BL
 > STATE.yml). The work-level Delivery Gates view is DERIVED at read time
 > as the union of all delivery `delivery_gate.issue_list` sequences + `gate_*` scalars.
 >
-> **Flat path (feature-001, single-delivery):** with a work-root `BLUEPRINT.md`
-> present and no `deliveries/` wrapper (`--delivery-id 001`), the SAME helper
+> **Flat path (feature-001, single-delivery):** on a work declaring
+> `pipeline.path: lite` with no `deliveries/` wrapper (`--delivery-id 001`), the SAME helper
 > calls instead target the work-root `STATE.yml`'s own frontmatter scalars + the
 > singular AUTHORED `delivery_gate.issue_list` key directly (there is exactly
 > one delivery, so the disjoint-write concern above does not apply — see

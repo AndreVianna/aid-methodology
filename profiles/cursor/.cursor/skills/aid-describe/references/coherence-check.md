@@ -20,10 +20,6 @@ analyst running it to surface conflicts before the work proceeds.
   (open coherence conflict) routes the adaptive loop back to conflict resolution if a
   mismatch surfaces during elicitation; this procedure is the structured gate that runs
   after elicitation completes.
-- `.cursor/skills/aid-describe/features/feature-003-greenfield-seed-authoring/SPEC.md`
-  -- the owner spec for FR-3 / AC-5, the coherence check section, and the sufficiency
-  bar (RQ-A5) that consumes this procedure's output.
-
 ---
 
 ## Contents

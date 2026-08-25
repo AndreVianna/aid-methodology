@@ -6,6 +6,13 @@ All sections are Complete or N/A in STATE.md `## Interview State`; run quality c
 
 Before presenting for approval, verify:
 - [ ] All "Must" requirements in §5 have acceptance criteria in §9
+- [ ] **Every criterion in §9 names an observable** — a command and its expected
+      result, a file and its content, a count, a threshold, or a user-visible
+      behaviour plus how to reproduce it. A judgment criterion must state what is
+      judged and against what standard. Anything nothing could falsify is not a
+      criterion; send it back rather than approving it
+      (`.github/aid/templates/requirements/requirements-template.md
+      § Verifiable Acceptance Criteria`)
 - [ ] No contradictions between sections
 - [ ] Scope (§4) is consistent with Functional Requirements (§5)
 - [ ] Constraints (§7) don't conflict with requirements

@@ -89,7 +89,7 @@ aid-detail  ▸ you are here
 
 Load the `Detail` file for the detected state and execute it.
 
-On state completion, route by its `**Advance:**` type (per [`state-machine-chaining.md`](../../templates/state-machine-chaining.md)):
+On state completion, route by its `**Advance:**` type (per [`state-machine-chaining.md`](../../aid/templates/state-machine-chaining.md)):
 - **CHAIN** → begin the next state's reference doc within the same invocation; no exit.
 - **PAUSE-FOR-USER-ACTION** / **PAUSE-FOR-USER-DECISION** → print the pause reason + resume command and exit.
 - **HALT** → print the closing summary and exit (DONE prints the task summary).

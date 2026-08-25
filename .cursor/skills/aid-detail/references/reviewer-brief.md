@@ -29,7 +29,7 @@ CONTEXT:
 
 SCOPE: {{SCOPE}}   # one of: per-deliverable | whole-list
   per-deliverable: Grade the task list for ONE delivery just written.
-  whole-list:      Re-grade all task files against current PLAN.md + SPECs.
+  whole-list:      Re-grade all task files against current PLAN.md + feature sections.
 
 RUBRIC: .cursor/aid/templates/grading-rubric.md (universal severity → grade table)
   Grade tasks for:
@@ -72,7 +72,7 @@ DECLARED REVIEW CRITERIA (resolve; do not invent):
     overriding file's `why` in the Evidence cell.
 
 OUT OF SCOPE (do NOT grade against):
-  - SPEC.md content — that's /aid-specify's grade
+  - feature technical-specification content — that's /aid-specify's grade
   - PLAN.md deliverable sequencing — that's /aid-plan's grade
   - KB document accuracy — route KB-source findings to /aid-discover Q&A
   - Execution detail (which agent, what branch) — /aid-execute owns runtime decisions
@@ -107,7 +107,7 @@ DELIVERABLES:
   `.aid/works/{work}/deliveries/delivery-NNN/tasks/task-NNN/DETAIL.md` (all deliveries) + the full PLAN.md.
 - `{{CONTEXT}}` — short, descriptive-only background:
   ```
-    (per-deliverable) Tasks for delivery-NNN of work-NNN; feature SPECs:
+    (per-deliverable) Tasks for delivery-NNN of work-NNN; feature sections:
                       feature-NNN-{name}, ...
     (whole-list)      Re-review of all tasks for work-NNN after PLAN/SPEC changes.
   ```

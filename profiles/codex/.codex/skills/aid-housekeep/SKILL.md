@@ -31,7 +31,7 @@ pipeline mapping and no phase gate references it.
 
 **State machine — each `/aid-housekeep` invocation drives the state machine until
 it hits a natural pause point per
-[`.codex/aid/templates/state-machine-chaining.md`](../../templates/state-machine-chaining.md).
+[`.codex/aid/templates/state-machine-chaining.md`](../../aid/templates/state-machine-chaining.md).
 Mechanical states auto-chain; only PAUSE-FOR-USER-ACTION and HALT stop the run.**
 
 > ```
@@ -237,7 +237,7 @@ aid-housekeep  ▸ you are here
 > `references/state-kb-delta.md` (authored by task-004 / feature-002).
 
 On state entry, print `[State: NAME]` + the "you are here" map from State Detection above.
-When a state completes, route by its `**Advance:**` type (per [`state-machine-chaining.md`](../../templates/state-machine-chaining.md)):
+When a state completes, route by its `**Advance:**` type (per [`state-machine-chaining.md`](../../aid/templates/state-machine-chaining.md)):
 - **CHAIN** → begin the next state's reference doc within the same invocation; no exit.
 - **PAUSE-FOR-USER-ACTION** → print the pause reason + resume command and exit.
 - **HALT** → print the closing summary and exit.

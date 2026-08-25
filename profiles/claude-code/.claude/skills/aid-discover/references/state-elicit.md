@@ -140,9 +140,8 @@ Then present **Step E2**'s prompt and PAUSE there.
 
 ## Step E2: Tool INTEGRATIONS branch (PAUSE-FOR-USER-DECISION)
 
-Tools are **connectable integrations**, captured into `.aid/connectors/` per feature-001's frozen
-contract (`.aid/work-002-external_sources/features/feature-001-integration-store-placement/SPEC.md`
-Data Model). Present:
+Tools are **connectable integrations**, captured into `.aid/connectors/` per the descriptor
+contract in `.claude/aid/templates/connectors/`. Present:
 
 ```
 Tool integrations

@@ -1,6 +1,6 @@
 # State: REVIEW
 
-PLAN.md exists and was previously completed; re-review deliverables against current SPECs and KB.
+PLAN.md exists and was previously completed; re-review deliverables against the current feature sections and KB.
 
 ## REVIEW (re-run on existing PLAN.md)
 
@@ -17,7 +17,7 @@ against current reality.
 
 ### Load Current State
 
-Re-read all feature SPECs, REQUIREMENTS.md, KB docs (same as first run).
+Re-read REQUIREMENTS.md (its § 11 feature sections included) and the KB docs (same as first run).
 
 ### Review Each Deliverable
 
@@ -25,7 +25,7 @@ For each deliverable in PLAN.md, run step 4:
 
 1. **New features** not assigned to any deliverable?
 2. **Removed features** still referenced in PLAN.md?
-3. **Changed SPECs** since PLAN.md was written?
+3. **Changed feature sections** since PLAN.md was written?
 4. **Priority shifts** in REQUIREMENTS.md?
 5. **Dependency changes** from SPEC updates?
 6. **Cross-cutting risks** emerged or resolved?
@@ -34,8 +34,9 @@ For each deliverable in PLAN.md, run step 4:
 
 Render `references/reviewer-brief.md` with:
 - `{{SCOPE}}` = `whole-plan`
-- `{{ARTIFACTS}}` = full `PLAN.md` + every `.aid/works/{work}/features/feature-*/SPEC.md`
-- `{{CONTEXT}}` = `PLAN.md for work-NNN with N deliveries; re-review against current SPECs.`
+- `{{ARTIFACTS}}` = full `PLAN.md` + the `### Feature NNN` sections of
+  `.aid/works/{work}/REQUIREMENTS.md § 11`
+- `{{CONTEXT}}` = `PLAN.md for work-NNN with N deliveries; re-review against the current feature sections.`
 
 Include in the prompt:
 - **Ledger lifecycle:** "Read `{{LEDGER}}` if it exists.
@@ -59,7 +60,7 @@ Compare to minimum grade from `bash .agent/aid/scripts/config/read-setting.sh --
 
 | Condition | Action |
 |-----------|--------|
-| Grade >= minimum | Ensure all delivery folders exist (deliveries/delivery-NNN/BLUEPRINT.md + STATE.yml for each delivery in PLAN.md; create any missing ones, seeding the top-level `delivery_state` scalar as `Pending-Spec` -- task-001/004). Delete ledger: `rm -f {{LEDGER}}`. Print summary, done. |
+| Grade >= minimum | Ensure `deliveries/delivery-NNN/STATE.yml` exists for each delivery in PLAN.md; create any missing ones, seeding the top-level `delivery_state` scalar as `Pending-Spec` -- task-001/004. Delete ledger: `rm -f {{LEDGER}}`. Print summary, done. |
 | Grade < minimum, deliverables fixable | List findings, re-enter loop for affected deliverables. |
 | Grade < minimum, sequence invalidated | Recommend `--reset`. |
 

@@ -471,10 +471,16 @@ EOF
 
     while IFS= read -r f; do
         all_docs+=("$f")
-    # LC_ALL=C: byte collation, so the emitted row order is the same on every
-    # machine. A locale-aware sort orders `INDEX.md` against `architecture.md`
-    # differently under en_US.UTF-8 than under C, which made a no-op regenerate
-    # produce a diff depending only on who ran it.
+    # LC_ALL=C, not a bare `sort`. Collation is locale-dependent: en_US folds case, so
+    # `INDEX.md` sorts among the i's, while C/POSIX order it by byte and put every
+    # capitalised name first. The generated INDEX.md is COMMITTED and CI re-generates it
+    # to assert freshness, so the same repo produced two different "correct" files
+    # depending on whose shell ran the script -- green locally, "INDEX.md is stale" in CI,
+    # with a diff that shows rows merely reordered and no obvious cause.
+    #
+    # Any generator whose output is committed has to be byte-deterministic across
+    # environments; the render pipeline already asserts this for profiles/, and this
+    # script was the one that did not.
     done < <(find "$ROOT" -maxdepth 1 -type f -name '*.md' ! -name '.*' | LC_ALL=C sort)
 
     if [[ ${#all_docs[@]} -eq 0 ]]; then

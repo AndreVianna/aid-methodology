@@ -1,13 +1,11 @@
 # Ticket Resolution Reference (Connector Ladder, Grammar, Confirm Gate)
 
 > Shared reference for the three dedicated ticket-tracker skills — `aid-read-ticket`,
-> `aid-create-ticket`, and `aid-update-ticket` (each authored under
-> `.github/skills/aid-<name>/SKILL.md` by a later delivery-001 task; see
-> `features/feature-001-dedicated-ticket-skills/SPEC.md`). Each skill's `SKILL.md`
+> `aid-create-ticket`, and `aid-update-ticket`, each at
+> `.github/skills/aid-<name>/SKILL.md`. Each skill's `SKILL.md`
 > implements this reference by a **short, additive pointer** — none of the three
 > re-describe the connector-resolution ladder, the grammar-parse rules, or the write
-> preview/confirm-gate convention inline (SPEC.md § Layers & Components, "Shared
-> reference (DRY, decision 1)"). This is the single, DRY home for all three — the
+> preview/confirm-gate convention inline. This is the single, DRY home for all three — the
 > same pattern [`shortcut-engine.md`](../shortcut-engine.md) and
 > [`consumption-protocol.md`](consumption-protocol.md) already establish for their
 > own callers.
@@ -88,8 +86,7 @@ reaches Step 3 (host MCP) or Step 4 (notify). This is expected, not a defect.
 
 ## Grammar-Parse Conventions
 
-Deterministic parsing shared by all three skills (REQUIREMENTS.md FR-1/FR-2/FR-3;
-SPEC.md § API Contracts):
+Deterministic parsing shared by all three skills (REQUIREMENTS.md FR-1/FR-2/FR-3):
 
 | Skill | Grammar (`argument-hint`) | Tokens |
 |---|---|---|
@@ -135,8 +132,7 @@ Parse rules:
 - **`read` never prompts.** It is non-destructive — fetch, display, done (AC-1).
 - **`create`/`update` always preview before writing.** Show the user the **exact**
   payload that will be sent, then gate on a single in-invocation `AskUserQuestion`
-  confirm **before** the MCP write call (REQUIREMENTS.md NFR-2; SPEC.md § Security
-  Specs). No skill ever writes to a tracker without this explicit confirm.
+  confirm **before** the MCP write call (REQUIREMENTS.md NFR-2). No skill ever writes to a tracker without this explicit confirm.
 - **This is a CHAIN advance, never `PAUSE-FOR-USER-DECISION`.** Per
   [`../state-machine-chaining.md`](../state-machine-chaining.md) § "The four advance
   types", a transition whose user interaction is "fully `AskUserQuestion`-based" (asked
@@ -146,8 +142,8 @@ Parse rules:
 - **`create`'s confirm gate folds in the level pick.** When the level is neither
   explicit (`--level`) nor inferable from the description, the pick **is** part of
   this same gate — an `epic|story|task` choice presented alongside the payload
-  preview, never a separate pre-write prompt (SPEC.md § Feature Flow, § Security
-  Specs: "no new silent behavior and no new write"). A description-inferred level is
+  preview, never a separate pre-write prompt -- no new silent behaviour and no new
+  write. A description-inferred level is
   surfaced here too, for explicit confirmation — never silently applied. The preview
   always shows the **concrete resolved issue-type** (or the graceful-degradation note
   — see Level Resolution) and any **parent** link (or a no-hierarchy note — see
@@ -254,4 +250,4 @@ Each skill's own `SKILL.md` points here rather than re-describing any of the abo
   "Done"` where `PROJ-9`'s current state has no direct transition to `Done` → the
   tracker's available transitions are queried, the requested target is not among
   them → the valid options are listed and the run stops **before** the confirm gate
-  is ever reached (SPEC.md § Security Specs, decision 4).
+  is ever reached.

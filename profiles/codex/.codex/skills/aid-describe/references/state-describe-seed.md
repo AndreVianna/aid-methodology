@@ -227,7 +227,7 @@ creating a new ADR." -- web-validation G1.)
 
 KB doc layout (authoring-conventions.md KB Document Layout):
 frontmatter -> `# <Title>` -> `## Contents` (when more than 3 sections) -> content sections.
-There is no history section: a doc ends with its last content section.
+No `## Change Log` -- per-doc history lives in git.
 
 After each confirmed answer, record it with Move 10 (scribe) from `references/move-playbook.md`:
 "Got it: recording `[content]` in `.aid/knowledge/<doc>.md`."

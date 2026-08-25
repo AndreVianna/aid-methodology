@@ -98,16 +98,21 @@ report() {
 # majority-share test flags the correct name as often as the stale one.
 #
 # The template is unambiguous. `work-state-template.yml` means the artifact it
-# produces is `STATE.yml`; `delivery-blueprint-template.md` means `BLUEPRINT.md`.
-# A stem with no matching template gets no oracle and is skipped rather than
-# guessed at.
+# produces is `STATE.yml`; `task-detail-template.md` means `DETAIL.md`. A stem with
+# no matching template gets no oracle and is skipped rather than guessed at.
+#
+# BLUEPRINT is deliberately absent from the map below. It was listed here when
+# `delivery-blueprint-template.md` existed; that template is retired (a delivery
+# definition is now a `### delivery-NNN` stanza in PLAN.md), so the entry could only
+# ever take the skip branch. The skip was graceful, which is exactly why a dead entry
+# survives unnoticed -- it costs nothing and proves nothing.
 # ==============================================================================
 say "== Claim class 1: artifact names =="
 
 ARTIFACT_EXTS="md yml yaml json"
 
 # stem -> the template basename that defines it
-ARTIFACT_MAP="STATE:state-template BLUEPRINT:blueprint-template DETAIL:detail-template"
+ARTIFACT_MAP="STATE:state-template DETAIL:detail-template"
 
 count_in() {
     local n

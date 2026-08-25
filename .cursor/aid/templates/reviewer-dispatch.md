@@ -163,9 +163,8 @@ other path through unchanged.
 # sits at the work root, at deliveries/delivery-NNN/, or at
 # deliveries/delivery-NNN/tasks/task-NNN/ — the basename alone identifies it
 # at every level, in both the flattened and the full layout, so no directory
-# pattern is needed. Authored artifacts (REQUIREMENTS.md, SPEC.md, PLAN.md,
-# BLUEPRINT.md, tasks/task-NNN/DETAIL.md) never share that basename and pass
-# through untouched.
+# pattern is needed. Authored artifacts (REQUIREMENTS.md, PLAN.md,
+# tasks/task-NNN/DETAIL.md) never share that basename and pass through untouched.
 #
 # The `|| true` is load-bearing, not defensive habit: `grep -v` exits 1 when it
 # emits no lines, so a change set consisting ONLY of state files -- the most
@@ -279,14 +278,14 @@ invocation sites:
 
 | Review | Already receives | Covers |
 |---|---|---|
-| `aid-define` CROSS-REFERENCE | `REQUIREMENTS.md` + every feature `SPEC.md` | Define's own output |
-| `aid-plan` | full `PLAN.md` + **every** `feature-*/SPEC.md` | Specify's per-feature specs |
+| `aid-define` CROSS-REFERENCE | `REQUIREMENTS.md`, whose `§ 11` holds every feature section | Define's own output |
+| `aid-plan` | full `PLAN.md` + **every** `§ 11` feature section | Specify's per-feature specifications |
 | `aid-detail` | every `task-NNN/DETAIL.md` + `PLAN.md` | Detail's task set |
 
-**`aid-specify` deliberately gets no invocation.** It dispatches a reviewer PER artifact, so
-no single specify review could see a contradiction spanning two features; its specs are
-cross-checked at `aid-plan`'s review, the first review after Specify that sees them
-together. Adding one there would run the pass once per feature, which is the opposite of
+**`aid-specify` deliberately gets no invocation.** It dispatches a reviewer PER feature, so
+no single specify review could see a contradiction spanning two features; the feature
+sections are cross-checked at `aid-plan`'s review, the first review after Specify that sees
+them together. Adding one there would run the pass once per feature, which is the opposite of
 once per phase.
 
 What the pass looks for is unchanged — two artifacts asserting different values for one

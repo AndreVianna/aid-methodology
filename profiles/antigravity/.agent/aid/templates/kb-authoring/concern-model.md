@@ -74,8 +74,8 @@ looking forward or tracking commitments -- it is excluded when it governs a sing
 at per-work granularity.
 
 - **Per-work governance** (a sprint backlog, a work plan, a task register) remains a scope
-  smell. It maps to AID's own **pipeline artifacts** (`REQUIREMENTS.md`, `SPEC.md`,
-  `PLAN.md`, the per-work `STATE.yml` tracking) -- route it there, not to the doc-set.
+  smell. It maps to AID's own **pipeline artifacts** (`REQUIREMENTS.md`, `PLAN.md`,
+  the per-work `STATE.yml` tracking) -- route it there, not to the doc-set.
 - **Project-level governance** (the roadmap, the backlog, the release ledger) is
   **admissible as a conditional document**: the pipeline artifacts a per-work item would
   route to are per-work and transient -- pruned when the work ships -- leaving no durable

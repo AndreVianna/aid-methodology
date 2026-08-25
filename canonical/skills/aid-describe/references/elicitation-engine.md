@@ -343,7 +343,7 @@ These invariants hold for every turn the engine runs, including the D1 opener.
 | 1 | One question per turn, never batch | interview-loop.md Rules |
 | 2 | Update files (record sink + STATE.md) after each answer, before returning to Step 1 | interview-loop.md "Update after each answer" |
 | 3 | No bare, suggestion-less question is ever emitted; `Suggested:` and `Why:` are non-optional on every emission | NFR-7 / AC-3; advisor-stance.md |
-| 4 | The D1 opener is the ONLY fixed turn; every adaptive loop turn is engine-chosen from the gap inventory; no hidden question list exists | D2; feature-002/SPEC.md "Engine Overview" |
+| 4 | The D1 opener is the ONLY fixed turn; every adaptive loop turn is engine-chosen from the gap inventory; no hidden question list exists | D2 |
 | 5 | The loop halts at minimal-but-sufficient (consumer's stop predicate fires), not at the end of a list | NFR-4 / RQ-A5; Step 1 stop check |
 | 6 | The opener is NEVER the calibration question; the calibration ASK fires as a follow-up at gap rank 2, never on turn 1 | D1 / AC-4; calibration.md Part B gating rule |
 | 7 | Every decision defers to the user; the engine recommends and guides but never decides silently | NFR-1; advisor-stance.md "Expert-Advisor Stance" |

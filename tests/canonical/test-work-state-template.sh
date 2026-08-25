@@ -76,7 +76,6 @@ REPO_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
 WORK_STATE="${REPO_ROOT}/canonical/aid/templates/work-state-template.yml"
 DELIVERY_STATE="${REPO_ROOT}/canonical/aid/templates/delivery-state-template.yml"
 TASK_STATE="${REPO_ROOT}/canonical/aid/templates/task-state-template.yml"
-DELIVERY_SPEC="${REPO_ROOT}/canonical/aid/templates/delivery-blueprint-template.md"
 TASK_SPEC="${REPO_ROOT}/canonical/aid/templates/task-detail-template.md"
 
 DOGFOOD_WORK_STATE="${REPO_ROOT}/.claude/aid/templates/work-state-template.yml"
@@ -193,11 +192,20 @@ fi
 # WS09: No "Status" section/field names in any new template (naming contract).
 # Path-level only: the two heading-less .yml templates pass VACUOUSLY (there
 # are no `## ` headings or `**...:**` bold lines left to match at all), and
-# the two still-markdown templates (DELIVERY_SPEC/TASK_SPEC) are unaffected
+# the one still-markdown template (TASK_SPEC) is unaffected
 # by FR-3 and checked exactly as before.
 # ---------------------------------------------------------------------------
-for tmpl in "$WORK_STATE" "$DELIVERY_STATE" "$TASK_STATE" "$DELIVERY_SPEC" "$TASK_SPEC"; do
+for tmpl in "$WORK_STATE" "$DELIVERY_STATE" "$TASK_STATE" "$TASK_SPEC"; do
     tmpl_name="${tmpl#"$REPO_ROOT/"}"
+    # A missing file makes both greps below return non-zero, so the else branch
+    # fires and the assertion PASSES -- reporting success about a file that is not
+    # there. That is what happened when delivery-blueprint-template.md was retired:
+    # two WS09 assertions kept passing on a deleted path for the rest of its life.
+    # Guard first, so a retired template fails loudly instead of vanishing quietly.
+    if [[ ! -f "$tmpl" ]]; then
+        fail "WS09 template does not exist: $tmpl_name (a vacuous pass would otherwise be reported)"
+        continue
+    fi
     # Pattern: ## heading containing "Status" as a word boundary section name
     if grep -qE '^## .*\bStatus\b' "$tmpl" 2>/dev/null; then
         fail "WS09 naming contract violated -- '## ... Status' heading found in $tmpl_name"

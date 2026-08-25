@@ -23,10 +23,10 @@ CONTEXT:
 
   Reviewer self-check: If CONTEXT contains downstream phase concerns (planning,
   task breakdown, execution), flag it as an OOS observation and bound your
-  review to the SPEC.md sections listed in ARTIFACTS.
+  review to the feature-section subsections listed in ARTIFACTS.
 
 RUBRIC: .claude/aid/templates/grading-rubric.md (universal severity → grade table)
-  Grade ONE feature's SPEC.md technical specification for:
+  Grade ONE feature's `#### Technical Specification` for:
     - Consistency with the KB (architecture, module-map, coding-standards, schemas)
     - Internal coherence (schemas ↔ feature flow ↔ layers ↔ acceptance criteria)
     - Codebase reality (does the proposed integration touch the modules it claims?)
@@ -98,11 +98,12 @@ DELIVERABLES:
 
 ## Substitution at dispatch time
 
-- `{{ARTIFACTS}}` — the feature's `SPEC.md` path plus the section list under
+- `{{ARTIFACTS}}` — the feature's `### Feature NNN` section in `REQUIREMENTS.md § 11`,
+  plus the subsection list under
   review (or "full SPEC" if all sections complete).
 - `{{CONTEXT}}` — short, descriptive-only background:
   ```
-    SPEC.md for feature-NNN-{name} in work-NNN-{name}. All sections marked Complete
+    Feature NNN in work-NNN-{name}, from REQUIREMENTS.md § 11. All sections marked Complete
     in the work STATE.yml's Features State view (row for this feature). This is the
     final review pass before the feature is marked Ready.
   ```

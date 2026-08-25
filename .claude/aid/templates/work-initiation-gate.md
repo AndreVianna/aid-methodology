@@ -93,9 +93,7 @@ The gate hands back to the starter, which now performs, in this order:
    worktree the starter is about to create is freshly branched off `master`,
    which tracks no `.aid/works/` at all (verified: `master`'s `.aid/` holds no
    `works/` -- every existing work lives in a worktree), so a fresh local glob
-   inside it would find nothing and re-allocate a colliding `work-001` (see
-   `feature-002/SPEC.md § Next-work-NNN derivation` for the full collision
-   analysis). The starter derives its own kebab-case `<name>` slug exactly as it
+   inside it would find nothing and re-allocate a colliding `work-001`. The starter derives its own kebab-case `<name>` slug exactly as it
    does today (from the description, or `{verb}-{artifact}`, or an asked name).
 
 2. **Create and enter the worktree, BEFORE authoring anything:**

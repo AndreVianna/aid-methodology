@@ -32,12 +32,12 @@ direction/hypothesis or the success signal cannot be made concrete and testable 
 often means the validation question itself is missing, not merely terse. Fidelity
 level never blocks CAPTURE -- default to `low-fi`.
 
-## `aid-prototype` -- structure (no SPEC.md)
+## `aid-prototype` -- structure (no technical specification)
 
-The collapse produces the throwaway model directly and emits no `SPEC.md`. A prototype is
-throwaway (no schema change); the **validation narrative** it needs lives in the model + the
-validation assessment (BUILD / PRESENT in `aid-prototype/SKILL.md`), not a
-`## Technical Specification` section.
+The collapse produces the throwaway model directly and emits no spec document. A prototype
+is throwaway (no schema change); the **validation narrative** it needs lives in the model +
+the validation assessment (BUILD / PRESENT in `aid-prototype/SKILL.md`), not a
+`#### Technical Specification` subsection.
 
 ## `aid-prototype` -- what the collapse builds
 
@@ -62,11 +62,11 @@ only to observe the direction's own success signal.
 **Escalation.** Same rule: escalate only when the target screen(s)/flow cannot be made
 concrete from `{description}` + KB context.
 
-## `aid-prototype-ui` -- structure (no SPEC.md)
+## `aid-prototype-ui` -- structure (no technical specification)
 
-A ui prototype likewise emits no `SPEC.md`: the **interaction flow** (states, transitions)
-and **accessibility notes** (`task-type-rules.md ## DESIGN`) are part of the wireframe/mock
-the collapse produces (no schema change), not a `### UI Specs` SPEC section.
+A ui prototype likewise emits no spec document: the **interaction flow** (states,
+transitions) and **accessibility notes** (`task-type-rules.md ## DESIGN`) are part of the
+wireframe/mock the collapse produces (no schema change), not a `##### UI Specs` subsection.
 
 ## `aid-prototype-ui` -- what the collapse builds
 
@@ -92,8 +92,6 @@ prototype with real users (usability testing, a controlled A/B test) is a G7 act
   direction's real build routes
 - `.codex/aid/templates/shortcut-scaffolding/test-experiment.md § aid-experiment` --
   where testing the prototype with users routes
-- `features/feature-005-prototype-family/SPEC.md` (work-001-lite-aid-skills) -- the
-  settled design this reference implements
 - `.codex/skills/aid-execute/references/task-type-rules.md ## DESIGN` -- the
   per-type execution rule this breakdown maps onto
 - `.aid/knowledge/artifact-schemas.md § Task DETAIL.md` -- the one-type-per-task

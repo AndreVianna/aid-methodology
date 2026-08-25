@@ -459,7 +459,7 @@ with the user and persisted in `discovery.doc_set` (`.aid/settings.yml`); only t
 doc realization varies per project, the dimension list is fixed (a T2 cardinality
 contract). A doc that is really a **per-work** governance artifact (a sprint backlog, a
 work plan, a task register) is out of KB scope -- route it to the pipeline
-(`REQUIREMENTS.md`/`SPEC.md`/`PLAN.md`, the per-work `STATE.md`), not the doc set. A
+(`REQUIREMENTS.md`/`PLAN.md`, the per-work `STATE.yml`), not the doc set. A
 **project-level** governance artifact (a roadmap, a backlog, a release ledger) is
 admissible instead, as a conditional document: the pipeline artifacts a per-work item
 would route to are per-work and transient -- pruned when the work ships -- leaving no

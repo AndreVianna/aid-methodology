@@ -47,7 +47,7 @@ Every node in the chart above, in chart order, with the exact `canonical/` text 
 | FIRST-RUN | `references/first-run.md` | `aid-architect` | `→ REVIEW` |
 ~~~~
 
-[Source: `canonical/skills/aid-detail/SKILL.md#L86`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-detail/SKILL.md#L86) · [full step: `canonical/skills/aid-detail/references/first-run.md#L1-L152`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-detail/references/first-run.md#L1-L152)
+[Source: `canonical/skills/aid-detail/SKILL.md#L86`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-detail/SKILL.md#L86) · [full step: `canonical/skills/aid-detail/references/first-run.md#L1-L129`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-detail/references/first-run.md#L1-L129)
 
 <a id="fragment-n2"></a>**2 · `REVIEW`** — Existing task files found; re-review against current… · _step_
 
@@ -55,7 +55,7 @@ Every node in the chart above, in chart order, with the exact `canonical/` text 
 | REVIEW | `references/review.md` | `aid-reviewer` | `→ DONE` |
 ~~~~
 
-[Source: `canonical/skills/aid-detail/SKILL.md#L87`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-detail/SKILL.md#L87) · [full step: `canonical/skills/aid-detail/references/review.md#L1-L81`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-detail/references/review.md#L1-L81)
+[Source: `canonical/skills/aid-detail/SKILL.md#L87`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-detail/SKILL.md#L87) · [full step: `canonical/skills/aid-detail/references/review.md#L1-L82`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-detail/references/review.md#L1-L82)
 
 <a id="fragment-n3"></a>**3 · `DONE`** · _exit_ · HALT
 
