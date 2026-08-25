@@ -81,7 +81,25 @@ function unparsed(text: string, context: string): never {
 function mermaidBlock(src: string): string {
   const m = src.match(/```mermaid\n([\s\S]*?)\n```/);
   if (!m) throw new Error('no mermaid block found');
-  return m[1];
+
+  // Strip Mermaid's own frontmatter directive, if present:
+  //
+  //     ---
+  //     config:
+  //       flowchart:
+  //         defaultRenderer: "elk"
+  //     ---
+  //     flowchart TD
+  //
+  // This is renderer configuration, not topology. Dropping it is safe in a way
+  // that dropping an unfamiliar STATEMENT would not be: it declares no node and
+  // no edge, so removing it cannot make a negative assertion vacuously true —
+  // which is the specific hazard `unparsed` exists to prevent. It is stripped
+  // here rather than taught to `parseFlow` for exactly that reason: the parser's
+  // job is to fail closed on anything that might carry an edge, and this cannot.
+  const body = m[1];
+  const fm = body.match(/^---\n[\s\S]*?\n---\n([\s\S]*)$/);
+  return fm ? fm[1] : body;
 }
 
 // Replace each shaped node declaration with a bare `ID`, recording the label.

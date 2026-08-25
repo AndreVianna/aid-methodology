@@ -12,3 +12,4 @@
 # relative to the pre-work-024 merge-base and is already absorbed into master, so it is
 # NOT seeded here. Append one reviewed row per future re-home, then re-run the gate to
 # confirm the target landed in the after-inventory.
+test-write-requirement.sh	U12 Change Log row untouched	test-write-requirement.sh	U12 body content untouched	The assertion was renamed, not dropped. It pinned that a targeted requirement edit leaves the rest of the file alone, and it did so by checking a Change Log row. When change logs were removed from every artifact, that row ceased to exist, so the same assertion now pins an ordinary body line instead. Same suite, same purpose, same one assertion -- only the anchor it reads moved.
