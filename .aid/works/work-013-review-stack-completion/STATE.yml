@@ -9,15 +9,15 @@ minimum_grade: A
 # [W]
 user_approved: 'yes'
 # [W]
-lifecycle: Paused-Awaiting-Input
+lifecycle: Completed
 # [W]
-phase: Detail
+phase: Execute
 # [W]
 active_skill: none
 # [W]
-updated: '2026-08-17T03:45:24Z'
+updated: '2026-08-25T02:20:00Z'
 # [W]
-pause_reason: 'Detail complete at A+ -- 48 tasks in 2 deliveries; run /aid-execute work-013 to begin delivery-001'
+pause_reason: --
 # [W]
 block_reason: --
 # [W]
@@ -473,3 +473,25 @@ qa:
       wording follows that answer. Confirmed Fixed by the reviewer at cycle 2. Q6 itself
       remains Pending.
     applied_to: 'feature-002-coverage-gate-completion'
+  - id: Q12
+    category: Scope
+    impact: Medium
+    state: Answered
+    context: >-
+      Raised at close-out as tech-debt L8. The site test AC5 asserted that README.md's
+      mermaid diagram and index.mdx's are topologically identical, and master's README
+      rewrite made that false by intent -- the two now share zero node labels, and the
+      Shortcut engine node AC5 pins by name is absent from README entirely. It was the
+      only red check on the branch, and no partial repair existed: satisfying the
+      assertion meant re-authoring one diagram wholesale.
+    suggested: >-
+      Retire AC5 and accept that the two diagrams answer different questions for
+      different readers; the alternatives were restoring README's old diagram or
+      rewriting the site home page to match the new one.
+    answer: >-
+      Owner chose retirement (2026-08-25). The assertion is removed and a note in its
+      place records the measurements, the reasoning, and what is now unguarded. Dead
+      helpers that only the guard called went with it; parseFlow and its link-grammar
+      suite are kept for the narrower vocabulary guard named as the replacement. L8 is
+      removed from tech-debt.md and L9 filed for the residue. Site suite green at 2729.
+    applied_to: 'site/src/data/__tests__/ac13-version-injection.test.ts; .aid/knowledge/tech-debt.md'
