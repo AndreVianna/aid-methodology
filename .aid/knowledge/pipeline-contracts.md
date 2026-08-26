@@ -434,13 +434,14 @@ Load-bearing keys: `project.{name,description,type}`, `tools.installed`,
   `delivery-state-template.yml` / `task-state-template.yml`,
   `canonical/aid/scripts/execute/writeback-state.sh`) are the current source of truth and name it
   `STATE.yml`.
-- The skill taxonomy is **75 skill directories** under `canonical/skills/`: 17 curated
+- The skill taxonomy is **111 skill directories** under `canonical/skills/`: 17 curated
   pipeline/on-demand/router skills (including `aid-read-ticket`, `aid-create-ticket`,
-  `aid-update-ticket`) + the 58-row shortcut catalog's skills, every row a canonical
+  `aid-update-ticket`) + the 94-row shortcut catalog's skills, every row a canonical
   name — 34 verb-first direct-entry shortcut doorways (generated from
-  `shortcut-catalog.yml`) plus 24 hand-authored `repurpose` skills — up from
-  82 dirs / 67 shortcuts / a 69-row catalog before the v2.1.0 coverage-gap follow-on added the <!-- count-history -->
-  `remove`/`deprecate`/`migrate` + `review`/`research` families. The recipe system
+  `shortcut-catalog.yml`) plus 60 hand-authored `repurpose` skills. The alias model is
+  retired: `alias_of` is required but always `null`, so no row is a synonym of another. <!-- count-history -->
+  Re-derive both figures rather than trusting this prose — `ls -1d canonical/skills/*/`
+  and `grep -c '^  - name:' canonical/aid/templates/shortcut-catalog.yml`. The recipe system
   (`canonical/aid/recipes/`, `parse-recipe.sh`, `{{slot}}` placeholders) was removed and
   replaced by the shortcut engine + `shortcut-scaffolding/<family>.md`; the prior "51 vs 52
   recipes" count drift is closed. Agents (9) and KB doc types (14) are unchanged.
