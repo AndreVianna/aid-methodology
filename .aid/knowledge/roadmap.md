@@ -44,9 +44,9 @@ work is in `release-tracking.md`; the rationale behind significant decisions is 
   design/create/update triad and the shared contract); including the knowledge relationship
   graph (independent effort, not a prerequisite for any planning skill); making the full
   36-skill catalog the MVP (conflates the minimum slice with the complete delivery).
-- **Status:** Delivered — `canonical/skills/aid-{design,create,update}-{roadmap,mvp,backlog}`,
+- **Status:** Shipped in v3.0.0 — `canonical/skills/aid-{design,create,update}-{roadmap,mvp,backlog}`,
   `canonical/aid/templates/design-lifecycle.md` and `canonical/aid/templates/design-seed.md`
-  are on master, awaiting the next tag; see `backlog.md` § `Next Release`.
+  are released; see `release-tracking.md`.
 
 ## Now
 
@@ -67,27 +67,11 @@ work is in `release-tracking.md`; the rationale behind significant decisions is 
   the shared contract (the contract must be stable before any consuming skill ships); delivering
   the grid skills before the planning skills (the planning skills produce the documents this
   repo needs to record its own committed direction, so they go first).
-- **Status:** Delivered — all three deliveries are complete and on master, awaiting the next
-  tag. All 36 skills exist under `canonical/skills/` and are rendered to the five profiles;
-  the shortcut catalog is back to 94 rows and the corpus to 111 skill directories.
+- **Status:** Shipped in v3.0.0 — all three deliveries are complete and released. All 36
+  skills exist under `canonical/skills/` and are rendered to the five profiles; the shortcut
+  catalog is back to 94 rows and the corpus to 111 skill directories.
 
 ## Next
-
-### v3.0.0 release
-
-- **What:** The next release packages everything sitting on master since v2.3.0 as a stable
-  **major** version. Its committed slice is `backlog.md` § `Next Release`.
-- **Why:** It is a major and not a minor because two of the shipped changes break adopters:
-  36 skill names are retired with the alias model, so an invocation that worked before now
-  resolves to nothing; and the Node floor rises to `>=22`, so an adopter on Node 20 cannot
-  install. A minor version would promise compatibility the release does not keep.
-- **Rejected:** Cutting it as `v2.4.0` (the version this section previously named — decided
-  before the alias retirement and the Node floor raise landed, and no longer honest);
-  splitting the breaking changes across two majors (they landed together and share one
-  upgrade note, so two migrations where one will do); holding the release for the agent chat
-  channel below (not committed, so waiting is speculative delay).
-- **Status:** ready to cut — the committed slice is drained into `release-tracking.md` by
-  `/release-aid major`, which bumps the carriers, tags, and publishes.
 
 ### Agent chat channel
 
