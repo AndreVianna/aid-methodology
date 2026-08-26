@@ -8,7 +8,7 @@ A full-lifecycle methodology for building software with AI agents
 ## Tracking discipline (IMPERATIVE)
 
 Every project, task, and deliverable is tracked in a state file — the work's
-`.aid/works/work-NNN-*/STATE.yml` (plus `.aid/knowledge/STATE.md` for knowledge-base and
+`.aid/works/work-NNN-*/STATE.md` (plus `.aid/knowledge/STATE.md` for knowledge-base and
 cross-phase process state). Keeping it current is **not optional**:
 
 - **ANY and ALL** changes to the state of a project, task, or deliverable —
@@ -74,6 +74,22 @@ cross-phase process state). Keeping it current is **not optional**:
 - Follow the current numbered phase: Discover → Describe → Define → Specify → Plan → Detail → Execute — the numbered sequence ends at Execute. `aid-config` bootstraps before the pipeline; Deploy and Monitor are optional, separately-invoked Deliver paths, not steps in the sequence.
 - Produce verifiable artifacts at each phase.
 - Quality gates must pass before proceeding.
+
+## Review criteria (before you write)
+
+Criteria are the writer's contract, not the reviewer's checklist. **Before authoring or
+editing any file, resolve its review criteria and comply** -- the reviewer is the backstop,
+not the enforcer:
+
+- Resolve three levels and satisfy the union: the **global** criteria and the criteria for
+  the file's **document type**, both in the type registry and criteria tables of
+  `.aid/knowledge/authoring-conventions.md`, plus anything the **file itself** declares in
+  its `review-criteria:` frontmatter. On a collision the most specific wins -- file over
+  type over global. A `kind: exclude` entry is as binding as a `validate` one: it names
+  what you must NOT add.
+- **Introducing or retiring a document type owes the KB a registry row.** Adding the first
+  file of a new type adds its row and its criteria in the same change; removing the last
+  file of a type removes the row. Every in-scope file must resolve to exactly one type.
 
 ## Review output format (global)
 
