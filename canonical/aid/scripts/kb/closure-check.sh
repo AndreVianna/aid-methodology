@@ -31,7 +31,8 @@
 #
 # Usage:
 #   closure-check.sh [--root PATH] [--concepts PATH] [--spine PATH]
-#                    [--kb-dir PATH] [--denylist PATH]
+#                    [--kb-dir PATH] [--denylist PATH] [--dismissed PATH]
+#                    [--defined-extra PATH]
 #                    [--output-a PATH] [--output-b PATH]
 #                    [--output-all PATH]
 #
@@ -60,6 +61,7 @@ SPINE_ARG=""
 KB_DIR_ARG=""
 DENYLIST_ARG=""
 DISMISSED_ARG=""
+DEFINED_EXTRA_ARG=""
 OUTPUT_A=""
 OUTPUT_B=""
 OUTPUT_ALL=""
@@ -72,6 +74,7 @@ while [[ $# -gt 0 ]]; do
     --kb-dir)     KB_DIR_ARG="$2";   shift 2 ;;
     --denylist)   DENYLIST_ARG="$2"; shift 2 ;;
     --dismissed)  DISMISSED_ARG="$2"; shift 2 ;;
+    --defined-extra) DEFINED_EXTRA_ARG="$2"; shift 2 ;;
     --output-a)   OUTPUT_A="$2";     shift 2 ;;
     --output-b)   OUTPUT_B="$2";     shift 2 ;;
     --output-all) OUTPUT_ALL="$2";   shift 2 ;;
@@ -104,6 +107,7 @@ ROOT=$(resolve_abs "$ROOT")
 [[ -n "$KB_DIR_ARG" ]]    && KB_DIR_ARG=$(resolve_abs "$KB_DIR_ARG")
 [[ -n "$DENYLIST_ARG" ]]  && DENYLIST_ARG=$(resolve_abs "$DENYLIST_ARG")
 [[ -n "$DISMISSED_ARG" ]] && DISMISSED_ARG=$(resolve_abs "$DISMISSED_ARG")
+[[ -n "$DEFINED_EXTRA_ARG" ]] && DEFINED_EXTRA_ARG=$(resolve_abs "$DEFINED_EXTRA_ARG")
 [[ -n "$OUTPUT_A" ]]      && OUTPUT_A=$(resolve_abs "$OUTPUT_A")
 [[ -n "$OUTPUT_B" ]]      && OUTPUT_B=$(resolve_abs "$OUTPUT_B")
 [[ -n "$OUTPUT_ALL" ]]    && OUTPUT_ALL=$(resolve_abs "$OUTPUT_ALL")
@@ -253,6 +257,18 @@ if [[ -f "$SPINE" ]]; then
   '
   sort -u -o "$DEFINED_FILE" "$DEFINED_FILE" 2>/dev/null || true
   sort -u -o "$RELATES_FILE" "$RELATES_FILE" 2>/dev/null || true
+fi
+
+# Union --defined-extra terms into the defined-identifier set before normalization.
+# Lines that start with '#' are comments; blank lines are ignored.
+# This is the only new input the flag adds: the default path (no --defined-extra) is
+# byte-identical to the previous behavior (AC-17).
+if [[ -n "${DEFINED_EXTRA_ARG:-}" && -f "$DEFINED_EXTRA_ARG" ]]; then
+  sed -E 's/^[[:space:]]+//; s/[[:space:]]+$//' "$DEFINED_EXTRA_ARG" \
+    | grep -v '^[[:space:]]*$' \
+    | grep -v '^#' \
+    | tr '[:upper:]' '[:lower:]' >> "$DEFINED_FILE" || true
+  sort -u -o "$DEFINED_FILE" "$DEFINED_FILE"
 fi
 
 # ---------------------------------------------------------------------------
