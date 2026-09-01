@@ -235,6 +235,40 @@ done
 # ---------------------------------------------------------------------------
 
 # ---------------------------------------------------------------------------
+# WS21: work-state-template declares a `features:` key, and declares it as
+# AUTHORED rather than DERIVED.
+#
+# This is not cosmetic. The key was absent and the section was documented as
+# DERIVED, which is false -- aid-define creates a row per feature and
+# aid-specify updates it, so nothing derives it. The mislabel made the
+# STATE.md -> STATE.yml converter read a real Features State row as proof that
+# a work predated the per-unit hierarchy, so it refused to convert EVERY work
+# that had been through /aid-define and named a remedy that cannot run on a
+# work with no tasks/. Declaring the key is what closes that, so the
+# declaration is asserted here rather than left to the converter's own gate.
+# ---------------------------------------------------------------------------
+assert_file_contains \
+    "$WORK_STATE" \
+    "features: []" \
+    "WS21 work-state-template declares an instantiated features: key"
+assert_file_contains \
+    "$WORK_STATE" \
+    "state:    Pending | In Discussion | Spike Needed | Blocked | Ready" \
+    "WS21 work-state-template declares the closed feature-state enum"
+if grep -qE '^#[[:space:]]*\[A\][[:space:]]*one entry per feature' "$WORK_STATE" 2>/dev/null; then
+    pass "WS21 features: carries the [A] AUTHORED writer legend"
+else
+    fail "WS21 features: is missing the [A] AUTHORED writer legend -- a DERIVED marker here is the defect"
+fi
+# The zone comment must no longer list Features State as DERIVED, or the next
+# reader re-derives the same wrong conclusion the converter did.
+if grep -qE 'DERIVED \(read-only, assembled at read time\) -- Features State' "$WORK_STATE" 2>/dev/null; then
+    fail "WS21 the zone comment still lists Features State as DERIVED"
+else
+    pass "WS21 the zone comment no longer lists Features State as DERIVED"
+fi
+
+# ---------------------------------------------------------------------------
 # WS12: delivery-state-template has a `qa:` key (content-breaking retarget:
 # `## Cross-phase Q&A` is a markdown heading FR-2b retires; the SD-5
 # per-delivery Q&A partition survives inside the `qa:` key's own comment).
