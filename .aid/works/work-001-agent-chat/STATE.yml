@@ -1,0 +1,338 @@
+# Work State -- work-NNN-{name}
+#
+# This is the WORK-LEVEL STATE.yml template. It is divided into three zones:
+#   FRONTMATTER (single-writer, machine-parsed scalars) -- top-level keys,
+#     verbatim: pipeline identity, work-level lifecycle/phase/approval
+#     scalars, and (for flattened single-delivery works only) the delivery
+#     lifecycle/gate scalars. Written ONLY by `writeback-state.sh` (surgical
+#     single-key write; every other line is reproduced byte-for-byte).
+#   AUTHORED (single-writer, YAML structures under a key, one key per former
+#     markdown section) -- interview, features, lifecycle_history, deploy,
+#     delivery_lifecycle (incl. its tasks_lifecycle child), delivery_gate, qa.
+#   DERIVED (read-only, assembled at read time) -- Plan/Deliveries, Tasks
+#     State, Delivery Gates, Calibration Log, Dispatches. NOT represented
+#     here -- no key at all. A reader seeing no key derives the same union it
+#     derives today. Agents that write state must target the per-unit
+#     STATE.yml files instead. `qa` is the one former-DERIVED name that keeps
+#     a key here, because on the flattened Lite path it is AUTHORED.
+#
+#     `features` was ALSO listed as DERIVED here and that was wrong. Nothing
+#     derives it: /aid-define creates a row per feature at decomposition and
+#     /aid-specify updates that row as the feature advances, so it is
+#     AUTHORED like `interview`. The mislabel was not merely a documentation
+#     defect -- it made the STATE.md -> STATE.yml converter treat a real
+#     Features State row as proof that a work still needed the pre-hierarchy
+#     era migration, so it REFUSED to convert any work that had been through
+#     /aid-define, and named a remedy that cannot run on a work with no
+#     tasks/. Declaring the key is what closes that.
+#
+# Writer legend -- stated in full-line comments above each key, NEVER as a
+# trailing comment on the key itself (D-3):
+#   [W] writeback-state.sh is the sole writer (surgical single-key write)
+#   [A] authored by this work's active branch (single writer)
+#
+# This is the single state file for THIS work -- the full dev lifecycle from
+# req to spec to plan to impl to deploy. One STATE.yml per
+# .aid/works/work-NNN-{name}/ directory. See also: per-delivery
+# delivery-NNN/STATE.yml (delivery lifecycle + gate + delivery-scoped Q&A +
+# derived task rollup) and per-task delivery-NNN/tasks/task-NNN/STATE.yml
+# (mutable task cells).
+#
+# Artifact files (REQUIREMENTS.md, PLAN.md, per-task DETAIL.md) carry NO inline
+# "## Change Log" section. Content history -- what changed in the document -- is
+# exactly what git records, with author, date and full diff, and without drift;
+# a hand-maintained table duplicates it at lower fidelity. This is the same
+# reasoning the tracking-discipline rule already applies to .aid/knowledge/ docs,
+# extended to work artifacts. Process state (where are we in the workflow) is
+# what THIS file is for, and it stays here.
+#
+# The AUTHORED delivery_lifecycle / tasks_lifecycle / delivery_gate keys
+# (singular) apply ONLY to single-delivery flattened works (no
+# deliveries/delivery-NNN/ wrapper). They are promoted verbatim from
+# delivery-state-template.yml / task-state-template.yml and are distinct from
+# the plural DERIVED Delivery Gates / Plan-Deliveries / Tasks State union
+# views, which are omitted here entirely. Left absent (keys omitted) for full
+# multi-delivery works, where each delivery's own lifecycle/gate lives in its
+# delivery-NNN/STATE.yml and each task's own state lives in its
+# delivery-NNN/tasks/task-NNN/STATE.yml instead.
+#
+# Full-layout omission rule: a full multi-delivery work's STATE.yml is
+# IDENTICAL to this template minus these keys: delivery_state, gate_tier,
+# gate_grade, gate_timestamp (the four flattened-only gate/delivery scalars),
+# minus delivery_lifecycle, tasks_lifecycle, delivery_gate (each lives in its
+# own delivery/task file instead), and minus qa (DERIVED on the full path).
+# `features` is NOT on that list: a feature is a work-level concept on both
+# layouts, so the key is present either way.
+#
+# Optional `ticket_ref` scalar (top-level, both layouts): links this work to
+# an external tracker item ({connector-stem}:{external-id}, e.g.
+# jira:PROJ-123). Left `--` when this work is not linked; readers/dashboard
+# ignore it. Nearest-ancestor resolution + MCP-first consumption contract:
+# canonical/aid/templates/connectors/consumption-protocol.md. `ticket_ref` is
+# a lifecycle-unit field only -- the connector descriptor schema is unchanged.
+#
+# STATE ADVANCEMENT ORDERING (authoritative source; schemas.md inline copy is downstream)
+#
+# Ordered from most-advanced to least-advanced:
+#   1. Done           -- task completed and accepted; all subtasks resolved
+#   2. Canceled       -- resolved terminal (explicitly abandoned); ranks just below Done
+#   3. In Review      -- work submitted; awaiting reviewer decision
+#   4. In Progress    -- actively being executed on its delivery branch
+#   5. Blocked        -- attempted but impeded; recoverable-in-place; more actionable than Failed
+#   6. Failed         -- completed attempt rejected; a parallel branch may have superseded
+#   7. Pending        -- not yet started
+#
+# Rationale: the dashboard "most-advanced wins" reconcile answers "how far has
+# this work gotten across all worktree branches." Done/Canceled are
+# terminal-resolved and rank highest. In Review outranks In Progress (review
+# is a later pipeline stage). Blocked outranks Failed because a blocked task
+# is recoverable-in-place and signals "needs attention now," whereas a failed
+# task represents a completed-but-rejected attempt that a parallel branch may
+# have already superseded -- surfacing "blocked" is the more actionable
+# signal. Both Blocked and Failed rank above Pending because they represent
+# work that was attempted and surfaced information (more informative than
+# "not started").
+#
+# Closed enum VALUES (unchanged): Pending | In Progress | In Review | Blocked | Done | Failed | Canceled
+#
+# This ordering is encoded ONCE here. Both reader twins (Python + Node)
+# reference schemas.md for the ordered list at runtime; schemas.md carries an
+# inline copy derived from this source.
+
+# [W]
+#   path: lite | full  -- lite = flattened (no deliveries/ wrapper); full = deliveries/delivery-NNN/ wrapper
+#   initiator: aid-describe | aid-{shortcut-skill}  -- the pipeline-starting skill: aid-describe, or a shortcut-catalog.yml skill (e.g. aid-fix, aid-refactor, aid-create-api)
+pipeline:
+  path: full
+  initiator: aid-describe
+# [W]
+started: '2026-09-01'
+# [W] resolved at runtime by `bash canonical/aid/scripts/config/read-setting.sh --skill {phase} --key minimum_grade --default A`; source is `.aid/settings.yml`
+minimum_grade: A
+# [W] 'yes' | 'no' -- quoted, see NFR-2 / D-5
+user_approved: 'no'
+# [W] Running | Paused-Awaiting-Input | Blocked | Completed | Canceled
+lifecycle: Running
+# [W] Describe | Define | Specify | Plan | Detail | Execute
+phase: Describe
+# [W] aid-{skill} | none
+active_skill: none
+# [W]
+updated: '2026-09-01T00:00:00Z'
+# [W] set only when lifecycle = Paused-Awaiting-Input
+pause_reason: --
+# [W] set only when lifecycle = Blocked
+block_reason: --
+# [W] e.g. IMPEDIMENT-task-NNN.md, or the failed gate
+block_artifact: --
+# [W] {connector-stem}:{external-id} | -- -- OPTIONAL; e.g. jira:PROJ-123; see the ticket_ref note above
+ticket_ref: --
+
+# [A] updated by aid-describe as each section is completed.
+#   state: In Progress | Complete | Approved
+#   grade: {grade} | Pending
+#   sections[].state: Pending | Complete
+interview:
+  state: 'In Progress'
+  grade: Pending
+  sections:
+    - id: 1
+      name: Objective
+      state: Complete
+      updated: '2026-09-01'
+    - id: 2
+      name: 'Problem Statement'
+      state: Complete
+      updated: '2026-09-01'
+    - id: 3
+      name: 'Users & Stakeholders'
+      state: Complete
+      updated: '2026-09-01'
+    - id: 4
+      name: Scope
+      state: Pending
+      updated: '2026-09-01'
+    - id: 5
+      name: 'Functional Requirements'
+      state: Complete
+      updated: '2026-09-01'
+    - id: 6
+      name: 'Non-Functional Requirements'
+      state: Complete
+      updated: '2026-09-01'
+    - id: 7
+      name: Constraints
+      state: Pending
+      updated: '2026-09-01'
+    - id: 8
+      name: 'Assumptions & Dependencies'
+      state: Pending
+      updated: '2026-09-01'
+    - id: 9
+      name: 'Acceptance Criteria'
+      state: Complete
+      updated: '2026-09-01'
+    - id: 10
+      name: Priority
+      state: Complete
+      updated: '2026-09-01'
+
+# [A] one entry per feature, in id order. Created by aid-define at feature
+#     decomposition (one entry per `### Feature NNN` section it appends to
+#     REQUIREMENTS.md § 11) and updated by aid-specify as each feature
+#     advances. Present on BOTH layouts -- a feature is a work-level concept,
+#     so this key is never omitted for a full multi-delivery work.
+#
+#     A feature is a SECTION, not a folder: `id` identifies
+#     `REQUIREMENTS.md § 11 ### Feature NNN`, and there is no
+#     features/feature-NNN/ directory and no per-feature SPEC.md to point at.
+#     Ids are never reused or renumbered -- a withdrawn feature keeps its
+#     entry with `withdrawn: true` so that every citation of it still
+#     resolves, and the number is not handed to a later feature.
+#
+#     `state` and `grade` describe that section's `#### Technical
+#     Specification` -- the part aid-specify fills. `sections` is the
+#     per-technical-section progress aid-specify tracks while it works
+#     through The Loop; it is the declared home for that tracking and is
+#     legitimately empty until aid-specify has run.
+#
+#   id:       '001'.. -- quoted, so a leading zero survives the YAML read
+#   name:     short slug; the §11 section title is authoritative
+#   state:    Pending | In Discussion | Spike Needed | Blocked | Ready
+#   grade:    {grade} | Pending
+#   qa_count: integer
+#   withdrawn: true -- omit the key entirely for a live feature
+#   sections[].state: Pending | In Discussion | Complete
+features:
+  - id: '001'
+    name: wake-feasibility-spike
+    state: Ready
+    grade: A+
+    qa_count: 0
+    started: '2026-09-01'
+    updated: '2026-09-01'
+    sections: []
+    notes: 'Stage P0. Specification carried forward intact -- an executable experiment design, reviewed to A+ over five cycles. Runs before anything is built (ID-14).'
+  - id: '003'
+    name: node-service-lifecycle
+    state: Pending
+    grade: Pending
+    qa_count: 0
+    started: --
+    updated: '2026-09-01'
+    sections: []
+    notes: 'Stage P1, and the keystone: owns the process model, the CLI surface and the store schema. Specify FIRST. Its predecessor specification was deliberately not carried; two of its findings travel on as constraints in the section itself.'
+  - id: '004'
+    name: session-registration
+    state: Pending
+    grade: Pending
+    qa_count: 0
+    started: --
+    updated: '2026-09-01'
+    sections: []
+    notes: 'Stage P1.'
+  - id: '005'
+    name: durable-chat-messaging
+    state: Pending
+    grade: Pending
+    qa_count: 0
+    started: --
+    updated: '2026-09-01'
+    sections: []
+    notes: 'Stage P1. Largest criterion set (6). Depends on the store schema Feature 003 fixes.'
+  - id: '006'
+    name: push-subscription
+    state: Pending
+    grade: Pending
+    qa_count: 0
+    started: --
+    updated: '2026-09-01'
+    sections: []
+    notes: 'Stage P2.'
+  - id: '007'
+    name: host-waker-adapters
+    state: Pending
+    grade: Pending
+    qa_count: 0
+    started: --
+    updated: '2026-09-01'
+    sections: []
+    notes: 'Stage P2. Shaped by the number Feature 001 measures -- cannot be specified before the spike answers.'
+  - id: '008'
+    name: chat-skill
+    state: Pending
+    grade: Pending
+    qa_count: 0
+    started: --
+    updated: '2026-09-01'
+    sections: []
+    notes: 'Stage P2. Replaces the withdrawn MCP facade; carries Description and user stories already.'
+  - id: '009'
+    name: lan-federation
+    state: Pending
+    grade: Pending
+    qa_count: 0
+    started: --
+    updated: '2026-09-01'
+    sections: []
+    notes: 'Stage P3 -- the target case. Its Description still states discovery as zero-configuration announcement, which FR-6.1 and AC-4 no longer support; reconcile when specifying.'
+  - id: '010'
+    name: directed-chat-messages
+    state: Pending
+    grade: Pending
+    qa_count: 0
+    started: --
+    updated: '2026-09-01'
+    sections: []
+    notes: 'Stage P4.'
+  - id: '011'
+    name: retention-enforcement
+    state: Pending
+    grade: Pending
+    qa_count: 0
+    started: --
+    updated: '2026-09-01'
+    sections: []
+    notes: 'Stage P4.'
+  - id: '012'
+    name: operator-visibility
+    state: Pending
+    grade: Pending
+    qa_count: 0
+    started: --
+    updated: '2026-09-01'
+    sections: []
+    notes: 'Stage P4. Read-only by design.'
+
+# [A] appended by aid-describe / aid-define as the interview and its
+#     cross-reference pass proceed. Append-only, newest LAST. Distinct from
+#     `lifecycle_history`, which records PHASE transitions and gates: this
+#     records what happened INSIDE the interview -- a question round, a
+#     stakeholder comment pass, a quality check, a cross-reference cycle.
+#
+#     Declared because the alternative is losing it. It lived under a
+#     `### Review History` heading inside the legacy markdown `## Interview State`
+#     section with no key of its own, which made it invisible to the schema and
+#     mergeable into `interview.sections` by anything reading tables from that
+#     range. A table the schema does not name is still data.
+#
+#   - date / event / outcome / notes
+review_history:
+  - date: '2026-09-01'
+    event: 'Seeded from a predecessor'
+    outcome: 'seven sections Complete, three Pending'
+    notes: 'Sections 1-3, 5, 6, 9 and 10 carried; 4, 7 and 8 carried but left open for this interview. Section 9 renumbered to a gapless AC-1..AC-22.'
+
+# [A] written by the orchestrator on the work's active branch (single
+#     writer). Append-only audit trail of phase transitions and gate
+#     approvals, newest LAST (append to bottom).
+lifecycle_history:
+  - date: '2026-09-01'
+    event: 'Work created'
+    grade: --
+    notes: 'Re-baselined from a predecessor rather than interviewed from zero. The predecessor was wound down because a major release retired the artifact set it was built on and its state file could not be converted without loss; its requirements were sound and are carried. Next: /aid-describe to close sections 4, 7 and 8.'
+
+# [A] aid-deploy only; one entry per delivery (never derived from child
+#     files; aid-deploy is the sole author):
+#   - delivery / state / pr / kb_updated / tag / notes
+deploy: []

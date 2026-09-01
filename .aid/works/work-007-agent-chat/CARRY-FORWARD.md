@@ -242,11 +242,14 @@ Survives pruning with no action, and must not be re-derived:
    `ID-1`–`ID-14` on 2026-09-01, which is what actually protects them from `W7-3`. Promotion to
    the Knowledge Base is deferred to ship time, as `D30`+ with real evidence citations — see
    section 1 above for why it cannot happen now. **No action outstanding.**
-2. **Open `work-024-agent-chat`.** 024 is the lowest free number: 001, 003, 004, 005, 007–013,
+2. **DONE — opened as `work-001-agent-chat`** (the stakeholder's chosen number; the `W1-*`
+   debt-id objection below did not survive checking, since nothing on disk references `work-001`
+   and that id pattern is undocumented convention). Originally read: 024 is the lowest free number: 001, 003, 004, 005, 007–013,
    017 and 019–023 have all been used, counting the three that live only in `.gitignore`
    (004, 009, 023) and would otherwise look free. Current tooling writes `STATE.yml`
    natively, so there is nothing to migrate.
-3. **Seed §1–§10 from this work's `REQUIREMENTS.md`** per the disposition table, then run
+3. **DONE (the seeding half).** §1–§10 seeded per the disposition table; §4, §7 and §8 left
+   `Pending` so the interview resumes on exactly those three. Still to run:
    `/aid-describe`. Its `CONTINUE` state works only sections marked `Pending` or `Partial`, so
    the questions it asks are the ones genuinely open (§4, §7, §8's floor, Q23/Q27/Q28 and the
    `start` idempotence sub-decision) — provided the seeded section states say so.
@@ -261,7 +264,8 @@ Survives pruning with no action, and must not be re-derived:
    > an update rather than a rewrite. Still — check the routing decision before letting it
    > proceed. This is tech-debt `SY-6`, and it is the honest cost of restarting: a fresh work
    > escapes the *migration* debt but not the stale-prose debt.
-4. **Renumber §9 to AC-1..AC-22.** A fresh work has no citation history to protect, so the gaps
+4. **DONE.** §9 is a gapless `AC-1`–`AC-22`, verified: each owned by exactly one feature, §10
+   and §11 agreeing stage for stage. Originally read: A fresh work has no citation history to protect, so the gaps
    left by the deleted and withdrawn criteria should close rather than be preserved as struck rows.
 5. **`/aid-define`** — expect the same eleven features. Carry 001's specification in whole;
    003, 006 and 009 start from their criteria.
