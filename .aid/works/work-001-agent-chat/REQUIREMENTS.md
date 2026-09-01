@@ -119,6 +119,11 @@ orchestrator and needs to see and audit what was sent between them.
   receives its messages. **The discovery mechanism is deliberately not named here** — it is
   stated as an outcome, because the research behind FR-6.1 found that no single mechanism
   works everywhere users actually are.
+  **And the promise is deliberately bounded: discovery always works, by a path that depends
+  on no network feature. Finding peers *without configuration* is a convenience layered
+  above that, offered where the network permits and promised nowhere** — the environments
+  that defeat it are ordinary ones (FR-6.1), and a promise the product cannot keep on a
+  developer's own laptop is worse than one it does not make.
 - **Delivery to a live session that is not currently taking a turn**, via an in-tool
   subscriber that holds a token-free wait open and turns an arriving message into a turn
   (FR-5.2). An idle session is woken on arrival; a busy one receives at its next turn
@@ -695,7 +700,7 @@ exception and is meant to be** — it produces answers, not product.
 | **P0 — POC** | Four tests against a throwaway stub node (one endpoint that waits, then returns a message), on **Claude Code and Cursor only**: (1) idle Claude Code session acts on a message with no human action; (2) idle Cursor session does the same via a blocking `stop` hook; (3) **how long a Cursor `stop` hook may block before the host kills it**; (4) the same exchange across two machines on the LAN | AC-20 — the single unvalidated assumption |
 | **P1 — Skeleton** | Node lifecycle + CLI + registration by stable name + chat create/delete/**join/leave**, **including the operator changing another session's membership** (FR-7.2, FR-3.4 — CLI-only, and the counterpart to AC-15's prohibition) + the local half of listing (FR-3.1) + durable `send`/`inbox`/`ack` with fan-out to every member, **pull only** (FR-5.3 — the pull floor ships here, not at P2). **Lifecycle is smaller than it was:** with the node shipping in the `aid` payload (FR-7.6) there is no install step to build | AC-3, AC-6, AC-7, AC-8, AC-9, AC-10, AC-13, AC-21, AC-22 |
 | **P2 — The wake** | Subscriber and re-arm (FR-5.1, FR-5.2, FR-5.4, FR-5.5 — FR-5.3's pull floor already shipped at P1), and the **rendered chat skill** (FR-0.2, FR-0.4 — FR-0.1 already shipped at P1), which replaces the withdrawn MCP façade. **FR-0.3 completes here, not at P1:** P1 delivered its administration and message-plane halves, but FR-0.3 also requires the CLI to carry the subscriber, which does not exist until this stage | **AC-1 (headline — same machine, cross-tool)**, AC-12, AC-15 |
-| **P3 — Federation** | Discovery, handshake, store-and-forward, version negotiation (FR-6), machine-qualified chat ids and local-only resolution (FR-3.2), the network half of listing (FR-3.1). **Discovery is layered, and the layering has a sequencing consequence stated rather than discovered:** the guaranteed path (a static peer list plus heartbeat) satisfies AC-4 but *not* the zero-configuration expectation in §4; the best-effort layer above it is what does. Shipping only the floor leaves this stage's user-facing promise unmet even with its criterion green | **AC-2 (the target case)**, AC-4, AC-5, AC-16, AC-19 |
+| **P3 — Federation** | Discovery, handshake, store-and-forward, version negotiation (FR-6), machine-qualified chat ids and local-only resolution (FR-3.2), the network half of listing (FR-3.1). **Discovery is layered, and the layering is now matched by what §4 promises:** the guaranteed path (a static peer list plus heartbeat) satisfies AC-4, and it is also the whole of the promise — §4 offers zero-configuration discovery as a convenience where the network permits and commits to it nowhere. So shipping the floor delivers this stage rather than leaving a promise unmet, and the best-effort layer above it improves the experience without carrying a criterion | **AC-2 (the target case)**, AC-4, AC-5, AC-16, AC-19 |
 | **P4 — Completeness** | Mention and whisper, audit/operator visibility, retention enforcement. Chats of more than two need nothing new here — fan-out to every member is P1 (AC-13); what P4 adds is **addressing within** a larger chat | AC-11, AC-14, AC-17, AC-18 |
 
 **Every stage is required. None is optional.** The stages are a delivery *order*, not a
@@ -1890,17 +1895,13 @@ believed empty here — but it is the one real loss, and it is named.
 - **Requirements:** §5 FR-2.2 (the cross-machine half of name uniqueness), FR-3.1 (network half), FR-3.2, FR-3.3, FR-6.1–6.4; §4 Scope; §8 Assumptions (cross-machine reach); §10 stage P3
 - **Criteria:** AC-2, AC-4, AC-5, AC-16, AC-19  ← ids from §9; never restated here
 
-> **Re-specification pending, and it has a live contradiction with §9 that must be closed
-> rather than carried.** The Description and one scenario below still state discovery as
-> *nodes announcing themselves and finding each other without configuration*. FR-6.1 was
-> restated as an **outcome** with a guaranteed path that depends on no network feature and
-> zero-configuration discovery layered above it as best-effort, and **AC-4 says outright that it
-> must be satisfiable by the guaranteed path alone** — because a criterion that can only pass
-> when multicast happens to work is a criterion that fails for reasons the product does not
-> control. The zero-configuration scenario below therefore tests the best-effort layer as though
-> it were the floor. Folding removes half the problem by itself: criteria are now cited from §9
-> rather than restated, so AC-4 governs. What remains is the Description's own wording and the
-> scenario, both of which `/aid-specify` must bring in line with the layered model.
+> **The discovery contradiction is closed (2026-09-01).** The Description, the user story and
+> the scenario each promised discovery *without configuration*, while AC-4 — the criterion
+> this feature owns — requires only that discovery be satisfiable by a path depending on no
+> network feature. All three now state the bounded promise §4 makes, and the scenario is split
+> so the guaranteed path is tested and the zero-configuration layer is marked best-effort and
+> criterion-free. What `/aid-specify` still owns is **which** mechanisms fill each layer;
+> FR-6.1 fixes only that the outcome is reached and that no layer is load-bearing alone.
 >
 > **One constraint carried in from stakeholder decision Q24, recorded because its own question
 > closed by deletion and the constraint would otherwise have gone with it:** the node ships
@@ -1913,7 +1914,10 @@ believed empty here — but it is the one real loss, and it is named.
 Machines finding each other, and messages crossing between them. This is the stage that
 delivers the target case.
 
-Nodes announce themselves on the local network and discover their neighbours. There is
+Nodes find each other on the local network. **How** is deliberately not fixed here: a
+guaranteed path that depends on no network feature always works, and automatic discovery
+sits above it as a convenience for the networks that allow it — which is not all of them,
+and not predictably the user's. There is
 **no password, key, or login anywhere** — being reachable on the network is the entire
 condition for taking part. That is a deliberate choice, and its consequence is stated
 plainly: the network *is* the security boundary, so it has to be one you trust.
@@ -1937,8 +1941,9 @@ nothing reports an error.
 
 - As a developer in Cursor on my laptop, I want to exchange messages with a colleague's
   Claude Code session on another machine, so that the whole point of the product works.
-- As the operator, I want machines to find each other without configuration, so that adding
-  a machine is not a setup task.
+- As the operator, I want adding a machine to work on any network I can reach, so that
+  discovery never fails for a reason I cannot diagnose — and, where the network allows it,
+  to happen without my configuring anything.
 - As a session, I want a bare chat name to mean *here*, so that I never reach a same-named
   room on another machine by accident.
 - As a sender, I want messages to a machine that is currently off to be delivered when it
@@ -1962,8 +1967,13 @@ nothing reports an error.
 - [ ] Given a Cursor session on one machine and a Claude Code session on another on the same
       network, when one sends to their shared chat, then the recipient **acts on it with no
       human action** — the target case.
-- [ ] Given two machines on the same network, when both nodes are running, then each
-      discovers the other without configuration.
+- [ ] Given two machines on a network that blocks broadcast and multicast, when both nodes
+      are running and the guaranteed path is used, then each finds the other — discovery
+      does not depend on a network feature.
+- [ ] Given two machines on a network that permits it, when both nodes are running, then
+      each finds the other with no configuration. **Best-effort:** this scenario is
+      environment-dependent by construction and carries no §9 criterion, which is why AC-4
+      is satisfiable by the scenario above it alone.
 - [ ] Given two discovered nodes, when they connect, then no key, password or login is
       required of either.
 - [ ] Given the same short session name registered on both machines, when the two nodes have

@@ -326,6 +326,10 @@ review_history:
     event: 'Interview turn 1 -- pre-reset residue swept as a class'
     outcome: '10 edits across 1, 4 and Feature 003; section 1 reopened'
     notes: 'The deleted deploy verb was still live text in eight places, contradicting FR-1.1 and FR-7.6. Sweeping the class rather than the eight lines found four further pre-reset assertions in Feature 003 that the deploy hits had not pointed at: the node as a separate package aid does not contain, Python as its prerequisite, an open question about where deploy fetches the node (which section 8 already records as closed by deletion, with the opposite premise), and the withdrawn MCP facade treated as shipping. Section 1 moved Complete -> Pending: it carried the defect while marked Complete and exempt from sweeping as runtime-independent, so its clean bill was unverified rather than earned.'
+  - date: '2026-09-01'
+    event: 'Interview turn 2 -- discovery promise bounded'
+    outcome: '6 edits across 4, 10 and Feature 009; contradiction closed'
+    notes: 'Zero-configuration discovery was promised in Feature 009s Description, user story and scenario, while AC-4 -- the criterion that feature owns -- requires only a path depending on no network feature, and section 10 stated in writing that shipping the floor would leave the promise unmet with the criterion green. Stakeholder decision: best-effort, not a v1 promise. A criterion for it was considered and rejected on AC-4s own reasoning -- it would be environment-dependent by construction and red on an ordinary laptop (WSL2 multicast, AP client isolation, macOS 15+). The scenario is split so the guaranteed path is tested and the zero-configuration layer is marked best-effort and criterion-free.'
 
 # [A] written by the orchestrator on the work's active branch (single
 #     writer). Append-only audit trail of phase transitions and gate
