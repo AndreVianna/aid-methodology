@@ -957,6 +957,26 @@ phase: Specify
 |------|------------------------|-------|-------|
 | 2026-01-02 | Work created | -- | scaffold |
 
+## Cross-phase Q&A
+
+### Q1
+
+- **Category:** Architecture
+- **Impact:** Required
+- **Status:** Answered
+- **Context:** the old spelling
+- **Suggested:** something
+- **Answer:** accepted
+
+### Q2
+
+- **Category:** Requirements
+- **Impact:** Medium
+- **State:** Pending
+- **Context:** the current spelling
+- **Suggested:** something else
+- **Answer:** _pending_
+
 ## Deploy State
 
 | Delivery | State | PR | KB Updated | Tag | Notes |
@@ -1057,6 +1077,30 @@ else
 fi
 assert_file_contains "$G15E_YML" "updated: '2026-01-02 -- No — runtime-independent'" \
     "G15E-14 a column beyond the emitted fields is folded into the last one, not dropped"
+
+# Q&A state: every pre-conversion file on disk writes `**Status:**`, because the
+# state-not-status naming contract renamed the templates and not the works
+# already written against them. Reading only `**State:**` silently emptied the
+# one field that says whether a question is still open.
+assert_file_contains "$G15E_YML" "state: Answered" \
+    "G15E-15 a Q&A entry's legacy **Status:** bullet is read (not silently emptied)"
+assert_file_contains "$G15E_YML" "state: Pending" \
+    "G15E-16 a Q&A entry's current **State:** bullet is still read"
+# `empty` is passed in rather than written inline: a literal '' inside a
+# single-quoted awk program is consumed by the shell before awk ever sees it,
+# which silently turned this assertion into a no-op.
+G15E_QA_EMPTY="$(awk -v empty="    state: ''" '
+    $0 == "qa:"                   { inblock = 1; next }
+    inblock && /^[A-Za-z0-9_]+:/  { inblock = 0 }
+    inblock && $0 == empty        { n++ }
+    inblock && /^    state:[ ]*$/ { n++ }
+    END                           { print n + 0 }
+' "$G15E_YML")"
+if [[ "$G15E_QA_EMPTY" == "0" ]]; then
+    pass "G15E-17 no Q&A entry converted with an empty state"
+else
+    fail "G15E-17 ${G15E_QA_EMPTY} Q&A entr(ies) converted with an empty state -- the label lookup missed"
+fi
 
 echo ""
 echo "=== Gate 15d: format_version stamp advances to AID_SUPPORTED_FORMAT (4) ==="

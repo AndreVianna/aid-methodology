@@ -2528,7 +2528,14 @@ _aid_sc_qa_entries() {
         local category impact qstate context suggested answer applied
         category="$(_aid_sc_bullet_value "$((qs+1))" "$qe" "Category")"
         impact="$(_aid_sc_bullet_value "$((qs+1))" "$qe" "Impact")"
+        # `State` is the current spelling; `Status` is what every pre-conversion
+        # file on disk actually says, because the state-not-status naming
+        # contract renamed the templates and not the works already written
+        # against them. Reading only `State` silently emptied the one field that
+        # says whether a question is still open -- 28 of 28 entries in the first
+        # real work this ran on. Falling back is the whole job of a migration.
         qstate="$(_aid_sc_bullet_value "$((qs+1))" "$qe" "State")"
+        [[ -z "$qstate" ]] && qstate="$(_aid_sc_bullet_value "$((qs+1))" "$qe" "Status")"
         context="$(_aid_sc_bullet_value "$((qs+1))" "$qe" "Context")"
         suggested="$(_aid_sc_bullet_value "$((qs+1))" "$qe" "Suggested")"
         answer="$(_aid_sc_bullet_value "$((qs+1))" "$qe" "Answer")"
