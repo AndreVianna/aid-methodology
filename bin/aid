@@ -2536,10 +2536,26 @@ _aid_sc_qa_entries() {
         # real work this ran on. Falling back is the whole job of a migration.
         qstate="$(_aid_sc_bullet_value "$((qs+1))" "$qe" "State")"
         [[ -z "$qstate" ]] && qstate="$(_aid_sc_bullet_value "$((qs+1))" "$qe" "Status")"
+        # An inline HTML comment annotating WHY the state was last changed is a
+        # real and useful habit, but `state` is a machine-read closed enum: left
+        # in place, `Answered <!-- ... -->` compares equal to nothing. Move the
+        # annotation into `answer`, which is free prose and is where the entry's
+        # disposition is discussed anyway -- so the enum is clean and the note is
+        # still on the entry. `state` is the only field treated this way; every
+        # other one is prose and keeps its comment where the author put it.
+        local qnote=""
+        if [[ "$qstate" == *"<!--"* ]]; then
+            qnote="${qstate#*<!--}"
+            qnote="$(_aid_sc_trim "${qnote%%-->*}")"
+            qstate="$(_aid_sc_trim "${qstate%%<!--*}")"
+        fi
         context="$(_aid_sc_bullet_value "$((qs+1))" "$qe" "Context")"
         suggested="$(_aid_sc_bullet_value "$((qs+1))" "$qe" "Suggested")"
         answer="$(_aid_sc_bullet_value "$((qs+1))" "$qe" "Answer")"
         applied="$(_aid_sc_bullet_value "$((qs+1))" "$qe" "Applied to")"
+        if [[ -n "$qnote" ]]; then
+            answer="${answer:+${answer} }[state note: ${qnote}]"
+        fi
         _SC_QA+=("${qid}"$'\x1f'"${category}"$'\x1f'"${impact}"$'\x1f'"${qstate}"$'\x1f'"${context}"$'\x1f'"${suggested}"$'\x1f'"${answer}"$'\x1f'"${applied}")
     done
 }

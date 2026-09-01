@@ -977,6 +977,15 @@ phase: Specify
 - **Suggested:** something else
 - **Answer:** _pending_
 
+### Q3
+
+- **Category:** Process
+- **Impact:** Low
+- **Status:** Closed  <!-- flipped 2026-01-05 to match this entry's own body -->
+- **Context:** an annotated state
+- **Suggested:** nothing
+- **Answer:** closed by deletion
+
 ## Deploy State
 
 | Delivery | State | PR | KB Updated | Tag | Notes |
@@ -1101,6 +1110,17 @@ if [[ "$G15E_QA_EMPTY" == "0" ]]; then
 else
     fail "G15E-17 ${G15E_QA_EMPTY} Q&A entr(ies) converted with an empty state -- the label lookup missed"
 fi
+
+# `state` is a machine-read closed enum, so an inline annotation must not ride
+# along in it -- `Closed <!-- ... -->` compares equal to nothing. It moves to
+# `answer`, which is prose, rather than being discarded.
+assert_file_contains "$G15E_YML" "state: Closed" \
+    "G15E-18 an annotated state converts to the bare enum member"
+assert_file_not_contains "$G15E_YML" "state: 'Closed  <!--" \
+    "G15E-19 the inline HTML comment does not ride along in the enum field"
+# Substring stops before the apostrophe: a YAML single-quoted scalar doubles it.
+assert_file_contains "$G15E_YML" "[state note: flipped 2026-01-05 to match this entry" \
+    "G15E-20 the annotation is preserved on the entry, not discarded"
 
 echo ""
 echo "=== Gate 15d: format_version stamp advances to AID_SUPPORTED_FORMAT (4) ==="
