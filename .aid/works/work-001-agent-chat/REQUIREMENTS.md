@@ -277,7 +277,7 @@ own, administered through `aid`, with state under `$AID_HOME`.
 | FR-7.4 | **Every face invokes the CLI rather than reimplementing node behaviour**, and the node publishes no client library or SDK for one to bind to. The chat skill is instructions that call `aid chat`; the subscriber of FR-5.1 is a CLI invocation. Together these keep the HTTP transport internal to the node |
 | FR-7.5 | The node has a **single responsibility: message exchange.** It ships no CLI and no operator surface of its own, and every human-facing operation against it is an `aid` subcommand. A change that would give the node its own operator-facing command is out of scope |
 | FR-7.6 | **The node ships inside the `aid` payload, and carries no third-party dependency.** This requirement was previously the opposite — the node was a separate distributable *because* it needed third-party libraries — and **that premise is now false**, which is why the conclusion inverts rather than being defended. Both named libraries are gone: mDNS is replaced by a discovery design built on the standard library (FR-6.1), and the MCP server implementation left with the façade (§4 Out of Scope). A component with zero dependencies costs an uninterested user nothing but disk, so the separation bought nothing and cost a whole install-and-fetch surface. The node is therefore provisioned exactly as `dashboard/` already is: a runtime component at the repository root, listed in a manifest that every publication channel derives its file set from. **AID's zero-runtime-dependency decision is preserved literally, not amended** — no carve-out is required, because there is nothing to carve out |
-| FR-7.7 | **A Node runtime is a prerequisite of the chat node, and this is stated rather than implied.** The `aid` CLI itself remains runtime-free — Bash and PowerShell only — so installing, updating and removing AID needs nothing but a shell. What this requirement governs is **the chat node**. Two other components need Node already, before and independently of this work, and are named for context rather than claimed as scope: the two on-demand skills that invoke Node scripts, and the dashboard server, which has offered a Node runtime alongside a Python one for as long as it has existed — **which of those two the dashboard keeps is adjacent work, not this requirement's** (see §10). The prerequisite is **checked before any side effect, with an explicit, actionable error** — never a stack trace, never a silent failure. It is honest about reach, and the distinction it draws is the load-bearing one: the audience installs its host tools through npm, so a runtime is **present**, but **no named host tool establishes which version** — several bundle their own or declare no minimum at all (§8 states this per host rather than as a count, deliberately). So Node may be assumed present; *a recent* Node may not. That argues for a **low** declared floor, and `/aid-specify` fixes two of them — one for components every adopter runs, one for the opt-in node — because they have different needs and need not be the same number |
+| FR-7.7 | **A Node runtime is a prerequisite of the chat node, and this is stated rather than implied.** The `aid` CLI itself remains runtime-free — Bash and PowerShell only — so installing, updating and removing AID needs nothing but a shell. What this requirement governs is **the chat node**. Two other components need Node already, before and independently of this work, and are named for context rather than claimed as scope: the two on-demand skills that invoke Node scripts, and the dashboard server, which has offered a Node runtime alongside a Python one for as long as it has existed — **which of those two the dashboard keeps is adjacent work, not this requirement's** (see §10). The prerequisite is **checked before any side effect, with an explicit, actionable error** — never a stack trace, never a silent failure. It is honest about reach, and the distinction it draws is the load-bearing one: the audience installs its host tools through npm, so a runtime is **present**, but **no named host tool establishes which version** — several bundle their own or declare no minimum at all (§8 states this per host rather than as a count, deliberately). So Node may be assumed present; *a recent* Node may not, which argues for a **low** declared floor. **The node's floor is therefore `>=22.13.0`** — low, and determined rather than chosen: the built-in SQLite module the store depends on does not exist before 22.5.0 and needs a flag the node cannot assume until 22.13.0 (§8). It is stated here rather than deferred precisely because it looks like a judgement call and is not; a reader weighing the adoption argument alone would reasonably inherit the repository's `>=22` and ship a node that cannot open its own store on five of that line's releases. **The floor for components every adopter runs is a separate number and is not this requirement's** — they have different needs and need not agree |
 
 ### FR-8 — withdrawn
 
@@ -579,10 +579,11 @@ first tried against.
 >
 > **This is the same shape of defect the Knowledge Base already records against the Python
 > channel** — a declared floor that nothing demonstrates — arriving from the other direction, so
-> inheriting `>=22` silently would be that error made twice. What the node declares, and whether
-> the warning is acceptable on a service the operator starts or must be suppressed, are decisions
-> for `/aid-specify` rather than facts this document fixes; the measurements above are stated so
-> that neither is decided by assumption.
+> inheriting `>=22` silently would be that error made twice. **So the node declares
+> `>=22.13.0`** (FR-7.7), which is what these measurements determine rather than merely inform.
+> One coupled question is deliberately left open: on 22.x and 23.x the module emits an
+> `ExperimentalWarning` on stderr at every open, and whether a service the operator starts may
+> print that or must suppress it is not settled here.
 
 **One dependency remains available and unused, and the reason is recorded.** The store is
 `node:sqlite` at release-candidate stability rather than a pinned third-party binding. That
@@ -602,9 +603,13 @@ package index to reach. **The question no longer has a subject.** The node ships
 `deploy` itself is gone. It is recorded as closed rather than removed, so that the deferral is
 seen to have been resolved rather than forgotten.
 
-**Two floors, not one, and the number is `/aid-specify`'s to fix.** The components every adopter
-runs and the opt-in node have different needs and need not agree. The research is explicit that
-this argues for a **low** floor rather than a fashionable one. **Not one of the five named host
+**Two floors, not one — and only one of them is still open.** The components every adopter runs
+and the opt-in node have different needs and need not agree. The research below is explicit
+that both argue for a **low** floor rather than a fashionable one. **The node's is settled at
+`>=22.13.0`** (FR-7.7): the store fixes its lower bound, so that number is read off the
+evidence rather than chosen, and it is the lowest one that actually works. What remains
+`/aid-specify`'s to fix is the **other** floor — the one for components every adopter runs,
+which no store constrains. **Not one of the five named host
 tools is established to require a recent system runtime**, and the evidence is stated per host
 rather than as a count, because a count is what would be wrong here:
 

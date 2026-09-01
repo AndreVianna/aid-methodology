@@ -330,6 +330,10 @@ review_history:
     event: 'Interview turn 2 -- discovery promise bounded'
     outcome: '6 edits across 4, 10 and Feature 009; contradiction closed'
     notes: 'Zero-configuration discovery was promised in Feature 009s Description, user story and scenario, while AC-4 -- the criterion that feature owns -- requires only a path depending on no network feature, and section 10 stated in writing that shipping the floor would leave the promise unmet with the criterion green. Stakeholder decision: best-effort, not a v1 promise. A criterion for it was considered and rejected on AC-4s own reasoning -- it would be environment-dependent by construction and red on an ordinary laptop (WSL2 multicast, AP client isolation, macOS 15+). The scenario is split so the guaranteed path is tested and the zero-configuration layer is marked best-effort and criterion-free.'
+  - date: '2026-09-01'
+    event: 'Interview turn 3 -- the node Node floor declared'
+    outcome: '3 edits across FR-7.7 and section 8; one coupled question left open'
+    notes: 'Section 8 deferred the number to /aid-specify while already carrying the evidence that determines it: node:sqlite does not exist before 22.5.0 and needs a flag until 22.13.0, so the repository floor of >=22 admits five releases on which the node cannot open its own store. Stakeholder decision: declare >=22.13.0 now, in FR-7.7 and section 8. Low, and determined rather than chosen -- the lowest floor that works rather than the lowest available. Deferring invited a later reader to inherit >=22 from the adoption argument alone, which is the M5 pattern (a declared floor nothing demonstrates) arriving from the other direction. Still open and deliberately not settled: the ExperimentalWarning the module emits on stderr on 22.x and 23.x, and whether an operator-started service may print it.'
 
 # [A] written by the orchestrator on the work's active branch (single
 #     writer). Append-only audit trail of phase transitions and gate
