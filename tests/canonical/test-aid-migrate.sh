@@ -977,6 +977,15 @@ phase: Specify
 - **Suggested:** something else
 - **Answer:** _pending_
 
+### Q3
+
+- **Category:** Process
+- **Impact:** Low
+- **Status:** Closed  <!-- flipped 2026-01-05 to match this entry's own body -->
+- **Context:** an annotated state
+- **Suggested:** nothing
+- **Answer:** closed by deletion
+
 ## Deploy State
 
 | Delivery | State | PR | KB Updated | Tag | Notes |
@@ -1100,6 +1109,34 @@ if [[ "$G15E_QA_EMPTY" == "0" ]]; then
     pass "G15E-17 no Q&A entry converted with an empty state"
 else
     fail "G15E-17 ${G15E_QA_EMPTY} Q&A entr(ies) converted with an empty state -- the label lookup missed"
+fi
+
+# `state` is a machine-read closed enum, so an inline annotation must not ride
+# along in it -- `Closed <!-- ... -->` compares equal to nothing. It moves to
+# `answer`, which is prose, rather than being discarded.
+assert_file_contains "$G15E_YML" "state: Closed" \
+    "G15E-18 an annotated state converts to the bare enum member"
+assert_file_not_contains "$G15E_YML" "state: 'Closed  <!--" \
+    "G15E-19 the inline HTML comment does not ride along in the enum field"
+# Substring stops before the apostrophe: a YAML single-quoted scalar doubles it.
+assert_file_contains "$G15E_YML" "[state note: flipped 2026-01-05 to match this entry" \
+    "G15E-20 the annotation is preserved on the entry, not discarded"
+
+# Review History sits under a `###` heading inside the legacy `## Interview State`
+# section, so it shares that range. Selecting interview.sections by header stopped its rows
+# being mis-filed as sections -- and would have DROPPED them outright without a
+# key of its own. A table the schema does not name is still data.
+assert_file_contains "$G15E_YML" "review_history:" \
+    "G15E-21 review_history key emitted"
+assert_file_contains "$G15E_YML" "event: 'Interview opened'" \
+    "G15E-22 Review History rows are preserved, not dropped with the mis-filing"
+assert_file_contains "$G15E_YML" "outcome: '4 fixed'" \
+    "G15E-23 a Review History row keeps its Outcome column"
+G15E_RH="$(g15e_count_seq "$G15E_YML" review_history '  ')"
+if [[ "$G15E_RH" == "2" ]]; then
+    pass "G15E-24 exactly 2 review_history entries (no header or separator row among them)"
+else
+    fail "G15E-24 review_history has ${G15E_RH} entries, want 2"
 fi
 
 echo ""

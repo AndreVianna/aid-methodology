@@ -54,8 +54,8 @@ approve requirements.
 > convert any work that had reached this phase. A per-feature "Cross-Reference" status and a
 > Q&A-adjacent "Review History" list, as used below, do still carry no dedicated key -- they
 > describe this skill's aspirational tracking design rather than a writable structure, and
-> that remains an open schema gap. Cross-phase Q&A entries have a real target: the `qa`
-> sequence.
+> that remains an open schema gap. The **Review History** list now has a real target of its own,
+> the `review_history` sequence, and Cross-phase Q&A entries have the `qa` sequence.
 
 **First run (after approval):** Decompose functional requirements into `REQUIREMENTS.md`
 §11 feature sections.

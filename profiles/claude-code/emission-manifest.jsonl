@@ -142,7 +142,7 @@
 {"dst": ".claude/aid/templates/task-detail-template.md", "profile": "claude-code", "sha256": "696916290f573c249f49d5d69de8560ddcde02c8151e624d5c7c98c170eec9d6", "src": "canonical/templates/task-detail-template.md"}
 {"dst": ".claude/aid/templates/task-state-template.yml", "profile": "claude-code", "sha256": "89b118a4ff34cf9ed88e8893a59a9e2294da198e4c28c967295c671dd43ed114", "src": "canonical/templates/task-state-template.yml"}
 {"dst": ".claude/aid/templates/work-initiation-gate.md", "profile": "claude-code", "sha256": "be1c1bfd0c2cbd6d8a04b789cf7643be71fdfe1ac96657ca6d3436593c1a36a6", "src": "canonical/templates/work-initiation-gate.md"}
-{"dst": ".claude/aid/templates/work-state-template.yml", "profile": "claude-code", "sha256": "63e1255b878ec67e74c29c638103edcb47cc12d1af640de568e861efcea92a3e", "src": "canonical/templates/work-state-template.yml"}
+{"dst": ".claude/aid/templates/work-state-template.yml", "profile": "claude-code", "sha256": "1364b66543ac971ea3fb125e38b66cdc28bfc65aae074fe19bb1dec88be5a927", "src": "canonical/templates/work-state-template.yml"}
 {"dst": ".claude/aid/templates/worktree-lifecycle.md", "profile": "claude-code", "sha256": "ab4ae2fc2dfe9a1ac324bd3ce266d84753437058fde9db5955a7b0ffea087d5f", "src": "canonical/templates/worktree-lifecycle.md"}
 {"dst": ".claude/skills/aid-ask/SKILL.md", "profile": "claude-code", "sha256": "8d35de7f9ac9a1976d5df5e7a6b096155d46e3b6b63213d4d716e80d7eb518a6", "src": "canonical/skills/aid-ask/SKILL.md"}
 {"dst": ".claude/skills/aid-brainstorm/SKILL.md", "profile": "claude-code", "sha256": "3e181901c0eec5848fd517d5cb9b4ed36d28418504456bf7b66b7e1bb9c2ebd6", "src": "canonical/skills/aid-brainstorm/SKILL.md"}
@@ -171,7 +171,7 @@
 {"dst": ".claude/skills/aid-create-ticket/SKILL.md", "profile": "claude-code", "sha256": "3d8540dc35fb55cc880a34549f71497c261ff557ca0ff11f61e474936e8c89d5", "src": "canonical/skills/aid-create-ticket/SKILL.md"}
 {"dst": ".claude/skills/aid-create-ui/SKILL.md", "profile": "claude-code", "sha256": "78b4ced9bd3a3ca77eb5e910c9a0560bcdc092558512847f4f31f390dfe294f9", "src": "canonical/skills/aid-create-ui/SKILL.md"}
 {"dst": ".claude/skills/aid-create/SKILL.md", "profile": "claude-code", "sha256": "ec45bc38d8c54485e21533aa880964d673d5f85b0e4d525ff34cfd74791e0edf", "src": "canonical/skills/aid-create/SKILL.md"}
-{"dst": ".claude/skills/aid-define/SKILL.md", "profile": "claude-code", "sha256": "1ac99aa864373401538351a4440651c7fa931ebeeb23665ce2a410d0d50719b6", "src": "canonical/skills/aid-define/SKILL.md"}
+{"dst": ".claude/skills/aid-define/SKILL.md", "profile": "claude-code", "sha256": "783c8249a1d15fca4d660ffdcb6d5c7ff7021845fd309d0c5b92c819e6768e61", "src": "canonical/skills/aid-define/SKILL.md"}
 {"dst": ".claude/skills/aid-define/references/cross-reference.md", "profile": "claude-code", "sha256": "159cd82fa29927c50d9cbb5e68dadd5cf2f8c182a9d23a7456b9f73c42447b45", "src": "canonical/skills/aid-define/references/cross-reference.md"}
 {"dst": ".claude/skills/aid-define/references/feature-decomposition.md", "profile": "claude-code", "sha256": "410975fd4abe38cced3f1f8f5b7307a2be716cdf1e91b4b8871da33f291746ae", "src": "canonical/skills/aid-define/references/feature-decomposition.md"}
 {"dst": ".claude/skills/aid-define/references/reviewer-brief.md", "profile": "claude-code", "sha256": "90cc4f044f537c37fd6f8ede170743b389eb342558999b83ec08dbf8b2ae1a6b", "src": "canonical/skills/aid-define/references/reviewer-brief.md"}
