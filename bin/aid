@@ -2280,8 +2280,8 @@ _aid_sc_table_rows() {
     # until the run of pipe lines breaks. Detecting tables this way, rather than
     # assuming the range holds exactly one, is what keeps a second table's
     # header and separator out of the first table's rows -- a real case, since a
-    # `## Interview State` section carries both a Review History table and the
-    # section-status table, and every heading below `##` stays inside its range.
+    # legacy `## Interview State` section carries both a Review History table and
+    # the section-status table, and every heading below `##` stays inside its range.
     #
     # WANT, when given, is a header cell that the wanted table must carry. It
     # selects ONE table out of the range by name instead of merging every table
@@ -2385,7 +2385,7 @@ _aid_sc_interview_header() {
     _SC_INTERVIEW_STATE=""
     _SC_INTERVIEW_GRADE=""
     # The labelled `**Interview State:**` line is preferred over a bare
-    # `**State:**` one. A `## Interview State` section may also carry a
+    # `**State:**` one. In the legacy markdown shape that section may also carry a
     # `### Cross-Reference` block with its own `**State:**` line, and matching
     # that first reported the cross-reference's state as the interview's.
     for ((i=start; i<end; i++)); do
@@ -2608,8 +2608,8 @@ _aid_sc_emit_interview() {
         [[ -n "$_SC_INTERVIEW_STATE" ]] && hstate="$_SC_INTERVIEW_STATE"
         [[ -n "$_SC_INTERVIEW_GRADE" ]] && hgrade="$_SC_INTERVIEW_GRADE"
     fi
-    # Selected by header cell: a `## Interview State` section may also carry a
-    # Review History table, whose rows are not sections.
+    # Selected by header cell: the legacy section also carries a Review History
+    # table, whose rows are not sections.
     _aid_sc_table_rows "$start" "$end" "Section"
     _SC_CNT_INTERVIEW="${#_SC_ROWS[@]}"
     _SC_OUT+=("interview:")
@@ -2671,7 +2671,8 @@ _aid_sc_emit_deploy() {
 }
 
 # _aid_sc_emit_features START END -> the `features:` sequence, mapped from the
-# `## Features State` table BY COLUMN NAME (see _aid_sc_table_header).
+# legacy `## Features State` table BY COLUMN NAME (`_aid_sc_table_rows` records the
+# matched header in `_SC_HEADER`).
 #
 # Three properties are deliberate, because each one is a way this could have
 # reintroduced the failure it exists to fix:
@@ -2743,6 +2744,31 @@ _aid_sc_emit_features() {
         [[ -n "$fupdated" ]] && _SC_OUT+=("    updated: $(_aid_sc_yaml_scalar "$fupdated")")
         [[ "$withdrawn" -eq 1 ]] && _SC_OUT+=("    withdrawn: true")
         _SC_OUT+=("    notes: $(_aid_sc_yaml_scalar "$fnotes")")
+    done
+}
+
+# _aid_sc_emit_review_history START END -> the `review_history:` sequence, from
+# the legacy `### Review History` table. Selected by header cell like every other
+# table, and emitted rather than dropped: it is not `interview.sections` (its
+# rows are interview events, not the ten numbered requirement sections), and it
+# is not `lifecycle_history` (that records phase transitions), so without a key
+# of its own it would simply be lost on conversion.
+_aid_sc_emit_review_history() {
+    local start="$1" end="$2"
+    _aid_sc_table_rows "$start" "$end" "Outcome"
+    _SC_CNT_REVHIST="${#_SC_ROWS[@]}"
+    if [[ "${#_SC_ROWS[@]}" -eq 0 ]]; then
+        _SC_OUT+=("review_history: []")
+        return 0
+    fi
+    _SC_OUT+=("review_history:")
+    local row
+    for row in "${_SC_ROWS[@]}"; do
+        _aid_sc_row_split "$row" 4
+        _SC_OUT+=("  - date: $(_aid_sc_yaml_scalar "${_SC_CELLS[0]}")")
+        _SC_OUT+=("    event: $(_aid_sc_yaml_scalar "${_SC_CELLS[1]}")")
+        _SC_OUT+=("    outcome: $(_aid_sc_yaml_scalar "${_SC_CELLS[2]}")")
+        _SC_OUT+=("    notes: $(_aid_sc_yaml_scalar "${_SC_CELLS[3]}")")
     done
 }
 
@@ -2876,11 +2902,15 @@ _aid_sc_convert_work_body() {
     if [[ "$h_i" -ge 0 ]]; then
         h_i_end="$(_aid_sc_section_end "$h_i" "$bend")"
         _aid_sc_emit_interview "$((h_i+1))" "$h_i_end"
+        # Same range: in the legacy shape the Review History table sits under a
+        # `###` heading inside that section, so it is in scope here and only here.
+        _aid_sc_emit_review_history "$((h_i+1))" "$h_i_end"
     else
         _SC_OUT+=("interview:")
         _SC_OUT+=("  state: Pending")
         _SC_OUT+=("  grade: Pending")
         _SC_OUT+=("  sections: []")
+        _SC_OUT+=("review_history: []")
     fi
 
     # AUTHORED on both layouts (a feature is a work-level concept). Was in the
@@ -3220,6 +3250,9 @@ _aid_sc_verify_roundtrip() {
             if [[ "$(_aid_sc_yaml_block_count "features:")" != "$_SC_CNT_FEATURES" ]]; then
                 ok=0; echo "WARN: aid migrate: ${md}: round-trip mismatch on features count" >&2
             fi
+            if [[ "$(_aid_sc_yaml_block_count "review_history:")" != "$_SC_CNT_REVHIST" ]]; then
+                ok=0; echo "WARN: aid migrate: ${md}: round-trip mismatch on review_history count" >&2
+            fi
             if [[ "$(_aid_sc_yaml_block_count "lifecycle_history:")" != "$_SC_CNT_LFH" ]]; then
                 ok=0; echo "WARN: aid migrate: ${md}: round-trip mismatch on lifecycle_history count" >&2
             fi
@@ -3278,7 +3311,7 @@ _aid_sc_convert_file() {
 
     _SC_CNT_INTERVIEW=0; _SC_CNT_LFH=0; _SC_CNT_DEPLOY=0; _SC_CNT_TASKSLC=0
     _SC_CNT_ISSUES=0; _SC_CNT_QA=0; _SC_CNT_FINDINGS=0; _SC_CNT_DISPATCH=0
-    _SC_CNT_FEATURES=0
+    _SC_CNT_FEATURES=0; _SC_CNT_REVHIST=0
 
     local n="${#_SC_LINES[@]}"
     if [[ "$n" -lt 2 ]] || [[ "${_SC_LINES[0]}" != "---" ]]; then

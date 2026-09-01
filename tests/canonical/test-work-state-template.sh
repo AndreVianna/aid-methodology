@@ -269,6 +269,31 @@ else
 fi
 
 # ---------------------------------------------------------------------------
+# WS22: work-state-template declares a `review_history:` key.
+#
+# The interview's Review History lived under a `### Review History` heading
+# inside the markdown `## Interview State` section with no key of its own. That
+# made it invisible to the schema and mergeable into `interview.sections` by
+# anything reading tables from that range -- and once the merge was fixed, it
+# would have been dropped on conversion instead. It is neither
+# `interview.sections` (its rows are interview events, not the ten §-sections)
+# nor `lifecycle_history` (which records phase transitions), so it needs its own.
+# ---------------------------------------------------------------------------
+assert_file_contains \
+    "$WORK_STATE" \
+    "review_history: []" \
+    "WS22 work-state-template declares an instantiated review_history: key"
+assert_file_contains \
+    "$WORK_STATE" \
+    "date / event / outcome / notes" \
+    "WS22 review_history declares its per-entry field set"
+if grep -qE 'Distinct from' "$WORK_STATE" 2>/dev/null; then
+    pass "WS22 review_history states how it differs from lifecycle_history"
+else
+    fail "WS22 review_history does not distinguish itself from lifecycle_history -- the two are easily conflated"
+fi
+
+# ---------------------------------------------------------------------------
 # WS12: delivery-state-template has a `qa:` key (content-breaking retarget:
 # `## Cross-phase Q&A` is a markdown heading FR-2b retires; the SD-5
 # per-delivery Q&A partition survives inside the `qa:` key's own comment).

@@ -215,6 +215,21 @@ interview:
 #   sections[].state: Pending | In Discussion | Complete
 features: []
 
+# [A] appended by aid-describe / aid-define as the interview and its
+#     cross-reference pass proceed. Append-only, newest LAST. Distinct from
+#     `lifecycle_history`, which records PHASE transitions and gates: this
+#     records what happened INSIDE the interview -- a question round, a
+#     stakeholder comment pass, a quality check, a cross-reference cycle.
+#
+#     Declared because the alternative is losing it. It lived under a
+#     `### Review History` heading inside the legacy markdown `## Interview State`
+#     section with no key of its own, which made it invisible to the schema and
+#     mergeable into `interview.sections` by anything reading tables from that
+#     range. A table the schema does not name is still data.
+#
+#   - date / event / outcome / notes
+review_history: []
+
 # [A] written by the orchestrator on the work's active branch (single
 #     writer). Append-only audit trail of phase transitions and gate
 #     approvals, newest LAST (append to bottom).
