@@ -46,13 +46,16 @@ approve requirements.
 ```
 
 > **Accuracy note.** `interview.state`/`interview.grade`/`interview.sections[]` are real
-> keys in `work-state-template.yml`. Features State is a DERIVED view with no key at all
-> (assembled at read time; never written directly, in either the old or new schema). A
-> per-feature "Cross-Reference" status and a Q&A-adjacent "Review History" list, as used
-> below, carry no dedicated key in `work-state-template.yml` either -- they describe this
-> skill's pre-existing, aspirational tracking design, not a currently writable structure;
-> this is a schema gap surfaced by the refactor, not something this DOCUMENT task resolves.
-> Cross-phase Q&A entries themselves DO have a real target: the `qa` sequence.
+> keys in `work-state-template.yml`, and so is **`features[]`** -- this skill creates one
+> entry there per `### Feature NNN` section it appends to `REQUIREMENTS.md § 11`, and
+> `/aid-specify` updates it as each feature advances. Features State was previously
+> described here as "a DERIVED view with no key at all"; that was wrong, and it was not a
+> harmless wrong -- the `STATE.md` -> `STATE.yml` converter believed it and refused to
+> convert any work that had reached this phase. A per-feature "Cross-Reference" status and a
+> Q&A-adjacent "Review History" list, as used below, do still carry no dedicated key -- they
+> describe this skill's aspirational tracking design rather than a writable structure, and
+> that remains an open schema gap. The **Review History** list now has a real target of its own,
+> the `review_history` sequence, and Cross-phase Q&A entries have the `qa` sequence.
 
 **First run (after approval):** Decompose functional requirements into `REQUIREMENTS.md`
 §11 feature sections.

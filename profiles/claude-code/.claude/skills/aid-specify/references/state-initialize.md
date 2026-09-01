@@ -88,10 +88,14 @@ Each has two paths: **Auto-activate** (obvious from context) or **Ask** (use def
 
 ### Step 3: Register in work STATE.yml
 
-In the work's `.aid/works/{work}/STATE.yml`, update the Features State view:
-- Find or add a row for this feature
-- Set State to `In Discussion`, Started date to today
-- Columns: Feature | State | Sections | Started | Last Updated | Notes
+In the work's `.aid/works/{work}/STATE.yml`, update the `features:` sequence:
+- Find the entry whose `id` is this feature's number (`/aid-define` created it at
+  decomposition); add one only if it is genuinely absent
+- Set `state: In Discussion` and `started` to today
+- Entry keys: `id` | `name` | `state` | `grade` | `qa_count` | `started` | `updated` |
+  `sections` | `notes` (`work-state-template.yml` declares the shape and the
+  `state` enum). Ids are never reused or renumbered — a withdrawn feature keeps
+  its entry with `withdrawn: true`.
 
 Emit pipeline phase (silent state-write only — no output, no gate):
 ```
@@ -133,6 +137,6 @@ I've analyzed {feature} against the KB and codebase.
 Does this look right? Answer the questions, and tell me if I'm missing anything.
 ```
 
-Process response → update work STATE.yml's Features State view → begin **The Loop** for first Pending section.
+Process response → update this feature's `features:` entry in the work STATE.yml → begin **The Loop** for first Pending section.
 
 **Advance:** **CHAIN** → [State: CONTINUE] (continue inline).

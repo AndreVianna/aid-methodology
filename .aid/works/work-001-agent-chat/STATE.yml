@@ -103,10 +103,10 @@
 #   path: lite | full  -- lite = flattened (no deliveries/ wrapper); full = deliveries/delivery-NNN/ wrapper
 #   initiator: aid-describe | aid-{shortcut-skill}  -- the pipeline-starting skill: aid-describe, or a shortcut-catalog.yml skill (e.g. aid-fix, aid-refactor, aid-create-api)
 pipeline:
-  path: lite
+  path: full
   initiator: aid-describe
 # [W]
-started: '2026-01-01'
+started: '2026-09-01'
 # [W] resolved at runtime by `bash canonical/aid/scripts/config/read-setting.sh --skill {phase} --key minimum_grade --default A`; source is `.aid/settings.yml`
 minimum_grade: A
 # [W] 'yes' | 'no' -- quoted, see NFR-2 / D-5
@@ -118,7 +118,7 @@ phase: Describe
 # [W] aid-{skill} | none
 active_skill: none
 # [W]
-updated: '2026-01-01T00:00:00Z'
+updated: '2026-09-01T00:00:00Z'
 # [W] set only when lifecycle = Paused-Awaiting-Input
 pause_reason: --
 # [W] set only when lifecycle = Blocked
@@ -127,16 +127,6 @@ block_reason: --
 block_artifact: --
 # [W] {connector-stem}:{external-id} | -- -- OPTIONAL; e.g. jira:PROJ-123; see the ticket_ref note above
 ticket_ref: --
-
-# Flattened single-delivery works only -- omit these 4 keys for full works.
-# [W] Pending-Spec | Specified | Executing | Gated | Done | Blocked
-delivery_state: Pending-Spec
-# [W] Small | Medium | Large
-gate_tier: Small
-# [W]
-gate_grade: Pending
-# [W]
-gate_timestamp: --
 
 # [A] updated by aid-describe as each section is completed.
 #   state: In Progress | Complete | Approved
@@ -148,44 +138,44 @@ interview:
   sections:
     - id: 1
       name: Objective
-      state: Pending
-      updated: --
+      state: Complete
+      updated: '2026-09-01'
     - id: 2
       name: 'Problem Statement'
-      state: Pending
-      updated: --
+      state: Complete
+      updated: '2026-09-01'
     - id: 3
       name: 'Users & Stakeholders'
-      state: Pending
-      updated: --
+      state: Complete
+      updated: '2026-09-01'
     - id: 4
       name: Scope
       state: Pending
-      updated: --
+      updated: '2026-09-01'
     - id: 5
       name: 'Functional Requirements'
-      state: Pending
-      updated: --
+      state: Complete
+      updated: '2026-09-01'
     - id: 6
       name: 'Non-Functional Requirements'
-      state: Pending
-      updated: --
+      state: Complete
+      updated: '2026-09-01'
     - id: 7
       name: Constraints
       state: Pending
-      updated: --
+      updated: '2026-09-01'
     - id: 8
       name: 'Assumptions & Dependencies'
       state: Pending
-      updated: --
+      updated: '2026-09-01'
     - id: 9
       name: 'Acceptance Criteria'
-      state: Pending
-      updated: --
+      state: Complete
+      updated: '2026-09-01'
     - id: 10
       name: Priority
-      state: Pending
-      updated: --
+      state: Complete
+      updated: '2026-09-01'
 
 # [A] one entry per feature, in id order. Created by aid-define at feature
 #     decomposition (one entry per `### Feature NNN` section it appends to
@@ -213,7 +203,106 @@ interview:
 #   qa_count: integer
 #   withdrawn: true -- omit the key entirely for a live feature
 #   sections[].state: Pending | In Discussion | Complete
-features: []
+features:
+  - id: '001'
+    name: wake-feasibility-spike
+    state: Ready
+    grade: A+
+    qa_count: 0
+    started: '2026-09-01'
+    updated: '2026-09-01'
+    sections: []
+    notes: 'Stage P0. Specification carried forward intact -- an executable experiment design, reviewed to A+ over five cycles. Runs before anything is built (ID-14).'
+  - id: '003'
+    name: node-service-lifecycle
+    state: Pending
+    grade: Pending
+    qa_count: 0
+    started: --
+    updated: '2026-09-01'
+    sections: []
+    notes: 'Stage P1, and the keystone: owns the process model, the CLI surface and the store schema. Specify FIRST. Its predecessor specification was deliberately not carried; two of its findings travel on as constraints in the section itself.'
+  - id: '004'
+    name: session-registration
+    state: Pending
+    grade: Pending
+    qa_count: 0
+    started: --
+    updated: '2026-09-01'
+    sections: []
+    notes: 'Stage P1.'
+  - id: '005'
+    name: durable-chat-messaging
+    state: Pending
+    grade: Pending
+    qa_count: 0
+    started: --
+    updated: '2026-09-01'
+    sections: []
+    notes: 'Stage P1. Largest criterion set (6). Depends on the store schema Feature 003 fixes.'
+  - id: '006'
+    name: push-subscription
+    state: Pending
+    grade: Pending
+    qa_count: 0
+    started: --
+    updated: '2026-09-01'
+    sections: []
+    notes: 'Stage P2.'
+  - id: '007'
+    name: host-waker-adapters
+    state: Pending
+    grade: Pending
+    qa_count: 0
+    started: --
+    updated: '2026-09-01'
+    sections: []
+    notes: 'Stage P2. Shaped by the number Feature 001 measures -- cannot be specified before the spike answers.'
+  - id: '008'
+    name: chat-skill
+    state: Pending
+    grade: Pending
+    qa_count: 0
+    started: --
+    updated: '2026-09-01'
+    sections: []
+    notes: 'Stage P2. Replaces the withdrawn MCP facade; carries Description and user stories already.'
+  - id: '009'
+    name: lan-federation
+    state: Pending
+    grade: Pending
+    qa_count: 0
+    started: --
+    updated: '2026-09-01'
+    sections: []
+    notes: 'Stage P3 -- the target case. Its Description still states discovery as zero-configuration announcement, which FR-6.1 and AC-4 no longer support; reconcile when specifying.'
+  - id: '010'
+    name: directed-chat-messages
+    state: Pending
+    grade: Pending
+    qa_count: 0
+    started: --
+    updated: '2026-09-01'
+    sections: []
+    notes: 'Stage P4.'
+  - id: '011'
+    name: retention-enforcement
+    state: Pending
+    grade: Pending
+    qa_count: 0
+    started: --
+    updated: '2026-09-01'
+    sections: []
+    notes: 'Stage P4.'
+  - id: '012'
+    name: operator-visibility
+    state: Pending
+    grade: Pending
+    qa_count: 0
+    started: --
+    updated: '2026-09-01'
+    sections: []
+    notes: 'Stage P4. Read-only by design.'
 
 # [A] appended by aid-describe / aid-define as the interview and its
 #     cross-reference pass proceed. Append-only, newest LAST. Distinct from
@@ -228,56 +317,22 @@ features: []
 #     range. A table the schema does not name is still data.
 #
 #   - date / event / outcome / notes
-review_history: []
+review_history:
+  - date: '2026-09-01'
+    event: 'Seeded from a predecessor'
+    outcome: 'seven sections Complete, three Pending'
+    notes: 'Sections 1-3, 5, 6, 9 and 10 carried; 4, 7 and 8 carried but left open for this interview. Section 9 renumbered to a gapless AC-1..AC-22.'
 
 # [A] written by the orchestrator on the work's active branch (single
 #     writer). Append-only audit trail of phase transitions and gate
 #     approvals, newest LAST (append to bottom).
 lifecycle_history:
-  - date: '2026-01-01'
+  - date: '2026-09-01'
     event: 'Work created'
     grade: --
-    notes: 'Initial scaffold by aid-config'
+    notes: 'Re-baselined from a predecessor rather than interviewed from zero. The predecessor was wound down because a major release retired the artifact set it was built on and its state file could not be converted without loss; its requirements were sound and are carried. Next: /aid-describe to close sections 4, 7 and 8.'
 
 # [A] aid-deploy only; one entry per delivery (never derived from child
 #     files; aid-deploy is the sole author):
 #   - delivery / state / pr / kb_updated / tag / notes
 deploy: []
-
-# [A] flattened only; single writer: this work's active branch. Written by
-#     aid-plan, aid-specify, aid-execute across the delivery pipeline for the
-#     synthesized delivery-001. Never derived from task rollup. `updated` is
-#     a writer-targeted child key (L-2).
-delivery_lifecycle:
-  updated: '2026-01-01T00:00:00Z'
-  block_reason: --
-  block_artifact: --
-
-# [W] flattened only -- one entry per task, keyed by task-NNN, REPLACING the
-#     now-absent per-task STATE.yml (each task is tasks/task-NNN/DETAIL.md
-#     only -- immutable, no sibling STATE.yml). Written by
-#     `writeback-state.sh --task-id NNN --field <field> --value <value>`,
-#     targeting this mapping instead of a delivery-NNN/tasks/task-NNN/STATE.yml.
-#     Mirrors the fields of task-state-template.yml (state/review/elapsed/
-#     notes/display_name), one entry per task-NNN.
-#   state: Pending | In Progress | In Review | Blocked | Done | Failed | Canceled
-tasks_lifecycle: {}
-
-# [A] flattened only; single writer: the delivery-gate closing step of
-#     aid-execute on this work's active branch, written via
-#     `writeback-state.sh --delivery-id 001 --block ...`. Distinct from
-#     per-task quick-check findings -- the gate aggregates those deferred
-#     [HIGH] rows (via .aid/works/{work}/delivery-001-issues.md; see
-#     canonical/aid/templates/delivery-issues.md) and runs a full grade.sh
-#     pass. `issue_list` is a writer-targeted child key (--append-issue, L-2).
-#   issue_list: severity-tagged strings, or [] when the gate passed clean
-delivery_gate:
-  issue_list: []
-
-# [A] flattened Lite only (AUTHORED here, not derived); one entry per
-#     question:
-#   - id / category (e.g. Architecture, Requirements, Security) /
-#     impact: High | Medium | Low | Required /
-#     state: Pending | Answered | Skipped /
-#     context / suggested / answer / applied_to
-qa: []

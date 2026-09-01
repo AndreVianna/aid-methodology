@@ -2252,31 +2252,111 @@ _aid_sc_section_end() {
 # templates' authored-empty sentinel) is dropped too, leaving _SC_ROWS
 # empty. Each row is one string with cells joined by ASCII 0x1F (unit
 # separator) -- split with `IFS=$'\x1f' read -ra cells <<< "$row"`.
+# _aid_sc_row_cells LINE -> stdout: the line's table cells, trimmed and joined
+# with \x1f. Split back out with _aid_sc_row_split, never with a fixed-field
+# `read` (see that function's own note).
+_aid_sc_row_cells() {
+    local raw="$1" j joined=""
+    local -a cells=()
+    raw="$(_aid_sc_trim "$raw")"
+    raw="${raw#|}"
+    raw="${raw%|}"
+    IFS='|' read -ra cells <<< "$raw"
+    for j in "${!cells[@]}"; do
+        local c; c="$(_aid_sc_trim "${cells[$j]}")"
+        if [[ "$j" -gt 0 ]]; then joined+=$'\x1f'; fi
+        joined+="$c"
+    done
+    printf '%s' "$joined"
+}
+
 _aid_sc_table_rows() {
-    local start="$1" end="$2" i line body
+    local start="$1" end="$2" want="${3-}" i line body
     _SC_ROWS=()
-    local header_seen=0 sep_seen=0
+    _SC_HEADER=()
+
+    # A markdown table is recognised by its SEPARATOR row (|---|---|): the line
+    # immediately above one is that table's header, and the data rows follow it
+    # until the run of pipe lines breaks. Detecting tables this way, rather than
+    # assuming the range holds exactly one, is what keeps a second table's
+    # header and separator out of the first table's rows -- a real case, since a
+    # legacy `## Interview State` section carries both a Review History table and
+    # the section-status table, and every heading below `##` stays inside its range.
+    #
+    # WANT, when given, is a header cell that the wanted table must carry. It
+    # selects ONE table out of the range by name instead of merging every table
+    # in it. Without it, all tables in the range contribute (the historical
+    # behaviour), minus the header/separator leak.
+    local in_table=0 selected=0
     for ((i=start; i<end; i++)); do
         line="${_SC_LINES[$i]}"
-        [[ "$line" =~ ^[[:space:]]*\|.*\|[[:space:]]*$ ]] || continue
-        if [[ "$header_seen" -eq 0 ]]; then header_seen=1; continue; fi
-        if [[ "$sep_seen" -eq 0 ]]; then sep_seen=1; continue; fi
+        if [[ ! "$line" =~ ^[[:space:]]*\|.*\|[[:space:]]*$ ]]; then
+            in_table=0
+            continue
+        fi
         body="$(_aid_sc_trim "$line")"
-        body="${body#|}"
-        body="${body%|}"
-        local -a cells=()
-        IFS='|' read -ra cells <<< "$body"
-        local j joined=""
-        for j in "${!cells[@]}"; do
-            local c; c="$(_aid_sc_trim "${cells[$j]}")"
-            if [[ "$j" -gt 0 ]]; then joined+=$'\x1f'; fi
-            joined+="$c"
-        done
-        _SC_ROWS+=("$joined")
+        # Separator row: the line above it was the header. Decide, here, whether
+        # this table is the wanted one.
+        if [[ "$body" =~ ^\|[[:space:]:|-]+\|$ ]]; then
+            local hdr_row=""
+            if [[ "$i" -gt "$start" ]]; then
+                hdr_row="$(_aid_sc_row_cells "${_SC_LINES[$((i-1))]}")"
+            fi
+            selected=1
+            if [[ -n "$want" ]]; then
+                selected=0
+                local hc
+                while IFS= read -r hc; do
+                    [[ "$hc" == "$want" ]] && selected=1
+                done < <(printf '%s' "$hdr_row" | tr $'\x1f' '\n')
+            fi
+            if [[ "$selected" -eq 1 ]]; then
+                local -a hcells=()
+                IFS=$'\x1f' read -ra hcells <<< "$hdr_row"
+                _SC_HEADER=("${hcells[@]}")
+            fi
+            in_table=1
+            continue
+        fi
+        # A header row is consumed by the separator branch above, so any pipe
+        # line reached here while in_table is a data row.
+        [[ "$in_table" -eq 1 && "$selected" -eq 1 ]] || continue
+        _SC_ROWS+=("$(_aid_sc_row_cells "$line")")
     done
+
     if [[ "${#_SC_ROWS[@]}" -eq 1 ]]; then
         local first="${_SC_ROWS[0]%%$'\x1f'*}"
         [[ "$first" == "_none yet_" ]] && _SC_ROWS=()
+    fi
+}
+
+# _aid_sc_row_split ROW N -> populates the caller-scope global _SC_CELLS with
+# EXACTLY N entries, padding with empty strings and folding any cell beyond the
+# Nth into the Nth with ' -- '.
+#
+# Why this exists rather than `IFS=$'\x1f' read -r a b c d <<< "$row"`: bash
+# assigns every remaining field, SEPARATORS INCLUDED, to the last named
+# variable. A table one column wider than its emitter expects therefore wrote a
+# raw \x1f into the YAML, which is not a printable character and makes the whole
+# document unparseable. Folding instead keeps the extra content (the same rule
+# the features emitter applies to an unrecognised column) and can never leak the
+# separator.
+_aid_sc_row_split() {
+    local row="$1" n="$2" i
+    local -a all=()
+    IFS=$'\x1f' read -ra all <<< "$row"
+    _SC_CELLS=()
+    for ((i=0; i<n; i++)); do _SC_CELLS+=("${all[$i]-}"); done
+    if [[ "${#all[@]}" -gt "$n" ]]; then
+        local extra=""
+        for ((i=n; i<${#all[@]}; i++)); do
+            [[ -n "${all[$i]}" ]] || continue
+            extra+="${extra:+ -- }${all[$i]}"
+        done
+        if [[ -n "$extra" ]]; then
+            local last=$((n - 1))
+            _SC_CELLS[$last]="${_SC_CELLS[$last]:+${_SC_CELLS[$last]} -- }${extra}"
+        fi
     fi
 }
 
@@ -2301,18 +2381,41 @@ _aid_sc_bullet_value() {
 # _SC_INTERVIEW_GRADE from the "**State:** X  **Grade:** Y" bold-line inside
 # [START,END); returns 1 (both left empty) if no such line is found.
 _aid_sc_interview_header() {
-    local start="$1" end="$2" i line
+    local start="$1" end="$2" i line rest="" found=0
     _SC_INTERVIEW_STATE=""
     _SC_INTERVIEW_GRADE=""
+    # The labelled `**Interview State:**` line is preferred over a bare
+    # `**State:**` one. In the legacy markdown shape that section may also carry a
+    # `### Cross-Reference` block with its own `**State:**` line, and matching
+    # that first reported the cross-reference's state as the interview's.
     for ((i=start; i<end; i++)); do
         line="${_SC_LINES[$i]}"
-        if [[ "$line" =~ ^\*\*State:\*\*(.*)\*\*Grade:\*\*(.*)$ ]]; then
-            _SC_INTERVIEW_STATE="$(_aid_sc_trim "${BASH_REMATCH[1]}")"
-            _SC_INTERVIEW_GRADE="$(_aid_sc_trim "${BASH_REMATCH[2]}")"
-            return 0
+        if [[ "$line" =~ ^\*\*Interview\ State:\*\*(.*)$ ]]; then
+            rest="${BASH_REMATCH[1]}"; found=1; break
         fi
     done
-    return 1
+    if [[ "$found" -eq 0 ]]; then
+        for ((i=start; i<end; i++)); do
+            line="${_SC_LINES[$i]}"
+            if [[ "$line" =~ ^\*\*State:\*\*(.*)$ ]]; then
+                rest="${BASH_REMATCH[1]}"; found=1; break
+            fi
+        done
+    fi
+    [[ "$found" -eq 1 ]] || return 1
+    if [[ "$rest" =~ ^(.*)\*\*Grade:\*\*(.*)$ ]]; then
+        _SC_INTERVIEW_STATE="$(_aid_sc_trim "${BASH_REMATCH[1]}")"
+        local g="${BASH_REMATCH[2]}" trimmed
+        # A further bold label on the same line (`**Minimum:** A **Cycles:** 14`)
+        # is not part of the grade. Only trim when something survives, so a
+        # grade written as `**A+**` is not erased.
+        trimmed="$(_aid_sc_trim "${g%%\*\**}")"
+        [[ -n "$trimmed" ]] && g="$trimmed"
+        _SC_INTERVIEW_GRADE="$(_aid_sc_trim "$g")"
+    else
+        _SC_INTERVIEW_STATE="$(_aid_sc_trim "$rest")"
+    fi
+    return 0
 }
 
 # _aid_sc_is_placeholder_item ITEM -> true (exit 0) iff ITEM is the
@@ -2425,11 +2528,34 @@ _aid_sc_qa_entries() {
         local category impact qstate context suggested answer applied
         category="$(_aid_sc_bullet_value "$((qs+1))" "$qe" "Category")"
         impact="$(_aid_sc_bullet_value "$((qs+1))" "$qe" "Impact")"
+        # `State` is the current spelling; `Status` is what every pre-conversion
+        # file on disk actually says, because the state-not-status naming
+        # contract renamed the templates and not the works already written
+        # against them. Reading only `State` silently emptied the one field that
+        # says whether a question is still open -- 28 of 28 entries in the first
+        # real work this ran on. Falling back is the whole job of a migration.
         qstate="$(_aid_sc_bullet_value "$((qs+1))" "$qe" "State")"
+        [[ -z "$qstate" ]] && qstate="$(_aid_sc_bullet_value "$((qs+1))" "$qe" "Status")"
+        # An inline HTML comment annotating WHY the state was last changed is a
+        # real and useful habit, but `state` is a machine-read closed enum: left
+        # in place, `Answered <!-- ... -->` compares equal to nothing. Move the
+        # annotation into `answer`, which is free prose and is where the entry's
+        # disposition is discussed anyway -- so the enum is clean and the note is
+        # still on the entry. `state` is the only field treated this way; every
+        # other one is prose and keeps its comment where the author put it.
+        local qnote=""
+        if [[ "$qstate" == *"<!--"* ]]; then
+            qnote="${qstate#*<!--}"
+            qnote="$(_aid_sc_trim "${qnote%%-->*}")"
+            qstate="$(_aid_sc_trim "${qstate%%<!--*}")"
+        fi
         context="$(_aid_sc_bullet_value "$((qs+1))" "$qe" "Context")"
         suggested="$(_aid_sc_bullet_value "$((qs+1))" "$qe" "Suggested")"
         answer="$(_aid_sc_bullet_value "$((qs+1))" "$qe" "Answer")"
         applied="$(_aid_sc_bullet_value "$((qs+1))" "$qe" "Applied to")"
+        if [[ -n "$qnote" ]]; then
+            answer="${answer:+${answer} }[state note: ${qnote}]"
+        fi
         _SC_QA+=("${qid}"$'\x1f'"${category}"$'\x1f'"${impact}"$'\x1f'"${qstate}"$'\x1f'"${context}"$'\x1f'"${suggested}"$'\x1f'"${answer}"$'\x1f'"${applied}")
     done
 }
@@ -2482,7 +2608,9 @@ _aid_sc_emit_interview() {
         [[ -n "$_SC_INTERVIEW_STATE" ]] && hstate="$_SC_INTERVIEW_STATE"
         [[ -n "$_SC_INTERVIEW_GRADE" ]] && hgrade="$_SC_INTERVIEW_GRADE"
     fi
-    _aid_sc_table_rows "$start" "$end"
+    # Selected by header cell: the legacy section also carries a Review History
+    # table, whose rows are not sections.
+    _aid_sc_table_rows "$start" "$end" "Section"
     _SC_CNT_INTERVIEW="${#_SC_ROWS[@]}"
     _SC_OUT+=("interview:")
     _SC_OUT+=("  state: $(_aid_sc_yaml_scalar "$hstate")")
@@ -2492,53 +2620,155 @@ _aid_sc_emit_interview() {
         return 0
     fi
     _SC_OUT+=("  sections:")
-    local row idn name st upd
+    local row
     for row in "${_SC_ROWS[@]}"; do
-        IFS=$'\x1f' read -r idn name st upd <<< "$row"
-        _SC_OUT+=("    - id: ${idn}")
-        _SC_OUT+=("      name: $(_aid_sc_yaml_scalar "$name")")
-        _SC_OUT+=("      state: $(_aid_sc_yaml_scalar "$st")")
-        _SC_OUT+=("      updated: $(_aid_sc_yaml_scalar "$upd")")
+        _aid_sc_row_split "$row" 4
+        _SC_OUT+=("    - id: $(_aid_sc_yaml_scalar "${_SC_CELLS[0]}")")
+        _SC_OUT+=("      name: $(_aid_sc_yaml_scalar "${_SC_CELLS[1]}")")
+        _SC_OUT+=("      state: $(_aid_sc_yaml_scalar "${_SC_CELLS[2]}")")
+        _SC_OUT+=("      updated: $(_aid_sc_yaml_scalar "${_SC_CELLS[3]}")")
     done
 }
 
 _aid_sc_emit_lifecycle_history() {
     local start="$1" end="$2"
-    _aid_sc_table_rows "$start" "$end"
+    _aid_sc_table_rows "$start" "$end" "Phase Transition / Gate"
     _SC_CNT_LFH="${#_SC_ROWS[@]}"
     if [[ "${#_SC_ROWS[@]}" -eq 0 ]]; then
         _SC_OUT+=("lifecycle_history: []")
         return 0
     fi
     _SC_OUT+=("lifecycle_history:")
-    local row rdate revent rgrade rnotes
+    local row
     for row in "${_SC_ROWS[@]}"; do
-        IFS=$'\x1f' read -r rdate revent rgrade rnotes <<< "$row"
-        _SC_OUT+=("  - date: $(_aid_sc_yaml_scalar "$rdate")")
-        _SC_OUT+=("    event: $(_aid_sc_yaml_scalar "$revent")")
-        _SC_OUT+=("    grade: $(_aid_sc_yaml_scalar "$rgrade")")
-        _SC_OUT+=("    notes: $(_aid_sc_yaml_scalar "$rnotes")")
+        _aid_sc_row_split "$row" 4
+        _SC_OUT+=("  - date: $(_aid_sc_yaml_scalar "${_SC_CELLS[0]}")")
+        _SC_OUT+=("    event: $(_aid_sc_yaml_scalar "${_SC_CELLS[1]}")")
+        _SC_OUT+=("    grade: $(_aid_sc_yaml_scalar "${_SC_CELLS[2]}")")
+        _SC_OUT+=("    notes: $(_aid_sc_yaml_scalar "${_SC_CELLS[3]}")")
     done
 }
 
 _aid_sc_emit_deploy() {
     local start="$1" end="$2"
-    _aid_sc_table_rows "$start" "$end"
+    _aid_sc_table_rows "$start" "$end" "Delivery"
     _SC_CNT_DEPLOY="${#_SC_ROWS[@]}"
     if [[ "${#_SC_ROWS[@]}" -eq 0 ]]; then
         _SC_OUT+=("deploy: []")
         return 0
     fi
     _SC_OUT+=("deploy:")
-    local row rdelivery rstate rpr rkbu rtag rnotes
+    local row
     for row in "${_SC_ROWS[@]}"; do
-        IFS=$'\x1f' read -r rdelivery rstate rpr rkbu rtag rnotes <<< "$row"
-        _SC_OUT+=("  - delivery: $(_aid_sc_yaml_scalar "$rdelivery")")
-        _SC_OUT+=("    state: $(_aid_sc_yaml_scalar "$rstate")")
-        _SC_OUT+=("    pr: $(_aid_sc_yaml_scalar "$rpr")")
-        _SC_OUT+=("    kb_updated: $(_aid_sc_yaml_scalar "$rkbu")")
-        _SC_OUT+=("    tag: $(_aid_sc_yaml_scalar "$rtag")")
-        _SC_OUT+=("    notes: $(_aid_sc_yaml_scalar "$rnotes")")
+        _aid_sc_row_split "$row" 6
+        _SC_OUT+=("  - delivery: $(_aid_sc_yaml_scalar "${_SC_CELLS[0]}")")
+        _SC_OUT+=("    state: $(_aid_sc_yaml_scalar "${_SC_CELLS[1]}")")
+        _SC_OUT+=("    pr: $(_aid_sc_yaml_scalar "${_SC_CELLS[2]}")")
+        _SC_OUT+=("    kb_updated: $(_aid_sc_yaml_scalar "${_SC_CELLS[3]}")")
+        _SC_OUT+=("    tag: $(_aid_sc_yaml_scalar "${_SC_CELLS[4]}")")
+        _SC_OUT+=("    notes: $(_aid_sc_yaml_scalar "${_SC_CELLS[5]}")")
+    done
+}
+
+# _aid_sc_emit_features START END -> the `features:` sequence, mapped from the
+# legacy `## Features State` table BY COLUMN NAME (`_aid_sc_table_rows` records the
+# matched header in `_SC_HEADER`).
+#
+# Three properties are deliberate, because each one is a way this could have
+# reintroduced the failure it exists to fix:
+#
+#   * It NEVER refuses. `state` and `grade` carry whatever the markdown said,
+#     unvalidated -- a real table holds values like
+#     "In Review (PAUSED at user request)" that are not enum members, and
+#     rejecting them would put us back to a work that cannot be converted.
+#     The enum in work-state-template.yml binds WRITERS; this is translation.
+#   * No column is dropped. A header this function does not recognise is
+#     folded into `notes` as "<Header>: <value>" rather than discarded, so an
+#     unknown column costs tidiness and never data.
+#   * A struck row (`~~002~~`) becomes `withdrawn: true` with a clean numeric
+#     id, so the entry stays machine-addressable while still reading as
+#     withdrawn. Ids are never reused, so the entry must survive.
+_aid_sc_emit_features() {
+    local start="$1" end="$2"
+    _aid_sc_table_rows "$start" "$end" "Feature"
+    _SC_CNT_FEATURES="${#_SC_ROWS[@]}"
+    if [[ "${#_SC_ROWS[@]}" -eq 0 ]]; then
+        _SC_OUT+=("features: []")
+        return 0
+    fi
+    _SC_OUT+=("features:")
+    local row
+    for row in "${_SC_ROWS[@]}"; do
+        local -a cells=()
+        IFS=$'\x1f' read -ra cells <<< "$row"
+        local fid="" fname="" fstate="" fgrade="" fqa="" fstarted="" fupdated="" fnotes=""
+        local fsections="" withdrawn=0 extra=""
+        local j cell hdr
+        for j in "${!cells[@]}"; do
+            cell="${cells[$j]}"
+            hdr="${_SC_HEADER[$j]:-}"
+            # Strip markdown strikethrough; record that it was there.
+            if [[ "$cell" == '~~'*'~~' ]]; then
+                withdrawn=1
+                cell="${cell#\~\~}"
+                cell="${cell%\~\~}"
+            fi
+            case "$hdr" in
+                '#'|'Id'|'ID'|'id')                 fid="$cell" ;;
+                'Feature')                          fname="$cell" ;;
+                'Spec State'|'State')               fstate="$cell" ;;
+                'Spec Grade'|'Grade')               fgrade="$cell" ;;
+                'Q&A Count'|'QA Count')             fqa="$cell" ;;
+                'Started')                          fstarted="$cell" ;;
+                'Last Updated'|'Updated')           fupdated="$cell" ;;
+                'Sections')                         fsections="$cell" ;;
+                'Notes')                            fnotes="$cell" ;;
+                '')                                 [[ -n "$cell" ]] && extra+="${extra:+; }${cell}" ;;
+                *)                                  [[ -n "$cell" ]] && extra+="${extra:+; }${hdr}: ${cell}" ;;
+            esac
+        done
+        # An unrecognised column is folded into notes rather than dropped.
+        [[ -n "$fsections" ]] && extra+="${extra:+; }Sections: ${fsections}"
+        [[ -n "$extra" ]] && fnotes="${fnotes:+${fnotes} -- }${extra}"
+        # Reduce the id to its digits so a decorated cell stays addressable.
+        local idnum="${fid//[^0-9]/}"
+        [[ -n "$idnum" ]] && fid="$idnum"
+        [[ -z "$fstate" ]] && fstate="Pending"
+        [[ -z "$fgrade" ]] && fgrade="Pending"
+        _SC_OUT+=("  - id: $(_aid_sc_yaml_scalar "$fid")")
+        _SC_OUT+=("    name: $(_aid_sc_yaml_scalar "$fname")")
+        _SC_OUT+=("    state: $(_aid_sc_yaml_scalar "$fstate")")
+        _SC_OUT+=("    grade: $(_aid_sc_yaml_scalar "$fgrade")")
+        [[ -n "$fqa" ]]      && _SC_OUT+=("    qa_count: $(_aid_sc_yaml_scalar "$fqa")")
+        [[ -n "$fstarted" ]] && _SC_OUT+=("    started: $(_aid_sc_yaml_scalar "$fstarted")")
+        [[ -n "$fupdated" ]] && _SC_OUT+=("    updated: $(_aid_sc_yaml_scalar "$fupdated")")
+        [[ "$withdrawn" -eq 1 ]] && _SC_OUT+=("    withdrawn: true")
+        _SC_OUT+=("    notes: $(_aid_sc_yaml_scalar "$fnotes")")
+    done
+}
+
+# _aid_sc_emit_review_history START END -> the `review_history:` sequence, from
+# the legacy `### Review History` table. Selected by header cell like every other
+# table, and emitted rather than dropped: it is not `interview.sections` (its
+# rows are interview events, not the ten numbered requirement sections), and it
+# is not `lifecycle_history` (that records phase transitions), so without a key
+# of its own it would simply be lost on conversion.
+_aid_sc_emit_review_history() {
+    local start="$1" end="$2"
+    _aid_sc_table_rows "$start" "$end" "Outcome"
+    _SC_CNT_REVHIST="${#_SC_ROWS[@]}"
+    if [[ "${#_SC_ROWS[@]}" -eq 0 ]]; then
+        _SC_OUT+=("review_history: []")
+        return 0
+    fi
+    _SC_OUT+=("review_history:")
+    local row
+    for row in "${_SC_ROWS[@]}"; do
+        _aid_sc_row_split "$row" 4
+        _SC_OUT+=("  - date: $(_aid_sc_yaml_scalar "${_SC_CELLS[0]}")")
+        _SC_OUT+=("    event: $(_aid_sc_yaml_scalar "${_SC_CELLS[1]}")")
+        _SC_OUT+=("    outcome: $(_aid_sc_yaml_scalar "${_SC_CELLS[2]}")")
+        _SC_OUT+=("    notes: $(_aid_sc_yaml_scalar "${_SC_CELLS[3]}")")
     done
 }
 
@@ -2559,22 +2789,22 @@ _aid_sc_emit_delivery_lifecycle() {
 
 _aid_sc_emit_tasks_lifecycle() {
     local start="$1" end="$2"
-    _aid_sc_table_rows "$start" "$end"
+    _aid_sc_table_rows "$start" "$end" "Task"
     _SC_CNT_TASKSLC="${#_SC_ROWS[@]}"
     if [[ "${#_SC_ROWS[@]}" -eq 0 ]]; then
         _SC_OUT+=("tasks_lifecycle: {}")
         return 0
     fi
     _SC_OUT+=("tasks_lifecycle:")
-    local row rtask rstate rreview relapsed rnotes rname
+    local row
     for row in "${_SC_ROWS[@]}"; do
-        IFS=$'\x1f' read -r rtask rstate rreview relapsed rnotes rname <<< "$row"
-        _SC_OUT+=("  ${rtask}:")
-        _SC_OUT+=("    state: $(_aid_sc_yaml_scalar "$rstate")")
-        _SC_OUT+=("    review: $(_aid_sc_yaml_scalar "$rreview")")
-        _SC_OUT+=("    elapsed: $(_aid_sc_yaml_scalar "$relapsed")")
-        _SC_OUT+=("    notes: $(_aid_sc_yaml_scalar "$rnotes")")
-        _SC_OUT+=("    display_name: $(_aid_sc_yaml_scalar "$rname")")
+        _aid_sc_row_split "$row" 6
+        _SC_OUT+=("  ${_SC_CELLS[0]}:")
+        _SC_OUT+=("    state: $(_aid_sc_yaml_scalar "${_SC_CELLS[1]}")")
+        _SC_OUT+=("    review: $(_aid_sc_yaml_scalar "${_SC_CELLS[2]}")")
+        _SC_OUT+=("    elapsed: $(_aid_sc_yaml_scalar "${_SC_CELLS[3]}")")
+        _SC_OUT+=("    notes: $(_aid_sc_yaml_scalar "${_SC_CELLS[4]}")")
+        _SC_OUT+=("    display_name: $(_aid_sc_yaml_scalar "${_SC_CELLS[5]}")")
     done
 }
 
@@ -2672,11 +2902,27 @@ _aid_sc_convert_work_body() {
     if [[ "$h_i" -ge 0 ]]; then
         h_i_end="$(_aid_sc_section_end "$h_i" "$bend")"
         _aid_sc_emit_interview "$((h_i+1))" "$h_i_end"
+        # Same range: in the legacy shape the Review History table sits under a
+        # `###` heading inside that section, so it is in scope here and only here.
+        _aid_sc_emit_review_history "$((h_i+1))" "$h_i_end"
     else
         _SC_OUT+=("interview:")
         _SC_OUT+=("  state: Pending")
         _SC_OUT+=("  grade: Pending")
         _SC_OUT+=("  sections: []")
+        _SC_OUT+=("review_history: []")
+    fi
+
+    # AUTHORED on both layouts (a feature is a work-level concept). Was in the
+    # DERIVED guard list below until it was recognised as AUTHORED; guarding it
+    # is what made every post-/aid-define work unconvertible.
+    local h_f h_f_end
+    h_f="$(_aid_sc_find_heading "## Features State" "$bstart" "$bend")"
+    if [[ "$h_f" -ge 0 ]]; then
+        h_f_end="$(_aid_sc_section_end "$h_f" "$bend")"
+        _aid_sc_emit_features "$((h_f+1))" "$h_f_end"
+    else
+        _SC_OUT+=("features: []")
     fi
 
     local h_l h_l_end
@@ -2740,7 +2986,7 @@ _aid_sc_convert_work_body() {
         fi
     fi
 
-    local -a derived_table_headings=("## Features State" "## Plan / Deliveries" "## Tasks State" "## Calibration Log")
+    local -a derived_table_headings=("## Plan / Deliveries" "## Tasks State" "## Calibration Log")
     local dh
     for dh in "${derived_table_headings[@]}"; do
         _aid_sc_guard_derived_table "$md" "$dh" "$bstart" "$bend" || return 1
@@ -3001,6 +3247,12 @@ _aid_sc_verify_roundtrip() {
             if [[ "$(_aid_sc_yaml_block_count "  sections:")" != "$_SC_CNT_INTERVIEW" ]]; then
                 ok=0; echo "WARN: aid migrate: ${md}: round-trip mismatch on interview.sections count" >&2
             fi
+            if [[ "$(_aid_sc_yaml_block_count "features:")" != "$_SC_CNT_FEATURES" ]]; then
+                ok=0; echo "WARN: aid migrate: ${md}: round-trip mismatch on features count" >&2
+            fi
+            if [[ "$(_aid_sc_yaml_block_count "review_history:")" != "$_SC_CNT_REVHIST" ]]; then
+                ok=0; echo "WARN: aid migrate: ${md}: round-trip mismatch on review_history count" >&2
+            fi
             if [[ "$(_aid_sc_yaml_block_count "lifecycle_history:")" != "$_SC_CNT_LFH" ]]; then
                 ok=0; echo "WARN: aid migrate: ${md}: round-trip mismatch on lifecycle_history count" >&2
             fi
@@ -3059,6 +3311,7 @@ _aid_sc_convert_file() {
 
     _SC_CNT_INTERVIEW=0; _SC_CNT_LFH=0; _SC_CNT_DEPLOY=0; _SC_CNT_TASKSLC=0
     _SC_CNT_ISSUES=0; _SC_CNT_QA=0; _SC_CNT_FINDINGS=0; _SC_CNT_DISPATCH=0
+    _SC_CNT_FEATURES=0; _SC_CNT_REVHIST=0
 
     local n="${#_SC_LINES[@]}"
     if [[ "$n" -lt 2 ]] || [[ "${_SC_LINES[0]}" != "---" ]]; then
