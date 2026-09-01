@@ -8,7 +8,7 @@ user_approved: no
 lifecycle: Running
 phase: Specify
 active_skill: aid-specify
-updated: '2026-08-10T00:00:00Z'
+updated: '2026-09-01T00:00:00Z'
 pause_reason: --
 block_reason: --
 block_artifact: --
@@ -274,8 +274,13 @@ rather than deleted** — three superseded, three closed by deletion, one invert
 
 **Three of the four questions that were still open are closed by this decision rather than
 answered by it**, which is the clearest single measure of how much scope the reset removed.
-Only **Q23** (one-hop versus two-hop LAN coverage in the spike) remains Pending, and it is
-untouched — it is a question about test coverage, not about runtime.
+Of the questions open before the reset only **Q23** (one-hop versus two-hop LAN coverage in the
+spike) remains Pending, and it is untouched — it is a question about test coverage, not about
+runtime. **Three further questions were opened afterwards, by the 2026-09-01 `master` merge, and
+are Pending: Q26 (re-shaping into the v3.0.0 artifact set), Q27 (two premises the reset asserted
+that the repository has not acted on), Q28 (the declared Node floor admits versions with no usable
+`node:sqlite`).** Q26 is the one that blocks: no pipeline skill can advance this work until it is
+answered.
 
 Two defects those entries surfaced **outlive their questions and must not be lost with them**:
 `test.yml`'s `canonical-tests` job still runs on every pull request with no interpreter pin
@@ -301,6 +306,7 @@ work folder is prunable, so prose here would have died with it; the second is a 
 | 2026-08-09 | Define → cross-referenced | **A+** | 14 adversarial cycles, 93 findings (91 fixed, 2 out of scope), 8 further stakeholder decisions taken as Q13–Q20. Final cycle a full end-to-end sweep with zero findings. Next: /aid-specify work-007 |
 | 2026-08-10 | **Specify → requirements reopened** | -- | Stakeholder scope reset on the runtime decision (Python → Node; PyPI dropped). Phase held at **Specify** rather than reverted to Describe, on this work's own precedent — its log already carries two mid-phase scope widenings ("Scope widened at the approval gate" and Q21 during `/aid-specify`). This is the same move, larger. `user_approved` stays `no`. Requirements are amended in place, not re-interviewed: §1–§3 and §6's parameters are untouched, so no elicitation is required. Next: amend REQUIREMENTS.md, delete `feature-002` + `feature-008`, re-specify `feature-003`/`006`/`009` |
 | 2026-08-10 | Requirements amended + reviewed | **8 findings (2 CRITICAL)** | REQUIREMENTS.md amended, `feature-002` deleted, `feature-008` repurposed to `chat-skill`. Reviewed by a dispatched `aid-reviewer`; ledger at `.aid/.temp/review-pending/interview-work-007-runtime-reset.md`. **Both CRITICALs were self-inflicted and both were the same class this document has failed on for fourteen cycles — a correction applied where a finding pointed and not to the class it belonged to.** (1) §1 Objective still said sessions reach the node "through **both** an MCP façade and the CLI" — and it was missed *because* the section-status table had marked §1 "runtime-independent, no sweep needed", so the one section exempted from sweeping was the one that contradicted §4, §5, §7 and `feature-008`. (2) A Review History row asserted three features were "re-specified" when none had been touched, which is the false-completion claim the IMPERATIVE tracking rule exists to prevent. Fixing the reviewer's finding on stale `Status` fields (Q18/Q19) then exposed **three more instances of the same field-versus-body contradiction in text I had just written** — Q20/Q24/Q25 read `Pending` while their own bodies said "Pending → Closed". 6 findings fixed, 2 ruled Invalid (stale rows in the DERIVED, self-regenerating Features State view), 1 routed out as repository tech debt with no owner in this work. **Still pending: features 003, 006, 009 re-specification and the six-feature sweep** |
+| 2026-09-01 | **master merged — resume state invalidated** | -- | 529 commits of `master` merged in, including the **v3.0.0** major release, whose own notes say a breaking change "folds away" the per-feature `SPEC.md` and per-delivery `BLUEPRINT.md` so that "an in-flight work finds them gone". This work is that in-flight work. **Three shape breaks, none of them content problems.** (1) A feature is now a `### Feature NNN` subsection of `REQUIREMENTS.md § 11 Features` — "features are sections, not folders" (`aid-define/references/feature-decomposition.md`:6,:94) — so the eleven `features/feature-NNN/SPEC.md` files have no home, and this work's `REQUIREMENTS.md` stops at §10 with no §11 at all, which is the exact condition `/aid-specify` exits on ("run /aid-define"). (2) Work state is now pure-YAML `STATE.yml`, not this markdown-plus-frontmatter `STATE.md`. (3) §9 criteria are now cited by `AC-N` id and stated in exactly one place, whereas the eleven SPECs restate criterion *text* as checkbox lists; `BLUEPRINT.md § GATE CRITERIA`, which the `## Delivery Gate` section below points at, no longer exists, and the execution graph is derived from each task's `**Depends on:**` field rather than stored. Merge conflicts were confined to three KB docs and are resolved: this work's `external-sources.md` host-harness catalogue survives, `INDEX.md` was regenerated, and `tech-debt.md` keeps `M5` + `W7-1` (both re-verified against the merged tree, line cites corrected) alongside master's rows. **The automated migration path is blocked by a repository defect, now filed as `W7-2`:** `aid __migrate-repo` refuses this `STATE.md` because `## Features State` holds real rows and the converter classes that section DERIVED, and the remedy its error names (`migrate-work-hierarchy`) exits 3 on a work with no `tasks/`. **Content survives better than shape.** The D-2 store contract was re-executed clause by clause on Node 22.14.0 — WAL, `synchronous=FULL`, the partial unique index rejecting a duplicate while two NULLs coexist, `ON DELETE CASCADE`, `integrity_check`, plus both original findings (default `busy_timeout` is `0`; no `db.transaction()` helper) — and every clause holds, so `node:sqlite` is confirmed on the floor master actually declares rather than only on the 24/26 it was verified against. Two premises the reset leaned on are **not** backed by the merged tree and must stop being assumed: PyPI is still a live channel with `requires-python = ">=3.8"` on disk and no drop recorded in `backlog.md` or `roadmap.md`, and the dashboard Node/Python twin that Q14 called "being retired rather than copied" still exists with no retirement planned. Three new questions carry what this merge opened: **Q26** (how the eleven SPECs and this `STATE.md` are re-shaped), **Q27** (the two unbacked premises), **Q28** (the declared Node floor admits versions with no usable `node:sqlite`). **Nothing is implemented, so the cost is re-shaping documents, not reverting code.** |
 
 ---
 
@@ -416,7 +422,12 @@ work folder is prunable, so prose here would have died with it; the second is a 
      rule, and no other script mentions it. The AID-side defects behind that -- a false DERIVED
      marker, and `/aid-specify`'s own column list (Feature | State | Sections | Started | Last
      Updated | Notes) not matching the columns actually used below -- are repository issues
-     outside this work's scope, recorded here so the next reader is not misled the same way. -->
+     outside this work's scope, recorded here so the next reader is not misled the same way.
+     2026-09-01: the false DERIVED marker is no longer only a documentation defect -- the
+     STATE.md -> STATE.yml converter classes this section DERIVED and therefore REFUSES to
+     convert this file, which is what blocks this work's migration to the v3.0.0 state format.
+     It now has a durable home as `W7-2` in `.aid/knowledge/tech-debt.md`, because this work
+     folder is prunable and the defect outlives it. -->
 
 | # | Feature | Spec State | Spec Grade | Q&A Count | Notes |
 |---|---------|------------|------------|-----------|-------|
@@ -749,6 +760,33 @@ passed this work's approval gate, so any may be revisited.
 - **Context:** Surfaced by `/aid-specify` on `feature-003`. The node may carry third-party dependencies (FR-7.6). Whether they may ship **compiled** wheels is a real constraint with downstream reach: a pure-Python rule keeps the offline/air-gapped bundle a single platform-independent file forever, while allowing compiled wheels means one bundle per platform and per Python minor. It directly constrains `feature-009`'s mDNS library choice and `feature-008`'s MCP server choice — both due in later waves.
 - **Suggested:** **Pure-Python wheels only.** One of AID's four install channels serves air-gapped machines, and a platform-matrix bundle is a distribution problem that grows without bound; the libraries in question have pure-Python implementations.
 - **Answer:** **CLOSED BY DELETION 2026-08-10 (runtime decision) — Status: Pending → Closed.** The node carries **no third-party dependency at all**, so there are no wheels, compiled or otherwise, and the platform-matrix bundle problem does not arise. Both libraries this question was about are gone: the mDNS one is replaced by a standard-library discovery design (FR-6.1) and the MCP one left with the façade. **The instinct behind the suggestion was right and was in effect honoured** — it wanted to protect the air-gapped, platform-independent single-file bundle, and a zero-dependency component protects it absolutely rather than by policy. **One echo of it survives as a real constraint on `/aid-specify`:** the store is the runtime's *built-in* SQLite rather than a compiled binding precisely because that keeps the no-native-code, no-platform-matrix property, and if the documented fallback to a pinned third-party binding is ever taken, this question's concern returns with it and must be re-answered rather than re-discovered.
+
+### Q26
+
+- **Category:** Process
+- **Impact:** Required
+- **Status:** Pending
+- **Context:** Surfaced by merging `master` (v3.0.0) on 2026-09-01. The artifact set this work is built out of was retired by a breaking change: a feature is now a `### Feature NNN` subsection of `REQUIREMENTS.md § 11 Features` rather than a folder with its own `SPEC.md` ("features are sections, not folders" — `aid-define/references/feature-decomposition.md`:6,:94), and work state is pure-YAML `STATE.yml`. On disk this work still has eleven `features/feature-NNN/SPEC.md` files, a `REQUIREMENTS.md` that ends at §10, and a markdown `STATE.md`. `/aid-specify` resolves its target inside §11 and exits with "run `/aid-define`" when §11 is absent, so **no pipeline skill can advance this work in its present shape**. The automated half of the move is blocked by `W7-2`. Note what is *not* at stake: nothing was implemented, so this is a document re-shaping, not a revert.
+- **Suggested:** Re-shape in place rather than re-deciding anything. Fold each surviving SPEC into a §11 subsection, converting its restated criterion text into `**Criteria:** AC-N` citations against §9 (which is unchanged and already carries the ids), drop the `## Change Log` sections that the current authoring rule forbids, and convert `STATE.md` by hand since the shipped converter refuses it. Carry `feature-003`'s twelve open findings across unchanged — they are defects in the *content*, which the fold does not touch, and losing them would re-open two HIGHs that took three cycles to surface. The alternative worth naming and rejecting: re-running `/aid-define` from the approved §5, which produces a well-formed §11 but discards the decomposition history, the fourteen cross-reference cycles' corrections, and `feature-001`'s A+ spike protocol.
+- **Answer:** _pending_
+
+### Q27
+
+- **Category:** Architecture
+- **Impact:** High
+- **Status:** Pending
+- **Context:** Surfaced by merging `master` (v3.0.0) on 2026-09-01. The runtime reset rested on two statements about the repository's direction that the merged tree does not support. (a) "PyPI is dropped as a publication channel" — the premise under which FR-8, AC-20, AC-24, AC-25, stage P0b and `feature-002` were all withdrawn, and under which Q4's tech-debt entry was to be "re-validated and closed as Not Applicable". PyPI is still live: `packages/pypi/pyproject.toml` declares `requires-python = ">=3.8"` on disk, `technology-stack.md`:130 states all four channels ship the same CLI, and neither `backlog.md` nor `roadmap.md` records a drop. The debt entry is correspondingly still live and re-verified as `M5`. (b) Q14's note that "the dashboard twin this answer cited as the expensive precedent is being retired rather than copied" — `dashboard/server/` still holds both `server.mjs` and `server.py`, and no retirement appears in the backlog or roadmap. **Neither premise changes a decision this work took**, which is why this is one question and not a reopening: the node is Node either way, and the rejection of a node twin stands on its own cost argument. What is wrong is that two load-bearing paragraphs assert repository futures as settled fact.
+- **Suggested:** Keep both decisions and restate both premises as what they are. FR-8's withdrawal should rest on the reason that survives independently — the floor raise was never a prerequisite for the messaging work (Q18 established exactly that, and it is the reasoning `feature-002` was deleted on), not on a channel removal that has not been agreed. Q14's twin note should cite its own cost argument and drop the claim about the dashboard's future.
+- **Answer:** _pending_
+
+### Q28
+
+- **Category:** Architecture
+- **Impact:** High
+- **Status:** Pending
+- **Context:** Surfaced by merging `master` (v3.0.0) on 2026-09-01, which raised every adopter-facing Node requirement to **`>=22`** (`packages/npm/package.json` `engines.node`). FR-7.6 puts the node inside the `aid` payload, so the node inherits that floor rather than declaring its own — and `>=22` admits versions where the store this work chose does not work. Per the vendor history (`nodejs.org/api/sqlite.html`, accessed 2026-09-01): `node:sqlite` was **added in v22.5.0** behind `--experimental-sqlite`, and the flag requirement was **removed in v22.13.0** (and v23.4.0). So on 22.0–22.4 the module does not exist at all, and on 22.5–22.12 it exists only behind a flag. The **effective floor for the node is 22.13.0**, not 22. Verified first-hand on v22.14.0: `node:sqlite` imports unflagged and every clause of the D-2 store contract holds — WAL persists, `synchronous=FULL` sticks, the partial unique index rejects a duplicate while two NULLs coexist, `ON DELETE CASCADE` fires, `integrity_check` returns `ok`, the default `busy_timeout` is `0`, and there is no `db.transaction()` helper. It also still emits an `ExperimentalWarning` on stderr on 22.x, since release-candidate status arrives only in v24.15.0. **This is the `M5` pattern arriving from a new direction** — a declared floor that is not the floor anything was demonstrated on — and this work's own record calls that class out as a defect, so inheriting it silently would be the same error made twice.
+- **Suggested:** State the node's Node requirement as **`>=22.13.0`** rather than inheriting `>=22`, checked at `start` with the explicit actionable error FR-7.7 and AC-23 already require — which is where the check already lives, so this costs a version constant rather than a mechanism. Decide separately, and record either way, whether the `ExperimentalWarning` on 22.x/23.x is acceptable on a service the operator starts or is to be suppressed; a warning on stderr at every start is the kind of thing that gets filed as a bug by someone who never reads a release note.
+- **Answer:** _pending_
 
 ## Calibration Log
 
