@@ -27,7 +27,7 @@ Sessions talk in **chats**. A chat is the only thing a message is addressed to, 
 smallest chat — two members — *is* a direct message. Larger chats add **mention** (aimed at
 someone, visible to all) and **whisper** (visible only to one member).
 
-The channel is delivered as a **local node** — a service deployed and administered by the
+The channel is delivered as a **local node** — a service started and administered by the
 `aid` CLI, running on each machine and serving every session on it, regardless of tool. The
 node itself has a single responsibility, message exchange, and ships no operator surface of
 its own. Nodes federate to other machines over a trusted LAN. Sessions reach the node
@@ -112,7 +112,8 @@ orchestrator and needs to see and audit what was sent between them.
   A chat is the only addressing unit; a two-member chat is a direct message. Within a chat
   of more than two, a message may **mention** members (visible to all) or **whisper** to one
   (visible only to them).
-- A **local service (node)**, deployed by the CLI, that all local sessions connect to.
+- A **local service (node)**, started by the CLI, that all local sessions connect to.
+  There is no installation step: the node ships inside the `aid` payload (FR-7.6).
 - **Cross-machine** connection between nodes on a **trusted LAN**: peers **find each other**,
   and store-and-forward at the sending node so a peer whose machine is offline still
   receives its messages. **The discovery mechanism is deliberately not named here** — it is
@@ -1356,31 +1357,26 @@ The background service that holds the messages, and the commands that run it.
 
 The node does **one job** — move messages between sessions. It ships no commands of its
 own, no installer, and no operator screen. Everything a human does to it is an `aid`
-subcommand: put it there, start it, ask how it is, stop it. Putting it there twice changes
-nothing the second time.
+subcommand: start it, ask how it is, stop it. There is nothing to *put there* — the node
+ships inside the `aid` payload, so the CLI starts what it already carries.
 
 Once running it is independent of every session. Sessions come and go; the node stays — it
 outlives the window that started it. (Whether it also restarts itself after a machine
 reboot is **not** specified: no requirement asks for it, and nothing here tests it.)
 
-The node is a **separate package with its own dependencies**, so installing `aid` does not
-drag two third-party libraries onto every user's machine. `aid` installs and runs it; `aid`
-does not contain it. One consequence follows and is deliberate: **the node needs Python, and
-only one of `aid`'s four install channels guarantees it.** So chat states Python as a
-prerequisite and says so with a clear error rather than a crash. AID itself gains no Python
-requirement — a user who never enables chat notices nothing.
-
-**One question is deliberately left open for `/aid-specify`: where the deploy command gets the
-node from.** Because `aid` does not carry it, deploy has to fetch it — from a package index,
-from a bundle, or otherwise — and one of the four install channels serves **offline,
-air-gapped machines** with no index to reach. Nothing in this feature's criteria depends on
-the answer, which is why it is not guessed at here. It is recorded so that whoever writes the
-technical specification knows it is theirs to settle rather than assumes it was decided.
+The node **ships inside the `aid` payload and carries no third-party dependency** (FR-7.6),
+so `aid` does contain it: there is nothing to fetch on any channel, air-gapped included, and
+a user who never enables chat pays only disk. One consequence follows and is deliberate:
+**the node needs a Node runtime, and no host tool guarantees which version is on PATH**
+(FR-7.7, §8). So chat states Node as a prerequisite, checks it before any side effect, and
+says so with a clear error rather than a crash. The `aid` CLI itself stays runtime-free —
+installing, updating and removing AID needs nothing but a shell.
 
 Beneath the surface there is **one implementation**. The CLI is not a second version of the
-node's logic, and the MCP façade added later is not a third — both are thin faces over the
-same core. This matters more than it sounds: two implementations drift, and the drift shows
-up as messages that behave differently depending on which door they came through.
+node's logic, and the rendered chat skill is not a third — the skill holds no logic at all,
+since every operation it describes is an `aid chat` invocation. This matters more than it
+sounds: two implementations drift, and the drift shows up as messages that behave
+differently depending on which door they came through.
 
 #### User Stories
 
@@ -1428,34 +1424,35 @@ up as messages that behave differently depending on which door they came through
 > criterion is stated, so these are verification scenarios rather than criteria; the criteria
 > this feature owns are cited above.
 
-- [ ] Given a machine with no node, when the operator runs the deploy command, then the
-      node is installed and running.
-- [ ] Given a machine with `aid` installed through a non-PyPI channel and no Python present,
-      when the operator deploys the node, then it fails with an explicit message naming
-      Python as the prerequisite — not a stack trace — and every unrelated `aid` command
+- [ ] Given a machine where `aid` is installed and the node has never run, when the operator
+      starts it, then it runs — with nothing fetched, resolved, verified or installed first.
+- [ ] Given a machine with `aid` installed and no usable Node runtime on PATH, when the
+      operator starts the node, then it fails with an explicit message naming Node as the
+      prerequisite — not a stack trace — and every `aid` command that needs no runtime
       still works.
-- [ ] Given a node already running, when the deploy command runs again, then nothing
-      changes and no error is raised.
+- [ ] Given a node already running, when start runs again, then it does not fail with an
+      unhandled error. **Whether it reports plain success or a distinct already-running
+      code is FR-1.1's open sub-decision**, so this scenario deliberately fixes only the
+      part that holds whichever way that is settled.
 - [ ] Given a running node, when the operator asks for status, then its state is reported.
 - [ ] Given a running node, when the operator stops it, then it stops.
 - [ ] Given a running node, when the session that started it exits, then the node keeps
       running.
-- [ ] Given the node's own distribution, when it is inspected, then it ships no
-      operator-facing command of its own.
+- [ ] Given the node's shipped files, when they are inspected, then they carry no
+      operator-facing command of their own.
 - [ ] Given `aid`'s own package manifests, when their dependency lists are read after this
-      work ships, then they are **still empty** — the node's third-party libraries live in the
-      node's distribution, and a user who never enables chat installs none of them. This is
-      what makes the node a separate distributable rather than a folder in the installer, and
-      it is the whole reason FR-7.6 exists.
+      work ships, then they are **still empty** — and this time because the node has no
+      third-party dependency at all, not because its dependencies were kept in a separate
+      distributable. FR-7.6 is satisfied literally rather than by a carve-out.
 - [ ] Given the node's distribution, when it is inspected, then it offers **no client library
       or SDK** for a caller to bind to. So an in-tool skill written later has nothing to
       reimplement against and invokes the CLI by construction, which is what FR-7.4's first
-      clause asks for. (The MCP façade is a *face over the same core*, added at stage P2 by
-      Feature 008, not a client library — and the separate question of the HTTP transport
-      staying internal to the subscriber belongs to Feature 006.)
+      clause asks for. (The rendered chat skill Feature 008 adds at stage P2 is instructions
+      that call `aid chat`, not a client library — and the separate question of the HTTP
+      transport staying internal to the subscriber belongs to Feature 006.)
 - [ ] Given the node's implementation, when it is inspected, then message-plane logic lives
-      in one core that the CLI calls rather than reimplements — so the MCP façade added at a
-      later stage has a single core to face.
+      in one core that the CLI calls rather than reimplements — so every face added later,
+      the chat skill included, has a single core behind it.
 
 ### Feature 004 — Session Registration
 
