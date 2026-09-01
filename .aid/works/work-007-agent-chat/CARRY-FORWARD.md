@@ -22,7 +22,7 @@ fault and not this work's to fix:
   half is done and verified.
 - **`W7-3`** — the `STATE.md` → `STATE.yml` conversion drops every block the YAML key set does
   not name. Measured on this file on 2026-09-01: **113,584 bytes in, 65,608 out** — 47,976
-  bytes, 42%, gone, and what goes includes the D1–D14 decision registry. Fixing it is a
+  bytes, 42%, gone, and what goes included the decision registry until it was moved. Fixing it is a
   schema decision for the repository, not for a feature work, and this work should not
   wait on it.
 
@@ -42,14 +42,47 @@ agreeing with §10 stage for stage, and all 40 §5 sub-requirements mapped.
 
 ## What moves
 
-### 1. D1–D14 → `.aid/knowledge/decisions.md` (do this first, and separately)
+### 1. The decision registry — DONE, and not where this document first said
 
 Fourteen architectural decisions, each recorded with **the alternative it rejected and why**.
 This is the single most valuable artifact the work produced and the one a new prompt is least
 likely to reproduce: a prompt states conclusions, and what makes these useful is the rejected
 branch attached to each.
 
-Source: `STATE.md` § `Cross-phase Q&A` → `### Decisions carried from the originating interview`.
+**Moved on 2026-09-01 out of `STATE.md` and into `REQUIREMENTS.md` § 7 → "Decisions taken, and
+the alternatives rejected", as `ID-1`–`ID-14`.** It travels to the successor with the rest of the
+requirements; nothing further is needed for it.
+
+> **This document originally said to promote them to `.aid/knowledge/decisions.md` first. That was
+> wrong, and the reasons are worth keeping** — they are the same reasons the promotion is still
+> owed *later*. Three of them, each sufficient on its own:
+>
+> - **Nothing on disk to ground them in.** `decisions.md`'s own authoring contract requires each
+>   decision to be grounded in its evidence, and every existing entry cites a file that exists
+>   (`packages/npm/package.json`, `README.md`, a test). This product does not exist yet, so the
+>   only evidence available is this work folder — which the Knowledge Base may not cite, by rule,
+>   because the folder is pruned when the work ships.
+> - **They are explicitly re-openable.** Their own preamble says none has passed the work's
+>   approval gate, so any may be revisited. `decisions.md` entries are `Accepted`, usually with
+>   an enforcement mechanism named.
+> - **The ids collide.** `decisions.md` already uses `D1`–`D29`.
+>
+> Promotion is **ship-time** work, as `D30`+ with real evidence citations. §9's AC-25 withdrawal
+> note already anticipated exactly this: the KB changes when the work ships, and that is ordinary
+> ship-time KB work rather than a criterion of this requirement set.
+
+**The move still achieves what step 1 was for.** Its purpose was to get the registry out of the
+`STATE.md` that `W7-3` discards. `REQUIREMENTS.md` is never touched by that converter, so the
+fourteen decisions — and, more to the point, the fourteen *rejected alternatives* — are out of
+reach of the defect entirely. Two things were fixed on the way:
+
+- **The overrides are stated inside their own rows.** `ID-9`, `ID-12` and `ID-13` each had an
+  element overturned, and each override previously pointed at a Q entry in `STATE.md`. Those
+  pointers would have dangled the moment the folder was pruned, so what the Q entry decided is
+  now written out in place.
+- **The ids are `ID-n`, not `D-n`.** Feature 003's Scope Ledger already uses `D-1`–`D-8` for its
+  spec-level decisions, in the same document — one character away from the interview ids, in a
+  table a reader could easily mistake for the same series.
 
 | # | Decision (abbreviated — carry the full row) |
 |---|---|
@@ -72,11 +105,10 @@ Three carry **override annotations that must travel with them** — D9, D12 and 
 element overturned by a later decision, and the row records both. Copying the conclusion without
 the override would reinstate a rejected design.
 
-**Why first, and why separate:** these are architectural decisions about the project, so
-`decisions.md` is where they belong under the current model regardless of this restart — and
-promoting them is what removes the largest part of `W7-3`'s subject. Do it through
-`/aid-update-kb` (it gates on human confirmation) and **strip every work reference** on the way
-in: the KB may contain no work id and no work-folder path.
+**When the ship-time promotion happens**, do it through `/aid-update-kb` (it gates on human
+confirmation), allocate `D30`+, **strip every work reference** on the way in — the KB may contain
+no work id and no work-folder path — and give each entry the evidence citation that will exist by
+then. Until then the registry lives in §7 and travels with the requirements.
 
 ### 2. `REQUIREMENTS.md` → the seed for the successor
 
@@ -205,9 +237,11 @@ Survives pruning with no action, and must not be re-derived:
 
 ## Order of operations
 
-1. **Promote D1–D14 to `decisions.md`** via `/aid-update-kb`, stripping every work reference.
-   Do this before anything else: it is the highest-value artifact, it belongs there under the
-   current model regardless, and it removes the largest part of `W7-3`'s subject.
+1. ~~**Promote the decision registry to `decisions.md`.**~~ **Superseded — done differently, and
+   already complete.** The fourteen decisions moved from `STATE.md` into `REQUIREMENTS.md` § 7 as
+   `ID-1`–`ID-14` on 2026-09-01, which is what actually protects them from `W7-3`. Promotion to
+   the Knowledge Base is deferred to ship time, as `D30`+ with real evidence citations — see
+   section 1 above for why it cannot happen now. **No action outstanding.**
 2. **Open `work-024-agent-chat`.** 024 is the lowest free number: 001, 003, 004, 005, 007–013,
    017 and 019–023 have all been used, counting the three that live only in `.gitignore`
    (004, 009, 023) and would otherwise look free. Current tooling writes `STATE.yml`

@@ -400,6 +400,50 @@ release condition. Speed is deliberately unconstrained until the design is prove
   Copilot CLI, Codex, and future tools — no design may assume a single host's CLI or session
   model. This holds for the **pull** surface but **not** for waking an idle session.
 
+### Decisions taken, and the alternatives rejected
+
+Fourteen decisions that shaped this design, each with the alternative it rejected and why. The
+rejected branch is the load-bearing half: the conclusions above and in §5 can be restated from
+the design, but *what was tried and discarded* cannot, and without it a later reader re-proposes
+a rejected option in good faith.
+
+They were settled in an earlier `/aid-describe` run in another repository and carried here with
+the requirements. **None has passed this work's approval gate, so any may be revisited** — they
+are rationale, not ratified constraints. Three (ID-9, ID-12, ID-13) had an element overturned by a
+later decision; each override is stated inside its own row, because a conclusion copied without
+its override reinstates a design that was rejected.
+
+> **Why these live here and not in `.aid/knowledge/decisions.md`.** That document requires each
+> decision to be grounded in its evidence, and every entry in it cites a file that exists. This
+> product does not exist yet, so the only evidence these could cite is this work folder — which
+> the Knowledge Base may not reference, by rule, because the folder is pruned when the work
+> ships. **Promotion to the Knowledge Base is ship-time work**, as `D30`+ with real evidence
+> citations, and §9's AC-25 withdrawal note already says so in as many words.
+>
+> **On the ids.** These were `D1`–`D14` while they lived in `STATE.md`, and are `ID-1`–`ID-14`
+> here — `ID` for *interview decision*, mapping exactly `Dn` → `ID-n`. Two live namespaces
+> already claim the obvious spellings: `.aid/knowledge/decisions.md` uses `D1`–`D29` for AID's
+> own decisions, and Feature 003's Scope Ledger below uses `D-1`–`D-8` for its spec-level ones.
+> A prefix that cannot be confused with either is worth more than continuity with a numbering
+> that only ever existed in a file now being retired.
+
+| # | Decision | Rejected alternative, and why |
+|---|---|---|
+| ID-1 | **MCP cannot wake an idle session.** MCP is pull-only — invoked *by* an agent, *during* a turn. Server→client notifications and `sampling` exist in the protocol, but no host maps them to "start a turn" | A hosted MCP bus as the whole solution — architecturally cannot notify an idle session |
+| ID-2 | **A local node per machine**, stood up by the CLI | A hosted central broker — cannot reach into a local process, and a hosted service that spawns local processes is remote code execution by design |
+| ID-3 | **Wake = in-tool subscriber.** A skill arms a background process; the host's own background-completion notification produces the turn | An external waker (`claude -p --resume` plus `flock`) — per-host fragmentation, session-id capture, and two processes mutating one working tree. Also a `Stop`-hook mailbox — never fires once a session is fully idle |
+| ID-4 | **The pull floor is retained** — a session with no subscriber reads its inbox at its own turn boundaries | Subscriber-only. Rejected because the floor is *free*: a woken session must read its mail anyway, so the read tool exists regardless |
+| ID-5 | **No process spawning and no session resumption in the product** | Channel-owns-launching — the operator's orchestrator already launches sessions, so a dead session is a launch problem rather than a wake problem |
+| ID-6 | **Address by stable name**, session id internal; the mailbox binds to the name | Session-id addressing — sessions restart constantly (context limits, crashes, `/clear`), which orphans undelivered mail and forces every sender to re-discover ids |
+| ID-7 | **Async request/reply** via `correlation_id`, and **no blocking API** | A synchronous `ask(timeout)` — couples two turn-based agents' timelines; the asking agent stalls while the peer may not even be awake, and any timeout is a guess |
+| ID-8 | **Durable log, at-least-once, per-member cursor, explicit ack** | Fire-and-forget. Under the durable model the re-arm gap becomes *latency* rather than loss — standard consumer-offset semantics |
+| ID-9 | **Reject on overflow.** A full mailbox means a broken consumer, and the sender must learn that rather than have messages vanish. **The oversized-payload half of this decision is OVERRIDDEN:** it originally also hard-rejected large payloads, and there is now **no message size limit** at all — a message is never rejected or truncated for being large (§6). One consequence follows and is stated in §6: storage is bounded by message *count*, never by bytes | Drop-oldest, or truncation. Silent truncation had already been recorded as tech debt in the originating workspace |
+| ID-10 | **Every limit is configurable through the CLI** | Hardcoded constants |
+| ID-11 | **The CLI is the complete administrative interface, and the privilege boundary is absolute** — no administrative operation is reachable from the agent-facing surface | Exposing administration over MCP — an agent could then pair an unknown peer or stop the node |
+| ID-12 | **One shared core, and no second implementation of the message plane.** **The MCP half of this decision is OVERRIDDEN ENTIRELY** (§4 Out of Scope): it originally put the message plane on *both* the CLI and an MCP façade over one core, and the façade is withdrawn — a rendered chat skill takes its place. **Note what the override does to the rejected alternative opposite:** the objection to CLI-only was that skills are the least portable layer and would need hand-authoring per host, and that is now known to be false for this repository, which renders one canonical skill into all five host dialects automatically. The surviving half — one core, no second implementation — is unchanged and is now FR-0.1 | CLI-only — skills are the least portable layer and would need hand-authoring per tool, forever, including future ones. MCP-only — leaves hosts with weak MCP configuration stranded |
+| ID-13 | **v1 is same-machine plus a trusted LAN**, with no NAT traversal and no relay. **Two elements are OVERRIDDEN.** The pre-shared key is gone: there is **no authentication anywhere** in this product, and trust is implicit in network membership, which makes the network itself the security boundary (§4, §8). mDNS is gone as a *named mechanism*: FR-6.1 now states discovery as an **outcome**, because research found no single mechanism reaches every environment users are actually in — of eleven comparable local-first tools surveyed only two make mDNS primary, and **all eleven** ship a manual backstop. **The surviving core is unchanged** | Same-machine-only — loses the federation the stakeholder wanted. Full NAT traversal or a relay tier — all of the risk, none of the core value |
+| ID-14 | **Risk-first priority:** the P0 spike runs before anything is built | Folding validation into P2 — would build federation on top of a wake mechanism that may not exist on three of the five target hosts |
+
 ## 8. Assumptions & Dependencies
 
 **Cross-machine reach — resolved.** v1 assumes a flat, **trusted LAN**: peers find each other
